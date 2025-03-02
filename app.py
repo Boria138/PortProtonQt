@@ -2,8 +2,36 @@ import sys
 import os
 import glob
 import configparser
+import shlex
+import requests
 from io import BytesIO
 from PySide6 import QtWidgets, QtCore, QtGui
+
+def load_pixmap(cover, width, height):
+    """
+    Загружает изображение из локального файла или по URL и масштабирует его.
+    Если загрузка не удалась, создаёт резервное изображение.
+    """
+    pixmap = QtGui.QPixmap()
+    if cover.startswith("http"):
+        try:
+            response = requests.get(cover)
+            if response.status_code == 200:
+                pixmap.loadFromData(response.content)
+        except Exception as e:
+            print("Ошибка загрузки обложки из URL:", e)
+    elif QtCore.QFile.exists(cover):
+        pixmap.load(cover)
+    if not pixmap or pixmap.isNull():
+        # Резервное изображение
+        pixmap = QtGui.QPixmap(width, height)
+        pixmap.fill(QtGui.QColor("#333333"))
+        painter = QtGui.QPainter(pixmap)
+        painter.setPen(QtGui.QPen(QtGui.QColor("white")))
+        painter.setFont(QtGui.QFont("Poppins", 12))
+        painter.drawText(pixmap.rect(), QtCore.Qt.AlignCenter, "No Image")
+        painter.end()
+    return pixmap.scaled(width, height, QtCore.Qt.KeepAspectRatioByExpanding, QtCore.Qt.SmoothTransformation)
 
 class AddGameDialog(QtWidgets.QDialog):
     def __init__(self, parent=None):
@@ -47,6 +75,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setWindowTitle("PortProton Cyberpunk")
         self.resize(1280, 720)
         self.setMinimumSize(800, 600)
+
+        # Используем одну сессию для всех HTTP-запросов
+        self.requests_session = requests.Session()
+        # Кэш для списка приложений Steam (будет загружен один раз)
+        self.steam_apps = None
 
         self.games = self.loadGames()
 
@@ -143,12 +176,70 @@ class MainWindow(QtWidgets.QMainWindow):
             }
         """)
 
+    def load_steam_apps(self):
+        """
+        Загружает и кэширует список приложений Steam.
+        Этот список используется для поиска игры по имени из строки Exec.
+        """
+        if self.steam_apps is None:
+            app_list_url = "http://api.steampowered.com/ISteamApps/GetAppList/v2/"
+            try:
+                response = self.requests_session.get(app_list_url)
+                if response.status_code == 200:
+                    data = response.json()
+                    self.steam_apps = data.get("applist", {}).get("apps", [])
+                else:
+                    self.steam_apps = []
+            except Exception as e:
+                print("Ошибка загрузки списка приложений Steam:", e)
+                self.steam_apps = []
+        return self.steam_apps
+
+    def get_steam_game_info(self, exec_line):
+        """
+        Используя строку запуска (Exec) desktop‑файла, пытается извлечь имя файла,
+        ищет в кэшированном списке Steam-приложений совпадение по имени, а затем запрашивает через Steam Store API данные о игре.
+        Возвращает словарь с ключами: appid, name, description, cover.
+        """
+        try:
+            parts = shlex.split(exec_line)
+            if len(parts) >= 4:
+                game_exe = parts[3]
+            else:
+                game_exe = exec_line
+            base_name = os.path.splitext(os.path.basename(game_exe))[0]
+            steam_apps = self.load_steam_apps()
+            matching_app = None
+            # Ищем совпадение по вхождению имени файла (без учета регистра)
+            for app in steam_apps:
+                if base_name.lower() in app["name"].lower():
+                    matching_app = app
+                    break
+            if matching_app:
+                appid = matching_app["appid"]
+                details_url = f"https://store.steampowered.com/api/appdetails?appids={appid}&l=russian"
+                details_response = self.requests_session.get(details_url)
+                if details_response.status_code == 200:
+                    details_data = details_response.json()
+                    app_details = details_data.get(str(appid), {})
+                    if app_details.get("success"):
+                        app_info = app_details.get("data", {})
+                        title = app_info.get("name", base_name)
+                        description = app_info.get("short_description", "")
+                        cover = app_info.get("library_capsule", "")
+                        return {"appid": appid, "name": title, "description": description, "cover": cover}
+            return {"appid": "", "name": base_name, "description": "", "cover": ""}
+        except Exception as e:
+            print(f"Ошибка получения данных из Steam API: {e}")
+            return {"appid": "", "name": base_name, "description": "", "cover": ""}
+
     def loadGames(self):
         """
         Ищет desktop файлы с играми в пользовательском каталоге PortProton.
         Путь к каталогу берётся из конфигурационного файла (~/.config/PortProton.conf)
         или из симлинка ~/PortProton, если файла нет.
-        Возвращает список кортежей (название, описание, путь к обложке).
+        Для каждого файла пытается получить данные из Steam API по строке Exec.
+        Возвращает список кортежей (название, описание, обложка, appid).
         Пропускает desktop файл самого PortProton.
         """
         games = []
@@ -178,16 +269,27 @@ class MainWindow(QtWidgets.QMainWindow):
                 config.read(file_path, encoding="utf-8")
                 if "Desktop Entry" in config:
                     entry = config["Desktop Entry"]
-                    name = entry.get("Name", "Unknown Game")
-                    if name.lower() == "portproton":
+                    desktop_name = entry.get("Name", "Unknown Game")
+                    if desktop_name.lower() == "portproton":
                         continue
-                    desc = entry.get("Comment", "")
-                    icon = entry.get("Icon", "")
-                    games.append((name, desc, icon))
+                    exec_line = entry.get("Exec", "")
+                    steam_info = {}
+                    if exec_line:
+                        steam_info = self.get_steam_game_info(exec_line)
+                    if steam_info.get("appid"):
+                        name = steam_info.get("name")
+                        desc = steam_info.get("description")
+                        cover = steam_info.get("cover")
+                        appid = steam_info.get("appid")
+                    else:
+                        name = desktop_name
+                        desc = entry.get("Comment", "")
+                        cover = entry.get("Icon", "")
+                        appid = ""
+                    games.append((name, desc, cover, appid))
             except Exception as e:
                 print(f"Ошибка чтения файла {file_path}: {e}")
         return games
-
 
     def switchTab(self, index):
         for i, btn in self.tabButtons.items():
@@ -211,8 +313,8 @@ class MainWindow(QtWidgets.QMainWindow):
         gridWidget = QtWidgets.QWidget()
         self.gamesGridLayout = QtWidgets.QGridLayout(gridWidget)
         self.gamesGridLayout.setSpacing(20)
-        for idx, (name, desc, cover) in enumerate(self.games):
-            card = self.createGameCard(name, desc, cover)
+        for idx, (name, desc, cover, appid) in enumerate(self.games):
+            card = self.createGameCard(name, desc, cover, appid)
             self.gamesGridLayout.addWidget(card, idx // 3, idx % 3)
 
         layout.addWidget(gridWidget)
@@ -226,16 +328,16 @@ class MainWindow(QtWidgets.QMainWindow):
             desc = dialog.descEdit.toPlainText().strip()
             cover = dialog.coverEdit.text().strip()
             if name:
-                self.games.append((name, desc, cover))
-                new_card = self.createGameCard(name, desc, cover)
+                # Для игр, добавленных вручную, appid оставляем пустым
+                self.games.append((name, desc, cover, ""))
+                new_card = self.createGameCard(name, desc, cover, "")
                 index = len(self.games) - 1
                 self.gamesGridLayout.addWidget(new_card, index // 3, index % 3)
 
-    def createGameCard(self, name, description, cover_path=None):
+    def createGameCard(self, name, description, cover_path=None, appid=""):
         """
         Создаёт карточку игры с эффектом glassmorphism.
-        Обложка берётся только из локального файла.
-        Если локальный файл не найден, создаётся резервная картинка.
+        Если обложка представлена URL или локальным файлом – загружается через load_pixmap.
         """
         card = QtWidgets.QFrame()
         card.setFixedSize(180, 300)
@@ -260,20 +362,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         imageLabel = QtWidgets.QLabel()
         imageLabel.setFixedSize(180, 250)
-
-        # Используем локальный файл обложки, если он существует
-        if cover_path and QtCore.QFile.exists(cover_path):
-            pixmap = QtGui.QPixmap(cover_path)
-            pixmap = pixmap.scaled(180, 250, QtCore.Qt.KeepAspectRatioByExpanding, QtCore.Qt.SmoothTransformation)
-        else:
-            # Создаем резервную картинку с фоном и текстом
-            pixmap = QtGui.QPixmap(180, 250)
-            pixmap.fill(QtGui.QColor("#333333"))
-            painter = QtGui.QPainter(pixmap)
-            painter.setPen(QtGui.QPen(QtGui.QColor("white")))
-            painter.setFont(QtGui.QFont("Poppins", 12))
-            painter.drawText(pixmap.rect(), QtCore.Qt.AlignCenter, name)
-            painter.end()
+        pixmap = load_pixmap(cover_path, 180, 250) if cover_path else load_pixmap("", 180, 250)
         imageLabel.setPixmap(pixmap)
         layout.addWidget(imageLabel)
 
@@ -282,7 +371,9 @@ class MainWindow(QtWidgets.QMainWindow):
         titleLabel.setStyleSheet("font-family: 'Poppins'; font-weight: 600; color: #00fff5;")
         layout.addWidget(titleLabel)
 
-        card.mousePressEvent = lambda event: self.openGameDetailPage(name, description, cover_path)
+        # Сохраняем appid (полученный из Steam API) в атрибуте карточки
+        card.appid = appid
+        card.mousePressEvent = lambda event: self.openGameDetailPage(name, description, cover_path, appid)
         return card
 
     def createAutoInstallTab(self):
@@ -341,8 +432,7 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         Извлекает палитру из нескольких доминирующих цветов обложки.
         """
-
-        pixmap = QtGui.QPixmap(cover_path)
+        pixmap = load_pixmap(cover_path, 180, 250)
         if pixmap.isNull():
             return [QtGui.QColor("#1a1a1a")] * num_colors
         image = pixmap.toImage()
@@ -374,9 +464,9 @@ class MainWindow(QtWidgets.QMainWindow):
     def darkenColor(self, color, factor=200):
         return color.darker(factor)
 
-    def openGameDetailPage(self, name, description, cover_path=None):
+    def openGameDetailPage(self, name, description, cover_path=None, appid=""):
         detailPage = QtWidgets.QWidget()
-        if cover_path and QtCore.QFile.exists(cover_path):
+        if cover_path:
             palette = self.getColorPalette(cover_path, num_colors=5)
             dark_palette = [self.darkenColor(color, factor=200) for color in palette]
             stops = ",\n".join(
@@ -445,17 +535,7 @@ class MainWindow(QtWidgets.QMainWindow):
         coverLayout.setContentsMargins(0, 0, 0, 0)
         imageLabel = QtWidgets.QLabel()
         imageLabel.setFixedSize(300, 400)
-        if cover_path and QtCore.QFile.exists(cover_path):
-            pixmap = QtGui.QPixmap(cover_path)
-            pixmap = pixmap.scaled(300, 400, QtCore.Qt.KeepAspectRatioByExpanding, QtCore.Qt.SmoothTransformation)
-        else:
-            pixmap = QtGui.QPixmap(300, 400)
-            pixmap.fill(QtGui.QColor("#333333"))
-            painter = QtGui.QPainter(pixmap)
-            painter.setPen(QtGui.QPen(QtGui.QColor("white")))
-            painter.setFont(QtGui.QFont("Poppins", 14))
-            painter.drawText(pixmap.rect(), QtCore.Qt.AlignCenter, name)
-            painter.end()
+        pixmap = load_pixmap(cover_path, 300, 400) if cover_path else load_pixmap("", 300, 400)
         imageLabel.setPixmap(pixmap)
         coverLayout.addWidget(imageLabel)
         contentFrameLayout.addWidget(coverFrame)
@@ -479,6 +559,11 @@ class MainWindow(QtWidgets.QMainWindow):
         descLabel.setWordWrap(True)
         descLabel.setStyleSheet("font-family: 'Poppins'; font-size: 16px; color: #fff;")
         detailsLayout.addWidget(descLabel)
+
+        if appid:
+            appidLabel = QtWidgets.QLabel(f"Steam AppID: {appid}")
+            appidLabel.setStyleSheet("font-family: 'Poppins'; font-size: 16px; color: #fff;")
+            detailsLayout.addWidget(appidLabel)
 
         detailsLayout.addStretch(1)
         playButton = QtWidgets.QPushButton("Играть")
@@ -525,3 +610,4 @@ if __name__ == '__main__':
     window = MainWindow()
     window.show()
     sys.exit(app.exec())
+
