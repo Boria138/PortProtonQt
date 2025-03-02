@@ -15,6 +15,14 @@
 - [ ] Брать обложки для игр со SteamGridDB или CDN Steam
 - [ ] Написать не обёртку над PortProton, а полноценную программу не зависящию от PortProton
 
+## Авторы
+
+[Boria138](https://github.com/Boria138) - Программист
+[BlackSnaker](https://github.com/BlackSnaker) - Дизайнер
+[Mikhail Tergoev(Castro-Fidel)](https://github.com/Castro-Fidel) - Автор оригинального проекта PortProton
+
+> [!NOTE]
+> Проект так же содержит части кода от [Ingame](https://github.com/Castro-Fidel/ingame)
 
 > [!WARNING]  
-> Проект находится на стадии WIP (work in progress) корректная работаспособность не гарантирована
+> Проект находится на стадии WIP (work in progress) корректная работоспособность не гарантирована

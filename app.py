@@ -93,7 +93,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tabButtons = {}
 
         tabs = [
-            "Список установленного",
+            "Библиотека",
             "Автоустановка",
             "Эмуляторы",
             "Настройки wine",
