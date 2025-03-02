@@ -17,9 +17,9 @@
 
 ## Авторы
 
-[Boria138](https://github.com/Boria138) - Программист
-[BlackSnaker](https://github.com/BlackSnaker) - Дизайнер
-[Mikhail Tergoev(Castro-Fidel)](https://github.com/Castro-Fidel) - Автор оригинального проекта PortProton
+* [Boria138](https://github.com/Boria138) - Программист
+* [BlackSnaker](https://github.com/BlackSnaker) - Дизайнер
+* [Mikhail Tergoev(Castro-Fidel)](https://github.com/Castro-Fidel) - Автор оригинального проекта PortProton
 
 > [!NOTE]
 > Проект так же содержит части кода от [Ingame](https://github.com/Castro-Fidel/ingame)
