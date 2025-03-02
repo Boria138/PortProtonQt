@@ -10,11 +10,38 @@ from PySide6 import QtWidgets, QtCore, QtGui
 
 def load_pixmap(cover, width, height):
     """
-    Загружает изображение из локального файла или по URL и масштабирует его,
-    сохраняя пропорции. Если загрузка не удалась, создаёт резервное изображение.
+    Загружает изображение из локального файла или по URL и масштабирует его.
+    Если загрузка не удалась, создаёт резервное изображение.
+    Если ссылка ведёт на Steam CDN, обложка кешируется локально в папке images.
     """
     pixmap = QtGui.QPixmap()
-    if cover.startswith("http"):
+
+    # Если ссылка на обложку ведёт на Steam CDN
+    if cover.startswith("https://steamcdn-a.akamaihd.net/steam/apps/"):
+        try:
+            parts = cover.split("/")
+            if "apps" in parts:
+                idx = parts.index("apps")
+                appid = parts[idx + 1]
+            else:
+                appid = None
+
+            if appid:
+                images_folder = "images"
+                if not os.path.exists(images_folder):
+                    os.makedirs(images_folder)
+                local_path = os.path.join(images_folder, f"{appid}.jpg")
+                if os.path.exists(local_path):
+                    pixmap.load(local_path)
+                else:
+                    response = requests.get(cover)
+                    if response.status_code == 200:
+                        with open(local_path, "wb") as f:
+                            f.write(response.content)
+                        pixmap.load(local_path)
+        except Exception as e:
+            print("Ошибка загрузки обложки из Steam CDN:", e)
+    elif cover.startswith("http"):
         try:
             response = requests.get(cover)
             if response.status_code == 200:
@@ -23,6 +50,7 @@ def load_pixmap(cover, width, height):
             print("Ошибка загрузки обложки из URL:", e)
     elif QtCore.QFile.exists(cover):
         pixmap.load(cover)
+
     if not pixmap or pixmap.isNull():
         pixmap = QtGui.QPixmap(width, height)
         pixmap.fill(QtGui.QColor("#333333"))
@@ -31,19 +59,7 @@ def load_pixmap(cover, width, height):
         painter.setFont(QtGui.QFont("Poppins", 12))
         painter.drawText(pixmap.rect(), QtCore.Qt.AlignCenter, "No Image")
         painter.end()
-        return pixmap
-
-    # Масштабируем изображение с сохранением пропорций
-    scaled_pixmap = pixmap.scaled(width, height, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
-    # Создаём итоговое изображение нужного размера и размещаем по центру масштабированное изображение
-    final_pixmap = QtGui.QPixmap(width, height)
-    final_pixmap.fill(QtGui.QColor("#333333"))
-    painter = QtGui.QPainter(final_pixmap)
-    x = (width - scaled_pixmap.width()) // 2
-    y = (height - scaled_pixmap.height()) // 2
-    painter.drawPixmap(x, y, scaled_pixmap)
-    painter.end()
-    return final_pixmap
+    return pixmap.scaled(width, height, QtCore.Qt.KeepAspectRatioByExpanding, QtCore.Qt.SmoothTransformation)
 
 class AddGameDialog(QtWidgets.QDialog):
     def __init__(self, parent=None):
@@ -80,7 +96,6 @@ class AddGameDialog(QtWidgets.QDialog):
         if fileName:
             self.coverEdit.setText(fileName)
 
-# Карточка игры (ярлык)
 class GameCard(QtWidgets.QFrame):
     def __init__(self, name, description, cover_path, appid, exec_line, select_callback, parent=None):
         super().__init__(parent)
@@ -93,12 +108,10 @@ class GameCard(QtWidgets.QFrame):
 
         self.setFixedSize(250, 400)
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
-        # Изменён стиль фона карточки: теперь используется градиент
         self.setStyleSheet("""
             QFrame {
                 border-radius: 15px;
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                                            stop:0 #141E30, stop:1 #243B55);
+                background-color: #000;
             }
             QFrame:focus {
                 border: 2px solid #00fff5;
@@ -118,8 +131,7 @@ class GameCard(QtWidgets.QFrame):
         coverLabel.setFixedSize(250, 300)
         pixmap = load_pixmap(cover_path, 250, 300) if cover_path else load_pixmap("", 250, 300)
         coverLabel.setPixmap(pixmap)
-        # Убираем вызов setScaledContents, так как изображение уже масштабировано
-        # coverLabel.setScaledContents(True)
+        coverLabel.setScaledContents(True)
         coverLabel.setStyleSheet("border-top-left-radius: 15px; border-top-right-radius: 15px;")
         layout.addWidget(coverLabel)
 
@@ -168,7 +180,7 @@ class MainWindow(QtWidgets.QMainWindow):
         header.setFixedHeight(80)
         header.setStyleSheet("""
             QFrame {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 rgba(0,0,0,0.8), stop:1 rgba(0,0,0,0.4));
+                background: rgba(0, 0, 0, 0.6);
                 border-bottom: 1px solid rgba(255,255,255,0.1);
             }
         """)
@@ -240,11 +252,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.createWineTab()         # Вкладка 3
         self.createPortProtonTab()   # Вкладка 4
 
-        # Обновлённый стиль главного окна с красивым градиентом
         self.setStyleSheet("""
             QMainWindow {
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                                             stop:0 #0f2027, stop:0.5 #203a43, stop:1 #2c5364);
+                                             stop:0 #1a1a1a, stop:1 #333333);
             }
             QLabel {
                 color: #fff;
@@ -266,51 +277,87 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.steam_apps = []
         return self.steam_apps
 
-    def get_steam_game_info(self, exec_line):
+    def get_steam_game_info(self, desktop_name, exec_line):
+        """
+        Поиск Steam‑информации производится по трем вариантам:
+          1. Имя из desktop файла,
+          2. Имя папки (из пути к exe),
+          3. Имя исполняемого файла.
+        Если найден appid, то в качестве обложки используется ссылка вида:
+          https://steamcdn-a.akamaihd.net/steam/apps/<appid>/library_600x900_2x.jpg
+        При наличии объекта fullgame сразу используется её информация (так как нас не волнуют DLC и саундтреки).
+        """
         try:
             parts = shlex.split(exec_line)
-            if len(parts) >= 4:
-                game_exe = parts[3]
-            else:
-                game_exe = exec_line
-            base_name = os.path.splitext(os.path.basename(game_exe))[0]
+            game_exe = parts[3] if len(parts) >= 4 else exec_line
+            folder_name = os.path.basename(os.path.dirname(game_exe)) if os.path.dirname(game_exe) else ""
+            exe_name = os.path.splitext(os.path.basename(game_exe))[0]
+            candidates = [desktop_name, folder_name, exe_name]
+
             steam_apps = self.load_steam_apps()
+            if not hasattr(self, 'steam_apps_index'):
+                self.steam_apps_index = {app["name"].lower(): app for app in steam_apps}
+
             matching_app = None
-            for app in steam_apps:
-                if base_name.lower() in app["name"].lower():
-                    matching_app = app
+            for candidate in candidates:
+                candidate_lower = candidate.lower()
+                if candidate_lower in self.steam_apps_index:
+                    matching_app = self.steam_apps_index[candidate_lower]
                     break
+                matching_app = next((app for app in steam_apps if candidate_lower in app["name"].lower()), None)
+                if matching_app:
+                    break
+
             if matching_app:
                 appid = matching_app["appid"]
-                details_url = f"https://store.steampowered.com/api/appdetails?appids={appid}&l=russian"
-                details_response = self.requests_session.get(details_url)
-                if details_response.status_code == 200:
+
+                if not hasattr(self, 'steam_details_cache'):
+                    self.steam_details_cache = {}
+
+                if appid in self.steam_details_cache:
+                    app_info = self.steam_details_cache[appid]
+                else:
+                    details_url = f"https://store.steampowered.com/api/appdetails?appids={appid}&l=russian"
+                    details_response = self.requests_session.get(details_url)
+                    if details_response.status_code != 200:
+                        return {"appid": "", "name": exe_name.capitalize(), "description": "", "cover": ""}
                     details_data = details_response.json()
                     app_details = details_data.get(str(appid), {})
-                    if app_details.get("success"):
-                        app_info = app_details.get("data", {})
-                        if app_info.get("type", "").lower() in ["music", "dlc"]:
-                            fullgame = app_info.get("fullgame", {})
-                            if fullgame and fullgame.get("appid"):
-                                appid = fullgame.get("appid")
-                                details_url = f"https://store.steampowered.com/api/appdetails?appids={appid}&l=russian"
-                                details_response = self.requests_session.get(details_url)
-                                if details_response.status_code == 200:
-                                    fullgame_details = details_response.json().get(str(appid), {})
-                                    if fullgame_details.get("success"):
-                                        app_info = fullgame_details.get("data", {})
-                                    else:
-                                        return None
-                            else:
-                                return None
-                        title = app_info.get("name", base_name)
-                        description = app_info.get("short_description", "")
-                        cover = app_info.get("capsule_image", "")
-                        return {"appid": appid, "name": title, "description": description, "cover": cover}
-            return {"appid": "", "name": base_name, "description": "", "cover": ""}
+                    if not app_details.get("success"):
+                        return {"appid": "", "name": exe_name.capitalize(), "description": "", "cover": ""}
+                    app_info = app_details.get("data", {})
+
+                    # Если есть информация о fullgame, сразу используем её,
+                    # поскольку нас не волнуют DLC и саундтреки.
+                    if app_info.get("fullgame", {}).get("appid"):
+                        fullgame_appid = app_info["fullgame"]["appid"]
+                        if fullgame_appid in self.steam_details_cache:
+                            app_info = self.steam_details_cache[fullgame_appid]
+                            appid = fullgame_appid
+                        else:
+                            details_url = f"https://store.steampowered.com/api/appdetails?appids={fullgame_appid}&l=russian"
+                            details_response = self.requests_session.get(details_url)
+                            if details_response.status_code == 200:
+                                fullgame_details = details_response.json().get(str(fullgame_appid), {})
+                                if fullgame_details.get("success"):
+                                    app_info = fullgame_details.get("data", {})
+                                    appid = fullgame_appid
+                                    self.steam_details_cache[fullgame_appid] = app_info
+                    self.steam_details_cache[matching_app["appid"]] = app_info
+
+                title = app_info.get("name", exe_name.capitalize())
+                description = app_info.get("short_description", "")
+                # Формируем URL обложки по appid
+                if appid:
+                    cover = f"https://steamcdn-a.akamaihd.net/steam/apps/{appid}/library_600x900_2x.jpg"
+                else:
+                    cover = app_info.get("capsule_image", "")
+                return {"appid": appid, "name": title, "description": description, "cover": cover}
+
+            return {"appid": "", "name": exe_name.capitalize(), "description": "", "cover": ""}
         except Exception as e:
             print(f"Ошибка получения данных из Steam API: {e}")
-            return {"appid": "", "name": base_name, "description": "", "cover": ""}
+            return {"appid": "", "name": exe_name.capitalize(), "description": "", "cover": ""}
 
     def loadGames(self):
         games = []
@@ -346,7 +393,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     exec_line = entry.get("Exec", "")
                     steam_info = {}
                     if exec_line:
-                        steam_info = self.get_steam_game_info(exec_line)
+                        steam_info = self.get_steam_game_info(desktop_name, exec_line)
                         if steam_info is None:
                             continue
                     if steam_info.get("appid"):
@@ -369,7 +416,6 @@ class MainWindow(QtWidgets.QMainWindow):
             btn.setChecked(i == index)
         self.stackedWidget.setCurrentIndex(index)
 
-    # Метод для создания виджета поиска с иконкой
     def createSearchWidget(self):
         container = QtWidgets.QWidget()
         layout = QtWidgets.QHBoxLayout(container)
@@ -412,7 +458,6 @@ class MainWindow(QtWidgets.QMainWindow):
             filtered = [game for game in self.games if text in game[0].lower()]
         self.populateGamesGrid(filtered)
 
-    # Вкладка "Библиотека игр"
     def createInstalledTab(self):
         widget = QtWidgets.QWidget()
         layout = QtWidgets.QVBoxLayout(widget)
@@ -437,10 +482,8 @@ class MainWindow(QtWidgets.QMainWindow):
         scrollArea.setStyleSheet("border: none;")
         scrollArea.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         listWidget = QtWidgets.QWidget()
-        # Оформление контейнера, где располагаются игры: градиентный фон
         listWidget.setStyleSheet("""
-            background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                                          stop:0 rgba(32,58,67,180), stop:1 rgba(44,83,100,180));
+            background-color: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.3);
             border-radius: 15px;
         """)
@@ -707,10 +750,6 @@ class MainWindow(QtWidgets.QMainWindow):
         page.deleteLater()
 
     def launchGame(self, exec_line):
-        """
-        Запускает игру, обрабатывая команду запуска согласно шаблону.
-        Если команда не задана, выводит предупреждение.
-        """
         if not exec_line:
             QtWidgets.QMessageBox.warning(self, "Ошибка", "Команда запуска не указана!")
             return
