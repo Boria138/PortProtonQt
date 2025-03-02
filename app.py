@@ -1,4 +1,8 @@
 import sys
+import os
+import glob
+import configparser
+from io import BytesIO
 from PySide6 import QtWidgets, QtCore, QtGui
 
 class AddGameDialog(QtWidgets.QDialog):
@@ -44,21 +48,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.resize(1280, 720)
         self.setMinimumSize(800, 600)
 
-        # Список игр (название, описание, путь к обложке)
-        self.games = [
-            ("Mafia", "Как и в оригинальной игре 2002 года, сюжет ремейка разворачивается в 1930-е годы в вымышленном американском городе Лост-Хэвен (англ. Lost Heaven), отныне находящемся в штате Иллинойс, и рассказывает историю Томаса Анджело — обыкновенного таксиста, который вынужденно и неожиданно для себя становится членом одной из двух могущественных мафиозных группировок города, конкурирующих друг с другом. При этом игра расширяет оригинальный сюжет", "cybergame.png"),
-            ("NeonRacer", "Описание NeonRacer...", "cover_neonracer.png"),
-            ("FuturisticWar", "Описание FuturisticWar...", "cover_futuristicwar.png")
-        ]
+        self.games = self.loadGames()
 
-        # Центральный виджет и основной layout
         centralWidget = QtWidgets.QWidget()
         self.setCentralWidget(centralWidget)
         mainLayout = QtWidgets.QVBoxLayout(centralWidget)
         mainLayout.setSpacing(0)
         mainLayout.setContentsMargins(0, 0, 0, 0)
 
-        # Заголовок
         header = QtWidgets.QFrame()
         header.setFixedHeight(80)
         header.setStyleSheet("""
@@ -80,7 +77,6 @@ class MainWindow(QtWidgets.QMainWindow):
         headerLayout.addStretch()
         mainLayout.addWidget(header)
 
-        # Панель навигации с эффектом glasmorphism
         navWidget = QtWidgets.QWidget()
         navWidget.setStyleSheet("""
             background: rgba(255, 255, 255, 0.1);
@@ -128,7 +124,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tabButtons[0].setChecked(True)
         mainLayout.addWidget(navWidget)
 
-       
         self.stackedWidget = QtWidgets.QStackedWidget()
         mainLayout.addWidget(self.stackedWidget)
 
@@ -138,7 +133,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.createWineTab()         # Вкладка 3
         self.createPortProtonTab()   # Вкладка 4
 
-       
         self.setStyleSheet("""
             QMainWindow {
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
@@ -149,13 +143,58 @@ class MainWindow(QtWidgets.QMainWindow):
             }
         """)
 
+    def loadGames(self):
+        """
+        Ищет desktop файлы с играми в пользовательском каталоге PortProton.
+        Путь к каталогу берётся из конфигурационного файла (~/.config/PortProton.conf)
+        или из симлинка ~/PortProton, если файла нет.
+        Возвращает список кортежей (название, описание, путь к обложке).
+        Пропускает desktop файл самого PortProton.
+        """
+        games = []
+        home = os.path.expanduser("~")
+        config_path = os.path.join(home, ".config", "PortProton.conf")
+        portproton_location = ""
+        if os.path.exists(config_path):
+            try:
+                with open(config_path, "r", encoding="utf-8") as file:
+                    portproton_location = file.read().strip()
+                print(f"Current PortProton location from config: {portproton_location}")
+            except Exception as e:
+                print("Ошибка при чтении файла конфигурации PortProton:", e)
+        else:
+            fallback_dir = os.path.join(home, "PortProton")
+            if os.path.exists(fallback_dir) and os.path.isdir(fallback_dir):
+                portproton_location = os.path.realpath(fallback_dir)
+                print(f"Using fallback PortProton location from symlink: {portproton_location}")
+            else:
+                print(f"Не найден конфигурационный файл {config_path} и симлинк ~/PortProton не существует.")
+                return games
+
+        portproton_files = glob.glob(os.path.join(portproton_location, "*.desktop"))
+        for file_path in portproton_files:
+            config = configparser.ConfigParser(interpolation=None)
+            try:
+                config.read(file_path, encoding="utf-8")
+                if "Desktop Entry" in config:
+                    entry = config["Desktop Entry"]
+                    name = entry.get("Name", "Unknown Game")
+                    if name.lower() == "portproton":
+                        continue
+                    desc = entry.get("Comment", "")
+                    icon = entry.get("Icon", "")
+                    games.append((name, desc, icon))
+            except Exception as e:
+                print(f"Ошибка чтения файла {file_path}: {e}")
+        return games
+
+
     def switchTab(self, index):
         for i, btn in self.tabButtons.items():
             btn.setChecked(i == index)
         self.stackedWidget.setCurrentIndex(index)
 
     def createInstalledTab(self):
-     
         widget = QtWidgets.QWidget()
         layout = QtWidgets.QVBoxLayout(widget)
         layout.setContentsMargins(20, 20, 20, 20)
@@ -164,17 +203,14 @@ class MainWindow(QtWidgets.QMainWindow):
         title.setStyleSheet("font-family: 'Orbitron'; font-size: 24px; color: #f5f5f5;")
         layout.addWidget(title)
 
-     
         addGameButton = QtWidgets.QPushButton("Добавить игру")
         addGameButton.setStyleSheet("font-family: 'Poppins'; font-size: 16px; color: #00fff5;")
         addGameButton.clicked.connect(self.openAddGameDialog)
         layout.addWidget(addGameButton, alignment=QtCore.Qt.AlignLeft)
 
-        # Сетка для карточек игр
         gridWidget = QtWidgets.QWidget()
         self.gamesGridLayout = QtWidgets.QGridLayout(gridWidget)
         self.gamesGridLayout.setSpacing(20)
-        # Добавляем существующие игры
         for idx, (name, desc, cover) in enumerate(self.games):
             card = self.createGameCard(name, desc, cover)
             self.gamesGridLayout.addWidget(card, idx // 3, idx % 3)
@@ -196,7 +232,11 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.gamesGridLayout.addWidget(new_card, index // 3, index % 3)
 
     def createGameCard(self, name, description, cover_path=None):
-        """Создаёт карточку игры с эффектом glassmorphism и загружает обложку."""
+        """
+        Создаёт карточку игры с эффектом glassmorphism.
+        Обложка берётся только из локального файла.
+        Если локальный файл не найден, создаётся резервная картинка.
+        """
         card = QtWidgets.QFrame()
         card.setFixedSize(180, 300)
         card.setStyleSheet("""
@@ -220,10 +260,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
         imageLabel = QtWidgets.QLabel()
         imageLabel.setFixedSize(180, 250)
+
+        # Используем локальный файл обложки, если он существует
         if cover_path and QtCore.QFile.exists(cover_path):
             pixmap = QtGui.QPixmap(cover_path)
             pixmap = pixmap.scaled(180, 250, QtCore.Qt.KeepAspectRatioByExpanding, QtCore.Qt.SmoothTransformation)
         else:
+            # Создаем резервную картинку с фоном и текстом
             pixmap = QtGui.QPixmap(180, 250)
             pixmap.fill(QtGui.QColor("#333333"))
             painter = QtGui.QPainter(pixmap)
@@ -239,7 +282,6 @@ class MainWindow(QtWidgets.QMainWindow):
         titleLabel.setStyleSheet("font-family: 'Poppins'; font-weight: 600; color: #00fff5;")
         layout.addWidget(titleLabel)
 
-        
         card.mousePressEvent = lambda event: self.openGameDetailPage(name, description, cover_path)
         return card
 
@@ -298,9 +340,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def getColorPalette(self, cover_path, num_colors=5, sample_step=10):
         """
         Извлекает палитру из нескольких доминирующих цветов обложки.
-        Для ускорения выборки обрабатываются пиксели с шагом sample_step.
-        Для квантования цвета используется деление значений на 32 (8 уровней на канал).
         """
+
         pixmap = QtGui.QPixmap(cover_path)
         if pixmap.isNull():
             return [QtGui.QColor("#1a1a1a")] * num_colors
@@ -331,14 +372,9 @@ class MainWindow(QtWidgets.QMainWindow):
         return palette
 
     def darkenColor(self, color, factor=200):
-        """
-        Возвращает затемнённый оттенок цвета.
-        Значение factor > 100 делает цвет темнее.
-        """
         return color.darker(factor)
 
     def openGameDetailPage(self, name, description, cover_path=None):
-       
         detailPage = QtWidgets.QWidget()
         if cover_path and QtCore.QFile.exists(cover_path):
             palette = self.getColorPalette(cover_path, num_colors=5)
@@ -359,7 +395,6 @@ class MainWindow(QtWidgets.QMainWindow):
         mainLayout.setContentsMargins(30, 30, 30, 30)
         mainLayout.setSpacing(20)
 
-        # Кнопка "Назад"
         backButton = QtWidgets.QPushButton("Назад")
         backButton.setFixedWidth(100)
         backButton.setStyleSheet("""
@@ -379,7 +414,6 @@ class MainWindow(QtWidgets.QMainWindow):
         backButton.clicked.connect(lambda: self.goBackDetailPage(detailPage))
         mainLayout.addWidget(backButton, alignment=QtCore.Qt.AlignLeft)
 
-       
         contentFrame = QtWidgets.QFrame()
         contentFrame.setStyleSheet("""
             QFrame {
@@ -393,7 +427,6 @@ class MainWindow(QtWidgets.QMainWindow):
         contentFrameLayout.setSpacing(40)
         mainLayout.addWidget(contentFrame)
 
-       
         coverFrame = QtWidgets.QFrame()
         coverFrame.setFixedSize(300, 400)
         coverFrame.setStyleSheet("""
@@ -427,7 +460,6 @@ class MainWindow(QtWidgets.QMainWindow):
         coverLayout.addWidget(imageLabel)
         contentFrameLayout.addWidget(coverFrame)
 
-       
         detailsWidget = QtWidgets.QWidget()
         detailsWidget.setStyleSheet("background: rgba(255,255,255,0.05); border-radius: 10px;")
         detailsLayout = QtWidgets.QVBoxLayout(detailsWidget)
