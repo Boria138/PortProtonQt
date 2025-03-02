@@ -4,13 +4,14 @@ import glob
 import configparser
 import shlex
 import requests
+import subprocess
 from io import BytesIO
 from PySide6 import QtWidgets, QtCore, QtGui
 
 def load_pixmap(cover, width, height):
     """
-    Загружает изображение из локального файла или по URL и масштабирует его.
-    Если загрузка не удалась, создаёт резервное изображение.
+    Загружает изображение из локального файла или по URL и масштабирует его,
+    сохраняя пропорции. Если загрузка не удалась, создаёт резервное изображение.
     """
     pixmap = QtGui.QPixmap()
     if cover.startswith("http"):
@@ -23,7 +24,6 @@ def load_pixmap(cover, width, height):
     elif QtCore.QFile.exists(cover):
         pixmap.load(cover)
     if not pixmap or pixmap.isNull():
-        # Резервное изображение
         pixmap = QtGui.QPixmap(width, height)
         pixmap.fill(QtGui.QColor("#333333"))
         painter = QtGui.QPainter(pixmap)
@@ -31,7 +31,19 @@ def load_pixmap(cover, width, height):
         painter.setFont(QtGui.QFont("Poppins", 12))
         painter.drawText(pixmap.rect(), QtCore.Qt.AlignCenter, "No Image")
         painter.end()
-    return pixmap.scaled(width, height, QtCore.Qt.KeepAspectRatioByExpanding, QtCore.Qt.SmoothTransformation)
+        return pixmap
+
+    # Масштабируем изображение с сохранением пропорций
+    scaled_pixmap = pixmap.scaled(width, height, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
+    # Создаём итоговое изображение нужного размера и размещаем по центру масштабированное изображение
+    final_pixmap = QtGui.QPixmap(width, height)
+    final_pixmap.fill(QtGui.QColor("#333333"))
+    painter = QtGui.QPainter(final_pixmap)
+    x = (width - scaled_pixmap.width()) // 2
+    y = (height - scaled_pixmap.height()) // 2
+    painter.drawPixmap(x, y, scaled_pixmap)
+    painter.end()
+    return final_pixmap
 
 class AddGameDialog(QtWidgets.QDialog):
     def __init__(self, parent=None):
@@ -68,6 +80,72 @@ class AddGameDialog(QtWidgets.QDialog):
         if fileName:
             self.coverEdit.setText(fileName)
 
+# Карточка игры (ярлык)
+class GameCard(QtWidgets.QFrame):
+    def __init__(self, name, description, cover_path, appid, exec_line, select_callback, parent=None):
+        super().__init__(parent)
+        self.name = name
+        self.description = description
+        self.cover_path = cover_path
+        self.appid = appid
+        self.exec_line = exec_line
+        self.select_callback = select_callback
+
+        self.setFixedSize(250, 400)
+        self.setFocusPolicy(QtCore.Qt.StrongFocus)
+        # Изменён стиль фона карточки: теперь используется градиент
+        self.setStyleSheet("""
+            QFrame {
+                border-radius: 15px;
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                                            stop:0 #141E30, stop:1 #243B55);
+            }
+            QFrame:focus {
+                border: 2px solid #00fff5;
+            }
+        """)
+        shadow = QtWidgets.QGraphicsDropShadowEffect(self)
+        shadow.setBlurRadius(20)
+        shadow.setColor(QtGui.QColor(0, 0, 0, 150))
+        shadow.setOffset(0, 0)
+        self.setGraphicsEffect(shadow)
+
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(5)
+
+        coverLabel = QtWidgets.QLabel()
+        coverLabel.setFixedSize(250, 300)
+        pixmap = load_pixmap(cover_path, 250, 300) if cover_path else load_pixmap("", 250, 300)
+        coverLabel.setPixmap(pixmap)
+        # Убираем вызов setScaledContents, так как изображение уже масштабировано
+        # coverLabel.setScaledContents(True)
+        coverLabel.setStyleSheet("border-top-left-radius: 15px; border-top-right-radius: 15px;")
+        layout.addWidget(coverLabel)
+
+        nameLabel = QtWidgets.QLabel(name)
+        nameLabel.setAlignment(QtCore.Qt.AlignCenter)
+        nameLabel.setStyleSheet("""
+            color: white;
+            font-family: 'Orbitron';
+            font-size: 18px;
+            font-weight: bold;
+            background-color: #111;
+            border-bottom-left-radius: 15px;
+            border-bottom-right-radius: 15px;
+            padding: 8px;
+        """)
+        layout.addWidget(nameLabel)
+
+    def mousePressEvent(self, event):
+        self.select_callback(self.name, self.description, self.cover_path, self.appid, self.exec_line)
+
+    def keyPressEvent(self, event):
+        if event.key() in (QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter):
+            self.select_callback(self.name, self.description, self.cover_path, self.appid, self.exec_line)
+        else:
+            super().keyPressEvent(event)
+
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
@@ -76,11 +154,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.resize(1280, 720)
         self.setMinimumSize(800, 600)
 
-        # Используем одну сессию для всех HTTP-запросов
         self.requests_session = requests.Session()
-        # Кэш для списка приложений Steam (будет загружен один раз)
         self.steam_apps = None
-
         self.games = self.loadGames()
 
         centralWidget = QtWidgets.QWidget()
@@ -93,7 +168,7 @@ class MainWindow(QtWidgets.QMainWindow):
         header.setFixedHeight(80)
         header.setStyleSheet("""
             QFrame {
-                background: rgba(0, 0, 0, 0.6);
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 rgba(0,0,0,0.8), stop:1 rgba(0,0,0,0.4));
                 border-bottom: 1px solid rgba(255,255,255,0.1);
             }
         """)
@@ -120,7 +195,6 @@ class MainWindow(QtWidgets.QMainWindow):
         navLayout.setContentsMargins(10, 0, 10, 0)
         navLayout.setSpacing(5)
         self.tabButtons = {}
-
         tabs = [
             "Библиотека",
             "Автоустановка",
@@ -166,10 +240,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.createWineTab()         # Вкладка 3
         self.createPortProtonTab()   # Вкладка 4
 
+        # Обновлённый стиль главного окна с красивым градиентом
         self.setStyleSheet("""
             QMainWindow {
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                                             stop:0 #1a1a1a, stop:1 #333333);
+                                             stop:0 #0f2027, stop:0.5 #203a43, stop:1 #2c5364);
             }
             QLabel {
                 color: #fff;
@@ -177,10 +252,6 @@ class MainWindow(QtWidgets.QMainWindow):
         """)
 
     def load_steam_apps(self):
-        """
-        Загружает и кэширует список приложений Steam.
-        Этот список используется для поиска игры по имени из строки Exec.
-        """
         if self.steam_apps is None:
             app_list_url = "http://api.steampowered.com/ISteamApps/GetAppList/v2/"
             try:
@@ -196,11 +267,6 @@ class MainWindow(QtWidgets.QMainWindow):
         return self.steam_apps
 
     def get_steam_game_info(self, exec_line):
-        """
-        Используя строку запуска (Exec) desktop‑файла, пытается извлечь имя файла,
-        ищет в кэшированном списке Steam-приложений совпадение по имени, а затем запрашивает через Steam Store API данные о игре.
-        Возвращает словарь с ключами: appid, name, description, cover.
-        """
         try:
             parts = shlex.split(exec_line)
             if len(parts) >= 4:
@@ -210,7 +276,6 @@ class MainWindow(QtWidgets.QMainWindow):
             base_name = os.path.splitext(os.path.basename(game_exe))[0]
             steam_apps = self.load_steam_apps()
             matching_app = None
-            # Ищем совпадение по вхождению имени файла (без учета регистра)
             for app in steam_apps:
                 if base_name.lower() in app["name"].lower():
                     matching_app = app
@@ -224,9 +289,23 @@ class MainWindow(QtWidgets.QMainWindow):
                     app_details = details_data.get(str(appid), {})
                     if app_details.get("success"):
                         app_info = app_details.get("data", {})
+                        if app_info.get("type", "").lower() in ["music", "dlc"]:
+                            fullgame = app_info.get("fullgame", {})
+                            if fullgame and fullgame.get("appid"):
+                                appid = fullgame.get("appid")
+                                details_url = f"https://store.steampowered.com/api/appdetails?appids={appid}&l=russian"
+                                details_response = self.requests_session.get(details_url)
+                                if details_response.status_code == 200:
+                                    fullgame_details = details_response.json().get(str(appid), {})
+                                    if fullgame_details.get("success"):
+                                        app_info = fullgame_details.get("data", {})
+                                    else:
+                                        return None
+                            else:
+                                return None
                         title = app_info.get("name", base_name)
                         description = app_info.get("short_description", "")
-                        cover = app_info.get("library_capsule", "")
+                        cover = app_info.get("capsule_image", "")
                         return {"appid": appid, "name": title, "description": description, "cover": cover}
             return {"appid": "", "name": base_name, "description": "", "cover": ""}
         except Exception as e:
@@ -234,14 +313,6 @@ class MainWindow(QtWidgets.QMainWindow):
             return {"appid": "", "name": base_name, "description": "", "cover": ""}
 
     def loadGames(self):
-        """
-        Ищет desktop файлы с играми в пользовательском каталоге PortProton.
-        Путь к каталогу берётся из конфигурационного файла (~/.config/PortProton.conf)
-        или из симлинка ~/PortProton, если файла нет.
-        Для каждого файла пытается получить данные из Steam API по строке Exec.
-        Возвращает список кортежей (название, описание, обложка, appid).
-        Пропускает desktop файл самого PortProton.
-        """
         games = []
         home = os.path.expanduser("~")
         config_path = os.path.join(home, ".config", "PortProton.conf")
@@ -276,6 +347,8 @@ class MainWindow(QtWidgets.QMainWindow):
                     steam_info = {}
                     if exec_line:
                         steam_info = self.get_steam_game_info(exec_line)
+                        if steam_info is None:
+                            continue
                     if steam_info.get("appid"):
                         name = steam_info.get("name")
                         desc = steam_info.get("description")
@@ -286,7 +359,7 @@ class MainWindow(QtWidgets.QMainWindow):
                         desc = entry.get("Comment", "")
                         cover = entry.get("Icon", "")
                         appid = ""
-                    games.append((name, desc, cover, appid))
+                    games.append((name, desc, cover, appid, exec_line))
             except Exception as e:
                 print(f"Ошибка чтения файла {file_path}: {e}")
         return games
@@ -296,13 +369,58 @@ class MainWindow(QtWidgets.QMainWindow):
             btn.setChecked(i == index)
         self.stackedWidget.setCurrentIndex(index)
 
+    # Метод для создания виджета поиска с иконкой
+    def createSearchWidget(self):
+        container = QtWidgets.QWidget()
+        layout = QtWidgets.QHBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        searchIconLabel = QtWidgets.QLabel()
+        searchIconLabel.setFixedSize(30, 30)
+        style = QtWidgets.QApplication.style()
+        icon = style.standardIcon(QtWidgets.QStyle.SP_FileDialogContentsView)
+        searchIconLabel.setPixmap(icon.pixmap(20, 20))
+        searchIconLabel.setAlignment(QtCore.Qt.AlignCenter)
+        searchEdit = QtWidgets.QLineEdit()
+        searchEdit.setPlaceholderText("Поиск игр...")
+        searchEdit.setClearButtonEnabled(True)
+        searchEdit.setStyleSheet("""
+            QLineEdit {
+                background-color: #222;
+                border: 2px solid #444;
+                border-radius: 15px;
+                padding-left: 35px;
+                padding-right: 10px;
+                font-family: 'Poppins';
+                font-size: 16px;
+                color: white;
+            }
+            QLineEdit:focus {
+                border: 2px solid #00fff5;
+            }
+        """)
+        layout.addWidget(searchIconLabel)
+        layout.addWidget(searchEdit)
+        layout.setStretch(1, 1)
+        return container, searchEdit
+
+    def filterGames(self, text):
+        text = text.strip().lower()
+        if text == "":
+            filtered = self.games
+        else:
+            filtered = [game for game in self.games if text in game[0].lower()]
+        self.populateGamesGrid(filtered)
+
+    # Вкладка "Библиотека игр"
     def createInstalledTab(self):
         widget = QtWidgets.QWidget()
         layout = QtWidgets.QVBoxLayout(widget)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(15)
-        title = QtWidgets.QLabel("Список установленного")
-        title.setStyleSheet("font-family: 'Orbitron'; font-size: 24px; color: #f5f5f5;")
+
+        title = QtWidgets.QLabel("Библиотека игр")
+        title.setStyleSheet("font-family: 'Orbitron'; font-size: 28px; color: #f5f5f5;")
         layout.addWidget(title)
 
         addGameButton = QtWidgets.QPushButton("Добавить игру")
@@ -310,16 +428,45 @@ class MainWindow(QtWidgets.QMainWindow):
         addGameButton.clicked.connect(self.openAddGameDialog)
         layout.addWidget(addGameButton, alignment=QtCore.Qt.AlignLeft)
 
-        gridWidget = QtWidgets.QWidget()
-        self.gamesGridLayout = QtWidgets.QGridLayout(gridWidget)
-        self.gamesGridLayout.setSpacing(20)
-        for idx, (name, desc, cover, appid) in enumerate(self.games):
-            card = self.createGameCard(name, desc, cover, appid)
-            self.gamesGridLayout.addWidget(card, idx // 3, idx % 3)
+        searchWidget, self.searchEdit = self.createSearchWidget()
+        self.searchEdit.textChanged.connect(self.filterGames)
+        layout.addWidget(searchWidget)
 
-        layout.addWidget(gridWidget)
-        layout.addStretch(1)
+        scrollArea = QtWidgets.QScrollArea()
+        scrollArea.setWidgetResizable(True)
+        scrollArea.setStyleSheet("border: none;")
+        scrollArea.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        listWidget = QtWidgets.QWidget()
+        # Оформление контейнера, где располагаются игры: градиентный фон
+        listWidget.setStyleSheet("""
+            background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                                          stop:0 rgba(32,58,67,180), stop:1 rgba(44,83,100,180));
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+        """)
+        self.gamesListLayout = QtWidgets.QGridLayout(listWidget)
+        self.gamesListLayout.setSpacing(20)
+        self.gamesListLayout.setContentsMargins(10, 10, 10, 10)
+        scrollArea.setWidget(listWidget)
+        layout.addWidget(scrollArea)
+
         self.stackedWidget.addWidget(widget)
+        self.populateGamesGrid(self.games)
+
+    def populateGamesGrid(self, games_list):
+        self.clearLayout(self.gamesListLayout)
+        columns = 4
+        for idx, (name, desc, cover, appid, exec_line) in enumerate(games_list):
+            card = GameCard(name, desc, cover, appid, exec_line, self.openGameDetailPage)
+            row = idx // columns
+            col = idx % columns
+            self.gamesListLayout.addWidget(card, row, col)
+
+    def clearLayout(self, layout):
+        while layout.count():
+            child = layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
 
     def openAddGameDialog(self):
         dialog = AddGameDialog(self)
@@ -327,54 +474,8 @@ class MainWindow(QtWidgets.QMainWindow):
             name = dialog.nameEdit.text().strip()
             desc = dialog.descEdit.toPlainText().strip()
             cover = dialog.coverEdit.text().strip()
-            if name:
-                # Для игр, добавленных вручную, appid оставляем пустым
-                self.games.append((name, desc, cover, ""))
-                new_card = self.createGameCard(name, desc, cover, "")
-                index = len(self.games) - 1
-                self.gamesGridLayout.addWidget(new_card, index // 3, index % 3)
-
-    def createGameCard(self, name, description, cover_path=None, appid=""):
-        """
-        Создаёт карточку игры с эффектом glassmorphism.
-        Если обложка представлена URL или локальным файлом – загружается через load_pixmap.
-        """
-        card = QtWidgets.QFrame()
-        card.setFixedSize(180, 300)
-        card.setStyleSheet("""
-            QFrame {
-                background: rgba(255,255,255,0.05);
-                border-radius: 10px;
-                border: 1px solid rgba(255,255,255,0.1);
-            }
-            QFrame:hover {
-                background: rgba(255,255,255,0.1);
-            }
-        """)
-        shadow = QtWidgets.QGraphicsDropShadowEffect(card)
-        shadow.setBlurRadius(15)
-        shadow.setColor(QtGui.QColor(0, 255, 255, 100))
-        shadow.setOffset(0, 0)
-        card.setGraphicsEffect(shadow)
-
-        layout = QtWidgets.QVBoxLayout(card)
-        layout.setContentsMargins(0, 0, 0, 0)
-
-        imageLabel = QtWidgets.QLabel()
-        imageLabel.setFixedSize(180, 250)
-        pixmap = load_pixmap(cover_path, 180, 250) if cover_path else load_pixmap("", 180, 250)
-        imageLabel.setPixmap(pixmap)
-        layout.addWidget(imageLabel)
-
-        titleLabel = QtWidgets.QLabel(name)
-        titleLabel.setAlignment(QtCore.Qt.AlignCenter)
-        titleLabel.setStyleSheet("font-family: 'Poppins'; font-weight: 600; color: #00fff5;")
-        layout.addWidget(titleLabel)
-
-        # Сохраняем appid (полученный из Steam API) в атрибуте карточки
-        card.appid = appid
-        card.mousePressEvent = lambda event: self.openGameDetailPage(name, description, cover_path, appid)
-        return card
+            self.games.append((name, desc, cover, "", ""))
+            self.populateGamesGrid(self.games)
 
     def createAutoInstallTab(self):
         widget = QtWidgets.QWidget()
@@ -429,9 +530,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.stackedWidget.addWidget(widget)
 
     def getColorPalette(self, cover_path, num_colors=5, sample_step=10):
-        """
-        Извлекает палитру из нескольких доминирующих цветов обложки.
-        """
         pixmap = load_pixmap(cover_path, 180, 250)
         if pixmap.isNull():
             return [QtGui.QColor("#1a1a1a")] * num_colors
@@ -464,7 +562,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def darkenColor(self, color, factor=200):
         return color.darker(factor)
 
-    def openGameDetailPage(self, name, description, cover_path=None, appid=""):
+    def openGameDetailPage(self, name, description, cover_path=None, appid="", exec_line=""):
         detailPage = QtWidgets.QWidget()
         if cover_path:
             palette = self.getColorPalette(cover_path, num_colors=5)
@@ -537,8 +635,10 @@ class MainWindow(QtWidgets.QMainWindow):
         imageLabel.setFixedSize(300, 400)
         pixmap = load_pixmap(cover_path, 300, 400) if cover_path else load_pixmap("", 300, 400)
         imageLabel.setPixmap(pixmap)
+        imageLabel.setScaledContents(True)
         coverLayout.addWidget(imageLabel)
         contentFrameLayout.addWidget(coverFrame)
+        detailPage._coverPixmap = pixmap
 
         detailsWidget = QtWidgets.QWidget()
         detailsWidget.setStyleSheet("background: rgba(255,255,255,0.05); border-radius: 10px;")
@@ -582,6 +682,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 background: linear-gradient(45deg, rgba(0,255,255,0.25), rgba(155,89,182,0.35));
             }
         """)
+        playButton.clicked.connect(lambda: self.launchGame(exec_line))
         detailsLayout.addWidget(playButton, alignment=QtCore.Qt.AlignLeft)
         contentFrameLayout.addWidget(detailsWidget)
 
@@ -605,9 +706,27 @@ class MainWindow(QtWidgets.QMainWindow):
         self.stackedWidget.removeWidget(page)
         page.deleteLater()
 
+    def launchGame(self, exec_line):
+        """
+        Запускает игру, обрабатывая команду запуска согласно шаблону.
+        Если команда не задана, выводит предупреждение.
+        """
+        if not exec_line:
+            QtWidgets.QMessageBox.warning(self, "Ошибка", "Команда запуска не указана!")
+            return
+        try:
+            entry_exec_split = shlex.split(exec_line)
+            if len(entry_exec_split) > 1 and ('data/scripts/start.sh' in entry_exec_split[1]):
+                exec_line = f"env START_FROM_STEAM=1 {exec_line[4:]}"
+            elif len(entry_exec_split) > 0 and ('flatpak' in entry_exec_split[0]):
+                exec_line = f"flatpak run --env=START_FROM_STEAM=1 {exec_line[12:]}"
+            subprocess.Popen(exec_line, shell=True)
+        except Exception as e:
+            print("Ошибка запуска игры:", e)
+            QtWidgets.QMessageBox.critical(self, "Ошибка", f"Не удалось запустить игру: {e}")
+
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     window = MainWindow()
     window.show()
     sys.exit(app.exec())
-
