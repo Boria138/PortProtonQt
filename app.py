@@ -14,7 +14,7 @@ def load_pixmap(cover, width, height):
     """
     Загружает изображение из локального файла или по URL и масштабирует его.
     Если загрузка не удалась, создаёт резервное изображение.
-    Если ссылка ведёт на Steam CDN, обложка кешируется локально в папке images.
+    Если ссылка ведёт на Steam CDN, обложка кешируется локально в папке ~/.cache/PortProtonQT/images.
     """
     pixmap = QtGui.QPixmap()
 
@@ -28,8 +28,10 @@ def load_pixmap(cover, width, height):
                 if idx + 1 < len(parts):
                     appid = parts[idx + 1]
             if appid:
-                local_path = os.path.join("images", f"{appid}.jpg")
-                os.makedirs(os.path.dirname(local_path), exist_ok=True)
+                # Используем общую папку кэша для изображений
+                cache_dir = os.path.join(os.path.expanduser("~"), ".cache", "PortProtonQT", "images")
+                os.makedirs(cache_dir, exist_ok=True)
+                local_path = os.path.join(cache_dir, f"{appid}.jpg")
                 if os.path.exists(local_path):
                     pixmap.load(local_path)
                 else:
@@ -260,7 +262,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def load_steam_apps(self):
         # Определяем путь к кэшу
-        cache_dir = os.path.join(os.path.expanduser("~"), ".cache", "steam_app_cache")
+        cache_dir = os.path.join(os.path.expanduser("~"), ".cache", "PortProtonQT")
         os.makedirs(cache_dir, exist_ok=True)
         cache_file = os.path.join(cache_dir, "steam_apps.json")
 
