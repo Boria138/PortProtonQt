@@ -454,7 +454,7 @@ class MainWindow(QtWidgets.QMainWindow):
             custom_desc = None
             if game_exe:
                 exe_name = os.path.splitext(os.path.basename(game_exe))[0]
-                custom_folder = os.path.join("custom_data", exe_name)
+                custom_folder = os.path.join(home, ".config", "PortProtonQT", "custom_data", exe_name)
                 os.makedirs(custom_folder, exist_ok=True)
                 try:
                     custom_files = set(os.listdir(custom_folder))
@@ -500,7 +500,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
             games.append((name, desc, cover, appid, exec_line))
         return games
-
 
     def switchTab(self, index):
         for i, btn in self.tabButtons.items():
