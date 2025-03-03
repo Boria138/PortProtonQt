@@ -6,6 +6,8 @@ import shlex
 import requests
 import subprocess
 from io import BytesIO
+import json
+import time
 from PySide6 import QtWidgets, QtCore, QtGui
 
 def load_pixmap(cover, width, height):
@@ -16,21 +18,18 @@ def load_pixmap(cover, width, height):
     """
     pixmap = QtGui.QPixmap()
 
-    # Если ссылка на обложку ведёт на Steam CDN
+    # Если ссылка ведёт на Steam CDN
     if cover.startswith("https://steamcdn-a.akamaihd.net/steam/apps/"):
         try:
             parts = cover.split("/")
+            appid = None
             if "apps" in parts:
                 idx = parts.index("apps")
-                appid = parts[idx + 1]
-            else:
-                appid = None
-
+                if idx + 1 < len(parts):
+                    appid = parts[idx + 1]
             if appid:
-                images_folder = "images"
-                if not os.path.exists(images_folder):
-                    os.makedirs(images_folder)
-                local_path = os.path.join(images_folder, f"{appid}.jpg")
+                local_path = os.path.join("images", f"{appid}.jpg")
+                os.makedirs(os.path.dirname(local_path), exist_ok=True)
                 if os.path.exists(local_path):
                     pixmap.load(local_path)
                 else:
@@ -41,17 +40,13 @@ def load_pixmap(cover, width, height):
                         pixmap.load(local_path)
         except Exception as e:
             print("Ошибка загрузки обложки из Steam CDN:", e)
-    elif cover.startswith("http"):
-        try:
-            response = requests.get(cover)
-            if response.status_code == 200:
-                pixmap.loadFromData(response.content)
-        except Exception as e:
-            print("Ошибка загрузки обложки из URL:", e)
+
+    # Если путь указывает на локальный файл
     elif QtCore.QFile.exists(cover):
         pixmap.load(cover)
 
-    if not pixmap or pixmap.isNull():
+    # Если загрузка не удалась, создаём резервное изображение
+    if pixmap.isNull():
         pixmap = QtGui.QPixmap(width, height)
         pixmap.fill(QtGui.QColor("#333333"))
         painter = QtGui.QPainter(pixmap)
@@ -59,6 +54,7 @@ def load_pixmap(cover, width, height):
         painter.setFont(QtGui.QFont("Poppins", 12))
         painter.drawText(pixmap.rect(), QtCore.Qt.AlignCenter, "No Image")
         painter.end()
+
     return pixmap.scaled(width, height, QtCore.Qt.KeepAspectRatioByExpanding, QtCore.Qt.SmoothTransformation)
 
 class AddGameDialog(QtWidgets.QDialog):
@@ -263,154 +259,246 @@ class MainWindow(QtWidgets.QMainWindow):
         """)
 
     def load_steam_apps(self):
-        if self.steam_apps is None:
-            app_list_url = "http://api.steampowered.com/ISteamApps/GetAppList/v2/"
+        # Определяем путь к кэшу
+        cache_dir = os.path.join(os.path.expanduser("~"), ".cache", "steam_app_cache")
+        os.makedirs(cache_dir, exist_ok=True)
+        cache_file = os.path.join(cache_dir, "steam_apps.json")
+
+        # Проверяем, существует ли кэш и актуален ли он (меньше 30 дней)
+        cache_valid = False
+        if os.path.exists(cache_file):
+            if time.time() - os.path.getmtime(cache_file) < 30 * 24 * 60 * 60:
+                cache_valid = True
+
+        if cache_valid:
             try:
-                response = self.requests_session.get(app_list_url)
-                if response.status_code == 200:
-                    data = response.json()
-                    self.steam_apps = data.get("applist", {}).get("apps", [])
-                else:
-                    self.steam_apps = []
+                with open(cache_file, "r", encoding="utf-8") as f:
+                    self.steam_apps = json.load(f)
+                return self.steam_apps
             except Exception as e:
-                print("Ошибка загрузки списка приложений Steam:", e)
+                print("Ошибка загрузки кэша:", e)
+
+        # Если кэш отсутствует, устарел или произошла ошибка, запрашиваем данные из API
+        app_list_url = "http://api.steampowered.com/ISteamApps/GetAppList/v2/"
+        try:
+            response = self.requests_session.get(app_list_url)
+            if response.status_code == 200:
+                data = response.json()
+                self.steam_apps = data.get("applist", {}).get("apps", [])
+                # Сохраняем полученные данные в кэш
+                try:
+                    with open(cache_file, "w", encoding="utf-8") as f:
+                        json.dump(self.steam_apps, f)
+                except Exception as e:
+                    print("Ошибка сохранения кэша:", e)
+            else:
                 self.steam_apps = []
+        except Exception as e:
+            print("Ошибка загрузки списка приложений Steam:", e)
+            self.steam_apps = []
+
         return self.steam_apps
 
     def get_steam_game_info(self, desktop_name, exec_line):
         """
         Поиск Steam‑информации производится по трем вариантам:
-          1. Имя из desktop файла,
-          2. Имя папки (из пути к exe),
-          3. Имя исполняемого файла.
+        1. Имя из desktop файла,
+        2. Имя папки (из пути к exe),
+        3. Имя исполняемого файла.
         Если найден appid, то в качестве обложки используется ссылка вида:
-          https://steamcdn-a.akamaihd.net/steam/apps/<appid>/library_600x900_2x.jpg
+        https://steamcdn-a.akamaihd.net/steam/apps/<appid>/library_600x900_2x.jpg
         """
         try:
+            # Разбор exec_line
             parts = shlex.split(exec_line)
             game_exe = parts[3] if len(parts) >= 4 else exec_line
             folder_name = os.path.basename(os.path.dirname(game_exe)) if os.path.dirname(game_exe) else ""
             exe_name = os.path.splitext(os.path.basename(game_exe))[0]
             candidates = [desktop_name, folder_name, exe_name]
 
+            # Получаем список приложений (с кэшированием)
             steam_apps = self.load_steam_apps()
             if not hasattr(self, 'steam_apps_index'):
                 self.steam_apps_index = {app["name"].lower(): app for app in steam_apps}
 
+            # Ищем совпадение по кандидатам
             matching_app = None
             for candidate in candidates:
                 candidate_lower = candidate.lower()
                 if candidate_lower in self.steam_apps_index:
                     matching_app = self.steam_apps_index[candidate_lower]
                     break
-                matching_app = next((app for app in steam_apps if candidate_lower in app["name"].lower()), None)
+                for app in steam_apps:
+                    if candidate_lower in app["name"].lower():
+                        matching_app = app
+                        break
                 if matching_app:
                     break
 
-            if matching_app:
-                appid = matching_app["appid"]
+            # Если ничего не найдено, возвращаем значение по умолчанию
+            if not matching_app:
+                return {"appid": "", "name": exe_name.capitalize(), "description": "", "cover": ""}
 
-                if not hasattr(self, 'steam_details_cache'):
-                    self.steam_details_cache = {}
+            appid = matching_app["appid"]
 
-                if appid in self.steam_details_cache:
-                    app_info = self.steam_details_cache[appid]
-                else:
-                    details_url = f"https://store.steampowered.com/api/appdetails?appids={appid}&l=russian"
-                    details_response = self.requests_session.get(details_url)
-                    if details_response.status_code != 200:
-                        return {"appid": "", "name": exe_name.capitalize(), "description": "", "cover": ""}
-                    details_data = details_response.json()
-                    app_details = details_data.get(str(appid), {})
-                    if not app_details.get("success"):
-                        return {"appid": "", "name": exe_name.capitalize(), "description": "", "cover": ""}
-                    app_info = app_details.get("data", {})
+            if not hasattr(self, 'steam_details_cache'):
+                self.steam_details_cache = {}
 
-                    # Если есть информация о fullgame, сразу используем её,
-                    # поскольку нас не волнуют DLC и саундтреки.
-                    if app_info.get("fullgame", {}).get("appid"):
-                        fullgame_appid = app_info["fullgame"]["appid"]
-                        if fullgame_appid in self.steam_details_cache:
-                            app_info = self.steam_details_cache[fullgame_appid]
+            # Если данные уже есть в кэше, используем их
+            if appid in self.steam_details_cache:
+                app_info = self.steam_details_cache[appid]
+            else:
+                def fetch_app_info(app_id):
+                    url = f"https://store.steampowered.com/api/appdetails?appids={app_id}&l=russian"
+                    response = self.requests_session.get(url)
+                    if response.status_code != 200:
+                        return None
+                    details = response.json().get(str(app_id), {})
+                    if not details.get("success"):
+                        return None
+                    return details.get("data", {})
+
+                app_info = fetch_app_info(appid)
+                if not app_info:
+                    return {"appid": "", "name": exe_name.capitalize(), "description": "", "cover": ""}
+
+                # Если есть информация о fullgame, используем её
+                fullgame_appid = app_info.get("fullgame", {}).get("appid")
+                if fullgame_appid:
+                    if fullgame_appid in self.steam_details_cache:
+                        app_info = self.steam_details_cache[fullgame_appid]
+                        appid = fullgame_appid
+                    else:
+                        fullgame_info = fetch_app_info(fullgame_appid)
+                        if fullgame_info:
+                            app_info = fullgame_info
                             appid = fullgame_appid
-                        else:
-                            details_url = f"https://store.steampowered.com/api/appdetails?appids={fullgame_appid}&l=russian"
-                            details_response = self.requests_session.get(details_url)
-                            if details_response.status_code == 200:
-                                fullgame_details = details_response.json().get(str(fullgame_appid), {})
-                                if fullgame_details.get("success"):
-                                    app_info = fullgame_details.get("data", {})
-                                    appid = fullgame_appid
-                                    self.steam_details_cache[fullgame_appid] = app_info
-                    self.steam_details_cache[matching_app["appid"]] = app_info
+                            self.steam_details_cache[fullgame_appid] = fullgame_info
+                self.steam_details_cache[matching_app["appid"]] = app_info
 
-                title = app_info.get("name", exe_name.capitalize())
-                description = app_info.get("short_description", "")
-                # Формируем URL обложки по appid
-                if appid:
-                    cover = f"https://steamcdn-a.akamaihd.net/steam/apps/{appid}/library_600x900_2x.jpg"
-                else:
-                    cover = app_info.get("capsule_image", "")
-                return {"appid": appid, "name": title, "description": description, "cover": cover}
+            title = app_info.get("name", exe_name.capitalize())
+            description = app_info.get("short_description", "")
+            cover = f"https://steamcdn-a.akamaihd.net/steam/apps/{appid}/library_600x900_2x.jpg"
+            return {"appid": appid, "name": title, "description": description, "cover": cover}
 
-            return {"appid": "", "name": exe_name.capitalize(), "description": "", "cover": ""}
         except Exception as e:
             print(f"Ошибка получения данных из Steam API: {e}")
             return {"appid": "", "name": exe_name.capitalize(), "description": "", "cover": ""}
 
     def loadGames(self):
+
         games = []
         home = os.path.expanduser("~")
         config_path = os.path.join(home, ".config", "PortProton.conf")
-        portproton_location = ""
-        if os.path.exists(config_path):
+
+        def read_file_content(file_path):
             try:
-                with open(config_path, "r", encoding="utf-8") as file:
-                    portproton_location = file.read().strip()
-                print(f"Current PortProton location from config: {portproton_location}")
+                with open(file_path, "r", encoding="utf-8") as f:
+                    return f.read().strip()
             except Exception as e:
-                print("Ошибка при чтении файла конфигурации PortProton:", e)
+                print(f"Ошибка чтения файла {file_path}: {e}")
+                return None
+
+        # Определяем местоположение PortProton
+        portproton_location = None
+        if os.path.exists(config_path):
+            portproton_location = read_file_content(config_path)
+            if portproton_location:
+                print(f"Current PortProton location from config: {portproton_location}")
         else:
             fallback_dir = os.path.join(home, "PortProton")
-            if os.path.exists(fallback_dir) and os.path.isdir(fallback_dir):
+            if os.path.isdir(fallback_dir):
                 portproton_location = os.path.realpath(fallback_dir)
                 print(f"Using fallback PortProton location from symlink: {portproton_location}")
-            else:
-                print(f"Не найден конфигурационный файл {config_path} и симлинк ~/PortProton не существует.")
-                return games
 
-        portproton_files = glob.glob(os.path.join(portproton_location, "*.desktop"))
-        for file_path in portproton_files:
+        if not portproton_location:
+            print(f"Не найден конфигурационный файл {config_path} и симлинк ~/PortProton не существует.")
+            return games
+
+        desktop_files = glob.glob(os.path.join(portproton_location, "*.desktop"))
+        for file_path in desktop_files:
             config = configparser.ConfigParser(interpolation=None)
             try:
                 config.read(file_path, encoding="utf-8")
-                if "Desktop Entry" in config:
-                    entry = config["Desktop Entry"]
-                    desktop_name = entry.get("Name", "Unknown Game")
-                    if desktop_name.lower() == "portproton":
-                        continue
-                    exec_line = entry.get("Exec", "")
-                    steam_info = {}
-                    if exec_line:
-                        steam_info = self.get_steam_game_info(desktop_name, exec_line)
-                        if steam_info is None:
-                            continue
-                    if steam_info.get("appid"):
-                        #TODO: Drop it on fix steamID parse
-                        #name = steam_info.get("name")
-                        name = desktop_name
-                        desc = steam_info.get("description")
-                        cover = steam_info.get("cover")
-                        appid = steam_info.get("appid")
-                    else:
-                        name = desktop_name
-                        desc = entry.get("Comment", "")
-                        cover = entry.get("Icon", "")
-                        appid = ""
-                    games.append((name, desc, cover, appid, exec_line))
             except Exception as e:
                 print(f"Ошибка чтения файла {file_path}: {e}")
+                continue
+
+            if "Desktop Entry" not in config:
+                continue
+
+            entry = config["Desktop Entry"]
+            desktop_name = entry.get("Name", "Unknown Game")
+            if desktop_name.lower() == "portproton":
+                continue
+
+            exec_line = entry.get("Exec", "")
+            steam_info = {}
+            game_exe = ""
+            if exec_line:
+                try:
+                    parts = shlex.split(exec_line)
+                    game_exe = os.path.expanduser(parts[3] if len(parts) >= 4 else exec_line)
+                except Exception as e:
+                    print(f"Ошибка обработки Exec строки в {file_path}: {e}")
+                    game_exe = os.path.expanduser(exec_line)
+                steam_info = self.get_steam_game_info(desktop_name, exec_line)
+                if steam_info is None:
+                    continue
+
+            # Ищем кастомные файлы (обложка, название, описание)
+            custom_cover = ""
+            custom_name = None
+            custom_desc = None
+            if game_exe:
+                exe_name = os.path.splitext(os.path.basename(game_exe))[0]
+                custom_folder = os.path.join("custom_data", exe_name)
+                os.makedirs(custom_folder, exist_ok=True)
+                try:
+                    custom_files = set(os.listdir(custom_folder))
+                except Exception as e:
+                    print(f"Ошибка доступа к папке {custom_folder}: {e}")
+                    custom_files = set()
+
+                # Поиск кастомной обложки
+                for ext in [".jpg", ".png", ".jpeg", ".bmp"]:
+                    candidate = "cover" + ext
+                    candidate_path = os.path.join(custom_folder, candidate)
+                    if candidate in custom_files and os.path.exists(candidate_path):
+                        custom_cover = candidate_path
+                        break
+
+                # Поиск кастомного названия и описания
+                name_file = os.path.join(custom_folder, "name.txt")
+                desc_file = os.path.join(custom_folder, "desc.txt")
+                if "name.txt" in custom_files:
+                    custom_name = read_file_content(name_file)
+                if "desc.txt" in custom_files:
+                    custom_desc = read_file_content(desc_file)
+
+            # Определяем финальные значения для игры
+            if steam_info.get("appid"):
+                name = desktop_name
+                desc = steam_info.get("description", "")
+                cover = steam_info.get("cover", "")
+                appid = steam_info.get("appid", "")
+            else:
+                name = desktop_name
+                desc = entry.get("Comment", "")
+                cover = entry.get("Icon", "")
+                appid = ""
+
+            # Переопределяем, если найдены кастомные данные
+            if custom_name:
+                name = custom_name
+            if custom_desc:
+                desc = custom_desc
+            if custom_cover:
+                cover = custom_cover
+
+            games.append((name, desc, cover, appid, exec_line))
         return games
+
 
     def switchTab(self, index):
         for i, btn in self.tabButtons.items():
