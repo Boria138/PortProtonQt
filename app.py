@@ -285,7 +285,6 @@ class MainWindow(QtWidgets.QMainWindow):
           3. Имя исполняемого файла.
         Если найден appid, то в качестве обложки используется ссылка вида:
           https://steamcdn-a.akamaihd.net/steam/apps/<appid>/library_600x900_2x.jpg
-        При наличии объекта fullgame сразу используется её информация (так как нас не волнуют DLC и саундтреки).
         """
         try:
             parts = shlex.split(exec_line)
@@ -397,7 +396,9 @@ class MainWindow(QtWidgets.QMainWindow):
                         if steam_info is None:
                             continue
                     if steam_info.get("appid"):
-                        name = steam_info.get("name")
+                        #TODO: Drop it on fix steamID parse
+                        #name = steam_info.get("name")
+                        name = desktop_name
                         desc = steam_info.get("description")
                         cover = steam_info.get("cover")
                         appid = steam_info.get("appid")
