@@ -293,9 +293,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 color: #fff;
             }
         """)
-
     def load_steam_apps(self):
-        cache_dir = os.path.join(os.path.expanduser("~"), ".cache", "PortProtonQT")
+        xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
+        cache_dir = os.path.join(xdg_cache_home, "PortProtonQT")
         os.makedirs(cache_dir, exist_ok=True)
         cache_file = os.path.join(cache_dir, "steam_apps.json")
 
@@ -413,8 +413,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def loadGames(self):
         games = []
-        home = os.path.expanduser("~")
-        config_path = os.path.join(home, ".config", "PortProton.conf")
+        xdg_config_home = os.getenv("XDG_CONFIG_HOME", os.path.join(os.path.expanduser("~"), ".config"))
+        xdg_data_home = os.getenv("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share"))
+        config_path = os.path.join(xdg_config_home, "PortProton.conf")
 
         def read_file_content(file_path):
             try:
@@ -430,13 +431,13 @@ class MainWindow(QtWidgets.QMainWindow):
             if portproton_location:
                 print(f"Current PortProton location from config: {portproton_location}")
         else:
-            fallback_dir = os.path.join(home, "PortProton")
+            fallback_dir = os.path.join(os.path.expanduser("~"), ".var", "app", "ru.linux_gaming.PortProton")
             if os.path.isdir(fallback_dir):
-                portproton_location = os.path.realpath(fallback_dir)
-                print(f"Using fallback PortProton location from symlink: {portproton_location}")
+                portproton_location = fallback_dir
+                print(f"Using fallback PortProton location from data directory: {portproton_location}")
 
         if not portproton_location:
-            print(f"Не найден конфигурационный файл {config_path} и симлинк ~/PortProton не существует.")
+            print(f"Не найден конфигурационный файл {config_path} и директория PortProton не существует.")
             return games
 
         desktop_files = glob.glob(os.path.join(portproton_location, "*.desktop"))
@@ -475,7 +476,7 @@ class MainWindow(QtWidgets.QMainWindow):
             custom_desc = None
             if game_exe:
                 exe_name = os.path.splitext(os.path.basename(game_exe))[0]
-                custom_folder = os.path.join(home, ".config", "PortProtonQT", "custom_data", exe_name)
+                custom_folder = os.path.join(xdg_data_home, "PortProtonQT", "custom_data", exe_name)
                 os.makedirs(custom_folder, exist_ok=True)
                 try:
                     custom_files = set(os.listdir(custom_folder))
