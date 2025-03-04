@@ -5,13 +5,14 @@ import configparser
 import shlex
 import requests
 import subprocess
-from io import BytesIO
 import json
 import time
 import signal
 import orjson
 import concurrent.futures
+from io import BytesIO
 from PySide6 import QtWidgets, QtCore, QtGui
+from PySide6.QtCore import Property
 
 def load_pixmap(cover, width, height):
     """
@@ -22,7 +23,6 @@ def load_pixmap(cover, width, height):
     """
     pixmap = QtGui.QPixmap()
 
-    # Если ссылка ведёт на Steam CDN
     if cover.startswith("https://steamcdn-a.akamaihd.net/steam/apps/"):
         try:
             parts = cover.split("/")
@@ -47,11 +47,9 @@ def load_pixmap(cover, width, height):
         except Exception as e:
             print("Ошибка загрузки обложки из Steam CDN:", e)
 
-    # Если путь указывает на локальный файл
     elif QtCore.QFile.exists(cover):
         pixmap.load(cover)
 
-    # Если загрузка не удалась, создаём резервное изображение
     if pixmap.isNull():
         pixmap = QtGui.QPixmap(width, height)
         pixmap.fill(QtGui.QColor("#333333"))
@@ -61,9 +59,7 @@ def load_pixmap(cover, width, height):
         painter.drawText(pixmap.rect(), QtCore.Qt.AlignCenter, "No Image")
         painter.end()
 
-    # Масштабирование с KeepAspectRatioByExpanding для заполнения контейнера
     scaled = pixmap.scaled(width, height, QtCore.Qt.KeepAspectRatioByExpanding, QtCore.Qt.SmoothTransformation)
-    # Обрезаем центральную часть до точного размера (width x height)
     x = (scaled.width() - width) // 2
     y = (scaled.height() - height) // 2
     cropped = scaled.copy(x, y, width, height)
@@ -87,6 +83,151 @@ def round_corners(pixmap, radius):
     painter.end()
     return rounded
 
+class VirtualKeyboard(QtWidgets.QWidget):
+    def __init__(self, parent=None, target_widget=None):
+        super().__init__(parent)
+        self.target_widget = target_widget  # куда отправлять вводимые символы
+        self.current_layout = "EN"  # "EN" или "RU" Возможно добавлю ещё языки
+        self.dragging = False
+        self.drag_start_pos = QtCore.QPoint()
+        self.initUI()
+
+    def initUI(self):
+        self.setWindowFlags(QtCore.Qt.Tool | QtCore.Qt.FramelessWindowHint)
+        self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
+        self.setFixedSize(800, 300)
+
+        main_layout = QtWidgets.QVBoxLayout(self)
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.header = QtWidgets.QFrame()
+        self.header.setFixedHeight(40)
+        self.header.setStyleSheet("""
+            background: rgba(0, 0, 0, 0.2);
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
+        """)
+        header_layout = QtWidgets.QHBoxLayout(self.header)
+        header_layout.setContentsMargins(10, 0, 10, 0)
+        header_label = QtWidgets.QLabel("Виртуальная клавиатура")
+        header_label.setStyleSheet("color: white; font-size: 18px;")
+        header_layout.addWidget(header_label)
+        header_layout.addStretch()
+        main_layout.addWidget(self.header)
+        self.header.installEventFilter(self)
+
+        self.keyboard_area = QtWidgets.QWidget()
+        self.keyboard_area.setStyleSheet("""
+            background: rgba(255, 255, 255, 0.95);
+            border-bottom-left-radius: 15px;
+            border-bottom-right-radius: 15px;
+        """)
+        main_layout.addWidget(self.keyboard_area)
+
+        self.keys_layout = QtWidgets.QVBoxLayout(self.keyboard_area)
+        self.keys_layout.setSpacing(10)
+        self.keys_layout.setContentsMargins(20, 20, 20, 20)
+
+        self.createKeys()
+
+    def getLayouts(self):
+        return {
+            "EN": [
+                ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
+                ["A", "S", "D", "F", "G", "H", "J", "K", "L"],
+                ["Z", "X", "C", "V", "B", "N", "M"],
+                ["Toggle", "Space", "Backspace", "Enter"]
+            ],
+            "RU": [
+                ["Й", "Ц", "У", "К", "Е", "Н", "Г", "Ш", "Щ", "З"],
+                ["Ф", "Ы", "В", "А", "П", "Р", "О", "Л", "Д", "Ж"],
+                ["Я", "Ч", "С", "М", "И", "Т", "Ь"],
+                ["Toggle", "Space", "Backspace", "Enter"]
+            ]
+        }
+
+    def createKeys(self):
+        while self.keys_layout.count():
+            child = self.keys_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+
+        layouts = self.getLayouts()[self.current_layout]
+        for row_keys in layouts:
+            row = QtWidgets.QHBoxLayout()
+            row.setSpacing(10)
+            for key in row_keys:
+                btn = QtWidgets.QPushButton(key)
+                btn.setMinimumHeight(60)
+                btn.setMinimumWidth(60)
+                btn.setStyleSheet("""
+                    QPushButton {
+                        background: #ffffff;
+                        border: 2px solid #cccccc;
+                        border-radius: 12px;
+                        color: #333333;
+                        font-size: 22px;
+                        font-family: 'Arial';
+                    }
+                    QPushButton:hover {
+                        background: #f2f2f2;
+                    }
+                    QPushButton:pressed {
+                        background: #e6e6e6;
+                        border: 2px solid #aaaaaa;
+                    }
+                """)
+                btn.clicked.connect(lambda checked, k=key: self.handleKey(k))
+                row.addWidget(btn)
+            self.keys_layout.addLayout(row)
+
+    def handleKey(self, key):
+        if key == "Toggle":
+            self.current_layout = "RU" if self.current_layout == "EN" else "EN"
+            self.createKeys()
+        elif key == "Space":
+            self.insertText(" ")
+        elif key == "Backspace":
+            self.deleteText()
+        elif key == "Enter":
+            self.insertText("\n")
+        else:
+            self.insertText(key)
+
+    def insertText(self, text):
+        widget = self.target_widget or QtWidgets.QApplication.focusWidget()
+        if widget and isinstance(widget, QtWidgets.QLineEdit):
+            widget.insert(text)
+        elif widget and isinstance(widget, QtWidgets.QTextEdit):
+            widget.insertPlainText(text)
+
+    def deleteText(self):
+        widget = self.target_widget or QtWidgets.QApplication.focusWidget()
+        if widget and isinstance(widget, QtWidgets.QLineEdit):
+            widget.setText(widget.text()[:-1])
+        elif widget and isinstance(widget, QtWidgets.QTextEdit):
+            cursor = widget.textCursor()
+            if cursor.position() > 0:
+                cursor.deletePreviousChar()
+                widget.setTextCursor(cursor)
+
+    def eventFilter(self, obj, event):
+        if obj == self.header:
+            if event.type() == QtCore.QEvent.MouseButtonPress:
+                if event.button() == QtCore.Qt.LeftButton:
+                    self.dragging = True
+                    self.drag_start_pos = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
+                    return True
+            elif event.type() == QtCore.QEvent.MouseMove:
+                if self.dragging:
+                    self.move(event.globalPosition().toPoint() - self.drag_start_pos)
+                    return True
+            elif event.type() == QtCore.QEvent.MouseButtonRelease:
+                self.dragging = False
+                return True
+        return super().eventFilter(obj, event)
+
 class AddGameDialog(QtWidgets.QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -99,6 +240,23 @@ class AddGameDialog(QtWidgets.QDialog):
         self.coverEdit = QtWidgets.QLineEdit(self)
 
         browseButton = QtWidgets.QPushButton("Обзор...", self)
+        browseButton.setStyleSheet("""
+            QPushButton {
+                background: rgba(255, 255, 255, 0.15);
+                border: 1px solid rgba(255, 255, 255, 0.3);
+                border-radius: 10px;
+                color: white;
+                font-size: 16px;
+                padding: 5px 10px;
+            }
+            QPushButton:hover {
+                background: rgba(255, 255, 255, 0.25);
+            }
+            QPushButton:pressed {
+                background: rgba(255, 255, 255, 0.35);
+                border: 1px solid rgba(255, 255, 255, 0.5);
+            }
+        """)
         browseButton.clicked.connect(self.browseCover)
         coverLayout = QtWidgets.QHBoxLayout()
         coverLayout.addWidget(self.coverEdit)
@@ -134,21 +292,25 @@ class GameCard(QtWidgets.QFrame):
 
         self.setFixedSize(250, 400)
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
-        # Улучшенный дизайн фрейма: градиентный фон, тонкая рамка и эффект при наведении
+        
         self.setStyleSheet("""
             QFrame {
                 border-radius: 15px;
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #141414, stop:1 #2a2a2a);
-                border: 1px solid #444;
-            }
-            QFrame:hover {
-                border: 2px solid #00fff5;
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #1a1a1a, stop:1 #333333);
-            }
-            QFrame:focus {
-                border: 2px solid #00fff5;
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                                             stop:0 #141414, stop:1 #2a2a2a);
             }
         """)
+
+        # Анимация обводки
+        self._borderWidth = 1
+        self._gradientAngle = 0.0
+        self._hovered = False
+
+        # Анимация для толщины границы
+        self.thickness_anim = QtCore.QPropertyAnimation(self, b"borderWidth")
+        self.thickness_anim.setDuration(300)
+
+        
         shadow = QtWidgets.QGraphicsDropShadowEffect(self)
         shadow.setBlurRadius(20)
         shadow.setColor(QtGui.QColor(0, 0, 0, 150))
@@ -161,11 +323,9 @@ class GameCard(QtWidgets.QFrame):
 
         coverLabel = QtWidgets.QLabel()
         coverLabel.setFixedSize(250, 300)
-        # Загружаем изображение, обрезаем и округляем все углы
         pixmap = load_pixmap(cover_path, 250, 300) if cover_path else load_pixmap("", 250, 300)
         pixmap = round_corners(pixmap, 15)
         coverLabel.setPixmap(pixmap)
-        # Изображение уже подготовлено нужного размера
         coverLabel.setStyleSheet("border-radius: 15px;")
         layout.addWidget(coverLabel)
 
@@ -182,6 +342,72 @@ class GameCard(QtWidgets.QFrame):
             padding: 8px;
         """)
         layout.addWidget(nameLabel)
+
+    def getBorderWidth(self):
+        return self._borderWidth
+
+    def setBorderWidth(self, value):
+        self._borderWidth = value
+        self.update()
+
+    borderWidth = Property(int, getBorderWidth, setBorderWidth)
+
+    def getGradientAngle(self):
+        return self._gradientAngle
+
+    def setGradientAngle(self, value):
+        self._gradientAngle = value
+        self.update()
+
+    gradientAngle = Property(float, getGradientAngle, setGradientAngle)
+
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        painter = QtGui.QPainter(self)
+        painter.setRenderHint(QtGui.QPainter.Antialiasing)
+        pen = QtGui.QPen()
+        pen.setWidth(self._borderWidth)
+        if self._hovered:
+           
+            center = self.rect().center()
+            gradient = QtGui.QConicalGradient(center, self._gradientAngle)
+            gradient.setColorAt(0, QtGui.QColor("#00fff5"))
+            gradient.setColorAt(0.5, QtGui.QColor("#9B59B6"))
+            gradient.setColorAt(1, QtGui.QColor("#00fff5"))
+            pen.setBrush(QtGui.QBrush(gradient))
+        else:
+            pen.setColor(QtGui.QColor(0, 0, 0, 0))
+        painter.setPen(pen)
+        rect = self.rect().adjusted(self._borderWidth / 2, self._borderWidth / 2,
+                                    -self._borderWidth / 2, -self._borderWidth / 2)
+        painter.drawRoundedRect(rect, 15, 15)
+
+    def enterEvent(self, event):
+        self._hovered = True
+        
+        self.thickness_anim.stop()
+        self.thickness_anim.setStartValue(self._borderWidth)
+        self.thickness_anim.setEndValue(4)
+        self.thickness_anim.start()
+        # Запуск анимации вращения градиента
+        self.gradient_anim = QtCore.QPropertyAnimation(self, b"gradientAngle")
+        self.gradient_anim.setDuration(3000)
+        self.gradient_anim.setStartValue(0)
+        self.gradient_anim.setEndValue(360)
+        self.gradient_anim.setLoopCount(-1)
+        self.gradient_anim.start()
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        self._hovered = False
+        if hasattr(self, "gradient_anim"):
+            self.gradient_anim.stop()
+            del self.gradient_anim
+        self.thickness_anim.stop()
+        self.thickness_anim.setStartValue(self._borderWidth)
+        self.thickness_anim.setEndValue(1)
+        self.thickness_anim.start()
+        super().leaveEvent(event)
 
     def mousePressEvent(self, event):
         self.select_callback(self.name, self.description, self.cover_path, self.appid, self.exec_line)
@@ -232,6 +458,27 @@ class MainWindow(QtWidgets.QMainWindow):
         """)
         headerLayout.addWidget(titleLabel)
         headerLayout.addStretch()
+
+        keyboardButton = QtWidgets.QPushButton("Клавиатура")
+        keyboardButton.setStyleSheet("""
+            QPushButton {
+                background: rgba(255, 255, 255, 0.15);
+                border: 1px solid rgba(255, 255, 255, 0.3);
+                border-radius: 10px;
+                color: white;
+                font-size: 16px;
+                padding: 10px 20px;
+            }
+            QPushButton:hover {
+                background: rgba(255, 255, 255, 0.25);
+            }
+            QPushButton:pressed {
+                background: rgba(255, 255, 255, 0.35);
+                border: 1px solid rgba(255, 255, 255, 0.5);
+            }
+        """)
+        keyboardButton.clicked.connect(self.toggleKeyboard)
+        headerLayout.addWidget(keyboardButton)
         mainLayout.addWidget(header)
 
         navWidget = QtWidgets.QWidget()
@@ -299,11 +546,21 @@ class MainWindow(QtWidgets.QMainWindow):
             }
         """)
 
+        self.virtualKeyboard = VirtualKeyboard(self, target_widget=self.searchEdit)
+        self.virtualKeyboard.hide()
+
+    def toggleKeyboard(self):
+        if self.virtualKeyboard.isVisible():
+            self.virtualKeyboard.hide()
+        else:
+            self.searchEdit.setFocus()
+            global_bottom_center = self.mapToGlobal(QtCore.QPoint(self.width() // 2, self.height()))
+            keyboard_x = global_bottom_center.x() - self.virtualKeyboard.width() // 2
+            keyboard_y = global_bottom_center.y() + 10
+            self.virtualKeyboard.move(keyboard_x, keyboard_y)
+            self.virtualKeyboard.show()
+
     def load_steam_apps(self):
-        """
-        Загружает список приложений Steam. При наличии валидного кэша (30 дней) загружает из файла,
-        иначе выполняется запрос к API Steam и сохраняется кэш.
-        """
         xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
         cache_dir = os.path.join(xdg_cache_home, "PortProtonQT")
         os.makedirs(cache_dir, exist_ok=True)
@@ -343,32 +600,19 @@ class MainWindow(QtWidgets.QMainWindow):
         return self.steam_apps
 
     def build_index(self):
-        """
-        Строим индекс для точного поиска по имени.
-        """
         self.steam_apps_index = {}
         if not self.steam_apps:
             return
-
         for app in self.steam_apps:
             name = app.get("name", "")
             if name:
                 self.steam_apps_index[name.lower()] = app
 
     def search_app(self, candidate):
-        """
-        Производит поиск по имени:
-         - Сначала ищется точное совпадение (приведенное к нижнему регистру).
-         - Если точного совпадения нет, проверяется, является ли кандидат подстрокой в имени приложения.
-        """
         candidate_lower = candidate.lower()
-        # Проверка точного совпадения
         if candidate_lower in self.steam_apps_index:
             return self.steam_apps_index[candidate_lower]
-
-        # Перебор всех имен для проверки наличия кандидата как подстроки
         for name_lower, app in self.steam_apps_index.items():
-            # Пропускаем, если имя приложения меньше кандидата
             if len(name_lower) < len(candidate_lower):
                 continue
             if candidate_lower in name_lower:
@@ -376,9 +620,6 @@ class MainWindow(QtWidgets.QMainWindow):
         return None
 
     def fetch_app_info(self, app_id):
-        """
-        Получает данные по приложению из Steam API.
-        """
         url = f"https://store.steampowered.com/api/appdetails?appids={app_id}&l=russian"
         try:
             response = self.requests_session.get(url)
@@ -393,14 +634,6 @@ class MainWindow(QtWidgets.QMainWindow):
             return None
 
     def get_steam_game_info(self, desktop_name, exec_line):
-        """
-        Поиск Steam‑информации производится по трем вариантам:
-        1. Имя из desktop файла,
-        2. Имя папки (из пути к exe),
-        3. Имя исполняемого файла.
-        Если найден appid, то в качестве обложки используется ссылка вида:
-        https://steamcdn-a.akamaihd.net/steam/apps/<appid>/library_600x900_2x.jpg
-        """
         try:
             parts = shlex.split(exec_line)
             game_exe = parts[3] if len(parts) >= 4 else exec_line
@@ -410,7 +643,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
             self.load_steam_apps()
             matching_app = None
-
             for candidate in candidates:
                 if not candidate:
                     continue
@@ -422,7 +654,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 return {"appid": "", "name": exe_name.capitalize(), "description": "", "cover": ""}
 
             appid = matching_app["appid"]
-
             if appid in self.steam_details_cache:
                 app_info = self.steam_details_cache[appid]
             else:
@@ -446,7 +677,6 @@ class MainWindow(QtWidgets.QMainWindow):
             description = app_info.get("short_description", "")
             cover = f"https://steamcdn-a.akamaihd.net/steam/apps/{appid}/library_600x900_2x.jpg"
             return {"appid": appid, "name": title, "description": description, "cover": cover}
-
         except Exception as e:
             print(f"Ошибка получения данных из Steam API: {e}")
             return {"appid": "", "name": exe_name.capitalize(), "description": "", "cover": ""}
@@ -465,7 +695,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 print(f"Ошибка чтения файла {file_path}: {e}")
                 return None
 
-        # Определяем директорию PortProton
         portproton_location = None
         if os.path.exists(config_path):
             portproton_location = read_file_content(config_path)
@@ -481,7 +710,6 @@ class MainWindow(QtWidgets.QMainWindow):
             print(f"Не найден конфигурационный файл {config_path} и директория PortProton не существует.")
             return games
 
-        # Получаем список desktop-файлов с помощью os.scandir
         desktop_files = []
         with os.scandir(portproton_location) as it:
             for entry in it:
@@ -510,7 +738,6 @@ class MainWindow(QtWidgets.QMainWindow):
             if exec_line:
                 try:
                     parts = shlex.split(exec_line)
-                    # Берем 4-й элемент, если он существует, иначе всю строку
                     game_exe = os.path.expanduser(parts[3] if len(parts) >= 4 else exec_line)
                 except Exception as e:
                     print(f"Ошибка обработки Exec строки в {file_path}: {e}")
@@ -566,11 +793,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
             return (name, desc, cover, appid, exec_line)
 
-        # Параллельная обработка desktop-файлов
         with concurrent.futures.ThreadPoolExecutor() as executor:
             results = list(executor.map(process_file, desktop_files))
 
-        # Собираем результаты, исключая None
         for res in results:
             if res is not None:
                 games.append(res)
@@ -634,7 +859,23 @@ class MainWindow(QtWidgets.QMainWindow):
         layout.addWidget(title)
 
         addGameButton = QtWidgets.QPushButton("Добавить игру")
-        addGameButton.setStyleSheet("font-family: 'Poppins'; font-size: 16px; color: #00fff5;")
+        addGameButton.setStyleSheet("""
+            QPushButton {
+                background: rgba(255, 255, 255, 0.15);
+                border: 1px solid rgba(255, 255, 255, 0.3);
+                border-radius: 10px;
+                color: white;
+                font-size: 16px;
+                padding: 10px 20px;
+            }
+            QPushButton:hover {
+                background: rgba(255, 255, 255, 0.25);
+            }
+            QPushButton:pressed {
+                background: rgba(255, 255, 255, 0.35);
+                border: 1px solid rgba(255, 255, 255, 0.5);
+            }
+        """)
         addGameButton.clicked.connect(self.openAddGameDialog)
         layout.addWidget(addGameButton, alignment=QtCore.Qt.AlignLeft)
 
@@ -773,10 +1014,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def openGameDetailPage(self, name, description, cover_path=None, appid="", exec_line=""):
         detailPage = QtWidgets.QWidget()
         if cover_path:
-            # Для детальной страницы округляем все углы (радиус 10)
             pixmap = load_pixmap(cover_path, 300, 400)
             pixmap = round_corners(pixmap, 10)
-            # Применяем цветовую палитру для фона
             palette = self.getColorPalette(cover_path, num_colors=5)
             dark_palette = [self.darkenColor(color, factor=200) for color in palette]
             stops = ",\n".join(
@@ -799,16 +1038,19 @@ class MainWindow(QtWidgets.QMainWindow):
         backButton.setFixedWidth(100)
         backButton.setStyleSheet("""
             QPushButton {
-                background: linear-gradient(45deg, rgba(0,255,255,0.15), rgba(155,89,182,0.25));
-                border: none;
-                padding: 10px 20px;
-                color: #00fff5;
-                font-family: 'Poppins';
-                font-weight: bold;
+                background: rgba(255, 255, 255, 0.15);
+                border: 1px solid rgba(255, 255, 255, 0.3);
                 border-radius: 5px;
+                color: white;
+                font-size: 16px;
+                padding: 8px 16px;
             }
             QPushButton:hover {
-                background: linear-gradient(45deg, rgba(0,255,255,0.25), rgba(155,89,182,0.35));
+                background: rgba(255, 255, 255, 0.25);
+            }
+            QPushButton:pressed {
+                background: rgba(255, 255, 255, 0.35);
+                border: 1px solid rgba(255, 255, 255, 0.5);
             }
         """)
         backButton.clicked.connect(lambda: self.goBackDetailPage(detailPage))
@@ -882,16 +1124,20 @@ class MainWindow(QtWidgets.QMainWindow):
         playButton.setFixedSize(120, 40)
         playButton.setStyleSheet("""
             QPushButton {
-                background: linear-gradient(45deg, rgba(0,255,255,0.15), rgba(155,89,182,0.25));
-                border: none;
+                background: rgba(255, 255, 255, 0.15);
+                border: 1px solid rgba(255, 255, 255, 0.3);
                 border-radius: 5px;
-                font-family: 'Poppins';
                 font-size: 16px;
-                color: #00fff5;
+                color: white;
                 font-weight: bold;
+                padding: 8px 16px;
             }
             QPushButton:hover {
-                background: linear-gradient(45deg, rgba(0,255,255,0.25), rgba(155,89,182,0.35));
+                background: rgba(255, 255, 255, 0.25);
+            }
+            QPushButton:pressed {
+                background: rgba(255, 255, 255, 0.35);
+                border: 1px solid rgba(255, 255, 255, 0.5);
             }
         """)
         playButton.clicked.connect(lambda: self.launchGame(exec_line))
@@ -918,31 +1164,18 @@ class MainWindow(QtWidgets.QMainWindow):
         self.stackedWidget.removeWidget(page)
         page.deleteLater()
 
-
     def launchGame(self, exec_line):
-        # Проверяем, что команда не пуста
         if not exec_line:
             QtWidgets.QMessageBox.warning(self, "Ошибка", "Команда не задана")
             return
 
         try:
             entry_exec_split = shlex.split(exec_line)
-
-            # Определяем путь к исполняемому файлу для проверки
-            # Если команда начинается с "env", то предполагается, что:
-            # аргумент 0: "env"
-            # аргумент 1: путь к скрипту (start.sh)
-            # аргумент 2: путь к исполняемому файлу (exe)
             if entry_exec_split[0] == "env":
                 if len(entry_exec_split) < 3:
                     QtWidgets.QMessageBox.warning(self, "Ошибка", "Неверный формат команды (native)")
                     return
                 file_to_check = entry_exec_split[2]
-            # Если команда начинается с "flatpak", то:
-            # аргумент 0: "flatpak"
-            # аргумент 1: "run"
-            # аргумент 2: идентификатор приложения
-            # аргумент 3: путь к исполняемому файлу
             elif entry_exec_split[0] == "flatpak":
                 if len(entry_exec_split) < 4:
                     QtWidgets.QMessageBox.warning(self, "Ошибка", "Неверный формат команды (flatpak)")
@@ -971,7 +1204,6 @@ class MainWindow(QtWidgets.QMainWindow):
             print("Ошибка запуска игры:", e)
 
     def closeEvent(self, event):
-        # Завершаем все запущенные процессы при закрытии приложения
         for proc in self.game_processes:
             try:
                 os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
