@@ -32,9 +32,10 @@ def load_pixmap(cover, width, height):
                 if idx + 1 < len(parts):
                     appid = parts[idx + 1]
             if appid:
-                cache_dir = os.path.join(os.path.expanduser("~"), ".cache", "PortProtonQT", "images")
-                os.makedirs(cache_dir, exist_ok=True)
-                local_path = os.path.join(cache_dir, f"{appid}.jpg")
+                xdg_data_home = os.getenv("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share"))
+                image_folder = os.path.join(xdg_data_home, "PortProtonQT", "images")
+                os.makedirs(image_folder, exist_ok=True)
+                local_path = os.path.join(image_folder, f"{appid}.jpg")
                 if os.path.exists(local_path):
                     pixmap.load(local_path)
                 else:
