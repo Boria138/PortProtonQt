@@ -9,6 +9,8 @@ from io import BytesIO
 import json
 import time
 import signal
+import orjson
+import concurrent.futures
 from PySide6 import QtWidgets, QtCore, QtGui
 
 def load_pixmap(cover, width, height):
@@ -199,6 +201,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.requests_session = requests.Session()
         self.steam_apps = None
+        self.steam_apps_index = {}
+        self.steam_details_cache = {}
         self.games = self.loadGames()
         self.game_processes = []
 
@@ -293,12 +297,16 @@ class MainWindow(QtWidgets.QMainWindow):
                 color: #fff;
             }
         """)
+
     def load_steam_apps(self):
+        """
+        Загружает список приложений Steam. При наличии валидного кэша (30 дней) загружает из файла,
+        иначе выполняется запрос к API Steam и сохраняется кэш.
+        """
         xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
         cache_dir = os.path.join(xdg_cache_home, "PortProtonQT")
         os.makedirs(cache_dir, exist_ok=True)
         cache_file = os.path.join(cache_dir, "steam_apps.json")
-
         cache_valid = False
         if os.path.exists(cache_file):
             if time.time() - os.path.getmtime(cache_file) < 30 * 24 * 60 * 60:
@@ -306,8 +314,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if cache_valid:
             try:
-                with open(cache_file, "r", encoding="utf-8") as f:
-                    self.steam_apps = json.load(f)
+                with open(cache_file, "rb") as f:
+                    self.steam_apps = orjson.loads(f.read())
+                self.build_index()
                 return self.steam_apps
             except Exception as e:
                 print("Ошибка загрузки кэша:", e)
@@ -319,8 +328,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 data = response.json()
                 self.steam_apps = data.get("applist", {}).get("apps", [])
                 try:
-                    with open(cache_file, "w", encoding="utf-8") as f:
-                        json.dump(self.steam_apps, f)
+                    with open(cache_file, "wb") as f:
+                        f.write(orjson.dumps(self.steam_apps))
                 except Exception as e:
                     print("Ошибка сохранения кэша:", e)
             else:
@@ -329,7 +338,58 @@ class MainWindow(QtWidgets.QMainWindow):
             print("Ошибка загрузки списка приложений Steam:", e)
             self.steam_apps = []
 
+        self.build_index()
         return self.steam_apps
+
+    def build_index(self):
+        """
+        Строим индекс для точного поиска по имени.
+        """
+        self.steam_apps_index = {}
+        if not self.steam_apps:
+            return
+
+        for app in self.steam_apps:
+            name = app.get("name", "")
+            if name:
+                self.steam_apps_index[name.lower()] = app
+
+    def search_app(self, candidate):
+        """
+        Производит поиск по имени:
+         - Сначала ищется точное совпадение (приведенное к нижнему регистру).
+         - Если точного совпадения нет, проверяется, является ли кандидат подстрокой в имени приложения.
+        """
+        candidate_lower = candidate.lower()
+        # Проверка точного совпадения
+        if candidate_lower in self.steam_apps_index:
+            return self.steam_apps_index[candidate_lower]
+
+        # Перебор всех имен для проверки наличия кандидата как подстроки
+        for name_lower, app in self.steam_apps_index.items():
+            # Пропускаем, если имя приложения меньше кандидата
+            if len(name_lower) < len(candidate_lower):
+                continue
+            if candidate_lower in name_lower:
+                return app
+        return None
+
+    def fetch_app_info(self, app_id):
+        """
+        Получает данные по приложению из Steam API.
+        """
+        url = f"https://store.steampowered.com/api/appdetails?appids={app_id}&l=russian"
+        try:
+            response = self.requests_session.get(url)
+            if response.status_code != 200:
+                return None
+            details = response.json().get(str(app_id), {})
+            if not details.get("success"):
+                return None
+            return details.get("data", {})
+        except Exception as e:
+            print("Ошибка запроса данных для appid {}: {}".format(app_id, e))
+            return None
 
     def get_steam_game_info(self, desktop_name, exec_line):
         """
@@ -347,20 +407,13 @@ class MainWindow(QtWidgets.QMainWindow):
             exe_name = os.path.splitext(os.path.basename(game_exe))[0]
             candidates = [desktop_name, folder_name, exe_name]
 
-            steam_apps = self.load_steam_apps()
-            if not hasattr(self, 'steam_apps_index'):
-                self.steam_apps_index = {app["name"].lower(): app for app in steam_apps}
-
+            self.load_steam_apps()
             matching_app = None
+
             for candidate in candidates:
-                candidate_lower = candidate.lower()
-                if candidate_lower in self.steam_apps_index:
-                    matching_app = self.steam_apps_index[candidate_lower]
-                    break
-                for app in steam_apps:
-                    if candidate_lower in app["name"].lower():
-                        matching_app = app
-                        break
+                if not candidate:
+                    continue
+                matching_app = self.search_app(candidate)
                 if matching_app:
                     break
 
@@ -369,33 +422,19 @@ class MainWindow(QtWidgets.QMainWindow):
 
             appid = matching_app["appid"]
 
-            if not hasattr(self, 'steam_details_cache'):
-                self.steam_details_cache = {}
-
             if appid in self.steam_details_cache:
                 app_info = self.steam_details_cache[appid]
             else:
-                def fetch_app_info(app_id):
-                    url = f"https://store.steampowered.com/api/appdetails?appids={app_id}&l=russian"
-                    response = self.requests_session.get(url)
-                    if response.status_code != 200:
-                        return None
-                    details = response.json().get(str(app_id), {})
-                    if not details.get("success"):
-                        return None
-                    return details.get("data", {})
-
-                app_info = fetch_app_info(appid)
+                app_info = self.fetch_app_info(appid)
                 if not app_info:
                     return {"appid": "", "name": exe_name.capitalize(), "description": "", "cover": ""}
-
                 fullgame_appid = app_info.get("fullgame", {}).get("appid")
                 if fullgame_appid:
                     if fullgame_appid in self.steam_details_cache:
                         app_info = self.steam_details_cache[fullgame_appid]
                         appid = fullgame_appid
                     else:
-                        fullgame_info = fetch_app_info(fullgame_appid)
+                        fullgame_info = self.fetch_app_info(fullgame_appid)
                         if fullgame_info:
                             app_info = fullgame_info
                             appid = fullgame_appid
@@ -425,6 +464,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 print(f"Ошибка чтения файла {file_path}: {e}")
                 return None
 
+        # Определяем директорию PortProton
         portproton_location = None
         if os.path.exists(config_path):
             portproton_location = read_file_content(config_path)
@@ -440,22 +480,28 @@ class MainWindow(QtWidgets.QMainWindow):
             print(f"Не найден конфигурационный файл {config_path} и директория PortProton не существует.")
             return games
 
-        desktop_files = glob.glob(os.path.join(portproton_location, "*.desktop"))
-        for file_path in desktop_files:
+        # Получаем список desktop-файлов с помощью os.scandir
+        desktop_files = []
+        with os.scandir(portproton_location) as it:
+            for entry in it:
+                if entry.is_file() and entry.name.endswith(".desktop"):
+                    desktop_files.append(entry.path)
+
+        def process_file(file_path):
             config = configparser.ConfigParser(interpolation=None)
             try:
                 config.read(file_path, encoding="utf-8")
             except Exception as e:
                 print(f"Ошибка чтения файла {file_path}: {e}")
-                continue
+                return None
 
             if "Desktop Entry" not in config:
-                continue
+                return None
 
             entry = config["Desktop Entry"]
             desktop_name = entry.get("Name", "Unknown Game")
             if desktop_name.lower() == "portproton":
-                continue
+                return None
 
             exec_line = entry.get("Exec", "")
             steam_info = {}
@@ -463,13 +509,14 @@ class MainWindow(QtWidgets.QMainWindow):
             if exec_line:
                 try:
                     parts = shlex.split(exec_line)
+                    # Берем 4-й элемент, если он существует, иначе всю строку
                     game_exe = os.path.expanduser(parts[3] if len(parts) >= 4 else exec_line)
                 except Exception as e:
                     print(f"Ошибка обработки Exec строки в {file_path}: {e}")
                     game_exe = os.path.expanduser(exec_line)
                 steam_info = self.get_steam_game_info(desktop_name, exec_line)
                 if steam_info is None:
-                    continue
+                    return None
 
             custom_cover = ""
             custom_name = None
@@ -516,7 +563,16 @@ class MainWindow(QtWidgets.QMainWindow):
             if custom_cover:
                 cover = custom_cover
 
-            games.append((name, desc, cover, appid, exec_line))
+            return (name, desc, cover, appid, exec_line)
+
+        # Параллельная обработка desktop-файлов
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            results = list(executor.map(process_file, desktop_files))
+
+        # Собираем результаты, исключая None
+        for res in results:
+            if res is not None:
+                games.append(res)
         return games
 
     def switchTab(self, index):
