@@ -14,7 +14,8 @@ def load_pixmap(cover, width, height):
     """
     Загружает изображение из локального файла или по URL и масштабирует его.
     Если загрузка не удалась, создаёт резервное изображение.
-    Если ссылка ведёт на Steam CDN, обложка кешируется локально в папке ~/.cache/PortProtonQT/images.
+    Если ссылка ведёт на Steam CDN, обложка кешируется локально.
+    После масштабирования с KeepAspectRatioByExpanding происходит обрезка центральной части до нужных размеров.
     """
     pixmap = QtGui.QPixmap()
 
@@ -28,7 +29,6 @@ def load_pixmap(cover, width, height):
                 if idx + 1 < len(parts):
                     appid = parts[idx + 1]
             if appid:
-                # Используем общую папку кэша для изображений
                 cache_dir = os.path.join(os.path.expanduser("~"), ".cache", "PortProtonQT", "images")
                 os.makedirs(cache_dir, exist_ok=True)
                 local_path = os.path.join(cache_dir, f"{appid}.jpg")
@@ -57,7 +57,31 @@ def load_pixmap(cover, width, height):
         painter.drawText(pixmap.rect(), QtCore.Qt.AlignCenter, "No Image")
         painter.end()
 
-    return pixmap.scaled(width, height, QtCore.Qt.KeepAspectRatioByExpanding, QtCore.Qt.SmoothTransformation)
+    # Масштабирование с KeepAspectRatioByExpanding для заполнения контейнера
+    scaled = pixmap.scaled(width, height, QtCore.Qt.KeepAspectRatioByExpanding, QtCore.Qt.SmoothTransformation)
+    # Обрезаем центральную часть до точного размера (width x height)
+    x = (scaled.width() - width) // 2
+    y = (scaled.height() - height) // 2
+    cropped = scaled.copy(x, y, width, height)
+    return cropped
+
+def round_corners(pixmap, radius):
+    """
+    Возвращает QPixmap с закруглёнными всеми углами.
+    """
+    if pixmap.isNull():
+        return pixmap
+    size = pixmap.size()
+    rounded = QtGui.QPixmap(size)
+    rounded.fill(QtCore.Qt.transparent)
+    painter = QtGui.QPainter(rounded)
+    painter.setRenderHint(QtGui.QPainter.Antialiasing)
+    path = QtGui.QPainterPath()
+    path.addRoundedRect(0, 0, size.width(), size.height(), radius, radius)
+    painter.setClipPath(path)
+    painter.drawPixmap(0, 0, pixmap)
+    painter.end()
+    return rounded
 
 class AddGameDialog(QtWidgets.QDialog):
     def __init__(self, parent=None):
@@ -106,10 +130,16 @@ class GameCard(QtWidgets.QFrame):
 
         self.setFixedSize(250, 400)
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
+        # Улучшенный дизайн фрейма: градиентный фон, тонкая рамка и эффект при наведении
         self.setStyleSheet("""
             QFrame {
                 border-radius: 15px;
-                background-color: #000;
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #141414, stop:1 #2a2a2a);
+                border: 1px solid #444;
+            }
+            QFrame:hover {
+                border: 2px solid #00fff5;
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #1a1a1a, stop:1 #333333);
             }
             QFrame:focus {
                 border: 2px solid #00fff5;
@@ -127,10 +157,12 @@ class GameCard(QtWidgets.QFrame):
 
         coverLabel = QtWidgets.QLabel()
         coverLabel.setFixedSize(250, 300)
+        # Загружаем изображение, обрезаем и округляем все углы
         pixmap = load_pixmap(cover_path, 250, 300) if cover_path else load_pixmap("", 250, 300)
+        pixmap = round_corners(pixmap, 15)
         coverLabel.setPixmap(pixmap)
-        coverLabel.setScaledContents(True)
-        coverLabel.setStyleSheet("border-top-left-radius: 15px; border-top-right-radius: 15px;")
+        # Изображение уже подготовлено нужного размера
+        coverLabel.setStyleSheet("border-radius: 15px;")
         layout.addWidget(coverLabel)
 
         nameLabel = QtWidgets.QLabel(name)
@@ -261,12 +293,10 @@ class MainWindow(QtWidgets.QMainWindow):
         """)
 
     def load_steam_apps(self):
-        # Определяем путь к кэшу
         cache_dir = os.path.join(os.path.expanduser("~"), ".cache", "PortProtonQT")
         os.makedirs(cache_dir, exist_ok=True)
         cache_file = os.path.join(cache_dir, "steam_apps.json")
 
-        # Проверяем, существует ли кэш и актуален ли он (меньше 30 дней)
         cache_valid = False
         if os.path.exists(cache_file):
             if time.time() - os.path.getmtime(cache_file) < 30 * 24 * 60 * 60:
@@ -280,14 +310,12 @@ class MainWindow(QtWidgets.QMainWindow):
             except Exception as e:
                 print("Ошибка загрузки кэша:", e)
 
-        # Если кэш отсутствует, устарел или произошла ошибка, запрашиваем данные из API
         app_list_url = "http://api.steampowered.com/ISteamApps/GetAppList/v2/"
         try:
             response = self.requests_session.get(app_list_url)
             if response.status_code == 200:
                 data = response.json()
                 self.steam_apps = data.get("applist", {}).get("apps", [])
-                # Сохраняем полученные данные в кэш
                 try:
                     with open(cache_file, "w", encoding="utf-8") as f:
                         json.dump(self.steam_apps, f)
@@ -302,28 +330,17 @@ class MainWindow(QtWidgets.QMainWindow):
         return self.steam_apps
 
     def get_steam_game_info(self, desktop_name, exec_line):
-        """
-        Поиск Steam‑информации производится по трем вариантам:
-        1. Имя из desktop файла,
-        2. Имя папки (из пути к exe),
-        3. Имя исполняемого файла.
-        Если найден appid, то в качестве обложки используется ссылка вида:
-        https://steamcdn-a.akamaihd.net/steam/apps/<appid>/library_600x900_2x.jpg
-        """
         try:
-            # Разбор exec_line
             parts = shlex.split(exec_line)
             game_exe = parts[3] if len(parts) >= 4 else exec_line
             folder_name = os.path.basename(os.path.dirname(game_exe)) if os.path.dirname(game_exe) else ""
             exe_name = os.path.splitext(os.path.basename(game_exe))[0]
             candidates = [desktop_name, folder_name, exe_name]
 
-            # Получаем список приложений (с кэшированием)
             steam_apps = self.load_steam_apps()
             if not hasattr(self, 'steam_apps_index'):
                 self.steam_apps_index = {app["name"].lower(): app for app in steam_apps}
 
-            # Ищем совпадение по кандидатам
             matching_app = None
             for candidate in candidates:
                 candidate_lower = candidate.lower()
@@ -337,7 +354,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 if matching_app:
                     break
 
-            # Если ничего не найдено, возвращаем значение по умолчанию
             if not matching_app:
                 return {"appid": "", "name": exe_name.capitalize(), "description": "", "cover": ""}
 
@@ -346,7 +362,6 @@ class MainWindow(QtWidgets.QMainWindow):
             if not hasattr(self, 'steam_details_cache'):
                 self.steam_details_cache = {}
 
-            # Если данные уже есть в кэше, используем их
             if appid in self.steam_details_cache:
                 app_info = self.steam_details_cache[appid]
             else:
@@ -364,7 +379,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 if not app_info:
                     return {"appid": "", "name": exe_name.capitalize(), "description": "", "cover": ""}
 
-                # Если есть информация о fullgame, используем её
                 fullgame_appid = app_info.get("fullgame", {}).get("appid")
                 if fullgame_appid:
                     if fullgame_appid in self.steam_details_cache:
@@ -388,7 +402,6 @@ class MainWindow(QtWidgets.QMainWindow):
             return {"appid": "", "name": exe_name.capitalize(), "description": "", "cover": ""}
 
     def loadGames(self):
-
         games = []
         home = os.path.expanduser("~")
         config_path = os.path.join(home, ".config", "PortProton.conf")
@@ -401,7 +414,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 print(f"Ошибка чтения файла {file_path}: {e}")
                 return None
 
-        # Определяем местоположение PortProton
         portproton_location = None
         if os.path.exists(config_path):
             portproton_location = read_file_content(config_path)
@@ -448,7 +460,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 if steam_info is None:
                     continue
 
-            # Ищем кастомные файлы (обложка, название, описание)
             custom_cover = ""
             custom_name = None
             custom_desc = None
@@ -462,7 +473,6 @@ class MainWindow(QtWidgets.QMainWindow):
                     print(f"Ошибка доступа к папке {custom_folder}: {e}")
                     custom_files = set()
 
-                # Поиск кастомной обложки
                 for ext in [".jpg", ".png", ".jpeg", ".bmp"]:
                     candidate = "cover" + ext
                     candidate_path = os.path.join(custom_folder, candidate)
@@ -470,7 +480,6 @@ class MainWindow(QtWidgets.QMainWindow):
                         custom_cover = candidate_path
                         break
 
-                # Поиск кастомного названия и описания
                 name_file = os.path.join(custom_folder, "name.txt")
                 desc_file = os.path.join(custom_folder, "desc.txt")
                 if "name.txt" in custom_files:
@@ -478,7 +487,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 if "desc.txt" in custom_files:
                     custom_desc = read_file_content(desc_file)
 
-            # Определяем финальные значения для игры
             if steam_info.get("appid"):
                 name = desktop_name
                 desc = steam_info.get("description", "")
@@ -490,7 +498,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 cover = entry.get("Icon", "")
                 appid = ""
 
-            # Переопределяем, если найдены кастомные данные
             if custom_name:
                 name = custom_name
             if custom_desc:
@@ -698,6 +705,10 @@ class MainWindow(QtWidgets.QMainWindow):
     def openGameDetailPage(self, name, description, cover_path=None, appid="", exec_line=""):
         detailPage = QtWidgets.QWidget()
         if cover_path:
+            # Для детальной страницы округляем все углы (радиус 10)
+            pixmap = load_pixmap(cover_path, 300, 400)
+            pixmap = round_corners(pixmap, 10)
+            # Применяем цветовую палитру для фона
             palette = self.getColorPalette(cover_path, num_colors=5)
             dark_palette = [self.darkenColor(color, factor=200) for color in palette]
             stops = ",\n".join(
@@ -766,12 +777,12 @@ class MainWindow(QtWidgets.QMainWindow):
         coverLayout.setContentsMargins(0, 0, 0, 0)
         imageLabel = QtWidgets.QLabel()
         imageLabel.setFixedSize(300, 400)
-        pixmap = load_pixmap(cover_path, 300, 400) if cover_path else load_pixmap("", 300, 400)
-        imageLabel.setPixmap(pixmap)
-        imageLabel.setScaledContents(True)
+        pixmap_detail = load_pixmap(cover_path, 300, 400) if cover_path else load_pixmap("", 300, 400)
+        pixmap_detail = round_corners(pixmap_detail, 10)
+        imageLabel.setPixmap(pixmap_detail)
         coverLayout.addWidget(imageLabel)
         contentFrameLayout.addWidget(coverFrame)
-        detailPage._coverPixmap = pixmap
+        detailPage._coverPixmap = pixmap_detail
 
         detailsWidget = QtWidgets.QWidget()
         detailsWidget.setStyleSheet("background: rgba(255,255,255,0.05); border-radius: 10px;")
