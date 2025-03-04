@@ -8,6 +8,7 @@ import subprocess
 from io import BytesIO
 import json
 import time
+import signal
 from PySide6 import QtWidgets, QtCore, QtGui
 
 def load_pixmap(cover, width, height):
@@ -199,6 +200,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.requests_session = requests.Session()
         self.steam_apps = None
         self.games = self.loadGames()
+        self.game_processes = []
 
         centralWidget = QtWidgets.QWidget()
         self.setCentralWidget(centralWidget)
@@ -330,6 +332,14 @@ class MainWindow(QtWidgets.QMainWindow):
         return self.steam_apps
 
     def get_steam_game_info(self, desktop_name, exec_line):
+        """
+        Поиск Steam‑информации производится по трем вариантам:
+        1. Имя из desktop файла,
+        2. Имя папки (из пути к exe),
+        3. Имя исполняемого файла.
+        Если найден appid, то в качестве обложки используется ссылка вида:
+        https://steamcdn-a.akamaihd.net/steam/apps/<appid>/library_600x900_2x.jpg
+        """
         try:
             parts = shlex.split(exec_line)
             game_exe = parts[3] if len(parts) >= 4 else exec_line
@@ -850,20 +860,66 @@ class MainWindow(QtWidgets.QMainWindow):
         self.stackedWidget.removeWidget(page)
         page.deleteLater()
 
+
     def launchGame(self, exec_line):
+        # Проверяем, что команда не пуста
         if not exec_line:
-            QtWidgets.QMessageBox.warning(self, "Ошибка", "Команда запуска не указана!")
+            QtWidgets.QMessageBox.warning(self, "Ошибка", "Команда не задана")
             return
+
         try:
             entry_exec_split = shlex.split(exec_line)
-            if len(entry_exec_split) > 1 and ('data/scripts/start.sh' in entry_exec_split[1]):
-                exec_line = f"env START_FROM_STEAM=1 {exec_line[4:]}"
-            elif len(entry_exec_split) > 0 and ('flatpak' in entry_exec_split[0]):
-                exec_line = f"flatpak run --env=START_FROM_STEAM=1 {exec_line[12:]}"
-            subprocess.Popen(exec_line, shell=True)
+
+            # Определяем путь к исполняемому файлу для проверки
+            # Если команда начинается с "env", то предполагается, что:
+            # аргумент 0: "env"
+            # аргумент 1: путь к скрипту (start.sh)
+            # аргумент 2: путь к исполняемому файлу (exe)
+            if entry_exec_split[0] == "env":
+                if len(entry_exec_split) < 3:
+                    QtWidgets.QMessageBox.warning(self, "Ошибка", "Неверный формат команды (native)")
+                    return
+                file_to_check = entry_exec_split[2]
+            # Если команда начинается с "flatpak", то:
+            # аргумент 0: "flatpak"
+            # аргумент 1: "run"
+            # аргумент 2: идентификатор приложения
+            # аргумент 3: путь к исполняемому файлу
+            elif entry_exec_split[0] == "flatpak":
+                if len(entry_exec_split) < 4:
+                    QtWidgets.QMessageBox.warning(self, "Ошибка", "Неверный формат команды (flatpak)")
+                    return
+                file_to_check = entry_exec_split[3]
+            else:
+                file_to_check = entry_exec_split[0]
+
+            if not os.path.exists(file_to_check):
+                QtWidgets.QMessageBox.warning(self, "Ошибка", f"Указанный файл не найден: {file_to_check}")
+                return
+
+            env_vars = os.environ.copy()
+
+            if entry_exec_split[0] == "env" and len(entry_exec_split) > 1 and 'data/scripts/start.sh' in entry_exec_split[1]:
+                env_vars['START_FROM_STEAM'] = '1'
+            elif entry_exec_split[0] == "flatpak":
+                env_vars['START_FROM_STEAM'] = '1'
+
+            process = subprocess.Popen(
+                entry_exec_split,
+                env=env_vars,
+            )
+            self.game_processes.append(process)
         except Exception as e:
             print("Ошибка запуска игры:", e)
-            QtWidgets.QMessageBox.critical(self, "Ошибка", f"Не удалось запустить игру: {e}")
+
+    def closeEvent(self, event):
+        # Завершаем все запущенные процессы при закрытии приложения
+        for proc in self.game_processes:
+            try:
+                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+            except Exception as e:
+                print("Ошибка при завершении процесса:", e)
+        event.accept()
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
