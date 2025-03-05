@@ -1,2 +1,5 @@
 __pycache__
 venv
+portprotonqt/__pycache__
+PortProtonQt.egg-info
+build
