@@ -561,6 +561,11 @@ class MainWindow(QtWidgets.QMainWindow):
             self.virtualKeyboard.show()
 
     def load_steam_apps(self):
+        """
+        Загружает список приложений Steam. При наличии валидного кэша (30 дней) загружает из файла,
+        иначе выполняется запрос к API Steam и сохраняется кэш.
+        """
+
         xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
         cache_dir = os.path.join(xdg_cache_home, "PortProtonQT")
         os.makedirs(cache_dir, exist_ok=True)
@@ -609,6 +614,12 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.steam_apps_index[name.lower()] = app
 
     def search_app(self, candidate):
+        """
+        Производит поиск по имени:
+         - Сначала ищется точное совпадение (приведенное к нижнему регистру).
+         - Если точного совпадения нет, проверяется, является ли кандидат подстрокой в имени приложения.
+        """
+
         candidate_lower = candidate.lower()
         if candidate_lower in self.steam_apps_index:
             return self.steam_apps_index[candidate_lower]
@@ -634,6 +645,15 @@ class MainWindow(QtWidgets.QMainWindow):
             return None
 
     def get_steam_game_info(self, desktop_name, exec_line):
+        """
+        Поиск Steam‑информации производится по трем вариантам:
+        1. Имя из desktop файла,
+        2. Имя папки (из пути к exe),
+        3. Имя исполняемого файла.
+        Если найден appid, то в качестве обложки используется ссылка вида:
+        https://steamcdn-a.akamaihd.net/steam/apps/<appid>/library_600x900_2x.jpg
+        """
+
         try:
             parts = shlex.split(exec_line)
             game_exe = parts[3] if len(parts) >= 4 else exec_line
@@ -1171,11 +1191,23 @@ class MainWindow(QtWidgets.QMainWindow):
 
         try:
             entry_exec_split = shlex.split(exec_line)
+
+            # Определяем путь к исполняемому файлу для проверки
+            # Если команда начинается с "env", то предполагается, что:
+            # аргумент 0: "env"
+            # аргумент 1: путь к скрипту (start.sh)
+            # аргумент 2: путь к исполняемому файлу (exe)
             if entry_exec_split[0] == "env":
                 if len(entry_exec_split) < 3:
                     QtWidgets.QMessageBox.warning(self, "Ошибка", "Неверный формат команды (native)")
                     return
                 file_to_check = entry_exec_split[2]
+
+            # Если команда начинается с "flatpak", то:
+            # аргумент 0: "flatpak"
+            # аргумент 1: "run"
+            # аргумент 2: идентификатор приложения
+            # аргумент 3: путь к исполняемому файлу
             elif entry_exec_split[0] == "flatpak":
                 if len(entry_exec_split) < 4:
                     QtWidgets.QMessageBox.warning(self, "Ошибка", "Неверный формат команды (flatpak)")
