@@ -1,4 +1,3 @@
-# main_window.py
 import sys
 import os
 import time
@@ -16,12 +15,14 @@ from portprotonqt.dialogs import AddGameDialog
 from portprotonqt.game_card import GameCard
 from portprotonqt.image_utils import load_pixmap, round_corners
 from portprotonqt.steam_api import get_steam_game_info
+from portprotonqt.gamepad_support import GamepadSupport
 
 import portprotonqt.styles as styles
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
+        self.gamepad_support = GamepadSupport(self)
 
         self.setWindowTitle("PortProton Cyberpunk")
         self.resize(1280, 720)
@@ -489,6 +490,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.stackedWidget.addWidget(detailPage)
         self.stackedWidget.setCurrentWidget(detailPage)
+        self.currentDetailPage = detailPage
 
         opacityEffect = QtWidgets.QGraphicsOpacityEffect(detailPage)
         detailPage.setGraphicsEffect(opacityEffect)
@@ -504,6 +506,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.stackedWidget.setCurrentIndex(0)
         self.stackedWidget.removeWidget(page)
         page.deleteLater()
+        if hasattr(self, "currentDetailPage"):
+            del self.currentDetailPage
 
     def launchGame(self, exec_line):
         if not exec_line:

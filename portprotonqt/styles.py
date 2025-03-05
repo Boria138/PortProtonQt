@@ -1,3 +1,52 @@
+import os
+from PySide6.QtGui import QFontDatabase
+
+def load_custom_fonts():
+    # Путь к папке со шрифтами
+    fonts_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fonts")
+    if not os.path.exists(fonts_path):
+        print("Папка fonts не найдена!")
+        return
+    # Загрузка RASKHAL для логотипа
+    raskhal_path = os.path.join(fonts_path, "RASKHAL-Regular.ttf")
+    if os.path.exists(raskhal_path):
+        font_id = QFontDatabase.addApplicationFont(raskhal_path)
+        if font_id != -1:
+            families = QFontDatabase.applicationFontFamilies(font_id)
+            if families:
+                print("RASKHAL успешно загружен:", families[0])
+        else:
+            print("Ошибка загрузки RASKHAL")
+    else:
+        print("Файл RASKHAL-Regular.ttf не найден в папке fonts")
+
+    # Загрузка Orbitron
+    orbitron_path = os.path.join(fonts_path, "Orbitron-Regular.ttf")
+    if os.path.exists(orbitron_path):
+        font_id = QFontDatabase.addApplicationFont(orbitron_path)
+        if font_id != -1:
+            families = QFontDatabase.applicationFontFamilies(font_id)
+            if families:
+                print("Orbitron успешно загружен:", families[0])
+        else:
+            print("Ошибка загрузки Orbitron")
+    else:
+        print("Файл Orbitron-Regular.ttf не найден в папке fonts")
+
+    # Загрузка Poppins
+    poppins_path = os.path.join(fonts_path, "Poppins-Regular.ttf")
+    if os.path.exists(poppins_path):
+        font_id = QFontDatabase.addApplicationFont(poppins_path)
+        if font_id != -1:
+            families = QFontDatabase.applicationFontFamilies(font_id)
+            if families:
+                print("Poppins успешно загружен:", families[0])
+        else:
+            print("Ошибка загрузки Poppins")
+    else:
+        print("Файл Poppins-Regular.ttf не найден в папке fonts")
+
+
 MAIN_WINDOW_HEADER_STYLE = """
     QFrame {
         background: rgba(0, 0, 0, 0.6);
@@ -6,7 +55,7 @@ MAIN_WINDOW_HEADER_STYLE = """
 """
 
 TITLE_LABEL_STYLE = """
-    font-family: 'Orbitron';
+    font-family: 'RASKHAL';
     font-size: 32px;
     color: #00fff5;
     text-shadow: 0 0 5px #00fff5, 0 0 7px #9B59B6;

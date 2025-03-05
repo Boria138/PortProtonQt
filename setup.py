@@ -23,4 +23,7 @@ setup(
         'Operating System :: Linux',
     ],
     python_requires='>=3.6',
+    package_data={
+        'portprotonqt': ['fonts/**/*'],
+    },
 )
