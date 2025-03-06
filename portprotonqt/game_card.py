@@ -1,9 +1,9 @@
 from PySide6 import QtWidgets, QtCore, QtGui
 from portprotonqt.image_utils import load_pixmap, round_corners
-import portprotonqt.styles as styles
+import portprotonqt.styles as default_styles
 
 class GameCard(QtWidgets.QFrame):
-    def __init__(self, name, description, cover_path, appid, exec_line, select_callback, parent=None):
+    def __init__(self, name, description, cover_path, appid, exec_line, select_callback, theme=None, parent=None):
         super().__init__(parent)
         self.name = name
         self.description = description
@@ -12,10 +12,13 @@ class GameCard(QtWidgets.QFrame):
         self.exec_line = exec_line
         self.select_callback = select_callback
 
+        # Используем переданную тему или стандартную
+        self.theme = theme if theme is not None else default_styles
+
         self.setFixedSize(250, 400)
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
-        
-        self.setStyleSheet(styles.GAME_CARD_WINDOW_STYLE)
+
+        self.setStyleSheet(self.theme.GAME_CARD_WINDOW_STYLE)
 
         # Анимация обводки
         self._borderWidth = 1
@@ -24,7 +27,7 @@ class GameCard(QtWidgets.QFrame):
 
         self.thickness_anim = QtCore.QPropertyAnimation(self, b"borderWidth")
         self.thickness_anim.setDuration(300)
-        
+
         shadow = QtWidgets.QGraphicsDropShadowEffect(self)
         shadow.setBlurRadius(20)
         shadow.setColor(QtGui.QColor(0, 0, 0, 150))
@@ -40,12 +43,12 @@ class GameCard(QtWidgets.QFrame):
         pixmap = load_pixmap(cover_path, 250, 300) if cover_path else load_pixmap("", 250, 300)
         pixmap = round_corners(pixmap, 15)
         coverLabel.setPixmap(pixmap)
-        coverLabel.setStyleSheet(styles.COVER_LABEL_STYLE)
+        coverLabel.setStyleSheet(self.theme.COVER_LABEL_STYLE)
         layout.addWidget(coverLabel)
 
         nameLabel = QtWidgets.QLabel(name)
         nameLabel.setAlignment(QtCore.Qt.AlignCenter)
-        nameLabel.setStyleSheet(styles.GAME_CARD_NAME_LABEL_STYLE)
+        nameLabel.setStyleSheet(self.theme.GAME_CARD_NAME_LABEL_STYLE)
         layout.addWidget(nameLabel)
 
     def getBorderWidth(self):

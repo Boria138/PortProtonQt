@@ -8,8 +8,11 @@ import subprocess
 import requests
 import orjson
 import concurrent.futures
+
 from PySide6 import QtWidgets, QtCore, QtGui
 
+# Импорт стандартных стилей и менеджера тем
+import portprotonqt.styles as default_styles
 from portprotonqt.virtual_keyboard import VirtualKeyboard
 from portprotonqt.dialogs import AddGameDialog
 from portprotonqt.game_card import GameCard
@@ -17,13 +20,46 @@ from portprotonqt.image_utils import load_pixmap, round_corners
 from portprotonqt.steam_api import get_steam_game_info
 from portprotonqt.gamepad_support import GamepadSupport
 
-import portprotonqt.styles as styles
+from portprotonqt.theme_manager import ThemeManager
+
+CONFIG_FILE = os.path.join(os.getenv("XDG_CONFIG_HOME", os.path.join(os.path.expanduser("~"), ".config")),
+                           "PortProtonQT.conf")
+
+def read_theme_from_config():
+    config = configparser.ConfigParser()
+    if os.path.exists(CONFIG_FILE):
+        try:
+            config.read(CONFIG_FILE, encoding="utf-8")
+            return config.get("Appearance", "theme", fallback="стандартная")
+        except Exception as e:
+            print("Ошибка чтения конфигурации темы:", e)
+    return "стандартная"
+
+def save_theme_to_config(theme_name):
+    config = configparser.ConfigParser()
+    if os.path.exists(CONFIG_FILE):
+        config.read(CONFIG_FILE, encoding="utf-8")
+    if "Appearance" not in config:
+        config["Appearance"] = {}
+    config["Appearance"]["theme"] = theme_name
+    try:
+        with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
+            config.write(configfile)
+    except Exception as e:
+        print("Ошибка сохранения конфигурации темы:", e)
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
-        self.gamepad_support = GamepadSupport(self)
+        # Создаём менеджер тем
+        self.theme_manager = ThemeManager()
+        # Читаем выбранную тему из конфигурации и применяем её
+        selected_theme = read_theme_from_config()
+        self.theme = self.theme_manager.apply_theme(selected_theme)
+        if not self.theme:
+            self.theme = default_styles  # запасной вариант
 
+        self.gamepad_support = GamepadSupport(self)
         self.setWindowTitle("PortProton Cyberpunk")
         self.resize(1280, 720)
         self.setMinimumSize(800, 600)
@@ -38,25 +74,26 @@ class MainWindow(QtWidgets.QMainWindow):
         mainLayout.setSpacing(0)
         mainLayout.setContentsMargins(0, 0, 0, 0)
 
-        header = QtWidgets.QFrame()
-        header.setFixedHeight(80)
-        header.setStyleSheet(styles.MAIN_WINDOW_HEADER_STYLE)
-        headerLayout = QtWidgets.QHBoxLayout(header)
+        # Заголовок
+        self.header = QtWidgets.QFrame()
+        self.header.setFixedHeight(80)
+        self.header.setStyleSheet(self.theme.MAIN_WINDOW_HEADER_STYLE)
+        headerLayout = QtWidgets.QHBoxLayout(self.header)
         headerLayout.setContentsMargins(20, 0, 20, 0)
-        titleLabel = QtWidgets.QLabel("PortProton")
-        titleLabel.setStyleSheet(styles.TITLE_LABEL_STYLE)
-        headerLayout.addWidget(titleLabel)
+        self.titleLabel = QtWidgets.QLabel("PortProton")
+        self.titleLabel.setStyleSheet(self.theme.TITLE_LABEL_STYLE)
+        headerLayout.addWidget(self.titleLabel)
         headerLayout.addStretch()
+        self.keyboardButton = QtWidgets.QPushButton("Клавиатура")
+        self.keyboardButton.setStyleSheet(self.theme.VIRTUAL_KEYBOARD_KEYS_STYLE)
+        self.keyboardButton.clicked.connect(self.toggleKeyboard)
+        headerLayout.addWidget(self.keyboardButton)
+        mainLayout.addWidget(self.header)
 
-        keyboardButton = QtWidgets.QPushButton("Клавиатура")
-        keyboardButton.setStyleSheet(styles.VIRTUAL_KEYBOARD_KEYS_STYLE)
-        keyboardButton.clicked.connect(self.toggleKeyboard)
-        headerLayout.addWidget(keyboardButton)
-        mainLayout.addWidget(header)
-
-        navWidget = QtWidgets.QWidget()
-        navWidget.setStyleSheet(styles.NAV_WIDGET_STYLE)
-        navLayout = QtWidgets.QHBoxLayout(navWidget)
+        # Навигация
+        self.navWidget = QtWidgets.QWidget()
+        self.navWidget.setStyleSheet(self.theme.NAV_WIDGET_STYLE)
+        navLayout = QtWidgets.QHBoxLayout(self.navWidget)
         navLayout.setContentsMargins(10, 0, 10, 0)
         navLayout.setSpacing(5)
         self.tabButtons = {}
@@ -65,32 +102,48 @@ class MainWindow(QtWidgets.QMainWindow):
             "Автоустановка",
             "Эмуляторы",
             "Настройки wine",
-            "Настройки PortProton"
+            "Настройки PortProton",
+            "Темы"  # вкладка управления темами
         ]
         for i, tabName in enumerate(tabs):
             btn = QtWidgets.QPushButton(tabName)
             btn.setCheckable(True)
             btn.clicked.connect(lambda checked, index=i: self.switchTab(index))
-            btn.setStyleSheet(styles.NAV_BUTTON_STYLE)
+            btn.setStyleSheet(self.theme.NAV_BUTTON_STYLE)
             navLayout.addWidget(btn)
             self.tabButtons[i] = btn
 
         self.tabButtons[0].setChecked(True)
-        mainLayout.addWidget(navWidget)
+        mainLayout.addWidget(self.navWidget)
 
+        # Стек виджетов (вкладок)
         self.stackedWidget = QtWidgets.QStackedWidget()
         mainLayout.addWidget(self.stackedWidget)
 
-        self.createInstalledTab()    # Вкладка 0
-        self.createAutoInstallTab()  # Вкладка 1
-        self.createEmulatorsTab()    # Вкладка 2
-        self.createWineTab()         # Вкладка 3
-        self.createPortProtonTab()   # Вкладка 4
+        # Создаём вкладки
+        self.createInstalledTab()    # вкладка 0
+        self.createAutoInstallTab()  # вкладка 1
+        self.createEmulatorsTab()    # вкладка 2
+        self.createWineTab()         # вкладка 3
+        self.createPortProtonTab()   # вкладка 4
+        self.createThemeTab()        # вкладка 5
 
-        self.setStyleSheet(styles.MAIN_WINDOW_STYLE)
+        self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE)
 
         self.virtualKeyboard = VirtualKeyboard(self, target_widget=self.searchEdit)
         self.virtualKeyboard.hide()
+
+    def updateUIStyles(self):
+        """Обновляет стили основных виджетов согласно self.theme."""
+        self.header.setStyleSheet(self.theme.MAIN_WINDOW_HEADER_STYLE)
+        self.titleLabel.setStyleSheet(self.theme.TITLE_LABEL_STYLE)
+        self.keyboardButton.setStyleSheet(self.theme.VIRTUAL_KEYBOARD_KEYS_STYLE)
+        self.navWidget.setStyleSheet(self.theme.NAV_WIDGET_STYLE)
+        for btn in self.tabButtons.values():
+            btn.setStyleSheet(self.theme.NAV_BUTTON_STYLE)
+        self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE)
+        if hasattr(self, 'searchEdit'):
+            self.searchEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE)
 
     def toggleKeyboard(self):
         if self.virtualKeyboard.isVisible():
@@ -243,7 +296,7 @@ class MainWindow(QtWidgets.QMainWindow):
         searchEdit = QtWidgets.QLineEdit()
         searchEdit.setPlaceholderText("Поиск игр...")
         searchEdit.setClearButtonEnabled(True)
-        searchEdit.setStyleSheet(styles.SEARCH_EDIT_STYLE)
+        searchEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE)
         layout.addWidget(searchIconLabel)
         layout.addWidget(searchEdit)
         layout.setStretch(1, 1)
@@ -264,11 +317,11 @@ class MainWindow(QtWidgets.QMainWindow):
         layout.setSpacing(15)
 
         title = QtWidgets.QLabel("Библиотека игр")
-        title.setStyleSheet(styles.INSTALLED_TAB_TITLE_STYLE)
+        title.setStyleSheet(self.theme.INSTALLED_TAB_TITLE_STYLE)
         layout.addWidget(title)
 
         addGameButton = QtWidgets.QPushButton("Добавить игру")
-        addGameButton.setStyleSheet(styles.ADD_GAME_BUTTON_STYLE)
+        addGameButton.setStyleSheet(self.theme.ADD_GAME_BUTTON_STYLE)
         addGameButton.clicked.connect(self.openAddGameDialog)
         layout.addWidget(addGameButton, alignment=QtCore.Qt.AlignLeft)
 
@@ -298,7 +351,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.clearLayout(self.gamesListLayout)
         columns = 4
         for idx, (name, desc, cover, appid, exec_line) in enumerate(games_list):
-            card = GameCard(name, desc, cover, appid, exec_line, self.openGameDetailPage)
+            # Передаём текущую тему в GameCard
+            card = GameCard(name, desc, cover, appid, exec_line, self.openGameDetailPage, theme=self.theme)
             row = idx // columns
             col = idx % columns
             self.gamesListLayout.addWidget(card, row, col)
@@ -323,10 +377,10 @@ class MainWindow(QtWidgets.QMainWindow):
         layout = QtWidgets.QVBoxLayout(widget)
         layout.setContentsMargins(20, 20, 20, 20)
         title = QtWidgets.QLabel("Автоустановка")
-        title.setStyleSheet(styles.TAB_TITLE_STYLE)
+        title.setStyleSheet(self.theme.TAB_TITLE_STYLE)
         layout.addWidget(title)
         content = QtWidgets.QLabel("Здесь можно настроить автоматическую установку игр...")
-        content.setStyleSheet(styles.CONTENT_STYLE)
+        content.setStyleSheet(self.theme.CONTENT_STYLE)
         layout.addWidget(content)
         layout.addStretch(1)
         self.stackedWidget.addWidget(widget)
@@ -336,10 +390,10 @@ class MainWindow(QtWidgets.QMainWindow):
         layout = QtWidgets.QVBoxLayout(widget)
         layout.setContentsMargins(20, 20, 20, 20)
         title = QtWidgets.QLabel("Эмуляторы")
-        title.setStyleSheet(styles.TAB_TITLE_STYLE)
+        title.setStyleSheet(self.theme.TAB_TITLE_STYLE)
         layout.addWidget(title)
         content = QtWidgets.QLabel("Список доступных эмуляторов и их настройка...")
-        content.setStyleSheet(styles.CONTENT_STYLE)
+        content.setStyleSheet(self.theme.CONTENT_STYLE)
         layout.addWidget(content)
         layout.addStretch(1)
         self.stackedWidget.addWidget(widget)
@@ -349,10 +403,10 @@ class MainWindow(QtWidgets.QMainWindow):
         layout = QtWidgets.QVBoxLayout(widget)
         layout.setContentsMargins(20, 20, 20, 20)
         title = QtWidgets.QLabel("Настройки wine")
-        title.setStyleSheet(styles.TAB_TITLE_STYLE)
+        title.setStyleSheet(self.theme.TAB_TITLE_STYLE)
         layout.addWidget(title)
         content = QtWidgets.QLabel("Различные параметры и версии wine...")
-        content.setStyleSheet(styles.CONTENT_STYLE)
+        content.setStyleSheet(self.theme.CONTENT_STYLE)
         layout.addWidget(content)
         layout.addStretch(1)
         self.stackedWidget.addWidget(widget)
@@ -362,11 +416,63 @@ class MainWindow(QtWidgets.QMainWindow):
         layout = QtWidgets.QVBoxLayout(widget)
         layout.setContentsMargins(20, 20, 20, 20)
         title = QtWidgets.QLabel("Настройки PortProton")
-        title.setStyleSheet(styles.TAB_TITLE_STYLE)
+        title.setStyleSheet(self.theme.TAB_TITLE_STYLE)
         layout.addWidget(title)
         content = QtWidgets.QLabel("Основные параметры PortProton...")
-        content.setStyleSheet(styles.CONTENT_STYLE)
+        content.setStyleSheet(self.theme.CONTENT_STYLE)
         layout.addWidget(content)
+        layout.addStretch(1)
+        self.stackedWidget.addWidget(widget)
+
+    def createThemeTab(self):
+        """
+        Создаёт вкладку для управления темами.
+        """
+        widget = QtWidgets.QWidget()
+        layout = QtWidgets.QVBoxLayout(widget)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(15)
+
+        title = QtWidgets.QLabel("Управление темами")
+        title.setStyleSheet(self.theme.TAB_TITLE_STYLE)
+        layout.addWidget(title)
+
+        # Выпадающий список для выбора темы
+        themesCombo = QtWidgets.QComboBox()
+        available_themes = self.theme_manager.get_available_themes()
+        themesCombo.addItems(available_themes)
+        layout.addWidget(themesCombo)
+
+        # Кнопка для применения выбранной темы
+        applyButton = QtWidgets.QPushButton("Применить тему")
+        applyButton.setStyleSheet(self.theme.ADD_GAME_BUTTON_STYLE)
+        layout.addWidget(applyButton)
+
+        # Информационное сообщение для пользователя
+        self.themeStatusLabel = QtWidgets.QLabel("")
+        layout.addWidget(self.themeStatusLabel)
+
+        # Обработчик нажатия кнопки
+        def on_apply():
+            selected_theme = themesCombo.currentText()
+            if selected_theme:
+                theme_module = self.theme_manager.apply_theme(selected_theme)
+                if theme_module:
+                    self.theme = theme_module
+                    # Применяем глобальные стили главного окна
+                    self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE)
+                    self.themeStatusLabel.setText(f"Тема '{selected_theme}' успешно применена")
+                    # Обновляем стили для уже созданных виджетов
+                    self.updateUIStyles()
+                    self.populateGamesGrid(self.games)
+                    # Сохраняем выбранную тему в конфигурации
+                    save_theme_to_config(selected_theme)
+                else:
+                    self.themeStatusLabel.setText(f"Ошибка при применении темы '{selected_theme}'")
+            else:
+                self.themeStatusLabel.setText("Нет доступных тем для применения")
+        applyButton.clicked.connect(on_apply)
+
         layout.addStretch(1)
         self.stackedWidget.addWidget(widget)
 
@@ -413,9 +519,9 @@ class MainWindow(QtWidgets.QMainWindow):
             stops = ",\n".join(
                 [f"stop:{i/(len(dark_palette)-1):.2f} {dark_palette[i].name()}" for i in range(len(dark_palette))]
             )
-            detailPage.setStyleSheet(styles.detail_page_style(stops))
+            detailPage.setStyleSheet(self.theme.detail_page_style(stops))
         else:
-            detailPage.setStyleSheet(styles.DETAIL_PAGE_NO_COVER_STYLE)
+            detailPage.setStyleSheet(self.theme.DETAIL_PAGE_NO_COVER_STYLE)
 
         mainLayout = QtWidgets.QVBoxLayout(detailPage)
         mainLayout.setContentsMargins(30, 30, 30, 30)
@@ -423,12 +529,12 @@ class MainWindow(QtWidgets.QMainWindow):
 
         backButton = QtWidgets.QPushButton("Назад")
         backButton.setFixedWidth(100)
-        backButton.setStyleSheet(styles.BACK_BUTTON_STYLE)
+        backButton.setStyleSheet(self.theme.BACK_BUTTON_STYLE)
         backButton.clicked.connect(lambda: self.goBackDetailPage(detailPage))
         mainLayout.addWidget(backButton, alignment=QtCore.Qt.AlignLeft)
 
         contentFrame = QtWidgets.QFrame()
-        contentFrame.setStyleSheet(styles.DETAIL_CONTENT_FRAME_STYLE)
+        contentFrame.setStyleSheet(self.theme.DETAIL_CONTENT_FRAME_STYLE)
         contentFrameLayout = QtWidgets.QHBoxLayout(contentFrame)
         contentFrameLayout.setContentsMargins(20, 20, 20, 20)
         contentFrameLayout.setSpacing(40)
@@ -436,7 +542,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         coverFrame = QtWidgets.QFrame()
         coverFrame.setFixedSize(300, 400)
-        coverFrame.setStyleSheet(styles.COVER_FRAME_STYLE)
+        coverFrame.setStyleSheet(self.theme.COVER_FRAME_STYLE)
         shadow = QtWidgets.QGraphicsDropShadowEffect(coverFrame)
         shadow.setBlurRadius(20)
         shadow.setColor(QtGui.QColor(0, 0, 0, 200))
@@ -454,34 +560,34 @@ class MainWindow(QtWidgets.QMainWindow):
         detailPage._coverPixmap = pixmap_detail
 
         detailsWidget = QtWidgets.QWidget()
-        detailsWidget.setStyleSheet(styles.DETAILS_WIDGET_STYLE)
+        detailsWidget.setStyleSheet(self.theme.DETAILS_WIDGET_STYLE)
         detailsLayout = QtWidgets.QVBoxLayout(detailsWidget)
         detailsLayout.setContentsMargins(20, 20, 20, 20)
         detailsLayout.setSpacing(15)
 
         titleLabel = QtWidgets.QLabel(name)
-        titleLabel.setStyleSheet(styles.DETAIL_PAGE_TITLE_STYLE)
+        titleLabel.setStyleSheet(self.theme.DETAIL_PAGE_TITLE_STYLE)
         detailsLayout.addWidget(titleLabel)
 
         line = QtWidgets.QFrame()
         line.setFrameShape(QtWidgets.QFrame.HLine)
-        line.setStyleSheet(styles.DETAIL_PAGE_LINE_STYLE)
+        line.setStyleSheet(self.theme.DETAIL_PAGE_LINE_STYLE)
         detailsLayout.addWidget(line)
 
         descLabel = QtWidgets.QLabel(description)
         descLabel.setWordWrap(True)
-        descLabel.setStyleSheet(styles.DETAIL_PAGE_DESC_STYLE)
+        descLabel.setStyleSheet(self.theme.DETAIL_PAGE_DESC_STYLE)
         detailsLayout.addWidget(descLabel)
 
         if appid:
             appidLabel = QtWidgets.QLabel(f"Steam AppID: {appid}")
-            appidLabel.setStyleSheet(styles.STEAM_APPID_LABEL_STYLE)
+            appidLabel.setStyleSheet(self.theme.STEAM_APPID_LABEL_STYLE)
             detailsLayout.addWidget(appidLabel)
 
         detailsLayout.addStretch(1)
         playButton = QtWidgets.QPushButton("Играть")
         playButton.setFixedSize(120, 40)
-        playButton.setStyleSheet(styles.PLAY_BUTTON_STYLE)
+        playButton.setStyleSheet(self.theme.PLAY_BUTTON_STYLE)
         playButton.clicked.connect(lambda: self.launchGame(exec_line))
         detailsLayout.addWidget(playButton, alignment=QtCore.Qt.AlignLeft)
         contentFrameLayout.addWidget(detailsWidget)
