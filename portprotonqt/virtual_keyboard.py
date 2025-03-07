@@ -1,5 +1,5 @@
 from PySide6 import QtWidgets, QtCore
-import portprotonqt.styles as default_styles
+import portprotonqt.themes.standart_lite.styles as default_styles
 
 class VirtualKeyboard(QtWidgets.QWidget):
     def __init__(self, parent=None, target_widget=None, theme=None):

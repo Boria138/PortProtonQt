@@ -8,8 +8,7 @@ import concurrent.futures
 
 from PySide6 import QtWidgets, QtCore, QtGui
 
-# Импорт стандартных стилей и менеджера тем
-import portprotonqt.styles as default_styles
+import portprotonqt.themes.standart_lite.styles as default_styles
 from portprotonqt.virtual_keyboard import VirtualKeyboard
 from portprotonqt.dialogs import AddGameDialog
 from portprotonqt.game_card import GameCard
@@ -27,10 +26,10 @@ def read_theme_from_config():
     if os.path.exists(CONFIG_FILE):
         try:
             config.read(CONFIG_FILE, encoding="utf-8")
-            return config.get("Appearance", "theme", fallback="стандартная")
+            return config.get("Appearance", "theme", fallback="standart_lite")
         except Exception as e:
             print("Ошибка чтения конфигурации темы:", e)
-    return "стандартная"
+    return "standart_lite"
 
 def save_theme_to_config(theme_name):
     config = configparser.ConfigParser()
@@ -58,7 +57,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.theme = default_styles  # запасной вариант
 
         self.gamepad_support = GamepadSupport(self)
-        self.setWindowTitle("PortProton Cyberpunk")
+        self.setWindowTitle("PortProtonQT")
         self.resize(1280, 720)
         self.setMinimumSize(800, 600)
 

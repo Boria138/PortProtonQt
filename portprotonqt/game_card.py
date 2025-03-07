@@ -1,6 +1,6 @@
 from PySide6 import QtWidgets, QtCore, QtGui
 from portprotonqt.image_utils import load_pixmap, round_corners
-import portprotonqt.styles as default_styles
+import portprotonqt.themes.standart_lite.styles as default_styles
 
 class GameCard(QtWidgets.QFrame):
     def __init__(self, name, description, cover_path, appid, exec_line, select_callback, theme=None, parent=None):

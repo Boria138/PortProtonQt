@@ -4,21 +4,23 @@ from PySide6.QtGui import QFontDatabase
 
 # Папка, где располагаются все дополнительные темы
 xdg_data_home = os.getenv("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share"))
-THEMES_DIR = os.path.join(xdg_data_home, "PortProtonQT", "themes")
+THEMES_DIRS = [
+    os.path.join(xdg_data_home, "PortProtonQT", "themes"),
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "themes")
+]
 
 
 def list_themes():
     """
-    Возвращает список доступных тем (названий папок) из каталога THEMES_DIR.
-    Добавляет стандартную тему под именем "стандартная".
+    Возвращает список доступных тем (названий папок) из каталогов THEMES_DIRS.
     """
-    themes = ["стандартная"]
-    if os.path.exists(THEMES_DIR):
-        # Добавляем все папки, которые содержат файл styles.py
-        for entry in os.listdir(THEMES_DIR):
-            theme_path = os.path.join(THEMES_DIR, entry)
-            if os.path.isdir(theme_path) and os.path.exists(os.path.join(theme_path, "styles.py")):
-                themes.append(entry)
+    themes = []
+    for themes_dir in THEMES_DIRS:
+        if os.path.exists(themes_dir):
+            for entry in os.listdir(themes_dir):
+                theme_path = os.path.join(themes_dir, entry)
+                if os.path.isdir(theme_path) and os.path.exists(os.path.join(theme_path, "styles.py")):
+                    themes.append(entry)
     return themes
 
 def load_theme(theme_name):
@@ -26,22 +28,21 @@ def load_theme(theme_name):
     Динамически загружает модуль стилей выбранной темы.
     Если выбрана стандартная тема, импортируется оригинальный styles.py из portprotonqt.
     Для кастомных тем возвращается обёртка, которая подставляет недостающие атрибуты из стандартной темы.
-
-    :param theme_name: Имя темы.
-    :return: Объект с атрибутами стилей.
     """
-    if theme_name == "стандартная":
-        import portprotonqt.styles as default_styles
+    if theme_name == "standart_lite":
+        import portprotonqt.themes.standart_lite.styles as default_styles
         return default_styles
 
-    theme_folder = os.path.join(THEMES_DIR, theme_name)
-    styles_file = os.path.join(theme_folder, "styles.py")
-    if not os.path.exists(styles_file):
-        raise FileNotFoundError(f"Файл стилей не найден для темы '{theme_name}': {styles_file}")
-    spec = importlib.util.spec_from_file_location("theme_styles", styles_file)
-    custom_theme = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(custom_theme)
-    return ThemeWrapper(custom_theme)
+    for themes_dir in THEMES_DIRS:
+        theme_folder = os.path.join(themes_dir, theme_name)
+        styles_file = os.path.join(theme_folder, "styles.py")
+        if os.path.exists(styles_file):
+            spec = importlib.util.spec_from_file_location("theme_styles", styles_file)
+            custom_theme = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(custom_theme)
+            return ThemeWrapper(custom_theme)
+
+    raise FileNotFoundError(f"Файл стилей не найден для темы '{theme_name}'")
 
 def load_theme_fonts(theme_name):
     """
@@ -52,15 +53,20 @@ def load_theme_fonts(theme_name):
 
     :param theme_name: Имя темы.
     """
-    if theme_name == "стандартная":
+    fonts_folder = None
+    if theme_name == "standart_lite":
         base_dir = os.path.dirname(os.path.abspath(__file__))
-        fonts_folder = os.path.join(base_dir, "fonts")
+        fonts_folder = os.path.join(base_dir, "themes", "standart_lite", "fonts")
     else:
-        theme_folder = os.path.join(THEMES_DIR, theme_name)
-        fonts_folder = os.path.join(theme_folder, "fonts")
+        for themes_dir in THEMES_DIRS:
+            theme_folder = os.path.join(themes_dir, theme_name)
+            possible_fonts_folder = os.path.join(theme_folder, "fonts")
+            if os.path.exists(possible_fonts_folder):
+                fonts_folder = possible_fonts_folder
+                break
 
-    if not os.path.exists(fonts_folder):
-        print(f"Папка fonts не найдена для темы '{theme_name}' по пути: {fonts_folder}")
+    if not fonts_folder or not os.path.exists(fonts_folder):
+        print(f"Папка fonts не найдена для темы '{theme_name}'")
         return
 
     for filename in os.listdir(fonts_folder):
@@ -85,7 +91,7 @@ class ThemeWrapper:
     def __getattr__(self, name):
         if hasattr(self.custom_theme, name):
             return getattr(self.custom_theme, name)
-        import portprotonqt.styles as default_styles
+        import portprotonqt.themes.standart_lite.styles as default_styles
         return getattr(default_styles, name)
 
 class ThemeManager:
