@@ -1,12 +1,9 @@
-import sys
 import os
-import time
 import signal
 import shlex
 import configparser
 import subprocess
 import requests
-import orjson
 import concurrent.futures
 
 from PySide6 import QtWidgets, QtCore, QtGui
@@ -128,7 +125,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.createPortProtonTab()   # вкладка 4
         self.createThemeTab()        # вкладка 5
 
-        self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE)
+       
 
         self.virtualKeyboard = VirtualKeyboard(self, target_widget=self.searchEdit)
         self.virtualKeyboard.hide()
@@ -331,13 +328,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         scrollArea = QtWidgets.QScrollArea()
         scrollArea.setWidgetResizable(True)
-        scrollArea.setStyleSheet("border: none;")
+        scrollArea.setStyleSheet(self.theme.SCROLL_AREA_STYLE)
         listWidget = QtWidgets.QWidget()
-        listWidget.setStyleSheet("""
-            background-color: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 15px;
-        """)
+        listWidget.setStyleSheet(self.theme.LIST_WIDGET_STYLE)
         self.gamesListLayout = QtWidgets.QGridLayout(listWidget)
         self.gamesListLayout.setSpacing(20)
         self.gamesListLayout.setContentsMargins(10, 10, 10, 10)

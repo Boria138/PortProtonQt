@@ -1,8 +1,11 @@
-from PySide6 import QtWidgets, QtCore, QtGui
+from PySide6 import QtWidgets, QtCore
+import portprotonqt.styles as default_styles
+
 
 class VirtualKeyboard(QtWidgets.QWidget):
-    def __init__(self, parent=None, target_widget=None):
+    def __init__(self, parent=None, target_widget=None, theme=None):
         super().__init__(parent)
+        self.theme = theme if theme is not None else default_styles
         self.target_widget = target_widget  # куда отправлять вводимые символы
         self.current_layout = "EN"  # "EN" или "RU"
         self.dragging = False
@@ -20,26 +23,18 @@ class VirtualKeyboard(QtWidgets.QWidget):
 
         self.header = QtWidgets.QFrame()
         self.header.setFixedHeight(40)
-        self.header.setStyleSheet("""
-            background: rgba(0, 0, 0, 0.2);
-            border-top-left-radius: 15px;
-            border-top-right-radius: 15px;
-        """)
+        self.header.setStyleSheet(self.theme.VIRTUAL_KEYBOARD_HEADER_STYLE)
         header_layout = QtWidgets.QHBoxLayout(self.header)
         header_layout.setContentsMargins(10, 0, 10, 0)
         header_label = QtWidgets.QLabel("Виртуальная клавиатура")
-        header_label.setStyleSheet("color: white; font-size: 18px;")
+        header_label.setStyleSheet(self.theme.VIRTUAL_KEYBOARD_HEADER_LABEL_STYLE)
         header_layout.addWidget(header_label)
         header_layout.addStretch()
         main_layout.addWidget(self.header)
         self.header.installEventFilter(self)
 
         self.keyboard_area = QtWidgets.QWidget()
-        self.keyboard_area.setStyleSheet("""
-            background: rgba(255, 255, 255, 0.95);
-            border-bottom-left-radius: 15px;
-            border-bottom-right-radius: 15px;
-        """)
+        self.keyboard_area.setStyleSheet()
         main_layout.addWidget(self.keyboard_area)
 
         self.keys_layout = QtWidgets.QVBoxLayout(self.keyboard_area)
@@ -78,23 +73,7 @@ class VirtualKeyboard(QtWidgets.QWidget):
                 btn = QtWidgets.QPushButton(key)
                 btn.setMinimumHeight(60)
                 btn.setMinimumWidth(60)
-                btn.setStyleSheet("""
-                    QPushButton {
-                        background: #ffffff;
-                        border: 2px solid #cccccc;
-                        border-radius: 12px;
-                        color: #333333;
-                        font-size: 22px;
-                        font-family: 'Arial';
-                    }
-                    QPushButton:hover {
-                        background: #f2f2f2;
-                    }
-                    QPushButton:pressed {
-                        background: #e6e6e6;
-                        border: 2px solid #aaaaaa;
-                    }
-                """)
+                btn.setStyleSheet(self.theme.VIRTUAL_KEYBOARD_KEYS_STYLE)
                 btn.clicked.connect(lambda checked, k=key: self.handleKey(k))
                 row.addWidget(btn)
             self.keys_layout.addLayout(row)
