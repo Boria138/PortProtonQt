@@ -4,6 +4,15 @@ import shlex
 import requests
 import orjson
 import subprocess
+import requests
+import re
+
+def is_russian(text):
+    """
+    Проверяет, содержит ли текст русские буквы.
+    """
+    return bool(re.search("[а-яА-Я]", text))
+
 
 def load_steam_apps(requests_session):
     """
@@ -165,6 +174,10 @@ def get_steam_game_info(desktop_name, exec_line, requests_session, steam_details
         title = app_info.get("name", exe_name.capitalize())
         description = app_info.get("short_description", "")
         cover = f"https://steamcdn-a.akamaihd.net/steam/apps/{appid}/library_600x900_2x.jpg"
+
+        if not is_russian(description):
+            return {"appid": appid, "name": title, "description": "", "cover": cover}
+
         return {"appid": appid, "name": title, "description": description, "cover": cover}
     except Exception as e:
         print(f"Ошибка получения данных из Steam API: {e}")
