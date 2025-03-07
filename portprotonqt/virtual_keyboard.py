@@ -34,7 +34,7 @@ class VirtualKeyboard(QtWidgets.QWidget):
         self.header.installEventFilter(self)
 
         self.keyboard_area = QtWidgets.QWidget()
-        self.keyboard_area.setStyleSheet()
+        self.keyboard_area.setStyleSheet(self.theme.VIRTUAL_KEYBOARD_AREA_STYLE)
         main_layout.addWidget(self.keyboard_area)
 
         self.keys_layout = QtWidgets.QVBoxLayout(self.keyboard_area)

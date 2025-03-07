@@ -21,6 +21,17 @@ MAIN_WINDOW_HEADER_STYLE = """
     }
 """
 
+MAIN_WINDOW_STYLE = """
+    QMainWindow {
+        background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                                     stop:0 #1a1a1a, stop:1 #333333);
+    }
+
+    QLabel {
+        color: #ffffff;
+    }
+"""
+
 TITLE_LABEL_STYLE = """
     /* Применяется к QLabel с логотипом / заголовком "PortProton" в верхней части главного окна */
 
@@ -316,20 +327,19 @@ VIRTUAL_KEYBOARD_AREA_STYLE = """
 """
 
 VIRTUAL_KEYBOARD_KEYS_STYLE = """
-    /* Стиль для самих кнопок в виртуальной клавиатуре (QPushButton) */
     QPushButton {
-        background: #ffffff;                          /* Чисто белый фон */
-        border: 2px solid #cccccc;                    /* Светло-серая граница (2px) */
-        border-radius: 12px;                        
-        color: #333333;                               /* Тёмно-серый цвет текста */
-        font-size: 22px;                           
-        font-family: 'Arial';                        
+        background: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 10px;
+        color: white;
+        font-size: 16px;
+        padding: 10px 20px;
     }
     QPushButton:hover {
-        background: #f2f2f2;                          /* При наведении - чуть темнее белого */
+        background: rgba(255, 255, 255, 0.25);
     }
     QPushButton:pressed {
-        background: #e6e6e6;                          /* При нажатии - ещё темнее */
-        border: 2px solid #aaaaaa;                    /* Более тёмная граница при клике */
+        background: rgba(255, 255, 255, 0.35);
+        border: 1px solid rgba(255, 255, 255, 0.5);
     }
 """

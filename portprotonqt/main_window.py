@@ -81,10 +81,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.titleLabel.setStyleSheet(self.theme.TITLE_LABEL_STYLE)
         headerLayout.addWidget(self.titleLabel)
         headerLayout.addStretch()
-        self.keyboardButton = QtWidgets.QPushButton("Клавиатура")
-        self.keyboardButton.setStyleSheet(self.theme.VIRTUAL_KEYBOARD_KEYS_STYLE)
-        self.keyboardButton.clicked.connect(self.toggleKeyboard)
-        headerLayout.addWidget(self.keyboardButton)
+        #self.keyboardButton = QtWidgets.QPushButton("Клавиатура")
+        #self.keyboardButton.setStyleSheet(self.theme.VIRTUAL_KEYBOARD_KEYS_STYLE)
+        #self.keyboardButton.clicked.connect(self.toggleKeyboard)
+        #headerLayout.addWidget(self.keyboardButton)
         mainLayout.addWidget(self.header)
 
         # Навигация
@@ -125,7 +125,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.createPortProtonTab()   # вкладка 4
         self.createThemeTab()        # вкладка 5
 
-       
+        self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE)
 
         self.virtualKeyboard = VirtualKeyboard(self, target_widget=self.searchEdit)
         self.virtualKeyboard.hide()
@@ -134,7 +134,7 @@ class MainWindow(QtWidgets.QMainWindow):
         """Обновляет стили основных виджетов согласно self.theme."""
         self.header.setStyleSheet(self.theme.MAIN_WINDOW_HEADER_STYLE)
         self.titleLabel.setStyleSheet(self.theme.TITLE_LABEL_STYLE)
-        self.keyboardButton.setStyleSheet(self.theme.VIRTUAL_KEYBOARD_KEYS_STYLE)
+        #self.keyboardButton.setStyleSheet(self.theme.VIRTUAL_KEYBOARD_KEYS_STYLE)
         self.navWidget.setStyleSheet(self.theme.NAV_WIDGET_STYLE)
         for btn in self.tabButtons.values():
             btn.setStyleSheet(self.theme.NAV_BUTTON_STYLE)
@@ -142,16 +142,16 @@ class MainWindow(QtWidgets.QMainWindow):
         if hasattr(self, 'searchEdit'):
             self.searchEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE)
 
-    def toggleKeyboard(self):
-        if self.virtualKeyboard.isVisible():
-            self.virtualKeyboard.hide()
-        else:
-            self.searchEdit.setFocus()
-            global_bottom_center = self.mapToGlobal(QtCore.QPoint(self.width() // 2, self.height()))
-            keyboard_x = global_bottom_center.x() - self.virtualKeyboard.width() // 2
-            keyboard_y = global_bottom_center.y() + 10
-            self.virtualKeyboard.move(keyboard_x, keyboard_y)
-            self.virtualKeyboard.show()
+    # def toggleKeyboard(self):
+    #     if self.virtualKeyboard.isVisible():
+    #         self.virtualKeyboard.hide()
+    #     else:
+    #         self.searchEdit.setFocus()
+    #         global_bottom_center = self.mapToGlobal(QtCore.QPoint(self.width() // 2, self.height()))
+    #         keyboard_x = global_bottom_center.x() - self.virtualKeyboard.width() // 2
+    #         keyboard_y = global_bottom_center.y() + 10
+    #         self.virtualKeyboard.move(keyboard_x, keyboard_y)
+    #         self.virtualKeyboard.show()
 
     def loadGames(self):
         games = []
