@@ -3,6 +3,7 @@ import time
 import shlex
 import requests
 import orjson
+import subprocess
 
 def load_steam_apps(requests_session):
     """
@@ -91,15 +92,42 @@ def fetch_app_info(app_id, requests_session):
 
 def get_steam_game_info(desktop_name, exec_line, requests_session, steam_details_cache):
     """
-    Определяет, есть ли информация об игре в Steam по различным вариантам имени.
-    Если найдена, возвращает словарь с appid, названием, описанием и ссылкой на обложку.
+    Определяет, есть ли информация об игре в Steam по разным вариантам имени.
+    Порядок поиска: сначала ProductName (из метаданных exe), затем FileDescription, затем имя exe.
+    Если игра найдена, возвращает словарь с appid, названием, описанием и ссылкой на обложку.
     """
     try:
         parts = shlex.split(exec_line)
-        game_exe = parts[3] if len(parts) >= 4 else exec_line
-        folder_name = os.path.basename(os.path.dirname(game_exe)) if os.path.dirname(game_exe) else ""
+        game_exe = next((part for part in parts if part.lower().endswith('.exe')), exec_line)
         exe_name = os.path.splitext(os.path.basename(game_exe))[0]
-        candidates = [desktop_name, folder_name, exe_name]
+
+        # Получаем метаданные из exe с помощью exiftool
+        try:
+            result = subprocess.run(
+                ["exiftool", "-j", game_exe],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                check=True
+            )
+            meta_data_list = orjson.loads(result.stdout.encode("utf-8"))
+            meta_data = meta_data_list[0] if meta_data_list else {}
+        except Exception as e:
+            print("Ошибка при получении метаданных:", e)
+            meta_data = {}
+
+        # Извлекаем ProductName и FileDescription из метаданных
+        product_name = meta_data.get("ProductName", "")
+        file_description = meta_data.get("FileDescription", "")
+
+        # Формируем список кандидатов в нужном порядке
+        candidates = []
+        if product_name and product_name not in ['BootstrapPackagedGame']:
+            candidates.append(product_name)
+        if file_description and file_description not in ['BootstrapPackagedGame']:
+            candidates.append(file_description)
+        if exe_name:
+            candidates.append(exe_name)
 
         steam_apps = load_steam_apps(requests_session)
         steam_apps_index = build_index(steam_apps)
