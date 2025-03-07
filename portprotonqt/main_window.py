@@ -52,6 +52,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.theme_manager = ThemeManager()
         # Читаем выбранную тему из конфигурации и применяем её
         selected_theme = read_theme_from_config()
+        self.current_theme_name = selected_theme
         self.theme = self.theme_manager.apply_theme(selected_theme)
         if not self.theme:
             self.theme = default_styles  # запасной вариант
@@ -81,10 +82,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.titleLabel.setStyleSheet(self.theme.TITLE_LABEL_STYLE)
         headerLayout.addWidget(self.titleLabel)
         headerLayout.addStretch()
-        #self.keyboardButton = QtWidgets.QPushButton("Клавиатура")
-        #self.keyboardButton.setStyleSheet(self.theme.VIRTUAL_KEYBOARD_KEYS_STYLE)
-        #self.keyboardButton.clicked.connect(self.toggleKeyboard)
-        #headerLayout.addWidget(self.keyboardButton)
+        self.keyboardButton = QtWidgets.QPushButton("Клавиатура")
+        self.keyboardButton.setStyleSheet(self.theme.VIRTUAL_KEYBOARD_KEYS_STYLE)
+        self.keyboardButton.clicked.connect(self.toggleKeyboard)
+        headerLayout.addWidget(self.keyboardButton)
         mainLayout.addWidget(self.header)
 
         # Навигация
@@ -134,7 +135,7 @@ class MainWindow(QtWidgets.QMainWindow):
         """Обновляет стили основных виджетов согласно self.theme."""
         self.header.setStyleSheet(self.theme.MAIN_WINDOW_HEADER_STYLE)
         self.titleLabel.setStyleSheet(self.theme.TITLE_LABEL_STYLE)
-        #self.keyboardButton.setStyleSheet(self.theme.VIRTUAL_KEYBOARD_KEYS_STYLE)
+        self.keyboardButton.setStyleSheet(self.theme.VIRTUAL_KEYBOARD_KEYS_STYLE)
         self.navWidget.setStyleSheet(self.theme.NAV_WIDGET_STYLE)
         for btn in self.tabButtons.values():
             btn.setStyleSheet(self.theme.NAV_BUTTON_STYLE)
@@ -142,16 +143,16 @@ class MainWindow(QtWidgets.QMainWindow):
         if hasattr(self, 'searchEdit'):
             self.searchEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE)
 
-    # def toggleKeyboard(self):
-    #     if self.virtualKeyboard.isVisible():
-    #         self.virtualKeyboard.hide()
-    #     else:
-    #         self.searchEdit.setFocus()
-    #         global_bottom_center = self.mapToGlobal(QtCore.QPoint(self.width() // 2, self.height()))
-    #         keyboard_x = global_bottom_center.x() - self.virtualKeyboard.width() // 2
-    #         keyboard_y = global_bottom_center.y() + 10
-    #         self.virtualKeyboard.move(keyboard_x, keyboard_y)
-    #         self.virtualKeyboard.show()
+    def toggleKeyboard(self):
+        if self.virtualKeyboard.isVisible():
+            self.virtualKeyboard.hide()
+        else:
+            self.searchEdit.setFocus()
+            global_bottom_center = self.mapToGlobal(QtCore.QPoint(self.width() // 2, self.height()))
+            keyboard_x = global_bottom_center.x() - self.virtualKeyboard.width() // 2
+            keyboard_y = global_bottom_center.y() + 10
+            self.virtualKeyboard.move(keyboard_x, keyboard_y)
+            self.virtualKeyboard.show()
 
     def loadGames(self):
         games = []
@@ -433,6 +434,9 @@ class MainWindow(QtWidgets.QMainWindow):
         # Выпадающий список для выбора темы
         themesCombo = QtWidgets.QComboBox()
         available_themes = self.theme_manager.get_available_themes()
+        if self.current_theme_name in available_themes:
+            available_themes.remove(self.current_theme_name)
+            available_themes.insert(0, self.current_theme_name)
         themesCombo.addItems(available_themes)
         layout.addWidget(themesCombo)
 

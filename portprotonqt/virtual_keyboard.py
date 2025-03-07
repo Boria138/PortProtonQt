@@ -1,7 +1,6 @@
 from PySide6 import QtWidgets, QtCore
 import portprotonqt.styles as default_styles
 
-
 class VirtualKeyboard(QtWidgets.QWidget):
     def __init__(self, parent=None, target_widget=None, theme=None):
         super().__init__(parent)
@@ -73,7 +72,7 @@ class VirtualKeyboard(QtWidgets.QWidget):
                 btn = QtWidgets.QPushButton(key)
                 btn.setMinimumHeight(60)
                 btn.setMinimumWidth(60)
-                btn.setStyleSheet(self.theme.VIRTUAL_KEYBOARD_KEYS_STYLE)
+                btn.setStyleSheet(self.theme.VIRTUAL_KEYBORD_AREA_KEYS_STYLE)
                 btn.clicked.connect(lambda checked, k=key: self.handleKey(k))
                 row.addWidget(btn)
             self.keys_layout.addLayout(row)
