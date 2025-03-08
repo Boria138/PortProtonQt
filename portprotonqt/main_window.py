@@ -5,6 +5,7 @@ import configparser
 import subprocess
 import requests
 import concurrent.futures
+import psutil
 
 from PySide6 import QtWidgets, QtCore, QtGui
 
@@ -15,7 +16,6 @@ from portprotonqt.game_card import GameCard
 from portprotonqt.image_utils import load_pixmap, round_corners
 from portprotonqt.steam_api import get_steam_game_info
 from portprotonqt.gamepad_support import GamepadSupport
-
 from portprotonqt.theme_manager import ThemeManager
 
 CONFIG_FILE = os.path.join(os.getenv("XDG_CONFIG_HOME", os.path.join(os.path.expanduser("~"), ".config")),
@@ -49,12 +49,11 @@ class MainWindow(QtWidgets.QMainWindow):
         super().__init__()
         # Создаём менеджер тем
         self.theme_manager = ThemeManager()
-        # Читаем выбранную тему из конфигурации и применяем её
         selected_theme = read_theme_from_config()
         self.current_theme_name = selected_theme
         self.theme = self.theme_manager.apply_theme(selected_theme)
         if not self.theme:
-            self.theme = default_styles  # запасной вариант
+            self.theme = default_styles
 
         self.gamepad_support = GamepadSupport(self)
         self.setWindowTitle("PortProtonQT")
@@ -64,6 +63,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.requests_session = requests.Session()
         self.games = self.loadGames()
         self.game_processes = []
+        # Имя целевого exe, которое будем отслеживать
+        self.target_exe = None
+
+        # Создаём статус-бар
+        self.setStatusBar(QtWidgets.QStatusBar(self))
 
         centralWidget = QtWidgets.QWidget()
         self.setCentralWidget(centralWidget)
@@ -100,7 +104,7 @@ class MainWindow(QtWidgets.QMainWindow):
             "Эмуляторы",
             "Настройки wine",
             "Настройки PortProton",
-            "Темы"  # вкладка управления темами
+            "Темы"
         ]
         for i, tabName in enumerate(tabs):
             btn = QtWidgets.QPushButton(tabName)
@@ -131,7 +135,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.virtualKeyboard.hide()
 
     def updateUIStyles(self):
-        """Обновляет стили основных виджетов согласно self.theme."""
         self.header.setStyleSheet(self.theme.MAIN_WINDOW_HEADER_STYLE)
         self.titleLabel.setStyleSheet(self.theme.TITLE_LABEL_STYLE)
         self.keyboardButton.setStyleSheet(self.theme.VIRTUAL_KEYBOARD_KEYS_STYLE)
@@ -344,7 +347,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.clearLayout(self.gamesListLayout)
         columns = 4
         for idx, (name, desc, cover, appid, exec_line) in enumerate(games_list):
-            # Передаём текущую тему в GameCard
             card = GameCard(name, desc, cover, appid, exec_line, self.openGameDetailPage, theme=self.theme)
             row = idx // columns
             col = idx % columns
@@ -418,9 +420,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.stackedWidget.addWidget(widget)
 
     def createThemeTab(self):
-        """
-        Создаёт вкладку для управления темами.
-        """
         widget = QtWidgets.QWidget()
         layout = QtWidgets.QVBoxLayout(widget)
         layout.setContentsMargins(20, 20, 20, 20)
@@ -430,7 +429,6 @@ class MainWindow(QtWidgets.QMainWindow):
         title.setStyleSheet(self.theme.TAB_TITLE_STYLE)
         layout.addWidget(title)
 
-        # Выпадающий список для выбора темы
         themesCombo = QtWidgets.QComboBox()
         available_themes = self.theme_manager.get_available_themes()
         if self.current_theme_name in available_themes:
@@ -439,29 +437,23 @@ class MainWindow(QtWidgets.QMainWindow):
         themesCombo.addItems(available_themes)
         layout.addWidget(themesCombo)
 
-        # Кнопка для применения выбранной темы
         applyButton = QtWidgets.QPushButton("Применить тему")
         applyButton.setStyleSheet(self.theme.ADD_GAME_BUTTON_STYLE)
         layout.addWidget(applyButton)
 
-        # Информационное сообщение для пользователя
         self.themeStatusLabel = QtWidgets.QLabel("")
         layout.addWidget(self.themeStatusLabel)
 
-        # Обработчик нажатия кнопки
         def on_apply():
             selected_theme = themesCombo.currentText()
             if selected_theme:
                 theme_module = self.theme_manager.apply_theme(selected_theme)
                 if theme_module:
                     self.theme = theme_module
-                    # Применяем глобальные стили главного окна
                     self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE)
                     self.themeStatusLabel.setText(f"Тема '{selected_theme}' успешно применена")
-                    # Обновляем стили для уже созданных виджетов
                     self.updateUIStyles()
                     self.populateGamesGrid(self.games)
-                    # Сохраняем выбранную тему в конфигурации
                     save_theme_to_config(selected_theme)
                 else:
                     self.themeStatusLabel.setText(f"Ошибка при применении темы '{selected_theme}'")
@@ -584,7 +576,7 @@ class MainWindow(QtWidgets.QMainWindow):
         playButton = QtWidgets.QPushButton("Играть")
         playButton.setFixedSize(120, 40)
         playButton.setStyleSheet(self.theme.PLAY_BUTTON_STYLE)
-        playButton.clicked.connect(lambda: self.launchGame(exec_line))
+        playButton.clicked.connect(lambda: self.launchGame(exec_line, name))
         detailsLayout.addWidget(playButton, alignment=QtCore.Qt.AlignLeft)
         contentFrameLayout.addWidget(detailsWidget)
 
@@ -611,7 +603,53 @@ class MainWindow(QtWidgets.QMainWindow):
         if hasattr(self, "currentDetailPage"):
             del self.currentDetailPage
 
-    def launchGame(self, exec_line):
+    def is_target_exe_running(self):
+        """Проверяет, запущен ли процесс с именем self.target_exe."""
+        if not self.target_exe:
+            return False
+        for proc in psutil.process_iter(attrs=["name"]):
+            try:
+                if proc.info["name"].lower() == self.target_exe.lower():
+                    return True
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                continue
+        return False
+
+    def startTypewriterEffect(self, message, interval=100):
+        """Запускает циклический эффект печатания текста в статус-баре."""
+        self._typewriter_text = message
+        self._typewriter_index = 0
+        self._typewriter_timer = QtCore.QTimer(self)
+        self._typewriter_timer.timeout.connect(self._updateTypewriterText)
+        self._typewriter_timer.start(interval)
+
+    def _updateTypewriterText(self):
+        # Если достигли конца строки, сбрасываем индекс, чтобы начать заново
+        if self._typewriter_index < len(self._typewriter_text):
+            self.statusBar().showMessage(self._typewriter_text[:self._typewriter_index+1])
+            self._typewriter_index += 1
+        else:
+            self._typewriter_index = 0  # сброс и повтор анимации
+
+    def clearGameStatus(self):
+        self.statusBar().clearMessage()
+
+    def checkTargetExe(self):
+        """Если игра запущена или дочерний процесс завершился, останавливаем анимацию и очищаем статус-бар с задержкой."""
+        target_running = self.is_target_exe_running()
+        child_running = any(proc.poll() is None for proc in self.game_processes)
+        if (not child_running) or target_running:
+            # Останавливаем эффект typewriter, если он работает
+            if hasattr(self, '_typewriter_timer'):
+                self._typewriter_timer.stop()
+                self._typewriter_timer.deleteLater()
+                del self._typewriter_timer
+            # Очищаем статус-бар через задержку
+            QtCore.QTimer.singleShot(1500, self.clearGameStatus)
+            self.checkProcessTimer.stop()
+            self.checkProcessTimer.deleteLater()
+
+    def launchGame(self, exec_line, game_name=""):
         if not exec_line:
             QtWidgets.QMessageBox.warning(self, "Ошибка", "Команда не задана")
             return
@@ -636,8 +674,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 QtWidgets.QMessageBox.warning(self, "Ошибка", f"Указанный файл не найден: {file_to_check}")
                 return
 
-            env_vars = os.environ.copy()
+            # Извлекаем имя запускаемого exe
+            self.target_exe = os.path.basename(file_to_check)
 
+            env_vars = os.environ.copy()
             if entry_exec_split[0] == "env" and len(entry_exec_split) > 1 and 'data/scripts/start.sh' in entry_exec_split[1]:
                 env_vars['START_FROM_STEAM'] = '1'
             elif entry_exec_split[0] == "flatpak":
@@ -646,8 +686,17 @@ class MainWindow(QtWidgets.QMainWindow):
             process = subprocess.Popen(
                 entry_exec_split,
                 env=env_vars,
+                shell=False
             )
             self.game_processes.append(process)
+
+            self.startTypewriterEffect(f"Идёт запуск {game_name}")
+
+            # Запускаем таймер для проверки состояния target_exe и дочернего процесса
+            self.checkProcessTimer = QtCore.QTimer(self)
+            self.checkProcessTimer.timeout.connect(self.checkTargetExe)
+            self.checkProcessTimer.start(500)
+
         except Exception as e:
             print("Ошибка запуска игры:", e)
 
