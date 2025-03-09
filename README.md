@@ -30,7 +30,7 @@
 - [X] Если SteamApi вернул английское описание вместо русского не выводить его в карточке (переводчики не точны)
 - [X] Добавить возможность изменения названия, описания и обложки через файлы .local/share/PortProtonQT/custom_data/exe_name/{desc,name,cover}
 - [ ] Добавить интеграцию с HowLongToBeat для вывода в карточке игры время для прохождения игры [рефференс](https://github.com/hulkrelax/hltb-for-deck)
-- [ ] Добавить в карточку игры сведения о поддержке геймадов 
+- [X] Добавить в карточку игры сведения о поддержке геймадов 
 - [ ] Добавить в карточки данные с ProtonDB и Are We Anti-Cheat Yet?
 
 ### Установка (debug)
@@ -46,7 +46,7 @@ pip install .
 ## Авторы
 
 * [Boria138](https://github.com/Boria138) - Программист
-* [BlackSnaker](https://github.com/BlackSnaker) - Дизайнер
+* [BlackSnaker](https://github.com/BlackSnaker) - Дизайнер - программист
 * [Mikhail Tergoev(Castro-Fidel)](https://github.com/Castro-Fidel) - Автор оригинального проекта PortProton
 
 > [!NOTE]

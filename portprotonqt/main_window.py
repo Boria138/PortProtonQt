@@ -82,9 +82,7 @@ class MainWindow(QtWidgets.QMainWindow):
         mainLayout.setSpacing(0)
         mainLayout.setContentsMargins(0, 0, 0, 0)
 
-        
         # 1. ШАПКА (HEADER)
-        
         self.header = QtWidgets.QFrame()
         self.header.setFixedHeight(80)
         self.header.setStyleSheet(self.theme.MAIN_WINDOW_HEADER_STYLE)
@@ -106,9 +104,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         mainLayout.addWidget(self.header)
 
-     
         # 2. НАВИГАЦИЯ (КНОПКИ ВКЛАДОК)
-        
         self.navWidget = QtWidgets.QWidget()
         self.navWidget.setStyleSheet(self.theme.NAV_WIDGET_STYLE)
         navLayout = QtWidgets.QHBoxLayout(self.navWidget)
@@ -119,13 +115,12 @@ class MainWindow(QtWidgets.QMainWindow):
         # Список вкладок
         tabs = [
             "Библиотека",         # индекс 0
-            "Автоустановка",      # индекс 1
-            "Эмуляторы",          # индекс 2
-            "Настройки wine",     # индекс 3
-            "Настройки PortProton",  # индекс 4
-            "Темы"                # индекс 5
+            "Автоустановка",       # индекс 1
+            "Эмуляторы",           # индекс 2
+            "Настройки wine",      # индекс 3
+            "Настройки PortProton",# индекс 4
+            "Темы"                 # индекс 5
         ]
-
         for i, tabName in enumerate(tabs):
             btn = QtWidgets.QPushButton(tabName)
             btn.setCheckable(True)
@@ -134,13 +129,10 @@ class MainWindow(QtWidgets.QMainWindow):
             navLayout.addWidget(btn)
             self.tabButtons[i] = btn
 
-        # По умолчанию активна вкладка 0
         self.tabButtons[0].setChecked(True)
         mainLayout.addWidget(self.navWidget)
 
-       
         # 3. QStackedWidget (ВКЛАДКИ)
-        
         self.stackedWidget = QtWidgets.QStackedWidget()
         mainLayout.addWidget(self.stackedWidget)
 
@@ -152,17 +144,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.createPortProtonTab()   # вкладка 4
         self.createThemeTab()        # вкладка 5
 
-        # Применяем общий стиль ко всему MainWindow
         self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE)
 
         # Инициализируем виртуальную клавиатуру (пока скрыта)
-        # По умолчанию ассоциируем её с виджетом self.searchEdit
         self.virtualKeyboard = VirtualKeyboard(self, target_widget=None)
         self.virtualKeyboard.hide()
 
-   
-    # МЕТОДЫ ДЛЯ ПЕРЕКЛЮЧЕНИЯ ТЕМ
-    
     def updateUIStyles(self):
         """Обновляет все стили после смены темы."""
         self.header.setStyleSheet(self.theme.MAIN_WINDOW_HEADER_STYLE)
@@ -174,12 +161,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE)
         if hasattr(self, 'searchEdit'):
             self.searchEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE)
-        # Обновим сетку игр
         self.populateGamesGrid(self.games)
 
-    
-    # КЛАВИАТУРА
-   
     def toggleKeyboard(self):
         if self.virtualKeyboard.isVisible():
             self.virtualKeyboard.hide()
@@ -192,9 +175,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.virtualKeyboard.move(keyboard_x, keyboard_y)
             self.virtualKeyboard.show()
 
-    
-    # ЗАГРУЗКА ИГР
-   
     def loadGames(self):
         games = []
         xdg_config_home = os.getenv("XDG_CONFIG_HOME", os.path.join(os.path.expanduser("~"), ".config"))
@@ -210,13 +190,11 @@ class MainWindow(QtWidgets.QMainWindow):
                 return None
 
         portproton_location = None
-        # Проверяем указанный путь в PortProton.conf
         if os.path.exists(config_path):
             portproton_location = read_file_content(config_path)
             if portproton_location:
                 print(f"Current PortProton location from config: {portproton_location}")
         else:
-            # Fallback
             fallback_dir = os.path.join(os.path.expanduser("~"), ".var", "app", "ru.linux_gaming.PortProton")
             if os.path.isdir(fallback_dir):
                 portproton_location = fallback_dir
@@ -245,8 +223,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
             entry = config["Desktop Entry"]
             desktop_name = entry.get("Name", "Unknown Game")
-
-            # Игнорируем, если это сам PortProton
             if desktop_name.lower() == "portproton":
                 return None
 
@@ -320,9 +296,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 games.append(res)
         return games
 
-    
     # ВКЛАДКИ
-    
     def switchTab(self, index):
         """Устанавливает активную вкладку по индексу."""
         for i, btn in self.tabButtons.items():
@@ -417,7 +391,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def openAddGameDialog(self):
         """Открывает диалоговое окно 'Добавить игру' с текущей темой."""
-        dialog = AddGameDialog(self, self.theme)  # <-- Передаём тему в конструктор диалога
+        dialog = AddGameDialog(self, self.theme)
         if dialog.exec() == QtWidgets.QDialog.Accepted:
             name = dialog.nameEdit.text().strip()
             desc = dialog.descEdit.toPlainText().strip()
@@ -504,19 +478,14 @@ class MainWindow(QtWidgets.QMainWindow):
         title.setStyleSheet(self.theme.TAB_TITLE_STYLE)
         layout.addWidget(title)
 
-        # ComboBox со списком доступных тем
         themesCombo = QtWidgets.QComboBox()
         available_themes = self.theme_manager.get_available_themes()
-
-        # Перемещаем текущую тему в начало списка
         if self.current_theme_name in available_themes:
             available_themes.remove(self.current_theme_name)
             available_themes.insert(0, self.current_theme_name)
-
         themesCombo.addItems(available_themes)
         layout.addWidget(themesCombo)
 
-        # Кнопка "Применить тему"
         applyButton = QtWidgets.QPushButton("Применить тему")
         applyButton.setStyleSheet(self.theme.ADD_GAME_BUTTON_STYLE)
         layout.addWidget(applyButton)
@@ -540,18 +509,12 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.themeStatusLabel.setText(f"Ошибка при применении темы '{selected_theme}'")
             else:
                 self.themeStatusLabel.setText("Нет доступных тем для применения")
-
         applyButton.clicked.connect(on_apply)
-
         layout.addStretch(1)
         self.stackedWidget.addWidget(widget)
 
-    
     # ЛОГИКА ДЕТАЛЬНОЙ СТРАНИЦЫ ИГРЫ
-   
     def getColorPalette(self, cover_path, num_colors=5, sample_step=10):
-        """Возвращает список самых часто встречающихся цветов (num_colors) 
-           из обложки (cover_path). Нужно для динамического фона."""
         pixmap = load_pixmap(cover_path, 180, 250)
         if pixmap.isNull():
             return [QtGui.QColor("#1a1a1a")] * num_colors
@@ -582,11 +545,10 @@ class MainWindow(QtWidgets.QMainWindow):
         return palette
 
     def darkenColor(self, color, factor=200):
-        """Утемняет цвет (color), умножая на factor%. По умолчанию factor=200."""
         return color.darker(factor)
 
     def openGameDetailPage(self, name, description, cover_path=None, appid="", exec_line=""):
-        """Переход на страницу с деталями игры (название, обложка, описание, кнопка запуска)."""
+        """Переход на страницу с деталями игры с информацией, похожей на Steam."""
         detailPage = QtWidgets.QWidget()
 
         if cover_path:
@@ -638,7 +600,7 @@ class MainWindow(QtWidgets.QMainWindow):
         contentFrameLayout.addWidget(coverFrame)
         detailPage._coverPixmap = pixmap_detail
 
-        # Детали (справа)
+        # Детали игры (справа)
         detailsWidget = QtWidgets.QWidget()
         detailsWidget.setStyleSheet(self.theme.DETAILS_WIDGET_STYLE)
         detailsLayout = QtWidgets.QVBoxLayout(detailsWidget)
@@ -659,6 +621,37 @@ class MainWindow(QtWidgets.QMainWindow):
         descLabel.setStyleSheet(self.theme.DETAIL_PAGE_DESC_STYLE)
         detailsLayout.addWidget(descLabel)
 
+        # Дополнительная информация (заглушки, как в Steam)
+        infoLayout = QtWidgets.QHBoxLayout()
+        infoLayout.setSpacing(10)
+
+        lastLaunchTitle = QtWidgets.QLabel("ПОСЛЕДНИЙ ЗАПУСК")
+        lastLaunchTitle.setStyleSheet("font-family: 'Poppins'; font-size: 11px; color: #aaaaaa;")
+        lastLaunchValue = QtWidgets.QLabel("8 февр.")
+        lastLaunchValue.setStyleSheet("font-family: 'Poppins'; font-size: 13px; color: #ffffff; font-weight: bold;")
+        
+        playTimeTitle = QtWidgets.QLabel("ВЫ ИГРАЛИ")
+        playTimeTitle.setStyleSheet("font-family: 'Poppins'; font-size: 11px; color: #aaaaaa;")
+        playTimeValue = QtWidgets.QLabel("19 мин.")
+        playTimeValue.setStyleSheet("font-family: 'Poppins'; font-size: 13px; color: #ffffff; font-weight: bold;")
+        
+        infoLayout.addWidget(lastLaunchTitle)
+        infoLayout.addWidget(lastLaunchValue)
+        infoLayout.addSpacing(30)
+        infoLayout.addWidget(playTimeTitle)
+        infoLayout.addWidget(playTimeValue)
+        detailsLayout.addLayout(infoLayout)
+
+        # Заглушка для поддержки геймпада
+        gamepadSupportLabel = QtWidgets.QLabel("Поддержка геймпада: Да")
+        gamepadSupportLabel.setAlignment(QtCore.Qt.AlignCenter)
+        gamepadSupportLabel.setStyleSheet(
+            "font-family: 'Poppins'; font-size: 12px; color: #00ff00; "
+            "font-weight: bold; background: rgba(0, 0, 0, 0.3); "
+            "border-radius: 5px; padding: 4px 8px;"
+        )
+        detailsLayout.addWidget(gamepadSupportLabel, alignment=QtCore.Qt.AlignCenter)
+
         if appid:
             appidLabel = QtWidgets.QLabel(f"Steam AppID: {appid}")
             appidLabel.setStyleSheet(self.theme.STEAM_APPID_LABEL_STYLE)
@@ -666,7 +659,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         detailsLayout.addStretch(1)
 
-        # Кнопка "Играть"
         playButton = QtWidgets.QPushButton("▷ Играть")
         playButton.setFixedSize(120, 40)
         playButton.setStyleSheet(self.theme.PLAY_BUTTON_STYLE)
@@ -699,9 +691,9 @@ class MainWindow(QtWidgets.QMainWindow):
         if hasattr(self, "currentDetailPage"):
             del self.currentDetailPage
 
-   
+    # ------------------------------------------------------------------------
     # ЗАПУСК/ОСТАНОВКА ИГРЫ
-    
+    # ------------------------------------------------------------------------
     def is_target_exe_running(self):
         """Проверяет, запущен ли процесс с именем self.target_exe через psutil."""
         if not self.target_exe:
@@ -740,7 +732,6 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         target_running = self.is_target_exe_running()
         child_running = any(proc.poll() is None for proc in self.game_processes)
-
         if (not child_running) or target_running:
             if hasattr(self, '_typewriter_timer'):
                 self._typewriter_timer.stop()
@@ -759,23 +750,19 @@ class MainWindow(QtWidgets.QMainWindow):
           - Иначе, запускаем subprocess и контролируем статус
         """
         if self.game_processes:
-            # Останавливаем
             for proc in self.game_processes:
                 try:
                     os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
                 except Exception as e:
                     print("Ошибка при завершении процесса:", e)
             self.game_processes = []
-            
             if hasattr(self, '_typewriter_timer') and self._typewriter_timer is not None:
                 self._typewriter_timer.stop()
                 self._typewriter_timer.deleteLater()
                 self._typewriter_timer = None
-
             self.statusBar().showMessage("Игра остановлена", 2000)
             QtCore.QTimer.singleShot(1500, self.clearGameStatus)
             button.setText("▷ Играть")
-
             if hasattr(self, 'checkProcessTimer') and self.checkProcessTimer is not None:
                 try:
                     self.checkProcessTimer.stop()
@@ -784,7 +771,6 @@ class MainWindow(QtWidgets.QMainWindow):
                     print("Ошибка при удалении checkProcessTimer:", e)
                 finally:
                     self.checkProcessTimer = None
-
             self.target_exe = None
         else:
             try:
@@ -801,36 +787,39 @@ class MainWindow(QtWidgets.QMainWindow):
                     file_to_check = entry_exec_split[3]
                 else:
                     file_to_check = entry_exec_split[0]
-
                 if not os.path.exists(file_to_check):
                     QtWidgets.QMessageBox.warning(self, "Ошибка", f"Указанный файл не найден: {file_to_check}")
                     return
-
                 self.target_exe = os.path.basename(file_to_check)
                 env_vars = os.environ.copy()
-
                 if entry_exec_split[0] == "env" and len(entry_exec_split) > 1 and 'data/scripts/start.sh' in entry_exec_split[1]:
                     env_vars['START_FROM_STEAM'] = '1'
                 elif entry_exec_split[0] == "flatpak":
                     env_vars['START_FROM_STEAM'] = '1'
-
                 process = subprocess.Popen(entry_exec_split, env=env_vars, shell=False)
                 self.game_processes.append(process)
-
                 self.startTypewriterEffect(f"Идёт запуск {game_name}")
                 self.checkProcessTimer = QtCore.QTimer(self)
                 self.checkProcessTimer.timeout.connect(self.checkTargetExe)
                 self.checkProcessTimer.start(500)
-
                 button.setText("✕ Остановить")
             except Exception as e:
                 print("Ошибка запуска игры:", e)
 
     def closeEvent(self, event):
-        """Вызывается при закрытии окна. Завершаем все процессы."""
         for proc in self.game_processes:
             try:
                 os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
             except Exception as e:
                 print("Ошибка при завершении процесса:", e)
         event.accept()
+
+# ФУНКЦИЯ ДЛЯ ДИНАМИЧЕСКОГО ГРАДИЕНТА (ДЕТАЛИ ИГРЫ)
+# Если тема не переопределила эту функцию, можно использовать эту реализацию.
+def detail_page_style(stops):
+    return f"""
+    QWidget {{
+        background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                                    {stops});
+    }}
+"""

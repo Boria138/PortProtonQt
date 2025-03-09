@@ -70,7 +70,7 @@ VIRTUAL_KEYBOARD_HEADER_STYLE = """
 # СТИЛЬ ТЕКСТА В ШАПКЕ ВИРТУАЛЬНОЙ КЛАВИАТУРЫ
 VIRTUAL_KEYBOARD_HEADER_LABEL_STYLE = "color: white; font-size: 18px;"
 
-# СТИЛЬ ОБЛАСТИ С КНОПКАМИ В ВИРТУАЛЬНОЙ КЛАВИАТУРЕ
+# СТИЛЬ ОБЛАСТИ С КНОПКАМИ В ВИРТУАЛЬНОЙ КЛАВИАТУРЫ
 VIRTUAL_KEYBOARD_AREA_STYLE = """
     background: rgba(255, 255, 255, 0.95);
     border-bottom-left-radius: 15px;
@@ -137,10 +137,18 @@ SEARCH_EDIT_STYLE = """
 SCROLL_AREA_STYLE = "border: none;"
 
 # ОБЛАСТЬ ДЛЯ КАРТОЧЕК ИГР (QWidget)
-LIST_WIDGET_STYLE= """
-    background-color: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 15px;
+LIST_WIDGET_STYLE = """
+    QWidget {
+        background-color: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 15px;
+    }
+    QWidget:hover {
+        /* Можно раскомментировать и настроить, если понадобится другой hover-эффект */
+        /* background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+            stop:0 #2859ff);
+        */
+    }
 """
 
 # ЗАГОЛОВОК "БИБЛИОТЕКА" НА ВКЛАДКЕ
@@ -278,7 +286,7 @@ GAME_CARD_WINDOW_STYLE = """
 """
 
 # НАЗВАНИЕ В КАРТОЧКЕ (QLabel), ГДЕ ДОЛЖЕН ПОМЕЩАТЬСЯ ТЕКСТ ЛЮБОЙ ДЛИНЫ
-GAME_CARD_NAME_LABEL_STYLE= """
+GAME_CARD_NAME_LABEL_STYLE = """
     QLabel {
         color: white;
         font-family: 'Orbitron';
@@ -288,14 +296,19 @@ GAME_CARD_NAME_LABEL_STYLE= """
         border-bottom-left-radius: 15px;
         border-bottom-right-radius: 15px;
         padding: 14px;
-        /* Включаем перенос текста на новую строку, 
-           чтобы длинные названия тоже умещались */
+        /* Включаем перенос текста на новую строку, чтобы длинные названия тоже умещались */
         qproperty-wordWrap: true;
     }
 """
 
-# ФУНКЦИЯ ДЛЯ ДИНАМИЧЕСКОГО ГРАДИЕНТА (ДЕТАЛИ ИГРЫ)
-# Функции из этой темы срабатывают всегда вне зависимости от выбранной темы функции с кастомных тем вызываются только при использовании кастомной темы
+# Дополнительные стили для информации на странице игры (заглушки)
+LAST_LAUNCH_TITLE_STYLE = "font-family: 'Poppins'; font-size: 11px; color: #c0c0c0; text-transform: uppercase; letter-spacing: 0.75px; margin-bottom: 2px;"
+LAST_LAUNCH_VALUE_STYLE = "font-family: 'Poppins'; font-size: 13px; color: #ffffff; font-weight: 600; letter-spacing: 0.75px;"
+PLAY_TIME_TITLE_STYLE   = "font-family: 'Poppins'; font-size: 11px; color: #c0c0c0; text-transform: uppercase; letter-spacing: 0.75px; margin-bottom: 2px;"
+PLAY_TIME_VALUE_STYLE   = "font-family: 'Poppins'; font-size: 13px; color: #ffffff; font-weight: 600; letter-spacing: 0.75px;"
+
+# ФУНКЦИЯ ДЛЯ ДИНАМИЧЕСКОГО ГРАДИЕНТА (ДЕТАЛИ ИГР)
+# Функция срабатывает всегда вне зависимости от выбранной темы.
 def detail_page_style(stops):
     return f"""
     QWidget {{
