@@ -576,7 +576,7 @@ class MainWindow(QtWidgets.QMainWindow):
         playButton = QtWidgets.QPushButton("Играть")
         playButton.setFixedSize(120, 40)
         playButton.setStyleSheet(self.theme.PLAY_BUTTON_STYLE)
-        playButton.clicked.connect(lambda: self.launchGame(exec_line, name))
+        playButton.clicked.connect(lambda: self.toggleGame(exec_line, name, playButton))
         detailsLayout.addWidget(playButton, alignment=QtCore.Qt.AlignLeft)
         contentFrameLayout.addWidget(detailsWidget)
 
@@ -649,56 +649,62 @@ class MainWindow(QtWidgets.QMainWindow):
             self.checkProcessTimer.stop()
             self.checkProcessTimer.deleteLater()
 
-    def launchGame(self, exec_line, game_name=""):
-        if not exec_line:
-            QtWidgets.QMessageBox.warning(self, "Ошибка", "Команда не задана")
-            return
+    def toggleGame(self, exec_line, game_name, button):
+        if self.game_processes:
+            # Если игра уже запущена, останавливаем все процессы
+            for proc in self.game_processes:
+                try:
+                    os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+                except Exception as e:
+                    print("Ошибка при завершении процесса:", e)
+            self.game_processes = []
 
-        try:
-            entry_exec_split = shlex.split(exec_line)
+            # Останавливаем typewriter-эффект, если он работает
+            if hasattr(self, '_typewriter_timer'):
+                self._typewriter_timer.stop()
+                self._typewriter_timer.deleteLater()
+                del self._typewriter_timer
 
-            if entry_exec_split[0] == "env":
-                if len(entry_exec_split) < 3:
-                    QtWidgets.QMessageBox.warning(self, "Ошибка", "Неверный формат команды (native)")
+            self.statusBar().showMessage("Игра остановлена", 2000)
+            QtCore.QTimer.singleShot(1500, self.clearGameStatus)
+            button.setText("Играть")
+            if hasattr(self, 'checkProcessTimer'):
+                self.checkProcessTimer.stop()
+                self.checkProcessTimer.deleteLater()
+            self.target_exe = None
+        else:
+            try:
+                entry_exec_split = shlex.split(exec_line)
+                if entry_exec_split[0] == "env":
+                    if len(entry_exec_split) < 3:
+                        QtWidgets.QMessageBox.warning(self, "Ошибка", "Неверный формат команды (native)")
+                        return
+                    file_to_check = entry_exec_split[2]
+                elif entry_exec_split[0] == "flatpak":
+                    if len(entry_exec_split) < 4:
+                        QtWidgets.QMessageBox.warning(self, "Ошибка", "Неверный формат команды (flatpak)")
+                        return
+                    file_to_check = entry_exec_split[3]
+                else:
+                    file_to_check = entry_exec_split[0]
+                if not os.path.exists(file_to_check):
+                    QtWidgets.QMessageBox.warning(self, "Ошибка", f"Указанный файл не найден: {file_to_check}")
                     return
-                file_to_check = entry_exec_split[2]
-            elif entry_exec_split[0] == "flatpak":
-                if len(entry_exec_split) < 4:
-                    QtWidgets.QMessageBox.warning(self, "Ошибка", "Неверный формат команды (flatpak)")
-                    return
-                file_to_check = entry_exec_split[3]
-            else:
-                file_to_check = entry_exec_split[0]
-
-            if not os.path.exists(file_to_check):
-                QtWidgets.QMessageBox.warning(self, "Ошибка", f"Указанный файл не найден: {file_to_check}")
-                return
-
-            # Извлекаем имя запускаемого exe
-            self.target_exe = os.path.basename(file_to_check)
-
-            env_vars = os.environ.copy()
-            if entry_exec_split[0] == "env" and len(entry_exec_split) > 1 and 'data/scripts/start.sh' in entry_exec_split[1]:
-                env_vars['START_FROM_STEAM'] = '1'
-            elif entry_exec_split[0] == "flatpak":
-                env_vars['START_FROM_STEAM'] = '1'
-
-            process = subprocess.Popen(
-                entry_exec_split,
-                env=env_vars,
-                shell=False
-            )
-            self.game_processes.append(process)
-
-            self.startTypewriterEffect(f"Идёт запуск {game_name}")
-
-            # Запускаем таймер для проверки состояния target_exe и дочернего процесса
-            self.checkProcessTimer = QtCore.QTimer(self)
-            self.checkProcessTimer.timeout.connect(self.checkTargetExe)
-            self.checkProcessTimer.start(500)
-
-        except Exception as e:
-            print("Ошибка запуска игры:", e)
+                self.target_exe = os.path.basename(file_to_check)
+                env_vars = os.environ.copy()
+                if entry_exec_split[0] == "env" and len(entry_exec_split) > 1 and 'data/scripts/start.sh' in entry_exec_split[1]:
+                    env_vars['START_FROM_STEAM'] = '1'
+                elif entry_exec_split[0] == "flatpak":
+                    env_vars['START_FROM_STEAM'] = '1'
+                process = subprocess.Popen(entry_exec_split, env=env_vars, shell=False)
+                self.game_processes.append(process)
+                self.startTypewriterEffect(f"Идёт запуск {game_name}")
+                self.checkProcessTimer = QtCore.QTimer(self)
+                self.checkProcessTimer.timeout.connect(self.checkTargetExe)
+                self.checkProcessTimer.start(500)
+                button.setText("Остановить")
+            except Exception as e:
+                print("Ошибка запуска игры:", e)
 
     def closeEvent(self, event):
         for proc in self.game_processes:
