@@ -667,7 +667,7 @@ class MainWindow(QtWidgets.QMainWindow):
         detailsLayout.addStretch(1)
 
         # Кнопка "Играть"
-        playButton = QtWidgets.QPushButton("Играть")
+        playButton = QtWidgets.QPushButton("▷ Играть")
         playButton.setFixedSize(120, 40)
         playButton.setStyleSheet(self.theme.PLAY_BUTTON_STYLE)
         playButton.clicked.connect(lambda: self.toggleGame(exec_line, name, playButton))
@@ -774,7 +774,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
             self.statusBar().showMessage("Игра остановлена", 2000)
             QtCore.QTimer.singleShot(1500, self.clearGameStatus)
-            button.setText("Играть")
+            button.setText("▷ Играть")
 
             if hasattr(self, 'checkProcessTimer') and self.checkProcessTimer is not None:
                 try:
@@ -822,7 +822,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.checkProcessTimer.timeout.connect(self.checkTargetExe)
                 self.checkProcessTimer.start(500)
 
-                button.setText("Остановить")
+                button.setText("✕ Остановить")
             except Exception as e:
                 print("Ошибка запуска игры:", e)
 
