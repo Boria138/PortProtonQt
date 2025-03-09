@@ -639,15 +639,18 @@ class MainWindow(QtWidgets.QMainWindow):
         target_running = self.is_target_exe_running()
         child_running = any(proc.poll() is None for proc in self.game_processes)
         if (not child_running) or target_running:
-            # Останавливаем эффект typewriter, если он работает
+            # Останавливаем typewriter-эффект, если он работает
             if hasattr(self, '_typewriter_timer'):
                 self._typewriter_timer.stop()
                 self._typewriter_timer.deleteLater()
-                del self._typewriter_timer
+                self._typewriter_timer = None
             # Очищаем статус-бар через задержку
             QtCore.QTimer.singleShot(1500, self.clearGameStatus)
-            self.checkProcessTimer.stop()
-            self.checkProcessTimer.deleteLater()
+            # Останавливаем и удаляем таймер, если он ещё существует
+            if self.checkProcessTimer is not None:
+                self.checkProcessTimer.stop()
+                self.checkProcessTimer.deleteLater()
+                self.checkProcessTimer = None
 
     def toggleGame(self, exec_line, game_name, button):
         if self.game_processes:
@@ -660,17 +663,25 @@ class MainWindow(QtWidgets.QMainWindow):
             self.game_processes = []
 
             # Останавливаем typewriter-эффект, если он работает
-            if hasattr(self, '_typewriter_timer'):
+            if hasattr(self, '_typewriter_timer') and self._typewriter_timer is not None:
                 self._typewriter_timer.stop()
                 self._typewriter_timer.deleteLater()
-                del self._typewriter_timer
+                self._typewriter_timer = None
 
             self.statusBar().showMessage("Игра остановлена", 2000)
             QtCore.QTimer.singleShot(1500, self.clearGameStatus)
             button.setText("Играть")
-            if hasattr(self, 'checkProcessTimer'):
-                self.checkProcessTimer.stop()
-                self.checkProcessTimer.deleteLater()
+
+            # Безопасно останавливаем checkProcessTimer, только если он существует
+            if hasattr(self, 'checkProcessTimer') and self.checkProcessTimer is not None:
+                try:
+                    self.checkProcessTimer.stop()
+                    self.checkProcessTimer.deleteLater()
+                except Exception as e:
+                    print("Ошибка при удалении checkProcessTimer:", e)
+                finally:
+                    self.checkProcessTimer = None
+
             self.target_exe = None
         else:
             try:
