@@ -3,12 +3,13 @@ from portprotonqt.image_utils import load_pixmap, round_corners
 import portprotonqt.themes.standart_lite.styles as default_styles
 
 class GameCard(QtWidgets.QFrame):
-    def __init__(self, name, description, cover_path, appid, exec_line, select_callback, theme=None, parent=None):
+    def __init__(self, name, description, cover_path, appid, controller_support, exec_line, select_callback, theme=None, parent=None):
         super().__init__(parent)
         self.name = name
         self.description = description
         self.cover_path = cover_path
         self.appid = appid
+        self.controller_support = controller_support
         self.exec_line = exec_line
         self.select_callback = select_callback
 
@@ -115,10 +116,10 @@ class GameCard(QtWidgets.QFrame):
         super().leaveEvent(event)
 
     def mousePressEvent(self, event):
-        self.select_callback(self.name, self.description, self.cover_path, self.appid, self.exec_line)
+        self.select_callback(self.name, self.description, self.cover_path, self.appid, self.controller_support, self.exec_line)
 
     def keyPressEvent(self, event):
         if event.key() in (QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter):
-            self.select_callback(self.name, self.description, self.cover_path, self.appid, self.exec_line)
+            self.select_callback(self.name, self.description, self.cover_path, self.appid, self.controller_support, self.exec_line)
         else:
             super().keyPressEvent(event)

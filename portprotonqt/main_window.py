@@ -227,9 +227,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 return None
 
             exec_line = entry.get("Exec", "")
-            steam_details_cache = {}
             steam_info = {}
             game_exe = ""
+            controller_support = ""
             if exec_line:
                 try:
                     parts = shlex.split(exec_line)
@@ -237,7 +237,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 except Exception as e:
                     print(f"Ошибка обработки Exec строки в {file_path}: {e}")
                     game_exe = os.path.expanduser(exec_line)
-                steam_info = get_steam_game_info(desktop_name, exec_line, self.requests_session, steam_details_cache)
+                steam_info = get_steam_game_info(desktop_name, exec_line, self.requests_session)
                 if steam_info is None:
                     return None
 
@@ -273,6 +273,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 desc = steam_info.get("description", "")
                 cover = steam_info.get("cover", "")
                 appid = steam_info.get("appid", "")
+                controller_support = steam_info.get("controller_support", "")
             else:
                 name = desktop_name
                 desc = entry.get("Comment", "")
@@ -286,7 +287,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if custom_cover:
                 cover = custom_cover
 
-            return (name, desc, cover, appid, exec_line)
+            return (name, desc, cover, appid, exec_line, controller_support)
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
             results = list(executor.map(process_file, desktop_files))
@@ -376,8 +377,8 @@ class MainWindow(QtWidgets.QMainWindow):
         """Заполняет сетку карточками игр (GameCard)."""
         self.clearLayout(self.gamesListLayout)
         columns = 4
-        for idx, (name, desc, cover, appid, exec_line) in enumerate(games_list):
-            card = GameCard(name, desc, cover, appid, exec_line, self.openGameDetailPage, theme=self.theme)
+        for idx, (name, desc, cover, appid, controller_support, exec_line) in enumerate(games_list):
+            card = GameCard(name, desc, cover, appid, controller_support, exec_line, self.openGameDetailPage, theme=self.theme)
             row = idx // columns
             col = idx % columns
             self.gamesListLayout.addWidget(card, row, col)
@@ -547,7 +548,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def darkenColor(self, color, factor=200):
         return color.darker(factor)
 
-    def openGameDetailPage(self, name, description, cover_path=None, appid="", exec_line=""):
+    def openGameDetailPage(self, name, description, cover_path=None, appid="", exec_line="", controller_support=""):
         """Переход на страницу с деталями игры с информацией, похожей на Steam."""
         detailPage = QtWidgets.QWidget()
 
@@ -642,20 +643,15 @@ class MainWindow(QtWidgets.QMainWindow):
         infoLayout.addWidget(playTimeValue)
         detailsLayout.addLayout(infoLayout)
 
-        # Заглушка для поддержки геймпада
-        gamepadSupportLabel = QtWidgets.QLabel("Поддержка геймпада: Да")
-        gamepadSupportLabel.setAlignment(QtCore.Qt.AlignCenter)
-        gamepadSupportLabel.setStyleSheet(
+        if controller_support:
+            gamepadSupportLabel = QtWidgets.QLabel(f"Поддержка геймпада: {controller_support}")
+            gamepadSupportLabel.setAlignment(QtCore.Qt.AlignCenter)
+            gamepadSupportLabel.setStyleSheet(
             "font-family: 'Poppins'; font-size: 12px; color: #00ff00; "
             "font-weight: bold; background: rgba(0, 0, 0, 0.3); "
             "border-radius: 5px; padding: 4px 8px;"
         )
-        detailsLayout.addWidget(gamepadSupportLabel, alignment=QtCore.Qt.AlignCenter)
-
-        if appid:
-            appidLabel = QtWidgets.QLabel(f"Steam AppID: {appid}")
-            appidLabel.setStyleSheet(self.theme.STEAM_APPID_LABEL_STYLE)
-            detailsLayout.addWidget(appidLabel)
+            detailsLayout.addWidget(gamepadSupportLabel, alignment=QtCore.Qt.AlignCenter)
 
         detailsLayout.addStretch(1)
 
