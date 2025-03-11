@@ -10,7 +10,6 @@ import psutil
 from PySide6 import QtWidgets, QtCore, QtGui
 
 import portprotonqt.themes.standart_lite.styles as default_styles
-from portprotonqt.virtual_keyboard import VirtualKeyboard
 from portprotonqt.dialogs import AddGameDialog
 from portprotonqt.game_card import GameCard
 from portprotonqt.image_utils import load_pixmap, round_corners
@@ -96,12 +95,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         headerLayout.addStretch()
 
-        # Кнопка "Клавиатура" справа
-        self.keyboardButton = QtWidgets.QPushButton("Клавиатура")
-        self.keyboardButton.setStyleSheet(self.theme.VIRTUAL_KEYBOARD_KEYS_STYLE)
-        self.keyboardButton.clicked.connect(self.toggleKeyboard)
-        headerLayout.addWidget(self.keyboardButton)
-
         mainLayout.addWidget(self.header)
 
         # 2. НАВИГАЦИЯ (КНОПКИ ВКЛАДОК)
@@ -146,15 +139,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE)
 
-        # Инициализируем виртуальную клавиатуру (пока скрыта)
-        self.virtualKeyboard = VirtualKeyboard(self, target_widget=None)
-        self.virtualKeyboard.hide()
-
     def updateUIStyles(self):
         """Обновляет все стили после смены темы."""
         self.header.setStyleSheet(self.theme.MAIN_WINDOW_HEADER_STYLE)
         self.titleLabel.setStyleSheet(self.theme.TITLE_LABEL_STYLE)
-        self.keyboardButton.setStyleSheet(self.theme.VIRTUAL_KEYBOARD_KEYS_STYLE)
         self.navWidget.setStyleSheet(self.theme.NAV_WIDGET_STYLE)
         for btn in self.tabButtons.values():
             btn.setStyleSheet(self.theme.NAV_BUTTON_STYLE)
@@ -162,18 +150,6 @@ class MainWindow(QtWidgets.QMainWindow):
         if hasattr(self, 'searchEdit'):
             self.searchEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE)
         self.populateGamesGrid(self.games)
-
-    def toggleKeyboard(self):
-        if self.virtualKeyboard.isVisible():
-            self.virtualKeyboard.hide()
-        else:
-            if hasattr(self, "searchEdit"):
-                self.searchEdit.setFocus()
-            global_bottom_center = self.mapToGlobal(QtCore.QPoint(self.width() // 2, self.height()))
-            keyboard_x = global_bottom_center.x() - self.virtualKeyboard.width() // 2
-            keyboard_y = global_bottom_center.y() + 10
-            self.virtualKeyboard.move(keyboard_x, keyboard_y)
-            self.virtualKeyboard.show()
 
     def loadGames(self):
         games = []
@@ -630,12 +606,12 @@ class MainWindow(QtWidgets.QMainWindow):
         lastLaunchTitle.setStyleSheet("font-family: 'Poppins'; font-size: 11px; color: #aaaaaa;")
         lastLaunchValue = QtWidgets.QLabel("8 февр.")
         lastLaunchValue.setStyleSheet("font-family: 'Poppins'; font-size: 13px; color: #ffffff; font-weight: bold;")
-        
+
         playTimeTitle = QtWidgets.QLabel("ВЫ ИГРАЛИ")
         playTimeTitle.setStyleSheet("font-family: 'Poppins'; font-size: 11px; color: #aaaaaa;")
         playTimeValue = QtWidgets.QLabel("19 мин.")
         playTimeValue.setStyleSheet("font-family: 'Poppins'; font-size: 13px; color: #ffffff; font-weight: bold;")
-        
+
         infoLayout.addWidget(lastLaunchTitle)
         infoLayout.addWidget(lastLaunchValue)
         infoLayout.addSpacing(30)

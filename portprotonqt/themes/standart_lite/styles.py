@@ -22,61 +22,6 @@ TITLE_LABEL_STYLE = """
         0 0 10px #9B59B6;
 """
 
-# СТИЛЬ КНОПОК ВИРТУАЛЬНОЙ КЛАВИАТУРЫ (ПОЛУПРОЗРАЧНЫЙ ФОН)
-VIRTUAL_KEYBOARD_KEYS_STYLE = """
-    QPushButton {
-        background: rgba(255, 255, 255, 0.15);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        border-radius: 10px;
-        color: white;
-        font-size: 16px;
-        padding: 10px 20px;
-    }
-    QPushButton:hover {
-        background: rgba(255, 255, 255, 0.25);
-    }
-    QPushButton:pressed {
-        background: rgba(255, 255, 255, 0.35);
-        border: 1px solid rgba(255, 255, 255, 0.5);
-    }
-"""
-
-# СТИЛЬ КНОПОК ВИРТУАЛЬНОЙ КЛАВИАТУРЫ (БЕЛЫЙ ФОН)
-VIRTUAL_KEYBORD_AREA_KEYS_STYLE = """
-    QPushButton {
-        background: #ffffff;
-        border: 2px solid #cccccc;
-        border-radius: 12px;
-        color: #333333;
-        font-size: 22px;
-        font-family: 'Arial';
-    }
-    QPushButton:hover {
-        background: #f2f2f2;
-    }
-    QPushButton:pressed {
-        background: #e6e6e6;
-        border: 2px solid #aaaaaa;
-    }
-"""
-
-# СТИЛЬ ШАПКИ ВИРТУАЛЬНОЙ КЛАВИАТУРЫ
-VIRTUAL_KEYBOARD_HEADER_STYLE = """
-    background: rgba(0, 0, 0, 0.2);
-    border-top-left-radius: 15px;
-    border-top-right-radius: 15px;
-"""
-
-# СТИЛЬ ТЕКСТА В ШАПКЕ ВИРТУАЛЬНОЙ КЛАВИАТУРЫ
-VIRTUAL_KEYBOARD_HEADER_LABEL_STYLE = "color: white; font-size: 18px;"
-
-# СТИЛЬ ОБЛАСТИ С КНОПКАМИ В ВИРТУАЛЬНОЙ КЛАВИАТУРЫ
-VIRTUAL_KEYBOARD_AREA_STYLE = """
-    background: rgba(255, 255, 255, 0.95);
-    border-bottom-left-radius: 15px;
-    border-bottom-right-radius: 15px;
-"""
-
 # СТИЛЬ ОБЛАСТИ НАВИГАЦИИ (КНОПКИ ВКЛАДОК)
 NAV_WIDGET_STYLE = """
     background: rgba(255, 255, 255, 0.1);
