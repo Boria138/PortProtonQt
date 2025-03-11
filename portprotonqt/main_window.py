@@ -549,7 +549,7 @@ class MainWindow(QtWidgets.QMainWindow):
         return color.darker(factor)
 
     def openGameDetailPage(self, name, description, cover_path=None, appid="", exec_line="", controller_support=""):
-        """Переход на страницу с деталями игры с информацией, похожей на Steam."""
+        """Переход на страницу с деталями игры."""
         detailPage = QtWidgets.QWidget()
 
         if cover_path:
@@ -809,13 +809,3 @@ class MainWindow(QtWidgets.QMainWindow):
             except Exception as e:
                 print("Ошибка при завершении процесса:", e)
         event.accept()
-
-# ФУНКЦИЯ ДЛЯ ДИНАМИЧЕСКОГО ГРАДИЕНТА (ДЕТАЛИ ИГРЫ)
-# Если тема не переопределила эту функцию, можно использовать эту реализацию.
-def detail_page_style(stops):
-    return f"""
-    QWidget {{
-        background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                                    {stops});
-    }}
-"""
