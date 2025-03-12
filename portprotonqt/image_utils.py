@@ -1,6 +1,8 @@
 import os
+
 import requests
-from PySide6 import QtGui, QtCore
+from PySide6 import QtCore, QtGui
+
 
 def load_pixmap(cover, width, height):
     """

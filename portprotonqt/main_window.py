@@ -1,20 +1,20 @@
-import os
-import signal
-import shlex
-import configparser
-import subprocess
-import requests
 import concurrent.futures
-import psutil
+import configparser
+import os
+import shlex
+import signal
+import subprocess
 
-from PySide6 import QtWidgets, QtCore, QtGui
+import psutil
+import requests
+from PySide6 import QtCore, QtGui, QtWidgets
 
 import portprotonqt.themes.standart_lite.styles as default_styles
 from portprotonqt.dialogs import AddGameDialog
 from portprotonqt.game_card import GameCard
+from portprotonqt.gamepad_support import GamepadSupport
 from portprotonqt.image_utils import load_pixmap, round_corners
 from portprotonqt.steam_api import get_steam_game_info
-from portprotonqt.gamepad_support import GamepadSupport
 from portprotonqt.theme_manager import ThemeManager
 
 CONFIG_FILE = os.path.join(
@@ -159,7 +159,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         def read_file_content(file_path):
             try:
-                with open(file_path, "r", encoding="utf-8") as f:
+                with open(file_path, encoding="utf-8") as f:
                     return f.read().strip()
             except Exception as e:
                 print(f"Ошибка чтения файла {file_path}: {e}")
@@ -510,7 +510,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 else:
                     histogram[key] = [color.red(), color.green(), color.blue(), 1]
         avg_colors = []
-        for key, (r_sum, g_sum, b_sum, count) in histogram.items():
+        for _, (r_sum, g_sum, b_sum, count) in histogram.items():
             avg_r = r_sum // count
             avg_g = g_sum // count
             avg_b = b_sum // count

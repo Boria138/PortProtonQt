@@ -1,5 +1,6 @@
-import os
 import importlib.util
+import os
+
 from PySide6.QtGui import QFontDatabase
 
 # Папка, где располагаются все дополнительные темы

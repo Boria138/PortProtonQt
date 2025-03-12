@@ -1,11 +1,12 @@
-import os
-import time
-import shlex
-import subprocess
-import orjson
-import requests
 import functools
 import logging
+import os
+import shlex
+import subprocess
+import time
+
+import orjson
+import requests
 
 # Настройка логирования
 logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] %(message)s')
@@ -65,8 +66,7 @@ def get_exiftool_data(game_exe):
     try:
         proc = subprocess.run(
             ["exiftool", "-j", game_exe],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             text=True,
             check=True
         )

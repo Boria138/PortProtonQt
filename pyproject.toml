@@ -41,8 +41,26 @@ portprotonqt = "portprotonqt.app:main"
 [tool.setuptools.package-data]
 "portprotonqt" = ["themes/**/*"]
 
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "B",  # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+]
+ignore = [
+    "B008",  # do not perform function calls in argument defaults
+    "C901",  # too complex
+    "W191",  # indentation contains tabs
+    "E501"   # Line too long
+]
+
 [dependency-groups]
 dev = [
+    "isort>=6.0.1",
     "pre-commit>=4.1.0",
     "ruff>=0.9.10",
 ]

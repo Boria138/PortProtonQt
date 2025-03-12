@@ -1,6 +1,8 @@
-import pygame
 import time
+
+import pygame
 from PySide6 import QtCore
+
 
 class GamepadSupport:
     def __init__(self, parent):

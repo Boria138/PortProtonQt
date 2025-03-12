@@ -1,3 +1,5 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
@@ -10,6 +12,11 @@ repos:
     rev: 0.6.6
     hooks:
       - id: uv-lock
+
+  - repo: https://github.com/pycqa/isort
+    rev: 6.0.1
+    hooks:
+      - id: isort
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.7.1
