@@ -12,7 +12,7 @@ import logging
 logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] %(message)s')
 logger = logging.getLogger(__name__)
 
-# Время жизни кэша – 30 дней (в секундах)
+# Время жизни кэша – 30 дней (Перенести в настройки)
 CACHE_DURATION = 30 * 24 * 60 * 60
 
 def get_cache_dir():
@@ -49,7 +49,7 @@ def is_valid_candidate(candidate):
       - win32
       - win64
       - gamelauncher
-    Нормализуем кандидата перед проверкой, чтобы символы тире не мешали обнаружению.
+    Нормализуем кандидата перед проверкой
     """
     # Приводим строку к виду без тире (а также без лишних пробелов) и в нижний регистр
     normalized_candidate = candidate.lower().replace("-", " ")
@@ -84,7 +84,6 @@ def process_steam_apps(steam_apps):
     """
     for app in steam_apps:
         name = app.get("name", "")
-        # Если ключ уже есть, можно его не пересчитывать
         if not app.get("normalized_name"):
             app["normalized_name"] = normalize_name(name)
     return steam_apps
@@ -108,13 +107,16 @@ def load_steam_apps(session):
             return steam_apps
         except Exception as e:
             logger.error("Ошибка загрузки кэша приложений: %s", e)
-    app_list_url = "http://api.steampowered.com/ISteamApps/GetAppList/v2/"
+    # TODO: Replace it with https://api.steampowered.com/IStoreService/GetAppList/v1/
+    app_list_url = "https://raw.githubusercontent.com/jsnli/steamappidlist/refs/heads/master/data/games_appid.json"
     try:
         response = session.get(app_list_url)
         if response.status_code == 200:
             data = response.json()
-            steam_apps = data.get("applist", {}).get("apps", [])
-            # Добавляем нормализованное имя для каждого приложения
+            if isinstance(data, dict):
+                steam_apps = data.get("applist", {}).get("apps", [])
+            else:
+                steam_apps = data
             steam_apps = process_steam_apps(steam_apps)
             try:
                 with open(cache_file, "wb") as f:
@@ -161,8 +163,6 @@ def search_app(candidate, steam_apps_index):
                 logger.debug("    Частичное совпадение, но соотношение длин недостаточно: кандидат '%s' в '%s' (ratio: %.2f)", candidate_norm, name_norm, ratio)
     logger.debug("    Приложение для кандидата '%s' не найдено", candidate_norm)
     return None
-
-
 
 def load_app_details(app_id):
     """Пытается загрузить кэшированные данные для игры по appid из файла."""
@@ -290,13 +290,6 @@ def get_steam_game_info(desktop_name, exec_line, session):
             "cover": "",
             "controller_support": ""
         }
-
-    fullgame_appid = app_info.get("fullgame", {}).get("appid")
-    if fullgame_appid:
-        fullgame_info = fetch_app_info_cached(fullgame_appid)
-        if fullgame_info:
-            app_info = fullgame_info
-            appid = fullgame_appid
 
     title = app_info.get("name", exe_name.capitalize())
     description = app_info.get("short_description", "")
