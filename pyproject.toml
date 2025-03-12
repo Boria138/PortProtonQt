@@ -41,15 +41,15 @@ portprotonqt = "portprotonqt.app:main"
 [tool.setuptools.package-data]
 "portprotonqt" = ["themes/**/*"]
 
-
 [tool.ruff.lint]
 select = [
     "E",  # pycodestyle errors
     "W",  # pycodestyle warnings
     "F",  # pyflakes
     "B",  # flake8-bugbear
-    "C4",  # flake8-comprehensions
-    "UP",  # pyupgrade
+    "I",  # isort
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
 ]
 ignore = [
     "B008",  # do not perform function calls in argument defaults
@@ -58,9 +58,14 @@ ignore = [
     "E501"   # Line too long
 ]
 
+[tool.ruff.lint.isort]
+known-third-party = ["portprotonqt"]
+
+[tool.ruff]
+exclude = [".venv"]
+
 [dependency-groups]
 dev = [
-    "isort>=6.0.1",
     "pre-commit>=4.1.0",
     "ruff>=0.9.10",
 ]

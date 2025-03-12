@@ -1,6 +1,5 @@
-from PySide6 import QtWidgets
-
 import portprotonqt.themes.standart_lite.styles as default_styles
+from PySide6 import QtWidgets
 
 
 class AddGameDialog(QtWidgets.QDialog):

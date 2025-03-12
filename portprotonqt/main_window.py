@@ -5,17 +5,16 @@ import shlex
 import signal
 import subprocess
 
+import portprotonqt.themes.standart_lite.styles as default_styles
 import psutil
 import requests
-from PySide6 import QtCore, QtGui, QtWidgets
-
-import portprotonqt.themes.standart_lite.styles as default_styles
 from portprotonqt.dialogs import AddGameDialog
 from portprotonqt.game_card import GameCard
 from portprotonqt.gamepad_support import GamepadSupport
 from portprotonqt.image_utils import load_pixmap, round_corners
 from portprotonqt.steam_api import get_steam_game_info
 from portprotonqt.theme_manager import ThemeManager
+from PySide6 import QtCore, QtGui, QtWidgets
 
 CONFIG_FILE = os.path.join(
     os.getenv("XDG_CONFIG_HOME", os.path.join(os.path.expanduser("~"), ".config")),

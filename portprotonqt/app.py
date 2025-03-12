@@ -1,8 +1,7 @@
 import sys
 
-from PySide6 import QtWidgets
-
 from portprotonqt.main_window import MainWindow
+from PySide6 import QtWidgets
 
 
 def main():
