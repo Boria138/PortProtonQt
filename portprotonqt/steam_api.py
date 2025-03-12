@@ -5,7 +5,6 @@ import subprocess
 import orjson
 import requests
 import functools
-import configparser
 import logging
 
 # Настройка логирования
@@ -31,7 +30,6 @@ def normalize_name(s):
       - убирает лишние пробелы,
       - если строка оканчивается на 'bin' или 'app', удаляет этот суффикс.
     """
-    s_original = s
     s = s.lower()
     for ch in ["™", "®"]:
         s = s.replace(ch, "")
@@ -74,7 +72,7 @@ def get_exiftool_data(game_exe):
         )
         meta_data_list = orjson.loads(proc.stdout.encode("utf-8"))
         return meta_data_list[0] if meta_data_list else {}
-    except Exception as e:
+    except Exception:
         return {}
 
 def process_steam_apps(steam_apps):

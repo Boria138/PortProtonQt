@@ -32,15 +32,14 @@
 - [X] Если SteamApi вернул английское описание вместо русского не выводить его в карточке (переводчики не точны)
 - [X] Добавить возможность изменения названия, описания и обложки через файлы .local/share/PortProtonQT/custom_data/exe_name/{desc,name,cover}
 - [ ] Добавить интеграцию с HowLongToBeat для вывода в карточке игры время для прохождения игры [рефференс](https://github.com/hulkrelax/hltb-for-deck)
-- [X] Добавить в карточку игры сведения о поддержке геймадов 
+- [X] Добавить в карточку игры сведения о поддержке геймадов
 - [ ] Добавить в карточки данные с ProtonDB
 
 ### Установка (debug)
 
 ```sh
-python -m venv venv
-source ./venv/bin/activate
-pip install .
+uv sync --all-extras --dev
+sorce ./venv/bin/activate
 ```
 
 Запуск производится по команде portprotonqt
@@ -54,8 +53,8 @@ pip install .
 > [!NOTE]
 > Проект так же содержит части кода от [Ingame](https://github.com/Castro-Fidel/ingame)
 
-> [!WARNING]  
+> [!WARNING]
 > Проект находится на стадии WIP (work in progress) корректная работоспособность не гарантирована
 
-> [!WARNING]  
+> [!WARNING]
 > Кастомные темы это python файл с CSS константами в нём можно выполнить абсолютно любой код, так что будьте осторожны при скачивание кастомных тем

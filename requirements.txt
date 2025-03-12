@@ -1,5 +1,0 @@
-PySide6
-Pygame
-requests
-orjson
-psutil
