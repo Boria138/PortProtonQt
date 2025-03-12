@@ -38,11 +38,21 @@
 ### Установка (debug)
 
 ```sh
-uv sync --all-extras --dev
-sorce ./venv/bin/activate
+uv sync
+source .venv/bin/activate
 ```
 
 Запуск производится по команде portprotonqt
+
+### Разработка
+
+В проект встроен линтер (ruff, pre-commit) и проверка lock файла, если эти проверки не пройдут PR не будет принят, поэтому перед коммитом введите такую команду
+
+```sh
+uv sync --all-extras --dev
+source .venv/bin/activate
+pre-commit run --all-files
+```
 
 ## Авторы
 
