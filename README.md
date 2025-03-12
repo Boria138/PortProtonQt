@@ -51,7 +51,7 @@ source .venv/bin/activate
 ```sh
 uv sync --all-extras --dev
 source .venv/bin/activate
-pre-commit run --all-files
+pre-commit install
 ```
 
 ## Авторы
