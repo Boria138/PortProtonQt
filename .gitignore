@@ -8,12 +8,13 @@ wheels/
 
 # Virtual environments
 .venv
+venv
+pyvenv.cfg
 
 # Ruff
 .ruff_cache
 
-# MacOS generated files #
-######################
+# MacOS generated files
 .DS_Store
 .DS_Store?
 ._*
