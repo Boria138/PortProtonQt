@@ -24,12 +24,12 @@ def get_cache_dir():
 
 def normalize_name(s):
     """
-    Нормализует строку:
-      - приводит к нижнему регистру,
-      - удаляет символы торговых марок,
-      - заменяет разделители (-, :, ,) на пробел,
-      - убирает лишние пробелы,
-      - если строка оканчивается на 'bin' или 'app', удаляет этот суффикс.
+    Normalizes a string:
+      - converts to lowercase,
+      - removes trademark characters,
+      - replaces delimiters (-, :, ,) with a space,
+      - removes extra spaces,
+      - if the string ends with 'bin' or 'app', removes the suffix.
     """
     s = s.lower()
     for ch in ["™", "®"]:
@@ -75,17 +75,6 @@ def get_exiftool_data(game_exe):
     except Exception:
         return {}
 
-def process_steam_apps(steam_apps):
-    """
-    Для каждого приложения из Steam добавляет ключ "normalized_name",
-    содержащий нормализованное значение имени (поле "name").
-    """
-    for app in steam_apps:
-        name = app.get("name", "")
-        if not app.get("normalized_name"):
-            app["normalized_name"] = normalize_name(name)
-    return steam_apps
-
 # Функция для загрузки списка приложений Steam с использованием кэша (30 дней)
 def load_steam_apps(session):
     cache_dir = get_cache_dir()
@@ -100,13 +89,11 @@ def load_steam_apps(session):
             with open(cache_file, "rb") as f:
                 steam_apps = orjson.loads(f.read())
             # Если приложения не содержат поле "normalized_name", добавляем его
-            steam_apps = process_steam_apps(steam_apps)
             logger.debug("Загружен кэш Steam приложений с %d записями", len(steam_apps))
             return steam_apps
         except Exception as e:
             logger.error("Ошибка загрузки кэша приложений: %s", e)
-    # TODO: Replace it with https://api.steampowered.com/IStoreService/GetAppList/v1/
-    app_list_url = "https://raw.githubusercontent.com/jsnli/steamappidlist/refs/heads/master/data/games_appid.json"
+    app_list_url = "https://raw.githubusercontent.com/BlackSnaker/PortProtonQt/refs/heads/main/data/games_appid_min.json"
     try:
         response = session.get(app_list_url)
         if response.status_code == 200:
@@ -115,7 +102,6 @@ def load_steam_apps(session):
                 steam_apps = data.get("applist", {}).get("apps", [])
             else:
                 steam_apps = data
-            steam_apps = process_steam_apps(steam_apps)
             try:
                 with open(cache_file, "wb") as f:
                     f.write(orjson.dumps(steam_apps))

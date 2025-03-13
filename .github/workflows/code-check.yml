@@ -2,8 +2,14 @@ name: Python Code Quality
 
 on:
   pull_request:
+    paths-ignore:
+      - "data/**"
+      - "*.md"
   push:
     branches: [main]
+    paths-ignore:
+      - "data/**"
+      - "*.md"
 
 jobs:
   lock_file:

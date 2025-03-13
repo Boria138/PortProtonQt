@@ -1,0 +1,32 @@
+name: Fetch Data
+run-name: Fetch and Write steam apps list
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 1 * *'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: "pyproject.toml"
+
+      - name: Set up dependency
+        run: pip install aiohttp asyncio
+
+      - name: Run get_id.py
+        run: python get_id.py
+        env:
+          STEAM_KEY: ${{ secrets.STEAM_KEY }}
+
+      - name: Push changes
+        uses: actions-js/push@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: "main"

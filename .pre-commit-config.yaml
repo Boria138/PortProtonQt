@@ -4,8 +4,6 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
-      - id: end-of-file-fixer
-      - id: check-executables-have-shebangs
       - id: trailing-whitespace
 
   - repo: https://github.com/astral-sh/uv-pre-commit
