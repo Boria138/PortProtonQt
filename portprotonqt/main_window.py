@@ -14,7 +14,9 @@ from portprotonqt.gamepad_support import GamepadSupport
 from portprotonqt.image_utils import load_pixmap, round_corners
 from portprotonqt.steam_api import get_steam_game_info
 from portprotonqt.theme_manager import ThemeManager
+from portprotonqt.time_utils import save_last_launch, get_last_launch, parse_playtime_file, format_playtime
 from PySide6 import QtCore, QtGui, QtWidgets
+from datetime import datetime
 
 CONFIG_FILE = os.path.join(
     os.getenv("XDG_CONFIG_HOME", os.path.join(os.path.expanduser("~"), ".config")),
@@ -90,7 +92,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # Текст "PortProton" слева
         self.titleLabel = QtWidgets.QLabel("PortProton")
         self.titleLabel = QtWidgets.QLabel()
-        pixmap = QtGui.QPixmap("portproton.png")  # Укажите путь к файлу PNG
+        pixmap = self.theme_manager.current_theme_logo
         self.titleLabel.setPixmap(pixmap)
         self.titleLabel.setFixedSize(pixmap.size())  # Фиксируем размер под изображение
         self.titleLabel.setStyleSheet(self.theme.TITLE_LABEL_STYLE)  # Оставляем стиль (если нужно)
@@ -100,8 +102,6 @@ class MainWindow(QtWidgets.QMainWindow):
         scaled_pixmap = pixmap.scaled(80, 80, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
         self.titleLabel.setPixmap(scaled_pixmap)
         self.titleLabel.setFixedSize(scaled_pixmap.size())
-
-
 
         # 2. НАВИГАЦИЯ (КНОПКИ ВКЛАДОК)
         self.navWidget = QtWidgets.QWidget()
@@ -182,6 +182,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 portproton_location = fallback_dir
                 print(f"Using fallback PortProton location from data directory: {portproton_location}")
 
+        self.portproton_location = portproton_location
+
         if not portproton_location:
             print(f"Не найден конфигурационный файл {config_path} и директория PortProton не существует.")
             return games
@@ -212,6 +214,7 @@ class MainWindow(QtWidgets.QMainWindow):
             steam_info = {}
             game_exe = ""
             controller_support = ""
+            formatted_playtime = ""
             if exec_line:
                 try:
                     parts = shlex.split(exec_line)
@@ -230,6 +233,19 @@ class MainWindow(QtWidgets.QMainWindow):
                 exe_name = os.path.splitext(os.path.basename(game_exe))[0]
                 custom_folder = os.path.join(xdg_data_home, "PortProtonQT", "custom_data", exe_name)
                 os.makedirs(custom_folder, exist_ok=True)
+                last_launch = get_last_launch(exe_name) if exe_name else "Никогда"
+                playtime_seconds = 0
+                statistics_file = os.path.join(self.portproton_location, "data", "tmp", "statistics")
+                playtime_data = parse_playtime_file(statistics_file)
+                matching_key = None
+                for key in playtime_data:
+                    if os.path.basename(key).split('.')[0] == exe_name:
+                        matching_key = key
+                        break
+
+                if matching_key:
+                    playtime_seconds = playtime_data[matching_key]
+                    formatted_playtime = format_playtime(playtime_seconds)
                 try:
                     custom_files = set(os.listdir(custom_folder))
                 except Exception as e:
@@ -269,7 +285,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if custom_cover:
                 cover = custom_cover
 
-            return (name, desc, cover, appid, exec_line, controller_support)
+            return (name, desc, cover, appid, exec_line, controller_support, last_launch, formatted_playtime)
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
             results = list(executor.map(process_file, desktop_files))
@@ -359,8 +375,8 @@ class MainWindow(QtWidgets.QMainWindow):
         """Заполняет сетку карточками игр (GameCard)."""
         self.clearLayout(self.gamesListLayout)
         columns = 4
-        for idx, (name, desc, cover, appid, controller_support, exec_line) in enumerate(games_list):
-            card = GameCard(name, desc, cover, appid, controller_support, exec_line, self.openGameDetailPage, theme=self.theme)
+        for idx, (name, desc, cover, appid, controller_support, exec_line, last_launch, formatted_playtime) in enumerate(games_list):
+            card = GameCard(name, desc, cover, appid, controller_support, exec_line, last_launch, formatted_playtime, self.openGameDetailPage, theme=self.theme)
             row = idx // columns
             col = idx % columns
             self.gamesListLayout.addWidget(card, row, col)
@@ -379,7 +395,7 @@ class MainWindow(QtWidgets.QMainWindow):
             name = dialog.nameEdit.text().strip()
             desc = dialog.descEdit.toPlainText().strip()
             cover = dialog.coverEdit.text().strip()
-            self.games.append((name, desc, cover, "", "", ""))
+            self.games.append((name, desc, cover, "", "", "", "Никогда",""))
             self.populateGamesGrid(self.games)
 
     def createAutoInstallTab(self):
@@ -530,7 +546,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def darkenColor(self, color, factor=200):
         return color.darker(factor)
 
-    def openGameDetailPage(self, name, description, cover_path=None, appid="", exec_line="", controller_support=""):
+    def openGameDetailPage(self, name, description, cover_path=None, appid="", exec_line="", controller_support="", last_launch="", formatted_playtime=""):
         """Переход на страницу с деталями игры."""
         detailPage = QtWidgets.QWidget()
 
@@ -610,12 +626,12 @@ class MainWindow(QtWidgets.QMainWindow):
 
         lastLaunchTitle = QtWidgets.QLabel("ПОСЛЕДНИЙ ЗАПУСК")
         lastLaunchTitle.setStyleSheet("font-family: 'Poppins'; font-size: 11px; color: #aaaaaa;")
-        lastLaunchValue = QtWidgets.QLabel("8 февр.")
+        lastLaunchValue = QtWidgets.QLabel(last_launch)
         lastLaunchValue.setStyleSheet("font-family: 'Poppins'; font-size: 13px; color: #ffffff; font-weight: bold;")
 
         playTimeTitle = QtWidgets.QLabel("ВЫ ИГРАЛИ")
         playTimeTitle.setStyleSheet("font-family: 'Poppins'; font-size: 11px; color: #aaaaaa;")
-        playTimeValue = QtWidgets.QLabel("19 мин.")
+        playTimeValue = QtWidgets.QLabel(formatted_playtime)
         playTimeValue.setStyleSheet("font-family: 'Poppins'; font-size: 13px; color: #ffffff; font-weight: bold;")
 
         infoLayout.addWidget(lastLaunchTitle)
@@ -769,6 +785,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     QtWidgets.QMessageBox.warning(self, "Ошибка", f"Указанный файл не найден: {file_to_check}")
                     return
                 self.target_exe = os.path.basename(file_to_check)
+                exe_name = os.path.splitext(os.path.basename(file_to_check))[0]
                 env_vars = os.environ.copy()
                 if entry_exec_split[0] == "env" and len(entry_exec_split) > 1 and 'data/scripts/start.sh' in entry_exec_split[1]:
                     env_vars['START_FROM_STEAM'] = '1'
@@ -776,6 +793,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     env_vars['START_FROM_STEAM'] = '1'
                 process = subprocess.Popen(entry_exec_split, env=env_vars, shell=False)
                 self.game_processes.append(process)
+                save_last_launch(exe_name, datetime.now())
                 self.startTypewriterEffect(f"Идёт запуск {game_name}")
                 self.checkProcessTimer = QtCore.QTimer(self)
                 self.checkProcessTimer.timeout.connect(self.checkTargetExe)

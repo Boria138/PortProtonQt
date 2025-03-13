@@ -64,7 +64,7 @@ ignore = [
 known-third-party = ["portprotonqt"]
 
 [tool.ruff]
-exclude = [".venv", "data"]
+exclude = [".venv", "data", "portprotonqt/themes"]
 
 [dependency-groups]
 dev = [

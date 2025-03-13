@@ -1,7 +1,7 @@
 import importlib.util
 import os
 
-from PySide6.QtGui import QFontDatabase
+from PySide6.QtGui import QFontDatabase, QPixmap
 
 # Папка, где располагаются все дополнительные темы
 xdg_data_home = os.getenv("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share"))
@@ -80,6 +80,38 @@ def load_theme_fonts(theme_name):
             else:
                 print(f"Ошибка загрузки шрифта: {filename}")
 
+def load_theme_logo(theme_name):
+    """
+    Загружает логотип выбранной темы из файла theme_logo.png.
+    Ищет файл логотипа в корне папки темы.
+
+    :param theme_name: Имя темы.
+    :return: QPixmap с логотипом или None, если файл не найден или произошла ошибка.
+    """
+    logo_path = None
+    if theme_name == "standart_lite":
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        logo_path = os.path.join(base_dir, "themes", "standart_lite", "theme_logo.png")
+    else:
+        for themes_dir in THEMES_DIRS:
+            theme_folder = os.path.join(themes_dir, theme_name)
+            possible_logo_path = os.path.join(theme_folder, "theme_logo.png")
+            if os.path.exists(possible_logo_path):
+                logo_path = possible_logo_path
+                break
+
+    if logo_path and os.path.exists(logo_path):
+        pixmap = QPixmap(logo_path)
+        if pixmap.isNull():
+            print(f"Ошибка загрузки логотипа: {logo_path}")
+            return None
+        else:
+            print(f"Логотип темы '{theme_name}' успешно загружен: {logo_path}")
+            return pixmap
+    else:
+        print(f"Файл логотипа не найден для темы '{theme_name}'")
+        return None
+
 class ThemeWrapper:
     """
     Обёртка для кастомной темы.
@@ -104,6 +136,7 @@ class ThemeManager:
     def __init__(self):
         self.current_theme_name = None
         self.current_theme_module = None
+        self.current_theme_logo = None
 
     def get_available_themes(self):
         """Возвращает список доступных тем."""
@@ -111,7 +144,7 @@ class ThemeManager:
 
     def apply_theme(self, theme_name):
         """
-        Применяет выбранную тему: загружает модуль стилей и шрифты.
+        Применяет выбранную тему: загружает модуль стилей, шрифты и логотип.
         Если загрузка прошла успешно, сохраняет выбранную тему.
 
         :param theme_name: Имя темы.
@@ -120,6 +153,7 @@ class ThemeManager:
         try:
             theme_module = load_theme(theme_name)
             load_theme_fonts(theme_name)
+            self.current_theme_logo = load_theme_logo(theme_name)
             self.current_theme_name = theme_name
             self.current_theme_module = theme_module
             print(f"Тема '{theme_name}' успешно применена")
