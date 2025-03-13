@@ -89,12 +89,19 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Текст "PortProton" слева
         self.titleLabel = QtWidgets.QLabel("PortProton")
-        self.titleLabel.setStyleSheet(self.theme.TITLE_LABEL_STYLE)
+        self.titleLabel = QtWidgets.QLabel()
+        pixmap = QtGui.QPixmap("portproton.png")  # Укажите путь к файлу PNG
+        self.titleLabel.setPixmap(pixmap)
+        self.titleLabel.setFixedSize(pixmap.size())  # Фиксируем размер под изображение
+        self.titleLabel.setStyleSheet(self.theme.TITLE_LABEL_STYLE)  # Оставляем стиль (если нужно)
         headerLayout.addWidget(self.titleLabel)
-
         headerLayout.addStretch()
-
         mainLayout.addWidget(self.header)
+        scaled_pixmap = pixmap.scaled(80, 80, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
+        self.titleLabel.setPixmap(scaled_pixmap)
+        self.titleLabel.setFixedSize(scaled_pixmap.size())
+
+
 
         # 2. НАВИГАЦИЯ (КНОПКИ ВКЛАДОК)
         self.navWidget = QtWidgets.QWidget()

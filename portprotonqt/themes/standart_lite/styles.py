@@ -1,16 +1,18 @@
-# Улучшенный тёмный стиль glassmorphism, вдохновлённый Apple Vision Pro – доработанный вариант
+# Улучшенный тёмный стиль – доработанный вариант
 
 # СТИЛЬ ШАПКИ ГЛАВНОГО ОКНА
 MAIN_WINDOW_HEADER_STYLE = """
     QFrame {
         background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-            stop:0 rgba(20, 20, 20, 0.50),
-            stop:1 rgba(30, 30, 30, 0.45));
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.20);
-        border-top-left-radius: 20px;
-        border-top-right-radius: 20px;
-        box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+            stop:0 rgba(20, 20, 20, 0.40),
+            stop:0.5 rgba(25, 25, 25, 0.35),
+            stop:1 rgba(30, 30, 30, 0.30));
+        border: 1px solid rgba(255, 255, 255, 0.10);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+        border-top-left-radius: 30px;
+        border-top-right-radius: 30px;
+        box-shadow: 0 14px 60px rgba(0, 0, 0, 0.7);
+        border: none;
     }
 """
 
@@ -18,9 +20,9 @@ MAIN_WINDOW_HEADER_STYLE = """
 TITLE_LABEL_STYLE = """
     QLabel {
         font-family: 'RASKHAL';
-        font-size: 36px;
+        font-size: 38px;
         color: #007AFF;
-        text-shadow: 0 0 15px rgba(0,122,255,0.8);
+        text-shadow: 0 0 20px rgba(0,122,255,0.8), 0 2px 4px rgba(0, 0, 0, 0.5);
     }
 """
 
@@ -28,11 +30,11 @@ TITLE_LABEL_STYLE = """
 NAV_WIDGET_STYLE = """
     QWidget {
         background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-            stop:0 rgba(20, 20, 20, 0.50),
-            stop:1 rgba(30, 30, 30, 0.45));
-        border: 1px solid rgba(255, 255, 255, 0.18);
-        border-radius: 15px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+            stop:0 rgba(20, 20, 20, 0.40),
+            stop:1 rgba(30, 30, 30, 0.35));
+        border: 1px solid rgba(255, 255, 255, 0.10);
+        border-radius: 25px;
+        box-shadow: 0 10px 50px rgba(0, 0, 0, 0.50);
     }
 """
 
@@ -45,15 +47,20 @@ NAV_BUTTON_STYLE = """
         font-family: 'Poppins';
         text-transform: uppercase;
         border: none;
+        border-radius: 15px;
     }
     QPushButton:checked {
         background: rgba(0,122,255,0.25);
         color: #007AFF;
         font-weight: bold;
-        border-radius: 5px;
+        border-radius: 15px;
     }
     QPushButton:hover {
+        background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+            stop:0 rgba(0,122,255,0.15),
+            stop:1 rgba(0,122,255,0.10));
         color: #007AFF;
+        cursor: pointer;
     }
 """
 
@@ -72,9 +79,9 @@ MAIN_WINDOW_STYLE = """
 # СТИЛЬ ПОЛЯ ПОИСКА
 SEARCH_EDIT_STYLE = """
     QLineEdit {
-        background-color: rgba(30, 30, 30, 0.70);
-        border: 1px solid rgba(255, 255, 255, 0.35);
-        border-radius: 20px;
+        background-color: rgba(30, 30, 30, 0.50);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        border-radius: 30px;
         padding-left: 35px;
         padding-right: 10px;
         font-family: 'Poppins';
@@ -93,11 +100,11 @@ SCROLL_AREA_STYLE = "border: none;"
 LIST_WIDGET_STYLE = """
     QWidget {
         background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-            stop:0 rgba(20, 20, 20, 0.50),
-            stop:1 rgba(20, 20, 20, 0.40));
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        border-radius: 15px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+            stop:0 rgba(20, 20, 20, 0.40),
+            stop:1 rgba(20, 20, 20, 0.30));
+        border: 1px solid rgba(255, 255, 255, 0.10);
+        border-radius: 25px;
+        box-shadow: 0 10px 50px rgba(0, 0, 0, 0.50);
     }
 """
 
@@ -107,20 +114,23 @@ INSTALLED_TAB_TITLE_STYLE = "font-family: 'Orbitron'; font-size: 28px; color: #0
 # СТИЛЬ КНОПКИ "ДОБАВИТЬ ИГРУ"
 ADD_GAME_BUTTON_STYLE = """
     QPushButton {
-        background: rgba(20, 20, 20, 0.50);
-        border: 1px solid rgba(255, 255, 255, 0.30);
-        border-radius: 10px;
+        background: rgba(20, 20, 20, 0.40);
+        border: 1px solid rgba(255, 255, 255, 0.20);
+        border-radius: 20px;
         color: #ffffff;
         font-size: 16px;
         padding: 12px 24px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.50);
     }
     QPushButton:hover {
-        background: rgba(20, 20, 20, 0.60);
+        background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+            stop:0 rgba(0,122,255,0.20),
+            stop:1 rgba(0,122,255,0.15));
+        cursor: pointer;
     }
     QPushButton:pressed {
-        background: rgba(20, 20, 20, 0.70);
-        border: 1px solid rgba(255, 255, 255, 0.35);
+        background: rgba(20, 20, 20, 0.60);
+        border: 1px solid rgba(255, 255, 255, 0.25);
     }
 """
 
@@ -134,20 +144,23 @@ DETAIL_PAGE_NO_COVER_STYLE = "background: rgba(20,20,20,0.95);"
 # СТИЛЬ КНОПКИ "НАЗАД" НА ДЕТАЛЬНОЙ СТРАНИЦЕ
 BACK_BUTTON_STYLE = """
     QPushButton {
-        background: rgba(20, 20, 20, 0.50);
-        border: 1px solid rgba(255, 255, 255, 0.30);
-        border-radius: 8px;
+        background: rgba(20, 20, 20, 0.40);
+        border: 1px solid rgba(255, 255, 255, 0.20);
+        border-radius: 15px;
         color: #ffffff;
         font-size: 16px;
         padding: 8px 16px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.50);
     }
     QPushButton:hover {
-        background: rgba(20, 20, 20, 0.60);
+        background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+            stop:0 rgba(0,122,255,0.20),
+            stop:1 rgba(0,122,255,0.15));
+        cursor: pointer;
     }
     QPushButton:pressed {
-        background: rgba(20, 20, 20, 0.70);
-        border: 1px solid rgba(255, 255, 255, 0.35);
+        background: rgba(20, 20, 20, 0.60);
+        border: 1px solid rgba(255, 255, 255, 0.25);
     }
 """
 
@@ -155,28 +168,28 @@ BACK_BUTTON_STYLE = """
 DETAIL_CONTENT_FRAME_STYLE = """
     QFrame {
         background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-            stop:0 rgba(20, 20, 20, 0.50),
-            stop:1 rgba(20, 20, 20, 0.45));
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        border-radius: 10px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+            stop:0 rgba(20, 20, 20, 0.40),
+            stop:1 rgba(20, 20, 20, 0.35));
+        border: 1px solid rgba(255, 255, 255, 0.10);
+        border-radius: 15px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.50);
     }
 """
 
 # ФРЕЙМ ПОД ОБЛОЖКОЙ
 COVER_FRAME_STYLE = """
     QFrame {
-        background: rgba(30, 30, 30, 0.85);
-        border-radius: 10px;
-        border: 1px solid rgba(255, 255, 255, 0.18);
+        background: rgba(30, 30, 30, 0.80);
+        border-radius: 15px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
     }
 """
 
 # СКРУГЛЕНИЕ LABEL ПОД ОБЛОЖКУ
-COVER_LABEL_STYLE = "border-radius: 15px;"
+COVER_LABEL_STYLE = "border-radius: 20px;"
 
 # ВИДЖЕТ ДЕТАЛЕЙ (ТЕКСТ, ОПИСАНИЕ)
-DETAILS_WIDGET_STYLE = "background: rgba(20,20,20,0.45); border-radius: 10px; padding: 10px;"
+DETAILS_WIDGET_STYLE = "background: rgba(20,20,20,0.40); border-radius: 15px; padding: 10px;"
 
 # НАЗВАНИЕ (ЗАГОЛОВОК) НА ДЕТАЛЬНОЙ СТРАНИЦЕ
 DETAIL_PAGE_TITLE_STYLE = "font-family: 'Orbitron'; font-size: 32px; color: #007AFF;"
@@ -193,53 +206,59 @@ STEAM_APPID_LABEL_STYLE = "font-family: 'Poppins'; font-size: 16px; color: #ffff
 # СТИЛЬ КНОПКИ "ИГРАТЬ"
 PLAY_BUTTON_STYLE = """
     QPushButton {
-        background: rgba(20, 20, 20, 0.50);
-        border: 1px solid rgba(255, 255, 255, 0.30);
-        border-radius: 8px;
+        background: rgba(20, 20, 20, 0.40);
+        border: 1px solid rgba(255, 255, 255, 0.20);
+        border-radius: 15px;
         font-size: 16px;
         color: #ffffff;
         font-weight: bold;
         padding: 8px 16px;
         min-width: 120px;
         min-height: 40px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.50);
     }
     QPushButton:hover {
-        background: rgba(20, 20, 20, 0.60);
+        background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+            stop:0 rgba(0,122,255,0.20),
+            stop:1 rgba(0,122,255,0.15));
+        cursor: pointer;
     }
     QPushButton:pressed {
-        background: rgba(20, 20, 20, 0.70);
-        border: 1px solid rgba(255, 255, 255, 0.35);
+        background: rgba(20, 20, 20, 0.60);
+        border: 1px solid rgba(255, 255, 255, 0.25);
     }
 """
 
 # СТИЛЬ КНОПКИ "ОБЗОР..." В ДИАЛОГЕ "ДОБАВИТЬ ИГРУ"
 DIALOG_BROWSE_BUTTON_STYLE = """
     QPushButton {
-        background: rgba(20, 20, 20, 0.50);
-        border: 1px solid rgba(255, 255, 255, 0.30);
-        border-radius: 10px;
+        background: rgba(20, 20, 20, 0.40);
+        border: 1px solid rgba(255, 255, 255, 0.20);
+        border-radius: 15px;
         color: #ffffff;
         font-size: 16px;
         padding: 5px 10px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.50);
     }
     QPushButton:hover {
-        background: rgba(20, 20, 20, 0.60);
+        background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+            stop:0 rgba(0,122,255,0.20),
+            stop:1 rgba(0,122,255,0.15));
+        cursor: pointer;
     }
     QPushButton:pressed {
-        background: rgba(20, 20, 20, 0.70);
-        border: 1px solid rgba(255, 255, 255, 0.35);
+        background: rgba(20, 20, 20, 0.60);
+        border: 1px solid rgba(255, 255, 255, 0.25);
     }
 """
 
 # СТИЛЬ КАРТОЧКИ ИГРЫ (GAMECARD)
 GAME_CARD_WINDOW_STYLE = """
     QFrame {
-        border-radius: 15px;
-        background: rgba(20, 20, 20, 0.55);
-        border: 1px solid rgba(255, 255, 255, 0.30);
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+        border-radius: 20px;
+        background: rgba(20, 20, 20, 0.40);
+        border: 1px solid rgba(255, 255, 255, 0.20);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.50);
     }
 """
 
@@ -251,8 +270,8 @@ GAME_CARD_NAME_LABEL_STYLE = """
         font-size: 18px;
         font-weight: bold;
         background-color: rgba(20, 20, 20, 0.85);
-        border-bottom-left-radius: 15px;
-        border-bottom-right-radius: 15px;
+        border-bottom-left-radius: 20px;
+        border-bottom-right-radius: 20px;
         padding: 14px;
         qproperty-wordWrap: true;
     }
@@ -264,8 +283,6 @@ LAST_LAUNCH_VALUE_STYLE = "font-family: 'Poppins'; font-size: 13px; color: #ffff
 PLAY_TIME_TITLE_STYLE   = "font-family: 'Poppins'; font-size: 11px; color: #bbbbbb; text-transform: uppercase; letter-spacing: 0.75px; margin-bottom: 2px;"
 PLAY_TIME_VALUE_STYLE   = "font-family: 'Poppins'; font-size: 13px; color: #ffffff; font-weight: 600; letter-spacing: 0.75px;"
 
-# ФУНКЦИЯ ДЛЯ ДИНАМИЧЕСКОГО ГРАДИЕНТА (ДЕТАЛИ ИГР)
-# Функции из этой темы срабатывает всегда вне зависимости от выбранной темы, функции из других тем работают только в этих темах
 def detail_page_style(stops):
     return f"""
     QWidget {{
