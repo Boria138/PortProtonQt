@@ -372,7 +372,7 @@ class MainWindow(QtWidgets.QMainWindow):
             name = dialog.nameEdit.text().strip()
             desc = dialog.descEdit.toPlainText().strip()
             cover = dialog.coverEdit.text().strip()
-            self.games.append((name, desc, cover, "", ""))
+            self.games.append((name, desc, cover, "", "", ""))
             self.populateGamesGrid(self.games)
 
     def createAutoInstallTab(self):

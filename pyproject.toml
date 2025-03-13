@@ -47,7 +47,6 @@ select = [
     "W",  # pycodestyle warnings
     "F",  # pyflakes
     "B",  # flake8-bugbear
-    "I",  # isort
     "C4", # flake8-comprehensions
     "UP", # pyupgrade
 ]
