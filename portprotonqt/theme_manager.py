@@ -1,7 +1,8 @@
 import importlib.util
 import os
-
-from PySide6.QtGui import QFontDatabase, QPixmap
+from PySide6.QtGui import QFontDatabase, QPixmap, QPainter
+from PySide6.QtSvg import QSvgRenderer
+from PySide6.QtCore import Qt
 
 # Папка, где располагаются все дополнительные темы
 xdg_data_home = os.getenv("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share"))
@@ -9,7 +10,6 @@ THEMES_DIRS = [
     os.path.join(xdg_data_home, "PortProtonQT", "themes"),
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "themes")
 ]
-
 
 def list_themes():
     """
@@ -82,35 +82,62 @@ def load_theme_fonts(theme_name):
 
 def load_theme_logo(theme_name):
     """
-    Загружает логотип выбранной темы из файла theme_logo.png.
-    Ищет файл логотипа в корне папки темы.
+    Загружает логотип выбранной темы из файла theme_logo.svg или theme_logo.png.
+    Сначала ищется SVG, затем PNG, в корне папки темы.
 
     :param theme_name: Имя темы.
     :return: QPixmap с логотипом или None, если файл не найден или произошла ошибка.
     """
     logo_path = None
+    file_extension = None
+
     if theme_name == "standart_lite":
         base_dir = os.path.dirname(os.path.abspath(__file__))
-        logo_path = os.path.join(base_dir, "themes", "standart_lite", "theme_logo.png")
+        svg_path = os.path.join(base_dir, "themes", "standart_lite", "theme_logo.svg")
+        png_path = os.path.join(base_dir, "themes", "standart_lite", "theme_logo.png")
+        if os.path.exists(svg_path):
+            logo_path = svg_path
+            file_extension = "svg"
+        elif os.path.exists(png_path):
+            logo_path = png_path
+            file_extension = "png"
     else:
         for themes_dir in THEMES_DIRS:
             theme_folder = os.path.join(themes_dir, theme_name)
-            possible_logo_path = os.path.join(theme_folder, "theme_logo.png")
-            if os.path.exists(possible_logo_path):
-                logo_path = possible_logo_path
+            svg_path = os.path.join(theme_folder, "theme_logo.svg")
+            png_path = os.path.join(theme_folder, "theme_logo.png")
+            if os.path.exists(svg_path):
+                logo_path = svg_path
+                file_extension = "svg"
+                break
+            elif os.path.exists(png_path):
+                logo_path = png_path
+                file_extension = "png"
                 break
 
-    if logo_path and os.path.exists(logo_path):
-        pixmap = QPixmap(logo_path)
-        if pixmap.isNull():
-            print(f"Ошибка загрузки логотипа: {logo_path}")
-            return None
-        else:
-            print(f"Логотип темы '{theme_name}' успешно загружен: {logo_path}")
-            return pixmap
-    else:
+    if not logo_path or not os.path.exists(logo_path):
         print(f"Файл логотипа не найден для темы '{theme_name}'")
         return None
+
+    if file_extension == "svg":
+        renderer = QSvgRenderer(logo_path)
+        if not renderer.isValid():
+            print(f"Ошибка загрузки SVG логотипа: {logo_path}")
+            return None
+        pixmap = QPixmap(128, 128)
+        pixmap.fill(Qt.transparent)
+        painter = QPainter(pixmap)
+        renderer.render(painter)
+        painter.end()
+        print(f"Логотип темы '{theme_name}' успешно загружен (SVG): {logo_path}")
+        return pixmap
+    else:
+        pixmap = QPixmap(logo_path)
+        if pixmap.isNull():
+            print(f"Ошибка загрузки PNG логотипа: {logo_path}")
+            return None
+        print(f"Логотип темы '{theme_name}' успешно загружен (PNG): {logo_path}")
+        return pixmap
 
 class ThemeWrapper:
     """
