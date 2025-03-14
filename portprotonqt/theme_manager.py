@@ -18,7 +18,6 @@ CONFIG_FILE = os.path.join(
     "PortProtonQT.conf"
 )
 
-
 def list_themes():
     """
     Возвращает список доступных тем (названий папок) из каталогов THEMES_DIRS.
