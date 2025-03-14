@@ -13,40 +13,10 @@ from portprotonqt.game_card import GameCard
 from portprotonqt.gamepad_support import GamepadSupport
 from portprotonqt.image_utils import load_pixmap, round_corners
 from portprotonqt.steam_api import get_steam_game_info
-from portprotonqt.theme_manager import ThemeManager
+from portprotonqt.theme_manager import ThemeManager, read_theme_from_config, save_theme_to_config, load_theme_metainfo, load_theme_screenshots
 from portprotonqt.time_utils import save_last_launch, get_last_launch, parse_playtime_file, format_playtime
 from PySide6 import QtCore, QtGui, QtWidgets
 from datetime import datetime
-
-CONFIG_FILE = os.path.join(
-    os.getenv("XDG_CONFIG_HOME", os.path.join(os.path.expanduser("~"), ".config")),
-    "PortProtonQT.conf"
-)
-
-def read_theme_from_config():
-    """Читает из конфигурационного файла, какая тема указана в разделе [Appearance]."""
-    config = configparser.ConfigParser()
-    if os.path.exists(CONFIG_FILE):
-        try:
-            config.read(CONFIG_FILE, encoding="utf-8")
-            return config.get("Appearance", "theme", fallback="standart_lite")
-        except Exception as e:
-            print("Ошибка чтения конфигурации темы:", e)
-    return "standart_lite"
-
-def save_theme_to_config(theme_name):
-    """Сохраняет имя выбранной темы в CONFIG_FILE под секцией [Appearance]."""
-    config = configparser.ConfigParser()
-    if os.path.exists(CONFIG_FILE):
-        config.read(CONFIG_FILE, encoding="utf-8")
-    if "Appearance" not in config:
-        config["Appearance"] = {}
-    config["Appearance"]["theme"] = theme_name
-    try:
-        with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
-            config.write(configfile)
-    except Exception as e:
-        print("Ошибка сохранения конфигурации темы:", e)
 
 class MainWindow(QtWidgets.QMainWindow):
     """Основное окно PortProtonQT."""
@@ -153,8 +123,6 @@ class MainWindow(QtWidgets.QMainWindow):
         for btn in self.tabButtons.values():
             btn.setStyleSheet(self.theme.NAV_BUTTON_STYLE)
         self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE)
-        if hasattr(self, 'searchEdit'):
-            self.searchEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE)
         self.populateGamesGrid(self.games)
 
     def loadGames(self):
@@ -467,33 +435,133 @@ class MainWindow(QtWidgets.QMainWindow):
         self.stackedWidget.addWidget(widget)
 
     def createThemeTab(self):
-        """Вкладка 'Темы', позволяющая менять тему интерфейса."""
+        """Вкладка 'Темы'"""
         widget = QtWidgets.QWidget()
-        layout = QtWidgets.QVBoxLayout(widget)
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(15)
+        mainLayout = QtWidgets.QVBoxLayout(widget)
+        mainLayout.setContentsMargins(20, 20, 20, 20)
+        mainLayout.setSpacing(10)
 
-        title = QtWidgets.QLabel("Управление темами")
-        title.setStyleSheet(self.theme.TAB_TITLE_STYLE)
-        layout.addWidget(title)
+        # 1. Верхняя строка: Заголовок и список тем (QComboBox)
+        topLayout = QtWidgets.QHBoxLayout()
+        titleLabel = QtWidgets.QLabel("Выберите тему:")
+        titleLabel.setStyleSheet(self.theme.TAB_TITLE_STYLE)
+        topLayout.addWidget(titleLabel)
 
-        themesCombo = QtWidgets.QComboBox()
+        self.themesCombo = QtWidgets.QComboBox()
+        self.themesCombo.setStyleSheet(self.theme.COMBO_BOX_STYLE)
         available_themes = self.theme_manager.get_available_themes()
         if self.current_theme_name in available_themes:
             available_themes.remove(self.current_theme_name)
             available_themes.insert(0, self.current_theme_name)
-        themesCombo.addItems(available_themes)
-        layout.addWidget(themesCombo)
+        self.themesCombo.addItems(available_themes)
+        topLayout.addWidget(self.themesCombo)
+        topLayout.addStretch(1)  # отодвигаем всё влево, если нужно
 
-        applyButton = QtWidgets.QPushButton("Применить тему")
-        applyButton.setStyleSheet(self.theme.ADD_GAME_BUTTON_STYLE)
-        layout.addWidget(applyButton)
+        mainLayout.addLayout(topLayout)
 
+        # 2. Центральная область: скроллимые скриншоты (горизонтальный QScrollArea)
+        self.screenshotsScroll = QtWidgets.QScrollArea()
+        self.screenshotsScroll.setWidgetResizable(True)
+        self.screenshotsScroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+        self.screenshotsScroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.screenshotsScroll.setFrameShape(QtWidgets.QFrame.NoFrame)
+
+        screenshotsContainer = QtWidgets.QWidget()
+        self.screenshotsLayout = QtWidgets.QHBoxLayout(screenshotsContainer)
+        self.screenshotsLayout.setContentsMargins(0, 0, 0, 0)
+        self.screenshotsLayout.setSpacing(10)
+        self.screenshotsScroll.setWidget(screenshotsContainer)
+
+        # Добавляем скроллимую область в основной layout, растягиваем её, чтобы занимала много места
+        mainLayout.addWidget(self.screenshotsScroll, stretch=1)
+
+        # 3. Нижняя часть: информация о теме + кнопка "Применить тему"
+        bottomLayout = QtWidgets.QVBoxLayout()
+        bottomLayout.setSpacing(10)
+
+        self.themeMetainfoLabel = QtWidgets.QLabel("")
+        self.themeMetainfoLabel.setWordWrap(True)
+        bottomLayout.addWidget(self.themeMetainfoLabel)
+
+        self.applyButton = QtWidgets.QPushButton("Применить тему")
+        self.applyButton.setStyleSheet(self.theme.ADD_GAME_BUTTON_STYLE)
+        bottomLayout.addWidget(self.applyButton)
+
+        # Поле для вывода статуса (ошибки/успех)
         self.themeStatusLabel = QtWidgets.QLabel("")
-        layout.addWidget(self.themeStatusLabel)
+        bottomLayout.addWidget(self.themeStatusLabel)
 
+        mainLayout.addLayout(bottomLayout)
+
+        # Функция для обновления информации и скриншотов при смене темы
+        def updateThemePreview(theme_name):
+            meta = load_theme_metainfo(theme_name)
+            link = meta.get('author_link', '')
+            if link:
+                link_html = f'<a href="{link}" target="_blank">{link}</a>'
+            else:
+                link_html = 'Нет ссылки'
+
+            # Формируем HTML-текст для метаинформации, используя <br> для переноса строк
+            preview_metainfo = (
+                f"<b>Название:</b> {meta.get('name', theme_name)}<br>"
+                f"<b>Описание:</b> {meta.get('description', '')}<br>"
+                f"<b>Автор:</b> {meta.get('author', 'Unknown')}<br>"
+                f"<b>Ссылка:</b> {link_html}"
+            )
+
+            self.themeMetainfoLabel.setTextFormat(QtCore.Qt.RichText)
+            self.themeMetainfoLabel.setOpenExternalLinks(True)
+            self.themeMetainfoLabel.setText(preview_metainfo)
+
+            # Очищаем старые скриншоты
+            for i in reversed(range(self.screenshotsLayout.count())):
+                widget_to_remove = self.screenshotsLayout.itemAt(i).widget()
+                if widget_to_remove is not None:
+                    self.screenshotsLayout.removeWidget(widget_to_remove)
+                    widget_to_remove.deleteLater()
+
+            # Загружаем скриншоты
+            screenshots = load_theme_screenshots(theme_name)
+            if screenshots:
+                for pixmap, filename in screenshots:
+                    # Получаем имя без расширения
+                    base_name = os.path.splitext(filename)[0]
+
+                    # Создаём контейнер для одного скриншота и подписи под ним
+                    shotContainer = QtWidgets.QWidget()
+                    shotLayout = QtWidgets.QVBoxLayout(shotContainer)
+                    shotLayout.setContentsMargins(0, 0, 0, 0)
+                    shotLayout.setSpacing(5)
+
+                    # Лейбл для картинки
+                    imageLabel = QtWidgets.QLabel()
+                    scaled = pixmap.scaledToHeight(300, QtCore.Qt.SmoothTransformation)
+                    imageLabel.setPixmap(scaled)
+                    # Устанавливаем tooltip по имени без расширения
+                    imageLabel.setToolTip(base_name)
+                    shotLayout.addWidget(imageLabel, alignment=QtCore.Qt.AlignCenter)
+
+                    # Лейбл для подписи под скриншотом
+                    captionLabel = QtWidgets.QLabel(base_name)
+                    captionLabel.setAlignment(QtCore.Qt.AlignHCenter)
+                    shotLayout.addWidget(captionLabel, alignment=QtCore.Qt.AlignCenter)
+
+                    # Добавляем контейнер в горизонтальный layout со скриншотами
+                    self.screenshotsLayout.addWidget(shotContainer)
+            else:
+                noShotsLabel = QtWidgets.QLabel("Нет скриншотов")
+                self.screenshotsLayout.addWidget(noShotsLabel)
+
+        # При первом открытии вкладки – обновляем превью для текущей темы
+        updateThemePreview(self.current_theme_name)
+
+        # При изменении выбора в комбобоксе – обновляем превью
+        self.themesCombo.currentTextChanged.connect(lambda t: updateThemePreview(t))
+
+        # Логика применения темы
         def on_apply():
-            selected_theme = themesCombo.currentText()
+            selected_theme = self.themesCombo.currentText()
             if selected_theme:
                 theme_module = self.theme_manager.apply_theme(selected_theme)
                 if theme_module:
@@ -502,14 +570,17 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE)
                     self.themeStatusLabel.setText(f"Тема '{selected_theme}' успешно применена")
                     self.updateUIStyles()
-                    self.populateGamesGrid(self.games)
                     save_theme_to_config(selected_theme)
+                    # Повторно обновляем превью, чтобы, если есть стили шрифтов и т.д., всё отобразилось
+                    updateThemePreview(selected_theme)
                 else:
                     self.themeStatusLabel.setText(f"Ошибка при применении темы '{selected_theme}'")
             else:
                 self.themeStatusLabel.setText("Нет доступных тем для применения")
-        applyButton.clicked.connect(on_apply)
-        layout.addStretch(1)
+
+        self.applyButton.clicked.connect(on_apply)
+
+        # Добавляем готовый виджет на вкладку
         self.stackedWidget.addWidget(widget)
 
     # ЛОГИКА ДЕТАЛЬНОЙ СТРАНИЦЫ ИГРЫ

@@ -200,8 +200,27 @@ DETAIL_PAGE_LINE_STYLE = "color: rgba(255,255,255,0.12); margin: 10px 0;"
 # ТЕКСТ ОПИСАНИЯ
 DETAIL_PAGE_DESC_STYLE = "font-family: 'Poppins'; font-size: 16px; color: #ffffff; line-height: 1.5;"
 
-# ЛЕЙБЛ "STEAM APPID"
-STEAM_APPID_LABEL_STYLE = "font-family: 'Poppins'; font-size: 16px; color: #ffffff;"
+# Стиль списка тем
+COMBO_BOX_STYLE = """
+QComboBox {
+    background-color: #2B2B2B;
+    color: #ffffff;
+    border: 1px solid #555555;
+    padding: 4px;
+}
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 20px;
+    border-left: 1px solid #555555;
+}
+QComboBox QAbstractItemView {
+    background-color: #333333;
+    color: #ffffff;
+    selection-background-color: #444444;
+}
+"""
+
 
 # СТИЛЬ КНОПКИ "ИГРАТЬ"
 PLAY_BUTTON_STYLE = """
