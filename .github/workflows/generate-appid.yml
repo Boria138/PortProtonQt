@@ -1,18 +1,20 @@
 name: Fetch Data
-run-name: Fetch and Write steam apps list
+run-name: Fetch and Update Steam Apps Data
 on:
   workflow_dispatch:
   schedule:
     - cron: '0 0 1 * *'
 
 jobs:
-  build:
+  update-steam-apps:
     runs-on: ubuntu-latest
     permissions:
-        contents: write
-        pull-requests: write
+      contents: write
+      pull-requests: write
+    env:
+      PR_BRANCH: pr/ci-cd/${{ github.ref_name }}
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Python
@@ -20,16 +22,45 @@ jobs:
         with:
           python-version-file: "pyproject.toml"
 
-      - name: Set up dependency
+      - name: Install dependencies
         run: pip install aiohttp asyncio
 
-      - name: Run get_id.py
+      - name: Run get_id.py to fetch Steam apps data
         run: python get_id.py
         env:
           STEAM_KEY: ${{ secrets.STEAM_KEY }}
 
-      - name: Push changes
-        uses: actions-js/push@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: "main"
+      - name: Create Pull Request if files changed
+        shell: bash
+        run: |
+          cd data
+
+          if git diff --quiet games_appid.json games_appid_min.json; then
+            echo "Файлы Steam apps не изменились. Pull Request не требуется."
+            exit 0
+          fi
+
+          cd ..
+
+          # Настраиваем Git
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+
+          git add data/games_appid.json data/games_appid_min.json
+          git commit -m "CI / CD update: Steam apps data"
+
+          git checkout -B "${PR_BRANCH}"
+          if ! git push -f --set-upstream origin "${PR_BRANCH}"; then
+            echo "::error:: Не удалось запушить изменения в ветку ${PR_BRANCH}. Проверьте разрешения репозитория."
+            exit 1
+          fi
+
+          if ! gh pr create --title "CI / CD: Steam apps data" --body "Автоматическое обновление данных Steam apps." --head "${PR_BRANCH}" --base "${{ github.ref_name }}"; then
+            pr_exists=$(gh pr list --head "${PR_BRANCH}" --state open --json number --jq '.[].number')
+            if [ -z "$pr_exists" ]; then
+              echo "::error:: Не удалось создать Pull Request. Проверьте настройки прав доступа."
+              exit 1
+            fi
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
