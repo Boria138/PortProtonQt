@@ -9,10 +9,10 @@ import orjson
 import requests
 
 # Настройка логирования
-logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] %(message)s')
+logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
 logger = logging.getLogger(__name__)
 
-# Время жизни кэша – 30 дней (Перенести в настройки)
+# Время жизни кэша – 30 дней (можно вынести в настройки)
 CACHE_DURATION = 30 * 24 * 60 * 60
 
 def get_cache_dir():
@@ -24,12 +24,12 @@ def get_cache_dir():
 
 def normalize_name(s):
     """
-    Normalizes a string:
-      - converts to lowercase,
-      - removes trademark characters,
-      - replaces delimiters (-, :, ,) with a space,
-      - removes extra spaces,
-      - if the string ends with 'bin' or 'app', removes the suffix.
+    Приведение строки к нормальному виду:
+      - перевод в нижний регистр,
+      - удаление символов ™ и ®,
+      - замена разделителей (-, :, ,) на пробел,
+      - удаление лишних пробелов,
+      - удаление суффиксов 'bin' или 'app' в конце строки.
     """
     s = s.lower()
     for ch in ["™", "®"]:
@@ -44,25 +44,47 @@ def normalize_name(s):
 
 def is_valid_candidate(candidate):
     """
-    Возвращает False, если кандидат содержит запрещённые подстроки:
+    Проверяет, содержит ли кандидат запрещённые подстроки:
       - win32
       - win64
       - gamelauncher
-    Нормализуем кандидата перед проверкой
+
+    Для проверки дополнительно используется строка без пробелов.
+    Возвращает True, если кандидат допустим, иначе False.
     """
-    # Приводим строку к виду без тире (а также без лишних пробелов) и в нижний регистр
-    normalized_candidate = candidate.lower().replace("-", " ")
-    normalized_candidate = " ".join(normalized_candidate.split())
+    normalized_candidate = normalize_name(candidate)
+    normalized_no_space = normalized_candidate.replace(" ", "")
     forbidden = ["win32", "win64", "gamelauncher"]
     for token in forbidden:
-        if token in normalized_candidate:
-            logger.debug("Отбрасываю кандидата '%s' (нормализовано: '%s') из-за присутствия '%s'", candidate, normalized_candidate, token)
+        if token in normalized_no_space:
             return False
     return True
 
-# Получаем метаданные из exe через exiftool
+def filter_candidates(candidates):
+    """
+    Фильтрует список кандидатов, отбрасывая недопустимые.
+    Выводит список отсеянных кандидатов и возвращает список допустимых.
+    """
+    valid = []
+    dropped = []
+    for cand in candidates:
+        if is_valid_candidate(cand):
+            valid.append(cand)
+        else:
+            dropped.append(cand)
+    if dropped:
+        logger.info("Отбрасываю кандидатов: %s", dropped)
+    return valid
+
+def remove_duplicates(candidates):
+    """
+    Удаляет дубликаты из списка, сохраняя порядок.
+    """
+    return list(dict.fromkeys(candidates))
+
 @functools.lru_cache(maxsize=256)
 def get_exiftool_data(game_exe):
+    """Получает метаданные через exiftool."""
     try:
         proc = subprocess.run(
             ["exiftool", "-j", game_exe],
@@ -75,8 +97,10 @@ def get_exiftool_data(game_exe):
     except Exception:
         return {}
 
-# Функция для загрузки списка приложений Steam с использованием кэша (30 дней)
 def load_steam_apps(session):
+    """
+    Загружает список приложений Steam с использованием кэша (30 дней).
+    """
     cache_dir = get_cache_dir()
     cache_file = os.path.join(cache_dir, "steam_apps.json")
     steam_apps = []
@@ -88,14 +112,13 @@ def load_steam_apps(session):
         try:
             with open(cache_file, "rb") as f:
                 steam_apps = orjson.loads(f.read())
-            # Если приложения не содержат поле "normalized_name", добавляем его
-            logger.debug("Загружен кэш Steam приложений с %d записями", len(steam_apps))
+            logger.info("Загружен кэш Steam приложений с %d записями", len(steam_apps))
             return steam_apps
         except Exception as e:
             logger.error("Ошибка загрузки кэша приложений: %s", e)
     app_list_url = "https://raw.githubusercontent.com/BlackSnaker/PortProtonQt/refs/heads/main/data/games_appid_min.json"
     try:
-        response = session.get(app_list_url)
+        response = session.get(app_list_url, timeout=5)
         if response.status_code == 200:
             data = response.json()
             if isinstance(data, dict):
@@ -105,7 +128,7 @@ def load_steam_apps(session):
             try:
                 with open(cache_file, "wb") as f:
                     f.write(orjson.dumps(steam_apps))
-                logger.debug("Кэш Steam приложений сохранён с %d записями", len(steam_apps))
+                logger.info("Кэш Steam приложений сохранён с %d записями", len(steam_apps))
             except Exception as e:
                 logger.error("Ошибка сохранения кэша приложений: %s", e)
         else:
@@ -115,41 +138,45 @@ def load_steam_apps(session):
         steam_apps = []
     return steam_apps
 
-# Строим индекс приложений для быстрого поиска по нормализованному имени
 def build_index(steam_apps):
+    """
+    Строит индекс приложений по полю normalized_name.
+    """
     steam_apps_index = {}
     if not steam_apps:
         return steam_apps_index
-    logger.debug("Построение индекса Steam приложений:")
+    logger.info("Построение индекса Steam приложений:")
     for app in steam_apps:
-        normalized = app.get("normalized_name")
-        if normalized:
-            steam_apps_index[normalized] = app
+        normalized = app["normalized_name"]
+        steam_apps_index[normalized] = app
     return steam_apps_index
 
-# Поиск приложения по кандидату (точное совпадение или поиск подстроки)
 def search_app(candidate, steam_apps_index):
+    """
+    Ищет приложение по кандидату: сначала пытается точное совпадение, затем ищет подстроку.
+    """
     candidate_norm = normalize_name(candidate)
-    logger.debug("Поиск приложения для кандидата: '%s' -> '%s'", candidate, candidate_norm)
+    logger.info("Поиск приложения для кандидата: '%s' -> '%s'", candidate, candidate_norm)
 
     if candidate_norm in steam_apps_index:
-        logger.debug("    Найдено точное совпадение: '%s'", candidate_norm)
+        logger.info("    Найдено точное совпадение: '%s'", candidate_norm)
         return steam_apps_index[candidate_norm]
 
     for name_norm, app in steam_apps_index.items():
         if candidate_norm in name_norm:
-            # Вычисляем отношение длин
             ratio = len(candidate_norm) / len(name_norm)
             if ratio > 0.8:
-                logger.debug("    Найдено частичное совпадение с достаточной схожестью: кандидат '%s' в '%s' (ratio: %.2f)", candidate_norm, name_norm, ratio)
+                logger.info("    Найдено частичное совпадение с достаточной схожестью: кандидат '%s' в '%s' (ratio: %.2f)",
+                            candidate_norm, name_norm, ratio)
                 return app
             else:
-                logger.debug("    Частичное совпадение, но соотношение длин недостаточно: кандидат '%s' в '%s' (ratio: %.2f)", candidate_norm, name_norm, ratio)
-    logger.debug("    Приложение для кандидата '%s' не найдено", candidate_norm)
+                logger.info("    Частичное совпадение, но соотношение длин недостаточно: кандидат '%s' в '%s' (ratio: %.2f)",
+                            candidate_norm, name_norm, ratio)
+    logger.info("    Приложение для кандидата '%s' не найдено", candidate_norm)
     return None
 
 def load_app_details(app_id):
-    """Пытается загрузить кэшированные данные для игры по appid из файла."""
+    """Загружает кэшированные данные для игры по appid, если они не устарели."""
     cache_dir = get_cache_dir()
     cache_file = os.path.join(cache_dir, f"steam_app_{app_id}.json")
     if os.path.exists(cache_file):
@@ -174,15 +201,14 @@ def save_app_details(app_id, data):
 @functools.lru_cache(maxsize=256)
 def fetch_app_info_cached(app_id):
     """
-    Функция обращается к Steam API для получения подробной информации по appid.
-    Сначала проверяется наличие файлового кэша, затем выполняется запрос.
+    Получает подробную информацию об игре через Steam API с использованием кэша.
     """
     cached = load_app_details(app_id)
     if cached is not None:
         return cached
     url = f"https://store.steampowered.com/api/appdetails?appids={app_id}&l=russian"
     try:
-        response = requests.get(url)
+        response = requests.get(url, timeout=5)
         if response.status_code != 200:
             return None
         data = response.json()
@@ -196,7 +222,26 @@ def fetch_app_info_cached(app_id):
         logger.error("Ошибка запроса данных для appid %s: %s", app_id, e)
         return None
 
+# Глобальные переменные для кэширования Steam-приложений и их индекса
+_STEAM_APPS = None
+_STEAM_APPS_INDEX = None
+
+def get_steam_apps_and_index(session):
+    """
+    Загружает и кэширует список приложений Steam и построенный индекс.
+    """
+    global _STEAM_APPS, _STEAM_APPS_INDEX
+    if _STEAM_APPS is None or _STEAM_APPS_INDEX is None:
+        _STEAM_APPS = load_steam_apps(session)
+        _STEAM_APPS_INDEX = build_index(_STEAM_APPS)
+    return _STEAM_APPS, _STEAM_APPS_INDEX
+
 def get_steam_game_info(desktop_name, exec_line, session):
+    """
+    Определяет информацию об игре по exec_line, используя метаданные файла,
+    формируя список кандидатов, отбрасывая недопустимые, затем удаляя дубликаты,
+    сортируя и выполняя поиск по списку Steam-приложений.
+    """
     try:
         parts = shlex.split(exec_line)
         game_exe = parts[3] if len(parts) >= 4 else exec_line
@@ -210,8 +255,9 @@ def get_steam_game_info(desktop_name, exec_line, session):
     if folder_name.lower() in ['bin', 'binaries']:
         folder_path = os.path.dirname(folder_path)
         folder_name = os.path.basename(folder_path)
-    logger.debug("Имя папки игры: '%s'", folder_name)
+    logger.info("Имя папки игры: '%s'", folder_name)
 
+    # Формирование списка кандидатов
     candidates = []
     meta_data = get_exiftool_data(game_exe)
     product_name = meta_data.get("ProductName", "")
@@ -227,34 +273,31 @@ def get_steam_game_info(desktop_name, exec_line, session):
     if folder_name:
         candidates.append(folder_name)
 
-    logger.debug("Исходные кандидаты: %s", candidates)
+    logger.info("Исходные кандидаты: %s", candidates)
 
-    # Убираем дубликаты, сохраняя порядок
-    candidates = list(dict.fromkeys(candidates))
-    logger.debug("Кандидаты после удаления дублей: %s", candidates)
-
-    # Фильтрация кандидатов по запрещённым подстрокам
-    candidates = [cand for cand in candidates if is_valid_candidate(cand)]
-    logger.debug("Кандидаты после фильтрации: %s", candidates)
+    # Сначала отбрасываем недопустимые кандидаты
+    candidates = filter_candidates(candidates)
+    # Затем удаляем дубликаты, сохраняя порядок
+    candidates = remove_duplicates(candidates)
+    logger.info("Кандидаты после фильтрации и удаления дублей: %s", candidates)
 
     # Сортируем кандидатов по количеству слов (от большего к меньшему)
     candidates_ordered = sorted(candidates, key=lambda s: len(s.split()), reverse=True)
-    logger.debug("Кандидаты после сортировки: %s", candidates_ordered)
+    logger.info("Кандидаты после сортировки: %s", candidates_ordered)
 
-
-    steam_apps = load_steam_apps(session)
-    steam_apps_index = build_index(steam_apps)
+    # Используем глобальное кэширование Steam-приложений и их индекса
+    _, steam_apps_index = get_steam_apps_and_index(session)
     matching_app = None
     for candidate in candidates_ordered:
         if not candidate:
             continue
         matching_app = search_app(candidate, steam_apps_index)
         if matching_app:
-            logger.debug("Совпадение найдено для кандидата '%s': %s", candidate, matching_app.get("name"))
+            logger.info("Совпадение найдено для кандидата '%s': %s", candidate, matching_app.get("name"))
             break
 
     if not matching_app:
-        logger.debug("Не найдено ни одного совпадения для кандидатов")
+        logger.info("Не найдено ни одного совпадения для кандидатов")
         return {
             "appid": "",
             "name": exe_name.capitalize(),
@@ -266,7 +309,7 @@ def get_steam_game_info(desktop_name, exec_line, session):
     appid = matching_app["appid"]
     app_info = fetch_app_info_cached(appid)
     if not app_info:
-        logger.debug("Не удалось получить информацию для appid %s", appid)
+        logger.info("Не удалось получить информацию для appid %s", appid)
         return {
             "appid": "",
             "name": exe_name.capitalize(),
@@ -279,7 +322,7 @@ def get_steam_game_info(desktop_name, exec_line, session):
     description = app_info.get("short_description", "")
     cover = f"https://steamcdn-a.akamaihd.net/steam/apps/{appid}/library_600x900_2x.jpg"
     controller_support = app_info.get("controller_support", "")
-    logger.debug("Итоговая информация об игре: appid=%s, name='%s'", appid, title)
+    logger.info("Итоговая информация об игре: appid=%s, name='%s'", appid, title)
     return {
         "appid": appid,
         "name": title,
