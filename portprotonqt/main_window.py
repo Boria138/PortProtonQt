@@ -696,14 +696,14 @@ class MainWindow(QtWidgets.QMainWindow):
         infoLayout.setSpacing(10)
 
         lastLaunchTitle = QtWidgets.QLabel("ПОСЛЕДНИЙ ЗАПУСК")
-        lastLaunchTitle.setStyleSheet("font-family: 'Poppins'; font-size: 11px; color: #aaaaaa;")
+        lastLaunchTitle.setStyleSheet(self.theme.LAST_LAUNCH_TITLE_STYLE)
         lastLaunchValue = QtWidgets.QLabel(last_launch)
-        lastLaunchValue.setStyleSheet("font-family: 'Poppins'; font-size: 13px; color: #ffffff; font-weight: bold;")
+        lastLaunchValue.setStyleSheet(self.theme.LAST_LAUNCH_VALUE_STYLE)
 
         playTimeTitle = QtWidgets.QLabel("ВЫ ИГРАЛИ")
-        playTimeTitle.setStyleSheet("font-family: 'Poppins'; font-size: 11px; color: #aaaaaa;")
+        playTimeTitle.setStyleSheet(self.theme.PLAY_TIME_TITLE_STYLE)
         playTimeValue = QtWidgets.QLabel(formatted_playtime)
-        playTimeValue.setStyleSheet("font-family: 'Poppins'; font-size: 13px; color: #ffffff; font-weight: bold;")
+        playTimeValue.setStyleSheet(self.theme.PLAY_TIME_VALUE_STYLE)
 
         infoLayout.addWidget(lastLaunchTitle)
         infoLayout.addWidget(lastLaunchValue)
@@ -715,11 +715,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if controller_support:
             gamepadSupportLabel = QtWidgets.QLabel(f"Поддержка геймпада: {controller_support}")
             gamepadSupportLabel.setAlignment(QtCore.Qt.AlignCenter)
-            gamepadSupportLabel.setStyleSheet(
-            "font-family: 'Poppins'; font-size: 12px; color: #00ff00; "
-            "font-weight: bold; background: rgba(0, 0, 0, 0.3); "
-            "border-radius: 5px; padding: 4px 8px;"
-        )
+            gamepadSupportLabel.setStyleSheet(self.theme.GAMEPAD_SUPPORT_VALUE_STYLE)
             detailsLayout.addWidget(gamepadSupportLabel, alignment=QtCore.Qt.AlignCenter)
 
         detailsLayout.addStretch(1)
