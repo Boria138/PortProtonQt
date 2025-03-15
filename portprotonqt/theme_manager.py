@@ -1,10 +1,11 @@
 import importlib.util
-import configparser
 import os
 import glob
 from PySide6.QtGui import QFontDatabase, QPixmap, QPainter
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtCore import Qt
+
+from portprotonqt.config_utils import save_theme_to_config, load_theme_metainfo
 
 # Папка, где располагаются все дополнительные темы
 xdg_data_home = os.getenv("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share"))
@@ -12,12 +13,6 @@ THEMES_DIRS = [
     os.path.join(xdg_data_home, "PortProtonQT", "themes"),
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "themes")
 ]
-
-# Файл конфигурации для хранения выбранной темы
-CONFIG_FILE = os.path.join(
-    os.getenv("XDG_CONFIG_HOME", os.path.join(os.path.expanduser("~"), ".config")),
-    "PortProtonQT.conf"
-)
 
 def list_themes():
     """
@@ -31,27 +26,6 @@ def list_themes():
                 if os.path.isdir(theme_path) and os.path.exists(os.path.join(theme_path, "styles.py")):
                     themes.append(entry)
     return themes
-
-
-def load_theme_metainfo(theme_name):
-    """
-    Загружает метаинформацию темы из файла metainfo.ini в корне папки темы.
-    Ожидаемые поля: author, author_link, description, name.
-    """
-    meta = {}
-    for themes_dir in THEMES_DIRS:
-        theme_folder = os.path.join(themes_dir, theme_name)
-        metainfo_file = os.path.join(theme_folder, "metainfo.ini")
-        if os.path.exists(metainfo_file):
-            config = configparser.ConfigParser()
-            config.read(metainfo_file, encoding="utf-8")
-            if "Metainfo" in config:
-                meta["author"] = config.get("Metainfo", "author", fallback="Unknown")
-                meta["author_link"] = config.get("Metainfo", "author_link", fallback="")
-                meta["description"] = config.get("Metainfo", "description", fallback="")
-                meta["name"] = config.get("Metainfo", "name", fallback=theme_name)
-            break
-    return meta
 
 def load_theme_screenshots(theme_name):
     """
@@ -72,10 +46,10 @@ def load_theme_screenshots(theme_name):
                         screenshots.append((pixmap, file))
     return screenshots
 
+
 def load_theme_fonts(theme_name):
     """
     Загружает все шрифты выбранной темы.
-
     :param theme_name: Имя темы.
     """
     fonts_folder = None
@@ -107,9 +81,8 @@ def load_theme_fonts(theme_name):
 
 def load_theme_logo(theme_name):
     """
-    Загружает логотип выбранной темы из файла, имя которого начинается с "theme_logo."
-    Поддерживает векторные форматы (например, SVG) и растровые форматы (PNG, JPG и т.д.).
-
+    Загружает логотип выбранной темы из файла, имя которого начинается с "theme_logo.".
+    Поддерживает векторные форматы (например, SVG) и растровые форматы.
     :param theme_name: Имя темы.
     :return: QPixmap с логотипом или None, если файл не найден или произошла ошибка.
     """
@@ -157,6 +130,7 @@ def load_theme_logo(theme_name):
         print(f"Логотип темы '{theme_name}' успешно загружен: {logo_path}")
         return pixmap
 
+
 class ThemeWrapper:
     """
     Обёртка для кастомной темы с поддержкой метаинформации.
@@ -166,11 +140,12 @@ class ThemeWrapper:
     def __init__(self, custom_theme, metainfo=None):
         self.custom_theme = custom_theme
         self.metainfo = metainfo or {}
-        self.screenshots = load_theme_screenshots(self.metainfo.get("name", ""), )
+        self.screenshots = load_theme_screenshots(self.metainfo.get("name", ""))
 
     def __getattr__(self, name):
         if hasattr(self.custom_theme, name):
             return getattr(self.custom_theme, name)
+        # Если атрибут отсутствует в кастомной теме, берём его из стандартной темы
         import portprotonqt.themes.standart_lite.styles as default_styles
         return getattr(default_styles, name)
 
@@ -184,7 +159,6 @@ def load_theme(theme_name):
     if theme_name == "standart_lite":
         import portprotonqt.themes.standart_lite.styles as default_styles
         default_styles.metainfo = load_theme_metainfo(theme_name)
-        # Можно также загрузить скриншоты для стандартной темы
         default_styles.screenshots = load_theme_screenshots(theme_name)
         return default_styles
 
@@ -196,42 +170,10 @@ def load_theme(theme_name):
             custom_theme = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(custom_theme)
             meta = load_theme_metainfo(theme_name)
-            # Обёртка также может сохранить список скриншотов
             wrapper = ThemeWrapper(custom_theme, metainfo=meta)
             wrapper.screenshots = load_theme_screenshots(theme_name)
             return wrapper
     raise FileNotFoundError(f"Файл стилей не найден для темы '{theme_name}'")
-
-
-def read_theme_from_config():
-    """
-    Читает из конфигурационного файла, какая тема указана в разделе [Appearance].
-    """
-    config = configparser.ConfigParser()
-    if os.path.exists(CONFIG_FILE):
-        try:
-            config.read(CONFIG_FILE, encoding="utf-8")
-            return config.get("Appearance", "theme", fallback="standart_lite")
-        except Exception as e:
-            print("Ошибка чтения конфигурации темы:", e)
-    return "standart_lite"
-
-
-def save_theme_to_config(theme_name):
-    """
-    Сохраняет имя выбранной темы в CONFIG_FILE под секцией [Appearance].
-    """
-    config = configparser.ConfigParser()
-    if os.path.exists(CONFIG_FILE):
-        config.read(CONFIG_FILE, encoding="utf-8")
-    if "Appearance" not in config:
-        config["Appearance"] = {}
-    config["Appearance"]["theme"] = theme_name
-    try:
-        with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
-            config.write(configfile)
-    except Exception as e:
-        print("Ошибка сохранения конфигурации темы:", e)
 
 
 class ThemeManager:
@@ -252,10 +194,9 @@ class ThemeManager:
     def apply_theme(self, theme_name):
         """
         Применяет выбранную тему: загружает модуль стилей, шрифты и логотип.
-        Если загрузка прошла успешно, сохраняет выбранную тему.
-
+        Если загрузка прошла успешно, сохраняет выбранную тему в конфигурации.
         :param theme_name: Имя темы.
-        :return: Модуль темы (или обёртка), либо None в случае ошибки.
+        :return: Загруженный модуль темы (или обёртка), либо None в случае ошибки.
         """
         try:
             theme_module = load_theme(theme_name)
@@ -263,6 +204,8 @@ class ThemeManager:
             self.current_theme_logo = load_theme_logo(theme_name)
             self.current_theme_name = theme_name
             self.current_theme_module = theme_module
+            # Сохраняем выбранную тему через функцию из модуля конфигов
+            save_theme_to_config(theme_name)
             print(f"Тема '{theme_name}' успешно применена")
             return theme_module
         except Exception as e:

@@ -1,5 +1,4 @@
 import concurrent.futures
-import configparser
 import os
 import shlex
 import signal
@@ -13,8 +12,9 @@ from portprotonqt.game_card import GameCard
 from portprotonqt.gamepad_support import GamepadSupport
 from portprotonqt.image_utils import load_pixmap, round_corners
 from portprotonqt.steam_api import get_steam_game_info
-from portprotonqt.theme_manager import ThemeManager, read_theme_from_config, save_theme_to_config, load_theme_metainfo, load_theme_screenshots
+from portprotonqt.theme_manager import ThemeManager, load_theme_screenshots
 from portprotonqt.time_utils import save_last_launch, get_last_launch, parse_playtime_file, format_playtime
+from portprotonqt.config_utils import get_portproton_location, read_theme_from_config, save_theme_to_config, parse_desktop_entry, load_theme_metainfo, read_time_config, read_file_content
 from PySide6 import QtCore, QtGui, QtWidgets
 from datetime import datetime
 
@@ -23,6 +23,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __init__(self):
         super().__init__()
+
+        read_time_config()
 
         # Создаём менеджер тем и читаем, какая тема выбрана
         self.theme_manager = ThemeManager()
@@ -127,53 +129,25 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def loadGames(self):
         games = []
-        xdg_config_home = os.getenv("XDG_CONFIG_HOME", os.path.join(os.path.expanduser("~"), ".config"))
-        xdg_data_home = os.getenv("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share"))
-        config_path = os.path.join(xdg_config_home, "PortProton.conf")
-
-        def read_file_content(file_path):
-            try:
-                with open(file_path, encoding="utf-8") as f:
-                    return f.read().strip()
-            except Exception as e:
-                print(f"Ошибка чтения файла {file_path}: {e}")
-                return None
-
-        portproton_location = None
-        if os.path.exists(config_path):
-            portproton_location = read_file_content(config_path)
-            if portproton_location:
-                print(f"Current PortProton location from config: {portproton_location}")
-        else:
-            fallback_dir = os.path.join(os.path.expanduser("~"), ".var", "app", "ru.linux_gaming.PortProton")
-            if os.path.isdir(fallback_dir):
-                portproton_location = fallback_dir
-                print(f"Using fallback PortProton location from data directory: {portproton_location}")
-
+        # Получаем путь к PortProton через модуль конфигов
+        portproton_location = get_portproton_location()
         self.portproton_location = portproton_location
 
         if not portproton_location:
-            print(f"Не найден конфигурационный файл {config_path} и директория PortProton не существует.")
             return games
 
-        desktop_files = []
-        with os.scandir(portproton_location) as it:
-            for entry in it:
-                if entry.is_file() and entry.name.endswith(".desktop"):
-                    desktop_files.append(entry.path)
+        # Определяем пути для XDG_DATA_HOME (используется для кастомных данных)
+        xdg_data_home = os.getenv("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share"))
+
+        # Получаем список файлов с расширением .desktop в директории portproton_location
+        desktop_files = [entry.path for entry in os.scandir(portproton_location)
+                        if entry.is_file() and entry.name.endswith(".desktop")]
 
         def process_file(file_path):
-            config = configparser.ConfigParser(interpolation=None)
-            try:
-                config.read(file_path, encoding="utf-8")
-            except Exception as e:
-                print(f"Ошибка чтения файла {file_path}: {e}")
+            entry = parse_desktop_entry(file_path)
+            if entry is None:
                 return None
 
-            if "Desktop Entry" not in config:
-                return None
-
-            entry = config["Desktop Entry"]
             desktop_name = entry.get("Name", "Unknown Game")
             if desktop_name.lower() == "portproton":
                 return None
@@ -183,6 +157,8 @@ class MainWindow(QtWidgets.QMainWindow):
             game_exe = ""
             controller_support = ""
             formatted_playtime = ""
+            last_launch = "Никогда"
+
             if exec_line:
                 try:
                     parts = shlex.split(exec_line)
@@ -202,15 +178,11 @@ class MainWindow(QtWidgets.QMainWindow):
                 custom_folder = os.path.join(xdg_data_home, "PortProtonQT", "custom_data", exe_name)
                 os.makedirs(custom_folder, exist_ok=True)
                 last_launch = get_last_launch(exe_name) if exe_name else "Никогда"
+
                 playtime_seconds = 0
                 statistics_file = os.path.join(self.portproton_location, "data", "tmp", "statistics")
                 playtime_data = parse_playtime_file(statistics_file)
-                matching_key = None
-                for key in playtime_data:
-                    if os.path.basename(key).split('.')[0] == exe_name:
-                        matching_key = key
-                        break
-
+                matching_key = next((key for key in playtime_data if os.path.basename(key).split('.')[0] == exe_name), None)
                 if matching_key:
                     playtime_seconds = playtime_data[matching_key]
                     formatted_playtime = format_playtime(playtime_seconds)
@@ -262,6 +234,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if res is not None:
                 games.append(res)
         return games
+
 
     # ВКЛАДКИ
     def switchTab(self, index):
@@ -816,6 +789,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.checkProcessTimer.stop()
                 self.checkProcessTimer.deleteLater()
                 self.checkProcessTimer = None
+
 
     def toggleGame(self, exec_line, game_name, button):
         """

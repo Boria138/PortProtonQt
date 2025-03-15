@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+from portprotonqt.config_utils import read_time_config
 
 def get_cache_file_path():
     """Возвращает путь к файлу кеша portproton_last_launch."""
@@ -61,7 +62,7 @@ def humanize_time_delta(launch_time):
 def get_last_launch(exe_name):
     """
     Читает время последнего запуска для заданного exe из файла кеша.
-    Возвращает относительную дату запуска (например, "1 день назад") или "Не запускалась".
+    Возвращает относительную дату запуска (например, "1 день назад") или "Никогда".
     """
     file_path = get_cache_file_path()
     if not os.path.exists(file_path):
@@ -99,53 +100,62 @@ def parse_playtime_file(file_path):
     try:
         with open(file_path, encoding="utf-8") as f:
             for line in f:
-                # Пропускаем пустые строки
                 if not line.strip():
                     continue
-
-                # Разбиваем строку по пробелам
                 parts = line.strip().split()
                 if len(parts) < 3:
-                    # Если строка не соответствует ожидаемому формату, пропускаем её
                     continue
-
                 exe_path = parts[0]
-                # Предполагаем, что третий элемент - это число секунд
                 try:
                     seconds = int(parts[2])
                 except ValueError:
                     seconds = 0
-
                 playtime_data[exe_path] = seconds
-
     except Exception as e:
         print(f"Ошибка при парсинге файла {file_path}: {e}")
-
     return playtime_data
 
 def format_playtime(seconds):
     """
-    Конвертирует время в секундах в форматированную строку с днями, часами, минутами и секундами.
+    Конвертирует время в секундах в форматированную строку.
 
-    Примеры:
-      45 -> "45 сек"
-      125 -> "2 мин 5 сек"
-      3675 -> "1 ч 1 мин 15 сек"
-      90061 -> "1 д 1 ч 1 мин 1 сек"
+    Поведение зависит от настройки detail_level из секции [Time]
+    конфигурационного файла. Если detail_level не задан, используется "detailed".
+
+    При "detailed" выводится полный разбор:
+       3675 -> "1 ч 1 мин 15 сек"
+       90061 -> "1 д 1 ч 1 мин 1 сек"
+
+    При "brief":
+       3675 -> "1 ч"
+       125 -> "2 мин 5 сек"
     """
+    detail_level = read_time_config()
     seconds = int(seconds)
-    days, rem = divmod(seconds, 86400)
-    hours, rem = divmod(rem, 3600)
-    minutes, secs = divmod(rem, 60)
 
-    parts = []
-    if days > 0:
-        parts.append(f"{days} д")
-    if hours > 0:
-        parts.append(f"{hours} ч")
-    if minutes > 0:
-        parts.append(f"{minutes} мин")
-    if secs > 0 or not parts:
-        parts.append(f"{secs} сек")
-
-    return " ".join(parts)
+    if detail_level == "detailed":
+        days, rem = divmod(seconds, 86400)
+        hours, rem = divmod(rem, 3600)
+        minutes, secs = divmod(rem, 60)
+        parts = []
+        if days > 0:
+            parts.append(f"{days} д")
+        if hours > 0:
+            parts.append(f"{hours} ч")
+        if minutes > 0:
+            parts.append(f"{minutes} мин")
+        if secs > 0 or not parts:
+            parts.append(f"{secs} сек")
+        return " ".join(parts)
+    else:  # brief
+        if seconds < 3600:
+            minutes, secs = divmod(seconds, 60)
+            parts = []
+            if minutes > 0:
+                parts.append(f"{minutes} мин")
+            if secs > 0 or not parts:
+                parts.append(f"{secs} сек")
+            return " ".join(parts)
+        else:
+            hours = seconds // 3600
+            return f"{hours} ч"
