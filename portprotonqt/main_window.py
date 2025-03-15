@@ -339,12 +339,25 @@ class MainWindow(QtWidgets.QMainWindow):
         self.stackedWidget.addWidget(widget)
         self.populateGamesGrid(self.games)
 
-    def populateGamesGrid(self, games_list):
-        """Заполняет сетку карточками игр (GameCard)."""
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self.updateGameGridColumns()
+
+    def updateGameGridColumns(self):
+        if not self.games:
+            return
+        # Получаем ширину виджета
+        available_width = self.stackedWidget.width()
+        # Учитываем примерную ширину одной карточки + отступы:
+        card_width = 300
+        spacing = 20  # межкарточный отступ
+        columns = max(1, (available_width // (card_width + spacing)))
+        self.populateGamesGrid(self.games, columns=columns)
+
+    def populateGamesGrid(self, games_list, columns=4):
         self.clearLayout(self.gamesListLayout)
-        columns = 4
-        for idx, (name, desc, cover, appid, controller_support, exec_line, last_launch, formatted_playtime) in enumerate(games_list):
-            card = GameCard(name, desc, cover, appid, controller_support, exec_line, last_launch, formatted_playtime, self.openGameDetailPage, theme=self.theme)
+        for idx, game_data in enumerate(games_list):
+            card = GameCard(*game_data, select_callback=self.openGameDetailPage, theme=self.theme)
             row = idx // columns
             col = idx % columns
             self.gamesListLayout.addWidget(card, row, col)
