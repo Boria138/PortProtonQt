@@ -236,6 +236,21 @@ def get_steam_apps_and_index(session):
         _STEAM_APPS_INDEX = build_index(_STEAM_APPS)
     return _STEAM_APPS, _STEAM_APPS_INDEX
 
+@functools.lru_cache(maxsize=256)
+def get_protondb_tier(appid):
+    url = f"https://www.protondb.com/api/v1/reports/summaries/{appid}.json"
+    try:
+        response = requests.get(url, timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            return data.get("tier", "")
+        else:
+            logger.info("Не удалось получить данные с ProtonDB для appid %s, код ответа: %s", appid, response.status_code)
+            return ""
+    except Exception as e:
+        logger.error("Ошибка запроса данных с ProtonDB для appid %s: %s", appid, e)
+        return ""
+
 def get_steam_game_info(desktop_name, exec_line, session):
     """
     Определяет информацию об игре по exec_line, используя метаданные файла,
@@ -303,7 +318,8 @@ def get_steam_game_info(desktop_name, exec_line, session):
             "name": exe_name.capitalize(),
             "description": "",
             "cover": "",
-            "controller_support": ""
+            "controller_support": "",
+            "protondb_tier": ""
         }
 
     appid = matching_app["appid"]
@@ -315,18 +331,24 @@ def get_steam_game_info(desktop_name, exec_line, session):
             "name": exe_name.capitalize(),
             "description": "",
             "cover": "",
-            "controller_support": ""
+            "controller_support": "",
+            "protondb_tier": ""
         }
 
     title = app_info.get("name", exe_name.capitalize())
     description = app_info.get("short_description", "")
     cover = f"https://steamcdn-a.akamaihd.net/steam/apps/{appid}/library_600x900_2x.jpg"
     controller_support = app_info.get("controller_support", "")
-    logger.info("Итоговая информация об игре: appid=%s, name='%s'", appid, title)
+
+    # Получение данных с ProtonDB
+    protondb_tier = get_protondb_tier(appid)
+    logger.info("Итоговая информация об игре: appid=%s, name='%s', protondb_tier='%s'", appid, title, protondb_tier)
+
     return {
         "appid": appid,
         "name": title,
         "description": description,
         "cover": cover,
-        "controller_support": controller_support
+        "controller_support": controller_support,
+        "protondb_tier": protondb_tier
     }
