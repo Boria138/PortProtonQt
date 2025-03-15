@@ -1,6 +1,7 @@
 import importlib.util
 import configparser
 import os
+import glob
 from PySide6.QtGui import QFontDatabase, QPixmap, QPainter
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtCore import Qt
@@ -68,16 +69,12 @@ def load_theme_screenshots(theme_name):
                 if os.path.isfile(screenshot_path):
                     pixmap = QPixmap(screenshot_path)
                     if not pixmap.isNull():
-                        # Вместо просто pixmap, добавляем кортеж (pixmap, file)
                         screenshots.append((pixmap, file))
     return screenshots
 
 def load_theme_fonts(theme_name):
     """
     Загружает все шрифты выбранной темы.
-
-    Для стандартной темы шрифты ищутся в папке fonts,
-    расположенной рядом с программой (в той же директории, что и этот модуль).
 
     :param theme_name: Имя темы.
     """
@@ -98,7 +95,7 @@ def load_theme_fonts(theme_name):
         return
 
     for filename in os.listdir(fonts_folder):
-        if filename.lower().endswith(".ttf"):
+        if filename.lower().endswith((".ttf", ".otf")):
             font_path = os.path.join(fonts_folder, filename)
             font_id = QFontDatabase.addApplicationFont(font_path)
             if font_id != -1:
@@ -110,44 +107,37 @@ def load_theme_fonts(theme_name):
 
 def load_theme_logo(theme_name):
     """
-    Загружает логотип выбранной темы из файла theme_logo.svg или theme_logo.png.
-    Сначала ищется SVG, затем PNG, в корне папки темы.
+    Загружает логотип выбранной темы из файла, имя которого начинается с "theme_logo."
+    Поддерживает векторные форматы (например, SVG) и растровые форматы (PNG, JPG и т.д.).
 
     :param theme_name: Имя темы.
     :return: QPixmap с логотипом или None, если файл не найден или произошла ошибка.
     """
     logo_path = None
-    file_extension = None
+
+    def find_logo_in_folder(folder):
+        pattern = os.path.join(folder, "theme_logo.*")
+        files = glob.glob(pattern)
+        return files[0] if files else None
 
     if theme_name == "standart_lite":
         base_dir = os.path.dirname(os.path.abspath(__file__))
-        svg_path = os.path.join(base_dir, "themes", "standart_lite", "theme_logo.svg")
-        png_path = os.path.join(base_dir, "themes", "standart_lite", "theme_logo.png")
-        if os.path.exists(svg_path):
-            logo_path = svg_path
-            file_extension = "svg"
-        elif os.path.exists(png_path):
-            logo_path = png_path
-            file_extension = "png"
+        theme_folder = os.path.join(base_dir, "themes", "standart_lite")
+        logo_path = find_logo_in_folder(theme_folder)
     else:
         for themes_dir in THEMES_DIRS:
             theme_folder = os.path.join(themes_dir, theme_name)
-            svg_path = os.path.join(theme_folder, "theme_logo.svg")
-            png_path = os.path.join(theme_folder, "theme_logo.png")
-            if os.path.exists(svg_path):
-                logo_path = svg_path
-                file_extension = "svg"
-                break
-            elif os.path.exists(png_path):
-                logo_path = png_path
-                file_extension = "png"
+            logo_path = find_logo_in_folder(theme_folder)
+            if logo_path:
                 break
 
     if not logo_path or not os.path.exists(logo_path):
         print(f"Файл логотипа не найден для темы '{theme_name}'")
         return None
 
-    if file_extension == "svg":
+    file_extension = os.path.splitext(logo_path)[1].lower()
+
+    if file_extension == ".svg":
         renderer = QSvgRenderer(logo_path)
         if not renderer.isValid():
             print(f"Ошибка загрузки SVG логотипа: {logo_path}")
@@ -162,11 +152,10 @@ def load_theme_logo(theme_name):
     else:
         pixmap = QPixmap(logo_path)
         if pixmap.isNull():
-            print(f"Ошибка загрузки PNG логотипа: {logo_path}")
+            print(f"Ошибка загрузки логотипа: {logo_path}")
             return None
-        print(f"Логотип темы '{theme_name}' успешно загружен (PNG): {logo_path}")
+        print(f"Логотип темы '{theme_name}' успешно загружен: {logo_path}")
         return pixmap
-
 
 class ThemeWrapper:
     """
