@@ -157,6 +157,7 @@ class MainWindow(QtWidgets.QMainWindow):
             game_exe = ""
             controller_support = ""
             formatted_playtime = ""
+            protondb_tier = ""
             last_launch = "Никогда"
 
             if exec_line:
@@ -212,6 +213,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 cover = steam_info.get("cover", "")
                 appid = steam_info.get("appid", "")
                 controller_support = steam_info.get("controller_support", "")
+                protondb_tier = steam_info.get("protondb_tier", "")
             else:
                 name = desktop_name
                 desc = entry.get("Comment", "")
@@ -225,7 +227,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if custom_cover:
                 cover = custom_cover
 
-            return (name, desc, cover, appid, exec_line, controller_support, last_launch, formatted_playtime)
+            return (name, desc, cover, appid, exec_line, controller_support, last_launch, formatted_playtime, protondb_tier)
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
             results = list(executor.map(process_file, desktop_files))
@@ -349,7 +351,7 @@ class MainWindow(QtWidgets.QMainWindow):
             name = dialog.nameEdit.text().strip()
             desc = dialog.descEdit.toPlainText().strip()
             cover = dialog.coverEdit.text().strip()
-            self.games.append((name, desc, cover, "", "", "", "Никогда",""))
+            self.games.append((name, desc, cover, "", "", "", "Никогда","", ""))
             self.populateGamesGrid(self.games)
 
     def createAutoInstallTab(self):
@@ -550,7 +552,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def darkenColor(self, color, factor=200):
         return color.darker(factor)
 
-    def openGameDetailPage(self, name, description, cover_path=None, appid="", exec_line="", controller_support="", last_launch="", formatted_playtime=""):
+    def openGameDetailPage(self, name, description, cover_path=None, appid="", exec_line="", controller_support="", last_launch="", formatted_playtime="", protondb_tier=""):
         """Переход на страницу с деталями игры."""
         detailPage = QtWidgets.QWidget()
 
@@ -624,7 +626,6 @@ class MainWindow(QtWidgets.QMainWindow):
         descLabel.setStyleSheet(self.theme.DETAIL_PAGE_DESC_STYLE)
         detailsLayout.addWidget(descLabel)
 
-        # Дополнительная информация (заглушки, как в Steam)
         infoLayout = QtWidgets.QHBoxLayout()
         infoLayout.setSpacing(10)
 
@@ -646,10 +647,52 @@ class MainWindow(QtWidgets.QMainWindow):
         detailsLayout.addLayout(infoLayout)
 
         if controller_support:
-            gamepadSupportLabel = QtWidgets.QLabel(f"Поддержка геймпада: {controller_support}")
+            cs = controller_support.lower()
+
+            if cs == "full":
+                translated_cs = "полная"
+            elif cs == "partial":
+                translated_cs = "частичная"
+            elif cs == "none":
+                translated_cs = "отсутствует"
+
+            gamepadSupportLabel = QtWidgets.QLabel(f"Поддержка геймпада: {translated_cs}")
             gamepadSupportLabel.setAlignment(QtCore.Qt.AlignCenter)
             gamepadSupportLabel.setStyleSheet(self.theme.GAMEPAD_SUPPORT_VALUE_STYLE)
             detailsLayout.addWidget(gamepadSupportLabel, alignment=QtCore.Qt.AlignCenter)
+
+        if protondb_tier:
+            status = protondb_tier.lower()
+            color = "#FFFFFF"
+            translated_status = protondb_tier  # по умолчанию оставляем как есть
+
+            if status == "borked":
+                color = "#FF0000"  # ярко-красный
+                translated_status = "сломана"
+            elif status == "platinum":
+                color = "#E5E4E2"
+                translated_status = "платина"
+            elif status == "gold":
+                color = "#FFD700"
+                translated_status = "золото"
+            elif status == "silver":
+                color = "#C0C0C0"
+                translated_status = "серебро"
+            elif status == "bronze":
+                color = "#CD7F32"
+                translated_status = "бронза"
+            elif status == "pending":
+                color = "#FFA500"  # оранжевый оттенок
+                translated_status = "ожидание"
+
+            protondbLink = f"https://www.protondb.com/app/{appid}"
+            link_html = f'<a href="{protondbLink}" style="color: {color}; text-decoration: none;">ProtonDB Tier: {translated_status}</a>'
+            protondbLabel = QtWidgets.QLabel(link_html)
+            protondbLabel.setTextFormat(QtCore.Qt.RichText)
+            protondbLabel.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
+            protondbLabel.setOpenExternalLinks(True)
+            protondbLabel.setAlignment(QtCore.Qt.AlignCenter)
+            detailsLayout.addWidget(protondbLabel, alignment=QtCore.Qt.AlignCenter)
 
         detailsLayout.addStretch(1)
 

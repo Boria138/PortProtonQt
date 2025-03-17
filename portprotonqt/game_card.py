@@ -4,7 +4,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 
 class GameCard(QtWidgets.QFrame):
-    def __init__(self, name, description, cover_path, appid, controller_support, exec_line, last_launch, formatted_playtime, select_callback, theme=None, parent=None):
+    def __init__(self, name, description, cover_path, appid, controller_support, exec_line, last_launch, formatted_playtime, protondb_tier, select_callback, theme=None, parent=None):
         super().__init__(parent)
         self.name = name
         self.description = description
@@ -14,6 +14,7 @@ class GameCard(QtWidgets.QFrame):
         self.exec_line = exec_line
         self.last_launch = last_launch
         self.formatted_playtime = formatted_playtime
+        self.protondb_tier = protondb_tier
         self.select_callback = select_callback
 
         # Используем переданную тему или стандартную
@@ -119,10 +120,10 @@ class GameCard(QtWidgets.QFrame):
         super().leaveEvent(event)
 
     def mousePressEvent(self, event):
-        self.select_callback(self.name, self.description, self.cover_path, self.appid, self.controller_support, self.exec_line, self.last_launch, self.formatted_playtime)
+        self.select_callback(self.name, self.description, self.cover_path, self.appid, self.controller_support, self.exec_line, self.last_launch, self.formatted_playtime, self.protondb_tier)
 
     def keyPressEvent(self, event):
         if event.key() in (QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter):
-            self.select_callback(self.name, self.description, self.cover_path, self.appid, self.controller_support, self.exec_line, self.last_launch, self.formatted_playtime)
+            self.select_callback(self.name, self.description, self.cover_path, self.appid, self.controller_support, self.exec_line, self.last_launch, self.formatted_playtime, self.protondb_tier)
         else:
             super().keyPressEvent(event)
