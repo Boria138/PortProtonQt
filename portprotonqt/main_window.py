@@ -10,7 +10,7 @@ import requests
 from portprotonqt.dialogs import AddGameDialog
 from portprotonqt.game_card import GameCard
 from portprotonqt.gamepad_support import GamepadSupport
-from portprotonqt.image_utils import load_pixmap, round_corners
+from portprotonqt.image_utils import load_pixmap, round_corners, ImageCarousel
 from portprotonqt.steam_api import get_steam_game_info
 from portprotonqt.theme_manager import ThemeManager, load_theme_screenshots
 from portprotonqt.time_utils import save_last_launch, get_last_launch, parse_playtime_file, format_playtime
@@ -441,27 +441,14 @@ class MainWindow(QtWidgets.QMainWindow):
             available_themes.insert(0, self.current_theme_name)
         self.themesCombo.addItems(available_themes)
         topLayout.addWidget(self.themesCombo)
-        topLayout.addStretch(1)  # отодвигаем всё влево, если нужно
-
+        topLayout.addStretch(1)
         mainLayout.addLayout(topLayout)
 
-        # 2. Центральная область: скроллимые скриншоты (горизонтальный QScrollArea)
-        self.screenshotsScroll = QtWidgets.QScrollArea()
-        self.screenshotsScroll.setWidgetResizable(True)
-        self.screenshotsScroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
-        self.screenshotsScroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        self.screenshotsScroll.setFrameShape(QtWidgets.QFrame.NoFrame)
+        # 2. Центральная область: карусель изображений
+        self.screenshotsCarousel = ImageCarousel([])  # Изначально пустая карусель
+        mainLayout.addWidget(self.screenshotsCarousel, stretch=1)
 
-        screenshotsContainer = QtWidgets.QWidget()
-        self.screenshotsLayout = QtWidgets.QHBoxLayout(screenshotsContainer)
-        self.screenshotsLayout.setContentsMargins(0, 0, 0, 0)
-        self.screenshotsLayout.setSpacing(10)
-        self.screenshotsScroll.setWidget(screenshotsContainer)
-
-        # Добавляем скроллимую область в основной layout, растягиваем её, чтобы занимала много места
-        mainLayout.addWidget(self.screenshotsScroll, stretch=1)
-
-        # 3. Нижняя часть: информация о теме + кнопка "Применить тему"
+        # 3. Нижняя часть: информация о теме и кнопка "Применить тему"
         bottomLayout = QtWidgets.QVBoxLayout()
         bottomLayout.setSpacing(10)
 
@@ -473,77 +460,32 @@ class MainWindow(QtWidgets.QMainWindow):
         self.applyButton.setStyleSheet(self.theme.ADD_GAME_BUTTON_STYLE)
         bottomLayout.addWidget(self.applyButton)
 
-        # Поле для вывода статуса (ошибки/успех)
         self.themeStatusLabel = QtWidgets.QLabel("")
         bottomLayout.addWidget(self.themeStatusLabel)
-
         mainLayout.addLayout(bottomLayout)
 
-        # Функция для обновления информации и скриншотов при смене темы
         def updateThemePreview(theme_name):
-            meta = load_theme_metainfo(theme_name)
+            meta = load_theme_metainfo(theme_name)  # Определена отдельно
             link = meta.get('author_link', '')
-            if link:
-                link_html = f'<a href="{link}" target="_blank">{link}</a>'
-            else:
-                link_html = 'Нет ссылки'
+            link_html = f'<a href="{link}" target="_blank">{link}</a>' if link else 'Нет ссылки'
 
-            # Формируем HTML-текст для метаинформации, используя <br> для переноса строк
             preview_metainfo = (
                 f"<b>Название:</b> {meta.get('name', theme_name)}<br>"
                 f"<b>Описание:</b> {meta.get('description', '')}<br>"
                 f"<b>Автор:</b> {meta.get('author', 'Unknown')}<br>"
                 f"<b>Ссылка:</b> {link_html}"
             )
-
             self.themeMetainfoLabel.setTextFormat(QtCore.Qt.RichText)
             self.themeMetainfoLabel.setOpenExternalLinks(True)
             self.themeMetainfoLabel.setText(preview_metainfo)
 
-            # Очищаем старые скриншоты
-            for i in reversed(range(self.screenshotsLayout.count())):
-                widget_to_remove = self.screenshotsLayout.itemAt(i).widget()
-                if widget_to_remove is not None:
-                    self.screenshotsLayout.removeWidget(widget_to_remove)
-                    widget_to_remove.deleteLater()
-
-            # Загружаем скриншоты
+            # Загружаем скриншоты для темы, возвращаем список кортежей (pixmap, filename)
             screenshots = load_theme_screenshots(theme_name)
-            if screenshots:
-                for pixmap, filename in screenshots:
-                    # Получаем имя без расширения
-                    base_name = os.path.splitext(filename)[0]
+            images = [(pixmap, os.path.splitext(filename)[0]) for pixmap, filename in screenshots] if screenshots else []
+            self.screenshotsCarousel.update_images(images)
 
-                    # Создаём контейнер для одного скриншота и подписи под ним
-                    shotContainer = QtWidgets.QWidget()
-                    shotLayout = QtWidgets.QVBoxLayout(shotContainer)
-                    shotLayout.setContentsMargins(0, 0, 0, 0)
-                    shotLayout.setSpacing(5)
-
-                    # Лейбл для картинки
-                    imageLabel = QtWidgets.QLabel()
-                    scaled = pixmap.scaledToHeight(300, QtCore.Qt.SmoothTransformation)
-                    imageLabel.setPixmap(scaled)
-                    # Устанавливаем tooltip по имени без расширения
-                    imageLabel.setToolTip(base_name)
-                    shotLayout.addWidget(imageLabel, alignment=QtCore.Qt.AlignCenter)
-
-                    # Лейбл для подписи под скриншотом
-                    captionLabel = QtWidgets.QLabel(base_name)
-                    captionLabel.setAlignment(QtCore.Qt.AlignHCenter)
-                    shotLayout.addWidget(captionLabel, alignment=QtCore.Qt.AlignCenter)
-
-                    # Добавляем контейнер в горизонтальный layout со скриншотами
-                    self.screenshotsLayout.addWidget(shotContainer)
-            else:
-                noShotsLabel = QtWidgets.QLabel("Нет скриншотов")
-                self.screenshotsLayout.addWidget(noShotsLabel)
-
-        # При первом открытии вкладки – обновляем превью для текущей темы
         updateThemePreview(self.current_theme_name)
-
-        # При изменении выбора в комбобоксе – обновляем превью
-        self.themesCombo.currentTextChanged.connect(lambda t: updateThemePreview(t))
+        self.themesCombo.currentTextChanged.connect(updateThemePreview)
 
         # Логика применения темы
         def on_apply():
