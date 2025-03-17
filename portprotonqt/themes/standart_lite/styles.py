@@ -309,7 +309,7 @@ GAMEPAD_SUPPORT_VALUE_STYLE = """
 # СТИЛИ ПОЛНОЭКРАНОГО ПРЕВЬЮ СКРИНШОТОВ ТЕМЫ
 PREV_BUTTON_STYLE="background-color: rgba(0, 0, 0, 0.5); color: white; border: none;"
 NEXT_BUTTON_STYLE="background-color: rgba(0, 0, 0, 0.5); color: white; border: none;"
-CAPTION_LABEL_STYLE="color: white; font-size: 16px; padding: 10px;"
+CAPTION_LABEL_STYLE="color: white; font-size: 16px;"
 
 # ФУНКЦИЯ ДЛЯ ДИНАМИЧЕСКОГО ГРАДИЕНТА (ДЕТАЛИ ИГР)
 # Функции из этой темы срабатывает всегда вне зависимости от выбранной темы, функции из других тем работают только в этих темах

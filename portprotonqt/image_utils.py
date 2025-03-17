@@ -78,10 +78,13 @@ def round_corners(pixmap, radius):
 class FullscreenDialog(QtWidgets.QDialog):
     """
     Диалог для просмотра изображений без стандартных элементов управления.
-    Подпись выводится снизу под изображением.
+    Изображение отображается в области фиксированного размера, а подпись располагается чуть выше нижней границы.
     В окне есть кнопки-стрелки для перелистывания изображений.
     Диалог закрывается при клике по изображению или подписи.
     """
+    FIXED_WIDTH = 800
+    FIXED_HEIGHT = 400
+
     def __init__(self, images, current_index=0, parent=None, theme=None):
         """
         :param images: Список кортежей (QPixmap, caption)
@@ -100,57 +103,75 @@ class FullscreenDialog(QtWidgets.QDialog):
         self.init_ui()
         self.update_display()
 
-        # Устанавливаем фильтр событий для закрытия диалога по клику
+        # Фильтруем события для закрытия диалога по клику
         self.imageLabel.installEventFilter(self)
         self.captionLabel.installEventFilter(self)
 
     def init_ui(self):
         self.layout = QtWidgets.QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setSpacing(0)
 
         # Контейнер для изображения и стрелок
         self.imageContainer = QtWidgets.QWidget()
+        self.imageContainer.setFixedSize(self.FIXED_WIDTH, self.FIXED_HEIGHT)
         self.imageContainerLayout = QtWidgets.QHBoxLayout(self.imageContainer)
         self.imageContainerLayout.setContentsMargins(0, 0, 0, 0)
         self.imageContainerLayout.setSpacing(0)
 
-        # Кнопка "назад"
+        # Левая стрелка
         self.prevButton = QtWidgets.QToolButton()
         self.prevButton.setArrowType(QtCore.Qt.LeftArrow)
         self.prevButton.setStyleSheet(self.theme.PREV_BUTTON_STYLE)
         self.prevButton.setCursor(QtCore.Qt.PointingHandCursor)
+        self.prevButton.setFixedSize(40, 40)
         self.prevButton.clicked.connect(self.show_prev)
         self.imageContainerLayout.addWidget(self.prevButton)
 
         # Метка для изображения
         self.imageLabel = QtWidgets.QLabel()
+        self.imageLabel.setFixedSize(self.FIXED_WIDTH - 80, self.FIXED_HEIGHT)
         self.imageLabel.setAlignment(QtCore.Qt.AlignCenter)
         self.imageContainerLayout.addWidget(self.imageLabel, stretch=1)
 
-        # Кнопка "вперёд"
+        # Правая стрелка
         self.nextButton = QtWidgets.QToolButton()
         self.nextButton.setArrowType(QtCore.Qt.RightArrow)
         self.nextButton.setStyleSheet(self.theme.NEXT_BUTTON_STYLE)
         self.nextButton.setCursor(QtCore.Qt.PointingHandCursor)
+        self.nextButton.setFixedSize(40, 40)
         self.nextButton.clicked.connect(self.show_next)
         self.imageContainerLayout.addWidget(self.nextButton)
 
         self.layout.addWidget(self.imageContainer)
 
-        # Метка для подписи под изображением
+        # Небольшой отступ между изображением и подписью
+        spacer = QtWidgets.QSpacerItem(20, 10, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
+        self.layout.addItem(spacer)
+
+        # Подпись
         self.captionLabel = QtWidgets.QLabel()
         self.captionLabel.setAlignment(QtCore.Qt.AlignCenter)
+        self.captionLabel.setFixedHeight(40)
         self.captionLabel.setStyleSheet(self.theme.CAPTION_LABEL_STYLE)
         self.captionLabel.setCursor(QtCore.Qt.PointingHandCursor)
         self.layout.addWidget(self.captionLabel)
 
     def update_display(self):
-        """Обновляет изображение и подпись в соответствии с текущим индексом."""
+        """Обновляет изображение и подпись согласно текущему индексу."""
         if not self.images:
             return
         pixmap, caption = self.images[self.current_index]
-        self.imageLabel.setPixmap(pixmap.scaledToWidth(800, QtCore.Qt.SmoothTransformation))
+        # Масштабируем изображение так, чтобы оно поместилось в область фиксированного размера
+        scaled_pixmap = pixmap.scaled(
+            self.FIXED_WIDTH - 80,  # учитываем ширину стрелок
+            self.FIXED_HEIGHT,
+            QtCore.Qt.KeepAspectRatio,
+            QtCore.Qt.SmoothTransformation
+        )
+        self.imageLabel.setPixmap(scaled_pixmap)
         self.captionLabel.setText(caption)
+        self.setWindowTitle(caption)
 
     def show_prev(self):
         """Показывает предыдущее изображение."""
@@ -177,55 +198,57 @@ class ClickablePixmapItem(QtWidgets.QGraphicsPixmapItem):
     Элемент карусели, реагирующий на клик.
     При клике открывается FullscreenDialog с возможностью перелистывания изображений.
     """
-    def __init__(self, pixmap, caption="Просмотр изображения", images_list=None):
+    def __init__(self, pixmap, caption="Просмотр изображения", images_list=None, index=0, carousel=None):
         """
         :param pixmap: QPixmap для отображения в карусели
         :param caption: Подпись к изображению
         :param images_list: Список всех изображений (кортежей (QPixmap, caption)),
                             чтобы в диалоге можно было перелистывать.
                             Если не передан, будет использован только текущее изображение.
+        :param index: Индекс текущего изображения в images_list.
+        :param carousel: Ссылка на родительскую карусель (ImageCarousel) для управления стрелками.
         """
         super().__init__(pixmap)
         self.caption = caption
         self.images_list = images_list if images_list is not None else [(pixmap, caption)]
+        self.index = index
+        self.carousel = carousel
         self.setCursor(QtCore.Qt.PointingHandCursor)
+        self.setToolTip(caption)
+        self._click_start_position = None
+        self.setAcceptedMouseButtons(QtCore.Qt.LeftButton)
+        self.setFlag(QtWidgets.QGraphicsItem.ItemIsSelectable, True)
 
     def mousePressEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
-            self.show_fullscreen()
-        super().mousePressEvent(event)
+            self._click_start_position = event.scenePos()
+            event.accept()
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == QtCore.Qt.LeftButton and self._click_start_position is not None:
+            distance = (event.scenePos() - self._click_start_position).manhattanLength()
+            if distance < 2:
+                self.show_fullscreen()
+                event.accept()
+                return
+        event.accept()
 
     def show_fullscreen(self):
-        # Получаем представление (виджет) карусели из сцены
-        views = self.scene().views()
-        if views:
-            carousel_view = views[0]
-            # Скрываем стрелки карусели
-            carousel_view.prevArrow.hide()
-            carousel_view.nextArrow.hide()
-        else:
-            carousel_view = None
-
-        # Определяем индекс текущего изображения в списке, если оно там присутствует
-        try:
-            idx = self.images_list.index((self.pixmap(), self.caption))
-        except ValueError:
-            idx = 0
-
-        dialog = FullscreenDialog(self.images_list, current_index=idx)
+        # Скрываем стрелки карусели перед открытием FullscreenDialog
+        if self.carousel:
+            self.carousel.prevArrow.hide()
+            self.carousel.nextArrow.hide()
+        dialog = FullscreenDialog(self.images_list, current_index=self.index)
         dialog.exec()
-
-        # После закрытия диалога – возвращаем стрелки карусели, если они были найдены
-        if carousel_view:
-            carousel_view.prevArrow.show()
-            carousel_view.nextArrow.show()
+        # После закрытия диалога обновляем видимость стрелок
+        if self.carousel:
+            self.carousel.update_arrows_visibility()
 
 
 class ImageCarousel(QtWidgets.QGraphicsView):
     """
-    Карусель изображений с адаптивностью и возможностью увеличения по клику.
-    При создании передается список кортежей: (QPixmap, caption).
-    Добавлены кнопки-стрелки для перемещения карусели с плавной анимацией.
+    Карусель изображений с адаптивностью, возможностью увеличения по клику
+    и перетаскиванием мыши.
     """
     def __init__(self, images, parent=None, theme=None):
         super().__init__(parent)
@@ -233,10 +256,15 @@ class ImageCarousel(QtWidgets.QGraphicsView):
         self.setScene(self.scene)
         self.images = images  # Список кортежей: (QPixmap, caption)
         self.image_items = []
-        self._animation = None  # Переменная для хранения текущей анимации
+        self._animation = None
         self.theme = theme if theme else default_styles
         self.init_ui()
         self.create_arrows()
+
+        # Переменные для поддержки перетаскивания
+        self._drag_active = False
+        self._drag_start_position = None
+        self._scroll_start_value = None
 
     def init_ui(self):
         self.setRenderHint(QtGui.QPainter.Antialiasing)
@@ -248,11 +276,13 @@ class ImageCarousel(QtWidgets.QGraphicsView):
         max_height = 300  # Фиксированная высота изображений
         x = 0
 
-        for pixmap, caption in self.images:
+        for i, (pixmap, caption) in enumerate(self.images):
             item = ClickablePixmapItem(
                 pixmap.scaledToHeight(max_height, QtCore.Qt.SmoothTransformation),
                 caption,
-                images_list=self.images
+                images_list=self.images,
+                index=i,
+                carousel=self  # Передаём ссылку на карусель
             )
             item.setPos(x, 0)
             self.scene.addItem(item)
@@ -262,11 +292,9 @@ class ImageCarousel(QtWidgets.QGraphicsView):
         self.setSceneRect(0, 0, x, max_height)
 
     def create_arrows(self):
-        """Создаёт кнопки-стрелки и привязывает к функциям прокрутки."""
-        # Левая кнопка
+        """Создаёт кнопки-стрелки и привязывает их к функциям прокрутки."""
         self.prevArrow = QtWidgets.QToolButton(self)
         self.prevArrow.setArrowType(QtCore.Qt.LeftArrow)
-        # Используем стиль из темы
         self.prevArrow.setStyleSheet(self.theme.PREV_BUTTON_STYLE)
         self.prevArrow.setFixedSize(40, 40)
         self.prevArrow.setCursor(QtCore.Qt.PointingHandCursor)
@@ -274,12 +302,10 @@ class ImageCarousel(QtWidgets.QGraphicsView):
         self.prevArrow.setAutoRepeatDelay(300)
         self.prevArrow.setAutoRepeatInterval(100)
         self.prevArrow.clicked.connect(self.scroll_left)
-        self.prevArrow.raise_()  # Поверх содержимого
+        self.prevArrow.raise_()
 
-        # Правая кнопка
         self.nextArrow = QtWidgets.QToolButton(self)
         self.nextArrow.setArrowType(QtCore.Qt.RightArrow)
-        # Используем стиль из темы
         self.nextArrow.setStyleSheet(self.theme.NEXT_BUTTON_STYLE)
         self.nextArrow.setFixedSize(40, 40)
         self.nextArrow.setCursor(QtCore.Qt.PointingHandCursor)
@@ -289,45 +315,81 @@ class ImageCarousel(QtWidgets.QGraphicsView):
         self.nextArrow.clicked.connect(self.scroll_right)
         self.nextArrow.raise_()
 
+        # Проверяем видимость стрелок при создании
+        self.update_arrows_visibility()
+
+    def update_arrows_visibility(self):
+        """
+        Показывает стрелки, если контент шире видимой области.
+        Иначе скрывает их.
+        """
+        # Если стрелки уже созданы, то обновляем их видимость
+        if hasattr(self, "prevArrow") and hasattr(self, "nextArrow"):
+            if self.horizontalScrollBar().maximum() == 0:
+                self.prevArrow.hide()
+                self.nextArrow.hide()
+            else:
+                self.prevArrow.show()
+                self.nextArrow.show()
+
     def resizeEvent(self, event):
-        """Переопределяем, чтобы кнопки-стрелки корректно позиционировались при изменении размеров."""
         super().resizeEvent(event)
         margin = 10
         self.prevArrow.move(margin, (self.height() - self.prevArrow.height()) // 2)
         self.nextArrow.move(self.width() - self.nextArrow.width() - margin,
-                            (self.height() - self.nextArrow.height()) // 2)
+                              (self.height() - self.nextArrow.height()) // 2)
+        self.update_arrows_visibility()
 
     def animate_scroll(self, end_value):
-        """Выполняет анимацию скроллинга до указанного значения."""
         scrollbar = self.horizontalScrollBar()
         start_value = scrollbar.value()
         animation = QtCore.QPropertyAnimation(scrollbar, b"value", self)
-        animation.setDuration(300)  # длительность анимации в мс
+        animation.setDuration(300)
         animation.setStartValue(start_value)
         animation.setEndValue(end_value)
         animation.setEasingCurve(QtCore.QEasingCurve.InOutQuad)
-        # Сохраняем анимацию, чтобы она не была удалена сборщиком мусора
         self._animation = animation
         animation.start()
 
     def scroll_left(self):
-        """Прокручивает карусель влево с плавной анимацией."""
         scrollbar = self.horizontalScrollBar()
         new_value = scrollbar.value() - 100
         self.animate_scroll(new_value)
 
     def scroll_right(self):
-        """Прокручивает карусель вправо с плавной анимацией."""
         scrollbar = self.horizontalScrollBar()
         new_value = scrollbar.value() + 100
         self.animate_scroll(new_value)
 
     def update_images(self, new_images):
-        """
-        Обновляет карусель новыми изображениями.
-        new_images — список кортежей (QPixmap, caption).
-        """
         self.scene.clear()
         self.images = new_images
         self.image_items.clear()
         self.init_ui()
+        self.update_arrows_visibility()
+
+    # Обработка событий мыши для перетаскивания
+    def mousePressEvent(self, event):
+        if event.button() == QtCore.Qt.LeftButton:
+            self._drag_active = True
+            self._drag_start_position = event.pos()
+            self._scroll_start_value = self.horizontalScrollBar().value()
+            # Скрываем стрелки при начале перетаскивания
+            if hasattr(self, "prevArrow"):
+                self.prevArrow.hide()
+            if hasattr(self, "nextArrow"):
+                self.nextArrow.hide()
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        if self._drag_active:
+            delta = event.pos().x() - self._drag_start_position.x()
+            new_value = self._scroll_start_value - delta
+            self.horizontalScrollBar().setValue(new_value)
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        self._drag_active = False
+        # Показываем стрелки после завершения перетаскивания (с проверкой видимости)
+        self.update_arrows_visibility()
+        super().mouseReleaseEvent(event)

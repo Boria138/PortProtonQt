@@ -481,8 +481,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
             # Загружаем скриншоты для темы, возвращаем список кортежей (pixmap, filename)
             screenshots = load_theme_screenshots(theme_name)
-            images = [(pixmap, os.path.splitext(filename)[0]) for pixmap, filename in screenshots] if screenshots else []
-            self.screenshotsCarousel.update_images(images)
+            if screenshots:
+                images = [(pixmap, os.path.splitext(filename)[0]) for pixmap, filename in screenshots]
+                self.screenshotsCarousel.update_images(images)
+                self.screenshotsCarousel.show()
+            else:
+                # Если скриншотов нет, скрываем карусель
+                self.screenshotsCarousel.hide()
 
         updateThemePreview(self.current_theme_name)
         self.themesCombo.currentTextChanged.connect(updateThemePreview)
