@@ -59,10 +59,29 @@ def humanize_time_delta(launch_time):
         years = int(seconds // 31104000)
         return f"{years} год{'а' if years == 1 else 'ов'} назад"
 
+def format_last_launch(launch_time):
+    """
+    Форматирует время запуска в зависимости от настройки detail_level:
+      - "detailed"  -> возвращает относительное время (например, "час назад")
+      - "brief" -> возвращает дату в формате "1 апреля"
+    """
+    detail_level = read_time_config() or "detailed"
+    if detail_level == "detailed":
+        return humanize_time_delta(launch_time)
+    else:
+        # Для корректного отображения названия месяца на русском можно использовать словарь.
+        months = {
+            1: "января", 2: "февраля", 3: "марта", 4: "апреля", 5: "мая", 6: "июня",
+            7: "июля", 8: "августа", 9: "сентября", 10: "октября", 11: "ноября", 12: "декабря"
+        }
+        day = launch_time.day
+        month = months.get(launch_time.month, "")
+        return f"{day} {month}"
+
 def get_last_launch(exe_name):
     """
     Читает время последнего запуска для заданного exe из файла кеша.
-    Возвращает относительную дату запуска (например, "1 день назад") или "Никогда".
+    Возвращает время запуска в нужном формате или "Никогда".
     """
     file_path = get_cache_file_path()
     if not os.path.exists(file_path):
@@ -74,7 +93,7 @@ def get_last_launch(exe_name):
                 if len(parts) == 2 and parts[0] == exe_name:
                     iso_time = parts[1]
                     launch_time = datetime.fromisoformat(iso_time)
-                    return humanize_time_delta(launch_time)
+                    return format_last_launch(launch_time)
     except Exception as e:
         print("Ошибка чтения файла кеша:", e)
     return "Никогда"
@@ -130,7 +149,7 @@ def format_playtime(seconds):
        3675 -> "1 ч"
        125 -> "2 мин 5 сек"
     """
-    detail_level = read_time_config()
+    detail_level = read_time_config() or "detailed"
     seconds = int(seconds)
 
     if detail_level == "detailed":
