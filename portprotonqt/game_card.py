@@ -4,7 +4,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 
 class GameCard(QtWidgets.QFrame):
-    def __init__(self, name, description, cover_path, appid, controller_support, exec_line, last_launch, formatted_playtime, protondb_tier, select_callback, theme=None, parent=None):
+    def __init__(self, name, description, cover_path, appid, controller_support, exec_line, last_launch, formatted_playtime, protondb_tier, select_callback, theme=None, card_width=250, parent=None):
         super().__init__(parent)
         self.name = name
         self.description = description
@@ -17,15 +17,14 @@ class GameCard(QtWidgets.QFrame):
         self.protondb_tier = protondb_tier
         self.select_callback = select_callback
 
-        # Используем переданную тему или стандартную
         self.theme = theme if theme is not None else default_styles
 
-        self.setFixedSize(250, 400)
+        # Используем переданный card_width для задания размеров
+        self.setFixedSize(card_width, int(card_width * 1.6))
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
-
         self.setStyleSheet(self.theme.GAME_CARD_WINDOW_STYLE)
 
-        # Анимация обводки
+        # Анимация обводки и остальные свойства остаются без изменений
         self._borderWidth = 1
         self._gradientAngle = 0.0
         self._hovered = False
@@ -44,8 +43,9 @@ class GameCard(QtWidgets.QFrame):
         layout.setSpacing(5)
 
         coverLabel = QtWidgets.QLabel()
-        coverLabel.setFixedSize(250, 300)
-        pixmap = load_pixmap(cover_path, 250, 300) if cover_path else load_pixmap("", 250, 300)
+        # Размер обложки пропорционален: высота = card_width * 1.2
+        coverLabel.setFixedSize(card_width, int(card_width * 1.2))
+        pixmap = load_pixmap(cover_path, card_width, int(card_width * 1.2)) if cover_path else load_pixmap("", card_width, int(card_width * 1.2))
         pixmap = round_corners(pixmap, 15)
         coverLabel.setPixmap(pixmap)
         coverLabel.setStyleSheet(self.theme.COVER_LABEL_STYLE)

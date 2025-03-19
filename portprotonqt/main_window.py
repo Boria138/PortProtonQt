@@ -14,7 +14,7 @@ from portprotonqt.image_utils import load_pixmap, round_corners, ImageCarousel
 from portprotonqt.steam_api import get_steam_game_info
 from portprotonqt.theme_manager import ThemeManager, load_theme_screenshots
 from portprotonqt.time_utils import save_last_launch, get_last_launch, parse_playtime_file, format_playtime
-from portprotonqt.config_utils import get_portproton_location, read_theme_from_config, save_theme_to_config, parse_desktop_entry, load_theme_metainfo, read_time_config, read_file_content
+from portprotonqt.config_utils import get_portproton_location, read_theme_from_config, save_theme_to_config, parse_desktop_entry, load_theme_metainfo, read_time_config, read_file_content, read_card_size, save_card_size
 from PySide6 import QtCore, QtGui, QtWidgets
 from datetime import datetime
 
@@ -34,7 +34,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if not self.theme:
             # Если тема не загрузилась, fallback на стандартный стиль
             self.theme = default_styles
-
+        self.card_width = read_card_size()
         self.gamepad_support = GamepadSupport(self)
         self.setWindowTitle("PortProtonQT")
         self.resize(1280, 720)
@@ -312,8 +312,38 @@ class MainWindow(QtWidgets.QMainWindow):
         scrollArea.setWidget(listWidget)
         layout.addWidget(scrollArea)
 
+        # Добавляем компактный ползунок в правом нижнем углу
+        sliderLayout = QtWidgets.QHBoxLayout()
+        sliderLayout.addStretch()  # сдвигаем ползунок вправо
+        self.sizeSlider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        self.sizeSlider.setMinimum(200)
+        self.sizeSlider.setMaximum(300)
+        self.sizeSlider.setValue(self.card_width)
+        self.sizeSlider.setTickInterval(10)
+        self.sizeSlider.setTickPosition(QtWidgets.QSlider.TicksBelow)
+        self.sizeSlider.setFixedWidth(150)
+        self.sizeSlider.setToolTip(f"{self.card_width} px")
+        sliderLayout.addWidget(self.sizeSlider)
+        layout.addLayout(sliderLayout)
+
+        # QTimer для дебаунсинга изменений слайдера (150 мс)
+        self.sliderDebounceTimer = QtCore.QTimer(self)
+        self.sliderDebounceTimer.setSingleShot(True)
+        self.sliderDebounceTimer.setInterval(150)
+
+        def on_slider_value_changed():
+            self.setUpdatesEnabled(False)
+            self.card_width = self.sizeSlider.value()
+            self.sizeSlider.setToolTip(f"{self.card_width} px")
+            self.populateGamesGrid(self.games)
+            from portprotonqt.config_utils import save_card_size
+            save_card_size(self.card_width)
+            self.setUpdatesEnabled(True)
+        self.sizeSlider.valueChanged.connect(lambda val: self.sliderDebounceTimer.start())
+        self.sliderDebounceTimer.timeout.connect(on_slider_value_changed)
+
         self.stackedWidget.addWidget(widget)
-        self.populateGamesGrid(self.games)
+        self.updateGameGridColumns()
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -322,18 +352,17 @@ class MainWindow(QtWidgets.QMainWindow):
     def updateGameGridColumns(self):
         if not self.games:
             return
-        # Получаем ширину виджета
-        available_width = self.stackedWidget.width()
-        # Учитываем примерную ширину одной карточки + отступы:
-        card_width = 300
-        spacing = 20  # межкарточный отступ
-        columns = max(1, (available_width // (card_width + spacing)))
+        # Учитываем отступы
+        available_width = self.stackedWidget.width() - 40
+        spacing = self.gamesListLayout.spacing() or 20
+        # Вычисляем число колонок на основе текущего значения self.card_width
+        columns = max(1, available_width // (self.card_width + spacing))
         self.populateGamesGrid(self.games, columns=columns)
 
     def populateGamesGrid(self, games_list, columns=4):
         self.clearLayout(self.gamesListLayout)
         for idx, game_data in enumerate(games_list):
-            card = GameCard(*game_data, select_callback=self.openGameDetailPage, theme=self.theme)
+            card = GameCard(*game_data, select_callback=self.openGameDetailPage, theme=self.theme, card_width=self.card_width)
             row = idx // columns
             col = idx % columns
             self.gamesListLayout.addWidget(card, row, col)
@@ -407,7 +436,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.stackedWidget.addWidget(widget)
 
     def createPortProtonTab(self):
-        """Вкладка 'Настройки PortProton'."""
         widget = QtWidgets.QWidget()
         layout = QtWidgets.QVBoxLayout(widget)
         layout.setContentsMargins(20, 20, 20, 20)
@@ -419,9 +447,30 @@ class MainWindow(QtWidgets.QMainWindow):
         content = QtWidgets.QLabel("Основные параметры PortProton...")
         content.setStyleSheet(self.theme.CONTENT_STYLE)
         layout.addWidget(content)
-        layout.addStretch(1)
 
+        # Добавляем ползунок для изменения размера карточек
+        sizeLayout = QtWidgets.QHBoxLayout()
+        sizeLabel = QtWidgets.QLabel("Размер карточек:")
+        sizeSlider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        sizeSlider.setMinimum(200)
+        sizeSlider.setMaximum(350)
+        sizeSlider.setValue(self.card_width)
+        sizeSlider.setTickInterval(10)
+        sizeSlider.setTickPosition(QtWidgets.QSlider.TicksBelow)
+        sizeLayout.addWidget(sizeLabel)
+        sizeLayout.addWidget(sizeSlider)
+        layout.addLayout(sizeLayout)
+
+        # При изменении значения обновляем размер карточек и сохраняем значение в конфиг
+        def on_card_size_changed(value):
+            self.card_width = value
+            self.populateGamesGrid(self.games)
+            save_card_size(value)
+        sizeSlider.valueChanged.connect(on_card_size_changed)
+
+        layout.addStretch(1)
         self.stackedWidget.addWidget(widget)
+
 
     def createThemeTab(self):
         """Вкладка 'Темы'"""

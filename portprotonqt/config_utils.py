@@ -176,3 +176,36 @@ def load_theme_metainfo(theme_name):
                 meta["name"] = cp.get("Metainfo", "name", fallback=theme_name)
             break
     return meta
+
+def read_card_size():
+    """
+    Читает из конфигурационного файла размер карточек (ширину) из секции [Cards].
+    Если параметр не задан, возвращает 250.
+    """
+    cp = configparser.ConfigParser()
+    if os.path.exists(CONFIG_FILE):
+        try:
+            cp.read(CONFIG_FILE, encoding="utf-8")
+            if not cp.has_section("Cards") or not cp.has_option("Cards", "card_width"):
+                save_card_size("250")
+                return 250
+            return cp.getint("Cards", "card_width", fallback=250)
+        except Exception as e:
+            print("Ошибка чтения конфигурации размера карточек:", e)
+    return 250
+
+def save_card_size(card_width):
+    """
+    Сохраняет размер карточек (ширину) в секцию [Cards] конфигурационного файла.
+    """
+    cp = configparser.ConfigParser()
+    if os.path.exists(CONFIG_FILE):
+        cp.read(CONFIG_FILE, encoding="utf-8")
+    if "Cards" not in cp:
+        cp["Cards"] = {}
+    cp["Cards"]["card_width"] = str(card_width)
+    try:
+        with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
+            cp.write(configfile)
+    except Exception as e:
+        print("Ошибка сохранения конфигурации размера карточек:", e)
