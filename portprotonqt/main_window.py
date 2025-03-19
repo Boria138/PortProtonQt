@@ -43,7 +43,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.requests_session = requests.Session()
         self.games = self.loadGames()
         self.game_processes = []
-        self.target_exe = None  # Для отслеживания конкретного exe
+        self.target_exe = None
+        self.current_running_button = None
 
         # Статус-бар
         self.setStatusBar(QtWidgets.QStatusBar(self))
@@ -553,7 +554,6 @@ class MainWindow(QtWidgets.QMainWindow):
         return color.darker(factor)
 
     def openGameDetailPage(self, name, description, cover_path=None, appid="", exec_line="", controller_support="", last_launch="", formatted_playtime="", protondb_tier=""):
-        """Переход на страницу с деталями игры."""
         detailPage = QtWidgets.QWidget()
 
         if cover_path:
@@ -648,14 +648,12 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if controller_support:
             cs = controller_support.lower()
-
             if cs == "full":
                 translated_cs = "полная"
             elif cs == "partial":
                 translated_cs = "частичная"
             elif cs == "none":
                 translated_cs = "отсутствует"
-
             gamepadSupportLabel = QtWidgets.QLabel(f"Поддержка геймпада: {translated_cs}")
             gamepadSupportLabel.setAlignment(QtCore.Qt.AlignCenter)
             gamepadSupportLabel.setStyleSheet(self.theme.GAMEPAD_SUPPORT_VALUE_STYLE)
@@ -664,10 +662,9 @@ class MainWindow(QtWidgets.QMainWindow):
         if protondb_tier:
             status = protondb_tier.lower()
             color = "#FFFFFF"
-            translated_status = protondb_tier  # по умолчанию оставляем как есть
-
+            translated_status = protondb_tier
             if status == "borked":
-                color = "#FF0000"  # ярко-красный
+                color = "#FF0000"
                 translated_status = "сломана"
             elif status == "platinum":
                 color = "#E5E4E2"
@@ -682,7 +679,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 color = "#CD7F32"
                 translated_status = "бронза"
             elif status == "pending":
-                color = "#FFA500"  # оранжевый оттенок
+                color = "#FFA500"
                 translated_status = "ожидание"
 
             protondbLink = f"https://www.protondb.com/app/{appid}"
@@ -696,7 +693,27 @@ class MainWindow(QtWidgets.QMainWindow):
 
         detailsLayout.addStretch(1)
 
-        playButton = QtWidgets.QPushButton("▷ Играть")
+        # Определяем текущий идентификатор игры по exec_line для корректного отображения кнопки
+        try:
+            entry_exec_split = shlex.split(exec_line)
+            if entry_exec_split[0] == "env":
+                file_to_check = entry_exec_split[2] if len(entry_exec_split) >= 3 else None
+            elif entry_exec_split[0] == "flatpak":
+                file_to_check = entry_exec_split[3] if len(entry_exec_split) >= 4 else None
+            else:
+                file_to_check = entry_exec_split[0]
+            current_exe = os.path.basename(file_to_check) if file_to_check else None
+        except Exception as e:
+            print("Ошибка при определении текущего exe:", e)
+            current_exe = None
+
+        # Если для этой игры уже запущен процесс, выставляем кнопку "✕ Остановить"
+        if self.target_exe is not None and current_exe == self.target_exe:
+            play_text = "✕ Остановить"
+        else:
+            play_text = "▷ Играть"
+
+        playButton = QtWidgets.QPushButton(play_text)
         playButton.setFixedSize(120, 40)
         playButton.setStyleSheet(self.theme.PLAY_BUTTON_STYLE)
         playButton.clicked.connect(lambda: self.toggleGame(exec_line, name, playButton))
@@ -720,6 +737,7 @@ class MainWindow(QtWidgets.QMainWindow):
         detailPage.animation = animation
         animation.finished.connect(lambda: detailPage.setGraphicsEffect(None))
 
+
     def goBackDetailPage(self, page):
         """Возврат из детальной страницы на вкладку 0 (Библиотека)."""
         self.stackedWidget.setCurrentIndex(0)
@@ -728,9 +746,6 @@ class MainWindow(QtWidgets.QMainWindow):
         if hasattr(self, "currentDetailPage"):
             del self.currentDetailPage
 
-    # ------------------------------------------------------------------------
-    # ЗАПУСК/ОСТАНОВКА ИГРЫ
-    # ------------------------------------------------------------------------
     def is_target_exe_running(self):
         """Проверяет, запущен ли процесс с именем self.target_exe через psutil."""
         if not self.target_exe:
@@ -780,14 +795,35 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.checkProcessTimer.deleteLater()
                 self.checkProcessTimer = None
 
-
     def toggleGame(self, exec_line, game_name, button):
-        """
-        Запускает или останавливает игру:
-          - Если уже запущена, убиваем процессы
-          - Иначе, запускаем subprocess и контролируем статус
-        """
-        if self.game_processes:
+        try:
+            entry_exec_split = shlex.split(exec_line)
+            if entry_exec_split[0] == "env":
+                if len(entry_exec_split) < 3:
+                    QtWidgets.QMessageBox.warning(self, "Ошибка", "Неверный формат команды (native)")
+                    return
+                file_to_check = entry_exec_split[2]
+            elif entry_exec_split[0] == "flatpak":
+                if len(entry_exec_split) < 4:
+                    QtWidgets.QMessageBox.warning(self, "Ошибка", "Неверный формат команды (flatpak)")
+                    return
+                file_to_check = entry_exec_split[3]
+            else:
+                file_to_check = entry_exec_split[0]
+            if not os.path.exists(file_to_check):
+                QtWidgets.QMessageBox.warning(self, "Ошибка", f"Указанный файл не найден: {file_to_check}")
+                return
+            current_exe = os.path.basename(file_to_check)
+        except Exception as e:
+            print("Ошибка при разборе exec_line:", e)
+            return
+
+        if self.game_processes and self.target_exe is not None and self.target_exe != current_exe:
+            QtWidgets.QMessageBox.warning(self, "Ошибка", "Невозможно запустить игру, пока другая игра запущена")
+            return
+
+        # Если игра уже запущена для этого exe – останавливаем её
+        if self.game_processes and self.target_exe == current_exe:
             for proc in self.game_processes:
                 try:
                     os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
@@ -812,24 +848,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.target_exe = None
         else:
             try:
-                entry_exec_split = shlex.split(exec_line)
-                if entry_exec_split[0] == "env":
-                    if len(entry_exec_split) < 3:
-                        QtWidgets.QMessageBox.warning(self, "Ошибка", "Неверный формат команды (native)")
-                        return
-                    file_to_check = entry_exec_split[2]
-                elif entry_exec_split[0] == "flatpak":
-                    if len(entry_exec_split) < 4:
-                        QtWidgets.QMessageBox.warning(self, "Ошибка", "Неверный формат команды (flatpak)")
-                        return
-                    file_to_check = entry_exec_split[3]
-                else:
-                    file_to_check = entry_exec_split[0]
-                if not os.path.exists(file_to_check):
-                    QtWidgets.QMessageBox.warning(self, "Ошибка", f"Указанный файл не найден: {file_to_check}")
-                    return
-                self.target_exe = os.path.basename(file_to_check)
-                exe_name = os.path.splitext(os.path.basename(file_to_check))[0]
+                self.target_exe = current_exe
+                exe_name = os.path.splitext(current_exe)[0]
                 env_vars = os.environ.copy()
                 if entry_exec_split[0] == "env" and len(entry_exec_split) > 1 and 'data/scripts/start.sh' in entry_exec_split[1]:
                     env_vars['START_FROM_STEAM'] = '1'
