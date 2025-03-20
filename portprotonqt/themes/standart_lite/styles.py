@@ -311,6 +311,15 @@ PREV_BUTTON_STYLE="background-color: rgba(0, 0, 0, 0.5); color: white; border: n
 NEXT_BUTTON_STYLE="background-color: rgba(0, 0, 0, 0.5); color: white; border: none;"
 CAPTION_LABEL_STYLE="color: white; font-size: 16px;"
 
+# СТИЛИ БЕЙДЖА PROTONDB НА КАРТОЧКЕ
+PROTONDB_BADGE_STYLE= """
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    padding: 2px 4px;
+    border-radius: 5px;
+    font-weight: bold;
+"""
+
 # ФУНКЦИЯ ДЛЯ ДИНАМИЧЕСКОГО ГРАДИЕНТА (ДЕТАЛИ ИГР)
 # Функции из этой темы срабатывает всегда вне зависимости от выбранной темы, функции из других тем работают только в этих темах
 def detail_page_style(stops):

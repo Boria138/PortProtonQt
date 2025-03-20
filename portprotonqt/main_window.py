@@ -63,12 +63,11 @@ class MainWindow(QtWidgets.QMainWindow):
         headerLayout.setContentsMargins(20, 0, 20, 0)
 
         # Текст "PortProton" слева
-        self.titleLabel = QtWidgets.QLabel("PortProton")
         self.titleLabel = QtWidgets.QLabel()
         pixmap = self.theme_manager.current_theme_logo
         self.titleLabel.setPixmap(pixmap)
-        self.titleLabel.setFixedSize(pixmap.size())  # Фиксируем размер под изображение
-        self.titleLabel.setStyleSheet(self.theme.TITLE_LABEL_STYLE)  # Оставляем стиль (если нужно)
+        self.titleLabel.setFixedSize(pixmap.size())
+        self.titleLabel.setStyleSheet(self.theme.TITLE_LABEL_STYLE)
         headerLayout.addWidget(self.titleLabel)
         headerLayout.addStretch()
         mainLayout.addWidget(self.header)
@@ -336,7 +335,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.card_width = self.sizeSlider.value()
             self.sizeSlider.setToolTip(f"{self.card_width} px")
             self.populateGamesGrid(self.games)
-            from portprotonqt.config_utils import save_card_size
             save_card_size(self.card_width)
             self.setUpdatesEnabled(True)
         self.sizeSlider.valueChanged.connect(lambda val: self.sliderDebounceTimer.start())
@@ -707,38 +705,6 @@ class MainWindow(QtWidgets.QMainWindow):
             gamepadSupportLabel.setAlignment(QtCore.Qt.AlignCenter)
             gamepadSupportLabel.setStyleSheet(self.theme.GAMEPAD_SUPPORT_VALUE_STYLE)
             detailsLayout.addWidget(gamepadSupportLabel, alignment=QtCore.Qt.AlignCenter)
-
-        if protondb_tier:
-            status = protondb_tier.lower()
-            color = "#FFFFFF"
-            translated_status = protondb_tier
-            if status == "borked":
-                color = "#FF0000"
-                translated_status = "сломана"
-            elif status == "platinum":
-                color = "#E5E4E2"
-                translated_status = "платина"
-            elif status == "gold":
-                color = "#FFD700"
-                translated_status = "золото"
-            elif status == "silver":
-                color = "#C0C0C0"
-                translated_status = "серебро"
-            elif status == "bronze":
-                color = "#CD7F32"
-                translated_status = "бронза"
-            elif status == "pending":
-                color = "#FFA500"
-                translated_status = "ожидание"
-
-            protondbLink = f"https://www.protondb.com/app/{appid}"
-            link_html = f'<a href="{protondbLink}" style="color: {color}; text-decoration: none;">ProtonDB Tier: {translated_status}</a>'
-            protondbLabel = QtWidgets.QLabel(link_html)
-            protondbLabel.setTextFormat(QtCore.Qt.RichText)
-            protondbLabel.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
-            protondbLabel.setOpenExternalLinks(True)
-            protondbLabel.setAlignment(QtCore.Qt.AlignCenter)
-            detailsLayout.addWidget(protondbLabel, alignment=QtCore.Qt.AlignCenter)
 
         detailsLayout.addStretch(1)
 

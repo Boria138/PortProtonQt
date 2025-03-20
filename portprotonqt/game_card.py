@@ -1,7 +1,20 @@
+from PySide6 import QtCore, QtGui, QtWidgets
 import portprotonqt.themes.standart_lite.styles as default_styles
 from portprotonqt.image_utils import load_pixmap, round_corners
-from PySide6 import QtCore, QtGui, QtWidgets
 
+class ClickableLabel(QtWidgets.QLabel):
+    clicked = QtCore.Signal()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setCursor(QtCore.Qt.PointingHandCursor)
+
+    def mousePressEvent(self, event):
+        if event.button() == QtCore.Qt.LeftButton:
+            self.clicked.emit()
+            event.accept()
+        else:
+            super().mousePressEvent(event)
 
 class GameCard(QtWidgets.QFrame):
     def __init__(self, name, description, cover_path, appid, controller_support, exec_line, last_launch, formatted_playtime, protondb_tier, select_callback, theme=None, card_width=250, parent=None):
@@ -19,12 +32,11 @@ class GameCard(QtWidgets.QFrame):
 
         self.theme = theme if theme is not None else default_styles
 
-        # Используем переданный card_width для задания размеров
+        # Задаём размеры карточки
         self.setFixedSize(card_width, int(card_width * 1.6))
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.setStyleSheet(self.theme.GAME_CARD_WINDOW_STYLE)
 
-        # Анимация обводки и остальные свойства остаются без изменений
         self._borderWidth = 1
         self._gradientAngle = 0.0
         self._hovered = False
@@ -42,19 +54,60 @@ class GameCard(QtWidgets.QFrame):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(5)
 
+        # Создаём контейнер для обложки с наложением (Stacked Layout)
+        coverWidget = QtWidgets.QWidget()
+        coverWidget.setFixedSize(card_width, int(card_width * 1.2))
+        coverLayout = QtWidgets.QStackedLayout(coverWidget)
+        coverLayout.setContentsMargins(0, 0, 0, 0)
+        coverLayout.setStackingMode(QtWidgets.QStackedLayout.StackAll)
+
+        # Обложка
         coverLabel = QtWidgets.QLabel()
-        # Размер обложки пропорционален: высота = card_width * 1.2
         coverLabel.setFixedSize(card_width, int(card_width * 1.2))
         pixmap = load_pixmap(cover_path, card_width, int(card_width * 1.2)) if cover_path else load_pixmap("", card_width, int(card_width * 1.2))
         pixmap = round_corners(pixmap, 15)
         coverLabel.setPixmap(pixmap)
         coverLabel.setStyleSheet(self.theme.COVER_LABEL_STYLE)
-        layout.addWidget(coverLabel)
+        coverLayout.addWidget(coverLabel)
 
+        # Метка ProtonDB
+        tier_text = self.getProtonDBText(protondb_tier)
+        self.protondbLabel = ClickableLabel(coverWidget)
+        if tier_text:
+            self.protondbLabel.setText(tier_text)
+            self.protondbLabel.setStyleSheet(self.theme.PROTONDB_BADGE_STYLE)
+        else:
+            self.protondbLabel.setVisible(False)
+        # Размещаем метку в правом верхнем углу обложки
+        self.protondbLabel.move(card_width - 90, 10)
+        self.protondbLabel.raise_()
+        self.protondbLabel.clicked.connect(self.open_protondb_report)
+
+        layout.addWidget(coverWidget)
+
+        # Название игры
         nameLabel = QtWidgets.QLabel(name)
         nameLabel.setAlignment(QtCore.Qt.AlignCenter)
         nameLabel.setStyleSheet(self.theme.GAME_CARD_NAME_LABEL_STYLE)
         layout.addWidget(nameLabel)
+
+    def getProtonDBText(self, tier):
+        if not tier:
+            return ""
+        translations = {
+            "platinum": "Платина",
+            "gold": "Золото",
+            "silver": "Серебро",
+            "bronze": "Бронза",
+            "borked": "Сломана",
+            "pending": "Ожидание"
+        }
+        return translations.get(tier.lower(), "")
+
+    def open_protondb_report(self):
+        # Открываем URL отчёта с использованием QDesktopServices
+        url = QtCore.QUrl(f"https://www.protondb.com/app/{self.appid}")
+        QtGui.QDesktopServices.openUrl(url)
 
     def getBorderWidth(self):
         return self._borderWidth
@@ -91,7 +144,7 @@ class GameCard(QtWidgets.QFrame):
             pen.setColor(QtGui.QColor(0, 0, 0, 0))
         painter.setPen(pen)
         rect = self.rect().adjusted(self._borderWidth / 2, self._borderWidth / 2,
-                                    -self._borderWidth / 2, -self._borderWidth / 2)
+                                     -self._borderWidth / 2, -self._borderWidth / 2)
         painter.drawRoundedRect(rect, 15, 15)
 
     def enterEvent(self, event):
