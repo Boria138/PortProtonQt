@@ -209,3 +209,38 @@ def save_card_size(card_width):
             cp.write(configfile)
     except Exception as e:
         print("Ошибка сохранения конфигурации размера карточек:", e)
+
+def read_sort_method():
+    """
+    Читает параметр сортировки игр из секции [Games] конфигурационного файла.
+    Если секция или параметр отсутствуют, сохраняет и возвращает "last_launch" по умолчанию.
+    """
+    cp = configparser.ConfigParser()
+    if os.path.exists(CONFIG_FILE):
+        try:
+            cp.read(CONFIG_FILE, encoding="utf-8")
+            if not cp.has_section("Games") or not cp.has_option("Games", "sort_method"):
+                save_sort_method("last_launch")
+                return "last_launch"
+            return cp.get("Games", "sort_method", fallback="last_launch").lower()
+        except Exception as e:
+            print("Ошибка чтения параметра сортировки:", e)
+    return "last_launch"
+
+
+def save_sort_method(sort_method):
+    """
+    Сохраняет параметр сортировки игр в секцию [Games] конфигурационного файла.
+    :param sort_method: Значение сортировки (например, "last_launch" или "playtime")
+    """
+    cp = configparser.ConfigParser()
+    if os.path.exists(CONFIG_FILE):
+        cp.read(CONFIG_FILE, encoding="utf-8")
+    if "Games" not in cp:
+        cp["Games"] = {}
+    cp["Games"]["sort_method"] = sort_method
+    try:
+        with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
+            cp.write(configfile)
+    except Exception as e:
+        print("Ошибка сохранения параметра сортировки:", e)

@@ -178,3 +178,23 @@ def format_playtime(seconds):
         else:
             hours = seconds // 3600
             return f"{hours} ч"
+
+def get_last_launch_timestamp(exe_name):
+    """
+    Возвращает метку времени последнего запуска (timestamp) для заданного exe.
+    Если записи нет или произошла ошибка, возвращает 0.
+    """
+    file_path = get_cache_file_path()
+    if not os.path.exists(file_path):
+        return 0
+    try:
+        with open(file_path, encoding="utf-8") as f:
+            for line in f:
+                parts = line.strip().split(maxsplit=1)
+                if len(parts) == 2 and parts[0] == exe_name:
+                    iso_time = parts[1]
+                    dt = datetime.fromisoformat(iso_time)
+                    return dt.timestamp()
+    except Exception as e:
+        print("Ошибка чтения кеша:", e)
+    return 0

@@ -13,8 +13,8 @@ from portprotonqt.gamepad_support import GamepadSupport
 from portprotonqt.image_utils import load_pixmap, round_corners, ImageCarousel
 from portprotonqt.steam_api import get_steam_game_info
 from portprotonqt.theme_manager import ThemeManager, load_theme_screenshots
-from portprotonqt.time_utils import save_last_launch, get_last_launch, parse_playtime_file, format_playtime
-from portprotonqt.config_utils import get_portproton_location, read_theme_from_config, save_theme_to_config, parse_desktop_entry, load_theme_metainfo, read_time_config, read_file_content, read_card_size, save_card_size
+from portprotonqt.time_utils import save_last_launch, get_last_launch, parse_playtime_file, format_playtime, get_last_launch_timestamp
+from portprotonqt.config_utils import get_portproton_location, read_theme_from_config, save_theme_to_config, parse_desktop_entry, load_theme_metainfo, read_time_config, read_file_content, read_card_size, save_card_size, read_sort_method
 from PySide6 import QtCore, QtGui, QtWidgets
 from datetime import datetime
 
@@ -136,12 +136,10 @@ class MainWindow(QtWidgets.QMainWindow):
         if not portproton_location:
             return games
 
-        # Определяем пути для XDG_DATA_HOME (используется для кастомных данных)
+        # Определяем путь для кастомных данных
         xdg_data_home = os.getenv("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share"))
-
-        # Получаем список файлов с расширением .desktop в директории portproton_location
         desktop_files = [entry.path for entry in os.scandir(portproton_location)
-                        if entry.is_file() and entry.name.endswith(".desktop")]
+                         if entry.is_file() and entry.name.endswith(".desktop")]
 
         def process_file(file_path):
             entry = parse_desktop_entry(file_path)
@@ -155,10 +153,11 @@ class MainWindow(QtWidgets.QMainWindow):
             exec_line = entry.get("Exec", "")
             steam_info = {}
             game_exe = ""
-            controller_support = ""
+            last_launch_formatted = "Никогда"
+            playtime_seconds = 0
             formatted_playtime = ""
             protondb_tier = ""
-            last_launch = "Никогда"
+            controller_support = ""
 
             if exec_line:
                 try:
@@ -178,9 +177,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 exe_name = os.path.splitext(os.path.basename(game_exe))[0]
                 custom_folder = os.path.join(xdg_data_home, "PortProtonQT", "custom_data", exe_name)
                 os.makedirs(custom_folder, exist_ok=True)
-                last_launch = get_last_launch(exe_name) if exe_name else "Никогда"
+                last_launch_formatted = get_last_launch(exe_name) if exe_name else "Никогда"
+                last_launch_ts = get_last_launch_timestamp(exe_name) if exe_name else 0
 
-                playtime_seconds = 0
                 statistics_file = os.path.join(self.portproton_location, "data", "tmp", "statistics")
                 playtime_data = parse_playtime_file(statistics_file)
                 matching_key = next((key for key in playtime_data if os.path.basename(key).split('.')[0] == exe_name), None)
@@ -206,6 +205,9 @@ class MainWindow(QtWidgets.QMainWindow):
                     custom_name = read_file_content(name_file)
                 if "desc.txt" in custom_files:
                     custom_desc = read_file_content(desc_file)
+            else:
+                exe_name = ""
+                last_launch_ts = 0
 
             if steam_info.get("appid"):
                 name = desktop_name
@@ -227,7 +229,12 @@ class MainWindow(QtWidgets.QMainWindow):
             if custom_cover:
                 cover = custom_cover
 
-            return (name, desc, cover, appid, exec_line, controller_support, last_launch, formatted_playtime, protondb_tier)
+            # Возвращаем кортеж с первыми 9 значениями для GameCard,
+            # а дополнительные значения используются для сортировки:
+            # last_launch_ts (индекс 9) и playtime_seconds (индекс 10)
+            return (name, desc, cover, appid, exec_line, controller_support,
+                    last_launch_formatted, formatted_playtime, protondb_tier,
+                    last_launch_ts, playtime_seconds)
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
             results = list(executor.map(process_file, desktop_files))
@@ -235,8 +242,15 @@ class MainWindow(QtWidgets.QMainWindow):
         for res in results:
             if res is not None:
                 games.append(res)
-        return games
 
+        sort_method = read_sort_method()
+
+        if sort_method == "playtime":
+            games.sort(key=lambda g: (g[10], g[9]), reverse=True)
+        else:
+            games.sort(key=lambda g: (g[9], g[10]), reverse=True)
+
+        return games
 
     # ВКЛАДКИ
     def switchTab(self, index):
@@ -379,7 +393,7 @@ class MainWindow(QtWidgets.QMainWindow):
             name = dialog.nameEdit.text().strip()
             desc = dialog.descEdit.toPlainText().strip()
             cover = dialog.coverEdit.text().strip()
-            self.games.append((name, desc, cover, "", "", "", "Никогда","", ""))
+            self.games.append((name, desc, cover, "", "", "", "Никогда","", "", "", ""))
             self.populateGamesGrid(self.games)
 
     def createAutoInstallTab(self):
@@ -434,6 +448,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.stackedWidget.addWidget(widget)
 
     def createPortProtonTab(self):
+        """Вкладка 'Настройки PortProton'."""
         widget = QtWidgets.QWidget()
         layout = QtWidgets.QVBoxLayout(widget)
         layout.setContentsMargins(20, 20, 20, 20)
@@ -445,30 +460,9 @@ class MainWindow(QtWidgets.QMainWindow):
         content = QtWidgets.QLabel("Основные параметры PortProton...")
         content.setStyleSheet(self.theme.CONTENT_STYLE)
         layout.addWidget(content)
-
-        # Добавляем ползунок для изменения размера карточек
-        sizeLayout = QtWidgets.QHBoxLayout()
-        sizeLabel = QtWidgets.QLabel("Размер карточек:")
-        sizeSlider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
-        sizeSlider.setMinimum(200)
-        sizeSlider.setMaximum(350)
-        sizeSlider.setValue(self.card_width)
-        sizeSlider.setTickInterval(10)
-        sizeSlider.setTickPosition(QtWidgets.QSlider.TicksBelow)
-        sizeLayout.addWidget(sizeLabel)
-        sizeLayout.addWidget(sizeSlider)
-        layout.addLayout(sizeLayout)
-
-        # При изменении значения обновляем размер карточек и сохраняем значение в конфиг
-        def on_card_size_changed(value):
-            self.card_width = value
-            self.populateGamesGrid(self.games)
-            save_card_size(value)
-        sizeSlider.valueChanged.connect(on_card_size_changed)
-
         layout.addStretch(1)
-        self.stackedWidget.addWidget(widget)
 
+        self.stackedWidget.addWidget(widget)
 
     def createThemeTab(self):
         """Вкладка 'Темы'"""
