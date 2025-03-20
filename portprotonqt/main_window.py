@@ -125,7 +125,7 @@ class MainWindow(QtWidgets.QMainWindow):
         for btn in self.tabButtons.values():
             btn.setStyleSheet(self.theme.NAV_BUTTON_STYLE)
         self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE)
-        self.populateGamesGrid(self.games)
+        self.updateGameGridColumns()
 
     def loadGames(self):
         games = []
@@ -334,7 +334,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.setUpdatesEnabled(False)
             self.card_width = self.sizeSlider.value()
             self.sizeSlider.setToolTip(f"{self.card_width} px")
-            self.populateGamesGrid(self.games)
+            self.updateGameGridColumns()
             save_card_size(self.card_width)
             self.setUpdatesEnabled(True)
         self.sizeSlider.valueChanged.connect(lambda val: self.sliderDebounceTimer.start())
