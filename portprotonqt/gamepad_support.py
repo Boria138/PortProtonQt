@@ -2,25 +2,54 @@ import time
 import pygame
 from PySide6 import QtCore
 
-class GamepadSupport:
-    def __init__(self, parent, axis_deadzone=0.5, axis_move_delay=0.3):
+class GamepadSupport(QtCore.QObject):
+    def __init__(self, parent, axis_deadzone=0.5, initial_axis_move_delay=0.3, repeat_axis_move_delay=0.15):
         """
-        parent: Родительский объект (например, главное окно), который реализует методы:
+        parent: Родительский объект (например, главное окно), реализующий методы:
             navigateRight, navigateLeft, navigateUp, navigateDown,
-            а также опционально: navigateUpRight, navigateUpLeft, navigateDownRight, navigateDownLeft,
+            navigateUpRight, navigateUpLeft, navigateDownRight, navigateDownLeft (опционально),
             activateFocusedWidget, goBackDetailPage, openSettings.
-        axis_deadzone: Порог, ниже которого осевой сигнал игнорируется (чтобы избежать дребезга).
-        axis_move_delay: Минимальное время между навигационными перемещениями.
         """
+        super().__init__(parent)
         self.parent = parent
         self.axis_deadzone = axis_deadzone
-        self.axis_move_delay = axis_move_delay
+        self.initial_axis_move_delay = initial_axis_move_delay
+        self.repeat_axis_move_delay = repeat_axis_move_delay
+        self.current_axis_delay = self.initial_axis_move_delay
         self.last_move_time = 0
         self.latest_horizontal = 0
         self.latest_vertical = 0
+        self.axis_moving = False  # Флаг, сигнализирующий, что ось уже активна
         self.joysticks = []
         self.haptics = []
         self.initGamepad()
+        # Устанавливаем фильтр событий для перехвата клавиатурных событий (стрелочные клавиши)
+        self.parent.installEventFilter(self)
+
+    def eventFilter(self, obj, event):
+        if event.type() == QtCore.QEvent.KeyPress:
+            key = event.key()
+            if key == QtCore.Qt.Key_Right:
+                self.parent.navigateRight()
+                return True
+            elif key == QtCore.Qt.Key_Left:
+                self.parent.navigateLeft()
+                return True
+            elif key == QtCore.Qt.Key_Up:
+                self.parent.navigateUp()
+                return True
+            elif key == QtCore.Qt.Key_Down:
+                self.parent.navigateDown()
+                return True
+            elif key in (QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter):
+                self.parent.activateFocusedWidget()
+                return True
+            # Например, клавиша B может использоваться для возврата
+            elif key == QtCore.Qt.Key_Escape:
+                if hasattr(self.parent, "goBackDetailPage"):
+                    self.parent.goBackDetailPage(getattr(self.parent, "currentDetailPage", None))
+                return True
+        return super().eventFilter(obj, event)
 
     def initGamepad(self):
         pygame.init()
@@ -53,10 +82,9 @@ class GamepadSupport:
                 self.handle_button_down(event)
 
     def handle_hat_motion(self, event):
-        # Обработка hat-событий: event.value возвращает (x, y)
         x, y = event.value
+        # Обработка диагональных движений
         if x != 0 and y != 0:
-            # Диагональное движение
             if x > 0 and y > 0:
                 if hasattr(self.parent, "navigateUpRight"):
                     self.parent.navigateUpRight()
@@ -83,7 +111,7 @@ class GamepadSupport:
                     self.parent.navigateLeft()
             self.vibrate()
         else:
-            # Если задействована только одна ось, обрабатываем отдельно.
+            # Обработка одиночных движений по одной оси
             if x == 1:
                 self.parent.navigateRight()
                 self.vibrate()
@@ -98,20 +126,36 @@ class GamepadSupport:
                 self.vibrate()
 
     def handle_axis_motion(self, event, current_time):
-        # Обновляем значения для горизонтальных и вертикальных осей
+        # последние значения осей
         if event.axis in (0, 2):  # Горизонтальные оси
             self.latest_horizontal = event.value
         elif event.axis in (1, 3):  # Вертикальные оси
             self.latest_vertical = event.value
 
-        # Если прошло достаточно времени с последнего перемещения
-        if current_time - self.last_move_time < self.axis_move_delay:
+        # Если обе оси в пределах мертвой зоны, сбрасывается состояние
+        if abs(self.latest_horizontal) < self.axis_deadzone and abs(self.latest_vertical) < self.axis_deadzone:
+            self.axis_moving = False
+            self.current_axis_delay = self.initial_axis_move_delay
             return
 
+        # Если ось только что активировалась (перешла из нейтрального положения), перемещается сразу
+        if not self.axis_moving:
+            self.trigger_movement()
+            self.last_move_time = current_time
+            self.axis_moving = True
+            return
+
+        # Если ось удерживается
+        if current_time - self.last_move_time >= self.current_axis_delay:
+            self.trigger_movement()
+            self.last_move_time = current_time
+            # После первого перемещения более короткая задержка
+            self.current_axis_delay = self.repeat_axis_move_delay
+
+    def trigger_movement(self):
         h = self.latest_horizontal
         v = self.latest_vertical
-
-        # Если оба значения превышают порог, считаем это диагональным движением
+        # Если оба значения превышают порог – движение диагональное
         if abs(h) > self.axis_deadzone and abs(v) > self.axis_deadzone:
             if h > 0 and v > 0:
                 if hasattr(self.parent, "navigateDownRight"):
@@ -137,24 +181,19 @@ class GamepadSupport:
                 else:
                     self.parent.navigateUp()
                     self.parent.navigateLeft()
-            self.last_move_time = current_time
-            self.vibrate()
         else:
-            # Если только одна ось превышает порог, обрабатываем отдельно.
+            # Обработка одиночных движений по каждой оси отдельно
             if abs(h) > self.axis_deadzone:
                 if h > 0:
                     self.parent.navigateRight()
                 else:
                     self.parent.navigateLeft()
-                self.last_move_time = current_time
-                self.vibrate()
             if abs(v) > self.axis_deadzone:
                 if v > 0:
                     self.parent.navigateDown()
                 else:
                     self.parent.navigateUp()
-                self.last_move_time = current_time
-                self.vibrate()
+        self.vibrate()
 
     def handle_button_down(self, event):
         if event.button == 0:
@@ -171,11 +210,6 @@ class GamepadSupport:
                 self.vibrate(duration=50, strength=0.8)
 
     def vibrate(self, duration=100, strength=0.5):
-        """
-        Запускает тактильную виброотдачу на всех устройствах, поддерживающих её.
-        duration: длительность вибрации в миллисекундах.
-        strength: сила вибрации от 0.0 до 1.0.
-        """
         for haptic in self.haptics:
             try:
                 haptic.rumble_play(strength, duration)
