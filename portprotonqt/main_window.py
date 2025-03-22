@@ -354,10 +354,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sliderDebounceTimer.timeout.connect(on_slider_value_changed)
 
         self.stackedWidget.addWidget(widget)
-        self.updateGameGridColumns()
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
+        self.updateGameGridColumns()
 
     def updateGameGridColumns(self):
         if not self.games:
