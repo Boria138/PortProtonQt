@@ -339,10 +339,10 @@ class MainWindow(QtWidgets.QMainWindow):
         sliderLayout.addWidget(self.sizeSlider)
         layout.addLayout(sliderLayout)
 
-        # QTimer для дебаунсинга изменений слайдера (150 мс)
+        # QTimer для дебаунсинга изменений слайдера (40 мс если карточки наслаиваются друг на друга увеличить число)
         self.sliderDebounceTimer = QtCore.QTimer(self)
         self.sliderDebounceTimer.setSingleShot(True)
-        self.sliderDebounceTimer.setInterval(150)
+        self.sliderDebounceTimer.setInterval(40)
 
         def on_slider_value_changed():
             self.setUpdatesEnabled(False)
@@ -358,7 +358,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        self.updateGameGridColumns()
 
     def updateGameGridColumns(self):
         if not self.games:
