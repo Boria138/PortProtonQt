@@ -215,6 +215,3 @@ class GamepadSupport(QtCore.QObject):
                 haptic.rumble_play(strength, duration)
             except Exception as e:
                 print("Error during haptic feedback:", e)
-
-if __name__ == "__main__":
-    print("Обнаружена поддержка тактильной виброотдачи.")
