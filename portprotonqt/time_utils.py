@@ -1,6 +1,13 @@
 import os
-from datetime import datetime
+import locale
+from datetime import datetime, timedelta
+from babel.dates import format_timedelta, format_date
 from portprotonqt.config_utils import read_time_config
+
+def get_system_locale():
+    """Возвращает системную локаль, например, 'ru_RU'. Если не удаётся определить – возвращает 'en'."""
+    loc = locale.getdefaultlocale()[0]
+    return loc if loc else 'en'
 
 def get_cache_file_path():
     """Возвращает путь к файлу кеша portproton_last_launch."""
@@ -32,51 +39,25 @@ def save_last_launch(exe_name, launch_time):
     except Exception as e:
         print("Ошибка сохранения файла кеша:", e)
 
-def humanize_time_delta(launch_time):
-    """
-    Принимает время запуска (datetime) и возвращает строку вида:
-    "только что", "5 мин. назад", "2 часа назад", "1 день назад", "3 месяца назад", "2 года назад"
-    """
-    now = datetime.now()
-    delta = now - launch_time
-    seconds = delta.total_seconds()
-
-    if seconds < 60:
-        return "только что"
-    elif seconds < 3600:
-        minutes = int(seconds // 60)
-        return f"{minutes} мин. назад"
-    elif seconds < 86400:
-        hours = int(seconds // 3600)
-        return f"{hours} час{'а' if hours == 1 else 'ов'} назад"
-    elif seconds < 2592000:
-        days = int(seconds // 86400)
-        return f"{days} дн. назад"
-    elif seconds < 31104000:
-        months = int(seconds // 2592000)
-        return f"{months} мес. назад"
-    else:
-        years = int(seconds // 31104000)
-        return f"{years} год{'а' if years == 1 else 'ов'} назад"
-
 def format_last_launch(launch_time):
     """
-    Форматирует время запуска в зависимости от настройки detail_level:
-      - "detailed"  -> возвращает относительное время (например, "час назад")
-      - "brief" -> возвращает дату в формате "1 апреля"
+    Форматирует время запуска с использованием Babel.
+
+    Для detail_level "detailed" возвращает относительный формат с добавлением "назад"
+    (например, "2 мин. назад"). Если время меньше минуты – возвращает "только что".
+    Для "brief" – дату в формате "день месяц год" (например, "1 апреля 2023")
+    на основе системной локали.
     """
     detail_level = read_time_config() or "detailed"
+    system_locale = get_system_locale()
     if detail_level == "detailed":
-        return humanize_time_delta(launch_time)
+        # Вычисляем delta как launch_time - datetime.now() чтобы получить отрицательное значение для прошедшего времени.
+        delta = launch_time - datetime.now()
+        if abs(delta.total_seconds()) < 60:
+            return "только что"
+        return format_timedelta(delta, locale=system_locale, granularity='second', format='short', add_direction=True)
     else:
-        # Для корректного отображения названия месяца на русском можно использовать словарь.
-        months = {
-            1: "января", 2: "февраля", 3: "марта", 4: "апреля", 5: "мая", 6: "июня",
-            7: "июля", 8: "августа", 9: "сентября", 10: "октября", 11: "ноября", 12: "декабря"
-        }
-        day = launch_time.day
-        month = months.get(launch_time.month, "")
-        return f"{day} {month}"
+        return format_date(launch_time, format="d MMMM yyyy", locale=system_locale)
 
 def get_last_launch(exe_name):
     """
@@ -136,20 +117,17 @@ def parse_playtime_file(file_path):
 
 def format_playtime(seconds):
     """
-    Конвертирует время в секундах в форматированную строку.
+    Конвертирует время в секундах в форматированную строку с использованием Babel.
 
-    Поведение зависит от настройки detail_level из секции [Time]
-    конфигурационного файла. Если detail_level не задан, используется "detailed".
-
-    При "detailed" выводится полный разбор:
-       3675 -> "1 ч 1 мин 15 сек"
-       90061 -> "1 д 1 ч 1 мин 1 сек"
+    При "detailed" выводится полный разбор времени, без округления
+    (например, "1 ч 1 мин 15 сек").
 
     При "brief":
-       3675 -> "1 ч"
-       125 -> "2 мин 5 сек"
+      - если время менее часа, выводится точное время с секундами (например, "9 мин 28 сек"),
+      - если больше часа – только часы (например, "3 ч").
     """
     detail_level = read_time_config() or "detailed"
+    system_locale = get_system_locale()
     seconds = int(seconds)
 
     if detail_level == "detailed":
@@ -166,7 +144,8 @@ def format_playtime(seconds):
         if secs > 0 or not parts:
             parts.append(f"{secs} сек")
         return " ".join(parts)
-    else:  # brief
+    else:
+        # Режим brief
         if seconds < 3600:
             minutes, secs = divmod(seconds, 60)
             parts = []
@@ -177,7 +156,7 @@ def format_playtime(seconds):
             return " ".join(parts)
         else:
             hours = seconds // 3600
-            return f"{hours} ч"
+            return format_timedelta(timedelta(hours=hours), locale=system_locale, granularity='hour', format='short')
 
 def get_last_launch_timestamp(exe_name):
     """
