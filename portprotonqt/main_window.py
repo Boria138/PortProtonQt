@@ -349,7 +349,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.card_width = self.sizeSlider.value()
             self.sizeSlider.setToolTip(f"{self.card_width} px")
             self.updateGameGridColumns()
-            save_card_size(self.card_width)
             self.setUpdatesEnabled(True)
         self.sizeSlider.valueChanged.connect(lambda val: self.sliderDebounceTimer.start())
         self.sliderDebounceTimer.timeout.connect(on_slider_value_changed)
@@ -881,4 +880,5 @@ class MainWindow(QtWidgets.QMainWindow):
                 os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
             except Exception as e:
                 print("Ошибка при завершении процесса:", e)
+        save_card_size(self.card_width)
         event.accept()
