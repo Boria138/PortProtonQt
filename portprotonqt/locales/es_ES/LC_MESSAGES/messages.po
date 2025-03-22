@@ -1,0 +1,182 @@
+# Spanish (Spain) translations for PortProtonQT.
+# Copyright (C) 2025 blacksnaker
+# This file is distributed under the same license as the PortProtonQT
+# project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PortProtonQT 0.1.0\n"
+"Report-Msgid-Bugs-To: olegpozitiv0102@gmail.com\n"
+"POT-Creation-Date: 2025-03-23 02:16+0500\n"
+"PO-Revision-Date: 2025-03-23 01:53+0500\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: es_ES\n"
+"Language-Team: es_ES <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.17.0\n"
+
+msgid "Platinum"
+msgstr ""
+
+msgid "Gold"
+msgstr ""
+
+msgid "Silver"
+msgstr ""
+
+msgid "Bronze"
+msgstr ""
+
+msgid "Borked"
+msgstr ""
+
+msgid "Pending"
+msgstr ""
+
+msgid "Library"
+msgstr ""
+
+msgid "Auto Install"
+msgstr ""
+
+msgid "Emulators"
+msgstr ""
+
+msgid "Wine Settings"
+msgstr ""
+
+msgid "PortProton Settings"
+msgstr ""
+
+msgid "Themes"
+msgstr ""
+
+msgid "Unknown Game"
+msgstr ""
+
+msgid "Never"
+msgstr ""
+
+msgid "Search games..."
+msgstr ""
+
+msgid "Game Library"
+msgstr ""
+
+msgid "Add Game"
+msgstr ""
+
+msgid "Here you can configure automatic game installation..."
+msgstr ""
+
+msgid "List of available emulators and their configuration..."
+msgstr ""
+
+msgid "Various Wine parameters and versions..."
+msgstr ""
+
+msgid "Main PortProton parameters..."
+msgstr ""
+
+msgid "Select Theme:"
+msgstr ""
+
+msgid "Apply Theme"
+msgstr ""
+
+msgid "No link"
+msgstr ""
+
+msgid "Name:"
+msgstr ""
+
+msgid "Description:"
+msgstr ""
+
+msgid "Author:"
+msgstr ""
+
+msgid "Unknown"
+msgstr ""
+
+msgid "Link:"
+msgstr ""
+
+#, python-brace-format
+msgid "Theme '{0}' applied successfully"
+msgstr ""
+
+#, python-brace-format
+msgid "Error applying theme '{0}'"
+msgstr ""
+
+msgid "No available themes to apply"
+msgstr ""
+
+msgid "Back"
+msgstr ""
+
+msgid "LAST LAUNCH"
+msgstr ""
+
+msgid "PLAY TIME"
+msgstr ""
+
+msgid "full"
+msgstr ""
+
+msgid "partial"
+msgstr ""
+
+msgid "none"
+msgstr ""
+
+#, python-brace-format
+msgid "Gamepad Support: {0}"
+msgstr ""
+
+msgid "✕ Stop"
+msgstr ""
+
+msgid "▷ Play"
+msgstr ""
+
+msgid "Error"
+msgstr ""
+
+msgid "Invalid command format (native)"
+msgstr ""
+
+msgid "Invalid command format (flatpak)"
+msgstr ""
+
+#, python-brace-format
+msgid "File not found: {0}"
+msgstr ""
+
+msgid "Cannot launch game while another game is running"
+msgstr ""
+
+msgid "Game stopped"
+msgstr ""
+
+#, python-brace-format
+msgid "Launching {0}"
+msgstr ""
+
+msgid "d"
+msgstr ""
+
+msgid "h"
+msgstr ""
+
+msgid "min"
+msgstr ""
+
+msgid "sec"
+msgstr ""
+

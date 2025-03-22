@@ -24,7 +24,7 @@ jobs:
         run: pip install aiohttp asyncio
 
       - name: Run get_id.py
-        run: python get_id.py
+        run: python dev-scripts/get_id.py
         env:
           STEAM_KEY: ${{ secrets.STEAM_KEY }}
 

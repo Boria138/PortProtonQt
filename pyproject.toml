@@ -40,10 +40,10 @@ dependencies = [
 portprotonqt = "portprotonqt.app:main"
 
 [tool.setuptools.package-data]
-"portprotonqt" = ["themes/**/*"]
+"portprotonqt" = ["themes/**/*", "locales/**/*"]
 
 [tool.setuptools.packages.find]
-exclude = ["data"]
+exclude = ["data", "dev-scripts"]
 
 [tool.ruff.lint]
 select = [
@@ -65,10 +65,14 @@ ignore = [
 known-third-party = ["portprotonqt"]
 
 [tool.ruff]
-exclude = [".venv", "data", "portprotonqt/themes"]
+exclude = [".venv", "data", "portprotonqt/themes", "portprotonqt/locales", "dev-scripts"]
 
 [dependency-groups]
 dev = [
+    "aiohttp>=3.11.14",
+    "asyncio>=3.4.3",
+    "mdformat>=0.7.22", # For locale list generate
     "pre-commit>=4.1.0",
     "ruff>=0.9.10",
+    "toml>=0.10.2", # For get version from pyproject
 ]

@@ -1,0 +1,183 @@
+# Russian (Russia) translations for PortProtonQT.
+# Copyright (C) 2025 blacksnaker
+# This file is distributed under the same license as the PortProtonQT
+# project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PortProtonQT 0.1.0\n"
+"Report-Msgid-Bugs-To: olegpozitiv0102@gmail.com\n"
+"POT-Creation-Date: 2025-03-23 02:16+0500\n"
+"PO-Revision-Date: 2025-03-23 01:52+0500\n"
+"Last-Translator: \n"
+"Language: ru_RU\n"
+"Language-Team: ru_RU <LL@li.org>\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.17.0\n"
+
+msgid "Platinum"
+msgstr "Платина"
+
+msgid "Gold"
+msgstr "Золото"
+
+msgid "Silver"
+msgstr "Серебро"
+
+msgid "Bronze"
+msgstr "Бронза"
+
+msgid "Borked"
+msgstr "Сломано"
+
+msgid "Pending"
+msgstr "В ожидании"
+
+msgid "Library"
+msgstr "Библиотека"
+
+msgid "Auto Install"
+msgstr "Автоустановка"
+
+msgid "Emulators"
+msgstr "Эмуляторы"
+
+msgid "Wine Settings"
+msgstr "Настройки wine"
+
+msgid "PortProton Settings"
+msgstr "Настройки PortProton"
+
+msgid "Themes"
+msgstr "Темы"
+
+msgid "Unknown Game"
+msgstr "Неизвестная игра"
+
+msgid "Never"
+msgstr "Никогла"
+
+msgid "Search games..."
+msgstr "Найти игры..."
+
+msgid "Game Library"
+msgstr "Игровая библиотека"
+
+msgid "Add Game"
+msgstr "Добавить игру"
+
+msgid "Here you can configure automatic game installation..."
+msgstr "Здесь можно настроить автоматическую установку игр..."
+
+msgid "List of available emulators and their configuration..."
+msgstr "Список доступных эмуляторов и их настройка..."
+
+msgid "Various Wine parameters and versions..."
+msgstr "Различные параметры и версии wine..."
+
+msgid "Main PortProton parameters..."
+msgstr "Основные параметры PortProton..."
+
+msgid "Select Theme:"
+msgstr "Выбрать тему:"
+
+msgid "Apply Theme"
+msgstr "Применить тему"
+
+msgid "No link"
+msgstr "Нет ссылки"
+
+msgid "Name:"
+msgstr "Имя:"
+
+msgid "Description:"
+msgstr "Описание:"
+
+msgid "Author:"
+msgstr "Автор:"
+
+msgid "Unknown"
+msgstr "Неизвестный"
+
+msgid "Link:"
+msgstr "Ссылка:"
+
+#, python-brace-format
+msgid "Theme '{0}' applied successfully"
+msgstr "Тема '{0}' применена успешно"
+
+#, python-brace-format
+msgid "Error applying theme '{0}'"
+msgstr "Ошибка при применение темы '{0}'"
+
+msgid "No available themes to apply"
+msgstr "Нет тем для применения"
+
+msgid "Back"
+msgstr "Назад"
+
+msgid "LAST LAUNCH"
+msgstr "Последний запуск"
+
+msgid "PLAY TIME"
+msgstr "Время игры"
+
+msgid "full"
+msgstr "полная"
+
+msgid "partial"
+msgstr "частичная"
+
+msgid "none"
+msgstr "отсутствует"
+
+#, python-brace-format
+msgid "Gamepad Support: {0}"
+msgstr "Поддержка геймпадов: {0}"
+
+msgid "✕ Stop"
+msgstr "✕ Остановить"
+
+msgid "▷ Play"
+msgstr "▷ Играть"
+
+msgid "Error"
+msgstr "Ошибка"
+
+msgid "Invalid command format (native)"
+msgstr "Неправильный формат команды (нативная версия)"
+
+msgid "Invalid command format (flatpak)"
+msgstr "Неправильный формат команды (flatpak)"
+
+#, python-brace-format
+msgid "File not found: {0}"
+msgstr "Файл не найден: {0}"
+
+msgid "Cannot launch game while another game is running"
+msgstr "Невозможно запустить игру пока запущена другая"
+
+msgid "Game stopped"
+msgstr "Игра остоновлена"
+
+#, python-brace-format
+msgid "Launching {0}"
+msgstr "Идёт запуск {0}"
+
+msgid "d"
+msgstr "д"
+
+msgid "h"
+msgstr "ч"
+
+msgid "min"
+msgstr "мин"
+
+msgid "sec"
+msgstr "сек"
+

@@ -3,6 +3,7 @@ import locale
 from datetime import datetime, timedelta
 from babel.dates import format_timedelta, format_date
 from portprotonqt.config_utils import read_time_config
+from portprotonqt.localization import _
 
 def get_system_locale():
     """Возвращает системную локаль, например, 'ru_RU'. Если не удаётся определить – возвращает 'en'."""
@@ -115,6 +116,7 @@ def parse_playtime_file(file_path):
         print(f"Ошибка при парсинге файла {file_path}: {e}")
     return playtime_data
 
+
 def format_playtime(seconds):
     """
     Конвертирует время в секундах в форматированную строку с использованием Babel.
@@ -136,13 +138,13 @@ def format_playtime(seconds):
         minutes, secs = divmod(rem, 60)
         parts = []
         if days > 0:
-            parts.append(f"{days} д")
+            parts.append(f"{days} " + _("d"))
         if hours > 0:
-            parts.append(f"{hours} ч")
+            parts.append(f"{hours} " + _("h"))
         if minutes > 0:
-            parts.append(f"{minutes} мин")
+            parts.append(f"{minutes} " + _("min"))
         if secs > 0 or not parts:
-            parts.append(f"{secs} сек")
+            parts.append(f"{secs} " + _("sec"))
         return " ".join(parts)
     else:
         # Режим brief
@@ -150,9 +152,9 @@ def format_playtime(seconds):
             minutes, secs = divmod(seconds, 60)
             parts = []
             if minutes > 0:
-                parts.append(f"{minutes} мин")
+                parts.append(f"{minutes} " + _("min"))
             if secs > 0 or not parts:
-                parts.append(f"{secs} сек")
+                parts.append(f"{secs} " + _("sec"))
             return " ".join(parts)
         else:
             hours = seconds // 3600

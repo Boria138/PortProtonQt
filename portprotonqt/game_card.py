@@ -1,6 +1,7 @@
 from PySide6 import QtCore, QtGui, QtWidgets
 import portprotonqt.themes.standart_lite.styles as default_styles
 from portprotonqt.image_utils import load_pixmap, round_corners
+from portprotonqt.localization import _
 
 class ClickableLabel(QtWidgets.QLabel):
     clicked = QtCore.Signal()
@@ -100,12 +101,12 @@ class GameCard(QtWidgets.QFrame):
         if not tier:
             return ""
         translations = {
-            "platinum": "Платина",
-            "gold": "Золото",
-            "silver": "Серебро",
-            "bronze": "Бронза",
-            "borked": "Сломана",
-            "pending": "Ожидание"
+            "platinum": _("Platinum"),
+            "gold": _("Gold"),
+            "silver": _("Silver"),
+            "bronze": _("Bronze"),
+            "borked": _("Borked"),
+            "pending": _("Pending")
         }
         return translations.get(tier.lower(), "")
 

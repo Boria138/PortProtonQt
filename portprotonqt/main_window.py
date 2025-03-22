@@ -7,6 +7,7 @@ import subprocess
 import portprotonqt.themes.standart_lite.styles as default_styles
 import psutil
 import requests
+
 from portprotonqt.dialogs import AddGameDialog
 from portprotonqt.game_card import GameCard
 from portprotonqt.gamepad_support import GamepadSupport
@@ -15,11 +16,13 @@ from portprotonqt.steam_api import get_steam_game_info
 from portprotonqt.theme_manager import ThemeManager, load_theme_screenshots
 from portprotonqt.time_utils import save_last_launch, get_last_launch, parse_playtime_file, format_playtime, get_last_launch_timestamp
 from portprotonqt.config_utils import get_portproton_location, read_theme_from_config, save_theme_to_config, parse_desktop_entry, load_theme_metainfo, read_time_config, read_file_content, read_card_size, save_card_size, read_sort_method
+from portprotonqt.localization import _
+
 from PySide6 import QtCore, QtGui, QtWidgets
 from datetime import datetime
 
 class MainWindow(QtWidgets.QMainWindow):
-    """Основное окно PortProtonQT."""
+    """Main window of PortProtonQT."""
 
     def __init__(self):
         super().__init__()
@@ -85,12 +88,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tabButtons = {}
         # Список вкладок
         tabs = [
-            "Библиотека",         # индекс 0
-            "Автоустановка",       # индекс 1
-            "Эмуляторы",           # индекс 2
-            "Настройки wine",      # индекс 3
-            "Настройки PortProton",# индекс 4
-            "Темы"                 # индекс 5
+            _("Library"),              # индекс 0
+            _("Auto Install"),         # индекс 1
+            _("Emulators"),            # индекс 2
+            _("Wine Settings"),        # индекс 3
+            _("PortProton Settings"),  # индекс 4
+            _("Themes")                # индекс 5
         ]
         for i, tabName in enumerate(tabs):
             btn = QtWidgets.QPushButton(tabName)
@@ -146,14 +149,14 @@ class MainWindow(QtWidgets.QMainWindow):
             if entry is None:
                 return None
 
-            desktop_name = entry.get("Name", "Unknown Game")
+            desktop_name = entry.get("Name", _("Unknown Game"))
             if desktop_name.lower() == "portproton":
                 return None
 
             exec_line = entry.get("Exec", "")
             steam_info = {}
             game_exe = ""
-            last_launch_formatted = "Никогда"
+            last_launch_formatted = _("Never")
             playtime_seconds = 0
             formatted_playtime = ""
             protondb_tier = ""
@@ -177,7 +180,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 exe_name = os.path.splitext(os.path.basename(game_exe))[0]
                 custom_folder = os.path.join(xdg_data_home, "PortProtonQT", "custom_data", exe_name)
                 os.makedirs(custom_folder, exist_ok=True)
-                last_launch_formatted = get_last_launch(exe_name) if exe_name else "Никогда"
+                last_launch_formatted = get_last_launch(exe_name) if exe_name else _("Never")
                 last_launch_ts = get_last_launch_timestamp(exe_name) if exe_name else 0
 
                 statistics_file = os.path.join(self.portproton_location, "data", "tmp", "statistics")
@@ -274,7 +277,7 @@ class MainWindow(QtWidgets.QMainWindow):
         searchIconLabel.setAlignment(QtCore.Qt.AlignCenter)
 
         searchEdit = QtWidgets.QLineEdit()
-        searchEdit.setPlaceholderText("Поиск игр...")
+        searchEdit.setPlaceholderText(_("Search games..."))
         searchEdit.setClearButtonEnabled(True)
         searchEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE)
 
@@ -293,17 +296,17 @@ class MainWindow(QtWidgets.QMainWindow):
         self.populateGamesGrid(filtered)
 
     def createInstalledTab(self):
-        """Вкладка 'Библиотека игр'."""
+        """Вкладка 'Game Library'."""
         widget = QtWidgets.QWidget()
         layout = QtWidgets.QVBoxLayout(widget)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(15)
 
-        title = QtWidgets.QLabel("Библиотека игр")
+        title = QtWidgets.QLabel(_("Game Library"))
         title.setStyleSheet(self.theme.INSTALLED_TAB_TITLE_STYLE)
         layout.addWidget(title)
 
-        addGameButton = QtWidgets.QPushButton("Добавить игру")
+        addGameButton = QtWidgets.QPushButton(_("Add Game"))
         addGameButton.setStyleSheet(self.theme.ADD_GAME_BUTTON_STYLE)
         addGameButton.clicked.connect(self.openAddGameDialog)
         layout.addWidget(addGameButton, alignment=QtCore.Qt.AlignLeft)
@@ -385,26 +388,26 @@ class MainWindow(QtWidgets.QMainWindow):
                 child.widget().deleteLater()
 
     def openAddGameDialog(self):
-        """Открывает диалоговое окно 'Добавить игру' с текущей темой."""
+        """Открывает диалоговое окно 'Add Game' с текущей темой."""
         dialog = AddGameDialog(self, self.theme)
         if dialog.exec() == QtWidgets.QDialog.Accepted:
             name = dialog.nameEdit.text().strip()
             desc = dialog.descEdit.toPlainText().strip()
             cover = dialog.coverEdit.text().strip()
-            self.games.append((name, desc, cover, "", "", "", "Никогда","", "", "", ""))
+            self.games.append((name, desc, cover, "", "", "", _("Never"), "", "", "", ""))
             self.populateGamesGrid(self.games)
 
     def createAutoInstallTab(self):
-        """Вкладка 'Автоустановка'."""
+        """Вкладка 'Auto Install'."""
         widget = QtWidgets.QWidget()
         layout = QtWidgets.QVBoxLayout(widget)
         layout.setContentsMargins(20, 20, 20, 20)
 
-        title = QtWidgets.QLabel("Автоустановка")
+        title = QtWidgets.QLabel(_("Auto Install"))
         title.setStyleSheet(self.theme.TAB_TITLE_STYLE)
         layout.addWidget(title)
 
-        content = QtWidgets.QLabel("Здесь можно настроить автоматическую установку игр...")
+        content = QtWidgets.QLabel(_("Here you can configure automatic game installation..."))
         content.setStyleSheet(self.theme.CONTENT_STYLE)
         layout.addWidget(content)
         layout.addStretch(1)
@@ -412,16 +415,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.stackedWidget.addWidget(widget)
 
     def createEmulatorsTab(self):
-        """Вкладка 'Эмуляторы'."""
+        """Вкладка 'Emulators'."""
         widget = QtWidgets.QWidget()
         layout = QtWidgets.QVBoxLayout(widget)
         layout.setContentsMargins(20, 20, 20, 20)
 
-        title = QtWidgets.QLabel("Эмуляторы")
+        title = QtWidgets.QLabel(_("Emulators"))
         title.setStyleSheet(self.theme.TAB_TITLE_STYLE)
         layout.addWidget(title)
 
-        content = QtWidgets.QLabel("Список доступных эмуляторов и их настройка...")
+        content = QtWidgets.QLabel(_("List of available emulators and their configuration..."))
         content.setStyleSheet(self.theme.CONTENT_STYLE)
         layout.addWidget(content)
         layout.addStretch(1)
@@ -429,16 +432,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.stackedWidget.addWidget(widget)
 
     def createWineTab(self):
-        """Вкладка 'Настройки wine'."""
+        """Вкладка 'Wine Settings'."""
         widget = QtWidgets.QWidget()
         layout = QtWidgets.QVBoxLayout(widget)
         layout.setContentsMargins(20, 20, 20, 20)
 
-        title = QtWidgets.QLabel("Настройки wine")
+        title = QtWidgets.QLabel(_("Wine Settings"))
         title.setStyleSheet(self.theme.TAB_TITLE_STYLE)
         layout.addWidget(title)
 
-        content = QtWidgets.QLabel("Различные параметры и версии wine...")
+        content = QtWidgets.QLabel(_("Various Wine parameters and versions..."))
         content.setStyleSheet(self.theme.CONTENT_STYLE)
         layout.addWidget(content)
         layout.addStretch(1)
@@ -446,16 +449,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.stackedWidget.addWidget(widget)
 
     def createPortProtonTab(self):
-        """Вкладка 'Настройки PortProton'."""
+        """Вкладка 'PortProton Settings'."""
         widget = QtWidgets.QWidget()
         layout = QtWidgets.QVBoxLayout(widget)
         layout.setContentsMargins(20, 20, 20, 20)
 
-        title = QtWidgets.QLabel("Настройки PortProton")
+        title = QtWidgets.QLabel(_("PortProton Settings"))
         title.setStyleSheet(self.theme.TAB_TITLE_STYLE)
         layout.addWidget(title)
 
-        content = QtWidgets.QLabel("Основные параметры PortProton...")
+        content = QtWidgets.QLabel(_("Main PortProton parameters..."))
         content.setStyleSheet(self.theme.CONTENT_STYLE)
         layout.addWidget(content)
         layout.addStretch(1)
@@ -463,7 +466,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.stackedWidget.addWidget(widget)
 
     def createThemeTab(self):
-        """Вкладка 'Темы'"""
+        """Вкладка 'Themes'"""
         widget = QtWidgets.QWidget()
         mainLayout = QtWidgets.QVBoxLayout(widget)
         mainLayout.setContentsMargins(20, 20, 20, 20)
@@ -471,7 +474,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # 1. Верхняя строка: Заголовок и список тем (QComboBox)
         topLayout = QtWidgets.QHBoxLayout()
-        titleLabel = QtWidgets.QLabel("Выберите тему:")
+        titleLabel = QtWidgets.QLabel(_("Select Theme:"))
         titleLabel.setStyleSheet(self.theme.TAB_TITLE_STYLE)
         topLayout.addWidget(titleLabel)
 
@@ -490,7 +493,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.screenshotsCarousel = ImageCarousel([])  # Изначально пустая карусель
         mainLayout.addWidget(self.screenshotsCarousel, stretch=1)
 
-        # 3. Нижняя часть: информация о теме и кнопка "Применить тему"
+        # 3. Нижняя часть: информация о теме и кнопка "Apply Theme"
         bottomLayout = QtWidgets.QVBoxLayout()
         bottomLayout.setSpacing(10)
 
@@ -498,7 +501,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.themeMetainfoLabel.setWordWrap(True)
         bottomLayout.addWidget(self.themeMetainfoLabel)
 
-        self.applyButton = QtWidgets.QPushButton("Применить тему")
+        self.applyButton = QtWidgets.QPushButton(_("Apply Theme"))
         self.applyButton.setStyleSheet(self.theme.ADD_GAME_BUTTON_STYLE)
         bottomLayout.addWidget(self.applyButton)
 
@@ -509,13 +512,13 @@ class MainWindow(QtWidgets.QMainWindow):
         def updateThemePreview(theme_name):
             meta = load_theme_metainfo(theme_name)  # Определена отдельно
             link = meta.get('author_link', '')
-            link_html = f'<a href="{link}" target="_blank">{link}</a>' if link else 'Нет ссылки'
+            link_html = f'<a href="{link}" target="_blank">{link}</a>' if link else _("No link")
 
             preview_metainfo = (
-                f"<b>Название:</b> {meta.get('name', theme_name)}<br>"
-                f"<b>Описание:</b> {meta.get('description', '')}<br>"
-                f"<b>Автор:</b> {meta.get('author', 'Unknown')}<br>"
-                f"<b>Ссылка:</b> {link_html}"
+                f"<b>{_('Name:')}</b> {meta.get('name', theme_name)}<br>"
+                f"<b>{_('Description:')}</b> {meta.get('description', '')}<br>"
+                f"<b>{_('Author:')}</b> {meta.get('author', _('Unknown'))}<br>"
+                f"<b>{_('Link:')}</b> {link_html}"
             )
             self.themeMetainfoLabel.setTextFormat(QtCore.Qt.RichText)
             self.themeMetainfoLabel.setOpenExternalLinks(True)
@@ -543,15 +546,15 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.theme = theme_module
                     self.current_theme_name = selected_theme
                     self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE)
-                    self.themeStatusLabel.setText(f"Тема '{selected_theme}' успешно применена")
+                    self.themeStatusLabel.setText(_("Theme '{0}' applied successfully").format(selected_theme))
                     self.updateUIStyles()
                     save_theme_to_config(selected_theme)
                     # Повторно обновляем превью, чтобы, если есть стили шрифтов и т.д., всё отобразилось
                     updateThemePreview(selected_theme)
                 else:
-                    self.themeStatusLabel.setText(f"Ошибка при применении темы '{selected_theme}'")
+                    self.themeStatusLabel.setText(_("Error applying theme '{0}'").format(selected_theme))
             else:
-                self.themeStatusLabel.setText("Нет доступных тем для применения")
+                self.themeStatusLabel.setText(_("No available themes to apply"))
 
         self.applyButton.clicked.connect(on_apply)
 
@@ -578,7 +581,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 else:
                     histogram[key] = [color.red(), color.green(), color.blue(), 1]
         avg_colors = []
-        for _, (r_sum, g_sum, b_sum, count) in histogram.items():
+        for _unused, (r_sum, g_sum, b_sum, count) in histogram.items():
             avg_r = r_sum // count
             avg_g = g_sum // count
             avg_b = b_sum // count
@@ -611,7 +614,7 @@ class MainWindow(QtWidgets.QMainWindow):
         mainLayout.setContentsMargins(30, 30, 30, 30)
         mainLayout.setSpacing(20)
 
-        backButton = QtWidgets.QPushButton("Назад")
+        backButton = QtWidgets.QPushButton(_("Back"))
         backButton.setFixedWidth(100)
         backButton.setStyleSheet(self.theme.BACK_BUTTON_STYLE)
         backButton.clicked.connect(lambda: self.goBackDetailPage(detailPage))
@@ -668,12 +671,12 @@ class MainWindow(QtWidgets.QMainWindow):
         infoLayout = QtWidgets.QHBoxLayout()
         infoLayout.setSpacing(10)
 
-        lastLaunchTitle = QtWidgets.QLabel("ПОСЛЕДНИЙ ЗАПУСК")
+        lastLaunchTitle = QtWidgets.QLabel(_("LAST LAUNCH"))
         lastLaunchTitle.setStyleSheet(self.theme.LAST_LAUNCH_TITLE_STYLE)
         lastLaunchValue = QtWidgets.QLabel(last_launch)
         lastLaunchValue.setStyleSheet(self.theme.LAST_LAUNCH_VALUE_STYLE)
 
-        playTimeTitle = QtWidgets.QLabel("ВЫ ИГРАЛИ")
+        playTimeTitle = QtWidgets.QLabel(_("PLAY TIME"))
         playTimeTitle.setStyleSheet(self.theme.PLAY_TIME_TITLE_STYLE)
         playTimeValue = QtWidgets.QLabel(formatted_playtime)
         playTimeValue.setStyleSheet(self.theme.PLAY_TIME_VALUE_STYLE)
@@ -688,12 +691,12 @@ class MainWindow(QtWidgets.QMainWindow):
         if controller_support:
             cs = controller_support.lower()
             if cs == "full":
-                translated_cs = "полная"
+                translated_cs = _("full")
             elif cs == "partial":
-                translated_cs = "частичная"
+                translated_cs = _("partial")
             elif cs == "none":
-                translated_cs = "отсутствует"
-            gamepadSupportLabel = QtWidgets.QLabel(f"Поддержка геймпада: {translated_cs}")
+                translated_cs = _("none")
+            gamepadSupportLabel = QtWidgets.QLabel(_("Gamepad Support: {0}").format(translated_cs))
             gamepadSupportLabel.setAlignment(QtCore.Qt.AlignCenter)
             gamepadSupportLabel.setStyleSheet(self.theme.GAMEPAD_SUPPORT_VALUE_STYLE)
             detailsLayout.addWidget(gamepadSupportLabel, alignment=QtCore.Qt.AlignCenter)
@@ -714,11 +717,11 @@ class MainWindow(QtWidgets.QMainWindow):
             print("Ошибка при определении текущего exe:", e)
             current_exe = None
 
-        # Если для этой игры уже запущен процесс, выставляем кнопку "✕ Остановить"
+        # Если для этой игры уже запущен процесс, выставляем кнопку "✕ Stop"
         if self.target_exe is not None and current_exe == self.target_exe:
-            play_text = "✕ Остановить"
+            play_text = _("✕ Stop")
         else:
-            play_text = "▷ Играть"
+            play_text = _("▷ Play")
 
         playButton = QtWidgets.QPushButton(play_text)
         playButton.setFixedSize(120, 40)
@@ -807,18 +810,18 @@ class MainWindow(QtWidgets.QMainWindow):
             entry_exec_split = shlex.split(exec_line)
             if entry_exec_split[0] == "env":
                 if len(entry_exec_split) < 3:
-                    QtWidgets.QMessageBox.warning(self, "Ошибка", "Неверный формат команды (native)")
+                    QtWidgets.QMessageBox.warning(self, _("Error"), _("Invalid command format (native)"))
                     return
                 file_to_check = entry_exec_split[2]
             elif entry_exec_split[0] == "flatpak":
                 if len(entry_exec_split) < 4:
-                    QtWidgets.QMessageBox.warning(self, "Ошибка", "Неверный формат команды (flatpak)")
+                    QtWidgets.QMessageBox.warning(self, _("Error"), _("Invalid command format (flatpak)"))
                     return
                 file_to_check = entry_exec_split[3]
             else:
                 file_to_check = entry_exec_split[0]
             if not os.path.exists(file_to_check):
-                QtWidgets.QMessageBox.warning(self, "Ошибка", f"Указанный файл не найден: {file_to_check}")
+                QtWidgets.QMessageBox.warning(self, _("Error"), _("File not found: {0}").format(file_to_check))
                 return
             current_exe = os.path.basename(file_to_check)
         except Exception as e:
@@ -826,7 +829,7 @@ class MainWindow(QtWidgets.QMainWindow):
             return
 
         if self.game_processes and self.target_exe is not None and self.target_exe != current_exe:
-            QtWidgets.QMessageBox.warning(self, "Ошибка", "Невозможно запустить игру, пока другая игра запущена")
+            QtWidgets.QMessageBox.warning(self, _("Error"), _("Cannot launch game while another game is running"))
             return
 
         # Если игра уже запущена для этого exe – останавливаем её
@@ -841,9 +844,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 self._typewriter_timer.stop()
                 self._typewriter_timer.deleteLater()
                 self._typewriter_timer = None
-            self.statusBar().showMessage("Игра остановлена", 2000)
+            self.statusBar().showMessage(_("Game stopped"), 2000)
             QtCore.QTimer.singleShot(1500, self.clearGameStatus)
-            button.setText("▷ Играть")
+            button.setText(_("▷ Play"))
             if hasattr(self, 'checkProcessTimer') and self.checkProcessTimer is not None:
                 try:
                     self.checkProcessTimer.stop()
@@ -865,13 +868,13 @@ class MainWindow(QtWidgets.QMainWindow):
                 process = subprocess.Popen(entry_exec_split, env=env_vars, shell=False)
                 self.game_processes.append(process)
                 save_last_launch(exe_name, datetime.now())
-                self.startTypewriterEffect(f"Идёт запуск {game_name}")
+                self.startTypewriterEffect(_("Launching {0}").format(game_name))
                 self.checkProcessTimer = QtCore.QTimer(self)
                 self.checkProcessTimer.timeout.connect(self.checkTargetExe)
                 self.checkProcessTimer.start(500)
-                button.setText("✕ Остановить")
+                button.setText(_("✕ Stop"))
             except Exception as e:
-                print("Ошибка запуска игры:", e)
+                print("Error launching game:", e)
 
     def closeEvent(self, event):
         for proc in self.game_processes:
