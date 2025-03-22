@@ -1,5 +1,3 @@
-# Улучшенный тёмный стиль – доработанный вариант
-
 # СТИЛЬ ШАПКИ ГЛАВНОГО ОКНА
 MAIN_WINDOW_HEADER_STYLE = """
     QFrame {
@@ -11,7 +9,6 @@ MAIN_WINDOW_HEADER_STYLE = """
         border-bottom: 1px solid rgba(255, 255, 255, 0.15);
         border-top-left-radius: 30px;
         border-top-right-radius: 30px;
-        box-shadow: 0 14px 60px rgba(0, 0, 0, 0.7);
         border: none;
     }
 """
@@ -22,7 +19,6 @@ TITLE_LABEL_STYLE = """
         font-family: 'RASKHAL';
         font-size: 38px;
         color: #007AFF;
-        text-shadow: 0 0 20px rgba(0,122,255,0.8), 0 2px 4px rgba(0, 0, 0, 0.5);
     }
 """
 
@@ -34,7 +30,6 @@ NAV_WIDGET_STYLE = """
             stop:1 rgba(30, 30, 30, 0.35));
         border: 1px solid rgba(255, 255, 255, 0.10);
         border-radius: 25px;
-        box-shadow: 0 10px 50px rgba(0, 0, 0, 0.50);
     }
 """
 
@@ -60,7 +55,6 @@ NAV_BUTTON_STYLE = """
             stop:0 rgba(0,122,255,0.15),
             stop:1 rgba(0,122,255,0.10));
         color: #007AFF;
-        cursor: pointer;
     }
 """
 
@@ -104,7 +98,6 @@ LIST_WIDGET_STYLE = """
             stop:1 rgba(20, 20, 20, 0.30));
         border: 1px solid rgba(255, 255, 255, 0.10);
         border-radius: 25px;
-        box-shadow: 0 10px 50px rgba(0, 0, 0, 0.50);
     }
 """
 
@@ -120,13 +113,11 @@ ADD_GAME_BUTTON_STYLE = """
         color: #ffffff;
         font-size: 16px;
         padding: 12px 24px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.50);
     }
     QPushButton:hover {
         background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
             stop:0 rgba(0,122,255,0.20),
             stop:1 rgba(0,122,255,0.15));
-        cursor: pointer;
     }
     QPushButton:pressed {
         background: rgba(20, 20, 20, 0.60);
@@ -150,13 +141,11 @@ BACK_BUTTON_STYLE = """
         color: #ffffff;
         font-size: 16px;
         padding: 8px 16px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.50);
     }
     QPushButton:hover {
         background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
             stop:0 rgba(0,122,255,0.20),
             stop:1 rgba(0,122,255,0.15));
-        cursor: pointer;
     }
     QPushButton:pressed {
         background: rgba(20, 20, 20, 0.60);
@@ -172,7 +161,6 @@ DETAIL_CONTENT_FRAME_STYLE = """
             stop:1 rgba(20, 20, 20, 0.35));
         border: 1px solid rgba(255, 255, 255, 0.10);
         border-radius: 15px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.50);
     }
 """
 
@@ -233,13 +221,11 @@ PLAY_BUTTON_STYLE = """
         padding: 8px 16px;
         min-width: 120px;
         min-height: 40px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.50);
     }
     QPushButton:hover {
         background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
             stop:0 rgba(0,122,255,0.20),
             stop:1 rgba(0,122,255,0.15));
-        cursor: pointer;
     }
     QPushButton:pressed {
         background: rgba(20, 20, 20, 0.60);
@@ -256,13 +242,11 @@ DIALOG_BROWSE_BUTTON_STYLE = """
         color: #ffffff;
         font-size: 16px;
         padding: 5px 10px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.50);
     }
     QPushButton:hover {
         background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
             stop:0 rgba(0,122,255,0.20),
             stop:1 rgba(0,122,255,0.15));
-        cursor: pointer;
     }
     QPushButton:pressed {
         background: rgba(20, 20, 20, 0.60);
@@ -276,7 +260,6 @@ GAME_CARD_WINDOW_STYLE = """
         border-radius: 20px;
         background: rgba(20, 20, 20, 0.40);
         border: 1px solid rgba(255, 255, 255, 0.20);
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.50);
     }
 """
 
