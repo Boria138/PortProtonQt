@@ -5,11 +5,13 @@ on:
     paths-ignore:
       - "data/**"
       - "*.md"
+      - "dev-scripts/**"
   push:
     branches: [main]
     paths-ignore:
       - "data/**"
       - "*.md"
+      - "dev-scripts/**"
 
 jobs:
   lock_file:

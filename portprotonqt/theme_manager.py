@@ -52,6 +52,7 @@ def load_theme_fonts(theme_name):
     Загружает все шрифты выбранной темы.
     :param theme_name: Имя темы.
     """
+    QFontDatabase.removeAllApplicationFonts()
     fonts_folder = None
     if theme_name == "standart_lite":
         base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -190,6 +191,12 @@ class ThemeManager:
     def get_available_themes(self):
         """Возвращает список доступных тем."""
         return list_themes()
+
+    def get_theme_logo(self, theme_name=None):
+        """Возвращает логотип для текущей или указанной темы."""
+        if theme_name is None:
+            theme_name = self.current_theme_name
+        return load_theme_logo(theme_name)
 
     def apply_theme(self, theme_name):
         """
