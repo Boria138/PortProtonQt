@@ -29,7 +29,8 @@ def normalize_name(s):
       - удаление символов ™ и ®,
       - замена разделителей (-, :, ,) на пробел,
       - удаление лишних пробелов,
-      - удаление суффиксов 'bin' или 'app' в конце строки.
+      - удаление суффиксов 'bin' или 'app' в конце строки,
+      - удаление ключевых слов типа 'ultimate', 'edition' и т.п.
     """
     s = s.lower()
     for ch in ["™", "®"]:
@@ -40,7 +41,13 @@ def normalize_name(s):
     for suffix in ["bin", "app"]:
         if s.endswith(suffix):
             s = s[:-len(suffix)].strip()
-    return s
+
+    # Удаляем служебные слова, которые не должны влиять на сопоставление
+    keywords_to_remove = {"ultimate", "edition", "definitive", "complete", "remastered"}
+    words = s.split()
+    filtered_words = [word for word in words if word not in keywords_to_remove]
+    return " ".join(filtered_words)
+
 
 def is_valid_candidate(candidate):
     """
