@@ -31,7 +31,7 @@ def _update_coverage(lines: list[str]) -> None:
     locales_stats = [line for line in lines if line.endswith(".po")]
 
     locales_rows = sorted(
-        f"| [{m[3]}](./{m[3]}/LC_MESSAGES/messages.po) | {m[2]} | {m[1]} |"
+        f"| [{m[3]}](./{m[3]}/LC_MESSAGES/messages.po) | {m[2]} | {m[1].replace('of', 'из')} |"
         for stat in locales_stats
         if (
             m := re.search(
