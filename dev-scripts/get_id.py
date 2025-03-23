@@ -101,13 +101,15 @@ async def request_data():
         print(f"Ошибка получения данных для {category}: {error}")
         return
 
-    # Создаем папку для данных, если её нет.
-    os.makedirs("../data", exist_ok=True)
-    output_path_formatted = f"../data/{category}_appid.json"
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    data_dir = os.path.join(repo_root, "data")
+    os.makedirs(data_dir, exist_ok=True)
+
+    output_path_formatted = os.path.join(data_dir, f"{category}_appid.json")
     with open(output_path_formatted, "w", encoding="utf-8") as f:
         json.dump(output_json, f, ensure_ascii=False, indent=2)
 
-    output_path_min = f"../data/{category}_appid_min.json"
+    output_path_min = os.path.join(data_dir, f"{category}_appid_min.json")
     with open(output_path_min, "w", encoding="utf-8") as f:
         json.dump(output_json, f, ensure_ascii=False, separators=(',',':'))
 
