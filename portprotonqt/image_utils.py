@@ -192,6 +192,21 @@ class FullscreenDialog(QtWidgets.QDialog):
             return True
         return super().eventFilter(obj, event)
 
+    def changeEvent(self, event):
+            """Закрывает диалог при потере фокуса."""
+            if event.type() == QtCore.QEvent.ActivationChange:
+                if not self.isActiveWindow():
+                    self.close()
+            super().changeEvent(event)
+
+    def mousePressEvent(self, event):
+        """Закрывает диалог при клике на пустую область."""
+        pos = event.pos()
+        # Проверяем, находится ли клик вне imageContainer и captionLabel
+        if not (self.imageContainer.geometry().contains(pos) or
+                self.captionLabel.geometry().contains(pos)):
+            self.close()
+        super().mousePressEvent(event)
 
 class ClickablePixmapItem(QtWidgets.QGraphicsPixmapItem):
     """
