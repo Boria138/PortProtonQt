@@ -138,13 +138,13 @@ def format_playtime(seconds):
         minutes, secs = divmod(rem, 60)
         parts = []
         if days > 0:
-            parts.append(f"{days} " + _("d"))
+            parts.append(f"{days} " + _("d."))
         if hours > 0:
-            parts.append(f"{hours} " + _("h"))
+            parts.append(f"{hours} " + _("h."))
         if minutes > 0:
-            parts.append(f"{minutes} " + _("min"))
+            parts.append(f"{minutes} " + _("min."))
         if secs > 0 or not parts:
-            parts.append(f"{secs} " + _("sec"))
+            parts.append(f"{secs} " + _("sec."))
         return " ".join(parts)
     else:
         # Режим brief
@@ -152,9 +152,9 @@ def format_playtime(seconds):
             minutes, secs = divmod(seconds, 60)
             parts = []
             if minutes > 0:
-                parts.append(f"{minutes} " + _("min"))
+                parts.append(f"{minutes} " + _("min."))
             if secs > 0 or not parts:
-                parts.append(f"{secs} " + _("sec"))
+                parts.append(f"{secs} " + _("sec."))
             return " ".join(parts)
         else:
             hours = seconds // 3600

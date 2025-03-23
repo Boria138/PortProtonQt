@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQT 0.1.0\n"
 "Report-Msgid-Bugs-To: olegpozitiv0102@gmail.com\n"
-"POT-Creation-Date: 2025-03-23 02:16+0500\n"
+"POT-Creation-Date: 2025-03-23 15:11+0500\n"
 "PO-Revision-Date: 2025-03-23 01:53+0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es_ES\n"
@@ -139,10 +139,10 @@ msgstr ""
 msgid "Gamepad Support: {0}"
 msgstr ""
 
-msgid "✕ Stop"
+msgid "Stop"
 msgstr ""
 
-msgid "▷ Play"
+msgid "Play"
 msgstr ""
 
 msgid "Error"
@@ -168,15 +168,15 @@ msgstr ""
 msgid "Launching {0}"
 msgstr ""
 
-msgid "d"
+msgid "d."
 msgstr ""
 
-msgid "h"
+msgid "h."
 msgstr ""
 
-msgid "min"
+msgid "min."
 msgstr ""
 
-msgid "sec"
+msgid "sec."
 msgstr ""
 

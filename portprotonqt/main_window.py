@@ -719,9 +719,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Если для этой игры уже запущен процесс, выставляем кнопку "✕ Stop"
         if self.target_exe is not None and current_exe == self.target_exe:
-            play_text = _("✕ Stop")
+            play_text = f"✕ { _('Stop') }"
         else:
-            play_text = _("▷ Play")
+            play_text = f"▷ { _('Play') }"
 
         playButton = QtWidgets.QPushButton(play_text)
         playButton.setFixedSize(120, 40)
@@ -846,7 +846,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self._typewriter_timer = None
             self.statusBar().showMessage(_("Game stopped"), 2000)
             QtCore.QTimer.singleShot(1500, self.clearGameStatus)
-            button.setText(_("▷ Play"))
+            button.setText(f"▷ { _('Play') }")
             if hasattr(self, 'checkProcessTimer') and self.checkProcessTimer is not None:
                 try:
                     self.checkProcessTimer.stop()
@@ -872,7 +872,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.checkProcessTimer = QtCore.QTimer(self)
                 self.checkProcessTimer.timeout.connect(self.checkTargetExe)
                 self.checkProcessTimer.start(500)
-                button.setText(_("✕ Stop"))
+                button.setText(f"✕ { _('Stop') }")
             except Exception as e:
                 print("Error launching game:", e)
 

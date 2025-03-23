@@ -57,7 +57,7 @@ def _update_coverage(lines: list[str]) -> None:
     md_file = LOCALES_PATH / "README.md"
     md_text = md_file.read_text("utf-8")
     md_text = re.sub(
-        r"(.*## Status\n).*?(##.*)",
+        r"(.*## Статус перевода\n).*?(##.*)",
         rf"\1\n{coverage_table}\n\2",
         md_text,
         flags=re.DOTALL,
