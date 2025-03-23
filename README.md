@@ -32,7 +32,10 @@
 - [ ] Добавить интеграцию с HowLongToBeat для вывода в карточке игры время для прохождения игры [рефференс](https://github.com/hulkrelax/hltb-for-deck)
 - [X] Добавить в карточку игры сведения о поддержке геймадов
 - [X] Добавить в карточки данные с ProtonDB
-- [ ] Добавить парсинг ярлыков со Steam
+- [X] Добавить парсинг ярлыков со Steam
+- [X] Добавить на карточку бейдж того что игра со стима
+- [X] Добавить поддержку Flatpak и Snap версии Steam
+- [X] Выводить данные о самом недавнем пользователе Steam, а не первом попавшемся
 - [X] Исправить склонения в детальном выводе времени, например не 3 часов назад, а 3 часа назад
 - [X] Добавить перевод через gettext [Документация](https://github.com/BlackSnaker/PortProtonQt/blob/main/portprotonqt/locales/README.md)
 - [ ] Добавить недокументированные параметры конфигурации в GUI (time detail_level, games sort_method)
@@ -59,6 +62,12 @@ source .venv/bin/activate
 uv sync --all-extras --dev
 source .venv/bin/activate
 pre-commit install
+```
+
+pre-commit сам запустится при коммите, если вы хотите запустить его вручную введите команду
+
+```sh
+pre-commit run --all-files
 ```
 
 ## Авторы

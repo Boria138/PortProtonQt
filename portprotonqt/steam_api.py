@@ -8,6 +8,9 @@ import time
 import orjson
 import requests
 
+from pathlib import Path
+import vdf
+
 # Настройка логирования
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
 logger = logging.getLogger(__name__)
@@ -21,6 +24,129 @@ def get_cache_dir():
     cache_dir = os.path.join(xdg_cache_home, "PortProtonQT")
     os.makedirs(cache_dir, exist_ok=True)
     return cache_dir
+
+STEAM_DATA_DIRS = (
+    "~/.local/share/Steam",
+    "~/snap/steam/common/.local/share/Steam",
+    "~/.var/app/com.valvesoftware.Steam/data/Steam",
+)
+
+def _get_steam_home():
+    """Возвращает путь к директории Steam, используя список возможных директорий."""
+    for dir_path in STEAM_DATA_DIRS:
+        expanded_path = Path(os.path.expanduser(dir_path))
+        if expanded_path.exists():
+            return expanded_path
+    return None
+
+def get_last_steam_user(steam_home):
+    """Возвращает данные последнего пользователя Steam из loginusers.vdf."""
+    loginusers_path = steam_home / "config/loginusers.vdf"
+    if not loginusers_path.exists():
+        logger.error("Файл loginusers.vdf не найден")
+        return None
+    try:
+        with open(loginusers_path, encoding='utf-8') as f:
+            data = vdf.load(f)
+        users = data.get('users', {})
+        for user_id, user_info in users.items():
+            if user_info.get('MostRecent') == '1':
+                # Преобразуем идентификатор пользователя в число
+                return {'SteamID': int(user_id)}
+        logger.info("Не найден пользователь с MostRecent=1")
+        return None
+    except Exception as e:
+        logger.error(f"Ошибка чтения loginusers.vdf: {e}")
+        return None
+
+def convert_steam_id(steam_id: int) -> int:
+    """
+    Преобразует знаковое 32-битное целое число в беззнаковое 32-битное целое число.
+    Использует побитовое И с 0xFFFFFFFF, что корректно обрабатывает отрицательные значения.
+    """
+    return steam_id & 0xFFFFFFFF
+
+def get_steam_libs(steam_dir):
+    libs = set()
+    libs_vdf = steam_dir / "steamapps/libraryfolders.vdf"
+    try:
+        with open(libs_vdf, encoding='utf-8') as f:
+            data = vdf.load(f)['libraryfolders']
+            for k in data:
+                if k.isdigit() and (path := Path(data[k]['path'])):
+                    libs.add(path)
+    except Exception as e:
+        logger.error(f"Ошибка чтения libraryfolders.vdf: {e}")
+    libs.add(steam_dir)
+    return libs
+
+def get_playtime_data(steam_home):
+    """Возвращает данные о времени игры для последнего пользователя."""
+    userdata_dir = steam_home / "userdata"
+    play_data = {}
+    if not userdata_dir.exists():
+        return play_data
+    # Получаем последнего пользователя
+    last_user = get_last_steam_user(steam_home)
+    if not last_user:
+        logger.info("Не удалось определить последнего пользователя Steam")
+        return play_data
+    user_id = last_user['SteamID']
+    convert_user_id = convert_steam_id(user_id)
+    user_dir = userdata_dir / str(convert_user_id)
+    if not user_dir.exists():
+        logger.info(f"Директория пользователя {convert_user_id} не найдена")
+        return play_data
+    localconfig = user_dir / "config/localconfig.vdf"
+    if not localconfig.exists():
+        logger.info(f"Файл localconfig.vdf не найден для пользователя {convert_user_id}")
+        return play_data
+    try:
+        with open(localconfig, encoding='utf-8') as f:
+            data = vdf.load(f)['UserLocalConfigStore']
+            apps = data.get('Software', {}).get('Valve', {}).get('Steam', {}).get('apps', {})
+            for appid_str, info in apps.items():
+                try:
+                    appid = int(appid_str)
+                    last_played = int(info.get('LastPlayed', 0))
+                    playtime = int(info.get('Playtime', 0))
+                    play_data[appid] = (last_played, playtime)
+                except (ValueError, TypeError) as e:
+                    logger.error(f"Ошибка обработки данных для appid {appid_str}: {e}")
+    except Exception as e:
+        logger.error(f"Ошибка чтения {localconfig}: {e}")
+    return play_data
+
+def get_steam_installed_games():
+    """Возвращает список установленных Steam игр в формате:
+    (name, appid, last_played_timestamp, playtime_seconds)"""
+    games = []
+    steam_home = _get_steam_home()
+    if not steam_home:
+        return games
+    play_data = get_playtime_data(steam_home)
+    blacklist_appids = {1161040, 1826330, 1493710, 1070560, 1391110, 1628350}
+    for lib in get_steam_libs(steam_home):
+        steamapps = lib / "steamapps"
+        if not steamapps.exists():
+            continue
+        for manifest in steamapps.glob("appmanifest_*.acf"):
+            try:
+                with open(manifest, encoding='utf-8') as f:
+                    app = vdf.load(f)['AppState']
+                appid = int(app.get('appid', 0))
+                if appid in blacklist_appids:
+                    continue
+                last_played, playtime = play_data.get(appid, (0, 0))
+                games.append((
+                    app.get('name', f"Unknown ({appid})"),
+                    appid,
+                    last_played,
+                    playtime * 60  # Конвертируем минуты в секунды
+                ))
+            except Exception as e:
+                logger.error(f"Ошибка в {manifest.name}: {e}")
+    return games
 
 def normalize_name(s):
     """
@@ -41,13 +167,10 @@ def normalize_name(s):
     for suffix in ["bin", "app"]:
         if s.endswith(suffix):
             s = s[:-len(suffix)].strip()
-
-    # Удаляем служебные слова, которые не должны влиять на сопоставление
     keywords_to_remove = {"ultimate", "edition", "definitive", "complete", "remastered"}
     words = s.split()
     filtered_words = [word for word in words if word not in keywords_to_remove]
     return " ".join(filtered_words)
-
 
 def is_valid_candidate(candidate):
     """
@@ -55,7 +178,6 @@ def is_valid_candidate(candidate):
       - win32
       - win64
       - gamelauncher
-
     Для проверки дополнительно используется строка без пробелов.
     Возвращает True, если кандидат допустим, иначе False.
     """
@@ -164,11 +286,9 @@ def search_app(candidate, steam_apps_index):
     """
     candidate_norm = normalize_name(candidate)
     logger.info("Поиск приложения для кандидата: '%s' -> '%s'", candidate, candidate_norm)
-
     if candidate_norm in steam_apps_index:
         logger.info("    Найдено точное совпадение: '%s'", candidate_norm)
         return steam_apps_index[candidate_norm]
-
     for name_norm, app in steam_apps_index.items():
         if candidate_norm in name_norm:
             ratio = len(candidate_norm) / len(name_norm)
@@ -258,6 +378,17 @@ def get_protondb_tier(appid):
         logger.error("Ошибка запроса данных с ProtonDB для appid %s: %s", appid, e)
         return ""
 
+def get_full_steam_game_info(appid):
+    """Возвращает полную информацию об игре через Steam API"""
+    app_info = fetch_app_info_cached(appid)
+    return {
+        'description': app_info.get('short_description', ''),
+        'controller_support': app_info.get('controller_support', ''),
+        'cover': f"https://steamcdn-a.akamaihd.net/steam/apps/{appid}/library_600x900_2x.jpg",
+        'protondb_tier': get_protondb_tier(appid),
+        "steam_game": "true"
+    } if app_info else {}
+
 def get_steam_game_info(desktop_name, exec_line, session):
     """
     Определяет информацию об игре по exec_line, используя метаданные файла,
@@ -271,14 +402,12 @@ def get_steam_game_info(desktop_name, exec_line, session):
         logger.error("Ошибка разбора exec_line: %s", e)
         game_exe = exec_line
     exe_name = os.path.splitext(os.path.basename(game_exe))[0]
-
     folder_path = os.path.dirname(game_exe)
     folder_name = os.path.basename(folder_path)
     if folder_name.lower() in ['bin', 'binaries']:
         folder_path = os.path.dirname(folder_path)
         folder_name = os.path.basename(folder_path)
     logger.info("Имя папки игры: '%s'", folder_name)
-
     # Формирование списка кандидатов
     candidates = []
     meta_data = get_exiftool_data(game_exe)
@@ -294,19 +423,15 @@ def get_steam_game_info(desktop_name, exec_line, session):
         candidates.append(exe_name)
     if folder_name:
         candidates.append(folder_name)
-
     logger.info("Исходные кандидаты: %s", candidates)
-
     # Сначала отбрасываем недопустимые кандидаты
     candidates = filter_candidates(candidates)
     # Затем удаляем дубликаты, сохраняя порядок
     candidates = remove_duplicates(candidates)
     logger.info("Кандидаты после фильтрации и удаления дублей: %s", candidates)
-
     # Сортируем кандидатов по количеству слов (от большего к меньшему)
     candidates_ordered = sorted(candidates, key=lambda s: len(s.split()), reverse=True)
     logger.info("Кандидаты после сортировки: %s", candidates_ordered)
-
     # Используем глобальное кэширование Steam-приложений и их индекса
     _, steam_apps_index = get_steam_apps_and_index(session)
     matching_app = None
@@ -317,7 +442,6 @@ def get_steam_game_info(desktop_name, exec_line, session):
         if matching_app:
             logger.info("Совпадение найдено для кандидата '%s': %s", candidate, matching_app.get("name"))
             break
-
     if not matching_app:
         logger.info("Не найдено ни одного совпадения для кандидатов")
         return {
@@ -326,9 +450,9 @@ def get_steam_game_info(desktop_name, exec_line, session):
             "description": "",
             "cover": "",
             "controller_support": "",
-            "protondb_tier": ""
+            "protondb_tier": "",
+            "steam_game": "false"
         }
-
     appid = matching_app["appid"]
     app_info = fetch_app_info_cached(appid)
     if not app_info:
@@ -339,23 +463,20 @@ def get_steam_game_info(desktop_name, exec_line, session):
             "description": "",
             "cover": "",
             "controller_support": "",
-            "protondb_tier": ""
+            "protondb_tier": "",
+            "steam_game": "false"
         }
-
     title = app_info.get("name", exe_name.capitalize())
     description = app_info.get("short_description", "")
     cover = f"https://steamcdn-a.akamaihd.net/steam/apps/{appid}/library_600x900_2x.jpg"
     controller_support = app_info.get("controller_support", "")
-
-    # Получение данных с ProtonDB
     protondb_tier = get_protondb_tier(appid)
-    logger.info("Итоговая информация об игре: appid=%s, name='%s', protondb_tier='%s'", appid, title, protondb_tier)
-
     return {
         "appid": appid,
         "name": title,
         "description": description,
         "cover": cover,
         "controller_support": controller_support,
-        "protondb_tier": protondb_tier
+        "protondb_tier": protondb_tier,
+        "steam_game": "false"
     }

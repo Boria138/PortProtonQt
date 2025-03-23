@@ -19,7 +19,7 @@ class ClickableLabel(QtWidgets.QLabel):
 
 class GameCard(QtWidgets.QFrame):
     def __init__(self, name, description, cover_path, appid, controller_support, exec_line,
-                 last_launch, formatted_playtime, protondb_tier, last_launch_ts, playtime_seconds,
+                 last_launch, formatted_playtime, protondb_tier, last_launch_ts, playtime_seconds, steam_game,
                  select_callback, theme=None, card_width=250, parent=None):
         super().__init__(parent)
         self.name = name
@@ -31,6 +31,7 @@ class GameCard(QtWidgets.QFrame):
         self.last_launch = last_launch
         self.formatted_playtime = formatted_playtime
         self.protondb_tier = protondb_tier
+        self.steam_game = steam_game
         self.last_launch_ts = last_launch_ts
         self.playtime_seconds = playtime_seconds
 
@@ -76,17 +77,53 @@ class GameCard(QtWidgets.QFrame):
         coverLabel.setStyleSheet(self.theme.COVER_LABEL_STYLE)
         coverLayout.addWidget(coverLabel)
 
-        # Метка ProtonDB
+        # Создаем ProtonDB бейдж
         tier_text = self.getProtonDBText(protondb_tier)
         self.protondbLabel = ClickableLabel(coverWidget)
         if tier_text:
             self.protondbLabel.setText(tier_text)
             self.protondbLabel.setStyleSheet(self.theme.PROTONDB_BADGE_STYLE)
+            protondb_visible = True
         else:
             self.protondbLabel.setVisible(False)
-        # Размещаем метку в правом верхнем углу обложки
-        self.protondbLabel.move(card_width - 90, 10)
+            protondb_visible = False
+
+        # Создаем Steam бейдж
+        self.steamLabel = QtWidgets.QLabel(coverWidget)
+        self.steamLabel.setText("Steam")
+        self.steamLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
+        steam_visible = (str(steam_game).lower() == "true")
+        self.steamLabel.setVisible(steam_visible)
+        self.steamLabel.adjustSize()
+
+        # Позиционирование бейджей у правого края
+        right_margin = 8     # Отступ от правого края
+        badge_spacing = 5    # Вертикальный отступ между бейджами
+        top_y = 10           # Стартовая позиция сверху
+
+        # Если оба бейджа видны, Steam располагается сверху, ProtonDB ниже
+        if steam_visible and protondb_visible:
+            steam_width = self.steamLabel.width()
+            steam_x = card_width - steam_width - right_margin
+            self.steamLabel.move(steam_x, top_y)
+
+            protondb_width = self.protondbLabel.width()
+            protondb_x = card_width - protondb_width - right_margin
+            protondb_y = top_y + self.steamLabel.height() + badge_spacing
+            self.protondbLabel.move(protondb_x, protondb_y)
+        # Если виден только Steam – позиционируем его вверху
+        elif steam_visible:
+            steam_width = self.steamLabel.width()
+            steam_x = card_width - steam_width - right_margin
+            self.steamLabel.move(steam_x, top_y)
+        # Если виден только ProtonDB – позиционируем его вверху
+        elif protondb_visible:
+            protondb_width = self.protondbLabel.width()
+            protondb_x = card_width - protondb_width - right_margin
+            self.protondbLabel.move(protondb_x, top_y)
+
         self.protondbLabel.raise_()
+        self.steamLabel.raise_()
         self.protondbLabel.clicked.connect(self.open_protondb_report)
 
         layout.addWidget(coverWidget)

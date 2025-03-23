@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQT 0.1.0\n"
 "Report-Msgid-Bugs-To: olegpozitiv0102@gmail.com\n"
-"POT-Creation-Date: 2025-03-23 15:16+0500\n"
+"POT-Creation-Date: 2025-03-24 12:45+0600\n"
 "PO-Revision-Date: 2025-03-23 01:53+0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es_ES\n"
@@ -55,10 +55,10 @@ msgstr ""
 msgid "Themes"
 msgstr ""
 
-msgid "Unknown Game"
+msgid "Never"
 msgstr ""
 
-msgid "Never"
+msgid "Unknown Game"
 msgstr ""
 
 msgid "Search games..."
@@ -145,7 +145,17 @@ msgstr ""
 msgid "Play"
 msgstr ""
 
+msgid "Launching via Steam..."
+msgstr ""
+
+msgid "Launching via Steam"
+msgstr ""
+
 msgid "Error"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to launch Steam: {0}"
 msgstr ""
 
 msgid "Invalid command format (native)"

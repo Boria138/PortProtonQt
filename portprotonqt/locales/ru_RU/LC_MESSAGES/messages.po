@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQT 0.1.0\n"
 "Report-Msgid-Bugs-To: olegpozitiv0102@gmail.com\n"
-"POT-Creation-Date: 2025-03-23 15:16+0500\n"
-"PO-Revision-Date: 2025-03-23 15:11+0500\n"
+"POT-Creation-Date: 2025-03-24 12:45+0600\n"
+"PO-Revision-Date: 2025-03-24 12:40+0600\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
@@ -56,11 +56,11 @@ msgstr "Настройки PortProton"
 msgid "Themes"
 msgstr "Темы"
 
-msgid "Unknown Game"
-msgstr "Неизвестная игра"
-
 msgid "Never"
 msgstr "Никогла"
+
+msgid "Unknown Game"
+msgstr "Неизвестная игра"
 
 msgid "Search games..."
 msgstr "Найти игры..."
@@ -146,8 +146,19 @@ msgstr "Остановить"
 msgid "Play"
 msgstr "Играть"
 
+msgid "Launching via Steam..."
+msgstr "Идёт запуск через Steam..."
+
+#, fuzzy
+msgid "Launching via Steam"
+msgstr "Идёт запуск через Steam"
+
 msgid "Error"
 msgstr "Ошибка"
+
+#, python-brace-format
+msgid "Failed to launch Steam: {0}"
+msgstr "Не удалось запустить Steam: {0}"
 
 msgid "Invalid command format (native)"
 msgstr "Неправильный формат команды (нативная версия)"

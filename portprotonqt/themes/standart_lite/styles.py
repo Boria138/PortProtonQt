@@ -303,6 +303,16 @@ PROTONDB_BADGE_STYLE= """
     font-weight: bold;
 """
 
+# СТИЛИ БЕЙДЖА STEAM
+STEAM_BADGE_STYLE= """
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 5px;
+    font-weight: bold;
+"""
+
 # ФУНКЦИЯ ДЛЯ ДИНАМИЧЕСКОГО ГРАДИЕНТА (ДЕТАЛИ ИГР)
 # Функции из этой темы срабатывает всегда вне зависимости от выбранной темы, функции из других тем работают только в этих темах
 def detail_page_style(stops):

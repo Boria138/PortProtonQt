@@ -12,10 +12,10 @@ from portprotonqt.dialogs import AddGameDialog
 from portprotonqt.game_card import GameCard
 from portprotonqt.gamepad_support import GamepadSupport
 from portprotonqt.image_utils import load_pixmap, round_corners, ImageCarousel
-from portprotonqt.steam_api import get_steam_game_info
+from portprotonqt.steam_api import get_steam_game_info, get_full_steam_game_info, get_steam_installed_games
 from portprotonqt.theme_manager import ThemeManager, load_theme_screenshots
-from portprotonqt.time_utils import save_last_launch, get_last_launch, parse_playtime_file, format_playtime, get_last_launch_timestamp
-from portprotonqt.config_utils import get_portproton_location, read_theme_from_config, save_theme_to_config, parse_desktop_entry, load_theme_metainfo, read_time_config, read_file_content, read_card_size, save_card_size, read_sort_method
+from portprotonqt.time_utils import save_last_launch, get_last_launch, parse_playtime_file, format_playtime, get_last_launch_timestamp, format_last_launch
+from portprotonqt.config_utils import get_portproton_location, read_theme_from_config, save_theme_to_config, parse_desktop_entry, load_theme_metainfo, read_time_config, read_card_size, save_card_size, read_sort_method
 from portprotonqt.localization import _
 
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -143,7 +143,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.updateGameGridColumns()
 
     def _updateTabStyles(self):
-        """Обновляет стили элементов на всех вкладках."""
         # Вкладка "Библиотека"
         self.addGameButton.setStyleSheet(self.theme.ADD_GAME_BUTTON_STYLE)
         self.searchEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE)
@@ -161,129 +160,177 @@ class MainWindow(QtWidgets.QMainWindow):
             content_label.setStyleSheet(self.theme.CONTENT_STYLE)
 
     def loadGames(self):
+        portproton_games = self._load_portproton_games()
+        steam_games = self._load_steam_games()
+
+        # Объединение и удаление дубликатов
+        seen = set()
         games = []
-        # Получаем путь к PortProton через модуль конфигов
+        for game in portproton_games + steam_games:
+            name = game[0]
+            if name not in seen:
+                seen.add(name)
+                games.append(game)
+
+        sort_method = read_sort_method()
+        if sort_method == "playtime":
+            games.sort(key=lambda g: (g[11], g[10]), reverse=True)
+        else:
+            games.sort(key=lambda g: (g[10], g[11]), reverse=True)
+
+
+        return games
+
+    def _load_portproton_games(self):
+        # Перенос оригинальной логики загрузки .desktop файлов
+        games = []
         portproton_location = get_portproton_location()
         self.portproton_location = portproton_location
 
         if not portproton_location:
             return games
 
-        # Определяем путь для кастомных данных
-        xdg_data_home = os.getenv("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share"))
         desktop_files = [entry.path for entry in os.scandir(portproton_location)
-                         if entry.is_file() and entry.name.endswith(".desktop")]
+                        if entry.name.endswith(".desktop")]
 
-        def process_file(file_path):
-            entry = parse_desktop_entry(file_path)
-            if entry is None:
-                return None
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            results = list(executor.map(self._process_desktop_file, desktop_files))
 
-            desktop_name = entry.get("Name", _("Unknown Game"))
-            if desktop_name.lower() == "portproton":
-                return None
+        return [res for res in results if res is not None]
 
-            exec_line = entry.get("Exec", "")
-            steam_info = {}
-            game_exe = ""
-            last_launch_formatted = _("Never")
-            playtime_seconds = 0
-            formatted_playtime = ""
-            protondb_tier = ""
-            controller_support = ""
+    def _load_steam_games(self):
+        steam_games = []
+        try:
+            for name, appid, last_played, playtime_seconds in get_steam_installed_games():
+                steam_info = get_full_steam_game_info(appid)
+                last_launch = format_last_launch(datetime.fromtimestamp(last_played)) if last_played else _("Never")
+                steam_game = "true"
 
-            if exec_line:
-                try:
-                    parts = shlex.split(exec_line)
-                    game_exe = os.path.expanduser(parts[3] if len(parts) >= 4 else exec_line)
-                except Exception as e:
-                    print(f"Ошибка обработки Exec строки в {file_path}: {e}")
-                    game_exe = os.path.expanduser(exec_line)
-                steam_info = get_steam_game_info(desktop_name, exec_line, self.requests_session)
-                if steam_info is None:
-                    return None
+                steam_games.append((
+                    name,
+                    steam_info.get('description', ''),
+                    steam_info.get('cover', ''),
+                    appid,
+                    f"steam://rungameid/{appid}",
+                    steam_info.get('controller_support', ''),
+                    last_launch,
+                    format_playtime(playtime_seconds),
+                    steam_info.get('protondb_tier', ''),
+                    last_played,
+                    playtime_seconds,
+                    steam_game,
+                ))
+        except Exception as e:
+            print(f"Ошибка загрузки Steam игр: {e}")
 
-            custom_cover = ""
-            custom_name = None
-            custom_desc = None
-            if game_exe:
-                exe_name = os.path.splitext(os.path.basename(game_exe))[0]
-                custom_folder = os.path.join(xdg_data_home, "PortProtonQT", "custom_data", exe_name)
-                os.makedirs(custom_folder, exist_ok=True)
-                last_launch_formatted = get_last_launch(exe_name) if exe_name else _("Never")
-                last_launch_ts = get_last_launch_timestamp(exe_name) if exe_name else 0
+        return steam_games
 
-                statistics_file = os.path.join(self.portproton_location, "data", "tmp", "statistics")
-                playtime_data = parse_playtime_file(statistics_file)
-                matching_key = next((key for key in playtime_data if os.path.basename(key).split('.')[0] == exe_name), None)
-                if matching_key:
-                    playtime_seconds = playtime_data[matching_key]
-                    formatted_playtime = format_playtime(playtime_seconds)
-                try:
-                    custom_files = set(os.listdir(custom_folder))
-                except Exception as e:
-                    print(f"Ошибка доступа к папке {custom_folder}: {e}")
-                    custom_files = set()
+    def _process_desktop_file(self, file_path):
+        """Обрабатывает .desktop файл и возвращает данные игры"""
+        entry = parse_desktop_entry(file_path)
+        if not entry:
+            return None
 
+        desktop_name = entry.get("Name", _("Unknown Game"))
+        if desktop_name.lower() == "portproton":
+            return None
+
+        exec_line = entry.get("Exec", "")
+        steam_info = {}
+        game_exe = ""
+        playtime_seconds = 0
+        formatted_playtime = ""
+
+        # Обработка Exec строки
+        if exec_line:
+            try:
+                parts = shlex.split(exec_line)
+                game_exe = os.path.expanduser(parts[3] if len(parts) >= 4 else exec_line)
+            except Exception as e:
+                print(f"Ошибка обработки Exec в {file_path}: {e}")
+                game_exe = os.path.expanduser(exec_line)
+
+            # Получение Steam-данных
+            steam_info = get_steam_game_info(
+                desktop_name,
+                exec_line,
+                self.requests_session
+            )
+
+        # Получение пользовательских данных
+        xdg_data_home = os.getenv("XDG_DATA_HOME",
+            os.path.join(os.path.expanduser("~"), ".local", "share"))
+
+        custom_cover = ""
+        custom_name = None
+        custom_desc = None
+
+        if game_exe:
+            exe_name = os.path.splitext(os.path.basename(game_exe))[0]
+            custom_folder = os.path.join(
+                xdg_data_home,
+                "PortProtonQT",
+                "custom_data",
+                exe_name
+            )
+            os.makedirs(custom_folder, exist_ok=True)
+
+            # Чтение пользовательских файлов
+            try:
+                custom_files = set(os.listdir(custom_folder))
                 for ext in [".jpg", ".png", ".jpeg", ".bmp"]:
-                    candidate = "cover" + ext
-                    candidate_path = os.path.join(custom_folder, candidate)
-                    if candidate in custom_files and os.path.exists(candidate_path):
-                        custom_cover = candidate_path
+                    candidate = f"cover{ext}"
+                    if candidate in custom_files:
+                        custom_cover = os.path.join(custom_folder, candidate)
                         break
 
                 name_file = os.path.join(custom_folder, "name.txt")
                 desc_file = os.path.join(custom_folder, "desc.txt")
+
                 if "name.txt" in custom_files:
-                    custom_name = read_file_content(name_file)
+                    with open(name_file, encoding="utf-8") as f:
+                        custom_name = f.read().strip()
+
                 if "desc.txt" in custom_files:
-                    custom_desc = read_file_content(desc_file)
-            else:
-                exe_name = ""
-                last_launch_ts = 0
+                    with open(desc_file, encoding="utf-8") as f:
+                        custom_desc = f.read().strip()
 
-            if steam_info.get("appid"):
-                name = desktop_name
-                desc = steam_info.get("description", "")
-                cover = steam_info.get("cover", "")
-                appid = steam_info.get("appid", "")
-                controller_support = steam_info.get("controller_support", "")
-                protondb_tier = steam_info.get("protondb_tier", "")
-            else:
-                name = desktop_name
-                desc = entry.get("Comment", "")
-                cover = entry.get("Icon", "")
-                appid = ""
+            except Exception as e:
+                print(f"Ошибка доступа к {custom_folder}: {e}")
 
-            if custom_name:
-                name = custom_name
-            if custom_desc:
-                desc = custom_desc
-            if custom_cover:
-                cover = custom_cover
+            # Статистика времени игры
+            statistics_file = os.path.join(
+                self.portproton_location,
+                "data",
+                "tmp",
+                "statistics"
+            )
+            playtime_data = parse_playtime_file(statistics_file)
+            matching_key = next(
+                (key for key in playtime_data
+                 if os.path.basename(key).split('.')[0] == exe_name),
+                None
+            )
+            if matching_key:
+                playtime_seconds = playtime_data[matching_key]
+                formatted_playtime = format_playtime(playtime_seconds)
 
-            # Возвращаем кортеж с первыми 9 значениями для GameCard,
-            # а дополнительные значения используются для сортировки:
-            # last_launch_ts (индекс 9) и playtime_seconds (индекс 10)
-            return (name, desc, cover, appid, exec_line, controller_support,
-                    last_launch_formatted, formatted_playtime, protondb_tier,
-                    last_launch_ts, playtime_seconds)
-
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            results = list(executor.map(process_file, desktop_files))
-
-        for res in results:
-            if res is not None:
-                games.append(res)
-
-        sort_method = read_sort_method()
-
-        if sort_method == "playtime":
-            games.sort(key=lambda g: (g[10], g[9]), reverse=True)
-        else:
-            games.sort(key=lambda g: (g[9], g[10]), reverse=True)
-
-        return games
+        # Формирование финальных данных
+        steam_game = "false"
+        return (
+            custom_name or steam_info.get("name", desktop_name),
+            custom_desc or steam_info.get("description", ""),
+            custom_cover or steam_info.get("cover", ""),
+            steam_info.get("appid", ""),
+            exec_line,
+            steam_info.get("controller_support", ""),
+            get_last_launch(exe_name) if exe_name else _("Never"),
+            formatted_playtime,
+            steam_info.get("protondb_tier", ""),
+            get_last_launch_timestamp(exe_name) if exe_name else 0,
+            playtime_seconds,
+            steam_game
+        )
 
     # ВКЛАДКИ
     def switchTab(self, index):
@@ -424,7 +471,7 @@ class MainWindow(QtWidgets.QMainWindow):
             name = dialog.nameEdit.text().strip()
             desc = dialog.descEdit.toPlainText().strip()
             cover = dialog.coverEdit.text().strip()
-            self.games.append((name, desc, cover, "", "", "", _("Never"), "", "", "", ""))
+            self.games.append((name, desc, cover, "", "", "", _("Never"), "", "", "", "", ""))
             self.populateGamesGrid(self.games)
 
     def createAutoInstallTab(self):
@@ -635,7 +682,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def darkenColor(self, color, factor=200):
         return color.darker(factor)
 
-    def openGameDetailPage(self, name, description, cover_path=None, appid="", exec_line="", controller_support="", last_launch="", formatted_playtime="", protondb_tier=""):
+    def openGameDetailPage(self, name, description, cover_path=None, appid="", exec_line="", controller_support="", last_launch="", formatted_playtime="", protondb_tier="", steam_game=""):
         detailPage = QtWidgets.QWidget()
 
         if cover_path:
@@ -845,7 +892,39 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.checkProcessTimer.deleteLater()
                 self.checkProcessTimer = None
 
+
     def toggleGame(self, exec_line, game_name, button):
+        if exec_line.startswith("steam://"):
+            try:
+                subprocess.Popen(["steam", exec_line],
+                                stdout=subprocess.DEVNULL,
+                                stderr=subprocess.DEVNULL)
+                self.statusBar().showMessage(_("Launching via Steam..."), 3000)
+                return
+            except Exception as e:
+                print(f"Steam launch error (native): {e}")
+                try:
+                    subprocess.Popen(["flatpak", "run", "com.valvesoftware.Steam", exec_line],
+                                    stdout=subprocess.DEVNULL,
+                                    stderr=subprocess.DEVNULL)
+                    self.statusBar().showMessage(f"{ _("Launching via Steam")} (flatpak)...", 3000)
+                    return
+                except Exception as e_flatpak:
+                    print(f"Steam launch error (flatpak): {e_flatpak}")
+                    try:
+                        subprocess.Popen(["snap", "run", "steam", exec_line],
+                                        stdout=subprocess.DEVNULL,
+                                        stderr=subprocess.DEVNULL)
+                        self.statusBar().showMessage(f"{ _("Launching via Steam")} (snap)...", 3000)
+                        return
+                    except Exception as e_snap:
+                        print(f"Steam launch error (snap): {e_snap}")
+                        QtWidgets.QMessageBox.warning(
+                            self,
+                            _("Error"),
+                            _("Failed to launch Steam: {0}").format(e)
+                        )
+                        return
         try:
             entry_exec_split = shlex.split(exec_line)
             if entry_exec_split[0] == "env":
