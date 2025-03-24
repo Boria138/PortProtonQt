@@ -318,9 +318,9 @@ class MainWindow(QtWidgets.QMainWindow):
         # Формирование финальных данных
         steam_game = "false"
         return (
-            custom_name or steam_info.get("name", desktop_name),
+            custom_name or desktop_name,
             custom_desc or steam_info.get("description", ""),
-            custom_cover or steam_info.get("cover", ""),
+            custom_cover or steam_info.get("cover", "") or entry.get("Icon", ""),
             steam_info.get("appid", ""),
             exec_line,
             steam_info.get("controller_support", ""),
