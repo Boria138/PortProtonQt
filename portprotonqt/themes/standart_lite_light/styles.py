@@ -141,8 +141,6 @@ BACK_BUTTON_STYLE = """
         color: #333333;
         font-size: 16px;
         padding: 8px 16px;
-        /* Эффект размытия для стекловидного фона (при наличии поддержки) */
-        backdrop-filter: blur(5px);
     }
     QPushButton:hover {
         background: rgba(255, 255, 255, 0.4);
@@ -159,7 +157,6 @@ DETAIL_CONTENT_FRAME_STYLE = """
         background: rgba(255, 255, 255, 0.25);
         border: 1px solid rgba(255, 255, 255, 0.4);
         border-radius: 15px;
-        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
     }
 """
 
@@ -169,7 +166,6 @@ COVER_FRAME_STYLE = """
         background: rgba(255, 255, 255, 0.2);
         border-radius: 15px;
         border: 1px solid rgba(255, 255, 255, 0.3);
-        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
     }
 """
 
@@ -222,7 +218,7 @@ PLAY_BUTTON_STYLE = """
         padding: 8px 16px;
         min-width: 120px;
         min-height: 40px;
-        backdrop-filter: blur(5px);
+      
     }
     QPushButton:hover {
         background: rgba(255, 255, 255, 0.4);
@@ -242,7 +238,7 @@ DIALOG_BROWSE_BUTTON_STYLE = """
         color: #333333;
         font-size: 16px;
         padding: 5px 10px;
-        backdrop-filter: blur(5px);
+       
     }
     QPushButton:hover {
         background: rgba(255, 255, 255, 0.4);
@@ -261,7 +257,7 @@ GAME_CARD_WINDOW_STYLE = """
             stop:0 rgba(255, 255, 255, 0.3),
             stop:1 rgba(249, 249, 249, 0.3));
         border: 1px solid rgba(255, 255, 255, 0.4);
-        backdrop-filter: blur(5px);
+       
     }
 """
 
@@ -303,6 +299,15 @@ PROTONDB_BADGE_STYLE = """
     background-color: rgba(240, 240, 240, 1);
     color: #333333;
     padding: 2px 4px;
+    border-radius: 5px;
+    font-weight: bold;
+"""
+# СТИЛИ БЕЙДЖА STEAM
+STEAM_BADGE_STYLE= """
+    background-color: rgba(240, 240, 240, 1);
+    color: #333333;
+    font-size: 12px;
+    padding: 6px 12px;
     border-radius: 5px;
     font-weight: bold;
 """

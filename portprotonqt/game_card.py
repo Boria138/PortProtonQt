@@ -55,6 +55,9 @@ class GameCard(QtWidgets.QFrame):
         self.gradient_anim = None
         self.pulse_anim = None
 
+        # Флаг для отслеживания подключения слота startPulseAnimation
+        self._isPulseAnimationConnected = False
+
         # Тень
         shadow = QtWidgets.QGraphicsDropShadowEffect(self)
         shadow.setBlurRadius(20)
@@ -214,14 +217,15 @@ class GameCard(QtWidgets.QFrame):
     def enterEvent(self, event):
         self._hovered = True
         self.thickness_anim.stop()
-        try:
+        # Отключаем слот, если он был подключён
+        if self._isPulseAnimationConnected:
             self.thickness_anim.finished.disconnect(self.startPulseAnimation)
-        except Exception:
-            pass
+            self._isPulseAnimationConnected = False
         self.thickness_anim.setEasingCurve(QtCore.QEasingCurve.OutBack)
         self.thickness_anim.setStartValue(self._borderWidth)
         self.thickness_anim.setEndValue(8)
         self.thickness_anim.finished.connect(self.startPulseAnimation)
+        self._isPulseAnimationConnected = True
         self.thickness_anim.start()
 
         self.gradient_anim = QtCore.QPropertyAnimation(self, b"gradientAngle")
@@ -240,10 +244,9 @@ class GameCard(QtWidgets.QFrame):
             self.gradient_anim = None
 
         self.thickness_anim.stop()
-        try:
+        if self._isPulseAnimationConnected:
             self.thickness_anim.finished.disconnect(self.startPulseAnimation)
-        except Exception:
-            pass
+            self._isPulseAnimationConnected = False
 
         if self.pulse_anim:
             self.pulse_anim.stop()
