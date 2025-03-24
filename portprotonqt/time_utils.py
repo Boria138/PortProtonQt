@@ -4,6 +4,9 @@ from datetime import datetime, timedelta
 from babel.dates import format_timedelta, format_date
 from portprotonqt.config_utils import read_time_config
 from portprotonqt.localization import _
+from portprotonqt.logger import get_logger
+
+logger = get_logger(__name__)
 
 def get_system_locale():
     """Возвращает системную локаль, например, 'ru_RU'. Если не удаётся определить – возвращает 'en'."""
@@ -23,29 +26,23 @@ def save_last_launch(exe_name, launch_time):
     file_path = get_cache_file_path()
     data = {}
     if os.path.exists(file_path):
-        try:
-            with open(file_path, encoding="utf-8") as f:
-                for line in f:
-                    parts = line.strip().split(maxsplit=1)
-                    if len(parts) == 2:
-                        data[parts[0]] = parts[1]
-        except Exception as e:
-            print("Ошибка чтения файла кеша:", e)
+        with open(file_path, encoding="utf-8") as f:
+            for line in f:
+                parts = line.strip().split(maxsplit=1)
+                if len(parts) == 2:
+                    data[parts[0]] = parts[1]
     data[exe_name] = launch_time.isoformat()
-    try:
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        with open(file_path, "w", encoding="utf-8") as f:
-            for key, iso_time in data.items():
-                f.write(f"{key} {iso_time}\n")
-    except Exception as e:
-        print("Ошибка сохранения файла кеша:", e)
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    with open(file_path, "w", encoding="utf-8") as f:
+        for key, iso_time in data.items():
+            f.write(f"{key} {iso_time}\n")
 
 def format_last_launch(launch_time):
     """
     Форматирует время запуска с использованием Babel.
 
     Для detail_level "detailed" возвращает относительный формат с добавлением "назад"
-    (например, "2 мин. назад"). Если время меньше минуты – возвращает "только что".
+    (например, "2 мин. назад"). Если время меньше минуты – возвращает переведённую строку.
     Для "brief" – дату в формате "день месяц год" (например, "1 апреля 2023")
     на основе системной локали.
     """
@@ -55,7 +52,7 @@ def format_last_launch(launch_time):
         # Вычисляем delta как launch_time - datetime.now() чтобы получить отрицательное значение для прошедшего времени.
         delta = launch_time - datetime.now()
         if abs(delta.total_seconds()) < 60:
-            return "только что"
+            return _("just now")
         return format_timedelta(delta, locale=system_locale, granularity='second', format='short', add_direction=True)
     else:
         return format_date(launch_time, format="d MMMM yyyy", locale=system_locale)
@@ -63,22 +60,19 @@ def format_last_launch(launch_time):
 def get_last_launch(exe_name):
     """
     Читает время последнего запуска для заданного exe из файла кеша.
-    Возвращает время запуска в нужном формате или "Никогда".
+    Возвращает время запуска в нужном формате или перевод строки "Never".
     """
     file_path = get_cache_file_path()
     if not os.path.exists(file_path):
-        return "Никогда"
-    try:
-        with open(file_path, encoding="utf-8") as f:
-            for line in f:
-                parts = line.strip().split(maxsplit=1)
-                if len(parts) == 2 and parts[0] == exe_name:
-                    iso_time = parts[1]
-                    launch_time = datetime.fromisoformat(iso_time)
-                    return format_last_launch(launch_time)
-    except Exception as e:
-        print("Ошибка чтения файла кеша:", e)
-    return "Никогда"
+        return _("Never")
+    with open(file_path, encoding="utf-8") as f:
+        for line in f:
+            parts = line.strip().split(maxsplit=1)
+            if len(parts) == 2 and parts[0] == exe_name:
+                iso_time = parts[1]
+                launch_time = datetime.fromisoformat(iso_time)
+                return format_last_launch(launch_time)
+    return _("Never")
 
 def parse_playtime_file(file_path):
     """
@@ -95,27 +89,20 @@ def parse_playtime_file(file_path):
     """
     playtime_data = {}
     if not os.path.exists(file_path):
-        print(f"Файл не найден: {file_path}")
+        logger.error(f"Файл не найден: {file_path}")
         return playtime_data
 
-    try:
-        with open(file_path, encoding="utf-8") as f:
-            for line in f:
-                if not line.strip():
-                    continue
-                parts = line.strip().split()
-                if len(parts) < 3:
-                    continue
-                exe_path = parts[0]
-                try:
-                    seconds = int(parts[2])
-                except ValueError:
-                    seconds = 0
-                playtime_data[exe_path] = seconds
-    except Exception as e:
-        print(f"Ошибка при парсинге файла {file_path}: {e}")
+    with open(file_path, encoding="utf-8") as f:
+        for line in f:
+            if not line.strip():
+                continue
+            parts = line.strip().split()
+            if len(parts) < 3:
+                continue
+            exe_path = parts[0]
+            seconds = int(parts[2])
+            playtime_data[exe_path] = seconds
     return playtime_data
-
 
 def format_playtime(seconds):
     """
@@ -163,19 +150,16 @@ def format_playtime(seconds):
 def get_last_launch_timestamp(exe_name):
     """
     Возвращает метку времени последнего запуска (timestamp) для заданного exe.
-    Если записи нет или произошла ошибка, возвращает 0.
+    Если записи нет, возвращает 0.
     """
     file_path = get_cache_file_path()
     if not os.path.exists(file_path):
         return 0
-    try:
-        with open(file_path, encoding="utf-8") as f:
-            for line in f:
-                parts = line.strip().split(maxsplit=1)
-                if len(parts) == 2 and parts[0] == exe_name:
-                    iso_time = parts[1]
-                    dt = datetime.fromisoformat(iso_time)
-                    return dt.timestamp()
-    except Exception as e:
-        print("Ошибка чтения кеша:", e)
+    with open(file_path, encoding="utf-8") as f:
+        for line in f:
+            parts = line.strip().split(maxsplit=1)
+            if len(parts) == 2 and parts[0] == exe_name:
+                iso_time = parts[1]
+                dt = datetime.fromisoformat(iso_time)
+                return dt.timestamp()
     return 0

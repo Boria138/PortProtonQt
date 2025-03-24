@@ -17,9 +17,12 @@ from portprotonqt.theme_manager import ThemeManager, load_theme_screenshots
 from portprotonqt.time_utils import save_last_launch, get_last_launch, parse_playtime_file, format_playtime, get_last_launch_timestamp, format_last_launch
 from portprotonqt.config_utils import get_portproton_location, read_theme_from_config, save_theme_to_config, parse_desktop_entry, load_theme_metainfo, read_time_config, read_card_size, save_card_size, read_sort_method
 from portprotonqt.localization import _
+from portprotonqt.logger import get_logger
 
 from PySide6 import QtCore, QtGui, QtWidgets
 from datetime import datetime
+
+logger = get_logger(__name__)
 
 class MainWindow(QtWidgets.QMainWindow):
     """Main window of PortProtonQT."""
@@ -200,29 +203,25 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _load_steam_games(self):
         steam_games = []
-        try:
-            for name, appid, last_played, playtime_seconds in get_steam_installed_games():
-                steam_info = get_full_steam_game_info(appid)
-                last_launch = format_last_launch(datetime.fromtimestamp(last_played)) if last_played else _("Never")
-                steam_game = "true"
+        for name, appid, last_played, playtime_seconds in get_steam_installed_games():
+            steam_info = get_full_steam_game_info(appid)
+            last_launch = format_last_launch(datetime.fromtimestamp(last_played)) if last_played else _("Never")
+            steam_game = "true"
 
-                steam_games.append((
-                    name,
-                    steam_info.get('description', ''),
-                    steam_info.get('cover', ''),
-                    appid,
-                    f"steam://rungameid/{appid}",
-                    steam_info.get('controller_support', ''),
-                    last_launch,
-                    format_playtime(playtime_seconds),
-                    steam_info.get('protondb_tier', ''),
-                    last_played,
-                    playtime_seconds,
-                    steam_game,
-                ))
-        except Exception as e:
-            print(f"Ошибка загрузки Steam игр: {e}")
-
+            steam_games.append((
+                name,
+                steam_info.get('description', ''),
+                steam_info.get('cover', ''),
+                appid,
+                f"steam://rungameid/{appid}",
+                steam_info.get('controller_support', ''),
+                last_launch,
+                format_playtime(playtime_seconds),
+                steam_info.get('protondb_tier', ''),
+                last_played,
+                playtime_seconds,
+                steam_game,
+            ))
         return steam_games
 
     def _process_desktop_file(self, file_path):
@@ -244,12 +243,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Обработка Exec строки
         if exec_line:
-            try:
-                parts = shlex.split(exec_line)
-                game_exe = os.path.expanduser(parts[3] if len(parts) >= 4 else exec_line)
-            except Exception as e:
-                print(f"Ошибка обработки Exec в {file_path}: {e}")
-                game_exe = os.path.expanduser(exec_line)
+            parts = shlex.split(exec_line)
+            game_exe = os.path.expanduser(parts[3] if len(parts) >= 4 else exec_line)
 
             # Получение Steam-данных
             steam_info = get_steam_game_info(
@@ -277,27 +272,23 @@ class MainWindow(QtWidgets.QMainWindow):
             os.makedirs(custom_folder, exist_ok=True)
 
             # Чтение пользовательских файлов
-            try:
-                custom_files = set(os.listdir(custom_folder))
-                for ext in [".jpg", ".png", ".jpeg", ".bmp"]:
-                    candidate = f"cover{ext}"
-                    if candidate in custom_files:
-                        custom_cover = os.path.join(custom_folder, candidate)
-                        break
+            custom_files = set(os.listdir(custom_folder))
+            for ext in [".jpg", ".png", ".jpeg", ".bmp"]:
+                candidate = f"cover{ext}"
+                if candidate in custom_files:
+                    custom_cover = os.path.join(custom_folder, candidate)
+                    break
 
-                name_file = os.path.join(custom_folder, "name.txt")
-                desc_file = os.path.join(custom_folder, "desc.txt")
+            name_file = os.path.join(custom_folder, "name.txt")
+            desc_file = os.path.join(custom_folder, "desc.txt")
 
-                if "name.txt" in custom_files:
-                    with open(name_file, encoding="utf-8") as f:
-                        custom_name = f.read().strip()
+            if "name.txt" in custom_files:
+                with open(name_file, encoding="utf-8") as f:
+                    custom_name = f.read().strip()
 
-                if "desc.txt" in custom_files:
-                    with open(desc_file, encoding="utf-8") as f:
-                        custom_desc = f.read().strip()
-
-            except Exception as e:
-                print(f"Ошибка доступа к {custom_folder}: {e}")
+            if "desc.txt" in custom_files:
+                with open(desc_file, encoding="utf-8") as f:
+                    custom_desc = f.read().strip()
 
             # Статистика времени игры
             statistics_file = os.path.join(
@@ -793,18 +784,14 @@ class MainWindow(QtWidgets.QMainWindow):
         detailsLayout.addStretch(1)
 
         # Определяем текущий идентификатор игры по exec_line для корректного отображения кнопки
-        try:
-            entry_exec_split = shlex.split(exec_line)
-            if entry_exec_split[0] == "env":
-                file_to_check = entry_exec_split[2] if len(entry_exec_split) >= 3 else None
-            elif entry_exec_split[0] == "flatpak":
-                file_to_check = entry_exec_split[3] if len(entry_exec_split) >= 4 else None
-            else:
-                file_to_check = entry_exec_split[0]
-            current_exe = os.path.basename(file_to_check) if file_to_check else None
-        except Exception as e:
-            print("Ошибка при определении текущего exe:", e)
-            current_exe = None
+        entry_exec_split = shlex.split(exec_line)
+        if entry_exec_split[0] == "env":
+            file_to_check = entry_exec_split[2] if len(entry_exec_split) >= 3 else None
+        elif entry_exec_split[0] == "flatpak":
+            file_to_check = entry_exec_split[3] if len(entry_exec_split) >= 4 else None
+        else:
+            file_to_check = entry_exec_split[0]
+        current_exe = os.path.basename(file_to_check) if file_to_check else None
 
         # Если для этой игры уже запущен процесс, выставляем кнопку "✕ Stop"
         if self.target_exe is not None and current_exe == self.target_exe:
@@ -850,11 +837,8 @@ class MainWindow(QtWidgets.QMainWindow):
         if not self.target_exe:
             return False
         for proc in psutil.process_iter(attrs=["name"]):
-            try:
-                if proc.info["name"].lower() == self.target_exe.lower():
-                    return True
-            except (psutil.NoSuchProcess, psutil.AccessDenied):
-                continue
+            if proc.info["name"].lower() == self.target_exe.lower():
+                return True
         return False
 
     def startTypewriterEffect(self, message, interval=100):
@@ -897,57 +881,29 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def toggleGame(self, exec_line, game_name, button):
         if exec_line.startswith("steam://"):
-            try:
-                subprocess.Popen(["steam", exec_line],
-                                stdout=subprocess.DEVNULL,
-                                stderr=subprocess.DEVNULL)
-                self.statusBar().showMessage(_("Launching via Steam..."), 3000)
-                return
-            except Exception as e:
-                print(f"Steam launch error (native): {e}")
-                try:
-                    subprocess.Popen(["flatpak", "run", "com.valvesoftware.Steam", exec_line],
-                                    stdout=subprocess.DEVNULL,
-                                    stderr=subprocess.DEVNULL)
-                    self.statusBar().showMessage(f"{ _("Launching via Steam")} (flatpak)...", 3000)
-                    return
-                except Exception as e_flatpak:
-                    print(f"Steam launch error (flatpak): {e_flatpak}")
-                    try:
-                        subprocess.Popen(["snap", "run", "steam", exec_line],
-                                        stdout=subprocess.DEVNULL,
-                                        stderr=subprocess.DEVNULL)
-                        self.statusBar().showMessage(f"{ _("Launching via Steam")} (snap)...", 3000)
-                        return
-                    except Exception as e_snap:
-                        print(f"Steam launch error (snap): {e_snap}")
-                        QtWidgets.QMessageBox.warning(
-                            self,
-                            _("Error"),
-                            _("Failed to launch Steam: {0}").format(e)
-                        )
-                        return
-        try:
-            entry_exec_split = shlex.split(exec_line)
-            if entry_exec_split[0] == "env":
-                if len(entry_exec_split) < 3:
-                    QtWidgets.QMessageBox.warning(self, _("Error"), _("Invalid command format (native)"))
-                    return
-                file_to_check = entry_exec_split[2]
-            elif entry_exec_split[0] == "flatpak":
-                if len(entry_exec_split) < 4:
-                    QtWidgets.QMessageBox.warning(self, _("Error"), _("Invalid command format (flatpak)"))
-                    return
-                file_to_check = entry_exec_split[3]
-            else:
-                file_to_check = entry_exec_split[0]
-            if not os.path.exists(file_to_check):
-                QtWidgets.QMessageBox.warning(self, _("Error"), _("File not found: {0}").format(file_to_check))
-                return
-            current_exe = os.path.basename(file_to_check)
-        except Exception as e:
-            print("Ошибка при разборе exec_line:", e)
+            subprocess.Popen(["steam", exec_line],
+                            stdout=subprocess.DEVNULL,
+                            stderr=subprocess.DEVNULL)
+            self.statusBar().showMessage(_("Launching via Steam..."), 3000)
             return
+
+        entry_exec_split = shlex.split(exec_line)
+        if entry_exec_split[0] == "env":
+            if len(entry_exec_split) < 3:
+                QtWidgets.QMessageBox.warning(self, _("Error"), _("Invalid command format (native)"))
+                return
+            file_to_check = entry_exec_split[2]
+        elif entry_exec_split[0] == "flatpak":
+            if len(entry_exec_split) < 4:
+                QtWidgets.QMessageBox.warning(self, _("Error"), _("Invalid command format (flatpak)"))
+                return
+            file_to_check = entry_exec_split[3]
+        else:
+            file_to_check = entry_exec_split[0]
+        if not os.path.exists(file_to_check):
+            QtWidgets.QMessageBox.warning(self, _("Error"), _("File not found: {0}").format(file_to_check))
+            return
+        current_exe = os.path.basename(file_to_check)
 
         if self.game_processes and self.target_exe is not None and self.target_exe != current_exe:
             QtWidgets.QMessageBox.warning(self, _("Error"), _("Cannot launch game while another game is running"))
@@ -956,10 +912,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # Если игра уже запущена для этого exe – останавливаем её
         if self.game_processes and self.target_exe == current_exe:
             for proc in self.game_processes:
-                try:
-                    os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-                except Exception as e:
-                    print("Ошибка при завершении процесса:", e)
+                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
             self.game_processes = []
             if hasattr(self, '_typewriter_timer') and self._typewriter_timer is not None:
                 self._typewriter_timer.stop()
@@ -969,39 +922,29 @@ class MainWindow(QtWidgets.QMainWindow):
             QtCore.QTimer.singleShot(1500, self.clearGameStatus)
             button.setText(f"▷ { _('Play') }")
             if hasattr(self, 'checkProcessTimer') and self.checkProcessTimer is not None:
-                try:
-                    self.checkProcessTimer.stop()
-                    self.checkProcessTimer.deleteLater()
-                except Exception as e:
-                    print("Ошибка при удалении checkProcessTimer:", e)
-                finally:
-                    self.checkProcessTimer = None
+                self.checkProcessTimer.stop()
+                self.checkProcessTimer.deleteLater()
+                self.checkProcessTimer = None
             self.target_exe = None
         else:
-            try:
-                self.target_exe = current_exe
-                exe_name = os.path.splitext(current_exe)[0]
-                env_vars = os.environ.copy()
-                if entry_exec_split[0] == "env" and len(entry_exec_split) > 1 and 'data/scripts/start.sh' in entry_exec_split[1]:
-                    env_vars['START_FROM_STEAM'] = '1'
-                elif entry_exec_split[0] == "flatpak":
-                    env_vars['START_FROM_STEAM'] = '1'
-                process = subprocess.Popen(entry_exec_split, env=env_vars, shell=False)
-                self.game_processes.append(process)
-                save_last_launch(exe_name, datetime.now())
-                self.startTypewriterEffect(_("Launching {0}").format(game_name))
-                self.checkProcessTimer = QtCore.QTimer(self)
-                self.checkProcessTimer.timeout.connect(self.checkTargetExe)
-                self.checkProcessTimer.start(500)
-                button.setText(f"✕ { _('Stop') }")
-            except Exception as e:
-                print("Error launching game:", e)
+            self.target_exe = current_exe
+            exe_name = os.path.splitext(current_exe)[0]
+            env_vars = os.environ.copy()
+            if entry_exec_split[0] == "env" and len(entry_exec_split) > 1 and 'data/scripts/start.sh' in entry_exec_split[1]:
+                env_vars['START_FROM_STEAM'] = '1'
+            elif entry_exec_split[0] == "flatpak":
+                env_vars['START_FROM_STEAM'] = '1'
+            process = subprocess.Popen(entry_exec_split, env=env_vars, shell=False)
+            self.game_processes.append(process)
+            save_last_launch(exe_name, datetime.now())
+            self.startTypewriterEffect(_("Launching {0}").format(game_name))
+            self.checkProcessTimer = QtCore.QTimer(self)
+            self.checkProcessTimer.timeout.connect(self.checkTargetExe)
+            self.checkProcessTimer.start(500)
+            button.setText(f"✕ { _('Stop') }")
 
     def closeEvent(self, event):
         for proc in self.game_processes:
-            try:
-                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-            except Exception as e:
-                print("Ошибка при завершении процесса:", e)
+            os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
         save_card_size(self.card_width)
         event.accept()

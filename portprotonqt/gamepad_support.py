@@ -1,6 +1,9 @@
 import time
 import pygame
 from PySide6 import QtCore
+from portprotonqt.logger import get_logger
+
+logger = get_logger(__name__)
 
 class GamepadSupport(QtCore.QObject):
     def __init__(self, parent, axis_deadzone=0.5, initial_axis_move_delay=0.3, repeat_axis_move_delay=0.15):
@@ -58,18 +61,15 @@ class GamepadSupport(QtCore.QObject):
             joystick = pygame.joystick.Joystick(i)
             joystick.init()
             self.joysticks.append(joystick)
-            try:
-                haptic = pygame.haptic.Haptic(joystick)
-                haptic.init()
-                self.haptics.append(haptic)
-                print(f"Joystick {i} haptic feedback initialized.")
-            except Exception as e:
-                print(f"Joystick {i} does not support haptic feedback: {e}")
+            haptic = pygame.haptic.Haptic(joystick)
+            haptic.init()
+            self.haptics.append(haptic)
+            logger.info(f"Joystick {i} haptic feedback initialized.")
 
         self.gamepad_timer = QtCore.QTimer(self.parent)
         self.gamepad_timer.timeout.connect(self.pollGamepad)
         self.gamepad_timer.start(50)
-        print("Gamepad support initialized:", len(self.joysticks), "joystick(s) found.")
+        logger.info(f"Gamepad support initialized: found {len(self.joysticks)}")
 
     def pollGamepad(self):
         current_time = time.time()
@@ -211,7 +211,4 @@ class GamepadSupport(QtCore.QObject):
 
     def vibrate(self, duration=100, strength=0.5):
         for haptic in self.haptics:
-            try:
-                haptic.rumble_play(strength, duration)
-            except Exception as e:
-                print("Error during haptic feedback:", e)
+            haptic.rumble_play(strength, duration)

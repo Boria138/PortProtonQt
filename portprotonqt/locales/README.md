@@ -8,9 +8,9 @@
 
 | Локаль | Прогресс | Переведено |
 | :----- | -------: | ---------: |
-| [de_DE](./de_DE/LC_MESSAGES/messages.po) | 0% | 0 из 55 |
-| [es_ES](./es_ES/LC_MESSAGES/messages.po) | 0% | 0 из 55 |
-| [ru_RU](./ru_RU/LC_MESSAGES/messages.po) | 100% | 55 из 55 |
+| [de_DE](./de_DE/LC_MESSAGES/messages.po) | 0% | 0 из 54 |
+| [es_ES](./es_ES/LC_MESSAGES/messages.po) | 0% | 0 из 54 |
+| [ru_RU](./ru_RU/LC_MESSAGES/messages.po) | 100% | 54 из 54 |
 
 ## Добавление нового перевода
 

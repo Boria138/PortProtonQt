@@ -1,11 +1,14 @@
 import importlib.util
 import os
 import glob
+from portprotonqt.logger import get_logger
 from PySide6.QtGui import QFontDatabase, QPixmap, QPainter
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtCore import Qt
 
 from portprotonqt.config_utils import save_theme_to_config, load_theme_metainfo
+
+logger = get_logger(__name__)
 
 # Папка, где располагаются все дополнительные темы
 xdg_data_home = os.getenv("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share"))
@@ -46,7 +49,6 @@ def load_theme_screenshots(theme_name):
                         screenshots.append((pixmap, file))
     return screenshots
 
-
 def load_theme_fonts(theme_name):
     """
     Загружает все шрифты выбранной темы.
@@ -66,7 +68,7 @@ def load_theme_fonts(theme_name):
                 break
 
     if not fonts_folder or not os.path.exists(fonts_folder):
-        print(f"Папка fonts не найдена для темы '{theme_name}'")
+        logger.error(f"Папка fonts не найдена для темы '{theme_name}'")
         return
 
     for filename in os.listdir(fonts_folder):
@@ -75,10 +77,9 @@ def load_theme_fonts(theme_name):
             font_id = QFontDatabase.addApplicationFont(font_path)
             if font_id != -1:
                 families = QFontDatabase.applicationFontFamilies(font_id)
-                print(f"Шрифт {filename} успешно загружен: {families}")
+                logger.info(f"Шрифт {filename} успешно загружен: {families}")
             else:
-                print(f"Ошибка загрузки шрифта: {filename}")
-
+                logger.error(f"Ошибка загрузки шрифта: {filename}")
 
 def load_theme_logo(theme_name):
     """
@@ -106,7 +107,7 @@ def load_theme_logo(theme_name):
                 break
 
     if not logo_path or not os.path.exists(logo_path):
-        print(f"Файл логотипа не найден для темы '{theme_name}'")
+        logger.error(f"Файл логотипа не найден для темы '{theme_name}'")
         return None
 
     file_extension = os.path.splitext(logo_path)[1].lower()
@@ -114,23 +115,22 @@ def load_theme_logo(theme_name):
     if file_extension == ".svg":
         renderer = QSvgRenderer(logo_path)
         if not renderer.isValid():
-            print(f"Ошибка загрузки SVG логотипа: {logo_path}")
+            logger.error(f"Ошибка загрузки SVG логотипа: {logo_path}")
             return None
         pixmap = QPixmap(128, 128)
         pixmap.fill(Qt.transparent)
         painter = QPainter(pixmap)
         renderer.render(painter)
         painter.end()
-        print(f"Логотип темы '{theme_name}' успешно загружен (SVG): {logo_path}")
+        logger.info(f"Логотип темы '{theme_name}' успешно загружен (SVG): {logo_path}")
         return pixmap
     else:
         pixmap = QPixmap(logo_path)
         if pixmap.isNull():
-            print(f"Ошибка загрузки логотипа: {logo_path}")
+            logger.error(f"Ошибка загрузки логотипа: {logo_path}")
             return None
-        print(f"Логотип темы '{theme_name}' успешно загружен: {logo_path}")
+        logger.info(f"Логотип темы '{theme_name}' успешно загружен: {logo_path}")
         return pixmap
-
 
 class ThemeWrapper:
     """
@@ -149,7 +149,6 @@ class ThemeWrapper:
         # Если атрибут отсутствует в кастомной теме, берём его из стандартной темы
         import portprotonqt.themes.standart_lite.styles as default_styles
         return getattr(default_styles, name)
-
 
 def load_theme(theme_name):
     """
@@ -175,7 +174,6 @@ def load_theme(theme_name):
             wrapper.screenshots = load_theme_screenshots(theme_name)
             return wrapper
     raise FileNotFoundError(f"Файл стилей не найден для темы '{theme_name}'")
-
 
 class ThemeManager:
     """
@@ -203,18 +201,13 @@ class ThemeManager:
         Применяет выбранную тему: загружает модуль стилей, шрифты и логотип.
         Если загрузка прошла успешно, сохраняет выбранную тему в конфигурации.
         :param theme_name: Имя темы.
-        :return: Загруженный модуль темы (или обёртка), либо None в случае ошибки.
+        :return: Загруженный модуль темы (или обёртка).
         """
-        try:
-            theme_module = load_theme(theme_name)
-            load_theme_fonts(theme_name)
-            self.current_theme_logo = load_theme_logo(theme_name)
-            self.current_theme_name = theme_name
-            self.current_theme_module = theme_module
-            # Сохраняем выбранную тему через функцию из модуля конфигов
-            save_theme_to_config(theme_name)
-            print(f"Тема '{theme_name}' успешно применена")
-            return theme_module
-        except Exception as e:
-            print(f"Ошибка при применении темы '{theme_name}': {e}")
-            return None
+        theme_module = load_theme(theme_name)
+        load_theme_fonts(theme_name)
+        self.current_theme_logo = load_theme_logo(theme_name)
+        self.current_theme_name = theme_name
+        self.current_theme_module = theme_module
+        save_theme_to_config(theme_name)
+        logger.info(f"Тема '{theme_name}' успешно применена")
+        return theme_module

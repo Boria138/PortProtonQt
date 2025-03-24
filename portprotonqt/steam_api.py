@@ -1,5 +1,4 @@
 import functools
-import logging
 import os
 import shlex
 import subprocess
@@ -10,10 +9,9 @@ import requests
 
 from pathlib import Path
 import vdf
+from portprotonqt.logger import get_logger
 
-# Настройка логирования
-logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Время жизни кэша – 30 дней (можно вынести в настройки)
 CACHE_DURATION = 30 * 24 * 60 * 60
@@ -45,19 +43,14 @@ def get_last_steam_user(steam_home):
     if not loginusers_path.exists():
         logger.error("Файл loginusers.vdf не найден")
         return None
-    try:
-        with open(loginusers_path, encoding='utf-8') as f:
-            data = vdf.load(f)
-        users = data.get('users', {})
-        for user_id, user_info in users.items():
-            if user_info.get('MostRecent') == '1':
-                # Преобразуем идентификатор пользователя в число
-                return {'SteamID': int(user_id)}
-        logger.info("Не найден пользователь с MostRecent=1")
-        return None
-    except Exception as e:
-        logger.error(f"Ошибка чтения loginusers.vdf: {e}")
-        return None
+    with open(loginusers_path, encoding='utf-8') as f:
+        data = vdf.load(f)
+    users = data.get('users', {})
+    for user_id, user_info in users.items():
+        if user_info.get('MostRecent') == '1':
+            return {'SteamID': int(user_id)}
+    logger.info("Не найден пользователь с MostRecent=1")
+    return None
 
 def convert_steam_id(steam_id: int) -> int:
     """
@@ -69,24 +62,20 @@ def convert_steam_id(steam_id: int) -> int:
 def get_steam_libs(steam_dir):
     libs = set()
     libs_vdf = steam_dir / "steamapps/libraryfolders.vdf"
-    try:
-        with open(libs_vdf, encoding='utf-8') as f:
-            data = vdf.load(f)['libraryfolders']
-            for k in data:
-                if k.isdigit() and (path := Path(data[k]['path'])):
-                    libs.add(path)
-    except Exception as e:
-        logger.error(f"Ошибка чтения libraryfolders.vdf: {e}")
+    with open(libs_vdf, encoding='utf-8') as f:
+        data = vdf.load(f)['libraryfolders']
+        for k in data:
+            if k.isdigit() and (path := Path(data[k]['path'])):
+                libs.add(path)
     libs.add(steam_dir)
     return libs
 
 def get_playtime_data(steam_home):
     """Возвращает данные о времени игры для последнего пользователя."""
-    userdata_dir = steam_home / "userdata"
     play_data = {}
+    userdata_dir = steam_home / "userdata"
     if not userdata_dir.exists():
         return play_data
-    # Получаем последнего пользователя
     last_user = get_last_steam_user(steam_home)
     if not last_user:
         logger.info("Не удалось определить последнего пользователя Steam")
@@ -101,20 +90,14 @@ def get_playtime_data(steam_home):
     if not localconfig.exists():
         logger.info(f"Файл localconfig.vdf не найден для пользователя {convert_user_id}")
         return play_data
-    try:
-        with open(localconfig, encoding='utf-8') as f:
-            data = vdf.load(f)['UserLocalConfigStore']
-            apps = data.get('Software', {}).get('Valve', {}).get('Steam', {}).get('apps', {})
-            for appid_str, info in apps.items():
-                try:
-                    appid = int(appid_str)
-                    last_played = int(info.get('LastPlayed', 0))
-                    playtime = int(info.get('Playtime', 0))
-                    play_data[appid] = (last_played, playtime)
-                except (ValueError, TypeError) as e:
-                    logger.error(f"Ошибка обработки данных для appid {appid_str}: {e}")
-    except Exception as e:
-        logger.error(f"Ошибка чтения {localconfig}: {e}")
+    with open(localconfig, encoding='utf-8') as f:
+        data = vdf.load(f)['UserLocalConfigStore']
+        apps = data.get('Software', {}).get('Valve', {}).get('Steam', {}).get('apps', {})
+        for appid_str, info in apps.items():
+            appid = int(appid_str)
+            last_played = int(info.get('LastPlayed', 0))
+            playtime = int(info.get('Playtime', 0))
+            play_data[appid] = (last_played, playtime)
     return play_data
 
 def get_steam_installed_games():
@@ -131,21 +114,18 @@ def get_steam_installed_games():
         if not steamapps.exists():
             continue
         for manifest in steamapps.glob("appmanifest_*.acf"):
-            try:
-                with open(manifest, encoding='utf-8') as f:
-                    app = vdf.load(f)['AppState']
-                appid = int(app.get('appid', 0))
-                if appid in blacklist_appids:
-                    continue
-                last_played, playtime = play_data.get(appid, (0, 0))
-                games.append((
-                    app.get('name', f"Unknown ({appid})"),
-                    appid,
-                    last_played,
-                    playtime * 60  # Конвертируем минуты в секунды
-                ))
-            except Exception as e:
-                logger.error(f"Ошибка в {manifest.name}: {e}")
+            with open(manifest, encoding='utf-8') as f:
+                app = vdf.load(f)['AppState']
+            appid = int(app.get('appid', 0))
+            if appid in blacklist_appids:
+                continue
+            last_played, playtime = play_data.get(appid, (0, 0))
+            games.append((
+                app.get('name', f"Unknown ({appid})"),
+                appid,
+                last_played,
+                playtime * 60  # Конвертируем минуты в секунды
+            ))
     return games
 
 def normalize_name(s):
@@ -213,18 +193,19 @@ def remove_duplicates(candidates):
 
 @functools.lru_cache(maxsize=256)
 def get_exiftool_data(game_exe):
-    """Получает метаданные через exiftool."""
-    try:
-        proc = subprocess.run(
-            ["exiftool", "-j", game_exe],
-            capture_output=True,
-            text=True,
-            check=True
-        )
-        meta_data_list = orjson.loads(proc.stdout.encode("utf-8"))
-        return meta_data_list[0] if meta_data_list else {}
-    except Exception:
+    """Получает метаданные через exiftool"""
+    proc = subprocess.run(
+        ["exiftool", "-j", game_exe],
+        capture_output=True,
+        text=True,
+        check=False
+    )
+    if proc.returncode != 0:
+        logger.error(f"exiftool error for {game_exe}: {proc.stderr.strip()}")
         return {}
+    meta_data_list = orjson.loads(proc.stdout.encode("utf-8"))
+    return meta_data_list[0] if meta_data_list else {}
+
 
 def load_steam_apps(session):
     """
@@ -238,32 +219,22 @@ def load_steam_apps(session):
         if time.time() - os.path.getmtime(cache_file) < CACHE_DURATION:
             cache_valid = True
     if cache_valid:
-        try:
-            with open(cache_file, "rb") as f:
-                steam_apps = orjson.loads(f.read())
-            logger.info("Загружен кэш Steam приложений с %d записями", len(steam_apps))
-            return steam_apps
-        except Exception as e:
-            logger.error("Ошибка загрузки кэша приложений: %s", e)
+        with open(cache_file, "rb") as f:
+            steam_apps = orjson.loads(f.read())
+        logger.info("Загружен кэш Steam приложений с %d записями", len(steam_apps))
+        return steam_apps
     app_list_url = "https://raw.githubusercontent.com/BlackSnaker/PortProtonQt/refs/heads/main/data/games_appid_min.json"
-    try:
-        response = session.get(app_list_url, timeout=5)
-        if response.status_code == 200:
-            data = response.json()
-            if isinstance(data, dict):
-                steam_apps = data.get("applist", {}).get("apps", [])
-            else:
-                steam_apps = data
-            try:
-                with open(cache_file, "wb") as f:
-                    f.write(orjson.dumps(steam_apps))
-                logger.info("Кэш Steam приложений сохранён с %d записями", len(steam_apps))
-            except Exception as e:
-                logger.error("Ошибка сохранения кэша приложений: %s", e)
+    response = session.get(app_list_url, timeout=5)
+    if response.status_code == 200:
+        data = response.json()
+        if isinstance(data, dict):
+            steam_apps = data.get("applist", {}).get("apps", [])
         else:
-            steam_apps = []
-    except Exception as e:
-        logger.error("Ошибка загрузки списка приложений Steam: %s", e)
+            steam_apps = data
+        with open(cache_file, "wb") as f:
+            f.write(orjson.dumps(steam_apps))
+        logger.info("Кэш Steam приложений сохранён с %d записями", len(steam_apps))
+    else:
         steam_apps = []
     return steam_apps
 
@@ -308,22 +279,16 @@ def load_app_details(app_id):
     cache_file = os.path.join(cache_dir, f"steam_app_{app_id}.json")
     if os.path.exists(cache_file):
         if time.time() - os.path.getmtime(cache_file) < CACHE_DURATION:
-            try:
-                with open(cache_file, "rb") as f:
-                    return orjson.loads(f.read())
-            except Exception as e:
-                logger.error("Ошибка загрузки кэша для appid %s: %s", app_id, e)
+            with open(cache_file, "rb") as f:
+                return orjson.loads(f.read())
     return None
 
 def save_app_details(app_id, data):
     """Сохраняет данные по appid в файл кэша."""
     cache_dir = get_cache_dir()
     cache_file = os.path.join(cache_dir, f"steam_app_{app_id}.json")
-    try:
-        with open(cache_file, "wb") as f:
-            f.write(orjson.dumps(data))
-    except Exception as e:
-        logger.error("Ошибка сохранения кэша для appid %s: %s", app_id, e)
+    with open(cache_file, "wb") as f:
+        f.write(orjson.dumps(data))
 
 @functools.lru_cache(maxsize=256)
 def fetch_app_info_cached(app_id):
@@ -334,20 +299,16 @@ def fetch_app_info_cached(app_id):
     if cached is not None:
         return cached
     url = f"https://store.steampowered.com/api/appdetails?appids={app_id}&l=russian"
-    try:
-        response = requests.get(url, timeout=5)
-        if response.status_code != 200:
-            return None
-        data = response.json()
-        details = data.get(str(app_id), {})
-        if not details.get("success"):
-            return None
-        app_data = details.get("data", {})
-        save_app_details(app_id, app_data)
-        return app_data
-    except Exception as e:
-        logger.error("Ошибка запроса данных для appid %s: %s", app_id, e)
+    response = requests.get(url, timeout=5)
+    if response.status_code != 200:
         return None
+    data = response.json()
+    details = data.get(str(app_id), {})
+    if not details.get("success"):
+        return None
+    app_data = details.get("data", {})
+    save_app_details(app_id, app_data)
+    return app_data
 
 # Глобальные переменные для кэширования Steam-приложений и их индекса
 _STEAM_APPS = None
@@ -366,17 +327,12 @@ def get_steam_apps_and_index(session):
 @functools.lru_cache(maxsize=256)
 def get_protondb_tier(appid):
     url = f"https://www.protondb.com/api/v1/reports/summaries/{appid}.json"
-    try:
-        response = requests.get(url, timeout=5)
-        if response.status_code == 200:
-            data = response.json()
-            return data.get("tier", "")
-        else:
-            logger.info("Не удалось получить данные с ProtonDB для appid %s, код ответа: %s", appid, response.status_code)
-            return ""
-    except Exception as e:
-        logger.error("Ошибка запроса данных с ProtonDB для appid %s: %s", appid, e)
-        return ""
+    response = requests.get(url, timeout=5)
+    if response.status_code == 200:
+        data = response.json()
+        return data.get("tier", "")
+    logger.info("Не удалось получить данные с ProtonDB для appid %s, код ответа: %s", appid, response.status_code)
+    return ""
 
 def get_full_steam_game_info(appid):
     """Возвращает полную информацию об игре через Steam API"""
@@ -395,12 +351,8 @@ def get_steam_game_info(desktop_name, exec_line, session):
     формируя список кандидатов, отбрасывая недопустимые, затем удаляя дубликаты,
     сортируя и выполняя поиск по списку Steam-приложений.
     """
-    try:
-        parts = shlex.split(exec_line)
-        game_exe = parts[3] if len(parts) >= 4 else exec_line
-    except Exception as e:
-        logger.error("Ошибка разбора exec_line: %s", e)
-        game_exe = exec_line
+    parts = shlex.split(exec_line)
+    game_exe = parts[3] if len(parts) >= 4 else exec_line
     exe_name = os.path.splitext(os.path.basename(game_exe))[0]
     folder_path = os.path.dirname(game_exe)
     folder_name = os.path.basename(folder_path)
@@ -408,7 +360,6 @@ def get_steam_game_info(desktop_name, exec_line, session):
         folder_path = os.path.dirname(folder_path)
         folder_name = os.path.basename(folder_path)
     logger.info("Имя папки игры: '%s'", folder_name)
-    # Формирование списка кандидатов
     candidates = []
     meta_data = get_exiftool_data(game_exe)
     product_name = meta_data.get("ProductName", "")
@@ -424,15 +375,11 @@ def get_steam_game_info(desktop_name, exec_line, session):
     if folder_name:
         candidates.append(folder_name)
     logger.info("Исходные кандидаты: %s", candidates)
-    # Сначала отбрасываем недопустимые кандидаты
     candidates = filter_candidates(candidates)
-    # Затем удаляем дубликаты, сохраняя порядок
     candidates = remove_duplicates(candidates)
     logger.info("Кандидаты после фильтрации и удаления дублей: %s", candidates)
-    # Сортируем кандидатов по количеству слов (от большего к меньшему)
     candidates_ordered = sorted(candidates, key=lambda s: len(s.split()), reverse=True)
     logger.info("Кандидаты после сортировки: %s", candidates_ordered)
-    # Используем глобальное кэширование Steam-приложений и их индекса
     _, steam_apps_index = get_steam_apps_and_index(session)
     matching_app = None
     for candidate in candidates_ordered:

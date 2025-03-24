@@ -1,5 +1,8 @@
 import os
 import configparser
+from portprotonqt.logger import get_logger
+
+logger = get_logger(__name__)
 
 # Пути к конфигурационным файлам
 CONFIG_FILE = os.path.join(
@@ -27,38 +30,30 @@ def read_config():
     """
     config_dict = {}
     if os.path.exists(CONFIG_FILE):
-        try:
-            with open(CONFIG_FILE, encoding="utf-8") as f:
-                for line in f:
-                    line = line.strip()
-                    # Пропускаем комментарии и пустые строки
-                    if not line or line.startswith("#"):
-                        continue
-                    key, sep, value = line.partition("=")
-                    if sep:
-                        config_dict[key.strip()] = value.strip()
-        except Exception as e:
-            print("Ошибка чтения конфигурационного файла:", e)
+        with open(CONFIG_FILE, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                key, sep, value = line.partition("=")
+                if sep:
+                    config_dict[key.strip()] = value.strip()
     return config_dict
 
 def read_theme_from_config():
     """
-    Читает из конфигурационного файла, какая тема указана в секции [Appearance].
-    Если чтение не удалось или параметр не задан, возвращает "standart_lite".
+    Читает из конфигурационного файла тему из секции [Appearance].
+    Если параметр не задан, возвращает "standart_lite".
     """
     cp = configparser.ConfigParser()
     if os.path.exists(CONFIG_FILE):
-        try:
-            cp.read(CONFIG_FILE, encoding="utf-8")
-            return cp.get("Appearance", "theme", fallback="standart_lite")
-        except Exception as e:
-            print("Ошибка чтения конфигурации темы:", e)
+        cp.read(CONFIG_FILE, encoding="utf-8")
+        return cp.get("Appearance", "theme", fallback="standart_lite")
     return "standart_lite"
 
 def save_theme_to_config(theme_name):
     """
-    Сохраняет имя выбранной темы в конфигурационном файле (CONFIG_FILE)
-    под секцией [Appearance].
+    Сохраняет имя выбранной темы в секции [Appearance] конфигурационного файла.
     """
     cp = configparser.ConfigParser()
     if os.path.exists(CONFIG_FILE):
@@ -66,11 +61,8 @@ def save_theme_to_config(theme_name):
     if "Appearance" not in cp:
         cp["Appearance"] = {}
     cp["Appearance"]["theme"] = theme_name
-    try:
-        with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
-            cp.write(configfile)
-    except Exception as e:
-        print("Ошибка сохранения конфигурации темы:", e)
+    with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
+        cp.write(configfile)
 
 def read_time_config():
     """
@@ -79,21 +71,16 @@ def read_time_config():
     """
     cp = configparser.ConfigParser()
     if os.path.exists(CONFIG_FILE):
-        try:
-            cp.read(CONFIG_FILE, encoding="utf-8")
-            if not cp.has_section("Time") or not cp.has_option("Time", "detail_level"):
-                save_time_config("detailed")
-                return "detailed"
-            return cp.get("Time", "detail_level", fallback="detailed").lower()
-        except Exception as e:
-            print("Ошибка чтения конфигурации времени:", e)
+        cp.read(CONFIG_FILE, encoding="utf-8")
+        if not cp.has_section("Time") or not cp.has_option("Time", "detail_level"):
+            save_time_config("detailed")
+            return "detailed"
+        return cp.get("Time", "detail_level", fallback="detailed").lower()
     return "detailed"
-
 
 def save_time_config(detail_level):
     """
     Сохраняет настройку уровня детализации времени в секции [Time] конфигурационного файла.
-    :param detail_level: Значение detail_level (например, "detailed" или "brief")
     """
     cp = configparser.ConfigParser()
     if os.path.exists(CONFIG_FILE):
@@ -101,60 +88,45 @@ def save_time_config(detail_level):
     if "Time" not in cp:
         cp["Time"] = {}
     cp["Time"]["detail_level"] = detail_level
-    try:
-        with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
-            cp.write(configfile)
-    except Exception as e:
-        print("Ошибка сохранения конфигурации времени:", e)
+    with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
+        cp.write(configfile)
 
 def read_file_content(file_path):
     """
-    Читает содержимое файла и возвращает его как строку,
-    либо None в случае ошибки.
+    Читает содержимое файла и возвращает его как строку.
     """
-    try:
-        with open(file_path, encoding="utf-8") as f:
-            return f.read().strip()
-    except Exception as e:
-        print(f"Ошибка чтения файла {file_path}: {e}")
-        return None
+    with open(file_path, encoding="utf-8") as f:
+        return f.read().strip()
 
 def get_portproton_location():
     """
     Возвращает путь к директории PortProton.
-    Если конфигурационный файл PORTPROTON_CONFIG_FILE существует и содержит путь,
+    Если файл PORTPROTON_CONFIG_FILE существует и содержит путь,
     возвращается его содержимое. Иначе используется fallback-директория.
     """
     if os.path.exists(PORTPROTON_CONFIG_FILE):
         location = read_file_content(PORTPROTON_CONFIG_FILE)
         if location:
-            print(f"Current PortProton location from config: {location}")
+            logger.info("Current PortProton location from config: %s", location)
             return location
 
     fallback_dir = os.path.join(os.path.expanduser("~"), ".var", "app", "ru.linux_gaming.PortProton")
     if os.path.isdir(fallback_dir):
-        print(f"Using fallback PortProton location from data directory: {fallback_dir}")
+        logger.info("Using fallback PortProton location from data directory: %s", fallback_dir)
         return fallback_dir
 
-    print(f"Не найден конфигурационный файл {CONFIG_FILE} и директория PortProton не существует.")
+    logger.info("Не найден конфигурационный файл %s и директория PortProton не существует.", CONFIG_FILE)
     return None
 
 def parse_desktop_entry(file_path):
     """
     Читает и парсит .desktop файл с помощью configparser.
-    Если секция [Desktop Entry] отсутствует или происходит ошибка,
-    возвращается None.
+    Если секция [Desktop Entry] отсутствует, возвращается None.
     """
     cp = configparser.ConfigParser(interpolation=None)
-    try:
-        cp.read(file_path, encoding="utf-8")
-    except Exception as e:
-        print(f"Ошибка чтения файла {file_path}: {e}")
-        return None
-
+    cp.read(file_path, encoding="utf-8")
     if "Desktop Entry" not in cp:
         return None
-
     return cp["Desktop Entry"]
 
 def load_theme_metainfo(theme_name):
@@ -179,19 +151,16 @@ def load_theme_metainfo(theme_name):
 
 def read_card_size():
     """
-    Читает из конфигурационного файла размер карточек (ширину) из секции [Cards].
+    Читает размер карточек (ширину) из секции [Cards] конфигурационного файла.
     Если параметр не задан, возвращает 250.
     """
     cp = configparser.ConfigParser()
     if os.path.exists(CONFIG_FILE):
-        try:
-            cp.read(CONFIG_FILE, encoding="utf-8")
-            if not cp.has_section("Cards") or not cp.has_option("Cards", "card_width"):
-                save_card_size("250")
-                return 250
-            return cp.getint("Cards", "card_width", fallback=250)
-        except Exception as e:
-            print("Ошибка чтения конфигурации размера карточек:", e)
+        cp.read(CONFIG_FILE, encoding="utf-8")
+        if not cp.has_section("Cards") or not cp.has_option("Cards", "card_width"):
+            save_card_size("250")
+            return 250
+        return cp.getint("Cards", "card_width", fallback=250)
     return 250
 
 def save_card_size(card_width):
@@ -204,11 +173,8 @@ def save_card_size(card_width):
     if "Cards" not in cp:
         cp["Cards"] = {}
     cp["Cards"]["card_width"] = str(card_width)
-    try:
-        with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
-            cp.write(configfile)
-    except Exception as e:
-        print("Ошибка сохранения конфигурации размера карточек:", e)
+    with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
+        cp.write(configfile)
 
 def read_sort_method():
     """
@@ -217,21 +183,16 @@ def read_sort_method():
     """
     cp = configparser.ConfigParser()
     if os.path.exists(CONFIG_FILE):
-        try:
-            cp.read(CONFIG_FILE, encoding="utf-8")
-            if not cp.has_section("Games") or not cp.has_option("Games", "sort_method"):
-                save_sort_method("last_launch")
-                return "last_launch"
-            return cp.get("Games", "sort_method", fallback="last_launch").lower()
-        except Exception as e:
-            print("Ошибка чтения параметра сортировки:", e)
+        cp.read(CONFIG_FILE, encoding="utf-8")
+        if not cp.has_section("Games") or not cp.has_option("Games", "sort_method"):
+            save_sort_method("last_launch")
+            return "last_launch"
+        return cp.get("Games", "sort_method", fallback="last_launch").lower()
     return "last_launch"
-
 
 def save_sort_method(sort_method):
     """
     Сохраняет параметр сортировки игр в секцию [Games] конфигурационного файла.
-    :param sort_method: Значение сортировки (например, "last_launch" или "playtime")
     """
     cp = configparser.ConfigParser()
     if os.path.exists(CONFIG_FILE):
@@ -239,8 +200,5 @@ def save_sort_method(sort_method):
     if "Games" not in cp:
         cp["Games"] = {}
     cp["Games"]["sort_method"] = sort_method
-    try:
-        with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
-            cp.write(configfile)
-    except Exception as e:
-        print("Ошибка сохранения параметра сортировки:", e)
+    with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
+        cp.write(configfile)
