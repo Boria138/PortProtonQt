@@ -561,6 +561,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.themeTabHeaderLayout = QtWidgets.QHBoxLayout()
 
         self.themeTabTitleLabel = QtWidgets.QLabel(_("Select Theme:"))
+        self.themeTabTitleLabel.setObjectName("tabTitle")
         self.themeTabTitleLabel.setStyleSheet(self.theme.TAB_TITLE_STYLE)
         self.themeTabHeaderLayout.addWidget(self.themeTabTitleLabel)
 
