@@ -218,7 +218,7 @@ PLAY_BUTTON_STYLE = """
         padding: 8px 16px;
         min-width: 120px;
         min-height: 40px;
-      
+
     }
     QPushButton:hover {
         background: rgba(255, 255, 255, 0.4);
@@ -238,7 +238,7 @@ DIALOG_BROWSE_BUTTON_STYLE = """
         color: #333333;
         font-size: 16px;
         padding: 5px 10px;
-       
+
     }
     QPushButton:hover {
         background: rgba(255, 255, 255, 0.4);
@@ -257,7 +257,7 @@ GAME_CARD_WINDOW_STYLE = """
             stop:0 rgba(255, 255, 255, 0.3),
             stop:1 rgba(249, 249, 249, 0.3));
         border: 1px solid rgba(255, 255, 255, 0.4);
-       
+
     }
 """
 

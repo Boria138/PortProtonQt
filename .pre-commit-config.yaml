@@ -1,6 +1,6 @@
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
-exclude: '(data/|portprotonqt/(themes|locales)/|dev-scripts/)'
+exclude: '(data/|portprotonqt/locales/|dev-scripts/|.venv/|venv/)'
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
@@ -18,3 +18,13 @@ repos:
     hooks:
       - id: ruff
         args: [ --fix ]
+
+  - repo: local
+    hooks:
+      - id: check-qss-properties
+        name: Check theme for invalid QSS properties
+        entry: python dev-scripts/check_qss_properties.py
+        language: system
+        types: [file]
+        files: \.py$
+        pass_filenames: false
