@@ -7,7 +7,6 @@ import re
 import subprocess
 from pathlib import Path
 
-import toml
 from babel.messages.frontend import CommandLineInterface
 
 # Папка с локализацией находится в папке portprotonqt/locales.
@@ -15,14 +14,7 @@ LOCALES_PATH = Path(__file__).parent.parent / "portprotonqt" / "locales"
 
 
 def _get_version() -> str:
-    """Get version string from pyproject.toml."""
-    try:
-        with (Path(__file__).parent.parent / "pyproject.toml").open(encoding="utf8") as toml_file:
-            pyproject_toml = toml.load(toml_file)
-        version = pyproject_toml["project"]["version"]
-    except Exception as e:
-        print("Could not determine version:", e)  # noqa: T201
-        version = "unknown"
+    version = "0.1.0"
     return version
 
 

@@ -70,10 +70,7 @@ exclude = [".venv", "venv", "data", "portprotonqt/themes", "dev-scripts"]
 
 [dependency-groups]
 dev = [
-    "aiohttp>=3.11.14",
-    "asyncio>=3.4.3",
     "mdformat>=0.7.22", # For locale list generate
     "pre-commit>=4.1.0",
-    "ruff>=0.9.10",
-    "toml>=0.10.2", # For get version from pyproject
+    "ruff>=0.9.10", # For get version from pyproject
 ]
