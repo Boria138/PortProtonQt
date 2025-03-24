@@ -238,6 +238,7 @@ class MainWindow(QtWidgets.QMainWindow):
         exec_line = entry.get("Exec", "")
         steam_info = {}
         game_exe = ""
+        exe_name = ""
         playtime_seconds = 0
         formatted_playtime = ""
 
