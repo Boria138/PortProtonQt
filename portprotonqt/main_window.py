@@ -232,7 +232,7 @@ class MainWindow(QtWidgets.QMainWindow):
             return None
 
         desktop_name = entry.get("Name", _("Unknown Game"))
-        if desktop_name.lower() == "portproton":
+        if desktop_name.lower() == "portproton" or desktop_name.lower() == "readme":
             return None
 
         exec_line = entry.get("Exec", "")
