@@ -47,9 +47,12 @@ def read_theme_from_config():
     """
     cp = configparser.ConfigParser()
     if os.path.exists(CONFIG_FILE):
-        cp.read(CONFIG_FILE, encoding="utf-8")
-        return cp.get("Appearance", "theme", fallback="standart_lite")
-    return "standart_lite"
+        try:
+            cp.read(CONFIG_FILE, encoding="utf-8")
+        except (configparser.DuplicateSectionError, configparser.DuplicateOptionError) as e:
+            logger.error("Ошибка в конфигурационном файле: %s", e)
+            return "standart_lite"
+    return cp.get("Appearance", "theme", fallback="standart_lite")
 
 def save_theme_to_config(theme_name):
     """
@@ -57,7 +60,10 @@ def save_theme_to_config(theme_name):
     """
     cp = configparser.ConfigParser()
     if os.path.exists(CONFIG_FILE):
-        cp.read(CONFIG_FILE, encoding="utf-8")
+        try:
+            cp.read(CONFIG_FILE, encoding="utf-8")
+        except (configparser.DuplicateSectionError, configparser.DuplicateOptionError) as e:
+            logger.error("Ошибка в конфигурационном файле: %s", e)
     if "Appearance" not in cp:
         cp["Appearance"] = {}
     cp["Appearance"]["theme"] = theme_name
@@ -71,7 +77,12 @@ def read_time_config():
     """
     cp = configparser.ConfigParser()
     if os.path.exists(CONFIG_FILE):
-        cp.read(CONFIG_FILE, encoding="utf-8")
+        try:
+            cp.read(CONFIG_FILE, encoding="utf-8")
+        except (configparser.DuplicateSectionError, configparser.DuplicateOptionError) as e:
+            logger.error("Ошибка в конфигурационном файле: %s", e)
+            save_time_config("detailed")
+            return "detailed"
         if not cp.has_section("Time") or not cp.has_option("Time", "detail_level"):
             save_time_config("detailed")
             return "detailed"
@@ -80,11 +91,14 @@ def read_time_config():
 
 def save_time_config(detail_level):
     """
-    Сохраняет настройку уровня детализации времени в секции [Time] конфигурационного файла.
+    Сохраняет настройку уровня детализации времени в секции [Time].
     """
     cp = configparser.ConfigParser()
     if os.path.exists(CONFIG_FILE):
-        cp.read(CONFIG_FILE, encoding="utf-8")
+        try:
+            cp.read(CONFIG_FILE, encoding="utf-8")
+        except (configparser.DuplicateSectionError, configparser.DuplicateOptionError) as e:
+            logger.error("Ошибка в конфигурационном файле: %s", e)
     if "Time" not in cp:
         cp["Time"] = {}
     cp["Time"]["detail_level"] = detail_level
@@ -105,17 +119,18 @@ def get_portproton_location():
     возвращается его содержимое. Иначе используется fallback-директория.
     """
     if os.path.exists(PORTPROTON_CONFIG_FILE):
-        location = read_file_content(PORTPROTON_CONFIG_FILE)
-        if location:
-            logger.info("Current PortProton location from config: %s", location)
-            return location
-
+        try:
+            location = read_file_content(PORTPROTON_CONFIG_FILE)
+            if location:
+                logger.info("Текущий путь PortProton из конфига: %s", location)
+                return location
+        except Exception as e:
+            logger.error("Ошибка чтения конфига PortProton: %s", e)
     fallback_dir = os.path.join(os.path.expanduser("~"), ".var", "app", "ru.linux_gaming.PortProton")
     if os.path.isdir(fallback_dir):
-        logger.info("Using fallback PortProton location from data directory: %s", fallback_dir)
+        logger.info("Используется fallback-директория PortProton: %s", fallback_dir)
         return fallback_dir
-
-    logger.info("Не найден конфигурационный файл %s и директория PortProton не существует.", CONFIG_FILE)
+    logger.warning("Конфиг PortProton и fallback-директория не найдены.")
     return None
 
 def parse_desktop_entry(file_path):
@@ -151,25 +166,33 @@ def load_theme_metainfo(theme_name):
 
 def read_card_size():
     """
-    Читает размер карточек (ширину) из секции [Cards] конфигурационного файла.
+    Читает размер карточек (ширину) из секции [Cards],
     Если параметр не задан, возвращает 250.
     """
     cp = configparser.ConfigParser()
     if os.path.exists(CONFIG_FILE):
-        cp.read(CONFIG_FILE, encoding="utf-8")
+        try:
+            cp.read(CONFIG_FILE, encoding="utf-8")
+        except (configparser.DuplicateSectionError, configparser.DuplicateOptionError) as e:
+            logger.error("Ошибка в конфигурационном файле: %s", e)
+            save_card_size(250)
+            return 250
         if not cp.has_section("Cards") or not cp.has_option("Cards", "card_width"):
-            save_card_size("250")
+            save_card_size(250)
             return 250
         return cp.getint("Cards", "card_width", fallback=250)
     return 250
 
 def save_card_size(card_width):
     """
-    Сохраняет размер карточек (ширину) в секцию [Cards] конфигурационного файла.
+    Сохраняет размер карточек (ширину) в секцию [Cards].
     """
     cp = configparser.ConfigParser()
     if os.path.exists(CONFIG_FILE):
-        cp.read(CONFIG_FILE, encoding="utf-8")
+        try:
+            cp.read(CONFIG_FILE, encoding="utf-8")
+        except (configparser.DuplicateSectionError, configparser.DuplicateOptionError) as e:
+            logger.error("Ошибка в конфигурационном файле: %s", e)
     if "Cards" not in cp:
         cp["Cards"] = {}
     cp["Cards"]["card_width"] = str(card_width)
@@ -178,12 +201,17 @@ def save_card_size(card_width):
 
 def read_sort_method():
     """
-    Читает параметр сортировки игр из секции [Games] конфигурационного файла.
-    Если секция или параметр отсутствуют, сохраняет и возвращает "last_launch" по умолчанию.
+    Читает метод сортировки из секции [Games].
+    Если параметр не задан, возвращает last_launch.
     """
     cp = configparser.ConfigParser()
     if os.path.exists(CONFIG_FILE):
-        cp.read(CONFIG_FILE, encoding="utf-8")
+        try:
+            cp.read(CONFIG_FILE, encoding="utf-8")
+        except (configparser.DuplicateSectionError, configparser.DuplicateOptionError) as e:
+            logger.error("Ошибка в конфигурационном файле: %s", e)
+            save_sort_method("last_launch")
+            return "last_launch"
         if not cp.has_section("Games") or not cp.has_option("Games", "sort_method"):
             save_sort_method("last_launch")
             return "last_launch"
@@ -192,11 +220,14 @@ def read_sort_method():
 
 def save_sort_method(sort_method):
     """
-    Сохраняет параметр сортировки игр в секцию [Games] конфигурационного файла.
+    Сохраняет метод сортировки в секцию [Games].
     """
     cp = configparser.ConfigParser()
     if os.path.exists(CONFIG_FILE):
-        cp.read(CONFIG_FILE, encoding="utf-8")
+        try:
+            cp.read(CONFIG_FILE, encoding="utf-8")
+        except (configparser.DuplicateSectionError, configparser.DuplicateOptionError) as e:
+            logger.error("Ошибка в конфигурационном файле: %s", e)
     if "Games" not in cp:
         cp["Games"] = {}
     cp["Games"]["sort_method"] = sort_method

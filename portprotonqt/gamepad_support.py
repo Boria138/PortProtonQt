@@ -57,14 +57,6 @@ class GamepadSupport(QtCore.QObject):
     def initGamepad(self):
         pygame.init()
         pygame.joystick.init()
-        for i in range(pygame.joystick.get_count()):
-            joystick = pygame.joystick.Joystick(i)
-            joystick.init()
-            self.joysticks.append(joystick)
-            haptic = pygame.haptic.Haptic(joystick)
-            haptic.init()
-            self.haptics.append(haptic)
-            logger.info(f"Joystick {i} haptic feedback initialized.")
 
         self.gamepad_timer = QtCore.QTimer(self.parent)
         self.gamepad_timer.timeout.connect(self.pollGamepad)

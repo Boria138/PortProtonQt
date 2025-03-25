@@ -429,7 +429,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        self.updateGameGridColumns()
+        self.sliderDebounceTimer.start()
 
     def updateGameGridColumns(self):
         if not self.games:
