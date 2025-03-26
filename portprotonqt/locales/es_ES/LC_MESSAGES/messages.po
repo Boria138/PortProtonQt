@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQT 0.1.0\n"
 "Report-Msgid-Bugs-To: olegpozitiv0102@gmail.com\n"
-"POT-Creation-Date: 2025-03-24 22:54+0500\n"
+"POT-Creation-Date: 2025-03-26 17:29+0500\n"
 "PO-Revision-Date: 2025-03-23 01:53+0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es_ES\n"
@@ -61,13 +61,13 @@ msgstr ""
 msgid "Unknown Game"
 msgstr ""
 
-msgid "Search games..."
-msgstr ""
-
 msgid "Game Library"
 msgstr ""
 
 msgid "Add Game"
+msgstr ""
+
+msgid "Find Games ..."
 msgstr ""
 
 msgid "Here you can configure automatic game installation..."

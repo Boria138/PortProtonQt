@@ -74,9 +74,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.titleLabel.setPixmap(pixmap)
         self.titleLabel.setFixedSize(pixmap.size())
         self.titleLabel.setStyleSheet(self.theme.TITLE_LABEL_STYLE)
-        # mainLayout.addWidget(self.titleLabel)
         headerLayout.addStretch()
-        headerLayout.addWidget(self.header)
         scaled_pixmap = pixmap.scaled(60, 60, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
         self.titleLabel.setPixmap(scaled_pixmap)
         self.titleLabel.setFixedSize(scaled_pixmap.size())
@@ -334,29 +332,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.stackedWidget.setCurrentIndex(index)
 
     def createSearchWidget(self):
-        # """Создаёт виджет поиска (иконка + QLineEdit)."""
-        # container = QtWidgets.QWidget()
-        # layout = QtWidgets.QHBoxLayout(container)
-        # layout.setContentsMargins(0, 0, 0, 0)
-        # layout.setSpacing(0)
-
-        # searchIconLabel = QtWidgets.QLabel()
-        # searchIconLabel.setFixedSize(30, 30)
-        # style = QtWidgets.QApplication.style()
-        # icon = style.standardIcon(QtWidgets.QStyle.SP_FileDialogContentsView)
-        # searchIconLabel.setPixmap(icon.pixmap(20, 20))
-        # searchIconLabel.setAlignment(QtCore.Qt.AlignCenter)
-
-        # searchEdit = QtWidgets.QLineEdit()
-        # searchEdit.setPlaceholderText(_("Search games..."))
-        # searchEdit.setClearButtonEnabled(True)
-        # searchEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE)
-
-        # layout.addWidget(searchIconLabel)
-        # layout.addWidget(searchEdit)
-        # layout.setStretch(1, 1)
-        # return container, searchEdit
-
         """Создаёт виджет добавить игру + поиск."""
         self.container = QtWidgets.QWidget()
         self.container.setStyleSheet(self.theme.CONTAINER_STYLE)
@@ -374,11 +349,10 @@ class MainWindow(QtWidgets.QMainWindow):
         layout.addWidget(self.addGameButton, alignment=QtCore.Qt.AlignRight)
 
         searchEdit = QtWidgets.QLineEdit()
-        searchEdit.setPlaceholderText("Поиск игр...")
+        searchEdit.setPlaceholderText(_("Find Games ..."))
         searchEdit.setClearButtonEnabled(True)
         searchEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE)
 
-        # layout.addWidget(searchIconLabel)
         layout.addWidget(searchEdit)
         layout.setStretch(1, 1)
         return self.container, searchEdit
@@ -399,15 +373,6 @@ class MainWindow(QtWidgets.QMainWindow):
         layout = QtWidgets.QVBoxLayout(self.gamesLibraryWidget)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(15)
-
-        # title = QtWidgets.QLabel(_("Game Library"))
-        # title.setStyleSheet(self.theme.INSTALLED_TAB_TITLE_STYLE)
-        # layout.addWidget(title)
-
-        # self.addGameButton = QtWidgets.QPushButton(_("Add Game"))
-        # self.addGameButton.setStyleSheet(self.theme.ADD_GAME_BUTTON_STYLE)
-        # self.addGameButton.clicked.connect(self.openAddGameDialog)
-        # layout.addWidget(self.addGameButton, alignment=QtCore.Qt.AlignLeft)
 
         searchWidget, self.searchEdit = self.createSearchWidget()
         self.searchEdit.textChanged.connect(self.filterGames)
@@ -493,7 +458,7 @@ class MainWindow(QtWidgets.QMainWindow):
             name = dialog.nameEdit.text().strip()
             desc = dialog.descEdit.toPlainText().strip()
             cover = dialog.coverEdit.text().strip()
-            self.games.append((name, desc, cover, "", "", "", _("Never"), "", "", "", "", ""))
+            self.games.append((name, desc, cover, "stub", "stub", "stub", _("Never"), "stub", "stub", "stub", "stub", "stub"))
             self.populateGamesGrid(self.games)
 
     def createAutoInstallTab(self):
@@ -800,6 +765,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if controller_support:
             cs = controller_support.lower()
+            translated_cs=""
             if cs == "full":
                 translated_cs = _("full")
             elif cs == "partial":
@@ -815,6 +781,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Определяем текущий идентификатор игры по exec_line для корректного отображения кнопки
         entry_exec_split = shlex.split(exec_line)
+        if not entry_exec_split:
+            return
+
         if entry_exec_split[0] == "env":
             file_to_check = entry_exec_split[2] if len(entry_exec_split) >= 3 else None
         elif entry_exec_split[0] == "flatpak":
