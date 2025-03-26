@@ -464,6 +464,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def createAutoInstallTab(self):
         """Вкладка 'Auto Install'."""
         self.autoInstallWidget = QtWidgets.QWidget()
+        self.autoInstallWidget.setStyleSheet(self.theme.AUTOINSTALL_WIDGET_STYLE)
         layout = QtWidgets.QVBoxLayout(self.autoInstallWidget)
         layout.setContentsMargins(20, 20, 20, 20)
 
@@ -483,6 +484,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def createEmulatorsTab(self):
         """Вкладка 'Emulators'."""
         self.emulatorsWidget = QtWidgets.QWidget()
+        self.emulatorsWidget.setStyleSheet(self.theme.EMULATORS_WIDGET_STYLE)
         layout = QtWidgets.QVBoxLayout(self.emulatorsWidget)
         layout.setContentsMargins(20, 20, 20, 20)
 
@@ -502,6 +504,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def createWineTab(self):
         """Вкладка 'Wine Settings'."""
         self.wineWidget = QtWidgets.QWidget()
+        self.wineWidget.setStyleSheet(self.theme.WINE_SETTINGS_WIDGET_STYLE)
         layout = QtWidgets.QVBoxLayout(self.wineWidget)
         layout.setContentsMargins(20, 20, 20, 20)
 
@@ -521,6 +524,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def createPortProtonTab(self):
         """Вкладка 'PortProton Settings'."""
         self.portProtonWidget = QtWidgets.QWidget()
+        self.portProtonWidget.setStyleSheet(self.theme.PORTPROTON_SETTINGS_WIDGET_STYLE)
         layout = QtWidgets.QVBoxLayout(self.portProtonWidget)
         layout.setContentsMargins(20, 20, 20, 20)
 
@@ -540,6 +544,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def createThemeTab(self):
         """Вкладка 'Themes'"""
         self.themeTabWidget = QtWidgets.QWidget()
+        self.themeTabWidget.setStyleSheet(self.theme.THEMES_WIDGET_STYLE)
         mainLayout = QtWidgets.QVBoxLayout(self.themeTabWidget)
         mainLayout.setContentsMargins(20, 20, 20, 20)
         mainLayout.setSpacing(10)

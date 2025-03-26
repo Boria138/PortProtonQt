@@ -44,14 +44,14 @@ NAV_BUTTON_STYLE = """
     }
     QPushButton:checked {
         background: rgba(0,122,255,0);
-        color: #ffffff;
+        color: #09bec8;
         font-weight: normal;
         text-decoration: underline;
         border-radius: 15px;
     }
     QPushButton:hover {
         background: none;
-        color: #ffffff;
+        color: #09bec8;
     }
 """
 
@@ -175,7 +175,7 @@ ADD_GAME_BUTTON_STYLE = """
 """
 
 # ТЕКСТОВЫЕ СТИЛИ: ЗАГОЛОВКИ И ОСНОВНОЙ КОНТЕНТ
-TAB_TITLE_STYLE = "font-family: 'Play'; font-size: 24px; color: #ffffff;"
+TAB_TITLE_STYLE = "font-family: 'Play'; font-size: 24px; color: #ffffff; background-color: none;"
 CONTENT_STYLE = "font-family: 'Play'; font-size: 16px; color: #ffffff;"
 
 # ФОН ДЛЯ ДЕТАЛЬНОЙ СТРАНИЦЫ, ЕСЛИ ОБЛОЖКА НЕ ЗАГРУЖЕНА
@@ -244,6 +244,7 @@ QComboBox {
     background-color: #2B2B2B;
     color: #ffffff;
     border: 1px solid #555555;
+    border-radius: 0px solid;
     padding: 4px;
 }
 QComboBox::drop-down {
@@ -381,6 +382,56 @@ LIBRARY_WIDGET_STYLE= """
 CONTAINER_STYLE= """
     QWidget {
         background-color: none;
+    }
+"""
+
+# AUTOINSTALL_WIDGET_STYLE
+AUTOINSTALL_WIDGET_STYLE= """
+    QWidget {
+        background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+            stop:0 rgba(55,55,55,1),
+            stop:1 rgba(24,24,24,1));
+        border-radius: 15px;
+    }
+"""
+
+# EMULATORS_WIDGET_STYLE
+EMULATORS_WIDGET_STYLE= """
+    QWidget {
+        background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+            stop:0 rgba(55,55,55,1),
+            stop:1 rgba(24,24,24,1));
+        border-radius: 15px;
+    }
+"""
+
+# WINE_SETTINGS_WIDGET_STYLE
+WINE_SETTINGS_WIDGET_STYLE= """
+    QWidget {
+        background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+            stop:0 rgba(55,55,55,1),
+            stop:1 rgba(24,24,24,1));
+        border-radius: 15px;
+    }
+"""
+
+# PORTPROTON_SETTINGS_WIDGET_STYLE
+PORTPROTON_SETTINGS_WIDGET_STYLE= """
+    QWidget {
+        background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+            stop:0 rgba(55,55,55,1),
+            stop:1 rgba(24,24,24,1));
+        border-radius: 15px;
+    }
+"""
+
+# THEMES_WIDGET_STYLE
+THEMES_WIDGET_STYLE= """
+    QWidget {
+        background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+            stop:0 rgba(55,55,55,1),
+            stop:1 rgba(24,24,24,1));
+        border-radius: 15px;
     }
 """
 
