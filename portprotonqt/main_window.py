@@ -62,11 +62,11 @@ class MainWindow(QtWidgets.QMainWindow):
         mainLayout.setContentsMargins(0, 0, 0, 0)
 
         # 1. ШАПКА (HEADER)
-        self.header = QtWidgets.QFrame()
+        self.header = QtWidgets.QWidget()
         self.header.setFixedHeight(80)
         self.header.setStyleSheet(self.theme.MAIN_WINDOW_HEADER_STYLE)
-        headerLayout = QtWidgets.QHBoxLayout(self.header)
-        headerLayout.setContentsMargins(20, 0, 20, 0)
+        headerLayout = QtWidgets.QVBoxLayout(self.header)
+        headerLayout.setContentsMargins(0, 0, 0, 0)
 
         # Текст "PortProton" слева
         self.titleLabel = QtWidgets.QLabel()
@@ -74,10 +74,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.titleLabel.setPixmap(pixmap)
         self.titleLabel.setFixedSize(pixmap.size())
         self.titleLabel.setStyleSheet(self.theme.TITLE_LABEL_STYLE)
-        headerLayout.addWidget(self.titleLabel)
+        # mainLayout.addWidget(self.titleLabel)
         headerLayout.addStretch()
-        mainLayout.addWidget(self.header)
-        scaled_pixmap = pixmap.scaled(80, 80, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
+        headerLayout.addWidget(self.header)
+        scaled_pixmap = pixmap.scaled(60, 60, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
         self.titleLabel.setPixmap(scaled_pixmap)
         self.titleLabel.setFixedSize(scaled_pixmap.size())
 
@@ -86,7 +86,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.navWidget.setStyleSheet(self.theme.NAV_WIDGET_STYLE)
         navLayout = QtWidgets.QHBoxLayout(self.navWidget)
         navLayout.setContentsMargins(10, 0, 10, 0)
-        navLayout.setSpacing(5)
+        navLayout.setSpacing(0)
+
+        navLayout.addWidget(self.titleLabel)
 
         self.tabButtons = {}
         # Список вкладок
@@ -126,7 +128,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def updateUIStyles(self):
         # Обновление логотипа
         pixmap = self.theme_manager.get_theme_logo(self.current_theme_name)
-        scaled_pixmap = pixmap.scaled(80, 80, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
+        scaled_pixmap = pixmap.scaled(60, 60, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
         self.titleLabel.setPixmap(scaled_pixmap)
         self.titleLabel.setFixedSize(scaled_pixmap.size())
         self.gamesListWidget.setStyleSheet(self.theme.LIST_WIDGET_STYLE)
@@ -332,28 +334,54 @@ class MainWindow(QtWidgets.QMainWindow):
         self.stackedWidget.setCurrentIndex(index)
 
     def createSearchWidget(self):
-        """Создаёт виджет поиска (иконка + QLineEdit)."""
-        container = QtWidgets.QWidget()
-        layout = QtWidgets.QHBoxLayout(container)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        # """Создаёт виджет поиска (иконка + QLineEdit)."""
+        # container = QtWidgets.QWidget()
+        # layout = QtWidgets.QHBoxLayout(container)
+        # layout.setContentsMargins(0, 0, 0, 0)
+        # layout.setSpacing(0)
 
-        searchIconLabel = QtWidgets.QLabel()
-        searchIconLabel.setFixedSize(30, 30)
-        style = QtWidgets.QApplication.style()
-        icon = style.standardIcon(QtWidgets.QStyle.SP_FileDialogContentsView)
-        searchIconLabel.setPixmap(icon.pixmap(20, 20))
-        searchIconLabel.setAlignment(QtCore.Qt.AlignCenter)
+        # searchIconLabel = QtWidgets.QLabel()
+        # searchIconLabel.setFixedSize(30, 30)
+        # style = QtWidgets.QApplication.style()
+        # icon = style.standardIcon(QtWidgets.QStyle.SP_FileDialogContentsView)
+        # searchIconLabel.setPixmap(icon.pixmap(20, 20))
+        # searchIconLabel.setAlignment(QtCore.Qt.AlignCenter)
+
+        # searchEdit = QtWidgets.QLineEdit()
+        # searchEdit.setPlaceholderText(_("Search games..."))
+        # searchEdit.setClearButtonEnabled(True)
+        # searchEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE)
+
+        # layout.addWidget(searchIconLabel)
+        # layout.addWidget(searchEdit)
+        # layout.setStretch(1, 1)
+        # return container, searchEdit
+
+        """Создаёт виджет добавить игру + поиск."""
+        self.container = QtWidgets.QWidget()
+        self.container.setStyleSheet(self.theme.CONTAINER_STYLE)
+        layout = QtWidgets.QHBoxLayout(self.container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(10)
+
+        title = QtWidgets.QLabel(_("Game Library"))
+        title.setStyleSheet(self.theme.INSTALLED_TAB_TITLE_STYLE)
+        layout.addWidget(title)
+
+        self.addGameButton = QtWidgets.QPushButton(_("Add Game"))
+        self.addGameButton.setStyleSheet(self.theme.ADD_GAME_BUTTON_STYLE)
+        self.addGameButton.clicked.connect(self.openAddGameDialog)
+        layout.addWidget(self.addGameButton, alignment=QtCore.Qt.AlignRight)
 
         searchEdit = QtWidgets.QLineEdit()
-        searchEdit.setPlaceholderText(_("Search games..."))
+        searchEdit.setPlaceholderText("Поиск игр...")
         searchEdit.setClearButtonEnabled(True)
         searchEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE)
 
-        layout.addWidget(searchIconLabel)
+        # layout.addWidget(searchIconLabel)
         layout.addWidget(searchEdit)
         layout.setStretch(1, 1)
-        return container, searchEdit
+        return self.container, searchEdit
 
     def filterGames(self, text):
         """Фильтрует список игр по подстроке text."""
@@ -366,19 +394,20 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def createInstalledTab(self):
         """Вкладка 'Game Library'."""
-        widget = QtWidgets.QWidget()
-        layout = QtWidgets.QVBoxLayout(widget)
+        self.gamesLibraryWidget = QtWidgets.QWidget()
+        self.gamesLibraryWidget.setStyleSheet(self.theme.LIBRARY_WIDGET_STYLE)
+        layout = QtWidgets.QVBoxLayout(self.gamesLibraryWidget)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(15)
 
-        title = QtWidgets.QLabel(_("Game Library"))
-        title.setStyleSheet(self.theme.INSTALLED_TAB_TITLE_STYLE)
-        layout.addWidget(title)
+        # title = QtWidgets.QLabel(_("Game Library"))
+        # title.setStyleSheet(self.theme.INSTALLED_TAB_TITLE_STYLE)
+        # layout.addWidget(title)
 
-        self.addGameButton = QtWidgets.QPushButton(_("Add Game"))
-        self.addGameButton.setStyleSheet(self.theme.ADD_GAME_BUTTON_STYLE)
-        self.addGameButton.clicked.connect(self.openAddGameDialog)
-        layout.addWidget(self.addGameButton, alignment=QtCore.Qt.AlignLeft)
+        # self.addGameButton = QtWidgets.QPushButton(_("Add Game"))
+        # self.addGameButton.setStyleSheet(self.theme.ADD_GAME_BUTTON_STYLE)
+        # self.addGameButton.clicked.connect(self.openAddGameDialog)
+        # layout.addWidget(self.addGameButton, alignment=QtCore.Qt.AlignLeft)
 
         searchWidget, self.searchEdit = self.createSearchWidget()
         self.searchEdit.textChanged.connect(self.filterGames)
@@ -408,6 +437,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sizeSlider.setTickPosition(QtWidgets.QSlider.TicksBelow)
         self.sizeSlider.setFixedWidth(150)
         self.sizeSlider.setToolTip(f"{self.card_width} px")
+        self.sizeSlider.setStyleSheet(self.theme.SLIDER_SIZE_STYLE)
         sliderLayout.addWidget(self.sizeSlider)
         layout.addLayout(sliderLayout)
 
@@ -425,7 +455,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sizeSlider.valueChanged.connect(lambda val: self.sliderDebounceTimer.start())
         self.sliderDebounceTimer.timeout.connect(on_slider_value_changed)
 
-        self.stackedWidget.addWidget(widget)
+        self.stackedWidget.addWidget(self.gamesLibraryWidget)
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
