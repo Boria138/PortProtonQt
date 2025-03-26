@@ -56,9 +56,9 @@ def load_theme_fonts(theme_name):
     """
     QFontDatabase.removeAllApplicationFonts()
     fonts_folder = None
-    if theme_name == "standart_lite":
+    if theme_name == "standart":
         base_dir = os.path.dirname(os.path.abspath(__file__))
-        fonts_folder = os.path.join(base_dir, "themes", "standart_lite", "fonts")
+        fonts_folder = os.path.join(base_dir, "themes", "standart", "fonts")
     else:
         for themes_dir in THEMES_DIRS:
             theme_folder = os.path.join(themes_dir, theme_name)
@@ -95,9 +95,9 @@ def load_theme_logo(theme_name):
         files = glob.glob(pattern)
         return files[0] if files else None
 
-    if theme_name == "standart_lite":
+    if theme_name == "standart":
         base_dir = os.path.dirname(os.path.abspath(__file__))
-        theme_folder = os.path.join(base_dir, "themes", "standart_lite")
+        theme_folder = os.path.join(base_dir, "themes", "standart")
         logo_path = find_logo_in_folder(theme_folder)
     else:
         for themes_dir in THEMES_DIRS:
@@ -146,8 +146,7 @@ class ThemeWrapper:
     def __getattr__(self, name):
         if hasattr(self.custom_theme, name):
             return getattr(self.custom_theme, name)
-        # Если атрибут отсутствует в кастомной теме, берём его из стандартной темы
-        import portprotonqt.themes.standart_lite.styles as default_styles
+        import portprotonqt.themes.standart.styles as default_styles
         return getattr(default_styles, name)
 
 def load_theme(theme_name):
@@ -156,8 +155,8 @@ def load_theme(theme_name):
     Если выбрана стандартная тема, импортируется оригинальный styles.py.
     Для кастомных тем возвращается обёртка, которая подставляет недостающие атрибуты.
     """
-    if theme_name == "standart_lite":
-        import portprotonqt.themes.standart_lite.styles as default_styles
+    if theme_name == "standart":
+        import portprotonqt.themes.standart.styles as default_styles
         default_styles.metainfo = load_theme_metainfo(theme_name)
         default_styles.screenshots = load_theme_screenshots(theme_name)
         return default_styles

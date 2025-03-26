@@ -1,5 +1,5 @@
 from PySide6 import QtCore, QtGui, QtWidgets
-import portprotonqt.themes.standart_lite.styles as default_styles
+import portprotonqt.themes.standart.styles as default_styles
 from portprotonqt.image_utils import load_pixmap, round_corners
 from portprotonqt.localization import _
 

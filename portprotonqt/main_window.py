@@ -4,7 +4,7 @@ import shlex
 import signal
 import subprocess
 
-import portprotonqt.themes.standart_lite.styles as default_styles
+import portprotonqt.themes.standart.styles as default_styles
 import psutil
 import requests
 

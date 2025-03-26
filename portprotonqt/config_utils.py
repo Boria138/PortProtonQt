@@ -43,7 +43,7 @@ def read_config():
 def read_theme_from_config():
     """
     Читает из конфигурационного файла тему из секции [Appearance].
-    Если параметр не задан, возвращает "standart_lite".
+    Если параметр не задан, возвращает "standart".
     """
     cp = configparser.ConfigParser()
     if os.path.exists(CONFIG_FILE):
@@ -51,8 +51,8 @@ def read_theme_from_config():
             cp.read(CONFIG_FILE, encoding="utf-8")
         except (configparser.DuplicateSectionError, configparser.DuplicateOptionError) as e:
             logger.error("Ошибка в конфигурационном файле: %s", e)
-            return "standart_lite"
-    return cp.get("Appearance", "theme", fallback="standart_lite")
+            return "standart"
+    return cp.get("Appearance", "theme", fallback="standart")
 
 def save_theme_to_config(theme_name):
     """

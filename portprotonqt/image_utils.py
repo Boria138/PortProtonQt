@@ -1,7 +1,7 @@
 import os
 import requests
 from PySide6 import QtCore, QtGui, QtWidgets
-import portprotonqt.themes.standart_lite.styles as default_styles
+import portprotonqt.themes.standart.styles as default_styles
 
 
 def load_pixmap(cover, width, height):

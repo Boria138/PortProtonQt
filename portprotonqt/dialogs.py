@@ -1,4 +1,4 @@
-import portprotonqt.themes.standart_lite.styles as default_styles
+import portprotonqt.themes.standart.styles as default_styles
 from PySide6 import QtWidgets
 
 
