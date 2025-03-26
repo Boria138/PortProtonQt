@@ -108,7 +108,6 @@ def get_steam_installed_games():
     if not steam_home:
         return games
     play_data = get_playtime_data(steam_home)
-    blacklist_appids = {1161040, 1826330, 1493710, 1070560, 1391110, 1628350}
     for lib in get_steam_libs(steam_home):
         steamapps = lib / "steamapps"
         if not steamapps.exists():
@@ -117,11 +116,15 @@ def get_steam_installed_games():
             with open(manifest, encoding='utf-8') as f:
                 app = vdf.load(f)['AppState']
             appid = int(app.get('appid', 0))
-            if appid in blacklist_appids:
+            game_name = app.get('name', f"Unknown ({appid})")
+            lower_name = game_name.lower()
+            if ("proton" in lower_name or
+                "steamworks" in lower_name or
+                "steam linux runtime" in lower_name):
                 continue
             last_played, playtime = play_data.get(appid, (0, 0))
             games.append((
-                app.get('name', f"Unknown ({appid})"),
+                game_name,
                 appid,
                 last_played,
                 playtime * 60  # Конвертируем минуты в секунды
@@ -352,7 +355,38 @@ def get_steam_game_info(desktop_name, exec_line, session):
     сортируя и выполняя поиск по списку Steam-приложений.
     """
     parts = shlex.split(exec_line)
-    game_exe = parts[3] if len(parts) >= 4 else exec_line
+    # Используем последнюю часть команды, так как она всегда корректная
+    game_exe = parts[-1] if parts else exec_line
+
+    # Если это bat-файл, открываем его и ищем путь к .exe
+    if game_exe.lower().endswith('.bat'):
+        if os.path.exists(game_exe):
+            try:
+                with open(game_exe, encoding='utf-8') as f:
+                    bat_lines = f.readlines()
+                # Проходим по строкам файла и ищем первую встречу с .exe
+                for line in bat_lines:
+                    line = line.strip()
+                    if '.exe' in line.lower():
+                        tokens = shlex.split(line)
+                        for token in tokens:
+                            if token.lower().endswith('.exe'):
+                                game_exe = token
+                                break
+                        # Если нашли корректный exe, выходим из цикла
+                        if game_exe.lower().endswith('.exe'):
+                            break
+            except Exception as e:
+                logger.error("Ошибка при обработке bat файла %s: %s", game_exe, e)
+        else:
+            logger.error("Файл bat не найден: %s", game_exe)
+
+    if not game_exe.lower().endswith('.exe'):
+        logger.error("Получен некорректный путь к исполняемому файлу: %s. Ожидается .exe", game_exe)
+        meta_data = {}
+    else:
+        meta_data = get_exiftool_data(game_exe)
+
     exe_name = os.path.splitext(os.path.basename(game_exe))[0]
     folder_path = os.path.dirname(game_exe)
     folder_name = os.path.basename(folder_path)
@@ -361,7 +395,6 @@ def get_steam_game_info(desktop_name, exec_line, session):
         folder_name = os.path.basename(folder_path)
     logger.info("Имя папки игры: '%s'", folder_name)
     candidates = []
-    meta_data = get_exiftool_data(game_exe)
     product_name = meta_data.get("ProductName", "")
     file_description = meta_data.get("FileDescription", "")
     if product_name and product_name not in ['BootstrapPackagedGame']:
