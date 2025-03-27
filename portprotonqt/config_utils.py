@@ -272,7 +272,7 @@ def save_display_filter(filter_value):
 def read_favorites():
     """
     Читает список избранных игр из секции [Favorites] конфигурационного файла.
-    Список хранится как строка с именами, разделёнными запятыми.
+    Список хранится как строка, заключённая в кавычки, с именами, разделёнными запятыми.
     Если секция или параметр отсутствуют, возвращает пустой список.
     """
     cp = configparser.ConfigParser()
@@ -283,14 +283,17 @@ def read_favorites():
             logger.error("Ошибка чтения конфига: %s", e)
             return []
         if cp.has_section("Favorites") and cp.has_option("Favorites", "games"):
-            favs = cp.get("Favorites", "games", fallback="")
+            favs = cp.get("Favorites", "games", fallback="").strip()
+            # Если строка начинается и заканчивается кавычками, удаляем их
+            if favs.startswith('"') and favs.endswith('"'):
+                favs = favs[1:-1]
             return [s.strip() for s in favs.split(",") if s.strip()]
     return []
 
 def save_favorites(favorites):
     """
     Сохраняет список избранных игр в секцию [Favorites] конфигурационного файла.
-    Список сохраняется как строка, где имена игр разделены запятыми.
+    Список сохраняется как строка, заключённая в двойные кавычки, где имена игр разделены запятыми.
     """
     cp = configparser.ConfigParser()
     if os.path.exists(CONFIG_FILE):
@@ -300,6 +303,7 @@ def save_favorites(favorites):
             logger.error("Ошибка чтения конфига: %s", e)
     if "Favorites" not in cp:
         cp["Favorites"] = {}
-    cp["Favorites"]["games"] = ", ".join(favorites)
+    fav_str = ", ".join(favorites)
+    cp["Favorites"]["games"] = f'"{fav_str}"'
     with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
         cp.write(configfile)

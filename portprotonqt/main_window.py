@@ -9,14 +9,14 @@ import psutil
 import requests
 
 from portprotonqt.dialogs import AddGameDialog
-from portprotonqt.game_card import GameCard
+from portprotonqt.game_card import GameCard, ClickableLabel
 from portprotonqt.flow_layout import FlowLayout
 from portprotonqt.gamepad_support import GamepadSupport
 from portprotonqt.image_utils import load_pixmap, round_corners, ImageCarousel
 from portprotonqt.steam_api import get_steam_game_info, get_full_steam_game_info, get_steam_installed_games
 from portprotonqt.theme_manager import ThemeManager, load_theme_screenshots
 from portprotonqt.time_utils import save_last_launch, get_last_launch, parse_playtime_file, format_playtime, get_last_launch_timestamp, format_last_launch
-from portprotonqt.config_utils import get_portproton_location, read_theme_from_config, save_theme_to_config, parse_desktop_entry, load_theme_metainfo, read_time_config, read_card_size, save_card_size, read_sort_method, read_display_filter, read_favorites
+from portprotonqt.config_utils import get_portproton_location, read_theme_from_config, save_theme_to_config, parse_desktop_entry, load_theme_metainfo, read_time_config, read_card_size, save_card_size, read_sort_method, read_display_filter, read_favorites, save_favorites
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
 
@@ -698,7 +698,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def openGameDetailPage(self, name, description, cover_path=None, appid="", exec_line="", controller_support="", last_launch="", formatted_playtime="", protondb_tier="", steam_game=""):
         detailPage = QtWidgets.QWidget()
-
         if cover_path:
             pixmap = load_pixmap(cover_path, 300, 400)
             pixmap = round_corners(pixmap, 10)
@@ -739,12 +738,28 @@ class MainWindow(QtWidgets.QMainWindow):
         coverFrame.setGraphicsEffect(shadow)
         coverLayout = QtWidgets.QVBoxLayout(coverFrame)
         coverLayout.setContentsMargins(0, 0, 0, 0)
+
         imageLabel = QtWidgets.QLabel()
         imageLabel.setFixedSize(300, 400)
         pixmap_detail = load_pixmap(cover_path, 300, 400) if cover_path else load_pixmap("", 300, 400)
         pixmap_detail = round_corners(pixmap_detail, 10)
         imageLabel.setPixmap(pixmap_detail)
         coverLayout.addWidget(imageLabel)
+
+        # Добавляем значок избранного поверх обложки в левом верхнем углу
+        favoriteLabelCover = ClickableLabel(coverFrame)
+        favoriteLabelCover.setFixedSize(*self.theme.favoriteLabelSize)
+        favoriteLabelCover.setStyleSheet(self.theme.FAVORITE_LABEL_STYLE)
+        favorites = read_favorites()
+        if name in favorites:
+            favoriteLabelCover.setText("★")
+        else:
+            favoriteLabelCover.setText("☆")
+        favoriteLabelCover.clicked.connect(lambda: self.toggleFavoriteInDetailPage(name, favoriteLabelCover))
+        # Размещаем значок: 8 пикселей от левого и верхнего края
+        favoriteLabelCover.move(8, 8)
+        favoriteLabelCover.raise_()
+
         contentFrameLayout.addWidget(coverFrame)
         detailPage._coverPixmap = pixmap_detail
 
@@ -755,6 +770,7 @@ class MainWindow(QtWidgets.QMainWindow):
         detailsLayout.setContentsMargins(20, 20, 20, 20)
         detailsLayout.setSpacing(15)
 
+        # Заголовок игры (без значка избранного)
         titleLabel = QtWidgets.QLabel(name)
         titleLabel.setStyleSheet(self.theme.DETAIL_PAGE_TITLE_STYLE)
         detailsLayout.addWidget(titleLabel)
@@ -771,17 +787,14 @@ class MainWindow(QtWidgets.QMainWindow):
 
         infoLayout = QtWidgets.QHBoxLayout()
         infoLayout.setSpacing(10)
-
         lastLaunchTitle = QtWidgets.QLabel(_("LAST LAUNCH"))
         lastLaunchTitle.setStyleSheet(self.theme.LAST_LAUNCH_TITLE_STYLE)
         lastLaunchValue = QtWidgets.QLabel(last_launch)
         lastLaunchValue.setStyleSheet(self.theme.LAST_LAUNCH_VALUE_STYLE)
-
         playTimeTitle = QtWidgets.QLabel(_("PLAY TIME"))
         playTimeTitle.setStyleSheet(self.theme.PLAY_TIME_TITLE_STYLE)
         playTimeValue = QtWidgets.QLabel(formatted_playtime)
         playTimeValue.setStyleSheet(self.theme.PLAY_TIME_VALUE_STYLE)
-
         infoLayout.addWidget(lastLaunchTitle)
         infoLayout.addWidget(lastLaunchValue)
         infoLayout.addSpacing(30)
@@ -818,7 +831,6 @@ class MainWindow(QtWidgets.QMainWindow):
             file_to_check = entry_exec_split[0]
         current_exe = os.path.basename(file_to_check) if file_to_check else None
 
-        # Если для этой игры уже запущен процесс, выставляем кнопку "✕ Stop"
         if self.target_exe is not None and current_exe == self.target_exe:
             play_text = f"✕ { _('Stop') }"
         else:
@@ -848,14 +860,25 @@ class MainWindow(QtWidgets.QMainWindow):
         detailPage.animation = animation
         animation.finished.connect(lambda: detailPage.setGraphicsEffect(None))
 
+    def toggleFavoriteInDetailPage(self, game_name, label):
+        favorites = read_favorites()
+        if game_name in favorites:
+            favorites.remove(game_name)
+            label.setText("☆")
+        else:
+            favorites.append(game_name)
+            label.setText("★")
+        save_favorites(favorites)
 
     def goBackDetailPage(self, page):
-        """Возврат из детальной страницы на вкладку 0 (Библиотека)."""
+        """Возврат из детальной страницы на вкладку 'Библиотека' с обновлением грида."""
         self.stackedWidget.setCurrentIndex(0)
         self.stackedWidget.removeWidget(page)
         page.deleteLater()
         if hasattr(self, "currentDetailPage"):
             del self.currentDetailPage
+        # Обновляем карточки библиотеки, чтобы отразить изменения избранного
+        self.updateGameGrid()
 
     def is_target_exe_running(self):
         """Проверяет, запущен ли процесс с именем self.target_exe через psutil."""
