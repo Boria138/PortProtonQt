@@ -268,3 +268,38 @@ def save_display_filter(filter_value):
     cp["Games"]["display_filter"] = filter_value
     with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
         cp.write(configfile)
+
+def read_favorites():
+    """
+    Читает список избранных игр из секции [Favorites] конфигурационного файла.
+    Список хранится как строка с именами, разделёнными запятыми.
+    Если секция или параметр отсутствуют, возвращает пустой список.
+    """
+    cp = configparser.ConfigParser()
+    if os.path.exists(CONFIG_FILE):
+        try:
+            cp.read(CONFIG_FILE, encoding="utf-8")
+        except Exception as e:
+            logger.error("Ошибка чтения конфига: %s", e)
+            return []
+        if cp.has_section("Favorites") and cp.has_option("Favorites", "games"):
+            favs = cp.get("Favorites", "games", fallback="")
+            return [s.strip() for s in favs.split(",") if s.strip()]
+    return []
+
+def save_favorites(favorites):
+    """
+    Сохраняет список избранных игр в секцию [Favorites] конфигурационного файла.
+    Список сохраняется как строка, где имена игр разделены запятыми.
+    """
+    cp = configparser.ConfigParser()
+    if os.path.exists(CONFIG_FILE):
+        try:
+            cp.read(CONFIG_FILE, encoding="utf-8")
+        except Exception as e:
+            logger.error("Ошибка чтения конфига: %s", e)
+    if "Favorites" not in cp:
+        cp["Favorites"] = {}
+    cp["Favorites"]["games"] = ", ".join(favorites)
+    with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
+        cp.write(configfile)

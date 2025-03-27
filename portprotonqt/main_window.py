@@ -16,7 +16,7 @@ from portprotonqt.image_utils import load_pixmap, round_corners, ImageCarousel
 from portprotonqt.steam_api import get_steam_game_info, get_full_steam_game_info, get_steam_installed_games
 from portprotonqt.theme_manager import ThemeManager, load_theme_screenshots
 from portprotonqt.time_utils import save_last_launch, get_last_launch, parse_playtime_file, format_playtime, get_last_launch_timestamp, format_last_launch
-from portprotonqt.config_utils import get_portproton_location, read_theme_from_config, save_theme_to_config, parse_desktop_entry, load_theme_metainfo, read_time_config, read_card_size, save_card_size, read_sort_method, read_display_filter
+from portprotonqt.config_utils import get_portproton_location, read_theme_from_config, save_theme_to_config, parse_desktop_entry, load_theme_metainfo, read_time_config, read_card_size, save_card_size, read_sort_method, read_display_filter, read_favorites
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
 
@@ -168,13 +168,10 @@ class MainWindow(QtWidgets.QMainWindow):
     def loadGames(self):
         display_filter = read_display_filter()
         if display_filter == "steam":
-            # Загружаем только игры Steam
             games = self._load_steam_games()
         elif display_filter == "portproton":
-            # Загружаем только игры PortProton
             games = self._load_portproton_games()
         else:
-            # Если фильтр "all", объединяем обе группы и удаляем дубликаты
             portproton_games = self._load_portproton_games()
             steam_games = self._load_steam_games()
             seen = set()
@@ -186,16 +183,17 @@ class MainWindow(QtWidgets.QMainWindow):
                     games.append(game)
 
         sort_method = read_sort_method()
+        favorites = read_favorites()
+
+        # Если сортировка по playtime, то сортируем по playtime_seconds (g[10])
+        # и затем по last_launch_timestamp (g[9]). Иначе – наоборот.
         if sort_method == "playtime":
-            games.sort(key=lambda g: (g[11], g[10]), reverse=True)
+            games.sort(key=lambda g: (0 if g[0] in favorites else 1, -g[10], -g[9]))
         else:
-            games.sort(key=lambda g: (g[10], g[11]), reverse=True)
+            games.sort(key=lambda g: (0 if g[0] in favorites else 1, -g[9], -g[10]))
         return games
 
-
-
     def _load_portproton_games(self):
-        # Перенос оригинальной логики загрузки .desktop файлов
         games = []
         portproton_location = get_portproton_location()
         self.portproton_location = portproton_location

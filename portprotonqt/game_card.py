@@ -2,6 +2,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 import portprotonqt.themes.standart.styles as default_styles
 from portprotonqt.image_utils import load_pixmap, round_corners
 from portprotonqt.localization import _
+from portprotonqt.config_utils import read_favorites, save_favorites  # импорт функций работы с избранным
 
 class ClickableLabel(QtWidgets.QLabel):
     clicked = QtCore.Signal()
@@ -86,6 +87,16 @@ class GameCard(QtWidgets.QFrame):
         coverLabel.setStyleSheet(self.theme.COVER_LABEL_STYLE)
         coverLayout.addWidget(coverLabel)
 
+        # Значок избранного (звёздочка) в левом верхнем углу обложки
+        self.favoriteLabel = ClickableLabel(coverWidget)
+        self.favoriteLabel.setFixedSize(24, 24)
+        self.favoriteLabel.move(8, 8)  # позиция: 8 пикселей от левого и верхнего края
+        self.favoriteLabel.clicked.connect(self.toggle_favorite)
+        # Определяем статус избранного по имени игры
+        self.is_favorite = self.name in read_favorites()
+        self.update_favorite_icon()
+        self.favoriteLabel.raise_()
+
         # ProtonDB бейдж
         tier_text = self.getProtonDBText(protondb_tier)
         self.protondbLabel = ClickableLabel(coverWidget)
@@ -156,6 +167,35 @@ class GameCard(QtWidgets.QFrame):
         url = QtCore.QUrl(f"https://www.protondb.com/app/{self.appid}")
         QtGui.QDesktopServices.openUrl(url)
 
+    def update_favorite_icon(self):
+        """
+        Обновляет отображение значка избранного.
+        Если игра избранная – отображается заполненная звезда (★),
+        иначе – пустая (☆).
+        """
+        if self.is_favorite:
+            self.favoriteLabel.setText("★")
+        else:
+            self.favoriteLabel.setText("☆")
+        self.favoriteLabel.setStyleSheet("color: gold; font-size: 18px; background: transparent;")
+
+    def toggle_favorite(self):
+        """
+        Переключает статус избранного для данной игры и сохраняет изменения в конфиге.
+        """
+        favorites = read_favorites()
+        if self.is_favorite:
+            if self.name in favorites:
+                favorites.remove(self.name)
+            self.is_favorite = False
+        else:
+            if self.name not in favorites:
+                favorites.append(self.name)
+            self.is_favorite = True
+        save_favorites(favorites)
+        self.update_favorite_icon()
+        # При необходимости можно уведомить родительский виджет об изменении порядка карточек.
+
     def getBorderWidth(self):
         return self._borderWidth
 
@@ -193,7 +233,6 @@ class GameCard(QtWidgets.QFrame):
             pen.setColor(QtGui.QColor(0, 0, 0, 0))
 
         painter.setPen(pen)
-        # Делаем углы почти прямыми, установив маленький радиус
         radius = 5
         rect = self.rect().adjusted(
             self._borderWidth / 2,
@@ -217,7 +256,6 @@ class GameCard(QtWidgets.QFrame):
     def enterEvent(self, event):
         self._hovered = True
         self.thickness_anim.stop()
-        # Отключаем слот, если он был подключён
         if self._isPulseAnimationConnected:
             self.thickness_anim.finished.disconnect(self.startPulseAnimation)
             self._isPulseAnimationConnected = False
