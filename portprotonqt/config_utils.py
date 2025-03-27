@@ -233,3 +233,38 @@ def save_sort_method(sort_method):
     cp["Games"]["sort_method"] = sort_method
     with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
         cp.write(configfile)
+
+def read_display_filter():
+    """
+    Читает параметр display_filter из секции [Games].
+    Если параметр отсутствует, сохраняет и возвращает значение "all".
+    """
+    cp = configparser.ConfigParser()
+    if os.path.exists(CONFIG_FILE):
+        try:
+            cp.read(CONFIG_FILE, encoding="utf-8")
+        except Exception as e:
+            logger.error("Ошибка чтения конфига: %s", e)
+            save_display_filter("all")
+            return "all"
+        if not cp.has_section("Games") or not cp.has_option("Games", "display_filter"):
+            save_display_filter("all")
+            return "all"
+        return cp.get("Games", "display_filter", fallback="all").lower()
+    return "all"
+
+def save_display_filter(filter_value):
+    """
+    Сохраняет параметр display_filter в секцию [Games] конфигурационного файла.
+    """
+    cp = configparser.ConfigParser()
+    if os.path.exists(CONFIG_FILE):
+        try:
+            cp.read(CONFIG_FILE, encoding="utf-8")
+        except Exception as e:
+            logger.error("Ошибка чтения конфига: %s", e)
+    if "Games" not in cp:
+        cp["Games"] = {}
+    cp["Games"]["display_filter"] = filter_value
+    with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
+        cp.write(configfile)

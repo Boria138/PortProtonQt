@@ -39,7 +39,7 @@
 - [X] Выводить данные о самом недавнем пользователе Steam, а не первом попавшемся
 - [X] Исправить склонения в детальном выводе времени, например не 3 часов назад, а 3 часа назад
 - [X] Добавить перевод через gettext [Документация](https://github.com/BlackSnaker/PortProtonQt/blob/main/portprotonqt/locales/README.md)
-- [ ] Добавить недокументированные параметры конфигурации в GUI (time detail_level, games sort_method)
+- [ ] Добавить недокументированные параметры конфигурации в GUI (time detail_level, games sort_method, games display_filter)
 - [ ] Добавить систему избранного к карточкам
 - [X] Заменить все print на logging
 - [ ] Привести все логи к одному языку
