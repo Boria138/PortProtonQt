@@ -166,32 +166,32 @@ class MainWindow(QtWidgets.QMainWindow):
             content_label.setStyleSheet(self.theme.CONTENT_STYLE)
 
     def loadGames(self):
-        portproton_games = self._load_portproton_games()
-        steam_games = self._load_steam_games()
-
-        # Объединение и удаление дубликатов
-        seen = set()
-        games = []
-        for game in portproton_games + steam_games:
-            name = game[0]
-            if name not in seen:
-                seen.add(name)
-                games.append(game)
+        display_filter = read_display_filter()
+        if display_filter == "steam":
+            # Загружаем только игры Steam
+            games = self._load_steam_games()
+        elif display_filter == "portproton":
+            # Загружаем только игры PortProton
+            games = self._load_portproton_games()
+        else:
+            # Если фильтр "all", объединяем обе группы и удаляем дубликаты
+            portproton_games = self._load_portproton_games()
+            steam_games = self._load_steam_games()
+            seen = set()
+            games = []
+            for game in portproton_games + steam_games:
+                name = game[0]
+                if name not in seen:
+                    seen.add(name)
+                    games.append(game)
 
         sort_method = read_sort_method()
         if sort_method == "playtime":
             games.sort(key=lambda g: (g[11], g[10]), reverse=True)
         else:
             games.sort(key=lambda g: (g[10], g[11]), reverse=True)
-
-        # Фильтрация по параметру display_filter
-        display_filter = read_display_filter()
-        if display_filter == "portproton":
-            games = [game for game in games if game[11] == "false"]
-        elif display_filter == "steam":
-            games = [game for game in games if game[11] == "true"]
-
         return games
+
 
 
     def _load_portproton_games(self):
