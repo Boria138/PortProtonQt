@@ -2,7 +2,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 import portprotonqt.themes.standart.styles as default_styles
 from portprotonqt.image_utils import load_pixmap, round_corners
 from portprotonqt.localization import _
-from portprotonqt.config_utils import read_favorites, save_favorites  # импорт функций работы с избранным
+from portprotonqt.config_utils import read_favorites, save_favorites
 
 class ClickableLabel(QtWidgets.QLabel):
     clicked = QtCore.Signal()
@@ -89,7 +89,7 @@ class GameCard(QtWidgets.QFrame):
 
         # Значок избранного (звёздочка) в левом верхнем углу обложки
         self.favoriteLabel = ClickableLabel(coverWidget)
-        self.favoriteLabel.setFixedSize(24, 24)
+        self.favoriteLabel.setFixedSize(*self.theme.favoriteLabelSize)
         self.favoriteLabel.move(8, 8)  # позиция: 8 пикселей от левого и верхнего края
         self.favoriteLabel.clicked.connect(self.toggle_favorite)
         # Определяем статус избранного по имени игры
@@ -177,7 +177,7 @@ class GameCard(QtWidgets.QFrame):
             self.favoriteLabel.setText("★")
         else:
             self.favoriteLabel.setText("☆")
-        self.favoriteLabel.setStyleSheet("color: gold; font-size: 18px; background: transparent;")
+        self.favoriteLabel.setStyleSheet(self.theme.FAVORITE_LABEL_STYLE)
 
     def toggle_favorite(self):
         """
@@ -194,7 +194,6 @@ class GameCard(QtWidgets.QFrame):
             self.is_favorite = True
         save_favorites(favorites)
         self.update_favorite_icon()
-        # При необходимости можно уведомить родительский виджет об изменении порядка карточек.
 
     def getBorderWidth(self):
         return self._borderWidth

@@ -368,6 +368,9 @@ PORTPROTON_SETTINGS_WIDGET_STYLE= """
         border-radius: 15px;
     }
 """
+# КОНСТАНТЫ
+favoriteLabelSize = 48, 48 # Размер контейнера для звёздочки избранного
+pixmapsScaledSize = 80, 80 # Уровень закругления обложек
 
 # THEMES_WIDGET_STYLE
 THEMES_WIDGET_STYLE= """
@@ -401,12 +404,5 @@ SLIDER_SIZE_STYLE= """
     }
 """
 
-# ФУНКЦИЯ ДЛЯ ДИНАМИЧЕСКОГО ГРАДИЕНТА (ДЕТАЛИ ИГР)
-# Функции из этой темы срабатывают всегда вне зависимости от выбранной темы, функции из других тем работают только в этих темах
-def detail_page_style(stops):
-    return f"""
-    QWidget {{
-        background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                                    {stops});
-    }}
-"""
+# Favorite Star
+FAVORITE_LABEL_STYLE = "color: gold; font-size: 32px; background: transparent;"

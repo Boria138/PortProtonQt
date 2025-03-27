@@ -1,3 +1,8 @@
+# КОНСТАНТЫ
+favoriteLabelSize = 48, 48 # Размер контейнера для звёздочки избранного
+pixmapsScaledSize = 60, 60 # Уровень закругления обложек
+
+
 # СТИЛЬ ШАПКИ ГЛАВНОГО ОКНА
 MAIN_WINDOW_HEADER_STYLE = """
     QFrame {
@@ -456,6 +461,9 @@ SLIDER_SIZE_STYLE= """
         border-radius: 9px;
     }
 """
+
+# Favorite Star
+FAVORITE_LABEL_STYLE = "color: gold; font-size: 32px; background: transparent;"
 
 # ФУНКЦИЯ ДЛЯ ДИНАМИЧЕСКОГО ГРАДИЕНТА (ДЕТАЛИ ИГР)
 # Функции из этой темы срабатывает всегда вне зависимости от выбранной темы, функции из других тем работают только в этих темах
