@@ -22,3 +22,6 @@ pyvenv.cfg
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Editors temp files
+*.kate-swp
