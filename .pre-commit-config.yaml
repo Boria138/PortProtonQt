@@ -23,7 +23,7 @@ repos:
     hooks:
       - id: check-qss-properties
         name: Check theme for invalid QSS properties
-        entry: python dev-scripts/check_qss_properties.py
+        entry: ./dev-scripts/check_qss_properties.py
         language: system
         types: [file]
         files: \.py$

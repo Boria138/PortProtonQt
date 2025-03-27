@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import argparse
 import contextlib
@@ -9,7 +9,6 @@ from pathlib import Path
 
 from babel.messages.frontend import CommandLineInterface
 
-# Папка с локализацией находится в папке portprotonqt/locales.
 LOCALES_PATH = Path(__file__).parent.parent / "portprotonqt" / "locales"
 
 

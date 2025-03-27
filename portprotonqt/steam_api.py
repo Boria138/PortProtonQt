@@ -174,13 +174,13 @@ def is_valid_candidate(candidate):
 
 def filter_candidates(candidates):
     """
-    Фильтрует список кандидатов, отбрасывая недопустимые.
+    Фильтрует список кандидатов, отбрасывая недопустимые, включая пустые строки.
     Выводит список отсеянных кандидатов и возвращает список допустимых.
     """
     valid = []
     dropped = []
     for cand in candidates:
-        if is_valid_candidate(cand):
+        if cand.strip() and is_valid_candidate(cand):
             valid.append(cand)
         else:
             dropped.append(cand)

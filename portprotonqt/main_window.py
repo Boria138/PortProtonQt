@@ -10,6 +10,7 @@ import requests
 
 from portprotonqt.dialogs import AddGameDialog
 from portprotonqt.game_card import GameCard
+from portprotonqt.flow_layout import FlowLayout
 from portprotonqt.gamepad_support import GamepadSupport
 from portprotonqt.image_utils import load_pixmap, round_corners, ImageCarousel
 from portprotonqt.steam_api import get_steam_game_info, get_full_steam_game_info, get_steam_installed_games
@@ -75,7 +76,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.titleLabel.setFixedSize(pixmap.size())
         self.titleLabel.setStyleSheet(self.theme.TITLE_LABEL_STYLE)
         headerLayout.addStretch()
-        scaled_pixmap = pixmap.scaled(60, 60, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
+        scaled_pixmap = pixmap.scaled(60, 60, QtCore.Qt.AspectRatioMode.KeepAspectRatio,
+                                      QtCore.Qt.TransformationMode.SmoothTransformation)
         self.titleLabel.setPixmap(scaled_pixmap)
         self.titleLabel.setFixedSize(scaled_pixmap.size())
 
@@ -126,7 +128,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def updateUIStyles(self):
         # Обновление логотипа
         pixmap = self.theme_manager.get_theme_logo(self.current_theme_name)
-        scaled_pixmap = pixmap.scaled(60, 60, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
+        scaled_pixmap = pixmap.scaled(60, 60, QtCore.Qt.AspectRatioMode.KeepAspectRatio,
+                                      QtCore.Qt.TransformationMode.SmoothTransformation)
         self.titleLabel.setPixmap(scaled_pixmap)
         self.titleLabel.setFixedSize(scaled_pixmap.size())
         self.gamesListWidget.setStyleSheet(self.theme.LIST_WIDGET_STYLE)
@@ -143,7 +146,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._updateTabStyles()
 
         # Перезагрузка карточек
-        self.updateGameGridColumns()
+        self.updateGameGrid()
 
     def _updateTabStyles(self):
         # Вкладка "Библиотека"
@@ -371,7 +374,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.gamesLibraryWidget = QtWidgets.QWidget()
         self.gamesLibraryWidget.setStyleSheet(self.theme.LIBRARY_WIDGET_STYLE)
         layout = QtWidgets.QVBoxLayout(self.gamesLibraryWidget)
-        layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(15)
 
         searchWidget, self.searchEdit = self.createSearchWidget()
@@ -384,14 +386,14 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.gamesListWidget = QtWidgets.QWidget()
         self.gamesListWidget.setStyleSheet(self.theme.LIST_WIDGET_STYLE)
-        self.gamesListLayout = QtWidgets.QGridLayout(self.gamesListWidget)
-        self.gamesListLayout.setSpacing(20)
-        self.gamesListLayout.setContentsMargins(10, 10, 10, 10)
+        # Используем FlowLayout вместо QGridLayout:
+        self.gamesListLayout = FlowLayout(self.gamesListWidget)
+        self.gamesListWidget.setLayout(self.gamesListLayout)
 
         scrollArea.setWidget(self.gamesListWidget)
         layout.addWidget(scrollArea)
 
-        # Добавляем компактный ползунок в правом нижнем углу
+        # Слайдер для изменения размера карточек:
         sliderLayout = QtWidgets.QHBoxLayout()
         sliderLayout.addStretch()  # сдвигаем ползунок вправо
         self.sizeSlider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
@@ -406,7 +408,6 @@ class MainWindow(QtWidgets.QMainWindow):
         sliderLayout.addWidget(self.sizeSlider)
         layout.addLayout(sliderLayout)
 
-        # QTimer для дебаунсинга изменений слайдера (40 мс если карточки наслаиваются друг на друга увеличить число)
         self.sliderDebounceTimer = QtCore.QTimer(self)
         self.sliderDebounceTimer.setSingleShot(True)
         self.sliderDebounceTimer.setInterval(40)
@@ -415,26 +416,41 @@ class MainWindow(QtWidgets.QMainWindow):
             self.setUpdatesEnabled(False)
             self.card_width = self.sizeSlider.value()
             self.sizeSlider.setToolTip(f"{self.card_width} px")
-            self.updateGameGridColumns()
+            self.updateGameGrid()  # обновляем карточки
             self.setUpdatesEnabled(True)
         self.sizeSlider.valueChanged.connect(lambda val: self.sliderDebounceTimer.start())
         self.sliderDebounceTimer.timeout.connect(on_slider_value_changed)
 
         self.stackedWidget.addWidget(self.gamesLibraryWidget)
 
+        # Первичная отрисовка карточек:
+        self.updateGameGrid()
+
     def resizeEvent(self, event):
         super().resizeEvent(event)
         self.sliderDebounceTimer.start()
 
-    def updateGameGridColumns(self):
+    def updateGameGrid(self):
+        """Перестраивает карточки с учетом FlowLayout."""
         if not self.games:
             return
-        # Учитываем отступы
-        available_width = self.stackedWidget.width() - 40
-        spacing = self.gamesListLayout.spacing() or 20
-        # Вычисляем число колонок на основе текущего значения self.card_width
+        self.clearLayout(self.gamesListLayout)
+        # Получаем доступную ширину виджета (без внутренних отступов)
+        available_width = self.gamesListWidget.width() -40  # можно скорректировать отступы
+        spacing = self.gamesListLayout.spacing()
+        # Определяем количество карточек, которые должны поместиться (минимальная ширина задаётся слайдером)
         columns = max(1, available_width // (self.card_width + spacing))
-        self.populateGamesGrid(self.games, columns=columns)
+        # Пересчитываем оптимальную ширину карточки так, чтобы карточки заполнили всю строку равномерно
+        new_card_width = (available_width - (columns - 1) * spacing) // columns
+
+        for game_data in self.games:
+            card = GameCard(*game_data,
+                            select_callback=self.openGameDetailPage,
+                            theme=self.theme,
+                            card_width=new_card_width)
+            self.gamesListLayout.addWidget(card)
+        self.gamesListWidget.updateGeometry()
+
 
     def populateGamesGrid(self, games_list, columns=4):
         self.clearLayout(self.gamesListLayout)
