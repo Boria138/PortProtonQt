@@ -92,6 +92,9 @@ class FullscreenDialog(QtWidgets.QDialog):
         :param theme: Объект темы для стилизации (если None, используется default_styles)
         """
         super().__init__(parent)
+        # Удаление диалога после закрытия
+        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+
         self.images = images
         self.current_index = current_index
         self.theme = theme if theme else default_styles
@@ -153,6 +156,7 @@ class FullscreenDialog(QtWidgets.QDialog):
         self.captionLabel = QtWidgets.QLabel()
         self.captionLabel.setAlignment(QtCore.Qt.AlignCenter)
         self.captionLabel.setFixedHeight(40)
+        self.captionLabel.setWordWrap(True)
         self.captionLabel.setStyleSheet(self.theme.CAPTION_LABEL_STYLE)
         self.captionLabel.setCursor(QtCore.Qt.PointingHandCursor)
         self.layout.addWidget(self.captionLabel)
@@ -161,6 +165,12 @@ class FullscreenDialog(QtWidgets.QDialog):
         """Обновляет изображение и подпись согласно текущему индексу."""
         if not self.images:
             return
+
+        # Очищаем старое содержимое
+        self.imageLabel.clear()
+        self.captionLabel.clear()
+        QtWidgets.QApplication.processEvents()
+
         pixmap, caption = self.images[self.current_index]
         # Масштабируем изображение так, чтобы оно поместилось в область фиксированного размера
         scaled_pixmap = pixmap.scaled(
@@ -172,6 +182,11 @@ class FullscreenDialog(QtWidgets.QDialog):
         self.imageLabel.setPixmap(scaled_pixmap)
         self.captionLabel.setText(caption)
         self.setWindowTitle(caption)
+
+        # Принудительная перерисовка виджетов
+        self.imageLabel.repaint()
+        self.captionLabel.repaint()
+        self.repaint()
 
     def show_prev(self):
         """Показывает предыдущее изображение."""
@@ -193,11 +208,11 @@ class FullscreenDialog(QtWidgets.QDialog):
         return super().eventFilter(obj, event)
 
     def changeEvent(self, event):
-            """Закрывает диалог при потере фокуса."""
-            if event.type() == QtCore.QEvent.ActivationChange:
-                if not self.isActiveWindow():
-                    self.close()
-            super().changeEvent(event)
+        """Закрывает диалог при потере фокуса."""
+        if event.type() == QtCore.QEvent.ActivationChange:
+            if not self.isActiveWindow():
+                self.close()
+        super().changeEvent(event)
 
     def mousePressEvent(self, event):
         """Закрывает диалог при клике на пустую область."""
