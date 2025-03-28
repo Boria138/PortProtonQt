@@ -331,14 +331,47 @@ def fetch_app_info_cached(app_id):
     save_app_details(app_id, app_data)
     return app_data
 
+def load_protondb_status(appid):
+    """Загружает закешированные данные ProtonDB для игры по appid, если они не устарели."""
+    cache_dir = get_cache_dir()
+    cache_file = os.path.join(cache_dir, f"protondb_{appid}.json")
+    if os.path.exists(cache_file):
+        if time.time() - os.path.getmtime(cache_file) < CACHE_DURATION:
+            try:
+                with open(cache_file, "rb") as f:
+                    return orjson.loads(f.read())
+            except Exception as e:
+                logger.error("Ошибка загрузки кеша ProtonDB для appid %s: %s", appid, e)
+    return None
+
+def save_protondb_status(appid, data):
+    """Сохраняет данные ProtonDB для игры по appid в файл кеша."""
+    cache_dir = get_cache_dir()
+    cache_file = os.path.join(cache_dir, f"protondb_{appid}.json")
+    try:
+        with open(cache_file, "wb") as f:
+            f.write(orjson.dumps(data))
+    except Exception as e:
+        logger.error("Ошибка сохранения кеша ProtonDB для appid %s: %s", appid, e)
+
 @functools.lru_cache(maxsize=256)
 def get_protondb_tier(appid):
+    """
+    Получает статус ProtonDB для приложения.
+    Сначала пытается загрузить данные из кеша, затем обращается к API ProtonDB и сохраняет результат в кеш.
+    """
+    cached = load_protondb_status(appid)
+    if cached is not None:
+        return cached.get("tier", "")
     url = f"https://www.protondb.com/api/v1/reports/summaries/{appid}.json"
     try:
         with get_url_with_proxy(url, timeout=5) as response:
             if response.status == 200:
                 data = orjson.loads(response.read())
-                return data.get("tier", "")
+                tier = data.get("tier", "")
+                # Сохраняем данные в кеш
+                save_protondb_status(appid, data)
+                return tier
             else:
                 logger.info("Не удалось получить данные с ProtonDB для appid %s, код ответа: %s", appid, response.status)
                 return ""
