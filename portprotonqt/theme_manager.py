@@ -4,6 +4,7 @@ import glob
 from portprotonqt.logger import get_logger
 from PySide6.QtGui import QFontDatabase, QPixmap, QPainter
 from PySide6.QtSvg import QSvgRenderer
+from PySide6.QtGui import QIcon
 from PySide6.QtCore import Qt
 
 from portprotonqt.config_utils import save_theme_to_config, load_theme_metainfo
@@ -210,3 +211,22 @@ class ThemeManager:
         save_theme_to_config(theme_name)
         logger.info(f"Тема '{theme_name}' успешно применена")
         return theme_module
+
+    def get_icon(self, icon_name):
+        """
+        Возвращает QIcon из папки icons текущей темы,
+        а если файл не найден, то из стандартной темы.
+        """
+        icon_path = None
+        # Поиск иконки в папке текущей темы
+        for themes_dir in THEMES_DIRS:
+            theme_folder = os.path.join(themes_dir, self.current_theme_name)
+            candidate = os.path.join(theme_folder, "icons", icon_name)
+            if os.path.exists(candidate):
+                icon_path = candidate
+                break
+        # Если не нашли – используем стандартную тему
+        if not icon_path:
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            icon_path = os.path.join(base_dir, "themes", "standart", "icons", icon_name)
+        return QIcon(icon_path)
