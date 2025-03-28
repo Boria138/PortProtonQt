@@ -110,11 +110,11 @@ class GameCard(QtWidgets.QFrame):
 
         # Steam бейдж
         self.steamLabel = QtWidgets.QLabel(coverWidget)
-        self.steamLabel.setText("Steam")
+        self.steamLabel.setText("   Steam")
         self.steamLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
         steam_visible = (str(steam_game).lower() == "true")
         self.steamLabel.setVisible(steam_visible)
-        self.steamLabel.adjustSize()
+        # self.steamLabel.adjustSize()
 
         # Расположение бейджей
         right_margin = 8
@@ -154,12 +154,12 @@ class GameCard(QtWidgets.QFrame):
         if not tier:
             return ""
         translations = {
-            "platinum": _("Platinum"),
-            "gold": _("Gold"),
-            "silver": _("Silver"),
-            "bronze": _("Bronze"),
-            "borked": _("Borked"),
-            "pending": _("Pending")
+            "platinum": _("✓ Platinum"),
+            "gold": _("✓ Gold"),
+            "silver": _("✓ Silver"),
+            "bronze": _("◉ Bronze"),
+            "borked": _("◉ Borked"),
+            "pending": _("◉ Pending")
         }
         return translations.get(tier.lower(), "")
 

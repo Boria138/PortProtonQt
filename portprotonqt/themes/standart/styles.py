@@ -346,19 +346,19 @@ CAPTION_LABEL_STYLE="color: white; font-size: 16px;"
 def get_protondb_badge_style(tier):
     tier = tier.lower()
     tier_colors = {
-        "platinum": {"background": "rgb(229, 228, 226)", "color": "black"},
-        "gold": {"background": "gold", "color": "black"},
-        "silver": {"background": "silver", "color": "black"},
-        "bronze": {"background": "peru", "color": "white"},
-        "borked": {"background": "red", "color": "white"},
-        "pending": {"background": "gray", "color": "white"}
+        "platinum": {"background": "rgba(255,255,255,0.9)", "color": "black"},
+        "gold": {"background": "rgba(253,185,49,0.7)", "color": "black"},
+        "silver": {"background": "rgba(169,169,169,0.8)", "color": "black"},
+        "bronze": {"background": "rgba(205,133,63,0.7)", "color": "black"},
+        "borked": {"background": "rgba(255,0,0,0.7)", "color": "black"},
+        "pending": {"background": "rgba(160,82,45,0.7)", "color": "black"}
     }
     colors = tier_colors.get(tier, {"background": "rgba(0, 0, 0, 0.5)", "color": "white"})
     return f"""
+        qproperty-alignment: AlignCenter;
         background-color: {colors["background"]};
         color: {colors["color"]};
         font-size: 16px;
-        padding: 3px 6px;
         border-radius: 5px;
         font-family: 'Play';
         font-weight: bold;
@@ -366,10 +366,10 @@ def get_protondb_badge_style(tier):
 
 # СТИЛИ БЕЙДЖА STEAM
 STEAM_BADGE_STYLE= """
-    background-color: rgba(0, 0, 0, 0.5);
+    qproperty-alignment: AlignCenter;
+    background: rgba(0, 0, 0, 0.5);
     color: white;
     font-size: 16px;
-    padding: 3px 6px;
     border-radius: 5px;
     font-family: 'Play';
     font-weight: bold;
