@@ -20,7 +20,8 @@ from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
 
 from PySide6 import QtCore, QtGui, QtWidgets
-from PySide6.QtGui import QIcon
+from PySide6.QtWidgets import QLineEdit
+from PySide6.QtGui import QIcon, QAction
 from datetime import datetime
 
 logger = get_logger(__name__)
@@ -357,6 +358,7 @@ class MainWindow(QtWidgets.QMainWindow):
         searchEdit = QtWidgets.QLineEdit()
         searchEdit.setPlaceholderText(_("Find Games ..."))
         searchEdit.setClearButtonEnabled(True)
+        searchEdit.addAction(QIcon("./portprotonqt/themes/standart/icons/search.svg"), QLineEdit.ActionPosition.LeadingPosition)
         searchEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE)
 
         layout.addWidget(searchEdit)
