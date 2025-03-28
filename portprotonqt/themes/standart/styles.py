@@ -169,13 +169,10 @@ ADD_GAME_BUTTON_STYLE = """
         padding: 8px 16px;
     }
     QPushButton:hover {
-        background: #ffffff;
-        color: #000000;
+        background: #09bec8;
     }
     QPushButton:pressed {
-        background: #ffffff;
-        color: #000000;
-        border: 0px solid rgba(255, 255, 255, 0.25);
+        background: #09bec8;
     }
 """
 
@@ -198,13 +195,10 @@ BACK_BUTTON_STYLE = """
         padding: 8px 16px;
     }
     QPushButton:hover {
-        background: #ffffff;
-        color: #000000;
+        background: #09bec8;
     }
     QPushButton:pressed {
-        background: #ffffff;
-        color: #000000;
-        border: 0px solid rgba(255, 255, 255, 0.25);
+        background: #09bec8;
     }
 """
 
@@ -271,7 +265,7 @@ PLAY_BUTTON_STYLE = """
         background: rgba(20, 20, 20, 0.40);
         border: 0px solid rgba(255, 255, 255, 0.20);
         border-radius: 15px;
-        font-size: 16px;
+        font-size: 18px;
         color: #ffffff;
         font-weight: bold;
         font-family: 'Play';
@@ -280,13 +274,10 @@ PLAY_BUTTON_STYLE = """
         min-height: 40px;
     }
     QPushButton:hover {
-        background: #ffffff;
-        color: #000000;
+        background: #09bec8;
     }
     QPushButton:pressed {
-        background: #ffffff;
-        color: #000000;
-        border: 0px solid rgba(255, 255, 255, 0.25);
+        background: #09bec8;
     }
 """
 

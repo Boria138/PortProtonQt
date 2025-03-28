@@ -20,6 +20,7 @@ from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
 
 from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6.QtGui import QIcon
 from datetime import datetime
 
 logger = get_logger(__name__)
@@ -348,7 +349,7 @@ class MainWindow(QtWidgets.QMainWindow):
         title.setStyleSheet(self.theme.INSTALLED_TAB_TITLE_STYLE)
         layout.addWidget(title)
 
-        self.addGameButton = QtWidgets.QPushButton(_("Add Game"))
+        self.addGameButton = QtWidgets.QPushButton(_("Add Game"), icon=QIcon("./portprotonqt/themes/standart/icons/addgame.svg"))
         self.addGameButton.setStyleSheet(self.theme.ADD_GAME_BUTTON_STYLE)
         self.addGameButton.clicked.connect(self.openAddGameDialog)
         layout.addWidget(self.addGameButton, alignment=QtCore.Qt.AlignRight)
@@ -599,7 +600,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.themeMetainfoLabel.setWordWrap(True)
         self.themeInfoLayout.addWidget(self.themeMetainfoLabel)
 
-        self.applyButton = QtWidgets.QPushButton(_("Apply Theme"))
+        self.applyButton = QtWidgets.QPushButton(_("Apply Theme"), icon=QIcon("./portprotonqt/themes/standart/icons/update.svg"))
         self.applyButton.setStyleSheet(self.theme.ADD_GAME_BUTTON_STYLE)
         self.themeInfoLayout.addWidget(self.applyButton)
 
@@ -711,7 +712,7 @@ class MainWindow(QtWidgets.QMainWindow):
         mainLayout.setContentsMargins(30, 30, 30, 30)
         mainLayout.setSpacing(20)
 
-        backButton = QtWidgets.QPushButton(_("Back"))
+        backButton = QtWidgets.QPushButton(_(" Back"), icon=QIcon("./portprotonqt/themes/standart/icons/back.svg"))
         backButton.setFixedWidth(100)
         backButton.setStyleSheet(self.theme.BACK_BUTTON_STYLE)
         backButton.clicked.connect(lambda: self.goBackDetailPage(detailPage))
@@ -828,12 +829,17 @@ class MainWindow(QtWidgets.QMainWindow):
             file_to_check = entry_exec_split[0]
         current_exe = os.path.basename(file_to_check) if file_to_check else None
 
-        if self.target_exe is not None and current_exe == self.target_exe:
-            play_text = f"✕ { _('Stop') }"
-        else:
-            play_text = f"▷ { _('Play') }"
+        # if self.target_exe is not None and current_exe == self.target_exe:
+        #     play_text = f"✕ { _('Stop') }"
+        # else:
+        #     play_text = f"▷ { _('Play') }"
 
-        playButton = QtWidgets.QPushButton(play_text)
+        if self.target_exe is not None and current_exe == self.target_exe:
+            playButton = QtWidgets.QPushButton(f" { _('Stop') }", icon=QIcon("./portprotonqt/themes/standart/icons/stop.svg"))
+        else:
+            playButton = QtWidgets.QPushButton(f" { _('Play') }", icon=QIcon("./portprotonqt/themes/standart/icons/play.svg"))
+
+        # playButton = QtWidgets.QPushButton(play_text)
         playButton.setFixedSize(120, 40)
         playButton.setStyleSheet(self.theme.PLAY_BUTTON_STYLE)
         playButton.clicked.connect(lambda: self.toggleGame(exec_line, name, playButton))
@@ -965,7 +971,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 self._typewriter_timer = None
             self.statusBar().showMessage(_("Game stopped"), 2000)
             QtCore.QTimer.singleShot(1500, self.clearGameStatus)
-            button.setText(f"▷ { _('Play') }")
+            # button.setText(f"▷ { _('Play') }")
+            button.setText(f" { _('Play') }")
+            button.setIcon(QIcon("./portprotonqt/themes/standart/icons/play.svg"))
             if hasattr(self, 'checkProcessTimer') and self.checkProcessTimer is not None:
                 self.checkProcessTimer.stop()
                 self.checkProcessTimer.deleteLater()
@@ -986,7 +994,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.checkProcessTimer = QtCore.QTimer(self)
             self.checkProcessTimer.timeout.connect(self.checkTargetExe)
             self.checkProcessTimer.start(500)
-            button.setText(f"✕ { _('Stop') }")
+            # button.setText(f"✕ { _('Stop') }")
+            button.setText(f" { _('Stop') }")
+            button.setIcon(QIcon("./portprotonqt/themes/standart/icons/stop.svg"))
 
     def closeEvent(self, event):
         for proc in self.game_processes:
