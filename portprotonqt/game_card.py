@@ -102,7 +102,7 @@ class GameCard(QtWidgets.QFrame):
         self.protondbLabel = ClickableLabel(coverWidget)
         if tier_text:
             self.protondbLabel.setText(tier_text)
-            self.protondbLabel.setStyleSheet(self.theme.PROTONDB_BADGE_STYLE)
+            self.protondbLabel.setStyleSheet(self.theme.get_protondb_badge_style(protondb_tier))
             protondb_visible = True
         else:
             self.protondbLabel.setVisible(False)

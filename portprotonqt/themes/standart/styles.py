@@ -343,15 +343,26 @@ NEXT_BUTTON_STYLE="background-color: rgba(0, 0, 0, 0.5); color: white; border: n
 CAPTION_LABEL_STYLE="color: white; font-size: 16px;"
 
 # СТИЛИ БЕЙДЖА PROTONDB НА КАРТОЧКЕ
-PROTONDB_BADGE_STYLE= """
-    background-color: rgba(0, 0, 0, 0.5);
-    color: white;
-    font-size: 16px;
-    padding: 3px 6px;
-    border-radius: 5px;
-    font-family: 'Play';
-    font-weight: bold;
-"""
+def get_protondb_badge_style(tier):
+    tier = tier.lower()
+    tier_colors = {
+        "platinum": {"background": "rgb(229, 228, 226)", "color": "black"},
+        "gold": {"background": "gold", "color": "black"},
+        "silver": {"background": "silver", "color": "black"},
+        "bronze": {"background": "peru", "color": "white"},
+        "borked": {"background": "red", "color": "white"},
+        "pending": {"background": "gray", "color": "white"}
+    }
+    colors = tier_colors.get(tier, {"background": "rgba(0, 0, 0, 0.5)", "color": "white"})
+    return f"""
+        background-color: {colors["background"]};
+        color: {colors["color"]};
+        font-size: 16px;
+        padding: 3px 6px;
+        border-radius: 5px;
+        font-family: 'Play';
+        font-weight: bold;
+    """
 
 # СТИЛИ БЕЙДЖА STEAM
 STEAM_BADGE_STYLE= """
