@@ -14,6 +14,9 @@ pyvenv.cfg
 # Ruff
 .ruff_cache
 
+# MyPy
+.mypy_cache
+
 # MacOS generated files
 .DS_Store
 .DS_Store?

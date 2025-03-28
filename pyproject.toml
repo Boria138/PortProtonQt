@@ -33,7 +33,6 @@ dependencies = [
   "psutil>=7.0.0",
   "pygame>=2.6.1",
   "pyside6>=6.8.2.1",
-  "requests>=2.32.3",
   "vdf>=3.4",
 ]
 

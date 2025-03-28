@@ -307,3 +307,48 @@ def save_favorites(favorites):
     cp["Favorites"]["games"] = f'"{fav_str}"'
     with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
         cp.write(configfile)
+
+def ensure_default_proxy_config():
+    """
+    Проверяет наличие секции [Proxy] в конфигурационном файле.
+    Если секция отсутствует, создаёт её с пустыми значениями.
+    """
+    cp = configparser.ConfigParser()
+    if os.path.exists(CONFIG_FILE):
+        try:
+            cp.read(CONFIG_FILE, encoding="utf-8")
+        except Exception as e:
+            logger.error("Ошибка чтения конфигурационного файла: %s", e)
+            return
+        if not cp.has_section("Proxy"):
+            cp.add_section("Proxy")
+            cp["Proxy"]["proxy_url"] = ""
+            cp["Proxy"]["proxy_user"] = ""
+            cp["Proxy"]["proxy_password"] = ""
+            with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
+                cp.write(configfile)
+
+
+def read_proxy_config():
+    """
+    Читает настройки прокси из секции [Proxy] конфигурационного файла.
+    Если параметр proxy_url не задан или пустой, возвращает пустой словарь.
+    """
+    ensure_default_proxy_config()
+    cp = configparser.ConfigParser()
+    try:
+        cp.read(CONFIG_FILE, encoding="utf-8")
+    except Exception as e:
+        logger.error("Ошибка чтения конфигурационного файла: %s", e)
+        return {}
+
+    proxy_url = cp.get("Proxy", "proxy_url", fallback="").strip()
+    if proxy_url:
+        # Если указаны логин и пароль, добавляем их к URL
+        proxy_user = cp.get("Proxy", "proxy_user", fallback="").strip()
+        proxy_password = cp.get("Proxy", "proxy_password", fallback="").strip()
+        if "://" in proxy_url and "@" not in proxy_url and proxy_user and proxy_password:
+            protocol, rest = proxy_url.split("://", 1)
+            proxy_url = f"{protocol}://{proxy_user}:{proxy_password}@{rest}"
+        return {"http": proxy_url, "https": proxy_url}
+    return {}

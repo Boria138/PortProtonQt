@@ -3,18 +3,33 @@ import os
 import shlex
 import subprocess
 import time
+import urllib.request
 
 import orjson
-import requests
+import vdf
 
 from pathlib import Path
-import vdf
 from portprotonqt.logger import get_logger
+from portprotonqt.config_utils import read_proxy_config
 
 logger = get_logger(__name__)
 
 # Время жизни кэша – 30 дней (можно вынести в настройки)
 CACHE_DURATION = 30 * 24 * 60 * 60
+
+PROXY_SETTINGS = read_proxy_config()
+
+def get_url_with_proxy(url, timeout=5):
+    """
+    Осуществляет запрос по URL с использованием прокси, если он задан.
+    """
+    if PROXY_SETTINGS:
+        proxy_handler = urllib.request.ProxyHandler(PROXY_SETTINGS)
+        opener = urllib.request.build_opener(proxy_handler)
+    else:
+        opener = urllib.request.build_opener()
+    req = urllib.request.Request(url)
+    return opener.open(req, timeout=timeout)
 
 def get_cache_dir():
     """Возвращает путь к каталогу кэша, создаёт его при необходимости."""
@@ -174,8 +189,7 @@ def is_valid_candidate(candidate):
 
 def filter_candidates(candidates):
     """
-    Фильтрует список кандидатов, отбрасывая недопустимые, включая пустые строки.
-    Выводит список отсеянных кандидатов и возвращает список допустимых.
+    Фильтрует список кандидатов, отбрасывая недопустимые.
     """
     valid = []
     dropped = []
@@ -209,10 +223,9 @@ def get_exiftool_data(game_exe):
     meta_data_list = orjson.loads(proc.stdout.encode("utf-8"))
     return meta_data_list[0] if meta_data_list else {}
 
-
-def load_steam_apps(session):
+def load_steam_apps():
     """
-    Загружает список приложений Steam с использованием кэша (30 дней).
+    Загружает список приложений Steam с использованием кэша (30 дней)
     """
     cache_dir = get_cache_dir()
     cache_file = os.path.join(cache_dir, "steam_apps.json")
@@ -227,17 +240,21 @@ def load_steam_apps(session):
         logger.info("Загружен кэш Steam приложений с %d записями", len(steam_apps))
         return steam_apps
     app_list_url = "https://raw.githubusercontent.com/BlackSnaker/PortProtonQt/refs/heads/main/data/games_appid_min.json"
-    response = session.get(app_list_url, timeout=5)
-    if response.status_code == 200:
-        data = response.json()
-        if isinstance(data, dict):
-            steam_apps = data.get("applist", {}).get("apps", [])
-        else:
-            steam_apps = data
-        with open(cache_file, "wb") as f:
-            f.write(orjson.dumps(steam_apps))
-        logger.info("Кэш Steam приложений сохранён с %d записями", len(steam_apps))
-    else:
+    try:
+        with get_url_with_proxy(app_list_url, timeout=5) as response:
+            if response.status == 200:
+                data = orjson.loads(response.read())
+                if isinstance(data, dict):
+                    steam_apps = data.get("applist", {}).get("apps", [])
+                else:
+                    steam_apps = data
+                with open(cache_file, "wb") as f:
+                    f.write(orjson.dumps(steam_apps))
+                logger.info("Кэш Steam приложений сохранён с %d записями", len(steam_apps))
+            else:
+                steam_apps = []
+    except Exception as e:
+        logger.error("Ошибка загрузки списка Steam приложений: %s", e)
         steam_apps = []
     return steam_apps
 
@@ -267,12 +284,9 @@ def search_app(candidate, steam_apps_index):
         if candidate_norm in name_norm:
             ratio = len(candidate_norm) / len(name_norm)
             if ratio > 0.8:
-                logger.info("    Найдено частичное совпадение с достаточной схожестью: кандидат '%s' в '%s' (ratio: %.2f)",
+                logger.info("    Найдено частичное совпадение: кандидат '%s' в '%s' (ratio: %.2f)",
                             candidate_norm, name_norm, ratio)
                 return app
-            else:
-                logger.info("    Частичное совпадение, но соотношение длин недостаточно: кандидат '%s' в '%s' (ratio: %.2f)",
-                            candidate_norm, name_norm, ratio)
     logger.info("    Приложение для кандидата '%s' не найдено", candidate_norm)
     return None
 
@@ -296,16 +310,20 @@ def save_app_details(app_id, data):
 @functools.lru_cache(maxsize=256)
 def fetch_app_info_cached(app_id):
     """
-    Получает подробную информацию об игре через Steam API с использованием кэша.
+    Получает подробную информацию об игре через Steam API
     """
     cached = load_app_details(app_id)
     if cached is not None:
         return cached
     url = f"https://store.steampowered.com/api/appdetails?appids={app_id}&l=russian"
-    response = requests.get(url, timeout=5)
-    if response.status_code != 200:
+    try:
+        with get_url_with_proxy(url, timeout=5) as response:
+            if response.status != 200:
+                return None
+            data = orjson.loads(response.read())
+    except Exception as e:
+        logger.error("Ошибка при получении информации об игре: %s", e)
         return None
-    data = response.json()
     details = data.get(str(app_id), {})
     if not details.get("success"):
         return None
@@ -313,49 +331,55 @@ def fetch_app_info_cached(app_id):
     save_app_details(app_id, app_data)
     return app_data
 
+@functools.lru_cache(maxsize=256)
+def get_protondb_tier(appid):
+    url = f"https://www.protondb.com/api/v1/reports/summaries/{appid}.json"
+    try:
+        with get_url_with_proxy(url, timeout=5) as response:
+            if response.status == 200:
+                data = orjson.loads(response.read())
+                return data.get("tier", "")
+            else:
+                logger.info("Не удалось получить данные с ProtonDB для appid %s, код ответа: %s", appid, response.status)
+                return ""
+    except Exception as e:
+        logger.info("Не удалось получить данные с ProtonDB для appid %s, ошибка: %s", appid, e)
+        return ""
+
 # Глобальные переменные для кэширования Steam-приложений и их индекса
 _STEAM_APPS = None
 _STEAM_APPS_INDEX = None
 
-def get_steam_apps_and_index(session):
+def get_steam_apps_and_index():
     """
     Загружает и кэширует список приложений Steam и построенный индекс.
     """
     global _STEAM_APPS, _STEAM_APPS_INDEX
     if _STEAM_APPS is None or _STEAM_APPS_INDEX is None:
-        _STEAM_APPS = load_steam_apps(session)
+        _STEAM_APPS = load_steam_apps()
         _STEAM_APPS_INDEX = build_index(_STEAM_APPS)
     return _STEAM_APPS, _STEAM_APPS_INDEX
-
-@functools.lru_cache(maxsize=256)
-def get_protondb_tier(appid):
-    url = f"https://www.protondb.com/api/v1/reports/summaries/{appid}.json"
-    response = requests.get(url, timeout=5)
-    if response.status_code == 200:
-        data = response.json()
-        return data.get("tier", "")
-    logger.info("Не удалось получить данные с ProtonDB для appid %s, код ответа: %s", appid, response.status_code)
-    return ""
 
 def get_full_steam_game_info(appid):
     """Возвращает полную информацию об игре через Steam API"""
     app_info = fetch_app_info_cached(appid)
+    if not app_info:
+        return {}
     return {
         'description': app_info.get('short_description', ''),
         'controller_support': app_info.get('controller_support', ''),
         'cover': f"https://steamcdn-a.akamaihd.net/steam/apps/{appid}/library_600x900_2x.jpg",
         'protondb_tier': get_protondb_tier(appid),
         "steam_game": "true"
-    } if app_info else {}
+    }
 
-def get_steam_game_info(desktop_name, exec_line, session):
+def get_steam_game_info(desktop_name, exec_line):
     """
     Определяет информацию об игре по exec_line, используя метаданные файла,
     формируя список кандидатов, отбрасывая недопустимые, затем удаляя дубликаты,
     сортируя и выполняя поиск по списку Steam-приложений.
     """
     parts = shlex.split(exec_line)
-    # Используем последнюю часть команды, так как она всегда корректная
     game_exe = parts[-1] if parts else exec_line
 
     # Если это bat-файл, открываем его и ищем путь к .exe
@@ -364,7 +388,6 @@ def get_steam_game_info(desktop_name, exec_line, session):
             try:
                 with open(game_exe, encoding='utf-8') as f:
                     bat_lines = f.readlines()
-                # Проходим по строкам файла и ищем первую встречу с .exe
                 for line in bat_lines:
                     line = line.strip()
                     if '.exe' in line.lower():
@@ -373,7 +396,6 @@ def get_steam_game_info(desktop_name, exec_line, session):
                             if token.lower().endswith('.exe'):
                                 game_exe = token
                                 break
-                        # Если нашли корректный exe, выходим из цикла
                         if game_exe.lower().endswith('.exe'):
                             break
             except Exception as e:
@@ -410,10 +432,9 @@ def get_steam_game_info(desktop_name, exec_line, session):
     logger.info("Исходные кандидаты: %s", candidates)
     candidates = filter_candidates(candidates)
     candidates = remove_duplicates(candidates)
-    logger.info("Кандидаты после фильтрации и удаления дублей: %s", candidates)
     candidates_ordered = sorted(candidates, key=lambda s: len(s.split()), reverse=True)
     logger.info("Кандидаты после сортировки: %s", candidates_ordered)
-    _, steam_apps_index = get_steam_apps_and_index(session)
+    _, steam_apps_index = get_steam_apps_and_index()
     matching_app = None
     for candidate in candidates_ordered:
         if not candidate:

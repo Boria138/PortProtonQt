@@ -6,7 +6,6 @@ import subprocess
 
 import portprotonqt.themes.standart.styles as default_styles
 import psutil
-import requests
 
 from portprotonqt.dialogs import AddGameDialog
 from portprotonqt.game_card import GameCard, ClickableLabel
@@ -47,7 +46,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.resize(1280, 720)
         self.setMinimumSize(800, 600)
 
-        self.requests_session = requests.Session()
         self.games = self.loadGames()
         self.game_processes = []
         self.target_exe = None
@@ -258,7 +256,6 @@ class MainWindow(QtWidgets.QMainWindow):
             steam_info = get_steam_game_info(
                 desktop_name,
                 exec_line,
-                self.requests_session
             )
 
         # Получение пользовательских данных

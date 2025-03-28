@@ -1,8 +1,8 @@
 import os
-import requests
+import urllib.request
 from PySide6 import QtCore, QtGui, QtWidgets
 import portprotonqt.themes.standart.styles as default_styles
-
+from portprotonqt.config_utils import read_proxy_config
 
 def load_pixmap(cover, width, height):
     """
@@ -22,6 +22,7 @@ def load_pixmap(cover, width, height):
                 if idx + 1 < len(parts):
                     appid = parts[idx + 1]
             if appid:
+                # формирование пути к локальному кэшу
                 xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
                 image_folder = os.path.join(xdg_cache_home, "PortProtonQT", "images")
                 os.makedirs(image_folder, exist_ok=True)
@@ -29,13 +30,24 @@ def load_pixmap(cover, width, height):
                 if os.path.exists(local_path):
                     pixmap.load(local_path)
                 else:
-                    response = requests.get(cover)
-                    if response.status_code == 200:
-                        with open(local_path, "wb") as f:
-                            f.write(response.content)
-                        pixmap.load(local_path)
+                    try:
+                        # Если указан proxy – используем его
+                        proxy = read_proxy_config()
+                        if proxy:
+                            proxy_handler = urllib.request.ProxyHandler({'http': proxy, 'https': proxy})
+                            opener = urllib.request.build_opener(proxy_handler)
+                            response = opener.open(cover, timeout=5)
+                        else:
+                            response = urllib.request.urlopen(cover, timeout=5)
+                        if response.status == 200:
+                            content = response.read()
+                            with open(local_path, "wb") as f:
+                                f.write(content)
+                            pixmap.load(local_path)
+                    except Exception as e:
+                        print("Ошибка загрузки обложки из Steam CDN:", e)
         except Exception as e:
-            print("Ошибка загрузки обложки из Steam CDN:", e)
+            print("Ошибка обработки URL:", e)
 
     elif QtCore.QFile.exists(cover):
         pixmap.load(cover)
@@ -54,7 +66,6 @@ def load_pixmap(cover, width, height):
     y = (scaled.height() - height) // 2
     cropped = scaled.copy(x, y, width, height)
     return cropped
-
 
 def round_corners(pixmap, radius):
     """
