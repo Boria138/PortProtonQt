@@ -1,50 +1,18 @@
 import os
-import hashlib
 import urllib.request
 from PySide6 import QtCore, QtGui, QtWidgets
 import portprotonqt.themes.standart.styles as default_styles
 from portprotonqt.config_utils import read_proxy_config
 
-def create_placeholder(width, height):
-    """
-    Создаёт QPixmap-заглушку с заданными размерами.
-    """
-    placeholder = QtGui.QPixmap(width, height)
-    placeholder.fill(QtGui.QColor("#333333"))
-    painter = QtGui.QPainter(placeholder)
-    painter.setPen(QtGui.QPen(QtGui.QColor("white")))
-    painter.setFont(QtGui.QFont("Poppins", 12))
-    painter.drawText(placeholder.rect(), QtCore.Qt.AlignCenter, "No Image")
-    painter.end()
-    return placeholder
-
-def get_cache_path(cache_key, ext="png"):
-    """
-    Возвращает путь для кешированного изображения,
-    используя md5-хэш cache_key.
-    """
-    xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
-    cache_folder = os.path.join(xdg_cache_home, "PortProtonQT", "image_cache")
-    os.makedirs(cache_folder, exist_ok=True)
-    hash_key = hashlib.md5(cache_key.encode("utf-8")).hexdigest()
-    return os.path.join(cache_folder, f"{hash_key}.{ext}")
-
 def load_pixmap(cover, width, height):
     """
-    Загружает изображение из локального файла или по URL, масштабирует и обрезает его до заданных размеров.
-    Готовое изображение сохраняется на диск
+    Загружает изображение из локального файла или по URL и масштабирует его.
+    Если загрузка не удалась, создаёт резервное изображение.
+    Если ссылка ведёт на Steam CDN, обложка кешируется локально.
+    После масштабирования с KeepAspectRatioByExpanding происходит обрезка центральной части до нужных размеров.
     """
-    # Формируем уникальный ключ для итогового изображения
-    final_key = f"{cover}_{width}_{height}"
-    final_cache_file = get_cache_path(final_key)
+    pixmap = QtGui.QPixmap()
 
-    # Если итоговый файл уже существует, загружаем его и возвращаем
-    if os.path.exists(final_cache_file):
-        pixmap = QtGui.QPixmap()
-        if pixmap.load(final_cache_file):
-            return pixmap
-
-    # Обработка для Steam CDN
     if cover.startswith("https://steamcdn-a.akamaihd.net/steam/apps/"):
         try:
             parts = cover.split("/")
@@ -54,14 +22,16 @@ def load_pixmap(cover, width, height):
                 if idx + 1 < len(parts):
                     appid = parts[idx + 1]
             if appid:
-                # Ключ для оригинального изображения без размеров
-                original_key = f"{appid}_original"
-                original_cache_file = get_cache_path(original_key, ext="jpg")
-                pixmap = QtGui.QPixmap()
-                if os.path.exists(original_cache_file):
-                    pixmap.load(original_cache_file)
+                # формирование пути к локальному кэшу
+                xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
+                image_folder = os.path.join(xdg_cache_home, "PortProtonQT", "images")
+                os.makedirs(image_folder, exist_ok=True)
+                local_path = os.path.join(image_folder, f"{appid}.jpg")
+                if os.path.exists(local_path):
+                    pixmap.load(local_path)
                 else:
                     try:
+                        # Если указан proxy – используем его
                         proxy = read_proxy_config()
                         if proxy:
                             proxy_handler = urllib.request.ProxyHandler({'http': proxy, 'https': proxy})
@@ -71,53 +41,30 @@ def load_pixmap(cover, width, height):
                             response = urllib.request.urlopen(cover, timeout=5)
                         if response.status == 200:
                             content = response.read()
-                            with open(original_cache_file, "wb") as f:
+                            with open(local_path, "wb") as f:
                                 f.write(content)
-                            pixmap.load(original_cache_file)
-                        else:
-                            pixmap = create_placeholder(width, height)
+                            pixmap.load(local_path)
                     except Exception as e:
                         print("Ошибка загрузки обложки из Steam CDN:", e)
-                        pixmap = create_placeholder(width, height)
-                        pixmap.save(original_cache_file)
-                if pixmap.isNull():
-                    pixmap = create_placeholder(width, height)
-                # Масштабируем и обрезаем изображение
-                scaled = pixmap.scaled(width, height, QtCore.Qt.KeepAspectRatioByExpanding, QtCore.Qt.SmoothTransformation)
-                x = (scaled.width() - width) // 2
-                y = (scaled.height() - height) // 2
-                cropped = scaled.copy(x, y, width, height)
-                cropped.save(final_cache_file)
-                return cropped
         except Exception as e:
             print("Ошибка обработки URL:", e)
 
-    # Обработка для остальных источников
-    pixmap = QtGui.QPixmap()
-    if QtCore.QFile.exists(cover):
+    elif QtCore.QFile.exists(cover):
         pixmap.load(cover)
-    else:
-        try:
-            proxy = read_proxy_config()
-            if proxy:
-                proxy_handler = urllib.request.ProxyHandler({'http': proxy, 'https': proxy})
-                opener = urllib.request.build_opener(proxy_handler)
-                response = opener.open(cover, timeout=5)
-            else:
-                response = urllib.request.urlopen(cover, timeout=5)
-            if response.status == 200:
-                data = response.read()
-                pixmap.loadFromData(data)
-        except Exception as e:
-            print("Ошибка загрузки изображения:", e)
+
     if pixmap.isNull():
-        pixmap = create_placeholder(width, height)
+        pixmap = QtGui.QPixmap(width, height)
+        pixmap.fill(QtGui.QColor("#333333"))
+        painter = QtGui.QPainter(pixmap)
+        painter.setPen(QtGui.QPen(QtGui.QColor("white")))
+        painter.setFont(QtGui.QFont("Poppins", 12))
+        painter.drawText(pixmap.rect(), QtCore.Qt.AlignCenter, "No Image")
+        painter.end()
 
     scaled = pixmap.scaled(width, height, QtCore.Qt.KeepAspectRatioByExpanding, QtCore.Qt.SmoothTransformation)
     x = (scaled.width() - width) // 2
     y = (scaled.height() - height) // 2
     cropped = scaled.copy(x, y, width, height)
-    cropped.save(final_cache_file)
     return cropped
 
 def round_corners(pixmap, radius):
