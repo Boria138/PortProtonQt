@@ -622,7 +622,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 f"<b>{_('Link:')}</b> {link_html}"
             )
             self.themeMetainfoLabel.setText(preview_text)
-            self.themeMetainfoLabel.setStyleSheet(self.theme.CONTENT_STYLE)  # Обновление стиля
+            self.themeMetainfoLabel.setStyleSheet(self.theme.CONTENT_STYLE)
 
             screenshots = load_theme_screenshots(theme_name)
             if screenshots:

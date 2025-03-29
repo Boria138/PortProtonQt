@@ -3,6 +3,7 @@ import os
 import shlex
 import subprocess
 import time
+import html
 import urllib.request
 
 import orjson
@@ -19,6 +20,14 @@ logger = get_logger(__name__)
 CACHE_DURATION = 30 * 24 * 60 * 60
 
 PROXY_SETTINGS = read_proxy_config()
+
+def decode_text(text: str) -> str:
+    """
+    Декодирует HTML-сущности в строке.
+    Например, "&amp;quot;" преобразуется в '"'.
+    Остальные символы и HTML-теги остаются без изменений.
+    """
+    return html.unescape(text)
 
 def get_url_with_proxy(url, timeout=5):
     """
@@ -400,12 +409,16 @@ def get_full_steam_game_info(appid):
     app_info = fetch_app_info_cached(appid)
     if not app_info:
         return {}
+    title = decode_text(app_info.get("name", ""))
+    description = decode_text(app_info.get("short_description", ""))
+    cover = f"https://steamcdn-a.akamaihd.net/steam/apps/{appid}/library_600x900_2x.jpg"
     return {
-        'description': app_info.get('short_description', ''),
+        'description': description,
         'controller_support': app_info.get('controller_support', ''),
-        'cover': f"https://steamcdn-a.akamaihd.net/steam/apps/{appid}/library_600x900_2x.jpg",
+        'cover': cover,
         'protondb_tier': get_protondb_tier(appid),
-        "steam_game": "true"
+        "steam_game": "true",
+        "name": title
     }
 
 def get_steam_game_info(desktop_name, exec_line):
@@ -479,10 +492,9 @@ def get_steam_game_info(desktop_name, exec_line):
             logger.info("Совпадение найдено для кандидата '%s': %s", candidate, matching_app.get("name"))
             break
     if not matching_app:
-        logger.info("Не найдено ни одного совпадения для кандидатов")
         return {
             "appid": "",
-            "name": exe_name.capitalize(),
+            "name": decode_text(f"{exe_name.capitalize()}"),
             "description": "",
             "cover": "",
             "controller_support": "",
@@ -492,18 +504,17 @@ def get_steam_game_info(desktop_name, exec_line):
     appid = matching_app["appid"]
     app_info = fetch_app_info_cached(appid)
     if not app_info:
-        logger.info("Не удалось получить информацию для appid %s", appid)
         return {
             "appid": "",
-            "name": exe_name.capitalize(),
+            "name": decode_text(f"{exe_name.capitalize()}"),
             "description": "",
             "cover": "",
             "controller_support": "",
             "protondb_tier": "",
             "steam_game": "false"
         }
-    title = app_info.get("name", exe_name.capitalize())
-    description = app_info.get("short_description", "")
+    title = decode_text(app_info.get("name", exe_name.capitalize()))
+    description = decode_text(app_info.get("short_description", ""))
     cover = f"https://steamcdn-a.akamaihd.net/steam/apps/{appid}/library_600x900_2x.jpg"
     controller_support = app_info.get("controller_support", "")
     protondb_tier = get_protondb_tier(appid)
