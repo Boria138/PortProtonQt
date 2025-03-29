@@ -895,34 +895,56 @@ class MainWindow(QtWidgets.QMainWindow):
         self._typewriter_timer.start(interval)
 
     def _updateTypewriterText(self):
+        # Если игра уже запущена, не обновляем статус-бар
+        if getattr(self, "_gameLaunched", False):
+            return
         if self._typewriter_index < len(self._typewriter_text):
             self.statusBar().showMessage(self._typewriter_text[:self._typewriter_index+1])
             self._typewriter_index += 1
         else:
-            self._typewriter_index = 0  # сброс анимации, печатаем снова
+            # Полный текст выведен, можно сбросить счетчик или оставить как есть
+            self._typewriter_index = len(self._typewriter_text)
 
     def clearGameStatus(self):
-        """Очищает статус-бар."""
+        """
+        Очищает статус-бар.
+        """
         self.statusBar().clearMessage()
 
     def checkTargetExe(self):
         """
-        Если игра запущена (target_exe) или дочерний процесс завершился,
-        останавливаем анимацию и очищаем статус-бар.
+        Проверяет, запущена ли игра.
+        Если процесс игры (target_exe) обнаружен – устанавливаем флаг и очищаем статус-бар.
+        Если игра завершилась – сбрасываем флаг, очищаем статус-бар и обновляем кнопку.
         """
         target_running = self.is_target_exe_running()
         child_running = any(proc.poll() is None for proc in self.game_processes)
-        if (not child_running) or target_running:
-            if hasattr(self, '_typewriter_timer'):
-                self._typewriter_timer.stop()
-                self._typewriter_timer.deleteLater()
-                self._typewriter_timer = None
-            QtCore.QTimer.singleShot(1500, self.clearGameStatus)
-            if self.checkProcessTimer is not None:
+
+        if target_running:
+            # Игра стартовала – устанавливаем флаг, чтобы не перезаписывать статус-бар
+            self._gameLaunched = True
+            self.clearGameStatus()
+        elif not child_running:
+            # Игра завершилась – сбрасываем флаг и кнопку
+            self._gameLaunched = False
+            self.clearGameStatus()
+            self.resetPlayButton()
+            if hasattr(self, 'checkProcessTimer') and self.checkProcessTimer is not None:
                 self.checkProcessTimer.stop()
                 self.checkProcessTimer.deleteLater()
                 self.checkProcessTimer = None
 
+    def resetPlayButton(self):
+        """
+        Сбрасывает кнопку запуска игры:
+        меняет текст на "Играть", устанавливает иконку и сбрасывает переменные.
+        Вызывается, когда игра завершилась (не по нажатию кнопки).
+        """
+        if self.current_running_button is not None:
+            self.current_running_button.setText(_("Play"))
+            self.current_running_button.setIcon(self.theme_manager.get_icon("play.svg"))
+            self.current_running_button = None
+        self.target_exe = None
 
     def toggleGame(self, exec_line, game_name, button):
         if exec_line.startswith("steam://"):
@@ -953,10 +975,13 @@ class MainWindow(QtWidgets.QMainWindow):
             QtWidgets.QMessageBox.warning(self, _("Error"), _("Cannot launch game while another game is running"))
             return
 
-        # Если игра уже запущена для этого exe – останавливаем её
+        # Если игра уже запущена для этого exe – останавливаем её по кнопке
         if self.game_processes and self.target_exe == current_exe:
             for proc in self.game_processes:
-                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+                try:
+                    os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+                except ProcessLookupError:
+                    pass  # процесс уже завершился
             self.game_processes = []
             if hasattr(self, '_typewriter_timer') and self._typewriter_timer is not None:
                 self._typewriter_timer.stop()
@@ -970,8 +995,12 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.checkProcessTimer.stop()
                 self.checkProcessTimer.deleteLater()
                 self.checkProcessTimer = None
+            self.current_running_button = None
             self.target_exe = None
+            self._gameLaunched = False
         else:
+            # Сохраняем ссылку на кнопку для сброса после завершения игры
+            self.current_running_button = button
             self.target_exe = current_exe
             exe_name = os.path.splitext(current_exe)[0]
             env_vars = os.environ.copy()
@@ -983,6 +1012,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.game_processes.append(process)
             save_last_launch(exe_name, datetime.now())
             self.startTypewriterEffect(_("Launching {0}").format(game_name))
+            # Запускаем таймер проверки состояния игры
             self.checkProcessTimer = QtCore.QTimer(self)
             self.checkProcessTimer.timeout.connect(self.checkTargetExe)
             self.checkProcessTimer.start(500)
@@ -991,6 +1021,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def closeEvent(self, event):
         for proc in self.game_processes:
-            os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+            try:
+                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+            except ProcessLookupError:
+                pass  # процесс уже завершился
         save_card_size(self.card_width)
         event.accept()
