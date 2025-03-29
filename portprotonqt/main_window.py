@@ -356,13 +356,13 @@ class MainWindow(QtWidgets.QMainWindow):
         layout.addWidget(self.addGameButton, alignment=QtCore.Qt.AlignRight)
 
         searchEdit = QtWidgets.QLineEdit()
+        searchEdit.setMaximumWidth(200)
         searchEdit.setPlaceholderText(_("Find Games ..."))
         searchEdit.setClearButtonEnabled(True)
         searchEdit.addAction(self.theme_manager.get_icon("search.svg"), QLineEdit.ActionPosition.LeadingPosition)
         searchEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE)
 
         layout.addWidget(searchEdit)
-        layout.setStretch(1, 1)
         return self.container, searchEdit
 
     def filterGames(self, text):
