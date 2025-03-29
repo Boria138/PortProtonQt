@@ -109,12 +109,11 @@ class GameCard(QtWidgets.QFrame):
             protondb_visible = False
 
         # Steam бейдж
-        self.steamLabel = QtWidgets.QLabel(coverWidget)
+        self.steamLabel = ClickableLabel(coverWidget)
         self.steamLabel.setText("   Steam")
         self.steamLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
         steam_visible = (str(steam_game).lower() == "true")
         self.steamLabel.setVisible(steam_visible)
-        # self.steamLabel.adjustSize()
 
         # Расположение бейджей
         right_margin = 8
@@ -141,6 +140,7 @@ class GameCard(QtWidgets.QFrame):
         self.protondbLabel.raise_()
         self.steamLabel.raise_()
         self.protondbLabel.clicked.connect(self.open_protondb_report)
+        self.steamLabel.clicked.connect(self.open_steam_page)
 
         layout.addWidget(coverWidget)
 
@@ -154,18 +154,23 @@ class GameCard(QtWidgets.QFrame):
         if not tier:
             return ""
         translations = {
-            "platinum": _("✓ Platinum"),
-            "gold": _("✓ Gold"),
-            "silver": _("✓ Silver"),
-            "bronze": _("◉ Bronze"),
-            "borked": _("◉ Borked"),
-            "pending": _("◉ Pending")
+            "platinum": "✓ " + _("Platinum"),
+            "gold": "✓ " + _("Gold"),
+            "silver": "✓ " + _("Silver"),
+            "bronze": "◉ " + _("Bronze"),
+            "borked": "◉ " + _("Borked"),
+            "pending": "◉ " + _("Pending")
         }
         return translations.get(tier.lower(), "")
 
     def open_protondb_report(self):
         url = QtCore.QUrl(f"https://www.protondb.com/app/{self.appid}")
         QtGui.QDesktopServices.openUrl(url)
+
+    def open_steam_page(self):
+        url = QtCore.QUrl(f"steam://store/{self.appid}")
+        QtGui.QDesktopServices.openUrl(url)
+
 
     def update_favorite_icon(self):
         """
