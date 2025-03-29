@@ -926,9 +926,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def toggleGame(self, exec_line, game_name, button):
         if exec_line.startswith("steam://"):
-            subprocess.Popen(["steam", exec_line],
-                            stdout=subprocess.DEVNULL,
-                            stderr=subprocess.DEVNULL)
+            url = QtCore.QUrl(exec_line)
+            QtGui.QDesktopServices.openUrl(url)
             self.statusBar().showMessage(_("Launching via Steam..."), 3000)
             return
 
