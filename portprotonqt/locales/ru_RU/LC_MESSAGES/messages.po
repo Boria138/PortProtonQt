@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQT 0.1.0\n"
 "Report-Msgid-Bugs-To: olegpozitiv0102@gmail.com\n"
-"POT-Creation-Date: 2025-03-26 17:29+0500\n"
-"PO-Revision-Date: 2025-03-26 17:29+0500\n"
+"POT-Creation-Date: 2025-03-29 19:48+0600\n"
+"PO-Revision-Date: 2025-03-29 19:48+0600\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
@@ -82,6 +82,39 @@ msgstr "Различные параметры и версии wine..."
 
 msgid "Main PortProton parameters..."
 msgstr "Основные параметры PortProton..."
+
+msgid "Time Detail Level:"
+msgstr "Уровень детализации вывода времени:"
+
+msgid "Games Sort Method:"
+msgstr "Метод сортировки игр:"
+
+msgid "Games Display Filter:"
+msgstr "Фильтр игр:"
+
+msgid "Proxy URL"
+msgstr "Адрес прокси"
+
+msgid "Proxy URL:"
+msgstr "Адрес прокси:"
+
+msgid "Proxy Username"
+msgstr "Имя пользователя прокси"
+
+msgid "Proxy Username:"
+msgstr "Имя пользователя прокси:"
+
+msgid "Proxy Password"
+msgstr "Пароль прокси"
+
+msgid "Proxy Password:"
+msgstr "Пароль прокси:"
+
+msgid "Save Settings"
+msgstr "Сохранить настройки"
+
+msgid "Settings saved"
+msgstr "Настройки сохранены"
 
 msgid "Select Theme:"
 msgstr "Выбрать тему:"
@@ -166,7 +199,7 @@ msgid "Cannot launch game while another game is running"
 msgstr "Невозможно запустить игру пока запущена другая"
 
 msgid "Game stopped"
-msgstr "Игра остоновлена"
+msgstr "Игра остановлена"
 
 #, python-brace-format
 msgid "Launching {0}"

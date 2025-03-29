@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQT 0.1.0\n"
 "Report-Msgid-Bugs-To: olegpozitiv0102@gmail.com\n"
-"POT-Creation-Date: 2025-03-26 17:29+0500\n"
+"POT-Creation-Date: 2025-03-29 19:48+0600\n"
 "PO-Revision-Date: 2025-03-23 01:52+0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: de_DE\n"
@@ -80,6 +80,39 @@ msgid "Various Wine parameters and versions..."
 msgstr ""
 
 msgid "Main PortProton parameters..."
+msgstr ""
+
+msgid "Time Detail Level:"
+msgstr ""
+
+msgid "Games Sort Method:"
+msgstr ""
+
+msgid "Games Display Filter:"
+msgstr ""
+
+msgid "Proxy URL"
+msgstr ""
+
+msgid "Proxy URL:"
+msgstr ""
+
+msgid "Proxy Username"
+msgstr ""
+
+msgid "Proxy Username:"
+msgstr ""
+
+msgid "Proxy Password"
+msgstr ""
+
+msgid "Proxy Password:"
+msgstr ""
+
+msgid "Save Settings"
+msgstr ""
+
+msgid "Settings saved"
 msgstr ""
 
 msgid "Select Theme:"

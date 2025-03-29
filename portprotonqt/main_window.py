@@ -15,7 +15,7 @@ from portprotonqt.image_utils import load_pixmap, round_corners, ImageCarousel
 from portprotonqt.steam_api import get_steam_game_info, get_full_steam_game_info, get_steam_installed_games
 from portprotonqt.theme_manager import ThemeManager, load_theme_screenshots
 from portprotonqt.time_utils import save_last_launch, get_last_launch, parse_playtime_file, format_playtime, get_last_launch_timestamp, format_last_launch
-from portprotonqt.config_utils import get_portproton_location, read_theme_from_config, save_theme_to_config, parse_desktop_entry, load_theme_metainfo, read_time_config, read_card_size, save_card_size, read_sort_method, read_display_filter, read_favorites, save_favorites
+from portprotonqt.config_utils import get_portproton_location, read_theme_from_config, save_theme_to_config, parse_desktop_entry, load_theme_metainfo, read_time_config, read_card_size, save_card_size, read_sort_method, read_display_filter, read_favorites, save_favorites, save_time_config, save_sort_method, save_display_filter, save_proxy_config, read_proxy_config
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
 
@@ -546,19 +546,102 @@ class MainWindow(QtWidgets.QMainWindow):
         self.portProtonWidget.setStyleSheet(self.theme.PORTPROTON_SETTINGS_WIDGET_STYLE)
         layout = QtWidgets.QVBoxLayout(self.portProtonWidget)
         layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(10)
 
-        self.portProtonTitle = QtWidgets.QLabel(_("PortProton Settings"))
-        self.portProtonTitle.setStyleSheet(self.theme.TAB_TITLE_STYLE)
-        self.portProtonTitle.setObjectName("tabTitle")
-        layout.addWidget(self.portProtonTitle)
+        title = QtWidgets.QLabel(_("PortProton Settings"))
+        title.setStyleSheet(self.theme.TAB_TITLE_STYLE)
+        title.setObjectName("tabTitle")
+        layout.addWidget(title)
 
-        self.portProtonContent = QtWidgets.QLabel(_("Main PortProton parameters..."))
-        self.portProtonContent.setStyleSheet(self.theme.CONTENT_STYLE)
-        self.portProtonContent.setObjectName("tabContent")
-        layout.addWidget(self.portProtonContent)
+        content = QtWidgets.QLabel(_("Main PortProton parameters..."))
+        content.setStyleSheet(self.theme.CONTENT_STYLE)
+        content.setObjectName("tabContent")
+        layout.addWidget(content)
+
+        # Форма для недокументированных параметров
+        formLayout = QtWidgets.QFormLayout()
+        formLayout.setSpacing(10)
+
+        # 1. Time detail_level
+        self.timeDetailCombo = QtWidgets.QComboBox()
+        self.timeDetailCombo.addItems(["detailed", "brief"])
+        current_time_detail = read_time_config()
+        index = self.timeDetailCombo.findText(current_time_detail, QtCore.Qt.MatchFixedString)
+        if index >= 0:
+            self.timeDetailCombo.setCurrentIndex(index)
+        formLayout.addRow(_("Time Detail Level:"), self.timeDetailCombo)
+
+        # 2. Games sort_method
+        self.gamesSortCombo = QtWidgets.QComboBox()
+        self.gamesSortCombo.addItems(["last_launch", "playtime"])
+        current_sort_method = read_sort_method()
+        index = self.gamesSortCombo.findText(current_sort_method, QtCore.Qt.MatchFixedString)
+        if index >= 0:
+            self.gamesSortCombo.setCurrentIndex(index)
+        formLayout.addRow(_("Games Sort Method:"), self.gamesSortCombo)
+
+        # 3. Games display_filter
+        self.gamesDisplayCombo = QtWidgets.QComboBox()
+        self.gamesDisplayCombo.addItems(["all", "steam", "portproton"])
+        current_display_filter = read_display_filter()
+        index = self.gamesDisplayCombo.findText(current_display_filter, QtCore.Qt.MatchFixedString)
+        if index >= 0:
+            self.gamesDisplayCombo.setCurrentIndex(index)
+        formLayout.addRow(_("Games Display Filter:"), self.gamesDisplayCombo)
+
+        # 4. Proxy настройки
+        self.proxyUrlEdit = QtWidgets.QLineEdit()
+        self.proxyUrlEdit.setPlaceholderText(_("Proxy URL"))
+        proxy_config = read_proxy_config()
+        # Если в настройках proxy есть URL, выводим его
+        if proxy_config.get("http", ""):
+            self.proxyUrlEdit.setText(proxy_config.get("http", ""))
+        formLayout.addRow(_("Proxy URL:"), self.proxyUrlEdit)
+
+        self.proxyUserEdit = QtWidgets.QLineEdit()
+        self.proxyUserEdit.setPlaceholderText(_("Proxy Username"))
+        formLayout.addRow(_("Proxy Username:"), self.proxyUserEdit)
+
+        self.proxyPasswordEdit = QtWidgets.QLineEdit()
+        self.proxyPasswordEdit.setPlaceholderText(_("Proxy Password"))
+        self.proxyPasswordEdit.setEchoMode(QtWidgets.QLineEdit.Password)
+        formLayout.addRow(_("Proxy Password:"), self.proxyPasswordEdit)
+
+        layout.addLayout(formLayout)
+
+        # Кнопка сохранения настроек
+        saveButton = QtWidgets.QPushButton(_("Save Settings"))
+        saveButton.setStyleSheet(self.theme.ADD_GAME_BUTTON_STYLE)
+        saveButton.clicked.connect(self.savePortProtonSettings)
+        layout.addWidget(saveButton)
+
         layout.addStretch(1)
-
         self.stackedWidget.addWidget(self.portProtonWidget)
+
+    def savePortProtonSettings(self):
+        """
+        Сохраняет параметры конфигурации в конфигурационный файл,
+        """
+        selected_time_detail = self.timeDetailCombo.currentText()
+        save_time_config(selected_time_detail)
+
+        selected_sort_method = self.gamesSortCombo.currentText()
+        save_sort_method(selected_sort_method)
+
+        selected_display_filter = self.gamesDisplayCombo.currentText()
+        save_display_filter(selected_display_filter)
+
+        # Сохранение proxy настроек
+        proxy_url = self.proxyUrlEdit.text().strip()
+        proxy_user = self.proxyUserEdit.text().strip()
+        proxy_password = self.proxyPasswordEdit.text().strip()
+        save_proxy_config(proxy_url, proxy_user, proxy_password)
+
+        # Обновляем отображение игр, чтобы применить изменения фильтра/сортировки
+        self.games = self.loadGames()
+        self.populateGamesGrid(self.games)
+        self.statusBar().showMessage(_("Settings saved"), 3000)
+
 
     def createThemeTab(self):
         """Вкладка 'Themes'"""

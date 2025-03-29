@@ -352,3 +352,22 @@ def read_proxy_config():
             proxy_url = f"{protocol}://{proxy_user}:{proxy_password}@{rest}"
         return {"http": proxy_url, "https": proxy_url}
     return {}
+
+def save_proxy_config(proxy_url="", proxy_user="", proxy_password=""):
+    """
+    Сохраняет настройки proxy в секцию [Proxy] конфигурационного файла.
+    Если секция отсутствует, создаёт её.
+    """
+    cp = configparser.ConfigParser()
+    if os.path.exists(CONFIG_FILE):
+        try:
+            cp.read(CONFIG_FILE, encoding="utf-8")
+        except (configparser.DuplicateSectionError, configparser.DuplicateOptionError) as e:
+            logger.error("Ошибка чтения конфигурационного файла: %s", e)
+    if "Proxy" not in cp:
+        cp["Proxy"] = {}
+    cp["Proxy"]["proxy_url"] = proxy_url
+    cp["Proxy"]["proxy_user"] = proxy_user
+    cp["Proxy"]["proxy_password"] = proxy_password
+    with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
+        cp.write(configfile)
