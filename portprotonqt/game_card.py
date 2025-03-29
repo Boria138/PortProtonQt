@@ -30,8 +30,8 @@ class ClickableLabel(QtWidgets.QLabel):
                 buffer.close()
                 # Формируем HTML: картинка и текст
                 html_text = (
-                    f'<img src="data:image/png;base64,{base64_data}" width="32" height="32" '
-                    f'style="vertical-align: middle;"> {text}'
+                    f'<img src="data:image/png;base64,{base64_data}" width="16" height="16" '
+                    f'style="vertical-align: middle;">      {text}'
                 )
                 self.setTextFormat(QtCore.Qt.RichText)
                 self.setText(html_text)
@@ -204,14 +204,14 @@ class GameCard(QtWidgets.QFrame):
         Возвращает имя файла иконки в зависимости от уровня protondb.
         Для примера:
           - Для platinum и gold — 'platinum-gold.svg'
-          - Для silver и bronze — 'silver.bronze.svg'
+          - Для silver и bronze — 'silver-bronze.svg'
           - Для borked и pending — 'broken.svg'
         """
         tier = tier.lower()
         if tier in ("platinum", "gold"):
             return "platinum-gold.svg"
         elif tier in ("silver", "bronze"):
-            return "silver.bronze.svg"
+            return "silver-bronze.svg"
         elif tier in ("borked", "pending"):
             return "broken.svg"
         return ""
