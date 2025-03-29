@@ -467,6 +467,103 @@ SLIDER_SIZE_STYLE= """
 # Favorite Star
 FAVORITE_LABEL_STYLE = "color: gold; font-size: 32px; background: transparent;"
 
+# СТИЛИ ДЛЯ QMessageBox (ОКНА СООБЩЕНИЙ)
+MESSAGE_BOX_STYLE = """
+    QMessageBox {
+        background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+            stop:0 rgba(40, 40, 40, 0.95),
+            stop:1 rgba(25, 25, 25, 0.95));
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 12px;
+    }
+    QMessageBox QLabel {
+        color: #ffffff;
+        font-family: 'Play';
+        font-size: 16px;
+    }
+    QMessageBox QPushButton {
+        background: rgba(30, 30, 30, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        color: #ffffff;
+        font-family: 'Play';
+        padding: 8px 20px;
+        min-width: 80px;
+    }
+    QMessageBox QPushButton:hover {
+        background: #09bec8;
+        border-color: rgba(255, 255, 255, 0.3);
+    }
+"""
+
+# СТИЛИ ДЛЯ ВКЛАДКИ НАСТРОЕК PORTPROTON
+FORM_LABEL_STYLE = """
+    QLabel {
+        color: #bbbbbb;
+        font-family: 'Play';
+        font-size: 14px;
+        padding: 4px 0;
+    }
+"""
+
+PROXY_INPUT_STYLE = """
+    QLineEdit {
+        background: rgba(30, 30, 30, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        padding: 8px;
+        color: #ffffff;
+        font-family: 'Play';
+        font-size: 14px;
+    }
+    QLineEdit:focus {
+        border-color: #09bec8;
+    }
+"""
+
+SETTINGS_COMBO_STYLE = """
+    QComboBox {
+        background: rgba(30, 30, 30, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        padding: 6px;
+        color: #ffffff;
+        font-family: 'Play';
+        font-size: 14px;
+        min-width: 120px;
+    }
+    QComboBox::drop-down {
+        subcontrol-origin: padding;
+        subcontrol-position: center right;
+        width: 20px;
+        border-left: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    QComboBox QAbstractItemView {
+        background: rgba(40, 40, 40, 0.95);
+        color: #ffffff;
+        selection-background-color: #09bec8;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+"""
+
+SETTINGS_SAVE_BUTTON_STYLE = """
+    QPushButton {
+        background: rgba(0, 158, 188, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        color: #ffffff;
+        font-family: 'Play';
+        font-size: 16px;
+        padding: 10px 25px;
+    }
+    QPushButton:hover {
+        background: rgba(0, 158, 188, 0.9);
+    }
+    QPushButton:pressed {
+        background: #09bec8;
+    }
+"""
+
 # ФУНКЦИЯ ДЛЯ ДИНАМИЧЕСКОГО ГРАДИЕНТА (ДЕТАЛИ ИГР)
 # Функции из этой темы срабатывает всегда вне зависимости от выбранной темы, функции из других тем работают только в этих темах
 def detail_page_style(stops):

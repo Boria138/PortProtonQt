@@ -123,6 +123,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.createThemeTab()        # вкладка 5
 
         self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE)
+        self.setStyleSheet(self.theme.MESSAGE_BOX_STYLE)
+
 
     def updateUIStyles(self):
         # Обновление логотипа
@@ -565,6 +567,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # 1. Time detail_level
         self.timeDetailCombo = QtWidgets.QComboBox()
         self.timeDetailCombo.addItems(["detailed", "brief"])
+        self.timeDetailCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
         current_time_detail = read_time_config()
         index = self.timeDetailCombo.findText(current_time_detail, QtCore.Qt.MatchFixedString)
         if index >= 0:
@@ -574,6 +577,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # 2. Games sort_method
         self.gamesSortCombo = QtWidgets.QComboBox()
         self.gamesSortCombo.addItems(["last_launch", "playtime"])
+        self.gamesSortCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
         current_sort_method = read_sort_method()
         index = self.gamesSortCombo.findText(current_sort_method, QtCore.Qt.MatchFixedString)
         if index >= 0:
@@ -583,6 +587,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # 3. Games display_filter
         self.gamesDisplayCombo = QtWidgets.QComboBox()
         self.gamesDisplayCombo.addItems(["all", "steam", "portproton"])
+        self.gamesDisplayCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
         current_display_filter = read_display_filter()
         index = self.gamesDisplayCombo.findText(current_display_filter, QtCore.Qt.MatchFixedString)
         if index >= 0:
@@ -592,6 +597,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # 4. Proxy настройки
         self.proxyUrlEdit = QtWidgets.QLineEdit()
         self.proxyUrlEdit.setPlaceholderText(_("Proxy URL"))
+        self.proxyUrlEdit.setStyleSheet(self.theme.PROXY_INPUT_STYLE)
         proxy_config = read_proxy_config()
         # Если в настройках proxy есть URL, выводим его
         if proxy_config.get("http", ""):
@@ -600,11 +606,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.proxyUserEdit = QtWidgets.QLineEdit()
         self.proxyUserEdit.setPlaceholderText(_("Proxy Username"))
+        self.proxyUserEdit.setStyleSheet(self.theme.PROXY_INPUT_STYLE)
         formLayout.addRow(_("Proxy Username:"), self.proxyUserEdit)
 
         self.proxyPasswordEdit = QtWidgets.QLineEdit()
         self.proxyPasswordEdit.setPlaceholderText(_("Proxy Password"))
         self.proxyPasswordEdit.setEchoMode(QtWidgets.QLineEdit.Password)
+        self.proxyPasswordEdit.setStyleSheet(self.theme.PROXY_INPUT_STYLE)
         formLayout.addRow(_("Proxy Password:"), self.proxyPasswordEdit)
 
         layout.addLayout(formLayout)
@@ -613,6 +621,7 @@ class MainWindow(QtWidgets.QMainWindow):
         saveButton = QtWidgets.QPushButton(_("Save Settings"))
         saveButton.setStyleSheet(self.theme.ADD_GAME_BUTTON_STYLE)
         saveButton.clicked.connect(self.savePortProtonSettings)
+        saveButton.setStyleSheet(self.theme.SETTINGS_SAVE_BUTTON_STYLE)
         layout.addWidget(saveButton)
 
         layout.addStretch(1)
@@ -638,8 +647,7 @@ class MainWindow(QtWidgets.QMainWindow):
         save_proxy_config(proxy_url, proxy_user, proxy_password)
 
         # Обновляем отображение игр, чтобы применить изменения фильтра/сортировки
-        self.games = self.loadGames()
-        self.populateGamesGrid(self.games)
+        self.updateGameGrid()
         self.statusBar().showMessage(_("Settings saved"), 3000)
 
 
