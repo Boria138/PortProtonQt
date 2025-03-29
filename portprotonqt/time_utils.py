@@ -1,17 +1,11 @@
 import os
-import locale
 from datetime import datetime, timedelta
 from babel.dates import format_timedelta, format_date
 from portprotonqt.config_utils import read_time_config
-from portprotonqt.localization import _
+from portprotonqt.localization import _, get_system_locale
 from portprotonqt.logger import get_logger
 
 logger = get_logger(__name__)
-
-def get_system_locale():
-    """Возвращает системную локаль, например, 'ru_RU'. Если не удаётся определить – возвращает 'en'."""
-    loc = locale.getdefaultlocale()[0]
-    return loc if loc else 'en'
 
 def get_cache_file_path():
     """Возвращает путь к файлу кеша portproton_last_launch."""

@@ -11,6 +11,7 @@ import vdf
 from pathlib import Path
 from portprotonqt.logger import get_logger
 from portprotonqt.config_utils import read_proxy_config
+from portprotonqt.localization import get_steam_language
 
 logger = get_logger(__name__)
 
@@ -315,7 +316,8 @@ def fetch_app_info_cached(app_id):
     cached = load_app_details(app_id)
     if cached is not None:
         return cached
-    url = f"https://store.steampowered.com/api/appdetails?appids={app_id}&l=russian"
+    lang = get_steam_language()
+    url = f"https://store.steampowered.com/api/appdetails?appids={app_id}&l={lang}"
     try:
         with get_url_with_proxy(url, timeout=5) as response:
             if response.status != 200:
