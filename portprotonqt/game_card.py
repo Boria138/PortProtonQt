@@ -1,15 +1,47 @@
 from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6.QtCore import QBuffer
 import portprotonqt.themes.standart.styles as default_styles
 from portprotonqt.image_utils import load_pixmap, round_corners
 from portprotonqt.localization import _
 from portprotonqt.config_utils import read_favorites, save_favorites
+from portprotonqt.theme_manager import ThemeManager
+from portprotonqt.config_utils import read_theme_from_config
 
 class ClickableLabel(QtWidgets.QLabel):
     clicked = QtCore.Signal()
 
     def __init__(self, *args, **kwargs):
+        # Извлекаем параметр icon, если он указан
+        icon = kwargs.pop("icon", None)
+        # Если первый позиционный аргумент – строка, считаем его текстом
+        text = args[0] if args and isinstance(args[0], str) else ""
         super().__init__(*args, **kwargs)
         self.setCursor(QtCore.Qt.PointingHandCursor)
+
+        if icon:
+            # Получаем QPixmap из переданной иконки (можно задать нужный размер)
+            pixmap = icon.pixmap(32, 32)
+            if text:
+                # Конвертируем QPixmap в base64 для вставки в HTML
+                buffer = QBuffer()
+                buffer.open(QBuffer.ReadWrite)
+                pixmap.save(buffer, "PNG")
+                base64_data = bytes(buffer.data().toBase64()).decode('utf-8')
+                buffer.close()
+                # Формируем HTML: картинка и текст
+                html_text = (
+                    f'<img src="data:image/png;base64,{base64_data}" width="32" height="32" '
+                    f'style="vertical-align: middle;"> {text}'
+                )
+                self.setTextFormat(QtCore.Qt.RichText)
+                self.setText(html_text)
+            else:
+                # Если текста нет, просто устанавливаем изображение
+                self.setPixmap(pixmap)
+        else:
+            # Если иконка не передана, устанавливаем текст (если он есть)
+            if text:
+                self.setText(text)
 
     def mousePressEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
@@ -37,7 +69,10 @@ class GameCard(QtWidgets.QFrame):
         self.playtime_seconds = playtime_seconds
 
         self.select_callback = select_callback
+        self.theme_manager = ThemeManager()
         self.theme = theme if theme is not None else default_styles
+
+        self.current_theme_name = read_theme_from_config()
 
         # Дополнительное пространство для анимации
         extra_margin = 20
@@ -99,18 +134,19 @@ class GameCard(QtWidgets.QFrame):
 
         # ProtonDB бейдж
         tier_text = self.getProtonDBText(protondb_tier)
-        self.protondbLabel = ClickableLabel(coverWidget)
         if tier_text:
-            self.protondbLabel.setText(tier_text)
+            icon_filename = self.getProtonDBIconFilename(protondb_tier)
+            icon = self.theme_manager.get_icon(icon_filename, self.current_theme_name)
+            self.protondbLabel = ClickableLabel(tier_text, icon=icon, parent=coverWidget)
             self.protondbLabel.setStyleSheet(self.theme.get_protondb_badge_style(protondb_tier))
             protondb_visible = True
         else:
+            self.protondbLabel = ClickableLabel("", parent=coverWidget)
             self.protondbLabel.setVisible(False)
             protondb_visible = False
 
         # Steam бейдж
-        self.steamLabel = ClickableLabel(coverWidget)
-        self.steamLabel.setText("   Steam")
+        self.steamLabel = ClickableLabel("Steam", icon=self.theme_manager.get_icon("steam.svg", self.current_theme_name), parent=coverWidget)
         self.steamLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
         steam_visible = (str(steam_game).lower() == "true")
         self.steamLabel.setVisible(steam_visible)
@@ -154,14 +190,31 @@ class GameCard(QtWidgets.QFrame):
         if not tier:
             return ""
         translations = {
-            "platinum": "✓ " + _("Platinum"),
-            "gold": "✓ " + _("Gold"),
-            "silver": "✓ " + _("Silver"),
-            "bronze": "◉ " + _("Bronze"),
-            "borked": "◉ " + _("Borked"),
-            "pending": "◉ " + _("Pending")
+            "platinum": _("Platinum"),
+            "gold": _("Gold"),
+            "silver":  _("Silver"),
+            "bronze": _("Bronze"),
+            "borked": _("Borked"),
+            "pending":  _("Pending")
         }
         return translations.get(tier.lower(), "")
+
+    def getProtonDBIconFilename(self, tier):
+        """
+        Возвращает имя файла иконки в зависимости от уровня protondb.
+        Для примера:
+          - Для platinum и gold — 'platinum-gold.svg'
+          - Для silver и bronze — 'silver.bronze.svg'
+          - Для borked и pending — 'broken.svg'
+        """
+        tier = tier.lower()
+        if tier in ("platinum", "gold"):
+            return "platinum-gold.svg"
+        elif tier in ("silver", "bronze"):
+            return "silver.bronze.svg"
+        elif tier in ("borked", "pending"):
+            return "broken.svg"
+        return ""
 
     def open_protondb_report(self):
         url = QtCore.QUrl(f"https://www.protondb.com/app/{self.appid}")
@@ -170,7 +223,6 @@ class GameCard(QtWidgets.QFrame):
     def open_steam_page(self):
         url = QtCore.QUrl(f"steam://store/{self.appid}")
         QtGui.QDesktopServices.openUrl(url)
-
 
     def update_favorite_icon(self):
         """

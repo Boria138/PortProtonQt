@@ -458,7 +458,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.gamesListLayout.addWidget(card)
         self.gamesListWidget.updateGeometry()
 
-
     def populateGamesGrid(self, games_list, columns=4):
         self.clearLayout(self.gamesListLayout)
         for _idx, game_data in enumerate(games_list):
