@@ -991,8 +991,6 @@ class MainWindow(QtWidgets.QMainWindow):
         page.deleteLater()
         if hasattr(self, "currentDetailPage"):
             del self.currentDetailPage
-        # Обновляем карточки библиотеки, чтобы отразить изменения избранного
-        self.updateGameGrid()
 
     def is_target_exe_running(self):
         """Проверяет, запущен ли процесс с именем self.target_exe через psutil."""
