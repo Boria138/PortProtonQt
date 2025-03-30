@@ -34,7 +34,7 @@ def load_pixmap(cover, width, height):
                         # Если указан proxy – используем его
                         proxy = read_proxy_config()
                         if proxy:
-                            proxy_handler = urllib.request.ProxyHandler({'http': proxy, 'https': proxy})
+                            proxy_handler = urllib.request.ProxyHandler(proxy)
                             opener = urllib.request.build_opener(proxy_handler)
                             response = opener.open(cover, timeout=5)
                         else:
