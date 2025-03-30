@@ -567,60 +567,72 @@ class MainWindow(QtWidgets.QMainWindow):
         self.timeDetailCombo = QtWidgets.QComboBox()
         self.timeDetailCombo.addItems(["detailed", "brief"])
         self.timeDetailCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
+        self.paramsTitle = QtWidgets.QLabel(_("Time Detail Level:"))
+        self.paramsTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         current_time_detail = read_time_config()
         index = self.timeDetailCombo.findText(current_time_detail, QtCore.Qt.MatchFixedString)
         if index >= 0:
             self.timeDetailCombo.setCurrentIndex(index)
-        formLayout.addRow(_("Time Detail Level:"), self.timeDetailCombo)
+        formLayout.addRow(self.paramsTitle, self.timeDetailCombo)
 
         # 2. Games sort_method
         self.gamesSortCombo = QtWidgets.QComboBox()
         self.gamesSortCombo.addItems(["last_launch", "playtime"])
         self.gamesSortCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
+        self.paramsTitle = QtWidgets.QLabel(_("Games Sort Method:"))
+        self.paramsTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         current_sort_method = read_sort_method()
         index = self.gamesSortCombo.findText(current_sort_method, QtCore.Qt.MatchFixedString)
         if index >= 0:
             self.gamesSortCombo.setCurrentIndex(index)
-        formLayout.addRow(_("Games Sort Method:"), self.gamesSortCombo)
+        formLayout.addRow(self.paramsTitle, self.gamesSortCombo)
 
         # 3. Games display_filter
         self.gamesDisplayCombo = QtWidgets.QComboBox()
         self.gamesDisplayCombo.addItems(["all", "steam", "portproton"])
         self.gamesDisplayCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
+        self.paramsTitle = QtWidgets.QLabel(_("Games Display Filter:"))
+        self.paramsTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         current_display_filter = read_display_filter()
         index = self.gamesDisplayCombo.findText(current_display_filter, QtCore.Qt.MatchFixedString)
         if index >= 0:
             self.gamesDisplayCombo.setCurrentIndex(index)
-        formLayout.addRow(_("Games Display Filter:"), self.gamesDisplayCombo)
+        formLayout.addRow(self.paramsTitle, self.gamesDisplayCombo)
 
         # 4. Proxy настройки
         self.proxyUrlEdit = QtWidgets.QLineEdit()
         self.proxyUrlEdit.setPlaceholderText(_("Proxy URL"))
         self.proxyUrlEdit.setStyleSheet(self.theme.PROXY_INPUT_STYLE)
+        self.paramsTitle = QtWidgets.QLabel(_("Proxy URL:"))
+        self.paramsTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         proxy_config = read_proxy_config()
         # Если в настройках proxy есть URL, выводим его
         if proxy_config.get("http", ""):
             self.proxyUrlEdit.setText(proxy_config.get("http", ""))
-        formLayout.addRow(_("Proxy URL:"), self.proxyUrlEdit)
+        formLayout.addRow(self.paramsTitle, self.proxyUrlEdit)
 
         self.proxyUserEdit = QtWidgets.QLineEdit()
         self.proxyUserEdit.setPlaceholderText(_("Proxy Username"))
         self.proxyUserEdit.setStyleSheet(self.theme.PROXY_INPUT_STYLE)
-        formLayout.addRow(_("Proxy Username:"), self.proxyUserEdit)
+        self.paramsTitle = QtWidgets.QLabel(_("Proxy Username:"))
+        self.paramsTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        formLayout.addRow(self.paramsTitle, self.proxyUserEdit)
 
         self.proxyPasswordEdit = QtWidgets.QLineEdit()
         self.proxyPasswordEdit.setPlaceholderText(_("Proxy Password"))
         self.proxyPasswordEdit.setEchoMode(QtWidgets.QLineEdit.Password)
         self.proxyPasswordEdit.setStyleSheet(self.theme.PROXY_INPUT_STYLE)
-        formLayout.addRow(_("Proxy Password:"), self.proxyPasswordEdit)
+        self.paramsTitle = QtWidgets.QLabel(_("Proxy Password:"))
+        self.paramsTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        formLayout.addRow(self.paramsTitle, self.proxyPasswordEdit)
 
         layout.addLayout(formLayout)
 
         # Кнопка сохранения настроек
-        saveButton = QtWidgets.QPushButton(_("Save Settings"))
+        saveButton = QtWidgets.QPushButton(_("Save Settings"), icon=self.theme_manager.get_icon("save.svg"))
         saveButton.setStyleSheet(self.theme.ADD_GAME_BUTTON_STYLE)
         saveButton.clicked.connect(self.savePortProtonSettings)
-        saveButton.setStyleSheet(self.theme.SETTINGS_SAVE_BUTTON_STYLE)
+        # saveButton.setStyleSheet(self.theme.SETTINGS_SAVE_BUTTON_STYLE)
         layout.addWidget(saveButton)
 
         layout.addStretch(1)
@@ -667,7 +679,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.themeTabHeaderLayout.addWidget(self.themeTabTitleLabel)
 
         self.themesCombo = QtWidgets.QComboBox()
-        self.themesCombo.setStyleSheet(self.theme.COMBO_BOX_STYLE)
+        self.themesCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
         available_themes = self.theme_manager.get_available_themes()
         if self.current_theme_name in available_themes:
             available_themes.remove(self.current_theme_name)

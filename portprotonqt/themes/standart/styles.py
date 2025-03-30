@@ -178,7 +178,7 @@ ADD_GAME_BUTTON_STYLE = """
 
 # ТЕКСТОВЫЕ СТИЛИ: ЗАГОЛОВКИ И ОСНОВНОЙ КОНТЕНТ
 TAB_TITLE_STYLE = "font-family: 'Play'; font-size: 24px; color: #ffffff; background-color: none;"
-CONTENT_STYLE = "font-family: 'Play'; font-size: 16px; color: #ffffff;"
+CONTENT_STYLE = "font-family: 'Play'; font-size: 16px; color: #ffffff; background-color: none;"
 
 # ФОН ДЛЯ ДЕТАЛЬНОЙ СТРАНИЦЫ, ЕСЛИ ОБЛОЖКА НЕ ЗАГРУЖЕНА
 DETAIL_PAGE_NO_COVER_STYLE = "background: rgba(20,20,20,0.95); border-radius: 15px;"
@@ -236,28 +236,6 @@ DETAIL_PAGE_LINE_STYLE = "color: rgba(255,255,255,0.12); margin: 10px 0;"
 
 # ТЕКСТ ОПИСАНИЯ
 DETAIL_PAGE_DESC_STYLE = "font-family: 'Play'; font-size: 16px; color: #ffffff; line-height: 1.5;"
-
-# Стиль списка тем
-COMBO_BOX_STYLE = """
-QComboBox {
-    background-color: #2B2B2B;
-    color: #ffffff;
-    border: 1px solid #555555;
-    border-radius: 0px solid;
-    padding: 4px;
-}
-QComboBox::drop-down {
-    subcontrol-origin: padding;
-    subcontrol-position: top right;
-    width: 20px;
-    border-left: 1px solid #555555;
-}
-QComboBox QAbstractItemView {
-    background-color: #333333;
-    color: #ffffff;
-    selection-background-color: #444444;
-}
-"""
 
 # СТИЛЬ КНОПКИ "ИГРАТЬ"
 PLAY_BUTTON_STYLE = """
@@ -425,9 +403,11 @@ WINE_SETTINGS_WIDGET_STYLE= """
 # PORTPROTON_SETTINGS_WIDGET_STYLE
 PORTPROTON_SETTINGS_WIDGET_STYLE= """
     QWidget {
-        background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-            stop:0 rgba(55,55,55,1),
-            stop:1 rgba(24,24,24,1));
+        background: qlineargradient(spread:pad, x1:0.507, y1:1, x2:0.494543, y2:0.003,
+        stop:0 rgba(9, 190, 200, 255), stop:0.0448663 rgba(8, 166, 171, 255), 
+        stop:0.355479 rgba(5, 121, 125, 255), 
+        stop:0.656601 rgba(3, 76, 80, 255), 
+        stop:0.993097 rgba(2, 46, 48, 255));
         border-radius: 0px;
     }
 """
@@ -506,15 +486,18 @@ FORM_LABEL_STYLE = """
     }
 """
 
+# PARAMS_TITLE_STYLE
+PARAMS_TITLE_STYLE = "color: #ffffff; font-family: 'Play'; font-size: 16px; padding: 10px; background: transparent;"
+
 PROXY_INPUT_STYLE = """
     QLineEdit {
         background: rgba(30, 30, 30, 0.5);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 8px;
-        padding: 8px;
+        border: 0px solid rgba(255, 255, 255, 0.2);
+        border-radius: 15px;
+        padding: 10px;
         color: #ffffff;
         font-family: 'Play';
-        font-size: 14px;
+        font-size: 16px;
     }
     QLineEdit:focus {
         border-color: #09bec8;
@@ -524,43 +507,37 @@ PROXY_INPUT_STYLE = """
 SETTINGS_COMBO_STYLE = """
     QComboBox {
         background: rgba(30, 30, 30, 0.5);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 8px;
-        padding: 6px;
+        border: 0px solid rgba(255, 255, 255, 0.2);
+        border-radius: 15px;
+        height: 42px;
+        padding-left: 12px;
         color: #ffffff;
         font-family: 'Play';
-        font-size: 14px;
+        font-size: 16px;
         min-width: 120px;
     }
     QComboBox::drop-down {
         subcontrol-origin: padding;
         subcontrol-position: center right;
-        width: 20px;
-        border-left: 1px solid rgba(255, 255, 255, 0.2);
+        image: url(./portprotonqt/themes/standart/icons/down.svg);
+        padding: 15px;
+        border-left: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    QComboBox::item {
+        background: none;
+        margin: 5px;
+        border: none;
+        border-radius: 6px;
+        height: 42px;
+    }
+    QComboBox::item:selected {
+        background: #09bec8;
     }
     QComboBox QAbstractItemView {
-        background: rgba(40, 40, 40, 0.95);
+        background: #32343d;
         color: #ffffff;
-        selection-background-color: #09bec8;
-        border: 1px solid rgba(255, 255, 255, 0.15);
-    }
-"""
-
-SETTINGS_SAVE_BUTTON_STYLE = """
-    QPushButton {
-        background: rgba(0, 158, 188, 0.7);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 8px;
-        color: #ffffff;
-        font-family: 'Play';
-        font-size: 16px;
-        padding: 10px 25px;
-    }
-    QPushButton:hover {
-        background: rgba(0, 158, 188, 0.9);
-    }
-    QPushButton:pressed {
-        background: #09bec8;
+        border: 0px solid rgba(255, 255, 255, 0.15);
+        border-radius: 15px;
     }
 """
 
