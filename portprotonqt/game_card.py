@@ -9,11 +9,16 @@ from portprotonqt.config_utils import read_theme_from_config
 class ClickableLabel(QtWidgets.QLabel):
     clicked = QtCore.Signal()
 
-    def __init__(self, *args, icon=None, **kwargs):
+    def __init__(self, *args, icon=None, icon_size=16, icon_space=5, **kwargs):
         """
         Поддерживаются вызовы:
-         - ClickableLabel("текст", parent=...) – первый аргумент строка,
-         - ClickableLabel(parent, text="...") – если первым аргументом передается родитель.
+          - ClickableLabel("текст", parent=...) – первый аргумент строка,
+          - ClickableLabel(parent, text="...") – если первым аргументом передается родитель.
+
+        Аргументы:
+          icon: QIcon или None – иконка, которая будет отрисована вместе с текстом.
+          icon_size: int – размер иконки (ширина и высота).
+          icon_space: int – отступ между иконкой и текстом.
         """
         if args and isinstance(args[0], str):
             text = args[0]
@@ -22,7 +27,6 @@ class ClickableLabel(QtWidgets.QLabel):
         elif args and isinstance(args[0], QtWidgets.QWidget):
             parent = args[0]
             text = kwargs.get("text", "")
-            # Если первый аргумент – родитель, то вызываем QLabel с родителем
             super().__init__(parent)
             self.setText(text)
         else:
@@ -30,7 +34,9 @@ class ClickableLabel(QtWidgets.QLabel):
             parent = kwargs.get("parent", None)
             super().__init__(text, parent)
 
-        self._icon = icon  # QIcon или None
+        self._icon = icon
+        self._icon_size = icon_size
+        self._icon_space = icon_space
         self.setCursor(QtCore.Qt.PointingHandCursor)
 
     def setIcon(self, icon):
@@ -43,20 +49,22 @@ class ClickableLabel(QtWidgets.QLabel):
         return self._icon
 
     def paintEvent(self, event):
-        """Переопределяем отрисовку: рисуем иконку и текст вместе."""
+        """Переопределяем отрисовку: рисуем иконку и текст в одном лейбле."""
         painter = QtGui.QPainter(self)
         painter.setRenderHint(QtGui.QPainter.Antialiasing)
 
         rect = self.contentsRect()
         alignment = self.alignment()
 
-        icon_size = 16
-        spacing = 5  # отступ между иконкой и текстом
+        icon_size = self._icon_size
+        spacing = self._icon_space
+
         icon_rect = QtCore.QRect()
         text_rect = QtCore.QRect()
         text = self.text()
 
         if self._icon:
+            # Получаем QPixmap нужного размера
             pixmap = self._icon.pixmap(icon_size, icon_size)
             icon_rect = QtCore.QRect(0, 0, icon_size, icon_size)
             icon_rect.moveTop(rect.top() + (rect.height() - icon_size) // 2)
@@ -105,7 +113,6 @@ class ClickableLabel(QtWidgets.QLabel):
             event.accept()
         else:
             super().mousePressEvent(event)
-
 
 class GameCard(QtWidgets.QFrame):
     def __init__(self, name, description, cover_path, appid, controller_support, exec_line,
@@ -194,16 +201,34 @@ class GameCard(QtWidgets.QFrame):
         if tier_text:
             icon_filename = self.getProtonDBIconFilename(protondb_tier)
             icon = self.theme_manager.get_icon(icon_filename, self.current_theme_name)
-            self.protondbLabel = ClickableLabel(tier_text, icon=icon, parent=coverWidget)
+            self.protondbLabel = ClickableLabel(
+                tier_text,
+                icon=icon,
+                parent=coverWidget,
+                icon_size=16,    # размер иконки
+                icon_space=5     # отступ между иконкой и текстом
+            )
             self.protondbLabel.setStyleSheet(self.theme.get_protondb_badge_style(protondb_tier))
             protondb_visible = True
         else:
-            self.protondbLabel = ClickableLabel("", parent=coverWidget)
+            self.protondbLabel = ClickableLabel(
+                "",
+                parent=coverWidget,
+                icon_size=16,
+                icon_space=5
+            )
             self.protondbLabel.setVisible(False)
             protondb_visible = False
 
         # Steam бейдж
-        self.steamLabel = ClickableLabel("Steam", icon=self.theme_manager.get_icon("steam.svg", self.current_theme_name), parent=coverWidget)
+        steam_icon = self.theme_manager.get_icon("steam.svg", self.current_theme_name)
+        self.steamLabel = ClickableLabel(
+            "Steam",
+            icon=steam_icon,
+            parent=coverWidget,
+            icon_size=16,
+            icon_space=5
+        )
         self.steamLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
         steam_visible = (str(steam_game).lower() == "true")
         self.steamLabel.setVisible(steam_visible)
