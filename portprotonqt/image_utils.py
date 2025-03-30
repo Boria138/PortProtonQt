@@ -4,18 +4,53 @@ from PySide6 import QtCore, QtGui, QtWidgets
 import portprotonqt.themes.standart.styles as default_styles
 from portprotonqt.config_utils import read_proxy_config, read_theme_from_config
 from portprotonqt.theme_manager import ThemeManager
+import hashlib
+
+
+def sanitize_filename(name):
+    """
+    Удаляет из имени файла недопустимые символы.
+    """
+    return "".join(c if c.isalnum() or c in (' ', '.', '_', '-') else '_' for c in name)
+
+def get_cache_path(cover, width, height, ext="jpg"):
+    """
+    Возвращает осмысленный путь для кешированного изображения.
+    Если cover – URL, используется его basename, иначе basename файла.
+    Добавляются размеры изображения и первые 8 символов md5-хэша cover для уникальности.
+    """
+    parsed = urllib.parse.urlparse(cover)
+    if parsed.scheme in ['http', 'https']:
+        basename = os.path.basename(parsed.path) or "image"
+    else:
+        basename = os.path.basename(cover)
+    basename = sanitize_filename(basename)
+    hash_key = hashlib.md5(cover.encode("utf-8")).hexdigest()[:8]
+    filename = f"{basename}_{width}x{height}_{hash_key}.{ext}"
+    xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
+    cache_folder = os.path.join(xdg_cache_home, "PortProtonQT", "images")
+    os.makedirs(cache_folder, exist_ok=True)
+    return os.path.join(cache_folder, filename)
 
 def load_pixmap(cover, width, height):
     """
-    Загружает изображение из локального файла или по URL и масштабирует его.
-    Если загрузка не удалась, создаёт резервное изображение.
-    Если ссылка ведёт на Steam CDN, обложка кешируется локально.
-    После масштабирования с KeepAspectRatioByExpanding происходит обрезка центральной части до нужных размеров.
+    Загружает изображение из локального файла или по URL (только для Steam CDN), масштабирует и обрезает его.
+    Если загрузка не удалась, берёт placeholder из темы.
+    Итоговое изображение сохраняется в кэш (в папке images), чтобы повторно не выполнять масштабирование и обрезку.
     """
-    pixmap = QtGui.QPixmap()
     theme_manager = ThemeManager()
     current_theme_name = read_theme_from_config()
+    final_cache_file = get_cache_path(cover, width, height, ext="jpg")  # сохраняем как jpg
 
+    # Если итоговое изображение уже есть в кэше, сразу возвращаем его
+    if os.path.exists(final_cache_file):
+        pixmap = QtGui.QPixmap()
+        if pixmap.load(final_cache_file):
+            return pixmap
+
+    pixmap = QtGui.QPixmap()
+
+    # Обработка ссылок с CDN Steam
     if cover.startswith("https://steamcdn-a.akamaihd.net/steam/apps/"):
         try:
             parts = cover.split("/")
@@ -25,7 +60,6 @@ def load_pixmap(cover, width, height):
                 if idx + 1 < len(parts):
                     appid = parts[idx + 1]
             if appid:
-                # формирование пути к локальному кэшу
                 xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
                 image_folder = os.path.join(xdg_cache_home, "PortProtonQT", "images")
                 os.makedirs(image_folder, exist_ok=True)
@@ -34,7 +68,6 @@ def load_pixmap(cover, width, height):
                     pixmap.load(local_path)
                 else:
                     try:
-                        # Если указан proxy – используем его
                         proxy = read_proxy_config()
                         if proxy:
                             proxy_handler = urllib.request.ProxyHandler(proxy)
@@ -52,15 +85,21 @@ def load_pixmap(cover, width, height):
         except Exception as e:
             print("Ошибка обработки URL:", e)
 
+    # Если путь указывает на локальный файл
     elif QtCore.QFile.exists(cover):
         pixmap.load(cover)
 
+    # Если это не ссылка с CDN и локальный файл не найден — не выводим ошибку дважды,
+    # а просто переходим к использованию placeholder
+    else:
+        pass
+
+    # Если изображение не загрузилось, берем placeholder
     if pixmap.isNull():
         placeholder_path = theme_manager.get_theme_image("placeholder.png", current_theme_name)
         if placeholder_path and QtCore.QFile.exists(placeholder_path):
             pixmap.load(placeholder_path)
         else:
-            # Создаем резервное изображение
             pixmap = QtGui.QPixmap(width, height)
             pixmap.fill(QtGui.QColor("#333333"))
             painter = QtGui.QPainter(pixmap)
@@ -68,11 +107,15 @@ def load_pixmap(cover, width, height):
             painter.setFont(QtGui.QFont("Poppins", 12))
             painter.drawText(pixmap.rect(), QtCore.Qt.AlignCenter, "No Image")
             painter.end()
+        return pixmap
 
+    # Масштабирование с сохранением пропорций и обрезка центральной части
     scaled = pixmap.scaled(width, height, QtCore.Qt.KeepAspectRatioByExpanding, QtCore.Qt.SmoothTransformation)
     x = (scaled.width() - width) // 2
     y = (scaled.height() - height) // 2
     cropped = scaled.copy(x, y, width, height)
+    # Сохраняем итоговое изображение в кэш
+    cropped.save(final_cache_file, "JPG")
     return cropped
 
 def round_corners(pixmap, radius):
@@ -92,7 +135,6 @@ def round_corners(pixmap, radius):
     painter.drawPixmap(0, 0, pixmap)
     painter.end()
     return rounded
-
 
 class FullscreenDialog(QtWidgets.QDialog):
     """
