@@ -441,25 +441,35 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sliderDebounceTimer.start()
 
     def updateGameGrid(self):
-        """Перестраивает карточки с учетом FlowLayout."""
+        """Перестраивает карточки с учётом доступной ширины."""
         if not self.games:
             return
+
+        # Очищаем текущие карточки
         self.clearLayout(self.gamesListLayout)
-        # Получаем доступную ширину виджета (без внутренних отступов)
-        available_width = self.gamesListWidget.width() -40  # можно скорректировать отступы
+
+        # Получаем актуальную доступную ширину после очистки
+        available_width = self.gamesListWidget.width() - 40  # Корректируем отступы
         spacing = self.gamesListLayout.spacing()
-        # Определяем количество карточек, которые должны поместиться (минимальная ширина задаётся слайдером)
+
+        # Рассчитываем оптимальный размер карточки
         columns = max(1, available_width // (self.card_width + spacing))
-        # Пересчитываем оптимальную ширину карточки так, чтобы карточки заполнили всю строку равномерно
         new_card_width = (available_width - (columns - 1) * spacing) // columns
 
+        # Добавляем карточки с новыми размерами
         for game_data in self.games:
-            card = GameCard(*game_data,
-                            select_callback=self.openGameDetailPage,
-                            theme=self.theme,
-                            card_width=new_card_width)
+            card = GameCard(
+                *game_data,
+                select_callback=self.openGameDetailPage,
+                theme=self.theme,
+                card_width=new_card_width  # Используем рассчитанную ширину
+            )
             self.gamesListLayout.addWidget(card)
+
+        # Принудительно обновляем геометрию лейаута
         self.gamesListWidget.updateGeometry()
+        self.gamesListLayout.invalidate()
+        self.gamesListWidget.update()
 
     def populateGamesGrid(self, games_list, columns=4):
         self.clearLayout(self.gamesListLayout)
@@ -660,10 +670,12 @@ class MainWindow(QtWidgets.QMainWindow):
         proxy_password = self.proxyPasswordEdit.text().strip()
         save_proxy_config(proxy_url, proxy_user, proxy_password)
 
-        # Обновляем отображение игр, чтобы применить изменения фильтра/сортировки
-        self.updateGameGrid()
-        self.statusBar().showMessage(_("Settings saved"), 3000)
+        # Перезагружаем настройки
+        read_time_config()  # Обновляем уровень детализации времени
+        self.games = self.loadGames()  # Перезагружаем игры с новыми параметрами
+        self.updateGameGrid()  # Обновляем интерфейс
 
+        self.statusBar().showMessage(_("Settings saved"), 3000)
 
     def createThemeTab(self):
         """Вкладка 'Themes'"""
