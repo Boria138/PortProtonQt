@@ -499,7 +499,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.autoInstallWidget = QtWidgets.QWidget()
         self.autoInstallWidget.setStyleSheet(self.theme.AUTOINSTALL_WIDGET_STYLE)
         layout = QtWidgets.QVBoxLayout(self.autoInstallWidget)
-        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setContentsMargins(10, 12, 0, 0)
 
         self.autoInstallTitle = QtWidgets.QLabel(_("Auto Install"))
         self.autoInstallTitle.setStyleSheet(self.theme.TAB_TITLE_STYLE)
@@ -519,7 +519,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.emulatorsWidget = QtWidgets.QWidget()
         self.emulatorsWidget.setStyleSheet(self.theme.EMULATORS_WIDGET_STYLE)
         layout = QtWidgets.QVBoxLayout(self.emulatorsWidget)
-        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setContentsMargins(10, 12, 0, 0)
 
         self.emulatorsTitle = QtWidgets.QLabel(_("Emulators"))
         self.emulatorsTitle.setStyleSheet(self.theme.TAB_TITLE_STYLE)
@@ -539,7 +539,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.wineWidget = QtWidgets.QWidget()
         self.wineWidget.setStyleSheet(self.theme.WINE_SETTINGS_WIDGET_STYLE)
         layout = QtWidgets.QVBoxLayout(self.wineWidget)
-        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setContentsMargins(10, 12, 0, 0)
 
         self.wineTitle = QtWidgets.QLabel(_("Wine Settings"))
         self.wineTitle.setStyleSheet(self.theme.TAB_TITLE_STYLE)
@@ -559,7 +559,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.portProtonWidget = QtWidgets.QWidget()
         self.portProtonWidget.setStyleSheet(self.theme.PORTPROTON_SETTINGS_WIDGET_STYLE)
         layout = QtWidgets.QVBoxLayout(self.portProtonWidget)
-        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setContentsMargins(10, 12, 0, 0)
         layout.setSpacing(10)
 
         title = QtWidgets.QLabel(_("PortProton Settings"))
@@ -682,7 +682,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.themeTabWidget = QtWidgets.QWidget()
         self.themeTabWidget.setStyleSheet(self.theme.THEMES_WIDGET_STYLE)
         mainLayout = QtWidgets.QVBoxLayout(self.themeTabWidget)
-        mainLayout.setContentsMargins(20, 20, 20, 20)
+        mainLayout.setContentsMargins(10, 6, 0, 0)
         mainLayout.setSpacing(10)
 
         # 1. Верхняя строка: Заголовок и список тем
