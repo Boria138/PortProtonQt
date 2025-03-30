@@ -168,23 +168,26 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def loadGames(self):
         display_filter = read_display_filter()
+        favorites = read_favorites()
+        sort_method = read_sort_method()
+        portproton_games = self._load_portproton_games()
+        steam_games = self._load_steam_games()
+
         if display_filter == "steam":
             games = self._load_steam_games()
         elif display_filter == "portproton":
             games = self._load_portproton_games()
+        elif display_filter == "favorites":
+            games = [game for game in portproton_games + steam_games if game[0] in favorites]
         else:
-            portproton_games = self._load_portproton_games()
-            steam_games = self._load_steam_games()
             seen = set()
             games = []
+
             for game in portproton_games + steam_games:
                 name = game[0]
                 if name not in seen:
                     seen.add(name)
                     games.append(game)
-
-        sort_method = read_sort_method()
-        favorites = read_favorites()
 
         # Если сортировка по playtime, то сортируем по playtime_seconds (g[10])
         # и затем по last_launch_timestamp (g[9]). Иначе – наоборот.
@@ -585,7 +588,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # 3. Games display_filter
         self.gamesDisplayCombo = QtWidgets.QComboBox()
-        self.gamesDisplayCombo.addItems(["all", "steam", "portproton"])
+        self.gamesDisplayCombo.addItems(["all", "steam", "portproton", "favorites"])
         self.gamesDisplayCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
         current_display_filter = read_display_filter()
         index = self.gamesDisplayCombo.findText(current_display_filter, QtCore.Qt.MatchFixedString)
