@@ -403,11 +403,7 @@ WINE_SETTINGS_WIDGET_STYLE= """
 # PORTPROTON_SETTINGS_WIDGET_STYLE
 PORTPROTON_SETTINGS_WIDGET_STYLE= """
     QWidget {
-        background: qlineargradient(spread:pad, x1:0.507, y1:1, x2:0.494543, y2:0.003,
-        stop:0 rgba(9, 190, 200, 255), stop:0.0448663 rgba(8, 166, 171, 255), 
-        stop:0.355479 rgba(5, 121, 125, 255), 
-        stop:0.656601 rgba(3, 76, 80, 255), 
-        stop:0.993097 rgba(2, 46, 48, 255));
+        background: qlineargradient(spread:pad, x1:0.507, y1:1, x2:0.494543, y2:0.003, stop:0 rgba(9, 190, 200, 255), stop:0.0448663 rgba(8, 166, 171, 255), stop:0.355479 rgba(5, 121, 125, 255), stop:0.656601 rgba(3, 76, 80, 255), stop:0.993097 rgba(2, 46, 48, 255));
         border-radius: 0px;
     }
 """
