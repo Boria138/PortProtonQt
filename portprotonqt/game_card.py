@@ -1,5 +1,4 @@
 from PySide6 import QtCore, QtGui, QtWidgets
-from PySide6.QtCore import QBuffer
 import portprotonqt.themes.standart.styles as default_styles
 from portprotonqt.image_utils import load_pixmap, round_corners
 from portprotonqt.localization import _
@@ -10,38 +9,95 @@ from portprotonqt.config_utils import read_theme_from_config
 class ClickableLabel(QtWidgets.QLabel):
     clicked = QtCore.Signal()
 
-    def __init__(self, *args, **kwargs):
-        # Извлекаем параметр icon, если он указан
-        icon = kwargs.pop("icon", None)
-        # Если первый позиционный аргумент – строка, считаем его текстом
-        text = args[0] if args and isinstance(args[0], str) else ""
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args, icon=None, **kwargs):
+        """
+        Поддерживаются вызовы:
+         - ClickableLabel("текст", parent=...) – первый аргумент строка,
+         - ClickableLabel(parent, text="...") – если первым аргументом передается родитель.
+        """
+        if args and isinstance(args[0], str):
+            text = args[0]
+            parent = kwargs.get("parent", None)
+            super().__init__(text, parent)
+        elif args and isinstance(args[0], QtWidgets.QWidget):
+            parent = args[0]
+            text = kwargs.get("text", "")
+            # Если первый аргумент – родитель, то вызываем QLabel с родителем
+            super().__init__(parent)
+            self.setText(text)
+        else:
+            text = ""
+            parent = kwargs.get("parent", None)
+            super().__init__(text, parent)
+
+        self._icon = icon  # QIcon или None
         self.setCursor(QtCore.Qt.PointingHandCursor)
 
-        if icon:
-            # Получаем QPixmap из переданной иконки (можно задать нужный размер)
-            pixmap = icon.pixmap(32, 32)
-            if text:
-                # Конвертируем QPixmap в base64 для вставки в HTML
-                buffer = QBuffer()
-                buffer.open(QBuffer.ReadWrite)
-                pixmap.save(buffer, "PNG")
-                base64_data = bytes(buffer.data().toBase64()).decode('utf-8')
-                buffer.close()
-                # Формируем HTML: картинка и текст
-                html_text = (
-                    f'<img src="data:image/png;base64,{base64_data}" width="16" height="16" '
-                    f'style="vertical-align: middle;">      {text}'
-                )
-                self.setTextFormat(QtCore.Qt.RichText)
-                self.setText(html_text)
-            else:
-                # Если текста нет, просто устанавливаем изображение
-                self.setPixmap(pixmap)
+    def setIcon(self, icon):
+        """Устанавливает иконку и перерисовывает виджет."""
+        self._icon = icon
+        self.update()
+
+    def icon(self):
+        """Возвращает текущую иконку."""
+        return self._icon
+
+    def paintEvent(self, event):
+        """Переопределяем отрисовку: рисуем иконку и текст вместе."""
+        painter = QtGui.QPainter(self)
+        painter.setRenderHint(QtGui.QPainter.Antialiasing)
+
+        rect = self.contentsRect()
+        alignment = self.alignment()
+
+        icon_size = 16
+        spacing = 5  # отступ между иконкой и текстом
+        icon_rect = QtCore.QRect()
+        text_rect = QtCore.QRect()
+        text = self.text()
+
+        if self._icon:
+            pixmap = self._icon.pixmap(icon_size, icon_size)
+            icon_rect = QtCore.QRect(0, 0, icon_size, icon_size)
+            icon_rect.moveTop(rect.top() + (rect.height() - icon_size) // 2)
         else:
-            # Если иконка не передана, устанавливаем текст (если он есть)
-            if text:
-                self.setText(text)
+            pixmap = None
+
+        fm = QtGui.QFontMetrics(self.font())
+        text_width = fm.horizontalAdvance(text)
+        text_height = fm.height()
+        total_width = text_width + (icon_size + spacing if pixmap else 0)
+
+        if alignment & QtCore.Qt.AlignHCenter:
+            x = rect.left() + (rect.width() - total_width) // 2
+        elif alignment & QtCore.Qt.AlignRight:
+            x = rect.right() - total_width
+        else:
+            x = rect.left()
+
+        y = rect.top() + (rect.height() - text_height) // 2
+
+        if pixmap:
+            icon_rect.moveLeft(x)
+            text_rect = QtCore.QRect(x + icon_size + spacing, y, text_width, text_height)
+        else:
+            text_rect = QtCore.QRect(x, y, text_width, text_height)
+
+        option = QtWidgets.QStyleOption()
+        option.initFrom(self)
+        self.style().drawPrimitive(QtWidgets.QStyle.PE_Widget, option, painter, self)
+
+        if pixmap:
+            painter.drawPixmap(icon_rect, pixmap)
+        self.style().drawItemText(
+            painter,
+            text_rect,
+            alignment,
+            self.palette(),
+            self.isEnabled(),
+            text,
+            self.foregroundRole(),
+        )
 
     def mousePressEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
@@ -49,6 +105,7 @@ class ClickableLabel(QtWidgets.QLabel):
             event.accept()
         else:
             super().mousePressEvent(event)
+
 
 class GameCard(QtWidgets.QFrame):
     def __init__(self, name, description, cover_path, appid, controller_support, exec_line,
