@@ -385,7 +385,7 @@ class GameCard(QtWidgets.QFrame):
             return
         self.pulse_anim = QtCore.QPropertyAnimation(self, b"borderWidth")
         self.pulse_anim.setDuration(800)
-        self.pulse_anim.setLoopCount(-1)
+        self.pulse_anim.setLoopCount(0)
         self.pulse_anim.setKeyValueAt(0, 8)
         self.pulse_anim.setKeyValueAt(0.5, 10)
         self.pulse_anim.setKeyValueAt(1, 8)
@@ -406,8 +406,8 @@ class GameCard(QtWidgets.QFrame):
 
         self.gradient_anim = QtCore.QPropertyAnimation(self, b"gradientAngle")
         self.gradient_anim.setDuration(3000)
-        self.gradient_anim.setStartValue(0)
-        self.gradient_anim.setEndValue(360)
+        self.gradient_anim.setStartValue(360)
+        self.gradient_anim.setEndValue(0)
         self.gradient_anim.setLoopCount(-1)
         self.gradient_anim.start()
 
