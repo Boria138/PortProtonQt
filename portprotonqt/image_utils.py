@@ -2,7 +2,8 @@ import os
 import urllib.request
 from PySide6 import QtCore, QtGui, QtWidgets
 import portprotonqt.themes.standart.styles as default_styles
-from portprotonqt.config_utils import read_proxy_config
+from portprotonqt.config_utils import read_proxy_config, read_theme_from_config
+from portprotonqt.theme_manager import ThemeManager
 
 def load_pixmap(cover, width, height):
     """
@@ -12,6 +13,8 @@ def load_pixmap(cover, width, height):
     После масштабирования с KeepAspectRatioByExpanding происходит обрезка центральной части до нужных размеров.
     """
     pixmap = QtGui.QPixmap()
+    theme_manager = ThemeManager()
+    current_theme_name = read_theme_from_config()
 
     if cover.startswith("https://steamcdn-a.akamaihd.net/steam/apps/"):
         try:
@@ -53,13 +56,18 @@ def load_pixmap(cover, width, height):
         pixmap.load(cover)
 
     if pixmap.isNull():
-        pixmap = QtGui.QPixmap(width, height)
-        pixmap.fill(QtGui.QColor("#333333"))
-        painter = QtGui.QPainter(pixmap)
-        painter.setPen(QtGui.QPen(QtGui.QColor("white")))
-        painter.setFont(QtGui.QFont("Poppins", 12))
-        painter.drawText(pixmap.rect(), QtCore.Qt.AlignCenter, "No Image")
-        painter.end()
+        placeholder_path = theme_manager.get_theme_image("placeholder.png", current_theme_name)
+        if placeholder_path and QtCore.QFile.exists(placeholder_path):
+            pixmap.load(placeholder_path)
+        else:
+            # Создаем резервное изображение
+            pixmap = QtGui.QPixmap(width, height)
+            pixmap.fill(QtGui.QColor("#333333"))
+            painter = QtGui.QPainter(pixmap)
+            painter.setPen(QtGui.QPen(QtGui.QColor("white")))
+            painter.setFont(QtGui.QFont("Poppins", 12))
+            painter.drawText(pixmap.rect(), QtCore.Qt.AlignCenter, "No Image")
+            painter.end()
 
     scaled = pixmap.scaled(width, height, QtCore.Qt.KeepAspectRatioByExpanding, QtCore.Qt.SmoothTransformation)
     x = (scaled.width() - width) // 2

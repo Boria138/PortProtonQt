@@ -232,3 +232,20 @@ class ThemeManager:
             base_dir = os.path.dirname(os.path.abspath(__file__))
             icon_path = os.path.join(base_dir, "themes", "standart", "icons", icon_name)
         return QIcon(icon_path)
+
+    def get_theme_image(self, image_name, theme_name=None):
+        """
+        Возвращает путь к изображению из папки текущей темы.
+        Если не найдено, проверяет стандартную тему.
+        """
+        theme_name = theme_name or self.current_theme_name
+        for themes_dir in THEMES_DIRS:
+            theme_folder = os.path.join(themes_dir, theme_name)
+            candidate = os.path.join(theme_folder, "images", image_name)
+            if os.path.exists(candidate):
+                return candidate
+
+        # Проверяем стандартную тему
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        default_path = os.path.join(base_dir, "themes", "standart", "images", image_name)
+        return default_path if os.path.exists(default_path) else None
