@@ -381,7 +381,7 @@ LIBRARY_WIDGET_STYLE= """
         background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
             stop:0 rgba(112,20,132,1),
             stop:1 rgba(50,134,182,1));
-        border-radius: 15px;
+        border-radius: 0px;
     }
 """
 
@@ -398,7 +398,7 @@ AUTOINSTALL_WIDGET_STYLE= """
         background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
             stop:0 rgba(55,55,55,1),
             stop:1 rgba(24,24,24,1));
-        border-radius: 15px;
+        border-radius: 0px;
     }
 """
 
@@ -408,7 +408,7 @@ EMULATORS_WIDGET_STYLE= """
         background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
             stop:0 rgba(55,55,55,1),
             stop:1 rgba(24,24,24,1));
-        border-radius: 15px;
+        border-radius: 0px;
     }
 """
 
@@ -418,7 +418,7 @@ WINE_SETTINGS_WIDGET_STYLE= """
         background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
             stop:0 rgba(55,55,55,1),
             stop:1 rgba(24,24,24,1));
-        border-radius: 15px;
+        border-radius: 0px;
     }
 """
 
@@ -428,7 +428,7 @@ PORTPROTON_SETTINGS_WIDGET_STYLE= """
         background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
             stop:0 rgba(55,55,55,1),
             stop:1 rgba(24,24,24,1));
-        border-radius: 15px;
+        border-radius: 0px;
     }
 """
 
@@ -438,7 +438,7 @@ THEMES_WIDGET_STYLE= """
         background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
             stop:0 rgba(55,55,55,1),
             stop:1 rgba(24,24,24,1));
-        border-radius: 15px;
+        border-radius: 0px;
     }
 """
 

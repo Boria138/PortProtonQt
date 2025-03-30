@@ -289,7 +289,7 @@ class GameCard(QtWidgets.QFrame):
             pen.setColor(QtGui.QColor(0, 0, 0, 0))
 
         painter.setPen(pen)
-        radius = 5
+        radius = 18
         rect = self.rect().adjusted(
             self._borderWidth / 2,
             self._borderWidth / 2,
