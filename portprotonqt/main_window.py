@@ -125,7 +125,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE)
         self.setStyleSheet(self.theme.MESSAGE_BOX_STYLE)
 
-
     def updateUIStyles(self):
         # Обновление логотипа
         pixmap = self.theme_manager.get_theme_logo(self.current_theme_name)
@@ -559,7 +558,6 @@ class MainWindow(QtWidgets.QMainWindow):
     def createPortProtonTab(self):
         """Вкладка 'PortProton Settings'."""
         self.portProtonWidget = QtWidgets.QWidget()
-        self.portProtonWidget.setStyleSheet(self.theme.PORTPROTON_SETTINGS_WIDGET_STYLE)
         layout = QtWidgets.QVBoxLayout(self.portProtonWidget)
         layout.setContentsMargins(10, 12, 10, 10)
         layout.setSpacing(10)
@@ -682,9 +680,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def createThemeTab(self):
         """Вкладка 'Themes'"""
         self.themeTabWidget = QtWidgets.QWidget()
-        self.themeTabWidget.setStyleSheet(self.theme.THEMES_WIDGET_STYLE)
         mainLayout = QtWidgets.QVBoxLayout(self.themeTabWidget)
-        mainLayout.setContentsMargins(10, 6, 10, 10)
+        mainLayout.setContentsMargins(10, 12, 10, 10)
         mainLayout.setSpacing(10)
 
         # 1. Верхняя строка: Заголовок и список тем
@@ -717,6 +714,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.themeMetainfoLabel = QtWidgets.QLabel()
         self.themeMetainfoLabel.setWordWrap(True)
+        self.themeMetainfoLabel.setStyleSheet(self.theme.METAINFO_LABEL_STYLE)
         self.themeInfoLayout.addWidget(self.themeMetainfoLabel)
 
         self.applyButton = QtWidgets.QPushButton(_("Apply Theme"), icon=self.theme_manager.get_icon("update.svg"))
