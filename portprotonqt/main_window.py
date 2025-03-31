@@ -408,7 +408,7 @@ class MainWindow(QtWidgets.QMainWindow):
         sliderLayout.addStretch()  # сдвигаем ползунок вправо
         self.sizeSlider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
         self.sizeSlider.setMinimum(200)
-        self.sizeSlider.setMaximum(300)
+        self.sizeSlider.setMaximum(250)
         self.sizeSlider.setValue(self.card_width)
         self.sizeSlider.setTickInterval(10)
         self.sizeSlider.setTickPosition(QtWidgets.QSlider.TicksBelow)
