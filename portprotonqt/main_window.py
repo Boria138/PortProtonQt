@@ -498,7 +498,6 @@ class MainWindow(QtWidgets.QMainWindow):
     def createAutoInstallTab(self):
         """Вкладка 'Auto Install'."""
         self.autoInstallWidget = QtWidgets.QWidget()
-        self.autoInstallWidget.setStyleSheet(self.theme.AUTOINSTALL_WIDGET_STYLE)
         layout = QtWidgets.QVBoxLayout(self.autoInstallWidget)
         layout.setContentsMargins(10, 12, 10, 10)
 
@@ -518,7 +517,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def createEmulatorsTab(self):
         """Вкладка 'Emulators'."""
         self.emulatorsWidget = QtWidgets.QWidget()
-        self.emulatorsWidget.setStyleSheet(self.theme.EMULATORS_WIDGET_STYLE)
+        # self.emulatorsWidget.setStyleSheet(self.theme.EMULATORS_WIDGET_STYLE)
         layout = QtWidgets.QVBoxLayout(self.emulatorsWidget)
         layout.setContentsMargins(10, 12, 10, 10)
 
@@ -538,7 +537,6 @@ class MainWindow(QtWidgets.QMainWindow):
     def createWineTab(self):
         """Вкладка 'Wine Settings'."""
         self.wineWidget = QtWidgets.QWidget()
-        self.wineWidget.setStyleSheet(self.theme.WINE_SETTINGS_WIDGET_STYLE)
         layout = QtWidgets.QVBoxLayout(self.wineWidget)
         layout.setContentsMargins(10, 12, 10, 10)
 
@@ -645,7 +643,6 @@ class MainWindow(QtWidgets.QMainWindow):
         saveButton = QtWidgets.QPushButton(_("Save Settings"), icon=self.theme_manager.get_icon("save.svg"))
         saveButton.setStyleSheet(self.theme.ADD_GAME_BUTTON_STYLE)
         saveButton.clicked.connect(self.savePortProtonSettings)
-        # saveButton.setStyleSheet(self.theme.SETTINGS_SAVE_BUTTON_STYLE)
         layout.addWidget(saveButton)
 
         layout.addStretch(1)

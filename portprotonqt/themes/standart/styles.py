@@ -374,38 +374,6 @@ CONTAINER_STYLE= """
     }
 """
 
-# AUTOINSTALL_WIDGET_STYLE
-AUTOINSTALL_WIDGET_STYLE= """
-    QWidget {
-        background: none;
-        border-radius: 0px;
-    }
-"""
-
-# EMULATORS_WIDGET_STYLE
-EMULATORS_WIDGET_STYLE= """
-    QWidget {
-        background: none;
-        border-radius: 0px;
-    }
-"""
-
-# WINE_SETTINGS_WIDGET_STYLE
-WINE_SETTINGS_WIDGET_STYLE= """
-    QWidget {
-        background: none;
-        border-radius: 0px;
-    }
-"""
-
-# THEMES_WIDGET_STYLE
-THEMES_WIDGET_STYLE= """
-    QWidget {
-        background: none;
-        border-radius: 0px;
-    }
-"""
-
 # SLIDER_SIZE_STYLE
 SLIDER_SIZE_STYLE= """
     QWidget {
