@@ -168,20 +168,22 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def loadGames(self):
         display_filter = read_display_filter()
-        favorites = read_favorites()
         sort_method = read_sort_method()
-        portproton_games = self._load_portproton_games()
-        steam_games = self._load_steam_games()
+        favorites = read_favorites()
 
         if display_filter == "steam":
             games = self._load_steam_games()
         elif display_filter == "portproton":
             games = self._load_portproton_games()
         elif display_filter == "favorites":
+            portproton_games = self._load_portproton_games()
+            steam_games = self._load_steam_games()
             games = [game for game in portproton_games + steam_games if game[0] in favorites]
         else:
             seen = set()
             games = []
+            portproton_games = self._load_portproton_games()
+            steam_games = self._load_steam_games()
 
             for game in portproton_games + steam_games:
                 name = game[0]
