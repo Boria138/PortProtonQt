@@ -4,49 +4,24 @@ from PySide6 import QtCore, QtGui, QtWidgets
 import portprotonqt.themes.standart.styles as default_styles
 from portprotonqt.config_utils import read_proxy_config, read_theme_from_config
 from portprotonqt.theme_manager import ThemeManager
-import hashlib
-
-
-def sanitize_filename(name):
-    """
-    Удаляет из имени файла недопустимые символы.
-    """
-    return "".join(c if c.isalnum() or c in (' ', '.', '_', '-') else '_' for c in name)
-
-def get_cache_path(cover, width, height, ext="jpg"):
-    """
-    Возвращает осмысленный путь для кешированного изображения.
-    Если cover – URL, используется его basename, иначе basename файла.
-    Добавляются размеры изображения и первые 8 символов md5-хэша cover для уникальности.
-    """
-    parsed = urllib.parse.urlparse(cover)
-    if parsed.scheme in ['http', 'https']:
-        basename = os.path.basename(parsed.path) or "image"
-    else:
-        basename = os.path.basename(cover)
-    basename = sanitize_filename(basename)
-    hash_key = hashlib.md5(cover.encode("utf-8")).hexdigest()[:8]
-    filename = f"{basename}_{width}x{height}_{hash_key}.{ext}"
-    xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
-    cache_folder = os.path.join(xdg_cache_home, "PortProtonQT", "images")
-    os.makedirs(cache_folder, exist_ok=True)
-    return os.path.join(cache_folder, filename)
+import functools
 
 def load_pixmap(cover, width, height):
     """
     Загружает изображение из локального файла или по URL (только для Steam CDN), масштабирует и обрезает его.
     Если загрузка не удалась, берёт placeholder из темы.
-    Итоговое изображение сохраняется в кэш (в папке images), чтобы повторно не выполнять масштабирование и обрезку.
+    Итоговое обрезанное изображение кешируется в памяти через lru_cache.
+    """
+    return get_cropped_pixmap_cached(cover, width, height)
+
+@functools.lru_cache(maxsize=256)
+def get_cropped_pixmap_cached(cover, width, height):
+    """
+    Загружает исходное изображение, масштабирует и обрезает его до указанных размеров.
+    Результат кешируется с помощью lru_cache.
     """
     theme_manager = ThemeManager()
     current_theme_name = read_theme_from_config()
-    final_cache_file = get_cache_path(cover, width, height, ext="jpg")  # сохраняем как jpg
-
-    # Если итоговое изображение уже есть в кэше, сразу возвращаем его
-    if os.path.exists(final_cache_file):
-        pixmap = QtGui.QPixmap()
-        if pixmap.load(final_cache_file):
-            return pixmap
 
     pixmap = QtGui.QPixmap()
 
@@ -89,12 +64,7 @@ def load_pixmap(cover, width, height):
     elif QtCore.QFile.exists(cover):
         pixmap.load(cover)
 
-    # Если это не ссылка с CDN и локальный файл не найден — не выводим ошибку дважды,
-    # а просто переходим к использованию placeholder
-    else:
-        pass
-
-    # Если изображение не загрузилось, берем placeholder
+    # Если изображение не загрузилось, используем placeholder
     if pixmap.isNull():
         placeholder_path = theme_manager.get_theme_image("placeholder.png", current_theme_name)
         if placeholder_path and QtCore.QFile.exists(placeholder_path):
@@ -114,8 +84,6 @@ def load_pixmap(cover, width, height):
     x = (scaled.width() - width) // 2
     y = (scaled.height() - height) // 2
     cropped = scaled.copy(x, y, width, height)
-    # Сохраняем итоговое изображение в кэш
-    cropped.save(final_cache_file, "JPG")
     return cropped
 
 def round_corners(pixmap, radius):
