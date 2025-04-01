@@ -403,10 +403,12 @@ WINE_SETTINGS_WIDGET_STYLE= """
 # PORTPROTON_SETTINGS_WIDGET_STYLE
 PORTPROTON_SETTINGS_WIDGET_STYLE= """
     QWidget {
-        background: qlineargradient(spread:pad, x1:0.507, y1:1, x2:0.494543, y2:0.003, stop:0 rgba(9, 190, 200, 255), stop:0.0448663 rgba(8, 166, 171, 255), stop:0.355479 rgba(5, 121, 125, 255), stop:0.656601 rgba(3, 76, 80, 255), stop:0.993097 rgba(2, 46, 48, 255));
+        background: #32343d;
         border-radius: 0px;
     }
 """
+
+
 
 # THEMES_WIDGET_STYLE
 THEMES_WIDGET_STYLE= """
@@ -503,7 +505,7 @@ PROXY_INPUT_STYLE = """
 
 SETTINGS_COMBO_STYLE = """
     QComboBox {
-        background: rgba(30, 30, 30, 0.5);
+        background: #3f424d;
         border: 0px solid rgba(255, 255, 255, 0.2);
         border-radius: 10px;
         height: 34px;
@@ -514,29 +516,44 @@ SETTINGS_COMBO_STYLE = """
         min-width: 120px;
         combobox-popup: 0;
     }
+    QComboBox:on {
+        background: #32343d;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
+        border-bottom-left-radius: 0px;
+        border-bottom-right-radius: 0px;
+    }
     QComboBox:hover {
         border: 1px solid rgba(255, 255, 255, 0.2);
     }
     QComboBox::drop-down {
         subcontrol-origin: padding;
         subcontrol-position: center right;
-        image: url(./portprotonqt/themes/standart/icons/down.svg);
-        padding: 15px;
         border-left: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 12px;
+        height: 12px;
+        width: 12px;
     }
-
+    QComboBox::down-arrow {
+        image: url(./portprotonqt/themes/standart/icons/down.svg);
+        padding: 12px;
+        height: 12px;
+        width: 12px;
+    }
+    QComboBox::down-arrow:on {
+        image: url(./portprotonqt/themes/standart/icons/up.svg);
+        padding: 12px;
+        height: 12px;
+        width: 12px;
+    }
     QComboBox QAbstractItemView {
-        background: #32343d;
-        color: #ffffff;
-        border: 0px solid rgba(255, 255, 255, 0.15);
         outline: none;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-top-style: none;
     }
-
     QListView {
-        background: #32343d;
-        color: #ffffff;
-        border: 0px solid rgba(255, 255, 255, 0.15);
-        border-radius: 10px;
+        background: #3f424d;
     }
     QListView::item {
         padding: 7px 7px 7px 12px;
@@ -544,7 +561,6 @@ SETTINGS_COMBO_STYLE = """
     }
     QListView::item:hover {
         background: #09bec8;
-
     }
     QListView::item:selected {
         background: #09bec8;
