@@ -489,14 +489,15 @@ PROXY_INPUT_STYLE = """
     QLineEdit {
         background: rgba(30, 30, 30, 0.5);
         border: 0px solid rgba(255, 255, 255, 0.2);
-        border-radius: 15px;
-        padding: 10px;
+        border-radius: 10px;
+        height: 34px;
+        padding-left: 12px;
         color: #ffffff;
         font-family: 'Play';
         font-size: 16px;
     }
     QLineEdit:focus {
-        border-color: #09bec8;
+        border: 1px solid rgba(255, 255, 255, 0.2);
     }
 """
 
@@ -504,13 +505,17 @@ SETTINGS_COMBO_STYLE = """
     QComboBox {
         background: rgba(30, 30, 30, 0.5);
         border: 0px solid rgba(255, 255, 255, 0.2);
-        border-radius: 15px;
-        height: 42px;
+        border-radius: 10px;
+        height: 34px;
         padding-left: 12px;
         color: #ffffff;
         font-family: 'Play';
         font-size: 16px;
         min-width: 120px;
+        combobox-popup: 0;
+    }
+    QComboBox:hover {
+        border: 1px solid rgba(255, 255, 255, 0.2);
     }
     QComboBox::drop-down {
         subcontrol-origin: padding;
@@ -519,21 +524,30 @@ SETTINGS_COMBO_STYLE = """
         padding: 15px;
         border-left: 1px solid rgba(255, 255, 255, 0.05);
     }
-    QComboBox::item {
-        background: none;
-        margin: 5px;
-        border: none;
-        border-radius: 6px;
-        height: 42px;
-    }
-    QComboBox::item:selected {
-        background: #09bec8;
-    }
+
     QComboBox QAbstractItemView {
         background: #32343d;
         color: #ffffff;
         border: 0px solid rgba(255, 255, 255, 0.15);
-        border-radius: 15px;
+        outline: none;
+    }
+
+    QListView {
+        background: #32343d;
+        color: #ffffff;
+        border: 0px solid rgba(255, 255, 255, 0.15);
+        border-radius: 10px;
+    }
+    QListView::item {
+        padding: 7px 7px 7px 12px;
+        border-radius: 10px;
+    }
+    QListView::item:hover {
+        background: #09bec8;
+
+    }
+    QListView::item:selected {
+        background: #09bec8;
     }
 """
 
