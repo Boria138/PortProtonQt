@@ -66,6 +66,13 @@ MAIN_WINDOW_STYLE = """
         background: none;
     }
     QLabel {
+        color: #232627;
+    }
+"""
+
+# СТИЛЬ ДЛЯ СТАТУСА ТЕМЫ
+THEME_STATUS_STYLE = """
+    QLabel {
         color: #ffffff;
     }
 """
