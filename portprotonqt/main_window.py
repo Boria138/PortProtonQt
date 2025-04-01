@@ -17,13 +17,10 @@ from portprotonqt.theme_manager import ThemeManager, load_theme_screenshots
 from portprotonqt.time_utils import save_last_launch, get_last_launch, parse_playtime_file, format_playtime, get_last_launch_timestamp, format_last_launch
 from portprotonqt.config_utils import get_portproton_location, read_theme_from_config, save_theme_to_config, parse_desktop_entry, load_theme_metainfo, read_time_config, read_card_size, save_card_size, read_sort_method, read_display_filter, read_favorites, save_favorites, save_time_config, save_sort_method, save_display_filter, save_proxy_config, read_proxy_config
 from portprotonqt.localization import _
-from portprotonqt.logger import get_logger
 
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtWidgets import QLineEdit
 from datetime import datetime
-
-logger = get_logger(__name__)
 
 class MainWindow(QtWidgets.QMainWindow):
     """Main window of PortProtonQT."""

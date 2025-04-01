@@ -4,7 +4,6 @@ import shlex
 import subprocess
 import time
 import html
-import urllib.request
 
 import orjson
 import vdf
@@ -13,6 +12,9 @@ from pathlib import Path
 from portprotonqt.logger import get_logger
 from portprotonqt.config_utils import read_proxy_config
 from portprotonqt.localization import get_steam_language
+from portprotonqt.downloader import Downloader
+
+downloader = Downloader()
 
 logger = get_logger(__name__)
 
@@ -28,18 +30,6 @@ def decode_text(text: str) -> str:
     Остальные символы и HTML-теги остаются без изменений.
     """
     return html.unescape(text)
-
-def get_url_with_proxy(url, timeout=5):
-    """
-    Осуществляет запрос по URL с использованием прокси, если он задан.
-    """
-    if PROXY_SETTINGS:
-        proxy_handler = urllib.request.ProxyHandler(PROXY_SETTINGS)
-        opener = urllib.request.build_opener(proxy_handler)
-    else:
-        opener = urllib.request.build_opener()
-    req = urllib.request.Request(url)
-    return opener.open(req, timeout=timeout)
 
 def get_cache_dir():
     """Возвращает путь к каталогу кэша, создаёт его при необходимости."""
@@ -235,37 +225,40 @@ def get_exiftool_data(game_exe):
 
 def load_steam_apps():
     """
-    Загружает список приложений Steam с использованием кэша (30 дней)
+    Загружает список приложений Steam с использованием кэша (30 дней).
     """
     cache_dir = get_cache_dir()
     cache_file = os.path.join(cache_dir, "steam_apps.json")
     steam_apps = []
     cache_valid = False
+
     if os.path.exists(cache_file):
         if time.time() - os.path.getmtime(cache_file) < CACHE_DURATION:
             cache_valid = True
+
     if cache_valid:
         with open(cache_file, "rb") as f:
             steam_apps = orjson.loads(f.read())
         logger.info("Загружен кэш Steam приложений с %d записями", len(steam_apps))
         return steam_apps
+
     app_list_url = "https://raw.githubusercontent.com/BlackSnaker/PortProtonQt/refs/heads/main/data/games_appid_min.json"
     try:
-        with get_url_with_proxy(app_list_url, timeout=5) as response:
-            if response.status == 200:
-                data = orjson.loads(response.read())
-                if isinstance(data, dict):
-                    steam_apps = data.get("applist", {}).get("apps", [])
-                else:
-                    steam_apps = data
-                with open(cache_file, "wb") as f:
-                    f.write(orjson.dumps(steam_apps))
-                logger.info("Кэш Steam приложений сохранён с %d записями", len(steam_apps))
+        result = downloader.download(app_list_url, cache_file, timeout=5)
+        if result:
+            with open(result, "rb") as f:
+                data = orjson.loads(f.read())
+            if isinstance(data, dict):
+                steam_apps = data.get("applist", {}).get("apps", [])
             else:
-                steam_apps = []
+                steam_apps = data
+            logger.info("Кэш Steam приложений сохранён с %d записями", len(steam_apps))
+        else:
+            steam_apps = []
     except Exception as e:
         logger.error("Ошибка загрузки списка Steam приложений: %s", e)
         steam_apps = []
+
     return steam_apps
 
 def build_index(steam_apps):
@@ -321,23 +314,36 @@ def save_app_details(app_id, data):
 def fetch_app_info_cached(app_id):
     """
     Получает подробную информацию об игре через Steam API
+    Если данные уже сохранены локально (и кэш валиден), возвращает их.
+    В противном случае загружает JSON-ответ по URL, сохраняет его в кэш и возвращает данные.
     """
     cached = load_app_details(app_id)
     if cached is not None:
         return cached
+
     lang = get_steam_language()
     url = f"https://store.steampowered.com/api/appdetails?appids={app_id}&l={lang}"
-    try:
-        with get_url_with_proxy(url, timeout=5) as response:
-            if response.status != 200:
-                return None
-            data = orjson.loads(response.read())
-    except Exception as e:
-        logger.error("Ошибка при получении информации об игре: %s", e)
+
+    # Определяем путь для сохранения кэшированного ответа
+    cache_dir = get_cache_dir()
+    cache_file = os.path.join(cache_dir, f"steam_app_{app_id}.json")
+
+    # Загружаем данные через Downloader
+    result = downloader.download(url, cache_file, timeout=5)
+    if not result:
         return None
+
+    try:
+        with open(result, "rb") as f:
+            data = orjson.loads(f.read())
+    except Exception as e:
+        logger.error("Ошибка при чтении загруженной информации об игре: %s", e)
+        return None
+
     details = data.get(str(app_id), {})
     if not details.get("success"):
         return None
+
     app_data = details.get("data", {})
     save_app_details(app_id, app_data)
     return app_data
@@ -369,25 +375,31 @@ def save_protondb_status(appid, data):
 def get_protondb_tier(appid):
     """
     Получает статус ProtonDB для приложения.
-    Сначала пытается загрузить данные из кеша, затем обращается к API ProtonDB и сохраняет результат в кеш.
+    Сначала пытается загрузить данные из кеша, затем обращается к API ProtonDB
+    и сохраняет результат в кеш.
     """
     cached = load_protondb_status(appid)
     if cached is not None:
         return cached.get("tier", "")
+
     url = f"https://www.protondb.com/api/v1/reports/summaries/{appid}.json"
+
+    cache_dir = get_cache_dir()
+    cache_file = os.path.join(cache_dir, f"protondb_{appid}.json")
+
+    result = downloader.download(url, cache_file, timeout=5)
+    if not result:
+        logger.info("Не удалось загрузить данные ProtonDB для appid %s", appid)
+        return ""
+
     try:
-        with get_url_with_proxy(url, timeout=5) as response:
-            if response.status == 200:
-                data = orjson.loads(response.read())
-                tier = data.get("tier", "")
-                # Сохраняем данные в кеш
-                save_protondb_status(appid, data)
-                return tier
-            else:
-                logger.info("Не удалось получить данные с ProtonDB для appid %s, код ответа: %s", appid, response.status)
-                return ""
+        with open(result, "rb") as f:
+            data = orjson.loads(f.read())
+        tier = data.get("tier", "")
+        save_protondb_status(appid, data)
+        return tier
     except Exception as e:
-        logger.info("Не удалось получить данные с ProtonDB для appid %s, ошибка: %s", appid, e)
+        logger.info("Не удалось обработать данные ProtonDB для appid %s, ошибка: %s", appid, e)
         return ""
 
 # Глобальные переменные для кэширования Steam-приложений и их индекса
