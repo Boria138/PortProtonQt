@@ -155,6 +155,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Вкладка "Темы"
         self.themesCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
+        self.themeStatusLabel.setStyleSheet(self.theme.THEME_STATUS_STYLE)
 
         # Вкладка "Настройки PORTPROTON"
         self.timeDetailTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
@@ -787,6 +788,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.current_theme_name = selected_theme
                     self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE)
                     self.themeStatusLabel.setText(_("Theme '{0}' applied successfully").format(selected_theme))
+                    self.themeStatusLabel.setStyleSheet(self.theme.THEME_STATUS_STYLE)
                     self.updateUIStyles()
                     save_theme_to_config(selected_theme)
                     updateThemePreview(selected_theme)
