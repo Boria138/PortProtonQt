@@ -151,12 +151,12 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _updateTabStyles(self):
         # Вкладка "Библиотека"
-        self.addGameButton.setStyleSheet(self.theme.ADD_GAME_BUTTON_STYLE)
+        self.addGameButton.setStyleSheet(self.theme.ADDGAME_BACK_BUTTON_STYLE)
         self.searchEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE)
 
         # Вкладка "Темы"
-        self.themesCombo.setStyleSheet(self.theme.COMBO_BOX_STYLE)
-        self.applyButton.setStyleSheet(self.theme.ADD_GAME_BUTTON_STYLE)
+        self.themesCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
+        self.applyButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
 
         # Список заголовков, которые нужно обновить
         for title_label in self.findChildren(QtWidgets.QLabel, "tabTitle"):
@@ -349,7 +349,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.container = QtWidgets.QWidget()
         self.container.setStyleSheet(self.theme.CONTAINER_STYLE)
         layout = QtWidgets.QHBoxLayout(self.container)
-        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setContentsMargins(0, 6, 0, 0)
         layout.setSpacing(10)
 
         self.GameLibraryTitle = QtWidgets.QLabel(_("Game Library"))
@@ -358,7 +358,7 @@ class MainWindow(QtWidgets.QMainWindow):
         layout.addWidget(self.GameLibraryTitle)
 
         self.addGameButton = QtWidgets.QPushButton(_("Add Game"), icon=self.theme_manager.get_icon("addgame.svg"))
-        self.addGameButton.setStyleSheet(self.theme.ADD_GAME_BUTTON_STYLE)
+        self.addGameButton.setStyleSheet(self.theme.ADDGAME_BACK_BUTTON_STYLE)
         self.addGameButton.clicked.connect(self.openAddGameDialog)
         layout.addWidget(self.addGameButton, alignment=QtCore.Qt.AlignRight)
 
@@ -499,9 +499,9 @@ class MainWindow(QtWidgets.QMainWindow):
     def createAutoInstallTab(self):
         """Вкладка 'Auto Install'."""
         self.autoInstallWidget = QtWidgets.QWidget()
-        self.autoInstallWidget.setStyleSheet(self.theme.AUTOINSTALL_WIDGET_STYLE)
+        self.autoInstallWidget.setStyleSheet(self.theme.OTHER_PAGES_WIDGET_STYLE)
         layout = QtWidgets.QVBoxLayout(self.autoInstallWidget)
-        layout.setContentsMargins(10, 12, 10, 10)
+        layout.setContentsMargins(10, 18, 10, 10)
 
         self.autoInstallTitle = QtWidgets.QLabel(_("Auto Install"))
         self.autoInstallTitle.setStyleSheet(self.theme.TAB_TITLE_STYLE)
@@ -519,9 +519,9 @@ class MainWindow(QtWidgets.QMainWindow):
     def createEmulatorsTab(self):
         """Вкладка 'Emulators'."""
         self.emulatorsWidget = QtWidgets.QWidget()
-        self.emulatorsWidget.setStyleSheet(self.theme.EMULATORS_WIDGET_STYLE)
+        self.emulatorsWidget.setStyleSheet(self.theme.OTHER_PAGES_WIDGET_STYLE)
         layout = QtWidgets.QVBoxLayout(self.emulatorsWidget)
-        layout.setContentsMargins(10, 12, 10, 10)
+        layout.setContentsMargins(10, 18, 10, 10)
 
         self.emulatorsTitle = QtWidgets.QLabel(_("Emulators"))
         self.emulatorsTitle.setStyleSheet(self.theme.TAB_TITLE_STYLE)
@@ -539,9 +539,9 @@ class MainWindow(QtWidgets.QMainWindow):
     def createWineTab(self):
         """Вкладка 'Wine Settings'."""
         self.wineWidget = QtWidgets.QWidget()
-        self.wineWidget.setStyleSheet(self.theme.WINE_SETTINGS_WIDGET_STYLE)
+        self.wineWidget.setStyleSheet(self.theme.OTHER_PAGES_WIDGET_STYLE)
         layout = QtWidgets.QVBoxLayout(self.wineWidget)
-        layout.setContentsMargins(10, 12, 10, 10)
+        layout.setContentsMargins(10, 18, 10, 10)
 
         self.wineTitle = QtWidgets.QLabel(_("Wine Settings"))
         self.wineTitle.setStyleSheet(self.theme.TAB_TITLE_STYLE)
@@ -559,10 +559,9 @@ class MainWindow(QtWidgets.QMainWindow):
     def createPortProtonTab(self):
         """Вкладка 'PortProton Settings'."""
         self.portProtonWidget = QtWidgets.QWidget()
-        self.portProtonWidget.setStyleSheet(self.theme.PORTPROTON_SETTINGS_WIDGET_STYLE)
+        self.portProtonWidget.setStyleSheet(self.theme.OTHER_PAGES_WIDGET_STYLE)
         layout = QtWidgets.QVBoxLayout(self.portProtonWidget)
-        layout.setContentsMargins(10, 12, 10, 10)
-        layout.setSpacing(10)
+        layout.setContentsMargins(10, 18, 10, 10)
 
         title = QtWidgets.QLabel(_("PortProton Settings"))
         title.setStyleSheet(self.theme.TAB_TITLE_STYLE)
@@ -576,6 +575,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Форма для недокументированных параметров
         formLayout = QtWidgets.QFormLayout()
+        formLayout.setContentsMargins(0, 10, 0, 0)
         formLayout.setSpacing(10)
 
         # 1. Time detail_level
@@ -645,9 +645,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Кнопка сохранения настроек
         saveButton = QtWidgets.QPushButton(_("Save Settings"), icon=self.theme_manager.get_icon("save.svg"))
-        saveButton.setStyleSheet(self.theme.ADD_GAME_BUTTON_STYLE)
+        saveButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         saveButton.clicked.connect(self.savePortProtonSettings)
-        # saveButton.setStyleSheet(self.theme.SETTINGS_SAVE_BUTTON_STYLE)
         layout.addWidget(saveButton)
 
         layout.addStretch(1)
@@ -682,9 +681,9 @@ class MainWindow(QtWidgets.QMainWindow):
     def createThemeTab(self):
         """Вкладка 'Themes'"""
         self.themeTabWidget = QtWidgets.QWidget()
-        self.themeTabWidget.setStyleSheet(self.theme.THEMES_WIDGET_STYLE)
+        self.themeTabWidget.setStyleSheet(self.theme.OTHER_PAGES_WIDGET_STYLE)
         mainLayout = QtWidgets.QVBoxLayout(self.themeTabWidget)
-        mainLayout.setContentsMargins(10, 6, 10, 10)
+        mainLayout.setContentsMargins(10, 14, 10, 10)
         mainLayout.setSpacing(10)
 
         # 1. Верхняя строка: Заголовок и список тем
@@ -709,6 +708,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # 2. Карусель скриншотов
         self.screenshotsCarousel = ImageCarousel([])
+        self.screenshotsCarousel.setStyleSheet(self.theme.CAROUSEL_WIDGET_STYLE)
         mainLayout.addWidget(self.screenshotsCarousel, stretch=1)
 
         # 3. Информация о теме
@@ -720,7 +720,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.themeInfoLayout.addWidget(self.themeMetainfoLabel)
 
         self.applyButton = QtWidgets.QPushButton(_("Apply Theme"), icon=self.theme_manager.get_icon("update.svg"))
-        self.applyButton.setStyleSheet(self.theme.ADD_GAME_BUTTON_STYLE)
+        self.applyButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.themeInfoLayout.addWidget(self.applyButton)
 
         self.themeStatusLabel = QtWidgets.QLabel()
@@ -833,7 +833,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         backButton = QtWidgets.QPushButton(_("Back"), icon=self.theme_manager.get_icon("back.svg"))
         backButton.setFixedWidth(100)
-        backButton.setStyleSheet(self.theme.BACK_BUTTON_STYLE)
+        backButton.setStyleSheet(self.theme.ADDGAME_BACK_BUTTON_STYLE)
         backButton.clicked.connect(lambda: self.goBackDetailPage(detailPage))
         mainLayout.addWidget(backButton, alignment=QtCore.Qt.AlignLeft)
 
