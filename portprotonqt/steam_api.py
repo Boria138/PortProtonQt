@@ -10,7 +10,6 @@ import vdf
 
 from pathlib import Path
 from portprotonqt.logger import get_logger
-from portprotonqt.config_utils import read_proxy_config
 from portprotonqt.localization import get_steam_language
 from portprotonqt.downloader import Downloader
 
@@ -20,8 +19,6 @@ logger = get_logger(__name__)
 
 # Время жизни кэша – 30 дней (можно вынести в настройки)
 CACHE_DURATION = 30 * 24 * 60 * 60
-
-PROXY_SETTINGS = read_proxy_config()
 
 def decode_text(text: str) -> str:
     """
