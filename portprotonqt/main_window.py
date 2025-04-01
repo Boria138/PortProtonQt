@@ -54,7 +54,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Статус-бар
         self.setStatusBar(QtWidgets.QStatusBar(self))
-
         centralWidget = QtWidgets.QWidget()
         self.setCentralWidget(centralWidget)
         mainLayout = QtWidgets.QVBoxLayout(centralWidget)
@@ -150,17 +149,42 @@ class MainWindow(QtWidgets.QMainWindow):
         self.updateGameGrid()
 
     def _updateTabStyles(self):
-        # Вкладка "Библиотека"
+        # Кнопки
         self.addGameButton.setStyleSheet(self.theme.ADDGAME_BACK_BUTTON_STYLE)
+        self.applyButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+
+        # Вкладка "Библиотека"
         self.searchEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE)
 
         # Вкладка "Темы"
         self.themesCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
-        self.applyButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+
+        # Вкладка "Настройки PORTPROTON"
+        self.timeDetailTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.timeDetailCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
+        self.gamesSortTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.gamesSortCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
+        self.gamesDisplayTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.gamesDisplayCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
+        self.proxyUrlTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.proxyUrlEdit.setStyleSheet(self.theme.PROXY_INPUT_STYLE)
+        self.proxyUserTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.proxyUserEdit.setStyleSheet(self.theme.PROXY_INPUT_STYLE)
+        self.proxyPasswordTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.proxyPasswordEdit.setStyleSheet(self.theme.PROXY_INPUT_STYLE)
+        self.saveButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
 
         # Список заголовков, которые нужно обновить
         for title_label in self.findChildren(QtWidgets.QLabel, "tabTitle"):
             title_label.setStyleSheet(self.theme.TAB_TITLE_STYLE)
+
+        # Список стилей страниц
+        self.autoInstallWidget.setStyleSheet(self.theme.OTHER_PAGES_WIDGET_STYLE)
+        self.emulatorsWidget.setStyleSheet(self.theme.OTHER_PAGES_WIDGET_STYLE)
+        self.wineWidget.setStyleSheet(self.theme.OTHER_PAGES_WIDGET_STYLE)
+        self.portProtonWidget.setStyleSheet(self.theme.OTHER_PAGES_WIDGET_STYLE)
+        self.themeTabWidget.setStyleSheet(self.theme.OTHER_PAGES_WIDGET_STYLE)
+        self.screenshotsCarousel.setStyleSheet(self.theme.CAROUSEL_WIDGET_STYLE)
 
         # Обновляем контент с objectName="tabContent"
         for content_label in self.findChildren(QtWidgets.QLabel, "tabContent"):
@@ -354,7 +378,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.GameLibraryTitle = QtWidgets.QLabel(_("Game Library"))
         self.GameLibraryTitle.setStyleSheet(self.theme.INSTALLED_TAB_TITLE_STYLE)
-        self.GameLibraryTitle.setObjectName("tabTitle")
+        # self.GameLibraryTitle.setObjectName("tabTitle")
         layout.addWidget(self.GameLibraryTitle)
 
         self.addGameButton = QtWidgets.QPushButton(_("Add Game"), icon=self.theme_manager.get_icon("addgame.svg"))
@@ -582,72 +606,72 @@ class MainWindow(QtWidgets.QMainWindow):
         self.timeDetailCombo = QtWidgets.QComboBox()
         self.timeDetailCombo.addItems(["detailed", "brief"])
         self.timeDetailCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
-        self.paramsTitle = QtWidgets.QLabel(_("Time Detail Level:"))
-        self.paramsTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.timeDetailTitle = QtWidgets.QLabel(_("Time Detail Level:"))
+        self.timeDetailTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         current_time_detail = read_time_config()
         index = self.timeDetailCombo.findText(current_time_detail, QtCore.Qt.MatchFixedString)
         if index >= 0:
             self.timeDetailCombo.setCurrentIndex(index)
-        formLayout.addRow(self.paramsTitle, self.timeDetailCombo)
+        formLayout.addRow(self.timeDetailTitle, self.timeDetailCombo)
 
         # 2. Games sort_method
         self.gamesSortCombo = QtWidgets.QComboBox()
         self.gamesSortCombo.addItems(["last_launch", "playtime"])
         self.gamesSortCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
-        self.paramsTitle = QtWidgets.QLabel(_("Games Sort Method:"))
-        self.paramsTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.gamesSortTitle = QtWidgets.QLabel(_("Games Sort Method:"))
+        self.gamesSortTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         current_sort_method = read_sort_method()
         index = self.gamesSortCombo.findText(current_sort_method, QtCore.Qt.MatchFixedString)
         if index >= 0:
             self.gamesSortCombo.setCurrentIndex(index)
-        formLayout.addRow(self.paramsTitle, self.gamesSortCombo)
+        formLayout.addRow(self.gamesSortTitle, self.gamesSortCombo)
 
         # 3. Games display_filter
         self.gamesDisplayCombo = QtWidgets.QComboBox()
         self.gamesDisplayCombo.addItems(["all", "steam", "portproton", "favorites"])
         self.gamesDisplayCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
-        self.paramsTitle = QtWidgets.QLabel(_("Games Display Filter:"))
-        self.paramsTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.gamesDisplayTitle = QtWidgets.QLabel(_("Games Display Filter:"))
+        self.gamesDisplayTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         current_display_filter = read_display_filter()
         index = self.gamesDisplayCombo.findText(current_display_filter, QtCore.Qt.MatchFixedString)
         if index >= 0:
             self.gamesDisplayCombo.setCurrentIndex(index)
-        formLayout.addRow(self.paramsTitle, self.gamesDisplayCombo)
+        formLayout.addRow(self.gamesDisplayTitle, self.gamesDisplayCombo)
 
         # 4. Proxy настройки
         self.proxyUrlEdit = QtWidgets.QLineEdit()
         self.proxyUrlEdit.setPlaceholderText(_("Proxy URL"))
         self.proxyUrlEdit.setStyleSheet(self.theme.PROXY_INPUT_STYLE)
-        self.paramsTitle = QtWidgets.QLabel(_("Proxy URL:"))
-        self.paramsTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.proxyUrlTitle = QtWidgets.QLabel(_("Proxy URL:"))
+        self.proxyUrlTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         proxy_config = read_proxy_config()
         # Если в настройках proxy есть URL, выводим его
         if proxy_config.get("http", ""):
             self.proxyUrlEdit.setText(proxy_config.get("http", ""))
-        formLayout.addRow(self.paramsTitle, self.proxyUrlEdit)
+        formLayout.addRow(self.proxyUrlTitle, self.proxyUrlEdit)
 
         self.proxyUserEdit = QtWidgets.QLineEdit()
         self.proxyUserEdit.setPlaceholderText(_("Proxy Username"))
         self.proxyUserEdit.setStyleSheet(self.theme.PROXY_INPUT_STYLE)
-        self.paramsTitle = QtWidgets.QLabel(_("Proxy Username:"))
-        self.paramsTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
-        formLayout.addRow(self.paramsTitle, self.proxyUserEdit)
+        self.proxyUserTitle = QtWidgets.QLabel(_("Proxy Username:"))
+        self.proxyUserTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        formLayout.addRow(self.proxyUserTitle, self.proxyUserEdit)
 
         self.proxyPasswordEdit = QtWidgets.QLineEdit()
         self.proxyPasswordEdit.setPlaceholderText(_("Proxy Password"))
         self.proxyPasswordEdit.setEchoMode(QtWidgets.QLineEdit.Password)
         self.proxyPasswordEdit.setStyleSheet(self.theme.PROXY_INPUT_STYLE)
-        self.paramsTitle = QtWidgets.QLabel(_("Proxy Password:"))
-        self.paramsTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
-        formLayout.addRow(self.paramsTitle, self.proxyPasswordEdit)
+        self.proxyPasswordTitle = QtWidgets.QLabel(_("Proxy Password:"))
+        self.proxyPasswordTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        formLayout.addRow(self.proxyPasswordTitle, self.proxyPasswordEdit)
 
         layout.addLayout(formLayout)
 
         # Кнопка сохранения настроек
-        saveButton = QtWidgets.QPushButton(_("Save Settings"), icon=self.theme_manager.get_icon("save.svg"))
-        saveButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
-        saveButton.clicked.connect(self.savePortProtonSettings)
-        layout.addWidget(saveButton)
+        self.saveButton = QtWidgets.QPushButton(_("Save Settings"), icon=self.theme_manager.get_icon("save.svg"))
+        self.saveButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        self.saveButton.clicked.connect(self.savePortProtonSettings)
+        layout.addWidget(self.saveButton)
 
         layout.addStretch(1)
         self.stackedWidget.addWidget(self.portProtonWidget)
