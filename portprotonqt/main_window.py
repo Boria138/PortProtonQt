@@ -123,12 +123,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
     def updateUIStyles(self):
-        # Обновление логотипа
-        pixmap = self.theme_manager.get_theme_logo(self.current_theme_name)
-        scaled_pixmap = pixmap.scaled(*self.theme.pixmapsScaledSize, QtCore.Qt.AspectRatioMode.KeepAspectRatio,
-                                      QtCore.Qt.TransformationMode.SmoothTransformation)
-        self.titleLabel.setPixmap(scaled_pixmap)
-        self.titleLabel.setFixedSize(scaled_pixmap.size())
         self.gamesListWidget.setStyleSheet(self.theme.LIST_WIDGET_STYLE)
 
         # Принудительное обновление базовых стилей
