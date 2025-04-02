@@ -55,7 +55,7 @@ def get_cropped_pixmap_cached(cover, width, height):
 
     # Если изображение не загрузилось, используем placeholder
     if pixmap.isNull():
-        placeholder_path = theme_manager.get_theme_image("placeholder.png", current_theme_name)
+        placeholder_path = theme_manager.get_theme_image("placeholder.jpg", current_theme_name)
         if placeholder_path and QtCore.QFile.exists(placeholder_path):
             pixmap.load(placeholder_path)
         else:
@@ -63,10 +63,8 @@ def get_cropped_pixmap_cached(cover, width, height):
             pixmap.fill(QtGui.QColor("#333333"))
             painter = QtGui.QPainter(pixmap)
             painter.setPen(QtGui.QPen(QtGui.QColor("white")))
-            painter.setFont(QtGui.QFont("Poppins", 12))
             painter.drawText(pixmap.rect(), QtCore.Qt.AlignCenter, "No Image")
             painter.end()
-        return pixmap
 
     # Масштабирование с сохранением пропорций и обрезка центральной части
     scaled = pixmap.scaled(width, height, QtCore.Qt.KeepAspectRatioByExpanding, QtCore.Qt.SmoothTransformation)
