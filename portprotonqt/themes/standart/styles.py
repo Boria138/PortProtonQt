@@ -474,6 +474,19 @@ PROXY_INPUT_STYLE = """
     QLineEdit:focus {
         border: 1px solid rgba(255, 255, 255, 0.2);
     }
+    QMenu {
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 5px 10px;
+        background: #32343d;
+    }
+    QMenu::item {
+        padding: 0px 10px;
+        border: 10px solid transparent; /* reserve space for selection border */
+    }
+    QMenu::item:selected {
+        background: #3f424d;
+        border-radius: 10px;
+    }
 """
 
 SETTINGS_COMBO_STYLE = f"""
