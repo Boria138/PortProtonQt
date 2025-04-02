@@ -1,10 +1,14 @@
 import os
-import urllib.request
 from PySide6 import QtCore, QtGui, QtWidgets
 import portprotonqt.themes.standart.styles as default_styles
-from portprotonqt.config_utils import read_proxy_config, read_theme_from_config
+from portprotonqt.config_utils import read_theme_from_config
 from portprotonqt.theme_manager import ThemeManager
+from portprotonqt.downloader import Downloader
+from portprotonqt.logger import get_logger
 import functools
+
+downloader = Downloader()
+logger = get_logger(__name__)
 
 def load_pixmap(cover, width, height):
     """
@@ -39,26 +43,11 @@ def get_cropped_pixmap_cached(cover, width, height):
                 image_folder = os.path.join(xdg_cache_home, "PortProtonQT", "images")
                 os.makedirs(image_folder, exist_ok=True)
                 local_path = os.path.join(image_folder, f"{appid}.jpg")
-                if os.path.exists(local_path):
-                    pixmap.load(local_path)
-                else:
-                    try:
-                        proxy = read_proxy_config()
-                        if proxy:
-                            proxy_handler = urllib.request.ProxyHandler(proxy)
-                            opener = urllib.request.build_opener(proxy_handler)
-                            response = opener.open(cover, timeout=5)
-                        else:
-                            response = urllib.request.urlopen(cover, timeout=5)
-                        if response.status == 200:
-                            content = response.read()
-                            with open(local_path, "wb") as f:
-                                f.write(content)
-                            pixmap.load(local_path)
-                    except Exception as e:
-                        print("Ошибка загрузки обложки из Steam CDN:", e)
+                result = downloader.download(cover, local_path, timeout=5)
+                if result:
+                    pixmap.load(result)
         except Exception as e:
-            print("Ошибка обработки URL:", e)
+            logger.error("Ошибка обработки URL:", e)
 
     # Если путь указывает на локальный файл
     elif QtCore.QFile.exists(cover):
@@ -66,7 +55,7 @@ def get_cropped_pixmap_cached(cover, width, height):
 
     # Если изображение не загрузилось, используем placeholder
     if pixmap.isNull():
-        placeholder_path = theme_manager.get_theme_image("placeholder.png", current_theme_name)
+        placeholder_path = theme_manager.get_theme_image("placeholder.jpg", current_theme_name)
         if placeholder_path and QtCore.QFile.exists(placeholder_path):
             pixmap.load(placeholder_path)
         else:
@@ -74,10 +63,8 @@ def get_cropped_pixmap_cached(cover, width, height):
             pixmap.fill(QtGui.QColor("#333333"))
             painter = QtGui.QPainter(pixmap)
             painter.setPen(QtGui.QPen(QtGui.QColor("white")))
-            painter.setFont(QtGui.QFont("Poppins", 12))
             painter.drawText(pixmap.rect(), QtCore.Qt.AlignCenter, "No Image")
             painter.end()
-        return pixmap
 
     # Масштабирование с сохранением пропорций и обрезка центральной части
     scaled = pixmap.scaled(width, height, QtCore.Qt.KeepAspectRatioByExpanding, QtCore.Qt.SmoothTransformation)
