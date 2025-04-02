@@ -1126,8 +1126,23 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.game_processes and self.target_exe == current_exe:
             for proc in self.game_processes:
                 try:
+                    # Используем psutil для поиска всех дочерних процессов
+                    parent = psutil.Process(proc.pid)
+                    children = parent.children(recursive=True)
+                    # Завершаем все дочерние процессы
+                    for child in children:
+                        try:
+                            child.terminate()
+                        except psutil.NoSuchProcess:
+                            pass
+                    psutil.wait_procs(children, timeout=5)
+                    # Если какие-то процессы не завершились корректно, принудительно убиваем их
+                    for child in children:
+                        if child.is_running():
+                            child.kill()
+                    # Завершаем сам родительский процесс
                     os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-                except ProcessLookupError:
+                except psutil.NoSuchProcess:
                     pass  # процесс уже завершился
             self.game_processes = []
             if hasattr(self, '_typewriter_timer') and self._typewriter_timer is not None:
@@ -1155,7 +1170,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 env_vars['START_FROM_STEAM'] = '1'
             elif entry_exec_split[0] == "flatpak":
                 env_vars['START_FROM_STEAM'] = '1'
-            process = subprocess.Popen(entry_exec_split, env=env_vars, shell=False)
+            process = subprocess.Popen(entry_exec_split, env=env_vars, shell=False, preexec_fn=os.setsid)
             self.game_processes.append(process)
             save_last_launch(exe_name, datetime.now())
             self.startTypewriterEffect(_("Launching {0}").format(game_name))
@@ -1165,6 +1180,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.checkProcessTimer.start(500)
             button.setText(_("Stop"))
             button.setIcon(self.theme_manager.get_icon("stop.svg"))
+
 
     def closeEvent(self, event):
         for proc in self.game_processes:
