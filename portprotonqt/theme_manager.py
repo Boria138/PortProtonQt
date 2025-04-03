@@ -1,6 +1,5 @@
 import importlib.util
 import os
-import glob
 from portprotonqt.logger import get_logger
 from PySide6.QtGui import QFontDatabase, QPixmap, QPainter
 from PySide6.QtSvg import QSvgRenderer
@@ -40,7 +39,7 @@ def load_theme_screenshots(theme_name):
     screenshots = []
     for themes_dir in THEMES_DIRS:
         theme_folder = os.path.join(themes_dir, theme_name)
-        screenshots_folder = os.path.join(theme_folder, "screenshots")
+        screenshots_folder = os.path.join(theme_folder, "images", "screenshots")
         if os.path.exists(screenshots_folder) and os.path.isdir(screenshots_folder):
             for file in os.listdir(screenshots_folder):
                 screenshot_path = os.path.join(screenshots_folder, file)
@@ -82,34 +81,11 @@ def load_theme_fonts(theme_name):
             else:
                 logger.error(f"Ошибка загрузки шрифта: {filename}")
 
-def load_theme_logo(theme_name):
-    """
-    Загружает логотип выбранной темы из файла, имя которого начинается с "theme_logo.".
-    Поддерживает векторные форматы (например, SVG) и растровые форматы.
-    :param theme_name: Имя темы.
-    :return: QPixmap с логотипом или None, если файл не найден или произошла ошибка.
-    """
+def load_logo():
     logo_path = None
 
-    def find_logo_in_folder(folder):
-        pattern = os.path.join(folder, "theme_logo.*")
-        files = glob.glob(pattern)
-        return files[0] if files else None
-
-    if theme_name == "standart":
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        theme_folder = os.path.join(base_dir, "themes", "standart")
-        logo_path = find_logo_in_folder(theme_folder)
-    else:
-        for themes_dir in THEMES_DIRS:
-            theme_folder = os.path.join(themes_dir, theme_name)
-            logo_path = find_logo_in_folder(theme_folder)
-            if logo_path:
-                break
-
-    if not logo_path or not os.path.exists(logo_path):
-        logger.error(f"Файл логотипа не найден для темы '{theme_name}'")
-        return None
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    logo_path = os.path.join(base_dir, "themes", "standart", "images", "theme_logo.svg")
 
     file_extension = os.path.splitext(logo_path)[1].lower()
 
@@ -123,14 +99,6 @@ def load_theme_logo(theme_name):
         painter = QPainter(pixmap)
         renderer.render(painter)
         painter.end()
-        logger.info(f"Логотип темы '{theme_name}' успешно загружен (SVG): {logo_path}")
-        return pixmap
-    else:
-        pixmap = QPixmap(logo_path)
-        if pixmap.isNull():
-            logger.error(f"Ошибка загрузки логотипа: {logo_path}")
-            return None
-        logger.info(f"Логотип темы '{theme_name}' успешно загружен: {logo_path}")
         return pixmap
 
 class ThemeWrapper:
@@ -184,17 +152,14 @@ class ThemeManager:
     def __init__(self):
         self.current_theme_name = None
         self.current_theme_module = None
-        self.current_theme_logo = None
 
     def get_available_themes(self):
         """Возвращает список доступных тем."""
         return list_themes()
 
-    def get_theme_logo(self, theme_name=None):
+    def get_theme_logo(self):
         """Возвращает логотип для текущей или указанной темы."""
-        if theme_name is None:
-            theme_name = self.current_theme_name
-        return load_theme_logo(theme_name)
+        return load_logo()
 
     def apply_theme(self, theme_name):
         """
@@ -205,7 +170,6 @@ class ThemeManager:
         """
         theme_module = load_theme(theme_name)
         load_theme_fonts(theme_name)
-        self.current_theme_logo = load_theme_logo(theme_name)
         self.current_theme_name = theme_name
         self.current_theme_module = theme_module
         save_theme_to_config(theme_name)
@@ -223,14 +187,14 @@ class ThemeManager:
         # Поиск иконки в папке текущей темы
         for themes_dir in THEMES_DIRS:
             theme_folder = os.path.join(themes_dir, theme_name)
-            candidate = os.path.join(theme_folder, "icons", icon_name)
+            candidate = os.path.join(theme_folder, "images", "icons", icon_name)
             if os.path.exists(candidate):
                 icon_path = candidate
                 break
         # Если не нашли – используем стандартную тему
         if not icon_path:
             base_dir = os.path.dirname(os.path.abspath(__file__))
-            icon_path = os.path.join(base_dir, "themes", "standart", "icons", icon_name)
+            icon_path = os.path.join(base_dir, "themes", "standart", "images", "icons", icon_name)
         return QIcon(icon_path)
 
     def get_theme_image(self, image_name, theme_name=None):

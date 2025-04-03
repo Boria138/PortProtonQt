@@ -523,13 +523,13 @@ SETTINGS_COMBO_STYLE = """
         width: 12px;
     }
     QComboBox::down-arrow {
-        image: url(./portprotonqt/themes/standart/icons/down.svg);
+        image: url(./portprotonqt/themes/standart/images/icons/down.svg);
         padding: 12px;
         height: 12px;
         width: 12px;
     }
     QComboBox::down-arrow:on {
-        image: url(./portprotonqt/themes/standart/icons/up.svg);
+        image: url(./portprotonqt/themes/standart/images/icons/up.svg);
         padding: 12px;
         height: 12px;
         width: 12px;

@@ -13,7 +13,7 @@ from portprotonqt.flow_layout import FlowLayout
 from portprotonqt.gamepad_support import GamepadSupport
 from portprotonqt.image_utils import load_pixmap, round_corners, ImageCarousel
 from portprotonqt.steam_api import get_steam_game_info, get_full_steam_game_info, get_steam_installed_games
-from portprotonqt.theme_manager import ThemeManager, load_theme_screenshots
+from portprotonqt.theme_manager import ThemeManager, load_theme_screenshots, load_logo
 from portprotonqt.time_utils import save_last_launch, get_last_launch, parse_playtime_file, format_playtime, get_last_launch_timestamp, format_last_launch
 from portprotonqt.config_utils import get_portproton_location, read_theme_from_config, save_theme_to_config, parse_desktop_entry, load_theme_metainfo, read_time_config, read_card_size, save_card_size, read_sort_method, read_display_filter, read_favorites, save_favorites, save_time_config, save_sort_method, save_display_filter, save_proxy_config, read_proxy_config
 from portprotonqt.localization import _
@@ -66,7 +66,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Текст "PortProton" слева
         self.titleLabel = QtWidgets.QLabel()
-        pixmap = self.theme_manager.current_theme_logo
+        pixmap = load_logo()
         self.titleLabel.setPixmap(pixmap)
         self.titleLabel.setFixedSize(pixmap.size())
         self.titleLabel.setStyleSheet(self.theme.TITLE_LABEL_STYLE)
@@ -123,12 +123,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
     def updateUIStyles(self):
-        # Обновление логотипа
-        pixmap = self.theme_manager.get_theme_logo(self.current_theme_name)
-        scaled_pixmap = pixmap.scaled(*self.theme.pixmapsScaledSize, QtCore.Qt.AspectRatioMode.KeepAspectRatio,
-                                      QtCore.Qt.TransformationMode.SmoothTransformation)
-        self.titleLabel.setPixmap(scaled_pixmap)
-        self.titleLabel.setFixedSize(scaled_pixmap.size())
         self.gamesListWidget.setStyleSheet(self.theme.LIST_WIDGET_STYLE)
 
         # Принудительное обновление базовых стилей
@@ -1132,8 +1126,23 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.game_processes and self.target_exe == current_exe:
             for proc in self.game_processes:
                 try:
+                    # Используем psutil для поиска всех дочерних процессов
+                    parent = psutil.Process(proc.pid)
+                    children = parent.children(recursive=True)
+                    # Завершаем все дочерние процессы
+                    for child in children:
+                        try:
+                            child.terminate()
+                        except psutil.NoSuchProcess:
+                            pass
+                    psutil.wait_procs(children, timeout=5)
+                    # Если какие-то процессы не завершились корректно, принудительно убиваем их
+                    for child in children:
+                        if child.is_running():
+                            child.kill()
+                    # Завершаем сам родительский процесс
                     os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-                except ProcessLookupError:
+                except psutil.NoSuchProcess:
                     pass  # процесс уже завершился
             self.game_processes = []
             if hasattr(self, '_typewriter_timer') and self._typewriter_timer is not None:
@@ -1161,7 +1170,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 env_vars['START_FROM_STEAM'] = '1'
             elif entry_exec_split[0] == "flatpak":
                 env_vars['START_FROM_STEAM'] = '1'
-            process = subprocess.Popen(entry_exec_split, env=env_vars, shell=False)
+            process = subprocess.Popen(entry_exec_split, env=env_vars, shell=False, preexec_fn=os.setsid)
             self.game_processes.append(process)
             save_last_launch(exe_name, datetime.now())
             self.startTypewriterEffect(_("Launching {0}").format(game_name))
@@ -1171,6 +1180,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.checkProcessTimer.start(500)
             button.setText(_("Stop"))
             button.setIcon(self.theme_manager.get_icon("stop.svg"))
+
 
     def closeEvent(self, event):
         for proc in self.game_processes:
