@@ -174,7 +174,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Вкладка "Темы"
         self.screenshotsCarousel.setStyleSheet(self.theme.CAROUSEL_WIDGET_STYLE)
-        self.themeStatusLabel.setStyleSheet(self.theme.THEME_STATUS_STYLE)
 
     def loadGames(self):
         display_filter = read_display_filter()
@@ -407,7 +406,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.gamesListWidget = QtWidgets.QWidget()
         self.gamesListWidget.setStyleSheet(self.theme.LIST_WIDGET_STYLE)
-        # Используем FlowLayout вместо QGridLayout:
         self.gamesListLayout = FlowLayout(self.gamesListWidget)
         self.gamesListWidget.setLayout(self.gamesListLayout)
 
@@ -698,9 +696,9 @@ class MainWindow(QtWidgets.QMainWindow):
         save_proxy_config(proxy_url, proxy_user, proxy_password)
 
         # Перезагружаем настройки
-        read_time_config()  # Обновляем уровень детализации времени
-        self.games = self.loadGames()  # Перезагружаем игры с новыми параметрами
-        self.updateGameGrid()  # Обновляем интерфейс
+        read_time_config()
+        self.games = self.loadGames()
+        self.updateGameGrid()
 
         self.statusBar().showMessage(_("Settings saved"), 3000)
 
@@ -752,9 +750,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.applyButton.setObjectName("actionButton")
         self.themeInfoLayout.addWidget(self.applyButton)
 
-        self.themeStatusLabel = QtWidgets.QLabel()
-        self.themeInfoLayout.addWidget(self.themeStatusLabel)
-
         mainLayout.addLayout(self.themeInfoLayout)
 
         # Функция обновления превью
@@ -794,15 +789,12 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.theme = theme_module
                     self.current_theme_name = selected_theme
                     self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE)
-                    self.themeStatusLabel.setText(_("Theme '{0}' applied successfully").format(selected_theme))
-                    self.themeStatusLabel.setStyleSheet(self.theme.THEME_STATUS_STYLE)
+                    self.statusBar().showMessage(_("Theme '{0}' applied successfully").format(selected_theme), 3000)
                     self.updateUIStyles()
                     save_theme_to_config(selected_theme)
                     updateThemePreview(selected_theme)
                 else:
-                    self.themeStatusLabel.setText(_("Error applying theme '{0}'").format(selected_theme))
-            else:
-                self.themeStatusLabel.setText(_("No available themes to apply"))
+                    self.statusBar().showMessage(_("Error applying theme '{0}'").format(selected_theme), 3000)
 
         self.applyButton.clicked.connect(on_apply)
 
@@ -985,7 +977,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         playButton.setFixedSize(120, 40)
         playButton.setStyleSheet(self.theme.PLAY_BUTTON_STYLE)
-        playButton.clicked.connect(lambda: self.toggleGame(exec_line, name, playButton))
+        playButton.clicked.connect(lambda: self.toggleGame(exec_line, playButton))
         detailsLayout.addWidget(playButton, alignment=QtCore.Qt.AlignLeft)
 
         contentFrameLayout.addWidget(detailsWidget)
@@ -1033,48 +1025,23 @@ class MainWindow(QtWidgets.QMainWindow):
                 return True
         return False
 
-    def startTypewriterEffect(self, message, interval=100):
-        """Эффект 'печатающегося текста' в статус-баре."""
-        self._typewriter_text = message
-        self._typewriter_index = 0
-        self._typewriter_timer = QtCore.QTimer(self)
-        self._typewriter_timer.timeout.connect(self._updateTypewriterText)
-        self._typewriter_timer.start(interval)
-
-    def _updateTypewriterText(self):
-        # Если игра уже запущена, не обновляем статус-бар
-        if getattr(self, "_gameLaunched", False):
-            return
-        if self._typewriter_index < len(self._typewriter_text):
-            self.statusBar().showMessage(self._typewriter_text[:self._typewriter_index+1])
-            self._typewriter_index += 1
-        else:
-            # Полный текст выведен, можно сбросить счетчик или оставить как есть
-            self._typewriter_index = len(self._typewriter_text)
-
-    def clearGameStatus(self):
-        """
-        Очищает статус-бар.
-        """
-        self.statusBar().clearMessage()
-
     def checkTargetExe(self):
         """
         Проверяет, запущена ли игра.
-        Если процесс игры (target_exe) обнаружен – устанавливаем флаг и очищаем статус-бар.
-        Если игра завершилась – сбрасываем флаг, очищаем статус-бар и обновляем кнопку.
+        Если процесс игры (target_exe) обнаружен – устанавливаем флаг и обновляем кнопку.
+        Если игра завершилась – сбрасываем флаг, обновляем кнопку и останавливаем таймер.
         """
         target_running = self.is_target_exe_running()
         child_running = any(proc.poll() is None for proc in self.game_processes)
 
         if target_running:
-            # Игра стартовала – устанавливаем флаг, чтобы не перезаписывать статус-бар
+            # Игра стартовала – устанавливаем флаг, обновляем кнопку на "Stop"
             self._gameLaunched = True
-            self.clearGameStatus()
+            if self.current_running_button is not None:
+                self.current_running_button.setText(_("Stop"))
         elif not child_running:
-            # Игра завершилась – сбрасываем флаг и кнопку
+            # Игра завершилась – сбрасываем флаг, сбрасываем кнопку и останавливаем таймер
             self._gameLaunched = False
-            self.clearGameStatus()
             self.resetPlayButton()
             if hasattr(self, 'checkProcessTimer') and self.checkProcessTimer is not None:
                 self.checkProcessTimer.stop()
@@ -1093,11 +1060,10 @@ class MainWindow(QtWidgets.QMainWindow):
             self.current_running_button = None
         self.target_exe = None
 
-    def toggleGame(self, exec_line, game_name, button):
+    def toggleGame(self, exec_line, button):
         if exec_line.startswith("steam://"):
             url = QtCore.QUrl(exec_line)
             QtGui.QDesktopServices.openUrl(url)
-            self.statusBar().showMessage(_("Launching via Steam..."), 3000)
             return
 
         entry_exec_split = shlex.split(exec_line)
@@ -1122,35 +1088,25 @@ class MainWindow(QtWidgets.QMainWindow):
             QtWidgets.QMessageBox.warning(self, _("Error"), _("Cannot launch game while another game is running"))
             return
 
-        # Если игра уже запущена для этого exe – останавливаем её по кнопке
+        # Если игра уже запущена для этого exe – останавливаем её по нажатию кнопки
         if self.game_processes and self.target_exe == current_exe:
             for proc in self.game_processes:
                 try:
-                    # Используем psutil для поиска всех дочерних процессов
                     parent = psutil.Process(proc.pid)
                     children = parent.children(recursive=True)
-                    # Завершаем все дочерние процессы
                     for child in children:
                         try:
                             child.terminate()
                         except psutil.NoSuchProcess:
                             pass
                     psutil.wait_procs(children, timeout=5)
-                    # Если какие-то процессы не завершились корректно, принудительно убиваем их
                     for child in children:
                         if child.is_running():
                             child.kill()
-                    # Завершаем сам родительский процесс
                     os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
                 except psutil.NoSuchProcess:
-                    pass  # процесс уже завершился
+                    pass
             self.game_processes = []
-            if hasattr(self, '_typewriter_timer') and self._typewriter_timer is not None:
-                self._typewriter_timer.stop()
-                self._typewriter_timer.deleteLater()
-                self._typewriter_timer = None
-            self.statusBar().showMessage(_("Game stopped"), 2000)
-            QtCore.QTimer.singleShot(1500, self.clearGameStatus)
             button.setText(_("Play"))
             button.setIcon(self.theme_manager.get_icon("play.svg"))
             if hasattr(self, 'checkProcessTimer') and self.checkProcessTimer is not None:
@@ -1173,14 +1129,11 @@ class MainWindow(QtWidgets.QMainWindow):
             process = subprocess.Popen(entry_exec_split, env=env_vars, shell=False, preexec_fn=os.setsid)
             self.game_processes.append(process)
             save_last_launch(exe_name, datetime.now())
-            self.startTypewriterEffect(_("Launching {0}").format(game_name))
-            # Запускаем таймер проверки состояния игры
+            button.setText(_("Launching"))
+            button.setIcon(self.theme_manager.get_icon("stop.svg"))
             self.checkProcessTimer = QtCore.QTimer(self)
             self.checkProcessTimer.timeout.connect(self.checkTargetExe)
             self.checkProcessTimer.start(500)
-            button.setText(_("Stop"))
-            button.setIcon(self.theme_manager.get_icon("stop.svg"))
-
 
     def closeEvent(self, event):
         for proc in self.game_processes:

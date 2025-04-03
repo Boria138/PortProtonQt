@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQT 0.1.0\n"
 "Report-Msgid-Bugs-To: olegpozitiv0102@gmail.com\n"
-"POT-Creation-Date: 2025-03-29 19:48+0600\n"
-"PO-Revision-Date: 2025-03-29 19:48+0600\n"
+"POT-Creation-Date: 2025-04-03 11:45+0600\n"
+"PO-Revision-Date: 2025-04-03 11:45+0600\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
@@ -148,9 +148,6 @@ msgstr "Тема '{0}' применена успешно"
 msgid "Error applying theme '{0}'"
 msgstr "Ошибка при применение темы '{0}'"
 
-msgid "No available themes to apply"
-msgstr "Нет тем для применения"
-
 msgid "Back"
 msgstr "Назад"
 
@@ -179,9 +176,6 @@ msgstr "Остановить"
 msgid "Play"
 msgstr "Играть"
 
-msgid "Launching via Steam..."
-msgstr "Идёт запуск через Steam..."
-
 msgid "Error"
 msgstr "Ошибка"
 
@@ -198,12 +192,8 @@ msgstr "Файл не найден: {0}"
 msgid "Cannot launch game while another game is running"
 msgstr "Невозможно запустить игру пока запущена другая"
 
-msgid "Game stopped"
-msgstr "Игра остановлена"
-
-#, python-brace-format
-msgid "Launching {0}"
-msgstr "Идёт запуск {0}"
+msgid "Launching"
+msgstr "Идёт запуск"
 
 msgid "just now"
 msgstr "только что"

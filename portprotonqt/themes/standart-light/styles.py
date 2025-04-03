@@ -70,13 +70,6 @@ MAIN_WINDOW_STYLE = """
     }
 """
 
-# СТИЛЬ ДЛЯ СТАТУСА ТЕМЫ
-THEME_STATUS_STYLE = """
-    QLabel {
-        color: #232627;
-    }
-"""
-
 # СТИЛЬ ПОЛЯ ПОИСКА
 SEARCH_EDIT_STYLE = """
     QLineEdit {
