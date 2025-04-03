@@ -1,3 +1,9 @@
+from portprotonqt.theme_manager import ThemeManager
+from portprotonqt.config_utils import read_theme_from_config
+
+theme_manager = ThemeManager()
+current_theme_name = read_theme_from_config()
+
 # КОНСТАНТЫ
 favoriteLabelSize = 48, 48 # Размер контейнера для звёздочки избранного
 pixmapsScaledSize = 60, 60 # Уровень закругления обложек
@@ -470,8 +476,8 @@ PROXY_INPUT_STYLE = """
     }
 """
 
-SETTINGS_COMBO_STYLE = """
-    QComboBox {
+SETTINGS_COMBO_STYLE = f"""
+    QComboBox {{
         background: #3f424d;
         border: 0px solid rgba(255, 255, 255, 0.2);
         border-radius: 10px;
@@ -482,57 +488,57 @@ SETTINGS_COMBO_STYLE = """
         font-size: 16px;
         min-width: 120px;
         combobox-popup: 0;
-    }
-    QComboBox:on {
+    }}
+    QComboBox:on {{
         background: #373a43;
         border: 1px solid rgba(255, 255, 255, 0.2);
         border-top-left-radius: 10px;
         border-top-right-radius: 10px;
         border-bottom-left-radius: 0px;
         border-bottom-right-radius: 0px;
-    }
-    QComboBox:hover {
+    }}
+    QComboBox:hover {{
         border: 1px solid rgba(255, 255, 255, 0.2);
-    }
-    QComboBox::drop-down {
+    }}
+    QComboBox::drop-down {{
         subcontrol-origin: padding;
         subcontrol-position: center right;
         border-left: 1px solid rgba(255, 255, 255, 0.05);
         padding: 12px;
         height: 12px;
         width: 12px;
-    }
-    QComboBox::down-arrow {
-        image: url(./portprotonqt/themes/standart/images/icons/down.svg);
+    }}
+    QComboBox::down-arrow {{
+        image: url({theme_manager.get_icon("down.svg", current_theme_name, as_path=True)});
         padding: 12px;
         height: 12px;
         width: 12px;
-    }
-    QComboBox::down-arrow:on {
-        image: url(./portprotonqt/themes/standart/images/icons/up.svg);
+    }}
+    QComboBox::down-arrow:on {{
+        image: url({theme_manager.get_icon("up.svg", current_theme_name, as_path=True)});
         padding: 12px;
         height: 12px;
         width: 12px;
-    }
-    QComboBox QAbstractItemView {
+    }}
+    QComboBox QAbstractItemView {{
         outline: none;
         border: 1px solid rgba(255, 255, 255, 0.2);
         border-top-style: none;
-    }
-    QListView {
+    }}
+    QListView {{
         background: #3f424d;
-    }
-    QListView::item {
+    }}
+    QListView::item {{
         padding: 7px 7px 7px 12px;
         border-radius: 0px;
         color: #ffffff;
-    }
-    QListView::item:hover {
+    }}
+    QListView::item:hover {{
         background: #282a33;
-    }
-    QListView::item:selected {
+    }}
+    QListView::item:selected {{
         background: #282a33;
-    }
+    }}
 """
 
 # ФУНКЦИЯ ДЛЯ ДИНАМИЧЕСКОГО ГРАДИЕНТА (ДЕТАЛИ ИГР)
