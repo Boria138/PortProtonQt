@@ -176,10 +176,11 @@ class ThemeManager:
         logger.info(f"Тема '{theme_name}' успешно применена")
         return theme_module
 
-    def get_icon(self, icon_name, theme_name=None):
+    def get_icon(self, icon_name, theme_name=None, as_path=False):
         """
         Возвращает QIcon из папки icons текущей темы,
         а если файл не найден, то из стандартной темы.
+        Если as_path=True, возвращает путь к иконке вместо QIcon.
         """
         icon_path = None
         theme_name = theme_name or self.current_theme_name
@@ -191,10 +192,15 @@ class ThemeManager:
             if os.path.exists(candidate):
                 icon_path = candidate
                 break
+
         # Если не нашли – используем стандартную тему
         if not icon_path:
             base_dir = os.path.dirname(os.path.abspath(__file__))
             icon_path = os.path.join(base_dir, "themes", "standart", "images", "icons", icon_name)
+
+        if as_path:
+            return icon_path
+
         return QIcon(icon_path)
 
     def get_theme_image(self, image_name, theme_name=None):

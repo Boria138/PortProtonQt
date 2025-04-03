@@ -1,7 +1,12 @@
+from portprotonqt.theme_manager import ThemeManager
+from portprotonqt.config_utils import read_theme_from_config
+
+theme_manager = ThemeManager()
+current_theme_name = read_theme_from_config()
+
 # КОНСТАНТЫ
 favoriteLabelSize = 48, 48 # Размер контейнера для звёздочки избранного
 pixmapsScaledSize = 60, 60 # Уровень закругления обложек
-
 
 # СТИЛЬ ШАПКИ ГЛАВНОГО ОКНА
 MAIN_WINDOW_HEADER_STYLE = """
@@ -67,13 +72,6 @@ MAIN_WINDOW_STYLE = """
     }
     QLabel {
         color: #ffffff;
-    }
-"""
-
-# СТИЛЬ ДЛЯ СТАТУСА ТЕМЫ
-THEME_STATUS_STYLE = """
-    QLabel {
-        color: #232627;
     }
 """
 
@@ -490,8 +488,8 @@ PROXY_INPUT_STYLE = """
     }
 """
 
-SETTINGS_COMBO_STYLE = """
-    QComboBox {
+SETTINGS_COMBO_STYLE = f"""
+    QComboBox {{
         background: #c7c7c7;
         border: 0px solid rgba(165, 165, 165, 0.7);
         border-radius: 10px;
@@ -502,57 +500,57 @@ SETTINGS_COMBO_STYLE = """
         font-size: 16px;
         min-width: 120px;
         combobox-popup: 0;
-    }
-    QComboBox:on {
+    }}
+    QComboBox:on {{
         background: #dfdfdf;
         border: 1px solid rgba(165, 165, 165, 0.7);
         border-top-left-radius: 10px;
         border-top-right-radius: 10px;
         border-bottom-left-radius: 0px;
         border-bottom-right-radius: 0px;
-    }
-    QComboBox:hover {
+    }}
+    QComboBox:hover {{
         border: 1px solid rgba(165, 165, 165, 0.7);
-    }
-    QComboBox::drop-down {
+    }}
+    QComboBox::drop-down {{
         subcontrol-origin: padding;
         subcontrol-position: center right;
         border-left: 1px solid rgba(255, 255, 255, 0.05);
         padding: 12px;
         height: 12px;
         width: 12px;
-    }
-    QComboBox::down-arrow {
-        image: url(./portprotonqt/themes/standart/images/icons/down.svg);
+    }}
+    QComboBox::down-arrow {{
+        image: url({theme_manager.get_icon("down.svg", current_theme_name, as_path=True)});
         padding: 12px;
         height: 12px;
         width: 12px;
-    }
-    QComboBox::down-arrow:on {
-        image: url(./portprotonqt/themes/standart/images/icons/up.svg);
+    }}
+    QComboBox::down-arrow:on {{
+        image: url({theme_manager.get_icon("up.svg", current_theme_name, as_path=True)});
         padding: 12px;
         height: 12px;
         width: 12px;
-    }
-    QComboBox QAbstractItemView {
+    }}
+    QComboBox QAbstractItemView {{
         outline: none;
         border: 1px solid rgba(165, 165, 165, 0.7);
         border-top-style: none;
-    }
-    QListView {
+    }}
+    QListView {{
         background: #e7e7e7;
-    }
-    QListView::item {
+    }}
+    QListView::item {{
         padding: 7px 7px 7px 12px;
         border-radius: 0px;
         color: #232627;
-    }
-    QListView::item:hover {
+    }}
+    QListView::item:hover {{
         background: #c7c7c7;
-    }
-    QListView::item:selected {
+    }}
+    QListView::item:selected {{
         background: #c7c7c7;
-    }
+    }}
 """
 
 # ФУНКЦИЯ ДЛЯ ДИНАМИЧЕСКОГО ГРАДИЕНТА (ДЕТАЛИ ИГР)
