@@ -1057,7 +1057,7 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         if self.current_running_button is not None:
             self.current_running_button.setText(_("Play"))
-            self.current_running_button.setIcon(self.theme_manager.get_icon("play.svg"))
+            self.current_running_button.setIcon(self.theme_manager.get_icon("play.svg", color=self.theme.playButtonPlayIconColor))
             self.current_running_button = None
         self.target_exe = None
 
@@ -1109,7 +1109,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     pass
             self.game_processes = []
             button.setText(_("Play"))
-            button.setIcon(self.theme_manager.get_icon("play.svg"))
+            button.setIcon(self.theme_manager.get_icon("play.svg", color=self.theme.playButtonPlayIconColor))
             if hasattr(self, 'checkProcessTimer') and self.checkProcessTimer is not None:
                 self.checkProcessTimer.stop()
                 self.checkProcessTimer.deleteLater()
@@ -1131,7 +1131,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.game_processes.append(process)
             save_last_launch(exe_name, datetime.now())
             button.setText(_("Launching"))
-            button.setIcon(self.theme_manager.get_icon("stop.svg"))
+            button.setIcon(self.theme_manager.get_icon("stop.svg", color=self.theme.playButtonStopIconColor))
             self.checkProcessTimer = QtCore.QTimer(self)
             self.checkProcessTimer.timeout.connect(self.checkTargetExe)
             self.checkProcessTimer.start(500)

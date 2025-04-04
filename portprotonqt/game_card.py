@@ -1,16 +1,16 @@
 from PySide6 import QtCore, QtGui, QtWidgets
-from PySide6.QtGui import QPixmap, QPainter, QPen, QColor, QConicalGradient, QBrush
+from PySide6.QtGui import QPainter, QPen, QColor, QConicalGradient, QBrush
 import portprotonqt.themes.standart.styles as default_styles
 from portprotonqt.image_utils import load_pixmap, round_corners
 from portprotonqt.localization import _
 from portprotonqt.config_utils import read_favorites, save_favorites
-from portprotonqt.theme_manager import ThemeManager, to_qcolor
+from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.config_utils import read_theme_from_config
 
 class ClickableLabel(QtWidgets.QLabel):
     clicked = QtCore.Signal()
 
-    def __init__(self, *args, icon=None, icon_size=16, icon_space=5, icon_color=None, **kwargs):
+    def __init__(self, *args, icon=None, icon_size=16, icon_space=5, **kwargs):
         """
         Поддерживаются вызовы:
           - ClickableLabel("текст", parent=...) – первый аргумент строка,
@@ -20,7 +20,6 @@ class ClickableLabel(QtWidgets.QLabel):
           icon: QIcon или None – иконка, которая будет отрисована вместе с текстом.
           icon_size: int – размер иконки (ширина и высота).
           icon_space: int – отступ между иконкой и текстом.
-          icon_color – цвет для перекраски иконки.
         """
         if args and isinstance(args[0], str):
             text = args[0]
@@ -39,7 +38,6 @@ class ClickableLabel(QtWidgets.QLabel):
         self._icon = icon
         self._icon_size = icon_size
         self._icon_space = icon_space
-        self._icon_color = to_qcolor(icon_color) if icon_color is not None else None
         self.setCursor(QtCore.Qt.PointingHandCursor)
 
     def setIcon(self, icon):
@@ -66,23 +64,13 @@ class ClickableLabel(QtWidgets.QLabel):
         text_rect = QtCore.QRect()
         text = self.text()
 
-        pixmap = None
         if self._icon:
             # Получаем QPixmap нужного размера
             pixmap = self._icon.pixmap(icon_size, icon_size)
-            # Если указан цвет, перекрашиваем pixmap
-            if self._icon_color:
-                colored_pixmap = QPixmap(pixmap.size())
-                colored_pixmap.fill(QtCore.Qt.transparent)
-                temp_painter = QPainter(colored_pixmap)
-                temp_painter.drawPixmap(0, 0, pixmap)
-                temp_painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
-                temp_painter.fillRect(colored_pixmap.rect(), self._icon_color)
-                temp_painter.end()
-                pixmap = colored_pixmap
-
             icon_rect = QtCore.QRect(0, 0, icon_size, icon_size)
             icon_rect.moveTop(rect.top() + (rect.height() - icon_size) // 2)
+        else:
+            pixmap = None
 
         fm = QtGui.QFontMetrics(self.font())
         text_width = fm.horizontalAdvance(text)
@@ -213,14 +201,13 @@ class GameCard(QtWidgets.QFrame):
         tier_text = self.getProtonDBText(protondb_tier)
         if tier_text:
             icon_filename = self.getProtonDBIconFilename(protondb_tier)
-            icon = self.theme_manager.get_icon(icon_filename, self.current_theme_name)
+            icon = self.theme_manager.get_icon(icon_filename, self.current_theme_name, color=self.theme.protonDBLabelColor)
             self.protondbLabel = ClickableLabel(
                 tier_text,
                 icon=icon,
                 parent=coverWidget,
                 icon_size=16,
                 icon_space=3,
-                icon_color="#000000"
             )
             self.protondbLabel.setStyleSheet(self.theme.get_protondb_badge_style(protondb_tier))
             protondb_visible = True
@@ -235,14 +222,13 @@ class GameCard(QtWidgets.QFrame):
             protondb_visible = False
 
         # Steam бейдж
-        steam_icon = self.theme_manager.get_icon("steam.svg", self.current_theme_name)
+        steam_icon = self.theme_manager.get_icon("steam.svg", self.current_theme_name, color=self.theme.steamLabelColor)
         self.steamLabel = ClickableLabel(
             "Steam",
             icon=steam_icon,
             parent=coverWidget,
             icon_size=16,
             icon_space=5,
-            icon_color="#ffffff"
         )
         self.steamLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
         steam_visible = (str(steam_game).lower() == "true")
