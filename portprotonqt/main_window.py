@@ -1007,6 +1007,7 @@ class MainWindow(QtWidgets.QMainWindow):
             favorites.append(game_name)
             label.setText("★")
         save_favorites(favorites)
+        self.updateGameGrid()
 
     def goBackDetailPage(self, page):
         """Возврат из детальной страницы на вкладку 'Библиотека' с обновлением грида."""
