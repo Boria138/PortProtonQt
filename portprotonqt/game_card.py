@@ -4,7 +4,7 @@ import portprotonqt.themes.standart.styles as default_styles
 from portprotonqt.image_utils import load_pixmap, round_corners
 from portprotonqt.localization import _
 from portprotonqt.config_utils import read_favorites, save_favorites
-from portprotonqt.theme_manager import ThemeManager
+from portprotonqt.theme_manager import ThemeManager, to_qcolor
 from portprotonqt.config_utils import read_theme_from_config
 
 class ClickableLabel(QtWidgets.QLabel):
@@ -20,7 +20,7 @@ class ClickableLabel(QtWidgets.QLabel):
           icon: QIcon или None – иконка, которая будет отрисована вместе с текстом.
           icon_size: int – размер иконки (ширина и высота).
           icon_space: int – отступ между иконкой и текстом.
-          icon_color: QColor или значение, совместимое с QColor, для перекраски иконки
+          icon_color – цвет для перекраски иконки.
         """
         if args and isinstance(args[0], str):
             text = args[0]
@@ -39,7 +39,7 @@ class ClickableLabel(QtWidgets.QLabel):
         self._icon = icon
         self._icon_size = icon_size
         self._icon_space = icon_space
-        self._icon_color = QColor(icon_color) if icon_color is not None else None
+        self._icon_color = to_qcolor(icon_color) if icon_color is not None else None
         self.setCursor(QtCore.Qt.PointingHandCursor)
 
     def setIcon(self, icon):
@@ -218,8 +218,9 @@ class GameCard(QtWidgets.QFrame):
                 tier_text,
                 icon=icon,
                 parent=coverWidget,
-                icon_size=16,    # размер иконки
-                icon_space=5     # отступ между иконкой и текстом
+                icon_size=16,
+                icon_space=5,
+                icon_color="#11FADC"
             )
             self.protondbLabel.setStyleSheet(self.theme.get_protondb_badge_style(protondb_tier))
             protondb_visible = True
