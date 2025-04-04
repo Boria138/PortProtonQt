@@ -17,6 +17,49 @@ THEMES_DIRS = [
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "themes")
 ]
 
+def to_qcolor(color):
+    """
+    Преобразует значение цвета, заданное в виде QColor, строки или кортежа (r, g, b),
+    в объект QColor.
+    Поддерживаются следующие форматы:
+      - QColor
+      - кортеж или список (r, g, b)
+      - строка вида "rgb(122,28,26)"
+      - строка вида "122,28,26"
+      - именованные цвета ("red") или шестнадцатеричные ("#7A1C1A")
+    """
+
+    if isinstance(color, QColor):
+        return color
+    elif isinstance(color, tuple | list) and len(color) >= 3:
+        return QColor(*color)
+    elif isinstance(color, str):
+        # Обработка строки с запятыми без "rgb(...)"
+        if "," in color:
+            parts = color.split(",")
+            if len(parts) >= 3:
+                try:
+                    r = int(parts[0].strip())
+                    g = int(parts[1].strip())
+                    b = int(parts[2].strip())
+                    return QColor(r, g, b)
+                except ValueError:
+                    pass
+        # Если строка начинается с "rgb", пытаемся распарсить формат "rgb(r, g, b)"
+        if color.lower().startswith("rgb"):
+            content = color[color.find("(")+1:color.find(")")]
+            parts = content.split(",")
+            if len(parts) >= 3:
+                try:
+                    r = int(parts[0].strip())
+                    g = int(parts[1].strip())
+                    b = int(parts[2].strip())
+                    return QColor(r, g, b)
+                except ValueError:
+                    pass
+        return QColor(color)
+    return QColor()
+
 def list_themes():
     """
     Возвращает список доступных тем (названий папок) из каталогов THEMES_DIRS.
@@ -181,13 +224,14 @@ class ThemeManager:
         Возвращает QIcon из папки icons текущей темы,
         а если файл не найден, то из стандартной темы.
         Если as_path=True, возвращает путь к иконке вместо QIcon.
-        Параметр color: QColor или строка, совместимая с QColor, для задания цвета иконки.
+        Параметры:
+        color – цвет для перекраски иконки.
         icon_size: размер иконки (ширина и высота).
         """
-        icon_path = None
-        theme_name = theme_name or self.current_theme_name
 
         # Поиск иконки в папке текущей темы
+        icon_path = None
+        theme_name = theme_name or self.current_theme_name
         for themes_dir in THEMES_DIRS:
             theme_folder = os.path.join(themes_dir, theme_name)
             candidate = os.path.join(theme_folder, "images", "icons", icon_name)
@@ -203,33 +247,35 @@ class ThemeManager:
         if as_path:
             return icon_path
 
-        if color and icon_path.lower().endswith(".svg"):
-            if not isinstance(color, QColor):
-                color = QColor(color)
-            # Создаем QSvgRenderer для чтения SVG
+        # Если перекраска не требуется, возвращаем стандартный QIcon
+        if not color:
+            return QIcon(icon_path)
+
+        # Преобразование цвета в QColor
+        color = to_qcolor(color)
+
+        # Если иконка в формате SVG, используем QSvgRenderer
+        if icon_path.lower().endswith(".svg"):
             renderer = QSvgRenderer(icon_path)
-            # Подготовим QPixmap нужного размера
             pixmap = QPixmap(icon_size, icon_size)
             pixmap.fill(Qt.transparent)
-            # Рендерим исходную иконку
             temp_painter = QPainter(pixmap)
             renderer.render(temp_painter)
             temp_painter.end()
+        else:
+            # Для растровых изображений загружаем QPixmap напрямую
+            pixmap = QPixmap(icon_path)
 
-            # Создаем pixmap для перекрашивания
-            colored_pixmap = QPixmap(icon_size, icon_size)
-            colored_pixmap.fill(Qt.transparent)
-            painter = QPainter(colored_pixmap)
-            # Рисуем оригинальную иконку
-            painter.drawPixmap(0, 0, pixmap)
-            # Устанавливаем режим композиции для перекраски
-            painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
-            painter.fillRect(colored_pixmap.rect(), color)
-            painter.end()
-            return QIcon(colored_pixmap)
+        # Перекрашивание pixmap
+        colored_pixmap = QPixmap(pixmap.size())
+        colored_pixmap.fill(Qt.transparent)
+        painter = QPainter(colored_pixmap)
+        painter.drawPixmap(0, 0, pixmap)
+        painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
+        painter.fillRect(colored_pixmap.rect(), color)
+        painter.end()
 
-        # Иначе стандартный способ создания иконки
-        return QIcon(icon_path)
+        return QIcon(colored_pixmap)
 
     def get_theme_image(self, image_name, theme_name=None):
         """

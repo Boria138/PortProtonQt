@@ -365,7 +365,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.GameLibraryTitle.setStyleSheet(self.theme.INSTALLED_TAB_TITLE_STYLE)
         layout.addWidget(self.GameLibraryTitle)
 
-        self.addGameButton = QtWidgets.QPushButton(_("Add Game"), icon=self.theme_manager.get_icon("addgame.svg", color="#7A1C1A"))
+        self.addGameButton = QtWidgets.QPushButton(_("Add Game"), icon=self.theme_manager.get_icon("addgame.svg", color="122,28,26"))
         self.addGameButton.setStyleSheet(self.theme.ADDGAME_BACK_BUTTON_STYLE)
         self.addGameButton.clicked.connect(self.openAddGameDialog)
         layout.addWidget(self.addGameButton, alignment=QtCore.Qt.AlignRight)
