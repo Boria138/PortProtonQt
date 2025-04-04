@@ -3,7 +3,7 @@ import os
 from portprotonqt.logger import get_logger
 from PySide6.QtGui import QFontDatabase, QPixmap, QPainter
 from PySide6.QtSvg import QSvgRenderer
-from PySide6.QtGui import QIcon
+from PySide6.QtGui import QIcon, QColor
 from PySide6.QtCore import Qt
 
 from portprotonqt.config_utils import save_theme_to_config, load_theme_metainfo
@@ -176,11 +176,13 @@ class ThemeManager:
         logger.info(f"Тема '{theme_name}' успешно применена")
         return theme_module
 
-    def get_icon(self, icon_name, theme_name=None, as_path=False):
+    def get_icon(self, icon_name, theme_name=None, as_path=False, color=None, icon_size=16):
         """
         Возвращает QIcon из папки icons текущей темы,
         а если файл не найден, то из стандартной темы.
         Если as_path=True, возвращает путь к иконке вместо QIcon.
+        Параметр color: QColor или строка, совместимая с QColor, для задания цвета иконки.
+        icon_size: размер иконки (ширина и высота).
         """
         icon_path = None
         theme_name = theme_name or self.current_theme_name
@@ -201,6 +203,32 @@ class ThemeManager:
         if as_path:
             return icon_path
 
+        if color and icon_path.lower().endswith(".svg"):
+            if not isinstance(color, QColor):
+                color = QColor(color)
+            # Создаем QSvgRenderer для чтения SVG
+            renderer = QSvgRenderer(icon_path)
+            # Подготовим QPixmap нужного размера
+            pixmap = QPixmap(icon_size, icon_size)
+            pixmap.fill(Qt.transparent)
+            # Рендерим исходную иконку
+            temp_painter = QPainter(pixmap)
+            renderer.render(temp_painter)
+            temp_painter.end()
+
+            # Создаем pixmap для перекрашивания
+            colored_pixmap = QPixmap(icon_size, icon_size)
+            colored_pixmap.fill(Qt.transparent)
+            painter = QPainter(colored_pixmap)
+            # Рисуем оригинальную иконку
+            painter.drawPixmap(0, 0, pixmap)
+            # Устанавливаем режим композиции для перекраски
+            painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
+            painter.fillRect(colored_pixmap.rect(), color)
+            painter.end()
+            return QIcon(colored_pixmap)
+
+        # Иначе стандартный способ создания иконки
         return QIcon(icon_path)
 
     def get_theme_image(self, image_name, theme_name=None):
