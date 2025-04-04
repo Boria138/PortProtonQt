@@ -530,13 +530,13 @@ SETTINGS_COMBO_STYLE = f"""
         width: 12px;
     }}
     QComboBox::down-arrow {{
-        image: url({theme_manager.get_icon("down.svg", current_theme_name, as_path=True)});
+        image: url({theme_manager.get_icon("down", current_theme_name, as_path=True)});
         padding: 12px;
         height: 12px;
         width: 12px;
     }}
     QComboBox::down-arrow:on {{
-        image: url({theme_manager.get_icon("up.svg", current_theme_name, as_path=True)});
+        image: url({theme_manager.get_icon("up", current_theme_name, as_path=True)});
         padding: 12px;
         height: 12px;
         width: 12px;

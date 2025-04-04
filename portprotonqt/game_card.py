@@ -222,7 +222,7 @@ class GameCard(QtWidgets.QFrame):
             protondb_visible = False
 
         # Steam бейдж
-        steam_icon = self.theme_manager.get_icon("steam.svg", self.current_theme_name, color=self.theme.steamLabelColor)
+        steam_icon = self.theme_manager.get_icon("steam", self.current_theme_name, color=self.theme.steamLabelColor)
         self.steamLabel = ClickableLabel(
             "Steam",
             icon=steam_icon,
@@ -285,18 +285,14 @@ class GameCard(QtWidgets.QFrame):
     def getProtonDBIconFilename(self, tier):
         """
         Возвращает имя файла иконки в зависимости от уровня protondb.
-        Для примера:
-          - Для platinum и gold — 'platinum-gold.svg'
-          - Для silver и bronze — 'silver-bronze.svg'
-          - Для borked и pending — 'broken.svg'
         """
         tier = tier.lower()
         if tier in ("platinum", "gold"):
-            return "platinum-gold.svg"
+            return "platinum-gold"
         elif tier in ("silver", "bronze"):
-            return "silver-bronze.svg"
+            return "silver-bronze"
         elif tier in ("borked", "pending"):
-            return "broken.svg"
+            return "broken"
         return ""
 
     def open_protondb_report(self):

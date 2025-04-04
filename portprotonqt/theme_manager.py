@@ -223,26 +223,66 @@ class ThemeManager:
         """
         Возвращает QIcon из папки icons текущей темы,
         а если файл не найден, то из стандартной темы.
+        Принимает название иконки без расширения и находит соответствующий файл
+        с поддерживаемым расширением (.svg, .png, .jpg и др.).
         Если as_path=True, возвращает путь к иконке вместо QIcon.
         Параметры:
         color – цвет для перекраски иконки.
         icon_size: размер иконки (ширина и высота).
         """
+        # Поддерживаемые расширения файлов изображений
+        supported_extensions = ['.svg', '.png', '.jpg', '.jpeg']
+
+        # Проверка, содержит ли icon_name уже расширение
+        has_extension = any(icon_name.lower().endswith(ext) for ext in supported_extensions)
+        base_name = icon_name if has_extension else icon_name
 
         # Поиск иконки в папке текущей темы
         icon_path = None
         theme_name = theme_name or self.current_theme_name
+
         for themes_dir in THEMES_DIRS:
             theme_folder = os.path.join(themes_dir, theme_name)
-            candidate = os.path.join(theme_folder, "images", "icons", icon_name)
-            if os.path.exists(candidate):
-                icon_path = candidate
-                break
+            icons_folder = os.path.join(theme_folder, "images", "icons")
+
+            # Если передано имя с расширением, проверяем только этот файл
+            if has_extension:
+                candidate = os.path.join(icons_folder, base_name)
+                if os.path.exists(candidate):
+                    icon_path = candidate
+                    break
+            else:
+                # Проверяем все поддерживаемые расширения
+                for ext in supported_extensions:
+                    candidate = os.path.join(icons_folder, base_name + ext)
+                    if os.path.exists(candidate):
+                        icon_path = candidate
+                        break
+                if icon_path:
+                    break
 
         # Если не нашли – используем стандартную тему
         if not icon_path:
             base_dir = os.path.dirname(os.path.abspath(__file__))
-            icon_path = os.path.join(base_dir, "themes", "standart", "images", "icons", icon_name)
+            standard_icons_folder = os.path.join(base_dir, "themes", "standart", "images", "icons")
+
+            # Аналогично проверяем в стандартной теме
+            if has_extension:
+                icon_path = os.path.join(standard_icons_folder, base_name)
+                if not os.path.exists(icon_path):
+                    icon_path = None
+            else:
+                for ext in supported_extensions:
+                    candidate = os.path.join(standard_icons_folder, base_name + ext)
+                    if os.path.exists(candidate):
+                        icon_path = candidate
+                        break
+
+        # Если иконка всё равно не найдена
+        if not icon_path or not os.path.exists(icon_path):
+            # Можно вернуть пустую иконку или показать предупреждение
+            logger.error(f"Предупреждение: иконка '{icon_name}' не найдена")
+            return QIcon() if not as_path else None
 
         if as_path:
             return icon_path
@@ -265,6 +305,8 @@ class ThemeManager:
         else:
             # Для растровых изображений загружаем QPixmap напрямую
             pixmap = QPixmap(icon_path)
+            if pixmap.width() != icon_size or pixmap.height() != icon_size:
+                pixmap = pixmap.scaled(icon_size, icon_size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
         # Перекрашивание pixmap
         colored_pixmap = QPixmap(pixmap.size())

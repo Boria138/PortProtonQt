@@ -11,8 +11,7 @@ class SystemTray:
         self.theme = theme if theme is not None else default_styles
         self.current_theme_name = read_theme_from_config()
         self.tray = QSystemTrayIcon()
-        #self.tray.setIcon(self.theme_manager.get_theme_logo(self.current_theme_name))
-        self.tray.setIcon(self.theme_manager.get_icon("addgame.svg", self.current_theme_name))
+        self.tray.setIcon(self.theme_manager.get_icon("addgame", self.current_theme_name))
         self.tray.setVisible(True)
 
         # Создаём меню
