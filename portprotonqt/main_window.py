@@ -365,7 +365,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.GameLibraryTitle.setStyleSheet(self.theme.INSTALLED_TAB_TITLE_STYLE)
         layout.addWidget(self.GameLibraryTitle)
 
-        self.addGameButton = QtWidgets.QPushButton(_("Add Game"), icon=self.theme_manager.get_icon("addgame.svg", color="122,28,26"))
+        self.addGameButton = QtWidgets.QPushButton(_("Add Game"), icon=self.theme_manager.get_icon("addgame.svg", color="#ffffff"))
         self.addGameButton.setStyleSheet(self.theme.ADDGAME_BACK_BUTTON_STYLE)
         self.addGameButton.clicked.connect(self.openAddGameDialog)
         layout.addWidget(self.addGameButton, alignment=QtCore.Qt.AlignRight)
@@ -374,7 +374,7 @@ class MainWindow(QtWidgets.QMainWindow):
         searchEdit.setMaximumWidth(200)
         searchEdit.setPlaceholderText(_("Find Games ..."))
         searchEdit.setClearButtonEnabled(True)
-        searchEdit.addAction(self.theme_manager.get_icon("search.svg"), QLineEdit.ActionPosition.LeadingPosition)
+        searchEdit.addAction(self.theme_manager.get_icon("search.svg", color="#ffffff"), QLineEdit.ActionPosition.LeadingPosition)
         searchEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE)
 
         layout.addWidget(searchEdit)
@@ -667,7 +667,7 @@ class MainWindow(QtWidgets.QMainWindow):
         layout.addLayout(formLayout)
 
         # Кнопка сохранения настроек
-        self.saveButton = QtWidgets.QPushButton(_("Save Settings"), icon=self.theme_manager.get_icon("save.svg"))
+        self.saveButton = QtWidgets.QPushButton(_("Save Settings"), icon=self.theme_manager.get_icon("save.svg", color="#ffffff"))
         self.saveButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.saveButton.setObjectName("actionButton")
         self.saveButton.clicked.connect(self.savePortProtonSettings)
@@ -745,7 +745,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.themeMetainfoLabel.setWordWrap(True)
         self.themeInfoLayout.addWidget(self.themeMetainfoLabel)
 
-        self.applyButton = QtWidgets.QPushButton(_("Apply Theme"), icon=self.theme_manager.get_icon("update.svg"))
+        self.applyButton = QtWidgets.QPushButton(_("Apply Theme"), icon=self.theme_manager.get_icon("update.svg", color="#ffffff"))
         self.applyButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.applyButton.setObjectName("actionButton")
         self.themeInfoLayout.addWidget(self.applyButton)
@@ -853,7 +853,7 @@ class MainWindow(QtWidgets.QMainWindow):
         mainLayout.setContentsMargins(30, 30, 30, 30)
         mainLayout.setSpacing(20)
 
-        backButton = QtWidgets.QPushButton(_("Back"), icon=self.theme_manager.get_icon("back.svg"))
+        backButton = QtWidgets.QPushButton(_("Back"), icon=self.theme_manager.get_icon("back.svg", color="#ffffff"))
         backButton.setFixedWidth(100)
         backButton.setStyleSheet(self.theme.ADDGAME_BACK_BUTTON_STYLE)
         backButton.clicked.connect(lambda: self.goBackDetailPage(detailPage))
@@ -971,9 +971,9 @@ class MainWindow(QtWidgets.QMainWindow):
         current_exe = os.path.basename(file_to_check) if file_to_check else None
 
         if self.target_exe is not None and current_exe == self.target_exe:
-            playButton = QtWidgets.QPushButton(_("Stop"), icon=self.theme_manager.get_icon("stop.svg"))
+            playButton = QtWidgets.QPushButton(_("Stop"), icon=self.theme_manager.get_icon("stop.svg", color="#ffffff"))
         else:
-            playButton = QtWidgets.QPushButton(_("Play"), icon=self.theme_manager.get_icon("play.svg"))
+            playButton = QtWidgets.QPushButton(_("Play"), icon=self.theme_manager.get_icon("play.svg", color="#ffffff"))
 
         playButton.setFixedSize(120, 40)
         playButton.setStyleSheet(self.theme.PLAY_BUTTON_STYLE)

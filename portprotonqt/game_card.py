@@ -219,8 +219,8 @@ class GameCard(QtWidgets.QFrame):
                 icon=icon,
                 parent=coverWidget,
                 icon_size=16,
-                icon_space=5,
-                icon_color="#11FADC"
+                icon_space=3,
+                icon_color="#000000"
             )
             self.protondbLabel.setStyleSheet(self.theme.get_protondb_badge_style(protondb_tier))
             protondb_visible = True
@@ -229,7 +229,7 @@ class GameCard(QtWidgets.QFrame):
                 "",
                 parent=coverWidget,
                 icon_size=16,
-                icon_space=5
+                icon_space=3
             )
             self.protondbLabel.setVisible(False)
             protondb_visible = False
@@ -242,7 +242,7 @@ class GameCard(QtWidgets.QFrame):
             parent=coverWidget,
             icon_size=16,
             icon_space=5,
-            icon_color="green"
+            icon_color="#ffffff"
         )
         self.steamLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
         steam_visible = (str(steam_game).lower() == "true")
