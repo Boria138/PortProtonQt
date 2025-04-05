@@ -7,12 +7,12 @@ current_theme_name = read_theme_from_config()
 # КОНСТАНТЫ
 favoriteLabelSize = 48, 48
 pixmapsScaledSize = 60, 60
-protonDBLabelColor = "#000000"
+protonDBLabelColor = "#232627"
 steamLabelColor = "#ffffff"
 addGameButtonIconColor = "#ffffff"
-saveButtonIconColor = "#ffffff"
+saveButtonIconColor = "#232627"
 searchEditActionIconColor = "#ffffff"
-applyButtonIconColor = "#ffffff"
+applyButtonIconColor = "#232627"
 backButtonIconColor = "#ffffff"
 playButtonStopIconColor = "#ffffff"
 playButtonPlayIconColor = "#ffffff"
@@ -524,7 +524,7 @@ SETTINGS_COMBO_STYLE = f"""
     QComboBox::drop-down {{
         subcontrol-origin: padding;
         subcontrol-position: center right;
-        border-left: 1px solid rgba(255, 255, 255, 0.05);
+        border-left: 1px solid rgba(0, 0, 50, 0.1);
         padding: 12px;
         height: 12px;
         width: 12px;
