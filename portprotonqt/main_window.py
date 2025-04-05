@@ -9,7 +9,7 @@ import psutil
 
 from portprotonqt.dialogs import AddGameDialog
 from portprotonqt.game_card import GameCard
-from portprotonqt.custom_wigets import FlowLayout, ClickableLabel
+from portprotonqt.custom_wigets import FlowLayout, ClickableLabel, AutoSizeButton
 from portprotonqt.gamepad_support import GamepadSupport
 from portprotonqt.image_utils import load_pixmap, round_corners, ImageCarousel
 from portprotonqt.steam_api import get_steam_game_info, get_full_steam_game_info, get_steam_installed_games
@@ -96,7 +96,7 @@ class MainWindow(QtWidgets.QMainWindow):
             _("Themes")                # индекс 5
         ]
         for i, tabName in enumerate(tabs):
-            btn = QtWidgets.QPushButton(tabName)
+            btn = AutoSizeButton(tabName)
             btn.setCheckable(True)
             btn.clicked.connect(lambda checked, index=i: self.switchTab(index))
             btn.setStyleSheet(self.theme.NAV_BUTTON_STYLE)
@@ -155,7 +155,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # Кнопки
         self.addGameButton.setStyleSheet(self.theme.ADDGAME_BACK_BUTTON_STYLE)
 
-        for action_button in self.findChildren(QtWidgets.QPushButton, "actionButton"):
+        for action_button in self.findChildren(AutoSizeButton, "actionButton"):
             action_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
 
         # Вкладка "Библиотека"
@@ -365,7 +365,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.GameLibraryTitle.setStyleSheet(self.theme.INSTALLED_TAB_TITLE_STYLE)
         layout.addWidget(self.GameLibraryTitle)
 
-        self.addGameButton = QtWidgets.QPushButton(_("Add Game"), icon=self.theme_manager.get_icon("addgame", color=self.theme.addGameButtonIconColor))
+        self.addGameButton = AutoSizeButton(_("Add Game"), icon=self.theme_manager.get_icon("addgame", color=self.theme.addGameButtonIconColor))
         self.addGameButton.setStyleSheet(self.theme.ADDGAME_BACK_BUTTON_STYLE)
         self.addGameButton.clicked.connect(self.openAddGameDialog)
         layout.addWidget(self.addGameButton, alignment=QtCore.Qt.AlignRight)
@@ -667,7 +667,7 @@ class MainWindow(QtWidgets.QMainWindow):
         layout.addLayout(formLayout)
 
         # Кнопка сохранения настроек
-        self.saveButton = QtWidgets.QPushButton(_("Save Settings"), icon=self.theme_manager.get_icon("save", color=self.theme.saveButtonIconColor))
+        self.saveButton = AutoSizeButton(_("Save Settings"), icon=self.theme_manager.get_icon("save", color=self.theme.saveButtonIconColor))
         self.saveButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.saveButton.setObjectName("actionButton")
         self.saveButton.clicked.connect(self.savePortProtonSettings)
@@ -745,7 +745,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.themeMetainfoLabel.setWordWrap(True)
         self.themeInfoLayout.addWidget(self.themeMetainfoLabel)
 
-        self.applyButton = QtWidgets.QPushButton(_("Apply Theme"), icon=self.theme_manager.get_icon("update", color=self.theme.applyButtonIconColor))
+        self.applyButton = AutoSizeButton(_("Apply Theme"), icon=self.theme_manager.get_icon("update", color=self.theme.applyButtonIconColor))
         self.applyButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.applyButton.setObjectName("actionButton")
         self.themeInfoLayout.addWidget(self.applyButton)
@@ -853,7 +853,7 @@ class MainWindow(QtWidgets.QMainWindow):
         mainLayout.setContentsMargins(30, 30, 30, 30)
         mainLayout.setSpacing(20)
 
-        backButton = QtWidgets.QPushButton(_("Back"), icon=self.theme_manager.get_icon("back", color=self.theme.backButtonIconColor))
+        backButton = AutoSizeButton(_("Back"), icon=self.theme_manager.get_icon("back", color=self.theme.backButtonIconColor))
         backButton.setFixedWidth(100)
         backButton.setStyleSheet(self.theme.ADDGAME_BACK_BUTTON_STYLE)
         backButton.clicked.connect(lambda: self.goBackDetailPage(detailPage))
@@ -971,9 +971,9 @@ class MainWindow(QtWidgets.QMainWindow):
         current_exe = os.path.basename(file_to_check) if file_to_check else None
 
         if self.target_exe is not None and current_exe == self.target_exe:
-            playButton = QtWidgets.QPushButton(_("Stop"), icon=self.theme_manager.get_icon("stop", color=self.theme.playButtonPlayIconColor))
+            playButton = AutoSizeButton(_("Stop"), icon=self.theme_manager.get_icon("stop", color=self.theme.playButtonPlayIconColor))
         else:
-            playButton = QtWidgets.QPushButton(_("Play"), icon=self.theme_manager.get_icon("play", color=self.theme.playButtonStopIconColor))
+            playButton = AutoSizeButton(_("Play"), icon=self.theme_manager.get_icon("play", color=self.theme.playButtonStopIconColor))
 
         playButton.setFixedSize(120, 40)
         playButton.setStyleSheet(self.theme.PLAY_BUTTON_STYLE)
