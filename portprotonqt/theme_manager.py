@@ -5,6 +5,7 @@ from PySide6.QtGui import QFontDatabase, QPixmap, QPainter
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtGui import QIcon, QColor
 from PySide6.QtCore import Qt
+import re
 
 from portprotonqt.config_utils import save_theme_to_config, load_theme_metainfo
 
@@ -19,45 +20,92 @@ THEMES_DIRS = [
 
 def to_qcolor(color):
     """
-    Преобразует значение цвета, заданное в виде QColor, строки или кортежа (r, g, b),
-    в объект QColor.
-    Поддерживаются следующие форматы:
-      - QColor
-      - кортеж или список (r, g, b)
-      - строка вида "rgb(122,28,26)"
-      - строка вида "122,28,26"
-      - именованные цвета ("red") или шестнадцатеричные ("#7A1C1A")
+    Преобразует значение цвета в QColor с поддержкой расширенных форматов:
+    - QColor -> возвращается как есть
+    - Кортежи: (R, G, B) или (R, G, B, A)
+    - Строки:
+        * Названия цветов ("red", "darkblue")
+        * HEX (#RGB, #RRGGBB, #RRGGBBAA)
+        * RGB/RGBA (rgb(255,0,0), rgba(255,0,0,128))
+        * Синтаксис с запятыми ("255,0,0", "255,0,0,0.5")
     """
 
+    # Если уже QColor
     if isinstance(color, QColor):
         return color
-    elif isinstance(color, tuple | list) and len(color) >= 3:
-        return QColor(*color)
-    elif isinstance(color, str):
-        # Обработка строки с запятыми без "rgb(...)"
-        if "," in color:
-            parts = color.split(",")
-            if len(parts) >= 3:
-                try:
-                    r = int(parts[0].strip())
-                    g = int(parts[1].strip())
-                    b = int(parts[2].strip())
-                    return QColor(r, g, b)
-                except ValueError:
-                    pass
-        # Если строка начинается с "rgb", пытаемся распарсить формат "rgb(r, g, b)"
-        if color.lower().startswith("rgb"):
-            content = color[color.find("(")+1:color.find(")")]
-            parts = content.split(",")
-            if len(parts) >= 3:
-                try:
-                    r = int(parts[0].strip())
-                    g = int(parts[1].strip())
-                    b = int(parts[2].strip())
-                    return QColor(r, g, b)
-                except ValueError:
-                    pass
-        return QColor(color)
+
+    # Обработка кортежей и списков
+    if isinstance(color, (tuple, list)):
+        components = []
+        for i, v in enumerate(color[:4]):
+            try:
+                components.append(int(v))
+            except (TypeError, ValueError):
+                return QColor()  # Некорректные данные
+
+        # Преобразование с учетом альфа-канала
+        try:
+            return (
+                QColor(*components)
+                if len(components) == 3 else
+                QColor(components[0], components[1], components[2], components[3])
+            )
+        except:
+            return QColor()
+
+    # Обработка строк
+    if isinstance(color, str):
+        color = color.strip()
+
+        # Регулярные выражения для форматов RGB/RGBA
+        rgb_pattern = r"""
+            ^rgba?\(\s*
+            (\d{1,3})\s*,\s*
+            (\d{1,3})\s*,\s*
+            (\d{1,3})
+            (?:\s*,\s*([\d.]+%?)\s*)?
+            \)$
+        """
+        match = re.match(rgb_pattern, color, re.VERBOSE | re.IGNORECASE)
+        if match:
+            try:
+                r = int(match.group(1))
+                g = int(match.group(2))
+                b = int(match.group(3))
+                a = 255
+
+                if match.group(4):
+                    a_str = match.group(4).replace('%', '')
+                    if '.' in a_str:
+                        a_val = float(a_str)
+                        a = int(a_val * 255) if a_val <= 1.0 else int(a_val)
+                    else:
+                        a = int(a_str)
+
+                    if '%' in match.group(4):
+                        a = int(a * 255 / 100)
+
+                return QColor(r, g, b, a) if a != 255 else QColor(r, g, b)
+            except:
+                pass
+
+        # Обработка строк с разделителями-запятыми
+        if ',' in color:
+            parts = [p.strip() for p in color.split(',')]
+            try:
+                if 3 <= len(parts) <=4:
+                    r = int(parts[0])
+                    g = int(parts[1])
+                    b = int(parts[2])
+                    a = int(float(parts[3])*255) if len(parts)==4 and '.' in parts[3] else int(parts[3]) if len(parts)==4 else 255
+                    return QColor(r, g, b, a)
+            except (ValueError, IndexError):
+                pass
+
+        # Прямое создание QColor для других форматов
+        qcolor = QColor(color)
+        return qcolor if qcolor.isValid() else QColor()
+
     return QColor()
 
 def list_themes():
