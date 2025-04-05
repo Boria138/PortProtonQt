@@ -1,8 +1,7 @@
-from PySide6 import QtCore, QtWidgets
+from PySide6 import QtCore, QtWidgets, QtGui
+from PySide6.QtGui import QPainter
 import numpy as np
-from numba import njit
 
-@njit
 def compute_layout(nat_sizes, rect_width, spacing, max_scale):
     """
     Вычисляет расположение элементов с учетом отступов и возможного увеличения карточек.
@@ -129,3 +128,111 @@ class FlowLayout(QtWidgets.QLayout):
                 item.setGeometry(QtCore.QRect(QtCore.QPoint(x, y), QtCore.QSize(w, h)))
 
         return total_height
+
+class ClickableLabel(QtWidgets.QLabel):
+    clicked = QtCore.Signal()
+
+    def __init__(self, *args, icon=None, icon_size=16, icon_space=5, **kwargs):
+        """
+        Поддерживаются вызовы:
+          - ClickableLabel("текст", parent=...) – первый аргумент строка,
+          - ClickableLabel(parent, text="...") – если первым аргументом передается родитель.
+
+        Аргументы:
+          icon: QIcon или None – иконка, которая будет отрисована вместе с текстом.
+          icon_size: int – размер иконки (ширина и высота).
+          icon_space: int – отступ между иконкой и текстом.
+        """
+        if args and isinstance(args[0], str):
+            text = args[0]
+            parent = kwargs.get("parent", None)
+            super().__init__(text, parent)
+        elif args and isinstance(args[0], QtWidgets.QWidget):
+            parent = args[0]
+            text = kwargs.get("text", "")
+            super().__init__(parent)
+            self.setText(text)
+        else:
+            text = ""
+            parent = kwargs.get("parent", None)
+            super().__init__(text, parent)
+
+        self._icon = icon
+        self._icon_size = icon_size
+        self._icon_space = icon_space
+        self.setCursor(QtCore.Qt.PointingHandCursor)
+
+    def setIcon(self, icon):
+        """Устанавливает иконку и перерисовывает виджет."""
+        self._icon = icon
+        self.update()
+
+    def icon(self):
+        """Возвращает текущую иконку."""
+        return self._icon
+
+    def paintEvent(self, event):
+        """Переопределяем отрисовку: рисуем иконку и текст в одном лейбле."""
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+
+        rect = self.contentsRect()
+        alignment = self.alignment()
+
+        icon_size = self._icon_size
+        spacing = self._icon_space
+
+        icon_rect = QtCore.QRect()
+        text_rect = QtCore.QRect()
+        text = self.text()
+
+        if self._icon:
+            # Получаем QPixmap нужного размера
+            pixmap = self._icon.pixmap(icon_size, icon_size)
+            icon_rect = QtCore.QRect(0, 0, icon_size, icon_size)
+            icon_rect.moveTop(rect.top() + (rect.height() - icon_size) // 2)
+        else:
+            pixmap = None
+
+        fm = QtGui.QFontMetrics(self.font())
+        text_width = fm.horizontalAdvance(text)
+        text_height = fm.height()
+        total_width = text_width + (icon_size + spacing if pixmap else 0)
+
+        if alignment & QtCore.Qt.AlignHCenter:
+            x = rect.left() + (rect.width() - total_width) // 2
+        elif alignment & QtCore.Qt.AlignRight:
+            x = rect.right() - total_width
+        else:
+            x = rect.left()
+
+        y = rect.top() + (rect.height() - text_height) // 2
+
+        if pixmap:
+            icon_rect.moveLeft(x)
+            text_rect = QtCore.QRect(x + icon_size + spacing, y, text_width, text_height)
+        else:
+            text_rect = QtCore.QRect(x, y, text_width, text_height)
+
+        option = QtWidgets.QStyleOption()
+        option.initFrom(self)
+        self.style().drawPrimitive(QtWidgets.QStyle.PE_Widget, option, painter, self)
+
+        if pixmap:
+            painter.drawPixmap(icon_rect, pixmap)
+        self.style().drawItemText(
+            painter,
+            text_rect,
+            alignment,
+            self.palette(),
+            self.isEnabled(),
+            text,
+            self.foregroundRole(),
+        )
+
+    def mousePressEvent(self, event):
+        if event.button() == QtCore.Qt.LeftButton:
+            self.clicked.emit()
+            event.accept()
+        else:
+            super().mousePressEvent(event)

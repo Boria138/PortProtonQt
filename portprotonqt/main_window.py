@@ -8,8 +8,8 @@ import portprotonqt.themes.standart.styles as default_styles
 import psutil
 
 from portprotonqt.dialogs import AddGameDialog
-from portprotonqt.game_card import GameCard, ClickableLabel
-from portprotonqt.flow_layout import FlowLayout
+from portprotonqt.game_card import GameCard
+from portprotonqt.custom_wigets import FlowLayout, ClickableLabel
 from portprotonqt.gamepad_support import GamepadSupport
 from portprotonqt.image_utils import load_pixmap, round_corners, ImageCarousel
 from portprotonqt.steam_api import get_steam_game_info, get_full_steam_game_info, get_steam_installed_games
