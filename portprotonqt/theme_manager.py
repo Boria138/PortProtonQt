@@ -35,9 +35,9 @@ def to_qcolor(color):
         return color
 
     # Обработка кортежей и списков
-    if isinstance(color, (tuple, list)):
+    if isinstance(color, (tuple|list)):
         components = []
-        for i, v in enumerate(color[:4]):
+        for _i, v in enumerate(color[:4]):
             try:
                 components.append(int(v))
             except (TypeError, ValueError):
@@ -50,7 +50,7 @@ def to_qcolor(color):
                 if len(components) == 3 else
                 QColor(components[0], components[1], components[2], components[3])
             )
-        except:
+        except (TypeError, ValueError):
             return QColor()
 
     # Обработка строк
@@ -86,7 +86,7 @@ def to_qcolor(color):
                         a = int(a * 255 / 100)
 
                 return QColor(r, g, b, a) if a != 255 else QColor(r, g, b)
-            except:
+            except (ValueError, TypeError):
                 pass
 
         # Обработка строк с разделителями-запятыми

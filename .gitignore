@@ -26,5 +26,8 @@ pyvenv.cfg
 ehthumbs.db
 Thumbs.db
 
-# Editors temp files
+# Editors files
 *.kate-swp
+.gigaide
+.idea
+.vscode

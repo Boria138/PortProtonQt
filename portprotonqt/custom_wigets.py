@@ -317,4 +317,3 @@ class AutoSizeButton(QtWidgets.QPushButton):
         fm = QtGui.QFontMetrics(font)
         elided_text = fm.elidedText(self._original_text, QtCore.Qt.ElideRight, available_width)
         super().setText(elided_text)
-
