@@ -121,22 +121,23 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE)
         self.setStyleSheet(self.theme.MESSAGE_BOX_STYLE)
 
-
     def updateUIStyles(self):
         self.gamesListWidget.setStyleSheet(self.theme.LIST_WIDGET_STYLE)
 
-        # Принудительное обновление базовых стилей
         self.header.setStyleSheet(self.theme.MAIN_WINDOW_HEADER_STYLE)
         self.titleLabel.setStyleSheet(self.theme.TITLE_LABEL_STYLE)
         self.navWidget.setStyleSheet(self.theme.NAV_WIDGET_STYLE)
+
         for btn in self.tabButtons.values():
             btn.setStyleSheet(self.theme.NAV_BUTTON_STYLE)
+
+        if self.search_action:
+            self.searchEdit.removeAction(self.search_action)
+
+        self.search_action = self.searchEdit.addAction(self.theme_manager.get_icon("search", color=self.theme.searchEditActionIconColor), QLineEdit.ActionPosition.LeadingPosition)
         self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE)
 
-        # Обновление виджетов на вкладках
         self._updateTabStyles()
-
-        # Перезагрузка карточек
         self.updateGameGrid()
 
     def _updateTabStyles(self):
@@ -370,15 +371,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.addGameButton.clicked.connect(self.openAddGameDialog)
         layout.addWidget(self.addGameButton, alignment=QtCore.Qt.AlignRight)
 
-        searchEdit = QtWidgets.QLineEdit()
-        searchEdit.setMaximumWidth(200)
-        searchEdit.setPlaceholderText(_("Find Games ..."))
-        searchEdit.setClearButtonEnabled(True)
-        searchEdit.addAction(self.theme_manager.get_icon("search", color=self.theme.searchEditActionIconColor), QLineEdit.ActionPosition.LeadingPosition)
-        searchEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE)
+        self.searchEdit = QtWidgets.QLineEdit()
+        self.search_action = self.searchEdit.addAction(self.theme_manager.get_icon("search", color=self.theme.searchEditActionIconColor), QLineEdit.ActionPosition.LeadingPosition)
+        self.searchEdit.setMaximumWidth(200)
+        self.searchEdit.setPlaceholderText(_("Find Games ..."))
+        self.searchEdit.setClearButtonEnabled(True)
+        self.searchEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE)
 
-        layout.addWidget(searchEdit)
-        return self.container, searchEdit
+        layout.addWidget(self.searchEdit)
+        return self.container, self.searchEdit
 
     def filterGames(self, text):
         """Фильтрует список игр по подстроке text."""

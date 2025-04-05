@@ -238,7 +238,8 @@ class ClickableLabel(QtWidgets.QLabel):
             super().mousePressEvent(event)
 
 class AutoSizeButton(QtWidgets.QPushButton):
-    def __init__(self, *args, icon=None, icon_size=16, icon_space=5, min_font_size=8, max_font_size=14, **kwargs):
+    def __init__(self, *args, icon=None, icon_size=16,
+                 min_font_size=8, max_font_size=14, **kwargs):
         if args and isinstance(args[0], str):
             text = args[0]
             parent = kwargs.get("parent", None)
@@ -254,7 +255,6 @@ class AutoSizeButton(QtWidgets.QPushButton):
 
         self._icon = icon
         self._icon_size = icon_size
-        self._icon_space = icon_space
         self._alignment = QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
         self._min_font_size = min_font_size
         self._max_font_size = max_font_size
@@ -268,10 +268,7 @@ class AutoSizeButton(QtWidgets.QPushButton):
         self.setCursor(QtCore.Qt.PointingHandCursor)
         self.setFlat(True)
 
-        # Используем Expanding для горизонтального размера
         super().setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
-
-        # Устанавливаем минимальную ширину для предотвращения слишком сильного сжатия
         self.setMinimumWidth(50)
 
     def setAlignment(self, alignment):
@@ -291,19 +288,16 @@ class AutoSizeButton(QtWidgets.QPushButton):
         self.adjustFontSize()
 
     def adjustFontSize(self):
-        """Автоматически регулирует размер шрифта в зависимости от доступного пространства и длины текста"""
         if not self._original_text:
             return
 
-        # Получаем доступное пространство
         available_width = self.width()
         if self._icon:
-            available_width -= (self._icon_size + self._icon_space)
+            available_width -= self._icon_size
 
         margins = self.contentsMargins()
-        available_width -= (margins.left() + margins.right() + 20)  # Отступ для надежности
+        available_width -= (margins.left() + margins.right() + 20)
 
-        # Сначала пробуем уменьшить шрифт
         font = QtGui.QFont(self._original_font)
         text = self._original_text
 
@@ -317,11 +311,10 @@ class AutoSizeButton(QtWidgets.QPushButton):
                 super().setText(text)
                 return
 
-        # Если текст не помещается даже с минимальным шрифтом,
-        # то сокращаем текст и добавляем многоточие
         font.setPointSize(self._min_font_size)
         self.setFont(font)
 
         fm = QtGui.QFontMetrics(font)
         elided_text = fm.elidedText(self._original_text, QtCore.Qt.ElideRight, available_width)
         super().setText(elided_text)
+
