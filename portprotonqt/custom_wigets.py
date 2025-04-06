@@ -239,7 +239,7 @@ class ClickableLabel(QtWidgets.QLabel):
 
 class AutoSizeButton(QtWidgets.QPushButton):
     def __init__(self, *args, icon=None, icon_size=16,
-                 min_font_size=8, max_font_size=14, **kwargs):
+                 min_font_size=8, max_font_size=14, padding=20, update_size=True, **kwargs):
         if args and isinstance(args[0], str):
             text = args[0]
             parent = kwargs.get("parent", None)
@@ -258,6 +258,8 @@ class AutoSizeButton(QtWidgets.QPushButton):
         self._alignment = QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
         self._min_font_size = min_font_size
         self._max_font_size = max_font_size
+        self._padding = padding
+        self._update_size = update_size
         self._original_font = self.font()
         self._original_text = self.text()
 
@@ -267,9 +269,11 @@ class AutoSizeButton(QtWidgets.QPushButton):
 
         self.setCursor(QtCore.Qt.PointingHandCursor)
         self.setFlat(True)
+        super().setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
 
-        super().setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
+        # Изначально выставляем минимальную ширину
         self.setMinimumWidth(50)
+        self.adjustFontSize()
 
     def setAlignment(self, alignment):
         self._alignment = alignment
@@ -280,40 +284,72 @@ class AutoSizeButton(QtWidgets.QPushButton):
 
     def setText(self, text):
         self._original_text = text
-        super().setText(text)
-        self.adjustFontSize()
+        if not self._update_size:
+            super().setText(text)
+        else:
+            super().setText(text)
+            self.adjustFontSize()
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        self.adjustFontSize()
+        if self._update_size:
+            self.adjustFontSize()
 
     def adjustFontSize(self):
         if not self._original_text:
             return
 
+        if not self._update_size:
+            return
+
+        # Определяем доступную ширину внутри кнопки
         available_width = self.width()
         if self._icon:
             available_width -= self._icon_size
 
         margins = self.contentsMargins()
-        available_width -= (margins.left() + margins.right() + 20)
+        available_width -= (margins.left() + margins.right() + self._padding * 2)
 
         font = QtGui.QFont(self._original_font)
         text = self._original_text
 
+        # Подбираем максимально возможный размер шрифта, при котором текст укладывается
+        chosen_size = self._max_font_size
         for font_size in range(self._max_font_size, self._min_font_size - 1, -1):
             font.setPointSize(font_size)
             fm = QtGui.QFontMetrics(font)
             text_width = fm.horizontalAdvance(text)
-
             if text_width <= available_width:
-                self.setFont(font)
-                super().setText(text)
-                return
+                chosen_size = font_size
+                break
 
-        font.setPointSize(self._min_font_size)
+        font.setPointSize(chosen_size)
         self.setFont(font)
 
+        # После выбора шрифта вычисляем требуемую ширину для полного отображения текста
         fm = QtGui.QFontMetrics(font)
-        elided_text = fm.elidedText(self._original_text, QtCore.Qt.ElideRight, available_width)
-        super().setText(elided_text)
+        text_width = fm.horizontalAdvance(text)
+        required_width = text_width + margins.left() + margins.right() + self._padding * 2
+        if self._icon:
+            required_width += self._icon_size
+
+        # Если текущая ширина меньше требуемой, обновляем минимальную ширину
+        if self.width() < required_width:
+            self.setMinimumWidth(required_width)
+
+        super().setText(text)
+
+    def sizeHint(self):
+        if not self._update_size:
+            return super().sizeHint()
+        else:
+            # Вычисляем оптимальный размер кнопки на основе текста и отступов
+            font = self.font()
+            fm = QtGui.QFontMetrics(font)
+            text_width = fm.horizontalAdvance(self._original_text)
+            margins = self.contentsMargins()
+            width = text_width + margins.left() + margins.right() + self._padding * 2
+            if self._icon:
+                width += self._icon_size
+            height = fm.height() + margins.top() + margins.bottom() + self._padding
+            return QtCore.QSize(width, height)
