@@ -1,11 +1,13 @@
 import importlib.util
 import os
 from portprotonqt.logger import get_logger
-from PySide6.QtGui import QFontDatabase, QPixmap, QPainter
 from PySide6.QtSvg import QSvgRenderer
-from PySide6.QtGui import QIcon, QColor
+from PySide6.QtGui import QIcon, QColor, QIconEngine, QFontDatabase, QPixmap, QPainter
 from PySide6.QtCore import Qt
 import re
+import xml.etree.ElementTree as ET
+import tempfile
+import atexit
 
 from portprotonqt.config_utils import save_theme_to_config, load_theme_metainfo
 
@@ -268,104 +270,189 @@ class ThemeManager:
         return theme_module
 
     def get_icon(self, icon_name, theme_name=None, as_path=False, color=None, icon_size=16):
-        """
-        Возвращает QIcon из папки icons текущей темы,
-        а если файл не найден, то из стандартной темы.
-        Принимает название иконки без расширения и находит соответствующий файл
-        с поддерживаемым расширением (.svg, .png, .jpg и др.).
-        Если as_path=True, возвращает путь к иконке вместо QIcon.
-        Параметры:
-        color – цвет для перекраски иконки.
-        icon_size: размер иконки (ширина и высота).
-        """
-        # Поддерживаемые расширения файлов изображений
-        supported_extensions = ['.svg', '.png', '.jpg', '.jpeg']
+            """
+            Возвращает QIcon из папки icons текущей темы,
+            а если файл не найден, то из стандартной темы.
+            Принимает название иконки без расширения и находит соответствующий файл
+            с поддерживаемым расширением (.svg, .png, .jpg и др.).
+            Если as_path=True, возвращает путь к иконке вместо QIcon.
+            Параметры:
+            color – цвет для перекраски иконки.
+            icon_size: размер иконки (ширина и высота).
+            """
+            # Поддерживаемые расширения файлов изображений
+            supported_extensions = ['.svg', '.png', '.jpg', '.jpeg']
 
-        # Проверка, содержит ли icon_name уже расширение
-        has_extension = any(icon_name.lower().endswith(ext) for ext in supported_extensions)
-        base_name = icon_name if has_extension else icon_name
+            # Проверка, содержит ли icon_name уже расширение
+            has_extension = any(icon_name.lower().endswith(ext) for ext in supported_extensions)
+            base_name = icon_name if has_extension else icon_name
 
-        # Поиск иконки в папке текущей темы
-        icon_path = None
-        theme_name = theme_name or self.current_theme_name
+            # Поиск иконки в папке текущей темы
+            icon_path = None
+            theme_name = theme_name or self.current_theme_name
 
-        for themes_dir in THEMES_DIRS:
-            theme_folder = os.path.join(themes_dir, theme_name)
-            icons_folder = os.path.join(theme_folder, "images", "icons")
+            for themes_dir in THEMES_DIRS:
+                theme_folder = os.path.join(themes_dir, theme_name)
+                icons_folder = os.path.join(theme_folder, "images", "icons")
 
-            # Если передано имя с расширением, проверяем только этот файл
-            if has_extension:
-                candidate = os.path.join(icons_folder, base_name)
-                if os.path.exists(candidate):
-                    icon_path = candidate
-                    break
-            else:
-                # Проверяем все поддерживаемые расширения
-                for ext in supported_extensions:
-                    candidate = os.path.join(icons_folder, base_name + ext)
+                # Если передано имя с расширением, проверяем только этот файл
+                if has_extension:
+                    candidate = os.path.join(icons_folder, base_name)
                     if os.path.exists(candidate):
                         icon_path = candidate
                         break
-                if icon_path:
-                    break
-
-        # Если не нашли – используем стандартную тему
-        if not icon_path:
-            base_dir = os.path.dirname(os.path.abspath(__file__))
-            standard_icons_folder = os.path.join(base_dir, "themes", "standart", "images", "icons")
-
-            # Аналогично проверяем в стандартной теме
-            if has_extension:
-                icon_path = os.path.join(standard_icons_folder, base_name)
-                if not os.path.exists(icon_path):
-                    icon_path = None
-            else:
-                for ext in supported_extensions:
-                    candidate = os.path.join(standard_icons_folder, base_name + ext)
-                    if os.path.exists(candidate):
-                        icon_path = candidate
+                else:
+                    # Проверяем все поддерживаемые расширения
+                    for ext in supported_extensions:
+                        candidate = os.path.join(icons_folder, base_name + ext)
+                        if os.path.exists(candidate):
+                            icon_path = candidate
+                            break
+                    if icon_path:
                         break
 
-        # Если иконка всё равно не найдена
-        if not icon_path or not os.path.exists(icon_path):
-            # Можно вернуть пустую иконку или показать предупреждение
-            logger.error(f"Предупреждение: иконка '{icon_name}' не найдена")
-            return QIcon() if not as_path else None
+            # Если не нашли – используем стандартную тему
+            if not icon_path:
+                base_dir = os.path.dirname(os.path.abspath(__file__))
+                standard_icons_folder = os.path.join(base_dir, "themes", "standart", "images", "icons")
 
-        if as_path:
-            return icon_path
+                # Аналогично проверяем в стандартной теме
+                if has_extension:
+                    icon_path = os.path.join(standard_icons_folder, base_name)
+                    if not os.path.exists(icon_path):
+                        icon_path = None
+                else:
+                    for ext in supported_extensions:
+                        candidate = os.path.join(standard_icons_folder, base_name + ext)
+                        if os.path.exists(candidate):
+                            icon_path = candidate
+                            break
 
-        # Если перекраска не требуется, возвращаем стандартный QIcon
-        if not color:
-            return QIcon(icon_path)
+            # Если иконка всё равно не найдена
+            if not icon_path or not os.path.exists(icon_path):
+                logger.error(f"Предупреждение: иконка '{icon_name}' не найдена")
+                return QIcon() if not as_path else None
 
-        # Преобразование цвета в QColor
-        color = to_qcolor(color)
+            if as_path:
+                return icon_path
 
-        # Если иконка в формате SVG, используем QSvgRenderer
-        if icon_path.lower().endswith(".svg"):
-            renderer = QSvgRenderer(icon_path)
-            pixmap = QPixmap(icon_size, icon_size)
-            pixmap.fill(Qt.transparent)
-            temp_painter = QPainter(pixmap)
-            renderer.render(temp_painter)
-            temp_painter.end()
-        else:
-            # Для растровых изображений загружаем QPixmap напрямую
-            pixmap = QPixmap(icon_path)
-            if pixmap.width() != icon_size or pixmap.height() != icon_size:
-                pixmap = pixmap.scaled(icon_size, icon_size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            # Если перекраска не требуется, возвращаем стандартный QIcon для SVG
+            if not color:
+                if icon_path.lower().endswith(".svg"):
 
-        # Перекрашивание pixmap
-        colored_pixmap = QPixmap(pixmap.size())
-        colored_pixmap.fill(Qt.transparent)
-        painter = QPainter(colored_pixmap)
-        painter.drawPixmap(0, 0, pixmap)
-        painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
-        painter.fillRect(colored_pixmap.rect(), color)
-        painter.end()
+                    class SvgIconEngine(QIconEngine):
+                        def __init__(self, path):
+                            super().__init__()
+                            self.path = path
+                            self.renderer = QSvgRenderer(path)
 
-        return QIcon(colored_pixmap)
+                        def paint(self, painter, rect, mode, state):
+                            painter.save()
+                            self.renderer.render(painter, rect)
+                            painter.restore()
+
+                        def clone(self):
+                            return SvgIconEngine(self.path)
+
+                        def pixmap(self, size, mode, state):
+                            pixmap = QPixmap(size)
+                            pixmap.fill(Qt.transparent)
+                            painter = QPainter(pixmap)
+                            self.paint(painter, pixmap.rect(), mode, state)
+                            painter.end()
+                            return pixmap
+
+                    return QIcon(SvgIconEngine(icon_path))
+                else:
+                    return QIcon(icon_path)
+
+            # Для SVG иконок с перекраской используем специальный движок
+            if icon_path.lower().endswith(".svg"):
+
+                class ColoredSvgIconEngine(QIconEngine):
+                    def __init__(self, path, color):
+                        super().__init__()
+                        self.path = path
+                        self.color = to_qcolor(color)
+
+                        try:
+                            # Парсим SVG как XML
+                            ET.register_namespace("", "http://www.w3.org/2000/svg")
+                            ET.register_namespace("svg", "http://www.w3.org/2000/svg")
+                            tree = ET.parse(path)
+                            root = tree.getroot()
+
+                            # Цвет для SVG элементов
+                            color_str = f"#{self.color.red():02x}{self.color.green():02x}{self.color.blue():02x}"
+
+                            # Функция для рекурсивного обхода всех элементов SVG
+                            def apply_color_to_elements(element):
+                                # Перечень тегов, которые могут содержать графику
+                                graphic_tags = {'path', 'rect', 'circle', 'ellipse', 'line', 'polyline', 'polygon'}
+
+                                # Если это графический элемент
+                                tag = element.tag.split('}')[-1]  # Удаляем namespace
+                                if tag in graphic_tags:
+                                    # Устанавливаем fill напрямую
+                                    element.set('fill', color_str)
+
+                                # Рекурсивно обрабатываем вложенные элементы
+                                for child in element:
+                                    apply_color_to_elements(child)
+
+                            # Применяем цвет ко всем графическим элементам
+                            apply_color_to_elements(root)
+
+                            # Сохраняем модифицированный SVG во временный файл
+
+                            self.temp_svg = tempfile.NamedTemporaryFile(delete=False, suffix='.svg')
+                            tree.write(self.temp_svg.name, encoding='utf-8', xml_declaration=True)
+                            self.temp_svg.close()
+
+                            # Загружаем SVG с помощью QSvgRenderer
+                            self.renderer = QSvgRenderer(self.temp_svg.name)
+
+                            # Планируем удаление временного файла после завершения работы
+                            atexit.register(lambda: os.unlink(self.temp_svg.name))
+
+                        except Exception as e:
+                            logger.error(f"Ошибка модификации SVG: {e}")
+                            # Если что-то пошло не так, используем оригинальный файл
+                            self.renderer = QSvgRenderer(path)
+
+                    def paint(self, painter, rect, mode, state):
+                        painter.save()
+                        self.renderer.render(painter, rect)
+                        painter.restore()
+
+                    def clone(self):
+                        return ColoredSvgIconEngine(self.path, self.color)
+
+                    def pixmap(self, size, mode, state):
+                        pixmap = QPixmap(size)
+                        pixmap.fill(Qt.transparent)
+                        painter = QPainter(pixmap)
+                        self.paint(painter, pixmap.rect(), mode, state)
+                        painter.end()
+                        return pixmap
+
+                return QIcon(ColoredSvgIconEngine(icon_path, color))
+            else:
+                # Для растровых изображений загружаем QPixmap и меняем цвет
+                pixmap = QPixmap(icon_path)
+                if pixmap.width() != icon_size or pixmap.height() != icon_size:
+                    pixmap = pixmap.scaled(icon_size, icon_size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+
+                # Перекрашивание pixmap
+                colored_pixmap = QPixmap(pixmap.size())
+                colored_pixmap.fill(Qt.transparent)
+                painter = QPainter(colored_pixmap)
+                painter.drawPixmap(0, 0, pixmap)
+                painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
+                painter.fillRect(colored_pixmap.rect(), to_qcolor(color))
+                painter.end()
+
+                return QIcon(colored_pixmap)
 
     def get_theme_image(self, image_name, theme_name=None):
         """
