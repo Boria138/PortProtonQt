@@ -241,7 +241,7 @@ def load_steam_apps():
 
     app_list_url = "https://raw.githubusercontent.com/BlackSnaker/PortProtonQt/refs/heads/main/data/games_appid_min.json"
     try:
-        result = downloader.download(app_list_url, cache_file, timeout=5)
+        result = downloader.download_parallel(app_list_url, cache_file, timeout=5)
         if result:
             with open(result, "rb") as f:
                 data = orjson.loads(f.read())
