@@ -96,7 +96,7 @@ class MainWindow(QtWidgets.QMainWindow):
             _("Themes")                # индекс 5
         ]
         for i, tabName in enumerate(tabs):
-            btn = AutoSizeButton(tabName)
+            btn = AutoSizeButton(tabName, update_size=False)
             btn.setCheckable(True)
             btn.clicked.connect(lambda checked, index=i: self.switchTab(index))
             btn.setStyleSheet(self.theme.NAV_BUTTON_STYLE)
