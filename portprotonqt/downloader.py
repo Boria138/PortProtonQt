@@ -29,19 +29,17 @@ def get_opener():
     opener = urllib.request.build_opener(handler)
     return opener
 
-def download_with_cache(url, local_path, timeout=5):
+def download_with_cache(url, local_path, timeout=5, downloader_instance=None):
     """Скачивает файл с отображением прогресса."""
     if os.path.exists(local_path):
         return local_path
 
     opener = get_opener()
-
     try:
         req = urllib.request.Request(url)
         start_time = time.time()
         with opener.open(req, timeout=timeout) as response:
             total_size = int(response.headers.get('Content-Length', 0))
-
             os.makedirs(os.path.dirname(local_path), exist_ok=True)
             downloaded = 0
             chunk_size = 8192
@@ -74,10 +72,11 @@ def download_with_cache(url, local_path, timeout=5):
 
             with print_lock:
                 print()
-
             return local_path
     except Exception as e:
         logger.error(f"Ошибка загрузки {url}: {e}")
+        if downloader_instance and hasattr(downloader_instance, '_last_error'):
+            downloader_instance._last_error[url] = True
         if os.path.exists(local_path):
             os.remove(local_path)
         return None
@@ -232,10 +231,11 @@ def download_with_parallel(url, local_path, timeout=5, workers=4):
         return None
 
 class Downloader:
-    """Усовершенствованный класс для управления загрузками."""
+    """Класс для управления загрузками."""
     def __init__(self, max_workers=4):
         self.max_workers = max_workers
         self._cache = {}
+        self._last_error = {}
         self._locks = {}
         self._global_lock = threading.Lock()
 
@@ -249,6 +249,8 @@ class Downloader:
     def download(self, url, local_path, timeout=5):
         """Основной метод загрузки с кэшированием."""
         with self._global_lock:
+            if url in self._last_error:
+                return None
             if url in self._cache:
                 return self._cache[url]
 
@@ -256,17 +258,17 @@ class Downloader:
         with url_lock:
             # Повторная проверка после получения блокировки
             with self._global_lock:
+                if url in self._last_error:
+                    return None
                 if url in self._cache:
                     return self._cache[url]
 
-            result = download_with_cache(url, local_path, timeout)
-
+            result = download_with_cache(url, local_path, timeout, self)
             with self._global_lock:
                 if result:
                     self._cache[url] = result
                 if url in self._locks:
                     del self._locks[url]
-
             return result
 
     def download_parallel(self, url, local_path, timeout=5):

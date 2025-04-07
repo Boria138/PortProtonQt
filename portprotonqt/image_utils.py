@@ -26,11 +26,10 @@ def get_cropped_pixmap_cached(cover, width, height):
     """
     theme_manager = ThemeManager()
     current_theme_name = read_theme_from_config()
-
     pixmap = QtGui.QPixmap()
 
     # Обработка ссылок с CDN Steam
-    if cover.startswith("https://steamcdn-a.akamaihd.net/steam/apps/"):
+    if cover and cover.startswith("https://steamcdn-a.akamaihd.net/steam/apps/"):
         try:
             parts = cover.split("/")
             appid = None
@@ -43,14 +42,18 @@ def get_cropped_pixmap_cached(cover, width, height):
                 image_folder = os.path.join(xdg_cache_home, "PortProtonQT", "images")
                 os.makedirs(image_folder, exist_ok=True)
                 local_path = os.path.join(image_folder, f"{appid}.jpg")
-                result = downloader.download(cover, local_path, timeout=5)
-                if result:
-                    pixmap.load(result)
+
+                if not os.path.exists(local_path):
+                    result = downloader.download(cover, local_path, timeout=5)
+                    if result and pixmap.load(result):
+                        pass
+                else:
+                    pixmap.load(local_path)
         except Exception as e:
-            logger.error("Ошибка обработки URL:", e)
+            logger.error(f"Ошибка обработки URL {cover}: {e}")
 
     # Если путь указывает на локальный файл
-    elif QtCore.QFile.exists(cover):
+    elif cover and QtCore.QFile.exists(cover):
         pixmap.load(cover)
 
     # Если изображение не загрузилось, используем placeholder
