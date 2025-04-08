@@ -50,7 +50,7 @@ NAV_WIDGET_STYLE = """
 
 # СТИЛЬ КНОПОК ВКЛАДОК НАВИГАЦИИ
 NAV_BUTTON_STYLE = """
-    QPushButton {
+    NavLabel {
         background: rgba(0,122,255,0);
         padding: 12px 24px;
         margin: 10px 0 10px 10px;
@@ -61,14 +61,14 @@ NAV_BUTTON_STYLE = """
         border: none;
         border-radius: 15px;
     }
-    QPushButton:checked {
+    NavLabel[checked = true] {
         background: rgba(0,122,255,0);
         color: #09bec8;
         font-weight: normal;
         text-decoration: underline;
         border-radius: 15px;
     }
-    QPushButton:hover {
+    NavLabel:hover {
         background: none;
         color: #09bec8;
     }

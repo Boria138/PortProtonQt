@@ -9,7 +9,7 @@ import psutil
 
 from portprotonqt.dialogs import AddGameDialog
 from portprotonqt.game_card import GameCard
-from portprotonqt.custom_wigets import FlowLayout, ClickableLabel, AutoSizeButton
+from portprotonqt.custom_wigets import FlowLayout, ClickableLabel, AutoSizeButton, NavLabel
 from portprotonqt.gamepad_support import GamepadSupport
 from portprotonqt.image_utils import load_pixmap, round_corners, ImageCarousel
 from portprotonqt.steam_api import get_steam_game_info, get_full_steam_game_info, get_steam_installed_games
@@ -96,9 +96,9 @@ class MainWindow(QtWidgets.QMainWindow):
             _("Themes")                # индекс 5
         ]
         for i, tabName in enumerate(tabs):
-            btn = AutoSizeButton(tabName, update_size=False)
+            btn = NavLabel(tabName)
             btn.setCheckable(True)
-            btn.clicked.connect(lambda checked, index=i: self.switchTab(index))
+            btn.clicked.connect(lambda index=i: self.switchTab(index))
             btn.setStyleSheet(self.theme.NAV_BUTTON_STYLE)
             navLayout.addWidget(btn)
             self.tabButtons[i] = btn

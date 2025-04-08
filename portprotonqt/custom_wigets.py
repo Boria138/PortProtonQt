@@ -1,6 +1,7 @@
-from PySide6 import QtCore, QtWidgets, QtGui
-from PySide6.QtGui import QPainter
 import numpy as np
+from PySide6.QtWidgets import QLabel, QPushButton, QWidget, QLayout, QSizePolicy, QStyle, QStyleOption
+from PySide6.QtCore import Qt, Signal, QRect, QPoint, QSize
+from PySide6.QtGui import QFont, QFontMetrics, QPainter
 
 def compute_layout(nat_sizes, rect_width, spacing, max_scale):
     """
@@ -54,7 +55,7 @@ def compute_layout(nat_sizes, rect_width, spacing, max_scale):
         i = j
     return result, y
 
-class FlowLayout(QtWidgets.QLayout):
+class FlowLayout(QLayout):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.itemList = []
@@ -80,13 +81,13 @@ class FlowLayout(QtWidgets.QLayout):
         return None
 
     def expandingDirections(self):
-        return QtCore.Qt.Orientations(0)
+        return Qt.Orientations(0)
 
     def hasHeightForWidth(self):
         return True
 
     def heightForWidth(self, width):
-        return self.doLayout(QtCore.QRect(0, 0, width, 0), True)
+        return self.doLayout(QRect(0, 0, width, 0), True)
 
     def setGeometry(self, rect):
         super().setGeometry(rect)
@@ -96,11 +97,11 @@ class FlowLayout(QtWidgets.QLayout):
         return self.minimumSize()
 
     def minimumSize(self):
-        size = QtCore.QSize()
+        size = QSize()
         for item in self.itemList:
             size = size.expandedTo(item.minimumSize())
         margins = self.contentsMargins()
-        size += QtCore.QSize(margins.left() + margins.right(),
+        size += QSize(margins.left() + margins.right(),
                              margins.top() + margins.bottom())
         return size
 
@@ -125,12 +126,12 @@ class FlowLayout(QtWidgets.QLayout):
                 y = geom_array[i, 1] + rect.y()
                 w = geom_array[i, 2]
                 h = geom_array[i, 3]
-                item.setGeometry(QtCore.QRect(QtCore.QPoint(x, y), QtCore.QSize(w, h)))
+                item.setGeometry(QRect(QPoint(x, y), QSize(w, h)))
 
         return total_height
 
-class ClickableLabel(QtWidgets.QLabel):
-    clicked = QtCore.Signal()
+class ClickableLabel(QLabel):
+    clicked = Signal()
 
     def __init__(self, *args, icon=None, icon_size=16, icon_space=5, **kwargs):
         """
@@ -147,7 +148,7 @@ class ClickableLabel(QtWidgets.QLabel):
             text = args[0]
             parent = kwargs.get("parent", None)
             super().__init__(text, parent)
-        elif args and isinstance(args[0], QtWidgets.QWidget):
+        elif args and isinstance(args[0], QWidget):
             parent = args[0]
             text = kwargs.get("text", "")
             super().__init__(parent)
@@ -160,7 +161,7 @@ class ClickableLabel(QtWidgets.QLabel):
         self._icon = icon
         self._icon_size = icon_size
         self._icon_space = icon_space
-        self.setCursor(QtCore.Qt.PointingHandCursor)
+        self.setCursor(Qt.PointingHandCursor)
 
     def setIcon(self, icon):
         """Устанавливает иконку и перерисовывает виджет."""
@@ -182,26 +183,26 @@ class ClickableLabel(QtWidgets.QLabel):
         icon_size = self._icon_size
         spacing = self._icon_space
 
-        icon_rect = QtCore.QRect()
-        text_rect = QtCore.QRect()
+        icon_rect = QRect()
+        text_rect = QRect()
         text = self.text()
 
         if self._icon:
             # Получаем QPixmap нужного размера
             pixmap = self._icon.pixmap(icon_size, icon_size)
-            icon_rect = QtCore.QRect(0, 0, icon_size, icon_size)
+            icon_rect = QRect(0, 0, icon_size, icon_size)
             icon_rect.moveTop(rect.top() + (rect.height() - icon_size) // 2)
         else:
             pixmap = None
 
-        fm = QtGui.QFontMetrics(self.font())
+        fm = QFontMetrics(self.font())
         text_width = fm.horizontalAdvance(text)
         text_height = fm.height()
         total_width = text_width + (icon_size + spacing if pixmap else 0)
 
-        if alignment & QtCore.Qt.AlignHCenter:
+        if alignment & Qt.AlignHCenter:
             x = rect.left() + (rect.width() - total_width) // 2
-        elif alignment & QtCore.Qt.AlignRight:
+        elif alignment & Qt.AlignRight:
             x = rect.right() - total_width
         else:
             x = rect.left()
@@ -210,13 +211,13 @@ class ClickableLabel(QtWidgets.QLabel):
 
         if pixmap:
             icon_rect.moveLeft(x)
-            text_rect = QtCore.QRect(x + icon_size + spacing, y, text_width, text_height)
+            text_rect = QRect(x + icon_size + spacing, y, text_width, text_height)
         else:
-            text_rect = QtCore.QRect(x, y, text_width, text_height)
+            text_rect = QRect(x, y, text_width, text_height)
 
-        option = QtWidgets.QStyleOption()
+        option = QStyleOption()
         option.initFrom(self)
-        self.style().drawPrimitive(QtWidgets.QStyle.PE_Widget, option, painter, self)
+        self.style().drawPrimitive(QStyle.PE_Widget, option, painter, self)
 
         if pixmap:
             painter.drawPixmap(icon_rect, pixmap)
@@ -231,20 +232,20 @@ class ClickableLabel(QtWidgets.QLabel):
         )
 
     def mousePressEvent(self, event):
-        if event.button() == QtCore.Qt.LeftButton:
+        if event.button() == Qt.LeftButton:
             self.clicked.emit()
             event.accept()
         else:
             super().mousePressEvent(event)
 
-class AutoSizeButton(QtWidgets.QPushButton):
+class AutoSizeButton(QPushButton):
     def __init__(self, *args, icon=None, icon_size=16,
                  min_font_size=8, max_font_size=14, padding=20, update_size=True, **kwargs):
         if args and isinstance(args[0], str):
             text = args[0]
             parent = kwargs.get("parent", None)
             super().__init__(text, parent)
-        elif args and isinstance(args[0], QtWidgets.QWidget):
+        elif args and isinstance(args[0], QWidget):
             parent = args[0]
             text = kwargs.get("text", "")
             super().__init__(text, parent)
@@ -255,7 +256,7 @@ class AutoSizeButton(QtWidgets.QPushButton):
 
         self._icon = icon
         self._icon_size = icon_size
-        self._alignment = QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
+        self._alignment = Qt.AlignLeft | Qt.AlignVCenter
         self._min_font_size = min_font_size
         self._max_font_size = max_font_size
         self._padding = padding
@@ -265,11 +266,11 @@ class AutoSizeButton(QtWidgets.QPushButton):
 
         if self._icon:
             self.setIcon(self._icon)
-            self.setIconSize(QtCore.QSize(self._icon_size, self._icon_size))
+            self.setIconSize(QSize(self._icon_size, self._icon_size))
 
-        self.setCursor(QtCore.Qt.PointingHandCursor)
+        self.setCursor(Qt.PointingHandCursor)
         self.setFlat(True)
-        super().setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
+        super().setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
 
         # Изначально выставляем минимальную ширину
         self.setMinimumWidth(50)
@@ -310,14 +311,14 @@ class AutoSizeButton(QtWidgets.QPushButton):
         margins = self.contentsMargins()
         available_width -= (margins.left() + margins.right() + self._padding * 2)
 
-        font = QtGui.QFont(self._original_font)
+        font = QFont(self._original_font)
         text = self._original_text
 
         # Подбираем максимально возможный размер шрифта, при котором текст укладывается
         chosen_size = self._max_font_size
         for font_size in range(self._max_font_size, self._min_font_size - 1, -1):
             font.setPointSize(font_size)
-            fm = QtGui.QFontMetrics(font)
+            fm = QFontMetrics(font)
             text_width = fm.horizontalAdvance(text)
             if text_width <= available_width:
                 chosen_size = font_size
@@ -327,7 +328,7 @@ class AutoSizeButton(QtWidgets.QPushButton):
         self.setFont(font)
 
         # После выбора шрифта вычисляем требуемую ширину для полного отображения текста
-        fm = QtGui.QFontMetrics(font)
+        fm = QFontMetrics(font)
         text_width = fm.horizontalAdvance(text)
         required_width = text_width + margins.left() + margins.right() + self._padding * 2
         if self._icon:
@@ -345,11 +346,46 @@ class AutoSizeButton(QtWidgets.QPushButton):
         else:
             # Вычисляем оптимальный размер кнопки на основе текста и отступов
             font = self.font()
-            fm = QtGui.QFontMetrics(font)
+            fm = QFontMetrics(font)
             text_width = fm.horizontalAdvance(self._original_text)
             margins = self.contentsMargins()
             width = text_width + margins.left() + margins.right() + self._padding * 2
             if self._icon:
                 width += self._icon_size
             height = fm.height() + margins.top() + margins.bottom() + self._padding
-            return QtCore.QSize(width, height)
+            return QSize(width, height)
+
+
+class NavLabel(QLabel):
+    clicked = Signal()
+
+    def __init__(self, text="", parent=None):
+        super().__init__(text, parent)
+        self.setWordWrap(True)
+        self.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+
+        self._checkable = False
+        self._isChecked = False
+        self.setProperty("checked", self._isChecked)
+        self.setCursor(Qt.PointingHandCursor)
+
+    def setCheckable(self, checkable):
+        self._checkable = checkable
+
+    def setChecked(self, checked):
+        if self._checkable:
+            self._isChecked = checked
+            self.setProperty("checked", checked)
+            self.style().unpolish(self)
+            self.style().polish(self)
+            self.update()
+
+    def isChecked(self):
+        return self._isChecked
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            if self._checkable:
+                self.setChecked(not self._isChecked)
+            self.clicked.emit()
+        super().mousePressEvent(event)
