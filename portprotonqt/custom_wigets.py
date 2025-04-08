@@ -240,7 +240,7 @@ class ClickableLabel(QtWidgets.QLabel):
 class AutoSizeButton(QtWidgets.QPushButton):
     def __init__(self, *args, icon=None, icon_size=16,
                  min_font_size=8, max_font_size=14,
-                 horizontal_padding=20, vertical_padding=10,
+                 horizontal_padding=35, vertical_padding=10,
                  update_size=True, **kwargs):
         if args and isinstance(args[0], str):
             text = args[0]
@@ -290,6 +290,7 @@ class AutoSizeButton(QtWidgets.QPushButton):
         else:
             super().setText(text)
             self.adjustFontSize()
+            self.updateGeometry()
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -297,10 +298,7 @@ class AutoSizeButton(QtWidgets.QPushButton):
             self.adjustFontSize()
 
     def adjustFontSize(self):
-        if not self._original_text:
-            return
-
-        if not self._update_size:
+        if not self._original_text or not self._update_size:
             return
 
         # Определяем доступную ширину внутри кнопки
@@ -334,10 +332,8 @@ class AutoSizeButton(QtWidgets.QPushButton):
         if self._icon:
             required_width += self._icon_size
 
-        # Устанавливаем минимальную ширину динамически
-        self.setMinimumWidth(0)  # Сбрасываем фиксированное значение
-        if self.width() < required_width:
-            self.setMinimumWidth(required_width)
+        # Устанавливаем шрину
+        self.setFixedWidth(required_width)
 
         super().setText(text)
 
