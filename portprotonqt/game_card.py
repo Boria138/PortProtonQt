@@ -1,5 +1,6 @@
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtGui import QPainter, QPen, QColor, QConicalGradient, QBrush
+from PySide6.QtCore import QEasingCurve
 import portprotonqt.themes.standart.styles as default_styles
 from portprotonqt.image_utils import load_pixmap, round_corners
 from portprotonqt.localization import _
@@ -35,7 +36,7 @@ class GameCard(QtWidgets.QFrame):
         # Дополнительное пространство для анимации
         extra_margin = 20
         self.setFixedSize(card_width + extra_margin, int(card_width * 1.6) + extra_margin)
-        self.setFocusPolicy(QtCore.Qt.StrongFocus)
+        self.setFocusPolicy(QtCore.Qt.FocusPolicy.StrongFocus)
         self.setStyleSheet(self.theme.GAME_CARD_WINDOW_STYLE)
 
         # Параметры анимации обводки
@@ -44,7 +45,7 @@ class GameCard(QtWidgets.QFrame):
         self._hovered = False
 
         # Анимации
-        self.thickness_anim = QtCore.QPropertyAnimation(self, b"borderWidth")
+        self.thickness_anim = QtCore.QPropertyAnimation(self, QtCore.QByteArray(b"borderWidth"))
         self.thickness_anim.setDuration(300)
         self.gradient_anim = None
         self.pulse_anim = None
@@ -69,7 +70,7 @@ class GameCard(QtWidgets.QFrame):
         coverWidget.setFixedSize(card_width, int(card_width * 1.2))
         coverLayout = QtWidgets.QStackedLayout(coverWidget)
         coverLayout.setContentsMargins(0, 0, 0, 0)
-        coverLayout.setStackingMode(QtWidgets.QStackedLayout.StackAll)
+        coverLayout.setStackingMode(QtWidgets.QStackedLayout.StackingMode.StackAll)
 
         # Обложка
         coverLabel = QtWidgets.QLabel()
@@ -158,7 +159,7 @@ class GameCard(QtWidgets.QFrame):
 
         # Название игры
         nameLabel = QtWidgets.QLabel(name)
-        nameLabel.setAlignment(QtCore.Qt.AlignCenter)
+        nameLabel.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         nameLabel.setStyleSheet(self.theme.GAME_CARD_NAME_LABEL_STYLE)
         layout.addWidget(nameLabel)
 
@@ -245,7 +246,7 @@ class GameCard(QtWidgets.QFrame):
     def paintEvent(self, event):
         super().paintEvent(event)
         painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
         pen = QPen()
         pen.setWidth(self._borderWidth)
@@ -273,7 +274,7 @@ class GameCard(QtWidgets.QFrame):
     def startPulseAnimation(self):
         if not self._hovered:
             return
-        self.pulse_anim = QtCore.QPropertyAnimation(self, b"borderWidth")
+        self.pulse_anim = QtCore.QPropertyAnimation(self, QtCore.QByteArray(b"borderWidth"))
         self.pulse_anim.setDuration(800)
         self.pulse_anim.setLoopCount(0)
         self.pulse_anim.setKeyValueAt(0, 8)
@@ -287,14 +288,14 @@ class GameCard(QtWidgets.QFrame):
         if self._isPulseAnimationConnected:
             self.thickness_anim.finished.disconnect(self.startPulseAnimation)
             self._isPulseAnimationConnected = False
-        self.thickness_anim.setEasingCurve(QtCore.QEasingCurve.OutBack)
+        self.thickness_anim.setEasingCurve(QEasingCurve(QEasingCurve.Type.OutBack))
         self.thickness_anim.setStartValue(self._borderWidth)
         self.thickness_anim.setEndValue(8)
         self.thickness_anim.finished.connect(self.startPulseAnimation)
         self._isPulseAnimationConnected = True
         self.thickness_anim.start()
 
-        self.gradient_anim = QtCore.QPropertyAnimation(self, b"gradientAngle")
+        self.gradient_anim = QtCore.QPropertyAnimation(self, QtCore.QByteArray(b"gradientAngle"))
         self.gradient_anim.setDuration(3000)
         self.gradient_anim.setStartValue(360)
         self.gradient_anim.setEndValue(0)
@@ -318,7 +319,7 @@ class GameCard(QtWidgets.QFrame):
             self.pulse_anim.stop()
             self.pulse_anim = None
 
-        self.thickness_anim.setEasingCurve(QtCore.QEasingCurve.InBack)
+        self.thickness_anim.setEasingCurve(QEasingCurve(QEasingCurve.Type.InBack))
         self.thickness_anim.setStartValue(self._borderWidth)
         self.thickness_anim.setEndValue(2)
         self.thickness_anim.start()
@@ -339,7 +340,7 @@ class GameCard(QtWidgets.QFrame):
         )
 
     def keyPressEvent(self, event):
-        if event.key() in (QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter):
+        if event.key() in (QtCore.Qt.Key.Key_Return, QtCore.Qt.Key.Key_Enter):
             self.select_callback(
                 self.name,
                 self.description,

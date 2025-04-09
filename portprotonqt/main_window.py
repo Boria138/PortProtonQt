@@ -848,6 +848,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def openGameDetailPage(self, name, description, cover_path=None, appid="", exec_line="", controller_support="", last_launch="", formatted_playtime="", protondb_tier="", steam_game=""):
         detailPage = QtWidgets.QWidget()
+        self._animations = {}
         if cover_path:
             pixmap = load_pixmap(cover_path, 300, 400)
             pixmap = round_corners(pixmap, 10)
@@ -1005,7 +1006,7 @@ class MainWindow(QtWidgets.QMainWindow):
         animation.setStartValue(0)
         animation.setEndValue(1)
         animation.start(QtCore.QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
-        detailPage.animation = animation
+        self._animations[detailPage] = animation
         animation.finished.connect(
             lambda: detailPage.setGraphicsEffect(cast(QtWidgets.QGraphicsEffect, None))
         )

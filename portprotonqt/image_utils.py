@@ -1,5 +1,6 @@
 import os
 from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6.QtWidgets import QGraphicsItem
 import portprotonqt.themes.standart.styles as default_styles
 from portprotonqt.config_utils import read_theme_from_config
 from portprotonqt.theme_manager import ThemeManager
@@ -59,22 +60,34 @@ def get_cropped_pixmap_cached(cover, width, height):
     # Если изображение не загрузилось, используем placeholder
     if pixmap.isNull():
         placeholder_path = theme_manager.get_theme_image("placeholder.jpg", current_theme_name)
-        if placeholder_path and QtCore.QFile.exists(placeholder_path):
-            pixmap.load(placeholder_path)
+        if placeholder_path:
+            file = QtCore.QFile(placeholder_path)
+            if file.exists():
+                pixmap.load(placeholder_path)  # Загружаем placeholder
+            else:
+                # Если placeholder не найден, создаем изображение с текстом
+                pixmap = QtGui.QPixmap(width, height)
+                pixmap.fill(QtGui.QColor("#333333"))
+                painter = QtGui.QPainter(pixmap)
+                painter.setPen(QtGui.QPen(QtGui.QColor("white")))
+                painter.drawText(pixmap.rect(), QtCore.Qt.AlignmentFlag.AlignCenter, "No Image")
+                painter.end()
         else:
+            # Если путь к placeholder не указан, создаем изображение с текстом
             pixmap = QtGui.QPixmap(width, height)
             pixmap.fill(QtGui.QColor("#333333"))
             painter = QtGui.QPainter(pixmap)
             painter.setPen(QtGui.QPen(QtGui.QColor("white")))
-            painter.drawText(pixmap.rect(), QtCore.Qt.AlignCenter, "No Image")
+            painter.drawText(pixmap.rect(), QtCore.Qt.AlignmentFlag.AlignCenter, "No Image")
             painter.end()
 
     # Масштабирование с сохранением пропорций и обрезка центральной части
-    scaled = pixmap.scaled(width, height, QtCore.Qt.KeepAspectRatioByExpanding, QtCore.Qt.SmoothTransformation)
+    scaled = pixmap.scaled(width, height, QtCore.Qt.AspectRatioMode.KeepAspectRatioByExpanding, QtCore.Qt.TransformationMode.SmoothTransformation)
     x = (scaled.width() - width) // 2
     y = (scaled.height() - height) // 2
     cropped = scaled.copy(x, y, width, height)
     return cropped
+
 
 def round_corners(pixmap, radius):
     """
@@ -84,9 +97,9 @@ def round_corners(pixmap, radius):
         return pixmap
     size = pixmap.size()
     rounded = QtGui.QPixmap(size)
-    rounded.fill(QtCore.Qt.transparent)
+    rounded.fill(QtGui.QColor(0, 0, 0, 0))
     painter = QtGui.QPainter(rounded)
-    painter.setRenderHint(QtGui.QPainter.Antialiasing)
+    painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
     path = QtGui.QPainterPath()
     path.addRoundedRect(0, 0, size.width(), size.height(), radius, radius)
     painter.setClipPath(path)
@@ -112,15 +125,15 @@ class FullscreenDialog(QtWidgets.QDialog):
         """
         super().__init__(parent)
         # Удаление диалога после закрытия
-        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose)
 
         self.images = images
         self.current_index = current_index
         self.theme = theme if theme else default_styles
 
         # Убираем стандартные элементы управления окна
-        self.setWindowFlags(QtCore.Qt.FramelessWindowHint | QtCore.Qt.Dialog)
-        self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
+        self.setWindowFlags(QtCore.Qt.WindowType.FramelessWindowHint | QtCore.Qt.WindowType.Dialog)
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_TranslucentBackground)
 
         self.init_ui()
         self.update_display()
@@ -130,9 +143,10 @@ class FullscreenDialog(QtWidgets.QDialog):
         self.captionLabel.installEventFilter(self)
 
     def init_ui(self):
-        self.layout = QtWidgets.QVBoxLayout(self)
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.layout.setSpacing(0)
+        self.mainLayout = QtWidgets.QVBoxLayout(self)
+        self.setLayout(self.mainLayout)
+        self.mainLayout.setContentsMargins(0, 0, 0, 0)
+        self.mainLayout.setSpacing(0)
 
         # Контейнер для изображения и стрелок
         self.imageContainer = QtWidgets.QWidget()
@@ -143,9 +157,9 @@ class FullscreenDialog(QtWidgets.QDialog):
 
         # Левая стрелка
         self.prevButton = QtWidgets.QToolButton()
-        self.prevButton.setArrowType(QtCore.Qt.LeftArrow)
+        self.prevButton.setArrowType(QtCore.Qt.ArrowType.LeftArrow)
         self.prevButton.setStyleSheet(self.theme.PREV_BUTTON_STYLE)
-        self.prevButton.setCursor(QtCore.Qt.PointingHandCursor)
+        self.prevButton.setCursor(QtCore.Qt.CursorShape.PointingHandCursor)
         self.prevButton.setFixedSize(40, 40)
         self.prevButton.clicked.connect(self.show_prev)
         self.imageContainerLayout.addWidget(self.prevButton)
@@ -153,32 +167,32 @@ class FullscreenDialog(QtWidgets.QDialog):
         # Метка для изображения
         self.imageLabel = QtWidgets.QLabel()
         self.imageLabel.setFixedSize(self.FIXED_WIDTH - 80, self.FIXED_HEIGHT)
-        self.imageLabel.setAlignment(QtCore.Qt.AlignCenter)
+        self.imageLabel.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         self.imageContainerLayout.addWidget(self.imageLabel, stretch=1)
 
         # Правая стрелка
         self.nextButton = QtWidgets.QToolButton()
-        self.nextButton.setArrowType(QtCore.Qt.RightArrow)
+        self.nextButton.setArrowType(QtCore.Qt.ArrowType.RightArrow)
         self.nextButton.setStyleSheet(self.theme.NEXT_BUTTON_STYLE)
-        self.nextButton.setCursor(QtCore.Qt.PointingHandCursor)
+        self.nextButton.setCursor(QtCore.Qt.CursorShape.PointingHandCursor)
         self.nextButton.setFixedSize(40, 40)
         self.nextButton.clicked.connect(self.show_next)
         self.imageContainerLayout.addWidget(self.nextButton)
 
-        self.layout.addWidget(self.imageContainer)
+        self.mainLayout.addWidget(self.imageContainer)
 
         # Небольшой отступ между изображением и подписью
-        spacer = QtWidgets.QSpacerItem(20, 10, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
-        self.layout.addItem(spacer)
+        spacer = QtWidgets.QSpacerItem(20, 10, QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Fixed)
+        self.mainLayout.addItem(spacer)
 
         # Подпись
         self.captionLabel = QtWidgets.QLabel()
-        self.captionLabel.setAlignment(QtCore.Qt.AlignCenter)
+        self.captionLabel.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         self.captionLabel.setFixedHeight(40)
         self.captionLabel.setWordWrap(True)
         self.captionLabel.setStyleSheet(self.theme.CAPTION_LABEL_STYLE)
-        self.captionLabel.setCursor(QtCore.Qt.PointingHandCursor)
-        self.layout.addWidget(self.captionLabel)
+        self.captionLabel.setCursor(QtCore.Qt.CursorShape.PointingHandCursor)
+        self.mainLayout.addWidget(self.captionLabel)
 
     def update_display(self):
         """Обновляет изображение и подпись согласно текущему индексу."""
@@ -195,8 +209,8 @@ class FullscreenDialog(QtWidgets.QDialog):
         scaled_pixmap = pixmap.scaled(
             self.FIXED_WIDTH - 80,  # учитываем ширину стрелок
             self.FIXED_HEIGHT,
-            QtCore.Qt.KeepAspectRatio,
-            QtCore.Qt.SmoothTransformation
+            QtCore.Qt.AspectRatioMode.KeepAspectRatio,
+            QtCore.Qt.TransformationMode.SmoothTransformation
         )
         self.imageLabel.setPixmap(scaled_pixmap)
         self.captionLabel.setText(caption)
@@ -221,14 +235,14 @@ class FullscreenDialog(QtWidgets.QDialog):
 
     def eventFilter(self, obj, event):
         """Закрывает диалог при клике по изображению или подписи."""
-        if event.type() == QtCore.QEvent.MouseButtonPress and obj in [self.imageLabel, self.captionLabel]:
+        if event.type() == QtCore.QEvent.Type.MouseButtonPress and obj in [self.imageLabel, self.captionLabel]:
             self.close()
             return True
         return super().eventFilter(obj, event)
 
     def changeEvent(self, event):
         """Закрывает диалог при потере фокуса."""
-        if event.type() == QtCore.QEvent.ActivationChange:
+        if event.type() == QtCore.QEvent.Type.ActivationChange:
             if not self.isActiveWindow():
                 self.close()
         super().changeEvent(event)
@@ -262,19 +276,19 @@ class ClickablePixmapItem(QtWidgets.QGraphicsPixmapItem):
         self.images_list = images_list if images_list is not None else [(pixmap, caption)]
         self.index = index
         self.carousel = carousel
-        self.setCursor(QtCore.Qt.PointingHandCursor)
+        self.setCursor(QtCore.Qt.CursorShape.PointingHandCursor)
         self.setToolTip(caption)
         self._click_start_position = None
-        self.setAcceptedMouseButtons(QtCore.Qt.LeftButton)
-        self.setFlag(QtWidgets.QGraphicsItem.ItemIsSelectable, True)
+        self.setAcceptedMouseButtons(QtCore.Qt.MouseButton.LeftButton)
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
 
     def mousePressEvent(self, event):
-        if event.button() == QtCore.Qt.LeftButton:
+        if event.button() == QtCore.Qt.MouseButton.LeftButton:
             self._click_start_position = event.scenePos()
             event.accept()
 
     def mouseReleaseEvent(self, event):
-        if event.button() == QtCore.Qt.LeftButton and self._click_start_position is not None:
+        if event.button() == QtCore.Qt.MouseButton.LeftButton and self._click_start_position is not None:
             distance = (event.scenePos() - self._click_start_position).manhattanLength()
             if distance < 2:
                 self.show_fullscreen()
@@ -299,10 +313,13 @@ class ImageCarousel(QtWidgets.QGraphicsView):
     Карусель изображений с адаптивностью, возможностью увеличения по клику
     и перетаскиванием мыши.
     """
-    def __init__(self, images, parent=None, theme=None):
+    def __init__(self, images: list[tuple], parent: QtWidgets.QWidget | None = None, theme: object | None = None):
         super().__init__(parent)
-        self.scene = QtWidgets.QGraphicsScene(self)
-        self.setScene(self.scene)
+
+        # Аннотируем тип scene как QGraphicsScene
+        self.carousel_scene: QtWidgets.QGraphicsScene = QtWidgets.QGraphicsScene(self)
+        self.setScene(self.carousel_scene)
+
         self.images = images  # Список кортежей: (QPixmap, caption)
         self.image_items = []
         self._animation = None
@@ -316,10 +333,10 @@ class ImageCarousel(QtWidgets.QGraphicsView):
         self._scroll_start_value = None
 
     def init_ui(self):
-        self.setRenderHint(QtGui.QPainter.Antialiasing)
-        self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        self.setFrameShape(QtWidgets.QFrame.NoFrame)
+        self.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
+        self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
 
         x_offset = 10  # Отступ между изображениями
         max_height = 300  # Фиксированная высота изображений
@@ -327,14 +344,14 @@ class ImageCarousel(QtWidgets.QGraphicsView):
 
         for i, (pixmap, caption) in enumerate(self.images):
             item = ClickablePixmapItem(
-                pixmap.scaledToHeight(max_height, QtCore.Qt.SmoothTransformation),
+                pixmap.scaledToHeight(max_height, QtCore.Qt.TransformationMode.SmoothTransformation),
                 caption,
                 images_list=self.images,
                 index=i,
-                carousel=self  # Передаём ссылку на карусель
+                carousel=self  # Передаем ссылку на карусель
             )
             item.setPos(x, 0)
-            self.scene.addItem(item)
+            self.carousel_scene.addItem(item)
             self.image_items.append(item)
             x += item.pixmap().width() + x_offset
 
@@ -343,10 +360,10 @@ class ImageCarousel(QtWidgets.QGraphicsView):
     def create_arrows(self):
         """Создаёт кнопки-стрелки и привязывает их к функциям прокрутки."""
         self.prevArrow = QtWidgets.QToolButton(self)
-        self.prevArrow.setArrowType(QtCore.Qt.LeftArrow)
-        self.prevArrow.setStyleSheet(self.theme.PREV_BUTTON_STYLE)
+        self.prevArrow.setArrowType(QtCore.Qt.ArrowType.LeftArrow)
+        self.prevArrow.setStyleSheet(self.theme.PREV_BUTTON_STYLE) # type: ignore
         self.prevArrow.setFixedSize(40, 40)
-        self.prevArrow.setCursor(QtCore.Qt.PointingHandCursor)
+        self.prevArrow.setCursor(QtCore.Qt.CursorShape.PointingHandCursor)
         self.prevArrow.setAutoRepeat(True)
         self.prevArrow.setAutoRepeatDelay(300)
         self.prevArrow.setAutoRepeatInterval(100)
@@ -354,10 +371,10 @@ class ImageCarousel(QtWidgets.QGraphicsView):
         self.prevArrow.raise_()
 
         self.nextArrow = QtWidgets.QToolButton(self)
-        self.nextArrow.setArrowType(QtCore.Qt.RightArrow)
-        self.nextArrow.setStyleSheet(self.theme.NEXT_BUTTON_STYLE)
+        self.nextArrow.setArrowType(QtCore.Qt.ArrowType.RightArrow)
+        self.nextArrow.setStyleSheet(self.theme.NEXT_BUTTON_STYLE) # type: ignore
         self.nextArrow.setFixedSize(40, 40)
-        self.nextArrow.setCursor(QtCore.Qt.PointingHandCursor)
+        self.nextArrow.setCursor(QtCore.Qt.CursorShape.PointingHandCursor)
         self.nextArrow.setAutoRepeat(True)
         self.nextArrow.setAutoRepeatDelay(300)
         self.nextArrow.setAutoRepeatInterval(100)
@@ -372,7 +389,6 @@ class ImageCarousel(QtWidgets.QGraphicsView):
         Показывает стрелки, если контент шире видимой области.
         Иначе скрывает их.
         """
-        # Если стрелки уже созданы, то обновляем их видимость
         if hasattr(self, "prevArrow") and hasattr(self, "nextArrow"):
             if self.horizontalScrollBar().maximum() == 0:
                 self.prevArrow.hide()
@@ -392,11 +408,11 @@ class ImageCarousel(QtWidgets.QGraphicsView):
     def animate_scroll(self, end_value):
         scrollbar = self.horizontalScrollBar()
         start_value = scrollbar.value()
-        animation = QtCore.QPropertyAnimation(scrollbar, b"value", self)
+        animation = QtCore.QPropertyAnimation(scrollbar, QtCore.QByteArray(b"value"), self)
         animation.setDuration(300)
         animation.setStartValue(start_value)
         animation.setEndValue(end_value)
-        animation.setEasingCurve(QtCore.QEasingCurve.InOutQuad)
+        animation.setEasingCurve(QtCore.QEasingCurve.Type.InOutQuad)
         self._animation = animation
         animation.start()
 
@@ -411,7 +427,7 @@ class ImageCarousel(QtWidgets.QGraphicsView):
         self.animate_scroll(new_value)
 
     def update_images(self, new_images):
-        self.scene.clear()
+        self.carousel_scene.clear()
         self.images = new_images
         self.image_items.clear()
         self.init_ui()
@@ -419,7 +435,7 @@ class ImageCarousel(QtWidgets.QGraphicsView):
 
     # Обработка событий мыши для перетаскивания
     def mousePressEvent(self, event):
-        if event.button() == QtCore.Qt.LeftButton:
+        if event.button() == QtCore.Qt.MouseButton.LeftButton:
             self._drag_active = True
             self._drag_start_position = event.pos()
             self._scroll_start_value = self.horizontalScrollBar().value()
@@ -431,7 +447,7 @@ class ImageCarousel(QtWidgets.QGraphicsView):
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
-        if self._drag_active:
+        if self._drag_active and self._drag_start_position is not None:
             delta = event.pos().x() - self._drag_start_position.x()
             new_value = self._scroll_start_value - delta
             self.horizontalScrollBar().setValue(new_value)

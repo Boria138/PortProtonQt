@@ -161,7 +161,7 @@ class ClickableLabel(QLabel):
         self._icon = icon
         self._icon_size = icon_size
         self._icon_space = icon_space
-        self.setCursor(Qt.PointingHandCursor)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
 
     def setIcon(self, icon):
         """Устанавливает иконку и перерисовывает виджет."""
@@ -230,7 +230,7 @@ class ClickableLabel(QLabel):
         )
 
     def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             self.clicked.emit()
             event.accept()
         else:
@@ -266,7 +266,7 @@ class AutoSizeButton(QPushButton):
             self.setIcon(self._icon)
             self.setIconSize(QSize(self._icon_size, self._icon_size))
 
-        self.setCursor(Qt.PointingHandCursor)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setFlat(True)
 
         # Изначально выставляем минимальную ширину
@@ -364,7 +364,7 @@ class NavLabel(QLabel):
         self._checkable = False
         self._isChecked = False
         self.setProperty("checked", self._isChecked)
-        self.setCursor(Qt.PointingHandCursor)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
 
     def setCheckable(self, checkable):
         self._checkable = checkable
@@ -381,7 +381,7 @@ class NavLabel(QLabel):
         return self._isChecked
 
     def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             if self._checkable:
                 self.setChecked(not self._isChecked)
             self.clicked.emit()
