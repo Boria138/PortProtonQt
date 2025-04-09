@@ -1,6 +1,7 @@
-from PySide6.QtGui import QAction
+from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import QSystemTrayIcon, QMenu
 from portprotonqt.theme_manager import ThemeManager
+from typing import cast
 import portprotonqt.themes.standart.styles as default_styles
 from portprotonqt.config_utils import read_theme_from_config
 
@@ -11,7 +12,7 @@ class SystemTray:
         self.theme = theme if theme is not None else default_styles
         self.current_theme_name = read_theme_from_config()
         self.tray = QSystemTrayIcon()
-        self.tray.setIcon(self.theme_manager.get_icon("ppqt", self.current_theme_name))
+        self.tray.setIcon(cast(QIcon, self.theme_manager.get_icon("ppqt", self.current_theme_name)))
         self.tray.setVisible(True)
 
         # Создаём меню

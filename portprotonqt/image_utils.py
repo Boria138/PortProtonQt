@@ -1,6 +1,8 @@
 import os
-from PySide6 import QtCore, QtGui, QtWidgets
-from PySide6.QtWidgets import QGraphicsItem
+from PySide6.QtGui import QPen, QColor, QPixmap, QPainter, QPainterPath
+from PySide6.QtCore import Qt, QFile, QEvent, QByteArray, QEasingCurve, QPropertyAnimation
+from PySide6.QtWidgets import QGraphicsItem, QToolButton, QFrame, QLabel, QGraphicsScene, QHBoxLayout, QWidget, QGraphicsView, QVBoxLayout, QSizePolicy
+from PySide6.QtWidgets import QSpacerItem, QGraphicsPixmapItem, QDialog, QApplication
 import portprotonqt.themes.standart.styles as default_styles
 from portprotonqt.config_utils import read_theme_from_config
 from portprotonqt.theme_manager import ThemeManager
@@ -27,7 +29,7 @@ def get_cropped_pixmap_cached(cover, width, height):
     """
     theme_manager = ThemeManager()
     current_theme_name = read_theme_from_config()
-    pixmap = QtGui.QPixmap()
+    pixmap = QPixmap()
 
     # Обработка ссылок с CDN Steam
     if cover and cover.startswith("https://steamcdn-a.akamaihd.net/steam/apps/"):
@@ -54,35 +56,35 @@ def get_cropped_pixmap_cached(cover, width, height):
             logger.error(f"Ошибка обработки URL {cover}: {e}")
 
     # Если путь указывает на локальный файл
-    elif cover and QtCore.QFile.exists(cover):
+    elif cover and QFile.exists(cover):
         pixmap.load(cover)
 
     # Если изображение не загрузилось, используем placeholder
     if pixmap.isNull():
-        placeholder_path = theme_manager.get_theme_image("placeholder.jpg", current_theme_name)
+        placeholder_path = theme_manager.get_theme_image("placeholder", current_theme_name)
         if placeholder_path:
-            file = QtCore.QFile(placeholder_path)
+            file = QFile(placeholder_path)
             if file.exists():
                 pixmap.load(placeholder_path)  # Загружаем placeholder
             else:
                 # Если placeholder не найден, создаем изображение с текстом
-                pixmap = QtGui.QPixmap(width, height)
-                pixmap.fill(QtGui.QColor("#333333"))
-                painter = QtGui.QPainter(pixmap)
-                painter.setPen(QtGui.QPen(QtGui.QColor("white")))
-                painter.drawText(pixmap.rect(), QtCore.Qt.AlignmentFlag.AlignCenter, "No Image")
+                pixmap = QPixmap(width, height)
+                pixmap.fill(QColor("#333333"))
+                painter = QPainter(pixmap)
+                painter.setPen(QPen(QColor("white")))
+                painter.drawText(pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "No Image")
                 painter.end()
         else:
             # Если путь к placeholder не указан, создаем изображение с текстом
-            pixmap = QtGui.QPixmap(width, height)
-            pixmap.fill(QtGui.QColor("#333333"))
-            painter = QtGui.QPainter(pixmap)
-            painter.setPen(QtGui.QPen(QtGui.QColor("white")))
-            painter.drawText(pixmap.rect(), QtCore.Qt.AlignmentFlag.AlignCenter, "No Image")
+            pixmap = QPixmap(width, height)
+            pixmap.fill(QColor("#333333"))
+            painter = QPainter(pixmap)
+            painter.setPen(QPen(QColor("white")))
+            painter.drawText(pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "No Image")
             painter.end()
 
     # Масштабирование с сохранением пропорций и обрезка центральной части
-    scaled = pixmap.scaled(width, height, QtCore.Qt.AspectRatioMode.KeepAspectRatioByExpanding, QtCore.Qt.TransformationMode.SmoothTransformation)
+    scaled = pixmap.scaled(width, height, Qt.AspectRatioMode.KeepAspectRatioByExpanding, Qt.TransformationMode.SmoothTransformation)
     x = (scaled.width() - width) // 2
     y = (scaled.height() - height) // 2
     cropped = scaled.copy(x, y, width, height)
@@ -96,18 +98,18 @@ def round_corners(pixmap, radius):
     if pixmap.isNull():
         return pixmap
     size = pixmap.size()
-    rounded = QtGui.QPixmap(size)
-    rounded.fill(QtGui.QColor(0, 0, 0, 0))
-    painter = QtGui.QPainter(rounded)
-    painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
-    path = QtGui.QPainterPath()
+    rounded = QPixmap(size)
+    rounded.fill(QColor(0, 0, 0, 0))
+    painter = QPainter(rounded)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+    path = QPainterPath()
     path.addRoundedRect(0, 0, size.width(), size.height(), radius, radius)
     painter.setClipPath(path)
     painter.drawPixmap(0, 0, pixmap)
     painter.end()
     return rounded
 
-class FullscreenDialog(QtWidgets.QDialog):
+class FullscreenDialog(QDialog):
     """
     Диалог для просмотра изображений без стандартных элементов управления.
     Изображение отображается в области фиксированного размера, а подпись располагается чуть выше нижней границы.
@@ -125,15 +127,15 @@ class FullscreenDialog(QtWidgets.QDialog):
         """
         super().__init__(parent)
         # Удаление диалога после закрытия
-        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
 
         self.images = images
         self.current_index = current_index
         self.theme = theme if theme else default_styles
 
         # Убираем стандартные элементы управления окна
-        self.setWindowFlags(QtCore.Qt.WindowType.FramelessWindowHint | QtCore.Qt.WindowType.Dialog)
-        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 
         self.init_ui()
         self.update_display()
@@ -143,38 +145,38 @@ class FullscreenDialog(QtWidgets.QDialog):
         self.captionLabel.installEventFilter(self)
 
     def init_ui(self):
-        self.mainLayout = QtWidgets.QVBoxLayout(self)
+        self.mainLayout = QVBoxLayout(self)
         self.setLayout(self.mainLayout)
         self.mainLayout.setContentsMargins(0, 0, 0, 0)
         self.mainLayout.setSpacing(0)
 
         # Контейнер для изображения и стрелок
-        self.imageContainer = QtWidgets.QWidget()
+        self.imageContainer = QWidget()
         self.imageContainer.setFixedSize(self.FIXED_WIDTH, self.FIXED_HEIGHT)
-        self.imageContainerLayout = QtWidgets.QHBoxLayout(self.imageContainer)
+        self.imageContainerLayout = QHBoxLayout(self.imageContainer)
         self.imageContainerLayout.setContentsMargins(0, 0, 0, 0)
         self.imageContainerLayout.setSpacing(0)
 
         # Левая стрелка
-        self.prevButton = QtWidgets.QToolButton()
-        self.prevButton.setArrowType(QtCore.Qt.ArrowType.LeftArrow)
+        self.prevButton = QToolButton()
+        self.prevButton.setArrowType(Qt.ArrowType.LeftArrow)
         self.prevButton.setStyleSheet(self.theme.PREV_BUTTON_STYLE)
-        self.prevButton.setCursor(QtCore.Qt.CursorShape.PointingHandCursor)
+        self.prevButton.setCursor(Qt.CursorShape.PointingHandCursor)
         self.prevButton.setFixedSize(40, 40)
         self.prevButton.clicked.connect(self.show_prev)
         self.imageContainerLayout.addWidget(self.prevButton)
 
         # Метка для изображения
-        self.imageLabel = QtWidgets.QLabel()
+        self.imageLabel = QLabel()
         self.imageLabel.setFixedSize(self.FIXED_WIDTH - 80, self.FIXED_HEIGHT)
-        self.imageLabel.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.imageLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.imageContainerLayout.addWidget(self.imageLabel, stretch=1)
 
         # Правая стрелка
-        self.nextButton = QtWidgets.QToolButton()
-        self.nextButton.setArrowType(QtCore.Qt.ArrowType.RightArrow)
+        self.nextButton = QToolButton()
+        self.nextButton.setArrowType(Qt.ArrowType.RightArrow)
         self.nextButton.setStyleSheet(self.theme.NEXT_BUTTON_STYLE)
-        self.nextButton.setCursor(QtCore.Qt.CursorShape.PointingHandCursor)
+        self.nextButton.setCursor(Qt.CursorShape.PointingHandCursor)
         self.nextButton.setFixedSize(40, 40)
         self.nextButton.clicked.connect(self.show_next)
         self.imageContainerLayout.addWidget(self.nextButton)
@@ -182,16 +184,16 @@ class FullscreenDialog(QtWidgets.QDialog):
         self.mainLayout.addWidget(self.imageContainer)
 
         # Небольшой отступ между изображением и подписью
-        spacer = QtWidgets.QSpacerItem(20, 10, QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Fixed)
+        spacer = QSpacerItem(20, 10, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
         self.mainLayout.addItem(spacer)
 
         # Подпись
-        self.captionLabel = QtWidgets.QLabel()
-        self.captionLabel.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.captionLabel = QLabel()
+        self.captionLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.captionLabel.setFixedHeight(40)
         self.captionLabel.setWordWrap(True)
         self.captionLabel.setStyleSheet(self.theme.CAPTION_LABEL_STYLE)
-        self.captionLabel.setCursor(QtCore.Qt.CursorShape.PointingHandCursor)
+        self.captionLabel.setCursor(Qt.CursorShape.PointingHandCursor)
         self.mainLayout.addWidget(self.captionLabel)
 
     def update_display(self):
@@ -202,15 +204,15 @@ class FullscreenDialog(QtWidgets.QDialog):
         # Очищаем старое содержимое
         self.imageLabel.clear()
         self.captionLabel.clear()
-        QtWidgets.QApplication.processEvents()
+        QApplication.processEvents()
 
         pixmap, caption = self.images[self.current_index]
         # Масштабируем изображение так, чтобы оно поместилось в область фиксированного размера
         scaled_pixmap = pixmap.scaled(
             self.FIXED_WIDTH - 80,  # учитываем ширину стрелок
             self.FIXED_HEIGHT,
-            QtCore.Qt.AspectRatioMode.KeepAspectRatio,
-            QtCore.Qt.TransformationMode.SmoothTransformation
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation
         )
         self.imageLabel.setPixmap(scaled_pixmap)
         self.captionLabel.setText(caption)
@@ -235,14 +237,14 @@ class FullscreenDialog(QtWidgets.QDialog):
 
     def eventFilter(self, obj, event):
         """Закрывает диалог при клике по изображению или подписи."""
-        if event.type() == QtCore.QEvent.Type.MouseButtonPress and obj in [self.imageLabel, self.captionLabel]:
+        if event.type() == QEvent.Type.MouseButtonPress and obj in [self.imageLabel, self.captionLabel]:
             self.close()
             return True
         return super().eventFilter(obj, event)
 
     def changeEvent(self, event):
         """Закрывает диалог при потере фокуса."""
-        if event.type() == QtCore.QEvent.Type.ActivationChange:
+        if event.type() == QEvent.Type.ActivationChange:
             if not self.isActiveWindow():
                 self.close()
         super().changeEvent(event)
@@ -256,7 +258,7 @@ class FullscreenDialog(QtWidgets.QDialog):
             self.close()
         super().mousePressEvent(event)
 
-class ClickablePixmapItem(QtWidgets.QGraphicsPixmapItem):
+class ClickablePixmapItem(QGraphicsPixmapItem):
     """
     Элемент карусели, реагирующий на клик.
     При клике открывается FullscreenDialog с возможностью перелистывания изображений.
@@ -276,19 +278,19 @@ class ClickablePixmapItem(QtWidgets.QGraphicsPixmapItem):
         self.images_list = images_list if images_list is not None else [(pixmap, caption)]
         self.index = index
         self.carousel = carousel
-        self.setCursor(QtCore.Qt.CursorShape.PointingHandCursor)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setToolTip(caption)
         self._click_start_position = None
-        self.setAcceptedMouseButtons(QtCore.Qt.MouseButton.LeftButton)
+        self.setAcceptedMouseButtons(Qt.MouseButton.LeftButton)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
 
     def mousePressEvent(self, event):
-        if event.button() == QtCore.Qt.MouseButton.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             self._click_start_position = event.scenePos()
             event.accept()
 
     def mouseReleaseEvent(self, event):
-        if event.button() == QtCore.Qt.MouseButton.LeftButton and self._click_start_position is not None:
+        if event.button() == Qt.MouseButton.LeftButton and self._click_start_position is not None:
             distance = (event.scenePos() - self._click_start_position).manhattanLength()
             if distance < 2:
                 self.show_fullscreen()
@@ -308,16 +310,16 @@ class ClickablePixmapItem(QtWidgets.QGraphicsPixmapItem):
             self.carousel.update_arrows_visibility()
 
 
-class ImageCarousel(QtWidgets.QGraphicsView):
+class ImageCarousel(QGraphicsView):
     """
     Карусель изображений с адаптивностью, возможностью увеличения по клику
     и перетаскиванием мыши.
     """
-    def __init__(self, images: list[tuple], parent: QtWidgets.QWidget | None = None, theme: object | None = None):
+    def __init__(self, images: list[tuple], parent: QWidget | None = None, theme: object | None = None):
         super().__init__(parent)
 
         # Аннотируем тип scene как QGraphicsScene
-        self.carousel_scene: QtWidgets.QGraphicsScene = QtWidgets.QGraphicsScene(self)
+        self.carousel_scene: QGraphicsScene = QGraphicsScene(self)
         self.setScene(self.carousel_scene)
 
         self.images = images  # Список кортежей: (QPixmap, caption)
@@ -333,10 +335,10 @@ class ImageCarousel(QtWidgets.QGraphicsView):
         self._scroll_start_value = None
 
     def init_ui(self):
-        self.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
-        self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
+        self.setRenderHint(QPainter.RenderHint.Antialiasing)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setFrameShape(QFrame.Shape.NoFrame)
 
         x_offset = 10  # Отступ между изображениями
         max_height = 300  # Фиксированная высота изображений
@@ -344,7 +346,7 @@ class ImageCarousel(QtWidgets.QGraphicsView):
 
         for i, (pixmap, caption) in enumerate(self.images):
             item = ClickablePixmapItem(
-                pixmap.scaledToHeight(max_height, QtCore.Qt.TransformationMode.SmoothTransformation),
+                pixmap.scaledToHeight(max_height, Qt.TransformationMode.SmoothTransformation),
                 caption,
                 images_list=self.images,
                 index=i,
@@ -359,22 +361,22 @@ class ImageCarousel(QtWidgets.QGraphicsView):
 
     def create_arrows(self):
         """Создаёт кнопки-стрелки и привязывает их к функциям прокрутки."""
-        self.prevArrow = QtWidgets.QToolButton(self)
-        self.prevArrow.setArrowType(QtCore.Qt.ArrowType.LeftArrow)
+        self.prevArrow = QToolButton(self)
+        self.prevArrow.setArrowType(Qt.ArrowType.LeftArrow)
         self.prevArrow.setStyleSheet(self.theme.PREV_BUTTON_STYLE) # type: ignore
         self.prevArrow.setFixedSize(40, 40)
-        self.prevArrow.setCursor(QtCore.Qt.CursorShape.PointingHandCursor)
+        self.prevArrow.setCursor(Qt.CursorShape.PointingHandCursor)
         self.prevArrow.setAutoRepeat(True)
         self.prevArrow.setAutoRepeatDelay(300)
         self.prevArrow.setAutoRepeatInterval(100)
         self.prevArrow.clicked.connect(self.scroll_left)
         self.prevArrow.raise_()
 
-        self.nextArrow = QtWidgets.QToolButton(self)
-        self.nextArrow.setArrowType(QtCore.Qt.ArrowType.RightArrow)
+        self.nextArrow = QToolButton(self)
+        self.nextArrow.setArrowType(Qt.ArrowType.RightArrow)
         self.nextArrow.setStyleSheet(self.theme.NEXT_BUTTON_STYLE) # type: ignore
         self.nextArrow.setFixedSize(40, 40)
-        self.nextArrow.setCursor(QtCore.Qt.CursorShape.PointingHandCursor)
+        self.nextArrow.setCursor(Qt.CursorShape.PointingHandCursor)
         self.nextArrow.setAutoRepeat(True)
         self.nextArrow.setAutoRepeatDelay(300)
         self.nextArrow.setAutoRepeatInterval(100)
@@ -408,11 +410,11 @@ class ImageCarousel(QtWidgets.QGraphicsView):
     def animate_scroll(self, end_value):
         scrollbar = self.horizontalScrollBar()
         start_value = scrollbar.value()
-        animation = QtCore.QPropertyAnimation(scrollbar, QtCore.QByteArray(b"value"), self)
+        animation = QPropertyAnimation(scrollbar, QByteArray(b"value"), self)
         animation.setDuration(300)
         animation.setStartValue(start_value)
         animation.setEndValue(end_value)
-        animation.setEasingCurve(QtCore.QEasingCurve.Type.InOutQuad)
+        animation.setEasingCurve(QEasingCurve.Type.InOutQuad)
         self._animation = animation
         animation.start()
 
@@ -435,7 +437,7 @@ class ImageCarousel(QtWidgets.QGraphicsView):
 
     # Обработка событий мыши для перетаскивания
     def mousePressEvent(self, event):
-        if event.button() == QtCore.Qt.MouseButton.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             self._drag_active = True
             self._drag_start_position = event.pos()
             self._scroll_start_value = self.horizontalScrollBar().value()

@@ -1,12 +1,12 @@
 import sys
 
 from portprotonqt.main_window import MainWindow
-from PySide6 import QtWidgets
+from PySide6.QtWidgets import QApplication
 from portprotonqt.tray import SystemTray
 from portprotonqt.config_utils import read_theme_from_config
 
 def main():
-    app = QtWidgets.QApplication(sys.argv)
+    app = QApplication(sys.argv)
     window = MainWindow()
     current_theme_name = read_theme_from_config()
     tray = SystemTray(app, current_theme_name)

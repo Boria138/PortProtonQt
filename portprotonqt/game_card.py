@@ -1,6 +1,8 @@
-from PySide6 import QtCore, QtGui, QtWidgets
-from PySide6.QtGui import QPainter, QPen, QColor, QConicalGradient, QBrush
-from PySide6.QtCore import QEasingCurve
+from PySide6.QtGui import QPainter, QPen, QColor, QConicalGradient, QBrush, QDesktopServices
+from PySide6.QtCore import QEasingCurve, Signal, Property, Qt, QPropertyAnimation, QByteArray, QUrl
+from PySide6.QtWidgets import QFrame, QGraphicsDropShadowEffect, QVBoxLayout, QWidget, QStackedLayout, QLabel
+from collections.abc import Callable
+from typing import cast
 import portprotonqt.themes.standart.styles as default_styles
 from portprotonqt.image_utils import load_pixmap, round_corners
 from portprotonqt.localization import _
@@ -9,7 +11,9 @@ from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.config_utils import read_theme_from_config
 from portprotonqt.custom_wigets import ClickableLabel
 
-class GameCard(QtWidgets.QFrame):
+class GameCard(QFrame):
+    borderWidthChanged = Signal()
+    gradientAngleChanged = Signal()
     def __init__(self, name, description, cover_path, appid, controller_support, exec_line,
                  last_launch, formatted_playtime, protondb_tier, last_launch_ts, playtime_seconds, steam_game,
                  select_callback, theme=None, card_width=250, parent=None):
@@ -36,7 +40,7 @@ class GameCard(QtWidgets.QFrame):
         # Дополнительное пространство для анимации
         extra_margin = 20
         self.setFixedSize(card_width + extra_margin, int(card_width * 1.6) + extra_margin)
-        self.setFocusPolicy(QtCore.Qt.FocusPolicy.StrongFocus)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.setStyleSheet(self.theme.GAME_CARD_WINDOW_STYLE)
 
         # Параметры анимации обводки
@@ -45,7 +49,7 @@ class GameCard(QtWidgets.QFrame):
         self._hovered = False
 
         # Анимации
-        self.thickness_anim = QtCore.QPropertyAnimation(self, QtCore.QByteArray(b"borderWidth"))
+        self.thickness_anim = QPropertyAnimation(self, QByteArray(b"borderWidth"))
         self.thickness_anim.setDuration(300)
         self.gradient_anim = None
         self.pulse_anim = None
@@ -54,26 +58,26 @@ class GameCard(QtWidgets.QFrame):
         self._isPulseAnimationConnected = False
 
         # Тень
-        shadow = QtWidgets.QGraphicsDropShadowEffect(self)
+        shadow = QGraphicsDropShadowEffect(self)
         shadow.setBlurRadius(20)
         shadow.setColor(QColor(0, 0, 0, 150))
         shadow.setOffset(0, 0)
         self.setGraphicsEffect(shadow)
 
         # Отступы, чтобы анимация не перекрывалась
-        layout = QtWidgets.QVBoxLayout(self)
+        layout = QVBoxLayout(self)
         layout.setContentsMargins(extra_margin // 2, extra_margin // 2, extra_margin // 2, extra_margin // 2)
         layout.setSpacing(5)
 
         # Контейнер обложки
-        coverWidget = QtWidgets.QWidget()
+        coverWidget = QWidget()
         coverWidget.setFixedSize(card_width, int(card_width * 1.2))
-        coverLayout = QtWidgets.QStackedLayout(coverWidget)
+        coverLayout = QStackedLayout(coverWidget)
         coverLayout.setContentsMargins(0, 0, 0, 0)
-        coverLayout.setStackingMode(QtWidgets.QStackedLayout.StackingMode.StackAll)
+        coverLayout.setStackingMode(QStackedLayout.StackingMode.StackAll)
 
         # Обложка
-        coverLabel = QtWidgets.QLabel()
+        coverLabel = QLabel()
         coverLabel.setFixedSize(card_width, int(card_width * 1.2))
         pixmap = load_pixmap(cover_path, card_width, int(card_width * 1.2)) if cover_path else load_pixmap("", card_width, int(card_width * 1.2))
         pixmap = round_corners(pixmap, 15)
@@ -158,8 +162,8 @@ class GameCard(QtWidgets.QFrame):
         layout.addWidget(coverWidget)
 
         # Название игры
-        nameLabel = QtWidgets.QLabel(name)
-        nameLabel.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        nameLabel = QLabel(name)
+        nameLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
         nameLabel.setStyleSheet(self.theme.GAME_CARD_NAME_LABEL_STYLE)
         layout.addWidget(nameLabel)
 
@@ -190,12 +194,12 @@ class GameCard(QtWidgets.QFrame):
         return ""
 
     def open_protondb_report(self):
-        url = QtCore.QUrl(f"https://www.protondb.com/app/{self.appid}")
-        QtGui.QDesktopServices.openUrl(url)
+        url = QUrl(f"https://www.protondb.com/app/{self.appid}")
+        QDesktopServices.openUrl(url)
 
     def open_steam_page(self):
-        url = QtCore.QUrl(f"steam://store/{self.appid}")
-        QtGui.QDesktopServices.openUrl(url)
+        url = QUrl(f"steam://store/{self.appid}")
+        QDesktopServices.openUrl(url)
 
     def update_favorite_icon(self):
         """
@@ -225,23 +229,27 @@ class GameCard(QtWidgets.QFrame):
         save_favorites(favorites)
         self.update_favorite_icon()
 
-    def getBorderWidth(self):
+    def getBorderWidth(self) -> int:
         return self._borderWidth
 
-    def setBorderWidth(self, value):
-        self._borderWidth = value
-        self.update()
+    def setBorderWidth(self, value: int):
+        if self._borderWidth != value:
+            self._borderWidth = value
+            self.borderWidthChanged.emit()
+            self.update()
 
-    borderWidth = QtCore.Property(int, getBorderWidth, setBorderWidth)
-
-    def getGradientAngle(self):
+    # Getter and setter for gradientAngle
+    def getGradientAngle(self) -> float:
         return self._gradientAngle
 
-    def setGradientAngle(self, value):
-        self._gradientAngle = value
-        self.update()
+    def setGradientAngle(self, value: float):
+        if self._gradientAngle != value:
+            self._gradientAngle = value
+            self.gradientAngleChanged.emit()
+            self.update()
 
-    gradientAngle = QtCore.Property(float, getGradientAngle, setGradientAngle)
+    borderWidth = Property(int, getBorderWidth, setBorderWidth, None, "", notify=cast(Callable[[], None], borderWidthChanged))
+    gradientAngle = Property(float, getGradientAngle, setGradientAngle, None, "", notify=cast(Callable[[], None], gradientAngleChanged))
 
     def paintEvent(self, event):
         super().paintEvent(event)
@@ -263,18 +271,14 @@ class GameCard(QtWidgets.QFrame):
 
         painter.setPen(pen)
         radius = 18
-        rect = self.rect().adjusted(
-            self._borderWidth / 2,
-            self._borderWidth / 2,
-            -self._borderWidth / 2,
-            -self._borderWidth / 2
-        )
+        bw = round(self._borderWidth / 2)
+        rect = self.rect().adjusted(bw, bw, -bw, -bw)
         painter.drawRoundedRect(rect, radius, radius)
 
     def startPulseAnimation(self):
         if not self._hovered:
             return
-        self.pulse_anim = QtCore.QPropertyAnimation(self, QtCore.QByteArray(b"borderWidth"))
+        self.pulse_anim = QPropertyAnimation(self, QByteArray(b"borderWidth"))
         self.pulse_anim.setDuration(800)
         self.pulse_anim.setLoopCount(0)
         self.pulse_anim.setKeyValueAt(0, 8)
@@ -295,7 +299,7 @@ class GameCard(QtWidgets.QFrame):
         self._isPulseAnimationConnected = True
         self.thickness_anim.start()
 
-        self.gradient_anim = QtCore.QPropertyAnimation(self, QtCore.QByteArray(b"gradientAngle"))
+        self.gradient_anim = QPropertyAnimation(self, QByteArray(b"gradientAngle"))
         self.gradient_anim.setDuration(3000)
         self.gradient_anim.setStartValue(360)
         self.gradient_anim.setEndValue(0)
@@ -340,7 +344,7 @@ class GameCard(QtWidgets.QFrame):
         )
 
     def keyPressEvent(self, event):
-        if event.key() in (QtCore.Qt.Key.Key_Return, QtCore.Qt.Key.Key_Enter):
+        if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
             self.select_callback(
                 self.name,
                 self.description,

@@ -11,6 +11,7 @@ from portprotonqt.dialogs import AddGameDialog
 from portprotonqt.game_card import GameCard
 from portprotonqt.custom_wigets import FlowLayout, ClickableLabel, AutoSizeButton, NavLabel
 from portprotonqt.gamepad_support import GamepadSupport
+
 from portprotonqt.image_utils import load_pixmap, round_corners, ImageCarousel
 from portprotonqt.steam_api import get_steam_game_info, get_full_steam_game_info, get_steam_installed_games
 from portprotonqt.theme_manager import ThemeManager, load_theme_screenshots, load_logo
@@ -18,12 +19,14 @@ from portprotonqt.time_utils import save_last_launch, get_last_launch, parse_pla
 from portprotonqt.config_utils import get_portproton_location, read_theme_from_config, save_theme_to_config, parse_desktop_entry, load_theme_metainfo, read_time_config, read_card_size, save_card_size, read_sort_method, read_display_filter, read_favorites, save_favorites, save_time_config, save_sort_method, save_display_filter, save_proxy_config, read_proxy_config
 from portprotonqt.localization import _
 
-from PySide6 import QtCore, QtGui, QtWidgets
-from PySide6.QtWidgets import QLineEdit
+from PySide6.QtWidgets import QLineEdit, QMainWindow, QStatusBar, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox, QScrollArea, QSlider
+from PySide6.QtWidgets import QDialog, QFormLayout, QFrame, QGraphicsDropShadowEffect, QMessageBox, QGraphicsEffect, QGraphicsOpacityEffect
+from PySide6.QtGui import QIcon, QPixmap, QColor, QDesktopServices
+from PySide6.QtCore import Qt, QTimer, QAbstractAnimation, QPropertyAnimation, QByteArray, QUrl
 from typing import cast
 from datetime import datetime
 
-class MainWindow(QtWidgets.QMainWindow):
+class MainWindow(QMainWindow):
     """Main window of PortProtonQT."""
 
     def __init__(self):
@@ -51,42 +54,42 @@ class MainWindow(QtWidgets.QMainWindow):
         self.current_running_button = None
 
         # Статус-бар
-        self.setStatusBar(QtWidgets.QStatusBar(self))
-        centralWidget = QtWidgets.QWidget()
+        self.setStatusBar(QStatusBar(self))
+        centralWidget = QWidget()
         self.setCentralWidget(centralWidget)
-        mainLayout = QtWidgets.QVBoxLayout(centralWidget)
+        mainLayout = QVBoxLayout(centralWidget)
         mainLayout.setSpacing(0)
         mainLayout.setContentsMargins(0, 0, 0, 0)
 
         # 1. ШАПКА (HEADER)
-        self.header = QtWidgets.QWidget()
+        self.header = QWidget()
         self.header.setFixedHeight(80)
         self.header.setStyleSheet(self.theme.MAIN_WINDOW_HEADER_STYLE)
-        headerLayout = QtWidgets.QVBoxLayout(self.header)
+        headerLayout = QVBoxLayout(self.header)
         headerLayout.setContentsMargins(0, 0, 0, 0)
 
         # Текст "PortProton" слева
-        self.titleLabel = QtWidgets.QLabel()
+        self.titleLabel = QLabel()
         pixmap = load_logo()
         # Обработка случая, если логотип не загрузился
         if pixmap is None:
             width, height = self.theme.pixmapsScaledSize
-            pixmap = QtGui.QPixmap(width, height)
-            pixmap.fill(QtGui.QColor(0, 0, 0, 0))
+            pixmap = QPixmap(width, height)
+            pixmap.fill(QColor(0, 0, 0, 0))
         width, height = self.theme.pixmapsScaledSize
         scaled_pixmap = pixmap.scaled(width, height,
-                                    QtCore.Qt.AspectRatioMode.KeepAspectRatio,
-                                    QtCore.Qt.TransformationMode.SmoothTransformation)
-        self.titleLabel = QtWidgets.QLabel()
+                                    Qt.AspectRatioMode.KeepAspectRatio,
+                                    Qt.TransformationMode.SmoothTransformation)
+        self.titleLabel = QLabel()
         self.titleLabel.setPixmap(scaled_pixmap)
         self.titleLabel.setFixedSize(scaled_pixmap.size())
         self.titleLabel.setStyleSheet(self.theme.TITLE_LABEL_STYLE)
         headerLayout.addStretch()
 
         # 2. НАВИГАЦИЯ (КНОПКИ ВКЛАДОК)
-        self.navWidget = QtWidgets.QWidget()
+        self.navWidget = QWidget()
         self.navWidget.setStyleSheet(self.theme.NAV_WIDGET_STYLE)
-        navLayout = QtWidgets.QHBoxLayout(self.navWidget)
+        navLayout = QHBoxLayout(self.navWidget)
         navLayout.setContentsMargins(10, 0, 10, 0)
         navLayout.setSpacing(0)
 
@@ -114,7 +117,7 @@ class MainWindow(QtWidgets.QMainWindow):
         mainLayout.addWidget(self.navWidget)
 
         # 3. QStackedWidget (ВКЛАДКИ)
-        self.stackedWidget = QtWidgets.QStackedWidget()
+        self.stackedWidget = QStackedWidget()
         mainLayout.addWidget(self.stackedWidget)
 
         # Создаём все вкладки
@@ -141,7 +144,9 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.search_action:
             self.searchEdit.removeAction(self.search_action)
 
-        self.search_action = self.searchEdit.addAction(self.theme_manager.get_icon("search", color=self.theme.searchEditActionIconColor), QLineEdit.ActionPosition.LeadingPosition)
+        icon: QIcon = cast(QIcon, self.theme_manager.get_icon("search", color=self.theme.searchEditActionIconColor))
+        action_pos = cast(QLineEdit.ActionPosition, QLineEdit.ActionPosition.LeadingPosition)
+        self.search_action = self.searchEdit.addAction(icon, action_pos)
         self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE)
 
         self._updateTabStyles()
@@ -149,15 +154,15 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _updateTabStyles(self):
         # Список стилей страниц, которые нужно обновить
-        for page_style in self.findChildren(QtWidgets.QWidget, "otherPage"):
+        for page_style in self.findChildren(QWidget, "otherPage"):
             page_style.setStyleSheet(self.theme.OTHER_PAGES_WIDGET_STYLE)
 
         # Список заголовков, которые нужно обновить
-        for title_label in self.findChildren(QtWidgets.QLabel, "tabTitle"):
+        for title_label in self.findChildren(QLabel, "tabTitle"):
             title_label.setStyleSheet(self.theme.TAB_TITLE_STYLE)
 
         # Обновляем контент с objectName="tabContent"
-        for content_label in self.findChildren(QtWidgets.QLabel, "tabContent"):
+        for content_label in self.findChildren(QLabel, "tabContent"):
             content_label.setStyleSheet(self.theme.CONTENT_STYLE)
 
         # Кнопки
@@ -171,13 +176,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.searchEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE)
 
         # Вкладка "Настройки PORTPROTON"
-        for params_label in self.findChildren(QtWidgets.QLabel, "settingsTitle"):
+        for params_label in self.findChildren(QLabel, "settingsTitle"):
             params_label.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
 
-        for combo_string in self.findChildren(QtWidgets.QComboBox, "comboString"):
+        for combo_string in self.findChildren(QComboBox, "comboString"):
             combo_string.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
 
-        for combo_string in self.findChildren(QtWidgets.QLineEdit, "inputString"):
+        for combo_string in self.findChildren(QLineEdit, "inputString"):
             combo_string.setStyleSheet(self.theme.PROXY_INPUT_STYLE)
 
         # Вкладка "Темы"
@@ -366,23 +371,25 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def createSearchWidget(self):
         """Создаёт виджет добавить игру + поиск."""
-        self.container = QtWidgets.QWidget()
+        self.container = QWidget()
         self.container.setStyleSheet(self.theme.CONTAINER_STYLE)
-        layout = QtWidgets.QHBoxLayout(self.container)
+        layout = QHBoxLayout(self.container)
         layout.setContentsMargins(0, 6, 0, 0)
         layout.setSpacing(10)
 
-        self.GameLibraryTitle = QtWidgets.QLabel(_("Game Library"))
+        self.GameLibraryTitle = QLabel(_("Game Library"))
         self.GameLibraryTitle.setStyleSheet(self.theme.INSTALLED_TAB_TITLE_STYLE)
         layout.addWidget(self.GameLibraryTitle)
 
         self.addGameButton = AutoSizeButton(_("Add Game"), icon=self.theme_manager.get_icon("addgame", color=self.theme.addGameButtonIconColor))
         self.addGameButton.setStyleSheet(self.theme.ADDGAME_BACK_BUTTON_STYLE)
         self.addGameButton.clicked.connect(self.openAddGameDialog)
-        layout.addWidget(self.addGameButton, alignment=QtCore.Qt.AlignmentFlag.AlignRight)
+        layout.addWidget(self.addGameButton, alignment=Qt.AlignmentFlag.AlignRight)
 
-        self.searchEdit = QtWidgets.QLineEdit()
-        self.search_action = self.searchEdit.addAction(self.theme_manager.get_icon("search", color=self.theme.searchEditActionIconColor), QLineEdit.ActionPosition.LeadingPosition)
+        self.searchEdit = QLineEdit()
+        icon: QIcon = cast(QIcon, self.theme_manager.get_icon("search", color=self.theme.searchEditActionIconColor))
+        action_pos = cast(QLineEdit.ActionPosition, QLineEdit.ActionPosition.LeadingPosition)
+        self.search_action = self.searchEdit.addAction(icon, action_pos)
         self.searchEdit.setMaximumWidth(200)
         self.searchEdit.setPlaceholderText(_("Find Games ..."))
         self.searchEdit.setClearButtonEnabled(True)
@@ -402,20 +409,20 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def createInstalledTab(self):
         """Вкладка 'Game Library'."""
-        self.gamesLibraryWidget = QtWidgets.QWidget()
+        self.gamesLibraryWidget = QWidget()
         self.gamesLibraryWidget.setStyleSheet(self.theme.LIBRARY_WIDGET_STYLE)
-        layout = QtWidgets.QVBoxLayout(self.gamesLibraryWidget)
+        layout = QVBoxLayout(self.gamesLibraryWidget)
         layout.setSpacing(15)
 
         searchWidget, self.searchEdit = self.createSearchWidget()
         self.searchEdit.textChanged.connect(self.filterGames)
         layout.addWidget(searchWidget)
 
-        scrollArea = QtWidgets.QScrollArea()
+        scrollArea = QScrollArea()
         scrollArea.setWidgetResizable(True)
         scrollArea.setStyleSheet(self.theme.SCROLL_AREA_STYLE)
 
-        self.gamesListWidget = QtWidgets.QWidget()
+        self.gamesListWidget = QWidget()
         self.gamesListWidget.setStyleSheet(self.theme.LIST_WIDGET_STYLE)
         self.gamesListLayout = FlowLayout(self.gamesListWidget)
         self.gamesListWidget.setLayout(self.gamesListLayout)
@@ -424,9 +431,9 @@ class MainWindow(QtWidgets.QMainWindow):
         layout.addWidget(scrollArea)
 
         # Слайдер для изменения размера карточек:
-        sliderLayout = QtWidgets.QHBoxLayout()
+        sliderLayout = QHBoxLayout()
         sliderLayout.addStretch()  # сдвигаем ползунок вправо
-        self.sizeSlider = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal)
+        self.sizeSlider = QSlider(Qt.Orientation.Horizontal)
         self.sizeSlider.setMinimum(200)
         self.sizeSlider.setMaximum(250)
         self.sizeSlider.setValue(self.card_width)
@@ -437,7 +444,7 @@ class MainWindow(QtWidgets.QMainWindow):
         sliderLayout.addWidget(self.sizeSlider)
         layout.addLayout(sliderLayout)
 
-        self.sliderDebounceTimer = QtCore.QTimer(self)
+        self.sliderDebounceTimer = QTimer(self)
         self.sliderDebounceTimer.setSingleShot(True)
         self.sliderDebounceTimer.setInterval(40)
 
@@ -506,7 +513,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def openAddGameDialog(self):
         """Открывает диалоговое окно 'Add Game' с текущей темой."""
         dialog = AddGameDialog(self, self.theme)
-        if dialog.exec() == QtWidgets.QDialog.DialogCode.Accepted:
+        if dialog.exec() == QDialog.DialogCode.Accepted:
             name = dialog.nameEdit.text().strip()
             desc = dialog.descEdit.toPlainText().strip()
             cover = dialog.coverEdit.text().strip()
@@ -515,18 +522,18 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def createAutoInstallTab(self):
         """Вкладка 'Auto Install'."""
-        self.autoInstallWidget = QtWidgets.QWidget()
+        self.autoInstallWidget = QWidget()
         self.autoInstallWidget.setStyleSheet(self.theme.OTHER_PAGES_WIDGET_STYLE)
         self.autoInstallWidget.setObjectName("otherPage")
-        layout = QtWidgets.QVBoxLayout(self.autoInstallWidget)
+        layout = QVBoxLayout(self.autoInstallWidget)
         layout.setContentsMargins(10, 18, 10, 10)
 
-        self.autoInstallTitle = QtWidgets.QLabel(_("Auto Install"))
+        self.autoInstallTitle = QLabel(_("Auto Install"))
         self.autoInstallTitle.setStyleSheet(self.theme.TAB_TITLE_STYLE)
         self.autoInstallTitle.setObjectName("tabTitle")
         layout.addWidget(self.autoInstallTitle)
 
-        self.autoInstallContent = QtWidgets.QLabel(_("Here you can configure automatic game installation..."))
+        self.autoInstallContent = QLabel(_("Here you can configure automatic game installation..."))
         self.autoInstallContent.setStyleSheet(self.theme.CONTENT_STYLE)
         self.autoInstallContent.setObjectName("tabContent")
         layout.addWidget(self.autoInstallContent)
@@ -536,18 +543,18 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def createEmulatorsTab(self):
         """Вкладка 'Emulators'."""
-        self.emulatorsWidget = QtWidgets.QWidget()
+        self.emulatorsWidget = QWidget()
         self.emulatorsWidget.setStyleSheet(self.theme.OTHER_PAGES_WIDGET_STYLE)
         self.emulatorsWidget.setObjectName("otherPage")
-        layout = QtWidgets.QVBoxLayout(self.emulatorsWidget)
+        layout = QVBoxLayout(self.emulatorsWidget)
         layout.setContentsMargins(10, 18, 10, 10)
 
-        self.emulatorsTitle = QtWidgets.QLabel(_("Emulators"))
+        self.emulatorsTitle = QLabel(_("Emulators"))
         self.emulatorsTitle.setStyleSheet(self.theme.TAB_TITLE_STYLE)
         self.emulatorsTitle.setObjectName("tabTitle")
         layout.addWidget(self.emulatorsTitle)
 
-        self.emulatorsContent = QtWidgets.QLabel(_("List of available emulators and their configuration..."))
+        self.emulatorsContent = QLabel(_("List of available emulators and their configuration..."))
         self.emulatorsContent.setStyleSheet(self.theme.CONTENT_STYLE)
         self.emulatorsContent.setObjectName("tabContent")
         layout.addWidget(self.emulatorsContent)
@@ -557,18 +564,18 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def createWineTab(self):
         """Вкладка 'Wine Settings'."""
-        self.wineWidget = QtWidgets.QWidget()
+        self.wineWidget = QWidget()
         self.wineWidget.setStyleSheet(self.theme.OTHER_PAGES_WIDGET_STYLE)
         self.wineWidget.setObjectName("otherPage")
-        layout = QtWidgets.QVBoxLayout(self.wineWidget)
+        layout = QVBoxLayout(self.wineWidget)
         layout.setContentsMargins(10, 18, 10, 10)
 
-        self.wineTitle = QtWidgets.QLabel(_("Wine Settings"))
+        self.wineTitle = QLabel(_("Wine Settings"))
         self.wineTitle.setStyleSheet(self.theme.TAB_TITLE_STYLE)
         self.wineTitle.setObjectName("tabTitle")
         layout.addWidget(self.wineTitle)
 
-        self.wineContent = QtWidgets.QLabel(_("Various Wine parameters and versions..."))
+        self.wineContent = QLabel(_("Various Wine parameters and versions..."))
         self.wineContent.setStyleSheet(self.theme.CONTENT_STYLE)
         self.wineContent.setObjectName("tabContent")
         layout.addWidget(self.wineContent)
@@ -578,76 +585,76 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def createPortProtonTab(self):
         """Вкладка 'PortProton Settings'."""
-        self.portProtonWidget = QtWidgets.QWidget()
+        self.portProtonWidget = QWidget()
         self.portProtonWidget.setStyleSheet(self.theme.OTHER_PAGES_WIDGET_STYLE)
         self.portProtonWidget.setObjectName("otherPage")
-        layout = QtWidgets.QVBoxLayout(self.portProtonWidget)
+        layout = QVBoxLayout(self.portProtonWidget)
         layout.setContentsMargins(10, 18, 10, 10)
 
-        title = QtWidgets.QLabel(_("PortProton Settings"))
+        title = QLabel(_("PortProton Settings"))
         title.setStyleSheet(self.theme.TAB_TITLE_STYLE)
         title.setObjectName("tabTitle")
         layout.addWidget(title)
 
-        content = QtWidgets.QLabel(_("Main PortProton parameters..."))
+        content = QLabel(_("Main PortProton parameters..."))
         content.setStyleSheet(self.theme.CONTENT_STYLE)
         content.setObjectName("tabContent")
         layout.addWidget(content)
 
         # Форма для недокументированных параметров
-        formLayout = QtWidgets.QFormLayout()
+        formLayout = QFormLayout()
         formLayout.setContentsMargins(0, 10, 0, 0)
         formLayout.setSpacing(10)
 
         # 1. Time detail_level
-        self.timeDetailCombo = QtWidgets.QComboBox()
+        self.timeDetailCombo = QComboBox()
         self.timeDetailCombo.addItems(["detailed", "brief"])
         self.timeDetailCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
         self.timeDetailCombo.setObjectName("comboString")
-        self.timeDetailTitle = QtWidgets.QLabel(_("Time Detail Level:"))
+        self.timeDetailTitle = QLabel(_("Time Detail Level:"))
         self.timeDetailTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         self.timeDetailTitle.setObjectName("settingsTitle")
         current_time_detail = read_time_config()
-        index = self.timeDetailCombo.findText(current_time_detail,QtCore.Qt.MatchFlag.MatchFixedString)
+        index = self.timeDetailCombo.findText(current_time_detail,Qt.MatchFlag.MatchFixedString)
 
         if index >= 0:
             self.timeDetailCombo.setCurrentIndex(index)
         formLayout.addRow(self.timeDetailTitle, self.timeDetailCombo)
 
         # 2. Games sort_method
-        self.gamesSortCombo = QtWidgets.QComboBox()
+        self.gamesSortCombo = QComboBox()
         self.gamesSortCombo.addItems(["last_launch", "playtime"])
         self.gamesSortCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
         self.gamesSortCombo.setObjectName("comboString")
-        self.gamesSortTitle = QtWidgets.QLabel(_("Games Sort Method:"))
+        self.gamesSortTitle = QLabel(_("Games Sort Method:"))
         self.gamesSortTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         self.gamesSortTitle.setObjectName("settingsTitle")
         current_sort_method = read_sort_method()
-        index = self.gamesSortCombo.findText(current_sort_method, QtCore.Qt.MatchFlag.MatchFixedString)
+        index = self.gamesSortCombo.findText(current_sort_method, Qt.MatchFlag.MatchFixedString)
         if index >= 0:
             self.gamesSortCombo.setCurrentIndex(index)
         formLayout.addRow(self.gamesSortTitle, self.gamesSortCombo)
 
         # 3. Games display_filter
-        self.gamesDisplayCombo = QtWidgets.QComboBox()
+        self.gamesDisplayCombo = QComboBox()
         self.gamesDisplayCombo.addItems(["all", "steam", "portproton", "favorites"])
         self.gamesDisplayCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
         self.gamesDisplayCombo.setObjectName("comboString")
-        self.gamesDisplayTitle = QtWidgets.QLabel(_("Games Display Filter:"))
+        self.gamesDisplayTitle = QLabel(_("Games Display Filter:"))
         self.gamesDisplayTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         self.gamesDisplayTitle.setObjectName("settingsTitle")
         current_display_filter = read_display_filter()
-        index = self.gamesDisplayCombo.findText(current_display_filter, QtCore.Qt.MatchFlag.MatchFixedString)
+        index = self.gamesDisplayCombo.findText(current_display_filter, Qt.MatchFlag.MatchFixedString)
         if index >= 0:
             self.gamesDisplayCombo.setCurrentIndex(index)
         formLayout.addRow(self.gamesDisplayTitle, self.gamesDisplayCombo)
 
         # 4. Proxy настройки
-        self.proxyUrlEdit = QtWidgets.QLineEdit()
+        self.proxyUrlEdit = QLineEdit()
         self.proxyUrlEdit.setPlaceholderText(_("Proxy URL"))
         self.proxyUrlEdit.setStyleSheet(self.theme.PROXY_INPUT_STYLE)
         self.proxyUrlEdit.setObjectName("inputString")
-        self.proxyUrlTitle = QtWidgets.QLabel(_("Proxy URL:"))
+        self.proxyUrlTitle = QLabel(_("Proxy URL:"))
         self.proxyUrlTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         self.proxyUrlTitle.setObjectName("settingsTitle")
         proxy_config = read_proxy_config()
@@ -656,21 +663,21 @@ class MainWindow(QtWidgets.QMainWindow):
             self.proxyUrlEdit.setText(proxy_config.get("http", ""))
         formLayout.addRow(self.proxyUrlTitle, self.proxyUrlEdit)
 
-        self.proxyUserEdit = QtWidgets.QLineEdit()
+        self.proxyUserEdit = QLineEdit()
         self.proxyUserEdit.setPlaceholderText(_("Proxy Username"))
         self.proxyUserEdit.setStyleSheet(self.theme.PROXY_INPUT_STYLE)
         self.proxyUserEdit.setObjectName("inputString")
-        self.proxyUserTitle = QtWidgets.QLabel(_("Proxy Username:"))
+        self.proxyUserTitle = QLabel(_("Proxy Username:"))
         self.proxyUserTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         self.proxyUserTitle.setObjectName("settingsTitle")
         formLayout.addRow(self.proxyUserTitle, self.proxyUserEdit)
 
-        self.proxyPasswordEdit = QtWidgets.QLineEdit()
+        self.proxyPasswordEdit = QLineEdit()
         self.proxyPasswordEdit.setPlaceholderText(_("Proxy Password"))
         self.proxyPasswordEdit.setEchoMode(QLineEdit.EchoMode.Password)
         self.proxyPasswordEdit.setStyleSheet(self.theme.PROXY_INPUT_STYLE)
         self.proxyPasswordEdit.setObjectName("inputString")
-        self.proxyPasswordTitle = QtWidgets.QLabel(_("Proxy Password:"))
+        self.proxyPasswordTitle = QLabel(_("Proxy Password:"))
         self.proxyPasswordTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         self.proxyPasswordTitle.setObjectName("settingsTitle")
         formLayout.addRow(self.proxyPasswordTitle, self.proxyPasswordEdit)
@@ -715,22 +722,22 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def createThemeTab(self):
         """Вкладка 'Themes'"""
-        self.themeTabWidget = QtWidgets.QWidget()
+        self.themeTabWidget = QWidget()
         self.themeTabWidget.setStyleSheet(self.theme.OTHER_PAGES_WIDGET_STYLE)
         self.themeTabWidget.setObjectName("otherPage")
-        mainLayout = QtWidgets.QVBoxLayout(self.themeTabWidget)
+        mainLayout = QVBoxLayout(self.themeTabWidget)
         mainLayout.setContentsMargins(10, 14, 10, 10)
         mainLayout.setSpacing(10)
 
         # 1. Верхняя строка: Заголовок и список тем
-        self.themeTabHeaderLayout = QtWidgets.QHBoxLayout()
+        self.themeTabHeaderLayout = QHBoxLayout()
 
-        self.themeTabTitleLabel = QtWidgets.QLabel(_("Select Theme:"))
+        self.themeTabTitleLabel = QLabel(_("Select Theme:"))
         self.themeTabTitleLabel.setObjectName("tabTitle")
         self.themeTabTitleLabel.setStyleSheet(self.theme.TAB_TITLE_STYLE)
         self.themeTabHeaderLayout.addWidget(self.themeTabTitleLabel)
 
-        self.themesCombo = QtWidgets.QComboBox()
+        self.themesCombo = QComboBox()
         self.themesCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
         self.themesCombo.setObjectName("comboString")
         available_themes = self.theme_manager.get_available_themes()
@@ -749,10 +756,10 @@ class MainWindow(QtWidgets.QMainWindow):
         mainLayout.addWidget(self.screenshotsCarousel, stretch=1)
 
         # 3. Информация о теме
-        self.themeInfoLayout = QtWidgets.QVBoxLayout()
+        self.themeInfoLayout = QVBoxLayout()
         self.themeInfoLayout.setSpacing(10)
 
-        self.themeMetainfoLabel = QtWidgets.QLabel()
+        self.themeMetainfoLabel = QLabel()
         self.themeMetainfoLabel.setWordWrap(True)
         self.themeInfoLayout.addWidget(self.themeMetainfoLabel)
 
@@ -816,7 +823,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def getColorPalette(self, cover_path, num_colors=5, sample_step=10):
         pixmap = load_pixmap(cover_path, 180, 250)
         if pixmap.isNull():
-            return [QtGui.QColor("#1a1a1a")] * num_colors
+            return [QColor("#1a1a1a")] * num_colors
         image = pixmap.toImage()
         width, height = image.width(), image.height()
         histogram = {}
@@ -836,7 +843,7 @@ class MainWindow(QtWidgets.QMainWindow):
             avg_r = r_sum // count
             avg_g = g_sum // count
             avg_b = b_sum // count
-            avg_colors.append((count, QtGui.QColor(avg_r, avg_g, avg_b)))
+            avg_colors.append((count, QColor(avg_r, avg_g, avg_b)))
         avg_colors.sort(key=lambda x: x[0], reverse=True)
         palette = [color for count, color in avg_colors[:num_colors]]
         if len(palette) < num_colors:
@@ -847,7 +854,7 @@ class MainWindow(QtWidgets.QMainWindow):
         return color.darker(factor)
 
     def openGameDetailPage(self, name, description, cover_path=None, appid="", exec_line="", controller_support="", last_launch="", formatted_playtime="", protondb_tier="", steam_game=""):
-        detailPage = QtWidgets.QWidget()
+        detailPage = QWidget()
         self._animations = {}
         if cover_path:
             pixmap = load_pixmap(cover_path, 300, 400)
@@ -861,7 +868,7 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             detailPage.setStyleSheet(self.theme.DETAIL_PAGE_NO_COVER_STYLE)
 
-        mainLayout = QtWidgets.QVBoxLayout(detailPage)
+        mainLayout = QVBoxLayout(detailPage)
         mainLayout.setContentsMargins(30, 30, 30, 30)
         mainLayout.setSpacing(20)
 
@@ -869,28 +876,28 @@ class MainWindow(QtWidgets.QMainWindow):
         backButton.setFixedWidth(100)
         backButton.setStyleSheet(self.theme.ADDGAME_BACK_BUTTON_STYLE)
         backButton.clicked.connect(lambda: self.goBackDetailPage(detailPage))
-        mainLayout.addWidget(backButton, alignment=QtCore.Qt.AlignmentFlag.AlignLeft)
+        mainLayout.addWidget(backButton, alignment=Qt.AlignmentFlag.AlignLeft)
 
-        contentFrame = QtWidgets.QFrame()
+        contentFrame = QFrame()
         contentFrame.setStyleSheet(self.theme.DETAIL_CONTENT_FRAME_STYLE)
-        contentFrameLayout = QtWidgets.QHBoxLayout(contentFrame)
+        contentFrameLayout = QHBoxLayout(contentFrame)
         contentFrameLayout.setContentsMargins(20, 20, 20, 20)
         contentFrameLayout.setSpacing(40)
         mainLayout.addWidget(contentFrame)
 
         # Обложка (слева)
-        coverFrame = QtWidgets.QFrame()
+        coverFrame = QFrame()
         coverFrame.setFixedSize(300, 400)
         coverFrame.setStyleSheet(self.theme.COVER_FRAME_STYLE)
-        shadow = QtWidgets.QGraphicsDropShadowEffect(coverFrame)
+        shadow = QGraphicsDropShadowEffect(coverFrame)
         shadow.setBlurRadius(20)
-        shadow.setColor(QtGui.QColor(0, 0, 0, 200))
+        shadow.setColor(QColor(0, 0, 0, 200))
         shadow.setOffset(0, 0)
         coverFrame.setGraphicsEffect(shadow)
-        coverLayout = QtWidgets.QVBoxLayout(coverFrame)
+        coverLayout = QVBoxLayout(coverFrame)
         coverLayout.setContentsMargins(0, 0, 0, 0)
 
-        imageLabel = QtWidgets.QLabel()
+        imageLabel = QLabel()
         imageLabel.setFixedSize(300, 400)
         pixmap_detail = load_pixmap(cover_path, 300, 400) if cover_path else load_pixmap("", 300, 400)
         pixmap_detail = round_corners(pixmap_detail, 10)
@@ -914,36 +921,36 @@ class MainWindow(QtWidgets.QMainWindow):
         contentFrameLayout.addWidget(coverFrame)
 
         # Детали игры (справа)
-        detailsWidget = QtWidgets.QWidget()
+        detailsWidget = QWidget()
         detailsWidget.setStyleSheet(self.theme.DETAILS_WIDGET_STYLE)
-        detailsLayout = QtWidgets.QVBoxLayout(detailsWidget)
+        detailsLayout = QVBoxLayout(detailsWidget)
         detailsLayout.setContentsMargins(20, 20, 20, 20)
         detailsLayout.setSpacing(15)
 
         # Заголовок игры (без значка избранного)
-        titleLabel = QtWidgets.QLabel(name)
+        titleLabel = QLabel(name)
         titleLabel.setStyleSheet(self.theme.DETAIL_PAGE_TITLE_STYLE)
         detailsLayout.addWidget(titleLabel)
 
-        line = QtWidgets.QFrame()
-        line.setFrameShape(QtWidgets.QFrame.Shape.HLine)
+        line = QFrame()
+        line.setFrameShape(QFrame.Shape.HLine)
         line.setStyleSheet(self.theme.DETAIL_PAGE_LINE_STYLE)
         detailsLayout.addWidget(line)
 
-        descLabel = QtWidgets.QLabel(description)
+        descLabel = QLabel(description)
         descLabel.setWordWrap(True)
         descLabel.setStyleSheet(self.theme.DETAIL_PAGE_DESC_STYLE)
         detailsLayout.addWidget(descLabel)
 
-        infoLayout = QtWidgets.QHBoxLayout()
+        infoLayout = QHBoxLayout()
         infoLayout.setSpacing(10)
-        lastLaunchTitle = QtWidgets.QLabel(_("LAST LAUNCH"))
+        lastLaunchTitle = QLabel(_("LAST LAUNCH"))
         lastLaunchTitle.setStyleSheet(self.theme.LAST_LAUNCH_TITLE_STYLE)
-        lastLaunchValue = QtWidgets.QLabel(last_launch)
+        lastLaunchValue = QLabel(last_launch)
         lastLaunchValue.setStyleSheet(self.theme.LAST_LAUNCH_VALUE_STYLE)
-        playTimeTitle = QtWidgets.QLabel(_("PLAY TIME"))
+        playTimeTitle = QLabel(_("PLAY TIME"))
         playTimeTitle.setStyleSheet(self.theme.PLAY_TIME_TITLE_STYLE)
-        playTimeValue = QtWidgets.QLabel(formatted_playtime)
+        playTimeValue = QLabel(formatted_playtime)
         playTimeValue.setStyleSheet(self.theme.PLAY_TIME_VALUE_STYLE)
         infoLayout.addWidget(lastLaunchTitle)
         infoLayout.addWidget(lastLaunchValue)
@@ -961,10 +968,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 translated_cs = _("partial")
             elif cs == "none":
                 translated_cs = _("none")
-            gamepadSupportLabel = QtWidgets.QLabel(_("Gamepad Support: {0}").format(translated_cs))
-            gamepadSupportLabel.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+            gamepadSupportLabel = QLabel(_("Gamepad Support: {0}").format(translated_cs))
+            gamepadSupportLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
             gamepadSupportLabel.setStyleSheet(self.theme.GAMEPAD_SUPPORT_VALUE_STYLE)
-            detailsLayout.addWidget(gamepadSupportLabel, alignment=QtCore.Qt.AlignmentFlag.AlignCenter)
+            detailsLayout.addWidget(gamepadSupportLabel, alignment=Qt.AlignmentFlag.AlignCenter)
 
         detailsLayout.addStretch(1)
 
@@ -989,7 +996,7 @@ class MainWindow(QtWidgets.QMainWindow):
         playButton.setFixedSize(120, 40)
         playButton.setStyleSheet(self.theme.PLAY_BUTTON_STYLE)
         playButton.clicked.connect(lambda: self.toggleGame(exec_line, playButton))
-        detailsLayout.addWidget(playButton, alignment=QtCore.Qt.AlignmentFlag.AlignLeft)
+        detailsLayout.addWidget(playButton, alignment=Qt.AlignmentFlag.AlignLeft)
 
         contentFrameLayout.addWidget(detailsWidget)
         mainLayout.addStretch()
@@ -999,16 +1006,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.currentDetailPage = detailPage
 
         # Анимация плавного появления
-        opacityEffect = QtWidgets.QGraphicsOpacityEffect(detailPage)
+        opacityEffect = QGraphicsOpacityEffect(detailPage)
         detailPage.setGraphicsEffect(opacityEffect)
-        animation = QtCore.QPropertyAnimation(opacityEffect, QtCore.QByteArray(b"opacity"))
+        animation = QPropertyAnimation(opacityEffect, QByteArray(b"opacity"))
         animation.setDuration(800)
         animation.setStartValue(0)
         animation.setEndValue(1)
-        animation.start(QtCore.QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
+        animation.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
         self._animations[detailPage] = animation
         animation.finished.connect(
-            lambda: detailPage.setGraphicsEffect(cast(QtWidgets.QGraphicsEffect, None))
+            lambda: detailPage.setGraphicsEffect(cast(QGraphicsEffect, None))
         )
 
     def toggleFavoriteInDetailPage(self, game_name, label):
@@ -1076,30 +1083,30 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def toggleGame(self, exec_line, button):
         if exec_line.startswith("steam://"):
-            url = QtCore.QUrl(exec_line)
-            QtGui.QDesktopServices.openUrl(url)
+            url = QUrl(exec_line)
+            QDesktopServices.openUrl(url)
             return
 
         entry_exec_split = shlex.split(exec_line)
         if entry_exec_split[0] == "env":
             if len(entry_exec_split) < 3:
-                QtWidgets.QMessageBox.warning(self, _("Error"), _("Invalid command format (native)"))
+                QMessageBox.warning(self, _("Error"), _("Invalid command format (native)"))
                 return
             file_to_check = entry_exec_split[2]
         elif entry_exec_split[0] == "flatpak":
             if len(entry_exec_split) < 4:
-                QtWidgets.QMessageBox.warning(self, _("Error"), _("Invalid command format (flatpak)"))
+                QMessageBox.warning(self, _("Error"), _("Invalid command format (flatpak)"))
                 return
             file_to_check = entry_exec_split[3]
         else:
             file_to_check = entry_exec_split[0]
         if not os.path.exists(file_to_check):
-            QtWidgets.QMessageBox.warning(self, _("Error"), _("File not found: {0}").format(file_to_check))
+            QMessageBox.warning(self, _("Error"), _("File not found: {0}").format(file_to_check))
             return
         current_exe = os.path.basename(file_to_check)
 
         if self.game_processes and self.target_exe is not None and self.target_exe != current_exe:
-            QtWidgets.QMessageBox.warning(self, _("Error"), _("Cannot launch game while another game is running"))
+            QMessageBox.warning(self, _("Error"), _("Cannot launch game while another game is running"))
             return
 
         # Если игра уже запущена для этого exe – останавливаем её по нажатию кнопки
@@ -1145,7 +1152,7 @@ class MainWindow(QtWidgets.QMainWindow):
             save_last_launch(exe_name, datetime.now())
             button.setText(_("Launching"))
             button.setIcon(self.theme_manager.get_icon("stop", color=self.theme.playButtonStopIconColor))
-            self.checkProcessTimer = QtCore.QTimer(self)
+            self.checkProcessTimer = QTimer(self)
             self.checkProcessTimer.timeout.connect(self.checkTargetExe)
             self.checkProcessTimer.start(500)
 

@@ -188,7 +188,7 @@ def load_logo():
             logger.error(f"Ошибка загрузки SVG логотипа: {logo_path}")
             return None
         pixmap = QPixmap(128, 128)
-        pixmap.fill(Qt.transparent)
+        pixmap.fill(QColor(0, 0, 0, 0))
         painter = QPainter(pixmap)
         renderer.render(painter)
         painter.end()
@@ -219,8 +219,6 @@ def load_theme(theme_name):
     """
     if theme_name == "standart":
         import portprotonqt.themes.standart.styles as default_styles
-        default_styles.metainfo = load_theme_metainfo(theme_name)
-        default_styles.screenshots = load_theme_screenshots(theme_name)
         return default_styles
 
     for themes_dir in THEMES_DIRS:
@@ -228,6 +226,8 @@ def load_theme(theme_name):
         styles_file = os.path.join(theme_folder, "styles.py")
         if os.path.exists(styles_file):
             spec = importlib.util.spec_from_file_location("theme_styles", styles_file)
+            if spec is None or spec.loader is None:
+                continue
             custom_theme = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(custom_theme)
             meta = load_theme_metainfo(theme_name)
@@ -292,19 +292,19 @@ class ThemeManager:
             theme_name = theme_name or self.current_theme_name
 
             for themes_dir in THEMES_DIRS:
-                theme_folder = os.path.join(themes_dir, theme_name)
+                theme_folder = os.path.join(str(themes_dir), str(theme_name))
                 icons_folder = os.path.join(theme_folder, "images", "icons")
 
                 # Если передано имя с расширением, проверяем только этот файл
                 if has_extension:
-                    candidate = os.path.join(icons_folder, base_name)
+                    candidate = os.path.join(icons_folder, str(base_name))
                     if os.path.exists(candidate):
                         icon_path = candidate
                         break
                 else:
                     # Проверяем все поддерживаемые расширения
                     for ext in supported_extensions:
-                        candidate = os.path.join(icons_folder, base_name + ext)
+                        candidate = os.path.join(icons_folder, str(base_name) + str(ext))
                         if os.path.exists(candidate):
                             icon_path = candidate
                             break
@@ -356,7 +356,7 @@ class ThemeManager:
 
                         def pixmap(self, size, mode, state):
                             pixmap = QPixmap(size)
-                            pixmap.fill(Qt.transparent)
+                            pixmap.fill(QColor(0, 0, 0, 0))
                             painter = QPainter(pixmap)
                             self.paint(painter, pixmap.rect(), mode, state)
                             painter.end()
@@ -404,7 +404,6 @@ class ThemeManager:
                             apply_color_to_elements(root)
 
                             # Сохраняем модифицированный SVG во временный файл
-
                             self.temp_svg = tempfile.NamedTemporaryFile(delete=False, suffix='.svg')
                             tree.write(self.temp_svg.name, encoding='utf-8', xml_declaration=True)
                             self.temp_svg.close()
@@ -430,7 +429,7 @@ class ThemeManager:
 
                     def pixmap(self, size, mode, state):
                         pixmap = QPixmap(size)
-                        pixmap.fill(Qt.transparent)
+                        pixmap.fill(QColor(0, 0, 0, 0))
                         painter = QPainter(pixmap)
                         self.paint(painter, pixmap.rect(), mode, state)
                         painter.end()
@@ -441,14 +440,14 @@ class ThemeManager:
                 # Для растровых изображений загружаем QPixmap и меняем цвет
                 pixmap = QPixmap(icon_path)
                 if pixmap.width() != icon_size or pixmap.height() != icon_size:
-                    pixmap = pixmap.scaled(icon_size, icon_size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                    pixmap = pixmap.scaled(icon_size, icon_size, Qt.AspectRatioMode.KeepAspectRatioByExpanding, Qt.TransformationMode.SmoothTransformation)
 
                 # Перекрашивание pixmap
                 colored_pixmap = QPixmap(pixmap.size())
-                colored_pixmap.fill(Qt.transparent)
+                pixmap.fill(QColor(0, 0, 0, 0))
                 painter = QPainter(colored_pixmap)
                 painter.drawPixmap(0, 0, pixmap)
-                painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
+                painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
                 painter.fillRect(colored_pixmap.rect(), to_qcolor(color))
                 painter.end()
 
@@ -458,15 +457,48 @@ class ThemeManager:
         """
         Возвращает путь к изображению из папки текущей темы.
         Если не найдено, проверяет стандартную тему.
+        Принимает название иконки без расширения и находит соответствующий файл
+        с поддерживаемым расширением (.svg, .png, .jpg и др.).
         """
+        image_path = None
         theme_name = theme_name or self.current_theme_name
-        for themes_dir in THEMES_DIRS:
-            theme_folder = os.path.join(themes_dir, theme_name)
-            candidate = os.path.join(theme_folder, "images", image_name)
-            if os.path.exists(candidate):
-                return candidate
+        # Поддерживаемые расширения файлов изображений
+        supported_extensions = ['.svg', '.png', '.jpg', '.jpeg']
 
-        # Проверяем стандартную тему
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        default_path = os.path.join(base_dir, "themes", "standart", "images", image_name)
-        return default_path if os.path.exists(default_path) else None
+        # Проверка, содержит ли image_name уже расширение
+        has_extension = any(image_name.lower().endswith(ext) for ext in supported_extensions)
+        base_name = image_name if has_extension else image_name
+        for themes_dir in THEMES_DIRS:
+            theme_folder = os.path.join(str(themes_dir), str(theme_name))
+            images_folder = os.path.join(theme_folder, "images")
+
+            if has_extension:
+                candidate = os.path.join(images_folder, str(base_name))
+                if os.path.exists(candidate):
+                    image_path = candidate
+                    break
+            else:
+                for ext in supported_extensions:
+                    candidate = os.path.join(images_folder, str(base_name) + str(ext))
+                    if os.path.exists(candidate):
+                        image_path = candidate
+                        break
+                if image_path:
+                    break
+
+            # Если не нашли – используем стандартную тему
+            if not image_path:
+                base_dir = os.path.dirname(os.path.abspath(__file__))
+                standard_images_folder = os.path.join(base_dir, "themes", "standart", "images")
+
+                # Аналогично проверяем в стандартной теме
+                if has_extension:
+                    image_path = os.path.join(standard_images_folder, base_name)
+                    if not os.path.exists(image_path):
+                        image_path = None
+                else:
+                    for ext in supported_extensions:
+                        candidate = os.path.join(standard_images_folder, base_name + ext)
+                        if os.path.exists(candidate):
+                            image_path = candidate
+                            break

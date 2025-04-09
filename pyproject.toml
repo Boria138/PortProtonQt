@@ -78,6 +78,23 @@ exclude = [
   ".vscode",
 ]
 
+[tool.pyright]
+reportMissingImports = "none"
+reportMissingModuleSource = "none"
+ignore = [
+    "portprotonqt/gamepad_support.py", # I need gamepad for test
+    ".eggs",
+    ".git",
+    "build",
+    "dist",
+    "portprotonqt.egg-info",
+    ".venv",
+    "venv",
+    "dev-scripts",
+    "portprotonqt/themes",
+    ".vscode",
+]
+
 [dependency-groups]
 dev = [
     "mdformat>=0.7.22",
