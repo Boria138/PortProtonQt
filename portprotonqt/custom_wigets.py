@@ -1,5 +1,5 @@
 import numpy as np
-from PySide6.QtWidgets import QLabel, QPushButton, QWidget, QLayout, QSizePolicy, QStyle, QStyleOption
+from PySide6.QtWidgets import QLabel, QPushButton, QWidget, QLayout, QStyleOption, QLayoutItem
 from PySide6.QtCore import Qt, Signal, QRect, QPoint, QSize
 from PySide6.QtGui import QFont, QFontMetrics, QPainter
 
@@ -64,24 +64,24 @@ class FlowLayout(QLayout):
         self._spacing = 5  # отступ между карточками
         self._max_scale = 1.2  # максимальное увеличение карточек (например, на 20%)
 
-    def addItem(self, item):
-        self.itemList.append(item)
+    def addItem(self, item: QLayoutItem) -> None:
+            self.itemList.append(item)
 
-    def count(self):
+    def takeAt(self, index: int) -> QLayoutItem:
+            if 0 <= index < len(self.itemList):
+                return self.itemList.pop(index)
+            raise IndexError("Index out of range")
+
+    def count(self) -> int:
         return len(self.itemList)
 
-    def itemAt(self, index):
+    def itemAt(self, index: int) -> QLayoutItem | None:
         if 0 <= index < len(self.itemList):
             return self.itemList[index]
         return None
 
-    def takeAt(self, index):
-        if 0 <= index < len(self.itemList):
-            return self.itemList.pop(index)
-        return None
-
     def expandingDirections(self):
-        return Qt.Orientations(0)
+        return Qt.Orientation(0)
 
     def hasHeightForWidth(self):
         return True
@@ -175,7 +175,7 @@ class ClickableLabel(QLabel):
     def paintEvent(self, event):
         """Переопределяем отрисовку: рисуем иконку и текст в одном лейбле."""
         painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
         rect = self.contentsRect()
         alignment = self.alignment()
@@ -200,9 +200,9 @@ class ClickableLabel(QLabel):
         text_height = fm.height()
         total_width = text_width + (icon_size + spacing if pixmap else 0)
 
-        if alignment & Qt.AlignHCenter:
+        if alignment & Qt.AlignmentFlag.AlignHCenter:
             x = rect.left() + (rect.width() - total_width) // 2
-        elif alignment & Qt.AlignRight:
+        elif alignment & Qt.AlignmentFlag.AlignRight:
             x = rect.right() - total_width
         else:
             x = rect.left()
@@ -217,8 +217,6 @@ class ClickableLabel(QLabel):
 
         option = QStyleOption()
         option.initFrom(self)
-        self.style().drawPrimitive(QStyle.PE_Widget, option, painter, self)
-
         if pixmap:
             painter.drawPixmap(icon_rect, pixmap)
         self.style().drawItemText(
@@ -256,7 +254,7 @@ class AutoSizeButton(QPushButton):
 
         self._icon = icon
         self._icon_size = icon_size
-        self._alignment = Qt.AlignLeft | Qt.AlignVCenter
+        self._alignment = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
         self._min_font_size = min_font_size
         self._max_font_size = max_font_size
         self._padding = padding
@@ -270,7 +268,6 @@ class AutoSizeButton(QPushButton):
 
         self.setCursor(Qt.PointingHandCursor)
         self.setFlat(True)
-        super().setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
 
         # Изначально выставляем минимальную ширину
         self.setMinimumWidth(50)
@@ -362,7 +359,7 @@ class NavLabel(QLabel):
     def __init__(self, text="", parent=None):
         super().__init__(text, parent)
         self.setWordWrap(True)
-        self.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
 
         self._checkable = False
         self._isChecked = False

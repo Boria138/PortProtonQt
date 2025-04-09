@@ -20,6 +20,7 @@ from portprotonqt.localization import _
 
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtWidgets import QLineEdit
+from typing import cast
 from datetime import datetime
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -67,14 +68,20 @@ class MainWindow(QtWidgets.QMainWindow):
         # Текст "PortProton" слева
         self.titleLabel = QtWidgets.QLabel()
         pixmap = load_logo()
-        self.titleLabel.setPixmap(pixmap)
-        self.titleLabel.setFixedSize(pixmap.size())
-        self.titleLabel.setStyleSheet(self.theme.TITLE_LABEL_STYLE)
-        headerLayout.addStretch()
-        scaled_pixmap = pixmap.scaled(*self.theme.pixmapsScaledSize, QtCore.Qt.AspectRatioMode.KeepAspectRatio,
-                                      QtCore.Qt.TransformationMode.SmoothTransformation)
+        # Обработка случая, если логотип не загрузился
+        if pixmap is None:
+            width, height = self.theme.pixmapsScaledSize
+            pixmap = QtGui.QPixmap(width, height)
+            pixmap.fill(QtGui.QColor(0, 0, 0, 0))
+        width, height = self.theme.pixmapsScaledSize
+        scaled_pixmap = pixmap.scaled(width, height,
+                                    QtCore.Qt.AspectRatioMode.KeepAspectRatio,
+                                    QtCore.Qt.TransformationMode.SmoothTransformation)
+        self.titleLabel = QtWidgets.QLabel()
         self.titleLabel.setPixmap(scaled_pixmap)
         self.titleLabel.setFixedSize(scaled_pixmap.size())
+        self.titleLabel.setStyleSheet(self.theme.TITLE_LABEL_STYLE)
+        headerLayout.addStretch()
 
         # 2. НАВИГАЦИЯ (КНОПКИ ВКЛАДОК)
         self.navWidget = QtWidgets.QWidget()
@@ -314,12 +321,15 @@ class MainWindow(QtWidgets.QMainWindow):
                     custom_desc = f.read().strip()
 
             # Статистика времени игры
-            statistics_file = os.path.join(
-                self.portproton_location,
-                "data",
-                "tmp",
-                "statistics"
-            )
+            if self.portproton_location is not None:
+                statistics_file = os.path.join(
+                    self.portproton_location,
+                    "data",
+                    "tmp",
+                    "statistics"
+                )
+            else:
+                raise ValueError("PortProton is not found")
             playtime_data = parse_playtime_file(statistics_file)
             matching_key = next(
                 (key for key in playtime_data
@@ -369,7 +379,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.addGameButton = AutoSizeButton(_("Add Game"), icon=self.theme_manager.get_icon("addgame", color=self.theme.addGameButtonIconColor))
         self.addGameButton.setStyleSheet(self.theme.ADDGAME_BACK_BUTTON_STYLE)
         self.addGameButton.clicked.connect(self.openAddGameDialog)
-        layout.addWidget(self.addGameButton, alignment=QtCore.Qt.AlignRight)
+        layout.addWidget(self.addGameButton, alignment=QtCore.Qt.AlignmentFlag.AlignRight)
 
         self.searchEdit = QtWidgets.QLineEdit()
         self.search_action = self.searchEdit.addAction(self.theme_manager.get_icon("search", color=self.theme.searchEditActionIconColor), QLineEdit.ActionPosition.LeadingPosition)
@@ -416,12 +426,11 @@ class MainWindow(QtWidgets.QMainWindow):
         # Слайдер для изменения размера карточек:
         sliderLayout = QtWidgets.QHBoxLayout()
         sliderLayout.addStretch()  # сдвигаем ползунок вправо
-        self.sizeSlider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        self.sizeSlider = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal)
         self.sizeSlider.setMinimum(200)
         self.sizeSlider.setMaximum(250)
         self.sizeSlider.setValue(self.card_width)
         self.sizeSlider.setTickInterval(10)
-        self.sizeSlider.setTickPosition(QtWidgets.QSlider.TicksBelow)
         self.sizeSlider.setFixedWidth(150)
         self.sizeSlider.setToolTip(f"{self.card_width} px")
         self.sizeSlider.setStyleSheet(self.theme.SLIDER_SIZE_STYLE)
@@ -497,11 +506,11 @@ class MainWindow(QtWidgets.QMainWindow):
     def openAddGameDialog(self):
         """Открывает диалоговое окно 'Add Game' с текущей темой."""
         dialog = AddGameDialog(self, self.theme)
-        if dialog.exec() == QtWidgets.QDialog.Accepted:
+        if dialog.exec() == QtWidgets.QDialog.DialogCode.Accepted:
             name = dialog.nameEdit.text().strip()
             desc = dialog.descEdit.toPlainText().strip()
             cover = dialog.coverEdit.text().strip()
-            self.games.append((name, desc, cover, "stub", "stub", "stub", _("Never"), "stub", "stub", "stub", "stub", "stub"))
+            self.games.append((name, desc, cover, "stub", "stub", "stub", _("Never"), "stub", "stub", 0.0, 0, "false"))
             self.populateGamesGrid(self.games)
 
     def createAutoInstallTab(self):
@@ -599,7 +608,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.timeDetailTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         self.timeDetailTitle.setObjectName("settingsTitle")
         current_time_detail = read_time_config()
-        index = self.timeDetailCombo.findText(current_time_detail, QtCore.Qt.MatchFixedString)
+        index = self.timeDetailCombo.findText(current_time_detail,QtCore.Qt.MatchFlag.MatchFixedString)
+
         if index >= 0:
             self.timeDetailCombo.setCurrentIndex(index)
         formLayout.addRow(self.timeDetailTitle, self.timeDetailCombo)
@@ -613,7 +623,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.gamesSortTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         self.gamesSortTitle.setObjectName("settingsTitle")
         current_sort_method = read_sort_method()
-        index = self.gamesSortCombo.findText(current_sort_method, QtCore.Qt.MatchFixedString)
+        index = self.gamesSortCombo.findText(current_sort_method, QtCore.Qt.MatchFlag.MatchFixedString)
         if index >= 0:
             self.gamesSortCombo.setCurrentIndex(index)
         formLayout.addRow(self.gamesSortTitle, self.gamesSortCombo)
@@ -627,7 +637,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.gamesDisplayTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         self.gamesDisplayTitle.setObjectName("settingsTitle")
         current_display_filter = read_display_filter()
-        index = self.gamesDisplayCombo.findText(current_display_filter, QtCore.Qt.MatchFixedString)
+        index = self.gamesDisplayCombo.findText(current_display_filter, QtCore.Qt.MatchFlag.MatchFixedString)
         if index >= 0:
             self.gamesDisplayCombo.setCurrentIndex(index)
         formLayout.addRow(self.gamesDisplayTitle, self.gamesDisplayCombo)
@@ -657,7 +667,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.proxyPasswordEdit = QtWidgets.QLineEdit()
         self.proxyPasswordEdit.setPlaceholderText(_("Proxy Password"))
-        self.proxyPasswordEdit.setEchoMode(QtWidgets.QLineEdit.Password)
+        self.proxyPasswordEdit.setEchoMode(QLineEdit.EchoMode.Password)
         self.proxyPasswordEdit.setStyleSheet(self.theme.PROXY_INPUT_STYLE)
         self.proxyPasswordEdit.setObjectName("inputString")
         self.proxyPasswordTitle = QtWidgets.QLabel(_("Proxy Password:"))
@@ -858,7 +868,7 @@ class MainWindow(QtWidgets.QMainWindow):
         backButton.setFixedWidth(100)
         backButton.setStyleSheet(self.theme.ADDGAME_BACK_BUTTON_STYLE)
         backButton.clicked.connect(lambda: self.goBackDetailPage(detailPage))
-        mainLayout.addWidget(backButton, alignment=QtCore.Qt.AlignLeft)
+        mainLayout.addWidget(backButton, alignment=QtCore.Qt.AlignmentFlag.AlignLeft)
 
         contentFrame = QtWidgets.QFrame()
         contentFrame.setStyleSheet(self.theme.DETAIL_CONTENT_FRAME_STYLE)
@@ -901,7 +911,6 @@ class MainWindow(QtWidgets.QMainWindow):
         favoriteLabelCover.raise_()
 
         contentFrameLayout.addWidget(coverFrame)
-        detailPage._coverPixmap = pixmap_detail
 
         # Детали игры (справа)
         detailsWidget = QtWidgets.QWidget()
@@ -916,7 +925,7 @@ class MainWindow(QtWidgets.QMainWindow):
         detailsLayout.addWidget(titleLabel)
 
         line = QtWidgets.QFrame()
-        line.setFrameShape(QtWidgets.QFrame.HLine)
+        line.setFrameShape(QtWidgets.QFrame.Shape.HLine)
         line.setStyleSheet(self.theme.DETAIL_PAGE_LINE_STYLE)
         detailsLayout.addWidget(line)
 
@@ -952,9 +961,9 @@ class MainWindow(QtWidgets.QMainWindow):
             elif cs == "none":
                 translated_cs = _("none")
             gamepadSupportLabel = QtWidgets.QLabel(_("Gamepad Support: {0}").format(translated_cs))
-            gamepadSupportLabel.setAlignment(QtCore.Qt.AlignCenter)
+            gamepadSupportLabel.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
             gamepadSupportLabel.setStyleSheet(self.theme.GAMEPAD_SUPPORT_VALUE_STYLE)
-            detailsLayout.addWidget(gamepadSupportLabel, alignment=QtCore.Qt.AlignCenter)
+            detailsLayout.addWidget(gamepadSupportLabel, alignment=QtCore.Qt.AlignmentFlag.AlignCenter)
 
         detailsLayout.addStretch(1)
 
@@ -979,7 +988,7 @@ class MainWindow(QtWidgets.QMainWindow):
         playButton.setFixedSize(120, 40)
         playButton.setStyleSheet(self.theme.PLAY_BUTTON_STYLE)
         playButton.clicked.connect(lambda: self.toggleGame(exec_line, playButton))
-        detailsLayout.addWidget(playButton, alignment=QtCore.Qt.AlignLeft)
+        detailsLayout.addWidget(playButton, alignment=QtCore.Qt.AlignmentFlag.AlignLeft)
 
         contentFrameLayout.addWidget(detailsWidget)
         mainLayout.addStretch()
@@ -991,13 +1000,15 @@ class MainWindow(QtWidgets.QMainWindow):
         # Анимация плавного появления
         opacityEffect = QtWidgets.QGraphicsOpacityEffect(detailPage)
         detailPage.setGraphicsEffect(opacityEffect)
-        animation = QtCore.QPropertyAnimation(opacityEffect, b"opacity")
+        animation = QtCore.QPropertyAnimation(opacityEffect, QtCore.QByteArray(b"opacity"))
         animation.setDuration(800)
         animation.setStartValue(0)
         animation.setEndValue(1)
-        animation.start(QtCore.QAbstractAnimation.DeleteWhenStopped)
+        animation.start(QtCore.QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
         detailPage.animation = animation
-        animation.finished.connect(lambda: detailPage.setGraphicsEffect(None))
+        animation.finished.connect(
+            lambda: detailPage.setGraphicsEffect(cast(QtWidgets.QGraphicsEffect, None))
+        )
 
     def toggleFavoriteInDetailPage(self, game_name, label):
         favorites = read_favorites()

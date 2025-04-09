@@ -27,9 +27,8 @@ class AddGameDialog(QtWidgets.QDialog):
         layout.addRow("Название:", self.nameEdit)
         layout.addRow("Описание:", self.descEdit)
         layout.addRow("Путь к обложке:", coverLayout)
-
         buttonBox = QtWidgets.QDialogButtonBox(
-            QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
+            QtWidgets.QDialogButtonBox.StandardButton.Ok | QtWidgets.QDialogButtonBox.StandardButton.Cancel
         )
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)

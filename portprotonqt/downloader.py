@@ -87,6 +87,7 @@ def download_with_parallel(url, local_path, timeout=5, workers=4):
         return local_path
 
     opener = get_opener()
+    temp_files = []
 
     try:
         # Проверка поддержки частичных загрузок
@@ -222,13 +223,15 @@ def download_with_parallel(url, local_path, timeout=5, workers=4):
     except Exception as e:
         logger.error(f"Ошибка параллельной загрузки {url}: {e}")
         # Очищаем временные файлы
-        for part in temp_files if 'temp_files' in locals() else []:
-            if os.path.exists(part):
-                os.remove(part)
+        if 'temp_files' in locals():
+            for part in temp_files:
+                if os.path.exists(part):
+                    os.remove(part)
 
         if os.path.exists(local_path):
             os.remove(local_path)
         return None
+
 
 class Downloader:
     """Класс для управления загрузками."""
