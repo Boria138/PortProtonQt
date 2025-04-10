@@ -525,8 +525,6 @@ class MainWindow(QMainWindow):
 
                 if desktop_entry and desktop_path:
                     self.games.append((name, "stub", "stub", "stub", "stub", "stub", _("Never"), "stub", "stub", 0.0, 0, "false"))
-                    self.populateGamesGrid(self.games)
-                    read_time_config()
                     self.games = self.loadGames()
                     self.updateGameGrid()
 
