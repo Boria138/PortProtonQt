@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQT 0.1.0\n"
 "Report-Msgid-Bugs-To: olegpozitiv0102@gmail.com\n"
-"POT-Creation-Date: 2025-04-03 11:45+0600\n"
+"POT-Creation-Date: 2025-04-10 17:15+0500\n"
 "PO-Revision-Date: 2025-03-23 01:53+0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es_ES\n"
@@ -18,6 +18,37 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
+
+msgid "Add Game"
+msgstr ""
+
+msgid "Browse..."
+msgstr ""
+
+msgid "Game Name:"
+msgstr ""
+
+msgid "Executable File:"
+msgstr ""
+
+msgid "Select Executable"
+msgstr ""
+
+msgid "Success"
+msgstr ""
+
+msgid "Game added successfully."
+msgstr ""
+
+msgid "Error"
+msgstr ""
+
+msgid "Please provide a game name and the .exe path."
+msgstr ""
+
+#, python-brace-format
+msgid "Launch game \"{name}\" with PortProton"
+msgstr ""
 
 msgid "Platinum"
 msgstr ""
@@ -62,9 +93,6 @@ msgid "Unknown Game"
 msgstr ""
 
 msgid "Game Library"
-msgstr ""
-
-msgid "Add Game"
 msgstr ""
 
 msgid "Find Games ..."
@@ -173,9 +201,6 @@ msgid "Stop"
 msgstr ""
 
 msgid "Play"
-msgstr ""
-
-msgid "Error"
 msgstr ""
 
 msgid "Invalid command format (native)"

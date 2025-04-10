@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQT 0.1.0\n"
 "Report-Msgid-Bugs-To: olegpozitiv0102@gmail.com\n"
-"POT-Creation-Date: 2025-04-03 11:45+0600\n"
-"PO-Revision-Date: 2025-04-03 11:45+0600\n"
+"POT-Creation-Date: 2025-04-10 17:15+0500\n"
+"PO-Revision-Date: 2025-04-10 17:15+0500\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
@@ -19,6 +19,37 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
+
+msgid "Add Game"
+msgstr "Добавить игру"
+
+msgid "Browse..."
+msgstr "Обзор..."
+
+msgid "Game Name:"
+msgstr "Имя игры:"
+
+msgid "Executable File:"
+msgstr "Имя исполняемого файла:"
+
+msgid "Select Executable"
+msgstr "Выберите исполнимый файл"
+
+msgid "Success"
+msgstr "Успех"
+
+msgid "Game added successfully."
+msgstr "Игра добавлена успешно."
+
+msgid "Error"
+msgstr "Ошибка"
+
+msgid "Please provide a game name and the .exe path."
+msgstr "Пожалуйста, укажите название игры и путь к .exe файлу."
+
+#, python-brace-format
+msgid "Launch game \"{name}\" with PortProton"
+msgstr "Запустить игру \"{name}\" с помощью PortProton"
 
 msgid "Platinum"
 msgstr "Платина"
@@ -64,9 +95,6 @@ msgstr "Неизвестная игра"
 
 msgid "Game Library"
 msgstr "Игровая библиотека"
-
-msgid "Add Game"
-msgstr "Добавить игру"
 
 msgid "Find Games ..."
 msgstr "Найти игры..."
@@ -175,9 +203,6 @@ msgstr "Остановить"
 
 msgid "Play"
 msgstr "Играть"
-
-msgid "Error"
-msgstr "Ошибка"
 
 msgid "Invalid command format (native)"
 msgstr "Неправильный формат команды (нативная версия)"

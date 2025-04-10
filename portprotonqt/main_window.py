@@ -16,11 +16,14 @@ from portprotonqt.image_utils import load_pixmap, round_corners, ImageCarousel
 from portprotonqt.steam_api import get_steam_game_info, get_full_steam_game_info, get_steam_installed_games
 from portprotonqt.theme_manager import ThemeManager, load_theme_screenshots, load_logo
 from portprotonqt.time_utils import save_last_launch, get_last_launch, parse_playtime_file, format_playtime, get_last_launch_timestamp, format_last_launch
-from portprotonqt.config_utils import get_portproton_location, read_theme_from_config, save_theme_to_config, parse_desktop_entry, load_theme_metainfo, read_time_config, read_card_size, save_card_size, read_sort_method, read_display_filter, read_favorites, save_favorites, save_time_config, save_sort_method, save_display_filter, save_proxy_config, read_proxy_config
+from portprotonqt.config_utils import (
+    get_portproton_location, read_theme_from_config, save_theme_to_config, parse_desktop_entry, load_theme_metainfo, read_time_config, read_card_size, save_card_size,
+    read_sort_method, read_display_filter, read_favorites, save_favorites, save_time_config, save_sort_method, save_display_filter, save_proxy_config, read_proxy_config
+)
 from portprotonqt.localization import _
 
-from PySide6.QtWidgets import QLineEdit, QMainWindow, QStatusBar, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox, QScrollArea, QSlider
-from PySide6.QtWidgets import QDialog, QFormLayout, QFrame, QGraphicsDropShadowEffect, QMessageBox, QGraphicsEffect, QGraphicsOpacityEffect
+from PySide6.QtWidgets import (QLineEdit, QMainWindow, QStatusBar, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox, QScrollArea, QSlider,
+                               QDialog, QFormLayout, QFrame, QGraphicsDropShadowEffect, QMessageBox, QGraphicsEffect, QGraphicsOpacityEffect)
 from PySide6.QtGui import QIcon, QPixmap, QColor, QDesktopServices
 from PySide6.QtCore import Qt, QTimer, QAbstractAnimation, QPropertyAnimation, QByteArray, QUrl
 from typing import cast
@@ -515,10 +518,17 @@ class MainWindow(QMainWindow):
         dialog = AddGameDialog(self, self.theme)
         if dialog.exec() == QDialog.DialogCode.Accepted:
             name = dialog.nameEdit.text().strip()
-            desc = dialog.descEdit.toPlainText().strip()
-            cover = dialog.coverEdit.text().strip()
-            self.games.append((name, desc, cover, "stub", "stub", "stub", _("Never"), "stub", "stub", 0.0, 0, "false"))
-            self.populateGamesGrid(self.games)
+            exe_path = dialog.exeEdit.text().strip()
+
+            if name and exe_path:
+                desktop_entry, desktop_path = dialog.getDesktopEntryData()
+
+                if desktop_entry and desktop_path:
+                    self.games.append((name, "stub", "stub", "stub", "stub", "stub", _("Never"), "stub", "stub", 0.0, 0, "false"))
+                    self.populateGamesGrid(self.games)
+                    read_time_config()
+                    self.games = self.loadGames()
+                    self.updateGameGrid()
 
     def createAutoInstallTab(self):
         """Вкладка 'Auto Install'."""
