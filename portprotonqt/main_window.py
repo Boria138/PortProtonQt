@@ -34,6 +34,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
+        self.setAcceptDrops(True)
 
         read_time_config()
 
@@ -513,9 +514,31 @@ class MainWindow(QMainWindow):
             if child.widget():
                 child.widget().deleteLater()
 
-    def openAddGameDialog(self):
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            for url in event.mimeData().urls():
+                if url.toLocalFile().lower().endswith(".exe"):
+                    event.acceptProposedAction()
+                    return
+        event.ignore()
+
+    def dropEvent(self, event):
+        for url in event.mimeData().urls():
+            path = url.toLocalFile()
+            if path.lower().endswith(".exe"):
+                self.openAddGameDialog(path)
+                break
+
+    def openAddGameDialog(self, exe_path=None):
         """Открывает диалоговое окно 'Add Game' с текущей темой."""
         dialog = AddGameDialog(self, self.theme)
+
+        if exe_path:
+            dialog.exeEdit.setText(exe_path)
+            if not dialog.nameEdit.text():
+                name = os.path.splitext(os.path.basename(exe_path))[0]
+                dialog.nameEdit.setText(name)
+
         if dialog.exec() == QDialog.DialogCode.Accepted:
             name = dialog.nameEdit.text().strip()
             exe_path = dialog.exeEdit.text().strip()
