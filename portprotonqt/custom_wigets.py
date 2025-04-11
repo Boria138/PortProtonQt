@@ -359,7 +359,7 @@ class NavLabel(QLabel):
     def __init__(self, text="", parent=None):
         super().__init__(text, parent)
         self.setWordWrap(True)
-        self.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        self.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
 
         self._checkable = False
         self._isChecked = False
