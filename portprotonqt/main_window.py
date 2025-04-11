@@ -1,6 +1,7 @@
 import concurrent.futures
 import os
 import shlex
+import shutil
 import signal
 import subprocess
 
@@ -533,23 +534,48 @@ class MainWindow(QMainWindow):
         """Открывает диалоговое окно 'Add Game' с текущей темой."""
         dialog = AddGameDialog(self, self.theme)
 
+        # Предзаполняем путь к .exe при drag-and-drop
         if exe_path:
             dialog.exeEdit.setText(exe_path)
-            if not dialog.nameEdit.text():
-                name = os.path.splitext(os.path.basename(exe_path))[0]
-                dialog.nameEdit.setText(name)
+            dialog.nameEdit.setText(os.path.splitext(os.path.basename(exe_path))[0])
+            dialog.updatePreview()
 
         if dialog.exec() == QDialog.DialogCode.Accepted:
             name = dialog.nameEdit.text().strip()
             exe_path = dialog.exeEdit.text().strip()
+            user_cover = dialog.coverEdit.text().strip()
 
-            if name and exe_path:
-                desktop_entry, desktop_path = dialog.getDesktopEntryData()
+            if not name or not exe_path:
+                return
 
-                if desktop_entry and desktop_path:
-                    self.games.append((name, "stub", "stub", "stub", "stub", "stub", _("Never"), "stub", "stub", 0.0, 0, "false"))
-                    self.games = self.loadGames()
-                    self.updateGameGrid()
+            # Сохраняем .desktop файл
+            desktop_entry, desktop_path = dialog.getDesktopEntryData()
+            if desktop_entry and desktop_path:
+                with open(desktop_path, "w", encoding="utf-8") as f:
+                    f.write(desktop_entry)
+                    os.chmod(desktop_path, 0o755)
+
+                # Проверяем путь обложки, если он отличается от стандартной
+                if os.path.isfile(user_cover):
+                    exe_name = os.path.splitext(os.path.basename(exe_path))[0]
+                    xdg_data_home = os.getenv("XDG_DATA_HOME",
+                        os.path.join(os.path.expanduser("~"), ".local", "share"))
+                    custom_folder = os.path.join(
+                        xdg_data_home,
+                        "PortProtonQT",
+                        "custom_data",
+                        exe_name
+                    )
+                    os.makedirs(custom_folder, exist_ok=True)
+
+                    # Сохраняем пользовательскую обложку как cover.*
+                    ext = os.path.splitext(user_cover)[1].lower()
+                    if ext in [".png", ".jpg", ".jpeg", ".bmp"]:
+                        shutil.copyfile(user_cover, os.path.join(custom_folder, f"cover{ext}"))
+
+            self.games = self.loadGames()
+            self.updateGameGrid()
+
 
     def createAutoInstallTab(self):
         """Вкладка 'Auto Install'."""

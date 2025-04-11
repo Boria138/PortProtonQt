@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQT 0.1.0\n"
 "Report-Msgid-Bugs-To: olegpozitiv0102@gmail.com\n"
-"POT-Creation-Date: 2025-04-10 17:15+0500\n"
-"PO-Revision-Date: 2025-04-10 17:15+0500\n"
+"POT-Creation-Date: 2025-04-11 11:55+0500\n"
+"PO-Revision-Date: 2025-04-11 11:55+0500\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
@@ -23,29 +23,26 @@ msgstr ""
 msgid "Add Game"
 msgstr "Добавить игру"
 
-msgid "Browse..."
-msgstr "Обзор..."
-
 msgid "Game Name:"
 msgstr "Имя игры:"
 
-msgid "Executable File:"
-msgstr "Имя исполняемого файла:"
+msgid "Browse..."
+msgstr "Обзор..."
+
+msgid "Path to Executable:"
+msgstr "Путь к исполняемому файлу:"
+
+msgid "Custom Cover:"
+msgstr "Обложка:"
+
+msgid "Cover Preview:"
+msgstr "Предпросмотр обложки:"
 
 msgid "Select Executable"
-msgstr "Выберите исполнимый файл"
+msgstr "Выберите исполняемый файл"
 
-msgid "Success"
-msgstr "Успех"
-
-msgid "Game added successfully."
-msgstr "Игра добавлена успешно."
-
-msgid "Error"
-msgstr "Ошибка"
-
-msgid "Please provide a game name and the .exe path."
-msgstr "Пожалуйста, укажите название игры и путь к .exe файлу."
+msgid "Select Cover Image"
+msgstr "Выберите обложку"
 
 #, python-brace-format
 msgid "Launch game \"{name}\" with PortProton"
@@ -203,6 +200,9 @@ msgstr "Остановить"
 
 msgid "Play"
 msgstr "Играть"
+
+msgid "Error"
+msgstr "Ошибка"
 
 msgid "Invalid command format (native)"
 msgstr "Неправильный формат команды (нативная версия)"

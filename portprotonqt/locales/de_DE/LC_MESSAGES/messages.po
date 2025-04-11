@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQT 0.1.0\n"
 "Report-Msgid-Bugs-To: olegpozitiv0102@gmail.com\n"
-"POT-Creation-Date: 2025-04-10 17:15+0500\n"
+"POT-Creation-Date: 2025-04-11 11:55+0500\n"
 "PO-Revision-Date: 2025-03-23 01:52+0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: de_DE\n"
@@ -22,28 +22,25 @@ msgstr ""
 msgid "Add Game"
 msgstr ""
 
-msgid "Browse..."
-msgstr ""
-
 msgid "Game Name:"
 msgstr ""
 
-msgid "Executable File:"
+msgid "Browse..."
+msgstr ""
+
+msgid "Path to Executable:"
+msgstr ""
+
+msgid "Custom Cover:"
+msgstr ""
+
+msgid "Cover Preview:"
 msgstr ""
 
 msgid "Select Executable"
 msgstr ""
 
-msgid "Success"
-msgstr ""
-
-msgid "Game added successfully."
-msgstr ""
-
-msgid "Error"
-msgstr ""
-
-msgid "Please provide a game name and the .exe path."
+msgid "Select Cover Image"
 msgstr ""
 
 #, python-brace-format
@@ -201,6 +198,9 @@ msgid "Stop"
 msgstr ""
 
 msgid "Play"
+msgstr ""
+
+msgid "Error"
 msgstr ""
 
 msgid "Invalid command format (native)"

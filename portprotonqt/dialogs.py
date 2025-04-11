@@ -1,11 +1,15 @@
 import os
+import shutil
+
+from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
-    QDialog, QLineEdit, QFormLayout, QPushButton, QHBoxLayout,
-    QDialogButtonBox, QFileDialog, QMessageBox
+    QDialog, QLineEdit, QFormLayout, QPushButton,
+    QHBoxLayout, QDialogButtonBox, QFileDialog, QLabel
 )
 from portprotonqt.config_utils import get_portproton_location
 from portprotonqt.localization import _
 import portprotonqt.themes.standart.styles as default_styles
+
 
 class AddGameDialog(QDialog):
     def __init__(self, parent=None, theme=None):
@@ -17,81 +21,116 @@ class AddGameDialog(QDialog):
 
         layout = QFormLayout(self)
 
+        # Game name
         self.nameEdit = QLineEdit(self)
-        self.exeEdit = QLineEdit(self)
+        layout.addRow(_("Game Name:"), self.nameEdit)
 
-        browseButton = QPushButton(_("Browse..."), self)
-        browseButton.clicked.connect(self.browseExe)
+        # Exe path
+        self.exeEdit = QLineEdit(self)
+        exeBrowseButton = QPushButton(_("Browse..."), self)
+        exeBrowseButton.clicked.connect(self.browseExe)
 
         exeLayout = QHBoxLayout()
         exeLayout.addWidget(self.exeEdit)
-        exeLayout.addWidget(browseButton)
+        exeLayout.addWidget(exeBrowseButton)
+        layout.addRow(_("Path to Executable:"), exeLayout)
 
-        layout.addRow(_("Game Name:"), self.nameEdit)
-        layout.addRow(_("Executable File:"), exeLayout)
+        # Cover path
+        self.coverEdit = QLineEdit(self)
+        coverBrowseButton = QPushButton(_("Browse..."), self)
+        coverBrowseButton.clicked.connect(self.browseCover)
 
+        coverLayout = QHBoxLayout()
+        coverLayout.addWidget(self.coverEdit)
+        coverLayout.addWidget(coverBrowseButton)
+        layout.addRow(_("Custom Cover:"), coverLayout)
+
+        # Preview
+        self.coverPreview = QLabel(self)
+        layout.addRow(_("Cover Preview:"), self.coverPreview)
+
+        # Dialog buttons
         buttonBox = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         )
-        buttonBox.accepted.connect(self.onAccept)
+        buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
-
         layout.addRow(buttonBox)
 
+        self.coverEdit.textChanged.connect(self.updatePreview)
+        self.exeEdit.textChanged.connect(self.updatePreview)
+
     def browseExe(self):
-        fileName = QFileDialog.getOpenFileName(
+        fileNameAndFilter = QFileDialog.getOpenFileName(
             self,
             _("Select Executable"),
             "",
             "Windows Executables (*.exe)"
-        )[0]
+        )
+        fileName = fileNameAndFilter[0]
         if fileName:
             self.exeEdit.setText(fileName)
-            if not self.nameEdit.text():
-                name = os.path.splitext(os.path.basename(fileName))[0]
-                self.nameEdit.setText(name)
+            base = os.path.basename(fileName)
+            name = os.path.splitext(base)[0]
+            self.nameEdit.setText(name)
 
-    def onAccept(self):
-        desktop_entry, desktop_path = self.getDesktopEntryData()
-        if desktop_entry and desktop_path:
-            try:
-                with open(desktop_path, "w") as f:
-                    f.write(desktop_entry)
-                QMessageBox.information(self, _("Success"), _("Game added successfully."))
-                self.accept()
-                os.system(f"chmod +x \"{desktop_path}\"")
-            except Exception as e:
-                QMessageBox.critical(self, _("Error"), str(e))
+    def browseCover(self):
+        fileNameAndFilter = QFileDialog.getOpenFileName(
+            self,
+            _("Select Cover Image"),
+            "",
+            "Images (*.png *.jpg *.jpeg *.bmp)"
+        )
+        fileName = fileNameAndFilter[0]
+        if fileName:
+            self.coverEdit.setText(fileName)
+
+    def updatePreview(self):
+        path = self.coverEdit.text().strip()
+
+        if os.path.isfile(path):
+            self.coverPreview.setPixmap(QPixmap(path))
+        elif os.path.isfile(self.exeEdit.text().strip()):
+            temp_icon = "/tmp/portproton_temp_icon.png"
+            os.system(f'exe-thumbnailer "{self.exeEdit.text().strip()}" "{temp_icon}"')
+            if os.path.exists(temp_icon):
+                self.coverPreview.setPixmap(QPixmap(temp_icon))
+            else:
+                self.coverPreview.clear()
         else:
-            # already handled by inner message boxes
-            pass
+            self.coverPreview.clear()
 
     def getDesktopEntryData(self):
+        """Returns the .desktop content and save path"""
         exe_path = self.exeEdit.text().strip()
         name = self.nameEdit.text().strip()
 
         if not exe_path or not name:
-            QMessageBox.warning(self, _("Error"), _("Please provide a game name and the .exe path."))
             return None, None
 
         portproton_path = get_portproton_location()
-        is_flatpak = ".var" in (portproton_path if portproton_path else "")
-        if portproton_path:
-            base_path = os.path.join(portproton_path, "data")
-        else:
-            raise ValueError("PortProton path is not available.")
+        if portproton_path is None:
+            return None, None
+
+        is_flatpak = ".var" in portproton_path
+        base_path = os.path.join(portproton_path, "data")
 
         if is_flatpak:
             exec_str = f'flatpak run ru.linux_gaming.PortProton "{exe_path}"'
         else:
-            start_sh = os.path.join(base_path, "scripts/start.sh")
+            start_sh = os.path.join(base_path, "scripts", "start.sh")
             exec_str = f'env "{start_sh}" "{exe_path}"'
 
         icon_path = os.path.join(base_path, "img", f"{name}.png")
         desktop_path = os.path.join(portproton_path, f"{name}.desktop")
         working_dir = os.path.join(base_path, "scripts")
-        os.makedirs(os.path.dirname(icon_path), exist_ok=True)
-        os.system(f'exe-thumbnailer "{exe_path}" "{icon_path}"')
+
+        user_cover_path = self.coverEdit.text().strip()
+        if os.path.isfile(user_cover_path):
+            shutil.copy(user_cover_path, icon_path)
+        else:
+            os.makedirs(os.path.dirname(icon_path), exist_ok=True)
+            os.system(f'exe-thumbnailer "{exe_path}" "{icon_path}"')
 
         comment = _('Launch game "{name}" with PortProton').format(name=name)
 
