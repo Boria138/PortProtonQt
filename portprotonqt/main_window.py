@@ -1231,7 +1231,7 @@ class MainWindow(QMainWindow):
 
             # Check if portproton_location is valid
             if self.portproton_location is None:
-                QMessageBox.warning(self, _("Error"), _("PortProton location is not set."))
+                QMessageBox.warning(self, _("Error"), _("PortProton is not found."))
                 return
 
             # Parse exec_line
@@ -1268,7 +1268,7 @@ class MainWindow(QMainWindow):
     def add_to_menu(self, game_name, exec_line):
             """Copy the .desktop file to ~/.local/share/applications."""
             if self.portproton_location is None:
-                QMessageBox.warning(self, _("Error"), _("PortProton location is not set."))
+                QMessageBox.warning(self, _("Error"), _("PortProton is not found."))
                 return
 
             # Parse exec_line
@@ -1297,15 +1297,49 @@ class MainWindow(QMainWindow):
         applications_dir = os.path.join(os.path.expanduser("~"), ".local", "share", "applications")
         desktop_path = os.path.join(applications_dir, f"{game_name}.desktop")
 
-        if not os.path.exists(desktop_path):
-            QMessageBox.warning(self, _("Error"), _("Game '{0}' is not in the menu").format(game_name))
-            return
-
         try:
             os.remove(desktop_path)
             self.statusBar().showMessage(_("Game '{0}' removed from menu").format(game_name), 3000)
         except OSError as e:
             QMessageBox.warning(self, _("Error"), _("Failed to remove game from menu: {0}").format(str(e)))
+
+    def add_to_desktop(self, game_name, exec_line):
+            """Copy the .desktop file to Desktop folder."""
+            if self.portproton_location is None:
+                QMessageBox.warning(self, _("Error"), _("PortProton is not found."))
+                return
+
+            # Parse exec_line
+            shlex.split(exec_line)
+            desktop_path = os.path.join(self.portproton_location, f"{game_name}.desktop")
+
+            if not desktop_path or not os.path.exists(desktop_path):
+                QMessageBox.warning(self, _("Error"), _("Could not locate .desktop file for '{0}'").format(game_name))
+                return
+
+            # Destination path
+            desktop_dir = subprocess.check_output(['xdg-user-dir', 'DESKTOP']).decode('utf-8').strip()
+            os.makedirs(desktop_dir, exist_ok=True)
+            dest_path = os.path.join(desktop_dir, f"{game_name}.desktop")
+
+            # Copy .desktop file
+            try:
+                shutil.copyfile(desktop_path, dest_path)
+                os.chmod(dest_path, 0o755)  # Ensure executable permissions
+                self.statusBar().showMessage(_("Game '{0}' added to desktop").format(game_name), 3000)
+            except OSError as e:
+                QMessageBox.warning(self, _("Error"), _("Failed to add game to desktop: {0}").format(str(e)))
+
+    def remove_from_desktop(self, game_name):
+        """Remove the .desktop file from Desktop folder."""
+        desktop_dir = subprocess.check_output(['xdg-user-dir', 'DESKTOP']).decode('utf-8').strip()
+        desktop_path = os.path.join(desktop_dir, f"{game_name}.desktop")
+
+        try:
+            os.remove(desktop_path)
+            self.statusBar().showMessage(_("Game '{0}' removed from Desktop").format(game_name), 3000)
+        except OSError as e:
+            QMessageBox.warning(self, _("Error"), _("Failed to remove game from Desktop: {0}").format(str(e)))
 
     def closeEvent(self, event):
         for proc in self.game_processes:

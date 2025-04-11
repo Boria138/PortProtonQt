@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQT 0.1.0\n"
 "Report-Msgid-Bugs-To: olegpozitiv0102@gmail.com\n"
-"POT-Creation-Date: 2025-04-11 14:46+0500\n"
+"POT-Creation-Date: 2025-04-11 21:20+0500\n"
 "PO-Revision-Date: 2025-03-23 01:53+0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es_ES\n"
@@ -65,7 +65,13 @@ msgstr ""
 msgid "Pending"
 msgstr ""
 
-msgid "Delete"
+msgid "Remove from Desktop"
+msgstr ""
+
+msgid "Add to Desktop"
+msgstr ""
+
+msgid "Delete from PortProton"
 msgstr ""
 
 msgid "Remove from Menu"
@@ -237,6 +243,9 @@ msgid ""
 "and custom data."
 msgstr ""
 
+msgid "PortProton is not found."
+msgstr ""
+
 #, python-brace-format
 msgid "Failed to delete .desktop file: {0}"
 msgstr ""
@@ -262,15 +271,27 @@ msgid "Failed to add game to menu: {0}"
 msgstr ""
 
 #, python-brace-format
-msgid "Game '{0}' is not in the menu"
-msgstr ""
-
-#, python-brace-format
 msgid "Game '{0}' removed from menu"
 msgstr ""
 
 #, python-brace-format
 msgid "Failed to remove game from menu: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Game '{0}' added to desktop"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to add game to desktop: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Game '{0}' removed from Desktop"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to remove game from Desktop: {0}"
 msgstr ""
 
 msgid "just now"

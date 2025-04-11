@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQT 0.1.0\n"
 "Report-Msgid-Bugs-To: olegpozitiv0102@gmail.com\n"
-"POT-Creation-Date: 2025-04-11 14:46+0500\n"
-"PO-Revision-Date: 2025-04-11 14:46+0500\n"
+"POT-Creation-Date: 2025-04-11 21:20+0500\n"
+"PO-Revision-Date: 2025-04-11 21:20+0500\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
@@ -66,8 +66,14 @@ msgstr "Сломано"
 msgid "Pending"
 msgstr "В ожидании"
 
-msgid "Delete"
-msgstr "Удалить"
+msgid "Remove from Desktop"
+msgstr "Удалить с рабочего стола"
+
+msgid "Add to Desktop"
+msgstr "Добавить на рабочий стол"
+
+msgid "Delete from PortProton"
+msgstr "Удалить из PortProton"
 
 msgid "Remove from Menu"
 msgstr "Удалить из меню"
@@ -240,6 +246,9 @@ msgstr ""
 "Вы уверены, что хотите удалить '{0}'? Это приведет к удалению файла .desktop"
 " и настраиваемых данных."
 
+msgid "PortProton is not found."
+msgstr "PortProton не найден"
+
 #, python-brace-format
 msgid "Failed to delete .desktop file: {0}"
 msgstr "Не удалось удалить файл .desktop: {0}"
@@ -265,16 +274,28 @@ msgid "Failed to add game to menu: {0}"
 msgstr "Не удалось добавить игру в меню: {0}"
 
 #, python-brace-format
-msgid "Game '{0}' is not in the menu"
-msgstr "Игра '{0}' отсутствует в меню"
-
-#, python-brace-format
 msgid "Game '{0}' removed from menu"
 msgstr "Игра '{0}' удалена из меню"
 
 #, python-brace-format
 msgid "Failed to remove game from menu: {0}"
 msgstr "Не удалось удалить игру из меню: {0}"
+
+#, python-brace-format
+msgid "Game '{0}' added to desktop"
+msgstr "Игра '{0}' добавлена на рабочий стол"
+
+#, python-brace-format
+msgid "Failed to add game to desktop: {0}"
+msgstr "Не удалось добавить игру на рабочий стол: {0}"
+
+#, python-brace-format
+msgid "Game '{0}' removed from Desktop"
+msgstr "Игра '{0}' удалена с рабочего стола"
+
+#, python-brace-format
+msgid "Failed to remove game from Desktop: {0}"
+msgstr "Не удалось удалить игру с рабочего стола: {0}"
 
 msgid "just now"
 msgstr "только что"

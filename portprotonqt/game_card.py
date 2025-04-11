@@ -11,6 +11,7 @@ from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.config_utils import read_theme_from_config
 from portprotonqt.custom_wigets import ClickableLabel
 import os
+import subprocess
 
 class GameCard(QFrame):
     borderWidthChanged = Signal()
@@ -369,9 +370,20 @@ class GameCard(QFrame):
         """Show context menu on right-click."""
         menu = QMenu(self)
 
+        # Check if .desktop file exists in Desktop folder
+        if self.steam_game != "true":
+            desktop_dir = subprocess.check_output(['xdg-user-dir', 'DESKTOP']).decode('utf-8').strip()
+            desktop_path = os.path.join(desktop_dir, f"{self.name}.desktop")
+            if os.path.exists(desktop_path):
+                remove_action = menu.addAction(_("Remove from Desktop"))
+                remove_action.triggered.connect(self.remove_from_desktop)
+            else:
+                add_action = menu.addAction(_("Add to Desktop"))
+                add_action.triggered.connect(self.add_to_desktop)
+
         # Add "Delete" action (not for Steam games)
         if self.steam_game != "true":
-            delete_action = menu.addAction(_("Delete"))
+            delete_action = menu.addAction(_("Delete from PortProton"))
             delete_action.triggered.connect(self.delete_game)
 
         # Check if .desktop file exists in ~/.local/share/applications
@@ -399,3 +411,11 @@ class GameCard(QFrame):
     def remove_from_menu(self):
         """Call parent method to remove game from menu."""
         self.window().remove_from_menu(self.name)
+
+    def add_to_desktop(self):
+        """Emit signal or call parent method to add game to desktop."""
+        self.window().add_to_desktop(self.name, self.exec_line)
+
+    def remove_from_desktop(self):
+        """Call parent method to remove game from desktop."""
+        self.window().remove_from_desktop(self.name)
