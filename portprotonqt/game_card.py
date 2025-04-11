@@ -1,6 +1,6 @@
 from PySide6.QtGui import QPainter, QPen, QColor, QConicalGradient, QBrush, QDesktopServices
 from PySide6.QtCore import QEasingCurve, Signal, Property, Qt, QPropertyAnimation, QByteArray, QUrl
-from PySide6.QtWidgets import QFrame, QGraphicsDropShadowEffect, QVBoxLayout, QWidget, QStackedLayout, QLabel
+from PySide6.QtWidgets import QFrame, QGraphicsDropShadowEffect, QVBoxLayout, QWidget, QStackedLayout, QLabel, QMenu
 from collections.abc import Callable
 from typing import cast
 import portprotonqt.themes.standart.styles as default_styles
@@ -10,6 +10,7 @@ from portprotonqt.config_utils import read_favorites, save_favorites
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.config_utils import read_theme_from_config
 from portprotonqt.custom_wigets import ClickableLabel
+import os
 
 class GameCard(QFrame):
     borderWidthChanged = Signal()
@@ -32,6 +33,8 @@ class GameCard(QFrame):
         self.playtime_seconds = playtime_seconds
 
         self.select_callback = select_callback
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.show_context_menu)
         self.theme_manager = ThemeManager()
         self.theme = theme if theme is not None else default_styles
 
@@ -331,17 +334,20 @@ class GameCard(QFrame):
         super().leaveEvent(event)
 
     def mousePressEvent(self, event):
-        self.select_callback(
-            self.name,
-            self.description,
-            self.cover_path,
-            self.appid,
-            self.controller_support,
-            self.exec_line,
-            self.last_launch,
-            self.formatted_playtime,
-            self.protondb_tier
-        )
+            if event.button() == Qt.MouseButton.LeftButton:
+                self.select_callback(
+                    self.name,
+                    self.description,
+                    self.cover_path,
+                    self.appid,
+                    self.controller_support,
+                    self.exec_line,
+                    self.last_launch,
+                    self.formatted_playtime,
+                    self.protondb_tier,
+                    self.steam_game
+                )
+            super().mousePressEvent(event)
 
     def keyPressEvent(self, event):
         if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
@@ -358,3 +364,38 @@ class GameCard(QFrame):
             )
         else:
             super().keyPressEvent(event)
+
+    def show_context_menu(self, pos):
+        """Show context menu on right-click."""
+        menu = QMenu(self)
+
+        # Add "Delete" action (not for Steam games)
+        if self.steam_game != "true":
+            delete_action = menu.addAction(_("Delete"))
+            delete_action.triggered.connect(self.delete_game)
+
+        # Check if .desktop file exists in ~/.local/share/applications
+        if self.steam_game != "true":
+            applications_dir = os.path.join(os.path.expanduser("~"), ".local", "share", "applications")
+            desktop_path = os.path.join(applications_dir, f"{self.name}.desktop")
+            if os.path.exists(desktop_path):
+                remove_action = menu.addAction(_("Remove from Menu"))
+                remove_action.triggered.connect(self.remove_from_menu)
+            else:
+                add_action = menu.addAction(_("Add to Menu"))
+                add_action.triggered.connect(self.add_to_menu)
+
+        # Show menu at cursor position
+        menu.exec(self.mapToGlobal(pos))
+
+    def delete_game(self):
+        """Emit signal or call parent method to delete the game."""
+        self.window().delete_game(self.name, self.exec_line)
+
+    def add_to_menu(self):
+        """Emit signal or call parent method to add game to menu."""
+        self.window().add_to_menu(self.name, self.exec_line)
+
+    def remove_from_menu(self):
+        """Call parent method to remove game from menu."""
+        self.window().remove_from_menu(self.name)

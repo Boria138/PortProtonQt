@@ -138,8 +138,9 @@ class AddGameDialog(QDialog):
 Name={name}
 Comment={comment}
 Exec={exec_str}
+Terminal=false
 Type=Application
-Categories=Game
+Categories=Game;
 StartupNotify=true
 Path={working_dir}
 Icon={icon_path}

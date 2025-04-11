@@ -1213,6 +1213,100 @@ class MainWindow(QMainWindow):
             self.checkProcessTimer.timeout.connect(self.checkTargetExe)
             self.checkProcessTimer.start(500)
 
+    def delete_game(self, game_name, exec_line):
+            """Delete the .desktop file and associated custom data for the game."""
+            reply = QMessageBox.question(
+                self,
+                _("Confirm Deletion"),
+                _("Are you sure you want to delete '{0}'? This will remove the .desktop file and custom data.").format(game_name),
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No
+            )
+            if reply != QMessageBox.StandardButton.Yes:
+                return
+
+            # Initialize desktop_path and exe_name
+            desktop_path = None
+            exe_name = None
+
+            # Check if portproton_location is valid
+            if self.portproton_location is None:
+                QMessageBox.warning(self, _("Error"), _("PortProton location is not set."))
+                return
+
+            # Parse exec_line
+            entry_exec_split = shlex.split(exec_line)
+            desktop_path = os.path.join(self.portproton_location, f"{game_name}.desktop")
+            exe_name = os.path.splitext(os.path.basename(entry_exec_split[3]))[0]
+
+            # Remove .desktop file
+            if desktop_path and os.path.exists(desktop_path):
+                try:
+                    os.remove(desktop_path)
+                except OSError as e:
+                    QMessageBox.warning(self, _("Error"), _("Failed to delete .desktop file: {0}").format(str(e)))
+                    return
+            else:
+                QMessageBox.warning(self, _("Error"), _("Could not locate .desktop file for '{0}'").format(game_name))
+                return
+
+            # Remove custom data if exe_name is determined
+            if exe_name:
+                xdg_data_home = os.getenv("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share"))
+                custom_folder = os.path.join(xdg_data_home, "PortProtonQT", "custom_data", exe_name)
+                if os.path.exists(custom_folder):
+                    try:
+                        shutil.rmtree(custom_folder)
+                    except OSError as e:
+                        QMessageBox.warning(self, _("Error"), _("Failed to delete custom data: {0}").format(str(e)))
+
+            # Update games list and grid
+            self.games = self.loadGames()
+            self.updateGameGrid()
+            self.statusBar().showMessage(_("Game '{0}' deleted successfully").format(game_name), 3000)
+
+    def add_to_menu(self, game_name, exec_line):
+            """Copy the .desktop file to ~/.local/share/applications."""
+            if self.portproton_location is None:
+                QMessageBox.warning(self, _("Error"), _("PortProton location is not set."))
+                return
+
+            # Parse exec_line
+            shlex.split(exec_line)
+            desktop_path = os.path.join(self.portproton_location, f"{game_name}.desktop")
+
+            if not desktop_path or not os.path.exists(desktop_path):
+                QMessageBox.warning(self, _("Error"), _("Could not locate .desktop file for '{0}'").format(game_name))
+                return
+
+            # Destination path
+            applications_dir = os.path.join(os.path.expanduser("~"), ".local", "share", "applications")
+            os.makedirs(applications_dir, exist_ok=True)
+            dest_path = os.path.join(applications_dir, f"{game_name}.desktop")
+
+            # Copy .desktop file
+            try:
+                shutil.copyfile(desktop_path, dest_path)
+                os.chmod(dest_path, 0o755)  # Ensure executable permissions
+                self.statusBar().showMessage(_("Game '{0}' added to menu").format(game_name), 3000)
+            except OSError as e:
+                QMessageBox.warning(self, _("Error"), _("Failed to add game to menu: {0}").format(str(e)))
+
+    def remove_from_menu(self, game_name):
+        """Remove the .desktop file from ~/.local/share/applications."""
+        applications_dir = os.path.join(os.path.expanduser("~"), ".local", "share", "applications")
+        desktop_path = os.path.join(applications_dir, f"{game_name}.desktop")
+
+        if not os.path.exists(desktop_path):
+            QMessageBox.warning(self, _("Error"), _("Game '{0}' is not in the menu").format(game_name))
+            return
+
+        try:
+            os.remove(desktop_path)
+            self.statusBar().showMessage(_("Game '{0}' removed from menu").format(game_name), 3000)
+        except OSError as e:
+            QMessageBox.warning(self, _("Error"), _("Failed to remove game from menu: {0}").format(str(e)))
+
     def closeEvent(self, event):
         for proc in self.game_processes:
             try:

@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQT 0.1.0\n"
 "Report-Msgid-Bugs-To: olegpozitiv0102@gmail.com\n"
-"POT-Creation-Date: 2025-04-11 11:55+0500\n"
-"PO-Revision-Date: 2025-04-11 11:55+0500\n"
+"POT-Creation-Date: 2025-04-11 14:46+0500\n"
+"PO-Revision-Date: 2025-04-11 14:46+0500\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
@@ -65,6 +65,15 @@ msgstr "Сломано"
 
 msgid "Pending"
 msgstr "В ожидании"
+
+msgid "Delete"
+msgstr "Удалить"
+
+msgid "Remove from Menu"
+msgstr "Удалить из меню"
+
+msgid "Add to Menu"
+msgstr "Добавить в меню"
 
 msgid "Library"
 msgstr "Библиотека"
@@ -219,6 +228,53 @@ msgstr "Невозможно запустить игру пока запущен
 
 msgid "Launching"
 msgstr "Идёт запуск"
+
+msgid "Confirm Deletion"
+msgstr "Подтвердите удаление"
+
+#, python-brace-format
+msgid ""
+"Are you sure you want to delete '{0}'? This will remove the .desktop file "
+"and custom data."
+msgstr ""
+"Вы уверены, что хотите удалить '{0}'? Это приведет к удалению файла .desktop"
+" и настраиваемых данных."
+
+#, python-brace-format
+msgid "Failed to delete .desktop file: {0}"
+msgstr "Не удалось удалить файл .desktop: {0}"
+
+#, python-brace-format
+msgid "Could not locate .desktop file for '{0}'"
+msgstr "Не удалось найти файл .desktop для '{0}'"
+
+#, python-brace-format
+msgid "Failed to delete custom data: {0}"
+msgstr "Не удалось удалить настраиваемые данные: {0}"
+
+#, python-brace-format
+msgid "Game '{0}' deleted successfully"
+msgstr "Игра '{0}' успешно удалена"
+
+#, python-brace-format
+msgid "Game '{0}' added to menu"
+msgstr "Игра '{0}' добавлена в меню"
+
+#, python-brace-format
+msgid "Failed to add game to menu: {0}"
+msgstr "Не удалось добавить игру в меню: {0}"
+
+#, python-brace-format
+msgid "Game '{0}' is not in the menu"
+msgstr "Игра '{0}' отсутствует в меню"
+
+#, python-brace-format
+msgid "Game '{0}' removed from menu"
+msgstr "Игра '{0}' удалена из меню"
+
+#, python-brace-format
+msgid "Failed to remove game from menu: {0}"
+msgstr "Не удалось удалить игру из меню: {0}"
 
 msgid "just now"
 msgstr "только что"

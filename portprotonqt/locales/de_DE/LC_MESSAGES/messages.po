@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQT 0.1.0\n"
 "Report-Msgid-Bugs-To: olegpozitiv0102@gmail.com\n"
-"POT-Creation-Date: 2025-04-11 11:55+0500\n"
+"POT-Creation-Date: 2025-04-11 14:46+0500\n"
 "PO-Revision-Date: 2025-03-23 01:52+0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: de_DE\n"
@@ -63,6 +63,15 @@ msgid "Borked"
 msgstr ""
 
 msgid "Pending"
+msgstr ""
+
+msgid "Delete"
+msgstr ""
+
+msgid "Remove from Menu"
+msgstr ""
+
+msgid "Add to Menu"
 msgstr ""
 
 msgid "Library"
@@ -217,6 +226,51 @@ msgid "Cannot launch game while another game is running"
 msgstr ""
 
 msgid "Launching"
+msgstr ""
+
+msgid "Confirm Deletion"
+msgstr ""
+
+#, python-brace-format
+msgid ""
+"Are you sure you want to delete '{0}'? This will remove the .desktop file "
+"and custom data."
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to delete .desktop file: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Could not locate .desktop file for '{0}'"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to delete custom data: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Game '{0}' deleted successfully"
+msgstr ""
+
+#, python-brace-format
+msgid "Game '{0}' added to menu"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to add game to menu: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Game '{0}' is not in the menu"
+msgstr ""
+
+#, python-brace-format
+msgid "Game '{0}' removed from menu"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to remove game from menu: {0}"
 msgstr ""
 
 msgid "just now"
