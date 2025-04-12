@@ -88,7 +88,7 @@ MAIN_WINDOW_STYLE = """
 SEARCH_EDIT_STYLE = """
     QLineEdit {
         background-color: rgba(30, 30, 30, 0.50);
-        border: 0px solid rgba(255, 255, 255, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.5);
         border-radius: 10px;
         padding: 7px 14px;
         font-family: 'Play';
@@ -96,7 +96,7 @@ SEARCH_EDIT_STYLE = """
         color: #ffffff;
     }
     QLineEdit:focus {
-        border: 0px solid #007AFF;
+        border: 1px solid #09bec8;
     }
 """
 
@@ -156,7 +156,29 @@ SCROLL_AREA_STYLE = """
         height: 3px;
         background: none;
     }
+"""
 
+# SLIDER_SIZE_STYLE
+SLIDER_SIZE_STYLE= """
+    QWidget {
+        background: transparent;
+        height: 25px;
+    }
+    QSlider::groove:horizontal {
+        border: 0px solid;
+        border-radius: 3px;
+        height: 6px; /* the groove expands to the size of the slider by default. by giving it a height, it has a fixed size */
+        background: rgba(20, 20, 20, 0.30);
+        margin: 6px 0;
+    }
+    QSlider::handle:horizontal {
+        background: #bebebe;
+        border: 0px solid;
+        width: 18px;
+        height: 18px;
+        margin: -6px 0; /* handle is placed by default on the contents rect of the groove. Expand outside the groove */
+        border-radius: 9px;
+    }
 """
 
 # СТИЛЬ ОБЛАСТИ ДЛЯ КАРТОЧЕК ИГР (QWidget)
@@ -175,7 +197,7 @@ INSTALLED_TAB_TITLE_STYLE = "font-family: 'Play'; font-size: 24px; color: #fffff
 ACTION_BUTTON_STYLE = """
     QPushButton {
         background: #3f424d;
-        border: 0px solid rgba(255, 255, 255, 0.20);
+        border: 1px solid rgba(255, 255, 255, 0.20);
         border-radius: 10px;
         color: #ffffff;
         font-size: 16px;
@@ -244,8 +266,8 @@ DETAIL_PAGE_NO_COVER_STYLE = "background: rgba(20,20,20,0.95); border-radius: 15
 ADDGAME_BACK_BUTTON_STYLE = """
     QPushButton {
         background: rgba(20, 20, 20, 0.40);
-        border: 0px solid rgba(255, 255, 255, 0.90);
-        border-radius: 15px;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        border-radius: 10px;
         color: #ffffff;
         font-size: 16px;
         font-family: 'Play';
@@ -298,8 +320,8 @@ DETAIL_PAGE_DESC_STYLE = "font-family: 'Play'; font-size: 16px; color: #ffffff; 
 PLAY_BUTTON_STYLE = """
     QPushButton {
         background: rgba(20, 20, 20, 0.40);
-        border: 0px solid rgba(255, 255, 255, 0.20);
-        border-radius: 15px;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        border-radius: 10px;
         font-size: 18px;
         color: #ffffff;
         font-weight: bold;
@@ -408,28 +430,6 @@ STEAM_BADGE_STYLE= """
     border-radius: 5px;
     font-family: 'Play';
     font-weight: bold;
-"""
-
-# SLIDER_SIZE_STYLE
-SLIDER_SIZE_STYLE= """
-    QWidget {
-        background: transparent;
-    }
-    QSlider::groove:horizontal {
-        border: 0px solid;
-        border-radius: 3px;
-        height: 6px; /* the groove expands to the size of the slider by default. by giving it a height, it has a fixed size */
-        background: rgba(20, 20, 20, 0.30);
-        margin: 6px 0;
-    }
-    QSlider::handle:horizontal {
-        background: #bebebe;
-        border: 0px solid;
-        width: 18px;
-        height: 18px;
-        margin: -6px 0; /* handle is placed by default on the contents rect of the groove. Expand outside the groove */
-        border-radius: 9px;
-    }
 """
 
 # Favorite Star
