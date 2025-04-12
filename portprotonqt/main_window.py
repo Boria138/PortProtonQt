@@ -177,6 +177,7 @@ class MainWindow(QMainWindow):
             action_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
 
         # Вкладка "Библиотека"
+        self.gamesLibraryWidget.setStyleSheet(self.theme.LIBRARY_WIDGET_STYLE)
         self.GameLibraryTitle.setStyleSheet(self.theme.INSTALLED_TAB_TITLE_STYLE)
         self.searchEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE)
 
