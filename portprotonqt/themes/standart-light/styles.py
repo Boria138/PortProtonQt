@@ -44,7 +44,6 @@ NAV_WIDGET_STYLE = """
     QWidget {
         background: #eff0f1;
         border: 0px solid;
-        border-radius: 0px;
     }
 """
 
@@ -559,16 +558,5 @@ SETTINGS_COMBO_STYLE = f"""
     }}
     QListView::item:selected {{
         background: #c7c7c7;
-    }}
-"""
-
-# ФУНКЦИЯ ДЛЯ ДИНАМИЧЕСКОГО ГРАДИЕНТА (ДЕТАЛИ ИГР)
-# Функции из этой темы срабатывает всегда вне зависимости от выбранной темы, функции из других тем работают только в этих темах
-def detail_page_style(stops):
-    return f"""
-    QWidget {{
-        background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                                    {stops});
-                                    border-radius: 15px;
     }}
 """
