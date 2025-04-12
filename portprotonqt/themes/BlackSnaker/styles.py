@@ -81,7 +81,7 @@ NAV_BUTTON_STYLE = """
 # ГЛОБАЛЬНЫЙ СТИЛЬ ДЛЯ ОКНА (ФОН) И QLabel
 MAIN_WINDOW_STYLE = """
     QMainWindow {
-        background: #ffffff;
+        background: none;
     }
     QLabel {
         color: #333333;
@@ -116,7 +116,7 @@ SCROLL_AREA_STYLE = """
         background: rgba(20, 20, 20, 0.30);
     }
     QScrollBar::handle:vertical {
-        background: #bebebe;
+        background: rgba(255, 255, 255, 0.7);
         border: 0px solid;
         border-radius: 5px;
     }
@@ -134,7 +134,6 @@ SCROLL_AREA_STYLE = """
         height: 3px;
         background: none;
     }
-
     QScrollBar:horizontal {
         height: 10px;
         border: 0px solid;
@@ -160,7 +159,29 @@ SCROLL_AREA_STYLE = """
         height: 3px;
         background: none;
     }
+"""
 
+# SLIDER_SIZE_STYLE
+SLIDER_SIZE_STYLE= """
+    QWidget {
+        background: transparent;
+        height: 25px;
+    }
+    QSlider::groove:horizontal {
+        border: 0px solid;
+        border-radius: 3px;
+        height: 6px; /* the groove expands to the size of the slider by default. by giving it a height, it has a fixed size */
+        background: rgba(20, 20, 20, 0.30);
+        margin: 6px 0;
+    }
+    QSlider::handle:horizontal {
+        background: #bebebe;
+        border: 0px solid;
+        width: 18px;
+        height: 18px;
+        margin: -6px 0; /* handle is placed by default on the contents rect of the groove. Expand outside the groove */
+        border-radius: 9px;
+    }
 """
 
 # СТИЛЬ ОБЛАСТИ ДЛЯ КАРТОЧЕК ИГР (QWidget)
@@ -417,28 +438,6 @@ STEAM_BADGE_STYLE= """
     font-weight: bold;
 """
 
-# SLIDER_SIZE_STYLE
-SLIDER_SIZE_STYLE= """
-    QWidget {
-        background: transparent;
-    }
-    QSlider::groove:horizontal {
-        border: 0px solid;
-        border-radius: 3px;
-        height: 6px; /* the groove expands to the size of the slider by default. by giving it a height, it has a fixed size */
-        background: rgba(20, 20, 20, 0.30);
-        margin: 6px 0;
-    }
-    QSlider::handle:horizontal {
-        background: #bebebe;
-        border: 0px solid;
-        width: 18px;
-        height: 18px;
-        margin: -6px 0; /* handle is placed by default on the contents rect of the groove. Expand outside the groove */
-        border-radius: 9px;
-    }
-"""
-
 # Favorite Star
 FAVORITE_LABEL_STYLE = "color: gold; font-size: 32px; background: transparent; border: none;"
 
@@ -566,16 +565,5 @@ SETTINGS_COMBO_STYLE = f"""
     }}
     QListView::item:selected {{
         background: rgba(0,122,255,0.25);
-    }}
-"""
-
-# ФУНКЦИЯ ДЛЯ ДИНАМИЧЕСКОГО ГРАДИЕНТА (ДЕТАЛИ ИГР)
-# Функции из этой темы срабатывает всегда вне зависимости от выбранной темы, функции из других тем работают только в этих темах
-def detail_page_style(stops):
-    return f"""
-    QWidget {{
-        background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                                    {stops});
-                                    border-radius: 15px;
     }}
 """
