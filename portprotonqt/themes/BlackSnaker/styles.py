@@ -100,7 +100,7 @@ SEARCH_EDIT_STYLE = """
         color: #ffffff;
     }
     QLineEdit:focus {
-        border: 0px solid #007AFF;
+        border: 1px solid rgba(0,122,255,0.25);
     }
 """
 
@@ -486,7 +486,7 @@ PROXY_INPUT_STYLE = """
         font-size: 16px;
     }
     QLineEdit:focus {
-        border: 1px solid rgba(255, 255, 255, 0.5);
+        border: 1px solid rgba(0,122,255,0.25);
     }
     QMenu {
         border: 1px solid rgba(255, 255, 255, 0.5);
