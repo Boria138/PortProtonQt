@@ -36,8 +36,6 @@ TITLE_LABEL_STYLE = """
         font-size: 38px;
         margin: 0 0 0 0;
         color: #007AFF;
-        border-bottom: 0px solid;
-        background: none;
     }
 """
 

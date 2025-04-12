@@ -44,7 +44,6 @@ NAV_WIDGET_STYLE = """
     QWidget {
         background: none;
         border: 0px solid;
-        border-radius: 0px;
     }
 """
 
