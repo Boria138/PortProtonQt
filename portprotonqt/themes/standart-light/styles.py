@@ -51,10 +51,10 @@ NAV_WIDGET_STYLE = """
 NAV_BUTTON_STYLE = """
     NavLabel {
         background: rgba(0,122,255,0);
-        padding: 12px 24px;
+        padding: 12px 3px;
         margin: 10px 0 10px 10px;
         color: #7f7f7f;
-        font-size: 18px;
+        font-size: 16px;
         font-family: 'Play';
         text-transform: uppercase;
         border: none;
