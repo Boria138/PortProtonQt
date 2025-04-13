@@ -53,7 +53,7 @@ NAV_BUTTON_STYLE = """
         background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
             stop:0 rgba(242, 242, 242, 0.5),
             stop:1 rgba(232, 232, 232, 0.5));
-        padding: 10px 24px;
+        padding: 10px 10px;
         margin: 10px 0 10px 10px;
         color: #333333;
         font-size: 16px;
@@ -367,7 +367,7 @@ GAME_CARD_WINDOW_STYLE = """
         background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
             stop:0 rgba(255, 255, 255, 0.3),
             stop:1 rgba(249, 249, 249, 0.3));
-        border: 1px solid rgba(255, 255, 255, 0.4);
+        border: 0px solid rgba(255, 255, 255, 0.4);
     }
 """
 
