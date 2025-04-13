@@ -42,34 +42,37 @@ TITLE_LABEL_STYLE = """
 # СТИЛЬ ОБЛАСТИ НАВИГАЦИИ (КНОПКИ ВКЛАДОК)
 NAV_WIDGET_STYLE = """
     QWidget {
-        background: #eff0f1;
-        border: 0px solid;
+        background: #ffffff;
+        border-bottom: 0px solid rgba(0, 0, 0, 0.10);
     }
 """
 
 # СТИЛЬ КНОПОК ВКЛАДОК НАВИГАЦИИ
 NAV_BUTTON_STYLE = """
     NavLabel {
-        background: rgba(0,122,255,0);
-        padding: 12px 24px;
+        background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+            stop:0 rgba(242, 242, 242, 0.5),
+            stop:1 rgba(232, 232, 232, 0.5));
+        padding: 10px 24px;
         margin: 10px 0 10px 10px;
-        color: #7f7f7f;
-        font-size: 18px;
-        font-family: 'Play';
+        color: #333333;
+        font-size: 16px;
+        font-family: 'Poppins';
         text-transform: uppercase;
-        border: none;
+        border: 1px solid rgba(179, 179, 179, 0.4);
         border-radius: 15px;
     }
     NavLabel[checked = true] {
-        background: rgba(0,122,255,0);
-        color: #09bec8;
-        font-weight: normal;
-        text-decoration: underline;
+        background: rgba(0,122,255,0.25);
+        color: #002244;
+        font-weight: bold;
         border-radius: 15px;
     }
     NavLabel:hover {
-        background: none;
-        color: #09bec8;
+        background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+            stop:0 rgba(0,122,255,0.12),
+            stop:1 rgba(0,122,255,0.08));
+        color: #002244;
     }
 """
 
@@ -79,7 +82,7 @@ MAIN_WINDOW_STYLE = """
         background: none;
     }
     QLabel {
-        color: #ffffff;
+        color: #333333;
     }
 """
 
@@ -90,12 +93,12 @@ SEARCH_EDIT_STYLE = """
         border: 1px solid rgba(255, 255, 255, 0.5);
         border-radius: 10px;
         padding: 7px 14px;
-        font-family: 'Play';
+        font-family: 'Poppins';
         font-size: 16px;
         color: #ffffff;
     }
     QLineEdit:focus {
-        border: 1px solid #09bec8;
+        border: 1px solid rgba(0,122,255,0.25);
     }
 """
 
@@ -111,7 +114,7 @@ SCROLL_AREA_STYLE = """
         background: rgba(20, 20, 20, 0.30);
     }
     QScrollBar::handle:vertical {
-        background: #bebebe;
+        background: rgba(255, 255, 255, 0.7);
         border: 0px solid;
         border-radius: 5px;
     }
@@ -129,7 +132,6 @@ SCROLL_AREA_STYLE = """
         height: 3px;
         background: none;
     }
-
     QScrollBar:horizontal {
         height: 10px;
         border: 0px solid;
@@ -190,32 +192,34 @@ LIST_WIDGET_STYLE = """
 """
 
 # ЗАГОЛОВОК "БИБЛИОТЕКА" НА ВКЛАДКЕ
-INSTALLED_TAB_TITLE_STYLE = "font-family: 'Play'; font-size: 24px; color: #ffffff;"
+INSTALLED_TAB_TITLE_STYLE = "font-family: 'Poppins'; font-size: 24px; color: #232627;"
 
 # СТИЛЬ КНОПОК "СОХРАНЕНИЯ, ПРИМЕНЕНИЯ И Т.Д."
 ACTION_BUTTON_STYLE = """
     QPushButton {
-        background: #c7c7c7;
-        border: 1px solid #c7c7c7;
+        background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+            stop:0 rgba(242, 242, 242, 0.5),
+            stop:1 rgba(232, 232, 232, 0.5));
+        border: 1px solid rgba(179, 179, 179, 0.4);
         border-radius: 10px;
         color: #232627;
         font-size: 16px;
-        font-family: 'Play';
+        font-family: 'Poppins';
         padding: 8px 16px;
     }
     QPushButton:hover {
-        background: #eff0f1;
+        background: rgba(0,122,255,0.25);
     }
     QPushButton:pressed {
-        background: #eff0f1;
+        background: rgba(0,122,255,0.25);
     }
 """
 
 # ТЕКСТОВЫЕ СТИЛИ: ЗАГОЛОВКИ И ОСНОВНОЙ КОНТЕНТ
-TAB_TITLE_STYLE = "font-family: 'Play'; font-size: 24px; color: #232627; background-color: none;"
+TAB_TITLE_STYLE = "font-family: 'Poppins'; font-size: 24px; color: #232627; background-color: none;"
 CONTENT_STYLE = """
     QLabel {
-        font-family: 'Play';
+        font-family: 'Poppins';
         font-size: 16px;
         color: #232627;
         background-color: none;
@@ -228,9 +232,7 @@ CONTENT_STYLE = """
 # LIBRARY_WIDGET_STYLE
 LIBRARY_WIDGET_STYLE= """
     QWidget {
-        background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-            stop:0 rgba(112,20,132,1),
-            stop:1 rgba(50,134,182,1));
+        background: qlineargradient(spread:pad, x1:0.162, y1:0.0313409, x2:1, y2:1, stop:0 rgba(215, 235, 255, 255), stop:1 rgba(253, 252, 255, 255));
         border-radius: 0px;
     }
 """
@@ -245,7 +247,7 @@ CONTAINER_STYLE= """
 # OTHER_PAGES_WIDGET_STYLE
 OTHER_PAGES_WIDGET_STYLE= """
     QWidget {
-        background: #d9d9d9;
+        background: qlineargradient(spread:pad, x1:0.162, y1:0.0313409, x2:1, y2:1, stop:0 rgba(215, 235, 255, 255), stop:1 rgba(253, 252, 255, 255));
         border-radius: 0px;
     }
 """
@@ -253,7 +255,7 @@ OTHER_PAGES_WIDGET_STYLE= """
 # CAROUSEL_WIDGET_STYLE
 CAROUSEL_WIDGET_STYLE= """
     QWidget {
-        background: #c7c7c7;
+        background: qlineargradient(spread:pad, x1:0.099, y1:0.119, x2:0.917, y2:0.936149, stop:0 rgba(215, 235, 255, 255), stop:1 rgba(217, 193, 255, 255));
         border-radius: 0px;
     }
 """
@@ -269,14 +271,14 @@ ADDGAME_BACK_BUTTON_STYLE = """
         border-radius: 10px;
         color: #ffffff;
         font-size: 16px;
-        font-family: 'Play';
-        padding: 8px 16px;
+        font-family: 'Poppins';
+        padding: 4px 16px;
     }
     QPushButton:hover {
-        background: #09bec8;
+        background: rgba(0,122,255,0.25);
     }
     QPushButton:pressed {
-        background: #09bec8;
+        background: rgba(0,122,255,0.25);
     }
 """
 
@@ -307,13 +309,13 @@ COVER_LABEL_STYLE = "border-radius: 100px;"
 DETAILS_WIDGET_STYLE = "background: rgba(20,20,20,0.40); border-radius: 15px; padding: 10px;"
 
 # НАЗВАНИЕ (ЗАГОЛОВОК) НА ДЕТАЛЬНОЙ СТРАНИЦЕ
-DETAIL_PAGE_TITLE_STYLE = "font-family: 'Play'; font-size: 32px; color: #007AFF;"
+DETAIL_PAGE_TITLE_STYLE = "font-family: 'Orbitron'; font-size: 32px; color: #007AFF;"
 
 # ЛИНИЯ-РАЗДЕЛИТЕЛЬ
 DETAIL_PAGE_LINE_STYLE = "color: rgba(255,255,255,0.12); margin: 10px 0;"
 
 # ТЕКСТ ОПИСАНИЯ
-DETAIL_PAGE_DESC_STYLE = "font-family: 'Play'; font-size: 16px; color: #ffffff; line-height: 1.5;"
+DETAIL_PAGE_DESC_STYLE = "font-family: 'Poppins'; font-size: 16px; color: #ffffff; line-height: 1.5;"
 
 # СТИЛЬ КНОПКИ "ИГРАТЬ"
 PLAY_BUTTON_STYLE = """
@@ -324,16 +326,16 @@ PLAY_BUTTON_STYLE = """
         font-size: 18px;
         color: #ffffff;
         font-weight: bold;
-        font-family: 'Play';
+        font-family: 'Orbitron';
         padding: 8px 16px;
         min-width: 120px;
         min-height: 40px;
     }
     QPushButton:hover {
-        background: #09bec8;
+        background: rgba(0,122,255,0.25);
     }
     QPushButton:pressed {
-        background: #09bec8;
+        background: rgba(0,122,255,0.25);
     }
 """
 
@@ -362,33 +364,36 @@ DIALOG_BROWSE_BUTTON_STYLE = """
 GAME_CARD_WINDOW_STYLE = """
     QFrame {
         border-radius: 20px;
-        background: rgba(20, 20, 20, 0.40);
-        border: 0px solid rgba(255, 255, 255, 0.20);
+        background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+            stop:0 rgba(255, 255, 255, 0.3),
+            stop:1 rgba(249, 249, 249, 0.3));
+        border: 1px solid rgba(255, 255, 255, 0.4);
     }
 """
 
 # НАЗВАНИЕ В КАРТОЧКЕ (QLabel)
 GAME_CARD_NAME_LABEL_STYLE = """
     QLabel {
-        color: #ffffff;
-        font-family: 'Play';
+        color: #333333;
+        font-family: 'Orbitron';
         font-size: 16px;
         font-weight: bold;
-        background-color: rgba(20, 20, 20, 0);
-        border-bottom-left-radius: 20px;
-        border-bottom-right-radius: 20px;
-        padding: 14px, 7px, 3px, 7px;
+        background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+            stop:0 rgba(242, 242, 242, 0.5),
+            stop:1 rgba(232, 232, 232, 0.5));
+        border-radius: 20px;
+        padding: 7px;
         qproperty-wordWrap: true;
     }
 """
 
 # ДОПОЛНИТЕЛЬНЫЕ СТИЛИ ИНФОРМАЦИИ НА СТРАНИЦЕ ИГР
-LAST_LAUNCH_TITLE_STYLE = "font-family: 'Play'; font-size: 11px; color: #bbbbbb; text-transform: uppercase; letter-spacing: 0.75px; margin-bottom: 2px;"
-LAST_LAUNCH_VALUE_STYLE = "font-family: 'Play'; font-size: 13px; color: #ffffff; font-weight: 600; letter-spacing: 0.75px;"
-PLAY_TIME_TITLE_STYLE = "font-family: 'Play'; font-size: 11px; color: #bbbbbb; text-transform: uppercase; letter-spacing: 0.75px; margin-bottom: 2px;"
-PLAY_TIME_VALUE_STYLE = "font-family: 'Play'; font-size: 13px; color: #ffffff; font-weight: 600; letter-spacing: 0.75px;"
+LAST_LAUNCH_TITLE_STYLE = "font-family: 'Poppins'; font-size: 11px; color: #bbbbbb; text-transform: uppercase; letter-spacing: 0.75px; margin-bottom: 2px;"
+LAST_LAUNCH_VALUE_STYLE = "font-family: 'Poppins'; font-size: 13px; color: #ffffff; font-weight: 600; letter-spacing: 0.75px;"
+PLAY_TIME_TITLE_STYLE = "font-family: 'Poppins'; font-size: 11px; color: #bbbbbb; text-transform: uppercase; letter-spacing: 0.75px; margin-bottom: 2px;"
+PLAY_TIME_VALUE_STYLE = "font-family: 'Poppins'; font-size: 13px; color: #ffffff; font-weight: 600; letter-spacing: 0.75px;"
 GAMEPAD_SUPPORT_VALUE_STYLE = """
-    font-family: 'Play'; font-size: 12px; color: #00ff00;
+    font-family: 'Poppins'; font-size: 12px; color: #00ff00;
     font-weight: bold; background: rgba(0, 0, 0, 0.3);
     border-radius: 5px; padding: 4px 8px;
 """
@@ -414,9 +419,9 @@ def get_protondb_badge_style(tier):
         qproperty-alignment: AlignCenter;
         background-color: {colors["background"]};
         color: {colors["color"]};
-        font-size: 16px;
+        font-size: 14px;
         border-radius: 5px;
-        font-family: 'Play';
+        font-family: 'Poppins';
         font-weight: bold;
     """
 
@@ -425,14 +430,14 @@ STEAM_BADGE_STYLE= """
     qproperty-alignment: AlignCenter;
     background: rgba(0, 0, 0, 0.5);
     color: white;
-    font-size: 16px;
+    font-size: 14px;
     border-radius: 5px;
-    font-family: 'Play';
+    font-family: 'Poppins';
     font-weight: bold;
 """
 
 # Favorite Star
-FAVORITE_LABEL_STYLE = "color: gold; font-size: 32px; background: transparent;"
+FAVORITE_LABEL_STYLE = "color: gold; font-size: 32px; background: transparent; border: none;"
 
 # СТИЛИ ДЛЯ QMessageBox (ОКНА СООБЩЕНИЙ)
 MESSAGE_BOX_STYLE = """
@@ -445,7 +450,7 @@ MESSAGE_BOX_STYLE = """
     }
     QMessageBox QLabel {
         color: #ffffff;
-        font-family: 'Play';
+        font-family: 'Poppins';
         font-size: 16px;
     }
     QMessageBox QPushButton {
@@ -453,7 +458,7 @@ MESSAGE_BOX_STYLE = """
         border: 1px solid rgba(165, 165, 165, 0.7);
         border-radius: 8px;
         color: #ffffff;
-        font-family: 'Play';
+        font-family: 'Poppins';
         padding: 8px 20px;
         min-width: 80px;
     }
@@ -465,24 +470,24 @@ MESSAGE_BOX_STYLE = """
 
 # СТИЛИ ДЛЯ ВКЛАДКИ НАСТРОЕК PORTPROTON
 # PARAMS_TITLE_STYLE
-PARAMS_TITLE_STYLE = "color: #232627; font-family: 'Play'; font-size: 16px; padding: 10px; background: transparent;"
+PARAMS_TITLE_STYLE = "color: #232627; font-family: 'Poppins'; font-size: 16px; padding: 10px; background: transparent;"
 
 PROXY_INPUT_STYLE = """
     QLineEdit {
-        background: #eff0f1;
+        background: rgba(20, 20, 20, 0.40);
         border: 0px solid rgba(165, 165, 165, 0.7);
         border-radius: 10px;
         height: 34px;
         padding-left: 12px;
-        color: #232627;
-        font-family: 'Play';
+        color: #ffffff;
+        font-family: 'Poppins';
         font-size: 16px;
     }
     QLineEdit:focus {
-        border: 1px solid rgba(165, 165, 165, 0.7);
+        border: 1px solid rgba(0,122,255,0.25);
     }
     QMenu {
-        border: 1px solid rgba(165, 165, 165, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.5);
         padding: 5px 10px;
         background: #c7c7c7;
     }
@@ -491,26 +496,26 @@ PROXY_INPUT_STYLE = """
         border: 10px solid transparent; /* reserve space for selection border */
     }
     QMenu::item:selected {
-        background: rgba(165, 165, 165, 0.7);
+        background: 1px solid rgba(255, 255, 255, 0.5);
         border-radius: 10px;
     }
 """
 
 SETTINGS_COMBO_STYLE = f"""
     QComboBox {{
-        background: #c7c7c7;
-        border: 0px solid rgba(165, 165, 165, 0.7);
+        background: rgba(20, 20, 20, 0.40);
+        border: 1px solid rgba(255, 255, 255, 0.5);
         border-radius: 10px;
         height: 34px;
         padding-left: 12px;
-        color: #232627;
-        font-family: 'Play';
+        color: #ffffff;
+        font-family: 'Poppins';
         font-size: 16px;
         min-width: 120px;
         combobox-popup: 0;
     }}
     QComboBox:on {{
-        background: #dfdfdf;
+        background: rgba(20, 20, 20, 0.40);
         border: 1px solid rgba(165, 165, 165, 0.7);
         border-top-left-radius: 10px;
         border-top-right-radius: 10px;
@@ -523,7 +528,7 @@ SETTINGS_COMBO_STYLE = f"""
     QComboBox::drop-down {{
         subcontrol-origin: padding;
         subcontrol-position: center right;
-        border-left: 1px solid rgba(0, 0, 50, 0.1);
+        border-left: 1px solid rgba(255, 255, 255, 0.5);
         padding: 12px;
         height: 12px;
         width: 12px;
@@ -546,7 +551,7 @@ SETTINGS_COMBO_STYLE = f"""
         border-top-style: none;
     }}
     QListView {{
-        background: #e7e7e7;
+        background: #ffffff;
     }}
     QListView::item {{
         padding: 7px 7px 7px 12px;
@@ -554,9 +559,9 @@ SETTINGS_COMBO_STYLE = f"""
         color: #232627;
     }}
     QListView::item:hover {{
-        background: #c7c7c7;
+        background: rgba(0,122,255,0.25);
     }}
     QListView::item:selected {{
-        background: #c7c7c7;
+        background: rgba(0,122,255,0.25);
     }}
 """
