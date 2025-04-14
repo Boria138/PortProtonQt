@@ -18,6 +18,7 @@ classifiers = [
   "Development Status :: 2 - Pre-Alpha",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
@@ -25,7 +26,7 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Operating System :: Linux"
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 dependencies = [
   "babel>=2.17.0",
   "numpy>=2.2.4",
@@ -77,10 +78,13 @@ exclude = [
   "portprotonqt/themes",
   ".vscode",
 ]
+target-version = "py39"
 
 [tool.pyright]
 reportMissingImports = "none"
 reportMissingModuleSource = "none"
+pythonVersion = "3.9"
+pythonPlatform = "Linux"
 ignore = [
     "portprotonqt/gamepad_support.py", # I need gamepad for test
     ".eggs",
