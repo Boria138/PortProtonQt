@@ -26,6 +26,15 @@ classifiers = [
   "Operating System :: Linux"
 ]
 requires-python = ">=3.10"
+dependencies = [
+    "babel>=2.17.0",
+    "numpy>=2.2.4",
+    "orjson>=3.10.16",
+    "psutil>=7.0.0",
+    "pygame>=2.6.1",
+    "pyside6>=6.9.0",
+    "vdf>=3.4",
+]
 
 [project.scripts]
 portprotonqt = "portprotonqt.app:main"
