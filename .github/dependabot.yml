@@ -16,10 +16,3 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
-    # We no need major version auto update
-    groups:
-      uv-minor-patch-updates:
-        applies-to: version-updates
-        update-types:
-        - "minor"
-        - "patch"
