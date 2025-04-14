@@ -28,6 +28,7 @@ repos:
     rev: v1.1.399
     hooks:
       - id: pyright
+        additional_dependencies: ["pyright[nodejs]"]
 
   - repo: local
     hooks:

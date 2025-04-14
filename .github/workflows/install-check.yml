@@ -1,0 +1,29 @@
+name: install check
+
+on:
+  pull_request:
+    paths-ignore:
+      - "data/**"
+      - "*.md"
+      - "dev-scripts/**"
+  push:
+    branches: [main]
+    paths-ignore:
+      - "data/**"
+      - "*.md"
+      - "dev-scripts/**"
+
+jobs:
+  install-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install the project
+        run: uv sync --all-extras --dev
