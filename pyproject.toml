@@ -32,7 +32,7 @@ dependencies = [
     "orjson>=3.10.16",
     "psutil>=7.0.0",
     "pygame>=2.6.1",
-    "pyside6>=6.9.0",
+    "pyside6>=6.8.0",
     "vdf>=3.4",
 ]
 

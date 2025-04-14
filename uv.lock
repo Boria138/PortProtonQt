@@ -251,7 +251,7 @@ requires-dist = [
     { name = "orjson", specifier = ">=3.10.16" },
     { name = "psutil", specifier = ">=7.0.0" },
     { name = "pygame", specifier = ">=2.6.1" },
-    { name = "pyside6", specifier = ">=6.9.0" },
+    { name = "pyside6", specifier = ">=6.8.0" },
     { name = "vdf", specifier = ">=3.4" },
 ]
 

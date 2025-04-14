@@ -4,14 +4,22 @@
 # https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
 
 version: 2
+enable-beta-ecosystems: true
 updates:
   # GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
-  # Python
-  - package-ecosystem: "pip"
+  # UV
+  - package-ecosystem: "uv"
     directory: "/"
     schedule:
       interval: "monthly"
+    # We no need major version auto update
+    groups:
+      uv-minor-patch-updates:
+        applies-to: version-updates
+        update-types:
+        - "minor"
+        - "patch"
