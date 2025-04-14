@@ -18,7 +18,6 @@ classifiers = [
   "Development Status :: 2 - Pre-Alpha",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
@@ -26,16 +25,7 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Operating System :: Linux"
 ]
-requires-python = ">=3.9"
-dependencies = [
-  "babel>=2.17.0",
-  "numpy>=2.2.4",
-  "orjson>=3.10.15",
-  "psutil>=7.0.0",
-  "pygame>=2.6.1",
-  "pyside6>=6.8.2.1",
-  "vdf>=3.4",
-]
+requires-python = ">=3.10"
 
 [project.scripts]
 portprotonqt = "portprotonqt.app:main"
@@ -78,12 +68,12 @@ exclude = [
   "portprotonqt/themes",
   ".vscode",
 ]
-target-version = "py39"
+target-version = "py310"
 
 [tool.pyright]
 reportMissingImports = "none"
 reportMissingModuleSource = "none"
-pythonVersion = "3.9"
+pythonVersion = "3.10"
 pythonPlatform = "Linux"
 ignore = [
     "portprotonqt/gamepad_support.py", # I need gamepad for test
