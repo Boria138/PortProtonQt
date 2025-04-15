@@ -1,7 +1,9 @@
 import os
 import urllib.request
+import urllib.error
 import threading
 import time
+import socket
 from pathlib import Path
 from portprotonqt.config_utils import read_proxy_config
 from portprotonqt.logger import get_logger
@@ -241,6 +243,23 @@ class Downloader:
         self._last_error = {}
         self._locks = {}
         self._global_lock = threading.Lock()
+        self._has_internet = None  # Кешируем результат проверки
+
+    def has_internet(self, timeout=3):
+        """Проверяет интернет один раз и кеширует результат"""
+        if self._has_internet is None:  # Проверяем только при первом вызове
+            try:
+                socket.create_connection(("8.8.8.8", 53), timeout=timeout)
+                urllib.request.urlopen("https://www.google.com", timeout=timeout)
+                self._has_internet = True
+            except (TimeoutError, OSError, urllib.error.URLError):
+                self._has_internet = False
+                logger.warning("Интернет недоступен. Все загрузки пропущены.")
+        return self._has_internet
+
+    def reset_internet_check(self):
+        """Сбрасывает кеш проверки интернета (например, после ошибки)."""
+        self._has_internet = None
 
     def _get_url_lock(self, url):
         """Возвращает блокировку для конкретного URL."""
@@ -251,6 +270,9 @@ class Downloader:
 
     def download(self, url, local_path, timeout=5):
         """Основной метод загрузки с кэшированием."""
+        if not self.has_internet():
+            return None
+
         with self._global_lock:
             if url in self._last_error:
                 return None
@@ -276,6 +298,9 @@ class Downloader:
 
     def download_parallel(self, url, local_path, timeout=5):
         """Параллельная загрузка с кэшированием."""
+        if not self.has_internet():
+            return None
+
         with self._global_lock:
             if url in self._cache:
                 return self._cache[url]
@@ -298,6 +323,9 @@ class Downloader:
 
     def download_many(self, files, timeout=5, parallel=False):
         """Массовая загрузка файлов с возможностью параллелизма."""
+        if not self.has_internet():
+            return {url: None for url, _ in files}
+
         results = {}
         threads = []
 
