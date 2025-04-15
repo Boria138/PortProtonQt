@@ -32,9 +32,10 @@ dependencies = [
     "orjson>=3.10.16",
     "psutil>=7.0.0",
     "pygame>=2.6.1",
-    "pyside6>=6.8.0",
+    "pyside6>=6.9.0",
     "vdf>=3.4",
 ]
+
 
 [project.scripts]
 portprotonqt = "portprotonqt.app:main"
@@ -101,6 +102,5 @@ ignore = [
 [dependency-groups]
 dev = [
     "mdformat>=0.7.22",
-    "pre-commit>=4.1.0",
-    "ruff>=0.9.10",
+    "pre-commit>=4.2.0",
 ]
