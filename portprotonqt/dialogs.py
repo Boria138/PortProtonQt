@@ -6,11 +6,58 @@ from PySide6.QtWidgets import (
     QDialog, QLineEdit, QFormLayout, QPushButton,
     QHBoxLayout, QDialogButtonBox, QFileDialog, QLabel
 )
+from PySide6.QtDBus import QDBusInterface, QDBusConnection, QDBusMessage
+
 from portprotonqt.config_utils import get_portproton_location
 from portprotonqt.localization import _
+from portprotonqt.logger import get_logger
 import portprotonqt.themes.standart.styles as default_styles
 
-os.environ["QT_QPA_PLATFORMTHEME"] = "xdgdesktopportal"
+logger = get_logger(__name__)
+
+def configure_xdg_portal() -> bool:
+    # Проверяем, есть ли вообще портал
+    connection = QDBusConnection.sessionBus()
+
+    interface = QDBusInterface(
+        "org.freedesktop.portal.Desktop",
+        "/org/freedesktop/portal/desktop",
+        "org.freedesktop.portal.FileChooser",
+        connection
+    )
+
+    if not interface.isValid():
+        logger.warning("XDG Desktop Portal is not available. Skipping portal-related configuration.")
+        return False
+
+    # Проверка через introspection на наличие метода OpenFile
+    introspect_iface = QDBusInterface(
+        "org.freedesktop.portal.Desktop",
+        "/org/freedesktop/portal/desktop",
+        "org.freedesktop.DBus.Introspectable",
+        connection
+    )
+
+    if not introspect_iface.isValid():
+        logger.warning("Cannot introspect portal interface.")
+        return False
+
+    reply = introspect_iface.call("Introspect")
+    if reply.type() != QDBusMessage.ReplyMessage or not reply.arguments():
+        logger.warning("Failed to introspect portal interface.")
+        return False
+
+    introspection_xml = reply.arguments()[0]
+    if "<method name=\"OpenFile\"" not in introspection_xml:
+        logger.warning("OpenFile method not found in FileChooser interface.")
+        return False
+
+    # Всё ок, теперь можно установить переменную окружения
+    os.environ["QT_QPA_PLATFORMTHEME"] = "xdgdesktopportal"
+    logger.info("XDG Desktop Portal and OpenFile method are available. Set QT_QPA_PLATFORMTHEME to xdgdesktopportal.")
+    return True
+
+configure_xdg_portal()
 
 class AddGameDialog(QDialog):
     def __init__(self, parent=None, theme=None):
