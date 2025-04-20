@@ -1215,56 +1215,67 @@ class MainWindow(QMainWindow):
             self.checkProcessTimer.start(500)
 
     def delete_game(self, game_name, exec_line):
-            """Delete the .desktop file and associated custom data for the game."""
-            reply = QMessageBox.question(
+        """Delete the .desktop file and associated custom data for the game."""
+        reply = QMessageBox.question(
+            self,
+            _("Confirm Deletion"),
+            _("Are you sure you want to delete '{0}'? This will remove the .desktop file and custom data.")
+                .format(game_name),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        # Check PortProton installation
+        if self.portproton_location is None:
+            QMessageBox.warning(self, _("Error"), _("PortProton is not found."))
+            return
+
+        # Parse Exec line
+        entry_exec_split = shlex.split(exec_line)
+        # Filter out desktop placeholders (%U, %f, etc.)
+        real_tokens = [t for t in entry_exec_split if not t.startswith('%')]
+
+        desktop_path = os.path.join(self.portproton_location, f"{game_name}.desktop")
+        exe_name = None
+        if real_tokens:
+            exe_path = real_tokens[-1]
+            exe_name = os.path.splitext(os.path.basename(exe_path))[0]
+        else:
+            QMessageBox.warning(
                 self,
-                _("Confirm Deletion"),
-                _("Are you sure you want to delete '{0}'? This will remove the .desktop file and custom data.").format(game_name),
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.No
+                _("Warning"),
+                _("Could not parse the executable path from Exec line:\n{0}").format(exec_line)
             )
-            if reply != QMessageBox.StandardButton.Yes:
+
+        # Remove .desktop file
+        if os.path.exists(desktop_path):
+            try:
+                os.remove(desktop_path)
+            except OSError as e:
+                QMessageBox.warning(self, _("Error"), _("Failed to delete .desktop file: {0}").format(e))
                 return
+        else:
+            QMessageBox.warning(self, _("Error"), _("Could not locate .desktop file for '{0}'").format(game_name))
+            return
 
-            # Initialize desktop_path and exe_name
-            desktop_path = None
-            exe_name = None
-
-            # Check if portproton_location is valid
-            if self.portproton_location is None:
-                QMessageBox.warning(self, _("Error"), _("PortProton is not found."))
-                return
-
-            # Parse exec_line
-            entry_exec_split = shlex.split(exec_line)
-            desktop_path = os.path.join(self.portproton_location, f"{game_name}.desktop")
-            exe_name = os.path.splitext(os.path.basename(entry_exec_split[3]))[0]
-
-            # Remove .desktop file
-            if desktop_path and os.path.exists(desktop_path):
+        # Remove custom data if we got an exe_name
+        if exe_name:
+            xdg_data_home = os.getenv("XDG_DATA_HOME",
+                                    os.path.join(os.path.expanduser("~"), ".local", "share"))
+            custom_folder = os.path.join(xdg_data_home, "PortProtonQT", "custom_data", exe_name)
+            if os.path.exists(custom_folder):
                 try:
-                    os.remove(desktop_path)
+                    shutil.rmtree(custom_folder)
                 except OSError as e:
-                    QMessageBox.warning(self, _("Error"), _("Failed to delete .desktop file: {0}").format(str(e)))
-                    return
-            else:
-                QMessageBox.warning(self, _("Error"), _("Could not locate .desktop file for '{0}'").format(game_name))
-                return
+                    QMessageBox.warning(self, _("Error"), _("Failed to delete custom data: {0}").format(e))
 
-            # Remove custom data if exe_name is determined
-            if exe_name:
-                xdg_data_home = os.getenv("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share"))
-                custom_folder = os.path.join(xdg_data_home, "PortProtonQT", "custom_data", exe_name)
-                if os.path.exists(custom_folder):
-                    try:
-                        shutil.rmtree(custom_folder)
-                    except OSError as e:
-                        QMessageBox.warning(self, _("Error"), _("Failed to delete custom data: {0}").format(str(e)))
+        # Refresh UI
+        self.games = self.loadGames()
+        self.updateGameGrid()
+        self.statusBar().showMessage(_("Game '{0}' deleted successfully").format(game_name), 3000)
 
-            # Update games list and grid
-            self.games = self.loadGames()
-            self.updateGameGrid()
-            self.statusBar().showMessage(_("Game '{0}' deleted successfully").format(game_name), 3000)
 
     def add_to_menu(self, game_name, exec_line):
             """Copy the .desktop file to ~/.local/share/applications."""
