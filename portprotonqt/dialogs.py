@@ -43,7 +43,7 @@ def configure_xdg_portal() -> bool:
         return False
 
     reply = introspect_iface.call("Introspect")
-    if reply.type() != QDBusMessage.ReplyMessage or not reply.arguments():
+    if reply.type() != QDBusMessage.MessageType.ReplyMessage or not reply.arguments():
         logger.warning("Failed to introspect portal interface.")
         return False
 
