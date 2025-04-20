@@ -10,6 +10,7 @@ from portprotonqt.config_utils import get_portproton_location
 from portprotonqt.localization import _
 import portprotonqt.themes.standart.styles as default_styles
 
+os.environ["QT_QPA_PLATFORMTHEME"] = "xdgdesktopportal"
 
 class AddGameDialog(QDialog):
     def __init__(self, parent=None, theme=None):
