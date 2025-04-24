@@ -1118,10 +1118,12 @@ class MainWindow(QMainWindow):
             self._gameLaunched = True
             if self.current_running_button is not None:
                 self.current_running_button.setText(_("Stop"))
+                #self._inhibit_screensaver()
         elif not child_running:
             # Игра завершилась – сбрасываем флаг, сбрасываем кнопку и останавливаем таймер
             self._gameLaunched = False
             self.resetPlayButton()
+            #self._uninhibit_screensaver()
             if hasattr(self, 'checkProcessTimer') and self.checkProcessTimer is not None:
                 self.checkProcessTimer.stop()
                 self.checkProcessTimer.deleteLater()
@@ -1195,6 +1197,7 @@ class MainWindow(QMainWindow):
             self.current_running_button = None
             self.target_exe = None
             self._gameLaunched = False
+            #self._uninhibit_screensaver()
         else:
             # Сохраняем ссылку на кнопку для сброса после завершения игры
             self.current_running_button = button
@@ -1275,7 +1278,6 @@ class MainWindow(QMainWindow):
         self.games = self.loadGames()
         self.updateGameGrid()
         self.statusBar().showMessage(_("Game '{0}' deleted successfully").format(game_name), 3000)
-
 
     def add_to_menu(self, game_name, exec_line):
             """Copy the .desktop file to ~/.local/share/applications."""

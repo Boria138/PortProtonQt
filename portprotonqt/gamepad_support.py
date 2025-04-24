@@ -57,6 +57,7 @@ class GamepadSupport(QtCore.QObject):
     def initGamepad(self):
         pygame.init()
         pygame.joystick.init()
+        pygame.display.set_allow_screensaver(True)
 
         self.gamepad_timer = QtCore.QTimer(self.parent)
         self.gamepad_timer.timeout.connect(self.pollGamepad)
