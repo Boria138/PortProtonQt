@@ -24,11 +24,14 @@ repos:
       - id: ruff
         args: [--fix]
 
-  - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.399
+  - repo: local
     hooks:
       - id: pyright
-        additional_dependencies: ["pyright[nodejs]"]
+        name: pyright
+        entry: pyright
+        language: system
+        'types_or': [python, pyi]
+        require_serial: true
 
   - repo: local
     hooks:

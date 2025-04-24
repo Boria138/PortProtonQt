@@ -375,7 +375,7 @@ class MainWindow(QMainWindow):
             btn.setChecked(i == index)
         self.stackedWidget.setCurrentIndex(index)
 
-    def createSearchWidget(self):
+    def createSearchWidget(self) -> tuple[QWidget, QLineEdit]:
         """Создаёт виджет добавить игру + поиск."""
         self.container = QWidget()
         self.container.setStyleSheet(self.theme.CONTAINER_STYLE)

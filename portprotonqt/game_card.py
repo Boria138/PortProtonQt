@@ -10,6 +10,7 @@ from portprotonqt.config_utils import read_favorites, save_favorites
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.config_utils import read_theme_from_config
 from portprotonqt.custom_wigets import ClickableLabel
+from portprotonqt.main_window import MainWindow
 import os
 import subprocess
 
@@ -32,6 +33,7 @@ class GameCard(QFrame):
         self.steam_game = steam_game
         self.last_launch_ts = last_launch_ts
         self.playtime_seconds = playtime_seconds
+        self.mw = cast(MainWindow, self.window())
 
         self.select_callback = select_callback
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
@@ -402,20 +404,20 @@ class GameCard(QFrame):
 
     def delete_game(self):
         """Emit signal or call parent method to delete the game."""
-        self.window().delete_game(self.name, self.exec_line)
+        self.mw.delete_game(self.name, self.exec_line)
 
     def add_to_menu(self):
         """Emit signal or call parent method to add game to menu."""
-        self.window().add_to_menu(self.name, self.exec_line)
+        self.mw.add_to_menu(self.name, self.exec_line)
 
     def remove_from_menu(self):
         """Call parent method to remove game from menu."""
-        self.window().remove_from_menu(self.name)
+        self.mw.remove_from_menu(self.name)
 
     def add_to_desktop(self):
         """Emit signal or call parent method to add game to desktop."""
-        self.window().add_to_desktop(self.name, self.exec_line)
+        self.mw.add_to_desktop(self.name, self.exec_line)
 
     def remove_from_desktop(self):
         """Call parent method to remove game from desktop."""
-        self.window().remove_from_desktop(self.name)
+        self.mw.remove_from_desktop(self.name)
