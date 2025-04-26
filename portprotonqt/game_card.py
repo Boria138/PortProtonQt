@@ -2,7 +2,6 @@ from PySide6.QtGui import QPainter, QPen, QColor, QConicalGradient, QBrush, QDes
 from PySide6.QtCore import QEasingCurve, Signal, Property, Qt, QPropertyAnimation, QByteArray, QUrl
 from PySide6.QtWidgets import QFrame, QGraphicsDropShadowEffect, QVBoxLayout, QWidget, QStackedLayout, QLabel, QMenu
 from collections.abc import Callable
-from typing import cast
 import portprotonqt.themes.standart.styles as default_styles
 from portprotonqt.image_utils import load_pixmap, round_corners
 from portprotonqt.localization import _
@@ -10,13 +9,19 @@ from portprotonqt.config_utils import read_favorites, save_favorites
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.config_utils import read_theme_from_config
 from portprotonqt.custom_wigets import ClickableLabel
-from portprotonqt.main_window import MainWindow
 import os
 import subprocess
+from typing import cast
+
 
 class GameCard(QFrame):
     borderWidthChanged = Signal()
     gradientAngleChanged = Signal()
+    deleteGameRequested = Signal(str, str)         # name, exec_line
+    addToMenuRequested = Signal(str, str)         # name, exec_line
+    removeFromMenuRequested = Signal(str)         # name
+    addToDesktopRequested = Signal(str, str)      # name, exec_line
+    removeFromDesktopRequested = Signal(str)      # name
     def __init__(self, name, description, cover_path, appid, controller_support, exec_line,
                  last_launch, formatted_playtime, protondb_tier, last_launch_ts, playtime_seconds, steam_game,
                  select_callback, theme=None, card_width=250, parent=None):
@@ -33,7 +38,6 @@ class GameCard(QFrame):
         self.steam_game = steam_game
         self.last_launch_ts = last_launch_ts
         self.playtime_seconds = playtime_seconds
-        self.mw = cast(MainWindow, self.window())
 
         self.select_callback = select_callback
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
@@ -403,21 +407,21 @@ class GameCard(QFrame):
         menu.exec(self.mapToGlobal(pos))
 
     def delete_game(self):
-        """Emit signal or call parent method to delete the game."""
-        self.mw.delete_game(self.name, self.exec_line)
+        """Emit signal to request deleting the game."""
+        self.deleteGameRequested.emit(self.name, self.exec_line)
 
     def add_to_menu(self):
-        """Emit signal or call parent method to add game to menu."""
-        self.mw.add_to_menu(self.name, self.exec_line)
+        """Emit signal to request adding game to menu."""
+        self.addToMenuRequested.emit(self.name, self.exec_line)
 
     def remove_from_menu(self):
-        """Call parent method to remove game from menu."""
-        self.mw.remove_from_menu(self.name)
+        """Emit signal to request removing game from menu."""
+        self.removeFromMenuRequested.emit(self.name)
 
     def add_to_desktop(self):
-        """Emit signal or call parent method to add game to desktop."""
-        self.mw.add_to_desktop(self.name, self.exec_line)
+        """Emit signal to request adding game to desktop."""
+        self.addToDesktopRequested.emit(self.name, self.exec_line)
 
     def remove_from_desktop(self):
-        """Call parent method to remove game from desktop."""
-        self.mw.remove_from_desktop(self.name)
+        """Emit signal to request removing game from desktop."""
+        self.removeFromDesktopRequested.emit(self.name)

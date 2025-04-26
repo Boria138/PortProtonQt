@@ -494,8 +494,14 @@ class MainWindow(QMainWindow):
                 *game_data,
                 select_callback=self.openGameDetailPage,
                 theme=self.theme,
-                card_width=new_card_width  # Используем рассчитанную ширину
+                card_width=new_card_width
             )
+            # Connect context menu signals
+            card.deleteGameRequested.connect(self.delete_game)
+            card.addToMenuRequested.connect(self.add_to_menu)
+            card.removeFromMenuRequested.connect(self.remove_from_menu)
+            card.addToDesktopRequested.connect(self.add_to_desktop)
+            card.removeFromDesktopRequested.connect(self.remove_from_desktop)
             self.gamesListLayout.addWidget(card)
 
         # Принудительно обновляем геометрию лейаута
@@ -507,6 +513,12 @@ class MainWindow(QMainWindow):
         self.clearLayout(self.gamesListLayout)
         for _idx, game_data in enumerate(games_list):
             card = GameCard(*game_data, select_callback=self.openGameDetailPage, theme=self.theme, card_width=self.card_width)
+            # Connect context menu signals
+            card.deleteGameRequested.connect(self.delete_game)
+            card.addToMenuRequested.connect(self.add_to_menu)
+            card.removeFromMenuRequested.connect(self.remove_from_menu)
+            card.addToDesktopRequested.connect(self.add_to_desktop)
+            card.removeFromDesktopRequested.connect(self.remove_from_desktop)
             self.gamesListLayout.addWidget(card)
 
     def clearLayout(self, layout):
