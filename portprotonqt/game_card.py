@@ -17,6 +17,7 @@ from typing import cast
 class GameCard(QFrame):
     borderWidthChanged = Signal()
     gradientAngleChanged = Signal()
+    editShortcutRequested = Signal(str, str, str)  # name, exec_line, cover_path
     deleteGameRequested = Signal(str, str)         # name, exec_line
     addToMenuRequested = Signal(str, str)         # name, exec_line
     removeFromMenuRequested = Signal(str)         # name
@@ -376,7 +377,6 @@ class GameCard(QFrame):
         """Show context menu on right-click."""
         menu = QMenu(self)
 
-        # Check if .desktop file exists in Desktop folder
         if self.steam_game != "true":
             desktop_dir = subprocess.check_output(['xdg-user-dir', 'DESKTOP']).decode('utf-8').strip()
             desktop_path = os.path.join(desktop_dir, f"{self.name}.desktop")
@@ -387,13 +387,15 @@ class GameCard(QFrame):
                 add_action = menu.addAction(_("Add to Desktop"))
                 add_action.triggered.connect(self.add_to_desktop)
 
-        # Add "Delete" action (not for Steam games)
-        if self.steam_game != "true":
+            # Add "Edit Shortcut" action
+            edit_action = menu.addAction(_("Edit Shortcut"))
+            edit_action.triggered.connect(self.edit_shortcut)
+
+            # Add "Delete" action
             delete_action = menu.addAction(_("Delete from PortProton"))
             delete_action.triggered.connect(self.delete_game)
 
-        # Check if .desktop file exists in ~/.local/share/applications
-        if self.steam_game != "true":
+            # Check if .desktop file exists in ~/.local/share/applications
             applications_dir = os.path.join(os.path.expanduser("~"), ".local", "share", "applications")
             desktop_path = os.path.join(applications_dir, f"{self.name}.desktop")
             if os.path.exists(desktop_path):
@@ -403,8 +405,11 @@ class GameCard(QFrame):
                 add_action = menu.addAction(_("Add to Menu"))
                 add_action.triggered.connect(self.add_to_menu)
 
-        # Show menu at cursor position
         menu.exec(self.mapToGlobal(pos))
+
+    def edit_shortcut(self):
+        """Emit signal to request editing the game shortcut."""
+        self.editShortcutRequested.emit(self.name, self.exec_line, self.cover_path)
 
     def delete_game(self):
         """Emit signal to request deleting the game."""

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQT 0.1.0\n"
 "Report-Msgid-Bugs-To: olegpozitiv0102@gmail.com\n"
-"POT-Creation-Date: 2025-04-11 21:20+0500\n"
+"POT-Creation-Date: 2025-04-26 11:53+0500\n"
 "PO-Revision-Date: 2025-03-23 01:53+0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es_ES\n"
@@ -18,6 +18,9 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
+
+msgid "Edit Game"
+msgstr ""
 
 msgid "Add Game"
 msgstr ""
@@ -69,6 +72,9 @@ msgid "Remove from Desktop"
 msgstr ""
 
 msgid "Add to Desktop"
+msgstr ""
+
+msgid "Edit Shortcut"
 msgstr ""
 
 msgid "Delete from PortProton"
@@ -164,21 +170,6 @@ msgstr ""
 msgid "No link"
 msgstr ""
 
-msgid "Name:"
-msgstr ""
-
-msgid "Description:"
-msgstr ""
-
-msgid "Author:"
-msgstr ""
-
-msgid "Unknown"
-msgstr ""
-
-msgid "Link:"
-msgstr ""
-
 #, python-brace-format
 msgid "Theme '{0}' applied successfully"
 msgstr ""
@@ -247,11 +238,32 @@ msgid "PortProton is not found."
 msgstr ""
 
 #, python-brace-format
-msgid "Failed to delete .desktop file: {0}"
+msgid "No executable command found for game: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to parse .desktop file for game: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Error reading .desktop file: {0}"
 msgstr ""
 
 #, python-brace-format
 msgid "Could not locate .desktop file for '{0}'"
+msgstr ""
+
+msgid "Warning"
+msgstr ""
+
+#, python-brace-format
+msgid ""
+"Could not parse the executable path from Exec line:\n"
+"{0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to delete .desktop file: {0}"
 msgstr ""
 
 #, python-brace-format
@@ -292,6 +304,44 @@ msgstr ""
 
 #, python-brace-format
 msgid "Failed to remove game from Desktop: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid ".desktop file not found for game: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Invalid executable command: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to parse executable command: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Executable command is empty for game: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Executable file not found: {0}"
+msgstr ""
+
+msgid "Game name and executable path are required."
+msgstr ""
+
+msgid "Failed to generate .desktop file data."
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to remove old .desktop file: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to save .desktop file: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to copy cover image: {0}"
 msgstr ""
 
 msgid "just now"

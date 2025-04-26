@@ -6,7 +6,6 @@ from PySide6.QtWidgets import (
     QDialog, QLineEdit, QFormLayout, QPushButton,
     QHBoxLayout, QDialogButtonBox, QFileDialog, QLabel
 )
-from PySide6.QtDBus import QDBusInterface, QDBusConnection, QDBusMessage
 
 from portprotonqt.config_utils import get_portproton_location
 from portprotonqt.localization import _
@@ -15,66 +14,28 @@ import portprotonqt.themes.standart.styles as default_styles
 
 logger = get_logger(__name__)
 
-def configure_xdg_portal() -> bool:
-    # Проверяем, есть ли вообще портал
-    connection = QDBusConnection.sessionBus()
-
-    interface = QDBusInterface(
-        "org.freedesktop.portal.Desktop",
-        "/org/freedesktop/portal/desktop",
-        "org.freedesktop.portal.FileChooser",
-        connection
-    )
-
-    if not interface.isValid():
-        logger.warning("XDG Desktop Portal is not available. Skipping portal-related configuration.")
-        return False
-
-    # Проверка через introspection на наличие метода OpenFile
-    introspect_iface = QDBusInterface(
-        "org.freedesktop.portal.Desktop",
-        "/org/freedesktop/portal/desktop",
-        "org.freedesktop.DBus.Introspectable",
-        connection
-    )
-
-    if not introspect_iface.isValid():
-        logger.warning("Cannot introspect portal interface.")
-        return False
-
-    reply = introspect_iface.call("Introspect")
-    if reply.type() != QDBusMessage.MessageType.ReplyMessage or not reply.arguments():
-        logger.warning("Failed to introspect portal interface.")
-        return False
-
-    introspection_xml = reply.arguments()[0]
-    if "<method name=\"OpenFile\"" not in introspection_xml:
-        logger.warning("OpenFile method not found in FileChooser interface.")
-        return False
-
-    # Всё ок, теперь можно установить переменную окружения
-    os.environ["QT_QPA_PLATFORMTHEME"] = "xdgdesktopportal"
-    logger.info("XDG Desktop Portal and OpenFile method are available. Set QT_QPA_PLATFORMTHEME to xdgdesktopportal.")
-    return True
-
-configure_xdg_portal()
-
 class AddGameDialog(QDialog):
-    def __init__(self, parent=None, theme=None):
+    def __init__(self, parent=None, theme=None, edit_mode=False, game_name=None, exe_path=None, cover_path=None):
         super().__init__(parent)
         self.theme = theme if theme else default_styles
+        self.edit_mode = edit_mode
+        self.original_name = game_name  # Store original name for editing
 
-        self.setWindowTitle(_("Add Game"))
+        self.setWindowTitle(_("Edit Game") if edit_mode else _("Add Game"))
         self.setModal(True)
 
         layout = QFormLayout(self)
 
         # Game name
         self.nameEdit = QLineEdit(self)
+        if game_name:
+            self.nameEdit.setText(game_name)
         layout.addRow(_("Game Name:"), self.nameEdit)
 
         # Exe path
         self.exeEdit = QLineEdit(self)
+        if exe_path:
+            self.exeEdit.setText(exe_path)
         exeBrowseButton = QPushButton(_("Browse..."), self)
         exeBrowseButton.clicked.connect(self.browseExe)
 
@@ -85,6 +46,8 @@ class AddGameDialog(QDialog):
 
         # Cover path
         self.coverEdit = QLineEdit(self)
+        if cover_path:
+            self.coverEdit.setText(cover_path)
         coverBrowseButton = QPushButton(_("Browse..."), self)
         coverBrowseButton.clicked.connect(self.browseCover)
 
@@ -108,6 +71,10 @@ class AddGameDialog(QDialog):
         self.coverEdit.textChanged.connect(self.updatePreview)
         self.exeEdit.textChanged.connect(self.updatePreview)
 
+        # Update preview initially if in edit mode
+        if edit_mode:
+            self.updatePreview()
+
     def browseExe(self):
         fileNameAndFilter = QFileDialog.getOpenFileName(
             self,
@@ -118,9 +85,10 @@ class AddGameDialog(QDialog):
         fileName = fileNameAndFilter[0]
         if fileName:
             self.exeEdit.setText(fileName)
-            base = os.path.basename(fileName)
-            name = os.path.splitext(base)[0]
-            self.nameEdit.setText(name)
+            if not self.edit_mode:
+                base = os.path.basename(fileName)
+                name = os.path.splitext(base)[0]
+                self.nameEdit.setText(name)
 
     def browseCover(self):
         fileNameAndFilter = QFileDialog.getOpenFileName(
