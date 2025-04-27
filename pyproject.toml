@@ -36,12 +36,11 @@ dependencies = [
     "vdf>=3.4",
 ]
 
-
 [project.scripts]
 portprotonqt = "portprotonqt.app:main"
 
 [tool.setuptools.package-data]
-"portprotonqt" = ["themes/**/*", "locales/**/*"]
+"portprotonqt" = ["themes/**/*", "locales/**/*", "custom_data/**/*"]
 
 [tool.setuptools.packages.find]
 exclude = ["data", "dev-scripts"]

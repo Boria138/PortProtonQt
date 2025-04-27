@@ -268,13 +268,13 @@ class MainWindow(QMainWindow):
         return steam_games
 
     def _process_desktop_file(self, file_path):
-        """Обрабатывает .desktop файл и возвращает данные игры"""
+        """Обрабатывает .desktop файл и возвращает данные игры с учетом встроенных и пользовательских переопределений."""
         entry = parse_desktop_entry(file_path)
         if not entry:
             return None
 
         desktop_name = entry.get("Name", _("Unknown Game"))
-        if desktop_name.lower() == "portproton" or desktop_name.lower() == "readme":
+        if desktop_name.lower() in ["portproton", "readme"]:
             return None
 
         exec_line = entry.get("Exec", "")
@@ -284,80 +284,116 @@ class MainWindow(QMainWindow):
         playtime_seconds = 0
         formatted_playtime = ""
 
-        # Обработка Exec строки
+        # Обработка Exec строки и получение Steam-данных
         if exec_line:
             parts = shlex.split(exec_line)
             game_exe = os.path.expanduser(parts[3] if len(parts) >= 4 else exec_line)
+            try:
+                steam_info = get_steam_game_info(desktop_name, exec_line)
+            except Exception as e:
+                print(f"Failed to get Steam info for {desktop_name}: {e}")
+                steam_info = {}
 
-            # Получение Steam-данных
-            steam_info = get_steam_game_info(
-                desktop_name,
-                exec_line,
-            )
+        # Определение папок для переопределений
+        # 1. Встроенные переопределения (в корне репозитория)
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # Корень репозитория
+        builtin_custom_folder = os.path.join(repo_root, "portprotonqt", "custom_data")
+        os.makedirs(builtin_custom_folder, exist_ok=True)
 
-        # Получение пользовательских данных
+        # 2. Пользовательские переопределения (в ~/.local/share/PortProtonQT)
         xdg_data_home = os.getenv("XDG_DATA_HOME",
-            os.path.join(os.path.expanduser("~"), ".local", "share"))
+                                os.path.join(os.path.expanduser("~"), ".local", "share"))
+        user_custom_folder = os.path.join(xdg_data_home, "PortProtonQT", "custom_data")
+        os.makedirs(user_custom_folder, exist_ok=True)
 
-        custom_cover = ""
-        custom_name = None
-        custom_desc = None
+        # Инициализация данных переопределения
+        builtin_cover = ""
+        builtin_name = None
+        builtin_desc = None
+        user_cover = ""
+        user_name = None
+        user_desc = None
 
         if game_exe:
             exe_name = os.path.splitext(os.path.basename(game_exe))[0]
-            custom_folder = os.path.join(
-                xdg_data_home,
-                "PortProtonQT",
-                "custom_data",
-                exe_name
-            )
-            os.makedirs(custom_folder, exist_ok=True)
 
-            # Чтение пользовательских файлов
-            custom_files = set(os.listdir(custom_folder))
+            # Папки для конкретной игры
+            builtin_game_folder = os.path.join(builtin_custom_folder, exe_name)
+            user_game_folder = os.path.join(user_custom_folder, exe_name)
+            os.makedirs(builtin_game_folder, exist_ok=True)
+            os.makedirs(user_game_folder, exist_ok=True)
+
+            # Чтение встроенных переопределений
+            builtin_files = set(os.listdir(builtin_game_folder)) if os.path.exists(builtin_game_folder) else set()
             for ext in [".jpg", ".png", ".jpeg", ".bmp"]:
                 candidate = f"cover{ext}"
-                if candidate in custom_files:
-                    custom_cover = os.path.join(custom_folder, candidate)
+                if candidate in builtin_files:
+                    builtin_cover = os.path.join(builtin_game_folder, candidate)
                     break
 
-            name_file = os.path.join(custom_folder, "name.txt")
-            desc_file = os.path.join(custom_folder, "desc.txt")
+            builtin_metadata_file = os.path.join(builtin_game_folder, "metadata.txt")
+            if os.path.exists(builtin_metadata_file):
+                with open(builtin_metadata_file, encoding="utf-8") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line.startswith("name="):
+                            builtin_name = line[len("name="):].strip()
+                        elif line.startswith("description="):
+                            builtin_desc = line[len("description="):].strip()
 
-            if "name.txt" in custom_files:
-                with open(name_file, encoding="utf-8") as f:
-                    custom_name = f.read().strip()
+            # Чтение пользовательских переопределений
+            user_files = set(os.listdir(user_game_folder)) if os.path.exists(user_game_folder) else set()
+            for ext in [".jpg", ".png", ".jpeg", ".bmp"]:
+                candidate = f"cover{ext}"
+                if candidate in user_files:
+                    user_cover = os.path.join(user_game_folder, candidate)
+                    break
 
-            if "desc.txt" in custom_files:
-                with open(desc_file, encoding="utf-8") as f:
-                    custom_desc = f.read().strip()
+            user_metadata_file = os.path.join(user_game_folder, "metadata.txt")
+            if os.path.exists(user_metadata_file):
+                with open(user_metadata_file, encoding="utf-8") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line.startswith("name="):
+                            user_name = line[len("name="):].strip()
+                        elif line.startswith("description="):
+                            user_desc = line[len("description="):].strip()
 
             # Статистика времени игры
             if self.portproton_location is not None:
-                statistics_file = os.path.join(
-                    self.portproton_location,
-                    "data",
-                    "tmp",
-                    "statistics"
-                )
+                statistics_file = os.path.join(self.portproton_location, "data", "tmp", "statistics")
+                try:
+                    playtime_data = parse_playtime_file(statistics_file)
+                    matching_key = next(
+                        (key for key in playtime_data if os.path.basename(key).split('.')[0] == exe_name),
+                        None
+                    )
+                    if matching_key:
+                        playtime_seconds = playtime_data[matching_key]
+                        formatted_playtime = format_playtime(playtime_seconds)
+                except Exception as e:
+                    print(f"Failed to parse playtime data: {e}")
             else:
                 raise ValueError("PortProton is not found")
-            playtime_data = parse_playtime_file(statistics_file)
-            matching_key = next(
-                (key for key in playtime_data
-                 if os.path.basename(key).split('.')[0] == exe_name),
-                None
-            )
-            if matching_key:
-                playtime_seconds = playtime_data[matching_key]
-                formatted_playtime = format_playtime(playtime_seconds)
 
-        # Формирование финальных данных
+        # Формирование финальных данных с приоритетом:
+        # 1. Пользовательские переопределения
+        # 2. Встроенные переопределения
+        # 3. Steam-данные (если нет переопределений)
+        # 4. Данные из .desktop (если нет Steam-данных)
+        final_name = user_name or builtin_name or desktop_name
+        final_desc = (user_desc if user_desc is not None else
+                    builtin_desc if builtin_desc is not None else
+                    steam_info.get("description", ""))
+        final_cover = (user_cover if user_cover else
+                    builtin_cover if builtin_cover else
+                    steam_info.get("cover", "") or entry.get("Icon", ""))
+
         steam_game = "false"
         return (
-            custom_name or desktop_name,
-            custom_desc or steam_info.get("description", ""),
-            custom_cover or steam_info.get("cover", "") or entry.get("Icon", ""),
+            final_name,
+            final_desc,
+            final_cover,
             steam_info.get("appid", ""),
             exec_line,
             steam_info.get("controller_support", ""),
