@@ -298,7 +298,6 @@ class MainWindow(QMainWindow):
         # 1. Встроенные переопределения (в корне репозитория)
         repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # Корень репозитория
         builtin_custom_folder = os.path.join(repo_root, "portprotonqt", "custom_data")
-        os.makedirs(builtin_custom_folder, exist_ok=True)
 
         # 2. Пользовательские переопределения (в ~/.local/share/PortProtonQT)
         xdg_data_home = os.getenv("XDG_DATA_HOME",
@@ -1548,7 +1547,7 @@ class MainWindow(QMainWindow):
                     # Search for a matching .desktop file by executable path
                     for file in glob.glob(os.path.join(self.portproton_location, "*.desktop")):
                         entry = parse_desktop_entry(file)
-                        if entry and entry.get("Exec", "").endswith("/Biomutant.exe"):
+                        if entry:
                             exec_line = entry.get("Exec", entry.get("exec", ""))
                             break
                     else:
