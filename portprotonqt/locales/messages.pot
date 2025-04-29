@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQT 0.1.0\n"
 "Report-Msgid-Bugs-To: olegpozitiv0102@gmail.com\n"
-"POT-Creation-Date: 2025-04-29 19:34+0500\n"
+"POT-Creation-Date: 2025-04-29 19:49+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -166,6 +166,21 @@ msgid "Apply Theme"
 msgstr ""
 
 msgid "No link"
+msgstr ""
+
+msgid "Unknown"
+msgstr ""
+
+msgid "Name:"
+msgstr ""
+
+msgid "Description:"
+msgstr ""
+
+msgid "Author:"
+msgstr ""
+
+msgid "Link:"
 msgstr ""
 
 #, python-brace-format

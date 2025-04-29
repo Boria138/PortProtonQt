@@ -5,12 +5,14 @@ on:
     paths-ignore:
       - "data/**"
       - "*.md"
+      - "*.yml"
       - "dev-scripts/**"
   push:
     branches: [main]
     paths-ignore:
       - "data/**"
       - "*.md"
+      - "*.yml"
       - "dev-scripts/**"
 
 jobs:
@@ -23,7 +25,6 @@ jobs:
         uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
-          cache-dependency-glob: "uv.lock"
 
       - name: Sync dependencies into venv
         run: uv sync --all-extras --dev

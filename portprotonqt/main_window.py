@@ -883,12 +883,13 @@ class MainWindow(QMainWindow):
             meta = load_theme_metainfo(theme_name)
             link = meta.get("author_link", "")
             link_html = f'<a href="{link}">{link}</a>' if link else _("No link")
+            unknown_author = _("Unknown")
 
             preview_text = (
-                f"<b>{_('Name:')}</b> {meta.get('name', theme_name)}<br>"
-                f"<b>{_('Description:')}</b> {meta.get('description', '')}<br>"
-                f"<b>{_('Author:')}</b> {meta.get('author', _('Unknown'))}<br>"
-                f"<b>{_('Link:')}</b> {link_html}"
+                "<b>" + _("Name:") + "</b> " + meta.get('name', theme_name) + "<br>" +
+                "<b>" + _("Description:") + "</b> " + meta.get('description', '') + "<br>" +
+                "<b>" + _("Author:") + "</b> " + meta.get('author', unknown_author) + "<br>" +
+                "<b>" + _("Link:") + "</b> " + link_html
             )
             self.themeMetainfoLabel.setText(preview_text)
             self.themeMetainfoLabel.setStyleSheet(self.theme.CONTENT_STYLE)

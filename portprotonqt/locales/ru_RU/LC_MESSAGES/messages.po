@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQT 0.1.0\n"
 "Report-Msgid-Bugs-To: olegpozitiv0102@gmail.com\n"
-"POT-Creation-Date: 2025-04-29 19:34+0500\n"
-"PO-Revision-Date: 2025-04-26 11:53+0500\n"
+"POT-Creation-Date: 2025-04-29 19:49+0500\n"
+"PO-Revision-Date: 2025-04-29 19:49+0500\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
@@ -170,6 +170,21 @@ msgstr "Применить тему"
 
 msgid "No link"
 msgstr "Нет ссылки"
+
+msgid "Unknown"
+msgstr "Не известен"
+
+msgid "Name:"
+msgstr "Название:"
+
+msgid "Description:"
+msgstr "Описание:"
+
+msgid "Author:"
+msgstr "Автор:"
+
+msgid "Link:"
+msgstr "Ссылка:"
 
 #, python-brace-format
 msgid "Theme '{0}' applied successfully"
