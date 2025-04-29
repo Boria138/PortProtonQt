@@ -28,11 +28,12 @@ classifiers = [
 requires-python = ">=3.10"
 dependencies = [
     "babel>=2.17.0",
+    "evdev>=1.9.1",
     "numpy>=2.2.4",
     "orjson>=3.10.16",
     "psutil>=7.0.0",
-    "pygame>=2.6.1",
     "pyside6>=6.9.0",
+    "pyudev>=0.24.3",
     "vdf>=3.4",
 ]
 

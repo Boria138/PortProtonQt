@@ -12,7 +12,7 @@ import psutil
 from portprotonqt.dialogs import AddGameDialog
 from portprotonqt.game_card import GameCard
 from portprotonqt.custom_wigets import FlowLayout, ClickableLabel, AutoSizeButton, NavLabel
-from portprotonqt.gamepad_support import GamepadSupport
+#from portprotonqt.gamepad_support import GamepadSupport
 
 from portprotonqt.image_utils import load_pixmap, round_corners, ImageCarousel
 from portprotonqt.steam_api import get_steam_game_info, get_full_steam_game_info, get_steam_installed_games
@@ -25,7 +25,7 @@ from portprotonqt.config_utils import (
 from portprotonqt.localization import _
 
 from PySide6.QtWidgets import (QLineEdit, QMainWindow, QStatusBar, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox, QScrollArea, QSlider,
-                               QDialog, QFormLayout, QFrame, QGraphicsDropShadowEffect, QMessageBox, QGraphicsEffect, QGraphicsOpacityEffect)
+                               QDialog, QFormLayout, QFrame, QGraphicsDropShadowEffect, QMessageBox, QGraphicsEffect, QGraphicsOpacityEffect, QApplication)
 from PySide6.QtGui import QIcon, QPixmap, QColor, QDesktopServices
 from PySide6.QtCore import Qt, QTimer, QAbstractAnimation, QPropertyAnimation, QByteArray, QUrl
 from typing import cast
@@ -49,7 +49,6 @@ class MainWindow(QMainWindow):
             # Если тема не загрузилась, fallback на стандартный стиль
             self.theme = default_styles
         self.card_width = read_card_size()
-        self.gamepad_support = GamepadSupport(self)
         self.setWindowTitle("PortProtonQT")
         self.resize(1280, 720)
         self.setMinimumSize(800, 600)
@@ -136,6 +135,7 @@ class MainWindow(QMainWindow):
 
         self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE)
         self.setStyleSheet(self.theme.MESSAGE_BOX_STYLE)
+        #self.gamepad_support = GamepadSupport(self)
 
     def updateUIStyles(self):
         self.gamesListWidget.setStyleSheet(self.theme.LIST_WIDGET_STYLE)
@@ -1136,6 +1136,23 @@ class MainWindow(QMainWindow):
             label.setText("★")
         save_favorites(favorites)
         self.updateGameGrid()
+
+    def activateFocusedWidget(self):
+        """Activate the currently focused widget."""
+        focused_widget = QApplication.focusWidget()
+        if not focused_widget:
+            return
+        if isinstance(focused_widget, ClickableLabel):
+            focused_widget.clicked.emit()
+        elif isinstance(focused_widget, AutoSizeButton):
+            focused_widget.click()
+        elif isinstance(focused_widget, NavLabel):
+            focused_widget.clicked.emit()
+        elif isinstance(focused_widget, ImageCarousel):
+            # Get the current image item and simulate a click
+            if focused_widget.image_items:
+                current_item = focused_widget.image_items[focused_widget.horizontalScrollBar().value() // 100]
+                current_item.show_fullscreen()
 
     def goBackDetailPage(self, page):
         """Возврат из детальной страницы на вкладку 'Библиотека' с обновлением грида."""

@@ -1,207 +1,209 @@
 import time
-import pygame
-from PySide6 import QtCore
+import threading
+from typing import Protocol, cast
+from evdev import InputDevice, ecodes, list_devices
+import pyudev
+from PySide6 import QtCore, QtGui, QtWidgets
 from portprotonqt.logger import get_logger
 
 logger = get_logger(__name__)
 
+class MainWindowProtocol(Protocol):
+    """Protocol describing methods expected from MainWindow."""
+
+    def activateFocusedWidget(self) -> None:
+        ...
+
+    def goBackDetailPage(self, page: QtWidgets.QWidget | None) -> None:
+        ...
+
+    def switchTab(self, index: int) -> None:
+        ...
+
+    currentDetailPage: QtWidgets.QWidget | None
+
 class GamepadSupport(QtCore.QObject):
-    def __init__(self, parent, axis_deadzone=0.5, initial_axis_move_delay=0.3, repeat_axis_move_delay=0.15):
+    def __init__(
+        self,
+        main_window: MainWindowProtocol,
+        axis_deadzone: float = 0.5,
+        initial_axis_move_delay: float = 0.3,
+        repeat_axis_move_delay: float = 0.15
+    ):
         """
-        parent: Родительский объект (например, главное окно), реализующий методы:
-            navigateRight, navigateLeft, navigateUp, navigateDown,
-            navigateUpRight, navigateUpLeft, navigateDownRight, navigateDownLeft (опционально),
-            activateFocusedWidget, goBackDetailPage, openSettings.
+        Initialize gamepad support using evdev with hotplug for Qt applications.
+
+        Args:
+            main_window: Parent object with navigation methods (navigateRight, navigateLeft, etc.).
+            axis_deadzone: Deadzone for D-pad (unused in evdev, kept for compatibility).
+            initial_axis_move_delay: Initial delay for D-pad movement.
+            repeat_axis_move_delay: Delay for repeated movements.
         """
-        super().__init__(parent)
-        self.parent = parent
+        super().__init__(cast(QtCore.QObject, main_window))
+        self._parent = main_window
         self.axis_deadzone = axis_deadzone
         self.initial_axis_move_delay = initial_axis_move_delay
         self.repeat_axis_move_delay = repeat_axis_move_delay
-        self.current_axis_delay = self.initial_axis_move_delay
-        self.last_move_time = 0
-        self.latest_horizontal = 0
-        self.latest_vertical = 0
-        self.axis_moving = False  # Флаг, сигнализирующий, что ось уже активна
-        self.joysticks = []
-        self.haptics = []
-        self.initGamepad()
-        # Устанавливаем фильтр событий для перехвата клавиатурных событий (стрелочные клавиши)
-        self.parent.installEventFilter(self)
+        self.current_axis_delay = initial_axis_move_delay
+        self.last_move_time = 0.0
+        self.axis_moving = False
+        self.gamepad: InputDevice | None = None
+        self.gamepad_thread: threading.Thread | None = None
+        self.running = True
 
-    def eventFilter(self, obj, event):
-        if event.type() == QtCore.QEvent.KeyPress:
-            key = event.key()
-            if key == QtCore.Qt.Key_Right:
-                self.parent.navigateRight()
+        # Initialize evdev and hotplug
+        self.init_gamepad()
+
+    def eventFilter(self, obj: QtCore.QObject, event: QtCore.QEvent) -> bool:
+        """Handle keyboard events."""
+        if event.type() == QtCore.QEvent.Type.KeyPress:
+            key_event = cast(QtGui.QKeyEvent, event)
+            key = key_event.key()
+            if key in (QtCore.Qt.Key.Key_Return, QtCore.Qt.Key.Key_Enter):
+                self._parent.activateFocusedWidget()
                 return True
-            elif key == QtCore.Qt.Key_Left:
-                self.parent.navigateLeft()
-                return True
-            elif key == QtCore.Qt.Key_Up:
-                self.parent.navigateUp()
-                return True
-            elif key == QtCore.Qt.Key_Down:
-                self.parent.navigateDown()
-                return True
-            elif key in (QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter):
-                self.parent.activateFocusedWidget()
-                return True
-            # Например, клавиша B может использоваться для возврата
-            elif key == QtCore.Qt.Key_Escape:
-                if hasattr(self.parent, "goBackDetailPage"):
-                    self.parent.goBackDetailPage(getattr(self.parent, "currentDetailPage", None))
+            elif key == QtCore.Qt.Key.Key_Escape:
+                self._parent.goBackDetailPage(getattr(self._parent, "currentDetailPage", None))
                 return True
         return super().eventFilter(obj, event)
 
-    def initGamepad(self):
-        pygame.init()
-        pygame.joystick.init()
-        pygame.display.set_allow_screensaver(True)
+    def init_gamepad(self) -> None:
+        """Initialize gamepad using evdev with hotplug support via pyudev."""
+        # Initial check for connected gamepads
+        self.check_gamepad()
 
-        self.gamepad_timer = QtCore.QTimer(self.parent)
-        self.gamepad_timer.timeout.connect(self.pollGamepad)
-        self.gamepad_timer.start(50)
-        logger.info(f"Gamepad support initialized: found {len(self.joysticks)}")
+        # Start hotplug monitoring via pyudev
+        threading.Thread(target=self.run_udev_monitor, daemon=True).start()
+        logger.info("Gamepad support initialized with hotplug (evdev + pyudev)")
 
-    def pollGamepad(self):
-        current_time = time.time()
-        for event in pygame.event.get():
-            if event.type == pygame.JOYHATMOTION:
-                self.handle_hat_motion(event)
-            elif event.type == pygame.JOYAXISMOTION:
-                self.handle_axis_motion(event, current_time)
-            elif event.type == pygame.JOYBUTTONDOWN:
-                self.handle_button_down(event)
+    def run_udev_monitor(self) -> None:
+        """Monitor device connection/disconnection via pyudev."""
+        context = pyudev.Context()
+        monitor = pyudev.Monitor.from_netlink(context)
+        monitor.filter_by(subsystem='input')
 
-    def handle_hat_motion(self, event):
-        x, y = event.value
-        # Обработка диагональных движений
-        if x != 0 and y != 0:
-            if x > 0 and y > 0:
-                if hasattr(self.parent, "navigateUpRight"):
-                    self.parent.navigateUpRight()
-                else:
-                    self.parent.navigateUp()
-                    self.parent.navigateRight()
-            elif x < 0 and y > 0:
-                if hasattr(self.parent, "navigateUpLeft"):
-                    self.parent.navigateUpLeft()
-                else:
-                    self.parent.navigateUp()
-                    self.parent.navigateLeft()
-            elif x > 0 and y < 0:
-                if hasattr(self.parent, "navigateDownRight"):
-                    self.parent.navigateDownRight()
-                else:
-                    self.parent.navigateDown()
-                    self.parent.navigateRight()
-            elif x < 0 and y < 0:
-                if hasattr(self.parent, "navigateDownLeft"):
-                    self.parent.navigateDownLeft()
-                else:
-                    self.parent.navigateDown()
-                    self.parent.navigateLeft()
-            self.vibrate()
-        else:
-            # Обработка одиночных движений по одной оси
-            if x == 1:
-                self.parent.navigateRight()
-                self.vibrate()
-            elif x == -1:
-                self.parent.navigateLeft()
-                self.vibrate()
-            if y == 1:
-                self.parent.navigateUp()
-                self.vibrate()
-            elif y == -1:
-                self.parent.navigateDown()
-                self.vibrate()
+        observer = pyudev.MonitorObserver(monitor, self.handle_udev_event)
+        observer.start()
 
-    def handle_axis_motion(self, event, current_time):
-        # последние значения осей
-        if event.axis in (0, 2):  # Горизонтальные оси
-            self.latest_horizontal = event.value
-        elif event.axis in (1, 3):  # Вертикальные оси
-            self.latest_vertical = event.value
+        # Keep monitoring thread alive
+        while self.running:
+            time.sleep(1)
 
-        # Если обе оси в пределах мертвой зоны, сбрасывается состояние
-        if abs(self.latest_horizontal) < self.axis_deadzone and abs(self.latest_vertical) < self.axis_deadzone:
+    def handle_udev_event(self, device: pyudev.Device) -> None:
+        """Handle udev events (device connection/disconnection)."""
+        if device.action == 'add':
+            # Delay to ensure device readiness
+            time.sleep(0.1)
+            self.check_gamepad()
+        elif device.action == 'remove' and self.gamepad:
+            # Check if the current gamepad was disconnected
+            if not any(self.gamepad.path == path for path in list_devices()):
+                logger.info("Gamepad disconnected")
+                self.gamepad = None
+                if self.gamepad_thread:
+                    self.gamepad_thread.join()
+
+    def check_gamepad(self) -> None:
+        """Check for gamepad connection via evdev."""
+        new_gamepad = self.find_gamepad()
+        if new_gamepad and new_gamepad != self.gamepad:
+            logger.info(f"Gamepad connected: {new_gamepad.name}")
+            self.gamepad = new_gamepad
+            if self.gamepad_thread:
+                self.gamepad_thread.join()
+            self.gamepad_thread = threading.Thread(target=self.monitor_gamepad, daemon=True)
+            self.gamepad_thread.start()
+
+    def find_gamepad(self) -> InputDevice | None:
+        """Find an available gamepad via evdev."""
+        devices = [InputDevice(path) for path in list_devices()]
+        for device in devices:
+            capabilities = device.capabilities()
+            if ecodes.EV_KEY in capabilities or ecodes.EV_ABS in capabilities:
+                return device
+        return None
+
+    def monitor_gamepad(self) -> None:
+        """Process gamepad events via evdev."""
+        try:
+            if not self.gamepad:
+                return
+
+            for event in self.gamepad.read_loop():
+                if not self.running:
+                    break
+                if event.type not in (ecodes.EV_KEY, ecodes.EV_ABS):
+                    continue
+
+                current_time = time.time()
+                button_code = event.code
+                current_state = event.value
+
+                # Handle buttons
+                if event.type == ecodes.EV_KEY and current_state == 1:
+                    self.handle_button(button_code)
+
+                # Handle D-pad
+                if event.type == ecodes.EV_ABS:
+                    self.handle_dpad(button_code, current_state, current_time)
+
+        except Exception as e:
+            logger.error(f"Error accessing gamepad: {e}")
+
+    def handle_button(self, button_code: int) -> None:
+        """Handle gamepad button presses."""
+        if button_code == 304:  # X
+            self._parent.activateFocusedWidget()
+        elif button_code == 305:  # Circle
+            self._parent.goBackDetailPage(getattr(self._parent, "currentDetailPage", None))
+        elif button_code == 308:  # Triangle
+            self.open_settings()
+
+    def open_settings(self) -> None:
+        """Open the 'PortProton Settings' tab (index 4)."""
+        try:
+            self._parent.switchTab(4)
+            logger.info("Switched to PortProton Settings tab (index: 4)")
+        except Exception as e:
+            logger.error(f"Failed to switch to settings tab: {e}")
+
+    def handle_dpad(self, code: int, value: int, current_time: float) -> None:
+        """Handle D-pad movements with delays."""
+        # Check D-pad activity
+        if value == 0:
             self.axis_moving = False
             self.current_axis_delay = self.initial_axis_move_delay
             return
 
-        # Если ось только что активировалась (перешла из нейтрального положения), перемещается сразу
+        # If D-pad was just activated, perform action immediately
         if not self.axis_moving:
-            self.trigger_movement()
+            self.trigger_dpad_movement(code, value)
             self.last_move_time = current_time
             self.axis_moving = True
             return
 
-        # Если ось удерживается
+        # If D-pad is held, respect delay
         if current_time - self.last_move_time >= self.current_axis_delay:
-            self.trigger_movement()
+            self.trigger_dpad_movement(code, value)
             self.last_move_time = current_time
-            # После первого перемещения более короткая задержка
             self.current_axis_delay = self.repeat_axis_move_delay
 
-    def trigger_movement(self):
-        h = self.latest_horizontal
-        v = self.latest_vertical
-        # Если оба значения превышают порог – движение диагональное
-        if abs(h) > self.axis_deadzone and abs(v) > self.axis_deadzone:
-            if h > 0 and v > 0:
-                if hasattr(self.parent, "navigateDownRight"):
-                    self.parent.navigateDownRight()
-                else:
-                    self.parent.navigateDown()
-                    self.parent.navigateRight()
-            elif h < 0 and v > 0:
-                if hasattr(self.parent, "navigateDownLeft"):
-                    self.parent.navigateDownLeft()
-                else:
-                    self.parent.navigateDown()
-                    self.parent.navigateLeft()
-            elif h > 0 and v < 0:
-                if hasattr(self.parent, "navigateUpRight"):
-                    self.parent.navigateUpRight()
-                else:
-                    self.parent.navigateUp()
-                    self.parent.navigateRight()
-            elif h < 0 and v < 0:
-                if hasattr(self.parent, "navigateUpLeft"):
-                    self.parent.navigateUpLeft()
-                else:
-                    self.parent.navigateUp()
-                    self.parent.navigateLeft()
-        else:
-            # Обработка одиночных движений по каждой оси отдельно
-            if abs(h) > self.axis_deadzone:
-                if h > 0:
-                    self.parent.navigateRight()
-                else:
-                    self.parent.navigateLeft()
-            if abs(v) > self.axis_deadzone:
-                if v > 0:
-                    self.parent.navigateDown()
-                else:
-                    self.parent.navigateUp()
-        self.vibrate()
+    def trigger_dpad_movement(self, code: int, value: int) -> None:
+        """Trigger navigation based on D-pad events."""
+        if code == ecodes.ABS_HAT0X:  # D-pad horizontal
+            if value < 0:
+                self._parent.navigateLeft()
+            elif value > 0:
+                self._parent.navigateRight()
+        elif code == ecodes.ABS_HAT0Y:  # D-pad vertical
+            if value < 0:
+                self._parent.navigateUp()
+            elif value > 0:
+                self._parent.navigateDown()
 
-    def handle_button_down(self, event):
-        if event.button == 0:
-            self.parent.activateFocusedWidget()
-            self.vibrate(duration=50, strength=0.8)
-        elif event.button == 1:
-            if hasattr(self.parent, "stackedWidget") and self.parent.stackedWidget.currentIndex() != 0 and hasattr(self.parent, "currentDetailPage"):
-                self.parent.goBackDetailPage(self.parent.currentDetailPage)
-                del self.parent.currentDetailPage
-                self.vibrate(duration=50, strength=0.8)
-        elif event.button == 2:
-            if hasattr(self.parent, "openSettings"):
-                self.parent.openSettings()
-                self.vibrate(duration=50, strength=0.8)
-
-    def vibrate(self, duration=100, strength=0.5):
-        for haptic in self.haptics:
-            haptic.rumble_play(strength, duration)
+    def cleanup(self) -> None:
+        """Clean up resources on shutdown."""
+        self.running = False
+        if self.gamepad:
+            self.gamepad.close()
+        logger.info("Gamepad support cleaned up")

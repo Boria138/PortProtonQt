@@ -360,11 +360,12 @@ class NavLabel(QLabel):
         super().__init__(text, parent)
         self.setWordWrap(True)
         self.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
-
         self._checkable = False
         self._isChecked = False
         self.setProperty("checked", self._isChecked)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
+        # Explicitly enable focus
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
     def setCheckable(self, checkable):
         self._checkable = checkable
@@ -382,7 +383,11 @@ class NavLabel(QLabel):
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
+            # Ensure widget can take focus on click
+            self.setFocus(Qt.FocusReason.MouseFocusReason)
             if self._checkable:
                 self.setChecked(not self._isChecked)
             self.clicked.emit()
-        super().mousePressEvent(event)
+            event.accept()
+        else:
+            super().mousePressEvent(event)
