@@ -12,7 +12,7 @@ import psutil
 from portprotonqt.dialogs import AddGameDialog
 from portprotonqt.game_card import GameCard
 from portprotonqt.custom_wigets import FlowLayout, ClickableLabel, AutoSizeButton, NavLabel
-#from portprotonqt.gamepad_support import GamepadSupport
+from portprotonqt.gamepad_support import GamepadSupport
 
 from portprotonqt.image_utils import load_pixmap, round_corners, ImageCarousel
 from portprotonqt.steam_api import get_steam_game_info, get_full_steam_game_info, get_steam_installed_games
@@ -135,7 +135,7 @@ class MainWindow(QMainWindow):
 
         self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE)
         self.setStyleSheet(self.theme.MESSAGE_BOX_STYLE)
-        #self.gamepad_support = GamepadSupport(self)
+        self.gamepad_support = GamepadSupport(self)
 
     def updateUIStyles(self):
         self.gamesListWidget.setStyleSheet(self.theme.LIST_WIDGET_STYLE)
@@ -1149,10 +1149,14 @@ class MainWindow(QMainWindow):
         elif isinstance(focused_widget, NavLabel):
             focused_widget.clicked.emit()
         elif isinstance(focused_widget, ImageCarousel):
-            # Get the current image item and simulate a click
             if focused_widget.image_items:
                 current_item = focused_widget.image_items[focused_widget.horizontalScrollBar().value() // 100]
                 current_item.show_fullscreen()
+        elif isinstance(focused_widget, QComboBox):
+            focused_widget.showPopup()
+        elif isinstance(focused_widget, QLineEdit):
+            focused_widget.setFocus()
+            focused_widget.selectAll()
 
     def goBackDetailPage(self, page):
         """Возврат из детальной страницы на вкладку 'Библиотека' с обновлением грида."""
