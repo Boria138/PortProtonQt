@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQT 0.1.0\n"
 "Report-Msgid-Bugs-To: olegpozitiv0102@gmail.com\n"
-"POT-Creation-Date: 2025-04-29 19:49+0500\n"
-"PO-Revision-Date: 2025-04-29 19:49+0500\n"
+"POT-Creation-Date: 2025-04-30 20:25+0500\n"
+"PO-Revision-Date: 2025-04-30 20:25+0500\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
@@ -256,31 +256,12 @@ msgid "PortProton is not found."
 msgstr "PortProton не найден."
 
 #, python-brace-format
-msgid "No executable command found for game: {0}"
-msgstr "Не найдено ни одной исполняемой команды для игры: {0}"
-
-#, python-brace-format
-msgid "Failed to parse .desktop file for game: {0}"
-msgstr "Не удалось удалить файл .desktop: {0}"
-
-#, python-brace-format
-msgid "Error reading .desktop file: {0}"
-msgstr "Не удалось удалить файл .desktop: {0}"
-
-#, python-brace-format
 msgid "Could not locate .desktop file for '{0}'"
 msgstr "Не удалось найти файл .desktop для '{0}'"
 
-msgid "Warning"
-msgstr "Идёт запуск"
-
 #, python-brace-format
-msgid ""
-"Could not parse the executable path from Exec line:\n"
-"{0}"
-msgstr ""
-"Не удалось разобрать путь к исполняемому файлу из строки Exec:\n"
-"{0}"
+msgid "Failed to parse .desktop file for '{0}'"
+msgstr "Не удалось спарсить файл .desktop: {0}"
 
 #, python-brace-format
 msgid "Failed to delete .desktop file: {0}"
@@ -319,11 +300,11 @@ msgid "Failed to add game to desktop: {0}"
 msgstr "Не удалось добавить игру на рабочий стол: {0}"
 
 #, python-brace-format
-msgid "Game '{0}' removed from Desktop"
+msgid "Game '{0}' removed from desktop"
 msgstr "Игра '{0}' удалена с рабочего стола"
 
 #, python-brace-format
-msgid "Failed to remove game from Desktop: {0}"
+msgid "Failed to remove game from desktop: {0}"
 msgstr "Не удалось удалить игру с рабочего стола: {0}"
 
 #, python-brace-format
@@ -331,20 +312,11 @@ msgid ".desktop file not found for game: {0}"
 msgstr "Файл не найден: {0}"
 
 #, python-brace-format
-msgid "Invalid executable command: {0}"
-msgstr "Недопустимая исполняемая команда: {0}"
-
-#, python-brace-format
-msgid "Failed to parse executable command: {0}"
-msgstr "Не удалось удалить игру из меню: {0}"
-
-#, python-brace-format
-msgid "Executable command is empty for game: {0}"
-msgstr "Исполняемая команда пуста для игры: {0}"
-
-#, python-brace-format
 msgid "Executable file not found: {0}"
 msgstr "Файл не найден: {0}"
+
+msgid "None"
+msgstr "Отсутствует"
 
 msgid "Game name and executable path are required."
 msgstr "Необходимо указать название игры и путь к исполняемому файлу."
@@ -353,16 +325,8 @@ msgid "Failed to generate .desktop file data."
 msgstr "Не удалось сгенерировать данные файла .desktop."
 
 #, python-brace-format
-msgid "Failed to remove old .desktop file: {0}"
-msgstr "Не удалось удалить файл .desktop: {0}"
-
-#, python-brace-format
 msgid "Failed to save .desktop file: {0}"
 msgstr "Не удалось удалить файл .desktop: {0}"
-
-#, python-brace-format
-msgid "Failed to copy cover image: {0}"
-msgstr "Не удалось удалить игру из меню: {0}"
 
 msgid "just now"
 msgstr "только что"
