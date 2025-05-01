@@ -129,7 +129,7 @@ async def request_data():
     # Упаковка только минифицированного JSON в tar.xz архив с максимальным сжатием
     archive_path = os.path.join(data_dir, f"{category}_appid.tar.xz")
     try:
-        with tarfile.open(archive_path, "w:xz", compresslevel=9) as tar:
+        with tarfile.open(archive_path, "w:xz", preset=9) as tar:
             tar.add(output_json_min, arcname=os.path.basename(output_json_min))
         print(f"Упаковано минифицированное JSON в архив: {archive_path}")
         # Удаляем исходный минифицированный файл после упаковки
