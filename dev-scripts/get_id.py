@@ -4,6 +4,8 @@ import os
 import json
 import asyncio
 import aiohttp
+import tarfile
+
 
 # Получаем ключ Steam из переменной окружения.
 key = os.environ.get('STEAM_KEY')
@@ -112,18 +114,37 @@ async def request_data():
     data_dir = os.path.join(repo_root, "data")
     os.makedirs(data_dir, exist_ok=True)
 
-    output_path_formatted = os.path.join(data_dir, f"{category}_appid.json")
-    with open(output_path_formatted, "w", encoding="utf-8") as f:
+    # Путь к JSON-файлам
+    output_json_full = os.path.join(data_dir, f"{category}_appid.json")
+    output_json_min = os.path.join(data_dir, f"{category}_appid_min.json")
+
+    # Записываем полные данные с отступами
+    with open(output_json_full, "w", encoding="utf-8") as f:
         json.dump(output_json, f, ensure_ascii=False, indent=2)
 
-    output_path_min = os.path.join(data_dir, f"{category}_appid_min.json")
-    with open(output_path_min, "w", encoding="utf-8") as f:
+    # Записываем минимизированные данные
+    with open(output_json_min, "w", encoding="utf-8") as f:
         json.dump(output_json, f, ensure_ascii=False, separators=(',',':'))
 
+    # Упаковка только минифицированного JSON в tar.xz архив с максимальным сжатием
+    archive_path = os.path.join(data_dir, f"{category}_appid.tar.xz")
+    try:
+        with tarfile.open(archive_path, "w:xz", compresslevel=9) as tar:
+            tar.add(output_json_min, arcname=os.path.basename(output_json_min))
+        print(f"Упаковано минифицированное JSON в архив: {archive_path}")
+        # Удаляем исходный минифицированный файл после упаковки
+        os.remove(output_json_min)
+    except Exception as e:
+        print(f"Ошибка при упаковке архива: {e}")
+        return False
+
+    return True
 
 async def run():
-    await request_data()
-
+    success = await request_data()
+    if not success:
+        exit(1)
 
 if __name__ == "__main__":
     asyncio.run(run())
+

@@ -20,6 +20,11 @@ jobs:
         with:
           python-version-file: "pyproject.toml"
 
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xz-utils
+
       - name: Set up dependency
         run: pip install aiohttp asyncio
 
