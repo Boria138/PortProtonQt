@@ -40,13 +40,19 @@ def normalize_name(s):
 def process_steam_apps(steam_apps):
     """
     Для каждого приложения из Steam добавляет ключ "normalized_name",
-    содержащий нормализованное значение имени (поле "name").
+    содержащий нормализованное значение имени (поле "name"),
+    и удаляет ненужные поля: "name", "last_modified", "price_change_number".
     """
     for app in steam_apps:
-        name = app.get("name", "")
+        original = app.get("name", "")
         if not app.get("normalized_name"):
-            app["normalized_name"] = normalize_name(name)
+            app["normalized_name"] = normalize_name(original)
+        # Удаляем ненужные поля
+        app.pop("name", None)
+        app.pop("last_modified", None)
+        app.pop("price_change_number", None)
     return steam_apps
+
 
 async def get_app_list(session, last_appid, endpoint):
     """
@@ -60,11 +66,12 @@ async def get_app_list(session, last_appid, endpoint):
         response.raise_for_status()
         return await response.json()
 
+
 async def request_data():
     """
     Получает данные списка приложений для категории "games" до тех пор,
-    пока не закончатся результаты, обрабатывает данные для добавления нормализованных имён
-    и записывает итоговый результат в JSON-файл.
+    пока не закончатся результаты, обрабатывает данные для добавления
+    нормализованных имён и записывает итоговый результат в JSON-файл.
     """
     # Параметры запроса для игр.
     game_param = "&include_games=true"
@@ -116,6 +123,7 @@ async def request_data():
 
 async def run():
     await request_data()
+
 
 if __name__ == "__main__":
     asyncio.run(run())

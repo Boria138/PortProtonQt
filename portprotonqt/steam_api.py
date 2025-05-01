@@ -498,7 +498,7 @@ def get_steam_game_info(desktop_name, exec_line):
             continue
         matching_app = search_app(candidate, steam_apps_index)
         if matching_app:
-            logger.info("Совпадение найдено для кандидата '%s': %s", candidate, matching_app.get("name"))
+            logger.info("Совпадение найдено для кандидата '%s': %s", candidate, matching_app.get("normalized_name"))
             break
     if not matching_app:
         return {
