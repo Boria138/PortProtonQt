@@ -227,53 +227,62 @@ def load_steam_apps():
     """
     cache_dir = get_cache_dir()
     cache_tar = os.path.join(cache_dir, "games_appid.tar.xz")
-    steam_apps = []
-    cache_valid = False
+    cache_json = os.path.join(cache_dir, "steam_apps.json")
 
-    # Проверяем валидность кэша архива
-    if os.path.exists(cache_tar) and (time.time() - os.path.getmtime(cache_tar) < CACHE_DURATION):
-        cache_valid = True
-
-    if cache_valid:
-        logger.info("Используется закешированный архив Steam приложений: %s", cache_tar)
+    # 1) Если JSON-кэш есть и свежий – читаем и возвращаем
+    if os.path.exists(cache_json) and (time.time() - os.path.getmtime(cache_json) < CACHE_DURATION):
+        logger.info("Используется закешированный JSON Steam приложений: %s", cache_json)
+        with open(cache_json, "rb") as f:
+            data = orjson.loads(f.read())
     else:
-        # URL архива с games_appid.tar.xz
-        app_list_url = (
-            "https://raw.githubusercontent.com/Boria138/PortProtonQt/"
-            "refs/heads/main/data/games_appid.tar.xz"
-        )
+        # 2) Если архива нет или он устарел – скачиваем его
+        need_download = not os.path.exists(cache_tar) or (time.time() - os.path.getmtime(cache_tar) >= CACHE_DURATION)
+        if need_download:
+            app_list_url = (
+                "https://raw.githubusercontent.com/Boria138/PortProtonQt/"
+                "refs/heads/main/data/games_appid.tar.xz"
+            )
+            try:
+                result = downloader.download_parallel(app_list_url, cache_tar, timeout=5)
+                if not result:
+                    raise RuntimeError("Не удалось скачать архив Steam приложений")
+            except Exception as e:
+                logger.error("Ошибка загрузки архива Steam приложений: %s", e)
+                return []
+
+        # 3) Распаковываем архив и получаем данные
         try:
-            result = downloader.download_parallel(app_list_url, cache_tar, timeout=5)
-            if not result:
-                raise RuntimeError("Не удалось скачать архив Steam приложений")
+            with tarfile.open(cache_tar, mode='r:xz') as tar:
+                member = next((m for m in tar.getmembers() if m.name.endswith('.json')), None)
+                if member is None:
+                    raise RuntimeError("JSON-файл не найден в архиве")
+                fobj = tar.extractfile(member)
+                if fobj is None:
+                    raise RuntimeError(f"Не удалось извлечь файл {member.name} из архива")
+                raw = fobj.read()
+                fobj.close()
+                data = orjson.loads(raw)
         except Exception as e:
-            logger.error("Ошибка загрузки архива Steam приложений: %s", e)
+            logger.error("Ошибка распаковки архива Steam приложений: %s", e)
             return []
 
-    # Распаковываем JSON из архива
-    try:
-        with tarfile.open(cache_tar, mode='r:xz') as tar:
-            member = next((m for m in tar.getmembers() if m.name.endswith('.json')), None)
-            if member is None:
-                logger.error("JSON-файл не найден в архиве %s", cache_tar)
-                return []
-            f = tar.extractfile(member)
-            if f is None:
-                logger.error("Не удалось извлечь файл %s из архива", member.name)
-                return []
-            raw = f.read()
-            data = orjson.loads(raw)
-    except Exception as e:
-        logger.error("Ошибка распаковки архива Steam приложений: %s", e)
-        return []
+        # 4) Сохраняем JSON и удаляем архив
+        try:
+            with open(cache_json, "wb") as f:
+                f.write(orjson.dumps(data))
+            if os.path.exists(cache_tar):
+                os.remove(cache_tar)
+                logger.info("Архив %s удалён после распаковки", cache_tar)
+        except Exception as e:
+            logger.warning("Не удалось сохранить JSON или удалить архив: %s", e)
 
-    # Извлекаем список приложений
+    # 5) Извлечение списка приложений
     if isinstance(data, dict):
         steam_apps = data.get("applist", {}).get("apps", [])
     else:
-        steam_apps = data
+        steam_apps = data or []
 
-    logger.info("Загружено %d приложений из архива", len(steam_apps))
+    logger.info("Загружено %d приложений из кэша", len(steam_apps))
     return steam_apps
 
 def build_index(steam_apps):
