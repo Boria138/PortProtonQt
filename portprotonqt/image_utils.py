@@ -128,6 +128,8 @@ class FullscreenDialog(QDialog):
         super().__init__(parent)
         # Удаление диалога после закрытия
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.setFocus()
 
         self.images = images
         self.current_index = current_index

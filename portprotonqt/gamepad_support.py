@@ -3,10 +3,12 @@ import threading
 from typing import Protocol, cast
 from evdev import InputDevice, ecodes, list_devices
 import pyudev
-from PySide6.QtWidgets import QWidget, QStackedWidget
+from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication
 from PySide6.QtCore import Qt, QObject, QEvent
 from PySide6.QtGui import QKeyEvent
 from portprotonqt.logger import get_logger
+from portprotonqt.image_utils import FullscreenDialog
+
 
 logger = get_logger(__name__)
 
@@ -54,39 +56,54 @@ class GamepadSupport(QObject):
         self.running = True
 
         # Install event filter for keyboard events
-        main_window.installEventFilter(self)
+        QApplication.instance().installEventFilter(self)
 
         # Initialize evdev and hotplug for gamepad
         self.init_gamepad()
 
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
-        """Handle keyboard events."""
         if event.type() == QEvent.Type.KeyPress:
-            key_event = cast(QKeyEvent, event)
-            key = key_event.key()
-            current_index = self._parent.stackedWidget.currentIndex()
-            total_tabs = len(self._parent.tabButtons)
+            key = cast(QKeyEvent, event).key()
+            active = QApplication.instance().activeWindow()
 
-            if key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+            # Если открыт FullscreenDialog
+            if isinstance(active, FullscreenDialog):
+                if key == Qt.Key.Key_Right:
+                    active.show_next()
+                    return True
+                elif key == Qt.Key.Key_Left:
+                    active.show_prev()
+                    return True
+                elif key in (Qt.Key.Key_Escape, Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_Backspace):
+                    active.close()
+                    return True
+
+            # В остальных случаях — навигация табов и действие «подтвердить/назад»
+            current = self._parent.stackedWidget.currentIndex()
+            total = len(self._parent.tabButtons)
+
+            if key == Qt.Key.Key_Left:
+                new = (current - 1) % total
+                self._parent.switchTab(new)
+                self._parent.tabButtons[new].setFocus()
+                return True
+            elif key == Qt.Key.Key_Right:
+                new = (current + 1) % total
+                self._parent.switchTab(new)
+                self._parent.tabButtons[new].setFocus()
+                return True
+            elif key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
                 self._parent.activateFocusedWidget()
                 return True
             elif key in (Qt.Key.Key_Escape, Qt.Key.Key_Backspace):
-                self._parent.goBackDetailPage(getattr(self._parent, "currentDetailPage", None))
-                return True
-            elif key == Qt.Key.Key_Left:
-                new_index = (current_index - 1) % total_tabs
-                self._parent.switchTab(new_index)
-                self._parent.tabButtons[new_index].setFocus(Qt.FocusReason.OtherFocusReason)
-                return True
-            elif key == Qt.Key.Key_Right:
-                new_index = (current_index + 1) % total_tabs
-                self._parent.switchTab(new_index)
-                self._parent.tabButtons[new_index].setFocus(Qt.FocusReason.OtherFocusReason)
+                self._parent.goBackDetailPage(self._parent.currentDetailPage)
                 return True
             elif key == Qt.Key.Key_E:
                 self._parent.openAddGameDialog()
                 return True
+
         return super().eventFilter(obj, event)
+
 
     def init_gamepad(self) -> None:
         """Initialize gamepad using evdev with hotplug support via pyudev."""
@@ -158,34 +175,62 @@ class GamepadSupport(QObject):
 
     def handle_button(self, button_code: int) -> None:
         """Handle gamepad button presses."""
+        active = QApplication.instance().activeWindow()
+
+        # Если открыт FullscreenDialog — обрабатываем тут
+        if isinstance(active, FullscreenDialog):
+            if button_code == 310:      # L1 — предыдущая картинка
+                active.show_prev()
+            elif button_code == 311:    # R1 — следующая картинка
+                active.show_next()
+            elif button_code == 305:    # Circle — закрыть
+                active.close()
+            # все остальные кнопки в FullscreenDialog не трогаем
+            return
+
+        # Иначе — стандартная навигация по вкладкам и диалогам
         current_index = self._parent.stackedWidget.currentIndex()
         total_tabs = len(self._parent.tabButtons)
-        if button_code == 304:  # X
+
+        if button_code == 304:         # X — подтвердить
             self._parent.activateFocusedWidget()
-        elif button_code == 305:  # Circle
+        elif button_code == 305:       # Circle — назад
             self._parent.goBackDetailPage(getattr(self._parent, "currentDetailPage", None))
-        elif button_code == 308:  # Triangle
+        elif button_code == 308:       # Triangle — добавить игру
             self._parent.openAddGameDialog()
-        elif button_code == 310:  # L1 (BTN_TL)
+        elif button_code == 310:       # L1 — влево по табам
             new_index = (current_index - 1) % total_tabs
             self._parent.switchTab(new_index)
             self._parent.tabButtons[new_index].setFocus(Qt.FocusReason.OtherFocusReason)
-        elif button_code == 311:  # R1 (BTN_TR)
+        elif button_code == 311:       # R1 — вправо по табам
             new_index = (current_index + 1) % total_tabs
             self._parent.switchTab(new_index)
             self._parent.tabButtons[new_index].setFocus(Qt.FocusReason.OtherFocusReason)
 
     def handle_dpad(self, code: int, value: int, current_time: float) -> None:
         """Handle D-pad movements with delays."""
+        active = QApplication.instance().activeWindow()
+
+        # Если в FullscreenDialog — без задержек сразу меняем картинку
+        if isinstance(active, FullscreenDialog) and code == ecodes.ABS_HAT0X:
+            if value < 0:
+                active.show_prev()
+            elif value > 0:
+                active.show_next()
+            return
+
+        # Иначе — старый deadzone/задержки
         if value == 0:
             self.axis_moving = False
             self.current_axis_delay = self.initial_axis_move_delay
             return
+
         if not self.axis_moving:
             self.trigger_dpad_movement(code, value)
             self.last_move_time = current_time
             self.axis_moving = True
             return
+
         if current_time - self.last_move_time >= self.current_axis_delay:
             self.trigger_dpad_movement(code, value)
             self.last_move_time = current_time
@@ -195,7 +240,7 @@ class GamepadSupport(QObject):
         """Trigger navigation based on D-pad events."""
         current_index = self._parent.stackedWidget.currentIndex()
         total_tabs = len(self._parent.tabButtons)
-        if code == ecodes.ABS_HAT0X:  # D-pad horizontal
+        if code == ecodes.ABS_HAT0X:
             if value < 0:  # Left
                 new_index = (current_index - 1) % total_tabs
                 self._parent.switchTab(new_index)

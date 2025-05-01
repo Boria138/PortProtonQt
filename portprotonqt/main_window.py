@@ -1161,6 +1161,8 @@ class MainWindow(QMainWindow):
 
     def goBackDetailPage(self, page):
         """Возврат из детальной страницы на вкладку 'Библиотека' с обновлением грида."""
+        if page is None:
+            return
         self.stackedWidget.setCurrentIndex(0)
         self.stackedWidget.removeWidget(page)
         page.deleteLater()
