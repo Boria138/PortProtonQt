@@ -1291,182 +1291,318 @@ class MainWindow(QMainWindow):
             self.checkProcessTimer.timeout.connect(self.checkTargetExe)
             self.checkProcessTimer.start(500)
 
+    def delete_game(self, game_name, exec_line):
+        """Delete the .desktop file and associated custom data for the game."""
 
-    def _extract_executable(self, exec_line: str) -> str:
-        """
-        Парсит строку Exec из .desktop и возвращает путь к исполняемому файлу,
-        пропуская env/flatpak-префиксы и плейсхолдеры %F, %U и т.п.
-        """
-        try:
-            tokens = shlex.split(exec_line)
-        except ValueError:
-            return ""
-
-        tokens = [t for t in tokens if not t.startswith('%') and not t.startswith('--')]
-        if tokens and tokens[0] in ("env", "flatpak"):
-            for t in tokens[1:]:
-                if "/" in t or t.endswith('.exe') or os.access(t, os.X_OK):
-                    return t
-            return ""
-        return tokens[0] if tokens else ""
-
-    def delete_game(self, game_name: str, exec_line: str):
-        """Удаляет .desktop файл и связанные пользовательские данные игры."""
-        game_name = game_name.rstrip()
         reply = QMessageBox.question(
             self,
             _("Confirm Deletion"),
-            _("Are you sure you want to delete '{0}'? This will remove the .desktop file and custom data.").format(game_name),
+            _("Are you sure you want to delete '{0}'? This will remove the .desktop file and custom data.")
+                .format(game_name),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )
         if reply != QMessageBox.StandardButton.Yes:
             return
 
-        if not self.portproton_location:
+        # Check PortProton installation
+        if self.portproton_location is None:
             QMessageBox.warning(self, _("Error"), _("PortProton is not found."))
             return
 
-        # Поиск .desktop
-        pattern = os.path.join(self.portproton_location, f"{game_name.strip()}*.desktop")
-        matches = glob.glob(pattern)
-        if not matches:
-            QMessageBox.warning(self, _("Error"), _("Could not locate .desktop file for '{0}'").format(game_name))
-            return
-        desktop_path = matches[0]
+        desktop_path = os.path.join(self.portproton_location, f"{game_name}.desktop")
+        exe_path = None
+        exe_name = None
 
-        # Восстановление exec_line
+        # Validate or recover exec_line
         if not exec_line or exec_line.strip() == "full":
-            entry = parse_desktop_entry(desktop_path)
-            if not entry:
-                QMessageBox.warning(self, _("Error"), _("Failed to parse .desktop file for '{0}'").format(game_name))
+            if os.path.exists(desktop_path):
+                try:
+                    entry = parse_desktop_entry(desktop_path)
+                    if entry:
+                        exec_line = entry.get("Exec", entry.get("exec", ""))
+                        if not exec_line:
+                            QMessageBox.warning(
+                                self,
+                                _("Error"),
+                                _("No executable command found for game: {0}").format(game_name)
+                            )
+                            return
+                    else:
+                        QMessageBox.warning(
+                            self,
+                            _("Error"),
+                            _("Failed to parse .desktop file for game: {0}").format(game_name)
+                        )
+                        return
+                except Exception as e:
+                    QMessageBox.warning(
+                        self,
+                        _("Error"),
+                        _("Error reading .desktop file: {0}").format(e)
+                    )
+                    return
+            else:
+                # Try sanitized name
+                sanitized_name = game_name.replace("/", "_").replace(":", "_").replace(" ", "_")
+                desktop_path = os.path.join(self.portproton_location, f"{sanitized_name}.desktop")
+                if os.path.exists(desktop_path):
+                    try:
+                        entry = parse_desktop_entry(desktop_path)
+                        if entry:
+                            exec_line = entry.get("Exec", entry.get("exec", ""))
+                            if not exec_line:
+                                QMessageBox.warning(
+                                    self,
+                                    _("Error"),
+                                    _("No executable command found for game: {0}").format(game_name)
+                                )
+                                return
+                        else:
+                            QMessageBox.warning(
+                                self,
+                                _("Error"),
+                                _("Failed to parse .desktop file for game: {0}").format(game_name)
+                            )
+                            return
+                    except Exception as e:
+                        QMessageBox.warning(
+                            self,
+                            _("Error"),
+                            _("Error reading .desktop file: {0}").format(e)
+                        )
+                        return
+                else:
+                    # Proceed with deletion if .desktop file exists, even without exec_line
+                    if not os.path.exists(desktop_path):
+                        desktop_path = os.path.join(self.portproton_location, f"{game_name}.desktop")
+                        if not os.path.exists(desktop_path):
+                            QMessageBox.warning(
+                                self,
+                                _("Error"),
+                                _("Could not locate .desktop file for '{0}'").format(game_name)
+                            )
+                            return
+
+        # Parse Exec line
+        if exec_line:
+            try:
+                entry_exec_split = shlex.split(exec_line)
+                # Filter out desktop placeholders (%U, %f, etc.)
+                real_tokens = [t for t in entry_exec_split if not t.startswith('%')]
+                if real_tokens:
+                    if real_tokens[0] == "env" and len(real_tokens) >= 3:
+                        exe_path = real_tokens[2]  # Use the executable path after env and script
+                    else:
+                        exe_path = real_tokens[-1]  # Fallback to the last token
+                    exe_name = os.path.splitext(os.path.basename(exe_path))[0]
+            except Exception:
+                QMessageBox.warning(
+                    self,
+                    _("Warning"),
+                    _("Could not parse the executable path from Exec line:\n{0}").format(exec_line)
+                )
+                # Proceed with deletion without exe_name
+
+        # Remove .desktop file
+        if os.path.exists(desktop_path):
+            try:
+                os.remove(desktop_path)
+            except OSError as e:
+                QMessageBox.warning(
+                    self,
+                    _("Error"),
+                    _("Failed to delete .desktop file: {0}").format(e)
+                )
                 return
-            exec_line = entry.get("Exec", entry.get("exec", ""))
-
-        # Извлечение пути к исполняемому
-        exe_path = self._extract_executable(exec_line)
-        exe_name = os.path.splitext(os.path.basename(exe_path))[0] if exe_path else None
-
-        # Удаление .desktop
-        try:
-            os.remove(desktop_path)
-        except OSError as e:
-            QMessageBox.warning(self, _("Error"), _("Failed to delete .desktop file: {0}").format(e))
+        else:
+            QMessageBox.warning(
+                self,
+                _("Error"),
+                _("Could not locate .desktop file for '{0}'").format(game_name)
+            )
             return
 
-        # Удаление кастомных данных
+        # Remove custom data if we got an exe_name
         if exe_name:
-            xdg = os.getenv("XDG_DATA_HOME", os.path.expanduser("~/.local/share"))
-            custom_folder = os.path.join(xdg, "PortProtonQT", "custom_data", exe_name)
+            xdg_data_home = os.getenv(
+                "XDG_DATA_HOME",
+                os.path.join(os.path.expanduser("~"), ".local", "share")
+            )
+            custom_folder = os.path.join(xdg_data_home, "PortProtonQT", "custom_data", exe_name)
             if os.path.exists(custom_folder):
                 try:
                     shutil.rmtree(custom_folder)
                 except OSError as e:
-                    QMessageBox.warning(self, _("Error"), _("Failed to delete custom data: {0}").format(e))
+                    QMessageBox.warning(
+                        self,
+                        _("Error"),
+                        _("Failed to delete custom data: {0}").format(e)
+                    )
 
+        # Refresh UI
         self.games = self.loadGames()
         self.updateGameGrid()
-        self.statusBar().showMessage(_("Game '{0}' deleted successfully").format(game_name), 3000)
+        self.statusBar().showMessage(
+            _("Game '{0}' deleted successfully").format(game_name), 3000
+        )
 
-    def add_to_menu(self, game_name: str, exec_line: str):
-        """Копирует .desktop файл в ~/.local/share/applications."""
-        game_name = game_name.rstrip()
-        if not self.portproton_location:
-            QMessageBox.warning(self, _("Error"), _("PortProton is not found."))
-            return
+    def add_to_menu(self, game_name, exec_line):
+            """Copy the .desktop file to ~/.local/share/applications."""
+            if self.portproton_location is None:
+                QMessageBox.warning(self, _("Error"), _("PortProton is not found."))
+                return
 
-        pattern = os.path.join(self.portproton_location, f"{game_name.strip()}*.desktop")
-        matches = glob.glob(pattern)
-        if not matches:
-            QMessageBox.warning(self, _("Error"), _("Could not locate .desktop file for '{0}'").format(game_name))
-            return
-        desktop_path = matches[0]
+            # Parse exec_line
+            shlex.split(exec_line)
+            desktop_path = os.path.join(self.portproton_location, f"{game_name}.desktop")
 
-        applications_dir = os.path.expanduser("~/.local/share/applications")
-        os.makedirs(applications_dir, exist_ok=True)
-        dest = os.path.join(applications_dir, os.path.basename(desktop_path))
+            if not desktop_path or not os.path.exists(desktop_path):
+                QMessageBox.warning(self, _("Error"), _("Could not locate .desktop file for '{0}'").format(game_name))
+                return
+
+            # Destination path
+            applications_dir = os.path.join(os.path.expanduser("~"), ".local", "share", "applications")
+            os.makedirs(applications_dir, exist_ok=True)
+            dest_path = os.path.join(applications_dir, f"{game_name}.desktop")
+
+            # Copy .desktop file
+            try:
+                shutil.copyfile(desktop_path, dest_path)
+                os.chmod(dest_path, 0o755)  # Ensure executable permissions
+                self.statusBar().showMessage(_("Game '{0}' added to menu").format(game_name), 3000)
+            except OSError as e:
+                QMessageBox.warning(self, _("Error"), _("Failed to add game to menu: {0}").format(str(e)))
+
+    def remove_from_menu(self, game_name):
+        """Remove the .desktop file from ~/.local/share/applications."""
+        applications_dir = os.path.join(os.path.expanduser("~"), ".local", "share", "applications")
+        desktop_path = os.path.join(applications_dir, f"{game_name}.desktop")
 
         try:
-            shutil.copyfile(desktop_path, dest)
-            os.chmod(dest, 0o755)
-            self.statusBar().showMessage(_("Game '{0}' added to menu").format(game_name), 3000)
-        except OSError as e:
-            QMessageBox.warning(self, _("Error"), _("Failed to add game to menu: {0}").format(e))
-
-    def remove_from_menu(self, game_name: str):
-        """Удаляет .desktop файл из ~/.local/share/applications."""
-        game_name = game_name.rstrip()
-        applications_dir = os.path.expanduser("~/.local/share/applications")
-        dest = os.path.join(applications_dir, f"{game_name}.desktop")
-        try:
-            os.remove(dest)
+            os.remove(desktop_path)
             self.statusBar().showMessage(_("Game '{0}' removed from menu").format(game_name), 3000)
         except OSError as e:
-            QMessageBox.warning(self, _("Error"), _("Failed to remove game from menu: {0}").format(e))
+            QMessageBox.warning(self, _("Error"), _("Failed to remove game from menu: {0}").format(str(e)))
 
-    def add_to_desktop(self, game_name: str, exec_line: str):
-        """Копирует .desktop файл на рабочий стол пользователя."""
-        game_name = game_name.rstrip()
-        if not self.portproton_location:
-            QMessageBox.warning(self, _("Error"), _("PortProton is not found."))
-            return
-
-        pattern = os.path.join(self.portproton_location, f"{game_name.strip()}*.desktop")
-        matches = glob.glob(pattern)
-        if not matches:
-            QMessageBox.warning(self, _("Error"), _("Could not locate .desktop file for '{0}'").format(game_name))
-            return
-        desktop_path = matches[0]
-
-        desktop_dir = subprocess.check_output(['xdg-user-dir', 'DESKTOP']).decode().strip()
-        os.makedirs(desktop_dir, exist_ok=True)
-        dest = os.path.join(desktop_dir, os.path.basename(desktop_path))
-
-        try:
-            shutil.copyfile(desktop_path, dest)
-            os.chmod(dest, 0o755)
-            self.statusBar().showMessage(_("Game '{0}' added to desktop").format(game_name), 3000)
-        except OSError as e:
-            QMessageBox.warning(self, _("Error"), _("Failed to add game to desktop: {0}").format(e))
-
-    def remove_from_desktop(self, game_name: str):
-        """Удаляет .desktop файл с рабочего стола пользователя."""
-        game_name = game_name.rstrip()
-        desktop_dir = subprocess.check_output(['xdg-user-dir', 'DESKTOP']).decode().strip()
-        dest = os.path.join(desktop_dir, f"{game_name}.desktop")
-        try:
-            os.remove(dest)
-            self.statusBar().showMessage(_("Game '{0}' removed from desktop").format(game_name), 3000)
-        except OSError as e:
-            QMessageBox.warning(self, _("Error"), _("Failed to remove game from desktop: {0}").format(e))
-
-    def edit_game_shortcut(self, game_name: str, exec_line: str, cover_path: str):
-        """Открывает диалог редактирования ярлыка для изменения существующего .desktop файла."""
-        game_name = game_name.rstrip()
-        if not self.portproton_location:
-            QMessageBox.warning(self, _("Error"), _("PortProton is not found."))
-            return
-
-        pattern = os.path.join(self.portproton_location, f"{game_name.strip()}*.desktop")
-        matches = glob.glob(pattern)
-        if not matches:
-            QMessageBox.warning(self, _("Error"), _(".desktop file not found for game: {0}").format(game_name))
-            return
-        desktop_path = matches[0]
-
-        # Восстановление exec_line
-        if not exec_line or exec_line.strip() == "full":
-            entry = parse_desktop_entry(desktop_path)
-            if not entry:
-                QMessageBox.warning(self, _("Error"), _("Failed to parse .desktop file for '{0}'").format(game_name))
+    def add_to_desktop(self, game_name, exec_line):
+            """Copy the .desktop file to Desktop folder."""
+            if self.portproton_location is None:
+                QMessageBox.warning(self, _("Error"), _("PortProton is not found."))
                 return
-            exec_line = entry.get("Exec", entry.get("exec", ""))
 
-        exe_path = self._extract_executable(exec_line)
-        if not exe_path or not os.path.exists(exe_path):
-            QMessageBox.warning(self, _("Error"), _("Executable file not found: {0}").format(exe_path or _('None')))
+            # Parse exec_line
+            shlex.split(exec_line)
+            desktop_path = os.path.join(self.portproton_location, f"{game_name}.desktop")
+
+            if not desktop_path or not os.path.exists(desktop_path):
+                QMessageBox.warning(self, _("Error"), _("Could not locate .desktop file for '{0}'").format(game_name))
+                return
+
+            # Destination path
+            desktop_dir = subprocess.check_output(['xdg-user-dir', 'DESKTOP']).decode('utf-8').strip()
+            os.makedirs(desktop_dir, exist_ok=True)
+            dest_path = os.path.join(desktop_dir, f"{game_name}.desktop")
+
+            # Copy .desktop file
+            try:
+                shutil.copyfile(desktop_path, dest_path)
+                os.chmod(dest_path, 0o755)  # Ensure executable permissions
+                self.statusBar().showMessage(_("Game '{0}' added to desktop").format(game_name), 3000)
+            except OSError as e:
+                QMessageBox.warning(self, _("Error"), _("Failed to add game to desktop: {0}").format(str(e)))
+
+    def remove_from_desktop(self, game_name):
+        """Remove the .desktop file from Desktop folder."""
+        desktop_dir = subprocess.check_output(['xdg-user-dir', 'DESKTOP']).decode('utf-8').strip()
+        desktop_path = os.path.join(desktop_dir, f"{game_name}.desktop")
+
+        try:
+            os.remove(desktop_path)
+            self.statusBar().showMessage(_("Game '{0}' removed from Desktop").format(game_name), 3000)
+        except OSError as e:
+            QMessageBox.warning(self, _("Error"), _("Failed to remove game from Desktop: {0}").format(str(e)))
+
+    def edit_game_shortcut(self, game_name, exec_line, cover_path):
+        """Opens the AddGameDialog in edit mode to modify an existing .desktop file."""
+
+        if self.portproton_location is None:
+            QMessageBox.warning(self, _("Error"), _("PortProton is not found."))
             return
 
+        # Parse exec_line to get the executable path
+        exe_path = None
+        if not exec_line or exec_line.strip() == "full":
+            # Fallback: Try to re-read the .desktop file
+            desktop_path = os.path.join(self.portproton_location, f"{game_name}.desktop")
+            if os.path.exists(desktop_path):
+                try:
+                    entry = parse_desktop_entry(desktop_path)
+                    if entry:
+                        exec_line = entry.get("Exec", entry.get("exec", ""))
+                        if not exec_line:
+                            QMessageBox.warning(self, _("Error"), _("No executable command found for game: {0}").format(game_name))
+                            return
+                    else:
+                        QMessageBox.warning(self, _("Error"), _("Failed to parse .desktop file for game: {0}").format(game_name))
+                        return
+                except Exception as e:
+                    QMessageBox.warning(self, _("Error"), _("Error reading .desktop file: {0}").format(e))
+                    return
+            else:
+                # Try sanitizing game_name
+                sanitized_name = game_name.replace("/", "_").replace(":", "_").replace(" ", "_")
+                desktop_path = os.path.join(self.portproton_location, f"{sanitized_name}.desktop")
+                if os.path.exists(desktop_path):
+                    try:
+                        entry = parse_desktop_entry(desktop_path)
+                        if entry:
+                            exec_line = entry.get("Exec", entry.get("exec", ""))
+                            if not exec_line:
+                                QMessageBox.warning(self, _("Error"), _("No executable command found for game: {0}").format(game_name))
+                                return
+                        else:
+                            QMessageBox.warning(self, _("Error"), _("Failed to parse .desktop file for game: {0}").format(game_name))
+                            return
+                    except Exception as e:
+                        QMessageBox.warning(self, _("Error"), _("Error reading .desktop file: {0}").format(e))
+                        return
+                else:
+                    # Search for a matching .desktop file by executable path
+                    for file in glob.glob(os.path.join(self.portproton_location, "*.desktop")):
+                        entry = parse_desktop_entry(file)
+                        if entry:
+                            exec_line = entry.get("Exec", entry.get("exec", ""))
+                            break
+                    else:
+                        QMessageBox.warning(self, _("Error"), _(".desktop file not found for game: {0}").format(game_name))
+                        return
+
+        if exec_line:
+            try:
+                entry_exec_split = shlex.split(exec_line)
+                if entry_exec_split:  # Check if the list is not empty
+                    if entry_exec_split[0] == "env" and len(entry_exec_split) >= 3:
+                        exe_path = entry_exec_split[2]  # Adjusted index for env script exe_path
+                    elif entry_exec_split[0] == "flatpak" and len(entry_exec_split) >= 4:
+                        exe_path = entry_exec_split[3]
+                    else:
+                        exe_path = entry_exec_split[-1]  # Fallback to the last element
+                else:
+                    QMessageBox.warning(self, _("Error"), _("Invalid executable command: {0}").format(exec_line))
+                    return
+            except Exception as e:
+                QMessageBox.warning(self, _("Error"), _("Failed to parse executable command: {0}").format(e))
+                return
+        else:
+            QMessageBox.warning(self, _("Error"), _("Executable command is empty for game: {0}").format(game_name))
+            return
+
+        if not exe_path or not os.path.exists(exe_path):
+            QMessageBox.warning(self, _("Error"), _("Executable file not found: {0}").format(exe_path or "None"))
+            return
+
+        # Open dialog in edit mode
         dialog = AddGameDialog(
             parent=self,
             theme=self.theme,
@@ -1485,32 +1621,47 @@ class MainWindow(QMainWindow):
                 QMessageBox.warning(self, _("Error"), _("Game name and executable path are required."))
                 return
 
+            # Generate new .desktop file content
             desktop_entry, new_desktop_path = dialog.getDesktopEntryData()
             if not desktop_entry or not new_desktop_path:
                 QMessageBox.warning(self, _("Error"), _("Failed to generate .desktop file data."))
                 return
 
-            old_path = os.path.join(self.portproton_location, f"{game_name}.desktop")
-            if new_name != game_name and os.path.exists(old_path):
-                os.remove(old_path)
+            # If the name has changed, remove the old .desktop file
+            old_desktop_path = os.path.join(self.portproton_location, f"{game_name}.desktop")
+            if game_name != new_name and os.path.exists(old_desktop_path):
+                try:
+                    os.remove(old_desktop_path)
+                except OSError as e:
+                    QMessageBox.warning(self, _("Error"), _("Failed to remove old .desktop file: {0}").format(e))
+                    return
 
+            # Save the updated .desktop file
             try:
                 with open(new_desktop_path, "w", encoding="utf-8") as f:
                     f.write(desktop_entry)
-                os.chmod(new_desktop_path, 0o755)
+                    os.chmod(new_desktop_path, 0o755)
             except OSError as e:
                 QMessageBox.warning(self, _("Error"), _("Failed to save .desktop file: {0}").format(e))
                 return
 
+            # Update custom cover if provided
             if os.path.isfile(new_cover_path):
-                exe_name_new = os.path.splitext(os.path.basename(new_exe_path))[0]
-                xdg = os.getenv("XDG_DATA_HOME", os.path.expanduser("~/.local/share"))
-                custom_folder = os.path.join(xdg, "PortProtonQT", "custom_data", exe_name_new)
+                exe_name = os.path.splitext(os.path.basename(new_exe_path))[0]
+                xdg_data_home = os.getenv("XDG_DATA_HOME",
+                                        os.path.join(os.path.expanduser("~"), ".local", "share"))
+                custom_folder = os.path.join(xdg_data_home, "PortProtonQT", "custom_data", exe_name)
                 os.makedirs(custom_folder, exist_ok=True)
-                ext = os.path.splitext(new_cover_path)[1].lower()
-                if ext in (".png", ".jpg", ".jpeg", ".bmp"):
-                    shutil.copyfile(new_cover_path, os.path.join(custom_folder, f"cover{ext}"))
 
+                ext = os.path.splitext(new_cover_path)[1].lower()
+                if ext in [".png", ".jpg", ".jpeg", ".bmp"]:
+                    try:
+                        shutil.copyfile(new_cover_path, os.path.join(custom_folder, f"cover{ext}"))
+                    except OSError as e:
+                        QMessageBox.warning(self, _("Error"), _("Failed to copy cover image: {0}").format(e))
+                        return
+
+            # Refresh the game list
             self.games = self.loadGames()
             self.updateGameGrid()
 
