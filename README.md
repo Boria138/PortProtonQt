@@ -62,6 +62,7 @@ source .venv/bin/activate
 В проект встроен линтер (ruff), статический анализатор (pyright) и проверка lock файла, если эти проверки не пройдут PR не будет принят, поэтому перед коммитом введите такую команду
 
 ```sh
+uv python install 3.10
 uv sync --all-extras --dev
 source .venv/bin/activate
 pre-commit install

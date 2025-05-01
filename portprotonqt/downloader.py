@@ -4,6 +4,8 @@ import urllib.error
 import threading
 import time
 import socket
+import ssl
+import certifi
 from pathlib import Path
 from portprotonqt.config_utils import read_proxy_config
 from portprotonqt.logger import get_logger
@@ -25,11 +27,12 @@ def format_size(size_bytes):
     return f"{size_bytes:.2f} {units[index]}"
 
 def get_opener():
-    """Создаёт и возвращает настроенный URL opener с прокси-конфигурацией."""
-    proxy_config = read_proxy_config() or {}
-    handler = urllib.request.ProxyHandler(proxy_config)
-    opener = urllib.request.build_opener(handler)
-    return opener
+    """Создаёт opener с прокси и корректной проверкой SSL через certifi."""
+    proxy = read_proxy_config() or {}
+    proxy_handler = urllib.request.ProxyHandler(proxy)
+    context = ssl.create_default_context(cafile=certifi.where())
+    https_handler = urllib.request.HTTPSHandler(context=context)
+    return urllib.request.build_opener(proxy_handler, https_handler)
 
 def download_with_cache(url, local_path, timeout=5, downloader_instance=None):
     """Скачивает файл с отображением прогресса."""
@@ -243,18 +246,19 @@ class Downloader:
         self._last_error = {}
         self._locks = {}
         self._global_lock = threading.Lock()
-        self._has_internet = None  # Кешируем результат проверки
+        self._has_internet = None
 
     def has_internet(self, timeout=3):
-        """Проверяет интернет один раз и кеширует результат"""
-        if self._has_internet is None:  # Проверяем только при первом вызове
+        if self._has_internet is None:
             try:
                 socket.create_connection(("8.8.8.8", 53), timeout=timeout)
-                urllib.request.urlopen("https://www.google.com", timeout=timeout)
+                # HTTPS проверка с certifi
+                ctx = ssl.create_default_context(cafile=certifi.where())
+                urllib.request.urlopen("https://www.google.com", timeout=timeout, context=ctx)
                 self._has_internet = True
-            except (TimeoutError, OSError, urllib.error.URLError):
+            except Exception as e:
+                logger.warning(f"Интернет недоступен: {e}")
                 self._has_internet = False
-                logger.warning("Интернет недоступен. Все загрузки пропущены.")
         return self._has_internet
 
     def reset_internet_check(self):
