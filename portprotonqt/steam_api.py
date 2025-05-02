@@ -368,7 +368,14 @@ def fetch_app_info_cached(app_id):
     if not details.get("success"):
         return None
 
-    app_data = details.get("data", {})
+    app_data_full = details.get("data", {})
+    app_data = {
+        "steam_appid": app_data_full.get("steam_appid", app_id),
+        "name": app_data_full.get("name", ""),
+        "short_description": app_data_full.get("short_description", ""),
+        "controller_support": app_data_full.get("controller_support", "")
+    }
+
     save_app_details(app_id, app_data)
     return app_data
 
@@ -386,7 +393,7 @@ def load_protondb_status(appid):
     return None
 
 def save_protondb_status(appid, data):
-    """Сохраняет данные ProtonDB для игры по appid в файл кеша."""
+    """Сохраняет данные ProtonDB для игры по appid в файл кэша."""
     cache_dir = get_cache_dir()
     cache_file = os.path.join(cache_dir, f"protondb_{appid}.json")
     try:
@@ -400,7 +407,7 @@ def get_protondb_tier(appid):
     """
     Получает статус ProtonDB для приложения.
     Сначала пытается загрузить данные из кеша, затем обращается к API ProtonDB
-    и сохраняет результат в кеш.
+    и сохраняет в кеш.
     """
     cached = load_protondb_status(appid)
     if cached is not None:
@@ -419,9 +426,9 @@ def get_protondb_tier(appid):
     try:
         with open(result, "rb") as f:
             data = orjson.loads(f.read())
-        tier = data.get("tier", "")
-        save_protondb_status(appid, data)
-        return tier
+        filtered_data = {"tier": data.get("tier", "")}
+        save_protondb_status(appid, filtered_data)
+        return filtered_data["tier"]
     except Exception as e:
         logger.info("Не удалось обработать данные ProtonDB для appid %s, ошибка: %s", appid, e)
         return ""
