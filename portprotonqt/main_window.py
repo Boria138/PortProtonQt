@@ -20,12 +20,13 @@ from portprotonqt.theme_manager import ThemeManager, load_theme_screenshots, loa
 from portprotonqt.time_utils import save_last_launch, get_last_launch, parse_playtime_file, format_playtime, get_last_launch_timestamp, format_last_launch
 from portprotonqt.config_utils import (
     get_portproton_location, read_theme_from_config, save_theme_to_config, parse_desktop_entry, load_theme_metainfo, read_time_config, read_card_size, save_card_size,
-    read_sort_method, read_display_filter, read_favorites, save_favorites, save_time_config, save_sort_method, save_display_filter, save_proxy_config, read_proxy_config
+    read_sort_method, read_display_filter, read_favorites, save_favorites, save_time_config, save_sort_method, save_display_filter, save_proxy_config, read_proxy_config, read_icon_color_config,
+    save_icon_color_config
 )
 from portprotonqt.localization import _
 
 from PySide6.QtWidgets import (QLineEdit, QMainWindow, QStatusBar, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox, QScrollArea, QSlider,
-                               QDialog, QFormLayout, QFrame, QGraphicsDropShadowEffect, QMessageBox, QGraphicsEffect, QGraphicsOpacityEffect, QApplication)
+                               QDialog, QFormLayout, QFrame, QGraphicsDropShadowEffect, QMessageBox, QGraphicsEffect, QGraphicsOpacityEffect, QApplication, QColorDialog)
 from PySide6.QtGui import QIcon, QPixmap, QColor, QDesktopServices
 from PySide6.QtCore import Qt, QTimer, QAbstractAnimation, QPropertyAnimation, QByteArray, QUrl
 from typing import cast
@@ -790,6 +791,17 @@ class MainWindow(QMainWindow):
         self.proxyPasswordTitle.setObjectName("settingsTitle")
         formLayout.addRow(self.proxyPasswordTitle, self.proxyPasswordEdit)
 
+        # 5.Tray icon color picker
+        initial_color = QColor(read_icon_color_config())
+        self.iconColor = initial_color
+        self.iconColorButton = AutoSizeButton()
+        self.iconColorButton.setStyleSheet(f"background-color: {self.iconColor.name()};")
+        self.iconColorButton.clicked.connect(self.pickTrayIconColor)
+        self.trayColorTitle = QLabel(_("Tray icon color:"))
+        self.trayColorTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.trayColorTitle.setObjectName("settingsTitle")
+        formLayout.addRow(self.trayColorTitle, self.iconColorButton)
+
         layout.addLayout(formLayout)
 
         # Кнопка сохранения настроек
@@ -801,6 +813,13 @@ class MainWindow(QMainWindow):
 
         layout.addStretch(1)
         self.stackedWidget.addWidget(self.portProtonWidget)
+
+    def pickTrayIconColor(self):
+        """Открыть стандартный QColorDialog и обновить кнопку."""
+        color = QColorDialog.getColor(self.iconColor, parent=self, title="Выбрать цвет значка в трее")
+        if color.isValid():
+            self.iconColor = color
+            self.iconColorButton.setStyleSheet(f"background-color: {self.iconColor.name()};")
 
     def savePortProtonSettings(self):
         """
@@ -820,6 +839,7 @@ class MainWindow(QMainWindow):
         proxy_user = self.proxyUserEdit.text().strip()
         proxy_password = self.proxyPasswordEdit.text().strip()
         save_proxy_config(proxy_url, proxy_user, proxy_password)
+        save_icon_color_config(self.iconColor.name())
 
         # Перезагружаем настройки
         read_time_config()
