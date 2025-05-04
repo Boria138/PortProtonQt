@@ -20,10 +20,14 @@ class MainWindowProtocol(Protocol):
         ...
     def openAddGameDialog(self, exe_path: str | None = None) -> None:
         ...
-    currentDetailPage: QWidget
+    def toggleGame(self, exec_line: str | None, button: QWidget | None = None) -> None:
+        ...
     stackedWidget: QStackedWidget
     tabButtons: dict[int, QWidget]
     gamesListWidget: QWidget
+
+    currentDetailPage: QWidget | None
+    current_exec_line: str | None
 
 # Mapping of actions to evdev button codes, includes PlayStation, Xbox, and Switch controllers (https://www.kernel.org/doc/html/v4.12/input/gamepad.html)
 BUTTONS = {
@@ -43,6 +47,7 @@ BUTTONS = {
     'menu':      {ecodes.BTN_START, ecodes.BTN_SELECT, ecodes.BTN_MODE},
 }
 
+
 class InputManager(QObject):
     """
     Manages input from gamepads and keyboards for navigating the application interface.
@@ -58,6 +63,10 @@ class InputManager(QObject):
     ):
         super().__init__(cast(QObject, main_window))
         self._parent = main_window
+        # Ensure attributes exist on main_window
+        self._parent.currentDetailPage = getattr(self._parent, 'currentDetailPage', None)
+        self._parent.current_exec_line = getattr(self._parent, 'current_exec_line', None)
+
         self.axis_deadzone = axis_deadzone
         self.initial_axis_move_delay = initial_axis_move_delay
         self.repeat_axis_move_delay = repeat_axis_move_delay
@@ -98,6 +107,12 @@ class InputManager(QObject):
                     return True
                 elif key in (Qt.Key.Key_Escape, Qt.Key.Key_Return, Qt.Key.Key_Enter):
                     active.close()
+                    return True
+
+            # Handle game launch on detail page
+            if getattr(self._parent, 'currentDetailPage', None) is not None and key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+                if getattr(self._parent, 'current_exec_line', None):
+                    self._parent.toggleGame(self._parent.current_exec_line, None)
                     return True
 
             # Tab switching and navigation
@@ -203,6 +218,12 @@ class InputManager(QObject):
             elif button_code in BUTTONS['back']:
                 active.close()
             return
+
+        # Game launch on detail page
+        if (button_code in BUTTONS['confirm'] or button_code in BUTTONS['confirm_stick']) and self._parent.currentDetailPage is not None:
+            if self._parent.current_exec_line:
+                self._parent.toggleGame(self._parent.current_exec_line, None)
+                return
 
         # Standard navigation
         if button_code in BUTTONS['confirm'] or button_code in BUTTONS['confirm_stick']:

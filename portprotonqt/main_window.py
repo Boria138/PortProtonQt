@@ -39,6 +39,9 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setAcceptDrops(True)
+        self.current_exec_line = None
+        self.currentDetailPage = None
+        self.current_play_button = None
 
         read_time_config()
 
@@ -1045,7 +1048,6 @@ class MainWindow(QMainWindow):
         else:
             favoriteLabelCover.setText("☆")
         favoriteLabelCover.clicked.connect(lambda: self.toggleFavoriteInDetailPage(name, favoriteLabelCover))
-        # Размещаем значок: 8 пикселей от левого и верхнего края
         favoriteLabelCover.move(8, 8)
         favoriteLabelCover.raise_()
 
@@ -1058,7 +1060,6 @@ class MainWindow(QMainWindow):
         detailsLayout.setContentsMargins(20, 20, 20, 20)
         detailsLayout.setSpacing(15)
 
-        # Заголовок игры (без значка избранного)
         titleLabel = QLabel(name)
         titleLabel.setStyleSheet(self.theme.DETAIL_PAGE_TITLE_STYLE)
         detailsLayout.addWidget(titleLabel)
@@ -1092,7 +1093,7 @@ class MainWindow(QMainWindow):
 
         if controller_support:
             cs = controller_support.lower()
-            translated_cs=""
+            translated_cs = ""
             if cs == "full":
                 translated_cs = _("full")
             elif cs == "partial":
@@ -1135,8 +1136,10 @@ class MainWindow(QMainWindow):
         self.stackedWidget.addWidget(detailPage)
         self.stackedWidget.setCurrentWidget(detailPage)
         self.currentDetailPage = detailPage
+        self.current_exec_line = exec_line
+        self.current_play_button = playButton
 
-        # Анимация плавного появления
+        # Анимация
         opacityEffect = QGraphicsOpacityEffect(detailPage)
         detailPage.setGraphicsEffect(opacityEffect)
         animation = QPropertyAnimation(opacityEffect, QByteArray(b"opacity"))
@@ -1232,11 +1235,16 @@ class MainWindow(QMainWindow):
         """
         if self.current_running_button is not None:
             self.current_running_button.setText(_("Play"))
-            self.current_running_button.setIcon(self.theme_manager.get_icon("play", color=self.theme.playButtonPlayIconColor))
+            icon = self.theme_manager.get_icon("play", color=self.theme.playButtonPlayIconColor)
+            if isinstance(icon, str):
+                icon = QIcon(icon)  # Convert path to QIcon
+            elif icon is None:
+                icon = QIcon()  # Use empty QIcon as fallback
+            self.current_running_button.setIcon(icon)
             self.current_running_button = None
         self.target_exe = None
 
-    def toggleGame(self, exec_line, button):
+    def toggleGame(self, exec_line, button=None):
         if exec_line.startswith("steam://"):
             url = QUrl(exec_line)
             QDesktopServices.openUrl(url)
@@ -1264,6 +1272,8 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, _("Error"), _("Cannot launch game while another game is running"))
             return
 
+        update_button = button if button is not None else self.current_play_button
+
         # Если игра уже запущена для этого exe – останавливаем её по нажатию кнопки
         if self.game_processes and self.target_exe == current_exe:
             for proc in self.game_processes:
@@ -1283,8 +1293,14 @@ class MainWindow(QMainWindow):
                 except psutil.NoSuchProcess:
                     pass
             self.game_processes = []
-            button.setText(_("Play"))
-            button.setIcon(self.theme_manager.get_icon("play", color=self.theme.playButtonPlayIconColor))
+            if update_button:
+                update_button.setText(_("Play"))
+                icon = self.theme_manager.get_icon("play", color=self.theme.playButtonPlayIconColor)
+                if isinstance(icon, str):
+                    icon = QIcon(icon)
+                elif icon is None:
+                    icon = QIcon()
+                update_button.setIcon(icon)
             if hasattr(self, 'checkProcessTimer') and self.checkProcessTimer is not None:
                 self.checkProcessTimer.stop()
                 self.checkProcessTimer.deleteLater()
@@ -1295,7 +1311,7 @@ class MainWindow(QMainWindow):
             #self._uninhibit_screensaver()
         else:
             # Сохраняем ссылку на кнопку для сброса после завершения игры
-            self.current_running_button = button
+            self.current_running_button = update_button
             self.target_exe = current_exe
             exe_name = os.path.splitext(current_exe)[0]
             env_vars = os.environ.copy()
@@ -1306,8 +1322,14 @@ class MainWindow(QMainWindow):
             process = subprocess.Popen(entry_exec_split, env=env_vars, shell=False, preexec_fn=os.setsid)
             self.game_processes.append(process)
             save_last_launch(exe_name, datetime.now())
-            button.setText(_("Launching"))
-            button.setIcon(self.theme_manager.get_icon("stop", color=self.theme.playButtonStopIconColor))
+            if update_button:
+                update_button.setText(_("Launching"))
+                icon = self.theme_manager.get_icon("stop", color=self.theme.playButtonStopIconColor)
+                if isinstance(icon, str):
+                    icon = QIcon(icon)
+                elif icon is None:
+                    icon = QIcon()
+
             self.checkProcessTimer = QTimer(self)
             self.checkProcessTimer.timeout.connect(self.checkTargetExe)
             self.checkProcessTimer.start(500)
