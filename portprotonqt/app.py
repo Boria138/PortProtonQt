@@ -23,8 +23,17 @@ def main():
     tray = SystemTray(app, current_theme_name)
     tray.show_action.triggered.connect(window.show)
     tray.hide_action.triggered.connect(window.hide)
-    window.show()
 
+    def recreate_tray():
+        nonlocal tray
+        tray.hide_tray()
+        current_theme = read_theme_from_config()
+        tray = SystemTray(app, current_theme)
+        tray.show_action.triggered.connect(window.show)
+        tray.hide_action.triggered.connect(window.hide)
+
+    window.settings_saved.connect(recreate_tray)
+    window.show()
     sys.exit(app.exec())
 
 if __name__ == '__main__':

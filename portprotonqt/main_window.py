@@ -28,12 +28,13 @@ from portprotonqt.localization import _
 from PySide6.QtWidgets import (QLineEdit, QMainWindow, QStatusBar, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox, QScrollArea, QSlider,
                                QDialog, QFormLayout, QFrame, QGraphicsDropShadowEffect, QMessageBox, QGraphicsEffect, QGraphicsOpacityEffect, QApplication, QColorDialog)
 from PySide6.QtGui import QIcon, QPixmap, QColor, QDesktopServices
-from PySide6.QtCore import Qt, QTimer, QAbstractAnimation, QPropertyAnimation, QByteArray, QUrl
+from PySide6.QtCore import Qt, QTimer, QAbstractAnimation, QPropertyAnimation, QByteArray, QUrl, Signal
 from typing import cast
 from datetime import datetime
 
 class MainWindow(QMainWindow):
     """Main window of PortProtonQT."""
+    settings_saved = Signal()
 
     def __init__(self):
         super().__init__()
@@ -845,6 +846,7 @@ class MainWindow(QMainWindow):
         read_time_config()
         self.games = self.loadGames()
         self.updateGameGrid()
+        self.settings_saved.emit()
 
         self.statusBar().showMessage(_("Settings saved"), 3000)
 

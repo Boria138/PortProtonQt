@@ -30,3 +30,7 @@ class SystemTray:
         self.menu.addAction(self.quit_action)
 
         self.tray.setContextMenu(self.menu)
+
+    def hide_tray(self):
+        """Скрыть иконку трея"""
+        self.tray.hide()
