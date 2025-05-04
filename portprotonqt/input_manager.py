@@ -14,7 +14,7 @@ logger = get_logger(__name__)
 class MainWindowProtocol(Protocol):
     def activateFocusedWidget(self) -> None:
         ...
-    def goBackDetailPage(self, page: QWidget) -> None:
+    def goBackDetailPage(self, page: QWidget | None) -> None:
         ...
     def switchTab(self, index: int) -> None:
         ...
@@ -43,7 +43,12 @@ BUTTONS = {
     'menu':      {ecodes.BTN_START, ecodes.BTN_SELECT, ecodes.BTN_MODE},
 }
 
-class GamepadSupport(QObject):
+class InputManager(QObject):
+    """
+    Manages input from gamepads and keyboards for navigating the application interface.
+    Supports gamepad hotplugging, button and axis events, and keyboard event filtering
+    for seamless UI interaction.
+    """
     def __init__(
         self,
         main_window: MainWindowProtocol,
@@ -64,7 +69,11 @@ class GamepadSupport(QObject):
         self.running = True
 
         # Install keyboard event filter
-        QApplication.instance().installEventFilter(self)
+        app = QApplication.instance()
+        if app is not None:
+            app.installEventFilter(self)
+        else:
+            logger.error("QApplication instance is None, cannot install event filter")
 
         # Initialize evdev + hotplug
         self.init_gamepad()
@@ -72,7 +81,12 @@ class GamepadSupport(QObject):
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         if event.type() == QEvent.Type.KeyPress:
             key = cast(QKeyEvent, event).key()
-            active = QApplication.instance().activeWindow()
+            app = QApplication.instance()
+            app = cast(QApplication, QApplication.instance())
+            if app is None:
+                logger.error("QApplication instance is None")
+                return super().eventFilter(obj, event)
+            active = app.activeWindow()
 
             # Fullscreen viewer navigation
             if isinstance(active, FullscreenDialog):
@@ -173,7 +187,12 @@ class GamepadSupport(QObject):
             logger.error(f"Error accessing gamepad: {e}")
 
     def handle_button(self, button_code: int) -> None:
-        active = QApplication.instance().activeWindow()
+        app = QApplication.instance()
+        app = cast(QApplication, QApplication.instance())
+        if app is None:
+            logger.error("QApplication instance is None")
+            return
+        active = app.activeWindow()
 
         # FullscreenDialog
         if isinstance(active, FullscreenDialog):
@@ -202,7 +221,12 @@ class GamepadSupport(QObject):
             self._parent.tabButtons[idx].setFocus(Qt.FocusReason.OtherFocusReason)
 
     def handle_dpad(self, code: int, value: int, current_time: float) -> None:
-        active = QApplication.instance().activeWindow()
+        app = QApplication.instance()
+        app = cast(QApplication, QApplication.instance())
+        if app is None:
+            logger.error("QApplication instance is None")
+            return
+        active = app.activeWindow()
         if isinstance(active, FullscreenDialog) and code == ecodes.ABS_HAT0X:
             if value < 0:
                 active.show_prev()

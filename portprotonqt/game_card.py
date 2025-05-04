@@ -8,7 +8,7 @@ from portprotonqt.localization import _
 from portprotonqt.config_utils import read_favorites, save_favorites
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.config_utils import read_theme_from_config
-from portprotonqt.custom_wigets import ClickableLabel
+from portprotonqt.custom_widgets import ClickableLabel
 import os
 import subprocess
 from typing import cast

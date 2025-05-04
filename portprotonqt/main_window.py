@@ -11,8 +11,8 @@ import psutil
 
 from portprotonqt.dialogs import AddGameDialog
 from portprotonqt.game_card import GameCard
-from portprotonqt.custom_wigets import FlowLayout, ClickableLabel, AutoSizeButton, NavLabel
-from portprotonqt.gamepad_support import GamepadSupport
+from portprotonqt.custom_widgets import FlowLayout, ClickableLabel, AutoSizeButton, NavLabel
+from portprotonqt.input_manager import InputManager
 
 from portprotonqt.image_utils import load_pixmap, round_corners, ImageCarousel
 from portprotonqt.steam_api import get_steam_game_info, get_full_steam_game_info, get_steam_installed_games
@@ -137,7 +137,7 @@ class MainWindow(QMainWindow):
 
         self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE)
         self.setStyleSheet(self.theme.MESSAGE_BOX_STYLE)
-        self.gamepad_support = GamepadSupport(self)
+        self.input_manager = InputManager(self)
 
     def updateUIStyles(self):
         self.gamesListWidget.setStyleSheet(self.theme.LIST_WIDGET_STYLE)
@@ -1181,9 +1181,8 @@ class MainWindow(QMainWindow):
             focused_widget.setFocus()
             focused_widget.selectAll()
 
-    def goBackDetailPage(self, page):
-        """Возврат из детальной страницы на вкладку 'Библиотека' с обновлением грида."""
-        if page is None:
+    def goBackDetailPage(self, page: QWidget | None) -> None:
+        if page is None or page != self.stackedWidget.currentWidget():
             return
         self.stackedWidget.setCurrentIndex(0)
         self.stackedWidget.removeWidget(page)

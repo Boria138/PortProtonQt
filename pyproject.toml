@@ -86,7 +86,6 @@ target-version = "py310"
 pythonVersion = "3.10"
 pythonPlatform = "Linux"
 ignore = [
-    "portprotonqt/gamepad_support.py", # I need gamepad for test
     ".eggs",
     ".git",
     "build",
