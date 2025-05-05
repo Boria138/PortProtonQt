@@ -1329,6 +1329,7 @@ class MainWindow(QMainWindow):
                     icon = QIcon(icon)
                 elif icon is None:
                     icon = QIcon()
+                update_button.setIcon(icon)
 
             self.checkProcessTimer = QTimer(self)
             self.checkProcessTimer.timeout.connect(self.checkTargetExe)
