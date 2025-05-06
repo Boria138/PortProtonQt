@@ -520,6 +520,11 @@ SETTINGS_COMBO_STYLE = f"""
     QComboBox:hover {{
         border: 1px solid rgba(255, 255, 255, 0.2);
     }}
+    /* Состояние фокуса */
+    QComboBox:focus {{
+        border: 2px solid #409EFF;
+        background-color: #404554;
+    }}
     QComboBox::drop-down {{
         subcontrol-origin: padding;
         subcontrol-position: center right;
@@ -540,6 +545,7 @@ SETTINGS_COMBO_STYLE = f"""
         height: 12px;
         width: 12px;
     }}
+    /* Список при открытом комбобоксе */
     QComboBox QAbstractItemView {{
         outline: none;
         border: 1px solid rgba(255, 255, 255, 0.2);
@@ -559,7 +565,13 @@ SETTINGS_COMBO_STYLE = f"""
     QListView::item:selected {{
         background: #282a33;
     }}
+    /* Выделение в списке при фокусе на элементе */
+    QListView::item:focus {{
+        background: #409EFF;
+        color: #ffffff;
+    }}
 """
+
 
 # ФУНКЦИЯ ДЛЯ ДИНАМИЧЕСКОГО ГРАДИЕНТА (ДЕТАЛИ ИГР)
 # Функции из этой темы срабатывает всегда вне зависимости от выбранной темы, функции из других тем работают только в этих темах

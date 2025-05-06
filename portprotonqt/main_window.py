@@ -704,17 +704,22 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout(self.portProtonWidget)
         layout.setContentsMargins(10, 18, 10, 10)
 
+        # Заголовок
         title = QLabel(_("PortProton Settings"))
         title.setStyleSheet(self.theme.TAB_TITLE_STYLE)
         title.setObjectName("tabTitle")
+        # Сам заголовок не фокусируется
+        title.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         layout.addWidget(title)
 
+        # Подзаголовок/описание
         content = QLabel(_("Main PortProton parameters..."))
         content.setStyleSheet(self.theme.CONTENT_STYLE)
         content.setObjectName("tabContent")
+        content.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         layout.addWidget(content)
 
-        # Форма для недокументированных параметров
+        # Форма с настройками
         formLayout = QFormLayout()
         formLayout.setContentsMargins(0, 10, 0, 0)
         formLayout.setSpacing(10)
@@ -723,100 +728,104 @@ class MainWindow(QMainWindow):
         self.timeDetailCombo = QComboBox()
         self.timeDetailCombo.addItems(["detailed", "brief"])
         self.timeDetailCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
-        self.timeDetailCombo.setObjectName("comboString")
+        # делаем фокусируемым
+        self.timeDetailCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.timeDetailTitle = QLabel(_("Time Detail Level:"))
         self.timeDetailTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
-        self.timeDetailTitle.setObjectName("settingsTitle")
+        self.timeDetailTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         current_time_detail = read_time_config()
-        index = self.timeDetailCombo.findText(current_time_detail,Qt.MatchFlag.MatchFixedString)
-
-        if index >= 0:
-            self.timeDetailCombo.setCurrentIndex(index)
+        idx = self.timeDetailCombo.findText(current_time_detail, Qt.MatchFlag.MatchFixedString)
+        if idx >= 0:
+            self.timeDetailCombo.setCurrentIndex(idx)
         formLayout.addRow(self.timeDetailTitle, self.timeDetailCombo)
 
         # 2. Games sort_method
         self.gamesSortCombo = QComboBox()
         self.gamesSortCombo.addItems(["last_launch", "playtime"])
         self.gamesSortCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
-        self.gamesSortCombo.setObjectName("comboString")
+        self.gamesSortCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.gamesSortTitle = QLabel(_("Games Sort Method:"))
         self.gamesSortTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
-        self.gamesSortTitle.setObjectName("settingsTitle")
-        current_sort_method = read_sort_method()
-        index = self.gamesSortCombo.findText(current_sort_method, Qt.MatchFlag.MatchFixedString)
-        if index >= 0:
-            self.gamesSortCombo.setCurrentIndex(index)
+        self.gamesSortTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        current_sort = read_sort_method()
+        idx = self.gamesSortCombo.findText(current_sort, Qt.MatchFlag.MatchFixedString)
+        if idx >= 0:
+            self.gamesSortCombo.setCurrentIndex(idx)
         formLayout.addRow(self.gamesSortTitle, self.gamesSortCombo)
 
         # 3. Games display_filter
         self.gamesDisplayCombo = QComboBox()
         self.gamesDisplayCombo.addItems(["all", "steam", "portproton", "favorites"])
         self.gamesDisplayCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
-        self.gamesDisplayCombo.setObjectName("comboString")
+        self.gamesDisplayCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.gamesDisplayTitle = QLabel(_("Games Display Filter:"))
         self.gamesDisplayTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
-        self.gamesDisplayTitle.setObjectName("settingsTitle")
-        current_display_filter = read_display_filter()
-        index = self.gamesDisplayCombo.findText(current_display_filter, Qt.MatchFlag.MatchFixedString)
-        if index >= 0:
-            self.gamesDisplayCombo.setCurrentIndex(index)
+        self.gamesDisplayTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        current_filter = read_display_filter()
+        idx = self.gamesDisplayCombo.findText(current_filter, Qt.MatchFlag.MatchFixedString)
+        if idx >= 0:
+            self.gamesDisplayCombo.setCurrentIndex(idx)
         formLayout.addRow(self.gamesDisplayTitle, self.gamesDisplayCombo)
 
-        # 4. Proxy настройки
+        # 4. Proxy settings
         self.proxyUrlEdit = QLineEdit()
         self.proxyUrlEdit.setPlaceholderText(_("Proxy URL"))
         self.proxyUrlEdit.setStyleSheet(self.theme.PROXY_INPUT_STYLE)
-        self.proxyUrlEdit.setObjectName("inputString")
+        self.proxyUrlEdit.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.proxyUrlTitle = QLabel(_("Proxy URL:"))
         self.proxyUrlTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
-        self.proxyUrlTitle.setObjectName("settingsTitle")
-        proxy_config = read_proxy_config()
-        # Если в настройках proxy есть URL, выводим его
-        if proxy_config.get("http", ""):
-            self.proxyUrlEdit.setText(proxy_config.get("http", ""))
+        self.proxyUrlTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        proxy_cfg = read_proxy_config()
+        if proxy_cfg.get("http", ""):
+            self.proxyUrlEdit.setText(proxy_cfg["http"])
         formLayout.addRow(self.proxyUrlTitle, self.proxyUrlEdit)
 
         self.proxyUserEdit = QLineEdit()
         self.proxyUserEdit.setPlaceholderText(_("Proxy Username"))
         self.proxyUserEdit.setStyleSheet(self.theme.PROXY_INPUT_STYLE)
-        self.proxyUserEdit.setObjectName("inputString")
+        self.proxyUserEdit.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.proxyUserTitle = QLabel(_("Proxy Username:"))
         self.proxyUserTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
-        self.proxyUserTitle.setObjectName("settingsTitle")
+        self.proxyUserTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         formLayout.addRow(self.proxyUserTitle, self.proxyUserEdit)
 
         self.proxyPasswordEdit = QLineEdit()
         self.proxyPasswordEdit.setPlaceholderText(_("Proxy Password"))
         self.proxyPasswordEdit.setEchoMode(QLineEdit.EchoMode.Password)
         self.proxyPasswordEdit.setStyleSheet(self.theme.PROXY_INPUT_STYLE)
-        self.proxyPasswordEdit.setObjectName("inputString")
+        self.proxyPasswordEdit.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.proxyPasswordTitle = QLabel(_("Proxy Password:"))
         self.proxyPasswordTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
-        self.proxyPasswordTitle.setObjectName("settingsTitle")
+        self.proxyPasswordTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         formLayout.addRow(self.proxyPasswordTitle, self.proxyPasswordEdit)
 
-        # 5.Tray icon color picker
+        # 5. Tray icon color picker
         initial_color = QColor(read_icon_color_config())
         self.iconColor = initial_color
         self.iconColorButton = AutoSizeButton()
         self.iconColorButton.setStyleSheet(f"background-color: {self.iconColor.name()};")
+        self.iconColorButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.iconColorButton.clicked.connect(self.pickTrayIconColor)
         self.trayColorTitle = QLabel(_("Tray icon color:"))
         self.trayColorTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
-        self.trayColorTitle.setObjectName("settingsTitle")
+        self.trayColorTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         formLayout.addRow(self.trayColorTitle, self.iconColorButton)
 
         layout.addLayout(formLayout)
 
         # Кнопка сохранения настроек
-        self.saveButton = AutoSizeButton(_("Save Settings"), icon=self.theme_manager.get_icon("save", color=self.theme.saveButtonIconColor))
+        self.saveButton = AutoSizeButton(
+            _("Save Settings"),
+            icon=self.theme_manager.get_icon("save", color=self.theme.saveButtonIconColor)
+        )
         self.saveButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
-        self.saveButton.setObjectName("actionButton")
+        self.saveButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.saveButton.clicked.connect(self.savePortProtonSettings)
         layout.addWidget(self.saveButton)
 
         layout.addStretch(1)
         self.stackedWidget.addWidget(self.portProtonWidget)
+
 
     def pickTrayIconColor(self):
         """Открыть стандартный QColorDialog и обновить кнопку."""

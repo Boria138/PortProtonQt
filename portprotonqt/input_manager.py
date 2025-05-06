@@ -8,6 +8,7 @@ from PySide6.QtCore import Qt, QObject, QEvent
 from PySide6.QtGui import QKeyEvent
 from portprotonqt.logger import get_logger
 from portprotonqt.image_utils import FullscreenDialog
+from portprotonqt.custom_widgets import NavLabel
 
 logger = get_logger(__name__)
 
@@ -88,56 +89,90 @@ class InputManager(QObject):
         self.init_gamepad()
 
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
-        if event.type() == QEvent.Type.KeyPress:
-            key = cast(QKeyEvent, event).key()
-            app = QApplication.instance()
-            app = cast(QApplication, QApplication.instance())
-            if app is None:
-                logger.error("QApplication instance is None")
-                return super().eventFilter(obj, event)
-            active = app.activeWindow()
 
-            # Fullscreen viewer navigation
-            if isinstance(active, FullscreenDialog):
-                if key == Qt.Key.Key_Right:
-                    active.show_next()
-                    return True
-                elif key == Qt.Key.Key_Left:
-                    active.show_prev()
-                    return True
-                elif key in (Qt.Key.Key_Escape, Qt.Key.Key_Return, Qt.Key.Key_Enter):
-                    active.close()
-                    return True
+        app = QApplication.instance()
+        if not app:
+            return super().eventFilter(obj, event)
 
-            # Handle game launch on detail page
-            if getattr(self._parent, 'currentDetailPage', None) is not None and key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
-                if getattr(self._parent, 'current_exec_line', None):
-                    self._parent.toggleGame(self._parent.current_exec_line, None)
-                    return True
+        # 1) Интересуют только нажатия клавиш
+        if not (isinstance(event, QKeyEvent) and event.type() == QEvent.Type.KeyPress):
+            return super().eventFilter(obj, event)
 
-            # Tab switching and navigation
-            current = self._parent.stackedWidget.currentIndex()
-            total = len(self._parent.tabButtons)
+        key = event.key()
+        focused = QApplication.focusWidget()
+        popup = QApplication.activePopupWidget()
 
+        # 2) Если открыт любой popup  — не перехватываем ENTER, ESC и стрелки
+        if popup:
+            # возвращаем False, чтобы событие пошло дальше в Qt и закрыло popup как нужно
+            return False
+
+        # 3) Навигация в полноэкранном просмотре
+        active_win = QApplication.activeWindow()
+        if isinstance(active_win, FullscreenDialog):
+            if key == Qt.Key.Key_Right:
+                active_win.show_next()
+                return True
             if key == Qt.Key.Key_Left:
-                new = (current - 1) % total
-                self._parent.switchTab(new)
-                self._parent.tabButtons[new].setFocus()
+                active_win.show_prev()
                 return True
-            elif key == Qt.Key.Key_Right:
-                new = (current + 1) % total
-                self._parent.switchTab(new)
-                self._parent.tabButtons[new].setFocus()
+            if key in (Qt.Key.Key_Escape, Qt.Key.Key_Return, Qt.Key.Key_Enter):
+                active_win.close()
                 return True
-            elif key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
-                self._parent.activateFocusedWidget()
+
+        # 4) На странице деталей Enter запускает/останавливает игру
+        if self._parent.currentDetailPage and key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+            if self._parent.current_exec_line:
+                self._parent.toggleGame(self._parent.current_exec_line, None)
                 return True
-            elif key == Qt.Key.Key_Escape:
-                self._parent.goBackDetailPage(getattr(self._parent, 'currentDetailPage', None))
+
+        # 5) Переключение вкладок ←/→
+        idx = self._parent.stackedWidget.currentIndex()
+        total = len(self._parent.tabButtons)
+        if key == Qt.Key.Key_Left:
+            new = (idx - 1) % total
+            self._parent.switchTab(new)
+            self._parent.tabButtons[new].setFocus()
+            return True
+        if key == Qt.Key.Key_Right:
+            new = (idx + 1) % total
+            self._parent.switchTab(new)
+            self._parent.tabButtons[new].setFocus()
+            return True
+
+        # 6) Спуск в содержимое вкладки ↓
+        if key == Qt.Key.Key_Down:
+            if isinstance(focused, NavLabel):
+                page = self._parent.stackedWidget.currentWidget()
+                focusables = page.findChildren(QWidget, options=Qt.FindChildrenRecursively) # type: ignore
+                focusables = [w for w in focusables if w.focusPolicy() & Qt.StrongFocus] # type: ignore
+                if focusables:
+                    focusables[0].setFocus()
+                    return True
+            else:
+                if focused is not None:
+                    focused.focusNextChild()
+                    return True
+
+        # 7) Подъём по содержимому вкладки ↑
+        if key == Qt.Key.Key_Up:
+            if focused is not None:
+                focused.focusPreviousChild()
                 return True
-            elif key == Qt.Key.Key_E:
-                self._parent.openAddGameDialog()
-                return True
+
+        # 8) Общие: Activate, Back, Add
+        if key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+            self._parent.activateFocusedWidget()
+            return True
+        elif key == Qt.Key.Key_Escape:
+            self._parent.goBackDetailPage(self._parent.currentDetailPage)
+            return True
+        elif key == Qt.Key.Key_E:
+            self._parent.openAddGameDialog()
+            return True
+
+        return False
+
 
         return super().eventFilter(obj, event)
 
