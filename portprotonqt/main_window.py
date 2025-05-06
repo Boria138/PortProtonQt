@@ -1187,8 +1187,6 @@ class MainWindow(QMainWindow):
             if focused_widget.image_items:
                 current_item = focused_widget.image_items[focused_widget.horizontalScrollBar().value() // 100]
                 current_item.show_fullscreen()
-        elif isinstance(focused_widget, QComboBox):
-            focused_widget.showPopup()
         elif isinstance(focused_widget, QLineEdit):
             focused_widget.setFocus()
             focused_widget.selectAll()

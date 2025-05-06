@@ -144,8 +144,9 @@ class InputManager(QObject):
         if key == Qt.Key.Key_Down:
             if isinstance(focused, NavLabel):
                 page = self._parent.stackedWidget.currentWidget()
-                focusables = page.findChildren(QWidget, options=Qt.FindChildrenRecursively) # type: ignore
-                focusables = [w for w in focusables if w.focusPolicy() & Qt.StrongFocus] # type: ignore
+                focusables = page.findChildren(QWidget,options=Qt.FindChildOption.FindChildrenRecursively)
+                focusables = [w for w in focusables if w.focusPolicy() & Qt.FocusPolicy.StrongFocus]
+
                 if focusables:
                     focusables[0].setFocus()
                     return True
@@ -172,7 +173,6 @@ class InputManager(QObject):
             return True
 
         return False
-
 
         return super().eventFilter(obj, event)
 
@@ -238,11 +238,10 @@ class InputManager(QObject):
 
     def handle_button(self, button_code: int) -> None:
         app = QApplication.instance()
-        app = cast(QApplication, QApplication.instance())
         if app is None:
             logger.error("QApplication instance is None")
             return
-        active = app.activeWindow()
+        active = QApplication.activeWindow()
 
         # FullscreenDialog
         if isinstance(active, FullscreenDialog):
@@ -278,11 +277,12 @@ class InputManager(QObject):
 
     def handle_dpad(self, code: int, value: int, current_time: float) -> None:
         app = QApplication.instance()
-        app = cast(QApplication, QApplication.instance())
         if app is None:
             logger.error("QApplication instance is None")
             return
-        active = app.activeWindow()
+        active = QApplication.activeWindow()
+
+        # Fullscreen horizontal
         if isinstance(active, FullscreenDialog) and code == ecodes.ABS_HAT0X:
             if value < 0:
                 active.show_prev()
@@ -290,11 +290,36 @@ class InputManager(QObject):
                 active.show_next()
             return
 
+        # Vertical navigation (DPAD up/down)
+        if code == ecodes.ABS_HAT0Y:
+            # ignore release
+            if value == 0:
+                return
+            focused = QApplication.focusWidget()
+            page = self._parent.stackedWidget.currentWidget()
+            if value > 0:
+                # down
+                if isinstance(focused, NavLabel):
+                    focusables = page.findChildren(QWidget, options=Qt.FindChildOption.FindChildrenRecursively)
+                    focusables = [w for w in focusables if w.focusPolicy() & Qt.FocusPolicy.StrongFocus]
+                    if focusables:
+                        focusables[0].setFocus()
+                        return
+                elif focused:
+                    focused.focusNextChild()
+                    return
+            elif value < 0 and focused:
+                # up
+                focused.focusPreviousChild()
+                return
+
+        # Horizontal wrap navigation repeat logic
+        if code != ecodes.ABS_HAT0X:
+            return
         if value == 0:
             self.axis_moving = False
             self.current_axis_delay = self.initial_axis_move_delay
             return
-
         if not self.axis_moving:
             self.trigger_dpad_movement(code, value)
             self.last_move_time = current_time
