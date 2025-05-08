@@ -3,12 +3,13 @@ import threading
 from typing import Protocol, cast
 from evdev import InputDevice, ecodes, list_devices
 import pyudev
-from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication
+from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea
 from PySide6.QtCore import Qt, QObject, QEvent
 from PySide6.QtGui import QKeyEvent
 from portprotonqt.logger import get_logger
 from portprotonqt.image_utils import FullscreenDialog
 from portprotonqt.custom_widgets import NavLabel
+from portprotonqt.game_card import GameCard
 
 logger = get_logger(__name__)
 
@@ -26,7 +27,6 @@ class MainWindowProtocol(Protocol):
     stackedWidget: QStackedWidget
     tabButtons: dict[int, QWidget]
     gamesListWidget: QWidget
-
     currentDetailPage: QWidget | None
     current_exec_line: str | None
 
@@ -47,7 +47,6 @@ BUTTONS = {
     # Start/select/home for menu/back
     'menu':      {ecodes.BTN_START, ecodes.BTN_SELECT, ecodes.BTN_MODE},
 }
-
 
 class InputManager(QObject):
     """
@@ -89,7 +88,6 @@ class InputManager(QObject):
         self.init_gamepad()
 
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
-
         app = QApplication.instance()
         if not app:
             return super().eventFilter(obj, event)
@@ -102,7 +100,7 @@ class InputManager(QObject):
         focused = QApplication.focusWidget()
         popup = QApplication.activePopupWidget()
 
-        # 2) Если открыт любой popup  — не перехватываем ENTER, ESC и стрелки
+        # 2) Если открыт любой popup — не перехватываем ENTER, ESC и стрелки
         if popup:
             # возвращаем False, чтобы событие пошло дальше в Qt и закрыло popup как нужно
             return False
@@ -126,27 +124,69 @@ class InputManager(QObject):
                 self._parent.toggleGame(self._parent.current_exec_line, None)
                 return True
 
-        # 5) Переключение вкладок ←/→
+        # 5) Навигация по карточкам в Library
+        if self._parent.stackedWidget.currentIndex() == 0:
+            game_cards = self._parent.gamesListWidget.findChildren(GameCard)
+            scroll_area = self._parent.gamesListWidget.parentWidget()
+            while scroll_area and not isinstance(scroll_area, QScrollArea):
+                scroll_area = scroll_area.parentWidget()
+            if not scroll_area:
+                logger.warning("No QScrollArea found for gamesListWidget")
+
+            if isinstance(focused, GameCard):
+                current_index = game_cards.index(focused) if focused in game_cards else -1
+                if key == Qt.Key.Key_Down:
+                    if current_index >= 0 and current_index + 1 < len(game_cards):
+                        next_card = game_cards[current_index + 1]
+                        next_card.setFocus()
+                        if scroll_area:
+                            scroll_area.ensureWidgetVisible(next_card, 50, 50)
+                        return True
+                elif key == Qt.Key.Key_Up:
+                    if current_index > 0:
+                        prev_card = game_cards[current_index - 1]
+                        prev_card.setFocus()
+                        if scroll_area:
+                            scroll_area.ensureWidgetVisible(prev_card, 50, 50)
+                        return True
+                    elif current_index == 0:
+                        self._parent.tabButtons[0].setFocus()
+                        return True
+                elif key == Qt.Key.Key_Left:
+                    if current_index > 0:
+                        prev_card = game_cards[current_index - 1]
+                        prev_card.setFocus()
+                        if scroll_area:
+                            scroll_area.ensureWidgetVisible(prev_card, 50, 50)
+                        return True
+                elif key == Qt.Key.Key_Right:
+                    if current_index >= 0 and current_index + 1 < len(game_cards):
+                        next_card = game_cards[current_index + 1]
+                        next_card.setFocus()
+                        if scroll_area:
+                            scroll_area.ensureWidgetVisible(next_card, 50, 50)
+                        return True
+
+        # 6) Переключение вкладок ←/→
         idx = self._parent.stackedWidget.currentIndex()
         total = len(self._parent.tabButtons)
-        if key == Qt.Key.Key_Left:
+        if key == Qt.Key.Key_Left and not isinstance(focused, GameCard):
             new = (idx - 1) % total
             self._parent.switchTab(new)
             self._parent.tabButtons[new].setFocus()
             return True
-        if key == Qt.Key.Key_Right:
+        if key == Qt.Key.Key_Right and not isinstance(focused, GameCard):
             new = (idx + 1) % total
             self._parent.switchTab(new)
             self._parent.tabButtons[new].setFocus()
             return True
 
-        # 6) Спуск в содержимое вкладки ↓
+        # 7) Спуск в содержимое вкладки ↓
         if key == Qt.Key.Key_Down:
             if isinstance(focused, NavLabel):
                 page = self._parent.stackedWidget.currentWidget()
-                focusables = page.findChildren(QWidget,options=Qt.FindChildOption.FindChildrenRecursively)
+                focusables = page.findChildren(QWidget, options=Qt.FindChildOption.FindChildrenRecursively)
                 focusables = [w for w in focusables if w.focusPolicy() & Qt.FocusPolicy.StrongFocus]
-
                 if focusables:
                     focusables[0].setFocus()
                     return True
@@ -155,13 +195,15 @@ class InputManager(QObject):
                     focused.focusNextChild()
                     return True
 
-        # 7) Подъём по содержимому вкладки ↑
+        # 8) Подъём по содержимому вкладки ↑
         if key == Qt.Key.Key_Up:
+            if isinstance(focused, NavLabel):
+                return True  # Не даём уйти выше NavLabel
             if focused is not None:
                 focused.focusPreviousChild()
                 return True
 
-        # 8) Общие: Activate, Back, Add
+        # 9) Общие: Activate, Back, Add
         if key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
             self._parent.activateFocusedWidget()
             return True
@@ -171,8 +213,6 @@ class InputManager(QObject):
         elif key == Qt.Key.Key_E:
             self._parent.openAddGameDialog()
             return True
-
-        return False
 
         return super().eventFilter(obj, event)
 

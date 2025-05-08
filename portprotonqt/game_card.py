@@ -13,7 +13,6 @@ import os
 import subprocess
 from typing import cast
 
-
 class GameCard(QFrame):
     borderWidthChanged = Signal()
     gradientAngleChanged = Signal()
@@ -23,6 +22,7 @@ class GameCard(QFrame):
     removeFromMenuRequested = Signal(str)         # name
     addToDesktopRequested = Signal(str, str)      # name, exec_line
     removeFromDesktopRequested = Signal(str)      # name
+
     def __init__(self, name, description, cover_path, appid, controller_support, exec_line,
                  last_launch, formatted_playtime, protondb_tier, last_launch_ts, playtime_seconds, steam_game,
                  select_callback, theme=None, card_width=250, parent=None):
@@ -58,6 +58,7 @@ class GameCard(QFrame):
         self._borderWidth = 2
         self._gradientAngle = 0.0
         self._hovered = False
+        self._focused = False
 
         # Анимации
         self.thickness_anim = QPropertyAnimation(self, QByteArray(b"borderWidth"))
@@ -75,7 +76,7 @@ class GameCard(QFrame):
         shadow.setOffset(0, 0)
         self.setGraphicsEffect(shadow)
 
-        # Отступы, чтобы анимация не перекрывалась
+        # Отступы
         layout = QVBoxLayout(self)
         layout.setContentsMargins(extra_margin // 2, extra_margin // 2, extra_margin // 2, extra_margin // 2)
         layout.setSpacing(5)
@@ -99,9 +100,8 @@ class GameCard(QFrame):
         # Значок избранного (звёздочка) в левом верхнем углу обложки
         self.favoriteLabel = ClickableLabel(coverWidget)
         self.favoriteLabel.setFixedSize(*self.theme.favoriteLabelSize)
-        self.favoriteLabel.move(8, 8)  # позиция: 8 пикселей от левого и верхнего края
+        self.favoriteLabel.move(8, 8)
         self.favoriteLabel.clicked.connect(self.toggle_favorite)
-        # Определяем статус избранного по имени игры
         self.is_favorite = self.name in read_favorites()
         self.update_favorite_icon()
         self.favoriteLabel.raise_()
@@ -121,12 +121,7 @@ class GameCard(QFrame):
             self.protondbLabel.setStyleSheet(self.theme.get_protondb_badge_style(protondb_tier))
             protondb_visible = True
         else:
-            self.protondbLabel = ClickableLabel(
-                "",
-                parent=coverWidget,
-                icon_size=16,
-                icon_space=3
-            )
+            self.protondbLabel = ClickableLabel("", parent=coverWidget, icon_size=16, icon_space=3)
             self.protondbLabel.setVisible(False)
             protondb_visible = False
 
@@ -151,7 +146,6 @@ class GameCard(QFrame):
             steam_width = self.steamLabel.width()
             steam_x = card_width - steam_width - right_margin
             self.steamLabel.move(steam_x, top_y)
-
             protondb_width = self.protondbLabel.width()
             protondb_x = card_width - protondb_width - right_margin
             protondb_y = top_y + self.steamLabel.height() + badge_spacing
@@ -192,9 +186,6 @@ class GameCard(QFrame):
         return translations.get(tier.lower(), "")
 
     def getProtonDBIconFilename(self, tier):
-        """
-        Возвращает имя файла иконки в зависимости от уровня protondb.
-        """
         tier = tier.lower()
         if tier in ("platinum", "gold"):
             return "platinum-gold"
@@ -213,11 +204,6 @@ class GameCard(QFrame):
         QDesktopServices.openUrl(url)
 
     def update_favorite_icon(self):
-        """
-        Обновляет отображение значка избранного.
-        Если игра избранная – отображается заполненная звезда (★),
-        иначе – пустая (☆).
-        """
         if self.is_favorite:
             self.favoriteLabel.setText("★")
         else:
@@ -225,9 +211,6 @@ class GameCard(QFrame):
         self.favoriteLabel.setStyleSheet(self.theme.FAVORITE_LABEL_STYLE)
 
     def toggle_favorite(self):
-        """
-        Переключает статус избранного для данной игры и сохраняет изменения в конфиге.
-        """
         favorites = read_favorites()
         if self.is_favorite:
             if self.name in favorites:
@@ -249,7 +232,6 @@ class GameCard(QFrame):
             self.borderWidthChanged.emit()
             self.update()
 
-    # Getter and setter for gradientAngle
     def getGradientAngle(self) -> float:
         return self._gradientAngle
 
@@ -269,7 +251,7 @@ class GameCard(QFrame):
 
         pen = QPen()
         pen.setWidth(self._borderWidth)
-        if self._hovered:
+        if self._hovered or self._focused:
             center = self.rect().center()
             gradient = QConicalGradient(center, self._gradientAngle)
             gradient.setColorAt(0, QColor("#00fff5"))
@@ -287,8 +269,10 @@ class GameCard(QFrame):
         painter.drawRoundedRect(rect, radius, radius)
 
     def startPulseAnimation(self):
-        if not self._hovered:
+        if not (self._hovered or self._focused):
             return
+        if self.pulse_anim:
+            self.pulse_anim.stop()
         self.pulse_anim = QPropertyAnimation(self, QByteArray(b"borderWidth"))
         self.pulse_anim.setDuration(800)
         self.pulse_anim.setLoopCount(0)
@@ -310,6 +294,8 @@ class GameCard(QFrame):
         self._isPulseAnimationConnected = True
         self.thickness_anim.start()
 
+        if self.gradient_anim:
+            self.gradient_anim.stop()
         self.gradient_anim = QPropertyAnimation(self, QByteArray(b"gradientAngle"))
         self.gradient_anim.setDuration(3000)
         self.gradient_anim.setStartValue(360)
@@ -321,41 +307,83 @@ class GameCard(QFrame):
 
     def leaveEvent(self, event):
         self._hovered = False
-        if self.gradient_anim:
-            self.gradient_anim.stop()
-            self.gradient_anim = None
+        if not self._focused:  # Сохраняем анимацию, если есть фокус
+            if self.gradient_anim:
+                self.gradient_anim.stop()
+                self.gradient_anim = None
+            self.thickness_anim.stop()
+            if self._isPulseAnimationConnected:
+                self.thickness_anim.finished.disconnect(self.startPulseAnimation)
+                self._isPulseAnimationConnected = False
+            if self.pulse_anim:
+                self.pulse_anim.stop()
+                self.pulse_anim = None
+            self.thickness_anim.setEasingCurve(QEasingCurve(QEasingCurve.Type.InBack))
+            self.thickness_anim.setStartValue(self._borderWidth)
+            self.thickness_anim.setEndValue(2)
+            self.thickness_anim.start()
 
+        super().leaveEvent(event)
+
+    def focusInEvent(self, event):
+        self._focused = True
         self.thickness_anim.stop()
         if self._isPulseAnimationConnected:
             self.thickness_anim.finished.disconnect(self.startPulseAnimation)
             self._isPulseAnimationConnected = False
-
-        if self.pulse_anim:
-            self.pulse_anim.stop()
-            self.pulse_anim = None
-
-        self.thickness_anim.setEasingCurve(QEasingCurve(QEasingCurve.Type.InBack))
+        self.thickness_anim.setEasingCurve(QEasingCurve(QEasingCurve.Type.OutBack))
         self.thickness_anim.setStartValue(self._borderWidth)
-        self.thickness_anim.setEndValue(2)
+        self.thickness_anim.setEndValue(12)
+        self.thickness_anim.finished.connect(self.startPulseAnimation)
+        self._isPulseAnimationConnected = True
         self.thickness_anim.start()
 
-        super().leaveEvent(event)
+        if self.gradient_anim:
+            self.gradient_anim.stop()
+        self.gradient_anim = QPropertyAnimation(self, QByteArray(b"gradientAngle"))
+        self.gradient_anim.setDuration(3000)
+        self.gradient_anim.setStartValue(360)
+        self.gradient_anim.setEndValue(0)
+        self.gradient_anim.setLoopCount(-1)
+        self.gradient_anim.start()
+
+        super().focusInEvent(event)
+
+    def focusOutEvent(self, event):
+        self._focused = False
+        if not self._hovered:  # Сохраняем анимацию, если есть наведение
+            if self.gradient_anim:
+                self.gradient_anim.stop()
+                self.gradient_anim = None
+            self.thickness_anim.stop()
+            if self._isPulseAnimationConnected:
+                self.thickness_anim.finished.disconnect(self.startPulseAnimation)
+                self._isPulseAnimationConnected = False
+            if self.pulse_anim:
+                self.pulse_anim.stop()
+                self.pulse_anim = None
+            self.thickness_anim.setEasingCurve(QEasingCurve(QEasingCurve.Type.InBack))
+            self.thickness_anim.setStartValue(self._borderWidth)
+            self.thickness_anim.setEndValue(2)
+            self.thickness_anim.start()
+
+        super().focusOutEvent(event)
 
     def mousePressEvent(self, event):
-            if event.button() == Qt.MouseButton.LeftButton:
-                self.select_callback(
-                    self.name,
-                    self.description,
-                    self.cover_path,
-                    self.appid,
-                    self.controller_support,
-                    self.exec_line,
-                    self.last_launch,
-                    self.formatted_playtime,
-                    self.protondb_tier,
-                    self.steam_game
-                )
-            super().mousePressEvent(event)
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.select_callback(
+                self.name,
+                self.description,
+                self.cover_path,
+                self.appid,
+                self.controller_support,
+                self.exec_line,
+                self.last_launch,
+                self.formatted_playtime,
+                self.protondb_tier,
+                self.steam_game
+            )
+        super().mousePressEvent(event)
 
     def keyPressEvent(self, event):
         if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
@@ -368,15 +396,14 @@ class GameCard(QFrame):
                 self.exec_line,
                 self.last_launch,
                 self.formatted_playtime,
-                self.protondb_tier
+                self.protondb_tier,
+                self.steam_game
             )
         else:
             super().keyPressEvent(event)
 
     def show_context_menu(self, pos):
-        """Show context menu on right-click."""
         menu = QMenu(self)
-
         if self.steam_game != "true":
             desktop_dir = subprocess.check_output(['xdg-user-dir', 'DESKTOP']).decode('utf-8').strip()
             desktop_path = os.path.join(desktop_dir, f"{self.name}.desktop")
@@ -387,15 +414,12 @@ class GameCard(QFrame):
                 add_action = menu.addAction(_("Add to Desktop"))
                 add_action.triggered.connect(self.add_to_desktop)
 
-            # Add "Edit Shortcut" action
             edit_action = menu.addAction(_("Edit Shortcut"))
             edit_action.triggered.connect(self.edit_shortcut)
 
-            # Add "Delete" action
             delete_action = menu.addAction(_("Delete from PortProton"))
             delete_action.triggered.connect(self.delete_game)
 
-            # Check if .desktop file exists in ~/.local/share/applications
             applications_dir = os.path.join(os.path.expanduser("~"), ".local", "share", "applications")
             desktop_path = os.path.join(applications_dir, f"{self.name}.desktop")
             if os.path.exists(desktop_path):
@@ -408,25 +432,19 @@ class GameCard(QFrame):
         menu.exec(self.mapToGlobal(pos))
 
     def edit_shortcut(self):
-        """Emit signal to request editing the game shortcut."""
         self.editShortcutRequested.emit(self.name, self.exec_line, self.cover_path)
 
     def delete_game(self):
-        """Emit signal to request deleting the game."""
         self.deleteGameRequested.emit(self.name, self.exec_line)
 
     def add_to_menu(self):
-        """Emit signal to request adding game to menu."""
         self.addToMenuRequested.emit(self.name, self.exec_line)
 
     def remove_from_menu(self):
-        """Emit signal to request removing game from menu."""
         self.removeFromMenuRequested.emit(self.name)
 
     def add_to_desktop(self):
-        """Emit signal to request adding game to desktop."""
         self.addToDesktopRequested.emit(self.name, self.exec_line)
 
     def remove_from_desktop(self):
-        """Emit signal to request removing game from desktop."""
         self.removeFromDesktopRequested.emit(self.name)

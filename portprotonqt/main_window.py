@@ -927,6 +927,7 @@ class MainWindow(QMainWindow):
             )
             self.themeMetainfoLabel.setText(preview_text)
             self.themeMetainfoLabel.setStyleSheet(self.theme.CONTENT_STYLE)
+            self.themeMetainfoLabel.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
             screenshots = load_theme_screenshots(theme_name)
             if screenshots:
@@ -1190,6 +1191,19 @@ class MainWindow(QMainWindow):
         elif isinstance(focused_widget, QLineEdit):
             focused_widget.setFocus()
             focused_widget.selectAll()
+        elif isinstance(focused_widget, GameCard):
+                    focused_widget.select_callback(
+                        focused_widget.name,
+                        focused_widget.description,
+                        focused_widget.cover_path,
+                        focused_widget.appid,
+                        focused_widget.controller_support,
+                        focused_widget.exec_line,
+                        focused_widget.last_launch,
+                        focused_widget.formatted_playtime,
+                        focused_widget.protondb_tier,
+                        focused_widget.steam_game
+                    )
 
     def goBackDetailPage(self, page: QWidget | None) -> None:
         if page is None or page != self.stackedWidget.currentWidget():
@@ -1197,8 +1211,8 @@ class MainWindow(QMainWindow):
         self.stackedWidget.setCurrentIndex(0)
         self.stackedWidget.removeWidget(page)
         page.deleteLater()
-        if hasattr(self, "currentDetailPage"):
-            del self.currentDetailPage
+        self.currentDetailPage = None
+        self.current_exec_line = None
 
     def is_target_exe_running(self):
         """Проверяет, запущен ли процесс с именем self.target_exe через psutil."""
