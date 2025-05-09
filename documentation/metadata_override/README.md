@@ -1,9 +1,5 @@
 📘  Эта документация также доступна на [русском](README.ru.md)
 
-# Metadata Override Configuration Guide for PortProtonQT
-
-> Customize how game names, descriptions, and covers appear in `PortProtonQT` using user or built-in metadata overrides.
-
 ---
 
 ## 📋 Contents
