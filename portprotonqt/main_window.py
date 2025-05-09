@@ -324,7 +324,6 @@ class MainWindow(QMainWindow):
             # Папки для конкретной игры
             builtin_game_folder = os.path.join(builtin_custom_folder, exe_name)
             user_game_folder = os.path.join(user_custom_folder, exe_name)
-            os.makedirs(builtin_game_folder, exist_ok=True)
             os.makedirs(user_game_folder, exist_ok=True)
 
             # Чтение встроенных переопределений

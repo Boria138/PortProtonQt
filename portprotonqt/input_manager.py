@@ -3,7 +3,7 @@ import threading
 from typing import Protocol, cast
 from evdev import InputDevice, ecodes, list_devices
 import pyudev
-from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea
+from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea, QLineEdit
 from PySide6.QtCore import Qt, QObject, QEvent
 from PySide6.QtGui import QKeyEvent
 from portprotonqt.logger import get_logger
@@ -114,7 +114,7 @@ class InputManager(QObject):
             if key == Qt.Key.Key_Left:
                 active_win.show_prev()
                 return True
-            if key in (Qt.Key.Key_Escape, Qt.Key.Key_Return, Qt.Key.Key_Enter):
+            if key in (Qt.Key.Key_Escape, Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_Backspace):
                 active_win.close()
                 return True
 
@@ -207,10 +207,14 @@ class InputManager(QObject):
         if key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
             self._parent.activateFocusedWidget()
             return True
-        elif key == Qt.Key.Key_Escape:
+        elif key in (Qt.Key.Key_Escape, Qt.Key.Key_Backspace):
+            if isinstance(focused, QLineEdit):
+                return False
             self._parent.goBackDetailPage(self._parent.currentDetailPage)
             return True
         elif key == Qt.Key.Key_E:
+            if isinstance(focused, QLineEdit):
+                return False
             self._parent.openAddGameDialog()
             return True
 
