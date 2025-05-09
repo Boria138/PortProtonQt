@@ -46,7 +46,7 @@ portprotonqt = "portprotonqt.app:main"
 "portprotonqt" = ["themes/**/*", "locales/**/*", "custom_data/**/*"]
 
 [tool.setuptools.packages.find]
-exclude = ["data", "dev-scripts"]
+exclude = ["data", "dev-scripts", "documentation"]
 
 [tool.ruff.lint]
 select = [
@@ -100,7 +100,6 @@ ignore = [
 
 [dependency-groups]
 dev = [
-    "mdformat>=0.7.22",
     "pre-commit>=4.2.0",
     "pyright>=1.1.400",
 ]

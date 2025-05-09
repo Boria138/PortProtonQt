@@ -6,10 +6,14 @@ import io
 import re
 import subprocess
 from pathlib import Path
-
 from babel.messages.frontend import CommandLineInterface
 
+GUIDE_DIR    = Path(__file__).parent.parent / "documentation" / "localization_guide"
+README_EN    = GUIDE_DIR / "README.md"
+README_RU    = GUIDE_DIR / "README.ru.md"
 LOCALES_PATH = Path(__file__).parent.parent / "portprotonqt" / "locales"
+THEMES_PATH = Path(__file__).parent.parent / "portprotonqt" / "themes"
+README_FILES = [README_EN, README_RU]
 
 
 def _get_version() -> str:
@@ -18,50 +22,75 @@ def _get_version() -> str:
 
 
 def _update_coverage(lines: list[str]) -> None:
-    # Parse stats
+    # Парсим статистику из вывода pybabel --statistics
     locales_stats = [line for line in lines if line.endswith(".po")]
-
-    locales_rows = sorted(
-        f"| [{m[3]}](./{m[3]}/LC_MESSAGES/messages.po) | {m[2]} | {m[1].replace('of', 'из')} |"
+    # Извлекаем (count, pct, locale) и сортируем
+    rows = sorted(
+        (m := re.search(
+            r"""(\d+\ of\ \d+).*         # message counts
+            \((\d+\%)\).*                # message percentage
+            locales\/(.*)\/LC_MESSAGES  # locale name""",
+            stat, re.VERBOSE
+        )) and m.groups()
         for stat in locales_stats
-        if (
-            m := re.search(
-                r"""(\d+\ of\ \d+).*        # message counts
-                \((\d+\%)\).*               # message percentage
-                locales\/(.*)\/LC_MESSAGES  # locale name""",
-                stat,
-                re.VERBOSE,
-            )
+    )
+
+    for md_file in README_FILES:
+        if not md_file.exists():
+            continue
+
+        text = md_file.read_text(encoding="utf-8")
+        is_ru = (md_file == README_RU)
+
+        # Выбираем заголовок раздела
+        status_header = (
+            "Current translation status:" if not is_ru
+            else "Текущий статус перевода:"
         )
-    )
-    locales_rows.sort()
 
-    # Generate markdown table
-    coverage_table = (
-        "<!-- Сгенерировано автоматически! -->\n\n"
-        "| Локаль | Прогресс | Переведено |\n| :----- | -------: | ---------: |\n"
-        + "\n".join(locales_rows)
-        + "\n"
-    )
+        # Формируем шапку и строки таблицы
+        if is_ru:
+            table_header = (
+                "<!-- Сгенерировано автоматически! -->\n\n"
+                "| Локаль | Прогресс | Переведено |\n"
+                "| :----- | -------: | ---------: |\n"
+            )
+            fmt = lambda count, pct, loc: f"| [{loc}](./{loc}/LC_MESSAGES/messages.po) | {pct} | {count.replace(' of ', ' из ')} |"
+        else:
+            table_header = (
+                "<!-- Auto-generated coverage table -->\n\n"
+                "| Locale | Progress | Translated |\n"
+                "| :----- | -------: | ---------: |\n"
+            )
+            fmt = lambda count, pct, loc: f"| [{loc}](./{loc}/LC_MESSAGES/messages.po) | {pct} | {count} |"
 
-    # Render stats to markdown file
-    md_file = LOCALES_PATH / "README.md"
-    md_text = md_file.read_text("utf-8")
-    md_text = re.sub(
-        r"(.*## Статус перевода\n).*?(##.*)",
-        rf"\1\n{coverage_table}\n\2",
-        md_text,
-        flags=re.DOTALL,
-    )
-    md_file.write_text(md_text, "utf-8")
+        # Собираем строки и добавляем '---' в конце
+        coverage_table = (
+            table_header
+            + "\n".join(fmt(c, p, l) for c, p, l in rows)
+            + "\n\n---"
+        )
 
-    subprocess.run(  # noqa: S602
-        f"mdformat {md_file.resolve()}",
-        shell=True,
-        check=True,
-        capture_output=True,
-        encoding="utf-8",
-    )
+        # Удаляем старую автоматически сгенерированную таблицу
+        old_block = (
+            r"<!--\s*(?:Сгенерировано автоматически!|Auto-generated coverage table)\s*-->"
+            r".*?(?=\n(?:##|\Z))"
+        )
+        cleaned = re.sub(old_block, "", text, flags=re.DOTALL)
+
+        # Вставляем новую таблицу сразу после строки с заголовком
+        insert_pattern = rf"(^.*{re.escape(status_header)}.*$)"
+        new_text = re.sub(
+            insert_pattern,
+            lambda m: m.group(1) + "\n\n" + coverage_table,
+            cleaned,
+            count=1,
+            flags=re.MULTILINE
+        )
+
+        # Записываем файл, если были изменения
+        if new_text != text:
+            md_file.write_text(new_text, encoding="utf-8")
 
 
 def compile_locales() -> None:
@@ -83,14 +112,13 @@ def extract_strings() -> None:
         [
             "pybabel",
             "extract",
-            "--copyright-holder=blacksnaker",
             "--project=PortProtonQT",
             f"--version={_get_version()}",
-            "--msgid-bugs-address=olegpozitiv0102@gmail.com",
             "--width=79",
             "--strip-comment-tag",
             "--no-location",
             f"--input-dir={input_dir}",
+            f"--ignore-dirs={THEMES_PATH}",
             f"--output-file={(LOCALES_PATH / 'messages.pot').resolve()}",
         ]
     )
