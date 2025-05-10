@@ -26,7 +26,7 @@ from portprotonqt.config_utils import (
 from portprotonqt.localization import _
 
 from PySide6.QtWidgets import (QLineEdit, QMainWindow, QStatusBar, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox, QScrollArea, QSlider,
-                               QDialog, QFormLayout, QFrame, QGraphicsDropShadowEffect, QMessageBox, QGraphicsEffect, QGraphicsOpacityEffect, QApplication, QColorDialog)
+                               QDialog, QFormLayout, QFrame, QGraphicsDropShadowEffect, QMessageBox, QGraphicsEffect, QGraphicsOpacityEffect, QApplication, QColorDialog, QPushButton)
 from PySide6.QtGui import QIcon, QPixmap, QColor, QDesktopServices
 from PySide6.QtCore import Qt, QTimer, QAbstractAnimation, QPropertyAnimation, QByteArray, QUrl, Signal
 from typing import cast
@@ -1180,6 +1180,8 @@ class MainWindow(QMainWindow):
         if isinstance(focused_widget, ClickableLabel):
             focused_widget.clicked.emit()
         elif isinstance(focused_widget, AutoSizeButton):
+            focused_widget.click()
+        elif isinstance(focused_widget, QPushButton):
             focused_widget.click()
         elif isinstance(focused_widget, NavLabel):
             focused_widget.clicked.emit()

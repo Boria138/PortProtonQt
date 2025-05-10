@@ -4,7 +4,7 @@ from typing import Protocol, cast
 from evdev import InputDevice, ecodes, list_devices
 import pyudev
 from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea, QLineEdit
-from PySide6.QtCore import Qt, QObject, QEvent
+from PySide6.QtCore import Qt, QObject, QEvent, QPoint
 from PySide6.QtGui import QKeyEvent
 from portprotonqt.logger import get_logger
 from portprotonqt.image_utils import FullscreenDialog
@@ -44,8 +44,10 @@ BUTTONS = {
     'next_tab':  {ecodes.BTN_TR,    ecodes.BTN_TR2},
     # Optional: stick presses on Switch Joy-Con
     'confirm_stick': {ecodes.BTN_THUMBL, ecodes.BTN_THUMBR},
-    # Start/select/home for menu/back
-    'menu':      {ecodes.BTN_START, ecodes.BTN_SELECT, ecodes.BTN_MODE},
+    # Start button for context menu
+    'context_menu': {ecodes.BTN_START},
+    # Select/home for back/menu
+    'menu':      {ecodes.BTN_SELECT, ecodes.BTN_MODE},
 }
 
 class InputManager(QObject):
@@ -124,7 +126,14 @@ class InputManager(QObject):
                 self._parent.toggleGame(self._parent.current_exec_line, None)
                 return True
 
-        # 5) Навигация по карточкам в Library
+        # 5) Открытие контекстного меню для GameCard
+        if isinstance(focused, GameCard):
+            if key == Qt.Key.Key_F10 and Qt.KeyboardModifier.ShiftModifier:
+                pos = QPoint(focused.width() // 2, focused.height() // 2)
+                focused.show_context_menu(pos)
+                return True
+
+        # 6) Навигация по карточкам в Library
         if self._parent.stackedWidget.currentIndex() == 0:
             game_cards = self._parent.gamesListWidget.findChildren(GameCard)
             scroll_area = self._parent.gamesListWidget.parentWidget()
@@ -167,7 +176,7 @@ class InputManager(QObject):
                             scroll_area.ensureWidgetVisible(next_card, 50, 50)
                         return True
 
-        # 6) Переключение вкладок ←/→
+        # 7) Переключение вкладок ←/→
         idx = self._parent.stackedWidget.currentIndex()
         total = len(self._parent.tabButtons)
         if key == Qt.Key.Key_Left and not isinstance(focused, GameCard):
@@ -181,7 +190,7 @@ class InputManager(QObject):
             self._parent.tabButtons[new].setFocus()
             return True
 
-        # 7) Спуск в содержимое вкладки ↓
+        # 8) Спуск в содержимое вкладки ↓
         if key == Qt.Key.Key_Down:
             if isinstance(focused, NavLabel):
                 page = self._parent.stackedWidget.currentWidget()
@@ -195,7 +204,7 @@ class InputManager(QObject):
                     focused.focusNextChild()
                     return True
 
-        # 8) Подъём по содержимому вкладки ↑
+        # 9) Подъём по содержимому вкладки ↑
         if key == Qt.Key.Key_Up:
             if isinstance(focused, NavLabel):
                 return True  # Не даём уйти выше NavLabel
@@ -203,7 +212,7 @@ class InputManager(QObject):
                 focused.focusPreviousChild()
                 return True
 
-        # 9) Общие: Activate, Back, Add
+        # 10) Общие: Activate, Back, Add
         if key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
             self._parent.activateFocusedWidget()
             return True
@@ -286,6 +295,7 @@ class InputManager(QObject):
             logger.error("QApplication instance is None")
             return
         active = QApplication.activeWindow()
+        focused = QApplication.focusWidget()
 
         # FullscreenDialog
         if isinstance(active, FullscreenDialog):
@@ -296,6 +306,13 @@ class InputManager(QObject):
             elif button_code in BUTTONS['back']:
                 active.close()
             return
+
+        # Context menu for GameCard
+        if isinstance(focused, GameCard):
+            if button_code in BUTTONS['context_menu']:
+                pos = QPoint(focused.width() // 2, focused.height() // 2)
+                focused.show_context_menu(pos)
+                return
 
         # Game launch on detail page
         if (button_code in BUTTONS['confirm'] or button_code in BUTTONS['confirm_stick']) and self._parent.currentDetailPage is not None:
