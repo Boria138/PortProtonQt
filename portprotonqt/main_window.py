@@ -5,6 +5,7 @@ import shutil
 import signal
 import subprocess
 import glob
+import sys
 
 import portprotonqt.themes.standart.styles as default_styles
 import psutil
@@ -138,67 +139,11 @@ class MainWindow(QMainWindow):
         self.createPortProtonTab()   # вкладка 4
         self.createThemeTab()        # вкладка 5
 
+        self.restore_state()
+
         self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE)
         self.setStyleSheet(self.theme.MESSAGE_BOX_STYLE)
         self.input_manager = InputManager(self)
-
-    def updateUIStyles(self):
-        self.gamesListWidget.setStyleSheet(self.theme.LIST_WIDGET_STYLE)
-
-        self.header.setStyleSheet(self.theme.MAIN_WINDOW_HEADER_STYLE)
-        self.titleLabel.setStyleSheet(self.theme.TITLE_LABEL_STYLE)
-        self.navWidget.setStyleSheet(self.theme.NAV_WIDGET_STYLE)
-
-        for btn in self.tabButtons.values():
-            btn.setStyleSheet(self.theme.NAV_BUTTON_STYLE)
-
-        if self.search_action:
-            self.searchEdit.removeAction(self.search_action)
-
-        icon: QIcon = cast(QIcon, self.theme_manager.get_icon("search", color=self.theme.searchEditActionIconColor))
-        action_pos = cast(QLineEdit.ActionPosition, QLineEdit.ActionPosition.LeadingPosition)
-        self.search_action = self.searchEdit.addAction(icon, action_pos)
-        self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE)
-
-        self._updateTabStyles()
-        self.updateGameGrid()
-
-    def _updateTabStyles(self):
-        # Список стилей страниц, которые нужно обновить
-        for page_style in self.findChildren(QWidget, "otherPage"):
-            page_style.setStyleSheet(self.theme.OTHER_PAGES_WIDGET_STYLE)
-
-        # Список заголовков, которые нужно обновить
-        for title_label in self.findChildren(QLabel, "tabTitle"):
-            title_label.setStyleSheet(self.theme.TAB_TITLE_STYLE)
-
-        # Обновляем контент с objectName="tabContent"
-        for content_label in self.findChildren(QLabel, "tabContent"):
-            content_label.setStyleSheet(self.theme.CONTENT_STYLE)
-
-        # Кнопки
-        self.addGameButton.setStyleSheet(self.theme.ADDGAME_BACK_BUTTON_STYLE)
-
-        for action_button in self.findChildren(AutoSizeButton, "actionButton"):
-            action_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
-
-        # Вкладка "Библиотека"
-        self.gamesLibraryWidget.setStyleSheet(self.theme.LIBRARY_WIDGET_STYLE)
-        self.GameLibraryTitle.setStyleSheet(self.theme.INSTALLED_TAB_TITLE_STYLE)
-        self.searchEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE)
-
-        # Вкладка "Настройки PORTPROTON"
-        for params_label in self.findChildren(QLabel, "settingsTitle"):
-            params_label.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
-
-        for combo_string in self.findChildren(QComboBox, "comboString"):
-            combo_string.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
-
-        for combo_string in self.findChildren(QLineEdit, "inputString"):
-            combo_string.setStyleSheet(self.theme.PROXY_INPUT_STYLE)
-
-        # Вкладка "Темы"
-        self.screenshotsCarousel.setStyleSheet(self.theme.CAROUSEL_WIDGET_STYLE)
 
     def loadGames(self):
         display_filter = read_display_filter()
@@ -947,13 +892,15 @@ class MainWindow(QMainWindow):
             if selected_theme:
                 theme_module = self.theme_manager.apply_theme(selected_theme)
                 if theme_module:
-                    self.theme = theme_module
-                    self.current_theme_name = selected_theme
-                    self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE)
-                    self.statusBar().showMessage(_("Theme '{0}' applied successfully").format(selected_theme), 3000)
-                    self.updateUIStyles()
                     save_theme_to_config(selected_theme)
-                    updateThemePreview(selected_theme)
+                    self.statusBar().showMessage(_("Theme '{0}' applied successfully").format(selected_theme), 3000)
+                    xdg_data_home = os.getenv("XDG_DATA_HOME",
+                                            os.path.join(os.path.expanduser("~"), ".local", "share"))
+                    state_file = os.path.join(xdg_data_home, "PortProtonQT", "state.txt")
+                    os.makedirs(os.path.dirname(state_file), exist_ok=True)
+                    with open(state_file, "w", encoding="utf-8") as f:
+                        f.write("theme_tab\n")
+                    QTimer.singleShot(500, lambda: self.restart_application())
                 else:
                     self.statusBar().showMessage(_("Error applying theme '{0}'").format(selected_theme), 3000)
 
@@ -961,6 +908,23 @@ class MainWindow(QMainWindow):
 
         # Добавляем виджет в stackedWidget
         self.stackedWidget.addWidget(self.themeTabWidget)
+
+    def restart_application(self):
+        """Перезапускает приложение."""
+        python = sys.executable
+        os.execl(python, python, *sys.argv)
+
+    def restore_state(self):
+        """Восстанавливает состояние приложения после перезапуска."""
+        xdg_data_home = os.getenv("XDG_DATA_HOME",
+                                os.path.join(os.path.expanduser("~"), ".local", "share"))
+        state_file = os.path.join(xdg_data_home, "PortProtonQT", "state.txt")
+        if os.path.exists(state_file):
+            with open(state_file, encoding="utf-8") as f:
+                state = f.read().strip()
+                if state == "theme_tab":
+                    self.switchTab(5)
+            os.remove(state_file)
 
     # ЛОГИКА ДЕТАЛЬНОЙ СТРАНИЦЫ ИГРЫ
     def getColorPalette(self, cover_path, num_colors=5, sample_step=10):
