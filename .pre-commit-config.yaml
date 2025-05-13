@@ -1,10 +1,6 @@
 # See https://pre-commit.com for more information
-# See https://pre-commit.ci/ for more information
 # See https://pre-commit.com/hooks.html for more hooks
-ci:
-  autofix_prs: false
-  autoupdate_schedule: quarterly
-exclude: '(data/|documentation/|portprotonqt/locales/|dev-scripts/|.venv/|venv/|themes/.*\.svg)'
+exclude: '(data/|documentation/|portprotonqt/locales/|dev-scripts/|\.venv/|venv/|.*\.svg$)'
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
@@ -12,6 +8,7 @@ repos:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-toml
+      - id: check-yaml
 
   - repo: https://github.com/astral-sh/uv-pre-commit
     rev: 0.6.14

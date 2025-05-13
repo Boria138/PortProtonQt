@@ -1,22 +1,22 @@
-name: install check
+name: Code and build check
 
 on:
   pull_request:
+    branches: [main]
     paths-ignore:
       - "data/**"
       - "*.md"
-      - "*.yml"
       - "dev-scripts/**"
   push:
     branches: [main]
     paths-ignore:
       - "data/**"
       - "*.md"
-      - "*.yml"
       - "dev-scripts/**"
 
 jobs:
   pre-commit:
+    name: Check code
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -34,3 +34,79 @@ jobs:
         run: |
           source .venv/bin/activate
           pre-commit run --show-diff-on-failure --color=always --all-files
+
+  build-appimage:
+    name: Check build AppImage
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install required dependencies
+        run: sudo apt install -y binutils coreutils desktop-file-utils fakeroot fuse libgdk-pixbuf2.0-dev patchelf python3-pip python3-setuptools squashfs-tools strace util-linux zsync
+
+      - name: Download AppImageBuilder etc.
+        run: |
+          pip3 install appimage-builder uv
+
+      - name: Build AppImage
+        run: |
+          cd ${{ github.workspace }}/build-aux
+          appimage-builder
+
+  build-arch:
+    name: Check build Arch Package
+    runs-on: ubuntu-22.04
+    container:
+      image: archlinux:base-devel
+      volumes:
+        - /usr:/usr-host
+        - /opt:/opt-host
+      options: --privileged
+
+    env:
+      PKGDEST: "/tmp/portproton-repo"
+
+    steps:
+      - name: Prepare container
+        run: |
+          pacman -Sy --noconfirm --disable-download-timeout --needed git wget gnupg
+
+          # Use all threads for building
+          sed -i 's/#MAKEFLAGS="-j2"/MAKEFLAGS="-j$(nproc) -l$(nproc)"/g' /etc/makepkg.conf
+
+          # Disable creating debug packages
+          sed -i 's/OPTIONS=(.*)/OPTIONS=(strip docs !libtool !staticlibs emptydirs zipman purge lto)/g' /etc/makepkg.conf
+
+          yes | pacman -Scc
+          pacman-key --init
+          pacman -S --noconfirm archlinux-keyring
+
+          mkdir -p /__w/portproton-repo
+
+          # Chaotic-AUR repo
+          pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
+          pacman-key --lsign-key 3056513887B78AEB
+          pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst'
+          pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst'
+
+          # Enable the chaotic-aur
+          cat << EOM >> /etc/pacman.conf
+
+          [chaotic-aur]
+          Include = /etc/pacman.d/chaotic-mirrorlist
+          EOM
+
+          pacman -Syy
+
+          useradd -m user -G wheel && echo "user ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+          echo "PACKAGER=\"Boris Yumankulov <boria138@altlinux.org>\"" >> /etc/makepkg.conf
+          chown user -R /tmp
+          chown user -R ..
+
+      - name: Build
+        run: |
+          cd /__w/portproton-repo
+          git clone https://github.com/Boria138/PortProtonQt.git
+          cd /__w/portproton-repo/PortProtonQt/build-aux
+          chown user -R ..
+          su user -c "yes '' | makepkg --noconfirm -s"
