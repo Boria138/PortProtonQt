@@ -1,0 +1,86 @@
+name: Build package
+on:
+  workflow_dispatch:
+
+jobs:
+  build-arch:
+    runs-on: ubuntu-24.04
+
+    permissions:
+      contents: write
+
+    container:
+      image: archlinux:base-devel
+      volumes:
+        - /usr:/usr-host
+        - /opt:/opt-host
+      options: --privileged
+
+    env:
+      PKGDEST: "/tmp/package"
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Prepare container
+        run: |
+
+          pacman -Syuu --noconfirm --disable-download-timeout --needed git wget gnupg
+
+          # Use all available threads to build a package
+          sed -i 's/#MAKEFLAGS="-j2"/MAKEFLAGS="-j$(nproc) -l$(nproc)"/g' /etc/makepkg.conf
+
+          yes | pacman -Scc
+          pacman-key --init
+          pacman -S --noconfirm archlinux-keyring
+
+          # Chaotic-AUR repo
+          pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
+          pacman-key --lsign-key 3056513887B78AEB
+          pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst'
+          pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst'
+
+          # Enable the Chaotic repository
+          [chaotic-aur]
+          Include = /etc/pacman.d/chaotic-mirrorlist
+          EOM
+
+          pacman -Sy --noconfirm --disable-download-timeout --needed rate-mirrors yay
+
+          rate-mirrors --allow-root arch | tee /etc/pacman.d/mirrorlist
+          rate-mirrors --allow-root chaotic-aur | tee /etc/pacman.d/chaotic-mirrorlist
+
+          pacman -Syy
+
+          useradd -m user -G wheel && echo "user ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+          echo "PACKAGER=\"Boria138\"" >> /etc/makepkg.conf
+          chown user -R /tmp
+          chown user -R ..
+
+      - name: Maximize build space
+        run: |
+          echo "==> Available space before cleanup"
+          echo
+          df -h
+          rm -rf /usr-host/share/dotnet
+          rm -rf /usr-host/share/swift
+          rm -rf /usr-host/share/java
+          rm -rf /usr-host/local/lib/android
+          rm -rf /opt-host/ghc
+          rm -rf /opt-host/hostedtoolcache
+          rm -rf /opt-host/az
+          echo "==> Available space after cleanup"
+          echo
+          df -h
+
+      - name: Build Refresh Mirrors
+        run: |
+          cd /__w/lunaos-repo
+          chown user -R ..
+          wget https://raw.githubusercontent.com/Boria138/PortProtonQt/refs/heads/main/build-aux/PKGBUILD
+          su user -c "yes '' | makepkg --noconfirm -s"
+
+      - name: Upload Arch package
+        uses: actions/upload-artifact@v4
+        with:
+          name: arch-package
+          path: ${{ env.PKGDEST }}/

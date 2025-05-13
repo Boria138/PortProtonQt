@@ -22,13 +22,13 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
-  "License :: OSI Approved :: MIT License",
   "Operating System :: Linux"
 ]
 requires-python = ">=3.10"
 dependencies = [
     "babel>=2.17.0",
     "evdev>=1.9.1",
+    "icoextract>=0.1.6",
     "numpy>=2.2.4",
     "orjson>=3.10.16",
     "psutil>=7.0.0",

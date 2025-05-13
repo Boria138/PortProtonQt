@@ -1,0 +1,21 @@
+pkgname=portprotonqt
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="A modern GUI for PortProton project."
+arch=('any')
+url="https://github.com/Boria138/PortProtonQt"
+license=('MIT')
+depends=('python-numpy' 'python-requests' 'python-babel' 'python-evdev' 'python-pyudev' 'python-orjson'
+    'python-psutil' 'python-tqdm' 'python-vdf' 'pyside6' 'icoextract')
+makedepends=('python-'{'build','installer','setuptools','wheel'})
+_commit=92b7d08f7fff59990de93cacba666b03569f8e2d
+source=("git+https://github.com/Boria138/PortProtonQt.git#commit=$_commit")
+sha256sums=('SKIP')
+
+build() {
+	python -m build --wheel --no-isolation
+}
+
+package() {
+    python -m installer --destdir="$pkgdir" dist/*.whl
+}
