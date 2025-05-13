@@ -24,7 +24,7 @@ jobs:
       - name: Prepare container
         run: |
 
-          pacman -Syuu --noconfirm --disable-download-timeout --needed gnupg wget
+          pacman -Syuu --noconfirm --disable-download-timeout --needed gnupg wget git
 
           wget https://raw.githubusercontent.com/Boria138/PortProtonQt/refs/heads/main/build-aux/PKGBUILD -P /__w/portprotonqt
 
