@@ -73,7 +73,7 @@ jobs:
           echo
           df -h
 
-      - name: Build Refresh Mirrors
+      - name: Build PortProtonQt
         run: |
           cd /__w/PortProtonQt/build-aux
           chown user -R ..
