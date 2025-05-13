@@ -79,7 +79,9 @@ jobs:
           cd /__w/portprotonqt
           chown user -R ..
           su user -c "yes '' | makepkg --noconfirm -s"
-          mv -v portprotonqt-* ${{ github.workspace }}/portprotonqt-latest.pkg.tar.zst
+          PKGFILE=$(ls ./*.pkg.tar.zst | head -n1)
+          echo ">> Moving $PKGFILE to workspace"
+          mv -v "$PKGFILE" "${GITHUB_WORKSPACE}/portprotonqt-latest.pkg.tar.zst"
 
       - name: Upload Arch package
         uses: actions/upload-artifact@v4
