@@ -40,6 +40,7 @@ jobs:
           pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst'
 
           # Enable the Chaotic repository
+          cat << EOM >> /etc/pacman.conf
           [chaotic-aur]
           Include = /etc/pacman.d/chaotic-mirrorlist
           EOM
