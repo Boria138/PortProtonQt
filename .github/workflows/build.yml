@@ -24,7 +24,7 @@ jobs:
       - name: Prepare container
         run: |
 
-          pacman -Syuu --noconfirm --disable-download-timeout --needed git wget gnupg
+          pacman -Syuu --noconfirm --disable-download-timeout --needed gnupg
 
           # Use all available threads to build a package
           sed -i 's/#MAKEFLAGS="-j2"/MAKEFLAGS="-j$(nproc) -l$(nproc)"/g' /etc/makepkg.conf
@@ -45,7 +45,7 @@ jobs:
           Include = /etc/pacman.d/chaotic-mirrorlist
           EOM
 
-          pacman -Sy --noconfirm --disable-download-timeout --needed rate-mirrors yay
+          pacman -Sy --noconfirm --disable-download-timeout --needed rate-mirrors
 
           rate-mirrors --allow-root arch | tee /etc/pacman.d/mirrorlist
           rate-mirrors --allow-root chaotic-aur | tee /etc/pacman.d/chaotic-mirrorlist
@@ -75,9 +75,8 @@ jobs:
 
       - name: Build Refresh Mirrors
         run: |
-          cd /__w/lunaos-repo
+          cd /__w/PortProtonQt/build-aux
           chown user -R ..
-          wget https://raw.githubusercontent.com/Boria138/PortProtonQt/refs/heads/main/build-aux/PKGBUILD
           su user -c "yes '' | makepkg --noconfirm -s"
 
       - name: Upload Arch package
