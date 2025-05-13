@@ -17,7 +17,6 @@ jobs:
       options: --privileged
 
     env:
-      PKGDEST: "/tmp/portprotonqt"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
@@ -80,9 +79,10 @@ jobs:
           cd /__w/portprotonqt
           chown user -R ..
           su user -c "yes '' | makepkg --noconfirm -s"
+          mv -v portprotonqt-* ${{ github.workspace }}/portprotonqt-latest.pkg.tar.zst
 
       - name: Upload Arch package
         uses: actions/upload-artifact@v4
         with:
           name: arch-package
-          path: ${{ env.PKGDEST }}/
+          path: ${{ github.workspace }}/portprotonqt-latest.pkg.tar.zst
