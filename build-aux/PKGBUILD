@@ -8,9 +8,8 @@ license=('MIT')
 depends=('python-numpy' 'python-requests' 'python-babel' 'python-evdev' 'python-pyudev' 'python-orjson'
     'python-psutil' 'python-tqdm' 'python-vdf' 'pyside6' 'icoextract')
 makedepends=('python-'{'build','installer','setuptools','wheel'})
-_commit=ee70de9a2ee775bb3acb8b14a96a002c0598d715
-source=("git+https://github.com/Boria138/PortProtonQt.git#commit=$_commit")
-sha256sums=('SKIP')
+source=("git+https://github.com/Boria138/PortProtonQt.git#tag=$pkgver")
+sha256sums=('cfc39502fa12717731e3b8f0bff62853598b8b8ba7b0777b227d6489d4c56a19')
 
 build() {
 	python -m build --wheel --no-isolation
