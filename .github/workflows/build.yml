@@ -1,14 +1,36 @@
-name: Build package
+name: Build AppImage and Arch Package CI
 on:
   workflow_dispatch:
 
 jobs:
+  build-appimage:
+    name: Build AppImage
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install required dependencies
+        run: sudo apt install -y binutils coreutils desktop-file-utils fakeroot fuse libgdk-pixbuf2.0-dev patchelf python3-pip python3-setuptools squashfs-tools strace util-linux zsync
+
+      - name: Download AppImageBuilder etc.
+        run: |
+          pip3 install appimage-builder uv
+
+      - name: Build AppImage
+        run: |
+          cd ${{ github.workspace }}/build-aux
+          appimage-builder
+
+      - name: Upload AppImage
+        uses: actions/upload-artifact@v4
+        with:
+          name: PortProtonQt-AppImage
+          path: ${{ github.workspace }}/build-aux/PortProtonQt*.AppImage
+          if-no-files-found: ignore
+
   build-arch:
-    runs-on: ubuntu-24.04
-
-    permissions:
-      contents: write
-
+    name: Build Arch Package
+    runs-on: ubuntu-22.04
     container:
       image: archlinux:base-devel
       volumes:
@@ -17,22 +39,25 @@ jobs:
       options: --privileged
 
     env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      PKGDEST: "/tmp/portproton-repo"
 
     steps:
       - name: Prepare container
         run: |
 
-          pacman -Syuu --noconfirm --disable-download-timeout --needed gnupg wget git
+          pacman -Sy --noconfirm --disable-download-timeout --needed git wget gnupg
 
-          wget https://raw.githubusercontent.com/Boria138/PortProtonQt/refs/heads/main/build-aux/PKGBUILD -P /__w/portprotonqt
-
-          # Use all available threads to build a package
+          # Use all threads for building
           sed -i 's/#MAKEFLAGS="-j2"/MAKEFLAGS="-j$(nproc) -l$(nproc)"/g' /etc/makepkg.conf
+
+          # Disable creating debug packages
+          sed -i 's/OPTIONS=(.*)/OPTIONS=(strip docs !libtool !staticlibs emptydirs zipman purge lto)/g' /etc/makepkg.conf
 
           yes | pacman -Scc
           pacman-key --init
           pacman -S --noconfirm archlinux-keyring
+
+          mkdir -p /__w/portproton-repo
 
           # Chaotic-AUR repo
           pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
@@ -40,51 +65,34 @@ jobs:
           pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst'
           pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst'
 
-          # Enable the Chaotic repository
+          # Enable the chaotic-aur
           cat << EOM >> /etc/pacman.conf
+
           [chaotic-aur]
           Include = /etc/pacman.d/chaotic-mirrorlist
           EOM
 
-          pacman -Sy --noconfirm --disable-download-timeout --needed rate-mirrors
-
-          rate-mirrors --allow-root arch | tee /etc/pacman.d/mirrorlist
-          rate-mirrors --allow-root chaotic-aur | tee /etc/pacman.d/chaotic-mirrorlist
-
           pacman -Syy
 
           useradd -m user -G wheel && echo "user ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-          echo "PACKAGER=\"Boria138\"" >> /etc/makepkg.conf
+          echo "PACKAGER=\"Boris Yumankulov <boria138@altlinux.org>\"" >> /etc/makepkg.conf
           chown user -R /tmp
           chown user -R ..
 
-      - name: Maximize build space
+      - name: Build
         run: |
-          echo "==> Available space before cleanup"
-          echo
-          df -h
-          rm -rf /usr-host/share/dotnet
-          rm -rf /usr-host/share/swift
-          rm -rf /usr-host/share/java
-          rm -rf /usr-host/local/lib/android
-          rm -rf /opt-host/ghc
-          rm -rf /opt-host/hostedtoolcache
-          rm -rf /opt-host/az
-          echo "==> Available space after cleanup"
-          echo
-          df -h
-
-      - name: Build PortProtonQt
-        run: |
-          cd /__w/portprotonqt
+          cd /__w/portproton-repo
+          git clone https://github.com/Boria138/PortProtonQt.git
+          cd /__w/portproton-repo/PortProtonQt/build-aux
           chown user -R ..
           su user -c "yes '' | makepkg --noconfirm -s"
-          PKGFILE=$(ls ./*.pkg.tar.zst | head -n1)
-          echo ">> Moving $PKGFILE to workspace"
-          mv -v "$PKGFILE" "${GITHUB_WORKSPACE}/portprotonqt-latest.pkg.tar.zst"
+
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Upload Arch package
         uses: actions/upload-artifact@v4
         with:
-          name: arch-package
-          path: ${{ github.workspace }}/portprotonqt-latest.pkg.tar.zst
+          name: PortProtonQt-Arch
+          path:  ${{ env.PKGDEST }}/*
+          if-no-files-found: ignore

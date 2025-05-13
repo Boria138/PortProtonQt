@@ -1,0 +1,56 @@
+version: 1
+
+script:
+  # 1) чистим старый AppDir
+  - rm -rf AppDir || true
+  # 2) создаём структуру каталога
+  - mkdir -p AppDir/usr/local/lib/python3.10/dist-packages
+  # 3) UV: создаём виртуальное окружение и устанавливаем зависимости из pyproject.toml
+  - uv venv
+  - uv pip install --no-cache-dir ../
+  # 4) копируем всё из .venv в AppDir
+  - cp -r .venv/lib/python3.10/site-packages/* AppDir/usr/local/lib/python3.10/dist-packages
+  - cp -r share AppDir/usr
+  # 5) чистим от ненужных модулей и бинарников
+  - rm -rf AppDir/usr/local/lib/python3.10/dist-packages/PySide6/Qt/qml/
+  - rm -f AppDir/usr/local/lib/python3.10/dist-packages/PySide6/{assistant,designer,linguist,lrelease,lupdate}
+  - rm -f AppDir/usr/local/lib/python3.10/dist-packages/PySide6/{Qt3D*,QtBluetooth*,QtCharts*,QtConcurrent*,QtDataVisualization*,QtDesigner*,QtHelp*,QtMultimedia*,QtNetwork*,QtOpenGL*,QtPositioning*,QtPrintSupport*,QtQml*,QtQuick*,QtRemoteObjects*,QtScxml*,QtSensors*,QtSerialPort*,QtSql*,QtStateMachine*,QtTest*,QtWeb*,QtXml*}
+  - shopt -s extglob
+  - rm -rf AppDir/usr/local/lib/python3.10/dist-packages/PySide6/Qt/lib/!(libQt6Core*|libQt6Gui*|libQt6Widgets*|libQt6OpenGL*|libQt6XcbQpa*|libQt6Wayland*|libQt6Egl*|libicudata*|libicuuc*|libicui18n*|libQt6DBus*|libQt6Svg*|libQt6Qml*|libQt6Network*)
+
+AppDir:
+  path: ./AppDir
+
+  app_info:
+    id: ru.linux_gaming.PortProtonQt
+    name: PortProtonQt
+    icon: ru.linux_gaming.PortProtonQt
+    version: 0.1.0
+    exec: usr/bin/python3
+    exec_args: "-m portprotonqt.app $@"
+
+  apt:
+    arch: amd64
+    sources:
+      - sourceline: 'deb [arch=amd64] http://archive.ubuntu.com/ubuntu/ jammy main restricted universe multiverse'
+        key_url: 'http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x871920d1991bc93c'
+
+    include:
+      - python3
+      - python3-pkg-resources
+      - libopengl0
+      - libk5crypto3
+      - libkrb5-3
+      - libgssapi-krb5-2
+      - libxcb-cursor0
+    exclude: []
+
+  runtime:
+    env:
+      PYTHONHOME: '${APPDIR}/usr'
+      PYTHONPATH: '${APPDIR}/usr/local/lib/python3.10/dist-packages'
+
+
+AppImage:
+  sign-key: None
+  arch: x86_64
