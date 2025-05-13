@@ -17,14 +17,16 @@ jobs:
       options: --privileged
 
     env:
-      PKGDEST: "/tmp/package"
+      PKGDEST: "/tmp/portprotonqt"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       - name: Prepare container
         run: |
 
-          pacman -Syuu --noconfirm --disable-download-timeout --needed gnupg
+          pacman -Syuu --noconfirm --disable-download-timeout --needed gnupg wget
+
+          wget https://raw.githubusercontent.com/Boria138/PortProtonQt/refs/heads/main/build-aux/PKGBUILD -P /__w/portprotonqt
 
           # Use all available threads to build a package
           sed -i 's/#MAKEFLAGS="-j2"/MAKEFLAGS="-j$(nproc) -l$(nproc)"/g' /etc/makepkg.conf
@@ -75,7 +77,7 @@ jobs:
 
       - name: Build PortProtonQt
         run: |
-          cd /__w/PortProtonQt/build-aux
+          cd /__w/portprotonqt
           chown user -R ..
           su user -c "yes '' | makepkg --noconfirm -s"
 
