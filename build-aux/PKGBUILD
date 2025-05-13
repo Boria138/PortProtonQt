@@ -12,9 +12,11 @@ source=("git+https://github.com/Boria138/PortProtonQt.git#tag=$pkgver")
 sha256sums=('cfc39502fa12717731e3b8f0bff62853598b8b8ba7b0777b227d6489d4c56a19')
 
 build() {
+    cd "$srcdir/PortProtonQt"
 	python -m build --wheel --no-isolation
 }
 
 package() {
+    cd "$srcdir/PortProtonQt"
     python -m installer --destdir="$pkgdir" dist/*.whl
 }
