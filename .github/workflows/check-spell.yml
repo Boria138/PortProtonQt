@@ -1,0 +1,27 @@
+name: Check Translations
+run-name: Check spelling in translation files
+on:
+  push:
+    paths:
+      - 'portprotonqt/locales/**'
+  pull_request:
+    paths:
+      - 'portprotonqt/locales/**'
+
+jobs:
+  check-translations:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: "pyproject.toml"
+
+      - name: Install Python dependencies
+        run: pip install pyaspeller
+
+      - name: Run spell check
+        run: python dev-scripts/check_spell.py portprotonqt/locales/**/*.po portprotonqt/locales/**/*.pot
