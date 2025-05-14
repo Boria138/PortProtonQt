@@ -110,3 +110,51 @@ jobs:
           cd /__w/portproton-repo/PortProtonQt/build-aux
           chown user -R ..
           su user -c "yes '' | makepkg --noconfirm -s"
+
+  build-fedora:
+    name: Check build Fedora package
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        fedora_version: [40, 41, 42, rawhide]
+
+    container:
+      image: fedora:${{ matrix.fedora_version }}
+      options: --privileged
+
+    env:
+      PACKAGE: portprotonqt
+      VERSION: 0.1.0
+
+    steps:
+      - name: Install build dependencies
+        run: |
+          dnf install -y git rpmdevtools python3-devel python3-wheel python3-pip \
+                         python3-build pyproject-rpm-macros python3-setuptools \
+                         redhat-rpm-config
+
+      - name: Setup rpmbuild environment
+        run: |
+          useradd rpmbuild -u 5002 -g users || true
+          mkdir -p /home/rpmbuild/{BUILD,RPMS,SPECS,SRPMS,SOURCES}
+          chown -R rpmbuild:users /home/rpmbuild
+          echo '%_topdir /home/rpmbuild' > /home/rpmbuild/.rpmmacros
+
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Prepare sources
+        run: |
+          git clone --depth 1 https://github.com/Boria138/PortProtonQt.git /tmp/src
+          mv /tmp/src /home/rpmbuild/PortProtonQt-${VERSION}
+          tar -czf /home/rpmbuild/SOURCES/PortProtonQt-${VERSION}.tar.gz -C /home/rpmbuild PortProtonQt-${VERSION}
+
+      - name: Copy fedora.spec
+        run: |
+          cp build-aux/fedora.spec /home/rpmbuild/SPECS/${PACKAGE}.spec
+          chown -R rpmbuild:users /home/rpmbuild
+
+      - name: Build RPM
+        run: |
+          su rpmbuild -c "rpmbuild -ba /home/rpmbuild/SPECS/${PACKAGE}.spec"
