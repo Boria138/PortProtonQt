@@ -2,6 +2,7 @@ name: Check Translations
 run-name: Check spelling in translation files
 on:
   push:
+    branches: [main]
     paths:
       - 'portprotonqt/locales/**'
   pull_request:
