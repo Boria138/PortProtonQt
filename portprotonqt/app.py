@@ -1,6 +1,7 @@
 import sys
 from PySide6.QtCore import QLocale, QTranslator, QLibraryInfo
 from PySide6.QtWidgets import QApplication
+from PySide6.QtGui import QIcon
 from portprotonqt.main_window import MainWindow
 from portprotonqt.tray import SystemTray
 from portprotonqt.config_utils import read_theme_from_config
@@ -8,8 +9,17 @@ from portprotonqt.logger import get_logger
 
 logger = get_logger(__name__)
 
+__app_id__ = "ru.linux_gaming.PortProtonQt"
+__app_name__ = "PortProtonQt"
+__app_version__ = "0.1.0"
+
 def main():
     app = QApplication(sys.argv)
+    app.setWindowIcon(QIcon.fromTheme(__app_id__))
+    app.setDesktopFileName(__app_id__)
+    app.setApplicationName(__app_name__)
+    app.setApplicationVersion(__app_version__)
+
     system_locale = QLocale.system()
     qt_translator = QTranslator()
     translations_path = QLibraryInfo.path(QLibraryInfo.LibraryPath.TranslationsPath)

@@ -46,7 +46,7 @@ portprotonqt = "portprotonqt.app:main"
 "portprotonqt" = ["themes/**/*", "locales/**/*", "custom_data/**/*"]
 
 [tool.setuptools.packages.find]
-exclude = ["data", "dev-scripts", "documentation"]
+exclude = ["build-aux", "dev-scripts", "documentation", "data"]
 
 [tool.ruff.lint]
 select = [

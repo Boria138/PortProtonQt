@@ -2,6 +2,7 @@
 Name=PortProtonQt
 Exec=portprotonqt
 Type=Application
+Comment=A modern GUI for PortProton project
 Terminal=false
 Icon=ru.linux_gaming.PortProtonQt
 StartupWMClass=ru.linux_gaming.PortProtonQt
