@@ -7,7 +7,7 @@ name = "portprotonqt"
 version = "0.1.0"
 description = "A project to rewrite PortProton (PortWINE) using PySide"
 readme = "README.md"
-license = "MIT"
+license = { text = "MIT" }
 authors = [
   { name = "Boria138" },
   { name = "BlackSnaker" },
