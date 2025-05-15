@@ -43,6 +43,7 @@ AppDir:
       - libkrb5-3
       - libgssapi-krb5-2
       - libxcb-cursor0
+      - libimage-exiftool-perl
     exclude: []
 
   runtime:
@@ -50,7 +51,7 @@ AppDir:
       PYTHONHOME: '${APPDIR}/usr'
       PYTHONPATH: '${APPDIR}/usr/local/lib/python3.10/dist-packages'
 
-
 AppImage:
+  update-information: gh-releases-zsync|Boria138|PortProtonQt|latest|PortProtonQt-*x86_64.AppImage.zsync
   sign-key: None
   arch: x86_64
