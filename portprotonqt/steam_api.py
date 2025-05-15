@@ -21,6 +21,20 @@ logger = get_logger(__name__)
 # Время жизни кэша – 30 дней (можно вынести в настройки)
 CACHE_DURATION = 30 * 24 * 60 * 60
 
+def safe_vdf_load(path):
+    """
+    Пытается загрузить VDF-файл, возвращает {} при ошибке или отсутствии vdf.
+    """
+    try:
+        with open(path, encoding='utf-8') as f:
+            return vdf.load(f)
+    except (FileNotFoundError) as e:
+        logger.info(f"Не удалось загрузить VDF {path}: {e}")
+        return {}
+    except Exception as e:
+        logger.error(f"Ошибка при разборе VDF {path}: {e}")
+        return {}
+
 def decode_text(text: str) -> str:
     """
     Декодирует HTML-сущности в строке.
@@ -50,20 +64,23 @@ def _get_steam_home():
             return expanded_path
     return None
 
-def get_last_steam_user(steam_home):
+def get_last_steam_user(steam_home: Path) -> dict | None:
     """Возвращает данные последнего пользователя Steam из loginusers.vdf."""
     loginusers_path = steam_home / "config/loginusers.vdf"
-    if not loginusers_path.exists():
-        logger.error("Файл loginusers.vdf не найден")
+    data = safe_vdf_load(loginusers_path)
+    if not data:
         return None
-    with open(loginusers_path, encoding='utf-8') as f:
-        data = vdf.load(f)
     users = data.get('users', {})
     for user_id, user_info in users.items():
         if user_info.get('MostRecent') == '1':
-            return {'SteamID': int(user_id)}
+            try:
+                return {'SteamID': int(user_id)}
+            except ValueError:
+                logger.error(f"Неверный формат SteamID: {user_id}")
+                return None
     logger.info("Не найден пользователь с MostRecent=1")
     return None
+
 
 def convert_steam_id(steam_id: int) -> int:
     """
@@ -72,76 +89,85 @@ def convert_steam_id(steam_id: int) -> int:
     """
     return steam_id & 0xFFFFFFFF
 
-def get_steam_libs(steam_dir):
+
+def get_steam_libs(steam_dir: Path) -> set[Path]:
+    """Возвращает набор директорий Steam libraryfolders."""
     libs = set()
     libs_vdf = steam_dir / "steamapps/libraryfolders.vdf"
-    with open(libs_vdf, encoding='utf-8') as f:
-        data = vdf.load(f)['libraryfolders']
-        for k in data:
-            if k.isdigit() and (path := Path(data[k]['path'])):
-                libs.add(path)
+    data = safe_vdf_load(libs_vdf)
+    folders = data.get('libraryfolders', {})
+    for key, info in folders.items():
+        if key.isdigit():
+            path_str = info.get('path') if isinstance(info, dict) else None
+            if path_str:
+                path = Path(path_str).expanduser()
+                if path.exists():
+                    libs.add(path)
+    # Основная директория Steam
     libs.add(steam_dir)
     return libs
 
-def get_playtime_data(steam_home):
+
+def get_playtime_data(steam_home: Path) -> dict[int, tuple[int, int]]:
     """Возвращает данные о времени игры для последнего пользователя."""
-    play_data = {}
+    play_data: dict[int, tuple[int, int]] = {}
     userdata_dir = steam_home / "userdata"
     if not userdata_dir.exists():
         return play_data
+
     last_user = get_last_steam_user(steam_home)
     if not last_user:
         logger.info("Не удалось определить последнего пользователя Steam")
         return play_data
+
     user_id = last_user['SteamID']
-    convert_user_id = convert_steam_id(user_id)
-    user_dir = userdata_dir / str(convert_user_id)
+    unsigned_id = convert_steam_id(user_id)
+    user_dir = userdata_dir / str(unsigned_id)
     if not user_dir.exists():
-        logger.info(f"Директория пользователя {convert_user_id} не найдена")
+        logger.info(f"Директория пользователя {unsigned_id} не найдена")
         return play_data
+
     localconfig = user_dir / "config/localconfig.vdf"
-    if not localconfig.exists():
-        logger.info(f"Файл localconfig.vdf не найден для пользователя {convert_user_id}")
-        return play_data
-    with open(localconfig, encoding='utf-8') as f:
-        data = vdf.load(f)['UserLocalConfigStore']
-        apps = data.get('Software', {}).get('Valve', {}).get('Steam', {}).get('apps', {})
-        for appid_str, info in apps.items():
+    data = safe_vdf_load(localconfig)
+    cfg = data.get('UserLocalConfigStore', {})
+    apps = cfg.get('Software', {}).get('Valve', {}).get('Steam', {}).get('apps', {})
+    for appid_str, info in apps.items():
+        try:
             appid = int(appid_str)
             last_played = int(info.get('LastPlayed', 0))
             playtime = int(info.get('Playtime', 0))
             play_data[appid] = (last_played, playtime)
+        except ValueError:
+            logger.warning(f"Некорректные данные playtime для app {appid_str}")
     return play_data
 
-def get_steam_installed_games():
-    """Возвращает список установленных Steam игр в формате:
-    (name, appid, last_played_timestamp, playtime_seconds)"""
-    games = []
+
+def get_steam_installed_games() -> list[tuple[str, int, int, int]]:
+    """Возвращает список установленных Steam игр в формате (name, appid, last_played, playtime_sec)."""
+    games: list[tuple[str, int, int, int]] = []
     steam_home = _get_steam_home()
     if not steam_home:
         return games
+
     play_data = get_playtime_data(steam_home)
     for lib in get_steam_libs(steam_home):
-        steamapps = lib / "steamapps"
-        if not steamapps.exists():
+        steamapps_dir = lib / "steamapps"
+        if not steamapps_dir.exists():
             continue
-        for manifest in steamapps.glob("appmanifest_*.acf"):
-            with open(manifest, encoding='utf-8') as f:
-                app = vdf.load(f)['AppState']
-            appid = int(app.get('appid', 0))
-            game_name = app.get('name', f"Unknown ({appid})")
-            lower_name = game_name.lower()
-            if ("proton" in lower_name or
-                "steamworks" in lower_name or
-                "steam linux runtime" in lower_name):
+        for manifest in steamapps_dir.glob("appmanifest_*.acf"):
+            data = safe_vdf_load(manifest)
+            app = data.get('AppState', {})
+            try:
+                appid = int(app.get('appid', 0))
+            except ValueError:
                 continue
-            last_played, playtime = play_data.get(appid, (0, 0))
-            games.append((
-                game_name,
-                appid,
-                last_played,
-                playtime * 60  # Конвертируем минуты в секунды
-            ))
+            name = app.get('name', f"Unknown ({appid})")
+            lname = name.lower()
+            # Пропускаем системные или runtime-пакеты
+            if any(token in lname for token in ["proton", "steamworks", "steam linux runtime"]):
+                continue
+            last_played, playtime_min = play_data.get(appid, (0, 0))
+            games.append((name, appid, last_played, playtime_min * 60))
     return games
 
 def normalize_name(s):
