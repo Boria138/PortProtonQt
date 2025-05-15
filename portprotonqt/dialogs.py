@@ -1,11 +1,14 @@
 import os
 import shutil
+import tempfile
 
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QDialog, QLineEdit, QFormLayout, QPushButton,
     QHBoxLayout, QDialogButtonBox, QFileDialog, QLabel
 )
+from icoextract import IconExtractor, IconExtractorError
+from PIL import Image
 
 from portprotonqt.config_utils import get_portproton_location
 from portprotonqt.localization import _
@@ -13,6 +16,71 @@ from portprotonqt.logger import get_logger
 import portprotonqt.themes.standart.styles as default_styles
 
 logger = get_logger(__name__)
+
+def generate_thumbnail(inputfile, outfile, size=128, force_resize=True):
+    """
+    Generates a thumbnail for an .exe file.
+
+    inputfile: the input file path (%i)
+    outfile: output filename (%o)
+    size: determines the thumbnail output size (%s)
+    """
+    logger.debug(f"Начинаем генерацию миниатюры: {inputfile} → {outfile}, размер={size}, принудительно={force_resize}")
+
+    try:
+        extractor = IconExtractor(inputfile)
+        logger.debug("IconExtractor успешно создан.")
+    except (RuntimeError, IconExtractorError) as e:
+        logger.warning(f"Не удалось создать IconExtractor: {e}")
+        return False
+
+    try:
+        data = extractor.get_icon()
+        im = Image.open(data)
+        logger.debug(f"Извлечена иконка размером {im.size}, форматы: {im.format}, кадры: {getattr(im, 'n_frames', 1)}")
+    except Exception as e:
+        logger.warning(f"Ошибка при извлечении иконки: {e}")
+        return False
+
+    if force_resize:
+        logger.debug(f"Принудительное изменение размера иконки на {size}x{size}")
+        im = im.resize((size, size))
+    else:
+        if size > 256:
+            logger.warning('Запрошен размер больше 256, установлен 256')
+            size = 256
+        elif size not in (128, 256):
+            logger.warning(f'Неподдерживаемый размер {size}, установлен 128')
+            size = 128
+
+        if size == 256:
+            logger.debug("Сохраняем иконку без изменения размера (256x256)")
+            im.save(outfile, "PNG")
+            logger.info(f"Иконка сохранена в {outfile}")
+            return True
+
+        frames = getattr(im, 'n_frames', 1)
+        try:
+            for frame in range(frames):
+                im.seek(frame)
+                if im.size == (size, size):
+                    logger.debug(f"Найден кадр с размером {size}x{size}")
+                    break
+        except EOFError:
+            logger.debug("Кадры закончились до нахождения нужного размера.")
+
+        if im.size != (size, size):
+            logger.debug(f"Изменение размера с {im.size} на {size}x{size}")
+            im = im.resize((size, size))
+
+    try:
+        im.save(outfile, "PNG")
+        logger.info(f"Миниатюра успешно сохранена в {outfile}")
+        return True
+    except Exception as e:
+        logger.error(f"Ошибка при сохранении миниатюры: {e}")
+        return False
+
 
 class AddGameDialog(QDialog):
     def __init__(self, parent=None, theme=None, edit_mode=False, game_name=None, exe_path=None, cover_path=None):
@@ -86,9 +154,7 @@ class AddGameDialog(QDialog):
         if fileName:
             self.exeEdit.setText(fileName)
             if not self.edit_mode:
-                base = os.path.basename(fileName)
-                name = os.path.splitext(base)[0]
-                self.nameEdit.setText(name)
+                self.nameEdit.setText(os.path.splitext(os.path.basename(fileName))[0])
 
     def browseCover(self):
         fileNameAndFilter = QFileDialog.getOpenFileName(
@@ -102,17 +168,18 @@ class AddGameDialog(QDialog):
             self.coverEdit.setText(fileName)
 
     def updatePreview(self):
-        path = self.coverEdit.text().strip()
+        cover_path = self.coverEdit.text().strip()
+        exe_path = self.exeEdit.text().strip()
 
-        if os.path.isfile(path):
-            self.coverPreview.setPixmap(QPixmap(path))
-        elif os.path.isfile(self.exeEdit.text().strip()):
-            temp_icon = "/tmp/portproton_temp_icon.png"
-            os.system(f'exe-thumbnailer "{self.exeEdit.text().strip()}" "{temp_icon}"')
-            if os.path.exists(temp_icon):
-                self.coverPreview.setPixmap(QPixmap(temp_icon))
-            else:
-                self.coverPreview.clear()
+        if os.path.isfile(cover_path):
+            self.coverPreview.setPixmap(QPixmap(cover_path))
+        elif os.path.isfile(exe_path):
+            tmp = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
+            tmp.close()
+            if generate_thumbnail(exe_path, tmp.name, size=128):
+                pixmap = QPixmap(tmp.name)
+                self.coverPreview.setPixmap(pixmap)
+            os.unlink(tmp.name)
         else:
             self.coverPreview.clear()
 

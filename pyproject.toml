@@ -31,6 +31,7 @@ dependencies = [
     "icoextract>=0.1.6",
     "numpy>=2.2.4",
     "orjson>=3.10.16",
+    "pillow>=11.2.1",
     "psutil>=7.0.0",
     "pyside6>=6.9.0",
     "pyudev>=0.24.3",
