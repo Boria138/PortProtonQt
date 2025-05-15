@@ -100,3 +100,50 @@ jobs:
       - name: Build RPM
         run: |
           su rpmbuild -c "rpmbuild -ba /home/rpmbuild/SPECS/${PACKAGE}.spec"
+
+  build-alt:
+    name: Check build ALT package
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        alt_branch: [p11, sisyphus]
+
+    container:
+      image: docker.io/library/alt:${{ matrix.alt_branch }}
+      options: --privileged
+
+    env:
+      PACKAGE: portprotonqt
+      VERSION: 0.1.0
+
+    steps:
+      - name: Install build dependencies
+        run: |
+          apt-get update
+          apt-get install -y rpm-build git python3-devel python3-module-setuptools python3-module-wheel
+
+      - name: Setup rpmbuild environment
+        run: |
+          useradd rpmbuild -u 5002 -g users || true
+          mkdir -p /home/rpmbuild/{BUILD,RPMS,SPECS,SRPMS,SOURCES}
+          chown -R rpmbuild:users /home/rpmbuild
+          echo '%_topdir /home/rpmbuild' > /home/rpmbuild/.rpmmacros
+
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Prepare sources
+        run: |
+          git clone -b alt-test --depth 1 https://github.com/Boria138/PortProtonQt.git /tmp/src
+          mv /tmp/src /home/rpmbuild/python3-module-portprotonqt-${VERSION}
+          tar -czf /home/rpmbuild/SOURCES/python3-module-portprotonqt-${VERSION}.tar -C /home/rpmbuild python3-module-portprotonqt-${VERSION}
+
+      - name: Copy ALT spec
+        run: |
+          cp build-aux/altlinux.spec /home/rpmbuild/SPECS/${PACKAGE}.spec
+          chown -R rpmbuild:users /home/rpmbuild
+
+      - name: Build RPM
+        run: |
+          su rpmbuild -c "rpmbuild -ba /home/rpmbuild/SPECS/${PACKAGE}.spec"
