@@ -37,5 +37,17 @@ repos:
         entry: ./dev-scripts/check_qss_properties.py
         language: system
         types: [file]
-        files: \.py$
-        pass_filenames: false
+        files: ^portprotonqt/themes/[^/]+/styles\.py$
+        pass_filenames: true
+        require_serial: true
+
+  - repo: local
+    hooks:
+      - id: check-translations
+        name: Spell-check changed translation files
+        entry: ./dev-scripts//check_spell.py
+        language: system
+        types: [file]
+        files: \.(po|pot)$
+        pass_filenames: true
+        require_serial: true

@@ -404,6 +404,7 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "pre-commit" },
+    { name = "pyaspeller" },
     { name = "pyright" },
 ]
 
@@ -426,6 +427,7 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "pre-commit", specifier = ">=4.2.0" },
+    { name = "pyaspeller", specifier = ">=2.0.2" },
     { name = "pyright", specifier = ">=1.1.400" },
 ]
 
@@ -458,6 +460,18 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/eb/a2/709e0fe2f093556c17fbafda93ac032257242cabcc7ff3369e2cb76a97aa/psutil-7.0.0-cp36-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a5f098451abc2828f7dc6b58d44b532b22f2088f4999a937557b603ce72b1993", size = 279544, upload_time = "2025-02-13T21:54:24.68Z" },
     { url = "https://files.pythonhosted.org/packages/50/e6/eecf58810b9d12e6427369784efe814a1eec0f492084ce8eb8f4d89d6d61/psutil-7.0.0-cp37-abi3-win32.whl", hash = "sha256:ba3fcef7523064a6c9da440fc4d6bd07da93ac726b5733c29027d7dc95b39d99", size = 241053, upload_time = "2025-02-13T21:54:34.31Z" },
     { url = "https://files.pythonhosted.org/packages/50/1b/6921afe68c74868b4c9fa424dad3be35b095e16687989ebbb50ce4fceb7c/psutil-7.0.0-cp37-abi3-win_amd64.whl", hash = "sha256:4cf3d4eb1aa9b348dec30105c55cd9b7d4629285735a102beb4441e38db90553", size = 244885, upload_time = "2025-02-13T21:54:37.486Z" },
+]
+
+[[package]]
+name = "pyaspeller"
+version = "2.0.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/6e/83/a4039c08cb9a57d8b7ad9e119fd87ab73ca6a8c4ea1421095afa70077979/pyaspeller-2.0.2.tar.gz", hash = "sha256:0aed696ab1ca11ca9d1a3874c7c2061fd567be9a2f1eff7b8e772031837701c0", size = 41039, upload_time = "2025-01-02T12:38:26.756Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/73/ab/af7783445d4b564a8c4f6830f4126a219901c14f6b02c03c87a3853f0bb4/pyaspeller-2.0.2-py3-none-any.whl", hash = "sha256:1ae806e7054b0758521dfccadee1aa79747220cb88f21e06f211c59b27fd8e85", size = 16143, upload_time = "2025-01-02T12:38:25.265Z" },
 ]
 
 [[package]]
