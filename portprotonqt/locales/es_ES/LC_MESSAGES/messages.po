@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-05-14 19:21+0500\n"
+"POT-Creation-Date: 2025-05-17 11:39+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es_ES\n"
@@ -104,7 +104,13 @@ msgstr ""
 msgid "Themes"
 msgstr ""
 
+msgid "Loading Steam games..."
+msgstr ""
+
 msgid "Never"
+msgstr ""
+
+msgid "Loading PortProton games..."
 msgstr ""
 
 msgid "Unknown Game"

@@ -181,7 +181,6 @@ class MainWindow(QMainWindow):
         self.games = []
         self.progress_bar.setValue(0)
         self.progress_bar.setVisible(True)
-        self.statusBar().showMessage(_("Loading games..."), 0)
         if display_filter == "steam":
             self._load_steam_games_async(lambda games: self.games_loaded.emit(games))
         elif display_filter == "portproton":
