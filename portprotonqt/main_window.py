@@ -67,7 +67,6 @@ class MainWindow(QMainWindow):
             self.theme = default_styles
         self.card_width = read_card_size()
         self.setWindowTitle("PortProtonQT")
-        self.resize(1280, 720)
         self.setMinimumSize(800, 600)
 
         self.games = []
