@@ -163,7 +163,6 @@ class MainWindow(QMainWindow):
 
     @Slot(list)
     def on_games_loaded(self, games: list[tuple]):
-        logger.info("Received %d games in main thread", len(games))
         self.games = games
         favorites = read_favorites()
         sort_method = read_sort_method()
@@ -214,34 +213,52 @@ class MainWindow(QMainWindow):
     def _load_steam_games_async(self, callback: Callable[[list[tuple]], None]):
         steam_games = []
         installed_games = get_steam_installed_games()
+        logger.info("Found %d installed Steam games: %s", len(installed_games), [g[0] for g in installed_games])
         if not installed_games:
             callback(steam_games)
             return
         self.total_games = len(installed_games)
         self.progress_bar.setMaximum(self.total_games)
         self.statusBar().showMessage(_("Loading Steam games..."), 0)
+        processed_count = 0  # Track number of processed games
+
+        def on_game_info(info: dict, name, appid, last_played, playtime_seconds):
+            nonlocal processed_count
+            if not info:
+                logger.warning("No info retrieved for game %s (appid %s)", name, appid)
+                info = {
+                    'description': '',
+                    'cover': '',
+                    'controller_support': '',
+                    'protondb_tier': '',
+                    'name': name,
+                    'steam_game': 'true'
+                }
+            last_launch = format_last_launch(datetime.fromtimestamp(last_played)) if last_played else _("Never")
+            steam_games.append((
+                name,
+                info.get('description', ''),
+                info.get('cover', ''),
+                appid,
+                f"steam://rungameid/{appid}",
+                info.get('controller_support', ''),
+                last_launch,
+                format_playtime(playtime_seconds),
+                info.get('protondb_tier', ''),
+                last_played,
+                playtime_seconds,
+                "true"
+            ))
+            processed_count += 1
+            self.pending_games.append(None)
+            self.progress_bar.setValue(len(self.pending_games))
+            logger.info("Game %s processed, processed_count: %d/%d", name, processed_count, len(installed_games))
+            if processed_count == len(installed_games):
+                callback(steam_games)
+
         for name, appid, last_played, playtime_seconds in installed_games:
-            def on_game_info(info: dict, name=name, appid=appid, last_played=last_played, playtime_seconds=playtime_seconds):
-                last_launch = format_last_launch(datetime.fromtimestamp(last_played)) if last_played else _("Never")
-                steam_games.append((
-                    name,
-                    info.get('description', ''),
-                    info.get('cover', ''),
-                    appid,
-                    f"steam://rungameid/{appid}",
-                    info.get('controller_support', ''),
-                    last_launch,
-                    format_playtime(playtime_seconds),
-                    info.get('protondb_tier', ''),
-                    last_played,
-                    playtime_seconds,
-                    "true"
-                ))
-                self.pending_games.append(None)
-                self.progress_bar.setValue(len(self.pending_games))
-                if len(self.pending_games) == len(installed_games):
-                    callback(steam_games)
-            get_full_steam_game_info_async(appid, on_game_info)
+            logger.debug("Requesting info for game %s (appid %s)", name, appid)
+            get_full_steam_game_info_async(appid, lambda info, n=name, a=appid, lp=last_played, pt=playtime_seconds: on_game_info(info, n, a, lp, pt))
 
     def _load_portproton_games_async(self, callback: Callable[[list[tuple]], None]):
         games = []
@@ -495,30 +512,42 @@ class MainWindow(QMainWindow):
         self.sliderDebounceTimer.start()
 
     def updateGameGrid(self):
-            if not self.games:
-                return
-            self.clearLayout(self.gamesListLayout)
-            available_width = self.gamesListWidget.width() - 40
-            spacing = self.gamesListLayout.spacing()
-            columns = max(1, available_width // (self.card_width + spacing))
-            new_card_width = (available_width - (columns - 1) * spacing) // columns
-            for game_data in self.games:
-                card = GameCard(
-                    *game_data,
-                    select_callback=self.openGameDetailPage,
-                    theme=self.theme,
-                    card_width=new_card_width
-                )
-                card.editShortcutRequested.connect(self.edit_game_shortcut)
-                card.deleteGameRequested.connect(self.delete_game)
-                card.addToMenuRequested.connect(self.add_to_menu)
-                card.removeFromMenuRequested.connect(self.remove_from_menu)
-                card.addToDesktopRequested.connect(self.add_to_desktop)
-                card.removeFromDesktopRequested.connect(self.remove_from_desktop)
-                self.gamesListLayout.addWidget(card)
-            self.gamesListWidget.updateGeometry()
-            self.gamesListLayout.invalidate()
-            self.gamesListWidget.update()
+        """Перестраивает карточки с учётом доступной ширины."""
+        if not self.games:
+            return
+
+        # Очищаем текущие карточки
+        self.clearLayout(self.gamesListLayout)
+
+        # Получаем актуальную доступную ширину после очистки
+        available_width = self.gamesListWidget.width() - 40  # Корректируем отступы
+        spacing = self.gamesListLayout.spacing()
+
+        # Рассчитываем оптимальный размер карточки
+        columns = max(1, available_width // (self.card_width + spacing))
+        new_card_width = (available_width - (columns - 1) * spacing) // columns
+
+        # Добавляем карточки с новыми размерами
+        for game_data in self.games:
+            card = GameCard(
+                *game_data,
+                select_callback=self.openGameDetailPage,
+                theme=self.theme,
+                card_width=new_card_width
+            )
+            # Connect context menu signals
+            card.editShortcutRequested.connect(self.edit_game_shortcut)
+            card.deleteGameRequested.connect(self.delete_game)
+            card.addToMenuRequested.connect(self.add_to_menu)
+            card.removeFromMenuRequested.connect(self.remove_from_menu)
+            card.addToDesktopRequested.connect(self.add_to_desktop)
+            card.removeFromDesktopRequested.connect(self.remove_from_desktop)
+            self.gamesListLayout.addWidget(card)
+
+        # Принудительно обновляем геометрию лейаута
+        self.gamesListWidget.updateGeometry()
+        self.gamesListLayout.invalidate()
+        self.gamesListWidget.update()
 
     def populateGamesGrid(self, games_list, columns=4):
         self.clearLayout(self.gamesListLayout)
