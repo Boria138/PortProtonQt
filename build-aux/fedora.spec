@@ -49,13 +49,14 @@ designed to simplify the management and launching of games using Wine and Proton
 
 %build
 %pyproject_wheel
-cp -r buils-aux/share %{buildroot}/usr/
 
 %install
 %pyproject_install
 %pyproject_save_files %{pypi_name}
+cp -r build-aux/share %{buildroot}/usr/
 
 %files -n python3-%{pypi_name} -f %{pyproject_files}
 %{_bindir}/%{pypi_name}
+%{_datadir}/*
 
 %changelog
