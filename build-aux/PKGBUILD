@@ -1,5 +1,5 @@
 pkgname=portprotonqt
-pkgver=0.1.0
+pkgver=0.1.1
 pkgrel=1
 pkgdesc="A modern GUI for PortProton project."
 arch=('any')
@@ -9,7 +9,7 @@ depends=('python-numpy' 'python-requests' 'python-babel' 'python-evdev' 'python-
     'python-psutil' 'python-tqdm' 'python-vdf' 'pyside6' 'icoextract' 'python-pillow' 'perl-image-exiftool')
 makedepends=('python-'{'build','installer','setuptools','wheel'})
 source=("git+https://github.com/Boria138/PortProtonQt.git#tag=$pkgver")
-sha256sums=('cfc39502fa12717731e3b8f0bff62853598b8b8ba7b0777b227d6489d4c56a19')
+sha256sums=('SKIP')
 
 build() {
     cd "$srcdir/PortProtonQt"
@@ -19,4 +19,5 @@ build() {
 package() {
     cd "$srcdir/PortProtonQt"
     python -m installer --destdir="$pkgdir" dist/*.whl
+    cp -r build-aux/share "$pkgdir/usr/"
 }

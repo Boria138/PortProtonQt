@@ -3,6 +3,14 @@ name: Build AppImage, Arch and Fedora Packages
 on:
   workflow_dispatch:
 
+env:
+  # Common version, will be used for tagging the release
+  VERSION: 0.1.1
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  PACKAGE: portprotonqt
+  PKGDEST: "/tmp/portproton-repo"
+
+
 jobs:
   build-appimage:
     name: Build AppImage
@@ -37,9 +45,6 @@ jobs:
         - /usr:/usr-host
         - /opt:/opt-host
       options: --privileged
-
-    env:
-      PKGDEST: "/tmp/portproton-repo"
 
     steps:
       - name: Prepare container
@@ -109,10 +114,6 @@ jobs:
       image: fedora:${{ matrix.fedora_version }}
       options: --privileged
 
-    env:
-      PACKAGE: portprotonqt
-      VERSION: 0.1.0
-
     steps:
       - name: Install build dependencies
         run: |
@@ -151,3 +152,26 @@ jobs:
           name: PortProtonQt-RPM-Fedora-${{ matrix.fedora_version }}
           path: /home/rpmbuild/RPMS/**/*.rpm
           if-no-files-found: ignore
+
+      - name: Get previous tag
+        id: prev
+        run: |
+          git fetch --tags
+          echo "::set-output name=tag::$(git describe --tags --abbrev=0 HEAD^1)"
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          echo "## Changelog" > changelog.md
+          git log ${{ steps.prev.outputs.tag }}..HEAD --no-merges --pretty=format:'- %s' >> changelog.md
+          echo "::set-output name=body::$(sed -e ':a;N;$!ba;s/"/\\"/g' changelog.md)"
+
+      - name: Make release
+        uses: mathieucarbou/marvinpinto-action-automatic-releases@latest
+        with:
+          repo_token: "${{ env.GITHUB_TOKEN }}"
+          prerelease: true
+          automatic_release_tag: v${{ env.VERSION }}
+          files: release/*
+          body: ${{ steps.changelog.outputs.body }}
+

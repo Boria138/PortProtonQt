@@ -49,6 +49,7 @@ designed to simplify the management and launching of games using Wine and Proton
 
 %build
 %pyproject_wheel
+cp -r buils-aux/share %{buildroot}/usr/
 
 %install
 %pyproject_install
