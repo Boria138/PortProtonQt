@@ -33,7 +33,6 @@ jobs:
         with:
           name: PortProtonQt-AppImage
           path: build-aux/PortProtonQt*.AppImage*
-          if-no-files-found: ignore
 
   build-arch:
     name: Build Arch Package
@@ -86,7 +85,6 @@ jobs:
         with:
           name: PortProtonQt-Arch
           path: ${{ env.PKGDEST }}/*
-          if-no-files-found: ignore
 
   build-fedora:
     name: Build Fedora RPM
@@ -137,7 +135,6 @@ jobs:
         with:
           name: PortProtonQt-RPM-Fedora-${{ matrix.fedora_version }}
           path: /home/rpmbuild/RPMS/**/*.rpm
-          if-no-files-found: ignore
 
   release:
     name: Create and Publish Release
@@ -146,48 +143,15 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Download AppImage artifact
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          name: PortProtonQt-AppImage
           path: release/
 
-      - name: Download Arch package artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: PortProtonQt-Arch
-          path: release/
-
-      - name: Download RPM artifacts (Fedora 40)
-        uses: actions/download-artifact@v4
-        with:
-          name: PortProtonQt-RPM-Fedora-40
-          path: release/
-
-      - name: Download RPM artifacts (Fedora 41)
-        uses: actions/download-artifact@v4
-        with:
-          name: PortProtonQt-RPM-Fedora-41
-          path: release/
-
-      - name: Download RPM artifacts (Fedora 42)
-        uses: actions/download-artifact@v4
-        with:
-          name: PortProtonQt-RPM-Fedora-42
-          path: release/
-
-      - name: Download RPM artifacts (Fedora rawhide)
-        uses: actions/download-artifact@v4
-        with:
-          name: PortProtonQt-RPM-Fedora-rawhide
-          path: release/
-
-      - name: Make release
+      - name: Create GitHub Release
         uses: mathieucarbou/marvinpinto-action-automatic-releases@latest
         with:
-          repo_token: "${{ env.GITHUB_TOKEN }}"
+          repo_token: ${{ env.GITHUB_TOKEN }}
           prerelease: true
           automatic_release_tag: ${{ env.VERSION }}
-          files: release/*
+          files: release/**/*
