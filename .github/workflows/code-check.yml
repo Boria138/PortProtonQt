@@ -14,6 +14,11 @@ on:
       - "*.md"
       - "dev-scripts/**"
 
+env:
+  # Common version, will be used for tagging the release
+  VERSION: 0.1.1
+  PACKAGE: portprotonqt
+
 jobs:
   pre-commit:
     name: Check code
@@ -64,10 +69,6 @@ jobs:
     container:
       image: fedora:${{ matrix.fedora_version }}
       options: --privileged
-
-    env:
-      PACKAGE: portprotonqt
-      VERSION: 0.1.0
 
     steps:
       - name: Install build dependencies

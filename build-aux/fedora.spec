@@ -1,5 +1,5 @@
 %global pypi_name portprotonqt
-%global pypi_version 0.1.0
+%global pypi_version 0.1.1
 %global oname PortProtonQt
 
 Name:           python-%{pypi_name}
