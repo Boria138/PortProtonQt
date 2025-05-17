@@ -153,18 +153,32 @@ jobs:
           path: /home/rpmbuild/RPMS/**/*.rpm
           if-no-files-found: ignore
 
-      - name: Get previous tag
-        id: prev
-        run: |
-          git fetch --tags
-          echo "::set-output name=tag::$(git describe --tags --abbrev=0 HEAD^1)"
+  release:
+    name: Create and Publish Release
+    needs: [build-appimage, build-arch, build-fedora]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
 
-      - name: Generate changelog
-        id: changelog
-        run: |
-          echo "## Changelog" > changelog.md
-          git log ${{ steps.prev.outputs.tag }}..HEAD --no-merges --pretty=format:'- %s' >> changelog.md
-          echo "::set-output name=body::$(sed -e ':a;N;$!ba;s/"/\\"/g' changelog.md)"
+      - name: Download AppImage artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: PortProtonQt-AppImage
+          path: release/
+
+      - name: Download Arch package artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: PortProtonQt-Arch
+          path: release/
+
+      - name: Download RPM artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: "PortProtonQt-RPM-Fedora-*"
+          path: release/
 
       - name: Make release
         uses: mathieucarbou/marvinpinto-action-automatic-releases@latest
@@ -173,4 +187,3 @@ jobs:
           prerelease: true
           automatic_release_tag: v${{ env.VERSION }}
           files: release/*
-          body: ${{ steps.changelog.outputs.body }}
