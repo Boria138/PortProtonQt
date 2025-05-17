@@ -171,7 +171,9 @@ class MainWindow(QMainWindow):
         sort_method = read_sort_method()
         if sort_method == "playtime":
             self.games.sort(key=lambda g: (0 if g[0] in favorites else 1, -g[10], -g[9]))
-        else:
+        elif sort_method == "alphabetical":
+            self.games.sort(key=lambda g: (0 if g[0] in favorites else 1, g[0].lower()))
+        else:  # Default to "last_launch"
             self.games.sort(key=lambda g: (0 if g[0] in favorites else 1, -g[9], -g[10]))
         self.updateGameGrid()
         self.progress_bar.setVisible(False)
@@ -743,7 +745,7 @@ class MainWindow(QMainWindow):
 
         # 2. Games sort_method
         self.gamesSortCombo = QComboBox()
-        self.gamesSortCombo.addItems(["last_launch", "playtime"])
+        self.gamesSortCombo.addItems(["last_launch", "playtime", "alphabetical"])
         self.gamesSortCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
         self.gamesSortCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.gamesSortTitle = QLabel(_("Games Sort Method:"))
