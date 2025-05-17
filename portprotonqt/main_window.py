@@ -42,6 +42,8 @@ class MainWindow(QMainWindow):
     """Main window of PortProtonQT."""
     settings_saved = Signal()
     games_loaded = Signal(list)
+    update_progress = Signal(int)  # Signal to update progress bar
+    update_status_message = Signal(str, int)  # Signal to update status message
 
     def __init__(self):
         super().__init__()
@@ -81,6 +83,8 @@ class MainWindow(QMainWindow):
         self.progress_bar.setTextVisible(True)
         self.progress_bar.setVisible(False)
         self.statusBar().addPermanentWidget(self.progress_bar)
+        self.update_progress.connect(self.progress_bar.setValue)
+        self.update_status_message.connect(self.statusBar().showMessage)
 
         # Центральный виджет и основной layout
         centralWidget = QWidget()
@@ -217,9 +221,9 @@ class MainWindow(QMainWindow):
             callback(steam_games)
             return
         self.total_games = len(installed_games)
-        self.progress_bar.setMaximum(self.total_games)
-        self.statusBar().showMessage(_("Loading Steam games..."), 0)
-        processed_count = 0  # Track number of processed games
+        self.update_progress.emit(0)  # Initialize progress bar
+        self.update_status_message.emit(_("Loading Steam games..."), 3000)
+        processed_count = 0
 
         def on_game_info(info: dict, name, appid, last_played, playtime_seconds):
             nonlocal processed_count
@@ -250,7 +254,7 @@ class MainWindow(QMainWindow):
             ))
             processed_count += 1
             self.pending_games.append(None)
-            self.progress_bar.setValue(len(self.pending_games))
+            self.update_progress.emit(len(self.pending_games))  # Update progress bar
             logger.info("Game %s processed, processed_count: %d/%d", name, processed_count, len(installed_games))
             if processed_count == len(installed_games):
                 callback(steam_games)
@@ -272,13 +276,13 @@ class MainWindow(QMainWindow):
             callback(games)
             return
         self.total_games = len(desktop_files)
-        self.progress_bar.setMaximum(self.total_games)
-        self.statusBar().showMessage(_("Loading PortProton games..."), 0)
+        self.update_progress.emit(0)  # Initialize progress bar
+        self.update_status_message.emit(_("Loading PortProton games..."), 3000)
         def on_desktop_processed(result: tuple | None, games=games):
             if result:
                 games.append(result)
             self.pending_games.append(None)
-            self.progress_bar.setValue(len(self.pending_games))
+            self.update_progress.emit(len(self.pending_games))  # Update progress bar
             if len(self.pending_games) == len(desktop_files):
                 callback(games)
         with ThreadPoolExecutor() as executor:
@@ -399,12 +403,13 @@ class MainWindow(QMainWindow):
         get_steam_game_info_async(desktop_name, exec_line, on_steam_info)
 
     def finalize_game_loading(self):
-            logger.info("Finalizing game loading, pending_games: %d", len(self.pending_games))
-            if self.pending_games and all(x is None for x in self.pending_games):
-                logger.info("All games processed, clearing pending_games")
-                self.pending_games = []
-                self.progress_bar.setVisible(False)
-                self.statusBar().clearMessage()
+        logger.info("Finalizing game loading, pending_games: %d", len(self.pending_games))
+        if self.pending_games and all(x is None for x in self.pending_games):
+            logger.info("All games processed, clearing pending_games")
+            self.pending_games = []
+            self.update_progress.emit(0)  # Hide progress bar
+            self.progress_bar.setVisible(False)
+            self.update_status_message.emit("", 0)  # Clear status message
 
     # ВКЛАДКИ
     def switchTab(self, index):
