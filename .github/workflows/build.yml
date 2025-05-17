@@ -6,10 +6,9 @@ on:
 env:
   # Common version, will be used for tagging the release
   VERSION: 0.1.1
+  PKGDEST: "/tmp/lunaos-repo"
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  PACKAGE: portprotonqt
-  PKGDEST: "/tmp/portproton-repo"
-
+  PACKAGE: "portprotonqt"
 
 jobs:
   build-appimage:
@@ -49,36 +48,23 @@ jobs:
     steps:
       - name: Prepare container
         run: |
-
           pacman -Sy --noconfirm --disable-download-timeout --needed git wget gnupg
-
-          # Use all threads for building
           sed -i 's/#MAKEFLAGS="-j2"/MAKEFLAGS="-j$(nproc) -l$(nproc)"/g' /etc/makepkg.conf
-
-          # Disable creating debug packages
           sed -i 's/OPTIONS=(.*)/OPTIONS=(strip docs !libtool !staticlibs emptydirs zipman purge lto)/g' /etc/makepkg.conf
-
           yes | pacman -Scc
           pacman-key --init
           pacman -S --noconfirm archlinux-keyring
-
           mkdir -p /__w/portproton-repo
-
-          # Chaotic-AUR repo
           pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
           pacman-key --lsign-key 3056513887B78AEB
           pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst'
           pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst'
-
-          # Enable the chaotic-aur
           cat << EOM >> /etc/pacman.conf
 
           [chaotic-aur]
           Include = /etc/pacman.d/chaotic-mirrorlist
           EOM
-
           pacman -Syy
-
           useradd -m user -G wheel && echo "user ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
           echo "PACKAGER=\"Boris Yumankulov <boria138@altlinux.org>\"" >> /etc/makepkg.conf
           chown user -R /tmp
@@ -99,7 +85,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: PortProtonQt-Arch
-          path:  ${{ env.PKGDEST }}/*
+          path: ${{ env.PKGDEST }}/*
           if-no-files-found: ignore
 
   build-fedora:
@@ -134,17 +120,17 @@ jobs:
       - name: Prepare sources
         run: |
           git clone --depth 1 https://github.com/Boria138/PortProtonQt.git /tmp/src
-          mv /tmp/src /home/rpmbuild/PortProtonQt-${VERSION}
-          tar -czf /home/rpmbuild/SOURCES/PortProtonQt-${VERSION}.tar.gz -C /home/rpmbuild PortProtonQt-${VERSION}
+          mv /tmp/src /home/rpmbuild/PortProtonQt-${{ env.VERSION }}
+          tar -czf /home/rpmbuild/SOURCES/PortProtonQt-${{ env.VERSION }}.tar.gz -C /home/rpmbuild PortProtonQt-${{ env.VERSION }}
 
       - name: Copy fedora.spec
         run: |
-          cp build-aux/fedora.spec /home/rpmbuild/SPECS/${PACKAGE}.spec
+          cp build-aux/fedora.spec /home/rpmbuild/SPECS/${{ env.PACKAGE }}.spec
           chown -R rpmbuild:users /home/rpmbuild
 
       - name: Build RPM
         run: |
-          su rpmbuild -c "rpmbuild -ba /home/rpmbuild/SPECS/${PACKAGE}.spec"
+          su rpmbuild -c "rpmbuild -ba /home/rpmbuild/SPECS/${{ env.PACKAGE }}.spec"
 
       - name: Upload RPM package
         uses: actions/upload-artifact@v4
@@ -174,10 +160,28 @@ jobs:
           name: PortProtonQt-Arch
           path: release/
 
-      - name: Download RPM artifacts
+      - name: Download RPM artifacts (Fedora 40)
         uses: actions/download-artifact@v4
         with:
-          name: "PortProtonQt-RPM-Fedora-*"
+          name: PortProtonQt-RPM-Fedora-40
+          path: release/
+
+      - name: Download RPM artifacts (Fedora 41)
+        uses: actions/download-artifact@v4
+        with:
+          name: PortProtonQt-RPM-Fedora-41
+          path: release/
+
+      - name: Download RPM artifacts (Fedora 42)
+        uses: actions/download-artifact@v4
+        with:
+          name: PortProtonQt-RPM-Fedora-42
+          path: release/
+
+      - name: Download RPM artifacts (Fedora rawhide)
+        uses: actions/download-artifact@v4
+        with:
+          name: PortProtonQt-RPM-Fedora-rawhide
           path: release/
 
       - name: Make release
@@ -185,5 +189,5 @@ jobs:
         with:
           repo_token: "${{ env.GITHUB_TOKEN }}"
           prerelease: true
-          automatic_release_tag: v${{ env.VERSION }}
+          automatic_release_tag: ${{ env.VERSION }}
           files: release/*
