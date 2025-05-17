@@ -8,30 +8,27 @@ from portprotonqt.config_utils import read_theme_from_config
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.downloader import Downloader
 from portprotonqt.logger import get_logger
-import functools
+from collections.abc import Callable
 
 downloader = Downloader()
 logger = get_logger(__name__)
 
-def load_pixmap(cover, width, height):
+def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[QPixmap], None]):
     """
-    Загружает изображение из локального файла или по URL (только для Steam CDN), масштабирует и обрезает его.
-    Если загрузка не удалась, берёт placeholder из темы.
-    Итоговое обрезанное изображение кешируется в памяти через lru_cache.
-    """
-    return get_cropped_pixmap_cached(cover, width, height)
-
-@functools.lru_cache(maxsize=256)
-def get_cropped_pixmap_cached(cover, width, height):
-    """
-    Загружает исходное изображение, масштабирует и обрезает его до указанных размеров.
-    Результат кешируется с помощью lru_cache.
+    Асинхронно загружает обложку и вызывает callback с готовым QPixmap.
     """
     theme_manager = ThemeManager()
     current_theme_name = read_theme_from_config()
-    pixmap = QPixmap()
 
-    # Обработка ссылок с CDN Steam
+    def finish_with(pixmap: QPixmap):
+        # Обрезаем и масштабируем
+        scaled = pixmap.scaled(width, height, Qt.AspectRatioMode.KeepAspectRatioByExpanding, Qt.TransformationMode.SmoothTransformation)
+        x = (scaled.width() - width) // 2
+        y = (scaled.height() - height) // 2
+        cropped = scaled.copy(x, y, width, height)
+        callback(cropped)
+
+    # Проверяем CDN Steam
     if cover and cover.startswith("https://steamcdn-a.akamaihd.net/steam/apps/"):
         try:
             parts = cover.split("/")
@@ -46,49 +43,43 @@ def get_cropped_pixmap_cached(cover, width, height):
                 os.makedirs(image_folder, exist_ok=True)
                 local_path = os.path.join(image_folder, f"{appid}.jpg")
 
-                if not os.path.exists(local_path):
-                    result = downloader.download(cover, local_path, timeout=5)
-                    if result and pixmap.load(result):
-                        pass
-                else:
-                    pixmap.load(local_path)
+                if os.path.exists(local_path):
+                    pixmap = QPixmap(local_path)
+                    return finish_with(pixmap)
+
+                def on_downloaded(result: str | None):
+                    pixmap = QPixmap()
+                    if result and os.path.exists(result):
+                        pixmap.load(result)
+                    if pixmap.isNull():
+                        placeholder = QPixmap(theme_manager.get_theme_image("placeholder", current_theme_name))
+                        finish_with(placeholder)
+                    else:
+                        finish_with(pixmap)
+
+                downloader.download_async(cover, local_path, timeout=5, callback=on_downloaded)
+                return  # из функции выходим — обработка продолжится в callback
         except Exception as e:
             logger.error(f"Ошибка обработки URL {cover}: {e}")
 
-    # Если путь указывает на локальный файл
-    elif cover and QFile.exists(cover):
-        pixmap.load(cover)
+    # Локальный файл
+    if cover and QFile.exists(cover):
+        pixmap = QPixmap(cover)
+        return finish_with(pixmap)
 
-    # Если изображение не загрузилось, используем placeholder
+    # Placeholder
+    placeholder_path = theme_manager.get_theme_image("placeholder", current_theme_name)
+    pixmap = QPixmap()
+    if placeholder_path and QFile.exists(placeholder_path):
+        pixmap.load(placeholder_path)
     if pixmap.isNull():
-        placeholder_path = theme_manager.get_theme_image("placeholder", current_theme_name)
-        if placeholder_path:
-            file = QFile(placeholder_path)
-            if file.exists():
-                pixmap.load(placeholder_path)  # Загружаем placeholder
-            else:
-                # Если placeholder не найден, создаем изображение с текстом
-                pixmap = QPixmap(width, height)
-                pixmap.fill(QColor("#333333"))
-                painter = QPainter(pixmap)
-                painter.setPen(QPen(QColor("white")))
-                painter.drawText(pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "No Image")
-                painter.end()
-        else:
-            # Если путь к placeholder не указан, создаем изображение с текстом
-            pixmap = QPixmap(width, height)
-            pixmap.fill(QColor("#333333"))
-            painter = QPainter(pixmap)
-            painter.setPen(QPen(QColor("white")))
-            painter.drawText(pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "No Image")
-            painter.end()
-
-    # Масштабирование с сохранением пропорций и обрезка центральной части
-    scaled = pixmap.scaled(width, height, Qt.AspectRatioMode.KeepAspectRatioByExpanding, Qt.TransformationMode.SmoothTransformation)
-    x = (scaled.width() - width) // 2
-    y = (scaled.height() - height) // 2
-    cropped = scaled.copy(x, y, width, height)
-    return cropped
+        pixmap = QPixmap(width, height)
+        pixmap.fill(QColor("#333333"))
+        painter = QPainter(pixmap)
+        painter.setPen(QPen(QColor("white")))
+        painter.drawText(pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "No Image")
+        painter.end()
+    finish_with(pixmap)
 
 
 def round_corners(pixmap, radius):

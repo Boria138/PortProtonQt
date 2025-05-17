@@ -1,4 +1,3 @@
-import concurrent.futures
 import os
 import shlex
 import shutil
@@ -15,8 +14,8 @@ from portprotonqt.game_card import GameCard
 from portprotonqt.custom_widgets import FlowLayout, ClickableLabel, AutoSizeButton, NavLabel
 from portprotonqt.input_manager import InputManager
 
-from portprotonqt.image_utils import load_pixmap, round_corners, ImageCarousel
-from portprotonqt.steam_api import get_steam_game_info, get_full_steam_game_info, get_steam_installed_games
+from portprotonqt.image_utils import load_pixmap_async, round_corners, ImageCarousel
+from portprotonqt.steam_api import get_steam_game_info_async, get_full_steam_game_info_async, get_steam_installed_games
 from portprotonqt.theme_manager import ThemeManager, load_theme_screenshots, load_logo
 from portprotonqt.time_utils import save_last_launch, get_last_launch, parse_playtime_file, format_playtime, get_last_launch_timestamp, format_last_launch
 from portprotonqt.config_utils import (
@@ -25,17 +24,24 @@ from portprotonqt.config_utils import (
     save_icon_color_config
 )
 from portprotonqt.localization import _
+from portprotonqt.logger import get_logger
+
 
 from PySide6.QtWidgets import (QLineEdit, QMainWindow, QStatusBar, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox, QScrollArea, QSlider,
-                               QDialog, QFormLayout, QFrame, QGraphicsDropShadowEffect, QMessageBox, QGraphicsEffect, QGraphicsOpacityEffect, QApplication, QColorDialog, QPushButton)
+                               QDialog, QFormLayout, QFrame, QGraphicsDropShadowEffect, QMessageBox, QGraphicsEffect, QGraphicsOpacityEffect, QApplication, QColorDialog, QPushButton, QProgressBar)
 from PySide6.QtGui import QIcon, QPixmap, QColor, QDesktopServices
-from PySide6.QtCore import Qt, QTimer, QAbstractAnimation, QPropertyAnimation, QByteArray, QUrl, Signal
+from PySide6.QtCore import Qt, QAbstractAnimation, QPropertyAnimation, QByteArray, QUrl, Signal, QTimer, Slot
 from typing import cast
+from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
+
+logger = get_logger(__name__)
 
 class MainWindow(QMainWindow):
     """Main window of PortProtonQT."""
     settings_saved = Signal()
+    games_loaded = Signal(list)
 
     def __init__(self):
         super().__init__()
@@ -43,6 +49,12 @@ class MainWindow(QMainWindow):
         self.current_exec_line = None
         self.currentDetailPage = None
         self.current_play_button = None
+        self.pending_games = []
+        self.total_games = 0
+        self.games_load_timer = QTimer(self)
+        self.games_load_timer.setSingleShot(True)
+        self.games_load_timer.timeout.connect(self.finalize_game_loading)
+        self.games_loaded.connect(self.on_games_loaded)
 
         read_time_config()
 
@@ -52,20 +64,26 @@ class MainWindow(QMainWindow):
         self.current_theme_name = selected_theme
         self.theme = self.theme_manager.apply_theme(selected_theme)
         if not self.theme:
-            # Если тема не загрузилась, fallback на стандартный стиль
             self.theme = default_styles
         self.card_width = read_card_size()
         self.setWindowTitle("PortProtonQT")
         self.resize(1280, 720)
         self.setMinimumSize(800, 600)
 
-        self.games = self.loadGames()
+        self.games = []
         self.game_processes = []
         self.target_exe = None
         self.current_running_button = None
 
         # Статус-бар
         self.setStatusBar(QStatusBar(self))
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setMaximumWidth(200)
+        self.progress_bar.setTextVisible(True)
+        self.progress_bar.setVisible(False)
+        self.statusBar().addPermanentWidget(self.progress_bar)
+
+        # Центральный виджет и основной layout
         centralWidget = QWidget()
         self.setCentralWidget(centralWidget)
         mainLayout = QVBoxLayout(centralWidget)
@@ -82,7 +100,6 @@ class MainWindow(QMainWindow):
         # Текст "PortProton" слева
         self.titleLabel = QLabel()
         pixmap = load_logo()
-        # Обработка случая, если логотип не загрузился
         if pixmap is None:
             width, height = self.theme.pixmapsScaledSize
             pixmap = QPixmap(width, height)
@@ -91,7 +108,6 @@ class MainWindow(QMainWindow):
         scaled_pixmap = pixmap.scaled(width, height,
                                     Qt.AspectRatioMode.KeepAspectRatio,
                                     Qt.TransformationMode.SmoothTransformation)
-        self.titleLabel = QLabel()
         self.titleLabel.setPixmap(scaled_pixmap)
         self.titleLabel.setFixedSize(scaled_pixmap.size())
         self.titleLabel.setStyleSheet(self.theme.TITLE_LABEL_STYLE)
@@ -107,14 +123,13 @@ class MainWindow(QMainWindow):
         navLayout.addWidget(self.titleLabel)
 
         self.tabButtons = {}
-        # Список вкладок
         tabs = [
-            _("Library"),              # индекс 0
-            _("Auto Install"),         # индекс 1
-            _("Emulators"),            # индекс 2
-            _("Wine Settings"),        # индекс 3
-            _("PortProton Settings"),  # индекс 4
-            _("Themes")                # индекс 5
+            _("Library"),
+            _("Auto Install"),
+            _("Emulators"),
+            _("Wine Settings"),
+            _("PortProton Settings"),
+            _("Themes")
         ]
         for i, tabName in enumerate(tabs):
             btn = NavLabel(tabName)
@@ -144,118 +159,143 @@ class MainWindow(QMainWindow):
         self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE)
         self.setStyleSheet(self.theme.MESSAGE_BOX_STYLE)
         self.input_manager = InputManager(self)
+        QTimer.singleShot(0, self.loadGames)
+
+    @Slot(list)
+    def on_games_loaded(self, games: list[tuple]):
+        logger.info("Received %d games in main thread", len(games))
+        self.games = games
+        favorites = read_favorites()
+        sort_method = read_sort_method()
+        if sort_method == "playtime":
+            self.games.sort(key=lambda g: (0 if g[0] in favorites else 1, -g[10], -g[9]))
+        else:
+            self.games.sort(key=lambda g: (0 if g[0] in favorites else 1, -g[9], -g[10]))
+        self.updateGameGrid()
+        self.progress_bar.setVisible(False)
 
     def loadGames(self):
         display_filter = read_display_filter()
-        sort_method = read_sort_method()
         favorites = read_favorites()
-
+        self.pending_games = []
+        self.games = []
+        self.progress_bar.setValue(0)
+        self.progress_bar.setVisible(True)
+        self.statusBar().showMessage(_("Loading games..."), 0)
         if display_filter == "steam":
-            games = self._load_steam_games()
+            self._load_steam_games_async(lambda games: self.games_loaded.emit(games))
         elif display_filter == "portproton":
-            games = self._load_portproton_games()
+            self._load_portproton_games_async(lambda games: self.games_loaded.emit(games))
         elif display_filter == "favorites":
-            portproton_games = self._load_portproton_games()
-            steam_games = self._load_steam_games()
-            games = [game for game in portproton_games + steam_games if game[0] in favorites]
+            def on_all_games(portproton_games, steam_games):
+                games = [game for game in portproton_games + steam_games if game[0] in favorites]
+                self.games_loaded.emit(games)
+            self._load_portproton_games_async(
+                lambda pg: self._load_steam_games_async(
+                    lambda sg: on_all_games(pg, sg)
+                )
+            )
         else:
-            seen = set()
-            games = []
-            portproton_games = self._load_portproton_games()
-            steam_games = self._load_steam_games()
+            def on_all_games(portproton_games, steam_games):
+                seen = set()
+                games = []
+                for game in portproton_games + steam_games:
+                    name = game[0]
+                    if name not in seen:
+                        seen.add(name)
+                        games.append(game)
+                self.games_loaded.emit(games)
+            self._load_portproton_games_async(
+                lambda pg: self._load_steam_games_async(
+                    lambda sg: on_all_games(pg, sg)
+                )
+            )
+        return []
 
-            for game in portproton_games + steam_games:
-                name = game[0]
-                if name not in seen:
-                    seen.add(name)
-                    games.append(game)
+    def _load_steam_games_async(self, callback: Callable[[list[tuple]], None]):
+        steam_games = []
+        installed_games = get_steam_installed_games()
+        if not installed_games:
+            callback(steam_games)
+            return
+        self.total_games = len(installed_games)
+        self.progress_bar.setMaximum(self.total_games)
+        self.statusBar().showMessage(_("Loading Steam games..."), 0)
+        for name, appid, last_played, playtime_seconds in installed_games:
+            def on_game_info(info: dict, name=name, appid=appid, last_played=last_played, playtime_seconds=playtime_seconds):
+                last_launch = format_last_launch(datetime.fromtimestamp(last_played)) if last_played else _("Never")
+                steam_games.append((
+                    name,
+                    info.get('description', ''),
+                    info.get('cover', ''),
+                    appid,
+                    f"steam://rungameid/{appid}",
+                    info.get('controller_support', ''),
+                    last_launch,
+                    format_playtime(playtime_seconds),
+                    info.get('protondb_tier', ''),
+                    last_played,
+                    playtime_seconds,
+                    "true"
+                ))
+                self.pending_games.append(None)
+                self.progress_bar.setValue(len(self.pending_games))
+                if len(self.pending_games) == len(installed_games):
+                    callback(steam_games)
+            get_full_steam_game_info_async(appid, on_game_info)
 
-        # Если сортировка по playtime, то сортируем по playtime_seconds (g[10])
-        # и затем по last_launch_timestamp (g[9]). Иначе – наоборот.
-        if sort_method == "playtime":
-            games.sort(key=lambda g: (0 if g[0] in favorites else 1, -g[10], -g[9]))
-        else:
-            games.sort(key=lambda g: (0 if g[0] in favorites else 1, -g[9], -g[10]))
-        return games
-
-    def _load_portproton_games(self):
+    def _load_portproton_games_async(self, callback: Callable[[list[tuple]], None]):
         games = []
         portproton_location = get_portproton_location()
         self.portproton_location = portproton_location
-
         if not portproton_location:
-            return games
-
+            callback(games)
+            return
         desktop_files = [entry.path for entry in os.scandir(portproton_location)
                         if entry.name.endswith(".desktop")]
+        if not desktop_files:
+            callback(games)
+            return
+        self.total_games = len(desktop_files)
+        self.progress_bar.setMaximum(self.total_games)
+        self.statusBar().showMessage(_("Loading PortProton games..."), 0)
+        def on_desktop_processed(result: tuple | None, games=games):
+            if result:
+                games.append(result)
+            self.pending_games.append(None)
+            self.progress_bar.setValue(len(self.pending_games))
+            if len(self.pending_games) == len(desktop_files):
+                callback(games)
+        with ThreadPoolExecutor() as executor:
+            for file_path in desktop_files:
+                executor.submit(self._process_desktop_file_async, file_path, on_desktop_processed)
 
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            results = list(executor.map(self._process_desktop_file, desktop_files))
-
-        return [res for res in results if res is not None]
-
-    def _load_steam_games(self):
-        steam_games = []
-        for name, appid, last_played, playtime_seconds in get_steam_installed_games():
-            steam_info = get_full_steam_game_info(appid)
-            last_launch = format_last_launch(datetime.fromtimestamp(last_played)) if last_played else _("Never")
-            steam_game = "true"
-
-            steam_games.append((
-                name,
-                steam_info.get('description', ''),
-                steam_info.get('cover', ''),
-                appid,
-                f"steam://rungameid/{appid}",
-                steam_info.get('controller_support', ''),
-                last_launch,
-                format_playtime(playtime_seconds),
-                steam_info.get('protondb_tier', ''),
-                last_played,
-                playtime_seconds,
-                steam_game,
-            ))
-        return steam_games
-
-    def _process_desktop_file(self, file_path):
-        """Обрабатывает .desktop файл и возвращает данные игры с учетом встроенных и пользовательских переопределений."""
+    def _process_desktop_file_async(self, file_path: str, callback: Callable[[tuple | None], None]):
         entry = parse_desktop_entry(file_path)
         if not entry:
-            return None
-
+            callback(None)
+            return
         desktop_name = entry.get("Name", _("Unknown Game"))
         if desktop_name.lower() in ["portproton", "readme"]:
-            return None
-
+            callback(None)
+            return
         exec_line = entry.get("Exec", "")
-        steam_info = {}
         game_exe = ""
         exe_name = ""
         playtime_seconds = 0
         formatted_playtime = ""
 
-        # Обработка Exec строки и получение Steam-данных
         if exec_line:
             parts = shlex.split(exec_line)
             game_exe = os.path.expanduser(parts[3] if len(parts) >= 4 else exec_line)
-            try:
-                steam_info = get_steam_game_info(desktop_name, exec_line)
-            except Exception as e:
-                print(f"Failed to get Steam info for {desktop_name}: {e}")
-                steam_info = {}
 
-        # Определение папок для переопределений
-        # 1. Встроенные переопределения (в корне репозитория)
-        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # Корень репозитория
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         builtin_custom_folder = os.path.join(repo_root, "portprotonqt", "custom_data")
-
-        # 2. Пользовательские переопределения (в ~/.local/share/PortProtonQT)
         xdg_data_home = os.getenv("XDG_DATA_HOME",
                                 os.path.join(os.path.expanduser("~"), ".local", "share"))
         user_custom_folder = os.path.join(xdg_data_home, "PortProtonQT", "custom_data")
         os.makedirs(user_custom_folder, exist_ok=True)
 
-        # Инициализация данных переопределения
         builtin_cover = ""
         builtin_name = None
         builtin_desc = None
@@ -265,13 +305,10 @@ class MainWindow(QMainWindow):
 
         if game_exe:
             exe_name = os.path.splitext(os.path.basename(game_exe))[0]
-
-            # Папки для конкретной игры
             builtin_game_folder = os.path.join(builtin_custom_folder, exe_name)
             user_game_folder = os.path.join(user_custom_folder, exe_name)
             os.makedirs(user_game_folder, exist_ok=True)
 
-            # Чтение встроенных переопределений
             builtin_files = set(os.listdir(builtin_game_folder)) if os.path.exists(builtin_game_folder) else set()
             for ext in [".jpg", ".png", ".jpeg", ".bmp"]:
                 candidate = f"cover{ext}"
@@ -289,7 +326,6 @@ class MainWindow(QMainWindow):
                         elif line.startswith("description="):
                             builtin_desc = line[len("description="):].strip()
 
-            # Чтение пользовательских переопределений
             user_files = set(os.listdir(user_game_folder)) if os.path.exists(user_game_folder) else set()
             for ext in [".jpg", ".png", ".jpeg", ".bmp"]:
                 candidate = f"cover{ext}"
@@ -307,8 +343,7 @@ class MainWindow(QMainWindow):
                         elif line.startswith("description="):
                             user_desc = line[len("description="):].strip()
 
-            # Статистика времени игры
-            if self.portproton_location is not None:
+            if self.portproton_location:
                 statistics_file = os.path.join(self.portproton_location, "data", "tmp", "statistics")
                 try:
                     playtime_data = parse_playtime_file(statistics_file)
@@ -321,37 +356,40 @@ class MainWindow(QMainWindow):
                         formatted_playtime = format_playtime(playtime_seconds)
                 except Exception as e:
                     print(f"Failed to parse playtime data: {e}")
-            else:
-                raise ValueError("PortProton is not found")
 
-        # Формирование финальных данных с приоритетом:
-        # 1. Пользовательские переопределения
-        # 2. Встроенные переопределения
-        # 3. Steam-данные (если нет переопределений)
-        # 4. Данные из .desktop (если нет Steam-данных)
-        final_name = user_name or builtin_name or desktop_name
-        final_desc = (user_desc if user_desc is not None else
-                    builtin_desc if builtin_desc is not None else
-                    steam_info.get("description", ""))
-        final_cover = (user_cover if user_cover else
-                    builtin_cover if builtin_cover else
-                    steam_info.get("cover", "") or entry.get("Icon", ""))
+        def on_steam_info(steam_info: dict):
+            final_name = user_name or builtin_name or desktop_name
+            final_desc = (user_desc if user_desc is not None else
+                        builtin_desc if builtin_desc is not None else
+                        steam_info.get("description", ""))
+            final_cover = (user_cover if user_cover else
+                        builtin_cover if builtin_cover else
+                        steam_info.get("cover", "") or entry.get("Icon", ""))
+            steam_game = "false"
+            callback((
+                final_name,
+                final_desc,
+                final_cover,
+                steam_info.get("appid", ""),
+                exec_line,
+                steam_info.get("controller_support", ""),
+                get_last_launch(exe_name) if exe_name else _("Never"),
+                formatted_playtime,
+                steam_info.get("protondb_tier", ""),
+                get_last_launch_timestamp(exe_name) if exe_name else 0,
+                playtime_seconds,
+                steam_game
+            ))
 
-        steam_game = "false"
-        return (
-            final_name,
-            final_desc,
-            final_cover,
-            steam_info.get("appid", ""),
-            exec_line,
-            steam_info.get("controller_support", ""),
-            get_last_launch(exe_name) if exe_name else _("Never"),
-            formatted_playtime,
-            steam_info.get("protondb_tier", ""),
-            get_last_launch_timestamp(exe_name) if exe_name else 0,
-            playtime_seconds,
-            steam_game
-        )
+        get_steam_game_info_async(desktop_name, exec_line, on_steam_info)
+
+    def finalize_game_loading(self):
+            logger.info("Finalizing game loading, pending_games: %d", len(self.pending_games))
+            if self.pending_games and all(x is None for x in self.pending_games):
+                logger.info("All games processed, clearing pending_games")
+                self.pending_games = []
+                self.progress_bar.setVisible(False)
+                self.statusBar().clearMessage()
 
     # ВКЛАДКИ
     def switchTab(self, index):
@@ -458,42 +496,30 @@ class MainWindow(QMainWindow):
         self.sliderDebounceTimer.start()
 
     def updateGameGrid(self):
-        """Перестраивает карточки с учётом доступной ширины."""
-        if not self.games:
-            return
-
-        # Очищаем текущие карточки
-        self.clearLayout(self.gamesListLayout)
-
-        # Получаем актуальную доступную ширину после очистки
-        available_width = self.gamesListWidget.width() - 40  # Корректируем отступы
-        spacing = self.gamesListLayout.spacing()
-
-        # Рассчитываем оптимальный размер карточки
-        columns = max(1, available_width // (self.card_width + spacing))
-        new_card_width = (available_width - (columns - 1) * spacing) // columns
-
-        # Добавляем карточки с новыми размерами
-        for game_data in self.games:
-            card = GameCard(
-                *game_data,
-                select_callback=self.openGameDetailPage,
-                theme=self.theme,
-                card_width=new_card_width
-            )
-            # Connect context menu signals
-            card.editShortcutRequested.connect(self.edit_game_shortcut)
-            card.deleteGameRequested.connect(self.delete_game)
-            card.addToMenuRequested.connect(self.add_to_menu)
-            card.removeFromMenuRequested.connect(self.remove_from_menu)
-            card.addToDesktopRequested.connect(self.add_to_desktop)
-            card.removeFromDesktopRequested.connect(self.remove_from_desktop)
-            self.gamesListLayout.addWidget(card)
-
-        # Принудительно обновляем геометрию лейаута
-        self.gamesListWidget.updateGeometry()
-        self.gamesListLayout.invalidate()
-        self.gamesListWidget.update()
+            if not self.games:
+                return
+            self.clearLayout(self.gamesListLayout)
+            available_width = self.gamesListWidget.width() - 40
+            spacing = self.gamesListLayout.spacing()
+            columns = max(1, available_width // (self.card_width + spacing))
+            new_card_width = (available_width - (columns - 1) * spacing) // columns
+            for game_data in self.games:
+                card = GameCard(
+                    *game_data,
+                    select_callback=self.openGameDetailPage,
+                    theme=self.theme,
+                    card_width=new_card_width
+                )
+                card.editShortcutRequested.connect(self.edit_game_shortcut)
+                card.deleteGameRequested.connect(self.delete_game)
+                card.addToMenuRequested.connect(self.add_to_menu)
+                card.removeFromMenuRequested.connect(self.remove_from_menu)
+                card.addToDesktopRequested.connect(self.add_to_desktop)
+                card.removeFromDesktopRequested.connect(self.remove_from_desktop)
+                self.gamesListLayout.addWidget(card)
+            self.gamesListWidget.updateGeometry()
+            self.gamesListLayout.invalidate()
+            self.gamesListWidget.update()
 
     def populateGamesGrid(self, games_list, columns=4):
         self.clearLayout(self.gamesListLayout)
@@ -927,35 +953,41 @@ class MainWindow(QMainWindow):
             os.remove(state_file)
 
     # ЛОГИКА ДЕТАЛЬНОЙ СТРАНИЦЫ ИГРЫ
-    def getColorPalette(self, cover_path, num_colors=5, sample_step=10):
-        pixmap = load_pixmap(cover_path, 180, 250)
-        if pixmap.isNull():
-            return [QColor("#1a1a1a")] * num_colors
-        image = pixmap.toImage()
-        width, height = image.width(), image.height()
-        histogram = {}
-        for x in range(0, width, sample_step):
-            for y in range(0, height, sample_step):
-                color = image.pixelColor(x, y)
-                key = (color.red() // 32, color.green() // 32, color.blue() // 32)
-                if key in histogram:
-                    histogram[key][0] += color.red()
-                    histogram[key][1] += color.green()
-                    histogram[key][2] += color.blue()
-                    histogram[key][3] += 1
-                else:
-                    histogram[key] = [color.red(), color.green(), color.blue(), 1]
-        avg_colors = []
-        for _unused, (r_sum, g_sum, b_sum, count) in histogram.items():
-            avg_r = r_sum // count
-            avg_g = g_sum // count
-            avg_b = b_sum // count
-            avg_colors.append((count, QColor(avg_r, avg_g, avg_b)))
-        avg_colors.sort(key=lambda x: x[0], reverse=True)
-        palette = [color for count, color in avg_colors[:num_colors]]
-        if len(palette) < num_colors:
-            palette += [palette[-1]] * (num_colors - len(palette))
-        return palette
+    def getColorPalette_async(self, cover_path, num_colors=5, sample_step=10, callback=None):
+        def on_pixmap(pixmap):
+            if pixmap.isNull():
+                if callback:
+                    callback([QColor("#1a1a1a")] * num_colors)
+                    return
+
+            image = pixmap.toImage()
+            width, height = image.width(), image.height()
+            histogram = {}
+            for x in range(0, width, sample_step):
+                for y in range(0, height, sample_step):
+                    color = image.pixelColor(x, y)
+                    key = (color.red() // 32, color.green() // 32, color.blue() // 32)
+                    if key in histogram:
+                        histogram[key][0] += color.red()
+                        histogram[key][1] += color.green()
+                        histogram[key][2] += color.blue()
+                        histogram[key][3] += 1
+                    else:
+                        histogram[key] = [color.red(), color.green(), color.blue(), 1]
+            avg_colors = []
+            for _unused, (r_sum, g_sum, b_sum, count) in histogram.items():
+                avg_r = r_sum // count
+                avg_g = g_sum // count
+                avg_b = b_sum // count
+                avg_colors.append((count, QColor(avg_r, avg_g, avg_b)))
+            avg_colors.sort(key=lambda x: x[0], reverse=True)
+            palette = [color for count, color in avg_colors[:num_colors]]
+            if len(palette) < num_colors:
+                palette += [palette[-1]] * (num_colors - len(palette))
+            if callback:
+                callback(palette)
+
+        load_pixmap_async(cover_path, 180, 250, on_pixmap)
 
     def darkenColor(self, color, factor=200):
         return color.darker(factor)
@@ -963,15 +995,24 @@ class MainWindow(QMainWindow):
     def openGameDetailPage(self, name, description, cover_path=None, appid="", exec_line="", controller_support="", last_launch="", formatted_playtime="", protondb_tier="", steam_game=""):
         detailPage = QWidget()
         self._animations = {}
+        imageLabel = QLabel()
+        imageLabel.setFixedSize(300, 400)
+
         if cover_path:
-            pixmap = load_pixmap(cover_path, 300, 400)
-            pixmap = round_corners(pixmap, 10)
-            palette = self.getColorPalette(cover_path, num_colors=5)
-            dark_palette = [self.darkenColor(color, factor=200) for color in palette]
-            stops = ",\n".join(
-                [f"stop:{i/(len(dark_palette)-1):.2f} {dark_palette[i].name()}" for i in range(len(dark_palette))]
-            )
-            detailPage.setStyleSheet(self.theme.detail_page_style(stops))
+            def on_pixmap_ready(pixmap):
+                rounded = round_corners(pixmap, 10)
+                imageLabel.setPixmap(rounded)
+
+                def on_palette_ready(palette):
+                    dark_palette = [self.darkenColor(color, factor=200) for color in palette]
+                    stops = ",\n".join(
+                        [f"stop:{i/(len(dark_palette)-1):.2f} {dark_palette[i].name()}" for i in range(len(dark_palette))]
+                    )
+                    detailPage.setStyleSheet(self.theme.detail_page_style(stops))
+
+                self.getColorPalette_async(cover_path, num_colors=5, callback=on_palette_ready)
+
+            load_pixmap_async(cover_path, 300, 400, on_pixmap_ready)
         else:
             detailPage.setStyleSheet(self.theme.DETAIL_PAGE_NO_COVER_STYLE)
 
@@ -1004,11 +1045,6 @@ class MainWindow(QMainWindow):
         coverLayout = QVBoxLayout(coverFrame)
         coverLayout.setContentsMargins(0, 0, 0, 0)
 
-        imageLabel = QLabel()
-        imageLabel.setFixedSize(300, 400)
-        pixmap_detail = load_pixmap(cover_path, 300, 400) if cover_path else load_pixmap("", 300, 400)
-        pixmap_detail = round_corners(pixmap_detail, 10)
-        imageLabel.setPixmap(pixmap_detail)
         coverLayout.addWidget(imageLabel)
 
         # Добавляем значок избранного поверх обложки в левом верхнем углу

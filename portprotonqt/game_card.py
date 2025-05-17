@@ -3,12 +3,13 @@ from PySide6.QtCore import QEasingCurve, Signal, Property, Qt, QPropertyAnimatio
 from PySide6.QtWidgets import QFrame, QGraphicsDropShadowEffect, QVBoxLayout, QWidget, QStackedLayout, QLabel, QMenu
 from collections.abc import Callable
 import portprotonqt.themes.standart.styles as default_styles
-from portprotonqt.image_utils import load_pixmap, round_corners
+from portprotonqt.image_utils import load_pixmap_async, round_corners
 from portprotonqt.localization import _
 from portprotonqt.config_utils import read_favorites, save_favorites
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.config_utils import read_theme_from_config
 from portprotonqt.custom_widgets import ClickableLabel
+import weakref
 import os
 import subprocess
 from typing import cast
@@ -91,11 +92,21 @@ class GameCard(QFrame):
         # Обложка
         coverLabel = QLabel()
         coverLabel.setFixedSize(card_width, int(card_width * 1.2))
-        pixmap = load_pixmap(cover_path, card_width, int(card_width * 1.2)) if cover_path else load_pixmap("", card_width, int(card_width * 1.2))
-        pixmap = round_corners(pixmap, 15)
-        coverLabel.setPixmap(pixmap)
         coverLabel.setStyleSheet(self.theme.COVER_LABEL_STYLE)
         coverLayout.addWidget(coverLabel)
+
+        # создаём слабую ссылку на label
+        label_ref = weakref.ref(coverLabel)
+
+        def on_cover_loaded(pixmap):
+            label = label_ref()
+            if label is None:
+                # QLabel уже удалён — ничего не делаем
+                return
+            label.setPixmap(round_corners(pixmap, 15))
+
+        # асинхронная загрузка обложки (пустая строка даст placeholder внутри load_pixmap_async)
+        load_pixmap_async(cover_path or "", card_width, int(card_width * 1.2), on_cover_loaded)
 
         # Значок избранного (звёздочка) в левом верхнем углу обложки
         self.favoriteLabel = ClickableLabel(coverWidget)
