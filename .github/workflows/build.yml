@@ -174,4 +174,3 @@ jobs:
           automatic_release_tag: v${{ env.VERSION }}
           files: release/*
           body: ${{ steps.changelog.outputs.body }}
-
