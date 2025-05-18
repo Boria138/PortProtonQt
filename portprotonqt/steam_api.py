@@ -18,6 +18,7 @@ from collections.abc import Callable
 import re
 import shutil
 import hashlib
+import zlib
 
 downloader = Downloader()
 logger = get_logger(__name__)
@@ -738,10 +739,15 @@ export START_FROM_STEAM=1
             logger.error(f"Failed to create backup of shortcuts.vdf: {e}")
             return (False, f"Failed to create backup of shortcuts.vdf: {e}")
 
-    unique_string = f"{game_name}:{script_path}"
-    generated_appid = int(hashlib.md5(unique_string.encode('utf-8')).hexdigest()[:8], 16) & 0x7FFFFFFF
+    unique_string = f"{script_path}{game_name}"
+    baseid = zlib.crc32(unique_string.encode('utf-8')) & 0xffffffff
+    appid = baseid | 0x80000000
+    if appid > 0x7FFFFFFF:
+        aidvdf = appid - 0x100000000
+    else:
+        aidvdf = appid
 
-    real_appid = None
+    steam_appid = None
     downloaded_count = 0
     total_covers = 4  # количество обложек
 
@@ -753,9 +759,9 @@ export START_FROM_STEAM=1
             if cover_file and os.path.exists(cover_file):
                 logger.info(f"Downloaded cover {cover_type} to {cover_file}")
             else:
-                logger.warning(f"Failed to download cover {cover_type} for appid {real_appid}")
+                logger.warning(f"Failed to download cover {cover_type} for appid {steam_appid}")
         except Exception as e:
-            logger.error(f"Error processing cover {cover_type} for appid {real_appid}: {e}")
+            logger.error(f"Error processing cover {cover_type} for appid {steam_appid}: {e}")
         with download_lock:
             downloaded_count += 1
             if downloaded_count == total_covers:
@@ -764,6 +770,7 @@ export START_FROM_STEAM=1
     def finalize_shortcut():
         tags_dict = {'0': 'PortProton'}
         shortcut = {
+            "appid": aidvdf,
             "AppName": game_name,
             "Exe": f'"{script_path}"',
             "StartDir": f'"{os.path.dirname(script_path)}"',
@@ -778,6 +785,7 @@ export START_FROM_STEAM=1
             "LastPlayTime": 0,
             "tags": tags_dict
         }
+        logger.info(f"Shortcut entry to be written: {shortcut}")
 
         try:
             if not os.path.exists(steam_shortcuts_path):
@@ -819,29 +827,23 @@ export START_FROM_STEAM=1
         return (True, f"Game '{game_name}' added to Steam with covers")
 
     def on_game_info(game_info: dict):
-        nonlocal real_appid
-        real_appid = game_info.get("appid")
-        if not real_appid or not isinstance(real_appid, int):
+        nonlocal steam_appid
+        steam_appid = game_info.get("appid")
+        if not steam_appid or not isinstance(steam_appid, int):
             logger.info("No valid Steam appid found, skipping cover download")
             return finalize_shortcut()
 
         # Обложки и имена, соответствующие bash-скрипту и твоим размерам
         cover_types = [
-            ("", "library_600x900_2x.jpg"),  # базовый, сохранится как AppId.jpg
-            ("p", "library_hero.jpg"),       # сохранится как AppIdp.jpg
-            ("_hero", "hero_capsule.jpg"),   # AppId_hero.jpg
-            ("_logo", "logo.png")            # AppId_logo.png
+            (".jpg", "header.jpg"),              # базовый, сохранится как AppId.jpg
+            ("p.jpg", "library_600x900_2x.jpg"), # сохранится как AppIdp.jpg
+            ("_hero.jpg", "library_hero.jpg"),   # AppId_hero.jpg
+            ("_logo.png", "logo.png")            # AppId_logo.png
         ]
 
         for suffix, cover_type in cover_types:
-            if suffix == "p":
-                cover_file = os.path.join(grid_dir, f"{generated_appid}p.jpg")
-            elif suffix == "_logo":
-                cover_file = os.path.join(grid_dir, f"{generated_appid}_logo.png")
-            else:
-                cover_file = os.path.join(grid_dir, f"{generated_appid}{suffix}.jpg")
-
-            cover_url = f"https://steamcdn-a.akamaihd.net/steam/apps/{real_appid}/{cover_type}"
+            cover_file = os.path.join(grid_dir, f"{appid}{suffix}")
+            cover_url = f"https://cdn.cloudflare.steamstatic.com/steam/apps/{steam_appid}/{cover_type}"
             downloader.download_async(
                 cover_url,
                 cover_file,
@@ -900,8 +902,9 @@ def remove_from_steam(game_name: str, exec_line: str) -> tuple[bool, str]:
         return (False, f"Game '{game_name}' not found in Steam")
 
     # Generate appid for identifying cover files
-    unique_string = f"{game_name}:{script_path}"
-    generated_appid = int(hashlib.md5(unique_string.encode('utf-8')).hexdigest()[:8], 16) & 0x7FFFFFFF
+    unique_string = f"{script_path}{game_name}"
+    baseid = zlib.crc32(unique_string.encode('utf-8')) & 0xffffffff
+    appid = baseid | 0x80000000
 
     # Create backup of shortcuts.vdf
     backup_path = f"{steam_shortcuts_path}.backup"
@@ -958,9 +961,10 @@ def remove_from_steam(game_name: str, exec_line: str) -> tuple[bool, str]:
 
     # Delete cover files
     cover_files = [
-        os.path.join(grid_dir, f"{generated_appid}.jpg"),
-        os.path.join(grid_dir, f"{generated_appid}_hero.jpg"),
-        os.path.join(grid_dir, f"{generated_appid}_logo.png")
+        os.path.join(grid_dir, f"{appid}.jpg"),
+        os.path.join(grid_dir, f"{appid}p.jpg"),
+        os.path.join(grid_dir, f"{appid}_hero.jpg"),
+        os.path.join(grid_dir, f"{appid}_logo.png")
     ]
     for cover_file in cover_files:
         if os.path.exists(cover_file):
