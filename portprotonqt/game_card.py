@@ -211,7 +211,7 @@ class GameCard(QFrame):
         QDesktopServices.openUrl(url)
 
     def open_steam_page(self):
-        url = QUrl(f"steam://store/{self.appid}")
+        url = QUrl(f"https://steamcommunity.com/app/{self.appid}")
         QDesktopServices.openUrl(url)
 
     def update_favorite_icon(self):
