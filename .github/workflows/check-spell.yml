@@ -8,6 +8,7 @@ on:
   pull_request:
     paths:
       - 'portprotonqt/locales/**'
+  workflow_dispatch:
 
 jobs:
   check-translations:
@@ -22,7 +23,7 @@ jobs:
           python-version-file: "pyproject.toml"
 
       - name: Install Python dependencies
-        run: pip install pyaspeller
+        run: pip install pyaspeller babel
 
       - name: Run spell check
         run: python dev-scripts/l10n.py --spellcheck
