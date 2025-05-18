@@ -22,7 +22,7 @@ Current translation status:
 | :----- | -------: | ---------: |
 | [de_DE](./de_DE/LC_MESSAGES/messages.po) | 0% | 0 of 110 |
 | [es_ES](./es_ES/LC_MESSAGES/messages.po) | 0% | 0 of 110 |
-| [ru_RU](./ru_RU/LC_MESSAGES/messages.po) | 100% | 110 of 110 |
+| [ru_RU](./ru_RU/LC_MESSAGES/messages.po) | 0% | 0 of 110 |
 
 ---
 
@@ -63,3 +63,18 @@ uv sync --all-extras --dev
 source .venv/bin/activate
 python dev-scripts/l10n.py
 ```
+
+
+## 🔍 Spell Check
+
+To check spelling, run the following commands:
+
+```bash
+uv python install 3.10
+uv sync --all-extras --dev
+source .venv/bin/activate
+python dev-scripts/l10n.py --spellcheck
+```
+
+The script performs parallel spellchecking of strings in `.po` and `.pot` files. For each file, it prints the list of strings being checked and highlights any spelling errors with suggestions. Words listed in `dev-scripts/.spellignore` are ignored and not treated as typos.
+

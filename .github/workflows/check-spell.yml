@@ -25,4 +25,4 @@ jobs:
         run: pip install pyaspeller
 
       - name: Run spell check
-        run: python dev-scripts/check_spell.py portprotonqt/locales/**/*.po portprotonqt/locales/**/*.pot
+        run: python dev-scripts/l10n.py --spellcheck
