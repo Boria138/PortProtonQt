@@ -12,7 +12,7 @@ class SystemTray:
         self.current_theme_name = read_theme_from_config()
         self.icon_color = read_icon_color_config()
         self.tray = QSystemTrayIcon()
-        self.tray.setIcon(cast(QIcon, self.theme_manager.get_icon("ppqt", self.current_theme_name, color=self.icon_color)))
+        self.tray.setIcon(cast(QIcon, self.theme_manager.get_icon("ppqt", self.current_theme_name, color=self.icon_color, icon_size=32)))
         self.tray.setToolTip("PortProton QT")
         self.tray.setVisible(True)
 
