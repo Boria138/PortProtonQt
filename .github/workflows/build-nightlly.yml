@@ -1,0 +1,155 @@
+name: Nightly Build - AppImage, Arch, Fedora
+
+on:
+  schedule:
+    - cron: "17 */12 * * *"
+  workflow_dispatch:
+
+env:
+  PKGDEST: "/tmp/lunaos-repo"
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  PACKAGE: "portprotonqt"
+  VERSION: 0.1.1
+
+jobs:
+  set-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate nightly version
+        id: version
+        run: echo "VERSION=nightly-$(git rev-list --count HEAD).$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+  build-appimage:
+    name: Build AppImage
+    needs: set-version
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: sudo apt install -y binutils coreutils desktop-file-utils fakeroot fuse libgdk-pixbuf2.0-dev patchelf python3-pip python3-setuptools squashfs-tools strace util-linux zsync
+
+      - name: Install tools
+        run: pip3 install appimage-builder uv
+
+      - name: Build AppImage
+        run: |
+          cd build-aux
+          appimage-builder
+
+      - name: Upload AppImage
+        uses: actions/upload-artifact@v4
+        with:
+          name: PortProtonQt-AppImage
+          path: build-aux/PortProtonQt*.AppImage*
+
+  build-arch:
+    name: Build Arch Package
+    needs: set-version
+    runs-on: ubuntu-22.04
+    container:
+      image: archlinux:base-devel
+      options: --privileged
+    steps:
+      - name: Prepare Arch container
+        run: |
+          pacman -Sy --noconfirm git wget gnupg
+          pacman-key --init
+          pacman -S --noconfirm archlinux-keyring
+          useradd -m user -G wheel && echo "user ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+          echo "PACKAGER=\"Boris Yumankulov <boria138@altlinux.org>\"" >> /etc/makepkg.conf
+
+      - name: Clone and build package
+        run: |
+          cd /tmp
+          git clone https://github.com/Boria138/PortProtonQt.git
+          cd PortProtonQt/build-aux
+          chown user -R ..
+          su user -c "yes '' | makepkg --noconfirm -s -p PKGBUILD-git"
+
+      - name: Upload Arch package
+        uses: actions/upload-artifact@v4
+        with:
+          name: PortProtonQt-Arch
+          path: /tmp/PortProtonQt/*.pkg.tar.zst
+
+  build-fedora:
+    name: Build Fedora RPM
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        fedora_version: [40, 41, 42, rawhide]
+
+    container:
+      image: fedora:${{ matrix.fedora_version }}
+      options: --privileged
+
+    steps:
+      - name: Install build dependencies
+        run: |
+          dnf install -y git rpmdevtools python3-devel python3-wheel python3-pip \
+                         python3-build pyproject-rpm-macros python3-setuptools \
+                         redhat-rpm-config
+
+      - name: Setup rpmbuild environment
+        run: |
+          useradd rpmbuild -u 5002 -g users || true
+          mkdir -p /home/rpmbuild/{BUILD,RPMS,SPECS,SRPMS,SOURCES}
+          chown -R rpmbuild:users /home/rpmbuild
+          echo '%_topdir /home/rpmbuild' > /home/rpmbuild/.rpmmacros
+
+      - name: Clone source and generate archive
+        run: |
+          git clone https://github.com/Boria138/PortProtonQt.git /tmp/src
+          cd /tmp/src
+          export GIT_VERSION=$(printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)")
+          echo "GIT_VERSION=$GIT_VERSION" >> $GITHUB_ENV
+          mv /tmp/src /home/rpmbuild/PortProtonQt-${{ env.VERSION }}
+          tar -czf /home/rpmbuild/SOURCES/PortProtonQt-${{ env.VERSION }}.tar.gz -C /home/rpmbuild PortProtonQt-${{ env.VERSION }}
+
+      - name: Copy fedora.spec
+        run: |
+          cp build-aux/fedora.spec /home/rpmbuild/SPECS/${{ env.PACKAGE }}.spec
+          chown -R rpmbuild:users /home/rpmbuild
+
+      - name: Build RPM
+        run: |
+          su rpmbuild -c "rpmbuild -ba /home/rpmbuild/SPECS/${{ env.PACKAGE }}.spec \
+            --define 'git_release $GIT_VERSION'"
+
+      - name: Upload RPM package
+        uses: actions/upload-artifact@v4
+        with:
+          name: PortProtonQt-RPM-Fedora-${{ matrix.fedora_version }}
+          path: /home/rpmbuild/RPMS/**/*.rpm
+
+  release:
+    name: Create Nightly Release
+    needs: [build-appimage, build-arch, build-fedora]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release/
+
+      - name: Create Nightly Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: nightly
+          prerelease: true
+          files: release/**
+          token: ${{ secrets.GITHUB_TOKEN }}
+          title: "Nightly Build"
+          body: |
+            ⚠️ **Автоматические ночные сборки**
+
+            Эти сборки предназначены **исключительно для тестирования** и могут содержать нестабильный или непроверенный код.
+
+            Сборки создаются автоматически из последнего коммита в ветке по расписанию и могут не отражать финальное состояние релиза.
