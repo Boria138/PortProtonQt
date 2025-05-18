@@ -6,30 +6,19 @@ on:
   workflow_dispatch:
 
 env:
-  PKGDEST: "/tmp/lunaos-repo"
+  VERSION: 0.1.1
+  PKGDEST: "/tmp/portprotonqt"
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   PACKAGE: "portprotonqt"
-  VERSION: 0.1.1
 
 jobs:
-  set-version:
-    runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.version.outputs.VERSION }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Generate nightly version
-        id: version
-        run: echo "VERSION=nightly-$(git rev-list --count HEAD).$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-
   build-appimage:
     name: Build AppImage
-    needs: set-version
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Install required dependencies
         run: sudo apt install -y binutils coreutils desktop-file-utils fakeroot fuse libgdk-pixbuf2.0-dev patchelf python3-pip python3-setuptools squashfs-tools strace util-linux zsync
 
       - name: Install tools
@@ -44,37 +33,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: PortProtonQt-AppImage
-          path: build-aux/PortProtonQt*.AppImage*
-
-  build-arch:
-    name: Build Arch Package
-    needs: set-version
-    runs-on: ubuntu-22.04
-    container:
-      image: archlinux:base-devel
-      options: --privileged
-    steps:
-      - name: Prepare Arch container
-        run: |
-          pacman -Sy --noconfirm git wget gnupg
-          pacman-key --init
-          pacman -S --noconfirm archlinux-keyring
-          useradd -m user -G wheel && echo "user ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-          echo "PACKAGER=\"Boris Yumankulov <boria138@altlinux.org>\"" >> /etc/makepkg.conf
-
-      - name: Clone and build package
-        run: |
-          cd /tmp
-          git clone https://github.com/Boria138/PortProtonQt.git
-          cd PortProtonQt/build-aux
-          chown user -R ..
-          su user -c "yes '' | makepkg --noconfirm -s -p PKGBUILD-git"
-
-      - name: Upload Arch package
-        uses: actions/upload-artifact@v4
-        with:
-          name: PortProtonQt-Arch
-          path: /tmp/PortProtonQt/*.pkg.tar.zst
+          path: build-aux/PortProtonQt*.AppImage
 
   build-fedora:
     name: Build Fedora RPM
@@ -102,12 +61,12 @@ jobs:
           chown -R rpmbuild:users /home/rpmbuild
           echo '%_topdir /home/rpmbuild' > /home/rpmbuild/.rpmmacros
 
-      - name: Clone source and generate archive
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Prepare sources
         run: |
-          git clone https://github.com/Boria138/PortProtonQt.git /tmp/src
-          cd /tmp/src
-          export GIT_VERSION=$(printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)")
-          echo "GIT_VERSION=$GIT_VERSION" >> $GITHUB_ENV
+          git clone --depth 1 https://github.com/Boria138/PortProtonQt.git /tmp/src
           mv /tmp/src /home/rpmbuild/PortProtonQt-${{ env.VERSION }}
           tar -czf /home/rpmbuild/SOURCES/PortProtonQt-${{ env.VERSION }}.tar.gz -C /home/rpmbuild PortProtonQt-${{ env.VERSION }}
 
@@ -118,14 +77,65 @@ jobs:
 
       - name: Build RPM
         run: |
-          su rpmbuild -c "rpmbuild -ba /home/rpmbuild/SPECS/${{ env.PACKAGE }}.spec \
-            --define 'git_release $GIT_VERSION'"
+          su rpmbuild -c "rpmbuild -ba /home/rpmbuild/SPECS/${{ env.PACKAGE }}.spec"
 
       - name: Upload RPM package
         uses: actions/upload-artifact@v4
         with:
           name: PortProtonQt-RPM-Fedora-${{ matrix.fedora_version }}
           path: /home/rpmbuild/RPMS/**/*.rpm
+
+  build-arch:
+    name: Build Arch Package
+    runs-on: ubuntu-22.04
+    container:
+      image: archlinux:base-devel
+      volumes:
+        - /usr:/usr-host
+        - /opt:/opt-host
+      options: --privileged
+
+    steps:
+      - name: Prepare container
+        run: |
+          pacman -Sy --noconfirm --disable-download-timeout --needed git wget gnupg
+          sed -i 's/#MAKEFLAGS="-j2"/MAKEFLAGS="-j$(nproc) -l$(nproc)"/g' /etc/makepkg.conf
+          sed -i 's/OPTIONS=(.*)/OPTIONS=(strip docs !libtool !staticlibs emptydirs zipman purge lto)/g' /etc/makepkg.conf
+          yes | pacman -Scc
+          pacman-key --init
+          pacman -S --noconfirm archlinux-keyring
+          mkdir -p /__w/portproton-repo
+          pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
+          pacman-key --lsign-key 3056513887B78AEB
+          pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst'
+          pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst'
+          cat << EOM >> /etc/pacman.conf
+
+          [chaotic-aur]
+          Include = /etc/pacman.d/chaotic-mirrorlist
+          EOM
+          pacman -Syy
+          useradd -m user -G wheel && echo "user ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+          echo "PACKAGER=\"Boris Yumankulov <boria138@altlinux.org>\"" >> /etc/makepkg.conf
+          chown user -R /tmp
+          chown user -R ..
+
+      - name: Build
+        run: |
+          cd /__w/portproton-repo
+          git clone https://github.com/Boria138/PortProtonQt.git
+          cd /__w/portproton-repo/PortProtonQt/build-aux
+          chown user -R ..
+          su user -c "yes '' | makepkg --noconfirm -s -p PKGBUILD-git"
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Upload Arch package
+        uses: actions/upload-artifact@v4
+        with:
+          name: PortProtonQt-Arch
+          path: ${{ env.PKGDEST }}/*
 
   release:
     name: Create Nightly Release
@@ -146,7 +156,6 @@ jobs:
           prerelease: true
           files: release/**
           token: ${{ secrets.GITHUB_TOKEN }}
-          title: "Nightly Build"
           body: |
             ⚠️ **Автоматические ночные сборки**
 
