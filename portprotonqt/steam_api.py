@@ -976,6 +976,15 @@ def remove_from_steam(game_name: str, exec_line: str) -> tuple[bool, str]:
         else:
             logger.info(f"Cover file not found: {cover_file}")
 
+    if os.path.exists(script_path):
+        try:
+            os.remove(script_path)
+            logger.info(f"Deleted steam script: {script_path}")
+        except Exception as e:
+            logger.error(f"Failed to delete steam script {script_path}: {e}")
+    else:
+        logger.info(f"Steam script not found: {script_path}")
+
     logger.info(f"Game '{game_name}' successfully removed from Steam")
     return (True, f"Game '{game_name}' removed from Steam")
 
