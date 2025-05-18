@@ -245,17 +245,20 @@ def remove_duplicates(candidates):
 @functools.lru_cache(maxsize=256)
 def get_exiftool_data(game_exe):
     """Получает метаданные через exiftool"""
-    proc = subprocess.run(
-        ["exiftool", "-j", game_exe],
-        capture_output=True,
-        text=True,
-        check=False
-    )
-    if proc.returncode != 0:
-        logger.error(f"exiftool error for {game_exe}: {proc.stderr.strip()}")
+    try:
+        proc = subprocess.run(
+            ["exiftool", "-j", game_exe],
+            capture_output=True,
+            text=True,
+            check=False
+        )
+        if proc.returncode != 0:
+            logger.error(f"exiftool error for {game_exe}: {proc.stderr.strip()}")
+            return {}
+        meta_data_list = orjson.loads(proc.stdout.encode("utf-8"))
+        return meta_data_list[0] if meta_data_list else {}
+    except Exception as e:
         return {}
-    meta_data_list = orjson.loads(proc.stdout.encode("utf-8"))
-    return meta_data_list[0] if meta_data_list else {}
 
 def load_steam_apps_async(callback: Callable[[list], None]):
     """
