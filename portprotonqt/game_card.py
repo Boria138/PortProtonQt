@@ -9,6 +9,7 @@ from portprotonqt.config_utils import read_favorites, save_favorites
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.config_utils import read_theme_from_config
 from portprotonqt.custom_widgets import ClickableLabel
+from portprotonqt.steam_api import is_game_in_steam
 import weakref
 import os
 import subprocess
@@ -23,6 +24,8 @@ class GameCard(QFrame):
     removeFromMenuRequested = Signal(str)         # name
     addToDesktopRequested = Signal(str, str)      # name, exec_line
     removeFromDesktopRequested = Signal(str)      # name
+    addToSteamRequested = Signal(str, str, str)   # name, exec_line, cover_path
+    removeFromSteamRequested = Signal(str, str)   # name, exec_line
 
     def __init__(self, name, description, cover_path, appid, controller_support, exec_line,
                  last_launch, formatted_playtime, protondb_tier, last_launch_ts, playtime_seconds, steam_game,
@@ -440,6 +443,15 @@ class GameCard(QFrame):
                 add_action = menu.addAction(_("Add to Menu"))
                 add_action.triggered.connect(self.add_to_menu)
 
+            # Add Steam-related actions
+            is_in_steam = is_game_in_steam(self.name)
+            if is_in_steam:
+                remove_steam_action = menu.addAction(_("Remove from Steam"))
+                remove_steam_action.triggered.connect(self.remove_from_steam)
+            else:
+                add_steam_action = menu.addAction(_("Add to Steam"))
+                add_steam_action.triggered.connect(self.add_to_steam)
+
         menu.exec(self.mapToGlobal(pos))
 
     def edit_shortcut(self):
@@ -459,3 +471,9 @@ class GameCard(QFrame):
 
     def remove_from_desktop(self):
         self.removeFromDesktopRequested.emit(self.name)
+
+    def add_to_steam(self):
+        self.addToSteamRequested.emit(self.name, self.exec_line, self.cover_path)
+
+    def remove_from_steam(self):
+        self.removeFromSteamRequested.emit(self.name, self.exec_line)

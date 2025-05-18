@@ -12,25 +12,31 @@ from pathlib import Path
 from portprotonqt.logger import get_logger
 from portprotonqt.localization import get_steam_language
 from portprotonqt.downloader import Downloader
+from portprotonqt.dialogs import generate_thumbnail
+from portprotonqt.config_utils import get_portproton_location
 from collections.abc import Callable
+import re
+import shutil
+import hashlib
 
 downloader = Downloader()
 logger = get_logger(__name__)
 CACHE_DURATION = 30 * 24 * 60 * 60
 
-def safe_vdf_load(path):
-    """
-    Пытается загрузить VDF-файл, возвращает {} при ошибке или отсутствии vdf.
-    """
+def safe_vdf_load(path: str | Path) -> dict:
+    path = str(path)  # Convert Path to str
     try:
-        with open(path, encoding='utf-8') as f:
-            return vdf.load(f)
-    except (FileNotFoundError) as e:
-        logger.info(f"Не удалось загрузить VDF {path}: {e}")
-        return {}
+        with open(path, 'rb') as f:
+            data = vdf.binary_load(f)
+        return data
     except Exception as e:
-        logger.error(f"Ошибка при разборе VDF {path}: {e}")
-        return {}
+        try:
+            with open(path, encoding='utf-8', errors='ignore') as f:
+                data = vdf.load(f)
+            return data
+        except Exception:
+            logger.error(f"Failed to load VDF file {path}: {e}")
+            return {}
 
 def decode_text(text: str) -> str:
     """
@@ -101,14 +107,26 @@ def get_steam_libs(steam_dir: Path) -> set[Path]:
     libs.add(steam_dir)
     return libs
 
-def get_playtime_data(steam_home: Path) -> dict[int, tuple[int, int]]:
+def get_playtime_data(steam_home: Path | None = None) -> dict[int, tuple[int, int]]:
     """Возвращает данные о времени игры для последнего пользователя."""
     play_data: dict[int, tuple[int, int]] = {}
-    userdata_dir = steam_home / "userdata"
-    if not userdata_dir.exists():
+    if steam_home is None:
+        steam_home = _get_steam_home()
+    if steam_home is None or not steam_home.exists():
+        logger.error("Steam home directory not found or does not exist")
         return play_data
 
-    last_user = get_last_steam_user(steam_home)
+    userdata_dir = steam_home / "userdata"
+    if not userdata_dir.exists():
+        logger.info("Userdata directory not found")
+        return play_data
+
+    if steam_home is not None:  # Explicit check for type checker
+        last_user = get_last_steam_user(steam_home)
+    else:
+        logger.info("Steam home is None, cannot retrieve last user")
+        return play_data
+
     if not last_user:
         logger.info("Не удалось определить последнего пользователя Steam")
         return play_data
@@ -138,7 +156,8 @@ def get_steam_installed_games() -> list[tuple[str, int, int, int]]:
     """Возвращает список установленных Steam игр в формате (name, appid, last_played, playtime_sec)."""
     games: list[tuple[str, int, int, int]] = []
     steam_home = _get_steam_home()
-    if not steam_home:
+    if steam_home is None or not steam_home.exists():
+        logger.error("Steam home directory not found or does not exist")
         return games
 
     play_data = get_playtime_data(steam_home)
@@ -465,7 +484,7 @@ def get_full_steam_game_info_async(appid: int, callback: Callable[[dict], None])
 
     fetch_app_info_async(appid, on_app_info)
 
-def get_steam_game_info_async(desktop_name: str, exec_line: str, callback: Callable[[dict], None]):
+def get_steam_game_info_async(desktop_name: str, exec_line: str, callback: Callable[[dict], tuple[bool, str] | None]) -> None:
     """
     Asynchronously retrieves Steam game info based on desktop name and exec line.
     Calls the callback with the game info dictionary.
@@ -605,3 +624,377 @@ def get_steam_apps_and_index_async(callback: Callable[[tuple[list, dict]], None]
             callback((_STEAM_APPS, _STEAM_APPS_INDEX))
 
     load_steam_apps_async(on_steam_apps)
+
+def add_to_steam(game_name: str, exec_line: str, cover_path: str) -> tuple[bool, str]:
+    """
+    Add a non-Steam game to Steam via shortcuts.vdf with PortProton tag,
+    and download Steam Grid covers with correct sizes and names.
+    """
+
+    if not exec_line or not exec_line.strip():
+        logger.error("Invalid exec_line: empty or whitespace")
+        return (False, "Executable command is empty or invalid")
+
+    # Parse exec_line to get the executable path
+    try:
+        entry_exec_split = shlex.split(exec_line)
+        if not entry_exec_split:
+            logger.error(f"Failed to parse exec_line: {exec_line}")
+            return (False, "Failed to parse executable command: no valid tokens")
+
+        if entry_exec_split[0] == "env" and len(entry_exec_split) >= 3:
+            exe_path = entry_exec_split[2]
+        elif entry_exec_split[0] == "flatpak" and len(entry_exec_split) >= 4:
+            exe_path = entry_exec_split[3]
+        else:
+            exe_path = entry_exec_split[-1]
+    except Exception as e:
+        logger.error(f"Failed to parse exec_line: {exec_line}, error: {e}")
+        return (False, f"Failed to parse executable command: {e}")
+
+    if not os.path.exists(exe_path):
+        logger.error(f"Executable not found: {exe_path}")
+        return (False, f"Executable file not found: {exe_path}")
+
+    portproton_dir = get_portproton_location()
+    if not portproton_dir:
+        logger.error("PortProton directory not found")
+        return (False, "PortProton directory not found")
+
+    steam_scripts_dir = os.path.join(portproton_dir, "steam_scripts")
+    os.makedirs(steam_scripts_dir, exist_ok=True)
+
+    safe_game_name = re.sub(r'[<>:"/\\|?*]', '_', game_name.strip())
+    script_path = os.path.join(steam_scripts_dir, f"{safe_game_name}.sh")
+    start_sh_path = os.path.join(portproton_dir, "data", "scripts", "start.sh")
+
+    if not os.path.exists(start_sh_path):
+        logger.error(f"start.sh not found at {start_sh_path}")
+        return (False, f"start.sh not found at {start_sh_path}")
+
+    if not os.path.exists(script_path):
+        script_content = f"""#!/usr/bin/env bash
+export LD_PRELOAD=
+export START_FROM_STEAM=1
+"{start_sh_path}" "{exe_path}" "$@"
+"""
+        try:
+            with open(script_path, "w", encoding="utf-8") as f:
+                f.write(script_content)
+            os.chmod(script_path, 0o755)
+            logger.info(f"Created launch script: {script_path}")
+        except Exception as e:
+            logger.error(f"Failed to create launch script {script_path}: {e}")
+            return (False, f"Failed to create launch script: {e}")
+    else:
+        logger.info(f"Launch script already exists: {script_path}")
+
+    generated_icon_path = os.path.join(portproton_dir, "data", "img", f"{safe_game_name}.png")
+    try:
+        img_dir = os.path.join(portproton_dir, "data", "img")
+        os.makedirs(img_dir, exist_ok=True)
+
+        if os.path.exists(generated_icon_path):
+            logger.info(f"Reusing existing thumbnail: {generated_icon_path}")
+        else:
+            success = generate_thumbnail(exe_path, generated_icon_path, size=128, force_resize=True)
+            if not success or not os.path.exists(generated_icon_path):
+                logger.warning(f"generate_thumbnail failed to create icon for {exe_path}")
+                icon_path = ""
+            else:
+                logger.info(f"Generated thumbnail: {generated_icon_path}")
+        icon_path = generated_icon_path
+    except Exception as e:
+        logger.error(f"Error generating thumbnail for {exe_path}: {e}")
+        icon_path = ""
+
+    steam_home = _get_steam_home()
+    if not steam_home:
+        logger.error("Steam home directory not found")
+        return (False, "Steam directory not found.")
+
+    last_user = get_last_steam_user(steam_home)
+    if not last_user or 'SteamID' not in last_user:
+        logger.error("Failed to retrieve Steam user ID")
+        return (False, "Failed to get Steam user ID.")
+
+    userdata_dir = steam_home / "userdata"
+    user_id = last_user['SteamID']
+    unsigned_id = convert_steam_id(user_id)
+    user_dir = userdata_dir / str(unsigned_id)
+    steam_shortcuts_path = user_dir / "config" / "shortcuts.vdf"
+    grid_dir = user_dir / "config" / "grid"
+    os.makedirs(grid_dir, exist_ok=True)
+
+    backup_path = f"{steam_shortcuts_path}.backup"
+    if os.path.exists(steam_shortcuts_path):
+        try:
+            shutil.copy2(steam_shortcuts_path, backup_path)
+            logger.info(f"Created backup of shortcuts.vdf at {backup_path}")
+        except Exception as e:
+            logger.error(f"Failed to create backup of shortcuts.vdf: {e}")
+            return (False, f"Failed to create backup of shortcuts.vdf: {e}")
+
+    unique_string = f"{game_name}:{script_path}"
+    generated_appid = int(hashlib.md5(unique_string.encode('utf-8')).hexdigest()[:8], 16) & 0x7FFFFFFF
+
+    real_appid = None
+    downloaded_count = 0
+    total_covers = 4  # количество обложек
+
+    download_lock = threading.Lock()
+
+    def on_cover_download(cover_file: str, cover_type: str):
+        nonlocal downloaded_count
+        try:
+            if cover_file and os.path.exists(cover_file):
+                logger.info(f"Downloaded cover {cover_type} to {cover_file}")
+            else:
+                logger.warning(f"Failed to download cover {cover_type} for appid {real_appid}")
+        except Exception as e:
+            logger.error(f"Error processing cover {cover_type} for appid {real_appid}: {e}")
+        with download_lock:
+            downloaded_count += 1
+            if downloaded_count == total_covers:
+                finalize_shortcut()
+
+    def finalize_shortcut():
+        tags_dict = {'0': 'PortProton'}
+        shortcut = {
+            "AppName": game_name,
+            "Exe": f'"{script_path}"',
+            "StartDir": f'"{os.path.dirname(script_path)}"',
+            "icon": icon_path,
+            "LaunchOptions": "",
+            "IsHidden": 0,
+            "AllowDesktopConfig": 1,
+            "AllowOverlay": 1,
+            "openvr": 0,
+            "Devkit": 0,
+            "DevkitGameID": "",
+            "LastPlayTime": 0,
+            "tags": tags_dict
+        }
+
+        try:
+            if not os.path.exists(steam_shortcuts_path):
+                os.makedirs(os.path.dirname(steam_shortcuts_path), exist_ok=True)
+                open(steam_shortcuts_path, 'wb').close()
+
+            try:
+                if os.path.getsize(steam_shortcuts_path) > 0:
+                    with open(steam_shortcuts_path, 'rb') as f:
+                        shortcuts_data = vdf.binary_load(f)
+                else:
+                    shortcuts_data = {"shortcuts": {}}
+            except Exception as load_err:
+                logger.warning(f"Failed to load existing shortcuts.vdf, starting fresh: {load_err}")
+                shortcuts_data = {"shortcuts": {}}
+
+            shortcuts = shortcuts_data.get("shortcuts", {})
+            for _key, entry in shortcuts.items():
+                if entry.get("AppName") == game_name and entry.get("Exe") == f'"{script_path}"':
+                    logger.info(f"Game '{game_name}' already exists in Steam shortcuts")
+                    return (False, f"Game '{game_name}' already exists in Steam")
+
+            new_index = str(len(shortcuts))
+            shortcuts[new_index] = shortcut
+
+            with open(steam_shortcuts_path, 'wb') as f:
+                vdf.binary_dump({"shortcuts": shortcuts}, f)
+        except Exception as e:
+            logger.error(f"Failed to update shortcuts.vdf: {e}")
+            if os.path.exists(backup_path):
+                try:
+                    shutil.copy2(backup_path, steam_shortcuts_path)
+                    logger.info("Restored shortcuts.vdf from backup due to update failure")
+                except Exception as restore_err:
+                    logger.error(f"Failed to restore shortcuts.vdf from backup: {restore_err}")
+            return (False, f"Failed to update shortcuts.vdf: {e}")
+
+        logger.info(f"Game '{game_name}' successfully added to Steam with covers")
+        return (True, f"Game '{game_name}' added to Steam with covers")
+
+    def on_game_info(game_info: dict):
+        nonlocal real_appid
+        real_appid = game_info.get("appid")
+        if not real_appid or not isinstance(real_appid, int):
+            logger.info("No valid Steam appid found, skipping cover download")
+            return finalize_shortcut()
+
+        # Обложки и имена, соответствующие bash-скрипту и твоим размерам
+        cover_types = [
+            ("", "library_600x900_2x.jpg"),  # базовый, сохранится как AppId.jpg
+            ("p", "library_hero.jpg"),       # сохранится как AppIdp.jpg
+            ("_hero", "hero_capsule.jpg"),   # AppId_hero.jpg
+            ("_logo", "logo.png")            # AppId_logo.png
+        ]
+
+        for suffix, cover_type in cover_types:
+            if suffix == "p":
+                cover_file = os.path.join(grid_dir, f"{generated_appid}p.jpg")
+            elif suffix == "_logo":
+                cover_file = os.path.join(grid_dir, f"{generated_appid}_logo.png")
+            else:
+                cover_file = os.path.join(grid_dir, f"{generated_appid}{suffix}.jpg")
+
+            cover_url = f"https://steamcdn-a.akamaihd.net/steam/apps/{real_appid}/{cover_type}"
+            downloader.download_async(
+                cover_url,
+                cover_file,
+                timeout=5,
+                callback=lambda result, cfile=cover_file, ctype=cover_type: on_cover_download(cfile, ctype)
+            )
+
+    get_steam_game_info_async(game_name, exec_line, on_game_info)
+    return (True, "Adding game to Steam, checking for covers...")
+
+def remove_from_steam(game_name: str, exec_line: str) -> tuple[bool, str]:
+    """
+    Remove a non-Steam game from Steam by deleting its entry from shortcuts.vdf.
+    """
+    # Validate inputs
+    if not game_name or not game_name.strip():
+        logger.error("Invalid game_name: empty or whitespace")
+        return (False, "Game name is empty or invalid")
+    if not exec_line or not exec_line.strip():
+        logger.error("Invalid exec_line: empty or whitespace")
+        return (False, "Executable command is empty or invalid")
+
+    # Get PortProton directory
+    portproton_dir = get_portproton_location()
+    if not portproton_dir:
+        logger.error("PortProton directory not found")
+        return (False, "PortProton directory not found")
+
+    # Construct script path
+    safe_game_name = re.sub(r'[<>:"/\\|?*]', '_', game_name.strip())
+    script_path = os.path.join(portproton_dir, "steam_scripts", f"{safe_game_name}.sh")
+
+    # Get Steam home directory
+    steam_home = _get_steam_home()
+    if not steam_home:
+        logger.error("Steam home directory not found")
+        return (False, "Steam directory not found.")
+
+    # Get current Steam user ID
+    last_user = get_last_steam_user(steam_home)
+    if not last_user or 'SteamID' not in last_user:
+        logger.error("Failed to retrieve Steam user ID")
+        return (False, "Failed to get Steam user ID.")
+    userdata_dir = steam_home / "userdata"
+    user_id = last_user['SteamID']
+    unsigned_id = convert_steam_id(user_id)
+    user_dir = userdata_dir / str(unsigned_id)
+
+    # Construct path to shortcuts.vdf and grid directory
+    steam_shortcuts_path = os.path.join(user_dir, "config", "shortcuts.vdf")
+    grid_dir = os.path.join(user_dir, "config", "grid")
+
+    # Check if shortcuts.vdf exists
+    if not os.path.exists(steam_shortcuts_path):
+        logger.info(f"shortcuts.vdf not found at {steam_shortcuts_path}")
+        return (False, f"Game '{game_name}' not found in Steam")
+
+    # Generate appid for identifying cover files
+    unique_string = f"{game_name}:{script_path}"
+    generated_appid = int(hashlib.md5(unique_string.encode('utf-8')).hexdigest()[:8], 16) & 0x7FFFFFFF
+
+    # Create backup of shortcuts.vdf
+    backup_path = f"{steam_shortcuts_path}.backup"
+    try:
+        shutil.copy2(steam_shortcuts_path, backup_path)
+        logger.info(f"Created backup of shortcuts.vdf at {backup_path}")
+    except Exception as e:
+        logger.error(f"Failed to create backup of shortcuts.vdf: {e}")
+        return (False, f"Failed to create backup of shortcuts.vdf: {e}")
+
+    # Load and modify shortcuts.vdf
+    try:
+        if os.path.getsize(steam_shortcuts_path) > 0:
+            with open(steam_shortcuts_path, 'rb') as f:
+                shortcuts_data = vdf.binary_load(f)
+        else:
+            shortcuts_data = {"shortcuts": {}}
+    except Exception as load_err:
+        logger.error(f"Failed to load shortcuts.vdf: {load_err}")
+        return (False, f"Failed to load shortcuts.vdf: {load_err}")
+
+    shortcuts = shortcuts_data.get("shortcuts", {})
+    found = False
+    new_shortcuts = {}
+    index = 0
+
+    # Filter out the matching shortcut
+    for _key, entry in shortcuts.items():
+        if entry.get("AppName") == game_name and entry.get("Exe") == f'"{script_path}"':
+            found = True
+            logger.info(f"Found matching shortcut for '{game_name}' to remove")
+            continue
+        new_shortcuts[str(index)] = entry
+        index += 1
+
+    if not found:
+        logger.info(f"Game '{game_name}' not found in Steam shortcuts")
+        return (False, f"Game '{game_name}' not found in Steam")
+
+    # Save updated shortcuts.vdf
+    try:
+        with open(steam_shortcuts_path, 'wb') as f:
+            vdf.binary_dump({"shortcuts": new_shortcuts}, f)
+        logger.info(f"Successfully updated shortcuts.vdf, removed '{game_name}'")
+    except Exception as e:
+        logger.error(f"Failed to update shortcuts.vdf: {e}")
+        if os.path.exists(backup_path):
+            try:
+                shutil.copy2(backup_path, steam_shortcuts_path)
+                logger.info("Restored shortcuts.vdf from backup due to update failure")
+            except Exception as restore_err:
+                logger.error(f"Failed to restore shortcuts.vdf from backup: {restore_err}")
+        return (False, f"Failed to update shortcuts.vdf: {e}")
+
+    # Delete cover files
+    cover_files = [
+        os.path.join(grid_dir, f"{generated_appid}.jpg"),
+        os.path.join(grid_dir, f"{generated_appid}_hero.jpg"),
+        os.path.join(grid_dir, f"{generated_appid}_logo.png")
+    ]
+    for cover_file in cover_files:
+        if os.path.exists(cover_file):
+            try:
+                os.remove(cover_file)
+                logger.info(f"Deleted cover file: {cover_file}")
+            except Exception as e:
+                logger.error(f"Failed to delete cover file {cover_file}: {e}")
+        else:
+            logger.info(f"Cover file not found: {cover_file}")
+
+    logger.info(f"Game '{game_name}' successfully removed from Steam")
+    return (True, f"Game '{game_name}' removed from Steam")
+
+def is_game_in_steam(game_name: str) -> bool:
+    steam_home = _get_steam_home()
+    if steam_home is None:
+        logger.warning("Steam home directory not found")
+        return False
+
+    try:
+        last_user = get_last_steam_user(steam_home)
+        if not last_user or 'SteamID' not in last_user:
+            logger.warning("No valid Steam user found")
+            return False
+        user_id = last_user['SteamID']
+        unsigned_id = convert_steam_id(user_id)
+        steam_shortcuts_path = os.path.join(str(steam_home), "userdata", str(unsigned_id), "config", "shortcuts.vdf")
+        if not os.path.exists(steam_shortcuts_path):
+            logger.warning(f"Shortcuts file not found at {steam_shortcuts_path}")
+            return False
+
+        shortcuts_data = safe_vdf_load(steam_shortcuts_path)
+        shortcuts = shortcuts_data.get("shortcuts", {})
+        for _key, entry in shortcuts.items():
+            if entry.get("AppName") == game_name:
+                return True
+    except Exception as e:
+        logger.error(f"Error checking if game {game_name} is in Steam: {e}")
+    return False

@@ -15,7 +15,7 @@ from portprotonqt.custom_widgets import FlowLayout, ClickableLabel, AutoSizeButt
 from portprotonqt.input_manager import InputManager
 
 from portprotonqt.image_utils import load_pixmap_async, round_corners, ImageCarousel
-from portprotonqt.steam_api import get_steam_game_info_async, get_full_steam_game_info_async, get_steam_installed_games
+from portprotonqt.steam_api import get_steam_game_info_async, get_full_steam_game_info_async, get_steam_installed_games, add_to_steam, remove_from_steam
 from portprotonqt.theme_manager import ThemeManager, load_theme_screenshots, load_logo
 from portprotonqt.time_utils import save_last_launch, get_last_launch, parse_playtime_file, format_playtime, get_last_launch_timestamp, format_last_launch
 from portprotonqt.config_utils import (
@@ -548,6 +548,8 @@ class MainWindow(QMainWindow):
             card.removeFromMenuRequested.connect(self.remove_from_menu)
             card.addToDesktopRequested.connect(self.add_to_desktop)
             card.removeFromDesktopRequested.connect(self.remove_from_desktop)
+            card.addToSteamRequested.connect(self.add_to_steam)
+            card.removeFromSteamRequested.connect(self.remove_from_steam_context)
             self.gamesListLayout.addWidget(card)
 
         # Принудительно обновляем геометрию лейаута
@@ -566,6 +568,8 @@ class MainWindow(QMainWindow):
             card.removeFromMenuRequested.connect(self.remove_from_menu)
             card.addToDesktopRequested.connect(self.add_to_desktop)
             card.removeFromDesktopRequested.connect(self.remove_from_desktop)
+            card.addToSteamRequested.connect(self.add_to_steam)
+            card.removeFromSteamRequested.connect(self.remove_from_steam_context)
             self.gamesListLayout.addWidget(card)
 
     def clearLayout(self, layout):
@@ -1764,6 +1768,142 @@ class MainWindow(QMainWindow):
             # Refresh the game list
             self.games = self.loadGames()
             self.updateGameGrid()
+
+    def add_to_steam(self, game_name, exec_line, cover_path):
+        """Handle adding a non-Steam game to Steam via steam_api, with exec_line validation and .desktop fallback."""
+        if self.portproton_location is None:
+            QMessageBox.warning(self, _("Error"), _("PortProton is not found."))
+            return
+
+        # Step 1: Try to get exec_line from .desktop file if empty or invalid
+        if not exec_line or exec_line.strip() == "full":
+            desktop_path = os.path.join(self.portproton_location, f"{game_name}.desktop")
+            if not os.path.exists(desktop_path):
+                sanitized_name = game_name.replace("/", "_").replace(":", "_").replace(" ", "_")
+                desktop_path = os.path.join(self.portproton_location, f"{sanitized_name}.desktop")
+
+            if os.path.exists(desktop_path):
+                try:
+                    entry = parse_desktop_entry(desktop_path)
+                    if entry:
+                        exec_line = entry.get("Exec", entry.get("exec", "")).strip()
+                        if not exec_line:
+                            QMessageBox.warning(self, _("Error"), _("No executable command found in .desktop for game: {0}").format(game_name))
+                            return
+                    else:
+                        QMessageBox.warning(self, _("Error"), _("Failed to parse .desktop file for game: {0}").format(game_name))
+                        return
+                except Exception as e:
+                    QMessageBox.warning(self, _("Error"), _("Error reading .desktop file: {0}").format(e))
+                    return
+            else:
+                # Fallback: Search all desktop files
+                for file in glob.glob(os.path.join(self.portproton_location, "*.desktop")):
+                    entry = parse_desktop_entry(file)
+                    if entry:
+                        exec_line = entry.get("Exec", entry.get("exec", "")).strip()
+                        if exec_line:
+                            break
+                else:
+                    QMessageBox.warning(self, _("Error"), _(".desktop file not found for game: {0}").format(game_name))
+                    return
+
+        # Step 2: Parse exec_line to get actual executable path
+        exe_path = None
+        try:
+            entry_exec_split = shlex.split(exec_line)
+            if entry_exec_split:
+                if entry_exec_split[0] == "env" and len(entry_exec_split) >= 3:
+                    exe_path = entry_exec_split[2]
+                elif entry_exec_split[0] == "flatpak" and len(entry_exec_split) >= 4:
+                    exe_path = entry_exec_split[3]
+                else:
+                    exe_path = entry_exec_split[-1]
+            else:
+                QMessageBox.warning(self, _("Error"), _("Invalid executable command: {0}").format(exec_line))
+                return
+        except Exception as e:
+            QMessageBox.warning(self, _("Error"), _("Failed to parse executable command: {0}").format(e))
+            return
+
+        if not exe_path or not os.path.exists(exe_path):
+            QMessageBox.warning(self, _("Error"), _("Executable file not found: {0}").format(exe_path or "None"))
+            return
+
+        # Step 3: Proceed with adding to Steam
+        success, message = add_to_steam(game_name, exec_line, cover_path)
+        if success:
+            QMessageBox.information(self, _("Restart Steam"), _("The game was added successfully.\nPlease restart Steam for changes to take effect."))
+        else:
+            QMessageBox.warning(self, _("Error"), message)
+
+    def remove_from_steam_context(self, game_name, exec_line):
+        """Handle remove a non-Steam game to Steam via steam_api, with exec_line validation and .desktop fallback."""
+        if self.portproton_location is None:
+            QMessageBox.warning(self, _("Error"), _("PortProton is not found."))
+            return
+
+        # Step 1: Try to get exec_line from .desktop file if empty or invalid
+        if not exec_line or exec_line.strip() == "full":
+            desktop_path = os.path.join(self.portproton_location, f"{game_name}.desktop")
+            if not os.path.exists(desktop_path):
+                sanitized_name = game_name.replace("/", "_").replace(":", "_").replace(" ", "_")
+                desktop_path = os.path.join(self.portproton_location, f"{sanitized_name}.desktop")
+
+            if os.path.exists(desktop_path):
+                try:
+                    entry = parse_desktop_entry(desktop_path)
+                    if entry:
+                        exec_line = entry.get("Exec", entry.get("exec", "")).strip()
+                        if not exec_line:
+                            QMessageBox.warning(self, _("Error"), _("No executable command found in .desktop for game: {0}").format(game_name))
+                            return
+                    else:
+                        QMessageBox.warning(self, _("Error"), _("Failed to parse .desktop file for game: {0}").format(game_name))
+                        return
+                except Exception as e:
+                    QMessageBox.warning(self, _("Error"), _("Error reading .desktop file: {0}").format(e))
+                    return
+            else:
+                # Fallback: Search all desktop files
+                for file in glob.glob(os.path.join(self.portproton_location, "*.desktop")):
+                    entry = parse_desktop_entry(file)
+                    if entry:
+                        exec_line = entry.get("Exec", entry.get("exec", "")).strip()
+                        if exec_line:
+                            break
+                else:
+                    QMessageBox.warning(self, _("Error"), _(".desktop file not found for game: {0}").format(game_name))
+                    return
+
+        # Step 2: Parse exec_line to get actual executable path
+        exe_path = None
+        try:
+            entry_exec_split = shlex.split(exec_line)
+            if entry_exec_split:
+                if entry_exec_split[0] == "env" and len(entry_exec_split) >= 3:
+                    exe_path = entry_exec_split[2]
+                elif entry_exec_split[0] == "flatpak" and len(entry_exec_split) >= 4:
+                    exe_path = entry_exec_split[3]
+                else:
+                    exe_path = entry_exec_split[-1]
+            else:
+                QMessageBox.warning(self, _("Error"), _("Invalid executable command: {0}").format(exec_line))
+                return
+        except Exception as e:
+            QMessageBox.warning(self, _("Error"), _("Failed to parse executable command: {0}").format(e))
+            return
+
+        if not exe_path or not os.path.exists(exe_path):
+            QMessageBox.warning(self, _("Error"), _("Executable file not found: {0}").format(exe_path or "None"))
+            return
+
+        # Step 3: Proceed with adding to Steam
+        success, message = remove_from_steam(game_name, exec_line)
+        if success:
+            QMessageBox.information(self, _("Restart Steam"), _("The game was removed successfully.\nPlease restart Steam for changes to take effect."))
+        else:
+            QMessageBox.warning(self, _("Error"), message)
 
     def closeEvent(self, event):
         for proc in self.game_processes:
