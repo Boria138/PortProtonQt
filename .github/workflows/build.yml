@@ -115,12 +115,6 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Prepare sources
-        run: |
-          git clone --depth 1 https://github.com/Boria138/PortProtonQt.git /tmp/src
-          mv /tmp/src /home/rpmbuild/PortProtonQt-${{ env.VERSION }}
-          tar -czf /home/rpmbuild/SOURCES/PortProtonQt-${{ env.VERSION }}.tar.gz -C /home/rpmbuild PortProtonQt-${{ env.VERSION }}
-
       - name: Copy fedora.spec
         run: |
           cp build-aux/fedora.spec /home/rpmbuild/SPECS/${{ env.PACKAGE }}.spec

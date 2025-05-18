@@ -6,7 +6,6 @@ on:
   workflow_dispatch:
 
 env:
-  VERSION: 0.1.1
   PKGDEST: "/tmp/portprotonqt"
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   PACKAGE: "portprotonqt"
@@ -27,6 +26,7 @@ jobs:
       - name: Build AppImage
         run: |
           cd build-aux
+          sed -i '/app_info:/,/- exec:/ s/^\(\s*version:\s*\).*/\1"0"/' AppImageBuilder.yml
           appimage-builder
 
       - name: Upload AppImage
@@ -64,15 +64,9 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Prepare sources
-        run: |
-          git clone --depth 1 https://github.com/Boria138/PortProtonQt.git /tmp/src
-          mv /tmp/src /home/rpmbuild/PortProtonQt-${{ env.VERSION }}
-          tar -czf /home/rpmbuild/SOURCES/PortProtonQt-${{ env.VERSION }}.tar.gz -C /home/rpmbuild PortProtonQt-${{ env.VERSION }}
-
       - name: Copy fedora.spec
         run: |
-          cp build-aux/fedora.spec /home/rpmbuild/SPECS/${{ env.PACKAGE }}.spec
+          cp build-aux/fedora-git.spec /home/rpmbuild/SPECS/${{ env.PACKAGE }}.spec
           chown -R rpmbuild:users /home/rpmbuild
 
       - name: Build RPM
@@ -150,15 +144,9 @@ jobs:
           path: release/
 
       - name: Create Nightly Release
-        uses: softprops/action-gh-release@v2
+        uses: mathieucarbou/marvinpinto-action-automatic-releases@latest
         with:
-          tag_name: nightly
+          repo_token: ${{ env.GITHUB_TOKEN }}
           prerelease: true
-          files: release/**
-          token: ${{ secrets.GITHUB_TOKEN }}
-          body: |
-            ⚠️ **Автоматические ночные сборки**
-
-            Эти сборки предназначены **исключительно для тестирования** и могут содержать нестабильный или непроверенный код.
-
-            Сборки создаются автоматически из последнего коммита в ветке по расписанию и могут не отражать финальное состояние релиза.
+          automatic_release_tag: nightly
+          files: release/**/*
