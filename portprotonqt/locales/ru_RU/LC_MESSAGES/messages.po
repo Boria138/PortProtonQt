@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-05-18 10:07+0500\n"
-"PO-Revision-Date: 2025-05-18 09:46+0500\n"
+"POT-Creation-Date: 2025-05-18 13:09+0500\n"
+"PO-Revision-Date: 2025-05-18 13:08+0500\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
@@ -86,6 +86,12 @@ msgstr "Удалить из меню"
 
 msgid "Add to Menu"
 msgstr "Добавить в меню"
+
+msgid "Remove from Steam"
+msgstr "Удалить из Steam"
+
+msgid "Add to Steam"
+msgstr "Добавить в Steam"
 
 msgid "Library"
 msgstr "Библиотека"
@@ -372,6 +378,27 @@ msgstr "Не удалось удалить файл .desktop: {0}"
 #, python-brace-format
 msgid "Failed to copy cover image: {0}"
 msgstr "Не удалось удалить игру из меню: {0}"
+
+#, python-brace-format
+msgid "No executable command found in .desktop for game: {0}"
+msgstr "Не найдено ни одной исполняемой команды для игры: {0}"
+
+msgid "Restart Steam"
+msgstr "Перезапустите Steam"
+
+msgid ""
+"The game was added successfully.\n"
+"Please restart Steam for changes to take effect."
+msgstr ""
+"Игра была успешно добавлена.\n"
+"Пожалуйста, перезапустите Steam, чтобы изменения вступили в силу."
+
+msgid ""
+"The game was removed successfully.\n"
+"Please restart Steam for changes to take effect."
+msgstr ""
+"Игра была успешно удалена..\n"
+"Пожалуйста, перезапустите Steam, чтобы изменения вступили в силу."
 
 msgid "just now"
 msgstr "только что"

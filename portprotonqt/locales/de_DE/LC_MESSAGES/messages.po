@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-05-18 10:07+0500\n"
+"POT-Creation-Date: 2025-05-18 13:09+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: de_DE\n"
@@ -84,6 +84,12 @@ msgid "Remove from Menu"
 msgstr ""
 
 msgid "Add to Menu"
+msgstr ""
+
+msgid "Remove from Steam"
+msgstr ""
+
+msgid "Add to Steam"
 msgstr ""
 
 msgid "Library"
@@ -366,6 +372,23 @@ msgstr ""
 
 #, python-brace-format
 msgid "Failed to copy cover image: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "No executable command found in .desktop for game: {0}"
+msgstr ""
+
+msgid "Restart Steam"
+msgstr ""
+
+msgid ""
+"The game was added successfully.\n"
+"Please restart Steam for changes to take effect."
+msgstr ""
+
+msgid ""
+"The game was removed successfully.\n"
+"Please restart Steam for changes to take effect."
 msgstr ""
 
 msgid "just now"

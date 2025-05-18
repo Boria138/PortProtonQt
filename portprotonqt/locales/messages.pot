@@ -1,5 +1,5 @@
 # Translations template for PortProtonQT.
-# Copyright (C) 2025 blacksnaker
+# Copyright (C) 2025 ORGANIZATION
 # This file is distributed under the same license as the PortProtonQT project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
 #
@@ -7,8 +7,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQT 0.1.1\n"
-"Report-Msgid-Bugs-To: olegpozitiv0102@gmail.com\n"
-"POT-Creation-Date: 2025-05-18 10:07+0500\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2025-05-18 13:09+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -82,6 +82,12 @@ msgid "Remove from Menu"
 msgstr ""
 
 msgid "Add to Menu"
+msgstr ""
+
+msgid "Remove from Steam"
+msgstr ""
+
+msgid "Add to Steam"
 msgstr ""
 
 msgid "Library"
@@ -364,6 +370,23 @@ msgstr ""
 
 #, python-brace-format
 msgid "Failed to copy cover image: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "No executable command found in .desktop for game: {0}"
+msgstr ""
+
+msgid "Restart Steam"
+msgstr ""
+
+msgid ""
+"The game was added successfully.\n"
+"Please restart Steam for changes to take effect."
+msgstr ""
+
+msgid ""
+"The game was removed successfully.\n"
+"Please restart Steam for changes to take effect."
 msgstr ""
 
 msgid "just now"
