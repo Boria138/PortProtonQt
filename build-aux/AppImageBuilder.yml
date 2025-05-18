@@ -25,7 +25,7 @@ AppDir:
     id: ru.linux_gaming.PortProtonQt
     name: PortProtonQt
     icon: ru.linux_gaming.PortProtonQt
-    version: 0.1.0
+    version: 0.1.1
     exec: usr/bin/python3
     exec_args: "-m portprotonqt.app $@"
 

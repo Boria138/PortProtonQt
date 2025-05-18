@@ -6,7 +6,7 @@ on:
 env:
   # Common version, will be used for tagging the release
   VERSION: 0.1.1
-  PKGDEST: "/tmp/lunaos-repo"
+  PKGDEST: "/tmp/portprotonqt"
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   PACKAGE: "portprotonqt"
 
