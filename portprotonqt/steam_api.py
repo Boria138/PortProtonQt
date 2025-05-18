@@ -60,7 +60,7 @@ STEAM_DATA_DIRS = (
     "~/.var/app/com.valvesoftware.Steam/data/Steam",
 )
 
-def _get_steam_home():
+def get_steam_home():
     """Возвращает путь к директории Steam, используя список возможных директорий."""
     for dir_path in STEAM_DATA_DIRS:
         expanded_path = Path(os.path.expanduser(dir_path))
@@ -112,7 +112,7 @@ def get_playtime_data(steam_home: Path | None = None) -> dict[int, tuple[int, in
     """Возвращает данные о времени игры для последнего пользователя."""
     play_data: dict[int, tuple[int, int]] = {}
     if steam_home is None:
-        steam_home = _get_steam_home()
+        steam_home = get_steam_home()
     if steam_home is None or not steam_home.exists():
         logger.error("Steam home directory not found or does not exist")
         return play_data
@@ -156,7 +156,7 @@ def get_playtime_data(steam_home: Path | None = None) -> dict[int, tuple[int, in
 def get_steam_installed_games() -> list[tuple[str, int, int, int]]:
     """Возвращает список установленных Steam игр в формате (name, appid, last_played, playtime_sec)."""
     games: list[tuple[str, int, int, int]] = []
-    steam_home = _get_steam_home()
+    steam_home = get_steam_home()
     if steam_home is None or not steam_home.exists():
         logger.error("Steam home directory not found or does not exist")
         return games
@@ -712,7 +712,7 @@ export START_FROM_STEAM=1
         logger.error(f"Error generating thumbnail for {exe_path}: {e}")
         icon_path = ""
 
-    steam_home = _get_steam_home()
+    steam_home = get_steam_home()
     if not steam_home:
         logger.error("Steam home directory not found")
         return (False, "Steam directory not found.")
@@ -877,7 +877,7 @@ def remove_from_steam(game_name: str, exec_line: str) -> tuple[bool, str]:
     script_path = os.path.join(portproton_dir, "steam_scripts", f"{safe_game_name}.sh")
 
     # Get Steam home directory
-    steam_home = _get_steam_home()
+    steam_home = get_steam_home()
     if not steam_home:
         logger.error("Steam home directory not found")
         return (False, "Steam directory not found.")
@@ -989,7 +989,7 @@ def remove_from_steam(game_name: str, exec_line: str) -> tuple[bool, str]:
     return (True, f"Game '{game_name}' removed from Steam")
 
 def is_game_in_steam(game_name: str) -> bool:
-    steam_home = _get_steam_home()
+    steam_home = get_steam_home()
     if steam_home is None:
         logger.warning("Steam home directory not found")
         return False
