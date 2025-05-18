@@ -4,7 +4,7 @@
 
 Name:           python-%{pypi_name}
 Version:        %{pypi_version}
-Release:        1%{?dist}
+Release:        %{?git_release}%{!?git_release:1}%{?dist}
 Summary:        A modern GUI for PortProton project
 
 License:        MIT
