@@ -731,7 +731,6 @@ class MainWindow(QMainWindow):
         title = QLabel(_("PortProton Settings"))
         title.setStyleSheet(self.theme.TAB_TITLE_STYLE)
         title.setObjectName("tabTitle")
-        # Сам заголовок не фокусируется
         title.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         layout.addWidget(title)
 
@@ -749,44 +748,56 @@ class MainWindow(QMainWindow):
 
         # 1. Time detail_level
         self.timeDetailCombo = QComboBox()
-        self.timeDetailCombo.addItems(["detailed", "brief"])
+        self.time_keys = ["detailed", "brief"]
+        self.time_labels = [_("detailed"), _("brief")]
+        self.timeDetailCombo.addItems(self.time_labels)
         self.timeDetailCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
         self.timeDetailCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.timeDetailTitle = QLabel(_("Time Detail Level:"))
         self.timeDetailTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         self.timeDetailTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        current_time_detail = read_time_config()
-        idx = self.timeDetailCombo.findText(current_time_detail, Qt.MatchFlag.MatchFixedString)
-        if idx >= 0:
-            self.timeDetailCombo.setCurrentIndex(idx)
+        current = read_time_config()
+        try:
+            idx = self.time_keys.index(current)
+        except ValueError:
+            idx = 0
+        self.timeDetailCombo.setCurrentIndex(idx)
         formLayout.addRow(self.timeDetailTitle, self.timeDetailCombo)
 
         # 2. Games sort_method
         self.gamesSortCombo = QComboBox()
-        self.gamesSortCombo.addItems(["last_launch", "playtime", "alphabetical", "favorites"])
+        self.sort_keys = ["last_launch", "playtime", "alphabetical", "favorites"]
+        self.sort_labels = [_("last launch"), _("playtime"), _("alphabetical"), _("favorites")]
+        self.gamesSortCombo.addItems(self.sort_labels)
         self.gamesSortCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
         self.gamesSortCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.gamesSortTitle = QLabel(_("Games Sort Method:"))
         self.gamesSortTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         self.gamesSortTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        current_sort = read_sort_method()
-        idx = self.gamesSortCombo.findText(current_sort, Qt.MatchFlag.MatchFixedString)
-        if idx >= 0:
-            self.gamesSortCombo.setCurrentIndex(idx)
+        current = read_sort_method()
+        try:
+            idx = self.sort_keys.index(current)
+        except ValueError:
+            idx = 0
+        self.gamesSortCombo.setCurrentIndex(idx)
         formLayout.addRow(self.gamesSortTitle, self.gamesSortCombo)
 
         # 3. Games display_filter
+        self.filter_keys = ["all", "steam", "portproton", "favorites"]
+        self.filter_labels = [_("all"), "steam", "portproton", _("favorites")]
         self.gamesDisplayCombo = QComboBox()
-        self.gamesDisplayCombo.addItems(["all", "steam", "portproton", "favorites"])
+        self.gamesDisplayCombo.addItems(self.filter_labels)
         self.gamesDisplayCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
         self.gamesDisplayCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.gamesDisplayTitle = QLabel(_("Games Display Filter:"))
         self.gamesDisplayTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         self.gamesDisplayTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        current_filter = read_display_filter()
-        idx = self.gamesDisplayCombo.findText(current_filter, Qt.MatchFlag.MatchFixedString)
-        if idx >= 0:
-            self.gamesDisplayCombo.setCurrentIndex(idx)
+        current = read_display_filter()
+        try:
+            idx = self.filter_keys.index(current)
+        except ValueError:
+            idx = 0
+        self.gamesDisplayCombo.setCurrentIndex(idx)
         formLayout.addRow(self.gamesDisplayTitle, self.gamesDisplayCombo)
 
         # 4. Proxy settings
@@ -848,7 +859,6 @@ class MainWindow(QMainWindow):
         layout.addStretch(1)
         self.stackedWidget.addWidget(self.portProtonWidget)
 
-
     def pickTrayIconColor(self):
         """Открыть стандартный QColorDialog и обновить кнопку."""
         color = QColorDialog.getColor(self.iconColor, parent=self, title="Выбрать цвет значка в трее")
@@ -860,14 +870,17 @@ class MainWindow(QMainWindow):
         """
         Сохраняет параметры конфигурации в конфигурационный файл,
         """
-        selected_time_detail = self.timeDetailCombo.currentText()
-        save_time_config(selected_time_detail)
+        time_idx = self.timeDetailCombo.currentIndex()
+        time_key = self.time_keys[time_idx]
+        save_time_config(time_key)
 
-        selected_sort_method = self.gamesSortCombo.currentText()
-        save_sort_method(selected_sort_method)
+        sort_idx = self.gamesSortCombo.currentIndex()
+        sort_key = self.sort_keys[sort_idx]
+        save_sort_method(sort_key)
 
-        selected_display_filter = self.gamesDisplayCombo.currentText()
-        save_display_filter(selected_display_filter)
+        filter_idx = self.gamesDisplayCombo.currentIndex()
+        filter_key = self.filter_keys[filter_idx]
+        save_display_filter(filter_key)
 
         # Сохранение proxy настроек
         proxy_url = self.proxyUrlEdit.text().strip()
