@@ -17,7 +17,6 @@ from portprotonqt.config_utils import get_portproton_location
 from collections.abc import Callable
 import re
 import shutil
-import hashlib
 import zlib
 
 downloader = Downloader()
@@ -259,6 +258,7 @@ def get_exiftool_data(game_exe):
         meta_data_list = orjson.loads(proc.stdout.encode("utf-8"))
         return meta_data_list[0] if meta_data_list else {}
     except Exception as e:
+        logger.error(f"An unexpected error occurred in get_exiftool_data for {game_exe}: {e}")
         return {}
 
 def load_steam_apps_async(callback: Callable[[list], None]):
