@@ -125,7 +125,7 @@ class GameCard(QFrame):
         tier_text = self.getProtonDBText(protondb_tier)
         if tier_text:
             icon_filename = self.getProtonDBIconFilename(protondb_tier)
-            icon = self.theme_manager.get_icon(icon_filename, self.current_theme_name, color=self.theme.protonDBLabelColor)
+            icon = self.theme_manager.get_icon(icon_filename, self.current_theme_name)
             self.protondbLabel = ClickableLabel(
                 tier_text,
                 icon=icon,
@@ -141,7 +141,7 @@ class GameCard(QFrame):
             protondb_visible = False
 
         # Steam бейдж
-        steam_icon = self.theme_manager.get_icon("steam", self.current_theme_name, color=self.theme.steamLabelColor)
+        steam_icon = self.theme_manager.get_icon("steam")
         self.steamLabel = ClickableLabel(
             "Steam",
             icon=steam_icon,

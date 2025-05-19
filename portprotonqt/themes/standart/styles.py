@@ -7,15 +7,6 @@ current_theme_name = read_theme_from_config()
 # КОНСТАНТЫ
 favoriteLabelSize = 48, 48
 pixmapsScaledSize = 60, 60
-protonDBLabelColor = "#000000"
-steamLabelColor = "#ffffff"
-addGameButtonIconColor = "#ffffff"
-saveButtonIconColor = "#ffffff"
-searchEditActionIconColor = "#ffffff"
-applyButtonIconColor = "#ffffff"
-backButtonIconColor = "#ffffff"
-playButtonStopIconColor = "#ffffff"
-playButtonPlayIconColor = "#ffffff"
 
 # СТИЛЬ ШАПКИ ГЛАВНОГО ОКНА
 MAIN_WINDOW_HEADER_STYLE = """

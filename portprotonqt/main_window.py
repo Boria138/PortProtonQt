@@ -20,15 +20,14 @@ from portprotonqt.theme_manager import ThemeManager, load_theme_screenshots, loa
 from portprotonqt.time_utils import save_last_launch, get_last_launch, parse_playtime_file, format_playtime, get_last_launch_timestamp, format_last_launch
 from portprotonqt.config_utils import (
     get_portproton_location, read_theme_from_config, save_theme_to_config, parse_desktop_entry, load_theme_metainfo, read_time_config, read_card_size, save_card_size,
-    read_sort_method, read_display_filter, read_favorites, save_favorites, save_time_config, save_sort_method, save_display_filter, save_proxy_config, read_proxy_config, read_icon_color_config,
-    save_icon_color_config
+    read_sort_method, read_display_filter, read_favorites, save_favorites, save_time_config, save_sort_method, save_display_filter, save_proxy_config, read_proxy_config
 )
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
 
 
 from PySide6.QtWidgets import (QLineEdit, QMainWindow, QStatusBar, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox, QScrollArea, QSlider,
-                               QDialog, QFormLayout, QFrame, QGraphicsDropShadowEffect, QMessageBox, QGraphicsEffect, QGraphicsOpacityEffect, QApplication, QColorDialog, QPushButton, QProgressBar)
+                               QDialog, QFormLayout, QFrame, QGraphicsDropShadowEffect, QMessageBox, QGraphicsEffect, QGraphicsOpacityEffect, QApplication, QPushButton, QProgressBar)
 from PySide6.QtGui import QIcon, QPixmap, QColor, QDesktopServices
 from PySide6.QtCore import Qt, QAbstractAnimation, QPropertyAnimation, QByteArray, QUrl, Signal, QTimer, Slot
 from typing import cast
@@ -447,13 +446,13 @@ class MainWindow(QMainWindow):
         self.GameLibraryTitle.setStyleSheet(self.theme.INSTALLED_TAB_TITLE_STYLE)
         layout.addWidget(self.GameLibraryTitle)
 
-        self.addGameButton = AutoSizeButton(_("Add Game"), icon=self.theme_manager.get_icon("addgame", color=self.theme.addGameButtonIconColor))
+        self.addGameButton = AutoSizeButton(_("Add Game"), icon=self.theme_manager.get_icon("addgame"))
         self.addGameButton.setStyleSheet(self.theme.ADDGAME_BACK_BUTTON_STYLE)
         self.addGameButton.clicked.connect(self.openAddGameDialog)
         layout.addWidget(self.addGameButton, alignment=Qt.AlignmentFlag.AlignRight)
 
         self.searchEdit = QLineEdit()
-        icon: QIcon = cast(QIcon, self.theme_manager.get_icon("search", color=self.theme.searchEditActionIconColor))
+        icon: QIcon = cast(QIcon, self.theme_manager.get_icon("search"))
         action_pos = cast(QLineEdit.ActionPosition, QLineEdit.ActionPosition.LeadingPosition)
         self.search_action = self.searchEdit.addAction(icon, action_pos)
         self.searchEdit.setMaximumWidth(200)
@@ -834,24 +833,12 @@ class MainWindow(QMainWindow):
         self.proxyPasswordTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         formLayout.addRow(self.proxyPasswordTitle, self.proxyPasswordEdit)
 
-        # 5. Tray icon color picker
-        initial_color = QColor(read_icon_color_config())
-        self.iconColor = initial_color
-        self.iconColorButton = AutoSizeButton()
-        self.iconColorButton.setStyleSheet(f"background-color: {self.iconColor.name()};")
-        self.iconColorButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.iconColorButton.clicked.connect(self.pickTrayIconColor)
-        self.trayColorTitle = QLabel(_("Tray icon color:"))
-        self.trayColorTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
-        self.trayColorTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        formLayout.addRow(self.trayColorTitle, self.iconColorButton)
-
         layout.addLayout(formLayout)
 
         # Кнопка сохранения настроек
         self.saveButton = AutoSizeButton(
             _("Save Settings"),
-            icon=self.theme_manager.get_icon("save", color=self.theme.saveButtonIconColor)
+            icon=self.theme_manager.get_icon("save")
         )
         self.saveButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.saveButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -860,13 +847,6 @@ class MainWindow(QMainWindow):
 
         layout.addStretch(1)
         self.stackedWidget.addWidget(self.portProtonWidget)
-
-    def pickTrayIconColor(self):
-        """Открыть стандартный QColorDialog и обновить кнопку."""
-        color = QColorDialog.getColor(self.iconColor, parent=self, title="Выбрать цвет значка в трее")
-        if color.isValid():
-            self.iconColor = color
-            self.iconColorButton.setStyleSheet(f"background-color: {self.iconColor.name()};")
 
     def savePortProtonSettings(self):
         """
@@ -889,7 +869,6 @@ class MainWindow(QMainWindow):
         proxy_user = self.proxyUserEdit.text().strip()
         proxy_password = self.proxyPasswordEdit.text().strip()
         save_proxy_config(proxy_url, proxy_user, proxy_password)
-        save_icon_color_config(self.iconColor.name())
 
         # Перезагружаем настройки
         read_time_config()
@@ -942,7 +921,7 @@ class MainWindow(QMainWindow):
         self.themeMetainfoLabel.setWordWrap(True)
         self.themeInfoLayout.addWidget(self.themeMetainfoLabel)
 
-        self.applyButton = AutoSizeButton(_("Apply Theme"), icon=self.theme_manager.get_icon("update", color=self.theme.applyButtonIconColor))
+        self.applyButton = AutoSizeButton(_("Apply Theme"), icon=self.theme_manager.get_icon("update"))
         self.applyButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.applyButton.setObjectName("actionButton")
         self.themeInfoLayout.addWidget(self.applyButton)
@@ -1087,7 +1066,7 @@ class MainWindow(QMainWindow):
         mainLayout.setContentsMargins(30, 30, 30, 30)
         mainLayout.setSpacing(20)
 
-        backButton = AutoSizeButton(_("Back"), icon=self.theme_manager.get_icon("back", color=self.theme.backButtonIconColor))
+        backButton = AutoSizeButton(_("Back"), icon=self.theme_manager.get_icon("back"))
         backButton.setFixedWidth(100)
         backButton.setStyleSheet(self.theme.ADDGAME_BACK_BUTTON_STYLE)
         backButton.clicked.connect(lambda: self.goBackDetailPage(detailPage))
@@ -1197,9 +1176,9 @@ class MainWindow(QMainWindow):
         current_exe = os.path.basename(file_to_check) if file_to_check else None
 
         if self.target_exe is not None and current_exe == self.target_exe:
-            playButton = AutoSizeButton(_("Stop"), icon=self.theme_manager.get_icon("stop", color=self.theme.playButtonPlayIconColor))
+            playButton = AutoSizeButton(_("Stop"), icon=self.theme_manager.get_icon("stop"))
         else:
-            playButton = AutoSizeButton(_("Play"), icon=self.theme_manager.get_icon("play", color=self.theme.playButtonStopIconColor))
+            playButton = AutoSizeButton(_("Play"), icon=self.theme_manager.get_icon("play"))
 
         playButton.setFixedSize(120, 40)
         playButton.setStyleSheet(self.theme.PLAY_BUTTON_STYLE)
@@ -1324,7 +1303,7 @@ class MainWindow(QMainWindow):
         """
         if self.current_running_button is not None:
             self.current_running_button.setText(_("Play"))
-            icon = self.theme_manager.get_icon("play", color=self.theme.playButtonPlayIconColor)
+            icon = self.theme_manager.get_icon("play")
             if isinstance(icon, str):
                 icon = QIcon(icon)  # Convert path to QIcon
             elif icon is None:
@@ -1384,7 +1363,7 @@ class MainWindow(QMainWindow):
             self.game_processes = []
             if update_button:
                 update_button.setText(_("Play"))
-                icon = self.theme_manager.get_icon("play", color=self.theme.playButtonPlayIconColor)
+                icon = self.theme_manager.get_icon("play")
                 if isinstance(icon, str):
                     icon = QIcon(icon)
                 elif icon is None:
@@ -1413,7 +1392,7 @@ class MainWindow(QMainWindow):
             save_last_launch(exe_name, datetime.now())
             if update_button:
                 update_button.setText(_("Launching"))
-                icon = self.theme_manager.get_icon("stop", color=self.theme.playButtonStopIconColor)
+                icon = self.theme_manager.get_icon("stop")
                 if isinstance(icon, str):
                     icon = QIcon(icon)
                 elif icon is None:

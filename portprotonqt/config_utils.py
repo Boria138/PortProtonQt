@@ -371,36 +371,3 @@ def save_proxy_config(proxy_url="", proxy_user="", proxy_password=""):
     cp["Proxy"]["proxy_password"] = proxy_password
     with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
         cp.write(configfile)
-
-def read_icon_color_config():
-    """
-    Читает цвет иконки в трее из секции [Appearance] конфигурационного файла.
-    Возвращает строку "#rrggbb". Если параметр не задан — дефолт "#09bec8".
-    """
-    cp = configparser.ConfigParser()
-    if os.path.exists(CONFIG_FILE):
-        try:
-            cp.read(CONFIG_FILE, encoding="utf-8")
-        except (configparser.DuplicateSectionError, configparser.DuplicateOptionError) as e:
-            logger.error("Ошибка в конфигурационном файле: %s", e)
-            return "#09bec8"
-        return cp.get("Appearance", "icon_color", fallback="#09bec8")
-    return "#09bec8"
-
-
-def save_icon_color_config(color_str):
-    """
-    Сохраняет цвет иконки в трее (строку "#rrggbb") в секцию [Appearance].
-    Если секции нет — создаёт её.
-    """
-    cp = configparser.ConfigParser()
-    if os.path.exists(CONFIG_FILE):
-        try:
-            cp.read(CONFIG_FILE, encoding="utf-8")
-        except (configparser.DuplicateSectionError, configparser.DuplicateOptionError) as e:
-            logger.error("Ошибка в конфигурационном файле: %s", e)
-    if "Appearance" not in cp:
-        cp["Appearance"] = {}
-    cp["Appearance"]["icon_color"] = color_str
-    with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
-        cp.write(configfile)
