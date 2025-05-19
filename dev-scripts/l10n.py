@@ -107,8 +107,11 @@ def extract_strings() -> None:
     input_dir = (Path(__file__).parent.parent / "portprotonqt").resolve()
     CommandLineInterface().run([
         "pybabel", "extract", "--project=PortProtonQT",
-        f"--version={_get_version()}", "--width=79", "--strip-comment-tag",
-        "--no-location", f"--input-dir={input_dir}",
+        f"--version={_get_version()}",
+        "--strip-comment-tag",
+        "--no-location",
+        f"--input-dir={input_dir}",
+        "--copyright-holder=boria138",
         f"--ignore-dirs={THEMES_PATH}",
         f"--output-file={POT_FILE.resolve()}"
     ])
@@ -118,7 +121,8 @@ def update_locales() -> None:
         "pybabel", "update",
         f"--input-file={POT_FILE.resolve()}",
         f"--output-dir={LOCALES_PATH.resolve()}",
-        "--width=79", "--ignore-obsolete"
+        "--ignore-obsolete",
+        "--update-header-comment",
     ])
 
 def create_new(locales: list[str]) -> None:

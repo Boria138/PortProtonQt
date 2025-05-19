@@ -1,6 +1,7 @@
 # Translations template for PortProtonQT.
-# Copyright (C) 2025 ORGANIZATION
-# This file is distributed under the same license as the PortProtonQT project.
+# Copyright (C) 2025 boria138
+# This file is distributed under the same license as the PortProtonQT
+# project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
 #
 #, fuzzy
@@ -8,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQT 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-05-19 11:03+0500\n"
+"POT-Creation-Date: 2025-05-19 18:26+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -76,6 +77,9 @@ msgid "Edit Shortcut"
 msgstr ""
 
 msgid "Delete from PortProton"
+msgstr ""
+
+msgid "Open Game Folder"
 msgstr ""
 
 msgid "Remove from Menu"
@@ -279,8 +283,8 @@ msgstr ""
 
 #, python-brace-format
 msgid ""
-"Are you sure you want to delete '{0}'? This will remove the .desktop file "
-"and custom data."
+"Are you sure you want to delete '{0}'? This will remove the .desktop file"
+" and custom data."
 msgstr ""
 
 msgid "PortProton is not found."
@@ -408,6 +412,14 @@ msgstr ""
 msgid ""
 "The game was removed successfully.\n"
 "Please restart Steam for changes to take effect."
+msgstr ""
+
+#, python-brace-format
+msgid "Opened folder for '{0}'"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to open game folder: {0}"
 msgstr ""
 
 msgid "just now"

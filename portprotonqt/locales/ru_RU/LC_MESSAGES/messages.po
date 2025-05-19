@@ -1,6 +1,7 @@
-# Russian (Russia) translations for PROJECT.
-# Copyright (C) 2025 ORGANIZATION
-# This file is distributed under the same license as the PROJECT project.
+# Russian (Russia) translations for PortProtonQT.
+# Copyright (C) 2025 boria138
+# This file is distributed under the same license as the PortProtonQT
+# project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
 #
 #, fuzzy
@@ -8,9 +9,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-05-19 11:03+0500\n"
-"PO-Revision-Date: 2025-05-19 11:03+0500\n"
-"Last-Translator: \n"
+"POT-Creation-Date: 2025-05-19 18:26+0500\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
@@ -80,6 +81,9 @@ msgstr "Редактировать"
 
 msgid "Delete from PortProton"
 msgstr "Удалить из PortProton"
+
+msgid "Open Game Folder"
+msgstr "Открыть папку с игрой"
 
 msgid "Remove from Menu"
 msgstr "Удалить из меню"
@@ -282,11 +286,11 @@ msgstr "Подтвердите удаление"
 
 #, python-brace-format
 msgid ""
-"Are you sure you want to delete '{0}'? This will remove the .desktop file "
-"and custom data."
+"Are you sure you want to delete '{0}'? This will remove the .desktop file"
+" and custom data."
 msgstr ""
-"Вы уверены, что хотите удалить '{0}'? Это приведет к удалению файла .desktop"
-" и настраиваемых данных."
+"Вы уверены, что хотите удалить '{0}'? Это приведет к удалению файла "
+".desktop и настраиваемых данных."
 
 msgid "PortProton is not found."
 msgstr "PortProton не найден."
@@ -420,6 +424,14 @@ msgid ""
 msgstr ""
 "Игра была успешно удалена..\n"
 "Пожалуйста, перезапустите Steam, чтобы изменения вступили в силу."
+
+#, python-brace-format
+msgid "Opened folder for '{0}'"
+msgstr "Открытие папки для '{0}'"
+
+#, python-brace-format
+msgid "Failed to open game folder: {0}"
+msgstr "Не удалось открыть папку для игры: {0}"
 
 msgid "just now"
 msgstr "только что"
