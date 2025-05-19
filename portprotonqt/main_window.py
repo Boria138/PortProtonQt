@@ -169,12 +169,27 @@ class MainWindow(QMainWindow):
         self.games = games
         favorites = read_favorites()
         sort_method = read_sort_method()
+
+        # Sort by: favorites first, then descending playtime, then descending last launch
         if sort_method == "playtime":
             self.games.sort(key=lambda g: (0 if g[0] in favorites else 1, -g[10], -g[9]))
+
+        # Sort by: favorites first, then alphabetically by game name
         elif sort_method == "alphabetical":
             self.games.sort(key=lambda g: (0 if g[0] in favorites else 1, g[0].lower()))
-        else:  # Default to "last_launch"
+
+        # Sort by: favorites first, then leave the rest in their original order
+        elif sort_method == "favorites":
+            self.games.sort(key=lambda g: (0 if g[0] in favorites else 1))
+
+        # Sort by: favorites first, then descending last launch, then descending playtime
+        elif sort_method == "last_launch":
             self.games.sort(key=lambda g: (0 if g[0] in favorites else 1, -g[9], -g[10]))
+
+        # Fallback: same as last_launch
+        else:
+            self.games.sort(key=lambda g: (0 if g[0] in favorites else 1, -g[9], -g[10]))
+
         self.updateGameGrid()
         self.progress_bar.setVisible(False)
 
@@ -736,7 +751,6 @@ class MainWindow(QMainWindow):
         self.timeDetailCombo = QComboBox()
         self.timeDetailCombo.addItems(["detailed", "brief"])
         self.timeDetailCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
-        # делаем фокусируемым
         self.timeDetailCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.timeDetailTitle = QLabel(_("Time Detail Level:"))
         self.timeDetailTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
@@ -749,7 +763,7 @@ class MainWindow(QMainWindow):
 
         # 2. Games sort_method
         self.gamesSortCombo = QComboBox()
-        self.gamesSortCombo.addItems(["last_launch", "playtime", "alphabetical"])
+        self.gamesSortCombo.addItems(["last_launch", "playtime", "alphabetical", "favorites"])
         self.gamesSortCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
         self.gamesSortCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.gamesSortTitle = QLabel(_("Games Sort Method:"))
