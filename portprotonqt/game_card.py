@@ -18,14 +18,15 @@ from typing import cast
 class GameCard(QFrame):
     borderWidthChanged = Signal()
     gradientAngleChanged = Signal()
-    editShortcutRequested = Signal(str, str, str)  # name, exec_line, cover_path
-    deleteGameRequested = Signal(str, str)         # name, exec_line
+    editShortcutRequested = Signal(str, str, str) # name, exec_line, cover_path
+    deleteGameRequested = Signal(str, str)        # name, exec_line
     addToMenuRequested = Signal(str, str)         # name, exec_line
     removeFromMenuRequested = Signal(str)         # name
     addToDesktopRequested = Signal(str, str)      # name, exec_line
     removeFromDesktopRequested = Signal(str)      # name
     addToSteamRequested = Signal(str, str, str)   # name, exec_line, cover_path
     removeFromSteamRequested = Signal(str, str)   # name, exec_line
+    openGameFolderRequested = Signal(str, str)    # name, exec_line
 
     def __init__(self, name, description, cover_path, appid, controller_support, exec_line,
                  last_launch, formatted_playtime, protondb_tier, last_launch_ts, playtime_seconds, steam_game,
@@ -434,6 +435,9 @@ class GameCard(QFrame):
             delete_action = menu.addAction(_("Delete from PortProton"))
             delete_action.triggered.connect(self.delete_game)
 
+            open_folder_action = menu.addAction(_("Open Game Folder"))
+            open_folder_action.triggered.connect(self.open_game_folder)
+
             applications_dir = os.path.join(os.path.expanduser("~"), ".local", "share", "applications")
             desktop_path = os.path.join(applications_dir, f"{self.name}.desktop")
             if os.path.exists(desktop_path):
@@ -477,3 +481,6 @@ class GameCard(QFrame):
 
     def remove_from_steam(self):
         self.removeFromSteamRequested.emit(self.name, self.exec_line)
+
+    def open_game_folder(self):
+        self.openGameFolderRequested.emit(self.name, self.exec_line)
