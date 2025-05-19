@@ -15,11 +15,6 @@ on:
       - "dev-scripts/**"
   workflow_dispatch:
 
-env:
-  # Common version, will be used for tagging the release
-  VERSION: 0.1.1
-  PACKAGE: portprotonqt
-
 jobs:
   pre-commit:
     name: Check code
@@ -41,64 +36,19 @@ jobs:
           source .venv/bin/activate
           pre-commit run --show-diff-on-failure --color=always --all-files
 
-  build-appimage:
-    name: Check build AppImage
-    runs-on: ubuntu-22.04
+  build-uv:
+    name: Build with uv
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install required dependencies
-        run: sudo apt install -y binutils coreutils desktop-file-utils fakeroot fuse libgdk-pixbuf2.0-dev patchelf python3-pip python3-setuptools squashfs-tools strace util-linux zsync
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
 
-      - name: Download AppImageBuilder etc.
-        run: |
-          pip3 install appimage-builder uv
+      - name: Sync dependencies
+        run: uv sync
 
-      - name: Build AppImage
-        run: |
-          cd ${{ github.workspace }}/build-aux
-          appimage-builder
-
-  build-fedora:
-    name: Check build Fedora package
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        fedora_version: [40, 41, 42, rawhide]
-
-    container:
-      image: fedora:${{ matrix.fedora_version }}
-      options: --privileged
-
-    steps:
-      - name: Install build dependencies
-        run: |
-          dnf install -y git rpmdevtools python3-devel python3-wheel python3-pip \
-                         python3-build pyproject-rpm-macros python3-setuptools \
-                         redhat-rpm-config
-
-      - name: Setup rpmbuild environment
-        run: |
-          useradd rpmbuild -u 5002 -g users || true
-          mkdir -p /home/rpmbuild/{BUILD,RPMS,SPECS,SRPMS,SOURCES}
-          chown -R rpmbuild:users /home/rpmbuild
-          echo '%_topdir /home/rpmbuild' > /home/rpmbuild/.rpmmacros
-
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Prepare sources
-        run: |
-          git clone --depth 1 https://github.com/Boria138/PortProtonQt.git /tmp/src
-          mv /tmp/src /home/rpmbuild/PortProtonQt-${VERSION}
-          tar -czf /home/rpmbuild/SOURCES/PortProtonQt-${VERSION}.tar.gz -C /home/rpmbuild PortProtonQt-${VERSION}
-
-      - name: Copy fedora.spec
-        run: |
-          cp build-aux/fedora.spec /home/rpmbuild/SPECS/${PACKAGE}.spec
-          chown -R rpmbuild:users /home/rpmbuild
-
-      - name: Build RPM
-        run: |
-          su rpmbuild -c "rpmbuild -ba /home/rpmbuild/SPECS/${PACKAGE}.spec"
+      - name: Build project
+        run: uv build
