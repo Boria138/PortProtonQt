@@ -83,9 +83,14 @@ pre-commit run --all-files
 * [BlackSnaker](https://github.com/BlackSnaker) - Дизайнер - программист
 * [Mikhail Tergoev(Castro-Fidel)](https://github.com/Castro-Fidel) - Автор оригинального проекта PortProton
 
-## Помощники (Контрибьютеры)
+## Помощники (Контрибьюторы)
 
-[![Помощники](https://contrib.rocks/image?repo=Boria138/PortProtonQT)](https://github.com/Boria138/PortProtonQT/graphs/contributors)
+Спасибо всем, кто помогает в развитии проекта:
+
+<a href="https://github.com/Boria138/PortProtonQt/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=Boria138/PortProtonQt" />
+</a>
+
 
 > [!WARNING]
 > Проект находится на стадии WIP (work in progress) корректная работоспособность не гарантирована
