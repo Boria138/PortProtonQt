@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-05-18 13:09+0500\n"
+"POT-Creation-Date: 2025-05-19 11:03+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: de_DE\n"
@@ -140,10 +140,31 @@ msgstr ""
 msgid "Main PortProton parameters..."
 msgstr ""
 
+msgid "detailed"
+msgstr ""
+
+msgid "brief"
+msgstr ""
+
 msgid "Time Detail Level:"
 msgstr ""
 
+msgid "last launch"
+msgstr ""
+
+msgid "playtime"
+msgstr ""
+
+msgid "alphabetical"
+msgstr ""
+
+msgid "favorites"
+msgstr ""
+
 msgid "Games Sort Method:"
+msgstr ""
+
+msgid "all"
 msgstr ""
 
 msgid "Games Display Filter:"

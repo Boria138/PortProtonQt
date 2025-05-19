@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-05-18 13:09+0500\n"
-"PO-Revision-Date: 2025-05-18 13:08+0500\n"
+"POT-Creation-Date: 2025-05-19 11:03+0500\n"
+"PO-Revision-Date: 2025-05-19 11:03+0500\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
@@ -141,11 +141,32 @@ msgstr "Различные параметры и версии wine..."
 msgid "Main PortProton parameters..."
 msgstr "Основные параметры PortProton..."
 
+msgid "detailed"
+msgstr "детальный"
+
+msgid "brief"
+msgstr "упрощённый"
+
 msgid "Time Detail Level:"
 msgstr "Уровень детализации вывода времени:"
 
+msgid "last launch"
+msgstr "последний запуск"
+
+msgid "playtime"
+msgstr "время игры"
+
+msgid "alphabetical"
+msgstr "алфавитный"
+
+msgid "favorites"
+msgstr "избранное"
+
 msgid "Games Sort Method:"
 msgstr "Метод сортировки игр:"
+
+msgid "all"
+msgstr "все"
 
 msgid "Games Display Filter:"
 msgstr "Фильтр игр:"
