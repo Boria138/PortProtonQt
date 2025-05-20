@@ -982,20 +982,38 @@ class MainWindow(QMainWindow):
         self.stackedWidget.addWidget(self.themeTabWidget)
 
     def restart_application(self):
-        """Перезапускает приложение."""
+        """Перезапускает приложение, сохраняя геометрию окна."""
+        xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
+        state_file = os.path.join(xdg_cache_home, "PortProtonQT", "state.txt")
+        os.makedirs(os.path.dirname(state_file), exist_ok=True)
+
+        # Сохраняем геометрию окна
+        with open(state_file, "w", encoding="utf-8") as f:
+            f.write("theme_tab\n")
+            # Сохраняем размер и положение окна
+            geometry = bytes(self.saveGeometry().toHex().data()).decode("utf-8")
+            f.write(f"geometry:{geometry}\n")
+
         python = sys.executable
         os.execl(python, python, *sys.argv)
 
     def restore_state(self):
         """Восстанавливает состояние приложения после перезапуска."""
-        xdg_data_home = os.getenv("XDG_DATA_HOME",
-                                os.path.join(os.path.expanduser("~"), ".local", "share"))
-        state_file = os.path.join(xdg_data_home, "PortProtonQT", "state.txt")
+        xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
+        state_file = os.path.join(xdg_cache_home, "PortProtonQT", "state.txt")
         if os.path.exists(state_file):
             with open(state_file, encoding="utf-8") as f:
-                state = f.read().strip()
-                if state == "theme_tab":
-                    self.switchTab(5)
+                lines = f.readlines()
+                for line in lines:
+                    line = line.strip()
+                    if line == "theme_tab":
+                        self.switchTab(5)
+                    elif line.startswith("geometry:"):
+                        # Восстанавливаем геометрию окна
+                        hex_data = line.split("geometry:", 1)[1]
+                        geom_bytes = QByteArray.fromHex(hex_data.encode("utf-8"))
+                        self.restoreGeometry(geom_bytes)
+                        self.showNormal()
             os.remove(state_file)
 
     # ЛОГИКА ДЕТАЛЬНОЙ СТРАНИЦЫ ИГРЫ
