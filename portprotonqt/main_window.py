@@ -20,14 +20,15 @@ from portprotonqt.theme_manager import ThemeManager, load_theme_screenshots, loa
 from portprotonqt.time_utils import save_last_launch, get_last_launch, parse_playtime_file, format_playtime, get_last_launch_timestamp, format_last_launch
 from portprotonqt.config_utils import (
     get_portproton_location, read_theme_from_config, save_theme_to_config, parse_desktop_entry, load_theme_metainfo, read_time_config, read_card_size, save_card_size,
-    read_sort_method, read_display_filter, read_favorites, save_favorites, save_time_config, save_sort_method, save_display_filter, save_proxy_config, read_proxy_config
+    read_sort_method, read_display_filter, read_favorites, save_favorites, save_time_config, save_sort_method, save_display_filter, save_proxy_config, read_proxy_config,
+    read_fullscreen_config, save_fullscreen_config
 )
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
 
 
 from PySide6.QtWidgets import (QLineEdit, QMainWindow, QStatusBar, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox, QScrollArea, QSlider,
-                               QDialog, QFormLayout, QFrame, QGraphicsDropShadowEffect, QMessageBox, QGraphicsEffect, QGraphicsOpacityEffect, QApplication, QPushButton, QProgressBar)
+                               QDialog, QFormLayout, QFrame, QGraphicsDropShadowEffect, QMessageBox, QGraphicsEffect, QGraphicsOpacityEffect, QApplication, QPushButton, QProgressBar, QCheckBox)
 from PySide6.QtGui import QIcon, QPixmap, QColor, QDesktopServices
 from PySide6.QtCore import Qt, QAbstractAnimation, QPropertyAnimation, QByteArray, QUrl, Signal, QTimer, Slot
 from typing import cast
@@ -162,6 +163,11 @@ class MainWindow(QMainWindow):
         self.setStyleSheet(self.theme.MESSAGE_BOX_STYLE)
         self.input_manager = InputManager(self)
         QTimer.singleShot(0, self.loadGames)
+
+        if read_fullscreen_config():
+            self.showFullScreen()
+        else:
+            self.showNormal()
 
     @Slot(list)
     def on_games_loaded(self, games: list[tuple]):
@@ -833,6 +839,17 @@ class MainWindow(QMainWindow):
         self.proxyPasswordTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         formLayout.addRow(self.proxyPasswordTitle, self.proxyPasswordEdit)
 
+        # 5. Fullscreen setting for application
+        self.fullscreenCheckBox = QCheckBox(_("Launch Application in Fullscreen"))
+        #self.fullscreenCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
+        self.fullscreenCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.fullscreenTitle = QLabel(_("Application Fullscreen Mode:"))
+        self.fullscreenTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.fullscreenTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        current_fullscreen = read_fullscreen_config()
+        self.fullscreenCheckBox.setChecked(current_fullscreen)
+        formLayout.addRow(self.fullscreenTitle, self.fullscreenCheckBox)
+
         layout.addLayout(formLayout)
 
         # Кнопка сохранения настроек
@@ -870,11 +887,19 @@ class MainWindow(QMainWindow):
         proxy_password = self.proxyPasswordEdit.text().strip()
         save_proxy_config(proxy_url, proxy_user, proxy_password)
 
+        fullscreen = self.fullscreenCheckBox.isChecked()
+        save_fullscreen_config(fullscreen)
+
         # Перезагружаем настройки
         read_time_config()
         self.games = self.loadGames()
         self.updateGameGrid()
         self.settings_saved.emit()
+
+        if fullscreen:
+            self.showFullScreen()
+        else:
+            self.showNormal()
 
         self.statusBar().showMessage(_("Settings saved"), 3000)
 

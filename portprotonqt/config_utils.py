@@ -371,3 +371,38 @@ def save_proxy_config(proxy_url="", proxy_user="", proxy_password=""):
     cp["Proxy"]["proxy_password"] = proxy_password
     with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
         cp.write(configfile)
+
+def read_fullscreen_config():
+    """
+    Читает настройку полноэкранного режима приложения из секции [Display].
+    Если параметр отсутствует, сохраняет и возвращает False по умолчанию.
+    """
+    cp = configparser.ConfigParser()
+    if os.path.exists(CONFIG_FILE):
+        try:
+            cp.read(CONFIG_FILE, encoding="utf-8")
+        except Exception as e:
+            logger.error("Ошибка чтения конфигурационного файла: %s", e)
+            save_fullscreen_config(False)
+            return False
+        if not cp.has_section("Display") or not cp.has_option("Display", "fullscreen"):
+            save_fullscreen_config(False)
+            return False
+        return cp.getboolean("Display", "fullscreen", fallback=False)
+    return False
+
+def save_fullscreen_config(fullscreen):
+    """
+    Сохраняет настройку полноэкранного режима приложения в секцию [Display].
+    """
+    cp = configparser.ConfigParser()
+    if os.path.exists(CONFIG_FILE):
+        try:
+            cp.read(CONFIG_FILE, encoding="utf-8")
+        except (configparser.DuplicateSectionError, configparser.DuplicateOptionError) as e:
+            logger.error("Ошибка чтения конфигурационного файла: %s", e)
+    if "Display" not in cp:
+        cp["Display"] = {}
+    cp["Display"]["fullscreen"] = str(fullscreen)
+    with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
+        cp.write(configfile)
