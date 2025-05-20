@@ -10,6 +10,7 @@ from portprotonqt.logger import get_logger
 from portprotonqt.image_utils import FullscreenDialog
 from portprotonqt.custom_widgets import NavLabel
 from portprotonqt.game_card import GameCard
+from portprotonqt.config_utils import read_fullscreen_config
 
 logger = get_logger(__name__)
 
@@ -78,6 +79,7 @@ class InputManager(QObject):
         self.gamepad: InputDevice | None = None
         self.gamepad_thread: threading.Thread | None = None
         self.running = True
+        self._is_fullscreen = read_fullscreen_config()
 
         # Install keyboard event filter
         app = QApplication.instance()
@@ -225,6 +227,20 @@ class InputManager(QObject):
             if isinstance(focused, QLineEdit):
                 return False
             self._parent.openAddGameDialog()
+            return True
+
+        # 11) Переключение полноэкранного режима по F11
+        if key == Qt.Key.Key_F11:
+            if read_fullscreen_config():
+                return True
+            window = self._parent
+            if isinstance(window, QWidget):
+                if self._is_fullscreen:
+                    window.showNormal()
+                    self._is_fullscreen = False
+                else:
+                    window.showFullScreen()
+                    self._is_fullscreen = True
             return True
 
         return super().eventFilter(obj, event)
