@@ -21,7 +21,7 @@ from portprotonqt.time_utils import save_last_launch, get_last_launch, parse_pla
 from portprotonqt.config_utils import (
     get_portproton_location, read_theme_from_config, save_theme_to_config, parse_desktop_entry, load_theme_metainfo, read_time_config, read_card_size, save_card_size,
     read_sort_method, read_display_filter, read_favorites, save_favorites, save_time_config, save_sort_method, save_display_filter, save_proxy_config, read_proxy_config,
-    read_fullscreen_config, save_fullscreen_config
+    read_fullscreen_config, save_fullscreen_config, read_window_geometry, save_window_geometry
 )
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
@@ -167,7 +167,11 @@ class MainWindow(QMainWindow):
         if read_fullscreen_config():
             self.showFullScreen()
         else:
-            self.showNormal()
+            width, height = read_window_geometry()
+            if width > 0 and height > 0:
+                self.resize(width, height)
+            else:
+                self.showNormal()
 
     @Slot(list)
     def on_games_loaded(self, games: list[tuple]):
@@ -900,6 +904,7 @@ class MainWindow(QMainWindow):
             self.showFullScreen()
         else:
             self.showNormal()
+            save_window_geometry(self.width(), self.height())
 
         self.statusBar().showMessage(_("Settings saved"), 3000)
 
@@ -1007,18 +1012,9 @@ class MainWindow(QMainWindow):
         self.stackedWidget.addWidget(self.themeTabWidget)
 
     def restart_application(self):
-        """Перезапускает приложение, сохраняя геометрию окна."""
-        xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
-        state_file = os.path.join(xdg_cache_home, "PortProtonQT", "state.txt")
-        os.makedirs(os.path.dirname(state_file), exist_ok=True)
-
-        # Сохраняем геометрию окна
-        with open(state_file, "w", encoding="utf-8") as f:
-            f.write("theme_tab\n")
-            # Сохраняем размер и положение окна
-            geometry = bytes(self.saveGeometry().toHex().data()).decode("utf-8")
-            f.write(f"geometry:{geometry}\n")
-
+        """Перезапускает приложение."""
+        if not self.isFullScreen():
+            save_window_geometry(self.width(), self.height())
         python = sys.executable
         os.execl(python, python, *sys.argv)
 
@@ -1028,17 +1024,9 @@ class MainWindow(QMainWindow):
         state_file = os.path.join(xdg_cache_home, "PortProtonQT", "state.txt")
         if os.path.exists(state_file):
             with open(state_file, encoding="utf-8") as f:
-                lines = f.readlines()
-                for line in lines:
-                    line = line.strip()
-                    if line == "theme_tab":
-                        self.switchTab(5)
-                    elif line.startswith("geometry:"):
-                        # Восстанавливаем геометрию окна
-                        hex_data = line.split("geometry:", 1)[1]
-                        geom_bytes = QByteArray.fromHex(hex_data.encode("utf-8"))
-                        self.restoreGeometry(geom_bytes)
-                        self.showNormal()
+                state = f.read().strip()
+                if state == "theme_tab":
+                    self.switchTab(5)
             os.remove(state_file)
 
     # ЛОГИКА ДЕТАЛЬНОЙ СТРАНИЦЫ ИГРЫ
@@ -2031,5 +2019,9 @@ class MainWindow(QMainWindow):
                 os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
             except ProcessLookupError:
                 pass  # процесс уже завершился
+
+        if not read_fullscreen_config():
+            save_window_geometry(self.width(), self.height())
+
         save_card_size(self.card_width)
         event.accept()

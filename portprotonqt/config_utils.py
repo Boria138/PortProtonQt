@@ -406,3 +406,40 @@ def save_fullscreen_config(fullscreen):
     cp["Display"]["fullscreen"] = str(fullscreen)
     with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
         cp.write(configfile)
+
+
+
+def read_window_geometry() -> tuple[int, int]:
+    """
+    Читает ширину и высоту окна из секции [MainWindow] конфигурационного файла.
+    Возвращает кортеж (width, height). Если данные отсутствуют, возвращает (0, 0).
+    """
+    cp = configparser.ConfigParser()
+    if os.path.exists(CONFIG_FILE):
+        try:
+            cp.read(CONFIG_FILE, encoding="utf-8")
+        except (configparser.DuplicateSectionError, configparser.DuplicateOptionError) as e:
+            logger.error("Ошибка в конфигурационном файле: %s", e)
+            return (0, 0)
+        if cp.has_section("MainWindow"):
+            width = cp.getint("MainWindow", "width", fallback=0)
+            height = cp.getint("MainWindow", "height", fallback=0)
+            return (width, height)
+    return (0, 0)
+
+def save_window_geometry(width: int, height: int):
+    """
+    Сохраняет ширину и высоту окна в секцию [MainWindow] конфигурационного файла.
+    """
+    cp = configparser.ConfigParser()
+    if os.path.exists(CONFIG_FILE):
+        try:
+            cp.read(CONFIG_FILE, encoding="utf-8")
+        except (configparser.DuplicateSectionError, configparser.DuplicateOptionError) as e:
+            logger.error("Ошибка в конфигурационном файле: %s", e)
+    if "MainWindow" not in cp:
+        cp["MainWindow"] = {}
+    cp["MainWindow"]["width"] = str(width)
+    cp["MainWindow"]["height"] = str(height)
+    with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
+        cp.write(configfile)
