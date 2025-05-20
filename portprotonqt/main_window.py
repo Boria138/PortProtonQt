@@ -1269,6 +1269,8 @@ class MainWindow(QMainWindow):
         elif isinstance(focused_widget, QLineEdit):
             focused_widget.setFocus()
             focused_widget.selectAll()
+        elif isinstance(focused_widget, QCheckBox):
+            focused_widget.setChecked(not focused_widget.isChecked())
         elif isinstance(focused_widget, GameCard):
                     focused_widget.select_callback(
                         focused_widget.name,
