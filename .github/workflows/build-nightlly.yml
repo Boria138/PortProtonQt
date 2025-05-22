@@ -12,6 +12,7 @@ env:
 
 jobs:
   build-appimage:
+    if: github.repository == 'Boria138/PortProtonQt'
     name: Build AppImage
     runs-on: ubuntu-22.04
     steps:
@@ -36,6 +37,7 @@ jobs:
           path: build-aux/PortProtonQt*.AppImage
 
   build-fedora:
+    if: github.repository == 'Boria138/PortProtonQt'
     name: Build Fedora RPM
     runs-on: ubuntu-latest
 
@@ -80,6 +82,7 @@ jobs:
           path: /home/rpmbuild/RPMS/**/*.rpm
 
   build-arch:
+    if: github.repository == 'Boria138/PortProtonQt'
     name: Build Arch Package
     runs-on: ubuntu-22.04
     container:
@@ -132,6 +135,7 @@ jobs:
           path: ${{ env.PKGDEST }}/*
 
   release:
+    if: github.repository == 'Boria138/PortProtonQt'
     name: Create Nightly Release
     needs: [build-appimage, build-arch, build-fedora]
     runs-on: ubuntu-latest
