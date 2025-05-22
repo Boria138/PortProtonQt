@@ -77,7 +77,8 @@ async def fetch_games_json(session):
     try:
         async with session.get(url) as response:
             response.raise_for_status()
-            data = await response.json()
+            text = await response.text()
+            data = json.loads(text)
             # Извлекаем только поля normalized_name и status
             return [{"normalized_name": normalize_name(game["name"]), "status": game["status"]} for game in data]
     except Exception as error:
