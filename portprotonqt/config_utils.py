@@ -4,6 +4,8 @@ from portprotonqt.logger import get_logger
 
 logger = get_logger(__name__)
 
+_portproton_location = None
+
 # Пути к конфигурационным файлам
 CONFIG_FILE = os.path.join(
     os.getenv("XDG_CONFIG_HOME", os.path.join(os.path.expanduser("~"), ".config")),
@@ -115,22 +117,33 @@ def read_file_content(file_path):
 def get_portproton_location():
     """
     Возвращает путь к директории PortProton.
-    Если файл PORTPROTON_CONFIG_FILE существует и содержит путь,
-    возвращается его содержимое. Иначе используется fallback-директория.
+    Сначала проверяется кэшированный путь. Если он отсутствует, проверяется
+    наличие пути в файле PORTPROTON_CONFIG_FILE. Если путь недоступен,
+    используется директория по умолчанию.
     """
-    if os.path.exists(PORTPROTON_CONFIG_FILE):
+    global _portproton_location
+    if _portproton_location is not None:
+        return _portproton_location
+
+    # Попытка чтения пути из конфигурационного файла
+    if os.path.isfile(PORTPROTON_CONFIG_FILE):
         try:
-            location = read_file_content(PORTPROTON_CONFIG_FILE)
-            if location:
-                logger.info("Текущий путь PortProton из конфига: %s", location)
-                return location
-        except Exception as e:
-            logger.error("Ошибка чтения конфига PortProton: %s", e)
-    fallback_dir = os.path.join(os.path.expanduser("~"), ".var", "app", "ru.linux_gaming.PortProton")
-    if os.path.isdir(fallback_dir):
-        logger.info("Используется fallback-директория PortProton: %s", fallback_dir)
-        return fallback_dir
-    logger.warning("Конфиг PortProton и fallback-директория не найдены.")
+            location = read_file_content(PORTPROTON_CONFIG_FILE).strip()
+            if location and os.path.isdir(location):
+                _portproton_location = location
+                logger.info(f"Путь PortProton из конфигурации: {location}")
+                return _portproton_location
+            logger.warning(f"Недействительный путь в конфиге PortProton: {location}")
+        except (OSError, PermissionError) as e:
+            logger.error(f"Ошибка чтения файла конфигурации PortProton: {e}")
+
+    default_dir = os.path.join(os.path.expanduser("~"), ".var", "app", "ru.linux_gaming.PortProton")
+    if os.path.isdir(default_dir):
+        _portproton_location = default_dir
+        logger.info(f"Используется директория flatpak PortProton: {default_dir}")
+        return _portproton_location
+
+    logger.warning("Конфигурация и директория flatpak PortProton не найдены")
     return None
 
 def parse_desktop_entry(file_path):
