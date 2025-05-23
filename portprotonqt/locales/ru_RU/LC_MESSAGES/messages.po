@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-05-20 21:47+0500\n"
-"PO-Revision-Date: 2025-05-20 21:47+0500\n"
+"POT-Creation-Date: 2025-05-24 00:30+0500\n"
+"PO-Revision-Date: 2025-05-24 00:29+0500\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
@@ -47,6 +47,12 @@ msgstr "Выберите исполняемый файл"
 
 msgid "Select Cover Image"
 msgstr "Выберите обложку"
+
+msgid "Invalid image"
+msgstr "Недопустимое изображение"
+
+msgid "No cover selected"
+msgstr "Обложка не выбрана"
 
 #, python-brace-format
 msgid "Launch game \"{name}\" with PortProton"
