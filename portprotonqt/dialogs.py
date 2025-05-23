@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
     QDialog, QLineEdit, QFormLayout, QPushButton,
     QHBoxLayout, QDialogButtonBox, QFileDialog, QLabel
 )
+from PySide6.QtCore import Qt
 from icoextract import IconExtractor, IconExtractorError
 from PIL import Image
 
@@ -87,51 +88,67 @@ class AddGameDialog(QDialog):
         super().__init__(parent)
         self.theme = theme if theme else default_styles
         self.edit_mode = edit_mode
-        self.original_name = game_name  # Store original name for editing
+        self.original_name = game_name
 
         self.setWindowTitle(_("Edit Game") if edit_mode else _("Add Game"))
         self.setModal(True)
+        self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE + self.theme.MESSAGE_BOX_STYLE)
 
         layout = QFormLayout(self)
 
         # Game name
         self.nameEdit = QLineEdit(self)
+        self.nameEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE + " QLineEdit { color: #ffffff; font-size: 14px; }")
         if game_name:
             self.nameEdit.setText(game_name)
-        layout.addRow(_("Game Name:"), self.nameEdit)
+        name_label = QLabel(_("Game Name:"))
+        name_label.setStyleSheet(self.theme.PARAMS_TITLE_STYLE + " QLabel { color: #ffffff; font-size: 14px; font-weight: bold; }")
+        layout.addRow(name_label, self.nameEdit)
 
         # Exe path
         self.exeEdit = QLineEdit(self)
+        self.exeEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE + " QLineEdit { color: #ffffff; font-size: 14px; }")
         if exe_path:
             self.exeEdit.setText(exe_path)
         exeBrowseButton = QPushButton(_("Browse..."), self)
+        exeBrowseButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         exeBrowseButton.clicked.connect(self.browseExe)
 
         exeLayout = QHBoxLayout()
         exeLayout.addWidget(self.exeEdit)
         exeLayout.addWidget(exeBrowseButton)
-        layout.addRow(_("Path to Executable:"), exeLayout)
+        exe_label = QLabel(_("Path to Executable:"))
+        exe_label.setStyleSheet(self.theme.PARAMS_TITLE_STYLE + " QLabel { color: #ffffff; font-size: 14px; font-weight: bold; }")
+        layout.addRow(exe_label, exeLayout)
 
         # Cover path
         self.coverEdit = QLineEdit(self)
+        self.coverEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE + " QLineEdit { color: #ffffff; font-size: 14px; }")
         if cover_path:
             self.coverEdit.setText(cover_path)
         coverBrowseButton = QPushButton(_("Browse..."), self)
+        coverBrowseButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         coverBrowseButton.clicked.connect(self.browseCover)
 
         coverLayout = QHBoxLayout()
         coverLayout.addWidget(self.coverEdit)
         coverLayout.addWidget(coverBrowseButton)
-        layout.addRow(_("Custom Cover:"), coverLayout)
+        cover_label = QLabel(_("Custom Cover:"))
+        cover_label.setStyleSheet(self.theme.PARAMS_TITLE_STYLE + " QLabel { color: #ffffff; font-size: 14px; font-weight: bold; }")
+        layout.addRow(cover_label, coverLayout)
 
         # Preview
         self.coverPreview = QLabel(self)
-        layout.addRow(_("Cover Preview:"), self.coverPreview)
+        self.coverPreview.setStyleSheet(self.theme.CONTENT_STYLE + " QLabel { color: #ffffff; }")
+        preview_label = QLabel(_("Cover Preview:"))
+        preview_label.setStyleSheet(self.theme.PARAMS_TITLE_STYLE + " QLabel { color: #ffffff; font-size: 14px; font-weight: bold; }")
+        layout.addRow(preview_label, self.coverPreview)
 
         # Dialog buttons
         buttonBox = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         )
+        buttonBox.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
         layout.addRow(buttonBox)
@@ -139,7 +156,6 @@ class AddGameDialog(QDialog):
         self.coverEdit.textChanged.connect(self.updatePreview)
         self.exeEdit.textChanged.connect(self.updatePreview)
 
-        # Update preview initially if in edit mode
         if edit_mode:
             self.updatePreview()
 
@@ -168,11 +184,15 @@ class AddGameDialog(QDialog):
             self.coverEdit.setText(fileName)
 
     def updatePreview(self):
+        """Update the cover preview image."""
         cover_path = self.coverEdit.text().strip()
         exe_path = self.exeEdit.text().strip()
-
-        if os.path.isfile(cover_path):
-            self.coverPreview.setPixmap(QPixmap(cover_path))
+        if cover_path and os.path.isfile(cover_path):
+            pixmap = QPixmap(cover_path)
+            if not pixmap.isNull():
+                self.coverPreview.setPixmap(pixmap.scaled(250, 250, Qt.AspectRatioMode.KeepAspectRatio))
+            else:
+                self.coverPreview.setText(_("Invalid image"))
         elif os.path.isfile(exe_path):
             tmp = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
             tmp.close()
@@ -181,7 +201,7 @@ class AddGameDialog(QDialog):
                 self.coverPreview.setPixmap(pixmap)
             os.unlink(tmp.name)
         else:
-            self.coverPreview.clear()
+            self.coverPreview.setText(_("No cover selected"))
 
     def getDesktopEntryData(self):
         """Returns the .desktop content and save path"""
