@@ -155,7 +155,6 @@ class GameCard(QFrame):
 
         # WeAntiCheatYet бейдж
         anticheat_text = self.getAntiCheatText(anticheat_status)
-        print (anticheat_text)
         if anticheat_text:
             icon_filename = self.getAntiCheatIconFilename(anticheat_status)
             icon = self.theme_manager.get_icon(icon_filename, self.current_theme_name)
