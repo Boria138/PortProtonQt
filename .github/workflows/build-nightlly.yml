@@ -52,7 +52,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: PortProtonQt-DEB
-          path: /tmp/portprotonqt.build/*
+          path: /tmp/portprotonqt.build/*.deb
 
   build-fedora:
     if: github.repository == 'Boria138/PortProtonQt'
