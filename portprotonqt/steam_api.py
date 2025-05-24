@@ -407,6 +407,104 @@ def fetch_app_info_async(app_id: int, callback: Callable[[dict | None], None]):
 
     downloader.download_async(url, cache_file, timeout=5, callback=process_response)
 
+def load_weanticheatyet_data_async(callback: Callable[[list], None]):
+    """
+    Asynchronously loads the list of WeAntiCheatYet data, using cache if available.
+    Calls the callback with the list of anti-cheat data.
+    """
+    cache_dir = get_cache_dir()
+    cache_tar = os.path.join(cache_dir, "anticheat_games.tar.xz")
+    cache_json = os.path.join(cache_dir, "anticheat_games.json")
+
+    def process_tar(result: str | None):
+        if not result or not os.path.exists(result):
+            logger.error("Failed to download WeAntiCheatYet archive")
+            callback([])
+            return
+        try:
+            with tarfile.open(result, mode='r:xz') as tar:
+                member = next((m for m in tar.getmembers() if m.name.endswith('anticheat_games_min.json')), None)
+                if member is None:
+                    raise RuntimeError("JSON file not found in archive")
+                fobj = tar.extractfile(member)
+                if fobj is None:
+                    raise RuntimeError(f"Failed to extract file {member.name} from archive")
+                raw = fobj.read()
+                fobj.close()
+                data = orjson.loads(raw)
+            with open(cache_json, "wb") as f:
+                f.write(orjson.dumps(data))
+            if os.path.exists(cache_tar):
+                os.remove(cache_tar)
+                logger.info("Archive %s deleted after extraction", cache_tar)
+            anti_cheat_data = data or []
+            logger.info("Loaded %d anti-cheat entries from archive", len(anti_cheat_data))
+            callback(anti_cheat_data)
+        except Exception as e:
+            logger.error("Error extracting WeAntiCheatYet archive: %s", e)
+            callback([])
+
+    if os.path.exists(cache_json) and (time.time() - os.path.getmtime(cache_json) < CACHE_DURATION):
+        logger.info("Using cached WeAntiCheatYet JSON: %s", cache_json)
+        try:
+            with open(cache_json, "rb") as f:
+                data = orjson.loads(f.read())
+            anti_cheat_data = data or []
+            logger.info("Loaded %d anti-cheat entries from cache", len(anti_cheat_data))
+            callback(anti_cheat_data)
+        except Exception as e:
+            logger.error("Error reading cached WeAntiCheatYet JSON: %s", e)
+            callback([])
+    else:
+        app_list_url = (
+            "https://raw.githubusercontent.com/Boria138/PortProtonQt/"
+            "refs/heads/main/data/anticheat_games.tar.xz"
+        )
+        downloader.download_async(app_list_url, cache_tar, timeout=5, callback=process_tar)
+
+def build_weanticheatyet_index(anti_cheat_data):
+    """
+    Строит индекс античит-данных по полю normalized_name.
+    """
+    anti_cheat_index = {}
+    if not anti_cheat_data:
+        return anti_cheat_index
+    logger.info("Построение индекса WeAntiCheatYet данных:")
+    for entry in anti_cheat_data:
+        normalized = entry["normalized_name"]
+        anti_cheat_index[normalized] = entry
+    return anti_cheat_index
+
+def search_anticheat_status(candidate, anti_cheat_index):
+    candidate_norm = normalize_name(candidate)
+    logger.info("Поиск античит-статуса для кандидата: '%s' -> '%s'", candidate, candidate_norm)
+    if candidate_norm in anti_cheat_index:
+        status = anti_cheat_index[candidate_norm]["status"]
+        logger.info("    Найдено точное совпадение: '%s', статус: '%s'", candidate_norm, status)
+        return status
+    for name_norm, entry in anti_cheat_index.items():
+        if candidate_norm in name_norm:
+            ratio = len(candidate_norm) / len(name_norm)
+            if ratio > 0.8:
+                status = entry["status"]
+                logger.info("    Найдено частичное совпадение: кандидат '%s' в '%s' (ratio: %.2f), статус: '%s'",
+                            candidate_norm, name_norm, ratio, status)
+                return status
+    logger.info("    Античит-статус для кандидата '%s' не найден", candidate_norm)
+    return ""
+
+def get_weanticheatyet_status_async(game_name: str, callback: Callable[[str], None]):
+    """
+    Asynchronously retrieves WeAntiCheatYet status for a game by name.
+    Calls the callback with the status string or empty string if not found.
+    """
+    def on_anticheat_data(anti_cheat_data: list):
+        anti_cheat_index = build_weanticheatyet_index(anti_cheat_data)
+        status = search_anticheat_status(game_name, anti_cheat_index)
+        callback(status)
+
+    load_weanticheatyet_data_async(on_anticheat_data)
+
 def load_protondb_status(appid):
     """Загружает закешированные данные ProtonDB для игры по appid, если они не устарели."""
     cache_dir = get_cache_dir()
@@ -463,7 +561,7 @@ def get_protondb_tier_async(appid: int, callback: Callable[[str], None]):
 
 def get_full_steam_game_info_async(appid: int, callback: Callable[[dict], None]):
     """
-    Asynchronously retrieves full Steam game info.
+    Asynchronously retrieves full Steam game info, including WeAntiCheatYet status.
     Calls the callback with the game info dictionary.
     """
     def on_app_info(app_info: dict | None):
@@ -475,14 +573,18 @@ def get_full_steam_game_info_async(appid: int, callback: Callable[[dict], None])
         cover = f"https://steamcdn-a.akamaihd.net/steam/apps/{appid}/library_600x900_2x.jpg"
 
         def on_protondb_tier(tier: str):
-            callback({
-                'description': description,
-                'controller_support': app_info.get('controller_support', ''),
-                'cover': cover,
-                'protondb_tier': tier,
-                'steam_game': "true",
-                'name': title
-            })
+            def on_anticheat_status(anticheat_status: str):
+                callback({
+                    'description': description,
+                    'controller_support': app_info.get('controller_support', ''),
+                    'cover': cover,
+                    'protondb_tier': tier,
+                    'steam_game': "true",
+                    'name': title,
+                    'anticheat_status': anticheat_status
+                })
+
+            get_weanticheatyet_status_async(title, on_anticheat_status)
 
         get_protondb_tier_async(appid, on_protondb_tier)
 
@@ -490,7 +592,7 @@ def get_full_steam_game_info_async(appid: int, callback: Callable[[dict], None])
 
 def get_steam_game_info_async(desktop_name: str, exec_line: str, callback: Callable[[dict], tuple[bool, str] | None]) -> None:
     """
-    Asynchronously retrieves Steam game info based on desktop name and exec line.
+    Asynchronously retrieves game info based on desktop name and exec line, including WeAntiCheatYet status for all games.
     Calls the callback with the game info dictionary.
     """
     parts = shlex.split(exec_line)
@@ -558,46 +660,62 @@ def get_steam_game_info_async(desktop_name: str, exec_line: str, callback: Calla
             if matching_app:
                 logger.info("Match found for candidate '%s': %s", candidate, matching_app.get("normalized_name"))
                 break
+
+        game_name = desktop_name or exe_name.capitalize()
+
         if not matching_app:
-            callback({
-                "appid": "",
-                "name": decode_text(f"{exe_name.capitalize()}"),
-                "description": "",
-                "cover": "",
-                "controller_support": "",
-                "protondb_tier": "",
-                "steam_game": "false"
-            })
+            def on_anticheat_status(anticheat_status: str):
+                callback({
+                    "appid": "",
+                    "name": decode_text(game_name),
+                    "description": "",
+                    "cover": "",
+                    "controller_support": "",
+                    "protondb_tier": "",
+                    "steam_game": "false",
+                    "anticheat_status": anticheat_status
+                })
+
+            get_weanticheatyet_status_async(game_name, on_anticheat_status)
             return
 
         appid = matching_app["appid"]
         def on_app_info(app_info: dict | None):
             if not app_info:
-                callback({
-                    "appid": "",
-                    "name": decode_text(f"{exe_name.capitalize()}"),
-                    "description": "",
-                    "cover": "",
-                    "controller_support": "",
-                    "protondb_tier": "",
-                    "steam_game": "false"
-                })
+                def on_anticheat_status(anticheat_status: str):
+                    callback({
+                        "appid": "",
+                        "name": decode_text(game_name),
+                        "description": "",
+                        "cover": "",
+                        "controller_support": "",
+                        "protondb_tier": "",
+                        "steam_game": "false",
+                        "anticheat_status": anticheat_status
+                    })
+
+                get_weanticheatyet_status_async(game_name, on_anticheat_status)
                 return
-            title = decode_text(app_info.get("name", exe_name.capitalize()))
+
+            title = decode_text(app_info.get("name", game_name))
             description = decode_text(app_info.get("short_description", ""))
             cover = f"https://steamcdn-a.akamaihd.net/steam/apps/{appid}/library_600x900_2x.jpg"
             controller_support = app_info.get("controller_support", "")
 
             def on_protondb_tier(tier: str):
-                callback({
-                    "appid": appid,
-                    "name": title,
-                    "description": description,
-                    "cover": cover,
-                    "controller_support": controller_support,
-                    "protondb_tier": tier,
-                    "steam_game": "false"
-                })
+                def on_anticheat_status(anticheat_status: str):
+                    callback({
+                        "appid": appid,
+                        "name": title,
+                        "description": description,
+                        "cover": cover,
+                        "controller_support": controller_support,
+                        "protondb_tier": tier,
+                        "steam_game": "true",
+                        "anticheat_status": anticheat_status
+                    })
+
+                get_weanticheatyet_status_async(title, on_anticheat_status)
 
             get_protondb_tier_async(appid, on_protondb_tier)
 

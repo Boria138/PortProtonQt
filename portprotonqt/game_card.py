@@ -27,8 +27,8 @@ class GameCard(QFrame):
     openGameFolderRequested = Signal(str, str)    # name, exec_line
 
     def __init__(self, name, description, cover_path, appid, controller_support, exec_line,
-                 last_launch, formatted_playtime, protondb_tier, last_launch_ts, playtime_seconds, steam_game,
-                 select_callback, theme=None, card_width=250, parent=None, context_menu_manager=None):
+                last_launch, formatted_playtime, protondb_tier, anticheat_status, last_launch_ts, playtime_seconds, steam_game,
+                select_callback, theme=None, card_width=250, parent=None, context_menu_manager=None):
         super().__init__(parent)
         self.name = name
         self.description = description
@@ -39,6 +39,7 @@ class GameCard(QFrame):
         self.last_launch = last_launch
         self.formatted_playtime = formatted_playtime
         self.protondb_tier = protondb_tier
+        self.anticheat_status = anticheat_status
         self.steam_game = steam_game
         self.last_launch_ts = last_launch_ts
         self.playtime_seconds = playtime_seconds
@@ -152,31 +153,54 @@ class GameCard(QFrame):
         steam_visible = (str(steam_game).lower() == "true")
         self.steamLabel.setVisible(steam_visible)
 
+        # WeAntiCheatYet бейдж
+        anticheat_text = self.getAntiCheatText(anticheat_status)
+        print (anticheat_text)
+        if anticheat_text:
+            icon_filename = self.getAntiCheatIconFilename(anticheat_status)
+            icon = self.theme_manager.get_icon(icon_filename, self.current_theme_name)
+            self.anticheatLabel = ClickableLabel(
+                anticheat_text,
+                icon=icon,
+                parent=coverWidget,
+                icon_size=16,
+                icon_space=3,
+            )
+            self.anticheatLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
+            anticheat_visible = True
+        else:
+            self.anticheatLabel = ClickableLabel("", parent=coverWidget, icon_size=16, icon_space=3)
+            self.anticheatLabel.setVisible(False)
+            anticheat_visible = False
+
         # Расположение бейджей
         right_margin = 8
         badge_spacing = 5
         top_y = 10
-        if steam_visible and protondb_visible:
+        badge_y_positions = []
+        if steam_visible:
             steam_width = self.steamLabel.width()
             steam_x = card_width - steam_width - right_margin
             self.steamLabel.move(steam_x, top_y)
+            badge_y_positions.append(top_y + self.steamLabel.height())
+        if protondb_visible:
             protondb_width = self.protondbLabel.width()
             protondb_x = card_width - protondb_width - right_margin
-            protondb_y = top_y + self.steamLabel.height() + badge_spacing
+            protondb_y = badge_y_positions[-1] + badge_spacing if badge_y_positions else top_y
             self.protondbLabel.move(protondb_x, protondb_y)
-        elif steam_visible:
-            steam_width = self.steamLabel.width()
-            steam_x = card_width - steam_width - right_margin
-            self.steamLabel.move(steam_x, top_y)
-        elif protondb_visible:
-            protondb_width = self.protondbLabel.width()
-            protondb_x = card_width - protondb_width - right_margin
-            self.protondbLabel.move(protondb_x, top_y)
+            badge_y_positions.append(protondb_y + self.protondbLabel.height())
+        if anticheat_visible:
+            anticheat_width = self.anticheatLabel.width()
+            anticheat_x = card_width - anticheat_width - right_margin
+            anticheat_y = badge_y_positions[-1] + badge_spacing if badge_y_positions else top_y
+            self.anticheatLabel.move(anticheat_x, anticheat_y)
 
+        self.anticheatLabel.raise_()
         self.protondbLabel.raise_()
         self.steamLabel.raise_()
         self.protondbLabel.clicked.connect(self.open_protondb_report)
         self.steamLabel.clicked.connect(self.open_steam_page)
+        self.anticheatLabel.clicked.connect(self.open_weanticheatyet_page)
 
         layout.addWidget(coverWidget)
 
@@ -190,6 +214,25 @@ class GameCard(QFrame):
         """Delegate context menu display to ContextMenuManager."""
         if self.context_menu_manager:
             self.context_menu_manager.show_context_menu(self, pos)
+
+    def getAntiCheatText(self, status):
+            if not status:
+                return ""
+            translations = {
+                "supported": _("Supported"),
+                "denied": _("Denied"),
+                "unknown": _("Unknown"),
+                "planned": _("Planned")
+            }
+            return translations.get(status.lower(), "")
+
+    def getAntiCheatIconFilename(self, status):
+        status = status.lower()
+        if status == "supported":
+            return "platinum-gold"
+        elif status in ("denied", "planned", "unknown"):
+            return "broken"
+        return ""
 
     def getProtonDBText(self, tier):
         if not tier:
@@ -221,6 +264,11 @@ class GameCard(QFrame):
     def open_steam_page(self):
         url = QUrl(f"https://steamcommunity.com/app/{self.appid}")
         QDesktopServices.openUrl(url)
+
+    def open_weanticheatyet_page(self):
+            formatted_name = self.name.lower().replace(" ", "-")
+            url = QUrl(f"https://areweanticheatyet.com/game/{formatted_name}")
+            QDesktopServices.openUrl(url)
 
     def update_favorite_icon(self):
         if self.is_favorite:

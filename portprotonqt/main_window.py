@@ -190,7 +190,7 @@ class MainWindow(QMainWindow):
 
         # Sort by: favorites first, then descending playtime, then descending last launch
         if sort_method == "playtime":
-            self.games.sort(key=lambda g: (0 if g[0] in favorites else 1, -g[10], -g[9]))
+            self.games.sort(key=lambda g: (0 if g[0] in favorites else 1, -g[11], -g[10]))
 
         # Sort by: favorites first, then alphabetically by game name
         elif sort_method == "alphabetical":
@@ -202,11 +202,11 @@ class MainWindow(QMainWindow):
 
         # Sort by: favorites first, then descending last launch, then descending playtime
         elif sort_method == "last_launch":
-            self.games.sort(key=lambda g: (0 if g[0] in favorites else 1, -g[9], -g[10]))
+            self.games.sort(key=lambda g: (0 if g[0] in favorites else 1, -g[10], -g[11]))
 
         # Fallback: same as last_launch
         else:
-            self.games.sort(key=lambda g: (0 if g[0] in favorites else 1, -g[9], -g[10]))
+            self.games.sort(key=lambda g: (0 if g[0] in favorites else 1, -g[10], -g[11]))
 
         self.updateGameGrid()
         self.progress_bar.setVisible(False)
@@ -283,6 +283,7 @@ class MainWindow(QMainWindow):
                 last_launch,
                 format_playtime(playtime_seconds),
                 info.get('protondb_tier', ''),
+                info.get("anticheat_status", ""),
                 last_played,
                 playtime_seconds,
                 "true"
@@ -428,6 +429,7 @@ class MainWindow(QMainWindow):
                 get_last_launch(exe_name) if exe_name else _("Never"),
                 formatted_playtime,
                 steam_info.get("protondb_tier", ""),
+                steam_info.get("anticheat_status", ""),
                 get_last_launch_timestamp(exe_name) if exe_name else 0,
                 playtime_seconds,
                 steam_game
