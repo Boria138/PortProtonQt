@@ -518,7 +518,7 @@ class MainWindow(QMainWindow):
         sliderLayout = QHBoxLayout()
         sliderLayout.addStretch()  # сдвигаем ползунок вправо
         self.sizeSlider = QSlider(Qt.Orientation.Horizontal)
-        self.sizeSlider.setMinimum(200)
+        self.sizeSlider.setMinimum(150)
         self.sizeSlider.setMaximum(250)
         self.sizeSlider.setValue(self.card_width)
         self.sizeSlider.setTickInterval(10)
@@ -551,31 +551,19 @@ class MainWindow(QMainWindow):
         self.sliderDebounceTimer.start()
 
     def updateGameGrid(self):
-        """Перестраивает карточки с учётом доступной ширины."""
         if not self.games:
             return
-
-        # Очищаем текущие карточки
         self.clearLayout(self.gamesListLayout)
-
-        # Получаем актуальную доступную ширину после очистки
-        available_width = self.gamesListWidget.width() - 40  # Корректируем отступы
-        spacing = self.gamesListLayout.spacing()
-
-        # Рассчитываем оптимальный размер карточки
-        columns = max(1, available_width // (self.card_width + spacing))
-        new_card_width = (available_width - (columns - 1) * spacing) // columns
-
-        # Добавляем карточки с новыми размерами
+        card_width = self.card_width
         for game_data in self.games:
             card = GameCard(
                 *game_data,
                 select_callback=self.openGameDetailPage,
                 theme=self.theme,
-                card_width=new_card_width,
+                card_width=card_width,
                 context_menu_manager=self.context_menu_manager
             )
-            # Connect context menu signals
+            # Connect context menu signals (unchanged)
             card.editShortcutRequested.connect(self.context_menu_manager.edit_game_shortcut)
             card.deleteGameRequested.connect(self.context_menu_manager.delete_game)
             card.addToMenuRequested.connect(self.context_menu_manager.add_to_menu)
@@ -586,13 +574,11 @@ class MainWindow(QMainWindow):
             card.removeFromSteamRequested.connect(self.context_menu_manager.remove_from_steam)
             card.openGameFolderRequested.connect(self.context_menu_manager.open_game_folder)
             self.gamesListLayout.addWidget(card)
-
-        # Принудительно обновляем геометрию лейаута
         self.gamesListWidget.updateGeometry()
         self.gamesListLayout.invalidate()
         self.gamesListWidget.update()
 
-    def populateGamesGrid(self, games_list, columns=4):
+    def populateGamesGrid(self, games_list):
         self.clearLayout(self.gamesListLayout)
         for _idx, game_data in enumerate(games_list):
             card = GameCard(*game_data, select_callback=self.openGameDetailPage, theme=self.theme, card_width=self.card_width, context_menu_manager=self.context_menu_manager)
