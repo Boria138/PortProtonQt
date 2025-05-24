@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-05-24 00:30+0500\n"
-"PO-Revision-Date: 2025-05-24 00:29+0500\n"
+"POT-Creation-Date: 2025-05-24 19:45+0500\n"
+"PO-Revision-Date: 2025-05-24 19:45+0500\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
@@ -20,6 +20,173 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
+
+msgid "Remove from Desktop"
+msgstr "Удалить с рабочего стола"
+
+msgid "Add to Desktop"
+msgstr "Добавить на рабочий стол"
+
+msgid "Edit Shortcut"
+msgstr "Редактировать"
+
+msgid "Delete from PortProton"
+msgstr "Удалить из PortProton"
+
+msgid "Open Game Folder"
+msgstr "Открыть папку с игрой"
+
+msgid "Remove from Menu"
+msgstr "Удалить из меню"
+
+msgid "Add to Menu"
+msgstr "Добавить в меню"
+
+msgid "Remove from Steam"
+msgstr "Удалить из Steam"
+
+msgid "Add to Steam"
+msgstr "Добавить в Steam"
+
+msgid "Error"
+msgstr "Ошибка"
+
+msgid "PortProton is not found."
+msgstr "PortProton не найден."
+
+#, python-brace-format
+msgid "No executable command found in .desktop for game: {0}"
+msgstr "Не найдено ни одной исполняемой команды для игры: {0}"
+
+#, python-brace-format
+msgid "Failed to parse .desktop file for game: {0}"
+msgstr "Не удалось удалить файл .desktop: {0}"
+
+#, python-brace-format
+msgid "Error reading .desktop file: {0}"
+msgstr "Не удалось удалить файл .desktop: {0}"
+
+#, python-brace-format
+msgid ".desktop file not found for game: {0}"
+msgstr "Файл не найден: {0}"
+
+#, python-brace-format
+msgid "Invalid executable command: {0}"
+msgstr "Недопустимая исполняемая команда: {0}"
+
+#, python-brace-format
+msgid "Executable file not found: {0}"
+msgstr "Файл не найден: {0}"
+
+#, python-brace-format
+msgid "Failed to parse executable command: {0}"
+msgstr "Не удалось удалить игру из меню: {0}"
+
+msgid "Confirm Deletion"
+msgstr "Подтвердите удаление"
+
+#, python-brace-format
+msgid ""
+"Are you sure you want to delete '{0}'? This will remove the .desktop file"
+" and custom data."
+msgstr ""
+"Вы уверены, что хотите удалить '{0}'? Это приведет к удалению файла "
+".desktop и настраиваемых данных."
+
+#, python-brace-format
+msgid "Could not locate .desktop file for '{0}'"
+msgstr "Не удалось найти файл .desktop для '{0}'"
+
+#, python-brace-format
+msgid "Failed to delete .desktop file: {0}"
+msgstr "Не удалось удалить файл .desktop: {0}"
+
+#, python-brace-format
+msgid "Game '{0}' deleted successfully"
+msgstr "Игра '{0}' успешно удалена"
+
+#, python-brace-format
+msgid "Failed to delete custom data: {0}"
+msgstr "Не удалось удалить настраиваемые данные: {0}"
+
+#, python-brace-format
+msgid "Game '{0}' added to menu"
+msgstr "Игра '{0}' добавлена в меню"
+
+#, python-brace-format
+msgid "Failed to add game to menu: {0}"
+msgstr "Не удалось добавить игру в меню: {0}"
+
+#, python-brace-format
+msgid "Failed to remove game from menu: {0}"
+msgstr "Не удалось удалить игру из меню: {0}"
+
+#, python-brace-format
+msgid "Game '{0}' removed from menu"
+msgstr "Игра '{0}' удалена из меню"
+
+#, python-brace-format
+msgid "Game '{0}' added to desktop"
+msgstr "Игра '{0}' добавлена на рабочий стол"
+
+#, python-brace-format
+msgid "Failed to add game to desktop: {0}"
+msgstr "Не удалось добавить игру на рабочий стол: {0}"
+
+#, python-brace-format
+msgid "Failed to remove game from Desktop: {0}"
+msgstr "Не удалось удалить игру с рабочего стола: {0}"
+
+#, python-brace-format
+msgid "Game '{0}' removed from Desktop"
+msgstr "Игра '{0}' удалена с рабочего стола"
+
+msgid "Game name and executable path are required."
+msgstr "Необходимо указать название игры и путь к исполняемому файлу."
+
+msgid "Failed to generate .desktop file data."
+msgstr "Не удалось сгенерировать данные файла .desktop."
+
+#, python-brace-format
+msgid "Failed to remove old .desktop file: {0}"
+msgstr "Не удалось удалить файл .desktop: {0}"
+
+#, python-brace-format
+msgid "Old .desktop file removed for '{0}'"
+msgstr "Старый файл .desktop удален для '{0}'"
+
+#, python-brace-format
+msgid "Failed to save .desktop file: {0}"
+msgstr "Не удалось удалить файл .desktop: {0}"
+
+#, python-brace-format
+msgid "Failed to copy cover image: {0}"
+msgstr "Не удалось удалить игру из меню: {0}"
+
+msgid "Restart Steam"
+msgstr "Перезапустите Steam"
+
+msgid ""
+"The game was added successfully.\n"
+"Please restart Steam for changes to take effect."
+msgstr ""
+"Игра была успешно добавлена.\n"
+"Пожалуйста, перезапустите Steam, чтобы изменения вступили в силу."
+
+msgid ""
+"The game was removed successfully.\n"
+"Please restart Steam for changes to take effect."
+msgstr ""
+"Игра была успешно удалена..\n"
+"Пожалуйста, перезапустите Steam, чтобы изменения вступили в силу."
+
+#, python-brace-format
+msgid "Opened folder for '{0}'"
+msgstr "Открытие папки для '{0}'"
+
+#, python-brace-format
+msgid "Failed to open game folder: {0}"
+msgstr "Не удалось открыть папку для игры: {0}"
 
 msgid "Edit Game"
 msgstr "Редактировать игру"
@@ -58,6 +225,18 @@ msgstr "Обложка не выбрана"
 msgid "Launch game \"{name}\" with PortProton"
 msgstr "Запустить игру \"{name}\" с помощью PortProton"
 
+msgid "Supported"
+msgstr "Поддерживается"
+
+msgid "Denied"
+msgstr "Отказано"
+
+msgid "Unknown"
+msgstr "Неизвестен"
+
+msgid "Planned"
+msgstr "Планируется"
+
 msgid "Platinum"
 msgstr "Платина"
 
@@ -75,33 +254,6 @@ msgstr "Сломано"
 
 msgid "Pending"
 msgstr "В ожидании"
-
-msgid "Remove from Desktop"
-msgstr "Удалить с рабочего стола"
-
-msgid "Add to Desktop"
-msgstr "Добавить на рабочий стол"
-
-msgid "Edit Shortcut"
-msgstr "Редактировать"
-
-msgid "Delete from PortProton"
-msgstr "Удалить из PortProton"
-
-msgid "Open Game Folder"
-msgstr "Открыть папку с игрой"
-
-msgid "Remove from Menu"
-msgstr "Удалить из меню"
-
-msgid "Add to Menu"
-msgstr "Добавить в меню"
-
-msgid "Remove from Steam"
-msgstr "Удалить из Steam"
-
-msgid "Add to Steam"
-msgstr "Добавить в Steam"
 
 msgid "Library"
 msgstr "Библиотека"
@@ -220,9 +372,6 @@ msgstr "Применить тему"
 msgid "No link"
 msgstr "Нет ссылки"
 
-msgid "Unknown"
-msgstr "Неизвестен"
-
 msgid "Name:"
 msgstr "Название:"
 
@@ -271,9 +420,6 @@ msgstr "Остановить"
 msgid "Play"
 msgstr "Играть"
 
-msgid "Error"
-msgstr "Ошибка"
-
 msgid "Invalid command format (native)"
 msgstr "Неправильный формат команды (нативная версия)"
 
@@ -289,158 +435,6 @@ msgstr "Невозможно запустить игру пока запущен
 
 msgid "Launching"
 msgstr "Идёт запуск"
-
-msgid "Confirm Deletion"
-msgstr "Подтвердите удаление"
-
-#, python-brace-format
-msgid ""
-"Are you sure you want to delete '{0}'? This will remove the .desktop file"
-" and custom data."
-msgstr ""
-"Вы уверены, что хотите удалить '{0}'? Это приведет к удалению файла "
-".desktop и настраиваемых данных."
-
-msgid "PortProton is not found."
-msgstr "PortProton не найден."
-
-#, python-brace-format
-msgid "No executable command found for game: {0}"
-msgstr "Не найдено ни одной исполняемой команды для игры: {0}"
-
-#, python-brace-format
-msgid "Failed to parse .desktop file for game: {0}"
-msgstr "Не удалось удалить файл .desktop: {0}"
-
-#, python-brace-format
-msgid "Error reading .desktop file: {0}"
-msgstr "Не удалось удалить файл .desktop: {0}"
-
-#, python-brace-format
-msgid "Could not locate .desktop file for '{0}'"
-msgstr "Не удалось найти файл .desktop для '{0}'"
-
-msgid "Warning"
-msgstr "Идёт запуск"
-
-#, python-brace-format
-msgid ""
-"Could not parse the executable path from Exec line:\n"
-"{0}"
-msgstr ""
-"Не удалось разобрать путь к исполняемому файлу из строки Exec:\n"
-"{0}"
-
-#, python-brace-format
-msgid "Failed to delete .desktop file: {0}"
-msgstr "Не удалось удалить файл .desktop: {0}"
-
-#, python-brace-format
-msgid "Failed to delete custom data: {0}"
-msgstr "Не удалось удалить настраиваемые данные: {0}"
-
-#, python-brace-format
-msgid "Game '{0}' deleted successfully"
-msgstr "Игра '{0}' успешно удалена"
-
-#, python-brace-format
-msgid "Game '{0}' added to menu"
-msgstr "Игра '{0}' добавлена в меню"
-
-#, python-brace-format
-msgid "Failed to add game to menu: {0}"
-msgstr "Не удалось добавить игру в меню: {0}"
-
-#, python-brace-format
-msgid "Game '{0}' removed from menu"
-msgstr "Игра '{0}' удалена из меню"
-
-#, python-brace-format
-msgid "Failed to remove game from menu: {0}"
-msgstr "Не удалось удалить игру из меню: {0}"
-
-#, python-brace-format
-msgid "Game '{0}' added to desktop"
-msgstr "Игра '{0}' добавлена на рабочий стол"
-
-#, python-brace-format
-msgid "Failed to add game to desktop: {0}"
-msgstr "Не удалось добавить игру на рабочий стол: {0}"
-
-#, python-brace-format
-msgid "Game '{0}' removed from Desktop"
-msgstr "Игра '{0}' удалена с рабочего стола"
-
-#, python-brace-format
-msgid "Failed to remove game from Desktop: {0}"
-msgstr "Не удалось удалить игру с рабочего стола: {0}"
-
-#, python-brace-format
-msgid ".desktop file not found for game: {0}"
-msgstr "Файл не найден: {0}"
-
-#, python-brace-format
-msgid "Invalid executable command: {0}"
-msgstr "Недопустимая исполняемая команда: {0}"
-
-#, python-brace-format
-msgid "Failed to parse executable command: {0}"
-msgstr "Не удалось удалить игру из меню: {0}"
-
-#, python-brace-format
-msgid "Executable command is empty for game: {0}"
-msgstr "Исполняемая команда пуста для игры: {0}"
-
-#, python-brace-format
-msgid "Executable file not found: {0}"
-msgstr "Файл не найден: {0}"
-
-msgid "Game name and executable path are required."
-msgstr "Необходимо указать название игры и путь к исполняемому файлу."
-
-msgid "Failed to generate .desktop file data."
-msgstr "Не удалось сгенерировать данные файла .desktop."
-
-#, python-brace-format
-msgid "Failed to remove old .desktop file: {0}"
-msgstr "Не удалось удалить файл .desktop: {0}"
-
-#, python-brace-format
-msgid "Failed to save .desktop file: {0}"
-msgstr "Не удалось удалить файл .desktop: {0}"
-
-#, python-brace-format
-msgid "Failed to copy cover image: {0}"
-msgstr "Не удалось удалить игру из меню: {0}"
-
-#, python-brace-format
-msgid "No executable command found in .desktop for game: {0}"
-msgstr "Не найдено ни одной исполняемой команды для игры: {0}"
-
-msgid "Restart Steam"
-msgstr "Перезапустите Steam"
-
-msgid ""
-"The game was added successfully.\n"
-"Please restart Steam for changes to take effect."
-msgstr ""
-"Игра была успешно добавлена.\n"
-"Пожалуйста, перезапустите Steam, чтобы изменения вступили в силу."
-
-msgid ""
-"The game was removed successfully.\n"
-"Please restart Steam for changes to take effect."
-msgstr ""
-"Игра была успешно удалена..\n"
-"Пожалуйста, перезапустите Steam, чтобы изменения вступили в силу."
-
-#, python-brace-format
-msgid "Opened folder for '{0}'"
-msgstr "Открытие папки для '{0}'"
-
-#, python-brace-format
-msgid "Failed to open game folder: {0}"
-msgstr "Не удалось открыть папку для игры: {0}"
 
 msgid "just now"
 msgstr "только что"

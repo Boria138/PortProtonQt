@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-05-24 00:30+0500\n"
+"POT-Creation-Date: 2025-05-24 19:45+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es_ES\n"
@@ -19,6 +19,167 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
+
+msgid "Remove from Desktop"
+msgstr ""
+
+msgid "Add to Desktop"
+msgstr ""
+
+msgid "Edit Shortcut"
+msgstr ""
+
+msgid "Delete from PortProton"
+msgstr ""
+
+msgid "Open Game Folder"
+msgstr ""
+
+msgid "Remove from Menu"
+msgstr ""
+
+msgid "Add to Menu"
+msgstr ""
+
+msgid "Remove from Steam"
+msgstr ""
+
+msgid "Add to Steam"
+msgstr ""
+
+msgid "Error"
+msgstr ""
+
+msgid "PortProton is not found."
+msgstr ""
+
+#, python-brace-format
+msgid "No executable command found in .desktop for game: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to parse .desktop file for game: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Error reading .desktop file: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid ".desktop file not found for game: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Invalid executable command: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Executable file not found: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to parse executable command: {0}"
+msgstr ""
+
+msgid "Confirm Deletion"
+msgstr ""
+
+#, python-brace-format
+msgid ""
+"Are you sure you want to delete '{0}'? This will remove the .desktop file"
+" and custom data."
+msgstr ""
+
+#, python-brace-format
+msgid "Could not locate .desktop file for '{0}'"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to delete .desktop file: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Game '{0}' deleted successfully"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to delete custom data: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Game '{0}' added to menu"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to add game to menu: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to remove game from menu: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Game '{0}' removed from menu"
+msgstr ""
+
+#, python-brace-format
+msgid "Game '{0}' added to desktop"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to add game to desktop: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to remove game from Desktop: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Game '{0}' removed from Desktop"
+msgstr ""
+
+msgid "Game name and executable path are required."
+msgstr ""
+
+msgid "Failed to generate .desktop file data."
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to remove old .desktop file: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Old .desktop file removed for '{0}'"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to save .desktop file: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to copy cover image: {0}"
+msgstr ""
+
+msgid "Restart Steam"
+msgstr ""
+
+msgid ""
+"The game was added successfully.\n"
+"Please restart Steam for changes to take effect."
+msgstr ""
+
+msgid ""
+"The game was removed successfully.\n"
+"Please restart Steam for changes to take effect."
+msgstr ""
+
+#, python-brace-format
+msgid "Opened folder for '{0}'"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to open game folder: {0}"
+msgstr ""
 
 msgid "Edit Game"
 msgstr ""
@@ -57,6 +218,18 @@ msgstr ""
 msgid "Launch game \"{name}\" with PortProton"
 msgstr ""
 
+msgid "Supported"
+msgstr ""
+
+msgid "Denied"
+msgstr ""
+
+msgid "Unknown"
+msgstr ""
+
+msgid "Planned"
+msgstr ""
+
 msgid "Platinum"
 msgstr ""
 
@@ -73,33 +246,6 @@ msgid "Borked"
 msgstr ""
 
 msgid "Pending"
-msgstr ""
-
-msgid "Remove from Desktop"
-msgstr ""
-
-msgid "Add to Desktop"
-msgstr ""
-
-msgid "Edit Shortcut"
-msgstr ""
-
-msgid "Delete from PortProton"
-msgstr ""
-
-msgid "Open Game Folder"
-msgstr ""
-
-msgid "Remove from Menu"
-msgstr ""
-
-msgid "Add to Menu"
-msgstr ""
-
-msgid "Remove from Steam"
-msgstr ""
-
-msgid "Add to Steam"
 msgstr ""
 
 msgid "Library"
@@ -219,9 +365,6 @@ msgstr ""
 msgid "No link"
 msgstr ""
 
-msgid "Unknown"
-msgstr ""
-
 msgid "Name:"
 msgstr ""
 
@@ -270,9 +413,6 @@ msgstr ""
 msgid "Play"
 msgstr ""
 
-msgid "Error"
-msgstr ""
-
 msgid "Invalid command format (native)"
 msgstr ""
 
@@ -287,150 +427,6 @@ msgid "Cannot launch game while another game is running"
 msgstr ""
 
 msgid "Launching"
-msgstr ""
-
-msgid "Confirm Deletion"
-msgstr ""
-
-#, python-brace-format
-msgid ""
-"Are you sure you want to delete '{0}'? This will remove the .desktop file"
-" and custom data."
-msgstr ""
-
-msgid "PortProton is not found."
-msgstr ""
-
-#, python-brace-format
-msgid "No executable command found for game: {0}"
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to parse .desktop file for game: {0}"
-msgstr ""
-
-#, python-brace-format
-msgid "Error reading .desktop file: {0}"
-msgstr ""
-
-#, python-brace-format
-msgid "Could not locate .desktop file for '{0}'"
-msgstr ""
-
-msgid "Warning"
-msgstr ""
-
-#, python-brace-format
-msgid ""
-"Could not parse the executable path from Exec line:\n"
-"{0}"
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to delete .desktop file: {0}"
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to delete custom data: {0}"
-msgstr ""
-
-#, python-brace-format
-msgid "Game '{0}' deleted successfully"
-msgstr ""
-
-#, python-brace-format
-msgid "Game '{0}' added to menu"
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to add game to menu: {0}"
-msgstr ""
-
-#, python-brace-format
-msgid "Game '{0}' removed from menu"
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to remove game from menu: {0}"
-msgstr ""
-
-#, python-brace-format
-msgid "Game '{0}' added to desktop"
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to add game to desktop: {0}"
-msgstr ""
-
-#, python-brace-format
-msgid "Game '{0}' removed from Desktop"
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to remove game from Desktop: {0}"
-msgstr ""
-
-#, python-brace-format
-msgid ".desktop file not found for game: {0}"
-msgstr ""
-
-#, python-brace-format
-msgid "Invalid executable command: {0}"
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to parse executable command: {0}"
-msgstr ""
-
-#, python-brace-format
-msgid "Executable command is empty for game: {0}"
-msgstr ""
-
-#, python-brace-format
-msgid "Executable file not found: {0}"
-msgstr ""
-
-msgid "Game name and executable path are required."
-msgstr ""
-
-msgid "Failed to generate .desktop file data."
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to remove old .desktop file: {0}"
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to save .desktop file: {0}"
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to copy cover image: {0}"
-msgstr ""
-
-#, python-brace-format
-msgid "No executable command found in .desktop for game: {0}"
-msgstr ""
-
-msgid "Restart Steam"
-msgstr ""
-
-msgid ""
-"The game was added successfully.\n"
-"Please restart Steam for changes to take effect."
-msgstr ""
-
-msgid ""
-"The game was removed successfully.\n"
-"Please restart Steam for changes to take effect."
-msgstr ""
-
-#, python-brace-format
-msgid "Opened folder for '{0}'"
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to open game folder: {0}"
 msgstr ""
 
 msgid "just now"
