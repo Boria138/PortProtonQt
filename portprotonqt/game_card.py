@@ -134,9 +134,11 @@ class GameCard(QFrame):
                 icon_space=3,
             )
             self.protondbLabel.setStyleSheet(self.theme.get_protondb_badge_style(protondb_tier))
+            self.protondbLabel.setFixedWidth(int(card_width * 2/3))  # Устанавливаем ширину в 2/3 ширины карточки
             protondb_visible = True
         else:
             self.protondbLabel = ClickableLabel("", parent=coverWidget, icon_size=16, icon_space=3)
+            self.protondbLabel.setFixedWidth(int(card_width * 2/3))  # Устанавливаем ширину даже для невидимого бейджа
             self.protondbLabel.setVisible(False)
             protondb_visible = False
 
@@ -150,6 +152,7 @@ class GameCard(QFrame):
             icon_space=5,
         )
         self.steamLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
+        self.steamLabel.setFixedWidth(int(card_width * 2/3))  # Устанавливаем ширину в 2/3 ширины карточки
         steam_visible = (str(steam_game).lower() == "true")
         self.steamLabel.setVisible(steam_visible)
 
@@ -166,9 +169,11 @@ class GameCard(QFrame):
                 icon_space=3,
             )
             self.anticheatLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
+            self.anticheatLabel.setFixedWidth(int(card_width * 2/3))  # Устанавливаем ширину в 2/3 ширины карточки
             anticheat_visible = True
         else:
             self.anticheatLabel = ClickableLabel("", parent=coverWidget, icon_size=16, icon_space=3)
+            self.anticheatLabel.setFixedWidth(int(card_width * 2/3))  # Устанавливаем ширину даже для невидимого бейджа
             self.anticheatLabel.setVisible(False)
             anticheat_visible = False
 
@@ -177,20 +182,18 @@ class GameCard(QFrame):
         badge_spacing = 5
         top_y = 10
         badge_y_positions = []
+        badge_width = int(card_width * 2/3)  # Фиксированная ширина бейджей
         if steam_visible:
-            steam_width = self.steamLabel.width()
-            steam_x = card_width - steam_width - right_margin
+            steam_x = card_width - badge_width - right_margin
             self.steamLabel.move(steam_x, top_y)
             badge_y_positions.append(top_y + self.steamLabel.height())
         if protondb_visible:
-            protondb_width = self.protondbLabel.width()
-            protondb_x = card_width - protondb_width - right_margin
+            protondb_x = card_width - badge_width - right_margin
             protondb_y = badge_y_positions[-1] + badge_spacing if badge_y_positions else top_y
             self.protondbLabel.move(protondb_x, protondb_y)
             badge_y_positions.append(protondb_y + self.protondbLabel.height())
         if anticheat_visible:
-            anticheat_width = self.anticheatLabel.width()
-            anticheat_x = card_width - anticheat_width - right_margin
+            anticheat_x = card_width - badge_width - right_margin
             anticheat_y = badge_y_positions[-1] + badge_spacing if badge_y_positions else top_y
             self.anticheatLabel.move(anticheat_x, anticheat_y)
 

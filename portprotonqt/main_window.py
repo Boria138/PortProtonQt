@@ -518,7 +518,7 @@ class MainWindow(QMainWindow):
         sliderLayout = QHBoxLayout()
         sliderLayout.addStretch()  # сдвигаем ползунок вправо
         self.sizeSlider = QSlider(Qt.Orientation.Horizontal)
-        self.sizeSlider.setMinimum(150)
+        self.sizeSlider.setMinimum(200)
         self.sizeSlider.setMaximum(250)
         self.sizeSlider.setValue(self.card_width)
         self.sizeSlider.setTickInterval(10)
