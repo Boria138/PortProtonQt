@@ -44,6 +44,7 @@ AppDir:
       - libgssapi-krb5-2
       - libxcb-cursor0
       - libimage-exiftool-perl
+      - xdg-utils
     exclude: []
 
   runtime:

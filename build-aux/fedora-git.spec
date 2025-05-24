@@ -42,6 +42,7 @@ Requires:       python3dist(vdf)
 Requires:       python3dist(pefile)
 Requires:       python3dist(pillow)
 Requires:       perl-Image-ExifTool
+Requires:       xdg-utils
 
 %description -n python3-%{pypi_name}-git
 PortProtonQt is a modern graphical user interface for the PortProton project,
