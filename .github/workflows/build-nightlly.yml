@@ -36,24 +36,6 @@ jobs:
           name: PortProtonQt-AppImage
           path: build-aux/PortProtonQt*.AppImage
 
-  build-deb:
-    if: github.repository == 'Boria138/PortProtonQt'
-    name: Build DEB
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build DEB
-        run: |
-          cd build-aux
-          bash deb_builld.sh
-
-      - name: Upload DEB
-        uses: actions/upload-artifact@v4
-        with:
-          name: PortProtonQt-DEB
-          path: /tmp/portprotonqt.build/*
-
   build-fedora:
     if: github.repository == 'Boria138/PortProtonQt'
     name: Build Fedora RPM
@@ -155,7 +137,7 @@ jobs:
   release:
     if: github.repository == 'Boria138/PortProtonQt'
     name: Create Nightly Release
-    needs: [build-appimage, build-deb, build-fedora, build-arch]
+    needs: [build-appimage, build-arch, build-fedora]
     runs-on: ubuntu-latest
     permissions:
       contents: write

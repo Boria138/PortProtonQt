@@ -6,7 +6,7 @@ arch=('any')
 url="https://github.com/Boria138/PortProtonQt"
 license=('MIT')
 depends=('python-numpy' 'python-requests' 'python-babel' 'python-evdev' 'python-pyudev' 'python-orjson'
-    'python-psutil' 'python-tqdm' 'python-vdf' 'pyside6' 'icoextract' 'python-pillow' 'perl-image-exiftool' 'xdg-utils')
+    'python-psutil' 'python-tqdm' 'python-vdf' 'pyside6' 'icoextract' 'python-pillow' 'perl-image-exiftool', 'xdg-utils')
 makedepends=('python-'{'build','installer','setuptools','wheel'})
 source=("git+https://github.com/Boria138/PortProtonQt.git#tag=$pkgver")
 sha256sums=('SKIP')

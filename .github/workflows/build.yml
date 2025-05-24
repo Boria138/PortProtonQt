@@ -34,68 +34,6 @@ jobs:
           name: PortProtonQt-AppImage
           path: build-aux/PortProtonQt*.AppImage*
 
-  build-deb:
-    if: github.repository == 'Boria138/PortProtonQt'
-    name: Build DEB
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build DEB
-        run: |
-          cd build-aux
-          bash deb_builld.sh
-
-      - name: Upload DEB
-        uses: actions/upload-artifact@v4
-        with:
-          name: PortProtonQt-DEB
-          path: /tmp/portprotonqt.build/*
-
-  build-fedora:
-    name: Build Fedora RPM
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        fedora_version: [40, 41, 42, rawhide]
-
-    container:
-      image: fedora:${{ matrix.fedora_version }}
-      options: --privileged
-
-    steps:
-      - name: Install build dependencies
-        run: |
-          dnf install -y git rpmdevtools python3-devel python3-wheel python3-pip \
-                         python3-build pyproject-rpm-macros python3-setuptools \
-                         redhat-rpm-config
-
-      - name: Setup rpmbuild environment
-        run: |
-          useradd rpmbuild -u 5002 -g users || true
-          mkdir -p /home/rpmbuild/{BUILD,RPMS,SPECS,SRPMS,SOURCES}
-          chown -R rpmbuild:users /home/rpmbuild
-          echo '%_topdir /home/rpmbuild' > /home/rpmbuild/.rpmmacros
-
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Copy fedora.spec
-        run: |
-          cp build-aux/fedora.spec /home/rpmbuild/SPECS/${{ env.PACKAGE }}.spec
-          chown -R rpmbuild:users /home/rpmbuild
-
-      - name: Build RPM
-        run: |
-          su rpmbuild -c "rpmbuild -ba /home/rpmbuild/SPECS/${{ env.PACKAGE }}.spec"
-
-      - name: Upload RPM package
-        uses: actions/upload-artifact@v4
-        with:
-          name: PortProtonQt-RPM-Fedora-${{ matrix.fedora_version }}
-          path: /home/rpmbuild/RPMS/**/*.rpm
-
   build-arch:
     name: Build Arch Package
     runs-on: ubuntu-22.04
@@ -148,9 +86,53 @@ jobs:
           name: PortProtonQt-Arch
           path: ${{ env.PKGDEST }}/*
 
+  build-fedora:
+    name: Build Fedora RPM
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        fedora_version: [40, 41, 42, rawhide]
+
+    container:
+      image: fedora:${{ matrix.fedora_version }}
+      options: --privileged
+
+    steps:
+      - name: Install build dependencies
+        run: |
+          dnf install -y git rpmdevtools python3-devel python3-wheel python3-pip \
+                         python3-build pyproject-rpm-macros python3-setuptools \
+                         redhat-rpm-config
+
+      - name: Setup rpmbuild environment
+        run: |
+          useradd rpmbuild -u 5002 -g users || true
+          mkdir -p /home/rpmbuild/{BUILD,RPMS,SPECS,SRPMS,SOURCES}
+          chown -R rpmbuild:users /home/rpmbuild
+          echo '%_topdir /home/rpmbuild' > /home/rpmbuild/.rpmmacros
+
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Copy fedora.spec
+        run: |
+          cp build-aux/fedora.spec /home/rpmbuild/SPECS/${{ env.PACKAGE }}.spec
+          chown -R rpmbuild:users /home/rpmbuild
+
+      - name: Build RPM
+        run: |
+          su rpmbuild -c "rpmbuild -ba /home/rpmbuild/SPECS/${{ env.PACKAGE }}.spec"
+
+      - name: Upload RPM package
+        uses: actions/upload-artifact@v4
+        with:
+          name: PortProtonQt-RPM-Fedora-${{ matrix.fedora_version }}
+          path: /home/rpmbuild/RPMS/**/*.rpm
+
   release:
     name: Create and Publish Release
-    needs: [build-appimage, build-deb, build-fedora, build-arch]
+    needs: [build-appimage, build-arch, build-fedora]
     runs-on: ubuntu-latest
     permissions:
       contents: write
