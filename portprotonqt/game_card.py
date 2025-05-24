@@ -222,17 +222,18 @@ class GameCard(QFrame):
                 return ""
             translations = {
                 "supported": _("Supported"),
-                "denied": _("Denied"),
-                "unknown": _("Unknown"),
-                "planned": _("Planned")
+                "running": _("Running"),
+                "planned": _("Planned"),
+                "broken":  _("Broken"),
+                "denied": _("Denied")
             }
             return translations.get(status.lower(), "")
 
     def getAntiCheatIconFilename(self, status):
         status = status.lower()
-        if status == "supported":
+        if status in ("supported", "running"):
             return "platinum-gold"
-        elif status in ("denied", "planned", "unknown"):
+        elif status in ("denied", "planned", "broken"):
             return "broken"
         return ""
 
