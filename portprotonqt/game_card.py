@@ -245,7 +245,7 @@ class GameCard(QFrame):
             "gold": _("Gold"),
             "silver":  _("Silver"),
             "bronze": _("Bronze"),
-            "borked": _("Borked"),
+            "borked": _("Broken"),
             "pending":  _("Pending")
         }
         return translations.get(tier.lower(), "")

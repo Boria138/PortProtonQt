@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-05-24 19:45+0500\n"
-"PO-Revision-Date: 2025-05-24 19:45+0500\n"
+"POT-Creation-Date: 2025-05-24 22:14+0500\n"
+"PO-Revision-Date: 2025-05-24 22:14+0500\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
@@ -228,14 +228,17 @@ msgstr "Запустить игру \"{name}\" с помощью PortProton"
 msgid "Supported"
 msgstr "Поддерживается"
 
-msgid "Denied"
-msgstr "Отказано"
-
-msgid "Unknown"
-msgstr "Неизвестен"
+msgid "Running"
+msgstr "Запускается"
 
 msgid "Planned"
 msgstr "Планируется"
+
+msgid "Broken"
+msgstr "Сломано"
+
+msgid "Denied"
+msgstr "Отказано"
 
 msgid "Platinum"
 msgstr "Платина"
@@ -248,9 +251,6 @@ msgstr "Серебро"
 
 msgid "Bronze"
 msgstr "Бронза"
-
-msgid "Borked"
-msgstr "Сломано"
 
 msgid "Pending"
 msgstr "В ожидании"
@@ -371,6 +371,9 @@ msgstr "Применить тему"
 
 msgid "No link"
 msgstr "Нет ссылки"
+
+msgid "Unknown"
+msgstr "Неизвестен"
 
 msgid "Name:"
 msgstr "Название:"

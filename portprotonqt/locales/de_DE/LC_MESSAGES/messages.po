@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-05-24 19:45+0500\n"
+"POT-Creation-Date: 2025-05-24 22:14+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: de_DE\n"
@@ -221,13 +221,16 @@ msgstr ""
 msgid "Supported"
 msgstr ""
 
-msgid "Denied"
-msgstr ""
-
-msgid "Unknown"
+msgid "Running"
 msgstr ""
 
 msgid "Planned"
+msgstr ""
+
+msgid "Broken"
+msgstr ""
+
+msgid "Denied"
 msgstr ""
 
 msgid "Platinum"
@@ -240,9 +243,6 @@ msgid "Silver"
 msgstr ""
 
 msgid "Bronze"
-msgstr ""
-
-msgid "Borked"
 msgstr ""
 
 msgid "Pending"
@@ -363,6 +363,9 @@ msgid "Apply Theme"
 msgstr ""
 
 msgid "No link"
+msgstr ""
+
+msgid "Unknown"
 msgstr ""
 
 msgid "Name:"
