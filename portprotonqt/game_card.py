@@ -1,6 +1,6 @@
 from PySide6.QtGui import QPainter, QPen, QColor, QConicalGradient, QBrush, QDesktopServices
 from PySide6.QtCore import QEasingCurve, Signal, Property, Qt, QPropertyAnimation, QByteArray, QUrl
-from PySide6.QtWidgets import QFrame, QGraphicsDropShadowEffect, QVBoxLayout, QWidget, QStackedLayout, QLabel, QMenu
+from PySide6.QtWidgets import QFrame, QGraphicsDropShadowEffect, QVBoxLayout, QWidget, QStackedLayout, QLabel
 from collections.abc import Callable
 import portprotonqt.themes.standart.styles as default_styles
 from portprotonqt.image_utils import load_pixmap_async, round_corners
@@ -9,15 +9,13 @@ from portprotonqt.config_utils import read_favorites, save_favorites
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.config_utils import read_theme_from_config
 from portprotonqt.custom_widgets import ClickableLabel
-from portprotonqt.steam_api import is_game_in_steam
 import weakref
-import os
-import subprocess
 from typing import cast
 
 class GameCard(QFrame):
     borderWidthChanged = Signal()
     gradientAngleChanged = Signal()
+    # Signals for context menu actions
     editShortcutRequested = Signal(str, str, str) # name, exec_line, cover_path
     deleteGameRequested = Signal(str, str)        # name, exec_line
     addToMenuRequested = Signal(str, str)         # name, exec_line
@@ -30,7 +28,7 @@ class GameCard(QFrame):
 
     def __init__(self, name, description, cover_path, appid, controller_support, exec_line,
                  last_launch, formatted_playtime, protondb_tier, last_launch_ts, playtime_seconds, steam_game,
-                 select_callback, theme=None, card_width=250, parent=None):
+                 select_callback, theme=None, card_width=250, parent=None, context_menu_manager=None):
         super().__init__(parent)
         self.name = name
         self.description = description
@@ -46,8 +44,9 @@ class GameCard(QFrame):
         self.playtime_seconds = playtime_seconds
 
         self.select_callback = select_callback
+        self.context_menu_manager = context_menu_manager
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self.customContextMenuRequested.connect(self.show_context_menu)
+        self.customContextMenuRequested.connect(self._show_context_menu)
         self.theme_manager = ThemeManager()
         self.theme = theme if theme is not None else default_styles
 
@@ -186,6 +185,11 @@ class GameCard(QFrame):
         nameLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
         nameLabel.setStyleSheet(self.theme.GAME_CARD_NAME_LABEL_STYLE)
         layout.addWidget(nameLabel)
+
+    def _show_context_menu(self, pos):
+        """Delegate context menu display to ContextMenuManager."""
+        if self.context_menu_manager:
+            self.context_menu_manager.show_context_menu(self, pos)
 
     def getProtonDBText(self, tier):
         if not tier:
@@ -416,71 +420,3 @@ class GameCard(QFrame):
             )
         else:
             super().keyPressEvent(event)
-
-    def show_context_menu(self, pos):
-        menu = QMenu(self)
-        if self.steam_game != "true":
-            desktop_dir = subprocess.check_output(['xdg-user-dir', 'DESKTOP']).decode('utf-8').strip()
-            desktop_path = os.path.join(desktop_dir, f"{self.name}.desktop")
-            if os.path.exists(desktop_path):
-                remove_action = menu.addAction(_("Remove from Desktop"))
-                remove_action.triggered.connect(self.remove_from_desktop)
-            else:
-                add_action = menu.addAction(_("Add to Desktop"))
-                add_action.triggered.connect(self.add_to_desktop)
-
-            edit_action = menu.addAction(_("Edit Shortcut"))
-            edit_action.triggered.connect(self.edit_shortcut)
-
-            delete_action = menu.addAction(_("Delete from PortProton"))
-            delete_action.triggered.connect(self.delete_game)
-
-            open_folder_action = menu.addAction(_("Open Game Folder"))
-            open_folder_action.triggered.connect(self.open_game_folder)
-
-            applications_dir = os.path.join(os.path.expanduser("~"), ".local", "share", "applications")
-            desktop_path = os.path.join(applications_dir, f"{self.name}.desktop")
-            if os.path.exists(desktop_path):
-                remove_action = menu.addAction(_("Remove from Menu"))
-                remove_action.triggered.connect(self.remove_from_menu)
-            else:
-                add_action = menu.addAction(_("Add to Menu"))
-                add_action.triggered.connect(self.add_to_menu)
-
-            # Add Steam-related actions
-            is_in_steam = is_game_in_steam(self.name)
-            if is_in_steam:
-                remove_steam_action = menu.addAction(_("Remove from Steam"))
-                remove_steam_action.triggered.connect(self.remove_from_steam)
-            else:
-                add_steam_action = menu.addAction(_("Add to Steam"))
-                add_steam_action.triggered.connect(self.add_to_steam)
-
-        menu.exec(self.mapToGlobal(pos))
-
-    def edit_shortcut(self):
-        self.editShortcutRequested.emit(self.name, self.exec_line, self.cover_path)
-
-    def delete_game(self):
-        self.deleteGameRequested.emit(self.name, self.exec_line)
-
-    def add_to_menu(self):
-        self.addToMenuRequested.emit(self.name, self.exec_line)
-
-    def remove_from_menu(self):
-        self.removeFromMenuRequested.emit(self.name)
-
-    def add_to_desktop(self):
-        self.addToDesktopRequested.emit(self.name, self.exec_line)
-
-    def remove_from_desktop(self):
-        self.removeFromDesktopRequested.emit(self.name)
-
-    def add_to_steam(self):
-        self.addToSteamRequested.emit(self.name, self.exec_line, self.cover_path)
-
-    def remove_from_steam(self):
-        self.removeFromSteamRequested.emit(self.name, self.exec_line)
-
-    def open_game_folder(self):
-        self.openGameFolderRequested.emit(self.name, self.exec_line)
