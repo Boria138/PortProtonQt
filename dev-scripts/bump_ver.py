@@ -10,6 +10,7 @@ BASE_DIR = Path(__file__).parent.parent
 APPIMAGE_RECIPE = BASE_DIR / "build-aux" / "AppImageBuilder.yml"
 ARCH_PKGBUILD = BASE_DIR / "build-aux" / "PKGBUILD"
 FEDORA_SPEC = BASE_DIR / "build-aux" / "fedora.spec"
+DEB_SCRIPT = BASE_DIR / "build-aux" / "deb_builld.sh"
 PYPROJECT = BASE_DIR / "pyproject.toml"
 APP_PY = BASE_DIR / "portprotonqt" / "app.py"
 BUILD_WORKFLOW = BASE_DIR / ".github" / "workflows" / "build.yml"
@@ -99,7 +100,8 @@ def main():
         (FEDORA_SPEC, bump_fedora),
         (PYPROJECT, bump_pyproject),
         (APP_PY, bump_app_py),
-        (BUILD_WORKFLOW, bump_workflow)
+        (BUILD_WORKFLOW, bump_workflow),
+        (DEB_SCRIPT, bump_workflow)
     ]
 
     updated = []
