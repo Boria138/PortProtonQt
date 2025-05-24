@@ -132,7 +132,7 @@ class InputManager(QObject):
         if isinstance(focused, GameCard):
             if key == Qt.Key.Key_F10 and Qt.KeyboardModifier.ShiftModifier:
                 pos = QPoint(focused.width() // 2, focused.height() // 2)
-                focused.show_context_menu(pos)
+                focused._show_context_menu(pos)
                 return True
 
         # 6) Навигация по карточкам в Library
@@ -327,7 +327,7 @@ class InputManager(QObject):
         if isinstance(focused, GameCard):
             if button_code in BUTTONS['context_menu']:
                 pos = QPoint(focused.width() // 2, focused.height() // 2)
-                focused.show_context_menu(pos)
+                focused._show_context_menu(pos)
                 return
 
         # Game launch on detail page
