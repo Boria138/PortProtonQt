@@ -1,5 +1,6 @@
 import os
 import configparser
+import shutil
 from portprotonqt.logger import get_logger
 
 logger = get_logger(__name__)
@@ -456,3 +457,28 @@ def save_window_geometry(width: int, height: int):
     cp["MainWindow"]["height"] = str(height)
     with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
         cp.write(configfile)
+
+def reset_config():
+    """
+    Сбрасывает конфигурационный файл, удаляя его.
+    После этого все настройки будут возвращены к значениям по умолчанию при следующем чтении.
+    """
+    if os.path.exists(CONFIG_FILE):
+        try:
+            os.remove(CONFIG_FILE)
+            logger.info("Конфигурационный файл %s удалён", CONFIG_FILE)
+        except Exception as e:
+            logger.error("Ошибка при удалении конфигурационного файла: %s", e)
+
+def clear_cache():
+    """
+    Очищает кэш PortProtonQT, удаляя папку кэша.
+    """
+    xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
+    cache_dir = os.path.join(xdg_cache_home, "PortProtonQT")
+    if os.path.exists(cache_dir):
+        try:
+            shutil.rmtree(cache_dir)
+            logger.info("Кэш PortProtonQT удалён: %s", cache_dir)
+        except Exception as e:
+            logger.error("Ошибка при удалении кэша: %s", e)

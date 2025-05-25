@@ -21,7 +21,7 @@ from portprotonqt.time_utils import save_last_launch, get_last_launch, parse_pla
 from portprotonqt.config_utils import (
     get_portproton_location, read_theme_from_config, save_theme_to_config, parse_desktop_entry, load_theme_metainfo, read_time_config, read_card_size, save_card_size,
     read_sort_method, read_display_filter, read_favorites, save_favorites, save_time_config, save_sort_method, save_display_filter, save_proxy_config, read_proxy_config,
-    read_fullscreen_config, save_fullscreen_config, read_window_geometry, save_window_geometry
+    read_fullscreen_config, save_fullscreen_config, read_window_geometry, save_window_geometry, reset_config, clear_cache
 )
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
@@ -852,6 +852,10 @@ class MainWindow(QMainWindow):
 
         layout.addLayout(formLayout)
 
+        # Кнопки
+        buttonsLayout = QHBoxLayout()
+        buttonsLayout.setSpacing(10)
+
         # Кнопка сохранения настроек
         self.saveButton = AutoSizeButton(
             _("Save Settings"),
@@ -860,10 +864,64 @@ class MainWindow(QMainWindow):
         self.saveButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.saveButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.saveButton.clicked.connect(self.savePortProtonSettings)
-        layout.addWidget(self.saveButton)
+        buttonsLayout.addWidget(self.saveButton)
 
+        # Кнопка сброса настроек
+        self.resetSettingsButton = AutoSizeButton(
+            _("Reset Settings"),
+            icon=self.theme_manager.get_icon("update")
+        )
+        self.resetSettingsButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        self.resetSettingsButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.resetSettingsButton.clicked.connect(self.resetSettings)
+        buttonsLayout.addWidget(self.resetSettingsButton)
+
+        # Кнопка очистки кэша
+        self.clearCacheButton = AutoSizeButton(
+            _("Clear Cache"),
+            icon=self.theme_manager.get_icon("update")
+        )
+        self.clearCacheButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        self.clearCacheButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.clearCacheButton.clicked.connect(self.clearCache)
+        buttonsLayout.addWidget(self.clearCacheButton)
+
+        layout.addLayout(buttonsLayout)
         layout.addStretch(1)
         self.stackedWidget.addWidget(self.portProtonWidget)
+
+    def resetSettings(self):
+        """Сбрасывает настройки и перезапускает приложение."""
+        reply = QMessageBox.question(
+            self,
+            _("Confirm Reset"),
+            _("Are you sure you want to reset all settings? This action cannot be undone."),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+        if reply == QMessageBox.StandardButton.Yes:
+            reset_config()
+
+            # Показываем сообщение
+            self.statusBar().showMessage(_("Settings reset. Restarting..."), 3000)
+
+            # Перезапускаем приложение
+            QTimer.singleShot(1000, lambda: self.restart_application())
+
+    def clearCache(self):
+        """Очищает кэш."""
+        reply = QMessageBox.question(
+            self,
+            _("Confirm Clear Cache"),
+            _("Are you sure you want to clear the cache? This action cannot be undone."),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+        if reply == QMessageBox.StandardButton.Yes:
+            clear_cache()
+
+            # Показываем сообщение
+            self.statusBar().showMessage(_("Cache cleared"), 3000)
 
     def savePortProtonSettings(self):
         """
