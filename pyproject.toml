@@ -101,7 +101,6 @@ ignore = [
 
 [dependency-groups]
 dev = [
-    "commitizen>=4.7.2",
     "pre-commit>=4.2.0",
     "pyaspeller>=2.0.2",
     "pyright>=1.1.400",
