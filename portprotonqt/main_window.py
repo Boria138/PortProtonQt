@@ -547,6 +547,22 @@ class MainWindow(QMainWindow):
         self.sizeSlider.valueChanged.connect(lambda val: self.sliderDebounceTimer.start())
         self.sliderDebounceTimer.timeout.connect(on_slider_value_changed)
 
+        def calculate_card_width():
+                available_width = scrollArea.width() - 20  # Учитываем отступы scrollArea
+                spacing = self.gamesListLayout._spacing  # Отступ между карточками (5 по умолчанию)
+                target_cards_per_row = 6  # Целевое количество карточек в ряду
+                # Вычисляем ширину карточки: (доступная ширина - отступы) / количество карточек
+                calculated_width = (available_width - spacing * (target_cards_per_row - 1)) // target_cards_per_row
+                # Ограничиваем ширину разумными значениями
+                calculated_width = max(200, min(calculated_width, 250))
+                if not self.sizeSlider.value() == self.card_width:  # Если слайдер не изменён вручную
+                    self.card_width = calculated_width
+                    self.sizeSlider.setValue(self.card_width)
+                    self.sizeSlider.setToolTip(f"{self.card_width} px")
+                    self.updateGameGrid()
+
+        QTimer.singleShot(0, calculate_card_width)
+
         self.stackedWidget.addWidget(self.gamesLibraryWidget)
 
         # Первичная отрисовка карточек:

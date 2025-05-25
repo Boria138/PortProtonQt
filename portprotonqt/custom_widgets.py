@@ -61,7 +61,7 @@ class FlowLayout(QLayout):
         self.itemList = []
         # Устанавливаем отступы контейнера в 0 и задаем spacing между карточками
         self.setContentsMargins(0, 0, 0, 0)
-        self._spacing = 5  # отступ между карточками
+        self._spacing = 3  # отступ между карточками
         self._max_scale = 1.2  # максимальное увеличение карточек (например, на 20%)
 
     def addItem(self, item: QLayoutItem) -> None:
@@ -238,7 +238,7 @@ class ClickableLabel(QLabel):
 
 class AutoSizeButton(QPushButton):
     def __init__(self, *args, icon=None, icon_size=16,
-                 min_font_size=8, max_font_size=14, padding=20, update_size=True, **kwargs):
+                 min_font_size=6, max_font_size=14, padding=20, update_size=True, **kwargs):
         if args and isinstance(args[0], str):
             text = args[0]
             parent = kwargs.get("parent", None)
