@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-05-24 22:14+0500\n"
-"PO-Revision-Date: 2025-05-24 22:14+0500\n"
+"POT-Creation-Date: 2025-05-25 09:53+0500\n"
+"PO-Revision-Date: 2025-05-25 09:53+0500\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
@@ -359,6 +359,32 @@ msgstr "Режим полноэкранного отображения прил�
 
 msgid "Save Settings"
 msgstr "Сохранить настройки"
+
+msgid "Reset Settings"
+msgstr "Сбросить настройки"
+
+msgid "Clear Cache"
+msgstr "Очистить кэш"
+
+msgid "Confirm Reset"
+msgstr "Подтвердите удаление"
+
+msgid "Are you sure you want to reset all settings? This action cannot be undone."
+msgstr ""
+"Вы уверены, что хотите сбросить все настройки? Это действие нельзя "
+"отменить."
+
+msgid "Settings reset. Restarting..."
+msgstr "Настройки сброшены. Перезапуск..."
+
+msgid "Confirm Clear Cache"
+msgstr "Подтвердите очистку кэша"
+
+msgid "Are you sure you want to clear the cache? This action cannot be undone."
+msgstr "Вы уверены, что хотите очистить кэш? Это действие нельзя отменить."
+
+msgid "Cache cleared"
+msgstr "Кэш очищен"
 
 msgid "Settings saved"
 msgstr "Настройки сохранены"
