@@ -64,7 +64,13 @@ class MainWindow(QMainWindow):
         self.theme_manager = ThemeManager()
         selected_theme = read_theme_from_config()
         self.current_theme_name = selected_theme
-        self.theme = self.theme_manager.apply_theme(selected_theme)
+        try:
+            self.theme = self.theme_manager.apply_theme(selected_theme)
+        except FileNotFoundError:
+            logger.warning(f"Тема '{selected_theme}' не найдена, применяется стандартная тема 'standart'")
+            self.theme = self.theme_manager.apply_theme("standart")
+            self.current_theme_name = "standart"
+            save_theme_to_config("standart")
         if not self.theme:
             self.theme = default_styles
         self.card_width = read_card_size()
