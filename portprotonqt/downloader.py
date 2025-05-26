@@ -2,6 +2,7 @@ from PySide6.QtCore import QObject, Signal, QThread
 import threading
 import os
 import requests
+import orjson
 import socket
 from pathlib import Path
 from tqdm import tqdm
@@ -242,3 +243,68 @@ class Downloader(QObject):
     def is_cached(self, url):
         with self._global_lock:
             return url in self._cache
+
+    def get_latest_legendary_release(self):
+        """Get the latest legendary release info from GitHub API."""
+        try:
+            api_url = "https://api.github.com/repos/derrod/legendary/releases/latest"
+            response = requests.get(api_url, timeout=10)
+            response.raise_for_status()
+
+            release_data = orjson.loads(response.content)
+
+            # Find the Linux binary asset
+            for asset in release_data.get('assets', []):
+                if asset['name'] == 'legendary' and 'linux' in asset.get('content_type', '').lower():
+                    return {
+                        'version': release_data['tag_name'],
+                        'download_url': asset['browser_download_url'],
+                        'size': asset['size']
+                    }
+
+            # Fallback: look for asset named just "legendary"
+            for asset in release_data.get('assets', []):
+                if asset['name'] == 'legendary':
+                    return {
+                        'version': release_data['tag_name'],
+                        'download_url': asset['browser_download_url'],
+                        'size': asset['size']
+                    }
+
+            logger.warning("Could not find legendary binary in latest release assets")
+            return None
+
+        except requests.RequestException as e:
+            logger.error(f"Failed to fetch latest legendary release info: {e}")
+            return None
+        except (KeyError, orjson.JSONDecodeError) as e:
+            logger.error(f"Failed to parse legendary release info: {e}")
+            return None
+
+    def download_legendary_binary(self, callback: Callable[[str | None], None] | None = None):
+        """Download the latest legendary binary for Linux from GitHub releases."""
+        if not self.has_internet():
+            logger.warning("No internet connection, skipping legendary binary download")
+            if callback:
+                callback(None)
+            return None
+
+        # Get latest release info
+        latest_release = self.get_latest_legendary_release()
+        if not latest_release:
+            logger.error("Could not determine latest legendary version, falling back to hardcoded version")
+            # Fallback to hardcoded version
+            binary_url = "https://github.com/derrod/legendary/releases/download/0.20.34/legendary"
+            version = "0.20.34"
+        else:
+            binary_url = latest_release['download_url']
+            version = latest_release['version']
+            logger.info(f"Found latest legendary version: {version}")
+
+        local_path = os.path.join(
+            os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache")),
+            "PortProtonQT", "legendary_cache", "legendary"
+        )
+
+        logger.info(f"Downloading legendary binary version {version} from {binary_url} to {local_path}")
+        return self.download_async(binary_url, local_path, timeout=5, callback=callback)

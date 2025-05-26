@@ -28,7 +28,7 @@ from portprotonqt.config_utils import (
 )
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
-
+from portprotonqt.downloader import Downloader
 
 from PySide6.QtWidgets import (QLineEdit, QMainWindow, QStatusBar, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox, QScrollArea, QSlider,
                                QDialog, QFormLayout, QFrame, QGraphicsDropShadowEffect, QMessageBox, QGraphicsEffect, QGraphicsOpacityEffect, QApplication, QPushButton, QProgressBar, QCheckBox)
@@ -70,9 +70,8 @@ class MainWindow(QMainWindow):
         os.makedirs(self.legendary_config_path, exist_ok=True)
         os.environ["LEGENDARY_CONFIG_PATH"] = self.legendary_config_path
 
-        self.legendary_path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "third-party", "legendary"
-        )
+        self.legendary_path = os.path.join(self.legendary_config_path, "legendary")
+        self.downloader = Downloader(max_workers=4)
 
         # Создаём менеджер тем и читаем, какая тема выбрана
         self.theme_manager = ThemeManager()
@@ -464,13 +463,43 @@ class MainWindow(QMainWindow):
         get_steam_game_info_async(desktop_name, exec_line, on_steam_info)
 
     def _load_egs_games_async(self, callback: Callable[[list[tuple]], None]):
-        logger.debug("Starting to load Epic Games Store games")
+            logger.debug("Starting to load Epic Games Store games")
+            games: list[tuple] = []
+            metadata_dir = Path(self.legendary_config_path) / "metadata"
+            cache_dir = Path(self.legendary_config_path)
+            cache_dir.mkdir(parents=True, exist_ok=True)
+            cache_file = cache_dir / "legendary_games.json"
+            cache_ttl = 3600  # Cache TTL in seconds (e.g., 1 hour)
+
+            # Ensure legendary binary is available
+            self.legendary_path = os.path.join(self.legendary_config_path, "legendary")
+            if not os.path.exists(self.legendary_path):
+                logger.info("Legendary binary not found, downloading...")
+
+                def on_legendary_downloaded(result):
+                    if result:
+                        logger.info("Legendary binary downloaded successfully")
+                        # Make the binary executable
+                        try:
+                            os.chmod(self.legendary_path, 0o755)
+                            logger.debug("Made legendary binary executable")
+                        except Exception as e:
+                            logger.error(f"Failed to make legendary binary executable: {e}")
+
+                        # Continue with loading games
+                        self._continue_loading_egs_games(callback, metadata_dir, cache_dir, cache_file, cache_ttl)
+                    else:
+                        logger.error("Failed to download legendary binary")
+                        callback(games)
+
+                self.downloader.download_legendary_binary(on_legendary_downloaded)
+                return
+            else:
+                # Legendary binary exists, continue with loading games
+                self._continue_loading_egs_games(callback, metadata_dir, cache_dir, cache_file, cache_ttl)
+
+    def _continue_loading_egs_games(self, callback: Callable[[list[tuple]], None], metadata_dir, cache_dir, cache_file, cache_ttl):
         games: list[tuple] = []
-        metadata_dir = Path(self.legendary_config_path) / "metadata"
-        cache_dir = Path(self.legendary_config_path)
-        cache_dir.mkdir(parents=True, exist_ok=True)
-        cache_file = cache_dir / "legendary_games.json"
-        cache_ttl = 3600  # Cache TTL in seconds (e.g., 1 hour)
 
         # Check if cache exists and is fresh, and metadata directory exists
         installed_games = None
