@@ -44,7 +44,7 @@ dependencies = [
 portprotonqt = "portprotonqt.app:main"
 
 [tool.setuptools.package-data]
-"portprotonqt" = ["themes/**/*", "locales/**/*", "custom_data/**/*"]
+"portprotonqt" = ["themes/**/*", "locales/**/*", "custom_data/**/*", "third-party/**/*"]
 
 [tool.setuptools.packages.find]
 exclude = ["build-aux", "dev-scripts", "documentation", "data"]

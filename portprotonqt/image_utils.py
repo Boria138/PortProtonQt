@@ -13,7 +13,7 @@ from collections.abc import Callable
 downloader = Downloader()
 logger = get_logger(__name__)
 
-def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[QPixmap], None]):
+def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[QPixmap], None], app_name: str = ""):
     """
     Асинхронно загружает обложку и вызывает callback с готовым QPixmap.
     """
@@ -28,6 +28,11 @@ def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[Q
         cropped = scaled.copy(x, y, width, height)
         callback(cropped)
 
+    # Cache directory
+    xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
+    image_folder = os.path.join(xdg_cache_home, "PortProtonQT", "images")
+    os.makedirs(image_folder, exist_ok=True)
+
     # Проверяем CDN Steam
     if cover and cover.startswith("https://steamcdn-a.akamaihd.net/steam/apps/"):
         try:
@@ -38,9 +43,6 @@ def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[Q
                 if idx + 1 < len(parts):
                     appid = parts[idx + 1]
             if appid:
-                xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
-                image_folder = os.path.join(xdg_cache_home, "PortProtonQT", "images")
-                os.makedirs(image_folder, exist_ok=True)
                 local_path = os.path.join(image_folder, f"{appid}.jpg")
 
                 if os.path.exists(local_path):
@@ -61,6 +63,36 @@ def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[Q
                 return  # из функции выходим — обработка продолжится в callback
         except Exception as e:
             logger.error(f"Ошибка обработки URL {cover}: {e}")
+
+    # Generic HTTP/HTTPS URL (e.g., EGS covers)
+    if cover and cover.startswith(("http://", "https://")):
+        try:
+            # Generate a cache filename based on URL hash
+            local_path = os.path.join(image_folder, f"{app_name}.jpg")  # Assume JPG for EGS
+            if os.path.exists(local_path):
+                logger.debug("Loading cached EGS cover: %s", local_path)
+                pixmap = QPixmap(local_path)
+                return finish_with(pixmap)
+
+            def on_downloaded(result: str | None):
+                pixmap = QPixmap()
+                if result and os.path.exists(result):
+                    pixmap.load(result)
+                    logger.info("Downloaded EGS cover: %s", result)
+                if pixmap.isNull():
+                    logger.warning("Failed to download EGS cover from %s", cover)
+                    placeholder = QPixmap(theme_manager.get_theme_image("placeholder", current_theme_name))
+                    if placeholder.isNull():
+                        logger.warning("Placeholder image not found for theme %s", current_theme_name)
+                    finish_with(placeholder)
+                else:
+                    finish_with(pixmap)
+
+            logger.debug("Downloading EGS cover: %s", cover)
+            downloader.download_async(cover, local_path, timeout=5, callback=on_downloaded)
+            return
+        except Exception as e:
+            logger.error("Error processing EGS URL %s: %s", cover, str(e))
 
     # Локальный файл
     if cover and QFile.exists(cover):

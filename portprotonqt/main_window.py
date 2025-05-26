@@ -4,6 +4,9 @@ import shutil
 import signal
 import subprocess
 import sys
+import orjson
+from pathlib import Path
+import time
 
 import portprotonqt.themes.standart.styles as default_styles
 import psutil
@@ -15,7 +18,7 @@ from portprotonqt.input_manager import InputManager
 from portprotonqt.context_menu_manager import ContextMenuManager
 
 from portprotonqt.image_utils import load_pixmap_async, round_corners, ImageCarousel
-from portprotonqt.steam_api import get_steam_game_info_async, get_full_steam_game_info_async, get_steam_installed_games
+from portprotonqt.steam_api import get_steam_game_info_async, get_full_steam_game_info_async, get_steam_installed_games, get_weanticheatyet_status_async
 from portprotonqt.theme_manager import ThemeManager, load_theme_screenshots, load_logo
 from portprotonqt.time_utils import save_last_launch, get_last_launch, parse_playtime_file, format_playtime, get_last_launch_timestamp, format_last_launch
 from portprotonqt.config_utils import (
@@ -59,6 +62,17 @@ class MainWindow(QMainWindow):
         self.games_loaded.connect(self.on_games_loaded)
 
         read_time_config()
+        # Set LEGENDARY_CONFIG_PATH to ~/.cache/PortProtonQT/legendary
+        self.legendary_config_path = os.path.join(
+            os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache")),
+            "PortProtonQT", "legendary_cache"
+        )
+        os.makedirs(self.legendary_config_path, exist_ok=True)
+        os.environ["LEGENDARY_CONFIG_PATH"] = self.legendary_config_path
+
+        self.legendary_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "third-party", "legendary"
+        )
 
         # Создаём менеджер тем и читаем, какая тема выбрана
         self.theme_manager = ThemeManager()
@@ -228,20 +242,24 @@ class MainWindow(QMainWindow):
             self._load_steam_games_async(lambda games: self.games_loaded.emit(games))
         elif display_filter == "portproton":
             self._load_portproton_games_async(lambda games: self.games_loaded.emit(games))
+        elif display_filter == "epic":
+            self._load_egs_games_async(lambda games: self.games_loaded.emit(games))
         elif display_filter == "favorites":
-            def on_all_games(portproton_games, steam_games):
-                games = [game for game in portproton_games + steam_games if game[0] in favorites]
+            def on_all_games(portproton_games, steam_games, epic_games):
+                games = [game for game in portproton_games + steam_games + epic_games if game[0] in favorites]
                 self.games_loaded.emit(games)
             self._load_portproton_games_async(
                 lambda pg: self._load_steam_games_async(
-                    lambda sg: on_all_games(pg, sg)
+                    lambda sg: self._load_egs_games_async(
+                        lambda eg: on_all_games(pg, sg, eg)
+                    )
                 )
             )
         else:
-            def on_all_games(portproton_games, steam_games):
+            def on_all_games(portproton_games, steam_games, epic_games):
                 seen = set()
                 games = []
-                for game in portproton_games + steam_games:
+                for game in portproton_games + steam_games + epic_games:
                     name = game[0]
                     if name not in seen:
                         seen.add(name)
@@ -249,7 +267,9 @@ class MainWindow(QMainWindow):
                 self.games_loaded.emit(games)
             self._load_portproton_games_async(
                 lambda pg: self._load_steam_games_async(
-                    lambda sg: on_all_games(pg, sg)
+                    lambda sg: self._load_egs_games_async(
+                        lambda eg: on_all_games(pg, sg, eg)
+                    )
                 )
             )
         return []
@@ -442,6 +462,206 @@ class MainWindow(QMainWindow):
             ))
 
         get_steam_game_info_async(desktop_name, exec_line, on_steam_info)
+
+    def _load_egs_games_async(self, callback: Callable[[list[tuple]], None]):
+        logger.debug("Starting to load Epic Games Store games")
+        games: list[tuple] = []
+        metadata_dir = Path(self.legendary_config_path) / "metadata"
+        cache_dir = Path(self.legendary_config_path)
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        cache_file = cache_dir / "legendary_games.json"
+        cache_ttl = 3600  # Cache TTL in seconds (e.g., 1 hour)
+
+        # Check if cache exists and is fresh, and metadata directory exists
+        installed_games = None
+        use_cache = False
+
+        if cache_file.exists():
+            try:
+                cache_mtime = cache_file.stat().st_mtime
+                if time.time() - cache_mtime < cache_ttl:
+                    # Check if metadata directory exists and is not empty
+                    if metadata_dir.exists() and any(metadata_dir.iterdir()):
+                        logger.debug("Loading Epic Games Store games from cache: %s", cache_file)
+                        with open(cache_file, "rb") as f:
+                            installed_games = orjson.loads(f.read())
+                        logger.info("Loaded %d games from cache", len(installed_games))
+                        use_cache = True
+                    else:
+                        logger.warning("Metadata directory is missing or empty, ignoring cache and fetching fresh data")
+                else:
+                    logger.debug("Cache is expired, fetching fresh data")
+            except orjson.JSONDecodeError as e:
+                logger.warning("Failed to parse cached JSON: %s", str(e))
+            except Exception as e:
+                logger.error("Unexpected error reading cache: %s", str(e))
+
+        # If cache is missing, invalid, or metadata directory is empty, fetch from legendary
+        if not use_cache or installed_games is None:
+            try:
+                logger.info("Executing 'legendary list --json' to retrieve installed EGS games")
+                result = subprocess.run(
+                    [self.legendary_path, "list", "--json"],
+                    capture_output=True,
+                    text=False,
+                    check=True
+                )
+                logger.debug("Parsing JSON output from legendary list command")
+                installed_games = orjson.loads(result.stdout)
+                logger.info("Found %d installed Epic Games Store games: %s",
+                            len(installed_games),
+                            [game.get("app_title", game.get("app_name", "")) for game in installed_games])
+                # Save to cache
+                try:
+                    with open(cache_file, "wb") as f:
+                        f.write(orjson.dumps(installed_games))
+                    logger.debug("Saved Epic Games Store games to cache: %s", cache_file)
+                except Exception as e:
+                    logger.error("Failed to save cache: %s", str(e))
+            except subprocess.CalledProcessError as e:
+                logger.error("Failed to execute legendary list command: %s", str(e))
+                callback(games)
+                return
+            except orjson.JSONDecodeError as e:
+                logger.error("Failed to parse JSON output from legendary list: %s", str(e))
+                callback(games)
+                return
+            except FileNotFoundError as e:
+                logger.error("Legendary executable not found at path %s: %s", self.legendary_path, str(e))
+                callback(games)
+                return
+
+        if not installed_games:
+            logger.info("No installed Epic Games Store games found")
+            callback(games)
+            return
+
+        pending_images = len(installed_games)
+        self.total_games = len(installed_games)
+        self.update_progress.emit(0)
+        self.update_status_message.emit(_("Loading Epic Games Store games..."), 3000)
+
+        # Изменяем подход: используем словарь для хранения результатов
+        game_results: dict[int, tuple] = {}
+
+        def process_game_metadata(game, index):
+            nonlocal processed_count, pending_images
+            app_name = game.get("app_name", "")
+            title = game.get("app_title", app_name)
+            logger.debug("Processing EGS game: %s (app_name: %s)", title, app_name)
+
+            if game.get("is_dlc", False):
+                logger.debug("Skipping DLC/add-on: %s (app_name: %s)", title, app_name)
+                processed_count += 1
+                pending_images -= 1
+                self.pending_games.append(None)
+                self.update_progress.emit(len(self.pending_games))
+                if pending_images == 0:
+                    # Собираем только валидные игры из словаря
+                    final_games = [game_results[i] for i in sorted(game_results.keys())]
+                    logger.info("All EGS games and images processed, invoking callback with %d games", len(final_games))
+                    callback(final_games)
+                return
+
+            metadata_file = metadata_dir / f"{app_name}.json"
+            try:
+                logger.debug("Reading metadata file for %s: %s", app_name, metadata_file)
+                with open(metadata_file, "rb") as f:  # Use binary mode for orjson
+                    metadata = orjson.loads(f.read())
+                logger.debug("Successfully parsed metadata JSON for %s", app_name)
+
+                description = metadata.get("metadata", {}).get("description", "")
+                cover_url = ""
+                for img in metadata.get("metadata", {}).get("keyImages", []):
+                    if img.get("type") in ["DieselGameBoxTall", "Thumbnail"]:
+                        cover_url = img.get("url", "")
+                        break
+                logger.debug("Retrieved metadata for %s: description length=%d, cover_url=%s",
+                            app_name, len(description), cover_url)
+            except FileNotFoundError as e:
+                logger.warning("Metadata file not found for EGS game %s: %s", app_name, str(e))
+                description = ""
+                cover_url = ""
+            except orjson.JSONDecodeError as e:
+                logger.warning("Failed to parse metadata JSON for %s: %s", app_name, str(e))
+                description = ""
+                cover_url = ""
+            except Exception as e:
+                logger.error("Unexpected error processing metadata for %s: %s", app_name, str(e))
+                description = ""
+                cover_url = ""
+
+            # Define local_path based on load_pixmap_async cache path
+            image_folder = os.path.join(os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache")), "PortProtonQT", "images")
+            local_path = os.path.join(image_folder, f"{app_name}.jpg") if cover_url else ""
+
+            # Define default playtime and launch data
+            playtime_seconds = 0
+            last_played = 0
+            last_launch = _("Never")
+            formatted_playtime = ""
+
+            # Optional: Attempt to load playtime data if available
+            if self.portproton_location:
+                statistics_file = os.path.join(self.portproton_location, "data", "tmp", "statistics")
+                try:
+                    playtime_data = parse_playtime_file(statistics_file)
+                    matching_key = next(
+                        (key for key in playtime_data if os.path.basename(key).split('.')[0] == app_name),
+                        None
+                    )
+                    if matching_key:
+                        playtime_seconds = playtime_data[matching_key]
+                        formatted_playtime = format_playtime(playtime_seconds)
+                        last_played = get_last_launch_timestamp(app_name)
+                        last_launch = format_last_launch(datetime.fromtimestamp(last_played)) if last_played else _("Never")
+                except Exception as e:
+                    logger.error(f"Failed to parse playtime data for EGS game {app_name}: {e}")
+
+            def on_cover_loaded(pixmap: QPixmap):
+                nonlocal processed_count, pending_images
+                logger.debug("Cover image loaded for %s: %s", app_name, local_path)
+
+                def on_anticheat_status(status: str):
+                    nonlocal processed_count, pending_images
+                    # Сохраняем результат в словарь
+                    game_results[index] = (
+                        title,
+                        description,
+                        local_path if os.path.exists(local_path) else "",
+                        app_name,
+                        f"legendary:launch:{app_name}",
+                        "",
+                        last_launch,
+                        formatted_playtime,
+                        "",
+                        status,
+                        last_played,
+                        playtime_seconds,
+                        "epic"
+                    )
+                    processed_count += 1
+                    pending_images -= 1
+                    self.pending_games.append(None)
+                    self.update_progress.emit(len(self.pending_games))
+                    logger.info("Processed EGS game %s with cover %s and anticheat status '%s', progress: %d/%d",
+                                title, local_path, status, processed_count, len(installed_games))
+                    if pending_images == 0:
+                        # Собираем только валидные игры из словаря
+                        final_games = [game_results[i] for i in sorted(game_results.keys())]
+                        logger.info("All EGS games and images processed, invoking callback with %d games", len(final_games))
+                        callback(final_games)
+
+                get_weanticheatyet_status_async(title, on_anticheat_status)
+
+            logger.debug("Loading cover image for %s: %s", app_name, cover_url)
+            load_pixmap_async(cover_url, 600, 900, on_cover_loaded, app_name=app_name)
+
+        logger.debug("Starting ThreadPoolExecutor for processing %d EGS games", len(installed_games))
+        processed_count = 0
+        with ThreadPoolExecutor() as executor:
+            for i, game in enumerate(installed_games):
+                executor.submit(process_game_metadata, game, i)
 
     def finalize_game_loading(self):
         logger.info("Finalizing game loading, pending_games: %d", len(self.pending_games))
@@ -812,8 +1032,8 @@ class MainWindow(QMainWindow):
         formLayout.addRow(self.gamesSortTitle, self.gamesSortCombo)
 
         # 3. Games display_filter
-        self.filter_keys = ["all", "steam", "portproton", "favorites"]
-        self.filter_labels = [_("all"), "steam", "portproton", _("favorites")]
+        self.filter_keys = ["all", "steam", "portproton", "favorites", "epic"]
+        self.filter_labels = [_("all"), "steam", "portproton", _("favorites"), "epic games store"]
         self.gamesDisplayCombo = QComboBox()
         self.gamesDisplayCombo.addItems(self.filter_labels)
         self.gamesDisplayCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
@@ -872,6 +1092,37 @@ class MainWindow(QMainWindow):
         self.fullscreenCheckBox.setChecked(current_fullscreen)
         formLayout.addRow(self.fullscreenTitle, self.fullscreenCheckBox)
 
+        # 6. Legendary Authentication
+        self.legendaryAuthButton = AutoSizeButton(
+            _("Open Legendary Login"),
+            icon=self.theme_manager.get_icon("login")
+        )
+        self.legendaryAuthButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        self.legendaryAuthButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.legendaryAuthButton.clicked.connect(self.openLegendaryLogin)
+        self.legendaryAuthTitle = QLabel(_("Legendary Authentication:"))
+        self.legendaryAuthTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.legendaryAuthTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        formLayout.addRow(self.legendaryAuthTitle, self.legendaryAuthButton)
+
+        self.legendaryCodeEdit = QLineEdit()
+        self.legendaryCodeEdit.setPlaceholderText(_("Enter Legendary Authorization Code"))
+        self.legendaryCodeEdit.setStyleSheet(self.theme.PROXY_INPUT_STYLE)
+        self.legendaryCodeEdit.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.legendaryCodeTitle = QLabel(_("Authorization Code:"))
+        self.legendaryCodeTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.legendaryCodeTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        formLayout.addRow(self.legendaryCodeTitle, self.legendaryCodeEdit)
+
+        self.submitCodeButton = AutoSizeButton(
+            _("Submit Code"),
+            icon=self.theme_manager.get_icon("save")
+        )
+        self.submitCodeButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        self.submitCodeButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.submitCodeButton.clicked.connect(self.submitLegendaryCode)
+        formLayout.addRow(QLabel(""), self.submitCodeButton)
+
         layout.addLayout(formLayout)
 
         # Кнопки
@@ -911,6 +1162,47 @@ class MainWindow(QMainWindow):
         layout.addLayout(buttonsLayout)
         layout.addStretch(1)
         self.stackedWidget.addWidget(self.portProtonWidget)
+
+    def openLegendaryLogin(self):
+        """Opens the Legendary login page in the default web browser."""
+        login_url = "https://legendary.gl/epiclogin"
+        try:
+            QDesktopServices.openUrl(QUrl(login_url))
+            self.statusBar().showMessage(_("Opened Legendary login page in browser"), 3000)
+        except Exception as e:
+            logger.error(f"Failed to open Legendary login page: {e}")
+            self.statusBar().showMessage(_("Failed to open Legendary login page"), 3000)
+
+    def submitLegendaryCode(self):
+        """Submits the Legendary authorization code using the legendary CLI."""
+        auth_code = self.legendaryCodeEdit.text().strip()
+        if not auth_code:
+            QMessageBox.warning(self, _("Error"), _("Please enter an authorization code"))
+            return
+
+        try:
+            # Execute legendary auth command
+            result = subprocess.run(
+                [self.legendary_path, "auth", "--code", auth_code],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            logger.info("Legendary authentication successful: %s", result.stdout)
+            self.statusBar().showMessage(_("Successfully authenticated with Legendary"), 3000)
+            self.legendaryCodeEdit.clear()
+            # Reload Epic Games Store games after successful authentication
+            self.games = self.loadGames()
+            self.updateGameGrid()
+        except subprocess.CalledProcessError as e:
+            logger.error("Legendary authentication failed: %s", e.stderr)
+            self.statusBar().showMessage(_("Legendary authentication failed: {0}").format(e.stderr), 5000)
+        except FileNotFoundError:
+            logger.error("Legendary executable not found at %s", self.legendary_path)
+            self.statusBar().showMessage(_("Legendary executable not found"), 5000)
+        except Exception as e:
+            logger.error("Unexpected error during Legendary authentication: %s", str(e))
+            self.statusBar().showMessage(_("Unexpected error during authentication"), 5000)
 
     def resetSettings(self):
         """Сбрасывает настройки и перезапускает приложение."""
