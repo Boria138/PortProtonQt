@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQT 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-05-25 09:53+0500\n"
+"POT-Creation-Date: 2025-05-26 19:05+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -276,6 +276,9 @@ msgstr ""
 msgid "Unknown Game"
 msgstr ""
 
+msgid "Loading Epic Games Store games..."
+msgstr ""
+
 msgid "Game Library"
 msgstr ""
 
@@ -348,6 +351,21 @@ msgstr ""
 msgid "Application Fullscreen Mode:"
 msgstr ""
 
+msgid "Open Legendary Login"
+msgstr ""
+
+msgid "Legendary Authentication:"
+msgstr ""
+
+msgid "Enter Legendary Authorization Code"
+msgstr ""
+
+msgid "Authorization Code:"
+msgstr ""
+
+msgid "Submit Code"
+msgstr ""
+
 msgid "Save Settings"
 msgstr ""
 
@@ -355,6 +373,28 @@ msgid "Reset Settings"
 msgstr ""
 
 msgid "Clear Cache"
+msgstr ""
+
+msgid "Opened Legendary login page in browser"
+msgstr ""
+
+msgid "Failed to open Legendary login page"
+msgstr ""
+
+msgid "Please enter an authorization code"
+msgstr ""
+
+msgid "Successfully authenticated with Legendary"
+msgstr ""
+
+#, python-brace-format
+msgid "Legendary authentication failed: {0}"
+msgstr ""
+
+msgid "Legendary executable not found"
+msgstr ""
+
+msgid "Unexpected error during authentication"
 msgstr ""
 
 msgid "Confirm Reset"

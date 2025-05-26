@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-05-25 09:53+0500\n"
-"PO-Revision-Date: 2025-05-25 09:53+0500\n"
+"POT-Creation-Date: 2025-05-26 19:05+0500\n"
+"PO-Revision-Date: 2025-05-26 19:05+0500\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
@@ -285,6 +285,9 @@ msgstr "Загрузка игр из PortProton..."
 msgid "Unknown Game"
 msgstr "Неизвестная игра"
 
+msgid "Loading Epic Games Store games..."
+msgstr "Загрузка игр из Epic Games Store..."
+
 msgid "Game Library"
 msgstr "Игровая библиотека"
 
@@ -357,6 +360,21 @@ msgstr "Запуск приложения в полноэкранном режи
 msgid "Application Fullscreen Mode:"
 msgstr "Режим полноэкранного отображения приложения:"
 
+msgid "Open Legendary Login"
+msgstr "Открыть браузер для входа в Legendary"
+
+msgid "Legendary Authentication:"
+msgstr "Авторизация в Legendary:"
+
+msgid "Enter Legendary Authorization Code"
+msgstr "Введите код авторизации Legendary"
+
+msgid "Authorization Code:"
+msgstr "Код авторизации:"
+
+msgid "Submit Code"
+msgstr "Отправить код"
+
 msgid "Save Settings"
 msgstr "Сохранить настройки"
 
@@ -365,6 +383,28 @@ msgstr "Сбросить настройки"
 
 msgid "Clear Cache"
 msgstr "Очистить кэш"
+
+msgid "Opened Legendary login page in browser"
+msgstr "Открытие страницы входа в Legendary в браузере"
+
+msgid "Failed to open Legendary login page"
+msgstr "Не удалось открыть страницу входа в Legendary"
+
+msgid "Please enter an authorization code"
+msgstr "Пожалуйста, введите код авторизации"
+
+msgid "Successfully authenticated with Legendary"
+msgstr "Успешная аутентификация с Legendary"
+
+#, python-brace-format
+msgid "Legendary authentication failed: {0}"
+msgstr "Сбой аутентификации в Legendary: {0}"
+
+msgid "Legendary executable not found"
+msgstr "Не найден исполняемый файл Legendary"
+
+msgid "Unexpected error during authentication"
+msgstr "Неожиданная ошибка при аутентификации"
 
 msgid "Confirm Reset"
 msgstr "Подтвердите удаление"
