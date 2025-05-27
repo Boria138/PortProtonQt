@@ -54,13 +54,21 @@ def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[Q
                     if result and os.path.exists(result):
                         pixmap.load(result)
                     if pixmap.isNull():
-                        placeholder = QPixmap(theme_manager.get_theme_image("placeholder", current_theme_name))
-                        finish_with(placeholder)
-                    else:
-                        finish_with(pixmap)
+                        placeholder_path = theme_manager.get_theme_image("placeholder", current_theme_name)
+                        if placeholder_path and QFile.exists(placeholder_path):
+                            pixmap.load(placeholder_path)
+                        else:
+                            logger.warning("Placeholder image not found for theme %s", current_theme_name)
+                            pixmap = QPixmap(width, height)
+                            pixmap.fill(QColor("#333333"))
+                            painter = QPainter(pixmap)
+                            painter.setPen(QPen(QColor("white")))
+                            painter.drawText(pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "No Image")
+                            painter.end()
+                    finish_with(pixmap)
 
                 downloader.download_async(cover, local_path, timeout=5, callback=on_downloaded)
-                return  # из функции выходим — обработка продолжится в callback
+                return
         except Exception as e:
             logger.error(f"Ошибка обработки URL {cover}: {e}")
 
@@ -81,12 +89,18 @@ def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[Q
                     logger.info("Downloaded EGS cover: %s", result)
                 if pixmap.isNull():
                     logger.warning("Failed to download EGS cover from %s", cover)
-                    placeholder = QPixmap(theme_manager.get_theme_image("placeholder", current_theme_name))
-                    if placeholder.isNull():
+                    placeholder_path = theme_manager.get_theme_image("placeholder", current_theme_name)
+                    if placeholder_path and QFile.exists(placeholder_path):
+                        pixmap.load(placeholder_path)
+                    else:
                         logger.warning("Placeholder image not found for theme %s", current_theme_name)
-                    finish_with(placeholder)
-                else:
-                    finish_with(pixmap)
+                        pixmap = QPixmap(width, height)
+                        pixmap.fill(QColor("#333333"))
+                        painter = QPainter(pixmap)
+                        painter.setPen(QPen(QColor("white")))
+                        painter.drawText(pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "No Image")
+                        painter.end()
+                finish_with(pixmap)
 
             logger.debug("Downloading EGS cover: %s", cover)
             downloader.download_async(cover, local_path, timeout=5, callback=on_downloaded)
@@ -104,7 +118,7 @@ def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[Q
     pixmap = QPixmap()
     if placeholder_path and QFile.exists(placeholder_path):
         pixmap.load(placeholder_path)
-    if pixmap.isNull():
+    else:
         pixmap = QPixmap(width, height)
         pixmap.fill(QColor("#333333"))
         painter = QPainter(pixmap)
@@ -112,7 +126,6 @@ def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[Q
         painter.drawText(pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "No Image")
         painter.end()
     finish_with(pixmap)
-
 
 def round_corners(pixmap, radius):
     """

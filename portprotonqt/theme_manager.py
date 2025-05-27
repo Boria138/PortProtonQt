@@ -243,12 +243,12 @@ class ThemeManager:
         """
         image_path = None
         theme_name = theme_name or self.current_theme_name
-        # Поддерживаемые расширения файлов изображений
         supported_extensions = ['.svg', '.png', '.jpg', '.jpeg']
 
-        # Проверка, содержит ли image_name уже расширение
         has_extension = any(image_name.lower().endswith(ext) for ext in supported_extensions)
         base_name = image_name if has_extension else image_name
+
+        # Check theme-specific images
         for themes_dir in THEMES_DIRS:
             theme_folder = os.path.join(str(themes_dir), str(theme_name))
             images_folder = os.path.join(theme_folder, "images")
@@ -267,19 +267,20 @@ class ThemeManager:
                 if image_path:
                     break
 
-            # Если не нашли – используем стандартную тему
-            if not image_path:
-                base_dir = os.path.dirname(os.path.abspath(__file__))
-                standard_images_folder = os.path.join(base_dir, "themes", "standart", "images")
+        # Check standard theme
+        if not image_path:
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            standard_images_folder = os.path.join(base_dir, "themes", "standart", "images")
 
-                # Аналогично проверяем в стандартной теме
-                if has_extension:
-                    image_path = os.path.join(standard_images_folder, base_name)
-                    if not os.path.exists(image_path):
-                        image_path = None
-                else:
-                    for ext in supported_extensions:
-                        candidate = os.path.join(standard_images_folder, base_name + ext)
-                        if os.path.exists(candidate):
-                            image_path = candidate
-                            break
+            if has_extension:
+                image_path = os.path.join(standard_images_folder, base_name)
+                if not os.path.exists(image_path):
+                    image_path = None
+            else:
+                for ext in supported_extensions:
+                    candidate = os.path.join(standard_images_folder, base_name + ext)
+                    if os.path.exists(candidate):
+                        image_path = candidate
+                        break
+
+        return image_path
