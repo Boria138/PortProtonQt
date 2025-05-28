@@ -57,3 +57,18 @@ def get_steam_language():
 
     # Если что-то пошло не так — используем английский по умолчанию
     return 'english'
+
+def get_egs_language():
+    try:
+        # Babel автоматически разбирает сложные локали, например, 'zh_Hant_HK' → 'zh_Hant'
+        system_locale = get_system_locale()
+        if system_locale:
+            locale = Locale.parse(system_locale)
+            # Используем только языковой код ('ru', 'en', и т.д.)
+            language_code = locale.language
+            return language_code
+    except Exception as e:
+        print(f"Failed to detect locale: {e}")
+
+    # Если что-то пошло не так — используем английский по умолчанию
+    return 'en'
