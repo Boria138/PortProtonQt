@@ -33,7 +33,7 @@ def get_egs_game_description_async(
     Asynchronously fetches the game description from the Epic Games Store API.
     Uses per-app cache files named egs_app_{app_name}.json in ~/.cache/PortProtonQT.
     Checks the cache first; if the description is cached and not expired, returns it.
-    Takes the description from data.about.shortDescription[2] if available (len >= 3), else [0].
+    Prioritizes the page with type 'productHome' for the base game description.
     """
     cache_dir = get_cache_dir()
     cache_file = cache_dir / f"egs_app_{app_name.lower().replace(':', '_').replace(' ', '_')}.json"
@@ -98,34 +98,25 @@ def get_egs_game_description_async(
                 callback("")
                 return
 
-            descriptions = (
-                data.get("pages", [{}])[0]
-                    .get("data", {})
-                    .get("about", {})
-                    .get("shortDescription", [])
-            )
-
             description = ""
-            if isinstance(descriptions, list) and descriptions:
-                try:
+            pages = data.get("pages", [])
+            if pages:
+                # Look for the page with type "productHome" for the base game
+                for page in pages:
+                    if page.get("type") == "productHome":
+                        about_data = page.get("data", {}).get("about", {})
+                        description = about_data.get("shortDescription", "")
+                        break
+                else:
+                    # Fallback to first page's description if no productHome is found
                     description = (
-                        descriptions[2]
-                        if len(descriptions) >= 3
-                        else descriptions[0]
-                    ) or ""
-                except (IndexError, TypeError):
-                    logger.warning(
-                        "Error accessing description index for %s", app_name
+                        pages[0].get("data", {})
+                        .get("about", {})
+                        .get("shortDescription", "")
                     )
-                    description = ""
-            elif isinstance(descriptions, str):
-                description = descriptions
-            else:
-                logger.warning(
-                    "Unexpected shortDescription format for %s: %s",
-                    app_name,
-                    type(descriptions)
-                )
+
+            if not description:
+                logger.warning("No valid description found for %s", app_name)
 
             logger.debug(
                 "Fetched EGS description for %s: %s",
