@@ -20,9 +20,9 @@
 
 | Локаль | Прогресс | Переведено |
 | :----- | -------: | ---------: |
-| [de_DE](./de_DE/LC_MESSAGES/messages.po) | 0% | 0 из 151 |
-| [es_ES](./es_ES/LC_MESSAGES/messages.po) | 0% | 0 из 151 |
-| [ru_RU](./ru_RU/LC_MESSAGES/messages.po) | 100% | 151 из 151 |
+| [de_DE](./de_DE/LC_MESSAGES/messages.po) | 0% | 0 из 152 |
+| [es_ES](./es_ES/LC_MESSAGES/messages.po) | 0% | 0 из 152 |
+| [ru_RU](./ru_RU/LC_MESSAGES/messages.po) | 100% | 152 из 152 |
 
 ---
 

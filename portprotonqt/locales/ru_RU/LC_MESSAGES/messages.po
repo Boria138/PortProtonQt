@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-05-26 19:05+0500\n"
-"PO-Revision-Date: 2025-05-26 19:05+0500\n"
+"POT-Creation-Date: 2025-05-29 17:42+0500\n"
+"PO-Revision-Date: 2025-05-29 17:42+0500\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
@@ -225,6 +225,15 @@ msgstr "Обложка не выбрана"
 msgid "Launch game \"{name}\" with PortProton"
 msgstr "Запустить игру \"{name}\" с помощью PortProton"
 
+msgid "Loading Epic Games Store games..."
+msgstr "Загрузка игр из Epic Games Store..."
+
+msgid "No description available"
+msgstr "Описание не найдено"
+
+msgid "Never"
+msgstr "Никогда"
+
 msgid "Supported"
 msgstr "Поддерживается"
 
@@ -276,17 +285,11 @@ msgstr "Темы"
 msgid "Loading Steam games..."
 msgstr "Загрузка игр из Steam..."
 
-msgid "Never"
-msgstr "Никогда"
-
 msgid "Loading PortProton games..."
 msgstr "Загрузка игр из PortProton..."
 
 msgid "Unknown Game"
 msgstr "Неизвестная игра"
-
-msgid "Loading Epic Games Store games..."
-msgstr "Загрузка игр из Epic Games Store..."
 
 msgid "Game Library"
 msgstr "Игровая библиотека"
