@@ -28,6 +28,7 @@
 - Переименован `_get_steam_home` → `get_steam_home`
 - Догика контекстного меню вынесена в `ContextMenuManager`
 - Бейдж Steam теперь открывает Steam Community
+- Изменена лицензия с MIT на GPL-3.0 для совместимости с кодом от legendary
 
 ### Fixed
 - Обработка несуществующей темы с возвратом к “standart”
@@ -37,6 +38,7 @@
 - Бесконечное обращение к get_portproton_location
 - Ссылки на документацию в README
 - traceback при загрузке playsholder при отсутвии обложек
+- Утечки памяти при загрузке обложек
 
 ---
 
