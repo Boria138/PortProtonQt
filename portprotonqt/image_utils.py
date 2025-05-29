@@ -9,45 +9,82 @@ from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.downloader import Downloader
 from portprotonqt.logger import get_logger
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
+from queue import Queue
+import threading
 
 downloader = Downloader()
 logger = get_logger(__name__)
 
+# Глобальная очередь и пул потоков для загрузки изображений
+image_load_queue = Queue()
+image_executor = ThreadPoolExecutor(max_workers=4)
+queue_lock = threading.Lock()
+
 def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[QPixmap], None], app_name: str = ""):
     """
-    Асинхронно загружает обложку и вызывает callback с готовым QPixmap.
+    Асинхронно загружает обложку через очередь задач.
     """
-    theme_manager = ThemeManager()
-    current_theme_name = read_theme_from_config()
+    def process_image():
+        theme_manager = ThemeManager()
+        current_theme_name = read_theme_from_config()
 
-    def finish_with(pixmap: QPixmap):
-        # Обрезаем и масштабируем
-        scaled = pixmap.scaled(width, height, Qt.AspectRatioMode.KeepAspectRatioByExpanding, Qt.TransformationMode.SmoothTransformation)
-        x = (scaled.width() - width) // 2
-        y = (scaled.height() - height) // 2
-        cropped = scaled.copy(x, y, width, height)
-        callback(cropped)
+        def finish_with(pixmap: QPixmap):
+            scaled = pixmap.scaled(width, height, Qt.AspectRatioMode.KeepAspectRatioByExpanding, Qt.TransformationMode.SmoothTransformation)
+            x = (scaled.width() - width) // 2
+            y = (scaled.height() - height) // 2
+            cropped = scaled.copy(x, y, width, height)
+            callback(cropped)
+            # Removed: pixmap = None (unnecessary, causes type error)
 
-    # Cache directory
-    xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
-    image_folder = os.path.join(xdg_cache_home, "PortProtonQT", "images")
-    os.makedirs(image_folder, exist_ok=True)
+        xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
+        image_folder = os.path.join(xdg_cache_home, "PortProtonQT", "images")
+        os.makedirs(image_folder, exist_ok=True)
 
-    # Проверяем CDN Steam
-    if cover and cover.startswith("https://steamcdn-a.akamaihd.net/steam/apps/"):
-        try:
-            parts = cover.split("/")
-            appid = None
-            if "apps" in parts:
-                idx = parts.index("apps")
-                if idx + 1 < len(parts):
-                    appid = parts[idx + 1]
-            if appid:
-                local_path = os.path.join(image_folder, f"{appid}.jpg")
+        if cover and cover.startswith("https://steamcdn-a.akamaihd.net/steam/apps/"):
+            try:
+                parts = cover.split("/")
+                appid = None
+                if "apps" in parts:
+                    idx = parts.index("apps")
+                    if idx + 1 < len(parts):
+                        appid = parts[idx + 1]
+                if appid:
+                    local_path = os.path.join(image_folder, f"{appid}.jpg")
+                    if os.path.exists(local_path):
+                        pixmap = QPixmap(local_path)
+                        finish_with(pixmap)
+                        return
 
+                    def on_downloaded(result: str | None):
+                        pixmap = QPixmap()
+                        if result and os.path.exists(result):
+                            pixmap.load(result)
+                        if pixmap.isNull():
+                            placeholder_path = theme_manager.get_theme_image("placeholder", current_theme_name)
+                            if placeholder_path and QFile.exists(placeholder_path):
+                                pixmap.load(placeholder_path)
+                            else:
+                                pixmap = QPixmap(width, height)
+                                pixmap.fill(QColor("#333333"))
+                                painter = QPainter(pixmap)
+                                painter.setPen(QPen(QColor("white")))
+                                painter.drawText(pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "No Image")
+                                painter.end()
+                        finish_with(pixmap)
+
+                    downloader.download_async(cover, local_path, timeout=5, callback=on_downloaded)
+                    return
+            except Exception as e:
+                logger.error(f"Ошибка обработки URL {cover}: {e}")
+
+        if cover and cover.startswith(("http://", "https://")):
+            try:
+                local_path = os.path.join(image_folder, f"{app_name}.jpg")
                 if os.path.exists(local_path):
                     pixmap = QPixmap(local_path)
-                    return finish_with(pixmap)
+                    finish_with(pixmap)
+                    return
 
                 def on_downloaded(result: str | None):
                     pixmap = QPixmap()
@@ -58,7 +95,6 @@ def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[Q
                         if placeholder_path and QFile.exists(placeholder_path):
                             pixmap.load(placeholder_path)
                         else:
-                            logger.warning("Placeholder image not found for theme %s", current_theme_name)
                             pixmap = QPixmap(width, height)
                             pixmap.fill(QColor("#333333"))
                             painter = QPainter(pixmap)
@@ -69,63 +105,30 @@ def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[Q
 
                 downloader.download_async(cover, local_path, timeout=5, callback=on_downloaded)
                 return
-        except Exception as e:
-            logger.error(f"Ошибка обработки URL {cover}: {e}")
+            except Exception as e:
+                logger.error("Error processing EGS URL %s: %s", cover, str(e))
 
-    # Generic HTTP/HTTPS URL (e.g., EGS covers)
-    if cover and cover.startswith(("http://", "https://")):
-        try:
-            # Generate a cache filename based on URL hash
-            local_path = os.path.join(image_folder, f"{app_name}.jpg")  # Assume JPG for EGS
-            if os.path.exists(local_path):
-                logger.debug("Loading cached EGS cover: %s", local_path)
-                pixmap = QPixmap(local_path)
-                return finish_with(pixmap)
-
-            def on_downloaded(result: str | None):
-                pixmap = QPixmap()
-                if result and os.path.exists(result):
-                    pixmap.load(result)
-                    logger.info("Downloaded EGS cover: %s", result)
-                if pixmap.isNull():
-                    logger.warning("Failed to download EGS cover from %s", cover)
-                    placeholder_path = theme_manager.get_theme_image("placeholder", current_theme_name)
-                    if placeholder_path and QFile.exists(placeholder_path):
-                        pixmap.load(placeholder_path)
-                    else:
-                        logger.warning("Placeholder image not found for theme %s", current_theme_name)
-                        pixmap = QPixmap(width, height)
-                        pixmap.fill(QColor("#333333"))
-                        painter = QPainter(pixmap)
-                        painter.setPen(QPen(QColor("white")))
-                        painter.drawText(pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "No Image")
-                        painter.end()
-                finish_with(pixmap)
-
-            logger.debug("Downloading EGS cover: %s", cover)
-            downloader.download_async(cover, local_path, timeout=5, callback=on_downloaded)
+        if cover and QFile.exists(cover):
+            pixmap = QPixmap(cover)
+            finish_with(pixmap)
             return
-        except Exception as e:
-            logger.error("Error processing EGS URL %s: %s", cover, str(e))
 
-    # Локальный файл
-    if cover and QFile.exists(cover):
-        pixmap = QPixmap(cover)
-        return finish_with(pixmap)
+        placeholder_path = theme_manager.get_theme_image("placeholder", current_theme_name)
+        pixmap = QPixmap()
+        if placeholder_path and QFile.exists(placeholder_path):
+            pixmap.load(placeholder_path)
+        else:
+            pixmap = QPixmap(width, height)
+            pixmap.fill(QColor("#333333"))
+            painter = QPainter(pixmap)
+            painter.setPen(QPen(QColor("white")))
+            painter.drawText(pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "No Image")
+            painter.end()
+        finish_with(pixmap)
 
-    # Placeholder
-    placeholder_path = theme_manager.get_theme_image("placeholder", current_theme_name)
-    pixmap = QPixmap()
-    if placeholder_path and QFile.exists(placeholder_path):
-        pixmap.load(placeholder_path)
-    else:
-        pixmap = QPixmap(width, height)
-        pixmap.fill(QColor("#333333"))
-        painter = QPainter(pixmap)
-        painter.setPen(QPen(QColor("white")))
-        painter.drawText(pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "No Image")
-        painter.end()
-    finish_with(pixmap)
+    with queue_lock:
+        image_load_queue.put(process_image)
+        image_executor.submit(lambda: image_load_queue.get()())
 
 def round_corners(pixmap, radius):
     """
