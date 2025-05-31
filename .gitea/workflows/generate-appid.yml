@@ -1,0 +1,44 @@
+name: Fetch Data
+run-name: Fetch and Write steam apps list
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 1 * *'
+
+jobs:
+  build:
+    if: gitea.repository == 'Boria138/PortProtonQt'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: https://gitea.com/actions/checkout@v4
+
+      - name: Set up Python
+        uses: https://gitea.com/actions/setup-python@v5
+        with:
+          python-version-file: "pyproject.toml"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xz-utils
+
+      - name: Set up dependency
+        run: pip install aiohttp asyncio
+
+      - name: Run get_id.py
+        run: python dev-scripts/get_id.py
+        env:
+          STEAM_KEY: ${{ secrets.STEAM_KEY }}
+
+      - name: git push changes
+        uses: https://github.com/appleboy/git-push-action@v1.0.0
+        with:
+          author_email: teabot@gitea.io
+          author_name: GiteaBot
+          branch: main
+          commit: true
+          no_verify: true
+          commit_message: "chore: autopublish"
+          remote: git@git.linux-gaming.ru:Boria138/PortProtonQt.git
+          ssh_key: ${{ secrets.DEPLOY_KEY }}

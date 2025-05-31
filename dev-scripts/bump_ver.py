@@ -12,12 +12,15 @@ ARCH_PKGBUILD = BASE_DIR / "build-aux" / "PKGBUILD"
 FEDORA_SPEC = BASE_DIR / "build-aux" / "fedora.spec"
 PYPROJECT = BASE_DIR / "pyproject.toml"
 APP_PY = BASE_DIR / "portprotonqt" / "app.py"
-BUILD_WORKFLOW = BASE_DIR / ".github" / "workflows" / "build.yml"
+GITHUB_WORKFLOW = BASE_DIR / ".github" / "workflows" / "build.yml"
+GITEA_WORKFLOW = BASE_DIR / ".gitea" / "workflows" / "build.yml"
 
 def bump_appimage(path: Path, old: str, new: str) -> bool:
     """
     Update only the 'version' field under app_info in AppImageBuilder.yml
     """
+    if not path.exists():
+        return False
     text = path.read_text(encoding='utf-8')
     pattern = re.compile(r"(?m)^(\s*version:\s*)" + re.escape(old) + r"$")
     new_text, count = pattern.subn(lambda m: m.group(1) + new, text)
@@ -30,6 +33,8 @@ def bump_arch(path: Path, old: str, new: str) -> bool:
     """
     Update pkgver in PKGBUILD
     """
+    if not path.exists():
+        return False
     text = path.read_text(encoding='utf-8')
     pattern = re.compile(r"(?m)^(pkgver=)" + re.escape(old) + r"$")
     new_text, count = pattern.subn(lambda m: m.group(1) + new, text)
@@ -42,6 +47,8 @@ def bump_fedora(path: Path, old: str, new: str) -> bool:
     """
     Update only the '%global pypi_version' line in fedora.spec
     """
+    if not path.exists():
+        return False
     text = path.read_text(encoding='utf-8')
     pattern = re.compile(r"(?m)^(%global\s+pypi_version\s+)" + re.escape(old) + r"$")
     new_text, count = pattern.subn(lambda m: m.group(1) + new, text)
@@ -54,6 +61,8 @@ def bump_pyproject(path: Path, old: str, new: str) -> bool:
     """
     Update version in pyproject.toml under [project]
     """
+    if not path.exists():
+        return False
     text = path.read_text(encoding='utf-8')
     pattern = re.compile(r"(?m)^(version\s*=\s*)\"" + re.escape(old) + r"\"$")
     new_text, count = pattern.subn(lambda m: m.group(1) + f'"{new}"', text)
@@ -66,6 +75,8 @@ def bump_app_py(path: Path, old: str, new: str) -> bool:
     """
     Update __app_version__ in app.py
     """
+    if not path.exists():
+        return False
     text = path.read_text(encoding='utf-8')
     pattern = re.compile(r"(?m)^(\s*__app_version__\s*=\s*)\"" + re.escape(old) + r"\"$")
     new_text, count = pattern.subn(lambda m: m.group(1) + f'"{new}"', text)
@@ -76,8 +87,10 @@ def bump_app_py(path: Path, old: str, new: str) -> bool:
 
 def bump_workflow(path: Path, old: str, new: str) -> bool:
     """
-    Update VERSION in GitHub Actions workflow (.github/workflows/build.yml)
+    Update VERSION in GitHub or Gitea Actions workflow
     """
+    if not path.exists():
+        return False
     text = path.read_text(encoding='utf-8')
     pattern = re.compile(r"(?m)^(\s*VERSION:\s*)" + re.escape(old) + r"$")
     new_text, count = pattern.subn(lambda m: m.group(1) + new, text)
@@ -99,7 +112,8 @@ def main():
         (FEDORA_SPEC, bump_fedora),
         (PYPROJECT, bump_pyproject),
         (APP_PY, bump_app_py),
-        (BUILD_WORKFLOW, bump_workflow)
+        (GITHUB_WORKFLOW, bump_workflow),
+        (GITEA_WORKFLOW, bump_workflow)
     ]
 
     updated = []

@@ -1,0 +1,139 @@
+name: Build AppImage, Arch and Fedora Packages
+env:
+  # Common version, will be used for tagging the release
+  VERSION: 0.1.1
+  PKGDEST: "/tmp/portprotonqt"
+  PACKAGE: "portprotonqt"
+
+jobs:
+  build-appimage:
+    name: Build AppImage
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: https://gitea.com/actions/checkout@v4
+
+      - name: Install required dependencies
+        run: sudo apt install -y binutils coreutils desktop-file-utils fakeroot fuse libgdk-pixbuf2.0-dev patchelf python3-pip python3-setuptools squashfs-tools strace util-linux zsync
+
+      - name: Install tools
+        run: pip3 install appimage-builder uv
+
+      - name: Build AppImage
+        run: |
+          cd build-aux
+          appimage-builder
+
+      - name: Upload AppImage
+        uses: https://gitea.com/actions/gitea-upload-artifact@v4
+        with:
+          name: PortProtonQt-AppImage
+          path: build-aux/PortProtonQt*.AppImage*
+
+  build-arch:
+    name: Build Arch Package
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:base-devel
+      volumes:
+        - /usr:/usr-host
+        - /opt:/opt-host
+      options: --privileged
+
+    steps:
+      - uses: https://gitea.com/actions/checkout@v4
+
+      - name: Prepare container
+        run: |
+          pacman -Sy --noconfirm --disable-download-timeout --needed git wget gnupg
+          sed -i 's/#MAKEFLAGS="-j2"/MAKEFLAGS="-j$(nproc) -l$(nproc)"/g' /etc/makepkg.conf
+          sed -i 's/OPTIONS=(.*)/OPTIONS=(strip docs !libtool !staticlibs emptydirs zipman purge lto)/g' /etc/makepkg.conf
+          yes | pacman -Scc
+          pacman-key --init
+          pacman -S --noconfirm archlinux-keyring
+          pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
+          pacman-key --lsign-key 3056513887B78AEB
+          pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst'
+          pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst'
+          cat << EOM >> /etc/pacman.conf
+
+          [chaotic-aur]
+          Include = /etc/pacman.d/chaotic-mirrorlist
+          EOM
+          pacman -Syy
+          useradd -m user -G wheel && echo "user ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+          echo "PACKAGER=\"Boris Yumankulov <boria138@altlinux.org>\"" >> /etc/makepkg.conf
+          chown user -R /tmp
+          chown user -R ..
+
+      - name: Build
+        run: |
+          cd build-aux
+          su user -c "yes '' | makepkg --noconfirm -s"
+
+      - name: Upload Arch package
+        uses: https://gitea.com/actions/gitea-upload-artifact@v4
+        with:
+          name: PortProtonQt-Arch
+          path: ${{ env.PKGDEST }}/*
+
+  build-fedora:
+    name: Build Fedora RPM
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        fedora_version: [40, 41, 42, rawhide]
+
+    container:
+      image: fedora:${{ matrix.fedora_version }}
+      options: --privileged
+
+    steps:
+      - name: Install build dependencies
+        run: |
+          dnf install -y git rpmdevtools python3-devel python3-wheel python3-pip \
+                         python3-build pyproject-rpm-macros python3-setuptools \
+                         redhat-rpm-config
+
+      - name: Setup rpmbuild environment
+        run: |
+          useradd rpmbuild -u 5002 -g users || true
+          mkdir -p /home/rpmbuild/{BUILD,RPMS,SPECS,SRPMS,SOURCES}
+          chown -R rpmbuild:users /home/rpmbuild
+          echo '%_topdir /home/rpmbuild' > /home/rpmbuild/.rpmmacros
+
+      - uses: https://gitea.com/actions/checkout@v4
+
+      - name: Copy fedora.spec
+        run: |
+          cp build-aux/fedora.spec /home/rpmbuild/SPECS/${{ env.PACKAGE }}.spec
+          chown -R rpmbuild:users /home/rpmbuild
+
+      - name: Build RPM
+        run: |
+          su rpmbuild -c "rpmbuild -ba /home/rpmbuild/SPECS/${{ env.PACKAGE }}.spec"
+
+      - name: Upload RPM package
+        uses: https://gitea.com/actions/gitea-upload-artifact@v4
+        with:
+          name: PortProtonQt-RPM-Fedora-${{ matrix.fedora_version }}
+          path: /home/rpmbuild/RPMS/**/*.rpm
+
+  release:
+    name: Create and Publish Release
+    needs: [build-appimage, build-arch, build-fedora]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: https://gitea.com/actions/download-artifact@v3
+        with:
+          path: release/
+
+      - name: Create GitHub Release
+        uses: https://gitea.com/actions/gitea-release-action
+        with:
+          token: ${{ secrets.GITEA_TOKEN }}
+          prerelease: true
+          sha256sum: true
+          tag_name: ${{ env.VERSION }}
+          files: release/**/*

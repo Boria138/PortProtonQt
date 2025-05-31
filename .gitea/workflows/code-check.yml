@@ -1,0 +1,53 @@
+name: Code and build check
+
+on:
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - "data/**"
+      - "*.md"
+      - "dev-scripts/**"
+  push:
+    branches: [main]
+    paths-ignore:
+      - "data/**"
+      - "*.md"
+      - "dev-scripts/**"
+
+jobs:
+  pre-commit:
+    name: Check code
+    runs-on: ubuntu-latest
+    steps:
+      - uses: https://gitea.com/actions/checkout@v4
+
+      - name: Install uv
+        uses: https://github.com/astral-sh/setup-uvv@v6
+        with:
+          enable-cache: true
+
+      - name: Sync dependencies into venv
+        run: uv sync --all-extras --dev
+
+      - name: Activate .venv & run pre-commit
+        shell: bash
+        run: |
+          source .venv/bin/activate
+          pre-commit run --show-diff-on-failure --color=always --all-files
+
+  build-uv:
+    name: Build with uv
+    runs-on: ubuntu-latest
+    steps:
+      - uses: https://gitea.com/actions/checkout@v4
+
+      - name: Install uv
+        uses: https://github.com/astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Sync dependencies
+        run: uv sync
+
+      - name: Build project
+        run: uv build
