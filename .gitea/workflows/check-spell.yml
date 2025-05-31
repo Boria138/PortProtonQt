@@ -8,7 +8,7 @@ on:
   pull_request:
     paths:
       - 'portprotonqt/locales/**'
-    workflow_dispatch:
+  workflow_dispatch:
 
 jobs:
   check-translations:
