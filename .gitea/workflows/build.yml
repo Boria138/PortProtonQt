@@ -1,4 +1,8 @@
 name: Build AppImage, Arch and Fedora Packages
+
+on:
+  workflow_dispatch:
+
 env:
   # Common version, will be used for tagging the release
   VERSION: 0.1.1
