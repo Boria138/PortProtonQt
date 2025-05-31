@@ -53,6 +53,8 @@ class MainWindow(QMainWindow):
         self.currentDetailPage = None
         self.current_play_button = None
         self.pending_games = []
+        self.game_card_cache = {}
+        self.pending_images = {}
         self.total_games = 0
         self.games_load_timer = QTimer(self)
         self.games_load_timer.setSingleShot(True)
@@ -490,7 +492,6 @@ class MainWindow(QMainWindow):
         self.stackedWidget.setCurrentIndex(index)
 
     def createSearchWidget(self) -> tuple[QWidget, QLineEdit]:
-        """Создаёт виджет добавить игру + поиск."""
         self.container = QWidget()
         self.container.setStyleSheet(self.theme.CONTAINER_STYLE)
         layout = QHBoxLayout(self.container)
@@ -515,27 +516,35 @@ class MainWindow(QMainWindow):
         self.searchEdit.setClearButtonEnabled(True)
         self.searchEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE)
 
+        # Добавляем дебансирование для поиска
+        self.searchEdit.textChanged.connect(self.startSearchDebounce)
+        self.searchDebounceTimer = QTimer(self)
+        self.searchDebounceTimer.setSingleShot(True)
+        self.searchDebounceTimer.setInterval(300)
+        self.searchDebounceTimer.timeout.connect(self.filterGamesDelayed)
+
         layout.addWidget(self.searchEdit)
         return self.container, self.searchEdit
 
-    def filterGames(self, text):
-        """Фильтрует список игр по подстроке text."""
-        text = text.strip().lower()
+    def startSearchDebounce(self, text):
+        self.searchDebounceTimer.start()
+
+    def filterGamesDelayed(self):
+        """Filters games based on search text and updates the grid."""
+        text = self.searchEdit.text().strip().lower()
         if text == "":
-            filtered = self.games
+            self.updateGameGrid()  # Use self.games directly
         else:
             filtered = [game for game in self.games if text in game[0].lower()]
-        self.populateGamesGrid(filtered)
+            self.updateGameGrid(filtered)
 
     def createInstalledTab(self):
-        """Вкладка 'Game Library'."""
         self.gamesLibraryWidget = QWidget()
         self.gamesLibraryWidget.setStyleSheet(self.theme.LIBRARY_WIDGET_STYLE)
         layout = QVBoxLayout(self.gamesLibraryWidget)
         layout.setSpacing(15)
 
         searchWidget, self.searchEdit = self.createSearchWidget()
-        self.searchEdit.textChanged.connect(self.filterGames)
         layout.addWidget(searchWidget)
 
         scrollArea = QScrollArea()
@@ -550,9 +559,8 @@ class MainWindow(QMainWindow):
         scrollArea.setWidget(self.gamesListWidget)
         layout.addWidget(scrollArea)
 
-        # Слайдер для изменения размера карточек:
         sliderLayout = QHBoxLayout()
-        sliderLayout.addStretch()  # сдвигаем ползунок вправо
+        sliderLayout.addStretch()
         self.sizeSlider = QSlider(Qt.Orientation.Horizontal)
         self.sizeSlider.setMinimum(200)
         self.sizeSlider.setMaximum(250)
@@ -572,86 +580,133 @@ class MainWindow(QMainWindow):
             self.setUpdatesEnabled(False)
             self.card_width = self.sizeSlider.value()
             self.sizeSlider.setToolTip(f"{self.card_width} px")
-            self.updateGameGrid()  # обновляем карточки
+            self.updateGameGrid()
             self.setUpdatesEnabled(True)
         self.sizeSlider.valueChanged.connect(lambda val: self.sliderDebounceTimer.start())
         self.sliderDebounceTimer.timeout.connect(on_slider_value_changed)
 
         def calculate_card_width():
-                available_width = scrollArea.width() - 20  # Учитываем отступы scrollArea
-                spacing = self.gamesListLayout._spacing  # Отступ между карточками (5 по умолчанию)
-                target_cards_per_row = 6  # Целевое количество карточек в ряду
-                # Вычисляем ширину карточки: (доступная ширина - отступы) / количество карточек
-                calculated_width = (available_width - spacing * (target_cards_per_row - 1)) // target_cards_per_row
-                # Ограничиваем ширину разумными значениями
-                calculated_width = max(200, min(calculated_width, 250))
-                if not self.sizeSlider.value() == self.card_width:  # Если слайдер не изменён вручную
-                    self.card_width = calculated_width
-                    self.sizeSlider.setValue(self.card_width)
-                    self.sizeSlider.setToolTip(f"{self.card_width} px")
-                    self.updateGameGrid()
+            available_width = scrollArea.width() - 20
+            spacing = self.gamesListLayout._spacing
+            target_cards_per_row = 8
+            calculated_width = (available_width - spacing * (target_cards_per_row - 1)) // target_cards_per_row
+            calculated_width = max(200, min(calculated_width, 250))
+            if not self.sizeSlider.value() == self.card_width:
+                self.card_width = calculated_width
+                self.sizeSlider.setValue(self.card_width)
+                self.sizeSlider.setToolTip(f"{self.card_width} px")
+                self.updateGameGrid()
 
         QTimer.singleShot(0, calculate_card_width)
 
-        self.stackedWidget.addWidget(self.gamesLibraryWidget)
+        # Добавляем обработчик прокрутки для ленивой загрузки
+        scrollArea.verticalScrollBar().valueChanged.connect(self.loadVisibleImages)
 
-        # Первичная отрисовка карточек:
+        self.stackedWidget.addWidget(self.gamesLibraryWidget)
         self.updateGameGrid()
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        self.sliderDebounceTimer.start()
+        if not hasattr(self, '_last_width'):
+            self._last_width = self.width()
+        if abs(self.width() - self._last_width) > 10:
+            self._last_width = self.width()
+            self.sliderDebounceTimer.start()
 
-    def updateGameGrid(self):
-        if not self.games:
+    def loadVisibleImages(self):
+        visible_region = self.gamesListWidget.visibleRegion()
+        max_concurrent_loads = 5
+        loaded_count = 0
+        for card_key, card in self.game_card_cache.items():
+            if card_key in self.pending_images and visible_region.contains(card.pos()) and loaded_count < max_concurrent_loads:
+                cover_path, width, height, callback = self.pending_images.pop(card_key)
+                load_pixmap_async(cover_path, width, height, callback)
+                loaded_count += 1
+
+    def updateGameGrid(self, games_list=None):
+        """Updates the game grid with the provided games list or self.games."""
+        if games_list is None:
+            games_list = self.games
+        if not games_list:
+            self.clearLayout(self.gamesListLayout)
+            self.game_card_cache.clear()
+            self.pending_images.clear()
             return
-        self.clearLayout(self.gamesListLayout)
-        card_width = self.card_width
-        for game_data in self.games:
-            card = GameCard(
-                *game_data,
-                select_callback=self.openGameDetailPage,
-                theme=self.theme,
-                card_width=card_width,
-                context_menu_manager=self.context_menu_manager
-            )
-            # Connect context menu signals (unchanged)
-            card.editShortcutRequested.connect(self.context_menu_manager.edit_game_shortcut)
-            card.deleteGameRequested.connect(self.context_menu_manager.delete_game)
-            card.addToMenuRequested.connect(self.context_menu_manager.add_to_menu)
-            card.removeFromMenuRequested.connect(self.context_menu_manager.remove_from_menu)
-            card.addToDesktopRequested.connect(self.context_menu_manager.add_to_desktop)
-            card.removeFromDesktopRequested.connect(self.context_menu_manager.remove_from_desktop)
-            card.addToSteamRequested.connect(self.context_menu_manager.add_to_steam)
-            card.removeFromSteamRequested.connect(self.context_menu_manager.remove_from_steam)
-            card.openGameFolderRequested.connect(self.context_menu_manager.open_game_folder)
-            self.gamesListLayout.addWidget(card)
-        self.gamesListWidget.updateGeometry()
-        self.gamesListLayout.invalidate()
-        self.gamesListWidget.update()
 
-    def populateGamesGrid(self, games_list):
-        self.clearLayout(self.gamesListLayout)
-        for _idx, game_data in enumerate(games_list):
-            card = GameCard(*game_data, select_callback=self.openGameDetailPage, theme=self.theme, card_width=self.card_width, context_menu_manager=self.context_menu_manager)
-            # Connect context menu signals
-            card.editShortcutRequested.connect(self.context_menu_manager.edit_game_shortcut)
-            card.deleteGameRequested.connect(self.context_menu_manager.delete_game)
-            card.addToMenuRequested.connect(self.context_menu_manager.add_to_menu)
-            card.removeFromMenuRequested.connect(self.context_menu_manager.remove_from_menu)
-            card.addToDesktopRequested.connect(self.context_menu_manager.add_to_desktop)
-            card.removeFromDesktopRequested.connect(self.context_menu_manager.remove_from_desktop)
-            card.addToSteamRequested.connect(self.context_menu_manager.add_to_steam)
-            card.removeFromSteamRequested.connect(self.context_menu_manager.remove_from_steam)
-            card.openGameFolderRequested.connect(self.context_menu_manager.open_game_folder)
-            self.gamesListLayout.addWidget(card)
+        # Create a set of game names for quick lookup
+        current_games = {game_data[0]: game_data for game_data in games_list}
+
+        # Check if the grid is already up-to-date
+        if set(current_games.keys()) == set(self.game_card_cache.keys()) and self.card_width == getattr(self, '_last_card_width', None):
+            return  # No changes needed, skip update
+
+        # Track if layout has changed to decide if geometry update is needed
+        layout_changed = False
+
+        # Remove cards for games no longer in the list
+        for card_key in list(self.game_card_cache.keys()):
+            if card_key not in current_games:
+                card = self.game_card_cache.pop(card_key)
+                self.gamesListLayout.removeWidget(card)
+                card.deleteLater()
+                if card_key in self.pending_images:
+                    del self.pending_images[card_key]
+                layout_changed = True
+
+        # Add or update cards for current games
+        for game_data in games_list:
+            game_name = game_data[0]
+            if game_name not in self.game_card_cache:
+                # Create new card
+                card = GameCard(
+                    *game_data,
+                    select_callback=self.openGameDetailPage,
+                    theme=self.theme,
+                    card_width=self.card_width,
+                    context_menu_manager=self.context_menu_manager
+                )
+                # Connect context menu signals
+                card.editShortcutRequested.connect(self.context_menu_manager.edit_game_shortcut)
+                card.deleteGameRequested.connect(self.context_menu_manager.delete_game)
+                card.addToMenuRequested.connect(self.context_menu_manager.add_to_menu)
+                card.removeFromMenuRequested.connect(self.context_menu_manager.remove_from_menu)
+                card.addToDesktopRequested.connect(self.context_menu_manager.add_to_desktop)
+                card.removeFromDesktopRequested.connect(self.context_menu_manager.remove_from_desktop)
+                card.addToSteamRequested.connect(self.context_menu_manager.add_to_steam)
+                card.removeFromSteamRequested.connect(self.context_menu_manager.remove_from_steam)
+                card.openGameFolderRequested.connect(self.context_menu_manager.open_game_folder)
+                self.game_card_cache[game_name] = card
+                self.gamesListLayout.addWidget(card)
+                layout_changed = True
+            elif self.card_width != getattr(self, '_last_card_width', None):
+                # Update size only if card_width has changed
+                card = self.game_card_cache[game_name]
+                card.setFixedWidth(self.card_width + 20)  # Account for extra_margin in GameCard
+
+        # Store the current card_width
+        self._last_card_width = self.card_width
+
+        # Trigger lazy image loading for visible cards
+        self.loadVisibleImages()
+
+        # Update layout geometry only if the layout has changed
+        if layout_changed:
+            self.gamesListWidget.updateGeometry()
 
     def clearLayout(self, layout):
         """Удаляет все виджеты из layout."""
         while layout.count():
             child = layout.takeAt(0)
             if child.widget():
-                child.widget().deleteLater()
+                widget = child.widget()
+                # Remove from game_card_cache if it's a GameCard
+                for key, card in list(self.game_card_cache.items()):
+                    if card == widget:
+                        del self.game_card_cache[key]
+                        # Also remove from pending_images if present
+                        if key in self.pending_images:
+                            del self.pending_images[key]
+                widget.deleteLater()
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
@@ -1471,6 +1526,7 @@ class MainWindow(QMainWindow):
         page.deleteLater()
         self.currentDetailPage = None
         self.current_exec_line = None
+        self.current_play_button = None
 
     def is_target_exe_running(self):
         """Проверяет, запущен ли процесс с именем self.target_exe через psutil."""

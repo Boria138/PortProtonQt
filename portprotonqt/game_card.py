@@ -94,13 +94,13 @@ class GameCard(QFrame):
         coverLayout.setStackingMode(QStackedLayout.StackingMode.StackAll)
 
         # Обложка
-        coverLabel = QLabel()
-        coverLabel.setFixedSize(card_width, int(card_width * 1.2))
-        coverLabel.setStyleSheet(self.theme.COVER_LABEL_STYLE)
-        coverLayout.addWidget(coverLabel)
+        self.coverLabel = QLabel()
+        self.coverLabel.setFixedSize(card_width, int(card_width * 1.2))
+        self.coverLabel.setStyleSheet(self.theme.COVER_LABEL_STYLE)
+        coverLayout.addWidget(self.coverLabel)
 
         # создаём слабую ссылку на label
-        label_ref = weakref.ref(coverLabel)
+        label_ref = weakref.ref(self.coverLabel)
 
         def on_cover_loaded(pixmap):
             label = label_ref()
