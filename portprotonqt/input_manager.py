@@ -101,15 +101,21 @@ class InputManager(QObject):
             return super().eventFilter(obj, event)
 
         key = event.key()
+        modifiers = event.modifiers()
         focused = QApplication.focusWidget()
         popup = QApplication.activePopupWidget()
 
-        # 2) Если открыт любой popup — не перехватываем ENTER, ESC и стрелки
+        # 2) Закрытие приложения по Ctrl+Q
+        if key == Qt.Key.Key_Q and modifiers & Qt.KeyboardModifier.ControlModifier:
+            app.quit()
+            return True
+
+        # 3) Если открыт любой popup — не перехватываем ENTER, ESC и стрелки
         if popup:
             # возвращаем False, чтобы событие пошло дальше в Qt и закрыло popup как нужно
             return False
 
-        # 3) Навигация в полноэкранном просмотре
+        # 4) Навигация в полноэкранном просмотре
         active_win = QApplication.activeWindow()
         if isinstance(active_win, FullscreenDialog):
             if key == Qt.Key.Key_Right:
@@ -122,20 +128,20 @@ class InputManager(QObject):
                 active_win.close()
                 return True
 
-        # 4) На странице деталей Enter запускает/останавливает игру
+        # 5) На странице деталей Enter запускает/останавливает игру
         if self._parent.currentDetailPage and key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
             if self._parent.current_exec_line:
                 self._parent.toggleGame(self._parent.current_exec_line, None)
                 return True
 
-        # 5) Открытие контекстного меню для GameCard
+        # 6) Открытие контекстного меню для GameCard
         if isinstance(focused, GameCard):
             if key == Qt.Key.Key_F10 and Qt.KeyboardModifier.ShiftModifier:
                 pos = QPoint(focused.width() // 2, focused.height() // 2)
                 focused._show_context_menu(pos)
                 return True
 
-        # 6) Навигация по карточкам в Library
+        # 7) Навигация по карточкам в Library
         if self._parent.stackedWidget.currentIndex() == 0:
             game_cards = self._parent.gamesListWidget.findChildren(GameCard)
             scroll_area = self._parent.gamesListWidget.parentWidget()
@@ -178,7 +184,7 @@ class InputManager(QObject):
                             scroll_area.ensureWidgetVisible(next_card, 50, 50)
                         return True
 
-        # 7) Переключение вкладок ←/→
+        # 8) Переключение вкладок ←/→
         idx = self._parent.stackedWidget.currentIndex()
         total = len(self._parent.tabButtons)
         if key == Qt.Key.Key_Left and not isinstance(focused, GameCard):
@@ -192,7 +198,7 @@ class InputManager(QObject):
             self._parent.tabButtons[new].setFocus()
             return True
 
-        # 8) Спуск в содержимое вкладки ↓
+        # 9) Спуск в содержимое вкладки ↓
         if key == Qt.Key.Key_Down:
             if isinstance(focused, NavLabel):
                 page = self._parent.stackedWidget.currentWidget()
@@ -206,7 +212,7 @@ class InputManager(QObject):
                     focused.focusNextChild()
                     return True
 
-        # 9) Подъём по содержимому вкладки ↑
+        # 10) Подъём по содержимому вкладки ↑
         if key == Qt.Key.Key_Up:
             if isinstance(focused, NavLabel):
                 return True  # Не даём уйти выше NavLabel
@@ -214,7 +220,7 @@ class InputManager(QObject):
                 focused.focusPreviousChild()
                 return True
 
-        # 10) Общие: Activate, Back, Add
+        # 11) Общие: Activate, Back, Add
         if key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
             self._parent.activateFocusedWidget()
             return True
@@ -229,7 +235,7 @@ class InputManager(QObject):
             self._parent.openAddGameDialog()
             return True
 
-        # 11) Переключение полноэкранного режима по F11
+        # 12) Переключение полноэкранного режима по F11
         if key == Qt.Key.Key_F11:
             if read_fullscreen_config():
                 return True
