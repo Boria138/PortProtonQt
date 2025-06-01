@@ -8,7 +8,7 @@
 Name:           python-%{pypi_name}-git
 Version:        %{pypi_version}
 Release:        %{rel_build}
-Summary:        A modern GUI for PortProton project (devel build)
+Summary:        Modern GUI for managing and launching games from PortProton, Steam, and Epic Games Store (development build)
 
 License:        GPL-3.0
 URL:            https://git.linux-gaming.ru/Boria138/PortProtonQt
@@ -45,8 +45,7 @@ Requires:       perl-Image-ExifTool
 Requires:       xdg-utils
 
 %description -n python3-%{pypi_name}-git
-PortProtonQt is a modern graphical user interface for the PortProton project,
-designed to simplify the management and launching of games using Wine and Proton.
+PortProtonQt is a modern, user-friendly graphical interface designed to streamline the management and launching of games across multiple platforms, including PortProton, Steam, and Epic Games Store.
 
 %prep
 git clone https://git.linux-gaming.ru/Boria138/PortProtonQt.git

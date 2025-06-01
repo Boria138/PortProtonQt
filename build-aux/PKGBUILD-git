@@ -1,7 +1,7 @@
 pkgname=portprotonqt-git
 pkgver=.
 pkgrel=1
-pkgdesc="A modern GUI for PortProton project.(developerment build)"
+pkgdesc="Modern GUI for managing and launching games from PortProton, Steam, and Epic Games Store.(developerment build)"
 arch=('any')
 url="https://git.linux-gaming.ru/Boria138/PortProtonQt"
 license=('GPL-3.0')
