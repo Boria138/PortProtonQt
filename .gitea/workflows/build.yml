@@ -12,7 +12,7 @@ env:
 jobs:
   build-appimage:
     name: Build AppImage
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - uses: https://gitea.com/actions/checkout@v4
 
@@ -49,7 +49,7 @@ jobs:
 
       - name: Prepare container
         run: |
-          pacman -Sy --noconfirm --disable-download-timeout --needed git wget gnupg
+          pacman -Sy --noconfirm --disable-download-timeout --needed git wget gnupg nodejs npm
           sed -i 's/#MAKEFLAGS="-j2"/MAKEFLAGS="-j$(nproc) -l$(nproc)"/g' /etc/makepkg.conf
           sed -i 's/OPTIONS=(.*)/OPTIONS=(strip docs !libtool !staticlibs emptydirs zipman purge lto)/g' /etc/makepkg.conf
           yes | pacman -Scc
@@ -103,7 +103,7 @@ jobs:
         run: |
           dnf install -y git rpmdevtools python3-devel python3-wheel python3-pip \
                          python3-build pyproject-rpm-macros python3-setuptools \
-                         redhat-rpm-config
+                         redhat-rpm-config nodejs npm
 
       - name: Setup rpmbuild environment
         run: |
