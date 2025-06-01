@@ -37,41 +37,4 @@ jobs:
           GITEA_ACTOR: ${{ gitea.actor }}
           GITEA_SERVER: "git.linux-gaming.ru"
           GITEA_REPOSITORY: ${{ gitea.repository }}
-        run: |
-          # Create the push script
-          cat << 'EOF' > push-to-gitea.sh
-          #!/bin/sh
-          set -e
-
-          timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-
-          AUTHOR_EMAIL=${INPUT_AUTHOR_EMAIL:-'gitea-actions@users.noreply.gitea.com'}
-          AUTHOR_NAME=${INPUT_AUTHOR_NAME:-'Gitea Actions'}
-          MESSAGE=${INPUT_MESSAGE:-"chore: update steam apps list ${timestamp}"}
-          BRANCH=main
-
-          INPUT_DIRECTORY=${INPUT_DIRECTORY:-'.'}
-
-          echo "Push to branch $INPUT_BRANCH"
-          [ -z "${GITEA_TOKEN}" ] && {
-              echo 'Missing input "gitea_token: ${{ secrets.GITEA_TOKEN }}".'
-              exit 1
-          }
-
-          cd "${INPUT_DIRECTORY}"
-
-          remote_repo="https://${GITEA_ACTOR}:${GITEA_TOKEN}@${GITEA_SERVER}/${GITEA_REPOSITORY}.git"
-
-          git config http.sslVerify false
-          git config --local user.email "${AUTHOR_EMAIL}"
-          git config --local user.name "${AUTHOR_NAME}"
-
-          git add -A
-          git commit -m "${MESSAGE}" || exit 0
-
-          git push "${remote_repo}" HEAD:"${BRANCH}"
-          EOF
-
-          # Make the script executable and run it
-          chmod +x push-to-gitea.sh
-          ./push-to-gitea.sh
+        run: bash dev-scripts/push-to-gitea.sh
