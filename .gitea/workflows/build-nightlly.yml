@@ -1,0 +1,129 @@
+name: Nightly Build - AppImage, Arch, Fedora
+
+on:
+  workflow_dispatch:
+
+env:
+  PKGDEST: "/tmp/portprotonqt"
+  PACKAGE: "portprotonqt"
+
+jobs:
+  build-appimage:
+    name: Build AppImage
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: https://gitea.com/actions/checkout@v4
+
+      - name: Install required dependencies
+        run: sudo apt install -y binutils coreutils desktop-file-utils fakeroot fuse libgdk-pixbuf2.0-dev patchelf python3-pip python3-dev python3-setuptools squashfs-tools strace util-linux zsync
+
+      - name: Install tools
+        run: pip3 install appimage-builder uv
+
+      - name: Build AppImage
+        run: |
+          cd build-aux
+          sed -i '/app_info:/,/- exec:/ s/^\(\s*version:\s*\).*/\1"0"/' AppImageBuilder.yml
+          appimage-builder
+
+      - name: Upload AppImage
+        uses: https://gitea.com/actions/gitea-upload-artifact@v3
+        with:
+          name: PortProtonQt-AppImage
+          path: build-aux/PortProtonQt*.AppImage
+
+  build-fedora:
+    name: Build Fedora RPM
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        fedora_version: [40, 41, 42, rawhide]
+
+    container:
+      image: fedora:${{ matrix.fedora_version }}
+      options: --privileged
+
+    steps:
+      - name: Install build dependencies
+        run: |
+          dnf install -y git rpmdevtools python3-devel python3-wheel python3-pip \
+                         python3-build pyproject-rpm-macros python3-setuptools \
+                         redhat-rpm-config nodejs npm
+
+      - name: Setup rpmbuild environment
+        run: |
+          useradd rpmbuild -u 5002 -g users || true
+          mkdir -p /home/rpmbuild/{BUILD,RPMS,SPECS,SRPMS,SOURCES}
+          chown -R rpmbuild:users /home/rpmbuild
+          echo '%_topdir /home/rpmbuild' > /home/rpmbuild/.rpmmacros
+
+      - name: Checkout repo
+        uses: https://gitea.com/actions/checkout@v4
+
+      - name: Copy fedora.spec
+        run: |
+          cp build-aux/fedora-git.spec /home/rpmbuild/SPECS/${{ env.PACKAGE }}.spec
+          chown -R rpmbuild:users /home/rpmbuild
+
+      - name: Build RPM
+        run: |
+          su rpmbuild -c "rpmbuild -ba /home/rpmbuild/SPECS/${{ env.PACKAGE }}.spec"
+
+      - name: Upload RPM package
+        uses: https://gitea.com/actions/gitea-upload-artifact@v3
+        with:
+          name: PortProtonQt-RPM-Fedora-${{ matrix.fedora_version }}
+          path: /home/rpmbuild/RPMS/**/*.rpm
+
+  build-arch:
+    name: Build Arch Package
+    runs-on: ubuntu-22.04
+    container:
+      image: archlinux:base-devel
+      volumes:
+        - /usr:/usr-host
+        - /opt:/opt-host
+      options: --privileged
+
+    steps:
+      - name: Prepare container
+        run: |
+          pacman -Sy --noconfirm --disable-download-timeout --needed git wget gnupg nodejs npm
+          sed -i 's/#MAKEFLAGS="-j2"/MAKEFLAGS="-j$(nproc) -l$(nproc)"/g' /etc/makepkg.conf
+          sed -i 's/OPTIONS=(.*)/OPTIONS=(strip docs !libtool !staticlibs emptydirs zipman purge lto)/g' /etc/makepkg.conf
+          yes | pacman -Scc
+          pacman-key --init
+          pacman -S --noconfirm archlinux-keyring
+          mkdir -p /__w/portproton-repo
+          pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
+          pacman-key --lsign-key 3056513887B78AEB
+          pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst'
+          pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst'
+          cat << EOM >> /etc/pacman.conf
+
+          [chaotic-aur]
+          Include = /etc/pacman.d/chaotic-mirrorlist
+          EOM
+          pacman -Syy
+          useradd -m user -G wheel && echo "user ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+          echo "PACKAGER=\"Boris Yumankulov <boria138@altlinux.org>\"" >> /etc/makepkg.conf
+          chown user -R /tmp
+          chown user -R ..
+
+      - name: Build
+        run: |
+          cd /__w/portproton-repo
+          git clone https://github.com/Boria138/PortProtonQt.git
+          cd /__w/portproton-repo/PortProtonQt/build-aux
+          chown user -R ..
+          su user -c "yes '' | makepkg --noconfirm -s -p PKGBUILD-git"
+
+      - name: Checkout
+        uses: https://gitea.com/actions/checkout@v4
+
+      - name: Upload Arch package
+        uses: https://gitea.com/actions/gitea-upload-artifact@v3
+        with:
+          name: PortProtonQt-Arch
+          path: ${{ env.PKGDEST }}/*

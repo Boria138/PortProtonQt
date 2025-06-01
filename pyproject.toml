@@ -1,0 +1,107 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "portprotonqt"
+version = "0.1.1"
+description = "A project to rewrite PortProton (PortWINE) using PySide"
+readme = "README.md"
+license = { text = "GPL-3.0" }
+authors = [
+  { name = "Boria138" },
+  { name = "BlackSnaker" },
+  { name = "Mikhail Tergoev(Castro-Fidel)" }
+]
+keywords = ["portproton", "wine", "game", "steam"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Operating System :: Linux"
+]
+requires-python = ">=3.10"
+dependencies = [
+    "babel>=2.17.0",
+    "evdev>=1.9.1",
+    "icoextract>=0.1.6",
+    "numpy>=2.2.4",
+    "orjson>=3.10.16",
+    "pillow>=11.2.1",
+    "psutil>=7.0.0",
+    "pyside6>=6.9.0",
+    "pyudev>=0.24.3",
+    "requests>=2.32.3",
+    "tqdm>=4.67.1",
+    "vdf>=3.4",
+]
+
+[project.scripts]
+portprotonqt = "portprotonqt.app:main"
+
+[tool.setuptools.package-data]
+"portprotonqt" = ["themes/**/*", "locales/**/*", "custom_data/**/*"]
+
+[tool.setuptools.packages.find]
+exclude = ["build-aux", "dev-scripts", "documentation", "data"]
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+]
+ignore = [
+    "B008",  # do not perform function calls in argument defaults
+    "C901",  # too complex
+    "W191",  # indentation contains tabs
+    "E501"   # Line too long
+]
+
+[tool.ruff.lint.isort]
+known-third-party = ["portprotonqt"]
+
+[tool.ruff]
+exclude = [
+  ".eggs",
+  ".git",
+  "build",
+  "dist",
+  "portprotonqt.egg-info",
+  ".venv",
+  "venv",
+  "dev-scripts",
+  "portprotonqt/themes",
+  ".vscode",
+]
+target-version = "py310"
+
+[tool.pyright]
+pythonVersion = "3.10"
+pythonPlatform = "Linux"
+ignore = [
+    ".eggs",
+    ".git",
+    "build",
+    "dist",
+    "portprotonqt.egg-info",
+    ".venv",
+    "venv",
+    "dev-scripts",
+    "portprotonqt/themes",
+    ".vscode",
+]
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.2.0",
+    "pyaspeller>=2.0.2",
+    "pyright>=1.1.400",
+]

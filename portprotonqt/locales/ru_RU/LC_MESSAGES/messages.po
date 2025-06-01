@@ -1,0 +1,525 @@
+# Russian (Russia) translations for PortProtonQT.
+# Copyright (C) 2025 boria138
+# This file is distributed under the same license as the PortProtonQT
+# project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2025-05-29 17:42+0500\n"
+"PO-Revision-Date: 2025-05-29 17:42+0500\n"
+"Last-Translator: \n"
+"Language: ru_RU\n"
+"Language-Team: ru_RU <LL@li.org>\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.17.0\n"
+
+msgid "Remove from Desktop"
+msgstr "Удалить с рабочего стола"
+
+msgid "Add to Desktop"
+msgstr "Добавить на рабочий стол"
+
+msgid "Edit Shortcut"
+msgstr "Редактировать"
+
+msgid "Delete from PortProton"
+msgstr "Удалить из PortProton"
+
+msgid "Open Game Folder"
+msgstr "Открыть папку с игрой"
+
+msgid "Remove from Menu"
+msgstr "Удалить из меню"
+
+msgid "Add to Menu"
+msgstr "Добавить в меню"
+
+msgid "Remove from Steam"
+msgstr "Удалить из Steam"
+
+msgid "Add to Steam"
+msgstr "Добавить в Steam"
+
+msgid "Error"
+msgstr "Ошибка"
+
+msgid "PortProton is not found."
+msgstr "PortProton не найден."
+
+#, python-brace-format
+msgid "No executable command found in .desktop for game: {0}"
+msgstr "Не найдено ни одной исполняемой команды для игры: {0}"
+
+#, python-brace-format
+msgid "Failed to parse .desktop file for game: {0}"
+msgstr "Не удалось удалить файл .desktop: {0}"
+
+#, python-brace-format
+msgid "Error reading .desktop file: {0}"
+msgstr "Не удалось удалить файл .desktop: {0}"
+
+#, python-brace-format
+msgid ".desktop file not found for game: {0}"
+msgstr "Файл не найден: {0}"
+
+#, python-brace-format
+msgid "Invalid executable command: {0}"
+msgstr "Недопустимая исполняемая команда: {0}"
+
+#, python-brace-format
+msgid "Executable file not found: {0}"
+msgstr "Файл не найден: {0}"
+
+#, python-brace-format
+msgid "Failed to parse executable command: {0}"
+msgstr "Не удалось удалить игру из меню: {0}"
+
+msgid "Confirm Deletion"
+msgstr "Подтвердите удаление"
+
+#, python-brace-format
+msgid ""
+"Are you sure you want to delete '{0}'? This will remove the .desktop file"
+" and custom data."
+msgstr ""
+"Вы уверены, что хотите удалить '{0}'? Это приведет к удалению файла "
+".desktop и настраиваемых данных."
+
+#, python-brace-format
+msgid "Could not locate .desktop file for '{0}'"
+msgstr "Не удалось найти файл .desktop для '{0}'"
+
+#, python-brace-format
+msgid "Failed to delete .desktop file: {0}"
+msgstr "Не удалось удалить файл .desktop: {0}"
+
+#, python-brace-format
+msgid "Game '{0}' deleted successfully"
+msgstr "Игра '{0}' успешно удалена"
+
+#, python-brace-format
+msgid "Failed to delete custom data: {0}"
+msgstr "Не удалось удалить настраиваемые данные: {0}"
+
+#, python-brace-format
+msgid "Game '{0}' added to menu"
+msgstr "Игра '{0}' добавлена в меню"
+
+#, python-brace-format
+msgid "Failed to add game to menu: {0}"
+msgstr "Не удалось добавить игру в меню: {0}"
+
+#, python-brace-format
+msgid "Failed to remove game from menu: {0}"
+msgstr "Не удалось удалить игру из меню: {0}"
+
+#, python-brace-format
+msgid "Game '{0}' removed from menu"
+msgstr "Игра '{0}' удалена из меню"
+
+#, python-brace-format
+msgid "Game '{0}' added to desktop"
+msgstr "Игра '{0}' добавлена на рабочий стол"
+
+#, python-brace-format
+msgid "Failed to add game to desktop: {0}"
+msgstr "Не удалось добавить игру на рабочий стол: {0}"
+
+#, python-brace-format
+msgid "Failed to remove game from Desktop: {0}"
+msgstr "Не удалось удалить игру с рабочего стола: {0}"
+
+#, python-brace-format
+msgid "Game '{0}' removed from Desktop"
+msgstr "Игра '{0}' удалена с рабочего стола"
+
+msgid "Game name and executable path are required."
+msgstr "Необходимо указать название игры и путь к исполняемому файлу."
+
+msgid "Failed to generate .desktop file data."
+msgstr "Не удалось сгенерировать данные файла .desktop."
+
+#, python-brace-format
+msgid "Failed to remove old .desktop file: {0}"
+msgstr "Не удалось удалить файл .desktop: {0}"
+
+#, python-brace-format
+msgid "Old .desktop file removed for '{0}'"
+msgstr "Старый файл .desktop удален для '{0}'"
+
+#, python-brace-format
+msgid "Failed to save .desktop file: {0}"
+msgstr "Не удалось удалить файл .desktop: {0}"
+
+#, python-brace-format
+msgid "Failed to copy cover image: {0}"
+msgstr "Не удалось удалить игру из меню: {0}"
+
+msgid "Restart Steam"
+msgstr "Перезапустите Steam"
+
+msgid ""
+"The game was added successfully.\n"
+"Please restart Steam for changes to take effect."
+msgstr ""
+"Игра была успешно добавлена.\n"
+"Пожалуйста, перезапустите Steam, чтобы изменения вступили в силу."
+
+msgid ""
+"The game was removed successfully.\n"
+"Please restart Steam for changes to take effect."
+msgstr ""
+"Игра была успешно удалена..\n"
+"Пожалуйста, перезапустите Steam, чтобы изменения вступили в силу."
+
+#, python-brace-format
+msgid "Opened folder for '{0}'"
+msgstr "Открытие папки для '{0}'"
+
+#, python-brace-format
+msgid "Failed to open game folder: {0}"
+msgstr "Не удалось открыть папку для игры: {0}"
+
+msgid "Edit Game"
+msgstr "Редактировать игру"
+
+msgid "Add Game"
+msgstr "Добавить игру"
+
+msgid "Game Name:"
+msgstr "Имя игры:"
+
+msgid "Browse..."
+msgstr "Обзор..."
+
+msgid "Path to Executable:"
+msgstr "Путь к исполняемому файлу:"
+
+msgid "Custom Cover:"
+msgstr "Обложка:"
+
+msgid "Cover Preview:"
+msgstr "Предпросмотр обложки:"
+
+msgid "Select Executable"
+msgstr "Выберите исполняемый файл"
+
+msgid "Select Cover Image"
+msgstr "Выберите обложку"
+
+msgid "Invalid image"
+msgstr "Недопустимое изображение"
+
+msgid "No cover selected"
+msgstr "Обложка не выбрана"
+
+#, python-brace-format
+msgid "Launch game \"{name}\" with PortProton"
+msgstr "Запустить игру \"{name}\" с помощью PortProton"
+
+msgid "Loading Epic Games Store games..."
+msgstr "Загрузка игр из Epic Games Store..."
+
+msgid "No description available"
+msgstr "Описание не найдено"
+
+msgid "Never"
+msgstr "Никогда"
+
+msgid "Supported"
+msgstr "Поддерживается"
+
+msgid "Running"
+msgstr "Запускается"
+
+msgid "Planned"
+msgstr "Планируется"
+
+msgid "Broken"
+msgstr "Сломано"
+
+msgid "Denied"
+msgstr "Отказано"
+
+msgid "Platinum"
+msgstr "Платина"
+
+msgid "Gold"
+msgstr "Золото"
+
+msgid "Silver"
+msgstr "Серебро"
+
+msgid "Bronze"
+msgstr "Бронза"
+
+msgid "Pending"
+msgstr "В ожидании"
+
+msgid "Library"
+msgstr "Библиотека"
+
+msgid "Auto Install"
+msgstr "Автоустановка"
+
+msgid "Emulators"
+msgstr "Эмуляторы"
+
+msgid "Wine Settings"
+msgstr "Настройки wine"
+
+msgid "PortProton Settings"
+msgstr "Настройки PortProton"
+
+msgid "Themes"
+msgstr "Темы"
+
+msgid "Loading Steam games..."
+msgstr "Загрузка игр из Steam..."
+
+msgid "Loading PortProton games..."
+msgstr "Загрузка игр из PortProton..."
+
+msgid "Unknown Game"
+msgstr "Неизвестная игра"
+
+msgid "Game Library"
+msgstr "Игровая библиотека"
+
+msgid "Find Games ..."
+msgstr "Найти игры..."
+
+msgid "Here you can configure automatic game installation..."
+msgstr "Здесь можно настроить автоматическую установку игр..."
+
+msgid "List of available emulators and their configuration..."
+msgstr "Список доступных эмуляторов и их настройка..."
+
+msgid "Various Wine parameters and versions..."
+msgstr "Различные параметры и версии wine..."
+
+msgid "Main PortProton parameters..."
+msgstr "Основные параметры PortProton..."
+
+msgid "detailed"
+msgstr "детальный"
+
+msgid "brief"
+msgstr "упрощённый"
+
+msgid "Time Detail Level:"
+msgstr "Уровень детализации вывода времени:"
+
+msgid "last launch"
+msgstr "последний запуск"
+
+msgid "playtime"
+msgstr "время игры"
+
+msgid "alphabetical"
+msgstr "алфавитный"
+
+msgid "favorites"
+msgstr "избранное"
+
+msgid "Games Sort Method:"
+msgstr "Метод сортировки игр:"
+
+msgid "all"
+msgstr "все"
+
+msgid "Games Display Filter:"
+msgstr "Фильтр игр:"
+
+msgid "Proxy URL"
+msgstr "Адрес прокси"
+
+msgid "Proxy URL:"
+msgstr "Адрес прокси:"
+
+msgid "Proxy Username"
+msgstr "Имя пользователя прокси"
+
+msgid "Proxy Username:"
+msgstr "Имя пользователя прокси:"
+
+msgid "Proxy Password"
+msgstr "Пароль прокси"
+
+msgid "Proxy Password:"
+msgstr "Пароль прокси:"
+
+msgid "Launch Application in Fullscreen"
+msgstr "Запуск приложения в полноэкранном режиме"
+
+msgid "Application Fullscreen Mode:"
+msgstr "Режим полноэкранного отображения приложения:"
+
+msgid "Open Legendary Login"
+msgstr "Открыть браузер для входа в Legendary"
+
+msgid "Legendary Authentication:"
+msgstr "Авторизация в Legendary:"
+
+msgid "Enter Legendary Authorization Code"
+msgstr "Введите код авторизации Legendary"
+
+msgid "Authorization Code:"
+msgstr "Код авторизации:"
+
+msgid "Submit Code"
+msgstr "Отправить код"
+
+msgid "Save Settings"
+msgstr "Сохранить настройки"
+
+msgid "Reset Settings"
+msgstr "Сбросить настройки"
+
+msgid "Clear Cache"
+msgstr "Очистить кэш"
+
+msgid "Opened Legendary login page in browser"
+msgstr "Открытие страницы входа в Legendary в браузере"
+
+msgid "Failed to open Legendary login page"
+msgstr "Не удалось открыть страницу входа в Legendary"
+
+msgid "Please enter an authorization code"
+msgstr "Пожалуйста, введите код авторизации"
+
+msgid "Successfully authenticated with Legendary"
+msgstr "Успешная аутентификация с Legendary"
+
+#, python-brace-format
+msgid "Legendary authentication failed: {0}"
+msgstr "Сбой аутентификации в Legendary: {0}"
+
+msgid "Legendary executable not found"
+msgstr "Не найден исполняемый файл Legendary"
+
+msgid "Unexpected error during authentication"
+msgstr "Неожиданная ошибка при аутентификации"
+
+msgid "Confirm Reset"
+msgstr "Подтвердите удаление"
+
+msgid "Are you sure you want to reset all settings? This action cannot be undone."
+msgstr ""
+"Вы уверены, что хотите сбросить все настройки? Это действие нельзя "
+"отменить."
+
+msgid "Settings reset. Restarting..."
+msgstr "Настройки сброшены. Перезапуск..."
+
+msgid "Confirm Clear Cache"
+msgstr "Подтвердите очистку кэша"
+
+msgid "Are you sure you want to clear the cache? This action cannot be undone."
+msgstr "Вы уверены, что хотите очистить кэш? Это действие нельзя отменить."
+
+msgid "Cache cleared"
+msgstr "Кэш очищен"
+
+msgid "Settings saved"
+msgstr "Настройки сохранены"
+
+msgid "Select Theme:"
+msgstr "Выбрать тему:"
+
+msgid "Apply Theme"
+msgstr "Применить тему"
+
+msgid "No link"
+msgstr "Нет ссылки"
+
+msgid "Unknown"
+msgstr "Неизвестен"
+
+msgid "Name:"
+msgstr "Название:"
+
+msgid "Description:"
+msgstr "Описание:"
+
+msgid "Author:"
+msgstr "Автор:"
+
+msgid "Link:"
+msgstr "Ссылка:"
+
+#, python-brace-format
+msgid "Theme '{0}' applied successfully"
+msgstr "Тема '{0}' применена успешно"
+
+#, python-brace-format
+msgid "Error applying theme '{0}'"
+msgstr "Ошибка при применение темы '{0}'"
+
+msgid "Back"
+msgstr "Назад"
+
+msgid "LAST LAUNCH"
+msgstr "Последний запуск"
+
+msgid "PLAY TIME"
+msgstr "Время игры"
+
+msgid "full"
+msgstr "полная"
+
+msgid "partial"
+msgstr "частичная"
+
+msgid "none"
+msgstr "отсутствует"
+
+#, python-brace-format
+msgid "Gamepad Support: {0}"
+msgstr "Поддержка геймпадов: {0}"
+
+msgid "Stop"
+msgstr "Остановить"
+
+msgid "Play"
+msgstr "Играть"
+
+msgid "Invalid command format (native)"
+msgstr "Неправильный формат команды (нативная версия)"
+
+msgid "Invalid command format (flatpak)"
+msgstr "Неправильный формат команды (flatpak)"
+
+#, python-brace-format
+msgid "File not found: {0}"
+msgstr "Файл не найден: {0}"
+
+msgid "Cannot launch game while another game is running"
+msgstr "Невозможно запустить игру пока запущена другая"
+
+msgid "Launching"
+msgstr "Идёт запуск"
+
+msgid "just now"
+msgstr "только что"
+
+msgid "d."
+msgstr "д."
+
+msgid "h."
+msgstr "ч."
+
+msgid "min."
+msgstr "мин."
+
+msgid "sec."
+msgstr "сек."
+
