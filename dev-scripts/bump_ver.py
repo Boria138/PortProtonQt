@@ -12,7 +12,6 @@ ARCH_PKGBUILD = BASE_DIR / "build-aux" / "PKGBUILD"
 FEDORA_SPEC = BASE_DIR / "build-aux" / "fedora.spec"
 PYPROJECT = BASE_DIR / "pyproject.toml"
 APP_PY = BASE_DIR / "portprotonqt" / "app.py"
-GITHUB_WORKFLOW = BASE_DIR / ".github" / "workflows" / "build.yml"
 GITEA_WORKFLOW = BASE_DIR / ".gitea" / "workflows" / "build.yml"
 
 def bump_appimage(path: Path, old: str, new: str) -> bool:
@@ -87,7 +86,7 @@ def bump_app_py(path: Path, old: str, new: str) -> bool:
 
 def bump_workflow(path: Path, old: str, new: str) -> bool:
     """
-    Update VERSION in GitHub or Gitea Actions workflow
+    Update VERSION in Gitea Actions workflow
     """
     if not path.exists():
         return False
@@ -112,7 +111,6 @@ def main():
         (FEDORA_SPEC, bump_fedora),
         (PYPROJECT, bump_pyproject),
         (APP_PY, bump_app_py),
-        (GITHUB_WORKFLOW, bump_workflow),
         (GITEA_WORKFLOW, bump_workflow)
     ]
 

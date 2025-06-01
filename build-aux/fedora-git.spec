@@ -10,8 +10,8 @@ Version:        %{pypi_version}
 Release:        %{rel_build}
 Summary:        A modern GUI for PortProton project (devel build)
 
-License:        MIT
-URL:            https://github.com/Boria138/PortProtonQt
+License:        GPL-3.0
+URL:            https://git.linux-gaming.ru/Boria138/PortProtonQt
 BuildArch:      noarch
 
 BuildRequires:  python3-devel
@@ -49,7 +49,7 @@ PortProtonQt is a modern graphical user interface for the PortProton project,
 designed to simplify the management and launching of games using Wine and Proton.
 
 %prep
-git clone https://github.com/Boria138/PortProtonQt
+git clone https://git.linux-gaming.ru/Boria138/PortProtonQt.git
 
 %build
 cd %{oname}

@@ -73,7 +73,7 @@ jobs:
       - name: Build
         run: |
           cd /__w/portproton-repo
-          git clone https://github.com/Boria138/PortProtonQt.git
+          git clone https://git.linux-gaming.ru/Boria138/PortProtonQt.git
           cd /__w/portproton-repo/PortProtonQt/build-aux
           chown user -R ..
           su user -c "yes '' | makepkg --noconfirm -s"

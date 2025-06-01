@@ -311,8 +311,7 @@ def load_steam_apps_async(callback: Callable[[list], None]):
             callback([])
     else:
         app_list_url = (
-            "https://raw.githubusercontent.com/Boria138/PortProtonQt/"
-            "refs/heads/main/data/games_appid.tar.xz"
+            "https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/data/games_appid.tar.xz"
         )
         downloader.download_async(app_list_url, cache_tar, timeout=5, callback=process_tar)
 
@@ -457,8 +456,7 @@ def load_weanticheatyet_data_async(callback: Callable[[list], None]):
             callback([])
     else:
         app_list_url = (
-            "https://raw.githubusercontent.com/Boria138/PortProtonQt/"
-            "refs/heads/main/data/anticheat_games.tar.xz"
+            "https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/data/anticheat_games.tar.xz"
         )
         downloader.download_async(app_list_url, cache_tar, timeout=5, callback=process_tar)
 
