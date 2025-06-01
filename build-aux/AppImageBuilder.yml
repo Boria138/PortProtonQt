@@ -38,7 +38,6 @@ AppDir:
     include:
       - python3
       - python3-pkg-resources
-      - python3-dev
       - libopengl0
       - libk5crypto3
       - libkrb5-3

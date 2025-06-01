@@ -19,7 +19,7 @@ jobs:
       - name: Install required dependencies
         run: |
             sudo apt update
-            sudo apt install -y binutils coreutils desktop-file-utils fakeroot fuse libgdk-pixbuf2.0-dev patchelf python3-pip python3-setuptools squashfs-tools strace util-linux zsync
+            sudo apt install -y binutils coreutils desktop-file-utils fakeroot fuse libgdk-pixbuf2.0-dev patchelf python3-pip python3-dev python3-setuptools squashfs-tools strace util-linux zsync
 
       - name: Install tools
         run: pip3 install appimage-builder uv
