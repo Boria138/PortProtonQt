@@ -30,7 +30,7 @@ jobs:
           appimage-builder
 
       - name: Upload AppImage
-        uses: https://gitea.com/actions/gitea-upload-artifact@v3
+        uses: https://gitea.com/actions/gitea-upload-artifact@v4
         with:
           name: PortProtonQt-AppImage
           path: build-aux/PortProtonQt*.AppImage*
@@ -82,7 +82,7 @@ jobs:
         uses: https://gitea.com/actions/checkout@v4
 
       - name: Upload Arch package
-        uses: https://gitea.com/actions/gitea-upload-artifact@v3
+        uses: https://gitea.com/actions/gitea-upload-artifact@v4
         with:
           name: PortProtonQt-Arch
           path: ${{ env.PKGDEST }}/*
@@ -126,7 +126,7 @@ jobs:
           su rpmbuild -c "rpmbuild -ba /home/rpmbuild/SPECS/${{ env.PACKAGE }}.spec"
 
       - name: Upload RPM package
-        uses: https://gitea.com/actions/gitea-upload-artifact@v3
+        uses: https://gitea.com/actions/gitea-upload-artifact@v4
         with:
           name: PortProtonQt-RPM-Fedora-${{ matrix.fedora_version }}
           path: /home/rpmbuild/RPMS/**/*.rpm
