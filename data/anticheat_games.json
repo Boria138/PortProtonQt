@@ -1221,7 +1221,7 @@
   },
   {
     "normalized_name": "ヘブンバーンズレッド (heaven burns red)",
-    "status": "Broken"
+    "status": "Running"
   },
   {
     "normalized_name": "microworks",
@@ -1405,7 +1405,7 @@
   },
   {
     "normalized_name": "wuthering waves",
-    "status": "Broken"
+    "status": "Planned"
   },
   {
     "normalized_name": "dota underlords",
@@ -1513,7 +1513,7 @@
   },
   {
     "normalized_name": "mabinogi",
-    "status": "Broken"
+    "status": "Running"
   },
   {
     "normalized_name": "tekken 7 (esl)",
@@ -1621,7 +1621,7 @@
   },
   {
     "normalized_name": "delta force hawk ops",
-    "status": "Broken"
+    "status": "Denied"
   },
   {
     "normalized_name": "lightning",
@@ -4394,5 +4394,17 @@
   {
     "normalized_name": "infinity nikki",
     "status": "Broken"
+  },
+  {
+    "normalized_name": "rematch",
+    "status": "Running"
+  },
+  {
+    "normalized_name": "nba 2k25",
+    "status": "Running"
+  },
+  {
+    "normalized_name": "elden ring nightreign",
+    "status": "Running"
   }
 ]
