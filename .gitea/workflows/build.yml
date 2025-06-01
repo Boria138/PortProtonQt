@@ -12,14 +12,9 @@ env:
 jobs:
   build-appimage:
     name: Build AppImage
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: https://gitea.com/actions/checkout@v4
-
-      - name: Set up Python
-        uses: https://gitea.com/actions/setup-python@v5
-        with:
-          python-version-file: "pyproject.toml"
 
       - name: Install required dependencies
         run: |
@@ -27,7 +22,7 @@ jobs:
             sudo apt install -y binutils coreutils desktop-file-utils fakeroot fuse libgdk-pixbuf2.0-dev patchelf python3-pip python3-dev python3-setuptools squashfs-tools strace util-linux zsync
 
       - name: Install tools
-        run: pip install appimage-builder uv
+        run: pip3 install appimage-builder uv
 
       - name: Build AppImage
         run: |
