@@ -35,7 +35,7 @@ jobs:
         env:
           GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
           GITEA_ACTOR: ${{ gitea.actor }}
-          GITEA_SERVER: ${{ secrets.GITEA_SERVER }}
+          GITEA_SERVER: "git.linux-gaming.ru"
           GITEA_REPOSITORY: ${{ gitea.repository }}
         run: |
           # Create the push script
