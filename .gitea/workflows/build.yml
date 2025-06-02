@@ -2,12 +2,16 @@ name: Build AppImage, Arch and Fedora Packages
 
 on:
   workflow_dispatch:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
 
 env:
   # Common version, will be used for tagging the release
-  VERSION: 0.1.1
+  VERSION: v0.1.1
   PKGDEST: "/tmp/portprotonqt"
   PACKAGE: "portprotonqt"
+  GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
 
 jobs:
   build-appimage:
@@ -130,3 +134,27 @@ jobs:
         with:
           name: PortProtonQt-RPM-Fedora-${{ matrix.fedora_version }}
           path: /home/rpmbuild/RPMS/**/*.rpm
+
+  release:
+    name: Create and Publish Release
+    needs: [build-appimage, build-arch, build-fedora]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: https://gitea.com/actions/download-artifact@v4
+        with:
+          path: release/
+
+      - name: Get Changes between Tags
+        id: changes
+        uses: https://github.com/simbo/changes-between-tags-action@v1
+
+      - name: Release
+        uses: https://gitea.com/actions/gitea-release-action@v1
+        with:
+          body: ${{ steps.changes.outputs.changes }}
+          token: ${{ env.GITEA_TOKEN }}
+          tag_name: ${{ env.VERSION }}
+          prerelease: true
+          files: release/**/*
+          sha256sum: true

@@ -47,7 +47,7 @@ PortProtonQt is a modern, user-friendly graphical interface designed to streamli
 %prep
 git clone https://git.linux-gaming.ru/Boria138/PortProtonQt
 cd %{oname}
-git checkout %{pypi_version}
+git checkout v%{pypi_version}
 
 %build
 cd %{oname}
