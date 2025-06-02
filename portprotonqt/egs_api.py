@@ -30,10 +30,12 @@ def get_egs_game_description_async(
     cache_ttl: int = 3600
 ) -> None:
     """
-    Asynchronously fetches the game description from the Epic Games Store API.
+    Asynchronously fetches the game description using Epic Games Store GraphQL API.
+    Falls back to the legacy store-content API using the productSlug from GraphQL if available.
     Uses per-app cache files named egs_app_{app_name}.json in ~/.cache/PortProtonQT.
     Checks the cache first; if the description is cached and not expired, returns it.
-    Prioritizes the page with type 'productHome' for the base game description.
+    Uses system language from get_egs_language() for the description.
+    Prioritizes the main game description by filtering for productSlug and excluding DLC/bundles.
     """
     cache_dir = get_cache_dir()
     cache_file = cache_dir / f"egs_app_{app_name.lower().replace(':', '_').replace(' ', '_')}.json"
@@ -84,39 +86,67 @@ def get_egs_game_description_async(
             cache_file.unlink(missing_ok=True)
 
     lang = get_egs_language()
-    slug = app_name.lower().replace(":", "").replace(" ", "-")
-    url = f"https://store-content.ak.epicgames.com/api/{lang}/content/products/{slug}"
+    search_url = "https://graphql.epicgames.com/graphql"
+    headers = {
+        "Content-Type": "application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) EpicGamesLauncher"
+    }
+    search_query = {
+        "query": "query search($keywords: String!, $locale: String) { Catalog { searchStore(keywords: $keywords, locale: $locale) { elements { title namespace productSlug description } } } }",
+        "variables": {
+            "keywords": app_name,
+            "locale": lang
+        }
+    }
 
     def fetch_description():
+        description = ""
+        product_slug = None
         try:
-            response = requests.get(url, timeout=5)
+            # First attempt: GraphQL search query
+            response = requests.post(search_url, json=search_query, headers=headers, timeout=5)
             response.raise_for_status()
             data = orjson.loads(response.content)
 
-            if not isinstance(data, dict):
-                logger.warning("Invalid JSON structure for %s: %s", app_name, type(data))
-                callback("")
-                return
-
-            description = ""
-            pages = data.get("pages", [])
-            if pages:
-                # Look for the page with type "productHome" for the base game
-                for page in pages:
-                    if page.get("type") == "productHome":
-                        about_data = page.get("data", {}).get("about", {})
-                        description = about_data.get("shortDescription", "")
+            if isinstance(data, dict) and "data" in data:
+                elements = data.get("data", {}).get("Catalog", {}).get("searchStore", {}).get("elements", [])
+                for element in elements:
+                    if isinstance(element, dict) and element.get("title", "").lower() == app_name.lower() and element.get("productSlug") and not any(substring in element.get("title", "").lower() for substring in ["bundle", "pack", "edition", "dlc", "upgrade", "chapter", "набор", "пак", "дополнение"]):
+                        description = element.get("description", "")
+                        product_slug = element.get("productSlug", "")
                         break
-                else:
-                    # Fallback to first page's description if no productHome is found
-                    description = (
-                        pages[0].get("data", {})
-                        .get("about", {})
-                        .get("shortDescription", "")
-                    )
+            else:
+                logger.warning("Invalid JSON structure for %s in GraphQL response: %s", app_name, type(data))
+
+            if not description and product_slug:
+                logger.info("No valid description found in GraphQL for %s, falling back to legacy API with slug %s", app_name, product_slug)
+                # Fallback to legacy API using productSlug
+                legacy_url = f"https://store-content.ak.epicgames.com/api/{lang}/content/products/{product_slug}"
+                response = requests.get(legacy_url, timeout=5)
+                response.raise_for_status()
+                data = orjson.loads(response.content)
+
+                if not isinstance(data, dict):
+                    logger.warning("Invalid JSON structure for %s in legacy API: %s", app_name, type(data))
+                    callback("")
+                    return
+
+                pages = data.get("pages", [])
+                if pages:
+                    for page in pages:
+                        if page.get("type") == "productHome":
+                            about_data = page.get("data", {}).get("about", {})
+                            description = about_data.get("shortDescription", "")
+                            break
+                    else:
+                        description = (
+                            pages[0].get("data", {})
+                            .get("about", {})
+                            .get("shortDescription", "")
+                        )
 
             if not description:
-                logger.warning("No valid description found for %s", app_name)
+                logger.warning("No valid description found for %s after both queries", app_name)
 
             logger.debug(
                 "Fetched EGS description for %s: %s",
