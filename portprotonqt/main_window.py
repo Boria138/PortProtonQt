@@ -1320,7 +1320,7 @@ class MainWindow(QMainWindow):
     def darkenColor(self, color, factor=200):
         return color.darker(factor)
 
-    def openGameDetailPage(self, name, description, cover_path=None, appid="", exec_line="", controller_support="", last_launch="", formatted_playtime="", protondb_tier="", steam_game=""):
+    def openGameDetailPage(self, name, description, cover_path=None, appid="", exec_line="", controller_support="", last_launch="", formatted_playtime="", protondb_tier="", steam_game="", anticheat_status=""):
         detailPage = QWidget()
         self._animations = {}
         imageLabel = QLabel()
@@ -1375,7 +1375,7 @@ class MainWindow(QMainWindow):
 
         coverLayout.addWidget(imageLabel)
 
-        # Добавляем значок избранного поверх обложки в левом верхнем углу
+        # Значок избранного
         favoriteLabelCover = ClickableLabel(coverFrame)
         favoriteLabelCover.setFixedSize(*self.theme.favoriteLabelSize)
         favoriteLabelCover.setStyleSheet(self.theme.FAVORITE_LABEL_STYLE)
@@ -1387,6 +1387,91 @@ class MainWindow(QMainWindow):
         favoriteLabelCover.clicked.connect(lambda: self.toggleFavoriteInDetailPage(name, favoriteLabelCover))
         favoriteLabelCover.move(8, 8)
         favoriteLabelCover.raise_()
+
+        # Добавляем бейджи (ProtonDB, Steam, WeAntiCheatYet)
+        right_margin = 8
+        badge_spacing = 5
+        top_y = 10
+        badge_y_positions = []
+        badge_width = int(300 * 2/3)  # 2/3 ширины обложки (300 px)
+
+        # ProtonDB бейдж
+        protondb_text = GameCard.getProtonDBText(protondb_tier)
+        if protondb_text:
+            icon_filename = GameCard.getProtonDBIconFilename(protondb_tier)
+            icon = self.theme_manager.get_icon(icon_filename, self.current_theme_name)
+            protondbLabel = ClickableLabel(
+                protondb_text,
+                icon=icon,
+                parent=coverFrame,
+                icon_size=16,
+                icon_space=3,
+            )
+            protondbLabel.setStyleSheet(self.theme.get_protondb_badge_style(protondb_tier))
+            protondbLabel.setFixedWidth(badge_width)
+            protondbLabel.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(f"https://www.protondb.com/app/{appid}")))
+            protondb_visible = True
+        else:
+            protondbLabel = ClickableLabel("", parent=coverFrame, icon_size=16, icon_space=3)
+            protondbLabel.setFixedWidth(badge_width)
+            protondbLabel.setVisible(False)
+            protondb_visible = False
+
+        # Steam бейдж
+        steam_icon = self.theme_manager.get_icon("steam")
+        steamLabel = ClickableLabel(
+            "Steam",
+            icon=steam_icon,
+            parent=coverFrame,
+            icon_size=16,
+            icon_space=5,
+        )
+        steamLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
+        steamLabel.setFixedWidth(badge_width)
+        steam_visible = (str(steam_game).lower() == "true")
+        steamLabel.setVisible(steam_visible)
+        steamLabel.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(f"https://steamcommunity.com/app/{appid}")))
+
+        # WeAntiCheatYet бейдж
+        anticheat_text = GameCard.getAntiCheatText(anticheat_status)
+        if anticheat_text:
+            icon_filename = GameCard.getAntiCheatIconFilename(anticheat_status)
+            icon = self.theme_manager.get_icon(icon_filename, self.current_theme_name)
+            anticheatLabel = ClickableLabel(
+                anticheat_text,
+                icon=icon,
+                parent=coverFrame,
+                icon_size=16,
+                icon_space=3,
+            )
+            anticheatLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
+            anticheatLabel.setFixedWidth(badge_width)
+            anticheatLabel.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(f"https://areweanticheatyet.com/game/{name.lower().replace(' ', '-')}")))
+            anticheat_visible = True
+        else:
+            anticheatLabel = ClickableLabel("", parent=coverFrame, icon_size=16, icon_space=3)
+            anticheatLabel.setFixedWidth(badge_width)
+            anticheatLabel.setVisible(False)
+            anticheat_visible = False
+
+        # Расположение бейджей
+        if steam_visible:
+            steam_x = 300 - badge_width - right_margin
+            steamLabel.move(steam_x, top_y)
+            badge_y_positions.append(top_y + steamLabel.height())
+        if protondb_visible:
+            protondb_x = 300 - badge_width - right_margin
+            protondb_y = badge_y_positions[-1] + badge_spacing if badge_y_positions else top_y
+            protondbLabel.move(protondb_x, protondb_y)
+            badge_y_positions.append(protondb_y + protondbLabel.height())
+        if anticheat_visible:
+            anticheat_x = 300 - badge_width - right_margin
+            anticheat_y = badge_y_positions[-1] + badge_spacing if badge_y_positions else top_y
+            anticheatLabel.move(anticheat_x, anticheat_y)
+
+        anticheatLabel.raise_()
+        protondbLabel.raise_()
+        steamLabel.raise_()
 
         contentFrameLayout.addWidget(coverFrame)
 

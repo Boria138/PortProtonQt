@@ -217,7 +217,8 @@ class GameCard(QFrame):
         if self.context_menu_manager:
             self.context_menu_manager.show_context_menu(self, pos)
 
-    def getAntiCheatText(self, status):
+    @staticmethod
+    def getAntiCheatText(status: str) -> str:
             if not status:
                 return ""
             translations = {
@@ -229,7 +230,8 @@ class GameCard(QFrame):
             }
             return translations.get(status.lower(), "")
 
-    def getAntiCheatIconFilename(self, status):
+    @staticmethod
+    def getAntiCheatIconFilename(status: str) -> str:
         status = status.lower()
         if status in ("supported", "running"):
             return "platinum-gold"
@@ -237,7 +239,8 @@ class GameCard(QFrame):
             return "broken"
         return ""
 
-    def getProtonDBText(self, tier):
+    @staticmethod
+    def getProtonDBText(tier: str) -> str:
         if not tier:
             return ""
         translations = {
@@ -250,7 +253,8 @@ class GameCard(QFrame):
         }
         return translations.get(tier.lower(), "")
 
-    def getProtonDBIconFilename(self, tier):
+    @staticmethod
+    def getProtonDBIconFilename(tier: str) -> str:
         tier = tier.lower()
         if tier in ("platinum", "gold"):
             return "platinum-gold"
@@ -451,7 +455,8 @@ class GameCard(QFrame):
                 self.last_launch,
                 self.formatted_playtime,
                 self.protondb_tier,
-                self.steam_game
+                self.steam_game,
+                self.anticheat_status
             )
         super().mousePressEvent(event)
 
@@ -467,7 +472,8 @@ class GameCard(QFrame):
                 self.last_launch,
                 self.formatted_playtime,
                 self.protondb_tier,
-                self.steam_game
+                self.steam_game,
+                self.anticheat_status
             )
         else:
             super().keyPressEvent(event)
