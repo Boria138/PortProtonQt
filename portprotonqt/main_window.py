@@ -61,6 +61,12 @@ class MainWindow(QMainWindow):
         self.games_load_timer.timeout.connect(self.finalize_game_loading)
         self.games_loaded.connect(self.on_games_loaded)
 
+        # Добавляем таймер для дебаунсинга сохранения настроек
+        self.settingsDebounceTimer = QTimer(self)
+        self.settingsDebounceTimer.setSingleShot(True)
+        self.settingsDebounceTimer.setInterval(300)  # 300 мс задержка
+        self.settingsDebounceTimer.timeout.connect(self.applySettingsDelayed)
+
         read_time_config()
         # Set LEGENDARY_CONFIG_PATH to ~/.cache/PortProtonQT/legendary
         self.legendary_config_path = os.path.join(
@@ -1102,9 +1108,15 @@ class MainWindow(QMainWindow):
             # Показываем сообщение
             self.statusBar().showMessage(_("Cache cleared"), 3000)
 
+    def applySettingsDelayed(self):
+        """Применяет настройки с учетом нового фильтра и обновляет список игр."""
+        read_time_config()
+        self.games = []  # Очищаем текущий список игр
+        self.loadGames()  # Загружаем игры с новым фильтром
+
     def savePortProtonSettings(self):
         """
-        Сохраняет параметры конфигурации в конфигурационный файл,
+        Сохраняет параметры конфигурации в конфигурационный файл.
         """
         time_idx = self.timeDetailCombo.currentIndex()
         time_key = self.time_keys[time_idx]
@@ -1127,17 +1139,23 @@ class MainWindow(QMainWindow):
         fullscreen = self.fullscreenCheckBox.isChecked()
         save_fullscreen_config(fullscreen)
 
-        # Перезагружаем настройки
-        read_time_config()
-        self.games = self.loadGames()
-        self.updateGameGrid()
+        # Запускаем отложенное применение настроек через таймер
+        self.settingsDebounceTimer.start()
+
         self.settings_saved.emit()
 
         if fullscreen:
             self.showFullScreen()
         else:
-            self.showNormal()
-            save_window_geometry(self.width(), self.height())
+            if self.isFullScreen():
+                # Переходим в нормальный режим и восстанавливаем сохраненные размеры
+                width, height = read_window_geometry()
+                self.showNormal()
+                if width > 0 and height > 0:
+                    self.resize(width, height)
+            # Сохраняем геометрию только если окно не в полноэкранном режиме
+            if not self.isFullScreen():
+                save_window_geometry(self.width(), self.height())
 
         self.statusBar().showMessage(_("Settings saved"), 3000)
 
