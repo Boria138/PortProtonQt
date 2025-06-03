@@ -24,18 +24,20 @@ def get_cache_dir() -> Path:
     cache_dir.mkdir(parents=True, exist_ok=True)
     return cache_dir
 
+
 def get_egs_game_description_async(
     app_name: str,
     callback: Callable[[str], None],
     cache_ttl: int = 3600
 ) -> None:
     """
-    Asynchronously fetches the game description using Epic Games Store GraphQL API.
-    Falls back to the legacy store-content API using the productSlug from GraphQL if available.
+    Asynchronously fetches the game description from the Epic Games Store API.
+    Prioritizes the legacy store-content API using a derived slug.
+    Falls back to GraphQL API if legacy API returns empty or 404, retrying legacy API with GraphQL productSlug if needed.
+    Retries GraphQL with English locale if system language yields no description.
     Uses per-app cache files named egs_app_{app_name}.json in ~/.cache/PortProtonQT.
     Checks the cache first; if the description is cached and not expired, returns it.
-    Uses system language from get_egs_language() for the description.
-    Prioritizes the main game description by filtering for productSlug and excluding DLC/bundles.
+    Prioritizes the page with type 'productHome' for the base game description in legacy API.
     """
     cache_dir = get_cache_dir()
     cache_file = cache_dir / f"egs_app_{app_name.lower().replace(':', '_').replace(' ', '_')}.json"
@@ -86,114 +88,121 @@ def get_egs_game_description_async(
             cache_file.unlink(missing_ok=True)
 
     lang = get_egs_language()
-    search_url = "https://graphql.epicgames.com/graphql"
     headers = {
         "Content-Type": "application/json",
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) EpicGamesLauncher"
     }
-    search_query = {
-        "query": "query search($keywords: String!, $locale: String) { Catalog { searchStore(keywords: $keywords, locale: $locale) { elements { title namespace productSlug description } } } }",
-        "variables": {
-            "keywords": app_name,
-            "locale": lang
-        }
-    }
+    search_url = "https://graphql.epicgames.com/graphql"
 
     def fetch_description():
         description = ""
-        product_slug = None
-        try:
-            # First attempt: GraphQL search query
-            response = requests.post(search_url, json=search_query, headers=headers, timeout=5)
-            response.raise_for_status()
-            data = orjson.loads(response.content)
+        slug = app_name.lower().replace(":", "").replace(" ", "-")
+        legacy_url = f"https://store-content.ak.epicgames.com/api/{lang}/content/products/{slug}"
 
-            if isinstance(data, dict) and "data" in data:
-                elements = data.get("data", {}).get("Catalog", {}).get("searchStore", {}).get("elements", [])
-                for element in elements:
-                    if isinstance(element, dict) and element.get("title", "").lower() == app_name.lower() and element.get("productSlug") and not any(substring in element.get("title", "").lower() for substring in ["bundle", "pack", "edition", "dlc", "upgrade", "chapter", "набор", "пак", "дополнение"]):
-                        description = element.get("description", "")
-                        product_slug = element.get("productSlug", "")
-                        break
-            else:
-                logger.warning("Invalid JSON structure for %s in GraphQL response: %s", app_name, type(data))
-
-            if not description and product_slug:
-                logger.info("No valid description found in GraphQL for %s, falling back to legacy API with slug %s", app_name, product_slug)
-                # Fallback to legacy API using productSlug
-                legacy_url = f"https://store-content.ak.epicgames.com/api/{lang}/content/products/{product_slug}"
-                response = requests.get(legacy_url, timeout=5)
+        # Helper function to fetch description via legacy API
+        def fetch_legacy_description(url: str) -> str:
+            try:
+                response = requests.get(url, timeout=5)
                 response.raise_for_status()
                 data = orjson.loads(response.content)
-
                 if not isinstance(data, dict):
                     logger.warning("Invalid JSON structure for %s in legacy API: %s", app_name, type(data))
-                    callback("")
-                    return
-
+                    return ""
                 pages = data.get("pages", [])
                 if pages:
                     for page in pages:
                         if page.get("type") == "productHome":
-                            about_data = page.get("data", {}).get("about", {})
-                            description = about_data.get("shortDescription", "")
-                            break
+                            return page.get("data", {}).get("about", {}).get("shortDescription", "")
                     else:
-                        description = (
-                            pages[0].get("data", {})
-                            .get("about", {})
-                            .get("shortDescription", "")
-                        )
+                        return pages[0].get("data", {}).get("about", {}).get("shortDescription", "")
+                return ""
+            except requests.HTTPError as e:
+                if e.response.status_code == 404:
+                    logger.info("Legacy API returned 404 for %s", app_name)
+                else:
+                    logger.warning("HTTP error in legacy API for %s: %s", app_name, str(e))
+                return ""
+            except requests.RequestException as e:
+                logger.warning("Failed to fetch legacy API for %s: %s", app_name, str(e))
+                return ""
+            except orjson.JSONDecodeError:
+                logger.warning("Invalid JSON response for %s in legacy API", app_name)
+                return ""
+
+        # Helper function to fetch description and productSlug via GraphQL
+        def fetch_graphql_description(locale: str) -> tuple[str, str]:
+            search_query = {
+                "query": "query search($keywords: String!, $locale: String) { Catalog { searchStore(keywords: $keywords, locale: $locale) { elements { title namespace productSlug description } } } }",
+                "variables": {
+                    "keywords": app_name,
+                    "locale": locale
+                }
+            }
+            try:
+                response = requests.post(search_url, json=search_query, headers=headers, timeout=5)
+                response.raise_for_status()
+                data = orjson.loads(response.content)
+                if isinstance(data, dict) and "data" in data:
+                    elements = data.get("data", {}).get("Catalog", {}).get("searchStore", {}).get("elements", [])
+                    for element in elements:
+                        if isinstance(element, dict) and element.get("title", "").lower() == app_name.lower() and element.get("productSlug") and not any(substring in element.get("title", "").lower() for substring in ["bundle", "pack", "edition", "dlc", "upgrade", "chapter", "набор", "пак", "дополнение"]):
+                            return element.get("description", ""), element.get("productSlug", "")
+                logger.warning("No valid description or productSlug found for %s in GraphQL with locale %s", app_name, locale)
+                return "", ""
+            except requests.RequestException as e:
+                logger.warning("Failed to fetch GraphQL data for %s with locale %s: %s", app_name, locale, str(e))
+                return "", ""
+            except orjson.JSONDecodeError:
+                logger.warning("Invalid JSON response for %s with locale %s", app_name, locale)
+                return "", ""
+
+        try:
+            # Step 1: Try legacy API with derived slug
+            description = fetch_legacy_description(legacy_url)
+            product_slug = None
+
+            # Step 2: If legacy API fails, try GraphQL and possibly retry legacy with GraphQL slug
+            if not description:
+                logger.info("No valid description from legacy API for %s, falling back to GraphQL", app_name)
+                description, product_slug = fetch_graphql_description(lang)
+                # Retry legacy API with GraphQL productSlug if available
+                if not description and product_slug:
+                    legacy_url = f"https://store-content.ak.epicgames.com/api/{lang}/content/products/{product_slug}"
+                    description = fetch_legacy_description(legacy_url)
+                    if description:
+                        logger.debug("Fetched description from legacy API with GraphQL slug for %s: %s", app_name, (description[:100] + "...") if len(description) > 100 else description)
+
+            # Step 3: If still no description, retry GraphQL with English locale
+            if not description:
+                logger.info("No description in system language %s for %s, retrying GraphQL with en-US", lang, app_name)
+                description, _ = fetch_graphql_description("en-US")
 
             if not description:
-                logger.warning("No valid description found for %s after both queries", app_name)
+                logger.warning("No valid description found for %s after all queries", app_name)
 
             logger.debug(
-                "Fetched EGS description for %s: %s",
+                "Final description for %s: %s",
                 app_name,
                 (description[:100] + "...") if len(description) > 100 else description
             )
 
+            # Save to cache
             cache_entry = {"description": description, "timestamp": time.time()}
             try:
                 temp_file = cache_file.with_suffix('.tmp')
                 with open(temp_file, "wb") as f:
                     f.write(orjson.dumps(cache_entry))
                 temp_file.replace(cache_file)
-                logger.debug(
-                    "Saved description to cache for %s", app_name
-                )
+                logger.debug("Saved description to cache for %s", app_name)
             except Exception as e:
-                logger.error(
-                    "Failed to save description cache for %s: %s",
-                    app_name,
-                    str(e)
-                )
+                logger.error("Failed to save description cache for %s: %s", app_name, str(e))
+
             callback(description)
-        except requests.RequestException as e:
-            logger.warning(
-                "Failed to fetch EGS description for %s: %s",
-                app_name,
-                str(e)
-            )
-            callback("")
-        except orjson.JSONDecodeError:
-            logger.warning(
-                "Invalid JSON response for %s", app_name
-            )
-            callback("")
         except Exception as e:
-            logger.error(
-                "Unexpected error fetching EGS description for %s: %s",
-                app_name,
-                str(e)
-            )
+            logger.error("Unexpected error fetching EGS description for %s: %s", app_name, str(e))
             callback("")
 
-    thread = threading.Thread(
-        target=fetch_description,
-        daemon=True
-    )
+    thread = threading.Thread(target=fetch_description, daemon=True)
     thread.start()
 
 def run_legendary_list_async(legendary_path: str, callback: Callable[[list | None], None]):
