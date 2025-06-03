@@ -1,4 +1,6 @@
+import re
 import requests
+import requests.exceptions
 import threading
 import orjson
 from pathlib import Path
@@ -24,27 +26,23 @@ def get_cache_dir() -> Path:
     cache_dir.mkdir(parents=True, exist_ok=True)
     return cache_dir
 
-
 def get_egs_game_description_async(
     app_name: str,
     callback: Callable[[str], None],
+    namespace: str | None = None,
     cache_ttl: int = 3600
 ) -> None:
     """
     Asynchronously fetches the game description from the Epic Games Store API.
-    Prioritizes the legacy store-content API using a derived slug.
-    Falls back to GraphQL API if legacy API returns empty or 404, retrying legacy API with GraphQL productSlug if needed.
-    Retries GraphQL with English locale if system language yields no description.
-    Uses per-app cache files named egs_app_{app_name}.json in ~/.cache/PortProtonQT.
-    Checks the cache first; if the description is cached and not expired, returns it.
-    Prioritizes the page with type 'productHome' for the base game description in legacy API.
+    Prioritizes GraphQL API with namespace for slug and description.
+    Falls back to legacy API if GraphQL provides a slug but no description.
+    Caches results in ~/.cache/PortProtonQT/egs_app_{app_name}.json.
+    Handles DNS resolution failures gracefully.
     """
     cache_dir = get_cache_dir()
     cache_file = cache_dir / f"egs_app_{app_name.lower().replace(':', '_').replace(' ', '_')}.json"
 
-    # Initialize content to avoid unbound variable
-    content = b""
-    # Load existing cache
+    # Check cache
     if cache_file.exists():
         try:
             with open(cache_file, "rb") as f:
@@ -74,10 +72,6 @@ def get_egs_game_description_async(
                 app_name,
                 str(e)
             )
-            logger.debug(
-                "Cache file content (first 100 chars): %s",
-                content[:100].decode('utf-8', errors='replace')
-            )
             cache_file.unlink(missing_ok=True)
         except Exception as e:
             logger.error(
@@ -92,119 +86,201 @@ def get_egs_game_description_async(
         "Content-Type": "application/json",
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) EpicGamesLauncher"
     }
-    search_url = "https://graphql.epicgames.com/graphql"
+
+    def slug_from_title(title: str) -> str:
+        """Derives a slug from the game title, preserving numbers and handling special characters."""
+        # Keep letters, numbers, and spaces; replace spaces with hyphens
+        cleaned = re.sub(r'[^a-z0-9 ]', '', title.lower()).strip()
+        return re.sub(r'\s+', '-', cleaned)
+
+    def get_product_slug(namespace: str) -> str:
+        """Fetches the product slug using the namespace via GraphQL."""
+        search_query = {
+            "query": """
+                query {
+                    Catalog {
+                        catalogNs(namespace: $namespace) {
+                            mappings(pageType: "productHome") {
+                                pageSlug
+                                pageType
+                            }
+                        }
+                    }
+                }
+            """,
+            "variables": {"namespace": namespace}
+        }
+        try:
+            response = requests.post(
+                "https://launcher.store.epicgames.com/graphql",
+                json=search_query,
+                headers=headers,
+                timeout=5
+            )
+            response.raise_for_status()
+            data = orjson.loads(response.content)
+            mappings = data.get("data", {}).get("Catalog", {}).get("catalogNs", {}).get("mappings", [])
+            for mapping in mappings:
+                if mapping.get("pageType") == "productHome":
+                    return mapping.get("pageSlug", "")
+            logger.warning("No productHome slug found for namespace %s", namespace)
+            return ""
+        except requests.RequestException as e:
+            logger.warning("Failed to fetch product slug for namespace %s: %s", namespace, str(e))
+            return ""
+        except orjson.JSONDecodeError:
+            logger.warning("Invalid JSON response for namespace %s", namespace)
+            return ""
+
+    def fetch_legacy_description(url: str) -> str:
+        """Fetches description from the legacy API, handling DNS failures."""
+        try:
+            response = requests.get(url, headers=headers, timeout=5)
+            response.raise_for_status()
+            data = orjson.loads(response.content)
+            if not isinstance(data, dict):
+                logger.warning("Invalid JSON structure for %s in legacy API: %s", app_name, type(data))
+                return ""
+            pages = data.get("pages", [])
+            if pages:
+                for page in pages:
+                    if page.get("type") == "productHome":
+                        return page.get("data", {}).get("about", {}).get("shortDescription", "")
+                return pages[0].get("data", {}).get("about", {}).get("shortDescription", "")
+            return ""
+        except requests.HTTPError as e:
+            if e.response.status_code == 404:
+                logger.info("Legacy API returned 404 for %s", app_name)
+            else:
+                logger.warning("HTTP error in legacy API for %s: %s", app_name, str(e))
+            return ""
+        except requests.exceptions.ConnectionError as e:
+            logger.error("DNS resolution failed for legacy API %s: %s", url, str(e))
+            return ""
+        except requests.RequestException as e:
+            logger.warning("Failed to fetch legacy API for %s: %s", app_name, str(e))
+            return ""
+        except orjson.JSONDecodeError:
+            logger.warning("Invalid JSON response for %s in legacy API", app_name)
+            return ""
+
+    def fetch_graphql_description(namespace: str | None, locale: str) -> tuple[str, str]:
+        """Fetches description and slug from GraphQL API using namespace or title."""
+        if namespace:
+            search_query = {
+                "query": """
+                    query {
+                        Product {
+                            sandbox(sandboxId: $namespace) {
+                                configuration {
+                                    ... on StoreConfiguration {
+                                        configs {
+                                            shortDescription
+                                        }
+                                    }
+                                }
+                            }
+                            catalogNs {
+                                mappings(pageType: "productHome") {
+                                    pageSlug
+                                    pageType
+                                }
+                            }
+                        }
+                    }
+                """,
+                "variables": {"namespace": namespace}
+            }
+            url = "https://launcher.store.epicgames.com/graphql"
+        else:
+            search_query = {
+                "query": """
+                    query search($keywords: String!, $locale: String) {
+                        Catalog {
+                            searchStore(keywords: $keywords, locale: $locale) {
+                                elements { title namespace productSlug description }
+                            }
+                        }
+                    }
+                """,
+                "variables": {"keywords": app_name, "locale": locale}
+            }
+            url = "https://graphql.epicgames.com/graphql"
+
+        try:
+            response = requests.post(url, json=search_query, headers=headers, timeout=5)
+            response.raise_for_status()
+            data = orjson.loads(response.content)
+            if namespace:
+                configs = data.get("data", {}).get("Product", {}).get("sandbox", {}).get("configuration", [{}])[0].get("configs", {})
+                description = configs.get("shortDescription", "")
+                mappings = data.get("data", {}).get("Product", {}).get("catalogNs", {}).get("mappings", [])
+                slug = next((m.get("pageSlug", "") for m in mappings if m.get("pageType") == "productHome"), "")
+                return description, slug
+            else:
+                elements = data.get("data", {}).get("Catalog", {}).get("searchStore", {}).get("elements", [])
+                for element in elements:
+                    if (isinstance(element, dict) and
+                        element.get("title", "").lower() == app_name.lower() and
+                        element.get("productSlug") and
+                        not any(substring in element.get("title", "").lower()
+                                for substring in ["bundle", "pack", "edition", "dlc", "upgrade", "chapter", "набор", "пак", "дополнение"])):
+                        return element.get("description", ""), element.get("productSlug", "")
+                return "", ""
+        except requests.RequestException as e:
+            logger.warning("Failed to fetch GraphQL data for %s with locale %s: %s", app_name, locale, str(e))
+            return "", ""
+        except orjson.JSONDecodeError:
+            logger.warning("Invalid JSON response for %s with locale %s", app_name, locale)
+            return "", ""
 
     def fetch_description():
         description = ""
-        slug = app_name.lower().replace(":", "").replace(" ", "-")
-        legacy_url = f"https://store-content.ak.epicgames.com/api/{lang}/content/products/{slug}"
+        product_slug = ""
 
-        # Helper function to fetch description via legacy API
-        def fetch_legacy_description(url: str) -> str:
+        # Step 1: Try GraphQL with namespace to get description and slug
+        if namespace:
+            description, product_slug = fetch_graphql_description(namespace, lang)
+            if description:
+                logger.debug("Fetched description from GraphQL for %s: %s", app_name, (description[:100] + "...") if len(description) > 100 else description)
+
+        # Step 2: If no description or no namespace, try legacy API with slug
+        if not description:
+            if not product_slug:
+                product_slug = slug_from_title(app_name)
+            legacy_url = f"https://store-content.ak.epicgames.com/api/{lang}/content/products/{product_slug}"
             try:
-                response = requests.get(url, timeout=5)
-                response.raise_for_status()
-                data = orjson.loads(response.content)
-                if not isinstance(data, dict):
-                    logger.warning("Invalid JSON structure for %s in legacy API: %s", app_name, type(data))
-                    return ""
-                pages = data.get("pages", [])
-                if pages:
-                    for page in pages:
-                        if page.get("type") == "productHome":
-                            return page.get("data", {}).get("about", {}).get("shortDescription", "")
-                    else:
-                        return pages[0].get("data", {}).get("about", {}).get("shortDescription", "")
-                return ""
-            except requests.HTTPError as e:
-                if e.response.status_code == 404:
-                    logger.info("Legacy API returned 404 for %s", app_name)
-                else:
-                    logger.warning("HTTP error in legacy API for %s: %s", app_name, str(e))
-                return ""
-            except requests.RequestException as e:
-                logger.warning("Failed to fetch legacy API for %s: %s", app_name, str(e))
-                return ""
-            except orjson.JSONDecodeError:
-                logger.warning("Invalid JSON response for %s in legacy API", app_name)
-                return ""
+                description = fetch_legacy_description(legacy_url)
+                if description:
+                    logger.debug("Fetched description from legacy API for %s: %s", app_name, (description[:100] + "...") if len(description) > 100 else description)
+            except requests.exceptions.ConnectionError:
+                logger.error("Skipping legacy API due to DNS resolution failure for %s", app_name)
 
-        # Helper function to fetch description and productSlug via GraphQL
-        def fetch_graphql_description(locale: str) -> tuple[str, str]:
-            search_query = {
-                "query": "query search($keywords: String!, $locale: String) { Catalog { searchStore(keywords: $keywords, locale: $locale) { elements { title namespace productSlug description } } } }",
-                "variables": {
-                    "keywords": app_name,
-                    "locale": locale
-                }
-            }
-            try:
-                response = requests.post(search_url, json=search_query, headers=headers, timeout=5)
-                response.raise_for_status()
-                data = orjson.loads(response.content)
-                if isinstance(data, dict) and "data" in data:
-                    elements = data.get("data", {}).get("Catalog", {}).get("searchStore", {}).get("elements", [])
-                    for element in elements:
-                        if isinstance(element, dict) and element.get("title", "").lower() == app_name.lower() and element.get("productSlug") and not any(substring in element.get("title", "").lower() for substring in ["bundle", "pack", "edition", "dlc", "upgrade", "chapter", "набор", "пак", "дополнение"]):
-                            return element.get("description", ""), element.get("productSlug", "")
-                logger.warning("No valid description or productSlug found for %s in GraphQL with locale %s", app_name, locale)
-                return "", ""
-            except requests.RequestException as e:
-                logger.warning("Failed to fetch GraphQL data for %s with locale %s: %s", app_name, locale, str(e))
-                return "", ""
-            except orjson.JSONDecodeError:
-                logger.warning("Invalid JSON response for %s with locale %s", app_name, locale)
-                return "", ""
+        # Step 3: If still no description and no namespace, try GraphQL with title
+        if not description and not namespace:
+            description, _ = fetch_graphql_description(None, lang)
+            if description:
+                logger.debug("Fetched description from GraphQL title search for %s: %s", app_name, (description[:100] + "...") if len(description) > 100 else description)
 
+        # Step 4: If no description found, log and return empty
+        if not description:
+            logger.warning("No valid description found for %s", app_name)
+
+        # Save to cache
+        cache_entry = {"description": description, "timestamp": time.time()}
         try:
-            # Step 1: Try legacy API with derived slug
-            description = fetch_legacy_description(legacy_url)
-            product_slug = None
-
-            # Step 2: If legacy API fails, try GraphQL and possibly retry legacy with GraphQL slug
-            if not description:
-                logger.info("No valid description from legacy API for %s, falling back to GraphQL", app_name)
-                description, product_slug = fetch_graphql_description(lang)
-                # Retry legacy API with GraphQL productSlug if available
-                if not description and product_slug:
-                    legacy_url = f"https://store-content.ak.epicgames.com/api/{lang}/content/products/{product_slug}"
-                    description = fetch_legacy_description(legacy_url)
-                    if description:
-                        logger.debug("Fetched description from legacy API with GraphQL slug for %s: %s", app_name, (description[:100] + "...") if len(description) > 100 else description)
-
-            # Step 3: If still no description, retry GraphQL with English locale
-            if not description:
-                logger.info("No description in system language %s for %s, retrying GraphQL with en-US", lang, app_name)
-                description, _ = fetch_graphql_description("en-US")
-
-            if not description:
-                logger.warning("No valid description found for %s after all queries", app_name)
-
-            logger.debug(
-                "Final description for %s: %s",
-                app_name,
-                (description[:100] + "...") if len(description) > 100 else description
-            )
-
-            # Save to cache
-            cache_entry = {"description": description, "timestamp": time.time()}
-            try:
-                temp_file = cache_file.with_suffix('.tmp')
-                with open(temp_file, "wb") as f:
-                    f.write(orjson.dumps(cache_entry))
-                temp_file.replace(cache_file)
-                logger.debug("Saved description to cache for %s", app_name)
-            except Exception as e:
-                logger.error("Failed to save description cache for %s: %s", app_name, str(e))
-
-            callback(description)
+            temp_file = cache_file.with_suffix('.tmp')
+            with open(temp_file, "wb") as f:
+                f.write(orjson.dumps(cache_entry))
+            temp_file.replace(cache_file)
+            logger.debug("Saved description to cache for %s", app_name)
         except Exception as e:
-            logger.error("Unexpected error fetching EGS description for %s: %s", app_name, str(e))
-            callback("")
+            logger.error("Failed to save description cache for %s: %s", app_name, str(e))
+
+        callback(description)
 
     thread = threading.Thread(target=fetch_description, daemon=True)
     thread.start()
-
 def run_legendary_list_async(legendary_path: str, callback: Callable[[list | None], None]):
     """
     Асинхронно выполняет команду 'legendary list --json' и возвращает результат через callback.
