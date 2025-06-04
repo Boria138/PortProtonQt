@@ -164,6 +164,7 @@ class GameCard(QFrame):
             parent=coverWidget,
             icon_size=16,
             icon_space=5,
+            change_cursor=False
         )
         self.egsLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
         self.egsLabel.setFixedWidth(int(card_width * 2/3))  # Устанавливаем ширину в 2/3 ширины карточки

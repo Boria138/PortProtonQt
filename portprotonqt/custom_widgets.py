@@ -133,7 +133,7 @@ class FlowLayout(QLayout):
 class ClickableLabel(QLabel):
     clicked = Signal()
 
-    def __init__(self, *args, icon=None, icon_size=16, icon_space=5, **kwargs):
+    def __init__(self, *args, icon=None, icon_size=16, icon_space=5, change_cursor=True, **kwargs):
         """
         Поддерживаются вызовы:
           - ClickableLabel("текст", parent=...) – первый аргумент строка,
@@ -143,6 +143,7 @@ class ClickableLabel(QLabel):
           icon: QIcon или None – иконка, которая будет отрисована вместе с текстом.
           icon_size: int – размер иконки (ширина и высота).
           icon_space: int – отступ между иконкой и текстом.
+          change_cursor: bool – изменять ли курсор на PointingHandCursor при наведении (по умолчанию True).
         """
         if args and isinstance(args[0], str):
             text = args[0]
@@ -161,7 +162,8 @@ class ClickableLabel(QLabel):
         self._icon = icon
         self._icon_size = icon_size
         self._icon_space = icon_space
-        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        if change_cursor:
+            self.setCursor(Qt.CursorShape.PointingHandCursor)
 
     def setIcon(self, icon):
         """Устанавливает иконку и перерисовывает виджет."""

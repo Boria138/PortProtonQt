@@ -1440,6 +1440,7 @@ class MainWindow(QMainWindow):
             parent=coverFrame,
             icon_size=16,
             icon_space=5,
+            change_cursor=False
         )
         egsLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
         egsLabel.setFixedWidth(badge_width)
