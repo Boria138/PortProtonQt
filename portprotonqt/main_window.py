@@ -1432,6 +1432,20 @@ class MainWindow(QMainWindow):
         steamLabel.setVisible(steam_visible)
         steamLabel.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(f"https://steamcommunity.com/app/{appid}")))
 
+        # Epic Games Store бейдж
+        egs_icon = self.theme_manager.get_icon("steam")
+        egsLabel = ClickableLabel(
+            "Epic Games",
+            icon=egs_icon,
+            parent=coverFrame,
+            icon_size=16,
+            icon_space=5,
+        )
+        egsLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
+        egsLabel.setFixedWidth(badge_width)
+        egs_visible = (str(steam_game).lower() == "epic")
+        egsLabel.setVisible(egs_visible)
+
         # WeAntiCheatYet бейдж
         anticheat_text = GameCard.getAntiCheatText(anticheat_status)
         if anticheat_text:
@@ -1459,6 +1473,11 @@ class MainWindow(QMainWindow):
             steam_x = 300 - badge_width - right_margin
             steamLabel.move(steam_x, top_y)
             badge_y_positions.append(top_y + steamLabel.height())
+        if egs_visible:
+            egs_x = 300 - badge_width - right_margin
+            egs_y = badge_y_positions[-1] + badge_spacing if badge_y_positions else top_y
+            egsLabel.move(egs_x, egs_y)
+            badge_y_positions.append(egs_y + egsLabel.height())
         if protondb_visible:
             protondb_x = 300 - badge_width - right_margin
             protondb_y = badge_y_positions[-1] + badge_spacing if badge_y_positions else top_y

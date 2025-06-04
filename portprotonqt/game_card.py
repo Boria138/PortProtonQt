@@ -156,6 +156,20 @@ class GameCard(QFrame):
         steam_visible = (str(steam_game).lower() == "true")
         self.steamLabel.setVisible(steam_visible)
 
+        # Epic Games Store бейдж
+        egs_icon = self.theme_manager.get_icon("steam")
+        self.egsLabel = ClickableLabel(
+            "Epic Games",
+            icon=egs_icon,
+            parent=coverWidget,
+            icon_size=16,
+            icon_space=5,
+        )
+        self.egsLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
+        self.egsLabel.setFixedWidth(int(card_width * 2/3))  # Устанавливаем ширину в 2/3 ширины карточки
+        egs_visible = (str(steam_game).lower() == "epic")
+        self.egsLabel.setVisible(egs_visible)
+
         # WeAntiCheatYet бейдж
         anticheat_text = self.getAntiCheatText(anticheat_status)
         if anticheat_text:
@@ -187,6 +201,11 @@ class GameCard(QFrame):
             steam_x = card_width - badge_width - right_margin
             self.steamLabel.move(steam_x, top_y)
             badge_y_positions.append(top_y + self.steamLabel.height())
+        if egs_visible:
+            egs_x = card_width - badge_width - right_margin
+            egs_y = badge_y_positions[-1] + badge_spacing if badge_y_positions else top_y
+            self.egsLabel.move(egs_x, egs_y)
+            badge_y_positions.append(egs_y + self.egsLabel.height())
         if protondb_visible:
             protondb_x = card_width - badge_width - right_margin
             protondb_y = badge_y_positions[-1] + badge_spacing if badge_y_positions else top_y
@@ -199,6 +218,7 @@ class GameCard(QFrame):
 
         self.anticheatLabel.raise_()
         self.protondbLabel.raise_()
+        self.egsLabel.raise_()
         self.steamLabel.raise_()
         self.protondbLabel.clicked.connect(self.open_protondb_report)
         self.steamLabel.clicked.connect(self.open_steam_page)
@@ -219,16 +239,16 @@ class GameCard(QFrame):
 
     @staticmethod
     def getAntiCheatText(status: str) -> str:
-            if not status:
-                return ""
-            translations = {
-                "supported": _("Supported"),
-                "running": _("Running"),
-                "planned": _("Planned"),
-                "broken":  _("Broken"),
-                "denied": _("Denied")
-            }
-            return translations.get(status.lower(), "")
+        if not status:
+            return ""
+        translations = {
+            "supported": _("Supported"),
+            "running": _("Running"),
+            "planned": _("Planned"),
+            "broken":  _("Broken"),
+            "denied": _("Denied")
+        }
+        return translations.get(status.lower(), "")
 
     @staticmethod
     def getAntiCheatIconFilename(status: str) -> str:
@@ -273,9 +293,9 @@ class GameCard(QFrame):
         QDesktopServices.openUrl(url)
 
     def open_weanticheatyet_page(self):
-            formatted_name = self.name.lower().replace(" ", "-")
-            url = QUrl(f"https://areweanticheatyet.com/game/{formatted_name}")
-            QDesktopServices.openUrl(url)
+        formatted_name = self.name.lower().replace(" ", "-")
+        url = QUrl(f"https://areweanticheatyet.com/game/{formatted_name}")
+        QDesktopServices.openUrl(url)
 
     def update_favorite_icon(self):
         if self.is_favorite:
