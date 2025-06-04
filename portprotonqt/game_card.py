@@ -5,7 +5,7 @@ from collections.abc import Callable
 import portprotonqt.themes.standart.styles as default_styles
 from portprotonqt.image_utils import load_pixmap_async, round_corners
 from portprotonqt.localization import _
-from portprotonqt.config_utils import read_favorites, save_favorites
+from portprotonqt.config_utils import read_favorites, save_favorites, read_display_filter
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.config_utils import read_theme_from_config
 from portprotonqt.custom_widgets import ClickableLabel
@@ -51,6 +51,7 @@ class GameCard(QFrame):
         self.theme_manager = ThemeManager()
         self.theme = theme if theme is not None else default_styles
 
+        self.display_filter = read_display_filter()
         self.current_theme_name = read_theme_from_config()
 
         # Дополнительное пространство для анимации
@@ -120,6 +121,10 @@ class GameCard(QFrame):
         self.update_favorite_icon()
         self.favoriteLabel.raise_()
 
+        steam_visible = (str(game_source).lower() == "steam" and self.display_filter in ("all", "favorites"))
+        egs_visible = (str(game_source).lower() == "epic" and self.display_filter in ("all", "favorites"))
+        portproton_visible = (str(game_source).lower() == "portproton" and self.display_filter in ("all", "favorites"))
+
         # ProtonDB бейдж
         tier_text = self.getProtonDBText(protondb_tier)
         if tier_text:
@@ -152,7 +157,6 @@ class GameCard(QFrame):
         )
         self.steamLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
         self.steamLabel.setFixedWidth(int(card_width * 2/3))
-        steam_visible = (str(game_source).lower() == "steam")
         self.steamLabel.setVisible(steam_visible)
 
         # Epic Games Store бейдж
@@ -167,7 +171,6 @@ class GameCard(QFrame):
         )
         self.egsLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
         self.egsLabel.setFixedWidth(int(card_width * 2/3))
-        egs_visible = (str(game_source).lower() == "epic")
         self.egsLabel.setVisible(egs_visible)
 
         # PortProton badge
@@ -182,7 +185,6 @@ class GameCard(QFrame):
         )
         self.portprotonLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
         self.portprotonLabel.setFixedWidth(int(card_width * 2/3))
-        portproton_visible = (str(game_source).lower() == "portproton")
         self.portprotonLabel.setVisible(portproton_visible)
 
         # WeAntiCheatYet бейдж
@@ -252,6 +254,53 @@ class GameCard(QFrame):
         nameLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
         nameLabel.setStyleSheet(self.theme.GAME_CARD_NAME_LABEL_STYLE)
         layout.addWidget(nameLabel)
+
+    def update_badge_visibility(self, display_filter: str):
+        """Update badge visibility based on the provided display_filter."""
+        self.display_filter = display_filter
+        self.steam_visible = (str(self.game_source).lower() == "steam" and display_filter in ("all", "favorites"))
+        self.egs_visible = (str(self.game_source).lower() == "epic" and display_filter in ("all", "favorites"))
+        self.portproton_visible = (str(self.game_source).lower() == "portproton" and display_filter in ("all", "favorites"))
+
+        self.steamLabel.setVisible(self.steam_visible)
+        self.egsLabel.setVisible(self.egs_visible)
+        self.portprotonLabel.setVisible(self.portproton_visible)
+
+        # Reposition badges
+        right_margin = 8
+        badge_spacing = 5
+        top_y = 10
+        badge_y_positions = []
+        badge_width = int(self.coverLabel.width() * 2/3)
+        if self.steam_visible:
+            steam_x = self.coverLabel.width() - badge_width - right_margin
+            self.steamLabel.move(steam_x, top_y)
+            badge_y_positions.append(top_y + self.steamLabel.height())
+        if self.egs_visible:
+            egs_x = self.coverLabel.width() - badge_width - right_margin
+            egs_y = badge_y_positions[-1] + badge_spacing if badge_y_positions else top_y
+            self.egsLabel.move(egs_x, egs_y)
+            badge_y_positions.append(egs_y + self.egsLabel.height())
+        if self.portproton_visible:
+            portproton_x = self.coverLabel.width() - badge_width - right_margin
+            portproton_y = badge_y_positions[-1] + badge_spacing if badge_y_positions else top_y
+            self.portprotonLabel.move(portproton_x, portproton_y)
+            badge_y_positions.append(portproton_y + self.portprotonLabel.height())
+        if self.protondbLabel.isVisible():
+            protondb_x = self.coverLabel.width() - badge_width - right_margin
+            protondb_y = badge_y_positions[-1] + badge_spacing if badge_y_positions else top_y
+            self.protondbLabel.move(protondb_x, protondb_y)
+            badge_y_positions.append(protondb_y + self.protondbLabel.height())
+        if self.anticheatLabel.isVisible():
+            anticheat_x = self.coverLabel.width() - badge_width - right_margin
+            anticheat_y = badge_y_positions[-1] + badge_spacing if badge_y_positions else top_y
+            self.anticheatLabel.move(anticheat_x, anticheat_y)
+
+            self.anticheatLabel.raise_()
+            self.protondbLabel.raise_()
+            self.portprotonLabel.raise_()
+            self.egsLabel.raise_()
+            self.steamLabel.raise_()
 
     def _show_context_menu(self, pos):
         """Delegate context menu display to ContextMenuManager."""

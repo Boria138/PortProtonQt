@@ -1108,10 +1108,13 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage(_("Cache cleared"), 3000)
 
     def applySettingsDelayed(self):
-        """Применяет настройки с учетом нового фильтра и обновляет список игр."""
+        """Applies settings with the new filter and updates the game list."""
         read_time_config()
-        self.games = []  # Очищаем текущий список игр
-        self.loadGames()  # Загружаем игры с новым фильтром
+        self.games = []
+        self.loadGames()
+        display_filter = read_display_filter()
+        for card in self.game_card_cache.values():
+            card.update_badge_visibility(display_filter)
 
     def savePortProtonSettings(self):
         """
@@ -1138,7 +1141,17 @@ class MainWindow(QMainWindow):
         fullscreen = self.fullscreenCheckBox.isChecked()
         save_fullscreen_config(fullscreen)
 
-        # Запускаем отложенное применение настроек через таймер
+        for card in self.game_card_cache.values():
+            card.update_badge_visibility(filter_key)
+
+        if self.currentDetailPage and self.current_exec_line:
+            current_game = next((game for game in self.games if game[4] == self.current_exec_line), None)
+            if current_game:
+                self.stackedWidget.removeWidget(self.currentDetailPage)
+                self.currentDetailPage.deleteLater()
+                self.currentDetailPage = None
+                self.openGameDetailPage(*current_game)
+
         self.settingsDebounceTimer.start()
 
         self.settings_saved.emit()
@@ -1388,6 +1401,10 @@ class MainWindow(QMainWindow):
         favoriteLabelCover.raise_()
 
         # Добавляем бейджи (ProtonDB, Steam, PortProton, WeAntiCheatYet)
+        display_filter = read_display_filter()
+        steam_visible = (str(game_source).lower() == "steam" and display_filter in ("all", "favorites"))
+        egs_visible = (str(game_source).lower() == "epic" and display_filter in ("all", "favorites"))
+        portproton_visible = (str(game_source).lower() == "portproton" and display_filter in ("all", "favorites"))
         right_margin = 8
         badge_spacing = 5
         top_y = 10
@@ -1427,7 +1444,6 @@ class MainWindow(QMainWindow):
         )
         steamLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
         steamLabel.setFixedWidth(badge_width)
-        steam_visible = (str(game_source).lower() == "steam")
         steamLabel.setVisible(steam_visible)
         steamLabel.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(f"https://steamcommunity.com/app/{appid}")))
 
@@ -1443,7 +1459,6 @@ class MainWindow(QMainWindow):
         )
         egsLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
         egsLabel.setFixedWidth(badge_width)
-        egs_visible = (str(game_source).lower() == "epic")
         egsLabel.setVisible(egs_visible)
 
         # PortProton badge
@@ -1458,7 +1473,6 @@ class MainWindow(QMainWindow):
         )
         portprotonLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
         portprotonLabel.setFixedWidth(badge_width)
-        portproton_visible = (str(game_source).lower() == "portproton")
         portprotonLabel.setVisible(portproton_visible)
 
         # WeAntiCheatYet бейдж
