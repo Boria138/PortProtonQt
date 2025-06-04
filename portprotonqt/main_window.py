@@ -1447,6 +1447,21 @@ class MainWindow(QMainWindow):
         egs_visible = (str(steam_game).lower() == "epic")
         egsLabel.setVisible(egs_visible)
 
+        # PortProton badge
+        portproton_icon = self.theme_manager.get_icon("ppqt-tray")
+        portprotonLabel = ClickableLabel(
+            "PortProton",
+            icon=portproton_icon,
+            parent=coverFrame,
+            icon_size=16,
+            icon_space=5,
+            change_cursor=False
+        )
+        portprotonLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
+        portprotonLabel.setFixedWidth(badge_width)
+        portproton_visible = (str(steam_game).lower() == "false")
+        portprotonLabel.setVisible(portproton_visible)
+
         # WeAntiCheatYet бейдж
         anticheat_text = GameCard.getAntiCheatText(anticheat_status)
         if anticheat_text:
@@ -1470,6 +1485,11 @@ class MainWindow(QMainWindow):
             anticheat_visible = False
 
         # Расположение бейджей
+        right_margin = 8
+        badge_spacing = 5
+        top_y = 10
+        badge_y_positions = []
+        badge_width = int(300 * 2/3)
         if steam_visible:
             steam_x = 300 - badge_width - right_margin
             steamLabel.move(steam_x, top_y)
@@ -1479,6 +1499,11 @@ class MainWindow(QMainWindow):
             egs_y = badge_y_positions[-1] + badge_spacing if badge_y_positions else top_y
             egsLabel.move(egs_x, egs_y)
             badge_y_positions.append(egs_y + egsLabel.height())
+        if portproton_visible:
+            portproton_x = 300 - badge_width - right_margin
+            portproton_y = badge_y_positions[-1] + badge_spacing if badge_y_positions else top_y
+            portprotonLabel.move(portproton_x, portproton_y)
+            badge_y_positions.append(portproton_y + portprotonLabel.height())
         if protondb_visible:
             protondb_x = 300 - badge_width - right_margin
             protondb_y = badge_y_positions[-1] + badge_spacing if badge_y_positions else top_y
@@ -1491,6 +1516,8 @@ class MainWindow(QMainWindow):
 
         anticheatLabel.raise_()
         protondbLabel.raise_()
+        portprotonLabel.raise_()
+        egsLabel.raise_()
         steamLabel.raise_()
 
         contentFrameLayout.addWidget(coverFrame)
