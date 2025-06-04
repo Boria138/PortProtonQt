@@ -27,7 +27,7 @@ class GameCard(QFrame):
     openGameFolderRequested = Signal(str, str)    # name, exec_line
 
     def __init__(self, name, description, cover_path, appid, controller_support, exec_line,
-                last_launch, formatted_playtime, protondb_tier, anticheat_status, last_launch_ts, playtime_seconds, steam_game,
+                last_launch, formatted_playtime, protondb_tier, anticheat_status, last_launch_ts, playtime_seconds, game_source,
                 select_callback, theme=None, card_width=250, parent=None, context_menu_manager=None):
         super().__init__(parent)
         self.name = name
@@ -40,7 +40,7 @@ class GameCard(QFrame):
         self.formatted_playtime = formatted_playtime
         self.protondb_tier = protondb_tier
         self.anticheat_status = anticheat_status
-        self.steam_game = steam_game
+        self.game_source = game_source
         self.last_launch_ts = last_launch_ts
         self.playtime_seconds = playtime_seconds
 
@@ -152,7 +152,7 @@ class GameCard(QFrame):
         )
         self.steamLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
         self.steamLabel.setFixedWidth(int(card_width * 2/3))
-        steam_visible = (str(steam_game).lower() == "true")
+        steam_visible = (str(game_source).lower() == "steam")
         self.steamLabel.setVisible(steam_visible)
 
         # Epic Games Store бейдж
@@ -167,7 +167,7 @@ class GameCard(QFrame):
         )
         self.egsLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
         self.egsLabel.setFixedWidth(int(card_width * 2/3))
-        egs_visible = (str(steam_game).lower() == "epic")
+        egs_visible = (str(game_source).lower() == "epic")
         self.egsLabel.setVisible(egs_visible)
 
         # PortProton badge
@@ -182,7 +182,7 @@ class GameCard(QFrame):
         )
         self.portprotonLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
         self.portprotonLabel.setFixedWidth(int(card_width * 2/3))
-        portproton_visible = (str(steam_game).lower() == "false")
+        portproton_visible = (str(game_source).lower() == "portproton")
         self.portprotonLabel.setVisible(portproton_visible)
 
         # WeAntiCheatYet бейдж
@@ -496,7 +496,7 @@ class GameCard(QFrame):
                 self.last_launch,
                 self.formatted_playtime,
                 self.protondb_tier,
-                self.steam_game,
+                self.game_source,
                 self.anticheat_status
             )
         super().mousePressEvent(event)
@@ -513,7 +513,7 @@ class GameCard(QFrame):
                 self.last_launch,
                 self.formatted_playtime,
                 self.protondb_tier,
-                self.steam_game,
+                self.game_source,
                 self.anticheat_status
             )
         else:

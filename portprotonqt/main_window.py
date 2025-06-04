@@ -314,7 +314,7 @@ class MainWindow(QMainWindow):
                     'controller_support': '',
                     'protondb_tier': '',
                     'name': name,
-                    'steam_game': 'true'
+                    'game_source': 'steam'
                 }
             last_launch = format_last_launch(datetime.fromtimestamp(last_played)) if last_played else _("Never")
             steam_games.append((
@@ -330,7 +330,7 @@ class MainWindow(QMainWindow):
                 info.get("anticheat_status", ""),
                 last_played,
                 playtime_seconds,
-                "true"
+                "steam"
             ))
             processed_count += 1
             self.pending_games.append(None)
@@ -462,7 +462,6 @@ class MainWindow(QMainWindow):
             final_cover = (user_cover if user_cover else
                         builtin_cover if builtin_cover else
                         steam_info.get("cover", "") or entry.get("Icon", ""))
-            steam_game = "false"
             callback((
                 final_name,
                 final_desc,
@@ -476,7 +475,7 @@ class MainWindow(QMainWindow):
                 steam_info.get("anticheat_status", ""),
                 get_last_launch_timestamp(exe_name) if exe_name else 0,
                 playtime_seconds,
-                steam_game
+                "portproton"
             ))
 
         get_steam_game_info_async(desktop_name, exec_line, on_steam_info)
@@ -1320,7 +1319,7 @@ class MainWindow(QMainWindow):
     def darkenColor(self, color, factor=200):
         return color.darker(factor)
 
-    def openGameDetailPage(self, name, description, cover_path=None, appid="", exec_line="", controller_support="", last_launch="", formatted_playtime="", protondb_tier="", steam_game="", anticheat_status=""):
+    def openGameDetailPage(self, name, description, cover_path=None, appid="", exec_line="", controller_support="", last_launch="", formatted_playtime="", protondb_tier="", game_source="", anticheat_status=""):
         detailPage = QWidget()
         self._animations = {}
         imageLabel = QLabel()
@@ -1388,7 +1387,7 @@ class MainWindow(QMainWindow):
         favoriteLabelCover.move(8, 8)
         favoriteLabelCover.raise_()
 
-        # Добавляем бейджи (ProtonDB, Steam, WeAntiCheatYet)
+        # Добавляем бейджи (ProtonDB, Steam, PortProton, WeAntiCheatYet)
         right_margin = 8
         badge_spacing = 5
         top_y = 10
@@ -1428,7 +1427,7 @@ class MainWindow(QMainWindow):
         )
         steamLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
         steamLabel.setFixedWidth(badge_width)
-        steam_visible = (str(steam_game).lower() == "true")
+        steam_visible = (str(game_source).lower() == "steam")
         steamLabel.setVisible(steam_visible)
         steamLabel.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(f"https://steamcommunity.com/app/{appid}")))
 
@@ -1444,7 +1443,7 @@ class MainWindow(QMainWindow):
         )
         egsLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
         egsLabel.setFixedWidth(badge_width)
-        egs_visible = (str(steam_game).lower() == "epic")
+        egs_visible = (str(game_source).lower() == "epic")
         egsLabel.setVisible(egs_visible)
 
         # PortProton badge
@@ -1459,7 +1458,7 @@ class MainWindow(QMainWindow):
         )
         portprotonLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
         portprotonLabel.setFixedWidth(badge_width)
-        portproton_visible = (str(steam_game).lower() == "false")
+        portproton_visible = (str(game_source).lower() == "portproton")
         portprotonLabel.setVisible(portproton_visible)
 
         # WeAntiCheatYet бейдж
@@ -1665,7 +1664,7 @@ class MainWindow(QMainWindow):
                         focused_widget.last_launch,
                         focused_widget.formatted_playtime,
                         focused_widget.protondb_tier,
-                        focused_widget.steam_game
+                        focused_widget.game_source
                     )
 
     def goBackDetailPage(self, page: QWidget | None) -> None:

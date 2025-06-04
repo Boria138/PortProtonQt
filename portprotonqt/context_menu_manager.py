@@ -40,7 +40,7 @@ class ContextMenuManager:
         """
 
         menu = QMenu(self.parent)
-        if game_card.steam_game != "true":
+        if game_card.game_source not in ("steam", "epic"):
             desktop_dir = subprocess.check_output(['xdg-user-dir', 'DESKTOP']).decode('utf-8').strip()
             desktop_path = os.path.join(desktop_dir, f"{game_card.name}.desktop")
             if os.path.exists(desktop_path):
