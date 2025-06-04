@@ -3,6 +3,7 @@
 import argparse
 import re
 from pathlib import Path
+from datetime import date
 
 # Base directory of the project
 BASE_DIR = Path(__file__).parent.parent
@@ -13,6 +14,7 @@ FEDORA_SPEC = BASE_DIR / "build-aux" / "fedora.spec"
 PYPROJECT = BASE_DIR / "pyproject.toml"
 APP_PY = BASE_DIR / "portprotonqt" / "app.py"
 GITEA_WORKFLOW = BASE_DIR / ".gitea" / "workflows" / "build.yml"
+CHANGELOG = BASE_DIR / "CHANGELOG.md"
 
 def bump_appimage(path: Path, old: str, new: str) -> bool:
     """
@@ -27,7 +29,6 @@ def bump_appimage(path: Path, old: str, new: str) -> bool:
         path.write_text(new_text, encoding='utf-8')
     return bool(count)
 
-
 def bump_arch(path: Path, old: str, new: str) -> bool:
     """
     Update pkgver in PKGBUILD
@@ -40,7 +41,6 @@ def bump_arch(path: Path, old: str, new: str) -> bool:
     if count:
         path.write_text(new_text, encoding='utf-8')
     return bool(count)
-
 
 def bump_fedora(path: Path, old: str, new: str) -> bool:
     """
@@ -55,7 +55,6 @@ def bump_fedora(path: Path, old: str, new: str) -> bool:
         path.write_text(new_text, encoding='utf-8')
     return bool(count)
 
-
 def bump_pyproject(path: Path, old: str, new: str) -> bool:
     """
     Update version in pyproject.toml under [project]
@@ -68,7 +67,6 @@ def bump_pyproject(path: Path, old: str, new: str) -> bool:
     if count:
         path.write_text(new_text, encoding='utf-8')
     return bool(count)
-
 
 def bump_app_py(path: Path, old: str, new: str) -> bool:
     """
@@ -83,7 +81,6 @@ def bump_app_py(path: Path, old: str, new: str) -> bool:
         path.write_text(new_text, encoding='utf-8')
     return bool(count)
 
-
 def bump_workflow(path: Path, old: str, new: str) -> bool:
     """
     Update VERSION in Gitea Actions workflow
@@ -97,6 +94,19 @@ def bump_workflow(path: Path, old: str, new: str) -> bool:
         path.write_text(new_text, encoding='utf-8')
     return bool(count)
 
+def bump_changelog(path: Path, old: str, new: str) -> bool:
+    """
+    Update [Unreleased] to [new] - YYYY-MM-DD in CHANGELOG.md
+    """
+    if not path.exists():
+        return False
+    text = path.read_text(encoding='utf-8')
+    pattern = re.compile(r"(?m)^##\s*\[Unreleased\]$")
+    current_date = date.today().strftime('%Y-%m-%d')
+    new_text, count = pattern.subn(f"## [{new}] - {current_date}", text)
+    if count:
+        path.write_text(new_text, encoding='utf-8')
+    return bool(count)
 
 def main():
     parser = argparse.ArgumentParser(description='Bump project version in specific files')
@@ -111,7 +121,8 @@ def main():
         (FEDORA_SPEC, bump_fedora),
         (PYPROJECT, bump_pyproject),
         (APP_PY, bump_app_py),
-        (GITEA_WORKFLOW, bump_workflow)
+        (GITEA_WORKFLOW, bump_workflow),
+        (CHANGELOG, bump_changelog)
     ]
 
     updated = []
@@ -125,7 +136,6 @@ def main():
             print(f" - {p}")
     else:
         print(f"No occurrences of version {old} found in specified files.")
-
 
 if __name__ == '__main__':
     main()
