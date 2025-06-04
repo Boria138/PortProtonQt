@@ -145,14 +145,17 @@ jobs:
         with:
           path: release/
 
-      - name: Get Changes between Tags
-        id: changes
-        uses: https://github.com/simbo/changes-between-tags-action@v1
+      - name: Extract changelog for version
+        id: changelog
+        run: |
+          VERSION="${{ env.VERSION }}"
+          VERSION=${VERSION#v}  # Remove 'v' prefix if present
+          awk "/^## \\[$VERSION\\]/ {flag=1; next} /^## \\[/ || /^---/ {flag=0} flag" CHANGELOG.md > changelog.txt
 
       - name: Release
         uses: https://gitea.com/actions/gitea-release-action@v1
         with:
-          body: ${{ steps.changes.outputs.changes }}
+          body_path: changelog.txt
           token: ${{ env.GITEA_TOKEN }}
           tag_name: ${{ env.VERSION }}
           prerelease: true
