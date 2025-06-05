@@ -357,6 +357,8 @@ class InputManager(QObject):
     @Slot(int)
     def handle_button_slot(self, button_code: int) -> None:
         try:
+            if getattr(self._parent, '_gameLaunched', False):
+                return
             app = QApplication.instance()
             if not app:
                 return
@@ -407,6 +409,8 @@ class InputManager(QObject):
     @Slot(int, int, float)
     def handle_dpad_slot(self, code: int, value: int, current_time: float) -> None:
         try:
+            if getattr(self._parent, '_gameLaunched', False):
+                return
             app = QApplication.instance()
             if not app:
                 return
