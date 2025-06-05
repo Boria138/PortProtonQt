@@ -60,6 +60,7 @@ class MainWindow(QMainWindow):
         self.games_load_timer.setSingleShot(True)
         self.games_load_timer.timeout.connect(self.finalize_game_loading)
         self.games_loaded.connect(self.on_games_loaded)
+        self.current_add_game_dialog = None
 
         # Добавляем таймер для дебаунсинга сохранения настроек
         self.settingsDebounceTimer = QTimer(self)
@@ -730,13 +731,26 @@ class MainWindow(QMainWindow):
 
     def openAddGameDialog(self, exe_path=None):
         """Открывает диалоговое окно 'Add Game' с текущей темой."""
+        # Проверяем, открыт ли уже диалог
+        if self.current_add_game_dialog is not None and self.current_add_game_dialog.isVisible():
+            self.current_add_game_dialog.activateWindow()  # Активируем существующий диалог
+            self.current_add_game_dialog.raise_()  # Поднимаем окно
+            return
+
         dialog = AddGameDialog(self, self.theme)
+        self.current_add_game_dialog = dialog  # Сохраняем ссылку на диалог
 
         # Предзаполняем путь к .exe при drag-and-drop
         if exe_path:
             dialog.exeEdit.setText(exe_path)
             dialog.nameEdit.setText(os.path.splitext(os.path.basename(exe_path))[0])
             dialog.updatePreview()
+
+        # Обработчик закрытия диалога
+        def on_dialog_finished():
+            self.current_add_game_dialog = None  # Сбрасываем ссылку при закрытии
+
+        dialog.finished.connect(on_dialog_finished)
 
         if dialog.exec() == QDialog.DialogCode.Accepted:
             name = dialog.nameEdit.text().strip()
@@ -773,7 +787,6 @@ class MainWindow(QMainWindow):
 
             self.games = self.loadGames()
             self.updateGameGrid()
-
 
     def createAutoInstallTab(self):
         """Вкладка 'Auto Install'."""
