@@ -200,6 +200,10 @@ ACTION_BUTTON_STYLE = """
     QPushButton:pressed {
         background: #282a33;
     }
+    QPushButton:focus {
+        border: 2px solid #409EFF;
+        background-color: #404554;
+    }
 """
 
 # ТЕКСТОВЫЕ СТИЛИ: ЗАГОЛОВКИ И ОСНОВНОЙ КОНТЕНТ
