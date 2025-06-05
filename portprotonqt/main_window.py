@@ -510,6 +510,7 @@ class MainWindow(QMainWindow):
 
         self.addGameButton = AutoSizeButton(_("Add Game"), icon=self.theme_manager.get_icon("addgame"))
         self.addGameButton.setStyleSheet(self.theme.ADDGAME_BACK_BUTTON_STYLE)
+        self.addGameButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.addGameButton.clicked.connect(self.openAddGameDialog)
         layout.addWidget(self.addGameButton, alignment=Qt.AlignmentFlag.AlignRight)
 
