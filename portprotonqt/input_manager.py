@@ -3,7 +3,7 @@ import threading
 from typing import Protocol, cast
 from evdev import InputDevice, ecodes, list_devices
 import pyudev
-from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea, QLineEdit
+from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea, QLineEdit, QDialog
 from PySide6.QtCore import Qt, QObject, QEvent, QPoint, Signal, Slot
 from PySide6.QtGui import QKeyEvent
 from portprotonqt.logger import get_logger
@@ -30,6 +30,7 @@ class MainWindowProtocol(Protocol):
     gamesListWidget: QWidget
     currentDetailPage: QWidget | None
     current_exec_line: str | None
+    current_add_game_dialog: QDialog | None  # Добавляем для отслеживания диалога
 
 # Mapping of actions to evdev button codes, includes PlayStation, Xbox, and Switch controllers
 BUTTONS = {
@@ -67,6 +68,7 @@ class InputManager(QObject):
         # Ensure attributes exist on main_window
         self._parent.currentDetailPage = getattr(self._parent, 'currentDetailPage', None)
         self._parent.current_exec_line = getattr(self._parent, 'current_exec_line', None)
+        self._parent.current_add_game_dialog = getattr(self._parent, 'current_add_game_dialog', None)
 
         self.axis_deadzone = axis_deadzone
         self.initial_axis_move_delay = initial_axis_move_delay
@@ -132,6 +134,11 @@ class InputManager(QObject):
         # Close application with Ctrl+Q
         if key == Qt.Key.Key_Q and modifiers & Qt.KeyboardModifier.ControlModifier:
             app.quit()
+            return True
+
+        # Закрытие AddGameDialog на Esc
+        if key == Qt.Key.Key_Escape and isinstance(popup, QDialog):
+            popup.reject()  # Закрываем диалог
             return True
 
         # Skip navigation keys if a popup is open
@@ -357,13 +364,20 @@ class InputManager(QObject):
     @Slot(int)
     def handle_button_slot(self, button_code: int) -> None:
         try:
+            # Игнорировать события геймпада, если игра запущена
             if getattr(self._parent, '_gameLaunched', False):
                 return
+
             app = QApplication.instance()
             if not app:
                 return
             active = QApplication.activeWindow()
             focused = QApplication.focusWidget()
+
+            # Закрытие AddGameDialog на кнопку B
+            if button_code in BUTTONS['back'] and isinstance(active, QDialog):
+                active.reject()  # Закрываем диалог
+                return
 
             # FullscreenDialog
             if isinstance(active, FullscreenDialog):
@@ -409,8 +423,10 @@ class InputManager(QObject):
     @Slot(int, int, float)
     def handle_dpad_slot(self, code: int, value: int, current_time: float) -> None:
         try:
+            # Игнорировать события геймпада, если игра запущена
             if getattr(self._parent, '_gameLaunched', False):
                 return
+
             app = QApplication.instance()
             if not app:
                 return
