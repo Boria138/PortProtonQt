@@ -390,6 +390,20 @@ class InputManager(QObject):
                 focused._show_context_menu(pos)
                 return True
 
+        # Tab switching with Left/Right keys (non-GameCard focus or no focus)
+        idx = self._parent.stackedWidget.currentIndex()
+        total = len(self._parent.tabButtons)
+        if key == Qt.Key.Key_Left and (not isinstance(focused, GameCard) or focused is None):
+            new = (idx - 1) % total
+            self._parent.switchTab(new)
+            self._parent.tabButtons[new].setFocus()
+            return True
+        if key == Qt.Key.Key_Right and (not isinstance(focused, GameCard) or focused is None):
+            new = (idx + 1) % total
+            self._parent.switchTab(new)
+            self._parent.tabButtons[new].setFocus()
+            return True
+
         # Library tab navigation
         if self._parent.stackedWidget.currentIndex() == 0:
             game_cards = self._parent.gamesListWidget.findChildren(GameCard)
@@ -497,20 +511,6 @@ class InputManager(QObject):
                         self._parent.tabButtons[0].setFocus()
                         return True
 
-        # Tab switching with Left/Right keys (non-GameCard focus)
-        idx = self._parent.stackedWidget.currentIndex()
-        total = len(self._parent.tabButtons)
-        if key == Qt.Key.Key_Left and not isinstance(focused, GameCard):
-            new = (idx - 1) % total
-            self._parent.switchTab(new)
-            self._parent.tabButtons[new].setFocus()
-            return True
-        if key == Qt.Key.Key_Right and not isinstance(focused, GameCard):
-            new = (idx + 1) % total
-            self._parent.switchTab(new)
-            self._parent.tabButtons[new].setFocus()
-            return True
-
         # Navigate down into tab content
         if key == Qt.Key.Key_Down:
             if isinstance(focused, NavLabel):
@@ -520,11 +520,6 @@ class InputManager(QObject):
                 if focusables:
                     focusables[0].setFocus()
                     return True
-            else:
-                if focused is not None:
-                    focused.focusNextChild()
-                    return True
-
         # Navigate up through tab content
         if key == Qt.Key.Key_Up:
             if isinstance(focused, NavLabel):
@@ -556,7 +551,6 @@ class InputManager(QObject):
             return True
 
         return super().eventFilter(obj, event)
-
 
     def init_gamepad(self) -> None:
         self.check_gamepad()
