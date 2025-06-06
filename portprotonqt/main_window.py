@@ -20,9 +20,12 @@ from portprotonqt.egs_api import load_egs_games_async
 from portprotonqt.theme_manager import ThemeManager, load_theme_screenshots, load_logo
 from portprotonqt.time_utils import save_last_launch, get_last_launch, parse_playtime_file, format_playtime, get_last_launch_timestamp, format_last_launch
 from portprotonqt.config_utils import (
-    get_portproton_location, read_theme_from_config, save_theme_to_config, parse_desktop_entry, load_theme_metainfo, read_time_config, read_card_size, save_card_size,
-    read_sort_method, read_display_filter, read_favorites, save_favorites, save_time_config, save_sort_method, save_display_filter, save_proxy_config, read_proxy_config,
-    read_fullscreen_config, save_fullscreen_config, read_window_geometry, save_window_geometry, reset_config, clear_cache
+    get_portproton_location, read_theme_from_config, save_theme_to_config, parse_desktop_entry,
+    load_theme_metainfo, read_time_config, read_card_size, save_card_size, read_sort_method,
+    read_display_filter, read_favorites, save_favorites, save_time_config, save_sort_method,
+    save_display_filter, save_proxy_config, read_proxy_config, read_fullscreen_config,
+    save_fullscreen_config, read_window_geometry, save_window_geometry, reset_config,
+    clear_cache, read_auto_fullscreen_gamepad, save_auto_fullscreen_gamepad
 )
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
@@ -976,7 +979,17 @@ class MainWindow(QMainWindow):
         self.fullscreenCheckBox.setChecked(current_fullscreen)
         formLayout.addRow(self.fullscreenTitle, self.fullscreenCheckBox)
 
-        # 6. Legendary Authentication
+        # 6. Automatic fullscreen on gamepad connection
+        self.autoFullscreenGamepadCheckBox = QCheckBox(_("Auto Fullscreen on Gamepad connected"))
+        self.autoFullscreenGamepadCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.autoFullscreenGamepadTitle = QLabel(_("Auto Fullscreen on Gamepad connected:"))
+        self.autoFullscreenGamepadTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.autoFullscreenGamepadTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        current_auto_fullscreen = read_auto_fullscreen_gamepad()
+        self.autoFullscreenGamepadCheckBox.setChecked(current_auto_fullscreen)
+        formLayout.addRow(self.autoFullscreenGamepadTitle, self.autoFullscreenGamepadCheckBox)
+
+        # 7. Legendary Authentication
         self.legendaryAuthButton = AutoSizeButton(
             _("Open Legendary Login"),
             icon=self.theme_manager.get_icon("login")
@@ -1155,6 +1168,9 @@ class MainWindow(QMainWindow):
         fullscreen = self.fullscreenCheckBox.isChecked()
         save_fullscreen_config(fullscreen)
 
+        auto_fullscreen_gamepad = self.autoFullscreenGamepadCheckBox.isChecked()
+        save_auto_fullscreen_gamepad(auto_fullscreen_gamepad)
+
         for card in self.game_card_cache.values():
             card.update_badge_visibility(filter_key)
 
@@ -1170,18 +1186,14 @@ class MainWindow(QMainWindow):
 
         self.settings_saved.emit()
 
-        if fullscreen:
+        # Управление полноэкранным режимом
+        gamepad_connected = self.input_manager.find_gamepad() is not None
+        if fullscreen or (auto_fullscreen_gamepad and gamepad_connected):
             self.showFullScreen()
         else:
-            if self.isFullScreen():
-                # Переходим в нормальный режим и восстанавливаем сохраненные размеры
-                width, height = read_window_geometry()
-                self.showNormal()
-                if width > 0 and height > 0:
-                    self.resize(width, height)
-            # Сохраняем геометрию только если окно не в полноэкранном режиме
-            if not self.isFullScreen():
-                save_window_geometry(self.width(), self.height())
+            # Если обе галочки сняты и геймпад не подключен, возвращаем нормальное состояние
+            self.showNormal()
+            self.resize(*read_window_geometry())  # Восстанавливаем сохраненные размеры окна
 
         self.statusBar().showMessage(_("Settings saved"), 3000)
 

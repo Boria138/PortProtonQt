@@ -10,7 +10,7 @@ from portprotonqt.logger import get_logger
 from portprotonqt.image_utils import FullscreenDialog
 from portprotonqt.custom_widgets import NavLabel
 from portprotonqt.game_card import GameCard
-from portprotonqt.config_utils import read_fullscreen_config, read_window_geometry, save_window_geometry
+from portprotonqt.config_utils import read_fullscreen_config, read_window_geometry, save_window_geometry, read_auto_fullscreen_gamepad
 
 logger = get_logger(__name__)
 
@@ -41,7 +41,7 @@ BUTTONS = {
     'next_tab':  {ecodes.BTN_TR, ecodes.BTN_TRIGGER_HAPPY5},
     'confirm_stick': {ecodes.BTN_THUMBL, ecodes.BTN_THUMBR},
     'context_menu': {ecodes.BTN_START},
-    'menu':      {ecodes.BTN_SELECT, ecodes.BTN_MODE},
+    'menu':      {ecodes.BTN_SELECT},
 }
 
 class InputManager(QObject):
@@ -595,8 +595,11 @@ class InputManager(QObject):
                     self.gamepad_thread.join()
                 self.gamepad_thread = threading.Thread(target=self.monitor_gamepad, daemon=True)
                 self.gamepad_thread.start()
-                # Signal to enter fullscreen mode
-                self.toggle_fullscreen.emit(True)
+                # Отправляем сигнал для полноэкранного режима только если:
+                # 1. auto_fullscreen_gamepad включено
+                # 2. fullscreen выключено (чтобы не конфликтовать с основной настройкой)
+                if read_auto_fullscreen_gamepad() and not read_fullscreen_config():
+                    self.toggle_fullscreen.emit(True)
         except Exception as e:
             logger.error(f"Error checking gamepad: {e}", exc_info=True)
 
@@ -623,7 +626,12 @@ class InputManager(QObject):
                     continue
                 now = time.time()
                 if event.type == ecodes.EV_KEY and event.value == 1:
-                    self.button_pressed.emit(event.code)
+                    # Обработка кнопки Select для переключения полноэкранного режима
+                    if event.code in BUTTONS['menu']:
+                        # Переключаем полноэкранный режим
+                        self.toggle_fullscreen.emit(not self._is_fullscreen)
+                    else:
+                        self.button_pressed.emit(event.code)
                 elif event.type == ecodes.EV_ABS:
                     self.dpad_moved.emit(event.code, event.value, now)
         except OSError as e:

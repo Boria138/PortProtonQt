@@ -482,3 +482,38 @@ def clear_cache():
             logger.info("Кэш PortProtonQT удалён: %s", cache_dir)
         except Exception as e:
             logger.error("Ошибка при удалении кэша: %s", e)
+
+def read_auto_fullscreen_gamepad():
+    """
+    Читает настройку автоматического полноэкранного режима при подключении геймпада из секции [Display].
+    Если параметр отсутствует, сохраняет и возвращает False по умолчанию.
+    """
+    cp = configparser.ConfigParser()
+    if os.path.exists(CONFIG_FILE):
+        try:
+            cp.read(CONFIG_FILE, encoding="utf-8")
+        except Exception as e:
+            logger.error("Ошибка чтения конфигурационного файла: %s", e)
+            save_auto_fullscreen_gamepad(False)
+            return False
+        if not cp.has_section("Display") or not cp.has_option("Display", "auto_fullscreen_gamepad"):
+            save_auto_fullscreen_gamepad(False)
+            return False
+        return cp.getboolean("Display", "auto_fullscreen_gamepad", fallback=False)
+    return False
+
+def save_auto_fullscreen_gamepad(auto_fullscreen):
+    """
+    Сохраняет настройку автоматического полноэкранного режима при подключении геймпада в секцию [Display].
+    """
+    cp = configparser.ConfigParser()
+    if os.path.exists(CONFIG_FILE):
+        try:
+            cp.read(CONFIG_FILE, encoding="utf-8")
+        except (configparser.DuplicateSectionError, configparser.DuplicateOptionError) as e:
+            logger.error("Ошибка чтения конфигурационного файла: %s", e)
+    if "Display" not in cp:
+        cp["Display"] = {}
+    cp["Display"]["auto_fullscreen_gamepad"] = str(auto_fullscreen)
+    with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
+        cp.write(configfile)
