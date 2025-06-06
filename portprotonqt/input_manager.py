@@ -153,7 +153,7 @@ class InputManager(QObject):
                     return
 
             # Game launch on detail page
-            if (button_code in BUTTONS['confirm'] or button_code in BUTTONS['confirm_stick']) and self._parent.currentDetailPage is not None:
+            if (button_code in BUTTONS['confirm'] or button_code in BUTTONS['confirm_stick']) and self._parent.currentDetailPage is not None and self._parent.current_add_game_dialog is None:
                 if self._parent.current_exec_line:
                     self._parent.toggleGame(self._parent.current_exec_line, None)
                     return
