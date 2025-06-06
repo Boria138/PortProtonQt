@@ -30,7 +30,7 @@ class MainWindowProtocol(Protocol):
     gamesListWidget: QWidget
     currentDetailPage: QWidget | None
     current_exec_line: str | None
-    current_add_game_dialog: QDialog | None  # Добавляем для отслеживания диалога
+    current_add_game_dialog: QDialog | None
 
 # Mapping of actions to evdev button codes, includes PlayStation, Xbox, and Switch controllers
 BUTTONS = {
@@ -117,6 +117,225 @@ class InputManager(QObject):
         except Exception as e:
             logger.error(f"Error in handle_fullscreen_slot: {e}", exc_info=True)
 
+    @Slot(int)
+    def handle_button_slot(self, button_code: int) -> None:
+        try:
+            # Игнорировать события геймпада, если игра запущена
+            if getattr(self._parent, '_gameLaunched', False):
+                return
+
+            app = QApplication.instance()
+            if not app:
+                return
+            active = QApplication.activeWindow()
+            focused = QApplication.focusWidget()
+
+            # Закрытие AddGameDialog на кнопку B
+            if button_code in BUTTONS['back'] and isinstance(active, QDialog):
+                active.reject()  # Закрываем диалог
+                return
+
+            # FullscreenDialog
+            if isinstance(active, FullscreenDialog):
+                if button_code in BUTTONS['prev_tab']:
+                    active.show_prev()
+                elif button_code in BUTTONS['next_tab']:
+                    active.show_next()
+                elif button_code in BUTTONS['back']:
+                    active.close()
+                return
+
+            # Context menu for GameCard
+            if isinstance(focused, GameCard):
+                if button_code in BUTTONS['context_menu']:
+                    pos = QPoint(focused.width() // 2, focused.height() // 2)
+                    focused._show_context_menu(pos)
+                    return
+
+            # Game launch on detail page
+            if (button_code in BUTTONS['confirm'] or button_code in BUTTONS['confirm_stick']) and self._parent.currentDetailPage is not None:
+                if self._parent.current_exec_line:
+                    self._parent.toggleGame(self._parent.current_exec_line, None)
+                    return
+
+            # Standard navigation
+            if button_code in BUTTONS['confirm'] or button_code in BUTTONS['confirm_stick']:
+                self._parent.activateFocusedWidget()
+            elif button_code in BUTTONS['back'] or button_code in BUTTONS['menu']:
+                self._parent.goBackDetailPage(getattr(self._parent, 'currentDetailPage', None))
+            elif button_code in BUTTONS['add_game']:
+                self._parent.openAddGameDialog()
+            elif button_code in BUTTONS['prev_tab']:
+                idx = (self._parent.stackedWidget.currentIndex() - 1) % len(self._parent.tabButtons)
+                self._parent.switchTab(idx)
+                self._parent.tabButtons[idx].setFocus(Qt.FocusReason.OtherFocusReason)
+            elif button_code in BUTTONS['next_tab']:
+                idx = (self._parent.stackedWidget.currentIndex() + 1) % len(self._parent.tabButtons)
+                self._parent.switchTab(idx)
+                self._parent.tabButtons[idx].setFocus(Qt.FocusReason.OtherFocusReason)
+        except Exception as e:
+            logger.error(f"Error in handle_button_slot: {e}", exc_info=True)
+
+
+    @Slot(int, int, float)
+    def handle_dpad_slot(self, code: int, value: int, current_time: float) -> None:
+        try:
+            # Игнорировать события геймпада, если игра запущена
+            if getattr(self._parent, '_gameLaunched', False):
+                return
+
+            app = QApplication.instance()
+            if not app:
+                return
+            active = QApplication.activeWindow()
+
+            # Fullscreen horizontal navigation
+            if isinstance(active, FullscreenDialog) and code == ecodes.ABS_HAT0X:
+                if value < 0:
+                    active.show_prev()
+                elif value > 0:
+                    active.show_next()
+                return
+
+            # Handle repeated D-pad movement
+            if value != 0:
+                if not self.axis_moving:
+                    self.axis_moving = True
+                elif (current_time - self.last_move_time) < self.current_axis_delay:
+                    return
+                self.last_move_time = current_time
+                self.current_axis_delay = self.repeat_axis_move_delay
+            else:
+                self.axis_moving = False
+                self.current_axis_delay = self.initial_axis_move_delay
+                return
+
+            # Library tab navigation (index 0)
+            if self._parent.stackedWidget.currentIndex() == 0 and code in (ecodes.ABS_HAT0X, ecodes.ABS_HAT0Y):
+                focused = QApplication.focusWidget()
+                game_cards = self._parent.gamesListWidget.findChildren(GameCard)
+                if not game_cards:
+                    return
+
+                scroll_area = self._parent.gamesListWidget.parentWidget()
+                while scroll_area and not isinstance(scroll_area, QScrollArea):
+                    scroll_area = scroll_area.parentWidget()
+
+                # If no focused widget or not a GameCard, focus the first card
+                if not isinstance(focused, GameCard) or focused not in game_cards:
+                    game_cards[0].setFocus()
+                    if scroll_area:
+                        scroll_area.ensureWidgetVisible(game_cards[0], 50, 50)
+                    return
+
+                # Group cards by rows based on y-coordinate
+                rows = {}
+                for card in game_cards:
+                    y = card.pos().y()
+                    if y not in rows:
+                        rows[y] = []
+                    rows[y].append(card)
+                # Sort cards in each row by x-coordinate
+                for y in rows:
+                    rows[y].sort(key=lambda c: c.pos().x())
+                # Sort rows by y-coordinate
+                sorted_rows = sorted(rows.items(), key=lambda x: x[0])
+
+                # Find current row and column
+                current_y = focused.pos().y()
+                current_row_idx = next(i for i, (y, _) in enumerate(sorted_rows) if y == current_y)
+                current_row = sorted_rows[current_row_idx][1]
+                current_col_idx = current_row.index(focused)
+
+                if code == ecodes.ABS_HAT0X and value != 0:  # Left/Right
+                    if value < 0:  # Left
+                        next_col_idx = current_col_idx - 1
+                        if next_col_idx >= 0:
+                            next_card = current_row[next_col_idx]
+                            next_card.setFocus()
+                            if scroll_area:
+                                scroll_area.ensureWidgetVisible(next_card, 50, 50)
+                        else:
+                            # Move to the last card of the previous row if available
+                            if current_row_idx > 0:
+                                prev_row = sorted_rows[current_row_idx - 1][1]
+                                next_card = prev_row[-1] if prev_row else None
+                                if next_card:
+                                    next_card.setFocus()
+                                    if scroll_area:
+                                        scroll_area.ensureWidgetVisible(next_card, 50, 50)
+                    elif value > 0:  # Right
+                        next_col_idx = current_col_idx + 1
+                        if next_col_idx < len(current_row):
+                            next_card = current_row[next_col_idx]
+                            next_card.setFocus()
+                            if scroll_area:
+                                scroll_area.ensureWidgetVisible(next_card, 50, 50)
+                        else:
+                            # Move to the first card of the next row if available
+                            if current_row_idx < len(sorted_rows) - 1:
+                                next_row = sorted_rows[current_row_idx + 1][1]
+                                next_card = next_row[0] if next_row else None
+                                if next_card:
+                                    next_card.setFocus()
+                                    if scroll_area:
+                                        scroll_area.ensureWidgetVisible(next_card, 50, 50)
+
+                elif code == ecodes.ABS_HAT0Y and value != 0:  # Up/Down
+                    if value > 0:  # Down
+                        next_row_idx = current_row_idx + 1
+                        if next_row_idx < len(sorted_rows):
+                            next_row = sorted_rows[next_row_idx][1]
+                            # Find card in same column or closest
+                            target_x = focused.pos().x()
+                            next_card = min(
+                                next_row,
+                                key=lambda c: abs(c.pos().x() - target_x),
+                                default=None
+                            )
+                            if next_card:
+                                next_card.setFocus()
+                                if scroll_area:
+                                    scroll_area.ensureWidgetVisible(next_card, 50, 50)
+                    elif value < 0:  # Up
+                        next_row_idx = current_row_idx - 1
+                        if next_row_idx >= 0:
+                            next_row = sorted_rows[next_row_idx][1]
+                            # Find card in same column or closest
+                            target_x = focused.pos().x()
+                            next_card = min(
+                                next_row,
+                                key=lambda c: abs(c.pos().x() - target_x),
+                                default=None
+                            )
+                            if next_card:
+                                next_card.setFocus()
+                                if scroll_area:
+                                    scroll_area.ensureWidgetVisible(next_card, 50, 50)
+                        elif current_row_idx == 0:
+                            self._parent.tabButtons[0].setFocus(Qt.FocusReason.OtherFocusReason)
+
+            # Vertical navigation in other tabs
+            elif code == ecodes.ABS_HAT0Y and value != 0:
+                focused = QApplication.focusWidget()
+                page = self._parent.stackedWidget.currentWidget()
+                if value > 0:  # Down
+                    if isinstance(focused, NavLabel):
+                        focusables = page.findChildren(QWidget, options=Qt.FindChildOption.FindChildrenRecursively)
+                        focusables = [w for w in focusables if w.focusPolicy() & Qt.FocusPolicy.StrongFocus]
+                        if focusables:
+                            focusables[0].setFocus()
+                            return
+                    elif focused:
+                        focused.focusNextChild()
+                        return
+                elif value < 0 and focused:  # Up
+                    focused.focusPreviousChild()
+                    return
+
+        except Exception as e:
+            logger.error(f"Error in handle_dpad_slot: {e}", exc_info=True)
+
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         app = QApplication.instance()
         if not app:
@@ -171,48 +390,114 @@ class InputManager(QObject):
                 focused._show_context_menu(pos)
                 return True
 
-        # Navigation in Library tab
+        # Library tab navigation
         if self._parent.stackedWidget.currentIndex() == 0:
             game_cards = self._parent.gamesListWidget.findChildren(GameCard)
             scroll_area = self._parent.gamesListWidget.parentWidget()
             while scroll_area and not isinstance(scroll_area, QScrollArea):
                 scroll_area = scroll_area.parentWidget()
 
-            if isinstance(focused, GameCard):
-                current_index = game_cards.index(focused) if focused in game_cards else -1
-                if key == Qt.Key.Key_Down:
-                    if current_index >= 0 and current_index + 1 < len(game_cards):
-                        next_card = game_cards[current_index + 1]
+            if key in (Qt.Key.Key_Left, Qt.Key.Key_Right, Qt.Key.Key_Up, Qt.Key.Key_Down):
+                if not game_cards:
+                    return True
+
+                # If no focused widget or not a GameCard, focus the first card
+                if not isinstance(focused, GameCard) or focused not in game_cards:
+                    game_cards[0].setFocus()
+                    if scroll_area:
+                        scroll_area.ensureWidgetVisible(game_cards[0], 50, 50)
+                    return True
+
+                # Group cards by rows based on y-coordinate
+                rows = {}
+                for card in game_cards:
+                    y = card.pos().y()
+                    if y not in rows:
+                        rows[y] = []
+                    rows[y].append(card)
+                # Sort cards in each row by x-coordinate
+                for y in rows:
+                    rows[y].sort(key=lambda c: c.pos().x())
+                # Sort rows by y-coordinate
+                sorted_rows = sorted(rows.items(), key=lambda x: x[0])
+
+                # Find current row and column
+                current_y = focused.pos().y()
+                current_row_idx = next(i for i, (y, _) in enumerate(sorted_rows) if y == current_y)
+                current_row = sorted_rows[current_row_idx][1]
+                current_col_idx = current_row.index(focused)
+
+                if key == Qt.Key.Key_Right:
+                    next_col_idx = current_col_idx + 1
+                    if next_col_idx < len(current_row):
+                        next_card = current_row[next_col_idx]
                         next_card.setFocus()
                         if scroll_area:
                             scroll_area.ensureWidgetVisible(next_card, 50, 50)
+                        return True
+                    else:
+                        # Move to the first card of the next row if available
+                        if current_row_idx < len(sorted_rows) - 1:
+                            next_row = sorted_rows[current_row_idx + 1][1]
+                            next_card = next_row[0] if next_row else None
+                            if next_card:
+                                next_card.setFocus()
+                                if scroll_area:
+                                    scroll_area.ensureWidgetVisible(next_card, 50, 50)
+                            return True
+                elif key == Qt.Key.Key_Left:
+                    next_col_idx = current_col_idx - 1
+                    if next_col_idx >= 0:
+                        next_card = current_row[next_col_idx]
+                        next_card.setFocus()
+                        if scroll_area:
+                            scroll_area.ensureWidgetVisible(next_card, 50, 50)
+                        return True
+                    else:
+                        # Move to the last card of the previous row if available
+                        if current_row_idx > 0:
+                            prev_row = sorted_rows[current_row_idx - 1][1]
+                            next_card = prev_row[-1] if prev_row else None
+                            if next_card:
+                                next_card.setFocus()
+                                if scroll_area:
+                                    scroll_area.ensureWidgetVisible(next_card, 50, 50)
+                            return True
+                elif key == Qt.Key.Key_Down:
+                    next_row_idx = current_row_idx + 1
+                    if next_row_idx < len(sorted_rows):
+                        next_row = sorted_rows[next_row_idx][1]
+                        target_x = focused.pos().x()
+                        next_card = min(
+                            next_row,
+                            key=lambda c: abs(c.pos().x() - target_x),
+                            default=None
+                        )
+                        if next_card:
+                            next_card.setFocus()
+                            if scroll_area:
+                                scroll_area.ensureWidgetVisible(next_card, 50, 50)
                         return True
                 elif key == Qt.Key.Key_Up:
-                    if current_index > 0:
-                        prev_card = game_cards[current_index - 1]
-                        prev_card.setFocus()
-                        if scroll_area:
-                            scroll_area.ensureWidgetVisible(prev_card, 50, 50)
+                    next_row_idx = current_row_idx - 1
+                    if next_row_idx >= 0:
+                        next_row = sorted_rows[next_row_idx][1]
+                        target_x = focused.pos().x()
+                        next_card = min(
+                            next_row,
+                            key=lambda c: abs(c.pos().x() - target_x),
+                            default=None
+                        )
+                        if next_card:
+                            next_card.setFocus()
+                            if scroll_area:
+                                scroll_area.ensureWidgetVisible(next_card, 50, 50)
                         return True
-                    elif current_index == 0:
+                    elif current_row_idx == 0:
                         self._parent.tabButtons[0].setFocus()
                         return True
-                elif key == Qt.Key.Key_Left:
-                    if current_index > 0:
-                        prev_card = game_cards[current_index - 1]
-                        prev_card.setFocus()
-                        if scroll_area:
-                            scroll_area.ensureWidgetVisible(prev_card, 50, 50)
-                        return True
-                elif key == Qt.Key.Key_Right:
-                    if current_index >= 0 and current_index + 1 < len(game_cards):
-                        next_card = game_cards[current_index + 1]
-                        next_card.setFocus()
-                        if scroll_area:
-                            scroll_area.ensureWidgetVisible(next_card, 50, 50)
-                        return True
 
-        # Tab switching with Left/Right keys
+        # Tab switching with Left/Right keys (non-GameCard focus)
         idx = self._parent.stackedWidget.currentIndex()
         total = len(self._parent.tabButtons)
         if key == Qt.Key.Key_Left and not isinstance(focused, GameCard):
@@ -271,6 +556,7 @@ class InputManager(QObject):
             return True
 
         return super().eventFilter(obj, event)
+
 
     def init_gamepad(self) -> None:
         self.check_gamepad()
@@ -360,114 +646,6 @@ class InputManager(QObject):
                 except Exception:
                     pass
             self.gamepad = None
-
-    @Slot(int)
-    def handle_button_slot(self, button_code: int) -> None:
-        try:
-            # Игнорировать события геймпада, если игра запущена
-            if getattr(self._parent, '_gameLaunched', False):
-                return
-
-            app = QApplication.instance()
-            if not app:
-                return
-            active = QApplication.activeWindow()
-            focused = QApplication.focusWidget()
-
-            # Закрытие AddGameDialog на кнопку B
-            if button_code in BUTTONS['back'] and isinstance(active, QDialog):
-                active.reject()  # Закрываем диалог
-                return
-
-            # FullscreenDialog
-            if isinstance(active, FullscreenDialog):
-                if button_code in BUTTONS['prev_tab']:
-                    active.show_prev()
-                elif button_code in BUTTONS['next_tab']:
-                    active.show_next()
-                elif button_code in BUTTONS['back']:
-                    active.close()
-                return
-
-            # Context menu for GameCard
-            if isinstance(focused, GameCard):
-                if button_code in BUTTONS['context_menu']:
-                    pos = QPoint(focused.width() // 2, focused.height() // 2)
-                    focused._show_context_menu(pos)
-                    return
-
-            # Game launch on detail page
-            if (button_code in BUTTONS['confirm'] or button_code in BUTTONS['confirm_stick']) and self._parent.currentDetailPage is not None:
-                if self._parent.current_exec_line:
-                    self._parent.toggleGame(self._parent.current_exec_line, None)
-                    return
-
-            # Standard navigation
-            if button_code in BUTTONS['confirm'] or button_code in BUTTONS['confirm_stick']:
-                self._parent.activateFocusedWidget()
-            elif button_code in BUTTONS['back'] or button_code in BUTTONS['menu']:
-                self._parent.goBackDetailPage(getattr(self._parent, 'currentDetailPage', None))
-            elif button_code in BUTTONS['add_game']:
-                self._parent.openAddGameDialog()
-            elif button_code in BUTTONS['prev_tab']:
-                idx = (self._parent.stackedWidget.currentIndex() - 1) % len(self._parent.tabButtons)
-                self._parent.switchTab(idx)
-                self._parent.tabButtons[idx].setFocus(Qt.FocusReason.OtherFocusReason)
-            elif button_code in BUTTONS['next_tab']:
-                idx = (self._parent.stackedWidget.currentIndex() + 1) % len(self._parent.tabButtons)
-                self._parent.switchTab(idx)
-                self._parent.tabButtons[idx].setFocus(Qt.FocusReason.OtherFocusReason)
-        except Exception as e:
-            logger.error(f"Error in handle_button_slot: {e}", exc_info=True)
-
-    @Slot(int, int, float)
-    def handle_dpad_slot(self, code: int, value: int, current_time: float) -> None:
-        try:
-            # Игнорировать события геймпада, если игра запущена
-            if getattr(self._parent, '_gameLaunched', False):
-                return
-
-            app = QApplication.instance()
-            if not app:
-                return
-            active = QApplication.activeWindow()
-
-            # Fullscreen horizontal navigation
-            if isinstance(active, FullscreenDialog) and code == ecodes.ABS_HAT0X:
-                if value < 0:
-                    active.show_prev()
-                elif value > 0:
-                    active.show_next()
-                return
-
-            # Vertical navigation (DPAD up/down)
-            if code == ecodes.ABS_HAT0Y:
-                if value == 0:
-                    return
-                focused = QApplication.focusWidget()
-                page = self._parent.stackedWidget.currentWidget()
-                if value > 0:
-                    if isinstance(focused, NavLabel):
-                        focusables = page.findChildren(QWidget, options=Qt.FindChildOption.FindChildrenRecursively)
-                        focusables = [w for w in focusables if w.focusPolicy() & Qt.FocusPolicy.StrongFocus]
-                        if focusables:
-                            focusables[0].setFocus()
-                            return
-                    elif focused:
-                        focused.focusNextChild()
-                        return
-                elif value < 0 and focused:
-                    focused.focusPreviousChild()
-                    return
-
-            # Reset axis movement state
-            if code == ecodes.ABS_HAT0X and value == 0:
-                self.axis_moving = False
-                self.current_axis_delay = self.initial_axis_move_delay
-                return
-
-        except Exception as e:
-            logger.error(f"Error in handle_dpad_slot: {e}", exc_info=True)
 
     def cleanup(self) -> None:
         try:
