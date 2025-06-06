@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-05-29 17:42+0500\n"
+"POT-Creation-Date: 2025-06-06 20:01+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es_ES\n"
@@ -354,6 +354,12 @@ msgid "Launch Application in Fullscreen"
 msgstr ""
 
 msgid "Application Fullscreen Mode:"
+msgstr ""
+
+msgid "Auto Fullscreen on Gamepad connected"
+msgstr ""
+
+msgid "Auto Fullscreen on Gamepad connected:"
 msgstr ""
 
 msgid "Open Legendary Login"
