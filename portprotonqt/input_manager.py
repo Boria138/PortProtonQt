@@ -432,7 +432,7 @@ class InputManager(QObject):
                 return
             active = QApplication.activeWindow()
 
-            # Fullscreen horizontal
+            # Fullscreen horizontal navigation
             if isinstance(active, FullscreenDialog) and code == ecodes.ABS_HAT0X:
                 if value < 0:
                     active.show_prev()
@@ -460,37 +460,14 @@ class InputManager(QObject):
                     focused.focusPreviousChild()
                     return
 
-            # Horizontal wrap navigation repeat logic
-            if code != ecodes.ABS_HAT0X:
-                return
-            if value == 0:
+            # Reset axis movement state
+            if code == ecodes.ABS_HAT0X and value == 0:
                 self.axis_moving = False
                 self.current_axis_delay = self.initial_axis_move_delay
                 return
-            if not self.axis_moving:
-                self.trigger_dpad_movement(code, value)
-                self.last_move_time = current_time
-                self.axis_moving = True
-            elif current_time - self.last_move_time >= self.current_axis_delay:
-                self.trigger_dpad_movement(code, value)
-                self.last_move_time = current_time
-                self.current_axis_delay = self.repeat_axis_move_delay
+
         except Exception as e:
             logger.error(f"Error in handle_dpad_slot: {e}", exc_info=True)
-
-    def trigger_dpad_movement(self, code: int, value: int) -> None:
-        try:
-            if code != ecodes.ABS_HAT0X:
-                return
-            idx = self._parent.stackedWidget.currentIndex()
-            if value < 0:
-                new = (idx - 1) % len(self._parent.tabButtons)
-            else:
-                new = (idx + 1) % len(self._parent.tabButtons)
-            self._parent.switchTab(new)
-            self._parent.tabButtons[new].setFocus(Qt.FocusReason.OtherFocusReason)
-        except Exception as e:
-            logger.error(f"Error in trigger_dpad_movement: {e}", exc_info=True)
 
     def cleanup(self) -> None:
         try:
