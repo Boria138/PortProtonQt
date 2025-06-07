@@ -261,19 +261,26 @@ class GameCard(QFrame):
         self.steam_visible = (str(self.game_source).lower() == "steam" and display_filter in ("all", "favorites"))
         self.egs_visible = (str(self.game_source).lower() == "epic" and display_filter in ("all", "favorites"))
         self.portproton_visible = (str(self.game_source).lower() == "portproton" and display_filter in ("all", "favorites"))
+        protondb_visible = bool(self.getProtonDBText(self.protondb_tier))
+        anticheat_visible = bool(self.getAntiCheatText(self.anticheat_status))
 
+        # Обновляем видимость бейджей
         self.steamLabel.setVisible(self.steam_visible)
         self.egsLabel.setVisible(self.egs_visible)
         self.portprotonLabel.setVisible(self.portproton_visible)
+        self.protondbLabel.setVisible(protondb_visible)
+        self.anticheatLabel.setVisible(anticheat_visible)
 
+        # Подготавливаем список всех бейджей с их текущей видимостью
         badges = [
             (self.steam_visible, self.steamLabel),
             (self.egs_visible, self.egsLabel),
             (self.portproton_visible, self.portprotonLabel),
-            (self.protondbLabel.isVisible(), self.protondbLabel),
-            (self.anticheatLabel.isVisible(), self.anticheatLabel),
+            (protondb_visible, self.protondbLabel),
+            (anticheat_visible, self.anticheatLabel),
         ]
 
+        # Пересчитываем позиции бейджей
         right_margin = 8
         badge_spacing = 5
         top_y = 10
@@ -287,6 +294,7 @@ class GameCard(QFrame):
                 badge.move(badge_x, badge_y)
                 badge_y_positions.append(badge_y + badge.height())
 
+        # Поднимаем бейджи в правильном порядке (от нижнего к верхнему)
         self.anticheatLabel.raise_()
         self.protondbLabel.raise_()
         self.portprotonLabel.raise_()
