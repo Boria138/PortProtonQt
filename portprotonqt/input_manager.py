@@ -216,7 +216,9 @@ class InputManager(QObject):
             elif button_code in BUTTONS['back'] or button_code in BUTTONS['menu']:
                 self._parent.goBackDetailPage(getattr(self._parent, 'currentDetailPage', None))
             elif button_code in BUTTONS['add_game']:
-                self._parent.openAddGameDialog()
+                # Only open AddGameDialog if in library tab (index 0)
+                if self._parent.stackedWidget.currentIndex() == 0:
+                    self._parent.openAddGameDialog()
             elif button_code in BUTTONS['prev_tab']:
                 idx = (self._parent.stackedWidget.currentIndex() - 1) % len(self._parent.tabButtons)
                 self._parent.switchTab(idx)
@@ -241,6 +243,21 @@ class InputManager(QObject):
             active = QApplication.activeWindow()
             focused = QApplication.focusWidget()
             popup = QApplication.activePopupWidget()
+
+            # Handle AddGameDialog navigation with D-pad
+            if isinstance(active, QDialog) and code == ecodes.ABS_HAT0Y and value != 0:
+                if not focused or not active.focusWidget():
+                    # If no widget is focused, focus the first focusable widget
+                    focusables = active.findChildren(QWidget, options=Qt.FindChildOption.FindChildrenRecursively)
+                    focusables = [w for w in focusables if w.focusPolicy() & Qt.FocusPolicy.StrongFocus]
+                    if focusables:
+                        focusables[0].setFocus(Qt.FocusReason.OtherFocusReason)
+                    return
+                if value > 0:  # Down
+                    active.focusNextChild()
+                elif value < 0:  # Up
+                    active.focusPreviousChild()
+                return
 
             # Handle QMenu navigation with D-pad
             if isinstance(popup, QMenu):
@@ -364,7 +381,6 @@ class InputManager(QObject):
                                     next_card.setFocus()
                                     if scroll_area:
                                         scroll_area.ensureWidgetVisible(next_card, 50, 50)
-
                 elif code == ecodes.ABS_HAT0Y and value != 0:  # Up/Down
                     if value > 0:  # Down
                         next_row_idx = current_row_idx + 1
@@ -621,6 +637,9 @@ class InputManager(QObject):
                 if focusables:
                     focusables[0].setFocus()
                     return True
+            elif focused:
+                focused.focusNextChild()
+                return True
         # Navigate up through tab content
         if key == Qt.Key.Key_Up:
             if isinstance(focused, NavLabel):
@@ -641,8 +660,10 @@ class InputManager(QObject):
         elif key == Qt.Key.Key_E:
             if isinstance(focused, QLineEdit):
                 return False
-            self._parent.openAddGameDialog()
-            return True
+            # Only open AddGameDialog if in library tab (index 0)
+            if self._parent.stackedWidget.currentIndex() == 0:
+                self._parent.openAddGameDialog()
+                return True
 
         # Toggle fullscreen with F11
         if key == Qt.Key.Key_F11:

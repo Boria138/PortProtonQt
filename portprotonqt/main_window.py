@@ -742,6 +742,7 @@ class MainWindow(QMainWindow):
             return
 
         dialog = AddGameDialog(self, self.theme)
+        dialog.setFocus(Qt.FocusReason.OtherFocusReason)
         self.current_add_game_dialog = dialog  # Сохраняем ссылку на диалог
 
         # Предзаполняем путь к .exe при drag-and-drop
