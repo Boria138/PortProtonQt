@@ -390,6 +390,23 @@ class InputManager(QObject):
                 focused._show_context_menu(pos)
                 return True
 
+        # Handle Up/Down keys for non-GameCard tabs
+        if key in (Qt.Key.Key_Up, Qt.Key.Key_Down) and not isinstance(focused, GameCard):
+            page = self._parent.stackedWidget.currentWidget()
+            if key == Qt.Key.Key_Down:
+                if isinstance(focused, NavLabel):
+                    focusables = page.findChildren(QWidget, options=Qt.FindChildOption.FindChildrenRecursively)
+                    focusables = [w for w in focusables if w.focusPolicy() & Qt.FocusPolicy.StrongFocus]
+                    if focusables:
+                        focusables[0].setFocus()
+                        return True
+                elif focused:
+                    focused.focusNextChild()
+                    return True
+            elif key == Qt.Key.Key_Up and focused:
+                focused.focusPreviousChild()
+                return True
+
         # Tab switching with Left/Right keys (non-GameCard focus or no focus)
         idx = self._parent.stackedWidget.currentIndex()
         total = len(self._parent.tabButtons)
