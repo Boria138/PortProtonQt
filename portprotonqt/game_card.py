@@ -266,13 +266,6 @@ class GameCard(QFrame):
         self.egsLabel.setVisible(self.egs_visible)
         self.portprotonLabel.setVisible(self.portproton_visible)
 
-        # Reposition badges
-        right_margin = 8
-        badge_spacing = 5
-        top_y = 10
-        badge_y_positions = []
-        badge_width = int(self.coverLabel.width() * 2/3)
-
         badges = [
             (self.steam_visible, self.steamLabel),
             (self.egs_visible, self.egsLabel),
@@ -280,6 +273,12 @@ class GameCard(QFrame):
             (self.protondbLabel.isVisible(), self.protondbLabel),
             (self.anticheatLabel.isVisible(), self.anticheatLabel),
         ]
+
+        right_margin = 8
+        badge_spacing = 5
+        top_y = 10
+        badge_y_positions = []
+        badge_width = int(self.coverLabel.width() * 2/3)
 
         for is_visible, badge in badges:
             if is_visible:
