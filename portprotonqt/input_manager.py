@@ -3,7 +3,7 @@ import threading
 from typing import Protocol, cast
 from evdev import InputDevice, ecodes, list_devices
 import pyudev
-from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea, QLineEdit, QDialog
+from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea, QLineEdit, QDialog, QMenu
 from PySide6.QtCore import Qt, QObject, QEvent, QPoint, Signal, Slot
 from PySide6.QtGui import QKeyEvent
 from portprotonqt.logger import get_logger
@@ -37,8 +37,8 @@ BUTTONS = {
     'confirm':   {ecodes.BTN_A},
     'back':      {ecodes.BTN_B},
     'add_game':  {ecodes.BTN_Y},
-    'prev_tab':  {ecodes.BTN_TL, ecodes.BTN_TRIGGER_HAPPY7},
-    'next_tab':  {ecodes.BTN_TR, ecodes.BTN_TRIGGER_HAPPY5},
+    'prev_tab':  {ecodes.BTN_TL},
+    'next_tab':  {ecodes.BTN_TR},
     'confirm_stick': {ecodes.BTN_THUMBL, ecodes.BTN_THUMBR},
     'context_menu': {ecodes.BTN_START},
     'menu':      {ecodes.BTN_SELECT},
@@ -129,6 +129,21 @@ class InputManager(QObject):
                 return
             active = QApplication.activeWindow()
             focused = QApplication.focusWidget()
+            popup = QApplication.activePopupWidget()
+
+            # Handle QMenu (context menu)
+            if isinstance(popup, QMenu):
+                if button_code in BUTTONS['confirm'] or button_code in BUTTONS['confirm_stick']:
+                    # Trigger the currently highlighted menu action and close the menu
+                    if popup.activeAction():
+                        popup.activeAction().trigger()
+                        popup.close()
+                    return
+                elif button_code in BUTTONS['back'] or button_code in BUTTONS['menu']:
+                    # Close the menu
+                    popup.close()
+                    return
+                return
 
             # Закрытие AddGameDialog на кнопку B
             if button_code in BUTTONS['back'] and isinstance(active, QDialog):
@@ -149,7 +164,9 @@ class InputManager(QObject):
             if isinstance(focused, GameCard):
                 if button_code in BUTTONS['context_menu']:
                     pos = QPoint(focused.width() // 2, focused.height() // 2)
-                    focused._show_context_menu(pos)
+                    menu = focused._show_context_menu(pos)
+                    if menu:
+                        menu.setFocus(Qt.FocusReason.OtherFocusReason)
                     return
 
             # Game launch on detail page
@@ -188,6 +205,22 @@ class InputManager(QObject):
             if not app:
                 return
             active = QApplication.activeWindow()
+            popup = QApplication.activePopupWidget()
+
+            # Handle QMenu navigation with D-pad
+            if isinstance(popup, QMenu):
+                if code == ecodes.ABS_HAT0Y and value != 0:
+                    actions = popup.actions()
+                    if actions:
+                        current_idx = actions.index(popup.activeAction()) if popup.activeAction() in actions else 0
+                        if value < 0:  # Up
+                            next_idx = (current_idx - 1) % len(actions)
+                            popup.setActiveAction(actions[next_idx])
+                        elif value > 0:  # Down
+                            next_idx = (current_idx + 1) % len(actions)
+                            popup.setActiveAction(actions[next_idx])
+                    return
+                return
 
             # Fullscreen horizontal navigation
             if isinstance(active, FullscreenDialog) and code == ecodes.ABS_HAT0X:
