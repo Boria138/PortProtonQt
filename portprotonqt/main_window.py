@@ -539,6 +539,12 @@ class MainWindow(QMainWindow):
     def startSearchDebounce(self, text):
         self.searchDebounceTimer.start()
 
+    def on_slider_value_changed(self, value: int):
+            self.card_width = value
+            self.sizeSlider.setToolTip(f"{value} px")
+            save_card_size(value)
+            self.updateGameGrid()
+
     def filterGamesDelayed(self):
         """Filters games based on search text and updates the grid."""
         text = self.searchEdit.text().strip().lower()
@@ -579,21 +585,9 @@ class MainWindow(QMainWindow):
         self.sizeSlider.setFixedWidth(150)
         self.sizeSlider.setToolTip(f"{self.card_width} px")
         self.sizeSlider.setStyleSheet(self.theme.SLIDER_SIZE_STYLE)
+        self.sizeSlider.valueChanged.connect(self.on_slider_value_changed)
         sliderLayout.addWidget(self.sizeSlider)
         layout.addLayout(sliderLayout)
-
-        self.sliderDebounceTimer = QTimer(self)
-        self.sliderDebounceTimer.setSingleShot(True)
-        self.sliderDebounceTimer.setInterval(40)
-
-        def on_slider_value_changed():
-            self.setUpdatesEnabled(False)
-            self.card_width = self.sizeSlider.value()
-            self.sizeSlider.setToolTip(f"{self.card_width} px")
-            self.updateGameGrid()
-            self.setUpdatesEnabled(True)
-        self.sizeSlider.valueChanged.connect(lambda val: self.sliderDebounceTimer.start())
-        self.sliderDebounceTimer.timeout.connect(on_slider_value_changed)
 
         def calculate_card_width():
             available_width = scrollArea.width() - 20
@@ -601,11 +595,6 @@ class MainWindow(QMainWindow):
             target_cards_per_row = 8
             calculated_width = (available_width - spacing * (target_cards_per_row - 1)) // target_cards_per_row
             calculated_width = max(200, min(calculated_width, 250))
-            if not self.sizeSlider.value() == self.card_width:
-                self.card_width = calculated_width
-                self.sizeSlider.setValue(self.card_width)
-                self.sizeSlider.setToolTip(f"{self.card_width} px")
-                self.updateGameGrid()
 
         QTimer.singleShot(0, calculate_card_width)
 
@@ -621,7 +610,6 @@ class MainWindow(QMainWindow):
             self._last_width = self.width()
         if abs(self.width() - self._last_width) > 10:
             self._last_width = self.width()
-            self.sliderDebounceTimer.start()
 
     def loadVisibleImages(self):
         visible_region = self.gamesListWidget.visibleRegion()
