@@ -45,7 +45,7 @@ Requires:       perl-Image-ExifTool
 Requires:       xdg-utils
 
 %description -n python3-%{pypi_name}-git
-PortProtonQt is a modern, user-friendly graphical interface designed to streamline the management and launching of games across multiple platforms, including PortProton, Steam, and Epic Games Store.
+This application provides a sleek, intuitive graphical interface for managing and launching games from PortProton, Steam, and Epic Games Store. It consolidates your game libraries into a single, user-friendly hub for seamless navigation and organization. Its lightweight structure and cross-platform support deliver a cohesive gaming experience, eliminating the need for multiple launchers. Unique PortProton integration enhances Linux gaming, enabling effortless play of Windows-based titles with minimal setup.
 
 %prep
 git clone https://git.linux-gaming.ru/Boria138/PortProtonQt.git
@@ -62,6 +62,8 @@ cp -r build-aux/share %{buildroot}/usr/
 
 %files -n python3-%{pypi_name}-git -f %{pyproject_files}
 %{_bindir}/%{pypi_name}
-%{_datadir}/*
+%{_datadir}/icons/hicolor/scalable/apps/ru.linux_gaming.PortProtonQt.svg
+%{_metainfodir}/ru.linux_gaming.PortProtonQt.metainfo.xml
+%{_datadir}/applications/ru.linux_gaming.PortProtonQt.desktop
 
 %changelog
