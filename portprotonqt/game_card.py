@@ -272,35 +272,27 @@ class GameCard(QFrame):
         top_y = 10
         badge_y_positions = []
         badge_width = int(self.coverLabel.width() * 2/3)
-        if self.steam_visible:
-            steam_x = self.coverLabel.width() - badge_width - right_margin
-            self.steamLabel.move(steam_x, top_y)
-            badge_y_positions.append(top_y + self.steamLabel.height())
-        if self.egs_visible:
-            egs_x = self.coverLabel.width() - badge_width - right_margin
-            egs_y = badge_y_positions[-1] + badge_spacing if badge_y_positions else top_y
-            self.egsLabel.move(egs_x, egs_y)
-            badge_y_positions.append(egs_y + self.egsLabel.height())
-        if self.portproton_visible:
-            portproton_x = self.coverLabel.width() - badge_width - right_margin
-            portproton_y = badge_y_positions[-1] + badge_spacing if badge_y_positions else top_y
-            self.portprotonLabel.move(portproton_x, portproton_y)
-            badge_y_positions.append(portproton_y + self.portprotonLabel.height())
-        if self.protondbLabel.isVisible():
-            protondb_x = self.coverLabel.width() - badge_width - right_margin
-            protondb_y = badge_y_positions[-1] + badge_spacing if badge_y_positions else top_y
-            self.protondbLabel.move(protondb_x, protondb_y)
-            badge_y_positions.append(protondb_y + self.protondbLabel.height())
-        if self.anticheatLabel.isVisible():
-            anticheat_x = self.coverLabel.width() - badge_width - right_margin
-            anticheat_y = badge_y_positions[-1] + badge_spacing if badge_y_positions else top_y
-            self.anticheatLabel.move(anticheat_x, anticheat_y)
 
-            self.anticheatLabel.raise_()
-            self.protondbLabel.raise_()
-            self.portprotonLabel.raise_()
-            self.egsLabel.raise_()
-            self.steamLabel.raise_()
+        badges = [
+            (self.steam_visible, self.steamLabel),
+            (self.egs_visible, self.egsLabel),
+            (self.portproton_visible, self.portprotonLabel),
+            (self.protondbLabel.isVisible(), self.protondbLabel),
+            (self.anticheatLabel.isVisible(), self.anticheatLabel),
+        ]
+
+        for is_visible, badge in badges:
+            if is_visible:
+                badge_x = self.coverLabel.width() - badge_width - right_margin
+                badge_y = badge_y_positions[-1] + badge_spacing if badge_y_positions else top_y
+                badge.move(badge_x, badge_y)
+                badge_y_positions.append(badge_y + badge.height())
+
+        self.anticheatLabel.raise_()
+        self.protondbLabel.raise_()
+        self.portprotonLabel.raise_()
+        self.egsLabel.raise_()
+        self.steamLabel.raise_()
 
     def _show_context_menu(self, pos):
         """Delegate context menu display to ContextMenuManager."""
