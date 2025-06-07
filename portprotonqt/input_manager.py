@@ -3,7 +3,7 @@ import threading
 from typing import Protocol, cast
 from evdev import InputDevice, ecodes, list_devices
 import pyudev
-from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea, QLineEdit, QDialog, QMenu
+from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea, QLineEdit, QDialog, QMenu, QComboBox, QListView
 from PySide6.QtCore import Qt, QObject, QEvent, QPoint, Signal, Slot
 from PySide6.QtGui import QKeyEvent
 from portprotonqt.logger import get_logger
@@ -134,20 +134,55 @@ class InputManager(QObject):
             # Handle QMenu (context menu)
             if isinstance(popup, QMenu):
                 if button_code in BUTTONS['confirm'] or button_code in BUTTONS['confirm_stick']:
-                    # Trigger the currently highlighted menu action and close the menu
                     if popup.activeAction():
                         popup.activeAction().trigger()
                         popup.close()
                     return
                 elif button_code in BUTTONS['back'] or button_code in BUTTONS['menu']:
-                    # Close the menu
                     popup.close()
                     return
                 return
 
+            # Handle QComboBox
+            if isinstance(focused, QComboBox):
+                if button_code in BUTTONS['confirm'] or button_code in BUTTONS['confirm_stick']:
+                    focused.showPopup()
+                return
+
+            # Handle QListView
+            if isinstance(focused, QListView):
+                combo = None
+                parent = focused.parentWidget()
+                while parent:
+                    if isinstance(parent, QComboBox):
+                        combo = parent
+                        break
+                    parent = parent.parentWidget()
+
+                if button_code in BUTTONS['confirm'] or button_code in BUTTONS['confirm_stick']:
+                    idx = focused.currentIndex()
+                    if idx.isValid():
+                        if combo:
+                            combo.setCurrentIndex(idx.row())
+                            combo.hidePopup()
+                            combo.setFocus(Qt.FocusReason.OtherFocusReason)
+                        else:
+                            focused.activated.emit(idx)
+                            focused.clicked.emit(idx)
+                            focused.hide()
+                    return
+
+                if button_code in BUTTONS['back']:
+                    if combo:
+                        combo.hidePopup()
+                        combo.setFocus(Qt.FocusReason.OtherFocusReason)
+                    else:
+                        focused.clearSelection()
+                        focused.hide()
+
             # Закрытие AddGameDialog на кнопку B
             if button_code in BUTTONS['back'] and isinstance(active, QDialog):
-                active.reject()  # Закрываем диалог
+                active.reject()
                 return
 
             # FullscreenDialog
@@ -193,7 +228,6 @@ class InputManager(QObject):
         except Exception as e:
             logger.error(f"Error in handle_button_slot: {e}", exc_info=True)
 
-
     @Slot(int, int, float)
     def handle_dpad_slot(self, code: int, value: int, current_time: float) -> None:
         try:
@@ -205,6 +239,7 @@ class InputManager(QObject):
             if not app:
                 return
             active = QApplication.activeWindow()
+            focused = QApplication.focusWidget()
             popup = QApplication.activePopupWidget()
 
             # Handle QMenu navigation with D-pad
@@ -220,6 +255,22 @@ class InputManager(QObject):
                             next_idx = (current_idx + 1) % len(actions)
                             popup.setActiveAction(actions[next_idx])
                     return
+                return
+
+            # Handle QListView navigation with D-pad
+            if isinstance(focused, QListView) and code == ecodes.ABS_HAT0Y and value != 0:
+                model = focused.model()
+                current_index = focused.currentIndex()
+                if model and current_index.isValid():
+                    row_count = model.rowCount()
+                    current_row = current_index.row()
+                    if value > 0:  # Down
+                        next_row = min(current_row + 1, row_count - 1)
+                        focused.setCurrentIndex(model.index(next_row, current_index.column()))
+                    elif value < 0:  # Up
+                        prev_row = max(current_row - 1, 0)
+                        focused.setCurrentIndex(model.index(prev_row, current_index.column()))
+                    focused.scrollTo(focused.currentIndex(), QListView.ScrollHint.PositionAtCenter)
                 return
 
             # Fullscreen horizontal navigation

@@ -9,6 +9,7 @@ from PySide6.QtGui import QDesktopServices
 from portprotonqt.config_utils import parse_desktop_entry
 from portprotonqt.localization import _
 from portprotonqt.steam_api import is_game_in_steam, add_to_steam, remove_from_steam
+from portprotonqt.dialogs import AddGameDialog
 
 class ContextMenuManager:
     """Manages context menu actions for game management in PortProtonQT."""
@@ -321,7 +322,6 @@ class ContextMenuManager:
 
     def edit_game_shortcut(self, game_name, exec_line, cover_path):
         """Opens the AddGameDialog in edit mode to modify an existing .desktop file."""
-        from portprotonqt.dialogs import AddGameDialog  # Local import to avoid circular dependency
 
         if not self._check_portproton():
             return
