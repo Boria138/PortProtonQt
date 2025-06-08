@@ -4,7 +4,7 @@ from typing import Protocol, cast
 from evdev import InputDevice, ecodes, list_devices
 import pyudev
 from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea, QLineEdit, QDialog, QMenu, QComboBox, QListView
-from PySide6.QtCore import Qt, QObject, QEvent, QPoint, Signal, Slot
+from PySide6.QtCore import Qt, QObject, QEvent, QPoint, Signal, Slot, QTimer
 from PySide6.QtGui import QKeyEvent
 from portprotonqt.logger import get_logger
 from portprotonqt.image_utils import FullscreenDialog
@@ -72,7 +72,6 @@ class InputManager(QObject):
         self._parent.currentDetailPage = getattr(self._parent, 'currentDetailPage', None)
         self._parent.current_exec_line = getattr(self._parent, 'current_exec_line', None)
         self._parent.current_add_game_dialog = getattr(self._parent, 'current_add_game_dialog', None)
-
         self.axis_deadzone = axis_deadzone
         self.initial_axis_move_delay = initial_axis_move_delay
         self.repeat_axis_move_delay = repeat_axis_move_delay
@@ -83,6 +82,12 @@ class InputManager(QObject):
         self.gamepad_thread: threading.Thread | None = None
         self.running = True
         self._is_fullscreen = read_fullscreen_config()
+
+        # Add variables for continuous D-pad movement
+        self.dpad_timer = QTimer(self)
+        self.dpad_timer.timeout.connect(self.handle_dpad_repeat)
+        self.current_dpad_code = None  # Tracks the current D-pad axis (e.g., ABS_HAT0X, ABS_HAT0Y)
+        self.current_dpad_value = 0    # Tracks the current D-pad direction value (e.g., -1, 1)
 
         # Connect signals to slots
         self.button_pressed.connect(self.handle_button_slot)
@@ -239,6 +244,15 @@ class InputManager(QObject):
         except Exception as e:
             logger.error(f"Error in handle_button_slot: {e}", exc_info=True)
 
+    def handle_dpad_repeat(self) -> None:
+        """Handle repeated D-pad input while the D-pad is held."""
+        if self.current_dpad_code is not None and self.current_dpad_value != 0:
+            now = time.time()
+            if (now - self.last_move_time) >= self.current_axis_delay:
+                self.handle_dpad_slot(self.current_dpad_code, self.current_dpad_value, now)
+                self.last_move_time = now
+                self.current_axis_delay = self.repeat_axis_move_delay
+
     @Slot(int, int, float)
     def handle_dpad_slot(self, code: int, value: int, current_time: float) -> None:
         try:
@@ -252,6 +266,23 @@ class InputManager(QObject):
             active = QApplication.activeWindow()
             focused = QApplication.focusWidget()
             popup = QApplication.activePopupWidget()
+
+            # Update D-pad state
+            if value != 0:
+                self.current_dpad_code = code
+                self.current_dpad_value = value
+                if not self.axis_moving:
+                    self.axis_moving = True
+                    self.last_move_time = current_time
+                    self.current_axis_delay = self.initial_axis_move_delay
+                    self.dpad_timer.start(int(self.repeat_axis_move_delay * 1000))  # Start timer (in milliseconds)
+            else:
+                self.current_dpad_code = None
+                self.current_dpad_value = 0
+                self.axis_moving = False
+                self.current_axis_delay = self.initial_axis_move_delay
+                self.dpad_timer.stop()  # Stop timer when D-pad is released
+                return
 
             # Handle SystemOverlay or AddGameDialog navigation with D-pad
             if isinstance(active, QDialog) and code == ecodes.ABS_HAT0Y and value != 0:
@@ -305,19 +336,6 @@ class InputManager(QObject):
                     active.show_prev()
                 elif value > 0:
                     active.show_next()
-                return
-
-            # Handle repeated D-pad movement
-            if value != 0:
-                if not self.axis_moving:
-                    self.axis_moving = True
-                elif (current_time - self.last_move_time) < self.current_axis_delay:
-                    return
-                self.last_move_time = current_time
-                self.current_axis_delay = self.repeat_axis_move_delay
-            else:
-                self.axis_moving = False
-                self.current_axis_delay = self.initial_axis_move_delay
                 return
 
             # Library tab navigation (index 0)
@@ -783,6 +801,7 @@ class InputManager(QObject):
     def cleanup(self) -> None:
         try:
             self.running = False
+            self.dpad_timer.stop()
             if self.gamepad_thread:
                 self.gamepad_thread.join()
             if self.gamepad:
