@@ -44,7 +44,7 @@ BUTTONS = {
     'confirm_stick': {ecodes.BTN_THUMBL, ecodes.BTN_THUMBR},
     'context_menu': {ecodes.BTN_START},
     'menu':      {ecodes.BTN_SELECT},
-    'guide':     {ecodes.BTN_MODE},
+    'guide':     {ecodes.BTN_MODE, ecodes.KEY_HOMEPAGE},
 }
 
 class InputManager(QObject):
