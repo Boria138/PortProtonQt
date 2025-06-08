@@ -25,6 +25,8 @@ class MainWindowProtocol(Protocol):
         ...
     def toggleGame(self, exec_line: str | None, button: QWidget | None = None) -> None:
         ...
+    def openSystemOverlay(self) -> None:
+            ...
     stackedWidget: QStackedWidget
     tabButtons: dict[int, QWidget]
     gamesListWidget: QWidget
@@ -42,6 +44,7 @@ BUTTONS = {
     'confirm_stick': {ecodes.BTN_THUMBL, ecodes.BTN_THUMBR},
     'context_menu': {ecodes.BTN_START},
     'menu':      {ecodes.BTN_SELECT},
+    'guide':     {ecodes.BTN_MODE},
 }
 
 class InputManager(QObject):
@@ -130,6 +133,12 @@ class InputManager(QObject):
             active = QApplication.activeWindow()
             focused = QApplication.focusWidget()
             popup = QApplication.activePopupWidget()
+
+            # Handle Guide button to open system overlay
+            if button_code in BUTTONS['guide']:
+                if not popup and not isinstance(active, QDialog):
+                    self._parent.openSystemOverlay()
+                    return
 
             # Handle QMenu (context menu)
             if isinstance(popup, QMenu):
@@ -244,7 +253,7 @@ class InputManager(QObject):
             focused = QApplication.focusWidget()
             popup = QApplication.activePopupWidget()
 
-            # Handle AddGameDialog navigation with D-pad
+            # Handle SystemOverlay or AddGameDialog navigation with D-pad
             if isinstance(active, QDialog) and code == ecodes.ABS_HAT0Y and value != 0:
                 if not focused or not active.focusWidget():
                     # If no widget is focused, focus the first focusable widget

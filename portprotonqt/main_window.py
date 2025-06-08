@@ -13,6 +13,7 @@ from portprotonqt.game_card import GameCard
 from portprotonqt.custom_widgets import FlowLayout, ClickableLabel, AutoSizeButton, NavLabel
 from portprotonqt.input_manager import InputManager
 from portprotonqt.context_menu_manager import ContextMenuManager
+from portprotonqt.system_overlay import SystemOverlay
 
 from portprotonqt.image_utils import load_pixmap_async, round_corners, ImageCarousel
 from portprotonqt.steam_api import get_steam_game_info_async, get_full_steam_game_info_async, get_steam_installed_games
@@ -499,6 +500,11 @@ class MainWindow(QMainWindow):
         for i, btn in self.tabButtons.items():
             btn.setChecked(i == index)
         self.stackedWidget.setCurrentIndex(index)
+
+    def openSystemOverlay(self):
+        """Opens the system overlay dialog."""
+        overlay = SystemOverlay(self, self.theme)
+        overlay.exec()
 
     def createSearchWidget(self) -> tuple[QWidget, QLineEdit]:
         self.container = QWidget()
