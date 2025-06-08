@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-06-06 20:01+0500\n"
+"POT-Creation-Date: 2025-06-08 09:31+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es_ES\n"
@@ -362,21 +362,6 @@ msgstr ""
 msgid "Auto Fullscreen on Gamepad connected:"
 msgstr ""
 
-msgid "Open Legendary Login"
-msgstr ""
-
-msgid "Legendary Authentication:"
-msgstr ""
-
-msgid "Enter Legendary Authorization Code"
-msgstr ""
-
-msgid "Authorization Code:"
-msgstr ""
-
-msgid "Submit Code"
-msgstr ""
-
 msgid "Save Settings"
 msgstr ""
 
@@ -390,22 +375,6 @@ msgid "Opened Legendary login page in browser"
 msgstr ""
 
 msgid "Failed to open Legendary login page"
-msgstr ""
-
-msgid "Please enter an authorization code"
-msgstr ""
-
-msgid "Successfully authenticated with Legendary"
-msgstr ""
-
-#, python-brace-format
-msgid "Legendary authentication failed: {0}"
-msgstr ""
-
-msgid "Legendary executable not found"
-msgstr ""
-
-msgid "Unexpected error during authentication"
 msgstr ""
 
 msgid "Confirm Reset"
@@ -503,6 +472,33 @@ msgid "Cannot launch game while another game is running"
 msgstr ""
 
 msgid "Launching"
+msgstr ""
+
+msgid "System Overlay"
+msgstr ""
+
+msgid "Reboot"
+msgstr ""
+
+msgid "Shutdown"
+msgstr ""
+
+msgid "Suspend"
+msgstr ""
+
+msgid "Exit Application"
+msgstr ""
+
+msgid "Cancel"
+msgstr ""
+
+msgid "Failed to reboot the system"
+msgstr ""
+
+msgid "Failed to shutdown the system"
+msgstr ""
+
+msgid "Failed to suspend the system"
 msgstr ""
 
 msgid "just now"

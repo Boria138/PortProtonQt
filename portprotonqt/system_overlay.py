@@ -1,5 +1,5 @@
 import subprocess
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QPushButton, QLabel, QMessageBox
+from PySide6.QtWidgets import QDialog, QVBoxLayout, QPushButton, QMessageBox
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import Qt
 from portprotonqt.logger import get_logger
@@ -19,11 +19,6 @@ class SystemOverlay(QDialog):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(10)
-
-        title = QLabel(_("System Actions"))
-        title.setStyleSheet(self.theme.TAB_TITLE_STYLE)
-        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(title)
 
         # Reboot button
         reboot_button = QPushButton(_("Reboot"))
@@ -69,14 +64,6 @@ class SystemOverlay(QDialog):
         except subprocess.CalledProcessError as e:
             logger.error(f"Failed to reboot: {e}")
             QMessageBox.warning(self, _("Error"), _("Failed to reboot the system"))
-        self.accept()
-
-    def sleep(self):
-        try:
-            subprocess.run(["systemctl", "suspend-then-hibernate"], check=True)
-        except subprocess.CalledProcessError as e:
-            logger.error(f"Failed to sleep: {e}")
-            QMessageBox.warning(self, _("Error"), _("Failed to put the system to sleep"))
         self.accept()
 
     def shutdown(self):
