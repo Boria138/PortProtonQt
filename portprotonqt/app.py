@@ -4,8 +4,9 @@ from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QIcon
 from portprotonqt.main_window import MainWindow
 from portprotonqt.tray import SystemTray
-from portprotonqt.config_utils import read_theme_from_config
+from portprotonqt.config_utils import read_theme_from_config, save_fullscreen_config
 from portprotonqt.logger import get_logger
+from portprotonqt.cli import parse_args
 
 logger = get_logger(__name__)
 
@@ -28,7 +29,17 @@ def main():
     else:
         logger.error(f"Qt translations for {system_locale.name()} not found in {translations_path}")
 
+    # Парсинг аргументов командной строки
+    args = parse_args()
+
     window = MainWindow()
+
+    # Обработка флага --fullscreen
+    if args.fullscreen:
+        logger.info("Запуск в полноэкранном режиме по флагу --fullscreen")
+        save_fullscreen_config(True)
+        window.showFullScreen()
+
     current_theme_name = read_theme_from_config()
     tray = SystemTray(app, current_theme_name)
     tray.show_action.triggered.connect(window.show)
@@ -43,7 +54,9 @@ def main():
         tray.hide_action.triggered.connect(window.hide)
 
     window.settings_saved.connect(recreate_tray)
+
     window.show()
+
     sys.exit(app.exec())
 
 if __name__ == '__main__':
