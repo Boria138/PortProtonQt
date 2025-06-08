@@ -90,6 +90,13 @@ SEARCH_EDIT_STYLE = """
     }
 """
 
+SETTINGS_CHECKBOX_STYLE = """
+    QCheckBox:focus {
+            border: 2px solid #409EFF;
+            background: #404554;
+        }
+"""
+
 # ОТКЛЮЧАЕМ РАМКУ У QScrollArea
 SCROLL_AREA_STYLE = """
     QWidget {
@@ -193,6 +200,28 @@ ACTION_BUTTON_STYLE = """
         font-size: 16px;
         font-family: 'Play';
         padding: 8px 16px;
+    }
+    QPushButton:hover {
+        background: #282a33;
+    }
+    QPushButton:pressed {
+        background: #282a33;
+    }
+    QPushButton:focus {
+        border: 2px solid #409EFF;
+        background-color: #404554;
+    }
+"""
+
+# СТИЛЬ КНОПОК ОВЕРЛЕЯ
+OVERLAY_BUTTON_STYLE = """
+    QPushButton {
+        background: #3f424d;
+        border: 1px solid rgba(255, 255, 255, 0.20);
+        border-radius: 10px;
+        color: #ffffff;
+        font-size: 16px;
+        font-family: 'Play';
     }
     QPushButton:hover {
         background: #282a33;

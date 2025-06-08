@@ -22,35 +22,35 @@ class SystemOverlay(QDialog):
 
         # Reboot button
         reboot_button = QPushButton(_("Reboot"))
-        #reboot_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        reboot_button.setStyleSheet(self.theme.OVERLAY_BUTTON_STYLE)
         reboot_button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         reboot_button.clicked.connect(self.reboot)
         layout.addWidget(reboot_button)
 
         # Shutdown button
         shutdown_button = QPushButton(_("Shutdown"))
-        #shutdown_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        shutdown_button.setStyleSheet(self.theme.OVERLAY_BUTTON_STYLE)
         shutdown_button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         shutdown_button.clicked.connect(self.shutdown)
         layout.addWidget(shutdown_button)
 
         # Suspend button
         suspend_button = QPushButton(_("Suspend"))
-        #suspend_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        suspend_button.setStyleSheet(self.theme.OVERLAY_BUTTON_STYLE)
         suspend_button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         suspend_button.clicked.connect(self.suspend)
         layout.addWidget(suspend_button)
 
         # Exit application button
         exit_button = QPushButton(_("Exit Application"))
-        #exit_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        exit_button.setStyleSheet(self.theme.OVERLAY_BUTTON_STYLE)
         exit_button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         exit_button.clicked.connect(self.exit_application)
         layout.addWidget(exit_button)
 
         # Cancel button
         cancel_button = QPushButton(_("Cancel"))
-        #cancel_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        cancel_button.setStyleSheet(self.theme.OVERLAY_BUTTON_STYLE)
         cancel_button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         cancel_button.clicked.connect(self.reject)
         layout.addWidget(cancel_button)
