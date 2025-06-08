@@ -6,7 +6,7 @@ import subprocess
 from PySide6.QtWidgets import QMessageBox, QDialog, QMenu
 from PySide6.QtCore import QUrl, QPoint
 from PySide6.QtGui import QDesktopServices
-from portprotonqt.config_utils import parse_desktop_entry
+from portprotonqt.config_utils import parse_desktop_entry, read_favorites, save_favorites
 from portprotonqt.localization import _
 from portprotonqt.steam_api import is_game_in_steam, add_to_steam, remove_from_steam
 from portprotonqt.dialogs import AddGameDialog
@@ -41,6 +41,17 @@ class ContextMenuManager:
         """
 
         menu = QMenu(self.parent)
+
+        favorites = read_favorites()
+        is_favorite = game_card.name in favorites
+
+        if is_favorite:
+            favorite_action = menu.addAction(_("Remove from Favorites"))
+            favorite_action.triggered.connect(lambda: self.toggle_favorite(game_card, False))
+        else:
+            favorite_action = menu.addAction(_("Add to Favorites"))
+            favorite_action.triggered.connect(lambda: self.toggle_favorite(game_card, True))
+
         if game_card.game_source not in ("steam", "epic"):
             desktop_dir = subprocess.check_output(['xdg-user-dir', 'DESKTOP']).decode('utf-8').strip()
             desktop_path = os.path.join(desktop_dir, f"{game_card.name}.desktop")
@@ -79,6 +90,26 @@ class ContextMenuManager:
                 add_steam_action.triggered.connect(lambda: self.add_to_steam(game_card.name, game_card.exec_line, game_card.cover_path))
 
         menu.exec(game_card.mapToGlobal(pos))
+
+    def toggle_favorite(self, game_card, add: bool):
+        """
+        Toggle the favorite status of a game and update its icon.
+
+        Args:
+            game_card: The GameCard instance to toggle.
+            add: True to add to favorites, False to remove.
+        """
+        favorites = read_favorites()
+        if add and game_card.name not in favorites:
+            favorites.append(game_card.name)
+            game_card.is_favorite = True
+            self.parent.statusBar().showMessage(_("Added '{0}' to favorites").format(game_card.name), 3000)
+        elif not add and game_card.name in favorites:
+            favorites.remove(game_card.name)
+            game_card.is_favorite = False
+            self.parent.statusBar().showMessage(_("Removed '{0}' from favorites").format(game_card.name), 3000)
+        save_favorites(favorites)
+        game_card.update_favorite_icon()
 
     def _check_portproton(self):
         """Check if PortProton is available."""
