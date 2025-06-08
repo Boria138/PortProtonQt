@@ -102,6 +102,7 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(800, 600)
 
         self.games = []
+        self.filtered_games = self.games
         self.game_processes = []
         self.target_exe = None
         self.current_running_button = None
@@ -543,10 +544,10 @@ class MainWindow(QMainWindow):
         """Filters games based on search text and updates the grid."""
         text = self.searchEdit.text().strip().lower()
         if text == "":
-            self.updateGameGrid()  # Use self.games directly
+            self.filtered_games = self.games
         else:
-            filtered = [game for game in self.games if text in game[0].lower()]
-            self.updateGameGrid(filtered)
+            self.filtered_games = [game for game in self.games if text in game[0].lower()]
+        self.updateGameGrid(self.filtered_games)
 
     def createInstalledTab(self):
         self.gamesLibraryWidget = QWidget()
@@ -620,22 +621,37 @@ class MainWindow(QMainWindow):
         if games_list is None:
             games_list = self.games
         if not games_list:
-            self.clearLayout(self.gamesListLayout)
+            # Скрываем все карточки, если список пуст
+            for card in self.game_card_cache.values():
+                card.hide()
             self.game_card_cache.clear()
             self.pending_images.clear()
+            self.gamesListWidget.updateGeometry()
             return
 
-        # Create a set of game names for quick lookup
+        # Создаем словарь текущих игр для быстрого поиска
         current_games = {game_data[0]: game_data for game_data in games_list}
 
-        # Check if the grid is already up-to-date
-        if set(current_games.keys()) == set(self.game_card_cache.keys()) and self.card_width == getattr(self, '_last_card_width', None):
-            return  # No changes needed, skip update
+        # Проверяем, изменился ли список игр или размер карточек
+        current_game_names = set(current_games.keys())
+        cached_game_names = set(self.game_card_cache.keys())
+        card_width_changed = self.card_width != getattr(self, '_last_card_width', None)
 
-        # Track if layout has changed to decide if geometry update is needed
+        if current_game_names == cached_game_names and not card_width_changed:
+            # Список игр и размер карточек не изменились, обновляем только видимость
+            search_text = self.searchEdit.text().strip().lower()
+            for game_name, card in self.game_card_cache.items():
+                card.setVisible(search_text in game_name.lower() or not search_text)
+            self.loadVisibleImages()
+            return
+
+        # Обновляем размер карточек, если он изменился
+        if card_width_changed:
+            for card in self.game_card_cache.values():
+                card.setFixedWidth(self.card_width + 20)  # Учитываем extra_margin в GameCard
+
+        # Удаляем карточки, которых больше нет в списке
         layout_changed = False
-
-        # Remove cards for games no longer in the list
         for card_key in list(self.game_card_cache.keys()):
             if card_key not in current_games:
                 card = self.game_card_cache.pop(card_key)
@@ -645,11 +661,14 @@ class MainWindow(QMainWindow):
                     del self.pending_images[card_key]
                 layout_changed = True
 
-        # Add or update cards for current games
+        # Добавляем новые карточки и обновляем существующие
         for game_data in games_list:
             game_name = game_data[0]
+            search_text = self.searchEdit.text().strip().lower()
+            should_be_visible = search_text in game_name.lower() or not search_text
+
             if game_name not in self.game_card_cache:
-                # Create new card
+                # Создаем новую карточку
                 card = GameCard(
                     *game_data,
                     select_callback=self.openGameDetailPage,
@@ -657,7 +676,7 @@ class MainWindow(QMainWindow):
                     card_width=self.card_width,
                     context_menu_manager=self.context_menu_manager
                 )
-                # Connect context menu signals
+                # Подключаем сигналы контекстного меню
                 card.editShortcutRequested.connect(self.context_menu_manager.edit_game_shortcut)
                 card.deleteGameRequested.connect(self.context_menu_manager.delete_game)
                 card.addToMenuRequested.connect(self.context_menu_manager.add_to_menu)
@@ -670,18 +689,18 @@ class MainWindow(QMainWindow):
                 self.game_card_cache[game_name] = card
                 self.gamesListLayout.addWidget(card)
                 layout_changed = True
-            elif self.card_width != getattr(self, '_last_card_width', None):
-                # Update size only if card_width has changed
+            else:
+                # Обновляем видимость существующей карточки
                 card = self.game_card_cache[game_name]
-                card.setFixedWidth(self.card_width + 20)  # Account for extra_margin in GameCard
+                card.setVisible(should_be_visible)
 
-        # Store the current card_width
+        # Сохраняем текущий card_width
         self._last_card_width = self.card_width
 
-        # Trigger lazy image loading for visible cards
+        # Загружаем изображения для видимых карточек
         self.loadVisibleImages()
 
-        # Update layout geometry only if the layout has changed
+        # Обновляем геометрию только при необходимости
         if layout_changed:
             self.gamesListWidget.updateGeometry()
 
