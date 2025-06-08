@@ -41,6 +41,7 @@ class ContextMenuManager:
         """
 
         menu = QMenu(self.parent)
+        menu.setStyleSheet(self.theme.CONTEXT_MENU_STYLE)
 
         favorites = read_favorites()
         is_favorite = game_card.name in favorites

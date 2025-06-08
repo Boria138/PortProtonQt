@@ -8,6 +8,40 @@ current_theme_name = read_theme_from_config()
 favoriteLabelSize = 48, 48
 pixmapsScaledSize = 60, 60
 
+CONTEXT_MENU_STYLE = """
+    QMenu {
+        background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+            stop:0 rgba(40, 40, 40, 0.95),
+            stop:1 rgba(25, 25, 25, 0.95));
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 12px;
+        color: #ffffff;
+        font-family: 'Play';
+        font-size: 16px;
+        padding: 5px;
+    }
+    QMenu::item {
+        padding: 8px 20px;
+        background: transparent;
+        border-radius: 8px;
+        color: #ffffff;
+    }
+    QMenu::item:selected {
+        background: #282a33;
+        color: #09bec8;
+    }
+    QMenu::item:hover {
+        background: #282a33;
+        color: #09bec8;
+    }
+    QMenu::item:focus {
+        background: #409EFF;
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 8px;
+    }
+"""
+
 # СТИЛЬ ШАПКИ ГЛАВНОГО ОКНА
 MAIN_WINDOW_HEADER_STYLE = """
     QFrame {
