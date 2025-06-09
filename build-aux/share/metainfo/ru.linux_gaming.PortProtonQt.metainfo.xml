@@ -7,7 +7,11 @@
   <summary>Modern GUI for managing and launching games from PortProton, Steam, and Epic Games Store</summary>
   <summary xml:lang="ru">Современный графический интерфейс для управления и запуска игр из PortProton, Steam и Epic Games Store</summary>
   <description>
-    <p>This application provides a sleek, intuitive graphical interface for managing and launching games from PortProton, Steam, and Epic Games Store. It consolidates your game libraries into a single, user-friendly hub for seamless navigation and organization. Its lightweight structure and cross-platform support deliver a cohesive gaming experience, eliminating the need for multiple launchers. Unique PortProton integration enhances Linux gaming, enabling effortless play of Windows-based titles with minimal setup.</p>
+    <p>
+      This application provides a sleek, intuitive graphical interface for managing and launching games from PortProton, Steam, and Epic Games Store. It consolidates your game libraries into a single, user-friendly hub for seamless navigation and organization. Its lightweight structure and cross-platform support deliver a cohesive gaming experience, eliminating the need for multiple launchers. Unique PortProton integration enhances Linux gaming, enabling effortless play of Windows-based titles with minimal setup.</p>
+    <p xml:lang="ru">
+      Это приложение предоставляет стильный и интуитивно понятный графический интерфейс для управления и запуска игр из PortProton, Steam и Epic Games Store. Оно объединяет ваши игровые библиотеки в одном удобном хабе для простой навигации и организации. Лёгкая структура и кроссплатформенная поддержка обеспечивают целостный игровой опыт, устраняя необходимость в использовании нескольких лаунчеров. Уникальная интеграция с PortProton улучшает игровой процесс на Linux, позволяя с лёгкостью запускать Windows-игры с минимальными настройками.
+      </p>
   </description>
   <launchable type="desktop-id">ru.linux_gaming.PortProtonQt.desktop</launchable>
   <developer id="ru.linux_gaming">
@@ -41,7 +45,7 @@
       <caption xml:lang="ru">Детали игры</caption>
     </screenshot>
     <screenshot>
-      <image>https://git.linux-gaming.ru/Boria138/PortProtonQt/src/commit/9c4ad0b7bacac08849aff9036561de7b88a9bad2/portprotonqt/themes/standart/images/screenshots/%D0%9D%D0%B0%D1%81%D1%82%D1%80%D0%BE%D0%B9%D0%BA%D0%B8.png</image>
+      <image>https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/%D0%9D%D0%B0%D1%81%D1%82%D1%80%D0%BE%D0%B9%D0%BA%D0%B8.png</image>
       <caption>Settings</caption>
       <caption xml:lang="ru">Настройки</caption>
     </screenshot>
