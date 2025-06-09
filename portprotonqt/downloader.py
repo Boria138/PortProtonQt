@@ -303,7 +303,7 @@ class Downloader(QObject):
 
         local_path = os.path.join(
             os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache")),
-            "PortProtonQT", "legendary_cache", "legendary"
+            "PortProtonQt", "legendary_cache", "legendary"
         )
 
         logger.info(f"Downloading legendary binary version {version} from {binary_url} to {local_path}")

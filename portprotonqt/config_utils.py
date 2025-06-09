@@ -10,7 +10,7 @@ _portproton_location = None
 # Пути к конфигурационным файлам
 CONFIG_FILE = os.path.join(
     os.getenv("XDG_CONFIG_HOME", os.path.join(os.path.expanduser("~"), ".config")),
-    "PortProtonQT.conf"
+    "PortProtonQt.conf"
 )
 
 PORTPROTON_CONFIG_FILE = os.path.join(
@@ -21,7 +21,7 @@ PORTPROTON_CONFIG_FILE = os.path.join(
 # Пути к папкам с темами
 xdg_data_home = os.getenv("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share"))
 THEMES_DIRS = [
-    os.path.join(xdg_data_home, "PortProtonQT", "themes"),
+    os.path.join(xdg_data_home, "PortProtonQt", "themes"),
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "themes")
 ]
 
@@ -472,14 +472,14 @@ def reset_config():
 
 def clear_cache():
     """
-    Очищает кэш PortProtonQT, удаляя папку кэша.
+    Очищает кэш PortProtonQt, удаляя папку кэша.
     """
     xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
-    cache_dir = os.path.join(xdg_cache_home, "PortProtonQT")
+    cache_dir = os.path.join(xdg_cache_home, "PortProtonQt")
     if os.path.exists(cache_dir):
         try:
             shutil.rmtree(cache_dir)
-            logger.info("Кэш PortProtonQT удалён: %s", cache_dir)
+            logger.info("Кэш PortProtonQt удалён: %s", cache_dir)
         except Exception as e:
             logger.error("Ошибка при удалении кэша: %s", e)
 

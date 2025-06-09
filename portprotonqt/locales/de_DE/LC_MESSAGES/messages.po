@@ -1,6 +1,6 @@
-# German (Germany) translations for PortProtonQT.
+# German (Germany) translations for PortProtonQt.
 # Copyright (C) 2025 boria138
-# This file is distributed under the same license as the PortProtonQT
+# This file is distributed under the same license as the PortProtonQt
 # project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
 #
@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-06-08 22:55+0500\n"
+"POT-Creation-Date: 2025-06-09 09:53+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: de_DE\n"

@@ -44,7 +44,7 @@ from datetime import datetime
 logger = get_logger(__name__)
 
 class MainWindow(QMainWindow):
-    """Main window of PortProtonQT."""
+    """Main window of PortProtonQt."""
     settings_saved = Signal()
     games_loaded = Signal(list)
     update_progress = Signal(int)  # Signal to update progress bar
@@ -73,10 +73,10 @@ class MainWindow(QMainWindow):
         self.settingsDebounceTimer.timeout.connect(self.applySettingsDelayed)
 
         read_time_config()
-        # Set LEGENDARY_CONFIG_PATH to ~/.cache/PortProtonQT/legendary
+        # Set LEGENDARY_CONFIG_PATH to ~/.cache/PortProtonQt/legendary_cache
         self.legendary_config_path = os.path.join(
             os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache")),
-            "PortProtonQT", "legendary_cache"
+            "PortProtonQt", "legendary_cache"
         )
         os.makedirs(self.legendary_config_path, exist_ok=True)
         os.environ["LEGENDARY_CONFIG_PATH"] = self.legendary_config_path
@@ -98,7 +98,7 @@ class MainWindow(QMainWindow):
         if not self.theme:
             self.theme = default_styles
         self.card_width = read_card_size()
-        self.setWindowTitle("PortProtonQT")
+        self.setWindowTitle("PortProtonQt")
         self.setMinimumSize(800, 600)
 
         self.games = []
@@ -384,7 +384,7 @@ class MainWindow(QMainWindow):
         builtin_custom_folder = os.path.join(repo_root, "portprotonqt", "custom_data")
         xdg_data_home = os.getenv("XDG_DATA_HOME",
                                 os.path.join(os.path.expanduser("~"), ".local", "share"))
-        user_custom_folder = os.path.join(xdg_data_home, "PortProtonQT", "custom_data")
+        user_custom_folder = os.path.join(xdg_data_home, "PortProtonQt", "custom_data")
         os.makedirs(user_custom_folder, exist_ok=True)
 
         builtin_cover = ""
@@ -780,7 +780,7 @@ class MainWindow(QMainWindow):
                         os.path.join(os.path.expanduser("~"), ".local", "share"))
                     custom_folder = os.path.join(
                         xdg_data_home,
-                        "PortProtonQT",
+                        "PortProtonQt",
                         "custom_data",
                         exe_name
                     )
@@ -1228,7 +1228,7 @@ class MainWindow(QMainWindow):
                     self.statusBar().showMessage(_("Theme '{0}' applied successfully").format(selected_theme), 3000)
                     xdg_data_home = os.getenv("XDG_DATA_HOME",
                                             os.path.join(os.path.expanduser("~"), ".local", "share"))
-                    state_file = os.path.join(xdg_data_home, "PortProtonQT", "state.txt")
+                    state_file = os.path.join(xdg_data_home, "PortProtonQt", "state.txt")
                     os.makedirs(os.path.dirname(state_file), exist_ok=True)
                     with open(state_file, "w", encoding="utf-8") as f:
                         f.write("theme_tab\n")
@@ -1251,7 +1251,7 @@ class MainWindow(QMainWindow):
     def restore_state(self):
         """Восстанавливает состояние приложения после перезапуска."""
         xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
-        state_file = os.path.join(xdg_cache_home, "PortProtonQT", "state.txt")
+        state_file = os.path.join(xdg_cache_home, "PortProtonQt", "state.txt")
         if os.path.exists(state_file):
             with open(state_file, encoding="utf-8") as f:
                 state = f.read().strip()

@@ -10,7 +10,7 @@ logger = get_logger(__name__)
 def get_cache_file_path():
     """Возвращает путь к файлу кеша portproton_last_launch."""
     cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
-    return os.path.join(cache_home, "PortProtonQT", "last_launch")
+    return os.path.join(cache_home, "PortProtonQt", "last_launch")
 
 def save_last_launch(exe_name, launch_time):
     """

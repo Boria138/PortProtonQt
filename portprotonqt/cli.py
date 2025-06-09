@@ -7,7 +7,7 @@ def parse_args():
     """
     Парсит аргументы командной строки.
     """
-    parser = argparse.ArgumentParser(description="PortProtonQT CLI")
+    parser = argparse.ArgumentParser(description="PortProtonQt CLI")
     parser.add_argument(
         "--fullscreen",
         action="store_true",

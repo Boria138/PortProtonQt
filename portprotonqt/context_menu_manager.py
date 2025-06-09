@@ -12,7 +12,7 @@ from portprotonqt.steam_api import is_game_in_steam, add_to_steam, remove_from_s
 from portprotonqt.dialogs import AddGameDialog
 
 class ContextMenuManager:
-    """Manages context menu actions for game management in PortProtonQT."""
+    """Manages context menu actions for game management in PortProtonQt."""
 
     def __init__(self, parent, portproton_location, theme, load_games_callback, update_game_grid_callback):
         """
@@ -258,7 +258,7 @@ class ContextMenuManager:
                 "XDG_DATA_HOME",
                 os.path.join(os.path.expanduser("~"), ".local", "share")
             )
-            custom_folder = os.path.join(xdg_data_home, "PortProtonQT", "custom_data", exe_name)
+            custom_folder = os.path.join(xdg_data_home, "PortProtonQt", "custom_data", exe_name)
             if os.path.exists(custom_folder):
                 try:
                     shutil.rmtree(custom_folder)
@@ -417,7 +417,7 @@ class ContextMenuManager:
                     "XDG_DATA_HOME",
                     os.path.join(os.path.expanduser("~"), ".local", "share")
                 )
-                custom_folder = os.path.join(xdg_data_home, "PortProtonQT", "custom_data", exe_name)
+                custom_folder = os.path.join(xdg_data_home, "PortProtonQt", "custom_data", exe_name)
                 os.makedirs(custom_folder, exist_ok=True)
 
                 ext = os.path.splitext(new_cover_path)[1].lower()
