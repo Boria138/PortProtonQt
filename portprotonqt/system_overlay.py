@@ -3,6 +3,7 @@ from PySide6.QtWidgets import QDialog, QVBoxLayout, QPushButton, QMessageBox
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import Qt
 from portprotonqt.logger import get_logger
+import os
 from portprotonqt.localization import _
 
 logger = get_logger(__name__)
@@ -48,6 +49,18 @@ class SystemOverlay(QDialog):
         exit_button.clicked.connect(self.exit_application)
         layout.addWidget(exit_button)
 
+        # Return to Desktop button
+        desktop_button = QPushButton(_("Return to Desktop"))
+        desktop_button.setStyleSheet(self.theme.OVERLAY_BUTTON_STYLE)
+        desktop_button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        desktop_button.clicked.connect(self.return_to_desktop)
+        script_path = "/usr/bin/portprotonqt-session-select"
+        script_exists = os.path.isfile(script_path)
+        desktop_button.setEnabled(script_exists)
+        if not script_exists:
+            desktop_button.setToolTip(_("portprotonqt-session-select file not found at /usr/bin/"))
+        layout.addWidget(desktop_button)
+
         # Cancel button
         cancel_button = QPushButton(_("Cancel"))
         cancel_button.setStyleSheet(self.theme.OVERLAY_BUTTON_STYLE)
@@ -80,6 +93,15 @@ class SystemOverlay(QDialog):
         except subprocess.CalledProcessError as e:
             logger.error(f"Failed to suspend: {e}")
             QMessageBox.warning(self, _("Error"), _("Failed to suspend the system"))
+        self.accept()
+
+    def return_to_desktop(self):
+        try:
+            script_path = os.path.join(os.path.dirname(__file__), "portprotonqt-session-select")
+            subprocess.run([script_path, "desktop"], check=True)
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Failed to return to desktop: {e}")
+            QMessageBox.warning(self, _("Error"), _("Failed to return to desktop"))
         self.accept()
 
     def exit_application(self):
