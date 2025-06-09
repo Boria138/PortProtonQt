@@ -3,7 +3,7 @@ import threading
 from typing import Protocol, cast
 from evdev import InputDevice, ecodes, list_devices
 import pyudev
-from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea, QLineEdit, QDialog, QMenu, QComboBox, QListView
+from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea, QLineEdit, QDialog, QMenu, QComboBox, QListView, QMessageBox
 from PySide6.QtCore import Qt, QObject, QEvent, QPoint, Signal, Slot, QTimer
 from PySide6.QtGui import QKeyEvent
 from portprotonqt.logger import get_logger
@@ -284,8 +284,22 @@ class InputManager(QObject):
                 self.dpad_timer.stop()  # Stop timer when D-pad is released
                 return
 
-            # Handle SystemOverlay or AddGameDialog navigation with D-pad
-            if isinstance(active, QDialog) and code == ecodes.ABS_HAT0Y and value != 0:
+            # Handle SystemOverlay, AddGameDialog, or QMessageBox navigation with D-pad
+            if isinstance(active, QDialog) and code == ecodes.ABS_HAT0X and value != 0:
+                if isinstance(active, QMessageBox):  # Specific handling for QMessageBox
+                    if not focused or not active.focusWidget():
+                        # If no widget is focused, focus the first focusable widget
+                        focusables = active.findChildren(QWidget, options=Qt.FindChildOption.FindChildrenRecursively)
+                        focusables = [w for w in focusables if w.focusPolicy() & Qt.FocusPolicy.StrongFocus]
+                        if focusables:
+                            focusables[0].setFocus(Qt.FocusReason.OtherFocusReason)
+                        return
+                    if value > 0:  # Right
+                        active.focusNextChild()
+                    elif value < 0:  # Left
+                        active.focusPreviousChild()
+                    return
+            elif isinstance(active, QDialog) and code == ecodes.ABS_HAT0Y and value != 0:  # Keep up/down for other dialogs
                 if not focused or not active.focusWidget():
                     # If no widget is focused, focus the first focusable widget
                     focusables = active.findChildren(QWidget, options=Qt.FindChildOption.FindChildrenRecursively)

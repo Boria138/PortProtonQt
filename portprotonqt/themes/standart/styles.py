@@ -519,6 +519,10 @@ MESSAGE_BOX_STYLE = """
         background: #09bec8;
         border-color: rgba(255, 255, 255, 0.3);
     }
+    QMessageBox QPushButton:focus {
+        border: 2px solid #409EFF;
+        background: #404554;
+    }
 """
 
 # СТИЛИ ДЛЯ ВКЛАДКИ НАСТРОЕК PORTPROTON
