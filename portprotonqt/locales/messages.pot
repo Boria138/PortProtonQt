@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-06-09 09:53+0500\n"
+"POT-Creation-Date: 2025-06-10 10:25+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -501,6 +501,12 @@ msgstr ""
 msgid "Exit Application"
 msgstr ""
 
+msgid "Return to Desktop"
+msgstr ""
+
+msgid "portprotonqt-session-select file not found at /usr/bin/"
+msgstr ""
+
 msgid "Cancel"
 msgstr ""
 
@@ -511,6 +517,9 @@ msgid "Failed to shutdown the system"
 msgstr ""
 
 msgid "Failed to suspend the system"
+msgstr ""
+
+msgid "Failed to return to desktop"
 msgstr ""
 
 msgid "just now"

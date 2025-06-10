@@ -9,9 +9,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-06-09 09:53+0500\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"POT-Creation-Date: 2025-06-10 10:25+0500\n"
+"PO-Revision-Date: 2025-06-10 10:24+0500\n"
+"Last-Translator: \n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
@@ -512,6 +512,12 @@ msgstr "Перейти в ждущий режим"
 msgid "Exit Application"
 msgstr "Выйти из приложения"
 
+msgid "Return to Desktop"
+msgstr "Вернуться на рабочий стол"
+
+msgid "portprotonqt-session-select file not found at /usr/bin/"
+msgstr "portprotonqt-session-select не найдет"
+
 msgid "Cancel"
 msgstr "Отмена"
 
@@ -523,6 +529,9 @@ msgstr "Не удалось завершить работу системы"
 
 msgid "Failed to suspend the system"
 msgstr "Не удалось перейти в ждущий режим"
+
+msgid "Failed to return to desktop"
+msgstr "Не удалось вернуться на рабочий стол"
 
 msgid "just now"
 msgstr "только что"
