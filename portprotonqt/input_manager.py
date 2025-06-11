@@ -491,6 +491,12 @@ class InputManager(QObject):
         focused = QApplication.focusWidget()
         popup = QApplication.activePopupWidget()
 
+        # Open system overlay with Insert
+        if key == Qt.Key.Key_Insert:
+            if not popup and not isinstance(QApplication.activeWindow(), QDialog):
+                self._parent.openSystemOverlay()
+                return True
+
         # Close application with Ctrl+Q
         if key == Qt.Key.Key_Q and modifiers & Qt.KeyboardModifier.ControlModifier:
             app.quit()
