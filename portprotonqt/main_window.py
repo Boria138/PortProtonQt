@@ -274,9 +274,10 @@ class MainWindow(QMainWindow):
                 seen = set()
                 games = []
                 for game in portproton_games + steam_games:
-                    name = game[0]
-                    if name not in seen:
-                        seen.add(name)
+                    # Уникальный ключ: имя + exec_line
+                    key = (game[0], game[4])
+                    if key not in seen:
+                        seen.add(key)
                         games.append(game)
                 self.games_loaded.emit(games)
             self._load_portproton_games_async(
@@ -629,18 +630,19 @@ class MainWindow(QMainWindow):
             self.gamesListWidget.updateGeometry()
             return
 
-        # Создаем словарь текущих игр для быстрого поиска
-        current_games = {game_data[0]: game_data for game_data in games_list}
+        # Создаем словарь текущих игр с уникальным ключом (name + exec_line)
+        current_games = {(game_data[0], game_data[4]): game_data for game_data in games_list}
 
         # Проверяем, изменился ли список игр или размер карточек
-        current_game_names = set(current_games.keys())
-        cached_game_names = set(self.game_card_cache.keys())
+        current_game_keys = set(current_games.keys())
+        cached_game_keys = set(self.game_card_cache.keys())
         card_width_changed = self.card_width != getattr(self, '_last_card_width', None)
 
-        if current_game_names == cached_game_names and not card_width_changed:
+        if current_game_keys == cached_game_keys and not card_width_changed:
             # Список игр и размер карточек не изменились, обновляем только видимость
             search_text = self.searchEdit.text().strip().lower()
-            for game_name, card in self.game_card_cache.items():
+            for game_key, card in self.game_card_cache.items():
+                game_name = game_key[0]
                 card.setVisible(search_text in game_name.lower() or not search_text)
             self.loadVisibleImages()
             return
@@ -664,10 +666,11 @@ class MainWindow(QMainWindow):
         # Добавляем новые карточки и обновляем существующие
         for game_data in games_list:
             game_name = game_data[0]
+            game_key = (game_name, game_data[4])
             search_text = self.searchEdit.text().strip().lower()
             should_be_visible = search_text in game_name.lower() or not search_text
 
-            if game_name not in self.game_card_cache:
+            if game_key not in self.game_card_cache:
                 # Создаем новую карточку
                 card = GameCard(
                     *game_data,
@@ -686,23 +689,25 @@ class MainWindow(QMainWindow):
                 card.addToSteamRequested.connect(self.context_menu_manager.add_to_steam)
                 card.removeFromSteamRequested.connect(self.context_menu_manager.remove_from_steam)
                 card.openGameFolderRequested.connect(self.context_menu_manager.open_game_folder)
-                self.game_card_cache[game_name] = card
+                self.game_card_cache[game_key] = card
                 self.gamesListLayout.addWidget(card)
                 layout_changed = True
             else:
                 # Обновляем видимость существующей карточки
-                card = self.game_card_cache[game_name]
+                card = self.game_card_cache[game_key]
                 card.setVisible(should_be_visible)
 
         # Сохраняем текущий card_width
         self._last_card_width = self.card_width
 
+        # Принудительно обновляем макет
+        if layout_changed:
+            self.gamesListLayout.update()
+            self.gamesListWidget.updateGeometry()
+            self.gamesListWidget.update()
+
         # Загружаем изображения для видимых карточек
         self.loadVisibleImages()
-
-        # Обновляем геометрию только при необходимости
-        if layout_changed:
-            self.gamesListWidget.updateGeometry()
 
     def clearLayout(self, layout):
         """Удаляет все виджеты из layout."""
