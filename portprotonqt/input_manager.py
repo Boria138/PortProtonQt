@@ -34,11 +34,13 @@ class MainWindowProtocol(Protocol):
     current_exec_line: str | None
     current_add_game_dialog: QDialog | None
 
-# Mapping of actions to evdev button codes, includes PlayStation, Xbox, and Switch controllers
+# Mapping of actions to evdev button codes, includes PlayStation, Xbox controllers
+# https://github.com/torvalds/linux/blob/master/drivers/hid/hid-playstation.c
+# https://github.com/torvalds/linux/blob/master/drivers/input/joystick/xpad.c
 BUTTONS = {
-    'confirm':   {ecodes.BTN_A},
-    'back':      {ecodes.BTN_B},
-    'add_game':  {ecodes.BTN_Y},
+    'confirm':   {ecodes.BTN_A, ecodes.BTN_SOUTH},
+    'back':      {ecodes.BTN_B, ecodes.BTN_EAST},
+    'add_game':  {ecodes.BTN_Y, ecodes.BTN_NORTH},
     'prev_tab':  {ecodes.BTN_TL},
     'next_tab':  {ecodes.BTN_TR},
     'confirm_stick': {ecodes.BTN_THUMBL, ecodes.BTN_THUMBR},
