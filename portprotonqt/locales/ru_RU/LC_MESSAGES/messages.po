@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-06-10 10:25+0500\n"
-"PO-Revision-Date: 2025-06-10 10:24+0500\n"
+"POT-Creation-Date: 2025-06-11 23:15+0500\n"
+"PO-Revision-Date: 2025-06-11 23:15+0500\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
@@ -382,6 +382,12 @@ msgstr "Режим полноэкранного отображения прил�
 
 msgid "Auto Fullscreen on Gamepad connected:"
 msgstr "Режим полноэкранного отображения приложения при подключении геймпада:"
+
+msgid "Gamepad haptic feedback"
+msgstr "Тактильная обратная связь на геймпаде"
+
+msgid "Gamepad haptic feedback:"
+msgstr "Тактильная обратная связь на геймпаде:"
 
 msgid "Save Settings"
 msgstr "Сохранить настройки"

@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-06-10 10:25+0500\n"
+"POT-Creation-Date: 2025-06-11 23:15+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: de_DE\n"
@@ -374,6 +374,12 @@ msgid "Auto Fullscreen on Gamepad connected"
 msgstr ""
 
 msgid "Auto Fullscreen on Gamepad connected:"
+msgstr ""
+
+msgid "Gamepad haptic feedback"
+msgstr ""
+
+msgid "Gamepad haptic feedback:"
 msgstr ""
 
 msgid "Save Settings"
