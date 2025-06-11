@@ -10,7 +10,7 @@ from portprotonqt.logger import get_logger
 from portprotonqt.image_utils import FullscreenDialog
 from portprotonqt.custom_widgets import NavLabel
 from portprotonqt.game_card import GameCard
-from portprotonqt.config_utils import read_fullscreen_config, read_window_geometry, save_window_geometry, read_auto_fullscreen_gamepad
+from portprotonqt.config_utils import read_fullscreen_config, read_window_geometry, save_window_geometry, read_auto_fullscreen_gamepad, read_rumble_config
 
 logger = get_logger(__name__)
 
@@ -128,6 +128,8 @@ class InputManager(QObject):
 
     def trigger_rumble(self, duration_ms: int = 200, strong_magnitude: int = 0x8000, weak_magnitude: int = 0x8000) -> None:
         """Trigger a rumble effect on the gamepad if supported."""
+        if not read_rumble_config():
+            return
         if not self.gamepad:
             return
         try:

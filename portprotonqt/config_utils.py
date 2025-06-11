@@ -322,6 +322,41 @@ def save_favorites(favorites):
     with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
         cp.write(configfile)
 
+def read_rumble_config():
+    """
+    Читает настройку виброотдачи геймпада из секции [Gamepad].
+    Если параметр отсутствует, сохраняет и возвращает False по умолчанию.
+    """
+    cp = configparser.ConfigParser()
+    if os.path.exists(CONFIG_FILE):
+        try:
+            cp.read(CONFIG_FILE, encoding="utf-8")
+        except Exception as e:
+            logger.error("Ошибка чтения конфигурационного файла: %s", e)
+            save_rumble_config(False)
+            return False
+        if not cp.has_section("Gamepad") or not cp.has_option("Gamepad", "rumble_enabled"):
+            save_rumble_config(False)
+            return False
+        return cp.getboolean("Gamepad", "rumble_enabled", fallback=False)
+    return False
+
+def save_rumble_config(rumble_enabled):
+    """
+    Сохраняет настройку виброотдачи геймпада в секцию [Gamepad].
+    """
+    cp = configparser.ConfigParser()
+    if os.path.exists(CONFIG_FILE):
+        try:
+            cp.read(CONFIG_FILE, encoding="utf-8")
+        except (configparser.DuplicateSectionError, configparser.DuplicateOptionError) as e:
+            logger.error("Ошибка чтения конфигурационного файла: %s", e)
+    if "Gamepad" not in cp:
+        cp["Gamepad"] = {}
+    cp["Gamepad"]["rumble_enabled"] = str(rumble_enabled)
+    with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
+        cp.write(configfile)
+
 def ensure_default_proxy_config():
     """
     Проверяет наличие секции [Proxy] в конфигурационном файле.
@@ -341,7 +376,6 @@ def ensure_default_proxy_config():
             cp["Proxy"]["proxy_password"] = ""
             with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
                 cp.write(configfile)
-
 
 def read_proxy_config():
     """
@@ -420,8 +454,6 @@ def save_fullscreen_config(fullscreen):
     cp["Display"]["fullscreen"] = str(fullscreen)
     with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
         cp.write(configfile)
-
-
 
 def read_window_geometry() -> tuple[int, int]:
     """

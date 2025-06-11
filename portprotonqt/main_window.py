@@ -26,7 +26,7 @@ from portprotonqt.config_utils import (
     read_display_filter, read_favorites, save_favorites, save_time_config, save_sort_method,
     save_display_filter, save_proxy_config, read_proxy_config, read_fullscreen_config,
     save_fullscreen_config, read_window_geometry, save_window_geometry, reset_config,
-    clear_cache, read_auto_fullscreen_gamepad, save_auto_fullscreen_gamepad
+    clear_cache, read_auto_fullscreen_gamepad, save_auto_fullscreen_gamepad, read_rumble_config, save_rumble_config
 )
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
@@ -997,6 +997,17 @@ class MainWindow(QMainWindow):
         self.autoFullscreenGamepadCheckBox.setChecked(current_auto_fullscreen)
         formLayout.addRow(self.autoFullscreenGamepadTitle, self.autoFullscreenGamepadCheckBox)
 
+        # 7. Gamepad haptic feedback config
+        self.gamepadRumbleCheckBox = QCheckBox(_("Gamepad haptic feedback"))
+        self.gamepadRumbleCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.gamepadRumbleCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
+        self.gamepadRumbleTitle = QLabel(_("Gamepad haptic feedback:"))
+        self.gamepadRumbleTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.gamepadRumbleTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        current_rumble_state = read_rumble_config()
+        self.gamepadRumbleCheckBox.setChecked(current_rumble_state)
+        formLayout.addRow(self.gamepadRumbleTitle, self.gamepadRumbleCheckBox)
+
         layout.addLayout(formLayout)
 
         # Кнопки
@@ -1116,6 +1127,10 @@ class MainWindow(QMainWindow):
 
         auto_fullscreen_gamepad = self.autoFullscreenGamepadCheckBox.isChecked()
         save_auto_fullscreen_gamepad(auto_fullscreen_gamepad)
+
+        # Сохранение настройки виброотдачи геймпада
+        rumble_enabled = self.gamepadRumbleCheckBox.isChecked()
+        save_rumble_config(rumble_enabled)
 
         for card in self.game_card_cache.values():
             card.update_badge_visibility(filter_key)
