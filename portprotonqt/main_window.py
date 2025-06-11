@@ -1235,9 +1235,13 @@ class MainWindow(QMainWindow):
                                             os.path.join(os.path.expanduser("~"), ".local", "share"))
                     state_file = os.path.join(xdg_data_home, "PortProtonQt", "state.txt")
                     os.makedirs(os.path.dirname(state_file), exist_ok=True)
-                    with open(state_file, "w", encoding="utf-8") as f:
-                        f.write("theme_tab\n")
-                    QTimer.singleShot(500, lambda: self.restart_application())
+                    try:
+                        with open(state_file, "w", encoding="utf-8") as f:
+                            f.write("theme_tab\n")
+                        logger.info(f"State saved to {state_file}")
+                        QTimer.singleShot(500, lambda: self.restart_application())
+                    except Exception as e:
+                        logger.error(f"Failed to save state to {state_file}: {e}")
                 else:
                     self.statusBar().showMessage(_("Error applying theme '{0}'").format(selected_theme), 3000)
 
@@ -1255,14 +1259,28 @@ class MainWindow(QMainWindow):
 
     def restore_state(self):
         """Восстанавливает состояние приложения после перезапуска."""
-        xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
-        state_file = os.path.join(xdg_cache_home, "PortProtonQt", "state.txt")
+        xdg_data_home = os.getenv("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share"))
+        state_file = os.path.join(xdg_data_home, "PortProtonQt", "state.txt")
+        logger.info(f"Checking for state file: {state_file}")
         if os.path.exists(state_file):
-            with open(state_file, encoding="utf-8") as f:
-                state = f.read().strip()
-                if state == "theme_tab":
-                    self.switchTab(5)
-            os.remove(state_file)
+            try:
+                with open(state_file, encoding="utf-8") as f:
+                    state = f.read().strip()
+                    logger.info(f"State file contents: '{state}'")
+                    if state == "theme_tab":
+                        logger.info("Restoring to theme tab (index 5)")
+                        if self.stackedWidget.count() > 5:
+                            self.switchTab(5)
+                        else:
+                            logger.warning("Theme tab (index 5) not available yet")
+                    else:
+                        logger.warning(f"Unexpected state value: '{state}'")
+                os.remove(state_file)
+                logger.info(f"State file {state_file} removed")
+            except Exception as e:
+                logger.error(f"Failed to read or process state file {state_file}: {e}")
+        else:
+            logger.info(f"State file {state_file} does not exist")
 
     # ЛОГИКА ДЕТАЛЬНОЙ СТРАНИЦЫ ИГРЫ
     def getColorPalette_async(self, cover_path, num_colors=5, sample_step=10, callback=None):
