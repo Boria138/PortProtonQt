@@ -34,19 +34,18 @@ class MainWindowProtocol(Protocol):
     current_exec_line: str | None
     current_add_game_dialog: QDialog | None
 
-# Mapping of actions to evdev button codes, includes PlayStation, Xbox controllers
+# Mapping of actions to evdev button codes, includes Xbox and Playstation controllers
 # https://github.com/torvalds/linux/blob/master/drivers/hid/hid-playstation.c
 # https://github.com/torvalds/linux/blob/master/drivers/input/joystick/xpad.c
 BUTTONS = {
-    'confirm':   {ecodes.BTN_A, ecodes.BTN_SOUTH},
-    'back':      {ecodes.BTN_B, ecodes.BTN_EAST},
-    'add_game':  {ecodes.BTN_Y, ecodes.BTN_NORTH},
-    'prev_tab':  {ecodes.BTN_TL},
-    'next_tab':  {ecodes.BTN_TR},
-    'confirm_stick': {ecodes.BTN_THUMBL, ecodes.BTN_THUMBR},
-    'context_menu': {ecodes.BTN_START},
-    'menu':      {ecodes.BTN_SELECT},
-    'guide':     {ecodes.BTN_MODE, ecodes.KEY_HOMEPAGE},
+    'confirm':   {ecodes.BTN_A, ecodes.BTN_SOUTH}, # A / Cross
+    'back':      {ecodes.BTN_B, ecodes.BTN_EAST},  # B / Circle
+    'add_game':  {ecodes.BTN_Y, ecodes.BTN_NORTH}, # Y / Triangle
+    'prev_tab':  {ecodes.BTN_TL},                  # LB / L1
+    'next_tab':  {ecodes.BTN_TR},                  # RB / R1
+    'context_menu': {ecodes.BTN_START},            # Start / Options
+    'menu':      {ecodes.BTN_SELECT},              # Select / Share
+    'guide':     {ecodes.BTN_MODE},                # Xbox / PS Home
 }
 
 class InputManager(QObject):
@@ -149,19 +148,19 @@ class InputManager(QObject):
 
             # Handle QMenu (context menu)
             if isinstance(popup, QMenu):
-                if button_code in BUTTONS['confirm'] or button_code in BUTTONS['confirm_stick']:
+                if button_code in BUTTONS['confirm']:
                     if popup.activeAction():
                         popup.activeAction().trigger()
                         popup.close()
                     return
-                elif button_code in BUTTONS['back'] or button_code in BUTTONS['menu']:
+                elif button_code in BUTTONS['back']:
                     popup.close()
                     return
                 return
 
             # Handle QComboBox
             if isinstance(focused, QComboBox):
-                if button_code in BUTTONS['confirm'] or button_code in BUTTONS['confirm_stick']:
+                if button_code in BUTTONS['confirm']:
                     focused.showPopup()
                 return
 
@@ -175,7 +174,7 @@ class InputManager(QObject):
                         break
                     parent = parent.parentWidget()
 
-                if button_code in BUTTONS['confirm'] or button_code in BUTTONS['confirm_stick']:
+                if button_code in BUTTONS['confirm']:
                     idx = focused.currentIndex()
                     if idx.isValid():
                         if combo:
@@ -221,18 +220,17 @@ class InputManager(QObject):
                     return
 
             # Game launch on detail page
-            if (button_code in BUTTONS['confirm'] or button_code in BUTTONS['confirm_stick']) and self._parent.currentDetailPage is not None and self._parent.current_add_game_dialog is None:
+            if (button_code in BUTTONS['confirm']) and self._parent.currentDetailPage is not None and self._parent.current_add_game_dialog is None:
                 if self._parent.current_exec_line:
                     self._parent.toggleGame(self._parent.current_exec_line, None)
                     return
 
             # Standard navigation
-            if button_code in BUTTONS['confirm'] or button_code in BUTTONS['confirm_stick']:
+            if button_code in BUTTONS['confirm']:
                 self._parent.activateFocusedWidget()
-            elif button_code in BUTTONS['back'] or button_code in BUTTONS['menu']:
+            elif button_code in BUTTONS['back']:
                 self._parent.goBackDetailPage(getattr(self._parent, 'currentDetailPage', None))
             elif button_code in BUTTONS['add_game']:
-                # Only open AddGameDialog if in library tab (index 0)
                 if self._parent.stackedWidget.currentIndex() == 0:
                     self._parent.openAddGameDialog()
             elif button_code in BUTTONS['prev_tab']:
@@ -791,9 +789,7 @@ class InputManager(QObject):
                     continue
                 now = time.time()
                 if event.type == ecodes.EV_KEY and event.value == 1:
-                    # Обработка кнопки Select для переключения полноэкранного режима
                     if event.code in BUTTONS['menu']:
-                        # Переключаем полноэкранный режим
                         self.toggle_fullscreen.emit(not self._is_fullscreen)
                     else:
                         self.button_pressed.emit(event.code)
