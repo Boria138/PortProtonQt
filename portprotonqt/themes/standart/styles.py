@@ -573,29 +573,29 @@ SETTINGS_COMBO_STYLE = f"""
     }}
 """
 
-SETTINGS_CHECKBOX_STYLE = """
-    QCheckBox {
+SETTINGS_CHECKBOX_STYLE = f"""
+    QCheckBox {{
         height: 34px;
-    }
+    }}
 
-    QCheckBox::indicator {
+    QCheckBox::indicator {{
         width: 24px;
         height: 24px;
         border: 2px solid rgba(255, 255, 255, 0.01);
         border-radius: 10px;
         background: #282a33;
-    }
-    QCheckBox::indicator:hover {
+    }}
+    QCheckBox::indicator:hover {{
         background: #3f424d;
         border: 2px solid #409EFF;
-    }
-    QCheckBox::indicator:focus {
+    }}
+    QCheckBox::indicator:focus {{
         border: 2px solid #409EFF;
-    }
-    QCheckBox::indicator:checked {
-        image: url(./themes/standart/images/icons/check.svg);
+    }}
+    QCheckBox::indicator:checked {{
+        image: url({theme_manager.get_icon("check", current_theme_name, as_path=True)});
         border: 2px solid #409EFF;
-    }
+    }}
 """
 
 # ФУНКЦИЯ ДЛЯ ДИНАМИЧЕСКОГО ГРАДИЕНТА (ДЕТАЛИ ИГР)
