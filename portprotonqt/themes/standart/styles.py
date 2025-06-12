@@ -86,7 +86,7 @@ SEARCH_EDIT_STYLE = """
         color: #ffffff;
     }
     QLineEdit:focus {
-        border: 1px solid #09bec8;
+        border: 1px solid #409EFF;
     }
 """
 
@@ -269,10 +269,10 @@ ADDGAME_BACK_BUTTON_STYLE = """
         padding: 8px 16px;
     }
     QPushButton:hover {
-        background: #09bec8;
+        background: #409EFF;
     }
     QPushButton:pressed {
-        background: #09bec8;
+        background: #409EFF;
     }
 """
 
@@ -326,10 +326,10 @@ PLAY_BUTTON_STYLE = """
         min-height: 40px;
     }
     QPushButton:hover {
-        background: #09bec8;
+        background: #409EFF;
     }
     QPushButton:pressed {
-        background: #09bec8;
+        background: #409EFF;
     }
 """
 
