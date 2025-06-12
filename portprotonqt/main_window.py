@@ -325,19 +325,25 @@ class MainWindow(QMainWindow):
                 self.update_status_message.emit
             )
         elif display_filter == "favorites":
-            def on_all_games(portproton_games, steam_games):
-                games = [game for game in portproton_games + steam_games if game[0] in favorites]
+            def on_all_games(portproton_games, steam_games, epic_games):
+                games = [game for game in portproton_games + steam_games + epic_games if game[0] in favorites]
                 self.games_loaded.emit(games)
             self._load_portproton_games_async(
                 lambda pg: self._load_steam_games_async(
-                    lambda sg: on_all_games(pg, sg)
+                    lambda sg: load_egs_games_async(
+                        self.legendary_path,
+                        lambda eg: on_all_games(pg, sg, eg),
+                        self.downloader,
+                        self.update_progress.emit,
+                        self.update_status_message.emit
+                    )
                 )
             )
         else:
-            def on_all_games(portproton_games, steam_games):
+            def on_all_games(portproton_games, steam_games, epic_games):
                 seen = set()
                 games = []
-                for game in portproton_games + steam_games:
+                for game in portproton_games + steam_games + epic_games:
                     # Уникальный ключ: имя + exec_line
                     key = (game[0], game[4])
                     if key not in seen:
@@ -346,7 +352,13 @@ class MainWindow(QMainWindow):
                 self.games_loaded.emit(games)
             self._load_portproton_games_async(
                 lambda pg: self._load_steam_games_async(
-                    lambda sg: on_all_games(pg, sg)
+                    lambda sg: load_egs_games_async(
+                        self.legendary_path,
+                        lambda eg: on_all_games(pg, sg, eg),
+                        self.downloader,
+                        self.update_progress.emit,
+                        self.update_status_message.emit
+                    )
                 )
             )
         return []
@@ -998,7 +1010,7 @@ class MainWindow(QMainWindow):
 
         # 3. Games display_filter
         self.filter_keys = ["all", "steam", "portproton", "favorites", "epic"]
-        self.filter_labels = [_("all"), "steam", "portproton", _("favorites")]
+        self.filter_labels = [_("all"), "steam", "portproton", _("favorites"), "epic games store"]
         self.gamesDisplayCombo = QComboBox()
         self.gamesDisplayCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.gamesDisplayCombo.addItems(self.filter_labels)
@@ -1081,6 +1093,37 @@ class MainWindow(QMainWindow):
         self.gamepadRumbleCheckBox.setChecked(current_rumble_state)
         formLayout.addRow(self.gamepadRumbleTitle, self.gamepadRumbleCheckBox)
 
+        # 8. Legendary Authentication
+        self.legendaryAuthButton = AutoSizeButton(
+            _("Open Legendary Login"),
+            icon=self.theme_manager.get_icon("login")
+        )
+        self.legendaryAuthButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        self.legendaryAuthButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.legendaryAuthButton.clicked.connect(self.openLegendaryLogin)
+        self.legendaryAuthTitle = QLabel(_("Legendary Authentication:"))
+        self.legendaryAuthTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.legendaryAuthTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        formLayout.addRow(self.legendaryAuthTitle, self.legendaryAuthButton)
+
+        self.legendaryCodeEdit = QLineEdit()
+        self.legendaryCodeEdit.setPlaceholderText(_("Enter Legendary Authorization Code"))
+        self.legendaryCodeEdit.setStyleSheet(self.theme.PROXY_INPUT_STYLE)
+        self.legendaryCodeEdit.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.legendaryCodeTitle = QLabel(_("Authorization Code:"))
+        self.legendaryCodeTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.legendaryCodeTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        formLayout.addRow(self.legendaryCodeTitle, self.legendaryCodeEdit)
+
+        self.submitCodeButton = AutoSizeButton(
+            _("Submit Code"),
+            icon=self.theme_manager.get_icon("save")
+        )
+        self.submitCodeButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        self.submitCodeButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.submitCodeButton.clicked.connect(self.submitLegendaryCode)
+        formLayout.addRow(QLabel(""), self.submitCodeButton)
+
         layout.addLayout(formLayout)
 
         # Кнопки
@@ -1130,6 +1173,37 @@ class MainWindow(QMainWindow):
         except Exception as e:
             logger.error(f"Failed to open Legendary login page: {e}")
             self.statusBar().showMessage(_("Failed to open Legendary login page"), 3000)
+
+    def submitLegendaryCode(self):
+        """Submits the Legendary authorization code using the legendary CLI."""
+        auth_code = self.legendaryCodeEdit.text().strip()
+        if not auth_code:
+            QMessageBox.warning(self, _("Error"), _("Please enter an authorization code"))
+            return
+
+        try:
+            # Execute legendary auth command
+            result = subprocess.run(
+                [self.legendary_path, "auth", "--code", auth_code],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            logger.info("Legendary authentication successful: %s", result.stdout)
+            self.statusBar().showMessage(_("Successfully authenticated with Legendary"), 3000)
+            self.legendaryCodeEdit.clear()
+            # Reload Epic Games Store games after successful authentication
+            self.games = self.loadGames()
+            self.updateGameGrid()
+        except subprocess.CalledProcessError as e:
+            logger.error("Legendary authentication failed: %s", e.stderr)
+            self.statusBar().showMessage(_("Legendary authentication failed: {0}").format(e.stderr), 5000)
+        except FileNotFoundError:
+            logger.error("Legendary executable not found at %s", self.legendary_path)
+            self.statusBar().showMessage(_("Legendary executable not found"), 5000)
+        except Exception as e:
+            logger.error("Unexpected error during Legendary authentication: %s", str(e))
+            self.statusBar().showMessage(_("Unexpected error during authentication"), 5000)
 
     def resetSettings(self):
         """Сбрасывает настройки и перезапускает приложение."""
