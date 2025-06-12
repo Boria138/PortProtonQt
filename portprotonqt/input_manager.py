@@ -1,16 +1,16 @@
 import time
 import threading
 from typing import Protocol, cast
-from evdev import InputDevice, ecodes, list_devices
-import pyudev
-from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea, QLineEdit, QDialog
-from PySide6.QtCore import Qt, QObject, QEvent, QPoint, Signal, Slot
+from evdev import InputDevice, InputEvent, ecodes, list_devices, ff
+from pyudev import Context, Monitor, MonitorObserver, Device
+from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea, QLineEdit, QDialog, QMenu, QComboBox, QListView, QMessageBox
+from PySide6.QtCore import Qt, QObject, QEvent, QPoint, Signal, Slot, QTimer
 from PySide6.QtGui import QKeyEvent
 from portprotonqt.logger import get_logger
 from portprotonqt.image_utils import FullscreenDialog
 from portprotonqt.custom_widgets import NavLabel
 from portprotonqt.game_card import GameCard
-from portprotonqt.config_utils import read_fullscreen_config, read_window_geometry, save_window_geometry, read_auto_fullscreen_gamepad
+from portprotonqt.config_utils import read_fullscreen_config, read_window_geometry, save_window_geometry, read_auto_fullscreen_gamepad, read_rumble_config
 
 logger = get_logger(__name__)
 
@@ -25,6 +25,8 @@ class MainWindowProtocol(Protocol):
         ...
     def toggleGame(self, exec_line: str | None, button: QWidget | None = None) -> None:
         ...
+    def openSystemOverlay(self) -> None:
+            ...
     stackedWidget: QStackedWidget
     tabButtons: dict[int, QWidget]
     gamesListWidget: QWidget
@@ -32,24 +34,25 @@ class MainWindowProtocol(Protocol):
     current_exec_line: str | None
     current_add_game_dialog: QDialog | None
 
-# Mapping of actions to evdev button codes, includes PlayStation, Xbox, and Switch controllers
+# Mapping of actions to evdev button codes, includes Xbox and Playstation controllers
+# https://github.com/torvalds/linux/blob/master/drivers/hid/hid-playstation.c
+# https://github.com/torvalds/linux/blob/master/drivers/input/joystick/xpad.c
 BUTTONS = {
-    'confirm':   {ecodes.BTN_A},
-    'back':      {ecodes.BTN_B},
-    'add_game':  {ecodes.BTN_Y},
-    'prev_tab':  {ecodes.BTN_TL, ecodes.BTN_TRIGGER_HAPPY7},
-    'next_tab':  {ecodes.BTN_TR, ecodes.BTN_TRIGGER_HAPPY5},
-    'confirm_stick': {ecodes.BTN_THUMBL, ecodes.BTN_THUMBR},
-    'context_menu': {ecodes.BTN_START},
-    'menu':      {ecodes.BTN_SELECT},
+    'confirm':   {ecodes.BTN_A, ecodes.BTN_SOUTH}, # A / Cross
+    'back':      {ecodes.BTN_B, ecodes.BTN_EAST},  # B / Circle
+    'add_game':  {ecodes.BTN_Y, ecodes.BTN_NORTH}, # Y / Triangle
+    'prev_tab':  {ecodes.BTN_TL},                  # LB / L1
+    'next_tab':  {ecodes.BTN_TR},                  # RB / R1
+    'context_menu': {ecodes.BTN_START},            # Start / Options
+    'menu':      {ecodes.BTN_SELECT},              # Select / Share
+    'guide':     {ecodes.BTN_MODE},                # Xbox / PS Home
 }
 
 class InputManager(QObject):
     """
     Manages input from gamepads and keyboards for navigating the application interface.
     Supports gamepad hotplugging, button and axis events, and keyboard event filtering
-    for seamless UI interaction. Enables fullscreen mode when a gamepad is connected
-    and restores normal mode when disconnected.
+    for seamless UI interaction.
     """
     # Signals for gamepad events
     button_pressed = Signal(int)  # Signal for button presses
@@ -69,7 +72,6 @@ class InputManager(QObject):
         self._parent.currentDetailPage = getattr(self._parent, 'currentDetailPage', None)
         self._parent.current_exec_line = getattr(self._parent, 'current_exec_line', None)
         self._parent.current_add_game_dialog = getattr(self._parent, 'current_add_game_dialog', None)
-
         self.axis_deadzone = axis_deadzone
         self.initial_axis_move_delay = initial_axis_move_delay
         self.repeat_axis_move_delay = repeat_axis_move_delay
@@ -80,6 +82,13 @@ class InputManager(QObject):
         self.gamepad_thread: threading.Thread | None = None
         self.running = True
         self._is_fullscreen = read_fullscreen_config()
+        self.rumble_effect_id: int | None = None  # Store the rumble effect ID
+
+        # Add variables for continuous D-pad movement
+        self.dpad_timer = QTimer(self)
+        self.dpad_timer.timeout.connect(self.handle_dpad_repeat)
+        self.current_dpad_code = None  # Tracks the current D-pad axis (e.g., ABS_HAT0X, ABS_HAT0Y)
+        self.current_dpad_value = 0    # Tracks the current D-pad direction value (e.g., -1, 1)
 
         # Connect signals to slots
         self.button_pressed.connect(self.handle_button_slot)
@@ -117,6 +126,48 @@ class InputManager(QObject):
         except Exception as e:
             logger.error(f"Error in handle_fullscreen_slot: {e}", exc_info=True)
 
+    def trigger_rumble(self, duration_ms: int = 200, strong_magnitude: int = 0x8000, weak_magnitude: int = 0x8000) -> None:
+        """Trigger a rumble effect on the gamepad if supported."""
+        if not read_rumble_config():
+            return
+        if not self.gamepad:
+            return
+        try:
+            # Check if the gamepad supports force feedback
+            caps = self.gamepad.capabilities()
+            if ecodes.EV_FF not in caps or ecodes.FF_RUMBLE not in caps.get(ecodes.EV_FF, []):
+                logger.debug("Gamepad does not support force feedback or rumble")
+                return
+
+            # Create a rumble effect
+            rumble = ff.Rumble(strong_magnitude=strong_magnitude, weak_magnitude=weak_magnitude)
+            effect = ff.Effect(
+                id=-1,  # Let evdev assign an ID
+                type=ecodes.FF_RUMBLE,
+                direction=0,  # Direction (not used for rumble)
+                replay=ff.Replay(length=duration_ms, delay=0),
+                u=ff.EffectType(ff_rumble_effect=rumble)
+            )
+
+            # Upload the effect
+            self.rumble_effect_id = self.gamepad.upload_effect(effect)
+            # Play the effect
+            event = InputEvent(0, 0, ecodes.EV_FF, self.rumble_effect_id, 1)
+            self.gamepad.write_event(event)
+            # Schedule effect erasure after duration
+            QTimer.singleShot(duration_ms, self.stop_rumble)
+        except Exception as e:
+            logger.error(f"Error triggering rumble: {e}", exc_info=True)
+
+    def stop_rumble(self) -> None:
+        """Stop the rumble effect and clean up."""
+        if self.gamepad and self.rumble_effect_id is not None:
+            try:
+                self.gamepad.erase_effect(self.rumble_effect_id)
+                self.rumble_effect_id = None
+            except Exception as e:
+                logger.error(f"Error stopping rumble: {e}", exc_info=True)
+
     @Slot(int)
     def handle_button_slot(self, button_code: int) -> None:
         try:
@@ -129,10 +180,66 @@ class InputManager(QObject):
                 return
             active = QApplication.activeWindow()
             focused = QApplication.focusWidget()
+            popup = QApplication.activePopupWidget()
+
+            # Handle Guide button to open system overlay
+            if button_code in BUTTONS['guide']:
+                if not popup and not isinstance(active, QDialog):
+                    self._parent.openSystemOverlay()
+                    return
+
+            # Handle QMenu (context menu)
+            if isinstance(popup, QMenu):
+                if button_code in BUTTONS['confirm']:
+                    if popup.activeAction():
+                        popup.activeAction().trigger()
+                        popup.close()
+                    return
+                elif button_code in BUTTONS['back']:
+                    popup.close()
+                    return
+                return
+
+            # Handle QComboBox
+            if isinstance(focused, QComboBox):
+                if button_code in BUTTONS['confirm']:
+                    focused.showPopup()
+                return
+
+            # Handle QListView
+            if isinstance(focused, QListView):
+                combo = None
+                parent = focused.parentWidget()
+                while parent:
+                    if isinstance(parent, QComboBox):
+                        combo = parent
+                        break
+                    parent = parent.parentWidget()
+
+                if button_code in BUTTONS['confirm']:
+                    idx = focused.currentIndex()
+                    if idx.isValid():
+                        if combo:
+                            combo.setCurrentIndex(idx.row())
+                            combo.hidePopup()
+                            combo.setFocus(Qt.FocusReason.OtherFocusReason)
+                        else:
+                            focused.activated.emit(idx)
+                            focused.clicked.emit(idx)
+                            focused.hide()
+                    return
+
+                if button_code in BUTTONS['back']:
+                    if combo:
+                        combo.hidePopup()
+                        combo.setFocus(Qt.FocusReason.OtherFocusReason)
+                    else:
+                        focused.clearSelection()
+                        focused.hide()
 
             # Закрытие AddGameDialog на кнопку B
             if button_code in BUTTONS['back'] and isinstance(active, QDialog):
-                active.reject()  # Закрываем диалог
+                active.reject()
                 return
 
             # FullscreenDialog
@@ -149,22 +256,26 @@ class InputManager(QObject):
             if isinstance(focused, GameCard):
                 if button_code in BUTTONS['context_menu']:
                     pos = QPoint(focused.width() // 2, focused.height() // 2)
-                    focused._show_context_menu(pos)
+                    menu = focused._show_context_menu(pos)
+                    if menu:
+                        menu.setFocus(Qt.FocusReason.OtherFocusReason)
                     return
 
             # Game launch on detail page
-            if (button_code in BUTTONS['confirm'] or button_code in BUTTONS['confirm_stick']) and self._parent.currentDetailPage is not None and self._parent.current_add_game_dialog is None:
+            if (button_code in BUTTONS['confirm']) and self._parent.currentDetailPage is not None and self._parent.current_add_game_dialog is None:
                 if self._parent.current_exec_line:
+                    self.trigger_rumble()
                     self._parent.toggleGame(self._parent.current_exec_line, None)
                     return
 
             # Standard navigation
-            if button_code in BUTTONS['confirm'] or button_code in BUTTONS['confirm_stick']:
+            if button_code in BUTTONS['confirm']:
                 self._parent.activateFocusedWidget()
-            elif button_code in BUTTONS['back'] or button_code in BUTTONS['menu']:
+            elif button_code in BUTTONS['back']:
                 self._parent.goBackDetailPage(getattr(self._parent, 'currentDetailPage', None))
             elif button_code in BUTTONS['add_game']:
-                self._parent.openAddGameDialog()
+                if self._parent.stackedWidget.currentIndex() == 0:
+                    self._parent.openAddGameDialog()
             elif button_code in BUTTONS['prev_tab']:
                 idx = (self._parent.stackedWidget.currentIndex() - 1) % len(self._parent.tabButtons)
                 self._parent.switchTab(idx)
@@ -176,6 +287,14 @@ class InputManager(QObject):
         except Exception as e:
             logger.error(f"Error in handle_button_slot: {e}", exc_info=True)
 
+    def handle_dpad_repeat(self) -> None:
+        """Handle repeated D-pad input while the D-pad is held."""
+        if self.current_dpad_code is not None and self.current_dpad_value != 0:
+            now = time.time()
+            if (now - self.last_move_time) >= self.current_axis_delay:
+                self.handle_dpad_slot(self.current_dpad_code, self.current_dpad_value, now)
+                self.last_move_time = now
+                self.current_axis_delay = self.repeat_axis_move_delay
 
     @Slot(int, int, float)
     def handle_dpad_slot(self, code: int, value: int, current_time: float) -> None:
@@ -188,6 +307,85 @@ class InputManager(QObject):
             if not app:
                 return
             active = QApplication.activeWindow()
+            focused = QApplication.focusWidget()
+            popup = QApplication.activePopupWidget()
+
+            # Update D-pad state
+            if value != 0:
+                self.current_dpad_code = code
+                self.current_dpad_value = value
+                if not self.axis_moving:
+                    self.axis_moving = True
+                    self.last_move_time = current_time
+                    self.current_axis_delay = self.initial_axis_move_delay
+                    self.dpad_timer.start(int(self.repeat_axis_move_delay * 1000))  # Start timer (in milliseconds)
+            else:
+                self.current_dpad_code = None
+                self.current_dpad_value = 0
+                self.axis_moving = False
+                self.current_axis_delay = self.initial_axis_move_delay
+                self.dpad_timer.stop()  # Stop timer when D-pad is released
+                return
+
+            # Handle SystemOverlay, AddGameDialog, or QMessageBox navigation with D-pad
+            if isinstance(active, QDialog) and code == ecodes.ABS_HAT0X and value != 0:
+                if isinstance(active, QMessageBox):  # Specific handling for QMessageBox
+                    if not focused or not active.focusWidget():
+                        # If no widget is focused, focus the first focusable widget
+                        focusables = active.findChildren(QWidget, options=Qt.FindChildOption.FindChildrenRecursively)
+                        focusables = [w for w in focusables if w.focusPolicy() & Qt.FocusPolicy.StrongFocus]
+                        if focusables:
+                            focusables[0].setFocus(Qt.FocusReason.OtherFocusReason)
+                        return
+                    if value > 0:  # Right
+                        active.focusNextChild()
+                    elif value < 0:  # Left
+                        active.focusPreviousChild()
+                    return
+            elif isinstance(active, QDialog) and code == ecodes.ABS_HAT0Y and value != 0:  # Keep up/down for other dialogs
+                if not focused or not active.focusWidget():
+                    # If no widget is focused, focus the first focusable widget
+                    focusables = active.findChildren(QWidget, options=Qt.FindChildOption.FindChildrenRecursively)
+                    focusables = [w for w in focusables if w.focusPolicy() & Qt.FocusPolicy.StrongFocus]
+                    if focusables:
+                        focusables[0].setFocus(Qt.FocusReason.OtherFocusReason)
+                    return
+                if value > 0:  # Down
+                    active.focusNextChild()
+                elif value < 0:  # Up
+                    active.focusPreviousChild()
+                return
+
+            # Handle QMenu navigation with D-pad
+            if isinstance(popup, QMenu):
+                if code == ecodes.ABS_HAT0Y and value != 0:
+                    actions = popup.actions()
+                    if actions:
+                        current_idx = actions.index(popup.activeAction()) if popup.activeAction() in actions else 0
+                        if value < 0:  # Up
+                            next_idx = (current_idx - 1) % len(actions)
+                            popup.setActiveAction(actions[next_idx])
+                        elif value > 0:  # Down
+                            next_idx = (current_idx + 1) % len(actions)
+                            popup.setActiveAction(actions[next_idx])
+                    return
+                return
+
+            # Handle QListView navigation with D-pad
+            if isinstance(focused, QListView) and code == ecodes.ABS_HAT0Y and value != 0:
+                model = focused.model()
+                current_index = focused.currentIndex()
+                if model and current_index.isValid():
+                    row_count = model.rowCount()
+                    current_row = current_index.row()
+                    if value > 0:  # Down
+                        next_row = min(current_row + 1, row_count - 1)
+                        focused.setCurrentIndex(model.index(next_row, current_index.column()))
+                    elif value < 0:  # Up
+                        prev_row = max(current_row - 1, 0)
+                        focused.setCurrentIndex(model.index(prev_row, current_index.column()))
+                    focused.scrollTo(focused.currentIndex(), QListView.ScrollHint.PositionAtCenter)
+                return
 
             # Fullscreen horizontal navigation
             if isinstance(active, FullscreenDialog) and code == ecodes.ABS_HAT0X:
@@ -195,19 +393,6 @@ class InputManager(QObject):
                     active.show_prev()
                 elif value > 0:
                     active.show_next()
-                return
-
-            # Handle repeated D-pad movement
-            if value != 0:
-                if not self.axis_moving:
-                    self.axis_moving = True
-                elif (current_time - self.last_move_time) < self.current_axis_delay:
-                    return
-                self.last_move_time = current_time
-                self.current_axis_delay = self.repeat_axis_move_delay
-            else:
-                self.axis_moving = False
-                self.current_axis_delay = self.initial_axis_move_delay
                 return
 
             # Library tab navigation (index 0)
@@ -280,7 +465,6 @@ class InputManager(QObject):
                                     next_card.setFocus()
                                     if scroll_area:
                                         scroll_area.ensureWidgetVisible(next_card, 50, 50)
-
                 elif code == ecodes.ABS_HAT0Y and value != 0:  # Up/Down
                     if value > 0:  # Down
                         next_row_idx = current_row_idx + 1
@@ -350,6 +534,12 @@ class InputManager(QObject):
         focused = QApplication.focusWidget()
         popup = QApplication.activePopupWidget()
 
+        # Open system overlay with Insert
+        if key == Qt.Key.Key_Insert:
+            if not popup and not isinstance(QApplication.activeWindow(), QDialog):
+                self._parent.openSystemOverlay()
+                return True
+
         # Close application with Ctrl+Q
         if key == Qt.Key.Key_Q and modifiers & Qt.KeyboardModifier.ControlModifier:
             app.quit()
@@ -388,6 +578,23 @@ class InputManager(QObject):
             if key == Qt.Key.Key_F10 and Qt.KeyboardModifier.ShiftModifier:
                 pos = QPoint(focused.width() // 2, focused.height() // 2)
                 focused._show_context_menu(pos)
+                return True
+
+        # Handle Up/Down keys for non-GameCard tabs
+        if key in (Qt.Key.Key_Up, Qt.Key.Key_Down) and not isinstance(focused, GameCard):
+            page = self._parent.stackedWidget.currentWidget()
+            if key == Qt.Key.Key_Down:
+                if isinstance(focused, NavLabel):
+                    focusables = page.findChildren(QWidget, options=Qt.FindChildOption.FindChildrenRecursively)
+                    focusables = [w for w in focusables if w.focusPolicy() & Qt.FocusPolicy.StrongFocus]
+                    if focusables:
+                        focusables[0].setFocus()
+                        return True
+                elif focused:
+                    focused.focusNextChild()
+                    return True
+            elif key == Qt.Key.Key_Up and focused:
+                focused.focusPreviousChild()
                 return True
 
         # Tab switching with Left/Right keys (non-GameCard focus or no focus)
@@ -520,6 +727,9 @@ class InputManager(QObject):
                 if focusables:
                     focusables[0].setFocus()
                     return True
+            elif focused:
+                focused.focusNextChild()
+                return True
         # Navigate up through tab content
         if key == Qt.Key.Key_Up:
             if isinstance(focused, NavLabel):
@@ -540,8 +750,10 @@ class InputManager(QObject):
         elif key == Qt.Key.Key_E:
             if isinstance(focused, QLineEdit):
                 return False
-            self._parent.openAddGameDialog()
-            return True
+            # Only open AddGameDialog if in library tab (index 0)
+            if self._parent.stackedWidget.currentIndex() == 0:
+                self._parent.openAddGameDialog()
+                return True
 
         # Toggle fullscreen with F11
         if key == Qt.Key.Key_F11:
@@ -559,17 +771,17 @@ class InputManager(QObject):
 
     def run_udev_monitor(self) -> None:
         try:
-            context = pyudev.Context()
-            monitor = pyudev.Monitor.from_netlink(context)
+            context = Context()
+            monitor = Monitor.from_netlink(context)
             monitor.filter_by(subsystem='input')
-            observer = pyudev.MonitorObserver(monitor, self.handle_udev_event)
+            observer = MonitorObserver(monitor, self.handle_udev_event)
             observer.start()
             while self.running:
                 time.sleep(1)
         except Exception as e:
             logger.error(f"Error in udev monitor: {e}", exc_info=True)
 
-    def handle_udev_event(self, action: str, device: pyudev.Device) -> None:
+    def handle_udev_event(self, action: str, device: Device) -> None:
         try:
             if action == 'add':
                 time.sleep(0.1)
@@ -577,6 +789,7 @@ class InputManager(QObject):
             elif action == 'remove' and self.gamepad:
                 if not any(self.gamepad.path == path for path in list_devices()):
                     logger.info("Gamepad disconnected")
+                    self.stop_rumble()
                     self.gamepad = None
                     if self.gamepad_thread:
                         self.gamepad_thread.join()
@@ -590,6 +803,7 @@ class InputManager(QObject):
             new_gamepad = self.find_gamepad()
             if new_gamepad and new_gamepad != self.gamepad:
                 logger.info(f"Gamepad connected: {new_gamepad.name}")
+                self.stop_rumble()
                 self.gamepad = new_gamepad
                 if self.gamepad_thread:
                     self.gamepad_thread.join()
@@ -626,9 +840,7 @@ class InputManager(QObject):
                     continue
                 now = time.time()
                 if event.type == ecodes.EV_KEY and event.value == 1:
-                    # Обработка кнопки Select для переключения полноэкранного режима
                     if event.code in BUTTONS['menu']:
-                        # Переключаем полноэкранный режим
                         self.toggle_fullscreen.emit(not self._is_fullscreen)
                     else:
                         self.button_pressed.emit(event.code)
@@ -644,6 +856,7 @@ class InputManager(QObject):
         finally:
             if self.gamepad:
                 try:
+                    self.stop_rumble()
                     self.gamepad.close()
                 except Exception:
                     pass
@@ -652,6 +865,8 @@ class InputManager(QObject):
     def cleanup(self) -> None:
         try:
             self.running = False
+            self.dpad_timer.stop()
+            self.stop_rumble()
             if self.gamepad_thread:
                 self.gamepad_thread.join()
             if self.gamepad:

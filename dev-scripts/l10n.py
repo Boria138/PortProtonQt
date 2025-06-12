@@ -106,7 +106,7 @@ def compile_locales() -> None:
 def extract_strings() -> None:
     input_dir = (Path(__file__).parent.parent / "portprotonqt").resolve()
     CommandLineInterface().run([
-        "pybabel", "extract", "--project=PortProtonQT",
+        "pybabel", "extract", "--project=PortProtonQt",
         f"--version={_get_version()}",
         "--strip-comment-tag",
         "--no-location",
@@ -231,7 +231,7 @@ def main(args) -> int:
     return 0
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(prog="l10n", description="Localization utility for PortProtonQT.")
+    parser = argparse.ArgumentParser(prog="l10n", description="Localization utility for PortProtonQt.")
     parser.add_argument("--create-new", nargs='+', type=str, default=False, help="Create .po for new locales")
     parser.add_argument("--update-all", action='store_true', help="Extract/update locales and update README coverage")
     parser.add_argument("--spellcheck", action='store_true', help="Run spellcheck on POT and PO files")

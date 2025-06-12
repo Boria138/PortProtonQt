@@ -35,10 +35,9 @@ def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[Q
             y = (scaled.height() - height) // 2
             cropped = scaled.copy(x, y, width, height)
             callback(cropped)
-            # Removed: pixmap = None (unnecessary, causes type error)
 
         xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
-        image_folder = os.path.join(xdg_cache_home, "PortProtonQT", "images")
+        image_folder = os.path.join(xdg_cache_home, "PortProtonQt", "images")
         os.makedirs(image_folder, exist_ok=True)
 
         if cover and cover.startswith("https://steamcdn-a.akamaihd.net/steam/apps/"):

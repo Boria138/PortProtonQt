@@ -22,7 +22,7 @@ def get_cache_dir() -> Path:
         "XDG_CACHE_HOME",
         os.path.join(os.path.expanduser("~"), ".cache")
     )
-    cache_dir = Path(xdg_cache_home) / "PortProtonQT"
+    cache_dir = Path(xdg_cache_home) / "PortProtonQt"
     cache_dir.mkdir(parents=True, exist_ok=True)
     return cache_dir
 
@@ -36,7 +36,7 @@ def get_egs_game_description_async(
     Asynchronously fetches the game description from the Epic Games Store API.
     Prioritizes GraphQL API with namespace for slug and description.
     Falls back to legacy API if GraphQL provides a slug but no description.
-    Caches results in ~/.cache/PortProtonQT/egs_app_{app_name}.json.
+    Caches results in ~/.cache/PortProtonQt/egs_app_{app_name}.json.
     Handles DNS resolution failures gracefully.
     """
     cache_dir = get_cache_dir()
@@ -423,7 +423,7 @@ def _continue_loading_egs_games(legendary_path: str, callback: Callable[[list[tu
             except Exception as e:
                 logger.warning("Error processing metadata for %s: %s", app_name, str(e))
 
-            image_folder = os.path.join(os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache")), "PortProtonQT", "images")
+            image_folder = os.path.join(os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache")), "PortProtonQt", "images")
             local_path = os.path.join(image_folder, f"{app_name}.jpg") if cover_url else ""
 
             def on_description_fetched(api_description: str):

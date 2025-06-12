@@ -8,6 +8,40 @@ current_theme_name = read_theme_from_config()
 favoriteLabelSize = 48, 48
 pixmapsScaledSize = 60, 60
 
+CONTEXT_MENU_STYLE = """
+    QMenu {
+        background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+            stop:0 rgba(40, 40, 40, 0.95),
+            stop:1 rgba(25, 25, 25, 0.95));
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 12px;
+        color: #ffffff;
+        font-family: 'Play';
+        font-size: 16px;
+        padding: 5px;
+    }
+    QMenu::item {
+        padding: 8px 20px;
+        background: transparent;
+        border-radius: 8px;
+        color: #ffffff;
+    }
+    QMenu::item:selected {
+        background: #282a33;
+        color: #09bec8;
+    }
+    QMenu::item:hover {
+        background: #282a33;
+        color: #09bec8;
+    }
+    QMenu::item:focus {
+        background: #409EFF;
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 8px;
+    }
+"""
+
 # СТИЛЬ ШАПКИ ГЛАВНОГО ОКНА
 MAIN_WINDOW_HEADER_STYLE = """
     QFrame {
@@ -88,6 +122,13 @@ SEARCH_EDIT_STYLE = """
     QLineEdit:focus {
         border: 1px solid #409EFF;
     }
+"""
+
+SETTINGS_CHECKBOX_STYLE = """
+    QCheckBox:focus {
+            border: 2px solid #409EFF;
+            background: #404554;
+        }
 """
 
 # ОТКЛЮЧАЕМ РАМКУ У QScrollArea
@@ -197,6 +238,28 @@ ACTION_BUTTON_STYLE = """
     QPushButton:hover {
         background: #282a33;
         border: 2px solid #409EFF;
+    }
+    QPushButton:pressed {
+        background: #282a33;
+    }
+    QPushButton:focus {
+        border: 2px solid #409EFF;
+        background-color: #404554;
+    }
+"""
+
+# СТИЛЬ КНОПОК ОВЕРЛЕЯ
+OVERLAY_BUTTON_STYLE = """
+    QPushButton {
+        background: #3f424d;
+        border: 1px solid rgba(255, 255, 255, 0.20);
+        border-radius: 10px;
+        color: #ffffff;
+        font-size: 16px;
+        font-family: 'Play';
+    }
+    QPushButton:hover {
+        background: #282a33;
     }
     QPushButton:pressed {
         background: #282a33;
@@ -416,6 +479,27 @@ def get_protondb_badge_style(tier):
         font-weight: bold;
     """
 
+# СТИЛИ БЕЙДЖА WEANTICHEATYET
+def get_anticheat_badge_style(status):
+    status = status.lower()
+    status_colors = {
+        "supported": {"background": "rgba(102, 168, 15, 0.7)", "color": "black"},
+        "running": {"background": "rgba(25, 113, 194, 0.7)", "color": "black"},
+        "planned": {"background": "rgba(156, 54, 181, 0.7)", "color": "black"},
+        "broken": {"background": "rgba(232, 89, 12, 0.7)", "color": "black"},
+        "denied": {"background": "rgba(224, 49, 49, 0.7)", "color": "black"}
+    }
+    colors = status_colors.get(status, {"background": "rgba(0, 0, 0, 0.5)", "color": "white"})
+    return f"""
+        qproperty-alignment: AlignCenter;
+        background-color: {colors["background"]};
+        color: {colors["color"]};
+        font-size: 16px;
+        border-radius: 5px;
+        font-family: 'Play';
+        font-weight: bold;
+    """
+
 # СТИЛИ БЕЙДЖА STEAM
 STEAM_BADGE_STYLE= """
     qproperty-alignment: AlignCenter;
@@ -456,6 +540,10 @@ MESSAGE_BOX_STYLE = """
     QMessageBox QPushButton:hover {
         background: #09bec8;
         border-color: rgba(255, 255, 255, 0.3);
+    }
+    QMessageBox QPushButton:focus {
+        border: 2px solid #409EFF;
+        background: #404554;
     }
 """
 

@@ -11,7 +11,7 @@ logger = get_logger(__name__)
 # Папка, где располагаются все дополнительные темы
 xdg_data_home = os.getenv("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share"))
 THEMES_DIRS = [
-    os.path.join(xdg_data_home, "PortProtonQT", "themes"),
+    os.path.join(xdg_data_home, "PortProtonQt", "themes"),
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "themes")
 ]
 

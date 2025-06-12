@@ -49,7 +49,7 @@ def decode_text(text: str) -> str:
 def get_cache_dir():
     """Возвращает путь к каталогу кэша, создаёт его при необходимости."""
     xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
-    cache_dir = os.path.join(xdg_cache_home, "PortProtonQT")
+    cache_dir = os.path.join(xdg_cache_home, "PortProtonQt")
     os.makedirs(cache_dir, exist_ok=True)
     return cache_dir
 

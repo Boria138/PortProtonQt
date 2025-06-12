@@ -1,15 +1,15 @@
-# Translations template for PortProtonQT.
+# Translations template for PortProtonQt.
 # Copyright (C) 2025 boria138
-# This file is distributed under the same license as the PortProtonQT
+# This file is distributed under the same license as the PortProtonQt
 # project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PortProtonQT 0.1.1\n"
+"Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-06-06 20:01+0500\n"
+"POT-Creation-Date: 2025-06-11 23:15+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,6 +17,12 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
+
+msgid "Remove from Favorites"
+msgstr ""
+
+msgid "Add to Favorites"
+msgstr ""
 
 msgid "Remove from Desktop"
 msgstr ""
@@ -43,6 +49,14 @@ msgid "Remove from Steam"
 msgstr ""
 
 msgid "Add to Steam"
+msgstr ""
+
+#, python-brace-format
+msgid "Added '{0}' to favorites"
+msgstr ""
+
+#, python-brace-format
+msgid "Removed '{0}' from favorites"
 msgstr ""
 
 msgid "Error"
@@ -360,19 +374,10 @@ msgstr ""
 msgid "Auto Fullscreen on Gamepad connected:"
 msgstr ""
 
-msgid "Open Legendary Login"
+msgid "Gamepad haptic feedback"
 msgstr ""
 
-msgid "Legendary Authentication:"
-msgstr ""
-
-msgid "Enter Legendary Authorization Code"
-msgstr ""
-
-msgid "Authorization Code:"
-msgstr ""
-
-msgid "Submit Code"
+msgid "Gamepad haptic feedback:"
 msgstr ""
 
 msgid "Save Settings"
@@ -388,22 +393,6 @@ msgid "Opened Legendary login page in browser"
 msgstr ""
 
 msgid "Failed to open Legendary login page"
-msgstr ""
-
-msgid "Please enter an authorization code"
-msgstr ""
-
-msgid "Successfully authenticated with Legendary"
-msgstr ""
-
-#, python-brace-format
-msgid "Legendary authentication failed: {0}"
-msgstr ""
-
-msgid "Legendary executable not found"
-msgstr ""
-
-msgid "Unexpected error during authentication"
 msgstr ""
 
 msgid "Confirm Reset"
@@ -501,6 +490,42 @@ msgid "Cannot launch game while another game is running"
 msgstr ""
 
 msgid "Launching"
+msgstr ""
+
+msgid "System Overlay"
+msgstr ""
+
+msgid "Reboot"
+msgstr ""
+
+msgid "Shutdown"
+msgstr ""
+
+msgid "Suspend"
+msgstr ""
+
+msgid "Exit Application"
+msgstr ""
+
+msgid "Return to Desktop"
+msgstr ""
+
+msgid "portprotonqt-session-select file not found at /usr/bin/"
+msgstr ""
+
+msgid "Cancel"
+msgstr ""
+
+msgid "Failed to reboot the system"
+msgstr ""
+
+msgid "Failed to shutdown the system"
+msgstr ""
+
+msgid "Failed to suspend the system"
+msgstr ""
+
+msgid "Failed to return to desktop"
 msgstr ""
 
 msgid "just now"

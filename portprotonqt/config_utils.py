@@ -10,7 +10,7 @@ _portproton_location = None
 # Пути к конфигурационным файлам
 CONFIG_FILE = os.path.join(
     os.getenv("XDG_CONFIG_HOME", os.path.join(os.path.expanduser("~"), ".config")),
-    "PortProtonQT.conf"
+    "PortProtonQt.conf"
 )
 
 PORTPROTON_CONFIG_FILE = os.path.join(
@@ -21,7 +21,7 @@ PORTPROTON_CONFIG_FILE = os.path.join(
 # Пути к папкам с темами
 xdg_data_home = os.getenv("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share"))
 THEMES_DIRS = [
-    os.path.join(xdg_data_home, "PortProtonQT", "themes"),
+    os.path.join(xdg_data_home, "PortProtonQt", "themes"),
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "themes")
 ]
 
@@ -322,6 +322,41 @@ def save_favorites(favorites):
     with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
         cp.write(configfile)
 
+def read_rumble_config():
+    """
+    Читает настройку виброотдачи геймпада из секции [Gamepad].
+    Если параметр отсутствует, сохраняет и возвращает False по умолчанию.
+    """
+    cp = configparser.ConfigParser()
+    if os.path.exists(CONFIG_FILE):
+        try:
+            cp.read(CONFIG_FILE, encoding="utf-8")
+        except Exception as e:
+            logger.error("Ошибка чтения конфигурационного файла: %s", e)
+            save_rumble_config(False)
+            return False
+        if not cp.has_section("Gamepad") or not cp.has_option("Gamepad", "rumble_enabled"):
+            save_rumble_config(False)
+            return False
+        return cp.getboolean("Gamepad", "rumble_enabled", fallback=False)
+    return False
+
+def save_rumble_config(rumble_enabled):
+    """
+    Сохраняет настройку виброотдачи геймпада в секцию [Gamepad].
+    """
+    cp = configparser.ConfigParser()
+    if os.path.exists(CONFIG_FILE):
+        try:
+            cp.read(CONFIG_FILE, encoding="utf-8")
+        except (configparser.DuplicateSectionError, configparser.DuplicateOptionError) as e:
+            logger.error("Ошибка чтения конфигурационного файла: %s", e)
+    if "Gamepad" not in cp:
+        cp["Gamepad"] = {}
+    cp["Gamepad"]["rumble_enabled"] = str(rumble_enabled)
+    with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
+        cp.write(configfile)
+
 def ensure_default_proxy_config():
     """
     Проверяет наличие секции [Proxy] в конфигурационном файле.
@@ -341,7 +376,6 @@ def ensure_default_proxy_config():
             cp["Proxy"]["proxy_password"] = ""
             with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
                 cp.write(configfile)
-
 
 def read_proxy_config():
     """
@@ -421,8 +455,6 @@ def save_fullscreen_config(fullscreen):
     with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
         cp.write(configfile)
 
-
-
 def read_window_geometry() -> tuple[int, int]:
     """
     Читает ширину и высоту окна из секции [MainWindow] конфигурационного файла.
@@ -472,14 +504,14 @@ def reset_config():
 
 def clear_cache():
     """
-    Очищает кэш PortProtonQT, удаляя папку кэша.
+    Очищает кэш PortProtonQt, удаляя папку кэша.
     """
     xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
-    cache_dir = os.path.join(xdg_cache_home, "PortProtonQT")
+    cache_dir = os.path.join(xdg_cache_home, "PortProtonQt")
     if os.path.exists(cache_dir):
         try:
             shutil.rmtree(cache_dir)
-            logger.info("Кэш PortProtonQT удалён: %s", cache_dir)
+            logger.info("Кэш PortProtonQt удалён: %s", cache_dir)
         except Exception as e:
             logger.error("Ошибка при удалении кэша: %s", e)
 

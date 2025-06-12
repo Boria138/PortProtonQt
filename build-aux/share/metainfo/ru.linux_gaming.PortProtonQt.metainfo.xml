@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop">
+  <name>PortProtonQt</name>
+  <id>ru.linux_gaming.PortProtonQt</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <summary>Modern GUI for managing and launching games from PortProton, Steam, and Epic Games Store</summary>
+  <summary xml:lang="ru">Современный графический интерфейс для управления и запуска игр из PortProton, Steam и Epic Games Store</summary>
+  <description>
+    <p>
+      This application provides a sleek, intuitive graphical interface for managing and launching games from PortProton, Steam, and Epic Games Store. It consolidates your game libraries into a single, user-friendly hub for seamless navigation and organization. Its lightweight structure and cross-platform support deliver a cohesive gaming experience, eliminating the need for multiple launchers. Unique PortProton integration enhances Linux gaming, enabling effortless play of Windows-based titles with minimal setup.</p>
+    <p xml:lang="ru">
+      Это приложение предоставляет стильный и интуитивно понятный графический интерфейс для управления и запуска игр из PortProton, Steam и Epic Games Store. Оно объединяет ваши игровые библиотеки в одном удобном хабе для простой навигации и организации. Лёгкая структура и кроссплатформенная поддержка обеспечивают целостный игровой опыт, устраняя необходимость в использовании нескольких лаунчеров. Уникальная интеграция с PortProton улучшает игровой процесс на Linux, позволяя с лёгкостью запускать Windows-игры с минимальными настройками.
+      </p>
+  </description>
+  <launchable type="desktop-id">ru.linux_gaming.PortProtonQt.desktop</launchable>
+  <developer id="ru.linux_gaming">
+    <name>Boria138</name>
+  </developer>
+  <recommends>
+    <control>keyboard</control>
+    <control>pointing</control>
+    <control>touch</control>
+    <control>gamepad</control>
+  </recommends>
+  <branding>
+    <color type="primary" scheme_preference="light">#007AFF</color>
+    <color type="primary" scheme_preference="dark">#09BEC8</color>
+  </branding>
+  <categories>
+    <category>Game</category>
+    <category>Utility</category>
+  </categories>
+  <url type="homepage">https://git.linux-gaming.ru/Boria138/PortProtonQt</url>
+  <url type="bugtracker">https://git.linux-gaming.ru/Boria138/PortProtonQt/issues</url>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/%D0%91%D0%B8%D0%B1%D0%BB%D0%B8%D0%BE%D1%82%D0%B5%D0%BA%D0%B0.png</image>
+      <caption>Library</caption>
+      <caption xml:lang="ru">Библиотека</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/%D0%9A%D0%B0%D1%80%D1%82%D0%BE%D1%87%D0%BA%D0%B0.png</image>
+      <caption>Card detail page</caption>
+      <caption xml:lang="ru">Детали игры</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/%D0%9D%D0%B0%D1%81%D1%82%D1%80%D0%BE%D0%B9%D0%BA%D0%B8.png</image>
+      <caption>Settings</caption>
+      <caption xml:lang="ru">Настройки</caption>
+    </screenshot>
+  </screenshots>
+  <keywords>
+    <keyword translate="no">wine</keyword>
+    <keyword translate="no">proton</keyword>
+    <keyword translate="no">steam</keyword>
+    <keyword translate="no">windows</keyword>
+    <keyword translate="no">epic games store</keyword>
+    <keyword translate="no">egs</keyword>
+    <keyword translate="no">qt</keyword>
+    <keyword translate="no">portproton</keyword>
+    <keyword>games</keyword>
+    </keywords>
+    <content_rating type="oars-1.1" />
+</component>

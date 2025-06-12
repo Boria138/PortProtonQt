@@ -1,6 +1,6 @@
-# Russian (Russia) translations for PortProtonQT.
+# Russian (Russia) translations for PortProtonQt.
 # Copyright (C) 2025 boria138
-# This file is distributed under the same license as the PortProtonQT
+# This file is distributed under the same license as the PortProtonQt
 # project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
 #
@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-06-06 20:01+0500\n"
-"PO-Revision-Date: 2025-06-06 20:01+0500\n"
+"POT-Creation-Date: 2025-06-11 23:15+0500\n"
+"PO-Revision-Date: 2025-06-11 23:15+0500\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
@@ -20,6 +20,12 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
+
+msgid "Remove from Favorites"
+msgstr "Удалить из Избранного"
+
+msgid "Add to Favorites"
+msgstr "Добавить в Избранное"
 
 msgid "Remove from Desktop"
 msgstr "Удалить с рабочего стола"
@@ -47,6 +53,14 @@ msgstr "Удалить из Steam"
 
 msgid "Add to Steam"
 msgstr "Добавить в Steam"
+
+#, python-brace-format
+msgid "Added '{0}' to favorites"
+msgstr "Добавление '{0}' в избранное"
+
+#, python-brace-format
+msgid "Removed '{0}' from favorites"
+msgstr "Удаление '{0}' из избранного"
 
 msgid "Error"
 msgstr "Ошибка"
@@ -369,20 +383,11 @@ msgstr "Режим полноэкранного отображения прил�
 msgid "Auto Fullscreen on Gamepad connected:"
 msgstr "Режим полноэкранного отображения приложения при подключении геймпада:"
 
-msgid "Open Legendary Login"
-msgstr "Открыть браузер для входа в Legendary"
+msgid "Gamepad haptic feedback"
+msgstr "Тактильная обратная связь на геймпаде"
 
-msgid "Legendary Authentication:"
-msgstr "Авторизация в Legendary:"
-
-msgid "Enter Legendary Authorization Code"
-msgstr "Введите код авторизации Legendary"
-
-msgid "Authorization Code:"
-msgstr "Код авторизации:"
-
-msgid "Submit Code"
-msgstr "Отправить код"
+msgid "Gamepad haptic feedback:"
+msgstr "Тактильная обратная связь на геймпаде:"
 
 msgid "Save Settings"
 msgstr "Сохранить настройки"
@@ -398,22 +403,6 @@ msgstr "Открытие страницы входа в Legendary в брауз�
 
 msgid "Failed to open Legendary login page"
 msgstr "Не удалось открыть страницу входа в Legendary"
-
-msgid "Please enter an authorization code"
-msgstr "Пожалуйста, введите код авторизации"
-
-msgid "Successfully authenticated with Legendary"
-msgstr "Успешная аутентификация с Legendary"
-
-#, python-brace-format
-msgid "Legendary authentication failed: {0}"
-msgstr "Сбой аутентификации в Legendary: {0}"
-
-msgid "Legendary executable not found"
-msgstr "Не найден исполняемый файл Legendary"
-
-msgid "Unexpected error during authentication"
-msgstr "Неожиданная ошибка при аутентификации"
 
 msgid "Confirm Reset"
 msgstr "Подтвердите удаление"
@@ -513,6 +502,42 @@ msgstr "Невозможно запустить игру пока запущен
 
 msgid "Launching"
 msgstr "Идёт запуск"
+
+msgid "System Overlay"
+msgstr "Системный оверлей"
+
+msgid "Reboot"
+msgstr "Перезагрузить"
+
+msgid "Shutdown"
+msgstr "Выключить"
+
+msgid "Suspend"
+msgstr "Перейти в ждущий режим"
+
+msgid "Exit Application"
+msgstr "Выйти из приложения"
+
+msgid "Return to Desktop"
+msgstr "Вернуться на рабочий стол"
+
+msgid "portprotonqt-session-select file not found at /usr/bin/"
+msgstr "portprotonqt-session-select не найдет"
+
+msgid "Cancel"
+msgstr "Отмена"
+
+msgid "Failed to reboot the system"
+msgstr "Не удалось перезагрузить систему"
+
+msgid "Failed to shutdown the system"
+msgstr "Не удалось завершить работу системы"
+
+msgid "Failed to suspend the system"
+msgstr "Не удалось перейти в ждущий режим"
+
+msgid "Failed to return to desktop"
+msgstr "Не удалось вернуться на рабочий стол"
 
 msgid "just now"
 msgstr "только что"

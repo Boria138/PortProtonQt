@@ -13,6 +13,7 @@ from portprotonqt.game_card import GameCard
 from portprotonqt.custom_widgets import FlowLayout, ClickableLabel, AutoSizeButton, NavLabel
 from portprotonqt.input_manager import InputManager
 from portprotonqt.context_menu_manager import ContextMenuManager
+from portprotonqt.system_overlay import SystemOverlay
 
 from portprotonqt.image_utils import load_pixmap_async, round_corners, ImageCarousel
 from portprotonqt.steam_api import get_steam_game_info_async, get_full_steam_game_info_async, get_steam_installed_games
@@ -25,7 +26,7 @@ from portprotonqt.config_utils import (
     read_display_filter, read_favorites, save_favorites, save_time_config, save_sort_method,
     save_display_filter, save_proxy_config, read_proxy_config, read_fullscreen_config,
     save_fullscreen_config, read_window_geometry, save_window_geometry, reset_config,
-    clear_cache, read_auto_fullscreen_gamepad, save_auto_fullscreen_gamepad
+    clear_cache, read_auto_fullscreen_gamepad, save_auto_fullscreen_gamepad, read_rumble_config, save_rumble_config
 )
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
@@ -43,7 +44,7 @@ from datetime import datetime
 logger = get_logger(__name__)
 
 class MainWindow(QMainWindow):
-    """Main window of PortProtonQT."""
+    """Main window of PortProtonQt."""
     settings_saved = Signal()
     games_loaded = Signal(list)
     update_progress = Signal(int)  # Signal to update progress bar
@@ -72,10 +73,10 @@ class MainWindow(QMainWindow):
         self.settingsDebounceTimer.timeout.connect(self.applySettingsDelayed)
 
         read_time_config()
-        # Set LEGENDARY_CONFIG_PATH to ~/.cache/PortProtonQT/legendary
+        # Set LEGENDARY_CONFIG_PATH to ~/.cache/PortProtonQt/legendary_cache
         self.legendary_config_path = os.path.join(
             os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache")),
-            "PortProtonQT", "legendary_cache"
+            "PortProtonQt", "legendary_cache"
         )
         os.makedirs(self.legendary_config_path, exist_ok=True)
         os.environ["LEGENDARY_CONFIG_PATH"] = self.legendary_config_path
@@ -97,10 +98,11 @@ class MainWindow(QMainWindow):
         if not self.theme:
             self.theme = default_styles
         self.card_width = read_card_size()
-        self.setWindowTitle("PortProtonQT")
+        self.setWindowTitle("PortProtonQt")
         self.setMinimumSize(800, 600)
 
         self.games = []
+        self.filtered_games = self.games
         self.game_processes = []
         self.target_exe = None
         self.current_running_button = None
@@ -259,39 +261,28 @@ class MainWindow(QMainWindow):
                 self.update_status_message.emit
             )
         elif display_filter == "favorites":
-            def on_all_games(portproton_games, steam_games, epic_games):
-                games = [game for game in portproton_games + steam_games + epic_games if game[0] in favorites]
+            def on_all_games(portproton_games, steam_games):
+                games = [game for game in portproton_games + steam_games if game[0] in favorites]
                 self.games_loaded.emit(games)
             self._load_portproton_games_async(
                 lambda pg: self._load_steam_games_async(
-                    lambda sg: load_egs_games_async(
-                        self.legendary_path,
-                        lambda eg: on_all_games(pg, sg, eg),
-                        self.downloader,
-                        self.update_progress.emit,
-                        self.update_status_message.emit
-                    )
+                    lambda sg: on_all_games(pg, sg)
                 )
             )
         else:
-            def on_all_games(portproton_games, steam_games, epic_games):
+            def on_all_games(portproton_games, steam_games):
                 seen = set()
                 games = []
-                for game in portproton_games + steam_games + epic_games:
-                    name = game[0]
-                    if name not in seen:
-                        seen.add(name)
+                for game in portproton_games + steam_games:
+                    # Уникальный ключ: имя + exec_line
+                    key = (game[0], game[4])
+                    if key not in seen:
+                        seen.add(key)
                         games.append(game)
                 self.games_loaded.emit(games)
             self._load_portproton_games_async(
                 lambda pg: self._load_steam_games_async(
-                    lambda sg: load_egs_games_async(
-                        self.legendary_path,
-                        lambda eg: on_all_games(pg, sg, eg),
-                        self.downloader,
-                        self.update_progress.emit,
-                        self.update_status_message.emit
-                    )
+                    lambda sg: on_all_games(pg, sg)
                 )
             )
         return []
@@ -394,7 +385,7 @@ class MainWindow(QMainWindow):
         builtin_custom_folder = os.path.join(repo_root, "portprotonqt", "custom_data")
         xdg_data_home = os.getenv("XDG_DATA_HOME",
                                 os.path.join(os.path.expanduser("~"), ".local", "share"))
-        user_custom_folder = os.path.join(xdg_data_home, "PortProtonQT", "custom_data")
+        user_custom_folder = os.path.join(xdg_data_home, "PortProtonQt", "custom_data")
         os.makedirs(user_custom_folder, exist_ok=True)
 
         builtin_cover = ""
@@ -500,6 +491,11 @@ class MainWindow(QMainWindow):
             btn.setChecked(i == index)
         self.stackedWidget.setCurrentIndex(index)
 
+    def openSystemOverlay(self):
+        """Opens the system overlay dialog."""
+        overlay = SystemOverlay(self, self.theme)
+        overlay.exec()
+
     def createSearchWidget(self) -> tuple[QWidget, QLineEdit]:
         self.container = QWidget()
         self.container.setStyleSheet(self.theme.CONTAINER_STYLE)
@@ -539,14 +535,20 @@ class MainWindow(QMainWindow):
     def startSearchDebounce(self, text):
         self.searchDebounceTimer.start()
 
+    def on_slider_value_changed(self, value: int):
+            self.card_width = value
+            self.sizeSlider.setToolTip(f"{value} px")
+            save_card_size(value)
+            self.updateGameGrid()
+
     def filterGamesDelayed(self):
         """Filters games based on search text and updates the grid."""
         text = self.searchEdit.text().strip().lower()
         if text == "":
-            self.updateGameGrid()  # Use self.games directly
+            self.filtered_games = self.games
         else:
-            filtered = [game for game in self.games if text in game[0].lower()]
-            self.updateGameGrid(filtered)
+            self.filtered_games = [game for game in self.games if text in game[0].lower()]
+        self.updateGameGrid(self.filtered_games)
 
     def createInstalledTab(self):
         self.gamesLibraryWidget = QWidget()
@@ -579,21 +581,9 @@ class MainWindow(QMainWindow):
         self.sizeSlider.setFixedWidth(150)
         self.sizeSlider.setToolTip(f"{self.card_width} px")
         self.sizeSlider.setStyleSheet(self.theme.SLIDER_SIZE_STYLE)
+        self.sizeSlider.valueChanged.connect(self.on_slider_value_changed)
         sliderLayout.addWidget(self.sizeSlider)
         layout.addLayout(sliderLayout)
-
-        self.sliderDebounceTimer = QTimer(self)
-        self.sliderDebounceTimer.setSingleShot(True)
-        self.sliderDebounceTimer.setInterval(40)
-
-        def on_slider_value_changed():
-            self.setUpdatesEnabled(False)
-            self.card_width = self.sizeSlider.value()
-            self.sizeSlider.setToolTip(f"{self.card_width} px")
-            self.updateGameGrid()
-            self.setUpdatesEnabled(True)
-        self.sizeSlider.valueChanged.connect(lambda val: self.sliderDebounceTimer.start())
-        self.sliderDebounceTimer.timeout.connect(on_slider_value_changed)
 
         def calculate_card_width():
             available_width = scrollArea.width() - 20
@@ -601,11 +591,6 @@ class MainWindow(QMainWindow):
             target_cards_per_row = 8
             calculated_width = (available_width - spacing * (target_cards_per_row - 1)) // target_cards_per_row
             calculated_width = max(200, min(calculated_width, 250))
-            if not self.sizeSlider.value() == self.card_width:
-                self.card_width = calculated_width
-                self.sizeSlider.setValue(self.card_width)
-                self.sizeSlider.setToolTip(f"{self.card_width} px")
-                self.updateGameGrid()
 
         QTimer.singleShot(0, calculate_card_width)
 
@@ -621,7 +606,6 @@ class MainWindow(QMainWindow):
             self._last_width = self.width()
         if abs(self.width() - self._last_width) > 10:
             self._last_width = self.width()
-            self.sliderDebounceTimer.start()
 
     def loadVisibleImages(self):
         visible_region = self.gamesListWidget.visibleRegion()
@@ -638,22 +622,38 @@ class MainWindow(QMainWindow):
         if games_list is None:
             games_list = self.games
         if not games_list:
-            self.clearLayout(self.gamesListLayout)
+            # Скрываем все карточки, если список пуст
+            for card in self.game_card_cache.values():
+                card.hide()
             self.game_card_cache.clear()
             self.pending_images.clear()
+            self.gamesListWidget.updateGeometry()
             return
 
-        # Create a set of game names for quick lookup
-        current_games = {game_data[0]: game_data for game_data in games_list}
+        # Создаем словарь текущих игр с уникальным ключом (name + exec_line)
+        current_games = {(game_data[0], game_data[4]): game_data for game_data in games_list}
 
-        # Check if the grid is already up-to-date
-        if set(current_games.keys()) == set(self.game_card_cache.keys()) and self.card_width == getattr(self, '_last_card_width', None):
-            return  # No changes needed, skip update
+        # Проверяем, изменился ли список игр или размер карточек
+        current_game_keys = set(current_games.keys())
+        cached_game_keys = set(self.game_card_cache.keys())
+        card_width_changed = self.card_width != getattr(self, '_last_card_width', None)
 
-        # Track if layout has changed to decide if geometry update is needed
+        if current_game_keys == cached_game_keys and not card_width_changed:
+            # Список игр и размер карточек не изменились, обновляем только видимость
+            search_text = self.searchEdit.text().strip().lower()
+            for game_key, card in self.game_card_cache.items():
+                game_name = game_key[0]
+                card.setVisible(search_text in game_name.lower() or not search_text)
+            self.loadVisibleImages()
+            return
+
+        # Обновляем размер карточек, если он изменился
+        if card_width_changed:
+            for card in self.game_card_cache.values():
+                card.setFixedWidth(self.card_width + 20)  # Учитываем extra_margin в GameCard
+
+        # Удаляем карточки, которых больше нет в списке
         layout_changed = False
-
-        # Remove cards for games no longer in the list
         for card_key in list(self.game_card_cache.keys()):
             if card_key not in current_games:
                 card = self.game_card_cache.pop(card_key)
@@ -663,11 +663,15 @@ class MainWindow(QMainWindow):
                     del self.pending_images[card_key]
                 layout_changed = True
 
-        # Add or update cards for current games
+        # Добавляем новые карточки и обновляем существующие
         for game_data in games_list:
             game_name = game_data[0]
-            if game_name not in self.game_card_cache:
-                # Create new card
+            game_key = (game_name, game_data[4])
+            search_text = self.searchEdit.text().strip().lower()
+            should_be_visible = search_text in game_name.lower() or not search_text
+
+            if game_key not in self.game_card_cache:
+                # Создаем новую карточку
                 card = GameCard(
                     *game_data,
                     select_callback=self.openGameDetailPage,
@@ -675,7 +679,7 @@ class MainWindow(QMainWindow):
                     card_width=self.card_width,
                     context_menu_manager=self.context_menu_manager
                 )
-                # Connect context menu signals
+                # Подключаем сигналы контекстного меню
                 card.editShortcutRequested.connect(self.context_menu_manager.edit_game_shortcut)
                 card.deleteGameRequested.connect(self.context_menu_manager.delete_game)
                 card.addToMenuRequested.connect(self.context_menu_manager.add_to_menu)
@@ -685,23 +689,25 @@ class MainWindow(QMainWindow):
                 card.addToSteamRequested.connect(self.context_menu_manager.add_to_steam)
                 card.removeFromSteamRequested.connect(self.context_menu_manager.remove_from_steam)
                 card.openGameFolderRequested.connect(self.context_menu_manager.open_game_folder)
-                self.game_card_cache[game_name] = card
+                self.game_card_cache[game_key] = card
                 self.gamesListLayout.addWidget(card)
                 layout_changed = True
-            elif self.card_width != getattr(self, '_last_card_width', None):
-                # Update size only if card_width has changed
-                card = self.game_card_cache[game_name]
-                card.setFixedWidth(self.card_width + 20)  # Account for extra_margin in GameCard
+            else:
+                # Обновляем видимость существующей карточки
+                card = self.game_card_cache[game_key]
+                card.setVisible(should_be_visible)
 
-        # Store the current card_width
+        # Сохраняем текущий card_width
         self._last_card_width = self.card_width
 
-        # Trigger lazy image loading for visible cards
-        self.loadVisibleImages()
-
-        # Update layout geometry only if the layout has changed
+        # Принудительно обновляем макет
         if layout_changed:
+            self.gamesListLayout.update()
             self.gamesListWidget.updateGeometry()
+            self.gamesListWidget.update()
+
+        # Загружаем изображения для видимых карточек
+        self.loadVisibleImages()
 
     def clearLayout(self, layout):
         """Удаляет все виджеты из layout."""
@@ -742,6 +748,7 @@ class MainWindow(QMainWindow):
             return
 
         dialog = AddGameDialog(self, self.theme)
+        dialog.setFocus(Qt.FocusReason.OtherFocusReason)
         self.current_add_game_dialog = dialog  # Сохраняем ссылку на диалог
 
         # Предзаполняем путь к .exe при drag-and-drop
@@ -778,7 +785,7 @@ class MainWindow(QMainWindow):
                         os.path.join(os.path.expanduser("~"), ".local", "share"))
                     custom_folder = os.path.join(
                         xdg_data_home,
-                        "PortProtonQT",
+                        "PortProtonQt",
                         "custom_data",
                         exe_name
                     )
@@ -920,7 +927,7 @@ class MainWindow(QMainWindow):
 
         # 3. Games display_filter
         self.filter_keys = ["all", "steam", "portproton", "favorites", "epic"]
-        self.filter_labels = [_("all"), "steam", "portproton", _("favorites"), "epic games store"]
+        self.filter_labels = [_("all"), "steam", "portproton", _("favorites")]
         self.gamesDisplayCombo = QComboBox()
         self.gamesDisplayCombo.addItems(self.filter_labels)
         self.gamesDisplayCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
@@ -983,6 +990,7 @@ class MainWindow(QMainWindow):
         self.autoFullscreenGamepadCheckBox = QCheckBox(_("Auto Fullscreen on Gamepad connected"))
         self.autoFullscreenGamepadCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
         self.autoFullscreenGamepadCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.autoFullscreenGamepadCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
         self.autoFullscreenGamepadTitle = QLabel(_("Auto Fullscreen on Gamepad connected:"))
         self.autoFullscreenGamepadTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         self.autoFullscreenGamepadTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -990,36 +998,16 @@ class MainWindow(QMainWindow):
         self.autoFullscreenGamepadCheckBox.setChecked(current_auto_fullscreen)
         formLayout.addRow(self.autoFullscreenGamepadTitle, self.autoFullscreenGamepadCheckBox)
 
-        # 7. Legendary Authentication
-        self.legendaryAuthButton = AutoSizeButton(
-            _("Open Legendary Login"),
-            icon=self.theme_manager.get_icon("login")
-        )
-        self.legendaryAuthButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
-        self.legendaryAuthButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.legendaryAuthButton.clicked.connect(self.openLegendaryLogin)
-        self.legendaryAuthTitle = QLabel(_("Legendary Authentication:"))
-        self.legendaryAuthTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
-        self.legendaryAuthTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        formLayout.addRow(self.legendaryAuthTitle, self.legendaryAuthButton)
-
-        self.legendaryCodeEdit = QLineEdit()
-        self.legendaryCodeEdit.setPlaceholderText(_("Enter Legendary Authorization Code"))
-        self.legendaryCodeEdit.setStyleSheet(self.theme.PROXY_INPUT_STYLE)
-        self.legendaryCodeEdit.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.legendaryCodeTitle = QLabel(_("Authorization Code:"))
-        self.legendaryCodeTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
-        self.legendaryCodeTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        formLayout.addRow(self.legendaryCodeTitle, self.legendaryCodeEdit)
-
-        self.submitCodeButton = AutoSizeButton(
-            _("Submit Code"),
-            icon=self.theme_manager.get_icon("save")
-        )
-        self.submitCodeButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
-        self.submitCodeButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.submitCodeButton.clicked.connect(self.submitLegendaryCode)
-        formLayout.addRow(QLabel(""), self.submitCodeButton)
+        # 7. Gamepad haptic feedback config
+        self.gamepadRumbleCheckBox = QCheckBox(_("Gamepad haptic feedback"))
+        self.gamepadRumbleCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.gamepadRumbleCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
+        self.gamepadRumbleTitle = QLabel(_("Gamepad haptic feedback:"))
+        self.gamepadRumbleTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.gamepadRumbleTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        current_rumble_state = read_rumble_config()
+        self.gamepadRumbleCheckBox.setChecked(current_rumble_state)
+        formLayout.addRow(self.gamepadRumbleTitle, self.gamepadRumbleCheckBox)
 
         layout.addLayout(formLayout)
 
@@ -1070,37 +1058,6 @@ class MainWindow(QMainWindow):
         except Exception as e:
             logger.error(f"Failed to open Legendary login page: {e}")
             self.statusBar().showMessage(_("Failed to open Legendary login page"), 3000)
-
-    def submitLegendaryCode(self):
-        """Submits the Legendary authorization code using the legendary CLI."""
-        auth_code = self.legendaryCodeEdit.text().strip()
-        if not auth_code:
-            QMessageBox.warning(self, _("Error"), _("Please enter an authorization code"))
-            return
-
-        try:
-            # Execute legendary auth command
-            result = subprocess.run(
-                [self.legendary_path, "auth", "--code", auth_code],
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            logger.info("Legendary authentication successful: %s", result.stdout)
-            self.statusBar().showMessage(_("Successfully authenticated with Legendary"), 3000)
-            self.legendaryCodeEdit.clear()
-            # Reload Epic Games Store games after successful authentication
-            self.games = self.loadGames()
-            self.updateGameGrid()
-        except subprocess.CalledProcessError as e:
-            logger.error("Legendary authentication failed: %s", e.stderr)
-            self.statusBar().showMessage(_("Legendary authentication failed: {0}").format(e.stderr), 5000)
-        except FileNotFoundError:
-            logger.error("Legendary executable not found at %s", self.legendary_path)
-            self.statusBar().showMessage(_("Legendary executable not found"), 5000)
-        except Exception as e:
-            logger.error("Unexpected error during Legendary authentication: %s", str(e))
-            self.statusBar().showMessage(_("Unexpected error during authentication"), 5000)
 
     def resetSettings(self):
         """Сбрасывает настройки и перезапускает приложение."""
@@ -1171,6 +1128,10 @@ class MainWindow(QMainWindow):
 
         auto_fullscreen_gamepad = self.autoFullscreenGamepadCheckBox.isChecked()
         save_auto_fullscreen_gamepad(auto_fullscreen_gamepad)
+
+        # Сохранение настройки виброотдачи геймпада
+        rumble_enabled = self.gamepadRumbleCheckBox.isChecked()
+        save_rumble_config(rumble_enabled)
 
         for card in self.game_card_cache.values():
             card.update_badge_visibility(filter_key)
@@ -1288,11 +1249,15 @@ class MainWindow(QMainWindow):
                     self.statusBar().showMessage(_("Theme '{0}' applied successfully").format(selected_theme), 3000)
                     xdg_data_home = os.getenv("XDG_DATA_HOME",
                                             os.path.join(os.path.expanduser("~"), ".local", "share"))
-                    state_file = os.path.join(xdg_data_home, "PortProtonQT", "state.txt")
+                    state_file = os.path.join(xdg_data_home, "PortProtonQt", "state.txt")
                     os.makedirs(os.path.dirname(state_file), exist_ok=True)
-                    with open(state_file, "w", encoding="utf-8") as f:
-                        f.write("theme_tab\n")
-                    QTimer.singleShot(500, lambda: self.restart_application())
+                    try:
+                        with open(state_file, "w", encoding="utf-8") as f:
+                            f.write("theme_tab\n")
+                        logger.info(f"State saved to {state_file}")
+                        QTimer.singleShot(500, lambda: self.restart_application())
+                    except Exception as e:
+                        logger.error(f"Failed to save state to {state_file}: {e}")
                 else:
                     self.statusBar().showMessage(_("Error applying theme '{0}'").format(selected_theme), 3000)
 
@@ -1310,14 +1275,28 @@ class MainWindow(QMainWindow):
 
     def restore_state(self):
         """Восстанавливает состояние приложения после перезапуска."""
-        xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
-        state_file = os.path.join(xdg_cache_home, "PortProtonQT", "state.txt")
+        xdg_data_home = os.getenv("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share"))
+        state_file = os.path.join(xdg_data_home, "PortProtonQt", "state.txt")
+        logger.info(f"Checking for state file: {state_file}")
         if os.path.exists(state_file):
-            with open(state_file, encoding="utf-8") as f:
-                state = f.read().strip()
-                if state == "theme_tab":
-                    self.switchTab(5)
-            os.remove(state_file)
+            try:
+                with open(state_file, encoding="utf-8") as f:
+                    state = f.read().strip()
+                    logger.info(f"State file contents: '{state}'")
+                    if state == "theme_tab":
+                        logger.info("Restoring to theme tab (index 5)")
+                        if self.stackedWidget.count() > 5:
+                            self.switchTab(5)
+                        else:
+                            logger.warning("Theme tab (index 5) not available yet")
+                    else:
+                        logger.warning(f"Unexpected state value: '{state}'")
+                os.remove(state_file)
+                logger.info(f"State file {state_file} removed")
+            except Exception as e:
+                logger.error(f"Failed to read or process state file {state_file}: {e}")
+        else:
+            logger.info(f"State file {state_file} does not exist")
 
     # ЛОГИКА ДЕТАЛЬНОЙ СТРАНИЦЫ ИГРЫ
     def getColorPalette_async(self, cover_path, num_colors=5, sample_step=10, callback=None):
@@ -1514,7 +1493,7 @@ class MainWindow(QMainWindow):
                 icon_size=16,
                 icon_space=3,
             )
-            anticheatLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
+            anticheatLabel.setStyleSheet(self.theme.get_anticheat_badge_style(anticheat_status))
             anticheatLabel.setFixedWidth(badge_width)
             anticheatLabel.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(f"https://areweanticheatyet.com/game/{name.lower().replace(' ', '-')}")))
             anticheat_visible = True
