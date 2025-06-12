@@ -33,7 +33,7 @@ TITLE_LABEL_STYLE = """
 # СТИЛЬ ОБЛАСТИ НАВИГАЦИИ (КНОПКИ ВКЛАДОК)
 NAV_WIDGET_STYLE = """
     QWidget {
-        background: none;
+        background: #282a33;
         border: 0px solid;
     }
 """
@@ -48,7 +48,7 @@ NAV_BUTTON_STYLE = """
         font-family: 'Play';
         font-size: 16px;
         text-transform: uppercase;
-        border: none;
+        border: #409EFF;
         border-radius: 15px;
     }
     NavLabel[checked = true] {
