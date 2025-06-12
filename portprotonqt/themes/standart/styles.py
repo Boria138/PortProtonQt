@@ -187,7 +187,7 @@ INSTALLED_TAB_TITLE_STYLE = "font-family: 'Play'; font-size: 24px; color: #fffff
 ACTION_BUTTON_STYLE = """
     QPushButton {
         background: #3f424d;
-        border: 1px solid rgba(255, 255, 255, 0.20);
+        border: 2px solid rgba(255, 255, 255, 0.01);
         border-radius: 10px;
         color: #ffffff;
         font-size: 16px;
@@ -196,6 +196,7 @@ ACTION_BUTTON_STYLE = """
     }
     QPushButton:hover {
         background: #282a33;
+        border: 2px solid #409EFF;
     }
     QPushButton:pressed {
         background: #282a33;
@@ -465,7 +466,7 @@ PARAMS_TITLE_STYLE = "color: #ffffff; font-family: 'Play'; font-size: 16px; padd
 PROXY_INPUT_STYLE = """
     QLineEdit {
         background: #282a33;
-        border: 0px solid rgba(255, 255, 255, 0.2);
+        border: 2px solid rgba(255, 255, 255, 0.01);
         border-radius: 10px;
         height: 34px;
         padding-left: 12px;
@@ -473,8 +474,13 @@ PROXY_INPUT_STYLE = """
         font-family: 'Play';
         font-size: 16px;
     }
+    QLineEdit:hover {
+        background: #3f424d;
+        border: 2px solid #409EFF;
+    }
     QLineEdit:focus {
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 2px solid #409EFF;
+        background-color: #404554;
     }
     QMenu {
         border: 1px solid rgba(255, 255, 255, 0.2);
@@ -494,7 +500,7 @@ PROXY_INPUT_STYLE = """
 SETTINGS_COMBO_STYLE = f"""
     QComboBox {{
         background: #3f424d;
-        border: 0px solid rgba(255, 255, 255, 0.2);
+        border: 2px solid rgba(255, 255, 255, 0.01);
         border-radius: 10px;
         height: 34px;
         padding-left: 12px;
@@ -506,14 +512,14 @@ SETTINGS_COMBO_STYLE = f"""
     }}
     QComboBox:on {{
         background: #373a43;
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 1px solid #409EFF;
         border-top-left-radius: 10px;
         border-top-right-radius: 10px;
         border-bottom-left-radius: 0px;
         border-bottom-right-radius: 0px;
     }}
     QComboBox:hover {{
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 2px solid #409EFF;
     }}
     /* Состояние фокуса */
     QComboBox:focus {{
@@ -543,7 +549,7 @@ SETTINGS_COMBO_STYLE = f"""
     /* Список при открытом комбобоксе */
     QComboBox QAbstractItemView {{
         outline: none;
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 1px solid #409EFF;
         border-top-style: none;
     }}
     QListView {{
@@ -575,16 +581,20 @@ SETTINGS_CHECKBOX_STYLE = """
     QCheckBox::indicator {
         width: 24px;
         height: 24px;
-        border: 1px solid rgba(255, 255, 255, 0.01);
+        border: 2px solid rgba(255, 255, 255, 0.01);
         border-radius: 10px;
         background: #282a33;
     }
     QCheckBox::indicator:hover {
         background: #3f424d;
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 2px solid #409EFF;
+    }
+    QCheckBox::indicator:focus {
+        border: 2px solid #409EFF;
     }
     QCheckBox::indicator:checked {
         image: url(./themes/standart/images/icons/check.svg);
+        border: 2px solid #409EFF;
     }
 """
 
