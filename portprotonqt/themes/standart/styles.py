@@ -53,14 +53,14 @@ NAV_BUTTON_STYLE = """
     }
     NavLabel[checked = true] {
         background: rgba(0,122,255,0);
-        color: #09bec8;
+        color: #409EFF;
         font-weight: normal;
         text-decoration: underline;
         border-radius: 15px;
     }
     NavLabel:hover {
         background: none;
-        color: #09bec8;
+        color: #409EFF;
     }
 """
 
