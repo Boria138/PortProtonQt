@@ -567,6 +567,26 @@ SETTINGS_COMBO_STYLE = f"""
     }}
 """
 
+SETTINGS_CHECKBOX_STYLE = """
+    QCheckBox {
+        height: 34px;
+    }
+
+    QCheckBox::indicator {
+        width: 24px;
+        height: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.01);
+        border-radius: 10px;
+        background: #282a33;
+    }
+    QCheckBox::indicator:hover {
+        background: #3f424d;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    QCheckBox::indicator:checked {
+        image: url(./themes/standart/images/icons/check.svg);
+    }
+"""
 
 # ФУНКЦИЯ ДЛЯ ДИНАМИЧЕСКОГО ГРАДИЕНТА (ДЕТАЛИ ИГР)
 # Функции из этой темы срабатывает всегда вне зависимости от выбранной темы, функции из других тем работают только в этих темах

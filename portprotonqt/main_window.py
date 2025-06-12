@@ -970,7 +970,7 @@ class MainWindow(QMainWindow):
 
         # 5. Fullscreen setting for application
         self.fullscreenCheckBox = QCheckBox(_("Launch Application in Fullscreen"))
-        #self.fullscreenCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
+        self.fullscreenCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
         self.fullscreenCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.fullscreenTitle = QLabel(_("Application Fullscreen Mode:"))
         self.fullscreenTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
@@ -981,6 +981,7 @@ class MainWindow(QMainWindow):
 
         # 6. Automatic fullscreen on gamepad connection
         self.autoFullscreenGamepadCheckBox = QCheckBox(_("Auto Fullscreen on Gamepad connected"))
+        self.autoFullscreenGamepadCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
         self.autoFullscreenGamepadCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.autoFullscreenGamepadTitle = QLabel(_("Auto Fullscreen on Gamepad connected:"))
         self.autoFullscreenGamepadTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
