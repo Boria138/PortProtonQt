@@ -199,7 +199,7 @@ class GameCard(QFrame):
                 icon_size=16,
                 icon_space=3,
             )
-            self.anticheatLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
+            self.anticheatLabel.setStyleSheet(self.theme.get_anticheat_badge_style(anticheat_status))
             self.anticheatLabel.setFixedWidth(int(card_width * 2/3))
             anticheat_visible = True
         else:

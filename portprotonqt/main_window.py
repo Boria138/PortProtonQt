@@ -1492,7 +1492,7 @@ class MainWindow(QMainWindow):
                 icon_size=16,
                 icon_space=3,
             )
-            anticheatLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
+            anticheatLabel.setStyleSheet(self.theme.get_anticheat_badge_style(anticheat_status))
             anticheatLabel.setFixedWidth(badge_width)
             anticheatLabel.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(f"https://areweanticheatyet.com/game/{name.lower().replace(' ', '-')}")))
             anticheat_visible = True

@@ -478,6 +478,27 @@ def get_protondb_badge_style(tier):
         font-weight: bold;
     """
 
+# СТИЛИ БЕЙДЖА WEANTICHEATYET
+def get_anticheat_badge_style(status):
+    status = status.lower()
+    status_colors = {
+        "supported": {"background": "rgba(102, 168, 15, 0.7)", "color": "black"},
+        "running": {"background": "rgba(25, 113, 194, 0.7)", "color": "black"},
+        "planned": {"background": "rgba(156, 54, 181, 0.7)", "color": "black"},
+        "broken": {"background": "rgba(232, 89, 12, 0.7)", "color": "black"},
+        "denied": {"background": "rgba(224, 49, 49, 0.7)", "color": "black"}
+    }
+    colors = status_colors.get(status, {"background": "rgba(0, 0, 0, 0.5)", "color": "white"})
+    return f"""
+        qproperty-alignment: AlignCenter;
+        background-color: {colors["background"]};
+        color: {colors["color"]};
+        font-size: 16px;
+        border-radius: 5px;
+        font-family: 'Play';
+        font-weight: bold;
+    """
+
 # СТИЛИ БЕЙДЖА STEAM
 STEAM_BADGE_STYLE= """
     qproperty-alignment: AlignCenter;
