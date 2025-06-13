@@ -19,14 +19,16 @@ class SystemOverlay(QDialog):
         self.setModal(True)
         self.setFixedSize(400, 300)
         self.theme_manager = ThemeManager()
-        # self.setWindowFlags(Qt.FramelessWindowHint)
+        self.setStyleSheet(self.theme.OVERLAY_WINDOW_STYLE)
+
+        # Убираем рамку окна
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(10)
 
         # Reboot button
-        # reboot_button = QPushButton(_("Reboot"))
         reboot_button = AutoSizeButton(
             _("Reboot"),
             icon=self.theme_manager.get_icon("reboot")
@@ -37,7 +39,6 @@ class SystemOverlay(QDialog):
         layout.addWidget(reboot_button)
 
         # Shutdown button
-        # shutdown_button = QPushButton(_("Shutdown"))
         shutdown_button = AutoSizeButton(
             _("Shutdown"),
             icon=self.theme_manager.get_icon("shutdown")
@@ -48,7 +49,6 @@ class SystemOverlay(QDialog):
         layout.addWidget(shutdown_button)
 
         # Suspend button
-        # suspend_button = QPushButton(_("Suspend"))
         suspend_button = AutoSizeButton(
             _("Suspend"),
             icon=self.theme_manager.get_icon("suspend")
@@ -59,7 +59,6 @@ class SystemOverlay(QDialog):
         layout.addWidget(suspend_button)
 
         # Exit application button
-        # exit_button = QPushButton(_("Exit Application"))
         exit_button = AutoSizeButton(
             _("Exit Application"),
             icon=self.theme_manager.get_icon("exit")
@@ -70,7 +69,6 @@ class SystemOverlay(QDialog):
         layout.addWidget(exit_button)
 
         # Return to Desktop button
-        # desktop_button = QPushButton(_("Return to Desktop"))
         desktop_button = AutoSizeButton(
             _("Return to Desktop"),
             icon=self.theme_manager.get_icon("desktop")
@@ -86,7 +84,6 @@ class SystemOverlay(QDialog):
         layout.addWidget(desktop_button)
 
         # Cancel button
-        # cancel_button = QPushButton(_("Cancel"))
         cancel_button = AutoSizeButton(
             _("Cancel"),
             icon=self.theme_manager.get_icon("cancel")
@@ -96,8 +93,20 @@ class SystemOverlay(QDialog):
         cancel_button.clicked.connect(self.reject)
         layout.addWidget(cancel_button)
 
-        # Set focus to the first button
-        reboot_button.setFocus()
+    def showEvent(self, event):
+        """Переопределяем showEvent для центрирования окна и установки фокуса"""
+        super().showEvent(event)
+
+        # Центрируем окно относительно родителя или экрана
+        if self.parent():
+            self.move(self.parent().geometry().center() - self.rect().center())
+        else:
+            screen_geometry = QApplication.primaryScreen().availableGeometry()
+            self.move(screen_geometry.center() - self.rect().center())
+
+        # Устанавливаем фокус на первый элемент
+        self.setFocus()
+        self.findChild(QPushButton).setFocus()
 
     def reboot(self):
         try:

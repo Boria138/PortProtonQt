@@ -248,7 +248,8 @@ ACTION_BUTTON_STYLE = """
     }
 """
 
-# СТИЛЬ КНОПОК ОВЕРЛЕЯ
+# СТИЛЬ ОВЕРЛЕЯ
+OVERLAY_WINDOW_STYLE = "background: #282a33;"
 OVERLAY_BUTTON_STYLE = """
     QPushButton {
         background: #3f424d;
