@@ -98,7 +98,7 @@ class AddGameDialog(QDialog):
 
         # Game name
         self.nameEdit = QLineEdit(self)
-        self.nameEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE + " QLineEdit { color: #ffffff; font-size: 14px; }")
+        self.nameEdit.setStyleSheet(self.theme.ADDGAME_INPUT_STYLE)
         if game_name:
             self.nameEdit.setText(game_name)
         name_label = QLabel(_("Game Name:"))
@@ -107,7 +107,7 @@ class AddGameDialog(QDialog):
 
         # Exe path
         self.exeEdit = QLineEdit(self)
-        self.exeEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE + " QLineEdit { color: #ffffff; font-size: 14px; }")
+        self.exeEdit.setStyleSheet(self.theme.ADDGAME_INPUT_STYLE)
         if exe_path:
             self.exeEdit.setText(exe_path)
         exeBrowseButton = QPushButton(_("Browse..."), self)
@@ -123,7 +123,7 @@ class AddGameDialog(QDialog):
 
         # Cover path
         self.coverEdit = QLineEdit(self)
-        self.coverEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE + " QLineEdit { color: #ffffff; font-size: 14px; }")
+        self.coverEdit.setStyleSheet(self.theme.ADDGAME_INPUT_STYLE)
         if cover_path:
             self.coverEdit.setText(cover_path)
         coverBrowseButton = QPushButton(_("Browse..."), self)

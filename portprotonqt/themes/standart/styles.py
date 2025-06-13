@@ -419,6 +419,40 @@ DIALOG_BROWSE_BUTTON_STYLE = """
     }
 """
 
+ADDGAME_INPUT_STYLE = """
+    QLineEdit {
+        background: #3f424d;
+        border: 2px solid rgba(255, 255, 255, 0.01);
+        border-radius: 10px;
+        height: 34px;
+        padding-left: 12px;
+        color: #ffffff;
+        font-family: 'Play';
+        font-size: 16px;
+    }
+    QLineEdit:hover {
+        background: #3f424d;
+        border: 2px solid #409EFF;
+    }
+    QLineEdit:focus {
+        border: 2px solid #409EFF;
+        background-color: #404554;
+    }
+    QMenu {
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 5px 10px;
+        background: #32343d;
+    }
+    QMenu::item {
+        padding: 0px 10px;
+        border: 10px solid transparent; /* reserve space for selection border */
+    }
+    QMenu::item:selected {
+        background: #3f424d;
+        border-radius: 10px;
+    }
+"""
+
 # СТИЛЬ КАРТОЧКИ ИГРЫ (GAMECARD)
 GAME_CARD_WINDOW_STYLE = """
     QFrame {
