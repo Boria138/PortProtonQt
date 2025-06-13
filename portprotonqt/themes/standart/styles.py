@@ -236,7 +236,7 @@ ACTION_BUTTON_STYLE = """
         padding: 8px 16px;
     }
     QPushButton:hover {
-        background: #282a33;
+        background: #409EFF;
         border: 2px solid #409EFF;
     }
     QPushButton:pressed {
