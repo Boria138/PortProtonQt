@@ -106,8 +106,6 @@ class InputManager(QObject):
     @Slot(bool)
     def handle_fullscreen_slot(self, enable: bool) -> None:
         try:
-            if read_fullscreen_config():
-                return
             window = self._parent
             if not isinstance(window, QWidget):
                 return
@@ -757,8 +755,6 @@ class InputManager(QObject):
 
         # Toggle fullscreen with F11
         if key == Qt.Key.Key_F11:
-            if read_fullscreen_config():
-                return True
             self.toggle_fullscreen.emit(not self._is_fullscreen)
             return True
 
