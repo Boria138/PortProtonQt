@@ -523,240 +523,133 @@ class InputManager(QObject):
         if not app:
             return super().eventFilter(obj, event)
 
-        # Handle only key press events
-        if not (isinstance(event, QKeyEvent) and event.type() == QEvent.Type.KeyPress):
+        # Handle key press and release events
+        if not isinstance(event, QKeyEvent):
             return super().eventFilter(obj, event)
 
         key = event.key()
         modifiers = event.modifiers()
         focused = QApplication.focusWidget()
         popup = QApplication.activePopupWidget()
-
-        # Open system overlay with Insert
-        if key == Qt.Key.Key_Insert:
-            if not popup and not isinstance(QApplication.activeWindow(), QDialog):
-                self._parent.openSystemOverlay()
-                return True
-
-        # Close application with Ctrl+Q
-        if key == Qt.Key.Key_Q and modifiers & Qt.KeyboardModifier.ControlModifier:
-            app.quit()
-            return True
-
-        # Закрытие AddGameDialog на Esc
-        if key == Qt.Key.Key_Escape and isinstance(popup, QDialog):
-            popup.reject()  # Закрываем диалог
-            return True
-
-        # Skip navigation keys if a popup is open
-        if popup:
-            return False
-
-        # FullscreenDialog navigation
         active_win = QApplication.activeWindow()
-        if isinstance(active_win, FullscreenDialog):
-            if key == Qt.Key.Key_Right:
-                active_win.show_next()
-                return True
-            if key == Qt.Key.Key_Left:
-                active_win.show_prev()
-                return True
-            if key in (Qt.Key.Key_Escape, Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_Backspace):
-                active_win.close()
-                return True
 
-        # Launch/stop game on detail page
-        if self._parent.currentDetailPage and key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
-            if self._parent.current_exec_line:
-                self._parent.toggleGame(self._parent.current_exec_line, None)
-                return True
-
-        # Context menu for GameCard
-        if isinstance(focused, GameCard):
-            if key == Qt.Key.Key_F10 and Qt.KeyboardModifier.ShiftModifier:
-                pos = QPoint(focused.width() // 2, focused.height() // 2)
-                focused._show_context_menu(pos)
-                return True
-
-        # Handle Up/Down keys for non-GameCard tabs
-        if key in (Qt.Key.Key_Up, Qt.Key.Key_Down) and not isinstance(focused, GameCard):
-            page = self._parent.stackedWidget.currentWidget()
-            if key == Qt.Key.Key_Down:
-                if isinstance(focused, NavLabel):
-                    focusables = page.findChildren(QWidget, options=Qt.FindChildOption.FindChildrenRecursively)
-                    focusables = [w for w in focusables if w.focusPolicy() & Qt.FocusPolicy.StrongFocus]
-                    if focusables:
-                        focusables[0].setFocus()
-                        return True
-                elif focused:
-                    focused.focusNextChild()
-                    return True
-            elif key == Qt.Key.Key_Up and focused:
-                focused.focusPreviousChild()
-                return True
-
-        # Tab switching with Left/Right keys (non-GameCard focus or no focus)
-        idx = self._parent.stackedWidget.currentIndex()
-        total = len(self._parent.tabButtons)
-        if key == Qt.Key.Key_Left and (not isinstance(focused, GameCard) or focused is None):
-            new = (idx - 1) % total
-            self._parent.switchTab(new)
-            self._parent.tabButtons[new].setFocus()
-            return True
-        if key == Qt.Key.Key_Right and (not isinstance(focused, GameCard) or focused is None):
-            new = (idx + 1) % total
-            self._parent.switchTab(new)
-            self._parent.tabButtons[new].setFocus()
-            return True
-
-        # Library tab navigation
-        if self._parent.stackedWidget.currentIndex() == 0:
-            game_cards = self._parent.gamesListWidget.findChildren(GameCard)
-            scroll_area = self._parent.gamesListWidget.parentWidget()
-            while scroll_area and not isinstance(scroll_area, QScrollArea):
-                scroll_area = scroll_area.parentWidget()
-
-            if key in (Qt.Key.Key_Left, Qt.Key.Key_Right, Qt.Key.Key_Up, Qt.Key.Key_Down):
-                if not game_cards:
+        # Handle key press events
+        if event.type() == QEvent.Type.KeyPress:
+            # Open system overlay with Insert
+            if key == Qt.Key.Key_Insert:
+                if not popup and not isinstance(active_win, QDialog):
+                    self._parent.openSystemOverlay()
                     return True
 
-                # If no focused widget or not a GameCard, focus the first card
-                if not isinstance(focused, GameCard) or focused not in game_cards:
-                    game_cards[0].setFocus()
-                    if scroll_area:
-                        scroll_area.ensureWidgetVisible(game_cards[0], 50, 50)
+            # Close application with Ctrl+Q
+            if key == Qt.Key.Key_Q and modifiers & Qt.KeyboardModifier.ControlModifier:
+                app.quit()
+                return True
+
+            # Close AddGameDialog with Escape
+            if key == Qt.Key.Key_Escape and isinstance(popup, QDialog):
+                popup.reject()
+                return True
+
+            # FullscreenDialog navigation
+            if isinstance(active_win, FullscreenDialog):
+                if key in (Qt.Key.Key_Escape, Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_Backspace):
+                    active_win.close()
+                    return True
+                elif key in (Qt.Key.Key_Left, Qt.Key.Key_Right):
+                    # Navigate screenshots in FullscreenDialog
+                    if key == Qt.Key.Key_Left:
+                        active_win.show_prev()
+                    elif key == Qt.Key.Key_Right:
+                        active_win.show_next()
+                    return True  # Consume event to prevent tab switching
+
+            # Handle tab switching with Left/Right arrow keys when not in GameCard focus
+            if key in (Qt.Key.Key_Left, Qt.Key.Key_Right) and (not isinstance(focused, GameCard) or focused is None):
+                idx = self._parent.stackedWidget.currentIndex()
+                total = len(self._parent.tabButtons)
+                if key == Qt.Key.Key_Left:
+                    new_idx = (idx - 1) % total
+                    self._parent.switchTab(new_idx)
+                    self._parent.tabButtons[new_idx].setFocus(Qt.FocusReason.OtherFocusReason)
+                    return True
+                elif key == Qt.Key.Key_Right:
+                    new_idx = (idx + 1) % total
+                    self._parent.switchTab(new_idx)
+                    self._parent.tabButtons[new_idx].setFocus(Qt.FocusReason.OtherFocusReason)
                     return True
 
-                # Group cards by rows based on y-coordinate
-                rows = {}
-                for card in game_cards:
-                    y = card.pos().y()
-                    if y not in rows:
-                        rows[y] = []
-                    rows[y].append(card)
-                # Sort cards in each row by x-coordinate
-                for y in rows:
-                    rows[y].sort(key=lambda c: c.pos().x())
-                # Sort rows by y-coordinate
-                sorted_rows = sorted(rows.items(), key=lambda x: x[0])
-
-                # Find current row and column
-                current_y = focused.pos().y()
-                current_row_idx = next(i for i, (y, _) in enumerate(sorted_rows) if y == current_y)
-                current_row = sorted_rows[current_row_idx][1]
-                current_col_idx = current_row.index(focused)
-
-                if key == Qt.Key.Key_Right:
-                    next_col_idx = current_col_idx + 1
-                    if next_col_idx < len(current_row):
-                        next_card = current_row[next_col_idx]
-                        next_card.setFocus()
-                        if scroll_area:
-                            scroll_area.ensureWidgetVisible(next_card, 50, 50)
-                        return True
-                    else:
-                        # Move to the first card of the next row if available
-                        if current_row_idx < len(sorted_rows) - 1:
-                            next_row = sorted_rows[current_row_idx + 1][1]
-                            next_card = next_row[0] if next_row else None
-                            if next_card:
-                                next_card.setFocus()
-                                if scroll_area:
-                                    scroll_area.ensureWidgetVisible(next_card, 50, 50)
-                            return True
-                elif key == Qt.Key.Key_Left:
-                    next_col_idx = current_col_idx - 1
-                    if next_col_idx >= 0:
-                        next_card = current_row[next_col_idx]
-                        next_card.setFocus()
-                        if scroll_area:
-                            scroll_area.ensureWidgetVisible(next_card, 50, 50)
-                        return True
-                    else:
-                        # Move to the last card of the previous row if available
-                        if current_row_idx > 0:
-                            prev_row = sorted_rows[current_row_idx - 1][1]
-                            next_card = prev_row[-1] if prev_row else None
-                            if next_card:
-                                next_card.setFocus()
-                                if scroll_area:
-                                    scroll_area.ensureWidgetVisible(next_card, 50, 50)
-                            return True
+            # Map arrow keys to D-pad press events for other contexts
+            if key in (Qt.Key.Key_Up, Qt.Key.Key_Down, Qt.Key.Key_Left, Qt.Key.Key_Right):
+                now = time.time()
+                dpad_code = None
+                dpad_value = 0
+                if key == Qt.Key.Key_Up:
+                    dpad_code = ecodes.ABS_HAT0Y
+                    dpad_value = -1
                 elif key == Qt.Key.Key_Down:
-                    next_row_idx = current_row_idx + 1
-                    if next_row_idx < len(sorted_rows):
-                        next_row = sorted_rows[next_row_idx][1]
-                        target_x = focused.pos().x()
-                        next_card = min(
-                            next_row,
-                            key=lambda c: abs(c.pos().x() - target_x),
-                            default=None
-                        )
-                        if next_card:
-                            next_card.setFocus()
-                            if scroll_area:
-                                scroll_area.ensureWidgetVisible(next_card, 50, 50)
-                        return True
-                elif key == Qt.Key.Key_Up:
-                    next_row_idx = current_row_idx - 1
-                    if next_row_idx >= 0:
-                        next_row = sorted_rows[next_row_idx][1]
-                        target_x = focused.pos().x()
-                        next_card = min(
-                            next_row,
-                            key=lambda c: abs(c.pos().x() - target_x),
-                            default=None
-                        )
-                        if next_card:
-                            next_card.setFocus()
-                            if scroll_area:
-                                scroll_area.ensureWidgetVisible(next_card, 50, 50)
-                        return True
-                    elif current_row_idx == 0:
-                        self._parent.tabButtons[0].setFocus()
-                        return True
+                    dpad_code = ecodes.ABS_HAT0Y
+                    dpad_value = 1
+                elif key == Qt.Key.Key_Left:
+                    dpad_code = ecodes.ABS_HAT0X
+                    dpad_value = -1
+                elif key == Qt.Key.Key_Right:
+                    dpad_code = ecodes.ABS_HAT0X
+                    dpad_value = 1
 
-        # Navigate down into tab content
-        if key == Qt.Key.Key_Down:
-            if isinstance(focused, NavLabel):
-                page = self._parent.stackedWidget.currentWidget()
-                focusables = page.findChildren(QWidget, options=Qt.FindChildOption.FindChildrenRecursively)
-                focusables = [w for w in focusables if w.focusPolicy() & Qt.FocusPolicy.StrongFocus]
-                if focusables:
-                    focusables[0].setFocus()
+                if dpad_code is not None:
+                    self.dpad_moved.emit(dpad_code, dpad_value, now)
                     return True
-            elif focused:
-                focused.focusNextChild()
+
+            # Launch/stop game on detail page
+            if self._parent.currentDetailPage and key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+                if self._parent.current_exec_line:
+                    self._parent.toggleGame(self._parent.current_exec_line, None)
+                    return True
+
+            # Context menu for GameCard
+            if isinstance(focused, GameCard):
+                if key == Qt.Key.Key_F10 and modifiers & Qt.KeyboardModifier.ShiftModifier:
+                    pos = QPoint(focused.width() // 2, focused.height() // 2)
+                    focused._show_context_menu(pos)
+                    return True
+
+            # General actions: Activate, Back, Add
+            if key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+                self._parent.activateFocusedWidget()
                 return True
-        # Navigate up through tab content
-        if key == Qt.Key.Key_Up:
-            if isinstance(focused, NavLabel):
+            elif key in (Qt.Key.Key_Escape, Qt.Key.Key_Backspace):
+                if isinstance(focused, QLineEdit):
+                    return False
+                self._parent.goBackDetailPage(self._parent.currentDetailPage)
                 return True
-            if focused is not None:
-                focused.focusPreviousChild()
+            elif key == Qt.Key.Key_E:
+                if isinstance(focused, QLineEdit):
+                    return False
+                # Only open AddGameDialog if in library tab (index 0)
+                if self._parent.stackedWidget.currentIndex() == 0:
+                    self._parent.openAddGameDialog()
+                    return True
+
+            # Toggle fullscreen with F11
+            if key == Qt.Key.Key_F11:
+                self.toggle_fullscreen.emit(not self._is_fullscreen)
                 return True
 
-        # General actions: Activate, Back, Add
-        if key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
-            self._parent.activateFocusedWidget()
-            return True
-        elif key in (Qt.Key.Key_Escape, Qt.Key.Key_Backspace):
-            if isinstance(focused, QLineEdit):
-                return False
-            self._parent.goBackDetailPage(self._parent.currentDetailPage)
-            return True
-        elif key == Qt.Key.Key_E:
-            if isinstance(focused, QLineEdit):
-                return False
-            # Only open AddGameDialog if in library tab (index 0)
-            if self._parent.stackedWidget.currentIndex() == 0:
-                self._parent.openAddGameDialog()
-                return True
+        # Handle key release events for arrow keys
+        elif event.type() == QEvent.Type.KeyRelease:
+            if key in (Qt.Key.Key_Up, Qt.Key.Key_Down, Qt.Key.Key_Left, Qt.Key.Key_Right):
+                now = time.time()
+                dpad_code = None
+                if key in (Qt.Key.Key_Up, Qt.Key.Key_Down):
+                    dpad_code = ecodes.ABS_HAT0Y
+                elif key in (Qt.Key.Key_Left, Qt.Key.Key_Right):
+                    dpad_code = ecodes.ABS_HAT0X
 
-        # Toggle fullscreen with F11
-        if key == Qt.Key.Key_F11:
-            self.toggle_fullscreen.emit(not self._is_fullscreen)
-            return True
+                if dpad_code is not None:
+                    # Emit release event with value 0 to stop continuous movement
+                    self.dpad_moved.emit(dpad_code, 0, now)
+                    return True
 
         return super().eventFilter(obj, event)
 
