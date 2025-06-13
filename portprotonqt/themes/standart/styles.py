@@ -10,11 +10,7 @@ pixmapsScaledSize = 60, 60
 
 CONTEXT_MENU_STYLE = """
     QMenu {
-        background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-            stop:0 rgba(40, 40, 40, 0.95),
-            stop:1 rgba(25, 25, 25, 0.95));
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        border-radius: 12px;
+        background: #282a33;;
         color: #ffffff;
         font-family: 'Play';
         font-size: 16px;
@@ -27,12 +23,12 @@ CONTEXT_MENU_STYLE = """
         color: #ffffff;
     }
     QMenu::item:selected {
-        background: #282a33;
-        color: #09bec8;
+        background: #409EFF;
+        color: #ffffff;
     }
     QMenu::item:hover {
-        background: #282a33;
-        color: #09bec8;
+        background: #409EFF;
+        color: #ffffff;
     }
     QMenu::item:focus {
         background: #409EFF;
@@ -244,7 +240,7 @@ ACTION_BUTTON_STYLE = """
     }
     QPushButton:focus {
         border: 2px solid #409EFF;
-        background-color: #404554;
+        background-color: #409EFF;
     }
 """
 
