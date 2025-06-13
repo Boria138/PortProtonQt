@@ -1,6 +1,5 @@
 import subprocess
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QPushButton, QMessageBox
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QDialog, QVBoxLayout, QPushButton, QMessageBox, QApplication, QWidget
 from PySide6.QtCore import Qt
 from portprotonqt.logger import get_logger
 import os
@@ -94,19 +93,21 @@ class SystemOverlay(QDialog):
         layout.addWidget(cancel_button)
 
     def showEvent(self, event):
-        """Переопределяем showEvent для центрирования окна и установки фокуса"""
+        """Override showEvent to center window and set focus."""
         super().showEvent(event)
 
-        # Центрируем окно относительно родителя или экрана
-        if self.parent():
-            self.move(self.parent().geometry().center() - self.rect().center())
+        # Center window relative to parent or screen
+        parent = self.parent()
+        if isinstance(parent, QWidget) and parent.isVisible():
+            self.move(parent.geometry().center() - self.rect().center())
         else:
             screen_geometry = QApplication.primaryScreen().availableGeometry()
             self.move(screen_geometry.center() - self.rect().center())
 
-        # Устанавливаем фокус на первый элемент
-        self.setFocus()
-        self.findChild(QPushButton).setFocus()
+        # Set focus on first button
+        button = self.findChild(QPushButton)
+        if button is not None:
+            button.setFocus()
 
     def reboot(self):
         try:
