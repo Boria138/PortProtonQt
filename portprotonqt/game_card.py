@@ -171,7 +171,7 @@ class GameCard(QFrame):
         self.steamLabel.setVisible(self.steam_visible)
 
         # Epic Games Store бейдж
-        egs_icon = self.theme_manager.get_icon("steam")
+        egs_icon = self.theme_manager.get_icon("epic_games")
         self.egsLabel = ClickableLabel(
             "Epic Games",
             icon=egs_icon,

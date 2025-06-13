@@ -1600,7 +1600,7 @@ class MainWindow(QMainWindow):
         steamLabel.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(f"https://steamcommunity.com/app/{appid}")))
 
         # Epic Games Store бейдж
-        egs_icon = self.theme_manager.get_icon("steam")
+        egs_icon = self.theme_manager.get_icon("epic_games")
         egsLabel = ClickableLabel(
             "Epic Games",
             icon=egs_icon,
