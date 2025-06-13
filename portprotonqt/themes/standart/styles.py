@@ -641,11 +641,12 @@ SETTINGS_COMBO_STYLE = f"""
     }}
     QComboBox:hover {{
         border: 2px solid #409EFF;
+        background: #409EFF;
     }}
     /* Состояние фокуса */
     QComboBox:focus {{
         border: 2px solid #409EFF;
-        background-color: #404554;
+        background-color: #409EFF;
     }}
     QComboBox::drop-down {{
         subcontrol-origin: padding;
