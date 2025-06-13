@@ -322,9 +322,15 @@ class GameCard(QFrame):
     @staticmethod
     def getAntiCheatIconFilename(status: str) -> str:
         status = status.lower()
-        if status in ("supported", "running"):
+        if status in ("supported"):
             return "ac_supported"
-        elif status in ("denied", "planned", "broken"):
+        elif status in ("running"):
+            return "ac_running"
+        elif status in ("planned"):
+            return "ac_planned"
+        elif status in ("denied"):
+            return "ac_denied"
+        elif status in ("broken"):
             return "ac_broken"
         return ""
 
