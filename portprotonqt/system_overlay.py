@@ -5,6 +5,8 @@ from PySide6.QtCore import Qt
 from portprotonqt.logger import get_logger
 import os
 from portprotonqt.localization import _
+from portprotonqt.custom_widgets import AutoSizeButton
+from portprotonqt.theme_manager import ThemeManager
 
 logger = get_logger(__name__)
 
@@ -16,41 +18,63 @@ class SystemOverlay(QDialog):
         self.setWindowTitle(_("System Overlay"))
         self.setModal(True)
         self.setFixedSize(400, 300)
+        self.theme_manager = ThemeManager()
+        # self.setWindowFlags(Qt.FramelessWindowHint)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(10)
 
         # Reboot button
-        reboot_button = QPushButton(_("Reboot"))
+        # reboot_button = QPushButton(_("Reboot"))
+        reboot_button = AutoSizeButton(
+            _("Reboot"),
+            icon=self.theme_manager.get_icon("reboot")
+        )
         reboot_button.setStyleSheet(self.theme.OVERLAY_BUTTON_STYLE)
         reboot_button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         reboot_button.clicked.connect(self.reboot)
         layout.addWidget(reboot_button)
 
         # Shutdown button
-        shutdown_button = QPushButton(_("Shutdown"))
+        # shutdown_button = QPushButton(_("Shutdown"))
+        shutdown_button = AutoSizeButton(
+            _("Shutdown"),
+            icon=self.theme_manager.get_icon("shutdown")
+        )
         shutdown_button.setStyleSheet(self.theme.OVERLAY_BUTTON_STYLE)
         shutdown_button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         shutdown_button.clicked.connect(self.shutdown)
         layout.addWidget(shutdown_button)
 
         # Suspend button
-        suspend_button = QPushButton(_("Suspend"))
+        # suspend_button = QPushButton(_("Suspend"))
+        suspend_button = AutoSizeButton(
+            _("Suspend"),
+            icon=self.theme_manager.get_icon("suspend")
+        )
         suspend_button.setStyleSheet(self.theme.OVERLAY_BUTTON_STYLE)
         suspend_button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         suspend_button.clicked.connect(self.suspend)
         layout.addWidget(suspend_button)
 
         # Exit application button
-        exit_button = QPushButton(_("Exit Application"))
+        # exit_button = QPushButton(_("Exit Application"))
+        exit_button = AutoSizeButton(
+            _("Exit Application"),
+            icon=self.theme_manager.get_icon("exit")
+        )
         exit_button.setStyleSheet(self.theme.OVERLAY_BUTTON_STYLE)
         exit_button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         exit_button.clicked.connect(self.exit_application)
         layout.addWidget(exit_button)
 
         # Return to Desktop button
-        desktop_button = QPushButton(_("Return to Desktop"))
+        # desktop_button = QPushButton(_("Return to Desktop"))
+        desktop_button = AutoSizeButton(
+            _("Return to Desktop"),
+            icon=self.theme_manager.get_icon("desktop")
+        )
         desktop_button.setStyleSheet(self.theme.OVERLAY_BUTTON_STYLE)
         desktop_button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         desktop_button.clicked.connect(self.return_to_desktop)
@@ -62,7 +86,11 @@ class SystemOverlay(QDialog):
         layout.addWidget(desktop_button)
 
         # Cancel button
-        cancel_button = QPushButton(_("Cancel"))
+        # cancel_button = QPushButton(_("Cancel"))
+        cancel_button = AutoSizeButton(
+            _("Cancel"),
+            icon=self.theme_manager.get_icon("cancel")
+        )
         cancel_button.setStyleSheet(self.theme.OVERLAY_BUTTON_STYLE)
         cancel_button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         cancel_button.clicked.connect(self.reject)
