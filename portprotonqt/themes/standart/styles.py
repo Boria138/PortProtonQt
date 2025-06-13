@@ -252,21 +252,23 @@ ACTION_BUTTON_STYLE = """
 OVERLAY_BUTTON_STYLE = """
     QPushButton {
         background: #3f424d;
-        border: 1px solid rgba(255, 255, 255, 0.20);
+        border: 2px solid rgba(255, 255, 255, 0.01);
         border-radius: 10px;
         color: #ffffff;
         font-size: 16px;
         font-family: 'Play';
+        padding: 8px 16px;
     }
     QPushButton:hover {
-        background: #282a33;
+        background: #409EFF;
+        border: 2px solid #409EFF;
     }
     QPushButton:pressed {
         background: #282a33;
     }
     QPushButton:focus {
         border: 2px solid #409EFF;
-        background-color: #404554;
+        background-color: #409EFF;
     }
 """
 
