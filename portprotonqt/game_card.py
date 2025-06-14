@@ -43,6 +43,7 @@ class GameCard(QFrame):
         self.game_source = game_source
         self.last_launch_ts = last_launch_ts
         self.playtime_seconds = playtime_seconds
+        self.card_width = card_width
 
         self.select_callback = select_callback
         self.context_menu_manager = context_menu_manager
@@ -53,6 +54,10 @@ class GameCard(QFrame):
 
         self.display_filter = read_display_filter()
         self.current_theme_name = read_theme_from_config()
+
+        self.steam_visible = (str(game_source).lower() == "steam" and self.display_filter in ("all", "favorites"))
+        self.egs_visible = (str(game_source).lower() == "epic" and self.display_filter in ("all", "favorites"))
+        self.portproton_visible = (str(game_source).lower() == "portproton" and self.display_filter in ("all", "favorites"))
 
         # Дополнительное пространство для анимации
         extra_margin = 20
@@ -121,9 +126,11 @@ class GameCard(QFrame):
         self.update_favorite_icon()
         self.favoriteLabel.raise_()
 
-        steam_visible = (str(game_source).lower() == "steam" and self.display_filter in ("all", "favorites"))
-        egs_visible = (str(game_source).lower() == "epic" and self.display_filter in ("all", "favorites"))
-        portproton_visible = (str(game_source).lower() == "portproton" and self.display_filter in ("all", "favorites"))
+        # Определяем общие параметры для бейджей
+        badge_width = int(card_width * 2/3)
+        icon_size = int(card_width * 0.06)  # 6% от ширины карточки
+        icon_space = int(card_width * 0.012)  # 1.2% от ширины карточки
+        font_scale_factor = 0.06  # Шрифт будет 6% от card_width
 
         # ProtonDB бейдж
         tier_text = self.getProtonDBText(protondb_tier)
@@ -134,17 +141,17 @@ class GameCard(QFrame):
                 tier_text,
                 icon=icon,
                 parent=coverWidget,
-                icon_size=16,
-                icon_space=3,
+                icon_size=icon_size,
+                icon_space=icon_space,
+                font_scale_factor=font_scale_factor
             )
             self.protondbLabel.setStyleSheet(self.theme.get_protondb_badge_style(protondb_tier))
-            self.protondbLabel.setFixedWidth(int(card_width * 2/3))
-            protondb_visible = True
+            self.protondbLabel.setFixedWidth(badge_width)
+            self.protondbLabel.setCardWidth(card_width)
         else:
-            self.protondbLabel = ClickableLabel("", parent=coverWidget, icon_size=16, icon_space=3)
-            self.protondbLabel.setFixedWidth(int(card_width * 2/3))
+            self.protondbLabel = ClickableLabel("", parent=coverWidget, icon_size=icon_size, icon_space=icon_space)
+            self.protondbLabel.setFixedWidth(badge_width)
             self.protondbLabel.setVisible(False)
-            protondb_visible = False
 
         # Steam бейдж
         steam_icon = self.theme_manager.get_icon("steam")
@@ -152,12 +159,14 @@ class GameCard(QFrame):
             "Steam",
             icon=steam_icon,
             parent=coverWidget,
-            icon_size=16,
-            icon_space=5,
+            icon_size=icon_size,
+            icon_space=icon_space,
+            font_scale_factor=font_scale_factor
         )
         self.steamLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
-        self.steamLabel.setFixedWidth(int(card_width * 2/3))
-        self.steamLabel.setVisible(steam_visible)
+        self.steamLabel.setFixedWidth(badge_width)
+        self.steamLabel.setCardWidth(card_width)
+        self.steamLabel.setVisible(self.steam_visible)
 
         # Epic Games Store бейдж
         egs_icon = self.theme_manager.get_icon("steam")
@@ -165,27 +174,31 @@ class GameCard(QFrame):
             "Epic Games",
             icon=egs_icon,
             parent=coverWidget,
-            icon_size=16,
-            icon_space=5,
+            icon_size=icon_size,
+            icon_space=icon_space,
+            font_scale_factor=font_scale_factor,
             change_cursor=False
         )
         self.egsLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
-        self.egsLabel.setFixedWidth(int(card_width * 2/3))
-        self.egsLabel.setVisible(egs_visible)
+        self.egsLabel.setFixedWidth(badge_width)
+        self.egsLabel.setCardWidth(card_width)
+        self.egsLabel.setVisible(self.egs_visible)
 
-        # PortProton badge
+        # PortProton бейдж
         portproton_icon = self.theme_manager.get_icon("ppqt-tray")
         self.portprotonLabel = ClickableLabel(
             "PortProton",
             icon=portproton_icon,
             parent=coverWidget,
-            icon_size=16,
-            icon_space=5,
+            icon_size=icon_size,
+            icon_space=icon_space,
+            font_scale_factor=font_scale_factor,
             change_cursor=False
         )
         self.portprotonLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
-        self.portprotonLabel.setFixedWidth(int(card_width * 2/3))
-        self.portprotonLabel.setVisible(portproton_visible)
+        self.portprotonLabel.setFixedWidth(badge_width)
+        self.portprotonLabel.setCardWidth(card_width)
+        self.portprotonLabel.setVisible(self.portproton_visible)
 
         # WeAntiCheatYet бейдж
         anticheat_text = self.getAntiCheatText(anticheat_status)
@@ -196,53 +209,20 @@ class GameCard(QFrame):
                 anticheat_text,
                 icon=icon,
                 parent=coverWidget,
-                icon_size=16,
-                icon_space=3,
+                icon_size=icon_size,
+                icon_space=icon_space,
+                font_scale_factor=font_scale_factor
             )
             self.anticheatLabel.setStyleSheet(self.theme.get_anticheat_badge_style(anticheat_status))
-            self.anticheatLabel.setFixedWidth(int(card_width * 2/3))
-            anticheat_visible = True
+            self.anticheatLabel.setFixedWidth(badge_width)
+            self.anticheatLabel.setCardWidth(card_width)
         else:
-            self.anticheatLabel = ClickableLabel("", parent=coverWidget, icon_size=16, icon_space=3)
-            self.anticheatLabel.setFixedWidth(int(card_width * 2/3))
+            self.anticheatLabel = ClickableLabel("", parent=coverWidget, icon_size=icon_size, icon_space=icon_space)
+            self.anticheatLabel.setFixedWidth(badge_width)
             self.anticheatLabel.setVisible(False)
-            anticheat_visible = False
 
         # Расположение бейджей
-        right_margin = 8
-        badge_spacing = 5
-        top_y = 10
-        badge_y_positions = []
-        badge_width = int(card_width * 2/3)
-        if steam_visible:
-            steam_x = card_width - badge_width - right_margin
-            self.steamLabel.move(steam_x, top_y)
-            badge_y_positions.append(top_y + self.steamLabel.height())
-        if egs_visible:
-            egs_x = card_width - badge_width - right_margin
-            egs_y = badge_y_positions[-1] + badge_spacing if badge_y_positions else top_y
-            self.egsLabel.move(egs_x, egs_y)
-            badge_y_positions.append(egs_y + self.egsLabel.height())
-        if portproton_visible:
-            portproton_x = card_width - badge_width - right_margin
-            portproton_y = badge_y_positions[-1] + badge_spacing if badge_y_positions else top_y
-            self.portprotonLabel.move(portproton_x, portproton_y)
-            badge_y_positions.append(portproton_y + self.portprotonLabel.height())
-        if protondb_visible:
-            protondb_x = card_width - badge_width - right_margin
-            protondb_y = badge_y_positions[-1] + badge_spacing if badge_y_positions else top_y
-            self.protondbLabel.move(protondb_x, protondb_y)
-            badge_y_positions.append(protondb_y + self.protondbLabel.height())
-        if anticheat_visible:
-            anticheat_x = card_width - badge_width - right_margin
-            anticheat_y = badge_y_positions[-1] + badge_spacing if badge_y_positions else top_y
-            self.anticheatLabel.move(anticheat_x, anticheat_y)
-
-        self.anticheatLabel.raise_()
-        self.protondbLabel.raise_()
-        self.portprotonLabel.raise_()
-        self.egsLabel.raise_()
-        self.steamLabel.raise_()
+        self._position_badges(card_width)
         self.protondbLabel.clicked.connect(self.open_protondb_report)
         self.steamLabel.clicked.connect(self.open_steam_page)
         self.anticheatLabel.clicked.connect(self.open_weanticheatyet_page)
@@ -255,7 +235,38 @@ class GameCard(QFrame):
         nameLabel.setStyleSheet(self.theme.GAME_CARD_NAME_LABEL_STYLE)
         layout.addWidget(nameLabel)
 
+    def _position_badges(self, card_width):
+        """Позиционирует бейджи на основе ширины карточки."""
+        right_margin = 8
+        badge_spacing = int(card_width * 0.02)  # 2% от ширины карточки
+        top_y = 10
+        badge_y_positions = []
+        badge_width = int(card_width * 2/3)
+
+        badges = [
+            (self.steam_visible, self.steamLabel),
+            (self.egs_visible, self.egsLabel),
+            (self.portproton_visible, self.portprotonLabel),
+            (bool(self.getProtonDBText(self.protondb_tier)), self.protondbLabel),
+            (bool(self.getAntiCheatText(self.anticheat_status)), self.anticheatLabel),
+        ]
+
+        for is_visible, badge in badges:
+            if is_visible:
+                badge_x = card_width - badge_width - right_margin
+                badge_y = badge_y_positions[-1] + badge_spacing if badge_y_positions else top_y
+                badge.move(badge_x, badge_y)
+                badge_y_positions.append(badge_y + badge.height())
+
+        # Поднимаем бейджи в правильном порядке (от нижнего к верхнему)
+        self.anticheatLabel.raise_()
+        self.protondbLabel.raise_()
+        self.portprotonLabel.raise_()
+        self.egsLabel.raise_()
+        self.steamLabel.raise_()
+
     def update_card_size(self, new_width: int):
+        """Обновляет размер карточки, обложки и бейджей."""
         self.card_width = new_width
         extra_margin = 20
         self.setFixedSize(new_width + extra_margin, int(new_width * 1.6) + extra_margin)
@@ -280,6 +291,7 @@ class GameCard(QFrame):
 
         load_pixmap_async(self.cover_path or "", new_width, int(new_width * 1.2), on_cover_loaded)
 
+        # Обновляем размеры и шрифты бейджей
         badge_width = int(new_width * 2/3)
         icon_size = int(new_width * 0.06)
         icon_space = int(new_width * 0.012)
@@ -287,12 +299,15 @@ class GameCard(QFrame):
             if label is not None:
                 label.setFixedWidth(badge_width)
                 label.setIconSize(icon_size, icon_space)
-                label.setCardWidth(new_width)
+                label.setCardWidth(new_width)  # Пересчитываем размер шрифта
+
+        # Перепозиционируем бейджи
+        self._position_badges(new_width)
 
         self.update()
 
     def update_badge_visibility(self, display_filter: str):
-        """Update badge visibility based on the provided display_filter."""
+        """Обновляет видимость бейджей на основе display_filter."""
         self.display_filter = display_filter
         self.steam_visible = (str(self.game_source).lower() == "steam" and display_filter in ("all", "favorites"))
         self.egs_visible = (str(self.game_source).lower() == "epic" and display_filter in ("all", "favorites"))
@@ -307,35 +322,8 @@ class GameCard(QFrame):
         self.protondbLabel.setVisible(protondb_visible)
         self.anticheatLabel.setVisible(anticheat_visible)
 
-        # Подготавливаем список всех бейджей с их текущей видимостью
-        badges = [
-            (self.steam_visible, self.steamLabel),
-            (self.egs_visible, self.egsLabel),
-            (self.portproton_visible, self.portprotonLabel),
-            (protondb_visible, self.protondbLabel),
-            (anticheat_visible, self.anticheatLabel),
-        ]
-
-        # Пересчитываем позиции бейджей
-        right_margin = 8
-        badge_spacing = 5
-        top_y = 10
-        badge_y_positions = []
-        badge_width = int(self.coverLabel.width() * 2/3)
-
-        for is_visible, badge in badges:
-            if is_visible:
-                badge_x = self.coverLabel.width() - badge_width - right_margin
-                badge_y = badge_y_positions[-1] + badge_spacing if badge_y_positions else top_y
-                badge.move(badge_x, badge_y)
-                badge_y_positions.append(badge_y + badge.height())
-
-        # Поднимаем бейджи в правильном порядке (от нижнего к верхнему)
-        self.anticheatLabel.raise_()
-        self.protondbLabel.raise_()
-        self.portprotonLabel.raise_()
-        self.egsLabel.raise_()
-        self.steamLabel.raise_()
+        # Перепозиционируем бейджи
+        self._position_badges(self.card_width)
 
     def _show_context_menu(self, pos):
         """Delegate context menu display to ContextMenuManager."""
