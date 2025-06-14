@@ -535,11 +535,13 @@ class MainWindow(QMainWindow):
     def startSearchDebounce(self, text):
         self.searchDebounceTimer.start()
 
-    def on_slider_value_changed(self, value: int):
-            self.card_width = value
-            self.sizeSlider.setToolTip(f"{value} px")
-            save_card_size(value)
-            self.updateGameGrid()
+    def on_slider_released(self):
+        self.card_width = self.sizeSlider.value()
+        self.sizeSlider.setToolTip(f"{self.card_width} px")
+        save_card_size(self.card_width)
+        for card in self.game_card_cache.values():
+            card.update_card_size(self.card_width)
+        self.updateGameGrid()
 
     def filterGamesDelayed(self):
         """Filters games based on search text and updates the grid."""
@@ -581,7 +583,7 @@ class MainWindow(QMainWindow):
         self.sizeSlider.setFixedWidth(150)
         self.sizeSlider.setToolTip(f"{self.card_width} px")
         self.sizeSlider.setStyleSheet(self.theme.SLIDER_SIZE_STYLE)
-        self.sizeSlider.valueChanged.connect(self.on_slider_value_changed)
+        self.sizeSlider.sliderReleased.connect(self.on_slider_released)
         sliderLayout.addWidget(self.sizeSlider)
         layout.addLayout(sliderLayout)
 

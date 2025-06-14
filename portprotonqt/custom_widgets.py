@@ -1,5 +1,5 @@
 import numpy as np
-from PySide6.QtWidgets import QLabel, QPushButton, QWidget, QLayout, QStyleOption, QLayoutItem
+from PySide6.QtWidgets import QLabel, QPushButton, QWidget, QLayout, QLayoutItem
 from PySide6.QtCore import Qt, Signal, QRect, QPoint, QSize
 from PySide6.QtGui import QFont, QFontMetrics, QPainter
 
@@ -133,18 +133,7 @@ class FlowLayout(QLayout):
 class ClickableLabel(QLabel):
     clicked = Signal()
 
-    def __init__(self, *args, icon=None, icon_size=16, icon_space=5, change_cursor=True, **kwargs):
-        """
-        Поддерживаются вызовы:
-          - ClickableLabel("текст", parent=...) – первый аргумент строка,
-          - ClickableLabel(parent, text="...") – если первым аргументом передается родитель.
-
-        Аргументы:
-          icon: QIcon или None – иконка, которая будет отрисована вместе с текстом.
-          icon_size: int – размер иконки (ширина и высота).
-          icon_space: int – отступ между иконкой и текстом.
-          change_cursor: bool – изменять ли курсор на PointingHandCursor при наведении (по умолчанию True).
-        """
+    def __init__(self, *args, icon=None, icon_size=16, icon_space=5, change_cursor=True, font_scale_factor=0.06, **kwargs):
         if args and isinstance(args[0], str):
             text = args[0]
             parent = kwargs.get("parent", None)
@@ -162,20 +151,38 @@ class ClickableLabel(QLabel):
         self._icon = icon
         self._icon_size = icon_size
         self._icon_space = icon_space
+        self._font_scale_factor = font_scale_factor
+        self._card_width = 250  # Значение по умолчанию
         if change_cursor:
             self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.updateFontSize()
 
     def setIcon(self, icon):
-        """Устанавливает иконку и перерисовывает виджет."""
         self._icon = icon
         self.update()
 
     def icon(self):
-        """Возвращает текущую иконку."""
         return self._icon
 
+    def setIconSize(self, icon_size: int, icon_space: int):
+        self._icon_size = icon_size
+        self._icon_space = icon_space
+        self.update()
+
+    def setCardWidth(self, card_width: int):
+        """Обновляет ширину карточки и пересчитывает размер шрифта."""
+        self._card_width = card_width
+        self.updateFontSize()
+
+    def updateFontSize(self):
+        """Обновляет размер шрифта на основе card_width и font_scale_factor."""
+        font = self.font()
+        font_size = int(self._card_width * self._font_scale_factor)
+        font.setPointSize(max(8, font_size))  # Минимальный размер шрифта 8
+        self.setFont(font)
+        self.update()
+
     def paintEvent(self, event):
-        """Переопределяем отрисовку: рисуем иконку и текст в одном лейбле."""
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
@@ -190,7 +197,6 @@ class ClickableLabel(QLabel):
         text = self.text()
 
         if self._icon:
-            # Получаем QPixmap нужного размера
             pixmap = self._icon.pixmap(icon_size, icon_size)
             icon_rect = QRect(0, 0, icon_size, icon_size)
             icon_rect.moveTop(rect.top() + (rect.height() - icon_size) // 2)
@@ -214,13 +220,8 @@ class ClickableLabel(QLabel):
         if pixmap:
             icon_rect.moveLeft(x)
             text_rect = QRect(x + icon_size + spacing, y, text_width, text_height)
-        else:
-            text_rect = QRect(x, y, text_width, text_height)
-
-        option = QStyleOption()
-        option.initFrom(self)
-        if pixmap:
             painter.drawPixmap(icon_rect, pixmap)
+
         self.style().drawItemText(
             painter,
             text_rect,

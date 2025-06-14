@@ -255,6 +255,42 @@ class GameCard(QFrame):
         nameLabel.setStyleSheet(self.theme.GAME_CARD_NAME_LABEL_STYLE)
         layout.addWidget(nameLabel)
 
+    def update_card_size(self, new_width: int):
+        self.card_width = new_width
+        extra_margin = 20
+        self.setFixedSize(new_width + extra_margin, int(new_width * 1.6) + extra_margin)
+
+        if self.coverLabel is None:
+            return
+
+        coverWidget = self.coverLabel.parentWidget()
+        if coverWidget is None:
+            return
+
+        coverWidget.setFixedSize(new_width, int(new_width * 1.2))
+        self.coverLabel.setFixedSize(new_width, int(new_width * 1.2))
+
+        label_ref = weakref.ref(self.coverLabel)
+        def on_cover_loaded(pixmap):
+            label = label_ref()
+            if label:
+                scaled_pixmap = pixmap.scaled(new_width, int(new_width * 1.2), Qt.AspectRatioMode.KeepAspectRatioByExpanding, Qt.TransformationMode.SmoothTransformation)
+                rounded_pixmap = round_corners(scaled_pixmap, 15)
+                label.setPixmap(rounded_pixmap)
+
+        load_pixmap_async(self.cover_path or "", new_width, int(new_width * 1.2), on_cover_loaded)
+
+        badge_width = int(new_width * 2/3)
+        icon_size = int(new_width * 0.06)
+        icon_space = int(new_width * 0.012)
+        for label in [self.steamLabel, self.egsLabel, self.portprotonLabel, self.protondbLabel, self.anticheatLabel]:
+            if label is not None:
+                label.setFixedWidth(badge_width)
+                label.setIconSize(icon_size, icon_space)
+                label.setCardWidth(new_width)
+
+        self.update()
+
     def update_badge_visibility(self, display_filter: str):
         """Update badge visibility based on the provided display_filter."""
         self.display_filter = display_filter
