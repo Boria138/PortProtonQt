@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-06-11 23:15+0500\n"
+"POT-Creation-Date: 2025-06-14 10:37+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es_ES\n"
@@ -492,9 +492,6 @@ msgid "Cannot launch game while another game is running"
 msgstr ""
 
 msgid "Launching"
-msgstr ""
-
-msgid "System Overlay"
 msgstr ""
 
 msgid "Reboot"
