@@ -14,7 +14,7 @@ class SystemOverlay(QDialog):
     def __init__(self, parent, theme):
         super().__init__(parent)
         self.theme = theme
-        self.setWindowTitle(_("System Overlay"))
+        self.setWindowTitle("System Overlay")
         self.setModal(True)
         self.setFixedSize(400, 300)
         self.theme_manager = ThemeManager()
