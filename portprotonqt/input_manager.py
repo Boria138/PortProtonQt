@@ -26,7 +26,9 @@ class MainWindowProtocol(Protocol):
     def toggleGame(self, exec_line: str | None, button: QWidget | None = None) -> None:
         ...
     def openSystemOverlay(self) -> None:
-            ...
+        ...
+    def on_slider_released(self) -> None:
+        ...
     stackedWidget: QStackedWidget
     tabButtons: dict[int, QWidget]
     gamesListWidget: QWidget
@@ -34,18 +36,20 @@ class MainWindowProtocol(Protocol):
     current_exec_line: str | None
     current_add_game_dialog: QDialog | None
 
-# Mapping of actions to evdev button codes, includes Xbox and Playstation controllers
+# Mapping of actions to evdev button codes, includes Xbox and PlayStation controllers
 # https://github.com/torvalds/linux/blob/master/drivers/hid/hid-playstation.c
 # https://github.com/torvalds/linux/blob/master/drivers/input/joystick/xpad.c
 BUTTONS = {
-    'confirm':   {ecodes.BTN_A, ecodes.BTN_SOUTH}, # A / Cross
-    'back':      {ecodes.BTN_B, ecodes.BTN_EAST},  # B / Circle
-    'add_game':  {ecodes.BTN_Y, ecodes.BTN_NORTH}, # Y / Triangle
-    'prev_tab':  {ecodes.BTN_TL},                  # LB / L1
-    'next_tab':  {ecodes.BTN_TR},                  # RB / R1
-    'context_menu': {ecodes.BTN_START},            # Start / Options
-    'menu':      {ecodes.BTN_SELECT},              # Select / Share
-    'guide':     {ecodes.BTN_MODE},                # Xbox / PS Home
+    'confirm':   {ecodes.BTN_A, ecodes.BTN_SOUTH}, # A (Xbox) / Cross (PS)
+    'back':      {ecodes.BTN_B, ecodes.BTN_EAST},  # B (Xbox) / Circle (PS)
+    'add_game':  {ecodes.BTN_Y, ecodes.BTN_NORTH}, # Y (Xbox) / Triangle (PS)
+    'prev_tab':  {ecodes.BTN_TL},                  # LB (Xbox) / L1 (PS)
+    'next_tab':  {ecodes.BTN_TR},                  # RB (Xbox) / R1 (PS)
+    'context_menu': {ecodes.BTN_START},            # Start (Xbox) / Options (PS)
+    'menu':      {ecodes.BTN_SELECT},              # Select (Xbox) / Share (PS)
+    'guide':     {ecodes.BTN_MODE},                # Xbox Button / PS Button
+    'increase_size': {ecodes.ABS_RZ},              # RT (Xbox) / R2 (PS)
+    'decrease_size': {ecodes.ABS_Z},               # LT (Xbox) / L2 (PS)
 }
 
 class InputManager(QObject):
@@ -83,6 +87,10 @@ class InputManager(QObject):
         self.running = True
         self._is_fullscreen = read_fullscreen_config()
         self.rumble_effect_id: int | None = None  # Store the rumble effect ID
+        self.lt_pressed = False
+        self.rt_pressed = False
+        self.last_trigger_time = 0.0
+        self.trigger_cooldown = 0.2
 
         # Add variables for continuous D-pad movement
         self.dpad_timer = QTimer(self)
@@ -169,7 +177,7 @@ class InputManager(QObject):
     @Slot(int)
     def handle_button_slot(self, button_code: int) -> None:
         try:
-            # Игнорировать события геймпада, если игра запущена
+            # Ignore gamepad events if a game is launched
             if getattr(self._parent, '_gameLaunched', False):
                 return
 
@@ -235,7 +243,7 @@ class InputManager(QObject):
                         focused.clearSelection()
                         focused.hide()
 
-            # Закрытие AddGameDialog на кнопку B
+            # Close AddGameDialog on B button
             if button_code in BUTTONS['back'] and isinstance(active, QDialog):
                 active.reject()
                 return
@@ -282,6 +290,20 @@ class InputManager(QObject):
                 idx = (self._parent.stackedWidget.currentIndex() + 1) % len(self._parent.tabButtons)
                 self._parent.switchTab(idx)
                 self._parent.tabButtons[idx].setFocus(Qt.FocusReason.OtherFocusReason)
+            elif button_code in BUTTONS['increase_size'] and self._parent.stackedWidget.currentIndex() == 0:
+                # Increase card size with RT (Xbox) / R2 (PS)
+                size_slider = getattr(self._parent, 'sizeSlider', None)
+                if size_slider:
+                    new_value = min(size_slider.value() + 10, size_slider.maximum())
+                    size_slider.setValue(new_value)
+                    self._parent.on_slider_released()
+            elif button_code in BUTTONS['decrease_size'] and self._parent.stackedWidget.currentIndex() == 0:
+                # Decrease card size with LT (Xbox) / L2 (PS)
+                size_slider = getattr(self._parent, 'sizeSlider', None)
+                if size_slider:
+                    new_value = max(size_slider.value() - 10, size_slider.minimum())
+                    size_slider.setValue(new_value)
+                    self._parent.on_slider_released()
         except Exception as e:
             logger.error(f"Error in handle_button_slot: {e}", exc_info=True)
 
@@ -297,7 +319,7 @@ class InputManager(QObject):
     @Slot(int, int, float)
     def handle_dpad_slot(self, code: int, value: int, current_time: float) -> None:
         try:
-            # Игнорировать события геймпада, если игра запущена
+            # Ignore gamepad events if a game is launched
             if getattr(self._parent, '_gameLaunched', False):
                 return
 
@@ -698,9 +720,9 @@ class InputManager(QObject):
                     self.gamepad_thread.join()
                 self.gamepad_thread = threading.Thread(target=self.monitor_gamepad, daemon=True)
                 self.gamepad_thread.start()
-                # Отправляем сигнал для полноэкранного режима только если:
-                # 1. auto_fullscreen_gamepad включено
-                # 2. fullscreen выключено (чтобы не конфликтовать с основной настройкой)
+                # Send signal for fullscreen mode only if:
+                # 1. auto_fullscreen_gamepad is enabled
+                # 2. fullscreen is not already enabled (to avoid conflict)
                 if read_auto_fullscreen_gamepad() and not read_fullscreen_config():
                     self.toggle_fullscreen.emit(True)
         except Exception as e:
@@ -734,7 +756,26 @@ class InputManager(QObject):
                     else:
                         self.button_pressed.emit(event.code)
                 elif event.type == ecodes.EV_ABS:
-                    self.dpad_moved.emit(event.code, event.value, now)
+                    if event.code in {ecodes.ABS_Z, ecodes.ABS_RZ}:
+                        # Проверяем, достаточно ли времени прошло с последнего срабатывания
+                        if now - self.last_trigger_time < self.trigger_cooldown:
+                            continue
+                        if event.code == ecodes.ABS_Z:  # LT/L2
+                            if event.value > 128 and not self.lt_pressed:
+                                self.lt_pressed = True
+                                self.button_pressed.emit(event.code)
+                                self.last_trigger_time = now
+                            elif event.value <= 128 and self.lt_pressed:
+                                self.lt_pressed = False
+                        elif event.code == ecodes.ABS_RZ:  # RT/R2
+                            if event.value > 128 and not self.rt_pressed:
+                                self.rt_pressed = True
+                                self.button_pressed.emit(event.code)
+                                self.last_trigger_time = now
+                            elif event.value <= 128 and self.rt_pressed:
+                                self.rt_pressed = False
+                    else:
+                        self.dpad_moved.emit(event.code, event.value, now)
         except OSError as e:
             if e.errno == 19:  # ENODEV: No such device
                 logger.info("Gamepad disconnected during event loop")
