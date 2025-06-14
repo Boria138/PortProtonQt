@@ -221,6 +221,9 @@ class ClickableLabel(QLabel):
             icon_rect.moveLeft(x)
             text_rect = QRect(x + icon_size + spacing, y, text_width, text_height)
             painter.drawPixmap(icon_rect, pixmap)
+        else:
+            # Устанавливаем text_rect для меток без иконки (например, favoriteLabel)
+            text_rect = QRect(x, y, text_width, text_height)
 
         self.style().drawItemText(
             painter,
