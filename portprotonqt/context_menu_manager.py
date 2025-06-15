@@ -3,7 +3,7 @@ import shlex
 import glob
 import shutil
 import subprocess
-from PySide6.QtWidgets import QMessageBox, QDialog, QMenu
+from PySide6.QtWidgets import QMessageBox, QDialog, QMenu, QFileDialog
 from PySide6.QtCore import QUrl, QPoint
 from PySide6.QtGui import QDesktopServices
 from portprotonqt.config_utils import parse_desktop_entry, read_favorites, save_favorites
@@ -53,6 +53,12 @@ class ContextMenuManager:
             favorite_action = menu.addAction(_("Add to Favorites"))
             favorite_action.triggered.connect(lambda: self.toggle_favorite(game_card, True))
 
+        if game_card.game_source == "epic":
+                import_action = menu.addAction(_("Import to Legendary"))
+                import_action.triggered.connect(
+                    lambda: self.import_to_legendary(game_card.name, game_card.appid)
+                )
+
         if game_card.game_source not in ("steam", "epic"):
             desktop_dir = subprocess.check_output(['xdg-user-dir', 'DESKTOP']).decode('utf-8').strip()
             desktop_path = os.path.join(desktop_dir, f"{game_card.name}.desktop")
@@ -91,6 +97,75 @@ class ContextMenuManager:
                 add_steam_action.triggered.connect(lambda: self.add_to_steam(game_card.name, game_card.exec_line, game_card.cover_path))
 
         menu.exec(game_card.mapToGlobal(pos))
+
+    def import_to_legendary(self, game_name, app_name):
+        """
+        Imports an installed Epic Games Store game to Legendary using the provided app_name.
+
+        Args:
+            game_name: The display name of the game.
+            app_name: The Legendary app_name (unique identifier for the game).
+        """
+        if not self._check_portproton():
+            return
+
+        # Открываем диалог для выбора папки с установленной игрой
+        folder_path = QFileDialog.getExistingDirectory(
+            self.parent,
+            _("Select Game Installation Folder"),
+            os.path.expanduser("~")
+        )
+        if not folder_path:
+            self.parent.statusBar().showMessage(_("No folder selected"), 3000)
+            return
+
+        # Путь к legendary
+        legendary_path = os.path.join(
+            os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache")),
+            "PortProtonQt", "legendary_cache", "legendary"
+        )
+        if not os.path.exists(legendary_path):
+            QMessageBox.warning(
+                self.parent,
+                _("Error"),
+                _("Legendary executable not found at {0}").format(legendary_path)
+            )
+            return
+
+        # Формируем команду для импорта
+        cmd = [legendary_path, "import", app_name, folder_path]
+
+        try:
+            # Выполняем команду legendary import
+            subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            self.parent.statusBar().showMessage(
+                _("Successfully imported '{0}' to Legendary").format(game_name), 3000
+            )
+
+
+        except subprocess.CalledProcessError as e:
+            QMessageBox.warning(
+                self.parent,
+                _("Error"),
+                _("Failed to import '{0}' to Legendary: {1}").format(game_name, e.stderr)
+            )
+        except FileNotFoundError:
+            QMessageBox.warning(
+                self.parent,
+                _("Error"),
+                _("Legendary executable not found")
+            )
+        except Exception as e:
+            QMessageBox.warning(
+                self.parent,
+                _("Error"),
+                _("Unexpected error during import: {0}").format(str(e))
+            )
 
     def toggle_favorite(self, game_card, add: bool):
         """
