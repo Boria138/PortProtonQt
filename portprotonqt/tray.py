@@ -7,12 +7,13 @@ from portprotonqt.config_utils import read_theme_from_config
 
 class SystemTray:
     def __init__(self, app, theme=None):
+        self.app = app
         self.theme_manager = ThemeManager()
         self.theme = theme if theme is not None else default_styles
         self.current_theme_name = read_theme_from_config()
         self.tray = QSystemTrayIcon()
         self.tray.setIcon(cast(QIcon, self.theme_manager.get_icon("ppqt-tray", self.current_theme_name)))
-        self.tray.setToolTip("PortProton QT")
+        self.tray.setToolTip("PortProtonQt")
         self.tray.setVisible(True)
 
         # Создаём меню
@@ -32,4 +33,16 @@ class SystemTray:
 
     def hide_tray(self):
         """Скрыть иконку трея"""
-        self.tray.hide()
+        if self.tray:
+            self.tray.setVisible(False)
+            self.tray.setContextMenu(None)
+
+    def cleanup(self):
+        """Очистка ресурсов трея"""
+        self.hide_tray()
+        if self.menu:
+            self.menu.deleteLater()
+            self.menu = None
+        if self.tray:
+            self.tray.deleteLater()
+            self.tray = None

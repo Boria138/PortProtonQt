@@ -36,7 +36,7 @@ def main():
 
     # Обработка флага --fullscreen
     if args.fullscreen:
-        logger.info("Запуск в полноэкранном режиме по флагу --fullscreen")
+        logger.info("Launching in fullscreen mode due to --fullscreen flag")
         save_fullscreen_config(True)
         window.showFullScreen()
 
@@ -47,13 +47,28 @@ def main():
 
     def recreate_tray():
         nonlocal tray
-        tray.hide_tray()
+        if tray:
+            logger.debug("Recreating system tray")
+            tray.cleanup()
+            tray = None
         current_theme = read_theme_from_config()
         tray = SystemTray(app, current_theme)
         tray.show_action.triggered.connect(window.show)
         tray.hide_action.triggered.connect(window.hide)
 
+    def cleanup_on_exit():
+        nonlocal tray, window
+        app.aboutToQuit.disconnect()  # Disconnect to prevent further calls
+        if tray:
+            tray.cleanup()
+            tray = None
+        if window:
+            window.close()
+            window = None
+        app.quit()
+
     window.settings_saved.connect(recreate_tray)
+    app.aboutToQuit.connect(cleanup_on_exit)
 
     window.show()
 

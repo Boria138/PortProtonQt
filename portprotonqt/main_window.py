@@ -1852,14 +1852,46 @@ class MainWindow(QMainWindow):
             self.checkProcessTimer.start(500)
 
     def closeEvent(self, event):
+        """Завершает все дочерние процессы и сохраняет настройки при закрытии окна."""
+        # Завершаем все игровые процессы
         for proc in self.game_processes:
             try:
+                parent = psutil.Process(proc.pid)
+                children = parent.children(recursive=True)
+                for child in children:
+                    try:
+                        logger.debug(f"Terminating child process {child.pid}")
+                        child.terminate()
+                    except psutil.NoSuchProcess:
+                        logger.debug(f"Child process {child.pid} already terminated")
+                psutil.wait_procs(children, timeout=5)
+                for child in children:
+                    if child.is_running():
+                        logger.debug(f"Killing child process {child.pid}")
+                        child.kill()
+                logger.debug(f"Terminating process group {proc.pid}")
                 os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-            except ProcessLookupError:
-                pass  # процесс уже завершился
+            except (psutil.NoSuchProcess, ProcessLookupError) as e:
+                logger.debug(f"Process {proc.pid} already terminated: {e}")
 
+        self.game_processes = []  # Очищаем список процессов
+
+        # Сохраняем настройки окна
         if not read_fullscreen_config():
+            logger.debug(f"Saving window geometry: {self.width()}x{self.height()}")
             save_window_geometry(self.width(), self.height())
-
         save_card_size(self.card_width)
+
+        # Очищаем таймеры и другие ресурсы
+        if hasattr(self, 'games_load_timer') and self.games_load_timer.isActive():
+            self.games_load_timer.stop()
+        if hasattr(self, 'settingsDebounceTimer') and self.settingsDebounceTimer.isActive():
+            self.settingsDebounceTimer.stop()
+        if hasattr(self, 'searchDebounceTimer') and self.searchDebounceTimer.isActive():
+            self.searchDebounceTimer.stop()
+        if hasattr(self, 'checkProcessTimer') and self.checkProcessTimer and self.checkProcessTimer.isActive():
+            self.checkProcessTimer.stop()
+            self.checkProcessTimer.deleteLater()
+            self.checkProcessTimer = None
+
         event.accept()
