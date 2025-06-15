@@ -145,7 +145,7 @@ jobs:
       - name: Install required dependencies
         run: |
             sudo apt update
-            sudo apt install -y awk
+            sudo apt install -y original-awk
 
       - name: Download all artifacts
         uses: https://gitea.com/actions/download-artifact@v3
