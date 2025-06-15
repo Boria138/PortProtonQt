@@ -1827,8 +1827,9 @@ class MainWindow(QMainWindow):
             exe_name = os.path.splitext(current_exe)[0]
             env_vars = os.environ.copy()
 
+            # Delay disabling gamepad handling to allow rumble to complete
             if hasattr(self, 'input_manager'):
-                self.input_manager.disable_gamepad_handling()
+                QTimer.singleShot(200, self.input_manager.disable_gamepad_handling)
 
             if entry_exec_split[0] == "env" and len(entry_exec_split) > 1 and 'data/scripts/start.sh' in entry_exec_split[1]:
                 env_vars['START_FROM_STEAM'] = '1'
