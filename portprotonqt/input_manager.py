@@ -219,6 +219,16 @@ class InputManager(QObject):
                     return
                 return
 
+            # Handle QMessageBox
+            if isinstance(active, QMessageBox):
+                if button_code in BUTTONS['confirm']:
+                    active.accept()  # Close QMessageBox with the default button
+                    return
+                elif button_code in BUTTONS['back']:
+                    active.reject()  # Close QMessageBox on back button
+                    return
+                return
+
             # Handle QComboBox
             if isinstance(focused, QComboBox):
                 if button_code in BUTTONS['confirm']:
