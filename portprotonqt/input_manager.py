@@ -40,9 +40,9 @@ class MainWindowProtocol(Protocol):
 # https://github.com/torvalds/linux/blob/master/drivers/hid/hid-playstation.c
 # https://github.com/torvalds/linux/blob/master/drivers/input/joystick/xpad.c
 BUTTONS = {
-    'confirm':   {ecodes.BTN_A, ecodes.BTN_SOUTH}, # A (Xbox) / Cross (PS)
-    'back':      {ecodes.BTN_B, ecodes.BTN_EAST},  # B (Xbox) / Circle (PS)
-    'add_game':  {ecodes.BTN_Y, ecodes.BTN_NORTH}, # Y (Xbox) / Triangle (PS)
+    'confirm':   {ecodes.BTN_SOUTH},               # A (Xbox) / Cross (PS)
+    'back':      {ecodes.BTN_EAST},                # B (Xbox) / Circle (PS)
+    'add_game':  {ecodes.BTN_NORTH},               # X (Xbox) / Triangle (PS)
     'prev_tab':  {ecodes.BTN_TL},                  # LB (Xbox) / L1 (PS)
     'next_tab':  {ecodes.BTN_TR},                  # RB (Xbox) / R1 (PS)
     'context_menu': {ecodes.BTN_START},            # Start (Xbox) / Options (PS)
