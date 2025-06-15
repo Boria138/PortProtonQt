@@ -72,6 +72,7 @@ class InputManager(QObject):
     ):
         super().__init__(cast(QObject, main_window))
         self._parent = main_window
+        self._gamepad_handling_enabled = True
         # Ensure attributes exist on main_window
         self._parent.currentDetailPage = getattr(self._parent, 'currentDetailPage', None)
         self._parent.current_exec_line = getattr(self._parent, 'current_exec_line', None)
@@ -132,6 +133,16 @@ class InputManager(QObject):
         except Exception as e:
             logger.error(f"Error in handle_fullscreen_slot: {e}", exc_info=True)
 
+    def disable_gamepad_handling(self) -> None:
+        """Отключает обработку событий геймпада."""
+        self._gamepad_handling_enabled = False
+        self.stop_rumble()
+        self.dpad_timer.stop()
+
+    def enable_gamepad_handling(self) -> None:
+        """Включает обработку событий геймпада."""
+        self._gamepad_handling_enabled = True
+
     def trigger_rumble(self, duration_ms: int = 200, strong_magnitude: int = 0x8000, weak_magnitude: int = 0x8000) -> None:
         """Trigger a rumble effect on the gamepad if supported."""
         if not read_rumble_config():
@@ -176,6 +187,8 @@ class InputManager(QObject):
 
     @Slot(int)
     def handle_button_slot(self, button_code: int) -> None:
+        if not self._gamepad_handling_enabled:
+            return
         try:
             # Ignore gamepad events if a game is launched
             if getattr(self._parent, '_gameLaunched', False):
@@ -318,6 +331,8 @@ class InputManager(QObject):
 
     @Slot(int, int, float)
     def handle_dpad_slot(self, code: int, value: int, current_time: float) -> None:
+        if not self._gamepad_handling_enabled:
+            return
         try:
             # Ignore gamepad events if a game is launched
             if getattr(self._parent, '_gameLaunched', False):

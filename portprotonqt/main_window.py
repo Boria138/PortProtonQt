@@ -1726,6 +1726,8 @@ class MainWindow(QMainWindow):
         elif not child_running:
             # Игра завершилась – сбрасываем флаг, сбрасываем кнопку и останавливаем таймер
             self._gameLaunched = False
+            if hasattr(self, 'input_manager'):
+                self.input_manager.enable_gamepad_handling()
             self.resetPlayButton()
             #self._uninhibit_screensaver()
             if hasattr(self, 'checkProcessTimer') and self.checkProcessTimer is not None:
@@ -1782,6 +1784,9 @@ class MainWindow(QMainWindow):
 
         # Если игра уже запущена для этого exe – останавливаем её по нажатию кнопки
         if self.game_processes and self.target_exe == current_exe:
+            if hasattr(self, 'input_manager'):
+                self.input_manager.enable_gamepad_handling()
+
             for proc in self.game_processes:
                 try:
                     parent = psutil.Process(proc.pid)
@@ -1821,6 +1826,10 @@ class MainWindow(QMainWindow):
             self.target_exe = current_exe
             exe_name = os.path.splitext(current_exe)[0]
             env_vars = os.environ.copy()
+
+            if hasattr(self, 'input_manager'):
+                self.input_manager.disable_gamepad_handling()
+
             if entry_exec_split[0] == "env" and len(entry_exec_split) > 1 and 'data/scripts/start.sh' in entry_exec_split[1]:
                 env_vars['START_FROM_STEAM'] = '1'
             elif entry_exec_split[0] == "flatpak":
