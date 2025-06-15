@@ -8,7 +8,7 @@ on:
 
 env:
   # Common version, will be used for tagging the release
-  VERSION: v0.1.1
+  VERSION: 0.1.2
   PKGDEST: "/tmp/portprotonqt"
   PACKAGE: "portprotonqt"
   GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
@@ -140,6 +140,13 @@ jobs:
     needs: [build-appimage, build-arch, build-fedora]
     runs-on: ubuntu-latest
     steps:
+      - uses: https://gitea.com/actions/checkout@v4
+
+      - name: Install required dependencies
+        run: |
+            sudo apt update
+            sudo apt install -y awk
+
       - name: Download all artifacts
         uses: https://gitea.com/actions/download-artifact@v3
         with:
@@ -149,7 +156,6 @@ jobs:
         id: changelog
         run: |
           VERSION="${{ env.VERSION }}"
-          VERSION=${VERSION#v}  # Remove 'v' prefix if present
           awk "/^## \\[$VERSION\\]/ {flag=1; next} /^## \\[/ || /^---/ {flag=0} flag" CHANGELOG.md > changelog.txt
 
       - name: Release
