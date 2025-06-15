@@ -141,7 +141,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download all artifacts
-        uses: https://gitea.com/actions/download-artifact@v4
+        uses: https://gitea.com/actions/download-artifact@v3
         with:
           path: release/
 
