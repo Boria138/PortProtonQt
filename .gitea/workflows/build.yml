@@ -145,12 +145,19 @@ jobs:
       - name: Install required dependencies
         run: |
             sudo apt update
-            sudo apt install -y original-awk
+            sudo apt install -y original-awk unzip
 
       - name: Download all artifacts
         uses: https://gitea.com/actions/download-artifact@v3
         with:
           path: release/
+
+      - name: Extract downloaded artifacts
+        run: |
+          mkdir -p extracted
+          find release/ -name '*.zip' -exec unzip -o {} -d extracted/ \;
+          find extracted/ -type f -exec mv {} release/ \;
+          rm -rf extracted/
 
       - name: Extract changelog for version
         id: changelog
@@ -163,7 +170,7 @@ jobs:
         with:
           body_path: changelog.txt
           token: ${{ env.GITEA_TOKEN }}
-          tag_name: ${{ env.VERSION }}
+          tag_name: v${{ env.VERSION }}
           prerelease: true
           files: release/**/*
           sha256sum: true
