@@ -29,12 +29,10 @@ def main():
     else:
         logger.error(f"Qt translations for {system_locale.name()} not found in {translations_path}")
 
-    # Парсинг аргументов командной строки
     args = parse_args()
 
     window = MainWindow()
 
-    # Обработка флага --fullscreen
     if args.fullscreen:
         logger.info("Launching in fullscreen mode due to --fullscreen flag")
         save_fullscreen_config(True)
@@ -53,18 +51,19 @@ def main():
             tray = None
         current_theme = read_theme_from_config()
         tray = SystemTray(app, current_theme)
-        tray.show_action.triggered.connect(window.show)
-        tray.hide_action.triggered.connect(window.hide)
+        # Ensure window is not None before connecting signals
+        if window:
+            tray.show_action.triggered.connect(window.show)
+            tray.hide_action.triggered.connect(window.hide)
 
     def cleanup_on_exit():
         nonlocal tray, window
-        app.aboutToQuit.disconnect()  # Disconnect to prevent further calls
+        app.aboutToQuit.disconnect()
         if tray:
             tray.cleanup()
             tray = None
         if window:
             window.close()
-            window = None
         app.quit()
 
     window.settings_saved.connect(recreate_tray)

@@ -35,14 +35,15 @@ class SystemTray:
         """Скрыть иконку трея"""
         if self.tray:
             self.tray.setVisible(False)
-            self.tray.setContextMenu(None)
+            if self.menu:
+                self.menu.deleteLater()
+                self.menu = None
 
     def cleanup(self):
         """Очистка ресурсов трея"""
-        self.hide_tray()
+        if self.tray:
+            self.tray.setVisible(False)
+            self.tray = None
         if self.menu:
             self.menu.deleteLater()
             self.menu = None
-        if self.tray:
-            self.tray.deleteLater()
-            self.tray = None
