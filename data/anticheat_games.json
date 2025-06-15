@@ -1573,7 +1573,7 @@
   },
   {
     "normalized_name": "dune awakening",
-    "status": "Broken"
+    "status": "Running"
   },
   {
     "normalized_name": "warcraft iii reforged",
@@ -2337,7 +2337,7 @@
   },
   {
     "normalized_name": "punishing gray raven",
-    "status": "Broken"
+    "status": "Running"
   },
   {
     "normalized_name": "brainbread 2",
@@ -3952,10 +3952,6 @@
     "status": "Running"
   },
   {
-    "normalized_name": "avatar frontiers of pandora",
-    "status": "Broken"
-  },
-  {
     "normalized_name": "v rising",
     "status": "Running"
   },
@@ -4405,6 +4401,18 @@
   },
   {
     "normalized_name": "elden ring nightreign",
+    "status": "Running"
+  },
+  {
+    "normalized_name": "steel hunters",
+    "status": "Running"
+  },
+  {
+    "normalized_name": "reverse 1999",
+    "status": "Running"
+  },
+  {
+    "normalized_name": "ragnarok origin roo",
     "status": "Running"
   }
 ]
