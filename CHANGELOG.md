@@ -3,6 +3,18 @@
 Все заметные изменения в этом проекте фиксируются в этом файле.
 Формат основан на [Keep a Changelog](https://keepachangelog.com/) и придерживается принципов [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+### Changed
+- Удалены сборки для Fedora 40
+
+### Fixed
+
+
+---
+
 ## [0.1.2] - 2025-06-15
 
 ### Added
