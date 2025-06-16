@@ -25,6 +25,7 @@ class GameCard(QFrame):
     addToSteamRequested = Signal(str, str, str)   # name, exec_line, cover_path
     removeFromSteamRequested = Signal(str, str)   # name, exec_line
     openGameFolderRequested = Signal(str, str)    # name, exec_line
+    hoverChanged = Signal(str, bool)
 
     def __init__(self, name, description, cover_path, appid, controller_support, exec_line,
                 last_launch, formatted_playtime, protondb_tier, anticheat_status, last_launch_ts, playtime_seconds, game_source,
@@ -476,6 +477,7 @@ class GameCard(QFrame):
 
     def enterEvent(self, event):
         self._hovered = True
+        self.hoverChanged.emit(self.name, True)
         self.thickness_anim.stop()
         if self._isPulseAnimationConnected:
             self.thickness_anim.finished.disconnect(self.startPulseAnimation)
@@ -500,22 +502,21 @@ class GameCard(QFrame):
 
     def leaveEvent(self, event):
         self._hovered = False
-        if not self._focused:  # Сохраняем анимацию, если есть фокус
+        self.hoverChanged.emit(self.name, False)
+        if not self._focused:
             if self.gradient_anim:
                 self.gradient_anim.stop()
                 self.gradient_anim = None
-            self.thickness_anim.stop()
-            if self._isPulseAnimationConnected:
-                self.thickness_anim.finished.disconnect(self.startPulseAnimation)
-                self._isPulseAnimationConnected = False
             if self.pulse_anim:
                 self.pulse_anim.stop()
                 self.pulse_anim = None
-            self.thickness_anim.setEasingCurve(QEasingCurve(QEasingCurve.Type.InBack))
-            self.thickness_anim.setStartValue(self._borderWidth)
-            self.thickness_anim.setEndValue(2)
-            self.thickness_anim.start()
-
+            if self.thickness_anim:
+                self.thickness_anim.stop()
+            if self._isPulseAnimationConnected:
+                self.thickness_anim.finished.disconnect(self.startPulseAnimation)
+                self._isPulseAnimationConnected = False
+            self.setBorderWidth(2)
+            self.update()
         super().leaveEvent(event)
 
     def focusInEvent(self, event):
