@@ -28,19 +28,19 @@ BuildRequires:  git
 %package -n     python3-%{pypi_name}-git
 Summary:        %{summary}
 %{?python_provide:%python_provide python3-%{pypi_name}}
-Requires:       python3dist(babel)
-Requires:       python3dist(evdev)
-Requires:       python3dist(icoextract)
-Requires:       python3dist(numpy)
-Requires:       python3dist(orjson)
-Requires:       python3dist(psutil)
-Requires:       python3dist(pyside6)
-Requires:       python3dist(pyudev)
-Requires:       python3dist(requests)
-Requires:       python3dist(tqdm)
-Requires:       python3dist(vdf)
-Requires:       python3dist(pefile)
-Requires:       python3dist(pillow)
+Requires:       python3-babel
+Requires:       python3-evdev
+Requires:       python3-icoextract
+Requires:       python3-numpy
+Requires:       python3-orjson
+Requires:       python3-psutil
+Requires:       python3-pyside6
+Requires:       python3-pyudev
+Requires:       python3-requests
+Requires:       python3-tqdm
+Requires:       python3-vdf
+Requires:       python3-pefile
+Requires:       python3-pillow
 Requires:       perl-Image-ExifTool
 Requires:       xdg-utils
 
