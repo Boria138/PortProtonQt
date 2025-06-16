@@ -16,6 +16,29 @@ from PySide6.QtGui import QPixmap
 
 logger = get_logger(__name__)
 
+def get_egs_executable(app_name: str, legendary_config_path: str) -> str | None:
+    """Получает путь к исполняемому файлу EGS-игры из installed.json с использованием orjson."""
+    installed_json_path = os.path.join(legendary_config_path, "installed.json")
+    try:
+        with open(installed_json_path, "rb") as f:
+            installed_data = orjson.loads(f.read())
+            if app_name in installed_data:
+                install_path = installed_data[app_name].get("install_path", "").decode('utf-8') if isinstance(installed_data[app_name].get("install_path"), bytes) else installed_data[app_name].get("install_path", "")
+                executable = installed_data[app_name].get("executable", "").decode('utf-8') if isinstance(installed_data[app_name].get("executable"), bytes) else installed_data[app_name].get("executable", "")
+                if install_path and executable:
+                    return os.path.join(install_path, executable)
+            logger.warning(f"No executable found for EGS app_name: {app_name}")
+            return None
+    except FileNotFoundError:
+        logger.error(f"installed.json not found at {installed_json_path}")
+        return None
+    except orjson.JSONDecodeError:
+        logger.error(f"Invalid JSON in {installed_json_path}")
+        return None
+    except Exception as e:
+        logger.error(f"Error reading installed.json: {e}")
+        return None
+
 def get_cache_dir() -> Path:
     """Returns the path to the cache directory, creating it if necessary."""
     xdg_cache_home = os.getenv(

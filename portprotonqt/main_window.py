@@ -17,7 +17,7 @@ from portprotonqt.system_overlay import SystemOverlay
 
 from portprotonqt.image_utils import load_pixmap_async, round_corners, ImageCarousel
 from portprotonqt.steam_api import get_steam_game_info_async, get_full_steam_game_info_async, get_steam_installed_games
-from portprotonqt.egs_api import load_egs_games_async
+from portprotonqt.egs_api import load_egs_games_async, get_egs_executable
 from portprotonqt.theme_manager import ThemeManager, load_theme_screenshots, load_logo
 from portprotonqt.time_utils import save_last_launch, get_last_launch, parse_playtime_file, format_playtime, get_last_launch_timestamp, format_last_launch
 from portprotonqt.config_utils import (
@@ -1905,26 +1905,15 @@ class MainWindow(QMainWindow):
 
         # Обработка EGS-игр
         if exec_line.startswith("legendary:launch:"):
-            # Извлекаем app_name из exec_line
             app_name = exec_line.split("legendary:launch:")[1]
-            legendary_path = self.legendary_path  # Путь к legendary
 
-            # Формируем переменные окружения
-            env_vars = os.environ.copy()
-            env_vars['START_FROM_STEAM'] = '1'
-            env_vars['LEGENDARY_CONFIG_PATH'] = self.legendary_config_path
+            # Получаем путь к .exe из installed.json
+            game_exe = get_egs_executable(app_name, self.legendary_config_path)
+            if not game_exe or not os.path.exists(game_exe):
+                QMessageBox.warning(self, _("Error"), _("Executable not found for EGS game: {0}").format(app_name))
+                return
 
-            wrapper = "flatpak run ru.linux_gaming.PortProton"
-            if self.portproton_location is not None and ".var" not in self.portproton_location:
-                start_sh = os.path.join(self.portproton_location, "data", "scripts", "start.sh")
-                wrapper = start_sh
-
-            # Формируем команду
-            cmd = [
-                legendary_path, "launch", app_name, "--no-wine", "--wrapper", wrapper
-            ]
-
-            current_exe = os.path.basename(legendary_path)
+            current_exe = os.path.basename(game_exe)
             if self.game_processes and self.target_exe is not None and self.target_exe != current_exe:
                 QMessageBox.warning(self, _("Error"), _("Cannot launch game while another game is running"))
                 return
@@ -1933,28 +1922,82 @@ class MainWindow(QMainWindow):
             update_button = button if button is not None else self.current_play_button
             self.current_running_button = update_button
             self.target_exe = current_exe
-            exe_name = app_name  # Используем app_name для EGS-игр
+            exe_name = os.path.splitext(current_exe)[0]
 
-            # Запускаем процесс
-            try:
-                process = subprocess.Popen(cmd, env=env_vars, shell=False, preexec_fn=os.setsid)
-                self.game_processes.append(process)
-                save_last_launch(exe_name, datetime.now())
+            # Проверяем, запущена ли игра
+            if self.game_processes and self.target_exe == current_exe:
+                # Останавливаем игру
+                if hasattr(self, 'input_manager'):
+                    self.input_manager.enable_gamepad_handling()
+
+                for proc in self.game_processes:
+                    try:
+                        parent = psutil.Process(proc.pid)
+                        children = parent.children(recursive=True)
+                        for child in children:
+                            try:
+                                child.terminate()
+                            except psutil.NoSuchProcess:
+                                pass
+                        psutil.wait_procs(children, timeout=5)
+                        for child in children:
+                            if child.is_running():
+                                child.kill()
+                        os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+                    except psutil.NoSuchProcess:
+                        pass
+                self.game_processes = []
                 if update_button:
-                    update_button.setText(_("Launching"))
-                    icon = self.theme_manager.get_icon("stop")
+                    update_button.setText(_("Play"))
+                    icon = self.theme_manager.get_icon("play")
                     if isinstance(icon, str):
                         icon = QIcon(icon)
                     elif icon is None:
                         icon = QIcon()
                     update_button.setIcon(icon)
+                if hasattr(self, 'checkProcessTimer') and self.checkProcessTimer is not None:
+                    self.checkProcessTimer.stop()
+                    self.checkProcessTimer.deleteLater()
+                    self.checkProcessTimer = None
+                self.current_running_button = None
+                self.target_exe = None
+                self._gameLaunched = False
+            else:
+                # Запускаем игру через PortProton
+                env_vars = os.environ.copy()
+                env_vars['START_FROM_STEAM'] = '1'
+                env_vars['LEGENDARY_CONFIG_PATH'] = self.legendary_config_path
 
-                self.checkProcessTimer = QTimer(self)
-                self.checkProcessTimer.timeout.connect(self.checkTargetExe)
-                self.checkProcessTimer.start(500)
-            except Exception as e:
-                logger.error(f"Failed to launch EGS game {app_name}: {e}")
-                QMessageBox.warning(self, _("Error"), _("Failed to launch game: {0}").format(str(e)))
+                wrapper = "flatpak run ru.linux_gaming.PortProton"
+                if self.portproton_location is not None and ".var" not in self.portproton_location:
+                    start_sh = os.path.join(self.portproton_location, "data", "scripts", "start.sh")
+                    wrapper = start_sh
+
+                cmd = [wrapper, game_exe]
+
+                try:
+                    process = subprocess.Popen(cmd, env=env_vars, shell=False, preexec_fn=os.setsid)
+                    self.game_processes.append(process)
+                    save_last_launch(exe_name, datetime.now())
+                    if update_button:
+                        update_button.setText(_("Launching"))
+                        icon = self.theme_manager.get_icon("stop")
+                        if isinstance(icon, str):
+                            icon = QIcon(icon)
+                        elif icon is None:
+                            icon = QIcon()
+                        update_button.setIcon(icon)
+
+                    # Delay disabling gamepad handling
+                    if hasattr(self, 'input_manager'):
+                        QTimer.singleShot(200, self.input_manager.disable_gamepad_handling)
+
+                    self.checkProcessTimer = QTimer(self)
+                    self.checkProcessTimer.timeout.connect(self.checkTargetExe)
+                    self.checkProcessTimer.start(500)
+                except Exception as e:
+                    logger.error(f"Failed to launch EGS game {app_name}: {e}")
+                    QMessageBox.warning(self, _("Error"), _("Failed to launch game: {0}").format(str(e)))
             return
 
         # Обработка PortProton-игр
