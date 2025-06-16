@@ -12,6 +12,10 @@ from collections.abc import Callable
 from portprotonqt.localization import get_egs_language, _
 from portprotonqt.logger import get_logger
 from portprotonqt.image_utils import load_pixmap_async
+from portprotonqt.time_utils import parse_playtime_file, format_playtime, get_last_launch, get_last_launch_timestamp
+from portprotonqt.config_utils import get_portproton_location
+from portprotonqt.steam_api import get_weanticheatyet_status_async
+
 from PySide6.QtGui import QPixmap
 
 logger = get_logger(__name__)
@@ -27,7 +31,6 @@ def get_egs_executable(app_name: str, legendary_config_path: str) -> str | None:
                 executable = installed_data[app_name].get("executable", "").decode('utf-8') if isinstance(installed_data[app_name].get("executable"), bytes) else installed_data[app_name].get("executable", "")
                 if install_path and executable:
                     return os.path.join(install_path, executable)
-            logger.warning(f"No executable found for EGS app_name: {app_name}")
             return None
     except FileNotFoundError:
         logger.error(f"installed.json not found at {installed_json_path}")
@@ -304,6 +307,7 @@ def get_egs_game_description_async(
 
     thread = threading.Thread(target=fetch_description, daemon=True)
     thread.start()
+
 def run_legendary_list_async(legendary_path: str, callback: Callable[[list | None], None]):
     """
     Асинхронно выполняет команду 'legendary list --json' и возвращает результат через callback.
@@ -349,6 +353,7 @@ def run_legendary_list_async(legendary_path: str, callback: Callable[[list | Non
 def load_egs_games_async(legendary_path: str, callback: Callable[[list[tuple]], None], downloader, update_progress: Callable[[int], None], update_status_message: Callable[[str, int], None]):
     """
     Асинхронно загружает Epic Games Store игры с использованием legendary CLI.
+    Читает статистику времени игры и последнего запуска из файла statistics.
     """
     logger.debug("Starting to load Epic Games Store games")
     games: list[tuple] = []
@@ -356,6 +361,14 @@ def load_egs_games_async(legendary_path: str, callback: Callable[[list[tuple]], 
     metadata_dir = cache_dir / "metadata"
     cache_file = cache_dir / "legendary_games.json"
     cache_ttl = 3600  # Cache TTL in seconds (1 hour)
+
+    # Путь к файлу statistics
+    portproton_location = get_portproton_location()
+    if portproton_location is None:
+        logger.error("PortProton location is not set, cannot locate statistics file")
+        statistics_file = ""
+    else:
+        statistics_file = os.path.join(portproton_location, "data", "tmp", "statistics")
 
     if not os.path.exists(legendary_path):
         logger.info("Legendary binary not found, downloading...")
@@ -368,7 +381,7 @@ def load_egs_games_async(legendary_path: str, callback: Callable[[list[tuple]], 
                     logger.error(f"Failed to make legendary binary executable: {e}")
                     callback(games)  # Return empty games list on failure
                     return
-                _continue_loading_egs_games(legendary_path, callback, metadata_dir, cache_dir, cache_file, cache_ttl, update_progress, update_status_message)
+                _continue_loading_egs_games(legendary_path, callback, metadata_dir, cache_dir, cache_file, cache_ttl, update_progress, update_status_message, statistics_file)
             else:
                 logger.error("Failed to download legendary binary")
                 callback(games)  # Return empty games list on failure
@@ -379,9 +392,9 @@ def load_egs_games_async(legendary_path: str, callback: Callable[[list[tuple]], 
             callback(games)
         return
     else:
-        _continue_loading_egs_games(legendary_path, callback, metadata_dir, cache_dir, cache_file, cache_ttl, update_progress, update_status_message)
+        _continue_loading_egs_games(legendary_path, callback, metadata_dir, cache_dir, cache_file, cache_ttl, update_progress, update_status_message, statistics_file)
 
-def _continue_loading_egs_games(legendary_path: str, callback: Callable[[list[tuple]], None], metadata_dir: Path, cache_dir: Path, cache_file: Path, cache_ttl: int, update_progress: Callable[[int], None], update_status_message: Callable[[str, int], None]):
+def _continue_loading_egs_games(legendary_path: str, callback: Callable[[list[tuple]], None], metadata_dir: Path, cache_dir: Path, cache_file: Path, cache_ttl: int, update_progress: Callable[[int], None], update_status_message: Callable[[str, int], None], statistics_file: str):
     """
     Продолжает процесс загрузки EGS игр, либо из кэша, либо через legendary CLI.
     """
@@ -433,6 +446,33 @@ def _continue_loading_egs_games(legendary_path: str, callback: Callable[[list[tu
                         callback(final_games)
                 return
 
+            # Получаем путь к .exe для извлечения имени
+            game_exe = get_egs_executable(app_name, os.path.dirname(legendary_path))
+            exe_name = ""
+            if game_exe:
+                exe_name = os.path.splitext(os.path.basename(game_exe))[0]
+
+            # Читаем статистику из файла statistics
+            playtime_seconds = 0
+            formatted_playtime = ""
+            last_launch = _("Never")
+            last_launch_timestamp = 0
+            if exe_name and os.path.exists(statistics_file):
+                try:
+                    playtime_data = parse_playtime_file(statistics_file)
+                    matching_key = next(
+                        (key for key in playtime_data if os.path.basename(key).split('.')[0] == exe_name),
+                        None
+                    )
+                    if matching_key:
+                        playtime_seconds = playtime_data[matching_key]
+                        formatted_playtime = format_playtime(playtime_seconds)
+                except Exception as e:
+                    logger.error(f"Failed to parse playtime data for {app_name}: {e}")
+            if exe_name:
+                last_launch = get_last_launch(exe_name) or _("Never")
+                last_launch_timestamp = get_last_launch_timestamp(exe_name)
+
             metadata_file = metadata_dir / f"{app_name}.json"
             cover_url = ""
             try:
@@ -453,7 +493,6 @@ def _continue_loading_egs_games(legendary_path: str, callback: Callable[[list[tu
                 final_description = api_description or _("No description available")
 
                 def on_cover_loaded(pixmap: QPixmap):
-                    from portprotonqt.steam_api import get_weanticheatyet_status_async
                     def on_anticheat_status(status: str):
                         nonlocal pending_images
                         with results_lock:
@@ -464,12 +503,12 @@ def _continue_loading_egs_games(legendary_path: str, callback: Callable[[list[tu
                                 app_name,
                                 f"legendary:launch:{app_name}",
                                 "",
-                                _("Never"),
-                                "",
+                                last_launch,  # Время последнего запуска
+                                formatted_playtime,  # Форматированное время игры
                                 "",
                                 status or "",
-                                0,
-                                0,
+                                last_launch_timestamp,  # Временная метка последнего запуска
+                                playtime_seconds,  # Время игры в секундах
                                 "epic"
                             )
                             pending_images -= 1
