@@ -954,6 +954,7 @@ class MainWindow(QMainWindow):
         formLayout = QFormLayout()
         formLayout.setContentsMargins(0, 10, 0, 0)
         formLayout.setSpacing(10)
+        formLayout.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
 
         # 1. Time detail_level
         self.timeDetailCombo = QComboBox()

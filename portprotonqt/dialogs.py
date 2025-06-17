@@ -95,6 +95,7 @@ class AddGameDialog(QDialog):
         self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE + self.theme.MESSAGE_BOX_STYLE)
 
         layout = QFormLayout(self)
+        layout.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
 
         # Game name
         self.nameEdit = QLineEdit(self)
