@@ -67,14 +67,14 @@ class GameCard(QFrame):
         self.setStyleSheet(self.theme.GAME_CARD_WINDOW_STYLE)
 
         # Параметры анимации обводки
-        self._borderWidth = 2
-        self._gradientAngle = 0.0
+        self._borderWidth = self.theme.GAME_CARD_ANIMATION["default_border_width"]
+        self._gradientAngle = self.theme.GAME_CARD_ANIMATION["gradient_start_angle"]
         self._hovered = False
         self._focused = False
 
         # Анимации
         self.thickness_anim = QPropertyAnimation(self, QByteArray(b"borderWidth"))
-        self.thickness_anim.setDuration(300)
+        self.thickness_anim.setDuration(self.theme.GAME_CARD_ANIMATION["thickness_anim_duration"])
         self.gradient_anim = None
         self.pulse_anim = None
 
@@ -448,10 +448,8 @@ class GameCard(QFrame):
         if self._hovered or self._focused:
             center = self.rect().center()
             gradient = QConicalGradient(center, self._gradientAngle)
-            gradient.setColorAt(0, QColor("#00fff5"))
-            gradient.setColorAt(0.33, QColor("#FF5733"))
-            gradient.setColorAt(0.66, QColor("#9B59B6"))
-            gradient.setColorAt(1, QColor("#00fff5"))
+            for stop in self.theme.GAME_CARD_ANIMATION["gradient_colors"]:
+                gradient.setColorAt(stop["position"], QColor(stop["color"]))
             pen.setBrush(QBrush(gradient))
         else:
             pen.setColor(QColor(0, 0, 0, 0))
@@ -468,11 +466,11 @@ class GameCard(QFrame):
         if self.pulse_anim:
             self.pulse_anim.stop()
         self.pulse_anim = QPropertyAnimation(self, QByteArray(b"borderWidth"))
-        self.pulse_anim.setDuration(800)
+        self.pulse_anim.setDuration(self.theme.GAME_CARD_ANIMATION["pulse_anim_duration"])
         self.pulse_anim.setLoopCount(0)
-        self.pulse_anim.setKeyValueAt(0, 8)
-        self.pulse_anim.setKeyValueAt(0.5, 10)
-        self.pulse_anim.setKeyValueAt(1, 8)
+        self.pulse_anim.setKeyValueAt(0, self.theme.GAME_CARD_ANIMATION["pulse_min_border_width"])
+        self.pulse_anim.setKeyValueAt(0.5, self.theme.GAME_CARD_ANIMATION["pulse_max_border_width"])
+        self.pulse_anim.setKeyValueAt(1, self.theme.GAME_CARD_ANIMATION["pulse_min_border_width"])
         self.pulse_anim.start()
 
     def enterEvent(self, event):
@@ -482,9 +480,9 @@ class GameCard(QFrame):
         if self._isPulseAnimationConnected:
             self.thickness_anim.finished.disconnect(self.startPulseAnimation)
             self._isPulseAnimationConnected = False
-        self.thickness_anim.setEasingCurve(QEasingCurve(QEasingCurve.Type.OutBack))
+        self.thickness_anim.setEasingCurve(QEasingCurve(QEasingCurve.Type[self.theme.GAME_CARD_ANIMATION["thickness_easing_curve"]]))
         self.thickness_anim.setStartValue(self._borderWidth)
-        self.thickness_anim.setEndValue(8)
+        self.thickness_anim.setEndValue(self.theme.GAME_CARD_ANIMATION["hover_border_width"])
         self.thickness_anim.finished.connect(self.startPulseAnimation)
         self._isPulseAnimationConnected = True
         self.thickness_anim.start()
@@ -492,9 +490,9 @@ class GameCard(QFrame):
         if self.gradient_anim:
             self.gradient_anim.stop()
         self.gradient_anim = QPropertyAnimation(self, QByteArray(b"gradientAngle"))
-        self.gradient_anim.setDuration(3000)
-        self.gradient_anim.setStartValue(360)
-        self.gradient_anim.setEndValue(0)
+        self.gradient_anim.setDuration(self.theme.GAME_CARD_ANIMATION["gradient_anim_duration"])
+        self.gradient_anim.setStartValue(self.theme.GAME_CARD_ANIMATION["gradient_start_angle"])
+        self.gradient_anim.setEndValue(self.theme.GAME_CARD_ANIMATION["gradient_end_angle"])
         self.gradient_anim.setLoopCount(-1)
         self.gradient_anim.start()
 
@@ -515,8 +513,10 @@ class GameCard(QFrame):
             if self._isPulseAnimationConnected:
                 self.thickness_anim.finished.disconnect(self.startPulseAnimation)
                 self._isPulseAnimationConnected = False
-            self.setBorderWidth(2)
-            self.update()
+            self.thickness_anim.setEasingCurve(QEasingCurve(QEasingCurve.Type[self.theme.GAME_CARD_ANIMATION["thickness_easing_curve_out"]]))
+            self.thickness_anim.setStartValue(self._borderWidth)
+            self.thickness_anim.setEndValue(self.theme.GAME_CARD_ANIMATION["default_border_width"])
+            self.thickness_anim.start()
         super().leaveEvent(event)
 
     def focusInEvent(self, event):
@@ -525,9 +525,9 @@ class GameCard(QFrame):
         if self._isPulseAnimationConnected:
             self.thickness_anim.finished.disconnect(self.startPulseAnimation)
             self._isPulseAnimationConnected = False
-        self.thickness_anim.setEasingCurve(QEasingCurve(QEasingCurve.Type.OutBack))
+        self.thickness_anim.setEasingCurve(QEasingCurve(QEasingCurve.Type[self.theme.GAME_CARD_ANIMATION["thickness_easing_curve"]]))
         self.thickness_anim.setStartValue(self._borderWidth)
-        self.thickness_anim.setEndValue(12)
+        self.thickness_anim.setEndValue(self.theme.GAME_CARD_ANIMATION["focus_border_width"])
         self.thickness_anim.finished.connect(self.startPulseAnimation)
         self._isPulseAnimationConnected = True
         self.thickness_anim.start()
@@ -535,9 +535,9 @@ class GameCard(QFrame):
         if self.gradient_anim:
             self.gradient_anim.stop()
         self.gradient_anim = QPropertyAnimation(self, QByteArray(b"gradientAngle"))
-        self.gradient_anim.setDuration(3000)
-        self.gradient_anim.setStartValue(360)
-        self.gradient_anim.setEndValue(0)
+        self.gradient_anim.setDuration(self.theme.GAME_CARD_ANIMATION["gradient_anim_duration"])
+        self.gradient_anim.setStartValue(self.theme.GAME_CARD_ANIMATION["gradient_start_angle"])
+        self.gradient_anim.setEndValue(self.theme.GAME_CARD_ANIMATION["gradient_end_angle"])
         self.gradient_anim.setLoopCount(-1)
         self.gradient_anim.start()
 
@@ -556,11 +556,10 @@ class GameCard(QFrame):
             if self.pulse_anim:
                 self.pulse_anim.stop()
                 self.pulse_anim = None
-            self.thickness_anim.setEasingCurve(QEasingCurve(QEasingCurve.Type.InBack))
+            self.thickness_anim.setEasingCurve(QEasingCurve(QEasingCurve.Type[self.theme.GAME_CARD_ANIMATION["thickness_easing_curve_out"]]))
             self.thickness_anim.setStartValue(self._borderWidth)
-            self.thickness_anim.setEndValue(2)
+            self.thickness_anim.setEndValue(self.theme.GAME_CARD_ANIMATION["default_border_width"])
             self.thickness_anim.start()
-
         super().focusOutEvent(event)
 
     def mousePressEvent(self, event):
