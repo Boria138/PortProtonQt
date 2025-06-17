@@ -8,7 +8,7 @@ current_theme_name = read_theme_from_config()
 favoriteLabelSize = 48, 48
 pixmapsScaledSize = 60, 60
 
-GAME_CARD_ANIMATION_PARAMS = {
+GAME_CARD_ANIMATION = {
     # Ширина обводки карточки в состоянии покоя (без наведения или фокуса).
     # Влияет на толщину рамки вокруг карточки, когда она не выделена.
     # Значение в пикселях.
