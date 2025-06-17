@@ -56,6 +56,7 @@ class MainWindow(QMainWindow):
         self.current_exec_line = None
         self.currentDetailPage = None
         self.current_play_button = None
+        self.current_focused_card = None
         self.pending_games = []
         self.game_card_cache = {}
         self.pending_images = {}
@@ -242,10 +243,39 @@ class MainWindow(QMainWindow):
         self.updateGameGrid()
         self.progress_bar.setVisible(False)
 
+    def _on_card_focused(self, game_name: str, is_focused: bool):
+        """Обработчик сигнала focusChanged от GameCard."""
+        card_key = None
+        for key, card in self.game_card_cache.items():
+            if card.name == game_name:
+                card_key = key
+                break
+
+        if not card_key:
+            return
+
+        card = self.game_card_cache[card_key]
+
+        if is_focused:
+            # Если карточка получила фокус
+            if self.current_hovered_card and self.current_hovered_card != card:
+                # Сбрасываем текущую hovered карточку
+                self.current_hovered_card._hovered = False
+                self.current_hovered_card.leaveEvent(None)
+                self.current_hovered_card = None
+            if self.current_focused_card and self.current_focused_card != card:
+                # Сбрасываем текущую focused карточку
+                self.current_focused_card._focused = False
+                self.current_focused_card.clearFocus()
+            self.current_focused_card = card
+        else:
+            # Если карточка потеряла фокус
+            if self.current_focused_card == card:
+                self.current_focused_card = None
+
     def _on_card_hovered(self, game_name: str, is_hovered: bool):
         """Обработчик сигнала hoverChanged от GameCard."""
         card_key = None
-        # Находим ключ карточки по имени игры
         for key, card in self.game_card_cache.items():
             if card.name == game_name:
                 card_key = key
@@ -258,10 +288,14 @@ class MainWindow(QMainWindow):
 
         if is_hovered:
             # Если мышь наведена на карточку
+            if self.current_focused_card and self.current_focused_card != card:
+                # Сбрасываем текущую focused карточку
+                self.current_focused_card._focused = False
+                self.current_focused_card.clearFocus()
             if self.current_hovered_card and self.current_hovered_card != card:
-                # Сбрасываем предыдущую выделенную карточку
+                # Сбрасываем предыдущую hovered карточку
                 self.current_hovered_card._hovered = False
-                self.current_hovered_card.leaveEvent(None)  # Принудительно вызываем leaveEvent
+                self.current_hovered_card.leaveEvent(None)
             self.current_hovered_card = card
         else:
             # Если мышь покинула карточку
@@ -709,6 +743,7 @@ class MainWindow(QMainWindow):
                     context_menu_manager=self.context_menu_manager
                 )
                 card.hoverChanged.connect(self._on_card_hovered)
+                card.focusChanged.connect(self._on_card_focused)
                 # Подключаем сигналы контекстного меню
                 card.editShortcutRequested.connect(self.context_menu_manager.edit_game_shortcut)
                 card.deleteGameRequested.connect(self.context_menu_manager.delete_game)

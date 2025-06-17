@@ -26,6 +26,7 @@ class GameCard(QFrame):
     removeFromSteamRequested = Signal(str, str)   # name, exec_line
     openGameFolderRequested = Signal(str, str)    # name, exec_line
     hoverChanged = Signal(str, bool)
+    focusChanged = Signal(str, bool)
 
     def __init__(self, name, description, cover_path, appid, controller_support, exec_line,
                 last_launch, formatted_playtime, protondb_tier, anticheat_status, last_launch_ts, playtime_seconds, game_source,
@@ -475,7 +476,9 @@ class GameCard(QFrame):
 
     def enterEvent(self, event):
         self._hovered = True
+        self._focused = False
         self.hoverChanged.emit(self.name, True)
+
         self.thickness_anim.stop()
         if self._isPulseAnimationConnected:
             self.thickness_anim.finished.disconnect(self.startPulseAnimation)
@@ -496,6 +499,7 @@ class GameCard(QFrame):
         self.gradient_anim.setLoopCount(-1)
         self.gradient_anim.start()
 
+        self.clearFocus()
         super().enterEvent(event)
 
     def leaveEvent(self, event):
@@ -521,6 +525,10 @@ class GameCard(QFrame):
 
     def focusInEvent(self, event):
         self._focused = True
+        self._hovered = False
+        self.hoverChanged.emit(self.name, False)
+        self.focusChanged.emit(self.name, True)
+
         self.thickness_anim.stop()
         if self._isPulseAnimationConnected:
             self.thickness_anim.finished.disconnect(self.startPulseAnimation)
@@ -545,7 +553,8 @@ class GameCard(QFrame):
 
     def focusOutEvent(self, event):
         self._focused = False
-        if not self._hovered:  # Сохраняем анимацию, если есть наведение
+        self.focusChanged.emit(self.name, False)
+        if not self._hovered:
             if self.gradient_anim:
                 self.gradient_anim.stop()
                 self.gradient_anim = None
