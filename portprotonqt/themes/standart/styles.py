@@ -190,13 +190,6 @@ SEARCH_EDIT_STYLE = """
     }
 """
 
-SETTINGS_CHECKBOX_STYLE = """
-    QCheckBox:focus {
-            border: 2px solid #409EFF;
-            background: #404554;
-        }
-"""
-
 # ОТКЛЮЧАЕМ РАМКУ У QScrollArea
 SCROLL_AREA_STYLE = """
     QWidget {
