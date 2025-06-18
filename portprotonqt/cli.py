@@ -13,4 +13,9 @@ def parse_args():
         action="store_true",
         help="Запустить приложение в полноэкранном режиме и сохранить эту настройку"
     )
+    parser.add_argument(
+        "--session",
+        action="store_true",
+        help="Запустить приложение с использованием gamescope"
+    )
     return parser.parse_args()

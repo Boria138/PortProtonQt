@@ -1,4 +1,6 @@
 import sys
+import os
+import subprocess
 from PySide6.QtCore import QLocale, QTranslator, QLibraryInfo
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QIcon
@@ -32,6 +34,13 @@ def main():
     args = parse_args()
 
     window = MainWindow()
+
+    if args.session:
+        gamescope_cmd = os.getenv("GAMESCOPE_CMD", "gamescope -f --xwayland-count 2")
+        cmd = f"{gamescope_cmd} -- portprotonqt"
+        logger.info(f"Executing: {cmd}")
+        subprocess.Popen(cmd, shell=True)
+        sys.exit(0)
 
     if args.fullscreen:
         logger.info("Launching in fullscreen mode due to --fullscreen flag")
