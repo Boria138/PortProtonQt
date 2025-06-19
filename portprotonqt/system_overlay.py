@@ -20,8 +20,12 @@ class SystemOverlay(QDialog):
         self.theme_manager = ThemeManager()
         self.setStyleSheet(self.theme.OVERLAY_WINDOW_STYLE)
 
-        # Убираем рамку окна
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
+        # Make window stay on top and frameless
+        self.setWindowFlags(
+            Qt.WindowType.FramelessWindowHint |
+            Qt.WindowType.Dialog |
+            Qt.WindowType.WindowStaysOnTopHint
+        )
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
