@@ -1916,7 +1916,6 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event):
         """Завершает все дочерние процессы и сохраняет настройки при закрытии окна."""
-        # Завершаем все игровые процессы
         for proc in self.game_processes:
             try:
                 parent = psutil.Process(proc.pid)
@@ -1957,4 +1956,5 @@ class MainWindow(QMainWindow):
             self.checkProcessTimer.deleteLater()
             self.checkProcessTimer = None
 
+        QApplication.quit()
         event.accept()
