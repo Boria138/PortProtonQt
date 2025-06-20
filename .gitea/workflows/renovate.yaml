@@ -1,0 +1,21 @@
+name: renovate
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "@daily"
+  push:
+    branches:
+      - main
+
+jobs:
+  renovate:
+    runs-on: ubuntu-latest
+    container: ghcr.io/renovatebot/renovate:41.1.3
+    steps:
+      - uses: actions/checkout@v4
+      - run: renovate
+        env:
+          RENOVATE_CONFIG_FILE: "/workspace/{{username}}/{{repo name}/config.js"
+          LOG_LEVEL: "debug"
+          RENOVATE_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
