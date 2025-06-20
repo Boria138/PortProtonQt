@@ -3,9 +3,7 @@
   "extends": [
     "config:best-practices"
   ],
-
   "rebaseWhen": "never",
-
   "packageRules": [
     {
       "automerge": true,
@@ -15,7 +13,7 @@
       "enabled": false,
       "matchUpdateTypes": ["digest", "pinDigest", "pin"],
       "matchDepTypes": ["container"],
-      "matchFileNames": [".gitea/workflows/**.yaml", ".gitra/workflows/**.yml"],
-    },
+      "matchFileNames": [".gitea/workflows/**.yaml", ".gitra/workflows/**.yml"]
+    }
   ]
 }
