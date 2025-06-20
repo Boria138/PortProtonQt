@@ -4,9 +4,6 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "@daily"
-  push:
-    branches:
-      - main
 
 jobs:
   renovate:
