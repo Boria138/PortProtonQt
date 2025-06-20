@@ -1,10 +1,13 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:best-practices"
-  ],
+  "extends": ["config:best-practices"],
   "rebaseWhen": "never",
   "packageRules": [
+    {
+      "matchManagers": ["poetry", "pip_requirements", "pip_setup", "pipenv", "uv"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true
+    },
     {
       "automerge": true,
       "matchUpdateTypes": ["pin", "pinDigest"]
