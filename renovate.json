@@ -2,9 +2,11 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:best-practices"],
   "rebaseWhen": "never",
+  "lockFileMaintenance": {
+    "enabled": true
+  },
   "packageRules": [
     {
-      "matchManagers": ["poetry", "pip_requirements", "pip_setup", "pipenv", "uv"],
       "matchUpdateTypes": ["minor", "patch"],
       "automerge": true
     },
