@@ -40,6 +40,7 @@ from typing import cast
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
+from PySide6.QtWidgets import QSizePolicy
 
 logger = get_logger(__name__)
 
@@ -958,7 +959,7 @@ class MainWindow(QMainWindow):
 
         # 1. Time detail_level
         self.timeDetailCombo = QComboBox()
-        self.timeDetailCombo.setMinimumContentsLength(500) # удалить потом. Сомнительное решение для растягивания комбобоксов в нативе
+        self.timeDetailCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.time_keys = ["detailed", "brief"]
         self.time_labels = [_("detailed"), _("brief")]
         self.timeDetailCombo.addItems(self.time_labels)
@@ -977,7 +978,7 @@ class MainWindow(QMainWindow):
 
         # 2. Games sort_method
         self.gamesSortCombo = QComboBox()
-        self.gamesSortCombo.setMinimumContentsLength(500) # удалить потом. Сомнительное решение для растягивания комбобоксов в нативе
+        self.gamesSortCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.sort_keys = ["last_launch", "playtime", "alphabetical", "favorites"]
         self.sort_labels = [_("last launch"), _("playtime"), _("alphabetical"), _("favorites")]
         self.gamesSortCombo.addItems(self.sort_labels)
@@ -998,7 +999,7 @@ class MainWindow(QMainWindow):
         self.filter_keys = ["all", "steam", "portproton", "favorites", "epic"]
         self.filter_labels = [_("all"), "steam", "portproton", _("favorites")]
         self.gamesDisplayCombo = QComboBox()
-        self.gamesDisplayCombo.setMinimumContentsLength(500) # удалить потом. Сомнительное решение для растягивания комбобоксов в нативе
+        self.gamesDisplayCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.gamesDisplayCombo.addItems(self.filter_labels)
         self.gamesDisplayCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
         self.gamesDisplayCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
