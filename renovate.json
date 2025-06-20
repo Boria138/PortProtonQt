@@ -16,14 +16,11 @@
     },
     {
       "enabled": false,
-      "matchUpdateTypes": ["digest", "pinDigest", "pin"],
       "matchFileNames": [".gitea/workflows/**.yaml", ".gitea/workflows/**.yml"]
     },
     {
       "enabled": false,
-      "matchFileNames": [".python-version"],
-      "matchManagers": ["pyenv"],
-      "matchUpdateTypes": ["major", "minor"]
+      "matchFileNames": [".python-version"]
     }
   ]
 }
