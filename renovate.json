@@ -1,7 +1,11 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:best-practices"],
+  "extends": [
+    "config:best-practices"
+  ],
+
   "rebaseWhen": "never",
+
   "packageRules": [
     {
       "automerge": true,
@@ -9,10 +13,9 @@
     },
     {
       "enabled": false,
-      "matchFileNames": [
-        ".gitea/workflows/**.yml",
-        ".gitea/workflows/**.yaml",
-      ]
-    }
+      "matchUpdateTypes": ["digest", "pinDigest", "pin"],
+      "matchDepTypes": ["container"],
+      "matchFileNames": [".gitea/workflows/**.yaml", ".gitra/workflows/**.yml"],
+    },
   ]
 }
