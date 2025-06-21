@@ -52,6 +52,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
+        QApplication.setStyle("Fusion")
         self.setAcceptDrops(True)
         self.current_exec_line = None
         self.currentDetailPage = None
