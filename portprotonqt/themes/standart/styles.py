@@ -696,7 +696,8 @@ SETTINGS_COMBO_STYLE = f"""
     }}
     QComboBox:on {{
         background: #373a43;
-        border: 1px solid #409EFF;
+        border: 2px solid #409EFF;
+        border-bottom-style: none;
         border-top-left-radius: 10px;
         border-top-right-radius: 10px;
         border-bottom-left-radius: 0px;
@@ -734,15 +735,20 @@ SETTINGS_COMBO_STYLE = f"""
     /* Список при открытом комбобоксе */
     QComboBox QAbstractItemView {{
         outline: none;
-        border: 1px solid #409EFF;
+        border: 2px solid #409EFF;
         border-top-style: none;
+        border-top-left-radius: 0px;
+        border-top-right-radius: 0px;
+        border-bottom-left-radius: 10px;
+        border-bottom-right-radius: 10px;
     }}
     QListView {{
         background: #3f424d;
     }}
     QListView::item {{
         padding: 7px 7px 7px 12px;
-        border-radius: 0px;
+        margin: 0px 3px 3px 3px;
+        border-radius: 10px;
         color: #ffffff;
     }}
     QListView::item:hover {{
