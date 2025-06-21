@@ -53,7 +53,40 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
+        # Создаём менеджер тем и читаем, какая тема выбрана
+        self.theme_manager = ThemeManager()
+        selected_theme = read_theme_from_config()
+        self.current_theme_name = selected_theme
+        try:
+            self.theme = self.theme_manager.apply_theme(selected_theme)
+        except FileNotFoundError:
+            logger.warning(f"Тема '{selected_theme}' не найдена, применяется стандартная тема 'standart'")
+            self.theme = self.theme_manager.apply_theme("standart")
+            self.current_theme_name = "standart"
+            save_theme_to_config("standart")
+        if not self.theme:
+            self.theme = default_styles
+        self.card_width = read_card_size()
+        self.setWindowTitle("PortProtonQt")
+        self.setMinimumSize(800, 600)
+
+        self.games = []
+        self.filtered_games = self.games
+        self.game_processes = []
+        self.target_exe = None
+        self.current_running_button = None
+        self.portproton_location = get_portproton_location()
+
+        self.context_menu_manager = ContextMenuManager(
+            self,
+            self.portproton_location,
+            self.theme,
+            self.loadGames,
+            self.updateGameGrid
+        )
+
         QApplication.setStyle("Fusion")
+        self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE)
         self.setAcceptDrops(True)
         self.current_exec_line = None
         self.currentDetailPage = None
@@ -88,41 +121,11 @@ class MainWindow(QMainWindow):
         self.legendary_path = os.path.join(self.legendary_config_path, "legendary")
         self.downloader = Downloader(max_workers=4)
 
-        # Создаём менеджер тем и читаем, какая тема выбрана
-        self.theme_manager = ThemeManager()
-        selected_theme = read_theme_from_config()
-        self.current_theme_name = selected_theme
-        try:
-            self.theme = self.theme_manager.apply_theme(selected_theme)
-        except FileNotFoundError:
-            logger.warning(f"Тема '{selected_theme}' не найдена, применяется стандартная тема 'standart'")
-            self.theme = self.theme_manager.apply_theme("standart")
-            self.current_theme_name = "standart"
-            save_theme_to_config("standart")
-        if not self.theme:
-            self.theme = default_styles
-        self.card_width = read_card_size()
-        self.setWindowTitle("PortProtonQt")
-        self.setMinimumSize(800, 600)
-
-        self.games = []
-        self.filtered_games = self.games
-        self.game_processes = []
-        self.target_exe = None
-        self.current_running_button = None
-        self.portproton_location = get_portproton_location()
-
-        self.context_menu_manager = ContextMenuManager(
-            self,
-            self.portproton_location,
-            self.theme,
-            self.loadGames,
-            self.updateGameGrid
-        )
-
         # Статус-бар
         self.setStatusBar(QStatusBar(self))
+        self.statusBar().setStyleSheet(self.theme.STATUS_BAR_STYLE)
         self.progress_bar = QProgressBar()
+        self.progress_bar.setStyleSheet(self.theme.PROGRESS_BAR_STYLE)
         self.progress_bar.setMaximumWidth(200)
         self.progress_bar.setTextVisible(True)
         self.progress_bar.setVisible(False)
@@ -203,8 +206,6 @@ class MainWindow(QMainWindow):
 
         self.restore_state()
 
-        self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE)
-        self.setStyleSheet(self.theme.MESSAGE_BOX_STYLE)
         self.input_manager = InputManager(self)
         QTimer.singleShot(0, self.loadGames)
 

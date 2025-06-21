@@ -108,6 +108,55 @@ CONTEXT_MENU_STYLE = """
     }
 """
 
+# ГЛОБАЛЬНЫЙ СТИЛЬ ДЛЯ ОКНА (ФОН), ЛЭЙБЛОВ, КНОПОК
+MAIN_WINDOW_STYLE = """
+    QWidget {
+        background: #282a33;
+    }
+    QLabel {
+        color: #ffffff;
+    }
+    QPushButton {
+        background: #3f424d;
+        border: 2px solid rgba(255, 255, 255, 0.01);
+        border-radius: 10px;
+        color: #ffffff;
+        font-size: 16px;
+        font-family: 'Play';
+        padding: 8px 16px;
+    }
+    QPushButton:hover {
+        background: #409EFF;
+        border: 2px solid #409EFF;
+    }
+    QPushButton:pressed {
+        background: #282a33;
+    }
+    QPushButton:focus {
+        border: 2px solid #409EFF;
+        background-color: #409EFF;
+    }
+"""
+
+# СТИЛЬ ПРОГРЕСС-БАРА
+PROGRESS_BAR_STYLE = """
+    QProgressBar {
+        color: #ffffff;
+        background-color: #3f424d;
+        text-align: center;
+    }
+    QProgressBar::chunk {
+        background-color: #409EFF;
+    }
+"""
+
+# СТИЛЬ СТАТУС-БАРА
+STATUS_BAR_STYLE = """
+    QStatusBar {
+        color: #ffffff;
+    }
+"""
+
 # СТИЛЬ ШАПКИ ГЛАВНОГО ОКНА
 MAIN_WINDOW_HEADER_STYLE = """
     QFrame {
@@ -133,7 +182,7 @@ TITLE_LABEL_STYLE = """
 # СТИЛЬ ОБЛАСТИ НАВИГАЦИИ (КНОПКИ ВКЛАДОК)
 NAV_WIDGET_STYLE = """
     QWidget {
-        background: #282a33;
+        background: transparent;
         border: 0px solid;
     }
 """
@@ -161,16 +210,6 @@ NAV_BUTTON_STYLE = """
     NavLabel:hover {
         background: none;
         color: #409EFF;
-    }
-"""
-
-# ГЛОБАЛЬНЫЙ СТИЛЬ ДЛЯ ОКНА (ФОН) И QLabel
-MAIN_WINDOW_STYLE = """
-    QMainWindow {
-        background: none;
-    }
-    QLabel {
-        color: #232627;
     }
 """
 
@@ -767,8 +806,10 @@ SETTINGS_COMBO_STYLE = f"""
 SETTINGS_CHECKBOX_STYLE = f"""
     QCheckBox {{
         height: 34px;
+        color: #ffffff;
+        font-family: 'Play';
+        font-size: 16px;
     }}
-
     QCheckBox::indicator {{
         width: 24px;
         height: 24px;
