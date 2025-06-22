@@ -142,6 +142,32 @@ class ContextMenuManager:
                 open_folder_action.triggered.connect(
                     lambda: self.open_egs_game_folder(game_card.appid)
                 )
+                # Add desktop shortcut actions for EGS games
+                desktop_dir = subprocess.check_output(['xdg-user-dir', 'DESKTOP']).decode('utf-8').strip()
+                desktop_path = os.path.join(desktop_dir, f"{game_card.name}.desktop")
+                if os.path.exists(desktop_path):
+                    remove_desktop_action = menu.addAction(_("Remove from Desktop"))
+                    remove_desktop_action.triggered.connect(
+                        lambda: self.remove_egs_from_desktop(game_card.name)
+                    )
+                else:
+                    add_desktop_action = menu.addAction(_("Add to Desktop"))
+                    add_desktop_action.triggered.connect(
+                        lambda: self.add_egs_to_desktop(game_card.name, game_card.appid)
+                    )
+                # Add menu shortcut actions for EGS games
+                applications_dir = os.path.join(os.path.expanduser("~"), ".local", "share", "applications")
+                menu_path = os.path.join(applications_dir, f"{game_card.name}.desktop")
+                if os.path.exists(menu_path):
+                    remove_menu_action = menu.addAction(_("Remove from Menu"))
+                    remove_menu_action.triggered.connect(
+                        lambda: self.remove_egs_from_menu(game_card.name)
+                    )
+                else:
+                    add_menu_action = menu.addAction(_("Add to Menu"))
+                    add_menu_action.triggered.connect(
+                        lambda: self.add_egs_to_menu(game_card.name, game_card.appid)
+                    )
 
         if game_card.game_source not in ("steam", "epic"):
             desktop_dir = subprocess.check_output(['xdg-user-dir', 'DESKTOP']).decode('utf-8').strip()
@@ -427,6 +453,185 @@ class ContextMenuManager:
             sanitized_name = game_name.replace("/", "_").replace(":", "_").replace(" ", "_")
             desktop_path = os.path.join(self.portproton_location, f"{sanitized_name}.desktop")
         return desktop_path
+
+    def _get_egs_desktop_path(self, game_name):
+        """Construct the .desktop file path for EGS games."""
+        desktop_path = os.path.join(self.portproton_location, "egs_desktops", f"{game_name}.desktop")
+        return desktop_path
+
+    def _create_egs_desktop_file(self, game_name: str, app_name: str) -> bool:
+        """
+        Creates a .desktop file for an EGS game in the PortProton egs_desktops directory.
+
+        Args:
+            game_name: The display name of the game.
+            app_name: The Legendary app_name (unique identifier for the game).
+
+        Returns:
+            bool: True if the .desktop file was created successfully, False otherwise.
+        """
+        if not self._check_portproton():
+            return False
+
+        if not os.path.exists(self.legendary_path):
+            self._show_warning_dialog(
+                _("Error"),
+                _("Legendary executable not found at {0}").format(self.legendary_path)
+            )
+            return False
+
+        # Determine wrapper
+        wrapper = "flatpak run ru.linux_gaming.PortProton"
+        start_sh_path = os.path.join(self.portproton_location, "data", "scripts", "start.sh")
+        if self.portproton_location and ".var" not in self.portproton_location:
+            wrapper = start_sh_path
+            if not os.path.exists(start_sh_path):
+                self._show_warning_dialog(
+                    _("Error"),
+                    _("start.sh not found at {0}").format(start_sh_path)
+                )
+                return False
+
+        # Get cover image path
+        image_folder = os.path.join(
+            os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache")),
+            "PortProtonQt", "images"
+        )
+        cover_path = os.path.join(image_folder, f"{app_name}.jpg")
+        icon_path = cover_path if os.path.exists(cover_path) else ""
+
+        # Create egs_desktops directory
+        egs_desktop_dir = os.path.join(self.portproton_location, "egs_desktops")
+        os.makedirs(egs_desktop_dir, exist_ok=True)
+
+        # Create .desktop file with direct Exec line
+        desktop_path = self._get_egs_desktop_path(game_name)
+        desktop_entry = f"""[Desktop Entry]
+Type=Application
+Name={game_name}
+Exec="{self.legendary_path}" launch {app_name} --no-wine --wrapper "env START_FROM_STEAM=1 {wrapper}" "$@"
+Icon={icon_path}
+Terminal=false
+Categories=Game;
+"""
+        try:
+            with open(desktop_path, "w", encoding="utf-8") as f:
+                f.write(desktop_entry)
+            os.chmod(desktop_path, 0o755)
+            logger.info(f"Created .desktop file for EGS game: {desktop_path}")
+            return True
+        except Exception as e:
+            self._show_warning_dialog(
+                _("Error"),
+                _("Failed to create .desktop file: {0}").format(str(e))
+            )
+            return False
+
+    def add_egs_to_desktop(self, game_name: str, app_name: str):
+        """
+        Copies the .desktop file for an EGS game to the Desktop folder.
+
+        Args:
+            game_name: The display name of the game.
+            app_name: The Legendary app_name (unique identifier for the game).
+        """
+        if not self._check_portproton():
+            return
+
+        desktop_path = self._get_egs_desktop_path(game_name)
+        if not os.path.exists(desktop_path):
+            # Create the .desktop file if it doesn't exist
+            if not self._create_egs_desktop_file(game_name, app_name):
+                return
+
+        desktop_dir = subprocess.check_output(['xdg-user-dir', 'DESKTOP']).decode('utf-8').strip()
+        os.makedirs(desktop_dir, exist_ok=True)
+        dest_path = os.path.join(desktop_dir, f"{game_name}.desktop")
+
+        try:
+            shutil.copyfile(desktop_path, dest_path)
+            os.chmod(dest_path, 0o755)
+            if self.parent.statusBar():
+                self.parent.statusBar().showMessage(
+                    _("Game '{0}' added to desktop").format(game_name), 3000
+                )
+                logger.debug("Direct status message: Game '%s' added to desktop", game_name)
+            else:
+                logger.warning("Status bar not available when adding '%s' to desktop", game_name)
+        except OSError as e:
+            self._show_warning_dialog(
+                _("Error"),
+                _("Failed to add game to desktop: {0}").format(str(e))
+            )
+
+    def remove_egs_from_desktop(self, game_name: str):
+        """
+        Removes the .desktop file for an EGS game from the Desktop folder.
+
+        Args:
+            game_name: The display name of the game.
+        """
+        desktop_dir = subprocess.check_output(['xdg-user-dir', 'DESKTOP']).decode('utf-8').strip()
+        desktop_path = os.path.join(desktop_dir, f"{game_name}.desktop")
+        self._remove_file(
+            desktop_path,
+            _("Failed to remove game from Desktop: {0}"),
+            _("Game '{0}' removed from Desktop"),
+            game_name
+        )
+
+    def add_egs_to_menu(self, game_name: str, app_name: str):
+        """
+        Copies the .desktop file for an EGS game to ~/.local/share/applications.
+
+        Args:
+            game_name: The display name of the game.
+            app_name: The Legendary app_name (unique identifier for the game).
+        """
+        if not self._check_portproton():
+            return
+
+        desktop_path = self._get_egs_desktop_path(game_name)
+        if not os.path.exists(desktop_path):
+            # Create the .desktop file if it doesn't exist
+            if not self._create_egs_desktop_file(game_name, app_name):
+                return
+
+        applications_dir = os.path.join(os.path.expanduser("~"), ".local", "share", "applications")
+        os.makedirs(applications_dir, exist_ok=True)
+        dest_path = os.path.join(applications_dir, f"{game_name}.desktop")
+
+        try:
+            shutil.copyfile(desktop_path, dest_path)
+            os.chmod(dest_path, 0o755)
+            if self.parent.statusBar():
+                self.parent.statusBar().showMessage(
+                    _("Game '{0}' added to menu").format(game_name), 3000
+                )
+                logger.debug("Direct status message: Game '%s' added to menu", game_name)
+            else:
+                logger.warning("Status bar not available when adding '%s' to menu", game_name)
+        except OSError as e:
+            self._show_warning_dialog(
+                _("Error"),
+                _("Failed to add game to menu: {0}").format(str(e))
+            )
+
+    def remove_egs_from_menu(self, game_name: str):
+        """
+        Removes the .desktop file for an EGS game from ~/.local/share/applications.
+
+        Args:
+            game_name: The display name of the game.
+        """
+        applications_dir = os.path.join(os.path.expanduser("~"), ".local", "share", "applications")
+        desktop_path = os.path.join(applications_dir, f"{game_name}.desktop")
+        self._remove_file(
+            desktop_path,
+            _("Failed to remove game from menu: {0}"),
+            _("Game '{0}' removed from menu"),
+            game_name
+        )
 
     def _get_exec_line(self, game_name, exec_line):
         """Retrieve and validate exec_line from .desktop file if necessary."""
