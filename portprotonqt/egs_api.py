@@ -14,11 +14,18 @@ from portprotonqt.logger import get_logger
 from portprotonqt.image_utils import load_pixmap_async
 from portprotonqt.time_utils import parse_playtime_file, format_playtime, get_last_launch, get_last_launch_timestamp
 from portprotonqt.config_utils import get_portproton_location
-from portprotonqt.steam_api import get_weanticheatyet_status_async, get_steam_apps_and_index_async, get_protondb_tier_async, search_app
-
+from portprotonqt.steam_api import (
+    get_weanticheatyet_status_async, get_steam_apps_and_index_async, get_protondb_tier_async,
+    search_app, get_steam_home, get_last_steam_user, convert_steam_id, generate_thumbnail
+)
+import vdf
+import shutil
+import zlib
+from portprotonqt.downloader import Downloader
 from PySide6.QtGui import QPixmap
 
 logger = get_logger(__name__)
+downloader = Downloader()
 
 def get_egs_executable(app_name: str, legendary_config_path: str) -> str | None:
     """Получает путь к исполняемому файлу EGS-игры из installed.json с использованием orjson."""
@@ -51,6 +58,237 @@ def get_cache_dir() -> Path:
     cache_dir = Path(xdg_cache_home) / "PortProtonQt"
     cache_dir.mkdir(parents=True, exist_ok=True)
     return cache_dir
+
+def add_egs_to_steam(app_name: str, game_title: str, legendary_path: str, callback: Callable[[tuple[bool, str]], None]) -> None:
+    """
+    Asynchronously adds an EGS game to Steam via shortcuts.vdf with PortProton tag.
+    Creates a launch script using legendary CLI with --no-wine and PortProton wrapper.
+    Wrapper is flatpak run if portproton_location is None or contains .var, otherwise start.sh.
+    Downloads Steam Grid covers if the game exists in Steam, and generates a thumbnail.
+    Calls the callback with (success, message).
+    """
+    if not app_name or not app_name.strip() or not game_title or not game_title.strip():
+        logger.error("Invalid app_name or game_title: empty or whitespace")
+        callback((False, "Game name or app name is empty or invalid"))
+        return
+
+    if not os.path.exists(legendary_path):
+        logger.error(f"Legendary executable not found: {legendary_path}")
+        callback((False, f"Legendary executable not found: {legendary_path}"))
+        return
+
+    portproton_dir = get_portproton_location()
+    if not portproton_dir:
+        logger.error("PortProton directory not found")
+        callback((False, "PortProton directory not found"))
+        return
+
+    # Determine wrapper
+    wrapper = "flatpak run ru.linux_gaming.PortProton"
+    start_sh_path = os.path.join(portproton_dir, "data", "scripts", "start.sh")
+    if portproton_dir is not None and ".var" not in portproton_dir:
+        wrapper = start_sh_path
+        if not os.path.exists(start_sh_path):
+            logger.error(f"start.sh not found at {start_sh_path}")
+            callback((False, f"start.sh not found at {start_sh_path}"))
+            return
+
+    # Create launch script
+    steam_scripts_dir = os.path.join(portproton_dir, "steam_scripts")
+    os.makedirs(steam_scripts_dir, exist_ok=True)
+    safe_game_name = re.sub(r'[<>:"/\\|?*]', '_', game_title.strip())
+    script_path = os.path.join(steam_scripts_dir, f"{safe_game_name}_egs.sh")
+    legendary_config_path = os.path.dirname(legendary_path)
+
+    script_content = f"""#!/usr/bin/env bash
+export LD_PRELOAD=
+export LEGENDARY_CONFIG_PATH="{legendary_config_path}"
+"{legendary_path}" launch {app_name} --no-wine --wrapper "env START_FROM_STEAM=1 {wrapper}" "$@"
+"""
+    try:
+        with open(script_path, "w", encoding="utf-8") as f:
+            f.write(script_content)
+        os.chmod(script_path, 0o755)
+        logger.info(f"Created launch script for EGS game: {script_path}")
+    except Exception as e:
+        logger.error(f"Failed to create launch script {script_path}: {e}")
+        callback((False, f"Failed to create launch script: {e}"))
+        return
+
+    # Generate thumbnail
+    generated_icon_path = os.path.join(portproton_dir, "data", "img", f"{safe_game_name}_egs.png")
+    try:
+        img_dir = os.path.join(portproton_dir, "data", "img")
+        os.makedirs(img_dir, exist_ok=True)
+        game_exe = get_egs_executable(app_name, legendary_config_path)
+        if not game_exe or not os.path.exists(game_exe):
+            logger.warning(f"Executable not found for {app_name}, skipping thumbnail generation")
+            icon_path = ""
+        elif os.path.exists(generated_icon_path):
+            logger.info(f"Reusing existing thumbnail: {generated_icon_path}")
+            icon_path = generated_icon_path
+        else:
+            success = generate_thumbnail(game_exe, generated_icon_path, size=128, force_resize=True)
+            if not success or not os.path.exists(generated_icon_path):
+                logger.warning(f"generate_thumbnail failed for {game_exe}")
+                icon_path = ""
+            else:
+                logger.info(f"Generated thumbnail: {generated_icon_path}")
+                icon_path = generated_icon_path
+    except Exception as e:
+        logger.error(f"Error generating thumbnail for {app_name}: {e}")
+        icon_path = ""
+
+    # Get Steam directories
+    steam_home = get_steam_home()
+    if not steam_home:
+        logger.error("Steam home directory not found")
+        callback((False, "Steam directory not found"))
+        return
+
+    last_user = get_last_steam_user(steam_home)
+    if not last_user or 'SteamID' not in last_user:
+        logger.error("Failed to retrieve Steam user ID")
+        callback((False, "Failed to get Steam user ID"))
+        return
+
+    userdata_dir = steam_home / "userdata"
+    user_id = last_user['SteamID']
+    unsigned_id = convert_steam_id(user_id)
+    user_dir = userdata_dir / str(unsigned_id)
+    steam_shortcuts_path = user_dir / "config" / "shortcuts.vdf"
+    grid_dir = user_dir / "config" / "grid"
+    os.makedirs(grid_dir, exist_ok=True)
+
+    # Backup shortcuts.vdf
+    backup_path = f"{steam_shortcuts_path}.backup"
+    if os.path.exists(steam_shortcuts_path):
+        try:
+            shutil.copy2(steam_shortcuts_path, backup_path)
+            logger.info(f"Created backup of shortcuts.vdf at {backup_path}")
+        except Exception as e:
+            logger.error(f"Failed to create backup of shortcuts.vdf: {e}")
+            callback((False, f"Failed to create backup of shortcuts.vdf: {e}"))
+            return
+
+    # Generate unique appid
+    unique_string = f"{script_path}{game_title}"
+    baseid = zlib.crc32(unique_string.encode('utf-8')) & 0xffffffff
+    appid = baseid | 0x80000000
+    if appid > 0x7FFFFFFF:
+        aidvdf = appid - 0x100000000
+    else:
+        aidvdf = appid
+
+    steam_appid = None
+    downloaded_count = 0
+    total_covers = 4
+    download_lock = threading.Lock()
+
+    def on_cover_download(cover_file: str, cover_type: str):
+        nonlocal downloaded_count
+        try:
+            if cover_file and os.path.exists(cover_file):
+                logger.info(f"Downloaded cover {cover_type} to {cover_file}")
+            else:
+                logger.warning(f"Failed to download cover {cover_type} for appid {steam_appid}")
+        except Exception as e:
+            logger.error(f"Error processing cover {cover_type} for appid {steam_appid}: {e}")
+        with download_lock:
+            downloaded_count += 1
+            if downloaded_count == total_covers:
+                finalize_shortcut()
+
+    def finalize_shortcut():
+        tags_dict = {'0': 'PortProton'}
+        shortcut = {
+            "appid": aidvdf,
+            "AppName": game_title,
+            "Exe": f'"{script_path}"',
+            "StartDir": f'"{os.path.dirname(script_path)}"',
+            "icon": icon_path,
+            "LaunchOptions": "",
+            "IsHidden": 0,
+            "AllowDesktopConfig": 1,
+            "AllowOverlay": 1,
+            "openvr": 0,
+            "Devkit": 0,
+            "DevkitGameID": "",
+            "LastPlayTime": 0,
+            "tags": tags_dict
+        }
+        logger.info(f"Shortcut entry for EGS game: {shortcut}")
+
+        try:
+            if not os.path.exists(steam_shortcuts_path):
+                os.makedirs(os.path.dirname(steam_shortcuts_path), exist_ok=True)
+                open(steam_shortcuts_path, 'wb').close()
+
+            try:
+                if os.path.getsize(steam_shortcuts_path) > 0:
+                    with open(steam_shortcuts_path, 'rb') as f:
+                        shortcuts_data = vdf.binary_load(f)
+                else:
+                    shortcuts_data = {"shortcuts": {}}
+            except Exception as load_err:
+                logger.warning(f"Failed to load shortcuts.vdf, starting fresh: {load_err}")
+                shortcuts_data = {"shortcuts": {}}
+
+            shortcuts = shortcuts_data.get("shortcuts", {})
+            for _key, entry in shortcuts.items():
+                if entry.get("AppName") == game_title and entry.get("Exe") == f'"{script_path}"':
+                    logger.info(f"EGS game '{game_title}' already exists in Steam shortcuts")
+                    callback((False, f"Game '{game_title}' already exists in Steam"))
+                    return
+
+            new_index = str(len(shortcuts))
+            shortcuts[new_index] = shortcut
+
+            with open(steam_shortcuts_path, 'wb') as f:
+                vdf.binary_dump({"shortcuts": shortcuts}, f)
+        except Exception as e:
+            logger.error(f"Failed to update shortcuts.vdf: {e}")
+            if os.path.exists(backup_path):
+                try:
+                    shutil.copy2(backup_path, steam_shortcuts_path)
+                    logger.info("Restored shortcuts.vdf from backup")
+                except Exception as restore_err:
+                    logger.error(f"Failed to restore shortcuts.vdf: {restore_err}")
+            callback((False, f"Failed to update shortcuts.vdf: {e}"))
+            return
+
+        logger.info(f"EGS game '{game_title}' added to Steam")
+        callback((True, f"Game '{game_title}' added to Steam with covers"))
+
+    def on_steam_apps(steam_data: tuple[list, dict]):
+        nonlocal steam_appid
+        steam_apps, steam_apps_index = steam_data
+        matching_app = search_app(game_title, steam_apps_index)
+        steam_appid = matching_app.get("appid") if matching_app else None
+
+        if not steam_appid:
+            logger.info(f"No Steam appid found for EGS game {game_title}, skipping cover download")
+            finalize_shortcut()
+            return
+
+        cover_types = [
+            (".jpg", "header.jpg"),
+            ("p.jpg", "library_600x900_2x.jpg"),
+            ("_hero.jpg", "library_hero.jpg"),
+            ("_logo.png", "logo.png")
+        ]
+
+        for suffix, cover_type in cover_types:
+            cover_file = os.path.join(grid_dir, f"{appid}{suffix}")
+            cover_url = f"https://cdn.cloudflare.steamstatic.com/steam/apps/{steam_appid}/{cover_type}"
+            downloader.download_async(
+                cover_url,
+                cover_file,
+                timeout=5,
+                callback=lambda result, cfile=cover_file, ctype=cover_type: on_cover_download(cfile, ctype)
+            )
+
+    get_steam_apps_and_index_async(on_steam_apps)
 
 def get_egs_game_description_async(
     app_name: str,
