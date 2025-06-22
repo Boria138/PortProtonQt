@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-06-14 10:37+0500\n"
+"POT-Creation-Date: 2025-06-22 18:23+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -24,19 +24,22 @@ msgstr ""
 msgid "Add to Favorites"
 msgstr ""
 
+msgid "Import to Legendary"
+msgstr ""
+
+msgid "Remove from Steam"
+msgstr ""
+
+msgid "Add to Steam"
+msgstr ""
+
+msgid "Open Game Folder"
+msgstr ""
+
 msgid "Remove from Desktop"
 msgstr ""
 
 msgid "Add to Desktop"
-msgstr ""
-
-msgid "Edit Shortcut"
-msgstr ""
-
-msgid "Delete from PortProton"
-msgstr ""
-
-msgid "Open Game Folder"
 msgstr ""
 
 msgid "Remove from Menu"
@@ -45,10 +48,46 @@ msgstr ""
 msgid "Add to Menu"
 msgstr ""
 
-msgid "Remove from Steam"
+msgid "Edit Shortcut"
 msgstr ""
 
-msgid "Add to Steam"
+msgid "Delete from PortProton"
+msgstr ""
+
+msgid "Error"
+msgstr ""
+
+#, python-brace-format
+msgid "Legendary executable not found at {0}"
+msgstr ""
+
+msgid "Success"
+msgstr ""
+
+#, python-brace-format
+msgid "'{0}' was added to Steam. Please restart Steam for changes to take effect."
+msgstr ""
+
+#, python-brace-format
+msgid "Executable file not found for game: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Opened folder for EGS game '{0}'"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to open game folder: {0}"
+msgstr ""
+
+msgid "Select Game Installation Folder"
+msgstr ""
+
+msgid "No folder selected"
+msgstr ""
+
+#, python-brace-format
+msgid "Importing '{0}' to Legendary..."
 msgstr ""
 
 #, python-brace-format
@@ -59,14 +98,51 @@ msgstr ""
 msgid "Removed '{0}' from favorites"
 msgstr ""
 
-msgid "Error"
-msgstr ""
-
 msgid "PortProton is not found."
 msgstr ""
 
 #, python-brace-format
-msgid "No executable command found in .desktop for game: {0}"
+msgid "start.sh not found at {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to create .desktop file: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Game '{0}' added to desktop"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to add game to desktop: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to remove game '{0}' from Desktop: {{0}}"
+msgstr ""
+
+#, python-brace-format
+msgid "Successfully removed game '{0}' from Desktop"
+msgstr ""
+
+#, python-brace-format
+msgid "Game '{0}' added to menu"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to add game '{0}' to menu: {1}"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to remove game '{0}' from menu: {{0}}"
+msgstr ""
+
+#, python-brace-format
+msgid "Successfully removed game '{0}' from menu"
+msgstr ""
+
+#, python-brace-format
+msgid "No executable command found in .desktop file for game: {0}"
 msgstr ""
 
 #, python-brace-format
@@ -74,7 +150,7 @@ msgid "Failed to parse .desktop file for game: {0}"
 msgstr ""
 
 #, python-brace-format
-msgid "Error reading .desktop file: {0}"
+msgid "Failed to read .desktop file: {0}"
 msgstr ""
 
 #, python-brace-format
@@ -103,7 +179,7 @@ msgid ""
 msgstr ""
 
 #, python-brace-format
-msgid "Could not locate .desktop file for '{0}'"
+msgid "Could not locate .desktop file for game: {0}"
 msgstr ""
 
 #, python-brace-format
@@ -119,35 +195,7 @@ msgid "Failed to delete custom data: {0}"
 msgstr ""
 
 #, python-brace-format
-msgid "Game '{0}' added to menu"
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to add game to menu: {0}"
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to remove game from menu: {0}"
-msgstr ""
-
-#, python-brace-format
-msgid "Game '{0}' removed from menu"
-msgstr ""
-
-#, python-brace-format
-msgid "Game '{0}' added to desktop"
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to add game to desktop: {0}"
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to remove game from Desktop: {0}"
-msgstr ""
-
-#, python-brace-format
-msgid "Game '{0}' removed from Desktop"
+msgid "Failed to add game '{0}' to desktop: {1}"
 msgstr ""
 
 msgid "Game name and executable path are required."
@@ -172,25 +220,54 @@ msgstr ""
 msgid "Failed to copy cover image: {0}"
 msgstr ""
 
-msgid "Restart Steam"
-msgstr ""
-
-msgid ""
-"The game was added successfully.\n"
-"Please restart Steam for changes to take effect."
-msgstr ""
-
-msgid ""
-"The game was removed successfully.\n"
-"Please restart Steam for changes to take effect."
+#, python-brace-format
+msgid "Failed to add game '{0}' to Steam: {1}"
 msgstr ""
 
 #, python-brace-format
-msgid "Opened folder for '{0}'"
+msgid ""
+"'{0}' was removed from Steam. Please restart Steam for changes to take "
+"effect."
+msgstr ""
+
+msgid "PortProton directory not found"
+msgstr ""
+
+msgid "Steam directory not found"
+msgstr ""
+
+msgid "Failed to get Steam user ID"
+msgstr ""
+
+msgid "Steam shortcuts file not found"
 msgstr ""
 
 #, python-brace-format
-msgid "Failed to open game folder: {0}"
+msgid "Failed to create backup of shortcuts.vdf: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to load shortcuts.vdf: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Game '{0}' not found in Steam shortcuts"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to update shortcuts.vdf: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to remove EGS game '{0}' from Steam: {1}"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to remove game '{0}' from Steam: {1}"
+msgstr ""
+
+#, python-brace-format
+msgid "Successfully opened folder for '{0}'"
 msgstr ""
 
 msgid "Edit Game"
@@ -233,10 +310,10 @@ msgstr ""
 msgid "Loading Epic Games Store games..."
 msgstr ""
 
-msgid "No description available"
+msgid "Never"
 msgstr ""
 
-msgid "Never"
+msgid "No description available"
 msgstr ""
 
 msgid "Supported"
@@ -380,6 +457,21 @@ msgstr ""
 msgid "Gamepad haptic feedback:"
 msgstr ""
 
+msgid "Open Legendary Login"
+msgstr ""
+
+msgid "Legendary Authentication:"
+msgstr ""
+
+msgid "Enter Legendary Authorization Code"
+msgstr ""
+
+msgid "Authorization Code:"
+msgstr ""
+
+msgid "Submit Code"
+msgstr ""
+
 msgid "Save Settings"
 msgstr ""
 
@@ -393,6 +485,22 @@ msgid "Opened Legendary login page in browser"
 msgstr ""
 
 msgid "Failed to open Legendary login page"
+msgstr ""
+
+msgid "Please enter an authorization code"
+msgstr ""
+
+msgid "Successfully authenticated with Legendary"
+msgstr ""
+
+#, python-brace-format
+msgid "Legendary authentication failed: {0}"
+msgstr ""
+
+msgid "Legendary executable not found"
+msgstr ""
+
+msgid "Unexpected error during authentication"
 msgstr ""
 
 msgid "Confirm Reset"
@@ -476,6 +584,20 @@ msgstr ""
 msgid "Play"
 msgstr ""
 
+#, python-brace-format
+msgid "Executable not found for EGS game: {0}"
+msgstr ""
+
+msgid "Cannot launch game while another game is running"
+msgstr ""
+
+msgid "Launching"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to launch game: {0}"
+msgstr ""
+
 msgid "Invalid command format (native)"
 msgstr ""
 
@@ -484,12 +606,6 @@ msgstr ""
 
 #, python-brace-format
 msgid "File not found: {0}"
-msgstr ""
-
-msgid "Cannot launch game while another game is running"
-msgstr ""
-
-msgid "Launching"
 msgstr ""
 
 msgid "Reboot"

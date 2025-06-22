@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-06-14 10:37+0500\n"
-"PO-Revision-Date: 2025-06-14 10:37+0500\n"
+"POT-Creation-Date: 2025-06-22 18:23+0500\n"
+"PO-Revision-Date: 2025-06-22 18:22+0500\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
@@ -27,20 +27,23 @@ msgstr "Удалить из Избранного"
 msgid "Add to Favorites"
 msgstr "Добавить в Избранное"
 
+msgid "Import to Legendary"
+msgstr "Импортировать игру"
+
+msgid "Remove from Steam"
+msgstr "Удалить из Steam"
+
+msgid "Add to Steam"
+msgstr "Добавить в Steam"
+
+msgid "Open Game Folder"
+msgstr "Открыть папку с игрой"
+
 msgid "Remove from Desktop"
 msgstr "Удалить с рабочего стола"
 
 msgid "Add to Desktop"
 msgstr "Добавить на рабочий стол"
-
-msgid "Edit Shortcut"
-msgstr "Редактировать"
-
-msgid "Delete from PortProton"
-msgstr "Удалить из PortProton"
-
-msgid "Open Game Folder"
-msgstr "Открыть папку с игрой"
 
 msgid "Remove from Menu"
 msgstr "Удалить из меню"
@@ -48,11 +51,49 @@ msgstr "Удалить из меню"
 msgid "Add to Menu"
 msgstr "Добавить в меню"
 
-msgid "Remove from Steam"
-msgstr "Удалить из Steam"
+msgid "Edit Shortcut"
+msgstr "Редактировать"
 
-msgid "Add to Steam"
-msgstr "Добавить в Steam"
+msgid "Delete from PortProton"
+msgstr "Удалить из PortProton"
+
+msgid "Error"
+msgstr "Ошибка"
+
+#, python-brace-format
+msgid "Legendary executable not found at {0}"
+msgstr "Legendary не найден по пути {0}"
+
+msgid "Success"
+msgstr "Успешно"
+
+#, python-brace-format
+msgid "'{0}' was added to Steam. Please restart Steam for changes to take effect."
+msgstr ""
+"'{0}' был добавлен в Steam. Пожалуйста, перезапустите Steam, чтобы "
+"изменения вступили в силу."
+
+#, python-brace-format
+msgid "Executable file not found for game: {0}"
+msgstr "Не найден исполняемый файл для игры: {0}"
+
+#, python-brace-format
+msgid "Opened folder for EGS game '{0}'"
+msgstr "Открытие папки для игры EGS '{0}'"
+
+#, python-brace-format
+msgid "Failed to open game folder: {0}"
+msgstr "Не удалось открыть папку для игры: {0}"
+
+msgid "Select Game Installation Folder"
+msgstr "Выберите папку установки игры"
+
+msgid "No folder selected"
+msgstr "Не выбрана ни одна папка"
+
+#, python-brace-format
+msgid "Importing '{0}' to Legendary..."
+msgstr "Игра '{0}' импортирована"
 
 #, python-brace-format
 msgid "Added '{0}' to favorites"
@@ -62,23 +103,60 @@ msgstr "Добавление '{0}' в избранное"
 msgid "Removed '{0}' from favorites"
 msgstr "Удаление '{0}' из избранного"
 
-msgid "Error"
-msgstr "Ошибка"
-
 msgid "PortProton is not found."
 msgstr "PortProton не найден."
 
 #, python-brace-format
-msgid "No executable command found in .desktop for game: {0}"
-msgstr "Не найдено ни одной исполняемой команды для игры: {0}"
+msgid "start.sh not found at {0}"
+msgstr "start.sh не найден по адресу {0}"
+
+#, python-brace-format
+msgid "Failed to create .desktop file: {0}"
+msgstr "Не удалось создать файл .desktop: {0}"
+
+#, python-brace-format
+msgid "Game '{0}' added to desktop"
+msgstr "Игра '{0}' добавлена на рабочий стол"
+
+#, python-brace-format
+msgid "Failed to add game to desktop: {0}"
+msgstr "Не удалось добавить игру на рабочий стол: {0}"
+
+#, python-brace-format
+msgid "Failed to remove game '{0}' from Desktop: {{0}}"
+msgstr "Не удалось удалить игру '{0}' с рабочего стола: {{0}}"
+
+#, python-brace-format
+msgid "Successfully removed game '{0}' from Desktop"
+msgstr "Успешно удалена игра '{0}' с рабочего стола"
+
+#, python-brace-format
+msgid "Game '{0}' added to menu"
+msgstr "Игра '{0}' добавлена в меню"
+
+#, python-brace-format
+msgid "Failed to add game '{0}' to menu: {1}"
+msgstr "Не удалось добавить игру в меню: '{0}' в меню: {1}"
+
+#, python-brace-format
+msgid "Failed to remove game '{0}' from menu: {{0}}"
+msgstr "Не удалось удалить игру '{0}' из меню: {{0}}"
+
+#, python-brace-format
+msgid "Successfully removed game '{0}' from menu"
+msgstr "Успешно удалена игра '{0}' из меню"
+
+#, python-brace-format
+msgid "No executable command found in .desktop file for game: {0}"
+msgstr "В файле .desktop для игры не найдено ни одной исполняемой команды: {0}"
 
 #, python-brace-format
 msgid "Failed to parse .desktop file for game: {0}"
 msgstr "Не удалось удалить файл .desktop: {0}"
 
 #, python-brace-format
-msgid "Error reading .desktop file: {0}"
-msgstr "Не удалось удалить файл .desktop: {0}"
+msgid "Failed to read .desktop file: {0}"
+msgstr "Не удалось прочитать файл .desktop: {0}"
 
 #, python-brace-format
 msgid ".desktop file not found for game: {0}"
@@ -108,8 +186,8 @@ msgstr ""
 ".desktop и настраиваемых данных."
 
 #, python-brace-format
-msgid "Could not locate .desktop file for '{0}'"
-msgstr "Не удалось найти файл .desktop для '{0}'"
+msgid "Could not locate .desktop file for game: {0}"
+msgstr "Не удалось найти файл .desktop для игры: {0}"
 
 #, python-brace-format
 msgid "Failed to delete .desktop file: {0}"
@@ -124,36 +202,8 @@ msgid "Failed to delete custom data: {0}"
 msgstr "Не удалось удалить настраиваемые данные: {0}"
 
 #, python-brace-format
-msgid "Game '{0}' added to menu"
-msgstr "Игра '{0}' добавлена в меню"
-
-#, python-brace-format
-msgid "Failed to add game to menu: {0}"
-msgstr "Не удалось добавить игру в меню: {0}"
-
-#, python-brace-format
-msgid "Failed to remove game from menu: {0}"
-msgstr "Не удалось удалить игру из меню: {0}"
-
-#, python-brace-format
-msgid "Game '{0}' removed from menu"
-msgstr "Игра '{0}' удалена из меню"
-
-#, python-brace-format
-msgid "Game '{0}' added to desktop"
-msgstr "Игра '{0}' добавлена на рабочий стол"
-
-#, python-brace-format
-msgid "Failed to add game to desktop: {0}"
-msgstr "Не удалось добавить игру на рабочий стол: {0}"
-
-#, python-brace-format
-msgid "Failed to remove game from Desktop: {0}"
-msgstr "Не удалось удалить игру с рабочего стола: {0}"
-
-#, python-brace-format
-msgid "Game '{0}' removed from Desktop"
-msgstr "Игра '{0}' удалена с рабочего стола"
+msgid "Failed to add game '{0}' to desktop: {1}"
+msgstr "Не удалось добавить игру '{0}' на рабочий стол: {1}"
 
 msgid "Game name and executable path are required."
 msgstr "Необходимо указать название игры и путь к исполняемому файлу."
@@ -177,30 +227,57 @@ msgstr "Не удалось удалить файл .desktop: {0}"
 msgid "Failed to copy cover image: {0}"
 msgstr "Не удалось удалить игру из меню: {0}"
 
-msgid "Restart Steam"
-msgstr "Перезапустите Steam"
-
-msgid ""
-"The game was added successfully.\n"
-"Please restart Steam for changes to take effect."
-msgstr ""
-"Игра была успешно добавлена.\n"
-"Пожалуйста, перезапустите Steam, чтобы изменения вступили в силу."
-
-msgid ""
-"The game was removed successfully.\n"
-"Please restart Steam for changes to take effect."
-msgstr ""
-"Игра была успешно удалена..\n"
-"Пожалуйста, перезапустите Steam, чтобы изменения вступили в силу."
+#, python-brace-format
+msgid "Failed to add game '{0}' to Steam: {1}"
+msgstr "Не удалось добавить игру '{0}' в Steam: {1}"
 
 #, python-brace-format
-msgid "Opened folder for '{0}'"
-msgstr "Открытие папки для '{0}'"
+msgid ""
+"'{0}' was removed from Steam. Please restart Steam for changes to take "
+"effect."
+msgstr ""
+"'{0}' был удалён из Steam. Пожалуйста, перезапустите Steam, чтобы "
+"изменения вступили в силу."
+
+msgid "PortProton directory not found"
+msgstr "PortProton не найден."
+
+msgid "Steam directory not found"
+msgstr "Каталог Steam не найден"
+
+msgid "Failed to get Steam user ID"
+msgstr "Не удалось получить ID пользователя Steam"
+
+msgid "Steam shortcuts file not found"
+msgstr "Файл ярлыков Steam не найден"
 
 #, python-brace-format
-msgid "Failed to open game folder: {0}"
-msgstr "Не удалось открыть папку для игры: {0}"
+msgid "Failed to create backup of shortcuts.vdf: {0}"
+msgstr "Не удалось создать резервную копию shortcuts.vdf: {0}"
+
+#, python-brace-format
+msgid "Failed to load shortcuts.vdf: {0}"
+msgstr "Не удалось загрузить shortcuts.vdf: {0}"
+
+#, python-brace-format
+msgid "Game '{0}' not found in Steam shortcuts"
+msgstr "Игра '{0}' не найдена в ярлыках Steam"
+
+#, python-brace-format
+msgid "Failed to update shortcuts.vdf: {0}"
+msgstr "Не удалось обновить shortcuts.vdf: {0}"
+
+#, python-brace-format
+msgid "Failed to remove EGS game '{0}' from Steam: {1}"
+msgstr "Не удалось удалить игру EGS '{0}' из Steam: {1}"
+
+#, python-brace-format
+msgid "Failed to remove game '{0}' from Steam: {1}"
+msgstr "Не удалось удалить игру '{0}' из Steam: {1}"
+
+#, python-brace-format
+msgid "Successfully opened folder for '{0}'"
+msgstr "Успешно открыта папка для '{0}'"
 
 msgid "Edit Game"
 msgstr "Редактировать игру"
@@ -242,11 +319,11 @@ msgstr "Запустить игру \"{name}\" с помощью PortProton"
 msgid "Loading Epic Games Store games..."
 msgstr "Загрузка игр из Epic Games Store..."
 
-msgid "No description available"
-msgstr "Описание не найдено"
-
 msgid "Never"
 msgstr "Никогда"
+
+msgid "No description available"
+msgstr "Описание не найдено"
 
 msgid "Supported"
 msgstr "Поддерживается"
@@ -389,6 +466,21 @@ msgstr "Тактильная отдача на геймпаде"
 msgid "Gamepad haptic feedback:"
 msgstr "Тактильная отдача на геймпаде:"
 
+msgid "Open Legendary Login"
+msgstr "Открыть браузер для входа в Legendary"
+
+msgid "Legendary Authentication:"
+msgstr "Авторизация в Legendary:"
+
+msgid "Enter Legendary Authorization Code"
+msgstr "Введите код авторизации Legendary"
+
+msgid "Authorization Code:"
+msgstr "Код авторизации;"
+
+msgid "Submit Code"
+msgstr "Отправить код"
+
 msgid "Save Settings"
 msgstr "Сохранить настройки"
 
@@ -403,6 +495,22 @@ msgstr "Открытие страницы входа в Legendary в брауз�
 
 msgid "Failed to open Legendary login page"
 msgstr "Не удалось открыть страницу входа в Legendary"
+
+msgid "Please enter an authorization code"
+msgstr "Пожалуйста, введите код авторизации"
+
+msgid "Successfully authenticated with Legendary"
+msgstr "Успешная аутентификация в Legendary"
+
+#, python-brace-format
+msgid "Legendary authentication failed: {0}"
+msgstr "Не удалось выполнить аутентификацию Legendary: {0}"
+
+msgid "Legendary executable not found"
+msgstr "Не найден исполняемый файл Legendary"
+
+msgid "Unexpected error during authentication"
+msgstr "Неожиданная ошибка при аутентификации"
 
 msgid "Confirm Reset"
 msgstr "Подтвердите удаление"
@@ -487,6 +595,20 @@ msgstr "Остановить"
 msgid "Play"
 msgstr "Играть"
 
+#, python-brace-format
+msgid "Executable not found for EGS game: {0}"
+msgstr "Не найден исполняемый файл для игры EGS: {0}"
+
+msgid "Cannot launch game while another game is running"
+msgstr "Невозможно запустить игру пока запущена другая"
+
+msgid "Launching"
+msgstr "Идёт запуск"
+
+#, python-brace-format
+msgid "Failed to launch game: {0}"
+msgstr "Не удалось запустить игру: {0}"
+
 msgid "Invalid command format (native)"
 msgstr "Неправильный формат команды (нативная версия)"
 
@@ -496,12 +618,6 @@ msgstr "Неправильный формат команды (flatpak)"
 #, python-brace-format
 msgid "File not found: {0}"
 msgstr "Файл не найден: {0}"
-
-msgid "Cannot launch game while another game is running"
-msgstr "Невозможно запустить игру пока запущена другая"
-
-msgid "Launching"
-msgstr "Идёт запуск"
 
 msgid "Reboot"
 msgstr "Перезагрузить"
