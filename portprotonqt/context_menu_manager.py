@@ -12,7 +12,7 @@ from PySide6.QtCore import QUrl, QPoint, QObject, Signal, Qt
 from PySide6.QtGui import QDesktopServices
 from portprotonqt.config_utils import parse_desktop_entry, read_favorites, save_favorites
 from portprotonqt.localization import _
-from portprotonqt.steam_api import is_game_in_steam, add_to_steam, remove_from_steam
+from portprotonqt.steam_api import is_game_in_steam, add_to_steam, remove_from_steam, get_steam_home, get_last_steam_user, convert_steam_id
 from portprotonqt.dialogs import AddGameDialog
 from portprotonqt.egs_api import add_egs_to_steam, get_egs_executable
 import vdf
@@ -23,6 +23,7 @@ class ContextMenuSignals(QObject):
     """Signals for thread-safe UI updates from worker threads."""
     show_status_message = Signal(str, int)
     show_warning_dialog = Signal(str, str)
+    show_info_dialog = Signal(str, str)
 
 class ContextMenuManager:
     """Manages context menu actions for game management in PortProtonQt."""
@@ -65,11 +66,20 @@ class ContextMenuManager:
             self._show_warning_dialog,
             Qt.ConnectionType.QueuedConnection
         )
+        self.signals.show_info_dialog.connect(
+            self._show_info_dialog,
+            Qt.ConnectionType.QueuedConnection
+        )
 
     def _show_warning_dialog(self, title: str, message: str):
         """Show a warning dialog in the main thread."""
         logger.debug("Showing warning dialog: %s - %s", title, message)
         QMessageBox.warning(self.parent, title, message)
+
+    def _show_info_dialog(self, title: str, message: str):
+        """Show an info dialog in the main thread."""
+        logger.debug("Showing info dialog: %s - %s", title, message)
+        QMessageBox.information(self.parent, title, message)
 
     def _is_egs_game_installed(self, app_name: str) -> bool:
         """
@@ -123,10 +133,6 @@ class ContextMenuManager:
             )
             # Show other actions only if the game is installed
             if self._is_egs_game_installed(game_card.appid):
-                uninstall_action = menu.addAction(_("Uninstall Game"))
-                uninstall_action.triggered.connect(
-                    lambda: self.uninstall_egs_game(game_card.name, game_card.appid)
-                )
                 is_in_steam = is_game_in_steam(game_card.name)
                 if is_in_steam:
                     remove_steam_action = menu.addAction(_("Remove from Steam"))
@@ -227,23 +233,22 @@ class ContextMenuManager:
             return
 
         if not os.path.exists(self.legendary_path):
-            self._show_warning_dialog(_("Error"), _("Legendary executable not found at {0}").format(self.legendary_path))
+            self.signals.show_warning_dialog.emit(
+                _("Error"), _("Legendary executable not found at {0}").format(self.legendary_path)
+            )
             return
 
         def on_add_to_steam_result(result: tuple[bool, str]):
             success, message = result
             if success:
-                self.signals.show_status_message.emit(
-                    _("The game was added successfully. Please restart Steam for changes to take effect."), 5000
+                self.signals.show_info_dialog.emit(
+                    _("Success"),
+                    _("'{0}' was added to Steam. Please restart Steam for changes to take effect.").format(game_name)
                 )
             else:
                 self.signals.show_warning_dialog.emit(_("Error"), message)
 
-        if self.parent.statusBar():
-            self.parent.statusBar().showMessage(_("Adding '{0}' to Steam...").format(game_name), 0)
-            logger.debug("Direct status message: Adding '%s' to Steam", game_name)
-        else:
-            logger.warning("Status bar not available when adding '%s' to Steam", game_name)
+        logger.debug("Adding '%s' to Steam", game_name)
         add_egs_to_steam(app_name, game_name, self.legendary_path, on_add_to_steam_result)
 
     def open_egs_game_folder(self, app_name: str):
@@ -258,7 +263,7 @@ class ContextMenuManager:
 
         exe_path = get_egs_executable(app_name, self.legendary_config_path)
         if not exe_path or not os.path.exists(exe_path):
-            self._show_warning_dialog(
+            self.signals.show_warning_dialog.emit(
                 _("Error"),
                 _("Executable file not found for game: {0}").format(app_name)
             )
@@ -275,7 +280,7 @@ class ContextMenuManager:
             else:
                 logger.warning("Status bar not available when opening folder for '%s'", app_name)
         except Exception as e:
-            self._show_warning_dialog(
+            self.signals.show_warning_dialog.emit(
                 _("Error"),
                 _("Failed to open game folder: {0}").format(str(e))
             )
@@ -305,7 +310,7 @@ class ContextMenuManager:
             return
 
         if not os.path.exists(self.legendary_path):
-            self._show_warning_dialog(
+            self.signals.show_warning_dialog.emit(
                 _("Error"),
                 _("Legendary executable not found at {0}").format(self.legendary_path)
             )
@@ -328,81 +333,6 @@ class ContextMenuManager:
         else:
             logger.warning("Status bar not available when importing '%s'", game_name)
         threading.Thread(target=run_import, daemon=True).start()
-
-    def uninstall_egs_game(self, game_name: str, app_name: str):
-        """
-        Uninstalls an Epic Games Store game using Legendary asynchronously.
-
-        Args:
-            game_name: The display name of the game.
-            app_name: The Legendary app_name (unique identifier for the game).
-        """
-        if not self._check_portproton():
-            return
-
-        if not os.path.exists(self.legendary_path):
-            self._show_warning_dialog(
-                _("Error"),
-                _("Legendary executable not found at {0}").format(self.legendary_path)
-            )
-            return
-
-        reply = QMessageBox.question(
-            self.parent,
-            _("Confirm Uninstallation"),
-            _("Are you sure you want to uninstall '{0}'? This will remove the game files.").format(game_name),
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No
-        )
-        if reply != QMessageBox.StandardButton.Yes:
-            return
-
-        def run_uninstall():
-            cmd = [self.legendary_path, "uninstall", app_name, "--skip-uninstaller"]
-            try:
-                subprocess.run(
-                    cmd,
-                    capture_output=True,
-                    text=True,
-                    check=True,
-                    env={"LEGENDARY_CONFIG_PATH": self.legendary_config_path}
-                )
-                self.signals.show_status_message.emit(
-                    _("Successfully uninstalled '{0}'").format(game_name), 3000
-                )
-            except subprocess.CalledProcessError as e:
-                self.signals.show_status_message.emit(
-                    _("Failed to uninstall '{0}'").format(game_name), 3000
-                )
-                self.signals.show_warning_dialog.emit(
-                    _("Error"),
-                    _("Failed to uninstall '{0}': {1}").format(game_name, e.stderr)
-                )
-            except FileNotFoundError:
-                self.signals.show_status_message.emit(
-                    _("Legendary executable not found"), 3000
-                )
-                self.signals.show_warning_dialog.emit(
-                    _("Error"),
-                    _("Legendary executable not found")
-                )
-            except Exception as e:
-                self.signals.show_status_message.emit(
-                    _("Unexpected error during uninstall"), 3000
-                )
-                self.signals.show_warning_dialog.emit(
-                    _("Error"),
-                    _("Unexpected error during uninstall: {0}").format(str(e))
-                )
-
-        if self.parent.statusBar():
-            self.parent.statusBar().showMessage(
-                _("Uninstalling '{0}'...").format(game_name), 0
-            )
-            logger.debug("Direct status message: Uninstalling '%s'", game_name)
-        else:
-            logger.warning("Status bar not available when uninstalling '%s'", game_name)
-        threading.Thread(target=run_uninstall, daemon=True).start()
 
     def toggle_favorite(self, game_card, add: bool):
         """
@@ -439,7 +369,7 @@ class ContextMenuManager:
     def _check_portproton(self):
         """Check if PortProton is available."""
         if self.portproton_location is None:
-            self._show_warning_dialog(
+            self.signals.show_warning_dialog.emit(
                 _("Error"),
                 _("PortProton is not found.")
             )
@@ -474,7 +404,7 @@ class ContextMenuManager:
             return False
 
         if not os.path.exists(self.legendary_path):
-            self._show_warning_dialog(
+            self.signals.show_warning_dialog.emit(
                 _("Error"),
                 _("Legendary executable not found at {0}").format(self.legendary_path)
             )
@@ -486,7 +416,7 @@ class ContextMenuManager:
         if self.portproton_location and ".var" not in self.portproton_location:
             wrapper = start_sh_path
             if not os.path.exists(start_sh_path):
-                self._show_warning_dialog(
+                self.signals.show_warning_dialog.emit(
                     _("Error"),
                     _("start.sh not found at {0}").format(start_sh_path)
                 )
@@ -509,10 +439,10 @@ class ContextMenuManager:
         desktop_entry = f"""[Desktop Entry]
 Type=Application
 Name={game_name}
-Exec="{self.legendary_path}" launch {app_name} --no-wine --wrapper "env START_FROM_STEAM=1 {wrapper}" "$@"
+Exec="{self.legendary_path}" launch {app_name} --no-wine --wrapper "env START_FROM_STEAM=1 {wrapper}"
 Icon={icon_path}
 Terminal=false
-Categories=Game;
+Categories=Game
 """
         try:
             with open(desktop_path, "w", encoding="utf-8") as f:
@@ -521,7 +451,7 @@ Categories=Game;
             logger.info(f"Created .desktop file for EGS game: {desktop_path}")
             return True
         except Exception as e:
-            self._show_warning_dialog(
+            self.signals.show_warning_dialog.emit(
                 _("Error"),
                 _("Failed to create .desktop file: {0}").format(str(e))
             )
@@ -555,13 +485,13 @@ Categories=Game;
                 self.parent.statusBar().showMessage(
                     _("Game '{0}' added to desktop").format(game_name), 3000
                 )
-                logger.debug("Direct status message: Game '%s' added to desktop", game_name)
+                logger.debug("Direct status message: Game '{0}' added to desktop", game_name)
             else:
-                logger.warning("Status bar not available when adding '%s' to desktop", game_name)
+                logger.warning("Status bar not available when adding '{0}' to desktop", game_name)
         except OSError as e:
-            self._show_warning_dialog(
+            self.signals.show_warning_dialog.emit(
                 _("Error"),
-                _("Failed to add game to desktop: {0}").format(str(e))
+                _("Failed to add game to desktop: {0}").format(game_name, str(e))
             )
 
     def remove_egs_from_desktop(self, game_name: str):
@@ -575,8 +505,8 @@ Categories=Game;
         desktop_path = os.path.join(desktop_dir, f"{game_name}.desktop")
         self._remove_file(
             desktop_path,
-            _("Failed to remove game from Desktop: {0}"),
-            _("Game '{0}' removed from Desktop"),
+            _("Failed to remove game '{0}' from Desktop: {{0}}").format(game_name),
+            _("Successfully removed game '{0}' from Desktop").format(game_name),
             game_name
         )
 
@@ -608,13 +538,13 @@ Categories=Game;
                 self.parent.statusBar().showMessage(
                     _("Game '{0}' added to menu").format(game_name), 3000
                 )
-                logger.debug("Direct status message: Game '%s' added to menu", game_name)
+                logger.debug("Direct status message: Game '{0}' added to menu", game_name)
             else:
-                logger.warning("Status bar not available when adding '%s' to menu", game_name)
+                logger.warning("Status bar not available when adding '{0}' to menu", game_name)
         except OSError as e:
-            self._show_warning_dialog(
+            self.signals.show_warning_dialog.emit(
                 _("Error"),
-                _("Failed to add game to menu: {0}").format(str(e))
+                _("Failed to add game '{0}' to menu: {1}").format(game_name, str(e))
             )
 
     def remove_egs_from_menu(self, game_name: str):
@@ -628,8 +558,8 @@ Categories=Game;
         desktop_path = os.path.join(applications_dir, f"{game_name}.desktop")
         self._remove_file(
             desktop_path,
-            _("Failed to remove game from menu: {0}"),
-            _("Game '{0}' removed from menu"),
+            _("Failed to remove game '{0}' from menu: {{0}}").format(game_name),
+            _("Successfully removed game '{0}' from menu").format(game_name),
             game_name
         )
 
@@ -645,21 +575,21 @@ Categories=Game;
                 if entry:
                     exec_line = entry.get("Exec", entry.get("exec", "")).strip()
                     if not exec_line:
-                        self._show_warning_dialog(
+                        self.signals.show_warning_dialog.emit(
                             _("Error"),
-                            _("No executable command found in .desktop for game: {0}").format(game_name)
+                            _("No executable command found in .desktop file for game: {0}").format(game_name)
                         )
                         return None
                 else:
-                    self._show_warning_dialog(
+                    self.signals.show_warning_dialog.emit(
                         _("Error"),
                         _("Failed to parse .desktop file for game: {0}").format(game_name)
                     )
                     return None
             except Exception as e:
-                self._show_warning_dialog(
+                self.signals.show_warning_dialog.emit(
                     _("Error"),
-                    _("Error reading .desktop file: {0}").format(e)
+                    _("Failed to read .desktop file: {0}").format(str(e))
                 )
                 return None
         else:
@@ -669,7 +599,7 @@ Categories=Game;
                     exec_line = entry.get("Exec", entry.get("exec", "")).strip()
                     if exec_line:
                         return exec_line
-            self._show_warning_dialog(
+            self.signals.show_warning_dialog.emit(
                 _("Error"),
                 _(".desktop file not found for game: {0}").format(game_name)
             )
@@ -681,7 +611,7 @@ Categories=Game;
         try:
             entry_exec_split = shlex.split(exec_line)
             if not entry_exec_split:
-                self._show_warning_dialog(
+                self.signals.show_warning_dialog.emit(
                     _("Error"),
                     _("Invalid executable command: {0}").format(exec_line)
                 )
@@ -693,16 +623,16 @@ Categories=Game;
             else:
                 exe_path = entry_exec_split[-1]
             if not exe_path or not os.path.exists(exe_path):
-                self._show_warning_dialog(
+                self.signals.show_warning_dialog.emit(
                     _("Error"),
                     _("Executable file not found: {0}").format(exe_path or "None")
                 )
                 return None
             return exe_path
         except Exception as e:
-            self._show_warning_dialog(
+            self.signals.show_warning_dialog.emit(
                 _("Error"),
-                _("Failed to parse executable command: {0}").format(e)
+                _("Failed to parse executable command: {0}").format(str(e))
             )
             return None
 
@@ -717,9 +647,9 @@ Categories=Game;
                 logger.warning("Status bar not available when removing file for '%s'", game_name)
             return True
         except OSError as e:
-            self._show_warning_dialog(
+            self.signals.show_warning_dialog.emit(
                 _("Error"),
-                error_message.format(e)
+                error_message.format(str(e))
             )
             return False
 
@@ -741,9 +671,9 @@ Categories=Game;
 
         desktop_path = self._get_desktop_path(game_name)
         if not os.path.exists(desktop_path):
-            self._show_warning_dialog(
+            self.signals.show_warning_dialog.emit(
                 _("Error"),
-                _("Could not locate .desktop file for '{0}'").format(game_name)
+                _("Could not locate .desktop file for game: {0}").format(game_name)
             )
             return
 
@@ -772,9 +702,9 @@ Categories=Game;
                 try:
                     shutil.rmtree(custom_folder)
                 except OSError as e:
-                    self._show_warning_dialog(
+                    self.signals.show_warning_dialog.emit(
                         _("Error"),
-                        _("Failed to delete custom data: {0}").format(e)
+                        _("Failed to delete custom data: {0}").format(str(e))
                     )
 
     def add_to_menu(self, game_name, exec_line):
@@ -784,9 +714,9 @@ Categories=Game;
 
         desktop_path = self._get_desktop_path(game_name)
         if not os.path.exists(desktop_path):
-            self._show_warning_dialog(
+            self.signals.show_warning_dialog.emit(
                 _("Error"),
-                _("Could not locate .desktop file for '{0}'").format(game_name)
+                _("Could not locate .desktop file for game: {0}").format(game_name)
             )
             return
 
@@ -801,13 +731,13 @@ Categories=Game;
                 self.parent.statusBar().showMessage(
                     _("Game '{0}' added to menu").format(game_name), 3000
                 )
-                logger.debug("Direct status message: Game '%s' added to menu", game_name)
+                logger.debug("Direct status message: Game '{0}' added to menu", game_name)
             else:
-                logger.warning("Status bar not available when adding '%s' to menu", game_name)
+                logger.warning("Status bar not available when adding '{0}' to menu", game_name)
         except OSError as e:
-            self._show_warning_dialog(
+            self.signals.show_warning_dialog.emit(
                 _("Error"),
-                _("Failed to add game to menu: {0}").format(str(e))
+                _("Failed to add game '{0}' to menu: {1}").format(game_name, str(e))
             )
 
     def remove_from_menu(self, game_name):
@@ -816,8 +746,8 @@ Categories=Game;
         desktop_path = os.path.join(applications_dir, f"{game_name}.desktop")
         self._remove_file(
             desktop_path,
-            _("Failed to remove game from menu: {0}"),
-            _("Game '{0}' removed from menu"),
+            _("Failed to remove game '{0}' from menu: {{0}}").format(game_name),
+            _("Successfully removed game '{0}' from menu").format(game_name),
             game_name
         )
 
@@ -828,9 +758,9 @@ Categories=Game;
 
         desktop_path = self._get_desktop_path(game_name)
         if not os.path.exists(desktop_path):
-            self._show_warning_dialog(
+            self.signals.show_warning_dialog.emit(
                 _("Error"),
-                _("Could not locate .desktop file for '{0}'").format(game_name)
+                _("Could not locate .desktop file for game: {0}").format(game_name)
             )
             return
 
@@ -845,13 +775,13 @@ Categories=Game;
                 self.parent.statusBar().showMessage(
                     _("Game '{0}' added to desktop").format(game_name), 3000
                 )
-                logger.debug("Direct status message: Game '%s' added to desktop", game_name)
+                logger.debug("Direct status message: Game '{0}' added to desktop", game_name)
             else:
-                logger.warning("Status bar not available when adding '%s' to desktop", game_name)
+                logger.warning("Status bar not available when adding '{0}' to desktop", game_name)
         except OSError as e:
-            self._show_warning_dialog(
+            self.signals.show_warning_dialog.emit(
                 _("Error"),
-                _("Failed to add game to desktop: {0}").format(str(e))
+                _("Failed to add game '{0}' to desktop: {1}").format(game_name, str(e))
             )
 
     def remove_from_desktop(self, game_name):
@@ -860,8 +790,8 @@ Categories=Game;
         desktop_path = os.path.join(desktop_dir, f"{game_name}.desktop")
         self._remove_file(
             desktop_path,
-            _("Failed to remove game from Desktop: {0}"),
-            _("Game '{0}' removed from Desktop"),
+            _("Failed to remove game '{0}' from Desktop: {{0}}").format(game_name),
+            _("Successfully removed game '{0}' from Desktop").format(game_name),
             game_name
         )
 
@@ -893,7 +823,7 @@ Categories=Game;
             new_cover_path = dialog.coverEdit.text().strip()
 
             if not new_name or not new_exe_path:
-                self._show_warning_dialog(
+                self.signals.show_warning_dialog.emit(
                     _("Error"),
                     _("Game name and executable path are required.")
                 )
@@ -901,7 +831,7 @@ Categories=Game;
 
             desktop_entry, new_desktop_path = dialog.getDesktopEntryData()
             if not desktop_entry or not new_desktop_path:
-                self._show_warning_dialog(
+                self.signals.show_warning_dialog.emit(
                     _("Error"),
                     _("Failed to generate .desktop file data.")
                 )
@@ -921,9 +851,9 @@ Categories=Game;
                     f.write(desktop_entry)
                     os.chmod(new_desktop_path, 0o755)
             except OSError as e:
-                self._show_warning_dialog(
+                self.signals.show_warning_dialog.emit(
                     _("Error"),
-                    _("Failed to save .desktop file: {0}").format(e)
+                    _("Failed to save .desktop file: {0}").format(str(e))
                 )
                 return
 
@@ -941,9 +871,9 @@ Categories=Game;
                     try:
                         shutil.copyfile(new_cover_path, os.path.join(custom_folder, f"cover{ext}"))
                     except OSError as e:
-                        self._show_warning_dialog(
+                        self.signals.show_warning_dialog.emit(
                             _("Error"),
-                            _("Failed to copy cover image: {0}").format(e)
+                            _("Failed to copy cover image: {0}").format(str(e))
                         )
                         return
 
@@ -960,23 +890,19 @@ Categories=Game;
         if not exe_path:
             return
 
-        def on_add_to_steam_result(result: tuple[bool, str]):
-            success, message = result
-            if success:
-                self.signals.show_status_message.emit(
-                    _("The game was added successfully. Please restart Steam for changes to take effect."), 5000
-                )
-            else:
-                self.signals.show_warning_dialog.emit(_("Error"), message)
+        logger.debug("Adding '{0}' to Steam", game_name)
 
-        if self.parent.statusBar():
-            self.parent.statusBar().showMessage(
-                _("Adding '{0}' to Steam...").format(game_name), 0
+        try:
+            add_to_steam(game_name, exec_line, cover_path)
+            self.signals.show_info_dialog.emit(
+                _("Success"),
+                _("'{0}' was added to Steam. Please restart Steam for changes to take effect.").format(game_name)
             )
-            logger.debug("Direct status message: Adding '%s' to Steam", game_name)
-        else:
-            logger.warning("Status bar not available when adding '%s' to Steam", game_name)
-        add_to_steam(game_name, exec_line, cover_path)
+        except Exception as e:
+            self.signals.show_warning_dialog.emit(
+                _("Error"),
+                _("Failed to add game '{0}' to Steam: {1}").format(game_name, str(e))
+            )
 
     def remove_from_steam(self, game_name, exec_line, game_source):
         """Handle removing a game from Steam via steam_api, supporting both EGS and non-EGS games."""
@@ -986,8 +912,9 @@ Categories=Game;
         def on_remove_from_steam_result(result: tuple[bool, str]):
             success, message = result
             if success:
-                self.signals.show_status_message.emit(
-                    _("The game was removed successfully. Please restart Steam for changes to take effect."), 5000
+                self.signals.show_info_dialog.emit(
+                    _("Success"),
+                    _("'{0}' was removed from Steam. Please restart Steam for changes to take effect.").format(game_name)
                 )
             else:
                 self.signals.show_warning_dialog.emit(_("Error"), message)
@@ -995,7 +922,7 @@ Categories=Game;
         if game_source == "epic":
             # For EGS games, construct the script path used in Steam shortcuts.vdf
             if not self.portproton_location:
-                self._show_warning_dialog(
+                self.signals.show_warning_dialog.emit(
                     _("Error"),
                     _("PortProton directory not found")
                 )
@@ -1007,15 +934,14 @@ Categories=Game;
 
             # Directly remove the shortcut by matching AppName and Exe
             try:
-                from portprotonqt.steam_api import get_steam_home, get_last_steam_user, convert_steam_id
                 steam_home = get_steam_home()
                 if not steam_home:
-                    self._show_warning_dialog(_("Error"), _("Steam directory not found"))
+                    self.signals.show_warning_dialog.emit(_("Error"), _("Steam directory not found"))
                     return
 
                 last_user = get_last_steam_user(steam_home)
                 if not last_user or 'SteamID' not in last_user:
-                    self._show_warning_dialog(_("Error"), _("Failed to get Steam user ID"))
+                    self.signals.show_warning_dialog.emit(_("Error"), _("Failed to get Steam user ID"))
                     return
 
                 userdata_dir = os.path.join(steam_home, "userdata")
@@ -1026,7 +952,7 @@ Categories=Game;
                 backup_path = f"{steam_shortcuts_path}.backup"
 
                 if not os.path.exists(steam_shortcuts_path):
-                    self._show_warning_dialog(
+                    self.signals.show_warning_dialog.emit(
                         _("Error"),
                         _("Steam shortcuts file not found")
                     )
@@ -1037,9 +963,9 @@ Categories=Game;
                     shutil.copy2(steam_shortcuts_path, backup_path)
                     logger.info(f"Created backup of shortcuts.vdf at {backup_path}")
                 except Exception as e:
-                    self._show_warning_dialog(
+                    self.signals.show_warning_dialog.emit(
                         _("Error"),
-                        _("Failed to create backup of shortcuts.vdf: {0}").format(e)
+                        _("Failed to create backup of shortcuts.vdf: {0}").format(str(e))
                     )
                     return
 
@@ -1048,9 +974,9 @@ Categories=Game;
                     with open(steam_shortcuts_path, 'rb') as f:
                         shortcuts_data = vdf.binary_load(f)
                 except Exception as e:
-                    self._show_warning_dialog(
+                    self.signals.show_warning_dialog.emit(
                         _("Error"),
-                        _("Failed to load shortcuts.vdf: {0}").format(e)
+                        _("Failed to load shortcuts.vdf: {0}").format(str(e))
                     )
                     return
 
@@ -1068,7 +994,7 @@ Categories=Game;
                     index += 1
 
                 if not modified:
-                    self._show_warning_dialog(
+                    self.signals.show_warning_dialog.emit(
                         _("Error"),
                         _("Game '{0}' not found in Steam shortcuts").format(game_name)
                     )
@@ -1081,9 +1007,9 @@ Categories=Game;
                     logger.info(f"Updated shortcuts.vdf, removed '{game_name}'")
                     on_remove_from_steam_result((True, f"Game '{game_name}' removed from Steam"))
                 except Exception as e:
-                    self._show_warning_dialog(
+                    self.signals.show_warning_dialog.emit(
                         _("Error"),
-                        _("Failed to update shortcuts.vdf: {0}").format(e)
+                        _("Failed to update shortcuts.vdf: {0}").format(str(e))
                     )
                     if os.path.exists(backup_path):
                         try:
@@ -1098,20 +1024,20 @@ Categories=Game;
                 if os.path.exists(script_path):
                     try:
                         os.remove(script_path)
-                        logger.info(f"Removed EGS script file: {script_path}")
+                        logger.info(f"Removed EGS script: {script_path}")
                     except Exception as e:
-                        logger.warning(f"Failed to remove EGS script file {script_path}: {e}")
+                        logger.warning(f"Failed to remove EGS script {script_path}: {e}")
 
             except Exception as e:
-                self._show_warning_dialog(
+                self.signals.show_warning_dialog.emit(
                     _("Error"),
-                    _("Failed to remove EGS game from Steam: {0}").format(e)
+                    _("Failed to remove EGS game '{0}' from Steam: {1}").format(game_name, str(e))
                 )
-                on_remove_from_steam_result((False, f"Failed to remove EGS game from Steam: {e}"))
+                on_remove_from_steam_result((False, f"Failed to remove EGS game '{game_name}' from Steam: {str(e)}"))
                 return
 
         else:
-            # For non-EGS games, use the existing logic
+            # For non-EGS games, use the existing logic without callback
             exec_line = self._get_exec_line(game_name, exec_line)
             if not exec_line:
                 return
@@ -1121,13 +1047,21 @@ Categories=Game;
                 return
 
             if self.parent.statusBar():
-                self.parent.statusBar().showMessage(
-                    _("Removing '{0}' from Steam...").format(game_name), 0
-                )
-                logger.debug("Direct status message: Removing '%s' from Steam", game_name)
+                logger.debug("Direct status message: Removing '{0}' from Steam", game_name)
             else:
-                logger.warning("Status bar not available when removing '%s' from Steam", game_name)
-            remove_from_steam(game_name, exec_line)
+                logger.warning("Status bar not available when removing '{0}' from Steam", game_name)
+
+            try:
+                remove_from_steam(game_name, exec_line)
+                self.signals.show_info_dialog.emit(
+                    _("Success"),
+                    _("'{0}' was removed from Steam. Please restart Steam for changes to take effect.").format(game_name)
+                )
+            except Exception as e:
+                self.signals.show_warning_dialog.emit(
+                    _("Error"),
+                    _("Failed to remove game '{0}' from Steam: {1}").format(game_name, str(e))
+                )
 
     def open_game_folder(self, game_name, exec_line):
         """Open the folder containing the game's executable."""
@@ -1147,13 +1081,13 @@ Categories=Game;
             QDesktopServices.openUrl(QUrl.fromLocalFile(folder_path))
             if self.parent.statusBar():
                 self.parent.statusBar().showMessage(
-                    _("Opened folder for '{0}'").format(game_name), 3000
+                    _("Successfully opened folder for '{0}'").format(game_name), 3000
                 )
-                logger.debug("Direct status message: Opened folder for '%s'", game_name)
+                logger.debug("Direct status message: Opened folder for '{0}'", game_name)
             else:
-                logger.warning("Status bar not available when opening folder for '%s'", game_name)
+                logger.warning("Status bar not available when opening folder for '{0}'", game_name)
         except Exception as e:
-            self._show_warning_dialog(
+            self.signals.show_warning_dialog.emit(
                 _("Error"),
                 _("Failed to open game folder: {0}").format(str(e))
             )
