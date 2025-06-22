@@ -14,7 +14,7 @@ from portprotonqt.logger import get_logger
 from portprotonqt.image_utils import load_pixmap_async
 from portprotonqt.time_utils import parse_playtime_file, format_playtime, get_last_launch, get_last_launch_timestamp
 from portprotonqt.config_utils import get_portproton_location
-from portprotonqt.steam_api import get_weanticheatyet_status_async
+from portprotonqt.steam_api import get_weanticheatyet_status_async, get_steam_apps_and_index_async, get_protondb_tier_async, search_app
 
 from PySide6.QtGui import QPixmap
 
@@ -354,6 +354,7 @@ def load_egs_games_async(legendary_path: str, callback: Callable[[list[tuple]], 
     """
     Асинхронно загружает Epic Games Store игры с использованием legendary CLI.
     Читает статистику времени игры и последнего запуска из файла statistics.
+    Проверяет наличие игры в Steam для получения ProtonDB статуса.
     """
     logger.debug("Starting to load Epic Games Store games")
     games: list[tuple] = []
@@ -489,39 +490,54 @@ def _continue_loading_egs_games(legendary_path: str, callback: Callable[[list[tu
             image_folder = os.path.join(os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache")), "PortProtonQt", "images")
             local_path = os.path.join(image_folder, f"{app_name}.jpg") if cover_url else ""
 
-            def on_description_fetched(api_description: str):
-                final_description = api_description or _("No description available")
+            def on_steam_apps(steam_data: tuple[list, dict]):
+                steam_apps, steam_apps_index = steam_data
+                matching_app = search_app(title, steam_apps_index)
+                steam_appid = matching_app.get("appid") if matching_app else None
 
-                def on_cover_loaded(pixmap: QPixmap):
-                    def on_anticheat_status(status: str):
-                        nonlocal pending_images
-                        with results_lock:
-                            game_results[index] = (
-                                title,
-                                final_description,
-                                local_path if os.path.exists(local_path) else "",
-                                app_name,
-                                f"legendary:launch:{app_name}",
-                                "",
-                                last_launch,  # Время последнего запуска
-                                formatted_playtime,  # Форматированное время игры
-                                "",
-                                status or "",
-                                last_launch_timestamp,  # Временная метка последнего запуска
-                                playtime_seconds,  # Время игры в секундах
-                                "epic"
-                            )
-                            pending_images -= 1
-                            update_progress(total_games - pending_images)
-                            if pending_images == 0:
-                                final_games = [game_results[i] for i in sorted(game_results.keys())]
-                                callback(final_games)
+                def on_protondb_tier(protondb_tier: str):
+                    def on_description_fetched(api_description: str):
+                        final_description = api_description or _("No description available")
 
-                    get_weanticheatyet_status_async(title, on_anticheat_status)
+                        def on_cover_loaded(pixmap: QPixmap):
+                            def on_anticheat_status(status: str):
+                                nonlocal pending_images
+                                with results_lock:
+                                    game_results[index] = (
+                                        title,
+                                        final_description,
+                                        local_path if os.path.exists(local_path) else "",
+                                        app_name,
+                                        f"legendary:launch:{app_name}",
+                                        "",
+                                        last_launch,  # Время последнего запуска
+                                        formatted_playtime,  # Форматированное время игры
+                                        protondb_tier,  # ProtonDB tier
+                                        status or "",
+                                        last_launch_timestamp,  # Временная метка последнего запуска
+                                        playtime_seconds,  # Время игры в секундах
+                                        "epic"
+                                    )
+                                    pending_images -= 1
+                                    update_progress(total_games - pending_images)
+                                    if pending_images == 0:
+                                        final_games = [game_results[i] for i in sorted(game_results.keys())]
+                                        callback(final_games)
 
-                load_pixmap_async(cover_url, 600, 900, on_cover_loaded, app_name=app_name)
+                            get_weanticheatyet_status_async(title, on_anticheat_status)
 
-            get_egs_game_description_async(title, on_description_fetched)
+                        load_pixmap_async(cover_url, 600, 900, on_cover_loaded, app_name=app_name)
+
+                    get_egs_game_description_async(title, on_description_fetched)
+
+                if steam_appid:
+                    logger.info(f"Found Steam appid {steam_appid} for EGS game {title}")
+                    get_protondb_tier_async(steam_appid, on_protondb_tier)
+                else:
+                    logger.debug(f"No Steam app found for EGS game {title}")
+                    on_protondb_tier("")  # Proceed with empty ProtonDB tier
+
+            get_steam_apps_and_index_async(on_steam_apps)
 
         max_workers = min(4, len(valid_games))
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
