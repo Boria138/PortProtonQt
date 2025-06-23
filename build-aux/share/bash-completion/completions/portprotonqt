@@ -1,0 +1,19 @@
+_portprotonqt() {
+    local cur prev
+    _init_completion || return
+
+    case $prev in
+        --help|-h)
+            return
+            ;;
+    esac
+
+    if [[ "$cur" == -* ]]; then
+        COMPREPLY=( $( compgen -W '--fullscreen --session' -- "$cur" ) )
+        return 0
+    fi
+
+    return 0
+}
+
+complete -F _portprotonqt portprotonqt

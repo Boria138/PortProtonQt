@@ -64,5 +64,6 @@ cp -r build-aux/share %{buildroot}/usr/
 %{_datadir}/icons/hicolor/scalable/apps/ru.linux_gaming.PortProtonQt.svg
 %{_metainfodir}/ru.linux_gaming.PortProtonQt.metainfo.xml
 %{_datadir}/applications/ru.linux_gaming.PortProtonQt.desktop
+%{bash_completions_dir}/portprotonqt
 
 %changelog
