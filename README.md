@@ -112,6 +112,16 @@ pre-commit run --all-files
 * [BlackSnaker](https://github.com/BlackSnaker) - Дизайнер - программист
 * [Mikhail Tergoev(Castro-Fidel)](https://git.linux-gaming.ru/CastroFidel) - Автор оригинального проекта PortProton
 
+## Зависимости и лицензии
+
+PortProtonQt использует код и зависимости от следующих проектов:
+
+- [Legendary](https://github.com/derrod/legendary) — инструмент для работы с Epic Games Store, лицензия [GPL-3.0](https://www.gnu.org/licenses/gpl-3.0.html).
+- [Icoextract](https://github.com/jlu5/icoextract) — библиотека для извлечения иконок, лицензия [MIT](https://opensource.org/licenses/MIT).
+- [PortProton 2.0](https://git.linux-gaming.ru/CastroFidel/PortProton_2.0) — библиотека для взаимодействия с PortProton, лицензия [MIT](https://opensource.org/licenses/MIT).
+
+Полный текст лицензий см. в файлах [LICENSE](LICENSE), [LICENSE-icoextract](documentation/licenses/icoextract), [LICENSE-portproton](documentation/licenses/portproton), [LICENSE-legendary](documentation/licenses/legendary).
+
 > [!WARNING]
 > Проект находится на стадии WIP (work in progress) корректная работоспособность не гарантирована
 
