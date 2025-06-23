@@ -1,0 +1,18 @@
+name: renovate
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * 0'
+
+jobs:
+  renovate:
+    runs-on: ubuntu-latest
+    container: ghcr.io/renovatebot/renovate:41.1.4
+    steps:
+      - uses: https://gitea.com/actions/checkout@v4
+      - run: renovate
+        env:
+          RENOVATE_CONFIG_FILE: "/workspace/Boria138/PortProtonQt/config.js"
+          LOG_LEVEL: "debug"
+          RENOVATE_TOKEN: ${{ secrets.RENOVATE_TOKEN }}

@@ -11,16 +11,16 @@
       "automerge": true
     },
     {
-      "automerge": true,
-      "matchUpdateTypes": ["pin", "pinDigest"]
+      "matchDatasources": ["python-version"],
+      "enabled": false
     },
     {
-      "enabled": false,
-      "matchFileNames": [".gitea/workflows/**.yaml", ".gitea/workflows/**.yml"]
+      "matchFileNames": [".gitea/workflows/**.yaml", ".gitea/workflows/**.yml"],
+      "enabled": false
     },
     {
-      "enabled": false,
-      "matchFileNames": [".python-version"]
+      "matchFileNames": [".python-version"],
+      "enabled": false
     }
   ]
 }
