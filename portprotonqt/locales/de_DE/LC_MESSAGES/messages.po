@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-06-22 18:23+0500\n"
+"POT-Creation-Date: 2025-06-24 11:17+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: de_DE\n"
@@ -19,6 +19,12 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
+
+msgid "Error"
+msgstr ""
+
+msgid "PortProton is not found"
+msgstr ""
 
 msgid "Remove from Favorites"
 msgstr ""
@@ -56,30 +62,29 @@ msgstr ""
 msgid "Delete from PortProton"
 msgstr ""
 
-msgid "Error"
-msgstr ""
-
 #, python-brace-format
-msgid "Legendary executable not found at {0}"
+msgid "Legendary executable not found at {path}"
 msgstr ""
 
 msgid "Success"
 msgstr ""
 
 #, python-brace-format
-msgid "'{0}' was added to Steam. Please restart Steam for changes to take effect."
+msgid ""
+"'{game_name}' was added to Steam. Please restart Steam for changes to "
+"take effect."
 msgstr ""
 
 #, python-brace-format
-msgid "Executable file not found for game: {0}"
+msgid "Executable not found for game: {game_name}"
 msgstr ""
 
 #, python-brace-format
-msgid "Opened folder for EGS game '{0}'"
+msgid "Opened folder for '{game_name}'"
 msgstr ""
 
 #, python-brace-format
-msgid "Failed to open game folder: {0}"
+msgid "Failed to open folder: {error}"
 msgstr ""
 
 msgid "Select Game Installation Folder"
@@ -89,86 +94,81 @@ msgid "No folder selected"
 msgstr ""
 
 #, python-brace-format
-msgid "Importing '{0}' to Legendary..."
+msgid "Imported '{game_name}' to Legendary"
 msgstr ""
 
 #, python-brace-format
-msgid "Added '{0}' to favorites"
+msgid "Failed to import '{game_name}' to Legendary: {error}"
 msgstr ""
 
 #, python-brace-format
-msgid "Removed '{0}' from favorites"
-msgstr ""
-
-msgid "PortProton is not found."
+msgid "Importing '{game_name}' to Legendary..."
 msgstr ""
 
 #, python-brace-format
-msgid "start.sh not found at {0}"
+msgid "Added '{game_name}' to favorites"
 msgstr ""
 
 #, python-brace-format
-msgid "Failed to create .desktop file: {0}"
+msgid "Removed '{game_name}' from favorites"
 msgstr ""
 
 #, python-brace-format
-msgid "Game '{0}' added to desktop"
+msgid "start.sh not found at {path}"
 msgstr ""
 
 #, python-brace-format
-msgid "Failed to add game to desktop: {0}"
+msgid "Failed to create .desktop file: {error}"
 msgstr ""
 
 #, python-brace-format
-msgid "Failed to remove game '{0}' from Desktop: {{0}}"
+msgid "Added '{game_name}' to {location}"
+msgstr ""
+
+msgid "Desktop"
 msgstr ""
 
 #, python-brace-format
-msgid "Successfully removed game '{0}' from Desktop"
+msgid "Failed to add '{game_name}' to {location}: {error}"
 msgstr ""
 
 #, python-brace-format
-msgid "Game '{0}' added to menu"
+msgid "Failed to remove '{game_name}' from {location}: {error}"
 msgstr ""
 
 #, python-brace-format
-msgid "Failed to add game '{0}' to menu: {1}"
+msgid "Removed '{game_name}' from {location}"
+msgstr ""
+
+msgid "Menu"
 msgstr ""
 
 #, python-brace-format
-msgid "Failed to remove game '{0}' from menu: {{0}}"
+msgid "No executable command in .desktop file for '{game_name}'"
 msgstr ""
 
 #, python-brace-format
-msgid "Successfully removed game '{0}' from menu"
+msgid "Failed to parse .desktop file for '{game_name}'"
 msgstr ""
 
 #, python-brace-format
-msgid "No executable command found in .desktop file for game: {0}"
+msgid "Failed to read .desktop file: {error}"
 msgstr ""
 
 #, python-brace-format
-msgid "Failed to parse .desktop file for game: {0}"
+msgid "No .desktop file found for '{game_name}'"
 msgstr ""
 
 #, python-brace-format
-msgid "Failed to read .desktop file: {0}"
+msgid "Invalid executable command: {exec_line}"
 msgstr ""
 
 #, python-brace-format
-msgid ".desktop file not found for game: {0}"
+msgid "Executable not found: {path}"
 msgstr ""
 
 #, python-brace-format
-msgid "Invalid executable command: {0}"
-msgstr ""
-
-#, python-brace-format
-msgid "Executable file not found: {0}"
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to parse executable command: {0}"
+msgid "Failed to parse executable: {error}"
 msgstr ""
 
 msgid "Confirm Deletion"
@@ -176,60 +176,52 @@ msgstr ""
 
 #, python-brace-format
 msgid ""
-"Are you sure you want to delete '{0}'? This will remove the .desktop file"
-" and custom data."
+"Are you sure you want to delete '{game_name}'? This will remove the "
+".desktop file and custom data."
 msgstr ""
 
 #, python-brace-format
-msgid "Could not locate .desktop file for game: {0}"
+msgid "Failed to delete .desktop file: {error}"
 msgstr ""
 
 #, python-brace-format
-msgid "Failed to delete .desktop file: {0}"
+msgid "Deleted '{game_name}' successfully"
 msgstr ""
 
 #, python-brace-format
-msgid "Game '{0}' deleted successfully"
+msgid "Failed to delete custom data: {error}"
+msgstr ""
+
+msgid "Game name and executable path are required"
+msgstr ""
+
+msgid "Failed to generate .desktop file data"
 msgstr ""
 
 #, python-brace-format
-msgid "Failed to delete custom data: {0}"
+msgid "Failed to delete old .desktop file: {error}"
 msgstr ""
 
 #, python-brace-format
-msgid "Failed to add game '{0}' to desktop: {1}"
-msgstr ""
-
-msgid "Game name and executable path are required."
-msgstr ""
-
-msgid "Failed to generate .desktop file data."
+msgid "Removed old .desktop file for '{game_name}'"
 msgstr ""
 
 #, python-brace-format
-msgid "Failed to remove old .desktop file: {0}"
+msgid "Failed to save .desktop file: {error}"
 msgstr ""
 
 #, python-brace-format
-msgid "Old .desktop file removed for '{0}'"
+msgid "Failed to copy cover image: {error}"
 msgstr ""
 
 #, python-brace-format
-msgid "Failed to save .desktop file: {0}"
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to copy cover image: {0}"
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to add game '{0}' to Steam: {1}"
+msgid "Failed to add '{game_name}' to Steam: {error}"
 msgstr ""
 
 #, python-brace-format
 msgid ""
-"'{0}' was removed from Steam. Please restart Steam for changes to take "
-"effect."
+"'{game_name}' was removed from Steam. Please restart Steam for changes to"
+" take effect."
 msgstr ""
 
 msgid "PortProton directory not found"
@@ -245,31 +237,27 @@ msgid "Steam shortcuts file not found"
 msgstr ""
 
 #, python-brace-format
-msgid "Failed to create backup of shortcuts.vdf: {0}"
+msgid "Failed to create backup of shortcuts.vdf: {error}"
 msgstr ""
 
 #, python-brace-format
-msgid "Failed to load shortcuts.vdf: {0}"
+msgid "Failed to load shortcuts.vdf: {error}"
 msgstr ""
 
 #, python-brace-format
-msgid "Game '{0}' not found in Steam shortcuts"
+msgid "Game '{game_name}' not found in Steam shortcuts"
 msgstr ""
 
 #, python-brace-format
-msgid "Failed to update shortcuts.vdf: {0}"
+msgid "Failed to update shortcuts.vdf: {error}"
 msgstr ""
 
 #, python-brace-format
-msgid "Failed to remove EGS game '{0}' from Steam: {1}"
+msgid "Failed to remove EGS game '{game_name}' from Steam: {error}"
 msgstr ""
 
 #, python-brace-format
-msgid "Failed to remove game '{0}' from Steam: {1}"
-msgstr ""
-
-#, python-brace-format
-msgid "Successfully opened folder for '{0}'"
+msgid "Failed to remove game '{game_name}' from Steam: {error}"
 msgstr ""
 
 msgid "Edit Game"
