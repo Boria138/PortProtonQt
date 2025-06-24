@@ -1,5 +1,4 @@
 import os
-import shutil
 import tempfile
 
 from PySide6.QtGui import QPixmap
@@ -229,25 +228,25 @@ class AddGameDialog(QDialog):
         desktop_path = os.path.join(portproton_path, f"{name}.desktop")
         working_dir = os.path.join(base_path, "scripts")
 
-        user_cover_path = self.coverEdit.text().strip()
-        if os.path.isfile(user_cover_path):
-            shutil.copy(user_cover_path, icon_path)
-        else:
-            os.makedirs(os.path.dirname(icon_path), exist_ok=True)
-            os.system(f'exe-thumbnailer "{exe_path}" "{icon_path}"')
+        os.makedirs(os.path.dirname(icon_path), exist_ok=True)
+
+        # Generate thumbnail (128x128) from exe
+        if not generate_thumbnail(exe_path, icon_path, size=128):
+            logger.error(f"Failed to generate thumbnail from exe: {exe_path}")
+            icon_path = ""  # Set empty icon if generation fails
 
         comment = _('Launch game "{name}" with PortProton').format(name=name)
 
         desktop_entry = f"""[Desktop Entry]
-Name={name}
-Comment={comment}
-Exec={exec_str}
-Terminal=false
-Type=Application
-Categories=Game;
-StartupNotify=true
-Path={working_dir}
-Icon={icon_path}
-"""
+    Name={name}
+    Comment={comment}
+    Exec={exec_str}
+    Terminal=false
+    Type=Application
+    Categories=Game;
+    StartupNotify=true
+    Path={working_dir}
+    Icon={icon_path}
+    """
 
         return desktop_entry, desktop_path

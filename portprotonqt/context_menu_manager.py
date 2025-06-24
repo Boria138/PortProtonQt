@@ -15,7 +15,7 @@ from portprotonqt.localization import _
 from portprotonqt.config_utils import parse_desktop_entry, read_favorites, save_favorites
 from portprotonqt.steam_api import is_game_in_steam, add_to_steam, remove_from_steam, get_steam_home, get_last_steam_user, convert_steam_id
 from portprotonqt.egs_api import add_egs_to_steam, get_egs_executable
-from portprotonqt.dialogs import AddGameDialog
+from portprotonqt.dialogs import AddGameDialog, generate_thumbnail
 
 logger = logging.getLogger(__name__)
 
@@ -378,23 +378,33 @@ class ContextMenuManager:
                     _("start.sh not found at {path}").format(path=start_sh_path)
                 )
                 return False
-        image_folder = os.path.join(
-            os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache")),
-            "PortProtonQt", "images"
-        )
-        cover_path = os.path.join(image_folder, f"{app_name}.jpg")
-        icon_path = cover_path if os.path.exists(cover_path) else ""
+        icon_path = os.path.join(self.portproton_location, "data", "img", f"{game_name}.png")
+        os.makedirs(os.path.dirname(icon_path), exist_ok=True)
+
+        # Generate 128x128 icon from exe only
+        exe_path = get_egs_executable(app_name, self.legendary_config_path)
+        if exe_path and os.path.exists(exe_path):
+            if not generate_thumbnail(exe_path, icon_path, size=128):
+                logger.error(f"Failed to generate thumbnail from exe: {exe_path}")
+                icon_path = ""
+        else:
+            logger.error(f"No executable found for EGS game: {app_name}")
+            icon_path = ""
+
         egs_desktop_dir = os.path.join(self.portproton_location, "egs_desktops")
         os.makedirs(egs_desktop_dir, exist_ok=True)
         desktop_path = self._get_egs_desktop_path(game_name)
+        comment = _('Launch game "{name}" with PortProton').format(name=game_name)
         desktop_entry = f"""[Desktop Entry]
-Type=Application
-Name={game_name}
-Exec="{self.legendary_path}" launch {app_name} --no-wine --wrapper "env START_FROM_STEAM=1 {wrapper}"
-Icon={icon_path}
-Terminal=false
-Categories=Game
-"""
+    Type=Application
+    Name={game_name}
+    Comment={comment}
+    Terminal=false
+    StartupNotify=true
+    Exec="{self.legendary_path}" launch {app_name} --no-wine --wrapper "env START_FROM_STEAM=1 {wrapper}"
+    Icon={icon_path}
+    Categories=Game
+    """
         try:
             with open(desktop_path, "w", encoding="utf-8") as f:
                 f.write(desktop_entry)
@@ -687,8 +697,9 @@ Categories=Game
 
         Args:
             game_name: The display name of the game.
-            exec_line: The executable command line for the game.
+            exec_line: The executable command line.
         """
+
         if not self._check_portproton():
             return
         desktop_path = self._get_desktop_path(game_name)
@@ -698,6 +709,18 @@ Categories=Game
                 _("No .desktop file found for '{game_name}'").format(game_name=game_name)
             )
             return
+        # Ensure icon exists
+        exec_line = self._get_exec_line(game_name, exec_line)
+        if not exec_line:
+            return
+        exe_path = self._parse_exe_path(exec_line, game_name)
+        if not exe_path:
+            return
+        icon_path = os.path.join(self.portproton_location, "data", "img", f"{game_name}.png")
+        if not os.path.exists(icon_path):
+            if not generate_thumbnail(exe_path, icon_path, size=128):
+                logger.error(f"Failed to generate thumbnail for {exe_path}")
+
         desktop_dir = subprocess.check_output(['xdg-user-dir', 'DESKTOP']).decode('utf-8').strip()
         os.makedirs(desktop_dir, exist_ok=True)
         dest_path = os.path.join(desktop_dir, f"{game_name}.desktop")
