@@ -108,9 +108,13 @@ pre-commit run --all-files
 
 ## Авторы
 
-* [Boria138](https://git.linux-gaming.ru/Boria138) - Программист
-* [BlackSnaker](https://github.com/BlackSnaker) - Дизайнер - программист
-* [Mikhail Tergoev(Castro-Fidel)](https://git.linux-gaming.ru/CastroFidel) - Автор оригинального проекта PortProton
+* [Boria138](https://git.linux-gaming.ru/Boria138) - Основной разработчик
+* [BlackSnaker](https://git.linux-gaming.ru/BlackSnaker) - Автор идеи, а так же начальной реализации проекта
+* [Mikhail Tergoev (Castro-Fidel)](https://git.linux-gaming.ru/CastroFidel) - Автор оригинального проекта PortProton
+
+### Контрибьюторы
+
+Мы благодарим всех, кто внёс вклад в развитие PortProtonQt, включая тех, кто участвует через коммиты, а также тех, кто помогает другими способами (тестирование, идеи, переводы, документация и т.д.). Полный список участников, можно найти в [списке активности репозитория](https://git.linux-gaming.ru/Boria138/PortProtonQt/activity/contributors). Дополнительные участники также перечислены в файле [CHANGELOG.md](CHANGELOG.md). Если вы внесли вклад, но не указаны, свяжитесь с основными разработчиками, чтобы мы могли вас отметить!
 
 ## Зависимости и лицензии
 
