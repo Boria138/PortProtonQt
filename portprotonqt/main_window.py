@@ -2072,41 +2072,36 @@ class MainWindow(QMainWindow):
             exe_name = os.path.splitext(current_exe)[0]
             env_vars = os.environ.copy()
 
-            # Delay disabling gamepad handling to allow rumble to complete
-            if hasattr(self, 'input_manager'):
-                QTimer.singleShot(200, self.input_manager.disable_gamepad_handling)
-
             if entry_exec_split[0] == "env" and len(entry_exec_split) > 1 and 'data/scripts/start.sh' in entry_exec_split[1]:
                 env_vars['START_FROM_STEAM'] = '1'
             elif entry_exec_split[0] == "flatpak":
                 env_vars['START_FROM_STEAM'] = '1'
-            return
 
-        # Запускаем игру
-        self.current_running_button = update_button
-        self.target_exe = current_exe
-        exe_name = os.path.splitext(current_exe)[0]
-        env_vars = os.environ.copy()
-        env_vars['START_FROM_STEAM'] = '1'
-        try:
-            process = subprocess.Popen(entry_exec_split, env=env_vars, shell=False, preexec_fn=os.setsid)
-            self.game_processes.append(process)
-            save_last_launch(exe_name, datetime.now())
-            if update_button:
-                update_button.setText(_("Launching"))
-                icon = self.theme_manager.get_icon("stop")
-                if isinstance(icon, str):
-                    icon = QIcon(icon)
-                elif icon is None:
-                    icon = QIcon()
-                update_button.setIcon(icon)
+            # Delay disabling gamepad handling to allow rumble to complete
+            if hasattr(self, 'input_manager'):
+                QTimer.singleShot(200, self.input_manager.disable_gamepad_handling)
 
-            self.checkProcessTimer = QTimer(self)
-            self.checkProcessTimer.timeout.connect(self.checkTargetExe)
-            self.checkProcessTimer.start(500)
-        except Exception as e:
-            logger.error(f"Failed to launch game {exe_name}: {e}")
-            QMessageBox.warning(self, _("Error"), _("Failed to launch game: {0}").format(str(e)))
+            # Запускаем игру
+            try:
+                process = subprocess.Popen(entry_exec_split, env=env_vars, shell=False, preexec_fn=os.setsid)
+                self.game_processes.append(process)
+                save_last_launch(exe_name, datetime.now())
+                if update_button:
+                    update_button.setText(_("Launching"))
+                    icon = self.theme_manager.get_icon("stop")
+                    if isinstance(icon, str):
+                        icon = QIcon(icon)
+                    elif icon is None:
+                        icon = QIcon()
+                    update_button.setIcon(icon)
+
+                self.checkProcessTimer = QTimer(self)
+                self.checkProcessTimer.timeout.connect(self.checkTargetExe)
+                self.checkProcessTimer.start(500)
+            except Exception as e:
+                logger.error(f"Failed to launch game {exe_name}: {e}")
+                QMessageBox.warning(self, _("Error"), _("Failed to launch game: {0}").format(str(e)))
+
 
     def closeEvent(self, event):
         """Завершает все дочерние процессы и сохраняет настройки при закрытии окна."""
