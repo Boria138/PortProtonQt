@@ -395,15 +395,16 @@ class ContextMenuManager:
         os.makedirs(egs_desktop_dir, exist_ok=True)
         desktop_path = self._get_egs_desktop_path(game_name)
         comment = _('Launch game "{name}" with PortProton').format(name=game_name)
-        desktop_entry = f"""[Desktop Entry]
-    Type=Application
-    Name={game_name}
-    Comment={comment}
-    Terminal=false
-    StartupNotify=true
-    Exec="{self.legendary_path}" launch {app_name} --no-wine --wrapper "env START_FROM_STEAM=1 {wrapper}"
-    Icon={icon_path}
-    Categories=Game
+        desktop_entry =f"""\
+[Desktop Entry]
+Name={game_name}
+Comment={comment}
+Exec="{self.legendary_path}" launch {app_name} --no-wine --wrapper "env START_FROM_STEAM=1 {wrapper}"
+Terminal=false
+Type=Application
+Categories=Game;
+StartupNotify=true
+Icon={icon_path}
     """
         try:
             with open(desktop_path, "w", encoding="utf-8") as f:
