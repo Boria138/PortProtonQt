@@ -464,15 +464,25 @@ class AddGameDialog(QDialog):
         self.updatePreview()
 
     def browseCover(self):
-        fileNameAndFilter = QFileDialog.getOpenFileName(
-            self,
-            _("Select Cover Image"),
-            "",
-            "Images (*.png *.jpg *.jpeg *.bmp)"
-        )
-        fileName = fileNameAndFilter[0]
-        if fileName:
-            self.coverEdit.setText(fileName)
+        """Открывает файловый менеджер для выбора изображения обложки"""
+        try:
+            file_explorer = FileExplorer(self)
+            file_explorer.file_signal.file_selected.connect(self.onCoverSelected)
+
+            if self.parent():
+                center_point = self.parent().geometry().center()
+                file_explorer.move(center_point - file_explorer.rect().center())
+
+            file_explorer.show()
+        except Exception as e:
+            logger.error(f"Error in browseCover: {e}")
+
+    def onCoverSelected(self, file_path):
+        """Обработчик выбора файла обложки в FileExplorer"""
+        if file_path and os.path.splitext(file_path)[1].lower() in ('.png', '.jpg', '.jpeg', '.bmp'):
+            self.coverEdit.setText(file_path)
+        else:
+            logger.warning(f"Selected file is not a valid image: {file_path}")
 
     def updatePreview(self):
         """Update the cover preview image."""
