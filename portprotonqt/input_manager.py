@@ -3,7 +3,7 @@ import threading
 from typing import Protocol, cast
 from evdev import InputDevice, InputEvent, ecodes, list_devices, ff
 from pyudev import Context, Monitor, MonitorObserver, Device
-from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea, QLineEdit, QDialog, QMenu, QComboBox, QListView, QMessageBox
+from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea, QLineEdit, QDialog, QMenu, QComboBox, QListView, QMessageBox, QListWidget
 from PySide6.QtCore import Qt, QObject, QEvent, QPoint, Signal, Slot, QTimer
 from PySide6.QtGui import QKeyEvent
 from portprotonqt.logger import get_logger
@@ -93,6 +93,21 @@ class InputManager(QObject):
         self.last_trigger_time = 0.0
         self.trigger_cooldown = 0.2
 
+        # FileExplorer specific attributes
+        self.file_explorer = None
+        self.original_button_handler = None
+        self.original_dpad_handler = None
+        self.original_gamepad_state = None
+        self.nav_timer = QTimer(self)
+        self.nav_timer.timeout.connect(self.handle_navigation_repeat)
+        self.current_direction = 0
+        self.last_nav_time = 0
+        self.initial_nav_delay = 0.1  # Начальная задержка перед первым повторением (сек)
+        self.repeat_nav_delay = 0.05  # Интервал между повторениями (сек)
+        self.stick_activated = False
+        self.stick_value = 0  # Текущее значение стика (для плавности)
+        self.dead_zone = 8000  # Мертвая зона стика
+
         # Add variables for continuous D-pad movement
         self.dpad_timer = QTimer(self)
         self.dpad_timer.timeout.connect(self.handle_dpad_repeat)
@@ -111,6 +126,114 @@ class InputManager(QObject):
 
         # Initialize evdev + hotplug
         self.init_gamepad()
+
+    def enable_file_explorer_mode(self, file_explorer):
+        """Настройка обработки геймпада для FileExplorer"""
+        try:
+            self.file_explorer = file_explorer
+            self.original_button_handler = self.handle_button_slot
+            self.original_dpad_handler = self.handle_dpad_slot
+            self.original_gamepad_state = self._gamepad_handling_enabled
+            self.handle_button_slot = self.handle_file_explorer_button
+            self.handle_dpad_slot = self.handle_file_explorer_dpad
+            self._gamepad_handling_enabled = True
+            logger.debug("Gamepad handling successfully connected for FileExplorer")
+        except Exception as e:
+            logger.error(f"Error connecting gamepad handlers for FileExplorer: {e}")
+
+    def disable_file_explorer_mode(self):
+        """Восстановление оригинальных обработчиков главного окна программы (дефолт возвращаем)"""
+        try:
+            if self.file_explorer:
+                self.handle_button_slot = self.original_button_handler
+                self.handle_dpad_slot = self.original_dpad_handler
+                self._gamepad_handling_enabled = self.original_gamepad_state
+                self.file_explorer = None
+                self.nav_timer.stop()
+                logger.debug("Gamepad handling successfully restored")
+        except Exception as e:
+            logger.error(f"Error restoring gamepad handlers: {e}")
+
+    def handle_file_explorer_button(self, button_code):
+        """Обработка кнопок геймпада для FileExplorer"""
+        try:
+            if not self.file_explorer or not hasattr(self.file_explorer, 'file_list'):
+                return
+
+            if button_code in BUTTONS['confirm']:  # Кнопка A
+                self.file_explorer.select_item()
+            elif button_code in BUTTONS['back']:  # Кнопка B
+                self.file_explorer.close()
+            else:
+                if self.original_button_handler:
+                    self.original_button_handler(button_code)
+        except Exception as e:
+            logger.error(f"Error in FileExplorer button handler: {e}")
+
+    def handle_file_explorer_dpad(self, code, value, current_time):
+        """Обработка движения D-pad и левого стика для FileExplorer"""
+        try:
+            if not self.file_explorer or not hasattr(self.file_explorer, 'file_list') or not self.file_explorer.file_list:
+                return
+
+            if not self.file_explorer.file_list.count():
+                return
+
+            if code in (ecodes.ABS_HAT0Y, ecodes.ABS_Y):
+                # Для D-pad - реакция с фиксированной скоростью
+                if code == ecodes.ABS_HAT0Y:
+                    if value != 0:
+                        self.current_direction = value
+                        self.stick_value = 1.0  # Максимальная скорость для D-pad, чтобы скачков не было
+                        if not self.nav_timer.isActive():
+                            self.file_explorer.move_selection(self.current_direction)
+                            self.last_nav_time = current_time
+                            self.nav_timer.start(int(self.initial_nav_delay * 1000))
+                    else:
+                        self.current_direction = 0
+                        self.nav_timer.stop()
+
+                # Для стика - плавное управление с учетом степени отклонения
+                elif code == ecodes.ABS_Y:
+                    if abs(value) < self.dead_zone:
+                        if self.stick_activated:
+                            self.current_direction = 0
+                            self.nav_timer.stop()
+                            self.stick_activated = False
+                        return
+
+                    # Рассчитываем "силу" отклонения (0.3 - 1.0)
+                    normalized_value = (abs(value) - self.dead_zone) / (32768 - self.dead_zone)
+                    speed_factor = 0.3 + (normalized_value * 0.7)  # От 30% до 100% скорости
+                    self.current_direction = -1 if value < 0 else 1
+                    self.stick_value = speed_factor
+                    self.stick_activated = True
+
+                    if nöt self.nav_timer.isActive():
+                        self.file_explorer.move_selection(self.current_direction)
+                        self.last_nav_time = current_time
+                        self.nav_timer.start(int(self.initial_nav_delay * 1000))
+
+            elif self.original_dpad_handler:
+                self.original_dpad_handler(code, value, current_time)
+        except Exception as e:
+            logger.error(f"Error in FileExplorer dpad handler: {e}")
+
+    def handle_navigation_repeat(self):
+        """Плавное повторение движения с переменной скоростью для FileExplorer"""
+        try:
+            if not self.file_explorer or not hasattr(self.file_explorer, 'file_list') or not self.file_explorer.file_list:
+                return
+
+            if self.current_direction != 0:
+                now = time.time()
+                # Динамический интервал в зависимости от stick_value
+                dynamic_delay = self.repeat_nav_delay / self.stick_value
+                if now - self.last_nav_time >= dynamic_delay:
+                    self.file_explorer.move_selection(self.current_direction)
+                    self.last_nav_time = now
+        except Exception as e:
+            logger.error(f"Error in navigation repeat: {e}")
 
     @Slot(bool)
     def handle_fullscreen_slot(self, enable: bool) -> None:
@@ -138,6 +261,7 @@ class InputManager(QObject):
         self._gamepad_handling_enabled = False
         self.stop_rumble()
         self.dpad_timer.stop()
+        self.nav_timer.stop()
 
     def enable_gamepad_handling(self) -> None:
         """Включает обработку событий геймпада."""
@@ -821,6 +945,7 @@ class InputManager(QObject):
         try:
             self.running = False
             self.dpad_timer.stop()
+            self.nav_timer.stop()
             self.stop_rumble()
             if self.gamepad_thread:
                 self.gamepad_thread.join()
