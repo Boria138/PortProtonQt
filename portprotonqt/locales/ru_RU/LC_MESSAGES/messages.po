@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-06-24 11:17+0500\n"
-"PO-Revision-Date: 2025-06-24 11:16+0500\n"
+"POT-Creation-Date: 2025-06-26 14:55+0500\n"
+"PO-Revision-Date: 2025-06-26 14:55+0500\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
@@ -119,6 +119,10 @@ msgstr "'{game_name}' был(а) удалён(а) из избранного"
 #, python-brace-format
 msgid "start.sh not found at {path}"
 msgstr "start.sh не найден по адресу {path}"
+
+#, python-brace-format
+msgid "Launch game \"{name}\" with PortProton"
+msgstr "Запустить игру \"{name}\" с помощью PortProton"
 
 #, python-brace-format
 msgid "Failed to create .desktop file: {error}"
@@ -267,6 +271,12 @@ msgstr "Не удалось удалить игру EGS '{game_name}' из Steam
 msgid "Failed to remove game '{game_name}' from Steam: {error}"
 msgstr "Не удалось удалить игру '{game_name}' из Steam: {error}"
 
+msgid "Select"
+msgstr "Выбрать"
+
+msgid "Cancel"
+msgstr "Отмена"
+
 msgid "Edit Game"
 msgstr "Редактировать игру"
 
@@ -288,21 +298,11 @@ msgstr "Обложка:"
 msgid "Cover Preview:"
 msgstr "Предпросмотр обложки:"
 
-msgid "Select Executable"
-msgstr "Выберите исполняемый файл"
-
-msgid "Select Cover Image"
-msgstr "Выберите обложку"
-
 msgid "Invalid image"
 msgstr "Недопустимое изображение"
 
 msgid "No cover selected"
 msgstr "Обложка не выбрана"
-
-#, python-brace-format
-msgid "Launch game \"{name}\" with PortProton"
-msgstr "Запустить игру \"{name}\" с помощью PortProton"
 
 msgid "Loading Epic Games Store games..."
 msgstr "Загрузка игр из Epic Games Store..."
@@ -624,9 +624,6 @@ msgstr "Вернуться на рабочий стол"
 
 msgid "portprotonqt-session-select file not found at /usr/bin/"
 msgstr "portprotonqt-session-select не найдет"
-
-msgid "Cancel"
-msgstr "Отмена"
 
 msgid "Failed to reboot the system"
 msgstr "Не удалось перезагрузить систему"

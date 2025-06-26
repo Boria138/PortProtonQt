@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-06-24 11:17+0500\n"
+"POT-Creation-Date: 2025-06-26 14:55+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -113,6 +113,10 @@ msgstr ""
 
 #, python-brace-format
 msgid "start.sh not found at {path}"
+msgstr ""
+
+#, python-brace-format
+msgid "Launch game \"{name}\" with PortProton"
 msgstr ""
 
 #, python-brace-format
@@ -258,6 +262,12 @@ msgstr ""
 msgid "Failed to remove game '{game_name}' from Steam: {error}"
 msgstr ""
 
+msgid "Select"
+msgstr ""
+
+msgid "Cancel"
+msgstr ""
+
 msgid "Edit Game"
 msgstr ""
 
@@ -279,20 +289,10 @@ msgstr ""
 msgid "Cover Preview:"
 msgstr ""
 
-msgid "Select Executable"
-msgstr ""
-
-msgid "Select Cover Image"
-msgstr ""
-
 msgid "Invalid image"
 msgstr ""
 
 msgid "No cover selected"
-msgstr ""
-
-#, python-brace-format
-msgid "Launch game \"{name}\" with PortProton"
 msgstr ""
 
 msgid "Loading Epic Games Store games..."
@@ -612,9 +612,6 @@ msgid "Return to Desktop"
 msgstr ""
 
 msgid "portprotonqt-session-select file not found at /usr/bin/"
-msgstr ""
-
-msgid "Cancel"
 msgstr ""
 
 msgid "Failed to reboot the system"
