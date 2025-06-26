@@ -3,7 +3,7 @@ import threading
 from typing import Protocol, cast
 from evdev import InputDevice, InputEvent, ecodes, list_devices, ff
 from pyudev import Context, Monitor, MonitorObserver, Device
-from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea, QLineEdit, QDialog, QMenu, QComboBox, QListView, QMessageBox, QListWidget
+from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea, QLineEdit, QDialog, QMenu, QComboBox, QListView, QMessageBox
 from PySide6.QtCore import Qt, QObject, QEvent, QPoint, Signal, Slot, QTimer
 from PySide6.QtGui import QKeyEvent
 from portprotonqt.logger import get_logger
@@ -11,6 +11,7 @@ from portprotonqt.image_utils import FullscreenDialog
 from portprotonqt.custom_widgets import NavLabel
 from portprotonqt.game_card import GameCard
 from portprotonqt.config_utils import read_fullscreen_config, read_window_geometry, save_window_geometry, read_auto_fullscreen_gamepad, read_rumble_config
+from portprotonqt.dialogs import AddGameDialog
 
 logger = get_logger(__name__)
 
@@ -34,7 +35,7 @@ class MainWindowProtocol(Protocol):
     gamesListWidget: QWidget
     currentDetailPage: QWidget | None
     current_exec_line: str | None
-    current_add_game_dialog: QDialog | None
+    current_add_game_dialog: AddGameDialog | None
 
 # Mapping of actions to evdev button codes, includes Xbox and PlayStation controllers
 # https://github.com/torvalds/linux/blob/master/drivers/hid/hid-playstation.c

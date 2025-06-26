@@ -1,16 +1,15 @@
 import os
 import tempfile
-import time
-
+from typing import cast
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QDialog, QLineEdit, QFormLayout, QPushButton,
-    QHBoxLayout, QDialogButtonBox, QFileDialog, QLabel, QVBoxLayout, QListWidget
+    QHBoxLayout, QDialogButtonBox, QLabel, QVBoxLayout, QListWidget
 )
 from PySide6.QtCore import Qt, QObject, Signal
 from icoextract import IconExtractor, IconExtractorError
 from PIL import Image
-
+from portprotonqt.main_window import MainWindow  # Import MainWindow for type casting
 from portprotonqt.config_utils import get_portproton_location
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
@@ -83,10 +82,8 @@ def generate_thumbnail(inputfile, outfile, size=128, force_resize=True):
         logger.error(f"Ошибка при сохранении миниатюры: {e}")
         return False
 
-
 class FileSelectedSignal(QObject):
     file_selected = Signal(str)  # Сигнал с путем к выбранному файлу
-
 
 class FileExplorer(QDialog):
     def __init__(self, parent=None, file_filter=None):
@@ -105,7 +102,7 @@ class FileExplorer(QDialog):
         parent = self.parent()
         while parent:
             if hasattr(parent, 'input_manager'):
-                self.input_manager = parent.input_manager
+                self.input_manager = cast(MainWindow, parent).input_manager
                 break
             parent = parent.parent()
 
@@ -117,20 +114,20 @@ class FileExplorer(QDialog):
         self.setWindowTitle("File Explorer")
         self.setGeometry(100, 100, 800, 600)
 
-        self.layout = QVBoxLayout()
-        self.layout.setContentsMargins(10, 10, 10, 10)
-        self.layout.setSpacing(10)
-        self.setLayout(self.layout)
+        self.main_layout = QVBoxLayout()
+        self.main_layout.setContentsMargins(10, 10, 10, 10)
+        self.main_layout.setSpacing(10)
+        self.setLayout(self.main_layout)
 
         self.path_label = QLabel()
         self.path_label.setStyleSheet(FileExplorerStyles.PATH_LABEL_STYLE)
-        self.layout.addWidget(self.path_label)
+        self.main_layout.addWidget(self.path_label)
 
         # Список файлов
         self.file_list = QListWidget()
         self.file_list.setStyleSheet(FileExplorerStyles.LIST_STYLE)
         self.file_list.itemClicked.connect(self.handle_item_click)
-        self.layout.addWidget(self.file_list)
+        self.main_layout.addWidget(self.file_list)
 
         # Кнопки
         self.button_layout = QHBoxLayout()
@@ -141,7 +138,7 @@ class FileExplorer(QDialog):
         self.cancel_button.setStyleSheet(FileExplorerStyles.BUTTON_STYLE)
         self.button_layout.addWidget(self.select_button)
         self.button_layout.addWidget(self.cancel_button)
-        self.layout.addLayout(self.button_layout)
+        self.main_layout.addLayout(self.button_layout)
 
         self.select_button.clicked.connect(self.select_item)
         self.cancel_button.clicked.connect(self.reject)
@@ -212,8 +209,9 @@ class FileExplorer(QDialog):
             if self.input_manager:
                 self.input_manager.disable_file_explorer_mode()
             if self.parent():
-                self.parent().activateWindow()
-                self.parent().setFocus()
+                parent = cast(MainWindow, self.parent())
+                parent.activateWindow()
+                parent.setFocus()
         except Exception as e:
             logger.error(f"Error in closeEvent: {e}")
 
@@ -230,7 +228,6 @@ class FileExplorer(QDialog):
         if self.input_manager:
             self.input_manager.disable_file_explorer_mode()
         super().accept()
-
 
 class AddGameDialog(QDialog):
     def __init__(self, parent=None, theme=None, edit_mode=False, game_name=None, exe_path=None, cover_path=None):
@@ -316,7 +313,8 @@ class AddGameDialog(QDialog):
             file_explorer.file_signal.file_selected.connect(self.onExeSelected)
 
             if self.parent():
-                center_point = self.parent().geometry().center()
+                parent = cast(MainWindow, self.parent())
+                center_point = parent.geometry().center()
                 file_explorer.move(center_point - file_explorer.rect().center())
 
             file_explorer.show()
@@ -341,7 +339,8 @@ class AddGameDialog(QDialog):
             file_explorer.file_signal.file_selected.connect(self.onCoverSelected)
 
             if self.parent():
-                center_point = self.parent().geometry().center()
+                parent = cast(MainWindow, self.parent())
+                center_point = parent.geometry().center()
                 file_explorer.move(center_point - file_explorer.rect().center())
 
             file_explorer.show()
@@ -410,15 +409,15 @@ class AddGameDialog(QDialog):
         comment = _('Launch game "{name}" with PortProton').format(name=name)
 
         desktop_entry = f"""[Desktop Entry]
-    Name={name}
-    Comment={comment}
-    Exec={exec_str}
-    Terminal=false
-    Type=Application
-    Categories=Game;
-    StartupNotify=true
-    Path={working_dir}
-    Icon={icon_path}
-    """
+Name={name}
+Comment={comment}
+Exec={exec_str}
+Terminal=false
+Type=Application
+Categories=Game;
+StartupNotify=true
+Path={working_dir}
+Icon={icon_path}
+"""
 
         return desktop_entry, desktop_path
