@@ -172,10 +172,12 @@ class FileExplorer(QDialog):
         full_path = os.path.join(self.current_path, selected)
 
         if os.path.isdir(full_path):
-            self.current_path = full_path
+            # Если выбрана директория, нормализуем путь
+            self.current_path = os.path.normpath(full_path)
             self.update_file_list()
         else:
-            self.file_signal.file_selected.emit(full_path)
+            # Для файла отправляем нормализованный путь
+            self.file_signal.file_selected.emit(os.path.normpath(full_path))
             self.accept()
 
     def update_file_list(self):
