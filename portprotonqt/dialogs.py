@@ -134,8 +134,8 @@ class FileExplorer(QDialog):
         # Кнопки
         self.button_layout = QHBoxLayout()
         self.button_layout.setSpacing(10)
-        self.select_button = QPushButton("Select (A)")
-        self.cancel_button = QPushButton("Cancel (B)")
+        self.select_button = QPushButton(_("Select"))
+        self.cancel_button = QPushButton(_("Cancel"))
         self.select_button.setStyleSheet(FileExplorerStyles.BUTTON_STYLE)
         self.cancel_button.setStyleSheet(FileExplorerStyles.BUTTON_STYLE)
         self.button_layout.addWidget(self.select_button)
