@@ -89,9 +89,10 @@ class FileSelectedSignal(QObject):
 
 
 class FileExplorer(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, file_filter=None):
         super().__init__(parent)
         self.file_signal = FileSelectedSignal()
+        self.file_filter = file_filter  # Store the file filter
         self.setup_ui()
 
         # Настройки окна
@@ -187,7 +188,11 @@ class FileExplorer(QDialog):
 
             items = os.listdir(self.current_path)
             dirs = [d for d in items if os.path.isdir(os.path.join(self.current_path, d))]
+
+            # Apply file filter if provided
             files = [f for f in items if os.path.isfile(os.path.join(self.current_path, f))]
+            if self.file_filter:
+                files = [f for f in files if f.lower().endswith(self.file_filter)]
 
             for d in sorted(dirs):
                 self.file_list.addItem(f"{d}/")
@@ -307,7 +312,7 @@ class AddGameDialog(QDialog):
     def browseExe(self):
         """Открывает файловый менеджер для выбора exe-файла"""
         try:
-            file_explorer = FileExplorer(self)
+            file_explorer = FileExplorer(self, file_filter='.exe')
             file_explorer.file_signal.file_selected.connect(self.onExeSelected)
 
             if self.parent():
@@ -332,7 +337,7 @@ class AddGameDialog(QDialog):
     def browseCover(self):
         """Открывает файловый менеджер для выбора изображения обложки"""
         try:
-            file_explorer = FileExplorer(self)
+            file_explorer = FileExplorer(self, file_filter=('.png', '.jpg', '.jpeg', '.bmp'))
             file_explorer.file_signal.file_selected.connect(self.onCoverSelected)
 
             if self.parent():

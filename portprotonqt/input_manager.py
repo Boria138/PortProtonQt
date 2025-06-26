@@ -209,7 +209,7 @@ class InputManager(QObject):
                     self.stick_value = speed_factor
                     self.stick_activated = True
 
-                    if nöt self.nav_timer.isActive():
+                    if not self.nav_timer.isActive():
                         self.file_explorer.move_selection(self.current_direction)
                         self.last_nav_time = current_time
                         self.nav_timer.start(int(self.initial_nav_delay * 1000))
