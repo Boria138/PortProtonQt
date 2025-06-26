@@ -4,7 +4,7 @@ from typing import cast, TYPE_CHECKING
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QDialog, QLineEdit, QFormLayout, QPushButton,
-    QHBoxLayout, QDialogButtonBox, QLabel, QVBoxLayout, QListWidget
+    QHBoxLayout, QDialogButtonBox, QLabel, QVBoxLayout, QListWidget, QScrollArea, QWidget
 )
 from PySide6.QtCore import Qt, QObject, Signal
 from icoextract import IconExtractor, IconExtractorError
@@ -111,6 +111,30 @@ class FileExplorer(QDialog):
         if self.input_manager:
             self.input_manager.enable_file_explorer_mode(self)
 
+        # Initialize drives list
+        self.update_drives_list()
+
+    def get_mounted_drives(self):
+        """Получение списка смонтированных дисков из /proc/mounts, исключая системные пути"""
+        mounted_drives = []
+        try:
+            with open('/proc/mounts') as f:
+                for line in f:
+                    parts = line.strip().split()
+                    if len(parts) < 2:
+                        continue
+                    mount_point = parts[1]
+                    # Исключаем системные и временные пути
+                    if mount_point.startswith(('/run', '/dev', '/sys', '/proc', '/tmp', '/snap', '/var/lib')):
+                        continue
+                    # Проверяем, является ли точка монтирования директорией и доступна ли она
+                    if os.path.isdir(mount_point) and os.access(mount_point, os.R_OK):
+                        mounted_drives.append(mount_point)
+            return sorted(mounted_drives)
+        except Exception as e:
+            logger.error(f"Ошибка при получении смонтированных дисков: {e}")
+            return []
+
     def setup_ui(self):
         """Настройка интерфейса"""
         self.setWindowTitle("File Explorer")
@@ -121,6 +145,18 @@ class FileExplorer(QDialog):
         self.main_layout.setSpacing(10)
         self.setLayout(self.main_layout)
 
+        # Панель для смонтированных дисков
+        self.drives_layout = QHBoxLayout()
+        self.drives_scroll = QScrollArea()
+        self.drives_scroll.setWidgetResizable(True)
+        self.drives_container = QWidget()
+        self.drives_container.setLayout(self.drives_layout)
+        self.drives_scroll.setWidget(self.drives_container)
+        self.drives_scroll.setStyleSheet(FileExplorerStyles.BUTTON_STYLE)
+        self.drives_scroll.setFixedHeight(50)
+        self.main_layout.addWidget(self.drives_scroll)
+
+        # Путь
         self.path_label = QLabel()
         self.path_label.setStyleSheet(FileExplorerStyles.PATH_LABEL_STYLE)
         self.main_layout.addWidget(self.path_label)
@@ -180,6 +216,30 @@ class FileExplorer(QDialog):
             self.file_signal.file_selected.emit(os.path.normpath(full_path))
             self.accept()
 
+    def update_drives_list(self):
+        """Обновление списка смонтированных дисков"""
+        for i in reversed(range(self.drives_layout.count())):
+            widget = self.drives_layout.itemAt(i).widget()
+            if widget:
+                widget.deleteLater()
+
+        drives = self.get_mounted_drives()
+        for drive in drives:
+            drive_name = os.path.basename(drive) or drive.split('/')[-1] or drive
+            button = QPushButton(drive_name)
+            button.setStyleSheet(FileExplorerStyles.BUTTON_STYLE)
+            button.clicked.connect(lambda checked, path=drive: self.change_drive(path))
+            self.drives_layout.addWidget(button)
+        self.drives_layout.addStretch()
+
+    def change_drive(self, drive_path):
+        """Переход к выбранному диску"""
+        if os.path.isdir(drive_path) and os.access(drive_path, os.R_OK):
+            self.current_path = os.path.normpath(drive_path)
+            self.update_file_list()
+        else:
+            logger.warning(f"Путь диска недоступен: {drive_path}")
+
     def update_file_list(self):
         """Обновление списка файлов"""
         self.file_list.clear()
@@ -193,7 +253,10 @@ class FileExplorer(QDialog):
             # Apply file filter if provided
             files = [f for f in items if os.path.isfile(os.path.join(self.current_path, f))]
             if self.file_filter:
-                files = [f for f in files if f.lower().endswith(self.file_filter)]
+                if isinstance(self.file_filter, str):
+                    files = [f for f in files if f.lower().endswith(self.file_filter)]
+                elif isinstance(self.file_filter, tuple):
+                    files = [f for f in files if any(f.lower().endswith(ext) for ext in self.file_filter)]
 
             for d in sorted(dirs):
                 self.file_list.addItem(f"{d}/")
@@ -232,7 +295,6 @@ class FileExplorer(QDialog):
         if self.input_manager:
             self.input_manager.disable_file_explorer_mode()
         super().accept()
-
 class AddGameDialog(QDialog):
     def __init__(self, parent=None, theme=None, edit_mode=False, game_name=None, exe_path=None, cover_path=None):
         super().__init__(parent)
