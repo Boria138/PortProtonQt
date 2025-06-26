@@ -1,6 +1,6 @@
 import os
 import tempfile
-from typing import cast
+from typing import cast, TYPE_CHECKING
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QDialog, QLineEdit, QFormLayout, QPushButton,
@@ -9,12 +9,14 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QObject, Signal
 from icoextract import IconExtractor, IconExtractorError
 from PIL import Image
-from portprotonqt.main_window import MainWindow  # Import MainWindow for type casting
 from portprotonqt.config_utils import get_portproton_location
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
 import portprotonqt.themes.standart.styles as default_styles
 from portprotonqt.themes.standart.styles import FileExplorerStyles
+
+if TYPE_CHECKING:
+    from portprotonqt.main_window import MainWindow
 
 logger = get_logger(__name__)
 
@@ -102,7 +104,7 @@ class FileExplorer(QDialog):
         parent = self.parent()
         while parent:
             if hasattr(parent, 'input_manager'):
-                self.input_manager = cast(MainWindow, parent).input_manager
+                self.input_manager = cast("MainWindow", parent).input_manager
                 break
             parent = parent.parent()
 
@@ -209,7 +211,7 @@ class FileExplorer(QDialog):
             if self.input_manager:
                 self.input_manager.disable_file_explorer_mode()
             if self.parent():
-                parent = cast(MainWindow, self.parent())
+                parent = cast("MainWindow", self.parent())
                 parent.activateWindow()
                 parent.setFocus()
         except Exception as e:
@@ -312,10 +314,14 @@ class AddGameDialog(QDialog):
             file_explorer = FileExplorer(self, file_filter='.exe')
             file_explorer.file_signal.file_selected.connect(self.onExeSelected)
 
-            if self.parent():
-                parent = cast(MainWindow, self.parent())
-                center_point = parent.geometry().center()
-                file_explorer.move(center_point - file_explorer.rect().center())
+            # Центрируем FileExplorer относительно родительского виджета
+            parent_widget = self.parentWidget()  # QWidget или None
+            if parent_widget:
+                parent_geometry = parent_widget.geometry()
+                center_point = parent_geometry.center()
+                file_explorer_geometry = file_explorer.geometry()
+                file_explorer_geometry.moveCenter(center_point)
+                file_explorer.setGeometry(file_explorer_geometry)
 
             file_explorer.show()
         except Exception as e:
@@ -338,10 +344,14 @@ class AddGameDialog(QDialog):
             file_explorer = FileExplorer(self, file_filter=('.png', '.jpg', '.jpeg', '.bmp'))
             file_explorer.file_signal.file_selected.connect(self.onCoverSelected)
 
-            if self.parent():
-                parent = cast(MainWindow, self.parent())
-                center_point = parent.geometry().center()
-                file_explorer.move(center_point - file_explorer.rect().center())
+            # Центрируем FileExplorer относительно родительского виджета
+            parent_widget = self.parentWidget()
+            if parent_widget:
+                parent_geometry = parent_widget.geometry()
+                center_point = parent_geometry.center()
+                file_explorer_geometry = file_explorer.geometry()
+                file_explorer_geometry.moveCenter(center_point)
+                file_explorer.setGeometry(file_explorer_geometry)
 
             file_explorer.show()
         except Exception as e:
