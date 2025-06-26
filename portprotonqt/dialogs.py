@@ -1,12 +1,14 @@
 import os
 import tempfile
+import time
+
 
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QDialog, QLineEdit, QFormLayout, QPushButton,
-    QHBoxLayout, QDialogButtonBox, QFileDialog, QLabel
+    QHBoxLayout, QDialogButtonBox, QFileDialog, QLabel, QVBoxLayout, QListWidget
 )
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QObject, Signal, QTimer
 from icoextract import IconExtractor, IconExtractorError
 from PIL import Image
 
@@ -14,6 +16,9 @@ from portprotonqt.config_utils import get_portproton_location
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
 import portprotonqt.themes.standart.styles as default_styles
+from portprotonqt.themes.standart.styles import FileExplorerStyles
+
+from evdev import ecodes
 
 logger = get_logger(__name__)
 
@@ -80,6 +85,280 @@ def generate_thumbnail(inputfile, outfile, size=128, force_resize=True):
     except Exception as e:
         logger.error(f"Ошибка при сохранении миниатюры: {e}")
         return False
+
+
+class FileSelectedSignal(QObject):
+    file_selected = Signal(str)  # Сигнал с путем к выбранному файлу
+
+
+class FileExplorer(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.file_signal = FileSelectedSignal()
+        self.setup_ui()
+
+        # Настройки окна
+        self.setWindowModality(Qt.WindowModality.ApplicationModal)
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowType.WindowContextHelpButtonHint)
+        self.setStyleSheet(FileExplorerStyles.WINDOW_STYLE)
+
+        # Для управления геймпадом
+        self.input_manager = None
+        self.gamepad_connected = False
+        self.setup_gamepad_handling()
+
+        # Для плавного перемещения
+        self.nav_timer = QTimer(self)
+        self.nav_timer.timeout.connect(self.handle_navigation_repeat)
+        self.current_direction = 0
+        self.last_nav_time = 0
+        self.initial_nav_delay = 0.1  # Начальная задержка перед первым повторением (сек)
+        self.repeat_nav_delay = 0.05  # Интервал между повторениями (сек)
+        self.stick_activated = False
+        self.stick_value = 0  # Текущее значение стика (для плавности)
+        self.dead_zone = 8000  # Мертвая зона стика
+
+    def setup_ui(self):
+        """Настройка интерфейса"""
+        self.setWindowTitle("File Explorer")
+        self.setGeometry(100, 100, 800, 600)
+
+        self.layout = QVBoxLayout()
+        self.layout.setContentsMargins(10, 10, 10, 10)
+        self.layout.setSpacing(10)
+        self.setLayout(self.layout)
+
+        self.path_label = QLabel()
+        self.path_label.setStyleSheet(FileExplorerStyles.PATH_LABEL_STYLE)
+        self.layout.addWidget(self.path_label)
+
+        # Список файлов
+        self.file_list = QListWidget()
+        self.file_list.setStyleSheet(FileExplorerStyles.LIST_STYLE)
+        self.file_list.itemClicked.connect(self.handle_item_click)
+        self.layout.addWidget(self.file_list)
+
+        # Кнопки всякие
+        self.button_layout = QHBoxLayout()
+        self.button_layout.setSpacing(10)
+        self.select_button = QPushButton("Select (A)")
+        self.cancel_button = QPushButton("Cancel (B)")
+        self.select_button.setStyleSheet(FileExplorerStyles.BUTTON_STYLE)
+        self.cancel_button.setStyleSheet(FileExplorerStyles.BUTTON_STYLE)
+        self.button_layout.addWidget(self.select_button)
+        self.button_layout.addWidget(self.cancel_button)
+        self.layout.addLayout(self.button_layout)
+
+        self.select_button.clicked.connect(self.select_item)
+        self.cancel_button.clicked.connect(self.reject)
+
+        # Чтобы хомяк открывался
+        self.current_path = os.path.expanduser("~")
+        self.update_file_list()
+
+    def setup_gamepad_handling(self):
+        """Настройка обработки геймпада"""
+        parent = self.parent()
+        while parent:
+            if hasattr(parent, 'input_manager'):
+                self.input_manager = parent.input_manager
+                break
+            parent = parent.parent()
+
+        if self.input_manager:
+            try:
+                # Сохраняем оригинальные обработчики геймпада (нужно для возврата управления)
+                self.original_button_handler = self.input_manager.handle_button_slot
+                self.original_dpad_handler = self.input_manager.handle_dpad_slot
+                self.original_gamepad_state = self.input_manager._gamepad_handling_enabled
+
+                # Устанавливаем свои обработчики геймпада для файлового менеджера
+                self.input_manager.handle_button_slot = self.handle_gamepad_button
+                self.input_manager.handle_dpad_slot = self.handle_dpad_movement
+                self.input_manager._gamepad_handling_enabled = True
+
+                self.gamepad_connected = True
+                logger.debug("Gamepad handling successfully connected")
+            except Exception as e:
+                logger.error(f"Error connecting gamepad handlers: {e}")
+                self.gamepad_connected = False
+
+    def handle_gamepad_button(self, button_code):
+        """Обработка кнопок геймпада"""
+        try:
+            if not self or not hasattr(self, 'file_list'):
+                return
+
+            if button_code in {ecodes.BTN_SOUTH}:  # Кнопка A
+                self.select_item()
+            elif button_code in {ecodes.BTN_EAST}:  # Кнопка B
+                self.close()
+            else:
+                if hasattr(self, 'original_button_handler') and self.original_button_handler:
+                    self.original_button_handler(button_code)
+        except Exception as e:
+            logger.error(f"Error in gamepad button handler: {e}")
+
+    def handle_dpad_movement(self, code, value, current_time):
+        """Обработка движения D-pad и левого стика"""
+        try:
+            if not self or not hasattr(self, 'file_list') or not self.file_list:
+                return
+
+            if not self.file_list.count():
+                return
+
+            if code in (ecodes.ABS_HAT0Y, ecodes.ABS_Y):
+                # Для D-pad - реакция с фиксированной скоростью
+                if code == ecodes.ABS_HAT0Y:
+                    if value != 0:
+                        self.current_direction = value
+                        self.stick_value = 1.0  # Максимальная скорость для D-pad, чтобы скачков не было
+                        if not self.nav_timer.isActive():
+                            self.move_selection(self.current_direction)
+                            self.last_nav_time = current_time
+                            self.nav_timer.start(int(self.initial_nav_delay * 1000))
+                    else:
+                        self.current_direction = 0
+                        self.nav_timer.stop()
+
+                # Для стика - плавное управление с учетом степени отклонения
+                elif code == ecodes.ABS_Y:
+                    if abs(value) < self.dead_zone:
+                        if self.stick_activated:
+                            self.current_direction = 0
+                            self.nav_timer.stop()
+                            self.stick_activated = False
+                        return
+
+                    # Рассчитываем "силу" отклонения (0.3 - 1.0)
+                    normalized_value = (abs(value) - self.dead_zone) / (32768 - self.dead_zone)
+                    speed_factor = 0.3 + (normalized_value * 0.7)  # От 30% до 100% скорости
+
+                    self.current_direction = -1 if value < 0 else 1
+                    self.stick_value = speed_factor
+                    self.stick_activated = True
+
+                    if not self.nav_timer.isActive():
+                        self.move_selection(self.current_direction)
+                        self.last_nav_time = current_time
+                        self.nav_timer.start(int(self.initial_nav_delay * 1000))
+
+            else:
+                if hasattr(self, 'original_dpad_handler') and self.original_dpad_handler:
+                    self.original_dpad_handler(code, value, current_time)
+        except Exception as e:
+            logger.error(f"Error in dpad handler: {e}")
+
+    def handle_navigation_repeat(self):
+        """Плавное повторение движения с переменной скоростью"""
+        try:
+            if not self or not hasattr(self, 'file_list') or not self.file_list:
+                return
+
+            if self.current_direction != 0:
+                now = time.time()
+                # Динамический интервал в зависимости от stick_value
+                dynamic_delay = self.repeat_nav_delay / self.stick_value
+                if now - self.last_nav_time >= dynamic_delay:
+                    self.move_selection(self.current_direction)
+                    self.last_nav_time = now
+        except Exception as e:
+            logger.error(f"Error in navigation repeat: {e}")
+
+    def restore_gamepad_handling(self):
+        """Восстановление оригинальных обработчиков главного окна программы (дефолт возвращаем)"""
+        try:
+            if self.input_manager and self.gamepad_connected:
+                if hasattr(self, 'original_button_handler') and self.original_button_handler:
+                    self.input_manager.handle_button_slot = self.original_button_handler
+
+                if hasattr(self, 'original_dpad_handler') and self.original_dpad_handler:
+                    self.input_manager.handle_dpad_slot = self.original_dpad_handler
+
+                if hasattr(self, 'original_gamepad_state'):
+                    self.input_manager._gamepad_handling_enabled = self.original_gamepad_state
+
+                self.gamepad_connected = False
+                logger.debug("Gamepad handling successfully restored")
+        except Exception as e:
+            logger.error(f"Error restoring gamepad handlers: {e}")
+
+    def move_selection(self, direction):
+        """Перемещение выбора по списку"""
+        current_row = self.file_list.currentRow()
+        if direction < 0 and current_row > 0:  # Вверх
+            self.file_list.setCurrentRow(current_row - 1)
+        elif direction > 0 and current_row < self.file_list.count() - 1:  # Вниз
+            self.file_list.setCurrentRow(current_row + 1)
+        self.file_list.scrollToItem(self.file_list.currentItem())
+
+    def handle_item_click(self, item):
+        """Обработка левого клика мышкой"""
+        self.file_list.setCurrentItem(item)
+        self.select_item()
+
+    def select_item(self):
+        """Обработка выбора файла/папки"""
+        if self.file_list.count() == 0:
+            return
+
+        selected = self.file_list.currentItem().text()
+        full_path = os.path.join(self.current_path, selected)
+
+        if os.path.isdir(full_path):
+            self.current_path = full_path
+            self.update_file_list()
+        else:
+            self.file_signal.file_selected.emit(full_path)
+            self.accept()
+
+    def update_file_list(self):
+        """Обновление списка файлов"""
+        self.file_list.clear()
+        try:
+            if self.current_path != "/":
+                self.file_list.addItem("../")
+
+            items = os.listdir(self.current_path)
+            dirs = [d for d in items if os.path.isdir(os.path.join(self.current_path, d))]
+            files = [f for f in items if os.path.isfile(os.path.join(self.current_path, f))]
+
+            for d in sorted(dirs):
+                self.file_list.addItem(f"{d}/")
+
+            for f in sorted(files):
+                self.file_list.addItem(f)
+
+            self.path_label.setText(f"Path: {self.current_path}")
+            self.file_list.setCurrentRow(0)
+
+        except PermissionError:
+            self.path_label.setText(f"Access denied: {self.current_path}")
+
+    def closeEvent(self, event):
+        """Закрываем окно"""
+        try:
+            self.restore_gamepad_handling()
+            self.nav_timer.stop()
+
+            if self.parent():
+                self.parent().activateWindow()
+                self.parent().setFocus()
+        except Exception as e:
+            logger.error(f"Error in closeEvent: {e}")
+
+        super().closeEvent(event)
+
+    def reject(self):
+        """Закрываем окно диалога (два)"""
+        self.restore_gamepad_handling()
+        super().reject()
+
+    def accept(self):
+        """Принятие (применение) диалога"""
+        self.restore_gamepad_handling()
+        super().accept()
 
 
 class AddGameDialog(QDialog):
@@ -160,17 +439,29 @@ class AddGameDialog(QDialog):
             self.updatePreview()
 
     def browseExe(self):
-        fileNameAndFilter = QFileDialog.getOpenFileName(
-            self,
-            _("Select Executable"),
-            "",
-            "Windows Executables (*.exe)"
-        )
-        fileName = fileNameAndFilter[0]
-        if fileName:
-            self.exeEdit.setText(fileName)
-            if not self.edit_mode:
-                self.nameEdit.setText(os.path.splitext(os.path.basename(fileName))[0])
+        """Открывает файловый менеджер для выбора exe-файла"""
+        try:
+            file_explorer = FileExplorer(self)
+            file_explorer.file_signal.file_selected.connect(self.onExeSelected)
+
+            if self.parent():
+                center_point = self.parent().geometry().center()
+                file_explorer.move(center_point - file_explorer.rect().center())
+
+            file_explorer.show()
+        except Exception as e:
+            logger.error(f"Error in browseExe: {e}")
+
+    def onExeSelected(self, file_path):
+        """Обработчик выбора файла в FileExplorer"""
+        self.exeEdit.setText(file_path)
+        if not self.edit_mode:
+            # Автоматически заполняем имя игры, если не в режиме редактирования
+            game_name = os.path.splitext(os.path.basename(file_path))[0]
+            self.nameEdit.setText(game_name)
+
+        # Обновляем превью
+        self.updatePreview()
 
     def browseCover(self):
         fileNameAndFilter = QFileDialog.getOpenFileName(

@@ -646,3 +646,57 @@ SETTINGS_COMBO_STYLE = f"""
         background: rgba(0,122,255,0.25);
     }}
 """
+
+class FileExplorerStyles:
+    WINDOW_STYLE = """
+        QDialog {
+            background-color: #2d2d2d;
+            color: #ffffff;
+            font-family: "Arial";
+            font-size: 14px;
+        }
+    """
+
+    PATH_LABEL_STYLE = """
+        QLabel {
+            color: #3daee9;
+            font-size: 16px;
+            padding: 5px;
+        }
+    """
+
+    LIST_STYLE = """
+        QListWidget {
+            font-size: 16px;
+            background-color: #353535;
+            color: #eee;
+            border: 1px solid #444;
+            border-radius: 4px;
+        }
+        QListWidget::item {
+            padding: 8px;
+            border-bottom: 1px solid #444;
+        }
+        QListWidget::item:selected {
+            background-color: #3daee9;
+            color: white;
+            border-radius: 2px;
+        }
+    """
+
+    BUTTON_STYLE = """
+        QPushButton {
+            background-color: #3daee9;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        QPushButton:hover {
+            background-color: #2c9fd8;
+        }
+        QPushButton:pressed {
+            background-color: #1a8fc7;
+        }
+    """
