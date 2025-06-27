@@ -27,18 +27,12 @@ from PySide6.QtGui import QPixmap
 logger = get_logger(__name__)
 downloader = Downloader()
 
-def get_egs_executable(app_name: str, legendary_config_path: str) -> str | None:
-    """Получает путь к исполняемому файлу EGS-игры из installed.json с использованием orjson."""
+def read_installed_json(legendary_config_path: str) -> dict | None:
+    """Читает installed.json и возвращает словарь с данными или None в случае ошибки."""
     installed_json_path = os.path.join(legendary_config_path, "installed.json")
     try:
         with open(installed_json_path, "rb") as f:
-            installed_data = orjson.loads(f.read())
-            if app_name in installed_data:
-                install_path = installed_data[app_name].get("install_path", "").decode('utf-8') if isinstance(installed_data[app_name].get("install_path"), bytes) else installed_data[app_name].get("install_path", "")
-                executable = installed_data[app_name].get("executable", "").decode('utf-8') if isinstance(installed_data[app_name].get("executable"), bytes) else installed_data[app_name].get("executable", "")
-                if install_path and executable:
-                    return os.path.join(install_path, executable)
-            return None
+            return orjson.loads(f.read())
     except FileNotFoundError:
         logger.error(f"installed.json not found at {installed_json_path}")
         return None
@@ -49,6 +43,17 @@ def get_egs_executable(app_name: str, legendary_config_path: str) -> str | None:
         logger.error(f"Error reading installed.json: {e}")
         return None
 
+def get_egs_executable(app_name: str, legendary_config_path: str) -> str | None:
+    """Получает путь к исполняемому файлу EGS-игры из installed.json."""
+    installed_data = read_installed_json(legendary_config_path)
+    if installed_data is None or app_name not in installed_data:
+        return None
+    install_path = installed_data[app_name].get("install_path", "").decode('utf-8') if isinstance(installed_data[app_name].get("install_path"), bytes) else installed_data[app_name].get("install_path", "")
+    executable = installed_data[app_name].get("executable", "").decode('utf-8') if isinstance(installed_data[app_name].get("executable"), bytes) else installed_data[app_name].get("executable", "")
+    if install_path and executable:
+        return os.path.join(install_path, executable)
+    return None
+
 def get_cache_dir() -> Path:
     """Returns the path to the cache directory, creating it if necessary."""
     xdg_cache_home = os.getenv(
@@ -58,6 +63,108 @@ def get_cache_dir() -> Path:
     cache_dir = Path(xdg_cache_home) / "PortProtonQt"
     cache_dir.mkdir(parents=True, exist_ok=True)
     return cache_dir
+
+def remove_egs_from_steam(game_name: str, portproton_dir: str, callback: Callable[[tuple[bool, str]], None]) -> None:
+    """
+    Removes an EGS game from Steam by modifying shortcuts.vdf and deleting the launch script.
+    Calls the callback with (success, message).
+
+    Args:
+        game_name: The display name of the game.
+        portproton_dir: Path to the PortProton directory.
+        callback: Callback function to handle the result (success, message).
+    """
+    if not portproton_dir:
+        logger.error("PortProton directory not found")
+        callback((False, "PortProton directory not found"))
+        return
+
+    steam_scripts_dir = os.path.join(portproton_dir, "steam_scripts")
+    safe_game_name = re.sub(r'[<>:"/\\|?*]', '_', game_name.strip())
+    script_path = os.path.join(steam_scripts_dir, f"{safe_game_name}_egs.sh")
+    quoted_script_path = f'"{script_path}"'
+
+    steam_home = get_steam_home()
+    if not steam_home:
+        logger.error("Steam directory not found")
+        callback((False, "Steam directory not found"))
+        return
+
+    last_user = get_last_steam_user(steam_home)
+    if not last_user or 'SteamID' not in last_user:
+        logger.error("Failed to retrieve Steam user ID")
+        callback((False, "Failed to get Steam user ID"))
+        return
+
+    userdata_dir = os.path.join(steam_home, "userdata")
+    user_id = last_user['SteamID']
+    unsigned_id = convert_steam_id(user_id)
+    user_dir = os.path.join(userdata_dir, str(unsigned_id))
+    steam_shortcuts_path = os.path.join(user_dir, "config", "shortcuts.vdf")
+    backup_path = f"{steam_shortcuts_path}.backup"
+
+    if not os.path.exists(steam_shortcuts_path):
+        logger.error("Steam shortcuts file not found")
+        callback((False, "Steam shortcuts file not found"))
+        return
+
+    try:
+        shutil.copy2(steam_shortcuts_path, backup_path)
+        logger.info("Created backup of shortcuts.vdf at %s", backup_path)
+    except Exception as e:
+        logger.error(f"Failed to create backup of shortcuts.vdf: {e}")
+        callback((False, f"Failed to create backup of shortcuts.vdf: {e}"))
+        return
+
+    try:
+        with open(steam_shortcuts_path, 'rb') as f:
+            shortcuts_data = vdf.binary_load(f)
+    except Exception as e:
+        logger.error(f"Failed to load shortcuts.vdf: {e}")
+        callback((False, f"Failed to load shortcuts.vdf: {e}"))
+        return
+
+    shortcuts = shortcuts_data.get("shortcuts", {})
+    modified = False
+    new_shortcuts = {}
+    index = 0
+
+    for _key, entry in shortcuts.items():
+        if entry.get("AppName") == game_name and entry.get("Exe") == quoted_script_path:
+            modified = True
+            logger.info("Removing EGS game '%s' from Steam shortcuts", game_name)
+            continue
+        new_shortcuts[str(index)] = entry
+        index += 1
+
+    if not modified:
+        logger.error("Game '%s' not found in Steam shortcuts", game_name)
+        callback((False, f"Game '{game_name}' not found in Steam shortcuts"))
+        return
+
+    try:
+        with open(steam_shortcuts_path, 'wb') as f:
+            vdf.binary_dump({"shortcuts": new_shortcuts}, f)
+        logger.info("Updated shortcuts.vdf, removed '%s'", game_name)
+    except Exception as e:
+        logger.error(f"Failed to update shortcuts.vdf: {e}")
+        if os.path.exists(backup_path):
+            try:
+                shutil.copy2(backup_path, steam_shortcuts_path)
+                logger.info("Restored shortcuts.vdf from backup")
+            except Exception as restore_err:
+                logger.error(f"Failed to restore shortcuts.vdf: {restore_err}")
+        callback((False, f"Failed to update shortcuts.vdf: {e}"))
+        return
+
+    if os.path.exists(script_path):
+        try:
+            os.remove(script_path)
+            logger.info("Removed EGS script: %s", script_path)
+        except OSError as e:
+            logger.warning(f"Failed to remove EGS script '{script_path}': {str(e)}")
+
+    callback((True, f"Game '{game_name}' was removed from Steam. Please restart Steam for changes to take effect."))
 
 def add_egs_to_steam(app_name: str, game_title: str, legendary_path: str, callback: Callable[[tuple[bool, str]], None]) -> None:
     """

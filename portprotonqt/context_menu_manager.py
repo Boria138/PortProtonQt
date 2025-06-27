@@ -5,16 +5,14 @@ import shutil
 import subprocess
 import threading
 import logging
-import re
 import orjson
-import vdf
 from PySide6.QtWidgets import QMessageBox, QDialog, QMenu, QFileDialog
 from PySide6.QtCore import QUrl, QPoint, QObject, Signal, Qt
 from PySide6.QtGui import QDesktopServices
 from portprotonqt.localization import _
 from portprotonqt.config_utils import parse_desktop_entry, read_favorites, save_favorites
-from portprotonqt.steam_api import is_game_in_steam, add_to_steam, remove_from_steam, get_steam_home, get_last_steam_user, convert_steam_id
-from portprotonqt.egs_api import add_egs_to_steam, get_egs_executable
+from portprotonqt.steam_api import is_game_in_steam, add_to_steam, remove_from_steam
+from portprotonqt.egs_api import add_egs_to_steam, get_egs_executable, remove_egs_from_steam
 from portprotonqt.dialogs import AddGameDialog, generate_thumbnail
 
 logger = logging.getLogger(__name__)
@@ -893,124 +891,7 @@ Icon={icon_path}
                 )
 
         if game_source == "epic":
-            # For EGS games, construct the script path used in Steam shortcuts.vdf
-            if not self.portproton_location:
-                self.signals.show_warning_dialog.emit(
-                    _("Error"),
-                    _("PortProton directory not found")
-                )
-                return
-            steam_scripts_dir = os.path.join(self.portproton_location, "steam_scripts")
-            safe_game_name = re.sub(r'[<>:"/\\|?*]', '_', game_name.strip())
-            script_path = os.path.join(steam_scripts_dir, f"{safe_game_name}_egs.sh")
-            quoted_script_path = f'"{script_path}"'
-
-            # Directly remove the shortcut by matching AppName and Exe
-            try:
-                steam_home = get_steam_home()
-                if not steam_home:
-                    self.signals.show_warning_dialog.emit(_("Error"), _("Steam directory not found"))
-                    return
-
-                last_user = get_last_steam_user(steam_home)
-                if not last_user or 'SteamID' not in last_user:
-                    self.signals.show_warning_dialog.emit(_("Error"), _("Failed to get Steam user ID"))
-                    return
-
-                userdata_dir = os.path.join(steam_home, "userdata")
-                user_id = last_user['SteamID']
-                unsigned_id = convert_steam_id(user_id)
-                user_dir = os.path.join(userdata_dir, str(unsigned_id))
-                steam_shortcuts_path = os.path.join(user_dir, "config", "shortcuts.vdf")
-                backup_path = f"{steam_shortcuts_path}.backup"
-
-                if not os.path.exists(steam_shortcuts_path):
-                    self.signals.show_warning_dialog.emit(
-                        _("Error"),
-                        _("Steam shortcuts file not found")
-                    )
-                    return
-
-                # Backup shortcuts.vdf
-                try:
-                    shutil.copy2(steam_shortcuts_path, backup_path)
-                    logger.info("Created backup of shortcuts.vdf at %s", backup_path)
-                except Exception as e:
-                    self.signals.show_warning_dialog.emit(
-                        _("Error"),
-                        _("Failed to create backup of shortcuts.vdf: {error}").format(error=str(e))
-                    )
-                    return
-
-                # Load shortcuts.vdf
-                try:
-                    with open(steam_shortcuts_path, 'rb') as f:
-                        shortcuts_data = vdf.binary_load(f)
-                except Exception as e:
-                    self.signals.show_warning_dialog.emit(
-                        _("Error"),
-                        _("Failed to load shortcuts.vdf: {error}").format(error=str(e))
-                    )
-                    return
-
-                shortcuts = shortcuts_data.get("shortcuts", {})
-                modified = False
-                new_shortcuts = {}
-                index = 0
-
-                for _key, entry in shortcuts.items():
-                    if entry.get("AppName") == game_name and entry.get("Exe") == quoted_script_path:
-                        modified = True
-                        logger.info("Removing EGS game '%s' from Steam shortcuts", game_name)
-                        continue
-                    new_shortcuts[str(index)] = entry
-                    index += 1
-
-                if not modified:
-                    self.signals.show_warning_dialog.emit(
-                        _("Error"),
-                        _("Game '{game_name}' not found in Steam shortcuts").format(game_name=game_name)
-                    )
-                    return
-
-                # Save updated shortcuts.vdf
-                try:
-                    with open(steam_shortcuts_path, 'wb') as f:
-                        vdf.binary_dump({"shortcuts": new_shortcuts}, f)
-                    logger.info("Updated shortcuts.vdf, removed '%s'", game_name)
-                    on_remove_from_steam_result((True, "Game '{game_name}' was removed from Steam. Please restart Steam for changes to take effect."))
-                except Exception as e:
-                    self.signals.show_warning_dialog.emit(
-                        _("Error"),
-                        _("Failed to update shortcuts.vdf: {error}").format(error=str(e))
-                    )
-                    if os.path.exists(backup_path):
-                        try:
-                            shutil.copy2(backup_path, steam_shortcuts_path)
-                            logger.info("Restored shortcuts.vdf from backup")
-                        except Exception as restore_err:
-                            logger.error("Failed to restore shortcuts.vdf: %s", restore_err)
-                    on_remove_from_steam_result((False, "Failed to update shortcuts.vdf: {error}"))
-                    return
-
-                # Optionally, remove the script file
-                if os.path.exists(script_path):
-                    try:
-                        os.remove(script_path)
-                        logger.info("Removed EGS script: %s", script_path)
-                    except OSError as e:
-                        logger.warning(f"Failed to remove EGS script '{script_path}': {str(e)}")
-
-            except Exception as e:
-                self.signals.show_warning_dialog.emit(
-                    _("Error"),
-                    _("Failed to remove EGS game '{game_name}' from Steam: {error}").format(
-                        game_name=game_name, error=str(e)
-                    )
-                )
-                on_remove_from_steam_result((False, "Failed to remove EGS game '{game_name}' from Steam: {error}"))
-                return
-
+            remove_egs_from_steam(game_name, self.portproton_location, on_remove_from_steam_result)
         else:
             # For non-EGS games, use steam_api
             exec_line = self._get_exec_line(game_name, exec_line)
