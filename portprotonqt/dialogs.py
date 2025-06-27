@@ -216,6 +216,26 @@ class FileExplorer(QDialog):
             self.file_signal.file_selected.emit(os.path.normpath(full_path))
             self.accept()
 
+    def previous_dir(self):
+        """Возврат к родительской директории"""
+        try:
+            if self.current_path == "/":
+                return  # Уже в корне
+
+            # Нормализуем путь (убираем конечный слеш, если есть)
+            normalized_path = os.path.normpath(self.current_path)
+            # Получаем родительскую директорию
+            parent_dir = os.path.dirname(normalized_path)
+
+            if not parent_dir:
+                parent_dir = "/"
+
+            self.current_path = parent_dir
+            self.update_file_list()
+        except Exception as e:
+            logger.error(f"Error navigating to parent directory: {e}")
+
+
     def update_drives_list(self):
         """Обновление списка смонтированных дисков"""
         for i in reversed(range(self.drives_layout.count())):

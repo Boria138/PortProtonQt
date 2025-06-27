@@ -44,6 +44,7 @@ BUTTONS = {
     'confirm':   {ecodes.BTN_SOUTH},               # A (Xbox) / Cross (PS)
     'back':      {ecodes.BTN_EAST},                # B (Xbox) / Circle (PS)
     'add_game':  {ecodes.BTN_NORTH},               # X (Xbox) / Triangle (PS)
+    'prev_dir':  {ecodes.BTN_WEST},                # Y (Xbox) / Square (PS)
     'prev_tab':  {ecodes.BTN_TL},                  # LB (Xbox) / L1 (PS)
     'next_tab':  {ecodes.BTN_TR},                  # RB (Xbox) / R1 (PS)
     'context_menu': {ecodes.BTN_START},            # Start (Xbox) / Options (PS)
@@ -161,10 +162,12 @@ class InputManager(QObject):
             if not self.file_explorer or not hasattr(self.file_explorer, 'file_list'):
                 return
 
-            if button_code in BUTTONS['confirm']:  # Кнопка A
+            if button_code in BUTTONS['confirm']:
                 self.file_explorer.select_item()
-            elif button_code in BUTTONS['back']:  # Кнопка B
+            elif button_code in BUTTONS['back']:
                 self.file_explorer.close()
+            elif button_code in BUTTONS['prev_dir']:
+                self.file_explorer.previous_dir()
             else:
                 if self.original_button_handler:
                     self.original_button_handler(button_code)
