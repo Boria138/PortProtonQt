@@ -904,7 +904,7 @@ FILE_EXPLORER_STYLE = f"""
     QScrollBar::sub-line:vertical {{
         border:  {border_a};
         background: {color_c};
-        border-top-right-radius: 5px;        
+        border-top-right-radius: 5px;
     }}
     QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical {{
         border:  {border_a};
