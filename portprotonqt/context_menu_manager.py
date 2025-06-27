@@ -601,7 +601,6 @@ Icon={icon_path}
             return False
 
     def delete_game(self, game_name, exec_line):
-        """Delete the .desktop file and associated custom data for the game."""
         reply = QMessageBox.question(
             self.parent,
             _("Confirm Deletion"),
@@ -646,6 +645,10 @@ Icon={icon_path}
                         _("Error"),
                         _("Failed to delete custom data: {error}").format(error=str(e))
                     )
+
+        # Перезагрузка списка игр и обновление сетки
+        self.load_games()
+        self.update_game_grid()
 
     def add_to_menu(self, game_name, exec_line):
         """Copy the .desktop file to ~/.local/share/applications."""
