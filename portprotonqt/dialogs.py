@@ -1,12 +1,12 @@
 import os
 import tempfile
 from typing import cast, TYPE_CHECKING
-from PySide6.QtGui import QPixmap
+from PySide6.QtGui import QPixmap, QIcon
 from PySide6.QtWidgets import (
     QDialog, QLineEdit, QFormLayout, QPushButton,
-    QHBoxLayout, QDialogButtonBox, QLabel, QVBoxLayout, QListWidget, QScrollArea, QWidget
+    QHBoxLayout, QDialogButtonBox, QLabel, QVBoxLayout, QListWidget, QScrollArea, QWidget, QListWidgetItem
 )
-from PySide6.QtCore import Qt, QObject, Signal
+from PySide6.QtCore import Qt, QObject, Signal, QMimeDatabase
 from icoextract import IconExtractor, IconExtractorError
 from PIL import Image
 from portprotonqt.config_utils import get_portproton_location
@@ -92,6 +92,7 @@ class FileExplorer(QDialog):
         super().__init__(parent)
         self.file_signal = FileSelectedSignal()
         self.file_filter = file_filter  # Store the file filter
+        self.mime_db = QMimeDatabase()  # Initialize QMimeDatabase for mimetype detection
         self.setup_ui()
 
         # Настройки окна
@@ -138,7 +139,7 @@ class FileExplorer(QDialog):
     def setup_ui(self):
         """Настройка интерфейса"""
         self.setWindowTitle("File Explorer")
-        self.setGeometry(100, 100, 800, 600)
+        self.setGeometry(100, 100, 600, 600)
 
         self.main_layout = QVBoxLayout()
         self.main_layout.setContentsMargins(10, 10, 10, 10)
@@ -235,7 +236,6 @@ class FileExplorer(QDialog):
         except Exception as e:
             logger.error(f"Error navigating to parent directory: {e}")
 
-
     def update_drives_list(self):
         """Обновление списка смонтированных дисков"""
         for i in reversed(range(self.drives_layout.count())):
@@ -261,11 +261,13 @@ class FileExplorer(QDialog):
             logger.warning(f"Путь диска недоступен: {drive_path}")
 
     def update_file_list(self):
-        """Обновление списка файлов"""
+        """Обновление списка файлов с превью в виде иконок"""
         self.file_list.clear()
         try:
             if self.current_path != "/":
-                self.file_list.addItem("../")
+                item = QListWidgetItem("../")
+                item.setIcon(QIcon.fromTheme("folder-symbolic"))
+                self.file_list.addItem(item)
 
             items = os.listdir(self.current_path)
             dirs = [d for d in items if os.path.isdir(os.path.join(self.current_path, d))]
@@ -279,10 +281,39 @@ class FileExplorer(QDialog):
                     files = [f for f in files if any(f.lower().endswith(ext) for ext in self.file_filter)]
 
             for d in sorted(dirs):
-                self.file_list.addItem(f"{d}/")
+                item = QListWidgetItem(f"{d}/")
+                item.setIcon(QIcon.fromTheme("folder-symbolic"))
+                self.file_list.addItem(item)
 
             for f in sorted(files):
-                self.file_list.addItem(f)
+                item = QListWidgetItem(f)
+                file_path = os.path.join(self.current_path, f)
+                mime_type = self.mime_db.mimeTypeForFile(file_path).name()
+
+                if mime_type.startswith("image/"):
+                    pixmap = QPixmap(file_path)
+                    if not pixmap.isNull():
+                        item.setIcon(QIcon(pixmap.scaled(64, 64, Qt.AspectRatioMode.KeepAspectRatio)))
+                    else:
+                        item.setIcon(QIcon.fromTheme("image-x-generic-symbolic"))
+                elif file_path.lower().endswith(".exe"):
+                    tmp = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
+                    tmp.close()
+                    if generate_thumbnail(file_path, tmp.name, size=64):
+                        pixmap = QPixmap(tmp.name)
+                        if not pixmap.isNull():
+                            item.setIcon(QIcon(pixmap))
+                        else:
+                            item.setIcon(QIcon.fromTheme("application-x-executable-symbolic"))
+                        os.unlink(tmp.name)
+                    else:
+                        item.setIcon(QIcon.fromTheme("application-x-executable-symbolic"))
+                else:
+                    icon_name = self.mime_db.mimeTypeForFile(file_path).iconName()
+                    symbolic_icon_name = icon_name + "-symbolic" if icon_name else "text-x-generic-symbolic"
+                    item.setIcon(QIcon.fromTheme(symbolic_icon_name, QIcon.fromTheme("text-x-generic-symbolic")))
+
+                self.file_list.addItem(item)
 
             self.path_label.setText(f"Path: {self.current_path}")
             self.file_list.setCurrentRow(0)
@@ -315,6 +346,7 @@ class FileExplorer(QDialog):
         if self.input_manager:
             self.input_manager.disable_file_explorer_mode()
         super().accept()
+
 class AddGameDialog(QDialog):
     def __init__(self, parent=None, theme=None, edit_mode=False, game_name=None, exe_path=None, cover_path=None):
         super().__init__(parent)
