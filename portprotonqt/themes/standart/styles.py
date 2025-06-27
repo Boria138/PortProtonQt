@@ -856,6 +856,72 @@ SETTINGS_CHECKBOX_STYLE = f"""
     }}
 """
 
+FILE_EXPLORER_STYLE = f"""
+    QListView {{
+        font-size: {font_size_a};
+        font-family: {font_family};
+        background-color: {color_c};
+        color: {color_f};
+        border-top-left-radius: 5px;
+        border-bottom-left-radius: 5px;
+    }}
+    QListView::item {{
+        padding: 8px;
+        margin: 0px 5px;
+        border-bottom: {border_b} rgba(255, 255, 255, 0.1);
+    }}
+    QListView::item:selected {{
+        background-color: {color_a};
+        color: {color_f};
+        border-radius: {border_radius_a};
+    }}
+    QListView::item:hover {{
+        background-color: {color_a};
+        color: {color_f};
+        border-radius: {border_radius_a};
+    }}
+    QListView::item:focus {{
+        background-color: {color_a};
+        color: {color_f};
+        border-radius: {border_radius_a};
+    }}
+    QScrollBar:vertical {{
+        width: 10px;
+        border:  {border_a};
+        border-radius: 5px;
+        background: {color_c};
+    }}
+    QScrollBar::handle:vertical {{
+        background: #bebebe;
+        border:  {border_a};
+        border-radius: 5px;
+    }}
+    QScrollBar::add-line:vertical {{
+        border:  {border_a};
+        background: {color_c};
+        border-bottom-right-radius: 5px;
+    }}
+    QScrollBar::sub-line:vertical {{
+        border:  {border_a};
+        background: {color_c};
+        border-top-right-radius: 5px;        
+    }}
+    QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical {{
+        border:  {border_a};
+        width: 3px;
+        height: 3px;
+        background: none;
+    }}
+"""
+
+FILE_EXPLORER_PATH_LABEL_STYLE = f"""
+    QLabel {{
+        color: {color_a};
+        font-size: {font_size_a};
+        font-family: {font_family};
+    }}
+"""
+
 # ФУНКЦИЯ ДЛЯ ДИНАМИЧЕСКОГО ГРАДИЕНТА (ДЕТАЛИ ИГР)
 # Функции из этой темы срабатывает всегда вне зависимости от выбранной темы, функции из других тем работают только в этих темах
 def detail_page_style(stops):
@@ -866,57 +932,3 @@ def detail_page_style(stops):
                                     border-radius: {border_radius_b};
     }}
 """
-
-class FileExplorerStyles:
-    WINDOW_STYLE = """
-        QDialog {
-            background-color: #2d2d2d;
-            color: #ffffff;
-            font-family: "Arial";
-            font-size: 14px;
-        }
-    """
-
-    PATH_LABEL_STYLE = """
-        QLabel {
-            color: #3daee9;
-            font-size: 16px;
-            padding: 5px;
-        }
-    """
-
-    LIST_STYLE = """
-        QListWidget {
-            font-size: 16px;
-            background-color: #353535;
-            color: #eee;
-            border: 1px solid #444;
-            border-radius: 4px;
-        }
-        QListWidget::item {
-            padding: 8px;
-            border-bottom: 1px solid #444;
-        }
-        QListWidget::item:selected {
-            background-color: #3daee9;
-            color: white;
-            border-radius: 2px;
-        }
-    """
-
-    BUTTON_STYLE = """
-        QPushButton {
-            background-color: #3daee9;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-        QPushButton:hover {
-            background-color: #2c9fd8;
-        }
-        QPushButton:pressed {
-            background-color: #1a8fc7;
-        }
-    """

@@ -13,7 +13,8 @@ from portprotonqt.config_utils import get_portproton_location
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
 import portprotonqt.themes.standart.styles as default_styles
-from portprotonqt.themes.standart.styles import FileExplorerStyles
+from portprotonqt.theme_manager import ThemeManager
+from portprotonqt.custom_widgets import AutoSizeButton
 
 if TYPE_CHECKING:
     from portprotonqt.main_window import MainWindow
@@ -88,8 +89,10 @@ class FileSelectedSignal(QObject):
     file_selected = Signal(str)  # Сигнал с путем к выбранному файлу
 
 class FileExplorer(QDialog):
-    def __init__(self, parent=None, file_filter=None):
+    def __init__(self, parent=None, theme=None, file_filter=None):
         super().__init__(parent)
+        self.theme = theme if theme else default_styles
+        self.theme_manager = ThemeManager()
         self.file_signal = FileSelectedSignal()
         self.file_filter = file_filter  # Store the file filter
         self.mime_db = QMimeDatabase()  # Initialize QMimeDatabase for mimetype detection
@@ -98,7 +101,6 @@ class FileExplorer(QDialog):
         # Настройки окна
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowType.WindowContextHelpButtonHint)
-        self.setStyleSheet(FileExplorerStyles.WINDOW_STYLE)
 
         # Find InputManager from parent
         self.input_manager = None
@@ -153,28 +155,28 @@ class FileExplorer(QDialog):
         self.drives_container = QWidget()
         self.drives_container.setLayout(self.drives_layout)
         self.drives_scroll.setWidget(self.drives_container)
-        self.drives_scroll.setStyleSheet(FileExplorerStyles.BUTTON_STYLE)
-        self.drives_scroll.setFixedHeight(50)
+        self.drives_scroll.setStyleSheet(self.theme.SCROLL_AREA_STYLE)
+        self.drives_scroll.setFixedHeight(60)
         self.main_layout.addWidget(self.drives_scroll)
 
         # Путь
         self.path_label = QLabel()
-        self.path_label.setStyleSheet(FileExplorerStyles.PATH_LABEL_STYLE)
+        self.path_label.setStyleSheet(self.theme.FILE_EXPLORER_PATH_LABEL_STYLE)
         self.main_layout.addWidget(self.path_label)
 
         # Список файлов
         self.file_list = QListWidget()
-        self.file_list.setStyleSheet(FileExplorerStyles.LIST_STYLE)
+        self.file_list.setStyleSheet(self.theme.FILE_EXPLORER_STYLE)
         self.file_list.itemClicked.connect(self.handle_item_click)
         self.main_layout.addWidget(self.file_list)
 
         # Кнопки
         self.button_layout = QHBoxLayout()
         self.button_layout.setSpacing(10)
-        self.select_button = QPushButton(_("Select"))
-        self.cancel_button = QPushButton(_("Cancel"))
-        self.select_button.setStyleSheet(FileExplorerStyles.BUTTON_STYLE)
-        self.cancel_button.setStyleSheet(FileExplorerStyles.BUTTON_STYLE)
+        self.select_button = AutoSizeButton(_("Select"), icon=self.theme_manager.get_icon("apply"))
+        self.cancel_button = AutoSizeButton(_("Cancel"), icon=self.theme_manager.get_icon("cancel"))
+        self.select_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        self.cancel_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.button_layout.addWidget(self.select_button)
         self.button_layout.addWidget(self.cancel_button)
         self.main_layout.addLayout(self.button_layout)
@@ -246,8 +248,8 @@ class FileExplorer(QDialog):
         drives = self.get_mounted_drives()
         for drive in drives:
             drive_name = os.path.basename(drive) or drive.split('/')[-1] or drive
-            button = QPushButton(drive_name)
-            button.setStyleSheet(FileExplorerStyles.BUTTON_STYLE)
+            button = AutoSizeButton(drive_name, icon=self.theme_manager.get_icon("mount_point"))
+            button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
             button.clicked.connect(lambda checked, path=drive: self.change_drive(path))
             self.drives_layout.addWidget(button)
         self.drives_layout.addStretch()
@@ -266,7 +268,7 @@ class FileExplorer(QDialog):
         try:
             if self.current_path != "/":
                 item = QListWidgetItem("../")
-                item.setIcon(QIcon.fromTheme("folder-symbolic"))
+                item.setIcon(self.theme_manager.get_icon("folder"))
                 self.file_list.addItem(item)
 
             items = os.listdir(self.current_path)
@@ -282,7 +284,7 @@ class FileExplorer(QDialog):
 
             for d in sorted(dirs):
                 item = QListWidgetItem(f"{d}/")
-                item.setIcon(QIcon.fromTheme("folder-symbolic"))
+                item.setIcon(self.theme_manager.get_icon("folder"))
                 self.file_list.addItem(item)
 
             for f in sorted(files):
