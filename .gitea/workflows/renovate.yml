@@ -10,9 +10,18 @@ jobs:
     runs-on: ubuntu-latest
     container: ghcr.io/renovatebot/renovate:41.1.4
     steps:
-      - uses: https://gitea.com/actions/checkout@v4
-      - run: renovate
+      - name: Checkout main repository
+        uses: https://gitea.com/actions/checkout@v4
+
+      - name: Checkout renovate config repository
+        uses: https://gitea.com/actions/checkout@v4
+        with:
+          repository: Linux-Gaming/renovate-config
+          path: renovate-config
+
+      - name: Run Renovate
+        run: renovate
         env:
-          RENOVATE_CONFIG_FILE: "/workspace/Boria138/PortProtonQt/config.js"
+          RENOVATE_CONFIG_FILE: "/workspace/renovate-config/config.js"
           LOG_LEVEL: "debug"
           RENOVATE_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
