@@ -268,7 +268,13 @@ class FileExplorer(QDialog):
         try:
             if self.current_path != "/":
                 item = QListWidgetItem("../")
-                item.setIcon(self.theme_manager.get_icon("folder"))
+                folder_icon = self.theme_manager.get_icon("folder")
+                # Ensure the icon is a QIcon
+                if isinstance(folder_icon, str) and os.path.isfile(folder_icon):
+                    folder_icon = QIcon(folder_icon)
+                elif not isinstance(folder_icon, QIcon):
+                    folder_icon = QIcon()  # Fallback to empty icon
+                item.setIcon(folder_icon)
                 self.file_list.addItem(item)
 
             items = os.listdir(self.current_path)
@@ -284,7 +290,13 @@ class FileExplorer(QDialog):
 
             for d in sorted(dirs):
                 item = QListWidgetItem(f"{d}/")
-                item.setIcon(self.theme_manager.get_icon("folder"))
+                folder_icon = self.theme_manager.get_icon("folder")
+                # Ensure the icon is a QIcon
+                if isinstance(folder_icon, str) and os.path.isfile(folder_icon):
+                    folder_icon = QIcon(folder_icon)
+                elif not isinstance(folder_icon, QIcon):
+                    folder_icon = QIcon()  # Fallback to empty icon
+                item.setIcon(folder_icon)
                 self.file_list.addItem(item)
 
             for f in sorted(files):
@@ -296,8 +308,6 @@ class FileExplorer(QDialog):
                     pixmap = QPixmap(file_path)
                     if not pixmap.isNull():
                         item.setIcon(QIcon(pixmap.scaled(64, 64, Qt.AspectRatioMode.KeepAspectRatio)))
-                    else:
-                        item.setIcon(QIcon.fromTheme("image-x-generic-symbolic"))
                 elif file_path.lower().endswith(".exe"):
                     tmp = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
                     tmp.close()
@@ -305,15 +315,7 @@ class FileExplorer(QDialog):
                         pixmap = QPixmap(tmp.name)
                         if not pixmap.isNull():
                             item.setIcon(QIcon(pixmap))
-                        else:
-                            item.setIcon(QIcon.fromTheme("application-x-executable-symbolic"))
                         os.unlink(tmp.name)
-                    else:
-                        item.setIcon(QIcon.fromTheme("application-x-executable-symbolic"))
-                else:
-                    icon_name = self.mime_db.mimeTypeForFile(file_path).iconName()
-                    symbolic_icon_name = icon_name + "-symbolic" if icon_name else "text-x-generic-symbolic"
-                    item.setIcon(QIcon.fromTheme(symbolic_icon_name, QIcon.fromTheme("text-x-generic-symbolic")))
 
                 self.file_list.addItem(item)
 
