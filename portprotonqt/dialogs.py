@@ -322,7 +322,7 @@ class FileExplorer(QDialog):
 
                 self.file_list.addItem(item)
 
-            self.path_label.setText(f"Path: {self.current_path}")
+            self.path_label.setText(_("Path: ") + self.current_path)
             self.file_list.setCurrentRow(0)
 
         except PermissionError:

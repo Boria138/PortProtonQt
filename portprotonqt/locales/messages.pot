@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-06-26 14:55+0500\n"
+"POT-Creation-Date: 2025-06-28 09:04+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -226,38 +226,6 @@ msgid ""
 " take effect."
 msgstr ""
 
-msgid "PortProton directory not found"
-msgstr ""
-
-msgid "Steam directory not found"
-msgstr ""
-
-msgid "Failed to get Steam user ID"
-msgstr ""
-
-msgid "Steam shortcuts file not found"
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to create backup of shortcuts.vdf: {error}"
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to load shortcuts.vdf: {error}"
-msgstr ""
-
-#, python-brace-format
-msgid "Game '{game_name}' not found in Steam shortcuts"
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to update shortcuts.vdf: {error}"
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to remove EGS game '{game_name}' from Steam: {error}"
-msgstr ""
-
 #, python-brace-format
 msgid "Failed to remove game '{game_name}' from Steam: {error}"
 msgstr ""
@@ -266,6 +234,9 @@ msgid "Select"
 msgstr ""
 
 msgid "Cancel"
+msgstr ""
+
+msgid "Path: "
 msgstr ""
 
 msgid "Edit Game"
