@@ -297,6 +297,7 @@ class FileExplorer(QDialog):
                 elif not isinstance(folder_icon, QIcon):
                     folder_icon = QIcon()  # Fallback to empty icon
                 item.setIcon(folder_icon)
+                self.file_list.setFocusPolicy(Qt.FocusPolicy.NoFocus)
                 self.file_list.addItem(item)
 
             for f in sorted(files):
