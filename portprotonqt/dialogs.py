@@ -298,6 +298,8 @@ class FileExplorer(QDialog):
                     folder_icon = QIcon()  # Fallback to empty icon
                 item.setIcon(folder_icon)
                 self.file_list.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+                self.file_list.setTextElideMode(Qt.TextElideMode.ElideRight)
+                self.file_list.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
                 self.file_list.addItem(item)
 
             for f in sorted(files):
