@@ -4,7 +4,7 @@ from typing import cast, TYPE_CHECKING
 from PySide6.QtGui import QPixmap, QIcon
 from PySide6.QtWidgets import (
     QDialog, QLineEdit, QFormLayout, QPushButton,
-    QHBoxLayout, QDialogButtonBox, QLabel, QVBoxLayout, QListWidget, QScrollArea, QWidget, QListWidgetItem
+    QHBoxLayout, QLabel, QVBoxLayout, QListWidget, QScrollArea, QWidget, QListWidgetItem
 )
 from PySide6.QtCore import Qt, QObject, Signal, QMimeDatabase
 from icoextract import IconExtractor, IconExtractorError
@@ -359,6 +359,7 @@ class AddGameDialog(QDialog):
     def __init__(self, parent=None, theme=None, edit_mode=False, game_name=None, exe_path=None, cover_path=None):
         super().__init__(parent)
         self.theme = theme if theme else default_styles
+        self.theme_manager = ThemeManager()
         self.edit_mode = edit_mode
         self.original_name = game_name
 
@@ -418,13 +419,18 @@ class AddGameDialog(QDialog):
         layout.addRow(preview_label, self.coverPreview)
 
         # Dialog buttons
-        buttonBox = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
-        )
-        buttonBox.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
-        buttonBox.accepted.connect(self.accept)
-        buttonBox.rejected.connect(self.reject)
-        layout.addRow(buttonBox)
+        self.button_layout = QHBoxLayout()
+        self.button_layout.setSpacing(10)
+        self.select_button = AutoSizeButton(_("Select"), icon=self.theme_manager.get_icon("apply"))
+        self.cancel_button = AutoSizeButton(_("Cancel"), icon=self.theme_manager.get_icon("cancel"))
+        self.select_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        self.cancel_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        self.button_layout.addWidget(self.select_button)
+        self.button_layout.addWidget(self.cancel_button)
+        layout.addRow(self.button_layout)
+
+        self.select_button.clicked.connect(self.accept)
+        self.cancel_button.clicked.connect(self.reject)
 
         self.coverEdit.textChanged.connect(self.updatePreview)
         self.exeEdit.textChanged.connect(self.updatePreview)
