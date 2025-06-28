@@ -300,6 +300,7 @@ class FileExplorer(QDialog):
                 self.file_list.setFocusPolicy(Qt.FocusPolicy.NoFocus)
                 self.file_list.setTextElideMode(Qt.TextElideMode.ElideRight)
                 self.file_list.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+                self.file_list.setAlternatingRowColors(True)
                 self.file_list.addItem(item)
 
             for f in sorted(files):

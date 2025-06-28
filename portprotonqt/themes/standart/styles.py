@@ -860,7 +860,7 @@ FILE_EXPLORER_STYLE = f"""
     QListView {{
         font-size: {font_size_a};
         font-family: {font_family};
-        background-color: {color_c};
+        background: {color_c};
         color: {color_f};
         border-top-left-radius: 5px;
         border-bottom-left-radius: 5px;
@@ -868,20 +868,23 @@ FILE_EXPLORER_STYLE = f"""
     QListView::item {{
         padding: 8px;
         margin: 0px 5px;
-        border-bottom: {border_b} rgba(255, 255, 255, 0.1);
+    }}
+    QListView::item:alternate {{
+        margin: 0px 5px;
+        background: {color_d};
     }}
     QListView::item:selected {{
-        background-color: {color_a};
+        background: {color_a};
         color: {color_f};
         border-radius: {border_radius_a};
     }}
     QListView::item:hover {{
-        background-color: {color_a};
+        background: {color_a};
         color: {color_f};
         border-radius: {border_radius_a};
     }}
     QListView::item:focus {{
-        background-color: {color_a};
+        background: {color_a};
         color: {color_f};
         border-radius: {border_radius_a};
     }}
