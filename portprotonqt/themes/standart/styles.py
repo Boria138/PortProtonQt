@@ -861,6 +861,7 @@ FILE_EXPLORER_STYLE = f"""
         font-size: {font_size_a};
         font-family: {font_family};
         background: {color_c};
+        alternate-background-color: {color_c};
         color: {color_f};
         border-top-left-radius: 5px;
         border-bottom-left-radius: 5px;
