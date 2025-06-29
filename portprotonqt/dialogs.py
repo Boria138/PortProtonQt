@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
     QDialog, QLineEdit, QFormLayout, QPushButton,
     QHBoxLayout, QLabel, QVBoxLayout, QListWidget, QScrollArea, QWidget, QListWidgetItem
 )
-from PySide6.QtCore import Qt, QObject, Signal, QMimeDatabase
+from PySide6.QtCore import Qt, QObject, Signal, QMimeDatabase, QTimer
 from icoextract import IconExtractor, IconExtractorError
 from PIL import Image
 from portprotonqt.config_utils import get_portproton_location
@@ -383,15 +383,16 @@ class AddGameDialog(QDialog):
         self.theme_manager = ThemeManager()
         self.edit_mode = edit_mode
         self.original_name = game_name
-        self.last_exe_path = exe_path  # Store last selected exe path
-        self.last_cover_path = cover_path  # Store last selected cover path
 
         self.setWindowTitle(_("Edit Game") if edit_mode else _("Add Game"))
         self.setModal(True)
+        self.setFixedWidth(600)
         self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE + self.theme.MESSAGE_BOX_STYLE)
 
         layout = QFormLayout(self)
         layout.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
+        layout.setFormAlignment(Qt.AlignmentFlag.AlignLeft)
+        layout.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
 
         # Game name
         self.nameEdit = QLineEdit(self)
@@ -399,46 +400,60 @@ class AddGameDialog(QDialog):
         if game_name:
             self.nameEdit.setText(game_name)
         name_label = QLabel(_("Game Name:"))
-        name_label.setStyleSheet(self.theme.PARAMS_TITLE_STYLE + " QLabel { color: #ffffff; font-size: 14px; font-weight: bold; }")
+        name_label.setStyleSheet(
+            self.theme.PARAMS_TITLE_STYLE + " QLabel { color: #ffffff; font-size: 14px; font-weight: bold; }")
         layout.addRow(name_label, self.nameEdit)
 
         # Exe path
+        exe_label = QLabel(_("Path to Executable:"))
+        exe_label.setStyleSheet(
+            self.theme.PARAMS_TITLE_STYLE + " QLabel { color: #ffffff; font-size: 14px; font-weight: bold; }")
+
         self.exeEdit = QLineEdit(self)
         self.exeEdit.setStyleSheet(self.theme.ADDGAME_INPUT_STYLE)
         if exe_path:
             self.exeEdit.setText(exe_path)
+
         exeBrowseButton = QPushButton(_("Browse..."), self)
         exeBrowseButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         exeBrowseButton.clicked.connect(self.browseExe)
+        exeBrowseButton.setObjectName("exeBrowseButton")  # Для поиска кнопки
 
-        exeLayout = QHBoxLayout()
-        exeLayout.addWidget(self.exeEdit)
-        exeLayout.addWidget(exeBrowseButton)
-        exe_label = QLabel(_("Path to Executable:"))
-        exe_label.setStyleSheet(self.theme.PARAMS_TITLE_STYLE + " QLabel { color: #ffffff; font-size: 14px; font-weight: bold; }")
-        layout.addRow(exe_label, exeLayout)
+        # Добавляем поле ввода для exe
+        layout.addRow(exe_label, self.exeEdit)
+
+        # Добавляем кнопку обзора под полем ввода с выравниванием
+        empty_label = QLabel("")
+        empty_label.setFixedWidth(exe_label.sizeHint().width())
+        layout.addRow(empty_label, exeBrowseButton)
 
         # Cover path
+        cover_label = QLabel(_("Custom Cover:"))
+        cover_label.setStyleSheet(
+            self.theme.PARAMS_TITLE_STYLE + " QLabel { color: #ffffff; font-size: 14px; font-weight: bold; }")
+
         self.coverEdit = QLineEdit(self)
         self.coverEdit.setStyleSheet(self.theme.ADDGAME_INPUT_STYLE)
         if cover_path:
             self.coverEdit.setText(cover_path)
+
         coverBrowseButton = QPushButton(_("Browse..."), self)
         coverBrowseButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         coverBrowseButton.clicked.connect(self.browseCover)
+        coverBrowseButton.setObjectName("coverBrowseButton")  # Для поиска кнопки
 
-        coverLayout = QHBoxLayout()
-        coverLayout.addWidget(self.coverEdit)
-        coverLayout.addWidget(coverBrowseButton)
-        cover_label = QLabel(_("Custom Cover:"))
-        cover_label.setStyleSheet(self.theme.PARAMS_TITLE_STYLE + " QLabel { color: #ffffff; font-size: 14px; font-weight: bold; }")
-        layout.addRow(cover_label, coverLayout)
+        # Добавляем поле ввода для обложки
+        layout.addRow(cover_label, self.coverEdit)
+
+        # Добавляем кнопку обзора под полем ввода с выравниванием
+        layout.addRow(empty_label, coverBrowseButton)
 
         # Preview
         self.coverPreview = QLabel(self)
         self.coverPreview.setStyleSheet(self.theme.CONTENT_STYLE + " QLabel { color: #ffffff; }")
         preview_label = QLabel(_("Cover Preview:"))
-        preview_label.setStyleSheet(self.theme.PARAMS_TITLE_STYLE + " QLabel { color: #ffffff; font-size: 14px; font-weight: bold; }")
+        preview_label.setStyleSheet(
+            self.theme.PARAMS_TITLE_STYLE + " QLabel { color: #ffffff; font-size: 14px; font-weight: bold; }")
         layout.addRow(preview_label, self.coverPreview)
 
         # Dialog buttons
@@ -452,21 +467,28 @@ class AddGameDialog(QDialog):
         self.button_layout.addWidget(self.cancel_button)
         layout.addRow(self.button_layout)
 
+        # Подключение сигналов
         self.select_button.clicked.connect(self.accept)
         self.cancel_button.clicked.connect(self.reject)
-
         self.coverEdit.textChanged.connect(self.updatePreview)
         self.exeEdit.textChanged.connect(self.updatePreview)
 
+        # Установка одинаковой ширины для кнопок и полей ввода
+        def update_button_widths():
+            exeBrowseButton.setFixedWidth(self.exeEdit.width())
+            coverBrowseButton.setFixedWidth(self.coverEdit.width())
+
+        # Вызываем после отображения окна, когда размеры установлены, чтобы реально дождаться, когда всё сформируется
+        QTimer.singleShot(0, update_button_widths)
+
+        # Обновляем превью, если в режиме редактирования
         if edit_mode:
             self.updatePreview()
 
     def browseExe(self):
         """Открывает файловый менеджер для выбора exe-файла"""
         try:
-            # Use last_exe_path if available and valid, otherwise fallback to home
-            initial_path = os.path.dirname(self.last_exe_path) if self.last_exe_path and os.path.isfile(self.last_exe_path) else None
-            file_explorer = FileExplorer(self, file_filter='.exe', initial_path=initial_path)
+            file_explorer = FileExplorer(self, file_filter='.exe')
             file_explorer.file_signal.file_selected.connect(self.onExeSelected)
 
             # Центрируем FileExplorer относительно родительского виджета
@@ -485,7 +507,6 @@ class AddGameDialog(QDialog):
     def onExeSelected(self, file_path):
         """Обработчик выбора файла в FileExplorer"""
         self.exeEdit.setText(file_path)
-        self.last_exe_path = file_path  # Update last selected exe path
         if not self.edit_mode:
             # Автоматически заполняем имя игры, если не в режиме редактирования
             game_name = os.path.splitext(os.path.basename(file_path))[0]
@@ -497,9 +518,7 @@ class AddGameDialog(QDialog):
     def browseCover(self):
         """Открывает файловый менеджер для выбора изображения обложки"""
         try:
-            # Use last_cover_path if available and valid, otherwise fallback to home
-            initial_path = os.path.dirname(self.last_cover_path) if self.last_cover_path and os.path.isfile(self.last_cover_path) else None
-            file_explorer = FileExplorer(self, file_filter=('.png', '.jpg', '.jpeg', '.bmp'), initial_path=initial_path)
+            file_explorer = FileExplorer(self, file_filter=('.png', '.jpg', '.jpeg', '.bmp'))
             file_explorer.file_signal.file_selected.connect(self.onCoverSelected)
 
             # Центрируем FileExplorer относительно родительского виджета
@@ -519,7 +538,6 @@ class AddGameDialog(QDialog):
         """Обработчик выбора файла обложки в FileExplorer"""
         if file_path and os.path.splitext(file_path)[1].lower() in ('.png', '.jpg', '.jpeg', '.bmp'):
             self.coverEdit.setText(file_path)
-            self.last_cover_path = file_path  # Update last selected cover path
         else:
             logger.warning(f"Selected file is not a valid image: {file_path}")
 
