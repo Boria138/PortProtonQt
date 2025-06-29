@@ -415,7 +415,7 @@ class AddGameDialog(QDialog):
         if exe_path:
             self.exeEdit.setText(exe_path)
 
-        exeBrowseButton = QPushButton(_("Browse..."), self)
+        exeBrowseButton = AutoSizeButton(_("Browse..."), icon=self.theme_manager.get_icon("search"))
         exeBrowseButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         exeBrowseButton.clicked.connect(self.browseExe)
         exeBrowseButton.setObjectName("exeBrowseButton")  # Для поиска кнопки
@@ -438,7 +438,7 @@ class AddGameDialog(QDialog):
         if cover_path:
             self.coverEdit.setText(cover_path)
 
-        coverBrowseButton = QPushButton(_("Browse..."), self)
+        coverBrowseButton = AutoSizeButton(_("Browse..."), icon=self.theme_manager.get_icon("search"))
         coverBrowseButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         coverBrowseButton.clicked.connect(self.browseCover)
         coverBrowseButton.setObjectName("coverBrowseButton")  # Для поиска кнопки
