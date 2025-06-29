@@ -454,8 +454,7 @@ class AddGameDialog(QDialog):
         self.coverPreview = QLabel(self)
         self.coverPreview.setStyleSheet(self.theme.CONTENT_STYLE + " QLabel { color: #ffffff; }")
         preview_label = QLabel(_("Cover Preview:"))
-        preview_label.setStyleSheet(
-            self.theme.PARAMS_TITLE_STYLE + " QLabel { color: #ffffff; font-size: 14px; font-weight: bold; }")
+        preview_label.setStyleSheet(self.theme.PARAMS_TITLE_STYLE + " QLabel { color: #ffffff; font-size: 14px; font-weight: bold; }")
         layout.addRow(preview_label, self.coverPreview)
 
         # Dialog buttons
