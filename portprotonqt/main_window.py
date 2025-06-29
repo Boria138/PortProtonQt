@@ -696,98 +696,109 @@ class MainWindow(QMainWindow):
                 loaded_count += 1
 
     def updateGameGrid(self, games_list=None):
-        """Updates the game grid with the provided games list or self.games."""
-        if games_list is None:
-            games_list = self.games
-        if not games_list:
-            # Скрываем все карточки, если список пуст
-            for card in self.game_card_cache.values():
-                card.hide()
-            self.game_card_cache.clear()
-            self.pending_images.clear()
-            self.gamesListWidget.updateGeometry()
-            return
+        """Обновляет сетку игровых карточек с сохранением порядка сортировки"""
+        # Подготовка данных
+        games_list = games_list if games_list is not None else self.games
+        search_text = self.searchEdit.text().strip().lower()
+        favorites = read_favorites()
+        sort_method = read_sort_method()
 
-        # Создаем словарь текущих игр с уникальным ключом (name + exec_line)
-        current_games = {(game_data[0], game_data[4]): game_data for game_data in games_list}
+        # Сортируем игры согласно текущим настройкам
+        def sort_key(game):
+            name = game[0]
+            # Избранные всегда первые
+            if name in favorites:
+                fav_order = 0
+            else:
+                fav_order = 1
 
-        # Проверяем, изменился ли список игр или размер карточек
-        current_game_keys = set(current_games.keys())
-        cached_game_keys = set(self.game_card_cache.keys())
-        card_width_changed = self.card_width != getattr(self, '_last_card_width', None)
+            if sort_method == "playtime":
+                return (fav_order, -game[11], -game[10])  # playtime_seconds, last_launch_ts
+            elif sort_method == "alphabetical":
+                return (fav_order, name.lower())
+            elif sort_method == "favorites":
+                return (fav_order,)
+            else:  # "last_launch" или по умолчанию
+                return (fav_order, -game[10], -game[11])  # last_launch_ts, playtime_seconds
 
-        if current_game_keys == cached_game_keys and not card_width_changed:
-            # Список игр и размер карточек не изменились, обновляем только видимость
-            search_text = self.searchEdit.text().strip().lower()
-            for game_key, card in self.game_card_cache.items():
-                game_name = game_key[0]
-                card.setVisible(search_text in game_name.lower() or not search_text)
-            self.loadVisibleImages()
-            return
+        sorted_games = sorted(games_list, key=sort_key)
 
-        # Обновляем размер карточек, если он изменился
-        if card_width_changed:
-            for card in self.game_card_cache.values():
-                card.setFixedWidth(self.card_width + 20)  # Учитываем extra_margin в GameCard
+        # Создаем временный список для новых карточек
+        new_card_order = []
 
-        # Удаляем карточки, которых больше нет в списке
-        layout_changed = False
+        # Обрабатываем каждую игру в отсортированном порядке
+        for game_data in sorted_games:
+            game_name = game_data[0]
+            exec_line = game_data[4]
+            game_key = (game_name, exec_line)
+            should_be_visible = not search_text or search_text in game_name.lower()
+
+            # Если карточка уже существует - используем существующую
+            if game_key in self.game_card_cache:
+                card = self.game_card_cache[game_key]
+                card.setVisible(should_be_visible)
+                new_card_order.append((game_key, card))
+                continue
+
+            # Создаем новую карточку
+            card = GameCard(
+                *game_data,
+                select_callback=self.openGameDetailPage,
+                theme=self.theme,
+                card_width=self.card_width,
+                context_menu_manager=self.context_menu_manager
+            )
+
+            # Подключаем сигналы
+            card.hoverChanged.connect(self._on_card_hovered)
+            card.focusChanged.connect(self._on_card_focused)
+
+            # Подключаем сигналы контекстного меню
+            card.editShortcutRequested.connect(self.context_menu_manager.edit_game_shortcut)
+            card.deleteGameRequested.connect(self.context_menu_manager.delete_game)
+            card.addToMenuRequested.connect(self.context_menu_manager.add_to_menu)
+            card.removeFromMenuRequested.connect(self.context_menu_manager.remove_from_menu)
+            card.addToDesktopRequested.connect(self.context_menu_manager.add_to_desktop)
+            card.removeFromDesktopRequested.connect(self.context_menu_manager.remove_from_desktop)
+            card.addToSteamRequested.connect(self.context_menu_manager.add_to_steam)
+            card.removeFromSteamRequested.connect(self.context_menu_manager.remove_from_steam)
+            card.openGameFolderRequested.connect(self.context_menu_manager.open_game_folder)
+
+            # Добавляем в кэш и временный список
+            self.game_card_cache[game_key] = card
+            new_card_order.append((game_key, card))
+            card.setVisible(should_be_visible)
+
+        # Полностью перестраиваем макет в правильном порядке, чистим FlowLayout
+        while self.gamesListLayout.count():
+            child = self.gamesListLayout.takeAt(0)
+            if child.widget():
+                child.widget().setParent(None)
+
+        # Добавляем карточки в макет в отсортированном порядке
+        for _game_key, card in new_card_order:
+            self.gamesListLayout.addWidget(card)
+
+            # Загружаем обложку, если карточка видима
+            if card.isVisible():
+                self.loadVisibleImages()
+
+        # Удаляем карточки для игр, которых больше нет в списке
+        existing_keys = {game_key for game_key, _ in new_card_order}
         for card_key in list(self.game_card_cache.keys()):
-            if card_key not in current_games:
+            if card_key not in existing_keys:
                 card = self.game_card_cache.pop(card_key)
-                self.gamesListLayout.removeWidget(card)
                 card.deleteLater()
                 if card_key in self.pending_images:
                     del self.pending_images[card_key]
-                layout_changed = True
-
-        # Добавляем новые карточки и обновляем существующие
-        for game_data in games_list:
-            game_name = game_data[0]
-            game_key = (game_name, game_data[4])
-            search_text = self.searchEdit.text().strip().lower()
-            should_be_visible = search_text in game_name.lower() or not search_text
-
-            if game_key not in self.game_card_cache:
-                # Создаем новую карточку
-                card = GameCard(
-                    *game_data,
-                    select_callback=self.openGameDetailPage,
-                    theme=self.theme,
-                    card_width=self.card_width,
-                    context_menu_manager=self.context_menu_manager
-                )
-                card.hoverChanged.connect(self._on_card_hovered)
-                card.focusChanged.connect(self._on_card_focused)
-                # Подключаем сигналы контекстного меню
-                card.editShortcutRequested.connect(self.context_menu_manager.edit_game_shortcut)
-                card.deleteGameRequested.connect(self.context_menu_manager.delete_game)
-                card.addToMenuRequested.connect(self.context_menu_manager.add_to_menu)
-                card.removeFromMenuRequested.connect(self.context_menu_manager.remove_from_menu)
-                card.addToDesktopRequested.connect(self.context_menu_manager.add_to_desktop)
-                card.removeFromDesktopRequested.connect(self.context_menu_manager.remove_from_desktop)
-                card.addToSteamRequested.connect(self.context_menu_manager.add_to_steam)
-                card.removeFromSteamRequested.connect(self.context_menu_manager.remove_from_steam)
-                card.openGameFolderRequested.connect(self.context_menu_manager.open_game_folder)
-                self.game_card_cache[game_key] = card
-                self.gamesListLayout.addWidget(card)
-                layout_changed = True
-            else:
-                # Обновляем видимость существующей карточки
-                card = self.game_card_cache[game_key]
-                card.setVisible(should_be_visible)
-
-        # Сохраняем текущий card_width
-        self._last_card_width = self.card_width
 
         # Принудительно обновляем макет
-        if layout_changed:
-            self.gamesListLayout.update()
-            self.gamesListWidget.updateGeometry()
-            self.gamesListWidget.update()
+        self.gamesListLayout.update()
+        self.gamesListWidget.updateGeometry()
+        self.gamesListWidget.update()
 
-        # Загружаем изображения для видимых карточек
-        self.loadVisibleImages()
+        # Сохраняем текущий размер карточек
+        self._last_card_width = self.card_width
 
     def clearLayout(self, layout):
         """Удаляет все виджеты из layout."""
