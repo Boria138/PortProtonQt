@@ -1,5 +1,6 @@
 import time
 import threading
+import os
 from typing import Protocol, cast
 from evdev import InputDevice, InputEvent, ecodes, list_devices, ff
 from pyudev import Context, Monitor, MonitorObserver, Device
@@ -162,8 +163,28 @@ class InputManager(QObject):
             if not self.file_explorer or not hasattr(self.file_explorer, 'file_list'):
                 return
 
-            if button_code in BUTTONS['confirm']:
-                self.file_explorer.select_item()
+            if button_code in BUTTONS['add_game']:
+                if self.file_explorer.file_list.count() == 0:
+                    return
+                selected = self.file_explorer.file_list.currentItem().text()
+                full_path = os.path.join(self.file_explorer.current_path, selected)
+                if os.path.isdir(full_path):
+                    # Подтверждаем выбор директории
+                    self.file_explorer.file_signal.file_selected.emit(os.path.normpath(full_path))
+                    self.file_explorer.accept()
+                else:
+                    logger.debug("Selected item is not a directory: %s", full_path)
+            elif button_code in BUTTONS['confirm']:
+                if self.file_explorer.file_list.count() == 0:
+                    return
+                selected = self.file_explorer.file_list.currentItem().text()
+                full_path = os.path.join(self.file_explorer.current_path, selected)
+                if os.path.isdir(full_path):
+                    # Открываем директорию
+                    self.file_explorer.current_path = os.path.normpath(full_path)
+                    self.file_explorer.update_file_list()
+                else:
+                    logger.debug("Selected item is not a directory, cannot open: %s", full_path)
             elif button_code in BUTTONS['back']:
                 self.file_explorer.close()
             elif button_code in BUTTONS['prev_dir']:

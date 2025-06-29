@@ -88,12 +88,13 @@ class FileSelectedSignal(QObject):
     file_selected = Signal(str)  # Сигнал с путем к выбранному файлу
 
 class FileExplorer(QDialog):
-    def __init__(self, parent=None, theme=None, file_filter=None, initial_path=None):
+    def __init__(self, parent=None, theme=None, file_filter=None, initial_path=None, directory_only=False):
         super().__init__(parent)
         self.theme = theme if theme else default_styles
         self.theme_manager = ThemeManager()
         self.file_signal = FileSelectedSignal()
         self.file_filter = file_filter  # Store the file filter
+        self.directory_only = directory_only  # Store the directory_only flag
         self.mime_db = QMimeDatabase()  # Initialize QMimeDatabase for mimetype detection
         self.path_history = {}  # Dictionary to store last selected item per directory
         self.initial_path = initial_path  # Store initial path if provided
@@ -216,13 +217,21 @@ class FileExplorer(QDialog):
         full_path = os.path.join(self.current_path, selected)
 
         if os.path.isdir(full_path):
-            # Если выбрана директория, нормализуем путь
-            self.current_path = os.path.normpath(full_path)
-            self.update_file_list()
+            if self.directory_only:
+                # Подтверждаем выбор директории
+                self.file_signal.file_selected.emit(os.path.normpath(full_path))
+                self.accept()
+            else:
+                # Открываем директорию
+                self.current_path = os.path.normpath(full_path)
+                self.update_file_list()
         else:
-            # Для файла отправляем нормализованный путь
-            self.file_signal.file_selected.emit(os.path.normpath(full_path))
-            self.accept()
+            if not self.directory_only:
+                # Для файла отправляем нормализованный путь
+                self.file_signal.file_selected.emit(os.path.normpath(full_path))
+                self.accept()
+            else:
+                logger.debug("Selected item is not a directory, ignoring: %s", full_path)
 
     def previous_dir(self):
         """Возврат к родительской директории"""
@@ -288,14 +297,7 @@ class FileExplorer(QDialog):
             items = os.listdir(self.current_path)
             dirs = [d for d in items if os.path.isdir(os.path.join(self.current_path, d))]
 
-            # Apply file filter if provided
-            files = [f for f in items if os.path.isfile(os.path.join(self.current_path, f))]
-            if self.file_filter:
-                if isinstance(self.file_filter, str):
-                    files = [f for f in files if f.lower().endswith(self.file_filter)]
-                elif isinstance(self.file_filter, tuple):
-                    files = [f for f in files if any(f.lower().endswith(ext) for ext in self.file_filter)]
-
+            # Добавляем директории
             for d in sorted(dirs):
                 item = QListWidgetItem(f"{d}/")
                 folder_icon = self.theme_manager.get_icon("folder")
@@ -307,25 +309,34 @@ class FileExplorer(QDialog):
                 item.setIcon(folder_icon)
                 self.file_list.addItem(item)
 
-            for f in sorted(files):
-                item = QListWidgetItem(f)
-                file_path = os.path.join(self.current_path, f)
-                mime_type = self.mime_db.mimeTypeForFile(file_path).name()
+            # Добавляем файлы только если directory_only=False
+            if not self.directory_only:
+                files = [f for f in items if os.path.isfile(os.path.join(self.current_path, f))]
+                if self.file_filter:
+                    if isinstance(self.file_filter, str):
+                        files = [f for f in files if f.lower().endswith(self.file_filter)]
+                    elif isinstance(self.file_filter, tuple):
+                        files = [f for f in files if any(f.lower().endswith(ext) for ext in self.file_filter)]
 
-                if mime_type.startswith("image/"):
-                    pixmap = QPixmap(file_path)
-                    if not pixmap.isNull():
-                        item.setIcon(QIcon(pixmap.scaled(64, 64, Qt.AspectRatioMode.KeepAspectRatio)))
-                elif file_path.lower().endswith(".exe"):
-                    tmp = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
-                    tmp.close()
-                    if generate_thumbnail(file_path, tmp.name, size=64):
-                        pixmap = QPixmap(tmp.name)
+                for f in sorted(files):
+                    item = QListWidgetItem(f)
+                    file_path = os.path.join(self.current_path, f)
+                    mime_type = self.mime_db.mimeTypeForFile(file_path).name()
+
+                    if mime_type.startswith("image/"):
+                        pixmap = QPixmap(file_path)
                         if not pixmap.isNull():
-                            item.setIcon(QIcon(pixmap))
-                        os.unlink(tmp.name)
+                            item.setIcon(QIcon(pixmap.scaled(64, 64, Qt.AspectRatioMode.KeepAspectRatio)))
+                    elif file_path.lower().endswith(".exe"):
+                        tmp = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
+                        tmp.close()
+                        if generate_thumbnail(file_path, tmp.name, size=64):
+                            pixmap = QPixmap(tmp.name)
+                            if not pixmap.isNull():
+                                item.setIcon(QIcon(pixmap))
+                            os.unlink(tmp.name)
 
-                self.file_list.addItem(item)
+                    self.file_list.addItem(item)
 
             self.path_label.setText(_("Path: ") + self.current_path)
 

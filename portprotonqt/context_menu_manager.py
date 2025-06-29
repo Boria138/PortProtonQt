@@ -6,14 +6,14 @@ import subprocess
 import threading
 import logging
 import orjson
-from PySide6.QtWidgets import QMessageBox, QDialog, QMenu, QFileDialog
+from PySide6.QtWidgets import QMessageBox, QDialog, QMenu
 from PySide6.QtCore import QUrl, QPoint, QObject, Signal, Qt
 from PySide6.QtGui import QDesktopServices
 from portprotonqt.localization import _
 from portprotonqt.config_utils import parse_desktop_entry, read_favorites, save_favorites
 from portprotonqt.steam_api import is_game_in_steam, add_to_steam, remove_from_steam
 from portprotonqt.egs_api import add_egs_to_steam, get_egs_executable, remove_egs_from_steam
-from portprotonqt.dialogs import AddGameDialog, generate_thumbnail
+from portprotonqt.dialogs import AddGameDialog, FileExplorer, generate_thumbnail
 
 logger = logging.getLogger(__name__)
 
@@ -282,35 +282,56 @@ class ContextMenuManager:
         """
         if not self._check_portproton():
             return
-        folder_path = QFileDialog.getExistingDirectory(
-            self.parent, _("Select Game Installation Folder"), os.path.expanduser("~")
-        )
-        if not folder_path:
-            self._show_status_message(_("No folder selected"))
-            return
         if not os.path.exists(self.legendary_path):
             self.signals.show_warning_dialog.emit(
                 _("Error"),
                 _("Legendary executable not found at {path}").format(path=self.legendary_path)
             )
             return
-        def run_import():
-            cmd = [self.legendary_path, "import", app_name, folder_path]
-            try:
-                subprocess.run(cmd, capture_output=True, text=True, check=True)
-                self.signals.show_info_dialog.emit(
-                    _("Success"),
-                    _("Imported '{game_name}' to Legendary").format(game_name=game_name)
-                )
-            except subprocess.CalledProcessError as e:
-                self.signals.show_warning_dialog.emit(
-                    _("Error"),
-                    _("Failed to import '{game_name}' to Legendary: {error}").format(
-                        game_name=game_name, error=e.stderr
+
+        # Используем FileExplorer с directory_only=True
+        file_explorer = FileExplorer(
+            parent=self.parent,
+            theme=self.theme,
+            initial_path=os.path.expanduser("~"),
+            directory_only=True
+        )
+
+        def on_folder_selected(folder_path):
+            if not folder_path:
+                self._show_status_message(_("No folder selected"))
+                return
+            def run_import():
+                cmd = [self.legendary_path, "import", app_name, folder_path]
+                try:
+                    subprocess.run(cmd, capture_output=True, text=True, check=True)
+                    self.signals.show_info_dialog.emit(
+                        _("Success"),
+                        _("Imported '{game_name}' to Legendary").format(game_name=game_name)
                     )
-                )
-        self._show_status_message(_("Importing '{game_name}' to Legendary...").format(game_name=game_name))
-        threading.Thread(target=run_import, daemon=True).start()
+                except subprocess.CalledProcessError as e:
+                    self.signals.show_warning_dialog.emit(
+                        _("Error"),
+                        _("Failed to import '{game_name}' to Legendary: {error}").format(
+                            game_name=game_name, error=e.stderr
+                        )
+                    )
+            self._show_status_message(_("Importing '{game_name}' to Legendary...").format(game_name=game_name))
+            threading.Thread(target=run_import, daemon=True).start()
+
+        # Подключаем сигнал выбора файла/папки
+        file_explorer.file_signal.file_selected.connect(on_folder_selected)
+
+        # Центрируем FileExplorer относительно родительского виджета
+        parent_widget = self.parent
+        if parent_widget:
+            parent_geometry = parent_widget.geometry()
+            center_point = parent_geometry.center()
+            file_explorer_geometry = file_explorer.geometry()
+            file_explorer_geometry.moveCenter(center_point)
+            file_explorer.setGeometry(file_explorer_geometry)
+
+        file_explorer.show()
 
     def toggle_favorite(self, game_card, add: bool):
         """
