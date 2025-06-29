@@ -8,7 +8,7 @@ import sys
 import portprotonqt.themes.standart.styles as default_styles
 import psutil
 
-from portprotonqt.dialogs import AddGameDialog
+from portprotonqt.dialogs import AddGameDialog, FileExplorer
 from portprotonqt.game_card import GameCard
 from portprotonqt.custom_widgets import FlowLayout, ClickableLabel, AutoSizeButton, NavLabel
 from portprotonqt.input_manager import InputManager
@@ -1832,6 +1832,12 @@ class MainWindow(QMainWindow):
                         focused_widget.protondb_tier,
                         focused_widget.game_source
                     )
+        parent = focused_widget.parent()
+        while parent:
+            if isinstance(parent, FileExplorer):
+                parent.select_item()
+                break
+            parent = parent.parent()
 
     def goBackDetailPage(self, page: QWidget | None) -> None:
         if page is None or page != self.stackedWidget.currentWidget():
