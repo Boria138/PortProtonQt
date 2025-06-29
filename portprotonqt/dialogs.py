@@ -89,13 +89,15 @@ class FileSelectedSignal(QObject):
     file_selected = Signal(str)  # Сигнал с путем к выбранному файлу
 
 class FileExplorer(QDialog):
-    def __init__(self, parent=None, theme=None, file_filter=None):
+    def __init__(self, parent=None, theme=None, file_filter=None, initial_path=None):
         super().__init__(parent)
         self.theme = theme if theme else default_styles
         self.theme_manager = ThemeManager()
         self.file_signal = FileSelectedSignal()
         self.file_filter = file_filter  # Store the file filter
         self.mime_db = QMimeDatabase()  # Initialize QMimeDatabase for mimetype detection
+        self.path_history = {}  # Dictionary to store last selected item per directory
+        self.initial_path = initial_path  # Store initial path if provided
         self.setup_ui()
 
         # Настройки окна
@@ -116,6 +118,12 @@ class FileExplorer(QDialog):
 
         # Initialize drives list
         self.update_drives_list()
+
+        # Set initial path if provided, else default to home
+        self.current_path = os.path.expanduser("~") if not initial_path else os.path.normpath(initial_path)
+        if initial_path and not os.path.isdir(self.current_path):
+            self.current_path = os.path.expanduser("~")  # Fallback to home if initial path is invalid
+        self.update_file_list()
 
     def get_mounted_drives(self):
         """Получение списка смонтированных дисков из /proc/mounts, исключая системные пути"""
@@ -184,10 +192,6 @@ class FileExplorer(QDialog):
         self.select_button.clicked.connect(self.select_item)
         self.cancel_button.clicked.connect(self.reject)
 
-        # Начальная папка
-        self.current_path = os.path.expanduser("~")
-        self.update_file_list()
-
     def move_selection(self, direction):
         """Перемещение выбора по списку"""
         current_row = self.file_list.currentRow()
@@ -200,6 +204,7 @@ class FileExplorer(QDialog):
     def handle_item_click(self, item):
         """Обработка клика мышью"""
         self.file_list.setCurrentItem(item)
+        self.path_history[self.current_path] = item.text()  # Save the selected item
         self.select_item()
 
     def select_item(self):
@@ -233,6 +238,9 @@ class FileExplorer(QDialog):
             if not parent_dir:
                 parent_dir = "/"
 
+            # Save the current directory as the last selected item for the parent
+            current_dir_name = os.path.basename(normalized_path)
+            self.path_history[parent_dir] = current_dir_name + "/" if current_dir_name else "../"
             self.current_path = parent_dir
             self.update_file_list()
         except Exception as e:
@@ -297,10 +305,6 @@ class FileExplorer(QDialog):
                 elif not isinstance(folder_icon, QIcon):
                     folder_icon = QIcon()  # Fallback to empty icon
                 item.setIcon(folder_icon)
-                self.file_list.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-                self.file_list.setTextElideMode(Qt.TextElideMode.ElideRight)
-                self.file_list.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-                self.file_list.setAlternatingRowColors(True)
                 self.file_list.addItem(item)
 
             for f in sorted(files):
@@ -324,7 +328,24 @@ class FileExplorer(QDialog):
                 self.file_list.addItem(item)
 
             self.path_label.setText(_("Path: ") + self.current_path)
-            self.file_list.setCurrentRow(0)
+
+            # Restore last selected item for this directory
+            last_item = self.path_history.get(self.current_path)
+            if last_item:
+                for i in range(self.file_list.count()):
+                    if self.file_list.item(i).text() == last_item:
+                        self.file_list.setCurrentRow(i)
+                        self.file_list.scrollToItem(self.file_list.currentItem())
+                        break
+                else:
+                    self.file_list.setCurrentRow(0)
+            else:
+                self.file_list.setCurrentRow(0)
+
+            self.file_list.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            self.file_list.setTextElideMode(Qt.TextElideMode.ElideRight)
+            self.file_list.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+            self.file_list.setAlternatingRowColors(True)
 
         except PermissionError:
             self.path_label.setText(f"Access denied: {self.current_path}")
@@ -362,6 +383,8 @@ class AddGameDialog(QDialog):
         self.theme_manager = ThemeManager()
         self.edit_mode = edit_mode
         self.original_name = game_name
+        self.last_exe_path = exe_path  # Store last selected exe path
+        self.last_cover_path = cover_path  # Store last selected cover path
 
         self.setWindowTitle(_("Edit Game") if edit_mode else _("Add Game"))
         self.setModal(True)
@@ -441,7 +464,9 @@ class AddGameDialog(QDialog):
     def browseExe(self):
         """Открывает файловый менеджер для выбора exe-файла"""
         try:
-            file_explorer = FileExplorer(self, file_filter='.exe')
+            # Use last_exe_path if available and valid, otherwise fallback to home
+            initial_path = os.path.dirname(self.last_exe_path) if self.last_exe_path and os.path.isfile(self.last_exe_path) else None
+            file_explorer = FileExplorer(self, file_filter='.exe', initial_path=initial_path)
             file_explorer.file_signal.file_selected.connect(self.onExeSelected)
 
             # Центрируем FileExplorer относительно родительского виджета
@@ -460,6 +485,7 @@ class AddGameDialog(QDialog):
     def onExeSelected(self, file_path):
         """Обработчик выбора файла в FileExplorer"""
         self.exeEdit.setText(file_path)
+        self.last_exe_path = file_path  # Update last selected exe path
         if not self.edit_mode:
             # Автоматически заполняем имя игры, если не в режиме редактирования
             game_name = os.path.splitext(os.path.basename(file_path))[0]
@@ -471,7 +497,9 @@ class AddGameDialog(QDialog):
     def browseCover(self):
         """Открывает файловый менеджер для выбора изображения обложки"""
         try:
-            file_explorer = FileExplorer(self, file_filter=('.png', '.jpg', '.jpeg', '.bmp'))
+            # Use last_cover_path if available and valid, otherwise fallback to home
+            initial_path = os.path.dirname(self.last_cover_path) if self.last_cover_path and os.path.isfile(self.last_cover_path) else None
+            file_explorer = FileExplorer(self, file_filter=('.png', '.jpg', '.jpeg', '.bmp'), initial_path=initial_path)
             file_explorer.file_signal.file_selected.connect(self.onCoverSelected)
 
             # Центрируем FileExplorer относительно родительского виджета
@@ -491,6 +519,7 @@ class AddGameDialog(QDialog):
         """Обработчик выбора файла обложки в FileExplorer"""
         if file_path and os.path.splitext(file_path)[1].lower() in ('.png', '.jpg', '.jpeg', '.bmp'):
             self.coverEdit.setText(file_path)
+            self.last_cover_path = file_path  # Update last selected cover path
         else:
             logger.warning(f"Selected file is not a valid image: {file_path}")
 
