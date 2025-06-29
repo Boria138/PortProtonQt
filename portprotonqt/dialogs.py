@@ -3,8 +3,7 @@ import tempfile
 from typing import cast, TYPE_CHECKING
 from PySide6.QtGui import QPixmap, QIcon
 from PySide6.QtWidgets import (
-    QDialog, QLineEdit, QFormLayout, QPushButton,
-    QHBoxLayout, QLabel, QVBoxLayout, QListWidget, QScrollArea, QWidget, QListWidgetItem
+    QDialog, QLineEdit, QFormLayout, QHBoxLayout, QLabel, QVBoxLayout, QListWidget, QScrollArea, QWidget, QListWidgetItem
 )
 from PySide6.QtCore import Qt, QObject, Signal, QMimeDatabase, QTimer
 from icoextract import IconExtractor, IconExtractorError
