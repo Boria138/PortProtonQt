@@ -410,6 +410,14 @@ CONTENT_STYLE = f"""
     }}
 """
 
+PREVIEW_WIDGET_STYLE = f"""
+    QWidget {{
+        margin-top: 3px;
+        background-color: {color_c};
+        border-radius: {border_radius_a};
+    }}
+"""
+
 # СТИЛЬ ОСНОВНЫХ СТРАНИЦ
 # LIBRARY_WIDGET_STYLE
 LIBRARY_WIDGET_STYLE= """

@@ -3,7 +3,7 @@ import tempfile
 from typing import cast, TYPE_CHECKING
 from PySide6.QtGui import QPixmap, QIcon
 from PySide6.QtWidgets import (
-    QDialog, QLineEdit, QFormLayout, QHBoxLayout, QLabel, QVBoxLayout, QListWidget, QScrollArea, QWidget, QListWidgetItem
+    QDialog, QLineEdit, QFormLayout, QHBoxLayout, QLabel, QVBoxLayout, QListWidget, QScrollArea, QWidget, QListWidgetItem, QSizePolicy
 )
 from PySide6.QtCore import Qt, QObject, Signal, QMimeDatabase, QTimer
 from icoextract import IconExtractor, IconExtractorError
@@ -424,6 +424,7 @@ class AddGameDialog(QDialog):
         self.setWindowTitle(_("Edit Game") if edit_mode else _("Add Game"))
         self.setModal(True)
         self.setFixedWidth(600)
+        self.setFixedHeight(600)
         self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE + self.theme.MESSAGE_BOX_STYLE)
 
         layout = QFormLayout(self)
@@ -437,13 +438,13 @@ class AddGameDialog(QDialog):
         if game_name:
             self.nameEdit.setText(game_name)
         name_label = QLabel(_("Game Name:"))
-        name_label.setStyleSheet(self.theme.PARAMS_TITLE_STYLE + " QLabel { color: #ffffff; font-size: 14px; font-weight: bold; }")
+        name_label.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         layout.addRow(name_label, self.nameEdit)
 
         # Exe path
         exe_label = QLabel(_("Path to Executable:"))
         exe_label.setStyleSheet(
-            self.theme.PARAMS_TITLE_STYLE + " QLabel { color: #ffffff; font-size: 14px; font-weight: bold; }")
+            self.theme.PARAMS_TITLE_STYLE)
 
         self.exeEdit = QLineEdit(self)
         self.exeEdit.setStyleSheet(self.theme.ADDGAME_INPUT_STYLE)
@@ -465,8 +466,7 @@ class AddGameDialog(QDialog):
 
         # Cover path
         cover_label = QLabel(_("Custom Cover:"))
-        cover_label.setStyleSheet(
-            self.theme.PARAMS_TITLE_STYLE + " QLabel { color: #ffffff; font-size: 14px; font-weight: bold; }")
+        cover_label.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
 
         self.coverEdit = QLineEdit(self)
         self.coverEdit.setStyleSheet(self.theme.ADDGAME_INPUT_STYLE)
@@ -486,15 +486,23 @@ class AddGameDialog(QDialog):
 
         # Preview
         self.coverPreview = QLabel(self)
-        self.coverPreview.setStyleSheet(self.theme.CONTENT_STYLE + " QLabel { color: #ffffff; }")
+        self.coverPreview.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.coverPreview.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        preview_widget = QWidget(self)
+        preview_widget.setStyleSheet(self.theme.PREVIEW_WIDGET_STYLE)
+        preview_layout = QVBoxLayout(preview_widget)
+        preview_layout.setContentsMargins(0, 0, 0, 0)
+        preview_layout.setSpacing(0)
         preview_label = QLabel(_("Cover Preview:"))
-        preview_label.setStyleSheet(self.theme.PARAMS_TITLE_STYLE + " QLabel { color: #ffffff; font-size: 14px; font-weight: bold; }")
-        layout.addRow(preview_label, self.coverPreview)
+        preview_label.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        preview_layout.addWidget(preview_label, alignment=Qt.AlignmentFlag.AlignLeft)
+        preview_layout.addWidget(self.coverPreview, stretch=1)
+        layout.addRow(preview_widget)
 
         # Dialog buttons
         self.button_layout = QHBoxLayout()
         self.button_layout.setSpacing(10)
-        self.select_button = AutoSizeButton(_("Select"), icon=self.theme_manager.get_icon("apply"))
+        self.select_button = AutoSizeButton(_("Apply"), icon=self.theme_manager.get_icon("apply"))
         self.cancel_button = AutoSizeButton(_("Cancel"), icon=self.theme_manager.get_icon("cancel"))
         self.select_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.cancel_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
