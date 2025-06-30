@@ -487,7 +487,7 @@ COVER_FRAME_STYLE = f"""
 """
 
 # СКРУГЛЕНИЕ LABEL ПОД ОБЛОЖКУ
-COVER_LABEL_STYLE = "border-radius: 100px;"
+COVER_LABEL_STYLE = f"border-radius: {border_radius_b};"
 
 # ВИДЖЕТ ДЕТАЛЕЙ (ТЕКСТ, ОПИСАНИЕ)
 DETAILS_WIDGET_STYLE = f"background: rgba(20,20,20,0.40); border-radius: {border_radius_b}; padding: 10px;"
