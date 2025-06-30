@@ -177,6 +177,7 @@ class FileExplorer(QDialog):
         self.file_list = QListWidget()
         self.file_list.setStyleSheet(self.theme.FILE_EXPLORER_STYLE)
         self.file_list.itemClicked.connect(self.handle_item_click)
+        self.file_list.itemDoubleClicked.connect(self.handle_item_double_click)  # Подключение двойного клика
         self.main_layout.addWidget(self.file_list)
 
         # Кнопки
@@ -203,10 +204,33 @@ class FileExplorer(QDialog):
         self.file_list.scrollToItem(self.file_list.currentItem())
 
     def handle_item_click(self, item):
-        """Обработка клика мышью"""
-        self.file_list.setCurrentItem(item)
-        self.path_history[self.current_path] = item.text()  # Save the selected item
-        self.select_item()
+        """Обработка одинарного клика мышью"""
+        try:
+            self.file_list.setCurrentItem(item)
+            self.path_history[self.current_path] = item.text()  # Сохраняем выбранный элемент
+            logger.debug("Selected item: %s", item.text())
+        except Exception as e:
+            logger.error("Error in handle_item_click: %s", e)
+
+    def handle_item_double_click(self, item):
+        """Обработка двойного клика мышью по элементу списка"""
+        try:
+            self.file_list.setCurrentItem(item)
+            self.path_history[self.current_path] = item.text()  # Сохраняем выбранный элемент
+            selected = item.text()
+            full_path = os.path.join(self.current_path, selected)
+            if os.path.isdir(full_path):
+                if selected == "../":
+                    # Переходим в родительскую директорию
+                    self.previous_dir()
+                else:
+                    # Открываем директорию
+                    self.current_path = os.path.normpath(full_path)
+                    self.update_file_list()
+            else:
+                logger.debug("Double-clicked item is not a directory, ignoring: %s", full_path)
+        except Exception as e:
+            logger.error("Error in handle_item_double_click: %s", e)
 
     def select_item(self):
         """Обработка выбора файла/папки"""
