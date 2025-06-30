@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-06-28 09:04+0500\n"
+"POT-Creation-Date: 2025-07-01 00:15+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -83,9 +83,6 @@ msgstr ""
 
 #, python-brace-format
 msgid "Failed to open folder: {error}"
-msgstr ""
-
-msgid "Select Game Installation Folder"
 msgstr ""
 
 msgid "No folder selected"
@@ -248,16 +245,19 @@ msgstr ""
 msgid "Game Name:"
 msgstr ""
 
-msgid "Browse..."
+msgid "Path to Executable:"
 msgstr ""
 
-msgid "Path to Executable:"
+msgid "Browse..."
 msgstr ""
 
 msgid "Custom Cover:"
 msgstr ""
 
 msgid "Cover Preview:"
+msgstr ""
+
+msgid "Apply"
 msgstr ""
 
 msgid "Invalid image"
