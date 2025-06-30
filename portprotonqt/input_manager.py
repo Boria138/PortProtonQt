@@ -158,7 +158,6 @@ class InputManager(QObject):
             logger.error(f"Error restoring gamepad handlers: {e}")
 
     def handle_file_explorer_button(self, button_code):
-        """Обработка кнопок геймпада для FileExplorer"""
         try:
             if not self.file_explorer or not hasattr(self.file_explorer, 'file_list'):
                 return
@@ -183,8 +182,12 @@ class InputManager(QObject):
                     # Открываем директорию
                     self.file_explorer.current_path = os.path.normpath(full_path)
                     self.file_explorer.update_file_list()
+                elif not self.file_explorer.directory_only:
+                    # Выбираем файл, если directory_only=False
+                    self.file_explorer.file_signal.file_selected.emit(os.path.normpath(full_path))
+                    self.file_explorer.accept()
                 else:
-                    logger.debug("Selected item is not a directory, cannot open: %s", full_path)
+                    logger.debug("Selected item is not a directory, cannot select: %s", full_path)
             elif button_code in BUTTONS['back']:
                 self.file_explorer.close()
             elif button_code in BUTTONS['prev_dir']:
