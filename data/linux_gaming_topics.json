@@ -1,5 +1,21 @@
 [
   {
+    "normalized_title": "settlement survival",
+    "slug": "settlement-survival"
+  },
+  {
+    "normalized_title": "the elder scrolls iv oblivion",
+    "slug": "the-elder-scrolls-iv-oblivion-remastered"
+  },
+  {
+    "normalized_title": "dead space 3",
+    "slug": "dead-space-3"
+  },
+  {
+    "normalized_title": "dead space 2",
+    "slug": "dead-space-2"
+  },
+  {
     "normalized_title": "hades",
     "slug": "hades"
   },
@@ -98,10 +114,6 @@
   {
     "normalized_title": "hotshot racing",
     "slug": "hotshot-racing"
-  },
-  {
-    "normalized_title": "s.t.a.l.k.e.r. anomaly g.a.m.m.a",
-    "slug": "s-t-a-l-k-e-r-anomaly-g-a-m-m-a"
   },
   {
     "normalized_title": "golazo! 2",
@@ -1798,5 +1810,45 @@
   {
     "normalized_title": "atomic heart",
     "slug": "atomic-heart"
+  },
+  {
+    "normalized_title": "genshin impact",
+    "slug": "genshin-impact"
+  },
+  {
+    "normalized_title": "battle.net",
+    "slug": "battle-net"
+  },
+  {
+    "normalized_title": "valorant",
+    "slug": "valorant"
+  },
+  {
+    "normalized_title": "русы против ящеров",
+    "slug": "rusy-protiv-yashherov"
+  },
+  {
+    "normalized_title": "last floor",
+    "slug": "last-floor"
+  },
+  {
+    "normalized_title": "fpv kamikaze drone",
+    "slug": "fpv-kamikaze-drone"
+  },
+  {
+    "normalized_title": "wild terra 2 new lands",
+    "slug": "wild-terra-2-new-lands"
+  },
+  {
+    "normalized_title": "armored warfare",
+    "slug": "armored-warfare"
+  },
+  {
+    "normalized_title": "warhammer 40 000 dawn of war",
+    "slug": "warhammer-40-000-dawn-of-war"
+  },
+  {
+    "normalized_title": "warhammer 40 000 space marine",
+    "slug": "warhammer-40-000-space-marine"
   }
 ]

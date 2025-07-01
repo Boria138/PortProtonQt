@@ -197,7 +197,7 @@
   },
   {
     "normalized_name": "rec room",
-    "status": "Broken"
+    "status": "Running"
   },
   {
     "normalized_name": "world war 3",
@@ -221,7 +221,7 @@
   },
   {
     "normalized_name": "zero hour",
-    "status": "Broken"
+    "status": "Running"
   },
   {
     "normalized_name": "ironsight",
@@ -309,7 +309,7 @@
   },
   {
     "normalized_name": "dirty bomb",
-    "status": "Broken"
+    "status": "Running"
   },
   {
     "normalized_name": "empyrion galactic survival",
@@ -989,7 +989,7 @@
   },
   {
     "normalized_name": "marauders",
-    "status": "Broken"
+    "status": "Running"
   },
   {
     "normalized_name": "predecessor",
@@ -1101,7 +1101,7 @@
   },
   {
     "normalized_name": "deceit 2",
-    "status": "Broken"
+    "status": "Running"
   },
   {
     "normalized_name": "block n load 2",
@@ -1781,7 +1781,7 @@
   },
   {
     "normalized_name": "splitgate 2",
-    "status": "Planned"
+    "status": "Running"
   },
   {
     "normalized_name": "xera survival",
@@ -1897,7 +1897,7 @@
   },
   {
     "normalized_name": "test drive unlimited solar crown",
-    "status": "Planned"
+    "status": "Running"
   },
   {
     "normalized_name": "resident evil resistance",
@@ -3461,7 +3461,7 @@
   },
   {
     "normalized_name": "crsed cuisine royale",
-    "status": "Supported"
+    "status": "Denied"
   },
   {
     "normalized_name": "project nebula",
@@ -4329,7 +4329,7 @@
   },
   {
     "normalized_name": "blindfire",
-    "status": "Broken"
+    "status": "Supported"
   },
   {
     "normalized_name": "h hour world's elite",
@@ -4414,5 +4414,17 @@
   {
     "normalized_name": "ragnarok origin roo",
     "status": "Running"
+  },
+  {
+    "normalized_name": "fantasy life i the girl who steals time",
+    "status": "Running"
+  },
+  {
+    "normalized_name": "la tale evolved",
+    "status": "Running"
+  },
+  {
+    "normalized_name": "carx street",
+    "status": "Broken"
   }
 ]
