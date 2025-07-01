@@ -128,10 +128,19 @@ class ContextMenuManager:
             game_card: The GameCard instance requesting the context menu.
             pos: The position (in widget coordinates) where the menu should appear.
         """
+
+        def get_safe_icon(icon_name: str) -> QIcon:
+            icon = self.theme_manager.get_icon(icon_name)
+            if isinstance(icon, QIcon):
+                return icon
+            elif isinstance(icon, str) and os.path.exists(icon):
+                return QIcon(icon)
+            return QIcon()
+
         menu = QMenu(self.parent)
         menu.setStyleSheet(self.theme.CONTEXT_MENU_STYLE)
 
-        launch_action = menu.addAction(QIcon(self.theme_manager.get_icon("play")), _("Launch Game"))
+        launch_action = menu.addAction(get_safe_icon("play"), _("Launch Game"))
         launch_action.triggered.connect(
             lambda: self._launch_game(game_card)
         )
@@ -140,11 +149,11 @@ class ContextMenuManager:
         is_favorite = game_card.name in favorites
         icon_name = "star_full" if is_favorite else "star"
         text = _("Remove from Favorites") if is_favorite else _("Add to Favorites")
-        favorite_action = menu.addAction(QIcon(self.theme_manager.get_icon(icon_name)), text)
+        favorite_action = menu.addAction(get_safe_icon(icon_name), text)
         favorite_action.triggered.connect(lambda: self.toggle_favorite(game_card, not is_favorite))
 
         if game_card.game_source == "epic":
-            import_action = menu.addAction(_("Import to Legendary"))
+            import_action = menu.addAction(get_safe_icon("import"), _("Import to Legendary"))
             import_action.triggered.connect(
                 lambda: self.import_to_legendary(game_card.name, game_card.appid)
             )
@@ -152,13 +161,13 @@ class ContextMenuManager:
                 is_in_steam = is_game_in_steam(game_card.name)
                 icon_name = "delete" if is_in_steam else "steam"
                 text = _("Remove from Steam") if is_in_steam else _("Add to Steam")
-                steam_action = menu.addAction(QIcon(self.theme_manager.get_icon(icon_name)), text)
+                steam_action = menu.addAction(get_safe_icon(icon_name), text)
                 steam_action.triggered.connect(
                     lambda: self.remove_from_steam(game_card.name, game_card.exec_line, game_card.game_source)
                     if is_in_steam
                     else self.add_egs_to_steam(game_card.name, game_card.appid)
                 )
-                open_folder_action = menu.addAction(QIcon(self.theme_manager.get_icon("search")), _("Open Game Folder"))
+                open_folder_action = menu.addAction(get_safe_icon("search"), _("Open Game Folder"))
                 open_folder_action.triggered.connect(
                     lambda: self.open_egs_game_folder(game_card.appid)
                 )
@@ -166,7 +175,7 @@ class ContextMenuManager:
                 desktop_path = os.path.join(desktop_dir, f"{game_card.name}.desktop")
                 icon_name = "delete" if os.path.exists(desktop_path) else "desktop"
                 text = _("Remove from Desktop") if os.path.exists(desktop_path) else _("Add to Desktop")
-                desktop_action = menu.addAction(QIcon(self.theme_manager.get_icon(icon_name)), text)
+                desktop_action = menu.addAction(get_safe_icon(icon_name), text)
                 desktop_action.triggered.connect(
                     lambda: self.remove_egs_from_desktop(game_card.name)
                     if os.path.exists(desktop_path)
@@ -175,6 +184,7 @@ class ContextMenuManager:
                 applications_dir = os.path.join(os.path.expanduser("~"), ".local", "share", "applications")
                 menu_path = os.path.join(applications_dir, f"{game_card.name}.desktop")
                 menu_action = menu.addAction(
+                    get_safe_icon("delete" if os.path.exists(menu_path) else "menu"),
                     _("Remove from Menu") if os.path.exists(menu_path) else _("Add to Menu")
                 )
                 menu_action.triggered.connect(
@@ -188,19 +198,19 @@ class ContextMenuManager:
             desktop_path = os.path.join(desktop_dir, f"{game_card.name}.desktop")
             icon_name = "delete" if os.path.exists(desktop_path) else "desktop"
             text = _("Remove from Desktop") if os.path.exists(desktop_path) else _("Add to Desktop")
-            desktop_action = menu.addAction(QIcon(self.theme_manager.get_icon(icon_name)), text)
+            desktop_action = menu.addAction(get_safe_icon(icon_name), text)
             desktop_action.triggered.connect(
                 lambda: self.remove_from_desktop(game_card.name)
                 if os.path.exists(desktop_path)
                 else self.add_to_desktop(game_card.name, game_card.exec_line)
             )
-            edit_action = menu.addAction(QIcon(self.theme_manager.get_icon("edit")), _("Edit Shortcut"))
+            edit_action = menu.addAction(get_safe_icon("edit"), _("Edit Shortcut"))
             edit_action.triggered.connect(
                 lambda: self.edit_game_shortcut(game_card.name, game_card.exec_line, game_card.cover_path)
             )
-            delete_action = menu.addAction(QIcon(self.theme_manager.get_icon("delete")), _("Delete from PortProton"))
+            delete_action = menu.addAction(get_safe_icon("delete"), _("Delete from PortProton"))
             delete_action.triggered.connect(lambda: self.delete_game(game_card.name, game_card.exec_line))
-            open_folder_action = menu.addAction(QIcon(self.theme_manager.get_icon("search")), _("Open Game Folder"))
+            open_folder_action = menu.addAction(get_safe_icon("search"), _("Open Game Folder"))
             open_folder_action.triggered.connect(
                 lambda: self.open_game_folder(game_card.name, game_card.exec_line)
             )
@@ -208,7 +218,7 @@ class ContextMenuManager:
             menu_path = os.path.join(applications_dir, f"{game_card.name}.desktop")
             icon_name = "delete" if os.path.exists(menu_path) else "menu"
             text = _("Remove from Menu") if os.path.exists(menu_path) else _("Add to Menu")
-            menu_action = menu.addAction(QIcon(self.theme_manager.get_icon(icon_name)), text)
+            menu_action = menu.addAction(get_safe_icon(icon_name), text)
             menu_action.triggered.connect(
                 lambda: self.remove_from_menu(game_card.name)
                 if os.path.exists(menu_path)
@@ -217,7 +227,7 @@ class ContextMenuManager:
             is_in_steam = is_game_in_steam(game_card.name)
             icon_name = "delete" if is_in_steam else "steam"
             text = _("Remove from Steam") if is_in_steam else _("Add to Steam")
-            steam_action = menu.addAction(QIcon(self.theme_manager.get_icon(icon_name)), text)
+            steam_action = menu.addAction(get_safe_icon(icon_name), text)
             steam_action.triggered.connect(
                 lambda: (
                     self.remove_from_steam(game_card.name, game_card.exec_line, game_card.game_source)
