@@ -129,6 +129,11 @@ class ContextMenuManager:
         menu = QMenu(self.parent)
         menu.setStyleSheet(self.theme.CONTEXT_MENU_STYLE)
 
+        launch_action = menu.addAction(_("Launch Game"))
+        launch_action.triggered.connect(
+            lambda: self._launch_game(game_card)
+        )
+
         favorites = read_favorites()
         is_favorite = game_card.name in favorites
         favorite_action = menu.addAction(
@@ -218,6 +223,40 @@ class ContextMenuManager:
             )
 
         menu.exec(game_card.mapToGlobal(pos))
+
+    def _launch_game(self, game_card):
+        """
+        Launch a game using a validated exec_line, handling EGS games specifically.
+
+        Args:
+            game_card: The GameCard instance containing game data.
+        """
+        if not self._check_portproton():
+            return
+        if game_card.game_source == "epic":
+            if not os.path.exists(self.legendary_path):
+                self.signals.show_warning_dialog.emit(
+                    _("Error"),
+                    _("Legendary executable not found at {path}").format(path=self.legendary_path)
+                )
+                return
+            # Construct EGS launch command
+            wrapper = "flatpak run ru.linux_gaming.PortProton"
+            start_sh_path = os.path.join(self.portproton_location, "data", "scripts", "start.sh")
+            if self.portproton_location and ".var" not in self.portproton_location:
+                wrapper = start_sh_path
+                if not os.path.exists(start_sh_path):
+                    self.signals.show_warning_dialog.emit(
+                        _("Error"),
+                        _("start.sh not found at {path}").format(path=start_sh_path)
+                    )
+                    return
+            exec_line = f'"{self.legendary_path}" launch {game_card.appid} --no-wine --wrapper "env START_FROM_STEAM=1 {wrapper}"'
+        else:
+            exec_line = self._get_exec_line(game_card.name, game_card.exec_line)
+            if not exec_line:
+                return
+        self.parent.toggleGame(exec_line)
 
     def add_egs_to_steam(self, game_name: str, app_name: str):
         """
