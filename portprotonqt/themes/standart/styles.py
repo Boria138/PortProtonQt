@@ -104,8 +104,11 @@ CONTEXT_MENU_STYLE = f"""
         font-size: {font_size_a};
         padding: 5px;
     }}
+    QMenu::icon {{
+    margin-left: 15px;
+    }}
     QMenu::item {{
-        padding: 8px 20px;
+        padding: 8px 20px 8px 10px;
         background: {color_h};
         border-radius: {border_radius_a};
         color: {color_f};

@@ -8,12 +8,13 @@ import logging
 import orjson
 from PySide6.QtWidgets import QMessageBox, QDialog, QMenu
 from PySide6.QtCore import QUrl, QPoint, QObject, Signal, Qt
-from PySide6.QtGui import QDesktopServices
+from PySide6.QtGui import QDesktopServices, QIcon
 from portprotonqt.localization import _
 from portprotonqt.config_utils import parse_desktop_entry, read_favorites, save_favorites
 from portprotonqt.steam_api import is_game_in_steam, add_to_steam, remove_from_steam
 from portprotonqt.egs_api import add_egs_to_steam, get_egs_executable, remove_egs_from_steam
 from portprotonqt.dialogs import AddGameDialog, FileExplorer, generate_thumbnail
+from portprotonqt.theme_manager import ThemeManager
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +41,7 @@ class ContextMenuManager:
         self.parent = parent
         self.portproton_location = portproton_location
         self.theme = theme
+        self.theme_manager = ThemeManager()
         self.load_games = load_games_callback
         self.update_game_grid = update_game_grid_callback
         self.legendary_path = os.path.join(
@@ -129,16 +131,16 @@ class ContextMenuManager:
         menu = QMenu(self.parent)
         menu.setStyleSheet(self.theme.CONTEXT_MENU_STYLE)
 
-        launch_action = menu.addAction(_("Launch Game"))
+        launch_action = menu.addAction(QIcon(self.theme_manager.get_icon("play")), _("Launch Game"))
         launch_action.triggered.connect(
             lambda: self._launch_game(game_card)
         )
 
         favorites = read_favorites()
         is_favorite = game_card.name in favorites
-        favorite_action = menu.addAction(
-            _("Remove from Favorites") if is_favorite else _("Add to Favorites")
-        )
+        icon_name = "star_full" if is_favorite else "star"
+        text = _("Remove from Favorites") if is_favorite else _("Add to Favorites")
+        favorite_action = menu.addAction(QIcon(self.theme_manager.get_icon(icon_name)), text)
         favorite_action.triggered.connect(lambda: self.toggle_favorite(game_card, not is_favorite))
 
         if game_card.game_source == "epic":
@@ -148,23 +150,23 @@ class ContextMenuManager:
             )
             if self._is_egs_game_installed(game_card.appid):
                 is_in_steam = is_game_in_steam(game_card.name)
-                steam_action = menu.addAction(
-                    _("Remove from Steam") if is_in_steam else _("Add to Steam")
-                )
+                icon_name = "delete" if is_in_steam else "steam"
+                text = _("Remove from Steam") if is_in_steam else _("Add to Steam")
+                steam_action = menu.addAction(QIcon(self.theme_manager.get_icon(icon_name)), text)
                 steam_action.triggered.connect(
                     lambda: self.remove_from_steam(game_card.name, game_card.exec_line, game_card.game_source)
                     if is_in_steam
                     else self.add_egs_to_steam(game_card.name, game_card.appid)
                 )
-                open_folder_action = menu.addAction(_("Open Game Folder"))
+                open_folder_action = menu.addAction(QIcon(self.theme_manager.get_icon("search")), _("Open Game Folder"))
                 open_folder_action.triggered.connect(
                     lambda: self.open_egs_game_folder(game_card.appid)
                 )
                 desktop_dir = subprocess.check_output(['xdg-user-dir', 'DESKTOP']).decode('utf-8').strip()
                 desktop_path = os.path.join(desktop_dir, f"{game_card.name}.desktop")
-                desktop_action = menu.addAction(
-                    _("Remove from Desktop") if os.path.exists(desktop_path) else _("Add to Desktop")
-                )
+                icon_name = "delete" if os.path.exists(desktop_path) else "desktop"
+                text = _("Remove from Desktop") if os.path.exists(desktop_path) else _("Add to Desktop")
+                desktop_action = menu.addAction(QIcon(self.theme_manager.get_icon(icon_name)), text)
                 desktop_action.triggered.connect(
                     lambda: self.remove_egs_from_desktop(game_card.name)
                     if os.path.exists(desktop_path)
@@ -184,42 +186,44 @@ class ContextMenuManager:
         if game_card.game_source not in ("steam", "epic"):
             desktop_dir = subprocess.check_output(['xdg-user-dir', 'DESKTOP']).decode('utf-8').strip()
             desktop_path = os.path.join(desktop_dir, f"{game_card.name}.desktop")
-            desktop_action = menu.addAction(
-                _("Remove from Desktop") if os.path.exists(desktop_path) else _("Add to Desktop")
-            )
+            icon_name = "delete" if os.path.exists(desktop_path) else "desktop"
+            text = _("Remove from Desktop") if os.path.exists(desktop_path) else _("Add to Desktop")
+            desktop_action = menu.addAction(QIcon(self.theme_manager.get_icon(icon_name)), text)
             desktop_action.triggered.connect(
                 lambda: self.remove_from_desktop(game_card.name)
                 if os.path.exists(desktop_path)
                 else self.add_to_desktop(game_card.name, game_card.exec_line)
             )
-            edit_action = menu.addAction(_("Edit Shortcut"))
+            edit_action = menu.addAction(QIcon(self.theme_manager.get_icon("edit")), _("Edit Shortcut"))
             edit_action.triggered.connect(
                 lambda: self.edit_game_shortcut(game_card.name, game_card.exec_line, game_card.cover_path)
             )
-            delete_action = menu.addAction(_("Delete from PortProton"))
+            delete_action = menu.addAction(QIcon(self.theme_manager.get_icon("delete")), _("Delete from PortProton"))
             delete_action.triggered.connect(lambda: self.delete_game(game_card.name, game_card.exec_line))
-            open_folder_action = menu.addAction(_("Open Game Folder"))
+            open_folder_action = menu.addAction(QIcon(self.theme_manager.get_icon("search")), _("Open Game Folder"))
             open_folder_action.triggered.connect(
                 lambda: self.open_game_folder(game_card.name, game_card.exec_line)
             )
             applications_dir = os.path.join(os.path.expanduser("~"), ".local", "share", "applications")
             menu_path = os.path.join(applications_dir, f"{game_card.name}.desktop")
-            menu_action = menu.addAction(
-                _("Remove from Menu") if os.path.exists(menu_path) else _("Add to Menu")
-            )
+            icon_name = "delete" if os.path.exists(menu_path) else "menu"
+            text = _("Remove from Menu") if os.path.exists(menu_path) else _("Add to Menu")
+            menu_action = menu.addAction(QIcon(self.theme_manager.get_icon(icon_name)), text)
             menu_action.triggered.connect(
                 lambda: self.remove_from_menu(game_card.name)
                 if os.path.exists(menu_path)
                 else self.add_to_menu(game_card.name, game_card.exec_line)
             )
             is_in_steam = is_game_in_steam(game_card.name)
-            steam_action = menu.addAction(
-                _("Remove from Steam") if is_in_steam else _("Add to Steam")
-            )
+            icon_name = "delete" if is_in_steam else "steam"
+            text = _("Remove from Steam") if is_in_steam else _("Add to Steam")
+            steam_action = menu.addAction(QIcon(self.theme_manager.get_icon(icon_name)), text)
             steam_action.triggered.connect(
-                lambda: self.remove_from_steam(game_card.name, game_card.exec_line, game_card.game_source)
-                if is_in_steam
-                else self.add_to_steam(game_card.name, game_card.exec_line, game_card.cover_path)
+                lambda: (
+                    self.remove_from_steam(game_card.name, game_card.exec_line, game_card.game_source)
+                    if is_in_steam
+                    else self.add_to_steam(game_card.name, game_card.exec_line, game_card.cover_path)
+                )
             )
 
         menu.exec(game_card.mapToGlobal(pos))
