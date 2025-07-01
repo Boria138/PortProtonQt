@@ -227,6 +227,10 @@ class FileExplorer(QDialog):
                     # Открываем директорию
                     self.current_path = os.path.normpath(full_path)
                     self.update_file_list()
+            elif not self.directory_only:
+                # Выбираем файл, если directory_only=False
+                self.file_signal.file_selected.emit(os.path.normpath(full_path))
+                self.accept()
             else:
                 logger.debug("Double-clicked item is not a directory, ignoring: %s", full_path)
         except Exception as e:
