@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-07-01 00:15+0500\n"
-"PO-Revision-Date: 2025-07-01 00:15+0500\n"
+"POT-Creation-Date: 2025-07-01 15:54+0500\n"
+"PO-Revision-Date: 2025-07-01 15:54+0500\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
@@ -26,6 +26,9 @@ msgstr "Ошибка"
 
 msgid "PortProton is not found"
 msgstr "PortProton не найден"
+
+msgid "Launch Game"
+msgstr "Запустить игру"
 
 msgid "Remove from Favorites"
 msgstr "Удалить из Избранного"
@@ -66,6 +69,10 @@ msgstr "Удалить из PortProton"
 #, python-brace-format
 msgid "Legendary executable not found at {path}"
 msgstr "Legendary не найден по пути {path}"
+
+#, python-brace-format
+msgid "start.sh not found at {path}"
+msgstr "start.sh не найден по адресу {path}"
 
 msgid "Success"
 msgstr "Успешно"
@@ -112,10 +119,6 @@ msgstr "'{game_name}' был(а) добавлен(а) в избранное"
 #, python-brace-format
 msgid "Removed '{game_name}' from favorites"
 msgstr "'{game_name}' был(а) удалён(а) из избранного"
-
-#, python-brace-format
-msgid "start.sh not found at {path}"
-msgstr "start.sh не найден по адресу {path}"
 
 #, python-brace-format
 msgid "Launch game \"{name}\" with PortProton"
