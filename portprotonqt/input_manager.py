@@ -9,7 +9,7 @@ from PySide6.QtCore import Qt, QObject, QEvent, QPoint, Signal, Slot, QTimer
 from PySide6.QtGui import QKeyEvent
 from portprotonqt.logger import get_logger
 from portprotonqt.image_utils import FullscreenDialog
-from portprotonqt.custom_widgets import NavLabel
+from portprotonqt.custom_widgets import NavLabel, AutoSizeButton
 from portprotonqt.game_card import GameCard
 from portprotonqt.config_utils import read_fullscreen_config, read_window_geometry, save_window_geometry, read_auto_fullscreen_gamepad, read_rumble_config
 from portprotonqt.dialogs import AddGameDialog
@@ -162,7 +162,26 @@ class InputManager(QObject):
             if not self.file_explorer or not hasattr(self.file_explorer, 'file_list'):
                 return
 
-            if button_code in BUTTONS['add_game']:
+            focused_widget = QApplication.focusWidget()
+            if button_code in BUTTONS['confirm']:  # A button (BTN_SOUTH)
+                if isinstance(focused_widget, AutoSizeButton) and hasattr(self.file_explorer, 'drive_buttons') and focused_widget in self.file_explorer.drive_buttons:
+                    self.file_explorer.select_drive()  # Select the focused drive
+                elif self.file_explorer.file_list.count() == 0:
+                    return
+                else:
+                    selected = self.file_explorer.file_list.currentItem().text()
+                    full_path = os.path.join(self.file_explorer.current_path, selected)
+                    if os.path.isdir(full_path):
+                        # Открываем директорию
+                        self.file_explorer.current_path = os.path.normpath(full_path)
+                        self.file_explorer.update_file_list()
+                    elif not self.file_explorer.directory_only:
+                        # Выбираем файл, если directory_only=False
+                        self.file_explorer.file_signal.file_selected.emit(os.path.normpath(full_path))
+                        self.file_explorer.accept()
+                    else:
+                        logger.debug("Selected item is not a directory, cannot select: %s", full_path)
+            elif button_code in BUTTONS['add_game']:  # X button
                 if self.file_explorer.file_list.count() == 0:
                     return
                 selected = self.file_explorer.file_list.currentItem().text()
@@ -173,24 +192,9 @@ class InputManager(QObject):
                     self.file_explorer.accept()
                 else:
                     logger.debug("Selected item is not a directory: %s", full_path)
-            elif button_code in BUTTONS['confirm']:
-                if self.file_explorer.file_list.count() == 0:
-                    return
-                selected = self.file_explorer.file_list.currentItem().text()
-                full_path = os.path.join(self.file_explorer.current_path, selected)
-                if os.path.isdir(full_path):
-                    # Открываем директорию
-                    self.file_explorer.current_path = os.path.normpath(full_path)
-                    self.file_explorer.update_file_list()
-                elif not self.file_explorer.directory_only:
-                    # Выбираем файл, если directory_only=False
-                    self.file_explorer.file_signal.file_selected.emit(os.path.normpath(full_path))
-                    self.file_explorer.accept()
-                else:
-                    logger.debug("Selected item is not a directory, cannot select: %s", full_path)
-            elif button_code in BUTTONS['back']:
+            elif button_code in BUTTONS['back']:  # B button
                 self.file_explorer.close()
-            elif button_code in BUTTONS['prev_dir']:
+            elif button_code in BUTTONS['prev_dir']:  # Y button
                 self.file_explorer.previous_dir()
             else:
                 if self.original_button_handler:
@@ -204,15 +208,33 @@ class InputManager(QObject):
             if not self.file_explorer or not hasattr(self.file_explorer, 'file_list') or not self.file_explorer.file_list:
                 return
 
-            if not self.file_explorer.file_list.count():
-                return
-
-            if code in (ecodes.ABS_HAT0Y, ecodes.ABS_Y):
+            focused_widget = QApplication.focusWidget()
+            if code in (ecodes.ABS_HAT0X, ecodes.ABS_X) and hasattr(self.file_explorer, 'drive_buttons') and self.file_explorer.drive_buttons:
+                # Navigate drive buttons horizontally
+                if not isinstance(focused_widget, AutoSizeButton) or focused_widget not in self.file_explorer.drive_buttons:
+                    # If not focused on a drive button, focus the first one
+                    self.file_explorer.drive_buttons[0].setFocus()
+                    return
+                current_idx = self.file_explorer.drive_buttons.index(focused_widget)
+                if value < 0:  # Left
+                    next_idx = max(current_idx - 1, 0)
+                    self.file_explorer.drive_buttons[next_idx].setFocus()
+                elif value > 0:  # Right
+                    next_idx = min(current_idx + 1, len(self.file_explorer.drive_buttons) - 1)
+                    self.file_explorer.drive_buttons[next_idx].setFocus()
+            elif code in (ecodes.ABS_HAT0Y, ecodes.ABS_Y):
+                if isinstance(focused_widget, AutoSizeButton) and focused_widget in self.file_explorer.drive_buttons:
+                    # Move focus to file list if navigating down from drive buttons
+                    if value > 0 and self.file_explorer.file_list.count() > 0:
+                        self.file_explorer.file_list.setFocus()
+                        self.file_explorer.file_list.setCurrentRow(0)
+                        self.file_explorer.file_list.scrollToItem(self.file_explorer.file_list.currentItem())
+                    return
                 # Для D-pad - реакция с фиксированной скоростью
                 if code == ecodes.ABS_HAT0Y:
                     if value != 0:
                         self.current_direction = value
-                        self.stick_value = 1.0  # Максимальная скорость для D-pad, чтобы скачков не было
+                        self.stick_value = 1.0  # Максимальная скорость для D-pad
                         if not self.nav_timer.isActive():
                             self.file_explorer.move_selection(self.current_direction)
                             self.last_nav_time = current_time
@@ -220,7 +242,6 @@ class InputManager(QObject):
                     else:
                         self.current_direction = 0
                         self.nav_timer.stop()
-
                 # Для стика - плавное управление с учетом степени отклонения
                 elif code == ecodes.ABS_Y:
                     if abs(value) < self.dead_zone:
@@ -229,19 +250,15 @@ class InputManager(QObject):
                             self.nav_timer.stop()
                             self.stick_activated = False
                         return
-
-                    # Рассчитываем "силу" отклонения (0.3 - 1.0)
                     normalized_value = (abs(value) - self.dead_zone) / (32768 - self.dead_zone)
                     speed_factor = 0.3 + (normalized_value * 0.7)  # От 30% до 100% скорости
                     self.current_direction = -1 if value < 0 else 1
                     self.stick_value = speed_factor
                     self.stick_activated = True
-
                     if not self.nav_timer.isActive():
                         self.file_explorer.move_selection(self.current_direction)
                         self.last_nav_time = current_time
                         self.nav_timer.start(int(self.initial_nav_delay * 1000))
-
             elif self.original_dpad_handler:
                 self.original_dpad_handler(code, value, current_time)
         except Exception as e:

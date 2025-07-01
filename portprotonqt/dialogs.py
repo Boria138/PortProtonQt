@@ -3,7 +3,7 @@ import tempfile
 from typing import cast, TYPE_CHECKING
 from PySide6.QtGui import QPixmap, QIcon
 from PySide6.QtWidgets import (
-    QDialog, QLineEdit, QFormLayout, QHBoxLayout, QLabel, QVBoxLayout, QListWidget, QScrollArea, QWidget, QListWidgetItem, QSizePolicy
+    QDialog, QLineEdit, QFormLayout, QHBoxLayout, QLabel, QVBoxLayout, QListWidget, QScrollArea, QWidget, QListWidgetItem, QSizePolicy, QApplication
 )
 from PySide6.QtCore import Qt, QObject, Signal, QMimeDatabase, QTimer
 from icoextract import IconExtractor, IconExtractorError
@@ -167,6 +167,7 @@ class FileExplorer(QDialog):
         self.drives_scroll.setFixedHeight(70)
         self.main_layout.addWidget(self.drives_scroll)
         self.drives_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.drives_scroll.setFocusPolicy(Qt.FocusPolicy.StrongFocus)  # Allow focus on scroll area
 
         # Путь
         self.path_label = QLabel()
@@ -177,7 +178,7 @@ class FileExplorer(QDialog):
         self.file_list = QListWidget()
         self.file_list.setStyleSheet(self.theme.FILE_EXPLORER_STYLE)
         self.file_list.itemClicked.connect(self.handle_item_click)
-        self.file_list.itemDoubleClicked.connect(self.handle_item_double_click)  # Подключение двойного клика
+        self.file_list.itemDoubleClicked.connect(self.handle_item_double_click)
         self.main_layout.addWidget(self.file_list)
 
         # Кнопки
@@ -291,13 +292,36 @@ class FileExplorer(QDialog):
                 widget.deleteLater()
 
         drives = self.get_mounted_drives()
+        self.drive_buttons = []  # Store buttons for navigation
         for drive in drives:
             drive_name = os.path.basename(drive) or drive.split('/')[-1] or drive
             button = AutoSizeButton(drive_name, icon=self.theme_manager.get_icon("mount_point"))
             button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+            button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)  # Make button focusable
             button.clicked.connect(lambda checked, path=drive: self.change_drive(path))
             self.drives_layout.addWidget(button)
+            self.drive_buttons.append(button)
         self.drives_layout.addStretch()
+
+        # Set focus to first drive button if available
+        if self.drive_buttons:
+            self.drive_buttons[0].setFocus()
+
+    def select_drive(self):
+        """Handle drive selection via gamepad"""
+        focused_widget = QApplication.focusWidget()
+        if isinstance(focused_widget, AutoSizeButton) and focused_widget in self.drive_buttons:
+            drive_path = None
+            for drive in self.get_mounted_drives():
+                drive_name = os.path.basename(drive) or drive.split('/')[-1] or drive
+                if drive_name == focused_widget.text():
+                    drive_path = drive
+                    break
+            if drive_path and os.path.isdir(drive_path) and os.access(drive_path, os.R_OK):
+                self.current_path = os.path.normpath(drive_path)
+                self.update_file_list()
+            else:
+                logger.warning(f"Путь диска недоступен: {drive_path}")
 
     def change_drive(self, drive_path):
         """Переход к выбранному диску"""
