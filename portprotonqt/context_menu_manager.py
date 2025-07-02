@@ -6,6 +6,8 @@ import subprocess
 import threading
 import logging
 import orjson
+import psutil
+import signal
 from PySide6.QtWidgets import QMessageBox, QDialog, QMenu
 from PySide6.QtCore import QUrl, QPoint, QObject, Signal, Qt
 from PySide6.QtGui import QDesktopServices, QIcon
@@ -120,6 +122,35 @@ class ContextMenuManager:
             logger.error("Failed to read installed.json: %s", e)
             return False
 
+    def _is_game_running(self, game_card) -> bool:
+        """
+        Check if the game associated with the game_card is currently running.
+
+        Args:
+            game_card: The GameCard instance containing game data.
+
+        Returns:
+            bool: True if the game is running, False otherwise.
+        """
+        if game_card.game_source == "epic":
+            exe_path = get_egs_executable(game_card.appid, self.legendary_config_path)
+            if not exe_path or not os.path.exists(exe_path):
+                return False
+            current_exe = os.path.basename(exe_path)
+        else:
+            exec_line = self._get_exec_line(game_card.name, game_card.exec_line)
+            if not exec_line:
+                return False
+            exe_path = self._parse_exe_path(exec_line, game_card.name)
+            if not exe_path:
+                return False
+            current_exe = os.path.basename(exe_path)
+
+        # Check if the current_exe matches the target_exe in MainWindow
+        if hasattr(self.parent, 'target_exe') and self.parent.target_exe == current_exe:
+            return True
+        return False
+
     def show_context_menu(self, game_card, pos: QPoint):
         """
         Show the context menu for a game card at the specified position.
@@ -140,7 +171,11 @@ class ContextMenuManager:
         menu = QMenu(self.parent)
         menu.setStyleSheet(self.theme.CONTEXT_MENU_STYLE)
 
-        launch_action = menu.addAction(get_safe_icon("play"), _("Launch Game"))
+        # Check if the game is running
+        is_running = self._is_game_running(game_card)
+        action_text = _("Stop Game") if is_running else _("Launch Game")
+        action_icon = "stop" if is_running else "play"
+        launch_action = menu.addAction(get_safe_icon(action_icon), action_text)
         launch_action.triggered.connect(
             lambda: self._launch_game(game_card)
         )
@@ -240,13 +275,44 @@ class ContextMenuManager:
 
     def _launch_game(self, game_card):
         """
-        Launch a game using a validated exec_line, handling EGS games specifically.
+        Launch or stop a game based on its current state.
 
         Args:
             game_card: The GameCard instance containing game data.
         """
         if not self._check_portproton():
             return
+
+        # Check if the game is running
+        if self._is_game_running(game_card):
+            # Stop the game
+            if hasattr(self.parent, 'game_processes') and self.parent.game_processes:
+                for proc in self.parent.game_processes:
+                    try:
+                        parent = psutil.Process(proc.pid)
+                        children = parent.children(recursive=True)
+                        for child in children:
+                            try:
+                                child.terminate()
+                            except psutil.NoSuchProcess:
+                                pass
+                        psutil.wait_procs(children, timeout=5)
+                        for child in children:
+                            if child.is_running():
+                                child.kill()
+                        os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+                    except psutil.NoSuchProcess:
+                        pass
+                self.parent.game_processes = []
+                self.parent.resetPlayButton()
+                if hasattr(self.parent, 'checkProcessTimer') and self.parent.checkProcessTimer is not None:
+                    self.parent.checkProcessTimer.stop()
+                    self.parent.checkProcessTimer.deleteLater()
+                    self.parent.checkProcessTimer = None
+                self._show_status_message(_("Stopped '{game_name}'").format(game_name=game_card.name))
+            return
+
+        # Launch the game
         if game_card.game_source == "epic":
             if not os.path.exists(self.legendary_path):
                 self.signals.show_warning_dialog.emit(
