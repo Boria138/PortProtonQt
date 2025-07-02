@@ -9,17 +9,18 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-07-02 10:43+0500\n"
-"PO-Revision-Date: 2025-07-02 10:43+0500\n"
+"POT-Creation-Date: 2025-07-02 22:45+0700\n"
+"PO-Revision-Date: 2025-07-02 22:51+0700\n"
 "Last-Translator: \n"
-"Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
-"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
-"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"Language: ru_RU\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 "
+"&& (n%100<10 || n%100>=20) ? 1 : 2);\n"
 "Generated-By: Babel 2.17.0\n"
+"X-Generator: Poedit 3.6\n"
 
 msgid "Error"
 msgstr "Ошибка"
@@ -86,11 +87,11 @@ msgstr "Успешно"
 
 #, python-brace-format
 msgid ""
-"'{game_name}' was added to Steam. Please restart Steam for changes to "
-"take effect."
+"'{game_name}' was added to Steam. Please restart Steam for changes to take "
+"effect."
 msgstr ""
-"'{game_name}' был(а) добавлен(а) в Steam. Пожалуйста, перезапустите "
-"Steam, чтобы изменения вступили в силу."
+"'{game_name}' был(а) добавлен(а) в Steam. Пожалуйста, перезапустите Steam, "
+"чтобы изменения вступили в силу."
 
 #, python-brace-format
 msgid "Executable not found for game: {game_name}"
@@ -190,8 +191,8 @@ msgstr "Подтвердите удаление"
 
 #, python-brace-format
 msgid ""
-"Are you sure you want to delete '{game_name}'? This will remove the "
-".desktop file and custom data."
+"Are you sure you want to delete '{game_name}'? This will remove the .desktop "
+"file and custom data."
 msgstr ""
 "Вы уверены, что хотите удалить '{game_name}'? Это приведёт к удалению "
 "файла .desktop и пользовательских данных."
@@ -236,15 +237,36 @@ msgstr "Не удалось добавить '{game_name}' в Steam: {error}"
 
 #, python-brace-format
 msgid ""
-"'{game_name}' was removed from Steam. Please restart Steam for changes to"
-" take effect."
+"'{game_name}' was removed from Steam. Please restart Steam for changes to take "
+"effect."
 msgstr ""
-"'{game_name}' был(а) удалён(а) из Steam. Пожалуйста, перезапустите Steam,"
-" чтобы изменения вступили в силу."
+"'{game_name}' был(а) удалён(а) из Steam. Пожалуйста, перезапустите Steam, чтобы "
+"изменения вступили в силу."
 
 #, python-brace-format
 msgid "Failed to remove game '{game_name}' from Steam: {error}"
 msgstr "Не удалось удалить игру '{game_name}' из Steam: {error}"
+
+msgid "Undo\tCtrl+Z"
+msgstr "Отмена\tCtrl+Z"
+
+msgid "Redo\tCtrl+Y"
+msgstr "Повтор\tCtrl+Y"
+
+msgid "Cut\tCtrl+X"
+msgstr "Вырезать\tCtrl+X"
+
+msgid "Copy\tCtrl+C"
+msgstr "Копировать\tCtrl+C"
+
+msgid "Paste\tCtrl+V"
+msgstr "Вставить\tCtrl+V"
+
+msgid "Delete\tDel"
+msgstr "Удалить\tDel"
+
+msgid "Select All\tCtrl+A"
+msgstr "Выделить всё\tCtrl+A"
 
 msgid "Select"
 msgstr "Выбрать"
@@ -486,8 +508,7 @@ msgstr "Подтвердите удаление"
 
 msgid "Are you sure you want to reset all settings? This action cannot be undone."
 msgstr ""
-"Вы уверены, что хотите сбросить все настройки? Это действие нельзя "
-"отменить."
+"Вы уверены, что хотите сбросить все настройки? Это действие нельзя отменить."
 
 msgid "Settings reset. Restarting..."
 msgstr "Настройки сброшены. Перезапуск..."
@@ -632,4 +653,3 @@ msgstr "мин."
 
 msgid "sec."
 msgstr "сек."
-

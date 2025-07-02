@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-07-02 10:43+0500\n"
+"POT-Creation-Date: 2025-07-02 22:45+0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: de_DE\n"
@@ -237,6 +237,27 @@ msgstr ""
 
 #, python-brace-format
 msgid "Failed to remove game '{game_name}' from Steam: {error}"
+msgstr ""
+
+msgid "Undo\tCtrl+Z"
+msgstr ""
+
+msgid "Redo\tCtrl+Y"
+msgstr ""
+
+msgid "Cut\tCtrl+X"
+msgstr ""
+
+msgid "Copy\tCtrl+C"
+msgstr ""
+
+msgid "Paste\tCtrl+V"
+msgstr ""
+
+msgid "Delete\tDel"
+msgstr ""
+
+msgid "Select All\tCtrl+A"
 msgstr ""
 
 msgid "Select"
