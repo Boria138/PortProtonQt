@@ -3,7 +3,7 @@ import tempfile
 from typing import cast, TYPE_CHECKING
 from PySide6.QtGui import QPixmap, QIcon
 from PySide6.QtWidgets import (
-    QDialog, QLineEdit, QFormLayout, QHBoxLayout, QLabel, QVBoxLayout, QListWidget, QScrollArea, QWidget, QListWidgetItem, QSizePolicy, QApplication
+    QDialog, QFormLayout, QHBoxLayout, QLabel, QVBoxLayout, QListWidget, QScrollArea, QWidget, QListWidgetItem, QSizePolicy, QApplication
 )
 from PySide6.QtCore import Qt, QObject, Signal, QMimeDatabase, QTimer
 from icoextract import IconExtractor, IconExtractorError
@@ -442,6 +442,7 @@ class FileExplorer(QDialog):
 class AddGameDialog(QDialog):
     def __init__(self, parent=None, theme=None, edit_mode=False, game_name=None, exe_path=None, cover_path=None):
         super().__init__(parent)
+        from portprotonqt.context_menu_manager import CustomLineEdit   # Локальный импорт
         self.theme = theme if theme else default_styles
         self.theme_manager = ThemeManager()
         self.edit_mode = edit_mode
@@ -461,7 +462,7 @@ class AddGameDialog(QDialog):
         layout.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
 
         # Game name
-        self.nameEdit = QLineEdit(self)
+        self.nameEdit = CustomLineEdit(self, theme=self.theme)
         self.nameEdit.setStyleSheet(self.theme.ADDGAME_INPUT_STYLE)
         if game_name:
             self.nameEdit.setText(game_name)
@@ -474,7 +475,7 @@ class AddGameDialog(QDialog):
         exe_label.setStyleSheet(
             self.theme.PARAMS_TITLE_STYLE)
 
-        self.exeEdit = QLineEdit(self)
+        self.exeEdit = CustomLineEdit(self, theme=self.theme)
         self.exeEdit.setStyleSheet(self.theme.ADDGAME_INPUT_STYLE)
         if exe_path:
             self.exeEdit.setText(exe_path)
@@ -496,7 +497,7 @@ class AddGameDialog(QDialog):
         cover_label = QLabel(_("Custom Cover:"))
         cover_label.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
 
-        self.coverEdit = QLineEdit(self)
+        self.coverEdit = CustomLineEdit(self, theme=self.theme)
         self.coverEdit.setStyleSheet(self.theme.ADDGAME_INPUT_STYLE)
         if cover_path:
             self.coverEdit.setText(cover_path)

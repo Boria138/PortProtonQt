@@ -1117,7 +1117,7 @@ class MainWindow(QMainWindow):
         self.legendaryAuthTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         formLayout.addRow(self.legendaryAuthTitle, self.legendaryAuthButton)
 
-        self.legendaryCodeEdit = QLineEdit()
+        self.legendaryCodeEdit = CustomLineEdit(self, theme=self.theme)
         self.legendaryCodeEdit.setPlaceholderText(_("Enter Legendary Authorization Code"))
         self.legendaryCodeEdit.setStyleSheet(self.theme.PROXY_INPUT_STYLE)
         self.legendaryCodeEdit.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
