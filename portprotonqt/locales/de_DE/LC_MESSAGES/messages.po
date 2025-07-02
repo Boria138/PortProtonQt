@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-07-01 15:54+0500\n"
+"POT-Creation-Date: 2025-07-02 10:43+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: de_DE\n"
@@ -24,6 +24,9 @@ msgid "Error"
 msgstr ""
 
 msgid "PortProton is not found"
+msgstr ""
+
+msgid "Stop Game"
 msgstr ""
 
 msgid "Launch Game"
@@ -63,6 +66,10 @@ msgid "Edit Shortcut"
 msgstr ""
 
 msgid "Delete from PortProton"
+msgstr ""
+
+#, python-brace-format
+msgid "Stopped '{game_name}'"
 msgstr ""
 
 #, python-brace-format

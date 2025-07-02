@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-07-01 15:54+0500\n"
-"PO-Revision-Date: 2025-07-01 15:54+0500\n"
+"POT-Creation-Date: 2025-07-02 10:43+0500\n"
+"PO-Revision-Date: 2025-07-02 10:43+0500\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
@@ -26,6 +26,9 @@ msgstr "Ошибка"
 
 msgid "PortProton is not found"
 msgstr "PortProton не найден"
+
+msgid "Stop Game"
+msgstr "Остановить игру"
 
 msgid "Launch Game"
 msgstr "Запустить игру"
@@ -65,6 +68,10 @@ msgstr "Редактировать"
 
 msgid "Delete from PortProton"
 msgstr "Удалить из PortProton"
+
+#, python-brace-format
+msgid "Stopped '{game_name}'"
+msgstr "Остановлен(а) '{game_name}'"
 
 #, python-brace-format
 msgid "Legendary executable not found at {path}"
