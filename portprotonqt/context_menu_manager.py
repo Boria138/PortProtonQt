@@ -188,7 +188,7 @@ class ContextMenuManager:
         favorite_action.triggered.connect(lambda: self.toggle_favorite(game_card, not is_favorite))
 
         if game_card.game_source == "epic":
-            import_action = menu.addAction(get_safe_icon("import"), _("Import to Legendary"))
+            import_action = menu.addAction(get_safe_icon("epic_games"), _("Import to Legendary"))
             import_action.triggered.connect(
                 lambda: self.import_to_legendary(game_card.name, game_card.appid)
             )
