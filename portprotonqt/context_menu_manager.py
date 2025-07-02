@@ -8,7 +8,7 @@ import logging
 import orjson
 import psutil
 import signal
-from PySide6.QtWidgets import QMessageBox, QDialog, QMenu
+from PySide6.QtWidgets import QMessageBox, QDialog, QMenu, QLineEdit, QApplication
 from PySide6.QtCore import QUrl, QPoint, QObject, Signal, Qt
 from PySide6.QtGui import QDesktopServices, QIcon
 from portprotonqt.localization import _
@@ -1080,3 +1080,69 @@ Icon={icon_path}
                 _("Error"),
                 _("Failed to open folder: {error}").format(error=str(e))
             )
+
+class CustomLineEdit(QLineEdit):
+
+    def __init__(self, *args, theme=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.theme = theme
+        self.theme_manager = ThemeManager()
+
+    def contextMenuEvent(self, event):
+        def get_safe_icon(icon_name: str) -> QIcon:
+            icon = self.theme_manager.get_icon(icon_name)
+            if isinstance(icon, QIcon):
+                return icon
+            elif isinstance(icon, str) and os.path.exists(icon):
+                return QIcon(icon)
+            return QIcon()
+
+        menu = QMenu(self)
+        if self.theme and hasattr(self.theme, "CONTEXT_MENU_STYLE"):
+            menu.setStyleSheet(self.theme.CONTEXT_MENU_STYLE)
+
+        # Undo
+        undo = menu.addAction(get_safe_icon("undo"), _("Undo\tCtrl+Z"))
+        undo.triggered.connect(self.undo)
+        undo.setEnabled(self.isUndoAvailable())
+
+        # Redo
+        redo = menu.addAction(get_safe_icon("redo"), _("Redo\tCtrl+Y"))
+        redo.triggered.connect(self.redo)
+        redo.setEnabled(self.isRedoAvailable())
+
+        menu.addSeparator()
+
+        # Cut
+        cut = menu.addAction(get_safe_icon("cut"), _("Cut\tCtrl+X"))
+        cut.triggered.connect(self.cut)
+        cut.setEnabled(self.hasSelectedText())
+
+        # Copy
+        copy = menu.addAction(get_safe_icon("copy"), _("Copy\tCtrl+C"))
+        copy.triggered.connect(self.copy)
+        copy.setEnabled(self.hasSelectedText())
+
+        # Paste
+        paste = menu.addAction(get_safe_icon("paste"), _("Paste\tCtrl+V"))
+        paste.triggered.connect(self.paste)
+        paste.setEnabled(QApplication.clipboard().mimeData().hasText())
+
+        # Delete
+        delete = menu.addAction(get_safe_icon("delete"), _("Delete\tDel"))
+        delete.triggered.connect(self._delete_selected_text)
+        delete.setEnabled(self.hasSelectedText())
+
+        menu.addSeparator()
+
+        # Select All
+        select_all = menu.addAction(get_safe_icon("select_all"), _("Select All\tCtrl+A"))
+        select_all.triggered.connect(self.selectAll)
+        select_all.setEnabled(bool(self.text()))
+
+        menu.exec(event.globalPos())
+
+    def _delete_selected_text(self):
+        cursor_pos = self.cursorPosition()
+        self.backspace()
+        self.setCursorPosition(cursor_pos)

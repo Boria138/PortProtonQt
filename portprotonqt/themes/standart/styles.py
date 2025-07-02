@@ -103,9 +103,10 @@ CONTEXT_MENU_STYLE = f"""
         font-family: '{font_family}';
         font-size: {font_size_a};
         padding: 5px;
+        min-width: 150px;
     }}
     QMenu::icon {{
-    margin-left: 15px;
+        margin-left: 15px;
     }}
     QMenu::item {{
         padding: 8px 20px 8px 10px;
@@ -117,6 +118,9 @@ CONTEXT_MENU_STYLE = f"""
         background: {color_a};
         color: {color_f};
     }}
+    QMenu::item:disabled {{
+            color: #7f7f7f;
+        }}
     QMenu::item:hover {{
         background: {color_a};
         color: {color_f};
@@ -126,6 +130,11 @@ CONTEXT_MENU_STYLE = f"""
         color: {color_f};
         border: {border_b} rgba(255, 255, 255, 0.3);
         border-radius: {border_radius_a};
+    }}
+    QMenu::separator {{
+        height: 1px;
+        background-color: #7f7f7f;
+        margin: 4px 8px;
     }}
 """
 
@@ -741,19 +750,6 @@ PROXY_INPUT_STYLE = f"""
     QLineEdit:focus {{
         border: {border_c} {color_a};
         background-color: {color_e};
-    }}
-    QMenu {{
-        border: {border_b} rgba(255, 255, 255, 0.2);
-        padding: 5px 10px;
-        background: {color_d};
-    }}
-    QMenu::item {{
-        padding: 0px 10px;
-        border: 10px solid {color_h}; /* reserve space for selection border */
-    }}
-    QMenu::item:selected {{
-        background: {color_c};
-        border-radius: {border_radius_a};
     }}
 """
 

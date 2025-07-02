@@ -12,7 +12,7 @@ from portprotonqt.dialogs import AddGameDialog, FileExplorer
 from portprotonqt.game_card import GameCard
 from portprotonqt.custom_widgets import FlowLayout, ClickableLabel, AutoSizeButton, NavLabel
 from portprotonqt.input_manager import InputManager
-from portprotonqt.context_menu_manager import ContextMenuManager
+from portprotonqt.context_menu_manager import ContextMenuManager, CustomLineEdit
 from portprotonqt.system_overlay import SystemOverlay
 
 from portprotonqt.image_utils import load_pixmap_async, round_corners, ImageCarousel
@@ -589,7 +589,7 @@ class MainWindow(QMainWindow):
         self.addGameButton.clicked.connect(self.openAddGameDialog)
         layout.addWidget(self.addGameButton, alignment=Qt.AlignmentFlag.AlignRight)
 
-        self.searchEdit = QLineEdit()
+        self.searchEdit = CustomLineEdit(self, theme=self.theme)
         icon: QIcon = cast(QIcon, self.theme_manager.get_icon("search"))
         action_pos = cast(QLineEdit.ActionPosition, QLineEdit.ActionPosition.LeadingPosition)
         self.search_action = self.searchEdit.addAction(icon, action_pos)
@@ -1039,7 +1039,7 @@ class MainWindow(QMainWindow):
         formLayout.addRow(self.gamesDisplayTitle, self.gamesDisplayCombo)
 
         # 4. Proxy settings
-        self.proxyUrlEdit = QLineEdit()
+        self.proxyUrlEdit = CustomLineEdit(self, theme=self.theme)
         self.proxyUrlEdit.setPlaceholderText(_("Proxy URL"))
         self.proxyUrlEdit.setStyleSheet(self.theme.PROXY_INPUT_STYLE)
         self.proxyUrlEdit.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -1051,7 +1051,7 @@ class MainWindow(QMainWindow):
             self.proxyUrlEdit.setText(proxy_cfg["http"])
         formLayout.addRow(self.proxyUrlTitle, self.proxyUrlEdit)
 
-        self.proxyUserEdit = QLineEdit()
+        self.proxyUserEdit = CustomLineEdit(self, theme=self.theme)
         self.proxyUserEdit.setPlaceholderText(_("Proxy Username"))
         self.proxyUserEdit.setStyleSheet(self.theme.PROXY_INPUT_STYLE)
         self.proxyUserEdit.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -1060,7 +1060,7 @@ class MainWindow(QMainWindow):
         self.proxyUserTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         formLayout.addRow(self.proxyUserTitle, self.proxyUserEdit)
 
-        self.proxyPasswordEdit = QLineEdit()
+        self.proxyPasswordEdit = CustomLineEdit(self, theme=self.theme)
         self.proxyPasswordEdit.setPlaceholderText(_("Proxy Password"))
         self.proxyPasswordEdit.setEchoMode(QLineEdit.EchoMode.Password)
         self.proxyPasswordEdit.setStyleSheet(self.theme.PROXY_INPUT_STYLE)
@@ -1359,7 +1359,7 @@ class MainWindow(QMainWindow):
         self.themeMetainfoLabel.setWordWrap(True)
         self.themeInfoLayout.addWidget(self.themeMetainfoLabel)
 
-        self.applyButton = AutoSizeButton(_("Apply Theme"), icon=self.theme_manager.get_icon("update"))
+        self.applyButton = AutoSizeButton(_("Apply Theme"), icon=self.theme_manager.get_icon("apply"))
         self.applyButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.applyButton.setObjectName("actionButton")
         self.themeInfoLayout.addWidget(self.applyButton)
