@@ -583,19 +583,6 @@ ADDGAME_INPUT_STYLE = f"""
         border: {border_c} {color_a};
         background-color: {color_e};
     }}
-    QMenu {{
-        border: {border_b} {color_g};
-        padding: 5px 10px;
-        background: {color_d};
-    }}
-    QMenu::item {{
-        padding: 0px 10px;
-        border: 10px solid {color_h}; /* reserve space for selection border */
-    }}
-    QMenu::item:selected {{
-        background: {color_c};
-        border-radius: {border_radius_a};
-    }}
 """
 
 # СТИЛЬ КАРТОЧКИ ИГРЫ (GAMECARD)
