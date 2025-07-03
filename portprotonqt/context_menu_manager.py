@@ -10,7 +10,7 @@ import psutil
 import signal
 from PySide6.QtWidgets import QMessageBox, QDialog, QMenu, QLineEdit, QApplication
 from PySide6.QtCore import QUrl, QPoint, QObject, Signal, Qt
-from PySide6.QtGui import QDesktopServices, QIcon
+from PySide6.QtGui import QDesktopServices, QIcon, QKeySequence
 from portprotonqt.localization import _
 from portprotonqt.config_utils import parse_desktop_entry, read_favorites, save_favorites
 from portprotonqt.steam_api import is_game_in_steam, add_to_steam, remove_from_steam
@@ -1097,48 +1097,34 @@ class CustomLineEdit(QLineEdit):
                 return QIcon(icon)
             return QIcon()
 
+        def add_action(text: str, shortcut: QKeySequence.StandardKey, icon_name: str, slot, enabled=True):
+            icon = get_safe_icon(icon_name)
+            shortcut_str = QKeySequence(shortcut).toString(QKeySequence.SequenceFormat.NativeText)
+            action_text = f"{text}\t{shortcut_str}"
+            action = menu.addAction(icon, action_text)
+            action.triggered.connect(slot)
+            action.setEnabled(enabled)
+
         menu = QMenu(self)
+
         if self.theme and hasattr(self.theme, "CONTEXT_MENU_STYLE"):
             menu.setStyleSheet(self.theme.CONTEXT_MENU_STYLE)
 
-        # Undo
-        undo = menu.addAction(get_safe_icon("undo"), _("Undo\tCtrl+Z"))
-        undo.triggered.connect(self.undo)
-        undo.setEnabled(self.isUndoAvailable())
-
-        # Redo
-        redo = menu.addAction(get_safe_icon("redo"), _("Redo\tCtrl+Y"))
-        redo.triggered.connect(self.redo)
-        redo.setEnabled(self.isRedoAvailable())
+        add_action(_("Undo"), QKeySequence.StandardKey.Undo, "undo", self.undo, self.isUndoAvailable())
+        add_action(_("Redo"), QKeySequence.StandardKey.Redo, "redo", self.redo, self.isRedoAvailable())
 
         menu.addSeparator()
 
-        # Cut
-        cut = menu.addAction(get_safe_icon("cut"), _("Cut\tCtrl+X"))
-        cut.triggered.connect(self.cut)
-        cut.setEnabled(self.hasSelectedText())
-
-        # Copy
-        copy = menu.addAction(get_safe_icon("copy"), _("Copy\tCtrl+C"))
-        copy.triggered.connect(self.copy)
-        copy.setEnabled(self.hasSelectedText())
-
-        # Paste
-        paste = menu.addAction(get_safe_icon("paste"), _("Paste\tCtrl+V"))
-        paste.triggered.connect(self.paste)
-        paste.setEnabled(QApplication.clipboard().mimeData().hasText())
-
-        # Delete
-        delete = menu.addAction(get_safe_icon("delete"), _("Delete\tDel"))
-        delete.triggered.connect(self._delete_selected_text)
-        delete.setEnabled(self.hasSelectedText())
+        add_action(_("Cut"), QKeySequence.StandardKey.Cut, "cut", self.cut, self.hasSelectedText())
+        add_action(_("Copy"), QKeySequence.StandardKey.Copy, "copy", self.copy, self.hasSelectedText())
+        add_action(_("Paste"), QKeySequence.StandardKey.Paste, "paste", self.paste,
+                   QApplication.clipboard().mimeData().hasText())
+        add_action(_("Delete"), QKeySequence.StandardKey.Delete, "delete", self._delete_selected_text,
+                   self.hasSelectedText())
 
         menu.addSeparator()
 
-        # Select All
-        select_all = menu.addAction(get_safe_icon("select_all"), _("Select All\tCtrl+A"))
-        select_all.triggered.connect(self.selectAll)
-        select_all.setEnabled(bool(self.text()))
+        add_action(_("Select All"), QKeySequence.StandardKey.SelectAll, "select_all", self.selectAll, bool(self.text()))
 
         menu.exec(event.globalPos())
 

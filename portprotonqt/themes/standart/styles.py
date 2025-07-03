@@ -109,7 +109,7 @@ CONTEXT_MENU_STYLE = f"""
         margin-left: 15px;
     }}
     QMenu::item {{
-        padding: 8px 20px 8px 10px;
+        padding: 10px 20px 10px 10px;
         background: {color_h};
         border-radius: {border_radius_a};
         color: {color_f};
@@ -134,7 +134,7 @@ CONTEXT_MENU_STYLE = f"""
     QMenu::separator {{
         height: 1px;
         background-color: #7f7f7f;
-        margin: 4px 8px;
+        margin: 3px 6px;
     }}
 """
 
