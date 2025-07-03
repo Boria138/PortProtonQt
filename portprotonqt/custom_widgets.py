@@ -192,19 +192,26 @@ class ClickableLabel(QLabel):
         icon_size = self._icon_size
         spacing = self._icon_space
 
-        icon_rect = QRect()
-        text_rect = QRect()
         text = self.text()
 
         if self._icon:
             pixmap = self._icon.pixmap(icon_size, icon_size)
-            icon_rect = QRect(0, 0, icon_size, icon_size)
-            icon_rect.moveTop(rect.top() + (rect.height() - icon_size) // 2)
         else:
             pixmap = None
 
         fm = QFontMetrics(self.font())
-        text_width = fm.horizontalAdvance(text)
+
+        # Считаем, сколько места остаётся под текст
+        available_width = rect.width()
+        if pixmap:
+            available_width -= (icon_size + spacing)
+        # Отступы по 2px с каждой стороны
+        available_width = max(0, available_width - 4)
+
+        # Получаем «обрезанный» текст с многоточием
+        display_text = fm.elidedText(text, Qt.TextElideMode.ElideRight, available_width)
+
+        text_width = fm.horizontalAdvance(display_text)
         text_height = fm.height()
         total_width = text_width + (icon_size + spacing if pixmap else 0)
 
@@ -214,24 +221,23 @@ class ClickableLabel(QLabel):
             x = rect.right() - total_width
         else:
             x = rect.left()
-
         y = rect.top() + (rect.height() - text_height) // 2
 
         if pixmap:
-            icon_rect.moveLeft(x)
-            text_rect = QRect(x + icon_size + spacing, y, text_width, text_height)
+            icon_rect = QRect(x, y + (text_height - icon_size) // 2, icon_size, icon_size)
             painter.drawPixmap(icon_rect, pixmap)
+            text_x = x + icon_size + spacing
         else:
-            # Устанавливаем text_rect для меток без иконки (например, favoriteLabel)
-            text_rect = QRect(x, y, text_width, text_height)
+            text_x = x
 
+        text_rect = QRect(text_x, y, text_width, text_height)
         self.style().drawItemText(
             painter,
             text_rect,
             alignment,
             self.palette(),
             self.isEnabled(),
-            text,
+            display_text,
             self.foregroundRole(),
         )
 

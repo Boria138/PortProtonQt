@@ -480,7 +480,6 @@ def get_protondb_badge_style(tier):
         qproperty-alignment: AlignCenter;
         background-color: {colors["background"]};
         color: {colors["color"]};
-        font-size: 14px;
         border-radius: 5px;
         font-family: 'Poppins';
         font-weight: bold;
@@ -500,7 +499,6 @@ def get_anticheat_badge_style(status):
         qproperty-alignment: AlignCenter;
         background-color: {colors["background"]};
         color: {colors["color"]};
-        font-size: 14px;
         border-radius: 5px;
         font-family: 'Poppins';
         font-weight: bold;
@@ -511,7 +509,6 @@ STEAM_BADGE_STYLE= """
     qproperty-alignment: AlignCenter;
     background: rgba(0, 0, 0, 0.5);
     color: white;
-    font-size: 14px;
     border-radius: 5px;
     font-family: 'Poppins';
     font-weight: bold;
