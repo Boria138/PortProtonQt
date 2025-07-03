@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-07-02 22:45+0700\n"
+"POT-Creation-Date: 2025-07-03 19:29+0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es_ES\n"
@@ -239,25 +239,25 @@ msgstr ""
 msgid "Failed to remove game '{game_name}' from Steam: {error}"
 msgstr ""
 
-msgid "Undo\tCtrl+Z"
+msgid "Undo"
 msgstr ""
 
-msgid "Redo\tCtrl+Y"
+msgid "Redo"
 msgstr ""
 
-msgid "Cut\tCtrl+X"
+msgid "Cut"
 msgstr ""
 
-msgid "Copy\tCtrl+C"
+msgid "Copy"
 msgstr ""
 
-msgid "Paste\tCtrl+V"
+msgid "Paste"
 msgstr ""
 
-msgid "Delete\tDel"
+msgid "Delete"
 msgstr ""
 
-msgid "Select All\tCtrl+A"
+msgid "Select All"
 msgstr ""
 
 msgid "Select"
