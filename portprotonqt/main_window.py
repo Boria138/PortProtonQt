@@ -1984,6 +1984,7 @@ class MainWindow(QMainWindow):
                 env_vars = os.environ.copy()
                 env_vars['START_FROM_STEAM'] = '1'
                 env_vars['LEGENDARY_CONFIG_PATH'] = self.legendary_config_path
+                env_vars['PROCESS_LOG'] = '1'
 
                 wrapper = "flatpak run ru.linux_gaming.PortProton"
                 if self.portproton_location is not None and ".var" not in self.portproton_location:
@@ -2091,8 +2092,10 @@ class MainWindow(QMainWindow):
 
             if entry_exec_split[0] == "env" and len(entry_exec_split) > 1 and 'data/scripts/start.sh' in entry_exec_split[1]:
                 env_vars['START_FROM_STEAM'] = '1'
+                env_vars['PROCESS_LOG'] = '1'
             elif entry_exec_split[0] == "flatpak":
                 env_vars['START_FROM_STEAM'] = '1'
+                env_vars['PROCESS_LOG'] = '1'
 
             # Delay disabling gamepad handling to allow rumble to complete
             if hasattr(self, 'input_manager'):
