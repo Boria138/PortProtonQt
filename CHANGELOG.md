@@ -3,6 +3,23 @@
 Все заметные изменения в этом проекте фиксируются в этом файле.
 Формат основан на [Keep a Changelog](https://keepachangelog.com/) и придерживается принципов [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+
+### Changed
+- Оптимизированны обложки автоинсталлов
+
+
+### Fixed
+
+
+### Contributors
+- @Vector_null
+
+---
+
 ## [0.1.3] - 2025-07-05
 
 ### Added
