@@ -137,6 +137,8 @@ class ContextMenuManager:
             if not exe_path or not os.path.exists(exe_path):
                 return False
             current_exe = os.path.basename(exe_path)
+        elif game_card.game_source == "steam":
+            return False
         else:
             exec_line = self._get_exec_line(game_card.name, game_card.exec_line)
             if not exec_line:

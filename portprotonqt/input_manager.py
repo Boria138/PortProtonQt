@@ -369,6 +369,7 @@ class InputManager(QObject):
             active = QApplication.activeWindow()
             focused = QApplication.focusWidget()
             popup = QApplication.activePopupWidget()
+            modal_dialog = QApplication.activeModalWidget()
 
             # Handle Guide button to open system overlay
             if button_code in BUTTONS['guide']:
@@ -460,7 +461,7 @@ class InputManager(QObject):
                     return
 
             # Game launch on detail page
-            if (button_code in BUTTONS['confirm']) and self._parent.currentDetailPage is not None and self._parent.current_add_game_dialog is None:
+            if (button_code in BUTTONS['confirm']) and self._parent.currentDetailPage is not None and modal_dialog is None:
                 if self._parent.current_exec_line:
                     self.trigger_rumble()
                     self._parent.toggleGame(self._parent.current_exec_line, None)

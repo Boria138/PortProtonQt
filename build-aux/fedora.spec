@@ -1,6 +1,7 @@
 %global pypi_name portprotonqt
 %global pypi_version 0.1.2
 %global oname PortProtonQt
+%global _python_no_extras_requires 1
 
 Name:           python-%{pypi_name}
 Version:        %{pypi_version}
@@ -43,6 +44,8 @@ Requires:       xdg-utils
 
 %description -n python3-%{pypi_name}
 This application provides a sleek, intuitive graphical interface for managing and launching games from PortProton, Steam, and Epic Games Store. It consolidates your game libraries into a single, user-friendly hub for seamless navigation and organization. Its lightweight structure and cross-platform support deliver a cohesive gaming experience, eliminating the need for multiple launchers. Unique PortProton integration enhances Linux gaming, enabling effortless play of Windows-based titles with minimal setup.
+
+%{?python_disable_dependency_generator}
 
 %prep
 git clone https://git.linux-gaming.ru/Boria138/PortProtonQt
