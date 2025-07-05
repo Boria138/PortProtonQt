@@ -1,0 +1,3 @@
+name=Demul
+description_ru=Эмулятор аркадных игровых автоматов, позволяющий играть в классические игры на системах Sega NAOMI и Sega Atomiswave на ПК. Он обеспечивает высокое качество графики и звука, а также поддерживает множество функций, включая сетевой режим.
+description_en=An arcade game emulator that allows users to play classic games from the Sega NAOMI and Sega Atomiswave systems on their PCs. It delivers high-quality graphics and sound, along with numerous features, including online multiplayer support.

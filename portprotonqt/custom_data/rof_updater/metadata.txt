@@ -1,0 +1,3 @@
+name=Rise of Flight
+description_ru=Симулятор авиационных боев, действие которого происходит во время Первой мировой войны, предлагающий игрокам реалистичный опыт управления историческими истребителями. Игра включает в себя различные миссии, многопользовательский режим и детализированную графику, что позволяет ощутить атмосферу воздушных сражений того времени.
+description_en=A flight combat simulator set during World War I, providing players with a realistic experience of piloting historical fighters. The game features various missions, a multiplayer mode, and detailed graphics, allowing players to immerse themselves in the atmosphere of aerial battles of that era.

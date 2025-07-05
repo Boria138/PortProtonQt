@@ -1,0 +1,3 @@
+name=Lesta Game Center
+description_ru=Лаунчер для игр Lesta Games.
+description_en=Launcher for Lesta Games studio games.

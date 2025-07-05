@@ -1,0 +1,3 @@
+name=Battle.net Launcher
+description_ru=Лаунчер для игр Activision и Blizzard.
+description_en=Launcher for Activision and Blizzard studio games.

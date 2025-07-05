@@ -1,0 +1,3 @@
+name=Farlight 84
+description_ru=Многопользовательская игра в жанре королевская битва, которая проходит в красочном и футуристическом мире, где игроки сражаются друг с другом с использованием уникальных навыков и оружия. Игра предлагает захватывающий геймплей с элементами строительства, а также возможность использовать различные транспортные средства для перемещения по карте.
+description_en=A multiplayer battle royale game set in a colorful and futuristic world where players fight against each other using unique skills and weapons. The game features exciting gameplay with building elements, as well as the ability to utilize various vehicles to navigate the map.

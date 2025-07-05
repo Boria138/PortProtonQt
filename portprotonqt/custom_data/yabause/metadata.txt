@@ -1,0 +1,3 @@
+name=Yabause
+description_ru=Эмулятор консоли Sega Saturn, который позволяет пользователям играть в классические игры для этой платформы на современных устройствах. Поддерживает различные функции, такие как сохранение состояния и настройка управления, обеспечивая удобный опыт для любителей данной платформы.
+description_en=A Sega Saturn console emulator that allows users to play classic games for this platform on modern devices. It supports various functions such as state saving and control settings, providing a user-friendly experience for fans of this platform.

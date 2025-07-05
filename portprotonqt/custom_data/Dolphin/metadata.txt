@@ -1,0 +1,3 @@
+name=Dolphin 5.0
+description_ru=Мощный эмулятор для игровых консолей Nintendo GameCube и Wii, который позволяет запускать игры на ПК с улучшенной графикой и производительностью. Он поддерживает широкий спектр функций, включая HD-разрешение, множество настройек управления и возможность использования модификаций.
+description_en=A powerful emulator for Nintendo GameCube and Wii consoles that allows users to play games on their PCs with enhanced graphics and performance. It supports a wide range of features, including HD resolution, numerous control configurations, and the ability to use modifications.

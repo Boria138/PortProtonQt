@@ -1,0 +1,3 @@
+name=RetroArch
+description_ru=Интерфейс для эмуляторов, который поддерживает множество игровых консолей и платформ, позволяя пользователям запускать старые игры на современных устройствах. Он предлагает удобный интерфейс, богатую библиотеку ядер эмуляции и функции для настройки производительности и графики.
+description_en=An interface for emulators that supports many game consoles and platforms, allowing users to run old games on modern devices. It offers a user-friendly interface, a rich library of emulation cores, and features for performance and graphics customization.

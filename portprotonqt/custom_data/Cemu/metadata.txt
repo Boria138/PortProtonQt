@@ -1,0 +1,3 @@
+name=Cemu
+description_ru=Эмулятор Wii U, который позволяет пользователям запускать и играть в игры, выпущенные на этой консоли, с высокой производительностью и улучшенной графикой.
+description_en=A Wii U emulator that allows users to launch and play games released on this console with high performance and enhanced graphics.

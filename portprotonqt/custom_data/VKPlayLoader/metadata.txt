@@ -1,0 +1,3 @@
+name=vkPlay Games Center
+description_ru=Лаунчер для библиотеки игр VK Play.
+description_en=Launcher for the VK Play game library.

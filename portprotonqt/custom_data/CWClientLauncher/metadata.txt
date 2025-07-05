@@ -1,0 +1,3 @@
+name=CONTRACT WARS
+description_ru=Многопользовательский шутер от первого лица, где игроки участвуют в противостоянии между двумя командами на разнообразных картах. Игра предлагает широкий выбор оружия и возможностей для настройки персонажей, что делает каждый матч уникальным.
+description_en=A multiplayer first-person shooter where players engage in battles between two teams on various maps. The game offers a wide selection of weapons and character customization options, making each match unique.

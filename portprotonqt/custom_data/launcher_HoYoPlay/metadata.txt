@@ -1,0 +1,3 @@
+name=HoYoPlay
+description_ru=Лаунчер для игр HoYoverse.
+description_en=Launcher for HoYoverse studio games.
