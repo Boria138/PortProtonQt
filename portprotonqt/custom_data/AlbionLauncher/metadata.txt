@@ -1,0 +1,3 @@
+name=Albion Online
+description_ru=Многопользовательская песочница в жанре MMORPG, где игроки могут исследовать открытый мир, заниматься ремеслом, добычей ресурсов и сражаться с другими игроками. Игра предлагает уникальную систему классов, позволяющую игрокам изменять свои роли в зависимости от выбранного снаряжения.
+description_en=A multiplayer sandbox MMORPG where players can explore an open world, engage in crafting, gather resources, and battle against other players. The game features a unique class system that allows players to change their roles based on the gear they equip.

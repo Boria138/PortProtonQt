@@ -1,0 +1,3 @@
+name=W3D Hub Launcher
+description_ru=Лаунчер для игр W3D Hub.
+description_en=Launcher for W3D Hub community games.

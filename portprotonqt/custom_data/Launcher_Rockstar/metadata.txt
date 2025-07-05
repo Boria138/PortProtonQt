@@ -1,0 +1,3 @@
+name=Rockstar Games Launcher
+description_ru=Лаунчер для игр Rockstar.
+description_en=Launcher for Rockstar studio games.

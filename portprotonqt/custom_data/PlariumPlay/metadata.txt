@@ -1,0 +1,3 @@
+name=Plarium Play
+description_ru=Лаунчер для игр Plarium.
+description_en=Launcher for Plarium studio games.

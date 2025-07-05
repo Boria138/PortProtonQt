@@ -1,0 +1,3 @@
+name=Goose Goose Duck
+description_ru=Многопользовательская игра в жанре социальной дедукции, где игроки выступают в роли уток или гусей, пытаясь выполнить задания и выявить среди них "уток" — предателей. Игра сочетает в себе элементы стратегии и общения, требуя от игроков координации и способности распознавать обман.
+description_en=A multiplayer social deduction game where players take on the roles of ducks or geese, trying to complete tasks and identify the "ducks" — the impostors among them. The game combines elements of strategy and communication, requiring players to coordinate and recognize deception.

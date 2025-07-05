@@ -1,0 +1,3 @@
+name=Mini World
+description_ru=Песочница, в которой игроки могут исследовать, строить и создавать свои уникальные миры в 3D-окружении. Игра предлагает разнообразные режимы, включая выживание и творчество, а также возможность взаимодействовать с другими игроками в многопользовательском формате.
+description_en=A sandbox game where players can explore, build, and create their unique worlds in a 3D environment. The game offers various modes, including survival and creative, as well as the ability to interact with other players in a multiplayer format.

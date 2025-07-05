@@ -1,0 +1,3 @@
+name=Ubisoft Game Launcher
+description_ru=Лаунчер для игр Ubisoft.
+description_en=Launcher for Ubisoft studio games.

@@ -1,0 +1,3 @@
+name=Last Chaos
+description_ru=Last Chaos – классическая MMORPG с шестью классами, осадами замков, корейским гриндом и километрами подземелий. Противостояние Апполона и Эреса набирает обороты, так что спешите принять одну из сторон.
+description_en=Last Chaos is a classic MMORPG with six classes, castle sieges, a Korean grind and kilometers of dungeons. The confrontation between Apollo and Eres is gaining momentum, so hurry up to take one of the sides.

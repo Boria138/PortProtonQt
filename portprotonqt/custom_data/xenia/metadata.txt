@@ -1,0 +1,3 @@
+name=Xenia
+description_ru=Эмулятор консоли Xbox 360, позволяющий пользователям запускать и играть в игры для этой платформы на ПК. Эмулятор поддерживает высокое разрешение, улучшенную производительность и активное сообщество для обсуждения и разработки совместимости игр.
+description_en=An Xbox 360 console emulator that allows users to launch and play games for this platform on a PC. The emulator supports high resolution, improved performance, and an active community to discuss and develop game compatibility.
