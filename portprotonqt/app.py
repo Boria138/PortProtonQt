@@ -14,7 +14,7 @@ logger = get_logger(__name__)
 
 __app_id__ = "ru.linux_gaming.PortProtonQt"
 __app_name__ = "PortProtonQt"
-__app_version__ = "0.1.2"
+__app_version__ = "0.1.3"
 
 def main():
     app = QApplication(sys.argv)

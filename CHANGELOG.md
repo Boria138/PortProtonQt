@@ -3,7 +3,7 @@
 Все заметные изменения в этом проекте фиксируются в этом файле.
 Формат основан на [Keep a Changelog](https://keepachangelog.com/) и придерживается принципов [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.1.3] - 2025-07-05
 
 ### Added
 - Аргумент `--session` для запуска приложения в gamescope (Исключительно в целях тестирования)
