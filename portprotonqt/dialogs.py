@@ -1,5 +1,6 @@
 import os
 import tempfile
+import re
 from typing import cast, TYPE_CHECKING
 from PySide6.QtGui import QPixmap, QIcon
 from PySide6.QtWidgets import (
@@ -14,6 +15,7 @@ from portprotonqt.logger import get_logger
 import portprotonqt.themes.standart.styles as default_styles
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.custom_widgets import AutoSizeButton
+from portprotonqt.downloader import Downloader
 
 if TYPE_CHECKING:
     from portprotonqt.main_window import MainWindow
@@ -449,6 +451,7 @@ class AddGameDialog(QDialog):
         self.original_name = game_name
         self.last_exe_path = exe_path  # Store last selected exe path
         self.last_cover_path = cover_path  # Store last selected cover path
+        self.downloader = Downloader(max_workers=4)  # Initialize Downloader
 
         self.setWindowTitle(_("Edit Game") if edit_mode else _("Add Game"))
         self.setModal(True)
@@ -472,8 +475,7 @@ class AddGameDialog(QDialog):
 
         # Exe path
         exe_label = QLabel(_("Path to Executable:"))
-        exe_label.setStyleSheet(
-            self.theme.PARAMS_TITLE_STYLE)
+        exe_label.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
 
         self.exeEdit = CustomLineEdit(self, theme=self.theme)
         self.exeEdit.setStyleSheet(self.theme.ADDGAME_INPUT_STYLE)
@@ -550,7 +552,7 @@ class AddGameDialog(QDialog):
             exeBrowseButton.setFixedWidth(self.exeEdit.width())
             coverBrowseButton.setFixedWidth(self.coverEdit.width())
 
-        # Вызываем после отображения окна, когда размеры установлены, чтобы реально дождаться, когда всё сформируется
+        # Вызываем после отображения окна, когда размеры установлены
         QTimer.singleShot(0, update_button_widths)
 
         # Обновляем превью, если в режиме редактирования
@@ -615,15 +617,46 @@ class AddGameDialog(QDialog):
         """Обработчик выбора файла обложки в FileExplorer"""
         if file_path and os.path.splitext(file_path)[1].lower() in ('.png', '.jpg', '.jpeg', '.bmp'):
             self.coverEdit.setText(file_path)
-            self.last_cover_path = file_path  # Update last selected cover path
+            self.last_cover_path = file_path
+            self.updatePreview()
         else:
             logger.warning(f"Selected file is not a valid image: {file_path}")
+
+    def handleDownloadedCover(self, file_path):
+        """Handle the downloaded cover image and update the preview."""
+        if file_path and os.path.isfile(file_path):
+            self.last_cover_path = file_path
+            pixmap = QPixmap(file_path)
+            if not pixmap.isNull():
+                self.coverPreview.setPixmap(pixmap.scaled(250, 250, Qt.AspectRatioMode.KeepAspectRatio))
+            else:
+                self.coverPreview.setText(_("Invalid image"))
+        else:
+            self.coverPreview.setText(_("Failed to download cover"))
+            logger.warning(f"Failed to download cover to {file_path}")
 
     def updatePreview(self):
         """Update the cover preview image."""
         cover_path = self.coverEdit.text().strip()
         exe_path = self.exeEdit.text().strip()
-        if cover_path and os.path.isfile(cover_path):
+
+        # Check if cover_path is a URL
+        url_pattern = r'^https?://[^\s/$.?#].[^\s]*$'
+        if re.match(url_pattern, cover_path):
+            # Create a temporary file for the downloaded image
+            fd, local_path = tempfile.mkstemp(suffix=".png")
+            os.close(fd)
+            os.unlink(local_path)
+
+            # Start asynchronous download
+            self.downloader.download_async(
+                url=cover_path,
+                local_path=local_path,
+                timeout=10,
+                callback=self.handleDownloadedCover
+            )
+            self.coverPreview.setText(_("Downloading cover..."))
+        elif cover_path and os.path.isfile(cover_path):
             pixmap = QPixmap(cover_path)
             if not pixmap.isNull():
                 self.coverPreview.setPixmap(pixmap.scaled(250, 250, Qt.AspectRatioMode.KeepAspectRatio))
@@ -666,8 +699,8 @@ class AddGameDialog(QDialog):
 
         os.makedirs(os.path.dirname(icon_path), exist_ok=True)
 
-        # Generate thumbnail (128x128) from exe
-        if not generate_thumbnail(exe_path, icon_path, size=128):
+        # Generate thumbnail (128x128) from exe if no cover is provided
+        if not self.last_cover_path and not generate_thumbnail(exe_path, icon_path, size=128):
             logger.error(f"Failed to generate thumbnail from exe: {exe_path}")
             icon_path = ""  # Set empty icon if generation fails
 
