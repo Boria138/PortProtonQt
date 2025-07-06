@@ -28,7 +28,7 @@ from portprotonqt.config_utils import (
     save_fullscreen_config, read_window_geometry, save_window_geometry, reset_config,
     clear_cache, read_auto_fullscreen_gamepad, save_auto_fullscreen_gamepad, read_rumble_config, save_rumble_config
 )
-from portprotonqt.localization import _
+from portprotonqt.localization import _, get_egs_language, read_metadata_translations
 from portprotonqt.logger import get_logger
 from portprotonqt.downloader import Downloader
 
@@ -465,11 +465,9 @@ class MainWindow(QMainWindow):
         os.makedirs(user_custom_folder, exist_ok=True)
 
         builtin_cover = ""
-        builtin_name = None
-        builtin_desc = None
         user_cover = ""
-        user_name = None
-        user_desc = None
+        user_game_folder=""
+        builtin_game_folder=""
 
         if game_exe:
             exe_name = os.path.splitext(os.path.basename(game_exe))[0]
@@ -477,22 +475,13 @@ class MainWindow(QMainWindow):
             user_game_folder = os.path.join(user_custom_folder, exe_name)
             os.makedirs(user_game_folder, exist_ok=True)
 
+            # Чтение обложки
             builtin_files = set(os.listdir(builtin_game_folder)) if os.path.exists(builtin_game_folder) else set()
             for ext in [".jpg", ".png", ".jpeg", ".bmp"]:
                 candidate = f"cover{ext}"
                 if candidate in builtin_files:
                     builtin_cover = os.path.join(builtin_game_folder, candidate)
                     break
-
-            builtin_metadata_file = os.path.join(builtin_game_folder, "metadata.txt")
-            if os.path.exists(builtin_metadata_file):
-                with open(builtin_metadata_file, encoding="utf-8") as f:
-                    for line in f:
-                        line = line.strip()
-                        if line.startswith("name="):
-                            builtin_name = line[len("name="):].strip()
-                        elif line.startswith("description="):
-                            builtin_desc = line[len("description="):].strip()
 
             user_files = set(os.listdir(user_game_folder)) if os.path.exists(user_game_folder) else set()
             for ext in [".jpg", ".png", ".jpeg", ".bmp"]:
@@ -501,16 +490,7 @@ class MainWindow(QMainWindow):
                     user_cover = os.path.join(user_game_folder, candidate)
                     break
 
-            user_metadata_file = os.path.join(user_game_folder, "metadata.txt")
-            if os.path.exists(user_metadata_file):
-                with open(user_metadata_file, encoding="utf-8") as f:
-                    for line in f:
-                        line = line.strip()
-                        if line.startswith("name="):
-                            user_name = line[len("name="):].strip()
-                        elif line.startswith("description="):
-                            user_desc = line[len("description="):].strip()
-
+            # Чтение статистики
             if self.portproton_location:
                 statistics_file = os.path.join(self.portproton_location, "data", "tmp", "statistics")
                 try:
@@ -526,13 +506,26 @@ class MainWindow(QMainWindow):
                     print(f"Failed to parse playtime data: {e}")
 
         def on_steam_info(steam_info: dict):
-            final_name = user_name or builtin_name or desktop_name
-            final_desc = (user_desc if user_desc is not None else
-                        builtin_desc if builtin_desc is not None else
-                        steam_info.get("description", ""))
+            # Определяем текущий язык
+            language_code = get_egs_language()
+
+            # Чтение переводов из metadata.txt
+            user_metadata_file = os.path.join(user_game_folder, "metadata.txt")
+            builtin_metadata_file = os.path.join(builtin_game_folder, "metadata.txt")
+
+            # Сначала пытаемся загрузить пользовательские переводы
+            translations = {'name': desktop_name, 'description': ''}
+            if os.path.exists(user_metadata_file):
+                translations = read_metadata_translations(user_metadata_file, language_code)
+            elif os.path.exists(builtin_metadata_file):
+                translations = read_metadata_translations(builtin_metadata_file, language_code)
+
+            final_name = translations['name']
+            final_desc = translations['description'] or steam_info.get("description", "")
             final_cover = (user_cover if user_cover else
                         builtin_cover if builtin_cover else
                         steam_info.get("cover", "") or entry.get("Icon", ""))
+
             callback((
                 final_name,
                 final_desc,

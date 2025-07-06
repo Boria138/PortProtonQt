@@ -1,6 +1,7 @@
 import gettext
 from pathlib import Path
 import locale
+import os
 from babel import Locale
 
 LOCALE_MAP = {
@@ -72,3 +73,32 @@ def get_egs_language():
 
     # Если что-то пошло не так — используем английский по умолчанию
     return 'en'
+
+def read_metadata_translations(metadata_file, language_code):
+    """
+    Читает переводы из metadata.txt для указанного языка.
+    Возвращает словарь с полями name и description.
+    Для name: использует name_<language_code>, затем name_en, затем name, и наконец _('Unknown Game').
+    Для description: использует description_<language_code>, затем description_en, затем description.
+    """
+    translations = {'name': _('Unknown Game'), 'description': ''}
+    if not os.path.exists(metadata_file):
+        return translations
+
+    with open(metadata_file, encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if line.startswith(f'name_{language_code}='):
+                translations['name'] = line[len(f'name_{language_code}='):].strip()
+            elif line.startswith('name_en=') and translations['name'] == _('Unknown Game'):
+                translations['name'] = line[len('name_en='):].strip()
+            elif line.startswith('name=') and translations['name'] == _('Unknown Game'):
+                translations['name'] = line[len('name='):].strip()
+            elif line.startswith(f'description_{language_code}='):
+                translations['description'] = line[len(f'description_{language_code}='):].strip()
+            elif line.startswith('description_en=') and not translations['description']:
+                translations['description'] = line[len('description_en='):].strip()
+            elif line.startswith('description=') and not translations['description']:
+                translations['description'] = line[len('description='):].strip()
+
+    return translations
