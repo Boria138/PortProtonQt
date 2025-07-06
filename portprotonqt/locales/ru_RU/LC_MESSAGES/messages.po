@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-07-03 19:29+0700\n"
-"PO-Revision-Date: 2025-07-03 19:28+0700\n"
+"POT-Creation-Date: 2025-07-06 17:56+0500\n"
+"PO-Revision-Date: 2025-07-06 17:56+0500\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
@@ -303,6 +303,12 @@ msgstr "Применить"
 msgid "Invalid image"
 msgstr "Недопустимое изображение"
 
+msgid "Failed to download cover"
+msgstr "Не удалось скачать обложку"
+
+msgid "Downloading cover..."
+msgstr "Скачивание обложки..."
+
 msgid "No cover selected"
 msgstr "Обложка не выбрана"
 
@@ -345,6 +351,9 @@ msgstr "Бронза"
 msgid "Pending"
 msgstr "В ожидании"
 
+msgid "Unknown Game"
+msgstr "Неизвестная игра"
+
 msgid "Library"
 msgstr "Библиотека"
 
@@ -368,9 +377,6 @@ msgstr "Загрузка игр из Steam..."
 
 msgid "Loading PortProton games..."
 msgstr "Загрузка игр из PortProton..."
-
-msgid "Unknown Game"
-msgstr "Неизвестная игра"
 
 msgid "Game Library"
 msgstr "Игровая библиотека"
