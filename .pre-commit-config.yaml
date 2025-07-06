@@ -1,6 +1,6 @@
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
-exclude: '(data/|documentation/|portprotonqt/locales/|dev-scripts/|\.venv/|venv/|.*\.svg$)'
+exclude: '(data/|documentation/|portprotonqt/locales/|portprotonqt/custom_data/|dev-scripts/|\.venv/|venv/|.*\.svg$)'
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
