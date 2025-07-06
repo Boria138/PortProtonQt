@@ -50,7 +50,9 @@ Each `<exe_name>` folder can include:
 - `metadata.txt` — contains name and description:
   ```txt
   name=My Game Title
+  name_ru=My Game Title (in russian language)
   description=My Game Description
+  description_ru=My Game Description (in russian language)
   ```
 - `cover.<extension>` — image file (`.png`, `.jpg`, `.jpeg`, `.bmp`)
 
