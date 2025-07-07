@@ -248,7 +248,8 @@ class Downloader(QObject):
         """Get the latest legendary release info from GitHub API."""
         try:
             api_url = "https://api.github.com/repos/derrod/legendary/releases/latest"
-            response = requests.get(api_url, timeout=10)
+            session = get_requests_session()
+            response = session.get(api_url, timeout=10)
             response.raise_for_status()
 
             release_data = orjson.loads(response.content)
