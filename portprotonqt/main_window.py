@@ -11,6 +11,7 @@ import psutil
 from portprotonqt.dialogs import AddGameDialog, FileExplorer
 from portprotonqt.game_card import GameCard
 from portprotonqt.custom_widgets import FlowLayout, ClickableLabel, AutoSizeButton, NavLabel
+from portprotonqt.portproton_api import PortProtonAPI
 from portprotonqt.input_manager import InputManager
 from portprotonqt.context_menu_manager import ContextMenuManager, CustomLineEdit
 from portprotonqt.system_overlay import SystemOverlay
@@ -120,6 +121,7 @@ class MainWindow(QMainWindow):
 
         self.legendary_path = os.path.join(self.legendary_config_path, "legendary")
         self.downloader = Downloader(max_workers=4)
+        self.portproton_api = PortProtonAPI(self.downloader)
 
         # Статус-бар
         self.setStatusBar(QStatusBar(self))
@@ -466,8 +468,8 @@ class MainWindow(QMainWindow):
 
         builtin_cover = ""
         user_cover = ""
-        user_game_folder=""
-        builtin_game_folder=""
+        user_game_folder = ""
+        builtin_game_folder = ""
 
         if game_exe:
             exe_name = os.path.splitext(os.path.basename(game_exe))[0]
@@ -475,7 +477,19 @@ class MainWindow(QMainWindow):
             user_game_folder = os.path.join(user_custom_folder, exe_name)
             os.makedirs(user_game_folder, exist_ok=True)
 
-            # Чтение обложки
+            # Check if local game folder is empty and download assets if it is
+            if not os.listdir(user_game_folder):
+                logger.debug(f"Local folder for {exe_name} is empty, checking repository")
+                def on_assets_downloaded(results):
+                    nonlocal user_cover
+                    if results["cover"]:
+                        user_cover = results["cover"]
+                        logger.info(f"Downloaded assets for {exe_name}: {results}")
+                    if results["metadata"]:
+                        logger.info(f"Downloaded metadata for {exe_name}: {results['metadata']}")
+                self.portproton_api.download_game_assets_async(exe_name, timeout=5, callback=on_assets_downloaded)
+
+            # Read cover
             builtin_files = set(os.listdir(builtin_game_folder)) if os.path.exists(builtin_game_folder) else set()
             for ext in [".jpg", ".png", ".jpeg", ".bmp"]:
                 candidate = f"cover{ext}"
@@ -490,7 +504,7 @@ class MainWindow(QMainWindow):
                     user_cover = os.path.join(user_game_folder, candidate)
                     break
 
-            # Чтение статистики
+            # Read statistics
             if self.portproton_location:
                 statistics_file = os.path.join(self.portproton_location, "data", "tmp", "statistics")
                 try:
@@ -503,17 +517,17 @@ class MainWindow(QMainWindow):
                         playtime_seconds = playtime_data[matching_key]
                         formatted_playtime = format_playtime(playtime_seconds)
                 except Exception as e:
-                    print(f"Failed to parse playtime data: {e}")
+                    logger.error(f"Failed to parse playtime data: {e}")
 
         def on_steam_info(steam_info: dict):
-            # Определяем текущий язык
+            # Get current language
             language_code = get_egs_language()
 
-            # Чтение переводов из metadata.txt
+            # Read translations from metadata.txt
             user_metadata_file = os.path.join(user_game_folder, "metadata.txt")
             builtin_metadata_file = os.path.join(builtin_game_folder, "metadata.txt")
 
-            # Сначала пытаемся загрузить пользовательские переводы
+            # Try user translations first
             translations = {'name': desktop_name, 'description': ''}
             if os.path.exists(user_metadata_file):
                 translations = read_metadata_translations(user_metadata_file, language_code)
