@@ -1,19 +1,33 @@
 import os
+import tarfile
+import orjson
 import requests
+import urllib.parse
+import time
 from collections.abc import Callable
-from portprotonqt.downloader import Downloader, download_with_cache
+from portprotonqt.downloader import Downloader
 from portprotonqt.logger import get_logger
 
 logger = get_logger(__name__)
+CACHE_DURATION = 30 * 24 * 60 * 60  # 30 days in seconds
+
+def get_cache_dir():
+    """Return the cache directory path, creating it if necessary."""
+    xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
+    cache_dir = os.path.join(xdg_cache_home, "PortProtonQt")
+    os.makedirs(cache_dir, exist_ok=True)
+    return cache_dir
 
 class PortProtonAPI:
-    """API to fetch game assets (cover, metadata) from the PortProtonQt repository."""
+    """API to fetch game assets (cover, metadata) and forum topics from the PortProtonQt repository."""
     def __init__(self, downloader: Downloader | None = None):
         self.base_url = "https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/portprotonqt/custom_data"
+        self.topics_url = "https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/data/linux_gaming_topics.tar.xz"
         self.downloader = downloader or Downloader(max_workers=4)
         self.xdg_data_home = os.getenv("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share"))
         self.custom_data_dir = os.path.join(self.xdg_data_home, "PortProtonQt", "custom_data")
         os.makedirs(self.custom_data_dir, exist_ok=True)
+        self._topics_data = None
 
     def _get_game_dir(self, exe_name: str) -> str:
         game_dir = os.path.join(self.custom_data_dir, exe_name)
@@ -40,7 +54,7 @@ class PortProtonAPI:
             cover_url = f"{cover_url_base}{ext}"
             if self._check_file_exists(cover_url, timeout):
                 local_cover_path = os.path.join(game_dir, f"cover{ext}")
-                result = download_with_cache(cover_url, local_cover_path, timeout, self.downloader)
+                result = self.downloader.download(cover_url, local_cover_path, timeout=timeout)
                 if result:
                     results["cover"] = result
                     logger.info(f"Downloaded cover for {exe_name} to {result}")
@@ -52,7 +66,7 @@ class PortProtonAPI:
 
         if self._check_file_exists(metadata_url, timeout):
             local_metadata_path = os.path.join(game_dir, "metadata.txt")
-            result = download_with_cache(metadata_url, local_metadata_path, timeout, self.downloader)
+            result = self.downloader.download(metadata_url, local_metadata_path, timeout=timeout)
             if result:
                 results["metadata"] = result
                 logger.info(f"Downloaded metadata for {exe_name} to {result}")
@@ -123,3 +137,66 @@ class PortProtonAPI:
             logger.debug(f"No assets found for {exe_name}")
             if callback:
                 callback(results)
+
+    def _load_topics_data(self):
+        """Load and cache linux_gaming_topics_min.json from the archive."""
+        if self._topics_data is not None:
+            return self._topics_data
+
+        cache_dir = get_cache_dir()
+        cache_tar = os.path.join(cache_dir, "linux_gaming_topics.tar.xz")
+        cache_json = os.path.join(cache_dir, "linux_gaming_topics_min.json")
+
+        if os.path.exists(cache_json) and (time.time() - os.path.getmtime(cache_json) < CACHE_DURATION):
+            logger.info("Using cached topics JSON: %s", cache_json)
+            try:
+                with open(cache_json, "rb") as f:
+                    self._topics_data = orjson.loads(f.read())
+                logger.debug("Loaded %d topics from cache", len(self._topics_data))
+                return self._topics_data
+            except Exception as e:
+                logger.error("Error reading cached topics JSON: %s", e)
+                self._topics_data = []
+
+        def process_tar(result: str | None):
+            if not result or not os.path.exists(result):
+                logger.error("Failed to download topics archive")
+                self._topics_data = []
+                return
+            try:
+                with tarfile.open(result, mode="r:xz") as tar:
+                    member = next((m for m in tar.getmembers() if m.name == "linux_gaming_topics_min.json"), None)
+                    if member is None:
+                        raise RuntimeError("linux_gaming_topics_min.json not found in archive")
+                    fobj = tar.extractfile(member)
+                    if fobj is None:
+                        raise RuntimeError("Failed to extract linux_gaming_topics_min.json from archive")
+                    raw = fobj.read()
+                    fobj.close()
+                    self._topics_data = orjson.loads(raw)
+                    with open(cache_json, "wb") as f:
+                        f.write(orjson.dumps(self._topics_data))
+                    if os.path.exists(cache_tar):
+                        os.remove(cache_tar)
+                        logger.info("Archive %s deleted after extraction", cache_tar)
+                    logger.info("Loaded %d topics from archive", len(self._topics_data))
+            except Exception as e:
+                logger.error("Error processing topics archive: %s", e)
+                self._topics_data = []
+
+        self.downloader.download_async(self.topics_url, cache_tar, timeout=5, callback=process_tar)
+        # Wait for async download to complete if called synchronously
+        while self._topics_data is None:
+            time.sleep(0.1)
+        return self._topics_data
+
+    def get_forum_topic_slug(self, game_name: str) -> str:
+        """Get the forum topic slug or search URL for a given game name."""
+        topics = self._load_topics_data()
+        normalized_name = game_name.lower().replace(" ", "-")
+        for topic in topics:
+            if topic["normalized_title"] == normalized_name:
+                return topic["slug"]
+        logger.debug("No forum topic found for game: %s, redirecting to search", game_name)
+        encoded_name = urllib.parse.quote(f"#ppdb {game_name}")
+        return f"search?q={encoded_name}"

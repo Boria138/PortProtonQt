@@ -9,6 +9,8 @@ from portprotonqt.config_utils import read_favorites, save_favorites, read_displ
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.config_utils import read_theme_from_config
 from portprotonqt.custom_widgets import ClickableLabel
+from portprotonqt.portproton_api import PortProtonAPI
+from portprotonqt.downloader import Downloader
 import weakref
 from typing import cast
 
@@ -56,6 +58,8 @@ class GameCard(QFrame):
 
         self.display_filter = read_display_filter()
         self.current_theme_name = read_theme_from_config()
+        self.downloader = Downloader(max_workers=4)
+        self.portproton_api = PortProtonAPI(self.downloader)
 
         self.steam_visible = (str(game_source).lower() == "steam" and self.display_filter in ("all", "favorites"))
         self.egs_visible = (str(game_source).lower() == "epic" and self.display_filter in ("all", "favorites"))
@@ -194,13 +198,13 @@ class GameCard(QFrame):
             parent=coverWidget,
             icon_size=icon_size,
             icon_space=icon_space,
-            font_scale_factor=font_scale_factor,
-            change_cursor=False
+            font_scale_factor=font_scale_factor
         )
         self.portprotonLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
         self.portprotonLabel.setFixedWidth(badge_width)
         self.portprotonLabel.setCardWidth(card_width)
         self.portprotonLabel.setVisible(self.portproton_visible)
+        self.portprotonLabel.clicked.connect(self.open_portproton_forum_topic)
 
         # WeAntiCheatYet бейдж
         anticheat_text = self.getAntiCheatText(anticheat_status)
@@ -384,6 +388,16 @@ class GameCard(QFrame):
         elif tier in ("borked", "pending"):
             return "broken"
         return ""
+
+    def open_portproton_forum_topic(self):
+        """Open the PortProton forum topic or search page for this game."""
+        result = self.portproton_api.get_forum_topic_slug(self.name)
+        base_url = "https://linux-gaming.ru/"
+        if result.startswith("search?q="):
+            url = QUrl(f"{base_url}{result}")
+        else:
+            url = QUrl(f"{base_url}t/{result}")
+        QDesktopServices.openUrl(url)
 
     def open_protondb_report(self):
         url = QUrl(f"https://www.protondb.com/app/{self.appid}")

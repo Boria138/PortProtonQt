@@ -248,6 +248,16 @@ class MainWindow(QMainWindow):
         self.updateGameGrid()
         self.progress_bar.setVisible(False)
 
+    def open_portproton_forum_topic(self, topic_name: str):
+        """Open the PortProton forum topic or search page for this game."""
+        result = self.portproton_api.get_forum_topic_slug(topic_name)
+        base_url = "https://linux-gaming.ru/"
+        if result.startswith("search?q="):
+            url = QUrl(f"{base_url}{result}")
+        else:
+            url = QUrl(f"{base_url}t/{result}")
+        QDesktopServices.openUrl(url)
+
     def _on_card_focused(self, game_name: str, is_focused: bool):
         """Обработчик сигнала focusChanged от GameCard."""
         card_key = None
@@ -1639,11 +1649,11 @@ class MainWindow(QMainWindow):
             parent=coverFrame,
             icon_size=16,
             icon_space=5,
-            change_cursor=False
         )
         portprotonLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
         portprotonLabel.setFixedWidth(badge_width)
         portprotonLabel.setVisible(portproton_visible)
+        portprotonLabel.clicked.connect(lambda: self.open_portproton_forum_topic(name))
 
         # WeAntiCheatYet бейдж
         anticheat_text = GameCard.getAntiCheatText(anticheat_status)
