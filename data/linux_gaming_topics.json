@@ -1,5 +1,137 @@
 [
   {
+    "normalized_title": "return alive",
+    "slug": "return-alive"
+  },
+  {
+    "normalized_title": "s.t.a.l.k.e.r. anomaly g.a.m.m.a",
+    "slug": "s-t-a-l-k-e-r-anomaly-g-a-m-m-a"
+  },
+  {
+    "normalized_title": "recore",
+    "slug": "recore-definitive-edition"
+  },
+  {
+    "normalized_title": "no man's sky",
+    "slug": "no-mans-sky"
+  },
+  {
+    "normalized_title": "alan wake 2",
+    "slug": "alan-wake-2"
+  },
+  {
+    "normalized_title": "architect life a house design simulator",
+    "slug": "architect-life-a-house-design-simulator"
+  },
+  {
+    "normalized_title": "clair obscur expedition 33",
+    "slug": "clair-obscur-expedition-33"
+  },
+  {
+    "normalized_title": "metro 2033 redux",
+    "slug": "metro-2033-redux"
+  },
+  {
+    "normalized_title": "nova drift",
+    "slug": "nova-drift"
+  },
+  {
+    "normalized_title": "deathloop",
+    "slug": "deathloop"
+  },
+  {
+    "normalized_title": "mullet madjack",
+    "slug": "mullet-madjack"
+  },
+  {
+    "normalized_title": "luma island",
+    "slug": "luma-island"
+  },
+  {
+    "normalized_title": "cash cleaner simulator",
+    "slug": "cash-cleaner-simulator"
+  },
+  {
+    "normalized_title": "the plucky squire (отважный паж)",
+    "slug": "the-plucky-squire-otvazhnyj-pazh"
+  },
+  {
+    "normalized_title": "crsed cuisine royale",
+    "slug": "crsed-cuisine-royale"
+  },
+  {
+    "normalized_title": "tainted grail the fall of avalon",
+    "slug": "tainted-grail-the-fall-of-avalon"
+  },
+  {
+    "normalized_title": "battle of space raiders",
+    "slug": "battle-of-space-raiders"
+  },
+  {
+    "normalized_title": "gzdoom",
+    "slug": "gzdoom"
+  },
+  {
+    "normalized_title": "rain on your parade",
+    "slug": "rain-on-your-parade"
+  },
+  {
+    "normalized_title": "партизан (partisan widerstand hinter feindlichen linien)",
+    "slug": "partizan-partisan-widerstand-hinter-feindlichen-linien"
+  },
+  {
+    "normalized_title": "ebola 2",
+    "slug": "ebola-2"
+  },
+  {
+    "normalized_title": "monster care simulator",
+    "slug": "monster-care-simulator"
+  },
+  {
+    "normalized_title": "steins;gate the distant valhalla",
+    "slug": "steins-gate-the-distant-valhalla"
+  },
+  {
+    "normalized_title": "hogwarts legacy",
+    "slug": "hogwarts-legacy"
+  },
+  {
+    "normalized_title": "osu!",
+    "slug": "osu"
+  },
+  {
+    "normalized_title": "stalker online (stay out)",
+    "slug": "stalker-online-stay-out"
+  },
+  {
+    "normalized_title": "slitterhead",
+    "slug": "slitterhead"
+  },
+  {
+    "normalized_title": "indiana jones and the great circle",
+    "slug": "indiana-jones-and-the-great-circle"
+  },
+  {
+    "normalized_title": "crossout",
+    "slug": "crossout"
+  },
+  {
+    "normalized_title": "days gone",
+    "slug": "days-gone"
+  },
+  {
+    "normalized_title": "warcraft iii reforged 2.0",
+    "slug": "warcraft-iii-reforged-2-0"
+  },
+  {
+    "normalized_title": "biomutant",
+    "slug": "biomutant"
+  },
+  {
+    "normalized_title": "overwatch 2",
+    "slug": "overwatch-2"
+  },
+  {
     "normalized_title": "settlement survival",
     "slug": "settlement-survival"
   },
@@ -550,10 +682,6 @@
   {
     "normalized_title": "snowrunner (ранее mudrunner 2)",
     "slug": "snowrunner-ranee-mudrunner-2"
-  },
-  {
-    "normalized_title": "alan wake 2",
-    "slug": "alan-wake-2"
   },
   {
     "normalized_title": "verse project",
