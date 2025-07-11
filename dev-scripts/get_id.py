@@ -100,33 +100,124 @@ async def fetch_games_json(session):
         return []
 
 async def get_linux_gaming_topics(session, category_slug):
-    """
-    Получает все темы из указанной категории linux-gaming.ru.
-    Сохраняет только нормализованное название (normalized_title) и slug.
-    """
     page = 0
     all_topics = []
+    max_pages = 100
 
-    while True:
-        page += 1
-        url = f"{LINUX_GAMING_BASE_URL}/c/{category_slug}/l/latest.json?page={page}"
-        try:
-            async with session.get(url, headers=LINUX_GAMING_HEADERS, verify_ssl=not DEBUG_MODE) as response:
-                response.raise_for_status()
-                data = await response.json()
-                topics = data.get("topic_list", {}).get("topics", [])
-                if not topics:
+    while page < max_pages:
+        # Пробуем несколько вариантов URL
+        urls_to_try = [
+            f"{LINUX_GAMING_BASE_URL}/c/{category_slug}/5/l/latest.json",  # с id категории
+            f"{LINUX_GAMING_BASE_URL}/c/{category_slug}/l/latest.json",     # только slug
+            f"{LINUX_GAMING_BASE_URL}/c/5/l/latest.json",                  # только id
+            f"{LINUX_GAMING_BASE_URL}/latest.json"                         # все темы
+        ]
+
+        success = False
+        data = None
+
+        for url in urls_to_try:
+            try:
+                # Добавляем параметры пагинации
+                params = {
+                    'page': page,
+                    'order': 'default'
+                }
+
+                async with session.get(url, headers=LINUX_GAMING_HEADERS,
+                                     params=params, verify_ssl=not DEBUG_MODE) as response:
+                    if response.status == 429:
+                        print(f"Слишком много запросов на странице {page}, ожидание...")
+                        await asyncio.sleep(5)
+                        continue
+
+                    if response.status == 404:
+                        if DEBUG_MODE:
+                            print(f"URL не найден: {url}")
+                        continue
+
+                    response.raise_for_status()
+                    data = await response.json()
+
+                    # Проверяем структуру ответа
+                    topic_list = data.get("topic_list", {})
+                    topics = topic_list.get("topics", [])
+
+                    if not topics:
+                        if page == 0:
+                            if DEBUG_MODE:
+                                print(f"Нет тем в URL: {url}")
+                            continue
+                        else:
+                            print(f"Страница {page} пуста, завершаем пагинацию.")
+                            return all_topics
+
+                    if DEBUG_MODE and page == 0:
+                        print(f"Успешно подключились к URL: {url}")
+
+                    success = True
                     break
-                for topic in topics:
-                    all_topics.append({
-                        "normalized_title": normalize_name(topic["title"]),
-                        "slug": topic["slug"]
-                    })
-                print(f"Обработано {len(topics)} тем на странице {page}, всего: {len(all_topics)}.")
-        except Exception as error:
-            print(f"Ошибка получения тем для страницы {page}: {error}")
+
+            except Exception as e:
+                if DEBUG_MODE:
+                    print(f"Ошибка с URL {url}: {e}")
+                continue
+
+        if not success:
+            print(f"Не удалось загрузить страницу {page}")
             break
+
+        # Обрабатываем темы (этот блок должен быть внутри основного цикла)
+        try:
+            topic_list = data.get("topic_list", {})
+            topics = topic_list.get("topics", [])
+
+            page_topics_added = 0
+            for topic in topics:
+                slug = topic["slug"]
+
+                # Пропускаем тему описания категории
+                if slug is None or slug == "opisanie-kategorii-portprotondb":
+                    if DEBUG_MODE:
+                        print(f"Пропущена тема описания категории")
+                    continue
+
+                normalized_title = normalize_name(topic["title"])
+
+                # Добавляем только валидные темы
+                all_topics.append({
+                    "normalized_title": normalized_title,
+                    "slug": slug,
+                })
+                page_topics_added += 1
+
+                if DEBUG_MODE and page_topics_added <= 3:  # Показываем первые 3 темы
+                    print(f"Добавлена тема: {normalized_title} (slug: {slug}")
+
+            print(f"Обработано {len(topics)} тем на странице {page}, добавлено: {page_topics_added}, всего: {len(all_topics)}.")
+
+            # Проверяем, есть ли еще страницы
+            more_topics_url = topic_list.get("more_topics_url")
+            if not more_topics_url:
+                print("Больше тем нет, завершаем пагинацию.")
+                break
+
+            page += 1
+
+            # Добавляем небольшую задержку между запросами
+            await asyncio.sleep(0.5)
+
+        except Exception as e:
+            print(f"Ошибка при обработке тем на странице {page}: {e}")
+            break
+
+    if not all_topics:
+        print("Предупреждение: не удалось получить ни одной темы из linux-gaming.ru.")
+    else:
+        print(f"Всего получено {len(all_topics)} тем из категории {category_slug}")
+
     return all_topics
+
 
 async def request_data():
     """
