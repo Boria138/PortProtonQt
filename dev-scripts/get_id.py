@@ -5,6 +5,7 @@ import json
 import asyncio
 import aiohttp
 import tarfile
+import ssl
 
 # Получаем ключи и данные из переменных окружения
 STEAM_KEY = os.environ.get('STEAM_KEY')
@@ -15,6 +16,7 @@ LINUX_GAMING_API_USERNAME = os.environ.get('LINUX_GAMING_API_USERNAME')
 ENABLE_STEAM = os.environ.get('ENABLE_STEAM', 'true').lower() == 'true'
 ENABLE_ANTICHEAT = os.environ.get('ENABLE_ANTICHEAT', 'true').lower() == 'true'
 ENABLE_LINUX_GAMING = os.environ.get('ENABLE_LINUX_GAMING', 'true').lower() == 'true'
+DEBUG_MODE = os.environ.get('DEBUG_MODE', 'false').lower() == 'true'
 
 # Конфигурация API
 STEAM_BASE_URL = "https://api.steampowered.com/IStoreService/GetAppList/v1/?"
@@ -25,6 +27,10 @@ LINUX_GAMING_HEADERS = {
     "Api-Key": LINUX_GAMING_API_KEY,
     "Api-Username": LINUX_GAMING_API_USERNAME
 }
+
+# Отключаем предупреждения об SSL в дебаг-режиме
+if DEBUG_MODE:
+    print("DEBUG_MODE enabled: SSL verification is disabled (insecure, use for debugging only).")
 
 def normalize_name(s):
     """
@@ -74,7 +80,7 @@ async def get_app_list(session, last_appid, endpoint):
     url = endpoint
     if last_appid:
         url = f"{url}&last_appid={last_appid}"
-    async with session.get(url) as response:
+    async with session.get(url, verify_ssl=not DEBUG_MODE) as response:
         response.raise_for_status()
         return await response.json()
 
@@ -84,7 +90,7 @@ async def fetch_games_json(session):
     """
     url = "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/HEAD/games.json"
     try:
-        async with session.get(url) as response:
+        async with session.get(url, verify_ssl=not DEBUG_MODE) as response:
             response.raise_for_status()
             text = await response.text()
             data = json.loads(text)
@@ -105,7 +111,7 @@ async def get_linux_gaming_topics(session, category_slug):
         page += 1
         url = f"{LINUX_GAMING_BASE_URL}/c/{category_slug}/l/latest.json?page={page}"
         try:
-            async with session.get(url, headers=LINUX_GAMING_HEADERS) as response:
+            async with session.get(url, headers=LINUX_GAMING_HEADERS, verify_ssl=not DEBUG_MODE) as response:
                 response.raise_for_status()
                 data = await response.json()
                 topics = data.get("topic_list", {}).get("topics", [])
