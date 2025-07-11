@@ -11,6 +11,11 @@ STEAM_KEY = os.environ.get('STEAM_KEY')
 LINUX_GAMING_API_KEY = os.environ.get('LINUX_GAMING_API_KEY')
 LINUX_GAMING_API_USERNAME = os.environ.get('LINUX_GAMING_API_USERNAME')
 
+# Флаги для включения/отключения источников
+ENABLE_STEAM = os.environ.get('ENABLE_STEAM', 'true').lower() == 'true'
+ENABLE_ANTICHEAT = os.environ.get('ENABLE_ANTICHEAT', 'true').lower() == 'true'
+ENABLE_LINUX_GAMING = os.environ.get('ENABLE_LINUX_GAMING', 'true').lower() == 'true'
+
 # Конфигурация API
 STEAM_BASE_URL = "https://api.steampowered.com/IStoreService/GetAppList/v1/?"
 LINUX_GAMING_BASE_URL = "https://linux-gaming.ru"
@@ -122,19 +127,6 @@ async def request_data():
     Получает данные из Steam, AreWeAntiCheatYet и linux-gaming.ru,
     обрабатывает их и сохраняет в JSON-файлы и tar.xz архивы.
     """
-    # Параметры запроса для Steam
-    game_param = "&include_games=true"
-    dlc_param = "&include_dlc=false"
-    software_param = "&include_software=false"
-    videos_param = "&include_videos=false"
-    hardware_param = "&include_hardware=false"
-
-    endpoint = (
-        f"{STEAM_BASE_URL}key={STEAM_KEY}"
-        f"{game_param}{dlc_param}{software_param}{videos_param}{hardware_param}"
-        f"&max_results=50000"
-    )
-
     output_json = []
     total_parsed = 0
     linux_gaming_topics = []
@@ -143,26 +135,48 @@ async def request_data():
     try:
         async with aiohttp.ClientSession() as session:
             # Загружаем данные Steam
-            have_more_results = True
-            last_appid_val = None
-            while have_more_results:
-                app_list = await get_app_list(session, last_appid_val, endpoint)
-                apps = app_list['response']['apps']
-                apps = process_steam_apps(apps)
-                output_json.extend(apps)
-                total_parsed += len(apps)
-                have_more_results = app_list['response'].get('have_more_results', False)
-                last_appid_val = app_list['response'].get('last_appid')
-                print(f"Обработано {len(apps)} игр Steam, всего: {total_parsed}.")
+            if ENABLE_STEAM:
+                # Параметры запроса для Steam
+                game_param = "&include_games=true"
+                dlc_param = "&include_dlc=false"
+                software_param = "&include_software=false"
+                videos_param = "&include_videos=false"
+                hardware_param = "&include_hardware=false"
+
+                endpoint = (
+                    f"{STEAM_BASE_URL}key={STEAM_KEY}"
+                    f"{game_param}{dlc_param}{software_param}{videos_param}{hardware_param}"
+                    f"&max_results=50000"
+                )
+
+                have_more_results = True
+                last_appid_val = None
+                while have_more_results:
+                    app_list = await get_app_list(session, last_appid_val, endpoint)
+                    apps = app_list['response']['apps']
+                    apps = process_steam_apps(apps)
+                    output_json.extend(apps)
+                    total_parsed += len(apps)
+                    have_more_results = app_list['response'].get('have_more_results', False)
+                    last_appid_val = app_list['response'].get('last_appid')
+                    print(f"Обработано {len(apps)} игр Steam, всего: {total_parsed}.")
+            else:
+                print("Пропущена загрузка данных Steam (ENABLE_STEAM=false).")
 
             # Загружаем данные AreWeAntiCheatYet
-            anticheat_games = await fetch_games_json(session)
+            if ENABLE_ANTICHEAT:
+                anticheat_games = await fetch_games_json(session)
+            else:
+                print("Пропущена загрузка данных AreWeAntiCheatYet (ENABLE_ANTICHEAT=false).")
 
             # Загружаем данные linux-gaming.ru
-            if LINUX_GAMING_API_KEY and LINUX_GAMING_API_USERNAME:
-                linux_gaming_topics = await get_linux_gaming_topics(session, CATEGORY_LINUX_GAMING)
+            if ENABLE_LINUX_GAMING:
+                if LINUX_GAMING_API_KEY and LINUX_GAMING_API_USERNAME:
+                    linux_gaming_topics = await get_linux_gaming_topics(session, CATEGORY_LINUX_GAMING)
+                else:
+                    print("Предупреждение: LINUX_GAMING_API_KEY или LINUX_GAMING_API_USERNAME не установлены.")
             else:
-                print("Предупреждение: LINUX_GAMING_API_KEY или LINUX_GAMING_API_USERNAME не установлены.")
+                print("Пропущена загрузка данных linux-gaming.ru (ENABLE_LINUX_GAMING=false).")
 
     except Exception as error:
         print(f"Ошибка получения данных: {error}")
@@ -173,55 +187,55 @@ async def request_data():
     os.makedirs(data_dir, exist_ok=True)
 
     # Сохранение данных Steam
-    output_json_full = os.path.join(data_dir, f"{CATEGORY_STEAM}_appid.json")
-    output_json_min = os.path.join(data_dir, f"{CATEGORY_STEAM}_appid_min.json")
-    with open(output_json_full, "w", encoding="utf-8") as f:
-        json.dump(output_json, f, ensure_ascii=False, indent=2)
-    with open(output_json_min, "w", encoding="utf-8") as f:
-        json.dump(output_json, f, ensure_ascii=False, separators=(',',':'))
+    if ENABLE_STEAM and output_json:
+        output_json_full = os.path.join(data_dir, f"{CATEGORY_STEAM}_appid.json")
+        output_json_min = os.path.join(data_dir, f"{CATEGORY_STEAM}_appid_min.json")
+        with open(output_json_full, "w", encoding="utf-8") as f:
+            json.dump(output_json, f, ensure_ascii=False, indent=2)
+        with open(output_json_min, "w", encoding="utf-8") as f:
+            json.dump(output_json, f, ensure_ascii=False, separators=(',',':'))
+
+        # Упаковка минифицированного JSON Steam в tar.xz архив
+        steam_archive_path = os.path.join(data_dir, f"{CATEGORY_STEAM}_appid.tar.xz")
+        try:
+            with tarfile.open(steam_archive_path, "w:xz", preset=9) as tar:
+                tar.add(output_json_min, arcname=os.path.basename(output_json_min))
+            print(f"Упаковано минифицированное JSON Steam в архив: {steam_archive_path}")
+            os.remove(output_json_min)
+        except Exception as e:
+            print(f"Ошибка при упаковке архива Steam: {e}")
+            return False
 
     # Сохранение данных AreWeAntiCheatYet
-    anticheat_json_full = os.path.join(data_dir, "anticheat_games.json")
-    anticheat_json_min = os.path.join(data_dir, "anticheat_games_min.json")
-    with open(anticheat_json_full, "w", encoding="utf-8") as f:
-        json.dump(anticheat_games, f, ensure_ascii=False, indent=2)
-    with open(anticheat_json_min, "w", encoding="utf-8") as f:
-        json.dump(anticheat_games, f, ensure_ascii=False, separators=(',',':'))
+    if ENABLE_ANTICHEAT and anticheat_games:
+        anticheat_json_full = os.path.join(data_dir, "anticheat_games.json")
+        anticheat_json_min = os.path.join(data_dir, "anticheat_games_min.json")
+        with open(anticheat_json_full, "w", encoding="utf-8") as f:
+            json.dump(anticheat_games, f, ensure_ascii=False, indent=2)
+        with open(anticheat_json_min, "w", encoding="utf-8") as f:
+            json.dump(anticheat_games, f, ensure_ascii=False, separators=(',',':'))
+
+        # Упаковка минифицированного JSON AreWeAntiCheatYet в tar.xz архив
+        anticheat_archive_path = os.path.join(data_dir, "anticheat_games.tar.xz")
+        try:
+            with tarfile.open(anticheat_archive_path, "w:xz", preset=9) as tar:
+                tar.add(anticheat_json_min, arcname=os.path.basename(anticheat_json_min))
+            print(f"Упаковано минифицированное JSON AreWeAntiCheatYet в архив: {anticheat_archive_path}")
+            os.remove(anticheat_json_min)
+        except Exception as e:
+            print(f"Ошибка при упаковке архива AreWeAntiCheatYet: {e}")
+            return False
 
     # Сохранение данных linux-gaming.ru
-    linux_gaming_json_full = os.path.join(data_dir, "linux_gaming_topics.json")
-    linux_gaming_json_min = os.path.join(data_dir, "linux_gaming_topics_min.json")
-    if linux_gaming_topics:
+    if ENABLE_LINUX_GAMING and linux_gaming_topics:
+        linux_gaming_json_full = os.path.join(data_dir, "linux_gaming_topics.json")
+        linux_gaming_json_min = os.path.join(data_dir, "linux_gaming_topics_min.json")
         with open(linux_gaming_json_full, "w", encoding="utf-8") as f:
             json.dump(linux_gaming_topics, f, ensure_ascii=False, indent=2)
         with open(linux_gaming_json_min, "w", encoding="utf-8") as f:
             json.dump(linux_gaming_topics, f, ensure_ascii=False, separators=(',',':'))
 
-    # Упаковка минифицированных JSON в tar.xz архивы
-    # Архив для Steam
-    steam_archive_path = os.path.join(data_dir, f"{CATEGORY_STEAM}_appid.tar.xz")
-    try:
-        with tarfile.open(steam_archive_path, "w:xz", preset=9) as tar:
-            tar.add(output_json_min, arcname=os.path.basename(output_json_min))
-        print(f"Упаковано минифицированное JSON Steam в архив: {steam_archive_path}")
-        os.remove(output_json_min)
-    except Exception as e:
-        print(f"Ошибка при упаковке архива Steam: {e}")
-        return False
-
-    # Архив для AreWeAntiCheatYet
-    anticheat_archive_path = os.path.join(data_dir, "anticheat_games.tar.xz")
-    try:
-        with tarfile.open(anticheat_archive_path, "w:xz", preset=9) as tar:
-            tar.add(anticheat_json_min, arcname=os.path.basename(anticheat_json_min))
-        print(f"Упаковано минифицированное JSON AreWeAntiCheatYet в архив: {anticheat_archive_path}")
-        os.remove(anticheat_json_min)
-    except Exception as e:
-        print(f"Ошибка при упаковке архива AreWeAntiCheatYet: {e}")
-        return False
-
-    # Архив для linux-gaming.ru
-    if linux_gaming_topics:
+        # Упаковка минифицированного JSON linux-gaming.ru в tar.xz архив
         linux_gaming_archive_path = os.path.join(data_dir, "linux_gaming_topics.tar.xz")
         try:
             with tarfile.open(linux_gaming_archive_path, "w:xz", preset=9) as tar:
