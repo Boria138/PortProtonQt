@@ -11,6 +11,31 @@ from portprotonqt.logger import get_logger
 logger = get_logger(__name__)
 CACHE_DURATION = 30 * 24 * 60 * 60  # 30 days in seconds
 
+def normalize_name(s):
+    """
+    Приведение строки к нормальному виду:
+    - перевод в нижний регистр,
+    - удаление символов ™ и ®,
+    - замена разделителей (-, :, ,) на пробел,
+    - удаление лишних пробелов,
+    - удаление суффиксов 'bin' или 'app' в конце строки,
+    - удаление ключевых слов типа 'ultimate', 'edition' и т.п.
+    """
+    s = s.lower()
+    for ch in ["™", "®"]:
+        s = s.replace(ch, "")
+    for ch in ["-", ":", ","]:
+        s = s.replace(ch, " ")
+    s = " ".join(s.split())
+    for suffix in ["bin", "app"]:
+        if s.endswith(suffix):
+            s = s[:-len(suffix)].strip()
+
+    keywords_to_remove = {"ultimate", "edition", "definitive", "complete", "remastered"}
+    words = s.split()
+    filtered_words = [word for word in words if word not in keywords_to_remove]
+    return " ".join(filtered_words)
+
 def get_cache_dir():
     """Return the cache directory path, creating it if necessary."""
     xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
@@ -193,7 +218,7 @@ class PortProtonAPI:
     def get_forum_topic_slug(self, game_name: str) -> str:
         """Get the forum topic slug or search URL for a given game name."""
         topics = self._load_topics_data()
-        normalized_name = game_name.lower().replace(" ", "-")
+        normalized_name = normalize_name(game_name)
         for topic in topics:
             if topic["normalized_title"] == normalized_name:
                 return topic["slug"]
