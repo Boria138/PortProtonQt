@@ -17,6 +17,7 @@
 
 ### Fixed
 - Запрос к GitHub API при загрузке legendary теперь не игнорирует настройки прокси
+- Путь к portprotonqt-session-select в оверлее
 
 ### Contributors
 - @Vector_null
