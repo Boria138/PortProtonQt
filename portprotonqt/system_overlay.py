@@ -20,6 +20,8 @@ class SystemOverlay(QDialog):
         self.theme_manager = ThemeManager()
         self.setStyleSheet(self.theme.OVERLAY_WINDOW_STYLE)
 
+        self.script_path = "/usr/bin/portprotonqt-session-select"
+
         # Make window stay on top and frameless
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint |
@@ -79,8 +81,7 @@ class SystemOverlay(QDialog):
         desktop_button.setStyleSheet(self.theme.OVERLAY_BUTTON_STYLE)
         desktop_button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         desktop_button.clicked.connect(self.return_to_desktop)
-        script_path = "/usr/bin/portprotonqt-session-select"
-        script_exists = os.path.isfile(script_path)
+        script_exists = os.path.isfile(self.script_path)
         desktop_button.setEnabled(script_exists)
         if not script_exists:
             desktop_button.setToolTip(_("portprotonqt-session-select file not found at /usr/bin/"))
@@ -139,8 +140,8 @@ class SystemOverlay(QDialog):
 
     def return_to_desktop(self):
         try:
-            script_path = os.path.join(os.path.dirname(__file__), "portprotonqt-session-select")
-            subprocess.run([script_path, "desktop"], check=True)
+            QApplication.quit()
+            subprocess.run([self.script_path, "desktop"], check=True)
         except subprocess.CalledProcessError as e:
             logger.error(f"Failed to return to desktop: {e}")
             QMessageBox.warning(self, _("Error"), _("Failed to return to desktop"))
