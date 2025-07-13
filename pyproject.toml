@@ -27,6 +27,7 @@ classifiers = [
 requires-python = ">=3.10"
 dependencies = [
     "babel>=2.17.0",
+    "beautifulsoup4>=4.13.4",
     "evdev>=1.9.1",
     "icoextract>=0.1.6",
     "numpy>=2.2.4",
