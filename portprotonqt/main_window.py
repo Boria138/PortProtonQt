@@ -31,6 +31,7 @@ from portprotonqt.config_utils import (
 )
 from portprotonqt.localization import _, get_egs_language, read_metadata_translations
 from portprotonqt.logger import get_logger
+from portprotonqt.howlongtobeat_api import HowLongToBeat
 from portprotonqt.downloader import Downloader
 
 from PySide6.QtWidgets import (QLineEdit, QMainWindow, QStatusBar, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox, QScrollArea, QSlider,
@@ -1589,7 +1590,7 @@ class MainWindow(QMainWindow):
         badge_spacing = 5
         top_y = 10
         badge_y_positions = []
-        badge_width = int(300 * 2/3)  # 2/3 ширины обложки (300 px)
+        badge_width = int(300 * 2/3)
 
         # ProtonDB бейдж
         protondb_text = GameCard.getProtonDBText(protondb_tier)
@@ -1678,11 +1679,6 @@ class MainWindow(QMainWindow):
             anticheat_visible = False
 
         # Расположение бейджей
-        right_margin = 8
-        badge_spacing = 5
-        top_y = 10
-        badge_y_positions = []
-        badge_width = int(300 * 2/3)
         if steam_visible:
             steam_x = 300 - badge_width - right_margin
             steamLabel.move(steam_x, top_y)
@@ -1736,22 +1732,97 @@ class MainWindow(QMainWindow):
         descLabel.setStyleSheet(self.theme.DETAIL_PAGE_DESC_STYLE)
         detailsLayout.addWidget(descLabel)
 
-        infoLayout = QHBoxLayout()
-        infoLayout.setSpacing(10)
+        # Инициализация HowLongToBeat
+        hltb = HowLongToBeat(parent=self)
+
+        # Создаем общий layout для всей игровой информации
+        gameInfoLayout = QVBoxLayout()
+        gameInfoLayout.setSpacing(10)
+
+        # Первая строка: Last Launch и Play Time
+        firstRowLayout = QHBoxLayout()
+        firstRowLayout.setSpacing(10)
+
+        # Last Launch
         lastLaunchTitle = QLabel(_("LAST LAUNCH"))
         lastLaunchTitle.setStyleSheet(self.theme.LAST_LAUNCH_TITLE_STYLE)
         lastLaunchValue = QLabel(last_launch)
         lastLaunchValue.setStyleSheet(self.theme.LAST_LAUNCH_VALUE_STYLE)
+        firstRowLayout.addWidget(lastLaunchTitle)
+        firstRowLayout.addWidget(lastLaunchValue)
+        firstRowLayout.addSpacing(30)
+
+        # Play Time
         playTimeTitle = QLabel(_("PLAY TIME"))
         playTimeTitle.setStyleSheet(self.theme.PLAY_TIME_TITLE_STYLE)
         playTimeValue = QLabel(formatted_playtime)
         playTimeValue.setStyleSheet(self.theme.PLAY_TIME_VALUE_STYLE)
-        infoLayout.addWidget(lastLaunchTitle)
-        infoLayout.addWidget(lastLaunchValue)
-        infoLayout.addSpacing(30)
-        infoLayout.addWidget(playTimeTitle)
-        infoLayout.addWidget(playTimeValue)
-        detailsLayout.addLayout(infoLayout)
+        firstRowLayout.addWidget(playTimeTitle)
+        firstRowLayout.addWidget(playTimeValue)
+
+        gameInfoLayout.addLayout(firstRowLayout)
+
+        # Создаем placeholder для второй строки (HLTB данные)
+        hltbLayout = QHBoxLayout()
+        hltbLayout.setSpacing(10)
+
+        # Время прохождения (Main Story, Main + Sides, Completionist)
+        def on_hltb_results(results):
+            if results:
+                game = results[0]  # Берем первый результат
+                main_story_time = hltb.format_game_time(game, "main_story")
+                main_extra_time = hltb.format_game_time(game, "main_extra")
+                completionist_time = hltb.format_game_time(game, "completionist")
+
+                # Очищаем layout перед добавлением новых элементов
+                while hltbLayout.count():
+                    child = hltbLayout.takeAt(0)
+                    if child.widget():
+                        child.widget().deleteLater()
+
+                has_data = False
+
+                if main_story_time is not None:
+                    mainStoryTitle = QLabel(_("MAIN STORY"))
+                    mainStoryTitle.setStyleSheet(self.theme.LAST_LAUNCH_TITLE_STYLE)
+                    mainStoryValue = QLabel(main_story_time)
+                    mainStoryValue.setStyleSheet(self.theme.LAST_LAUNCH_VALUE_STYLE)
+                    hltbLayout.addWidget(mainStoryTitle)
+                    hltbLayout.addWidget(mainStoryValue)
+                    hltbLayout.addSpacing(30)
+                    has_data = True
+
+                if main_extra_time is not None:
+                    mainExtraTitle = QLabel(_("MAIN + SIDES"))
+                    mainExtraTitle.setStyleSheet(self.theme.PLAY_TIME_TITLE_STYLE)
+                    mainExtraValue = QLabel(main_extra_time)
+                    mainExtraValue.setStyleSheet(self.theme.PLAY_TIME_VALUE_STYLE)
+                    hltbLayout.addWidget(mainExtraTitle)
+                    hltbLayout.addWidget(mainExtraValue)
+                    hltbLayout.addSpacing(30)
+                    has_data = True
+
+                if completionist_time is not None:
+                    completionistTitle = QLabel(_("COMPLETIONIST"))
+                    completionistTitle.setStyleSheet(self.theme.LAST_LAUNCH_TITLE_STYLE)
+                    completionistValue = QLabel(completionist_time)
+                    completionistValue.setStyleSheet(self.theme.LAST_LAUNCH_VALUE_STYLE)
+                    hltbLayout.addWidget(completionistTitle)
+                    hltbLayout.addWidget(completionistValue)
+                    has_data = True
+
+                # Если есть данные, добавляем layout во вторую строку
+                if has_data:
+                    gameInfoLayout.addLayout(hltbLayout)
+
+        # Подключаем сигнал searchCompleted к on_hltb_results
+        hltb.searchCompleted.connect(on_hltb_results)
+
+        # Запускаем поиск в фоновом потоке
+        hltb.search_with_callback(name, case_sensitive=False)
+
+        # Добавляем общий layout с игровой информацией
+        detailsLayout.addLayout(gameInfoLayout)
 
         if controller_support:
             cs = controller_support.lower()
@@ -1769,7 +1840,7 @@ class MainWindow(QMainWindow):
 
         detailsLayout.addStretch(1)
 
-        # Определяем текущий идентификатор игры по exec_line для корректного отображения кнопки
+        # Определяем текущий идентификатор игры по exec_line
         entry_exec_split = shlex.split(exec_line)
         if not entry_exec_split:
             return
