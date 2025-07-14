@@ -9,7 +9,7 @@ _portprotonqt() {
     esac
 
     if [[ "$cur" == -* ]]; then
-        COMPREPLY=( $( compgen -W '--fullscreen --session' -- "$cur" ) )
+        COMPREPLY=( $( compgen -W '--fullscreen' -- "$cur" ) )
         return 0
     fi
 
