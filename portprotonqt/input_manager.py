@@ -111,6 +111,8 @@ class InputManager(QObject):
         self.stick_value = 0  # Текущее значение стика (для плавности)
         self.dead_zone = 8000  # Мертвая зона стика
 
+        self._is_gamescope_session = 'gamescope' in os.environ.get('DESKTOP_SESSION', '').lower()
+
         # Add variables for continuous D-pad movement
         self.dpad_timer = QTimer(self)
         self.dpad_timer.timeout.connect(self.handle_dpad_repeat)
@@ -849,7 +851,7 @@ class InputManager(QObject):
                     return True
 
             # Toggle fullscreen with F11
-            if key == Qt.Key.Key_F11:
+            if key == Qt.Key.Key_F11 and not self._is_gamescope_session:
                 self.toggle_fullscreen.emit(not self._is_fullscreen)
                 return True
 
@@ -946,7 +948,7 @@ class InputManager(QObject):
                     continue
                 now = time.time()
                 if event.type == ecodes.EV_KEY and event.value == 1:
-                    if event.code in BUTTONS['menu']:
+                    if event.code in BUTTONS['menu'] and not self._is_gamescope_session:
                         self.toggle_fullscreen.emit(not self._is_fullscreen)
                     else:
                         self.button_pressed.emit(event.code)
