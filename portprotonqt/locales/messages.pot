@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-07-06 17:56+0500\n"
+"POT-Creation-Date: 2025-07-14 13:16+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -559,6 +559,15 @@ msgid "LAST LAUNCH"
 msgstr ""
 
 msgid "PLAY TIME"
+msgstr ""
+
+msgid "MAIN STORY"
+msgstr ""
+
+msgid "MAIN + SIDES"
+msgstr ""
+
+msgid "COMPLETIONIST"
 msgstr ""
 
 msgid "full"

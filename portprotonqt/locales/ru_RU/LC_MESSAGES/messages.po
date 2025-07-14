@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-07-06 17:56+0500\n"
-"PO-Revision-Date: 2025-07-06 17:56+0500\n"
+"POT-Creation-Date: 2025-07-14 13:16+0500\n"
+"PO-Revision-Date: 2025-07-14 13:16+0500\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
@@ -571,6 +571,15 @@ msgstr "Последний запуск"
 
 msgid "PLAY TIME"
 msgstr "Время игры"
+
+msgid "MAIN STORY"
+msgstr "СЮЖЕТ"
+
+msgid "MAIN + SIDES"
+msgstr "СЮЖЕТ + ПОБОЧКИ"
+
+msgid "COMPLETIONIST"
+msgstr "100%"
 
 msgid "full"
 msgstr "полная"
