@@ -45,7 +45,18 @@ AppDir:
       - libxcb-cursor0
       - libimage-exiftool-perl
       - xdg-utils
-    exclude: []
+    exclude:
+      # Документация и man-страницы
+      - "*-doc"
+      - "*-man"
+      - manpages
+      - mandb
+      # Статические библиотеки
+      - "*-dev"
+      - "*-static"
+      # Дебаг-символы
+      - "*-dbg"
+      - "*-dbgsym"
 
   runtime:
     env:
