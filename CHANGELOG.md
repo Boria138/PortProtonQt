@@ -21,6 +21,7 @@
 ### Fixed
 - Запрос к GitHub API при загрузке legendary теперь не игнорирует настройки прокси
 - Путь к portprotonqt-session-select в оверлее
+- Работа exiftool в AppImage
 
 ### Contributors
 - @Vector_null
