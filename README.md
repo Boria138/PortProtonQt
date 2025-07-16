@@ -51,11 +51,11 @@ pre-commit run --all-files
 
 PortProtonQt использует код и зависимости от следующих проектов:
 
-- [Legendary](https://github.com/derrod/legendary) — инструмент для работы с Epic Games Store, лицензия [GPL-3.0](https://www.gnu.org/licenses/gpl-3.0.html).
-- [Icoextract](https://github.com/jlu5/icoextract) — библиотека для извлечения иконок, лицензия [MIT](https://opensource.org/licenses/MIT).
-- [PortProton 2.0](https://git.linux-gaming.ru/CastroFidel/PortProton_2.0) — библиотека для взаимодействия с PortProton, лицензия [MIT](https://opensource.org/licenses/MIT).
+- [Legendary](https://github.com/derrod/legendary) — инструмент для работы с Epic Games Store, лицензия [GPL-3.0](https://github.com/derrod/legendary/blob/master/LICENSE).
+- [Icoextract](https://github.com/jlu5/icoextract) — библиотека для извлечения иконок, лицензия [MIT](https://github.com/jlu5/icoextract/blob/master/LICENSE).
+- [HowLongToBeat Python API](https://github.com/ScrappyCocco/HowLongToBeat-PythonAPI) — библиотека для взаимодействия с HowLongToBeat, лицензия [MIT](https://github.com/ScrappyCocco/HowLongToBeat-PythonAPI/blob/master/LICENSE.md).
 
-Полный текст лицензий см. в файлах [LICENSE](LICENSE), [LICENSE-icoextract](documentation/licenses/icoextract), [LICENSE-portproton](documentation/licenses/portproton), [LICENSE-legendary](documentation/licenses/legendary).
+Полный текст лицензий см. в файле [LICENSE](LICENSE).
 
 > [!WARNING]
 > Проект находится на стадии WIP (work in progress) корректная работоспособность не гарантирована
