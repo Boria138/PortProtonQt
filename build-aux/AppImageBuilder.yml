@@ -51,6 +51,7 @@ AppDir:
     env:
       PYTHONHOME: '${APPDIR}/usr'
       PYTHONPATH: '${APPDIR}/usr/local/lib/python3.10/dist-packages'
+      PERLLIB: '${APPDIR}/usr/share/perl5:${APPDIR}/usr/lib/x86_64-linux-gnu/perl/5.34:${APPDIR}/usr/share/perl/5.34'
 
 AppImage:
   sign-key: None
