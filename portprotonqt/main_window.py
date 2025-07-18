@@ -1518,6 +1518,8 @@ class MainWindow(QMainWindow):
         self._animations = {}
         imageLabel = QLabel()
         imageLabel.setFixedSize(300, 400)
+        self._detail_page_active = True
+        self._current_detail_page = detailPage
 
         if cover_path:
             def on_pixmap_ready(pixmap):
@@ -1768,6 +1770,11 @@ class MainWindow(QMainWindow):
 
         # Время прохождения (Main Story, Main + Sides, Completionist)
         def on_hltb_results(results):
+            if not hasattr(self, '_detail_page_active') or not self._detail_page_active:
+                return
+            if not self._current_detail_page or self._current_detail_page.isHidden() or not self._current_detail_page.parent():
+                return
+
             if results:
                 game = results[0]  # Берем первый результат
                 main_story_time = hltb.format_game_time(game, "main_story")
@@ -1941,6 +1948,8 @@ class MainWindow(QMainWindow):
     def goBackDetailPage(self, page: QWidget | None) -> None:
         if page is None or page != self.stackedWidget.currentWidget():
             return
+        self._detail_page_active = False
+        self._current_detail_page = None
         self.stackedWidget.setCurrentIndex(0)
         self.stackedWidget.removeWidget(page)
         page.deleteLater()
