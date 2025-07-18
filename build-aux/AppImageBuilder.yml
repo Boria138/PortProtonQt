@@ -1,5 +1,4 @@
 version: 1
-
 script:
   # 1) чистим старый AppDir
   - rm -rf AppDir || true
@@ -17,10 +16,31 @@ script:
   - rm -f AppDir/usr/local/lib/python3.10/dist-packages/PySide6/{Qt3D*,QtBluetooth*,QtCharts*,QtConcurrent*,QtDataVisualization*,QtDesigner*,QtHelp*,QtMultimedia*,QtNetwork*,QtOpenGL*,QtPositioning*,QtPrintSupport*,QtQml*,QtQuick*,QtRemoteObjects*,QtScxml*,QtSensors*,QtSerialPort*,QtSql*,QtStateMachine*,QtTest*,QtWeb*,QtXml*}
   - shopt -s extglob
   - rm -rf AppDir/usr/local/lib/python3.10/dist-packages/PySide6/Qt/lib/!(libQt6Core*|libQt6Gui*|libQt6Widgets*|libQt6OpenGL*|libQt6XcbQpa*|libQt6Wayland*|libQt6Egl*|libicudata*|libicuuc*|libicui18n*|libQt6DBus*|libQt6Svg*|libQt6Qml*|libQt6Network*)
-
 AppDir:
   path: ./AppDir
-
+  after_bundle:
+    # Документация, справка, примеры
+    - rm -rf $TARGET_APPDIR/usr/share/man || true
+    - rm -rf $TARGET_APPDIR/usr/share/doc || true
+    - rm -rf $TARGET_APPDIR/usr/share/doc-base || true
+    - rm -rf $TARGET_APPDIR/usr/share/info || true
+    - rm -rf $TARGET_APPDIR/usr/share/help || true
+    - rm -rf $TARGET_APPDIR/usr/share/gtk-doc || true
+    - rm -rf $TARGET_APPDIR/usr/share/devhelp || true
+    - rm -rf $TARGET_APPDIR/usr/share/examples || true
+    - rm -rf $TARGET_APPDIR/usr/share/pkgconfig || true
+    - rm -rf $TARGET_APPDIR/usr/share/bash-completion || true
+    - rm -rf $TARGET_APPDIR/usr/share/pixmaps || true
+    - rm -rf $TARGET_APPDIR/usr/share/mime || true
+    - rm -rf $TARGET_APPDIR/usr/share/metainfo || true
+    - rm -rf $TARGET_APPDIR/usr/include || true
+    - rm -rf $TARGET_APPDIR/usr/lib/pkgconfig || true
+    # Статика и отладка
+    - find $TARGET_APPDIR -type f \( -name '*.a' -o -name '*.la' -o -name '*.h' -o -name '*.cmake' -o -name '*.pdb' \) -delete || true
+    # Strip ELF бинарников (исключая Python extensions)
+    - "find $TARGET_APPDIR -type f -executable -exec file {} \\; | grep ELF | grep -v '/dist-packages/' | grep -v '/site-packages/' | cut -d: -f1 | xargs strip --strip-unneeded || true"
+    # Удаление пустых папок
+    - find $TARGET_APPDIR -type d -empty -delete || true
   app_info:
     id: ru.linux_gaming.PortProtonQt
     name: PortProtonQt
@@ -28,13 +48,11 @@ AppDir:
     version: 0.1.3
     exec: usr/bin/python3
     exec_args: "-m portprotonqt.app $@"
-
   apt:
     arch: amd64
     sources:
       - sourceline: 'deb [arch=amd64] http://archive.ubuntu.com/ubuntu/ jammy main restricted universe multiverse'
         key_url: 'http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x871920d1991bc93c'
-
     include:
       - python3-minimal
       - python3-pkg-resources
@@ -57,13 +75,11 @@ AppDir:
       # Дебаг-символы
       - "*-dbg"
       - "*-dbgsym"
-
   runtime:
     env:
       PYTHONHOME: '${APPDIR}/usr'
       PYTHONPATH: '${APPDIR}/usr/local/lib/python3.10/dist-packages'
       PERLLIB: '${APPDIR}/usr/share/perl5:${APPDIR}/usr/lib/x86_64-linux-gnu/perl/5.34:${APPDIR}/usr/share/perl/5.34'
-
 AppImage:
   sign-key: None
   arch: x86_64
