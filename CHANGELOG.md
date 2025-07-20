@@ -17,11 +17,13 @@
 - Бейдж PortProton теперь открывает PortProtonDB
 - Отключено переключение полноэкранного режима через F11 или кнопку Select на геймпаде в gamescope сессии
 - Удалён аргумент `--session` так как тестирование gamescope сессии завершено
+- В контекстном меню игр без exe файла теперь отображается только пункт "Удалить из PortProton"
 
 ### Fixed
 - Запрос к GitHub API при загрузке legendary теперь не игнорирует настройки прокси
 - Путь к portprotonqt-session-select в оверлее
 - Работа exiftool в AppImage
+- Открытие контекстного меню у игр без exe
 
 ### Contributors
 - @Vector_null
