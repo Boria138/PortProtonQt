@@ -148,10 +148,7 @@ class ContextMenuManager:
                 return False
             current_exe = os.path.basename(exe_path)
 
-        # Check if the current_exe matches the target_exe in MainWindow
-        if hasattr(self.parent, 'target_exe') and self.parent.target_exe == current_exe:
-            return True
-        return False
+        return hasattr(self.parent, 'target_exe') and self.parent.target_exe == current_exe
 
     def show_context_menu(self, game_card, pos: QPoint):
         """
@@ -161,7 +158,6 @@ class ContextMenuManager:
             game_card: The GameCard instance requesting the context menu.
             pos: The position (in widget coordinates) where the menu should appear.
         """
-
         def get_safe_icon(icon_name: str) -> QIcon:
             icon = self.theme_manager.get_icon(icon_name)
             if isinstance(icon, QIcon):
@@ -173,7 +169,18 @@ class ContextMenuManager:
         menu = QMenu(self.parent)
         menu.setStyleSheet(self.theme.CONTEXT_MENU_STYLE)
 
-        # Check if the game is running
+        # For non-Steam and non-Epic games, check if exe exists
+        if game_card.game_source not in ("steam", "epic"):
+            exec_line = self._get_exec_line(game_card.name, game_card.exec_line)
+            exe_path = self._parse_exe_path(exec_line, game_card.name) if exec_line else None
+            if not exe_path:
+                # Show only "Delete from PortProton" if no valid exe
+                delete_action = menu.addAction(get_safe_icon("delete"), _("Delete from PortProton"))
+                delete_action.triggered.connect(lambda: self.delete_game(game_card.name, game_card.exec_line))
+                menu.exec(game_card.mapToGlobal(pos))
+                return
+
+        # Normal menu for games with valid exe or from Steam/Epic
         is_running = self._is_game_running(game_card)
         action_text = _("Stop Game") if is_running else _("Launch Game")
         action_icon = "stop" if is_running else "play"
@@ -697,15 +704,12 @@ Icon={icon_path}
             return None
         return exec_line
 
-    def _parse_exe_path(self, exec_line, game_name):
+    def _parse_exe_path(self, exec_line: str, game_name: str) -> str | None:
         """Parse the executable path from exec_line."""
         try:
             entry_exec_split = shlex.split(exec_line)
             if not entry_exec_split:
-                self.signals.show_warning_dialog.emit(
-                    _("Error"),
-                    _("Invalid executable command: {exec_line}").format(exec_line=exec_line)
-                )
+                logger.debug("Invalid executable command for '%s': %s", game_name, exec_line)
                 return None
             if entry_exec_split[0] == "env" and len(entry_exec_split) >= 3:
                 exe_path = entry_exec_split[2]
@@ -714,17 +718,11 @@ Icon={icon_path}
             else:
                 exe_path = entry_exec_split[-1]
             if not exe_path or not os.path.exists(exe_path):
-                self.signals.show_warning_dialog.emit(
-                    _("Error"),
-                    _("Executable not found: {path}").format(path=exe_path or "None")
-                )
+                logger.debug("Executable not found for '%s': %s", game_name, exe_path or "None")
                 return None
             return exe_path
         except Exception as e:
-            self.signals.show_warning_dialog.emit(
-                _("Error"),
-                _("Failed to parse executable: {error}").format(error=str(e))
-            )
+            logger.debug("Failed to parse executable for '%s': %s", game_name, e)
             return None
 
     def _remove_file(self, file_path, error_message, success_message, game_name, location=""):
