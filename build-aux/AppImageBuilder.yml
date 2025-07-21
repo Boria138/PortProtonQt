@@ -82,4 +82,5 @@ AppDir:
       PERLLIB: '${APPDIR}/usr/share/perl5:${APPDIR}/usr/lib/x86_64-linux-gnu/perl/5.34:${APPDIR}/usr/share/perl/5.34'
 AppImage:
   sign-key: None
+  comp: xz
   arch: x86_64
