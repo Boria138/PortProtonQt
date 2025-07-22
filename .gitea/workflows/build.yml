@@ -23,11 +23,11 @@ jobs:
       - name: Install required dependencies
         run: |
             sudo apt update
-            sudo apt install -y binutils coreutils desktop-file-utils gtk-update-icon-cache fakeroot fuse libgdk-pixbuf2.0-dev patchelf python3-pip python3-dev python3-setuptools squashfs-tools strace util-linux zsync git
+            sudo apt install -y binutils coreutils desktop-file-utils gtk-update-icon-cache fakeroot fuse libgdk-pixbuf2.0-dev patchelf python3-pip python3-dev python3-setuptools squashfs-tools strace util-linux zsync git zstd
 
       - name: Install tools
         run: |
-            pip3 install git+https://github.com/Frederic98/appimage-builder.git
+            pip3 install git+https://github.com/Boria138/appimage-builder.git
             pip3 install uv
 
       - name: Build AppImage
@@ -159,6 +159,7 @@ jobs:
           mkdir -p extracted
           find release/ -name '*.zip' -exec unzip -o {} -d extracted/ \;
           find extracted/ -type f -exec mv {} release/ \;
+          find release/ -name '*.zip' -delete
           rm -rf extracted/
 
       - name: Extract changelog for version

@@ -13,9 +13,9 @@ script:
   # 5) чистим от ненужных модулей и бинарников
   - rm -rf AppDir/usr/local/lib/python3.10/dist-packages/PySide6/Qt/qml/
   - rm -f AppDir/usr/local/lib/python3.10/dist-packages/PySide6/{assistant,designer,linguist,lrelease,lupdate}
-  - rm -f AppDir/usr/local/lib/python3.10/dist-packages/PySide6/{Qt3D*,QtBluetooth*,QtCharts*,QtConcurrent*,QtDataVisualization*,QtDesigner*,QtHelp*,QtMultimedia*,QtNetwork*,QtOpenGL*,QtPositioning*,QtPrintSupport*,QtQml*,QtQuick*,QtRemoteObjects*,QtScxml*,QtSensors*,QtSerialPort*,QtSql*,QtStateMachine*,QtTest*,QtWeb*,QtXml*}
+  - rm -f AppDir/usr/local/lib/python3.10/dist-packages/PySide6/{Qt3DAnimation*,Qt3DCore*,Qt3DExtras*,Qt3DInput*,Qt3DLogic*,Qt3DRender*,QtBluetooth*,QtCharts*,QtConcurrent*,QtDataVisualization*,QtDesigner*,QtExampleIcons*,QtGraphs*,QtGraphsWidgets*,QtHelp*,QtHttpServer*,QtLocation*,QtMultimedia*,QtMultimediaWidgets*,QtNetwork*,QtNetworkAuth*,QtNfc*,QtOpenGL*,QtOpenGLWidgets*,QtPdf*,QtPdfWidgets*,QtPositioning*,QtPrintSupport*,QtQml*,QtQuick*,QtQuick3D*,QtQuickControls2*,QtQuickTest*,QtQuickWidgets*,QtRemoteObjects*,QtScxml*,QtSensors*,QtSerialBus*,QtSerialPort*,QtSpatialAudio*,QtSql*,QtStateMachine*,QtSvgWidgets*,QtTest*,QtTextToSpeech*,QtUiTools*,QtWebChannel*,QtWebEngineCore*,QtWebEngineQuick*,QtWebEngineWidgets*,QtWebSockets*,QtWebView*,QtXml*}
   - shopt -s extglob
-  - rm -rf AppDir/usr/local/lib/python3.10/dist-packages/PySide6/Qt/lib/!(libQt6Core*|libQt6Gui*|libQt6Widgets*|libQt6OpenGL*|libQt6XcbQpa*|libQt6Wayland*|libQt6Egl*|libicudata*|libicuuc*|libicui18n*|libQt6DBus*|libQt6Svg*|libQt6Qml*|libQt6Network*)
+  - rm -rf AppDir/usr/local/lib/python3.10/dist-packages/PySide6/Qt/lib/!(libQt6Core*|libQt6DBus*|libQt6Egl*|libQt6Gui*|libQt6Svg*|libQt6Wayland*|libQt6Widgets*|libQt6XcbQpa*|libicudata*|libicui18n*|libicuuc*)
 AppDir:
   path: ./AppDir
   after_bundle:
@@ -82,5 +82,4 @@ AppDir:
       PERLLIB: '${APPDIR}/usr/share/perl5:${APPDIR}/usr/lib/x86_64-linux-gnu/perl/5.34:${APPDIR}/usr/share/perl/5.34'
 AppImage:
   sign-key: None
-  comp: xz
   arch: x86_64
