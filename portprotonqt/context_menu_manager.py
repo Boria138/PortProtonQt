@@ -285,7 +285,7 @@ class ContextMenuManager:
         if actions:
             menu.setActiveAction(actions[0])
 
-        menu.exec(game_card.mapToGlobal(pos))
+            menu.exec(game_card.mapToGlobal(pos))
 
     def _launch_game(self, game_card):
         """
