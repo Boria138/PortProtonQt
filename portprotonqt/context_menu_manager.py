@@ -280,6 +280,11 @@ class ContextMenuManager:
                 )
             )
 
+        # Устанавливаем фокус на первый элемент меню
+        actions = menu.actions()
+        if actions:
+            menu.setActiveAction(actions[0])
+
         menu.exec(game_card.mapToGlobal(pos))
 
     def _launch_game(self, game_card):
