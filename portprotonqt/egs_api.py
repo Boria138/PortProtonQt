@@ -747,6 +747,11 @@ def _continue_loading_egs_games(legendary_path: str, callback: Callable[[list[tu
     games: list[tuple] = []
     cache_dir.mkdir(parents=True, exist_ok=True)
 
+    user_json_path = cache_dir / "user.json"
+    if not user_json_path.exists():
+        callback(games)
+        return
+
     def process_games(installed_games: list | None):
         if installed_games is None:
             logger.info("No installed Epic Games Store games found")
@@ -855,12 +860,12 @@ def _continue_loading_egs_games(legendary_path: str, callback: Callable[[list[tu
                                         app_name,
                                         f"legendary:launch:{app_name}",
                                         "",
-                                        last_launch,  # Время последнего запуска
-                                        formatted_playtime,  # Форматированное время игры
-                                        protondb_tier,  # ProtonDB tier
+                                        last_launch,
+                                        formatted_playtime,
+                                        protondb_tier,
                                         status or "",
-                                        last_launch_timestamp,  # Временная метка последнего запуска
-                                        playtime_seconds,  # Время игры в секундах
+                                        last_launch_timestamp,
+                                        playtime_seconds,
                                         "epic"
                                     )
                                     pending_images -= 1
@@ -880,7 +885,7 @@ def _continue_loading_egs_games(legendary_path: str, callback: Callable[[list[tu
                     get_protondb_tier_async(steam_appid, on_protondb_tier)
                 else:
                     logger.debug(f"No Steam app found for EGS game {title}")
-                    on_protondb_tier("")  # Proceed with empty ProtonDB tier
+                    on_protondb_tier("")
 
             get_steam_apps_and_index_async(on_steam_apps)
 
