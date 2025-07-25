@@ -1883,7 +1883,7 @@ class MainWindow(QMainWindow):
         opacityEffect = QGraphicsOpacityEffect(detailPage)
         detailPage.setGraphicsEffect(opacityEffect)
         animation = QPropertyAnimation(opacityEffect, QByteArray(b"opacity"))
-        animation.setDuration(800)
+        animation.setDuration(350)
         animation.setStartValue(0)
         animation.setEndValue(1)
         animation.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
