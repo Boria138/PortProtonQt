@@ -765,7 +765,7 @@
   },
   {
     "normalized_name": "lost ark",
-    "status": "Broken"
+    "status": "Running"
   },
   {
     "normalized_name": "archeage unchained",
@@ -4425,6 +4425,62 @@
   },
   {
     "normalized_name": "carx street",
+    "status": "Broken"
+  },
+  {
+    "normalized_name": "warcos 2",
+    "status": "Broken"
+  },
+  {
+    "normalized_name": "karos classic",
+    "status": "Broken"
+  },
+  {
+    "normalized_name": "dead island riptide",
+    "status": "Running"
+  },
+  {
+    "normalized_name": "lineage",
+    "status": "Broken"
+  },
+  {
+    "normalized_name": "day of dragons",
+    "status": "Running"
+  },
+  {
+    "normalized_name": "sonic rumble",
+    "status": "Broken"
+  },
+  {
+    "normalized_name": "black stigma",
+    "status": "Broken"
+  },
+  {
+    "normalized_name": "umamusume pretty derby",
+    "status": "Running"
+  },
+  {
+    "normalized_name": "dirt rally",
+    "status": "Supported"
+  },
+  {
+    "normalized_name": "minifighter",
+    "status": "Broken"
+  },
+  {
+    "normalized_name": "hide & hold out h2o",
+    "status": "Running"
+  },
+  {
+    "normalized_name": "f1 25",
+    "status": "Denied"
+  },
+  {
+    "normalized_name": "ghost of tsushima director's cut",
+    "status": "Denied"
+  },
+  {
+    "normalized_name": "sword of justice",
     "status": "Broken"
   }
 ]
