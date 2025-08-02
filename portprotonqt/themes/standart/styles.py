@@ -27,6 +27,10 @@ color_g = "rgba(0, 0, 0, 0)"
 color_h = "transparent"
 
 GAME_CARD_ANIMATION = {
+    # Тип анимации fade при входе на детальную страницу
+    # Возможные значения: "fade", "slide_left", "slide_right", "slide_up", "slide_down", "bounce", "none"
+    "detail_page_animation_type": "fade",
+
     # Ширина обводки карточки в состоянии покоя (без наведения или фокуса).
     # Влияет на толщину рамки вокруг карточки, когда она не выделена.
     # Значение в пикселях.
@@ -93,7 +97,16 @@ GAME_CARD_ANIMATION = {
         {"position": 0.33, "color": "#FF5733"}, # Цвет на 33% (оранжевый)
         {"position": 0.66, "color": "#9B59B6"}, # Цвет на 66% (пурпурный)
         {"position": 1, "color": "#00fff5"}     # Конечный цвет (возвращение к циану)
-    ]
+    ],
+
+    # Длительность анимации fade при входе на детальную страницу
+    "detail_page_fade_duration": 350,
+
+    # Длительность анимации slide при входе на детальную страницу
+    "detail_page_slide_duration": 500,
+
+    # Длительность анимации zoom при входе на детальную страницу
+    "detail_page_zoom_duration": 400
 }
 
 CONTEXT_MENU_STYLE = f"""
