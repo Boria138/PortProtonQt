@@ -3,13 +3,13 @@
 ---
 
 ## 📋 Contents
-- [Overview](#overview)
-- [Creating the Theme Folder](#creating-the-theme-folder)
-- [Style File](#style-file)
-- [Animation configuration](#animation-configuration)
-- [Metadata](#metadata)
-- [Screenshots](#screenshots)
-- [Fonts and Icons](#fonts-and-icons)
+- [Overview](#-overview)
+- [Creating the Theme Folder](#-creating-the-theme-folder)
+- [Style File](#-style-file-stylespy)
+- [Animation configuration](#-animation-configuration)
+- [Metadata](#-metadata-metainfoini)
+- [Screenshots](#-screenshots)
+- [Fonts and Icons](#-fonts-and-icons-optional)
 
 ---
 
