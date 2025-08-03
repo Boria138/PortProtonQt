@@ -291,7 +291,7 @@ def load_steam_apps_async(callback: Callable[[list], None]):
             if os.path.exists(cache_tar):
                 os.remove(cache_tar)
                 logger.info("Archive %s deleted after extraction", cache_tar)
-            steam_apps = data.get("applist", {}).get("apps", []) if isinstance(data, dict) else data or []
+            steam_apps = data if isinstance(data, list) else []
             logger.info("Loaded %d apps from archive", len(steam_apps))
             callback(steam_apps)
         except Exception as e:
@@ -303,12 +303,25 @@ def load_steam_apps_async(callback: Callable[[list], None]):
         try:
             with open(cache_json, "rb") as f:
                 data = orjson.loads(f.read())
-            steam_apps = data.get("applist", {}).get("apps", []) if isinstance(data, dict) else data or []
+            # Validate JSON structure
+            if not isinstance(data, list):
+                logger.error("Cached JSON %s has invalid format (not a list), re-downloading", cache_json)
+                raise ValueError("Invalid JSON structure")
+            # Validate each app entry
+            for app in data:
+                if not isinstance(app, dict) or "appid" not in app or "normalized_name" not in app:
+                    logger.error("Cached JSON %s contains invalid app entry, re-downloading", cache_json)
+                    raise ValueError("Invalid app entry structure")
+            steam_apps = data
             logger.info("Loaded %d apps from cache", len(steam_apps))
             callback(steam_apps)
         except Exception as e:
-            logger.error("Error reading cached JSON: %s", e)
-            callback([])
+            logger.error("Error reading or validating cached JSON %s: %s", cache_json, e)
+            # Attempt to re-download if cache is invalid or corrupted
+            app_list_url = (
+                "https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/data/games_appid.tar.xz"
+            )
+            downloader.download_async(app_list_url, cache_tar, timeout=5, callback=process_tar)
     else:
         app_list_url = (
             "https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/data/games_appid.tar.xz"
@@ -448,12 +461,25 @@ def load_weanticheatyet_data_async(callback: Callable[[list], None]):
         try:
             with open(cache_json, "rb") as f:
                 data = orjson.loads(f.read())
-            anti_cheat_data = data or []
+            # Validate JSON structure
+            if not isinstance(data, list):
+                logger.error("Cached JSON %s has invalid format (not a list), re-downloading", cache_json)
+                raise ValueError("Invalid JSON structure")
+            # Validate each anti-cheat entry
+            for entry in data:
+                if not isinstance(entry, dict) or "normalized_name" not in entry or "status" not in entry:
+                    logger.error("Cached JSON %s contains invalid anti-cheat entry, re-downloading", cache_json)
+                    raise ValueError("Invalid anti-cheat entry structure")
+            anti_cheat_data = data
             logger.info("Loaded %d anti-cheat entries from cache", len(anti_cheat_data))
             callback(anti_cheat_data)
         except Exception as e:
-            logger.error("Error reading cached WeAntiCheatYet JSON: %s", e)
-            callback([])
+            logger.error("Error reading or validating cached WeAntiCheatYet JSON %s: %s", cache_json, e)
+            # Attempt to re-download if cache is invalid or corrupted
+            app_list_url = (
+                "https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/data/anticheat_games.tar.xz"
+            )
+            downloader.download_async(app_list_url, cache_tar, timeout=5, callback=process_tar)
     else:
         app_list_url = (
             "https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/data/anticheat_games.tar.xz"
