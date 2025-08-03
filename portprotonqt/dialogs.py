@@ -677,7 +677,10 @@ class AddGameDialog(QDialog):
         exe_path = self.exeEdit.text().strip()
         name = self.nameEdit.text().strip()
 
-        if not exe_path or not name:
+        if not exe_path or not os.path.isfile(exe_path):
+            return None, None
+
+        if not name:
             return None, None
 
         portproton_path = get_portproton_location()
