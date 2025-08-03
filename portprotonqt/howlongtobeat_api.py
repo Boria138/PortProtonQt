@@ -219,9 +219,11 @@ class ResultParser:
             ("comp_plus", "main_extra"),
             ("comp_100", "completionist")
         ]
+        all_zero = all(game_data.get(json_field, 0) == 0 for json_field, _ in time_fields)
         for json_field, attr_name in time_fields:
             if json_field in game_data:
-                time_hours = round(game_data[json_field] / 3600, 2)
+                time_seconds = game_data[json_field]
+                time_hours = None if all_zero else round(time_seconds / 3600, 2)
                 setattr(game, attr_name, time_hours)
         game.similarity = self._calculate_similarity(game)
         return game
