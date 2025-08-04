@@ -53,7 +53,7 @@ The `GAME_CARD_ANIMATION` dictionary controls all animation parameters for game 
 ```python
 GAME_CARD_ANIMATION = {
     # Animation type when transitioning to a detailed page
-    # Available values: "fade", "slide_left", "slide_right", "slide_up", "slide_down", "bounce", "none"
+    # Available values: "fade", "slide_left", "slide_right", "slide_up", "slide_down", "bounce"
     "detail_page_animation_type": "fade",
 
     # Border width settings (in pixels)

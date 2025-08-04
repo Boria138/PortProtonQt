@@ -53,7 +53,7 @@ def custom_button_style(color1, color2):
 ```python
 GAME_CARD_ANIMATION = {
     # Тип анимации при переходе на детальную страницу
-    # Доступные значения: "fade", "slide_left", "slide_right", "slide_up", "slide_down", "bounce", "none"
+    # Доступные значения: "fade", "slide_left", "slide_right", "slide_up", "slide_down", "bounce"
     "detail_page_animation_type": "fade",
 
     # Настройки ширины обводки (в пикселях)

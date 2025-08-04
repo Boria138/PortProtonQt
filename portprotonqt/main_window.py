@@ -697,6 +697,15 @@ class MainWindow(QMainWindow):
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
+        if hasattr(self, '_animations') and self._animations:
+            for widget, animation in list(self._animations.items()):
+                try:
+                    if animation.state() == QAbstractAnimation.State.Running:
+                        animation.stop()
+                        widget.setWindowOpacity(1.0)
+                        del self._animations[widget]
+                except RuntimeError:
+                    del self._animations[widget]
         if not hasattr(self, '_last_width'):
             self._last_width = self.width()
         if abs(self.width() - self._last_width) > 10:
@@ -1520,23 +1529,44 @@ class MainWindow(QMainWindow):
         self._detail_page_active = True
         self._current_detail_page = detailPage
 
-        if cover_path:
-            def on_pixmap_ready(pixmap):
-                rounded = round_corners(pixmap, 10)
-                imageLabel.setPixmap(rounded)
+        # Функция загрузки изображения и обновления стилей
+        def load_image_and_restore_effect():
+            if not detailPage or detailPage.isHidden():
+                logger.warning("Detail page is None or hidden, skipping image load")
+                return
 
-                def on_palette_ready(palette):
-                    dark_palette = [self.darkenColor(color, factor=200) for color in palette]
-                    stops = ",\n".join(
-                        [f"stop:{i/(len(dark_palette)-1):.2f} {dark_palette[i].name()}" for i in range(len(dark_palette))]
-                    )
-                    detailPage.setStyleSheet(self.theme.detail_page_style(stops))
+            detailPage.setWindowOpacity(1.0)
 
-                self.getColorPalette_async(cover_path, num_colors=5, callback=on_palette_ready)
+            if cover_path:
+                def on_pixmap_ready(pixmap):
+                    if not detailPage or detailPage.isHidden():
+                        logger.warning("Detail page is None or hidden, skipping pixmap update")
+                        return
+                    rounded = round_corners(pixmap, 10)
+                    imageLabel.setPixmap(rounded)
+                    logger.debug("Pixmap set for imageLabel")
 
-            load_pixmap_async(cover_path, 300, 400, on_pixmap_ready)
-        else:
-            detailPage.setStyleSheet(self.theme.DETAIL_PAGE_NO_COVER_STYLE)
+                    def on_palette_ready(palette):
+                        if not detailPage or detailPage.isHidden():
+                            logger.warning("Detail page is None or hidden, skipping palette update")
+                            return
+                        dark_palette = [self.darkenColor(color, factor=200) for color in palette]
+                        stops = ",\n".join(
+                            [f"stop:{i/(len(dark_palette)-1):.2f} {dark_palette[i].name()}" for i in range(len(dark_palette))]
+                        )
+                        detailPage.setStyleSheet(self.theme.detail_page_style(stops))
+                        detailPage.update()
+                        logger.debug("Stylesheet updated with palette")
+
+                    self.getColorPalette_async(cover_path, num_colors=5, callback=on_palette_ready)
+                load_pixmap_async(cover_path, 300, 400, on_pixmap_ready)
+            else:
+                detailPage.setStyleSheet(self.theme.DETAIL_PAGE_NO_COVER_STYLE)
+                detailPage.update()
+
+        def cleanup_animation():
+            if detailPage in self._animations:
+                del self._animations[detailPage]
 
         mainLayout = QVBoxLayout(detailPage)
         mainLayout.setContentsMargins(30, 30, 30, 30)
@@ -1891,7 +1921,9 @@ class MainWindow(QMainWindow):
             animation.setEndValue(1)
             animation.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
             self._animations[detailPage] = animation
-            animation.finished.connect(lambda: None)
+            # Очистка эффекта и загрузка изображения после завершения анимации
+            animation.finished.connect(lambda: detailPage.setGraphicsEffect(shadow))
+            animation.finished.connect(load_image_and_restore_effect)
         elif animation_type == "slide_left":
             duration = self.theme.GAME_CARD_ANIMATION.get("detail_page_slide_duration", 500)
             detailPage.move(self.width(), 0)
@@ -1902,6 +1934,8 @@ class MainWindow(QMainWindow):
             animation.setEasingCurve(QEasingCurve.Type.OutCubic)
             animation.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
             self._animations[detailPage] = animation
+            animation.finished.connect(cleanup_animation)
+            animation.finished.connect(load_image_and_restore_effect)
         elif animation_type == "slide_right":
             duration = self.theme.GAME_CARD_ANIMATION.get("detail_page_slide_duration", 500)
             detailPage.move(-self.width(), 0)
@@ -1912,6 +1946,8 @@ class MainWindow(QMainWindow):
             animation.setEasingCurve(QEasingCurve.Type.OutCubic)
             animation.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
             self._animations[detailPage] = animation
+            animation.finished.connect(cleanup_animation)
+            animation.finished.connect(load_image_and_restore_effect)
         elif animation_type == "slide_up":
             duration = self.theme.GAME_CARD_ANIMATION.get("detail_page_slide_duration", 500)
             detailPage.move(0, self.height())
@@ -1922,6 +1958,8 @@ class MainWindow(QMainWindow):
             animation.setEasingCurve(QEasingCurve.Type.OutCubic)
             animation.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
             self._animations[detailPage] = animation
+            animation.finished.connect(cleanup_animation)
+            animation.finished.connect(load_image_and_restore_effect)
         elif animation_type == "slide_down":
             duration = self.theme.GAME_CARD_ANIMATION.get("detail_page_slide_duration", 500)
             detailPage.move(0, -self.height())
@@ -1932,6 +1970,8 @@ class MainWindow(QMainWindow):
             animation.setEasingCurve(QEasingCurve.Type.OutCubic)
             animation.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
             self._animations[detailPage] = animation
+            animation.finished.connect(cleanup_animation)
+            animation.finished.connect(load_image_and_restore_effect)
         elif animation_type == "bounce":
             duration = self.theme.GAME_CARD_ANIMATION.get("detail_page_zoom_duration", 400)
 
@@ -1956,49 +1996,10 @@ class MainWindow(QMainWindow):
             group_anim.addAnimation(opacity_anim)
             group_anim.addAnimation(geometry_anim)
 
-            def load_image_and_restore_effect():
-                if not detailPage or detailPage.isHidden():
-                    logger.warning("Detail page is None or hidden, skipping image load")
-                    return
-
-                # No need to restore graphics effect, just ensure full opacity
-                detailPage.setWindowOpacity(1.0)
-
-                if cover_path:
-                    def on_pixmap_ready(pixmap):
-                        if not detailPage or detailPage.isHidden():
-                            logger.warning("Detail page is None or hidden, skipping pixmap update")
-                            return
-                        rounded = round_corners(pixmap, 10)
-                        imageLabel.setPixmap(rounded)
-                        logger.debug("Pixmap set for imageLabel")
-
-                        def on_palette_ready(palette):
-                            if not detailPage or detailPage.isHidden():
-                                logger.warning("Detail page is None or hidden, skipping palette update")
-                                return
-                            dark_palette = [self.darkenColor(color, factor=200) for color in palette]
-                            stops = ",\n".join(
-                                [f"stop:{i/(len(dark_palette)-1):.2f} {dark_palette[i].name()}" for i in range(len(dark_palette))]
-                            )
-                            detailPage.setStyleSheet(self.theme.detail_page_style(stops))
-                            logger.debug("Stylesheet updated with palette")
-
-                        self.getColorPalette_async(cover_path, num_colors=5, callback=on_palette_ready)
-
-                    load_pixmap_async(cover_path, 300, 400, on_pixmap_ready)
-
-            # Clean up function
-            def cleanup_animation():
-                if detailPage in self._animations:
-                    del self._animations[detailPage]
-
             group_anim.finished.connect(load_image_and_restore_effect)
             group_anim.finished.connect(cleanup_animation)
             group_anim.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
             self._animations[detailPage] = group_anim
-        elif animation_type == "none":
-            pass
 
     def toggleFavoriteInDetailPage(self, game_name, label):
         favorites = read_favorites()
@@ -2058,6 +2059,14 @@ class MainWindow(QMainWindow):
             return
         self._detail_page_active = False
         self._current_detail_page = None
+        if hasattr(self, '_animations') and page in self._animations:
+            try:
+                animation = self._animations[page]
+                if animation.state() == QAbstractAnimation.State.Running:
+                    animation.stop()
+                del self._animations[page]
+            except RuntimeError:
+                del self._animations[page]
         self.stackedWidget.setCurrentIndex(0)
         self.stackedWidget.removeWidget(page)
         page.deleteLater()

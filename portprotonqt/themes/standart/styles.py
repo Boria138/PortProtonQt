@@ -28,7 +28,7 @@ color_h = "transparent"
 
 GAME_CARD_ANIMATION = {
     # Тип анимации fade при входе на детальную страницу
-    # Возможные значения: "fade", "slide_left", "slide_right", "slide_up", "slide_down", "bounce", "none"
+    # Возможные значения: "fade", "slide_left", "slide_right", "slide_up", "slide_down", "bounce"
     "detail_page_animation_type": "fade",
 
     # Ширина обводки карточки в состоянии покоя (без наведения или фокуса).
