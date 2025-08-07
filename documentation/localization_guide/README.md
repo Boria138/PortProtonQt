@@ -3,10 +3,11 @@
 ---
 
 ## 📋 Contents
-- [Overview](#overview)
-- [Adding a New Translation](#adding-a-new-translation)
-- [Updating Existing Translations](#updating-existing-translations)
-- [Compiling Translations](#compiling-translations)
+- [Overview](#-overview)
+- [Adding a New Translation](#-adding-a-new-translation)
+- [Updating Existing Translations](#-updating-existing-translations)
+- [Compiling Translations](#-compiling-translations)
+- [Spell Check](#-spell-check)
 
 ---
 

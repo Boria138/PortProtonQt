@@ -3,15 +3,10 @@
 ---
 
 ## 📋 Contents
-- [Overview](#overview)
-- [How It Works](#how-it-works)
-  - [Data Priorities](#data-priorities)
-  - [File Structure](#file-structure)
-- [For Users](#for-users)
-  - [Creating User Overrides](#creating-user-overrides)
-  - [Example](#example)
-- [For Developers](#for-developers)
-  - [Adding Built-In Overrides](#adding-built-in-overrides)
+- [Overview](#-overview)
+- [How It Works](#-how-it-works)
+- [For Users](#-for-users)
+- [For Developers](#-for-developers)
 
 ---
 
