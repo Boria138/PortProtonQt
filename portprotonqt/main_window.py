@@ -10,6 +10,7 @@ import psutil
 
 from portprotonqt.dialogs import AddGameDialog, FileExplorer
 from portprotonqt.game_card import GameCard
+from portprotonqt.animations import DetailPageAnimations
 from portprotonqt.custom_widgets import FlowLayout, ClickableLabel, AutoSizeButton, NavLabel
 from portprotonqt.portproton_api import PortProtonAPI
 from portprotonqt.input_manager import InputManager
@@ -35,8 +36,8 @@ from portprotonqt.howlongtobeat_api import HowLongToBeat
 from portprotonqt.downloader import Downloader
 
 from PySide6.QtWidgets import (QLineEdit, QMainWindow, QStatusBar, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox, QScrollArea, QSlider,
-                               QDialog, QFormLayout, QFrame, QGraphicsDropShadowEffect, QMessageBox, QGraphicsOpacityEffect, QApplication, QPushButton, QProgressBar, QCheckBox, QSizePolicy)
-from PySide6.QtCore import Qt, QAbstractAnimation, QPropertyAnimation, QByteArray, QUrl, Signal, QTimer, Slot, QEasingCurve, QParallelAnimationGroup, QRect
+                               QDialog, QFormLayout, QFrame, QGraphicsDropShadowEffect, QMessageBox, QApplication, QPushButton, QProgressBar, QCheckBox, QSizePolicy)
+from PySide6.QtCore import Qt, QAbstractAnimation, QUrl, Signal, QTimer, Slot
 from PySide6.QtGui import QIcon, QPixmap, QColor, QDesktopServices
 from typing import cast
 from collections.abc import Callable
@@ -209,6 +210,7 @@ class MainWindow(QMainWindow):
         self.restore_state()
 
         self.input_manager = InputManager(self)
+        self.detail_animations = DetailPageAnimations(self, self.theme)
         QTimer.singleShot(0, self.loadGames)
 
         if read_fullscreen_config():
@@ -1909,97 +1911,7 @@ class MainWindow(QMainWindow):
         self.current_play_button = playButton
 
         # Анимация
-        animation_type = self.theme.GAME_CARD_ANIMATION.get("detail_page_animation_type", "fade")
-        duration = self.theme.GAME_CARD_ANIMATION.get("detail_page_fade_duration", 350)
-
-        if animation_type == "fade":
-            opacity_effect = QGraphicsOpacityEffect(detailPage)
-            detailPage.setGraphicsEffect(opacity_effect)
-            animation = QPropertyAnimation(opacity_effect, QByteArray(b"opacity"))
-            animation.setDuration(duration)
-            animation.setStartValue(0)
-            animation.setEndValue(1)
-            animation.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
-            self._animations[detailPage] = animation
-            # Очистка эффекта и загрузка изображения после завершения анимации
-            animation.finished.connect(lambda: detailPage.setGraphicsEffect(shadow))
-            animation.finished.connect(load_image_and_restore_effect)
-        elif animation_type == "slide_left":
-            duration = self.theme.GAME_CARD_ANIMATION.get("detail_page_slide_duration", 500)
-            detailPage.move(self.width(), 0)
-            animation = QPropertyAnimation(detailPage, QByteArray(b"pos"))
-            animation.setDuration(duration)
-            animation.setStartValue(detailPage.pos())
-            animation.setEndValue(self.stackedWidget.rect().topLeft())
-            animation.setEasingCurve(QEasingCurve.Type.OutCubic)
-            animation.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
-            self._animations[detailPage] = animation
-            animation.finished.connect(cleanup_animation)
-            animation.finished.connect(load_image_and_restore_effect)
-        elif animation_type == "slide_right":
-            duration = self.theme.GAME_CARD_ANIMATION.get("detail_page_slide_duration", 500)
-            detailPage.move(-self.width(), 0)
-            animation = QPropertyAnimation(detailPage, QByteArray(b"pos"))
-            animation.setDuration(duration)
-            animation.setStartValue(detailPage.pos())
-            animation.setEndValue(self.stackedWidget.rect().topLeft())
-            animation.setEasingCurve(QEasingCurve.Type.OutCubic)
-            animation.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
-            self._animations[detailPage] = animation
-            animation.finished.connect(cleanup_animation)
-            animation.finished.connect(load_image_and_restore_effect)
-        elif animation_type == "slide_up":
-            duration = self.theme.GAME_CARD_ANIMATION.get("detail_page_slide_duration", 500)
-            detailPage.move(0, self.height())
-            animation = QPropertyAnimation(detailPage, QByteArray(b"pos"))
-            animation.setDuration(duration)
-            animation.setStartValue(detailPage.pos())
-            animation.setEndValue(self.stackedWidget.rect().topLeft())
-            animation.setEasingCurve(QEasingCurve.Type.OutCubic)
-            animation.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
-            self._animations[detailPage] = animation
-            animation.finished.connect(cleanup_animation)
-            animation.finished.connect(load_image_and_restore_effect)
-        elif animation_type == "slide_down":
-            duration = self.theme.GAME_CARD_ANIMATION.get("detail_page_slide_duration", 500)
-            detailPage.move(0, -self.height())
-            animation = QPropertyAnimation(detailPage, QByteArray(b"pos"))
-            animation.setDuration(duration)
-            animation.setStartValue(detailPage.pos())
-            animation.setEndValue(self.stackedWidget.rect().topLeft())
-            animation.setEasingCurve(QEasingCurve.Type.OutCubic)
-            animation.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
-            self._animations[detailPage] = animation
-            animation.finished.connect(cleanup_animation)
-            animation.finished.connect(load_image_and_restore_effect)
-        elif animation_type == "bounce":
-            duration = self.theme.GAME_CARD_ANIMATION.get("detail_page_zoom_duration", 400)
-
-            detailPage.setWindowOpacity(0.0)
-
-            opacity_anim = QPropertyAnimation(detailPage, QByteArray(b"windowOpacity"))
-            opacity_anim.setDuration(duration)
-            opacity_anim.setStartValue(0.0)
-            opacity_anim.setEndValue(1.0)
-
-            # Animate geometry
-            initial_rect = QRect(detailPage.x() + detailPage.width() // 4, detailPage.y() + detailPage.height() // 4,
-                                detailPage.width() // 2, detailPage.height() // 2)
-            final_rect = detailPage.geometry()
-            geometry_anim = QPropertyAnimation(detailPage, QByteArray(b"geometry"))
-            geometry_anim.setDuration(duration)
-            geometry_anim.setStartValue(initial_rect)
-            geometry_anim.setEndValue(final_rect)
-            geometry_anim.setEasingCurve(QEasingCurve.Type.OutBack)
-
-            group_anim = QParallelAnimationGroup()
-            group_anim.addAnimation(opacity_anim)
-            group_anim.addAnimation(geometry_anim)
-
-            group_anim.finished.connect(load_image_and_restore_effect)
-            group_anim.finished.connect(cleanup_animation)
-            group_anim.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
-            self._animations[detailPage] = group_anim
+        self.detail_animations.animate_detail_page(detailPage, load_image_and_restore_effect, cleanup_animation)
 
     def toggleFavoriteInDetailPage(self, game_name, label):
         favorites = read_favorites()
