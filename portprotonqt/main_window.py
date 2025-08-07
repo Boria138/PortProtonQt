@@ -1967,24 +1967,42 @@ class MainWindow(QMainWindow):
             parent = parent.parent()
 
     def goBackDetailPage(self, page: QWidget | None) -> None:
-        if page is None or page != self.stackedWidget.currentWidget():
+        if page is None or page != self.stackedWidget.currentWidget() or getattr(self, '_exit_animation_in_progress', False):
             return
+        self._exit_animation_in_progress = True
         self._detail_page_active = False
         self._current_detail_page = None
-        if hasattr(self, '_animations') and page in self._animations:
+
+        def cleanup():
+            """Helper function to clean up after animation."""
             try:
-                animation = self._animations[page]
-                if animation.state() == QAbstractAnimation.State.Running:
-                    animation.stop()
-                del self._animations[page]
-            except RuntimeError:
-                del self._animations[page]
-        self.stackedWidget.setCurrentIndex(0)
-        self.stackedWidget.removeWidget(page)
-        page.deleteLater()
-        self.currentDetailPage = None
-        self.current_exec_line = None
-        self.current_play_button = None
+                if page in self._animations:
+                    animation = self._animations[page]
+                    try:
+                        if animation.state() == QAbstractAnimation.State.Running:
+                            animation.stop()
+                    except RuntimeError:
+                        pass  # Animation already deleted
+                    finally:
+                        del self._animations[page]
+                self.stackedWidget.setCurrentIndex(0)
+                self.stackedWidget.removeWidget(page)
+                page.deleteLater()
+                self.currentDetailPage = None
+                self.current_exec_line = None
+                self.current_play_button = None
+                self._exit_animation_in_progress = False
+            except Exception as e:
+                logger.error(f"Error in cleanup: {e}", exc_info=True)
+                self._exit_animation_in_progress = False
+
+        # Start exit animation
+        try:
+            self.detail_animations.animate_detail_page_exit(page, cleanup)
+        except Exception as e:
+            logger.error(f"Error starting exit animation: {e}", exc_info=True)
+            self._exit_animation_in_progress = False
+            cleanup()  # Fallback to cleanup if animation fails
 
     def is_target_exe_running(self):
         """Проверяет, запущен ли процесс с именем self.target_exe через psutil."""

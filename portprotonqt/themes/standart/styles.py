@@ -27,7 +27,7 @@ color_g = "rgba(0, 0, 0, 0)"
 color_h = "transparent"
 
 GAME_CARD_ANIMATION = {
-    # Тип анимации fade при входе на детальную страницу
+    # Тип анимации при входе и выходе на детальную страницу
     # Возможные значения: "fade", "slide_left", "slide_right", "slide_up", "slide_down", "bounce"
     "detail_page_animation_type": "fade",
 
@@ -105,8 +105,25 @@ GAME_CARD_ANIMATION = {
     # Длительность анимации slide при входе на детальную страницу
     "detail_page_slide_duration": 500,
 
-    # Длительность анимации zoom при входе на детальную страницу
-    "detail_page_zoom_duration": 400
+    # Длительность анимации bounce при входе на детальную страницу
+    "detail_page_bounce_duration": 400,
+
+    # Длительность анимации fade при выходе из детальной страницы
+    "detail_page_fade_duration_exit": 350,
+
+    # Длительность анимации slide при выходе из детальной страницы
+    "detail_page_slide_duration_exit": 500,
+
+    # Длительность анимации bounce при выходе из детальной страницы
+    "detail_page_bounce_duration_exit": 400,
+
+    # Тип кривой сглаживания для анимации при входе на детальную страницу
+    # Применяется к slide и bounce анимациям
+    "detail_page_easing_curve": "OutCubic",
+
+    # Тип кривой сглаживания для анимации при выходе из детальной страницы
+    # Применяется к slide и bounce анимациям
+    "detail_page_easing_curve_exit": "InCubic"
 }
 
 CONTEXT_MENU_STYLE = f"""
