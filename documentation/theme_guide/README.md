@@ -52,42 +52,103 @@ The `GAME_CARD_ANIMATION` dictionary controls all animation parameters for game 
 
 ```python
 GAME_CARD_ANIMATION = {
-    # Animation type when transitioning to a detailed page
-    # Available values: "fade", "slide_left", "slide_right", "slide_up", "slide_down", "bounce"
+    # Type of animation when entering and exiting the detail page
+    # Possible values: "fade", "slide_left", "slide_right", "slide_up", "slide_down", "bounce"
     "detail_page_animation_type": "fade",
 
-    # Border width settings (in pixels)
+    # Border width of the card in idle state (no hover or focus).
+    # Affects the thickness of the border when the card is not highlighted.
+    # Value in pixels.
     "default_border_width": 2,
+
+    # Border width on hover.
+    # Increases the border thickness when the cursor is over the card.
+    # Value in pixels.
     "hover_border_width": 8,
+
+    # Border width on focus (e.g., selected via keyboard).
+    # Increases the border thickness when the card is focused.
+    # Value in pixels.
     "focus_border_width": 12,
+
+    # Minimum border width during pulsing animation.
+    # Sets the minimum border thickness during the "breathing" animation.
+    # Value in pixels.
     "pulse_min_border_width": 8,
+
+    # Maximum border width during pulsing animation.
+    # Sets the maximum border thickness during pulsing.
+    # Value in pixels.
     "pulse_max_border_width": 10,
 
-    # Animation duration (in milliseconds)
+    # Duration of the border thickness animation (e.g., on hover or focus).
+    # Affects the speed of transition between different border widths.
+    # Value in milliseconds.
     "thickness_anim_duration": 300,
+
+    # Duration of one pulsing animation cycle.
+    # Defines how fast the border "pulses" between min and max values.
+    # Value in milliseconds.
     "pulse_anim_duration": 800,
+
+    # Duration of the gradient rotation animation.
+    # Affects how fast the gradient border rotates around the card.
+    # Value in milliseconds.
     "gradient_anim_duration": 3000,
 
-    # Gradient animation angles (in degrees)
+    # Starting angle of the gradient (in degrees).
+    # Defines the initial rotation point of the gradient when the animation starts.
     "gradient_start_angle": 360,
+
+    # Ending angle of the gradient (in degrees).
+    # Defines the end rotation point of the gradient.
+    # A value of 0 means a full 360-degree rotation.
     "gradient_end_angle": 0,
 
-    # Smoothing curves for smooth animations
+    # Easing curve type for border expansion animation (on hover/focus).
+    # Affects the "feel" of the animation (e.g., smooth acceleration or deceleration).
+    # Possible values: strings corresponding to QEasingCurve.Type (e.g., "OutBack", "InOutQuad").
     "thickness_easing_curve": "OutBack",
+
+    # Easing curve type for border contraction animation (on mouse leave/focus loss).
+    # Affects the "feel" of returning to the original border width.
     "thickness_easing_curve_out": "InBack",
 
-    # Gradient colors for animated stroke
+    # Gradient colors for the animated border.
+    # A list of dictionaries where each defines a position (0.0–1.0) and color in hex format.
+    # Affects the appearance of the border on hover or focus.
     "gradient_colors": [
-        {"position": 0, "color": "#00fff5"},
-        {"position": 0.33, "color": "#FF5733"},
-        {"position": 0.66, "color": "#9B59B6"},
-        {"position": 1, "color": "#00fff5"}
+        {"position": 0, "color": "#00fff5"},    # Start color (cyan)
+        {"position": 0.33, "color": "#FF5733"}, # 33% color (orange)
+        {"position": 0.66, "color": "#9B59B6"}, # 66% color (purple)
+        {"position": 1, "color": "#00fff5"}     # End color (back to cyan)
     ],
 
-    # Duration of transitions to the detailed page
+    # Duration of the fade animation when entering the detail page
     "detail_page_fade_duration": 350,
+
+    # Duration of the slide animation when entering the detail page
     "detail_page_slide_duration": 500,
-    "detail_page_zoom_duration": 400
+
+    # Duration of the bounce animation when entering the detail page
+    "detail_page_bounce_duration": 400,
+
+    # Duration of the fade animation when exiting the detail page
+    "detail_page_fade_duration_exit": 350,
+
+    # Duration of the slide animation when exiting the detail page
+    "detail_page_slide_duration_exit": 500,
+
+    # Duration of the bounce animation when exiting the detail page
+    "detail_page_bounce_duration_exit": 400,
+
+    # Easing curve type for animation when entering the detail page
+    # Applies to slide and bounce animations
+    "detail_page_easing_curve": "OutCubic",
+
+    # Easing curve type for animation when exiting the detail page
+    # Applies to slide and bounce animations
+    "detail_page_easing_curve_exit": "InCubic"
 }
 ```
 
