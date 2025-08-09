@@ -18,6 +18,11 @@ from collections.abc import Callable
 import re
 import shutil
 import zlib
+import websocket
+import requests
+import json
+import random
+import base64
 
 downloader = Downloader()
 logger = get_logger(__name__)
@@ -771,6 +776,124 @@ def get_steam_apps_and_index_async(callback: Callable[[tuple[list, dict]], None]
 
     load_steam_apps_async(on_steam_apps)
 
+def enable_steam_cef() -> tuple[bool, str]:
+    """
+    Проверяет и при необходимости активирует режим удаленной отладки Steam CEF.
+
+    Создает файл .cef-enable-remote-debugging в директории Steam.
+    Steam необходимо перезапустить после первого создания этого файла.
+
+    Возвращает кортеж:
+    - (True, "already_enabled") если уже было активно.
+    - (True, "restart_needed") если было только что активировано и нужен перезапуск Steam.
+    - (False, "steam_not_found") если директория Steam не найдена.
+    """
+    steam_home = get_steam_home()
+    if not steam_home:
+        return (False, "steam_not_found")
+
+    cef_flag_file = steam_home / ".cef-enable-remote-debugging"
+    logger.info(f"Проверка CEF флага: {cef_flag_file}")
+
+    if cef_flag_file.exists():
+        logger.info("CEF Remote Debugging уже активирован.")
+        return (True, "already_enabled")
+    else:
+        try:
+            os.makedirs(cef_flag_file.parent, exist_ok=True)
+            cef_flag_file.touch()
+            logger.info("CEF Remote Debugging активирован. Steam необходимо перезапустить.")
+            return (True, "restart_needed")
+        except Exception as e:
+            logger.error(f"Не удалось создать CEF флаг {cef_flag_file}: {e}")
+            return (False, str(e))
+
+def call_steam_api(js_cmd: str, *args) -> dict | None:
+    """
+    Выполняет JavaScript функцию в контексте Steam через CEF Remote Debugging.
+
+    Args:
+        js_cmd: Имя JS функции для вызова (напр. 'createShortcut').
+        *args: Аргументы для передачи в JS функцию.
+
+    Returns:
+        Словарь с результатом выполнения или None в случае ошибки.
+    """
+    status, message = enable_steam_cef()
+    if not (status is True and message == "already_enabled"):
+        if message == "restart_needed":
+            logger.warning("Steam CEF API доступен, но требует перезапуска Steam для полной активации.")
+        elif message == "steam_not_found":
+            logger.error("Не удалось найти директорию Steam для проверки CEF API.")
+        else:
+            logger.error(f"Steam CEF API недоступен или не готов: {message}")
+        return None
+
+    steam_debug_url = "http://localhost:8080/json"
+
+    try:
+        response = requests.get(steam_debug_url, timeout=2)
+        response.raise_for_status()
+        contexts = response.json()
+        ws_url = next((ctx['webSocketDebuggerUrl'] for ctx in contexts if ctx['title'] == 'SharedJSContext'), None)
+        if not ws_url:
+            logger.warning("Не удалось найти SharedJSContext. Steam запущен с флагом -cef-enable-remote-debugging?")
+            return None
+    except Exception as e:
+        logger.warning(f"Не удалось подключиться к Steam CEF API по адресу {steam_debug_url}. Steam запущен? {e}")
+        return None
+
+    js_code = """
+        async function createShortcut(name, exe, dir, icon, args) {
+            const id = await SteamClient.Apps.AddShortcut(name, exe, dir, args);
+            console.log("Shortcut created with ID:", id);
+            await SteamClient.Apps.SetShortcutName(id, name);
+            if (icon)
+                await SteamClient.Apps.SetShortcutIcon(id, icon);
+            if (args)
+                await SteamClient.Apps.SetAppLaunchOptions(id, args);
+            return { id };
+        };
+
+        async function setGrid(id, i, ext, image) {
+            await SteamClient.Apps.SetCustomArtworkForApp(id, image, ext, i);
+        };
+
+        async function removeShortcut(id) {
+            await SteamClient.Apps.RemoveShortcut(+id);
+        };
+    """
+    try:
+        ws = websocket.create_connection(ws_url, timeout=5)
+        js_args = ", ".join(json.dumps(arg) for arg in args)
+        expression = f"{js_code} {js_cmd}({js_args});"
+        payload = {
+            "id": random.randint(0, 32767),
+            "method": "Runtime.evaluate",
+            "params": {
+                "expression": expression,
+                "awaitPromise": True,
+                "returnByValue": True
+            }
+        }
+
+        ws.send(json.dumps(payload))
+        response_str = ws.recv()
+        ws.close()
+
+        response_data = json.loads(response_str)
+        if "error" in response_data:
+            logger.error(f"Ошибка выполнения JS в Steam: {response_data['error']['message']}")
+            return None
+        result = response_data.get('result', {}).get('result', {})
+        if result.get('type') == 'object' and result.get('subtype') == 'error':
+            logger.error(f"Ошибка выполнения JS в Steam: {result.get('description')}")
+            return None
+        return result.get('value')
+    except Exception as e:
+        logger.error(f"Ошибка при взаимодействии с WebSocket Steam: {e}")
+        return None
+
 def add_to_steam(game_name: str, exec_line: str, cover_path: str) -> tuple[bool, str]:
     """
     Add a non-Steam game to Steam via shortcuts.vdf with PortProton tag,
@@ -872,45 +995,43 @@ export START_FROM_STEAM=1
     grid_dir = user_dir / "config" / "grid"
     os.makedirs(grid_dir, exist_ok=True)
 
-    backup_path = f"{steam_shortcuts_path}.backup"
-    if os.path.exists(steam_shortcuts_path):
-        try:
-            shutil.copy2(steam_shortcuts_path, backup_path)
-            logger.info(f"Created backup of shortcuts.vdf at {backup_path}")
-        except Exception as e:
-            logger.error(f"Failed to create backup of shortcuts.vdf: {e}")
-            return (False, f"Failed to create backup of shortcuts.vdf: {e}")
+    appid = None
+    was_api_used = False
 
-    unique_string = f"{script_path}{game_name}"
-    baseid = zlib.crc32(unique_string.encode('utf-8')) & 0xffffffff
-    appid = baseid | 0x80000000
-    if appid > 0x7FFFFFFF:
-        aidvdf = appid - 0x100000000
+    logger.info("Попытка добавления ярлыка через Steam CEF API...")
+    api_response = call_steam_api(
+        "createShortcut",
+        game_name,
+        script_path,
+        str(Path(script_path).parent),
+        icon_path,
+        ""
+    )
+    logger.info(f"### api_response: {api_response}")
+
+    if api_response and isinstance(api_response, dict) and 'id' in api_response:
+        appid = api_response['id']
+        was_api_used = True
+        logger.info(f"Ярлык успешно добавлен через API. AppID: {appid}")
     else:
-        aidvdf = appid
+        logger.warning("Не удалось добавить ярлык через API. Используется запасной метод (запись в shortcuts.vdf).")
+        backup_path = f"{steam_shortcuts_path}.backup"
+        if os.path.exists(steam_shortcuts_path):
+            try:
+                shutil.copy2(steam_shortcuts_path, backup_path)
+                logger.info(f"Created backup of shortcuts.vdf at {backup_path}")
+            except Exception as e:
+                logger.error(f"Failed to create backup of shortcuts.vdf: {e}")
+                return (False, f"Failed to create backup of shortcuts.vdf: {e}")
 
-    steam_appid = None
-    downloaded_count = 0
-    total_covers = 4  # количество обложек
+        unique_string = f"{script_path}{game_name}"
+        baseid = zlib.crc32(unique_string.encode('utf-8')) & 0xffffffff
+        appid = baseid | 0x80000000
+        if appid > 0x7FFFFFFF:
+            aidvdf = appid - 0x100000000
+        else:
+            aidvdf = appid
 
-    download_lock = threading.Lock()
-
-    def on_cover_download(cover_file: str, cover_type: str):
-        nonlocal downloaded_count
-        try:
-            if cover_file and os.path.exists(cover_file):
-                logger.info(f"Downloaded cover {cover_type} to {cover_file}")
-            else:
-                logger.warning(f"Failed to download cover {cover_type} for appid {steam_appid}")
-        except Exception as e:
-            logger.error(f"Error processing cover {cover_type} for appid {steam_appid}: {e}")
-        with download_lock:
-            downloaded_count += 1
-            if downloaded_count == total_covers:
-                finalize_shortcut()
-
-    def finalize_shortcut():
-        tags_dict = {'0': 'PortProton'}
         shortcut = {
             "appid": aidvdf,
             "AppName": game_name,
@@ -925,7 +1046,7 @@ export START_FROM_STEAM=1
             "Devkit": 0,
             "DevkitGameID": "",
             "LastPlayTime": 0,
-            "tags": tags_dict
+            "tags": {'0': 'PortProton'}
         }
         logger.info(f"Shortcut entry to be written: {shortcut}")
 
@@ -955,6 +1076,7 @@ export START_FROM_STEAM=1
 
             with open(steam_shortcuts_path, 'wb') as f:
                 vdf.binary_dump({"shortcuts": shortcuts}, f)
+            logger.info(f"Game '{game_name}' successfully added to Steam with covers")
         except Exception as e:
             logger.error(f"Failed to update shortcuts.vdf: {e}")
             if os.path.exists(backup_path):
@@ -963,34 +1085,61 @@ export START_FROM_STEAM=1
                     logger.info("Restored shortcuts.vdf from backup due to update failure")
                 except Exception as restore_err:
                     logger.error(f"Failed to restore shortcuts.vdf from backup: {restore_err}")
-            return (False, f"Failed to update shortcuts.vdf: {e}")
+            appid = None
 
-        logger.info(f"Game '{game_name}' successfully added to Steam with covers")
-        return (True, f"Game '{game_name}' added to Steam with covers")
+    if not appid:
+        return (False, "Не удалось создать ярлык ни одним из способов.")
+
+    steam_appid = None
+    # downloaded_count = 0
+    # download_lock = threading.Lock()
 
     def on_game_info(game_info: dict):
         nonlocal steam_appid
         steam_appid = game_info.get("appid")
         if not steam_appid or not isinstance(steam_appid, int):
             logger.info("No valid Steam appid found, skipping cover download")
-            return finalize_shortcut()
+            return
+        logger.info(f"Найден Steam AppID {steam_appid} для загрузки обложек.")
 
-        # Обложки и имена, соответствующие bash-скрипту и твоим размерам
         cover_types = [
-            (".jpg", "header.jpg"),              # базовый, сохранится как AppId.jpg
-            ("p.jpg", "library_600x900_2x.jpg"), # сохранится как AppIdp.jpg
-            ("_hero.jpg", "library_hero.jpg"),   # AppId_hero.jpg
-            ("_logo.png", "logo.png")            # AppId_logo.png
+            ("p.jpg", "library_600x900_2x.jpg"),
+            ("_hero.jpg", "library_hero.jpg"),
+            ("_logo.png", "logo.png"),
+            (".jpg", "header.jpg")
         ]
 
-        for suffix, cover_type in cover_types:
+        def on_cover_download(result_path: str | None, steam_name: str, index: int):
+            # nonlocal downloaded_count
+            try:
+                if result_path and os.path.exists(result_path):
+                    logger.info(f"Downloaded cover {steam_name} to {result_path}")
+                    if was_api_used:
+                        try:
+                            with open(result_path, 'rb') as f:
+                                img_b64 = base64.b64encode(f.read()).decode('utf-8')
+                            logger.info(f"Применение обложки типа '{steam_name}' через API для AppID {appid}")
+                            ext = Path(steam_name).suffix.lstrip('.')
+                            call_steam_api("setGrid", appid, index, ext, img_b64)
+                        except Exception as e:
+                            logger.error(f"Ошибка при применении обложки '{steam_name}' через API: {e}")
+                else:
+                    logger.warning(f"Failed to download cover {steam_name} for appid {steam_appid}")
+            except Exception as e:
+                logger.error(f"Error processing cover {steam_name} for appid {steam_appid}: {e}")
+            # with download_lock:
+            #     downloaded_count += 1
+            #     if downloaded_count == len(cover_types):
+            #         finalize_shortcut()
+
+        for i, (suffix, steam_name) in enumerate(cover_types):
             cover_file = os.path.join(grid_dir, f"{appid}{suffix}")
-            cover_url = f"https://cdn.cloudflare.steamstatic.com/steam/apps/{steam_appid}/{cover_type}"
+            cover_url = f"https://cdn.cloudflare.steamstatic.com/steam/apps/{steam_appid}/{steam_name}"
             downloader.download_async(
                 cover_url,
                 cover_file,
                 timeout=5,
-                callback=lambda result, cfile=cover_file, ctype=cover_type: on_cover_download(cfile, ctype)
+                callback=lambda result, index=i, name=steam_name: on_cover_download(result, name, index)
             )
 
     get_steam_game_info_async(game_name, exec_line, on_game_info)

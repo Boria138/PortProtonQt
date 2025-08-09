@@ -39,6 +39,7 @@ dependencies = [
     "requests>=2.32.3",
     "tqdm>=4.67.1",
     "vdf>=3.4",
+    "websocket-client"
 ]
 
 [project.scripts]
