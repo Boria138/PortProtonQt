@@ -857,10 +857,12 @@ def call_steam_api(js_cmd: str, *args) -> dict | None:
 
         async function setGrid(id, i, ext, image) {
             await SteamClient.Apps.SetCustomArtworkForApp(id, image, ext, i);
+            return true;
         };
 
         async function removeShortcut(id) {
             await SteamClient.Apps.RemoveShortcut(+id);
+            return true;
         };
     """
     try:
@@ -1007,7 +1009,6 @@ export START_FROM_STEAM=1
         icon_path,
         ""
     )
-    logger.info(f"### api_response: {api_response}")
 
     if api_response and isinstance(api_response, dict) and 'id' in api_response:
         appid = api_response['id']
@@ -1192,19 +1193,8 @@ def remove_from_steam(game_name: str, exec_line: str) -> tuple[bool, str]:
         logger.info(f"shortcuts.vdf not found at {steam_shortcuts_path}")
         return (False, f"Game '{game_name}' not found in Steam")
 
-    # Generate appid for identifying cover files
-    unique_string = f"{script_path}{game_name}"
-    baseid = zlib.crc32(unique_string.encode('utf-8')) & 0xffffffff
-    appid = baseid | 0x80000000
-
-    # Create backup of shortcuts.vdf
-    backup_path = f"{steam_shortcuts_path}.backup"
-    try:
-        shutil.copy2(steam_shortcuts_path, backup_path)
-        logger.info(f"Created backup of shortcuts.vdf at {backup_path}")
-    except Exception as e:
-        logger.error(f"Failed to create backup of shortcuts.vdf: {e}")
-        return (False, f"Failed to create backup of shortcuts.vdf: {e}")
+    appid = None
+    was_api_used = False
 
     # Load and modify shortcuts.vdf
     try:
@@ -1218,37 +1208,52 @@ def remove_from_steam(game_name: str, exec_line: str) -> tuple[bool, str]:
         return (False, f"Failed to load shortcuts.vdf: {load_err}")
 
     shortcuts = shortcuts_data.get("shortcuts", {})
-    found = False
     new_shortcuts = {}
     index = 0
 
     # Filter out the matching shortcut
     for _key, entry in shortcuts.items():
         if entry.get("AppName") == game_name and entry.get("Exe") == f'"{script_path}"':
-            found = True
+            appid = convert_steam_id(int(entry.get("appid")))
             logger.info(f"Found matching shortcut for '{game_name}' to remove")
             continue
         new_shortcuts[str(index)] = entry
         index += 1
 
-    if not found:
+    if not appid:
         logger.info(f"Game '{game_name}' not found in Steam shortcuts")
         return (False, f"Game '{game_name}' not found in Steam")
 
-    # Save updated shortcuts.vdf
-    try:
-        with open(steam_shortcuts_path, 'wb') as f:
-            vdf.binary_dump({"shortcuts": new_shortcuts}, f)
-        logger.info(f"Successfully updated shortcuts.vdf, removed '{game_name}'")
-    except Exception as e:
-        logger.error(f"Failed to update shortcuts.vdf: {e}")
-        if os.path.exists(backup_path):
-            try:
-                shutil.copy2(backup_path, steam_shortcuts_path)
-                logger.info("Restored shortcuts.vdf from backup due to update failure")
-            except Exception as restore_err:
-                logger.error(f"Failed to restore shortcuts.vdf from backup: {restore_err}")
-        return (False, f"Failed to update shortcuts.vdf: {e}")
+    api_response = call_steam_api("removeShortcut", appid)
+    if api_response is not None: # API ответил, даже если ответ пустой
+        was_api_used = True
+        logger.info(f"Ярлык для AppID {appid} успешно удален через API.")
+    else:
+        logger.warning("Не удалось удалить ярлык через API. Используется запасной метод (редактирование shortcuts.vdf).")
+
+        # Create backup of shortcuts.vdf
+        backup_path = f"{steam_shortcuts_path}.backup"
+        try:
+            shutil.copy2(steam_shortcuts_path, backup_path)
+            logger.info(f"Created backup of shortcuts.vdf at {backup_path}")
+        except Exception as e:
+            logger.error(f"Failed to create backup of shortcuts.vdf: {e}")
+            return (False, f"Failed to create backup of shortcuts.vdf: {e}")
+
+        # Save updated shortcuts.vdf
+        try:
+            with open(steam_shortcuts_path, 'wb') as f:
+                vdf.binary_dump({"shortcuts": new_shortcuts}, f)
+            logger.info(f"Successfully updated shortcuts.vdf, removed '{game_name}'")
+        except Exception as e:
+            logger.error(f"Failed to update shortcuts.vdf: {e}")
+            if os.path.exists(backup_path):
+                try:
+                    shutil.copy2(backup_path, steam_shortcuts_path)
+                    logger.info("Restored shortcuts.vdf from backup due to update failure")
+                except Exception as restore_err:
+                    logger.error(f"Failed to restore shortcuts.vdf from backup: {restore_err}")
+            return (False, f"Failed to update shortcuts.vdf: {e}")
 
     # Delete cover files
     cover_files = [
