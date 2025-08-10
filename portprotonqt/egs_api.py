@@ -16,13 +16,14 @@ from portprotonqt.time_utils import parse_playtime_file, format_playtime, get_la
 from portprotonqt.config_utils import get_portproton_location
 from portprotonqt.steam_api import (
     get_weanticheatyet_status_async, get_steam_apps_and_index_async, get_protondb_tier_async,
-    search_app, get_steam_home, get_last_steam_user, convert_steam_id, generate_thumbnail
+    search_app, get_steam_home, get_last_steam_user, convert_steam_id, generate_thumbnail, call_steam_api
 )
 import vdf
 import shutil
 import zlib
 from portprotonqt.downloader import Downloader
 from PySide6.QtGui import QPixmap
+import base64
 
 logger = get_logger(__name__)
 downloader = Downloader()
@@ -66,7 +67,8 @@ def get_cache_dir() -> Path:
 
 def remove_egs_from_steam(game_name: str, portproton_dir: str, callback: Callable[[tuple[bool, str]], None]) -> None:
     """
-    Removes an EGS game from Steam by modifying shortcuts.vdf and deleting the launch script.
+    Removes an EGS game from Steam using CEF API or by modifying shortcuts.vdf and deleting the launch script.
+    Also deletes associated cover files in the Steam grid directory.
     Calls the callback with (success, message).
 
     Args:
@@ -74,6 +76,7 @@ def remove_egs_from_steam(game_name: str, portproton_dir: str, callback: Callabl
         portproton_dir: Path to the PortProton directory.
         callback: Callback function to handle the result (success, message).
     """
+
     if not portproton_dir:
         logger.error("PortProton directory not found")
         callback((False, "PortProton directory not found"))
@@ -101,51 +104,89 @@ def remove_egs_from_steam(game_name: str, portproton_dir: str, callback: Callabl
     unsigned_id = convert_steam_id(user_id)
     user_dir = os.path.join(userdata_dir, str(unsigned_id))
     steam_shortcuts_path = os.path.join(user_dir, "config", "shortcuts.vdf")
-    backup_path = f"{steam_shortcuts_path}.backup"
+    grid_dir = os.path.join(user_dir, "config", "grid")
 
     if not os.path.exists(steam_shortcuts_path):
         logger.error("Steam shortcuts file not found")
         callback((False, "Steam shortcuts file not found"))
         return
 
+    # Find appid for the shortcut
+    try:
+        with open(steam_shortcuts_path, 'rb') as f:
+            shortcuts_data = vdf.binary_load(f)
+        shortcuts = shortcuts_data.get("shortcuts", {})
+        appid = None
+        for _key, entry in shortcuts.items():
+            if entry.get("AppName") == game_name and entry.get("Exe") == quoted_script_path:
+                appid = convert_steam_id(int(entry.get("appid")))
+                logger.info(f"Found matching shortcut for '{game_name}' with AppID {appid}")
+                break
+        if not appid:
+            logger.info(f"Game '{game_name}' not found in Steam shortcuts")
+            callback((False, f"Game '{game_name}' not found in Steam"))
+            return
+    except Exception as e:
+        logger.error(f"Failed to load shortcuts.vdf: {e}")
+        callback((False, f"Failed to load shortcuts.vdf: {e}"))
+        return
+
+    # Try CEF API first
+    logger.info(f"Attempting to remove EGS game '{game_name}' via Steam CEF API with AppID {appid}")
+    api_response = call_steam_api("removeShortcut", appid)
+    if api_response is not None:  # API responded, even if empty
+        logger.info(f"Shortcut for AppID {appid} successfully removed via CEF API")
+
+        # Delete cover files
+        cover_files = [
+            os.path.join(grid_dir, f"{appid}.jpg"),
+            os.path.join(grid_dir, f"{appid}p.jpg"),
+            os.path.join(grid_dir, f"{appid}_hero.jpg"),
+            os.path.join(grid_dir, f"{appid}_logo.png")
+        ]
+        for cover_file in cover_files:
+            if os.path.exists(cover_file):
+                try:
+                    os.remove(cover_file)
+                    logger.info(f"Deleted cover file: {cover_file}")
+                except Exception as e:
+                    logger.error(f"Failed to delete cover file {cover_file}: {e}")
+
+        # Delete launch script
+        if os.path.exists(script_path):
+            try:
+                os.remove(script_path)
+                logger.info(f"Removed EGS script: {script_path}")
+            except OSError as e:
+                logger.warning(f"Failed to remove EGS script '{script_path}': {str(e)}")
+
+        callback((True, f"Game '{game_name}' was removed from Steam. Please restart Steam for changes to take effect."))
+        return
+
+    # Fallback to VDF modification
+    logger.warning("CEF API failed for EGS game removal; falling back to VDF modification")
+    backup_path = f"{steam_shortcuts_path}.backup"
     try:
         shutil.copy2(steam_shortcuts_path, backup_path)
-        logger.info("Created backup of shortcuts.vdf at %s", backup_path)
+        logger.info(f"Created backup of shortcuts.vdf at {backup_path}")
     except Exception as e:
         logger.error(f"Failed to create backup of shortcuts.vdf: {e}")
         callback((False, f"Failed to create backup of shortcuts.vdf: {e}"))
         return
 
     try:
-        with open(steam_shortcuts_path, 'rb') as f:
-            shortcuts_data = vdf.binary_load(f)
-    except Exception as e:
-        logger.error(f"Failed to load shortcuts.vdf: {e}")
-        callback((False, f"Failed to load shortcuts.vdf: {e}"))
-        return
+        new_shortcuts = {}
+        index = 0
+        for _key, entry in shortcuts.items():
+            if entry.get("AppName") == game_name and entry.get("Exe") == quoted_script_path:
+                logger.info(f"Removing EGS game '{game_name}' from Steam shortcuts")
+                continue
+            new_shortcuts[str(index)] = entry
+            index += 1
 
-    shortcuts = shortcuts_data.get("shortcuts", {})
-    modified = False
-    new_shortcuts = {}
-    index = 0
-
-    for _key, entry in shortcuts.items():
-        if entry.get("AppName") == game_name and entry.get("Exe") == quoted_script_path:
-            modified = True
-            logger.info("Removing EGS game '%s' from Steam shortcuts", game_name)
-            continue
-        new_shortcuts[str(index)] = entry
-        index += 1
-
-    if not modified:
-        logger.error("Game '%s' not found in Steam shortcuts", game_name)
-        callback((False, f"Game '{game_name}' not found in Steam shortcuts"))
-        return
-
-    try:
         with open(steam_shortcuts_path, 'wb') as f:
             vdf.binary_dump({"shortcuts": new_shortcuts}, f)
-        logger.info("Updated shortcuts.vdf, removed '%s'", game_name)
+        logger.info(f"Updated shortcuts.vdf, removed '{game_name}'")
     except Exception as e:
         logger.error(f"Failed to update shortcuts.vdf: {e}")
         if os.path.exists(backup_path):
@@ -157,10 +198,26 @@ def remove_egs_from_steam(game_name: str, portproton_dir: str, callback: Callabl
         callback((False, f"Failed to update shortcuts.vdf: {e}"))
         return
 
+    # Delete cover files
+    cover_files = [
+        os.path.join(grid_dir, f"{appid}.jpg"),
+        os.path.join(grid_dir, f"{appid}p.jpg"),
+        os.path.join(grid_dir, f"{appid}_hero.jpg"),
+        os.path.join(grid_dir, f"{appid}_logo.png")
+    ]
+    for cover_file in cover_files:
+        if os.path.exists(cover_file):
+            try:
+                os.remove(cover_file)
+                logger.info(f"Deleted cover file: {cover_file}")
+            except Exception as e:
+                logger.error(f"Failed to delete cover file {cover_file}: {e}")
+
+    # Delete launch script
     if os.path.exists(script_path):
         try:
             os.remove(script_path)
-            logger.info("Removed EGS script: %s", script_path)
+            logger.info(f"Removed EGS script: {script_path}")
         except OSError as e:
             logger.warning(f"Failed to remove EGS script '{script_path}': {str(e)}")
 
@@ -168,12 +225,20 @@ def remove_egs_from_steam(game_name: str, portproton_dir: str, callback: Callabl
 
 def add_egs_to_steam(app_name: str, game_title: str, legendary_path: str, callback: Callable[[tuple[bool, str]], None]) -> None:
     """
-    Asynchronously adds an EGS game to Steam via shortcuts.vdf with PortProton tag.
+    Asynchronously adds an EGS game to Steam via CEF API or shortcuts.vdf with PortProton tag.
     Creates a launch script using legendary CLI with --no-wine and PortProton wrapper.
     Wrapper is flatpak run if portproton_location is None or contains .var, otherwise start.sh.
     Downloads Steam Grid covers if the game exists in Steam, and generates a thumbnail.
     Calls the callback with (success, message).
+
+    Args:
+        app_name: The Legendary app_name (unique identifier for the game).
+        game_title: The display name of the game.
+        legendary_path: Path to the Legendary CLI executable.
+        callback: Callback function to handle the result (success, message).
     """
+    from portprotonqt.steam_api import call_steam_api  # Import for CEF API
+
     if not app_name or not app_name.strip() or not game_title or not game_title.strip():
         logger.error("Invalid app_name or game_title: empty or whitespace")
         callback((False, "Game name or app name is empty or invalid"))
@@ -267,47 +332,47 @@ export LEGENDARY_CONFIG_PATH="{legendary_config_path}"
     grid_dir = user_dir / "config" / "grid"
     os.makedirs(grid_dir, exist_ok=True)
 
-    # Backup shortcuts.vdf
-    backup_path = f"{steam_shortcuts_path}.backup"
-    if os.path.exists(steam_shortcuts_path):
-        try:
-            shutil.copy2(steam_shortcuts_path, backup_path)
-            logger.info(f"Created backup of shortcuts.vdf at {backup_path}")
-        except Exception as e:
-            logger.error(f"Failed to create backup of shortcuts.vdf: {e}")
-            callback((False, f"Failed to create backup of shortcuts.vdf: {e}"))
-            return
+    # Try CEF API first
+    logger.info(f"Attempting to add EGS game '{game_title}' via Steam CEF API")
+    api_response = call_steam_api(
+        "createShortcut",
+        game_title,
+        script_path,
+        str(Path(script_path).parent),
+        icon_path,
+        ""
+    )
 
-    # Generate unique appid
-    unique_string = f"{script_path}{game_title}"
-    baseid = zlib.crc32(unique_string.encode('utf-8')) & 0xffffffff
-    appid = baseid | 0x80000000
-    if appid > 0x7FFFFFFF:
-        aidvdf = appid - 0x100000000
+    appid = None
+    was_api_used = False
+
+    if api_response and isinstance(api_response, dict) and 'id' in api_response:
+        appid = api_response['id']
+        was_api_used = True
+        logger.info(f"EGS game '{game_title}' successfully added via CEF API. AppID: {appid}")
     else:
-        aidvdf = appid
+        logger.warning("CEF API failed for EGS game addition; falling back to VDF modification")
+        # Backup shortcuts.vdf
+        backup_path = f"{steam_shortcuts_path}.backup"
+        if os.path.exists(steam_shortcuts_path):
+            try:
+                shutil.copy2(steam_shortcuts_path, backup_path)
+                logger.info(f"Created backup of shortcuts.vdf at {backup_path}")
+            except Exception as e:
+                logger.error(f"Failed to create backup of shortcuts.vdf: {e}")
+                callback((False, f"Failed to create backup of shortcuts.vdf: {e}"))
+                return
 
-    steam_appid = None
-    downloaded_count = 0
-    total_covers = 4
-    download_lock = threading.Lock()
+        # Generate unique appid
+        unique_string = f"{script_path}{game_title}"
+        baseid = zlib.crc32(unique_string.encode('utf-8')) & 0xffffffff
+        appid = baseid | 0x80000000
+        if appid > 0x7FFFFFFF:
+            aidvdf = appid - 0x100000000
+        else:
+            aidvdf = appid
 
-    def on_cover_download(cover_file: str, cover_type: str):
-        nonlocal downloaded_count
-        try:
-            if cover_file and os.path.exists(cover_file):
-                logger.info(f"Downloaded cover {cover_type} to {cover_file}")
-            else:
-                logger.warning(f"Failed to download cover {cover_type} for appid {steam_appid}")
-        except Exception as e:
-            logger.error(f"Error processing cover {cover_type} for appid {steam_appid}: {e}")
-        with download_lock:
-            downloaded_count += 1
-            if downloaded_count == total_covers:
-                finalize_shortcut()
-
-    def finalize_shortcut():
-        tags_dict = {'0': 'PortProton'}
+        # Create shortcut entry
         shortcut = {
             "appid": aidvdf,
             "AppName": game_title,
@@ -322,7 +387,7 @@ export LEGENDARY_CONFIG_PATH="{legendary_config_path}"
             "Devkit": 0,
             "DevkitGameID": "",
             "LastPlayTime": 0,
-            "tags": tags_dict
+            "tags": {'0': 'PortProton'}
         }
         logger.info(f"Shortcut entry for EGS game: {shortcut}")
 
@@ -353,6 +418,7 @@ export LEGENDARY_CONFIG_PATH="{legendary_config_path}"
 
             with open(steam_shortcuts_path, 'wb') as f:
                 vdf.binary_dump({"shortcuts": shortcuts}, f)
+            logger.info(f"EGS game '{game_title}' added to Steam via VDF")
         except Exception as e:
             logger.error(f"Failed to update shortcuts.vdf: {e}")
             if os.path.exists(backup_path):
@@ -364,8 +430,42 @@ export LEGENDARY_CONFIG_PATH="{legendary_config_path}"
             callback((False, f"Failed to update shortcuts.vdf: {e}"))
             return
 
-        logger.info(f"EGS game '{game_title}' added to Steam")
-        callback((True, f"Game '{game_title}' added to Steam with covers"))
+    if not appid:
+        callback((False, "Failed to create shortcut via any method"))
+        return
+
+    steam_appid = None
+    downloaded_count = 0
+    total_covers = 4
+    download_lock = threading.Lock()
+
+    def on_cover_download(cover_file: str | None, cover_type: str, index: int):
+        nonlocal downloaded_count
+        try:
+            if cover_file is None or not os.path.exists(cover_file):
+                logger.warning(f"Failed to download cover {cover_type} for appid {steam_appid}")
+                with download_lock:
+                    downloaded_count += 1
+                    if downloaded_count == total_covers:
+                        callback((True, f"Game '{game_title}' added to Steam with covers"))
+                return
+
+            logger.info(f"Downloaded cover {cover_type} to {cover_file}")
+            if was_api_used:
+                try:
+                    with open(cover_file, 'rb') as f:
+                        img_b64 = base64.b64encode(f.read()).decode('utf-8')
+                    logger.info(f"Applying cover type '{cover_type}' via API for AppID {appid}")
+                    ext = Path(cover_type).suffix.lstrip('.')
+                    call_steam_api("setGrid", appid, index, ext, img_b64)
+                except Exception as e:
+                    logger.error(f"Error applying cover '{cover_type}' via API: {e}")
+        except Exception as e:
+            logger.error(f"Error processing cover {cover_type} for appid {steam_appid}: {e}")
+        with download_lock:
+            downloaded_count += 1
+            if downloaded_count == total_covers:
+                callback((True, f"Game '{game_title}' added to Steam with covers"))
 
     def on_steam_apps(steam_data: tuple[list, dict]):
         nonlocal steam_appid
@@ -375,24 +475,24 @@ export LEGENDARY_CONFIG_PATH="{legendary_config_path}"
 
         if not steam_appid:
             logger.info(f"No Steam appid found for EGS game {game_title}, skipping cover download")
-            finalize_shortcut()
+            callback((True, f"Game '{game_title}' added to Steam"))
             return
 
         cover_types = [
-            (".jpg", "header.jpg"),
-            ("p.jpg", "library_600x900_2x.jpg"),
-            ("_hero.jpg", "library_hero.jpg"),
-            ("_logo.png", "logo.png")
+            (".jpg", "header.jpg", 0),
+            ("p.jpg", "library_600x900_2x.jpg", 1),
+            ("_hero.jpg", "library_hero.jpg", 2),
+            ("_logo.png", "logo.png", 3)
         ]
 
-        for suffix, cover_type in cover_types:
+        for suffix, cover_type, index in cover_types:
             cover_file = os.path.join(grid_dir, f"{appid}{suffix}")
             cover_url = f"https://cdn.cloudflare.steamstatic.com/steam/apps/{steam_appid}/{cover_type}"
             downloader.download_async(
                 cover_url,
                 cover_file,
                 timeout=5,
-                callback=lambda result, cfile=cover_file, ctype=cover_type: on_cover_download(cfile, ctype)
+                callback=lambda result, ctype=cover_type, idx=index: on_cover_download(result, ctype, idx)
             )
 
     get_steam_apps_and_index_async(on_steam_apps)
