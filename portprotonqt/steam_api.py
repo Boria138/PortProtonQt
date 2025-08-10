@@ -20,7 +20,6 @@ import shutil
 import zlib
 import websocket
 import requests
-import json
 import random
 import base64
 
@@ -867,7 +866,7 @@ def call_steam_api(js_cmd: str, *args) -> dict | None:
     """
     try:
         ws = websocket.create_connection(ws_url, timeout=5)
-        js_args = ", ".join(json.dumps(arg) for arg in args)
+        js_args = ", ".join(orjson.dumps(arg).decode('utf-8') for arg in args)
         expression = f"{js_code} {js_cmd}({js_args});"
         payload = {
             "id": random.randint(0, 32767),
@@ -879,11 +878,11 @@ def call_steam_api(js_cmd: str, *args) -> dict | None:
             }
         }
 
-        ws.send(json.dumps(payload))
+        ws.send(orjson.dumps(payload))
         response_str = ws.recv()
         ws.close()
 
-        response_data = json.loads(response_str)
+        response_data = orjson.loads(response_str)
         if "error" in response_data:
             logger.error(f"Ошибка выполнения JS в Steam: {response_data['error']['message']}")
             return None
@@ -1092,8 +1091,6 @@ export START_FROM_STEAM=1
         return (False, "Не удалось создать ярлык ни одним из способов.")
 
     steam_appid = None
-    # downloaded_count = 0
-    # download_lock = threading.Lock()
 
     def on_game_info(game_info: dict):
         nonlocal steam_appid
@@ -1111,7 +1108,6 @@ export START_FROM_STEAM=1
         ]
 
         def on_cover_download(result_path: str | None, steam_name: str, index: int):
-            # nonlocal downloaded_count
             try:
                 if result_path and os.path.exists(result_path):
                     logger.info(f"Downloaded cover {steam_name} to {result_path}")
@@ -1128,10 +1124,6 @@ export START_FROM_STEAM=1
                     logger.warning(f"Failed to download cover {steam_name} for appid {steam_appid}")
             except Exception as e:
                 logger.error(f"Error processing cover {steam_name} for appid {steam_appid}: {e}")
-            # with download_lock:
-            #     downloaded_count += 1
-            #     if downloaded_count == len(cover_types):
-            #         finalize_shortcut()
 
         for i, (suffix, steam_name) in enumerate(cover_types):
             cover_file = os.path.join(grid_dir, f"{appid}{suffix}")
@@ -1194,7 +1186,6 @@ def remove_from_steam(game_name: str, exec_line: str) -> tuple[bool, str]:
         return (False, f"Game '{game_name}' not found in Steam")
 
     appid = None
-    was_api_used = False
 
     # Load and modify shortcuts.vdf
     try:
@@ -1226,7 +1217,6 @@ def remove_from_steam(game_name: str, exec_line: str) -> tuple[bool, str]:
 
     api_response = call_steam_api("removeShortcut", appid)
     if api_response is not None: # API ответил, даже если ответ пустой
-        was_api_used = True
         logger.info(f"Ярлык для AppID {appid} успешно удален через API.")
     else:
         logger.warning("Не удалось удалить ярлык через API. Используется запасной метод (редактирование shortcuts.vdf).")
