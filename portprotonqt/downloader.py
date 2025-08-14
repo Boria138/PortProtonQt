@@ -144,14 +144,21 @@ class Downloader(QObject):
                 logger.warning(f"Предыдущая ошибка загрузки для {url}, пропускаем")
                 return None
             if url in self._cache:
-                return self._cache[url]
+                cached_path = self._cache[url]
+                if os.path.exists(cached_path):
+                    if os.path.abspath(cached_path) == os.path.abspath(local_path):
+                        return cached_path
+                else:
+                    del self._cache[url]
         url_lock = self._get_url_lock(url)
         with url_lock:
             with self._global_lock:
                 if url in self._last_error:
                     return None
                 if url in self._cache:
-                    return self._cache[url]
+                    cached_path = self._cache[url]
+                    if os.path.exists(cached_path) and os.path.abspath(cached_path) == os.path.abspath(local_path):
+                        return cached_path
             result = download_with_cache(url, local_path, timeout, self)
             with self._global_lock:
                 if result:
