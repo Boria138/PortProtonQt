@@ -27,6 +27,11 @@
       "rangeStrategy": "bump",
       "versioning": "pep440",
       "groupName": "Python dependencies"
+    },
+    {
+      "matchPackageNames": ["numpy", "setuptools"],
+      "enabled": false,
+      "description": "Disabled due to Python 3.10 incompatibility with numpy>=2.3.2 (requires Python>=3.11)"
     }
   ]
 }
