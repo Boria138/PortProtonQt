@@ -15,6 +15,10 @@
       "enabled": false
     },
     {
+      "matchFileNames": [".python-version"],
+      "enabled": false
+    },
+    {
       "matchManagers": ["github-actions", "pre-commit"],
       "enabled": false
     },
