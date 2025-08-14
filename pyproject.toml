@@ -28,15 +28,15 @@ requires-python = ">=3.10"
 dependencies = [
     "babel>=2.17.0",
     "beautifulsoup4>=4.13.4",
-    "evdev>=1.9.1",
-    "icoextract>=0.1.6",
+    "evdev>=1.9.2",
+    "icoextract>=0.2.0",
     "numpy>=2.2.4",
-    "orjson>=3.10.16",
-    "pillow>=11.2.1",
+    "orjson>=3.11.2",
+    "pillow>=11.3.0",
     "psutil>=7.0.0",
-    "pyside6>=6.9.0",
+    "pyside6>=6.9.1",
     "pyudev>=0.24.3",
-    "requests>=2.32.3",
+    "requests>=2.32.4",
     "tqdm>=4.67.1",
     "vdf>=3.4",
     "websocket-client>=1.8.0",
@@ -103,7 +103,7 @@ ignore = [
 
 [dependency-groups]
 dev = [
-    "pre-commit>=4.2.0",
+    "pre-commit>=4.3.0",
     "pyaspeller>=2.0.2",
-    "pyright>=1.1.400",
+    "pyright>=1.1.403",
 ]
