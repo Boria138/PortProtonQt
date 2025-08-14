@@ -15,12 +15,14 @@
       "enabled": false
     },
     {
-      "matchFileNames": [".gitea/workflows/**.yaml", ".gitea/workflows/**.yml"],
+      "matchManagers": ["github-actions", "pre-commit"],
       "enabled": false
     },
     {
-      "matchFileNames": [".python-version"],
-      "enabled": false
+      "matchManagers": ["pep621"],
+      "rangeStrategy": "bump",
+      "versioning": "pep440",
+      "groupName": "Python dependencies"
     }
   ]
 }
