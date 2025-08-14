@@ -7,6 +7,19 @@ from portprotonqt.logger import get_logger
 
 logger = get_logger(__name__)
 
+class SafeOpacityEffect(QGraphicsOpacityEffect):
+    def __init__(self, parent=None, disable_at_full=True):
+        super().__init__(parent)
+        self.disable_at_full = disable_at_full
+
+    def setOpacity(self, opacity: float):
+        opacity = max(0.0, min(1.0, opacity))
+        super().setOpacity(opacity)
+        if opacity < 1.0:
+            self.setEnabled(True)
+        elif self.disable_at_full:
+            self.setEnabled(False)
+
 class GameCardAnimations:
     def __init__(self, game_card, theme=None):
         self.game_card = game_card
@@ -138,7 +151,9 @@ class GameCardAnimations:
                 self.thickness_anim.start()
 
     def paint_border(self, painter: QPainter):
-        """Paint the animated border for the GameCard."""
+        if not painter.isActive():
+            logger.warning("Painter is not active; skipping border paint")
+            return
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         pen = QPen()
         pen.setWidth(self.game_card._borderWidth)
@@ -154,6 +169,8 @@ class GameCardAnimations:
         radius = 18
         bw = round(self.game_card._borderWidth / 2)
         rect = self.game_card.rect().adjusted(bw, bw, -bw, -bw)
+        if rect.isEmpty():
+            return  # Avoid drawing invalid rect
         painter.drawRoundedRect(rect, radius, radius)
 
 class DetailPageAnimations:
@@ -164,21 +181,28 @@ class DetailPageAnimations:
 
     def animate_detail_page(self, detail_page: QWidget, load_image_and_restore_effect: Callable, cleanup_animation: Callable):
         """Animate the detail page based on theme settings."""
-        shadow = detail_page.graphicsEffect()
         animation_type = self.theme.GAME_CARD_ANIMATION.get("detail_page_animation_type", "fade")
         duration = self.theme.GAME_CARD_ANIMATION.get("detail_page_fade_duration", 350)
 
         if animation_type == "fade":
-            opacity_effect = QGraphicsOpacityEffect(detail_page)
+            original_effect = detail_page.graphicsEffect()
+            opacity_effect = SafeOpacityEffect(detail_page, disable_at_full=True)
+            opacity_effect.setOpacity(0.0)
             detail_page.setGraphicsEffect(opacity_effect)
             animation = QPropertyAnimation(opacity_effect, QByteArray(b"opacity"))
             animation.setDuration(duration)
-            animation.setStartValue(0)
-            animation.setEndValue(1)
+            animation.setStartValue(0.0)
+            animation.setEndValue(0.999)
             animation.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
             self.animations[detail_page] = animation
-            animation.finished.connect(lambda: detail_page.setGraphicsEffect(shadow) if shadow is not None else detail_page.setGraphicsEffect(None)) # type: ignore
+            def restore_effect():
+                try:
+                    detail_page.setGraphicsEffect(original_effect) # type: ignore
+                except RuntimeError:
+                    logger.debug("Original effect already deleted")
+            animation.finished.connect(restore_effect)
             animation.finished.connect(load_image_and_restore_effect)
+            animation.finished.connect(opacity_effect.deleteLater)
         elif animation_type in ["slide_left", "slide_right", "slide_up", "slide_down"]:
             duration = self.theme.GAME_CARD_ANIMATION.get("detail_page_slide_duration", 500)
             easing_curve = QEasingCurve(QEasingCurve.Type[self.theme.GAME_CARD_ANIMATION.get("detail_page_easing_curve", "OutCubic")])
@@ -243,15 +267,24 @@ class DetailPageAnimations:
             # Define animation based on type
             if animation_type == "fade":
                 duration = self.theme.GAME_CARD_ANIMATION.get("detail_page_fade_duration_exit", 350)
-                opacity_effect = QGraphicsOpacityEffect(detail_page)
+                original_effect = detail_page.graphicsEffect()
+                opacity_effect = SafeOpacityEffect(detail_page, disable_at_full=False)
+                opacity_effect.setOpacity(0.999)
                 detail_page.setGraphicsEffect(opacity_effect)
                 animation = QPropertyAnimation(opacity_effect, QByteArray(b"opacity"))
                 animation.setDuration(duration)
-                animation.setStartValue(1)
-                animation.setEndValue(0)
+                animation.setStartValue(0.999)
+                animation.setEndValue(0.0)
                 animation.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
                 self.animations[detail_page] = animation
-                animation.finished.connect(cleanup_callback)
+                def restore_and_cleanup():
+                    try:
+                        detail_page.setGraphicsEffect(original_effect) # type: ignore
+                    except RuntimeError:
+                        logger.debug("Original effect already deleted")
+                    cleanup_callback()
+                animation.finished.connect(restore_and_cleanup)
+                animation.finished.connect(opacity_effect.deleteLater)  # Clean up effect
             elif animation_type in ["slide_left", "slide_right", "slide_up", "slide_down"]:
                 duration = self.theme.GAME_CARD_ANIMATION.get("detail_page_slide_duration_exit", 500)
                 easing_curve = QEasingCurve(QEasingCurve.Type[self.theme.GAME_CARD_ANIMATION.get("detail_page_easing_curve_exit", "InCubic")])

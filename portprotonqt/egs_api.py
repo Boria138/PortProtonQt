@@ -237,8 +237,6 @@ def add_egs_to_steam(app_name: str, game_title: str, legendary_path: str, callba
         legendary_path: Path to the Legendary CLI executable.
         callback: Callback function to handle the result (success, message).
     """
-    from portprotonqt.steam_api import call_steam_api  # Import for CEF API
-
     if not app_name or not app_name.strip() or not game_title or not game_title.strip():
         logger.error("Invalid app_name or game_title: empty or whitespace")
         callback((False, "Game name or app name is empty or invalid"))
