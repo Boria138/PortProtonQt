@@ -188,7 +188,7 @@ class GameCard(QFrame):
         self.egsLabel.setVisible(self.egs_visible)
 
         # PortProton бейдж
-        portproton_icon = self.theme_manager.get_icon("ppqt-tray")
+        portproton_icon = self.theme_manager.get_icon("portproton")
         self.portprotonLabel = ClickableLabel(
             "PortProton",
             icon=portproton_icon,

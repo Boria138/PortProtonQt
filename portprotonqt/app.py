@@ -3,8 +3,7 @@ from PySide6.QtCore import QLocale, QTranslator, QLibraryInfo
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QIcon
 from portprotonqt.main_window import MainWindow
-from portprotonqt.tray import SystemTray
-from portprotonqt.config_utils import read_theme_from_config, save_fullscreen_config
+from portprotonqt.config_utils import save_fullscreen_config
 from portprotonqt.logger import get_logger
 from portprotonqt.cli import parse_args
 
@@ -38,35 +37,13 @@ def main():
         save_fullscreen_config(True)
         window.showFullScreen()
 
-    current_theme_name = read_theme_from_config()
-    tray = SystemTray(app, current_theme_name)
-    tray.show_action.triggered.connect(window.show)
-    tray.hide_action.triggered.connect(window.hide)
-
-    def recreate_tray():
-        nonlocal tray
-        if tray:
-            logger.debug("Recreating system tray")
-            tray.cleanup()
-            tray = None
-        current_theme = read_theme_from_config()
-        tray = SystemTray(app, current_theme)
-        # Ensure window is not None before connecting signals
-        if window:
-            tray.show_action.triggered.connect(window.show)
-            tray.hide_action.triggered.connect(window.hide)
-
     def cleanup_on_exit():
-        nonlocal tray, window
+        nonlocal window
         app.aboutToQuit.disconnect()
-        if tray:
-            tray.cleanup()
-            tray = None
         if window:
             window.close()
         app.quit()
 
-    window.settings_saved.connect(recreate_tray)
     app.aboutToQuit.connect(cleanup_on_exit)
 
     window.show()

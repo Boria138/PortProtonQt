@@ -48,7 +48,6 @@ logger = get_logger(__name__)
 
 class MainWindow(QMainWindow):
     """Main window of PortProtonQt."""
-    settings_saved = Signal()
     games_loaded = Signal(list)
     update_progress = Signal(int)  # Signal to update progress bar
     update_status_message = Signal(str, int)  # Signal to update status message
@@ -1331,7 +1330,6 @@ class MainWindow(QMainWindow):
 
         self.settingsDebounceTimer.start()
 
-        self.settings_saved.emit()
 
         # Управление полноэкранным режимом
         gamepad_connected = self.input_manager.find_gamepad() is not None
@@ -1676,7 +1674,7 @@ class MainWindow(QMainWindow):
         egsLabel.setVisible(egs_visible)
 
         # PortProton badge
-        portproton_icon = self.theme_manager.get_icon("ppqt-tray")
+        portproton_icon = self.theme_manager.get_icon("portproton")
         portprotonLabel = ClickableLabel(
             "PortProton",
             icon=portproton_icon,
