@@ -27,10 +27,11 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install uv
-        uses: https://github.com/astral-sh/setup-uv@v6
-        with:
-          enable-cache: true
+      - name: Install uv manually
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          source $HOME/.local/bin/env
+          uv --version
 
       - name: Sync dependencies into venv
         run: uv sync --all-extras --dev
