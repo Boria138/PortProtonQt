@@ -765,6 +765,11 @@ class InputManager(QObject):
                 app.quit()
                 return True
 
+            # Handle Backspace for FileExplorer navigation (move to parent directory)
+            if key == Qt.Key.Key_Backspace and self.file_explorer:
+                self.file_explorer.previous_dir()
+                return True
+
             # Close AddGameDialog with Escape
             if key == Qt.Key.Key_Escape and isinstance(popup, QDialog):
                 popup.reject()
