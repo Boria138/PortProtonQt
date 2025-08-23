@@ -137,8 +137,9 @@ class FileExplorer(QDialog):
                     if len(parts) < 2:
                         continue
                     mount_point = parts[1]
-                    # Исключаем системные и временные пути
-                    if mount_point.startswith(('/run', '/dev', '/sys', '/proc', '/tmp', '/snap', '/var/lib')):
+                    # Исключаем системные и временные пути, но сохраняем /run/media
+                    if (mount_point.startswith(('/dev', '/sys', '/proc', '/tmp', '/snap', '/var/lib')) or
+                        (mount_point.startswith('/run') and not mount_point.startswith('/run/media'))):
                         continue
                     # Проверяем, является ли точка монтирования директорией и доступна ли она
                     if os.path.isdir(mount_point) and os.access(mount_point, os.R_OK):
