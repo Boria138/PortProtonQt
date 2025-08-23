@@ -22,6 +22,12 @@ jobs:
     steps:
       - uses: https://gitea.com/actions/checkout@v4
 
+      - name: Set up Node.js
+        uses: https://gitea.com/actions/setup-nodev4
+        with:
+          node-version: 20
+          cache: "npm"
+
       - name: Install uv
         uses: https://github.com/astral-sh/setup-uv@v6
         with:
