@@ -42,17 +42,17 @@ class MainWindowProtocol(Protocol):
 # https://github.com/torvalds/linux/blob/master/drivers/hid/hid-playstation.c
 # https://github.com/torvalds/linux/blob/master/drivers/input/joystick/xpad.c
 BUTTONS = {
-    'confirm':   {ecodes.BTN_SOUTH},               # A (Xbox) / Cross (PS)
-    'back':      {ecodes.BTN_EAST},                # B (Xbox) / Circle (PS)
-    'add_game':  {ecodes.BTN_NORTH},               # X (Xbox) / Triangle (PS)
-    'prev_dir':  {ecodes.BTN_WEST},                # Y (Xbox) / Square (PS)
-    'prev_tab':  {ecodes.BTN_TL},                  # LB (Xbox) / L1 (PS)
-    'next_tab':  {ecodes.BTN_TR},                  # RB (Xbox) / R1 (PS)
-    'context_menu': {ecodes.BTN_START},            # Start (Xbox) / Options (PS)
-    'menu':      {ecodes.BTN_SELECT},              # Select (Xbox) / Share (PS)
-    'guide':     {ecodes.BTN_MODE},                # Xbox Button / PS Button
-    'increase_size': {ecodes.ABS_RZ},              # RT (Xbox) / R2 (PS)
-    'decrease_size': {ecodes.ABS_Z},               # LT (Xbox) / L2 (PS)
+    'confirm':       {ecodes.BTN_SOUTH},           # A (Xbox) / Cross (PS)
+    'back':          {ecodes.BTN_EAST},            # B (Xbox) / Circle (PS)
+    'add_game':      {ecodes.BTN_NORTH},           # X (Xbox) / Triangle (PS)
+    'prev_dir':      {ecodes.BTN_WEST},            # Y (Xbox) / Square (PS)
+    'prev_tab':      {ecodes.BTN_TL},              # LB (Xbox) / L1 (PS)
+    'next_tab':      {ecodes.BTN_TR},              # RB (Xbox) / R1 (PS)
+    'context_menu':  {ecodes.BTN_START},           # Start (Xbox) / Options (PS)
+    'menu':          {ecodes.BTN_SELECT},          # Select (Xbox) / Share (PS)
+    'guide':         {ecodes.BTN_MODE},            # Xbox Button / PS Button
+    'increase_size': {ecodes.BTN_TR2},             # RT (Xbox) / R2 (PS)
+    'decrease_size': {ecodes.BTN_TL2},             # LT (Xbox) / L2 (PS)
 }
 
 class InputManager(QObject):
