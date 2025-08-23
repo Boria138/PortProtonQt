@@ -788,8 +788,8 @@ class InputManager(QObject):
                         active_win.show_next()
                     return True  # Consume event to prevent tab switching
 
-            # Handle tab switching with Left/Right arrow keys when not in GameCard focus
-            if key in (Qt.Key.Key_Left, Qt.Key.Key_Right) and (not isinstance(focused, GameCard) or focused is None):
+            # Handle tab switching with Left/Right arrow keys when not in GameCard focus or QLineEdit
+            if key in (Qt.Key.Key_Left, Qt.Key.Key_Right) and (not isinstance(focused, GameCard | QLineEdit) or focused is None):
                 idx = self._parent.stackedWidget.currentIndex()
                 total = len(self._parent.tabButtons)
                 if key == Qt.Key.Key_Left:
