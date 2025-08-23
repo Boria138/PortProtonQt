@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-07-14 13:16+0500\n"
+"POT-Creation-Date: 2025-08-23 20:35+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -22,6 +22,9 @@ msgid "Error"
 msgstr ""
 
 msgid "PortProton is not found"
+msgstr ""
+
+msgid "Delete from PortProton"
 msgstr ""
 
 msgid "Stop Game"
@@ -61,9 +64,6 @@ msgid "Add to Menu"
 msgstr ""
 
 msgid "Edit Shortcut"
-msgstr ""
-
-msgid "Delete from PortProton"
 msgstr ""
 
 #, python-brace-format
@@ -168,18 +168,6 @@ msgstr ""
 msgid "No .desktop file found for '{game_name}'"
 msgstr ""
 
-#, python-brace-format
-msgid "Invalid executable command: {exec_line}"
-msgstr ""
-
-#, python-brace-format
-msgid "Executable not found: {path}"
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to parse executable: {error}"
-msgstr ""
-
 msgid "Confirm Deletion"
 msgstr ""
 
@@ -256,6 +244,9 @@ msgid "Delete"
 msgstr ""
 
 msgid "Select All"
+msgstr ""
+
+msgid "File Explorer"
 msgstr ""
 
 msgid "Select"

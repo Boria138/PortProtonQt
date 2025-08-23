@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-07-14 13:16+0500\n"
-"PO-Revision-Date: 2025-07-14 13:16+0500\n"
+"POT-Creation-Date: 2025-08-23 20:35+0500\n"
+"PO-Revision-Date: 2025-08-23 20:35+0500\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
@@ -26,6 +26,9 @@ msgstr "Ошибка"
 
 msgid "PortProton is not found"
 msgstr "PortProton не найден"
+
+msgid "Delete from PortProton"
+msgstr "Удалить из PortProton"
 
 msgid "Stop Game"
 msgstr "Остановить игру"
@@ -65,9 +68,6 @@ msgstr "Добавить в меню"
 
 msgid "Edit Shortcut"
 msgstr "Редактировать"
-
-msgid "Delete from PortProton"
-msgstr "Удалить из PortProton"
 
 #, python-brace-format
 msgid "Stopped '{game_name}'"
@@ -173,18 +173,6 @@ msgstr "Не удалось прочитать файл .desktop: {error}"
 msgid "No .desktop file found for '{game_name}'"
 msgstr "Файл .desktop для '{game_name}' не найден"
 
-#, python-brace-format
-msgid "Invalid executable command: {exec_line}"
-msgstr "Недопустимая исполняемая команда: {exec_line}"
-
-#, python-brace-format
-msgid "Executable not found: {path}"
-msgstr "Исполняемый файл не найден: {path}"
-
-#, python-brace-format
-msgid "Failed to parse executable: {error}"
-msgstr "Не удалось разобрать исполняемый файл: {error}"
-
 msgid "Confirm Deletion"
 msgstr "Подтвердите удаление"
 
@@ -266,6 +254,9 @@ msgstr "Удалить"
 
 msgid "Select All"
 msgstr "Выбрать всё"
+
+msgid "File Explorer"
+msgstr "Проводник"
 
 msgid "Select"
 msgstr "Выбрать"
