@@ -150,7 +150,7 @@ class FileExplorer(QDialog):
 
     def setup_ui(self):
         """Настройка интерфейса"""
-        self.setWindowTitle("File Explorer")
+        self.setWindowTitle(_("File Explorer"))
         self.setGeometry(100, 100, 600, 600)
 
         self.main_layout = QVBoxLayout()
