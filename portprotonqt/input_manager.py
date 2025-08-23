@@ -754,6 +754,14 @@ class InputManager(QObject):
 
         # Handle key press events
         if event.type() == QEvent.Type.KeyPress:
+            # Handle QLineEdit cursor movement with Left/Right arrows
+            if isinstance(focused, QLineEdit) and key in (Qt.Key.Key_Left, Qt.Key.Key_Right):
+                if key == Qt.Key.Key_Left:
+                    focused.cursorBackward(False, 1)  # Move cursor left by one character
+                elif key == Qt.Key.Key_Right:
+                    focused.cursorForward(False, 1)  # Move cursor right by one character
+                return True  # Consume the event to prevent further processing
+
             # Open system overlay with Insert
             if key == Qt.Key.Key_Insert:
                 if not popup and not isinstance(active_win, QDialog):
