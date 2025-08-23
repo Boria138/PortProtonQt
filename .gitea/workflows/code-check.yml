@@ -23,7 +23,7 @@ jobs:
       - uses: https://gitea.com/actions/checkout@v4
 
       - name: Set up Node.js
-        uses: https://gitea.com/actions/setup-nodev4
+        uses: https://gitea.com/actions/setup-node@v4
         with:
           node-version: 20
           cache: "npm"
