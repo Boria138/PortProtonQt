@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QObject, Signal, QMimeDatabase, QTimer
 from icoextract import IconExtractor, IconExtractorError
 from PIL import Image
-from portprotonqt.config_utils import get_portproton_location
+from portprotonqt.config_utils import get_portproton_location, read_favorite_folders
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
 import portprotonqt.themes.standart.styles as default_styles
@@ -106,13 +106,15 @@ class FileExplorer(QDialog):
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowType.WindowContextHelpButtonHint)
 
-        # Find InputManager from parent
+        # Find InputManager and ContextMenuManager from parent
         self.input_manager = None
+        self.context_menu_manager = None
         parent = self.parent()
         while parent:
             if hasattr(parent, 'input_manager'):
                 self.input_manager = cast("MainWindow", parent).input_manager
-                break
+            if hasattr(parent, 'context_menu_manager'):
+                self.context_menu_manager = cast("MainWindow", parent).context_menu_manager
             parent = parent.parent()
 
         if self.input_manager:
@@ -159,7 +161,7 @@ class FileExplorer(QDialog):
         self.main_layout.setSpacing(10)
         self.setLayout(self.main_layout)
 
-        # Панель для смонтированных дисков
+        # Панель для смонтированных дисков и избранных папок
         self.drives_layout = QHBoxLayout()
         self.drives_scroll = QScrollArea()
         self.drives_scroll.setWidgetResizable(True)
@@ -170,7 +172,7 @@ class FileExplorer(QDialog):
         self.drives_scroll.setFixedHeight(70)
         self.main_layout.addWidget(self.drives_scroll)
         self.drives_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.drives_scroll.setFocusPolicy(Qt.FocusPolicy.StrongFocus)  # Allow focus on scroll area
+        self.drives_scroll.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
         # Путь
         self.path_label = QLabel()
@@ -182,6 +184,8 @@ class FileExplorer(QDialog):
         self.file_list.setStyleSheet(self.theme.FILE_EXPLORER_STYLE)
         self.file_list.itemClicked.connect(self.handle_item_click)
         self.file_list.itemDoubleClicked.connect(self.handle_item_double_click)
+        self.file_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.file_list.customContextMenuRequested.connect(self.show_folder_context_menu)
         self.main_layout.addWidget(self.file_list)
 
         # Кнопки
@@ -197,6 +201,13 @@ class FileExplorer(QDialog):
 
         self.select_button.clicked.connect(self.select_item)
         self.cancel_button.clicked.connect(self.reject)
+
+    def show_folder_context_menu(self, pos):
+        """Shows the context menu for a folder using ContextMenuManager."""
+        if self.context_menu_manager:
+            self.context_menu_manager.show_folder_context_menu(self, pos)
+        else:
+            logger.warning("ContextMenuManager not found in parent")
 
     def move_selection(self, direction):
         """Перемещение выбора по списку"""
@@ -288,43 +299,84 @@ class FileExplorer(QDialog):
             logger.error(f"Error navigating to parent directory: {e}")
 
     def update_drives_list(self):
-        """Обновление списка смонтированных дисков"""
+        """Обновление списка смонтированных дисков и избранных папок."""
         for i in reversed(range(self.drives_layout.count())):
-            widget = self.drives_layout.itemAt(i).widget()
-            if widget:
+            item = self.drives_layout.itemAt(i)
+            if item and item.widget():
+                widget = item.widget()
+                self.drives_layout.removeWidget(widget)
                 widget.deleteLater()
 
+        self.drive_buttons = []
         drives = self.get_mounted_drives()
-        self.drive_buttons = []  # Store buttons for navigation
+        favorite_folders = read_favorite_folders()
+
+        # Добавляем смонтированные диски
         for drive in drives:
             drive_name = os.path.basename(drive) or drive.split('/')[-1] or drive
             button = AutoSizeButton(drive_name, icon=self.theme_manager.get_icon("mount_point"))
             button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
-            button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)  # Make button focusable
+            button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
             button.clicked.connect(lambda checked, path=drive: self.change_drive(path))
             self.drives_layout.addWidget(button)
             self.drive_buttons.append(button)
-        self.drives_layout.addStretch()
 
-        # Set focus to first drive button if available
-        if self.drive_buttons:
-            self.drive_buttons[0].setFocus()
+        # Добавляем избранные папки
+        for folder in favorite_folders:
+            folder_name = os.path.basename(folder) or folder.split('/')[-1] or folder
+            button = AutoSizeButton(folder_name, icon=self.theme_manager.get_icon("folder"))
+            button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+            button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+            button.clicked.connect(lambda checked, path=folder: self.change_drive(path))
+            self.drives_layout.addWidget(button)
+            self.drive_buttons.append(button)
+
+        # Добавляем растяжку, чтобы выровнять элементы
+        spacer = QWidget()
+        spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        self.drives_layout.addWidget(spacer)
 
     def select_drive(self):
-        """Handle drive selection via gamepad"""
+        """Обрабатывает выбор диска или избранной папки через геймпад."""
         focused_widget = QApplication.focusWidget()
         if isinstance(focused_widget, AutoSizeButton) and focused_widget in self.drive_buttons:
-            drive_path = None
-            for drive in self.get_mounted_drives():
-                drive_name = os.path.basename(drive) or drive.split('/')[-1] or drive
-                if drive_name == focused_widget.text():
-                    drive_path = drive
-                    break
-            if drive_path and os.path.isdir(drive_path) and os.access(drive_path, os.R_OK):
-                self.current_path = os.path.normpath(drive_path)
-                self.update_file_list()
-            else:
-                logger.warning(f"Путь диска недоступен: {drive_path}")
+            drive_name = focused_widget.text().strip()  # Удаляем пробелы
+            logger.debug(f"Выбрано имя: {drive_name}")
+
+            # Специальная обработка корневого каталога
+            if drive_name == "/":
+                if os.path.isdir("/") and os.access("/", os.R_OK):
+                    self.current_path = "/"
+                    self.update_file_list()
+                    logger.info("Выбран корневой каталог: /")
+                    return
+                else:
+                    logger.warning("Корневой каталог недоступен: недостаточно прав или ошибка пути")
+                    return
+
+            # Проверяем избранные папки
+            favorite_folders = read_favorite_folders()
+            logger.debug(f"Избранные папки: {favorite_folders}")
+            for folder in favorite_folders:
+                folder_name = os.path.basename(os.path.normpath(folder)) or folder  # Для корневых путей
+                if folder_name == drive_name and os.path.isdir(folder) and os.access(folder, os.R_OK):
+                    self.current_path = os.path.normpath(folder)
+                    self.update_file_list()
+                    logger.info(f"Выбрана избранная папка: {self.current_path}")
+                    return
+
+            # Проверяем смонтированные диски
+            mounted_drives = self.get_mounted_drives()
+            logger.debug(f"Смонтированные диски: {mounted_drives}")
+            for drive in mounted_drives:
+                drive_basename = os.path.basename(os.path.normpath(drive)) or drive  # Для корневых путей
+                if drive_basename == drive_name and os.path.isdir(drive) and os.access(drive, os.R_OK):
+                    self.current_path = os.path.normpath(drive)
+                    self.update_file_list()
+                    logger.info(f"Выбран смонтированный диск: {self.current_path}")
+                    return
+
+            logger.warning(f"Путь недоступен: {drive_name}.")
 
     def change_drive(self, drive_path):
         """Переход к выбранному диску"""

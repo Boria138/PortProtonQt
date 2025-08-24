@@ -161,7 +161,20 @@ class InputManager(QObject):
 
     def handle_file_explorer_button(self, button_code):
         try:
+            popup = QApplication.activePopupWidget()
+            if isinstance(popup, QMenu):
+                if button_code in BUTTONS['confirm']:  # A button (BTN_SOUTH)
+                    if popup.activeAction():
+                        popup.activeAction().trigger()
+                        popup.close()
+                    return
+                elif button_code in BUTTONS['back']:  # B button
+                    popup.close()
+                    return
+                return  # Skip other handling if menu is open
+
             if not self.file_explorer or not hasattr(self.file_explorer, 'file_list'):
+                logger.debug("No file explorer or file_list available")
                 return
 
             focused_widget = QApplication.focusWidget()
@@ -169,27 +182,37 @@ class InputManager(QObject):
                 if isinstance(focused_widget, AutoSizeButton) and hasattr(self.file_explorer, 'drive_buttons') and focused_widget in self.file_explorer.drive_buttons:
                     self.file_explorer.select_drive()  # Select the focused drive
                 elif self.file_explorer.file_list.count() == 0:
+                    logger.debug("File list is empty")
                     return
                 else:
                     selected = self.file_explorer.file_list.currentItem().text()
                     full_path = os.path.join(self.file_explorer.current_path, selected)
                     if os.path.isdir(full_path):
-                        # Открываем директорию
                         self.file_explorer.current_path = os.path.normpath(full_path)
                         self.file_explorer.update_file_list()
                     elif not self.file_explorer.directory_only:
-                        # Выбираем файл, если directory_only=False
                         self.file_explorer.file_signal.file_selected.emit(os.path.normpath(full_path))
                         self.file_explorer.accept()
                     else:
                         logger.debug("Selected item is not a directory, cannot select: %s", full_path)
+            elif button_code in BUTTONS['context_menu']:  # Start button (BTN_START)
+                if self.file_explorer.file_list.count() == 0:
+                    logger.debug("File list is empty, cannot show context menu")
+                    return
+                current_item = self.file_explorer.file_list.currentItem()
+                if current_item:
+                    item_rect = self.file_explorer.file_list.visualItemRect(current_item)
+                    pos = item_rect.center()  # Use local coordinates for itemAt check
+                    self.file_explorer.show_folder_context_menu(pos)
+                else:
+                    logger.debug("No item selected for context menu")
             elif button_code in BUTTONS['add_game']:  # X button
                 if self.file_explorer.file_list.count() == 0:
+                    logger.debug("File list is empty")
                     return
                 selected = self.file_explorer.file_list.currentItem().text()
                 full_path = os.path.join(self.file_explorer.current_path, selected)
                 if os.path.isdir(full_path):
-                    # Подтверждаем выбор директории
                     self.file_explorer.file_signal.file_selected.emit(os.path.normpath(full_path))
                     self.file_explorer.accept()
                 else:
@@ -202,12 +225,29 @@ class InputManager(QObject):
                 if self.original_button_handler:
                     self.original_button_handler(button_code)
         except Exception as e:
-            logger.error(f"Error in FileExplorer button handler: {e}")
+            logger.error("Error in FileExplorer button handler: %s", e)
 
     def handle_file_explorer_dpad(self, code, value, current_time):
         """Обработка движения D-pad и левого стика для FileExplorer"""
         try:
+            popup = QApplication.activePopupWidget()
+            if isinstance(popup, QMenu):
+                if code == ecodes.ABS_HAT0Y and value != 0:
+                    actions = popup.actions()
+                    if not actions:
+                        return
+                    current_action = popup.activeAction()
+                    current_idx = actions.index(current_action) if current_action in actions else -1
+                    if value > 0:  # Down
+                        next_idx = (current_idx + 1) % len(actions) if current_idx != -1 else 0
+                        popup.setActiveAction(actions[next_idx])
+                    elif value < 0:  # Up
+                        next_idx = (current_idx - 1) % len(actions) if current_idx != -1 else len(actions) - 1
+                        popup.setActiveAction(actions[next_idx])
+                return  # Skip other handling if menu is open
+
             if not self.file_explorer or not hasattr(self.file_explorer, 'file_list') or not self.file_explorer.file_list:
+                logger.debug("No file explorer or file_list available")
                 return
 
             focused_widget = QApplication.focusWidget()
@@ -264,7 +304,7 @@ class InputManager(QObject):
             elif self.original_dpad_handler:
                 self.original_dpad_handler(code, value, current_time)
         except Exception as e:
-            logger.error(f"Error in FileExplorer dpad handler: {e}")
+            logger.error("Error in FileExplorer dpad handler: %s", e)
 
     def handle_navigation_repeat(self):
         """Плавное повторение движения с переменной скоростью для FileExplorer"""
@@ -741,6 +781,11 @@ class InputManager(QObject):
         app = QApplication.instance()
         if not app:
             return super().eventFilter(obj, event)
+
+        # Ensure obj is a QObject
+        if not isinstance(obj, QObject):
+            logger.debug(f"Skipping event filter for non-QObject: {type(obj).__name__}")
+            return False
 
         # Handle key press and release events
         if not isinstance(event, QKeyEvent):

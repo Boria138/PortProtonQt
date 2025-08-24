@@ -549,3 +549,41 @@ def save_auto_fullscreen_gamepad(auto_fullscreen):
     cp["Display"]["auto_fullscreen_gamepad"] = str(auto_fullscreen)
     with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
         cp.write(configfile)
+
+def read_favorite_folders():
+    """
+    Читает список избранных папок из секции [FavoritesFolders] конфигурационного файла.
+    Список хранится как строка, заключённая в кавычки, с путями, разделёнными запятыми.
+    Если секция или параметр отсутствуют, возвращает пустой список.
+    """
+    cp = configparser.ConfigParser()
+    if os.path.exists(CONFIG_FILE):
+        try:
+            cp.read(CONFIG_FILE, encoding="utf-8")
+        except Exception as e:
+            logger.error("Ошибка чтения конфига: %s", e)
+            return []
+        if cp.has_section("FavoritesFolders") and cp.has_option("FavoritesFolders", "folders"):
+            favs = cp.get("FavoritesFolders", "folders", fallback="").strip()
+            if favs.startswith('"') and favs.endswith('"'):
+                favs = favs[1:-1]
+            return [os.path.normpath(s.strip()) for s in favs.split(",") if s.strip() and os.path.isdir(os.path.normpath(s.strip()))]
+    return []
+
+def save_favorite_folders(folders):
+    """
+    Сохраняет список избранных папок в секцию [FavoritesFolders] конфигурационного файла.
+    Список сохраняется как строка, заключённая в двойные кавычки, где пути разделены запятыми.
+    """
+    cp = configparser.ConfigParser()
+    if os.path.exists(CONFIG_FILE):
+        try:
+            cp.read(CONFIG_FILE, encoding="utf-8")
+        except Exception as e:
+            logger.error("Ошибка чтения конфига: %s", e)
+    if "FavoritesFolders" not in cp:
+        cp["FavoritesFolders"] = {}
+    fav_str = ", ".join([os.path.normpath(folder) for folder in folders])
+    cp["FavoritesFolders"]["folders"] = f'"{fav_str}"'
+    with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
+        cp.write(configfile)

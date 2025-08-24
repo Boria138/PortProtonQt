@@ -12,7 +12,7 @@ from PySide6.QtWidgets import QMessageBox, QDialog, QMenu, QLineEdit, QApplicati
 from PySide6.QtCore import QUrl, QPoint, QObject, Signal, Qt
 from PySide6.QtGui import QDesktopServices, QIcon, QKeySequence
 from portprotonqt.localization import _
-from portprotonqt.config_utils import parse_desktop_entry, read_favorites, save_favorites
+from portprotonqt.config_utils import parse_desktop_entry, read_favorites, save_favorites, read_favorite_folders, save_favorite_folders
 from portprotonqt.steam_api import is_game_in_steam, add_to_steam, remove_from_steam
 from portprotonqt.egs_api import add_egs_to_steam, get_egs_executable, remove_egs_from_steam
 from portprotonqt.dialogs import AddGameDialog, FileExplorer, generate_thumbnail
@@ -150,6 +150,84 @@ class ContextMenuManager:
 
         return hasattr(self.parent, 'target_exe') and self.parent.target_exe == current_exe
 
+    def show_folder_context_menu(self, file_explorer, pos):
+        """Shows the context menu for a folder in FileExplorer."""
+        try:
+            item = file_explorer.file_list.itemAt(pos)
+            if not item:
+                logger.debug("No item selected at position %s", pos)
+                return
+            selected = item.text()
+            if not selected.endswith("/"):
+                logger.debug("Selected item is not a folder: %s", selected)
+                return  # Only for folders
+            full_path = os.path.normpath(os.path.join(file_explorer.current_path, selected.rstrip("/")))
+            if not os.path.isdir(full_path):
+                logger.debug("Path is not a directory: %s", full_path)
+                return
+
+            menu = QMenu(file_explorer)
+            menu.setStyleSheet(self.theme.CONTEXT_MENU_STYLE)
+            menu.setParent(file_explorer, Qt.WindowType.Popup)  # Set transientParent for Wayland
+
+            favorite_folders = read_favorite_folders()
+            is_favorite = full_path in favorite_folders
+            action_text = _("Remove from Favorites") if is_favorite else _("Add to Favorites")
+            favorite_action = menu.addAction(self._get_safe_icon("star" if is_favorite else "star_full"), action_text)
+            favorite_action.triggered.connect(lambda: self.toggle_favorite_folder(file_explorer, full_path, not is_favorite))
+
+            # Disconnect file_list signals to prevent navigation during menu interaction
+            try:
+                file_explorer.file_list.itemClicked.disconnect(file_explorer.handle_item_click)
+                file_explorer.file_list.itemDoubleClicked.disconnect(file_explorer.handle_item_double_click)
+            except TypeError:
+                pass  # Signals may not be connected
+
+            # Reconnect signals after menu closes
+            def reconnect_signals():
+                try:
+                    file_explorer.file_list.itemClicked.connect(file_explorer.handle_item_click)
+                    file_explorer.file_list.itemDoubleClicked.connect(file_explorer.handle_item_double_click)
+                except Exception as e:
+                    logger.error("Error reconnecting file list signals: %s", e)
+
+            menu.aboutToHide.connect(reconnect_signals)
+
+            # Set focus to the first menu item
+            actions = menu.actions()
+            if actions:
+                menu.setActiveAction(actions[0])
+
+            # Map local position to global for menu display
+            global_pos = file_explorer.file_list.mapToGlobal(pos)
+            menu.exec(global_pos)
+        except Exception as e:
+            logger.error("Error showing folder context menu: %s", e)
+
+    def toggle_favorite_folder(self, file_explorer, folder_path, add):
+        """Adds or removes a folder from favorites."""
+        favorite_folders = read_favorite_folders()
+        if add:
+            if folder_path not in favorite_folders:
+                favorite_folders.append(folder_path)
+                save_favorite_folders(favorite_folders)
+                logger.info(f"Folder added to favorites: {folder_path}")
+        else:
+            if folder_path in favorite_folders:
+                favorite_folders.remove(folder_path)
+                save_favorite_folders(favorite_folders)
+                logger.info(f"Folder removed from favorites: {folder_path}")
+        file_explorer.update_drives_list()
+
+    def _get_safe_icon(self, icon_name: str) -> QIcon:
+        """Returns a QIcon, ensuring it is valid."""
+        icon = self.theme_manager.get_icon(icon_name)
+        if isinstance(icon, QIcon):
+            return icon
+        elif isinstance(icon, str) and os.path.exists(icon):
+            return QIcon(icon)
+        return QIcon()
+
     def show_context_menu(self, game_card, pos: QPoint):
         """
         Show the context menu for a game card at the specified position.
@@ -158,14 +236,6 @@ class ContextMenuManager:
             game_card: The GameCard instance requesting the context menu.
             pos: The position (in widget coordinates) where the menu should appear.
         """
-        def get_safe_icon(icon_name: str) -> QIcon:
-            icon = self.theme_manager.get_icon(icon_name)
-            if isinstance(icon, QIcon):
-                return icon
-            elif isinstance(icon, str) and os.path.exists(icon):
-                return QIcon(icon)
-            return QIcon()
-
         menu = QMenu(self.parent)
         menu.setStyleSheet(self.theme.CONTEXT_MENU_STYLE)
 
@@ -175,7 +245,7 @@ class ContextMenuManager:
             exe_path = self._parse_exe_path(exec_line, game_card.name) if exec_line else None
             if not exe_path:
                 # Show only "Delete from PortProton" if no valid exe
-                delete_action = menu.addAction(get_safe_icon("delete"), _("Delete from PortProton"))
+                delete_action = menu.addAction(self._get_safe_icon("delete"), _("Delete from PortProton"))
                 delete_action.triggered.connect(lambda: self.delete_game(game_card.name, game_card.exec_line))
                 menu.exec(game_card.mapToGlobal(pos))
                 return
@@ -184,7 +254,7 @@ class ContextMenuManager:
         is_running = self._is_game_running(game_card)
         action_text = _("Stop Game") if is_running else _("Launch Game")
         action_icon = "stop" if is_running else "play"
-        launch_action = menu.addAction(get_safe_icon(action_icon), action_text)
+        launch_action = menu.addAction(self._get_safe_icon(action_icon), action_text)
         launch_action.triggered.connect(
             lambda: self._launch_game(game_card)
         )
@@ -193,11 +263,11 @@ class ContextMenuManager:
         is_favorite = game_card.name in favorites
         icon_name = "star_full" if is_favorite else "star"
         text = _("Remove from Favorites") if is_favorite else _("Add to Favorites")
-        favorite_action = menu.addAction(get_safe_icon(icon_name), text)
+        favorite_action = menu.addAction(self._get_safe_icon(icon_name), text)
         favorite_action.triggered.connect(lambda: self.toggle_favorite(game_card, not is_favorite))
 
         if game_card.game_source == "epic":
-            import_action = menu.addAction(get_safe_icon("epic_games"), _("Import to Legendary"))
+            import_action = menu.addAction(self._get_safe_icon("epic_games"), _("Import to Legendary"))
             import_action.triggered.connect(
                 lambda: self.import_to_legendary(game_card.name, game_card.appid)
             )
@@ -205,13 +275,13 @@ class ContextMenuManager:
                 is_in_steam = is_game_in_steam(game_card.name)
                 icon_name = "delete" if is_in_steam else "steam"
                 text = _("Remove from Steam") if is_in_steam else _("Add to Steam")
-                steam_action = menu.addAction(get_safe_icon(icon_name), text)
+                steam_action = menu.addAction(self._get_safe_icon(icon_name), text)
                 steam_action.triggered.connect(
                     lambda: self.remove_from_steam(game_card.name, game_card.exec_line, game_card.game_source)
                     if is_in_steam
                     else self.add_egs_to_steam(game_card.name, game_card.appid)
                 )
-                open_folder_action = menu.addAction(get_safe_icon("search"), _("Open Game Folder"))
+                open_folder_action = menu.addAction(self._get_safe_icon("search"), _("Open Game Folder"))
                 open_folder_action.triggered.connect(
                     lambda: self.open_egs_game_folder(game_card.appid)
                 )
@@ -219,7 +289,7 @@ class ContextMenuManager:
                 desktop_path = os.path.join(desktop_dir, f"{game_card.name}.desktop")
                 icon_name = "delete" if os.path.exists(desktop_path) else "desktop"
                 text = _("Remove from Desktop") if os.path.exists(desktop_path) else _("Add to Desktop")
-                desktop_action = menu.addAction(get_safe_icon(icon_name), text)
+                desktop_action = menu.addAction(self._get_safe_icon(icon_name), text)
                 desktop_action.triggered.connect(
                     lambda: self.remove_egs_from_desktop(game_card.name)
                     if os.path.exists(desktop_path)
@@ -228,7 +298,7 @@ class ContextMenuManager:
                 applications_dir = os.path.join(os.path.expanduser("~"), ".local", "share", "applications")
                 menu_path = os.path.join(applications_dir, f"{game_card.name}.desktop")
                 menu_action = menu.addAction(
-                    get_safe_icon("delete" if os.path.exists(menu_path) else "menu"),
+                    self._get_safe_icon("delete" if os.path.exists(menu_path) else "menu"),
                     _("Remove from Menu") if os.path.exists(menu_path) else _("Add to Menu")
                 )
                 menu_action.triggered.connect(
@@ -242,19 +312,19 @@ class ContextMenuManager:
             desktop_path = os.path.join(desktop_dir, f"{game_card.name}.desktop")
             icon_name = "delete" if os.path.exists(desktop_path) else "desktop"
             text = _("Remove from Desktop") if os.path.exists(desktop_path) else _("Add to Desktop")
-            desktop_action = menu.addAction(get_safe_icon(icon_name), text)
+            desktop_action = menu.addAction(self._get_safe_icon(icon_name), text)
             desktop_action.triggered.connect(
                 lambda: self.remove_from_desktop(game_card.name)
                 if os.path.exists(desktop_path)
                 else self.add_to_desktop(game_card.name, game_card.exec_line)
             )
-            edit_action = menu.addAction(get_safe_icon("edit"), _("Edit Shortcut"))
+            edit_action = menu.addAction(self._get_safe_icon("edit"), _("Edit Shortcut"))
             edit_action.triggered.connect(
                 lambda: self.edit_game_shortcut(game_card.name, game_card.exec_line, game_card.cover_path)
             )
-            delete_action = menu.addAction(get_safe_icon("delete"), _("Delete from PortProton"))
+            delete_action = menu.addAction(self._get_safe_icon("delete"), _("Delete from PortProton"))
             delete_action.triggered.connect(lambda: self.delete_game(game_card.name, game_card.exec_line))
-            open_folder_action = menu.addAction(get_safe_icon("search"), _("Open Game Folder"))
+            open_folder_action = menu.addAction(self._get_safe_icon("search"), _("Open Game Folder"))
             open_folder_action.triggered.connect(
                 lambda: self.open_game_folder(game_card.name, game_card.exec_line)
             )
@@ -262,7 +332,7 @@ class ContextMenuManager:
             menu_path = os.path.join(applications_dir, f"{game_card.name}.desktop")
             icon_name = "delete" if os.path.exists(menu_path) else "menu"
             text = _("Remove from Menu") if os.path.exists(menu_path) else _("Add to Menu")
-            menu_action = menu.addAction(get_safe_icon(icon_name), text)
+            menu_action = menu.addAction(self._get_safe_icon(icon_name), text)
             menu_action.triggered.connect(
                 lambda: self.remove_from_menu(game_card.name)
                 if os.path.exists(menu_path)
@@ -271,7 +341,7 @@ class ContextMenuManager:
             is_in_steam = is_game_in_steam(game_card.name)
             icon_name = "delete" if is_in_steam else "steam"
             text = _("Remove from Steam") if is_in_steam else _("Add to Steam")
-            steam_action = menu.addAction(get_safe_icon(icon_name), text)
+            steam_action = menu.addAction(self._get_safe_icon(icon_name), text)
             steam_action.triggered.connect(
                 lambda: (
                     self.remove_from_steam(game_card.name, game_card.exec_line, game_card.game_source)
@@ -280,7 +350,7 @@ class ContextMenuManager:
                 )
             )
 
-        # Устанавливаем фокус на первый элемент меню
+        # Set focus to the first menu item
         actions = menu.actions()
         if actions:
             menu.setActiveAction(actions[0])
@@ -422,7 +492,7 @@ class ContextMenuManager:
             )
             return
 
-        # Используем FileExplorer с directory_only=True
+        # Use FileExplorer with directory_only=True
         file_explorer = FileExplorer(
             parent=self.parent,
             theme=self.theme,
@@ -452,10 +522,10 @@ class ContextMenuManager:
             self._show_status_message(_("Importing '{game_name}' to Legendary...").format(game_name=game_name))
             threading.Thread(target=run_import, daemon=True).start()
 
-        # Подключаем сигнал выбора файла/папки
+        # Connect the file selection signal
         file_explorer.file_signal.file_selected.connect(on_folder_selected)
 
-        # Центрируем FileExplorer относительно родительского виджета
+        # Center FileExplorer relative to the parent widget
         parent_widget = self.parent
         if parent_widget:
             parent_geometry = parent_widget.geometry()
@@ -789,7 +859,7 @@ Icon={icon_path}
                         _("Failed to delete custom data: {error}").format(error=str(e))
                     )
 
-        # Перезагрузка списка игр и обновление сетки
+        # Reload games list and update grid
         self.load_games()
         self.update_game_grid()
 
