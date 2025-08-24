@@ -19,7 +19,7 @@
       "enabled": false
     },
     {
-      "matchManagers": ["github-actions", "pre-commit"],
+      "matchManagers": ["github-actions", "pre-commit", "poetry"],
       "enabled": false
     },
     {
