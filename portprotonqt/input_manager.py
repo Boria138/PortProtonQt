@@ -4,7 +4,7 @@ import os
 from typing import Protocol, cast
 from evdev import InputDevice, InputEvent, ecodes, list_devices, ff
 from pyudev import Context, Monitor, MonitorObserver, Device
-from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea, QLineEdit, QDialog, QMenu, QComboBox, QListView, QMessageBox
+from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea, QLineEdit, QDialog, QMenu, QComboBox, QListView, QMessageBox, QListWidget
 from PySide6.QtCore import Qt, QObject, QEvent, QPoint, Signal, Slot, QTimer
 from PySide6.QtGui import QKeyEvent
 from portprotonqt.logger import get_logger
@@ -802,6 +802,54 @@ class InputManager(QObject):
 
         # Handle key press events
         if event.type() == QEvent.Type.KeyPress:
+            # Handle FileExplorer specific logic
+            if self.file_explorer:
+                # Handle drive buttons in FileExplorer
+                if key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+                    if isinstance(focused, AutoSizeButton) and hasattr(self.file_explorer, 'drive_buttons') and focused in self.file_explorer.drive_buttons:
+                        self.file_explorer.select_drive()
+                        return True
+                    elif isinstance(focused, QListWidget) and focused == self.file_explorer.file_list:
+                        current_item = focused.currentItem()
+                        if current_item:
+                            selected = current_item.text()
+                            full_path = os.path.join(self.file_explorer.current_path, selected)
+                            if os.path.isdir(full_path):
+                                if selected == "../":
+                                    self.file_explorer.previous_dir()
+                                else:
+                                    self.file_explorer.current_path = os.path.normpath(full_path)
+                                    self.file_explorer.update_file_list()
+                            elif not self.file_explorer.directory_only:
+                                self.file_explorer.file_signal.file_selected.emit(os.path.normpath(full_path))
+                                self.file_explorer.accept()
+                            return True
+                    else:
+                        self._parent.activateFocusedWidget()
+                        return True
+
+                # Handle FileExplorer navigation with right arrow key
+                if key == Qt.Key.Key_Right:
+                    try:
+                        if hasattr(self.file_explorer, 'drive_buttons') and self.file_explorer.drive_buttons:
+                            if not isinstance(focused, AutoSizeButton) or focused not in self.file_explorer.drive_buttons:
+                                self.file_explorer.drive_buttons[0].setFocus()
+                                self.file_explorer.ensure_button_visible(self.file_explorer.drive_buttons[0])
+                            else:
+                                current_idx = self.file_explorer.drive_buttons.index(focused)
+                                next_idx = min(current_idx + 1, len(self.file_explorer.drive_buttons) - 1)
+                                self.file_explorer.drive_buttons[next_idx].setFocus()
+                                self.file_explorer.ensure_button_visible(self.file_explorer.drive_buttons[next_idx])
+                            return True
+                    except Exception as e:
+                        logger.error(f"Error handling right arrow in FileExplorer: {e}")
+                        return True
+
+                # Handle Backspace for FileExplorer navigation
+                if key == Qt.Key.Key_Backspace:
+                    self.file_explorer.previous_dir()
+                    return True
+
             # Handle QLineEdit cursor movement with Left/Right arrows
             if isinstance(focused, QLineEdit) and key in (Qt.Key.Key_Left, Qt.Key.Key_Right):
                 if key == Qt.Key.Key_Left:
@@ -845,7 +893,7 @@ class InputManager(QObject):
                     return True  # Consume event to prevent tab switching
 
             # Handle tab switching with Left/Right arrow keys when not in GameCard focus or QLineEdit
-            if key in (Qt.Key.Key_Left, Qt.Key.Key_Right) and (not isinstance(focused, GameCard | QLineEdit) or focused is None):
+            if key in (Qt.Key.Key_Left, Qt.Key.Key_Right) and not isinstance(focused, GameCard | QLineEdit) and not self.file_explorer:
                 idx = self._parent.stackedWidget.currentIndex()
                 total = len(self._parent.tabButtons)
                 if key == Qt.Key.Key_Left:
