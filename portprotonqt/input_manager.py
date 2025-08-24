@@ -256,14 +256,17 @@ class InputManager(QObject):
                 if not isinstance(focused_widget, AutoSizeButton) or focused_widget not in self.file_explorer.drive_buttons:
                     # If not focused on a drive button, focus the first one
                     self.file_explorer.drive_buttons[0].setFocus()
+                    self.file_explorer.ensure_button_visible(self.file_explorer.drive_buttons[0])
                     return
                 current_idx = self.file_explorer.drive_buttons.index(focused_widget)
                 if value < 0:  # Left
                     next_idx = max(current_idx - 1, 0)
                     self.file_explorer.drive_buttons[next_idx].setFocus()
+                    self.file_explorer.ensure_button_visible(self.file_explorer.drive_buttons[next_idx])
                 elif value > 0:  # Right
                     next_idx = min(current_idx + 1, len(self.file_explorer.drive_buttons) - 1)
                     self.file_explorer.drive_buttons[next_idx].setFocus()
+                    self.file_explorer.ensure_button_visible(self.file_explorer.drive_buttons[next_idx])
             elif code in (ecodes.ABS_HAT0Y, ecodes.ABS_Y):
                 if isinstance(focused_widget, AutoSizeButton) and focused_widget in self.file_explorer.drive_buttons:
                     # Move focus to file list if navigating down from drive buttons

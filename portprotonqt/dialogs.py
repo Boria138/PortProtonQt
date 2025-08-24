@@ -298,6 +298,17 @@ class FileExplorer(QDialog):
         except Exception as e:
             logger.error(f"Error navigating to parent directory: {e}")
 
+    def ensure_button_visible(self, button):
+        """Ensure the specified button is visible in the drives_scroll area."""
+        try:
+            if not button or not self.drives_scroll:
+                return
+            # Ensure the button is visible in the scroll area
+            self.drives_scroll.ensureWidgetVisible(button, 50, 50)
+            logger.debug(f"Ensured button {button.text()} is visible in drives_scroll")
+        except Exception as e:
+            logger.error(f"Error ensuring button visible: {e}")
+
     def update_drives_list(self):
         """Обновление списка смонтированных дисков и избранных папок."""
         for i in reversed(range(self.drives_layout.count())):
