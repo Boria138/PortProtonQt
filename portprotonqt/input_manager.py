@@ -874,10 +874,13 @@ class InputManager(QObject):
                 self.file_explorer.previous_dir()
                 return True
 
-            # Close AddGameDialog with Escape
-            if key == Qt.Key.Key_Escape and isinstance(popup, QDialog):
-                popup.reject()
-                return True
+            # Close Dialogs with Escape
+            if key == Qt.Key.Key_Escape:
+                if isinstance(focused, QLineEdit):
+                    return False
+                if isinstance(active_win, QDialog):
+                    active_win.reject()
+                    return True
 
             # FullscreenDialog navigation
             if isinstance(active_win, FullscreenDialog):
