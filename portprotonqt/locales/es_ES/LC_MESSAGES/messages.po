@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-08-23 20:35+0500\n"
+"POT-Creation-Date: 2025-08-26 13:17+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es_ES\n"
@@ -26,6 +26,12 @@ msgstr ""
 msgid "PortProton is not found"
 msgstr ""
 
+msgid "Remove from Favorites"
+msgstr ""
+
+msgid "Add to Favorites"
+msgstr ""
+
 msgid "Delete from PortProton"
 msgstr ""
 
@@ -33,12 +39,6 @@ msgid "Stop Game"
 msgstr ""
 
 msgid "Launch Game"
-msgstr ""
-
-msgid "Remove from Favorites"
-msgstr ""
-
-msgid "Add to Favorites"
 msgstr ""
 
 msgid "Import to Legendary"
@@ -649,5 +649,26 @@ msgid "min."
 msgstr ""
 
 msgid "sec."
+msgstr ""
+
+msgid "Show"
+msgstr ""
+
+msgid "Favorites"
+msgstr ""
+
+msgid "Recent Games"
+msgstr ""
+
+msgid "Exit"
+msgstr ""
+
+msgid "Hide"
+msgstr ""
+
+msgid "No favorites"
+msgstr ""
+
+msgid "No recent games"
 msgstr ""
 

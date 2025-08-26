@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-08-23 20:35+0500\n"
-"PO-Revision-Date: 2025-08-23 20:35+0500\n"
+"POT-Creation-Date: 2025-08-26 13:17+0500\n"
+"PO-Revision-Date: 2025-08-26 13:16+0500\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
@@ -27,6 +27,12 @@ msgstr "Ошибка"
 msgid "PortProton is not found"
 msgstr "PortProton не найден"
 
+msgid "Remove from Favorites"
+msgstr "Удалить из Избранного"
+
+msgid "Add to Favorites"
+msgstr "Добавить в Избранное"
+
 msgid "Delete from PortProton"
 msgstr "Удалить из PortProton"
 
@@ -35,12 +41,6 @@ msgstr "Остановить игру"
 
 msgid "Launch Game"
 msgstr "Запустить игру"
-
-msgid "Remove from Favorites"
-msgstr "Удалить из Избранного"
-
-msgid "Add to Favorites"
-msgstr "Добавить в Избранное"
 
 msgid "Import to Legendary"
 msgstr "Импортировать игру"
@@ -659,4 +659,25 @@ msgstr "мин."
 
 msgid "sec."
 msgstr "сек."
+
+msgid "Show"
+msgstr "Показать"
+
+msgid "Favorites"
+msgstr "Избранное"
+
+msgid "Recent Games"
+msgstr "Недавние"
+
+msgid "Exit"
+msgstr "Выход"
+
+msgid "Hide"
+msgstr "Скрыть"
+
+msgid "No favorites"
+msgstr "Нет избранных"
+
+msgid "No recent games"
+msgstr "Нет недавних игр"
 
