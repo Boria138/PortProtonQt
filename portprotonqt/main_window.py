@@ -34,6 +34,7 @@ from portprotonqt.localization import _, get_egs_language, read_metadata_transla
 from portprotonqt.logger import get_logger
 from portprotonqt.howlongtobeat_api import HowLongToBeat
 from portprotonqt.downloader import Downloader
+from portprotonqt.tray_manager import TrayManager
 
 from PySide6.QtWidgets import (QLineEdit, QMainWindow, QStatusBar, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox, QScrollArea, QSlider,
                                QDialog, QFormLayout, QFrame, QGraphicsDropShadowEffect, QMessageBox, QApplication, QPushButton, QProgressBar, QCheckBox, QSizePolicy)
@@ -52,10 +53,11 @@ class MainWindow(QMainWindow):
     update_progress = Signal(int)  # Signal to update progress bar
     update_status_message = Signal(str, int)  # Signal to update status message
 
-    def __init__(self):
+    def __init__(self, app_name: str):
         super().__init__()
         # Создаём менеджер тем и читаем, какая тема выбрана
         self.theme_manager = ThemeManager()
+        self.is_exiting = False
         selected_theme = read_theme_from_config()
         self.current_theme_name = selected_theme
         try:
@@ -67,8 +69,9 @@ class MainWindow(QMainWindow):
             save_theme_to_config("standart")
         if not self.theme:
             self.theme = default_styles
+        self.tray_manager = TrayManager(self, app_name, self.current_theme_name)
         self.card_width = read_card_size()
-        self.setWindowTitle("PortProtonQt")
+        self.setWindowTitle(app_name)
         self.setMinimumSize(800, 600)
 
         self.games = []
@@ -2266,46 +2269,51 @@ class MainWindow(QMainWindow):
 
 
     def closeEvent(self, event):
-        """Завершает все дочерние процессы и сохраняет настройки при закрытии окна."""
-        for proc in self.game_processes:
-            try:
-                parent = psutil.Process(proc.pid)
-                children = parent.children(recursive=True)
-                for child in children:
-                    try:
-                        logger.debug(f"Terminating child process {child.pid}")
-                        child.terminate()
-                    except psutil.NoSuchProcess:
-                        logger.debug(f"Child process {child.pid} already terminated")
-                psutil.wait_procs(children, timeout=5)
-                for child in children:
-                    if child.is_running():
-                        logger.debug(f"Killing child process {child.pid}")
-                        child.kill()
-                logger.debug(f"Terminating process group {proc.pid}")
-                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-            except (psutil.NoSuchProcess, ProcessLookupError) as e:
-                logger.debug(f"Process {proc.pid} already terminated: {e}")
+        """Обработчик закрытия окна: сворачивает приложение в трей, если не требуется принудительный выход."""
+        if hasattr(self, 'is_exiting') and self.is_exiting:
+            # Принудительное закрытие: завершаем процессы и приложение
+            for proc in self.game_processes:
+                try:
+                    parent = psutil.Process(proc.pid)
+                    children = parent.children(recursive=True)
+                    for child in children:
+                        try:
+                            logger.debug(f"Terminating child process {child.pid}")
+                            child.terminate()
+                        except psutil.NoSuchProcess:
+                            logger.debug(f"Child process {child.pid} already terminated")
+                    psutil.wait_procs(children, timeout=5)
+                    for child in children:
+                        if child.is_running():
+                            logger.debug(f"Killing child process {child.pid}")
+                            child.kill()
+                    logger.debug(f"Terminating process group {proc.pid}")
+                    os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+                except (psutil.NoSuchProcess, ProcessLookupError) as e:
+                    logger.debug(f"Process {proc.pid} already terminated: {e}")
 
-        self.game_processes = []  # Очищаем список процессов
+            self.game_processes = []  # Очищаем список процессов
 
-        # Сохраняем настройки окна
-        if not read_fullscreen_config():
-            logger.debug(f"Saving window geometry: {self.width()}x{self.height()}")
-            save_window_geometry(self.width(), self.height())
-        save_card_size(self.card_width)
+            # Очищаем таймеры
+            if hasattr(self, 'games_load_timer') and self.games_load_timer.isActive():
+                self.games_load_timer.stop()
+            if hasattr(self, 'settingsDebounceTimer') and self.settingsDebounceTimer.isActive():
+                self.settingsDebounceTimer.stop()
+            if hasattr(self, 'searchDebounceTimer') and self.searchDebounceTimer.isActive():
+                self.searchDebounceTimer.stop()
+            if hasattr(self, 'checkProcessTimer') and self.checkProcessTimer and self.checkProcessTimer.isActive():
+                self.checkProcessTimer.stop()
+                self.checkProcessTimer.deleteLater()
+                self.checkProcessTimer = None
 
-        # Очищаем таймеры и другие ресурсы
-        if hasattr(self, 'games_load_timer') and self.games_load_timer.isActive():
-            self.games_load_timer.stop()
-        if hasattr(self, 'settingsDebounceTimer') and self.settingsDebounceTimer.isActive():
-            self.settingsDebounceTimer.stop()
-        if hasattr(self, 'searchDebounceTimer') and self.searchDebounceTimer.isActive():
-            self.searchDebounceTimer.stop()
-        if hasattr(self, 'checkProcessTimer') and self.checkProcessTimer and self.checkProcessTimer.isActive():
-            self.checkProcessTimer.stop()
-            self.checkProcessTimer.deleteLater()
-            self.checkProcessTimer = None
+            # Сохраняем настройки окна
+            if not read_fullscreen_config():
+                logger.debug(f"Saving window geometry: {self.width()}x{self.height()}")
+                save_window_geometry(self.width(), self.height())
+            save_card_size(self.card_width)
 
-        QApplication.quit()
-        event.accept()
+            event.accept()
+        else:
+            # Сворачиваем в трей вместо закрытия
+            self.hide()
+            event.ignore()

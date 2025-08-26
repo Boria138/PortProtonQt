@@ -30,7 +30,7 @@ def main():
 
     args = parse_args()
 
-    window = MainWindow()
+    window = MainWindow(app_name=__app_name__)
 
     if args.fullscreen:
         logger.info("Launching in fullscreen mode due to --fullscreen flag")
