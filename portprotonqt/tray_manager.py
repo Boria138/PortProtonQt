@@ -1,6 +1,7 @@
 import sys
 from PySide6.QtWidgets import QSystemTrayIcon, QMenu
 from PySide6.QtGui import QIcon, QAction
+from PySide6.QtCore import QTimer
 from portprotonqt.logger import get_logger
 from portprotonqt.theme_manager import ThemeManager
 import portprotonqt.themes.standart.styles as default_styles
@@ -13,7 +14,7 @@ class TrayManager:
     """Модуль управления системным треем для PortProtonQt.
 
     Обеспечивает:
-    - Показ/скрытие главного окна по клику на иконку трея.
+    - Показ/скрытие главного окна по двойному клику на иконку трея.
     - Контекстное меню с опциями: Show/Hide (переключается в зависимости от состояния окна),
       Favorites (быстрый запуск избранных игр), Recent Games (быстрый запуск недавних игр), Exit.
     - Меню Favorites и Recent Games динамически заполняются при показе (через aboutToShow).
@@ -36,7 +37,7 @@ class TrayManager:
             icon = QIcon()
         self.tray_icon.setIcon(icon)
 
-        self.tray_icon.activated.connect(self.toggle_window)
+        self.tray_icon.activated.connect(self.handle_tray_click)
         self.tray_icon.setToolTip(self.app_name)
 
         # Контекстное меню
@@ -70,6 +71,12 @@ class TrayManager:
         # Флаг для принудительного выхода
         self.main_window.is_exiting = False
 
+        # Переменные для отслеживания двойного клика
+        self.click_count = 0
+        self.click_timer = QTimer()
+        self.click_timer.setSingleShot(True)
+        self.click_timer.timeout.connect(self.reset_click_count)
+
     def update_toggle_action(self):
         """Update toggle_action text based on window visibility."""
         if self.main_window.isVisible():
@@ -77,10 +84,22 @@ class TrayManager:
         else:
             self.toggle_action.setText(_("Show"))
 
-    def toggle_window(self, reason):
-        """Переключает видимость окна по клику на иконку трея."""
+    def handle_tray_click(self, reason):
+        """Обрабатывает клики по иконке трея, отслеживая двойной клик."""
         if reason == QSystemTrayIcon.ActivationReason.Trigger:
-            self.toggle_window_action()
+            self.click_count += 1
+            if self.click_count == 1:
+                # Запускаем таймер для ожидания второго клика (300 мс - стандартное время для двойного клика)
+                self.click_timer.start(300)
+            elif self.click_count == 2:
+                # Двойной клик зафиксирован
+                self.click_timer.stop()
+                self.toggle_window_action()
+                self.click_count = 0
+
+    def reset_click_count(self):
+        """Сбрасывает счетчик кликов, если таймер истек."""
+        self.click_count = 0
 
     def toggle_window_action(self):
         """Toggle window visibility and update action text."""
