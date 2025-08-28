@@ -5,7 +5,7 @@ from PySide6.QtGui import QFont, QFontMetrics, QPainter
 
 def compute_layout(nat_sizes, rect_width, spacing, max_scale):
     """
-    Вычисляет расположение элементов с учетом отступов и возможного увеличения карточек.
+    Вычисляет расположение элементов с учетом отступов и максимального масштабирования карточек.
     nat_sizes: массив (N, 2) с натуральными размерами элементов (ширина, высота).
     rect_width: доступная ширина контейнера.
     spacing: отступ между элементами.
@@ -19,58 +19,63 @@ def compute_layout(nat_sizes, rect_width, spacing, max_scale):
     result = np.zeros((N, 4), dtype=np.int32)
     y = 0
     i = 0
+
     while i < N:
         sum_width = 0
         row_max_height = 0
         count = 0
         j = i
-        # Подбираем количество элементов для текущего ряда
+
+        # Подбираем количество элементов для текущего ряда с учетом max_scale
+        scaled_sizes = nat_sizes * max_scale
         while j < N:
-            w = nat_sizes[j, 0]
-            # Если уже есть хотя бы один элемент и следующий не помещается с учетом spacing, выходим
+            w = scaled_sizes[j, 0]
             if count > 0 and (sum_width + spacing + w) > rect_width:
                 break
             sum_width += w
             count += 1
-            h = nat_sizes[j, 1]
+            h = scaled_sizes[j, 1]
             if h > row_max_height:
                 row_max_height = h
             j += 1
-        # Доступная ширина ряда с учетом обязательных отступов между элементами
-        available_width = rect_width - spacing * (count - 1)
-        desired_scale = available_width / sum_width if sum_width > 0 else 1.0
-        # Разрешаем увеличение карточек, но не более max_scale
-        scale = desired_scale if desired_scale < max_scale else max_scale
-        # Выравниваем по левому краю (offset = 0)
-        x = 0
+
+        # Вычисляем общую ширину ряда включая отступы
+        total_row_width = sum_width + spacing * (count - 1)
+
+        # Вычисляем смещение для центрирования ряда
+        x_offset = (rect_width - total_row_width) // 2
+
+        # Размещаем элементы в ряду с центрированием
+        x = x_offset
         for k in range(i, j):
-            new_w = int(nat_sizes[k, 0] * scale)
-            new_h = int(nat_sizes[k, 1] * scale)
+            new_w = int(nat_sizes[k, 0] * max_scale)
+            new_h = int(nat_sizes[k, 1] * max_scale)
             result[k, 0] = x
             result[k, 1] = y
             result[k, 2] = new_w
             result[k, 3] = new_h
             x += new_w + spacing
-        y += int(row_max_height * scale) + spacing
+
+        y += int(row_max_height) + spacing
         i = j
+
     return result, y
 
 class FlowLayout(QLayout):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.itemList = []
-        # Устанавливаем отступы контейнера в 0 и задаем spacing между карточками
         self.setContentsMargins(0, 0, 0, 0)
-        self._spacing = 3  # отступ между карточками
-        self._max_scale = 1.2  # максимальное увеличение карточек (например, на 20%)
+        self._spacing = 3
+        self._max_scale = 1.2
 
     def addItem(self, item: QLayoutItem) -> None:
-            self.itemList.append(item)
+        self.itemList.append(item)
 
     def takeAt(self, index: int) -> QLayoutItem:
-            if 0 <= index < len(self.itemList):
-                return self.itemList.pop(index)
-            raise IndexError("Index out of range")
+        if 0 <= index < len(self.itemList):
+            return self.itemList.pop(index)
+        raise IndexError("Index out of range")
 
     def count(self) -> int:
         return len(self.itemList)
@@ -99,10 +104,12 @@ class FlowLayout(QLayout):
     def minimumSize(self):
         size = QSize()
         for item in self.itemList:
-            size = size.expandedTo(item.minimumSize())
+            # Учитываем максимальный масштаб при расчете минимального размера
+            item_size = item.sizeHint()
+            scaled_size = QSize(int(item_size.width() * self._max_scale), int(item_size.height() * self._max_scale))
+            size = size.expandedTo(scaled_size)
         margins = self.contentsMargins()
-        size += QSize(margins.left() + margins.right(),
-                             margins.top() + margins.bottom())
+        size += QSize(margins.left() + margins.right(), margins.top() + margins.bottom())
         return size
 
     def doLayout(self, rect, testOnly):
@@ -110,14 +117,12 @@ class FlowLayout(QLayout):
         if N == 0:
             return 0
 
-        # Собираем натуральные размеры всех элементов в массив NumPy
         nat_sizes = np.empty((N, 2), dtype=np.int32)
         for i, item in enumerate(self.itemList):
             s = item.sizeHint()
             nat_sizes[i, 0] = s.width()
             nat_sizes[i, 1] = s.height()
 
-        # Вычисляем геометрию с учетом spacing и max_scale через numba-функцию
         geom_array, total_height = compute_layout(nat_sizes, rect.width(), self._spacing, self._max_scale)
 
         if not testOnly:
