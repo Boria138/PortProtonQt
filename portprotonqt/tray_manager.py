@@ -1,12 +1,13 @@
 import sys
-from PySide6.QtWidgets import QSystemTrayIcon, QMenu
+import subprocess
+from PySide6.QtWidgets import QSystemTrayIcon, QMenu, QApplication
 from PySide6.QtGui import QIcon, QAction
 from PySide6.QtCore import QTimer
 from portprotonqt.logger import get_logger
 from portprotonqt.theme_manager import ThemeManager
 import portprotonqt.themes.standart.styles as default_styles
 from portprotonqt.localization import _
-from portprotonqt.config_utils import read_favorites, read_theme_from_config
+from portprotonqt.config_utils import read_favorites, read_theme_from_config, save_theme_to_config
 
 logger = get_logger(__name__)
 
@@ -16,8 +17,8 @@ class TrayManager:
     Обеспечивает:
     - Показ/скрытие главного окна по двойному клику на иконку трея.
     - Контекстное меню с опциями: Show/Hide (переключается в зависимости от состояния окна),
-      Favorites (быстрый запуск избранных игр), Recent Games (быстрый запуск недавних игр), Exit.
-    - Меню Favorites и Recent Games динамически заполняются при показе (через aboutToShow).
+      Favorites (быстрый запуск избранных игр), Recent Games (быстрый запуск недавних игр), Themes (быстрая смена тем), Exit.
+    - Меню Favorites, Recent Games и Themes динамически заполняются при показе (через aboutToShow).
     - При закрытии окна (крестик) приложение сворачивается в трей, а не закрывается.
       Полное закрытие только через Exit в меню.
     """
@@ -49,15 +50,20 @@ class TrayManager:
         self.favorites_menu = QMenu(_("Favorites"))
         self.favorites_menu.aboutToShow.connect(self.populate_favorites_menu)
 
-        # Подменю для недавних игр (топ-5 по последнему запуску)
+        # Подменю для недавних игр
         self.recent_menu = QMenu(_("Recent Games"))
         self.recent_menu.aboutToShow.connect(self.populate_recent_menu)
+
+        # Подменю для тем
+        self.themes_menu = QMenu(_("Themes"))
+        self.themes_menu.aboutToShow.connect(self.populate_themes_menu)
 
         # Добавляем действия в меню
         self.tray_menu.addAction(self.toggle_action)
         self.tray_menu.addSeparator()
         self.tray_menu.addMenu(self.favorites_menu)
         self.tray_menu.addMenu(self.recent_menu)
+        self.tray_menu.addMenu(self.themes_menu)
         self.tray_menu.addSeparator()
         exit_action = QAction(_("Exit"), self.main_window)
         exit_action.triggered.connect(self.force_exit)
@@ -152,6 +158,48 @@ class TrayManager:
             action = QAction(action_text, self.main_window)
             action.triggered.connect(lambda checked=False, el=exec_line: self.main_window.toggleGame(el))
             self.recent_menu.addAction(action)
+
+    def populate_themes_menu(self):
+        """Динамически заполняет меню тем, позволяя переключать доступные темы."""
+        self.themes_menu.clear()
+        available_themes = self.theme_manager.get_available_themes()
+        current_theme = read_theme_from_config()
+
+        for theme_name in sorted(available_themes):
+            action = QAction(theme_name, self.main_window)
+            action.setCheckable(True)
+            action.setChecked(theme_name == current_theme)
+            action.triggered.connect(lambda checked=False, tn=theme_name: self.switch_theme(tn))
+            self.themes_menu.addAction(action)
+
+    def switch_theme(self, theme_name: str):
+        """Сохраняет выбранную тему и перезапускает приложение для применения изменений."""
+        try:
+            # Сохраняем новую тему в конфигурации
+            save_theme_to_config(theme_name)
+            logger.info(f"Saved theme {theme_name}, restarting application to apply changes")
+
+            # Получаем текущий исполняемый файл и аргументы
+            executable = sys.executable
+            args = sys.argv
+
+            # Закрываем текущее приложение
+            self.main_window.is_exiting = True
+            QApplication.quit()
+
+            # Перезапускаем приложение
+            subprocess.Popen([executable] + args)
+
+        except Exception as e:
+            logger.error(f"Failed to switch theme to {theme_name}: {e}")
+            # В случае ошибки сохраняем стандартную тему
+            save_theme_to_config("standart")
+            # Перезапускаем приложение с дефолтной темой
+            executable = sys.executable
+            args = sys.argv
+            self.main_window.is_exiting = True
+            QApplication.quit()
+            subprocess.Popen([executable] + args)
 
     def force_exit(self):
         """Принудительно закрывает приложение."""
