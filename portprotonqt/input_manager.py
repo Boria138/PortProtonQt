@@ -658,8 +658,9 @@ class InputManager(QObject):
             # Library tab navigation (index 0)
             if self._parent.stackedWidget.currentIndex() == 0 and code in (ecodes.ABS_HAT0X, ecodes.ABS_HAT0Y):
                 focused = QApplication.focusWidget()
-                game_cards = self._parent.gamesListWidget.findChildren(GameCard)
+                game_cards = [card for card in self._parent.gamesListWidget.findChildren(GameCard) if card.isVisible()]
                 if not game_cards:
+                    logger.debug("No visible GameCards found")
                     return
 
                 scroll_area = self._parent.gamesListWidget.parentWidget()
@@ -668,27 +669,48 @@ class InputManager(QObject):
 
                 # If no focused widget or not a GameCard, focus the first card
                 if not isinstance(focused, GameCard) or focused not in game_cards:
-                    game_cards[0].setFocus()
+                    game_cards[0].setFocus(Qt.FocusReason.OtherFocusReason)
                     if scroll_area:
                         scroll_area.ensureWidgetVisible(game_cards[0], 50, 50)
                     return
 
-                # Group cards by rows based on y-coordinate
+                # Group cards by rows based on normalized y-coordinate
                 rows = {}
+                tolerance = 50  # Increased tolerance for scaling effects
                 for card in game_cards:
-                    y = card.pos().y()
-                    if y not in rows:
-                        rows[y] = []
-                    rows[y].append(card)
-                # Sort cards in each row by x-coordinate
+                    y = card.pos().y() / card.getScale()  # Normalize y-coordinate
+                    found = False
+                    for row_y in rows:
+                        if abs(y - row_y) < tolerance:
+                            rows[row_y].append(card)
+                            found = True
+                            break
+                    if not found:
+                        rows[y] = [card]
+                # Sort cards in each row by normalized x-coordinate
                 for y in rows:
-                    rows[y].sort(key=lambda c: c.pos().x())
+                    rows[y].sort(key=lambda c: c.pos().x() / c.getScale())
                 # Sort rows by y-coordinate
                 sorted_rows = sorted(rows.items(), key=lambda x: x[0])
 
-                # Find current row and column
-                current_y = focused.pos().y()
-                current_row_idx = next(i for i, (y, _) in enumerate(sorted_rows) if y == current_y)
+                # Find current row with normalized y-coordinate
+                current_y = focused.pos().y() / focused.getScale()
+                current_row_idx = None
+                min_diff = float('inf')
+                for i, (y, _) in enumerate(sorted_rows):
+                    diff = abs(y - current_y)
+                    if diff < tolerance and diff < min_diff:
+                        current_row_idx = i
+                        min_diff = diff
+
+                if current_row_idx is None:
+                    logger.warning("No row found for current_y: %s, falling back to closest row", current_y)
+                    if sorted_rows:
+                        current_row_idx = min(range(len(sorted_rows)), key=lambda i: abs(sorted_rows[i][0] - current_y))
+                    else:
+                        logger.error("No rows available")
+                        return
+
                 current_row = sorted_rows[current_row_idx][1]
                 current_col_idx = current_row.index(focused)
 
@@ -697,7 +719,7 @@ class InputManager(QObject):
                         next_col_idx = current_col_idx - 1
                         if next_col_idx >= 0:
                             next_card = current_row[next_col_idx]
-                            next_card.setFocus()
+                            next_card.setFocus(Qt.FocusReason.OtherFocusReason)
                             if scroll_area:
                                 scroll_area.ensureWidgetVisible(next_card, 50, 50)
                         else:
@@ -706,14 +728,14 @@ class InputManager(QObject):
                                 prev_row = sorted_rows[current_row_idx - 1][1]
                                 next_card = prev_row[-1] if prev_row else None
                                 if next_card:
-                                    next_card.setFocus()
+                                    next_card.setFocus(Qt.FocusReason.OtherFocusReason)
                                     if scroll_area:
                                         scroll_area.ensureWidgetVisible(next_card, 50, 50)
                     elif value > 0:  # Right
                         next_col_idx = current_col_idx + 1
                         if next_col_idx < len(current_row):
                             next_card = current_row[next_col_idx]
-                            next_card.setFocus()
+                            next_card.setFocus(Qt.FocusReason.OtherFocusReason)
                             if scroll_area:
                                 scroll_area.ensureWidgetVisible(next_card, 50, 50)
                         else:
@@ -722,7 +744,7 @@ class InputManager(QObject):
                                 next_row = sorted_rows[current_row_idx + 1][1]
                                 next_card = next_row[0] if next_row else None
                                 if next_card:
-                                    next_card.setFocus()
+                                    next_card.setFocus(Qt.FocusReason.OtherFocusReason)
                                     if scroll_area:
                                         scroll_area.ensureWidgetVisible(next_card, 50, 50)
                 elif code == ecodes.ABS_HAT0Y and value != 0:  # Up/Down
@@ -730,30 +752,30 @@ class InputManager(QObject):
                         next_row_idx = current_row_idx + 1
                         if next_row_idx < len(sorted_rows):
                             next_row = sorted_rows[next_row_idx][1]
-                            # Find card in same column or closest
-                            target_x = focused.pos().x()
+                            # Find card in same column or closest based on normalized x
+                            target_x = focused.pos().x() / focused.getScale()
                             next_card = min(
                                 next_row,
-                                key=lambda c: abs(c.pos().x() - target_x),
+                                key=lambda c: abs(c.pos().x() / c.getScale() - target_x),
                                 default=None
                             )
                             if next_card:
-                                next_card.setFocus()
+                                next_card.setFocus(Qt.FocusReason.OtherFocusReason)
                                 if scroll_area:
                                     scroll_area.ensureWidgetVisible(next_card, 50, 50)
                     elif value < 0:  # Up
                         next_row_idx = current_row_idx - 1
                         if next_row_idx >= 0:
                             next_row = sorted_rows[next_row_idx][1]
-                            # Find card in same column or closest
-                            target_x = focused.pos().x()
+                            # Find card in same column or closest based on normalized x
+                            target_x = focused.pos().x() / focused.getScale()
                             next_card = min(
                                 next_row,
-                                key=lambda c: abs(c.pos().x() - target_x),
+                                key=lambda c: abs(c.pos().x() / c.getScale() - target_x),
                                 default=None
                             )
                             if next_card:
-                                next_card.setFocus()
+                                next_card.setFocus(Qt.FocusReason.OtherFocusReason)
                                 if scroll_area:
                                     scroll_area.ensureWidgetVisible(next_card, 50, 50)
                         elif current_row_idx == 0:
@@ -768,8 +790,8 @@ class InputManager(QObject):
                         focusables = page.findChildren(QWidget, options=Qt.FindChildOption.FindChildrenRecursively)
                         focusables = [w for w in focusables if w.focusPolicy() & Qt.FocusPolicy.StrongFocus]
                         if focusables:
-                            focusables[0].setFocus()
-                            return
+                            focusables[0].setFocus(Qt.FocusReason.OtherFocusReason)
+                        return
                     elif focused:
                         focused.focusNextChild()
                         return
