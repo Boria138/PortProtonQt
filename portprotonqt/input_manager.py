@@ -556,45 +556,123 @@ class InputManager(QObject):
 
     @Slot(int, int, float)
     def handle_dpad_slot(self, code: int, value: int, current_time: float) -> None:
+        if not self._gamepad_handling_enabled:
+            return
         try:
-            if not self._gamepad_handling_enabled:
-                return
+            # Ignore gamepad events if a game is launched
             if getattr(self._parent, '_gameLaunched', False):
                 return
+
+            app = QApplication.instance()
+            if not app:
+                return
+            active = QApplication.activeWindow()
+            focused = QApplication.focusWidget()
             popup = QApplication.activePopupWidget()
+
+            # Update D-pad state
+            if value != 0:
+                self.current_dpad_code = code
+                self.current_dpad_value = value
+                if not self.axis_moving:
+                    self.axis_moving = True
+                    self.last_move_time = current_time
+                    self.current_axis_delay = self.initial_axis_move_delay
+                    self.dpad_timer.start(int(self.repeat_axis_move_delay * 1000))  # Start timer (in milliseconds)
+            else:
+                self.current_dpad_code = None
+                self.current_dpad_value = 0
+                self.axis_moving = False
+                self.current_axis_delay = self.initial_axis_move_delay
+                self.dpad_timer.stop()  # Stop timer when D-pad is released
+                return
+
+            # Handle SystemOverlay, AddGameDialog, or QMessageBox navigation with D-pad
+            if isinstance(active, QDialog) and code == ecodes.ABS_HAT0X and value != 0:
+                if isinstance(active, QMessageBox):  # Specific handling for QMessageBox
+                    if not focused or not active.focusWidget():
+                        # If no widget is focused, focus the first focusable widget
+                        focusables = active.findChildren(QWidget, options=Qt.FindChildOption.FindChildrenRecursively)
+                        focusables = [w for w in focusables if w.focusPolicy() & Qt.FocusPolicy.StrongFocus]
+                        if focusables:
+                            focusables[0].setFocus(Qt.FocusReason.OtherFocusReason)
+                        return
+                    if value > 0:  # Right
+                        active.focusNextChild()
+                    elif value < 0:  # Left
+                        active.focusPreviousChild()
+                    return
+            elif isinstance(active, QDialog) and code == ecodes.ABS_HAT0Y and value != 0:  # Keep up/down for other dialogs
+                if not focused or not active.focusWidget():
+                    # If no widget is focused, focus the first focusable widget
+                    focusables = active.findChildren(QWidget, options=Qt.FindChildOption.FindChildrenRecursively)
+                    focusables = [w for w in focusables if w.focusPolicy() & Qt.FocusPolicy.StrongFocus]
+                    if focusables:
+                        focusables[0].setFocus(Qt.FocusReason.OtherFocusReason)
+                    return
+                if value > 0:  # Down
+                    active.focusNextChild()
+                elif value < 0:  # Up
+                    active.focusPreviousChild()
+                return
+
+            # Handle QMenu navigation with D-pad
             if isinstance(popup, QMenu):
                 if code == ecodes.ABS_HAT0Y and value != 0:
                     actions = popup.actions()
-                    if not actions:
-                        return
-                    current_action = popup.activeAction()
-                    current_idx = actions.index(current_action) if current_action in actions else -1
-                    if value > 0:  # Down
-                        next_idx = (current_idx + 1) % len(actions) if current_idx != -1 else 0
-                        popup.setActiveAction(actions[next_idx])
-                    elif value < 0:  # Up
-                        next_idx = (current_idx - 1) % len(actions) if current_idx != -1 else len(actions) - 1
-                        popup.setActiveAction(actions[next_idx])
+                    if actions:
+                        current_idx = actions.index(popup.activeAction()) if popup.activeAction() in actions else 0
+                        if value < 0:  # Up
+                            next_idx = (current_idx - 1) % len(actions)
+                            popup.setActiveAction(actions[next_idx])
+                        elif value > 0:  # Down
+                            next_idx = (current_idx + 1) % len(actions)
+                            popup.setActiveAction(actions[next_idx])
                     return
-                return  # Skip other handling if menu is open
+                return
 
-            # Update dpad state for repeat navigation
-            if code in (ecodes.ABS_HAT0X, ecodes.ABS_HAT0Y):
-                self.current_dpad_code = code
-                self.current_dpad_value = value
-                if value != 0 and not self.dpad_timer.isActive():
-                    self.dpad_timer.start(int(self.initial_axis_move_delay * 1000))
-                elif value == 0:
-                    self.dpad_timer.stop()
+            # Handle QListView navigation with D-pad
+            if isinstance(focused, QListView) and code == ecodes.ABS_HAT0Y and value != 0:
+                model = focused.model()
+                current_index = focused.currentIndex()
+                if model and current_index.isValid():
+                    row_count = model.rowCount()
+                    current_row = current_index.row()
+                    if value > 0:  # Down
+                        next_row = min(current_row + 1, row_count - 1)
+                        focused.setCurrentIndex(model.index(next_row, current_index.column()))
+                    elif value < 0:  # Up
+                        prev_row = max(current_row - 1, 0)
+                        focused.setCurrentIndex(model.index(prev_row, current_index.column()))
+                    focused.scrollTo(focused.currentIndex(), QListView.ScrollHint.PositionAtCenter)
+                return
 
-            focused = QApplication.focusWidget()
-            if self._parent.stackedWidget.currentIndex() == 0 and isinstance(focused, GameCard):
-                scroll_area = None
-                parent = focused
-                while parent and not isinstance(parent, QScrollArea):
-                    parent = parent.parentWidget()
-                if isinstance(parent, QScrollArea):
-                    scroll_area = parent
+            # Fullscreen horizontal navigation
+            if isinstance(active, FullscreenDialog) and code == ecodes.ABS_HAT0X:
+                if value < 0:
+                    active.show_prev()
+                elif value > 0:
+                    active.show_next()
+                return
+
+            # Library tab navigation (index 0)
+            if self._parent.stackedWidget.currentIndex() == 0 and code in (ecodes.ABS_HAT0X, ecodes.ABS_HAT0Y):
+                focused = QApplication.focusWidget()
+                game_cards = self._parent.gamesListWidget.findChildren(GameCard)
+                if not game_cards:
+                    return
+
+                scroll_area = self._parent.gamesListWidget.parentWidget()
+                while scroll_area and not isinstance(scroll_area, QScrollArea):
+                    scroll_area = scroll_area.parentWidget()
+
+                # If no focused widget or not a GameCard, focus the first card
+                if not isinstance(focused, GameCard) or focused not in game_cards:
+                    game_cards[0].setFocus()
+                    if scroll_area:
+                        scroll_area.ensureWidgetVisible(game_cards[0], 50, 50)
+                    return
+
                 cards = self._parent.gamesListWidget.findChildren(GameCard, options=Qt.FindChildOption.FindChildrenRecursively)
                 if not cards:
                     return
@@ -624,16 +702,21 @@ class InputManager(QObject):
                             break
                     if current_row_idx is not None:
                         break
+
                 # Fallback: if focused card not found, select closest row by y-position
                 if current_row_idx is None:
+                    if not sorted_rows:  # Additional safety check
+                        return
                     focused_y = focused.pos().y()
-                    current_row_idx = min(range(len(sorted_rows)), key=lambda i: abs(sorted_rows[i][0] - focused_y), default=0)
+                    current_row_idx = min(range(len(sorted_rows)), key=lambda i: abs(sorted_rows[i][0] - focused_y))
+                    if current_row_idx >= len(sorted_rows):  # Safety check
+                        return
                     current_row = sorted_rows[current_row_idx][1]
                     focused_x = focused.pos().x() + focused.width() / 2
-                    current_col_idx = min(range(len(current_row)), key=lambda i: abs((current_row[i].pos().x() + current_row[i].width() / 2) - focused_x), default=0)
+                    current_col_idx = min(range(len(current_row)), key=lambda i: abs((current_row[i].pos().x() + current_row[i].width() / 2) - focused_x), default=0) # type: ignore
 
                 # Add null checks before using current_row_idx and current_col_idx
-                if current_row_idx is None or current_col_idx is None:
+                if current_row_idx is None or current_col_idx is None or current_row_idx >= len(sorted_rows):
                     return
 
                 current_row = sorted_rows[current_row_idx][1]
@@ -695,33 +778,25 @@ class InputManager(QObject):
                                     scroll_area.ensureWidgetVisible(next_card, 50, 50)
                         elif current_row_idx == 0:
                             self._parent.tabButtons[0].setFocus(Qt.FocusReason.OtherFocusReason)
+
+            # Vertical navigation in other tabs
             elif code == ecodes.ABS_HAT0Y and value != 0:
                 focused = QApplication.focusWidget()
+                page = self._parent.stackedWidget.currentWidget()
                 if value > 0:  # Down
-                    if isinstance(focused, NavLabel) and self._parent.stackedWidget.currentIndex() == 0:
-                        # Directly move to the first GameCard in gamesListWidget
-                        cards = self._parent.gamesListWidget.findChildren(GameCard, options=Qt.FindChildOption.FindChildrenRecursively)
-                        if cards:
-                            first_card = min(cards, key=lambda c: (c.pos().y(), c.pos().x()), default=None)
-                            if first_card:
-                                first_card.setFocus(Qt.FocusReason.OtherFocusReason)
-                                scroll_area = None
-                                parent = first_card
-                                while parent and not isinstance(parent, QScrollArea):
-                                    parent = parent.parentWidget()
-                                if isinstance(parent, QScrollArea):
-                                    scroll_area = parent
-                                    scroll_area.ensureWidgetVisible(first_card, 50, 50)
-                                return
-                    page = self._parent.stackedWidget.currentWidget()
-                    focusables = page.findChildren(QWidget, options=Qt.FindChildOption.FindChildrenRecursively)
-                    focusables = [w for w in focusables if w.focusPolicy() & Qt.FocusPolicy.StrongFocus]
-                    if focusables:
-                        focusables[0].setFocus(Qt.FocusReason.OtherFocusReason)
-                    return
+                    if isinstance(focused, NavLabel):
+                        focusables = page.findChildren(QWidget, options=Qt.FindChildOption.FindChildrenRecursively)
+                        focusables = [w for w in focusables if w.focusPolicy() & Qt.FocusPolicy.StrongFocus]
+                        if focusables:
+                            focusables[0].setFocus()
+                            return
+                    elif focused:
+                        focused.focusNextChild()
+                        return
                 elif value < 0 and focused:  # Up
                     focused.focusPreviousChild()
                     return
+
         except Exception as e:
             logger.error(f"Error in handle_dpad_slot: {e}", exc_info=True)
 
