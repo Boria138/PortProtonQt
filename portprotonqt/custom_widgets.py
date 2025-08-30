@@ -5,11 +5,11 @@ from PySide6.QtGui import QFont, QFontMetrics, QPainter
 
 def compute_layout(nat_sizes, rect_width, spacing, max_scale):
     """
-    Вычисляет расположение элементов с учетом отступов и максимального масштабирования карточек.
+    Вычисляет расположение элементов с учетом отступов и возможного увеличения карточек.
     nat_sizes: массив (N, 2) с натуральными размерами элементов (ширина, высота).
     rect_width: доступная ширина контейнера.
-    spacing: отступ между элементами.
-    max_scale: максимальный коэффициент масштабирования (например, 1.2).
+    spacing: отступ между элементами (горизонтальный и вертикальный).
+    max_scale: максимальный коэффициент масштабирования (например, 1.0).
 
     Возвращает:
       result: массив (N, 4), где каждая строка содержит [x, y, new_width, new_height].
@@ -19,55 +19,81 @@ def compute_layout(nat_sizes, rect_width, spacing, max_scale):
     result = np.zeros((N, 4), dtype=np.int32)
     y = 0
     i = 0
+    min_margin = 20  # Минимальный отступ по краям
 
+    # Определяем максимальное количество элементов в ряду и общий масштаб
+    max_items_per_row = 0
+    global_scale = 1.0
+    temp_i = 0
+
+    # Первый проход: находим максимальное количество элементов в ряду
+    while temp_i < N:
+        sum_width = 0
+        count = 0
+        temp_j = temp_i
+        while temp_j < N:
+            w = nat_sizes[temp_j, 0]
+            if count > 0 and (sum_width + spacing + w) > rect_width - 2 * min_margin:
+                break
+            sum_width += w
+            count += 1
+            temp_j += 1
+
+        if count > max_items_per_row:
+            max_items_per_row = count
+            # Вычисляем масштаб для самого заполненного ряда
+            available_width = rect_width - spacing * (count - 1) - 2 * min_margin
+            desired_scale = available_width / sum_width if sum_width > 0 else 1.0
+            global_scale = desired_scale if desired_scale < max_scale else max_scale
+
+        temp_i = temp_j
+
+    # Второй проход: размещаем элементы
     while i < N:
         sum_width = 0
         row_max_height = 0
         count = 0
         j = i
 
-        # Подбираем количество элементов для текущего ряда с учетом max_scale
-        scaled_sizes = nat_sizes * max_scale
+        # Подбираем количество элементов для текущего ряда
         while j < N:
-            w = scaled_sizes[j, 0]
-            if count > 0 and (sum_width + spacing + w) > rect_width:
+            w = nat_sizes[j, 0]
+            if count > 0 and (sum_width + spacing + w) > rect_width - 2 * min_margin:
                 break
             sum_width += w
             count += 1
-            h = scaled_sizes[j, 1]
+            h = nat_sizes[j, 1]
             if h > row_max_height:
                 row_max_height = h
             j += 1
 
-        # Вычисляем общую ширину ряда включая отступы
-        total_row_width = sum_width + spacing * (count - 1)
+        # Используем глобальный масштаб для всех рядов
+        scale = global_scale
+        scaled_row_width = int(sum_width * scale) + spacing * (count - 1)
 
-        # Вычисляем смещение для центрирования ряда
-        x_offset = (rect_width - total_row_width) // 2
+        # Центрируем ряд относительно контейнера
+        x = max(min_margin, (rect_width - scaled_row_width) // 2)
 
-        # Размещаем элементы в ряду с центрированием
-        x = x_offset
         for k in range(i, j):
-            new_w = int(nat_sizes[k, 0] * max_scale)
-            new_h = int(nat_sizes[k, 1] * max_scale)
+            new_w = int(nat_sizes[k, 0] * scale)
+            new_h = int(nat_sizes[k, 1] * scale)
             result[k, 0] = x
             result[k, 1] = y
             result[k, 2] = new_w
             result[k, 3] = new_h
             x += new_w + spacing
 
-        y += int(row_max_height) + spacing
+        y += int(row_max_height * scale) + spacing
         i = j
-
     return result, y
 
 class FlowLayout(QLayout):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.itemList = []
-        self.setContentsMargins(0, 0, 0, 0)
-        self._spacing = 3
-        self._max_scale = 1.2
+        self.setContentsMargins(10, 10, 10, 10)
+        self._spacing = 20  # Отступ для анимации и предотвращения перекрытий
+        self._max_scale = 1.0  # Отключено масштабирование в layout
 
     def addItem(self, item: QLayoutItem) -> None:
         self.itemList.append(item)
@@ -104,12 +130,10 @@ class FlowLayout(QLayout):
     def minimumSize(self):
         size = QSize()
         for item in self.itemList:
-            # Учитываем максимальный масштаб при расчете минимального размера
-            item_size = item.sizeHint()
-            scaled_size = QSize(int(item_size.width() * self._max_scale), int(item_size.height() * self._max_scale))
-            size = size.expandedTo(scaled_size)
+            size = size.expandedTo(item.minimumSize())
         margins = self.contentsMargins()
-        size += QSize(margins.left() + margins.right(), margins.top() + margins.bottom())
+        size += QSize(margins.left() + margins.right(),
+                      margins.top() + margins.bottom())
         return size
 
     def doLayout(self, rect, testOnly):
@@ -157,7 +181,7 @@ class ClickableLabel(QLabel):
         self._icon_size = icon_size
         self._icon_space = icon_space
         self._font_scale_factor = font_scale_factor
-        self._card_width = 250  # Значение по умолчанию
+        self._card_width = 250
         if change_cursor:
             self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.updateFontSize()
@@ -175,28 +199,23 @@ class ClickableLabel(QLabel):
         self.update()
 
     def setCardWidth(self, card_width: int):
-        """Обновляет ширину карточки и пересчитывает размер шрифта."""
         self._card_width = card_width
         self.updateFontSize()
 
     def updateFontSize(self):
-        """Обновляет размер шрифта на основе card_width и font_scale_factor."""
         font = self.font()
         font_size = int(self._card_width * self._font_scale_factor)
-        font.setPointSize(max(8, font_size))  # Минимальный размер шрифта 8
+        font.setPointSize(max(8, font_size))
         self.setFont(font)
         self.update()
 
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-
         rect = self.contentsRect()
         alignment = self.alignment()
-
         icon_size = self._icon_size
         spacing = self._icon_space
-
         text = self.text()
 
         if self._icon:
@@ -205,17 +224,11 @@ class ClickableLabel(QLabel):
             pixmap = None
 
         fm = QFontMetrics(self.font())
-
-        # Считаем, сколько места остаётся под текст
         available_width = rect.width()
         if pixmap:
             available_width -= (icon_size + spacing)
-        # Отступы по 2px с каждой стороны
         available_width = max(0, available_width - 4)
-
-        # Получаем «обрезанный» текст с многоточием
         display_text = fm.elidedText(text, Qt.TextElideMode.ElideRight, available_width)
-
         text_width = fm.horizontalAdvance(display_text)
         text_height = fm.height()
         total_width = text_width + (icon_size + spacing if pixmap else 0)
@@ -285,8 +298,6 @@ class AutoSizeButton(QPushButton):
 
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setFlat(True)
-
-        # Изначально выставляем минимальную ширину
         self.setMinimumWidth(50)
         self.adjustFontSize()
 
@@ -317,7 +328,6 @@ class AutoSizeButton(QPushButton):
         if not self._update_size:
             return
 
-        # Определяем доступную ширину внутри кнопки
         available_width = self.width()
         if self._icon:
             available_width -= self._icon_size
@@ -328,7 +338,6 @@ class AutoSizeButton(QPushButton):
         font = QFont(self._original_font)
         text = self._original_text
 
-        # Подбираем максимально возможный размер шрифта, при котором текст укладывается
         chosen_size = self._max_font_size
         for font_size in range(self._max_font_size, self._min_font_size - 1, -1):
             font.setPointSize(font_size)
@@ -341,14 +350,12 @@ class AutoSizeButton(QPushButton):
         font.setPointSize(chosen_size)
         self.setFont(font)
 
-        # После выбора шрифта вычисляем требуемую ширину для полного отображения текста
         fm = QFontMetrics(font)
         text_width = fm.horizontalAdvance(text)
         required_width = text_width + margins.left() + margins.right() + self._padding * 2
         if self._icon:
             required_width += self._icon_size
 
-        # Если текущая ширина меньше требуемой, обновляем минимальную ширину
         if self.width() < required_width:
             self.setMinimumWidth(required_width)
 
@@ -358,7 +365,6 @@ class AutoSizeButton(QPushButton):
         if not self._update_size:
             return super().sizeHint()
         else:
-            # Вычисляем оптимальный размер кнопки на основе текста и отступов
             font = self.font()
             fm = QFontMetrics(font)
             text_width = fm.horizontalAdvance(self._original_text)
@@ -368,7 +374,6 @@ class AutoSizeButton(QPushButton):
                 width += self._icon_size
             height = fm.height() + margins.top() + margins.bottom() + self._padding
             return QSize(width, height)
-
 
 class NavLabel(QLabel):
     clicked = Signal()
@@ -381,7 +386,6 @@ class NavLabel(QLabel):
         self._isChecked = False
         self.setProperty("checked", self._isChecked)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        # Explicitly enable focus
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
     def setCheckable(self, checkable):
@@ -400,7 +404,6 @@ class NavLabel(QLabel):
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
-            # Ensure widget can take focus on click
             self.setFocus(Qt.FocusReason.MouseFocusReason)
             if self._checkable:
                 self.setChecked(not self._isChecked)
