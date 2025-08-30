@@ -1528,7 +1528,7 @@ class MainWindow(QMainWindow):
         detailPage = QWidget()
         self._animations = {}
         imageLabel = QLabel()
-        imageLabel.setFixedSize(300, 400)
+        imageLabel.setFixedSize(300, 450)
         self._detail_page_active = True
         self._current_detail_page = detailPage
 
@@ -1562,7 +1562,7 @@ class MainWindow(QMainWindow):
                         logger.debug("Stylesheet updated with palette")
 
                     self.getColorPalette_async(cover_path, num_colors=5, callback=on_palette_ready)
-                load_pixmap_async(cover_path, 300, 400, on_pixmap_ready)
+                load_pixmap_async(cover_path, 300, 450, on_pixmap_ready)
             else:
                 detailPage.setStyleSheet(self.theme.DETAIL_PAGE_NO_COVER_STYLE)
                 detailPage.update()
@@ -1590,7 +1590,7 @@ class MainWindow(QMainWindow):
 
         # Обложка (слева)
         coverFrame = QFrame()
-        coverFrame.setFixedSize(300, 400)
+        coverFrame.setFixedSize(300, 450)
         coverFrame.setStyleSheet(self.theme.COVER_FRAME_STYLE)
         shadow = QGraphicsDropShadowEffect(coverFrame)
         shadow.setBlurRadius(20)

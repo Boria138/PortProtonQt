@@ -99,7 +99,7 @@ class GameCard(QFrame):
         self.coverLabel.setStyleSheet(self.theme.COVER_LABEL_STYLE)
         coverLayout.addWidget(self.coverLabel)
 
-        load_pixmap_async(cover_path or "", self.base_card_width, int(self.base_card_width * 1.2), self.on_cover_loaded)
+        load_pixmap_async(cover_path or "", self.base_card_width, int(self.base_card_width * 1.5), self.on_cover_loaded)
 
         self.favoriteLabel = ClickableLabel(self.coverWidget)
         self.favoriteLabel.clicked.connect(self.toggle_favorite)
@@ -206,7 +206,7 @@ class GameCard(QFrame):
     def update_cover_pixmap(self):
         if self.base_pixmap:
             scaled_width = int(self.base_card_width * self._scale)
-            scaled_pixmap = self.base_pixmap.scaled(scaled_width, int(scaled_width * 1.2), Qt.AspectRatioMode.KeepAspectRatioByExpanding, Qt.TransformationMode.SmoothTransformation)
+            scaled_pixmap = self.base_pixmap.scaled(scaled_width, int(scaled_width * 1.5), Qt.AspectRatioMode.KeepAspectRatioByExpanding, Qt.TransformationMode.SmoothTransformation)
             rounded_pixmap = round_corners(scaled_pixmap, int(15 * self._scale))
             self.coverLabel.setPixmap(rounded_pixmap)
 
@@ -240,13 +240,13 @@ class GameCard(QFrame):
 
     def update_scale(self):
         scaled_width = int(self.base_card_width * self._scale)
-        scaled_height = int(self.base_card_width * 1.6 * self._scale)
+        scaled_height = int(self.base_card_width * 1.8 * self._scale)
         scaled_extra = int(self.base_extra_margin * self._scale)
         self.setFixedSize(scaled_width + scaled_extra, scaled_height + scaled_extra)
         self.layout_.setContentsMargins(scaled_extra // 2, scaled_extra // 2, scaled_extra // 2, scaled_extra // 2)
 
-        self.coverWidget.setFixedSize(scaled_width, int(scaled_width * 1.2))
-        self.coverLabel.setFixedSize(scaled_width, int(scaled_width * 1.2))
+        self.coverWidget.setFixedSize(scaled_width, int(scaled_width * 1.5))
+        self.coverLabel.setFixedSize(scaled_width, int(scaled_width * 1.5))
 
         self.update_cover_pixmap()
 
@@ -289,7 +289,7 @@ class GameCard(QFrame):
 
     def update_card_size(self, new_width: int):
         self.base_card_width = new_width
-        load_pixmap_async(self.cover_path or "", new_width, int(new_width * 1.2), self.on_cover_loaded)
+        load_pixmap_async(self.cover_path or "", new_width, int(new_width * 1.5), self.on_cover_loaded)
         self.update_scale()
 
     def update_badge_visibility(self, display_filter: str):
