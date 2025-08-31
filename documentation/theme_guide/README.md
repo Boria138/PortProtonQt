@@ -108,7 +108,6 @@ GAME_CARD_ANIMATION = {
 
     # Type of card animation on hover or focus
     # Possible values: "gradient", "scale"
-    # "scale" is unstable and requires adjustments (use at your own risk)
     # "gradient" enables a rotating gradient for the border, "scale" enlarges the card
     "card_animation_type": "gradient",
 
