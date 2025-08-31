@@ -4,7 +4,7 @@ import re
 from typing import cast, TYPE_CHECKING
 from PySide6.QtGui import QPixmap, QIcon
 from PySide6.QtWidgets import (
-    QDialog, QFormLayout, QHBoxLayout, QLabel, QVBoxLayout, QListWidget, QScrollArea, QWidget, QListWidgetItem, QSizePolicy, QApplication
+    QDialog, QFormLayout, QHBoxLayout, QLabel, QVBoxLayout, QListWidget, QScrollArea, QWidget, QListWidgetItem, QSizePolicy, QApplication, QProgressBar
 )
 from PySide6.QtCore import Qt, QObject, Signal, QMimeDatabase, QTimer
 from icoextract import IconExtractor, IconExtractorError
@@ -16,6 +16,7 @@ import portprotonqt.themes.standart.styles as default_styles
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.custom_widgets import AutoSizeButton
 from portprotonqt.downloader import Downloader
+import psutil
 
 if TYPE_CHECKING:
     from portprotonqt.main_window import MainWindow
@@ -88,6 +89,86 @@ def generate_thumbnail(inputfile, outfile, size=128, force_resize=True):
 
 class FileSelectedSignal(QObject):
     file_selected = Signal(str)  # Сигнал с путем к выбранному файлу
+
+class GameLaunchDialog(QDialog):
+    """Modal dialog to indicate game launch progress, similar to Steam's launch dialog."""
+    def __init__(self, parent=None, game_name=None, theme=None, target_exe=None):
+        super().__init__(parent)
+        self.theme = theme if theme else default_styles
+        self.theme_manager = ThemeManager()
+        self.game_name = game_name if game_name else _("Game")
+        self.target_exe = target_exe  # Store the target executable name
+        self.setWindowTitle(_("Launching {0}").format(self.game_name))
+        self.setModal(True)
+        self.setFixedSize(400, 200)
+        self.setStyleSheet(self.theme.MESSAGE_BOX_STYLE)
+        self.setWindowModality(Qt.WindowModality.ApplicationModal)
+        self.setWindowFlags(Qt.WindowType.Dialog | Qt.WindowType.FramelessWindowHint)
+
+        # Layout
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(10)
+
+        # Game name label
+        label = QLabel(_("Launching {0}...").format(self.game_name))
+        label.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(label)
+
+        # Progress bar (indeterminate)
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setStyleSheet(self.theme.PROGRESS_BAR_STYLE)
+        self.progress_bar.setRange(0, 0)  # Indeterminate mode
+        layout.addWidget(self.progress_bar)
+
+        # Cancel button
+        self.cancel_button = AutoSizeButton(_("Cancel"), icon=self.theme_manager.get_icon("cancel"))
+        self.cancel_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        self.cancel_button.clicked.connect(self.reject)
+        layout.addWidget(self.cancel_button, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        # Center dialog on parent
+        if parent:
+            parent_geometry = parent.geometry()
+            center_point = parent_geometry.center()
+            dialog_geometry = self.geometry()
+            dialog_geometry.moveCenter(center_point)
+            self.setGeometry(dialog_geometry)
+
+        # Timer to check if the game process is running
+        self.check_process_timer = QTimer(self)
+        self.check_process_timer.timeout.connect(self.check_target_exe)
+        self.check_process_timer.start(500)
+
+    def is_target_exe_running(self):
+        """Check if the target executable is running using psutil."""
+        if not self.target_exe:
+            return False
+        for proc in psutil.process_iter(attrs=["name"]):
+            if proc.info["name"].lower() == self.target_exe.lower():
+                return True
+        return False
+
+    def check_target_exe(self):
+        """Check if the game process is running and close the dialog if it is."""
+        if self.is_target_exe_running():
+            logger.info(f"Game {self.game_name} process detected as running, closing launch dialog")
+            self.accept()  # Close dialog when game is running
+            self.check_process_timer.stop()
+            self.check_process_timer.deleteLater()
+        elif not hasattr(self.parent(), 'game_processes') or not any(proc.poll() is None for proc in cast("MainWindow", self.parent()).game_processes):
+            # If no child processes are running, stop the timer but keep dialog open
+            self.check_process_timer.stop()
+            self.check_process_timer.deleteLater()
+
+
+    def reject(self):
+        """Handle dialog cancellation."""
+        logger.info(f"Game launch cancelled for {self.game_name}")
+        self.check_process_timer.stop()
+        self.check_process_timer.deleteLater()
+        super().reject()
 
 class FileExplorer(QDialog):
     def __init__(self, parent=None, theme=None, file_filter=None, initial_path=None, directory_only=False):
