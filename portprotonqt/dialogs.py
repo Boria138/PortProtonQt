@@ -96,7 +96,7 @@ class GameLaunchDialog(QDialog):
         super().__init__(parent)
         self.theme = theme if theme else default_styles
         self.theme_manager = ThemeManager()
-        self.game_name = game_name if game_name else _("Game")
+        self.game_name = game_name
         self.target_exe = target_exe  # Store the target executable name
         self.setWindowTitle(_("Launching {0}").format(self.game_name))
         self.setModal(True)
@@ -111,7 +111,7 @@ class GameLaunchDialog(QDialog):
         layout.setSpacing(10)
 
         # Game name label
-        label = QLabel(_("Launching {0}...").format(self.game_name))
+        label = QLabel(_("Launching {0}").format(self.game_name))
         label.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(label)

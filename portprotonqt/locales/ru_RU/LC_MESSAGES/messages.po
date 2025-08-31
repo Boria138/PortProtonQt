@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-08-26 13:17+0500\n"
-"PO-Revision-Date: 2025-08-26 13:16+0500\n"
+"POT-Creation-Date: 2025-08-31 12:28+0500\n"
+"PO-Revision-Date: 2025-08-31 12:28+0500\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
@@ -255,14 +255,18 @@ msgstr "Удалить"
 msgid "Select All"
 msgstr "Выбрать всё"
 
+#, python-brace-format
+msgid "Launching {0}"
+msgstr "Идёт запуск {0}"
+
+msgid "Cancel"
+msgstr "Отмена"
+
 msgid "File Explorer"
 msgstr "Проводник"
 
 msgid "Select"
 msgstr "Выбрать"
-
-msgid "Cancel"
-msgstr "Отмена"
 
 msgid "Path: "
 msgstr "Путь: "

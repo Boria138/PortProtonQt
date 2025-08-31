@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-08-26 13:17+0500\n"
+"POT-Creation-Date: 2025-08-31 12:28+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es_ES\n"
@@ -248,13 +248,17 @@ msgstr ""
 msgid "Select All"
 msgstr ""
 
+#, python-brace-format
+msgid "Launching {0}"
+msgstr ""
+
+msgid "Cancel"
+msgstr ""
+
 msgid "File Explorer"
 msgstr ""
 
 msgid "Select"
-msgstr ""
-
-msgid "Cancel"
 msgstr ""
 
 msgid "Path: "
