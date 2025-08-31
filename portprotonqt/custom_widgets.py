@@ -24,6 +24,7 @@ def compute_layout(nat_sizes, rect_width, spacing, max_scale):
     # Определяем максимальное количество элементов в ряду и общий масштаб
     max_items_per_row = 0
     global_scale = 1.0
+    max_row_x_start = min_margin  # Начальная позиция x самого длинного ряда
     temp_i = 0
 
     # Первый проход: находим максимальное количество элементов в ряду
@@ -45,7 +46,9 @@ def compute_layout(nat_sizes, rect_width, spacing, max_scale):
             available_width = rect_width - spacing * (count - 1) - 2 * min_margin
             desired_scale = available_width / sum_width if sum_width > 0 else 1.0
             global_scale = desired_scale if desired_scale < max_scale else max_scale
-
+            # Сохраняем начальную позицию x для самого длинного ряда
+            scaled_row_width = int(sum_width * global_scale) + spacing * (count - 1)
+            max_row_x_start = max(min_margin, (rect_width - scaled_row_width) // 2)
         temp_i = temp_j
 
     # Второй проход: размещаем элементы
@@ -71,8 +74,13 @@ def compute_layout(nat_sizes, rect_width, spacing, max_scale):
         scale = global_scale
         scaled_row_width = int(sum_width * scale) + spacing * (count - 1)
 
-        # Центрируем ряд относительно контейнера
-        x = max(min_margin, (rect_width - scaled_row_width) // 2)
+        # Определяем начальную координату x
+        if count == max_items_per_row:
+            # Центрируем полный ряд
+            x = max(min_margin, (rect_width - scaled_row_width) // 2)
+        else:
+            # Выравниваем неполный ряд по левому краю, совмещая с началом самого длинного ряда
+            x = max_row_x_start
 
         for k in range(i, j):
             new_w = int(nat_sizes[k, 0] * scale)
@@ -91,7 +99,7 @@ class FlowLayout(QLayout):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.itemList = []
-        self.setContentsMargins(10, 10, 10, 10)
+        self.setContentsMargins(20, 20, 20, 20)  # Отступы по краям
         self._spacing = 20  # Отступ для анимации и предотвращения перекрытий
         self._max_scale = 1.0  # Отключено масштабирование в layout
 
