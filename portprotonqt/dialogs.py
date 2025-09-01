@@ -9,10 +9,9 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QObject, Signal, QMimeDatabase, QTimer
 from icoextract import IconExtractor, IconExtractorError
 from PIL import Image
-from portprotonqt.config_utils import get_portproton_location, read_favorite_folders
+from portprotonqt.config_utils import get_portproton_location, read_favorite_folders, read_theme_from_config
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
-import portprotonqt.themes.standart.styles as default_styles
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.custom_widgets import AutoSizeButton
 from portprotonqt.downloader import Downloader
@@ -94,8 +93,8 @@ class GameLaunchDialog(QDialog):
     """Modal dialog to indicate game launch progress, similar to Steam's launch dialog."""
     def __init__(self, parent=None, game_name=None, theme=None, target_exe=None):
         super().__init__(parent)
-        self.theme = theme if theme else default_styles
         self.theme_manager = ThemeManager()
+        self.theme = theme if theme else self.theme_manager.apply_theme(read_theme_from_config())
         self.game_name = game_name
         self.target_exe = target_exe  # Store the target executable name
         self.setWindowTitle(_("Launching {0}").format(self.game_name))
@@ -173,8 +172,8 @@ class GameLaunchDialog(QDialog):
 class FileExplorer(QDialog):
     def __init__(self, parent=None, theme=None, file_filter=None, initial_path=None, directory_only=False):
         super().__init__(parent)
-        self.theme = theme if theme else default_styles
         self.theme_manager = ThemeManager()
+        self.theme = theme if theme else self.theme_manager.apply_theme(read_theme_from_config())
         self.file_signal = FileSelectedSignal()
         self.file_filter = file_filter  # Store the file filter
         self.directory_only = directory_only  # Store the directory_only flag
@@ -590,8 +589,8 @@ class AddGameDialog(QDialog):
     def __init__(self, parent=None, theme=None, edit_mode=False, game_name=None, exe_path=None, cover_path=None):
         super().__init__(parent)
         from portprotonqt.context_menu_manager import CustomLineEdit   # Локальный импорт
-        self.theme = theme if theme else default_styles
         self.theme_manager = ThemeManager()
+        self.theme = theme if theme else self.theme_manager.apply_theme(read_theme_from_config())
         self.edit_mode = edit_mode
         self.original_name = game_name
         self.last_exe_path = exe_path  # Store last selected exe path

@@ -2,12 +2,10 @@ from PySide6.QtGui import QPainter, QColor, QDesktopServices
 from PySide6.QtCore import Signal, Property, Qt, QUrl
 from PySide6.QtWidgets import QFrame, QGraphicsDropShadowEffect, QVBoxLayout, QWidget, QStackedLayout, QLabel
 from collections.abc import Callable
-import portprotonqt.themes.standart.styles as default_styles
 from portprotonqt.image_utils import load_pixmap_async, round_corners
 from portprotonqt.localization import _
-from portprotonqt.config_utils import read_favorites, save_favorites, read_display_filter
+from portprotonqt.config_utils import read_favorites, save_favorites, read_display_filter, read_theme_from_config
 from portprotonqt.theme_manager import ThemeManager
-from portprotonqt.config_utils import read_theme_from_config
 from portprotonqt.custom_widgets import ClickableLabel
 from portprotonqt.portproton_api import PortProtonAPI
 from portprotonqt.downloader import Downloader
@@ -56,7 +54,7 @@ class GameCard(QFrame):
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self._show_context_menu)
         self.theme_manager = ThemeManager()
-        self.theme = theme if theme is not None else default_styles
+        self.theme = theme if theme is not None else self.theme_manager.apply_theme(read_theme_from_config())
 
         self.display_filter = read_display_filter()
         self.current_theme_name = read_theme_from_config()

@@ -9,7 +9,6 @@ from PySide6.QtGui import QIcon, QAction
 from PySide6.QtCore import QTimer
 from portprotonqt.logger import get_logger
 from portprotonqt.theme_manager import ThemeManager
-import portprotonqt.themes.standart.styles as default_styles
 from portprotonqt.localization import _
 from portprotonqt.config_utils import read_favorites, read_theme_from_config, save_theme_to_config
 from portprotonqt.dialogs import GameLaunchDialog
@@ -31,15 +30,7 @@ class TrayManager:
         self.theme_manager = ThemeManager()
         selected_theme = read_theme_from_config()
         self.current_theme_name = selected_theme
-        try:
-            self.theme = self.theme_manager.apply_theme(selected_theme)
-        except FileNotFoundError:
-            logger.warning(f"Тема '{selected_theme}' не найдена, применяется стандартная тема 'standart'")
-            self.theme = self.theme_manager.apply_theme("standart")
-            self.current_theme_name = "standart"
-            save_theme_to_config("standart")
-        if not self.theme:
-            self.theme = default_styles
+        self.theme = self.theme_manager.apply_theme(selected_theme)
         self.main_window = main_window
         self.tray_icon = QSystemTrayIcon(self.main_window)
 

@@ -1,9 +1,10 @@
 import importlib.util
 import os
+import ast
+import re
 from portprotonqt.logger import get_logger
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtGui import QIcon, QColor, QFontDatabase, QPixmap, QPainter
-
 from portprotonqt.config_utils import save_theme_to_config, load_theme_metainfo
 
 logger = get_logger(__name__)
@@ -14,6 +15,71 @@ THEMES_DIRS = [
     os.path.join(xdg_data_home, "PortProtonQt", "themes"),
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "themes")
 ]
+
+# Запрещенные модули и функции
+FORBIDDEN_MODULES = {
+    "os",
+    "subprocess",
+    "shutil",
+    "sys",
+    "socket",
+    "ctypes",
+    "pathlib",
+    "glob",
+}
+FORBIDDEN_FUNCTIONS = {
+    "exec",
+    "eval",
+    "open",
+    "__import__",
+}
+
+FORBIDDEN_PROPERTIES = {
+    "box-shadow",
+    "backdrop-filter",
+    "cursor",
+    "text-shadow",
+}
+
+def check_theme_safety(theme_file: str) -> bool:
+    """
+    Проверяет файл темы на наличие запрещённых модулей и функций.
+    Возвращает True, если файл безопасен, иначе False.
+    """
+    has_errors = False
+    try:
+        with open(theme_file) as f:
+            content = f.read()
+
+            # Проверка на запрещённые QSS-свойства
+            for prop in FORBIDDEN_PROPERTIES:
+                if re.search(rf"{prop}\s*:", content, re.IGNORECASE):
+                    logger.error(f"Unknown QSS property found '{prop}' in file {theme_file}")
+                    has_errors = True
+
+            # Проверка на опасные импорты и функции
+            try:
+                tree = ast.parse(content)
+                for node in ast.walk(tree):
+                    # Проверка импортов
+                    if isinstance(node, ast.Import | ast.ImportFrom):
+                        for name in node.names:
+                            if name.name in FORBIDDEN_MODULES:
+                                logger.error(f"Forbidden module '{name.name}' found in file {theme_file}")
+                                has_errors = True
+                    # Проверка вызовов функций
+                    if isinstance(node, ast.Call):
+                        if isinstance(node.func, ast.Name) and node.func.id in FORBIDDEN_FUNCTIONS:
+                            logger.error(f"Forbidden function '{node.func.id}' found in file {theme_file}")
+                            has_errors = True
+            except SyntaxError as e:
+                logger.error(f"Syntax error in file {theme_file}: {e}")
+                has_errors = True
+    except Exception as e:
+        logger.error(f"Failed to check theme safety for {theme_file}: {e}")
+        has_errors = True
+
+    return not has_errors
 
 def list_themes():
     """
@@ -66,7 +132,7 @@ def load_theme_fonts(theme_name):
                 break
 
     if not fonts_folder or not os.path.exists(fonts_folder):
-        logger.error(f"Папка fonts не найдена для темы '{theme_name}'")
+        logger.error(f"Fonts folder not found for theme '{theme_name}'")
         return
 
     for filename in os.listdir(fonts_folder):
@@ -75,9 +141,9 @@ def load_theme_fonts(theme_name):
             font_id = QFontDatabase.addApplicationFont(font_path)
             if font_id != -1:
                 families = QFontDatabase.applicationFontFamilies(font_id)
-                logger.info(f"Шрифт {filename} успешно загружен: {families}")
+                logger.info(f"Font {filename} successfully loaded: {families}")
             else:
-                logger.error(f"Ошибка загрузки шрифта: {filename}")
+                logger.error(f"Error loading font: {filename}")
 
 def load_logo():
     logo_path = None
@@ -90,7 +156,7 @@ def load_logo():
     if file_extension == ".svg":
         renderer = QSvgRenderer(logo_path)
         if not renderer.isValid():
-            logger.error(f"Ошибка загрузки SVG логотипа: {logo_path}")
+            logger.error(f"Error loading SVG logo: {logo_path}")
             return None
         pixmap = QPixmap(128, 128)
         pixmap.fill(QColor(0, 0, 0, 0))
@@ -109,37 +175,42 @@ class ThemeWrapper:
         self.custom_theme = custom_theme
         self.metainfo = metainfo or {}
         self.screenshots = load_theme_screenshots(self.metainfo.get("name", ""))
+        self._default_theme = None  # Lazy-loaded default theme
 
     def __getattr__(self, name):
         if hasattr(self.custom_theme, name):
             return getattr(self.custom_theme, name)
-        import portprotonqt.themes.standart.styles as default_styles
-        return getattr(default_styles, name)
+        if self._default_theme is None:
+            self._default_theme = load_theme("standart")  # Dynamically load standard theme
+        return getattr(self._default_theme, name)
 
 def load_theme(theme_name):
     """
     Динамически загружает модуль стилей выбранной темы и метаинформацию.
-    Если выбрана стандартная тема, импортируется оригинальный styles.py.
+    Все темы, включая стандартную, проходят проверку безопасности.
     Для кастомных тем возвращается обёртка, которая подставляет недостающие атрибуты.
     """
-    if theme_name == "standart":
-        import portprotonqt.themes.standart.styles as default_styles
-        return default_styles
-
     for themes_dir in THEMES_DIRS:
         theme_folder = os.path.join(themes_dir, theme_name)
         styles_file = os.path.join(theme_folder, "styles.py")
         if os.path.exists(styles_file):
+            # Проверяем безопасность темы перед загрузкой
+            if not check_theme_safety(styles_file):
+                logger.error(f"Theme '{theme_name}' is unsafe, falling back to 'standart'")
+                raise FileNotFoundError(f"Theme '{theme_name}' contains forbidden modules or functions")
+
             spec = importlib.util.spec_from_file_location("theme_styles", styles_file)
             if spec is None or spec.loader is None:
                 continue
             custom_theme = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(custom_theme)
+            if theme_name == "standart":
+                return custom_theme
             meta = load_theme_metainfo(theme_name)
             wrapper = ThemeWrapper(custom_theme, metainfo=meta)
             wrapper.screenshots = load_theme_screenshots(theme_name)
             return wrapper
-    raise FileNotFoundError(f"Файл стилей не найден для темы '{theme_name}'")
+    raise FileNotFoundError(f"Styles file not found for theme '{theme_name}'")
 
 class ThemeManager:
     """
@@ -166,12 +237,18 @@ class ThemeManager:
         :param theme_name: Имя темы.
         :return: Загруженный модуль темы (или обёртка).
         """
-        theme_module = load_theme(theme_name)
+        try:
+            theme_module = load_theme(theme_name)
+        except FileNotFoundError:
+            logger.warning(f"Theme '{theme_name}' not found or unsafe, applying standard theme 'standart'")
+            theme_module = load_theme("standart")
+            theme_name = "standart"
+            save_theme_to_config("standart")
         load_theme_fonts(theme_name)
         self.current_theme_name = theme_name
         self.current_theme_module = theme_module
         save_theme_to_config(theme_name)
-        logger.info(f"Тема '{theme_name}' успешно применена")
+        logger.info(f"Theme '{theme_name}' successfully applied")
         return theme_module
 
     def get_icon(self, icon_name, theme_name=None, as_path=False):
@@ -226,7 +303,7 @@ class ThemeManager:
 
         # Если иконка всё равно не найдена
         if not icon_path or not os.path.exists(icon_path):
-            logger.error(f"Предупреждение: иконка '{icon_name}' не найдена")
+            logger.error(f"Warning: icon '{icon_name}' not found")
             return QIcon() if not as_path else None
 
         if as_path:

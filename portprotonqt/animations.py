@@ -2,8 +2,10 @@ from PySide6.QtCore import QPropertyAnimation, QByteArray, QEasingCurve, QAbstra
 from PySide6.QtGui import QPainter, QPen, QColor, QConicalGradient, QBrush
 from PySide6.QtWidgets import QWidget, QGraphicsOpacityEffect
 from collections.abc import Callable
-import portprotonqt.themes.standart.styles as default_styles
 from portprotonqt.logger import get_logger
+from portprotonqt.config_utils import read_theme_from_config
+from portprotonqt.theme_manager import ThemeManager
+
 
 logger = get_logger(__name__)
 
@@ -23,7 +25,8 @@ class SafeOpacityEffect(QGraphicsOpacityEffect):
 class GameCardAnimations:
     def __init__(self, game_card, theme=None):
         self.game_card = game_card
-        self.theme = theme if theme is not None else default_styles
+        self.theme_manager = ThemeManager()
+        self.theme = theme if theme is not None else self.theme_manager.apply_theme(read_theme_from_config())
         self.thickness_anim: QPropertyAnimation | None = None
         self.gradient_anim: QPropertyAnimation | None = None
         self.scale_anim: QPropertyAnimation | None = None
@@ -232,7 +235,8 @@ class GameCardAnimations:
 class DetailPageAnimations:
     def __init__(self, main_window, theme=None):
         self.main_window = main_window
-        self.theme = theme if theme is not None else default_styles
+        self.theme_manager = ThemeManager()
+        self.theme = theme if theme is not None else self.theme_manager.apply_theme(read_theme_from_config())
         self.animations = main_window._animations if hasattr(main_window, '_animations') else {}
 
     def animate_detail_page(self, detail_page: QWidget, load_image_and_restore_effect: Callable, cleanup_animation: Callable):
