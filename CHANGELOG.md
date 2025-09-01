@@ -3,6 +3,19 @@
 Все заметные изменения в этом проекте фиксируются в этом файле.
 Формат основан на [Keep a Changelog](https://keepachangelog.com/) и придерживается принципов [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+### Changed
+- Добавлена проверка безопасности в theme_manager.py для всех сторонних тем, с проверкой на запрещённые модули и функции (подробности см. в коде theme_manager под полями FORBIDDEN_MODULES и FORBIDDEN_FUNCTIONS)
+
+### Fixed
+
+### Contributors
+
+---
+
 ## [0.1.5] - 2025-08-31
 
 ### Added

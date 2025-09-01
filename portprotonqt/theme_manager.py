@@ -1,7 +1,6 @@
 import importlib.util
 import os
 import ast
-import re
 from portprotonqt.logger import get_logger
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtGui import QIcon, QColor, QFontDatabase, QPixmap, QPainter
@@ -34,13 +33,6 @@ FORBIDDEN_FUNCTIONS = {
     "__import__",
 }
 
-FORBIDDEN_PROPERTIES = {
-    "box-shadow",
-    "backdrop-filter",
-    "cursor",
-    "text-shadow",
-}
-
 def check_theme_safety(theme_file: str) -> bool:
     """
     Проверяет файл темы на наличие запрещённых модулей и функций.
@@ -50,12 +42,6 @@ def check_theme_safety(theme_file: str) -> bool:
     try:
         with open(theme_file) as f:
             content = f.read()
-
-            # Проверка на запрещённые QSS-свойства
-            for prop in FORBIDDEN_PROPERTIES:
-                if re.search(rf"{prop}\s*:", content, re.IGNORECASE):
-                    logger.error(f"Unknown QSS property found '{prop}' in file {theme_file}")
-                    has_errors = True
 
             # Проверка на опасные импорты и функции
             try:
