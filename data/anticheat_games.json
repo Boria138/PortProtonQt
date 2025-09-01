@@ -1777,7 +1777,7 @@
   },
   {
     "normalized_name": "supervive",
-    "status": "Denied"
+    "status": "Running"
   },
   {
     "normalized_name": "splitgate 2",
@@ -4472,7 +4472,7 @@
     "status": "Running"
   },
   {
-    "normalized_name": "f1 25",
+    "normalized_name": "battlefield 6",
     "status": "Denied"
   },
   {
@@ -4482,5 +4482,65 @@
   {
     "normalized_name": "sword of justice",
     "status": "Broken"
+  },
+  {
+    "normalized_name": "blade & soul neo",
+    "status": "Broken"
+  },
+  {
+    "normalized_name": "the finals (cn)",
+    "status": "Broken"
+  },
+  {
+    "normalized_name": "tom clancy's rainbow six siege x",
+    "status": "Denied"
+  },
+  {
+    "normalized_name": "dragonheir silent gods",
+    "status": "Broken"
+  },
+  {
+    "normalized_name": "the quinfall",
+    "status": "Running"
+  },
+  {
+    "normalized_name": "redmatch 2",
+    "status": "Broken"
+  },
+  {
+    "normalized_name": "blade & soul heroes",
+    "status": "Broken"
+  },
+  {
+    "normalized_name": "blue archive",
+    "status": "Running"
+  },
+  {
+    "normalized_name": "midnight murder club",
+    "status": "Broken"
+  },
+  {
+    "normalized_name": "dungeon done",
+    "status": "Broken"
+  },
+  {
+    "normalized_name": "project wraith",
+    "status": "Broken"
+  },
+  {
+    "normalized_name": "solo leveling arise",
+    "status": "Broken"
+  },
+  {
+    "normalized_name": "freedom wars",
+    "status": "Running"
+  },
+  {
+    "normalized_name": "open fortress",
+    "status": "Running"
+  },
+  {
+    "normalized_name": "no more room in hell 2",
+    "status": "Running"
   }
 ]

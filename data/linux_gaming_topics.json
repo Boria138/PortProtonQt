@@ -1,5 +1,49 @@
 [
   {
+    "normalized_title": "astroneer",
+    "slug": "astroneer"
+  },
+  {
+    "normalized_title": "anno 2205",
+    "slug": "anno-2205"
+  },
+  {
+    "normalized_title": "anno 2070",
+    "slug": "anno-2070"
+  },
+  {
+    "normalized_title": "kompas 3d v23 / компас 3d v23",
+    "slug": "kompas-3d-v23-kompas-3d-v23"
+  },
+  {
+    "normalized_title": "ultrakill (early access)",
+    "slug": "ultrakill-early-access"
+  },
+  {
+    "normalized_title": "vintage story",
+    "slug": "vintage-story"
+  },
+  {
+    "normalized_title": "disco elysium the finul cut",
+    "slug": "disco-elysium-the-finul-cut"
+  },
+  {
+    "normalized_title": "warcraft iii reign of chaos",
+    "slug": "warcraft-iii-reign-of-chaos"
+  },
+  {
+    "normalized_title": "dying light",
+    "slug": "dying-light"
+  },
+  {
+    "normalized_title": "лихо одноглазое",
+    "slug": "liho-odnoglazoe"
+  },
+  {
+    "normalized_title": "indika",
+    "slug": "indika"
+  },
+  {
     "normalized_title": "no sleep for kaname date from ai the somnium files",
     "slug": "no-sleep-for-kaname-date-from-ai-the-somnium-files"
   },
@@ -234,10 +278,6 @@
   {
     "normalized_title": "cardlife creative survival",
     "slug": "cardlife-creative-survival"
-  },
-  {
-    "normalized_title": "kompas 3d v23 / компас 3d v23",
-    "slug": "kompas-3d-v23-kompas-3d-v23"
   },
   {
     "normalized_title": "kompas 3d v24 / компас 3d v24 beta",
