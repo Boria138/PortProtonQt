@@ -4,10 +4,9 @@ import shutil
 import signal
 import subprocess
 import sys
-
-import portprotonqt.themes.standart.styles as default_styles
 import psutil
 
+from portprotonqt.logger import get_logger
 from portprotonqt.dialogs import AddGameDialog, FileExplorer
 from portprotonqt.game_card import GameCard
 from portprotonqt.animations import DetailPageAnimations
@@ -31,7 +30,6 @@ from portprotonqt.config_utils import (
     clear_cache, read_auto_fullscreen_gamepad, save_auto_fullscreen_gamepad, read_rumble_config, save_rumble_config
 )
 from portprotonqt.localization import _, get_egs_language, read_metadata_translations
-from portprotonqt.logger import get_logger
 from portprotonqt.howlongtobeat_api import HowLongToBeat
 from portprotonqt.downloader import Downloader
 from portprotonqt.tray_manager import TrayManager
@@ -60,15 +58,7 @@ class MainWindow(QMainWindow):
         self.is_exiting = False
         selected_theme = read_theme_from_config()
         self.current_theme_name = selected_theme
-        try:
-            self.theme = self.theme_manager.apply_theme(selected_theme)
-        except FileNotFoundError:
-            logger.warning(f"Тема '{selected_theme}' не найдена, применяется стандартная тема 'standart'")
-            self.theme = self.theme_manager.apply_theme("standart")
-            self.current_theme_name = "standart"
-            save_theme_to_config("standart")
-        if not self.theme:
-            self.theme = default_styles
+        self.theme = self.theme_manager.apply_theme(selected_theme)
         self.tray_manager = TrayManager(self, app_name, self.current_theme_name)
         self.card_width = read_card_size()
         self.setWindowTitle(app_name)
