@@ -32,6 +32,11 @@
       "matchPackageNames": ["numpy", "setuptools"],
       "enabled": false,
       "description": "Disabled due to Python 3.10 incompatibility with numpy>=2.3.2 (requires Python>=3.11)"
+    },
+    {
+      "matchDatasources": ["github-runners"],
+      "enabled": false,
+      "description": "Prevent Renovate from updating runs-on to unsupported ubuntu-24.04"
     }
   ]
 }
