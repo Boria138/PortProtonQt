@@ -8,12 +8,12 @@ on:
 jobs:
   renovate:
     runs-on: ubuntu-latest
-    container: ghcr.io/renovatebot/renovate:latest
+    container: ghcr.io/renovatebot/renovate:latest@sha256:46b57bb9816dec6409e7be57e0e5f7b26d214281044f5aedd3b160be178475e2
     steps:
-      - uses: https://gitea.com/actions/checkout@v4
+      - uses: https://gitea.com/actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
 
       - name: Set up Node.js
-        uses: https://gitea.com/actions/setup-node@v4
+        uses: https://gitea.com/actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
 
