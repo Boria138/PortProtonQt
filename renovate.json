@@ -19,6 +19,10 @@
       "description": "Disabled because download-artifact@v4 is not working"
     },
     {
+      "matchFileNames": [".python-version"],
+      "enabled": false,
+    },
+    {
       "matchManagers": ["poetry", "pyenv"],
       "enabled": false
     },
@@ -29,7 +33,7 @@
       "groupName": "Python dependencies"
     },
     {
-      "matchPackageNames": ["numpy", "setuptools"],
+      "matchPackageNames": ["numpy", "setuptools", "python"],
       "enabled": false,
       "description": "Disabled due to Python 3.10 incompatibility with numpy>=2.3.2 (requires Python>=3.11)"
     },
