@@ -22,6 +22,7 @@ import websocket
 import requests
 import random
 import base64
+import glob
 
 downloader = Downloader()
 logger = get_logger(__name__)
@@ -265,10 +266,20 @@ def get_exiftool_data(game_exe):
         logger.error(f"An unexpected error occurred in get_exiftool_data for {game_exe}: {e}")
         return {}
 
+def delete_cached_app_files(cache_dir: str, pattern: str):
+    """Deletes cached files matching the given pattern in the cache directory."""
+    try:
+        for file_path in glob.glob(os.path.join(cache_dir, pattern)):
+            os.remove(file_path)
+            logger.info(f"Deleted cached file: {file_path}")
+    except Exception as e:
+        logger.error(f"Failed to delete cached files matching {pattern}: {e}")
+
 def load_steam_apps_async(callback: Callable[[list], None]):
     """
     Asynchronously loads the list of Steam applications, using cache if available.
     Calls the callback with the list of apps.
+    Deletes cached app detail files when downloading a new steam_apps.json.
     """
     cache_dir = get_cache_dir()
     cache_tar = os.path.join(cache_dir, "games_appid.tar.xz")
@@ -295,6 +306,8 @@ def load_steam_apps_async(callback: Callable[[list], None]):
             if os.path.exists(cache_tar):
                 os.remove(cache_tar)
                 logger.info("Archive %s deleted after extraction", cache_tar)
+            # Delete all cached app detail files (steam_app_*.json)
+            delete_cached_app_files(cache_dir, "steam_app_*.json")
             steam_apps = data if isinstance(data, list) else []
             logger.info("Loaded %d apps from archive", len(steam_apps))
             callback(steam_apps)
@@ -325,11 +338,15 @@ def load_steam_apps_async(callback: Callable[[list], None]):
             app_list_url = (
                 "https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/data/games_appid.tar.xz"
             )
+            # Delete cached app detail files before re-downloading
+            delete_cached_app_files(cache_dir, "steam_app_*.json")
             downloader.download_async(app_list_url, cache_tar, timeout=5, callback=process_tar)
     else:
         app_list_url = (
             "https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/data/games_appid.tar.xz"
         )
+        # Delete cached app detail files before downloading
+        delete_cached_app_files(cache_dir, "steam_app_*.json")
         downloader.download_async(app_list_url, cache_tar, timeout=5, callback=process_tar)
 
 def build_index(steam_apps):
@@ -427,6 +444,7 @@ def load_weanticheatyet_data_async(callback: Callable[[list], None]):
     """
     Asynchronously loads the list of WeAntiCheatYet data, using cache if available.
     Calls the callback with the list of anti-cheat data.
+    Deletes cached anti-cheat files when downloading a new anticheat_games.json.
     """
     cache_dir = get_cache_dir()
     cache_tar = os.path.join(cache_dir, "anticheat_games.tar.xz")
@@ -483,11 +501,15 @@ def load_weanticheatyet_data_async(callback: Callable[[list], None]):
             app_list_url = (
                 "https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/data/anticheat_games.tar.xz"
             )
+            # Delete cached anti-cheat files before re-downloading
+            delete_cached_app_files(cache_dir, "anticheat_*.json")  # Adjust pattern if app-specific files are added
             downloader.download_async(app_list_url, cache_tar, timeout=5, callback=process_tar)
     else:
         app_list_url = (
             "https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/data/anticheat_games.tar.xz"
         )
+        # Delete cached anti-cheat files before downloading
+        delete_cached_app_files(cache_dir, "anticheat_*.json")  # Adjust pattern if app-specific files are added
         downloader.download_async(app_list_url, cache_tar, timeout=5, callback=process_tar)
 
 def build_weanticheatyet_index(anti_cheat_data):
