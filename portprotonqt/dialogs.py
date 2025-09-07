@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from portprotonqt.main_window import MainWindow
 
 logger = get_logger(__name__)
+theme_manager = ThemeManager()
 
 def generate_thumbnail(inputfile, outfile, size=128, force_resize=True):
     """
@@ -93,8 +94,7 @@ class GameLaunchDialog(QDialog):
     """Modal dialog to indicate game launch progress, similar to Steam's launch dialog."""
     def __init__(self, parent=None, game_name=None, theme=None, target_exe=None):
         super().__init__(parent)
-        self.theme_manager = ThemeManager()
-        self.theme = theme if theme else self.theme_manager.apply_theme(read_theme_from_config())
+        self.theme = theme if theme else theme_manager.apply_theme(read_theme_from_config())
         self.game_name = game_name
         self.target_exe = target_exe  # Store the target executable name
         self.setWindowTitle(_("Launching {0}").format(self.game_name))
@@ -122,7 +122,7 @@ class GameLaunchDialog(QDialog):
         layout.addWidget(self.progress_bar)
 
         # Cancel button
-        self.cancel_button = AutoSizeButton(_("Cancel"), icon=self.theme_manager.get_icon("cancel"))
+        self.cancel_button = AutoSizeButton(_("Cancel"), icon=theme_manager.get_icon("cancel"))
         self.cancel_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.cancel_button.clicked.connect(self.reject)
         layout.addWidget(self.cancel_button, alignment=Qt.AlignmentFlag.AlignCenter)
@@ -172,8 +172,7 @@ class GameLaunchDialog(QDialog):
 class FileExplorer(QDialog):
     def __init__(self, parent=None, theme=None, file_filter=None, initial_path=None, directory_only=False):
         super().__init__(parent)
-        self.theme_manager = ThemeManager()
-        self.theme = theme if theme else self.theme_manager.apply_theme(read_theme_from_config())
+        self.theme = theme if theme else theme_manager.apply_theme(read_theme_from_config())
         self.file_signal = FileSelectedSignal()
         self.file_filter = file_filter  # Store the file filter
         self.directory_only = directory_only  # Store the directory_only flag
@@ -271,8 +270,8 @@ class FileExplorer(QDialog):
         # Кнопки
         self.button_layout = QHBoxLayout()
         self.button_layout.setSpacing(10)
-        self.select_button = AutoSizeButton(_("Select"), icon=self.theme_manager.get_icon("apply"))
-        self.cancel_button = AutoSizeButton(_("Cancel"), icon=self.theme_manager.get_icon("cancel"))
+        self.select_button = AutoSizeButton(_("Select"), icon=theme_manager.get_icon("apply"))
+        self.cancel_button = AutoSizeButton(_("Cancel"), icon=theme_manager.get_icon("cancel"))
         self.select_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.cancel_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.button_layout.addWidget(self.select_button)
@@ -405,7 +404,7 @@ class FileExplorer(QDialog):
         # Добавляем смонтированные диски
         for drive in drives:
             drive_name = os.path.basename(drive) or drive.split('/')[-1] or drive
-            button = AutoSizeButton(drive_name, icon=self.theme_manager.get_icon("mount_point"))
+            button = AutoSizeButton(drive_name, icon=theme_manager.get_icon("mount_point"))
             button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
             button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
             button.clicked.connect(lambda checked, path=drive: self.change_drive(path))
@@ -415,7 +414,7 @@ class FileExplorer(QDialog):
         # Добавляем избранные папки
         for folder in favorite_folders:
             folder_name = os.path.basename(folder) or folder.split('/')[-1] or folder
-            button = AutoSizeButton(folder_name, icon=self.theme_manager.get_icon("folder"))
+            button = AutoSizeButton(folder_name, icon=theme_manager.get_icon("folder"))
             button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
             button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
             button.clicked.connect(lambda checked, path=folder: self.change_drive(path))
@@ -483,7 +482,7 @@ class FileExplorer(QDialog):
         try:
             if self.current_path != "/":
                 item = QListWidgetItem("../")
-                folder_icon = self.theme_manager.get_icon("folder")
+                folder_icon = theme_manager.get_icon("folder")
                 # Ensure the icon is a QIcon
                 if isinstance(folder_icon, str) and os.path.isfile(folder_icon):
                     folder_icon = QIcon(folder_icon)
@@ -498,7 +497,7 @@ class FileExplorer(QDialog):
             # Добавляем директории
             for d in sorted(dirs):
                 item = QListWidgetItem(f"{d}/")
-                folder_icon = self.theme_manager.get_icon("folder")
+                folder_icon = theme_manager.get_icon("folder")
                 # Ensure the icon is a QIcon
                 if isinstance(folder_icon, str) and os.path.isfile(folder_icon):
                     folder_icon = QIcon(folder_icon)
@@ -589,8 +588,7 @@ class AddGameDialog(QDialog):
     def __init__(self, parent=None, theme=None, edit_mode=False, game_name=None, exe_path=None, cover_path=None):
         super().__init__(parent)
         from portprotonqt.context_menu_manager import CustomLineEdit   # Локальный импорт
-        self.theme_manager = ThemeManager()
-        self.theme = theme if theme else self.theme_manager.apply_theme(read_theme_from_config())
+        self.theme = theme if theme else theme_manager.apply_theme(read_theme_from_config())
         self.edit_mode = edit_mode
         self.original_name = game_name
         self.last_exe_path = exe_path  # Store last selected exe path
@@ -626,7 +624,7 @@ class AddGameDialog(QDialog):
         if exe_path:
             self.exeEdit.setText(exe_path)
 
-        exeBrowseButton = AutoSizeButton(_("Browse..."), icon=self.theme_manager.get_icon("search"))
+        exeBrowseButton = AutoSizeButton(_("Browse..."), icon=theme_manager.get_icon("search"))
         exeBrowseButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         exeBrowseButton.clicked.connect(self.browseExe)
         exeBrowseButton.setObjectName("exeBrowseButton")  # Для поиска кнопки
@@ -648,7 +646,7 @@ class AddGameDialog(QDialog):
         if cover_path:
             self.coverEdit.setText(cover_path)
 
-        coverBrowseButton = AutoSizeButton(_("Browse..."), icon=self.theme_manager.get_icon("search"))
+        coverBrowseButton = AutoSizeButton(_("Browse..."), icon=theme_manager.get_icon("search"))
         coverBrowseButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         coverBrowseButton.clicked.connect(self.browseCover)
         coverBrowseButton.setObjectName("coverBrowseButton")  # Для поиска кнопки
@@ -677,8 +675,8 @@ class AddGameDialog(QDialog):
         # Dialog buttons
         self.button_layout = QHBoxLayout()
         self.button_layout.setSpacing(10)
-        self.select_button = AutoSizeButton(_("Apply"), icon=self.theme_manager.get_icon("apply"))
-        self.cancel_button = AutoSizeButton(_("Cancel"), icon=self.theme_manager.get_icon("cancel"))
+        self.select_button = AutoSizeButton(_("Apply"), icon=theme_manager.get_icon("apply"))
+        self.cancel_button = AutoSizeButton(_("Cancel"), icon=theme_manager.get_icon("cancel"))
         self.select_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.cancel_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.button_layout.addWidget(self.select_button)

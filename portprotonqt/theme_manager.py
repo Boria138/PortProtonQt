@@ -14,6 +14,7 @@ THEMES_DIRS = [
     os.path.join(xdg_data_home, "PortProtonQt", "themes"),
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "themes")
 ]
+_loaded_theme = None
 
 # Запрещенные модули и функции
 FORBIDDEN_MODULES = {
@@ -101,9 +102,13 @@ def load_theme_screenshots(theme_name):
 
 def load_theme_fonts(theme_name):
     """
-    Загружает все шрифты выбранной темы.
-    :param theme_name: Имя темы.
+    Загружает все шрифты выбранной темы, если они ещё не были загружены.
     """
+    global _loaded_theme
+    if _loaded_theme == theme_name:
+        logger.debug(f"Fonts for theme '{theme_name}' already loaded, skipping")
+        return
+
     QFontDatabase.removeAllApplicationFonts()
     fonts_folder = None
     if theme_name == "standart":
@@ -131,9 +136,13 @@ def load_theme_fonts(theme_name):
             else:
                 logger.error(f"Error loading font: {filename}")
 
-def load_logo():
-    logo_path = None
+    _loaded_theme = theme_name
 
+def load_logo():
+    """
+    Загружает логотип темы из стандартной папки.
+    """
+    logo_path = None
     base_dir = os.path.dirname(os.path.abspath(__file__))
     logo_path = os.path.join(base_dir, "themes", "standart", "images", "theme_logo.svg")
 
@@ -201,28 +210,34 @@ def load_theme(theme_name):
 class ThemeManager:
     """
     Класс для управления темами приложения.
-
-    Позволяет получить список доступных тем, загрузить и применить выбранную тему.
+    Реализует паттерн Singleton для единого экземпляра.
     """
-    def __init__(self):
-        self.current_theme_name = None
-        self.current_theme_module = None
+    _instance = None
 
-    def get_available_themes(self):
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance.current_theme_name = None
+            cls._instance.current_theme_module = None
+        return cls._instance
+
+    def get_available_themes(self) -> list:
         """Возвращает список доступных тем."""
         return list_themes()
 
     def get_theme_logo(self):
-        """Возвращает логотип для текущей или указанной темы."""
+        """Возвращает логотип текущей темы."""
         return load_logo()
 
-    def apply_theme(self, theme_name):
+    def apply_theme(self, theme_name: str):
         """
-        Применяет выбранную тему: загружает модуль стилей, шрифты и логотип.
-        Если загрузка прошла успешно, сохраняет выбранную тему в конфигурации.
-        :param theme_name: Имя темы.
-        :return: Загруженный модуль темы (или обёртка).
+        Применяет указанную тему, если она ещё не применена.
+        Возвращает модуль темы или обёртку.
         """
+        if self.current_theme_name == theme_name and self.current_theme_module is not None:
+            logger.debug(f"Theme '{theme_name}' is already applied, skipping")
+            return self.current_theme_module
+
         try:
             theme_module = load_theme(theme_name)
         except FileNotFoundError:
@@ -230,6 +245,7 @@ class ThemeManager:
             theme_module = load_theme("standart")
             theme_name = "standart"
             save_theme_to_config("standart")
+
         load_theme_fonts(theme_name)
         self.current_theme_name = theme_name
         self.current_theme_module = theme_module
