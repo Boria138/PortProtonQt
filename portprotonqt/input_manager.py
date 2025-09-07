@@ -1061,6 +1061,10 @@ class InputManager(QObject):
         try:
             devices = [InputDevice(path) for path in list_devices()]
             for device in devices:
+                # Skip ASRock LED controller (vendor ID: 26ce, product ID: 01a2)
+                if device.info.vendor == 0x26ce and device.info.product == 0x01a2:
+                    logger.debug(f"Skipping ASRock LED controller: {device.name}")
+                    continue
                 caps = device.capabilities()
                 if ecodes.EV_KEY in caps or ecodes.EV_ABS in caps:
                     return device
