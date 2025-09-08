@@ -1085,7 +1085,9 @@ class InputManager(QObject):
                 now = time.time()
                 if event.type == ecodes.EV_KEY and event.value == 1:
                     if event.code in BUTTONS['menu'] and not self._is_gamescope_session:
-                        self.toggle_fullscreen.emit(not self._is_fullscreen)
+                        # Проверяем, не запущена ли игра
+                        if not getattr(self._parent, '_gameLaunched', False):
+                            self.toggle_fullscreen.emit(not self._is_fullscreen)
                     else:
                         self.button_pressed.emit(event.code)
                 elif event.type == ecodes.EV_ABS:
