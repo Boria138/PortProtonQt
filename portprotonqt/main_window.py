@@ -199,9 +199,15 @@ class MainWindow(QMainWindow):
         self.createPortProtonTab()   # вкладка 4
         self.createThemeTab()        # вкладка 5
 
+        self.controlHintsWidget = self.createControlHintsWidget()
+        mainLayout.addWidget(self.controlHintsWidget)
+
         self.restore_state()
 
         self.input_manager = InputManager(self)
+        # Connect InputManager gamepad connection/disconnection signals
+        self.input_manager.button_pressed.connect(self.updateControlHints)
+        self.input_manager.dpad_moved.connect(self.updateControlHints)
         self.detail_animations = DetailPageAnimations(self, self.theme)
         QTimer.singleShot(0, self.loadGames)
 
@@ -213,6 +219,98 @@ class MainWindow(QMainWindow):
                 self.resize(width, height)
             else:
                 self.showNormal()
+
+    def createControlHintsWidget(self) -> QWidget:
+        from portprotonqt.localization import _
+        """Creates a widget displaying control hints for gamepad and keyboard."""
+        logger.debug("Creating control hints widget")
+        hintsWidget = QWidget()
+        hintsWidget.setStyleSheet(self.theme.STATUS_BAR_STYLE)
+
+        hintsLayout = QHBoxLayout(hintsWidget)
+
+        gamepad_hints = [
+            ("button_a", _("Select")),
+            ("button_b", _("Back")),
+            ("button_x", _("Add Game")),
+            ("button_y", _("Previous Directory")),
+            ("button_lb", _("Previous Tab")),
+            ("button_rb", _("Next Tab")),
+            ("button_start", _("Context Menu")),
+            ("button_select", _("Toggle Fullscreen")),
+            ("button_guide", _("System Overlay")),
+            ("button_rt", _("Increase Size")),
+            ("button_lt", _("Decrease Size")),
+        ]
+
+        keyboard_hints = [
+            ("key_enter", _("Select")),
+            ("key_esc", _("Back")),
+            ("key_e", _("Add Game")),
+            ("key_left", _("Previous Tab")),
+            ("key_right", _("Next Tab")),
+            ("key_context", _("Context Menu")),
+            ("key_insert", _("System Overlay")),
+            ("key_f11", _("Toggle Fullscreen")),
+        ]
+
+        self.hintsLabels = []
+
+        def makeHint(icon_name: str, action: str, visible: bool):
+            container = QWidget()
+            layout = QHBoxLayout(container)
+            layout.setContentsMargins(0, 0, 0, 0)
+            layout.setSpacing(10)
+
+            # иконка
+            icon_label = QLabel()
+            icon_label.setFixedSize(48, 48)
+            icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+            pixmap = QPixmap()
+            icon_path = self.theme_manager.get_theme_image(icon_name, self.current_theme_name)
+            if not icon_path:
+                icon_path = self.theme_manager.get_theme_image("placeholder", self.current_theme_name)
+
+            if icon_path:
+                pixmap.load(str(icon_path))
+
+            if not pixmap.isNull():
+                icon_label.setPixmap(pixmap.scaled(48, 48, Qt.AspectRatioMode.KeepAspectRatio,
+                                                Qt.TransformationMode.SmoothTransformation))
+
+            layout.addWidget(icon_label)
+
+            # текст
+            text_label = QLabel(action)
+            text_label.setStyleSheet(self.theme.LAST_LAUNCH_VALUE_STYLE)
+            text_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
+            layout.addWidget(text_label)
+
+            container.setVisible(visible)
+            self.hintsLabels.append((container, icon_name))
+            hintsLayout.addWidget(container)
+
+        for icon, action in gamepad_hints:
+            makeHint(icon, action, visible=False)
+
+        for icon, action in keyboard_hints:
+            makeHint(icon, action, visible=True)
+
+        hintsLayout.addStretch()  # чтобы всё разъехалось на всю ширину
+        return hintsWidget
+
+    def updateControlHints(self, *args) -> None:
+        """Updates control hints based on gamepad connection status."""
+        is_gamepad_connected = self.input_manager.gamepad is not None
+        logger.debug("Updating control hints, gamepad connected: %s", is_gamepad_connected)
+
+        for container, icon_name in self.hintsLabels:
+            if icon_name.startswith("button_"):  # это геймпад
+                container.setVisible(is_gamepad_connected)
+            else:  # это клавиатура
+                container.setVisible(not is_gamepad_connected)
+
     @Slot(list)
     def on_games_loaded(self, games: list[tuple]):
         self.games = games
