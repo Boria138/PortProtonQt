@@ -99,7 +99,7 @@ jobs:
 
     strategy:
       matrix:
-        fedora_version: [41, 42, rawhide]
+        fedora_version: [41, 42, 43, rawhide]
 
     container:
       image: fedora:${{ matrix.fedora_version }}
