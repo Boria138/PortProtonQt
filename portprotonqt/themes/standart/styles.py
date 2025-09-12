@@ -280,16 +280,6 @@ MAIN_WINDOW_HEADER_STYLE = f"""
     }}
 """
 
-# СТИЛЬ ЗАГОЛОВКА (ЛОГО) В ШАПКЕ
-TITLE_LABEL_STYLE = """
-    QLabel {
-        font-family: 'RASKHAL';
-        font-size: 38px;
-        margin: 0 0 0 0;
-        color: #007AFF;
-    }
-"""
-
 # СТИЛЬ ОБЛАСТИ НАВИГАЦИИ (КНОПКИ ВКЛАДОК)
 NAV_WIDGET_STYLE = f"""
     QWidget {{

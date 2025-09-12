@@ -19,7 +19,7 @@ from portprotonqt.system_overlay import SystemOverlay
 from portprotonqt.image_utils import load_pixmap_async, round_corners, ImageCarousel
 from portprotonqt.steam_api import get_steam_game_info_async, get_full_steam_game_info_async, get_steam_installed_games
 from portprotonqt.egs_api import load_egs_games_async, get_egs_executable
-from portprotonqt.theme_manager import ThemeManager, load_theme_screenshots, load_logo
+from portprotonqt.theme_manager import ThemeManager, load_theme_screenshots
 from portprotonqt.time_utils import save_last_launch, get_last_launch, parse_playtime_file, format_playtime, get_last_launch_timestamp, format_last_launch
 from portprotonqt.config_utils import (
     get_portproton_location, read_theme_from_config, save_theme_to_config, parse_desktop_entry,
@@ -141,32 +141,26 @@ class MainWindow(QMainWindow):
         self.header.setStyleSheet(self.theme.MAIN_WINDOW_HEADER_STYLE)
         headerLayout = QVBoxLayout(self.header)
         headerLayout.setContentsMargins(0, 0, 0, 0)
-
-        # Текст "PortProton" слева
-        self.titleLabel = QLabel()
-        pixmap = load_logo()
-        if pixmap is None:
-            width, height = self.theme.pixmapsScaledSize
-            pixmap = QPixmap(width, height)
-            pixmap.fill(QColor(0, 0, 0, 0))
-        width, height = self.theme.pixmapsScaledSize
-        scaled_pixmap = pixmap.scaled(width, height,
-                                    Qt.AspectRatioMode.KeepAspectRatio,
-                                    Qt.TransformationMode.SmoothTransformation)
-        self.titleLabel.setPixmap(scaled_pixmap)
-        self.titleLabel.setFixedSize(scaled_pixmap.size())
-        self.titleLabel.setStyleSheet(self.theme.TITLE_LABEL_STYLE)
         headerLayout.addStretch()
+
+        self.input_manager = InputManager(self)
+        self.input_manager.button_pressed.connect(self.updateControlHints)
+        self.input_manager.dpad_moved.connect(self.updateControlHints)
 
         # 2. НАВИГАЦИЯ (КНОПКИ ВКЛАДОК)
         self.navWidget = QWidget()
         self.navWidget.setStyleSheet(self.theme.NAV_WIDGET_STYLE)
         navLayout = QHBoxLayout(self.navWidget)
         navLayout.setContentsMargins(10, 0, 10, 0)
-        navLayout.setSpacing(0)
+        navLayout.setSpacing(10)
 
-        navLayout.addWidget(self.titleLabel)
+         # Left navigation button (key_left or button_lb)
+        self.leftNavButton = QLabel()
+        self.leftNavButton.setFixedSize(32, 32)
+        self.leftNavButton.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        navLayout.addWidget(self.leftNavButton)
 
+        # Вкладки
         self.tabButtons = {}
         tabs = [
             _("Library"),
@@ -185,6 +179,16 @@ class MainWindow(QMainWindow):
             self.tabButtons[i] = btn
 
         self.tabButtons[0].setChecked(True)
+
+        # Right navigation button (key_right or button_rb)
+        self.rightNavButton = QLabel()
+        self.rightNavButton.setFixedSize(32, 32)
+        self.rightNavButton.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        navLayout.addWidget(self.rightNavButton)
+
+        # Initial update of navigation buttons based on input device
+        self.updateNavButtons()
+
         mainLayout.addWidget(self.navWidget)
 
         # 3. QStackedWidget (ВКЛАДКИ)
@@ -199,15 +203,12 @@ class MainWindow(QMainWindow):
         self.createPortProtonTab()   # вкладка 4
         self.createThemeTab()        # вкладка 5
 
+        # Подсказки управления
         self.controlHintsWidget = self.createControlHintsWidget()
         mainLayout.addWidget(self.controlHintsWidget)
 
         self.restore_state()
 
-        self.input_manager = InputManager(self)
-        # Connect InputManager gamepad connection/disconnection signals
-        self.input_manager.button_pressed.connect(self.updateControlHints)
-        self.input_manager.dpad_moved.connect(self.updateControlHints)
         self.detail_animations = DetailPageAnimations(self, self.theme)
         QTimer.singleShot(0, self.loadGames)
 
@@ -228,30 +229,23 @@ class MainWindow(QMainWindow):
         hintsWidget.setStyleSheet(self.theme.STATUS_BAR_STYLE)
 
         hintsLayout = QHBoxLayout(hintsWidget)
+        hintsLayout.setContentsMargins(10, 0, 10, 0)
+        hintsLayout.setSpacing(20)
 
         gamepad_hints = [
             ("button_a", _("Select")),
             ("button_b", _("Back")),
             ("button_x", _("Add Game")),
-            ("button_y", _("Previous Directory")),
-            ("button_lb", _("Previous Tab")),
-            ("button_rb", _("Next Tab")),
-            ("button_start", _("Context Menu")),
-            ("button_select", _("Toggle Fullscreen")),
-            ("button_guide", _("System Overlay")),
-            ("button_rt", _("Increase Size")),
-            ("button_lt", _("Decrease Size")),
+            ("button_start", _("Menu")),
+            ("button_select", _("Fullscreen")),
         ]
 
         keyboard_hints = [
             ("key_enter", _("Select")),
             ("key_esc", _("Back")),
             ("key_e", _("Add Game")),
-            ("key_left", _("Previous Tab")),
-            ("key_right", _("Next Tab")),
-            ("key_context", _("Context Menu")),
-            ("key_insert", _("System Overlay")),
-            ("key_f11", _("Toggle Fullscreen")),
+            ("key_context", _("Menu")),
+            ("key_f11", _("Fullscreen")),
         ]
 
         self.hintsLabels = []
@@ -260,11 +254,11 @@ class MainWindow(QMainWindow):
             container = QWidget()
             layout = QHBoxLayout(container)
             layout.setContentsMargins(0, 0, 0, 0)
-            layout.setSpacing(10)
+            layout.setSpacing(6)
 
-            # иконка
+            # иконка кнопки
             icon_label = QLabel()
-            icon_label.setFixedSize(48, 48)
+            icon_label.setFixedSize(32, 32)
             icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
             pixmap = QPixmap()
@@ -276,12 +270,15 @@ class MainWindow(QMainWindow):
                 pixmap.load(str(icon_path))
 
             if not pixmap.isNull():
-                icon_label.setPixmap(pixmap.scaled(48, 48, Qt.AspectRatioMode.KeepAspectRatio,
-                                                Qt.TransformationMode.SmoothTransformation))
+                icon_label.setPixmap(pixmap.scaled(
+                    32, 32,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation
+                ))
 
             layout.addWidget(icon_label)
 
-            # текст
+            # текст действия
             text_label = QLabel(action)
             text_label.setStyleSheet(self.theme.LAST_LAUNCH_VALUE_STYLE)
             text_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
@@ -297,19 +294,56 @@ class MainWindow(QMainWindow):
         for icon, action in keyboard_hints:
             makeHint(icon, action, visible=True)
 
-        hintsLayout.addStretch()  # чтобы всё разъехалось на всю ширину
+        hintsLayout.addStretch()  # растянуть вправо
         return hintsWidget
 
+
+    def updateNavButtons(self, *args) -> None:
+        """Updates control hints and navigation buttons based on gamepad connection status."""
+        is_gamepad_connected = self.input_manager.gamepad is not None
+        logger.debug("Updating control hints, gamepad connected: %s", is_gamepad_connected)
+
+        # Left navigation button
+        left_pix = QPixmap()
+        left_icon_name = "button_lb" if is_gamepad_connected else "key_left"
+        left_icon = self.theme_manager.get_theme_image(left_icon_name, self.current_theme_name)
+        if left_icon:
+            left_pix.load(str(left_icon))
+        if not left_pix.isNull():
+            self.leftNavButton.setPixmap(left_pix.scaled(
+                32, 32,
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation
+            ))
+        self.leftNavButton.setVisible(is_gamepad_connected or not is_gamepad_connected)
+
+        # Right navigation button
+        right_pix = QPixmap()
+        right_icon_name = "button_rb" if is_gamepad_connected else "key_right"
+        right_icon = self.theme_manager.get_theme_image(right_icon_name, self.current_theme_name)
+        if right_icon:
+            right_pix.load(str(right_icon))
+        if not right_pix.isNull():
+            self.rightNavButton.setPixmap(right_pix.scaled(
+                32, 32,
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation
+            ))
+        self.rightNavButton.setVisible(is_gamepad_connected or not is_gamepad_connected)
+
     def updateControlHints(self, *args) -> None:
-        """Updates control hints based on gamepad connection status."""
+        """Updates control hints and navigation buttons based on gamepad connection status."""
         is_gamepad_connected = self.input_manager.gamepad is not None
         logger.debug("Updating control hints, gamepad connected: %s", is_gamepad_connected)
 
         for container, icon_name in self.hintsLabels:
-            if icon_name.startswith("button_"):  # это геймпад
+            if icon_name.startswith("button_"):  # геймпад
                 container.setVisible(is_gamepad_connected)
-            else:  # это клавиатура
+            else:  # клавиатура
                 container.setVisible(not is_gamepad_connected)
+
+        # Update navigation buttons
+        self.updateNavButtons()
 
     @Slot(list)
     def on_games_loaded(self, games: list[tuple]):
@@ -760,6 +794,8 @@ class MainWindow(QMainWindow):
 
         sliderLayout = QHBoxLayout()
         sliderLayout.addStretch()
+
+        # Слайдер
         self.sizeSlider = QSlider(Qt.Orientation.Horizontal)
         self.sizeSlider.setMinimum(200)
         self.sizeSlider.setMaximum(250)
@@ -770,6 +806,7 @@ class MainWindow(QMainWindow):
         self.sizeSlider.setStyleSheet(self.theme.SLIDER_SIZE_STYLE)
         self.sizeSlider.sliderReleased.connect(self.on_slider_released)
         sliderLayout.addWidget(self.sizeSlider)
+
         layout.addLayout(sliderLayout)
 
         def calculate_card_width():
@@ -1420,7 +1457,6 @@ class MainWindow(QMainWindow):
                 self.openGameDetailPage(*current_game)
 
         self.settingsDebounceTimer.start()
-
 
         # Управление полноэкранным режимом
         gamepad_connected = self.input_manager.find_gamepad() is not None

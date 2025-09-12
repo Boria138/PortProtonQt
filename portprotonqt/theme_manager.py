@@ -2,8 +2,7 @@ import importlib.util
 import os
 import ast
 from portprotonqt.logger import get_logger
-from PySide6.QtSvg import QSvgRenderer
-from PySide6.QtGui import QIcon, QColor, QFontDatabase, QPixmap, QPainter
+from PySide6.QtGui import QIcon, QFontDatabase, QPixmap
 from portprotonqt.config_utils import save_theme_to_config, load_theme_metainfo
 
 logger = get_logger(__name__)
@@ -138,28 +137,6 @@ def load_theme_fonts(theme_name):
 
     _loaded_theme = theme_name
 
-def load_logo():
-    """
-    Загружает логотип темы из стандартной папки.
-    """
-    logo_path = None
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    logo_path = os.path.join(base_dir, "themes", "standart", "images", "theme_logo.svg")
-
-    file_extension = os.path.splitext(logo_path)[1].lower()
-
-    if file_extension == ".svg":
-        renderer = QSvgRenderer(logo_path)
-        if not renderer.isValid():
-            logger.error(f"Error loading SVG logo: {logo_path}")
-            return None
-        pixmap = QPixmap(128, 128)
-        pixmap.fill(QColor(0, 0, 0, 0))
-        painter = QPainter(pixmap)
-        renderer.render(painter)
-        painter.end()
-        return pixmap
-
 class ThemeWrapper:
     """
     Обёртка для кастомной темы с поддержкой метаинформации.
@@ -224,10 +201,6 @@ class ThemeManager:
     def get_available_themes(self) -> list:
         """Возвращает список доступных тем."""
         return list_themes()
-
-    def get_theme_logo(self):
-        """Возвращает логотип текущей темы."""
-        return load_logo()
 
     def apply_theme(self, theme_name: str):
         """
