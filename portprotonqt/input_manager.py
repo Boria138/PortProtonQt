@@ -3,6 +3,7 @@ import threading
 import os
 from typing import Protocol, cast
 from evdev import InputDevice, InputEvent, ecodes, list_devices, ff
+from enum import Enum
 from pyudev import Context, Monitor, MonitorObserver, Device
 from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea, QLineEdit, QDialog, QMenu, QComboBox, QListView, QMessageBox, QListWidget
 from PySide6.QtCore import Qt, QObject, QEvent, QPoint, Signal, Slot, QTimer
@@ -38,22 +39,28 @@ class MainWindowProtocol(Protocol):
     current_exec_line: str | None
     current_add_game_dialog: AddGameDialog | None
 
-# Mapping of actions to evdev button codes, includes Xbox and PlayStation controllers
+# Mapping of actions to evdev button codes, includes Xbox, PlayStation and Nintendo Switch controllers
 # https://github.com/torvalds/linux/blob/master/drivers/hid/hid-playstation.c
 # https://github.com/torvalds/linux/blob/master/drivers/input/joystick/xpad.c
+# https://github.com/torvalds/linux/blob/master/drivers/hid/hid-nintendo
 BUTTONS = {
-    'confirm':       {ecodes.BTN_SOUTH},           # A (Xbox) / Cross (PS)
-    'back':          {ecodes.BTN_EAST},            # B (Xbox) / Circle (PS)
-    'add_game':      {ecodes.BTN_NORTH},           # X (Xbox) / Triangle (PS)
-    'prev_dir':      {ecodes.BTN_WEST},            # Y (Xbox) / Square (PS)
-    'prev_tab':      {ecodes.BTN_TL},              # LB (Xbox) / L1 (PS)
-    'next_tab':      {ecodes.BTN_TR},              # RB (Xbox) / R1 (PS)
-    'context_menu':  {ecodes.BTN_START},           # Start (Xbox) / Options (PS)
-    'menu':          {ecodes.BTN_SELECT},          # Select (Xbox) / Share (PS)
-    'guide':         {ecodes.BTN_MODE},            # Xbox Button / PS Button
-    'increase_size': {ecodes.BTN_TR2},             # RT (Xbox) / R2 (PS)
-    'decrease_size': {ecodes.BTN_TL2},             # LT (Xbox) / L2 (PS)
+    'confirm':       {ecodes.BTN_SOUTH},           # A (Xbox) / Cross (PS) / B (Switch)
+    'back':          {ecodes.BTN_EAST},            # B (Xbox) / Circle (PS) / A (Switch)
+    'add_game':      {ecodes.BTN_NORTH},           # X (Xbox) / Triangle (PS) / Y (Switch)
+    'prev_dir':      {ecodes.BTN_WEST},            # Y (Xbox) / Square (PS) / X (Switch)
+    'prev_tab':      {ecodes.BTN_TL},              # LB (Xbox) / L1 (PS) / L (Switch)
+    'next_tab':      {ecodes.BTN_TR},              # RB (Xbox) / R1 (PS) / R (Switch)
+    'context_menu':  {ecodes.BTN_START},           # Start (Xbox) / Options (PS) / + (Switch)
+    'menu':          {ecodes.BTN_SELECT},          # Select (Xbox) / Share (PS) / - (Switch)
+    'guide':         {ecodes.BTN_MODE},            # Xbox Button / PS Button / Home (Switch)
+    'increase_size': {ecodes.BTN_TR2},             # RT (Xbox) / R2 (PS) / ZR (Switch)
+    'decrease_size': {ecodes.BTN_TL2},             # LT (Xbox) / L2 (PS) / ZL (Switch)
 }
+
+class GamepadType(Enum):
+    XBOX = "Xbox"
+    PLAYSTATION = "PlayStation"
+    UNKNOWN = "Unknown"
 
 class InputManager(QObject):
     """
@@ -76,6 +83,7 @@ class InputManager(QObject):
         super().__init__(cast(QObject, main_window))
         self._parent = main_window
         self._gamepad_handling_enabled = True
+        self.gamepad_type = GamepadType.UNKNOWN
         # Ensure attributes exist on main_window
         self._parent.currentDetailPage = getattr(self._parent, 'currentDetailPage', None)
         self._parent.current_exec_line = getattr(self._parent, 'current_exec_line', None)
@@ -131,6 +139,38 @@ class InputManager(QObject):
 
         # Initialize evdev + hotplug
         self.init_gamepad()
+
+    def detect_gamepad_type(self, device: InputDevice) -> GamepadType:
+        """
+        Определяет тип геймпада по capabilities
+        """
+        caps = device.capabilities()
+        keys = set(caps.get(ecodes.EV_KEY, []))
+
+        # Для EV_ABS вытаскиваем только коды (первый элемент кортежа)
+        abs_axes = {a if isinstance(a, int) else a[0] for a in caps.get(ecodes.EV_ABS, [])}
+
+        # Xbox layout
+        if {ecodes.BTN_SOUTH, ecodes.BTN_EAST, ecodes.BTN_NORTH, ecodes.BTN_WEST}.issubset(keys):
+            if {ecodes.ABS_X, ecodes.ABS_Y, ecodes.ABS_RX, ecodes.ABS_RY}.issubset(abs_axes):
+                self.gamepad_type = GamepadType.XBOX
+                return GamepadType.XBOX
+
+        # PlayStation layout
+        if ecodes.BTN_TOUCH in keys or (ecodes.BTN_DPAD_UP in keys and ecodes.BTN_EAST in keys):
+            self.gamepad_type = GamepadType.PLAYSTATION
+            logger.info(f"Detected {self.gamepad_type.value} controller: {device.name}")
+            return GamepadType.PLAYSTATION
+
+        # Steam Controller / Deck (трекпады)
+        if any(a for a in abs_axes if a >= ecodes.ABS_MT_SLOT):
+            self.gamepad_type = GamepadType.XBOX
+            logger.info(f"Detected {self.gamepad_type.value} controller: {device.name}")
+            return GamepadType.XBOX
+
+        # Fallback
+        self.gamepad_type = GamepadType.XBOX
+        return GamepadType.XBOX
 
     def enable_file_explorer_mode(self, file_explorer):
         """Настройка обработки геймпада для FileExplorer"""
@@ -1043,6 +1083,8 @@ class InputManager(QObject):
             new_gamepad = self.find_gamepad()
             if new_gamepad and new_gamepad != self.gamepad:
                 logger.info(f"Gamepad connected: {new_gamepad.name}")
+                self.detect_gamepad_type(new_gamepad)
+                logger.info(f"Detected gamepad type: {self.gamepad_type.value}")
                 self.stop_rumble()
                 self.gamepad = new_gamepad
                 if self.gamepad_thread:
@@ -1137,5 +1179,7 @@ class InputManager(QObject):
                 self.gamepad_thread.join()
             if self.gamepad:
                 self.gamepad.close()
+            self.gamepad = None
+            self.gamepad_type = GamepadType.UNKNOWN
         except Exception as e:
             logger.error(f"Error during cleanup: {e}", exc_info=True)

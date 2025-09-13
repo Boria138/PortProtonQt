@@ -15,6 +15,7 @@ from portprotonqt.portproton_api import PortProtonAPI
 from portprotonqt.input_manager import InputManager
 from portprotonqt.context_menu_manager import ContextMenuManager, CustomLineEdit
 from portprotonqt.system_overlay import SystemOverlay
+from portprotonqt.input_manager import GamepadType
 
 from portprotonqt.image_utils import load_pixmap_async, round_corners, ImageCarousel
 from portprotonqt.steam_api import get_steam_game_info_async, get_full_steam_game_info_async, get_steam_installed_games
@@ -221,6 +222,50 @@ class MainWindow(QMainWindow):
             else:
                 self.showNormal()
 
+    def get_button_icon(self, action: str, gtype: GamepadType) -> str:
+        """Get the icon name for a specific action and gamepad type."""
+        mappings = {
+            'confirm': {
+                GamepadType.XBOX: "xbox_a",
+                GamepadType.PLAYSTATION: "ps_cross",
+            },
+            'back': {
+                GamepadType.XBOX: "xbox_b",
+                GamepadType.PLAYSTATION: "ps_circle",
+            },
+            'add_game': {
+                GamepadType.XBOX: "xbox_x",
+                GamepadType.PLAYSTATION: "ps_triangle",
+            },
+            'context_menu': {
+                GamepadType.XBOX: "xbox_start",
+                GamepadType.PLAYSTATION: "ps_options",
+            },
+            'menu': {
+                GamepadType.XBOX: "xbox_view",
+                GamepadType.PLAYSTATION: "ps_share",
+            },
+        }
+        return mappings.get(action, {}).get(gtype, "placeholder")
+
+    def get_nav_icon(self, direction: str, gtype: GamepadType) -> str:
+        """Get the icon name for navigation direction and gamepad type."""
+        if direction == 'left':
+            action = 'prev_tab'
+        else:
+            action = 'next_tab'
+        mappings = {
+            'prev_tab': {
+                GamepadType.XBOX: "xbox_lb",
+                GamepadType.PLAYSTATION: "ps_l1",
+            },
+            'next_tab': {
+                GamepadType.XBOX: "xbox_rb",
+                GamepadType.PLAYSTATION: "ps_r1",
+            },
+        }
+        return mappings.get(action, {}).get(gtype, "placeholder")
+
     def createControlHintsWidget(self) -> QWidget:
         from portprotonqt.localization import _
         """Creates a widget displaying control hints for gamepad and keyboard."""
@@ -232,12 +277,12 @@ class MainWindow(QMainWindow):
         hintsLayout.setContentsMargins(10, 0, 10, 0)
         hintsLayout.setSpacing(20)
 
-        gamepad_hints = [
-            ("button_a", _("Select")),
-            ("button_b", _("Back")),
-            ("button_x", _("Add Game")),
-            ("button_start", _("Menu")),
-            ("button_select", _("Fullscreen")),
+        gamepad_actions = [
+            ("confirm", _("Select")),
+            ("back", _("Back")),
+            ("add_game", _("Add Game")),
+            ("context_menu", _("Menu")),
+            ("menu", _("Fullscreen")),
         ]
 
         keyboard_hints = [
@@ -250,7 +295,7 @@ class MainWindow(QMainWindow):
 
         self.hintsLabels = []
 
-        def makeHint(icon_name: str, action: str, visible: bool):
+        def makeHint(icon_name: str, action_text: str, is_gamepad: bool, action: str | None = None,):
             container = QWidget()
             layout = QHBoxLayout(container)
             layout.setContentsMargins(0, 0, 0, 0)
@@ -262,12 +307,12 @@ class MainWindow(QMainWindow):
             icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
             pixmap = QPixmap()
-            icon_path = self.theme_manager.get_theme_image(icon_name, self.current_theme_name)
-            if not icon_path:
-                icon_path = self.theme_manager.get_theme_image("placeholder", self.current_theme_name)
-
-            if icon_path:
-                pixmap.load(str(icon_path))
+            for candidate in (
+                self.theme_manager.get_theme_image(icon_name, self.current_theme_name),
+                self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
+            ):
+                if candidate is not None and pixmap.load(str(candidate)):
+                    break
 
             if not pixmap.isNull():
                 icon_label.setPixmap(pixmap.scaled(
@@ -279,33 +324,43 @@ class MainWindow(QMainWindow):
             layout.addWidget(icon_label)
 
             # текст действия
-            text_label = QLabel(action)
+            text_label = QLabel(action_text)
             text_label.setStyleSheet(self.theme.LAST_LAUNCH_VALUE_STYLE)
             text_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
             layout.addWidget(text_label)
 
-            container.setVisible(visible)
-            self.hintsLabels.append((container, icon_name))
+            if is_gamepad:
+                container.setVisible(False)
+                self.hintsLabels.append((container, icon_label, action))  # Store action for dynamic update
+            else:
+                container.setVisible(True)
+                self.hintsLabels.append((container, icon_label, None))  # Keyboard, no action
+
             hintsLayout.addWidget(container)
 
-        for icon, action in gamepad_hints:
-            makeHint(icon, action, visible=False)
+        # Create gamepad hints
+        for action, text in gamepad_actions:
+            makeHint("placeholder", text, True, action)  # Initial placeholder
 
-        for icon, action in keyboard_hints:
-            makeHint(icon, action, visible=True)
+        # Create keyboard hints
+        for icon, text in keyboard_hints:
+            makeHint(icon, text, False)
 
-        hintsLayout.addStretch()  # растянуть вправо
+        hintsLayout.addStretch()
         return hintsWidget
 
-
     def updateNavButtons(self, *args) -> None:
-        """Updates control hints and navigation buttons based on gamepad connection status."""
+        """Updates navigation buttons based on gamepad connection status and type."""
         is_gamepad_connected = self.input_manager.gamepad is not None
-        logger.debug("Updating control hints, gamepad connected: %s", is_gamepad_connected)
+        gtype = self.input_manager.gamepad_type
+        logger.debug("Updating nav buttons, gamepad connected: %s, type: %s", is_gamepad_connected, gtype.value)
 
         # Left navigation button
         left_pix = QPixmap()
-        left_icon_name = "button_lb" if is_gamepad_connected else "key_left"
+        if is_gamepad_connected:
+            left_icon_name = self.get_nav_icon('left', gtype)
+        else:
+            left_icon_name = "key_left"
         left_icon = self.theme_manager.get_theme_image(left_icon_name, self.current_theme_name)
         if left_icon:
             left_pix.load(str(left_icon))
@@ -315,11 +370,14 @@ class MainWindow(QMainWindow):
                 Qt.AspectRatioMode.KeepAspectRatio,
                 Qt.TransformationMode.SmoothTransformation
             ))
-        self.leftNavButton.setVisible(is_gamepad_connected or not is_gamepad_connected)
+        self.leftNavButton.setVisible(True)  # Always visible, icon changes
 
         # Right navigation button
         right_pix = QPixmap()
-        right_icon_name = "button_rb" if is_gamepad_connected else "key_right"
+        if is_gamepad_connected:
+            right_icon_name = self.get_nav_icon('right', gtype)
+        else:
+            right_icon_name = "key_right"
         right_icon = self.theme_manager.get_theme_image(right_icon_name, self.current_theme_name)
         if right_icon:
             right_pix.load(str(right_icon))
@@ -329,17 +387,41 @@ class MainWindow(QMainWindow):
                 Qt.AspectRatioMode.KeepAspectRatio,
                 Qt.TransformationMode.SmoothTransformation
             ))
-        self.rightNavButton.setVisible(is_gamepad_connected or not is_gamepad_connected)
+        self.rightNavButton.setVisible(True)  # Always visible, icon changes
 
     def updateControlHints(self, *args) -> None:
-        """Updates control hints and navigation buttons based on gamepad connection status."""
+        """Updates control hints based on gamepad connection status and type."""
         is_gamepad_connected = self.input_manager.gamepad is not None
-        logger.debug("Updating control hints, gamepad connected: %s", is_gamepad_connected)
+        gtype = self.input_manager.gamepad_type
+        logger.debug("Updating control hints, gamepad connected: %s, type: %s", is_gamepad_connected, gtype.value)
 
-        for container, icon_name in self.hintsLabels:
-            if icon_name.startswith("button_"):  # геймпад
-                container.setVisible(is_gamepad_connected)
-            else:  # клавиатура
+        gamepad_actions = ['confirm', 'back', 'add_game', 'context_menu', 'menu']
+
+        for container, icon_label, action in self.hintsLabels:
+            if action in gamepad_actions:  # Gamepad hint
+                if is_gamepad_connected:
+                    container.setVisible(True)
+                    # Update icon based on type
+                    icon_name = self.get_button_icon(action, gtype)
+                    icon_path = self.theme_manager.get_theme_image(icon_name, self.current_theme_name)
+                    pixmap = QPixmap()
+                    if icon_path:
+                        pixmap.load(str(icon_path))
+                    if not pixmap.isNull():
+                        icon_label.setPixmap(pixmap.scaled(
+                            32, 32,
+                            Qt.AspectRatioMode.KeepAspectRatio,
+                            Qt.TransformationMode.SmoothTransformation
+                        ))
+                    else:
+                        # Fallback to placeholder
+                        placeholder = self.theme_manager.get_theme_image("placeholder", self.current_theme_name)
+                        if placeholder:
+                            pixmap.load(str(placeholder))
+                            icon_label.setPixmap(pixmap.scaled(32, 32, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+                else:
+                    container.setVisible(False)
+            else:  # Keyboard hint
                 container.setVisible(not is_gamepad_connected)
 
         # Update navigation buttons
