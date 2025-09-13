@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-08-31 12:28+0500\n"
-"PO-Revision-Date: 2025-08-31 12:28+0500\n"
+"POT-Creation-Date: 2025-09-13 11:51+0500\n"
+"PO-Revision-Date: 2025-09-13 11:47+0500\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
@@ -367,6 +367,13 @@ msgstr "Настройки PortProton"
 msgid "Themes"
 msgstr "Темы"
 
+msgid "Back"
+msgstr "Назад"
+
+#, fuzzy
+msgid "Fullscreen"
+msgstr "Полный экран"
+
 msgid "Loading Steam games..."
 msgstr "Загрузка игр из Steam..."
 
@@ -557,9 +564,6 @@ msgstr "Тема '{0}' применена успешно"
 #, python-brace-format
 msgid "Error applying theme '{0}'"
 msgstr "Ошибка при применение темы '{0}'"
-
-msgid "Back"
-msgstr "Назад"
 
 msgid "LAST LAUNCH"
 msgstr "Последний запуск"
