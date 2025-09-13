@@ -242,7 +242,7 @@ class MainWindow(QMainWindow):
 
         keyboard_hints = [
             ("key_enter", _("Select")),
-            ("key_esc", _("Back")),
+            ("key_backspace", _("Back")),
             ("key_e", _("Add Game")),
             ("key_context", _("Menu")),
             ("key_f11", _("Fullscreen")),
