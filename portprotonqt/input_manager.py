@@ -448,12 +448,12 @@ class InputManager(QObject):
         try:
 
             app = QApplication.instance()
-            if not app or not self._parent.isActiveWindow():
-                return
             active = QApplication.activeWindow()
             focused = QApplication.focusWidget()
             popup = QApplication.activePopupWidget()
             modal_dialog = QApplication.activeModalWidget()
+            if not app or not active:
+                return
 
             # Handle Guide button to open system overlay
             if button_code in BUTTONS['guide']:
@@ -1138,7 +1138,8 @@ class InputManager(QObject):
 
                 # Проверка фокуса: игнорируем события, если окно не в фокусе
                 app = QApplication.instance()
-                if not app or not self._parent.isActiveWindow():
+                active = QApplication.activeWindow()
+                if not app or not active:
                     continue
 
                 if event.type == ecodes.EV_KEY and event.value == 1:
