@@ -600,11 +600,11 @@ class InputManager(QObject):
         try:
 
             app = QApplication.instance()
-            if not app or not self._parent.isActiveWindow():
-                return
             active = QApplication.activeWindow()
             focused = QApplication.focusWidget()
             popup = QApplication.activePopupWidget()
+            if not app or not active:
+                return
 
             # Update D-pad state
             if value != 0:
