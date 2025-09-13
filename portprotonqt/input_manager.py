@@ -32,6 +32,8 @@ class MainWindowProtocol(Protocol):
         ...
     def on_slider_released(self) -> None:
         ...
+    def isActiveWindow(self) -> bool:
+        ...
     stackedWidget: QStackedWidget
     tabButtons: dict[int, QWidget]
     gamesListWidget: QWidget
@@ -444,12 +446,9 @@ class InputManager(QObject):
         if not self._gamepad_handling_enabled:
             return
         try:
-            # Ignore gamepad events if a game is launched
-            if getattr(self._parent, '_gameLaunched', False):
-                return
 
             app = QApplication.instance()
-            if not app:
+            if not app or not self._parent.isActiveWindow():
                 return
             active = QApplication.activeWindow()
             focused = QApplication.focusWidget()
@@ -599,12 +598,9 @@ class InputManager(QObject):
         if not self._gamepad_handling_enabled:
             return
         try:
-            # Ignore gamepad events if a game is launched
-            if getattr(self._parent, '_gameLaunched', False):
-                return
 
             app = QApplication.instance()
-            if not app:
+            if not app or not self._parent.isActiveWindow():
                 return
             active = QApplication.activeWindow()
             focused = QApplication.focusWidget()
@@ -1125,11 +1121,15 @@ class InputManager(QObject):
                 if event.type not in (ecodes.EV_KEY, ecodes.EV_ABS):
                     continue
                 now = time.time()
+
+                # Проверка фокуса: игнорируем события, если окно не в фокусе
+                app = QApplication.instance()
+                if not app or not self._parent.isActiveWindow():
+                    continue
+
                 if event.type == ecodes.EV_KEY and event.value == 1:
                     if event.code in BUTTONS['menu'] and not self._is_gamescope_session:
-                        # Проверяем, не запущена ли игра
-                        if not getattr(self._parent, '_gameLaunched', False):
-                            self.toggle_fullscreen.emit(not self._is_fullscreen)
+                        self.toggle_fullscreen.emit(not self._is_fullscreen)
                     else:
                         self.button_pressed.emit(event.code)
                 elif event.type == ecodes.EV_ABS:
