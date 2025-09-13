@@ -55,8 +55,8 @@ BUTTONS = {
     'context_menu':  {ecodes.BTN_START},           # Start (Xbox) / Options (PS) / + (Switch)
     'menu':          {ecodes.BTN_SELECT},          # Select (Xbox) / Share (PS) / - (Switch)
     'guide':         {ecodes.BTN_MODE},            # Xbox Button / PS Button / Home (Switch)
-    'increase_size': {ecodes.BTN_TR2},             # RT (Xbox) / R2 (PS) / ZR (Switch)
-    'decrease_size': {ecodes.BTN_TL2},             # LT (Xbox) / L2 (PS) / ZL (Switch)
+    'increase_size': {ecodes.ABS_RZ},              # RT (Xbox) / R2 (PS) / ZR (Switch)
+    'decrease_size': {ecodes.ABS_Z},               # LT (Xbox) / L2 (PS) / ZL (Switch)
 }
 
 class GamepadType(Enum):
