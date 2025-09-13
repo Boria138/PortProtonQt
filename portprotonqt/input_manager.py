@@ -7,7 +7,7 @@ from enum import Enum
 from pyudev import Context, Monitor, MonitorObserver, Device
 from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea, QLineEdit, QDialog, QMenu, QComboBox, QListView, QMessageBox, QListWidget
 from PySide6.QtCore import Qt, QObject, QEvent, QPoint, Signal, Slot, QTimer
-from PySide6.QtGui import QKeyEvent
+from PySide6.QtGui import QKeyEvent, QMouseEvent
 from portprotonqt.logger import get_logger
 from portprotonqt.image_utils import FullscreenDialog
 from portprotonqt.custom_widgets import NavLabel, AutoSizeButton
@@ -840,6 +840,20 @@ class InputManager(QObject):
         app = QApplication.instance()
         if not app:
             return super().eventFilter(obj, event)
+
+        if event.type() == QEvent.Type.MouseButtonPress:
+            mouse_event = cast(QMouseEvent, event)
+            if mouse_event.button() == Qt.MouseButton.ExtraButton1:
+                # Handle ExtraButton1 as "back" action, similar to Escape
+                active_win = QApplication.activeWindow()
+                focused = QApplication.focusWidget()
+                if isinstance(focused, QLineEdit):
+                    return False  # Skip if in QLineEdit
+                if isinstance(active_win, QDialog):
+                    active_win.reject()
+                    return True
+                self._parent.goBackDetailPage(self._parent.currentDetailPage)
+                return True
 
         # Ensure obj is a QObject
         if not isinstance(obj, QObject):
