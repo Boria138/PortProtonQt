@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/theme_logo.svg" width="64">
+  <img src="build-aux/share/icons/hicolor/scalable/apps/ru.linux_gaming.PortProtonQt.svg" width="64">
   <h1 align="center">PortProtonQt</h1>
   <p align="center">Удобный графический интерфейс для управления и запуска игр из PortProton, Steam и Epic Games Store. Оно объединяет библиотеки игр в единый центр для лёгкой навигации и организации. Лёгкая структура и кроссплатформенная поддержка обеспечивают цельный игровой опыт без необходимости использования нескольких лаунчеров. Интеграция с PortProton упрощает запуск Windows-игр на Linux с минимальной настройкой.</p>
 </div>
