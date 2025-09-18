@@ -4,7 +4,6 @@ import glob
 import shutil
 import subprocess
 import threading
-import logging
 import orjson
 import psutil
 import signal
@@ -17,8 +16,9 @@ from portprotonqt.steam_api import is_game_in_steam, add_to_steam, remove_from_s
 from portprotonqt.egs_api import add_egs_to_steam, get_egs_executable, remove_egs_from_steam
 from portprotonqt.dialogs import AddGameDialog, FileExplorer, generate_thumbnail
 from portprotonqt.theme_manager import ThemeManager
+from portprotonqt.logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class ContextMenuSignals(QObject):
     """Signals for thread-safe UI updates from worker threads."""

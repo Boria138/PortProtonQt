@@ -6,7 +6,6 @@ from portprotonqt.logger import get_logger
 from portprotonqt.config_utils import read_theme_from_config
 from portprotonqt.theme_manager import ThemeManager
 
-
 logger = get_logger(__name__)
 
 class SafeOpacityEffect(QGraphicsOpacityEffect):
@@ -210,7 +209,7 @@ class GameCardAnimations:
 
     def paint_border(self, painter: QPainter):
         if not painter.isActive():
-            logger.warning("Painter is not active; skipping border paint")
+            logger.debug("Painter is not active; skipping border paint")
             return
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         pen = QPen()
@@ -259,7 +258,7 @@ class DetailPageAnimations:
                 try:
                     detail_page.setGraphicsEffect(original_effect) # type: ignore
                 except RuntimeError:
-                    logger.debug("Original effect already deleted")
+                    logger.warning("Original effect already deleted")
             animation.finished.connect(restore_effect)
             animation.finished.connect(load_image_and_restore_effect)
             animation.finished.connect(opacity_effect.deleteLater)
@@ -318,7 +317,7 @@ class DetailPageAnimations:
                     if isinstance(animation, QAbstractAnimation) and animation.state() == QAbstractAnimation.State.Running:
                         animation.stop()
                 except RuntimeError:
-                    logger.debug("Animation already deleted for page")
+                    logger.warning("Animation already deleted for page")
                 except Exception as e:
                     logger.error(f"Error stopping existing animation: {e}", exc_info=True)
                 finally:

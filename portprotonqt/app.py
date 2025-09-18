@@ -26,7 +26,7 @@ def main():
     if qt_translator.load(system_locale, "qtbase", "_", translations_path):
         app.installTranslator(qt_translator)
     else:
-        logger.error(f"Qt translations for {system_locale.name()} not found in {translations_path}")
+        logger.warning(f"Qt translations for {system_locale.name()} not found in {translations_path}, using english language")
 
     args = parse_args()
 
