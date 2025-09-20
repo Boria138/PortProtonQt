@@ -62,7 +62,7 @@ class ContextMenuManager:
                 self.parent.statusBar().showMessage,
                 Qt.ConnectionType.QueuedConnection
             )
-            logger.debug("Connected show_status_message signal to statusBar")
+            logger.debug("Connected show_status_message signal to status bar")
         self.signals.show_warning_dialog.connect(
             self._show_warning_dialog,
             Qt.ConnectionType.QueuedConnection
@@ -74,28 +74,28 @@ class ContextMenuManager:
 
     def _show_warning_dialog(self, title: str, message: str):
         """Show a warning dialog in the main thread."""
-        logger.debug("Showing warning dialog: %s - %s", title, message)
+        logger.debug("Displaying warning dialog: %s - %s", title, message)
         QMessageBox.warning(self.parent, title, message)
 
     def _show_info_dialog(self, title: str, message: str):
         """Show an info dialog in the main thread."""
-        logger.debug("Showing info dialog: %s - %s", title, message)
+        logger.debug("Displaying info dialog: %s - %s", title, message)
         QMessageBox.information(self.parent, title, message)
 
     def _show_status_message(self, message: str, timeout: int = 3000):
         """Show a status message on the status bar if available."""
         if self.parent.statusBar():
             self.parent.statusBar().showMessage(message, timeout)
-            logger.debug("Direct status message: %s", message)
+            logger.debug("Displayed status message: %s", message)
         else:
-            logger.warning("Status bar not available for message: %s", message)
+            logger.warning("Status bar unavailable for message: %s", message)
 
     def _check_portproton(self):
         """Check if PortProton is available."""
         if self.portproton_location is None:
             self.signals.show_warning_dialog.emit(
                 _("Error"),
-                _("PortProton is not found")
+                _("PortProton directory not found")
             )
             return False
         return True
@@ -119,7 +119,7 @@ class ContextMenuManager:
                 installed_games = orjson.loads(f.read())
             return app_name in installed_games
         except (OSError, orjson.JSONDecodeError) as e:
-            logger.error("Failed to read installed.json: %s", e)
+            logger.error("Error reading installed.json: %s", e)
             return False
 
     def _is_game_running(self, game_card) -> bool:
@@ -155,7 +155,7 @@ class ContextMenuManager:
         try:
             item = file_explorer.file_list.itemAt(pos)
             if not item:
-                logger.debug("No item selected at position %s", pos)
+                logger.debug("No folder selected at position %s", pos)
                 return
             selected = item.text()
             if not selected.endswith("/"):
@@ -202,7 +202,7 @@ class ContextMenuManager:
             global_pos = file_explorer.file_list.mapToGlobal(pos)
             menu.exec(global_pos)
         except Exception as e:
-            logger.error("Error showing folder context menu: %s", e)
+            logger.error("Error displaying folder context menu: %s", e)
 
     def toggle_favorite_folder(self, file_explorer, folder_path, add):
         """Adds or removes a folder from favorites."""
@@ -211,12 +211,12 @@ class ContextMenuManager:
             if folder_path not in favorite_folders:
                 favorite_folders.append(folder_path)
                 save_favorite_folders(favorite_folders)
-                logger.info(f"Folder added to favorites: {folder_path}")
+                logger.info("Added folder to favorites: %s", folder_path)
         else:
             if folder_path in favorite_folders:
                 favorite_folders.remove(folder_path)
                 save_favorite_folders(favorite_folders)
-                logger.info(f"Folder removed from favorites: {folder_path}")
+                logger.info("Removed folder from favorites: %s", folder_path)
         file_explorer.update_drives_list()
 
     def _get_safe_icon(self, icon_name: str) -> QIcon:
@@ -607,10 +607,10 @@ class ContextMenuManager:
         exe_path = get_egs_executable(app_name, self.legendary_config_path)
         if exe_path and os.path.exists(exe_path):
             if not generate_thumbnail(exe_path, icon_path, size=128):
-                logger.error(f"Failed to generate thumbnail from exe: {exe_path}")
+                logger.error("Failed to generate thumbnail for EGS game: %s", exe_path)
                 icon_path = ""
         else:
-            logger.error(f"No executable found for EGS game: {app_name}")
+            logger.error("No executable found for EGS game: %s", app_name)
             icon_path = ""
 
         egs_desktop_dir = os.path.join(self.portproton_location, "egs_desktops")
@@ -750,7 +750,7 @@ Icon={icon_path}
                     if not exec_line:
                         self.signals.show_warning_dialog.emit(
                             _("Error"),
-                            _("No executable command in .desktop file for '{game_name}'").format(game_name=game_name)
+                            _("No executable command found in .desktop file for '{game_name}'").format(game_name=game_name)
                         )
                         return None
                 else:
@@ -762,7 +762,7 @@ Icon={icon_path}
             except Exception as e:
                 self.signals.show_warning_dialog.emit(
                     _("Error"),
-                    _("Failed to read .desktop file: {error}").format(error=str(e))
+                    _("Error reading .desktop file: {error}").format(error=str(e))
                 )
                 return None
         else:
@@ -784,7 +784,7 @@ Icon={icon_path}
         try:
             entry_exec_split = shlex.split(exec_line)
             if not entry_exec_split:
-                logger.debug("Invalid executable command for '%s': %s", game_name, exec_line)
+                logger.debug("Invalid executable command for game '%s': %s", game_name, exec_line)
                 return None
             if entry_exec_split[0] == "env" and len(entry_exec_split) >= 3:
                 exe_path = entry_exec_split[2]
@@ -793,11 +793,11 @@ Icon={icon_path}
             else:
                 exe_path = entry_exec_split[-1]
             if not exe_path or not os.path.exists(exe_path):
-                logger.debug("Executable not found for '%s': %s", game_name, exe_path or "None")
+                logger.debug("Executable not found for game '%s': %s", game_name, exe_path or "None")
                 return None
             return exe_path
         except Exception as e:
-            logger.debug("Failed to parse executable for '%s': %s", game_name, e)
+            logger.debug("Error parsing executable for game '%s': %s", game_name, e)
             return None
 
     def _remove_file(self, file_path, error_message, success_message, game_name, location=""):
@@ -936,7 +936,7 @@ Icon={icon_path}
         icon_path = os.path.join(self.portproton_location, "data", "img", f"{game_name}.png")
         if not os.path.exists(icon_path):
             if not generate_thumbnail(exe_path, icon_path, size=128):
-                logger.error(f"Failed to generate thumbnail for {exe_path}")
+                logger.error("Failed to generate thumbnail for game: %s", exe_path)
 
         desktop_dir = subprocess.check_output(['xdg-user-dir', 'DESKTOP']).decode('utf-8').strip()
         os.makedirs(desktop_dir, exist_ok=True)
@@ -1072,7 +1072,7 @@ Icon={icon_path}
         exe_path = self._parse_exe_path(exec_line, game_name)
         if not exe_path:
             return
-        logger.debug("Adding '%s' to Steam", game_name)
+        logger.debug("Adding game '%s' to Steam", game_name)
         try:
             success, message = add_to_steam(game_name, exec_line, cover_path)
             self.signals.show_info_dialog.emit(
@@ -1115,7 +1115,7 @@ Icon={icon_path}
             exe_path = self._parse_exe_path(exec_line, game_name)
             if not exe_path:
                 return
-            logger.debug("Removing non-EGS game '%s' from Steam", game_name)
+            logger.debug("Removing game '%s' from Steam", game_name)
             try:
                 success, message = remove_from_steam(game_name, exec_line)
                 self.signals.show_info_dialog.emit(

@@ -5,29 +5,29 @@ from PySide6.QtGui import QFont, QFontMetrics, QPainter
 
 def compute_layout(nat_sizes, rect_width, spacing, max_scale):
     """
-    Вычисляет расположение элементов с учетом отступов и возможного увеличения карточек.
-    nat_sizes: массив (N, 2) с натуральными размерами элементов (ширина, высота).
-    rect_width: доступная ширина контейнера.
-    spacing: отступ между элементами (горизонтальный и вертикальный).
-    max_scale: максимальный коэффициент масштабирования (например, 1.0).
+    Computes the layout of elements considering spacing and potential scaling of cards.
+    nat_sizes: Array (N, 2) with natural sizes of elements (width, height).
+    rect_width: Available container width.
+    spacing: Spacing between elements (horizontal and vertical).
+    max_scale: Maximum scaling factor (e.g., 1.0).
 
-    Возвращает:
-      result: массив (N, 4), где каждая строка содержит [x, y, new_width, new_height].
-      total_height: итоговая высота всех рядов.
+    Returns:
+      result: Array (N, 4), where each row contains [x, y, new_width, new_height].
+      total_height: Total height of all rows.
     """
     N = nat_sizes.shape[0]
     result = np.zeros((N, 4), dtype=np.int32)
     y = 0
     i = 0
-    min_margin = 20  # Минимальный отступ по краям
+    min_margin = 20  # Minimum margin on edges
 
-    # Определяем максимальное количество элементов в ряду и общий масштаб
+    # Determine the maximum number of items per row and overall scale
     max_items_per_row = 0
     global_scale = 1.0
-    max_row_x_start = min_margin  # Начальная позиция x самого длинного ряда
+    max_row_x_start = min_margin  # Starting x position of the widest row
     temp_i = 0
 
-    # Первый проход: находим максимальное количество элементов в ряду
+    # First pass: Find the maximum number of items in a row
     while temp_i < N:
         sum_width = 0
         count = 0
@@ -42,23 +42,23 @@ def compute_layout(nat_sizes, rect_width, spacing, max_scale):
 
         if count > max_items_per_row:
             max_items_per_row = count
-            # Вычисляем масштаб для самого заполненного ряда
+            # Calculate scale for the most populated row
             available_width = rect_width - spacing * (count - 1) - 2 * min_margin
             desired_scale = available_width / sum_width if sum_width > 0 else 1.0
             global_scale = desired_scale if desired_scale < max_scale else max_scale
-            # Сохраняем начальную позицию x для самого длинного ряда
+            # Store starting x position for the widest row
             scaled_row_width = int(sum_width * global_scale) + spacing * (count - 1)
             max_row_x_start = max(min_margin, (rect_width - scaled_row_width) // 2)
         temp_i = temp_j
 
-    # Второй проход: размещаем элементы
+    # Second pass: Place elements
     while i < N:
         sum_width = 0
         row_max_height = 0
         count = 0
         j = i
 
-        # Подбираем количество элементов для текущего ряда
+        # Determine the number of items for the current row
         while j < N:
             w = nat_sizes[j, 0]
             if count > 0 and (sum_width + spacing + w) > rect_width - 2 * min_margin:
@@ -70,16 +70,16 @@ def compute_layout(nat_sizes, rect_width, spacing, max_scale):
                 row_max_height = h
             j += 1
 
-        # Используем глобальный масштаб для всех рядов
+        # Use global scale for all rows
         scale = global_scale
         scaled_row_width = int(sum_width * scale) + spacing * (count - 1)
 
-        # Определяем начальную координату x
+        # Determine starting x coordinate
         if count == max_items_per_row:
-            # Центрируем полный ряд
+            # Center the full row
             x = max(min_margin, (rect_width - scaled_row_width) // 2)
         else:
-            # Выравниваем неполный ряд по левому краю, совмещая с началом самого длинного ряда
+            # Align incomplete row to the left, matching the widest row's start
             x = max_row_x_start
 
         for k in range(i, j):
@@ -99,9 +99,9 @@ class FlowLayout(QLayout):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.itemList = []
-        self.setContentsMargins(20, 20, 20, 20)  # Отступы по краям
-        self._spacing = 20  # Отступ для анимации и предотвращения перекрытий
-        self._max_scale = 1.0  # Отключено масштабирование в layout
+        self.setContentsMargins(20, 20, 20, 20)  # Margins around the layout
+        self._spacing = 20  # Spacing for animation and overlap prevention
+        self._max_scale = 1.0  # Scaling disabled in layout
 
     def addItem(self, item: QLayoutItem) -> None:
         self.itemList.append(item)

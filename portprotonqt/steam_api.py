@@ -45,14 +45,14 @@ def safe_vdf_load(path: str | Path) -> dict:
 
 def decode_text(text: str) -> str:
     """
-    Декодирует HTML-сущности в строке.
-    Например, "&amp;quot;" преобразуется в '"'.
-    Остальные символы и HTML-теги остаются без изменений.
+    Decodes HTML entities in a string.
+    For example, "&amp;quot;" is converted to '"'.
+    Other characters and HTML tags remain unchanged.
     """
     return html.unescape(text)
 
 def get_cache_dir():
-    """Возвращает путь к каталогу кэша, создаёт его при необходимости."""
+    """Returns the path to the cache directory, creating it if necessary."""
     xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
     cache_dir = os.path.join(xdg_cache_home, "PortProtonQt")
     os.makedirs(cache_dir, exist_ok=True)
@@ -65,7 +65,7 @@ STEAM_DATA_DIRS = (
 )
 
 def get_steam_home():
-    """Возвращает путь к директории Steam, используя список возможных директорий."""
+    """Returns the path to the Steam directory using a list of possible directories."""
     for dir_path in STEAM_DATA_DIRS:
         expanded_path = Path(os.path.expanduser(dir_path))
         if expanded_path.exists():
@@ -73,7 +73,7 @@ def get_steam_home():
     return None
 
 def get_last_steam_user(steam_home: Path) -> dict | None:
-    """Возвращает данные последнего пользователя Steam из loginusers.vdf."""
+    """Returns data for the last Steam user from loginusers.vdf."""
     loginusers_path = steam_home / "config/loginusers.vdf"
     data = safe_vdf_load(loginusers_path)
     if not data:
@@ -84,20 +84,20 @@ def get_last_steam_user(steam_home: Path) -> dict | None:
             try:
                 return {'SteamID': int(user_id)}
             except ValueError:
-                logger.error(f"Неверный формат SteamID: {user_id}")
+                logger.error(f"Invalid SteamID format: {user_id}")
                 return None
-    logger.info("Не найден пользователь с MostRecent=1")
+    logger.info("No user found with MostRecent=1")
     return None
 
 def convert_steam_id(steam_id: int) -> int:
     """
-    Преобразует знаковое 32-битное целое число в беззнаковое 32-битное целое число.
-    Использует побитовое И с 0xFFFFFFFF, что корректно обрабатывает отрицательные значения.
+    Converts a signed 32-bit integer to an unsigned 32-bit integer.
+    Uses bitwise AND with 0xFFFFFFFF to correctly handle negative values.
     """
     return steam_id & 0xFFFFFFFF
 
 def get_steam_libs(steam_dir: Path) -> set[Path]:
-    """Возвращает набор директорий Steam libraryfolders."""
+    """Returns a set of Steam library folders."""
     libs = set()
     libs_vdf = steam_dir / "steamapps/libraryfolders.vdf"
     data = safe_vdf_load(libs_vdf)
@@ -113,7 +113,7 @@ def get_steam_libs(steam_dir: Path) -> set[Path]:
     return libs
 
 def get_playtime_data(steam_home: Path | None = None) -> dict[int, tuple[int, int]]:
-    """Возвращает данные о времени игры для последнего пользователя."""
+    """Returns playtime data for the last user."""
     play_data: dict[int, tuple[int, int]] = {}
     if steam_home is None:
         steam_home = get_steam_home()
@@ -133,14 +133,14 @@ def get_playtime_data(steam_home: Path | None = None) -> dict[int, tuple[int, in
         return play_data
 
     if not last_user:
-        logger.info("Не удалось определить последнего пользователя Steam")
+        logger.info("Could not identify the last Steam user")
         return play_data
 
     user_id = last_user['SteamID']
     unsigned_id = convert_steam_id(user_id)
     user_dir = userdata_dir / str(unsigned_id)
     if not user_dir.exists():
-        logger.info(f"Директория пользователя {unsigned_id} не найдена")
+        logger.info(f"User directory {unsigned_id} not found")
         return play_data
 
     localconfig = user_dir / "config/localconfig.vdf"
@@ -154,11 +154,11 @@ def get_playtime_data(steam_home: Path | None = None) -> dict[int, tuple[int, in
             playtime = int(info.get('Playtime', 0))
             play_data[appid] = (last_played, playtime)
         except ValueError:
-            logger.warning(f"Некорректные данные playtime для app {appid_str}")
+            logger.warning(f"Invalid playtime data for app {appid_str}")
     return play_data
 
 def get_steam_installed_games() -> list[tuple[str, int, int, int]]:
-    """Возвращает список установленных Steam игр в формате (name, appid, last_played, playtime_sec)."""
+    """Returns a list of installed Steam games in the format (name, appid, last_played, playtime_sec)."""
     games: list[tuple[str, int, int, int]] = []
     steam_home = get_steam_home()
     if steam_home is None or not steam_home.exists():
@@ -187,13 +187,13 @@ def get_steam_installed_games() -> list[tuple[str, int, int, int]]:
 
 def normalize_name(s):
     """
-    Приведение строки к нормальному виду:
-      - перевод в нижний регистр,
-      - удаление символов ™ и ®,
-      - замена разделителей (-, :, ,) на пробел,
-      - удаление лишних пробелов,
-      - удаление суффиксов 'bin' или 'app' в конце строки,
-      - удаление ключевых слов типа 'ultimate', 'edition' и т.п.
+    Normalizes a string by:
+      - converting to lowercase,
+      - removing ™ and ® symbols,
+      - replacing separators (-, :, ,) with spaces,
+      - removing extra spaces,
+      - removing 'bin' or 'app' suffixes,
+      - removing keywords like 'ultimate', 'edition', etc.
     """
     s = s.lower()
     for ch in ["™", "®"]:
@@ -211,12 +211,12 @@ def normalize_name(s):
 
 def is_valid_candidate(candidate):
     """
-    Проверяет, содержит ли кандидат запрещённые подстроки:
+    Checks if a candidate contains forbidden substrings:
       - win32
       - win64
       - gamelauncher
-    Для проверки дополнительно используется строка без пробелов.
-    Возвращает True, если кандидат допустим, иначе False.
+    Additionally checks the string without spaces.
+    Returns True if the candidate is valid, otherwise False.
     """
     normalized_candidate = normalize_name(candidate)
     normalized_no_space = normalized_candidate.replace(" ", "")
@@ -228,7 +228,7 @@ def is_valid_candidate(candidate):
 
 def filter_candidates(candidates):
     """
-    Фильтрует список кандидатов, отбрасывая недопустимые.
+    Filters a list of candidates, discarding invalid ones.
     """
     valid = []
     dropped = []
@@ -238,18 +238,18 @@ def filter_candidates(candidates):
         else:
             dropped.append(cand)
     if dropped:
-        logger.info("Отбрасываю кандидатов: %s", dropped)
+        logger.info("Discarding candidates: %s", dropped)
     return valid
 
 def remove_duplicates(candidates):
     """
-    Удаляет дубликаты из списка, сохраняя порядок.
+    Removes duplicates from a list while preserving order.
     """
     return list(dict.fromkeys(candidates))
 
 @functools.lru_cache(maxsize=256)
 def get_exiftool_data(game_exe):
-    """Получает метаданные через exiftool"""
+    """Retrieves metadata using exiftool."""
     try:
         proc = subprocess.run(
             ["exiftool", "-j", game_exe],
@@ -258,12 +258,12 @@ def get_exiftool_data(game_exe):
             check=False
         )
         if proc.returncode != 0:
-            logger.error(f"exiftool error for {game_exe}: {proc.stderr.strip()}")
+            logger.error(f"exiftool failed for {game_exe}: {proc.stderr.strip()}")
             return {}
         meta_data_list = orjson.loads(proc.stdout.encode("utf-8"))
         return meta_data_list[0] if meta_data_list else {}
     except Exception as e:
-        logger.error(f"An unexpected error occurred in get_exiftool_data for {game_exe}: {e}")
+        logger.error(f"Unexpected error in get_exiftool_data for {game_exe}: {e}")
         return {}
 
 def delete_cached_app_files(cache_dir: str, pattern: str):
@@ -305,14 +305,14 @@ def load_steam_apps_async(callback: Callable[[list], None]):
                 f.write(orjson.dumps(data))
             if os.path.exists(cache_tar):
                 os.remove(cache_tar)
-                logger.info("Archive %s deleted after extraction", cache_tar)
+                logger.info("Deleted archive: %s", cache_tar)
             # Delete all cached app detail files (steam_app_*.json)
             delete_cached_app_files(cache_dir, "steam_app_*.json")
             steam_apps = data if isinstance(data, list) else []
             logger.info("Loaded %d apps from archive", len(steam_apps))
             callback(steam_apps)
         except Exception as e:
-            logger.error("Error extracting Steam apps archive: %s", e)
+            logger.error("Failed to extract Steam apps archive: %s", e)
             callback([])
 
     if os.path.exists(cache_json) and (time.time() - os.path.getmtime(cache_json) < CACHE_DURATION):
@@ -322,18 +322,18 @@ def load_steam_apps_async(callback: Callable[[list], None]):
                 data = orjson.loads(f.read())
             # Validate JSON structure
             if not isinstance(data, list):
-                logger.error("Cached JSON %s has invalid format (not a list), re-downloading", cache_json)
+                logger.error("Invalid JSON format in %s (not a list), re-downloading", cache_json)
                 raise ValueError("Invalid JSON structure")
             # Validate each app entry
             for app in data:
                 if not isinstance(app, dict) or "appid" not in app or "normalized_name" not in app:
-                    logger.error("Cached JSON %s contains invalid app entry, re-downloading", cache_json)
+                    logger.error("Invalid app entry in cached JSON %s, re-downloading", cache_json)
                     raise ValueError("Invalid app entry structure")
             steam_apps = data
             logger.info("Loaded %d apps from cache", len(steam_apps))
             callback(steam_apps)
         except Exception as e:
-            logger.error("Error reading or validating cached JSON %s: %s", cache_json, e)
+            logger.error("Failed to read or validate cached JSON %s: %s", cache_json, e)
             # Attempt to re-download if cache is invalid or corrupted
             app_list_url = (
                 "https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/data/games_appid.tar.xz"
@@ -351,12 +351,12 @@ def load_steam_apps_async(callback: Callable[[list], None]):
 
 def build_index(steam_apps):
     """
-    Строит индекс приложений по полю normalized_name.
+    Builds an index of applications by normalized_name field.
     """
     steam_apps_index = {}
     if not steam_apps:
         return steam_apps_index
-    logger.info("Построение индекса Steam приложений:")
+    logger.info("Building Steam apps index")
     for app in steam_apps:
         normalized = app["normalized_name"]
         steam_apps_index[normalized] = app
@@ -364,25 +364,24 @@ def build_index(steam_apps):
 
 def search_app(candidate, steam_apps_index):
     """
-    Ищет приложение по кандидату: сначала пытается точное совпадение, затем ищет подстроку.
+    Searches for an application by candidate: tries exact match first, then substring match.
     """
     candidate_norm = normalize_name(candidate)
-    logger.info("Поиск приложения для кандидата: '%s' -> '%s'", candidate, candidate_norm)
+    logger.info("Searching for app with candidate: '%s' -> '%s'", candidate, candidate_norm)
     if candidate_norm in steam_apps_index:
-        logger.info("    Найдено точное совпадение: '%s'", candidate_norm)
+        logger.info("Found exact match: '%s'", candidate_norm)
         return steam_apps_index[candidate_norm]
     for name_norm, app in steam_apps_index.items():
         if candidate_norm in name_norm:
             ratio = len(candidate_norm) / len(name_norm)
             if ratio > 0.8:
-                logger.info("    Найдено частичное совпадение: кандидат '%s' в '%s' (ratio: %.2f)",
-                            candidate_norm, name_norm, ratio)
+                logger.info("Found partial match: candidate '%s' in '%s' (ratio: %.2f)", candidate_norm, name_norm, ratio)
                 return app
-    logger.info("    Приложение для кандидата '%s' не найдено", candidate_norm)
+    logger.info("No app found for candidate '%s'", candidate_norm)
     return None
 
 def load_app_details(app_id):
-    """Загружает кэшированные данные для игры по appid, если они не устарели."""
+    """Loads cached game data by appid if not outdated."""
     cache_dir = get_cache_dir()
     cache_file = os.path.join(cache_dir, f"steam_app_{app_id}.json")
     if os.path.exists(cache_file):
@@ -392,7 +391,7 @@ def load_app_details(app_id):
     return None
 
 def save_app_details(app_id, data):
-    """Сохраняет данные по appid в файл кэша."""
+    """Saves appid data to a cache file."""
     cache_dir = get_cache_dir()
     cache_file = os.path.join(cache_dir, f"steam_app_{app_id}.json")
     with open(cache_file, "wb") as f:
@@ -435,7 +434,7 @@ def fetch_app_info_async(app_id: int, callback: Callable[[dict | None], None]):
             save_app_details(app_id, app_data)
             callback(app_data)
         except Exception as e:
-            logger.error("Error processing Steam app info for appid %s: %s", app_id, e)
+            logger.error("Failed to process Steam app info for appid %s: %s", app_id, e)
             callback(None)
 
     downloader.download_async(url, cache_file, timeout=5, callback=process_response)
@@ -470,12 +469,12 @@ def load_weanticheatyet_data_async(callback: Callable[[list], None]):
                 f.write(orjson.dumps(data))
             if os.path.exists(cache_tar):
                 os.remove(cache_tar)
-                logger.info("Archive %s deleted after extraction", cache_tar)
+                logger.info("Deleted archive: %s", cache_tar)
             anti_cheat_data = data or []
             logger.info("Loaded %d anti-cheat entries from archive", len(anti_cheat_data))
             callback(anti_cheat_data)
         except Exception as e:
-            logger.error("Error extracting WeAntiCheatYet archive: %s", e)
+            logger.error("Failed to extract WeAntiCheatYet archive: %s", e)
             callback([])
 
     if os.path.exists(cache_json) and (time.time() - os.path.getmtime(cache_json) < CACHE_DURATION):
@@ -485,41 +484,37 @@ def load_weanticheatyet_data_async(callback: Callable[[list], None]):
                 data = orjson.loads(f.read())
             # Validate JSON structure
             if not isinstance(data, list):
-                logger.error("Cached JSON %s has invalid format (not a list), re-downloading", cache_json)
+                logger.error("Invalid JSON format in %s (not a list), re-downloading", cache_json)
                 raise ValueError("Invalid JSON structure")
             # Validate each anti-cheat entry
             for entry in data:
                 if not isinstance(entry, dict) or "normalized_name" not in entry or "status" not in entry:
-                    logger.error("Cached JSON %s contains invalid anti-cheat entry, re-downloading", cache_json)
+                    logger.error("Invalid anti-cheat entry in cached JSON %s, re-downloading", cache_json)
                     raise ValueError("Invalid anti-cheat entry structure")
             anti_cheat_data = data
             logger.info("Loaded %d anti-cheat entries from cache", len(anti_cheat_data))
             callback(anti_cheat_data)
         except Exception as e:
-            logger.error("Error reading or validating cached WeAntiCheatYet JSON %s: %s", cache_json, e)
+            logger.error("Failed to read or validate cached WeAntiCheatYet JSON %s: %s", cache_json, e)
             # Attempt to re-download if cache is invalid or corrupted
             app_list_url = (
                 "https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/data/anticheat_games.tar.xz"
             )
-            # Delete cached anti-cheat files before re-downloading
-            delete_cached_app_files(cache_dir, "anticheat_*.json")  # Adjust pattern if app-specific files are added
             downloader.download_async(app_list_url, cache_tar, timeout=5, callback=process_tar)
     else:
         app_list_url = (
             "https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/data/anticheat_games.tar.xz"
         )
-        # Delete cached anti-cheat files before downloading
-        delete_cached_app_files(cache_dir, "anticheat_*.json")  # Adjust pattern if app-specific files are added
         downloader.download_async(app_list_url, cache_tar, timeout=5, callback=process_tar)
 
 def build_weanticheatyet_index(anti_cheat_data):
     """
-    Строит индекс античит-данных по полю normalized_name.
+    Builds an index of anti-cheat data by normalized_name field.
     """
     anti_cheat_index = {}
     if not anti_cheat_data:
         return anti_cheat_index
-    logger.info("Построение индекса WeAntiCheatYet данных:")
+    logger.info("Building WeAntiCheatYet data index")
     for entry in anti_cheat_data:
         normalized = entry["normalized_name"]
         anti_cheat_index[normalized] = entry
@@ -527,20 +522,19 @@ def build_weanticheatyet_index(anti_cheat_data):
 
 def search_anticheat_status(candidate, anti_cheat_index):
     candidate_norm = normalize_name(candidate)
-    logger.info("Поиск античит-статуса для кандидата: '%s' -> '%s'", candidate, candidate_norm)
+    logger.info("Searching for anti-cheat status for candidate: '%s' -> '%s'", candidate, candidate_norm)
     if candidate_norm in anti_cheat_index:
         status = anti_cheat_index[candidate_norm]["status"]
-        logger.info("    Найдено точное совпадение: '%s', статус: '%s'", candidate_norm, status)
+        logger.info("Found exact match: '%s', status: '%s'", candidate_norm, status)
         return status
     for name_norm, entry in anti_cheat_index.items():
         if candidate_norm in name_norm:
             ratio = len(candidate_norm) / len(name_norm)
             if ratio > 0.8:
                 status = entry["status"]
-                logger.info("    Найдено частичное совпадение: кандидат '%s' в '%s' (ratio: %.2f), статус: '%s'",
-                            candidate_norm, name_norm, ratio, status)
+                logger.info("Found partial match: candidate '%s' in '%s' (ratio: %.2f), status: '%s'", candidate_norm, name_norm, ratio, status)
                 return status
-    logger.info("    Античит-статус для кандидата '%s' не найден", candidate_norm)
+    logger.info("No anti-cheat status found for candidate '%s'", candidate_norm)
     return ""
 
 def get_weanticheatyet_status_async(game_name: str, callback: Callable[[str], None]):
@@ -556,7 +550,7 @@ def get_weanticheatyet_status_async(game_name: str, callback: Callable[[str], No
     load_weanticheatyet_data_async(on_anticheat_data)
 
 def load_protondb_status(appid):
-    """Загружает закешированные данные ProtonDB для игры по appid, если они не устарели."""
+    """Loads cached ProtonDB data for a game by appid if not outdated."""
     cache_dir = get_cache_dir()
     cache_file = os.path.join(cache_dir, f"protondb_{appid}.json")
     if os.path.exists(cache_file):
@@ -565,18 +559,18 @@ def load_protondb_status(appid):
                 with open(cache_file, "rb") as f:
                     return orjson.loads(f.read())
             except Exception as e:
-                logger.error("Ошибка загрузки кеша ProtonDB для appid %s: %s", appid, e)
+                logger.error("Failed to load ProtonDB cache for appid %s: %s", appid, e)
     return None
 
 def save_protondb_status(appid, data):
-    """Сохраняет данные ProtonDB для игры по appid в файл кэша."""
+    """Saves ProtonDB data for a game by appid to a cache file."""
     cache_dir = get_cache_dir()
     cache_file = os.path.join(cache_dir, f"protondb_{appid}.json")
     try:
         with open(cache_file, "wb") as f:
             f.write(orjson.dumps(data))
     except Exception as e:
-        logger.error("Ошибка сохранения кеша ProtonDB для appid %s: %s", appid, e)
+        logger.error("Failed to save ProtonDB cache for appid %s: %s", appid, e)
 
 def get_protondb_tier_async(appid: int, callback: Callable[[str], None]):
     """
@@ -664,7 +658,7 @@ def get_steam_game_info_async(desktop_name: str, exec_line: str, callback: Calla
                         if game_exe.lower().endswith('.exe'):
                             break
             except Exception as e:
-                logger.error("Error processing bat file %s: %s", game_exe, e)
+                logger.error("Failed to process bat file %s: %s", game_exe, e)
         else:
             logger.error("Bat file not found: %s", game_exe)
 
@@ -799,55 +793,55 @@ def get_steam_apps_and_index_async(callback: Callable[[tuple[list, dict]], None]
 
 def enable_steam_cef() -> tuple[bool, str]:
     """
-    Проверяет и при необходимости активирует режим удаленной отладки Steam CEF.
+    Checks and enables Steam CEF remote debugging if necessary.
 
-    Создает файл .cef-enable-remote-debugging в директории Steam.
-    Steam необходимо перезапустить после первого создания этого файла.
+    Creates a .cef-enable-remote-debugging file in the Steam directory.
+    Steam must be restarted after the file is first created.
 
-    Возвращает кортеж:
-    - (True, "already_enabled") если уже было активно.
-    - (True, "restart_needed") если было только что активировано и нужен перезапуск Steam.
-    - (False, "steam_not_found") если директория Steam не найдена.
+    Returns a tuple:
+    - (True, "already_enabled") if already enabled.
+    - (True, "restart_needed") if just enabled and Steam restart is needed.
+    - (False, "steam_not_found") if Steam directory is not found.
     """
     steam_home = get_steam_home()
     if not steam_home:
         return (False, "steam_not_found")
 
     cef_flag_file = steam_home / ".cef-enable-remote-debugging"
-    logger.info(f"Проверка CEF флага: {cef_flag_file}")
+    logger.info(f"Checking CEF flag: {cef_flag_file}")
 
     if cef_flag_file.exists():
-        logger.info("CEF Remote Debugging уже активирован.")
+        logger.info("CEF Remote Debugging is already enabled")
         return (True, "already_enabled")
     else:
         try:
             os.makedirs(cef_flag_file.parent, exist_ok=True)
             cef_flag_file.touch()
-            logger.info("CEF Remote Debugging активирован. Steam необходимо перезапустить.")
+            logger.info("Enabled CEF Remote Debugging. Steam restart required")
             return (True, "restart_needed")
         except Exception as e:
-            logger.error(f"Не удалось создать CEF флаг {cef_flag_file}: {e}")
+            logger.error(f"Failed to create CEF flag {cef_flag_file}: {e}")
             return (False, str(e))
 
 def call_steam_api(js_cmd: str, *args) -> dict | None:
     """
-    Выполняет JavaScript функцию в контексте Steam через CEF Remote Debugging.
+    Executes a JavaScript function in the Steam context via CEF Remote Debugging.
 
     Args:
-        js_cmd: Имя JS функции для вызова (напр. 'createShortcut').
-        *args: Аргументы для передачи в JS функцию.
+        js_cmd: Name of the JS function to call (e.g., 'createShortcut').
+        *args: Arguments to pass to the JS function.
 
     Returns:
-        Словарь с результатом выполнения или None в случае ошибки.
+        Dictionary with the result or None if an error occurs.
     """
     status, message = enable_steam_cef()
     if not (status is True and message == "already_enabled"):
         if message == "restart_needed":
-            logger.warning("Steam CEF API доступен, но требует перезапуска Steam для полной активации.")
+            logger.warning("Steam CEF API is available but requires Steam restart for full activation")
         elif message == "steam_not_found":
-            logger.error("Не удалось найти директорию Steam для проверки CEF API.")
+            logger.error("Could not find Steam directory to check CEF API")
         else:
-            logger.error(f"Steam CEF API недоступен или не готов: {message}")
+            logger.error(f"Steam CEF API is unavailable or not ready: {message}")
         return None
 
     steam_debug_url = "http://localhost:8080/json"
@@ -858,10 +852,10 @@ def call_steam_api(js_cmd: str, *args) -> dict | None:
         contexts = response.json()
         ws_url = next((ctx['webSocketDebuggerUrl'] for ctx in contexts if ctx['title'] == 'SharedJSContext'), None)
         if not ws_url:
-            logger.warning("Не удалось найти SharedJSContext. Steam запущен с флагом -cef-enable-remote-debugging?")
+            logger.warning("SharedJSContext not found. Is Steam running with -cef-enable-remote-debugging?")
             return None
     except Exception as e:
-        logger.warning(f"Не удалось подключиться к Steam CEF API по адресу {steam_debug_url}. Steam запущен? {e}")
+        logger.warning(f"Failed to connect to Steam CEF API at {steam_debug_url}. Is Steam running? {e}")
         return None
 
     js_code = """
@@ -906,15 +900,15 @@ def call_steam_api(js_cmd: str, *args) -> dict | None:
 
         response_data = orjson.loads(response_str)
         if "error" in response_data:
-            logger.error(f"Ошибка выполнения JS в Steam: {response_data['error']['message']}")
+            logger.error(f"JavaScript execution error in Steam: {response_data['error']['message']}")
             return None
         result = response_data.get('result', {}).get('result', {})
         if result.get('type') == 'object' and result.get('subtype') == 'error':
-            logger.error(f"Ошибка выполнения JS в Steam: {result.get('description')}")
+            logger.error(f"JavaScript execution error in Steam: {result.get('description')}")
             return None
         return result.get('value')
     except Exception as e:
-        logger.error(f"Ошибка при взаимодействии с WebSocket Steam: {e}")
+        logger.error(f"WebSocket interaction error with Steam: {e}")
         return None
 
 def add_to_steam(game_name: str, exec_line: str, cover_path: str) -> tuple[bool, str]:
@@ -991,24 +985,24 @@ export START_FROM_STEAM=1
         else:
             success = generate_thumbnail(exe_path, generated_icon_path, size=128, force_resize=True)
             if not success or not os.path.exists(generated_icon_path):
-                logger.warning(f"generate_thumbnail failed to create icon for {exe_path}")
+                logger.warning(f"Failed to generate thumbnail for {exe_path}")
                 icon_path = ""
             else:
                 logger.info(f"Generated thumbnail: {generated_icon_path}")
         icon_path = generated_icon_path
     except Exception as e:
-        logger.error(f"Error generating thumbnail for {exe_path}: {e}")
+        logger.error(f"Failed to generate thumbnail for {exe_path}: {e}")
         icon_path = ""
 
     steam_home = get_steam_home()
     if not steam_home:
         logger.error("Steam home directory not found")
-        return (False, "Steam directory not found.")
+        return (False, "Steam directory not found")
 
     last_user = get_last_steam_user(steam_home)
     if not last_user or 'SteamID' not in last_user:
         logger.error("Failed to retrieve Steam user ID")
-        return (False, "Failed to get Steam user ID.")
+        return (False, "Failed to get Steam user ID")
 
     userdata_dir = steam_home / "userdata"
     user_id = last_user['SteamID']
@@ -1021,7 +1015,7 @@ export START_FROM_STEAM=1
     appid = None
     was_api_used = False
 
-    logger.info("Попытка добавления ярлыка через Steam CEF API...")
+    logger.info("Attempting to add shortcut via Steam CEF API")
     api_response = call_steam_api(
         "createShortcut",
         game_name,
@@ -1034,9 +1028,9 @@ export START_FROM_STEAM=1
     if api_response and isinstance(api_response, dict) and 'id' in api_response:
         appid = api_response['id']
         was_api_used = True
-        logger.info(f"Ярлык успешно добавлен через API. AppID: {appid}")
+        logger.info(f"Shortcut successfully added via API. AppID: {appid}")
     else:
-        logger.warning("Не удалось добавить ярлык через API. Используется запасной метод (запись в shortcuts.vdf).")
+        logger.warning("Failed to add shortcut via API. Falling back to shortcuts.vdf")
         backup_path = f"{steam_shortcuts_path}.backup"
         if os.path.exists(steam_shortcuts_path):
             try:
@@ -1110,7 +1104,7 @@ export START_FROM_STEAM=1
             appid = None
 
     if not appid:
-        return (False, "Не удалось создать ярлык ни одним из способов.")
+        return (False, "Failed to create shortcut using any method")
 
     steam_appid = None
 
@@ -1120,7 +1114,7 @@ export START_FROM_STEAM=1
         if not steam_appid or not isinstance(steam_appid, int):
             logger.info("No valid Steam appid found, skipping cover download")
             return
-        logger.info(f"Найден Steam AppID {steam_appid} для загрузки обложек.")
+        logger.info(f"Found Steam AppID {steam_appid} for cover download")
 
         cover_types = [
             ("p.jpg", "library_600x900_2x.jpg"),
@@ -1137,15 +1131,15 @@ export START_FROM_STEAM=1
                         try:
                             with open(result_path, 'rb') as f:
                                 img_b64 = base64.b64encode(f.read()).decode('utf-8')
-                            logger.info(f"Применение обложки типа '{steam_name}' через API для AppID {appid}")
+                            logger.info(f"Applying cover type '{steam_name}' via API for AppID {appid}")
                             ext = Path(steam_name).suffix.lstrip('.')
                             call_steam_api("setGrid", appid, index, ext, img_b64)
                         except Exception as e:
-                            logger.error(f"Ошибка при применении обложки '{steam_name}' через API: {e}")
+                            logger.error(f"Failed to apply cover '{steam_name}' via API: {e}")
                 else:
                     logger.warning(f"Failed to download cover {steam_name} for appid {steam_appid}")
             except Exception as e:
-                logger.error(f"Error processing cover {steam_name} for appid {steam_appid}: {e}")
+                logger.error(f"Failed to process cover {steam_name} for appid {steam_appid}: {e}")
 
         for i, (suffix, steam_name) in enumerate(cover_types):
             cover_file = os.path.join(grid_dir, f"{appid}{suffix}")
@@ -1186,13 +1180,13 @@ def remove_from_steam(game_name: str, exec_line: str) -> tuple[bool, str]:
     steam_home = get_steam_home()
     if not steam_home:
         logger.error("Steam home directory not found")
-        return (False, "Steam directory not found.")
+        return (False, "Steam directory not found")
 
     # Get current Steam user ID
     last_user = get_last_steam_user(steam_home)
     if not last_user or 'SteamID' not in last_user:
         logger.error("Failed to retrieve Steam user ID")
-        return (False, "Failed to get Steam user ID.")
+        return (False, "Failed to get Steam user ID")
     userdata_dir = steam_home / "userdata"
     user_id = last_user['SteamID']
     unsigned_id = convert_steam_id(user_id)
@@ -1238,10 +1232,10 @@ def remove_from_steam(game_name: str, exec_line: str) -> tuple[bool, str]:
         return (False, f"Game '{game_name}' not found in Steam")
 
     api_response = call_steam_api("removeShortcut", appid)
-    if api_response is not None: # API ответил, даже если ответ пустой
-        logger.info(f"Ярлык для AppID {appid} успешно удален через API.")
+    if api_response is not None: # API responded, even if response is empty
+        logger.info(f"Shortcut for AppID {appid} successfully removed via API")
     else:
-        logger.warning("Не удалось удалить ярлык через API. Используется запасной метод (редактирование shortcuts.vdf).")
+        logger.warning("Failed to remove shortcut via API. Falling back to editing shortcuts.vdf")
 
         # Create backup of shortcuts.vdf
         backup_path = f"{steam_shortcuts_path}.backup"
@@ -1320,5 +1314,5 @@ def is_game_in_steam(game_name: str) -> bool:
             if entry.get("AppName") == game_name:
                 return True
     except Exception as e:
-        logger.error(f"Error checking if game {game_name} is in Steam: {e}")
+        logger.error(f"Failed to check if game {game_name} is in Steam: {e}")
     return False

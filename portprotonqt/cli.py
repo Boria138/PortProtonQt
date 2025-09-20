@@ -1,17 +1,15 @@
 import argparse
-from portprotonqt.logger import get_logger
 
-logger = get_logger(__name__)
 
 def parse_args():
     """
-    Парсит аргументы командной строки.
+    Parses command-line arguments.
     """
     parser = argparse.ArgumentParser(description="PortProtonQt CLI")
     parser.add_argument(
         "--fullscreen",
         action="store_true",
-        help="Запустить приложение в полноэкранном режиме и сохранить эту настройку"
+        help="Launch the application in fullscreen mode and save this setting"
     )
     parser.add_argument(
         "--debug-level",
