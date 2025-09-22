@@ -1,19 +1,30 @@
-_portprotonqt() {
-    local cur prev
-    _init_completion || return
+_portprotonqt_completions() {
+    local cur prev opts
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-    case $prev in
-        --help|-h)
-            return
+    # Available options
+    opts="--fullscreen --debug-level --help -h"
+
+    # Debug level choices
+    debug_levels="ALL DEBUG INFO WARNING ERROR CRITICAL"
+
+    case "${prev}" in
+        --debug-level)
+            # Complete debug levels
+            COMPREPLY=( $(compgen -W "${debug_levels}" -- ${cur}) )
+            return 0
+            ;;
+        *)
             ;;
     esac
 
-    if [[ "$cur" == -* ]]; then
-        COMPREPLY=( $( compgen -W '--fullscreen' -- "$cur" ) )
+    # Complete options
+    if [[ ${cur} == -* ]]; then
+        COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
         return 0
     fi
-
-    return 0
 }
 
-complete -F _portprotonqt portprotonqt
+complete -F _portprotonqt_completions portprotonqt
