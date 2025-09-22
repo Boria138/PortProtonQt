@@ -4,10 +4,8 @@ from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QIcon
 from portprotonqt.main_window import MainWindow
 from portprotonqt.config_utils import save_fullscreen_config
-from portprotonqt.logger import get_logger
+from portprotonqt.logger import get_logger, setup_logger
 from portprotonqt.cli import parse_args
-
-logger = get_logger(__name__)
 
 __app_id__ = "ru.linux_gaming.PortProtonQt"
 __app_name__ = "PortProtonQt"
@@ -20,6 +18,14 @@ def main():
     app.setApplicationName(__app_name__)
     app.setApplicationVersion(__app_version__)
 
+    args = parse_args()
+
+    # Setup logger with specified debug level
+    setup_logger(args.debug_level)
+
+    # Reinitialize logger after setup to ensure it uses the new configuration
+    logger = get_logger(__name__)
+
     system_locale = QLocale.system()
     qt_translator = QTranslator()
     translations_path = QLibraryInfo.path(QLibraryInfo.LibraryPath.TranslationsPath)
@@ -27,8 +33,6 @@ def main():
         app.installTranslator(qt_translator)
     else:
         logger.warning(f"Qt translations for {system_locale.name()} not found in {translations_path}, using english language")
-
-    args = parse_args()
 
     window = MainWindow(app_name=__app_name__)
 

@@ -13,4 +13,10 @@ def parse_args():
         action="store_true",
         help="Запустить приложение в полноэкранном режиме и сохранить эту настройку"
     )
+    parser.add_argument(
+        "--debug-level",
+        choices=['ALL', 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+        default='NOTSET',
+        help="Установить уровень логирования (ALL для всех сообщений, по умолчанию: без логов)"
+    )
     return parser.parse_args()
