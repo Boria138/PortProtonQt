@@ -2,6 +2,7 @@
 
 import argparse
 import re
+import subprocess
 from pathlib import Path
 from datetime import date
 
@@ -134,6 +135,12 @@ def main():
         print(f"Updated version from {old} to {new} in {len(updated)} files:")
         for p in sorted(updated):
             print(f" - {p}")
+
+        try:
+            subprocess.run(["uv", "lock"], check=True)
+            print("Regenerated uv.lock")
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to regenerate uv.lock: {e}")
     else:
         print(f"No occurrences of version {old} found in specified files.")
 
