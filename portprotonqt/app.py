@@ -9,7 +9,7 @@ from portprotonqt.cli import parse_args
 
 __app_id__ = "ru.linux_gaming.PortProtonQt"
 __app_name__ = "PortProtonQt"
-__app_version__ = "0.1.5"
+__app_version__ = "0.1.6"
 
 def main():
     app = QApplication(sys.argv)
