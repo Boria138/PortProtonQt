@@ -1,4 +1,4 @@
-name: Check Translations
+name: Check Translations (disabled until yaspeller is fixed)
 run-name: Check spelling in translation files
 on:
   push:
@@ -12,6 +12,7 @@ on:
 
 jobs:
   check-translations:
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
