@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-09-13 11:51+0500\n"
+"POT-Creation-Date: 2025-09-23 22:23+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -21,7 +21,7 @@ msgstr ""
 msgid "Error"
 msgstr ""
 
-msgid "PortProton is not found"
+msgid "PortProton directory not found"
 msgstr ""
 
 msgid "Remove from Favorites"
@@ -153,7 +153,7 @@ msgid "Menu"
 msgstr ""
 
 #, python-brace-format
-msgid "No executable command in .desktop file for '{game_name}'"
+msgid "No executable command found in .desktop file for '{game_name}'"
 msgstr ""
 
 #, python-brace-format
@@ -161,7 +161,7 @@ msgid "Failed to parse .desktop file for '{game_name}'"
 msgstr ""
 
 #, python-brace-format
-msgid "Failed to read .desktop file: {error}"
+msgid "Error reading .desktop file: {error}"
 msgstr ""
 
 #, python-brace-format
@@ -260,6 +260,10 @@ msgid "Select"
 msgstr ""
 
 msgid "Path: "
+msgstr ""
+
+#, python-format
+msgid "Access denied: %s"
 msgstr ""
 
 msgid "Edit Game"
@@ -454,21 +458,6 @@ msgstr ""
 msgid "Gamepad haptic feedback:"
 msgstr ""
 
-msgid "Open Legendary Login"
-msgstr ""
-
-msgid "Legendary Authentication:"
-msgstr ""
-
-msgid "Enter Legendary Authorization Code"
-msgstr ""
-
-msgid "Authorization Code:"
-msgstr ""
-
-msgid "Submit Code"
-msgstr ""
-
 msgid "Save Settings"
 msgstr ""
 
@@ -476,28 +465,6 @@ msgid "Reset Settings"
 msgstr ""
 
 msgid "Clear Cache"
-msgstr ""
-
-msgid "Opened Legendary login page in browser"
-msgstr ""
-
-msgid "Failed to open Legendary login page"
-msgstr ""
-
-msgid "Please enter an authorization code"
-msgstr ""
-
-msgid "Successfully authenticated with Legendary"
-msgstr ""
-
-#, python-brace-format
-msgid "Legendary authentication failed: {0}"
-msgstr ""
-
-msgid "Legendary executable not found"
-msgstr ""
-
-msgid "Unexpected error during authentication"
 msgstr ""
 
 msgid "Confirm Reset"

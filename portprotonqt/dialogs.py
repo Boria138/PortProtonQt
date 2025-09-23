@@ -336,7 +336,7 @@ class FileExplorer(QDialog):
                         mounted_drives.append(mount_point)
             return sorted(mounted_drives)
         except Exception as e:
-            logger.error(_("Error retrieving mounted drives: %s"), str(e))
+            logger.error(f"Error retrieving mounted drives: {e}")
             return []
 
     def setup_ui(self):
@@ -398,7 +398,7 @@ class FileExplorer(QDialog):
         if self.context_menu_manager:
             self.context_menu_manager.show_folder_context_menu(self, pos)
         else:
-            logger.warning(_("ContextMenuManager not found in parent"))
+            logger.warning("ContextMenuManager not found in parent")
 
     def move_selection(self, direction):
         """Move selection in the list."""
