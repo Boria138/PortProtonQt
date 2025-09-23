@@ -6,7 +6,7 @@ from PySide6.QtGui import QPixmap, QIcon
 from PySide6.QtWidgets import (
     QDialog, QFormLayout, QHBoxLayout, QLabel, QVBoxLayout, QListWidget, QScrollArea, QWidget, QListWidgetItem, QSizePolicy, QApplication, QProgressBar
 )
-from PySide6.QtCore import Qt, QObject, Signal, QMimeDatabase, QTimer
+from PySide6.QtCore import Qt, QObject, Signal, QMimeDatabase, QTimer, QThreadPool, QRunnable, Slot
 from icoextract import IconExtractor, IconExtractorError
 from PIL import Image
 from portprotonqt.config_utils import get_portproton_location, read_favorite_folders, read_theme_from_config
@@ -179,9 +179,11 @@ class FileExplorer(QDialog):
         self.mime_db = QMimeDatabase()  # Initialize QMimeDatabase for mimetype detection
         self.path_history = {}  # Dictionary to store last selected item per directory
         self.initial_path = initial_path  # Store initial path if provided
+        self.thumbnail_cache = {}  # Cache for loaded thumbnails
+        self.pending_thumbnails = set()  # Track files pending thumbnail loading
         self.setup_ui()
 
-        # Настройки окна
+        # Window settings
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowType.WindowContextHelpButtonHint)
 
@@ -208,8 +210,115 @@ class FileExplorer(QDialog):
             self.current_path = os.path.expanduser("~")  # Fallback to home if initial path is invalid
         self.update_file_list()
 
+    class ThumbnailLoader(QRunnable):
+        """Class for asynchronous thumbnail loading in a separate thread."""
+        class Signals(QObject):
+            thumbnail_ready = Signal(str, QIcon)  # Signal for ready thumbnail: file path and icon
+
+        def __init__(self, file_path, mime_type, size=64):
+            super().__init__()
+            self.file_path = file_path
+            self.mime_type = mime_type
+            self.size = size
+            self.signals = self.Signals()
+
+        @Slot()
+        def run(self):
+            """Performs thumbnail loading in a background thread."""
+            try:
+                if self.mime_type.startswith("image/"):
+                    pixmap = QPixmap(self.file_path)
+                    if not pixmap.isNull():
+                        scaled_pixmap = pixmap.scaled(self.size, self.size, Qt.AspectRatioMode.KeepAspectRatio)
+                        self.signals.thumbnail_ready.emit(self.file_path, QIcon(scaled_pixmap))
+                    else:
+                        logger.warning("Failed to load image: %s", self.file_path)
+                elif self.file_path.lower().endswith(".exe"):
+                    with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
+                        if generate_thumbnail(self.file_path, tmp.name, size=self.size):
+                            pixmap = QPixmap(tmp.name)
+                            if not pixmap.isNull():
+                                self.signals.thumbnail_ready.emit(self.file_path, QIcon(pixmap))
+                            os.unlink(tmp.name)
+                        else:
+                            logger.warning("Failed to generate thumbnail for .exe: %s", self.file_path)
+            except Exception as e:
+                logger.error("Error loading thumbnail for %s: %s", self.file_path, str(e))
+
+
+    def async_load_thumbnails(self, files, mime_db):
+        """
+        Asynchronously loads thumbnails for a list of files.
+
+        Args:
+            files (list): List of file names to process.
+            mime_db (QMimeDatabase): QMimeDatabase instance for file type detection.
+        """
+        thread_pool = QThreadPool.globalInstance()
+        thread_pool.setMaxThreadCount(4)  # Limit the number of threads
+
+        for f in files:
+            file_path = os.path.join(self.current_path, f)
+            if file_path in self.thumbnail_cache or file_path in self.pending_thumbnails:
+                continue  # Skip if already cached or pending
+            mime_type = mime_db.mimeTypeForFile(file_path).name()
+            if mime_type.startswith("image/") or file_path.lower().endswith(".exe"):
+                self.pending_thumbnails.add(file_path)
+                loader = self.ThumbnailLoader(file_path, mime_type, size=64)
+                loader.signals.thumbnail_ready.connect(self.update_thumbnail)
+                thread_pool.start(loader)
+
+
+    @Slot(str, QIcon)
+    def update_thumbnail(self, file_path, icon):
+        """
+        Updates the icon for a file list item after thumbnail loading.
+
+        Args:
+            file_path (str): Path to the file for which the thumbnail was loaded.
+            icon (QIcon): Loaded icon.
+        """
+        try:
+            # Cache the thumbnail
+            self.thumbnail_cache[file_path] = icon
+            self.pending_thumbnails.discard(file_path)
+            # Update the item in the file list
+            file_name = os.path.basename(file_path)
+            for i in range(self.file_list.count()):
+                item = self.file_list.item(i)
+                if item.text() == file_name:
+                    item.setIcon(icon)
+                    break
+        except Exception as e:
+            logger.error("Error updating thumbnail for %s: %s", file_path, str(e))
+
+
+    def load_visible_thumbnails(self):
+        """Load thumbnails only for visible items in the file list."""
+        try:
+            visible_range = self.file_list.count()
+            first_visible = max(0, self.file_list.indexAt(self.file_list.viewport().rect().topLeft()).row())
+            last_visible = min(visible_range - 1, self.file_list.indexAt(self.file_list.viewport().rect().bottomRight()).row() + 5)
+
+            files_to_load = []
+            for i in range(first_visible, last_visible + 1):
+                item = self.file_list.item(i)
+                if not item:
+                    continue
+                file_name = item.text()
+                if file_name.endswith("/"):
+                    continue  # Skip directories
+                file_path = os.path.join(self.current_path, file_name)
+                if file_path not in self.thumbnail_cache and file_path not in self.pending_thumbnails:
+                    files_to_load.append(file_name)
+
+            if files_to_load:
+                self.async_load_thumbnails(files_to_load, self.mime_db)
+        except Exception as e:
+            logger.error("Error loading visible thumbnails: %s", str(e))
+
     def get_mounted_drives(self):
-        """Получение списка смонтированных дисков из /proc/mounts, исключая системные пути"""
+        """Retrieve a list of mounted drives from /proc/mounts, excluding system paths."""
         mounted_drives = []
         try:
             with open('/proc/mounts') as f:
@@ -218,20 +327,20 @@ class FileExplorer(QDialog):
                     if len(parts) < 2:
                         continue
                     mount_point = parts[1]
-                    # Исключаем системные и временные пути, но сохраняем /run/media
+                    # Exclude system and temporary paths, but keep /run/media
                     if (mount_point.startswith(('/dev', '/sys', '/proc', '/tmp', '/snap', '/var/lib')) or
                         (mount_point.startswith('/run') and not mount_point.startswith('/run/media'))):
                         continue
-                    # Проверяем, является ли точка монтирования директорией и доступна ли она
+                    # Check if the mount point is a directory and accessible
                     if os.path.isdir(mount_point) and os.access(mount_point, os.R_OK):
                         mounted_drives.append(mount_point)
             return sorted(mounted_drives)
         except Exception as e:
-            logger.error(f"Ошибка при получении смонтированных дисков: {e}")
+            logger.error(_("Error retrieving mounted drives: %s"), str(e))
             return []
 
     def setup_ui(self):
-        """Настройка интерфейса"""
+        """Set up the user interface."""
         self.setWindowTitle(_("File Explorer"))
         self.setGeometry(100, 100, 600, 600)
 
@@ -240,7 +349,7 @@ class FileExplorer(QDialog):
         self.main_layout.setSpacing(10)
         self.setLayout(self.main_layout)
 
-        # Панель для смонтированных дисков и избранных папок
+        # Panel for mounted drives and favorite folders
         self.drives_layout = QHBoxLayout()
         self.drives_scroll = QScrollArea()
         self.drives_scroll.setWidgetResizable(True)
@@ -253,12 +362,12 @@ class FileExplorer(QDialog):
         self.drives_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.drives_scroll.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
-        # Путь
+        # Path label
         self.path_label = QLabel()
         self.path_label.setStyleSheet(self.theme.FILE_EXPLORER_PATH_LABEL_STYLE)
         self.main_layout.addWidget(self.path_label)
 
-        # Список файлов
+        # File list
         self.file_list = QListWidget()
         self.file_list.setStyleSheet(self.theme.FILE_EXPLORER_STYLE)
         self.file_list.itemClicked.connect(self.handle_item_click)
@@ -267,7 +376,10 @@ class FileExplorer(QDialog):
         self.file_list.customContextMenuRequested.connect(self.show_folder_context_menu)
         self.main_layout.addWidget(self.file_list)
 
-        # Кнопки
+        # Connect scroll signal for lazy loading
+        self.file_list.verticalScrollBar().valueChanged.connect(self.load_visible_thumbnails)
+
+        # Buttons
         self.button_layout = QHBoxLayout()
         self.button_layout.setSpacing(10)
         self.select_button = AutoSizeButton(_("Select"), icon=theme_manager.get_icon("apply"))
@@ -286,43 +398,43 @@ class FileExplorer(QDialog):
         if self.context_menu_manager:
             self.context_menu_manager.show_folder_context_menu(self, pos)
         else:
-            logger.warning("ContextMenuManager not found in parent")
+            logger.warning(_("ContextMenuManager not found in parent"))
 
     def move_selection(self, direction):
-        """Перемещение выбора по списку"""
+        """Move selection in the list."""
         current_row = self.file_list.currentRow()
-        if direction < 0 and current_row > 0:  # Вверх
+        if direction < 0 and current_row > 0:  # Up
             self.file_list.setCurrentRow(current_row - 1)
-        elif direction > 0 and current_row < self.file_list.count() - 1:  # Вниз
+        elif direction > 0 and current_row < self.file_list.count() - 1:  # Down
             self.file_list.setCurrentRow(current_row + 1)
         self.file_list.scrollToItem(self.file_list.currentItem())
 
     def handle_item_click(self, item):
-        """Обработка одинарного клика мышью"""
+        """Handle single mouse click."""
         try:
             self.file_list.setCurrentItem(item)
-            self.path_history[self.current_path] = item.text()  # Сохраняем выбранный элемент
+            self.path_history[self.current_path] = item.text()  # Save selected item
             logger.debug("Selected item: %s", item.text())
         except Exception as e:
             logger.error("Error in handle_item_click: %s", e)
 
     def handle_item_double_click(self, item):
-        """Обработка двойного клика мышью по элементу списка"""
+        """Handle double mouse click on a list item."""
         try:
             self.file_list.setCurrentItem(item)
-            self.path_history[self.current_path] = item.text()  # Сохраняем выбранный элемент
+            self.path_history[self.current_path] = item.text()  # Save selected item
             selected = item.text()
             full_path = os.path.join(self.current_path, selected)
             if os.path.isdir(full_path):
                 if selected == "../":
-                    # Переходим в родительскую директорию
+                    # Navigate to parent directory
                     self.previous_dir()
                 else:
-                    # Открываем директорию
+                    # Open directory
                     self.current_path = os.path.normpath(full_path)
                     self.update_file_list()
             elif not self.directory_only:
-                # Выбираем файл, если directory_only=False
+                # Select file if directory_only=False
                 self.file_signal.file_selected.emit(os.path.normpath(full_path))
                 self.accept()
             else:
@@ -331,7 +443,7 @@ class FileExplorer(QDialog):
             logger.error("Error in handle_item_double_click: %s", e)
 
     def select_item(self):
-        """Обработка выбора файла/папки"""
+        """Handle file/folder selection."""
         if self.file_list.count() == 0:
             return
 
@@ -340,30 +452,30 @@ class FileExplorer(QDialog):
 
         if os.path.isdir(full_path):
             if self.directory_only:
-                # Подтверждаем выбор директории
+                # Confirm directory selection
                 self.file_signal.file_selected.emit(os.path.normpath(full_path))
                 self.accept()
             else:
-                # Открываем директорию
+                # Open directory
                 self.current_path = os.path.normpath(full_path)
                 self.update_file_list()
         else:
             if not self.directory_only:
-                # Для файла отправляем нормализованный путь
+                # Emit normalized path for file
                 self.file_signal.file_selected.emit(os.path.normpath(full_path))
                 self.accept()
             else:
                 logger.debug("Selected item is not a directory, ignoring: %s", full_path)
 
     def previous_dir(self):
-        """Возврат к родительской директории"""
+        """Navigate to parent directory."""
         try:
             if self.current_path == "/":
-                return  # Уже в корне
+                return  # Already at root
 
-            # Нормализуем путь (убираем конечный слеш, если есть)
+            # Normalize path (remove trailing slash if present)
             normalized_path = os.path.normpath(self.current_path)
-            # Получаем родительскую директорию
+            # Get parent directory
             parent_dir = os.path.dirname(normalized_path)
 
             if not parent_dir:
@@ -389,7 +501,7 @@ class FileExplorer(QDialog):
             logger.error(f"Error ensuring button visible: {e}")
 
     def update_drives_list(self):
-        """Обновление списка смонтированных дисков и избранных папок."""
+        """Update the list of mounted drives and favorite folders."""
         for i in reversed(range(self.drives_layout.count())):
             item = self.drives_layout.itemAt(i)
             if item and item.widget():
@@ -401,7 +513,7 @@ class FileExplorer(QDialog):
         drives = self.get_mounted_drives()
         favorite_folders = read_favorite_folders()
 
-        # Добавляем смонтированные диски
+        # Add mounted drives
         for drive in drives:
             drive_name = os.path.basename(drive) or drive.split('/')[-1] or drive
             button = AutoSizeButton(drive_name, icon=theme_manager.get_icon("mount_point"))
@@ -411,7 +523,7 @@ class FileExplorer(QDialog):
             self.drives_layout.addWidget(button)
             self.drive_buttons.append(button)
 
-        # Добавляем избранные папки
+        # Add favorite folders
         for folder in favorite_folders:
             folder_name = os.path.basename(folder) or folder.split('/')[-1] or folder
             button = AutoSizeButton(folder_name, icon=theme_manager.get_icon("folder"))
@@ -421,92 +533,92 @@ class FileExplorer(QDialog):
             self.drives_layout.addWidget(button)
             self.drive_buttons.append(button)
 
-        # Добавляем растяжку, чтобы выровнять элементы
+        # Add spacer to align elements
         spacer = QWidget()
         spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         self.drives_layout.addWidget(spacer)
 
     def select_drive(self):
-        """Обрабатывает выбор диска или избранной папки через геймпад."""
+        """Handle drive or favorite folder selection via gamepad."""
         focused_widget = QApplication.focusWidget()
         if isinstance(focused_widget, AutoSizeButton) and focused_widget in self.drive_buttons:
-            drive_name = focused_widget.text().strip()  # Удаляем пробелы
-            logger.debug(f"Выбрано имя: {drive_name}")
+            drive_name = focused_widget.text().strip()  # Remove whitespace
+            logger.debug(f"Selected name: {drive_name}")
 
-            # Специальная обработка корневого каталога
+            # Special handling for root directory
             if drive_name == "/":
                 if os.path.isdir("/") and os.access("/", os.R_OK):
                     self.current_path = "/"
                     self.update_file_list()
-                    logger.info("Выбран корневой каталог: /")
+                    logger.info("Selected root directory")
                     return
                 else:
-                    logger.warning("Корневой каталог недоступен: недостаточно прав или ошибка пути")
+                    logger.warning("Root directory is inaccessible: insufficient permissions or path error")
                     return
 
-            # Проверяем избранные папки
+            # Check favorite folders
             favorite_folders = read_favorite_folders()
-            logger.debug(f"Избранные папки: {favorite_folders}")
+            logger.debug(f"Favorite folders: {favorite_folders}")
             for folder in favorite_folders:
-                folder_name = os.path.basename(os.path.normpath(folder)) or folder  # Для корневых путей
+                folder_name = os.path.basename(os.path.normpath(folder)) or folder  # For root paths
                 if folder_name == drive_name and os.path.isdir(folder) and os.access(folder, os.R_OK):
                     self.current_path = os.path.normpath(folder)
                     self.update_file_list()
-                    logger.info(f"Выбрана избранная папка: {self.current_path}")
+                    logger.info(f"Selected favorite folder: {self.current_path}")
                     return
 
-            # Проверяем смонтированные диски
+            # Check mounted drives
             mounted_drives = self.get_mounted_drives()
-            logger.debug(f"Смонтированные диски: {mounted_drives}")
+            logger.debug(f"Mounted drives: {mounted_drives}")
             for drive in mounted_drives:
-                drive_basename = os.path.basename(os.path.normpath(drive)) or drive  # Для корневых путей
+                drive_basename = os.path.basename(os.path.normpath(drive)) or drive  # For root paths
                 if drive_basename == drive_name and os.path.isdir(drive) and os.access(drive, os.R_OK):
                     self.current_path = os.path.normpath(drive)
                     self.update_file_list()
-                    logger.info(f"Выбран смонтированный диск: {self.current_path}")
+                    logger.info(f"Selected mounted drive: {self.current_path}")
                     return
 
-            logger.warning(f"Путь недоступен: {drive_name}.")
+            logger.warning(f"Path is inaccessible: {drive_name}.")
 
     def change_drive(self, drive_path):
-        """Переход к выбранному диску"""
+        """Navigate to the selected drive."""
         if os.path.isdir(drive_path) and os.access(drive_path, os.R_OK):
             self.current_path = os.path.normpath(drive_path)
             self.update_file_list()
         else:
-            logger.warning(f"Путь диска недоступен: {drive_path}")
+            logger.warning(f"Drive path is inaccessible: {drive_path}")
 
     def update_file_list(self):
-        """Обновление списка файлов с превью в виде иконок"""
+        """Update the file list with asynchronous thumbnail loading."""
         self.file_list.clear()
+        self.thumbnail_cache.clear()  # Clear cache when changing directories
+        self.pending_thumbnails.clear()  # Clear pending thumbnails
         try:
             if self.current_path != "/":
                 item = QListWidgetItem("../")
                 folder_icon = theme_manager.get_icon("folder")
-                # Ensure the icon is a QIcon
                 if isinstance(folder_icon, str) and os.path.isfile(folder_icon):
                     folder_icon = QIcon(folder_icon)
                 elif not isinstance(folder_icon, QIcon):
-                    folder_icon = QIcon()  # Fallback to empty icon
+                    folder_icon = QIcon()
                 item.setIcon(folder_icon)
                 self.file_list.addItem(item)
 
             items = os.listdir(self.current_path)
             dirs = [d for d in items if os.path.isdir(os.path.join(self.current_path, d))]
 
-            # Добавляем директории
+            # Add directories
             for d in sorted(dirs):
                 item = QListWidgetItem(f"{d}/")
                 folder_icon = theme_manager.get_icon("folder")
-                # Ensure the icon is a QIcon
                 if isinstance(folder_icon, str) and os.path.isfile(folder_icon):
                     folder_icon = QIcon(folder_icon)
                 elif not isinstance(folder_icon, QIcon):
-                    folder_icon = QIcon()  # Fallback to empty icon
+                    folder_icon = QIcon()
                 item.setIcon(folder_icon)
                 self.file_list.addItem(item)
 
-            # Добавляем файлы только если directory_only=False
+            # Add files only if directory_only=False
             if not self.directory_only:
                 files = [f for f in items if os.path.isfile(os.path.join(self.current_path, f))]
                 if self.file_filter:
@@ -515,25 +627,13 @@ class FileExplorer(QDialog):
                     elif isinstance(self.file_filter, tuple):
                         files = [f for f in files if any(f.lower().endswith(ext) for ext in self.file_filter)]
 
+                # Add files to the list without immediate thumbnail loading
                 for f in sorted(files):
                     item = QListWidgetItem(f)
-                    file_path = os.path.join(self.current_path, f)
-                    mime_type = self.mime_db.mimeTypeForFile(file_path).name()
-
-                    if mime_type.startswith("image/"):
-                        pixmap = QPixmap(file_path)
-                        if not pixmap.isNull():
-                            item.setIcon(QIcon(pixmap.scaled(64, 64, Qt.AspectRatioMode.KeepAspectRatio)))
-                    elif file_path.lower().endswith(".exe"):
-                        tmp = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
-                        tmp.close()
-                        if generate_thumbnail(file_path, tmp.name, size=64):
-                            pixmap = QPixmap(tmp.name)
-                            if not pixmap.isNull():
-                                item.setIcon(QIcon(pixmap))
-                            os.unlink(tmp.name)
-
                     self.file_list.addItem(item)
+
+                # Load thumbnails for visible items only
+                self.load_visible_thumbnails()
 
             self.path_label.setText(_("Path: ") + self.current_path)
 
@@ -556,10 +656,10 @@ class FileExplorer(QDialog):
             self.file_list.setAlternatingRowColors(True)
 
         except PermissionError:
-            self.path_label.setText(f"Access denied: {self.current_path}")
+            self.path_label.setText(_("Access denied: %s") % self.current_path)
 
     def closeEvent(self, event):
-        """Закрытие окна"""
+        """Handle window closing."""
         try:
             if self.input_manager:
                 self.input_manager.disable_file_explorer_mode()
@@ -573,13 +673,13 @@ class FileExplorer(QDialog):
         super().closeEvent(event)
 
     def reject(self):
-        """Закрытие диалога"""
+        """Close the dialog."""
         if self.input_manager:
             self.input_manager.disable_file_explorer_mode()
         super().reject()
 
     def accept(self):
-        """Принятие диалога"""
+        """Accept the dialog."""
         if self.input_manager:
             self.input_manager.disable_file_explorer_mode()
         super().accept()
