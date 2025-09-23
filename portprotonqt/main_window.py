@@ -1341,36 +1341,36 @@ class MainWindow(QMainWindow):
         self.gamepadRumbleCheckBox.setChecked(current_rumble_state)
         formLayout.addRow(self.gamepadRumbleTitle, self.gamepadRumbleCheckBox)
 
-        # 8. Legendary Authentication
-        self.legendaryAuthButton = AutoSizeButton(
-            _("Open Legendary Login"),
-            icon=self.theme_manager.get_icon("login")
-        )
-        self.legendaryAuthButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
-        self.legendaryAuthButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.legendaryAuthButton.clicked.connect(self.openLegendaryLogin)
-        self.legendaryAuthTitle = QLabel(_("Legendary Authentication:"))
-        self.legendaryAuthTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
-        self.legendaryAuthTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        formLayout.addRow(self.legendaryAuthTitle, self.legendaryAuthButton)
-
-        self.legendaryCodeEdit = CustomLineEdit(self, theme=self.theme)
-        self.legendaryCodeEdit.setPlaceholderText(_("Enter Legendary Authorization Code"))
-        self.legendaryCodeEdit.setStyleSheet(self.theme.PROXY_INPUT_STYLE)
-        self.legendaryCodeEdit.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.legendaryCodeTitle = QLabel(_("Authorization Code:"))
-        self.legendaryCodeTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
-        self.legendaryCodeTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        formLayout.addRow(self.legendaryCodeTitle, self.legendaryCodeEdit)
-
-        self.submitCodeButton = AutoSizeButton(
-            _("Submit Code"),
-            icon=self.theme_manager.get_icon("save")
-        )
-        self.submitCodeButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
-        self.submitCodeButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.submitCodeButton.clicked.connect(self.submitLegendaryCode)
-        formLayout.addRow(QLabel(""), self.submitCodeButton)
+        # # 8. Legendary Authentication
+        # self.legendaryAuthButton = AutoSizeButton(
+        #     _("Open Legendary Login"),
+        #     icon=self.theme_manager.get_icon("login")
+        # )
+        # self.legendaryAuthButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        # self.legendaryAuthButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        # self.legendaryAuthButton.clicked.connect(self.openLegendaryLogin)
+        # self.legendaryAuthTitle = QLabel(_("Legendary Authentication:"))
+        # self.legendaryAuthTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        # self.legendaryAuthTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        # formLayout.addRow(self.legendaryAuthTitle, self.legendaryAuthButton)
+        #
+        # self.legendaryCodeEdit = CustomLineEdit(self, theme=self.theme)
+        # self.legendaryCodeEdit.setPlaceholderText(_("Enter Legendary Authorization Code"))
+        # self.legendaryCodeEdit.setStyleSheet(self.theme.PROXY_INPUT_STYLE)
+        # self.legendaryCodeEdit.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        # self.legendaryCodeTitle = QLabel(_("Authorization Code:"))
+        # self.legendaryCodeTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        # self.legendaryCodeTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        # formLayout.addRow(self.legendaryCodeTitle, self.legendaryCodeEdit)
+        #
+        # self.submitCodeButton = AutoSizeButton(
+        #     _("Submit Code"),
+        #     icon=self.theme_manager.get_icon("save")
+        # )
+        # self.submitCodeButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        # self.submitCodeButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        # self.submitCodeButton.clicked.connect(self.submitLegendaryCode)
+        # formLayout.addRow(QLabel(""), self.submitCodeButton)
 
         layout.addLayout(formLayout)
 
@@ -1412,46 +1412,46 @@ class MainWindow(QMainWindow):
         layout.addStretch(1)
         self.stackedWidget.addWidget(self.portProtonWidget)
 
-    def openLegendaryLogin(self):
-        """Opens the Legendary login page in the default web browser."""
-        login_url = "https://legendary.gl/epiclogin"
-        try:
-            QDesktopServices.openUrl(QUrl(login_url))
-            self.statusBar().showMessage(_("Opened Legendary login page in browser"), 3000)
-        except Exception as e:
-            logger.error(f"Failed to open Legendary login page: {e}")
-            self.statusBar().showMessage(_("Failed to open Legendary login page"), 3000)
-
-    def submitLegendaryCode(self):
-        """Submits the Legendary authorization code using the legendary CLI."""
-        auth_code = self.legendaryCodeEdit.text().strip()
-        if not auth_code:
-            QMessageBox.warning(self, _("Error"), _("Please enter an authorization code"))
-            return
-
-        try:
-            # Execute legendary auth command
-            result = subprocess.run(
-                [self.legendary_path, "auth", "--code", auth_code],
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            logger.info("Legendary authentication successful: %s", result.stdout)
-            self.statusBar().showMessage(_("Successfully authenticated with Legendary"), 3000)
-            self.legendaryCodeEdit.clear()
-            # Reload Epic Games Store games after successful authentication
-            self.games = self.loadGames()
-            self.updateGameGrid()
-        except subprocess.CalledProcessError as e:
-            logger.error("Legendary authentication failed: %s", e.stderr)
-            self.statusBar().showMessage(_("Legendary authentication failed: {0}").format(e.stderr), 5000)
-        except FileNotFoundError:
-            logger.error("Legendary executable not found at %s", self.legendary_path)
-            self.statusBar().showMessage(_("Legendary executable not found"), 5000)
-        except Exception as e:
-            logger.error("Unexpected error during Legendary authentication: %s", str(e))
-            self.statusBar().showMessage(_("Unexpected error during authentication"), 5000)
+    # def openLegendaryLogin(self):
+    #     """Opens the Legendary login page in the default web browser."""
+    #     login_url = "https://legendary.gl/epiclogin"
+    #     try:
+    #         QDesktopServices.openUrl(QUrl(login_url))
+    #         self.statusBar().showMessage(_("Opened Legendary login page in browser"), 3000)
+    #     except Exception as e:
+    #         logger.error(f"Failed to open Legendary login page: {e}")
+    #         self.statusBar().showMessage(_("Failed to open Legendary login page"), 3000)
+    #
+    # def submitLegendaryCode(self):
+    #     """Submits the Legendary authorization code using the legendary CLI."""
+    #     auth_code = self.legendaryCodeEdit.text().strip()
+    #     if not auth_code:
+    #         QMessageBox.warning(self, _("Error"), _("Please enter an authorization code"))
+    #         return
+    #
+    #     try:
+    #         # Execute legendary auth command
+    #         result = subprocess.run(
+    #             [self.legendary_path, "auth", "--code", auth_code],
+    #             capture_output=True,
+    #             text=True,
+    #             check=True
+    #         )
+    #         logger.info("Legendary authentication successful: %s", result.stdout)
+    #         self.statusBar().showMessage(_("Successfully authenticated with Legendary"), 3000)
+    #         self.legendaryCodeEdit.clear()
+    #         # Reload Epic Games Store games after successful authentication
+    #         self.games = self.loadGames()
+    #         self.updateGameGrid()
+    #     except subprocess.CalledProcessError as e:
+    #         logger.error("Legendary authentication failed: %s", e.stderr)
+    #         self.statusBar().showMessage(_("Legendary authentication failed: {0}").format(e.stderr), 5000)
+    #     except FileNotFoundError:
+    #         logger.error("Legendary executable not found at %s", self.legendary_path)
+    #         self.statusBar().showMessage(_("Legendary executable not found"), 5000)
+    #     except Exception as e:
+    #         logger.error("Unexpected error during Legendary authentication: %s", str(e))
+    #         self.statusBar().showMessage(_("Unexpected error during authentication"), 5000)
 
     def resetSettings(self):
         """Сбрасывает настройки и перезапускает приложение."""
