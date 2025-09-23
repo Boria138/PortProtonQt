@@ -20,7 +20,7 @@
     },
     {
       "matchFileNames": [".python-version"],
-      "enabled": false,
+      "enabled": false
     },
     {
       "matchManagers": ["poetry", "pyenv"],
@@ -41,6 +41,6 @@
       "matchDatasources": ["github-runners", "python-version"],
       "enabled": false,
       "description": "Prevent Renovate from updating runs-on to unsupported ubuntu-24.04"
-    },
+    }
   ]
 }
