@@ -17,12 +17,22 @@ jobs:
       - name: Install required dependencies
         run: |
             sudo apt update
-            sudo apt install -y binutils coreutils desktop-file-utils gtk-update-icon-cache fakeroot fuse libgdk-pixbuf2.0-dev patchelf python3-pip python3-dev python3-setuptools squashfs-tools strace util-linux zsync git zstd
+            sudo apt install -y binutils coreutils desktop-file-utils gtk-update-icon-cache fakeroot fuse libgdk-pixbuf2.0-dev patchelf python3-pip python3-dev python3-setuptools python3-build python3-venv squashfs-tools strace util-linux zsync git zstd adwaita-icon-theme
 
-      - name: Install tools
+      - name: Upgrade pip toolchain
         run: |
-            pip3 install git+https://github.com/Boria138/appimage-builder.git
-            pip3 install uv
+          python3 -m pip install --upgrade \
+            pip setuptools setuptools-scm wheel packaging build
+
+      - name: Install appimage-builder
+        run: |
+          git clone https://github.com/Boria138/appimage-builder
+          cd appimage-builder
+          pip install .
+
+      - name: Install uv
+        run: |
+          pip install uv
 
       - name: Build AppImage
         run: |
