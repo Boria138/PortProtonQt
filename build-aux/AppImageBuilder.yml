@@ -1,16 +1,11 @@
 version: 1
 script:
-  # 1) чистим старый AppDir
   - rm -rf AppDir || true
-  # 2) создаём структуру каталога
   - mkdir -p AppDir/usr/local/lib/python3.10/dist-packages
-  # 3) UV: создаём виртуальное окружение и устанавливаем зависимости из pyproject.toml
   - uv venv
   - uv pip install --no-cache-dir ../
-  # 4) копируем всё из .venv в AppDir
   - cp -r .venv/lib/python3.10/site-packages/* AppDir/usr/local/lib/python3.10/dist-packages
   - cp -r share AppDir/usr
-  # 5) чистим от ненужных модулей и бинарников
   - rm -rf AppDir/usr/local/lib/python3.10/dist-packages/PySide6/Qt/qml/
   - rm -f AppDir/usr/local/lib/python3.10/dist-packages/PySide6/{assistant,designer,linguist,lrelease,lupdate}
   - rm -f AppDir/usr/local/lib/python3.10/dist-packages/PySide6/{Qt3DAnimation*,Qt3DCore*,Qt3DExtras*,Qt3DInput*,Qt3DLogic*,Qt3DRender*,QtBluetooth*,QtCharts*,QtConcurrent*,QtDataVisualization*,QtDesigner*,QtExampleIcons*,QtGraphs*,QtGraphsWidgets*,QtHelp*,QtHttpServer*,QtLocation*,QtMultimedia*,QtMultimediaWidgets*,QtNetwork*,QtNetworkAuth*,QtNfc*,QtOpenGL*,QtOpenGLWidgets*,QtPdf*,QtPdfWidgets*,QtPositioning*,QtPrintSupport*,QtQml*,QtQuick*,QtQuick3D*,QtQuickControls2*,QtQuickTest*,QtQuickWidgets*,QtRemoteObjects*,QtScxml*,QtSensors*,QtSerialBus*,QtSerialPort*,QtSpatialAudio*,QtSql*,QtStateMachine*,QtSvgWidgets*,QtTest*,QtTextToSpeech*,QtUiTools*,QtWebChannel*,QtWebEngineCore*,QtWebEngineQuick*,QtWebEngineWidgets*,QtWebSockets*,QtWebView*,QtXml*}
@@ -19,7 +14,6 @@ script:
 AppDir:
   path: ./AppDir
   after_bundle:
-    # Документация, справка, примеры
     - rm -rf $TARGET_APPDIR/usr/share/man || true
     - rm -rf $TARGET_APPDIR/usr/share/doc || true
     - rm -rf $TARGET_APPDIR/usr/share/doc-base || true
@@ -35,11 +29,8 @@ AppDir:
     - rm -rf $TARGET_APPDIR/usr/share/metainfo || true
     - rm -rf $TARGET_APPDIR/usr/include || true
     - rm -rf $TARGET_APPDIR/usr/lib/pkgconfig || true
-    # Статика и отладка
     - find $TARGET_APPDIR -type f \( -name '*.a' -o -name '*.la' -o -name '*.h' -o -name '*.cmake' -o -name '*.pdb' \) -delete || true
-    # Strip ELF бинарников (исключая Python extensions)
     - "find $TARGET_APPDIR -type f -executable -exec file {} \\; | grep ELF | grep -v '/dist-packages/' | grep -v '/site-packages/' | cut -d: -f1 | xargs strip --strip-unneeded || true"
-    # Удаление пустых папок
     - find $TARGET_APPDIR -type d -empty -delete || true
   app_info:
     id: ru.linux_gaming.PortProtonQt
@@ -64,15 +55,12 @@ AppDir:
       - libimage-exiftool-perl
       - xdg-utils
     exclude:
-      # Документация и man-страницы
       - "*-doc"
       - "*-man"
       - manpages
       - mandb
-      # Статические библиотеки
       - "*-dev"
       - "*-static"
-      # Дебаг-символы
       - "*-dbg"
       - "*-dbgsym"
   runtime:
@@ -83,3 +71,4 @@ AppDir:
 AppImage:
   sign-key: None
   arch: x86_64
+  comp: zstd
