@@ -4,7 +4,7 @@ import re
 from typing import cast, TYPE_CHECKING
 from PySide6.QtGui import QPixmap, QIcon
 from PySide6.QtWidgets import (
-    QDialog, QFormLayout, QHBoxLayout, QLabel, QVBoxLayout, QListWidget, QScrollArea, QWidget, QListWidgetItem, QSizePolicy, QApplication, QProgressBar
+    QDialog, QFormLayout, QHBoxLayout, QLabel, QVBoxLayout, QListWidget, QScrollArea, QWidget, QListWidgetItem, QSizePolicy, QApplication, QProgressBar, QScroller
 )
 from PySide6.QtCore import Qt, QObject, Signal, QMimeDatabase, QTimer, QThreadPool, QRunnable, Slot
 from icoextract import IconExtractor, IconExtractorError
@@ -374,6 +374,9 @@ class FileExplorer(QDialog):
         self.file_list.itemDoubleClicked.connect(self.handle_item_double_click)
         self.file_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.file_list.customContextMenuRequested.connect(self.show_folder_context_menu)
+        self.file_list.setHorizontalScrollMode(QListWidget.ScrollMode.ScrollPerPixel)
+        self.file_list.setVerticalScrollMode(QListWidget.ScrollMode.ScrollPerPixel)
+        QScroller.grabGesture(self.file_list.viewport(), QScroller.ScrollerGestureType.LeftMouseButtonGesture)
         self.main_layout.addWidget(self.file_list)
 
         # Connect scroll signal for lazy loading
