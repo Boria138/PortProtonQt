@@ -10,7 +10,7 @@ from portprotonqt.logger import get_logger
 from portprotonqt.dialogs import AddGameDialog, FileExplorer
 from portprotonqt.game_card import GameCard
 from portprotonqt.animations import DetailPageAnimations
-from portprotonqt.custom_widgets import FlowLayout, ClickableLabel, AutoSizeButton, NavLabel
+from portprotonqt.custom_widgets import ClickableLabel, AutoSizeButton, NavLabel
 from portprotonqt.portproton_api import PortProtonAPI
 from portprotonqt.input_manager import InputManager
 from portprotonqt.context_menu_manager import ContextMenuManager, CustomLineEdit
@@ -34,9 +34,11 @@ from portprotonqt.localization import _, get_egs_language, read_metadata_transla
 from portprotonqt.howlongtobeat_api import HowLongToBeat
 from portprotonqt.downloader import Downloader
 from portprotonqt.tray_manager import TrayManager
+from portprotonqt.game_library_manager import GameLibraryManager
 
-from PySide6.QtWidgets import (QLineEdit, QMainWindow, QStatusBar, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox, QScrollArea, QSlider,
-                               QDialog, QFormLayout, QFrame, QGraphicsDropShadowEffect, QMessageBox, QApplication, QPushButton, QProgressBar, QCheckBox, QSizePolicy, QScroller)
+
+from PySide6.QtWidgets import (QLineEdit, QMainWindow, QStatusBar, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox,
+                               QDialog, QFormLayout, QFrame, QGraphicsDropShadowEffect, QMessageBox, QApplication, QPushButton, QProgressBar, QCheckBox, QSizePolicy)
 from PySide6.QtCore import Qt, QAbstractAnimation, QUrl, Signal, QTimer, Slot
 from PySide6.QtGui import QIcon, QPixmap, QColor, QDesktopServices
 from typing import cast
@@ -47,14 +49,12 @@ from datetime import datetime
 logger = get_logger(__name__)
 
 class MainWindow(QMainWindow):
-    """Main window of PortProtonQt."""
     games_loaded = Signal(list)
-    update_progress = Signal(int)  # Signal to update progress bar
-    update_status_message = Signal(str, int)  # Signal to update status message
+    update_progress = Signal(int)
+    update_status_message = Signal(str, int)
 
     def __init__(self, app_name: str):
         super().__init__()
-        # Создаём менеджер тем и читаем, какая тема выбрана
         self.theme_manager = ThemeManager()
         self.is_exiting = False
         selected_theme = read_theme_from_config()
@@ -62,23 +62,27 @@ class MainWindow(QMainWindow):
         self.theme = self.theme_manager.apply_theme(selected_theme)
         self.tray_manager = TrayManager(self, app_name, self.current_theme_name)
         self.card_width = read_card_size()
+        self._last_card_width = self.card_width
         self.setWindowTitle(app_name)
         self.setMinimumSize(800, 600)
 
         self.games = []
-        self.filtered_games = self.games
         self.game_processes = []
         self.target_exe = None
         self.current_running_button = None
         self.portproton_location = get_portproton_location()
+
+        self.game_library_manager = GameLibraryManager(self, self.theme, None)
 
         self.context_menu_manager = ContextMenuManager(
             self,
             self.portproton_location,
             self.theme,
             self.loadGames,
-            self.updateGameGrid
+            self.game_library_manager.update_game_grid
         )
+
+        self.game_library_manager.context_menu_manager = self.context_menu_manager
 
         QApplication.setStyle("Fusion")
         self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE)
@@ -86,26 +90,22 @@ class MainWindow(QMainWindow):
         self.current_exec_line = None
         self.currentDetailPage = None
         self.current_play_button = None
-        self.current_focused_card = None
+        self.current_focused_card: GameCard | None = None
+        self.current_hovered_card: GameCard | None = None
         self.pending_games = []
-        self.game_card_cache = {}
-        self.pending_images = {}
         self.total_games = 0
         self.games_load_timer = QTimer(self)
         self.games_load_timer.setSingleShot(True)
         self.games_load_timer.timeout.connect(self.finalize_game_loading)
         self.games_loaded.connect(self.on_games_loaded)
         self.current_add_game_dialog = None
-        self.current_hovered_card = None
 
-        # Добавляем таймер для дебаунсинга сохранения настроек
         self.settingsDebounceTimer = QTimer(self)
         self.settingsDebounceTimer.setSingleShot(True)
-        self.settingsDebounceTimer.setInterval(300)  # 300 мс задержка
+        self.settingsDebounceTimer.setInterval(300)
         self.settingsDebounceTimer.timeout.connect(self.applySettingsDelayed)
 
         read_time_config()
-        # Set LEGENDARY_CONFIG_PATH to ~/.cache/PortProtonQt/legendary_cache
         self.legendary_config_path = os.path.join(
             os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache")),
             "PortProtonQt", "legendary_cache"
@@ -144,7 +144,7 @@ class MainWindow(QMainWindow):
         headerLayout.setContentsMargins(0, 0, 0, 0)
         headerLayout.addStretch()
 
-        self.input_manager = InputManager(self)
+        self.input_manager = InputManager(self) # type: ignore
         self.input_manager.button_pressed.connect(self.updateControlHints)
         self.input_manager.dpad_moved.connect(self.updateControlHints)
 
@@ -196,15 +196,13 @@ class MainWindow(QMainWindow):
         self.stackedWidget = QStackedWidget()
         mainLayout.addWidget(self.stackedWidget)
 
-        # Создаём все вкладки
-        self.createInstalledTab()    # вкладка 0
-        self.createAutoInstallTab()  # вкладка 1
-        self.createEmulatorsTab()    # вкладка 2
-        self.createWineTab()         # вкладка 3
-        self.createPortProtonTab()   # вкладка 4
-        self.createThemeTab()        # вкладка 5
+        self.createInstalledTab()
+        self.createAutoInstallTab()
+        self.createEmulatorsTab()
+        self.createWineTab()
+        self.createPortProtonTab()
+        self.createThemeTab()
 
-        # Подсказки управления
         self.controlHintsWidget = self.createControlHintsWidget()
         mainLayout.addWidget(self.controlHintsWidget)
 
@@ -221,6 +219,11 @@ class MainWindow(QMainWindow):
                 self.resize(width, height)
             else:
                 self.showNormal()
+
+    def on_slider_released(self) -> None:
+        """Delegate to game library manager."""
+        if hasattr(self, 'game_library_manager'):
+            self.game_library_manager.on_slider_released()
 
     def get_button_icon(self, action: str, gtype: GamepadType) -> str:
         """Get the icon name for a specific action and gamepad type."""
@@ -429,31 +432,7 @@ class MainWindow(QMainWindow):
 
     @Slot(list)
     def on_games_loaded(self, games: list[tuple]):
-        self.games = games
-        favorites = read_favorites()
-        sort_method = read_sort_method()
-
-        # Sort by: favorites first, then descending playtime, then descending last launch
-        if sort_method == "playtime":
-            self.games.sort(key=lambda g: (0 if g[0] in favorites else 1, -g[11], -g[10]))
-
-        # Sort by: favorites first, then alphabetically by game name
-        elif sort_method == "alphabetical":
-            self.games.sort(key=lambda g: (0 if g[0] in favorites else 1, g[0].lower()))
-
-        # Sort by: favorites first, then leave the rest in their original order
-        elif sort_method == "favorites":
-            self.games.sort(key=lambda g: (0 if g[0] in favorites else 1))
-
-        # Sort by: favorites first, then descending last launch, then descending playtime
-        elif sort_method == "last_launch":
-            self.games.sort(key=lambda g: (0 if g[0] in favorites else 1, -g[10], -g[11]))
-
-        # Fallback: same as last_launch
-        else:
-            self.games.sort(key=lambda g: (0 if g[0] in favorites else 1, -g[10], -g[11]))
-
-        self.updateGameGrid()
+        self.game_library_manager.set_games(games)
         self.progress_bar.setVisible(False)
 
     def open_portproton_forum_topic(self, topic_name: str):
@@ -465,65 +444,6 @@ class MainWindow(QMainWindow):
         else:
             url = QUrl(f"{base_url}t/{result}")
         QDesktopServices.openUrl(url)
-
-    def _on_card_focused(self, game_name: str, is_focused: bool):
-        """Обработчик сигнала focusChanged от GameCard."""
-        card_key = None
-        for key, card in self.game_card_cache.items():
-            if card.name == game_name:
-                card_key = key
-                break
-
-        if not card_key:
-            return
-
-        card = self.game_card_cache[card_key]
-
-        if is_focused:
-            # Если карточка получила фокус
-            if self.current_hovered_card and self.current_hovered_card != card:
-                # Сбрасываем текущую hovered карточку
-                self.current_hovered_card._hovered = False
-                self.current_hovered_card.leaveEvent(None)
-                self.current_hovered_card = None
-            if self.current_focused_card and self.current_focused_card != card:
-                # Сбрасываем текущую focused карточку
-                self.current_focused_card._focused = False
-                self.current_focused_card.clearFocus()
-            self.current_focused_card = card
-        else:
-            # Если карточка потеряла фокус
-            if self.current_focused_card == card:
-                self.current_focused_card = None
-
-    def _on_card_hovered(self, game_name: str, is_hovered: bool):
-        """Обработчик сигнала hoverChanged от GameCard."""
-        card_key = None
-        for key, card in self.game_card_cache.items():
-            if card.name == game_name:
-                card_key = key
-                break
-
-        if not card_key:
-            return
-
-        card = self.game_card_cache[card_key]
-
-        if is_hovered:
-            # Если мышь наведена на карточку
-            if self.current_focused_card and self.current_focused_card != card:
-                # Сбрасываем текущую focused карточку
-                self.current_focused_card._focused = False
-                self.current_focused_card.clearFocus()
-            if self.current_hovered_card and self.current_hovered_card != card:
-                # Сбрасываем предыдущую hovered карточку
-                self.current_hovered_card._hovered = False
-                self.current_hovered_card.leaveEvent(None)
-            self.current_hovered_card = card
-        else:
-            # Если мышь покинула карточку
-            if self.current_hovered_card == card:
-                self.current_hovered_card = None
 
     def loadGames(self):
         display_filter = read_display_filter()
@@ -797,7 +717,7 @@ class MainWindow(QMainWindow):
         overlay = SystemOverlay(self, self.theme)
         overlay.exec()
 
-    def createSearchWidget(self) -> tuple[QWidget, QLineEdit]:
+    def createSearchWidget(self) -> tuple[QWidget, CustomLineEdit]:
         self.container = QWidget()
         self.container.setStyleSheet(self.theme.CONTAINER_STYLE)
         layout = QHBoxLayout(self.container)
@@ -823,12 +743,11 @@ class MainWindow(QMainWindow):
         self.searchEdit.setClearButtonEnabled(True)
         self.searchEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE)
 
-        # Добавляем дебансирование для поиска
         self.searchEdit.textChanged.connect(self.startSearchDebounce)
         self.searchDebounceTimer = QTimer(self)
         self.searchDebounceTimer.setSingleShot(True)
         self.searchDebounceTimer.setInterval(300)
-        self.searchDebounceTimer.timeout.connect(self.filterGamesDelayed)
+        self.searchDebounceTimer.timeout.connect(self.game_library_manager.filter_games_delayed)
 
         layout.addWidget(self.searchEdit)
         return self.container, self.searchEdit
@@ -836,76 +755,10 @@ class MainWindow(QMainWindow):
     def startSearchDebounce(self, text):
         self.searchDebounceTimer.start()
 
-    def on_slider_released(self):
-        self.card_width = self.sizeSlider.value()
-        self.sizeSlider.setToolTip(f"{self.card_width} px")
-        save_card_size(self.card_width)
-        for card in self.game_card_cache.values():
-            card.update_card_size(self.card_width)
-        self.updateGameGrid()
-
-    def filterGamesDelayed(self):
-        """Filters games based on search text and updates the grid."""
-        text = self.searchEdit.text().strip().lower()
-        if text == "":
-            self.filtered_games = self.games
-        else:
-            self.filtered_games = [game for game in self.games if text in game[0].lower()]
-        self.updateGameGrid(self.filtered_games)
-
     def createInstalledTab(self):
-        self.gamesLibraryWidget = QWidget()
-        self.gamesLibraryWidget.setStyleSheet(self.theme.LIBRARY_WIDGET_STYLE)
-        layout = QVBoxLayout(self.gamesLibraryWidget)
-        layout.setSpacing(15)
-
-        searchWidget, self.searchEdit = self.createSearchWidget()
-        layout.addWidget(searchWidget)
-
-        scrollArea = QScrollArea()
-        scrollArea.setWidgetResizable(True)
-        scrollArea.setStyleSheet(self.theme.SCROLL_AREA_STYLE)
-        QScroller.grabGesture(scrollArea.viewport(), QScroller.ScrollerGestureType.LeftMouseButtonGesture)
-
-        self.gamesListWidget = QWidget()
-        self.gamesListWidget.setStyleSheet(self.theme.LIST_WIDGET_STYLE)
-        self.gamesListLayout = FlowLayout(self.gamesListWidget)
-        self.gamesListWidget.setLayout(self.gamesListLayout)
-
-        scrollArea.setWidget(self.gamesListWidget)
-        layout.addWidget(scrollArea)
-
-        sliderLayout = QHBoxLayout()
-        sliderLayout.addStretch()
-
-        # Слайдер
-        self.sizeSlider = QSlider(Qt.Orientation.Horizontal)
-        self.sizeSlider.setMinimum(200)
-        self.sizeSlider.setMaximum(250)
-        self.sizeSlider.setValue(self.card_width)
-        self.sizeSlider.setTickInterval(10)
-        self.sizeSlider.setFixedWidth(150)
-        self.sizeSlider.setToolTip(f"{self.card_width} px")
-        self.sizeSlider.setStyleSheet(self.theme.SLIDER_SIZE_STYLE)
-        self.sizeSlider.sliderReleased.connect(self.on_slider_released)
-        sliderLayout.addWidget(self.sizeSlider)
-
-        layout.addLayout(sliderLayout)
-
-        def calculate_card_width():
-            available_width = scrollArea.width() - 20
-            spacing = self.gamesListLayout._spacing
-            target_cards_per_row = 8
-            calculated_width = (available_width - spacing * (target_cards_per_row - 1)) // target_cards_per_row
-            calculated_width = max(200, min(calculated_width, 250))
-
-        QTimer.singleShot(0, calculate_card_width)
-
-        # Добавляем обработчик прокрутки для ленивой загрузки
-        scrollArea.verticalScrollBar().valueChanged.connect(self.loadVisibleImages)
-
+        self.gamesLibraryWidget = self.game_library_manager.create_games_library_widget()
         self.stackedWidget.addWidget(self.gamesLibraryWidget)
-        self.updateGameGrid()
+        self.game_library_manager.update_game_grid()
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -923,135 +776,6 @@ class MainWindow(QMainWindow):
         if abs(self.width() - self._last_width) > 10:
             self._last_width = self.width()
 
-    def loadVisibleImages(self):
-        visible_region = self.gamesListWidget.visibleRegion()
-        max_concurrent_loads = 5
-        loaded_count = 0
-        for card_key, card in self.game_card_cache.items():
-            if card_key in self.pending_images and visible_region.contains(card.pos()) and loaded_count < max_concurrent_loads:
-                cover_path, width, height, callback = self.pending_images.pop(card_key)
-                load_pixmap_async(cover_path, width, height, callback)
-                loaded_count += 1
-
-    def updateGameGrid(self, games_list=None):
-        """Обновляет сетку игровых карточек с сохранением порядка сортировки"""
-        # Подготовка данных
-        games_list = games_list if games_list is not None else self.games
-        search_text = self.searchEdit.text().strip().lower()
-        favorites = read_favorites()
-        sort_method = read_sort_method()
-
-        # Сортируем игры согласно текущим настройкам
-        def sort_key(game):
-            name = game[0]
-            # Избранные всегда первые
-            if name in favorites:
-                fav_order = 0
-            else:
-                fav_order = 1
-
-            if sort_method == "playtime":
-                return (fav_order, -game[11], -game[10])  # playtime_seconds, last_launch_ts
-            elif sort_method == "alphabetical":
-                return (fav_order, name.lower())
-            elif sort_method == "favorites":
-                return (fav_order,)
-            else:  # "last_launch" или по умолчанию
-                return (fav_order, -game[10], -game[11])  # last_launch_ts, playtime_seconds
-
-        sorted_games = sorted(games_list, key=sort_key)
-
-        # Создаем временный список для новых карточек
-        new_card_order = []
-
-        # Обрабатываем каждую игру в отсортированном порядке
-        for game_data in sorted_games:
-            game_name = game_data[0]
-            exec_line = game_data[4]
-            game_key = (game_name, exec_line)
-            should_be_visible = not search_text or search_text in game_name.lower()
-
-            # Если карточка уже существует - используем существующую
-            if game_key in self.game_card_cache:
-                card = self.game_card_cache[game_key]
-                card.setVisible(should_be_visible)
-                new_card_order.append((game_key, card))
-                continue
-
-            # Создаем новую карточку
-            card = GameCard(
-                *game_data,
-                select_callback=self.openGameDetailPage,
-                theme=self.theme,
-                card_width=self.card_width,
-                context_menu_manager=self.context_menu_manager
-            )
-
-            # Подключаем сигналы
-            card.hoverChanged.connect(self._on_card_hovered)
-            card.focusChanged.connect(self._on_card_focused)
-
-            # Подключаем сигналы контекстного меню
-            card.editShortcutRequested.connect(self.context_menu_manager.edit_game_shortcut)
-            card.deleteGameRequested.connect(self.context_menu_manager.delete_game)
-            card.addToMenuRequested.connect(self.context_menu_manager.add_to_menu)
-            card.removeFromMenuRequested.connect(self.context_menu_manager.remove_from_menu)
-            card.addToDesktopRequested.connect(self.context_menu_manager.add_to_desktop)
-            card.removeFromDesktopRequested.connect(self.context_menu_manager.remove_from_desktop)
-            card.addToSteamRequested.connect(self.context_menu_manager.add_to_steam)
-            card.removeFromSteamRequested.connect(self.context_menu_manager.remove_from_steam)
-            card.openGameFolderRequested.connect(self.context_menu_manager.open_game_folder)
-
-            # Добавляем в кэш и временный список
-            self.game_card_cache[game_key] = card
-            new_card_order.append((game_key, card))
-            card.setVisible(should_be_visible)
-
-        # Полностью перестраиваем макет в правильном порядке, чистим FlowLayout
-        while self.gamesListLayout.count():
-            child = self.gamesListLayout.takeAt(0)
-            if child.widget():
-                child.widget().setParent(None)
-
-        # Добавляем карточки в макет в отсортированном порядке
-        for _game_key, card in new_card_order:
-            self.gamesListLayout.addWidget(card)
-
-            # Загружаем обложку, если карточка видима
-            if card.isVisible():
-                self.loadVisibleImages()
-
-        # Удаляем карточки для игр, которых больше нет в списке
-        existing_keys = {game_key for game_key, _ in new_card_order}
-        for card_key in list(self.game_card_cache.keys()):
-            if card_key not in existing_keys:
-                card = self.game_card_cache.pop(card_key)
-                card.deleteLater()
-                if card_key in self.pending_images:
-                    del self.pending_images[card_key]
-
-        # Принудительно обновляем макет
-        self.gamesListLayout.update()
-        self.gamesListWidget.updateGeometry()
-        self.gamesListWidget.update()
-
-        # Сохраняем текущий размер карточек
-        self._last_card_width = self.card_width
-
-    def clearLayout(self, layout):
-        """Удаляет все виджеты из layout."""
-        while layout.count():
-            child = layout.takeAt(0)
-            if child.widget():
-                widget = child.widget()
-                # Remove from game_card_cache if it's a GameCard
-                for key, card in list(self.game_card_cache.items()):
-                    if card == widget:
-                        del self.game_card_cache[key]
-                        # Also remove from pending_images if present
-                        if key in self.pending_images:
-                            del self.pending_images[key]
-                widget.deleteLater()
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
@@ -1069,26 +793,22 @@ class MainWindow(QMainWindow):
                 break
 
     def openAddGameDialog(self, exe_path=None):
-        """Открывает диалоговое окно 'Add Game' с текущей темой."""
-        # Проверяем, открыт ли уже диалог
         if self.current_add_game_dialog is not None and self.current_add_game_dialog.isVisible():
-            self.current_add_game_dialog.activateWindow()  # Активируем существующий диалог
-            self.current_add_game_dialog.raise_()  # Поднимаем окно
+            self.current_add_game_dialog.activateWindow()
+            self.current_add_game_dialog.raise_()
             return
 
         dialog = AddGameDialog(self, self.theme)
         dialog.setFocus(Qt.FocusReason.OtherFocusReason)
-        self.current_add_game_dialog = dialog  # Сохраняем ссылку на диалог
+        self.current_add_game_dialog = dialog
 
-        # Предзаполняем путь к .exe при drag-and-drop
         if exe_path:
             dialog.exeEdit.setText(exe_path)
             dialog.nameEdit.setText(os.path.splitext(os.path.basename(exe_path))[0])
             dialog.updatePreview()
 
-        # Обработчик закрытия диалога
         def on_dialog_finished():
-            self.current_add_game_dialog = None  # Сбрасываем ссылку при закрытии
+            self.current_add_game_dialog = None
 
         dialog.finished.connect(on_dialog_finished)
 
@@ -1100,14 +820,12 @@ class MainWindow(QMainWindow):
             if not name or not exe_path:
                 return
 
-            # Сохраняем .desktop файл
             desktop_entry, desktop_path = dialog.getDesktopEntryData()
             if desktop_entry and desktop_path:
                 with open(desktop_path, "w", encoding="utf-8") as f:
                     f.write(desktop_entry)
                     os.chmod(desktop_path, 0o755)
 
-                # Проверяем путь обложки, если он отличается от стандартной
                 if os.path.isfile(user_cover):
                     exe_name = os.path.splitext(os.path.basename(exe_path))[0]
                     xdg_data_home = os.getenv("XDG_DATA_HOME",
@@ -1119,14 +837,12 @@ class MainWindow(QMainWindow):
                         exe_name
                     )
                     os.makedirs(custom_folder, exist_ok=True)
-
-                    # Сохраняем пользовательскую обложку как cover.*
                     ext = os.path.splitext(user_cover)[1].lower()
                     if ext in [".png", ".jpg", ".jpeg", ".bmp"]:
                         shutil.copyfile(user_cover, os.path.join(custom_folder, f"cover{ext}"))
 
             self.games = self.loadGames()
-            self.updateGameGrid()
+            self.game_library_manager.update_game_grid()
 
     def createAutoInstallTab(self):
         """Вкладка 'Auto Install'."""
@@ -1488,18 +1204,14 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage(_("Cache cleared"), 3000)
 
     def applySettingsDelayed(self):
-        """Applies settings with the new filter and updates the game list."""
         read_time_config()
         self.games = []
         self.loadGames()
         display_filter = read_display_filter()
-        for card in self.game_card_cache.values():
+        for card in self.game_library_manager.game_card_cache.values():
             card.update_badge_visibility(display_filter)
 
     def savePortProtonSettings(self):
-        """
-        Сохраняет параметры конфигурации в конфигурационный файл.
-        """
         time_idx = self.timeDetailCombo.currentIndex()
         time_key = self.time_keys[time_idx]
         save_time_config(time_key)
@@ -1512,7 +1224,6 @@ class MainWindow(QMainWindow):
         filter_key = self.filter_keys[filter_idx]
         save_display_filter(filter_key)
 
-        # Сохранение proxy настроек
         proxy_url = self.proxyUrlEdit.text().strip()
         proxy_user = self.proxyUserEdit.text().strip()
         proxy_password = self.proxyPasswordEdit.text().strip()
@@ -1524,11 +1235,10 @@ class MainWindow(QMainWindow):
         auto_fullscreen_gamepad = self.autoFullscreenGamepadCheckBox.isChecked()
         save_auto_fullscreen_gamepad(auto_fullscreen_gamepad)
 
-        # Сохранение настройки виброотдачи геймпада
         rumble_enabled = self.gamepadRumbleCheckBox.isChecked()
         save_rumble_config(rumble_enabled)
 
-        for card in self.game_card_cache.values():
+        for card in self.game_library_manager.game_card_cache.values():
             card.update_badge_visibility(filter_key)
 
         if self.currentDetailPage and self.current_exec_line:
@@ -1541,14 +1251,12 @@ class MainWindow(QMainWindow):
 
         self.settingsDebounceTimer.start()
 
-        # Управление полноэкранным режимом
         gamepad_connected = self.input_manager.find_gamepad() is not None
         if fullscreen or (auto_fullscreen_gamepad and gamepad_connected):
             self.showFullScreen()
         else:
-            # Если обе галочки сняты и геймпад не подключен, возвращаем нормальное состояние
             self.showNormal()
-            self.resize(*read_window_geometry())  # Восстанавливаем сохраненные размеры окна
+            self.resize(*read_window_geometry())
 
         self.statusBar().showMessage(_("Settings saved"), 3000)
 
@@ -2130,7 +1838,7 @@ class MainWindow(QMainWindow):
             favorites.append(game_name)
             label.setText("★")
         save_favorites(favorites)
-        self.updateGameGrid()
+        self.game_library_manager.update_game_grid()
 
     def activateFocusedWidget(self):
         """Activate the currently focused widget."""
