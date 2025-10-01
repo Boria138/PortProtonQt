@@ -29,7 +29,7 @@ class ContextMenuSignals(QObject):
 class ContextMenuManager:
     """Manages context menu actions for game management in PortProtonQt."""
 
-    def __init__(self, parent, portproton_location, theme, load_games_callback, update_game_grid_callback):
+    def __init__(self, parent, portproton_location, theme, load_games_callback, game_library_manager):
         """
         Initialize the ContextMenuManager.
 
@@ -45,7 +45,8 @@ class ContextMenuManager:
         self.theme = theme
         self.theme_manager = ThemeManager()
         self.load_games = load_games_callback
-        self.update_game_grid = update_game_grid_callback
+        self.game_library_manager = game_library_manager
+        self.update_game_grid = game_library_manager.update_game_grid
         self.legendary_path = os.path.join(
             os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache")),
             "PortProtonQt", "legendary_cache", "legendary"
@@ -859,9 +860,16 @@ Icon={icon_path}
                         _("Failed to delete custom data: {error}").format(error=str(e))
                     )
 
-        # Reload games list and update grid
-        self.load_games()
-        self.update_game_grid()
+        self.update_game_grid = self.game_library_manager.remove_game_incremental
+        self.game_library_manager.remove_game_incremental(game_name, exec_line)
+
+    def add_game_incremental(self, game_data: tuple):
+        """Add game after .desktop creation."""
+        if not self._check_portproton():
+            return
+        # Assume game_data is built from new .desktop (name, desc, cover, etc.)
+        self.game_library_manager.add_game_incremental(game_data)
+        self._show_status_message(_("Added '{game_name}' successfully").format(game_name=game_data[0]))
 
     def add_to_menu(self, game_name, exec_line):
         """Copy the .desktop file to ~/.local/share/applications."""

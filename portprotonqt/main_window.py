@@ -79,7 +79,7 @@ class MainWindow(QMainWindow):
             self.portproton_location,
             self.theme,
             self.loadGames,
-            self.game_library_manager.update_game_grid
+            self.game_library_manager
         )
 
         self.game_library_manager.context_menu_manager = self.context_menu_manager
@@ -826,23 +826,118 @@ class MainWindow(QMainWindow):
                     f.write(desktop_entry)
                     os.chmod(desktop_path, 0o755)
 
-                if os.path.isfile(user_cover):
-                    exe_name = os.path.splitext(os.path.basename(exe_path))[0]
-                    xdg_data_home = os.getenv("XDG_DATA_HOME",
-                        os.path.join(os.path.expanduser("~"), ".local", "share"))
-                    custom_folder = os.path.join(
-                        xdg_data_home,
-                        "PortProtonQt",
-                        "custom_data",
-                        exe_name
-                    )
-                    os.makedirs(custom_folder, exist_ok=True)
-                    ext = os.path.splitext(user_cover)[1].lower()
-                    if ext in [".png", ".jpg", ".jpeg", ".bmp"]:
-                        shutil.copyfile(user_cover, os.path.join(custom_folder, f"cover{ext}"))
+                exe_name = os.path.splitext(os.path.basename(exe_path))[0]
+                xdg_data_home = os.getenv("XDG_DATA_HOME",
+                    os.path.join(os.path.expanduser("~"), ".local", "share"))
+                custom_folder = os.path.join(
+                    xdg_data_home,
+                    "PortProtonQt",
+                    "custom_data",
+                    exe_name
+                )
+                os.makedirs(custom_folder, exist_ok=True)
 
-            self.games = self.loadGames()
-            self.game_library_manager.update_game_grid()
+                # Handle user cover copy
+                cover_path = None
+                if user_cover:
+                    ext = os.path.splitext(user_cover)[1].lower()
+                    if os.path.isfile(user_cover) and ext in [".png", ".jpg", ".jpeg", ".bmp"]:
+                        copied_cover = os.path.join(custom_folder, f"cover{ext}")
+                        shutil.copyfile(user_cover, copied_cover)
+                        cover_path = copied_cover
+
+                # Parse .desktop (adapt from _process_desktop_file_async)
+                entry = parse_desktop_entry(desktop_path)
+                if not entry:
+                    return
+                description = entry.get("Comment", "")
+                exec_line = entry.get("Exec", exe_path)
+
+                # Builtin custom folder (adapt path)
+                repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                builtin_custom_folder = os.path.join(repo_root, "portprotonqt", "custom_data")
+                builtin_game_folder = os.path.join(builtin_custom_folder, exe_name)
+                builtin_cover = ""
+                if os.path.exists(builtin_game_folder):
+                    builtin_files = set(os.listdir(builtin_game_folder))
+                    for ext in [".jpg", ".png", ".jpeg", ".bmp"]:
+                        candidate = f"cover{ext}"
+                        if candidate in builtin_files:
+                            builtin_cover = os.path.join(builtin_game_folder, candidate)
+                            break
+
+                # User cover fallback
+                user_cover_path = cover_path  # Already set if user provided
+
+                # Statistics (playtime, last launch - defaults for new)
+                playtime_seconds = 0
+                formatted_playtime = format_playtime(playtime_seconds)
+                last_played_timestamp = 0
+                last_launch = _("Never")
+
+                # Language for translations
+                language_code = get_egs_language()
+
+                # Read translations from metadata.txt
+                user_metadata_file = os.path.join(custom_folder, "metadata.txt")
+                builtin_metadata_file = os.path.join(builtin_game_folder, "metadata.txt")
+
+                translations = {'name': name, 'description': description}
+                if os.path.exists(user_metadata_file):
+                    translations = read_metadata_translations(user_metadata_file, language_code)
+                elif os.path.exists(builtin_metadata_file):
+                    translations = read_metadata_translations(builtin_metadata_file, language_code)
+
+                final_name = translations['name']
+                final_desc = translations['description']
+
+                def on_steam_info(steam_info: dict):
+                    nonlocal final_name, final_desc
+                    # Adapt final_cover logic from _process_desktop_file_async
+                    final_cover = (user_cover_path if user_cover_path else
+                                builtin_cover if builtin_cover else
+                                steam_info.get("cover", "") or entry.get("Icon", ""))
+
+                    # Use Steam description as fallback if no translation
+                    steam_desc = steam_info.get("description", "")
+                    if steam_desc and steam_desc != final_desc:
+                        final_desc = steam_desc
+
+                    # Use Steam name as fallback if better
+                    steam_name = steam_info.get("name", "")
+                    if steam_name and steam_name != final_name:
+                        final_name = steam_name
+
+                    # Build full game_data tuple with all Steam data
+                    game_data = (
+                        final_name,
+                        final_desc,
+                        final_cover,
+                        steam_info.get("appid", ""),
+                        exec_line,
+                        steam_info.get("controller_support", ""),
+                        last_launch,
+                        formatted_playtime,
+                        steam_info.get("protondb_tier", ""),
+                        steam_info.get("anticheat_status", ""),
+                        last_played_timestamp,
+                        playtime_seconds,
+                        "portproton"
+                    )
+
+                    # Incremental add
+                    self.game_library_manager.add_game_incremental(game_data)
+
+                    # Status message
+                    msg = _("Added '{name}'").format(name=final_name)
+                    self.statusBar().showMessage(msg, 3000)
+
+                    # Trigger visible images load
+                    QTimer.singleShot(200, self.game_library_manager.load_visible_images)
+
+                self.update_status_message.emit(_("Enriching from Steam..."), 3000)
+                from portprotonqt.steam_api import get_steam_game_info_async
+                get_steam_game_info_async(final_name, exec_line, on_steam_info)
 
     def createAutoInstallTab(self):
         """Вкладка 'Auto Install'."""
