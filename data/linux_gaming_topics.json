@@ -1,5 +1,97 @@
 [
   {
+    "normalized_title": "dirt rally 2.0 game of the year",
+    "slug": "dirt-rally-2-0-game-of-the-year-edition"
+  },
+  {
+    "normalized_title": "deus ex human revolution director’s cut",
+    "slug": "deus-ex-human-revolution-director-s-cut"
+  },
+  {
+    "normalized_title": "freelancer",
+    "slug": "freelancer"
+  },
+  {
+    "normalized_title": "everspace",
+    "slug": "everspace"
+  },
+  {
+    "normalized_title": "blades of time limited",
+    "slug": "blades-of-time-limited-edition"
+  },
+  {
+    "normalized_title": "chorus",
+    "slug": "chorus"
+  },
+  {
+    "normalized_title": "tom clancy's splinter cell pandora tomorrow",
+    "slug": "tom-clancys-splinter-cell-pandora-tomorrow"
+  },
+  {
+    "normalized_title": "the alters",
+    "slug": "the-alters"
+  },
+  {
+    "normalized_title": "hard reset redux",
+    "slug": "hard-reset-redux"
+  },
+  {
+    "normalized_title": "far cry 5",
+    "slug": "far-cry-5"
+  },
+  {
+    "normalized_title": "metal eden",
+    "slug": "metal-eden"
+  },
+  {
+    "normalized_title": "indiana jones and the great circle",
+    "slug": "indiana-jones-and-the-great-circle"
+  },
+  {
+    "normalized_title": "old world",
+    "slug": "old-world"
+  },
+  {
+    "normalized_title": "witchfire",
+    "slug": "witchfire"
+  },
+  {
+    "normalized_title": "prototype",
+    "slug": "prototype"
+  },
+  {
+    "normalized_title": "mandragora whispers of the witch tree",
+    "slug": "mandragora-whispers-of-the-witch-tree"
+  },
+  {
+    "normalized_title": "grand theft auto v (gta 5)",
+    "slug": "grand-theft-auto-v-gta-5"
+  },
+  {
+    "normalized_title": "lifeless planet premier",
+    "slug": "lifeless-planet-premier-edition"
+  },
+  {
+    "normalized_title": "warcraft iii the frozen throne",
+    "slug": "warcraft-iii-the-frozen-throne"
+  },
+  {
+    "normalized_title": "star wars republic commando",
+    "slug": "star-wars-republic-commando"
+  },
+  {
+    "normalized_title": "hollow knight silksong",
+    "slug": "hollow-knight-silksong"
+  },
+  {
+    "normalized_title": "arma reforger",
+    "slug": "arma-reforger"
+  },
+  {
+    "normalized_title": "arma 3",
+    "slug": "arma-3"
+  },
+  {
     "normalized_title": "astroneer",
     "slug": "astroneer"
   },
@@ -194,10 +286,6 @@
   {
     "normalized_title": "slitterhead",
     "slug": "slitterhead"
-  },
-  {
-    "normalized_title": "indiana jones and the great circle",
-    "slug": "indiana-jones-and-the-great-circle"
   },
   {
     "normalized_title": "crossout",
