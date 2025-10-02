@@ -747,10 +747,21 @@ class MainWindow(QMainWindow):
         self.searchDebounceTimer = QTimer(self)
         self.searchDebounceTimer.setSingleShot(True)
         self.searchDebounceTimer.setInterval(300)
-        self.searchDebounceTimer.timeout.connect(self.game_library_manager.filter_games_delayed)
+        self.searchDebounceTimer.timeout.connect(self.on_search_changed)
 
         layout.addWidget(self.searchEdit)
         return self.container, self.searchEdit
+
+    def on_search_text_changed(self, text: str):
+        """Search text change handler with debounce."""
+        self.searchDebounceTimer.stop()
+        self.searchDebounceTimer.start()
+
+    @Slot()
+    def on_search_changed(self):
+        """Triggers filtering with delay."""
+        if hasattr(self, 'game_library_manager'):
+            self.game_library_manager.filter_games_delayed()
 
     def startSearchDebounce(self, text):
         self.searchDebounceTimer.start()

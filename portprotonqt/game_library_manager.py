@@ -51,8 +51,9 @@ class GameLibraryManager:
         self.sizeSlider: QSlider | None = None
         self._update_timer: QTimer | None = None
         self._pending_update = False
-        self.pending_deletions = deque()  # Queue for deferred widget deletion
-        self.dirty = False  # Flag for when full resort is needed
+        self.pending_deletions = deque()
+        self.is_filtering = False
+        self.dirty = False
 
     def create_games_library_widget(self):
         """Creates the games library widget with search, grid, and slider."""
@@ -201,10 +202,13 @@ class GameLibraryManager:
         self._pending_update = False
         self._update_game_grid_immediate()
 
-    def update_game_grid(self, games_list: list[tuple] | None = None):
+    def update_game_grid(self, games_list: list[tuple] | None = None, is_filter: bool = False):
         """Schedules a game grid update with debouncing."""
-        if games_list is not None:
-            self.filtered_games = games_list
+        if not is_filter:
+            if games_list is not None:
+                self.filtered_games = games_list
+            self.dirty = True  # Full rebuild only for non-filter
+        self.is_filtering = is_filter
         self._pending_update = True
 
         if self._update_timer is not None:
@@ -217,123 +221,157 @@ class GameLibraryManager:
         if self.gamesListLayout is None or self.gamesListWidget is None:
             return
 
-        games_list = self.filtered_games if self.filtered_games else self.games
         search_text = self.main_window.searchEdit.text().strip().lower()
-        favorites = read_favorites()
-        sort_method = read_sort_method()
 
-        # Batch layout updates (extended scope)
-        self.gamesListWidget.setUpdatesEnabled(False)
-        if self.gamesListLayout is not None:
-            self.gamesListLayout.setEnabled(False)  # Disable layout during batch
+        if self.is_filtering:
+            # Filter mode: do not change layout, only hide/show cards
+            self._apply_filter_visibility(search_text)
+        else:
+            # Full update: sorting, removal/addition, reorganization
+            games_list = self.filtered_games if self.filtered_games else self.games
+            favorites = read_favorites()
+            sort_method = read_sort_method()
 
-        try:
-            # Optimized sorting: Partition favorites first, then sort subgroups
-            def partition_sort_key(game):
-                name = game[0]
-                is_fav = name in favorites
-                fav_order = 0 if is_fav else 1
-                if sort_method == "playtime":
-                    return (fav_order, -game[11] if game[11] else 0, -game[10] if game[10] else 0)
-                elif sort_method == "alphabetical":
-                    return (fav_order, name.lower())
-                elif sort_method == "favorites":
-                    return (fav_order,)
+            # Batch layout updates (extended scope)
+            self.gamesListWidget.setUpdatesEnabled(False)
+            if self.gamesListLayout is not None:
+                self.gamesListLayout.setEnabled(False)  # Disable layout during batch
+
+            try:
+                # Optimized sorting: Partition favorites first, then sort subgroups
+                def partition_sort_key(game):
+                    name = game[0]
+                    is_fav = name in favorites
+                    fav_order = 0 if is_fav else 1
+                    if sort_method == "playtime":
+                        return (fav_order, -game[11] if game[11] else 0, -game[10] if game[10] else 0)
+                    elif sort_method == "alphabetical":
+                        return (fav_order, name.lower())
+                    elif sort_method == "favorites":
+                        return (fav_order,)
+                    else:
+                        return (fav_order, -game[10] if game[10] else 0, -game[11] if game[11] else 0)
+
+                # Quick partition: Sort favorites and non-favorites separately, then merge
+                fav_games = [g for g in games_list if g[0] in favorites]
+                non_fav_games = [g for g in games_list if g[0] not in favorites]
+                sorted_fav = sorted(fav_games, key=partition_sort_key)
+                sorted_non_fav = sorted(non_fav_games, key=partition_sort_key)
+                sorted_games = sorted_fav + sorted_non_fav
+
+                # Build set of current game keys for faster lookup
+                current_game_keys = {(game[0], game[4]) for game in sorted_games}
+
+                # Remove cards that no longer exist (batch)
+                cards_to_remove = []
+                for card_key in list(self.game_card_cache.keys()):
+                    if card_key not in current_game_keys:
+                        cards_to_remove.append(card_key)
+
+                for card_key in cards_to_remove:
+                    card = self.game_card_cache.pop(card_key)
+                    if self.gamesListLayout is not None:
+                        self.gamesListLayout.removeWidget(card)
+                    self.pending_deletions.append(card)  # Defer
+                    if card_key in self.pending_images:
+                        del self.pending_images[card_key]
+
+                # Track current layout order (only if dirty/full update needed)
+                if self.dirty and self.gamesListLayout is not None:
+                    current_layout_order = []
+                    for i in range(self.gamesListLayout.count()):
+                        item = self.gamesListLayout.itemAt(i)
+                        if item is not None:
+                            widget = item.widget()
+                            if widget:
+                                for key, card in self.game_card_cache.items():
+                                    if card == widget:
+                                        current_layout_order.append(key)
+                                        break
                 else:
-                    return (fav_order, -game[10] if game[10] else 0, -game[11] if game[11] else 0)
+                    current_layout_order = None  # Skip reorg if not dirty
 
-            # Quick partition: Sort favorites and non-favorites separately, then merge
-            fav_games = [g for g in games_list if g[0] in favorites]
-            non_fav_games = [g for g in games_list if g[0] not in favorites]
-            sorted_fav = sorted(fav_games, key=partition_sort_key)
-            sorted_non_fav = sorted(non_fav_games, key=partition_sort_key)
-            sorted_games = sorted_fav + sorted_non_fav
+                new_card_order = []
+                cards_to_add = []
 
-            # Build set of current game keys for faster lookup
-            current_game_keys = {(game[0], game[4]) for game in sorted_games}
+                for game_data in sorted_games:
+                    game_name = game_data[0]
+                    exec_line = game_data[4]
+                    game_key = (game_name, exec_line)
+                    should_be_visible = not search_text or search_text in game_name.lower()
 
-            # Remove cards that no longer exist (batch)
-            cards_to_remove = []
-            for card_key in list(self.game_card_cache.keys()):
-                if card_key not in current_game_keys:
-                    cards_to_remove.append(card_key)
+                    if game_key in self.game_card_cache:
+                        card = self.game_card_cache[game_key]
+                        if card.isVisible() != should_be_visible:
+                            card.setVisible(should_be_visible)
+                        new_card_order.append(game_key)
+                    else:
+                        if self.context_menu_manager is None:
+                            continue
 
-            for card_key in cards_to_remove:
-                card = self.game_card_cache.pop(card_key)
-                if self.gamesListLayout is not None:
-                    self.gamesListLayout.removeWidget(card)
-                self.pending_deletions.append(card)  # Defer
-                if card_key in self.pending_images:
-                    del self.pending_images[card_key]
-
-            # Track current layout order (only if dirty/full update needed)
-            if self.dirty and self.gamesListLayout is not None:
-                current_layout_order = []
-                for i in range(self.gamesListLayout.count()):
-                    item = self.gamesListLayout.itemAt(i)
-                    if item is not None:
-                        widget = item.widget()
-                        if widget:
-                            for key, card in self.game_card_cache.items():
-                                if card == widget:
-                                    current_layout_order.append(key)
-                                    break
-            else:
-                current_layout_order = None  # Skip reorg if not dirty
-
-            new_card_order = []
-            cards_to_add = []
-
-            for game_data in sorted_games:
-                game_name = game_data[0]
-                exec_line = game_data[4]
-                game_key = (game_name, exec_line)
-                should_be_visible = not search_text or search_text in game_name.lower()
-
-                if game_key in self.game_card_cache:
-                    card = self.game_card_cache[game_key]
-                    if card.isVisible() != should_be_visible:
+                        card = self._create_game_card(game_data)
+                        self.game_card_cache[game_key] = card
                         card.setVisible(should_be_visible)
-                    new_card_order.append(game_key)
-                else:
-                    if self.context_menu_manager is None:
-                        continue
+                        new_card_order.append(game_key)
+                        cards_to_add.append((game_key, card))
 
-                    card = self._create_game_card(game_data)
-                    self.game_card_cache[game_key] = card
-                    card.setVisible(should_be_visible)
-                    new_card_order.append(game_key)
-                    cards_to_add.append((game_key, card))
+                # Only reorganize if order changed AND dirty
+                if self.dirty and self.gamesListLayout is not None and (current_layout_order is None or new_card_order != current_layout_order):
+                    # Remove all widgets from layout (batch)
+                    while self.gamesListLayout.count():
+                        self.gamesListLayout.takeAt(0)
 
-            # Only reorganize if order changed AND dirty
-            if self.dirty and self.gamesListLayout is not None and (current_layout_order is None or new_card_order != current_layout_order):
-                # Remove all widgets from layout (batch)
-                while self.gamesListLayout.count():
-                    self.gamesListLayout.takeAt(0)
+                    # Add widgets in new order (batch)
+                    for game_key in new_card_order:
+                        card = self.game_card_cache[game_key]
+                        self.gamesListLayout.addWidget(card)
 
-                # Add widgets in new order (batch)
-                for game_key in new_card_order:
-                    card = self.game_card_cache[game_key]
-                    self.gamesListLayout.addWidget(card)
+                self.dirty = False  # Reset flag
 
-            self.dirty = False  # Reset flag
+                # Deferred deletions (run in timer to avoid stack overflow)
+                if self.pending_deletions:
+                    QTimer.singleShot(0, lambda: self._flush_deletions())
 
-            # Deferred deletions (run in timer to avoid stack overflow)
-            if self.pending_deletions:
-                QTimer.singleShot(0, lambda: self._flush_deletions())
+                # Load visible images for new cards only
+                if cards_to_add:
+                    self.load_visible_images()
 
-            # Load visible images for new cards only
-            if cards_to_add:
-                self.load_visible_images()
+            finally:
+                if self.gamesListLayout is not None:
+                    self.gamesListLayout.setEnabled(True)
+                self.gamesListWidget.setUpdatesEnabled(True)
+                if self.gamesListLayout is not None:
+                    self.gamesListLayout.update()
+                self.gamesListWidget.updateGeometry()
+                self.main_window._last_card_width = self.card_width
 
-        finally:
-            if self.gamesListLayout is not None:
-                self.gamesListLayout.setEnabled(True)
-            self.gamesListWidget.setUpdatesEnabled(True)
-            if self.gamesListLayout is not None:
-                self.gamesListLayout.update()
+        self.is_filtering = False  # Reset flag in any case
+
+    def _apply_filter_visibility(self, search_text: str):
+        """Applies visibility to cards based on search, without changing the layout."""
+        visible_count = 0
+        for game_key, card in self.game_card_cache.items():
+            game_name = card.name  # Assume GameCard has 'name' attribute
+            should_be_visible = not search_text or search_text in game_name.lower()
+            if card.isVisible() != should_be_visible:
+                card.setVisible(should_be_visible)
+            if should_be_visible:
+                visible_count += 1
+                # Load image only for newly visible cards
+                if game_key in self.pending_images:
+                    cover_path, width, height, callback = self.pending_images.pop(game_key)
+                    load_pixmap_async(cover_path, width, height, callback)
+
+        # Force geometry update so FlowLayout accounts for hidden widgets
+        if self.gamesListLayout is not None:
+            self.gamesListLayout.update()
+        if self.gamesListWidget is not None:
             self.gamesListWidget.updateGeometry()
-            self.main_window._last_card_width = self.card_width
+        self.main_window._last_card_width = self.card_width
+
+        # If search is empty, load images for visible ones
+        if not search_text:
+            self.load_visible_images()
 
     def _create_game_card(self, game_data: tuple) -> GameCard:
         """Creates a new game card with all necessary connections."""
@@ -412,9 +450,4 @@ class GameLibraryManager:
 
     def filter_games_delayed(self):
         """Filters games based on search text and updates the grid."""
-        text = self.main_window.searchEdit.text().strip().lower()
-        if text == "":
-            self.filtered_games = self.games
-        else:
-            self.filtered_games = [game for game in self.games if text in game[0].lower()]
-        self.update_game_grid(self.filtered_games)
+        self.update_game_grid(is_filter=True)
