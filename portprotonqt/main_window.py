@@ -301,12 +301,12 @@ class MainWindow(QMainWindow):
         def makeHint(icon_name: str, action_text: str, is_gamepad: bool, action: str | None = None,):
             container = QWidget()
             layout = QHBoxLayout(container)
-            layout.setContentsMargins(0, 0, 0, 0)
+            layout.setContentsMargins(0, 5, 0, 0)
             layout.setSpacing(6)
 
             # иконка кнопки
             icon_label = QLabel()
-            icon_label.setFixedSize(32, 32)
+            icon_label.setFixedSize(26, 26)
             icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
             pixmap = QPixmap()
@@ -319,7 +319,7 @@ class MainWindow(QMainWindow):
 
             if not pixmap.isNull():
                 icon_label.setPixmap(pixmap.scaled(
-                    32, 32,
+                    26, 26,
                     Qt.AspectRatioMode.KeepAspectRatio,
                     Qt.TransformationMode.SmoothTransformation
                 ))
@@ -412,7 +412,7 @@ class MainWindow(QMainWindow):
                         pixmap.load(str(icon_path))
                     if not pixmap.isNull():
                         icon_label.setPixmap(pixmap.scaled(
-                            32, 32,
+                            26, 26,
                             Qt.AspectRatioMode.KeepAspectRatio,
                             Qt.TransformationMode.SmoothTransformation
                         ))
@@ -421,7 +421,7 @@ class MainWindow(QMainWindow):
                         placeholder = self.theme_manager.get_theme_image("placeholder", self.current_theme_name)
                         if placeholder:
                             pixmap.load(str(placeholder))
-                            icon_label.setPixmap(pixmap.scaled(32, 32, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+                            icon_label.setPixmap(pixmap.scaled(26, 26, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
                 else:
                     container.setVisible(False)
             else:  # Keyboard hint
