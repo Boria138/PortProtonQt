@@ -54,8 +54,6 @@ PortProtonQt использует код и зависимости от след
 - [Legendary](https://github.com/derrod/legendary) — инструмент для работы с Epic Games Store, лицензия [GPL-3.0](https://github.com/derrod/legendary/blob/master/LICENSE).
 - [Icoextract](https://github.com/jlu5/icoextract) — библиотека для извлечения иконок, лицензия [MIT](https://github.com/jlu5/icoextract/blob/master/LICENSE).
 - [HowLongToBeat Python API](https://github.com/ScrappyCocco/HowLongToBeat-PythonAPI) — библиотека для взаимодействия с HowLongToBeat, лицензия [MIT](https://github.com/ScrappyCocco/HowLongToBeat-PythonAPI/blob/master/LICENSE.md).
-- [Those Awesome Guys: Gamepad prompts images](https://thoseawesomeguys.com/prompts/) - Набор подсказок для геймпада и клавиатур, лицензия [CC0](https://creativecommons.org/public-domain/cc0/)
-
 Полный текст лицензий см. в файле [LICENSE](LICENSE).
 
 > [!WARNING]
