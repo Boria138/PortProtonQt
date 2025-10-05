@@ -5,6 +5,9 @@ import signal
 import subprocess
 import sys
 import psutil
+import tarfile
+import glob
+import re
 
 from portprotonqt.logger import get_logger
 from portprotonqt.dialogs import AddGameDialog, FileExplorer
@@ -1005,13 +1008,334 @@ class MainWindow(QMainWindow):
         self.wineTitle.setObjectName("tabTitle")
         layout.addWidget(self.wineTitle)
 
-        self.wineContent = QLabel(_("Various Wine parameters and versions..."))
-        self.wineContent.setStyleSheet(self.theme.CONTENT_STYLE)
-        self.wineContent.setObjectName("tabContent")
-        layout.addWidget(self.wineContent)
+        # Путь к дистрибутивам Wine/Proton
+        if self.portproton_location is None:
+            content = QLabel(_("PortProton location not set"))
+            content.setStyleSheet(self.theme.CONTENT_STYLE)
+            content.setObjectName("tabContent")
+            layout.addWidget(content)
+            layout.addStretch(1)
+            self.stackedWidget.addWidget(self.wineWidget)
+            return
+
+        dist_path = os.path.join(self.portproton_location, "data", "dist")
+        prefixes_path = os.path.join(self.portproton_location, "data", "prefixes")
+
+        if not os.path.exists(dist_path):
+            content = QLabel(_("PortProton data/dist not found"))
+            content.setStyleSheet(self.theme.CONTENT_STYLE)
+            content.setObjectName("tabContent")
+            layout.addWidget(content)
+            layout.addStretch(1)
+            self.stackedWidget.addWidget(self.wineWidget)
+            return
+
+        # Форма с настройками
+        formLayout = QFormLayout()
+        formLayout.setContentsMargins(0, 10, 0, 0)
+        formLayout.setSpacing(10)
+        formLayout.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
+
+        # Выбор версии Wine/Proton
+        self.wine_versions = [d for d in os.listdir(dist_path) if os.path.isdir(os.path.join(dist_path, d))]
+        self.wineCombo = QComboBox()
+        self.wineCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.wineCombo.addItems(self.wine_versions)
+        self.wineCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
+        self.wineCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.wineTitleLabel = QLabel(_("Wine/Proton Version:"))
+        self.wineTitleLabel.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.wineTitleLabel.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        if self.wine_versions:
+            self.wineCombo.setCurrentIndex(0)  # Выбрать первую по умолчанию
+        formLayout.addRow(self.wineTitleLabel, self.wineCombo)
+
+        # Выбор префикса
+        self.prefixes = [d for d in os.listdir(prefixes_path) if os.path.isdir(os.path.join(prefixes_path, d))] if os.path.exists(prefixes_path) else []
+        self.prefixCombo = QComboBox()
+        self.prefixCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.prefixCombo.addItems(self.prefixes)
+        self.prefixCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
+        self.prefixCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.prefixTitleLabel = QLabel(_("Wine Prefix:"))
+        self.prefixTitleLabel.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.prefixTitleLabel.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        if self.prefixes:
+            self.prefixCombo.setCurrentIndex(0)  # Выбрать первый по умолчанию
+        formLayout.addRow(self.prefixTitleLabel, self.prefixCombo)
+
+        layout.addLayout(formLayout)
+
+        # Кнопки для стандартных инструментов Wine
+        toolsLayout = QHBoxLayout()
+        toolsLayout.setSpacing(10)
+
+        tools = [
+            ("winecfg", _("Wine Configuration")),
+            ("regedit", _("Registry Editor")),
+            ("control", _("Control Panel")),
+            ("taskmgr", _("Task Manager")),
+            ("explorer", _("File Explorer")),
+            ("cmd", _("Command Prompt")),
+        ]
+
+        for tool_cmd, tool_name in tools:
+            btn = AutoSizeButton(tool_name)
+            btn.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+            btn.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+            btn.clicked.connect(lambda checked, t=tool_cmd: self.run_wine_tool(t))
+            toolsLayout.addWidget(btn)
+
+        layout.addLayout(toolsLayout)
         layout.addStretch(1)
 
         self.stackedWidget.addWidget(self.wineWidget)
+
+    def prepare_wine(self, version):
+        """Подготавливает окружение Wine/Proton для выбранной версии."""
+        if not version:
+            return
+
+        if self.portproton_location is None:
+            logger.warning("PortProton location not set")
+            return
+
+        dist_path = os.path.join(self.portproton_location, "data", "dist")
+        winendir = os.path.join(dist_path, version)
+        if not os.path.exists(winendir):
+            logger.warning(f"Wine directory not found: {winendir}")
+            return
+
+        files_dir = os.path.join(winendir, "files")
+        dist_dir = os.path.join(winendir, "dist")
+        proton_tar = os.path.join(winendir, "proton_dist.tar")
+
+        if os.path.isdir(files_dir) and not os.path.isdir(dist_dir):
+            for item in os.listdir(winendir):
+                if item not in ["files", "version"]:
+                    item_path = os.path.join(winendir, item)
+                    if os.path.isdir(item_path):
+                        shutil.rmtree(item_path)
+                    else:
+                        os.remove(item_path)
+            if os.path.exists(files_dir):
+                for item in os.listdir(files_dir):
+                    shutil.move(os.path.join(files_dir, item), winendir)
+                os.rmdir(files_dir)
+        elif not os.path.isdir(files_dir) and os.path.isdir(dist_dir):
+            for item in os.listdir(winendir):
+                if item not in ["dist", "version"]:
+                    item_path = os.path.join(winendir, item)
+                    if os.path.isdir(item_path):
+                        shutil.rmtree(item_path)
+                    else:
+                        os.remove(item_path)
+            if os.path.exists(dist_dir):
+                for item in os.listdir(dist_dir):
+                    shutil.move(os.path.join(dist_dir, item), winendir)
+                os.rmdir(dist_dir)
+        elif os.path.isfile(proton_tar):
+            with tarfile.open(proton_tar) as tar:
+                tar.extractall(winendir)
+            os.remove(proton_tar)
+            for item in os.listdir(winendir):
+                if item not in ["bin", "lib", "lib64", "share", "version"]:
+                    item_path = os.path.join(winendir, item)
+                    if os.path.isdir(item_path):
+                        shutil.rmtree(item_path)
+                    else:
+                        os.remove(item_path)
+
+        if os.path.exists(winendir):
+            # Создать файл version
+            version_file = os.path.join(winendir, "version")
+            if not os.path.exists(version_file):
+                with open(version_file, "w") as f:
+                    f.write(version)
+
+            # Симлинк lib64/wine
+            lib_wine = os.path.join(winendir, "lib", "wine", "x86_64-unix")
+            lib64_wine = os.path.join(winendir, "lib64", "wine")
+            if not os.path.lexists(lib64_wine) and os.path.exists(lib_wine):
+                os.makedirs(os.path.join(winendir, "lib64"), exist_ok=True)
+                self.safe_symlink(os.path.join(winendir, "lib", "wine"), lib64_wine)
+
+            # Обработка mono и gecko
+            tmp_path = os.path.join(self.portproton_location, "tmp")
+            os.makedirs(tmp_path, exist_ok=True)
+            for component in ["mono", "gecko"]:
+                share_wine_comp = os.path.join(winendir, "share", "wine", component)
+                tmp_comp = os.path.join(tmp_path, component)
+                if os.path.lexists(share_wine_comp) and os.path.islink(share_wine_comp):
+                    logger.info(f"{share_wine_comp} is symlink. OK.")
+                elif os.path.isdir(share_wine_comp):
+                    self.safe_copytree(share_wine_comp, tmp_comp)
+                    self.safe_rmtree(share_wine_comp)
+                    self.safe_symlink(tmp_comp, share_wine_comp)
+                    logger.info(f"Copied {component} to tmp and created symlink. OK.")
+                else:
+                    self.safe_rmtree(share_wine_comp)
+                    if os.path.exists(tmp_comp):
+                        self.safe_symlink(tmp_comp, share_wine_comp)
+                    logger.warning(f"{share_wine_comp} is broken symlink. Repaired.")
+
+            # Модификация wine.inf
+            wine_inf = os.path.join(winendir, "share", "wine", "wine.inf")
+            if os.path.exists(wine_inf):
+                with open(wine_inf) as f:
+                    lines = f.readlines()
+
+                nvidia_uuid = 'Global,"{41FCC608-8496-4DEF-B43E-7D9BD675A6FF}",0x10001,0x00000001'
+                has_nvidia = any(nvidia_uuid in line for line in lines)
+                if not has_nvidia:
+                    lines.append('HKLM,Software\\NVIDIA Corporation\\Global,"{41FCC608-8496-4DEF-B43E-7D9BD675A6FF}",0x10001,0x00000001\n')
+                    lines.append('HKLM,System\\ControlSet001\\Services\\nvlddmkm,"{41FCC608-8496-4DEF-B43E-7D9BD675A6FF}",0x10001,0x00000001\n')
+
+                new_lines = []
+                for line in lines:
+                    if 'Steam.exe' in line or r'\\Valve\\Steam' in line or 'winemenubuilder' in line:
+                        continue
+                    new_lines.append(line)
+                lines = new_lines
+
+                with open(wine_inf, "w") as f:
+                    f.writelines(lines)
+
+            # Удаление steam и winemenubuilder файлов
+            for libdir in ["lib", "lib64"]:
+                lib_path = os.path.join(winendir, libdir)
+                if os.path.exists(lib_path):
+                    # *steam*
+                    for pattern in [
+                        os.path.join(lib_path, "*steam*"),
+                        os.path.join(lib_path, "wine", "*", "*steam*"),
+                        os.path.join(lib_path, "wine", "*-windows", "winemenubuilder.exe")
+                    ]:
+                        for file_path in glob.glob(pattern, recursive=True):
+                            try:
+                                os.remove(file_path)
+                            except Exception:
+                                pass
+
+    def safe_symlink(self, src, dst):
+        """Создает симлинк, удаляя dst если существует."""
+        if os.path.exists(dst):
+            if os.path.islink(dst):
+                os.remove(dst)
+            else:
+                shutil.rmtree(dst)
+        os.symlink(src, dst)
+
+    def safe_copytree(self, src, dst):
+        """Копирует директорию, удаляя dst если существует."""
+        if os.path.exists(dst):
+            shutil.rmtree(dst)
+        shutil.copytree(src, dst)
+
+    def safe_rmtree(self, path):
+        """Удаляет директорию если существует."""
+        if os.path.exists(path):
+            shutil.rmtree(path)
+
+    def clean_wine_dist_dirs(self):
+        """Normalizes Wine dist directory names to uppercase with underscores."""
+        if self.portproton_location is None:
+            return
+
+        dist_path = os.path.join(self.portproton_location, "data", "dist")
+        if not os.path.exists(dist_path):
+            return
+        for entry in os.scandir(dist_path):
+            if entry.is_dir():
+                dist_dir = entry.name
+                dist_dir_stripped = re.sub(r'\s+', ' ', dist_dir.strip())
+                dist_dir_new = dist_dir_stripped.replace(' ', '_').upper()
+                if dist_dir_new != dist_dir:
+                    new_path = os.path.join(dist_path, dist_dir_new)
+                    if not os.path.exists(new_path):
+                        try:
+                            os.rename(entry.path, new_path)
+                            logger.info(f"Renamed {dist_dir} to {dist_dir_new}")
+                        except Exception as e:
+                            logger.error(f"Failed to rename {dist_dir} to {dist_dir_new}: {e}")
+
+    def run_wine_tool(self, tool_cmd: str):
+        """Запускает инструмент Wine с выбранной версией и префиксом."""
+        version = self.wineCombo.currentText()
+        prefix = self.prefixCombo.currentText()
+
+        if not version:
+            QMessageBox.warning(self, _("Error"), _("Please select a Wine/Proton version"))
+            return
+
+        if not prefix:
+            QMessageBox.warning(self, _("Error"), _("Please select a prefix"))
+            return
+
+        if self.portproton_location is None:
+            QMessageBox.warning(self, _("Error"), _("PortProton location not set"))
+            return
+
+        # Clean and normalize dist directories
+        self.clean_wine_dist_dirs()
+
+        # Repopulate wineCombo with normalized names
+        dist_path = os.path.join(self.portproton_location, "data", "dist")
+        self.wine_versions = sorted([d for d in os.listdir(dist_path) if os.path.isdir(os.path.join(dist_path, d))])
+        self.wineCombo.clear()
+        self.wineCombo.addItems(self.wine_versions)
+
+        # Try to select the normalized original version
+        version_normalized = version.strip().replace(' ', '_').upper()
+        index = self.wineCombo.findText(version_normalized)
+        if index != -1:
+            self.wineCombo.setCurrentIndex(index)
+            version = version_normalized
+        elif self.wine_versions:
+            self.wineCombo.setCurrentIndex(0)
+            version = self.wine_versions[0]
+        else:
+            QMessageBox.warning(self, _("Error"), _("No Wine versions found after cleaning"))
+            return
+
+        # Prepare Wine for the (possibly updated) version
+        self.prepare_wine(version)
+
+        prefixes_path = os.path.join(self.portproton_location, "data", "prefixes")
+        winendir = os.path.join(dist_path, version)
+        wine_bin = os.path.join(winendir, "bin", "wine")
+        wineserver_bin = os.path.join(winendir, "bin", "wineserver")
+
+        if not os.path.exists(wine_bin):
+            QMessageBox.warning(self, _("Error"), _("Wine binary not found: {}").format(wine_bin))
+            return
+
+        prefix_dir = os.path.join(prefixes_path, prefix)
+        if not os.path.exists(prefix_dir):
+            QMessageBox.warning(self, _("Error"), _("Prefix not found: {}").format(prefix_dir))
+            return
+
+        env = os.environ.copy()
+        env['WINEPREFIX'] = prefix_dir
+        env['WINEDIR'] = winendir
+        env['WINE'] = wine_bin
+        env['WINELOADER'] = wine_bin
+        env['WINESERVER'] = wineserver_bin
+        env['WINEDEBUG'] = '-all'
+        env['WINEDLLOVERRIDES'] = "steam_api,steam_api64,steamclient,steamclient64=n;dotnetfx35.exe,dotnetfx35setup.exe=b;winemenubuilder.exe=;mscoree="
+
+        try:
+            if tool_cmd == "cmd":
+                # Open Command Prompt in a separate terminal
+                term_cmd = ["x-terminal-emulator", "-e", wine_bin, tool_cmd]
+                subprocess.Popen(term_cmd, env=env, start_new_session=True)
+            else:
+                cmd = [wine_bin, tool_cmd]
+                subprocess.Popen(cmd, env=env, start_new_session=True)
+            self.statusBar().showMessage(_("Launched {} for prefix {}").format(tool_cmd, prefix), 3000)
+        except Exception as e:
+            logger.error(f"Failed to launch {tool_cmd}: {e}")
+            QMessageBox.warning(self, _("Error"), _("Failed to launch {}: {}").format(tool_cmd, str(e)))
 
     def createPortProtonTab(self):
         """Вкладка 'PortProton Settings'."""
