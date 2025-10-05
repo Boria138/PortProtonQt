@@ -211,14 +211,28 @@ def normalize_name(s):
 
 def is_valid_candidate(candidate):
     """
-    Checks if a candidate contains forbidden substrings:
-      - win32
-      - win64
-      - gamelauncher
-    Additionally checks the string without spaces.
-    Returns True if the candidate is valid, otherwise False.
+    Determines whether a given candidate string is valid for use as a game name.
+
+    The function performs the following checks:
+      1. Normalizes the candidate using `normalize_name()`.
+      2. Rejects the candidate if the normalized name is exactly "game"
+         (to avoid overly generic names).
+      3. Removes spaces and checks for forbidden substrings:
+         - "win32"
+         - "win64"
+         - "gamelauncher"
+         These are checked in the space-free version of the string.
+      4. Returns True only if none of the forbidden conditions are met.
+
+    Args:
+        candidate (str): The candidate string to validate.
+
+    Returns:
+        bool: True if the candidate is valid, False otherwise.
     """
     normalized_candidate = normalize_name(candidate)
+    if normalized_candidate == "game":
+        return False
     normalized_no_space = normalized_candidate.replace(" ", "")
     forbidden = ["win32", "win64", "gamelauncher"]
     for token in forbidden:
