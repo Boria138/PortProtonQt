@@ -769,6 +769,7 @@ class MainWindow(QMainWindow):
     def createInstalledTab(self):
         self.gamesLibraryWidget = self.game_library_manager.create_games_library_widget()
         self.stackedWidget.addWidget(self.gamesLibraryWidget)
+        self.gamesListWidget = self.game_library_manager.gamesListWidget
         self.game_library_manager.update_game_grid()
 
     def resizeEvent(self, event):

@@ -35,6 +35,7 @@ class MainWindowProtocol(Protocol):
     _last_card_width: int
     current_hovered_card: GameCard | None
     current_focused_card: GameCard | None
+    gamesListWidget: QWidget | None
 
 class GameLibraryManager:
     def __init__(self, main_window: MainWindowProtocol, theme, context_menu_manager: ContextMenuManager | None):

@@ -597,6 +597,9 @@ class InputManager(QObject):
     def handle_dpad_slot(self, code: int, value: int, current_time: float) -> None:
         if not self._gamepad_handling_enabled:
             return
+        if not hasattr(self._parent, 'gamesListWidget') or self._parent.gamesListWidget is None:
+            logger.error("gamesListWidget not available yet, skipping D-pad navigation")
+            return
         try:
 
             app = QApplication.instance()
