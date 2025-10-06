@@ -9,18 +9,17 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-09-23 22:23+0500\n"
-"PO-Revision-Date: 2025-09-23 22:23+0500\n"
+"POT-Creation-Date: 2025-10-06 17:46+0500\n"
+"PO-Revision-Date: 2025-10-06 17:46+0500\n"
 "Last-Translator: \n"
-"Language-Team: ru_RU <LL@li.org>\n"
 "Language: ru_RU\n"
+"Language-Team: ru_RU <LL@li.org>\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 "
-"&& (n%100<10 || n%100>=20) ? 1 : 2);\n"
 "Generated-By: Babel 2.17.0\n"
-"X-Generator: Poedit 3.6\n"
 
 msgid "Error"
 msgstr "Ошибка"
@@ -87,11 +86,11 @@ msgstr "Успешно"
 
 #, python-brace-format
 msgid ""
-"'{game_name}' was added to Steam. Please restart Steam for changes to take "
-"effect."
+"'{game_name}' was added to Steam. Please restart Steam for changes to "
+"take effect."
 msgstr ""
-"'{game_name}' был(а) добавлен(а) в Steam. Пожалуйста, перезапустите Steam, "
-"чтобы изменения вступили в силу."
+"'{game_name}' был(а) добавлен(а) в Steam. Пожалуйста, перезапустите "
+"Steam, чтобы изменения вступили в силу."
 
 #, python-brace-format
 msgid "Executable not found for game: {game_name}"
@@ -179,11 +178,11 @@ msgstr "Подтвердите удаление"
 
 #, python-brace-format
 msgid ""
-"Are you sure you want to delete '{game_name}'? This will remove the .desktop "
-"file and custom data."
+"Are you sure you want to delete '{game_name}'? This will remove the "
+".desktop file and custom data."
 msgstr ""
-"Вы уверены, что хотите удалить '{game_name}'? Это приведёт к удалению файла ."
-"desktop и пользовательских данных."
+"Вы уверены, что хотите удалить '{game_name}'? Это приведёт к удалению "
+"файла .desktop и пользовательских данных."
 
 #, python-brace-format
 msgid "Failed to delete .desktop file: {error}"
@@ -196,6 +195,10 @@ msgstr "'{game_name}' был(а) успешно удалён(а)"
 #, python-brace-format
 msgid "Failed to delete custom data: {error}"
 msgstr "Не удалось удалить пользовательские данные: {error}"
+
+#, python-brace-format
+msgid "Added '{game_name}' successfully"
+msgstr "'{game_name}' успешно добавлен(а)"
 
 msgid "Game name and executable path are required"
 msgstr "Требуются название игры и путь к исполняемому файлу"
@@ -225,11 +228,11 @@ msgstr "Не удалось добавить '{game_name}' в Steam: {error}"
 
 #, python-brace-format
 msgid ""
-"'{game_name}' was removed from Steam. Please restart Steam for changes to take "
-"effect."
+"'{game_name}' was removed from Steam. Please restart Steam for changes to"
+" take effect."
 msgstr ""
-"'{game_name}' был(а) удалён(а) из Steam. Пожалуйста, перезапустите Steam, чтобы "
-"изменения вступили в силу."
+"'{game_name}' был(а) удалён(а) из Steam. Пожалуйста, перезапустите Steam,"
+" чтобы изменения вступили в силу."
 
 #, python-brace-format
 msgid "Failed to remove game '{game_name}' from Steam: {error}"
@@ -274,7 +277,7 @@ msgstr "Путь: "
 
 #, python-format
 msgid "Access denied: %s"
-msgstr "Доступ запрещен: %s"
+msgstr "Доступ запрещён: %s"
 
 msgid "Edit Game"
 msgstr "Редактировать игру"
@@ -390,14 +393,72 @@ msgstr "Игровая библиотека"
 msgid "Find Games ..."
 msgstr "Найти игры..."
 
+#, python-brace-format
+msgid "Added '{name}'"
+msgstr "'{name}' добавлен(а)"
+
 msgid "Here you can configure automatic game installation..."
 msgstr "Здесь можно настроить автоматическую установку игр..."
 
 msgid "List of available emulators and their configuration..."
 msgstr "Список доступных эмуляторов и их настройка..."
 
-msgid "Various Wine parameters and versions..."
-msgstr "Различные параметры и версии wine..."
+msgid "Compatibility tool:"
+msgstr "Инструмент совместимости:"
+
+msgid "Prefix:"
+msgstr "Префикс:"
+
+msgid "Wine Configuration"
+msgstr "Конфигурация Wine"
+
+msgid "Registry Editor"
+msgstr "Редактор реестра"
+
+msgid "Control Panel"
+msgstr "Панель управления"
+
+msgid "Task Manager"
+msgstr "Диспетчер задач"
+
+msgid "Command Prompt"
+msgstr "Командная строка"
+
+msgid "Uninstaller"
+msgstr "Удаление программ"
+
+msgid "Create Prefix Backup"
+msgstr "Создать резервную копию префикса"
+
+msgid "Load Prefix Backup"
+msgstr "Загрузить резервную копию префикса"
+
+msgid "Delete Compatibility Tool"
+msgstr "Удалить Инструмент совместимости"
+
+msgid "Delete Prefix"
+msgstr "Удалить Префикс"
+
+msgid "Clear Prefix"
+msgstr "Очистить Префикс"
+
+msgid "Failed to start backup process."
+msgstr "Не удалось запустить процесс резервного копирования."
+
+msgid "Failed to start restore process."
+msgstr "Не удалось запустить процесс восстановления."
+
+msgid "Prefix backup completed."
+msgstr "Резервное копирование префикса завершено."
+
+msgid "Prefix backup failed."
+msgstr "Сбой резервного копирования префикса."
+
+msgid "Prefix restore completed."
+msgstr "Восстановление префикса завершено."
+
+msgid "Prefix restore failed."
+msgstr "Восстановление префикса не удалось."
 
 msgid "Main PortProton parameters..."
 msgstr "Основные параметры PortProton..."
@@ -482,7 +543,8 @@ msgstr "Подтвердите удаление"
 
 msgid "Are you sure you want to reset all settings? This action cannot be undone."
 msgstr ""
-"Вы уверены, что хотите сбросить все настройки? Это действие нельзя отменить."
+"Вы уверены, что хотите сбросить все настройки? Это действие нельзя "
+"отменить."
 
 msgid "Settings reset. Restarting..."
 msgstr "Настройки сброшены. Перезапуск..."
@@ -654,3 +716,4 @@ msgstr "Нет избранных"
 
 msgid "No recent games"
 msgstr "Нет недавних игр"
+

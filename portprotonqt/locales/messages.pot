@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-09-23 22:23+0500\n"
+"POT-Creation-Date: 2025-10-06 17:46+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -187,6 +187,10 @@ msgstr ""
 
 #, python-brace-format
 msgid "Failed to delete custom data: {error}"
+msgstr ""
+
+#, python-brace-format
+msgid "Added '{game_name}' successfully"
 msgstr ""
 
 msgid "Game name and executable path are required"
@@ -380,13 +384,71 @@ msgstr ""
 msgid "Find Games ..."
 msgstr ""
 
+#, python-brace-format
+msgid "Added '{name}'"
+msgstr ""
+
 msgid "Here you can configure automatic game installation..."
 msgstr ""
 
 msgid "List of available emulators and their configuration..."
 msgstr ""
 
-msgid "Various Wine parameters and versions..."
+msgid "Compatibility tool:"
+msgstr ""
+
+msgid "Prefix:"
+msgstr ""
+
+msgid "Wine Configuration"
+msgstr ""
+
+msgid "Registry Editor"
+msgstr ""
+
+msgid "Control Panel"
+msgstr ""
+
+msgid "Task Manager"
+msgstr ""
+
+msgid "Command Prompt"
+msgstr ""
+
+msgid "Uninstaller"
+msgstr ""
+
+msgid "Create Prefix Backup"
+msgstr ""
+
+msgid "Load Prefix Backup"
+msgstr ""
+
+msgid "Delete Compatibility Tool"
+msgstr ""
+
+msgid "Delete Prefix"
+msgstr ""
+
+msgid "Clear Prefix"
+msgstr ""
+
+msgid "Failed to start backup process."
+msgstr ""
+
+msgid "Failed to start restore process."
+msgstr ""
+
+msgid "Prefix backup completed."
+msgstr ""
+
+msgid "Prefix backup failed."
+msgstr ""
+
+msgid "Prefix restore completed."
+msgstr ""
+
+msgid "Prefix restore failed."
 msgstr ""
 
 msgid "Main PortProton parameters..."

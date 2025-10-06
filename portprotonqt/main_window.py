@@ -947,7 +947,6 @@ class MainWindow(QMainWindow):
                     # Trigger visible images load
                     QTimer.singleShot(200, self.game_library_manager.load_visible_images)
 
-                self.update_status_message.emit(_("Enriching from Steam..."), 3000)
                 from portprotonqt.steam_api import get_steam_game_info_async
                 get_steam_game_info_async(final_name, exec_line, on_steam_info)
 
@@ -1026,7 +1025,7 @@ class MainWindow(QMainWindow):
         self.wineCombo.addItems(self.wine_versions)
         self.wineCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
         self.wineCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.wineTitleLabel = QLabel(_("Wine/Proton Version:"))
+        self.wineTitleLabel = QLabel(_("Compatibility tool:"))
         self.wineTitleLabel.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         self.wineTitleLabel.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         if self.wine_versions:
@@ -1039,7 +1038,7 @@ class MainWindow(QMainWindow):
         self.prefixCombo.addItems(self.prefixes)
         self.prefixCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
         self.prefixCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.prefixTitleLabel = QLabel(_("Wine Prefix:"))
+        self.prefixTitleLabel = QLabel(_("Prefix:"))
         self.prefixTitleLabel.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         self.prefixTitleLabel.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         if self.prefixes:
@@ -1080,12 +1079,12 @@ class MainWindow(QMainWindow):
         additional_grid.setSpacing(6)
 
         additional_buttons = [
-            (_("Winetricks"), None),
+            ("Winetricks", None),
             (_("Create Prefix Backup"), self.create_prefix_backup),
             (_("Load Prefix Backup"), self.load_prefix_backup),
-            (_("Delete Proton"), None),
+            (_("Delete Compatibility Tool"), None),
             (_("Delete Prefix"), None),
-            (_("Clean Prefix"), None),
+            (_("Clear Prefix"), None),
         ]
 
         for i, (text, callback) in enumerate(additional_buttons):
@@ -1111,7 +1110,6 @@ class MainWindow(QMainWindow):
     def create_prefix_backup(self):
         selected_prefix = self.prefixCombo.currentText()
         if not selected_prefix:
-            QMessageBox.warning(self, _("Error"), _("Select a prefix first."))
             return
         file_explorer = FileExplorer(self, directory_only=True)
         file_explorer.file_signal.file_selected.connect(lambda path: self._perform_backup(path, selected_prefix))
@@ -1120,11 +1118,9 @@ class MainWindow(QMainWindow):
     def _perform_backup(self, backup_dir, prefix_name):
         os.makedirs(backup_dir, exist_ok=True)
         if not self.portproton_location:
-            QMessageBox.warning(self, _("Error"), _("PortProton location not found."))
             return
         start_sh = os.path.join(self.portproton_location, "data", "scripts", "start.sh")
         if not os.path.exists(start_sh):
-            QMessageBox.warning(self, _("Error"), _("start.sh not found."))
             return
         self.backup_process = QProcess(self)
         self.backup_process.finished.connect(lambda exitCode, exitStatus: self._on_backup_finished(exitCode))
@@ -1140,14 +1136,11 @@ class MainWindow(QMainWindow):
 
     def _perform_restore(self, file_path):
         if not file_path or not os.path.exists(file_path):
-            QMessageBox.warning(self, _("Error"), _("Valid .ppack file path required."))
             return
         if not self.portproton_location:
-            QMessageBox.warning(self, _("Error"), _("PortProton location not found."))
             return
         start_sh = os.path.join(self.portproton_location, "data", "scripts", "start.sh")
         if not os.path.exists(start_sh):
-            QMessageBox.warning(self, _("Error"), _("start.sh not found."))
             return
         self.restore_process = QProcess(self)
         self.restore_process.finished.connect(lambda exitCode, exitStatus: self._on_restore_finished(exitCode))
