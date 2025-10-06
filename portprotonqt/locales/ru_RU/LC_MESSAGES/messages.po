@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-10-06 17:46+0500\n"
-"PO-Revision-Date: 2025-10-06 17:46+0500\n"
+"POT-Creation-Date: 2025-10-06 17:57+0500\n"
+"PO-Revision-Date: 2025-10-06 17:57+0500\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
@@ -459,6 +459,30 @@ msgstr "Восстановление префикса завершено."
 
 msgid "Prefix restore failed."
 msgstr "Восстановление префикса не удалось."
+
+#, python-brace-format
+msgid "Are you sure you want to delete prefix '{}'?"
+msgstr "Вы уверены, что хотите удалить префикс «{}»?"
+
+#, python-brace-format
+msgid "Prefix '{}' deleted."
+msgstr "Префикс «{}» удален."
+
+#, python-brace-format
+msgid "Failed to delete prefix: {}"
+msgstr "Не удалось удалить префикс: {}"
+
+#, python-brace-format
+msgid "Are you sure you want to delete compatibility tool '{}'?"
+msgstr "Вы уверены, что хотите удалить инструмент совместимости «{}»?"
+
+#, python-brace-format
+msgid "Compatibility tool '{}' deleted."
+msgstr "Инструмент совместимости «{}» удален."
+
+#, python-brace-format
+msgid "Failed to delete compatibility tool: {}"
+msgstr "Не удалось удалить инструмент совместимости: {}"
 
 msgid "Main PortProton parameters..."
 msgstr "Основные параметры PortProton..."
