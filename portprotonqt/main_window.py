@@ -1082,8 +1082,8 @@ class MainWindow(QMainWindow):
             ("Winetricks", None),
             (_("Create Prefix Backup"), self.create_prefix_backup),
             (_("Load Prefix Backup"), self.load_prefix_backup),
-            (_("Delete Compatibility Tool"), None),
-            (_("Delete Prefix"), None),
+            (_("Delete Compatibility Tool"), self.delete_compat_tool),
+            (_("Delete Prefix"), self.delete_prefix),
             (_("Clear Prefix"), None),
         ]
 
@@ -1160,6 +1160,71 @@ class MainWindow(QMainWindow):
             QMessageBox.information(self, _("Success"), _("Prefix restore completed."))
         else:
             QMessageBox.warning(self, _("Error"), _("Prefix restore failed."))
+
+    def delete_prefix(self):
+        selected_prefix = self.prefixCombo.currentText()
+        if not self.portproton_location:
+            return
+
+        if not selected_prefix:
+            return
+
+        prefix_path = os.path.join(self.portproton_location, "data", "prefixes", selected_prefix)
+        if not os.path.exists(prefix_path):
+            return
+
+        reply = QMessageBox.question(
+            self,
+            _("Confirm Deletion"),
+            _("Are you sure you want to delete prefix '{}'?").format(selected_prefix),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+
+        if reply == QMessageBox.StandardButton.Yes:
+            try:
+                shutil.rmtree(prefix_path)
+                QMessageBox.information(self, _("Success"), _("Prefix '{}' deleted.").format(selected_prefix))
+                # обновляем список
+                self.prefixCombo.clear()
+                self.prefixes = [d for d in os.listdir(os.path.join(self.portproton_location, "data", "prefixes"))
+                                 if os.path.isdir(os.path.join(self.portproton_location, "data", "prefixes", d))]
+                self.prefixCombo.addItems(self.prefixes)
+            except Exception as e:
+                QMessageBox.warning(self, _("Error"), _("Failed to delete prefix: {}").format(str(e)))
+
+    def delete_compat_tool(self):
+        """Удаляет выбранный Wine/Proton дистрибутив из каталога dist."""
+        if not self.portproton_location:
+            return
+
+        selected_tool = self.wineCombo.currentText()
+        if not selected_tool:
+            return
+
+        tool_path = os.path.join(self.portproton_location, "data", "dist", selected_tool)
+        if not os.path.exists(tool_path):
+            return
+
+        reply = QMessageBox.question(
+            self,
+            _("Confirm Deletion"),
+            _("Are you sure you want to delete compatibility tool '{}'?").format(selected_tool),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+
+        if reply == QMessageBox.StandardButton.Yes:
+            try:
+                shutil.rmtree(tool_path)
+                QMessageBox.information(self, _("Success"), _("Compatibility tool '{}' deleted.").format(selected_tool))
+                # обновляем список
+                self.wineCombo.clear()
+                self.wine_versions = [d for d in os.listdir(os.path.join(self.portproton_location, "data", "dist"))
+                                      if os.path.isdir(os.path.join(self.portproton_location, "data", "dist", d))]
+                self.wineCombo.addItems(self.wine_versions)
+            except Exception as e:
+                QMessageBox.warning(self, _("Error"), _("Failed to delete compatibility tool: {}").format(str(e)))
 
     def createPortProtonTab(self):
         """Вкладка 'PortProton Settings'."""
