@@ -597,6 +597,16 @@ class FileExplorer(QDialog):
         self.thumbnail_cache.clear()  # Clear cache when changing directories
         self.pending_thumbnails.clear()  # Clear pending thumbnails
         try:
+            if self.directory_only:
+                item = QListWidgetItem("./")
+                folder_icon = theme_manager.get_icon("folder")
+                # Ensure the icon is a QIcon
+                if isinstance(folder_icon, str) and os.path.isfile(folder_icon):
+                    folder_icon = QIcon(folder_icon)
+                elif not isinstance(folder_icon, QIcon):
+                    folder_icon = QIcon()  # Fallback to empty icon
+                item.setIcon(folder_icon)
+                self.file_list.addItem(item)
             if self.current_path != "/":
                 item = QListWidgetItem("../")
                 folder_icon = theme_manager.get_icon("folder")

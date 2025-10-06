@@ -39,7 +39,7 @@ from portprotonqt.game_library_manager import GameLibraryManager
 
 from PySide6.QtWidgets import (QLineEdit, QMainWindow, QStatusBar, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox,
                                QDialog, QFormLayout, QFrame, QGraphicsDropShadowEffect, QMessageBox, QApplication, QPushButton, QProgressBar, QCheckBox, QSizePolicy, QGridLayout)
-from PySide6.QtCore import Qt, QAbstractAnimation, QUrl, Signal, QTimer, Slot
+from PySide6.QtCore import Qt, QAbstractAnimation, QUrl, Signal, QTimer, Slot, QProcess
 from PySide6.QtGui import QIcon, QPixmap, QColor, QDesktopServices
 from typing import cast
 from collections.abc import Callable
@@ -1006,7 +1006,6 @@ class MainWindow(QMainWindow):
         self.wineTitle.setObjectName("tabTitle")
         layout.addWidget(self.wineTitle)
 
-        # Путь к дистрибутивам Wine/Proton
         if self.portproton_location is None:
             return
 
@@ -1016,13 +1015,11 @@ class MainWindow(QMainWindow):
         if not os.path.exists(dist_path):
             return
 
-        # Форма с настройками
         formLayout = QFormLayout()
         formLayout.setContentsMargins(0, 10, 0, 0)
         formLayout.setSpacing(10)
         formLayout.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
 
-        # Выбор версии Wine/Proton
         self.wine_versions = [d for d in os.listdir(dist_path) if os.path.isdir(os.path.join(dist_path, d))]
         self.wineCombo = QComboBox()
         self.wineCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
@@ -1033,10 +1030,9 @@ class MainWindow(QMainWindow):
         self.wineTitleLabel.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         self.wineTitleLabel.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         if self.wine_versions:
-            self.wineCombo.setCurrentIndex(0)  # Выбрать первую по умолчанию
+            self.wineCombo.setCurrentIndex(0)
         formLayout.addRow(self.wineTitleLabel, self.wineCombo)
 
-        # Выбор префикса
         self.prefixes = [d for d in os.listdir(prefixes_path) if os.path.isdir(os.path.join(prefixes_path, d))] if os.path.exists(prefixes_path) else []
         self.prefixCombo = QComboBox()
         self.prefixCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
@@ -1047,15 +1043,14 @@ class MainWindow(QMainWindow):
         self.prefixTitleLabel.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         self.prefixTitleLabel.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         if self.prefixes:
-            self.prefixCombo.setCurrentIndex(0)  # Выбрать первый по умолчанию
+            self.prefixCombo.setCurrentIndex(0)
         formLayout.addRow(self.prefixTitleLabel, self.prefixCombo)
 
         layout.addLayout(formLayout)
 
-        # Кнопки для стандартных инструментов Wine в сетке 2x3
+        # --- Wine Tools ---
         tools_grid = QGridLayout()
-        tools_grid.setSpacing(10)
-        tools_grid.setContentsMargins(0, 0, 0, 0)
+        tools_grid.setSpacing(6)
 
         tools = [
             ("winecfg", _("Wine Configuration")),
@@ -1064,60 +1059,114 @@ class MainWindow(QMainWindow):
             ("taskmgr", _("Task Manager")),
             ("explorer", _("File Explorer")),
             ("cmd", _("Command Prompt")),
+            ("uninstaller", _("Uninstaller")),
         ]
 
         for i, (_tool_cmd, tool_name) in enumerate(tools):
             row = i // 3
             col = i % 3
-            btn = AutoSizeButton(tool_name, update_size=False)  # Отключаем авторазмер для избежания проблем
+            btn = AutoSizeButton(tool_name, update_size=False)
             btn.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
             btn.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
             tools_grid.addWidget(btn, row, col)
 
-        # Растягиваем столбцы равномерно
         for col in range(3):
             tools_grid.setColumnStretch(col, 1)
 
         layout.addLayout(tools_grid)
 
-        # Дополнительные инструменты в сетке 1x4 или 2x2 если нужно
+        # --- Additional Tools ---
         additional_grid = QGridLayout()
-        additional_grid.setSpacing(10)
-        additional_grid.setContentsMargins(0, 0, 0, 0)
+        additional_grid.setSpacing(6)
 
-        # Wine Uninstaller
-        uninstaller_btn = AutoSizeButton(_("Uninstaller"), update_size=False)
-        uninstaller_btn.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
-        uninstaller_btn.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        additional_grid.addWidget(uninstaller_btn, 0, 0)
+        additional_buttons = [
+            (_("Winetricks"), None),
+            (_("Create Prefix Backup"), self.create_prefix_backup),
+            (_("Load Prefix Backup"), self.load_prefix_backup),
+            (_("Delete Proton"), None),
+            (_("Delete Prefix"), None),
+            (_("Clean Prefix"), None),
+        ]
 
-        # Winetricks
-        winetricks_btn = AutoSizeButton(_("Winetricks"), update_size=False)
-        winetricks_btn.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
-        winetricks_btn.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        additional_grid.addWidget(winetricks_btn, 0, 1)
+        for i, (text, callback) in enumerate(additional_buttons):
+            row = i // 3
+            col = i % 3
+            btn = AutoSizeButton(text, update_size=False)
+            btn.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+            btn.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+            if callback:
+                btn.clicked.connect(callback)
+            additional_grid.addWidget(btn, row, col)
 
-        # Create Backup
-        create_backup_btn = AutoSizeButton(_("Create Prefix Backup"), update_size=False)
-        create_backup_btn.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
-        create_backup_btn.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        additional_grid.addWidget(create_backup_btn, 0, 2)
-
-        # Load Backup
-        load_backup_btn = AutoSizeButton(_("Load Prefix Backup"), update_size=False)
-        load_backup_btn.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
-        load_backup_btn.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        additional_grid.addWidget(load_backup_btn, 0, 3)
-
-        # Растягиваем столбцы равномерно
-        for col in range(4):
+        for col in range(3):
             additional_grid.setColumnStretch(col, 1)
 
         layout.addLayout(additional_grid)
-
+        tools_grid.setContentsMargins(10, 4, 10, 0)
+        additional_grid.setContentsMargins(10, 6, 10, 0)
         layout.addStretch(1)
 
         self.stackedWidget.addWidget(self.wineWidget)
+
+    def create_prefix_backup(self):
+        selected_prefix = self.prefixCombo.currentText()
+        if not selected_prefix:
+            QMessageBox.warning(self, _("Error"), _("Select a prefix first."))
+            return
+        file_explorer = FileExplorer(self, directory_only=True)
+        file_explorer.file_signal.file_selected.connect(lambda path: self._perform_backup(path, selected_prefix))
+        file_explorer.exec()
+
+    def _perform_backup(self, backup_dir, prefix_name):
+        os.makedirs(backup_dir, exist_ok=True)
+        if not self.portproton_location:
+            QMessageBox.warning(self, _("Error"), _("PortProton location not found."))
+            return
+        start_sh = os.path.join(self.portproton_location, "data", "scripts", "start.sh")
+        if not os.path.exists(start_sh):
+            QMessageBox.warning(self, _("Error"), _("start.sh not found."))
+            return
+        self.backup_process = QProcess(self)
+        self.backup_process.finished.connect(lambda exitCode, exitStatus: self._on_backup_finished(exitCode))
+        cmd = [start_sh, "--backup-prefix", prefix_name, backup_dir]
+        self.backup_process.start(cmd[0], cmd[1:])
+        if not self.backup_process.waitForStarted():
+            QMessageBox.warning(self, _("Error"), _("Failed to start backup process."))
+
+    def load_prefix_backup(self):
+        file_explorer = FileExplorer(self, file_filter='.ppack')
+        file_explorer.file_signal.file_selected.connect(self._perform_restore)
+        file_explorer.exec()
+
+    def _perform_restore(self, file_path):
+        if not file_path or not os.path.exists(file_path):
+            QMessageBox.warning(self, _("Error"), _("Valid .ppack file path required."))
+            return
+        if not self.portproton_location:
+            QMessageBox.warning(self, _("Error"), _("PortProton location not found."))
+            return
+        start_sh = os.path.join(self.portproton_location, "data", "scripts", "start.sh")
+        if not os.path.exists(start_sh):
+            QMessageBox.warning(self, _("Error"), _("start.sh not found."))
+            return
+        self.restore_process = QProcess(self)
+        self.restore_process.finished.connect(lambda exitCode, exitStatus: self._on_restore_finished(exitCode))
+        cmd = [start_sh, "--restore-prefix", file_path]
+        self.restore_process.start(cmd[0], cmd[1:])
+        if not self.restore_process.waitForStarted():
+            QMessageBox.warning(self, _("Error"), _("Failed to start restore process."))
+
+    def _on_backup_finished(self, exitCode):
+        if exitCode == 0:
+            QMessageBox.information(self, _("Success"), _("Prefix backup completed."))
+        else:
+            QMessageBox.warning(self, _("Error"), _("Prefix backup failed."))
+
+    def _on_restore_finished(self, exitCode):
+        if exitCode == 0:
+            QMessageBox.information(self, _("Success"), _("Prefix restore completed."))
+        else:
+            QMessageBox.warning(self, _("Error"), _("Prefix restore failed."))
 
     def createPortProtonTab(self):
         """Вкладка 'PortProton Settings'."""
