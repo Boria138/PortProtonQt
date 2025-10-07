@@ -5,7 +5,7 @@ from typing import cast, TYPE_CHECKING
 from PySide6.QtGui import QPixmap, QIcon, QTextCursor
 from PySide6.QtWidgets import (
     QDialog, QFormLayout, QHBoxLayout, QLabel, QVBoxLayout, QListWidget, QScrollArea, QWidget, QListWidgetItem, QSizePolicy, QApplication, QProgressBar, QScroller,
-    QTabWidget, QTableWidget, QHeaderView, QMessageBox, QTableWidgetItem, QTextEdit
+    QTabWidget, QTableWidget, QHeaderView, QMessageBox, QTableWidgetItem, QTextEdit, QAbstractItemView
 )
 
 from PySide6.QtCore import Qt, QObject, Signal, QMimeDatabase, QTimer, QThreadPool, QRunnable, Slot, QProcess, QProcessEnvironment
@@ -979,7 +979,6 @@ Icon={icon_path}
 """
 
         return desktop_entry, desktop_path
-
 class WinetricksDialog(QDialog):
     """Dialog for managing Winetricks components in a prefix."""
 
@@ -1105,6 +1104,9 @@ class WinetricksDialog(QDialog):
 
         # DLLs tab
         self.dll_table = QTableWidget()
+        self.dll_table.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.dll_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.dll_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.dll_table.setColumnCount(3)
         self.dll_table.setHorizontalHeaderLabels([_("Set"), _("Libraries"), _("Information")])
         self.dll_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
@@ -1116,6 +1118,9 @@ class WinetricksDialog(QDialog):
 
         # Fonts tab
         self.fonts_table = QTableWidget()
+        self.fonts_table.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.fonts_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.fonts_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.fonts_table.setColumnCount(3)
         self.fonts_table.setHorizontalHeaderLabels([_("Set"), _("Fonts"), _("Information")])
         self.fonts_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
@@ -1127,6 +1132,9 @@ class WinetricksDialog(QDialog):
 
         # Settings tab
         self.settings_table = QTableWidget()
+        self.settings_table.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.settings_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.settings_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.settings_table.setColumnCount(3)
         self.settings_table.setHorizontalHeaderLabels([_("Set"), _("Settings"), _("Information")])
         self.settings_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
@@ -1156,6 +1164,10 @@ class WinetricksDialog(QDialog):
         self.force_button.clicked.connect(lambda: self.install_selected(force=True))
         self.install_button.clicked.connect(lambda: self.install_selected(force=False))
 
+        # Set initial focus to the first table
+        self.dll_table.setCurrentCell(0, 0)
+        self.dll_table.setFocus(Qt.FocusReason.OtherFocusReason)
+
     def load_lists(self):
         """Load and populate the lists for DLLs, Fonts, and Settings"""
         if not os.path.exists(self.winetricks_path):
@@ -1180,7 +1192,6 @@ class WinetricksDialog(QDialog):
         # Settings
         self._start_list_process("settings", self.settings_table, self.get_settings_exclusions(), env, cwd)
 
-
     def _start_list_process(self, category, table, exclusion_pattern, env, cwd):
         """Запускает QProcess для списка."""
         process = QProcess(self)
@@ -1197,6 +1208,10 @@ class WinetricksDialog(QDialog):
         output = bytes(process.readAllStandardOutput().data()).decode('utf-8', 'ignore')
         if exit_code == 0 and exit_status == QProcess.ExitStatus.NormalExit:
             self.populate_table(table, output, exclusion_pattern, self.log_path)
+            # Restore focus after populating
+            if table.rowCount() > 0:
+                table.setCurrentCell(0, 0)
+                table.setFocus(Qt.FocusReason.OtherFocusReason)
         else:
             error_output = bytes(process.readAllStandardError().data()).decode('utf-8', 'ignore')
             logger.error(f"Failed to list {category}: {error_output}")

@@ -5,7 +5,7 @@ from typing import Protocol, cast
 from evdev import InputDevice, InputEvent, ecodes, list_devices, ff
 from enum import Enum
 from pyudev import Context, Monitor, MonitorObserver, Device
-from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea, QLineEdit, QDialog, QMenu, QComboBox, QListView, QMessageBox, QListWidget
+from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea, QLineEdit, QDialog, QMenu, QComboBox, QListView, QMessageBox, QListWidget, QTableWidget, QAbstractItemView
 from PySide6.QtCore import Qt, QObject, QEvent, QPoint, Signal, Slot, QTimer
 from PySide6.QtGui import QKeyEvent, QMouseEvent
 from portprotonqt.logger import get_logger
@@ -13,7 +13,7 @@ from portprotonqt.image_utils import FullscreenDialog
 from portprotonqt.custom_widgets import NavLabel, AutoSizeButton
 from portprotonqt.game_card import GameCard
 from portprotonqt.config_utils import read_fullscreen_config, read_window_geometry, save_window_geometry, read_auto_fullscreen_gamepad, read_rumble_config
-from portprotonqt.dialogs import AddGameDialog
+from portprotonqt.dialogs import AddGameDialog, WinetricksDialog
 
 logger = get_logger(__name__)
 
@@ -446,7 +446,6 @@ class InputManager(QObject):
         if not self._gamepad_handling_enabled:
             return
         try:
-
             app = QApplication.instance()
             active = QApplication.activeWindow()
             focused = QApplication.focusWidget()
@@ -551,6 +550,38 @@ class InputManager(QObject):
                     self._parent.toggleGame(self._parent.current_exec_line, None)
                     return
 
+            if isinstance(active, WinetricksDialog):
+                if button_code in BUTTONS['confirm']:  # A button - toggle checkbox
+                    current_table = active.tab_widget.currentWidget()
+                    if isinstance(current_table, QTableWidget):
+                        current_row = current_table.currentRow()
+                        if current_row >= 0:
+                            checkbox = current_table.item(current_row, 0)
+                            if checkbox:
+                                checkbox.setCheckState(
+                                    Qt.CheckState.Unchecked if checkbox.checkState() == Qt.CheckState.Checked else Qt.CheckState.Checked
+                                )
+                    return
+                elif button_code in BUTTONS['add_game']:  # X button - install
+                    active.install_selected(force=False)
+                    return
+                elif button_code in BUTTONS['prev_dir']:  # Y button - force install
+                    active.install_selected(force=True)
+                    return
+                elif button_code in BUTTONS['back']:  # B button - close dialog
+                    active.reject()
+                    return
+                elif button_code in BUTTONS['prev_tab']:  # LB - previous tab
+                    current_idx = active.tab_widget.currentIndex()
+                    new_idx = (current_idx - 1) % active.tab_widget.count()
+                    active.tab_widget.setCurrentIndex(new_idx)
+                    return
+                elif button_code in BUTTONS['next_tab']:  # RB - next tab
+                    current_idx = active.tab_widget.currentIndex()
+                    new_idx = (current_idx + 1) % active.tab_widget.count()
+                    active.tab_widget.setCurrentIndex(new_idx)
+                    return
+
             # Standard navigation
             if button_code in BUTTONS['confirm']:
                 self._parent.activateFocusedWidget()
@@ -581,6 +612,7 @@ class InputManager(QObject):
                     new_value = max(size_slider.value() - 10, size_slider.minimum())
                     size_slider.setValue(new_value)
                     self._parent.on_slider_released()
+
         except Exception as e:
             logger.error(f"Error in handle_button_slot: {e}", exc_info=True)
 
@@ -641,7 +673,7 @@ class InputManager(QObject):
                     elif value < 0:  # Left
                         active.focusPreviousChild()
                     return
-            elif isinstance(active, QDialog) and code == ecodes.ABS_HAT0Y and value != 0:  # Keep up/down for other dialogs
+            elif isinstance(active, QDialog) and code == ecodes.ABS_HAT0Y and value != 0 and not isinstance(focused, QTableWidget):  # Skip if focused on table
                 if not focused or not active.focusWidget():
                     # If no widget is focused, focus the first focusable widget
                     focusables = active.findChildren(QWidget, options=Qt.FindChildOption.FindChildrenRecursively)
@@ -693,6 +725,52 @@ class InputManager(QObject):
                 elif value > 0:
                     active.show_next()
                 return
+
+            # Table navigation
+            if isinstance(focused, QTableWidget):
+                row_count = focused.rowCount()
+                if row_count <= 0:
+                    return
+                current_row = focused.currentRow()
+                if current_row < 0:
+                    current_row = 0
+                    focused.setCurrentCell(0, 0)
+
+                if code == ecodes.ABS_HAT0Y and value != 0:
+                    # Vertical navigation
+                    if value > 0:  # Down
+                        new_row = min(current_row + 1, row_count - 1)
+                    elif value < 0:  # Up
+                        new_row = max(current_row - 1, 0)
+                    else:
+                        return
+
+                    focused.setCurrentCell(new_row, focused.currentColumn())
+                    item = focused.item(new_row, focused.currentColumn())
+                    if item:
+                        focused.scrollToItem(
+                            item,
+                            QAbstractItemView.ScrollHint.PositionAtCenter
+                        )
+                    focused.setFocus(Qt.FocusReason.OtherFocusReason)
+                    return
+                elif code == ecodes.ABS_HAT0X and value != 0:
+                    # Horizontal navigation
+                    col_count = focused.columnCount()
+                    current_col = focused.currentColumn()
+                    if current_col < 0:
+                        current_col = 0
+
+                    if value < 0:  # Left
+                        new_col = max(current_col - 1, 0)
+                    elif value > 0:  # Right
+                        new_col = min(current_col + 1, col_count - 1)
+                    else:
+                        return
+
+                    focused.setCurrentCell(focused.currentRow(), new_col)
+                    focused.setFocus(Qt.FocusReason.OtherFocusReason)
+                    return
 
             # Library tab navigation (index 0)
             if self._parent.stackedWidget.currentIndex() == 0 and code in (ecodes.ABS_HAT0X, ecodes.ABS_HAT0Y):
