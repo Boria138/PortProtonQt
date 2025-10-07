@@ -23,7 +23,7 @@
 | :----- | -------: | ---------: |
 | [de_DE](./de_DE/LC_MESSAGES/messages.po) | 0% | 0 из 232 |
 | [es_ES](./es_ES/LC_MESSAGES/messages.po) | 0% | 0 из 232 |
-| [ru_RU](./ru_RU/LC_MESSAGES/messages.po) | 99% | 230 из 232 |
+| [ru_RU](./ru_RU/LC_MESSAGES/messages.po) | 100% | 232 из 232 |
 
 ---
 

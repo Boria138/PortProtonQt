@@ -23,7 +23,7 @@ Current translation status:
 | :----- | -------: | ---------: |
 | [de_DE](./de_DE/LC_MESSAGES/messages.po) | 0% | 0 of 232 |
 | [es_ES](./es_ES/LC_MESSAGES/messages.po) | 0% | 0 of 232 |
-| [ru_RU](./ru_RU/LC_MESSAGES/messages.po) | 99% | 230 of 232 |
+| [ru_RU](./ru_RU/LC_MESSAGES/messages.po) | 100% | 232 of 232 |
 
 ---
 
