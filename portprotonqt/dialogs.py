@@ -1345,8 +1345,16 @@ class WinetricksDialog(QDialog):
         """Обработчик завершения установки."""
         error_message = ""
         if self.apply_process is not None:
-            error_data = self.apply_process.readAllStandardError().data()
-            error_message = bytes(error_data).decode('utf-8', 'ignore')
+            # Читаем вывод в зависимости от режима каналов
+            if self.apply_process.processChannelMode() == QProcess.ProcessChannelMode.MergedChannels:
+                # Если каналы объединены, читаем из StandardOutput
+                output_data = self.apply_process.readAllStandardOutput().data()
+                error_message = bytes(output_data).decode('utf-8', 'ignore')
+            else:
+                # Если каналы разделены, читаем из StandardError
+                error_data = self.apply_process.readAllStandardError().data()
+                error_message = bytes(error_data).decode('utf-8', 'ignore')
+
         if exit_code != 0 or exit_status != QProcess.ExitStatus.NormalExit:
             logger.error(f"Winetricks install failed: {error_message}")
             QMessageBox.warning(self, _("Error"), _("Installation failed. Check logs."))
@@ -1356,7 +1364,6 @@ class WinetricksDialog(QDialog):
                     existing = {line.strip() for line in f if line.strip()}
             else:
                 existing = set()
-
             with open(self.log_path, 'a') as f:
                 for name in selected:
                     if name not in existing:
