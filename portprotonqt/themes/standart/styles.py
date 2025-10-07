@@ -916,6 +916,96 @@ SETTINGS_CHECKBOX_STYLE = f"""
     }}
 """
 
+WINETRICKS_TAB_STYLE = f"""
+QTabWidget::pane {{
+    border: 1px solid {color_d};
+    background: {color_b};
+    border-radius: {border_radius_a};
+}}
+QTabBar::tab {{
+    background: {color_c};
+    color: {color_f};
+    padding: 8px 16px;
+    border-top-left-radius: {border_radius_a};
+    border-top-right-radius: {border_radius_a};
+    margin-right: 2px;
+}}
+QTabBar::tab:selected {{
+    background: {color_a};
+    color: {color_f};
+}}
+QTabBar::tab:hover {{
+    background: {color_e};
+}}
+"""
+
+WINETRICKS_TABBLE_STYLE = f"""
+QTableWidget {{
+    background: {color_c};
+    color: {color_f};
+    gridline-color: {color_d};
+    alternate-background-color: {color_d};
+    border: {border_a};
+    border-radius: {border_radius_a};
+    font-family: '{font_family}';
+    font-size: {font_size_a};
+}}
+QHeaderView::section {{
+    background: {color_d};
+    color: {color_f};
+    padding: 5px;
+    border: {border_a};
+    font-weight: bold;
+}}
+QTableWidget::item {{
+    padding: 8px;
+    border-bottom: 1px solid {color_d};
+}}
+QTableWidget::item:selected {{
+    background: {color_a};
+    color: {color_f};
+}}
+QTableWidget::item:hover {{
+    background: {color_e};
+}}
+QTableWidget::indicator {{
+    width: 24px;
+    height: 24px;
+    border: {border_b} {color_a};
+    border-radius: {border_radius_a};
+    background: rgba(255, 255, 255, 0.1);
+}}
+QTableWidget::indicator:unchecked {{
+    background: rgba(255, 255, 255, 0.1);
+    image: none;
+}}
+QTableWidget::indicator:checked {{
+    background: {color_a};
+    image: url({theme_manager.get_icon("check", current_theme_name, as_path=True)});
+    border: {border_b} {color_f};
+}}
+QTableWidget::indicator:hover {{
+    background: rgba(255, 255, 255, 0.2);
+    border: {border_b} {color_a};
+}}
+QTableWidget::indicator:focus {{
+    border: {border_c} {color_a};
+}}
+{SCROLL_AREA_STYLE}
+"""
+
+WINETRICKS_LOG_STYLE = f"""
+QTextEdit {{
+    background: {color_c};
+    border: {border_a};
+    border-radius: {border_radius_a};
+    color: {color_f};
+    font-family: '{font_family}';
+    font-size: {font_size_a};
+    padding: 5px;
+}}
+"""
+
 FILE_EXPLORER_STYLE = f"""
     QListView {{
         font-size: {font_size_a};

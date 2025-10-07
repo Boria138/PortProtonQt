@@ -7,7 +7,7 @@ import sys
 import psutil
 
 from portprotonqt.logger import get_logger
-from portprotonqt.dialogs import AddGameDialog, FileExplorer
+from portprotonqt.dialogs import AddGameDialog, FileExplorer, WinetricksDialog
 from portprotonqt.game_card import GameCard
 from portprotonqt.animations import DetailPageAnimations
 from portprotonqt.custom_widgets import ClickableLabel, AutoSizeButton, NavLabel
@@ -1079,7 +1079,7 @@ class MainWindow(QMainWindow):
         additional_grid.setSpacing(6)
 
         additional_buttons = [
-            ("Winetricks", None),
+            ("Winetricks", self.open_winetricks),
             (_("Create Prefix Backup"), self.create_prefix_backup),
             (_("Load Prefix Backup"), self.load_prefix_backup),
             (_("Delete Compatibility Tool"), self.delete_compat_tool),
@@ -1225,6 +1225,24 @@ class MainWindow(QMainWindow):
                 self.wineCombo.addItems(self.wine_versions)
             except Exception as e:
                 QMessageBox.warning(self, _("Error"), _("Failed to delete compatibility tool: {}").format(str(e)))
+
+    def open_winetricks(self):
+        """Open the Winetricks dialog for the selected prefix and wine."""
+        selected_prefix = self.prefixCombo.currentText()
+        if not selected_prefix:
+            return
+
+        selected_wine = self.wineCombo.currentText()
+        if not selected_wine:
+            return
+
+        assert self.portproton_location is not None
+        prefix_path = os.path.join(self.portproton_location, "data", "prefixes", selected_prefix)
+        wine_path = os.path.join(self.portproton_location, "data", "dist", selected_wine, "bin", "wine")
+
+        # Open Winetricks dialog
+        dialog = WinetricksDialog(self, self.theme, prefix_path, wine_path)
+        dialog.exec()
 
     def createPortProtonTab(self):
         """Вкладка 'PortProton Settings'."""
