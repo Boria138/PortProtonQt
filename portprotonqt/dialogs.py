@@ -1114,7 +1114,7 @@ class WinetricksDialog(QDialog):
         self.dll_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         self.dll_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
         self.dll_table.setStyleSheet(table_base_style)
-        self.tab_widget.addTab(self.dll_table, _("DLLs"))
+        self.tab_widget.addTab(self.dll_table, "DLLs")
 
         # Fonts tab
         self.fonts_table = QTableWidget()
@@ -1296,10 +1296,6 @@ class WinetricksDialog(QDialog):
                         if name and name not in selected:
                             selected.append(name)
 
-        if not selected:
-            QMessageBox.information(self, _("Info"), _("No components selected."))
-            return
-
         # Load installed
         installed = set()
         if os.path.exists(self.log_path):
@@ -1311,7 +1307,7 @@ class WinetricksDialog(QDialog):
         new_selected = [name for name in selected if name not in installed]
 
         if not new_selected:
-            QMessageBox.information(self, _("Info"), _("No new components selected."))
+            QMessageBox.information(self, _("Warning"), _("No components selected."))
             return
 
         self.install_button.setEnabled(False)

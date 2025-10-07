@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-10-06 17:57+0500\n"
+"POT-Creation-Date: 2025-10-07 15:26+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es_ES\n"
@@ -306,6 +306,45 @@ msgid "Downloading cover..."
 msgstr ""
 
 msgid "No cover selected"
+msgstr ""
+
+msgid "Prefix Manager"
+msgstr ""
+
+msgid "Set"
+msgstr ""
+
+msgid "Libraries"
+msgstr ""
+
+msgid "Information"
+msgstr ""
+
+msgid "Fonts"
+msgstr ""
+
+msgid "Settings"
+msgstr ""
+
+msgid "Force Install"
+msgstr ""
+
+msgid "Install"
+msgstr ""
+
+msgid "Winetricks not found. Please try again."
+msgstr ""
+
+msgid "Warning"
+msgstr ""
+
+msgid "No components selected."
+msgstr ""
+
+msgid "Installation failed. Check logs."
+msgstr ""
+
+msgid "Components installed successfully."
 msgstr ""
 
 msgid "Loading Epic Games Store games..."
