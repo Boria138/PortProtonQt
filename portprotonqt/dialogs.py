@@ -979,6 +979,7 @@ Icon={icon_path}
 """
 
         return desktop_entry, desktop_path
+
 class WinetricksDialog(QDialog):
     """Dialog for managing Winetricks components in a prefix."""
 
@@ -1350,9 +1351,16 @@ class WinetricksDialog(QDialog):
             logger.error(f"Winetricks install failed: {error_message}")
             QMessageBox.warning(self, _("Error"), _("Installation failed. Check logs."))
         else:
+            if os.path.exists(self.log_path):
+                with open(self.log_path) as f:
+                    existing = {line.strip() for line in f if line.strip()}
+            else:
+                existing = set()
+
             with open(self.log_path, 'a') as f:
                 for name in selected:
-                    f.write(f"{name}\n")
+                    if name not in existing:
+                        f.write(f"{name}\n")
             logger.info("Winetricks installation completed successfully.")
             QMessageBox.information(self, _("Success"), _("Components installed successfully."))
             self.load_lists()
