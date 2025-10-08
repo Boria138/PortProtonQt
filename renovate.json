@@ -1,6 +1,8 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:best-practices"],
+  "extends": [
+    "config:best-practices"
+  ],
   "rebaseWhen": "never",
   "lockFileMaintenance": {
     "enabled": true
@@ -9,6 +11,23 @@
     "enabled": true
   },
   "packageRules": [
+    {
+      "description": "Update renovate only weekly",
+      "matchDepNames": ["ghcr.io/renovatebot/renovate"],
+      "extends": ["schedule:weekly"]
+    },
+    {
+      "description": "Automerge renovate updates",
+      "matchPackageNames": [
+        "ghcr.io/renovatebot/renovate"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "digest"
+      ],
+      "automerge": true
+    },
     {
       "matchUpdateTypes": ["minor", "patch"],
       "automerge": true
@@ -33,7 +52,7 @@
       "groupName": "Python dependencies"
     },
     {
-      "matchPackageNames": ["numpy", "setuptools", "python"],
+      "matchPackageNames": ["numpy", "setuptools", "python", "pyside6"],
       "enabled": false,
       "description": "Disabled due to Python 3.10 incompatibility with numpy>=2.3.2 (requires Python>=3.11)"
     },
