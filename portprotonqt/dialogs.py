@@ -5,7 +5,7 @@ from typing import cast, TYPE_CHECKING
 from PySide6.QtGui import QPixmap, QIcon, QTextCursor
 from PySide6.QtWidgets import (
     QDialog, QFormLayout, QHBoxLayout, QLabel, QVBoxLayout, QListWidget, QScrollArea, QWidget, QListWidgetItem, QSizePolicy, QApplication, QProgressBar, QScroller,
-    QTabWidget, QTableWidget, QHeaderView, QMessageBox, QTableWidgetItem, QTextEdit, QAbstractItemView
+    QTabWidget, QTableWidget, QHeaderView, QMessageBox, QTableWidgetItem, QTextEdit, QAbstractItemView, QStackedWidget
 )
 
 from PySide6.QtCore import Qt, QObject, Signal, QMimeDatabase, QTimer, QThreadPool, QRunnable, Slot, QProcess, QProcessEnvironment
@@ -17,6 +17,7 @@ from portprotonqt.logger import get_logger
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.custom_widgets import AutoSizeButton
 from portprotonqt.downloader import Downloader
+from portprotonqt.preloader import Preloader
 import psutil
 
 if TYPE_CHECKING:
@@ -1115,7 +1116,24 @@ class WinetricksDialog(QDialog):
         self.dll_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         self.dll_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
         self.dll_table.setStyleSheet(table_base_style)
-        self.tab_widget.addTab(self.dll_table, "DLLs")
+
+        self.dll_preloader = Preloader()
+        dll_preloader_container = QWidget()
+        dll_preloader_layout = QVBoxLayout(dll_preloader_container)
+        dll_preloader_layout.addStretch()
+        dll_preloader_hlayout = QHBoxLayout()
+        dll_preloader_hlayout.addStretch()
+        dll_preloader_hlayout.addWidget(self.dll_preloader)
+        dll_preloader_hlayout.addStretch()
+        dll_preloader_layout.addLayout(dll_preloader_hlayout)
+        dll_preloader_layout.addStretch()
+        dll_preloader_layout.setContentsMargins(0, 0, 0, 0)
+        dll_preloader_layout.setSpacing(0)
+
+        self.dll_container = QStackedWidget()
+        self.dll_container.addWidget(dll_preloader_container)
+        self.dll_container.addWidget(self.dll_table)
+        self.tab_widget.addTab(self.dll_container, "DLLs")
 
         # Fonts tab
         self.fonts_table = QTableWidget()
@@ -1129,7 +1147,24 @@ class WinetricksDialog(QDialog):
         self.fonts_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         self.fonts_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
         self.fonts_table.setStyleSheet(table_base_style)
-        self.tab_widget.addTab(self.fonts_table, _("Fonts"))
+
+        self.fonts_preloader = Preloader()
+        fonts_preloader_container = QWidget()
+        fonts_preloader_layout = QVBoxLayout(fonts_preloader_container)
+        fonts_preloader_layout.addStretch()
+        fonts_preloader_hlayout = QHBoxLayout()
+        fonts_preloader_hlayout.addStretch()
+        fonts_preloader_hlayout.addWidget(self.fonts_preloader)
+        fonts_preloader_hlayout.addStretch()
+        fonts_preloader_layout.addLayout(fonts_preloader_hlayout)
+        fonts_preloader_layout.addStretch()
+        fonts_preloader_layout.setContentsMargins(0, 0, 0, 0)
+        fonts_preloader_layout.setSpacing(0)
+
+        self.fonts_container = QStackedWidget()
+        self.fonts_container.addWidget(fonts_preloader_container)
+        self.fonts_container.addWidget(self.fonts_table)
+        self.tab_widget.addTab(self.fonts_container, _("Fonts"))
 
         # Settings tab
         self.settings_table = QTableWidget()
@@ -1143,7 +1178,30 @@ class WinetricksDialog(QDialog):
         self.settings_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         self.settings_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
         self.settings_table.setStyleSheet(table_base_style)
-        self.tab_widget.addTab(self.settings_table, _("Settings"))
+
+        self.settings_preloader = Preloader()
+        settings_preloader_container = QWidget()
+        settings_preloader_layout = QVBoxLayout(settings_preloader_container)
+        settings_preloader_layout.addStretch()
+        settings_preloader_hlayout = QHBoxLayout()
+        settings_preloader_hlayout.addStretch()
+        settings_preloader_hlayout.addWidget(self.settings_preloader)
+        settings_preloader_hlayout.addStretch()
+        settings_preloader_layout.addLayout(settings_preloader_hlayout)
+        settings_preloader_layout.addStretch()
+        settings_preloader_layout.setContentsMargins(0, 0, 0, 0)
+        settings_preloader_layout.setSpacing(0)
+
+        self.settings_container = QStackedWidget()
+        self.settings_container.addWidget(settings_preloader_container)
+        self.settings_container.addWidget(self.settings_table)
+        self.tab_widget.addTab(self.settings_container, _("Settings"))
+
+        self.containers = {
+            "dlls": self.dll_container,
+            "fonts": self.fonts_container,
+            "settings": self.settings_container
+        }
 
         main_layout.addWidget(self.tab_widget)
 
@@ -1165,10 +1223,6 @@ class WinetricksDialog(QDialog):
         self.force_button.clicked.connect(lambda: self.install_selected(force=True))
         self.install_button.clicked.connect(lambda: self.install_selected(force=False))
 
-        # Set initial focus to the first table
-        self.dll_table.setCurrentCell(0, 0)
-        self.dll_table.setFocus(Qt.FocusReason.OtherFocusReason)
-
     def load_lists(self):
         """Load and populate the lists for DLLs, Fonts, and Settings"""
         if not os.path.exists(self.winetricks_path):
@@ -1185,12 +1239,15 @@ class WinetricksDialog(QDialog):
         cwd = os.path.dirname(self.winetricks_path)
 
         # DLLs
+        self.containers["dlls"].setCurrentIndex(0)
         self._start_list_process("dlls", self.dll_table, self.get_dll_exclusions(), env, cwd)
 
         # Fonts
+        self.containers["fonts"].setCurrentIndex(0)
         self._start_list_process("fonts", self.fonts_table, self.get_fonts_exclusions(), env, cwd)
 
         # Settings
+        self.containers["settings"].setCurrentIndex(0)
         self._start_list_process("settings", self.settings_table, self.get_settings_exclusions(), env, cwd)
 
     def _start_list_process(self, category, table, exclusion_pattern, env, cwd):
@@ -1205,6 +1262,7 @@ class WinetricksDialog(QDialog):
         """Обработчик завершения списка."""
         if process is None:
             logger.error(f"Process is None for {category}")
+            self.containers[category].setCurrentIndex(1)
             return
         output = bytes(process.readAllStandardOutput().data()).decode('utf-8', 'ignore')
         if exit_code == 0 and exit_status == QProcess.ExitStatus.NormalExit:
@@ -1216,6 +1274,8 @@ class WinetricksDialog(QDialog):
         else:
             error_output = bytes(process.readAllStandardError().data()).decode('utf-8', 'ignore')
             logger.error(f"Failed to list {category}: {error_output}")
+
+        self.containers[category].setCurrentIndex(1)
 
     def get_dll_exclusions(self):
         """Get regex pattern for DLL exclusions."""
