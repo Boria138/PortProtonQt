@@ -60,35 +60,6 @@ class VirtualKeyboard(QFrame):
             }
         """)
 
-    def keyPressEvent(self, event):
-        if event.key() == Qt.Key.Key_B or event.key() == Qt.Key.Key_Escape:
-            # Закрываем клавиатуру по нажатию B/Back
-            if isinstance(self._parent, QWidget):
-                self._parent.hide()
-            # Возвращаем фокус на диалог
-            if self._parent and self._parent.parent():
-                dialog_parent = self._parent.parent()
-                current_focused_field = getattr(dialog_parent, 'current_focused_field', None)
-                if current_focused_field:
-                    current_focused_field.setFocus()
-            return
-
-        elif event.key() == Qt.Key.Key_X and not self.gamepad_x_pressed:
-            self.gamepad_x_pressed = True
-            self.on_backspace_pressed()
-            return
-
-        super().keyPressEvent(event)
-
-    def keyReleaseEvent(self, event):
-        # Обработка отпускания кнопки X геймпада
-        if event.key() == Qt.Key.Key_X:
-            self.gamepad_x_pressed = False
-            self.stop_backspace_repeat()
-            return
-
-        super().keyReleaseEvent(event)
-
     def highlight_cursor_position(self):
         """Подсвечиваем текущую позицию курсора"""
         if not self.current_input_widget or not isinstance(self.current_input_widget, QLineEdit):
