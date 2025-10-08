@@ -8,7 +8,7 @@ on:
 jobs:
   renovate:
     runs-on: ubuntu-latest
-    container: ghcr.io/renovatebot/renovate:latest@sha256:e459af116e0cb6c7d5094c0dd4c999d4335d948324192902125b7aff91601a00
+    container: ghcr.io/renovatebot/renovate:latest@sha256:17c8966ef38fc361e108a550ffe2dcedf73e846f9975a974aea3d48c66b107a6
     steps:
       - uses: https://gitea.com/actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
 
