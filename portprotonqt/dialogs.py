@@ -17,7 +17,7 @@ from portprotonqt.logger import get_logger
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.custom_widgets import AutoSizeButton
 from portprotonqt.downloader import Downloader
-from portprotonqt.virtual_keyboard import VirtualKeyboard, connect_keyboard_to_lineedit
+from portprotonqt.virtual_keyboard import VirtualKeyboard
 from portprotonqt.preloader import Preloader
 import psutil
 
@@ -832,11 +832,6 @@ class AddGameDialog(QDialog):
         # Устанавливаем минимальные размеры
         self.keyboard.setMinimumWidth(574)
         self.keyboard.setMinimumHeight(220)
-
-        # Подключаем клавиатуру к полям ввода
-        connect_keyboard_to_lineedit(self.keyboard, self.nameEdit)
-        connect_keyboard_to_lineedit(self.keyboard, self.exeEdit)
-        connect_keyboard_to_lineedit(self.keyboard, self.coverEdit)
 
     def show_keyboard_for_widget(self, widget):
         """Показывает клавиатуру для указанного виджета"""

@@ -540,18 +540,3 @@ class VirtualKeyboard(QFrame):
                 if item and item.widget() and item.widget().isEnabled():
                     return cast(QPushButton, item.widget())
         return None
-
-def connect_keyboard_to_lineedit(keyboard: VirtualKeyboard, line_edit: QLineEdit):
-    """Подключаем виртуальную клавиатуру к QLineEdit"""
-    original_mouse_press = line_edit.mousePressEvent
-
-    def custom_mouse_press(event):
-        # Сначала вызываем оригинальный обработчик
-        if original_mouse_press:
-            original_mouse_press(event)
-        # Затем показываем клавиатуру
-        keyboard.show_for_widget(line_edit)
-        line_edit.setFocus()
-
-    line_edit.mousePressEvent = custom_mouse_press
-    line_edit.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
