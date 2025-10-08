@@ -206,6 +206,8 @@ class MainWindow(QMainWindow):
         self.controlHintsWidget = self.createControlHintsWidget()
         mainLayout.addWidget(self.controlHintsWidget)
 
+        self.updateControlHints()
+
         self.restore_state()
 
         self.detail_animations = DetailPageAnimations(self, self.theme)
@@ -429,6 +431,7 @@ class MainWindow(QMainWindow):
 
         # Update navigation buttons
         self.updateNavButtons()
+
 
     @Slot(list)
     def on_games_loaded(self, games: list[tuple]):
