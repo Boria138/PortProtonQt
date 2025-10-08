@@ -2066,10 +2066,19 @@ class MainWindow(QMainWindow):
                 completionist_time = hltb.format_game_time(game, "completionist")
 
                 # Очищаем layout перед добавлением новых элементов
-                while hltbLayout.count():
-                    child = hltbLayout.takeAt(0)
-                    if child.widget():
-                        child.widget().deleteLater()
+                def clear_layout(layout):
+                    while layout.count():
+                        item = layout.takeAt(0)
+                        widget = item.widget()
+                        sublayout = item.layout()
+                        if widget:
+                            widget.deleteLater()
+                        elif sublayout:
+                            clear_layout(sublayout)
+
+                clear_layout(hltbLayout)
+
+
 
                 has_data = False
 
@@ -2537,7 +2546,7 @@ class MainWindow(QMainWindow):
                 self.settingsDebounceTimer.stop()
             if hasattr(self, 'searchDebounceTimer') and self.searchDebounceTimer.isActive():
                 self.searchDebounceTimer.stop()
-            if hasattr(self, 'checkProcessTimer') and self.checkProcessTimer and self.checkProcessTimer.isActive():
+            if hasattr(self, 'checkProcessTimer') and self.checkProcessTimer is not None and self.checkProcessTimer.isActive():
                 self.checkProcessTimer.stop()
                 self.checkProcessTimer.deleteLater()
                 self.checkProcessTimer = None

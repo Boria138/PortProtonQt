@@ -510,8 +510,8 @@ class FileExplorer(QDialog):
         """Update the list of mounted drives and favorite folders."""
         for i in reversed(range(self.drives_layout.count())):
             item = self.drives_layout.itemAt(i)
-            if item and item.widget():
-                widget = item.widget()
+            widget = item.widget() if item else None
+            if widget:
                 self.drives_layout.removeWidget(widget)
                 widget.deleteLater()
 
