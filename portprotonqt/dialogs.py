@@ -17,6 +17,7 @@ from portprotonqt.logger import get_logger
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.custom_widgets import AutoSizeButton
 from portprotonqt.downloader import Downloader
+from portprotonqt.virtual_keyboard import VirtualKeyboard, connect_keyboard_to_lineedit
 from portprotonqt.preloader import Preloader
 import psutil
 
@@ -816,6 +817,69 @@ class AddGameDialog(QDialog):
         # Обновляем превью, если в режиме редактирования
         if edit_mode:
             self.updatePreview()
+
+        # Инициализация клавиатуры (отдельным методом вроде лучше)
+        self.init_keyboard()
+
+        # Устанавливаем фокус на первое поле при открытии
+        QTimer.singleShot(0, self.nameEdit.setFocus)
+
+    def init_keyboard(self):
+        """Инициализация виртуальной клавиатуры"""
+        self.keyboard = VirtualKeyboard(self)
+        self.keyboard.hide()
+
+        # Устанавливаем минимальные размеры
+        self.keyboard.setMinimumWidth(574)
+        self.keyboard.setMinimumHeight(220)
+
+        # Подключаем клавиатуру к полям ввода
+        connect_keyboard_to_lineedit(self.keyboard, self.nameEdit)
+        connect_keyboard_to_lineedit(self.keyboard, self.exeEdit)
+        connect_keyboard_to_lineedit(self.keyboard, self.coverEdit)
+
+    def show_keyboard_for_widget(self, widget):
+        """Показывает клавиатуру для указанного виджета"""
+        if not widget or not widget.isVisible():
+            return
+
+        # Устанавливаем текущий виджет ввода
+        self.keyboard.current_input_widget = widget
+
+        # Позиционирование клавиатуры
+        keyboard_height = 220
+        self.keyboard.setFixedWidth(self.width())
+        self.keyboard.setFixedHeight(keyboard_height)
+        self.keyboard.move(0, self.height() - keyboard_height)
+
+        # Показываем и поднимаем клавиатуру
+        self.keyboard.setParent(self)
+        self.keyboard.show()
+        self.keyboard.raise_()
+
+        # TODO: доработать.
+        # Устанавливаем фокус на первую кнопку клавиатуры
+        first_button = self.keyboard.findFirstFocusableButton()
+        if first_button:
+            QTimer.singleShot(50, lambda: first_button.setFocus())
+
+    def closeEvent(self, event):
+        """Обработчик закрытия окна"""
+        if hasattr(self, 'keyboard'):
+            self.keyboard.hide()
+        super().closeEvent(event)
+
+    def reject(self):
+        """Обработчик кнопки Cancel"""
+        if hasattr(self, 'keyboard'):
+            self.keyboard.hide()
+        super().reject()
+
+    def accept(self):
+        """Обработчик кнопки Apply"""
+        if hasattr(self, 'keyboard'):
+            self.keyboard.hide()
+        super().accept()
 
     def browseExe(self):
         """Открывает файловый менеджер для выбора exe-файла"""

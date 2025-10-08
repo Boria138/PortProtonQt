@@ -14,6 +14,7 @@ from portprotonqt.custom_widgets import NavLabel, AutoSizeButton
 from portprotonqt.game_card import GameCard
 from portprotonqt.config_utils import read_fullscreen_config, read_window_geometry, save_window_geometry, read_auto_fullscreen_gamepad, read_rumble_config
 from portprotonqt.dialogs import AddGameDialog, WinetricksDialog
+from portprotonqt.virtual_keyboard import VirtualKeyboard
 
 logger = get_logger(__name__)
 
@@ -443,9 +444,30 @@ class InputManager(QObject):
 
     @Slot(int)
     def handle_button_slot(self, button_code: int) -> None:
+        active_window = QApplication.activeWindow()
+
+        # Обработка виртуальной клавиатуры в AddGameDialog
+        if isinstance(active_window, AddGameDialog):
+            focused = QApplication.focusWidget()
+            if button_code in BUTTONS['confirm'] and isinstance(focused, QLineEdit):
+                # Показываем клавиатуру при нажатии A на поле ввода
+                active_window.show_keyboard_for_widget(focused)
+                return
+
+            # Если клавиатура видима, обрабатываем её кнопки
+            if hasattr(active_window, 'keyboard') and active_window.keyboard.isVisible():
+                self.handle_virtual_keyboard(button_code)
+                return
+
+        keyboard = getattr(self._parent, 'keyboard', None)
+        if keyboard and keyboard.isVisible():
+            self.handle_virtual_keyboard(button_code)
+            return
+
         if not self._gamepad_handling_enabled:
             return
         try:
+
             app = QApplication.instance()
             active = QApplication.activeWindow()
             focused = QApplication.focusWidget()
@@ -453,6 +475,21 @@ class InputManager(QObject):
             modal_dialog = QApplication.activeModalWidget()
             if not app or not active:
                 return
+
+            if button_code in BUTTONS['confirm'] and isinstance(focused, QLineEdit):
+                search_edit = getattr(self._parent, 'searchEdit', None)
+                if focused == search_edit:
+                    keyboard = getattr(self._parent, 'keyboard', None)
+                    if keyboard:
+                        keyboard.show_for_widget(focused)
+                        return
+
+                # Handle Y button to focus search
+            if button_code in BUTTONS['prev_dir']:  # Y button
+                search_edit = getattr(self._parent, 'searchEdit', None)
+                if search_edit:
+                    search_edit.setFocus()
+                    return
 
             # Handle Guide button to open system overlay
             if button_code in BUTTONS['guide']:
@@ -550,6 +587,7 @@ class InputManager(QObject):
                     self._parent.toggleGame(self._parent.current_exec_line, None)
                     return
 
+
             if isinstance(active, WinetricksDialog):
                 if button_code in BUTTONS['confirm']:  # A button - toggle checkbox
                     current_table = active.tab_widget.currentWidget()
@@ -612,7 +650,6 @@ class InputManager(QObject):
                     new_value = max(size_slider.value() - 10, size_slider.minimum())
                     size_slider.setValue(new_value)
                     self._parent.on_slider_released()
-
         except Exception as e:
             logger.error(f"Error in handle_button_slot: {e}", exc_info=True)
 
@@ -627,6 +664,76 @@ class InputManager(QObject):
 
     @Slot(int, int, float)
     def handle_dpad_slot(self, code: int, value: int, current_time: float) -> None:
+        keyboard = None
+        active_window = QApplication.activeWindow()
+
+        # Проверяем клавиатуру в активном окне (AddGameDialog или главном окне)
+        if isinstance(active_window, AddGameDialog):
+            keyboard = getattr(active_window, 'keyboard', None)
+        else:
+            keyboard = getattr(self._parent, 'keyboard', None)
+
+        if keyboard and keyboard.isVisible():
+            # Обработка горизонтального перемещения (LEFT/RIGHT)
+            if code in (ecodes.ABS_HAT0X, ecodes.ABS_X):
+                if code == ecodes.ABS_X:  # Левый стик
+                    # Применяем мертвую зону
+                    if abs(value) < self.dead_zone:
+                        self.current_dpad_code = None
+                        self.current_dpad_value = 0
+                        self.dpad_timer.stop()
+                        return
+
+                    # Нормализуем значение стика (-1, 0, 1)
+                    normalized_value = 1 if value > self.dead_zone else (-1 if value < -self.dead_zone else 0)
+                else:  # D-pad
+                    normalized_value = value  # D-pad уже дает -1, 0, 1
+
+                if normalized_value != 0:
+                    # Ограничиваем частоту перемещений
+                    now = time.time()
+                    if now - self.last_move_time < self.current_axis_delay:
+                        return
+
+                    self.last_move_time = now
+                    self.current_axis_delay = self.repeat_axis_move_delay  # Уменьшаем задержку после первого перемещения
+
+                    if normalized_value > 0:  # Вправо
+                        keyboard.move_focus_right()
+                    elif normalized_value < 0:  # Влево
+                        keyboard.move_focus_left()
+                return
+
+            # Обработка вертикального перемещения (UP/DOWN)
+            elif code in (ecodes.ABS_HAT0Y, ecodes.ABS_Y):
+                if code == ecodes.ABS_Y:  # Левый стик
+                    # Применяем мертвую зону
+                    if abs(value) < self.dead_zone:
+                        self.current_dpad_code = None
+                        self.current_dpad_value = 0
+                        self.dpad_timer.stop()
+                        return
+
+                    # Нормализуем значение стика (-1, 0, 1)
+                    normalized_value = 1 if value > self.dead_zone else (-1 if value < -self.dead_zone else 0)
+                else:  # D-pad
+                    normalized_value = value  # D-pad уже дает -1, 0, 1
+
+                if normalized_value != 0:
+                    # Ограничиваем частоту перемещений
+                    now = time.time()
+                    if now - self.last_move_time < self.current_axis_delay:
+                        return
+
+                    self.last_move_time = now
+                    self.current_axis_delay = self.repeat_axis_move_delay  # Уменьшаем задержку после первого перемещения
+
+                    if normalized_value > 0:  # Вниз
+                        keyboard.move_focus_down()
+                    elif normalized_value < 0:  # Вверх
+                        keyboard.move_focus_up()
+                return
+
         if not self._gamepad_handling_enabled:
             return
         if not hasattr(self._parent, 'gamesListWidget') or self._parent.gamesListWidget is None:
@@ -640,6 +747,32 @@ class InputManager(QObject):
             popup = QApplication.activePopupWidget()
             if not app or not active:
                 return
+
+            # Новый код: обработка перехода на поле поиска
+            if code == ecodes.ABS_HAT0Y and value < 0:  # Only D-pad up
+                if isinstance(focused, GameCard):
+                    # Get all visible game cards
+                    game_cards = self._parent.gamesListWidget.findChildren(GameCard)
+                    if not game_cards:
+                        return
+
+                    # Find the current card's position
+                    current_card_pos = focused.pos()
+                    current_row_y = current_card_pos.y()
+
+                    # Check if this is the first row (no cards above)
+                    is_first_row = True
+                    for card in game_cards:
+                        if card.pos().y() < current_row_y and card.isVisible():
+                            is_first_row = False
+                            break
+
+                    # Only move to search if on first row
+                    if is_first_row:
+                        search_edit = getattr(self._parent, 'searchEdit', None)
+                        if search_edit:
+                            search_edit.setFocus()
+                            return
 
             # Update D-pad state
             if value != 0:
@@ -673,7 +806,7 @@ class InputManager(QObject):
                     elif value < 0:  # Left
                         active.focusPreviousChild()
                     return
-            elif isinstance(active, QDialog) and code == ecodes.ABS_HAT0Y and value != 0 and not isinstance(focused, QTableWidget):  # Skip if focused on table
+            elif isinstance(active, QDialog) and code == ecodes.ABS_HAT0Y and value != 0 and not isinstance(focused, QTableWidget):  # Keep up/down for other dialogs
                 if not focused or not active.focusWidget():
                     # If no widget is focused, focus the first focusable widget
                     focusables = active.findChildren(QWidget, options=Qt.FindChildOption.FindChildrenRecursively)
@@ -725,6 +858,7 @@ class InputManager(QObject):
                 elif value > 0:
                     active.show_next()
                 return
+
 
             # Table navigation
             if isinstance(focused, QTableWidget):
@@ -1279,3 +1413,40 @@ class InputManager(QObject):
             self.gamepad_type = GamepadType.UNKNOWN
         except Exception as e:
             logger.error(f"Error during cleanup: {e}", exc_info=True)
+
+    def handle_virtual_keyboard(self, button_code: int) -> None:
+        # Проверяем клавиатуру в активном окне
+        active_window = QApplication.activeWindow()
+        keyboard = None
+
+        # Сначала проверяем AddGameDialog
+        if isinstance(active_window, AddGameDialog):
+            keyboard = getattr(active_window, 'keyboard', None)
+        else:
+            # Если это не AddGameDialog, проверяем клавиатуру в главном окне
+            keyboard = getattr(self._parent, 'keyboard', None)
+
+        if not keyboard or not isinstance(keyboard, VirtualKeyboard) or not keyboard.isVisible():
+            return
+
+        # Обработка кнопок геймпада
+        if button_code in BUTTONS['confirm']:  # Кнопка A/Cross - подтверждение
+            keyboard.activateFocusedKey()
+        elif button_code in BUTTONS['back']:  # Кнопка B/Circle - скрыть клавиатуру
+            keyboard.hide()
+            # Возвращаем фокус на поле ввода
+            if keyboard.current_input_widget:
+                keyboard.current_input_widget.setFocus()
+        elif button_code in BUTTONS['prev_tab']:  # LB/L1 - переключение раскладки
+            keyboard.on_lang_click()
+        elif button_code in BUTTONS['next_tab']:  # RB/R1 - переключение Shift
+            keyboard.on_shift_click(not keyboard.shift_pressed)
+        elif button_code in BUTTONS['context_menu']:  # Кнопка Start - подтверждение
+            keyboard.activateFocusedKey()
+        elif button_code in BUTTONS['menu']:  # Кнопка Select - скрыть клавиатуру
+            keyboard.hide()
+            # Возвращаем фокус на поле ввода
+            if keyboard.current_input_widget:
+                keyboard.current_input_widget.setFocus()
+        elif button_code in BUTTONS['add_game']:  # Кнопка X - Backspace
+            keyboard.on_backspace_click()

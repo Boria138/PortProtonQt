@@ -35,7 +35,7 @@ from portprotonqt.howlongtobeat_api import HowLongToBeat
 from portprotonqt.downloader import Downloader
 from portprotonqt.tray_manager import TrayManager
 from portprotonqt.game_library_manager import GameLibraryManager
-
+from portprotonqt.virtual_keyboard import VirtualKeyboard, connect_keyboard_to_lineedit
 
 from PySide6.QtWidgets import (QLineEdit, QMainWindow, QStatusBar, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox,
                                QDialog, QFormLayout, QFrame, QGraphicsDropShadowEffect, QMessageBox, QApplication, QPushButton, QProgressBar, QCheckBox, QSizePolicy, QGridLayout)
@@ -209,6 +209,10 @@ class MainWindow(QMainWindow):
         self.updateControlHints()
 
         self.restore_state()
+
+        self.keyboard = VirtualKeyboard(self)
+        mainLayout.addWidget(self.keyboard)
+        connect_keyboard_to_lineedit(self.keyboard, self.searchEdit)
 
         self.detail_animations = DetailPageAnimations(self, self.theme)
         QTimer.singleShot(0, self.loadGames)
