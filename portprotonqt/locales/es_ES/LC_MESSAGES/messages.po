@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-10-07 15:45+0500\n"
+"POT-Creation-Date: 2025-10-09 16:37+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es_ES\n"
@@ -411,6 +411,9 @@ msgid "Back"
 msgstr ""
 
 msgid "Fullscreen"
+msgstr ""
+
+msgid "Search"
 msgstr ""
 
 msgid "Loading Steam games..."
