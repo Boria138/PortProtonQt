@@ -1336,8 +1336,8 @@ class InputManager(QObject):
                     self.gamepad = None
                     if self.gamepad_thread:
                         self.gamepad_thread.join()
-                    # Signal to exit fullscreen mode
-                    self.toggle_fullscreen.emit(False)
+                    if read_auto_fullscreen_gamepad() and not read_fullscreen_config():
+                        self.toggle_fullscreen.emit(False)
         except Exception as e:
             logger.error(f"Error handling udev event: {e}", exc_info=True)
 
