@@ -11,7 +11,7 @@ theme_manager = ThemeManager()
 class VirtualKeyboard(QFrame):
     keyPressed = Signal(str)
 
-    def __init__(self, parent: QWidget | None = None, theme=None):
+    def __init__(self, parent: QWidget | None = None, theme=None, button_width: int = 80):
         super().__init__(parent)
         self._parent: QWidget | None = parent
         self.available_layouts: list[str] = self.get_layouts_setxkbmap()
@@ -34,6 +34,15 @@ class VirtualKeyboard(QFrame):
         self.current_input_widget = None
         self.cursor_visible = True
         self.last_focused_button = None
+
+        self.base_button_width = 40
+        self.base_min_width = 574
+        self.button_width = button_width
+        self.button_height = 40
+        self.spacing = 4
+        self.margins = 10
+        self.num_cols = 14
+
         self.initUI()
         self.hide()
 
@@ -53,17 +62,18 @@ class VirtualKeyboard(QFrame):
         layout.setSpacing(0)
 
         self.keyboard_layout = QGridLayout()
-        self.keyboard_layout.setSpacing(4)
-        self.keyboard_layout.setContentsMargins(5, 5, 5, 5)
+        self.keyboard_layout.setSpacing(self.spacing)
+        self.keyboard_layout.setContentsMargins(self.margins // 2, self.margins // 2, self.margins // 2, self.margins // 2)
         self.create_keyboard()
 
-        keyboard_container = QWidget()
-        keyboard_container.setLayout(self.keyboard_layout)
-        keyboard_container.setMinimumWidth(574)
-        keyboard_container.setMinimumHeight(220)
-        keyboard_container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.keyboard_container = QWidget()
+        self.keyboard_container.setLayout(self.keyboard_layout)
+        ratio = self.button_width / self.base_button_width
+        self.keyboard_container.setMinimumWidth(int(self.base_min_width * ratio))
+        self.keyboard_container.setMinimumHeight(220)
+        self.keyboard_container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
-        layout.addWidget(keyboard_container, 0, Qt.AlignmentFlag.AlignHCenter)
+        layout.addWidget(self.keyboard_container, 0, Qt.AlignmentFlag.AlignHCenter)
         self.setLayout(layout)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
@@ -118,8 +128,8 @@ class VirtualKeyboard(QFrame):
             if item.widget():
                 item.widget().deleteLater()
 
-        fixed_w = 40
-        fixed_h = 40
+        fixed_w = self.button_width
+        fixed_h = self.button_height
 
         # Выбираем текущую раскладку (обычная или с shift)
         layout_mode = 'shift' if self.shift_pressed else 'normal'
@@ -149,7 +159,7 @@ class VirtualKeyboard(QFrame):
 
         # Нижний ряд (специальные кнопки)
         shift = QPushButton('⬆')
-        shift.setFixedSize((fixed_w * 3) + 2, fixed_h)
+        shift.setFixedSize(fixed_w * 3 + 2 * self.spacing, fixed_h)
         shift.setCheckable(True)
         shift.setChecked(self.shift_pressed)
         shift.clicked.connect(lambda checked: self.on_shift_click(checked))
@@ -161,19 +171,18 @@ class VirtualKeyboard(QFrame):
         button.clicked.connect(self.on_caps_click)
 
         space = QPushButton('Space')
-        space.setFixedHeight(fixed_h)
+        space.setFixedSize(fixed_w * 5 + 4 * self.spacing, fixed_h)
         space.clicked.connect(lambda: self.on_button_click(' '))
         self.keyboard_layout.addWidget(space, 4, 1, 1, 5)
 
         backspace = QPushButton('⌫')
-        backspace.setFixedSize(fixed_h, fixed_w)
-        # backspace.clicked.connect(self.on_backspace_click)
+        backspace.setFixedSize(fixed_w, fixed_h)
         backspace.pressed.connect(self.on_backspace_pressed)
         backspace.released.connect(self.stop_backspace_repeat)
         self.keyboard_layout.addWidget(backspace, 0, 13, 1, 1)
 
         enter = QPushButton('Enter')
-        enter.setFixedSize((fixed_h*2) + 2, fixed_w)
+        enter.setFixedSize(fixed_w * 2 + self.spacing, fixed_h)
         enter.clicked.connect(self.on_enter_click)
         self.keyboard_layout.addWidget(enter, 2, 12, 1, 2)
 
@@ -183,7 +192,7 @@ class VirtualKeyboard(QFrame):
         self.keyboard_layout.addWidget(lang, 4, 0, 1, 1)
 
         clear = QPushButton('Clear')
-        clear.setFixedHeight(fixed_h)
+        clear.setFixedSize(fixed_w * 2 + self.spacing, fixed_h)
         clear.clicked.connect(self.on_clear_click)
         self.keyboard_layout.addWidget(clear, 4, 10, 1, 2)
 
@@ -207,17 +216,14 @@ class VirtualKeyboard(QFrame):
         right.clicked.connect(self.right_key)
         self.keyboard_layout.addWidget(right, 4, 9, 1, 1)
 
-        right = QPushButton('Hide')
-        right.setFixedSize((fixed_w*2) + 2, fixed_h)
-        right.clicked.connect(self.hide)
-        self.keyboard_layout.addWidget(right, 4, 12, 1, 2)
+        hide_button = QPushButton('Hide')
+        hide_button.setFixedSize(fixed_w * 2 + self.spacing, fixed_h)
+        hide_button.clicked.connect(self.hide)
+        self.keyboard_layout.addWidget(hide_button, 4, 12, 1, 2)
 
         if coords:
-            # print('изменились координаты')
             row, col = coords
-            # print(row, col)
             item = self.keyboard_layout.itemAtPosition(row, col)
-            # print(item)
             if item and item.widget():
                 item.widget().setFocus()
 
@@ -322,14 +328,9 @@ class VirtualKeyboard(QFrame):
             # Если был нажат SHIFT, но не CapsLock, отключаем его после ввода символа
             if self.shift_pressed and not self.caps_lock:
                 self.shift_pressed = False
-                # Сохраняем состояние перед обновлением
-                # was_shift = self.shift_pressed
                 self.update_keyboard()
                 if key_to_restore and key_to_restore in self.buttons:
                     self.buttons[key_to_restore].setFocus()
-                # Восстанавливаем фокус
-                # if focused_button and focused_button in self.buttons.values():
-                #     focused_button.setFocus()
 
     def on_tab_click(self):
         if self.current_input_widget is not None:
@@ -412,12 +413,6 @@ class VirtualKeyboard(QFrame):
 
         self.update_keyboard()
 
-        # available_layouts = list(keyboard_layouts.keys())
-        # current_index = self.available_layouts.index(self.current_layout)
-        # next_index = (current_index + 1) % len(self.available_layouts)
-        # self.current_layout = self.available_layouts[next_index]
-        # self.update_keyboard()
-
     def on_shift_click(self, checked):
         self.shift_pressed = checked
         self.update_keyboard()
@@ -497,8 +492,6 @@ class VirtualKeyboard(QFrame):
                         found = True
                         break
                     search_col += 1
-                # Если не нашли в этой строке, продолжаем к следующей, но для простоты останавливаемся
-                # (можно добавить полный цикл, но предполагаем, что строки не пустые)
 
         elif direction == "left":
             # Сначала ищем в той же строке влево

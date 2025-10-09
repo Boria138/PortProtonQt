@@ -826,12 +826,8 @@ class AddGameDialog(QDialog):
 
     def init_keyboard(self):
         """Инициализация виртуальной клавиатуры"""
-        self.keyboard = VirtualKeyboard(self)
+        self.keyboard = VirtualKeyboard(self, theme=self.theme, button_width=40)
         self.keyboard.hide()
-
-        # Устанавливаем минимальные размеры
-        self.keyboard.setMinimumWidth(574)
-        self.keyboard.setMinimumHeight(220)
 
     def show_keyboard_for_widget(self, widget):
         """Показывает клавиатуру для указанного виджета"""
