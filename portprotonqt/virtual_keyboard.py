@@ -2,15 +2,20 @@ from typing import cast
 from PySide6.QtWidgets import (QFrame, QVBoxLayout, QPushButton, QGridLayout,
                                QSizePolicy, QWidget, QLineEdit)
 from PySide6.QtCore import Qt, Signal, QProcess
-from portprotonqt.keyboard_layouts import keyboard_layouts  # Импортируем раскладки
+from portprotonqt.keyboard_layouts import keyboard_layouts
+from portprotonqt.theme_manager import ThemeManager
+from portprotonqt.config_utils import read_theme_from_config
+
+theme_manager = ThemeManager()
 
 class VirtualKeyboard(QFrame):
     keyPressed = Signal(str)
 
-    def __init__(self, parent: QWidget | None = None):
+    def __init__(self, parent: QWidget | None = None, theme=None):
         super().__init__(parent)
         self._parent: QWidget | None = parent
         self.available_layouts: list[str] = self.get_layouts_setxkbmap()
+        self.theme = theme if theme else theme_manager.apply_theme(read_theme_from_config())
         if not self.available_layouts:
             self.available_layouts.append('en')
         self.current_layout: str = self.available_layouts[0]
@@ -32,33 +37,7 @@ class VirtualKeyboard(QFrame):
         self.initUI()
         self.hide()
 
-        self.setStyleSheet("""
-            VirtualKeyboard {
-                background-color: rgba(0, 0, 0, 200);  /* Полупрозрачный серый */
-                border-radius: 5px;
-                border: 1px solid #ccc;
-            }
-            QPushButton {
-                font-size: 14px;
-                border: 1px solid #888;
-                border-radius: 3px;
-                min-width: 30px;
-                min-height: 30px;
-                padding: 0px;
-            }
-            QPushButton:pressed {
-                background-color: #d0d0d0;
-            }
-            QPushButton[checked="true"] {
-                background-color: #a0c4ff;
-                border: 1px solid #4a90e2;
-            }
-            QPushButton[checked="true"] {
-                background-color: #4a90e2;
-                color: white;
-                border: 2px solid #1a73e8;
-            }
-        """)
+        self.setStyleSheet(self.theme.VIRTUAL_KEYBOARD_STYLE)
 
     def highlight_cursor_position(self):
         """Подсвечиваем текущую позицию курсора"""
@@ -74,20 +53,18 @@ class VirtualKeyboard(QFrame):
         layout.setSpacing(0)
 
         self.keyboard_layout = QGridLayout()
-        self.keyboard_layout.setSpacing(1)
-        self.keyboard_layout.setContentsMargins(0, 0, 0, 0)
+        self.keyboard_layout.setSpacing(4)
+        self.keyboard_layout.setContentsMargins(5, 5, 5, 5)
         self.create_keyboard()
 
         keyboard_container = QWidget()
         keyboard_container.setLayout(self.keyboard_layout)
-        # keyboard_container.setFixedSize(660, 220)
         keyboard_container.setMinimumWidth(574)
         keyboard_container.setMinimumHeight(220)
         keyboard_container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
         layout.addWidget(keyboard_container, 0, Qt.AlignmentFlag.AlignHCenter)
         self.setLayout(layout)
-        # self.setMinimumHeight(240)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
     def run_shell_command(self, cmd: str) -> str | None:
@@ -471,7 +448,7 @@ class VirtualKeyboard(QFrame):
         """Активирует текущую выделенную кнопку на клавиатуре"""
         focused = self.focusWidget()
         if isinstance(focused, QPushButton):
-            focused.click()
+            focused.animateClick()
 
     def focusNextKey(self, direction: str):
         """Перемещает фокус на следующую кнопку в указанном направлении"""

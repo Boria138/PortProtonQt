@@ -210,8 +210,7 @@ class MainWindow(QMainWindow):
 
         self.restore_state()
 
-        self.keyboard = VirtualKeyboard(self)
-        mainLayout.addWidget(self.keyboard)
+        self.keyboard = VirtualKeyboard(self, self.theme)
 
         self.detail_animations = DetailPageAnimations(self, self.theme)
         QTimer.singleShot(0, self.loadGames)

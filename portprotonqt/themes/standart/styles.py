@@ -217,6 +217,56 @@ CONTEXT_MENU_STYLE = f"""
     }}
 """
 
+VIRTUAL_KEYBOARD_STYLE = """
+VirtualKeyboard {
+    background-color: rgba(30, 30, 30, 200);
+    border-radius: 0px;
+    border: none;
+}
+QPushButton {
+    font-size: 14px;
+    border: 1px solid #555;
+    border-top-color: #666;
+    border-left-color: #666;
+    border-radius: 3px;
+    min-width: 30px;
+    min-height: 30px;
+    padding: 4px;
+    background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #505050, stop:1 #404040);
+    color: #e0e0e0;
+}
+QPushButton:hover {
+    background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #606060, stop:1 #505050);
+    border: 1px solid #666;
+    border-top-color: #777;
+    border-left-color: #777;
+}
+QPushButton:focus {
+    border: 2px solid #4a90e2;
+    background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #5a5a5a, stop:1 #454545);
+}
+QPushButton:pressed {
+    background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #3a3a3a, stop:1 #303030);
+    border: 1px solid #444;
+    border-bottom-color: #555;
+    border-right-color: #555;
+    padding-top: 5px;
+    padding-bottom: 3px;
+    padding-left: 5px;
+    padding-right: 3px;
+}
+QPushButton[checked="true"] {
+    background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #4a90e2, stop:1 #3a7ad2);
+    color: white;
+    border: 1px solid #2a6ac2;
+    border-top-color: #5aa0f2;
+    border-left-color: #5aa0f2;
+}
+QPushButton[checked="true"]:focus {
+    border: 2px solid #6aa3f5;
+}
+"""
+
 # ГЛОБАЛЬНЫЙ СТИЛЬ ДЛЯ ОКНА (ФОН), ЛЭЙБЛОВ, КНОПОК
 MAIN_WINDOW_STYLE = f"""
     QWidget {{
