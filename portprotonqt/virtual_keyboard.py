@@ -415,6 +415,8 @@ class VirtualKeyboard(QFrame):
 
     def on_shift_click(self, checked):
         self.shift_pressed = checked
+        if not checked and self.caps_lock:
+            self.caps_lock = False
         self.update_keyboard()
 
     def show_for_widget(self, widget):
