@@ -1233,6 +1233,7 @@ class WinetricksDialog(QDialog):
         assert self.prefix_path is not None
         env = QProcessEnvironment.systemEnvironment()
         env.insert("WINEPREFIX", self.prefix_path)
+        env.insert("WINETRICKS_DOWNLOADER", "curl")
         if self.wine_use is not None:
             env.insert("WINE", self.wine_use)
 
