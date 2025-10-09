@@ -54,6 +54,11 @@ AppDir:
       - libxcb-cursor0
       - libimage-exiftool-perl
       - xdg-utils
+      - cabextract
+      - curl
+      - 7zip
+      - unzip
+      - unrar
     exclude:
       - "*-doc"
       - "*-man"

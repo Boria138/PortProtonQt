@@ -46,6 +46,11 @@ Requires:       python3-pillow
 Requires:       perl-Image-ExifTool
 Requires:       xdg-utils
 Requires:       python3-beautifulsoup4
+Requires:       cabextract
+Requires:       gzip
+Requires:       unzip
+Requires:       curl
+Requires:       unrar
 
 %description -n python3-%{pypi_name}-git
 This application provides a sleek, intuitive graphical interface for managing and launching games from PortProton, Steam, and Epic Games Store. It consolidates your game libraries into a single, user-friendly hub for seamless navigation and organization. Its lightweight structure and cross-platform support deliver a cohesive gaming experience, eliminating the need for multiple launchers. Unique PortProton integration enhances Linux gaming, enabling effortless play of Windows-based titles with minimal setup.
