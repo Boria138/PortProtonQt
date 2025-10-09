@@ -252,6 +252,10 @@ class MainWindow(QMainWindow):
                 GamepadType.XBOX: "xbox_view",
                 GamepadType.PLAYSTATION: "ps_share",
             },
+            'search': {
+                GamepadType.XBOX: "xbox_y",
+                GamepadType.PLAYSTATION: "ps_square",
+            },
         }
         return mappings.get(action, {}).get(gtype, "placeholder")
 
@@ -290,6 +294,7 @@ class MainWindow(QMainWindow):
             ("add_game", _("Add Game")),
             ("context_menu", _("Menu")),
             ("menu", _("Fullscreen")),
+            ("search", _("Search")),
         ]
 
         keyboard_hints = [
@@ -402,7 +407,7 @@ class MainWindow(QMainWindow):
         gtype = self.input_manager.gamepad_type
         logger.debug("Updating control hints, gamepad connected: %s, type: %s", is_gamepad_connected, gtype.value)
 
-        gamepad_actions = ['confirm', 'back', 'add_game', 'context_menu', 'menu']
+        gamepad_actions = ['confirm', 'back', 'add_game', 'context_menu', 'menu', 'search']
 
         for container, icon_label, action in self.hintsLabels:
             if action in gamepad_actions:  # Gamepad hint
@@ -433,7 +438,6 @@ class MainWindow(QMainWindow):
 
         # Update navigation buttons
         self.updateNavButtons()
-
 
     @Slot(list)
     def on_games_loaded(self, games: list[tuple]):
