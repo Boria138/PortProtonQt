@@ -145,7 +145,7 @@ class MainWindow(QMainWindow):
         headerLayout.addStretch()
 
         self.input_manager = InputManager(self) # type: ignore
-        self.input_manager.button_pressed.connect(self.updateControlHints)
+        self.input_manager.button_event.connect(self.updateControlHints)
         self.input_manager.dpad_moved.connect(self.updateControlHints)
 
         # 2. НАВИГАЦИЯ (КНОПКИ ВКЛАДОК)

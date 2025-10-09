@@ -72,7 +72,7 @@ class InputManager(QObject):
     for seamless UI interaction.
     """
     # Signals for gamepad events
-    button_pressed = Signal(int)  # Signal for button presses
+    button_event = Signal(int, int)  # Signal for button events: (code, value) where value=1 (press), 0 (release)
     dpad_moved = Signal(int, int, float)  # Signal for D-pad movements
     toggle_fullscreen = Signal(bool)  # Signal for toggling fullscreen mode (True for fullscreen, False for normal)
 
@@ -131,7 +131,7 @@ class InputManager(QObject):
         self.current_dpad_value = 0    # Tracks the current D-pad direction value (e.g., -1, 1)
 
         # Connect signals to slots
-        self.button_pressed.connect(self.handle_button_slot)
+        self.button_event.connect(self.handle_button_slot)
         self.dpad_moved.connect(self.handle_dpad_slot)
         self.toggle_fullscreen.connect(self.handle_fullscreen_slot)
 
@@ -202,7 +202,9 @@ class InputManager(QObject):
         except Exception as e:
             logger.error(f"Error restoring gamepad handlers: {e}")
 
-    def handle_file_explorer_button(self, button_code):
+    def handle_file_explorer_button(self, button_code, value):
+        if value == 0:  # Ignore releases
+                    return
         try:
             popup = QApplication.activePopupWidget()
             if isinstance(popup, QMenu):
@@ -442,26 +444,31 @@ class InputManager(QObject):
             except Exception as e:
                 logger.error(f"Error stopping rumble: {e}", exc_info=True)
 
-    @Slot(int)
-    def handle_button_slot(self, button_code: int) -> None:
+    @Slot(int, int)
+    def handle_button_slot(self, button_code: int, value: int) -> None:
         active_window = QApplication.activeWindow()
 
-        # Обработка виртуальной клавиатуры в AddGameDialog
+        # Обработка виртуальной клавиатуры в AddGameDialog (handle both press and release)
         if isinstance(active_window, AddGameDialog):
             focused = QApplication.focusWidget()
-            if button_code in BUTTONS['confirm'] and isinstance(focused, QLineEdit):
-                # Показываем клавиатуру при нажатии A на поле ввода
+            if button_code in BUTTONS['confirm'] and value == 1 and isinstance(focused, QLineEdit):
+                # Показываем клавиатуру при нажатии A на поле ввода (only on press)
                 active_window.show_keyboard_for_widget(focused)
                 return
 
-            # Если клавиатура видима, обрабатываем её кнопки
+            # Если клавиатура видима, обрабатываем её кнопки (including release)
             if hasattr(active_window, 'keyboard') and active_window.keyboard.isVisible():
-                self.handle_virtual_keyboard(button_code)
+                self.handle_virtual_keyboard(button_code, value)
                 return
 
+        # Main window keyboard handling (including release)
         keyboard = getattr(self._parent, 'keyboard', None)
         if keyboard and keyboard.isVisible():
-            self.handle_virtual_keyboard(button_code)
+            self.handle_virtual_keyboard(button_code, value)
+            return
+
+        # Ignore releases for all other (non-keyboard) button handling
+        if value == 0:
             return
 
         if not self._gamepad_handling_enabled:
@@ -1051,6 +1058,52 @@ class InputManager(QObject):
         except Exception as e:
             logger.error(f"Error in handle_dpad_slot: {e}", exc_info=True)
 
+    def handle_virtual_keyboard(self, button_code: int, value: int) -> None:
+        # Проверяем клавиатуру в активном окне
+        active_window = QApplication.activeWindow()
+        keyboard = None
+
+        # Сначала проверяем AddGameDialog
+        if isinstance(active_window, AddGameDialog):
+            keyboard = getattr(active_window, 'keyboard', None)
+        else:
+            # Если это не AddGameDialog, проверяем клавиатуру в главном окне
+            keyboard = getattr(self._parent, 'keyboard', None)
+
+        if not keyboard or not isinstance(keyboard, VirtualKeyboard) or not keyboard.isVisible():
+            return
+
+        # Обработка кнопок геймпада
+        if button_code in BUTTONS['confirm']:  # Кнопка A/Cross - подтверждение
+            if value == 1:
+                keyboard.activateFocusedKey()
+        elif button_code in BUTTONS['back']:  # Кнопка B/Circle - скрыть клавиатуру
+            if value == 1:
+                keyboard.hide()
+                # Возвращаем фокус на поле ввода
+                if keyboard.current_input_widget:
+                    keyboard.current_input_widget.setFocus()
+        elif button_code in BUTTONS['prev_tab']:  # LB/L1 - переключение раскладки
+            if value == 1:
+                keyboard.on_lang_click()
+        elif button_code in BUTTONS['next_tab']:  # RB/R1 - переключение Shift
+            if value == 1:
+                keyboard.on_shift_click(not keyboard.shift_pressed)
+        elif button_code in BUTTONS['context_menu']:  # Кнопка Start - подтверждение
+            if value == 1:
+                keyboard.activateFocusedKey()
+        elif button_code in BUTTONS['menu']:  # Кнопка Select - скрыть клавиатуру
+            if value == 1:
+                keyboard.hide()
+                # Возвращаем фокус на поле ввода
+                if keyboard.current_input_widget:
+                    keyboard.current_input_widget.setFocus()
+        elif button_code in BUTTONS['add_game']:  # Кнопка X - Backspace (now holdable)
+            if value == 1:
+                keyboard.on_backspace_pressed()
+            elif value == 0:
+                keyboard.stop_backspace_repeat()
+
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         app = QApplication.instance()
         if not app:
@@ -1357,11 +1410,12 @@ class InputManager(QObject):
                 if not app or not active:
                     continue
 
-                if event.type == ecodes.EV_KEY and event.value == 1:
-                    if event.code in BUTTONS['menu'] and not self._is_gamescope_session:
+                if event.type == ecodes.EV_KEY:
+                    # Emit on both press (1) and release (0)
+                    self.button_event.emit(event.code, event.value)
+                    # Special handling for menu on press only
+                    if event.value == 1 and event.code in BUTTONS['menu'] and not self._is_gamescope_session:
                         self.toggle_fullscreen.emit(not self._is_fullscreen)
-                    else:
-                        self.button_pressed.emit(event.code)
                 elif event.type == ecodes.EV_ABS:
                     if event.code in {ecodes.ABS_Z, ecodes.ABS_RZ}:
                         # Проверяем, достаточно ли времени прошло с последнего срабатывания
@@ -1370,17 +1424,19 @@ class InputManager(QObject):
                         if event.code == ecodes.ABS_Z:  # LT/L2
                             if event.value > 128 and not self.lt_pressed:
                                 self.lt_pressed = True
-                                self.button_pressed.emit(event.code)
+                                self.button_event.emit(event.code, 1)  # Emit as press
                                 self.last_trigger_time = now
                             elif event.value <= 128 and self.lt_pressed:
                                 self.lt_pressed = False
+                                self.button_event.emit(event.code, 0)  # Emit as release
                         elif event.code == ecodes.ABS_RZ:  # RT/R2
                             if event.value > 128 and not self.rt_pressed:
                                 self.rt_pressed = True
-                                self.button_pressed.emit(event.code)
+                                self.button_event.emit(event.code, 1)  # Emit as press
                                 self.last_trigger_time = now
                             elif event.value <= 128 and self.rt_pressed:
                                 self.rt_pressed = False
+                                self.button_event.emit(event.code, 0)  # Emit as release
                     else:
                         self.dpad_moved.emit(event.code, event.value, now)
         except OSError as e:
@@ -1413,40 +1469,3 @@ class InputManager(QObject):
             self.gamepad_type = GamepadType.UNKNOWN
         except Exception as e:
             logger.error(f"Error during cleanup: {e}", exc_info=True)
-
-    def handle_virtual_keyboard(self, button_code: int) -> None:
-        # Проверяем клавиатуру в активном окне
-        active_window = QApplication.activeWindow()
-        keyboard = None
-
-        # Сначала проверяем AddGameDialog
-        if isinstance(active_window, AddGameDialog):
-            keyboard = getattr(active_window, 'keyboard', None)
-        else:
-            # Если это не AddGameDialog, проверяем клавиатуру в главном окне
-            keyboard = getattr(self._parent, 'keyboard', None)
-
-        if not keyboard or not isinstance(keyboard, VirtualKeyboard) or not keyboard.isVisible():
-            return
-
-        # Обработка кнопок геймпада
-        if button_code in BUTTONS['confirm']:  # Кнопка A/Cross - подтверждение
-            keyboard.activateFocusedKey()
-        elif button_code in BUTTONS['back']:  # Кнопка B/Circle - скрыть клавиатуру
-            keyboard.hide()
-            # Возвращаем фокус на поле ввода
-            if keyboard.current_input_widget:
-                keyboard.current_input_widget.setFocus()
-        elif button_code in BUTTONS['prev_tab']:  # LB/L1 - переключение раскладки
-            keyboard.on_lang_click()
-        elif button_code in BUTTONS['next_tab']:  # RB/R1 - переключение Shift
-            keyboard.on_shift_click(not keyboard.shift_pressed)
-        elif button_code in BUTTONS['context_menu']:  # Кнопка Start - подтверждение
-            keyboard.activateFocusedKey()
-        elif button_code in BUTTONS['menu']:  # Кнопка Select - скрыть клавиатуру
-            keyboard.hide()
-            # Возвращаем фокус на поле ввода
-            if keyboard.current_input_widget:
-                keyboard.current_input_widget.setFocus()
-        elif button_code in BUTTONS['add_game']:  # Кнопка X - Backspace
-            keyboard.on_backspace_click()
