@@ -363,8 +363,9 @@ class GameLibraryManager:
                     cover_path, width, height, callback = self.pending_images.pop(game_key)
                     load_pixmap_async(cover_path, width, height, callback)
 
-        # Force geometry update so FlowLayout accounts for hidden widgets
+        # Force full relayout after visibility changes
         if self.gamesListLayout is not None:
+            self.gamesListLayout.invalidate()  # Принудительно инвалидируем для пересчёта
             self.gamesListLayout.update()
         if self.gamesListWidget is not None:
             self.gamesListWidget.updateGeometry()

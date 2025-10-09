@@ -126,7 +126,21 @@ class FlowLayout(QLayout):
         return True
 
     def heightForWidth(self, width):
-        return self.doLayout(QRect(0, 0, width, 0), True)
+        # Аналогично фильтруем видимые для тестового расчёта высоты
+        visible_items = []
+        nat_sizes = np.empty((0, 2), dtype=np.int32)
+        for item in self.itemList:
+            if item.widget() and item.widget().isVisible():
+                visible_items.append(item)
+                s = item.sizeHint()
+                new_row = np.array([[s.width(), s.height()]], dtype=np.int32)
+                nat_sizes = np.vstack([nat_sizes, new_row]) if len(nat_sizes) > 0 else new_row
+
+        if len(visible_items) == 0:
+            return 0
+
+        _, total_height = compute_layout(nat_sizes, width, self._spacing, self._max_scale)
+        return total_height
 
     def setGeometry(self, rect):
         super().setGeometry(rect)
@@ -145,25 +159,45 @@ class FlowLayout(QLayout):
         return size
 
     def doLayout(self, rect, testOnly):
-        N = len(self.itemList)
-        if N == 0:
+        N_total = len(self.itemList)
+        if N_total == 0:
             return 0
 
-        nat_sizes = np.empty((N, 2), dtype=np.int32)
+        # Фильтруем только видимые элементы
+        visible_items = []
+        visible_indices = []  # Индексы в оригинальном itemList для установки геометрии
+        nat_sizes = np.empty((0, 2), dtype=np.int32)
         for i, item in enumerate(self.itemList):
-            s = item.sizeHint()
-            nat_sizes[i, 0] = s.width()
-            nat_sizes[i, 1] = s.height()
+            if item.widget() and item.widget().isVisible():
+                visible_items.append(item)
+                visible_indices.append(i)
+                s = item.sizeHint()
+                new_row = np.array([[s.width(), s.height()]], dtype=np.int32)
+                nat_sizes = np.vstack([nat_sizes, new_row]) if len(nat_sizes) > 0 else new_row
+
+        N = len(visible_items)
+        if N == 0:
+            # Если все скрыты, устанавливаем нулевые геометрии для всех
+            if not testOnly:
+                for item in self.itemList:
+                    item.setGeometry(QRect())
+            return 0
 
         geom_array, total_height = compute_layout(nat_sizes, rect.width(), self._spacing, self._max_scale)
 
         if not testOnly:
-            for i, item in enumerate(self.itemList):
-                x = geom_array[i, 0] + rect.x()
-                y = geom_array[i, 1] + rect.y()
-                w = geom_array[i, 2]
-                h = geom_array[i, 3]
+            # Устанавливаем геометрии только для видимых
+            for idx, (_vis_idx, item) in enumerate(zip(visible_indices, visible_items, strict=True)):
+                x = geom_array[idx, 0] + rect.x()
+                y = geom_array[idx, 1] + rect.y()
+                w = geom_array[idx, 2]
+                h = geom_array[idx, 3]
                 item.setGeometry(QRect(QPoint(x, y), QSize(w, h)))
+
+            # Для невидимых — нулевая геометрия
+            for i in range(N_total):
+                if i not in visible_indices:
+                    self.itemList[i].setGeometry(QRect())
 
         return total_height
 
