@@ -680,31 +680,41 @@ class InputManager(QObject):
         else:
             keyboard = getattr(self._parent, 'keyboard', None)
 
+        # Handle release early
+        if value == 0:
+            self.current_dpad_code = None
+            self.current_dpad_value = 0
+            self.axis_moving = False
+            self.current_axis_delay = self.initial_axis_move_delay
+            self.dpad_timer.stop()
+            return
+
+        # Update D-pad state for continuous movement
+        self.current_dpad_code = code
+        self.current_dpad_value = value
+        if not self.axis_moving:
+            self.axis_moving = True
+            self.last_move_time = current_time
+            self.current_axis_delay = self.initial_axis_move_delay
+            self.dpad_timer.start(int(self.repeat_axis_move_delay * 1000))
+
         if keyboard and keyboard.isVisible():
             # Обработка горизонтального перемещения (LEFT/RIGHT)
             if code in (ecodes.ABS_HAT0X, ecodes.ABS_X):
+                normalized_value = 0
                 if code == ecodes.ABS_X:  # Левый стик
                     # Применяем мертвую зону
                     if abs(value) < self.dead_zone:
                         self.current_dpad_code = None
                         self.current_dpad_value = 0
+                        self.axis_moving = False
                         self.dpad_timer.stop()
                         return
-
-                    # Нормализуем значение стика (-1, 0, 1)
-                    normalized_value = 1 if value > self.dead_zone else (-1 if value < -self.dead_zone else 0)
+                    normalized_value = 1 if value > self.dead_zone else -1
                 else:  # D-pad
                     normalized_value = value  # D-pad уже дает -1, 0, 1
 
                 if normalized_value != 0:
-                    # Ограничиваем частоту перемещений
-                    now = time.time()
-                    if now - self.last_move_time < self.current_axis_delay:
-                        return
-
-                    self.last_move_time = now
-                    self.current_axis_delay = self.repeat_axis_move_delay  # Уменьшаем задержку после первого перемещения
-
                     if normalized_value > 0:  # Вправо
                         keyboard.move_focus_right()
                     elif normalized_value < 0:  # Влево
@@ -713,28 +723,20 @@ class InputManager(QObject):
 
             # Обработка вертикального перемещения (UP/DOWN)
             elif code in (ecodes.ABS_HAT0Y, ecodes.ABS_Y):
+                normalized_value = 0
                 if code == ecodes.ABS_Y:  # Левый стик
                     # Применяем мертвую зону
                     if abs(value) < self.dead_zone:
                         self.current_dpad_code = None
                         self.current_dpad_value = 0
+                        self.axis_moving = False
                         self.dpad_timer.stop()
                         return
-
-                    # Нормализуем значение стика (-1, 0, 1)
-                    normalized_value = 1 if value > self.dead_zone else (-1 if value < -self.dead_zone else 0)
+                    normalized_value = 1 if value > self.dead_zone else -1
                 else:  # D-pad
                     normalized_value = value  # D-pad уже дает -1, 0, 1
 
                 if normalized_value != 0:
-                    # Ограничиваем частоту перемещений
-                    now = time.time()
-                    if now - self.last_move_time < self.current_axis_delay:
-                        return
-
-                    self.last_move_time = now
-                    self.current_axis_delay = self.repeat_axis_move_delay  # Уменьшаем задержку после первого перемещения
-
                     if normalized_value > 0:  # Вниз
                         keyboard.move_focus_down()
                     elif normalized_value < 0:  # Вверх
@@ -780,23 +782,6 @@ class InputManager(QObject):
                         if search_edit:
                             search_edit.setFocus()
                             return
-
-            # Update D-pad state
-            if value != 0:
-                self.current_dpad_code = code
-                self.current_dpad_value = value
-                if not self.axis_moving:
-                    self.axis_moving = True
-                    self.last_move_time = current_time
-                    self.current_axis_delay = self.initial_axis_move_delay
-                    self.dpad_timer.start(int(self.repeat_axis_move_delay * 1000))  # Start timer (in milliseconds)
-            else:
-                self.current_dpad_code = None
-                self.current_dpad_value = 0
-                self.axis_moving = False
-                self.current_axis_delay = self.initial_axis_move_delay
-                self.dpad_timer.stop()  # Stop timer when D-pad is released
-                return
 
             # Handle SystemOverlay, AddGameDialog, or QMessageBox navigation with D-pad
             if isinstance(active, QDialog) and code == ecodes.ABS_HAT0X and value != 0:

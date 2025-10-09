@@ -451,7 +451,7 @@ class VirtualKeyboard(QFrame):
             focused.animateClick()
 
     def focusNextKey(self, direction: str):
-        """Перемещает фокус на следующую кнопку в указанном направлении"""
+        """Перемещает фокус на следующую кнопку в указанном направлении с обертыванием"""
         current = self.focusWidget()
         if not current:
             first_button = self.findFirstFocusableButton()
@@ -466,48 +466,120 @@ class VirtualKeyboard(QFrame):
         position = cast(tuple[int, int, int, int], self.keyboard_layout.getItemPosition(current_idx))
         current_row, current_col, row_span, col_span = position
 
-        # Поиск следующей кнопки
+        num_rows = self.keyboard_layout.rowCount()
+        num_cols = self.keyboard_layout.columnCount()
+
+        found = False
+
         if direction == "right":
-            next_col = current_col + col_span
-            next_row = current_row
-            max_attempts = self.keyboard_layout.columnCount() - next_col
+            # Сначала ищем в той же строке вправо
+            search_row = current_row
+            search_col = current_col + col_span
+            while search_col < num_cols:
+                item = self.keyboard_layout.itemAtPosition(search_row, search_col)
+                if item and item.widget() and item.widget().isEnabled():
+                    next_button = cast(QPushButton, item.widget())
+                    next_button.setFocus()
+                    found = True
+                    break
+                search_col += 1
+
+            if not found:
+                # Переходим к следующей строке, начиная с col 0
+                search_row = (current_row + 1) % num_rows
+                search_col = 0
+                # Ищем первую кнопку в этой строке
+                while search_col < num_cols:
+                    item = self.keyboard_layout.itemAtPosition(search_row, search_col)
+                    if item and item.widget() and item.widget().isEnabled():
+                        next_button = cast(QPushButton, item.widget())
+                        next_button.setFocus()
+                        found = True
+                        break
+                    search_col += 1
+                # Если не нашли в этой строке, продолжаем к следующей, но для простоты останавливаемся
+                # (можно добавить полный цикл, но предполагаем, что строки не пустые)
+
         elif direction == "left":
-            next_col = current_col - 1
-            next_row = current_row
-            max_attempts = next_col + 1
+            # Сначала ищем в той же строке влево
+            search_row = current_row
+            search_col = current_col - 1
+            while search_col >= 0:
+                item = self.keyboard_layout.itemAtPosition(search_row, search_col)
+                if item and item.widget() and item.widget().isEnabled():
+                    next_button = cast(QPushButton, item.widget())
+                    next_button.setFocus()
+                    found = True
+                    break
+                search_col -= 1
+
+            if not found:
+                # Переходим к предыдущей строке, начиная с последнего столбца
+                search_row = (current_row - 1) % num_rows
+                search_col = num_cols - 1
+                # Ищем последнюю кнопку в этой строке
+                while search_col >= 0:
+                    item = self.keyboard_layout.itemAtPosition(search_row, search_col)
+                    if item and item.widget() and item.widget().isEnabled():
+                        next_button = cast(QPushButton, item.widget())
+                        next_button.setFocus()
+                        found = True
+                        break
+                    search_col -= 1
+
         elif direction == "down":
-            next_col = current_col
-            next_row = current_row + row_span
-            max_attempts = self.keyboard_layout.rowCount() - next_row
+            # Сначала ищем в том же столбце вниз
+            search_col = current_col
+            search_row = current_row + row_span
+            while search_row < num_rows:
+                item = self.keyboard_layout.itemAtPosition(search_row, search_col)
+                if item and item.widget() and item.widget().isEnabled():
+                    next_button = cast(QPushButton, item.widget())
+                    next_button.setFocus()
+                    found = True
+                    break
+                search_row += 1
+
+            if not found:
+                # Переходим к следующему столбцу, начиная с row 0
+                search_col = (current_col + col_span) % num_cols
+                search_row = 0
+                # Ищем первую кнопку в этом столбце
+                while search_row < num_rows:
+                    item = self.keyboard_layout.itemAtPosition(search_row, search_col)
+                    if item and item.widget() and item.widget().isEnabled():
+                        next_button = cast(QPushButton, item.widget())
+                        next_button.setFocus()
+                        found = True
+                        break
+                    search_row += 1
+
         elif direction == "up":
-            next_col = current_col
-            next_row = current_row - 1
-            max_attempts = next_row + 1
-        else:
-            return
+            # Сначала ищем в том же столбце вверх
+            search_col = current_col
+            search_row = current_row - 1
+            while search_row >= 0:
+                item = self.keyboard_layout.itemAtPosition(search_row, search_col)
+                if item and item.widget() and item.widget().isEnabled():
+                    next_button = cast(QPushButton, item.widget())
+                    next_button.setFocus()
+                    found = True
+                    break
+                search_row -= 1
 
-        next_button = None
-        attempts = 0
-
-        while attempts < max_attempts:
-            item = self.keyboard_layout.itemAtPosition(next_row, next_col)
-            if item and item.widget() and item.widget().isEnabled():
-                next_button = cast(QPushButton, item.widget())
-                break
-
-            if direction == "right":
-                next_col += 1
-            elif direction == "left":
-                next_col -= 1
-            elif direction == "down":
-                next_row += 1
-            elif direction == "up":
-                next_row -= 1
-
-            attempts += 1
-
-        if next_button:
-            next_button.setFocus()
+            if not found:
+                # Переходим к предыдущему столбцу, начиная с последней строки
+                search_col = (current_col - 1) % num_cols
+                search_row = num_rows - 1
+                # Ищем последнюю кнопку в этом столбце
+                while search_row >= 0:
+                    item = self.keyboard_layout.itemAtPosition(search_row, search_col)
+                    if item and item.widget() and item.widget().isEnabled():
+                        next_button = cast(QPushButton, item.widget())
+                        next_button.setFocus()
+                        found = True
+                        break
+                    search_row -= 1
 
     def findFirstFocusableButton(self) -> QPushButton | None:
         """Находит первую фокусируемую кнопку на клавиатуре"""
