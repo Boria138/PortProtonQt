@@ -1,9 +1,11 @@
 import sys
+import os
+import subprocess
 from PySide6.QtCore import QLocale, QTranslator, QLibraryInfo
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QIcon
 from portprotonqt.main_window import MainWindow
-from portprotonqt.config_utils import save_fullscreen_config
+from portprotonqt.config_utils import save_fullscreen_config, get_portproton_location
 from portprotonqt.logger import get_logger, setup_logger
 from portprotonqt.cli import parse_args
 
@@ -12,6 +14,19 @@ __app_name__ = "PortProtonQt"
 __app_version__ = "0.1.6"
 
 def main():
+
+    os.environ['PW_CLI'] = '1'
+    os.environ['PROCESS_LOG'] = '1'
+    os.environ['START_FROM_STEAM'] = '1'
+
+    portproton_path = get_portproton_location()
+
+    if portproton_path is None:
+        return
+
+    script_path = os.path.join(portproton_path, 'data', 'scripts', 'start.sh')
+    subprocess.run([script_path, 'cli', '--initial'])
+
     app = QApplication(sys.argv)
     app.setWindowIcon(QIcon.fromTheme(__app_id__))
     app.setDesktopFileName(__app_id__)

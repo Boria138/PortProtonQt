@@ -166,7 +166,6 @@ class MainWindow(QMainWindow):
         tabs = [
             _("Library"),
             _("Auto Install"),
-            _("Emulators"),
             _("Wine Settings"),
             _("PortProton Settings"),
             _("Themes")
@@ -198,7 +197,6 @@ class MainWindow(QMainWindow):
 
         self.createInstalledTab()
         self.createAutoInstallTab()
-        self.createEmulatorsTab()
         self.createWineTab()
         self.createPortProtonTab()
         self.createThemeTab()
@@ -980,32 +978,10 @@ class MainWindow(QMainWindow):
 
         self.stackedWidget.addWidget(self.autoInstallWidget)
 
-    def createEmulatorsTab(self):
-        """Вкладка 'Emulators'."""
-        self.emulatorsWidget = QWidget()
-        self.emulatorsWidget.setStyleSheet(self.theme.OTHER_PAGES_WIDGET_STYLE)
-        self.emulatorsWidget.setObjectName("otherPage")
-        layout = QVBoxLayout(self.emulatorsWidget)
-        layout.setContentsMargins(10, 18, 10, 10)
-
-        self.emulatorsTitle = QLabel(_("Emulators"))
-        self.emulatorsTitle.setStyleSheet(self.theme.TAB_TITLE_STYLE)
-        self.emulatorsTitle.setObjectName("tabTitle")
-        layout.addWidget(self.emulatorsTitle)
-
-        self.emulatorsContent = QLabel(_("List of available emulators and their configuration..."))
-        self.emulatorsContent.setStyleSheet(self.theme.CONTENT_STYLE)
-        self.emulatorsContent.setObjectName("tabContent")
-        layout.addWidget(self.emulatorsContent)
-        layout.addStretch(1)
-
-        self.stackedWidget.addWidget(self.emulatorsWidget)
-
     def createWineTab(self):
         """Вкладка 'Wine Settings'."""
         self.wineWidget = QWidget()
         self.wineWidget.setStyleSheet(self.theme.OTHER_PAGES_WIDGET_STYLE)
-        self.wineWidget.setObjectName("otherPage")
         layout = QVBoxLayout(self.wineWidget)
         layout.setContentsMargins(10, 18, 10, 10)
 
@@ -1070,12 +1046,13 @@ class MainWindow(QMainWindow):
             ("uninstaller", _("Uninstaller")),
         ]
 
-        for i, (_tool_cmd, tool_name) in enumerate(tools):
+        for i, (tool_cmd, tool_name) in enumerate(tools):
             row = i // 3
             col = i % 3
             btn = AutoSizeButton(tool_name, update_size=False)
             btn.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
             btn.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+            btn.clicked.connect(lambda checked, t=tool_cmd: self.launch_wine_tool(t))
             tools_grid.addWidget(btn, row, col)
 
         for col in range(3):
@@ -1093,7 +1070,7 @@ class MainWindow(QMainWindow):
             (_("Load Prefix Backup"), self.load_prefix_backup),
             (_("Delete Compatibility Tool"), self.delete_compat_tool),
             (_("Delete Prefix"), self.delete_prefix),
-            (_("Clear Prefix"), None),
+            (_("Clear Prefix"), self.clear_prefix),
         ]
 
         for i, (text, callback) in enumerate(additional_buttons):
@@ -1115,6 +1092,70 @@ class MainWindow(QMainWindow):
         layout.addStretch(1)
 
         self.stackedWidget.addWidget(self.wineWidget)
+
+    def launch_wine_tool(self, tool):
+        mapping = {
+            "winecfg": ("--winecfg", None),
+            "regedit": ("--winereg", None),
+            "control": ("--winecmd", "control"),
+            "taskmgr": ("--winecmd", "taskmgr"),
+            "explorer": ("--winefile", None),
+            "cmd": ("--winecmd", None),
+            "uninstaller": ("--wine_uninstaller", None),
+        }
+        if tool not in mapping:
+            return
+        cli_arg, extra = mapping[tool]
+        self.launch_generic_tool(cli_arg, extra)
+
+    def launch_generic_tool(self, cli_arg, extra=None):
+        wine = self.wineCombo.currentText()
+        prefix = self.prefixCombo.currentText()
+        if not wine or not prefix:
+            return
+        if not self.portproton_location:
+            return
+        start_sh = os.path.join(self.portproton_location, "data", "scripts", "start.sh")
+        if not os.path.exists(start_sh):
+            return
+        cmd = [start_sh, cli_arg, wine, prefix]
+        if extra:
+            cmd.append(extra)
+        proc = QProcess(self)
+        proc.start(cmd[0], cmd[1:])
+        if not proc.waitForStarted():
+            QMessageBox.warning(self, _("Error"), _("Failed to start process."))
+
+    def clear_prefix(self):
+        selected_prefix = self.prefixCombo.currentText()
+        selected_wine = self.wineCombo.currentText()
+        if not selected_prefix or not selected_wine:
+            return
+        if not self.portproton_location:
+            return
+        reply = QMessageBox.question(
+            self,
+            _("Confirm Clear"),
+            _("Are you sure you want to clear prefix '{}'?").format(selected_prefix),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+        if reply == QMessageBox.StandardButton.Yes:
+            start_sh = os.path.join(self.portproton_location, "data", "scripts", "start.sh")
+            if not os.path.exists(start_sh):
+                return
+            self.clear_process = QProcess(self)
+            self.clear_process.finished.connect(lambda exitCode, exitStatus: self._on_clear_finished(exitCode))
+            cmd = [start_sh, "--clear_pfx", selected_wine, selected_prefix]
+            self.clear_process.start(cmd[0], cmd[1:])
+            if not self.clear_process.waitForStarted():
+                QMessageBox.warning(self, _("Error"), _("Failed to start clear process."))
+
+    def _on_clear_finished(self, exitCode):
+        if exitCode == 0:
+            QMessageBox.information(self, _("Success"), _("Prefix cleared."))
+        else:
+            QMessageBox.warning(self, _("Error"), _("Prefix clear failed."))
 
     def create_prefix_backup(self):
         selected_prefix = self.prefixCombo.currentText()
@@ -1196,8 +1237,9 @@ class MainWindow(QMainWindow):
                 QMessageBox.information(self, _("Success"), _("Prefix '{}' deleted.").format(selected_prefix))
                 # обновляем список
                 self.prefixCombo.clear()
-                self.prefixes = [d for d in os.listdir(os.path.join(self.portproton_location, "data", "prefixes"))
-                                 if os.path.isdir(os.path.join(self.portproton_location, "data", "prefixes", d))]
+                prefixes_path = os.path.join(self.portproton_location, "data", "prefixes")
+                self.prefixes = [d for d in os.listdir(prefixes_path)
+                                if os.path.isdir(os.path.join(prefixes_path, d))]
                 self.prefixCombo.addItems(self.prefixes)
             except Exception as e:
                 QMessageBox.warning(self, _("Error"), _("Failed to delete prefix: {}").format(str(e)))
@@ -2392,9 +2434,7 @@ class MainWindow(QMainWindow):
             else:
                 # Запускаем игру через PortProton
                 env_vars = os.environ.copy()
-                env_vars['START_FROM_STEAM'] = '1'
                 env_vars['LEGENDARY_CONFIG_PATH'] = self.legendary_config_path
-                env_vars['PROCESS_LOG'] = '1'
 
                 wrapper = "flatpak run ru.linux_gaming.PortProton"
                 if self.portproton_location is not None and ".var" not in self.portproton_location:
