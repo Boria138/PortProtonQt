@@ -1139,7 +1139,7 @@ class MainWindow(QMainWindow):
                     card_layout.addWidget(desc_label)
 
                 # Install button
-                install_btn = AutoSizeButton(_("Install"), icon=self.theme_manager.get_icon("install"))
+                install_btn = AutoSizeButton(_("Install"))
                 install_btn.setStyleSheet(self.theme.PLAY_BUTTON_STYLE)
                 install_btn.clicked.connect(lambda checked, s=script_name: self.launch_autoinstall(s))
                 card_layout.addWidget(install_btn)

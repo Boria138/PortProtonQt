@@ -135,6 +135,46 @@ class PortProtonAPI:
             if callback:
                 callback(results)
 
+    def download_autoinstall_cover_async(self, exe_name: str, timeout: int = 5, callback: Callable[[str | None], None] | None = None) -> None:
+        """Download only autoinstall cover image (no metadata)."""
+        xdg_data_home = os.getenv("XDG_DATA_HOME",
+                                os.path.join(os.path.expanduser("~"), ".local", "share"))
+        user_game_folder = os.path.join(xdg_data_home, "PortProtonQt", "custom_data", "autoinstall", exe_name)
+        os.makedirs(user_game_folder, exist_ok=True)
+
+        cover_extensions = [".png", ".jpg", ".jpeg", ".bmp"]
+        results: str | None = None
+        pending_downloads = 0
+
+        def on_cover_downloaded(local_path: str | None, ext: str):
+            nonlocal pending_downloads, results
+            if local_path:
+                logger.info(f"Async autoinstall cover downloaded for {exe_name}: {local_path}")
+                results = local_path
+            else:
+                logger.debug(f"No autoinstall cover downloaded for {exe_name} with extension {ext}")
+            pending_downloads -= 1
+            if pending_downloads == 0 and callback:
+                callback(results)
+
+        for ext in cover_extensions:
+            cover_url = f"{self.base_url}/{exe_name}/cover{ext}"
+            if self._check_file_exists(cover_url, timeout):
+                local_cover_path = os.path.join(user_game_folder, f"cover{ext}")
+                pending_downloads += 1
+                self.downloader.download_async(
+                    cover_url,
+                    local_cover_path,
+                    timeout=timeout,
+                    callback=lambda path, ext=ext: on_cover_downloaded(path, ext)
+                )
+                break
+
+        if pending_downloads == 0:
+            logger.debug(f"No autoinstall covers found for {exe_name}")
+            if callback:
+                callback(None)
+
     def parse_autoinstall_script(self, file_path: str) -> tuple[str | None, str | None]:
         """Extract display_name from # name comment and exe_name from autoinstall bash script."""
         try:
@@ -142,41 +182,52 @@ class PortProtonAPI:
                 content = f.read()
 
             # Skip emulators
-            if "# type: emulators" in content:
+            if re.search(r'#\s*type\s*:\s*emulators', content, re.IGNORECASE):
                 return None, None
 
             display_name = None
-            # Extract display_name from # name: comment
-            name_match = re.search(r'#\s*name\s*:\s*(.+)', content, re.MULTILINE | re.IGNORECASE)
+            exe_name = None
+
+            # Extract display_name from "# name:" comment
+            name_match = re.search(r'#\s*name\s*:\s*(.+)', content, re.IGNORECASE)
             if name_match:
                 display_name = name_match.group(1).strip()
 
-            # Extract exe_name: prefer pw_create_unique_exe argument, then PORTWINE_CREATE_SHORTCUT_NAME, then portwine_exe basename
-            exe_name = None
+            # --- pw_create_unique_exe ---
+            pw_match = re.search(r'pw_create_unique_exe(?:\s+["\']([^"\']+)["\'])?', content)
+            if pw_match:
+                arg = pw_match.group(1)
+                if arg:
+                    exe_name = arg.strip()
+                    if not exe_name.lower().endswith(".exe"):
+                        exe_name += ".exe"
+                else:
+                    export_match = re.search(
+                        r'export\s+PORTWINE_CREATE_SHORTCUT_NAME\s*=\s*["\']([^"\']+)["\']',
+                        content, re.IGNORECASE)
+                    if export_match:
+                        exe_name = f"{export_match.group(1).strip()}.exe"
 
-            # Check for pw_create_unique_exe with argument
-            arg_match = re.search(r'pw_create_unique_exe\s+["\']([^"\']+)["\']', content, re.MULTILINE)
-            if arg_match:
-                exe_name = arg_match.group(1).strip()
-
-            # Fallback to PORTWINE_CREATE_SHORTCUT_NAME
-            if not exe_name:
-                export_match = re.search(r'export\s+PORTWINE_CREATE_SHORTCUT_NAME\s*=\s*["\']([^"\']+)["\']', content, re.MULTILINE)
-                if export_match:
-                    exe_name = export_match.group(1).strip()
-
-            # Fallback to portwine_exe basename
-            if not exe_name:
-                portwine_match = re.search(r'portwine_exe\s*=\s*["\']([^"\']+)["\']', content, re.MULTILINE)
+            else:
+                # --- portwine_exe= --- (многострочный, сложный вариант)
+                portwine_match = re.search(
+                    r'portwine_exe\s*=\s*(?:["\']?\$\(.+?\)[\'"]?|["\'].*?\.exe["\']|[^\n]+)',
+                    content,
+                    re.DOTALL,
+                )
                 if portwine_match:
-                    exe_path = portwine_match.group(1).strip()
-                    exe_name = os.path.splitext(os.path.basename(exe_path))[0]
+                    exe_expr = portwine_match.group(0).split("=", 1)[1].strip()
+                    exe_expr = exe_expr.strip("'\" ")
 
-            # Fallback display_name to exe_name if not found
+                    # --- Найти .exe внутри выражения (разрешаем точки в имени) ---
+                    exe_candidates = re.findall(r'[-\w\s/\\\.]+\.exe', exe_expr)
+                    if exe_candidates:
+                        exe_name = os.path.basename(exe_candidates[-1].strip())
+
+            # Fallback
             if not display_name and exe_name:
                 display_name = exe_name
 
-            print(exe_name)
             return display_name, exe_name
 
         except Exception as e:
@@ -184,48 +235,68 @@ class PortProtonAPI:
             return None, None
 
     def get_autoinstall_games_async(self, callback: Callable[[list[tuple]], None]) -> None:
-        """Load auto-install games with custom_data assets (cover and metadata)."""
+        """Load auto-install games with user/builtin covers and async autoinstall cover download."""
         games = []
         auto_dir = os.path.join(self.portproton_location, "data", "scripts", "pw_autoinstall")
         if not os.path.exists(auto_dir):
             callback(games)
             return
+
         scripts = sorted(glob.glob(os.path.join(auto_dir, "*")))
         if not scripts:
             callback(games)
             return
 
+        xdg_data_home = os.getenv("XDG_DATA_HOME",
+                                os.path.join(os.path.expanduser("~"), ".local", "share"))
+        base_autoinstall_dir = os.path.join(xdg_data_home, "PortProtonQt", "custom_data", "autoinstall")
+        os.makedirs(base_autoinstall_dir, exist_ok=True)
+
         for script_path in scripts:
             display_name, exe_name = self.parse_autoinstall_script(script_path)
-            if display_name and exe_name:
-                # Download assets
-                cover_path = ""
-                metadata_path = ""
-                description = ""
-                if metadata_path and os.path.exists(metadata_path):
-                    try:
-                        with open(metadata_path, encoding="utf-8") as f:
-                            description = f.read().strip()
-                    except Exception as e:
-                        logger.error(f"Failed to read metadata for {exe_name}: {e}")
-                script_name = os.path.splitext(os.path.basename(script_path))[0]
-                # Basic tuple with assets
-                game_tuple = (
-                    display_name,  # name
-                    description,  # description
-                    cover_path,  # cover
-                    "",  # appid
-                    f"autoinstall:{script_name}",  # exec_line
-                    "",  # controller_support
-                    "Never",  # last_launch
-                    "0h 0m",  # formatted_playtime
-                    "",  # protondb_tier
-                    "",  # anticheat_status
-                    0,  # last_played
-                    0,  # playtime_seconds
-                    "autoinstall"  # game_source
-                )
-                games.append(game_tuple)
+            script_name = os.path.splitext(os.path.basename(script_path))[0]
+
+            if not (display_name and exe_name):
+                continue
+
+            exe_name = os.path.splitext(exe_name)[0]  # Без .exe
+            user_game_folder = os.path.join(base_autoinstall_dir, exe_name)
+            os.makedirs(user_game_folder, exist_ok=True)
+
+            # Поиск обложки
+            cover_path = ""
+            user_files = set(os.listdir(user_game_folder)) if os.path.exists(user_game_folder) else set()
+            for ext in [".jpg", ".png", ".jpeg", ".bmp"]:
+                candidate = f"cover{ext}"
+                if candidate in user_files:
+                    cover_path = os.path.join(user_game_folder, candidate)
+                    break
+
+            # Если обложки нет — пытаемся скачать
+            if not cover_path:
+                logger.debug(f"No local cover found for autoinstall {exe_name}, trying to download...")
+                def on_cover_downloaded(path):
+                    if path:
+                        logger.info(f"Downloaded autoinstall cover for {exe_name}: {path}")
+                self.download_autoinstall_cover_async(exe_name, timeout=5, callback=on_cover_downloaded)
+
+            # Формируем кортеж игры
+            game_tuple = (
+                display_name,  # name
+                "",  # description
+                cover_path,  # cover
+                "",  # appid
+                f"autoinstall:{script_name}",  # exec_line
+                "",  # controller_support
+                "Never",  # last_launch
+                "0h 0m",  # formatted_playtime
+                "",  # protondb_tier
+                "",  # anticheat_status
+                0,  # last_played
+                0,  # playtime_seconds
+                "autoinstall"  # game_source
+            )
+            games.append(game_tuple)
 
         callback(games)
 
