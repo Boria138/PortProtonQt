@@ -453,3 +453,11 @@ class GameLibraryManager:
     def filter_games_delayed(self):
         """Filters games based on search text and updates the grid."""
         self.update_game_grid(is_filter=True)
+
+    def calculate_columns(self, card_width: int) -> int:
+        """Calculate the number of columns based on card width and assumed container width."""
+        # Assuming a typical container width; adjust as needed
+        available_width = 1200  # Example width, can be dynamic if widget access is added
+        spacing = 15  # Assumed spacing between cards
+        columns = max(1, (available_width - spacing) // (card_width + spacing))
+        return min(columns, 8)  # Cap at reasonable max

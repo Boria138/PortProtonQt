@@ -4,9 +4,12 @@ import orjson
 import requests
 import urllib.parse
 import time
+import glob
+import re
 from collections.abc import Callable
 from portprotonqt.downloader import Downloader
 from portprotonqt.logger import get_logger
+from portprotonqt.config_utils import get_portproton_location
 
 logger = get_logger(__name__)
 CACHE_DURATION = 30 * 24 * 60 * 60  # 30 days in seconds
@@ -52,6 +55,9 @@ class PortProtonAPI:
         self.xdg_data_home = os.getenv("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share"))
         self.custom_data_dir = os.path.join(self.xdg_data_home, "PortProtonQt", "custom_data")
         os.makedirs(self.custom_data_dir, exist_ok=True)
+        self.portproton_location = get_portproton_location()
+        self.repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self.builtin_custom_folder = os.path.join(self.repo_root, "custom_data")
         self._topics_data = None
 
     def _get_game_dir(self, exe_name: str) -> str:
@@ -67,40 +73,6 @@ class PortProtonAPI:
         except requests.RequestException as e:
             logger.debug(f"Failed to check file at {url}: {e}")
             return False
-
-    def download_game_assets(self, exe_name: str, timeout: int = 5) -> dict[str, str | None]:
-        game_dir = self._get_game_dir(exe_name)
-        results: dict[str, str | None] = {"cover": None, "metadata": None}
-        cover_extensions = [".png", ".jpg", ".jpeg", ".bmp"]
-        cover_url_base = f"{self.base_url}/{exe_name}/cover"
-        metadata_url = f"{self.base_url}/{exe_name}/metadata.txt"
-
-        for ext in cover_extensions:
-            cover_url = f"{cover_url_base}{ext}"
-            if self._check_file_exists(cover_url, timeout):
-                local_cover_path = os.path.join(game_dir, f"cover{ext}")
-                result = self.downloader.download(cover_url, local_cover_path, timeout=timeout)
-                if result:
-                    results["cover"] = result
-                    logger.info(f"Downloaded cover for {exe_name} to {result}")
-                    break
-                else:
-                    logger.error(f"Failed to download cover for {exe_name} from {cover_url}")
-            else:
-                logger.debug(f"No cover found for {exe_name} with extension {ext}")
-
-        if self._check_file_exists(metadata_url, timeout):
-            local_metadata_path = os.path.join(game_dir, "metadata.txt")
-            result = self.downloader.download(metadata_url, local_metadata_path, timeout=timeout)
-            if result:
-                results["metadata"] = result
-                logger.info(f"Downloaded metadata for {exe_name} to {result}")
-            else:
-                logger.error(f"Failed to download metadata for {exe_name} from {metadata_url}")
-        else:
-            logger.debug(f"No metadata found for {exe_name}")
-
-        return results
 
     def download_game_assets_async(self, exe_name: str, timeout: int = 5, callback: Callable[[dict[str, str | None]], None] | None = None) -> None:
         game_dir = self._get_game_dir(exe_name)
@@ -162,6 +134,100 @@ class PortProtonAPI:
             logger.debug(f"No assets found for {exe_name}")
             if callback:
                 callback(results)
+
+    def parse_autoinstall_script(self, file_path: str) -> tuple[str | None, str | None]:
+        """Extract display_name from # name comment and exe_name from autoinstall bash script."""
+        try:
+            with open(file_path, encoding='utf-8') as f:
+                content = f.read()
+
+            # Skip emulators
+            if "# type: emulators" in content:
+                return None, None
+
+            display_name = None
+            # Extract display_name from # name: comment
+            name_match = re.search(r'#\s*name\s*:\s*(.+)', content, re.MULTILINE | re.IGNORECASE)
+            if name_match:
+                display_name = name_match.group(1).strip()
+
+            # Extract exe_name: prefer pw_create_unique_exe argument, then PORTWINE_CREATE_SHORTCUT_NAME, then portwine_exe basename
+            exe_name = None
+
+            # Check for pw_create_unique_exe with argument
+            arg_match = re.search(r'pw_create_unique_exe\s+["\']([^"\']+)["\']', content, re.MULTILINE)
+            if arg_match:
+                exe_name = arg_match.group(1).strip()
+
+            # Fallback to PORTWINE_CREATE_SHORTCUT_NAME
+            if not exe_name:
+                export_match = re.search(r'export\s+PORTWINE_CREATE_SHORTCUT_NAME\s*=\s*["\']([^"\']+)["\']', content, re.MULTILINE)
+                if export_match:
+                    exe_name = export_match.group(1).strip()
+
+            # Fallback to portwine_exe basename
+            if not exe_name:
+                portwine_match = re.search(r'portwine_exe\s*=\s*["\']([^"\']+)["\']', content, re.MULTILINE)
+                if portwine_match:
+                    exe_path = portwine_match.group(1).strip()
+                    exe_name = os.path.splitext(os.path.basename(exe_path))[0]
+
+            # Fallback display_name to exe_name if not found
+            if not display_name and exe_name:
+                display_name = exe_name
+
+            print(exe_name)
+            return display_name, exe_name
+
+        except Exception as e:
+            logger.error(f"Failed to parse {file_path}: {e}")
+            return None, None
+
+    def get_autoinstall_games_async(self, callback: Callable[[list[tuple]], None]) -> None:
+        """Load auto-install games with custom_data assets (cover and metadata)."""
+        games = []
+        auto_dir = os.path.join(self.portproton_location, "data", "scripts", "pw_autoinstall")
+        if not os.path.exists(auto_dir):
+            callback(games)
+            return
+        scripts = sorted(glob.glob(os.path.join(auto_dir, "*")))
+        if not scripts:
+            callback(games)
+            return
+
+        for script_path in scripts:
+            display_name, exe_name = self.parse_autoinstall_script(script_path)
+            if display_name and exe_name:
+                # Download assets
+                cover_path = ""
+                metadata_path = ""
+                description = ""
+                if metadata_path and os.path.exists(metadata_path):
+                    try:
+                        with open(metadata_path, encoding="utf-8") as f:
+                            description = f.read().strip()
+                    except Exception as e:
+                        logger.error(f"Failed to read metadata for {exe_name}: {e}")
+                script_name = os.path.splitext(os.path.basename(script_path))[0]
+                # Basic tuple with assets
+                game_tuple = (
+                    display_name,  # name
+                    description,  # description
+                    cover_path,  # cover
+                    "",  # appid
+                    f"autoinstall:{script_name}",  # exec_line
+                    "",  # controller_support
+                    "Never",  # last_launch
+                    "0h 0m",  # formatted_playtime
+                    "",  # protondb_tier
+                    "",  # anticheat_status
+                    0,  # last_played
+                    0,  # playtime_seconds
+                    "autoinstall"  # game_source
+                )
+                games.append(game_tuple)
+
+        callback(games)
 
     def _load_topics_data(self):
         """Load and cache linux_gaming_topics_min.json from the archive."""

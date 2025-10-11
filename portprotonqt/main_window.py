@@ -5,6 +5,7 @@ import signal
 import subprocess
 import sys
 import psutil
+import re
 
 from portprotonqt.logger import get_logger
 from portprotonqt.dialogs import AddGameDialog, FileExplorer, WinetricksDialog
@@ -38,7 +39,7 @@ from portprotonqt.game_library_manager import GameLibraryManager
 from portprotonqt.virtual_keyboard import VirtualKeyboard
 
 from PySide6.QtWidgets import (QLineEdit, QMainWindow, QStatusBar, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox,
-                               QDialog, QFormLayout, QFrame, QGraphicsDropShadowEffect, QMessageBox, QApplication, QPushButton, QProgressBar, QCheckBox, QSizePolicy, QGridLayout)
+                               QDialog, QFormLayout, QFrame, QGraphicsDropShadowEffect, QMessageBox, QApplication, QPushButton, QProgressBar, QCheckBox, QSizePolicy, QGridLayout, QScrollArea)
 from PySide6.QtCore import Qt, QAbstractAnimation, QUrl, Signal, QTimer, Slot, QProcess
 from PySide6.QtGui import QIcon, QPixmap, QColor, QDesktopServices
 from typing import cast
@@ -128,6 +129,11 @@ class MainWindow(QMainWindow):
         self.statusBar().addPermanentWidget(self.progress_bar)
         self.update_progress.connect(self.progress_bar.setValue)
         self.update_status_message.connect(self.statusBar().showMessage)
+
+        self.installing = False
+        self.current_install_script = None
+        self.install_process = None
+        self.install_monitor_timer = None
 
         # Центральный виджет и основной layout
         centralWidget = QWidget()
@@ -436,6 +442,103 @@ class MainWindow(QMainWindow):
 
         # Update navigation buttons
         self.updateNavButtons()
+
+    def launch_autoinstall(self, script_name: str):
+        """Launch auto-install script."""
+        if self.installing:
+            QMessageBox.warning(self, _("Warning"), _("Installation already in progress."))
+            return
+        self.installing = True
+        self.current_install_script = script_name
+        self.seen_progress = False
+        self.current_percent = 0.0
+        start_sh = os.path.join(self.portproton_location, "data", "scripts", "start.sh")
+        if not os.path.exists(start_sh):
+            self.installing = False
+            QMessageBox.warning(self, _("Error"), _("start.sh not found."))
+            return
+        cmd = [start_sh, "cli", "--autoinstall", script_name]
+        print(cmd)
+        self.install_process = QProcess(self)
+        self.install_process.finished.connect(self.on_install_finished)
+        self.install_process.errorOccurred.connect(self.on_install_error)
+        self.install_process.start(cmd[0], cmd[1:])
+        if not self.install_process.waitForStarted(5000):
+            self.installing = False
+            QMessageBox.warning(self, _("Error"), _("Failed to start installation."))
+            return
+        self.progress_bar.setVisible(True)
+        self.progress_bar.setRange(0, 0)  # Indeterminate
+        self.update_status_message.emit(f"Processed {script_name} installation...", 0)
+        self.install_monitor_timer = QTimer(self)
+        self.install_monitor_timer.timeout.connect(self.monitor_install_progress)
+        self.install_monitor_timer.start(2000)  # Start monitoring after 2s
+
+    def monitor_install_progress(self):
+        """Monitor /tmp/PortProton_$USER/process.log for progress."""
+        user = os.getenv('USER', 'unknown')
+        log_file = f"/tmp/PortProton_{user}/process.log"
+        if not os.path.exists(log_file):
+            return
+        try:
+            with open(log_file, encoding='utf-8') as f:
+                content = f.read()
+            # Extract all percentage matches, including .0% as 0.0
+            matches = re.findall(r'([0-9]*\.?[0-9]+)%', content)
+            if matches:
+                try:
+                    percent = float(matches[-1])
+                    if percent > 0:
+                        self.seen_progress = True
+                        self.current_percent = percent
+                    elif self.seen_progress and percent == 0:
+                        self.current_percent = 100.0
+                        self.install_monitor_timer.stop()
+                    # Update progress bar to determinate if not already
+                    if self.progress_bar.maximum() == 0:
+                        self.progress_bar.setRange(0, 100)
+                        self.progress_bar.setFormat("%p")  # Show percentage
+                    self.progress_bar.setValue(int(self.current_percent))
+                    if self.current_percent >= 100:
+                        self.install_monitor_timer.stop()
+                except ValueError:
+                    pass  # Ignore invalid floats
+        except Exception as e:
+            logger.error(f"Error monitoring log: {e}")
+
+    @Slot(int, int)
+    def on_install_finished(self, exit_code: int, exit_status: int):
+        """Handle installation finish."""
+        self.installing = False
+        if self.install_monitor_timer:
+            self.install_monitor_timer.stop()
+            self.install_monitor_timer.deleteLater()
+            self.install_monitor_timer = None
+        self.progress_bar.setRange(0, 100)
+        self.progress_bar.setValue(100)
+        if exit_code == 0:
+            self.update_status_message.emit(_("Installation completed successfully."), 5000)
+            # Reload library after delay
+            QTimer.singleShot(3000, self.loadGames)
+        else:
+            self.update_status_message.emit(_("Installation failed."), 5000)
+            QMessageBox.warning(self, _("Error"), f"Installation failed (code: {exit_code}).")
+        self.progress_bar.setVisible(False)
+        self.current_install_script = None
+        if self.install_process:
+            self.install_process.deleteLater()
+            self.install_process = None
+
+    def on_install_error(self, error: QProcess.ProcessError):
+        """Handle installation error."""
+        self.installing = False
+        if self.install_monitor_timer:
+            self.install_monitor_timer.stop()
+            self.install_monitor_timer.deleteLater()
+            self.install_monitor_timer = None
+        self.update_status_message.emit(_("Installation error."), 5000)
+        QMessageBox.warning(self, _("Error"), f"Process error: {error}")
+        self.progress_bar.setVisible(False)
 
     @Slot(list)
     def on_games_loaded(self, games: list[tuple]):
@@ -958,25 +1061,113 @@ class MainWindow(QMainWindow):
                 get_steam_game_info_async(final_name, exec_line, on_steam_info)
 
     def createAutoInstallTab(self):
-        """Вкладка 'Auto Install'."""
-        self.autoInstallWidget = QWidget()
-        self.autoInstallWidget.setStyleSheet(self.theme.OTHER_PAGES_WIDGET_STYLE)
-        self.autoInstallWidget.setObjectName("otherPage")
-        layout = QVBoxLayout(self.autoInstallWidget)
-        layout.setContentsMargins(10, 18, 10, 10)
+        """Create the Auto Install tab with flow layout of simple game cards (cover, name, install button)."""
+        from portprotonqt.localization import _
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(20)
 
-        self.autoInstallTitle = QLabel(_("Auto Install"))
-        self.autoInstallTitle.setStyleSheet(self.theme.TAB_TITLE_STYLE)
-        self.autoInstallTitle.setObjectName("tabTitle")
-        layout.addWidget(self.autoInstallTitle)
+        # Header label
+        header = QLabel(_("Auto Install Games"))
+        header.setStyleSheet(self.theme.DETAIL_PAGE_TITLE_STYLE)
+        layout.addWidget(header)
 
-        self.autoInstallContent = QLabel(_("Here you can configure automatic game installation..."))
-        self.autoInstallContent.setStyleSheet(self.theme.CONTENT_STYLE)
-        self.autoInstallContent.setObjectName("tabContent")
-        layout.addWidget(self.autoInstallContent)
-        layout.addStretch(1)
+        # Scroll area for games
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll_widget = QWidget()
+        from portprotonqt.custom_widgets import FlowLayout
+        self.auto_install_flow_layout = FlowLayout(scroll_widget)  # Store reference for potential updates
+        self.auto_install_flow_layout.setSpacing(15)
+        self.auto_install_flow_layout.setContentsMargins(0, 0, 0, 0)
 
-        self.stackedWidget.addWidget(self.autoInstallWidget)
+        # Load games asynchronously (though now sync inside, but callback for consistency)
+        def on_autoinstall_games_loaded(games: list[tuple]):
+            # Clear existing widgets
+            while self.auto_install_flow_layout.count():
+                child = self.auto_install_flow_layout.takeAt(0)
+                if child.widget():
+                    child.widget().deleteLater()
+
+            for game in games:
+                name = game[0]
+                description = game[1]
+                cover_path = game[2]
+                exec_line = game[4]
+                script_name = exec_line.split("autoinstall:")[1] if exec_line.startswith("autoinstall:") else ""
+
+                # Create simple card frame
+                card_frame = QFrame()
+                card_frame.setFixedWidth(self.card_width)
+                card_frame.setStyleSheet(self.theme.GAME_CARD_STYLE if hasattr(self.theme, 'GAME_CARD_STYLE') else "")
+                card_layout = QVBoxLayout(card_frame)
+                card_layout.setContentsMargins(10, 10, 10, 10)
+                card_layout.setSpacing(10)
+
+                # Cover image
+                cover_label = QLabel()
+                cover_label.setFixedHeight(120)
+                cover_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                pixmap = QPixmap()
+                if cover_path and os.path.exists(cover_path) and pixmap.load(cover_path):
+                    scaled_pix = pixmap.scaled(self.card_width - 40, 120, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+                    cover_label.setPixmap(scaled_pix)
+                else:
+                    # Placeholder
+                    placeholder_icon = self.theme_manager.get_theme_image("placeholder", self.current_theme_name)
+                    if placeholder_icon:
+                        pixmap.load(str(placeholder_icon))
+                        scaled_pix = pixmap.scaled(100, 100, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+                        cover_label.setPixmap(scaled_pix)
+                card_layout.addWidget(cover_label)
+
+                # Name label
+                name_label = QLabel(name)
+                name_label.setWordWrap(True)
+                name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                name_label.setStyleSheet(self.theme.CARD_TITLE_STYLE if hasattr(self.theme, 'CARD_TITLE_STYLE') else "")
+                card_layout.addWidget(name_label)
+
+                # Optional short description
+                if description:
+                    desc_label = QLabel(description[:100] + "..." if len(description) > 100 else description)
+                    desc_label.setWordWrap(True)
+                    desc_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                    desc_label.setStyleSheet(self.theme.CARD_DESC_STYLE if hasattr(self.theme, 'CARD_DESC_STYLE') else "")
+                    card_layout.addWidget(desc_label)
+
+                # Install button
+                install_btn = AutoSizeButton(_("Install"), icon=self.theme_manager.get_icon("install"))
+                install_btn.setStyleSheet(self.theme.PLAY_BUTTON_STYLE)
+                install_btn.clicked.connect(lambda checked, s=script_name: self.launch_autoinstall(s))
+                card_layout.addWidget(install_btn)
+
+                card_layout.addStretch()
+
+                # Add to flow layout
+                self.auto_install_flow_layout.addWidget(card_frame)
+
+            scroll.setWidget(scroll_widget)
+            layout.addWidget(scroll)
+
+        # Trigger load
+        self.portproton_api.get_autoinstall_games_async(on_autoinstall_games_loaded)
+
+        self.stackedWidget.addWidget(tab)
+
+
+    def on_auto_install_search_changed(self, text: str):
+        """Filter auto-install games based on search text."""
+        filtered_games = [g for g in self.auto_install_games if text.lower() in g[0].lower() or text.lower() in g[1].lower()]
+        self.populate_auto_install_grid(filtered_games)
+        self.auto_install_clear_search_button.setVisible(bool(text))
+
+    def clear_auto_install_search(self):
+        """Clear the auto-install search and repopulate grid."""
+        self.auto_install_search_line.clear()
+        self.populate_auto_install_grid(self.auto_install_games)
 
     def createWineTab(self):
         """Вкладка 'Wine Settings'."""
@@ -2520,6 +2711,11 @@ class MainWindow(QMainWindow):
         if exec_line.startswith("steam://"):
             url = QUrl(exec_line)
             QDesktopServices.openUrl(url)
+            return
+
+        if exec_line.startswith("autoinstall:"):
+            script_name = exec_line.split("autoinstall:")[1]
+            self.launch_autoinstall(script_name)
             return
 
         # Обработка EGS-игр
