@@ -1037,13 +1037,11 @@ class MainWindow(QMainWindow):
         tools_grid.setSpacing(6)
 
         tools = [
-            ("winecfg", _("Wine Configuration")),
-            ("regedit", _("Registry Editor")),
-            ("control", _("Control Panel")),
-            ("taskmgr", _("Task Manager")),
-            ("explorer", _("File Explorer")),
-            ("cmd", _("Command Prompt")),
-            ("uninstaller", _("Uninstaller")),
+            ("--winecfg", _("Wine Configuration")),
+            ("--winereg", _("Registry Editor")),
+            ("--winefile", _("File Explorer")),
+            ("--winecmd", _("Command Prompt")),
+            ("--wine_uninstaller", _("Uninstaller")),
         ]
 
         for i, (tool_cmd, tool_name) in enumerate(tools):
@@ -1052,7 +1050,7 @@ class MainWindow(QMainWindow):
             btn = AutoSizeButton(tool_name, update_size=False)
             btn.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
             btn.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-            btn.clicked.connect(lambda checked, t=tool_cmd: self.launch_wine_tool(t))
+            btn.clicked.connect(lambda checked, t=tool_cmd: self.launch_generic_tool(t))
             tools_grid.addWidget(btn, row, col)
 
         for col in range(3):
@@ -1091,24 +1089,21 @@ class MainWindow(QMainWindow):
         additional_grid.setContentsMargins(10, 6, 10, 0)
         layout.addStretch(1)
 
+        self.wine_progress_bar = QProgressBar(self.wineWidget)
+        self.wine_progress_bar.setStyleSheet(self.theme.PROGRESS_BAR_STYLE)
+        self.wine_progress_bar.setMaximumWidth(200)
+        self.wine_progress_bar.setTextVisible(True)
+        self.wine_progress_bar.setVisible(False)
+        self.wine_progress_bar.setRange(0, 0)
+
+        wine_progress_layout = QHBoxLayout()
+        wine_progress_layout.addStretch(1)
+        wine_progress_layout.addWidget(self.wine_progress_bar)
+        layout.addLayout(wine_progress_layout)
+
         self.stackedWidget.addWidget(self.wineWidget)
 
-    def launch_wine_tool(self, tool):
-        mapping = {
-            "winecfg": ("--winecfg", None),
-            "regedit": ("--winereg", None),
-            "control": ("--winecmd", "control"),
-            "taskmgr": ("--winecmd", "taskmgr"),
-            "explorer": ("--winefile", None),
-            "cmd": ("--winecmd", None),
-            "uninstaller": ("--wine_uninstaller", None),
-        }
-        if tool not in mapping:
-            return
-        cli_arg, extra = mapping[tool]
-        self.launch_generic_tool(cli_arg, extra)
-
-    def launch_generic_tool(self, cli_arg, extra=None):
+    def launch_generic_tool(self, cli_arg):
         wine = self.wineCombo.currentText()
         prefix = self.prefixCombo.currentText()
         if not wine or not prefix:
@@ -1118,21 +1113,93 @@ class MainWindow(QMainWindow):
         start_sh = os.path.join(self.portproton_location, "data", "scripts", "start.sh")
         if not os.path.exists(start_sh):
             return
-        cmd = [start_sh, cli_arg, wine, prefix]
-        if extra:
-            cmd.append(extra)
+        cmd = [start_sh, "cli", cli_arg, wine, prefix]
+
+        # Показываем прогресс-бар перед запуском
+        self.wine_progress_bar.setVisible(True)
+        self.update_status_message.emit(_("Launching tool..."), 0)
+
         proc = QProcess(self)
+        proc.finished.connect(lambda exitCode, exitStatus: self._on_wine_tool_finished(exitCode, cli_arg))
+        proc.errorOccurred.connect(lambda error: self._on_wine_tool_error(error, cli_arg))
         proc.start(cmd[0], cmd[1:])
-        if not proc.waitForStarted():
+
+        if not proc.waitForStarted(5000):
+            self.wine_progress_bar.setVisible(False)
+            self.update_status_message.emit("", 0)
             QMessageBox.warning(self, _("Error"), _("Failed to start process."))
+            return
+
+        self._start_wine_process_monitor(cli_arg)
+
+    def _start_wine_process_monitor(self, cli_arg):
+        """Запускает таймер для мониторинга запуска Wine утилиты."""
+        self.wine_monitor_timer = QTimer(self)
+        self.wine_monitor_timer.setInterval(500)
+        self.wine_monitor_timer.timeout.connect(lambda: self._check_wine_process(cli_arg))
+        self.wine_monitor_timer.start()
+
+    def _check_wine_process(self, cli_arg):
+        """Проверяет, запустился ли целевой .exe процесс."""
+        exe_map = {
+            "--winecfg": "winecfg.exe",
+            "--winereg": "regedit.exe",
+            "--winefile": "winefile.exe",
+            "--winecmd": "cmd.exe",
+            "--wine_uninstaller": "uninstaller.exe",
+        }
+        target_exe = exe_map.get(cli_arg, "")
+        if not target_exe:
+            return
+
+        # Проверяем процессы через psutil
+        for proc in psutil.process_iter(attrs=["name"]):
+            if proc.info["name"].lower() == target_exe.lower():
+                # Процесс запустился — скрываем прогресс-бар и останавливаем мониторинг
+                self.wine_progress_bar.setVisible(False)
+                self.update_status_message.emit("", 0)
+                if hasattr(self, 'wine_monitor_timer') and self.wine_monitor_timer is not None:
+                    self.wine_monitor_timer.stop()
+                    self.wine_monitor_timer.deleteLater()
+                    self.wine_monitor_timer = None
+                logger.info(f"Wine tool {target_exe} started successfully")
+                return
+
+    def _on_wine_tool_finished(self, exitCode, cli_arg):
+        """Обработчик завершения Wine утилиты."""
+        self.wine_progress_bar.setVisible(False)
+        self.update_status_message.emit("", 0)
+        # Останавливаем мониторинг, если он активен
+        if hasattr(self, 'wine_monitor_timer') and self.wine_monitor_timer is not None:
+            self.wine_monitor_timer.stop()
+            self.wine_monitor_timer.deleteLater()
+            self.wine_monitor_timer = None
+        if exitCode == 0:
+            logger.info(f"Wine tool {cli_arg} finished successfully")
+        else:
+            logger.warning(f"Wine tool {cli_arg} finished with exit code {exitCode}")
+
+    def _on_wine_tool_error(self, error, cli_arg):
+        """Обработчик ошибки запуска Wine утилиты."""
+        self.wine_progress_bar.setVisible(False)
+        self.update_status_message.emit("", 0)
+        # Останавливаем мониторинг, если он активен
+        if hasattr(self, 'wine_monitor_timer') and self.wine_monitor_timer is not None:
+            self.wine_monitor_timer.stop()
+            self.wine_monitor_timer.deleteLater()
+            self.wine_monitor_timer = None
+        logger.error(f"Wine tool {cli_arg} error: {error}")
+        QMessageBox.warning(self, _("Error"), f"Failed to launch tool: {error}")
 
     def clear_prefix(self):
+        """Очистка префикса (позже удалить)."""
         selected_prefix = self.prefixCombo.currentText()
         selected_wine = self.wineCombo.currentText()
         if not selected_prefix or not selected_wine:
             return
         if not self.portproton_location:
             return
+
         reply = QMessageBox.question(
             self,
             _("Confirm Clear"),
@@ -1140,22 +1207,102 @@ class MainWindow(QMainWindow):
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )
-        if reply == QMessageBox.StandardButton.Yes:
-            start_sh = os.path.join(self.portproton_location, "data", "scripts", "start.sh")
-            if not os.path.exists(start_sh):
-                return
-            self.clear_process = QProcess(self)
-            self.clear_process.finished.connect(lambda exitCode, exitStatus: self._on_clear_finished(exitCode))
-            cmd = [start_sh, "--clear_pfx", selected_wine, selected_prefix]
-            self.clear_process.start(cmd[0], cmd[1:])
-            if not self.clear_process.waitForStarted():
-                QMessageBox.warning(self, _("Error"), _("Failed to start clear process."))
+        if reply != QMessageBox.StandardButton.Yes:
+            return
 
-    def _on_clear_finished(self, exitCode):
-        if exitCode == 0:
-            QMessageBox.information(self, _("Success"), _("Prefix cleared."))
+        prefix_dir = os.path.join(self.portproton_location, "data", "prefixes", selected_prefix)
+        if not os.path.exists(prefix_dir):
+            QMessageBox.warning(self, _("Error"), _("Prefix '{}' does not exist.").format(selected_prefix))
+            return
+
+        success = True
+        errors = []
+
+        # Удаление файлов
+        files_to_remove = [
+            os.path.join(prefix_dir, "*.dot*"),
+            os.path.join(prefix_dir, "*.prog*"),
+            os.path.join(prefix_dir, ".wine_ver"),
+            os.path.join(prefix_dir, "system.reg"),
+            os.path.join(prefix_dir, "user.reg"),
+            os.path.join(prefix_dir, "userdef.reg"),
+            os.path.join(prefix_dir, "winetricks.log"),
+            os.path.join(prefix_dir, ".update-timestamp"),
+            os.path.join(prefix_dir, "drive_c", ".windows-serial"),
+        ]
+
+        import glob
+        for pattern in files_to_remove:
+            if "*" in pattern:  # Глобальный паттерн
+                matches = glob.glob(pattern)
+                for file_path in matches:
+                    try:
+                        if os.path.exists(file_path):
+                            os.remove(file_path)
+                    except Exception as e:
+                        success = False
+                        errors.append(str(e))
+            else:  # Конкретный файл
+                try:
+                    if os.path.exists(pattern):
+                        os.remove(pattern)
+                except Exception as e:
+                    success = False
+                    errors.append(str(e))
+
+        # Удаление директорий
+        dirs_to_remove = [
+            os.path.join(prefix_dir, "drive_c", "windows"),
+            os.path.join(prefix_dir, "drive_c", "ProgramData", "Setup"),
+            os.path.join(prefix_dir, "drive_c", "ProgramData", "Windows"),
+            os.path.join(prefix_dir, "drive_c", "ProgramData", "WindowsTask"),
+            os.path.join(prefix_dir, "drive_c", "ProgramData", "Package Cache"),
+            os.path.join(prefix_dir, "drive_c", "users", "Public", "Local Settings", "Application Data", "Microsoft"),
+            os.path.join(prefix_dir, "drive_c", "users", "Public", "Local Settings", "Application Data", "Temp"),
+            os.path.join(prefix_dir, "drive_c", "users", "Public", "Local Settings", "Temporary Internet Files"),
+            os.path.join(prefix_dir, "drive_c", "users", "Public", "Application Data", "Microsoft"),
+            os.path.join(prefix_dir, "drive_c", "users", "Public", "Application Data", "wine_gecko"),
+            os.path.join(prefix_dir, "drive_c", "users", "Public", "Temp"),
+            os.path.join(prefix_dir, "drive_c", "users", "steamuser", "Local Settings", "Application Data", "Microsoft"),
+            os.path.join(prefix_dir, "drive_c", "users", "steamuser", "Local Settings", "Application Data", "Temp"),
+            os.path.join(prefix_dir, "drive_c", "users", "steamuser", "Local Settings", "Temporary Internet Files"),
+            os.path.join(prefix_dir, "drive_c", "users", "steamuser", "Application Data", "Microsoft"),
+            os.path.join(prefix_dir, "drive_c", "users", "steamuser", "Application Data", "wine_gecko"),
+            os.path.join(prefix_dir, "drive_c", "users", "steamuser", "Temp"),
+            os.path.join(prefix_dir, "drive_c", "Program Files", "Internet Explorer"),
+            os.path.join(prefix_dir, "drive_c", "Program Files", "Windows Media Player"),
+            os.path.join(prefix_dir, "drive_c", "Program Files", "Windows NT"),
+            os.path.join(prefix_dir, "drive_c", "Program Files (x86)", "Internet Explorer"),
+            os.path.join(prefix_dir, "drive_c", "Program Files (x86)", "Windows Media Player"),
+            os.path.join(prefix_dir, "drive_c", "Program Files (x86)", "Windows NT"),
+        ]
+
+        import shutil
+        for dir_path in dirs_to_remove:
+            try:
+                if os.path.exists(dir_path):
+                    shutil.rmtree(dir_path)
+            except Exception as e:
+                success = False
+                errors.append(str(e))
+
+        tmp_path = os.path.join(self.portproton_location, "data", "tmp")
+        if os.path.exists(tmp_path):
+            import glob
+            bin_files = glob.glob(os.path.join(tmp_path, "*.bin"))
+            foz_files = glob.glob(os.path.join(tmp_path, "*.foz"))
+            for file_path in bin_files + foz_files:
+                try:
+                    os.remove(file_path)
+                except Exception as e:
+                    success = False
+                    errors.append(str(e))
+
+        if success:
+            QMessageBox.information(self, _("Success"), _("Prefix '{}' cleared successfully.").format(selected_prefix))
         else:
-            QMessageBox.warning(self, _("Error"), _("Prefix clear failed."))
+            error_msg = _("Prefix '{}' cleared with errors:\n{}").format(selected_prefix, "\n".join(errors[:5]))
+            QMessageBox.warning(self, _("Warning"), error_msg)
 
     def create_prefix_backup(self):
         selected_prefix = self.prefixCombo.currentText()
@@ -2599,6 +2746,10 @@ class MainWindow(QMainWindow):
                 self.checkProcessTimer.stop()
                 self.checkProcessTimer.deleteLater()
                 self.checkProcessTimer = None
+            if hasattr(self, 'wine_monitor_timer') and self.wine_monitor_timer is not None:
+                self.wine_monitor_timer.stop()
+                self.wine_monitor_timer.deleteLater()
+                self.wine_monitor_timer = None
 
             # Сохраняем настройки окна
             if not read_fullscreen_config():
