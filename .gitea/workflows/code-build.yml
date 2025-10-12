@@ -138,7 +138,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.arch == 'true' || github.event_name == 'workflow_dispatch'
     container:
-      image: archlinux:base-devel@sha256:b3809917ab5a7840d42237f5f92d92660cd036bd75ae343e7825e6a24401f166
+      image: archlinux:base-devel@sha256:06ab929f935145dd65994a89dd06651669ea28d43c812f3e24de990978511821
       volumes:
         - /usr:/usr-host
         - /opt:/opt-host
