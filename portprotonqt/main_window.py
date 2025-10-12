@@ -1063,13 +1063,13 @@ class MainWindow(QMainWindow):
         autoInstallPage = QWidget()
         autoInstallPage.setStyleSheet(self.theme.LIBRARY_WIDGET_STYLE)
         autoInstallLayout = QVBoxLayout(autoInstallPage)
-        autoInstallLayout.setContentsMargins(0, 0, 0, 0)
+        autoInstallLayout.setContentsMargins(20, 0, 20, 0)
         autoInstallLayout.setSpacing(0)
 
         # Верхняя панель с заголовком и поиском
         headerWidget = QWidget()
         headerLayout = QHBoxLayout(headerWidget)
-        headerLayout.setContentsMargins(20, 10, 20, 10)
+        headerLayout.setContentsMargins(0, 10, 0, 10)
         headerLayout.setSpacing(10)
 
         # Заголовок
