@@ -209,20 +209,23 @@ class PortProtonAPI:
                         exe_name = f"{export_match.group(1).strip()}.exe"
 
             else:
-                # --- portwine_exe= --- (многострочный, сложный вариант)
-                portwine_match = re.search(
-                    r'portwine_exe\s*=\s*(?:["\']?\$\(.+?\)[\'"]?|["\'].*?\.exe["\']|[^\n]+)',
-                    content,
-                    re.DOTALL,
-                )
-                if portwine_match:
-                    exe_expr = portwine_match.group(0).split("=", 1)[1].strip()
-                    exe_expr = exe_expr.strip("'\" ")
+                portwine_match = None
+                for line in content.splitlines():
+                    stripped = line.strip()
+                    # Игнорируем закомментированные строки
+                    if stripped.startswith("#"):
+                        continue
+                    # Ищем portwine_exe только в активных строках
+                    if "portwine_exe" in stripped and "=" in stripped:
+                        portwine_match = stripped
+                        break
 
-                    # --- Найти .exe внутри выражения (разрешаем точки в имени) ---
+                if portwine_match:
+                    exe_expr = portwine_match.split("=", 1)[1].strip().strip("'\" ")
                     exe_candidates = re.findall(r'[-\w\s/\\\.]+\.exe', exe_expr)
                     if exe_candidates:
                         exe_name = os.path.basename(exe_candidates[-1].strip())
+
 
             # Fallback
             if not display_name and exe_name:
