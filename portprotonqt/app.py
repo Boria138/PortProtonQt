@@ -13,8 +13,17 @@ __app_id__ = "ru.linux_gaming.PortProtonQt"
 __app_name__ = "PortProtonQt"
 __app_version__ = "0.1.6"
 
-def main():
+def get_version():
+    try:
+        commit = subprocess.check_output(
+            ['git', 'rev-parse', '--short', 'HEAD'],
+            stderr=subprocess.DEVNULL
+        ).decode('utf-8').strip()
+        return f"{__app_version__} ({commit})"
+    except (subprocess.CalledProcessError, FileNotFoundError, OSError):
+        return __app_version__
 
+def main():
     os.environ['PW_CLI'] = '1'
     os.environ['PROCESS_LOG'] = '1'
     os.environ['START_FROM_STEAM'] = '1'
@@ -49,7 +58,8 @@ def main():
     else:
         logger.warning(f"Qt translations for {system_locale.name()} not found in {translations_path}, using english language")
 
-    window = MainWindow(app_name=__app_name__)
+    version = get_version()
+    window = MainWindow(app_name=__app_name__, version=version)
 
     if args.fullscreen:
         logger.info("Launching in fullscreen mode due to --fullscreen flag")

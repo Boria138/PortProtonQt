@@ -54,7 +54,7 @@ class MainWindow(QMainWindow):
     update_progress = Signal(int)
     update_status_message = Signal(str, int)
 
-    def __init__(self, app_name: str):
+    def __init__(self, app_name: str, version: str):
         super().__init__()
         self.theme_manager = ThemeManager()
         self.is_exiting = False
@@ -64,7 +64,7 @@ class MainWindow(QMainWindow):
         self.tray_manager = TrayManager(self, app_name, self.current_theme_name)
         self.card_width = read_card_size()
         self._last_card_width = self.card_width
-        self.setWindowTitle(app_name)
+        self.setWindowTitle(f"{app_name} {version}")
         self.setMinimumSize(800, 600)
 
         self.games = []
