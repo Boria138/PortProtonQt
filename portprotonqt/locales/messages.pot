@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-10-09 16:37+0500\n"
+"POT-Creation-Date: 2025-10-12 15:20+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -393,9 +393,6 @@ msgstr ""
 msgid "Auto Install"
 msgstr ""
 
-msgid "Emulators"
-msgstr ""
-
 msgid "Wine Settings"
 msgstr ""
 
@@ -414,6 +411,21 @@ msgstr ""
 msgid "Search"
 msgstr ""
 
+msgid "Installation already in progress."
+msgstr ""
+
+msgid "Failed to start installation."
+msgstr ""
+
+msgid "Installation completed successfully."
+msgstr ""
+
+msgid "Installation failed."
+msgstr ""
+
+msgid "Installation error."
+msgstr ""
+
 msgid "Loading Steam games..."
 msgstr ""
 
@@ -430,12 +442,6 @@ msgstr ""
 msgid "Added '{name}'"
 msgstr ""
 
-msgid "Here you can configure automatic game installation..."
-msgstr ""
-
-msgid "List of available emulators and their configuration..."
-msgstr ""
-
 msgid "Compatibility tool:"
 msgstr ""
 
@@ -446,12 +452,6 @@ msgid "Wine Configuration"
 msgstr ""
 
 msgid "Registry Editor"
-msgstr ""
-
-msgid "Control Panel"
-msgstr ""
-
-msgid "Task Manager"
 msgstr ""
 
 msgid "Command Prompt"
@@ -473,6 +473,29 @@ msgid "Delete Prefix"
 msgstr ""
 
 msgid "Clear Prefix"
+msgstr ""
+
+msgid "Launching tool..."
+msgstr ""
+
+msgid "Failed to start process."
+msgstr ""
+
+msgid "Confirm Clear"
+msgstr ""
+
+#, python-brace-format
+msgid "Are you sure you want to clear prefix '{}'?"
+msgstr ""
+
+#, python-brace-format
+msgid "Prefix '{}' cleared successfully."
+msgstr ""
+
+#, python-brace-format
+msgid ""
+"Prefix '{}' cleared with errors:\n"
+"{}"
 msgstr ""
 
 msgid "Failed to start backup process."

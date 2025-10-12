@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-10-09 16:37+0500\n"
-"PO-Revision-Date: 2025-10-09 16:37+0500\n"
+"POT-Creation-Date: 2025-10-12 15:20+0500\n"
+"PO-Revision-Date: 2025-10-12 15:20+0500\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
@@ -402,9 +402,6 @@ msgstr "Библиотека"
 msgid "Auto Install"
 msgstr "Автоустановка"
 
-msgid "Emulators"
-msgstr "Эмуляторы"
-
 msgid "Wine Settings"
 msgstr "Настройки wine"
 
@@ -423,6 +420,21 @@ msgstr "Полный экран"
 msgid "Search"
 msgstr "Поиск"
 
+msgid "Installation already in progress."
+msgstr "Установка уже выполняется."
+
+msgid "Failed to start installation."
+msgstr "Не удалось запустить установку."
+
+msgid "Installation completed successfully."
+msgstr "Установка завершена успешно."
+
+msgid "Installation failed."
+msgstr "Установка не удалась."
+
+msgid "Installation error."
+msgstr "Ошибка установки."
+
 msgid "Loading Steam games..."
 msgstr "Загрузка игр из Steam..."
 
@@ -439,12 +451,6 @@ msgstr "Найти игры..."
 msgid "Added '{name}'"
 msgstr "'{name}' добавлен(а)"
 
-msgid "Here you can configure automatic game installation..."
-msgstr "Здесь можно настроить автоматическую установку игр..."
-
-msgid "List of available emulators and their configuration..."
-msgstr "Список доступных эмуляторов и их настройка..."
-
 msgid "Compatibility tool:"
 msgstr "Инструмент совместимости:"
 
@@ -456,12 +462,6 @@ msgstr "Конфигурация Wine"
 
 msgid "Registry Editor"
 msgstr "Редактор реестра"
-
-msgid "Control Panel"
-msgstr "Панель управления"
-
-msgid "Task Manager"
-msgstr "Диспетчер задач"
 
 msgid "Command Prompt"
 msgstr "Командная строка"
@@ -483,6 +483,31 @@ msgstr "Удалить Префикс"
 
 msgid "Clear Prefix"
 msgstr "Очистить Префикс"
+
+msgid "Launching tool..."
+msgstr "Запуск инструмента..."
+
+msgid "Failed to start process."
+msgstr "Не удалось запустить процесс."
+
+msgid "Confirm Clear"
+msgstr "Подтвердите очистку"
+
+#, python-brace-format
+msgid "Are you sure you want to clear prefix '{}'?"
+msgstr "Вы уверены, что хотите очистить префикс «{}»?"
+
+#, python-brace-format
+msgid "Prefix '{}' cleared successfully."
+msgstr "Префикс '{}' успешно удален."
+
+#, python-brace-format
+msgid ""
+"Prefix '{}' cleared with errors:\n"
+"{}"
+msgstr ""
+"Префикс '{}' очищен с ошибками:\n"
+"{}"
 
 msgid "Failed to start backup process."
 msgstr "Не удалось запустить процесс резервного копирования."

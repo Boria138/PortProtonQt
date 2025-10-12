@@ -1451,7 +1451,6 @@ class MainWindow(QMainWindow):
 
         prefix_dir = os.path.join(self.portproton_location, "data", "prefixes", selected_prefix)
         if not os.path.exists(prefix_dir):
-            QMessageBox.warning(self, _("Error"), _("Prefix '{}' does not exist.").format(selected_prefix))
             return
 
         success = True
