@@ -467,7 +467,7 @@ class MainWindow(QMainWindow):
             return
         self.progress_bar.setVisible(True)
         self.progress_bar.setRange(0, 0)  # Indeterminate
-        self.update_status_message.emit(f"Processed {script_name} installation...", 0)
+        self.update_status_message.emit(_("Processed {} installation...").format(script_name), 0)
         self.install_monitor_timer = QTimer(self)
         self.install_monitor_timer.timeout.connect(self.monitor_install_progress)
         self.install_monitor_timer.start(2000)  # Start monitoring after 2s
