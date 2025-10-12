@@ -136,42 +136,38 @@ class PortProtonAPI:
                 callback(results)
 
     def download_autoinstall_cover_async(self, exe_name: str, timeout: int = 5, callback: Callable[[str | None], None] | None = None) -> None:
-        """Download only autoinstall cover image (no metadata)."""
+        """Download only autoinstall cover image (PNG only, no metadata)."""
         xdg_data_home = os.getenv("XDG_DATA_HOME",
                                 os.path.join(os.path.expanduser("~"), ".local", "share"))
-        user_game_folder = os.path.join(xdg_data_home, "PortProtonQt", "custom_data", "autoinstall", exe_name)
-        os.makedirs(user_game_folder, exist_ok=True)
+        autoinstall_root = os.path.join(xdg_data_home, "PortProtonQt", "custom_data", "autoinstall")
+        user_game_folder = os.path.join(autoinstall_root, exe_name)
 
-        cover_extensions = [".png", ".jpg", ".jpeg", ".bmp"]
-        results: str | None = None
-        pending_downloads = 0
+        if not os.path.isdir(user_game_folder):
+            try:
+                os.mkdir(user_game_folder)
+            except FileExistsError:
+                pass
 
-        def on_cover_downloaded(local_path: str | None, ext: str):
-            nonlocal pending_downloads, results
+        cover_url = f"{self.base_url}/{exe_name}/cover.png"
+        local_cover_path = os.path.join(user_game_folder, "cover.png")
+
+        def on_cover_downloaded(local_path: str | None):
             if local_path:
                 logger.info(f"Async autoinstall cover downloaded for {exe_name}: {local_path}")
-                results = local_path
             else:
-                logger.debug(f"No autoinstall cover downloaded for {exe_name} with extension {ext}")
-            pending_downloads -= 1
-            if pending_downloads == 0 and callback:
-                callback(results)
+                logger.debug(f"No autoinstall cover downloaded for {exe_name}")
+            if callback:
+                callback(local_path)
 
-        for ext in cover_extensions:
-            cover_url = f"{self.base_url}/{exe_name}/cover{ext}"
-            if self._check_file_exists(cover_url, timeout):
-                local_cover_path = os.path.join(user_game_folder, f"cover{ext}")
-                pending_downloads += 1
-                self.downloader.download_async(
-                    cover_url,
-                    local_cover_path,
-                    timeout=timeout,
-                    callback=lambda path, ext=ext: on_cover_downloaded(path, ext)
-                )
-                break
-
-        if pending_downloads == 0:
-            logger.debug(f"No autoinstall covers found for {exe_name}")
+        if self._check_file_exists(cover_url, timeout):
+            self.downloader.download_async(
+                cover_url,
+                local_cover_path,
+                timeout=timeout,
+                callback=on_cover_downloaded
+            )
+        else:
+            logger.debug(f"No autoinstall cover found for {exe_name}")
             if callback:
                 callback(None)
 
@@ -212,10 +208,8 @@ class PortProtonAPI:
                 portwine_match = None
                 for line in content.splitlines():
                     stripped = line.strip()
-                    # Игнорируем закомментированные строки
                     if stripped.startswith("#"):
                         continue
-                    # Ищем portwine_exe только в активных строках
                     if "portwine_exe" in stripped and "=" in stripped:
                         portwine_match = stripped
                         break
@@ -238,7 +232,7 @@ class PortProtonAPI:
             return None, None
 
     def get_autoinstall_games_async(self, callback: Callable[[list[tuple]], None]) -> None:
-        """Load auto-install games with user/builtin covers and async autoinstall cover download."""
+        """Load auto-install games with user/builtin covers (no async download here)."""
         games = []
         auto_dir = os.path.join(self.portproton_location, "data", "scripts", "pw_autoinstall")
         if not os.path.exists(auto_dir):
@@ -275,15 +269,10 @@ class PortProtonAPI:
                     cover_path = os.path.join(user_game_folder, candidate)
                     break
 
-            # Если обложки нет — пытаемся скачать
             if not cover_path:
-                logger.debug(f"No local cover found for autoinstall {exe_name}, trying to download...")
-                def on_cover_downloaded(path):
-                    if path:
-                        logger.info(f"Downloaded autoinstall cover for {exe_name}: {path}")
-                self.download_autoinstall_cover_async(exe_name, timeout=5, callback=on_cover_downloaded)
+                logger.debug(f"No local cover found for autoinstall {exe_name}")
 
-            # Формируем кортеж игры
+            # Формируем кортеж игры (добавлен exe_name в конец)
             game_tuple = (
                 display_name,  # name
                 "",  # description
@@ -297,7 +286,8 @@ class PortProtonAPI:
                 "",  # anticheat_status
                 0,  # last_played
                 0,  # playtime_seconds
-                "autoinstall"  # game_source
+                "autoinstall",  # game_source
+                exe_name  # exe_name
             )
             games.append(game_tuple)
 

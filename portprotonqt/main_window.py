@@ -11,7 +11,7 @@ from portprotonqt.logger import get_logger
 from portprotonqt.dialogs import AddGameDialog, FileExplorer, WinetricksDialog
 from portprotonqt.game_card import GameCard
 from portprotonqt.animations import DetailPageAnimations
-from portprotonqt.custom_widgets import ClickableLabel, AutoSizeButton, NavLabel
+from portprotonqt.custom_widgets import ClickableLabel, AutoSizeButton, NavLabel, FlowLayout
 from portprotonqt.portproton_api import PortProtonAPI
 from portprotonqt.input_manager import InputManager
 from portprotonqt.context_menu_manager import ContextMenuManager, CustomLineEdit
@@ -518,8 +518,6 @@ class MainWindow(QMainWindow):
         self.progress_bar.setValue(100)
         if exit_code == 0:
             self.update_status_message.emit(_("Installation completed successfully."), 5000)
-            # Reload library after delay
-            QTimer.singleShot(3000, self.loadGames)
         else:
             self.update_status_message.emit(_("Installation failed."), 5000)
             QMessageBox.warning(self, _("Error"), f"Installation failed (code: {exit_code}).")
@@ -1061,113 +1059,150 @@ class MainWindow(QMainWindow):
                 get_steam_game_info_async(final_name, exec_line, on_steam_info)
 
     def createAutoInstallTab(self):
-        """Create the Auto Install tab with flow layout of simple game cards (cover, name, install button)."""
-        from portprotonqt.localization import _
-        tab = QWidget()
-        layout = QVBoxLayout(tab)
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(20)
 
-        # Header label
-        header = QLabel(_("Auto Install Games"))
-        header.setStyleSheet(self.theme.DETAIL_PAGE_TITLE_STYLE)
-        layout.addWidget(header)
+        autoInstallPage = QWidget()
+        autoInstallPage.setStyleSheet(self.theme.MAIN_WINDOW_STYLE)
+        autoInstallLayout = QVBoxLayout(autoInstallPage)
+        autoInstallLayout.setContentsMargins(0, 0, 0, 0)
+        autoInstallLayout.setSpacing(0)
 
-        # Scroll area for games
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scroll_widget = QWidget()
-        from portprotonqt.custom_widgets import FlowLayout
-        self.auto_install_flow_layout = FlowLayout(scroll_widget)  # Store reference for potential updates
-        self.auto_install_flow_layout.setSpacing(15)
-        self.auto_install_flow_layout.setContentsMargins(0, 0, 0, 0)
+        # Верхняя панель с заголовком и поиском
+        headerWidget = QWidget()
+        headerLayout = QHBoxLayout(headerWidget)
+        headerLayout.setContentsMargins(20, 10, 20, 10)
+        headerLayout.setSpacing(10)
 
-        # Load games asynchronously (though now sync inside, but callback for consistency)
+        # Заголовок
+        titleLabel = QLabel(_("Auto Install Games"))
+        titleLabel.setStyleSheet(self.theme.TAB_TITLE_STYLE)
+        titleLabel.setAlignment(Qt.AlignVCenter | Qt.AlignLeft)
+        headerLayout.addWidget(titleLabel)
+
+        headerLayout.addStretch()
+
+        # Поисковая строка
+        self.autoInstallSearchLineEdit = CustomLineEdit(self, theme=self.theme)
+        icon: QIcon = cast(QIcon, self.theme_manager.get_icon("search"))
+        action_pos = cast(int, CustomLineEdit.ActionPosition.LeadingPosition)
+        self.search_action = self.autoInstallSearchLineEdit.addAction(icon, action_pos)
+        self.autoInstallSearchLineEdit.setMaximumWidth(200)
+        self.autoInstallSearchLineEdit.setPlaceholderText(_("Find Games ..."))
+        self.autoInstallSearchLineEdit.setClearButtonEnabled(True)
+        self.autoInstallSearchLineEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE)
+        self.autoInstallSearchLineEdit.textChanged.connect(self.filterAutoInstallGames)
+        headerLayout.addWidget(self.autoInstallSearchLineEdit)
+
+        autoInstallLayout.addWidget(headerWidget)
+
+        # Прогресс-бар
+        self.autoInstallProgress = QProgressBar()
+        self.autoInstallProgress.setStyleSheet(self.theme.PROGRESS_BAR_STYLE)
+        self.autoInstallProgress.setVisible(False)
+        autoInstallLayout.addWidget(self.autoInstallProgress)
+
+        # Скролл
+        self.autoInstallScrollArea = QScrollArea()
+        self.autoInstallScrollArea.setWidgetResizable(True)
+        self.autoInstallScrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.autoInstallScrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.autoInstallScrollArea.setStyleSheet("QScrollArea { border: none; background: transparent; }")
+
+        self.autoInstallContainer = QWidget()
+        self.autoInstallContainerLayout = FlowLayout(self.autoInstallContainer)
+        self.autoInstallContainer.setLayout(self.autoInstallContainerLayout)
+        self.autoInstallScrollArea.setWidget(self.autoInstallContainer)
+
+        autoInstallLayout.addWidget(self.autoInstallScrollArea)
+
+        # Хранение карточек
+        self.autoInstallGameCards = {}
+        self.allAutoInstallCards = []
+
+        # Обновление обложки
+        def on_autoinstall_cover_updated(exe_name, local_path):
+            if exe_name in self.autoInstallGameCards and local_path:
+                card = self.autoInstallGameCards[exe_name]
+                card.cover_path = local_path
+                load_pixmap_async(local_path, self.card_width, int(self.card_width * 1.5), card.on_cover_loaded)
+
+        # Загрузка игр
         def on_autoinstall_games_loaded(games: list[tuple]):
-            # Clear existing widgets
-            while self.auto_install_flow_layout.count():
-                child = self.auto_install_flow_layout.takeAt(0)
-                if child.widget():
+            self.autoInstallProgress.setVisible(False)
+
+            # Очистка
+            while self.autoInstallContainerLayout.count():
+                child = self.autoInstallContainerLayout.takeAt(0)
+                if child:
                     child.widget().deleteLater()
 
-            for game in games:
-                name = game[0]
-                description = game[1]
-                cover_path = game[2]
-                exec_line = game[4]
-                script_name = exec_line.split("autoinstall:")[1] if exec_line.startswith("autoinstall:") else ""
+            self.autoInstallGameCards.clear()
+            self.allAutoInstallCards.clear()
 
-                # Create simple card frame
-                card_frame = QFrame()
-                card_frame.setFixedWidth(self.card_width)
-                card_frame.setStyleSheet(self.theme.GAME_CARD_STYLE if hasattr(self.theme, 'GAME_CARD_STYLE') else "")
-                card_layout = QVBoxLayout(card_frame)
-                card_layout.setContentsMargins(10, 10, 10, 10)
-                card_layout.setSpacing(10)
+            if not games:
+                return
 
-                # Cover image
-                cover_label = QLabel()
-                cover_label.setFixedHeight(120)
-                cover_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                pixmap = QPixmap()
-                if cover_path and os.path.exists(cover_path) and pixmap.load(cover_path):
-                    scaled_pix = pixmap.scaled(self.card_width - 40, 120, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-                    cover_label.setPixmap(scaled_pix)
-                else:
-                    # Placeholder
-                    placeholder_icon = self.theme_manager.get_theme_image("placeholder", self.current_theme_name)
-                    if placeholder_icon:
-                        pixmap.load(str(placeholder_icon))
-                        scaled_pix = pixmap.scaled(100, 100, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-                        cover_label.setPixmap(scaled_pix)
-                card_layout.addWidget(cover_label)
+            # Callback для запуска установки
+            def select_callback(name, description, cover_path, appid, exec_line, controller_support, *_):
+                if not exec_line or not exec_line.startswith("autoinstall:"):
+                    logger.warning(f"Invalid exec_line for autoinstall: {exec_line}")
+                    return
+                script_name = exec_line[11:].lstrip(':').strip()
+                self.launch_autoinstall(script_name)
 
-                # Name label
-                name_label = QLabel(name)
-                name_label.setWordWrap(True)
-                name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                name_label.setStyleSheet(self.theme.CARD_TITLE_STYLE if hasattr(self.theme, 'CARD_TITLE_STYLE') else "")
-                card_layout.addWidget(name_label)
+            # Создаём карточки
+            for game_tuple in games:
+                name, description, cover_path, appid, controller_support, exec_line, *_ , game_source, exe_name = game_tuple
 
-                # Optional short description
-                if description:
-                    desc_label = QLabel(description[:100] + "..." if len(description) > 100 else description)
-                    desc_label.setWordWrap(True)
-                    desc_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                    desc_label.setStyleSheet(self.theme.CARD_DESC_STYLE if hasattr(self.theme, 'CARD_DESC_STYLE') else "")
-                    card_layout.addWidget(desc_label)
+                card = GameCard(
+                    name, description, cover_path, appid, controller_support,
+                    exec_line, None, None, None,
+                    None, None, None, game_source,
+                    select_callback=select_callback,
+                    theme=self.theme,
+                    card_width=self.card_width,
+                    parent=self.autoInstallContainer,
+                )
 
-                # Install button
-                install_btn = AutoSizeButton(_("Install"))
-                install_btn.setStyleSheet(self.theme.PLAY_BUTTON_STYLE)
-                install_btn.clicked.connect(lambda checked, s=script_name: self.launch_autoinstall(s))
-                card_layout.addWidget(install_btn)
+                self.autoInstallGameCards[exe_name] = card
+                self.allAutoInstallCards.append(card)
+                self.autoInstallContainerLayout.addWidget(card)
 
-                card_layout.addStretch()
+            # Загружаем недостающие обложки
+            for game_tuple in games:
+                name, _, cover_path, *_ , game_source, exe_name = game_tuple
+                if not cover_path:
+                    self.portproton_api.download_autoinstall_cover_async(
+                        exe_name, timeout=5,
+                        callback=lambda path, ex=exe_name: on_autoinstall_cover_updated(ex, path)
+                    )
 
-                # Add to flow layout
-                self.auto_install_flow_layout.addWidget(card_frame)
+            self.autoInstallContainer.updateGeometry()
+            self.autoInstallScrollArea.updateGeometry()
+            self.filterAutoInstallGames()
 
-            scroll.setWidget(scroll_widget)
-            layout.addWidget(scroll)
-
-        # Trigger load
+        # Показываем прогресс
+        self.autoInstallProgress.setVisible(True)
+        self.autoInstallProgress.setRange(0, 0)
         self.portproton_api.get_autoinstall_games_async(on_autoinstall_games_loaded)
 
-        self.stackedWidget.addWidget(tab)
+        self.stackedWidget.addWidget(autoInstallPage)
 
+    def filterAutoInstallGames(self):
+        """Filter auto install game cards based on search text."""
+        search_text = self.autoInstallSearchLineEdit.text().lower().strip()
+        visible_count = 0
 
-    def on_auto_install_search_changed(self, text: str):
-        """Filter auto-install games based on search text."""
-        filtered_games = [g for g in self.auto_install_games if text.lower() in g[0].lower() or text.lower() in g[1].lower()]
-        self.populate_auto_install_grid(filtered_games)
-        self.auto_install_clear_search_button.setVisible(bool(text))
+        for card in self.allAutoInstallCards:
+            if search_text in card.name.lower():
+                card.setVisible(True)
+                visible_count += 1
+            else:
+                card.setVisible(False)
 
-    def clear_auto_install_search(self):
-        """Clear the auto-install search and repopulate grid."""
-        self.auto_install_search_line.clear()
-        self.populate_auto_install_grid(self.auto_install_games)
+        # Re-layout the container
+        self.autoInstallContainerLayout.invalidate()
+        self.autoInstallContainer.updateGeometry()
+        self.autoInstallScrollArea.updateGeometry()
 
     def createWineTab(self):
         """Вкладка 'Wine Settings'."""
@@ -1787,7 +1822,7 @@ class MainWindow(QMainWindow):
         # # 8. Legendary Authentication
         # self.legendaryAuthButton = AutoSizeButton(
         #     _("Open Legendary Login"),
-        #     icon=self.theme_manager.get_icon("login")
+        #     icon=self.theme_manager.get_icon("login")self.theme_manager.get_icon("login")
         # )
         # self.legendaryAuthButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         # self.legendaryAuthButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -2711,11 +2746,6 @@ class MainWindow(QMainWindow):
         if exec_line.startswith("steam://"):
             url = QUrl(exec_line)
             QDesktopServices.openUrl(url)
-            return
-
-        if exec_line.startswith("autoinstall:"):
-            script_name = exec_line.split("autoinstall:")[1]
-            self.launch_autoinstall(script_name)
             return
 
         # Обработка EGS-игр

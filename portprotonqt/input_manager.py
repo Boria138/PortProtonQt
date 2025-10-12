@@ -1022,6 +1022,130 @@ class InputManager(QObject):
                         elif current_row_idx == 0:
                             self._parent.tabButtons[0].setFocus(Qt.FocusReason.OtherFocusReason)
 
+            # Autoinstall tab navigation(index 1)
+            if self._parent.stackedWidget.currentIndex() == 1 and code in (ecodes.ABS_HAT0X, ecodes.ABS_HAT0Y):
+                focused = QApplication.focusWidget()
+                game_cards = self._parent.autoInstallContainer.findChildren(GameCard)
+                if not game_cards:
+                    return
+
+                scroll_area = self._parent.autoInstallContainer.parentWidget()
+                while scroll_area and not isinstance(scroll_area, QScrollArea):
+                    scroll_area = scroll_area.parentWidget()
+
+                # If no focused widget or not a GameCard, focus the first card
+                if not isinstance(focused, GameCard) or focused not in game_cards:
+                    game_cards[0].setFocus()
+                    if scroll_area:
+                        scroll_area.ensureWidgetVisible(game_cards[0], 50, 50)
+                    return
+
+                cards = self._parent.autoInstallContainer.findChildren(GameCard, options=Qt.FindChildOption.FindChildrenRecursively)
+                if not cards:
+                    return
+                # Group cards by rows with tolerance for y-position
+                rows = {}
+                y_tolerance = 10  # Allow slight variations in y-position
+                for card in cards:
+                    y = card.pos().y()
+                    matched = False
+                    for row_y in rows:
+                        if abs(y - row_y) <= y_tolerance:
+                            rows[row_y].append(card)
+                            matched = True
+                            break
+                    if not matched:
+                        rows[y] = [card]
+                sorted_rows = sorted(rows.items(), key=lambda x: x[0])
+                if not sorted_rows:
+                    return
+                current_row_idx = None
+                current_col_idx = None
+                for row_idx, (_y, row_cards) in enumerate(sorted_rows):
+                    for idx, card in enumerate(row_cards):
+                        if card == focused:
+                            current_row_idx = row_idx
+                            current_col_idx = idx
+                            break
+                    if current_row_idx is not None:
+                        break
+
+                # Fallback: if focused card not found, select closest row by y-position
+                if current_row_idx is None:
+                    if not sorted_rows:  # Additional safety check
+                        return
+                    focused_y = focused.pos().y()
+                    current_row_idx = min(range(len(sorted_rows)), key=lambda i: abs(sorted_rows[i][0] - focused_y))
+                    if current_row_idx >= len(sorted_rows):  # Safety check
+                        return
+                    current_row = sorted_rows[current_row_idx][1]
+                    focused_x = focused.pos().x() + focused.width() / 2
+                    current_col_idx = min(range(len(current_row)), key=lambda i: abs((current_row[i].pos().x() + current_row[i].width() / 2) - focused_x), default=0) # type: ignore
+
+                # Add null checks before using current_row_idx and current_col_idx
+                if current_row_idx is None or current_col_idx is None or current_row_idx >= len(sorted_rows):
+                    return
+
+                current_row = sorted_rows[current_row_idx][1]
+                if code == ecodes.ABS_HAT0X and value != 0:
+                    if value < 0:  # Left
+                        if current_col_idx > 0:
+                            next_card = current_row[current_col_idx - 1]
+                            next_card.setFocus(Qt.FocusReason.OtherFocusReason)
+                            if scroll_area:
+                                scroll_area.ensureWidgetVisible(next_card, 50, 50)
+                        else:
+                            if current_row_idx > 0:
+                                prev_row = sorted_rows[current_row_idx - 1][1]
+                                next_card = prev_row[-1] if prev_row else None
+                                if next_card:
+                                    next_card.setFocus(Qt.FocusReason.OtherFocusReason)
+                                    if scroll_area:
+                                        scroll_area.ensureWidgetVisible(next_card, 50, 50)
+                    elif value > 0:  # Right
+                        if current_col_idx < len(current_row) - 1:
+                            next_card = current_row[current_col_idx + 1]
+                            next_card.setFocus(Qt.FocusReason.OtherFocusReason)
+                            if scroll_area:
+                                scroll_area.ensureWidgetVisible(next_card, 50, 50)
+                        else:
+                            if current_row_idx < len(sorted_rows) - 1:
+                                next_row = sorted_rows[current_row_idx + 1][1]
+                                next_card = next_row[0] if next_row else None
+                                if next_card:
+                                    next_card.setFocus(Qt.FocusReason.OtherFocusReason)
+                                    if scroll_area:
+                                        scroll_area.ensureWidgetVisible(next_card, 50, 50)
+                elif code == ecodes.ABS_HAT0Y and value != 0:
+                    if value > 0:  # Down
+                        if current_row_idx < len(sorted_rows) - 1:
+                            next_row = sorted_rows[current_row_idx + 1][1]
+                            current_x = focused.pos().x() + focused.width() / 2
+                            next_card = min(
+                                next_row,
+                                key=lambda c: abs((c.pos().x() + c.width() / 2) - current_x),
+                                default=None
+                            )
+                            if next_card:
+                                next_card.setFocus(Qt.FocusReason.OtherFocusReason)
+                                if scroll_area:
+                                    scroll_area.ensureWidgetVisible(next_card, 50, 50)
+                    elif value < 0:  # Up
+                        if current_row_idx > 0:
+                            prev_row = sorted_rows[current_row_idx - 1][1]
+                            current_x = focused.pos().x() + focused.width() / 2
+                            next_card = min(
+                                prev_row,
+                                key=lambda c: abs((c.pos().x() + c.width() / 2) - current_x),
+                                default=None
+                            )
+                            if next_card:
+                                next_card.setFocus(Qt.FocusReason.OtherFocusReason)
+                                if scroll_area:
+                                    scroll_area.ensureWidgetVisible(next_card, 50, 50)
+                        elif current_row_idx == 0:
+                            self._parent.tabButtons[0].setFocus(Qt.FocusReason.OtherFocusReason)
+
             # Vertical navigation in other tabs
             elif code == ecodes.ABS_HAT0Y and value != 0:
                 focused = QApplication.focusWidget()
@@ -1088,6 +1212,21 @@ class InputManager(QObject):
                 keyboard.on_backspace_pressed()
             elif value == 0:
                 keyboard.stop_backspace_repeat()
+        elif button_code in BUTTONS['search']:  # Кнопка Y/Square - поиск (tab-specific)
+            if value == 1:
+                current_index = self._parent.stackedWidget.currentIndex()
+                search_field = None
+                if current_index == 0:  # Library tab
+                    search_field = self._parent.searchLineEdit
+                elif current_index == 1:  # Auto Install tab
+                    search_field = self._parent.autoInstallSearchLineEdit
+                else:
+                    return
+
+                if search_field:
+                    search_field.setFocus()
+                    keyboard.current_input_widget = search_field
+                    keyboard.show()
 
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         app = QApplication.instance()
