@@ -38,7 +38,7 @@ class MainWindowProtocol(Protocol):
     stackedWidget: QStackedWidget
     tabButtons: dict[int, QWidget]
     gamesListWidget: QWidget
-    autoInstallContainer: QWidget
+    autoInstallContainer: QWidget | None
     currentDetailPage: QWidget | None
     current_exec_line: str | None
     current_add_game_dialog: AddGameDialog | None

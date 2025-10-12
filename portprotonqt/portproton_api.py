@@ -234,7 +234,7 @@ class PortProtonAPI:
     def get_autoinstall_games_async(self, callback: Callable[[list[tuple]], None]) -> None:
         """Load auto-install games with user/builtin covers (no async download here)."""
         games = []
-        auto_dir = os.path.join(self.portproton_location, "data", "scripts", "pw_autoinstall")
+        auto_dir = os.path.join(self.portproton_location or "", "data", "scripts", "pw_autoinstall") if self.portproton_location else ""
         if not os.path.exists(auto_dir):
             callback(games)
             return

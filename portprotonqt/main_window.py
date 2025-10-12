@@ -452,13 +452,11 @@ class MainWindow(QMainWindow):
         self.current_install_script = script_name
         self.seen_progress = False
         self.current_percent = 0.0
-        start_sh = os.path.join(self.portproton_location, "data", "scripts", "start.sh")
+        start_sh = os.path.join(self.portproton_location or "", "data", "scripts", "start.sh") if self.portproton_location else ""
         if not os.path.exists(start_sh):
             self.installing = False
-            QMessageBox.warning(self, _("Error"), _("start.sh not found."))
             return
         cmd = [start_sh, "cli", "--autoinstall", script_name]
-        print(cmd)
         self.install_process = QProcess(self)
         self.install_process.finished.connect(self.on_install_finished)
         self.install_process.errorOccurred.connect(self.on_install_error)
@@ -493,14 +491,16 @@ class MainWindow(QMainWindow):
                         self.current_percent = percent
                     elif self.seen_progress and percent == 0:
                         self.current_percent = 100.0
-                        self.install_monitor_timer.stop()
+                        if self.install_monitor_timer is not None:
+                            self.install_monitor_timer.stop()
                     # Update progress bar to determinate if not already
                     if self.progress_bar.maximum() == 0:
                         self.progress_bar.setRange(0, 100)
                         self.progress_bar.setFormat("%p")  # Show percentage
                     self.progress_bar.setValue(int(self.current_percent))
                     if self.current_percent >= 100:
-                        self.install_monitor_timer.stop()
+                        if self.install_monitor_timer is not None:
+                            self.install_monitor_timer.stop()
                 except ValueError:
                     pass  # Ignore invalid floats
         except Exception as e:
@@ -510,7 +510,7 @@ class MainWindow(QMainWindow):
     def on_install_finished(self, exit_code: int, exit_status: int):
         """Handle installation finish."""
         self.installing = False
-        if self.install_monitor_timer:
+        if self.install_monitor_timer is not None:
             self.install_monitor_timer.stop()
             self.install_monitor_timer.deleteLater()
             self.install_monitor_timer = None
@@ -518,6 +518,7 @@ class MainWindow(QMainWindow):
         self.progress_bar.setValue(100)
         if exit_code == 0:
             self.update_status_message.emit(_("Installation completed successfully."), 5000)
+            QTimer.singleShot(500, lambda: self.restart_application())
         else:
             self.update_status_message.emit(_("Installation failed."), 5000)
             QMessageBox.warning(self, _("Error"), f"Installation failed (code: {exit_code}).")
@@ -530,7 +531,7 @@ class MainWindow(QMainWindow):
     def on_install_error(self, error: QProcess.ProcessError):
         """Handle installation error."""
         self.installing = False
-        if self.install_monitor_timer:
+        if self.install_monitor_timer is not None:
             self.install_monitor_timer.stop()
             self.install_monitor_timer.deleteLater()
             self.install_monitor_timer = None
@@ -1059,7 +1060,6 @@ class MainWindow(QMainWindow):
                 get_steam_game_info_async(final_name, exec_line, on_steam_info)
 
     def createAutoInstallTab(self):
-
         autoInstallPage = QWidget()
         autoInstallPage.setStyleSheet(self.theme.LIBRARY_WIDGET_STYLE)
         autoInstallLayout = QVBoxLayout(autoInstallPage)
@@ -1075,7 +1075,7 @@ class MainWindow(QMainWindow):
         # Заголовок
         titleLabel = QLabel(_("Auto Install"))
         titleLabel.setStyleSheet(self.theme.TAB_TITLE_STYLE)
-        titleLabel.setAlignment(Qt.AlignVCenter | Qt.AlignLeft)
+        titleLabel.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
         headerLayout.addWidget(titleLabel)
 
         headerLayout.addStretch()
@@ -1083,7 +1083,7 @@ class MainWindow(QMainWindow):
         # Поисковая строка
         self.autoInstallSearchLineEdit = CustomLineEdit(self, theme=self.theme)
         icon: QIcon = cast(QIcon, self.theme_manager.get_icon("search"))
-        action_pos = cast(int, CustomLineEdit.ActionPosition.LeadingPosition)
+        action_pos = QLineEdit.ActionPosition.LeadingPosition
         self.search_action = self.autoInstallSearchLineEdit.addAction(icon, action_pos)
         self.autoInstallSearchLineEdit.setMaximumWidth(200)
         self.autoInstallSearchLineEdit.setPlaceholderText(_("Find Games ..."))
@@ -2028,9 +2028,6 @@ class MainWindow(QMainWindow):
         gamepad_connected = self.input_manager.find_gamepad() is not None
         if fullscreen or (auto_fullscreen_gamepad and gamepad_connected):
             self.showFullScreen()
-        else:
-            self.showNormal()
-            self.resize(*read_window_geometry())
 
         self.statusBar().showMessage(_("Settings saved"), 3000)
 
@@ -2975,11 +2972,11 @@ class MainWindow(QMainWindow):
             self.game_processes = []  # Очищаем список процессов
 
             # Очищаем таймеры
-            if hasattr(self, 'games_load_timer') and self.games_load_timer.isActive():
+            if hasattr(self, 'games_load_timer') and self.games_load_timer is not None and self.games_load_timer.isActive():
                 self.games_load_timer.stop()
-            if hasattr(self, 'settingsDebounceTimer') and self.settingsDebounceTimer.isActive():
+            if hasattr(self, 'settingsDebounceTimer') and self.settingsDebounceTimer is not None and self.settingsDebounceTimer.isActive():
                 self.settingsDebounceTimer.stop()
-            if hasattr(self, 'searchDebounceTimer') and self.searchDebounceTimer.isActive():
+            if hasattr(self, 'searchDebounceTimer') and self.searchDebounceTimer is not None and self.searchDebounceTimer.isActive():
                 self.searchDebounceTimer.stop()
             if hasattr(self, 'checkProcessTimer') and self.checkProcessTimer is not None and self.checkProcessTimer.isActive():
                 self.checkProcessTimer.stop()
