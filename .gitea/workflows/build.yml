@@ -8,7 +8,7 @@ on:
 
 env:
   # Common version, will be used for tagging the release
-  VERSION: 0.1.6
+  VERSION: 0.1.7
   PKGDEST: "/tmp/portprotonqt"
   PACKAGE: "portprotonqt"
   GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
