@@ -39,7 +39,7 @@ from portprotonqt.game_library_manager import GameLibraryManager
 from portprotonqt.virtual_keyboard import VirtualKeyboard
 
 from PySide6.QtWidgets import (QLineEdit, QMainWindow, QStatusBar, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox,
-                               QDialog, QFormLayout, QFrame, QGraphicsDropShadowEffect, QMessageBox, QApplication, QPushButton, QProgressBar, QCheckBox, QSizePolicy, QGridLayout, QScrollArea)
+                               QDialog, QFormLayout, QFrame, QGraphicsDropShadowEffect, QMessageBox, QApplication, QPushButton, QProgressBar, QCheckBox, QSizePolicy, QGridLayout, QScrollArea, QScroller)
 from PySide6.QtCore import Qt, QAbstractAnimation, QUrl, Signal, QTimer, Slot, QProcess
 from PySide6.QtGui import QIcon, QPixmap, QColor, QDesktopServices
 from typing import cast
@@ -1061,7 +1061,7 @@ class MainWindow(QMainWindow):
     def createAutoInstallTab(self):
 
         autoInstallPage = QWidget()
-        autoInstallPage.setStyleSheet(self.theme.MAIN_WINDOW_STYLE)
+        autoInstallPage.setStyleSheet(self.theme.LIBRARY_WIDGET_STYLE)
         autoInstallLayout = QVBoxLayout(autoInstallPage)
         autoInstallLayout.setContentsMargins(0, 0, 0, 0)
         autoInstallLayout.setSpacing(0)
@@ -1073,7 +1073,7 @@ class MainWindow(QMainWindow):
         headerLayout.setSpacing(10)
 
         # Заголовок
-        titleLabel = QLabel(_("Auto Install Games"))
+        titleLabel = QLabel(_("Auto Install"))
         titleLabel.setStyleSheet(self.theme.TAB_TITLE_STYLE)
         titleLabel.setAlignment(Qt.AlignVCenter | Qt.AlignLeft)
         headerLayout.addWidget(titleLabel)
@@ -1103,9 +1103,8 @@ class MainWindow(QMainWindow):
         # Скролл
         self.autoInstallScrollArea = QScrollArea()
         self.autoInstallScrollArea.setWidgetResizable(True)
-        self.autoInstallScrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.autoInstallScrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.autoInstallScrollArea.setStyleSheet("QScrollArea { border: none; background: transparent; }")
+        self.autoInstallScrollArea.setStyleSheet(self.theme.SCROLL_AREA_STYLE)
+        QScroller.grabGesture(self.autoInstallScrollArea.viewport(), QScroller.ScrollerGestureType.LeftMouseButtonGesture)
 
         self.autoInstallContainer = QWidget()
         self.autoInstallContainerLayout = FlowLayout(self.autoInstallContainer)
@@ -1162,6 +1161,20 @@ class MainWindow(QMainWindow):
                     card_width=self.card_width,
                     parent=self.autoInstallContainer,
                 )
+
+                # Hide badges and favorite button
+                if hasattr(card, 'steamLabel'):
+                    card.steamLabel.setVisible(False)
+                if hasattr(card, 'egsLabel'):
+                    card.egsLabel.setVisible(False)
+                if hasattr(card, 'portprotonLabel'):
+                    card.portprotonLabel.setVisible(False)
+                if hasattr(card, 'protondbLabel'):
+                    card.protondbLabel.setVisible(False)
+                if hasattr(card, 'anticheatLabel'):
+                    card.anticheatLabel.setVisible(False)
+                if hasattr(card, 'favoriteLabel'):
+                    card.favoriteLabel.setVisible(False)
 
                 self.autoInstallGameCards[exe_name] = card
                 self.allAutoInstallCards.append(card)
