@@ -56,6 +56,16 @@ class GameLibraryManager:
         self.is_filtering = False
         self.dirty = False
 
+    def force_update_cards_library(self):
+        if self.gamesListWidget and self.gamesListLayout:
+            self.gamesListLayout.invalidate()
+            self.gamesListWidget.updateGeometry()
+            widget = self.gamesListWidget
+            QTimer.singleShot(0, lambda: (
+                widget.adjustSize(),
+                widget.updateGeometry()
+            ))
+
     def create_games_library_widget(self):
         """Creates the games library widget with search, grid, and slider."""
         self.gamesLibraryWidget = QWidget()
@@ -346,6 +356,8 @@ class GameLibraryManager:
                 self.gamesListWidget.updateGeometry()
                 self.main_window._last_card_width = self.card_width
 
+                self.force_update_cards_library()
+
         self.is_filtering = False  # Reset flag in any case
 
     def _apply_filter_visibility(self, search_text: str):
@@ -453,11 +465,3 @@ class GameLibraryManager:
     def filter_games_delayed(self):
         """Filters games based on search text and updates the grid."""
         self.update_game_grid(is_filter=True)
-
-    def calculate_columns(self, card_width: int) -> int:
-        """Calculate the number of columns based on card width and assumed container width."""
-        # Assuming a typical container width; adjust as needed
-        available_width = 1200  # Example width, can be dynamic if widget access is added
-        spacing = 15  # Assumed spacing between cards
-        columns = max(1, (available_width - spacing) // (card_width + spacing))
-        return min(columns, 8)  # Cap at reasonable max
