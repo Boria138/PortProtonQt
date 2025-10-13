@@ -180,6 +180,8 @@ jobs:
 
       - name: Release
         uses: https://gitea.com/actions/gitea-release-action@v1
+        env:
+            NODE_OPTIONS: '--experimental-fetch' # if nodejs < 18
         with:
           body_path: changelog.txt
           token: ${{ env.GITEA_TOKEN }}
