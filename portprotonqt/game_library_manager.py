@@ -56,16 +56,6 @@ class GameLibraryManager:
         self.is_filtering = False
         self.dirty = False
 
-    def force_update_cards_library(self):
-        if self.gamesListWidget and self.gamesListLayout:
-            self.gamesListLayout.invalidate()
-            self.gamesListWidget.updateGeometry()
-            widget = self.gamesListWidget
-            QTimer.singleShot(0, lambda: (
-                widget.adjustSize(),
-                widget.updateGeometry()
-            ))
-
     def create_games_library_widget(self):
         """Creates the games library widget with search, grid, and slider."""
         self.gamesLibraryWidget = QWidget()
@@ -226,6 +216,16 @@ class GameLibraryManager:
             self._update_timer.start()
         else:
             self._update_game_grid_immediate()
+
+    def force_update_cards_library(self):
+        if self.gamesListWidget and self.gamesListLayout:
+            self.gamesListLayout.invalidate()
+            self.gamesListWidget.updateGeometry()
+            widget = self.gamesListWidget
+            QTimer.singleShot(0, lambda: (
+                widget.adjustSize(),
+                widget.updateGeometry()
+            ))
 
     def _update_game_grid_immediate(self):
         """Updates the game grid with the provided or current game list."""

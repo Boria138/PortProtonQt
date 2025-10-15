@@ -100,7 +100,6 @@ class MainWindow(QMainWindow):
         self.games_load_timer.timeout.connect(self.finalize_game_loading)
         self.games_loaded.connect(self.on_games_loaded)
         self.current_add_game_dialog = None
-        self.current_display_filter = read_display_filter()
 
         self.settingsDebounceTimer = QTimer(self)
         self.settingsDebounceTimer.setSingleShot(True)
@@ -853,6 +852,7 @@ class MainWindow(QMainWindow):
                 auto_widget.adjustSize(),
                 auto_widget.updateGeometry()
             ))
+
 
     def openSystemOverlay(self):
         """Opens the system overlay dialog."""
@@ -2026,12 +2026,9 @@ class MainWindow(QMainWindow):
 
     def applySettingsDelayed(self):
         read_time_config()
+        self.games = []
+        self.loadGames()
         display_filter = read_display_filter()
-        reload_needed = display_filter != self.current_display_filter
-        if reload_needed:
-            self.games = []
-            self.loadGames()
-        self.current_display_filter = display_filter
         for card in self.game_library_manager.game_card_cache.values():
             card.update_badge_visibility(display_filter)
 
@@ -2046,8 +2043,6 @@ class MainWindow(QMainWindow):
 
         filter_idx = self.gamesDisplayCombo.currentIndex()
         filter_key = self.filter_keys[filter_idx]
-
-        old_filter = self.current_display_filter
         save_display_filter(filter_key)
 
         proxy_url = self.proxyUrlEdit.text().strip()
@@ -2077,19 +2072,17 @@ class MainWindow(QMainWindow):
                 self.input_manager.gamepad_type = GamepadType.UNKNOWN
             self.updateControlHints()
 
-        if filter_key != old_filter:
-            for card in self.game_library_manager.game_card_cache.values():
-                card.update_badge_visibility(filter_key)
+        for card in self.game_library_manager.game_card_cache.values():
+            card.update_badge_visibility(filter_key)
 
-            if self.currentDetailPage and self.current_exec_line:
-                current_game = next((game for game in self.games if game[4] == self.current_exec_line), None)
-                if current_game:
-                    self.stackedWidget.removeWidget(self.currentDetailPage)
-                    self.currentDetailPage.deleteLater()
-                    self.currentDetailPage = None
-                    self.openGameDetailPage(*current_game)
+        if self.currentDetailPage and self.current_exec_line:
+            current_game = next((game for game in self.games if game[4] == self.current_exec_line), None)
+            if current_game:
+                self.stackedWidget.removeWidget(self.currentDetailPage)
+                self.currentDetailPage.deleteLater()
+                self.currentDetailPage = None
+                self.openGameDetailPage(*current_game)
 
-        self.current_display_filter = filter_key
         self.settingsDebounceTimer.start()
 
         gamepad_connected = self.input_manager.find_gamepad() is not None
