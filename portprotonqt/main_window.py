@@ -29,7 +29,7 @@ from portprotonqt.config_utils import (
     read_display_filter, read_favorites, save_favorites, save_time_config, save_sort_method,
     save_display_filter, save_proxy_config, read_proxy_config, read_fullscreen_config,
     save_fullscreen_config, read_window_geometry, save_window_geometry, reset_config,
-    clear_cache, read_auto_fullscreen_gamepad, save_auto_fullscreen_gamepad, read_rumble_config, save_rumble_config
+    clear_cache, read_auto_fullscreen_gamepad, save_auto_fullscreen_gamepad, read_rumble_config, save_rumble_config, read_gamepad_type, save_gamepad_type
 )
 from portprotonqt.localization import _, get_egs_language, read_metadata_translations
 from portprotonqt.howlongtobeat_api import HowLongToBeat
@@ -1784,7 +1784,22 @@ class MainWindow(QMainWindow):
         self.gamesDisplayCombo.setCurrentIndex(idx)
         formLayout.addRow(self.gamesDisplayTitle, self.gamesDisplayCombo)
 
-        # 4. Proxy settings
+        # 4 Gamepad Type
+        self.gamepadTypeCombo = QComboBox()
+        self.gamepadTypeCombo.addItems(["Xbox", "PlayStation"])
+        self.gamepadTypeCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.gamepadTypeCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
+        self.gamepadTypeTitle = QLabel(_("Gamepad Type:"))
+        self.gamepadTypeTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.gamepadTypeTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        current_type_str = read_gamepad_type()
+        if current_type_str == "playstation":
+            self.gamepadTypeCombo.setCurrentText("PlayStation")
+        else:
+            self.gamepadTypeCombo.setCurrentText("Xbox")
+        formLayout.addRow(self.gamepadTypeTitle, self.gamepadTypeCombo)
+
+        # 5. Proxy settings
         self.proxyUrlEdit = CustomLineEdit(self, theme=self.theme)
         self.proxyUrlEdit.setPlaceholderText(_("Proxy URL"))
         self.proxyUrlEdit.setStyleSheet(self.theme.PROXY_INPUT_STYLE)
@@ -1816,7 +1831,7 @@ class MainWindow(QMainWindow):
         self.proxyPasswordTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         formLayout.addRow(self.proxyPasswordTitle, self.proxyPasswordEdit)
 
-        # 5. Fullscreen setting for application
+        # 6. Fullscreen setting for application
         self.fullscreenCheckBox = QCheckBox(_("Launch Application in Fullscreen"))
         self.fullscreenCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
         self.fullscreenCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -1827,7 +1842,7 @@ class MainWindow(QMainWindow):
         self.fullscreenCheckBox.setChecked(current_fullscreen)
         formLayout.addRow(self.fullscreenTitle, self.fullscreenCheckBox)
 
-        # 6. Automatic fullscreen on gamepad connection
+        # 7. Automatic fullscreen on gamepad connection
         self.autoFullscreenGamepadCheckBox = QCheckBox(_("Auto Fullscreen on Gamepad connected"))
         self.autoFullscreenGamepadCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
         self.autoFullscreenGamepadCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -1839,7 +1854,7 @@ class MainWindow(QMainWindow):
         self.autoFullscreenGamepadCheckBox.setChecked(current_auto_fullscreen)
         formLayout.addRow(self.autoFullscreenGamepadTitle, self.autoFullscreenGamepadCheckBox)
 
-        # 7. Gamepad haptic feedback config
+        # 8. Gamepad haptic feedback config
         self.gamepadRumbleCheckBox = QCheckBox(_("Gamepad haptic feedback"))
         self.gamepadRumbleCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.gamepadRumbleCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
@@ -1850,7 +1865,7 @@ class MainWindow(QMainWindow):
         self.gamepadRumbleCheckBox.setChecked(current_rumble_state)
         formLayout.addRow(self.gamepadRumbleTitle, self.gamepadRumbleCheckBox)
 
-        # # 8. Legendary Authentication
+        # # 9. Legendary Authentication
         # self.legendaryAuthButton = AutoSizeButton(
         #     _("Open Legendary Login"),
         #     icon=self.theme_manager.get_icon("login")self.theme_manager.get_icon("login")
@@ -2021,8 +2036,6 @@ class MainWindow(QMainWindow):
         old_filter = self.current_display_filter
         save_display_filter(filter_key)
 
-        save_display_filter(filter_key)
-
         proxy_url = self.proxyUrlEdit.text().strip()
         proxy_user = self.proxyUserEdit.text().strip()
         proxy_password = self.proxyPasswordEdit.text().strip()
@@ -2036,6 +2049,19 @@ class MainWindow(QMainWindow):
 
         rumble_enabled = self.gamepadRumbleCheckBox.isChecked()
         save_rumble_config(rumble_enabled)
+
+        gamepad_type_text = self.gamepadTypeCombo.currentText()
+        gpad_type = "playstation" if gamepad_type_text == "PlayStation" else "xbox"
+        save_gamepad_type(gpad_type)
+
+        if hasattr(self, 'input_manager'):
+            if gpad_type == "playstation":
+                self.input_manager.gamepad_type = GamepadType.PLAYSTATION
+            elif gpad_type == "xbox":
+                self.input_manager.gamepad_type = GamepadType.XBOX
+            else:
+                self.input_manager.gamepad_type = GamepadType.UNKNOWN
+            self.updateControlHints()
 
         if filter_key != old_filter:
             for card in self.game_library_manager.game_card_cache.values():

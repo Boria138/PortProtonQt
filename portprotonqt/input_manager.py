@@ -12,7 +12,7 @@ from portprotonqt.logger import get_logger
 from portprotonqt.image_utils import FullscreenDialog
 from portprotonqt.custom_widgets import NavLabel, AutoSizeButton
 from portprotonqt.game_card import GameCard
-from portprotonqt.config_utils import read_fullscreen_config, read_window_geometry, save_window_geometry, read_auto_fullscreen_gamepad, read_rumble_config
+from portprotonqt.config_utils import read_fullscreen_config, read_window_geometry, save_window_geometry, read_auto_fullscreen_gamepad, read_rumble_config, read_gamepad_type
 from portprotonqt.dialogs import AddGameDialog, WinetricksDialog
 from portprotonqt.virtual_keyboard import VirtualKeyboard
 
@@ -87,8 +87,13 @@ class InputManager(QObject):
         super().__init__(cast(QObject, main_window))
         self._parent = main_window
         self._gamepad_handling_enabled = True
-        self.gamepad_type = GamepadType.UNKNOWN
-        # Ensure attributes exist on main_window
+        type_str = read_gamepad_type()
+        if type_str == "playstation":
+            self.gamepad_type = GamepadType.PLAYSTATION
+        elif type_str == "xbox":
+            self.gamepad_type = GamepadType.XBOX
+        else:
+            self.gamepad_type = GamepadType.UNKNOWN
         self._parent.currentDetailPage = getattr(self._parent, 'currentDetailPage', None)
         self._parent.current_exec_line = getattr(self._parent, 'current_exec_line', None)
         self._parent.current_add_game_dialog = getattr(self._parent, 'current_add_game_dialog', None)
@@ -270,38 +275,6 @@ class InputManager(QObject):
                             scroll_area.ensureWidgetVisible(next_card, 50, 50)
                 elif current_row_idx == 0:
                     self._parent.tabButtons[tab_index].setFocus(Qt.FocusReason.OtherFocusReason)
-
-    def detect_gamepad_type(self, device: InputDevice) -> GamepadType:
-        """
-        Определяет тип геймпада по capabilities
-        """
-        caps = device.capabilities()
-        keys = set(caps.get(ecodes.EV_KEY, []))
-
-        # Для EV_ABS вытаскиваем только коды (первый элемент кортежа)
-        abs_axes = {a if isinstance(a, int) else a[0] for a in caps.get(ecodes.EV_ABS, [])}
-
-        # Xbox layout
-        if {ecodes.BTN_SOUTH, ecodes.BTN_EAST, ecodes.BTN_NORTH, ecodes.BTN_WEST}.issubset(keys):
-            if {ecodes.ABS_X, ecodes.ABS_Y, ecodes.ABS_RX, ecodes.ABS_RY}.issubset(abs_axes):
-                self.gamepad_type = GamepadType.XBOX
-                return GamepadType.XBOX
-
-        # PlayStation layout
-        if ecodes.BTN_TOUCH in keys or (ecodes.BTN_DPAD_UP in keys and ecodes.BTN_EAST in keys):
-            self.gamepad_type = GamepadType.PLAYSTATION
-            logger.info(f"Detected {self.gamepad_type.value} controller: {device.name}")
-            return GamepadType.PLAYSTATION
-
-        # Steam Controller / Deck (трекпады)
-        if any(a for a in abs_axes if a >= ecodes.ABS_MT_SLOT):
-            self.gamepad_type = GamepadType.XBOX
-            logger.info(f"Detected {self.gamepad_type.value} controller: {device.name}")
-            return GamepadType.XBOX
-
-        # Fallback
-        self.gamepad_type = GamepadType.XBOX
-        return GamepadType.XBOX
 
     def enable_file_explorer_mode(self, file_explorer):
         """Настройка обработки геймпада для FileExplorer"""
@@ -1369,8 +1342,6 @@ class InputManager(QObject):
             new_gamepad = self.find_gamepad()
             if new_gamepad and new_gamepad != self.gamepad:
                 logger.info(f"Gamepad connected: {new_gamepad.name}")
-                self.detect_gamepad_type(new_gamepad)
-                logger.info(f"Detected gamepad type: {self.gamepad_type.value}")
                 self.stop_rumble()
                 self.gamepad = new_gamepad
                 if self.gamepad_thread:

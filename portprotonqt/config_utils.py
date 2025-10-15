@@ -259,6 +259,25 @@ def save_rumble_config(rumble_enabled):
     with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
         cp.write(configfile)
 
+def read_gamepad_type():
+    """Reads the gamepad type from the [Gamepad] section.
+    Returns 'xbox' if the parameter is missing.
+    """
+    cp = read_config_safely(CONFIG_FILE)
+    if cp is None or not cp.has_section("Gamepad") or not cp.has_option("Gamepad", "type"):
+        save_gamepad_type("xbox")
+        return "xbox"
+    return cp.get("Gamepad", "type", fallback="xbox").lower()
+
+def save_gamepad_type(gpad_type):
+    """Saves the gamepad type to the [Gamepad] section."""
+    cp = read_config_safely(CONFIG_FILE) or configparser.ConfigParser()
+    if "Gamepad" not in cp:
+        cp["Gamepad"] = {}
+    cp["Gamepad"]["type"] = gpad_type
+    with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
+        cp.write(configfile)
+
 def ensure_default_proxy_config():
     """Ensures the [Proxy] section exists in the configuration file.
     Creates it with empty values if missing.
