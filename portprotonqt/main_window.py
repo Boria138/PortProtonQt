@@ -824,20 +824,20 @@ class MainWindow(QMainWindow):
         if hasattr(self, "game_library_manager"):
             mgr = self.game_library_manager
             if mgr.gamesListWidget and mgr.gamesListLayout:
-                layout = mgr.gamesListLayout
-                widget = mgr.gamesListWidget
+                games_layout = mgr.gamesListLayout
+                games_widget = mgr.gamesListWidget
                 QTimer.singleShot(0, lambda: (
-                    layout.invalidate(),
-                    widget.adjustSize(),
-                    widget.updateGeometry()
+                    games_layout.invalidate(),
+                    games_widget.adjustSize(),
+                    games_widget.updateGeometry()
                 ))
         if hasattr(self, "autoInstallContainer") and hasattr(self, "autoInstallContainerLayout"):
-            layout = self.autoInstallContainerLayout
-            widget = self.autoInstallContainer
+            auto_layout = self.autoInstallContainerLayout
+            auto_widget = self.autoInstallContainer
             QTimer.singleShot(0, lambda: (
-                layout.invalidate(),
-                widget.adjustSize(),
-                widget.updateGeometry()
+                auto_layout.invalidate(),
+                auto_widget.adjustSize(),
+                auto_widget.updateGeometry()
             ))
 
     def openSystemOverlay(self):
