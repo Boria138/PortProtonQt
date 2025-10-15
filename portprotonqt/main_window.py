@@ -517,12 +517,26 @@ class MainWindow(QMainWindow):
             self.install_monitor_timer = None
         self.progress_bar.setRange(0, 100)
         self.progress_bar.setValue(100)
+
         if exit_code == 0:
             self.update_status_message.emit(_("Installation completed successfully."), 5000)
-            QTimer.singleShot(500, lambda: self.restart_application())
+
+            desktop_dir = self.portproton_location or ""
+            new_desktops = [e.path for e in os.scandir(desktop_dir) if e.name.endswith(".desktop")]
+            if new_desktops:
+                latest = max(new_desktops, key=os.path.getmtime)
+                self._process_desktop_file_async(
+                    latest,
+                    lambda result: (
+                        self.game_library_manager.add_game_incremental(result)
+                        if result else None
+                    )
+                )
+
         else:
             self.update_status_message.emit(_("Installation failed."), 5000)
             QMessageBox.warning(self, _("Error"), f"Installation failed (code: {exit_code}).")
+
         self.progress_bar.setVisible(False)
         self.current_install_script = None
         if self.install_process:
