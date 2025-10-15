@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-10-12 17:14+0500\n"
+"POT-Creation-Date: 2025-10-15 15:31+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: de_DE\n"
@@ -577,6 +577,9 @@ msgid "all"
 msgstr ""
 
 msgid "Games Display Filter:"
+msgstr ""
+
+msgid "Gamepad Type:"
 msgstr ""
 
 msgid "Proxy URL"
