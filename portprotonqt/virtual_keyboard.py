@@ -1,7 +1,8 @@
-from typing import cast
+from typing import cast, Any
 from PySide6.QtWidgets import (QFrame, QVBoxLayout, QPushButton, QGridLayout,
                                QSizePolicy, QWidget, QLineEdit)
-from PySide6.QtCore import Qt, Signal, QProcess
+from PySide6.QtCore import Qt, Signal, QProcess, QSize
+from PySide6.QtGui import QPixmap, QIcon
 from portprotonqt.keyboard_layouts import keyboard_layouts
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.config_utils import read_theme_from_config
@@ -42,6 +43,18 @@ class VirtualKeyboard(QFrame):
         self.spacing = 4
         self.margins = 10
         self.num_cols = 14
+
+        # Find input_manager and main_window
+        self.input_manager: Any = None
+        self.main_window: Any = None
+        parent_widget: QWidget | None = self._parent
+        while parent_widget:
+            if hasattr(parent_widget, 'input_manager'):
+                self.input_manager = cast(Any, parent_widget).input_manager
+                self.main_window = cast(Any, parent_widget)
+            parent_widget = cast(QWidget | None, parent_widget.parent())
+
+        self.current_theme_name = read_theme_from_config()
 
         self.initUI()
         self.hide()
@@ -119,6 +132,28 @@ class VirtualKeyboard(QFrame):
         self.buttons: dict[str, QPushButton] = {}
         self.update_keyboard()
 
+    def set_gamepad_icon(self, button, icon_type, gtype='default'):
+        """Set gamepad icon on button based on type. Now works even without gamepad by using 'default' gtype."""
+        if icon_type in ['back', 'add_game']:
+            icon_name = self.main_window.get_button_icon(icon_type, gtype) if self.main_window else f"{icon_type}_default.png"
+        else:  # nav left/right
+            if icon_type in ['left', 'right']:
+                direction = icon_type
+                icon_name = self.main_window.get_nav_icon(direction, gtype) if self.main_window else f"{direction}_default.png"
+            else:
+                direction = 'left' if icon_type == 'left' else 'right'
+                icon_name = self.main_window.get_nav_icon(direction, gtype) if self.main_window else f"{direction}_default.png"
+
+        icon_path = theme_manager.get_theme_image(icon_name, self.current_theme_name)
+        if icon_path:
+            pixmap = QPixmap(str(icon_path))
+            if not pixmap.isNull():
+                button.setIcon(QIcon(pixmap))
+                button.setIconSize(QSize(20, 20))
+                return
+        # Fallback: if no icon found, try standard Qt icon or leave empty
+        print(f"Warning: Icon {icon_name} not found for button {icon_type}")
+
     def update_keyboard(self):
         coords = self._save_focused_coords()
 
@@ -151,6 +186,9 @@ class VirtualKeyboard(QFrame):
                     button.setCheckable(True)
                     button.setChecked(self.shift_pressed)
                     button.clicked.connect(lambda checked: self.on_shift_click(checked))
+                    # Add gamepad icon for Shift (RB/R)
+                    gtype = self.input_manager.gamepad_type if self.input_manager and self.input_manager.gamepad else 'default'
+                    self.set_gamepad_icon(button, 'right', gtype)
                 else:
                     button.clicked.connect(lambda checked=False, k=key: self.on_button_click(k))
 
@@ -163,6 +201,9 @@ class VirtualKeyboard(QFrame):
         shift.setCheckable(True)
         shift.setChecked(self.shift_pressed)
         shift.clicked.connect(lambda checked: self.on_shift_click(checked))
+        # Add gamepad icon for Shift (RB/R)
+        gtype = self.input_manager.gamepad_type if self.input_manager and self.input_manager.gamepad else 'default'
+        self.set_gamepad_icon(shift, 'right', gtype)
         self.keyboard_layout.addWidget(shift, 3, 11, 1, 3)
 
         button = QPushButton('CAPS')
@@ -179,6 +220,9 @@ class VirtualKeyboard(QFrame):
         backspace.setFixedSize(fixed_w, fixed_h)
         backspace.pressed.connect(self.on_backspace_pressed)
         backspace.released.connect(self.stop_backspace_repeat)
+        # Add gamepad icon for Backspace (X/Triangle)
+        gtype = self.input_manager.gamepad_type if self.input_manager and self.input_manager.gamepad else 'default'
+        self.set_gamepad_icon(backspace, 'add_game', gtype)
         self.keyboard_layout.addWidget(backspace, 0, 13, 1, 1)
 
         enter = QPushButton('Enter')
@@ -189,6 +233,9 @@ class VirtualKeyboard(QFrame):
         lang = QPushButton('🌐')
         lang.setFixedSize(fixed_w, fixed_h)
         lang.clicked.connect(self.on_lang_click)
+        # Add gamepad icon for Lang (LB/L)
+        gtype = self.input_manager.gamepad_type if self.input_manager and self.input_manager.gamepad else 'default'
+        self.set_gamepad_icon(lang, 'left', gtype)
         self.keyboard_layout.addWidget(lang, 4, 0, 1, 1)
 
         clear = QPushButton('Clear')
@@ -219,6 +266,9 @@ class VirtualKeyboard(QFrame):
         hide_button = QPushButton('Hide')
         hide_button.setFixedSize(fixed_w * 2 + self.spacing, fixed_h)
         hide_button.clicked.connect(self.hide)
+        # Add gamepad icon for Hide (B/Circle)
+        gtype = self.input_manager.gamepad_type if self.input_manager and self.input_manager.gamepad else 'default'
+        self.set_gamepad_icon(hide_button, 'back', gtype)
         self.keyboard_layout.addWidget(hide_button, 4, 12, 1, 2)
 
         if coords:
