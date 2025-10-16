@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-10-16 10:43+0500\n"
-"PO-Revision-Date: 2025-10-16 10:43+0500\n"
+"POT-Creation-Date: 2025-10-16 14:54+0500\n"
+"PO-Revision-Date: 2025-10-16 14:54+0500\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
@@ -632,6 +632,12 @@ msgstr "Запуск приложения в полноэкранном режи
 
 msgid "Application Fullscreen Mode:"
 msgstr "Режим полноэкранного отображения приложения:"
+
+msgid "Minimize to tray on close"
+msgstr "Сворачивать в трей при закрытии"
+
+msgid "Application Close Mode:"
+msgstr "Режим закрытия приложения:"
 
 msgid "Auto Fullscreen on Gamepad connected"
 msgstr "Режим полноэкранного отображения приложения при подключении геймпада"

@@ -21,9 +21,9 @@ Current translation status:
 
 | Locale | Progress | Translated |
 | :----- | -------: | ---------: |
-| [de_DE](./de_DE/LC_MESSAGES/messages.po) | 0% | 0 of 247 |
-| [es_ES](./es_ES/LC_MESSAGES/messages.po) | 0% | 0 of 247 |
-| [ru_RU](./ru_RU/LC_MESSAGES/messages.po) | 100% | 247 of 247 |
+| [de_DE](./de_DE/LC_MESSAGES/messages.po) | 0% | 0 of 249 |
+| [es_ES](./es_ES/LC_MESSAGES/messages.po) | 0% | 0 of 249 |
+| [ru_RU](./ru_RU/LC_MESSAGES/messages.po) | 100% | 249 of 249 |
 
 ---
 
