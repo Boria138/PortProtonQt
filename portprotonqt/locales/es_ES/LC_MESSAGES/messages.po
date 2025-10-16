@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-10-15 15:31+0500\n"
+"POT-Creation-Date: 2025-10-16 10:43+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es_ES\n"
@@ -252,11 +252,35 @@ msgstr ""
 msgid "Select All"
 msgstr ""
 
-#, python-brace-format
-msgid "Launching {0}"
+msgid "Open"
+msgstr ""
+
+msgid "Select Dir"
+msgstr ""
+
+msgid "Prev Dir"
 msgstr ""
 
 msgid "Cancel"
+msgstr ""
+
+msgid "Toggle"
+msgstr ""
+
+msgid "Install"
+msgstr ""
+
+msgid "Force Install"
+msgstr ""
+
+msgid "Prev Tab"
+msgstr ""
+
+msgid "Next Tab"
+msgstr ""
+
+#, python-brace-format
+msgid "Launching {0}"
 msgstr ""
 
 msgid "File Explorer"
@@ -324,12 +348,6 @@ msgid "Fonts"
 msgstr ""
 
 msgid "Settings"
-msgstr ""
-
-msgid "Force Install"
-msgstr ""
-
-msgid "Install"
 msgstr ""
 
 msgid "Winetricks not found. Please try again."

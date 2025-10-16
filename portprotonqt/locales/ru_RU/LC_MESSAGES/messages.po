@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-10-15 15:31+0500\n"
-"PO-Revision-Date: 2025-10-15 15:31+0500\n"
+"POT-Creation-Date: 2025-10-16 10:43+0500\n"
+"PO-Revision-Date: 2025-10-16 10:43+0500\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
@@ -259,12 +259,36 @@ msgstr "Удалить"
 msgid "Select All"
 msgstr "Выбрать всё"
 
-#, python-brace-format
-msgid "Launching {0}"
-msgstr "Идёт запуск {0}"
+msgid "Open"
+msgstr "Открыть"
+
+msgid "Select Dir"
+msgstr "Выбрать папку"
+
+msgid "Prev Dir"
+msgstr "Предыдущий каталог"
 
 msgid "Cancel"
 msgstr "Отмена"
+
+msgid "Toggle"
+msgstr "Переключить"
+
+msgid "Install"
+msgstr "Установить"
+
+msgid "Force Install"
+msgstr "Принудительно установить"
+
+msgid "Prev Tab"
+msgstr "Предыдущая вкладка"
+
+msgid "Next Tab"
+msgstr "Следующая вкладка"
+
+#, python-brace-format
+msgid "Launching {0}"
+msgstr "Идёт запуск {0}"
 
 msgid "File Explorer"
 msgstr "Проводник"
@@ -332,12 +356,6 @@ msgstr "Шрифты"
 
 msgid "Settings"
 msgstr "Настройки"
-
-msgid "Force Install"
-msgstr "Принудительно установить"
-
-msgid "Install"
-msgstr "Установить"
 
 msgid "Winetricks not found. Please try again."
 msgstr "Winetricks не найден. Повторите попытку."
