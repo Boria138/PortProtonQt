@@ -1436,6 +1436,7 @@ class InputManager(QObject):
         return super().eventFilter(obj, event)
 
     def init_gamepad(self) -> None:
+        self.monitor_observer = None  # Добавляем атрибут для хранения observer
         self.check_gamepad()
         threading.Thread(target=self.run_udev_monitor, daemon=True).start()
         logger.info("Gamepad support initialized with hotplug (evdev + pyudev)")
@@ -1446,9 +1447,9 @@ class InputManager(QObject):
             monitor = Monitor.from_netlink(context)
             monitor.filter_by(subsystem='input')
             observer = MonitorObserver(monitor, self.handle_udev_event)
-            observer.start()
-            while self.running:
-                time.sleep(1)
+            self.monitor_observer = observer  # Сохраняем ссылку для остановки
+            observer.start()  # Это блокирует поток до вызова send_stop()
+            logger.info("MonitorObserver stopped gracefully")
         except Exception as e:
             logger.error(f"Error in udev monitor: {e}", exc_info=True)
 
@@ -1569,11 +1570,21 @@ class InputManager(QObject):
     def cleanup(self) -> None:
         try:
             self.running = False
+
+            # Останавливаем udev monitor
+            if self.monitor_observer:
+                try:
+                    logger.info("Stopping udev monitor...")
+                    self.monitor_observer.send_stop()
+                except Exception as e:
+                    logger.warning(f"Error stopping monitor observer: {e}")
+                self.monitor_observer = None
+
             self.dpad_timer.stop()
             self.nav_timer.stop()
             self.stop_rumble()
             if self.gamepad_thread:
-                self.gamepad_thread.join()
+                self.gamepad_thread.join(timeout=2.0)  # Добавлен таймаут
             if self.gamepad:
                 self.gamepad.close()
             self.gamepad = None
