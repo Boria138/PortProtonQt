@@ -4,7 +4,7 @@ import os
 from typing import Protocol, cast
 from evdev import InputDevice, InputEvent, ecodes, list_devices, ff
 from enum import Enum
-from pyudev import Context, Monitor, MonitorObserver, Device
+from pyudev import Context, Monitor, MonitorObserver, Device, Devices
 from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea, QLineEdit, QDialog, QMenu, QComboBox, QListView, QMessageBox, QListWidget, QTableWidget, QAbstractItemView, QTableWidgetItem
 from PySide6.QtCore import Qt, QObject, QEvent, QPoint, Signal, Slot, QTimer
 from PySide6.QtGui import QKeyEvent, QMouseEvent
@@ -1436,19 +1436,31 @@ class InputManager(QObject):
         return super().eventFilter(obj, event)
 
     def init_gamepad(self) -> None:
-        self.monitor_observer = None  # Добавляем атрибут для хранения observer
+        self.monitor_observer = None
+        self.udev_context = Context()  # Создаём context один раз
+        self.Devices = Devices  # Сохраняем класс для использования в других методах
         self.check_gamepad()
         threading.Thread(target=self.run_udev_monitor, daemon=True).start()
         logger.info("Gamepad support initialized with hotplug (evdev + pyudev)")
 
     def run_udev_monitor(self) -> None:
         try:
-            context = Context()
-            monitor = Monitor.from_netlink(context)
+            logger.info("Starting udev monitor...")
+            monitor = Monitor.from_netlink(self.udev_context)
             monitor.filter_by(subsystem='input')
+            logger.info("Monitor created and filtered")
+
             observer = MonitorObserver(monitor, self.handle_udev_event)
-            self.monitor_observer = observer  # Сохраняем ссылку для остановки
-            observer.start()  # Это блокирует поток до вызова send_stop()
+            self.monitor_observer = observer
+            logger.info("MonitorObserver created")
+
+            observer.start()
+            logger.info("MonitorObserver started")
+
+            # Держим поток живым, пока не получим сигнал остановки
+            while self.running:
+                time.sleep(1)
+
             logger.info("MonitorObserver stopped gracefully")
         except Exception as e:
             logger.error(f"Error in udev monitor: {e}", exc_info=True)
@@ -1492,14 +1504,33 @@ class InputManager(QObject):
     def find_gamepad(self) -> InputDevice | None:
         try:
             devices = [InputDevice(path) for path in list_devices()]
+            logger.info(f"Checking {len(devices)} devices for gamepad...")
+
             for device in devices:
+                logger.debug(f"Checking device: {device.name} at {device.path}")
+
                 # Skip ASRock LED controller (vendor ID: 26ce, product ID: 01a2)
                 if device.info.vendor == 0x26ce and device.info.product == 0x01a2:
                     logger.debug(f"Skipping ASRock LED controller: {device.name}")
                     continue
-                caps = device.capabilities()
-                if ecodes.EV_KEY in caps or ecodes.EV_ABS in caps:
-                    return device
+
+                # Получаем udev-устройство для проверки ID_INPUT_JOYSTICK
+                try:
+                    udev_device = self.Devices.from_device_file(self.udev_context, device.path)
+                    is_joystick = udev_device.get('ID_INPUT_JOYSTICK')
+
+                    logger.debug(f"Device {device.name}: ID_INPUT_JOYSTICK = {is_joystick}")
+
+                    if is_joystick == '1':
+                        logger.info(f"Found gamepad: {device.name}")
+                        return device
+                    else:
+                        logger.debug(f"Skipping non-joystick device: {device.name}")
+                except Exception as e:
+                    logger.warning(f"Could not check udev properties for {device.path}: {e}")
+                    continue
+
+            logger.warning("No gamepad found")
             return None
         except Exception as e:
             logger.error(f"Error finding gamepad: {e}", exc_info=True)
