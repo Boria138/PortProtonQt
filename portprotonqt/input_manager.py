@@ -5,7 +5,7 @@ from typing import Protocol, cast
 from evdev import InputDevice, InputEvent, ecodes, list_devices, ff
 from enum import Enum
 from pyudev import Context, Monitor, MonitorObserver, Device
-from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea, QLineEdit, QDialog, QMenu, QComboBox, QListView, QMessageBox, QListWidget, QTableWidget, QAbstractItemView
+from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea, QLineEdit, QDialog, QMenu, QComboBox, QListView, QMessageBox, QListWidget, QTableWidget, QAbstractItemView, QTableWidgetItem
 from PySide6.QtCore import Qt, QObject, QEvent, QPoint, Signal, Slot, QTimer
 from PySide6.QtGui import QKeyEvent, QMouseEvent
 from portprotonqt.logger import get_logger
@@ -13,7 +13,7 @@ from portprotonqt.image_utils import FullscreenDialog
 from portprotonqt.custom_widgets import NavLabel, AutoSizeButton
 from portprotonqt.game_card import GameCard
 from portprotonqt.config_utils import read_fullscreen_config, read_window_geometry, save_window_geometry, read_auto_fullscreen_gamepad, read_rumble_config, read_gamepad_type
-from portprotonqt.dialogs import AddGameDialog, WinetricksDialog
+from portprotonqt.dialogs import AddGameDialog
 from portprotonqt.virtual_keyboard import VirtualKeyboard
 
 logger = get_logger(__name__)
@@ -455,6 +455,171 @@ class InputManager(QObject):
         except Exception as e:
             logger.error("Error in FileExplorer dpad handler: %s", e)
 
+    def enable_winetricks_mode(self, winetricks_dialog):
+        """Setup gamepad handling for WinetricksDialog"""
+        try:
+            self.winetricks_dialog = winetricks_dialog
+            self.original_button_handler = self.handle_button_slot
+            self.original_dpad_handler = self.handle_dpad_slot
+            self.original_gamepad_state = self._gamepad_handling_enabled
+            self.handle_button_slot = self.handle_winetricks_button
+            self.handle_dpad_slot = self.handle_winetricks_dpad
+            self._gamepad_handling_enabled = True
+            # Reset dpad timer for table nav
+            self.dpad_timer.stop()
+            self.current_dpad_code = None
+            self.current_dpad_value = 0
+            logger.debug("Gamepad handling successfully connected for WinetricksDialog")
+        except Exception as e:
+            logger.error(f"Error connecting gamepad handlers for Winetricks: {e}")
+
+    def disable_winetricks_mode(self):
+        """Restore original main window handlers"""
+        try:
+            if self.winetricks_dialog:
+                self.handle_button_slot = self.original_button_handler
+                self.handle_dpad_slot = self.original_dpad_handler
+                self._gamepad_handling_enabled = self.original_gamepad_state
+                self.winetricks_dialog = None
+                self.dpad_timer.stop()
+                self.current_dpad_code = None
+                self.current_dpad_value = 0
+                logger.debug("Gamepad handling successfully restored from Winetricks")
+        except Exception as e:
+            logger.error(f"Error restoring gamepad handlers from Winetricks: {e}")
+
+    def handle_winetricks_button(self, button_code, value):
+        if self.winetricks_dialog is None:
+            return
+        if value == 0:  # Ignore releases
+            return
+        try:
+            # Always check for popups first, including QMessageBox
+            popup = QApplication.activePopupWidget()
+            if popup:
+                if isinstance(popup, QMessageBox):
+                    if button_code in BUTTONS['confirm'] or button_code in BUTTONS['back']:
+                        popup.accept()  # Close QMessageBox with A or B
+                        return
+                elif isinstance(popup, QMenu):
+                    if button_code in BUTTONS['confirm']:  # A: Select menu item
+                        focused = popup.activeAction()
+                        if focused:
+                            focused.trigger()
+                        return
+                    elif button_code in BUTTONS['back']:  # B: Close menu
+                        popup.close()
+                        return
+
+            # Additional check for top-level QMessageBox (in case not active popup yet)
+            for widget in QApplication.topLevelWidgets():
+                if isinstance(widget, QMessageBox) and widget.isVisible():
+                    if button_code in BUTTONS['confirm'] or button_code in BUTTONS['back']:
+                        widget.accept()
+                        return
+
+            focused = QApplication.focusWidget()
+            if button_code in BUTTONS['confirm']:  # A: Toggle checkbox
+                if isinstance(focused, QTableWidget):
+                    current_row = focused.currentRow()
+                    if current_row >= 0:
+                        checkbox_item = focused.item(current_row, 0)
+                        if checkbox_item and isinstance(checkbox_item, QTableWidgetItem):
+                            new_state = Qt.CheckState.Checked if checkbox_item.checkState() == Qt.CheckState.Unchecked else Qt.CheckState.Unchecked
+                            checkbox_item.setCheckState(new_state)
+                return
+            elif button_code in BUTTONS['add_game']:  # X: Install (no force)
+                self.winetricks_dialog.install_selected(force=False)
+                return
+            elif button_code in BUTTONS['prev_dir']:  # Y: Force Install
+                self.winetricks_dialog.install_selected(force=True)
+                return
+            elif button_code in BUTTONS['back']:  # B: Cancel
+                self.winetricks_dialog.reject()
+                return
+            elif button_code in BUTTONS['prev_tab']:  # LB: Prev Tab
+                current_index = self.winetricks_dialog.tab_widget.currentIndex()
+                new_index = max(0, current_index - 1)
+                self.winetricks_dialog.tab_widget.setCurrentIndex(new_index)
+                self._focus_first_row_in_current_table()
+                return
+            elif button_code in BUTTONS['next_tab']:  # RB: Next Tab
+                current_index = self.winetricks_dialog.tab_widget.currentIndex()
+                new_index = min(self.winetricks_dialog.tab_widget.count() - 1, current_index + 1)
+                self.winetricks_dialog.tab_widget.setCurrentIndex(new_index)
+                self._focus_first_row_in_current_table()
+                return
+            # Fallback: Activate focused widget (e.g., buttons)
+            self._parent.activateFocusedWidget()
+        except Exception as e:
+            logger.error(f"Error in handle_winetricks_button: {e}")
+
+    def handle_winetricks_dpad(self, code, value, now):
+        if self.winetricks_dialog is None:
+            return
+        try:
+            if value == 0:  # Release: Stop repeat
+                self.dpad_timer.stop()
+                self.current_dpad_code = None
+                self.current_dpad_value = 0
+                return
+
+            # Start/update repeat timer for hold navigation
+            if self.current_dpad_code != code or self.current_dpad_value != value:
+                self.dpad_timer.stop()
+                self.dpad_timer.setInterval(150 if self.dpad_timer.isActive() else 300)  # Initial slower, then faster repeat
+                self.dpad_timer.start()
+                self.current_dpad_code = code
+                self.current_dpad_value = value
+
+            table = self._get_current_table()
+            if not table or table.rowCount() == 0:
+                return
+
+            current_row = table.currentRow()
+            if code == ecodes.ABS_HAT0Y:  # Up/Down: Navigate rows
+                if value < 0:  # Up
+                    new_row = max(0, current_row - 1)
+                elif value > 0:  # Down
+                    new_row = min(table.rowCount() - 1, current_row + 1)
+                else:
+                    return
+                if new_row != current_row:
+                    table.setCurrentCell(new_row, 0)  # Focus checkbox column
+                    table.setFocus(Qt.FocusReason.OtherFocusReason)
+            elif code == ecodes.ABS_HAT0X:  # Left/Right: Switch tabs
+                if value < 0:  # Left: Prev tab
+                    current_index = self.winetricks_dialog.tab_widget.currentIndex()
+                    new_index = max(0, current_index - 1)
+                    self.winetricks_dialog.tab_widget.setCurrentIndex(new_index)
+                elif value > 0:  # Right: Next tab
+                    current_index = self.winetricks_dialog.tab_widget.currentIndex()
+                    new_index = min(self.winetricks_dialog.tab_widget.count() - 1, current_index + 1)
+                    self.winetricks_dialog.tab_widget.setCurrentIndex(new_index)
+                self._focus_first_row_in_current_table()
+        except Exception as e:
+            logger.error(f"Error in handle_winetricks_dpad: {e}")
+
+    def _get_current_table(self):
+        """Get the current visible table from the tab widget's stacked container."""
+        if self.winetricks_dialog is None:
+            return None
+        current_container = self.winetricks_dialog.tab_widget.currentWidget()
+        if current_container and isinstance(current_container, QStackedWidget):
+            current_table = current_container.widget(1)  # Table is at index 1 (after preloader)
+            if isinstance(current_table, QTableWidget):
+                return current_table
+        return None
+
+    def _focus_first_row_in_current_table(self):
+        """Focus the first row in the current table after tab switch."""
+        if self.winetricks_dialog is None:
+            return
+        table = self._get_current_table()
+        if table and table.rowCount() > 0:
+            table.setCurrentCell(0, 0)
+            table.setFocus(Qt.FocusReason.OtherFocusReason)
+
     def handle_navigation_repeat(self):
         """Плавное повторение движения с переменной скоростью для FileExplorer"""
         try:
@@ -703,39 +868,6 @@ class InputManager(QObject):
                 if self._parent.current_exec_line:
                     self.trigger_rumble()
                     self._parent.toggleGame(self._parent.current_exec_line, None)
-                    return
-
-
-            if isinstance(active, WinetricksDialog):
-                if button_code in BUTTONS['confirm']:  # A button - toggle checkbox
-                    current_table = active.tab_widget.currentWidget()
-                    if isinstance(current_table, QTableWidget):
-                        current_row = current_table.currentRow()
-                        if current_row >= 0:
-                            checkbox = current_table.item(current_row, 0)
-                            if checkbox:
-                                checkbox.setCheckState(
-                                    Qt.CheckState.Unchecked if checkbox.checkState() == Qt.CheckState.Checked else Qt.CheckState.Checked
-                                )
-                    return
-                elif button_code in BUTTONS['add_game']:  # X button - install
-                    active.install_selected(force=False)
-                    return
-                elif button_code in BUTTONS['prev_dir']:  # Y button - force install
-                    active.install_selected(force=True)
-                    return
-                elif button_code in BUTTONS['back']:  # B button - close dialog
-                    active.reject()
-                    return
-                elif button_code in BUTTONS['prev_tab']:  # LB - previous tab
-                    current_idx = active.tab_widget.currentIndex()
-                    new_idx = (current_idx - 1) % active.tab_widget.count()
-                    active.tab_widget.setCurrentIndex(new_idx)
-                    return
-                elif button_code in BUTTONS['next_tab']:  # RB - next tab
-                    current_idx = active.tab_widget.currentIndex()
-                    new_idx = (current_idx + 1) % active.tab_widget.count()
-                    active.tab_widget.setCurrentIndex(new_idx)
                     return
 
             # Standard navigation

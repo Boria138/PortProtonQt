@@ -260,6 +260,10 @@ class MainWindow(QMainWindow):
                 GamepadType.XBOX: "xbox_y",
                 GamepadType.PLAYSTATION: "ps_square",
             },
+            'prev_dir': {
+                GamepadType.XBOX: "xbox_y",
+                GamepadType.PLAYSTATION: "ps_square",
+            },
         }
         return mappings.get(action, {}).get(gtype, "placeholder")
 

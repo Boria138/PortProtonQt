@@ -91,6 +91,130 @@ def generate_thumbnail(inputfile, outfile, size=128, force_resize=True):
         logger.error(f"Ошибка при сохранении миниатюры: {e}")
         return False
 
+def create_dialog_hints_widget(theme, main_window, input_manager, context='default'):
+    """
+    Common function to create hints widget for all dialogs.
+    Uses main_window for get_button_icon/get_nav_icon, input_manager for gamepad detection.
+    """
+    theme_manager = ThemeManager()
+    current_theme_name = read_theme_from_config()
+
+    hintsWidget = QWidget()
+    hintsWidget.setStyleSheet(theme.STATUS_BAR_STYLE)
+    hintsLayout = QHBoxLayout(hintsWidget)
+    hintsLayout.setContentsMargins(10, 0, 10, 0)
+    hintsLayout.setSpacing(20)
+
+    dialog_actions = []
+
+    # Context-specific actions (gamepad only, no keyboard)
+    if context == 'file_explorer':
+        dialog_actions = [
+            ("confirm", _("Open")),        # A / Cross
+            ("add_game", _("Select Dir")), # X / Triangle
+            ("prev_dir", _("Prev Dir")),   # Y / Square
+            ("back", _("Cancel")),         # B / Circle
+            ("context_menu", _("Menu")),   # Start / Options
+        ]
+    elif context == 'winetricks':
+        dialog_actions = [
+            ("confirm", _("Toggle")),         # A / Cross
+            ("add_game", _("Install")),       # X / Triangle
+            ("prev_dir", _("Force Install")), # Y / Square
+            ("back", _("Cancel")),            # B / Circle
+            ("prev_tab", _("Prev Tab")),      # LB / L1
+            ("next_tab", _("Next Tab")),      # RB / R1
+        ]
+
+    hints_labels = []  # Store for updates (returned for class storage)
+
+    def make_hint(icon_name, text, action=None):
+        container = QWidget()
+        hlayout = QHBoxLayout(container)
+        hlayout.setContentsMargins(0, 5, 0, 0)
+        hlayout.setSpacing(6)
+
+        icon_label = QLabel()
+        icon_label.setFixedSize(26, 26)
+        icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        pixmap = QPixmap()
+        icon_path = theme_manager.get_theme_image(icon_name, current_theme_name)
+        if icon_path:
+            pixmap.load(str(icon_path))
+        if not pixmap.isNull():
+            icon_label.setPixmap(pixmap.scaled(26, 26, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+
+        hlayout.addWidget(icon_label)
+
+        text_label = QLabel(text)
+        text_label.setStyleSheet(theme.LAST_LAUNCH_VALUE_STYLE)
+        text_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
+        hlayout.addWidget(text_label)
+
+        # Initially hidden; show only if gamepad connected
+        container.setVisible(False)
+        hints_labels.append((container, icon_label, action))
+
+        hintsLayout.addWidget(container)
+
+    # Add gamepad hints only
+    for action, text in dialog_actions:
+        make_hint("placeholder", text, action)
+
+    hintsLayout.addStretch()
+
+    # Return widget and labels for class storage
+    return hintsWidget, hints_labels
+
+def update_dialog_hints(hints_labels, main_window, input_manager, theme_manager, current_theme_name):
+    """
+    Common function to update hints for any dialog.
+    """
+    if not input_manager or not main_window:
+        # Hide all if no input_manager or main_window
+        for container, _, _ in hints_labels:
+            container.setVisible(False)
+        return
+
+    is_gamepad = input_manager.gamepad is not None
+    if not is_gamepad:
+        # Hide all hints if no gamepad
+        for container, _, _ in hints_labels:
+            container.setVisible(False)
+        return
+
+    gtype = input_manager.gamepad_type
+    gamepad_actions = ['confirm', 'back', 'context_menu', 'add_game', 'prev_dir', 'prev_tab', 'next_tab']
+
+    for container, icon_label, action in hints_labels:
+        if action and action in gamepad_actions:
+            container.setVisible(True)
+            # Update icon using main_window methods
+            if action in ['confirm', 'back', 'context_menu', 'add_game', 'prev_dir']:
+                icon_name = main_window.get_button_icon(action, gtype)
+            else:  # only prev_tab/next_tab (treat as nav)
+                direction = 'left' if action == 'prev_tab' else 'right'
+                icon_name = main_window.get_nav_icon(direction, gtype)
+            icon_path = theme_manager.get_theme_image(icon_name, current_theme_name)
+            pixmap = QPixmap()
+            if icon_path:
+                pixmap.load(str(icon_path))
+            if not pixmap.isNull():
+                icon_label.setPixmap(pixmap.scaled(
+                    26, 26,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation
+                ))
+            else:
+                # Fallback to placeholder
+                placeholder = theme_manager.get_theme_image("placeholder", current_theme_name)
+                if placeholder:
+                    pixmap.load(str(placeholder))
+                    icon_label.setPixmap(pixmap.scaled(26, 26, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+        else:
+            container.setVisible(False)
+
 class FileSelectedSignal(QObject):
     file_selected = Signal(str)  # Сигнал с путем к выбранному файлу
 
@@ -185,6 +309,7 @@ class FileExplorer(QDialog):
         self.initial_path = initial_path  # Store initial path if provided
         self.thumbnail_cache = {}  # Cache for loaded thumbnails
         self.pending_thumbnails = set()  # Track files pending thumbnail loading
+        self.main_window = None  # Add reference to MainWindow
         self.setup_ui()
 
         # Window settings
@@ -198,6 +323,7 @@ class FileExplorer(QDialog):
         while parent:
             if hasattr(parent, 'input_manager'):
                 self.input_manager = cast("MainWindow", parent).input_manager
+                self.main_window = parent
             if hasattr(parent, 'context_menu_manager'):
                 self.context_menu_manager = cast("MainWindow", parent).context_menu_manager
             parent = parent.parent()
@@ -213,6 +339,17 @@ class FileExplorer(QDialog):
         if initial_path and not os.path.isdir(self.current_path):
             self.current_path = os.path.expanduser("~")  # Fallback to home if initial path is invalid
         self.update_file_list()
+
+        # Create hints widget using common function
+        self.current_theme_name = read_theme_from_config()
+        self.hints_widget, self.hints_labels = create_dialog_hints_widget(self.theme, self.main_window, self.input_manager, context='file_explorer')
+        self.main_layout.addWidget(self.hints_widget)
+
+        # Connect signals
+        if self.input_manager:
+            self.input_manager.button_event.connect(lambda *args: update_dialog_hints(self.hints_labels, self.main_window, self.input_manager, theme_manager, self.current_theme_name))
+            self.input_manager.dpad_moved.connect(lambda *args: update_dialog_hints(self.hints_labels, self.main_window, self.input_manager, theme_manager, self.current_theme_name))
+            update_dialog_hints(self.hints_labels, self.main_window, self.input_manager, theme_manager, self.current_theme_name)
 
     class ThumbnailLoader(QRunnable):
         """Class for asynchronous thumbnail loading in a separate thread."""
@@ -1037,8 +1174,6 @@ Icon={icon_path}
         return desktop_entry, desktop_path
 
 class WinetricksDialog(QDialog):
-    """Dialog for managing Winetricks components in a prefix."""
-
     def __init__(self, parent=None, theme=None, prefix_path: str | None = None, wine_use: str | None = None):
         super().__init__(parent)
         self.theme = theme if theme else theme_manager.apply_theme(read_theme_from_config())
@@ -1070,6 +1205,36 @@ class WinetricksDialog(QDialog):
         self.update_winetricks()
         self.setup_ui()
         self.load_lists()
+
+        # Find input_manager and main_window
+        self.input_manager = None
+        self.main_window = None
+        parent = self.parent()
+        while parent:
+            if hasattr(parent, 'input_manager'):
+                self.input_manager = cast("MainWindow", parent).input_manager
+                self.main_window = parent
+            parent = parent.parent()
+
+        self.current_theme_name = read_theme_from_config()
+
+        # Enable Winetricks-specific mode
+        if self.input_manager:
+            self.input_manager.enable_winetricks_mode(self)
+
+        # Create hints widget using common function
+        self.hints_widget, self.hints_labels = create_dialog_hints_widget(self.theme, self.main_window, self.input_manager, context='winetricks')
+        self.main_layout.addWidget(self.hints_widget)
+
+        # Connect signals (use self.theme_manager)
+        if self.input_manager:
+            self.input_manager.button_event.connect(
+                lambda *args: update_dialog_hints(self.hints_labels, self.main_window, self.input_manager, theme_manager, self.current_theme_name)
+            )
+            self.input_manager.dpad_moved.connect(
+                lambda *args: update_dialog_hints(self.hints_labels, self.main_window, self.input_manager, theme_manager, self.current_theme_name)
+            )
+            update_dialog_hints(self.hints_labels, self.main_window, self.input_manager, theme_manager, self.current_theme_name)
 
     def update_winetricks(self):
         """Update the winetricks script."""
@@ -1143,15 +1308,15 @@ class WinetricksDialog(QDialog):
 
     def setup_ui(self):
         """Set up the user interface with tabs and tables."""
-        main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(10, 10, 10, 10)
-        main_layout.setSpacing(10)
+        self.main_layout = QVBoxLayout(self)
+        self.main_layout.setContentsMargins(10, 10, 10, 10)
+        self.main_layout.setSpacing(10)
 
         # Log output
         self.log_output = QTextEdit()
         self.log_output.setReadOnly(True)
         self.log_output.setStyleSheet(self.theme.WINETRICKS_LOG_STYLE)
-        main_layout.addWidget(self.log_output)
+        self.main_layout.addWidget(self.log_output)
 
         # Tab widget
         self.tab_widget = QTabWidget()
@@ -1258,7 +1423,7 @@ class WinetricksDialog(QDialog):
             "settings": self.settings_container
         }
 
-        main_layout.addWidget(self.tab_widget)
+        self.main_layout.addWidget(self.tab_widget)
 
         # Buttons
         button_layout = QHBoxLayout()
@@ -1272,7 +1437,7 @@ class WinetricksDialog(QDialog):
         button_layout.addWidget(self.cancel_button)
         button_layout.addWidget(self.force_button)
         button_layout.addWidget(self.install_button)
-        main_layout.addLayout(button_layout)
+        self.main_layout.addLayout(button_layout)
 
         self.cancel_button.clicked.connect(self.reject)
         self.force_button.clicked.connect(lambda: self.install_selected(force=True))
@@ -1497,3 +1662,15 @@ class WinetricksDialog(QDialog):
         """Добавляет в лог."""
         self.log_output.append(message)
         self.log_output.moveCursor(QTextCursor.MoveOperation.End)
+
+    def closeEvent(self, event):
+        """Disable mode on close."""
+        if self.input_manager:
+            self.input_manager.disable_winetricks_mode()
+        super().closeEvent(event)
+
+    def reject(self):
+        """Disable mode on reject."""
+        if self.input_manager:
+            self.input_manager.disable_winetricks_mode()
+        super().reject()
