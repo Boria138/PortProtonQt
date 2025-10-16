@@ -427,3 +427,22 @@ def save_favorite_folders(folders):
     cp["FavoritesFolders"]["folders"] = f'"{fav_str}"'
     with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
         cp.write(configfile)
+
+def read_minimize_to_tray():
+    """Reads the minimize-to-tray setting from the [Display] section.
+    Returns True if the parameter is missing (default: minimize to tray).
+    """
+    cp = read_config_safely(CONFIG_FILE)
+    if cp is None or not cp.has_section("Display") or not cp.has_option("Display", "minimize_to_tray"):
+        save_minimize_to_tray(True)
+        return True
+    return cp.getboolean("Display", "minimize_to_tray", fallback=True)
+
+def save_minimize_to_tray(minimize_to_tray):
+    """Saves the minimize-to-tray setting to the [Display] section."""
+    cp = read_config_safely(CONFIG_FILE) or configparser.ConfigParser()
+    if "Display" not in cp:
+        cp["Display"] = {}
+    cp["Display"]["minimize_to_tray"] = str(minimize_to_tray)
+    with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
+        cp.write(configfile)

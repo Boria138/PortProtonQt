@@ -29,7 +29,7 @@ from portprotonqt.config_utils import (
     read_display_filter, read_favorites, save_favorites, save_time_config, save_sort_method,
     save_display_filter, save_proxy_config, read_proxy_config, read_fullscreen_config,
     save_fullscreen_config, read_window_geometry, save_window_geometry, reset_config,
-    clear_cache, read_auto_fullscreen_gamepad, save_auto_fullscreen_gamepad, read_rumble_config, save_rumble_config, read_gamepad_type, save_gamepad_type
+    clear_cache, read_auto_fullscreen_gamepad, save_auto_fullscreen_gamepad, read_rumble_config, save_rumble_config, read_gamepad_type, save_gamepad_type, read_minimize_to_tray, save_minimize_to_tray
 )
 from portprotonqt.localization import _, get_egs_language, read_metadata_translations
 from portprotonqt.howlongtobeat_api import HowLongToBeat
@@ -1860,7 +1860,19 @@ class MainWindow(QMainWindow):
         self.fullscreenCheckBox.setChecked(current_fullscreen)
         formLayout.addRow(self.fullscreenTitle, self.fullscreenCheckBox)
 
-        # 7. Automatic fullscreen on gamepad connection
+        # 7. Minimize to tray setting
+        self.minimizeToTrayCheckBox = QCheckBox(_("Minimize to tray on close"))
+        self.minimizeToTrayCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
+        self.minimizeToTrayCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.minimizeToTrayTitle = QLabel(_("Application Close Mode:"))
+        self.minimizeToTrayTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.minimizeToTrayTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        current_minimize_to_tray = read_minimize_to_tray()
+        self.minimizeToTrayCheckBox.setChecked(current_minimize_to_tray)
+        self.minimizeToTrayCheckBox.toggled.connect(lambda checked: save_minimize_to_tray(checked))
+        formLayout.addRow(self.minimizeToTrayTitle, self.minimizeToTrayCheckBox)
+
+        # 8. Automatic fullscreen on gamepad connection
         self.autoFullscreenGamepadCheckBox = QCheckBox(_("Auto Fullscreen on Gamepad connected"))
         self.autoFullscreenGamepadCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
         self.autoFullscreenGamepadCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -1872,7 +1884,7 @@ class MainWindow(QMainWindow):
         self.autoFullscreenGamepadCheckBox.setChecked(current_auto_fullscreen)
         formLayout.addRow(self.autoFullscreenGamepadTitle, self.autoFullscreenGamepadCheckBox)
 
-        # 8. Gamepad haptic feedback config
+        # 9. Gamepad haptic feedback config
         self.gamepadRumbleCheckBox = QCheckBox(_("Gamepad haptic feedback"))
         self.gamepadRumbleCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.gamepadRumbleCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
@@ -3008,10 +3020,12 @@ class MainWindow(QMainWindow):
                 logger.error(f"Failed to launch game {exe_name}: {e}")
                 QMessageBox.warning(self, _("Error"), _("Failed to launch game: {0}").format(str(e)))
 
-
     def closeEvent(self, event):
-        """Обработчик закрытия окна: сворачивает приложение в трей, если не требуется принудительный выход."""
-        if hasattr(self, 'is_exiting') and self.is_exiting:
+        """Обработчик закрытия окна: проверяет настройку minimize_to_tray.
+        Если True — сворачиваем в трей (по умолчанию). Иначе — полностью закрываем.
+        """
+        minimize_to_tray = read_minimize_to_tray()  # Импорт read_minimize_to_tray из config_utils
+        if hasattr(self, 'is_exiting') and self.is_exiting or not minimize_to_tray:
             # Принудительное закрытие: завершаем процессы и приложение
             for proc in self.game_processes:
                 try:
