@@ -29,7 +29,8 @@ from portprotonqt.config_utils import (
     read_display_filter, read_favorites, save_favorites, save_time_config, save_sort_method,
     save_display_filter, save_proxy_config, read_proxy_config, read_fullscreen_config,
     save_fullscreen_config, read_window_geometry, save_window_geometry, reset_config,
-    clear_cache, read_auto_fullscreen_gamepad, save_auto_fullscreen_gamepad, read_rumble_config, save_rumble_config, read_gamepad_type, save_gamepad_type, read_minimize_to_tray, save_minimize_to_tray
+    clear_cache, read_auto_fullscreen_gamepad, save_auto_fullscreen_gamepad, read_rumble_config, save_rumble_config, read_gamepad_type, save_gamepad_type, read_minimize_to_tray, save_minimize_to_tray,
+    read_auto_card_size, save_auto_card_size
 )
 from portprotonqt.localization import _, get_egs_language, read_metadata_translations
 from portprotonqt.howlongtobeat_api import HowLongToBeat
@@ -39,7 +40,7 @@ from portprotonqt.game_library_manager import GameLibraryManager
 from portprotonqt.virtual_keyboard import VirtualKeyboard
 
 from PySide6.QtWidgets import (QLineEdit, QMainWindow, QStatusBar, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox,
-                               QDialog, QFormLayout, QFrame, QGraphicsDropShadowEffect, QMessageBox, QApplication, QPushButton, QProgressBar, QCheckBox, QSizePolicy, QGridLayout, QScrollArea, QScroller)
+                               QDialog, QFormLayout, QFrame, QGraphicsDropShadowEffect, QMessageBox, QApplication, QPushButton, QProgressBar, QCheckBox, QSizePolicy, QGridLayout, QScrollArea, QScroller, QSlider)
 from PySide6.QtCore import Qt, QAbstractAnimation, QUrl, Signal, QTimer, Slot, QProcess
 from PySide6.QtGui import QIcon, QPixmap, QColor, QDesktopServices
 from typing import cast
@@ -63,6 +64,7 @@ class MainWindow(QMainWindow):
         self.theme = self.theme_manager.apply_theme(selected_theme)
         self.tray_manager = TrayManager(self, app_name, self.current_theme_name)
         self.card_width = read_card_size()
+        self.auto_card_width = read_auto_card_size()
         self._last_card_width = self.card_width
         self.setWindowTitle(f"{app_name} {version}")
         self.setMinimumSize(800, 600)
@@ -1100,8 +1102,7 @@ class MainWindow(QMainWindow):
         autoInstallPage = QWidget()
         autoInstallPage.setStyleSheet(self.theme.LIBRARY_WIDGET_STYLE)
         autoInstallLayout = QVBoxLayout(autoInstallPage)
-        autoInstallLayout.setContentsMargins(20, 0, 20, 0)
-        autoInstallLayout.setSpacing(0)
+        autoInstallLayout.setSpacing(15)
 
         # Верхняя панель с заголовком и поиском
         headerWidget = QWidget()
@@ -1150,6 +1151,25 @@ class MainWindow(QMainWindow):
 
         autoInstallLayout.addWidget(self.autoInstallScrollArea)
 
+        # Slider for card size
+        sliderLayout = QHBoxLayout()
+        sliderLayout.setSpacing(0)
+        sliderLayout.setContentsMargins(0, 0, 0, 0)
+        sliderLayout.addStretch()
+
+        self.auto_size_slider = QSlider(Qt.Orientation.Horizontal)
+        self.auto_size_slider.setMinimum(200)
+        self.auto_size_slider.setMaximum(250)
+        self.auto_size_slider.setValue(self.auto_card_width)
+        self.auto_size_slider.setTickInterval(10)
+        self.auto_size_slider.setFixedWidth(150)
+        self.auto_size_slider.setToolTip(f"{self.auto_card_width} px")
+        self.auto_size_slider.setStyleSheet(self.theme.SLIDER_SIZE_STYLE)
+        self.auto_size_slider.sliderReleased.connect(self.on_auto_slider_released)
+        sliderLayout.addWidget(self.auto_size_slider)
+
+        autoInstallLayout.addLayout(sliderLayout)
+
         # Хранение карточек
         self.autoInstallGameCards = {}
         self.allAutoInstallCards = []
@@ -1159,7 +1179,7 @@ class MainWindow(QMainWindow):
             if exe_name in self.autoInstallGameCards and local_path:
                 card = self.autoInstallGameCards[exe_name]
                 card.cover_path = local_path
-                load_pixmap_async(local_path, self.card_width, int(self.card_width * 1.5), card.on_cover_loaded)
+                load_pixmap_async(local_path, self.auto_card_width, int(self.auto_card_width * 1.5), card.on_cover_loaded)
 
         # Загрузка игр
         def on_autoinstall_games_loaded(games: list[tuple]):
@@ -1195,7 +1215,7 @@ class MainWindow(QMainWindow):
                     None, None, None, game_source,
                     select_callback=select_callback,
                     theme=self.theme,
-                    card_width=self.card_width,
+                    card_width=self.auto_card_width,
                     parent=self.autoInstallContainer,
                 )
 
@@ -1236,6 +1256,18 @@ class MainWindow(QMainWindow):
         self.portproton_api.get_autoinstall_games_async(on_autoinstall_games_loaded)
 
         self.stackedWidget.addWidget(autoInstallPage)
+
+    def on_auto_slider_released(self):
+        """Handles auto-install slider release to update card size."""
+        if hasattr(self, 'auto_size_slider') and self.auto_size_slider:
+            self.auto_card_width = self.auto_size_slider.value()
+            self.auto_size_slider.setToolTip(f"{self.auto_card_width} px")
+            save_auto_card_size(self.auto_card_width)
+            for card in self.allAutoInstallCards:
+                card.update_card_size(self.auto_card_width)
+            self.autoInstallContainerLayout.invalidate()
+            self.autoInstallContainer.updateGeometry()
+            self.autoInstallScrollArea.updateGeometry()
 
     def filterAutoInstallGames(self):
         """Filter auto install game cards based on search text."""
@@ -3070,6 +3102,7 @@ class MainWindow(QMainWindow):
                 logger.debug(f"Saving window geometry: {self.width()}x{self.height()}")
                 save_window_geometry(self.width(), self.height())
             save_card_size(self.card_width)
+            save_auto_card_size(self.auto_card_width)
 
             event.accept()
         else:

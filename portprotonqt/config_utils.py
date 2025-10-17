@@ -177,6 +177,26 @@ def save_card_size(card_width):
     with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
         cp.write(configfile)
 
+def read_auto_card_size():
+    """Reads the card size (width) for Auto Install from the [Cards] section.
+    Returns 250 if the parameter is not set.
+    """
+    cp = read_config_safely(CONFIG_FILE)
+    if cp is None or not cp.has_section("Cards") or not cp.has_option("Cards", "auto_card_width"):
+        save_auto_card_size(250)
+        return 250
+    return cp.getint("Cards", "auto_card_width", fallback=250)
+
+def save_auto_card_size(card_width):
+    """Saves the card size (width) for Auto Install to the [Cards] section."""
+    cp = read_config_safely(CONFIG_FILE) or configparser.ConfigParser()
+    if "Cards" not in cp:
+        cp["Cards"] = {}
+    cp["Cards"]["auto_card_width"] = str(card_width)
+    with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
+        cp.write(configfile)
+
+
 def read_sort_method():
     """Reads the sort method from the [Games] section.
     Returns 'last_launch' if the parameter is not set.
