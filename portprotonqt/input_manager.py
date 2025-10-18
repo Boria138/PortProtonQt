@@ -1456,51 +1456,68 @@ class InputManager(QObject):
         threading.Thread(target=self.run_udev_monitor, daemon=True).start()
         logger.info("Gamepad support initialized with hotplug (evdev + pyudev)")
 
-
     def run_udev_monitor(self) -> None:
         """
-        Неблокирующий опрос udev событий без MonitorObserver.
-        Использует monitor.poll() с таймаутом для корректного завершения.
+        Безопасный неблокирующий udev monitor для геймпадов.
+        Использует select.poll() вместо блокирующего monitor.poll().
         """
         try:
             logger.info("Starting udev monitor...")
             monitor = Monitor.from_netlink(self.udev_context)
             monitor.filter_by(subsystem='input')
-            monitor.start()
-            logger.info("Monitor started, draining initial events...")
 
-            # КРИТИЧНО: При старте udev отправляет события о ВСЕХ существующих устройствах
-            # Это может быть 10-50+ событий, которые блокируют инициализацию
-            # Решение: дренируем (игнорируем) все события за первые 500ms
+            try:
+                monitor.start()
+            except Exception as e:
+                logger.error(f"Failed to start udev monitor: {e}")
+                return
+
+            import select
+            fd = monitor.fileno()
+            poller = select.poll()
+            poller.register(fd, select.POLLIN)
+
+            # Короткий дренаж событий при запуске (0.5 сек)
             drain_start = time.time()
             drained_count = 0
-
             while time.time() - drain_start < 0.5:
-                device = monitor.poll(timeout=0.1)
-                if device is not None:
+                events = poller.poll(100)
+                if not events:
+                    continue
+                try:
+                    _ = monitor.poll(timeout=0)  # просто читаем, не обрабатываем
                     drained_count += 1
+                except Exception:
+                    break
 
             self.monitor_ready = True
             logger.info(f"Drained {drained_count} initial events, now monitoring hotplug...")
 
-            # Основной цикл опроса с таймаутом 1 секунда
+            # Основной цикл
             while self.running:
-                # poll() возвращает None при таймауте - не блокирует навсегда
-                device = monitor.poll(timeout=1.0)
+                events = poller.poll(1000)  # 1 сек таймаут
+                if not events:
+                    continue  # просто ждём, не блокируем
 
-                if device is not None:
-                    action = device.action
+                try:
+                    device = monitor.poll(timeout=0)
+                except Exception as e:
+                    logger.debug(f"Monitor poll failed: {e}")
+                    continue
 
-                    # Фильтруем только джойстики на уровне callback
-                    # Это предотвращает обработку мышей/клавиатур/и т.д.
-                    if action and self._is_joystick_device(device):
-                        logger.info(f"Joystick hotplug event: {action} for {device.sys_name}")
-                        self.handle_udev_event(action, device)
+                if not device:
+                    continue
+
+                action = device.action
+                if action and self._is_joystick_device(device):
+                    logger.info(f"Joystick hotplug event: {action} for {device.sys_name}")
+                    # отправляем сигнал в Qt-поток
+                    self.handle_udev_event(action, device)
 
             logger.info("udev monitor stopped gracefully")
+
         except Exception as e:
             logger.error(f"Error in udev monitor: {e}", exc_info=True)
-
 
     def _is_joystick_device(self, device: Device) -> bool:
         """
