@@ -33,6 +33,7 @@ class MainWindowProtocol(Protocol):
     # Required attributes
     searchEdit: CustomLineEdit
     _last_card_width: int
+    card_width: int
     current_hovered_card: GameCard | None
     current_focused_card: GameCard | None
     gamesListWidget: QWidget | None
@@ -128,6 +129,8 @@ class GameLibraryManager:
         self.card_width = self.sizeSlider.value()
         self.sizeSlider.setToolTip(f"{self.card_width} px")
         save_card_size(self.card_width)
+        self.main_window.card_width = self.card_width
+        self.main_window._last_card_width = self.card_width
         for card in self.game_card_cache.values():
             card.update_card_size(self.card_width)
         self.update_game_grid()

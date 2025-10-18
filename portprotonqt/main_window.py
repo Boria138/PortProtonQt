@@ -3056,7 +3056,13 @@ class MainWindow(QMainWindow):
         """Обработчик закрытия окна: проверяет настройку minimize_to_tray.
         Если True — сворачиваем в трей (по умолчанию). Иначе — полностью закрываем.
         """
-        minimize_to_tray = read_minimize_to_tray()  # Импорт read_minimize_to_tray из config_utils
+        minimize_to_tray = read_minimize_to_tray()
+        save_card_size(self.card_width)
+        save_auto_card_size(self.auto_card_width)
+        # Сохраняем настройки окна
+        if not read_fullscreen_config():
+            logger.debug(f"Saving window geometry: {self.width()}x{self.height()}")
+            save_window_geometry(self.width(), self.height())
         if hasattr(self, 'is_exiting') and self.is_exiting or not minimize_to_tray:
             # Принудительное закрытие: завершаем процессы и приложение
             for proc in self.game_processes:
@@ -3096,13 +3102,6 @@ class MainWindow(QMainWindow):
                 self.wine_monitor_timer.stop()
                 self.wine_monitor_timer.deleteLater()
                 self.wine_monitor_timer = None
-
-            # Сохраняем настройки окна
-            if not read_fullscreen_config():
-                logger.debug(f"Saving window geometry: {self.width()}x{self.height()}")
-                save_window_geometry(self.width(), self.height())
-            save_card_size(self.card_width)
-            save_auto_card_size(self.auto_card_width)
 
             event.accept()
         else:
