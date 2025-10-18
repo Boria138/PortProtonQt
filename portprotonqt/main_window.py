@@ -3057,54 +3057,72 @@ class MainWindow(QMainWindow):
         Если True — сворачиваем в трей (по умолчанию). Иначе — полностью закрываем.
         """
         minimize_to_tray = read_minimize_to_tray()
+
+        if minimize_to_tray:
+            # Просто сворачиваем в трей
+            event.ignore()
+            self.hide()
+            return
+
+        # Полное закрытие приложения
+        self.is_exiting = True
+        event.accept()
+
+        # Скрываем и удаляем иконку трея
+        if hasattr(self, "tray_manager") and self.tray_manager.tray_icon:
+            self.tray_manager.tray_icon.hide()
+            self.tray_manager.tray_icon.deleteLater()
+
+        # Сохраняем размеры карточек
         save_card_size(self.card_width)
         save_auto_card_size(self.auto_card_width)
-        # Сохраняем настройки окна
+
+        # Сохраняем размеры окна (если не в полноэкранном режиме)
         if not read_fullscreen_config():
             logger.debug(f"Saving window geometry: {self.width()}x{self.height()}")
             save_window_geometry(self.width(), self.height())
-        if hasattr(self, 'is_exiting') and self.is_exiting or not minimize_to_tray:
-            # Принудительное закрытие: завершаем процессы и приложение
-            for proc in self.game_processes:
-                try:
-                    parent = psutil.Process(proc.pid)
-                    children = parent.children(recursive=True)
-                    for child in children:
-                        try:
-                            logger.debug(f"Terminating child process {child.pid}")
-                            child.terminate()
-                        except psutil.NoSuchProcess:
-                            logger.debug(f"Child process {child.pid} already terminated")
-                    psutil.wait_procs(children, timeout=5)
-                    for child in children:
-                        if child.is_running():
-                            logger.debug(f"Killing child process {child.pid}")
-                            child.kill()
-                    logger.debug(f"Terminating process group {proc.pid}")
-                    os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-                except (psutil.NoSuchProcess, ProcessLookupError) as e:
-                    logger.debug(f"Process {proc.pid} already terminated: {e}")
 
-            self.game_processes = []  # Очищаем список процессов
+        # Завершаем все игровые процессы
+        for proc in getattr(self, "game_processes", []):
+            try:
+                parent = psutil.Process(proc.pid)
+                children = parent.children(recursive=True)
+                for child in children:
+                    try:
+                        logger.debug(f"Terminating child process {child.pid}")
+                        child.terminate()
+                    except psutil.NoSuchProcess:
+                        logger.debug(f"Child process {child.pid} already terminated")
 
-            # Очищаем таймеры
-            if hasattr(self, 'games_load_timer') and self.games_load_timer is not None and self.games_load_timer.isActive():
-                self.games_load_timer.stop()
-            if hasattr(self, 'settingsDebounceTimer') and self.settingsDebounceTimer is not None and self.settingsDebounceTimer.isActive():
-                self.settingsDebounceTimer.stop()
-            if hasattr(self, 'searchDebounceTimer') and self.searchDebounceTimer is not None and self.searchDebounceTimer.isActive():
-                self.searchDebounceTimer.stop()
-            if hasattr(self, 'checkProcessTimer') and self.checkProcessTimer is not None and self.checkProcessTimer.isActive():
-                self.checkProcessTimer.stop()
-                self.checkProcessTimer.deleteLater()
-                self.checkProcessTimer = None
-            if hasattr(self, 'wine_monitor_timer') and self.wine_monitor_timer is not None:
-                self.wine_monitor_timer.stop()
-                self.wine_monitor_timer.deleteLater()
-                self.wine_monitor_timer = None
+                psutil.wait_procs(children, timeout=5)
+                for child in children:
+                    if child.is_running():
+                        logger.debug(f"Killing child process {child.pid}")
+                        child.kill()
 
-            event.accept()
-        else:
-            # Сворачиваем в трей вместо закрытия
-            self.hide()
-            event.ignore()
+                logger.debug(f"Terminating process group {proc.pid}")
+                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+
+            except (psutil.NoSuchProcess, ProcessLookupError) as e:
+                logger.debug(f"Process {getattr(proc, 'pid', '?')} already terminated: {e}")
+            except Exception as e:
+                logger.warning(f"Failed to terminate process {getattr(proc, 'pid', '?')}: {e}")
+
+        self.game_processes = []
+
+        # Универсальная остановка и удаление таймеров
+        timers = [
+            "games_load_timer",
+            "settingsDebounceTimer",
+            "searchDebounceTimer",
+            "checkProcessTimer",
+            "wine_monitor_timer",
+        ]
+
+        for tname in timers:
+            timer = getattr(self, tname, None)
+            if timer and timer.isActive():
+                timer.stop()
+            if timer:
+                timer.deleteLater()
+                setattr(self, tname, None)
