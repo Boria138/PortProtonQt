@@ -1034,8 +1034,8 @@ class AddGameDialog(QDialog):
         """Обработчик выбора файла в FileExplorer"""
         self.exeEdit.setText(file_path)
         self.last_exe_path = file_path  # Update last selected exe path
-        if not self.edit_mode:
-            # Автоматически заполняем имя игры, если не в режиме редактирования
+        if not self.edit_mode and not self.nameEdit.text().strip():
+            # Автоматически заполняем имя игры, если не в режиме редактирования или если оно не введено вручную
             game_name = os.path.splitext(os.path.basename(file_path))[0]
             self.nameEdit.setText(game_name)
 
