@@ -1,5 +1,5 @@
 %global pypi_name portprotonqt
-%global pypi_version 0.1.7
+%global pypi_version 0.1.8
 %global oname PortProtonQt
 %global _python_no_extras_requires 1
 
