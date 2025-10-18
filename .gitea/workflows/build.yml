@@ -188,4 +188,4 @@ jobs:
           tag_name: v${{ env.VERSION }}
           prerelease: true
           files: release/**/*
-          sha256sum: true
+          sha256sum: false
