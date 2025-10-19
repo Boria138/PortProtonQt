@@ -1440,6 +1440,7 @@ class InputManager(QObject):
         self.udev_context = Context()
         self.Devices = Devices
         self.monitor_ready = False
+        self.monitor_event = threading.Event()
 
         # Подключаем сигнал hotplug к обработчику в главном потоке
         self.gamepad_hotplug.connect(self._on_gamepad_hotplug)
@@ -1491,6 +1492,7 @@ class InputManager(QObject):
                     break
 
             self.monitor_ready = True
+            self.monitor_event.set()
             logger.info(f"Drained {drained_count} initial events, now monitoring hotplug...")
 
             # Основной цикл
@@ -1592,7 +1594,6 @@ class InputManager(QObject):
         except Exception as e:
             logger.error(f"Error in hotplug handler: {e}", exc_info=True)
 
-
     def check_gamepad(self) -> None:
         """
         Проверка и подключение геймпада.
@@ -1601,18 +1602,23 @@ class InputManager(QObject):
         try:
             new_gamepad = self.find_gamepad()
 
-            # Проверяем, действительно ли это новый геймпад
             if new_gamepad:
                 if not self.gamepad or new_gamepad.path != self.gamepad.path:
                     logger.info(f"Gamepad connected: {new_gamepad.name} at {new_gamepad.path}")
                     self.stop_rumble()
                     self.gamepad = new_gamepad
 
-                    if self.gamepad_thread:
+                    if self.gamepad_thread and self.gamepad_thread.is_alive():
                         self.gamepad_thread.join(timeout=2.0)
 
+                    def start_monitoring():
+                        # Ожидание готовности udev monitor без busy-wait
+                        if not self.monitor_event.wait(timeout=2.0):
+                            logger.warning("Timeout waiting for udev monitor readiness")
+                        self.monitor_gamepad()
+
                     self.gamepad_thread = threading.Thread(
-                        target=self.monitor_gamepad,
+                        target=start_monitoring,
                         daemon=True
                     )
                     self.gamepad_thread.start()
@@ -1622,12 +1628,11 @@ class InputManager(QObject):
                         self.toggle_fullscreen.emit(True)
 
             elif self.gamepad and not any(self.gamepad.path == path for path in list_devices()):
-                # Геймпад был подключён, но теперь его нет в системе
                 logger.info("Gamepad no longer detected")
                 self.stop_rumble()
                 self.gamepad = None
 
-                if self.gamepad_thread:
+                if self.gamepad_thread and self.gamepad_thread.is_alive():
                     self.gamepad_thread.join(timeout=2.0)
 
                 if read_auto_fullscreen_gamepad() and not read_fullscreen_config():
@@ -1635,7 +1640,6 @@ class InputManager(QObject):
 
         except Exception as e:
             logger.error(f"Error checking gamepad: {e}", exc_info=True)
-
 
     def find_gamepad(self) -> InputDevice | None:
         """
