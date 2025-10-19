@@ -1253,7 +1253,15 @@ class MainWindow(QMainWindow):
         # Показываем прогресс
         self.autoInstallProgress.setVisible(True)
         self.autoInstallProgress.setRange(0, 0)
-        self.portproton_api.get_autoinstall_games_async(on_autoinstall_games_loaded)
+
+        # Store the thread to prevent premature destruction
+        self.autoInstallLoadThread = self.portproton_api.start_autoinstall_games_load(on_autoinstall_games_loaded)
+
+        # Optional: Clean up thread when finished (prevents leak)
+        if self.autoInstallLoadThread:
+            def on_thread_finished():
+                self.autoInstallLoadThread = None  # Release reference
+            self.autoInstallLoadThread.finished.connect(on_thread_finished)
 
         self.stackedWidget.addWidget(autoInstallPage)
 

@@ -6,13 +6,16 @@ import urllib.parse
 import time
 import glob
 import re
+import hashlib
 from collections.abc import Callable
+from PySide6.QtCore import QThread, Signal
 from portprotonqt.downloader import Downloader
 from portprotonqt.logger import get_logger
 from portprotonqt.config_utils import get_portproton_location
 
 logger = get_logger(__name__)
 CACHE_DURATION = 30 * 24 * 60 * 60  # 30 days in seconds
+AUTOINSTALL_CACHE_DURATION = 3600  # 1 hour for autoinstall cache
 
 def normalize_name(s):
     """
@@ -59,6 +62,7 @@ class PortProtonAPI:
         self.repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         self.builtin_custom_folder = os.path.join(self.repo_root, "custom_data")
         self._topics_data = None
+        self._autoinstall_cache = None  # New: In-memory cache
 
     def _get_game_dir(self, exe_name: str) -> str:
         game_dir = os.path.join(self.custom_data_dir, exe_name)
@@ -231,67 +235,139 @@ class PortProtonAPI:
             logger.error(f"Failed to parse {file_path}: {e}")
             return None, None
 
-    def get_autoinstall_games_async(self, callback: Callable[[list[tuple]], None]) -> None:
-        """Load auto-install games with user/builtin covers (no async download here)."""
-        games = []
-        auto_dir = os.path.join(self.portproton_location or "", "data", "scripts", "pw_autoinstall") if self.portproton_location else ""
+    def _compute_scripts_signature(self, auto_dir: str) -> str:
+        """Compute a hash-based signature of the autoinstall scripts to detect changes."""
         if not os.path.exists(auto_dir):
-            callback(games)
-            return
-
+            return ""
         scripts = sorted(glob.glob(os.path.join(auto_dir, "*")))
-        if not scripts:
-            callback(games)
-            return
+        # Simple hash: concatenate sorted filenames and hash
+        filenames_str = "".join(sorted([os.path.basename(s) for s in scripts]))
+        return hashlib.md5(filenames_str.encode()).hexdigest()
 
-        xdg_data_home = os.getenv("XDG_DATA_HOME",
-                                os.path.join(os.path.expanduser("~"), ".local", "share"))
-        base_autoinstall_dir = os.path.join(xdg_data_home, "PortProtonQt", "custom_data", "autoinstall")
-        os.makedirs(base_autoinstall_dir, exist_ok=True)
+    def _load_autoinstall_cache(self):
+        """Load cached autoinstall games if fresh and scripts unchanged."""
+        if self._autoinstall_cache is not None:
+            return self._autoinstall_cache
+        cache_dir = get_cache_dir()
+        cache_file = os.path.join(cache_dir, "autoinstall_games_cache.json")
+        if os.path.exists(cache_file):
+            try:
+                mod_time = os.path.getmtime(cache_file)
+                if time.time() - mod_time < AUTOINSTALL_CACHE_DURATION:
+                    with open(cache_file, "rb") as f:
+                        data = orjson.loads(f.read())
+                        # Check signature
+                        cached_signature = data.get("scripts_signature", "")
+                        current_signature = self._compute_scripts_signature(
+                            os.path.join(self.portproton_location or "", "data", "scripts", "pw_autoinstall")
+                        )
+                        if cached_signature != current_signature:
+                            logger.info("Scripts signature mismatch; invalidating cache")
+                            return None
+                        self._autoinstall_cache = data["games"]
+                        logger.info(f"Loaded {len(self._autoinstall_cache)} cached autoinstall games")
+                        return self._autoinstall_cache
+            except Exception as e:
+                logger.error(f"Failed to load autoinstall cache: {e}")
+        return None
 
-        for script_path in scripts:
-            display_name, exe_name = self.parse_autoinstall_script(script_path)
-            script_name = os.path.splitext(os.path.basename(script_path))[0]
+    def _save_autoinstall_cache(self, games):
+        """Save parsed autoinstall games to cache with scripts signature."""
+        try:
+            cache_dir = get_cache_dir()
+            cache_file = os.path.join(cache_dir, "autoinstall_games_cache.json")
+            auto_dir = os.path.join(self.portproton_location or "", "data", "scripts", "pw_autoinstall")
+            scripts_signature = self._compute_scripts_signature(auto_dir)
+            data = {"games": games, "scripts_signature": scripts_signature, "timestamp": time.time()}
+            with open(cache_file, "wb") as f:
+                f.write(orjson.dumps(data))
+            logger.debug(f"Saved {len(games)} autoinstall games to cache with signature {scripts_signature}")
+        except Exception as e:
+            logger.error(f"Failed to save autoinstall cache: {e}")
 
-            if not (display_name and exe_name):
-                continue
+    def start_autoinstall_games_load(self, callback: Callable[[list[tuple]], None]) -> QThread | None:
+        """Start loading auto-install games in a background thread. Returns the thread for management."""
+        # Check cache first (sync, fast)
+        cached_games = self._load_autoinstall_cache()
+        if cached_games is not None:
+            # Emit via callback immediately if cached
+            QThread.msleep(0)  # Yield to Qt event loop
+            callback(cached_games)
+            return None  # No thread needed
 
-            exe_name = os.path.splitext(exe_name)[0]  # Без .exe
-            user_game_folder = os.path.join(base_autoinstall_dir, exe_name)
-            os.makedirs(user_game_folder, exist_ok=True)
+        # No cache: Start background thread
+        class AutoinstallWorker(QThread):
+            finished = Signal(list)
+            api: "PortProtonAPI"
+            portproton_location: str | None
 
-            # Поиск обложки
-            cover_path = ""
-            user_files = set(os.listdir(user_game_folder)) if os.path.exists(user_game_folder) else set()
-            for ext in [".jpg", ".png", ".jpeg", ".bmp"]:
-                candidate = f"cover{ext}"
-                if candidate in user_files:
-                    cover_path = os.path.join(user_game_folder, candidate)
-                    break
+            def run(self):
+                games = []
+                auto_dir = os.path.join(
+                    self.portproton_location or "", "data", "scripts", "pw_autoinstall"
+                ) if self.portproton_location else ""
+                if not os.path.exists(auto_dir):
+                    self.finished.emit(games)
+                    return
 
-            if not cover_path:
-                logger.debug(f"No local cover found for autoinstall {exe_name}")
+                scripts = sorted(glob.glob(os.path.join(auto_dir, "*")))
+                if not scripts:
+                    self.finished.emit(games)
+                    return
 
-            # Формируем кортеж игры (добавлен exe_name в конец)
-            game_tuple = (
-                display_name,  # name
-                "",  # description
-                cover_path,  # cover
-                "",  # appid
-                f"autoinstall:{script_name}",  # exec_line
-                "",  # controller_support
-                "Never",  # last_launch
-                "0h 0m",  # formatted_playtime
-                "",  # protondb_tier
-                "",  # anticheat_status
-                0,  # last_played
-                0,  # playtime_seconds
-                "autoinstall",  # game_source
-                exe_name  # exe_name
-            )
-            games.append(game_tuple)
+                xdg_data_home = os.getenv(
+                    "XDG_DATA_HOME",
+                    os.path.join(os.path.expanduser("~"), ".local", "share"),
+                )
+                base_autoinstall_dir = os.path.join(
+                    xdg_data_home, "PortProtonQt", "custom_data", "autoinstall"
+                )
+                os.makedirs(base_autoinstall_dir, exist_ok=True)
 
-        callback(games)
+                for script_path in scripts:
+                    display_name, exe_name = self.api.parse_autoinstall_script(script_path)
+                    script_name = os.path.splitext(os.path.basename(script_path))[0]
+
+                    if not (display_name and exe_name):
+                        continue
+
+                    exe_name = os.path.splitext(exe_name)[0]
+                    user_game_folder = os.path.join(base_autoinstall_dir, exe_name)
+                    os.makedirs(user_game_folder, exist_ok=True)
+
+                    # Find cover
+                    cover_path = ""
+                    user_files = (
+                        set(os.listdir(user_game_folder))
+                        if os.path.exists(user_game_folder)
+                        else set()
+                    )
+                    for ext in [".jpg", ".png", ".jpeg", ".bmp"]:
+                        candidate = f"cover{ext}"
+                        if candidate in user_files:
+                            cover_path = os.path.join(user_game_folder, candidate)
+                            break
+
+                    if not cover_path:
+                        logger.debug(f"No local cover found for autoinstall {exe_name}")
+
+                    game_tuple = (
+                        display_name, "", cover_path, "", f"autoinstall:{script_name}",
+                        "", "Never", "0h 0m", "", "", 0, 0, "autoinstall", exe_name
+                    )
+                    games.append(game_tuple)
+
+                self.api._save_autoinstall_cache(games)
+                self.api._autoinstall_cache = games
+                self.finished.emit(games)
+
+        worker = AutoinstallWorker()
+        worker.api = self
+        worker.portproton_location = self.portproton_location
+        worker.finished.connect(lambda games: callback(games))
+        worker.start()
+        logger.info("Started background load of autoinstall games")
+        return worker
 
     def _load_topics_data(self):
         """Load and cache linux_gaming_topics_min.json from the archive."""
