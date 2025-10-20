@@ -83,6 +83,43 @@ def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[Q
             except Exception as e:
                 logger.error(f"Ошибка обработки URL {cover}: {e}")
 
+        # SteamGridDB (SGDB)
+        if cover and cover.startswith("https://cdn2.steamgriddb.com"):
+            try:
+                parts = cover.split("/")
+                filename = parts[-1] if parts else "sgdb_cover.png"
+                # SGDB ссылки содержат уникальный хеш в названии — используем как имя
+                local_path = os.path.join(image_folder, filename)
+
+                if os.path.exists(local_path):
+                    pixmap = QPixmap(local_path)
+                    finish_with(pixmap)
+                    return
+
+                def on_downloaded(result: str | None):
+                    pixmap = QPixmap()
+                    if result and os.path.exists(result):
+                        pixmap.load(result)
+                    if pixmap.isNull():
+                        placeholder_path = theme_manager.get_theme_image("placeholder", current_theme_name)
+                        if placeholder_path and QFile.exists(placeholder_path):
+                            pixmap.load(placeholder_path)
+                        else:
+                            pixmap = QPixmap(width, height)
+                            pixmap.fill(QColor("#333333"))
+                            painter = QPainter(pixmap)
+                            painter.setPen(QPen(QColor("white")))
+                            painter.drawText(pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "No Image")
+                            painter.end()
+                    finish_with(pixmap)
+
+                logger.info("Downloading SGDB cover for %s -> %s", app_name or "unknown", filename)
+                downloader.download_async(cover, local_path, timeout=5, callback=on_downloaded)
+                return
+
+            except Exception as e:
+                logger.error(f"Ошибка обработки SGDB URL {cover}: {e}")
+
         if cover and cover.startswith(("http://", "https://")):
             try:
                 local_path = os.path.join(image_folder, f"{app_name}.jpg")

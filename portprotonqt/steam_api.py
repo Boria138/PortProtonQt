@@ -23,6 +23,7 @@ import requests
 import random
 import base64
 import glob
+import urllib.parse
 
 downloader = Downloader()
 logger = get_logger(__name__)
@@ -411,6 +412,39 @@ def save_app_details(app_id, data):
     with open(cache_file, "wb") as f:
         f.write(orjson.dumps(data))
 
+def fetch_sgdb_cover(game_name: str) -> str:
+    """
+    Fetch a cover image URL from steamgrid.usebottles.com for the given game.
+    The API returns a single string (quoted URL).
+    """
+    try:
+        encoded = urllib.parse.quote(game_name)
+        url = f"https://steamgrid.usebottles.com/api/search/{encoded}"
+        resp = requests.get(url, timeout=5)
+        if resp.status_code != 200:
+            logger.warning("SGDB request failed for %s: %s", game_name, resp.status_code)
+            return ""
+        text = resp.text.strip()
+        # Убираем возможные кавычки вокруг строки
+        if text.startswith('"') and text.endswith('"'):
+            text = text[1:-1]
+        if text:
+            logger.info("Fetched SGDB cover for %s: %s", game_name, text)
+        return text
+    except Exception as e:
+        logger.warning("Failed to fetch SGDB cover for %s: %s", game_name, e)
+    return ""
+
+
+def check_url_exists(url: str) -> bool:
+    """Check whether a URL returns HTTP 200."""
+    try:
+        r = requests.head(url, timeout=3)
+        return r.status_code == 200
+    except Exception:
+        return False
+
+
 def fetch_app_info_async(app_id: int, callback: Callable[[dict | None], None]):
     """
     Asynchronously fetches detailed app info from Steam API.
@@ -629,6 +663,11 @@ def get_full_steam_game_info_async(appid: int, callback: Callable[[dict], None])
         title = decode_text(app_info.get("name", ""))
         description = decode_text(app_info.get("short_description", ""))
         cover = f"https://steamcdn-a.akamaihd.net/steam/apps/{appid}/library_600x900_2x.jpg"
+        if not check_url_exists(cover):
+            logger.info("Steam cover not found for %s, trying SGDB", title)
+            alt_cover = fetch_sgdb_cover(title)
+            if alt_cover:
+                cover = alt_cover
 
         def on_protondb_tier(tier: str):
             def on_anticheat_status(anticheat_status: str):
@@ -722,12 +761,15 @@ def get_steam_game_info_async(desktop_name: str, exec_line: str, callback: Calla
         game_name = desktop_name or exe_name.capitalize()
 
         if not matching_app:
+            cover = fetch_sgdb_cover(game_name) or ""
+            logger.info("Using SGDB cover for non-Steam game '%s': %s", game_name, cover)
+
             def on_anticheat_status(anticheat_status: str):
                 callback({
                     "appid": "",
                     "name": decode_text(game_name),
                     "description": "",
-                    "cover": "",
+                    "cover": cover,
                     "controller_support": "",
                     "protondb_tier": "",
                     "steam_game": "false",
@@ -758,6 +800,11 @@ def get_steam_game_info_async(desktop_name: str, exec_line: str, callback: Calla
             title = decode_text(app_info.get("name", game_name))
             description = decode_text(app_info.get("short_description", ""))
             cover = f"https://steamcdn-a.akamaihd.net/steam/apps/{appid}/library_600x900_2x.jpg"
+            if not check_url_exists(cover):
+                logger.info("Steam cover not found for %s, trying SGDB", title)
+                alt_cover = fetch_sgdb_cover(title)
+                if alt_cover:
+                    cover = alt_cover
             controller_support = app_info.get("controller_support", "")
 
             def on_protondb_tier(tier: str):
