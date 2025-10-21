@@ -1,5 +1,5 @@
 from PySide6.QtGui import QPainter, QColor, QDesktopServices
-from PySide6.QtCore import Signal, Property, Qt, QUrl
+from PySide6.QtCore import Signal, Property, Qt, QUrl, QTimer
 from PySide6.QtWidgets import QFrame, QGraphicsDropShadowEffect, QVBoxLayout, QWidget, QStackedLayout, QLabel
 from collections.abc import Callable
 from portprotonqt.image_utils import load_pixmap_async, round_corners
@@ -403,6 +403,13 @@ class GameCard(QFrame):
         else:
             self.favoriteLabel.setText("☆")
         self.favoriteLabel.setStyleSheet(self.theme.FAVORITE_LABEL_STYLE)
+
+        parent = self.parent()
+        while parent:
+            if hasattr(parent, 'game_library_manager'):
+                QTimer.singleShot(0, parent.game_library_manager.update_game_grid) # type: ignore[attr-defined]
+                break
+            parent = parent.parent()
 
     def toggle_favorite(self):
         favorites = read_favorites()
