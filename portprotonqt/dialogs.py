@@ -1674,3 +1674,286 @@ class WinetricksDialog(QDialog):
         if self.input_manager:
             self.input_manager.disable_winetricks_mode()
         super().reject()
+
+class ExeSettingsDialog(QDialog):
+    def __init__(self, parent=None, theme=None, exe_path=None):
+        super().__init__(parent)
+        self.theme = theme if theme else theme_manager.apply_theme(read_theme_from_config())
+        self.exe_path = exe_path
+        if not self.exe_path:
+            logger.error("Exe path not provided")
+            return
+        self.portproton_path = get_portproton_location()
+        if self.portproton_path is None:
+            logger.error("PortProton location not found")
+            return
+        base_path = os.path.join(self.portproton_path, "data")
+        self.start_sh = os.path.join(base_path, "scripts", "start.sh")
+        self.ppdb_path = self.exe_path + ".ppdb" if not self.exe_path.endswith('.ppdb') else self.exe_path
+        self.current_settings = {}
+        self.value_widgets = {}
+        self.original_values = {}
+        self.available_keys = set()
+        self.branch_name = _("Unknown")
+
+        self.setWindowTitle(_("Exe Settings"))
+        self.setModal(True)
+        self.resize(900, 600)
+        self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE + self.theme.MESSAGE_BOX_STYLE)
+
+        self.init_toggle_settings()
+        self.setup_ui()
+
+        # Find input_manager and main_window
+        self.input_manager = None
+        self.main_window = None
+        parent = self.parent()
+        while parent:
+            if hasattr(parent, 'input_manager'):
+                self.input_manager = cast("MainWindow", parent).input_manager
+                self.main_window = parent
+            parent = parent.parent()
+
+        self.current_theme_name = read_theme_from_config()
+
+        # Create hints widget using common function
+        self.hints_widget, self.hints_labels = create_dialog_hints_widget(
+            self.theme, self.main_window, self.input_manager, context='winetricks'
+        )
+        self.main_layout.addWidget(self.hints_widget)
+
+        # Connect signals
+        if self.input_manager:
+            self.input_manager.button_event.connect(
+                lambda *args: update_dialog_hints(self.hints_labels, self.main_window, self.input_manager, theme_manager, self.current_theme_name)
+            )
+            self.input_manager.dpad_moved.connect(
+                lambda *args: update_dialog_hints(self.hints_labels, self.main_window, self.input_manager, theme_manager, self.current_theme_name)
+            )
+            update_dialog_hints(self.hints_labels, self.main_window, self.input_manager, theme_manager, self.current_theme_name)
+
+        # Load current settings (includes list-db)
+        self.load_current_settings()
+
+    def init_toggle_settings(self):
+        """Initialize predefined toggle settings with descriptions."""
+        self.toggle_settings = {
+            'PW_MANGOHUD': _("Using FPS and system load monitoring (Turns on and off by the key combination - right Shift + F12)"),
+            'PW_MANGOHUD_USER_CONF': _("Forced use of MANGOHUD system settings (GOverlay, etc.)"),
+            'PW_VKBASALT': _("Enable vkBasalt by default to improve graphics in games running on Vulkan. (The HOME hotkey disables vkbasalt)"),
+            'PW_VKBASALT_USER_CONF': _("Forced use of VKBASALT system settings (GOverlay, etc.)"),
+            'PW_DGVOODOO2': _("Enable dgVoodoo2. Forced use all dgVoodoo2 libs (Glide 2.11-3.1, DirectDraw 1-7, Direct3D 2-9) on all 3D API."),
+            'PW_GAMESCOPE': _("Super + F : Toggle fullscreen\nSuper + N : Toggle nearest neighbour filtering\nSuper + U : Toggle FSR upscaling\nSuper + Y : Toggle NIS upscaling\nSuper + I : Increase FSR sharpness by 1\nSuper + O : Decrease FSR sharpness by 1\nSuper + S : Take screenshot (currently goes to /tmp/gamescope_DATE.png)\nSuper + G : Toggle keyboard grab\nSuper + C : Update clipboard"),
+            'PW_USE_ESYNC': _("Enable in-process synchronization primitives based on eventfd."),
+            'PW_USE_FSYNC': _("Enable futex-based in-process synchronization primitives."),
+            'PW_USE_NTSYNC': _("Enable in-process synchronization via the Linux ntsync driver."),
+            'PW_USE_RAY_TRACING': _("Enable vkd3d support - Ray Tracing"),
+            'PW_USE_NVAPI_AND_DLSS': _("Enable DLSS on supported NVIDIA graphics cards"),
+            'PW_USE_OPTISCALER': _("Enable OptiScaler (replacement upscaler / frame generator)"),
+            'PW_USE_LS_FRAME_GEN': _("Enable Lossless Scaling frame generation (experimental)"),
+            'PW_WINE_FULLSCREEN_FSR': _("FSR upscaling in fullscreen with ProtonGE below native resolution"),
+            'PW_HIDE_NVIDIA_GPU': _("Disguise all NVIDIA GPU features"),
+            'PW_VIRTUAL_DESKTOP': _("Run the application in WINE virtual desktop"),
+            'PW_USE_TERMINAL': _("Run the application in a terminal"),
+            'PW_GUI_DISABLED_CS': _("Disable startup mode and WINE version selector window"),
+            'PW_USE_GAMEMODE': _("Use system GameMode for performance optimization"),
+            'PW_USE_D3D_EXTRAS': _("Enable forced use of third-party DirectX libraries"),
+            'PW_FIX_VIDEO_IN_GAME': _("Fix pink-tinted video playback in some games"),
+            'PW_REDUCE_PULSE_LATENCY': _("Reduce PulseAudio latency to fix intermittent sound"),
+            'PW_USE_US_LAYOUT': _("Force US keyboard layout"),
+            'PW_USE_GSTREAMER': _("Use GStreamer for in-game clips (WMF support)"),
+            'PW_USE_SHADER_CACHE': _("Use WINE shader caching"),
+            'PW_USE_WINE_DXGI': _("Force use of built-in DXGI library"),
+            'PW_USE_EAC_AND_BE': _("Enable Easy Anti-Cheat and BattlEye runtimes"),
+            'PW_USE_SYSTEM_VK_LAYERS': _("Use system Vulkan layers (MangoHud, vkBasalt, OBS, etc.)"),
+            'PW_USE_OBS_VKCAPTURE': _("Enable OBS Studio capture via obs-vkcapture"),
+            'PW_DISABLE_COMPOSITING': _("Disable desktop compositing for performance"),
+            'PW_USE_RUNTIME': _("Use container launch mode (recommended default)"),
+            'PW_DINPUT_PROTOCOL': _("Force DirectInput protocol instead of XInput"),
+            'PW_USE_NATIVE_WAYLAND': _("Enable experimental native Wayland support"),
+            'PW_USE_DXVK_HDR': _("Enable HDR settings under native Wayland"),
+            'PW_USE_GALLIUM_ZINK': _("Use Gallium Zink (OpenGL via Vulkan)"),
+            'PW_USE_GALLIUM_NINE': _("Use Gallium Nine (native DirectX 9 for Mesa)"),
+            'PW_USE_WINED3D_VULKAN': _("Use WineD3D Vulkan backend (Damavand)"),
+            'PW_USE_SUPPLIED_DXVK_VKD3D': _("Use bundled dxvk/vkd3d from Wine/Proton"),
+            'PW_USE_SAREK_ASYNC': _("Use async dxvk-sarek (experimental)")
+        }
+
+    def setup_ui(self):
+        """Set up the user interface."""
+        self.main_layout = QVBoxLayout(self)
+        self.main_layout.setContentsMargins(10, 10, 10, 10)
+        self.main_layout.setSpacing(10)
+
+        # Метка с текущей веткой (STABLE / DEVEL)
+        self.branch_label = QLabel(_("Detected branch: Unknown"))
+        self.branch_label.setStyleSheet("font-weight: bold;")
+        self.main_layout.addWidget(self.branch_label)
+
+        # Таблица настроек
+        self.settings_table = QTableWidget()
+        self.settings_table.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.settings_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.settings_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.settings_table.setColumnCount(3)
+        self.settings_table.setHorizontalHeaderLabels([_("Setting"), _("Value"), _("Description")])
+        self.settings_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        self.settings_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
+        self.settings_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
+        self.settings_table.horizontalHeader().resizeSection(1, 100)
+        self.settings_table.setWordWrap(True)
+        self.settings_table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.settings_table.setTextElideMode(Qt.TextElideMode.ElideNone)
+        self.settings_table.setStyleSheet(self.theme.WINETRICKS_TABBLE_STYLE)
+        self.main_layout.addWidget(self.settings_table)
+
+        # Кнопки
+        button_layout = QHBoxLayout()
+        self.apply_button = AutoSizeButton(_("Apply"), icon=theme_manager.get_icon("apply"))
+        self.cancel_button = AutoSizeButton(_("Cancel"), icon=theme_manager.get_icon("cancel"))
+        self.apply_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        self.cancel_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        button_layout.addWidget(self.apply_button)
+        button_layout.addWidget(self.cancel_button)
+        self.main_layout.addLayout(button_layout)
+
+        self.apply_button.clicked.connect(self.apply_changes)
+        self.cancel_button.clicked.connect(self.reject)
+
+    def load_current_settings(self):
+        """Load available toggles first, then current settings."""
+        process = QProcess(self)
+        process.finished.connect(self.on_list_db_finished)
+        process.start(self.start_sh, ["cli", "--list-db"])
+
+    def on_list_db_finished(self, exit_code, exit_status):
+        """Handle --list-db output and extract available keys."""
+        process = cast(QProcess, self.sender())
+        self.available_keys = set()
+        if exit_code == 0 and exit_status == QProcess.ExitStatus.NormalExit:
+            output = bytes(process.readAllStandardOutput().data()).decode('utf-8', 'ignore')
+            for line in output.splitlines():
+                if "Branch in used:" in line:
+                    self.branch_name = line.split(":", 1)[1].strip()
+                    self.branch_label.setText(_("Detected branch: ") + self.branch_name)
+                for token in line.split():
+                    if token.startswith("PW_"):
+                        self.available_keys.add(token.strip())
+
+            # Показываем только пересечение
+            self.available_keys &= set(self.toggle_settings.keys())
+            logger.debug(f"Filtered available keys (intersection): {self.available_keys}")
+        else:
+            logger.warning("Failed to get --list-db output; showing all toggles")
+            self.available_keys = set(self.toggle_settings.keys())
+
+        # Загружаем текущие настройки
+        process = QProcess(self)
+        process.finished.connect(self.on_show_ppdb_finished)
+        process.start(self.start_sh, ["cli", "--show-ppdb", self.ppdb_path])
+
+    def on_show_ppdb_finished(self, exit_code, exit_status):
+        """Handle --show-ppdb output."""
+        process = cast(QProcess, self.sender())
+        if exit_code != 0 or exit_status != QProcess.ExitStatus.NormalExit:
+            logger.warning("Failed to load settings, using defaults")
+        else:
+            output = bytes(process.readAllStandardOutput().data()).decode('utf-8', 'ignore').strip()
+            self.current_settings = {}
+            for line in output.split('\n'):
+                if '=' in line and line.strip().startswith('PW_'):
+                    key, val = line.split('=', 1)
+                    self.current_settings[key.strip()] = val.strip()
+            logger.debug(f"Loaded current settings: {self.current_settings}")
+        self.populate_table()
+
+    def populate_table(self):
+        """Populate the table with settings that are available in both lists."""
+        self.settings_table.setRowCount(0)
+        self.value_widgets.clear()
+        self.original_values.clear()
+        self.settings_table.verticalHeader().setVisible(False)
+
+        visible_keys = sorted(self.available_keys) if self.available_keys else sorted(self.toggle_settings.keys())
+
+        for toggle in visible_keys:
+            description = self.toggle_settings.get(toggle)
+            if not description:
+                continue
+
+            row = self.settings_table.rowCount()
+            self.settings_table.insertRow(row)
+
+            name_item = QTableWidgetItem(toggle)
+            name_item.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled)
+            self.settings_table.setItem(row, 0, name_item)
+
+            current_val = self.current_settings.get(toggle, '0')
+            checkbox = QTableWidgetItem()
+            checkbox.setFlags(checkbox.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+            checkbox.setCheckState(Qt.CheckState.Checked if current_val == '1' else Qt.CheckState.Unchecked)
+            checkbox.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.settings_table.setItem(row, 1, checkbox)
+
+            desc_item = QTableWidgetItem(description)
+            desc_item.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled)
+            desc_item.setToolTip(description)
+            desc_item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+            self.settings_table.setItem(row, 2, desc_item)
+
+            self.value_widgets[(row, 1)] = checkbox
+            self.original_values[toggle] = current_val
+
+        self.settings_table.resizeRowsToContents()
+        if self.settings_table.rowCount() > 0:
+            self.settings_table.setCurrentCell(0, 0)
+            self.settings_table.setFocus(Qt.FocusReason.OtherFocusReason)
+
+    def apply_changes(self):
+        """Apply changes by collecting diffs and running --edit-db."""
+        changes = []
+        for key, orig_val in self.original_values.items():
+            row = -1
+            for r in range(self.settings_table.rowCount()):
+                item0 = self.settings_table.item(r, 0)
+                if item0 and item0.text() == key:
+                    row = r
+                    break
+            if row == -1:
+                continue
+
+            item = self.settings_table.item(row, 1)
+            if not item:
+                continue
+
+            new_val = '1' if item.checkState() == Qt.CheckState.Checked else '0'
+            if new_val != orig_val:
+                changes.append(f"{key}={new_val}")
+
+        if not changes:
+            QMessageBox.information(self, _("Info"), _("No changes to apply."))
+            return
+
+        process = QProcess(self)
+        process.finished.connect(self.on_edit_db_finished)
+        args = ["cli", "--edit-db", self.exe_path] + changes
+        process.start(self.start_sh, args)
+        self.apply_button.setEnabled(False)
+
+    def on_edit_db_finished(self, exit_code, exit_status):
+        """Handle --edit-db output."""
+        process = cast(QProcess, self.sender())
+        self.apply_button.setEnabled(True)
+        if exit_code != 0 or exit_status != QProcess.ExitStatus.NormalExit:
+            error_output = bytes(process.readAllStandardError().data()).decode('utf-8', 'ignore')
+            QMessageBox.warning(self, _("Error"), _("Failed to apply changes. Check logs."))
+            logger.error(f"Failed to apply changes: {error_output}")
+        else:
+            self.load_current_settings()
+            QMessageBox.information(self, _("Success"), _("Settings updated successfully."))
+
+    def closeEvent(self, event):
+        super().closeEvent(event)
+
+    def reject(self):
+        super().reject()

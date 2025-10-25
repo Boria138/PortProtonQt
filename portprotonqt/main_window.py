@@ -8,7 +8,7 @@ import psutil
 import re
 
 from portprotonqt.logger import get_logger
-from portprotonqt.dialogs import AddGameDialog, FileExplorer, WinetricksDialog
+from portprotonqt.dialogs import AddGameDialog, FileExplorer, WinetricksDialog, ExeSettingsDialog
 from portprotonqt.game_card import GameCard
 from portprotonqt.animations import DetailPageAnimations
 from portprotonqt.custom_widgets import ClickableLabel, AutoSizeButton, NavLabel, FlowLayout
@@ -2326,6 +2326,14 @@ class MainWindow(QMainWindow):
     def darkenColor(self, color, factor=200):
         return color.darker(factor)
 
+    def open_exe_settings(self, exe_path):
+        """Open the ExeSettingsDialog for the given executable."""
+        if not os.path.exists(exe_path):
+            QMessageBox.warning(self, _("Error"), _("Executable not found: {0}").format(exe_path))
+            return
+        dialog = ExeSettingsDialog(self, self.theme, exe_path)
+        dialog.exec()
+
     def openGameDetailPage(self, name, description, cover_path=None, appid="", exec_line="", controller_support="", last_launch="", formatted_playtime="", protondb_tier="", game_source="", anticheat_status=""):
         detailPage = QWidget()
         self._animations = {}
@@ -2628,8 +2636,6 @@ class MainWindow(QMainWindow):
 
                 clear_layout(hltbLayout)
 
-
-
                 has_data = False
 
                 if main_story_time is not None:
@@ -2712,6 +2718,14 @@ class MainWindow(QMainWindow):
         playButton.setStyleSheet(self.theme.PLAY_BUTTON_STYLE)
         playButton.clicked.connect(lambda: self.toggleGame(exec_line, playButton))
         detailsLayout.addWidget(playButton, alignment=Qt.AlignmentFlag.AlignLeft)
+
+        # Settings button
+        settings_icon = self.theme_manager.get_icon("settings")
+        settings_button = AutoSizeButton(_("Settings"), icon=settings_icon)
+        settings_button.setFixedSize(120, 40)
+        settings_button.setStyleSheet(self.theme.PLAY_BUTTON_STYLE)
+        settings_button.clicked.connect(lambda: self.open_exe_settings(file_to_check))
+        detailsLayout.addWidget(settings_button, alignment=Qt.AlignmentFlag.AlignLeft)
 
         contentFrameLayout.addWidget(detailsWidget)
         mainLayout.addStretch()
