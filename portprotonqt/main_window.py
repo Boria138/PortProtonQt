@@ -1508,9 +1508,10 @@ class MainWindow(QMainWindow):
         QMessageBox.warning(self, _("Error"), f"Failed to launch tool: {error}")
 
     def clear_prefix(self):
-        """Очистка префикса (позже удалить)."""
+        """Очищает префикс"""
         selected_prefix = self.prefixCombo.currentText()
         selected_wine = self.wineCombo.currentText()
+
         if not selected_prefix or not selected_wine:
             return
         if not self.portproton_location:
@@ -1526,98 +1527,38 @@ class MainWindow(QMainWindow):
         if reply != QMessageBox.StandardButton.Yes:
             return
 
-        prefix_dir = os.path.join(self.portproton_location, "data", "prefixes", selected_prefix)
-        if not os.path.exists(prefix_dir):
+        start_sh = os.path.join(self.portproton_location, "data", "scripts", "start.sh")
+        if not os.path.exists(start_sh):
+            QMessageBox.warning(self, _("Error"), _("Missing start.sh script."))
             return
 
-        success = True
-        errors = []
+        self.wine_progress_bar.setVisible(True)
+        self.update_status_message.emit(_("Clearing prefix..."), 0)
 
-        # Удаление файлов
-        files_to_remove = [
-            os.path.join(prefix_dir, "*.dot*"),
-            os.path.join(prefix_dir, "*.prog*"),
-            os.path.join(prefix_dir, ".wine_ver"),
-            os.path.join(prefix_dir, "system.reg"),
-            os.path.join(prefix_dir, "user.reg"),
-            os.path.join(prefix_dir, "userdef.reg"),
-            os.path.join(prefix_dir, "winetricks.log"),
-            os.path.join(prefix_dir, ".update-timestamp"),
-            os.path.join(prefix_dir, "drive_c", ".windows-serial"),
-        ]
+        self.clear_process = QProcess(self)
+        self.clear_process.finished.connect(lambda exitCode, exitStatus: self._on_clear_prefix_finished(exitCode))
+        self.clear_process.errorOccurred.connect(lambda error: self._on_clear_prefix_error(error))
+        cmd = [start_sh, "cli", "--clear_pfx", selected_wine, selected_prefix]
+        self.clear_process.start(cmd[0], cmd[1:])
 
-        import glob
-        for pattern in files_to_remove:
-            if "*" in pattern:  # Глобальный паттерн
-                matches = glob.glob(pattern)
-                for file_path in matches:
-                    try:
-                        if os.path.exists(file_path):
-                            os.remove(file_path)
-                    except Exception as e:
-                        success = False
-                        errors.append(str(e))
-            else:  # Конкретный файл
-                try:
-                    if os.path.exists(pattern):
-                        os.remove(pattern)
-                except Exception as e:
-                    success = False
-                    errors.append(str(e))
+        if not self.clear_process.waitForStarted(5000):
+            self.wine_progress_bar.setVisible(False)
+            self.update_status_message.emit("", 0)
+            QMessageBox.warning(self, _("Error"), _("Failed to start prefix clear process."))
+            return
 
-        # Удаление директорий
-        dirs_to_remove = [
-            os.path.join(prefix_dir, "drive_c", "windows"),
-            os.path.join(prefix_dir, "drive_c", "ProgramData", "Setup"),
-            os.path.join(prefix_dir, "drive_c", "ProgramData", "Windows"),
-            os.path.join(prefix_dir, "drive_c", "ProgramData", "WindowsTask"),
-            os.path.join(prefix_dir, "drive_c", "ProgramData", "Package Cache"),
-            os.path.join(prefix_dir, "drive_c", "users", "Public", "Local Settings", "Application Data", "Microsoft"),
-            os.path.join(prefix_dir, "drive_c", "users", "Public", "Local Settings", "Application Data", "Temp"),
-            os.path.join(prefix_dir, "drive_c", "users", "Public", "Local Settings", "Temporary Internet Files"),
-            os.path.join(prefix_dir, "drive_c", "users", "Public", "Application Data", "Microsoft"),
-            os.path.join(prefix_dir, "drive_c", "users", "Public", "Application Data", "wine_gecko"),
-            os.path.join(prefix_dir, "drive_c", "users", "Public", "Temp"),
-            os.path.join(prefix_dir, "drive_c", "users", "steamuser", "Local Settings", "Application Data", "Microsoft"),
-            os.path.join(prefix_dir, "drive_c", "users", "steamuser", "Local Settings", "Application Data", "Temp"),
-            os.path.join(prefix_dir, "drive_c", "users", "steamuser", "Local Settings", "Temporary Internet Files"),
-            os.path.join(prefix_dir, "drive_c", "users", "steamuser", "Application Data", "Microsoft"),
-            os.path.join(prefix_dir, "drive_c", "users", "steamuser", "Application Data", "wine_gecko"),
-            os.path.join(prefix_dir, "drive_c", "users", "steamuser", "Temp"),
-            os.path.join(prefix_dir, "drive_c", "Program Files", "Internet Explorer"),
-            os.path.join(prefix_dir, "drive_c", "Program Files", "Windows Media Player"),
-            os.path.join(prefix_dir, "drive_c", "Program Files", "Windows NT"),
-            os.path.join(prefix_dir, "drive_c", "Program Files (x86)", "Internet Explorer"),
-            os.path.join(prefix_dir, "drive_c", "Program Files (x86)", "Windows Media Player"),
-            os.path.join(prefix_dir, "drive_c", "Program Files (x86)", "Windows NT"),
-        ]
-
-        import shutil
-        for dir_path in dirs_to_remove:
-            try:
-                if os.path.exists(dir_path):
-                    shutil.rmtree(dir_path)
-            except Exception as e:
-                success = False
-                errors.append(str(e))
-
-        tmp_path = os.path.join(self.portproton_location, "data", "tmp")
-        if os.path.exists(tmp_path):
-            import glob
-            bin_files = glob.glob(os.path.join(tmp_path, "*.bin"))
-            foz_files = glob.glob(os.path.join(tmp_path, "*.foz"))
-            for file_path in bin_files + foz_files:
-                try:
-                    os.remove(file_path)
-                except Exception as e:
-                    success = False
-                    errors.append(str(e))
-
-        if success:
-            QMessageBox.information(self, _("Success"), _("Prefix '{}' cleared successfully.").format(selected_prefix))
+    def _on_clear_prefix_finished(self, exitCode):
+        self.wine_progress_bar.setVisible(False)
+        self.update_status_message.emit("", 0)
+        if exitCode == 0:
+            QMessageBox.information(self, _("Success"), _("Prefix cleared successfully."))
         else:
-            error_msg = _("Prefix '{}' cleared with errors:\n{}").format(selected_prefix, "\n".join(errors[:5]))
-            QMessageBox.warning(self, _("Warning"), error_msg)
+            QMessageBox.warning(self, _("Error"), _("Prefix clear failed with exit code {}.").format(exitCode))
+
+    def _on_clear_prefix_error(self, error):
+        self.wine_progress_bar.setVisible(False)
+        self.update_status_message.emit("", 0)
+        QMessageBox.warning(self, _("Error"), _("Failed to run clear prefix command: {}").format(error))
 
     def create_prefix_backup(self):
         selected_prefix = self.prefixCombo.currentText()
