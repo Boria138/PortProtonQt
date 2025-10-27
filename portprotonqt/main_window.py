@@ -73,7 +73,7 @@ class MainWindow(QMainWindow):
         self.game_processes = []
         self.target_exe = None
         self.current_running_button = None
-        self.portproton_location = get_portproton_location()
+        self.portproton_location, self.start_sh = get_portproton_location()
 
         self.game_library_manager = GameLibraryManager(self, self.theme, None)
 
@@ -458,11 +458,11 @@ class MainWindow(QMainWindow):
         self.current_install_script = script_name
         self.seen_progress = False
         self.current_percent = 0.0
-        start_sh = os.path.join(self.portproton_location or "", "data", "scripts", "start.sh") if self.portproton_location else ""
-        if not os.path.exists(start_sh):
+        start_sh = self.start_sh
+        if not start_sh:
             self.installing = False
             return
-        cmd = [start_sh, "cli", "--autoinstall", script_name]
+        cmd = start_sh + ["cli", "--autoinstall", script_name]
         self.install_process = QProcess(self)
         self.install_process.finished.connect(self.on_install_finished)
         self.install_process.errorOccurred.connect(self.on_install_error)
@@ -1424,12 +1424,10 @@ class MainWindow(QMainWindow):
         prefix = self.prefixCombo.currentText()
         if not wine or not prefix:
             return
-        if not self.portproton_location:
+        if not self.portproton_location or not self.start_sh:
             return
-        start_sh = os.path.join(self.portproton_location, "data", "scripts", "start.sh")
-        if not os.path.exists(start_sh):
-            return
-        cmd = [start_sh, "cli", cli_arg, wine, prefix]
+        start_sh = self.start_sh
+        cmd = start_sh + ["cli", cli_arg, wine, prefix]
 
         # Показываем прогресс-бар перед запуском
         self.wine_progress_bar.setVisible(True)
@@ -1514,7 +1512,7 @@ class MainWindow(QMainWindow):
 
         if not selected_prefix or not selected_wine:
             return
-        if not self.portproton_location:
+        if not self.portproton_location or not self.start_sh:
             return
 
         reply = QMessageBox.question(
@@ -1527,10 +1525,7 @@ class MainWindow(QMainWindow):
         if reply != QMessageBox.StandardButton.Yes:
             return
 
-        start_sh = os.path.join(self.portproton_location, "data", "scripts", "start.sh")
-        if not os.path.exists(start_sh):
-            QMessageBox.warning(self, _("Error"), _("Missing start.sh script."))
-            return
+        start_sh = self.start_sh
 
         self.wine_progress_bar.setVisible(True)
         self.update_status_message.emit(_("Clearing prefix..."), 0)
@@ -1538,7 +1533,7 @@ class MainWindow(QMainWindow):
         self.clear_process = QProcess(self)
         self.clear_process.finished.connect(lambda exitCode, exitStatus: self._on_clear_prefix_finished(exitCode))
         self.clear_process.errorOccurred.connect(lambda error: self._on_clear_prefix_error(error))
-        cmd = [start_sh, "cli", "--clear_pfx", selected_wine, selected_prefix]
+        cmd = start_sh + ["cli", "--clear_pfx", selected_wine, selected_prefix]
         self.clear_process.start(cmd[0], cmd[1:])
 
         if not self.clear_process.waitForStarted(5000):
@@ -1570,14 +1565,12 @@ class MainWindow(QMainWindow):
 
     def _perform_backup(self, backup_dir, prefix_name):
         os.makedirs(backup_dir, exist_ok=True)
-        if not self.portproton_location:
+        if not self.portproton_location or not self.start_sh:
             return
-        start_sh = os.path.join(self.portproton_location, "data", "scripts", "start.sh")
-        if not os.path.exists(start_sh):
-            return
+        start_sh = self.start_sh
         self.backup_process = QProcess(self)
         self.backup_process.finished.connect(lambda exitCode, exitStatus: self._on_backup_finished(exitCode))
-        cmd = [start_sh, "--backup-prefix", prefix_name, backup_dir]
+        cmd = start_sh + ["--backup-prefix", prefix_name, backup_dir]
         self.backup_process.start(cmd[0], cmd[1:])
         if not self.backup_process.waitForStarted():
             QMessageBox.warning(self, _("Error"), _("Failed to start backup process."))
@@ -1590,14 +1583,12 @@ class MainWindow(QMainWindow):
     def _perform_restore(self, file_path):
         if not file_path or not os.path.exists(file_path):
             return
-        if not self.portproton_location:
+        if not self.portproton_location or not self.start_sh:
             return
-        start_sh = os.path.join(self.portproton_location, "data", "scripts", "start.sh")
-        if not os.path.exists(start_sh):
-            return
+        start_sh = self.start_sh
         self.restore_process = QProcess(self)
         self.restore_process.finished.connect(lambda exitCode, exitStatus: self._on_restore_finished(exitCode))
-        cmd = [start_sh, "--restore-prefix", file_path]
+        cmd = start_sh + ["--restore-prefix", file_path]
         self.restore_process.start(cmd[0], cmd[1:])
         if not self.restore_process.waitForStarted():
             QMessageBox.warning(self, _("Error"), _("Failed to start restore process."))
@@ -2890,10 +2881,7 @@ class MainWindow(QMainWindow):
                 env_vars = os.environ.copy()
                 env_vars['LEGENDARY_CONFIG_PATH'] = self.legendary_config_path
 
-                wrapper = "flatpak run ru.linux_gaming.PortProton"
-                if self.portproton_location is not None and ".var" not in self.portproton_location:
-                    start_sh = os.path.join(self.portproton_location, "data", "scripts", "start.sh")
-                    wrapper = start_sh
+                wrapper = self.start_sh or ""
 
                 cmd = [wrapper, game_exe]
 
@@ -2986,13 +2974,6 @@ class MainWindow(QMainWindow):
             self.target_exe = current_exe
             exe_name = os.path.splitext(current_exe)[0]
             env_vars = os.environ.copy()
-
-            if entry_exec_split[0] == "env" and len(entry_exec_split) > 1 and 'data/scripts/start.sh' in entry_exec_split[1]:
-                env_vars['START_FROM_STEAM'] = '1'
-                env_vars['PROCESS_LOG'] = '1'
-            elif entry_exec_split[0] == "flatpak":
-                env_vars['START_FROM_STEAM'] = '1'
-                env_vars['PROCESS_LOG'] = '1'
 
             # Запускаем игру
             try:

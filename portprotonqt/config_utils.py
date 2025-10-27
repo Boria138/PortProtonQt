@@ -1,11 +1,13 @@
 import os
 import configparser
 import shutil
+import subprocess
 from portprotonqt.logger import get_logger
 
 logger = get_logger(__name__)
 
 _portproton_location = None
+_portproton_start_sh = None
 
 # Paths to configuration files
 CONFIG_FILE = os.path.join(
@@ -101,33 +103,65 @@ def read_file_content(file_path):
         return f.read().strip()
 
 def get_portproton_location():
-    """Returns the path to the PortProton directory.
+    """Returns the path to the PortProton directory and start.sh command list.
+
     Checks the cached path first. If not set, reads from PORTPROTON_CONFIG_FILE.
-    If the path is invalid, uses the default directory.
+    If the path is invalid, uses the default flatpak directory.
+    If Flatpak package ru.linux_gaming.PortProton is installed, returns the Flatpak run command list.
     """
-    global _portproton_location
-    if _portproton_location is not None:
-        return _portproton_location
+    global _portproton_location, _portproton_start_sh
+
+    if '_portproton_location' in globals() and _portproton_location is not None:
+        return _portproton_location, _portproton_start_sh
+
+    location = None
 
     if os.path.isfile(PORTPROTON_CONFIG_FILE):
         try:
             location = read_file_content(PORTPROTON_CONFIG_FILE).strip()
             if location and os.path.isdir(location):
-                _portproton_location = location
                 logger.info(f"PortProton path from configuration: {location}")
-                return _portproton_location
-            logger.warning(f"Invalid PortProton path in configuration: {location}, using default path")
+            else:
+                logger.warning(f"Invalid PortProton path in configuration: {location}, using defaults")
+                location = None
         except (OSError, PermissionError) as e:
-            logger.warning(f"Failed to read PortProton configuration file: {e}, using default path")
+            logger.warning(f"Failed to read PortProton configuration file: {e}")
+            location = None
 
-    default_dir = os.path.join(os.path.expanduser("~"), ".var", "app", "ru.linux_gaming.PortProton")
-    if os.path.isdir(default_dir):
-        _portproton_location = default_dir
-        logger.info(f"Using flatpak PortProton directory: {default_dir}")
-        return _portproton_location
+    default_flatpak_dir = os.path.join(os.path.expanduser("~"), ".var", "app", "ru.linux_gaming.PortProton")
+    is_flatpak_installed = False
+    try:
+        result = subprocess.run(
+            ["flatpak", "list"],
+            capture_output=True,
+            text=True,
+            check=False
+        )
+        if "ru.linux_gaming.PortProton" in result.stdout:
+            is_flatpak_installed = True
+    except Exception:
+        pass
 
-    logger.warning("PortProton configuration and flatpak directory not found")
-    return None
+    if is_flatpak_installed:
+        _portproton_location = default_flatpak_dir if os.path.isdir(default_flatpak_dir) else None
+        _portproton_start_sh = ["flatpak", "run", "ru.linux_gaming.PortProton"]
+        logger.info("Detected Flatpak installation: using 'flatpak run ru.linux_gaming.PortProton'")
+    elif location:
+        _portproton_location = location
+        start_sh_path = os.path.join(location, "data", "scripts", "start.sh")
+        _portproton_start_sh = [start_sh_path] if os.path.exists(start_sh_path) else None
+        logger.info(f"Using PortProton installation from config path: {_portproton_location}")
+    elif os.path.isdir(default_flatpak_dir):
+        _portproton_location = default_flatpak_dir
+        start_sh_path = os.path.join(default_flatpak_dir, "data", "scripts", "start.sh")
+        _portproton_start_sh = [start_sh_path] if os.path.exists(start_sh_path) else None
+        logger.info(f"Using Flatpak PortProton directory: {_portproton_location}")
+    else:
+        logger.warning("PortProton configuration and Flatpak directory not found")
+        _portproton_location = None
+        _portproton_start_sh = None
+
+    return _portproton_location, _portproton_start_sh
 
 def parse_desktop_entry(file_path):
     """Reads and parses a .desktop file using configparser.

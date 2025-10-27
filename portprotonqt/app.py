@@ -19,7 +19,6 @@ __app_id__ = "ru.linux_gaming.PortProtonQt"
 __app_name__ = "PortProtonQt"
 __app_version__ = "0.1.8"
 
-
 def get_version():
     try:
         commit = subprocess.check_output(
@@ -30,18 +29,16 @@ def get_version():
     except (subprocess.CalledProcessError, FileNotFoundError, OSError):
         return __app_version__
 
-
 def main():
     os.environ["PW_CLI"] = "1"
     os.environ["PROCESS_LOG"] = "1"
     os.environ["START_FROM_STEAM"] = "1"
 
-    portproton_path = get_portproton_location()
-    if portproton_path is None:
+    portproton_path, start_sh = get_portproton_location()
+    if portproton_path is None or start_sh is None:
         return
 
-    script_path = os.path.join(portproton_path, "data", "scripts", "start.sh")
-    subprocess.run([script_path, "cli", "--initial"])
+    subprocess.run(start_sh + ["cli", "--initial"])
 
     app = QApplication(sys.argv)
     app.setWindowIcon(QIcon.fromTheme(__app_id__))
@@ -160,7 +157,6 @@ def main():
     app.aboutToQuit.connect(cleanup_on_exit)
 
     sys.exit(app.exec())
-
 
 if __name__ == "__main__":
     main()
