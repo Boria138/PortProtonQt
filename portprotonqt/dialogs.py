@@ -2,7 +2,7 @@ import os
 import tempfile
 import re
 from typing import cast, TYPE_CHECKING
-from PySide6.QtGui import QPixmap, QIcon, QTextCursor
+from PySide6.QtGui import QPixmap, QIcon, QTextCursor, QColor
 from PySide6.QtWidgets import (
     QDialog, QFormLayout, QHBoxLayout, QLabel, QVBoxLayout, QListWidget, QScrollArea, QWidget, QListWidgetItem, QSizePolicy, QApplication, QProgressBar, QScroller,
     QTabWidget, QTableWidget, QHeaderView, QMessageBox, QTableWidgetItem, QTextEdit, QAbstractItemView, QStackedWidget
@@ -1694,6 +1694,7 @@ class ExeSettingsDialog(QDialog):
         self.value_widgets = {}
         self.original_values = {}
         self.available_keys = set()
+        self.blocked_keys = set()
         self.branch_name = _("Unknown")
 
         self.setWindowTitle(_("Exe Settings"))
@@ -1830,15 +1831,21 @@ class ExeSettingsDialog(QDialog):
         """Handle --list-db output and extract available keys."""
         process = cast(QProcess, self.sender())
         self.available_keys = set()
+        self.blocked_keys = set()
         if exit_code == 0 and exit_status == QProcess.ExitStatus.NormalExit:
             output = bytes(process.readAllStandardOutput().data()).decode('utf-8', 'ignore')
             for line in output.splitlines():
                 if "Branch in used:" in line:
                     self.branch_name = line.split(":", 1)[1].strip()
                     self.branch_label.setText(_("Detected branch: ") + self.branch_name)
-                for token in line.split():
-                    if token.startswith("PW_"):
-                        self.available_keys.add(token.strip())
+                    continue
+                stripped_line = line.strip()
+                if stripped_line.startswith("PW_"):
+                    parts = stripped_line.split(maxsplit=1)
+                    key = parts[0]
+                    self.available_keys.add(key)
+                    if len(parts) > 1 and parts[1] == "blocked":
+                        self.blocked_keys.add(key)
 
             # Показываем только пересечение
             self.available_keys &= set(self.toggle_settings.keys())
@@ -1865,6 +1872,11 @@ class ExeSettingsDialog(QDialog):
                     key, val = line.split('=', 1)
                     self.current_settings[key.strip()] = val.strip()
             logger.debug(f"Loaded current settings: {self.current_settings}")
+
+        # Force blocked settings to '0'
+        for key in self.blocked_keys:
+            self.current_settings[key] = '0'
+
         self.populate_table()
 
     def populate_table(self):
@@ -1886,21 +1898,29 @@ class ExeSettingsDialog(QDialog):
 
             name_item = QTableWidgetItem(toggle)
             name_item.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled)
-            self.settings_table.setItem(row, 0, name_item)
 
             current_val = self.current_settings.get(toggle, '0')
+            is_blocked = toggle in self.blocked_keys
             checkbox = QTableWidgetItem()
             checkbox.setFlags(checkbox.flags() | Qt.ItemFlag.ItemIsUserCheckable)
-            checkbox.setCheckState(Qt.CheckState.Checked if current_val == '1' else Qt.CheckState.Unchecked)
+            check_state = Qt.CheckState.Checked if current_val == '1' and not is_blocked else Qt.CheckState.Unchecked
+            checkbox.setCheckState(check_state)
             checkbox.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            if is_blocked:
+                checkbox.setFlags(checkbox.flags() & ~Qt.ItemFlag.ItemIsUserCheckable)
+                checkbox.setBackground(QColor(240, 240, 240))
+                name_item.setForeground(QColor(128, 128, 128))
             self.settings_table.setItem(row, 1, checkbox)
 
             desc_item = QTableWidgetItem(description)
             desc_item.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled)
             desc_item.setToolTip(description)
             desc_item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+            if is_blocked:
+                desc_item.setForeground(QColor(128, 128, 128))
             self.settings_table.setItem(row, 2, desc_item)
 
+            self.settings_table.setItem(row, 0, name_item)
             self.value_widgets[(row, 1)] = checkbox
             self.original_values[toggle] = current_val
 
@@ -1913,6 +1933,8 @@ class ExeSettingsDialog(QDialog):
         """Apply changes by collecting diffs and running --edit-db."""
         changes = []
         for key, orig_val in self.original_values.items():
+            if key in self.blocked_keys:
+                continue  # Skip blocked keys
             row = -1
             for r in range(self.settings_table.rowCount()):
                 item0 = self.settings_table.item(r, 0)
