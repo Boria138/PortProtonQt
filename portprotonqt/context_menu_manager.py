@@ -11,7 +11,7 @@ from PySide6.QtWidgets import QMessageBox, QDialog, QMenu, QLineEdit, QApplicati
 from PySide6.QtCore import QUrl, QPoint, QObject, Signal, Qt
 from PySide6.QtGui import QDesktopServices, QIcon, QKeySequence
 from portprotonqt.localization import _
-from portprotonqt.config_utils import parse_desktop_entry, read_favorites, save_favorites, read_favorite_folders, save_favorite_folders
+from portprotonqt.config_utils import parse_desktop_entry, read_favorites, save_favorites, read_favorite_folders, save_favorite_folders, get_portproton_start_command
 from portprotonqt.steam_api import is_game_in_steam, add_to_steam, remove_from_steam
 from portprotonqt.egs_api import add_egs_to_steam, get_egs_executable, remove_egs_from_steam
 from portprotonqt.dialogs import AddGameDialog, FileExplorer, generate_thumbnail
@@ -406,16 +406,7 @@ class ContextMenuManager:
                 )
                 return
             # Construct EGS launch command
-            wrapper = "flatpak run ru.linux_gaming.PortProton"
-            start_sh_path = os.path.join(self.portproton_location, "data", "scripts", "start.sh")
-            if self.portproton_location and ".var" not in self.portproton_location:
-                wrapper = start_sh_path
-                if not os.path.exists(start_sh_path):
-                    self.signals.show_warning_dialog.emit(
-                        _("Error"),
-                        _("start.sh not found at {path}").format(path=start_sh_path)
-                    )
-                    return
+            wrapper = get_portproton_start_command()
             exec_line = f'"{self.legendary_path}" launch {game_card.appid} --no-wine --wrapper "env START_FROM_STEAM=1 {wrapper}"'
         else:
             exec_line = self._get_exec_line(game_card.name, game_card.exec_line)

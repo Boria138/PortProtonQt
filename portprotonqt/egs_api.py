@@ -13,7 +13,7 @@ from portprotonqt.localization import get_egs_language, _
 from portprotonqt.logger import get_logger
 from portprotonqt.image_utils import load_pixmap_async
 from portprotonqt.time_utils import parse_playtime_file, format_playtime, get_last_launch, get_last_launch_timestamp
-from portprotonqt.config_utils import get_portproton_location
+from portprotonqt.config_utils import get_portproton_location, get_portproton_start_command
 from portprotonqt.steam_api import (
     get_weanticheatyet_status_async, get_steam_apps_and_index_async, get_protondb_tier_async,
     search_app, get_steam_home, get_last_steam_user, convert_steam_id, generate_thumbnail, call_steam_api
@@ -254,14 +254,7 @@ def add_egs_to_steam(app_name: str, game_title: str, legendary_path: str, callba
         return
 
     # Determine wrapper
-    wrapper = "flatpak run ru.linux_gaming.PortProton"
-    start_sh_path = os.path.join(portproton_dir, "data", "scripts", "start.sh")
-    if portproton_dir is not None and ".var" not in portproton_dir:
-        wrapper = start_sh_path
-        if not os.path.exists(start_sh_path):
-            logger.error(f"start.sh not found at {start_sh_path}")
-            callback((False, f"start.sh not found at {start_sh_path}"))
-            return
+    wrapper = get_portproton_start_command()
 
     # Create launch script
     steam_scripts_dir = os.path.join(portproton_dir, "steam_scripts")

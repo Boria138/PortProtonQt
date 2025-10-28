@@ -10,7 +10,7 @@ from portprotonqt.main_window import MainWindow
 from portprotonqt.config_utils import (
     save_fullscreen_config,
     read_fullscreen_config,
-    get_portproton_location,
+    get_portproton_start_command
 )
 from portprotonqt.logger import get_logger, setup_logger
 from portprotonqt.cli import parse_args
@@ -34,8 +34,9 @@ def main():
     os.environ["PROCESS_LOG"] = "1"
     os.environ["START_FROM_STEAM"] = "1"
 
-    portproton_path, start_sh = get_portproton_location()
-    if portproton_path is None or start_sh is None:
+    start_sh = get_portproton_start_command()
+
+    if start_sh is None:
         return
 
     subprocess.run(start_sh + ["cli", "--initial"])

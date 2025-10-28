@@ -30,7 +30,7 @@ from portprotonqt.config_utils import (
     save_display_filter, save_proxy_config, read_proxy_config, read_fullscreen_config,
     save_fullscreen_config, read_window_geometry, save_window_geometry, reset_config,
     clear_cache, read_auto_fullscreen_gamepad, save_auto_fullscreen_gamepad, read_rumble_config, save_rumble_config, read_gamepad_type, save_gamepad_type, read_minimize_to_tray, save_minimize_to_tray,
-    read_auto_card_size, save_auto_card_size
+    read_auto_card_size, save_auto_card_size, get_portproton_start_command
 )
 from portprotonqt.localization import _, get_egs_language, read_metadata_translations
 from portprotonqt.howlongtobeat_api import HowLongToBeat
@@ -73,7 +73,8 @@ class MainWindow(QMainWindow):
         self.game_processes = []
         self.target_exe = None
         self.current_running_button = None
-        self.portproton_location, self.start_sh = get_portproton_location()
+        self.portproton_location = get_portproton_location()
+        self.start_sh = get_portproton_start_command()
 
         self.game_library_manager = GameLibraryManager(self, self.theme, None)
 

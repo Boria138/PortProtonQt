@@ -103,16 +103,11 @@ def read_file_content(file_path):
         return f.read().strip()
 
 def get_portproton_location():
-    """Returns the path to the PortProton directory and start.sh command list.
+    """Возвращает путь к PortProton каталогу (строку) или None."""
+    global _portproton_location
 
-    Checks the cached path first. If not set, reads from PORTPROTON_CONFIG_FILE.
-    If the path is invalid, uses the default flatpak directory.
-    If Flatpak package ru.linux_gaming.PortProton is installed, returns the Flatpak run command list.
-    """
-    global _portproton_location, _portproton_start_sh
-
-    if '_portproton_location' in globals() and _portproton_location is not None:
-        return _portproton_location, _portproton_start_sh
+    if _portproton_location is not None:
+        return _portproton_location
 
     location = None
 
@@ -120,16 +115,28 @@ def get_portproton_location():
         try:
             location = read_file_content(PORTPROTON_CONFIG_FILE).strip()
             if location and os.path.isdir(location):
+                _portproton_location = location
                 logger.info(f"PortProton path from configuration: {location}")
-            else:
-                logger.warning(f"Invalid PortProton path in configuration: {location}, using defaults")
-                location = None
+                return _portproton_location
+            logger.warning(f"Invalid PortProton path in configuration: {location}, using defaults")
         except (OSError, PermissionError) as e:
             logger.warning(f"Failed to read PortProton configuration file: {e}")
-            location = None
 
     default_flatpak_dir = os.path.join(os.path.expanduser("~"), ".var", "app", "ru.linux_gaming.PortProton")
-    is_flatpak_installed = False
+    if os.path.isdir(default_flatpak_dir):
+        _portproton_location = default_flatpak_dir
+        logger.info(f"Using Flatpak PortProton directory: {default_flatpak_dir}")
+        return _portproton_location
+
+    logger.warning("PortProton configuration and Flatpak directory not found")
+    return None
+
+def get_portproton_start_command():
+    """Возвращает список команд для запуска PortProton (start.sh или flatpak run)."""
+    portproton_path = get_portproton_location()
+    if not portproton_path:
+        return None
+
     try:
         result = subprocess.run(
             ["flatpak", "list"],
@@ -138,30 +145,18 @@ def get_portproton_location():
             check=False
         )
         if "ru.linux_gaming.PortProton" in result.stdout:
-            is_flatpak_installed = True
+            logger.info("Detected Flatpak installation")
+            return ["flatpak", "run", "ru.linux_gaming.PortProton"]
     except Exception:
         pass
 
-    if is_flatpak_installed:
-        _portproton_location = default_flatpak_dir if os.path.isdir(default_flatpak_dir) else None
-        _portproton_start_sh = ["flatpak", "run", "ru.linux_gaming.PortProton"]
-        logger.info("Detected Flatpak installation: using 'flatpak run ru.linux_gaming.PortProton'")
-    elif location:
-        _portproton_location = location
-        start_sh_path = os.path.join(location, "data", "scripts", "start.sh")
-        _portproton_start_sh = [start_sh_path] if os.path.exists(start_sh_path) else None
-        logger.info(f"Using PortProton installation from config path: {_portproton_location}")
-    elif os.path.isdir(default_flatpak_dir):
-        _portproton_location = default_flatpak_dir
-        start_sh_path = os.path.join(default_flatpak_dir, "data", "scripts", "start.sh")
-        _portproton_start_sh = [start_sh_path] if os.path.exists(start_sh_path) else None
-        logger.info(f"Using Flatpak PortProton directory: {_portproton_location}")
-    else:
-        logger.warning("PortProton configuration and Flatpak directory not found")
-        _portproton_location = None
-        _portproton_start_sh = None
+    start_sh_path = os.path.join(portproton_path, "data", "scripts", "start.sh")
+    if os.path.exists(start_sh_path):
+        return [start_sh_path]
 
-    return _portproton_location, _portproton_start_sh
+    logger.warning("Neither flatpak nor start.sh found for PortProton")
+    return None
+
 
 def parse_desktop_entry(file_path):
     """Reads and parses a .desktop file using configparser.

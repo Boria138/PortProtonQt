@@ -58,7 +58,7 @@ class PortProtonAPI:
         self.xdg_data_home = os.getenv("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share"))
         self.custom_data_dir = os.path.join(self.xdg_data_home, "PortProtonQt", "custom_data")
         os.makedirs(self.custom_data_dir, exist_ok=True)
-        self.portproton_location, self.portproton_start_sh = get_portproton_location()
+        self.portproton_location = get_portproton_location()
         self.repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         self.builtin_custom_folder = os.path.join(self.repo_root, "custom_data")
         self._topics_data = None

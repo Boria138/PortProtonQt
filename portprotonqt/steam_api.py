@@ -13,7 +13,7 @@ from portprotonqt.logger import get_logger
 from portprotonqt.localization import get_steam_language
 from portprotonqt.downloader import Downloader
 from portprotonqt.dialogs import generate_thumbnail
-from portprotonqt.config_utils import get_portproton_location
+from portprotonqt.config_utils import get_portproton_location, get_portproton_start_command
 from collections.abc import Callable
 import re
 import shutil
@@ -1004,7 +1004,8 @@ def add_to_steam(game_name: str, exec_line: str, cover_path: str) -> tuple[bool,
         return (False, f"Executable file not found: {exe_path}")
 
     portproton_dir = get_portproton_location()
-    if not portproton_dir:
+    start_sh = get_portproton_start_command()
+    if not portproton_dir or not start_sh:
         logger.error("PortProton directory not found")
         return (False, "PortProton directory not found")
 
@@ -1013,17 +1014,12 @@ def add_to_steam(game_name: str, exec_line: str, cover_path: str) -> tuple[bool,
 
     safe_game_name = re.sub(r'[<>:"/\\|?*]', '_', game_name.strip())
     script_path = os.path.join(steam_scripts_dir, f"{safe_game_name}.sh")
-    start_sh_path = os.path.join(portproton_dir, "data", "scripts", "start.sh")
-
-    if not os.path.exists(start_sh_path):
-        logger.error(f"start.sh not found at {start_sh_path}")
-        return (False, f"start.sh not found at {start_sh_path}")
 
     if not os.path.exists(script_path):
         script_content = f"""#!/usr/bin/env bash
 export LD_PRELOAD=
 export START_FROM_STEAM=1
-"{start_sh_path}" "{exe_path}" "$@"
+"{start_sh}" "{exe_path}" "$@"
 """
         try:
             with open(script_path, "w", encoding="utf-8") as f:
