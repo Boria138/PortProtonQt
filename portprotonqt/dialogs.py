@@ -5,9 +5,8 @@ from typing import cast, TYPE_CHECKING
 from PySide6.QtGui import QPixmap, QIcon, QTextCursor, QColor
 from PySide6.QtWidgets import (
     QDialog, QFormLayout, QHBoxLayout, QLabel, QVBoxLayout, QListWidget, QScrollArea, QWidget, QListWidgetItem, QSizePolicy, QApplication, QProgressBar, QScroller,
-    QTabWidget, QTableWidget, QHeaderView, QMessageBox, QTableWidgetItem, QTextEdit, QAbstractItemView, QStackedWidget
+    QTabWidget, QTableWidget, QHeaderView, QMessageBox, QTableWidgetItem, QTextEdit, QAbstractItemView, QStackedWidget, QComboBox
 )
-
 from PySide6.QtCore import Qt, QObject, Signal, QMimeDatabase, QTimer, QThreadPool, QRunnable, Slot, QProcess, QProcessEnvironment
 from icoextract import IconExtractor, IconExtractorError
 from PIL import Image
@@ -1674,27 +1673,32 @@ class WinetricksDialog(QDialog):
         if self.input_manager:
             self.input_manager.disable_winetricks_mode()
         super().reject()
-
 class ExeSettingsDialog(QDialog):
     def __init__(self, parent=None, theme=None, exe_path=None):
         super().__init__(parent)
         self.theme = theme if theme else theme_manager.apply_theme(read_theme_from_config())
         self.exe_path = exe_path
         if not self.exe_path:
-            logger.error("Exe path not provided")
             return
         self.portproton_path = get_portproton_location()
         if self.portproton_path is None:
             logger.error("PortProton location not found")
             return
         base_path = os.path.join(self.portproton_path, "data")
-        self.start_sh = os.path.join(base_path, "scripts", "start.sh")
-        self.ppdb_path = self.exe_path + ".ppdb" if not self.exe_path.endswith('.ppdb') else self.exe_path
+        self.start_sh = [os.path.join(base_path, "scripts", "start.sh")]
+
         self.current_settings = {}
         self.value_widgets = {}
         self.original_values = {}
+        self.advanced_widgets = {}
+        self.original_display_values = {}
         self.available_keys = set()
         self.blocked_keys = set()
+        self.numa_nodes = {}
+        self.is_amd = False
+        self.locale_options = []
+        self.logical_core_options = []
+        self.amd_vulkan_drivers = []
         self.branch_name = _("Unknown")
 
         self.setWindowTitle(_("Exe Settings"))
@@ -1717,24 +1721,15 @@ class ExeSettingsDialog(QDialog):
 
         self.current_theme_name = read_theme_from_config()
 
-        # Create hints widget using common function
-        self.hints_widget, self.hints_labels = create_dialog_hints_widget(
-            self.theme, self.main_window, self.input_manager, context='winetricks'
-        )
-        self.main_layout.addWidget(self.hints_widget)
-
-        # Connect signals
-        if self.input_manager:
-            self.input_manager.button_event.connect(
-                lambda *args: update_dialog_hints(self.hints_labels, self.main_window, self.input_manager, theme_manager, self.current_theme_name)
-            )
-            self.input_manager.dpad_moved.connect(
-                lambda *args: update_dialog_hints(self.hints_labels, self.main_window, self.input_manager, theme_manager, self.current_theme_name)
-            )
-            update_dialog_hints(self.hints_labels, self.main_window, self.input_manager, theme_manager, self.current_theme_name)
-
         # Load current settings (includes list-db)
         self.load_current_settings()
+
+    def _get_process_args(self, subcommand_args):
+        """Get the full arguments for QProcess.start, handling flatpak separator."""
+        if self.start_sh[0] == "flatpak":
+            return self.start_sh[1:] + ["--"] + subcommand_args
+        else:
+            return self.start_sh + subcommand_args
 
     def init_toggle_settings(self):
         """Initialize predefined toggle settings with descriptions."""
@@ -1786,10 +1781,15 @@ class ExeSettingsDialog(QDialog):
         self.main_layout.setContentsMargins(10, 10, 10, 10)
         self.main_layout.setSpacing(10)
 
-        # Метка с текущей веткой (STABLE / DEVEL)
-        self.branch_label = QLabel(_("Detected branch: Unknown"))
-        self.branch_label.setStyleSheet("font-weight: bold;")
-        self.main_layout.addWidget(self.branch_label)
+        # Tab widget
+        self.tab_widget = QTabWidget()
+        self.main_tab = QWidget()
+        self.main_tab_layout = QVBoxLayout(self.main_tab)
+        self.advanced_tab = QWidget()
+        self.advanced_tab_layout = QVBoxLayout(self.advanced_tab)
+
+        self.tab_widget.addTab(self.main_tab, _("Main"))
+        self.tab_widget.addTab(self.advanced_tab, _("Advanced"))
 
         # Таблица настроек
         self.settings_table = QTableWidget()
@@ -1806,12 +1806,31 @@ class ExeSettingsDialog(QDialog):
         self.settings_table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         self.settings_table.setTextElideMode(Qt.TextElideMode.ElideNone)
         self.settings_table.setStyleSheet(self.theme.WINETRICKS_TABBLE_STYLE)
-        self.main_layout.addWidget(self.settings_table)
+        self.main_tab_layout.addWidget(self.settings_table)
+
+        # Таблица Advanced
+        self.advanced_table = QTableWidget()
+        self.advanced_table.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.advanced_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.advanced_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.advanced_table.setColumnCount(3)
+        self.advanced_table.setHorizontalHeaderLabels([_("Setting"), _("Value"), _("Description")])
+        self.advanced_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        self.advanced_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
+        self.advanced_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
+        self.advanced_table.horizontalHeader().resizeSection(1, 200)
+        self.advanced_table.setWordWrap(True)
+        self.advanced_table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.advanced_table.setTextElideMode(Qt.TextElideMode.ElideNone)
+        self.advanced_table.setStyleSheet(self.theme.WINETRICKS_TABBLE_STYLE)
+        self.advanced_tab_layout.addWidget(self.advanced_table)
+
+        self.main_layout.addWidget(self.tab_widget)
 
         # Кнопки
         button_layout = QHBoxLayout()
-        self.apply_button = AutoSizeButton(_("Apply"), icon=theme_manager.get_icon("apply"))
-        self.cancel_button = AutoSizeButton(_("Cancel"), icon=theme_manager.get_icon("cancel"))
+        self.apply_button = AutoSizeButton(_("Apply"), icon=ThemeManager().get_icon("apply"))
+        self.cancel_button = AutoSizeButton(_("Cancel"), icon=ThemeManager().get_icon("cancel"))
         self.apply_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.cancel_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         button_layout.addWidget(self.apply_button)
@@ -1821,69 +1840,107 @@ class ExeSettingsDialog(QDialog):
         self.apply_button.clicked.connect(self.apply_changes)
         self.cancel_button.clicked.connect(self.reject)
 
+
     def load_current_settings(self):
         """Load available toggles first, then current settings."""
         process = QProcess(self)
         process.finished.connect(self.on_list_db_finished)
-        process.start(self.start_sh, ["cli", "--list-db"])
+        process.start(self.start_sh[0], ["cli", "--list-db"])
+
 
     def on_list_db_finished(self, exit_code, exit_status):
-        """Handle --list-db output and extract available keys."""
+        """Handle --list-db output and extract available keys and system info."""
         process = cast(QProcess, self.sender())
         self.available_keys = set()
         self.blocked_keys = set()
         if exit_code == 0 and exit_status == QProcess.ExitStatus.NormalExit:
             output = bytes(process.readAllStandardOutput().data()).decode('utf-8', 'ignore')
-            for line in output.splitlines():
-                if "Branch in used:" in line:
-                    self.branch_name = line.split(":", 1)[1].strip()
-                    self.branch_label.setText(_("Detected branch: ") + self.branch_name)
+            lines = output.splitlines()
+            self.numa_nodes = {}
+            self.is_amd = False
+            self.logical_core_options = []
+            self.locale_options = []
+            self.amd_vulkan_drivers = []
+            for line in lines:
+                line_stripped = line.strip()
+                if not line_stripped:
                     continue
-                stripped_line = line.strip()
-                if stripped_line.startswith("PW_"):
-                    parts = stripped_line.split(maxsplit=1)
+                if re.match(r'^[A-Z_0-9]+=[^=]+$', line_stripped) and not line_stripped.startswith('PW_'):
+                    # System info
+                    k, v = line_stripped.split('=', 1)
+                    if k.startswith('NUMA_NODE_'):
+                        node_id = k[10:]
+                        self.numa_nodes[node_id] = v
+                    elif k == 'IS_AMD':
+                        self.is_amd = v.lower() == 'true'
+                    elif k == 'LOGICAL_CORE_OPTIONS':
+                        self.logical_core_options = v.split('!') if v else []
+                    elif k == 'LOCALE_LIST':
+                        self.locale_options = v.split('!') if v else []
+                    elif k == 'AMD_VULKAN_DRIVER_LIST':
+                        self.amd_vulkan_drivers = v.split('!') if v else []
+                    continue
+                if line_stripped.startswith('PW_'):
+                    parts = line_stripped.split(maxsplit=1)
                     key = parts[0]
                     self.available_keys.add(key)
-                    if len(parts) > 1 and parts[1] == "blocked":
+                    if len(parts) > 1 and 'blocked' in parts[1]:
                         self.blocked_keys.add(key)
 
             # Показываем только пересечение
             self.available_keys &= set(self.toggle_settings.keys())
-            logger.debug(f"Filtered available keys (intersection): {self.available_keys}")
-        else:
-            logger.warning("Failed to get --list-db output; showing all toggles")
-            self.available_keys = set(self.toggle_settings.keys())
 
         # Загружаем текущие настройки
         process = QProcess(self)
         process.finished.connect(self.on_show_ppdb_finished)
-        process.start(self.start_sh, ["cli", "--show-ppdb", self.ppdb_path])
+        process.start(self.start_sh[0], ["cli", "--show-ppdb", f"{self.exe_path}.ppdb"])
 
     def on_show_ppdb_finished(self, exit_code, exit_status):
         """Handle --show-ppdb output."""
         process = cast(QProcess, self.sender())
         if exit_code != 0 or exit_status != QProcess.ExitStatus.NormalExit:
-            logger.warning("Failed to load settings, using defaults")
+            # Fallback to defaults if load fails
+            for key in self.toggle_settings:
+                self.current_settings[key] = '0'
+            for adv_key in ['PW_WINDOWS_VER', 'WINEDLLOVERRIDES', 'LAUNCH_PARAMETERS',
+                            'PW_WINE_CPU_TOPOLOGY', 'PW_MESA_GL_VERSION_OVERRIDE',
+                            'PW_VKD3D_FEATURE_LEVEL', 'PW_LOCALE_SELECT',
+                            'PW_MESA_VK_WSI_PRESENT_MODE', 'PW_AMD_VULKAN_USE',
+                            'PW_CPU_NUMA_NODE_INDEX']:
+                self.current_settings[adv_key] = 'disabled' if 'TOPOLOGY' in adv_key or 'SELECT' in adv_key or 'MODE' in adv_key or 'LEVEL' in adv_key or 'GL_VERSION' in adv_key or 'NUMA' in adv_key else ''
         else:
             output = bytes(process.readAllStandardOutput().data()).decode('utf-8', 'ignore').strip()
             self.current_settings = {}
             for line in output.split('\n'):
-                if '=' in line and line.strip().startswith('PW_'):
-                    key, val = line.split('=', 1)
-                    self.current_settings[key.strip()] = val.strip()
-            logger.debug(f"Loaded current settings: {self.current_settings}")
+                line_stripped = line.strip()
+                if '=' in line_stripped:
+                    # Parse all KEY=VALUE lines, not just specific prefixes, to catch more
+                    try:
+                        key, val = line_stripped.split('=', 1)
+                        if key in self.toggle_settings or key in ['PW_WINDOWS_VER', 'WINEDLLOVERRIDES', 'LAUNCH_PARAMETERS',
+                                                                 'PW_WINE_CPU_TOPOLOGY', 'PW_MESA_GL_VERSION_OVERRIDE',
+                                                                 'PW_VKD3D_FEATURE_LEVEL', 'PW_LOCALE_SELECT',
+                                                                 'PW_MESA_VK_WSI_PRESENT_MODE', 'PW_AMD_VULKAN_USE',
+                                                                 'PW_CPU_NUMA_NODE_INDEX', 'PW_TASKSET_SLR']:
+                            self.current_settings[key] = val
+                    except ValueError:
+                        continue
 
         # Force blocked settings to '0'
         for key in self.blocked_keys:
             self.current_settings[key] = '0'
 
+        self.original_values = self.current_settings.copy()
+        for key in set(self.toggle_settings.keys()):
+            self.original_values.setdefault(key, '0')
+
         self.populate_table()
+        self.populate_advanced()
 
     def populate_table(self):
         """Populate the table with settings that are available in both lists."""
         self.settings_table.setRowCount(0)
         self.value_widgets.clear()
-        self.original_values.clear()
         self.settings_table.verticalHeader().setVisible(False)
 
         visible_keys = sorted(self.available_keys) if self.available_keys else sorted(self.toggle_settings.keys())
@@ -1922,16 +1979,187 @@ class ExeSettingsDialog(QDialog):
 
             self.settings_table.setItem(row, 0, name_item)
             self.value_widgets[(row, 1)] = checkbox
-            self.original_values[toggle] = current_val
 
         self.settings_table.resizeRowsToContents()
         if self.settings_table.rowCount() > 0:
             self.settings_table.setCurrentCell(0, 0)
             self.settings_table.setFocus(Qt.FocusReason.OtherFocusReason)
 
+    def populate_advanced(self):
+        """Populate the advanced tab with table format."""
+        self.advanced_table.setRowCount(0)
+        self.advanced_widgets.clear()
+        self.original_display_values = {}
+        self.advanced_table.verticalHeader().setVisible(False)
+
+        current = self.current_settings
+        disabled_text = _('disabled')
+
+        # Define advanced settings configuration
+        advanced_settings = []
+
+        # 1. Windows version
+        advanced_settings.append({
+            'key': 'PW_WINDOWS_VER',
+            'name': _("Windows version"),
+            'description': _("Changing the WINDOWS emulation version may be required to run older games. WINDOWS versions below 10 do not support new games with DirectX 12"),
+            'type': 'combo',
+            'options': ['11', '10', '7', 'XP'],
+            'default': '10'
+        })
+
+        # 2. Forced to use/disable libraries
+        advanced_settings.append({
+            'key': 'WINEDLLOVERRIDES',
+            'name': _("DLL Overrides"),
+            'description': _("Forced to use/disable the library only for the given application.\n\nA brief instruction:\n* libraries are written WITHOUT the .dll file extension\n* libraries are separated by semicolons - ;\n* library=n - use the WINDOWS (third-party) library\n* library=b - use WINE (built-in) library\n* library=n,b - use WINDOWS library and then WINE\n* library=b,n - use WINE library and then WINDOWS\n* library= - disable the use of this library\n\nExample: libglesv2=;d3dx9_36,d3dx9_42=n,b;mfc120=b,n"),
+            'type': 'text',
+            'default': ''
+        })
+
+        # 3. Launch arguments
+        advanced_settings.append({
+            'key': 'LAUNCH_PARAMETERS',
+            'name': _("Launch Arguments"),
+            'description': _("Adding an argument after the .exe file, just like you would add an argument in a shortcut on a WINDOWS system.\n\nExample: -dx11 -skipintro 1"),
+            'type': 'text',
+            'default': ''
+        })
+
+        # 4. CPU cores limit
+        advanced_settings.append({
+            'key': 'PW_WINE_CPU_TOPOLOGY',
+            'name': _("CPU Cores Limit"),
+            'description': _("Limiting the number of CPU cores is useful for Unity games (It is recommended to set the value equal to 8)"),
+            'type': 'combo',
+            'options': [disabled_text] + self.logical_core_options,
+            'default': disabled_text
+        })
+
+        # 5. OpenGL version
+        advanced_settings.append({
+            'key': 'PW_MESA_GL_VERSION_OVERRIDE',
+            'name': _("OpenGL Version"),
+            'description': _("You can select the required OpenGL version, some games require a forced Compatibility Profile (COMP)."),
+            'type': 'combo',
+            'options': [disabled_text, '4.6COMPAT', '4.5COMPAT', '4.3COMPAT', '4.1COMPAT', '3.3COMPAT', '3.2COMPAT'],
+            'default': disabled_text
+        })
+
+        # 6. VKD3D feature level
+        advanced_settings.append({
+            'key': 'PW_VKD3D_FEATURE_LEVEL',
+            'name': _("VKD3D Feature Level"),
+            'description': _("You can set a forced feature level VKD3D for games on DirectX12"),
+            'type': 'combo',
+            'options': [disabled_text, '12_2', '12_1', '12_0', '11_1', '11_0'],
+            'default': disabled_text
+        })
+
+        # 7. Locale
+        advanced_settings.append({
+            'key': 'PW_LOCALE_SELECT',
+            'name': _("Locale"),
+            'description': _("Force certain locale for an app. Fixes encoding issues in legacy software"),
+            'type': 'combo',
+            'options': [disabled_text] + self.locale_options,
+            'default': disabled_text
+        })
+
+        # 8. Present mode
+        advanced_settings.append({
+            'key': 'PW_MESA_VK_WSI_PRESENT_MODE',
+            'name': _("Window Mode"),
+            'description': _("Window mode (for Vulkan and OpenGL):\nfifo - First in, first out. Limits the frame rate + no tearing. (VSync)\nimmediate - Unlimited frame rate + tearing.\nmailbox - Triple buffering. Unlimited frame rate + no tearing.\nrelaxed - Same as fifo but allows tearing when below the monitors refresh rate."),
+            'type': 'combo',
+            'options': [disabled_text, 'fifo', 'immediate', 'mailbox', 'relaxed'],
+            'default': disabled_text
+        })
+
+        # 9. AMD Vulkan (always show, block if not applicable)
+        amd_options = [disabled_text] + self.amd_vulkan_drivers if self.is_amd and self.amd_vulkan_drivers else [disabled_text]
+        advanced_settings.append({
+            'key': 'PW_AMD_VULKAN_USE',
+            'name': _("AMD Vulkan Driver"),
+            'description': _("Select needed AMD vulkan implementation. Choosing which implementation of vulkan will be used to run the game"),
+            'type': 'combo',
+            'options': amd_options,
+            'default': disabled_text
+        })
+
+        # 10. NUMA node (always show if numa_nodes exist, block if <=1)
+        numa_ids = sorted(self.numa_nodes.keys())
+        numa_options = [disabled_text] + numa_ids if len(numa_ids) > 1 else [disabled_text]
+        advanced_settings.append({
+            'key': 'PW_CPU_NUMA_NODE_INDEX',
+            'name': _("NUMA Node"),
+            'description': _("NUMA node for CPU affinity. In multi-core systems, CPUs are split into NUMA nodes, each with its own local memory and cores. Binding a game to a single node reduces memory-access latency and limits costly core-to-core switches."),
+            'type': 'combo',
+            'options': numa_options,
+            'default': disabled_text
+        })
+
+        # Populate table
+        for setting in advanced_settings:
+            row = self.advanced_table.rowCount()
+            self.advanced_table.insertRow(row)
+
+            # Name column
+            name_item = QTableWidgetItem(setting['name'])
+            name_item.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled)
+            self.advanced_table.setItem(row, 0, name_item)
+
+            # Value column (widget)
+            if setting['type'] == 'combo':
+                combo = QComboBox()
+                combo.addItems(setting['options'])
+
+                # Get current value
+                current_raw = current.get(setting['key'], setting['default'])
+                if setting['key'] == 'PW_WINE_CPU_TOPOLOGY':
+                    current_val = disabled_text if current_raw == 'disabled' else (current_raw.split(':')[0] if isinstance(current_raw, str) and ':' in current_raw else current_raw)
+                elif setting['key'] == 'PW_AMD_VULKAN_USE':
+                    current_val = disabled_text if not current_raw or current_raw == '' else current_raw
+                else:
+                    current_val = disabled_text if current_raw == 'disabled' else current_raw
+
+                if current_val not in setting['options']:
+                    combo.addItem(current_val)
+                combo.setCurrentText(current_val)
+
+                # Block if only disabled option
+                if len(setting['options']) == 1:
+                    combo.setEnabled(False)
+
+                self.advanced_table.setCellWidget(row, 1, combo)
+                self.advanced_widgets[setting['key']] = combo
+                self.original_display_values[setting['key']] = current_val
+
+            elif setting['type'] == 'text':
+                text_edit = QTextEdit()
+                current_val = current.get(setting['key'], setting['default'])
+                text_edit.setPlainText(current_val)
+
+                self.advanced_table.setCellWidget(row, 1, text_edit)
+                self.advanced_widgets[setting['key']] = text_edit
+                self.original_display_values[setting['key']] = current_val
+
+            # Description column
+            desc_item = QTableWidgetItem(setting['description'])
+            desc_item.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled)
+            desc_item.setToolTip(setting['description'])
+            desc_item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+            self.advanced_table.setItem(row, 2, desc_item)
+
+        self.advanced_table.resizeRowsToContents()
+        if self.advanced_table.rowCount() > 0:
+            self.advanced_table.setCurrentCell(0, 0)
+
     def apply_changes(self):
-        """Apply changes by collecting diffs and running --edit-db."""
+        """Apply changes by collecting diffs from both main and advanced tabs."""
         changes = []
+
+        # --- 1. Обычные (toggle) настройки ---
         for key, orig_val in self.original_values.items():
             if key in self.blocked_keys:
                 continue  # Skip blocked keys
@@ -1952,14 +2180,32 @@ class ExeSettingsDialog(QDialog):
             if new_val != orig_val:
                 changes.append(f"{key}={new_val}")
 
+        # --- 2. Advanced настройки ---
+        for key, widget in self.advanced_widgets.items():
+            orig_val = self.original_display_values.get(key, '')
+            if isinstance(widget, QComboBox):
+                new_val = widget.currentText()
+                # приведение disabled к 'disabled'
+                if new_val.lower() == _('disabled').lower():
+                    new_val = 'disabled'
+            elif isinstance(widget, QTextEdit):
+                new_val = widget.toPlainText().strip()
+            else:
+                continue
+
+            if new_val != orig_val:
+                changes.append(f"{key}={new_val}")
+
+        # --- 3. Проверка на изменения ---
         if not changes:
             QMessageBox.information(self, _("Info"), _("No changes to apply."))
             return
 
+        # --- 4. Запуск процесса сохранения ---
         process = QProcess(self)
         process.finished.connect(self.on_edit_db_finished)
         args = ["cli", "--edit-db", self.exe_path] + changes
-        process.start(self.start_sh, args)
+        process.start(self.start_sh[0], args)
         self.apply_button.setEnabled(False)
 
     def on_edit_db_finished(self, exit_code, exit_status):
