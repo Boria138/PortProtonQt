@@ -1,5 +1,109 @@
 [
   {
+    "normalized_title": "split/second",
+    "slug": "split-second"
+  },
+  {
+    "normalized_title": "warzone 2100",
+    "slug": "warzone-2100"
+  },
+  {
+    "normalized_title": "foundation",
+    "slug": "foundation"
+  },
+  {
+    "normalized_title": "земский собор [демо]",
+    "slug": "zemskij-sobor-demo"
+  },
+  {
+    "normalized_title": "crusader kings 3",
+    "slug": "crusader-kings-3"
+  },
+  {
+    "normalized_title": "nadir a grimdark deck builder",
+    "slug": "nadir-a-grimdark-deck-builder"
+  },
+  {
+    "normalized_title": "oriental empires",
+    "slug": "oriental-empires"
+  },
+  {
+    "normalized_title": "vampire the masquerade bloodlines 2",
+    "slug": "vampire-the-masquerade-bloodlines-2"
+  },
+  {
+    "normalized_title": "escape from duckov",
+    "slug": "escape-from-duckov"
+  },
+  {
+    "normalized_title": "xiii",
+    "slug": "xiii"
+  },
+  {
+    "normalized_title": "saints row 2",
+    "slug": "saints-row-2"
+  },
+  {
+    "normalized_title": "frozenheim",
+    "slug": "frozenheim"
+  },
+  {
+    "normalized_title": "saints row (2022)",
+    "slug": "saints-row-2022"
+  },
+  {
+    "normalized_title": "iron harvest",
+    "slug": "iron-harvest"
+  },
+  {
+    "normalized_title": "tom clancy's splinter cell blacklist",
+    "slug": "tom-clancys-splinter-cell-blacklist"
+  },
+  {
+    "normalized_title": "painkiller overdose",
+    "slug": "painkiller-overdose"
+  },
+  {
+    "normalized_title": "ancestors legacy",
+    "slug": "ancestors-legacy"
+  },
+  {
+    "normalized_title": "bye sweet carole",
+    "slug": "bye-sweet-carole"
+  },
+  {
+    "normalized_title": "painkiller black",
+    "slug": "painkiller-black-edition"
+  },
+  {
+    "normalized_title": "hogwarts legacy",
+    "slug": "hogwarts-legacy"
+  },
+  {
+    "normalized_title": "active matter",
+    "slug": "active-matter"
+  },
+  {
+    "normalized_title": "tom clancy's splinter cell",
+    "slug": "tom-clancys-splinter-cell"
+  },
+  {
+    "normalized_title": "sniper ghost warrior",
+    "slug": "sniper-ghost-warrior"
+  },
+  {
+    "normalized_title": "fate undiscovered realms",
+    "slug": "fate-undiscovered-realms"
+  },
+  {
+    "normalized_title": "dying light the beast deluxe",
+    "slug": "dying-light-the-beast-deluxe-edition"
+  },
+  {
+    "normalized_title": "spellforce platinum",
+    "slug": "spellforce-platinum-edition"
+  },
+  {
     "normalized_title": "dirt rally 2.0 game of the year",
     "slug": "dirt-rally-2-0-game-of-the-year-edition"
   },
@@ -270,10 +374,6 @@
   {
     "normalized_title": "steins;gate the distant valhalla",
     "slug": "steins-gate-the-distant-valhalla"
-  },
-  {
-    "normalized_title": "hogwarts legacy",
-    "slug": "hogwarts-legacy"
   },
   {
     "normalized_title": "osu!",

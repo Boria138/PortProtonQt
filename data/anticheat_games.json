@@ -1021,7 +1021,7 @@
   },
   {
     "normalized_name": "farlight 84",
-    "status": "Supported"
+    "status": "Denied"
   },
   {
     "normalized_name": "riders republic",
@@ -1436,8 +1436,8 @@
     "status": "Broken"
   },
   {
-    "normalized_name": "blue protocol",
-    "status": "Broken"
+    "normalized_name": "blue protocol star resonance",
+    "status": "Running"
   },
   {
     "normalized_name": "dark and darker",
