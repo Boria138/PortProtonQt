@@ -5,7 +5,7 @@ from typing import cast, TYPE_CHECKING
 from PySide6.QtGui import QPixmap, QIcon, QTextCursor, QColor
 from PySide6.QtWidgets import (
     QDialog, QFormLayout, QHBoxLayout, QLabel, QVBoxLayout, QListWidget, QScrollArea, QWidget, QListWidgetItem, QSizePolicy, QApplication, QProgressBar, QScroller,
-    QTabWidget, QTableWidget, QHeaderView, QMessageBox, QTableWidgetItem, QTextEdit, QAbstractItemView, QStackedWidget, QComboBox
+    QTabWidget, QTableWidget, QHeaderView, QMessageBox, QTableWidgetItem, QTextEdit, QAbstractItemView, QStackedWidget, QComboBox, QLineEdit
 )
 from PySide6.QtCore import Qt, QObject, Signal, QMimeDatabase, QTimer, QThreadPool, QRunnable, Slot, QProcess, QProcessEnvironment
 from icoextract import IconExtractor, IconExtractorError
@@ -1673,6 +1673,7 @@ class WinetricksDialog(QDialog):
         if self.input_manager:
             self.input_manager.disable_winetricks_mode()
         super().reject()
+
 class ExeSettingsDialog(QDialog):
     def __init__(self, parent=None, theme=None, exe_path=None):
         super().__init__(parent)
@@ -1699,7 +1700,6 @@ class ExeSettingsDialog(QDialog):
         self.locale_options = []
         self.logical_core_options = []
         self.amd_vulkan_drivers = []
-        self.branch_name = _("Unknown")
 
         self.setWindowTitle(_("Exe Settings"))
         self.setModal(True)
@@ -2136,12 +2136,12 @@ class ExeSettingsDialog(QDialog):
                 self.original_display_values[setting['key']] = current_val
 
             elif setting['type'] == 'text':
-                text_edit = QTextEdit()
+                line_edit = QLineEdit()
                 current_val = current.get(setting['key'], setting['default'])
-                text_edit.setPlainText(current_val)
+                line_edit.setText(current_val)
 
-                self.advanced_table.setCellWidget(row, 1, text_edit)
-                self.advanced_widgets[setting['key']] = text_edit
+                self.advanced_table.setCellWidget(row, 1, line_edit)
+                self.advanced_widgets[setting['key']] = line_edit
                 self.original_display_values[setting['key']] = current_val
 
             # Description column
@@ -2151,15 +2151,27 @@ class ExeSettingsDialog(QDialog):
             desc_item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
             self.advanced_table.setItem(row, 2, desc_item)
 
-        self.advanced_table.resizeRowsToContents()
-        if self.advanced_table.rowCount() > 0:
-            self.advanced_table.setCurrentCell(0, 0)
+        # Make sure QLineEdit and QComboBox look consistent
+        self.advanced_table.setStyleSheet("""
+        QComboBox, QLineEdit {
+            padding: 3px 6px;
+            min-height: 26px;
+        }
+        QComboBox::drop-down {
+            subcontrol-origin: padding;
+            subcontrol-position: top right;
+            width: 18px;
+        }
+        QTextEdit {
+            border-radius: 4px;
+            padding: 4px;
+        }
+        """)
 
     def apply_changes(self):
         """Apply changes by collecting diffs from both main and advanced tabs."""
         changes = []
 
-        # --- 1. Обычные (toggle) настройки ---
         for key, orig_val in self.original_values.items():
             if key in self.blocked_keys:
                 continue  # Skip blocked keys
@@ -2180,28 +2192,24 @@ class ExeSettingsDialog(QDialog):
             if new_val != orig_val:
                 changes.append(f"{key}={new_val}")
 
-        # --- 2. Advanced настройки ---
         for key, widget in self.advanced_widgets.items():
             orig_val = self.original_display_values.get(key, '')
             if isinstance(widget, QComboBox):
                 new_val = widget.currentText()
-                # приведение disabled к 'disabled'
                 if new_val.lower() == _('disabled').lower():
                     new_val = 'disabled'
-            elif isinstance(widget, QTextEdit):
-                new_val = widget.toPlainText().strip()
+            elif isinstance(widget, QLineEdit):
+                new_val = widget.text().strip()
             else:
                 continue
 
             if new_val != orig_val:
                 changes.append(f"{key}={new_val}")
 
-        # --- 3. Проверка на изменения ---
         if not changes:
             QMessageBox.information(self, _("Info"), _("No changes to apply."))
             return
 
-        # --- 4. Запуск процесса сохранения ---
         process = QProcess(self)
         process.finished.connect(self.on_edit_db_finished)
         args = ["cli", "--edit-db", self.exe_path] + changes
