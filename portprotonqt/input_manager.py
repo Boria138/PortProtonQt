@@ -1,8 +1,9 @@
 import time
 import threading
 import os
+import math
 from typing import Protocol, cast
-from evdev import InputDevice, InputEvent, ecodes, list_devices, ff
+from evdev import InputDevice, InputEvent, UInput, ecodes, list_devices, ff
 from enum import Enum
 from pyudev import Context, Monitor, Device, Devices
 from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea, QLineEdit, QDialog, QMenu, QComboBox, QListView, QMessageBox, QListWidget, QTableWidget, QAbstractItemView, QTableWidgetItem
@@ -15,6 +16,7 @@ from portprotonqt.game_card import GameCard
 from portprotonqt.config_utils import read_fullscreen_config, read_window_geometry, save_window_geometry, read_auto_fullscreen_gamepad, read_rumble_config, read_gamepad_type
 from portprotonqt.dialogs import AddGameDialog
 from portprotonqt.virtual_keyboard import VirtualKeyboard
+import select
 
 logger = get_logger(__name__)
 
@@ -115,6 +117,31 @@ class InputManager(QObject):
         self.last_trigger_time = 0.0
         self.trigger_cooldown = 0.2
 
+        # Mouse emulation attributes
+        self.mouse_emulation_enabled = True  # Enable by default as crutch for external apps
+        self.ui = None  # UInput for virtual mouse
+        self.stick_x_raw = 0
+        self.stick_y_raw = 0
+        self.deadzone = 8000  # Deadzone for sticks
+        self.max_value = 32767  # Max stick value
+        self.sensitivity = 8.0  # Cursor sensitivity
+        self.scroll_accumulator = 0.0
+        self.scroll_sensitivity = 0.15  # Scroll sensitivity
+        self.scroll_threshold = 0.2  # Scroll threshold
+        self.last_update = time.time()
+        self.update_interval = 0.016  # ~60 FPS
+        self.emulation_active = False  # Flag for external focus (updated in main thread)
+
+        # Focus check timer for emulation flag (runs in main thread)
+        self.focus_check_timer = QTimer(self)
+        self.focus_check_timer.timeout.connect(self._update_emulation_flag)
+        self.focus_check_timer.start(100)  # Check every 100ms
+
+        logger.info("EMUL: Mouse emulation initialized (enabled=%s)", self.mouse_emulation_enabled)
+
+        if self.mouse_emulation_enabled:
+            self.enable_mouse_emulation()
+
         # FileExplorer specific attributes
         self.file_explorer = None
         self.original_button_handler = None
@@ -150,6 +177,11 @@ class InputManager(QObject):
 
         # Initialize evdev + hotplug
         self.init_gamepad()
+
+    def _update_emulation_flag(self):
+        """Update emulation_active flag based on Qt app focus (main thread only)."""
+        active = QApplication.activeWindow()
+        self.emulation_active = (active is None)  # True for external windows (e.g., winefile)
 
     def _navigate_game_cards(self, container, tab_index: int, code: int, value: int) -> None:
         """Common navigation logic for game cards in a container."""
@@ -636,6 +668,116 @@ class InputManager(QObject):
                     self.last_nav_time = now
         except Exception as e:
             logger.error(f"Error in navigation repeat: {e}")
+
+    def enable_mouse_emulation(self):
+        """Enable mouse emulation mode (creates virtual mouse device)."""
+        if self.mouse_emulation_enabled and self.ui is not None:
+            logger.debug("EMUL: Mouse emulation already enabled, skipping")
+            return
+
+        try:
+            logger.info("EMUL: Attempting to create UInput virtual mouse...")
+            if not os.path.exists('/dev/uinput'):
+                logger.error("EMUL: /dev/uinput does not exist")
+                self.mouse_emulation_enabled = False
+                return
+
+            if not os.access('/dev/uinput', os.W_OK):
+                logger.error("EMUL: No write access to /dev/uinput")
+                self.mouse_emulation_enabled = False
+                return
+
+            self.ui = UInput({
+                ecodes.EV_KEY: [ecodes.BTN_LEFT, ecodes.BTN_RIGHT],
+                ecodes.EV_REL: [ecodes.REL_X, ecodes.REL_Y, ecodes.REL_WHEEL],
+            }, name="Virtual DPad Mouse")
+
+            self.mouse_emulation_enabled = True
+            logger.info("EMUL: Virtual mouse created successfully")
+
+        except PermissionError as e:
+            logger.error("EMUL: Permission denied for /dev/uinput: %s", e)
+            self.mouse_emulation_enabled = False
+        except Exception as ex:
+            logger.error(f"EMUL: Error creating virtual mouse: {ex}", exc_info=True)
+            self.mouse_emulation_enabled = False
+
+    def disable_mouse_emulation(self):
+        """Disable mouse emulation mode (closes virtual mouse device)."""
+        logger.info("EMUL: Disabling mouse emulation...")
+        if self.ui:
+            try:
+                self.ui.close()
+                logger.info("EMUL: Virtual mouse closed")
+            except Exception as e:
+                logger.error("EMUL: Error closing virtual mouse: %s", e)
+            self.ui = None
+        self.mouse_emulation_enabled = False
+        self.stick_x_raw = 0
+        self.stick_y_raw = 0
+        self.scroll_accumulator = 0.0
+
+    def handle_scroll(self, raw_value):
+        """Обработка прокрутки с правого стика Y"""
+        if not self.mouse_emulation_enabled or not self.emulation_active or not self.ui:
+            return
+        if abs(raw_value) < self.deadzone:
+            self.scroll_accumulator = 0.0
+            return
+        normalized = raw_value / self.max_value
+        self.scroll_accumulator += normalized * self.scroll_sensitivity
+        while abs(self.scroll_accumulator) >= self.scroll_threshold:
+            scroll_step = 1 if self.scroll_accumulator > 0 else -1
+            self.scroll_wheel(-scroll_step)
+            self.scroll_accumulator -= scroll_step * self.scroll_threshold
+
+    def update_mouse_position(self):
+        """Постоянное обновление позиции мыши на основе состояния стика"""
+        if not self.ui or not self.emulation_active:
+            return
+        x = self.stick_x_raw
+        y = self.stick_y_raw
+        magnitude = math.sqrt(x * x + y * y)
+        if magnitude < self.deadzone:
+            return
+        norm_x = x / magnitude
+        norm_y = y / magnitude
+        adjusted_magnitude = max(0.0, min(1.0, (magnitude - self.deadzone) / (self.max_value - self.deadzone)))
+        adjusted_magnitude = math.pow(adjusted_magnitude, 1.5)
+        speed = adjusted_magnitude * self.sensitivity
+        dx = int(norm_x * speed)
+        dy = int(norm_y * speed)
+        if dx != 0 or dy != 0:
+            self.move_mouse(dx, dy)
+
+    def move_mouse(self, dx, dy):
+        """Сдвиг системного курсора"""
+        if self.ui:
+            self.ui.write(ecodes.EV_REL, ecodes.REL_X, dx)
+            self.ui.write(ecodes.EV_REL, ecodes.REL_Y, dy)
+            self.ui.syn()
+
+    def scroll_wheel(self, steps):
+        """Прокрутка колеса мыши"""
+        if self.ui:
+            self.ui.write(ecodes.EV_REL, ecodes.REL_WHEEL, steps)
+            self.ui.syn()
+
+    def click_left(self):
+        """Клик левой кнопкой мыши"""
+        if self.ui:
+            self.ui.write(ecodes.EV_KEY, ecodes.BTN_LEFT, 1)
+            self.ui.syn()
+            self.ui.write(ecodes.EV_KEY, ecodes.BTN_LEFT, 0)
+            self.ui.syn()
+
+    def click_right(self):
+        """Клик правой кнопкой мыши"""
+        if self.ui:
+            self.ui.write(ecodes.EV_KEY, ecodes.BTN_RIGHT, 1)
+            self.ui.syn()
+            self.ui.write(ecodes.EV_KEY, ecodes.BTN_RIGHT, 0)
+            self.ui.syn()
 
     @Slot(bool)
     def handle_fullscreen_slot(self, enable: bool) -> None:
@@ -1473,7 +1615,6 @@ class InputManager(QObject):
                 logger.error(f"Failed to start udev monitor: {e}")
                 return
 
-            import select
             fd = monitor.fileno()
             poller = select.poll()
             poller.register(fd, select.POLLIN)
@@ -1692,60 +1833,103 @@ class InputManager(QObject):
             logger.error(f"Error finding gamepad: {e}", exc_info=True)
             return None
 
-
     def monitor_gamepad(self) -> None:
         try:
-            if not self.gamepad:
-                return
-            for event in self.gamepad.read_loop():
-                if not self.running:
-                    break
-                if event.type not in (ecodes.EV_KEY, ecodes.EV_ABS):
-                    continue
-                now = time.time()
+            while self.running:
+                current_time = time.time()
 
-                # Проверка фокуса: игнорируем события, если окно не в фокусе
-                app = QApplication.instance()
-                active = QApplication.activeWindow()
-                if not app or not active:
-                    continue
+                if self.gamepad:
+                    try:
+                        # Non-blocking read with short timeout
+                        events = []
+                        r, w, x = select.select([self.gamepad.fd], [], [], 0.001)
+                        if r:
+                            events = list(self.gamepad.read())
 
-                if event.type == ecodes.EV_KEY:
-                    # Emit on both press (1) and release (0)
-                    self.button_event.emit(event.code, event.value)
-                    # Special handling for menu on press only
-                    if event.value == 1 and event.code in BUTTONS['menu'] and not self._is_gamescope_session:
-                        self.toggle_fullscreen.emit(not self._is_fullscreen)
-                elif event.type == ecodes.EV_ABS:
-                    if event.code in {ecodes.ABS_Z, ecodes.ABS_RZ}:
-                        # Проверяем, достаточно ли времени прошло с последнего срабатывания
-                        if now - self.last_trigger_time < self.trigger_cooldown:
-                            continue
-                        if event.code == ecodes.ABS_Z:  # LT/L2
-                            if event.value > 128 and not self.lt_pressed:
-                                self.lt_pressed = True
-                                self.button_event.emit(event.code, 1)  # Emit as press
-                                self.last_trigger_time = now
-                            elif event.value <= 128 and self.lt_pressed:
-                                self.lt_pressed = False
-                                self.button_event.emit(event.code, 0)  # Emit as release
-                        elif event.code == ecodes.ABS_RZ:  # RT/R2
-                            if event.value > 128 and not self.rt_pressed:
-                                self.rt_pressed = True
-                                self.button_event.emit(event.code, 1)  # Emit as press
-                                self.last_trigger_time = now
-                            elif event.value <= 128 and self.rt_pressed:
-                                self.rt_pressed = False
-                                self.button_event.emit(event.code, 0)  # Emit as release
-                    else:
-                        self.dpad_moved.emit(event.code, event.value, now)
-        except OSError as e:
-            if e.errno == 19:  # ENODEV: No such device
-                logger.info("Gamepad disconnected during event loop")
-            else:
-                logger.error(f"OSError in gamepad monitoring: {e}", exc_info=True)
+                        # Process events
+                        for event in events:
+                            if not self.running:
+                                break
+
+                            # UI signal handling (always, for internal app)
+                            if event.type == ecodes.EV_KEY:
+                                self.button_event.emit(event.code, event.value)
+                                # Special handling for menu on press only
+                                if event.value == 1 and event.code in BUTTONS['menu'] and not self._is_gamescope_session:
+                                    self.toggle_fullscreen.emit(not self._is_fullscreen)
+                            elif event.type == ecodes.EV_ABS:
+                                if event.code in {ecodes.ABS_Z, ecodes.ABS_RZ}:
+                                    # Trigger handling for UI
+                                    if current_time - self.last_trigger_time < self.trigger_cooldown:
+                                        continue
+                                    if event.code == ecodes.ABS_Z:  # LT/L2
+                                        if event.value > 128 and not self.lt_pressed:
+                                            self.lt_pressed = True
+                                            self.button_event.emit(event.code, 1)
+                                            self.last_trigger_time = current_time
+                                        elif event.value <= 128 and self.lt_pressed:
+                                            self.lt_pressed = False
+                                            self.button_event.emit(event.code, 0)
+                                    elif event.code == ecodes.ABS_RZ:  # RT/R2
+                                        if event.value > 128 and not self.rt_pressed:
+                                            self.rt_pressed = True
+                                            self.button_event.emit(event.code, 1)
+                                            self.last_trigger_time = current_time
+                                        elif event.value <= 128 and self.rt_pressed:
+                                            self.rt_pressed = False
+                                            self.button_event.emit(event.code, 0)
+                                else:
+                                    self.dpad_moved.emit(event.code, event.value, current_time)
+
+                            # Mouse emulation (only for external windows)
+                            if self.mouse_emulation_enabled and self.emulation_active:
+                                if event.type == ecodes.EV_ABS:
+                                    if event.code == ecodes.ABS_HAT0X:
+                                        if event.value == -1:
+                                            self.move_mouse(-10, 0)
+                                        elif event.value == 1:
+                                            self.move_mouse(10, 0)
+                                    elif event.code == ecodes.ABS_HAT0Y:
+                                        if event.value == -1:
+                                            self.move_mouse(0, -10)
+                                        elif event.value == 1:
+                                            self.move_mouse(0, 10)
+                                    elif event.code == ecodes.ABS_X:
+                                        self.stick_x_raw = event.value
+                                    elif event.code == ecodes.ABS_Y:
+                                        self.stick_y_raw = event.value
+                                    elif event.code == ecodes.ABS_RY:
+                                        self.handle_scroll(event.value)
+                                elif event.type == ecodes.EV_KEY:
+                                    if event.code in (ecodes.BTN_SOUTH, ecodes.BTN_A) and event.value == 1:
+                                        self.click_left()
+                                    elif event.code in (ecodes.BTN_EAST, ecodes.BTN_B) and event.value == 1:
+                                        self.click_right()
+
+                        # Periodic mouse position update
+                        if current_time - self.last_update >= self.update_interval:
+                            self.update_mouse_position()
+                            self.last_update = current_time
+
+                    except OSError as e:
+                        if e.errno == 19:  # ENODEV
+                            logger.info("Gamepad disconnected during monitoring")
+                        else:
+                            logger.error(f"IOError in gamepad monitoring: {e}")
+                        self.gamepad = None
+                        self.stick_x_raw = 0
+                        self.stick_y_raw = 0
+                        self.scroll_accumulator = 0.0
+                        break
+                    except Exception as ex:
+                        logger.error(f"Unexpected error in gamepad monitoring: {ex}")
+                        break
+                else:
+                    time.sleep(0.1)
+                    if not self.running:
+                        break
         except Exception as e:
-            logger.error(f"Error in gamepad monitoring: {e}", exc_info=True)
+            logger.error(f"Error in gamepad monitoring thread: {e}", exc_info=True)
         finally:
             if self.gamepad:
                 try:
@@ -1760,6 +1944,12 @@ class InputManager(QObject):
         Корректное завершение работы с геймпадом и udev монитором.
         """
         try:
+            # Mouse emulation cleanup
+            self.disable_mouse_emulation()
+
+            # Stop focus check timer
+            self.focus_check_timer.stop()
+
             # Флаг для остановки udev monitor loop
             self.running = False
 
