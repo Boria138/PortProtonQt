@@ -20,4 +20,5 @@ package() {
     cd "$srcdir/PortProtonQt"
     python -m installer --destdir="$pkgdir" dist/*.whl
     cp -r build-aux/share "$pkgdir/usr/"
+    cp -r build-aux/lib "$pkgdir/usr/"
 }

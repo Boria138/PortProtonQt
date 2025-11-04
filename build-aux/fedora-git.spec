@@ -22,6 +22,7 @@ BuildRequires:  python3-build
 BuildRequires:  pyproject-rpm-macros
 BuildRequires:  python3dist(setuptools)
 BuildRequires:  git
+BuildRequires:  systemd-rpm-macros
 
 %description
 %{summary}
@@ -69,11 +70,13 @@ cd %{oname}
 %pyproject_install
 %pyproject_save_files %{pypi_name}
 cp -r build-aux/share %{buildroot}/usr/
+cp -r build-aux/lib %{buildroot}/usr/
 
 %files -n python3-%{pypi_name}-git -f %{pyproject_files}
 %{_bindir}/%{pypi_name}
 %{_datadir}/icons/hicolor/scalable/apps/ru.linux_gaming.PortProtonQt.svg
 %{_metainfodir}/ru.linux_gaming.PortProtonQt.metainfo.xml
+%{_udevrulesdir}/60-portprotonqt.rules
 %{_datadir}/applications/ru.linux_gaming.PortProtonQt.desktop
 %{bash_completions_dir}/portprotonqt
 

@@ -62,7 +62,7 @@ jobs:
       - name: Install build dependencies
         run: |
           dnf install -y git rpmdevtools python3-devel python3-wheel python3-pip \
-                         python3-build pyproject-rpm-macros python3-setuptools \
+                         python3-build pyproject-rpm-macros systemd-rpm-macros python3-setuptools \
                          redhat-rpm-config nodejs npm
 
       - name: Setup rpmbuild environment

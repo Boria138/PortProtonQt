@@ -17,7 +17,7 @@ import json
 
 
 class PySide6DependencyAnalyzer:
-    def __init__(self):
+    def __init__(self, project_root: Path = None):
         # Системные библиотеки, которые нужно всегда оставлять
         self.system_libs = {
             'libQt6XcbQpa', 'libQt6Wayland', 'libQt6Egl',
@@ -28,6 +28,16 @@ class PySide6DependencyAnalyzer:
         self.used_modules_code = set()
         self.used_modules_ldd = set()
         self.all_required_modules = set()
+        
+        # Определяем корень проекта
+        if project_root is None:
+            # Корень проекта - две директории выше от скрипта
+            self.project_root = Path(__file__).parent.parent
+        else:
+            self.project_root = project_root
+            
+        self.venv_path = self.project_root / ".venv"
+        self.build_path = self.project_root / "build-aux"
 
     def find_python_files(self, directory: Path) -> List[Path]:
         """Находит все Python файлы в директории"""
@@ -44,24 +54,61 @@ class PySide6DependencyAnalyzer:
         """Находит все PySide6 библиотеки (.so файлы)"""
         libs = {}
 
-        # Поиск в единственной локации
-        search_path = Path("../.venv/lib/python3.10/site-packages/PySide6")
-        print(f"Поиск PySide6 библиотек в: {search_path}")
+        # Ищем venv в корне проекта
+        venv_candidates = [
+            self.venv_path,  # .venv
+            self.project_root / "venv",
+            self.project_root / ".virtualenv",
+        ]
+        
+        pyside6_path = None
+        
+        # Пробуем найти PySide6 в venv
+        for venv in venv_candidates:
+            if venv.exists():
+                # Ищем Python версию
+                lib_path = venv / "lib"
+                if lib_path.exists():
+                    for python_dir in lib_path.iterdir():
+                        if python_dir.name.startswith('python'):
+                            candidate = python_dir / "site-packages" / "PySide6"
+                            if candidate.exists():
+                                pyside6_path = candidate
+                                print(f"Найден PySide6 в: {candidate}")
+                                break
+                    if pyside6_path:
+                        break
+        
+        if not pyside6_path:
+            print(f"Предупреждение: PySide6 не найден в venv, проверяем AppDir...")
+            # Если не нашли в venv, пробуем в AppDir
+            if base_path:
+                appdir_candidate = base_path / "AppDir/usr/local/lib"
+                if appdir_candidate.exists():
+                    for python_dir in appdir_candidate.iterdir():
+                        if python_dir.name.startswith('python'):
+                            candidate = python_dir / "dist-packages" / "PySide6"
+                            if candidate.exists():
+                                pyside6_path = candidate
+                                print(f"Найден PySide6 в AppDir: {candidate}")
+                                break
 
-        if search_path.exists():
-            # Ищем .so файлы модулей
-            for so_file in search_path.glob("Qt*.*.so"):
-                module_name = so_file.stem.split('.')[0]  # QtCore.abi3.so -> QtCore
-                if module_name.startswith('Qt'):
-                    libs[module_name] = so_file
+        if not pyside6_path:
+            return libs
 
-            # Также ищем в подпапках
-            for subdir in search_path.iterdir():
-                if subdir.is_dir() and subdir.name.startswith('Qt'):
-                    for so_file in subdir.glob("*.so*"):
-                        if 'Qt' in so_file.name:
-                            libs[subdir.name] = so_file
-                            break
+        # Ищем .so файлы модулей
+        for so_file in pyside6_path.glob("Qt*.*.so"):
+            module_name = so_file.stem.split('.')[0]  # QtCore.abi3.so -> QtCore
+            if module_name.startswith('Qt'):
+                libs[module_name] = so_file
+
+        # Также ищем в подпапках
+        for subdir in pyside6_path.iterdir():
+            if subdir.is_dir() and subdir.name.startswith('Qt'):
+                for so_file in subdir.glob("*.so*"):
+                    if 'Qt' in so_file.name:
+                        libs[subdir.name] = so_file
+                        break
 
         return libs
 
@@ -276,39 +323,83 @@ class PySide6DependencyAnalyzer:
             f"  - rm -rf AppDir/usr/local/lib/python3.10/dist-packages/PySide6/Qt/lib/!({keep_pattern})"
         ])
 
-        # Заменяем блок очистки в рецепте
         import re
-
-        # Ищем блок "# 5) чистим от ненужных модулей и бинарников" до следующего комментария или до AppDir:
-        pattern = r'(  # 5\) чистим от ненужных модулей и бинарников\n).*?(?=\nAppDir:|\n  # [0-9]+\)|$)'
-
-        new_cleanup_block = "  # 5) чистим от ненужных модулей и бинарников\n" + '\n'.join(cleanup_lines)
-
-        updated_recipe = re.sub(pattern, new_cleanup_block, recipe_content, flags=re.DOTALL)
+        
+        # Ищем весь блок команд очистки PySide6 (от первой rm до AppDir:)
+        # Паттерн: после "  - cp -r lib AppDir/usr\n" идут команды rm, а затем "AppDir:"
+        pattern = r'(  - cp -r lib AppDir/usr\n)((?:  - (?:rm|shopt).*\n)*?)(?=AppDir:)'
+        
+        match = re.search(pattern, recipe_content)
+        
+        if not match:
+            print("ПРЕДУПРЕЖДЕНИЕ: Не удалось найти блок очистки в рецепте")
+            print("Добавляем команды очистки перед блоком AppDir:")
+            
+            # Просто вставим команды перед AppDir:
+            appdir_pos = recipe_content.find('AppDir:')
+            if appdir_pos != -1:
+                new_content = (
+                    recipe_content[:appdir_pos] + 
+                    '\n'.join(cleanup_lines) + '\n' +
+                    recipe_content[appdir_pos:]
+                )
+                return new_content
+            else:
+                print("ОШИБКА: Не найден блок AppDir: в рецепте")
+                return ""
+        
+        # Создаем замену - группа 1 (cp -r lib) + новые команды очистки
+        replacement = r'\1' + '\n'.join(cleanup_lines) + '\n'
+        
+        updated_recipe = re.sub(pattern, replacement, recipe_content, count=1)
 
         return updated_recipe
 
 
 def main():
     parser = argparse.ArgumentParser(description='Анализ зависимостей PySide6 модулей с использованием ldd')
-    parser.add_argument('project_path', help='Путь к проекту для анализа')
+    parser.add_argument('project_path', nargs='?', default='.',
+                        help='Путь к проекту для анализа (по умолчанию: текущая директория)')
     parser.add_argument('--appdir', help='Путь к AppDir для поиска PySide6 библиотек')
     parser.add_argument('--output', '-o', help='Путь для сохранения результатов (JSON)')
     parser.add_argument('--verbose', '-v', action='store_true', help='Подробный вывод')
+    parser.add_argument('--venv', help='Путь к виртуальному окружению (по умолчанию: .venv в корне проекта)')
 
     args = parser.parse_args()
 
-    project_path = Path(args.project_path)
+    project_path = Path(args.project_path).resolve()
     if not project_path.exists():
         print(f"Ошибка: путь {project_path} не существует")
         sys.exit(1)
 
-    appdir_path = Path(args.appdir) if args.appdir else None
+    appdir_path = Path(args.appdir).resolve() if args.appdir else None
     if appdir_path and not appdir_path.exists():
         print(f"Предупреждение: AppDir путь {appdir_path} не существует")
         appdir_path = None
 
-    analyzer = PySide6DependencyAnalyzer()
+    # Определяем корень проекта
+    # Если запущен из подпапки проекта, ищем корень
+    project_root = project_path
+    if (project_path / ".git").exists() or (project_path / "pyproject.toml").exists():
+        project_root = project_path
+    else:
+        # Пытаемся найти корень проекта
+        current = project_path
+        while current != current.parent:
+            if (current / ".git").exists() or (current / "pyproject.toml").exists():
+                project_root = current
+                break
+            current = current.parent
+    
+    print(f"Корень проекта: {project_root}")
+
+    analyzer = PySide6DependencyAnalyzer(project_root=project_root)
+    
+    # Если указан custom venv путь
+    if args.venv:
+        analyzer.venv_path = Path(args.venv).resolve()
+        print(f"Использую указанный venv: {analyzer.venv_path}")
+    
     results = analyzer.analyze_project(project_path, appdir_path)
 
     # Сохраняем в анализатор для генерации команд
@@ -347,13 +438,13 @@ def main():
     print(f"\nПотенциальная экономия места: {results['analysis_summary']['space_saving_potential']}")
 
     if args.verbose and results['real_dependencies']:
-        Devlin(f"\nРеальные зависимости (ldd):")
+        print(f"\nРеальные зависимости (ldd):")
         for module, deps in results['real_dependencies'].items():
             if deps:
                 print(f"  {module} → {', '.join(deps)}")
 
     # Обновляем AppImage рецепт
-    recipe_path = Path("../build-aux/AppImageBuilder.yml")
+    recipe_path = analyzer.build_path / "AppImageBuilder.yml"
     if recipe_path.exists():
         updated_recipe = analyzer.generate_appimage_recipe(results['removable'], recipe_path)
         if updated_recipe:

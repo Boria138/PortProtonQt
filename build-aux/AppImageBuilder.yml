@@ -6,11 +6,12 @@ script:
   - uv pip install --no-cache-dir ../
   - cp -r .venv/lib/python3.10/site-packages/* AppDir/usr/local/lib/python3.10/dist-packages
   - cp -r share AppDir/usr
+  - cp -r lib AppDir/usr
   - rm -rf AppDir/usr/local/lib/python3.10/dist-packages/PySide6/Qt/qml/
   - rm -f AppDir/usr/local/lib/python3.10/dist-packages/PySide6/{assistant,designer,linguist,lrelease,lupdate}
-  - rm -f AppDir/usr/local/lib/python3.10/dist-packages/PySide6/{Qt3DAnimation*,Qt3DCore*,Qt3DExtras*,Qt3DInput*,Qt3DLogic*,Qt3DRender*,QtBluetooth*,QtCharts*,QtConcurrent*,QtDataVisualization*,QtDesigner*,QtExampleIcons*,QtGraphs*,QtGraphsWidgets*,QtHelp*,QtHttpServer*,QtLocation*,QtMultimedia*,QtMultimediaWidgets*,QtNetwork*,QtNetworkAuth*,QtNfc*,QtOpenGL*,QtOpenGLWidgets*,QtPdf*,QtPdfWidgets*,QtPositioning*,QtPrintSupport*,QtQml*,QtQuick*,QtQuick3D*,QtQuickControls2*,QtQuickTest*,QtQuickWidgets*,QtRemoteObjects*,QtScxml*,QtSensors*,QtSerialBus*,QtSerialPort*,QtSpatialAudio*,QtSql*,QtStateMachine*,QtSvgWidgets*,QtTest*,QtTextToSpeech*,QtUiTools*,QtWebChannel*,QtWebEngineCore*,QtWebEngineQuick*,QtWebEngineWidgets*,QtWebSockets*,QtWebView*,QtXml*}
+  - rm -f AppDir/usr/local/lib/python3.10/dist-packages/PySide6/{Qt3DAnimation*,Qt3DCore*,Qt3DExtras*,Qt3DInput*,Qt3DLogic*,Qt3DRender*,QtBluetooth*,QtCharts*,QtConcurrent*,QtDataVisualization*,QtDesigner*,QtExampleIcons*,QtGraphs*,QtGraphsWidgets*,QtHelp*,QtHttpServer*,QtLocation*,QtMultimedia*,QtMultimediaWidgets*,QtNetworkAuth*,QtNfc*,QtOpenGL*,QtOpenGLWidgets*,QtPdf*,QtPdfWidgets*,QtPositioning*,QtPrintSupport*,QtQml*,QtQuick*,QtQuick3D*,QtQuickControls2*,QtQuickTest*,QtQuickWidgets*,QtRemoteObjects*,QtScxml*,QtSensors*,QtSerialBus*,QtSerialPort*,QtSpatialAudio*,QtSql*,QtStateMachine*,QtSvg*,QtSvgWidgets*,QtTest*,QtTextToSpeech*,QtUiTools*,QtWebChannel*,QtWebEngineCore*,QtWebEngineQuick*,QtWebEngineWidgets*,QtWebSockets*,QtWebView*,QtXml*}
   - shopt -s extglob
-  - rm -rf AppDir/usr/local/lib/python3.10/dist-packages/PySide6/Qt/lib/!(libQt6Core*|libQt6DBus*|libQt6Egl*|libQt6Gui*|libQt6Svg*|libQt6Wayland*|libQt6Widgets*|libQt6XcbQpa*|libicudata*|libicui18n*|libicuuc*)
+  - rm -rf AppDir/usr/local/lib/python3.10/dist-packages/PySide6/Qt/lib/!(libQt6Core*|libQt6DBus*|libQt6Egl*|libQt6Gui*|libQt6Network*|libQt6Wayland*|libQt6Widgets*|libQt6XcbQpa*|libicudata*|libicui18n*|libicuuc*)
 AppDir:
   path: ./AppDir
   after_bundle:
