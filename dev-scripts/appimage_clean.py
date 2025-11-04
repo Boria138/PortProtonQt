@@ -21,21 +21,25 @@ class PySide6DependencyAnalyzer:
         # Системные библиотеки, которые нужно всегда оставлять
         self.system_libs = {
             'libQt6XcbQpa', 'libQt6Wayland', 'libQt6Egl',
-            'libicudata', 'libicuuc', 'libicui18n', 'libQt6DBus'
+            'libicudata', 'libicuuc', 'libicui18n', 'libQt6DBus',
+            'libQt6Svg'
+        }
+
+        self.critical_modules = {
+            'QtSvg',
         }
 
         self.real_dependencies = {}
         self.used_modules_code = set()
         self.used_modules_ldd = set()
         self.all_required_modules = set()
-        
         # Определяем корень проекта
         if project_root is None:
             # Корень проекта - две директории выше от скрипта
             self.project_root = Path(__file__).parent.parent
         else:
             self.project_root = project_root
-            
+
         self.venv_path = self.project_root / ".venv"
         self.build_path = self.project_root / "build-aux"
 
@@ -60,9 +64,9 @@ class PySide6DependencyAnalyzer:
             self.project_root / "venv",
             self.project_root / ".virtualenv",
         ]
-        
+
         pyside6_path = None
-        
+
         # Пробуем найти PySide6 в venv
         for venv in venv_candidates:
             if venv.exists():
@@ -78,7 +82,7 @@ class PySide6DependencyAnalyzer:
                                 break
                     if pyside6_path:
                         break
-        
+
         if not pyside6_path:
             print(f"Предупреждение: PySide6 не найден в venv, проверяем AppDir...")
             # Если не нашли в venv, пробуем в AppDir
@@ -304,8 +308,10 @@ class PySide6DependencyAnalyzer:
 
         # Модули для удаления
         if removable_modules:
-            modules_list = ','.join([f"{mod}*" for mod in sorted(removable_modules)])
-            cleanup_lines.append(f"  - rm -f AppDir/usr/local/lib/python3.10/dist-packages/PySide6/{{{modules_list}}}")
+            removable_filtered = [m for m in removable_modules if m not in self.critical_modules]
+            if removable_filtered:
+                modules_list = ','.join([f"{mod}*" for mod in sorted(removable_filtered)])
+                cleanup_lines.append(f"  - rm -f AppDir/usr/local/lib/python3.10/dist-packages/PySide6/{{{modules_list}}}")
 
         # Генерируем команду для удаления нативных библиотек с сохранением нужных
         required_libs = set()
@@ -324,22 +330,22 @@ class PySide6DependencyAnalyzer:
         ])
 
         import re
-        
+
         # Ищем весь блок команд очистки PySide6 (от первой rm до AppDir:)
         # Паттерн: после "  - cp -r lib AppDir/usr\n" идут команды rm, а затем "AppDir:"
         pattern = r'(  - cp -r lib AppDir/usr\n)((?:  - (?:rm|shopt).*\n)*?)(?=AppDir:)'
-        
+
         match = re.search(pattern, recipe_content)
-        
+
         if not match:
             print("ПРЕДУПРЕЖДЕНИЕ: Не удалось найти блок очистки в рецепте")
             print("Добавляем команды очистки перед блоком AppDir:")
-            
+
             # Просто вставим команды перед AppDir:
             appdir_pos = recipe_content.find('AppDir:')
             if appdir_pos != -1:
                 new_content = (
-                    recipe_content[:appdir_pos] + 
+                    recipe_content[:appdir_pos] +
                     '\n'.join(cleanup_lines) + '\n' +
                     recipe_content[appdir_pos:]
                 )
@@ -347,14 +353,13 @@ class PySide6DependencyAnalyzer:
             else:
                 print("ОШИБКА: Не найден блок AppDir: в рецепте")
                 return ""
-        
+
         # Создаем замену - группа 1 (cp -r lib) + новые команды очистки
         replacement = r'\1' + '\n'.join(cleanup_lines) + '\n'
-        
+
         updated_recipe = re.sub(pattern, replacement, recipe_content, count=1)
 
         return updated_recipe
-
 
 def main():
     parser = argparse.ArgumentParser(description='Анализ зависимостей PySide6 модулей с использованием ldd')
