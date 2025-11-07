@@ -131,6 +131,9 @@ class InputManager(QObject):
         self.last_update = time.time()
         self.update_interval = 0.016  # ~60 FPS
         self.emulation_active = False  # Flag for external focus (updated in main thread)
+        self.emulation_triggered = False
+        self.back_held = False
+        self.guide_held = False
 
         # Focus check timer for emulation flag (runs in main thread)
         self.focus_check_timer = QTimer(self)
@@ -182,6 +185,8 @@ class InputManager(QObject):
         """Update emulation_active flag based on Qt app focus (main thread only)."""
         active = QApplication.activeWindow()
         self.emulation_active = (active is None)  # True for external windows (e.g., winefile)
+        if not self.emulation_active:
+            self.emulation_triggered = False
 
     def _navigate_game_cards(self, container, tab_index: int, code: int, value: int) -> None:
         """Common navigation logic for game cards in a container."""
@@ -1853,6 +1858,17 @@ class InputManager(QObject):
 
                             # UI signal handling (always, for internal app)
                             if event.type == ecodes.EV_KEY:
+                                if event.code == ecodes.BTN_EAST:  # Back button
+                                    self.back_held = (event.value == 1)
+
+                                if event.code in BUTTONS['guide']:
+                                    self.guide_held = (event.value == 1)
+
+                                if event.value == 1:
+                                    if ((event.code in BUTTONS['guide'] and self.back_held) or
+                                        (event.code == ecodes.BTN_EAST and self.guide_held)):
+                                        self.emulation_triggered = not self.emulation_triggered
+
                                 self.button_event.emit(event.code, event.value)
                                 # Special handling for menu on press only
                                 if event.value == 1 and event.code in BUTTONS['menu'] and not self._is_gamescope_session:
@@ -1881,8 +1897,8 @@ class InputManager(QObject):
                                 else:
                                     self.dpad_moved.emit(event.code, event.value, current_time)
 
-                            # Mouse emulation (only for external windows)
-                            if self.mouse_emulation_enabled and self.emulation_active:
+                            # Mouse emulation (only for external windows + triggered)
+                            if self.mouse_emulation_enabled and self.emulation_active and self.emulation_triggered:
                                 if event.type == ecodes.EV_ABS:
                                     if event.code == ecodes.ABS_HAT0X:
                                         if event.value == -1:
@@ -1920,6 +1936,9 @@ class InputManager(QObject):
                         self.stick_x_raw = 0
                         self.stick_y_raw = 0
                         self.scroll_accumulator = 0.0
+                        self.back_held = False
+                        self.guide_held = False
+                        self.emulation_triggered = False
                         break
                     except Exception as ex:
                         logger.error(f"Unexpected error in gamepad monitoring: {ex}")
@@ -1938,6 +1957,9 @@ class InputManager(QObject):
                 except Exception:
                     pass
             self.gamepad = None
+            self.back_held = False
+            self.guide_held = False
+            self.emulation_triggered = False
 
     def cleanup(self) -> None:
         """
