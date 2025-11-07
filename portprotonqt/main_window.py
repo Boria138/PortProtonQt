@@ -2642,6 +2642,7 @@ class MainWindow(QMainWindow):
             file_to_check = entry_exec_split[0]
         current_exe = os.path.basename(file_to_check) if file_to_check else None
 
+        buttons_layout = QHBoxLayout()
         if self.target_exe is not None and current_exe == self.target_exe:
             playButton = AutoSizeButton(_("Stop"), icon=self.theme_manager.get_icon("stop"))
         else:
@@ -2650,7 +2651,7 @@ class MainWindow(QMainWindow):
         playButton.setFixedSize(120, 40)
         playButton.setStyleSheet(self.theme.PLAY_BUTTON_STYLE)
         playButton.clicked.connect(lambda: self.toggleGame(exec_line, playButton))
-        detailsLayout.addWidget(playButton, alignment=Qt.AlignmentFlag.AlignLeft)
+        buttons_layout.addWidget(playButton, alignment=Qt.AlignmentFlag.AlignLeft)
 
         # Settings button
         settings_icon = self.theme_manager.get_icon("settings")
@@ -2658,7 +2659,9 @@ class MainWindow(QMainWindow):
         settings_button.setFixedSize(120, 40)
         settings_button.setStyleSheet(self.theme.PLAY_BUTTON_STYLE)
         settings_button.clicked.connect(lambda: self.open_exe_settings(file_to_check))
-        detailsLayout.addWidget(settings_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        buttons_layout.addWidget(settings_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        buttons_layout.addStretch()
+        detailsLayout.addLayout(buttons_layout)
 
         contentFrameLayout.addWidget(detailsWidget)
         mainLayout.addStretch()
