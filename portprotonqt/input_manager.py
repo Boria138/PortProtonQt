@@ -132,7 +132,7 @@ class InputManager(QObject):
         self.update_interval = 0.016  # ~60 FPS
         self.emulation_active = False  # Flag for external focus (updated in main thread)
         self.emulation_triggered = False
-        self.back_held = False
+        self.start_held = False
         self.guide_held = False
 
         # Focus check timer for emulation flag (runs in main thread)
@@ -1858,15 +1858,15 @@ class InputManager(QObject):
 
                             # UI signal handling (always, for internal app)
                             if event.type == ecodes.EV_KEY:
-                                if event.code == ecodes.BTN_EAST:  # Back button
-                                    self.back_held = (event.value == 1)
+                                if event.code == ecodes.BTN_START:
+                                    self.start_held = (event.value == 1)
 
                                 if event.code in BUTTONS['guide']:
                                     self.guide_held = (event.value == 1)
 
                                 if event.value == 1:
-                                    if ((event.code in BUTTONS['guide'] and self.back_held) or
-                                        (event.code == ecodes.BTN_EAST and self.guide_held)):
+                                    if ((event.code in BUTTONS['guide'] and self.start_held) or
+                                        (event.code == ecodes.BTN_START and self.guide_held)):
                                         self.emulation_triggered = not self.emulation_triggered
 
                                 self.button_event.emit(event.code, event.value)
@@ -1936,7 +1936,7 @@ class InputManager(QObject):
                         self.stick_x_raw = 0
                         self.stick_y_raw = 0
                         self.scroll_accumulator = 0.0
-                        self.back_held = False
+                        self.start_held = False
                         self.guide_held = False
                         self.emulation_triggered = False
                         break
@@ -1957,7 +1957,7 @@ class InputManager(QObject):
                 except Exception:
                     pass
             self.gamepad = None
-            self.back_held = False
+            self.start_held = False
             self.guide_held = False
             self.emulation_triggered = False
 
