@@ -1,5 +1,3 @@
-"""Configuration module for exe settings dialog."""
-
 def get_toggle_settings():
     """Get predefined toggle settings with descriptions."""
     from portprotonqt.localization import _

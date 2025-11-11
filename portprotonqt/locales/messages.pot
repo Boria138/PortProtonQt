@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-10-16 14:54+0500\n"
+"POT-Creation-Date: 2025-11-11 17:00+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -74,10 +74,6 @@ msgstr ""
 msgid "Legendary executable not found at {path}"
 msgstr ""
 
-#, python-brace-format
-msgid "start.sh not found at {path}"
-msgstr ""
-
 msgid "Success"
 msgstr ""
 
@@ -120,6 +116,10 @@ msgstr ""
 
 #, python-brace-format
 msgid "Removed '{game_name}' from favorites"
+msgstr ""
+
+#, python-brace-format
+msgid "start.sh not found at {path}"
 msgstr ""
 
 #, python-brace-format
@@ -363,6 +363,39 @@ msgstr ""
 msgid "Components installed successfully."
 msgstr ""
 
+msgid "Exe Settings"
+msgstr ""
+
+msgid "Main"
+msgstr ""
+
+msgid "Advanced"
+msgstr ""
+
+msgid "Setting"
+msgstr ""
+
+msgid "Value"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "disabled"
+msgstr ""
+
+msgid "Info"
+msgstr ""
+
+msgid "No changes to apply."
+msgstr ""
+
+msgid "Failed to apply changes. Check logs."
+msgstr ""
+
+msgid "Settings updated successfully."
+msgstr ""
+
 msgid "Loading Epic Games Store games..."
 msgstr ""
 
@@ -510,14 +543,21 @@ msgstr ""
 msgid "Are you sure you want to clear prefix '{}'?"
 msgstr ""
 
-#, python-brace-format
-msgid "Prefix '{}' cleared successfully."
+msgid "Clearing prefix..."
+msgstr ""
+
+msgid "Failed to start prefix clear process."
+msgstr ""
+
+msgid "Prefix cleared successfully."
 msgstr ""
 
 #, python-brace-format
-msgid ""
-"Prefix '{}' cleared with errors:\n"
-"{}"
+msgid "Prefix clear failed with exit code {}."
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to run clear prefix command: {}"
 msgstr ""
 
 msgid "Failed to start backup process."
@@ -702,6 +742,10 @@ msgstr ""
 msgid "Error applying theme '{0}'"
 msgstr ""
 
+#, python-brace-format
+msgid "Executable not found: {0}"
+msgstr ""
+
 msgid "LAST LAUNCH"
 msgstr ""
 
@@ -758,6 +802,232 @@ msgstr ""
 
 #, python-brace-format
 msgid "File not found: {0}"
+msgstr ""
+
+msgid ""
+"Using FPS and system load monitoring (Turns on and off by the key "
+"combination - right Shift + F12)"
+msgstr ""
+
+msgid "Forced use of MANGOHUD system settings (GOverlay, etc.)"
+msgstr ""
+
+msgid ""
+"Enable vkBasalt by default to improve graphics in games running on "
+"Vulkan. (The HOME hotkey disables vkbasalt)"
+msgstr ""
+
+msgid "Forced use of VKBASALT system settings (GOverlay, etc.)"
+msgstr ""
+
+msgid ""
+"Enable dgVoodoo2. Forced use all dgVoodoo2 libs (Glide 2.11-3.1, "
+"DirectDraw 1-7, Direct3D 2-9) on all 3D API."
+msgstr ""
+
+msgid ""
+"Super + F : Toggle fullscreen\n"
+"Super + N : Toggle nearest neighbour filtering\n"
+"Super + U : Toggle FSR upscaling\n"
+"Super + Y : Toggle NIS upscaling\n"
+"Super + I : Increase FSR sharpness by 1\n"
+"Super + O : Decrease FSR sharpness by 1\n"
+"Super + S : Take screenshot (currently goes to /tmp/gamescope_DATE.png)\n"
+"Super + G : Toggle keyboard grab\n"
+"Super + C : Update clipboard"
+msgstr ""
+
+msgid "Enable in-process synchronization primitives based on eventfd."
+msgstr ""
+
+msgid "Enable futex-based in-process synchronization primitives."
+msgstr ""
+
+msgid "Enable in-process synchronization via the Linux ntsync driver."
+msgstr ""
+
+msgid "Enable vkd3d support - Ray Tracing"
+msgstr ""
+
+msgid "Enable DLSS on supported NVIDIA graphics cards"
+msgstr ""
+
+msgid "Enable OptiScaler (replacement upscaler / frame generator)"
+msgstr ""
+
+msgid "Enable Lossless Scaling frame generation (experimental)"
+msgstr ""
+
+msgid "FSR upscaling in fullscreen with ProtonGE below native resolution"
+msgstr ""
+
+msgid "Disguise all NVIDIA GPU features"
+msgstr ""
+
+msgid "Run the application in WINE virtual desktop"
+msgstr ""
+
+msgid "Run the application in a terminal"
+msgstr ""
+
+msgid "Disable startup mode and WINE version selector window"
+msgstr ""
+
+msgid "Use system GameMode for performance optimization"
+msgstr ""
+
+msgid "Enable forced use of third-party DirectX libraries"
+msgstr ""
+
+msgid "Fix pink-tinted video playback in some games"
+msgstr ""
+
+msgid "Reduce PulseAudio latency to fix intermittent sound"
+msgstr ""
+
+msgid "Force US keyboard layout"
+msgstr ""
+
+msgid "Use GStreamer for in-game clips (WMF support)"
+msgstr ""
+
+msgid "Use WINE shader caching"
+msgstr ""
+
+msgid "Force use of built-in DXGI library"
+msgstr ""
+
+msgid "Enable Easy Anti-Cheat and BattlEye runtimes"
+msgstr ""
+
+msgid "Use system Vulkan layers (MangoHud, vkBasalt, OBS, etc.)"
+msgstr ""
+
+msgid "Enable OBS Studio capture via obs-vkcapture"
+msgstr ""
+
+msgid "Disable desktop compositing for performance"
+msgstr ""
+
+msgid "Use container launch mode (recommended default)"
+msgstr ""
+
+msgid "Force DirectInput protocol instead of XInput"
+msgstr ""
+
+msgid "Enable experimental native Wayland support"
+msgstr ""
+
+msgid "Enable HDR settings under native Wayland"
+msgstr ""
+
+msgid "Use Gallium Zink (OpenGL via Vulkan)"
+msgstr ""
+
+msgid "Use Gallium Nine (native DirectX 9 for Mesa)"
+msgstr ""
+
+msgid "Use WineD3D Vulkan backend (Damavand)"
+msgstr ""
+
+msgid "Use bundled dxvk/vkd3d from Wine/Proton"
+msgstr ""
+
+msgid "Use async dxvk-sarek (experimental)"
+msgstr ""
+
+msgid "Windows version"
+msgstr ""
+
+msgid ""
+"Changing the WINDOWS emulation version may be required to run older "
+"games. WINDOWS versions below 10 do not support new games with DirectX 12"
+msgstr ""
+
+msgid "DLL Overrides"
+msgstr ""
+
+msgid ""
+"Forced to use/disable the library only for the given application.\n"
+"\n"
+"A brief instruction:\n"
+"* libraries are written WITHOUT the .dll file extension\n"
+"* libraries are separated by semicolons - ;\n"
+"* library=n - use the WINDOWS (third-party) library\n"
+"* library=b - use WINE (built-in) library\n"
+"* library=n,b - use WINDOWS library and then WINE\n"
+"* library=b,n - use WINE library and then WINDOWS\n"
+"* library= - disable the use of this library\n"
+"\n"
+"Example: libglesv2=;d3dx9_36,d3dx9_42=n,b;mfc120=b,n"
+msgstr ""
+
+msgid "Launch Arguments"
+msgstr ""
+
+msgid ""
+"Adding an argument after the .exe file, just like you would add an "
+"argument in a shortcut on a WINDOWS system.\n"
+"\n"
+"Example: -dx11 -skipintro 1"
+msgstr ""
+
+msgid "CPU Cores Limit"
+msgstr ""
+
+msgid ""
+"Limiting the number of CPU cores is useful for Unity games (It is "
+"recommended to set the value equal to 8)"
+msgstr ""
+
+msgid "OpenGL Version"
+msgstr ""
+
+msgid ""
+"You can select the required OpenGL version, some games require a forced "
+"Compatibility Profile (COMP)."
+msgstr ""
+
+msgid "VKD3D Feature Level"
+msgstr ""
+
+msgid "You can set a forced feature level VKD3D for games on DirectX12"
+msgstr ""
+
+msgid "Locale"
+msgstr ""
+
+msgid "Force certain locale for an app. Fixes encoding issues in legacy software"
+msgstr ""
+
+msgid "Window Mode"
+msgstr ""
+
+msgid ""
+"Window mode (for Vulkan and OpenGL):\n"
+"fifo - First in, first out. Limits the frame rate + no tearing. (VSync)\n"
+"immediate - Unlimited frame rate + tearing.\n"
+"mailbox - Triple buffering. Unlimited frame rate + no tearing.\n"
+"relaxed - Same as fifo but allows tearing when below the monitors refresh"
+" rate."
+msgstr ""
+
+msgid "AMD Vulkan Driver"
+msgstr ""
+
+msgid ""
+"Select needed AMD vulkan implementation. Choosing which implementation of"
+" vulkan will be used to run the game"
+msgstr ""
+
+msgid "NUMA Node"
+msgstr ""
+
+msgid ""
+"NUMA node for CPU affinity. In multi-core systems, CPUs are split into "
+"NUMA nodes, each with its own local memory and cores. Binding a game to a"
+" single node reduces memory-access latency and limits costly core-to-core"
+" switches."
 msgstr ""
 
 msgid "Reboot"
