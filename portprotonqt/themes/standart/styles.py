@@ -990,6 +990,104 @@ QTabBar::tab:hover {{
 """
 
 WINETRICKS_TABBLE_STYLE = f"""
+QComboBox {{
+    background: {color_c};
+    border: {border_c} {color_g};
+    border-radius: {border_radius_a};
+    padding-left: 12px;
+    color: {color_f};
+    font-family: '{font_family}';
+    font-size: {font_size_a};
+    min-width: 120px;
+    combobox-popup: 0;
+}}
+QComboBox:on {{
+    background: {color_b};
+    border: {border_c} {color_a};
+    border-bottom-style: none;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    border-bottom-left-radius: 0px;
+    border-bottom-right-radius: 0px;
+}}
+QComboBox:hover {{
+    border: {border_c} {color_a};
+    background: {color_a};
+}}
+/* Состояние фокуса */
+QComboBox:focus {{
+    border: {border_c} {color_a};
+    background-color: {color_a};
+}}
+QComboBox::drop-down {{
+    subcontrol-origin: padding;
+    subcontrol-position: center right;
+    border-left: {border_b} rgba(255, 255, 255, 0.05);
+    padding: 12px;
+    height: 12px;
+    width: 12px;
+}}
+QComboBox::down-arrow {{
+    image: url({theme_manager.get_icon("down", current_theme_name, as_path=True)});
+    padding: 12px;
+    height: 12px;
+    width: 12px;
+}}
+QComboBox::down-arrow:on {{
+    image: url({theme_manager.get_icon("up", current_theme_name, as_path=True)});
+    padding: 12px;
+    height: 12px;
+    width: 12px;
+}}
+/* Список при открытом комбобоксе */
+QComboBox QAbstractItemView {{
+    outline: none;
+    background: {color_c};
+    border: {border_c} {color_a};
+    border-top-style: none;
+    border-top-left-radius: 0px;
+    border-top-right-radius: 0px;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+}}
+QListView {{
+    background: {color_c};
+}}
+QListView::item {{
+    padding: 7px 7px 7px 12px;
+    margin: 3px;
+    border-radius: {border_radius_a};
+    color: {color_f};
+}}
+QListView::item:hover {{
+    background: {color_b};
+}}
+QListView::item:selected {{
+    background: {color_b};
+}}
+/* Выделение в списке при фокусе на элементе */
+QListView::item:focus {{
+    background: {color_a};
+    color: {color_f};
+}}
+QLineEdit {{
+    background: {color_b};
+    border: {border_c} rgba(255, 255, 255, 0.01);
+    border-radius: {border_radius_a};
+    height: 34px;
+    padding-left: 12px;
+    color: {color_f};
+    font-family: '{font_family}';
+    font-size: {font_size_a};
+}}
+QLineEdit:hover {{
+    background: {color_c};
+    border: {border_c} {color_a};
+}}
+QLineEdit:focus {{
+    border: {border_c} {color_a};
+    background-color: {color_e};
+}}
 QTableWidget {{
     background: {color_c};
     color: {color_f};
@@ -1010,6 +1108,7 @@ QHeaderView::section {{
 QTableWidget::item {{
     padding: 8px;
     border-bottom: 1px solid {color_d};
+    min-height: 36px;
 }}
 QTableWidget::item:selected {{
     background: {color_a};

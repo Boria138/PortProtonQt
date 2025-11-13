@@ -1783,6 +1783,7 @@ class ExeSettingsDialog(QDialog):
 
         # Tab widget
         self.tab_widget = QTabWidget()
+        self.tab_widget.setStyleSheet(self.theme.WINETRICKS_TAB_STYLE)
         self.main_tab = QWidget()
         self.main_tab_layout = QVBoxLayout(self.main_tab)
         self.advanced_tab = QWidget()
@@ -2152,21 +2153,21 @@ class ExeSettingsDialog(QDialog):
             self.advanced_table.setItem(row, 2, desc_item)
 
         # Make sure QLineEdit and QComboBox look consistent
-        self.advanced_table.setStyleSheet("""
-        QComboBox, QLineEdit {
-            padding: 3px 6px;
-            min-height: 26px;
-        }
-        QComboBox::drop-down {
-            subcontrol-origin: padding;
-            subcontrol-position: top right;
-            width: 18px;
-        }
-        QTextEdit {
-            border-radius: 4px;
-            padding: 4px;
-        }
-        """)
+        # self.advanced_table.setStyleSheet("""
+        # QComboBox, QLineEdit {
+        #     padding: 3px 6px;
+        #     min-height: 26px;
+        # }
+        # QComboBox::drop-down {
+        #     subcontrol-origin: padding;
+        #     subcontrol-position: top right;
+        #     width: 18px;
+        # }
+        # QTextEdit {
+        #     border-radius: 4px;
+        #     padding: 4px;
+        # }
+        # """)
 
     def apply_changes(self):
         """Apply changes by collecting diffs from both main and advanced tabs."""
