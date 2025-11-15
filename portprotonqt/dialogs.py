@@ -1325,7 +1325,9 @@ class WinetricksDialog(QDialog):
 
         # DLLs tab
         self.dll_table = QTableWidget()
+        self.dll_table.setAlternatingRowColors(True)
         self.dll_table.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        # self.dll_table.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
         self.dll_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.dll_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.dll_table.setColumnCount(3)
@@ -1356,7 +1358,9 @@ class WinetricksDialog(QDialog):
 
         # Fonts tab
         self.fonts_table = QTableWidget()
+        self.fonts_table.setAlternatingRowColors(True)
         self.fonts_table.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        # self.fonts_table.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
         self.fonts_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.fonts_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.fonts_table.setColumnCount(3)
@@ -1387,7 +1391,9 @@ class WinetricksDialog(QDialog):
 
         # Settings tab
         self.settings_table = QTableWidget()
+        self.settings_table.setAlternatingRowColors(True)
         self.settings_table.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        # self.settings_table.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
         self.settings_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.settings_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.settings_table.setColumnCount(3)
@@ -1703,7 +1709,7 @@ class ExeSettingsDialog(QDialog):
 
         self.setWindowTitle(_("Exe Settings"))
         self.setModal(True)
-        self.resize(900, 600)
+        self.resize(1100, 720)
         self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE + self.theme.MESSAGE_BOX_STYLE)
 
         self.init_toggle_settings()
@@ -1794,7 +1800,9 @@ class ExeSettingsDialog(QDialog):
 
         # Таблица настроек
         self.settings_table = QTableWidget()
+        self.settings_table.setAlternatingRowColors(True)
         self.settings_table.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        # self.settings_table.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
         self.settings_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.settings_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.settings_table.setColumnCount(3)
@@ -1811,9 +1819,11 @@ class ExeSettingsDialog(QDialog):
 
         # Таблица Advanced
         self.advanced_table = QTableWidget()
+        self.advanced_table.setAlternatingRowColors(True)
         self.advanced_table.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.advanced_table.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
         self.advanced_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        self.advanced_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        # self.advanced_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.advanced_table.setColumnCount(3)
         self.advanced_table.setHorizontalHeaderLabels([_("Setting"), _("Value"), _("Description")])
         self.advanced_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)

@@ -968,9 +968,8 @@ SETTINGS_CHECKBOX_STYLE = f"""
 
 WINETRICKS_TAB_STYLE = f"""
 QTabWidget::pane {{
-    border: 1px solid {color_d};
-    background: {color_b};
-    border-radius: {border_radius_a};
+    border-top: 1px solid {color_c};
+    background: {color_h};
 }}
 QTabBar::tab {{
     background: {color_c};
@@ -985,7 +984,7 @@ QTabBar::tab:selected {{
     color: {color_f};
 }}
 QTabBar::tab:hover {{
-    background: {color_e};
+    background: {color_a};
 }}
 """
 
@@ -1071,7 +1070,7 @@ QListView::item:focus {{
     color: {color_f};
 }}
 QLineEdit {{
-    background: {color_b};
+    background: {color_c};
     border: {border_c} rgba(255, 255, 255, 0.01);
     border-radius: {border_radius_a};
     height: 34px;
@@ -1089,9 +1088,9 @@ QLineEdit:focus {{
     background-color: {color_e};
 }}
 QTableWidget {{
-    background: {color_c};
+    background: {color_h};
     color: {color_f};
-    gridline-color: {color_d};
+    gridline-color: {color_h};
     alternate-background-color: {color_d};
     border: {border_a};
     border-radius: {border_radius_a};
@@ -1107,40 +1106,68 @@ QHeaderView::section {{
 }}
 QTableWidget::item {{
     padding: 8px;
-    border-bottom: 1px solid {color_d};
-    min-height: 36px;
+    border-bottom: {border_a } {color_c};
+    height: 36px;
 }}
-QTableWidget::item:selected {{
+QTableWidget::item:selected,
+QTableWidget::item:focus,
+QTableWidget::item:selected:focus {{
     background: {color_a};
     color: {color_f};
+    selection-background-color: {color_a};
 }}
 QTableWidget::item:hover {{
-    background: {color_e};
+    background: {color_h};
 }}
 QTableWidget::indicator {{
     width: 24px;
     height: 24px;
-    border: {border_b} {color_a};
+    border: {border_c} {color_h};
     border-radius: {border_radius_a};
-    background: rgba(255, 255, 255, 0.1);
+    background: {color_b};
 }}
 QTableWidget::indicator:unchecked {{
     background: rgba(255, 255, 255, 0.1);
     image: none;
 }}
 QTableWidget::indicator:checked {{
-    background: {color_a};
+    background: {color_b};
     image: url({theme_manager.get_icon("check", current_theme_name, as_path=True)});
-    border: {border_b} {color_f};
+    border: {border_c} {color_a};
 }}
 QTableWidget::indicator:hover {{
     background: rgba(255, 255, 255, 0.2);
-    border: {border_b} {color_a};
-}}
-QTableWidget::indicator:focus {{
     border: {border_c} {color_a};
 }}
-{SCROLL_AREA_STYLE}
+QTableWidget::indicator:focus {{
+    background: rgba(255, 255, 255, 0.2);
+    border: {border_c} {color_a};
+}}
+QScrollBar:vertical {{
+    width: 10px;
+    border:  {border_a};
+    border-radius: 5px;
+    background: rgba(20, 20, 20, 0.30);
+}}
+QScrollBar::handle:vertical {{
+    background: #bebebe;
+    border:  {border_a};
+    border-radius: 5px;
+}}
+QScrollBar::add-line:vertical {{
+    border:  {border_a};
+    background: none;
+}}
+QScrollBar::sub-line:vertical {{
+    border:  {border_a};
+    background: none;
+}}
+QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical {{
+    border:  {border_a};
+    width: 3px;
+    height: 3px;
+    background: none;
+}}
 """
 
 WINETRICKS_LOG_STYLE = f"""
