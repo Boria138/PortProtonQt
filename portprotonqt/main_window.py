@@ -565,6 +565,16 @@ class MainWindow(QMainWindow):
         self.game_library_manager.set_games(games)
         self.progress_bar.setVisible(False)
 
+        # Clear the refresh in progress flag
+        if hasattr(self, '_refresh_in_progress'):
+            self._refresh_in_progress = False
+
+        # Re-enable the refresh button if it exists
+        if hasattr(self, 'refreshButton'):
+            self.refreshButton.setEnabled(True)
+            self.refreshButton.setText(_("Refresh Grid"))
+            self.update_status_message.emit(_("Game library refreshed"), 3000)
+
     def open_portproton_forum_topic(self, topic_name: str):
         """Open the PortProton forum topic or search page for this game."""
         result = self.portproton_api.get_forum_topic_slug(topic_name)
@@ -881,7 +891,16 @@ class MainWindow(QMainWindow):
         self.addGameButton.setStyleSheet(self.theme.ADDGAME_BACK_BUTTON_STYLE)
         self.addGameButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.addGameButton.clicked.connect(self.openAddGameDialog)
-        layout.addWidget(self.addGameButton, alignment=Qt.AlignmentFlag.AlignRight)
+        layout.addWidget(self.addGameButton)
+
+        # Refresh button
+        self.refreshButton = AutoSizeButton(_("Refresh Grid"), icon=self.theme_manager.get_icon("update"))
+        self.refreshButton.setStyleSheet(self.theme.ADDGAME_BACK_BUTTON_STYLE)
+        self.refreshButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.refreshButton.clicked.connect(self.refreshGames)
+        layout.addWidget(self.refreshButton)
+
+        layout.addStretch()  # Add stretch to push search to the right
 
         self.searchEdit = CustomLineEdit(self, theme=self.theme)
         icon: QIcon = cast(QIcon, self.theme_manager.get_icon("search"))
@@ -900,6 +919,32 @@ class MainWindow(QMainWindow):
 
         layout.addWidget(self.searchEdit)
         return self.container, self.searchEdit
+
+    def refreshGames(self):
+        """Refresh the game grid by reloading all games without restarting the application."""
+        # Prevent multiple refreshes at once
+        if hasattr(self, '_refresh_in_progress') and self._refresh_in_progress:
+            # If refresh is already in progress, just update the status
+            self.update_status_message.emit(_("A refresh is already in progress..."), 3000)
+            return
+
+        # Mark that a refresh is in progress
+        self._refresh_in_progress = True
+
+        # Clear the search field to ensure all games are shown after refresh
+        self.searchEdit.clear()
+
+        # Disable the refresh button during refresh to prevent multiple clicks
+        self.refreshButton.setEnabled(False)
+        self.refreshButton.setText(_("Refreshing..."))
+
+        # Show progress bar
+        self.progress_bar.setVisible(True)
+        self.progress_bar.setRange(0, 0)  # Indeterminate
+        self.update_status_message.emit(_("Refreshing game library..."), 0)
+
+        # Reload games using the existing loadGames functionality
+        QTimer.singleShot(0, self.loadGames)
 
     def on_search_text_changed(self, text: str):
         """Search text change handler with debounce."""
