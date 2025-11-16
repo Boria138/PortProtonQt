@@ -2015,22 +2015,6 @@ class ExeSettingsDialog(QDialog):
             desc_item.setToolTip(setting['description'])
             desc_item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
             self.advanced_table.setItem(row, 2, desc_item)
-            # Style for consistency
-            self.advanced_table.setStyleSheet("""
-            QComboBox, QLineEdit {
-                padding: 3px 6px;
-                min-height: 26px;
-            }
-            QComboBox::drop-down {
-                subcontrol-origin: padding;
-                subcontrol-position: top right;
-                width: 18px;
-            }
-            QTextEdit {
-                border-radius: 4px;
-                padding: 4px;
-            }
-            """)
 
     def apply_changes(self):
         """Apply changes by collecting diffs from both main and advanced tabs."""
