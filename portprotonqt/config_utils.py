@@ -9,6 +9,10 @@ logger = get_logger(__name__)
 _portproton_location = None
 _portproton_start_sh = None
 
+# Configuration cache for performance optimization
+_config_cache = {}
+_config_last_modified = {}
+
 # Paths to configuration files
 CONFIG_FILE = os.path.join(
     os.getenv("XDG_CONFIG_HOME", os.path.join(os.path.expanduser("~"), ".config")),
@@ -28,13 +32,35 @@ THEMES_DIRS = [
 ]
 
 def read_config_safely(config_file: str) -> configparser.ConfigParser | None:
-    """Safely reads a configuration file and returns a ConfigParser object or None if reading fails."""
-    cp = configparser.ConfigParser()
+    """Safely reads a configuration file and returns a ConfigParser object or None if reading fails.
+    Uses caching to avoid repeated file reads for better performance.
+    """
+    # Check if file exists
     if not os.path.exists(config_file):
         logger.debug(f"Configuration file {config_file} not found")
         return None
+
+    # Get file modification time
+    try:
+        current_mtime = os.path.getmtime(config_file)
+    except OSError:
+        logger.warning(f"Failed to get modification time for {config_file}")
+        return None
+
+    # Check if we have a cached version that's still valid
+    if config_file in _config_cache and config_file in _config_last_modified:
+        if _config_last_modified[config_file] == current_mtime:
+            logger.debug(f"Using cached config for {config_file}")
+            return _config_cache[config_file]
+
+    # Read and parse the config file
+    cp = configparser.ConfigParser()
     try:
         cp.read(config_file, encoding="utf-8")
+        # Update cache
+        _config_cache[config_file] = cp
+        _config_last_modified[config_file] = current_mtime
+        logger.debug(f"Config file {config_file} loaded and cached")
         return cp
     except (configparser.DuplicateSectionError, configparser.DuplicateOptionError) as e:
         logger.warning(f"Invalid configuration file format: {e}")
@@ -42,6 +68,14 @@ def read_config_safely(config_file: str) -> configparser.ConfigParser | None:
     except Exception as e:
         logger.warning(f"Failed to read configuration file: {e}")
         return None
+
+def invalidate_config_cache(config_file: str = CONFIG_FILE):
+    """Invalidates the cached configuration for the specified file."""
+    if config_file in _config_cache:
+        del _config_cache[config_file]
+    if config_file in _config_last_modified:
+        del _config_last_modified[config_file]
+    logger.debug(f"Config cache invalidated for {config_file}")
 
 def read_config():
     """Reads the configuration file and returns a dictionary of parameters.
@@ -77,6 +111,8 @@ def save_theme_to_config(theme_name):
     cp["Appearance"]["theme"] = theme_name
     with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
         cp.write(configfile)
+    # Invalidate cache after saving
+    invalidate_config_cache()
 
 def read_time_config():
     """Reads time settings from the [Time] section of the configuration file.
@@ -96,6 +132,8 @@ def save_time_config(detail_level):
     cp["Time"]["detail_level"] = detail_level
     with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
         cp.write(configfile)
+    # Invalidate cache after saving
+    invalidate_config_cache()
 
 def read_file_content(file_path):
     """Reads the content of a file and returns it as a string."""
@@ -205,6 +243,8 @@ def save_card_size(card_width):
     cp["Cards"]["card_width"] = str(card_width)
     with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
         cp.write(configfile)
+    # Invalidate cache after saving
+    invalidate_config_cache()
 
 def read_auto_card_size():
     """Reads the card size (width) for Auto Install from the [Cards] section.
@@ -224,6 +264,8 @@ def save_auto_card_size(card_width):
     cp["Cards"]["auto_card_width"] = str(card_width)
     with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
         cp.write(configfile)
+    # Invalidate cache after saving
+    invalidate_config_cache()
 
 
 def read_sort_method():
@@ -244,6 +286,8 @@ def save_sort_method(sort_method):
     cp["Games"]["sort_method"] = sort_method
     with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
         cp.write(configfile)
+    # Invalidate cache after saving
+    invalidate_config_cache()
 
 def read_display_filter():
     """Reads the display_filter parameter from the [Games] section.
@@ -263,6 +307,8 @@ def save_display_filter(filter_value):
     cp["Games"]["display_filter"] = filter_value
     with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
         cp.write(configfile)
+    # Invalidate cache after saving
+    invalidate_config_cache()
 
 def read_favorites():
     """Reads the list of favorite games from the [Favorites] section.
@@ -288,6 +334,8 @@ def save_favorites(favorites):
     cp["Favorites"]["games"] = f'"{fav_str}"'
     with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
         cp.write(configfile)
+    # Invalidate cache after saving
+    invalidate_config_cache()
 
 def read_rumble_config():
     """Reads the gamepad rumble setting from the [Gamepad] section.
@@ -307,6 +355,8 @@ def save_rumble_config(rumble_enabled):
     cp["Gamepad"]["rumble_enabled"] = str(rumble_enabled)
     with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
         cp.write(configfile)
+    # Invalidate cache after saving
+    invalidate_config_cache()
 
 def read_gamepad_type():
     """Reads the gamepad type from the [Gamepad] section.
@@ -326,6 +376,8 @@ def save_gamepad_type(gpad_type):
     cp["Gamepad"]["type"] = gpad_type
     with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
         cp.write(configfile)
+    # Invalidate cache after saving
+    invalidate_config_cache()
 
 def ensure_default_proxy_config():
     """Ensures the [Proxy] section exists in the configuration file.
@@ -370,6 +422,8 @@ def save_proxy_config(proxy_url="", proxy_user="", proxy_password=""):
     cp["Proxy"]["proxy_password"] = proxy_password
     with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
         cp.write(configfile)
+    # Invalidate cache after saving
+    invalidate_config_cache()
 
 def read_fullscreen_config():
     """Reads the fullscreen mode setting from the [Display] section.
@@ -389,6 +443,8 @@ def save_fullscreen_config(fullscreen):
     cp["Display"]["fullscreen"] = str(fullscreen)
     with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
         cp.write(configfile)
+    # Invalidate cache after saving
+    invalidate_config_cache()
 
 def read_window_geometry() -> tuple[int, int]:
     """Reads the window width and height from the [MainWindow] section.
@@ -410,6 +466,8 @@ def save_window_geometry(width: int, height: int):
     cp["MainWindow"]["height"] = str(height)
     with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
         cp.write(configfile)
+    # Invalidate cache after saving
+    invalidate_config_cache()
 
 def reset_config():
     """Resets the configuration file by deleting it.
@@ -419,6 +477,8 @@ def reset_config():
         try:
             os.remove(CONFIG_FILE)
             logger.info("Configuration file %s deleted", CONFIG_FILE)
+            # Invalidate cache after deletion
+            invalidate_config_cache()
         except Exception as e:
             logger.warning(f"Failed to delete configuration file: {e}")
 
@@ -432,6 +492,9 @@ def clear_cache():
             logger.info("PortProtonQt cache deleted: %s", cache_dir)
         except Exception as e:
             logger.warning(f"Failed to delete cache: {e}")
+
+    # Also clear our internal config cache
+    invalidate_config_cache()
 
 def read_auto_fullscreen_gamepad():
     """Reads the auto-fullscreen setting for gamepad from the [Display] section.
@@ -451,6 +514,8 @@ def save_auto_fullscreen_gamepad(auto_fullscreen):
     cp["Display"]["auto_fullscreen_gamepad"] = str(auto_fullscreen)
     with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
         cp.write(configfile)
+    # Invalidate cache after saving
+    invalidate_config_cache()
 
 def read_favorite_folders():
     """Reads the list of favorite folders from the [FavoritesFolders] section.
@@ -476,6 +541,8 @@ def save_favorite_folders(folders):
     cp["FavoritesFolders"]["folders"] = f'"{fav_str}"'
     with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
         cp.write(configfile)
+    # Invalidate cache after saving
+    invalidate_config_cache()
 
 def read_minimize_to_tray():
     """Reads the minimize-to-tray setting from the [Display] section.
@@ -495,3 +562,5 @@ def save_minimize_to_tray(minimize_to_tray):
     cp["Display"]["minimize_to_tray"] = str(minimize_to_tray)
     with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
         cp.write(configfile)
+    # Invalidate cache after saving
+    invalidate_config_cache()

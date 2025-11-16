@@ -5,6 +5,9 @@ from portprotonqt.logger import get_logger
 from PySide6.QtGui import QIcon, QFontDatabase, QPixmap
 from portprotonqt.config_utils import save_theme_to_config, load_theme_metainfo
 
+# Icon caching for performance optimization
+_icon_cache = {}
+
 logger = get_logger(__name__)
 
 # Папка, где располагаются все дополнительные темы
@@ -232,6 +235,14 @@ class ThemeManager:
         а если файл не найден, то из стандартной темы.
         Если as_path=True, возвращает путь к иконке вместо QIcon.
         """
+        # Create cache key
+        cache_key = f"{icon_name}_{theme_name or self.current_theme_name}_{as_path}"
+
+        # Check if we already have this icon cached
+        if cache_key in _icon_cache:
+            logger.debug(f"Using cached icon for {icon_name}")
+            return _icon_cache[cache_key]
+
         icon_path = None
         theme_name = theme_name or self.current_theme_name
         supported_extensions = ['.svg', '.png', '.jpg', '.jpeg']
@@ -279,12 +290,20 @@ class ThemeManager:
         # Если иконка всё равно не найдена
         if not icon_path or not os.path.exists(icon_path):
             logger.error(f"Warning: icon '{icon_name}' not found")
-            return QIcon() if not as_path else None
+            result = QIcon() if not as_path else None
+            # Cache the result even if it's None
+            _icon_cache[cache_key] = result
+            return result
 
         if as_path:
+            # Cache the path
+            _icon_cache[cache_key] = icon_path
             return icon_path
 
-        return QIcon(icon_path)
+        # Create QIcon and cache it
+        icon = QIcon(icon_path)
+        _icon_cache[cache_key] = icon
+        return icon
 
     def get_theme_image(self, image_name, theme_name=None):
         """
