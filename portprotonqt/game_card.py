@@ -102,7 +102,7 @@ class GameCard(QFrame):
 
         self.favoriteLabel = ClickableLabel(self.coverWidget)
         self.favoriteLabel.clicked.connect(self.toggle_favorite)
-        self.is_favorite = self.name in read_favorites()
+        self.is_favorite = self.name in set(read_favorites())
         self.update_favorite_icon()
         self.favoriteLabel.raise_()
 
@@ -413,12 +413,13 @@ class GameCard(QFrame):
 
     def toggle_favorite(self):
         favorites = read_favorites()
+        favorites_set = set(favorites)
         if self.is_favorite:
-            if self.name in favorites:
+            if self.name in favorites_set:
                 favorites.remove(self.name)
             self.is_favorite = False
         else:
-            if self.name not in favorites:
+            if self.name not in favorites_set:
                 favorites.append(self.name)
             self.is_favorite = True
         save_favorites(favorites)

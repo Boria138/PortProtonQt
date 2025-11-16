@@ -267,8 +267,9 @@ class GameLibraryManager:
                         return (fav_order, -game[10] if game[10] else 0, -game[11] if game[11] else 0)
 
                 # Quick partition: Sort favorites and non-favorites separately, then merge
-                fav_games = [g for g in games_list if g[0] in favorites]
-                non_fav_games = [g for g in games_list if g[0] not in favorites]
+                favorites_set = set(favorites)  # Convert to set for O(1) lookup
+                fav_games = [g for g in games_list if g[0] in favorites_set]
+                non_fav_games = [g for g in games_list if g[0] not in favorites_set]
                 sorted_fav = sorted(fav_games, key=partition_sort_key)
                 sorted_non_fav = sorted(non_fav_games, key=partition_sort_key)
                 sorted_games = sorted_fav + sorted_non_fav
