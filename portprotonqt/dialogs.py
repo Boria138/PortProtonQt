@@ -1695,6 +1695,17 @@ class ExeSettingsDialog(QDialog):
         base_path = os.path.join(self.portproton_path, "data")
         self.start_sh = [os.path.join(base_path, "scripts", "start.sh")]
 
+        self.dist_options = []
+        self.prefix_options = []
+        if self.portproton_path:
+            dist_dir = os.path.join(self.portproton_path, 'dist')
+            if os.path.exists(dist_dir):
+                self.dist_options = [f for f in os.listdir(dist_dir) if os.path.isdir(os.path.join(dist_dir, f))]
+
+            prefixes_dir = os.path.join(self.portproton_path, 'prefixes')
+            if os.path.exists(prefixes_dir):
+                self.prefix_options = [f for f in os.listdir(prefixes_dir) if os.path.isdir(os.path.join(prefixes_dir, f))]
+
         self.current_settings = {}
         self.value_widgets = {}
         self.original_values = {}
@@ -1961,7 +1972,9 @@ class ExeSettingsDialog(QDialog):
             locale_options=self.locale_options,
             amd_vulkan_drivers=self.amd_vulkan_drivers,
             is_amd=self.is_amd,
-            numa_nodes=self.numa_nodes
+            numa_nodes=self.numa_nodes,
+            dist_options=self.dist_options,
+            prefix_options=self.prefix_options
         )
 
         # Populate table

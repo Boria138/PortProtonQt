@@ -46,14 +46,47 @@ def get_toggle_settings():
 
 
 def get_advanced_settings(disabled_text, logical_core_options, locale_options,
-                          amd_vulkan_drivers, is_amd, numa_nodes):
+                          amd_vulkan_drivers, is_amd, numa_nodes, dist_options=None, prefix_options=None):
     """Get advanced settings configuration."""
     from portprotonqt.localization import _
 
-
     advanced_settings = []
+    if dist_options is None:
+        dist_options = []
+    if prefix_options is None:
+        prefix_options = []
 
-    # 1. Windows version
+    # 1. Wine Version
+    advanced_settings.append({
+        'key': 'PW_WINE_USE',
+        'name': _("Wine Version"),
+        'description': _("Select the Wine or Proton version to use for this executable."),
+        'type': 'combo',
+        'options': dist_options,
+        'default': ''
+    })
+
+    # 2. Prefix Name
+    advanced_settings.append({
+        'key': 'PW_PREFIX_NAME',
+        'name': _("Prefix Name"),
+        'description': _("Select the Wine prefix to use."),
+        'type': 'combo',
+        'options': prefix_options,
+        'default': 'DEFAULT'
+    })
+
+    # 3. Vulkan Backend
+    advanced_settings.append({
+        'key': 'PW_VULKAN_USE',
+        'name': _("Vulkan Backend"),
+        'description': _("Select Vulkan rendering backend:\n0 - WINED3D OpenGL\n1 - DXVK-Sarek and VKD3D\n2 - Stable DXVK and VKD3D\n6 - Newest DXVK and VKD3D"),
+        'type': 'combo',
+        'options': [ '0', '1', '2', '6'],
+        'default': '6'
+    })
+
+    # 4. Windows version
     advanced_settings.append({
         'key': 'PW_WINDOWS_VER',
         'name': _("Windows version"),
@@ -63,7 +96,7 @@ def get_advanced_settings(disabled_text, logical_core_options, locale_options,
         'default': '10'
     })
 
-    # 2. DLL Overrides
+    # 5. DLL Overrides
     advanced_settings.append({
         'key': 'WINEDLLOVERRIDES',
         'name': _("DLL Overrides"),
@@ -72,7 +105,7 @@ def get_advanced_settings(disabled_text, logical_core_options, locale_options,
         'default': ''
     })
 
-    # 3. Launch arguments
+    # 6. Launch arguments
     advanced_settings.append({
         'key': 'LAUNCH_PARAMETERS',
         'name': _("Launch Arguments"),
@@ -81,7 +114,7 @@ def get_advanced_settings(disabled_text, logical_core_options, locale_options,
         'default': ''
     })
 
-    # 4. CPU cores limit
+    # 7. CPU cores limit
     advanced_settings.append({
         'key': 'PW_WINE_CPU_TOPOLOGY',
         'name': _("CPU Cores Limit"),
@@ -91,7 +124,7 @@ def get_advanced_settings(disabled_text, logical_core_options, locale_options,
         'default': disabled_text
     })
 
-    # 5. OpenGL version
+    # 8. OpenGL version
     advanced_settings.append({
         'key': 'PW_MESA_GL_VERSION_OVERRIDE',
         'name': _("OpenGL Version"),
@@ -101,7 +134,7 @@ def get_advanced_settings(disabled_text, logical_core_options, locale_options,
         'default': disabled_text
     })
 
-    # 6. VKD3D feature level
+    # 9. VKD3D feature level
     advanced_settings.append({
         'key': 'PW_VKD3D_FEATURE_LEVEL',
         'name': _("VKD3D Feature Level"),
@@ -111,7 +144,7 @@ def get_advanced_settings(disabled_text, logical_core_options, locale_options,
         'default': disabled_text
     })
 
-    # 7. Locale
+    # 10. Locale
     advanced_settings.append({
         'key': 'PW_LOCALE_SELECT',
         'name': _("Locale"),
@@ -121,7 +154,7 @@ def get_advanced_settings(disabled_text, logical_core_options, locale_options,
         'default': disabled_text
     })
 
-    # 8. Present mode
+    # 11. Present mode
     advanced_settings.append({
         'key': 'PW_MESA_VK_WSI_PRESENT_MODE',
         'name': _("Window Mode"),
@@ -131,7 +164,7 @@ def get_advanced_settings(disabled_text, logical_core_options, locale_options,
         'default': disabled_text
     })
 
-    # 9. AMD Vulkan driver
+    # 12. AMD Vulkan driver
     amd_options = [disabled_text] + amd_vulkan_drivers if is_amd and amd_vulkan_drivers else [disabled_text]
     advanced_settings.append({
         'key': 'PW_AMD_VULKAN_USE',
@@ -142,7 +175,7 @@ def get_advanced_settings(disabled_text, logical_core_options, locale_options,
         'default': disabled_text
     })
 
-    # 10. NUMA node
+    # 13. NUMA node
     numa_ids = sorted(numa_nodes.keys())
     numa_options = [disabled_text] + numa_ids if len(numa_ids) > 1 else [disabled_text]
     advanced_settings.append({
@@ -159,6 +192,9 @@ def get_advanced_settings(disabled_text, logical_core_options, locale_options,
 
 # Keys that should be recognized as advanced settings
 ADVANCED_SETTING_KEYS = [
+    'PW_WINE_USE',
+    'PW_PREFIX_NAME',
+    'PW_VULKAN_USE',
     'PW_WINDOWS_VER',
     'WINEDLLOVERRIDES',
     'LAUNCH_PARAMETERS',
