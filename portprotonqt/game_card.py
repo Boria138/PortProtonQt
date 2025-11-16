@@ -203,7 +203,7 @@ class GameCard(QFrame):
         self.update_cover_pixmap()
 
     def update_cover_pixmap(self):
-        if self.base_pixmap:
+        if self.base_pixmap and not self.base_pixmap.isNull():
             scaled_width = int(self.base_card_width * self._scale)
             scaled_pixmap = self.base_pixmap.scaled(scaled_width, int(scaled_width * 1.5), Qt.AspectRatioMode.KeepAspectRatioByExpanding, Qt.TransformationMode.SmoothTransformation)
             rounded_pixmap = round_corners(scaled_pixmap, int(15 * self._scale))

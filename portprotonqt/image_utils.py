@@ -36,11 +36,22 @@ def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[Q
         current_theme_name = read_theme_from_config()
 
         def finish_with(pixmap: QPixmap):
-            scaled = pixmap.scaled(width, height, Qt.AspectRatioMode.KeepAspectRatioByExpanding, Qt.TransformationMode.SmoothTransformation)
-            x = (scaled.width() - width) // 2
-            y = (scaled.height() - height) // 2
-            cropped = scaled.copy(x, y, width, height)
-            callback(cropped)
+            # Check if pixmap is valid before attempting to scale it
+            if pixmap.isNull():
+                # Create a default placeholder pixmap instead of trying to scale a null pixmap
+                placeholder_pixmap = QPixmap(width, height)
+                placeholder_pixmap.fill(QColor("#333333"))
+                painter = QPainter(placeholder_pixmap)
+                painter.setPen(QPen(QColor("white")))
+                painter.drawText(placeholder_pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "No Image")
+                painter.end()
+                callback(placeholder_pixmap)
+            else:
+                scaled = pixmap.scaled(width, height, Qt.AspectRatioMode.KeepAspectRatioByExpanding, Qt.TransformationMode.SmoothTransformation)
+                x = (scaled.width() - width) // 2
+                y = (scaled.height() - height) // 2
+                cropped = scaled.copy(x, y, width, height)
+                callback(cropped)
 
         xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
         image_folder = os.path.join(xdg_cache_home, "PortProtonQt", "images")
@@ -58,6 +69,9 @@ def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[Q
                     local_path = os.path.join(image_folder, f"{appid}.jpg")
                     if os.path.exists(local_path):
                         pixmap = QPixmap(local_path)
+                        # Check if the pixmap loaded successfully
+                        if pixmap.isNull():
+                            logger.warning(f"Failed to load image from {local_path}")
                         finish_with(pixmap)
                         return
 
@@ -69,6 +83,8 @@ def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[Q
                             placeholder_path = theme_manager.get_theme_image("placeholder", current_theme_name)
                             if placeholder_path and QFile.exists(placeholder_path):
                                 pixmap.load(placeholder_path)
+                                if pixmap.isNull():
+                                    logger.warning(f"Failed to load placeholder image from {placeholder_path}")
                             else:
                                 pixmap = QPixmap(width, height)
                                 pixmap.fill(QColor("#333333"))
@@ -93,6 +109,9 @@ def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[Q
 
                 if os.path.exists(local_path):
                     pixmap = QPixmap(local_path)
+                    # Check if the pixmap loaded successfully
+                    if pixmap.isNull():
+                        logger.warning(f"Failed to load image from {local_path}")
                     finish_with(pixmap)
                     return
 
@@ -104,6 +123,8 @@ def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[Q
                         placeholder_path = theme_manager.get_theme_image("placeholder", current_theme_name)
                         if placeholder_path and QFile.exists(placeholder_path):
                             pixmap.load(placeholder_path)
+                            if pixmap.isNull():
+                                logger.warning(f"Failed to load placeholder image from {placeholder_path}")
                         else:
                             pixmap = QPixmap(width, height)
                             pixmap.fill(QColor("#333333"))
@@ -125,6 +146,9 @@ def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[Q
                 local_path = os.path.join(image_folder, f"{app_name}.jpg")
                 if os.path.exists(local_path):
                     pixmap = QPixmap(local_path)
+                    # Check if the pixmap loaded successfully
+                    if pixmap.isNull():
+                        logger.warning(f"Failed to load image from {local_path}")
                     finish_with(pixmap)
                     return
 
@@ -136,6 +160,8 @@ def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[Q
                         placeholder_path = theme_manager.get_theme_image("placeholder", current_theme_name)
                         if placeholder_path and QFile.exists(placeholder_path):
                             pixmap.load(placeholder_path)
+                            if pixmap.isNull():
+                                logger.warning(f"Failed to load placeholder image from {placeholder_path}")
                         else:
                             pixmap = QPixmap(width, height)
                             pixmap.fill(QColor("#333333"))
@@ -152,6 +178,9 @@ def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[Q
 
         if cover and QFile.exists(cover):
             pixmap = QPixmap(cover)
+            # Check if the pixmap loaded successfully
+            if pixmap.isNull():
+                logger.warning(f"Failed to load image from {cover}")
             finish_with(pixmap)
             return
 
@@ -159,6 +188,8 @@ def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[Q
         pixmap = QPixmap()
         if placeholder_path and QFile.exists(placeholder_path):
             pixmap.load(placeholder_path)
+            if pixmap.isNull():
+                logger.warning(f"Failed to load placeholder image from {placeholder_path}")
         else:
             pixmap = QPixmap(width, height)
             pixmap.fill(QColor("#333333"))
@@ -178,7 +209,15 @@ def round_corners(pixmap, radius):
     """
     if pixmap.isNull():
         return pixmap
+
+    # Check if radius is valid to prevent issues
+    if radius <= 0:
+        return pixmap
+
     size = pixmap.size()
+    if size.width() <= 0 or size.height() <= 0:
+        return pixmap
+
     rounded = QPixmap(size)
     rounded.fill(QColor(0, 0, 0, 0))
     painter = QPainter(rounded)
@@ -281,20 +320,31 @@ class FullscreenDialog(QDialog):
         QApplication.processEvents()
 
         pixmap, caption = self.images[self.current_index]
-        # Учитываем devicePixelRatio для масштабирования высокого качества
-        device_pixel_ratio = get_device_pixel_ratio()
-        target_width = int((self.FIXED_WIDTH - 80) * device_pixel_ratio)
-        target_height = int(self.FIXED_HEIGHT * device_pixel_ratio)
+        # Check if pixmap is valid before attempting to scale it
+        if pixmap.isNull():
+            # Create a default placeholder pixmap instead of trying to scale a null pixmap
+            placeholder_pixmap = QPixmap(self.FIXED_WIDTH - 80, self.FIXED_HEIGHT)
+            placeholder_pixmap.fill(QColor("#333333"))
+            painter = QPainter(placeholder_pixmap)
+            painter.setPen(QPen(QColor("white")))
+            painter.drawText(placeholder_pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "No Image")
+            painter.end()
+            self.imageLabel.setPixmap(placeholder_pixmap)
+        else:
+            # Учитываем devicePixelRatio для масштабирования высокого качества
+            device_pixel_ratio = get_device_pixel_ratio()
+            target_width = int((self.FIXED_WIDTH - 80) * device_pixel_ratio)
+            target_height = int(self.FIXED_HEIGHT * device_pixel_ratio)
 
-        # Масштабируем изображение из оригинального pixmap
-        scaled_pixmap = pixmap.scaled(
-            target_width,
-            target_height,
-            Qt.AspectRatioMode.KeepAspectRatio,
-            Qt.TransformationMode.SmoothTransformation
-        )
-        scaled_pixmap.setDevicePixelRatio(device_pixel_ratio)
-        self.imageLabel.setPixmap(scaled_pixmap)
+            # Масштабируем изображение из оригинального pixmap
+            scaled_pixmap = pixmap.scaled(
+                target_width,
+                target_height,
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation
+            )
+            scaled_pixmap.setDevicePixelRatio(device_pixel_ratio)
+            self.imageLabel.setPixmap(scaled_pixmap)
         self.captionLabel.setText(caption)
         self.setWindowTitle(caption)
 
