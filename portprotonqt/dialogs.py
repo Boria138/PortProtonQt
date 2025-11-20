@@ -125,6 +125,15 @@ def create_dialog_hints_widget(theme, main_window, input_manager, context='defau
             ("prev_tab", _("Prev Tab")),      # LB / L1
             ("next_tab", _("Next Tab")),      # RB / R1
         ]
+    elif context == 'settings':
+        dialog_actions = [
+            ("confirm", _("Toggle")),         # A / Cross
+            ("add_game", _("Save")),          # X / Triangle
+            ("prev_dir", _("Search")),        # Y / Square
+            ("back", _("Cancel")),            # B / Circle
+            ("prev_tab", _("Prev Tab")),      # LB / L1
+            ("next_tab", _("Next Tab")),      # RB / R1
+        ]
 
     hints_labels = []  # Store for updates (returned for class storage)
 
@@ -1723,6 +1732,8 @@ class ExeSettingsDialog(QDialog):
         self.setModal(True)
         self.resize(1100, 720)
         self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE + self.theme.MESSAGE_BOX_STYLE)
+        # Set focus policy to handle focus changes properly
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
         # Load toggle settings from config module
         self.toggle_settings = get_toggle_settings()
@@ -1741,6 +1752,27 @@ class ExeSettingsDialog(QDialog):
 
         self.current_theme_name = read_theme_from_config()
 
+        # Enable settings dialog-specific mode
+        if self.input_manager:
+            self.input_manager.enable_settings_mode(self)
+
+        # Create hints widget using common function
+        self.hints_widget, self.hints_labels = create_dialog_hints_widget(self.theme, self.main_window, self.input_manager, context='settings')
+        self.main_layout.addWidget(self.hints_widget)
+
+        # Connect signals
+        if self.input_manager:
+            self.input_manager.button_event.connect(
+                lambda *args: update_dialog_hints(self.hints_labels, self.main_window, self.input_manager, theme_manager, self.current_theme_name)
+            )
+            self.input_manager.dpad_moved.connect(
+                lambda *args: update_dialog_hints(self.hints_labels, self.main_window, self.input_manager, theme_manager, self.current_theme_name)
+            )
+            update_dialog_hints(self.hints_labels, self.main_window, self.input_manager, theme_manager, self.current_theme_name)
+
+        # Initialize virtual keyboard
+        self.init_virtual_keyboard()
+
         # Load current settings (includes list-db)
         self.load_current_settings()
 
@@ -1756,6 +1788,19 @@ class ExeSettingsDialog(QDialog):
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setContentsMargins(10, 10, 10, 10)
         self.main_layout.setSpacing(10)
+
+        # Search bar
+        search_layout = QHBoxLayout()
+        self.search_label = QLabel(_("Search:"))
+        self.search_label.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.search_edit = QLineEdit()
+        self.search_edit.setStyleSheet(self.theme.ADDGAME_INPUT_STYLE)
+        self.search_edit.setPlaceholderText(_("Search settings..."))
+        self.search_edit.textChanged.connect(self.filter_settings)
+        self.search_edit.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        search_layout.addWidget(self.search_label)
+        search_layout.addWidget(self.search_edit)
+        self.main_layout.addLayout(search_layout)
 
         # Tab widget
         self.tab_widget = QTabWidget()
@@ -2009,6 +2054,9 @@ class ExeSettingsDialog(QDialog):
                 if len(setting['options']) == 1:
                     combo.setEnabled(False)
 
+                # Set focus policy for combo box
+                combo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+
                 self.advanced_table.setCellWidget(row, 1, combo)
                 self.advanced_widgets[setting['key']] = combo
                 self.original_display_values[setting['key']] = current_val
@@ -2028,6 +2076,75 @@ class ExeSettingsDialog(QDialog):
             desc_item.setToolTip(setting['description'])
             desc_item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
             self.advanced_table.setItem(row, 2, desc_item)
+
+    def init_virtual_keyboard(self):
+        """Initialize virtual keyboard"""
+        self.keyboard = VirtualKeyboard(self, theme=self.theme, button_width=40)
+        self.keyboard.hide()
+        self.keyboard.current_input_widget = None
+
+    def show_virtual_keyboard(self, widget=None):
+        """Show virtual keyboard for search or text input"""
+        if not widget:
+            # Default to search edit
+            widget = self.search_edit
+
+        if not widget or not widget.isVisible():
+            return
+
+        # Set the current input widget
+        self.keyboard.current_input_widget = widget
+
+        # Position the keyboard
+        keyboard_height = 220
+        self.keyboard.setFixedWidth(self.width())
+        self.keyboard.setFixedHeight(keyboard_height)
+        self.keyboard.move(0, self.height() - keyboard_height)
+
+        # Show and raise keyboard
+        self.keyboard.setParent(self)
+        self.keyboard.show()
+        self.keyboard.raise_()
+
+        # Focus on first button of keyboard
+        first_button = self.keyboard.findFirstFocusableButton()
+        if first_button:
+            # First hide the current focus to prevent conflicts
+            focused_widget = QApplication.focusWidget()
+            if focused_widget and focused_widget != self.keyboard:
+                focused_widget.clearFocus()
+
+            # Then focus the keyboard button
+            QTimer.singleShot(50, lambda: first_button.setFocus())
+
+    def filter_settings(self, text):
+        """Filter settings based on search text."""
+        # Filter main settings table
+        search_text = text.lower()
+        for row in range(self.settings_table.rowCount()):
+            name_item = self.settings_table.item(row, 0)  # Setting name
+            desc_item = self.settings_table.item(row, 2)  # Description
+            should_show = False
+
+            if name_item and search_text in name_item.text().lower():
+                should_show = True
+            elif desc_item and search_text in desc_item.text().lower():
+                should_show = True
+
+            self.settings_table.setRowHidden(row, not should_show)
+
+        # Filter advanced settings table
+        for row in range(self.advanced_table.rowCount()):
+            name_item = self.advanced_table.item(row, 0)  # Setting name
+            desc_item = self.advanced_table.item(row, 2)  # Description
+            should_show = False
+
+            if name_item and search_text in name_item.text().lower():
+                should_show = True
+            elif desc_item and search_text in desc_item.text().lower():
+                should_show = True
+
+            self.advanced_table.setRowHidden(row, not should_show)
 
     def apply_changes(self):
         """Apply changes by collecting diffs from both main and advanced tabs."""
@@ -2089,8 +2206,40 @@ class ExeSettingsDialog(QDialog):
             self.load_current_settings()
             QMessageBox.information(self, _("Success"), _("Settings updated successfully."))
 
+    def keyPressEvent(self, event):
+        """Override key press event to handle combo box interaction properly."""
+        # If a combo box in the advanced table is active and has an open dropdown,
+        # we need to handle Escape key specially to prevent dialog closure
+        focused_widget = QApplication.focusWidget()
+        if (event.key() == Qt.Key.Key_Escape and
+            isinstance(focused_widget, QComboBox) and
+            focused_widget.view().isVisible()):
+            # If a combo box dropdown is open, just close the dropdown instead of the dialog
+            focused_widget.hidePopup()
+            self.advanced_table.setFocus()
+            return
+        super().keyPressEvent(event)
+
     def closeEvent(self, event):
+        # Hide virtual keyboard if visible
+        if hasattr(self, 'keyboard') and self.keyboard.isVisible():
+            self.keyboard.hide()
+        if self.input_manager:
+            self.input_manager.disable_settings_mode()
         super().closeEvent(event)
 
     def reject(self):
+        # Hide virtual keyboard if visible
+        if hasattr(self, 'keyboard') and self.keyboard.isVisible():
+            self.keyboard.hide()
+        if self.input_manager:
+            self.input_manager.disable_settings_mode()
         super().reject()
+
+    def accept(self):
+        # Hide virtual keyboard if visible
+        if hasattr(self, 'keyboard') and self.keyboard.isVisible():
+            self.keyboard.hide()
+        if self.input_manager:
+            self.input_manager.disable_settings_mode()
+        super().accept()
