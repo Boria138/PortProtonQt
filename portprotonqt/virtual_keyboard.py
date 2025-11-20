@@ -91,18 +91,41 @@ class VirtualKeyboard(QFrame):
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
     def run_shell_command(self, cmd: str) -> str | None:
+        """Synchronous shell command execution - kept for backward compatibility"""
         process = QProcess(self)
         process.start("sh", ["-c", cmd])
-        process.waitForFinished(-1)
-        if process.exitCode() == 0:
-            output_bytes = process.readAllStandardOutput().data()
-            if isinstance(output_bytes, memoryview):
-                output_str = output_bytes.tobytes().decode('utf-8').strip()
+        # Use a reasonable timeout instead of indefinite wait
+        if process.waitForFinished(5000):  # 5 second timeout
+            if process.exitCode() == 0:
+                output_bytes = process.readAllStandardOutput().data()
+                if isinstance(output_bytes, memoryview):
+                    output_str = output_bytes.tobytes().decode('utf-8').strip()
+                else:
+                    output_str = output_bytes.decode('utf-8').strip()
+                return output_str
+        return None
+
+    def run_shell_command_async(self, cmd: str, callback=None):
+        """
+        Run a shell command asynchronously and optionally call a callback with the result.
+        """
+        def on_process_finished(exit_code, exit_status):
+            if exit_code == 0:
+                output_bytes = process.readAllStandardOutput().data()
+                if isinstance(output_bytes, memoryview):
+                    output_str = output_bytes.tobytes().decode('utf-8').strip()
+                else:
+                    output_str = output_bytes.decode('utf-8').strip()
+                if callback:
+                    callback(output_str)
             else:
-                output_str = output_bytes.decode('utf-8').strip()
-            return output_str
-        else:
-            return None
+                if callback:
+                    callback(None)
+
+        process = QProcess(self)
+        # Connect the finished signal to handle the result
+        process.finished.connect(on_process_finished)
+        process.start("sh", ["-c", cmd])
 
     def get_layouts_setxkbmap(self) -> list[str]:
         """Получаем раскладки, которые используются в системе, возвращаем список вида ['us', 'ru'] и т.п."""

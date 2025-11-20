@@ -39,7 +39,19 @@ def main():
     if start_sh is None:
         return
 
-    subprocess.run(start_sh + ["cli", "--initial"])
+    # Run the initial command asynchronously to avoid blocking startup
+    import threading
+    def run_initial_command():
+        try:
+            subprocess.run(start_sh + ["cli", "--initial"], timeout=10)  # Add timeout to prevent hanging
+        except subprocess.TimeoutExpired:
+            logger.warning("Initial command timed out after 10 seconds")
+        except Exception as e:
+            logger.warning(f"Initial command failed: {e}")
+
+    # Start the initial command in a background thread to not block UI startup
+    initial_thread = threading.Thread(target=run_initial_command, daemon=True)
+    initial_thread.start()
 
     app = QApplication(sys.argv)
     app.setWindowIcon(QIcon.fromTheme(__app_id__))

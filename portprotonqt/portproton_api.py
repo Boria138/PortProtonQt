@@ -416,18 +416,24 @@ class PortProtonAPI:
                 self._topics_data = []
 
         self.downloader.download_async(self.topics_url, cache_tar, timeout=5, callback=process_tar)
-        # Wait for async download to complete if called synchronously
-        while self._topics_data is None:
-            time.sleep(0.1)
-        return self._topics_data
+        # Instead of blocking, return cached data if available, or empty list
+        # The actual data will be loaded asynchronously for future calls
+        if hasattr(self, '_topics_data') and self._topics_data is not None:
+            return self._topics_data
+        else:
+            # Return empty list as fallback to prevent blocking
+            # The topics data will be loaded asynchronously in the background
+            logger.warning("Returning empty topics data, async loading in progress")
+            return []
 
     def get_forum_topic_slug(self, game_name: str) -> str:
         """Get the forum topic slug or search URL for a given game name."""
         topics = self._load_topics_data()
-        normalized_name = normalize_name(game_name)
-        for topic in topics:
-            if topic["normalized_title"] == normalized_name:
-                return topic["slug"]
+        if topics:  # Only search if topics were loaded
+            normalized_name = normalize_name(game_name)
+            for topic in topics:
+                if topic["normalized_title"] == normalized_name:
+                    return topic["slug"]
         logger.debug("No forum topic found for game: %s, redirecting to search", game_name)
         encoded_name = urllib.parse.quote(f"#ppdb {game_name}")
         return f"search?q={encoded_name}"
