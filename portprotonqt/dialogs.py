@@ -2026,6 +2026,8 @@ class ExeSettingsDialog(QDialog):
         for setting in advanced_settings:
             row = self.advanced_table.rowCount()
             self.advanced_table.insertRow(row)
+            is_blocked = setting.get("type") == "combo" and len(setting.get("options", [])) == 1
+
 
             # Name column
             name_item = QTableWidgetItem(setting['name'])
@@ -2050,9 +2052,9 @@ class ExeSettingsDialog(QDialog):
                     combo.addItem(current_val)
                 combo.setCurrentText(current_val)
 
-                # Block if only disabled option
-                if len(setting['options']) == 1:
+                if is_blocked:
                     combo.setEnabled(False)
+                    name_item.setForeground(QColor(128, 128, 128))
 
                 # Set focus policy for combo box
                 combo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -2066,6 +2068,10 @@ class ExeSettingsDialog(QDialog):
                 current_val = current.get(setting['key'], setting['default'])
                 line_edit.setText(current_val)
 
+                if is_blocked:
+                    line_edit.setEnabled(False)
+                    line_edit.setStyleSheet("background-color: #f0f0f0;")
+
                 self.advanced_table.setCellWidget(row, 1, line_edit)
                 self.advanced_widgets[setting['key']] = line_edit
                 self.original_display_values[setting['key']] = current_val
@@ -2075,6 +2081,8 @@ class ExeSettingsDialog(QDialog):
             desc_item.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled)
             desc_item.setToolTip(setting['description'])
             desc_item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+            if is_blocked:
+                desc_item.setForeground(QColor(128, 128, 128))
             self.advanced_table.setItem(row, 2, desc_item)
 
     def init_virtual_keyboard(self):
