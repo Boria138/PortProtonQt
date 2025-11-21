@@ -1018,6 +1018,11 @@ QComboBox:focus {{
     border: {border_c} {color_a};
     background-color: {color_a};
 }}
+QComboBox:disabled {{
+    background: #2a2c35;
+    border: {border_c} #2a2c35;
+    color: #777a84;
+}}
 QComboBox::drop-down {{
     subcontrol-origin: padding;
     subcontrol-position: center right;
