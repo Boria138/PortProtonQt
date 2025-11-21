@@ -2042,7 +2042,7 @@ class ExeSettingsDialog(QDialog):
                 if setting['key'] == 'PW_WINE_CPU_TOPOLOGY':
                     current_val = disabled_text if current_raw == 'disabled' else (current_raw.split(':')[0] if isinstance(current_raw, str) and ':' in current_raw else current_raw)
                 elif setting['key'] == 'PW_AMD_VULKAN_USE':
-                    current_val = disabled_text if not current_raw or current_raw == '' else current_raw
+                    current_val = disabled_text if not current_raw or current_raw == '' or current_raw == 'disabled' else current_raw
                 else:
                     current_val = disabled_text if current_raw == 'disabled' else current_raw
 
