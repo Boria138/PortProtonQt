@@ -2087,7 +2087,7 @@ class ExeSettingsDialog(QDialog):
 
     def init_virtual_keyboard(self):
         """Initialize virtual keyboard"""
-        self.keyboard = VirtualKeyboard(self, theme=self.theme, button_width=40)
+        self.keyboard = VirtualKeyboard(self, theme=self.theme, button_width=50)
         self.keyboard.hide()
         self.keyboard.current_input_widget = None
 
