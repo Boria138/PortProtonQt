@@ -1707,10 +1707,9 @@ class ExeSettingsDialog(QDialog):
         self.dist_options = []
         self.prefix_options = []
         if self.portproton_path:
-            dist_dir = os.path.join(self.portproton_path, 'dist')
+            dist_dir = os.path.join(self.portproton_path, "data", 'dist')
             if os.path.exists(dist_dir):
                 self.dist_options = [f for f in os.listdir(dist_dir) if os.path.isdir(os.path.join(dist_dir, f))]
-
             prefixes_dir = os.path.join(self.portproton_path, 'prefixes')
             if os.path.exists(prefixes_dir):
                 self.prefix_options = [f for f in os.listdir(prefixes_dir) if os.path.isdir(os.path.join(prefixes_dir, f))]
@@ -1945,6 +1944,11 @@ class ExeSettingsDialog(QDialog):
         for key in self.blocked_keys:
             self.current_settings[key] = '0'
 
+        # Ensure the currently used Proton version is in dist_options even if not available locally
+        current_wine_version = self.current_settings.get('PW_WINE_USE')
+        if current_wine_version and current_wine_version not in self.dist_options:
+            self.dist_options.append(current_wine_version)
+
         self.original_values = self.current_settings.copy()
         for key in set(self.toggle_settings.keys()):
             self.original_values.setdefault(key, '0')
@@ -2045,10 +2049,13 @@ class ExeSettingsDialog(QDialog):
                     current_val = disabled_text if current_raw == 'disabled' else (current_raw.split(':')[0] if isinstance(current_raw, str) and ':' in current_raw else current_raw)
                 elif setting['key'] == 'PW_AMD_VULKAN_USE':
                     current_val = disabled_text if not current_raw or current_raw == '' or current_raw == 'disabled' else current_raw
+                elif setting['key'] == 'PW_WINE_USE':
+                    # For PW_WINE_USE, only add to options if it's not empty, otherwise leave as is
+                    current_val = current_raw
                 else:
                     current_val = disabled_text if current_raw == 'disabled' else current_raw
 
-                if current_val not in setting['options']:
+                if current_val and current_val not in setting['options']:
                     combo.addItem(current_val)
                 combo.setCurrentText(current_val)
 
