@@ -1811,6 +1811,8 @@ class ExeSettingsDialog(QDialog):
 
         self.tab_widget.addTab(self.main_tab, _("Main"))
         self.tab_widget.addTab(self.advanced_tab, _("Advanced"))
+        # Connect tab change to update description hint
+        self.tab_widget.currentChanged.connect(self.on_table_selection_changed)
 
         # Main settings table
         self.settings_table = QTableWidget()
@@ -1830,6 +1832,8 @@ class ExeSettingsDialog(QDialog):
         self.settings_table.setTextElideMode(Qt.TextElideMode.ElideNone)
         self.settings_table.setStyleSheet(self.theme.WINETRICKS_TABBLE_STYLE)
         self.main_tab_layout.addWidget(self.settings_table)
+        # Connect selection changed signal for the main table
+        self.settings_table.currentCellChanged.connect(self.on_table_selection_changed)
 
         # Advanced settings table
         self.advanced_table = QTableWidget()
@@ -1849,8 +1853,27 @@ class ExeSettingsDialog(QDialog):
         self.advanced_table.setTextElideMode(Qt.TextElideMode.ElideNone)
         self.advanced_table.setStyleSheet(self.theme.WINETRICKS_TABBLE_STYLE)
         self.advanced_tab_layout.addWidget(self.advanced_table)
+        # Connect selection changed signal for the advanced table
+        self.advanced_table.currentCellChanged.connect(self.on_table_selection_changed)
 
         self.main_layout.addWidget(self.tab_widget)
+
+        # Gamepad tooltip for showing descriptions
+        self.gamepad_tooltip = QLabel()
+        self.gamepad_tooltip.setWordWrap(True)
+        self.gamepad_tooltip.setStyleSheet("""
+            QLabel {
+                background-color: #2d2d2d;
+                border: 1px solid #555;
+                border-radius: 4px;
+                padding: 8px;
+                color: white;
+                font-size: 14px;
+            }
+        """)
+        self.gamepad_tooltip.setVisible(False)
+        self.gamepad_tooltip.setParent(self)
+        self.gamepad_tooltip.setWindowFlags(Qt.WindowType.ToolTip)
 
         # Buttons
         button_layout = QHBoxLayout()
@@ -2004,6 +2027,10 @@ class ExeSettingsDialog(QDialog):
             self.settings_table.setCurrentCell(0, 0)
             self.settings_table.setFocus(Qt.FocusReason.OtherFocusReason)
 
+        # Initialize gamepad tooltip for the first row if gamepad is connected
+        if self.input_manager and self.input_manager.gamepad:
+            self.on_table_selection_changed()
+
     def populate_advanced(self):
         """Populate the advanced tab with table format."""
         self.advanced_table.setRowCount(0)
@@ -2123,6 +2150,10 @@ class ExeSettingsDialog(QDialog):
             if is_blocked:
                 desc_item.setForeground(QColor(128, 128, 128))
             self.advanced_table.setItem(row, 2, desc_item)
+
+        # Initialize gamepad tooltip for the first row if gamepad is connected
+        if self.input_manager and self.input_manager.gamepad and self.advanced_table.rowCount() > 0:
+            self.on_table_selection_changed()
 
     def init_virtual_keyboard(self):
         """Initialize virtual keyboard"""
@@ -2296,10 +2327,101 @@ class ExeSettingsDialog(QDialog):
             self.input_manager.disable_settings_mode()
         super().closeEvent(event)
 
+    def show_gamepad_tooltip(self, show=True, text=""):
+        """Show or hide the gamepad tooltip with the provided text."""
+        if show and text:
+            # First set the text to measure the required size
+            self.gamepad_tooltip.setText(text)
+
+            # Calculate appropriate size based on text content
+            font_metrics = self.gamepad_tooltip.fontMetrics()
+            # Calculate text dimensions - wrap at max width
+            max_width = 500  # Maximum width in pixels
+            text_lines = text.split('\n')  # Handle multiline text
+
+            # If text is longer than can fit in a single line at max width, wrap it
+            wrapped_lines = []
+            for line in text_lines:
+                if font_metrics.horizontalAdvance(line) <= max_width:
+                    wrapped_lines.append(line)
+                else:
+                    # Word wrap the line to fit within max width
+                    words = line.split(' ')
+                    current_line = ''
+                    for word in words:
+                        test_line = current_line + ' ' + word if current_line else word
+                        if font_metrics.horizontalAdvance(test_line) <= max_width:
+                            current_line = test_line
+                        else:
+                            if current_line:
+                                wrapped_lines.append(current_line)
+                            current_line = word
+                    if current_line:
+                        wrapped_lines.append(current_line)
+
+            # Set the final wrapped text
+            wrapped_text = '\n'.join(wrapped_lines)
+            self.gamepad_tooltip.setText(wrapped_text)
+
+            # Calculate the required size
+            rect = font_metrics.boundingRect(0, 0, max_width, 1000, Qt.TextFlag.TextWordWrap, wrapped_text)
+            required_width = min(max_width, rect.width() + 20)  # Add padding
+            required_height = min(300, rect.height() + 16)  # Add padding, max height 300
+
+            # Position the tooltip near the currently focused cell
+            current_table = self.advanced_table if self.tab_widget.currentIndex() == 1 else self.settings_table
+            if current_table and current_table.currentRow() >= 0 and current_table.currentColumn() >= 0:
+                # Get the position of the current cell
+                row = current_table.currentRow()
+                col = current_table.currentColumn()
+                item_rect = current_table.visualRect(current_table.model().index(row, col))
+
+                # Convert to global coordinates
+                global_pos = current_table.mapToGlobal(item_rect.topRight())
+
+                # Position the tooltip near the cell
+                self.gamepad_tooltip.setFixedSize(required_width, required_height)
+                self.gamepad_tooltip.move(global_pos.x(), global_pos.y())
+                self.gamepad_tooltip.setVisible(True)
+            else:
+                self.gamepad_tooltip.setVisible(False)
+        else:
+            self.gamepad_tooltip.setVisible(False)
+
+    def get_current_description(self):
+        """Get the description text for the currently selected row in the active table."""
+        # Determine which table is active
+        current_table = self.advanced_table if self.tab_widget.currentIndex() == 1 else self.settings_table
+
+        current_row = current_table.currentRow()
+        if current_row >= 0:
+            # Get the description from column 2
+            desc_item = current_table.item(current_row, 2)
+            if desc_item:
+                return desc_item.text()
+        return ""
+
+    def on_table_selection_changed(self):
+        """Called when table selection changes to update the gamepad tooltip."""
+        # Only show the tooltip if we have a gamepad connected and we're in the description column
+        if self.input_manager and self.input_manager.gamepad:
+            current_table = self.advanced_table if self.tab_widget.currentIndex() == 1 else self.settings_table
+            current_column = current_table.currentColumn() if current_table else -1
+            # Only show tooltip when focused on the description column (column 2)
+            if current_column == 2:
+                description = self.get_current_description()
+                self.show_gamepad_tooltip(show=True, text=description)
+            else:
+                self.show_gamepad_tooltip(show=False)
+        else:
+            self.show_gamepad_tooltip(show=False)
+
     def reject(self):
         # Hide virtual keyboard if visible
         if hasattr(self, 'keyboard') and self.keyboard.isVisible():
             self.keyboard.hide()
+        # Hide gamepad tooltip
+        self.gamepad_tooltip.setVisible(False)
         if self.input_manager:
             self.input_manager.disable_settings_mode()
         super().reject()
@@ -2308,6 +2430,8 @@ class ExeSettingsDialog(QDialog):
         # Hide virtual keyboard if visible
         if hasattr(self, 'keyboard') and self.keyboard.isVisible():
             self.keyboard.hide()
+        # Hide gamepad tooltip
+        self.gamepad_tooltip.setVisible(False)
         if self.input_manager:
             self.input_manager.disable_settings_mode()
         super().accept()
