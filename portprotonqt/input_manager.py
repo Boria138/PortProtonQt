@@ -314,6 +314,7 @@ class InputManager(QObject):
                 elif current_row_idx == 0:
                     self._parent.tabButtons[tab_index].setFocus(Qt.FocusReason.OtherFocusReason)
 
+    # FILE EXPLORER MODE
     def enable_file_explorer_mode(self, file_explorer):
         """Настройка обработки геймпада для FileExplorer"""
         try:
@@ -321,20 +322,23 @@ class InputManager(QObject):
             self.original_button_handler = self.handle_button_slot
             self.original_dpad_handler = self.handle_dpad_slot
             self.original_gamepad_state = self._gamepad_handling_enabled
+
             self.handle_button_slot = self.handle_file_explorer_button
             self.handle_dpad_slot = self.handle_file_explorer_dpad
             self._gamepad_handling_enabled = True
+
             logger.debug("Gamepad handling successfully connected for FileExplorer")
         except Exception as e:
             logger.error(f"Error connecting gamepad handlers for FileExplorer: {e}")
 
     def disable_file_explorer_mode(self):
-        """Восстановление оригинальных обработчиков главного окна программы (дефолт возвращаем)"""
+        """Восстановление оригинальных обработчиков (дефолт возвращаем)"""
         try:
             if self.file_explorer:
                 self.handle_button_slot = self.original_button_handler
                 self.handle_dpad_slot = self.original_dpad_handler
                 self._gamepad_handling_enabled = self.original_gamepad_state
+
                 self.file_explorer = None
                 self.nav_timer.stop()
                 logger.debug("Gamepad handling successfully restored")
@@ -343,11 +347,13 @@ class InputManager(QObject):
 
     def handle_file_explorer_button(self, button_code, value):
         if value == 0:  # Ignore releases
-                    return
+            return
+
         try:
+            # 1. Handle Popups (Menus)
             popup = QApplication.activePopupWidget()
             if isinstance(popup, QMenu):
-                if button_code in BUTTONS['confirm']:  # A button (BTN_SOUTH)
+                if button_code in BUTTONS['confirm']:  # A button
                     if popup.activeAction():
                         popup.activeAction().trigger()
                         popup.close()
@@ -357,63 +363,73 @@ class InputManager(QObject):
                     return
                 return  # Skip other handling if menu is open
 
+            # 2. Validate File Explorer state
             if not self.file_explorer or not hasattr(self.file_explorer, 'file_list'):
                 logger.debug("No file explorer or file_list available")
                 return
 
             focused_widget = QApplication.focusWidget()
-            if button_code in BUTTONS['confirm']:  # A button (BTN_SOUTH)
-                if isinstance(focused_widget, AutoSizeButton) and hasattr(self.file_explorer, 'drive_buttons') and focused_widget in self.file_explorer.drive_buttons:
-                    self.file_explorer.select_drive()  # Select the focused drive
-                elif self.file_explorer.file_list.count() == 0:
-                    logger.debug("File list is empty")
+
+            # 3. Handle Buttons
+            if button_code in BUTTONS['confirm']:  # A button
+                # Check if a drive button is focused
+                if isinstance(focused_widget, AutoSizeButton) and \
+                   hasattr(self.file_explorer, 'drive_buttons') and \
+                   focused_widget in self.file_explorer.drive_buttons:
+                    self.file_explorer.select_drive()
                     return
-                else:
-                    selected = self.file_explorer.file_list.currentItem().text()
-                    full_path = os.path.join(self.file_explorer.current_path, selected)
-                    if os.path.isdir(full_path):
-                        self.file_explorer.current_path = os.path.normpath(full_path)
-                        self.file_explorer.update_file_list()
-                    elif not self.file_explorer.directory_only:
-                        self.file_explorer.file_signal.file_selected.emit(os.path.normpath(full_path))
-                        self.file_explorer.accept()
-                    else:
-                        logger.debug("Selected item is not a directory, cannot select: %s", full_path)
-            elif button_code in BUTTONS['context_menu']:  # Start button (BTN_START)
+
                 if self.file_explorer.file_list.count() == 0:
-                    logger.debug("File list is empty, cannot show context menu")
                     return
-                current_item = self.file_explorer.file_list.currentItem()
-                if current_item:
-                    item_rect = self.file_explorer.file_list.visualItemRect(current_item)
-                    pos = item_rect.center()  # Use local coordinates for itemAt check
-                    self.file_explorer.show_folder_context_menu(pos)
-                else:
-                    logger.debug("No item selected for context menu")
-            elif button_code in BUTTONS['add_game']:  # X button
-                if self.file_explorer.file_list.count() == 0:
-                    logger.debug("File list is empty")
-                    return
+
                 selected = self.file_explorer.file_list.currentItem().text()
                 full_path = os.path.join(self.file_explorer.current_path, selected)
+
                 if os.path.isdir(full_path):
+                    self.file_explorer.current_path = os.path.normpath(full_path)
+                    self.file_explorer.update_file_list()
+                elif not self.file_explorer.directory_only:
                     self.file_explorer.file_signal.file_selected.emit(os.path.normpath(full_path))
                     self.file_explorer.accept()
                 else:
-                    logger.debug("Selected item is not a directory: %s", full_path)
+                    logger.debug(f"Selected item is not a directory: {full_path}")
+
+            elif button_code in BUTTONS['context_menu']:  # Start button
+                if self.file_explorer.file_list.count() == 0:
+                    return
+
+                current_item = self.file_explorer.file_list.currentItem()
+                if current_item:
+                    item_rect = self.file_explorer.file_list.visualItemRect(current_item)
+                    self.file_explorer.show_folder_context_menu(item_rect.center())
+
+            elif button_code in BUTTONS['add_game']:  # X button
+                if self.file_explorer.file_list.count() == 0:
+                    return
+
+                selected = self.file_explorer.file_list.currentItem().text()
+                full_path = os.path.join(self.file_explorer.current_path, selected)
+
+                if os.path.isdir(full_path):
+                    self.file_explorer.file_signal.file_selected.emit(os.path.normpath(full_path))
+                    self.file_explorer.accept()
+
             elif button_code in BUTTONS['back']:  # B button
                 self.file_explorer.close()
+
             elif button_code in BUTTONS['prev_dir']:  # Y button
                 self.file_explorer.previous_dir()
+
             else:
                 if self.original_button_handler:
                     self.original_button_handler(button_code)
+
         except Exception as e:
-            logger.error("Error in FileExplorer button handler: %s", e)
+            logger.error(f"Error in FileExplorer button handler: {e}")
 
     def handle_file_explorer_dpad(self, code, value, current_time):
-        """Обработка движения D-pad и левого стика для FileExplorer"""
         try:
+            # 1. Handle Popups (Menus)
             popup = QApplication.activePopupWidget()
             if isinstance(popup, QMenu):
                 if code == ecodes.ABS_HAT0Y and value != 0:
@@ -422,48 +438,60 @@ class InputManager(QObject):
                         return
                     current_action = popup.activeAction()
                     current_idx = actions.index(current_action) if current_action in actions else -1
+
                     if value > 0:  # Down
                         next_idx = (current_idx + 1) % len(actions) if current_idx != -1 else 0
-                        popup.setActiveAction(actions[next_idx])
-                    elif value < 0:  # Up
+                    else:  # Up
                         next_idx = (current_idx - 1) % len(actions) if current_idx != -1 else len(actions) - 1
-                        popup.setActiveAction(actions[next_idx])
-                return  # Skip other handling if menu is open
 
+                    popup.setActiveAction(actions[next_idx])
+                return
+
+            # 2. Validate State
             if not self.file_explorer or not hasattr(self.file_explorer, 'file_list') or not self.file_explorer.file_list:
-                logger.debug("No file explorer or file_list available")
                 return
 
             focused_widget = QApplication.focusWidget()
-            if code in (ecodes.ABS_HAT0X, ecodes.ABS_X) and hasattr(self.file_explorer, 'drive_buttons') and self.file_explorer.drive_buttons:
-                # Navigate drive buttons horizontally
+
+            # 3. Handle Drive Buttons Navigation (Horizontal)
+            if code in (ecodes.ABS_HAT0X, ecodes.ABS_X) and \
+               hasattr(self.file_explorer, 'drive_buttons') and \
+               self.file_explorer.drive_buttons:
+
                 if not isinstance(focused_widget, AutoSizeButton) or focused_widget not in self.file_explorer.drive_buttons:
-                    # If not focused on a drive button, focus the first one
+                    # Focus first drive button if not currently on one
                     self.file_explorer.drive_buttons[0].setFocus()
                     self.file_explorer.ensure_button_visible(self.file_explorer.drive_buttons[0])
                     return
+
                 current_idx = self.file_explorer.drive_buttons.index(focused_widget)
+                next_idx = current_idx
+
                 if value < 0:  # Left
                     next_idx = max(current_idx - 1, 0)
-                    self.file_explorer.drive_buttons[next_idx].setFocus()
-                    self.file_explorer.ensure_button_visible(self.file_explorer.drive_buttons[next_idx])
                 elif value > 0:  # Right
                     next_idx = min(current_idx + 1, len(self.file_explorer.drive_buttons) - 1)
+
+                if next_idx != current_idx:
                     self.file_explorer.drive_buttons[next_idx].setFocus()
                     self.file_explorer.ensure_button_visible(self.file_explorer.drive_buttons[next_idx])
+                return
+
+            # 4. Handle Vertical Navigation (File List vs Drive Buttons)
             elif code in (ecodes.ABS_HAT0Y, ecodes.ABS_Y):
+                # Move from buttons to list
                 if isinstance(focused_widget, AutoSizeButton) and focused_widget in self.file_explorer.drive_buttons:
-                    # Move focus to file list if navigating down from drive buttons
                     if value > 0 and self.file_explorer.file_list.count() > 0:
                         self.file_explorer.file_list.setFocus()
                         self.file_explorer.file_list.setCurrentRow(0)
                         self.file_explorer.file_list.scrollToItem(self.file_explorer.file_list.currentItem())
                     return
-                # Для D-pad - реакция с фиксированной скоростью
+
+                # D-pad: Fixed speed
                 if code == ecodes.ABS_HAT0Y:
                     if value != 0:
                         self.current_direction = value
-                        self.stick_value = 1.0  # Максимальная скорость для D-pad
+                        self.stick_value = 1.0
                         if not self.nav_timer.isActive():
                             self.file_explorer.move_selection(self.current_direction)
                             self.last_nav_time = current_time
@@ -471,7 +499,8 @@ class InputManager(QObject):
                     else:
                         self.current_direction = 0
                         self.nav_timer.stop()
-                # Для стика - плавное управление с учетом степени отклонения
+
+                # Stick: Analog speed
                 elif code == ecodes.ABS_Y:
                     if abs(value) < self.dead_zone:
                         if self.stick_activated:
@@ -479,20 +508,27 @@ class InputManager(QObject):
                             self.nav_timer.stop()
                             self.stick_activated = False
                         return
+
                     normalized_value = (abs(value) - self.dead_zone) / (32768 - self.dead_zone)
-                    speed_factor = 0.3 + (normalized_value * 0.7)  # От 30% до 100% скорости
+                    speed_factor = 0.3 + (normalized_value * 0.7)
+
                     self.current_direction = -1 if value < 0 else 1
                     self.stick_value = speed_factor
                     self.stick_activated = True
+
                     if not self.nav_timer.isActive():
                         self.file_explorer.move_selection(self.current_direction)
                         self.last_nav_time = current_time
                         self.nav_timer.start(int(self.initial_nav_delay * 1000))
+
+            # 5. Fallback
             elif self.original_dpad_handler:
                 self.original_dpad_handler(code, value, current_time)
-        except Exception as e:
-            logger.error("Error in FileExplorer dpad handler: %s", e)
 
+        except Exception as e:
+            logger.error(f"Error in FileExplorer dpad handler: {e}")
+
+    # WINETRICKS MODE
     def enable_winetricks_mode(self, winetricks_dialog):
         """Setup gamepad handling for WinetricksDialog"""
         try:
@@ -500,13 +536,16 @@ class InputManager(QObject):
             self.original_button_handler = self.handle_button_slot
             self.original_dpad_handler = self.handle_dpad_slot
             self.original_gamepad_state = self._gamepad_handling_enabled
+
             self.handle_button_slot = self.handle_winetricks_button
             self.handle_dpad_slot = self.handle_winetricks_dpad
             self._gamepad_handling_enabled = True
+
             # Reset dpad timer for table nav
             self.dpad_timer.stop()
             self.current_dpad_code = None
             self.current_dpad_value = 0
+
             logger.debug("Gamepad handling successfully connected for WinetricksDialog")
         except Exception as e:
             logger.error(f"Error connecting gamepad handlers for Winetricks: {e}")
@@ -518,14 +557,153 @@ class InputManager(QObject):
                 self.handle_button_slot = self.original_button_handler
                 self.handle_dpad_slot = self.original_dpad_handler
                 self._gamepad_handling_enabled = self.original_gamepad_state
+
                 self.winetricks_dialog = None
                 self.dpad_timer.stop()
                 self.current_dpad_code = None
                 self.current_dpad_value = 0
+
                 logger.debug("Gamepad handling successfully restored from Winetricks")
         except Exception as e:
             logger.error(f"Error restoring gamepad handlers from Winetricks: {e}")
 
+    def handle_winetricks_button(self, button_code, value):
+        if self.winetricks_dialog is None or value == 0:
+            return
+
+        try:
+            # 1. Check active Popups (QMessageBox, QMenu)
+            popup = QApplication.activePopupWidget()
+            if popup:
+                if isinstance(popup, QMessageBox):
+                    if button_code in (BUTTONS['confirm'] | BUTTONS['back']):
+                        popup.accept()
+                    return
+                elif isinstance(popup, QMenu):
+                    if button_code in BUTTONS['confirm']:
+                        if popup.activeAction():
+                            popup.activeAction().trigger()
+                    elif button_code in BUTTONS['back']:
+                        popup.close()
+                    return
+
+            # 2. Check Top-Level Message Boxes
+            for widget in QApplication.topLevelWidgets():
+                if isinstance(widget, QMessageBox) and widget.isVisible():
+                    if button_code in (BUTTONS['confirm'] | BUTTONS['back']):
+                        widget.accept()
+                    return
+
+            # 3. Main Logic
+            focused = QApplication.focusWidget()
+
+            if button_code in BUTTONS['confirm']:  # A: Toggle checkbox
+                if isinstance(focused, QTableWidget):
+                    current_row = focused.currentRow()
+                    if current_row >= 0:
+                        checkbox_item = focused.item(current_row, 0)
+                        if checkbox_item and isinstance(checkbox_item, QTableWidgetItem):
+                            new_state = Qt.CheckState.Checked if checkbox_item.checkState() == Qt.CheckState.Unchecked else Qt.CheckState.Unchecked
+                            checkbox_item.setCheckState(new_state)
+                return
+
+            elif button_code in BUTTONS['add_game']:  # X: Install
+                self.winetricks_dialog.install_selected(force=False)
+
+            elif button_code in BUTTONS['prev_dir']:  # Y: Force Install
+                self.winetricks_dialog.install_selected(force=True)
+
+            elif button_code in BUTTONS['back']:  # B: Cancel
+                self.winetricks_dialog.reject()
+
+            elif button_code in BUTTONS['prev_tab']:  # LB
+                new_index = max(0, self.winetricks_dialog.tab_widget.currentIndex() - 1)
+                self.winetricks_dialog.tab_widget.setCurrentIndex(new_index)
+                self._focus_first_row_in_current_table()
+
+            elif button_code in BUTTONS['next_tab']:  # RB
+                new_index = min(self.winetricks_dialog.tab_widget.count() - 1, self.winetricks_dialog.tab_widget.currentIndex() + 1)
+                self.winetricks_dialog.tab_widget.setCurrentIndex(new_index)
+                self._focus_first_row_in_current_table()
+
+            else:
+                self._parent.activateFocusedWidget()
+
+        except Exception as e:
+            logger.error(f"Error in handle_winetricks_button: {e}")
+
+    def handle_winetricks_dpad(self, code, value, now):
+        if self.winetricks_dialog is None:
+            return
+        try:
+            if value == 0:  # Release
+                self.dpad_timer.stop()
+                self.current_dpad_code = None
+                self.current_dpad_value = 0
+                return
+
+            # Timer setup
+            if self.current_dpad_code != code or self.current_dpad_value != value:
+                self.dpad_timer.stop()
+                self.dpad_timer.setInterval(150 if self.dpad_timer.isActive() else 300)
+                self.dpad_timer.start()
+                self.current_dpad_code = code
+                self.current_dpad_value = value
+
+            table = self._get_current_table()
+            if not table or table.rowCount() == 0:
+                return
+
+            current_row = table.currentRow()
+
+            if code == ecodes.ABS_HAT0Y:  # Up/Down
+                step = -1 if value < 0 else 1
+                new_row = current_row + step
+
+                # Skip hidden rows
+                while 0 <= new_row < table.rowCount() and table.isRowHidden(new_row):
+                    new_row += step
+
+                # Bounds check
+                if new_row < 0:
+                    new_row = current_row
+                if new_row >= table.rowCount():
+                    new_row = current_row
+
+                if new_row != current_row:
+                    table.setCurrentCell(new_row, 0)
+                    table.setFocus(Qt.FocusReason.OtherFocusReason)
+
+            elif code == ecodes.ABS_HAT0X:  # Left/Right (Tabs)
+                current_index = self.winetricks_dialog.tab_widget.currentIndex()
+                if value < 0:  # Left
+                    new_index = max(0, current_index - 1)
+                else:  # Right
+                    new_index = min(self.winetricks_dialog.tab_widget.count() - 1, current_index + 1)
+
+                if new_index != current_index:
+                    self.winetricks_dialog.tab_widget.setCurrentIndex(new_index)
+                    self._focus_first_row_in_current_table()
+
+        except Exception as e:
+            logger.error(f"Error in handle_winetricks_dpad: {e}")
+
+    def _get_current_table(self):
+        if self.winetricks_dialog:
+            current_container = self.winetricks_dialog.tab_widget.currentWidget()
+            if isinstance(current_container, QStackedWidget):
+                current_table = current_container.widget(1)
+                if isinstance(current_table, QTableWidget):
+                    return current_table
+        return None
+
+    def _focus_first_row_in_current_table(self):
+        table = self._get_current_table()
+        if table and table.rowCount() > 0:
+            table.setCurrentCell(0, 0)
+            table.setFocus(Qt.FocusReason.OtherFocusReason)
+
+    # SETTINGS MODE
     def enable_settings_mode(self, settings_dialog):
         """Setup gamepad handling for ExeSettingsDialog"""
         try:
@@ -533,13 +711,15 @@ class InputManager(QObject):
             self.original_button_handler = self.handle_button_slot
             self.original_dpad_handler = self.handle_dpad_slot
             self.original_gamepad_state = self._gamepad_handling_enabled
+
             self.handle_button_slot = self.handle_settings_button
             self.handle_dpad_slot = self.handle_settings_dpad
             self._gamepad_handling_enabled = True
-            # Reset dpad timer for table nav
+
             self.dpad_timer.stop()
             self.current_dpad_code = None
             self.current_dpad_value = 0
+
             logger.debug("Gamepad handling successfully connected for SettingsDialog")
         except Exception as e:
             logger.error(f"Error connecting gamepad handlers for SettingsDialog: {e}")
@@ -551,181 +731,101 @@ class InputManager(QObject):
                 self.handle_button_slot = self.original_button_handler
                 self.handle_dpad_slot = self.original_dpad_handler
                 self._gamepad_handling_enabled = self.original_gamepad_state
+
                 self.settings_dialog = None
                 self.dpad_timer.stop()
                 self.current_dpad_code = None
                 self.current_dpad_value = 0
+
                 logger.debug("Gamepad handling successfully restored from Settings")
         except Exception as e:
             logger.error(f"Error restoring gamepad handlers from Settings: {e}")
-
-    def handle_winetricks_button(self, button_code, value):
-        if self.winetricks_dialog is None:
-            return
-        if value == 0:  # Ignore releases
-            return
-        try:
-            # Always check for popups first, including QMessageBox
-            popup = QApplication.activePopupWidget()
-            if popup:
-                if isinstance(popup, QMessageBox):
-                    if button_code in BUTTONS['confirm'] or button_code in BUTTONS['back']:
-                        popup.accept()  # Close QMessageBox with A or B
-                        return
-                elif isinstance(popup, QMenu):
-                    if button_code in BUTTONS['confirm']:  # A: Select menu item
-                        focused = popup.activeAction()
-                        if focused:
-                            focused.trigger()
-                        return
-                    elif button_code in BUTTONS['back']:  # B: Close menu
-                        popup.close()
-                        return
-
-            # Additional check for top-level QMessageBox (in case not active popup yet)
-            for widget in QApplication.topLevelWidgets():
-                if isinstance(widget, QMessageBox) and widget.isVisible():
-                    if button_code in BUTTONS['confirm'] or button_code in BUTTONS['back']:
-                        widget.accept()
-                        return
-
-            focused = QApplication.focusWidget()
-            if button_code in BUTTONS['confirm']:  # A: Toggle checkbox
-                if isinstance(focused, QTableWidget):
-                    current_row = focused.currentRow()
-                    if current_row >= 0:
-                        checkbox_item = focused.item(current_row, 0)
-                        if checkbox_item and isinstance(checkbox_item, QTableWidgetItem):
-                            new_state = Qt.CheckState.Checked if checkbox_item.checkState() == Qt.CheckState.Unchecked else Qt.CheckState.Unchecked
-                            checkbox_item.setCheckState(new_state)
-                return
-            elif button_code in BUTTONS['add_game']:  # X: Install (no force)
-                self.winetricks_dialog.install_selected(force=False)
-                return
-            elif button_code in BUTTONS['prev_dir']:  # Y: Force Install
-                self.winetricks_dialog.install_selected(force=True)
-                return
-            elif button_code in BUTTONS['back']:  # B: Cancel
-                self.winetricks_dialog.reject()
-                return
-            elif button_code in BUTTONS['prev_tab']:  # LB: Prev Tab
-                current_index = self.winetricks_dialog.tab_widget.currentIndex()
-                new_index = max(0, current_index - 1)
-                self.winetricks_dialog.tab_widget.setCurrentIndex(new_index)
-                self._focus_first_row_in_current_table()
-                return
-            elif button_code in BUTTONS['next_tab']:  # RB: Next Tab
-                current_index = self.winetricks_dialog.tab_widget.currentIndex()
-                new_index = min(self.winetricks_dialog.tab_widget.count() - 1, current_index + 1)
-                self.winetricks_dialog.tab_widget.setCurrentIndex(new_index)
-                self._focus_first_row_in_current_table()
-                return
-            # Fallback: Activate focused widget (e.g., buttons)
-            self._parent.activateFocusedWidget()
-        except Exception as e:
-            logger.error(f"Error in handle_winetricks_button: {e}")
 
     def handle_settings_button(self, button_code, value):
         if self.settings_dialog is None or value == 0:
             return
 
         try:
+            # 1. Virtual Keyboard Handling
             kb = getattr(self.settings_dialog, 'keyboard', None)
-
-            # Virtual keyboard
             if kb and kb.isVisible():
                 if button_code in BUTTONS['back']:
                     kb.hide()
                     if kb.current_input_widget:
                         kb.current_input_widget.setFocus()
-                    return
-                if button_code in BUTTONS['confirm'] or button_code in BUTTONS['context_menu']:
+                elif button_code in (BUTTONS['confirm'] | BUTTONS['context_menu']):
                     kb.activateFocusedKey()
-                    return
-                if button_code in BUTTONS['prev_tab']:
+                elif button_code in BUTTONS['prev_tab']:
                     kb.on_lang_click()
-                    return
-                if button_code in BUTTONS['next_tab']:
+                elif button_code in BUTTONS['next_tab']:
                     kb.on_shift_click(not kb.shift_pressed)
-                    return
-                if button_code in BUTTONS['add_game']:
+                elif button_code in BUTTONS['add_game']:
                     kb.on_backspace_pressed()
-                    return
                 return
 
-            # Pop-ups
+            # 2. Popup Handling
             popup = QApplication.activePopupWidget()
             if popup:
                 if isinstance(popup, (QMessageBox, QDialog)):
-                    if button_code in BUTTONS['confirm'] | BUTTONS['back']:
+                    if button_code in (BUTTONS['confirm'] | BUTTONS['back']):
                         popup.accept()
-                        return
+                    return
                 if isinstance(popup, QMenu):
                     if button_code in BUTTONS['confirm'] and popup.activeAction():
                         popup.activeAction().trigger()
-                        return
-                    if button_code in BUTTONS['back']:
+                    elif button_code in BUTTONS['back']:
                         popup.close()
-                        return
+                    return
 
+            # 3. Advanced Tab Combo Box Logic
             table = self._get_current_settings_table()
-
-            # Ищем любой открытый комбобокс в Advanced-вкладке
             open_combo = None
-            if table is not None and table == self.settings_dialog.advanced_table:
+            if table and table == self.settings_dialog.advanced_table:
                 for r in range(table.rowCount()):
                     w = table.cellWidget(r, 1)
                     if isinstance(w, QComboBox) and w.view().isVisible():
                         open_combo = w
                         break
 
-            # B — закрываем открытый комбобокс или весь диалог
+            # B Button - Close combo or dialog
             if button_code in BUTTONS['back']:
                 if open_combo:
                     open_combo.hidePopup()
-                    if table is not None:
+                    if table:
                         table.setFocus()
                 else:
                     self.settings_dialog.reject()
                 return
 
-            # A — главное действие
+            # A Button - Confirm
             if button_code in BUTTONS['confirm']:
-                # Если есть открытый комбобокс — подтверждаем выбор в нём
                 if open_combo:
                     view = open_combo.view()
-                    model_index = view.currentIndex()
-                    if model_index.isValid():
-                        open_combo.setCurrentIndex(model_index.row())
+                    if view.currentIndex().isValid():
+                        open_combo.setCurrentIndex(view.currentIndex().row())
                     open_combo.hidePopup()
-                    if table is not None:
+                    if table:
                         table.setFocus()
                     return
 
-                # Обычная логика: чекбоксы, открытие комбо, ввод текста
+                # Standard interaction
                 focused = QApplication.focusWidget()
                 if isinstance(focused, QTableWidget) and table and focused.currentRow() >= 0:
                     row = focused.currentRow()
                     cell = focused.cellWidget(row, 1)
 
-                    # Main tab — чекбоксы
-                    if table == self.settings_dialog.settings_table:
+                    # Main settings (checkboxes)
+                    if self.settings_dialog and table == self.settings_dialog.settings_table:
                         item = focused.item(row, 1)
-                        # Only allow toggling if the item is user checkable (enabled)
-                        if item and item.flags() & Qt.ItemFlag.ItemIsUserCheckable:
-                            item.setCheckState(
-                                Qt.CheckState.Checked
-                                if item.checkState() == Qt.CheckState.Unchecked
-                                else Qt.CheckState.Unchecked
-                            )
+                        if item and (item.flags() & Qt.ItemFlag.ItemIsUserCheckable):
+                            new_state = Qt.CheckState.Checked if item.checkState() == Qt.CheckState.Unchecked else Qt.CheckState.Unchecked
+                            item.setCheckState(new_state)
                         return
 
-                    # Advanced tab
-                    if isinstance(cell, QComboBox):
-                        # Only allow opening combo box if it's enabled
-                        if cell.isEnabled():
-                            cell.showPopup()           # открываем, если закрыт
-                            cell.setFocus()
+                    # Advanced settings
+                    if isinstance(cell, QComboBox) and cell.isEnabled():
+                        cell.showPopup()
+                        cell.setFocus()
                         return
                     if isinstance(cell, QLineEdit):
                         cell.setFocus()
@@ -736,278 +836,142 @@ class InputManager(QObject):
                     self.settings_dialog.show_virtual_keyboard(focused)
                 return
 
-            # X — Apply
-            if button_code in BUTTONS['add_game']:
+            # 4. Global Shortcuts
+            if button_code in BUTTONS['add_game']:  # X: Apply
                 self.settings_dialog.apply_changes()
-                return
 
-            # Y — поиск + клавиатура
-            if button_code in BUTTONS['prev_dir']:
+            elif button_code in BUTTONS['prev_dir']:  # Y: Search + Keyboard
                 self.settings_dialog.search_edit.setFocus()
                 self.settings_dialog.show_virtual_keyboard(self.settings_dialog.search_edit)
-                return
 
-            # LB / RB — переключение вкладок
-            if button_code in BUTTONS['prev_tab']:
+            elif button_code in BUTTONS['prev_tab']:  # LB
                 idx = max(0, self.settings_dialog.tab_widget.currentIndex() - 1)
                 self.settings_dialog.tab_widget.setCurrentIndex(idx)
                 self._focus_first_row_in_current_settings_table()
-            elif button_code in BUTTONS['next_tab']:
+
+            elif button_code in BUTTONS['next_tab']:  # RB
                 idx = min(self.settings_dialog.tab_widget.count() - 1, self.settings_dialog.tab_widget.currentIndex() + 1)
                 self.settings_dialog.tab_widget.setCurrentIndex(idx)
                 self._focus_first_row_in_current_settings_table()
+
             else:
                 self._parent.activateFocusedWidget()
 
         except Exception as e:
             logger.error(f"Error in handle_settings_button: {e}")
 
-    def handle_winetricks_dpad(self, code, value, now):
-        if self.winetricks_dialog is None:
-            return
-        try:
-            if value == 0:  # Release: Stop repeat
-                self.dpad_timer.stop()
-                self.current_dpad_code = None
-                self.current_dpad_value = 0
-                return
-
-            # Start/update repeat timer for hold navigation
-            if self.current_dpad_code != code or self.current_dpad_value != value:
-                self.dpad_timer.stop()
-                self.dpad_timer.setInterval(150 if self.dpad_timer.isActive() else 300)  # Initial slower, then faster repeat
-                self.dpad_timer.start()
-                self.current_dpad_code = code
-                self.current_dpad_value = value
-
-            table = self._get_current_table()
-            if not table or table.rowCount() == 0:
-                return
-
-            current_row = table.currentRow()
-            if code == ecodes.ABS_HAT0Y:  # Up/Down: Navigate rows
-                if value < 0:  # Up
-                    # Find the next visible row above the current row
-                    new_row = current_row - 1
-                    while new_row >= 0 and table.isRowHidden(new_row):
-                        new_row -= 1
-                    if new_row < 0:
-                        # If no visible row above, stay at current position
-                        new_row = current_row
-                elif value > 0:  # Down
-                    # Find the next visible row below the current row
-                    new_row = current_row + 1
-                    while new_row < table.rowCount() and table.isRowHidden(new_row):
-                        new_row += 1
-                    if new_row >= table.rowCount():
-                        # If no visible row below, stay at current position
-                        new_row = current_row
-                else:
-                    return
-                if new_row != current_row:
-                    table.setCurrentCell(new_row, 0)  # Focus checkbox column
-                    table.setFocus(Qt.FocusReason.OtherFocusReason)
-            elif code == ecodes.ABS_HAT0X:  # Left/Right: Switch tabs
-                if value < 0:  # Left: Prev tab
-                    current_index = self.winetricks_dialog.tab_widget.currentIndex()
-                    new_index = max(0, current_index - 1)
-                    self.winetricks_dialog.tab_widget.setCurrentIndex(new_index)
-                elif value > 0:  # Right: Next tab
-                    current_index = self.winetricks_dialog.tab_widget.currentIndex()
-                    new_index = min(self.winetricks_dialog.tab_widget.count() - 1, current_index + 1)
-                    self.winetricks_dialog.tab_widget.setCurrentIndex(new_index)
-                self._focus_first_row_in_current_table()
-        except Exception as e:
-            logger.error(f"Error in handle_winetricks_dpad: {e}")
-
-    def _get_current_table(self):
-        """Get the current visible table from the tab widget's stacked container."""
-        if self.winetricks_dialog is None:
-            return None
-        current_container = self.winetricks_dialog.tab_widget.currentWidget()
-        if current_container and isinstance(current_container, QStackedWidget):
-            current_table = current_container.widget(1)  # Table is at index 1 (after preloader)
-            if isinstance(current_table, QTableWidget):
-                return current_table
-        return None
-
-    def _focus_first_row_in_current_table(self):
-        """Focus the first row in the current table after tab switch."""
-        if self.winetricks_dialog is None:
-            return
-        table = self._get_current_table()
-        if table and table.rowCount() > 0:
-            table.setCurrentCell(0, 0)
-            table.setFocus(Qt.FocusReason.OtherFocusReason)
-
-    def _focus_first_row_in_current_settings_table(self):
-        """Focus the first row in the current settings table after tab switch."""
-        if self.settings_dialog is None:
-            return
-        current_table = self._get_current_settings_table()
-        if current_table and current_table.rowCount() > 0:
-            # For the advanced settings table, focus on column 1 (value column) which contains the widgets
-            # For the main settings table, focus on column 0 (name column) which contains checkboxes
-            focus_column = 1 if current_table == self.settings_dialog.advanced_table else 0
-            current_table.setCurrentCell(0, focus_column)
-            current_table.setFocus(Qt.FocusReason.OtherFocusReason)
-
-    def _get_current_settings_table(self):
-        """Get the current visible table from the settings dialog's tab widget."""
-        if self.settings_dialog is None:
-            return None
-        current_index = self.settings_dialog.tab_widget.currentIndex()
-        if current_index == 0:
-            return self.settings_dialog.settings_table
-        elif current_index == 1:
-            return self.settings_dialog.advanced_table
-        return None
-
     def handle_settings_dpad(self, code, value, now):
         if self.settings_dialog is None:
             return
+
         try:
-            # Check if virtual keyboard is visible - if so, handle keyboard navigation instead
-            if (hasattr(self.settings_dialog, 'keyboard') and
-                self.settings_dialog.keyboard.isVisible()):
-                # Handle keyboard navigation with D-pad
-                if code in (ecodes.ABS_HAT0X, ecodes.ABS_X):
-                    normalized_value = 0
-                    if code == ecodes.ABS_X:  # Left stick
-                        # Apply deadzone
-                        if abs(value) < self.dead_zone:
-                            self.current_dpad_code = None
-                            self.current_dpad_value = 0
-                            self.axis_moving = False
-                            self.dpad_timer.stop()
-                            return
-                        normalized_value = 1 if value > self.dead_zone else -1
-                    else:  # D-pad
-                        normalized_value = value  # D-pad already gives -1, 0, 1
+            # 1. Virtual Keyboard Navigation
+            kb = getattr(self.settings_dialog, 'keyboard', None)
+            if kb and kb.isVisible():
+                normalized_value = 0
 
-                    if normalized_value != 0:
-                        if normalized_value > 0:  # Right
-                            self.settings_dialog.keyboard.move_focus_right()
-                        elif normalized_value < 0:  # Left
-                            self.settings_dialog.keyboard.move_focus_left()
-                    return
+                # Normalize Stick vs D-pad
+                if code in (ecodes.ABS_X, ecodes.ABS_Y):  # Sticks
+                    if abs(value) < self.dead_zone:
+                        self.current_dpad_code = None
+                        self.current_dpad_value = 0
+                        self.dpad_timer.stop()
+                        return
+                    normalized_value = 1 if value > self.dead_zone else -1
+                else:  # D-pad
+                    normalized_value = value
 
-                # Handle vertical navigation for keyboard
-                elif code in (ecodes.ABS_HAT0Y, ecodes.ABS_Y):
-                    normalized_value = 0
-                    if code == ecodes.ABS_Y:  # Left stick
-                        # Apply deadzone
-                        if abs(value) < self.dead_zone:
-                            self.current_dpad_code = None
-                            self.current_dpad_value = 0
-                            self.axis_moving = False
-                            self.dpad_timer.stop()
-                            return
-                        normalized_value = 1 if value > self.dead_zone else -1
-                    else:  # D-pad
-                        normalized_value = value  # D-pad already gives -1, 0, 1
+                if normalized_value != 0:
+                    if code in (ecodes.ABS_HAT0X, ecodes.ABS_X):
+                        if normalized_value > 0:
+                            kb.move_focus_right()
+                        else:
+                            kb.move_focus_left()
+                    elif code in (ecodes.ABS_HAT0Y, ecodes.ABS_Y):
+                        if normalized_value > 0:
+                            kb.move_focus_down()
+                        else:
+                            kb.move_focus_up()
+                return
 
-                    if normalized_value != 0:
-                        if normalized_value > 0:  # Down
-                            self.settings_dialog.keyboard.move_focus_down()
-                        elif normalized_value < 0:  # Up
-                            self.settings_dialog.keyboard.move_focus_up()
-                    return
-                return  # Don't continue with table navigation if keyboard is visible
-
-            # Get the current settings table first
+            # 2. Combo Box Navigation (within Advanced Table)
             table = self._get_current_settings_table()
             if not table or table.rowCount() == 0:
                 return
 
-            # Check if a combo box in advanced settings has an open dropdown - if so, handle combo box navigation
-            if (table == self.settings_dialog.advanced_table and
-                table.currentRow() >= 0 and
-                table.currentColumn() == 1):  # Value column
+            if self.settings_dialog and table == self.settings_dialog.advanced_table and table.currentRow() >= 0:
                 cell_widget = table.cellWidget(table.currentRow(), 1)
                 if isinstance(cell_widget, QComboBox) and cell_widget.view().isVisible():
-                    # Only handle combo box dropdown navigation for vertical movements
                     if code == ecodes.ABS_HAT0Y and value != 0:
-                        current_index = cell_widget.currentIndex()
-                        if value < 0:  # Up: move to previous item
-                            new_index = max(0, current_index - 1)
-                        elif value > 0:  # Down: move to next item
-                            new_index = min(cell_widget.count() - 1, current_index + 1)
-                        else:
-                            return
-                        if new_index != current_index:
-                            cell_widget.setCurrentIndex(new_index)
-                            cell_widget.setCurrentText(cell_widget.itemText(new_index))  # Ensure text is updated
-                    # If combo box is active, don't continue with table navigation (for any direction)
-                    return  # Don't continue with table navigation if combo box is active
-                # If not a combo box or dropdown not visible, continue with regular table navigation below
-            # Continue with regular table navigation
+                        idx = cell_widget.currentIndex()
+                        new_idx = max(0, idx - 1) if value < 0 else min(cell_widget.count() - 1, idx + 1)
+                        if new_idx != idx:
+                            cell_widget.setCurrentIndex(new_idx)
+                    return  # Consume event
 
-            if value == 0:  # Release: Stop repeat
+            # 3. Standard Table Navigation
+            if value == 0:
                 self.dpad_timer.stop()
                 self.current_dpad_code = None
                 self.current_dpad_value = 0
                 return
 
-            # Start/update repeat timer for hold navigation
             if self.current_dpad_code != code or self.current_dpad_value != value:
                 self.dpad_timer.stop()
-                self.dpad_timer.setInterval(150 if self.dpad_timer.isActive() else 300)  # Initial slower, then faster repeat
+                self.dpad_timer.setInterval(150 if self.dpad_timer.isActive() else 300)
                 self.dpad_timer.start()
                 self.current_dpad_code = code
                 self.current_dpad_value = value
 
             current_row = table.currentRow()
-            if code == ecodes.ABS_HAT0Y:  # Up/Down: Navigate rows
-                if value < 0:  # Up
-                    # Find the next visible row above the current row
-                    new_row = current_row - 1
-                    while new_row >= 0 and table.isRowHidden(new_row):
-                        new_row -= 1
-                    if new_row < 0:
-                        # If no visible row above, stay at current position
-                        new_row = current_row
-                elif value > 0:  # Down
-                    # Find the next visible row below the current row
-                    new_row = current_row + 1
-                    while new_row < table.rowCount() and table.isRowHidden(new_row):
-                        new_row += 1
-                    if new_row >= table.rowCount():
-                        # If no visible row below, stay at current position
-                        new_row = current_row
-                else:
-                    return
-                if new_row != current_row:
-                    # For the advanced settings table, focus on column 1 (value column) which contains the widgets
-                    # For the main settings table, focus on column 0 (name column) which contains checkboxes
-                    focus_column = 1 if table == self.settings_dialog.advanced_table else 0
+
+            if code == ecodes.ABS_HAT0Y:  # Up/Down
+                step = -1 if value < 0 else 1
+                new_row = current_row + step
+
+                while 0 <= new_row < table.rowCount() and table.isRowHidden(new_row):
+                    new_row += step
+
+                if 0 <= new_row < table.rowCount():
+                    focus_column = 1 if (self.settings_dialog and table == self.settings_dialog.advanced_table) else 0
                     table.setCurrentCell(new_row, focus_column)
                     table.setFocus(Qt.FocusReason.OtherFocusReason)
-            elif code == ecodes.ABS_HAT0X:  # Left/Right: Switch tabs or navigate in cells
+
+            elif code == ecodes.ABS_HAT0X:  # Left/Right
+                current_col = table.currentColumn()
                 if value < 0:  # Left
-                    current_col = table.currentColumn()
                     if current_col > 0:
-                        # Move to previous column in the same row
                         table.setCurrentCell(current_row, max(0, current_col - 1))
                     else:
-                        # Switch to previous tab if at first column
-                        current_index = self.settings_dialog.tab_widget.currentIndex()
-                        new_index = max(0, current_index - 1)
-                        self.settings_dialog.tab_widget.setCurrentIndex(new_index)
+                        idx = max(0, self.settings_dialog.tab_widget.currentIndex() - 1)
+                        self.settings_dialog.tab_widget.setCurrentIndex(idx)
                         self._focus_first_row_in_current_settings_table()
-                elif value > 0:  # Right
-                    current_col = table.currentColumn()
+                else:  # Right
                     if current_col < table.columnCount() - 1:
-                        # Move to next column in the same row
                         table.setCurrentCell(current_row, min(table.columnCount() - 1, current_col + 1))
                     else:
-                        # Switch to next tab if at last column
-                        current_index = self.settings_dialog.tab_widget.currentIndex()
-                        new_index = min(self.settings_dialog.tab_widget.count() - 1, current_index + 1)
-                        self.settings_dialog.tab_widget.setCurrentIndex(new_index)
+                        idx = min(self.settings_dialog.tab_widget.count() - 1, self.settings_dialog.tab_widget.currentIndex() + 1)
+                        self.settings_dialog.tab_widget.setCurrentIndex(idx)
                         self._focus_first_row_in_current_settings_table()
+
         except Exception as e:
             logger.error(f"Error in handle_settings_dpad: {e}")
+
+    def _get_current_settings_table(self):
+        if self.settings_dialog:
+            idx = self.settings_dialog.tab_widget.currentIndex()
+            if idx == 0:
+                return self.settings_dialog.settings_table
+            elif idx == 1:
+                return self.settings_dialog.advanced_table
+        return None
+
+    def _focus_first_row_in_current_settings_table(self):
+        table = self._get_current_settings_table()
+        if table and table.rowCount() > 0:
+            col = 1 if (self.settings_dialog and table == self.settings_dialog.advanced_table) else 0
+            table.setCurrentCell(0, col)
+            table.setFocus(Qt.FocusReason.OtherFocusReason)
 
     def handle_navigation_repeat(self):
         """Плавное повторение движения с переменной скоростью для FileExplorer"""
