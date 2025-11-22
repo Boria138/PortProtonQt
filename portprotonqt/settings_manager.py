@@ -77,13 +77,46 @@ def get_advanced_settings(disabled_text, logical_core_options, locale_options,
     })
 
     # 3. Vulkan Backend
+    vulkan_options = [
+        _("Auto – latest DXVK + VKD3D (recommended)"),        # → 6
+        _("Stable – proven DXVK + VKD3D"),                    # → 2
+        _("Sarek – experimental DXVK-Sarek + VKD3D-Sarek"),   # → 1
+        _("WINED3D – OpenGL (fallback only)")                 # → 0
+    ]
+
+    # Маппинг: отображаемый текст → реальное значение в ppdb
+    vulkan_value_map = {
+        vulkan_options[0]: "6",
+        vulkan_options[1]: "2",
+        vulkan_options[2]: "1",
+        vulkan_options[3]: "0",
+    }
+
     advanced_settings.append({
         'key': 'PW_VULKAN_USE',
         'name': _("Vulkan Backend"),
-        'description': _("Select Vulkan rendering backend:\n0 - WINED3D OpenGL\n1 - DXVK-Sarek and VKD3D\n2 - Stable DXVK and VKD3D\n6 - Newest DXVK and VKD3D"),
+        'description': _(
+            "Select the rendering backend for translating DirectX → Vulkan/OpenGL:\n\n"
+            "• Auto – latest DXVK + VKD3D (recommended)\n"
+            "   The newest versions from the developers. Give the best compatibility and performance in modern games.\n"
+            "   Require up-to-date drivers:\n"
+            "   – AMD: Mesa 25.0+ or proprietary AMDVLK 2024.Q4+\n"
+            "   – NVIDIA: driver 550.54.14 or newer\n"
+            "   – Intel: Mesa 24.2+\n\n"
+            "• Stable – proven DXVK + VKD3D\n"
+            "   Older but extremely well-tested versions. Work on any drivers that support Vulkan 1.3+.\n"
+            "   The best choice if you have problems with the newest versions.\n\n"
+            "• Sarek – experimental DXVK-Sarek + VKD3D-Sarek\n"
+            "   Work even on older drivers and video cards that support at least Vulkan 1.1.\n\n"
+            "• WINED3D – OpenGL translation (fallback)\n"
+            "   No DXVK/VKD3D used. DirectX is translated to OpenGL via built-in WineD3D.\n"
+            "   Works on absolutely any hardware, but performance is significantly lower.\n"
+            "   Use only as a last resort when nothing else starts."
+        ),
         'type': 'combo',
-        'options': [ '0', '1', '2', '6'],
-        'default': '6'
+        'options': vulkan_options,
+        'default': '6',
+        '_value_map': vulkan_value_map
     })
 
     # 4. Windows version

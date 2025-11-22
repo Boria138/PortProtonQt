@@ -2009,6 +2009,7 @@ class ExeSettingsDialog(QDialog):
         self.advanced_table.setRowCount(0)
         self.advanced_widgets.clear()
         self.original_display_values = {}
+        self.value_mapping = {}  # Store value mappings for settings that need translation
         self.advanced_table.verticalHeader().setVisible(False)
 
         current = self.current_settings
@@ -2050,10 +2051,17 @@ class ExeSettingsDialog(QDialog):
                 elif setting['key'] == 'PW_AMD_VULKAN_USE':
                     current_val = disabled_text if not current_raw or current_raw == '' or current_raw == 'disabled' else current_raw
                 elif setting['key'] == 'PW_WINE_USE':
-                    # For PW_WINE_USE, only add to options if it's not empty, otherwise leave as is
                     current_val = current_raw
                 else:
                     current_val = disabled_text if current_raw == 'disabled' else current_raw
+
+                # For settings with value mapping, convert the raw value to display text
+                if '_value_map' in setting:
+                    # Create reverse mapping for lookup
+                    reverse_map = {v: k for k, v in setting['_value_map'].items()}
+                    if current_raw in reverse_map:
+                        # The value from DB maps to a display text, so show that text
+                        current_val = reverse_map[current_raw]
 
                 if current_val and current_val not in setting['options']:
                     combo.addItem(current_val)
@@ -2068,7 +2076,31 @@ class ExeSettingsDialog(QDialog):
 
                 self.advanced_table.setCellWidget(row, 1, combo)
                 self.advanced_widgets[setting['key']] = combo
-                self.original_display_values[setting['key']] = current_val
+
+                # For settings with value mapping, we need to store what was originally displayed to the user
+                # If the current_raw value maps to a display text, store the display text for comparison
+                if '_value_map' in setting:
+                    reverse_map = {v: k for k, v in setting['_value_map'].items()}
+                    if current_raw in reverse_map:
+                        # The raw value from database maps to a display text, store that display text
+                        # so comparison with user selection will work correctly
+                        self.original_display_values[setting['key']] = reverse_map[current_raw]
+                    else:
+                        # No mapping found, store the current display value
+                        self.original_display_values[setting['key']] = current_val
+                else:
+                    # For regular settings, store the display value
+                    self.original_display_values[setting['key']] = current_val
+
+                # Check if this setting has a value mapping and store it
+                if '_value_map' in setting:
+                    # Create reverse mapping for original value lookup
+                    reverse_map = {v: k for k, v in setting['_value_map'].items()}
+                    self.value_mapping[setting['key']] = {
+                        'forward': setting['_value_map'],
+                        'reverse': reverse_map
+                    }
+
 
             elif setting['type'] == 'text':
                 line_edit = QLineEdit()
@@ -2189,15 +2221,36 @@ class ExeSettingsDialog(QDialog):
             orig_val = self.original_display_values.get(key, '')
             if isinstance(widget, QComboBox):
                 new_val = widget.currentText()
+
+                # Special handling for settings that have value mapping
+                # Check if this key has a forward value mapping stored
+                if key in self.value_mapping and 'forward' in self.value_mapping[key]:
+                    value_map = self.value_mapping[key]['forward']
+
+                    # Compare the selected display text with the original display text
+                    has_changed = (new_val != orig_val)
+
+                    # If new_val (the display text selected by user) is in the forward mapping,
+                    # convert it to the actual value for saving
+                    if new_val in value_map:
+                        new_val = value_map[new_val]
+                    # else: new_val remains as the display text (for cases not in the mapping)
+                else:
+                    # No value mapping, regular comparison
+                    has_changed = (new_val != orig_val)
+
                 if new_val.lower() == _('disabled').lower():
                     new_val = 'disabled'
+
+                if has_changed:
+                    changes.append(f"{key}={new_val}")
+
             elif isinstance(widget, QLineEdit):
                 new_val = widget.text().strip()
+                if new_val != orig_val:
+                    changes.append(f"{key}={new_val}")
             else:
                 continue
-
-            if new_val != orig_val:
-                changes.append(f"{key}={new_val}")
 
         if not changes:
             QMessageBox.information(self, _("Info"), _("No changes to apply."))
