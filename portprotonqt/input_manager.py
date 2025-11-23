@@ -724,7 +724,7 @@ class InputManager(QObject):
             logger.error(f"Error restoring gamepad handlers from Settings: {e}")
 
     def handle_settings_button(self, button_code, value):
-        if self.settings_dialog is None or value == 0:
+        if self.settings_dialog is None:
             return
 
         try:
@@ -732,111 +732,123 @@ class InputManager(QObject):
             kb = getattr(self.settings_dialog, 'keyboard', None)
             if kb and kb.isVisible():
                 if button_code in BUTTONS['back']:
-                    kb.hide()
-                    if kb.current_input_widget:
-                        kb.current_input_widget.setFocus()
+                    if value != 0:  # Only handle press, not release
+                        kb.hide()
+                        if kb.current_input_widget:
+                            kb.current_input_widget.setFocus()
+                    return  # Return early to avoid dialog closing logic
                 elif button_code in (BUTTONS['confirm'] | BUTTONS['context_menu']):
-                    kb.activateFocusedKey()
+                    if value != 0:  # Only handle press, not release
+                        kb.activateFocusedKey()
+                    return
                 elif button_code in BUTTONS['prev_tab']:
-                    kb.on_lang_click()
+                    if value != 0:  # Only handle press, not release
+                        kb.on_lang_click()
+                    return
                 elif button_code in BUTTONS['next_tab']:
-                    kb.on_shift_click(not kb.shift_pressed)
+                    if value != 0:  # Only handle press, not release
+                        kb.on_shift_click(not kb.shift_pressed)
+                    return
                 elif button_code in BUTTONS['add_game']:
-                    kb.on_backspace_pressed()
-                return
+                    if value != 0:  # Press event
+                        kb.on_backspace_pressed()
+                    else:  # Release event
+                        kb.stop_backspace_repeat()
+                    return
 
             # Handle common UI elements like QMessageBox, QMenu, etc.
             if self._handle_common_ui_elements(button_code):
                 return
 
             # Handle other QDialogs
-            popup = QApplication.activePopupWidget()
-            if isinstance(popup, QDialog):
-                if button_code in BUTTONS['confirm']:
-                    popup.accept()
-                elif button_code in BUTTONS['back']:
-                    popup.reject()
-                return
-
-            # 3. Advanced Tab Combo Box Logic
-            table = self._get_current_settings_table()
-            open_combo = None
-            if table and table == self.settings_dialog.advanced_table:
-                for r in range(table.rowCount()):
-                    w = table.cellWidget(r, 1)
-                    if isinstance(w, QComboBox) and w.view().isVisible():
-                        open_combo = w
-                        break
-
-            # B Button - Close combo or dialog
-            if button_code in BUTTONS['back']:
-                if open_combo:
-                    open_combo.hidePopup()
-                    if table:
-                        table.setFocus()
-                else:
-                    self.settings_dialog.reject()
-                return
-
-            # A Button - Confirm
-            if button_code in BUTTONS['confirm']:
-                if open_combo:
-                    view = open_combo.view()
-                    if view.currentIndex().isValid():
-                        open_combo.setCurrentIndex(view.currentIndex().row())
-                    open_combo.hidePopup()
-                    if table:
-                        table.setFocus()
+            if value != 0:  # Only handle press events, not releases
+                popup = QApplication.activePopupWidget()
+                if isinstance(popup, QDialog):
+                    if button_code in BUTTONS['confirm']:
+                        popup.accept()
+                    elif button_code in BUTTONS['back']:
+                        popup.reject()
                     return
 
-                # Standard interaction
-                focused = QApplication.focusWidget()
-                if isinstance(focused, QTableWidget) and table and focused.currentRow() >= 0:
-                    row = focused.currentRow()
-                    cell = focused.cellWidget(row, 1)
+                # 3. Advanced Tab Combo Box Logic
+                table = self._get_current_settings_table()
+                open_combo = None
+                if table and table == self.settings_dialog.advanced_table:
+                    for r in range(table.rowCount()):
+                        w = table.cellWidget(r, 1)
+                        if isinstance(w, QComboBox) and w.view().isVisible():
+                            open_combo = w
+                            break
 
-                    # Main settings (checkboxes)
-                    if self.settings_dialog and table == self.settings_dialog.settings_table:
-                        item = focused.item(row, 1)
-                        if item and (item.flags() & Qt.ItemFlag.ItemIsUserCheckable):
-                            new_state = Qt.CheckState.Checked if item.checkState() == Qt.CheckState.Unchecked else Qt.CheckState.Unchecked
-                            item.setCheckState(new_state)
+                # B Button - Close combo or dialog
+                if button_code in BUTTONS['back']:
+                    if open_combo:
+                        open_combo.hidePopup()
+                        if table:
+                            table.setFocus()
+                    else:
+                        self.settings_dialog.reject()
+                    return
+
+                # A Button - Confirm
+                if button_code in BUTTONS['confirm']:
+                    if open_combo:
+                        view = open_combo.view()
+                        if view.currentIndex().isValid():
+                            open_combo.setCurrentIndex(view.currentIndex().row())
+                        open_combo.hidePopup()
+                        if table:
+                            table.setFocus()
                         return
 
-                    # Advanced settings
-                    if isinstance(cell, QComboBox) and cell.isEnabled():
-                        cell.showPopup()
-                        cell.setFocus()
-                        return
-                    if isinstance(cell, QLineEdit):
-                        cell.setFocus()
-                        self.settings_dialog.show_virtual_keyboard(cell)
-                        return
+                    # Standard interaction
+                    focused = QApplication.focusWidget()
+                    if isinstance(focused, QTableWidget) and table and focused.currentRow() >= 0:
+                        row = focused.currentRow()
+                        cell = focused.cellWidget(row, 1)
 
-                if isinstance(focused, QLineEdit):
-                    self.settings_dialog.show_virtual_keyboard(focused)
-                return
+                        # Main settings (checkboxes)
+                        if self.settings_dialog and table == self.settings_dialog.settings_table:
+                            item = focused.item(row, 1)
+                            if item and (item.flags() & Qt.ItemFlag.ItemIsUserCheckable):
+                                new_state = Qt.CheckState.Checked if item.checkState() == Qt.CheckState.Unchecked else Qt.CheckState.Unchecked
+                                item.setCheckState(new_state)
+                            return
 
-            # 4. Global Shortcuts
-            if button_code in BUTTONS['add_game']:  # X: Apply
-                self.settings_dialog.apply_changes()
+                        # Advanced settings
+                        if isinstance(cell, QComboBox) and cell.isEnabled():
+                            cell.showPopup()
+                            cell.setFocus()
+                            return
+                        if isinstance(cell, QLineEdit):
+                            cell.setFocus()
+                            self.settings_dialog.show_virtual_keyboard(cell)
+                            return
 
-            elif button_code in BUTTONS['prev_dir']:  # Y: Search + Keyboard
-                self.settings_dialog.search_edit.setFocus()
-                self.settings_dialog.show_virtual_keyboard(self.settings_dialog.search_edit)
+                    if isinstance(focused, QLineEdit):
+                        self.settings_dialog.show_virtual_keyboard(focused)
+                    return
 
-            elif button_code in BUTTONS['prev_tab']:  # LB
-                idx = max(0, self.settings_dialog.tab_widget.currentIndex() - 1)
-                self.settings_dialog.tab_widget.setCurrentIndex(idx)
-                self._focus_first_row_in_current_settings_table()
+                # 4. Global Shortcuts
+                if button_code in BUTTONS['add_game']:  # X: Apply
+                    self.settings_dialog.apply_changes()
 
-            elif button_code in BUTTONS['next_tab']:  # RB
-                idx = min(self.settings_dialog.tab_widget.count() - 1, self.settings_dialog.tab_widget.currentIndex() + 1)
-                self.settings_dialog.tab_widget.setCurrentIndex(idx)
-                self._focus_first_row_in_current_settings_table()
+                elif button_code in BUTTONS['prev_dir']:  # Y: Search + Keyboard
+                    self.settings_dialog.search_edit.setFocus()
+                    self.settings_dialog.show_virtual_keyboard(self.settings_dialog.search_edit)
 
-            else:
-                self._parent.activateFocusedWidget()
+                elif button_code in BUTTONS['prev_tab']:  # LB
+                    idx = max(0, self.settings_dialog.tab_widget.currentIndex() - 1)
+                    self.settings_dialog.tab_widget.setCurrentIndex(idx)
+                    self._focus_first_row_in_current_settings_table()
+
+                elif button_code in BUTTONS['next_tab']:  # RB
+                    idx = min(self.settings_dialog.tab_widget.count() - 1, self.settings_dialog.tab_widget.currentIndex() + 1)
+                    self.settings_dialog.tab_widget.setCurrentIndex(idx)
+                    self._focus_first_row_in_current_settings_table()
+
+                else:
+                    self._parent.activateFocusedWidget()
 
         except Exception as e:
             logger.error(f"Error in handle_settings_button: {e}")
