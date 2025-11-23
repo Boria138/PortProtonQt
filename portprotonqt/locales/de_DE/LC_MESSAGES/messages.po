@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-11-11 17:00+0500\n"
+"POT-Creation-Date: 2025-11-23 15:42+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: de_DE\n"
@@ -279,6 +279,12 @@ msgstr ""
 msgid "Next Tab"
 msgstr ""
 
+msgid "Save"
+msgstr ""
+
+msgid "Search"
+msgstr ""
+
 #, python-brace-format
 msgid "Launching {0}"
 msgstr ""
@@ -366,6 +372,12 @@ msgid "Components installed successfully."
 msgstr ""
 
 msgid "Exe Settings"
+msgstr ""
+
+msgid "Search:"
+msgstr ""
+
+msgid "Search settings..."
 msgstr ""
 
 msgid "Main"
@@ -461,9 +473,6 @@ msgstr ""
 msgid "Fullscreen"
 msgstr ""
 
-msgid "Search"
-msgstr ""
-
 msgid "Installation already in progress."
 msgstr ""
 
@@ -483,6 +492,12 @@ msgstr ""
 msgid "Installation error."
 msgstr ""
 
+msgid "Refresh Grid"
+msgstr ""
+
+msgid "Game library refreshed"
+msgstr ""
+
 msgid "Loading Steam games..."
 msgstr ""
 
@@ -493,6 +508,15 @@ msgid "Game Library"
 msgstr ""
 
 msgid "Find Games ..."
+msgstr ""
+
+msgid "A refresh is already in progress..."
+msgstr ""
+
+msgid "Refreshing..."
+msgstr ""
+
+msgid "Refreshing game library..."
 msgstr ""
 
 #, python-brace-format
@@ -936,6 +960,55 @@ msgid "Use bundled dxvk/vkd3d from Wine/Proton"
 msgstr ""
 
 msgid "Use async dxvk-sarek (experimental)"
+msgstr ""
+
+msgid "Wine Version"
+msgstr ""
+
+msgid "Select the Wine or Proton version to use for this executable."
+msgstr ""
+
+msgid "Prefix Name"
+msgstr ""
+
+msgid "Select the Wine prefix to use."
+msgstr ""
+
+msgid "Latest"
+msgstr ""
+
+msgid "Stable"
+msgstr ""
+
+msgid "Vulkan Backend"
+msgstr ""
+
+msgid ""
+"Select the rendering backend for translating DirectX → Vulkan/OpenGL:\n"
+"\n"
+"• Auto – latest DXVK + VKD3D (recommended)\n"
+"   The newest versions from the developers. Give the best compatibility "
+"and performance in modern games.\n"
+"   Require up-to-date drivers:\n"
+"   – AMD: Mesa 25.0+ or proprietary AMDVLK 2024.Q4+\n"
+"   – NVIDIA: driver 550.54.14 or newer\n"
+"   – Intel: Mesa 24.2+\n"
+"\n"
+"• Stable – proven DXVK + VKD3D\n"
+"   Older but extremely well-tested versions. Work on any drivers that "
+"support Vulkan 1.3+.\n"
+"   The best choice if you have problems with the newest versions.\n"
+"\n"
+"• Sarek – experimental DXVK-Sarek + VKD3D-Sarek\n"
+"   Work even on older drivers and video cards that support at least "
+"Vulkan 1.1.\n"
+"\n"
+"• WINED3D – OpenGL translation (fallback)\n"
+"   No DXVK/VKD3D used. DirectX is translated to OpenGL via built-in "
+"WineD3D.\n"
+"   Works on absolutely any hardware, but performance is significantly "
+"lower.\n"
+"   Use only as a last resort when nothing else starts."
 msgstr ""
 
 msgid "Windows version"

@@ -78,10 +78,10 @@ def get_advanced_settings(disabled_text, logical_core_options, locale_options,
 
     # 3. Vulkan Backend
     vulkan_options = [
-        _("Auto – latest DXVK + VKD3D (recommended)"),        # → 6
-        _("Stable – proven DXVK + VKD3D"),                    # → 2
-        _("Sarek – experimental DXVK-Sarek + VKD3D-Sarek"),   # → 1
-        _("WINED3D – OpenGL (fallback only)")                 # → 0
+        _("Latest"),        # → 6
+        _("Stable"),                    # → 2
+        ("Sarek"),   # → 1
+        ("WINED3D – OpenGL")                 # → 0
     ]
 
     # Маппинг: отображаемый текст → реальное значение в ppdb
