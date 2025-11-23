@@ -572,29 +572,11 @@ class InputManager(QObject):
             return
 
         try:
-            # 1. Check active Popups (QMessageBox, QMenu)
-            popup = QApplication.activePopupWidget()
-            if popup:
-                if isinstance(popup, QMessageBox):
-                    if button_code in (BUTTONS['confirm'] | BUTTONS['back']):
-                        popup.accept()
-                    return
-                elif isinstance(popup, QMenu):
-                    if button_code in BUTTONS['confirm']:
-                        if popup.activeAction():
-                            popup.activeAction().trigger()
-                    elif button_code in BUTTONS['back']:
-                        popup.close()
-                    return
+            # Handle common UI elements like QMessageBox, QMenu, etc.
+            if self._handle_common_ui_elements(button_code):
+                return
 
-            # 2. Check Top-Level Message Boxes
-            for widget in QApplication.topLevelWidgets():
-                if isinstance(widget, QMessageBox) and widget.isVisible():
-                    if button_code in (BUTTONS['confirm'] | BUTTONS['back']):
-                        widget.accept()
-                    return
-
-            # 3. Main Logic
+            # Winetricks-specific button handling
             focused = QApplication.focusWidget()
 
             if button_code in BUTTONS['confirm']:  # A: Toggle checkbox
@@ -763,19 +745,18 @@ class InputManager(QObject):
                     kb.on_backspace_pressed()
                 return
 
-            # 2. Popup Handling
+            # Handle common UI elements like QMessageBox, QMenu, etc.
+            if self._handle_common_ui_elements(button_code):
+                return
+
+            # Handle other QDialogs
             popup = QApplication.activePopupWidget()
-            if popup:
-                if isinstance(popup, (QMessageBox, QDialog)):
-                    if button_code in (BUTTONS['confirm'] | BUTTONS['back']):
-                        popup.accept()
-                    return
-                if isinstance(popup, QMenu):
-                    if button_code in BUTTONS['confirm'] and popup.activeAction():
-                        popup.activeAction().trigger()
-                    elif button_code in BUTTONS['back']:
-                        popup.close()
-                    return
+            if isinstance(popup, QDialog):
+                if button_code in BUTTONS['confirm']:
+                    popup.accept()
+                elif button_code in BUTTONS['back']:
+                    popup.reject()
+                return
 
             # 3. Advanced Tab Combo Box Logic
             table = self._get_current_settings_table()
@@ -1243,26 +1224,8 @@ class InputManager(QObject):
                     self._parent.openSystemOverlay()
                     return
 
-            # Handle QMenu (context menu)
-            if isinstance(popup, QMenu):
-                if button_code in BUTTONS['confirm']:
-                    if popup.activeAction():
-                        popup.activeAction().trigger()
-                        popup.close()
-                    return
-                elif button_code in BUTTONS['back']:
-                    popup.close()
-                    return
-                return
-
-            # Handle QMessageBox
-            if isinstance(active, QMessageBox):
-                if button_code in BUTTONS['confirm']:
-                    active.accept()  # Close QMessageBox with the default button
-                    return
-                elif button_code in BUTTONS['back']:
-                    active.reject()  # Close QMessageBox on back button
-                    return
+            # Handle common UI elements like QMenu and QMessageBox
+            if self._handle_common_ui_elements(button_code):
                 return
 
             # Handle QComboBox
@@ -1463,21 +1426,40 @@ class InputManager(QObject):
             if not app or not active:
                 return
 
-            # Handle SystemOverlay, AddGameDialog, or QMessageBox navigation with D-pad
-            if isinstance(active, QDialog) and code == ecodes.ABS_HAT0X and value != 0:
-                if isinstance(active, QMessageBox):  # Specific handling for QMessageBox
-                    if not focused or not active.focusWidget():
-                        # If no widget is focused, focus the first focusable widget
-                        focusables = active.findChildren(QWidget, options=Qt.FindChildOption.FindChildrenRecursively)
-                        focusables = [w for w in focusables if w.focusPolicy() & Qt.FocusPolicy.StrongFocus]
-                        if focusables:
-                            focusables[0].setFocus(Qt.FocusReason.OtherFocusReason)
-                        return
+            # Handle QMessageBox navigation with D-pad (for multiple buttons)
+            if isinstance(active, QMessageBox) and not isinstance(focused, QTableWidget):
+                if not focused or not active.focusWidget():
+                    # If no widget is focused, focus the first focusable widget
+                    focusables = active.findChildren(QWidget, options=Qt.FindChildOption.FindChildrenRecursively)
+                    focusables = [w for w in focusables if w.focusPolicy() & Qt.FocusPolicy.StrongFocus]
+                    if focusables:
+                        focusables[0].setFocus(Qt.FocusReason.OtherFocusReason)
+                    return
+                if code == ecodes.ABS_HAT0X and value != 0:  # Horizontal navigation
                     if value > 0:  # Right
                         active.focusNextChild()
                     elif value < 0:  # Left
                         active.focusPreviousChild()
+                elif code == ecodes.ABS_HAT0Y and value != 0:  # Vertical navigation
+                    if value > 0:  # Down
+                        active.focusNextChild()
+                    elif value < 0:  # Up
+                        active.focusPreviousChild()
+                return
+            # Handle SystemOverlay, AddGameDialog, or other QDialog navigation with D-pad
+            elif isinstance(active, QDialog) and code == ecodes.ABS_HAT0X and value != 0:
+                if not focused or not active.focusWidget():
+                    # If no widget is focused, focus the first focusable widget
+                    focusables = active.findChildren(QWidget, options=Qt.FindChildOption.FindChildrenRecursively)
+                    focusables = [w for w in focusables if w.focusPolicy() & Qt.FocusPolicy.StrongFocus]
+                    if focusables:
+                        focusables[0].setFocus(Qt.FocusReason.OtherFocusReason)
                     return
+                if value > 0:  # Right
+                    active.focusNextChild()
+                elif value < 0:  # Left
+                    active.focusPreviousChild()
+                return
             elif isinstance(active, QDialog) and code == ecodes.ABS_HAT0Y and value != 0 and not isinstance(focused, QTableWidget):  # Keep up/down for other dialogs
                 if not focused or not active.focusWidget():
                     # If no widget is focused, focus the first focusable widget
@@ -2312,3 +2294,56 @@ class InputManager(QObject):
 
         except Exception as e:
             logger.error(f"Error during cleanup: {e}", exc_info=True)
+
+    def _handle_common_ui_elements(self, button_code):
+        """
+        Common handler for common UI elements like QMessageBox, QMenu, etc.
+        Returns True if the event was handled, False otherwise.
+        """
+        # Check for popup widgets first
+        popup = QApplication.activePopupWidget()
+        if popup:
+            if isinstance(popup, QMessageBox):
+                self._handle_qmessagebox_button(popup, button_code)
+                return True
+            elif isinstance(popup, QMenu):
+                if button_code in BUTTONS['confirm']:
+                    if popup.activeAction():
+                        popup.activeAction().trigger()
+                    popup.close()
+                elif button_code in BUTTONS['back']:
+                    popup.close()
+                return True
+
+        # Check for top-level QMessageBox specifically
+        active = QApplication.activeWindow()
+        if isinstance(active, QMessageBox):
+            self._handle_qmessagebox_button(active, button_code)
+            return True
+
+        # Check for top-level message boxes (additional check)
+        for widget in QApplication.topLevelWidgets():
+            if isinstance(widget, QMessageBox) and widget.isVisible() and widget != active:
+                self._handle_qmessagebox_button(widget, button_code)
+                return True
+
+        return False  # Not handled by common handler
+
+    def _handle_qmessagebox_button(self, msg_box, button_code):
+        """
+        Unified handler for QMessageBox across all modes.
+        For single button dialogs, A button accepts the dialog.
+        For multiple button dialogs, navigate between buttons and allow selection.
+        """
+        if button_code in BUTTONS['confirm']:
+            # Check if there's a focused button in the message box
+            focused_widget = msg_box.focusWidget()
+            if focused_widget:
+                # If a specific button is focused, click/activate it
+                focused_widget.click()
+            else:
+                # If no button is focused, accept with default behavior
+                msg_box.accept()
+        elif button_code in BUTTONS['back']:
+            # For back button, reject the dialog (typically cancels or selects cancel button)
+            msg_box.reject()
