@@ -1818,9 +1818,7 @@ class ExeSettingsDialog(QDialog):
         self.settings_table = QTableWidget()
         self.settings_table.setAlternatingRowColors(True)
         self.settings_table.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        # self.settings_table.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
-        self.settings_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        self.settings_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.settings_table.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
         self.settings_table.setColumnCount(3)
         self.settings_table.setHorizontalHeaderLabels([_("Setting"), _("Value"), _("Description")])
         self.settings_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
@@ -2001,10 +1999,8 @@ class ExeSettingsDialog(QDialog):
             current_val = self.current_settings.get(toggle, '0')
             is_blocked = toggle in self.blocked_keys
             checkbox = QTableWidgetItem()
-            checkbox.setFlags(checkbox.flags() | Qt.ItemFlag.ItemIsUserCheckable)
             check_state = Qt.CheckState.Checked if current_val == '1' and not is_blocked else Qt.CheckState.Unchecked
             checkbox.setCheckState(check_state)
-            checkbox.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             if is_blocked:
                 checkbox.setFlags(checkbox.flags() & ~Qt.ItemFlag.ItemIsUserCheckable)
                 checkbox.setBackground(QColor(240, 240, 240))
