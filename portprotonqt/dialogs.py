@@ -1939,7 +1939,7 @@ class ExeSettingsDialog(QDialog):
         # Load current settings
         process = QProcess(self)
         process.finished.connect(self.on_show_ppdb_finished)
-        process.start(self.start_sh[0], ["cli", "--show-ppdb", f"{self.exe_path}.ppdb"])
+        process.start(self.start_sh[0], ["cli", "--show-ppdb", f"{self.exe_path}"])
 
     def on_show_ppdb_finished(self, exit_code, exit_status):
         """Handle --show-ppdb output."""
