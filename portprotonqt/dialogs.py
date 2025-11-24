@@ -2326,43 +2326,28 @@ class ExeSettingsDialog(QDialog):
     def show_gamepad_tooltip(self, show=True, text=""):
         """Show or hide the gamepad tooltip with the provided text."""
         if show and text:
-            # First set the text to measure the required size
+            # Set the text to the tooltip
             self.gamepad_tooltip.setText(text)
 
-            # Calculate appropriate size based on text content
+            # Temporarily set a large size to allow proper text wrapping measurement
+            self.gamepad_tooltip.setFixedSize(500, 300)
+
+            # Use font metrics to calculate the proper size with Qt's wrapping
             font_metrics = self.gamepad_tooltip.fontMetrics()
-            # Calculate text dimensions - wrap at max width
             max_width = 500  # Maximum width in pixels
-            text_lines = text.split('\n')  # Handle multiline text
 
-            # If text is longer than can fit in a single line at max width, wrap it
-            wrapped_lines = []
-            for line in text_lines:
-                if font_metrics.horizontalAdvance(line) <= max_width:
-                    wrapped_lines.append(line)
-                else:
-                    # Word wrap the line to fit within max width
-                    words = line.split(' ')
-                    current_line = ''
-                    for word in words:
-                        test_line = current_line + ' ' + word if current_line else word
-                        if font_metrics.horizontalAdvance(test_line) <= max_width:
-                            current_line = test_line
-                        else:
-                            if current_line:
-                                wrapped_lines.append(current_line)
-                            current_line = word
-                    if current_line:
-                        wrapped_lines.append(current_line)
+            # Calculate the required size using Qt's text wrapping functionality
+            # We'll allow Qt to do the wrapping and measure accordingly
+            # Using the boundingRect with TextWordWrap flag for accurate measurement
+            text_rect = font_metrics.boundingRect(
+                0, 0, max_width - 20, 1000,  # Leave space for padding
+                Qt.TextFlag.TextWordWrap | Qt.TextFlag.TextExpandTabs,
+                text
+            )
 
-            # Set the final wrapped text
-            wrapped_text = '\n'.join(wrapped_lines)
-            self.gamepad_tooltip.setText(wrapped_text)
-
-            # Calculate the required size
-            rect = font_metrics.boundingRect(0, 0, max_width, 1000, Qt.TextFlag.TextWordWrap, wrapped_text)
-            required_width = min(max_width, rect.width() + 20)  # Add padding
-            required_height = min(300, rect.height() + 16)  # Add padding, max height 300
+            # Calculate final dimensions with sufficient padding
+            required_width = min(max_width, text_rect.width() + 25)  # Add padding
+            required_height = min(300, text_rect.height() + 25)  # Add padding
 
             # Position the tooltip near the currently focused cell
             current_table = self.advanced_table if self.tab_widget.currentIndex() == 1 else self.settings_table
