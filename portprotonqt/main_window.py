@@ -2314,7 +2314,8 @@ class MainWindow(QMainWindow):
 
     def openGameDetailPage(self, name, description, cover_path=None, appid="", exec_line="", controller_support="", last_launch="", formatted_playtime="", protondb_tier="", game_source="", anticheat_status=""):
         detailPage = QWidget()
-        self._animations = {}
+        if not hasattr(self, '_animations'):
+            self._animations = {}
         imageLabel = QLabel()
         imageLabel.setFixedSize(300, 450)
         self._detail_page_active = True
@@ -2322,38 +2323,53 @@ class MainWindow(QMainWindow):
 
         # Функция загрузки изображения и обновления стилей
         def load_image_and_restore_effect():
-            if not detailPage or detailPage.isHidden():
-                logger.warning("Detail page is None or hidden, skipping image load")
+            # Check if detail page still exists and is valid
+            if not detailPage or detailPage.isHidden() or detailPage.parent() is None:
+                logger.warning("Detail page is None, hidden, or no longer valid, skipping image load")
                 return
 
-            detailPage.setWindowOpacity(1.0)
+            try:
+                detailPage.setWindowOpacity(1.0)
+            except RuntimeError:
+                logger.warning("Detail page already deleted, skipping opacity set")
+                return
 
             if cover_path:
                 def on_pixmap_ready(pixmap):
-                    if not detailPage or detailPage.isHidden():
-                        logger.warning("Detail page is None or hidden, skipping pixmap update")
+                    # Check if detail page still exists and is valid
+                    if not detailPage or detailPage.isHidden() or detailPage.parent() is None:
+                        logger.warning("Detail page is None, hidden, or no longer valid, skipping pixmap update")
                         return
-                    rounded = round_corners(pixmap, 10)
-                    imageLabel.setPixmap(rounded)
-                    logger.debug("Pixmap set for imageLabel")
+                    try:
+                        rounded = round_corners(pixmap, 10)
+                        imageLabel.setPixmap(rounded)
+                        logger.debug("Pixmap set for imageLabel")
 
-                    def on_palette_ready(palette):
-                        if not detailPage or detailPage.isHidden():
-                            logger.warning("Detail page is None or hidden, skipping palette update")
-                            return
-                        dark_palette = [self.darkenColor(color, factor=200) for color in palette]
-                        stops = ",\n".join(
-                            [f"stop:{i/(len(dark_palette)-1):.2f} {dark_palette[i].name()}" for i in range(len(dark_palette))]
-                        )
-                        detailPage.setStyleSheet(self.theme.detail_page_style(stops))
-                        detailPage.update()
-                        logger.debug("Stylesheet updated with palette")
-
-                    self.getColorPalette_async(cover_path, num_colors=5, callback=on_palette_ready)
+                        def on_palette_ready(palette):
+                            # Check if detail page still exists and is valid
+                            if not detailPage or detailPage.isHidden() or detailPage.parent() is None:
+                                logger.warning("Detail page is None, hidden, or no longer valid, skipping palette update")
+                                return
+                            try:
+                                dark_palette = [self.darkenColor(color, factor=200) for color in palette]
+                                stops = ",\n".join(
+                                    [f"stop:{i/(len(dark_palette)-1):.2f} {dark_palette[i].name()}" for i in range(len(dark_palette))]
+                                )
+                                detailPage.setStyleSheet(self.theme.detail_page_style(stops))
+                                detailPage.update()
+                                logger.debug("Stylesheet updated with palette")
+                            except RuntimeError:
+                                logger.warning("Detail page already deleted, skipping palette stylesheet update")
+                        self.getColorPalette_async(cover_path, num_colors=5, callback=on_palette_ready)
+                    except RuntimeError:
+                        logger.warning("Detail page already deleted, skipping pixmap update")
                 load_pixmap_async(cover_path, 300, 450, on_pixmap_ready)
             else:
-                detailPage.setStyleSheet(self.theme.DETAIL_PAGE_NO_COVER_STYLE)
-                detailPage.update()
+                try:
+                    detailPage.setStyleSheet(self.theme.DETAIL_PAGE_NO_COVER_STYLE)
+                    detailPage.update()
+                except RuntimeError:
+                    logger.warning("Detail page already deleted, skipping no-cover stylesheet update")
 
         def cleanup_animation():
             if detailPage in self._animations:
@@ -2594,6 +2610,9 @@ class MainWindow(QMainWindow):
                 return
             if not self._current_detail_page or self._current_detail_page.isHidden() or not self._current_detail_page.parent():
                 return
+            # Additional check: make sure the detail page in the stacked widget is still our current detail page
+            if self.stackedWidget.currentWidget() != self._current_detail_page and self._current_detail_page not in [self.stackedWidget.widget(i) for i in range(self.stackedWidget.count())]:
+                return
 
             if results:
                 game = results[0]  # Берем первый результат
@@ -2617,33 +2636,42 @@ class MainWindow(QMainWindow):
                 has_data = False
 
                 if main_story_time is not None:
-                    mainStoryTitle = QLabel(_("MAIN STORY"))
-                    mainStoryTitle.setStyleSheet(self.theme.LAST_LAUNCH_TITLE_STYLE)
-                    mainStoryValue = QLabel(main_story_time)
-                    mainStoryValue.setStyleSheet(self.theme.LAST_LAUNCH_VALUE_STYLE)
-                    hltbLayout.addWidget(mainStoryTitle)
-                    hltbLayout.addWidget(mainStoryValue)
-                    hltbLayout.addSpacing(30)
-                    has_data = True
+                    try:
+                        mainStoryTitle = QLabel(_("MAIN STORY"))
+                        mainStoryTitle.setStyleSheet(self.theme.LAST_LAUNCH_TITLE_STYLE)
+                        mainStoryValue = QLabel(main_story_time)
+                        mainStoryValue.setStyleSheet(self.theme.LAST_LAUNCH_VALUE_STYLE)
+                        hltbLayout.addWidget(mainStoryTitle)
+                        hltbLayout.addWidget(mainStoryValue)
+                        hltbLayout.addSpacing(30)
+                        has_data = True
+                    except RuntimeError:
+                        logger.warning("Detail page already deleted, skipping main story time update")
 
                 if main_extra_time is not None:
-                    mainExtraTitle = QLabel(_("MAIN + SIDES"))
-                    mainExtraTitle.setStyleSheet(self.theme.PLAY_TIME_TITLE_STYLE)
-                    mainExtraValue = QLabel(main_extra_time)
-                    mainExtraValue.setStyleSheet(self.theme.PLAY_TIME_VALUE_STYLE)
-                    hltbLayout.addWidget(mainExtraTitle)
-                    hltbLayout.addWidget(mainExtraValue)
-                    hltbLayout.addSpacing(30)
-                    has_data = True
+                    try:
+                        mainExtraTitle = QLabel(_("MAIN + SIDES"))
+                        mainExtraTitle.setStyleSheet(self.theme.PLAY_TIME_TITLE_STYLE)
+                        mainExtraValue = QLabel(main_extra_time)
+                        mainExtraValue.setStyleSheet(self.theme.PLAY_TIME_VALUE_STYLE)
+                        hltbLayout.addWidget(mainExtraTitle)
+                        hltbLayout.addWidget(mainExtraValue)
+                        hltbLayout.addSpacing(30)
+                        has_data = True
+                    except RuntimeError:
+                        logger.warning("Detail page already deleted, skipping main extra time update")
 
                 if completionist_time is not None:
-                    completionistTitle = QLabel(_("COMPLETIONIST"))
-                    completionistTitle.setStyleSheet(self.theme.LAST_LAUNCH_TITLE_STYLE)
-                    completionistValue = QLabel(completionist_time)
-                    completionistValue.setStyleSheet(self.theme.LAST_LAUNCH_VALUE_STYLE)
-                    hltbLayout.addWidget(completionistTitle)
-                    hltbLayout.addWidget(completionistValue)
-                    has_data = True
+                    try:
+                        completionistTitle = QLabel(_("COMPLETIONIST"))
+                        completionistTitle.setStyleSheet(self.theme.LAST_LAUNCH_TITLE_STYLE)
+                        completionistValue = QLabel(completionist_time)
+                        completionistValue.setStyleSheet(self.theme.LAST_LAUNCH_VALUE_STYLE)
+                        hltbLayout.addWidget(completionistTitle)
+                        hltbLayout.addWidget(completionistValue)
+                        has_data = True
+                    except RuntimeError:
+                        logger.warning("Detail page already deleted, skipping completionist time update")
 
                 # Если есть данные, добавляем layout во вторую строку
                 if has_data:
