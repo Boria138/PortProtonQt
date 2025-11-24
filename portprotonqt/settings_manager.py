@@ -20,7 +20,6 @@ def get_toggle_settings():
         'PW_HIDE_NVIDIA_GPU': _("Disguise all NVIDIA GPU features"),
         'PW_VIRTUAL_DESKTOP': _("Run the application in WINE virtual desktop"),
         'PW_USE_TERMINAL': _("Run the application in a terminal"),
-        'PW_GUI_DISABLED_CS': _("Disable startup mode and WINE version selector window"),
         'PW_USE_GAMEMODE': _("Use system GameMode for performance optimization"),
         'PW_USE_D3D_EXTRAS': _("Enable forced use of third-party DirectX libraries"),
         'PW_FIX_VIDEO_IN_GAME': _("Fix pink-tinted video playback in some games"),
@@ -70,7 +69,7 @@ def get_advanced_settings(disabled_text, logical_core_options, locale_options,
     advanced_settings.append({
         'key': 'PW_PREFIX_NAME',
         'name': _("Prefix Name"),
-        'description': _("Select the Wine prefix to use."),
+        'description': _("Specify the Wine prefix to run this game with"),
         'type': 'combo',
         'options': prefix_options,
         'default': 'DEFAULT'
@@ -78,7 +77,7 @@ def get_advanced_settings(disabled_text, logical_core_options, locale_options,
 
     # 3. Vulkan Backend
     vulkan_options = [
-        _("Latest"),        # → 6
+        _("Newest"),        # → 6
         _("Stable"),                    # → 2
         ("Sarek"),   # → 1
         ("WINED3D – OpenGL")                 # → 0
@@ -96,22 +95,11 @@ def get_advanced_settings(disabled_text, logical_core_options, locale_options,
         'key': 'PW_VULKAN_USE',
         'name': _("Vulkan Backend"),
         'description': _(
-            "Select the rendering backend for translating DirectX → Vulkan/OpenGL:\n\n"
-            "• Auto – latest DXVK + VKD3D (recommended)\n"
-            "   The newest versions from the developers. Give the best compatibility and performance in modern games.\n"
-            "   Require up-to-date drivers:\n"
-            "   – AMD: Mesa 25.0+ or proprietary AMDVLK 2024.Q4+\n"
-            "   – NVIDIA: driver 550.54.14 or newer\n"
-            "   – Intel: Mesa 24.2+\n\n"
-            "• Stable – proven DXVK + VKD3D\n"
-            "   Older but extremely well-tested versions. Work on any drivers that support Vulkan 1.3+.\n"
-            "   The best choice if you have problems with the newest versions.\n\n"
-            "• Sarek – experimental DXVK-Sarek + VKD3D-Sarek\n"
-            "   Work even on older drivers and video cards that support at least Vulkan 1.1.\n\n"
-            "• WINED3D – OpenGL translation (fallback)\n"
-            "   No DXVK/VKD3D used. DirectX is translated to OpenGL via built-in WineD3D.\n"
-            "   Works on absolutely any hardware, but performance is significantly lower.\n"
-            "   Use only as a last resort when nothing else starts."
+            "Select the DirectX → Vulkan/OpenGL backend:\n\n"
+            "• Newest – latest DXVK + VKD3D (best compatibility/performance, requires modern drivers: AMD Mesa 25+, NVIDIA 550.54.14+, Intel Mesa 24.2+)\n"
+            "• Stable – older, well-tested DXVK + VKD3D (works on any Vulkan 1.3+ driver)\n"
+            "• Sarek – experimental DXVK-Sarek + VKD3D-Sarek (supports older drivers, Vulkan 1.1+)\n"
+            "• WINED3D – OpenGL fallback (lowest performance, use only if others fail)"
         ),
         'type': 'combo',
         'options': vulkan_options,
