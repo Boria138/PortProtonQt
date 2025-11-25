@@ -118,19 +118,25 @@ class InputManager(QObject):
         self.trigger_cooldown = 0.2
 
         # Mouse emulation attributes
-        self.mouse_emulation_enabled = True  # Enable by default as crutch for external apps
-        self.ui = None  # UInput for virtual mouse
+        self.mouse_emulation_enabled = True
+        self.ui = None
         self.stick_x_raw = 0
         self.stick_y_raw = 0
-        self.deadzone = 8000  # Deadzone for sticks
-        self.max_value = 32767  # Max stick value
-        self.sensitivity = 8.0  # Cursor sensitivity
+
+        # Параметры осей (будут заполнены из ядра)
+        self.center_x = 127      # центр X оси
+        self.center_y = 127      # центр Y оси
+        self.min_value = 0       # минимум осей
+        self.max_value = 255     # максимум осей
+        self.deadzone_value = 15 # мёртвая зона из ядра (flat параметр)
+
+        self.sensitivity = 8.0
         self.scroll_accumulator = 0.0
-        self.scroll_sensitivity = 0.15  # Scroll sensitivity
-        self.scroll_threshold = 0.2  # Scroll threshold
+        self.scroll_sensitivity = 0.15
+        self.scroll_threshold = 0.2
         self.last_update = time.time()
         self.update_interval = 0.016  # ~60 FPS
-        self.emulation_active = False  # Flag for external focus (updated in main thread)
+        self.emulation_active = False
         self.emulation_triggered = False
         self.start_held = False
         self.guide_held = False
@@ -1030,15 +1036,27 @@ class InputManager(QObject):
         self.stick_y_raw = 0
         self.scroll_accumulator = 0.0
 
+
     def handle_scroll(self, raw_value):
         """Обработка прокрутки с правого стика Y"""
         if not self.mouse_emulation_enabled or not self.emulation_active or not self.ui:
             return
-        if abs(raw_value) < self.deadzone:
+
+        # Нормализуем от центра
+        centered_value = raw_value - self.center_y
+
+        if abs(centered_value) < self.deadzone_value:
             self.scroll_accumulator = 0.0
             return
-        normalized = raw_value / self.max_value
+
+        # Нормализуем значение (-1.0 до 1.0)
+        range_val = (self.max_value - self.min_value) / 2
+        normalized = centered_value / range_val
+
+        # Накапливаем прокрутку
         self.scroll_accumulator += normalized * self.scroll_sensitivity
+
+        # Отправляем события прокрутки
         while abs(self.scroll_accumulator) >= self.scroll_threshold:
             scroll_step = 1 if self.scroll_accumulator > 0 else -1
             self.scroll_wheel(-scroll_step)
@@ -1048,18 +1066,35 @@ class InputManager(QObject):
         """Постоянное обновление позиции мыши на основе состояния стика"""
         if not self.ui or not self.emulation_active:
             return
-        x = self.stick_x_raw
-        y = self.stick_y_raw
+
+        # Центрируем значения
+        x = self.stick_x_raw - self.center_x
+        y = self.stick_y_raw - self.center_y
+
+        # Применяем мёртвую зону из ядра
         magnitude = math.sqrt(x * x + y * y)
-        if magnitude < self.deadzone:
+
+        if magnitude < self.deadzone_value:
             return
-        norm_x = x / magnitude
-        norm_y = y / magnitude
-        adjusted_magnitude = max(0.0, min(1.0, (magnitude - self.deadzone) / (self.max_value - self.deadzone)))
+
+        if magnitude > 0:
+            norm_x = x / magnitude
+            norm_y = y / magnitude
+        else:
+            return
+
+        # Нормализуем по диапазону оси
+        max_range = (self.max_value - self.min_value) / 2
+        adjusted_magnitude = (magnitude - self.deadzone_value) / (max_range - self.deadzone_value)
+        adjusted_magnitude = max(0.0, min(1.0, adjusted_magnitude))
+
+        # Нелинейная кривая
         adjusted_magnitude = math.pow(adjusted_magnitude, 1.5)
+
         speed = adjusted_magnitude * self.sensitivity
         dx = int(norm_x * speed)
         dy = int(norm_y * speed)
+
         if dx != 0 or dy != 0:
             self.move_mouse(dx, dy)
 
@@ -2170,6 +2205,7 @@ class InputManager(QObject):
 
                     if is_joystick == '1':
                         logger.info(f"Found gamepad: {device.name}")
+                        self.detect_gamepad_axes(device)
                         return device
 
                 except Exception as e:
@@ -2182,6 +2218,34 @@ class InputManager(QObject):
         except Exception as e:
             logger.error(f"Error finding gamepad: {e}", exc_info=True)
             return None
+
+    def detect_gamepad_axes(self, device: InputDevice) -> None:
+        """Читаем параметры осей из ядра (диапазон и мёртвую зону)"""
+        try:
+            caps = device.capabilities()
+            if ecodes.EV_ABS not in caps:
+                return
+
+            abs_axes = caps[ecodes.EV_ABS]
+            for code, absinfo in abs_axes:
+                if code == ecodes.ABS_X:
+                    self.min_value = absinfo.min
+                    self.max_value = absinfo.max
+                    self.center_x = (absinfo.min + absinfo.max) // 2
+                    self.center_y = (absinfo.min + absinfo.max) // 2
+                    self.stick_x_raw = self.center_x
+                    self.stick_y_raw = self.center_y
+
+                    # Берём мёртвую зону из ядра (flat параметр)
+                    self.deadzone_value = absinfo.flat if absinfo.flat > 0 else 15
+
+                    logger.info(
+                        f"Gamepad axes: min={self.min_value}, max={self.max_value}, "
+                        f"center={self.center_x}, deadzone={self.deadzone_value}"
+                    )
+                    break
+        except Exception as ex:
+            logger.error(f"Error detecting gamepad axes: {ex}")
 
     def monitor_gamepad(self) -> None:
         try:
@@ -2278,8 +2342,8 @@ class InputManager(QObject):
                         else:
                             logger.error(f"IOError in gamepad monitoring: {e}")
                         self.gamepad = None
-                        self.stick_x_raw = 0
-                        self.stick_y_raw = 0
+                        self.stick_x_raw = self.center_x
+                        self.stick_y_raw = self.center_y
                         self.scroll_accumulator = 0.0
                         self.start_held = False
                         self.guide_held = False
