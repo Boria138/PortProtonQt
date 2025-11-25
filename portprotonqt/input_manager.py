@@ -2319,12 +2319,19 @@ class InputManager(QObject):
                                             self.move_mouse(0, -10)
                                         elif event.value == 1:
                                             self.move_mouse(0, 10)
-                                    elif event.code == ecodes.ABS_X:
+                                    # Левый стик X - два варианта
+                                    elif event.code in (ecodes.ABS_X, ecodes.ABS_RX):
                                         self.stick_x_raw = event.value
-                                    elif event.code == ecodes.ABS_Y:
-                                        self.stick_y_raw = event.value
-                                    elif event.code == ecodes.ABS_RY:
+                                    # Левый стик Y - два варианта
+                                    elif event.code in (ecodes.ABS_Y, ecodes.ABS_Z):
+                                        # Игнорируем триггеры (ABS_GAS и ABS_BRAKE)
+                                        if event.code not in (ecodes.ABS_GAS, ecodes.ABS_BRAKE):
+                                            self.stick_y_raw = event.value
+                                    # Правый стик Y (скролл) - два варианта
+                                    elif event.code in (ecodes.ABS_RY, ecodes.ABS_RZ):
                                         self.handle_scroll(event.value)
+                                    elif event.code in (ecodes.ABS_GAS, ecodes.ABS_BRAKE):
+                                        pass  # Триггеры - не обрабатываем
                                 elif event.type == ecodes.EV_KEY:
                                     if event.code in (ecodes.BTN_SOUTH, ecodes.BTN_A) and event.value == 1:
                                         self.click_left()
