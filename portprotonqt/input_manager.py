@@ -1201,7 +1201,6 @@ class InputManager(QObject):
             active = QApplication.activeWindow()
             focused = QApplication.focusWidget()
             popup = QApplication.activePopupWidget()
-            modal_dialog = QApplication.activeModalWidget()
             if not app or not active:
                 return
 
@@ -1299,13 +1298,6 @@ class InputManager(QObject):
                     menu = focused._show_context_menu(pos)
                     if menu:
                         menu.setFocus(Qt.FocusReason.OtherFocusReason)
-                    return
-
-            # Game launch on detail page
-            if (button_code in BUTTONS['confirm']) and self._parent.currentDetailPage is not None and modal_dialog is None:
-                if self._parent.current_exec_line:
-                    self.trigger_rumble()
-                    self._parent.toggleGame(self._parent.current_exec_line, None)
                     return
 
             # Standard navigation
@@ -1606,6 +1598,50 @@ class InputManager(QObject):
                         return
                     self._navigate_game_cards(container, current_index, code, value)
                     return
+
+            # Button navigation on detail pages (horizontal layout)
+            if code in (ecodes.ABS_HAT0X, ecodes.ABS_HAT0Y):
+                focused = QApplication.focusWidget()
+                page = self._parent.stackedWidget.currentWidget()
+
+                # Check if we're on a detail page and focused widget is a button
+                if isinstance(focused, AutoSizeButton):
+                    # Find all buttons in the same horizontal layout (same parent, same Y position)
+                    parent_widget = focused.parentWidget()
+                    if parent_widget:
+                        # Find all AutoSizeButtons in the parent that are horizontally aligned
+                        buttons = parent_widget.findChildren(AutoSizeButton)
+                        # Filter buttons that are approximately on the same horizontal level (similar Y positions)
+                        y_tolerance = 20  # pixels tolerance for vertical alignment
+                        current_y = focused.geometry().y() + focused.geometry().height() // 2
+                        aligned_buttons = []
+                        for btn in buttons:
+                            btn_center_y = btn.geometry().y() + btn.geometry().height() // 2
+                            if abs(btn_center_y - current_y) <= y_tolerance:
+                                aligned_buttons.append(btn)
+
+                        # Sort buttons by x position for left-to-right navigation
+                        if len(aligned_buttons) > 1:
+                            aligned_buttons.sort(key=lambda b: b.geometry().x() + b.geometry().width() // 2)
+
+                            # Find current button index
+                            try:
+                                current_index = aligned_buttons.index(focused)
+                            except ValueError:
+                                current_index = -1
+
+                            if current_index >= 0:
+                                if code == ecodes.ABS_HAT0X:  # Horizontal navigation (left/right)
+                                    if value < 0 and current_index > 0:  # Left
+                                        aligned_buttons[current_index - 1].setFocus(Qt.FocusReason.OtherFocusReason)
+                                        return
+                                    elif value > 0 and current_index < len(aligned_buttons) - 1:  # Right
+                                        aligned_buttons[current_index + 1].setFocus(Qt.FocusReason.OtherFocusReason)
+                                        return
+                                elif code == ecodes.ABS_HAT0Y:  # Vertical navigation (up/down)
+                                    # For buttons on the same row, up/down should go to other controls
+                                    # So we'll continue to the next section of code for general navigation
+                                    pass
 
             # Vertical navigation in other tabs
             if code == ecodes.ABS_HAT0Y and value != 0:

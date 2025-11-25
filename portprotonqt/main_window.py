@@ -2723,6 +2723,7 @@ class MainWindow(QMainWindow):
 
         playButton.setFixedSize(120, 40)
         playButton.setStyleSheet(self.theme.PLAY_BUTTON_STYLE)
+        playButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         playButton.clicked.connect(lambda: self.toggleGame(exec_line, playButton))
         buttons_layout.addWidget(playButton, alignment=Qt.AlignmentFlag.AlignLeft)
 
@@ -2747,6 +2748,61 @@ class MainWindow(QMainWindow):
 
         # Анимация
         self.detail_animations.animate_detail_page(detailPage, load_image_and_restore_effect, cleanup_animation)
+
+        # Update page reference
+        self.currentDetailPage = detailPage
+
+        original_load = load_image_and_restore_effect
+
+        def enhanced_load():
+            original_load()
+            QTimer.singleShot(50, try_set_focus)
+
+        def try_set_focus():
+            if not (playButton and not playButton.isHidden()):
+                return
+
+            # Ensure page is active
+            self.stackedWidget.setCurrentWidget(detailPage)
+            detailPage.setFocus(Qt.FocusReason.OtherFocusReason)
+            playButton.setFocus(Qt.FocusReason.OtherFocusReason)
+            playButton.update()
+            detailPage.raise_()
+            self.activateWindow()
+
+            if playButton.hasFocus():
+                logger.debug("Play button successfully received focus")
+            else:
+                logger.debug("Retrying focus...")
+                QTimer.singleShot(20, retry_focus)
+
+        def retry_focus():
+            if not (playButton and not playButton.isHidden() and not playButton.hasFocus()):
+                return
+
+            QApplication.processEvents()
+            self.activateWindow()
+            self.stackedWidget.setCurrentWidget(detailPage)
+            detailPage.raise_()
+            playButton.setFocus(Qt.FocusReason.OtherFocusReason)
+            playButton.update()
+
+            if not playButton.hasFocus():
+                logger.debug("Final retry...")
+                playButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+                playButton.setFocus(Qt.FocusReason.OtherFocusReason)
+                QApplication.processEvents()
+
+                if playButton.hasFocus():
+                    logger.debug("Play button received focus after final retry")
+                else:
+                    logger.debug("Play button still doesn't have focus")
+
+        self.detail_animations.animate_detail_page(
+            detailPage,
+            enhanced_load,
+            cleanup_animation
+        )
 
     def toggleFavoriteInDetailPage(self, game_name, label):
         favorites = read_favorites()

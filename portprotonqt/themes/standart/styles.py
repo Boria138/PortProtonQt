@@ -647,6 +647,9 @@ PLAY_BUTTON_STYLE = f"""
     QPushButton:pressed {{
         background: {color_a};
     }}
+    QPushButton:focus {{
+        background: {color_a};
+    }}
 """
 
 # СТИЛЬ КНОПКИ "ОБЗОР..." В ДИАЛОГЕ "ДОБАВИТЬ ИГРУ"
