@@ -2227,7 +2227,7 @@ class InputManager(QObject):
                 return
 
             abs_axes = caps[ecodes.EV_ABS]
-            for code, absinfo in abs_axes:
+            for code, absinfo in abs_axes:  # type: ignore
                 if code == ecodes.ABS_X:
                     self.min_value = absinfo.min
                     self.max_value = absinfo.max
@@ -2319,16 +2319,12 @@ class InputManager(QObject):
                                             self.move_mouse(0, -10)
                                         elif event.value == 1:
                                             self.move_mouse(0, 10)
-                                    # Левый стик X - два варианта
-                                    elif event.code in (ecodes.ABS_X, ecodes.ABS_RX):
+                                    elif event.code == ecodes.ABS_X:
                                         self.stick_x_raw = event.value
-                                    # Левый стик Y - два варианта
-                                    elif event.code in (ecodes.ABS_Y, ecodes.ABS_Z):
-                                        # Игнорируем триггеры (ABS_GAS и ABS_BRAKE)
+                                    elif event.code == ecodes.ABS_Y:
                                         if event.code not in (ecodes.ABS_GAS, ecodes.ABS_BRAKE):
                                             self.stick_y_raw = event.value
-                                    # Правый стик Y (скролл) - два варианта
-                                    elif event.code in (ecodes.ABS_RY, ecodes.ABS_RZ):
+                                    elif event.code == ecodes.ABS_RY:
                                         self.handle_scroll(event.value)
                                     elif event.code in (ecodes.ABS_GAS, ecodes.ABS_BRAKE):
                                         pass  # Триггеры - не обрабатываем
