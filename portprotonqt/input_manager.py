@@ -37,6 +37,8 @@ class MainWindowProtocol(Protocol):
         ...
     def isActiveWindow(self) -> bool:
         ...
+    def refreshGames(self) -> None:
+        ...
     stackedWidget: QStackedWidget
     tabButtons: dict[int, QWidget]
     gamesListWidget: QWidget
@@ -140,6 +142,14 @@ class InputManager(QObject):
         self.emulation_triggered = False
         self.start_held = False
         self.guide_held = False
+        # Variables for key combination handling
+        self.guide_pressed_time = 0
+        self.select_pressed_time = 0
+        self.guide_timer = QTimer(self)
+        self.guide_timer.setSingleShot(True)
+        self.guide_timer.timeout.connect(self._handle_guide_timeout)
+        self.guide_combination_timeout = 0.3  # 300ms timeout for combination
+        self.in_guide_combination_attempt = False  # Flag to track if we're in a guide+select combination attempt
 
         # Focus check timer for emulation flag (runs in main thread)
         self.focus_check_timer = QTimer(self)
@@ -1201,6 +1211,28 @@ class InputManager(QObject):
             except Exception as e:
                 logger.error(f"Error stopping rumble: {e}", exc_info=True)
 
+    def _handle_guide_timeout(self) -> None:
+        if self.guide_held:
+            time_since_guide = time.time() - self.guide_pressed_time
+            time_since_select = time.time() - self.select_pressed_time
+
+            if (self.select_pressed_time > self.guide_pressed_time and
+                time_since_select <= self.guide_combination_timeout and
+                time_since_guide <= self.guide_combination_timeout):
+                logger.debug("Guide + Select combination detected, refreshing game grid")
+                self._parent.refreshGames()
+            else:
+                logger.debug("Guide button pressed alone, opening system overlay")
+                active = QApplication.activeWindow()
+                if not isinstance(active, QDialog):
+                    self._parent.openSystemOverlay()
+
+        self.guide_held = False
+        self.in_guide_combination_attempt = False
+        self.guide_pressed_time = 0
+        self.select_pressed_time = 0
+
+
     @Slot(int, int)
     def handle_button_slot(self, button_code: int, value: int) -> None:
         active_window = QApplication.activeWindow()
@@ -1235,7 +1267,6 @@ class InputManager(QObject):
             app = QApplication.instance()
             active = QApplication.activeWindow()
             focused = QApplication.focusWidget()
-            popup = QApplication.activePopupWidget()
             if not app or not active:
                 return
 
@@ -1264,11 +1295,35 @@ class InputManager(QObject):
                     search_edit.setFocus()
                     return
 
-            # Handle Guide button to open system overlay
-            if button_code in BUTTONS['guide']:
-                if not popup and not isinstance(active, QDialog):
-                    self._parent.openSystemOverlay()
+            # Guide + Select combination for refreshing game grid
+            if value == 1:
+                current_time = time.time()
+
+                if button_code in BUTTONS['guide']:
+                    self.guide_held = True
+                    self.guide_pressed_time = current_time
+                    self.in_guide_combination_attempt = True
+                    if hasattr(self, 'guide_timer'):
+                        self.guide_timer.start(int(self.guide_combination_timeout * 1000))
                     return
+                elif button_code in BUTTONS['menu'] and hasattr(self, 'guide_held') and self.guide_held:
+                    self.select_pressed_time = current_time
+                    time_since_guide = current_time - self.guide_pressed_time
+                    if time_since_guide <= self.guide_combination_timeout:
+                        if hasattr(self, 'guide_timer'):
+                            self.guide_timer.stop()
+                        logger.debug("Guide + Select combination detected, refreshing game grid")
+                        self._parent.refreshGames()
+                        self.guide_held = False
+                        self.in_guide_combination_attempt = False
+                        self.guide_pressed_time = 0
+                        self.select_pressed_time = 0
+                        return
+                    else:
+                        self.in_guide_combination_attempt = False
+                        self.guide_held = False
+                        self.guide_pressed_time = 0
+                        self.select_pressed_time = 0
 
             # Handle common UI elements like QMenu and QMessageBox
             if self._handle_common_ui_elements(button_code):
@@ -1843,6 +1898,11 @@ class InputManager(QObject):
                     self._parent.openSystemOverlay()
                     return True
 
+            # Refresh game grid with F5
+            if key == Qt.Key.Key_F5:
+                self._parent.refreshGames()
+                return True
+
             # Close application with Ctrl+Q
             if key == Qt.Key.Key_Q and modifiers & Qt.KeyboardModifier.ControlModifier:
                 app.quit()
@@ -2280,7 +2340,8 @@ class InputManager(QObject):
 
                                 self.button_event.emit(event.code, event.value)
                                 # Special handling for menu on press only
-                                if event.value == 1 and event.code in BUTTONS['menu'] and not self._is_gamescope_session:
+                                if (event.value == 1 and event.code in BUTTONS['menu'] and
+                                    not self._is_gamescope_session and not self.in_guide_combination_attempt):
                                     self.toggle_fullscreen.emit(not self._is_fullscreen)
                             elif event.type == ecodes.EV_ABS:
                                 if event.code in {ecodes.ABS_Z, ecodes.ABS_RZ}:
