@@ -407,7 +407,10 @@ class GameCard(QFrame):
         parent = self.parent()
         while parent:
             if hasattr(parent, 'game_library_manager'):
-                QTimer.singleShot(0, parent.game_library_manager.update_game_grid) # type: ignore[attr-defined]
+                # Access using getattr with default to avoid Ruff B009 warning
+                manager = getattr(parent, 'game_library_manager', None)
+                if manager is not None:
+                    QTimer.singleShot(0, manager.update_game_grid)
                 break
             parent = parent.parent()
 

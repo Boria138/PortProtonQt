@@ -104,15 +104,14 @@ def main():
             def restore_window():
                 try:
                     if msg.startswith("show"):
-                        if hasattr(window, "restore_from_tray"):
-                            window.restore_from_tray()  # type: ignore[attr-defined]
-                        else:
-                            window.showNormal()
-                            window.raise_()
-                            window.activateWindow()
-                            window.setWindowState(
-                                window.windowState() & ~Qt.WindowState.WindowMinimized | Qt.WindowState.WindowActive
-                            )
+                        # Ensure the window is visible and not minimized
+                        window.setWindowState(window.windowState() & ~Qt.WindowState.WindowMinimized)
+                        window.show()
+                        window.raise_()
+                        window.activateWindow()
+
+                        # Ensure window is in active state for systems with strict focus policies
+                        window.setWindowState(window.windowState() | Qt.WindowState.WindowActive)
 
                         if ":fullscreen" in msg:
                             logger.info("Switching to fullscreen via IPC")

@@ -2,7 +2,7 @@ import time
 import threading
 import os
 import math
-from typing import Protocol, cast
+from typing import Protocol, cast, Any
 from evdev import InputDevice, InputEvent, UInput, ecodes, list_devices, ff
 from enum import Enum
 from pyudev import Context, Monitor, Device, Devices
@@ -264,7 +264,7 @@ class InputManager(QObject):
                 return
             current_row = sorted_rows[current_row_idx][1]
             focused_x = focused.pos().x() + focused.width() / 2
-            current_col_idx = min(range(len(current_row)), key=lambda i: abs((current_row[i].pos().x() + current_row[i].width() / 2) - focused_x), default=0)  # type: ignore
+            current_col_idx = min(range(len(current_row)), key=lambda i: abs((current_row[i].pos().x() + current_row[i].width() / 2) - focused_x), default=0)
 
         # Add null checks before using current_row_idx and current_col_idx
         if current_row_idx is None or current_col_idx is None or current_row_idx >= len(sorted_rows):
@@ -2287,7 +2287,7 @@ class InputManager(QObject):
                 return
 
             abs_axes = caps[ecodes.EV_ABS]
-            for code, absinfo in abs_axes:  # type: ignore
+            for code, absinfo in cast(Any, abs_axes):
                 if code == ecodes.ABS_X:
                     self.min_value = absinfo.min
                     self.max_value = absinfo.max

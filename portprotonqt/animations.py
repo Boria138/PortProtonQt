@@ -1,3 +1,4 @@
+from typing import Any, cast
 from PySide6.QtCore import QPropertyAnimation, QByteArray, QEasingCurve, QAbstractAnimation, QParallelAnimationGroup, QRect, Qt, QPoint
 from PySide6.QtGui import QPainter, QPen, QColor, QConicalGradient, QBrush
 from PySide6.QtWidgets import QWidget, QGraphicsOpacityEffect
@@ -256,7 +257,7 @@ class DetailPageAnimations:
             self.animations[detail_page] = animation
             def restore_effect():
                 try:
-                    detail_page.setGraphicsEffect(original_effect) # type: ignore
+                    detail_page.setGraphicsEffect(cast(Any, original_effect))
                 except RuntimeError:
                     logger.warning("Original effect already deleted")
             animation.finished.connect(restore_effect)
@@ -338,7 +339,7 @@ class DetailPageAnimations:
                 self.animations[detail_page] = animation
                 def restore_and_cleanup():
                     try:
-                        detail_page.setGraphicsEffect(original_effect) # type: ignore
+                        detail_page.setGraphicsEffect(cast(Any, original_effect))
                     except RuntimeError:
                         logger.debug("Original effect already deleted")
                     cleanup_callback()

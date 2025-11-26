@@ -6,14 +6,13 @@ import subprocess
 import sys
 import psutil
 import re
-
 from portprotonqt.logger import get_logger
 from portprotonqt.dialogs import AddGameDialog, FileExplorer, WinetricksDialog, ExeSettingsDialog
 from portprotonqt.game_card import GameCard
 from portprotonqt.animations import DetailPageAnimations
 from portprotonqt.custom_widgets import ClickableLabel, AutoSizeButton, NavLabel, FlowLayout
 from portprotonqt.portproton_api import PortProtonAPI
-from portprotonqt.input_manager import InputManager
+from portprotonqt.input_manager import InputManager, MainWindowProtocol
 from portprotonqt.context_menu_manager import ContextMenuManager, CustomLineEdit
 from portprotonqt.system_overlay import SystemOverlay
 from portprotonqt.input_manager import GamepadType
@@ -153,7 +152,7 @@ class MainWindow(QMainWindow):
         headerLayout.setContentsMargins(0, 0, 0, 0)
         headerLayout.addStretch()
 
-        self.input_manager = InputManager(self) # type: ignore
+        self.input_manager = InputManager(cast(MainWindowProtocol, self))
         self.input_manager.button_event.connect(self.updateControlHints)
         self.input_manager.dpad_moved.connect(self.updateControlHints)
 
