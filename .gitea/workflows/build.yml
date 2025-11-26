@@ -64,7 +64,7 @@ jobs:
     steps:
       - name: Prepare container
         run: |
-          pacman -Sy --noconfirm --disable-download-timeout --needed git wget gnupg nodejs npm
+          pacman -Syuu --noconfirm --disable-download-timeout --needed git wget gnupg nodejs npm
           sed -i 's/#MAKEFLAGS="-j2"/MAKEFLAGS="-j$(nproc) -l$(nproc)"/g' /etc/makepkg.conf
           sed -i 's/OPTIONS=(.*)/OPTIONS=(strip docs !libtool !staticlibs emptydirs zipman purge lto)/g' /etc/makepkg.conf
           yes | pacman -Scc
