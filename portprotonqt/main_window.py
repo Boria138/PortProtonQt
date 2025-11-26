@@ -2866,29 +2866,59 @@ class MainWindow(QMainWindow):
         def cleanup():
             """Helper function to clean up after animation."""
             try:
-                if page in self._animations:
-                    animation = self._animations[page]
+                # Stop and clean up any existing animations for this page
+                if hasattr(self, '_animations') and page in self._animations:
                     try:
-                        if animation.state() == QAbstractAnimation.State.Running:
-                            animation.stop()
-                    except RuntimeError:
-                        pass  # Animation already deleted
-                    finally:
-                        del self._animations[page]
-                self.stackedWidget.setCurrentIndex(0)
-                self.stackedWidget.removeWidget(page)
-                page.deleteLater()
-                self.currentDetailPage = None
-                self.current_exec_line = None
-                self.current_play_button = None
+                        animation = self._animations[page]
+                        if isinstance(animation, QAbstractAnimation):
+                            if animation.state() == QAbstractAnimation.State.Running:
+                                animation.stop()
+                            # Since animation is set to delete when stopped, we don't manually delete it
+                            del self._animations[page]
+                    except (KeyError, RuntimeError):
+                        pass  # Animation already deleted or not found
+
+                # Ensure page is still valid before trying to remove it
+                # Check if page is still in the stacked widget by iterating through all widgets
+                page_found = False
+                for i in range(self.stackedWidget.count()):
+                    if self.stackedWidget.widget(i) is page:
+                        page_found = True
+                        break
+
+                if page_found:
+                    self.stackedWidget.setCurrentIndex(0)
+                    self.stackedWidget.removeWidget(page)
+                    page.deleteLater()
+                else:
+                    logger.debug("Page not found in stacked widget, may have been removed already")
+
+                # Clear references to avoid dangling references
+                if hasattr(self, 'currentDetailPage'):
+                    self.currentDetailPage = None
+                if hasattr(self, 'current_exec_line'):
+                    self.current_exec_line = None
+                if hasattr(self, 'current_play_button'):
+                    self.current_play_button = None
+
+                self._exit_animation_in_progress = False
+            except RuntimeError:
+                # Widget was already deleted, which is expected after deleteLater()
+                logger.debug("Detail page already deleted during cleanup")
                 self._exit_animation_in_progress = False
             except Exception as e:
-                logger.error(f"Error in cleanup: {e}", exc_info=True)
+                logger.error(f"Unexpected error in cleanup: {e}", exc_info=True)
                 self._exit_animation_in_progress = False
 
         # Start exit animation
         try:
-            self.detail_animations.animate_detail_page_exit(page, cleanup)
+            # Check if the page is still valid before starting animation
+            if page and not page.isHidden() and page.parent() is not None:
+                self.detail_animations.animate_detail_page_exit(page, cleanup)
+            else:
+                logger.warning("Detail page not valid, bypassing animation and cleaning up directly")
+                self._exit_animation_in_progress = False
+                cleanup()
         except Exception as e:
             logger.error(f"Error starting exit animation: {e}", exc_info=True)
             self._exit_animation_in_progress = False

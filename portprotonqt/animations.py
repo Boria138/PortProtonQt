@@ -237,14 +237,31 @@ class DetailPageAnimations:
         self.main_window = main_window
         self.theme_manager = ThemeManager()
         self.theme = theme if theme is not None else self.theme_manager.apply_theme(read_theme_from_config())
-        self.animations = main_window._animations if hasattr(main_window, '_animations') else {}
+        # Ensure the main window has an animations dict
+        if not hasattr(main_window, '_animations'):
+            main_window._animations = {}
+        self.animations = main_window._animations
 
     def animate_detail_page(self, detail_page: QWidget, load_image_and_restore_effect: Callable, cleanup_animation: Callable):
         """Animate the detail page based on theme settings."""
+        # Check if the detail page is still valid before proceeding
+        if not detail_page or detail_page.isHidden() or detail_page.parent() is None:
+            logger.warning("Detail page is not valid, skipping enter animation")
+            load_image_and_restore_effect()
+            cleanup_animation()
+            return
+
         animation_type = self.theme.GAME_CARD_ANIMATION.get("detail_page_animation_type", "fade")
         duration = self.theme.GAME_CARD_ANIMATION.get("detail_page_fade_duration", 350)
 
         if animation_type == "fade":
+            # Check again if page is still valid before starting animation
+            if not detail_page or detail_page.isHidden():
+                logger.warning("Detail page became invalid during fade setup, skipping animation")
+                load_image_and_restore_effect()
+                cleanup_animation()
+                return
+
             original_effect = detail_page.graphicsEffect()
             opacity_effect = SafeOpacityEffect(detail_page, disable_at_full=True)
             opacity_effect.setOpacity(0.0)
@@ -253,17 +270,36 @@ class DetailPageAnimations:
             animation.setDuration(duration)
             animation.setStartValue(0.0)
             animation.setEndValue(0.999)
-            animation.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
-            self.animations[detail_page] = animation
+
             def restore_effect():
                 try:
-                    detail_page.setGraphicsEffect(cast(Any, original_effect))
+                    # Check if page is still valid before restoring effect
+                    if detail_page and not detail_page.isHidden():
+                        detail_page.setGraphicsEffect(cast(Any, original_effect))
                 except RuntimeError:
                     logger.warning("Original effect already deleted")
-            animation.finished.connect(restore_effect)
-            animation.finished.connect(load_image_and_restore_effect)
-            animation.finished.connect(opacity_effect.deleteLater)
+
+            # Only start animation if page is still valid
+            if detail_page and not detail_page.isHidden():
+                animation.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
+                self.animations[detail_page] = animation
+                animation.finished.connect(restore_effect)
+                animation.finished.connect(load_image_and_restore_effect)
+                animation.finished.connect(opacity_effect.deleteLater)
+            else:
+                logger.warning("Detail page invalid when starting fade, cleaning up")
+                restore_effect()
+                load_image_and_restore_effect()
+                opacity_effect.deleteLater()
+                cleanup_animation()
         elif animation_type in ["slide_left", "slide_right", "slide_up", "slide_down"]:
+            # Check again if page is still valid before starting animation
+            if not detail_page or detail_page.isHidden():
+                logger.warning("Detail page became invalid during slide setup, skipping animation")
+                load_image_and_restore_effect()
+                cleanup_animation()
+                return
+
             duration = self.theme.GAME_CARD_ANIMATION.get("detail_page_slide_duration", 500)
             easing_curve = QEasingCurve(QEasingCurve.Type[self.theme.GAME_CARD_ANIMATION.get("detail_page_easing_curve", "OutCubic")])
             start_pos = {
@@ -278,11 +314,25 @@ class DetailPageAnimations:
             animation.setStartValue(start_pos)
             animation.setEndValue(self.main_window.stackedWidget.rect().topLeft())
             animation.setEasingCurve(easing_curve)
-            animation.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
-            self.animations[detail_page] = animation
-            animation.finished.connect(cleanup_animation)
-            animation.finished.connect(load_image_and_restore_effect)
+
+            # Only start animation if page is still valid
+            if detail_page and not detail_page.isHidden():
+                animation.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
+                self.animations[detail_page] = animation
+                animation.finished.connect(cleanup_animation)
+                animation.finished.connect(load_image_and_restore_effect)
+            else:
+                logger.warning("Detail page invalid when starting slide, cleaning up")
+                load_image_and_restore_effect()
+                cleanup_animation()
         elif animation_type == "bounce":
+            # Check again if page is still valid before starting animation
+            if not detail_page or detail_page.isHidden():
+                logger.warning("Detail page became invalid during bounce setup, skipping animation")
+                load_image_and_restore_effect()
+                cleanup_animation()
+                return
+
             duration = self.theme.GAME_CARD_ANIMATION.get("detail_page_bounce_duration", 400)
             easing_curve = QEasingCurve(QEasingCurve.Type[self.theme.GAME_CARD_ANIMATION.get("detail_page_easing_curve", "OutCubic")])
             detail_page.setWindowOpacity(0.0)
@@ -301,14 +351,27 @@ class DetailPageAnimations:
             group_anim = QParallelAnimationGroup()
             group_anim.addAnimation(opacity_anim)
             group_anim.addAnimation(geometry_anim)
-            group_anim.finished.connect(load_image_and_restore_effect)
-            group_anim.finished.connect(cleanup_animation)
-            group_anim.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
-            self.animations[detail_page] = group_anim
+
+            # Only start animation if page is still valid
+            if detail_page and not detail_page.isHidden():
+                group_anim.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
+                self.animations[detail_page] = group_anim
+                group_anim.finished.connect(load_image_and_restore_effect)
+                group_anim.finished.connect(cleanup_animation)
+            else:
+                logger.warning("Detail page invalid when starting bounce, cleaning up")
+                load_image_and_restore_effect()
+                cleanup_animation()
 
     def animate_detail_page_exit(self, detail_page: QWidget, cleanup_callback: Callable):
         """Animate the detail page exit based on theme settings."""
         try:
+            # Check if the detail page is still valid before proceeding
+            if not detail_page or detail_page.isHidden() or detail_page.parent() is None:
+                logger.warning("Detail page is not valid, skipping exit animation")
+                cleanup_callback()
+                return
+
             animation_type = self.theme.GAME_CARD_ANIMATION.get("detail_page_animation_type", "fade")
 
             # Safely stop and remove any existing animation
@@ -327,6 +390,13 @@ class DetailPageAnimations:
             # Define animation based on type
             if animation_type == "fade":
                 duration = self.theme.GAME_CARD_ANIMATION.get("detail_page_fade_duration_exit", 350)
+
+                # Check if page is still valid before accessing properties
+                if not detail_page or detail_page.isHidden():
+                    logger.warning("Detail page became invalid during fade exit setup, skipping animation")
+                    cleanup_callback()
+                    return
+
                 original_effect = detail_page.graphicsEffect()
                 opacity_effect = SafeOpacityEffect(detail_page, disable_at_full=False)
                 opacity_effect.setOpacity(0.999)
@@ -335,18 +405,36 @@ class DetailPageAnimations:
                 animation.setDuration(duration)
                 animation.setStartValue(0.999)
                 animation.setEndValue(0.0)
-                animation.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
-                self.animations[detail_page] = animation
+
                 def restore_and_cleanup():
                     try:
-                        detail_page.setGraphicsEffect(cast(Any, original_effect))
+                        # Check if page is still valid before restoring effect
+                        if detail_page and not detail_page.isHidden():
+                            detail_page.setGraphicsEffect(cast(Any, original_effect))
                     except RuntimeError:
                         logger.debug("Original effect already deleted")
                     cleanup_callback()
-                animation.finished.connect(restore_and_cleanup)
-                animation.finished.connect(opacity_effect.deleteLater)
+
+                # Check if animation is still valid before starting
+                if animation and not detail_page.isHidden():
+                    animation.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
+                    self.animations[detail_page] = animation
+                    animation.finished.connect(restore_and_cleanup)
+                    animation.finished.connect(opacity_effect.deleteLater)
+                else:
+                    logger.warning("Animation or detail page invalid when starting fade exit, cleaning up")
+                    restore_and_cleanup()
+                    opacity_effect.deleteLater()
+
             elif animation_type in ["slide_left", "slide_right", "slide_up", "slide_down"]:
                 duration = self.theme.GAME_CARD_ANIMATION.get("detail_page_slide_duration_exit", 500)
+
+                # Check if page is still valid before accessing properties
+                if not detail_page or detail_page.isHidden():
+                    logger.warning("Detail page became invalid during slide exit setup, skipping animation")
+                    cleanup_callback()
+                    return
+
                 easing_curve = QEasingCurve(QEasingCurve.Type[self.theme.GAME_CARD_ANIMATION.get("detail_page_easing_curve_exit", "InCubic")])
                 end_pos = {
                     "slide_left": QPoint(-self.main_window.width(), 0),
@@ -354,16 +442,37 @@ class DetailPageAnimations:
                     "slide_up": QPoint(0, self.main_window.height()),
                     "slide_down": QPoint(0, -self.main_window.height())
                 }[animation_type]
+
                 animation = QPropertyAnimation(detail_page, QByteArray(b"pos"))
                 animation.setDuration(duration)
                 animation.setStartValue(detail_page.pos())
                 animation.setEndValue(end_pos)
                 animation.setEasingCurve(easing_curve)
-                animation.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
-                self.animations[detail_page] = animation
-                animation.finished.connect(cleanup_callback)
+
+                def slide_cleanup():
+                    # Check if page is still valid before cleanup
+                    if not detail_page or detail_page.isHidden():
+                        logger.debug("Detail page already cleaned up")
+                    cleanup_callback()
+
+                # Check if animation is still valid before starting
+                if animation and not detail_page.isHidden():
+                    animation.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
+                    self.animations[detail_page] = animation
+                    animation.finished.connect(slide_cleanup)
+                else:
+                    logger.warning("Animation or detail page invalid when starting slide exit, cleaning up")
+                    slide_cleanup()
+
             elif animation_type == "bounce":
                 duration = self.theme.GAME_CARD_ANIMATION.get("detail_page_bounce_duration_exit", 400)
+
+                # Check if page is still valid before accessing properties
+                if not detail_page or detail_page.isHidden():
+                    logger.warning("Detail page became invalid during bounce exit setup, skipping animation")
+                    cleanup_callback()
+                    return
+
                 easing_curve = QEasingCurve(QEasingCurve.Type[self.theme.GAME_CARD_ANIMATION.get("detail_page_easing_curve_exit", "InCubic")])
                 opacity_anim = QPropertyAnimation(detail_page, QByteArray(b"windowOpacity"))
                 opacity_anim.setDuration(duration)
@@ -376,13 +485,38 @@ class DetailPageAnimations:
                 geometry_anim.setStartValue(detail_page.geometry())
                 geometry_anim.setEndValue(final_rect)
                 geometry_anim.setEasingCurve(easing_curve)
+
+                # Check if animations are still valid before creating group
+                if not detail_page or detail_page.isHidden():
+                    logger.warning("Detail page became invalid during bounce exit setup, cleaning up")
+                    cleanup_callback()
+                    return
+
                 group_anim = QParallelAnimationGroup()
                 group_anim.addAnimation(opacity_anim)
                 group_anim.addAnimation(geometry_anim)
-                group_anim.finished.connect(cleanup_callback)
+
+                # Check if group animation is still valid before connecting
+                if not detail_page or detail_page.isHidden():
+                    logger.warning("Detail page became invalid during group animation setup, cleaning up")
+                    cleanup_callback()
+                    return
+
+                def bounce_cleanup():
+                    # Check if page is still valid before cleanup
+                    if not detail_page or detail_page.isHidden():
+                        logger.debug("Detail page already cleaned up")
+                    cleanup_callback()
+
                 group_anim.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
                 self.animations[detail_page] = group_anim
+                group_anim.finished.connect(bounce_cleanup)
+        except RuntimeError:
+            # Widget was already deleted, which is expected after deleteLater()
+            logger.debug("Detail page already deleted during animation setup")
+            cleanup_callback()
         except Exception as e:
             logger.error(f"Error in animate_detail_page_exit: {e}", exc_info=True)
-            self.animations.pop(detail_page, None)
+            if detail_page in self.animations:
+                self.animations.pop(detail_page, None)
             cleanup_callback()
