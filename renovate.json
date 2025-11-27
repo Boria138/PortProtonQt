@@ -52,7 +52,7 @@
       "groupName": "Python dependencies"
     },
     {
-      "matchPackageNames": ["numpy", "setuptools", "python", "pyside6"],
+      "matchPackageNames": ["numpy", "setuptools", "python"],
       "enabled": false,
       "description": "Disabled due to Python 3.10 incompatibility with numpy>=2.3.2 (requires Python>=3.11)"
     },

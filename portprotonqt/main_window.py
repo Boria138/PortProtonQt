@@ -855,19 +855,17 @@ class MainWindow(QMainWindow):
             if mgr.gamesListWidget and mgr.gamesListLayout:
                 games_layout = mgr.gamesListLayout
                 games_widget = mgr.gamesListWidget
-                QTimer.singleShot(0, lambda: (
-                    games_layout.invalidate(),
-                    games_widget.adjustSize(),
-                    games_widget.updateGeometry()
-                ))
+                # Update layout updates to be more compatible with PySide 6.10.1
+                QTimer.singleShot(0, lambda: games_layout.invalidate())
+                QTimer.singleShot(10, lambda: games_widget.adjustSize())
+                QTimer.singleShot(15, lambda: games_widget.updateGeometry())
         if hasattr(self, "autoInstallContainer") and hasattr(self, "autoInstallContainerLayout"):
             auto_layout = self.autoInstallContainerLayout
             auto_widget = self.autoInstallContainer
-            QTimer.singleShot(0, lambda: (
-                auto_layout.invalidate(),
-                auto_widget.adjustSize(),
-                auto_widget.updateGeometry()
-            ))
+            # Update layout updates to be more compatible with PySide 6.10.1
+            QTimer.singleShot(0, lambda: auto_layout.invalidate())
+            QTimer.singleShot(10, lambda: auto_widget.adjustSize())
+            QTimer.singleShot(15, lambda: auto_widget.updateGeometry())
 
 
     def openSystemOverlay(self):
@@ -1234,7 +1232,9 @@ class MainWindow(QMainWindow):
             while self.autoInstallContainerLayout.count():
                 child = self.autoInstallContainerLayout.takeAt(0)
                 if child:
-                    child.widget().deleteLater()
+                    widget = child.widget()
+                    if widget:
+                        widget.deleteLater()
 
             self.autoInstallGameCards.clear()
             self.allAutoInstallCards.clear()

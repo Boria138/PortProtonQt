@@ -199,9 +199,9 @@ def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[Q
             painter.end()
         finish_with(pixmap)
 
-    with queue_lock:
-        image_load_queue.put(process_image)
-        image_executor.submit(lambda: image_load_queue.get()())
+    # Submit the process_image function directly to the executor
+    # This avoids the potential blocking issue with queue.get() in PySide 6.10.1
+    image_executor.submit(process_image)
 
 def round_corners(pixmap, radius):
     """

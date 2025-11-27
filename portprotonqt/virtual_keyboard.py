@@ -166,8 +166,10 @@ class VirtualKeyboard(QFrame):
         # Очищаем предыдущие кнопки
         while self.keyboard_layout.count():
             item = self.keyboard_layout.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
+            if item:
+                widget = item.widget()
+                if widget:
+                    widget.deleteLater()
 
         fixed_w = self.button_width
         fixed_h = self.button_height
@@ -280,8 +282,10 @@ class VirtualKeyboard(QFrame):
         if coords:
             row, col = coords
             item = self.keyboard_layout.itemAtPosition(row, col)
-            if item and item.widget():
-                item.widget().setFocus()
+            if item:
+                widget = item.widget()
+                if widget:
+                    widget.setFocus()
 
     def up_key(self):
         """Перемещает курсор в QLineEdit вверх/в начало, если клавиатура видима"""
@@ -392,7 +396,8 @@ class VirtualKeyboard(QFrame):
         if self.current_input_widget is not None:
             self.current_input_widget.insert('\t')
             self.keyPressed.emit('Tab')
-            self.current_input_widget.setFocus()
+            if self.current_input_widget:
+                self.current_input_widget.setFocus()
             self.highlight_cursor_position()
 
     def on_caps_click(self):
@@ -530,8 +535,9 @@ class VirtualKeyboard(QFrame):
             search_col = current_col + col_span
             while search_col < num_cols:
                 item = self.keyboard_layout.itemAtPosition(search_row, search_col)
-                if item and item.widget() and item.widget().isEnabled():
-                    next_button = cast(QPushButton, item.widget())
+                widget = item.widget() if item else None
+                if widget and widget.isEnabled():
+                    next_button = cast(QPushButton, widget)
                     next_button.setFocus()
                     found = True
                     break
@@ -544,8 +550,9 @@ class VirtualKeyboard(QFrame):
                 # Ищем первую кнопку в этой строке
                 while search_col < num_cols:
                     item = self.keyboard_layout.itemAtPosition(search_row, search_col)
-                    if item and item.widget() and item.widget().isEnabled():
-                        next_button = cast(QPushButton, item.widget())
+                    widget = item.widget() if item else None
+                    if widget and widget.isEnabled():
+                        next_button = cast(QPushButton, widget)
                         next_button.setFocus()
                         found = True
                         break
@@ -557,8 +564,9 @@ class VirtualKeyboard(QFrame):
             search_col = current_col - 1
             while search_col >= 0:
                 item = self.keyboard_layout.itemAtPosition(search_row, search_col)
-                if item and item.widget() and item.widget().isEnabled():
-                    next_button = cast(QPushButton, item.widget())
+                widget = item.widget() if item else None
+                if widget and widget.isEnabled():
+                    next_button = cast(QPushButton, widget)
                     next_button.setFocus()
                     found = True
                     break
@@ -571,8 +579,9 @@ class VirtualKeyboard(QFrame):
                 # Ищем последнюю кнопку в этой строке
                 while search_col >= 0:
                     item = self.keyboard_layout.itemAtPosition(search_row, search_col)
-                    if item and item.widget() and item.widget().isEnabled():
-                        next_button = cast(QPushButton, item.widget())
+                    widget = item.widget() if item else None
+                    if widget and widget.isEnabled():
+                        next_button = cast(QPushButton, widget)
                         next_button.setFocus()
                         found = True
                         break
@@ -584,8 +593,9 @@ class VirtualKeyboard(QFrame):
             search_row = current_row + row_span
             while search_row < num_rows:
                 item = self.keyboard_layout.itemAtPosition(search_row, search_col)
-                if item and item.widget() and item.widget().isEnabled():
-                    next_button = cast(QPushButton, item.widget())
+                widget = item.widget() if item else None
+                if widget and widget.isEnabled():
+                    next_button = cast(QPushButton, widget)
                     next_button.setFocus()
                     found = True
                     break
@@ -598,8 +608,9 @@ class VirtualKeyboard(QFrame):
                 # Ищем первую кнопку в этом столбце
                 while search_row < num_rows:
                     item = self.keyboard_layout.itemAtPosition(search_row, search_col)
-                    if item and item.widget() and item.widget().isEnabled():
-                        next_button = cast(QPushButton, item.widget())
+                    widget = item.widget() if item else None
+                    if widget and widget.isEnabled():
+                        next_button = cast(QPushButton, widget)
                         next_button.setFocus()
                         found = True
                         break
@@ -611,8 +622,9 @@ class VirtualKeyboard(QFrame):
             search_row = current_row - 1
             while search_row >= 0:
                 item = self.keyboard_layout.itemAtPosition(search_row, search_col)
-                if item and item.widget() and item.widget().isEnabled():
-                    next_button = cast(QPushButton, item.widget())
+                widget = item.widget() if item else None
+                if widget and widget.isEnabled():
+                    next_button = cast(QPushButton, widget)
                     next_button.setFocus()
                     found = True
                     break
@@ -625,8 +637,9 @@ class VirtualKeyboard(QFrame):
                 # Ищем последнюю кнопку в этом столбце
                 while search_row >= 0:
                     item = self.keyboard_layout.itemAtPosition(search_row, search_col)
-                    if item and item.widget() and item.widget().isEnabled():
-                        next_button = cast(QPushButton, item.widget())
+                    widget = item.widget() if item else None
+                    if widget and widget.isEnabled():
+                        next_button = cast(QPushButton, widget)
                         next_button.setFocus()
                         found = True
                         break
@@ -637,6 +650,7 @@ class VirtualKeyboard(QFrame):
         for row in range(self.keyboard_layout.rowCount()):
             for col in range(self.keyboard_layout.columnCount()):
                 item = self.keyboard_layout.itemAtPosition(row, col)
-                if item and item.widget() and item.widget().isEnabled():
-                    return cast(QPushButton, item.widget())
+                widget = item.widget() if item else None
+                if widget and widget.isEnabled():
+                    return cast(QPushButton, widget)
         return None

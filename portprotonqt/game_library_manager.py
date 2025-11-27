@@ -222,13 +222,17 @@ class GameLibraryManager:
 
     def force_update_cards_library(self):
         if self.gamesListWidget and self.gamesListLayout:
+            # Use singleShot to ensure UI updates happen after all other operations complete
+            # This prevents potential freezing in PySide 6.10.1
+            QTimer.singleShot(0, self._perform_force_update)
+
+    def _perform_force_update(self):
+        """Perform the actual force update on the layout."""
+        if self.gamesListLayout:
             self.gamesListLayout.invalidate()
+        if self.gamesListWidget:
+            self.gamesListWidget.adjustSize()
             self.gamesListWidget.updateGeometry()
-            widget = self.gamesListWidget
-            QTimer.singleShot(0, lambda: (
-                widget.adjustSize(),
-                widget.updateGeometry()
-            ))
 
     def _update_game_grid_immediate(self):
         """Updates the game grid with the provided or current game list."""

@@ -1,7 +1,6 @@
 from PySide6.QtGui import QPainter, QColor, QDesktopServices
 from PySide6.QtCore import Signal, Property, Qt, QUrl, QTimer
 from PySide6.QtWidgets import QFrame, QGraphicsDropShadowEffect, QVBoxLayout, QWidget, QStackedLayout, QLabel
-from collections.abc import Callable
 from portprotonqt.image_utils import load_pixmap_async, round_corners
 from portprotonqt.localization import _
 from portprotonqt.config_utils import read_favorites, save_favorites, read_display_filter, read_theme_from_config
@@ -10,8 +9,6 @@ from portprotonqt.custom_widgets import ClickableLabel
 from portprotonqt.portproton_api import PortProtonAPI
 from portprotonqt.downloader import Downloader
 from portprotonqt.animations import GameCardAnimations
-from typing import cast
-
 
 class GameCard(QFrame):
     borderWidthChanged = Signal()
@@ -455,9 +452,9 @@ class GameCard(QFrame):
             self.update_scale()
             self.scaleChanged.emit()
 
-    borderWidth = Property(int, getBorderWidth, setBorderWidth, None, "", notify=cast(Callable[[], None], borderWidthChanged))
-    gradientAngle = Property(float, getGradientAngle, setGradientAngle, None, "", notify=cast(Callable[[], None], gradientAngleChanged))
-    scale = Property(float, getScale, setScale, None, "", notify=cast(Callable[[], None], scaleChanged))
+    borderWidth = Property(int, getBorderWidth, setBorderWidth, None, "", notify=borderWidthChanged)
+    gradientAngle = Property(float, getGradientAngle, setGradientAngle, None, "", notify=gradientAngleChanged)
+    scale = Property(float, getScale, setScale, None, "", notify=scaleChanged)
 
 
     def paintEvent(self, event):
