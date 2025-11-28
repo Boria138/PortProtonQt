@@ -44,9 +44,10 @@ Requires:       python3-tqdm
 Requires:       python3-vdf
 Requires:       python3-pefile
 Requires:       python3-pillow
+Requires:       python3-beautifulsoup4
+Requires:       python3-rapidfuzz
 Requires:       perl-Image-ExifTool
 Requires:       xdg-utils
-Requires:       python3-beautifulsoup4
 Requires:       cabextract
 Requires:       gzip
 Requires:       unzip

@@ -1,5 +1,6 @@
 from typing import Protocol
 from portprotonqt.game_card import GameCard
+from portprotonqt.search_utils import SearchOptimizer, ThreadedSearch
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QScrollArea, QSlider, QScroller
 from PySide6.QtCore import Qt, QTimer
 from portprotonqt.custom_widgets import FlowLayout
@@ -56,6 +57,9 @@ class GameLibraryManager:
         self.pending_deletions = deque()
         self.is_filtering = False
         self.dirty = False
+        # Initialize search optimizer
+        self.search_optimizer = SearchOptimizer()
+        self.search_thread: ThreadedSearch | None = None
 
     def create_games_library_widget(self):
         """Creates the games library widget with search, grid, and slider."""
@@ -212,6 +216,10 @@ class GameLibraryManager:
             if games_list is not None:
                 self.filtered_games = games_list
             self.dirty = True  # Full rebuild only for non-filter
+        else:
+            # When filtering, we want to update with the current filtered_games
+            # which has already been set by _perform_search
+            pass
         self.is_filtering = is_filter
         self._pending_update = True
 
@@ -242,8 +250,9 @@ class GameLibraryManager:
         search_text = self.main_window.searchEdit.text().strip().lower()
 
         if self.is_filtering:
-            # Filter mode: do not change layout, only hide/show cards
-            self._apply_filter_visibility(search_text)
+            # Filter mode: use the pre-computed filtered_games from optimized search
+            # This means we already have the exact games to show
+            self._update_search_results()
         else:
             # Full update: sorting, removal/addition, reorganization
             games_list = self.filtered_games if self.filtered_games else self.games
@@ -368,8 +377,73 @@ class GameLibraryManager:
 
         self.is_filtering = False  # Reset flag in any case
 
+    def _update_search_results(self):
+        """Update the grid with pre-computed search results."""
+        if self.gamesListLayout is None or self.gamesListWidget is None:
+            return
+
+        # Batch layout updates
+        self.gamesListWidget.setUpdatesEnabled(False)
+        if self.gamesListLayout is not None:
+            self.gamesListLayout.setEnabled(False)  # Disable layout during batch
+
+        try:
+            # Create set of keys for current filtered games for fast lookup
+            filtered_keys = {(game[0], game[4]) for game in self.filtered_games}  # (name, exec_line)
+
+            # Process existing cards: show cards that are in filtered results, hide others
+            cards_to_hide = []
+            for card_key, card in self.game_card_cache.items():
+                if card_key in filtered_keys:
+                    # Card should be visible
+                    if not card.isVisible():
+                        card.setVisible(True)
+                else:
+                    # Card should be hidden
+                    if card.isVisible():
+                        card.setVisible(False)
+                        cards_to_hide.append(card_key)
+
+            # Now add any missing cards that are in filtered results but not in cache
+            cards_to_add = []
+            for game_data in self.filtered_games:
+                game_name = game_data[0]
+                exec_line = game_data[4]
+                game_key = (game_name, exec_line)
+
+                if game_key not in self.game_card_cache:
+                    if self.context_menu_manager is None:
+                        continue
+
+                    card = self._create_game_card(game_data)
+                    self.game_card_cache[game_key] = card
+                    card.setVisible(True)  # New cards should be visible
+                    cards_to_add.append((game_key, card))
+
+            # Add new cards to layout
+            for _game_key, card in cards_to_add:
+                self.gamesListLayout.addWidget(card)
+
+            # Remove cards that are no longer needed (if any)
+            # Note: we're not removing them completely as they might be needed later
+            # Instead, we just hide them and they'll be reused if needed
+
+        finally:
+            if self.gamesListLayout is not None:
+                self.gamesListLayout.setEnabled(True)
+            self.gamesListWidget.setUpdatesEnabled(True)
+            if self.gamesListLayout is not None:
+                self.gamesListLayout.update()
+            self.gamesListWidget.updateGeometry()
+            self.main_window._last_card_width = self.card_width
+
+            self.force_update_cards_library()
+
     def _apply_filter_visibility(self, search_text: str):
         """Applies visibility to cards based on search, without changing the layout."""
+        # This method is used for simple substring matching
+        # For the new optimized search, we'll use a different approach in update_game_grid
+        # when is_filter=True
         visible_count = 0
         for game_key, card in self.game_card_cache.items():
             game_name = card.name  # Assume GameCard has 'name' attribute
@@ -446,8 +520,37 @@ class GameLibraryManager:
         """Sets the games list and updates the filtered games."""
         self.games = games
         self.filtered_games = self.games
+
+        # Build search indices for fast searching
+        self._build_search_indices(games)
+
         self.dirty = True  # Full resort needed
         self.update_game_grid()
+
+    def _build_search_indices(self, games: list[tuple]):
+        """Build search indices for fast searching."""
+        # Prepare items for indexing: (search_key, game_data)
+        # We'll index by game name (index 0) and potentially other fields
+        items = []
+        for game in games:
+            # game is a tuple: (name, description, cover, appid, exec_line, controller_support,
+            #                   last_launch, formatted_playtime, protondb_tier, anticheat_status,
+            #                   last_played_timestamp, playtime_seconds, game_source)
+            name = str(game[0]).lower() if game[0] else ""
+            description = str(game[1]).lower() if game[1] else ""
+
+            # Create multiple search entries for better matching
+            items.append((name, game))  # Exact name
+            # Add other searchable fields if needed
+            if description:
+                items.append((description, game))
+
+            # Also add individual words from the name for partial matching
+            for word in name.split():
+                if len(word) > 2:  # Only index words longer than 2 characters
+                    items.append((word, game))
+
+        self.search_optimizer.build_indices(items)
 
     def add_game_incremental(self, game_data: tuple):
         """Add a single game without full reload."""
@@ -472,4 +575,54 @@ class GameLibraryManager:
 
     def filter_games_delayed(self):
         """Filters games based on search text and updates the grid."""
-        self.update_game_grid(is_filter=True)
+        search_text = self.main_window.searchEdit.text().strip().lower()
+
+        if not search_text:
+            # If search is empty, show all games
+            self.filtered_games = self.games
+            self.update_game_grid(is_filter=True)
+        else:
+            # Use the optimized search
+            self._perform_search(search_text)
+
+    def _perform_search(self, search_text: str):
+        """Perform the actual search using optimized search algorithms."""
+        if not search_text:
+            self.filtered_games = self.games
+            self.update_game_grid(is_filter=True)
+            return
+
+        # Use exact search first
+        exact_result = self.search_optimizer.exact_search(search_text)
+        if exact_result:
+            # If exact match found, show only that game
+            self.filtered_games = [exact_result]
+            self.update_game_grid(is_filter=True)
+            return
+
+        # Try prefix search
+        prefix_results = self.search_optimizer.prefix_search(search_text)
+        if prefix_results:
+            # Get the actual game data from the prefix matches
+            filtered_games = []
+            for _match_text, game_data in prefix_results:
+                if game_data not in filtered_games:  # Avoid duplicates
+                    filtered_games.append(game_data)
+            self.filtered_games = filtered_games
+            self.update_game_grid(is_filter=True)
+            return
+
+        # Finally, try fuzzy search
+        fuzzy_results = self.search_optimizer.fuzzy_search(search_text, limit=20, min_score=60.0)
+        if fuzzy_results:
+            # Get the actual game data from the fuzzy matches
+            filtered_games = []
+            for _match_text, game_data, _score in fuzzy_results:
+                if game_data not in filtered_games:  # Avoid duplicates
+                    filtered_games.append(game_data)
+            self.filtered_games = filtered_games
+            self.update_game_grid(is_filter=True)
+        else:
+            # If no results found, show empty list
+            self.filtered_games = []
+            self.update_game_grid(is_filter=True)

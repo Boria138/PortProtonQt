@@ -998,7 +998,7 @@ class MainWindow(QMainWindow):
         self.searchEdit.textChanged.connect(self.startSearchDebounce)
         self.searchDebounceTimer = QTimer(self)
         self.searchDebounceTimer.setSingleShot(True)
-        self.searchDebounceTimer.setInterval(300)
+        self.searchDebounceTimer.setInterval(150)  # Reduced debounce time for better responsiveness
         self.searchDebounceTimer.timeout.connect(self.on_search_changed)
 
         layout.addWidget(self.searchEdit)
