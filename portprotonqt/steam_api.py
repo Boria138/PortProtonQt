@@ -420,7 +420,7 @@ def fetch_sgdb_cover(game_name: str) -> str:
     try:
         encoded = urllib.parse.quote(game_name)
         url = f"https://steamgrid.usebottles.com/api/search/{encoded}"
-        resp = requests.get(url, timeout=5)
+        resp = requests.get(url, timeout=10)
         if resp.status_code != 200:
             logger.warning("SGDB request failed for %s: %s", game_name, resp.status_code)
             return ""
@@ -431,17 +431,30 @@ def fetch_sgdb_cover(game_name: str) -> str:
         if text:
             logger.info("Fetched SGDB cover for %s: %s", game_name, text)
         return text
+    except requests.exceptions.Timeout:
+        logger.warning(f"SGDB request timed out for {game_name}")
+        return ""
+    except requests.exceptions.RequestException as e:
+        logger.warning(f"SGDB request error for {game_name}: {e}")
+        return ""
     except Exception as e:
-        logger.warning("Failed to fetch SGDB cover for %s: %s", game_name, e)
-    return ""
+        logger.warning(f"Unexpected error while fetching SGDB cover for {game_name}: {e}")
+        return ""
 
 
 def check_url_exists(url: str) -> bool:
     """Check whether a URL returns HTTP 200."""
     try:
-        r = requests.head(url, timeout=3)
+        r = requests.head(url, timeout=5)
         return r.status_code == 200
-    except Exception:
+    except requests.exceptions.Timeout:
+        logger.warning(f"URL check timed out for: {url}")
+        return False
+    except requests.exceptions.RequestException as e:
+        logger.warning(f"Request error when checking URL {url}: {e}")
+        return False
+    except Exception as e:
+        logger.warning(f"Unexpected error when checking URL {url}: {e}")
         return False
 
 

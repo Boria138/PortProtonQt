@@ -254,6 +254,8 @@ class PortProtonAPI:
             try:
                 mod_time = os.path.getmtime(cache_file)
                 if time.time() - mod_time < AUTOINSTALL_CACHE_DURATION:
+                    # Add timeout protection for file operations
+                    start_time = time.time()
                     with open(cache_file, "rb") as f:
                         data = orjson.loads(f.read())
                         # Check signature
@@ -261,6 +263,10 @@ class PortProtonAPI:
                         current_signature = self._compute_scripts_signature(
                             os.path.join(self.portproton_location or "", "data", "scripts", "pw_autoinstall")
                         )
+                        # Check for timeout during signature computation
+                        if time.time() - start_time > 3:  # 3 second timeout
+                            logger.warning("Cache loading took too long, skipping cache")
+                            return None
                         if cached_signature != current_signature:
                             logger.info("Scripts signature mismatch; invalidating cache")
                             return None
@@ -287,21 +293,26 @@ class PortProtonAPI:
 
     def start_autoinstall_games_load(self, callback: Callable[[list[tuple]], None]) -> QThread | None:
         """Start loading auto-install games in a background thread. Returns the thread for management."""
-        # Check cache first (sync, fast)
-        cached_games = self._load_autoinstall_cache()
-        if cached_games is not None:
-            # Emit via callback immediately if cached
-            QThread.msleep(0)  # Yield to Qt event loop
-            callback(cached_games)
-            return None  # No thread needed
-
-        # No cache: Start background thread
         class AutoinstallWorker(QThread):
             finished = Signal(list)
             api: "PortProtonAPI"
             portproton_location: str | None
 
             def run(self):
+                import time
+                # Check cache in this background thread, not in main thread
+                start_time = time.time()
+                cached_games = self.api._load_autoinstall_cache()
+                # If cache loading took too long (>2 seconds), skip cache and load directly
+                if time.time() - start_time > 2:
+                    logger.warning("Cache loading took too long, proceeding without cache")
+                    cached_games = None
+
+                if cached_games is not None:
+                    self.finished.emit(cached_games)
+                    return
+
+                # No cache: Load games from scratch
                 games = []
                 auto_dir = os.path.join(
                     self.portproton_location or "", "data", "scripts", "pw_autoinstall"

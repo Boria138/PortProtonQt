@@ -111,34 +111,65 @@ def load_theme_fonts(theme_name):
         logger.debug(f"Fonts for theme '{theme_name}' already loaded, skipping")
         return
 
-    QFontDatabase.removeAllApplicationFonts()
-    fonts_folder = None
-    if theme_name == "standart":
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        fonts_folder = os.path.join(base_dir, "themes", "standart", "fonts")
-    else:
-        for themes_dir in THEMES_DIRS:
-            theme_folder = os.path.join(themes_dir, theme_name)
-            possible_fonts_folder = os.path.join(theme_folder, "fonts")
-            if os.path.exists(possible_fonts_folder):
-                fonts_folder = possible_fonts_folder
-                break
+    def load_fonts_delayed():
+        global _loaded_theme
+        try:
+            # Only remove fonts if this is a theme change (not initial load)
+            current_loaded_theme = _loaded_theme  # Capture the current value
+            if current_loaded_theme is not None and current_loaded_theme != theme_name:
+                # Run font removal in the GUI thread with delay
+                QFontDatabase.removeAllApplicationFonts()
 
-    if not fonts_folder or not os.path.exists(fonts_folder):
-        logger.error(f"Fonts folder not found for theme '{theme_name}'")
-        return
+            import time
+            import os
+            start_time = time.time()
+            timeout = 3  # Reduced timeout to 3 seconds for faster loading
 
-    for filename in os.listdir(fonts_folder):
-        if filename.lower().endswith((".ttf", ".otf")):
-            font_path = os.path.join(fonts_folder, filename)
-            font_id = QFontDatabase.addApplicationFont(font_path)
-            if font_id != -1:
-                families = QFontDatabase.applicationFontFamilies(font_id)
-                logger.info(f"Font {filename} successfully loaded: {families}")
+            fonts_folder = None
+            if theme_name == "standart":
+                base_dir = os.path.dirname(os.path.abspath(__file__))
+                fonts_folder = os.path.join(base_dir, "themes", "standart", "fonts")
             else:
-                logger.error(f"Error loading font: {filename}")
+                for themes_dir in THEMES_DIRS:
+                    theme_folder = os.path.join(themes_dir, theme_name)
+                    possible_fonts_folder = os.path.join(theme_folder, "fonts")
+                    if os.path.exists(possible_fonts_folder):
+                        fonts_folder = possible_fonts_folder
+                        break
 
-    _loaded_theme = theme_name
+            if not fonts_folder or not os.path.exists(fonts_folder):
+                logger.error(f"Fonts folder not found for theme '{theme_name}'")
+                return
+
+            font_files = []
+            for filename in os.listdir(fonts_folder):
+                if filename.lower().endswith((".ttf", ".otf")):
+                    font_files.append(filename)
+
+            # Limit number of fonts loaded to prevent too much blocking
+            font_files = font_files[:10]  # Only load first 10 fonts to prevent too much blocking
+
+            for filename in font_files:
+                if time.time() - start_time > timeout:
+                    logger.warning(f"Font loading timed out for theme '{theme_name}' after loading {len(font_files)} fonts")
+                    break
+
+                font_path = os.path.join(fonts_folder, filename)
+                font_id = QFontDatabase.addApplicationFont(font_path)
+                if font_id != -1:
+                    families = QFontDatabase.applicationFontFamilies(font_id)
+                    logger.info(f"Font {filename} successfully loaded: {families}")
+                else:
+                    logger.error(f"Error loading font: {filename}")
+
+            # Update the global variable in the main thread
+            _loaded_theme = theme_name
+        except Exception as e:
+            logger.error(f"Error loading fonts for theme '{theme_name}': {e}")
+
+    # Use QTimer to delay font loading until after the UI is rendered
+    from PySide6.QtCore import QTimer
+    QTimer.singleShot(100, load_fonts_delayed)  # Delay font loading by 100ms
 
 class ThemeWrapper:
     """

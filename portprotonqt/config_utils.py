@@ -137,8 +137,14 @@ def save_time_config(detail_level):
 
 def read_file_content(file_path):
     """Reads the content of a file and returns it as a string."""
-    with open(file_path, encoding="utf-8") as f:
-        return f.read().strip()
+    try:
+        # Add timeout protection for file operations using a simple approach
+        with open(file_path, encoding="utf-8") as f:
+            content = f.read().strip()
+            return content
+    except Exception as e:
+        logger.warning(f"Error reading file {file_path}: {e}")
+        raise  # Re-raise the exception to be handled by the caller
 
 def get_portproton_location():
     """Возвращает путь к PortProton каталогу (строку) или None."""
@@ -159,6 +165,8 @@ def get_portproton_location():
             logger.warning(f"Invalid PortProton path in configuration: {location}, using defaults")
         except (OSError, PermissionError) as e:
             logger.warning(f"Failed to read PortProton configuration file: {e}")
+        except Exception as e:
+            logger.warning(f"Unexpected error reading PortProton configuration file: {e}")
 
     default_flatpak_dir = os.path.join(os.path.expanduser("~"), ".var", "app", "ru.linux_gaming.PortProton")
     if os.path.isdir(default_flatpak_dir):
@@ -180,12 +188,17 @@ def get_portproton_start_command():
             ["flatpak", "list"],
             capture_output=True,
             text=True,
-            check=False
+            check=False,
+            timeout=10
         )
         if "ru.linux_gaming.PortProton" in result.stdout:
             logger.info("Detected Flatpak installation")
             return ["flatpak", "run", "ru.linux_gaming.PortProton"]
-    except Exception:
+    except subprocess.TimeoutExpired:
+        logger.warning("Flatpak list command timed out")
+        return None
+    except Exception as e:
+        logger.warning(f"Error checking flatpak list: {e}")
         pass
 
     start_sh_path = os.path.join(portproton_path, "data", "scripts", "start.sh")

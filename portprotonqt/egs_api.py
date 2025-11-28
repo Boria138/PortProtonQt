@@ -577,7 +577,7 @@ def get_egs_game_description_async(
                 "https://launcher.store.epicgames.com/graphql",
                 json=search_query,
                 headers=headers,
-                timeout=5
+                timeout=10
             )
             response.raise_for_status()
             data = orjson.loads(response.content)
@@ -597,7 +597,7 @@ def get_egs_game_description_async(
     def fetch_legacy_description(url: str) -> str:
         """Fetches description from the legacy API, handling DNS failures."""
         try:
-            response = requests.get(url, headers=headers, timeout=5)
+            response = requests.get(url, headers=headers, timeout=10)
             response.raise_for_status()
             data = orjson.loads(response.content)
             if not isinstance(data, dict):
@@ -618,6 +618,9 @@ def get_egs_game_description_async(
             return ""
         except requests.exceptions.ConnectionError as e:
             logger.error("DNS resolution failed for legacy API %s: %s", url, str(e))
+            return ""
+        except requests.exceptions.Timeout:
+            logger.warning("Request timeout for legacy API %s", url)
             return ""
         except requests.RequestException as e:
             logger.warning("Failed to fetch legacy API for %s: %s", app_name, str(e))
@@ -670,7 +673,7 @@ def get_egs_game_description_async(
             url = "https://graphql.epicgames.com/graphql"
 
         try:
-            response = requests.post(url, json=search_query, headers=headers, timeout=5)
+            response = requests.post(url, json=search_query, headers=headers, timeout=10)
             response.raise_for_status()
             data = orjson.loads(response.content)
             if namespace:
@@ -689,6 +692,9 @@ def get_egs_game_description_async(
                                 for substring in ["bundle", "pack", "edition", "dlc", "upgrade", "chapter", "набор", "пак", "дополнение"])):
                         return element.get("description", ""), element.get("productSlug", "")
                 return "", ""
+        except requests.exceptions.Timeout:
+            logger.warning("GraphQL request timeout for %s with locale %s", app_name, locale)
+            return "", ""
         except requests.RequestException as e:
             logger.warning("Failed to fetch GraphQL data for %s with locale %s: %s", app_name, locale, str(e))
             return "", ""
@@ -717,6 +723,10 @@ def get_egs_game_description_async(
                     logger.debug("Fetched description from legacy API for %s: %s", app_name, (description[:100] + "...") if len(description) > 100 else description)
             except requests.exceptions.ConnectionError:
                 logger.error("Skipping legacy API due to DNS resolution failure for %s", app_name)
+            except requests.exceptions.Timeout:
+                logger.warning("Legacy API request timed out for %s", app_name)
+            except Exception as e:
+                logger.error("Unexpected error fetching legacy API for %s: %s", app_name, str(e))
 
         # Step 3: If still no description and no namespace, try GraphQL with title
         if not description and not namespace:

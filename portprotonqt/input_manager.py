@@ -159,7 +159,8 @@ class InputManager(QObject):
         logger.info("EMUL: Mouse emulation initialized (enabled=%s)", self.mouse_emulation_enabled)
 
         if self.mouse_emulation_enabled:
-            self.enable_mouse_emulation()
+            # Initialize mouse emulation asynchronously to avoid blocking startup
+            QTimer.singleShot(0, self._async_enable_mouse_emulation)
 
         # FileExplorer specific attributes
         self.file_explorer = None
@@ -196,6 +197,10 @@ class InputManager(QObject):
 
         # Initialize evdev + hotplug
         self.init_gamepad()
+
+    def _async_enable_mouse_emulation(self):
+        """Asynchronously enable mouse emulation to avoid blocking startup."""
+        self.enable_mouse_emulation()
 
     def _update_emulation_flag(self):
         """Update emulation_active flag based on Qt app focus (main thread only)."""

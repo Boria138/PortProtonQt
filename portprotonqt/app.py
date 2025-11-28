@@ -34,12 +34,11 @@ def main():
     os.environ["PROCESS_LOG"] = "1"
     os.environ["START_FROM_STEAM"] = "1"
 
+    # Get the PortProton start command
     start_sh = get_portproton_start_command()
 
     if start_sh is None:
         return
-
-    subprocess.run(start_sh + ["cli", "--initial"])
 
     app = QApplication(sys.argv)
     app.setWindowIcon(QIcon.fromTheme(__app_id__))
@@ -143,6 +142,22 @@ def main():
         logger.info("Launching in normal mode")
         save_fullscreen_config(False)
         window.showNormal()
+
+    # Execute the initial PortProton command after the UI is set up
+    def run_initial_command():
+        nonlocal start_sh
+        if start_sh:
+            try:
+                subprocess.run(start_sh + ["cli", "--initial"], timeout=10)
+            except subprocess.TimeoutExpired:
+                logger.warning("Initial PortProton command timed out")
+            except Exception as e:
+                logger.error(f"Error running initial PortProton command: {e}")
+        else:
+            logger.warning("PortProton start command not available, skipping initial command")
+
+    # Run the initial command after the UI is displayed
+    QTimer.singleShot(100, run_initial_command)
 
     # --- Cleanup ---
     def cleanup_on_exit():

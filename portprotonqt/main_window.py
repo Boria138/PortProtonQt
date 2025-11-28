@@ -60,6 +60,7 @@ class MainWindow(QMainWindow):
         self.is_exiting = False
         selected_theme = read_theme_from_config()
         self.current_theme_name = selected_theme
+        # Apply theme but defer heavy font loading
         self.theme = self.theme_manager.apply_theme(selected_theme)
         self.tray_manager = TrayManager(self, app_name, self.current_theme_name)
         self.card_width = read_card_size()
@@ -131,6 +132,13 @@ class MainWindow(QMainWindow):
         self.statusBar().addPermanentWidget(self.progress_bar)
         self.update_progress.connect(self.progress_bar.setValue)
         self.update_status_message.connect(self.statusBar().showMessage)
+
+        # Show immediate startup progress to indicate the app is loading
+        self.progress_bar.setVisible(True)
+        self.progress_bar.setRange(0, 0)  # Indeterminate initially
+        self.progress_bar.setValue(0)  # Reset value
+        self.update_status_message.emit(_("Starting PortProton..."), 0)
+        QApplication.processEvents()  # Process to show progress bar immediately
 
         self.installing = False
         self.current_install_script = None
@@ -219,7 +227,6 @@ class MainWindow(QMainWindow):
         self.keyboard = VirtualKeyboard(self, self.theme)
 
         self.detail_animations = DetailPageAnimations(self, self.theme)
-        QTimer.singleShot(0, self.loadGames)
 
         if read_fullscreen_config():
             self.showFullScreen()
@@ -229,6 +236,14 @@ class MainWindow(QMainWindow):
                 self.resize(width, height)
             else:
                 self.showNormal()
+
+        # Process events to ensure UI is responsive before starting heavy operations
+        QApplication.processEvents()
+
+        # Delay game loading until after the UI is fully displayed to prevent blocking
+        # Use a longer delay to ensure window is fully rendered and responsive
+        # Use a custom event processing approach to make sure UI stays responsive
+        QTimer.singleShot(500, self.loadGames)  # Reduced delay but ensure UI gets event processing
 
     def on_slider_released(self) -> None:
         """Delegate to game library manager."""
@@ -563,6 +578,8 @@ class MainWindow(QMainWindow):
     def on_games_loaded(self, games: list[tuple]):
         self.game_library_manager.set_games(games)
         self.progress_bar.setVisible(False)
+        self.progress_bar.setRange(0, 100)  # Reset to determinate state for next use
+        self.progress_bar.setValue(0)
 
         # Clear the refresh in progress flag
         if hasattr(self, '_refresh_in_progress'):
@@ -589,58 +606,128 @@ class MainWindow(QMainWindow):
         favorites = read_favorites()
         self.pending_games = []
         self.games = []
+
+        # Show initial progress bar and status message immediately
+        self.progress_bar.setRange(0, 100)  # Set to determinate range
         self.progress_bar.setValue(0)
         self.progress_bar.setVisible(True)
-        if display_filter == "steam":
-            self._load_steam_games_async(lambda games: self.games_loaded.emit(games))
-        elif display_filter == "portproton":
-            self._load_portproton_games_async(lambda games: self.games_loaded.emit(games))
-        elif display_filter == "epic":
-            load_egs_games_async(
-                self.legendary_path,
-                lambda games: self.games_loaded.emit(games),
-                self.downloader,
-                self.update_progress.emit,
-                self.update_status_message.emit
-            )
-        elif display_filter == "favorites":
-            def on_all_games(portproton_games, steam_games, epic_games):
-                games = [game for game in portproton_games + steam_games + epic_games if game[0] in favorites]
-                self.games_loaded.emit(games)
-            self._load_portproton_games_async(
-                lambda pg: self._load_steam_games_async(
-                    lambda sg: load_egs_games_async(
-                        self.legendary_path,
-                        lambda eg: on_all_games(pg, sg, eg),
-                        self.downloader,
-                        self.update_progress.emit,
-                        self.update_status_message.emit
-                    )
+        self.update_status_message.emit(_("Loading games..."), 0)
+
+        # Process events to keep UI responsive
+        QApplication.processEvents()
+
+        def start_loading():
+            # Make sure progress bar is still visible
+            self.progress_bar.setValue(0)
+            self.progress_bar.setVisible(True)
+            QApplication.processEvents()  # Allow UI to update
+
+            if display_filter == "steam":
+                self._load_steam_games_async(lambda games: self.games_loaded.emit(games))
+            elif display_filter == "portproton":
+                self._load_portproton_games_async(lambda games: self.games_loaded.emit(games))
+            elif display_filter == "epic":
+                load_egs_games_async(
+                    self.legendary_path,
+                    lambda games: self.games_loaded.emit(games),
+                    self.downloader,
+                    self.update_progress.emit,
+                    self.update_status_message.emit
                 )
-            )
-        else:
-            def on_all_games(portproton_games, steam_games, epic_games):
-                seen = set()
-                games = []
-                for game in portproton_games + steam_games + epic_games:
-                    # Уникальный ключ: имя + exec_line
-                    key = (game[0], game[4])
-                    if key not in seen:
-                        seen.add(key)
-                        games.append(game)
-                self.games_loaded.emit(games)
-            self._load_portproton_games_async(
-                lambda pg: self._load_steam_games_async(
-                    lambda sg: load_egs_games_async(
-                        self.legendary_path,
-                        lambda eg: on_all_games(pg, sg, eg),
-                        self.downloader,
-                        self.update_progress.emit,
-                        self.update_status_message.emit
-                    )
+            elif display_filter == "favorites":
+                def on_all_games_favorites(portproton_games, steam_games, epic_games):
+                    games = [game for game in portproton_games + steam_games + epic_games if game[0] in favorites]
+                    self.games_loaded.emit(games)
+
+                # Load games from different sources in parallel to prevent blocking
+                results = {'portproton': [], 'steam': [], 'epic': []}
+                completed = {'portproton': False, 'steam': False, 'epic': False}
+
+                def check_completion():
+                    if all(completed.values()):
+                        QApplication.processEvents()  # Keep UI responsive
+                        on_all_games_favorites(results['portproton'], results['steam'], results['epic'])
+
+                def portproton_callback(games):
+                    results['portproton'] = games
+                    completed['portproton'] = True
+                    QApplication.processEvents()  # Keep UI responsive
+                    check_completion()
+
+                def steam_callback(games):
+                    results['steam'] = games
+                    completed['steam'] = True
+                    QApplication.processEvents()  # Keep UI responsive
+                    check_completion()
+
+                def epic_callback(games):
+                    results['epic'] = games
+                    completed['epic'] = True
+                    QApplication.processEvents()  # Keep UI responsive
+                    check_completion()
+
+                self._load_portproton_games_async(portproton_callback)
+                self._load_steam_games_async(steam_callback)
+                load_egs_games_async(
+                    self.legendary_path,
+                    epic_callback,
+                    self.downloader,
+                    self.update_progress.emit,
+                    self.update_status_message.emit
                 )
-            )
-        return []
+            else:
+                # For 'all' filter - load games from different sources in parallel to prevent blocking
+                results = {'portproton': [], 'steam': [], 'epic': []}
+                completed = {'portproton': False, 'steam': False, 'epic': False}
+
+                def on_all_games():
+                    seen = set()
+                    games = []
+                    for game in results['portproton'] + results['steam'] + results['epic']:
+                        # Уникальный ключ: имя + exec_line
+                        key = (game[0], game[4])
+                        if key not in seen:
+                            seen.add(key)
+                            games.append(game)
+                    QApplication.processEvents()  # Keep UI responsive
+                    self.games_loaded.emit(games)
+
+                def check_completion():
+                    if all(completed.values()):
+                        QApplication.processEvents()  # Keep UI responsive
+                        on_all_games()
+
+                def portproton_callback(games):
+                    results['portproton'] = games
+                    completed['portproton'] = True
+                    QApplication.processEvents()  # Keep UI responsive
+                    check_completion()
+
+                def steam_callback(games):
+                    results['steam'] = games
+                    completed['steam'] = True
+                    QApplication.processEvents()  # Keep UI responsive
+                    check_completion()
+
+                def epic_callback(games):
+                    results['epic'] = games
+                    completed['epic'] = True
+                    QApplication.processEvents()  # Keep UI responsive
+                    check_completion()
+
+                # Load all sources in parallel
+                self._load_portproton_games_async(portproton_callback)
+                self._load_steam_games_async(steam_callback)
+                load_egs_games_async(
+                    self.legendary_path,
+                    epic_callback,
+                    self.downloader,
+                    self.update_progress.emit,
+                    self.update_status_message.emit
+                )
+
+        # Run loading with minimal delay to allow UI to be responsive
+        QTimer.singleShot(100, start_loading)  # Reduced to 100ms
 
     def _load_steam_games_async(self, callback: Callable[[list[tuple]], None]):
         steam_games = []
