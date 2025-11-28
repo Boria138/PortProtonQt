@@ -1163,6 +1163,31 @@ QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical {{
     height: 3px;
     background: none;
 }}
+QScrollBar:horizontal {{
+    height: 10px;
+    border:  {border_a};
+    border-radius: 5px;
+    background: rgba(20, 20, 20, 0.30);
+}}
+QScrollBar::handle:horizontal {{
+    background: #bebebe;
+    border:  {border_a};
+    border-radius: 5px;
+}}
+QScrollBar::add-line:horizontal {{
+    border:  {border_a};
+    background: none;
+}}
+QScrollBar::sub-line:horizontal {{
+    border:  {border_a};
+    background: none;
+}}
+QScrollBar::up-arrow:horizontal, QScrollBar::down-arrow:horizontal {{
+    border:  {border_a};
+    width: 3px;
+    height: 3px;
+    background: none;
+}}
 """
 
 WINETRICKS_LOG_STYLE = f"""
