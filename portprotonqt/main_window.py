@@ -270,7 +270,7 @@ class MainWindow(QMainWindow):
                 GamepadType.PLAYSTATION: "ps_options",
             },
             'menu': {
-                GamepadType.XBOX: "xbox_view",
+                GamepadType.XBOX: "xbox_view",  # Select button on Xbox
                 GamepadType.PLAYSTATION: "ps_share",
             },
             'search': {
@@ -280,6 +280,10 @@ class MainWindow(QMainWindow):
             'prev_dir': {
                 GamepadType.XBOX: "xbox_y",
                 GamepadType.PLAYSTATION: "ps_square",
+            },
+            'guide_select': {
+                GamepadType.XBOX: "xbox_xbox",  # Xbox Guide button
+                GamepadType.PLAYSTATION: "ps_ps",  # PS button
             },
         }
         return mappings.get(action, {}).get(gtype, "placeholder")
@@ -320,6 +324,7 @@ class MainWindow(QMainWindow):
             ("context_menu", _("Menu")),
             ("menu", _("Fullscreen")),
             ("search", _("Search")),
+            ("guide_select", _("Refresh Grid")),
         ]
 
         keyboard_hints = [
@@ -328,6 +333,7 @@ class MainWindow(QMainWindow):
             ("key_e", _("Add Game")),
             ("key_context", _("Menu")),
             ("key_f11", _("Fullscreen")),
+            ("key_f5", _("Refresh Grid")),
         ]
 
         self.hintsLabels = []
@@ -375,9 +381,100 @@ class MainWindow(QMainWindow):
 
             hintsLayout.addWidget(container)
 
+        # Special function to create combination hint for Guide+Select
+        def makeCombinationHint(action_text: str, action: str | None = None):
+            container = QWidget()
+            layout = QHBoxLayout(container)
+            layout.setContentsMargins(0, 5, 0, 0)
+            layout.setSpacing(6)
+
+            # First icon (Guide button)
+            guide_icon = QLabel()
+            guide_icon.setFixedSize(26, 26)
+            guide_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+            pixmap = QPixmap()
+            for candidate in (
+                self.theme_manager.get_theme_image("xbox_xbox", self.current_theme_name),  # Xbox Guide
+                self.theme_manager.get_theme_image("ps_ps", self.current_theme_name),  # PS Button
+                self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
+            ):
+                if candidate is not None and pixmap.load(str(candidate)):
+                    break
+
+            if not pixmap.isNull():
+                guide_icon.setPixmap(pixmap.scaled(
+                    26, 26,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation
+                ))
+
+            layout.addWidget(guide_icon)
+
+            # Plus sign between icons
+            plus_icon = QLabel()
+            plus_icon.setFixedSize(26, 26)
+            plus_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+            plus_pixmap = QPixmap()
+            for candidate in (
+                self.theme_manager.get_theme_image("key_+", self.current_theme_name),
+                self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
+            ):
+                if candidate is not None and plus_pixmap.load(str(candidate)):
+                    break
+
+            if not plus_pixmap.isNull():
+                plus_icon.setPixmap(plus_pixmap.scaled(
+                    26, 26,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation
+                ))
+
+            layout.addWidget(plus_icon)
+
+            # Second icon (Select button)
+            select_icon = QLabel()
+            select_icon.setFixedSize(26, 26)
+            select_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+            pixmap2 = QPixmap()
+            for candidate in (
+                self.theme_manager.get_theme_image("xbox_view", self.current_theme_name),  # Xbox Select
+                self.theme_manager.get_theme_image("ps_share", self.current_theme_name),  # PS Share
+                self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
+            ):
+                if candidate is not None and pixmap2.load(str(candidate)):
+                    break
+
+            if not pixmap2.isNull():
+                select_icon.setPixmap(pixmap2.scaled(
+                    26, 26,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation
+                ))
+
+            layout.addWidget(select_icon)
+
+            # текст действия
+            text_label = QLabel(action_text)
+            text_label.setStyleSheet(self.theme.LAST_LAUNCH_VALUE_STYLE)
+            text_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
+            layout.addWidget(text_label)
+
+            # For gamepad combination hints
+            container.setVisible(False)
+            self.hintsLabels.append((container, [guide_icon, plus_icon, select_icon], action))  # Store all three elements for dynamic update
+
+            hintsLayout.addWidget(container)
+
         # Create gamepad hints
         for action, text in gamepad_actions:
-            makeHint("placeholder", text, True, action)  # Initial placeholder
+            if action == "guide_select":
+                # For the Guide+Select combination, create a special combination hint
+                makeCombinationHint(text, action)
+            else:
+                makeHint("placeholder", text, True, action)  # Initial placeholder
 
         # Create keyboard hints
         for icon, text in keyboard_hints:
@@ -432,30 +529,106 @@ class MainWindow(QMainWindow):
         gtype = self.input_manager.gamepad_type
         logger.debug("Updating control hints, gamepad connected: %s, type: %s", is_gamepad_connected, gtype.value)
 
-        gamepad_actions = ['confirm', 'back', 'add_game', 'context_menu', 'menu', 'search']
+        gamepad_actions = ['confirm', 'back', 'add_game', 'context_menu', 'menu', 'search', 'guide_select']
 
-        for container, icon_label, action in self.hintsLabels:
+        for container, icon_element, action in self.hintsLabels:
             if action in gamepad_actions:  # Gamepad hint
                 if is_gamepad_connected:
                     container.setVisible(True)
-                    # Update icon based on type
-                    icon_name = self.get_button_icon(action, gtype)
-                    icon_path = self.theme_manager.get_theme_image(icon_name, self.current_theme_name)
-                    pixmap = QPixmap()
-                    if icon_path:
-                        pixmap.load(str(icon_path))
-                    if not pixmap.isNull():
-                        icon_label.setPixmap(pixmap.scaled(
-                            26, 26,
-                            Qt.AspectRatioMode.KeepAspectRatio,
-                            Qt.TransformationMode.SmoothTransformation
-                        ))
+                    # Check if this is a combination hint (array of icons) or single icon hint
+                    if isinstance(icon_element, list) and len(icon_element) == 3 and action == "guide_select":
+                        # This is a combination hint for Guide+Select
+                        guide_icon, plus_icon, select_icon = icon_element
+
+                        # Determine guide icon based on gamepad type
+                        if gtype == GamepadType.XBOX:
+                            guide_icon_name = "xbox_xbox"  # Xbox Guide button
+                        elif gtype == GamepadType.PLAYSTATION:
+                            guide_icon_name = "ps_ps"  # PS Button
+                        else:
+                            guide_icon_name = "xbox_xbox"  # Default to Xbox guide
+
+                        # Load Guide icon
+                        guide_pixmap = QPixmap()
+                        for candidate in (
+                            self.theme_manager.get_theme_image(guide_icon_name, self.current_theme_name),
+                            self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
+                        ):
+                            if candidate is not None and guide_pixmap.load(str(candidate)):
+                                break
+
+                        if not guide_pixmap.isNull():
+                            guide_icon.setPixmap(guide_pixmap.scaled(
+                                26, 26,
+                                Qt.AspectRatioMode.KeepAspectRatio,
+                                Qt.TransformationMode.SmoothTransformation
+                            ))
+
+                        # Load Plus icon
+                        plus_pixmap = QPixmap()
+                        for candidate in (
+                            self.theme_manager.get_theme_image("key_+", self.current_theme_name),
+                            self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
+                        ):
+                            if candidate is not None and plus_pixmap.load(str(candidate)):
+                                break
+
+                        if not plus_pixmap.isNull():
+                            plus_icon.setPixmap(plus_pixmap.scaled(
+                                26, 26,
+                                Qt.AspectRatioMode.KeepAspectRatio,
+                                Qt.TransformationMode.SmoothTransformation
+                            ))
+
+                        # Determine select icon based on gamepad type
+                        if gtype == GamepadType.XBOX:
+                            select_icon_name = "xbox_view"  # Xbox Select button
+                        elif gtype == GamepadType.PLAYSTATION:
+                            select_icon_name = "ps_share"  # PS Share button
+                        else:
+                            select_icon_name = "xbox_view"  # Default to Xbox Select
+
+                        # Load Select icon
+                        select_pixmap = QPixmap()
+                        for candidate in (
+                            self.theme_manager.get_theme_image(select_icon_name, self.current_theme_name),
+                            self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
+                        ):
+                            if candidate is not None and select_pixmap.load(str(candidate)):
+                                break
+
+                        if not select_pixmap.isNull():
+                            select_icon.setPixmap(select_pixmap.scaled(
+                                26, 26,
+                                Qt.AspectRatioMode.KeepAspectRatio,
+                                Qt.TransformationMode.SmoothTransformation
+                            ))
                     else:
-                        # Fallback to placeholder
-                        placeholder = self.theme_manager.get_theme_image("placeholder", self.current_theme_name)
-                        if placeholder:
-                            pixmap.load(str(placeholder))
-                            icon_label.setPixmap(pixmap.scaled(26, 26, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+                        # This is a regular single-icon hint
+                        # Verify that icon_element is not a list before assigning
+                        if isinstance(icon_element, list):
+                            # This shouldn't happen based on current logic, but added for safety
+                            logger.warning(f"Unexpected list found for single-icon hint with action: {action}")
+                            continue  # Skip this iteration to prevent error
+                        icon_label = icon_element
+                        # Update icon based on type
+                        icon_name = self.get_button_icon(action, gtype)
+                        icon_path = self.theme_manager.get_theme_image(icon_name, self.current_theme_name)
+                        pixmap = QPixmap()
+                        if icon_path:
+                            pixmap.load(str(icon_path))
+                        if not pixmap.isNull():
+                            icon_label.setPixmap(pixmap.scaled(
+                                26, 26,
+                                Qt.AspectRatioMode.KeepAspectRatio,
+                                Qt.TransformationMode.SmoothTransformation
+                            ))
+                        else:
+                            # Fallback to placeholder
+                            placeholder = self.theme_manager.get_theme_image("placeholder", self.current_theme_name)
+                            if placeholder:
+                                pixmap.load(str(placeholder))
+                                icon_label.setPixmap(pixmap.scaled(26, 26, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
                 else:
                     container.setVisible(False)
             else:  # Keyboard hint
