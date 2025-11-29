@@ -906,6 +906,7 @@ class AddGameDialog(QDialog):
 
         self.coverEdit = CustomLineEdit(self, theme=self.theme)
         self.coverEdit.setStyleSheet(self.theme.ADDGAME_INPUT_STYLE)
+        self.coverEdit.setPlaceholderText(_("Enter local path or URL for cover image"))
         if cover_path:
             self.coverEdit.setText(cover_path)
 
@@ -949,7 +950,12 @@ class AddGameDialog(QDialog):
         # Подключение сигналов
         self.select_button.clicked.connect(self.accept)
         self.cancel_button.clicked.connect(self.reject)
-        self.coverEdit.textChanged.connect(self.updatePreview)
+        # Set up a timer for debounced cover preview updates
+        self.cover_preview_timer = QTimer(self)
+        self.cover_preview_timer.setSingleShot(True)
+        self.cover_preview_timer.timeout.connect(self.updatePreview)
+
+        self.coverEdit.textChanged.connect(self.onCoverTextChanged)
         self.exeEdit.textChanged.connect(self.updatePreview)
 
         # Установка одинаковой ширины для кнопок и полей ввода
@@ -1094,22 +1100,32 @@ class AddGameDialog(QDialog):
             self.coverPreview.setText(_("Failed to download cover"))
             logger.warning(f"Failed to download cover to {file_path}")
 
+    def onCoverTextChanged(self):
+        """Handle cover text changes with debounce."""
+        # Restart the timer to delay the preview update
+        self.cover_preview_timer.start(500)  # 500ms delay
+
     def updatePreview(self):
         """Update the cover preview image."""
         cover_path = self.coverEdit.text().strip()
         exe_path = self.exeEdit.text().strip()
 
-        # Check if cover_path is a URL
-        url_pattern = r'^https?://[^\s/$.?#].[^\s]*$'
-        if re.match(url_pattern, cover_path):
+        # Check if cover_path is a URL by checking for common image extensions
+        image_extensions = ('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.webp')
+        has_image_extension = any(cover_path.lower().endswith(ext) for ext in image_extensions)
+
+        # Consider it a URL if it has image extension and is not a local file
+        if has_image_extension and not os.path.isfile(cover_path):
             # Create a temporary file for the downloaded image
             fd, local_path = tempfile.mkstemp(suffix=".png")
             os.close(fd)
             os.unlink(local_path)
 
             # Start asynchronous download
+            # Add protocol if not present
+            download_url = cover_path if cover_path.startswith(('http://', 'https://')) else f'https://{cover_path}'
             self.downloader.download_async(
-                url=cover_path,
+                url=download_url,
                 local_path=local_path,
                 timeout=10,
                 callback=self.handleDownloadedCover

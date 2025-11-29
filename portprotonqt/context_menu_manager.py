@@ -1035,7 +1035,15 @@ Icon={icon_path}
                 )
                 return
 
-            if os.path.isfile(new_cover_path):
+            # Check if new_cover_path is a URL by checking for common image extensions
+            image_extensions = ('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.webp')
+            has_image_extension = any(new_cover_path.lower().endswith(ext) for ext in image_extensions)
+
+            # Consider it a URL if it has image extension and is not a local file
+            is_url = has_image_extension and not os.path.isfile(new_cover_path)
+
+            # Use the downloaded file path if we have a URL and the file was downloaded, otherwise use the local file
+            if os.path.isfile(new_cover_path) or (is_url and dialog.last_cover_path and os.path.isfile(dialog.last_cover_path)):
                 exe_name = os.path.splitext(os.path.basename(new_exe_path))[0]
                 xdg_data_home = os.getenv(
                     "XDG_DATA_HOME",
@@ -1043,16 +1051,25 @@ Icon={icon_path}
                 )
                 custom_folder = os.path.join(xdg_data_home, "PortProtonQt", "custom_data", exe_name)
                 os.makedirs(custom_folder, exist_ok=True)
-                ext = os.path.splitext(new_cover_path)[1].lower()
+
+                # Use the actual cover file path (either from URL download or local file)
+                cover_to_copy = dialog.last_cover_path if is_url and dialog.last_cover_path and os.path.isfile(dialog.last_cover_path) else new_cover_path
+                ext = os.path.splitext(cover_to_copy)[1].lower()
                 if ext in [".png", ".jpg", ".jpeg", ".bmp"]:
                     try:
-                        shutil.copyfile(new_cover_path, os.path.join(custom_folder, f"cover{ext}"))
+                        shutil.copyfile(cover_to_copy, os.path.join(custom_folder, f"cover{ext}"))
                     except OSError as e:
                         self.signals.show_warning_dialog.emit(
                             _("Error"),
                             _("Failed to copy cover image: {error}").format(error=str(e))
                         )
                         return
+                else:
+                    self.signals.show_warning_dialog.emit(
+                        _("Error"),
+                        _("Unsupported image format: {extension}").format(extension=ext)
+                    )
+                    return
 
     def add_to_steam(self, game_name, exec_line, cover_path):
         """
