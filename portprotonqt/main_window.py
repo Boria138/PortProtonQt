@@ -780,11 +780,10 @@ class MainWindow(QMainWindow):
         self.pending_games = []
         self.games = []
 
-        # Show initial progress bar and status message immediately
+        # Show initial progress bar immediately
         self.progress_bar.setRange(0, 100)  # Set to determinate range
         self.progress_bar.setValue(0)
         self.progress_bar.setVisible(True)
-        self.update_status_message.emit(_("Loading games..."), 0)
 
         # Process events to keep UI responsive
         QApplication.processEvents()
@@ -899,8 +898,8 @@ class MainWindow(QMainWindow):
                     self.update_status_message.emit
                 )
 
-        # Run loading with minimal delay to allow UI to be responsive
-        QTimer.singleShot(100, start_loading)  # Reduced to 100ms
+        # Run loading immediately to show status without delay
+        start_loading()
 
     def _load_steam_games_async(self, callback: Callable[[list[tuple]], None]):
         steam_games = []
