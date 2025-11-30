@@ -1200,8 +1200,19 @@ class MainWindow(QMainWindow):
         self.progress_bar.setRange(0, 0)  # Indeterminate
         self.update_status_message.emit(_("Refreshing game library..."), 0)
 
+        # Clear the game card cache to force reload of custom data
+        if hasattr(self, 'game_library_manager') and self.game_library_manager:
+            # Clear the cache to ensure custom data is reloaded
+            self.game_library_manager.game_card_cache.clear()
+            self.game_library_manager.pending_images.clear()
+            # Clear search indices to rebuild with fresh data
+            if hasattr(self.game_library_manager, '_build_search_indices'):
+                # Mark for full rebuild of search indices
+                self.game_library_manager.dirty = True  # Force full update
+
         # Reload games using the existing loadGames functionality
-        QTimer.singleShot(0, self.loadGames)
+        # Use a small delay to allow UI to update before starting the refresh
+        QTimer.singleShot(50, lambda: self.loadGames())
 
     def on_search_text_changed(self, text: str):
         """Search text change handler with debounce."""
