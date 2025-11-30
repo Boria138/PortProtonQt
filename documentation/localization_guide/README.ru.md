@@ -21,9 +21,9 @@
 
 | Локаль | Прогресс | Переведено |
 | :----- | -------: | ---------: |
-| [de_DE](./de_DE/LC_MESSAGES/messages.po) | 0% | 0 из 338 |
-| [es_ES](./es_ES/LC_MESSAGES/messages.po) | 0% | 0 из 338 |
-| [ru_RU](./ru_RU/LC_MESSAGES/messages.po) | 100% | 338 из 338 |
+| [de_DE](./de_DE/LC_MESSAGES/messages.po) | 0% | 0 из 341 |
+| [es_ES](./es_ES/LC_MESSAGES/messages.po) | 0% | 0 из 341 |
+| [ru_RU](./ru_RU/LC_MESSAGES/messages.po) | 100% | 341 из 341 |
 
 ---
 

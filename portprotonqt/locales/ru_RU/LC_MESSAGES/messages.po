@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-11-24 23:48+0500\n"
-"PO-Revision-Date: 2025-11-24 23:47+0500\n"
+"POT-Creation-Date: 2025-11-30 13:20+0500\n"
+"PO-Revision-Date: 2025-11-30 13:18+0500\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
@@ -223,6 +223,10 @@ msgid "Failed to copy cover image: {error}"
 msgstr "Не удалось скопировать обложку: {error}"
 
 #, python-brace-format
+msgid "Unsupported image format: {extension}"
+msgstr "Неподдерживаемый формат изображения: {extension}"
+
+#, python-brace-format
 msgid "Failed to add '{game_name}' to Steam: {error}"
 msgstr "Не удалось добавить '{game_name}' в Steam: {error}"
 
@@ -326,6 +330,9 @@ msgstr "Обзор..."
 
 msgid "Custom Cover:"
 msgstr "Обложка:"
+
+msgid "Enter local path or URL for cover image"
+msgstr "Введите локальный путь или URL обложки"
 
 msgid "Cover Preview:"
 msgstr "Предпросмотр обложки:"
@@ -459,6 +466,9 @@ msgstr "В ожидании"
 msgid "Unknown Game"
 msgstr "Неизвестная игра"
 
+msgid "Starting PortProton..."
+msgstr "Инициализация PortProton"
+
 msgid "Library"
 msgstr "Библиотека"
 
@@ -480,6 +490,9 @@ msgstr "Назад"
 msgid "Fullscreen"
 msgstr "Полный экран"
 
+msgid "Refresh Grid"
+msgstr "Обновить"
+
 msgid "Installation already in progress."
 msgstr "Установка уже выполняется."
 
@@ -498,9 +511,6 @@ msgstr "Установка не удалась."
 
 msgid "Installation error."
 msgstr "Ошибка установки."
-
-msgid "Refresh Grid"
-msgstr "Обновить"
 
 msgid "Game library refreshed"
 msgstr "Игровая библиотека обновлена"
