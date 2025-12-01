@@ -1832,7 +1832,7 @@ class ExeSettingsDialog(QDialog):
         # Connect tab change to update description hint
         self.tab_widget.currentChanged.connect(self.on_table_selection_changed)
 
-        # Main settings table
+        # Main settings table with preloader
         self.settings_table = QTableWidget()
         self.settings_table.setAlternatingRowColors(True)
         self.settings_table.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -1847,11 +1847,30 @@ class ExeSettingsDialog(QDialog):
         self.settings_table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         self.settings_table.setTextElideMode(Qt.TextElideMode.ElideNone)
         self.settings_table.setStyleSheet(self.theme.WINETRICKS_TABBLE_STYLE)
-        self.main_tab_layout.addWidget(self.settings_table)
+
+        # Create preloader for main settings table
+        self.settings_preloader = Preloader()
+        settings_preloader_container = QWidget()
+        settings_preloader_layout = QVBoxLayout(settings_preloader_container)
+        settings_preloader_layout.addStretch()
+        settings_preloader_hlayout = QHBoxLayout()
+        settings_preloader_hlayout.addStretch()
+        settings_preloader_hlayout.addWidget(self.settings_preloader)
+        settings_preloader_hlayout.addStretch()
+        settings_preloader_layout.addLayout(settings_preloader_hlayout)
+        settings_preloader_layout.addStretch()
+        settings_preloader_layout.setContentsMargins(0, 0, 0, 0)
+        settings_preloader_layout.setSpacing(0)
+
+        # Create stacked widget for main settings
+        self.settings_container = QStackedWidget()
+        self.settings_container.addWidget(settings_preloader_container)  # Index 0: preloader
+        self.settings_container.addWidget(self.settings_table)          # Index 1: table
+        self.main_tab_layout.addWidget(self.settings_container)
         # Connect selection changed signal for the main table
         self.settings_table.currentCellChanged.connect(self.on_table_selection_changed)
 
-        # Advanced settings table
+        # Advanced settings table with preloader
         self.advanced_table = QTableWidget()
         self.advanced_table.setAlternatingRowColors(True)
         self.advanced_table.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -1868,7 +1887,26 @@ class ExeSettingsDialog(QDialog):
         self.advanced_table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         self.advanced_table.setTextElideMode(Qt.TextElideMode.ElideNone)
         self.advanced_table.setStyleSheet(self.theme.WINETRICKS_TABBLE_STYLE)
-        self.advanced_tab_layout.addWidget(self.advanced_table)
+
+        # Create preloader for advanced settings table
+        self.advanced_preloader = Preloader()
+        advanced_preloader_container = QWidget()
+        advanced_preloader_layout = QVBoxLayout(advanced_preloader_container)
+        advanced_preloader_layout.addStretch()
+        advanced_preloader_hlayout = QHBoxLayout()
+        advanced_preloader_hlayout.addStretch()
+        advanced_preloader_hlayout.addWidget(self.advanced_preloader)
+        advanced_preloader_hlayout.addStretch()
+        advanced_preloader_layout.addLayout(advanced_preloader_hlayout)
+        advanced_preloader_layout.addStretch()
+        advanced_preloader_layout.setContentsMargins(0, 0, 0, 0)
+        advanced_preloader_layout.setSpacing(0)
+
+        # Create stacked widget for advanced settings
+        self.advanced_container = QStackedWidget()
+        self.advanced_container.addWidget(advanced_preloader_container)  # Index 0: preloader
+        self.advanced_container.addWidget(self.advanced_table)          # Index 1: table
+        self.advanced_tab_layout.addWidget(self.advanced_container)
         # Connect selection changed signal for the advanced table
         self.advanced_table.currentCellChanged.connect(self.on_table_selection_changed)
 
@@ -1906,6 +1944,10 @@ class ExeSettingsDialog(QDialog):
 
     def load_current_settings(self):
         """Load available toggles first, then current settings."""
+        # Show preloaders initially
+        self.settings_container.setCurrentIndex(0)  # Show preloader for main settings
+        self.advanced_container.setCurrentIndex(0)  # Show preloader for advanced settings
+
         process = QProcess(self)
         process.finished.connect(self.on_list_db_finished)
         args = self._get_process_args(["cli", "--list-db"])
@@ -1996,6 +2038,10 @@ class ExeSettingsDialog(QDialog):
 
         self.populate_table()
         self.populate_advanced()
+
+        # Show the loaded content and hide preloaders
+        self.settings_container.setCurrentIndex(1)    # Show main settings table
+        self.advanced_container.setCurrentIndex(1)    # Show advanced settings table
 
     def populate_table(self):
         """Populate the table with settings that are available in both lists."""
