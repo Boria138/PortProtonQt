@@ -2345,9 +2345,12 @@ class InputManager(QObject):
 
                                 self.button_event.emit(event.code, event.value)
                                 # Special handling for menu on press only
+                                # Only handle menu button if our main window is currently active
                                 if (event.value == 1 and event.code in BUTTONS['menu'] and
                                     not self._is_gamescope_session and not self.in_guide_combination_attempt):
-                                    self.toggle_fullscreen.emit(not self._is_fullscreen)
+                                    # Check if our main window is the currently active window
+                                    if self._parent.isActiveWindow():
+                                        self.toggle_fullscreen.emit(not self._is_fullscreen)
                             elif event.type == ecodes.EV_ABS:
                                 if event.code in {ecodes.ABS_Z, ecodes.ABS_RZ}:
                                     # Trigger handling for UI
