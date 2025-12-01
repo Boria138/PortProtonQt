@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QObject, Signal, QMimeDatabase, QTimer, QThreadPool, QRunnable, Slot, QProcess, QProcessEnvironment
 from icoextract import IconExtractor, IconExtractorError
 from PIL import Image
-from portprotonqt.config_utils import get_portproton_location, read_favorite_folders, read_theme_from_config
+from portprotonqt.config_utils import get_portproton_location, get_portproton_start_command, read_favorite_folders, read_theme_from_config
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
 from portprotonqt.theme_manager import ThemeManager
@@ -1717,8 +1717,10 @@ class ExeSettingsDialog(QDialog):
         if self.portproton_path is None:
             logger.error("PortProton location not found")
             return
-        base_path = os.path.join(self.portproton_path, "data")
-        self.start_sh = [os.path.join(base_path, "scripts", "start.sh")]
+        self.start_sh = get_portproton_start_command()
+        if self.start_sh is None:
+            logger.error("PortProton start command not found")
+            return
 
         self.dist_options = []
         self.prefix_options = []
@@ -1792,9 +1794,9 @@ class ExeSettingsDialog(QDialog):
         self.load_current_settings()
 
     def _get_process_args(self, subcommand_args):
-        """Get the full arguments for QProcess.start, handling flatpak separator."""
-        if self.start_sh[0] == "flatpak":
-            return self.start_sh[1:] + ["--"] + subcommand_args
+        """Get the full arguments for QProcess.start, handling flatpak format."""
+        if self.start_sh and self.start_sh[0] == "flatpak":
+            return self.start_sh + subcommand_args
         else:
             return self.start_sh + subcommand_args
 
@@ -1906,7 +1908,8 @@ class ExeSettingsDialog(QDialog):
         """Load available toggles first, then current settings."""
         process = QProcess(self)
         process.finished.connect(self.on_list_db_finished)
-        process.start(self.start_sh[0], ["cli", "--list-db"])
+        args = self._get_process_args(["cli", "--list-db"])
+        process.start(args[0], args[1:])
 
     def on_list_db_finished(self, exit_code, exit_status):
         """Handle --list-db output and extract available keys and system info."""
@@ -1953,7 +1956,8 @@ class ExeSettingsDialog(QDialog):
         # Load current settings
         process = QProcess(self)
         process.finished.connect(self.on_show_ppdb_finished)
-        process.start(self.start_sh[0], ["cli", "--show-ppdb", f"{self.exe_path}"])
+        args = self._get_process_args(["cli", "--show-ppdb", f"{self.exe_path}"])
+        process.start(args[0], args[1:])
 
     def on_show_ppdb_finished(self, exit_code, exit_status):
         """Handle --show-ppdb output."""
@@ -2301,8 +2305,9 @@ class ExeSettingsDialog(QDialog):
 
         process = QProcess(self)
         process.finished.connect(self.on_edit_db_finished)
-        args = ["cli", "--edit-db", self.exe_path] + changes
-        process.start(self.start_sh[0], args)
+        process_args = ["cli", "--edit-db", self.exe_path] + changes
+        args = self._get_process_args(process_args)
+        process.start(args[0], args[1:])
         self.apply_button.setEnabled(False)
 
     def on_edit_db_finished(self, exit_code, exit_status):
