@@ -1,5 +1,129 @@
 [
   {
+    "normalized_title": "metal gear solid v the phantom pain",
+    "slug": "metal-gear-solid-v-the-phantom-pain"
+  },
+  {
+    "normalized_title": "battlefield bad company 2",
+    "slug": "battlefield-bad-company-2"
+  },
+  {
+    "normalized_title": "call of duty black ops",
+    "slug": "call-of-duty-black-ops"
+  },
+  {
+    "normalized_title": "call of duty modern warfare 2 (2009)",
+    "slug": "call-of-duty-modern-warfare-2-2009"
+  },
+  {
+    "normalized_title": "call of duty black ops cold war",
+    "slug": "call-of-duty-black-ops-cold-war"
+  },
+  {
+    "normalized_title": "call of duty infinite warfare",
+    "slug": "call-of-duty-infinite-warfare"
+  },
+  {
+    "normalized_title": "lost planet 2",
+    "slug": "lost-planet-2"
+  },
+  {
+    "normalized_title": "lost planet extreme condition colonies",
+    "slug": "lost-planet-extreme-condition-colonies-edition"
+  },
+  {
+    "normalized_title": "starcraft",
+    "slug": "starcraft-remastered"
+  },
+  {
+    "normalized_title": "the entropy centre",
+    "slug": "the-entropy-centre"
+  },
+  {
+    "normalized_title": "metal gear solid v ground zeroes",
+    "slug": "metal-gear-solid-v-ground-zeroes"
+  },
+  {
+    "normalized_title": "escape from tarkov",
+    "slug": "escape-from-tarkov"
+  },
+  {
+    "normalized_title": "command & conquer generals",
+    "slug": "command-conquer-generals"
+  },
+  {
+    "normalized_title": "command & conquer generals zero hour",
+    "slug": "command-conquer-generals-zero-hour"
+  },
+  {
+    "normalized_title": "absolum",
+    "slug": "absolum"
+  },
+  {
+    "normalized_title": "tom clancy's splinter cell chaos theory",
+    "slug": "tom-clancys-splinter-cell-chaos-theory"
+  },
+  {
+    "normalized_title": "winter burrow",
+    "slug": "winter-burrow"
+  },
+  {
+    "normalized_title": "forager",
+    "slug": "forager"
+  },
+  {
+    "normalized_title": "wall world",
+    "slug": "wall-world"
+  },
+  {
+    "normalized_title": "grand theft auto iv the",
+    "slug": "grand-theft-auto-iv-the-complete-edition"
+  },
+  {
+    "normalized_title": "voidtrain",
+    "slug": "voidtrain"
+  },
+  {
+    "normalized_title": "jdm japanese drift master",
+    "slug": "jdm-japanese-drift-master"
+  },
+  {
+    "normalized_title": "lego harry potter collection",
+    "slug": "lego-harry-potter-collection"
+  },
+  {
+    "normalized_title": "life is strange season",
+    "slug": "life-is-strange-complete-season"
+  },
+  {
+    "normalized_title": "земский собор [демо]",
+    "slug": "zemskij-sobor-demo"
+  },
+  {
+    "normalized_title": "syberia",
+    "slug": "syberia-remastered"
+  },
+  {
+    "normalized_title": "europa universalis v",
+    "slug": "europa-universalis-v"
+  },
+  {
+    "normalized_title": "no i'm not a human",
+    "slug": "no-im-not-a-human"
+  },
+  {
+    "normalized_title": "dispatch digital deluxe",
+    "slug": "dispatch-digital-deluxe-edition"
+  },
+  {
+    "normalized_title": "cossacks 3 digital deluxe",
+    "slug": "cossacks-3-digital-deluxe"
+  },
+  {
+    "normalized_title": "battlefield 2",
+    "slug": "battlefield-2"
+  },
+  {
     "normalized_title": "split/second",
     "slug": "split-second"
   },
@@ -10,10 +134,6 @@
   {
     "normalized_title": "foundation",
     "slug": "foundation"
-  },
-  {
-    "normalized_title": "земский собор [демо]",
-    "slug": "zemskij-sobor-demo"
   },
   {
     "normalized_title": "crusader kings 3",
@@ -1412,10 +1532,6 @@
     "slug": "world-of-sea-battle"
   },
   {
-    "normalized_title": "escape from tarkov",
-    "slug": "escape-from-tarkov"
-  },
-  {
     "normalized_title": "bayonetta",
     "slug": "bayonetta"
   },
@@ -1538,10 +1654,6 @@
   {
     "normalized_title": "call of duty 2",
     "slug": "call-of-duty-2"
-  },
-  {
-    "normalized_title": "call of duty infinite warfare",
-    "slug": "call-of-duty-infinite-warfare"
   },
   {
     "normalized_title": "call of duty world at war",
@@ -1734,10 +1846,6 @@
   {
     "normalized_title": "elden ring",
     "slug": "elden-ring"
-  },
-  {
-    "normalized_title": "starcraft",
-    "slug": "starcraft-remastered"
   },
   {
     "normalized_title": "cataclismo",

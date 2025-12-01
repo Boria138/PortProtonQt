@@ -1373,7 +1373,7 @@
   },
   {
     "normalized_name": "arena breakout infinite",
-    "status": "Broken"
+    "status": "Denied"
   },
   {
     "normalized_name": "pixel gun 3d pc",
@@ -4316,7 +4316,7 @@
     "status": "Broken"
   },
   {
-    "normalized_name": "solo leveling arise",
+    "normalized_name": "solo leveling arise overdrive",
     "status": "Running"
   },
   {
@@ -4528,10 +4528,6 @@
     "status": "Broken"
   },
   {
-    "normalized_name": "solo leveling arise",
-    "status": "Broken"
-  },
-  {
     "normalized_name": "freedom wars",
     "status": "Running"
   },
@@ -4542,5 +4538,9 @@
   {
     "normalized_name": "no more room in hell 2",
     "status": "Running"
+  },
+  {
+    "normalized_name": "call of duty black ops 7",
+    "status": "Denied"
   }
 ]
