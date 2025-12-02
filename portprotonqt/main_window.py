@@ -1199,7 +1199,7 @@ class MainWindow(QMainWindow):
         self.progress_bar.setRange(0, 0)  # Indeterminate
         self.update_status_message.emit(_("Refreshing game library..."), 0)
 
-        # Clear the game card cache to force reload of custom data
+        # Clear the game card cache and layout to force reload of custom data
         if hasattr(self, 'game_library_manager') and self.game_library_manager:
             # Clear the cache to ensure custom data is reloaded
             self.game_library_manager.game_card_cache.clear()
@@ -1208,6 +1208,19 @@ class MainWindow(QMainWindow):
             if hasattr(self.game_library_manager, '_build_search_indices'):
                 # Mark for full rebuild of search indices
                 self.game_library_manager.dirty = True  # Force full update
+
+            # Also clear the layout to ensure old widgets are removed
+            if (hasattr(self.game_library_manager, 'gamesListLayout') and
+                self.game_library_manager.gamesListLayout and
+                hasattr(self.game_library_manager, 'gamesListWidget') and
+                self.game_library_manager.gamesListWidget):
+                # Remove all widgets from the layout
+                self.game_library_manager.clear_layout(self.game_library_manager.gamesListLayout)
+
+                # Force layout update to ensure UI changes are visible
+                self.game_library_manager.gamesListWidget.updateGeometry()
+                if hasattr(self.game_library_manager, 'gamesListLayout'):
+                    self.game_library_manager.gamesListLayout.update()
 
         # Reload games using the existing loadGames functionality
         # Use a small delay to allow UI to update before starting the refresh

@@ -505,16 +505,24 @@ class GameLibraryManager:
         """Clears all widgets from the layout."""
         if layout is None:
             return
+        # Remove all widgets from the layout and clean up caches
         while layout.count():
             child = layout.takeAt(0)
             if child.widget():
                 widget = child.widget()
+                # Clean up cache if widget exists in it
                 for key, card in list(self.game_card_cache.items()):
                     if card == widget:
                         del self.game_card_cache[key]
                         if key in self.pending_images:
                             del self.pending_images[key]
+                        break
+                # Always schedule widget for deletion regardless of cache state
                 widget.deleteLater()
+
+        # Also clear the cache completely if needed (in case layout wasn't in sync)
+        self.game_card_cache.clear()
+        self.pending_images.clear()
 
     def set_games(self, games: list[tuple]):
         """Sets the games list and updates the filtered games."""
