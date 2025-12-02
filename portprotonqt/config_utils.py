@@ -183,23 +183,39 @@ def get_portproton_start_command():
     if not portproton_path:
         return None
 
+    # Check if flatpak command exists before trying to run it
     try:
-        result = subprocess.run(
-            ["flatpak", "list"],
+        subprocess.run(
+            ["flatpak", "--version"],
             capture_output=True,
             text=True,
             check=False,
-            timeout=10
+            timeout=5
         )
-        if "ru.linux_gaming.PortProton" in result.stdout:
-            logger.info("Detected Flatpak installation")
-            return ["flatpak", "run", "ru.linux_gaming.PortProton"]
-    except subprocess.TimeoutExpired:
-        logger.warning("Flatpak list command timed out")
-        return None
-    except Exception as e:
-        logger.warning(f"Error checking flatpak list: {e}")
-        pass
+        flatpak_available = True
+    except FileNotFoundError:
+        flatpak_available = False
+    except Exception:
+        flatpak_available = False
+
+    if flatpak_available:
+        try:
+            result = subprocess.run(
+                ["flatpak", "list"],
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=10
+            )
+            if "ru.linux_gaming.PortProton" in result.stdout:
+                logger.info("Detected Flatpak installation")
+                return ["flatpak", "run", "ru.linux_gaming.PortProton"]
+        except subprocess.TimeoutExpired:
+            logger.warning("Flatpak list command timed out")
+            return None
+        except Exception as e:
+            logger.warning(f"Error checking flatpak list: {e}")
+            pass
 
     start_sh_path = os.path.join(portproton_path, "data", "scripts", "start.sh")
     if os.path.exists(start_sh_path):
