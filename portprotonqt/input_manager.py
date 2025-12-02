@@ -1939,8 +1939,10 @@ class InputManager(QObject):
                         active_win.show_next()
                     return True  # Consume event to prevent tab switching
 
-            # Handle tab switching with Left/Right arrow keys when not in GameCard focus or QLineEdit
-            if key in (Qt.Key.Key_Left, Qt.Key.Key_Right) and not isinstance(focused, GameCard | QLineEdit) and not self.file_explorer:
+            # Handle tab switching with Left/Right arrow keys when not in GameCard focus or QLineEdit or QTableWidget or AutoSizeButton
+            if (key in (Qt.Key.Key_Left, Qt.Key.Key_Right) and
+                not isinstance(focused, GameCard | QLineEdit | QTableWidget | AutoSizeButton) and
+                not self.file_explorer):
                 idx = self._parent.stackedWidget.currentIndex()
                 total = len(self._parent.tabButtons)
                 if key == Qt.Key.Key_Left:
@@ -1985,6 +1987,18 @@ class InputManager(QObject):
 
             # General actions: Activate, Back, Add
             if key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+                # Special handling for table widgets with checkboxes
+                if isinstance(focused, QTableWidget):
+                    current_row = focused.currentRow()
+                    current_col = focused.currentColumn()
+                    if current_row >= 0 and current_col >= 0:
+                        # Check if the cell contains a checkbox
+                        item = focused.item(current_row, current_col)
+                        if item and (item.flags() & Qt.ItemFlag.ItemIsUserCheckable):
+                            # Toggle the checkbox state
+                            new_state = Qt.CheckState.Checked if item.checkState() == Qt.CheckState.Unchecked else Qt.CheckState.Unchecked
+                            item.setCheckState(new_state)
+                            return True
                 self._parent.activateFocusedWidget()
                 return True
             elif key in (Qt.Key.Key_Escape, Qt.Key.Key_Backspace):
