@@ -1976,12 +1976,6 @@ class InputManager(QObject):
                     self.dpad_moved.emit(dpad_code, dpad_value, now)
                     return True
 
-            # Launch/stop game on detail page
-            if self._parent.currentDetailPage and key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
-                if self._parent.current_exec_line:
-                    self._parent.toggleGame(self._parent.current_exec_line, None)
-                    return True
-
             # Context menu for GameCard
             if isinstance(focused, GameCard):
                 if key == Qt.Key.Key_F10 and modifiers & Qt.KeyboardModifier.ShiftModifier:
