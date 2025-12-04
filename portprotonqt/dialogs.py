@@ -1973,6 +1973,9 @@ class ExeSettingsDialog(QDialog):
                 if re.match(r'^[A-Z_0-9]+=[^=]+$', line_stripped) and not line_stripped.startswith('PW_'):
                     # System info
                     k, v = line_stripped.split('=', 1)
+                    # Remove surrounding quotes from the value if present
+                    if v.startswith('"') and v.endswith('"') and len(v) >= 2:
+                        v = v[1:-1]
                     if k.startswith('NUMA_NODE_'):
                         node_id = k[10:]
                         self.numa_nodes[node_id] = v
@@ -2019,6 +2022,9 @@ class ExeSettingsDialog(QDialog):
                     try:
                         key, val = line_stripped.split('=', 1)
                         if key in self.toggle_settings or key in ADVANCED_SETTING_KEYS:
+                            # Remove surrounding quotes from the value if present
+                            if val.startswith('"') and val.endswith('"') and len(val) >= 2:
+                                val = val[1:-1]
                             self.current_settings[key] = val
                     except ValueError:
                         continue
