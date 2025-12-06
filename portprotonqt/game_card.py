@@ -200,13 +200,27 @@ class GameCard(QFrame):
         self.update_cover_pixmap()
 
     def update_cover_pixmap(self):
+        # Check if the coverLabel still exists before trying to update it
+        # This prevents the "Internal C++ object already deleted" error when
+        # the widget has been destroyed but the async callback still executes
+        if not hasattr(self, 'coverLabel') or self.coverLabel is None:
+            return
+
         if self.base_pixmap and not self.base_pixmap.isNull():
             scaled_width = int(self.base_card_width * self._scale)
             scaled_pixmap = self.base_pixmap.scaled(scaled_width, int(scaled_width * 1.5), Qt.AspectRatioMode.KeepAspectRatioByExpanding, Qt.TransformationMode.SmoothTransformation)
             rounded_pixmap = round_corners(scaled_pixmap, int(15 * self._scale))
-            self.coverLabel.setPixmap(rounded_pixmap)
+            try:
+                self.coverLabel.setPixmap(rounded_pixmap)
+            except RuntimeError:
+                # Handle the case where the Qt object was deleted between the check and the call
+                pass
 
     def _position_badges(self, current_width):
+        # Check if the card has been destroyed before updating
+        if not hasattr(self, 'coverLabel') or self.coverLabel is None:
+            return
+
         right_margin = int(8 * self._scale)
         badge_spacing = int(current_width * 0.02)
         top_y = int(10 * self._scale)
@@ -225,16 +239,28 @@ class GameCard(QFrame):
             if is_visible:
                 badge_x = current_width - badge_width - right_margin
                 badge_y = badge_y_positions[-1] + badge_spacing if badge_y_positions else top_y
-                badge.move(int(badge_x), int(badge_y))
-                badge_y_positions.append(badge_y + badge.height())
+                try:
+                    badge.move(int(badge_x), int(badge_y))
+                    badge_y_positions.append(badge_y + badge.height())
+                except RuntimeError:
+                    # Handle the case where the Qt object was deleted
+                    pass
 
-        self.anticheatLabel.raise_()
-        self.protondbLabel.raise_()
-        self.portprotonLabel.raise_()
-        self.egsLabel.raise_()
-        self.steamLabel.raise_()
+        try:
+            self.anticheatLabel.raise_()
+            self.protondbLabel.raise_()
+            self.portprotonLabel.raise_()
+            self.egsLabel.raise_()
+            self.steamLabel.raise_()
+        except RuntimeError:
+            # Handle the case where the Qt object was deleted
+            pass
 
     def update_scale(self):
+        # Check if the card has been destroyed before updating
+        if not hasattr(self, 'coverLabel') or self.coverLabel is None:
+            return
+
         scaled_width = int(self.base_card_width * self._scale)
         scaled_height = int(self.base_card_width * 1.8 * self._scale)
         scaled_extra = int(self.base_extra_margin * self._scale)
@@ -255,33 +281,53 @@ class GameCard(QFrame):
         icon_space = int(scaled_width * 0.012)
         for label in [self.steamLabel, self.egsLabel, self.portprotonLabel, self.protondbLabel, self.anticheatLabel]:
             if label is not None:
-                label.setFixedWidth(badge_width)
-                label.setIconSize(icon_size, icon_space)
-                label.setCardWidth(scaled_width)
+                try:
+                    label.setFixedWidth(badge_width)
+                    label.setIconSize(icon_size, icon_space)
+                    label.setCardWidth(scaled_width)
+                except RuntimeError:
+                    # Handle the case where the Qt object was deleted
+                    pass
 
         self._position_badges(scaled_width)
 
         if self.base_font_size is not None:
-            font = self.nameLabel.font()
-            new_font_size = self.base_font_size * self._scale
-            if new_font_size > 0:
-                font.setPointSizeF(new_font_size)
-                self.nameLabel.setFont(font)
+            try:
+                font = self.nameLabel.font()
+                new_font_size = self.base_font_size * self._scale
+                if new_font_size > 0:
+                    font.setPointSizeF(new_font_size)
+                    self.nameLabel.setFont(font)
+            except RuntimeError:
+                # Handle the case where the Qt object was deleted
+                pass
 
-        self.shadow.setBlurRadius(int(20 * self._scale))
+        try:
+            self.shadow.setBlurRadius(int(20 * self._scale))
+        except RuntimeError:
+            # Handle the case where the Qt object was deleted
+            pass
 
-        self.updateGeometry()
-        self.update()
+        try:
+            self.updateGeometry()
+            self.update()
+        except RuntimeError:
+            # Handle the case where the Qt object was deleted
+            pass
 
         # Ensure parent layout is updated safely
-        parent = self.parentWidget()
-        if parent:
-            layout = parent.layout()
-            if layout:
-                layout.invalidate()
-                layout.activate()
-                layout.update()
-            parent.updateGeometry()
+        try:
+            parent = self.parentWidget()
+            if parent:
+                layout = parent.layout()
+                if layout:
+                    layout.invalidate()
+                    layout.activate()
+                    layout.update()
+                parent.updateGeometry()
+        except RuntimeError:
+            # Handle the case where the Qt object was deleted
+            pass
 
     def update_card_size(self, new_width: int):
         self.base_card_width = new_width
@@ -289,6 +335,10 @@ class GameCard(QFrame):
         self.update_scale()
 
     def update_badge_visibility(self, display_filter: str):
+        # Check if the card has been destroyed before updating
+        if not hasattr(self, 'coverLabel') or self.coverLabel is None:
+            return
+
         self.display_filter = display_filter
         self.steam_visible = (str(self.game_source).lower() == "steam" and self.display_filter in ("all", "favorites"))
         self.egs_visible = (str(self.game_source).lower() == "epic" and self.display_filter in ("all", "favorites"))
@@ -296,11 +346,15 @@ class GameCard(QFrame):
         protondb_visible = bool(self.getProtonDBText(self.protondb_tier))
         anticheat_visible = bool(self.getAntiCheatText(self.anticheat_status))
 
-        self.steamLabel.setVisible(self.steam_visible)
-        self.egsLabel.setVisible(self.egs_visible)
-        self.portprotonLabel.setVisible(self.portproton_visible)
-        self.protondbLabel.setVisible(protondb_visible)
-        self.anticheatLabel.setVisible(anticheat_visible)
+        try:
+            self.steamLabel.setVisible(self.steam_visible)
+            self.egsLabel.setVisible(self.egs_visible)
+            self.portprotonLabel.setVisible(self.portproton_visible)
+            self.protondbLabel.setVisible(protondb_visible)
+            self.anticheatLabel.setVisible(anticheat_visible)
+        except RuntimeError:
+            # Handle the case where the Qt object was deleted
+            return
 
         scaled_width = int(self.base_card_width * self._scale)
         self._position_badges(scaled_width)
@@ -395,21 +449,33 @@ class GameCard(QFrame):
         QDesktopServices.openUrl(url)
 
     def update_favorite_icon(self):
-        if self.is_favorite:
-            self.favoriteLabel.setText("★")
-        else:
-            self.favoriteLabel.setText("☆")
-        self.favoriteLabel.setStyleSheet(self.theme.FAVORITE_LABEL_STYLE)
+        # Check if the card has been destroyed before updating
+        if not hasattr(self, 'coverLabel') or self.coverLabel is None:
+            return
 
-        parent = self.parent()
-        while parent:
-            if hasattr(parent, 'game_library_manager'):
-                # Access using getattr with default to avoid Ruff B009 warning
-                manager = getattr(parent, 'game_library_manager', None)
-                if manager is not None:
-                    QTimer.singleShot(0, manager.update_game_grid)
-                break
-            parent = parent.parent()
+        try:
+            if self.is_favorite:
+                self.favoriteLabel.setText("★")
+            else:
+                self.favoriteLabel.setText("☆")
+            self.favoriteLabel.setStyleSheet(self.theme.FAVORITE_LABEL_STYLE)
+        except RuntimeError:
+            # Handle the case where the Qt object was deleted
+            return
+
+        try:
+            parent = self.parent()
+            while parent:
+                if hasattr(parent, 'game_library_manager'):
+                    # Access using getattr with default to avoid Ruff B009 warning
+                    manager = getattr(parent, 'game_library_manager', None)
+                    if manager is not None:
+                        QTimer.singleShot(0, manager.update_game_grid)
+                    break
+                parent = parent.parent()
+        except RuntimeError:
+            # Handle the case where the Qt object was deleted
+            pass
 
     def toggle_favorite(self):
         favorites = read_favorites()

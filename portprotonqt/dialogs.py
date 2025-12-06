@@ -1089,16 +1089,24 @@ class AddGameDialog(QDialog):
 
     def handleDownloadedCover(self, file_path):
         """Handle the downloaded cover image and update the preview."""
-        if file_path and os.path.isfile(file_path):
-            self.last_cover_path = file_path
-            pixmap = QPixmap(file_path)
-            if not pixmap.isNull():
-                self.coverPreview.setPixmap(pixmap.scaled(250, 250, Qt.AspectRatioMode.KeepAspectRatio))
+        # Check if the dialog or widget has been destroyed before updating
+        if not hasattr(self, 'coverPreview') or self.coverPreview is None:
+            return
+
+        try:
+            if file_path and os.path.isfile(file_path):
+                self.last_cover_path = file_path
+                pixmap = QPixmap(file_path)
+                if not pixmap.isNull():
+                    self.coverPreview.setPixmap(pixmap.scaled(250, 250, Qt.AspectRatioMode.KeepAspectRatio))
+                else:
+                    self.coverPreview.setText(_("Invalid image"))
             else:
-                self.coverPreview.setText(_("Invalid image"))
-        else:
-            self.coverPreview.setText(_("Failed to download cover"))
-            logger.warning(f"Failed to download cover to {file_path}")
+                self.coverPreview.setText(_("Failed to download cover"))
+                logger.warning(f"Failed to download cover to {file_path}")
+        except RuntimeError:
+            # Handle the case where the Qt object was deleted
+            pass
 
     def onCoverTextChanged(self):
         """Handle cover text changes with debounce."""
