@@ -490,6 +490,7 @@ class GameLibraryManager:
             select_callback=self.main_window.openGameDetailPage,
             theme=self.theme,
             card_width=self.card_width,
+            parent=self.gamesListWidget,
             context_menu_manager=self.context_menu_manager
         )
 
