@@ -12,7 +12,7 @@ jobs:
     name: Build AppImage
     runs-on: ubuntu-22.04
     steps:
-      - uses: https://gitea.com/actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6
+      - uses: https://gitea.com/actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
       - name: Install required dependencies
         run: |
@@ -73,7 +73,7 @@ jobs:
           echo '%_topdir /home/rpmbuild' > /home/rpmbuild/.rpmmacros
 
       - name: Checkout repo
-        uses: https://gitea.com/actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6
+        uses: https://gitea.com/actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
       - name: Copy fedora.spec
         run: |
@@ -134,7 +134,7 @@ jobs:
           su user -c "yes '' | makepkg --noconfirm -s -p PKGBUILD-git"
 
       - name: Checkout
-        uses: https://gitea.com/actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6
+        uses: https://gitea.com/actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
       - name: Upload Arch package
         uses: https://gitea.com/actions/gitea-upload-artifact@v4
