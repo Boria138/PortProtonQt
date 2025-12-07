@@ -66,8 +66,11 @@ class VirtualKeyboard(QFrame):
         if not self.current_input_widget or not isinstance(self.current_input_widget, QLineEdit):
             return
 
-        # Просто устанавливаем курсор на нужную позицию без выделения
-        self.current_input_widget.setCursorPosition(self.current_input_widget.cursorPosition())
+        try:
+            # Просто устанавливаем курсор на нужную позицию без выделения
+            self.current_input_widget.setCursorPosition(self.current_input_widget.cursorPosition())
+        except RuntimeError:
+            self.current_input_widget = None
 
     def initUI(self):
         layout = QVBoxLayout()
@@ -290,31 +293,43 @@ class VirtualKeyboard(QFrame):
     def up_key(self):
         """Перемещает курсор в QLineEdit вверх/в начало, если клавиатура видима"""
         if self.current_input_widget and isinstance(self.current_input_widget, QLineEdit):
-            self.current_input_widget.setCursorPosition(0)
-            self.current_input_widget.setFocus()
+            try:
+                self.current_input_widget.setCursorPosition(0)
+                self.current_input_widget.setFocus()
+            except RuntimeError:
+                self.current_input_widget = None
 
     def down_key(self):
         """Перемещает курсор в QLineEdit вниз/в конец, если клавиатура видима"""
         if self.current_input_widget and isinstance(self.current_input_widget, QLineEdit):
-            self.current_input_widget.setCursorPosition(len(self.current_input_widget.text()))
-            self.current_input_widget.setFocus()
+            try:
+                self.current_input_widget.setCursorPosition(len(self.current_input_widget.text()))
+                self.current_input_widget.setFocus()
+            except RuntimeError:
+                self.current_input_widget = None
 
     def left_key(self):
         """Перемещает курсор в QLineEdit влево, если клавиатура видима"""
         if self.current_input_widget and isinstance(self.current_input_widget, QLineEdit):
-            pos = self.current_input_widget.cursorPosition()
-            if pos > 0:
-                self.current_input_widget.setCursorPosition(pos - 1)
-            self.current_input_widget.setFocus()
+            try:
+                pos = self.current_input_widget.cursorPosition()
+                if pos > 0:
+                    self.current_input_widget.setCursorPosition(pos - 1)
+                self.current_input_widget.setFocus()
+            except RuntimeError:
+                self.current_input_widget = None
 
     def right_key(self):
         """Перемещает курсор в QLineEdit вправо, если клавиатура видима"""
         if self.current_input_widget and isinstance(self.current_input_widget, QLineEdit):
-            pos = self.current_input_widget.cursorPosition()
-            text_len = len(self.current_input_widget.text())
-            if pos < text_len:
-                self.current_input_widget.setCursorPosition(pos + 1)
-            self.current_input_widget.setFocus()
+            try:
+                pos = self.current_input_widget.cursorPosition()
+                text_len = len(self.current_input_widget.text())
+                if pos < text_len:
+                    self.current_input_widget.setCursorPosition(pos + 1)
+                self.current_input_widget.setFocus()
+            except RuntimeError:
+                self.current_input_widget = None
 
     def move_focus_up(self):
         """Перемещает фокус по кнопкам клавиатуры вверх с фиксированной скоростью"""
@@ -370,35 +385,41 @@ class VirtualKeyboard(QFrame):
                 self.on_shift_click(not self.shift_pressed)
             self.highlight_cursor_position()
         elif self.current_input_widget is not None:
-            # Сохраняем текущую кнопку с фокусом
-            focused_button = self.focusWidget()
-            key_to_restore = None
-            if isinstance(focused_button, QPushButton) and focused_button in self.buttons.values():
-                key_to_restore = next((k for k, btn in self.buttons.items() if btn == focused_button), None)
+            try:
+                # Сохраняем текущую кнопку с фокусом
+                focused_button = self.focusWidget()
+                key_to_restore = None
+                if isinstance(focused_button, QPushButton) and focused_button in self.buttons.values():
+                    key_to_restore = next((k for k, btn in self.buttons.items() if btn == focused_button), None)
 
-            key = "&" if key == "&&" else key
-            cursor_pos = self.current_input_widget.cursorPosition()
-            text = self.current_input_widget.text()
-            new_text = text[:cursor_pos] + key + text[cursor_pos:]
-            self.current_input_widget.setText(new_text)
-            self.current_input_widget.setCursorPosition(cursor_pos + len(key))
-            self.keyPressed.emit(key)
-            self.highlight_cursor_position()
+                key = "&" if key == "&&" else key
+                cursor_pos = self.current_input_widget.cursorPosition()
+                text = self.current_input_widget.text()
+                new_text = text[:cursor_pos] + key + text[cursor_pos:]
+                self.current_input_widget.setText(new_text)
+                self.current_input_widget.setCursorPosition(cursor_pos + len(key))
+                self.keyPressed.emit(key)
+                self.highlight_cursor_position()
 
-            # Если был нажат SHIFT, но не CapsLock, отключаем его после ввода символа
-            if self.shift_pressed and not self.caps_lock:
-                self.shift_pressed = False
-                self.update_keyboard()
-                if key_to_restore and key_to_restore in self.buttons:
-                    self.buttons[key_to_restore].setFocus()
+                # Если был нажат SHIFT, но не CapsLock, отключаем его после ввода символа
+                if self.shift_pressed and not self.caps_lock:
+                    self.shift_pressed = False
+                    self.update_keyboard()
+                    if key_to_restore and key_to_restore in self.buttons:
+                        self.buttons[key_to_restore].setFocus()
+            except RuntimeError:
+                self.current_input_widget = None
 
     def on_tab_click(self):
         if self.current_input_widget is not None:
-            self.current_input_widget.insert('\t')
-            self.keyPressed.emit('Tab')
-            if self.current_input_widget:
-                self.current_input_widget.setFocus()
-            self.highlight_cursor_position()
+            try:
+                self.current_input_widget.insert('\t')
+                self.keyPressed.emit('Tab')
+                if self.current_input_widget:
+                    self.current_input_widget.setFocus()
+                self.highlight_cursor_position()
+            except RuntimeError:
+                self.current_input_widget = None
 
     def on_caps_click(self):
         """Включаем/выключаем CapsLock"""
@@ -417,15 +438,18 @@ class VirtualKeyboard(QFrame):
     def on_backspace_click(self):
         """Обработка одного нажатия Backspace"""
         if self.current_input_widget is not None:
-            cursor_pos = self.current_input_widget.cursorPosition()
-            text = self.current_input_widget.text()
+            try:
+                cursor_pos = self.current_input_widget.cursorPosition()
+                text = self.current_input_widget.text()
 
-            if cursor_pos > 0:
-                new_text = text[:cursor_pos - 1] + text[cursor_pos:]
-                self.current_input_widget.setText(new_text)
-                self.current_input_widget.setCursorPosition(cursor_pos - 1)
-                self.keyPressed.emit('Backspace')
-                self.highlight_cursor_position()
+                if cursor_pos > 0:
+                    new_text = text[:cursor_pos - 1] + text[cursor_pos:]
+                    self.current_input_widget.setText(new_text)
+                    self.current_input_widget.setCursorPosition(cursor_pos - 1)
+                    self.keyPressed.emit('Backspace')
+                    self.highlight_cursor_position()
+            except RuntimeError:
+                self.current_input_widget = None
 
     def on_backspace_pressed(self):
         """Обработка зажатого Backspace"""
@@ -449,15 +473,21 @@ class VirtualKeyboard(QFrame):
         # TODO: тут подумать, как обрабатывать нажатие.
         #  Пока болванка перехода на новую строку, в QlineEdit работает как нажатие пробела
         if self.current_input_widget is not None:
-            self.current_input_widget.insert('\n')
-            self.keyPressed.emit('Enter')
+            try:
+                self.current_input_widget.insert('\n')
+                self.keyPressed.emit('Enter')
+            except RuntimeError:
+                self.current_input_widget = None
 
     def on_clear_click(self):
         """Чистим строку от введённого текста"""
         if self.current_input_widget is not None:
-            self.current_input_widget.clear()
-            self.keyPressed.emit('Clear')
-            self.highlight_cursor_position()
+            try:
+                self.current_input_widget.clear()
+                self.keyPressed.emit('Clear')
+                self.highlight_cursor_position()
+            except RuntimeError:
+                self.current_input_widget = None
 
     def on_lang_click(self):
         """Переключение раскладки"""
@@ -483,8 +513,11 @@ class VirtualKeyboard(QFrame):
     def show_for_widget(self, widget):
         self.current_input_widget = widget
         if widget:
-            widget.setFocus()
-            self.highlight_cursor_position()
+            try:
+                widget.setFocus()
+                self.highlight_cursor_position()
+            except RuntimeError:
+                self.current_input_widget = None
 
         # Позиционирование клавиатуры внизу родительского виджета
         if self._parent and isinstance(self._parent, QWidget):

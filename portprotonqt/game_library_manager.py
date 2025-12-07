@@ -167,12 +167,18 @@ class GameLibraryManager:
 
         if is_focused:
             if self.main_window.current_hovered_card and self.main_window.current_hovered_card != card:
-                self.main_window.current_hovered_card._hovered = False
-                self.main_window.current_hovered_card.leaveEvent(None)
+                try:
+                    self.main_window.current_hovered_card._hovered = False
+                    self.main_window.current_hovered_card.leaveEvent(None)
+                except RuntimeError:
+                    pass  # Card already deleted
                 self.main_window.current_hovered_card = None
             if self.main_window.current_focused_card and self.main_window.current_focused_card != card:
-                self.main_window.current_focused_card._focused = False
-                self.main_window.current_focused_card.clearFocus()
+                try:
+                    self.main_window.current_focused_card._focused = False
+                    self.main_window.current_focused_card.clearFocus()
+                except RuntimeError:
+                    pass  # Card already deleted
             self.main_window.current_focused_card = card
         else:
             if self.main_window.current_focused_card == card:
@@ -193,11 +199,19 @@ class GameLibraryManager:
 
         if is_hovered:
             if self.main_window.current_focused_card and self.main_window.current_focused_card != card:
-                self.main_window.current_focused_card._focused = False
-                self.main_window.current_focused_card.clearFocus()
+                try:
+                    if self.main_window.current_focused_card:
+                        self.main_window.current_focused_card._focused = False
+                        self.main_window.current_focused_card.clearFocus()
+                except RuntimeError:
+                    pass  # Card already deleted
             if self.main_window.current_hovered_card and self.main_window.current_hovered_card != card:
-                self.main_window.current_hovered_card._hovered = False
-                self.main_window.current_hovered_card.leaveEvent(None)
+                try:
+                    if self.main_window.current_hovered_card:
+                        self.main_window.current_hovered_card._hovered = False
+                        self.main_window.current_hovered_card.leaveEvent(None)
+                except RuntimeError:
+                    pass  # Card already deleted
             self.main_window.current_hovered_card = card
         else:
             if self.main_window.current_hovered_card == card:
@@ -498,6 +512,11 @@ class GameLibraryManager:
     def _flush_deletions(self):
         """Delete pending widgets off the main update cycle."""
         for card in list(self.pending_deletions):
+            # Clear any references to this card if it's currently focused/hovered
+            if self.main_window.current_focused_card == card:
+                self.main_window.current_focused_card = None
+            if self.main_window.current_hovered_card == card:
+                self.main_window.current_hovered_card = None
             card.deleteLater()
             self.pending_deletions.remove(card)
 

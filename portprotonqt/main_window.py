@@ -3229,7 +3229,10 @@ class MainWindow(QMainWindow):
             # Игра стартовала – устанавливаем флаг, обновляем кнопку на "Stop"
             self._gameLaunched = True
             if self.current_running_button is not None:
-                self.current_running_button.setText(_("Stop"))
+                try:
+                    self.current_running_button.setText(_("Stop"))
+                except RuntimeError:
+                    self.current_running_button = None
                 #self._inhibit_screensaver()
         elif not child_running:
             # Игра завершилась – сбрасываем флаг, сбрасываем кнопку и останавливаем таймер
@@ -3248,13 +3251,16 @@ class MainWindow(QMainWindow):
         Вызывается, когда игра завершилась (не по нажатию кнопки).
         """
         if self.current_running_button is not None:
-            self.current_running_button.setText(_("Play"))
-            icon = self.theme_manager.get_icon("play")
-            if isinstance(icon, str):
-                icon = QIcon(icon)  # Convert path to QIcon
-            elif icon is None:
-                icon = QIcon()  # Use empty QIcon as fallback
-            self.current_running_button.setIcon(icon)
+            try:
+                self.current_running_button.setText(_("Play"))
+                icon = self.theme_manager.get_icon("play")
+                if isinstance(icon, str):
+                    icon = QIcon(icon)  # Convert path to QIcon
+                elif icon is None:
+                    icon = QIcon()  # Use empty QIcon as fallback
+                self.current_running_button.setIcon(icon)
+            except RuntimeError:
+                pass
             self.current_running_button = None
         self.target_exe = None
 
@@ -3307,13 +3313,16 @@ class MainWindow(QMainWindow):
                         pass
                 self.game_processes = []
                 if update_button:
-                    update_button.setText(_("Play"))
-                    icon = self.theme_manager.get_icon("play")
-                    if isinstance(icon, str):
-                        icon = QIcon(icon)
-                    elif icon is None:
-                        icon = QIcon()
-                    update_button.setIcon(icon)
+                    try:
+                        update_button.setText(_("Play"))
+                        icon = self.theme_manager.get_icon("play")
+                        if isinstance(icon, str):
+                            icon = QIcon(icon)
+                        elif icon is None:
+                            icon = QIcon()
+                        update_button.setIcon(icon)
+                    except RuntimeError:
+                        pass
                 if hasattr(self, 'checkProcessTimer') and self.checkProcessTimer is not None:
                     self.checkProcessTimer.stop()
                     self.checkProcessTimer.deleteLater()
@@ -3335,13 +3344,16 @@ class MainWindow(QMainWindow):
                     self.game_processes.append(process)
                     save_last_launch(exe_name, datetime.now())
                     if update_button:
-                        update_button.setText(_("Launching"))
-                        icon = self.theme_manager.get_icon("stop")
-                        if isinstance(icon, str):
-                            icon = QIcon(icon)
-                        elif icon is None:
-                            icon = QIcon()
-                        update_button.setIcon(icon)
+                        try:
+                            update_button.setText(_("Launching"))
+                            icon = self.theme_manager.get_icon("stop")
+                            if isinstance(icon, str):
+                                icon = QIcon(icon)
+                            elif icon is None:
+                                icon = QIcon()
+                            update_button.setIcon(icon)
+                        except RuntimeError:
+                            pass
 
                     self.checkProcessTimer = QTimer(self)
                     self.checkProcessTimer.timeout.connect(self.checkTargetExe)
@@ -3398,13 +3410,16 @@ class MainWindow(QMainWindow):
                     pass
             self.game_processes = []
             if update_button:
-                update_button.setText(_("Play"))
-                icon = self.theme_manager.get_icon("play")
-                if isinstance(icon, str):
-                    icon = QIcon(icon)
-                elif icon is None:
-                    icon = QIcon()
-                update_button.setIcon(icon)
+                try:
+                    update_button.setText(_("Play"))
+                    icon = self.theme_manager.get_icon("play")
+                    if isinstance(icon, str):
+                        icon = QIcon(icon)
+                    elif icon is None:
+                        icon = QIcon()
+                    update_button.setIcon(icon)
+                except RuntimeError:
+                    pass
             if hasattr(self, 'checkProcessTimer') and self.checkProcessTimer is not None:
                 self.checkProcessTimer.stop()
                 self.checkProcessTimer.deleteLater()
@@ -3426,13 +3441,16 @@ class MainWindow(QMainWindow):
                 self.game_processes.append(process)
                 save_last_launch(exe_name, datetime.now())
                 if update_button:
-                    update_button.setText(_("Launching"))
-                    icon = self.theme_manager.get_icon("stop")
-                    if isinstance(icon, str):
-                        icon = QIcon(icon)
-                    elif icon is None:
-                        icon = QIcon()
-                    update_button.setIcon(icon)
+                    try:
+                        update_button.setText(_("Launching"))
+                        icon = self.theme_manager.get_icon("stop")
+                        if isinstance(icon, str):
+                            icon = QIcon(icon)
+                        elif icon is None:
+                            icon = QIcon()
+                        update_button.setIcon(icon)
+                    except RuntimeError:
+                        pass
 
                 self.checkProcessTimer = QTimer(self)
                 self.checkProcessTimer.timeout.connect(self.checkTargetExe)
