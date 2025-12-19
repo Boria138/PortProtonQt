@@ -124,8 +124,12 @@ class PortProtonAPI:
                 )
                 break
 
-        if self._check_file_exists(metadata_url, timeout):
-            local_metadata_path = os.path.join(game_dir, "metadata.txt")
+        # Check if metadata already exists locally before attempting download
+        local_metadata_path = os.path.join(game_dir, "metadata.txt")
+        if os.path.exists(local_metadata_path):
+            logger.debug(f"Metadata already exists locally for {exe_name}: {local_metadata_path}")
+            results["metadata"] = local_metadata_path
+        elif self._check_file_exists(metadata_url, timeout):
             pending_downloads += 1
             self.downloader.download_async(
                 metadata_url,
@@ -152,8 +156,16 @@ class PortProtonAPI:
             except FileExistsError:
                 pass
 
-        cover_url = f"{self.base_url}/{exe_name}/cover.png"
         local_cover_path = os.path.join(user_game_folder, "cover.png")
+
+        # Check if the cover already exists locally before attempting download
+        if os.path.exists(local_cover_path):
+            logger.debug(f"Async autoinstall cover already exists locally for {exe_name}: {local_cover_path}")
+            if callback:
+                callback(local_cover_path)
+            return
+
+        cover_url = f"{self.base_url}/{exe_name}/cover.png"
 
         def on_cover_downloaded(local_path: str | None):
             if local_path:
@@ -174,6 +186,102 @@ class PortProtonAPI:
             logger.debug(f"No autoinstall cover found for {exe_name}")
             if callback:
                 callback(None)
+
+    def download_autoinstall_metadata_async(self, exe_name: str, timeout: int = 5, callback: Callable[[str | None], None] | None = None) -> None:
+        """Download autoinstall metadata.txt file."""
+        xdg_data_home = os.getenv("XDG_DATA_HOME",
+                                os.path.join(os.path.expanduser("~"), ".local", "share"))
+        autoinstall_root = os.path.join(xdg_data_home, "PortProtonQt", "custom_data", "autoinstall")
+        user_game_folder = os.path.join(autoinstall_root, exe_name)
+
+        if not os.path.isdir(user_game_folder):
+            try:
+                os.makedirs(user_game_folder, exist_ok=True)
+            except FileExistsError:
+                pass
+
+        local_metadata_path = os.path.join(user_game_folder, "metadata.txt")
+
+        # Check if the file already exists locally before attempting download
+        if os.path.exists(local_metadata_path):
+            logger.debug(f"Async autoinstall metadata already exists locally for {exe_name}: {local_metadata_path}")
+            if callback:
+                callback(local_metadata_path)
+            return
+
+        metadata_url = f"{self.base_url}/{exe_name}/metadata.txt"
+
+        def on_metadata_downloaded(local_path: str | None):
+            if local_path:
+                logger.info(f"Async autoinstall metadata downloaded for {exe_name}: {local_path}")
+            else:
+                logger.debug(f"No autoinstall metadata downloaded for {exe_name}")
+            if callback:
+                callback(local_path)
+
+        if self._check_file_exists(metadata_url, timeout):
+            self.downloader.download_async(
+                metadata_url,
+                local_metadata_path,
+                timeout=timeout,
+                callback=on_metadata_downloaded
+            )
+        else:
+            logger.debug(f"No autoinstall metadata found for {exe_name}")
+            if callback:
+                callback(None)
+
+    def get_autoinstall_description(self, exe_name: str, lang_code: str = "en") -> str | None:
+        """Read description from downloaded metadata.txt file for autoinstall game.
+
+        Args:
+            exe_name: The executable name/script name
+            lang_code: Language code ("en" or "ru" for description)
+
+        Returns:
+            Description string or None if not found
+        """
+        xdg_data_home = os.getenv("XDG_DATA_HOME",
+                                os.path.join(os.path.expanduser("~"), ".local", "share"))
+        autoinstall_root = os.path.join(xdg_data_home, "PortProtonQt", "custom_data", "autoinstall")
+        metadata_path = os.path.join(autoinstall_root, exe_name, "metadata.txt")
+
+        if not os.path.exists(metadata_path):
+            return None
+
+        try:
+            with open(metadata_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+            # Parse the metadata content to extract description
+            # Format: description_en=... or description_ru=...
+            if lang_code == "ru":
+                pattern = r'^description_ru=(.*)$'
+            else:
+                pattern = r'^description_en=(.*)$'
+
+            import re
+            match = re.search(pattern, content, re.MULTILINE)
+            if match:
+                description = match.group(1).strip()
+                # Handle potential quoted strings
+                if description.startswith('"') and description.endswith('"'):
+                    description = description[1:-1]
+                return description
+            else:
+                # Try fallback to the other language if the requested one is not found
+                fallback_lang = "ru" if lang_code == "en" else "en"
+                fallback_pattern = r'^description_{}=(.*)$'.format(fallback_lang)
+                fallback_match = re.search(fallback_pattern, content, re.MULTILINE)
+                if fallback_match:
+                    description = fallback_match.group(1).strip()
+                    if description.startswith('"') and description.endswith('"'):
+                        description = description[1:-1]
+                    return description
+        except Exception as e:
+            logger.error(f"Error reading metadata for {exe_name}: {e}")
+
+        return None
 
     def parse_autoinstall_script(self, file_path: str) -> tuple[str | None, str | None]:
         """Extract display_name from # name comment and exe_name from autoinstall bash script."""
@@ -362,8 +470,23 @@ class PortProtonAPI:
                     if not cover_path:
                         logger.debug(f"No local cover found for autoinstall {exe_name}")
 
+                    # Try to get the description from metadata file
+                    description = ""
+                    # Look for metadata in the expected location
+                    try:
+                        import locale
+                        current_locale = locale.getlocale()[0] or 'en'
+                    except:
+                        current_locale = 'en'
+                    lang_code = 'ru' if current_locale and 'ru' in current_locale.lower() else 'en'
+
+                    # Try to read description from downloaded metadata
+                    metadata_description = self.api.get_autoinstall_description(exe_name, lang_code)
+                    if metadata_description:
+                        description = metadata_description
+
                     game_tuple = (
-                        display_name, "", cover_path, "", f"autoinstall:{script_name}",
+                        display_name, description, cover_path, "", f"autoinstall:{script_name}",
                         "", "Never", "0h 0m", "", "", 0, 0, "autoinstall", exe_name
                     )
                     games.append(game_tuple)
