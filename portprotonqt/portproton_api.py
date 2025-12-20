@@ -250,7 +250,7 @@ class PortProtonAPI:
             return None
 
         try:
-            with open(metadata_path, 'r', encoding='utf-8') as f:
+            with open(metadata_path, encoding='utf-8') as f:
                 content = f.read()
 
             # Parse the metadata content to extract description
@@ -271,7 +271,7 @@ class PortProtonAPI:
             else:
                 # Try fallback to the other language if the requested one is not found
                 fallback_lang = "ru" if lang_code == "en" else "en"
-                fallback_pattern = r'^description_{}=(.*)$'.format(fallback_lang)
+                fallback_pattern = rf'^description_{fallback_lang}=(.*)$'
                 fallback_match = re.search(fallback_pattern, content, re.MULTILINE)
                 if fallback_match:
                     description = fallback_match.group(1).strip()
@@ -476,7 +476,7 @@ class PortProtonAPI:
                     try:
                         import locale
                         current_locale = locale.getlocale()[0] or 'en'
-                    except:
+                    except (AttributeError, IndexError, TypeError):
                         current_locale = 'en'
                     lang_code = 'ru' if current_locale and 'ru' in current_locale.lower() else 'en'
 

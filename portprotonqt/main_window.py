@@ -18,7 +18,7 @@ from portprotonqt.context_menu_manager import ContextMenuManager, CustomLineEdit
 from portprotonqt.system_overlay import SystemOverlay
 from portprotonqt.input_manager import GamepadType
 
-from portprotonqt.image_utils import load_pixmap_async, round_corners, ImageCarousel
+from portprotonqt.image_utils import load_pixmap_async, ImageCarousel
 from portprotonqt.steam_api import get_steam_game_info_async, get_full_steam_game_info_async, get_steam_installed_games
 from portprotonqt.egs_api import load_egs_games_async, get_egs_executable
 from portprotonqt.theme_manager import ThemeManager, load_theme_screenshots
@@ -26,21 +26,20 @@ from portprotonqt.time_utils import save_last_launch, get_last_launch, parse_pla
 from portprotonqt.config_utils import (
     get_portproton_location, read_theme_from_config, save_theme_to_config, parse_desktop_entry,
     load_theme_metainfo, read_time_config, read_card_size, save_card_size, read_sort_method,
-    read_display_filter, read_favorites, save_favorites, save_time_config, save_sort_method,
+    read_display_filter, read_favorites, save_time_config, save_sort_method,
     save_display_filter, save_proxy_config, read_proxy_config, read_fullscreen_config,
     save_fullscreen_config, read_window_geometry, save_window_geometry, reset_config,
     clear_cache, read_auto_fullscreen_gamepad, save_auto_fullscreen_gamepad, read_rumble_config, save_rumble_config, read_gamepad_type, save_gamepad_type, read_minimize_to_tray, save_minimize_to_tray,
     read_auto_card_size, save_auto_card_size, get_portproton_start_command
 )
 from portprotonqt.localization import _, get_egs_language, read_metadata_translations
-from portprotonqt.howlongtobeat_api import HowLongToBeat
 from portprotonqt.downloader import Downloader
 from portprotonqt.tray_manager import TrayManager
 from portprotonqt.game_library_manager import GameLibraryManager
 from portprotonqt.virtual_keyboard import VirtualKeyboard
 
 from PySide6.QtWidgets import (QLineEdit, QMainWindow, QStatusBar, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox,
-                               QDialog, QFormLayout, QFrame, QGraphicsDropShadowEffect, QMessageBox, QApplication, QPushButton, QProgressBar, QCheckBox, QSizePolicy, QGridLayout, QScrollArea, QScroller, QSlider)
+                               QDialog, QFormLayout, QMessageBox, QApplication, QPushButton, QProgressBar, QCheckBox, QSizePolicy, QGridLayout, QScrollArea, QScroller, QSlider)
 from PySide6.QtCore import Qt, QAbstractAnimation, QUrl, Signal, QTimer, Slot, QProcess
 from PySide6.QtGui import QIcon, QPixmap, QColor, QDesktopServices
 from typing import cast
@@ -231,6 +230,7 @@ class MainWindow(QMainWindow):
         self.keyboard = VirtualKeyboard(self, self.theme)
 
         self.detail_animations = DetailPageAnimations(self, self.theme)
+        self._animations = {}
 
         if read_fullscreen_config():
             self.showFullScreen()
@@ -1571,7 +1571,7 @@ class MainWindow(QMainWindow):
 
             # Загружаем недостающие обложки и метаданные
             for game_tuple in games:
-                name, description, cover_path, *_ , game_source, exe_name = game_tuple
+                name, description, cover_path, appid, controller_support, exec_line, *_ , game_source, exe_name = game_tuple
                 if not cover_path:
                     self.portproton_api.download_autoinstall_cover_async(
                         exe_name, timeout=5,
@@ -1580,22 +1580,11 @@ class MainWindow(QMainWindow):
 
                 # Always try to download metadata for better descriptions
                 # Update the card when metadata is downloaded
-                def metadata_callback(path):
+                def metadata_callback(path, exe_name=exe_name):
                     if path and os.path.exists(path):  # If metadata file was successfully downloaded
                         try:
-                            # Read the translated metadata using the existing function
-                            language_code = get_egs_language()  # Use the same language detection as elsewhere
-                            translations = read_metadata_translations(path, language_code)
-
-                            # Update the card with the new name if available
-                            if exe_name in self.autoInstallGameCards:
-                                card = self.autoInstallGameCards[exe_name]
-                                if translations and 'name' in translations and translations['name'] and translations['name'] != _('Unknown Game'):
-                                    # Update the card's internal name reference
-                                    card.name = translations['name']
-                                    # Update the display label
-                                    if hasattr(card, 'nameLabel') and card.nameLabel:
-                                        card.nameLabel.setText(translations['name'])
+                            # Update card name from metadata
+                            self._update_card_name_from_metadata(exe_name, path)
                         except Exception as e:
                             logger.error(f"Error updating card metadata for {exe_name}: {e}")
 
@@ -3002,14 +2991,40 @@ class MainWindow(QMainWindow):
                 timer.deleteLater()
                 setattr(self, tname, None)
 
-    def open_portproton_forum_topic(self, name):
-        """Bridge method to detail page manager."""
-        return self.detail_page_manager.open_portproton_forum_topic(name)
+    def _update_card_name_from_metadata(self, exe_name: str, metadata_path: str):
+        """Update card name from metadata file."""
+        # Read the translated metadata using the existing function
+        language_code = get_egs_language()  # Use the same language detection as elsewhere
+        translations = read_metadata_translations(metadata_path, language_code)
+
+        # Update the card with the new name if available
+        if exe_name in self.autoInstallGameCards:
+            card = self.autoInstallGameCards[exe_name]
+
+            # Defensive check: Ensure card is not a list or other unexpected type
+            if isinstance(card, list):
+                logger.error(f"Card for {exe_name} is unexpectedly a list: {card}")
+                return
+
+            # Additional defensive checks for card validity
+            if not hasattr(card, 'nameLabel'):
+                logger.warning(f"Card for {exe_name} doesn't have nameLabel attribute")
+                return
+
+            if not (hasattr(card, 'nameLabel') and hasattr(card.nameLabel, 'setText')):
+                logger.warning(f"Card nameLabel for {exe_name} doesn't have setText method")
+                return
+
+            if translations and 'name' in translations and translations['name'] and translations['name'] != _('Unknown Game'):
+                # Update the card's internal name reference
+                card.name = translations['name']
+                # Update the display label
+                if hasattr(card, 'nameLabel') and card.nameLabel:
+                    card.nameLabel.setText(translations['name'])
+
 
     def goBackDetailPage(self, page):
         """Bridge method to detail page manager."""
-        # Store the current tab index before going back to ensure we return to the same tab
-        current_tab_index = self.stackedWidget.currentIndex()
         result = self.detail_page_manager.goBackDetailPage(page)
         # The detail page manager will handle the navigation properly
         return result

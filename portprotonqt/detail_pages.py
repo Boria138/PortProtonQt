@@ -6,6 +6,7 @@ from PySide6.QtGui import QColor, QDesktopServices
 from portprotonqt.image_utils import load_pixmap_async, round_corners
 from portprotonqt.custom_widgets import ClickableLabel, AutoSizeButton
 from portprotonqt.game_card import GameCard
+from portprotonqt.howlongtobeat_api import HowLongToBeat
 from portprotonqt.config_utils import read_favorites, save_favorites, read_display_filter
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
@@ -540,7 +541,6 @@ class DetailPageManager:
 
         if script_name:
             # Get localized description based on current UI language
-            from portprotonqt.localization import _
             # Import locale module to detect current locale
             import locale
             try:
@@ -737,7 +737,7 @@ class DetailPageManager:
 
             if not installButton.hasFocus():
                 logger.debug("Final retry...")
-                installButton.setFocusPolicy(Qt.FocusReason.StrongFocus)
+                installButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
                 installButton.setFocus(Qt.FocusReason.OtherFocusReason)
                 self.main_window.processEvents()
 
