@@ -94,7 +94,7 @@ jobs:
     name: Build Arch Package
     runs-on: ubuntu-22.04
     container:
-      image: archlinux:base-devel@sha256:943bdad9e9d0d23503f24797b44ce2cc1531bf101e18b3e7fb8c8776190dc45e
+      image: archlinux:base-devel@sha256:9414f5b766a34ebd769608b9ec80e1b4bfd7ea5e86dd49cae06ae308ad6c4221
       volumes:
         - /usr:/usr-host
         - /opt:/opt-host
