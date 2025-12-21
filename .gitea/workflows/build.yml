@@ -17,49 +17,40 @@ jobs:
   build-appimage:
     name: Build AppImage
     runs-on: ubuntu-22.04
+    container:
+      image: archlinux:base-devel
+      options: --privileged --device /dev/fuse
     steps:
+      - name: Prepare container
+        run: |
+          pacman-key --init
+          pacman -Sy --noconfirm archlinux-keyring
+          pacman -Syu --noconfirm --disable-download-timeout --needed git wget gnupg nodejs npm xorg-server-xvfb zsync
+
       - uses: https://gitea.com/actions/checkout@v4
 
-      - name: Install required dependencies
+      - name: Install appimage dependencies
         run: |
-            sudo apt update
-            sudo apt install -y binutils coreutils desktop-file-utils gtk-update-icon-cache fakeroot fuse libgdk-pixbuf2.0-dev patchelf python3-pip python3-dev python3-setuptools python3-build python3-venv squashfs-tools strace util-linux zsync git zstd adwaita-icon-theme
-
-      - name: Upgrade pip toolchain
-        run: |
-          python3 -m pip install --upgrade \
-            pip setuptools setuptools-scm wheel packaging build
-
-      - name: Install appimage-builder
-        run: |
-          git clone https://github.com/Boria138/appimage-builder
-          cd appimage-builder
-          pip install .
-
-      - name: Install uv
-        run: |
-          pip install uv
+          cd build-aux/AppImage
+          chmod +x get-dependencies.sh portprotonqt-appimage.sh
+          ./get-dependencies.sh
 
       - name: Build AppImage
         run: |
-          cd build-aux
-          appimage-builder
+          cd build-aux/AppImage
+          ./portprotonqt-appimage.sh
 
       - name: Upload AppImage
         uses: https://gitea.com/actions/gitea-upload-artifact@v4
         with:
           name: PortProtonQt-AppImage
-          path: build-aux/PortProtonQt*.AppImage*
+          path: build-aux/AppImage/dist/*.AppImage
 
   build-arch:
     name: Build Arch Package
     runs-on: ubuntu-22.04
     container:
       image: archlinux:base-devel
-      volumes:
-        - /usr:/usr-host
-        - /opt:/opt-host
-      options: --privileged
 
     steps:
       - name: Prepare container

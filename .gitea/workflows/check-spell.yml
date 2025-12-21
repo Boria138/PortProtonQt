@@ -12,7 +12,6 @@ on:
 
 jobs:
   check-translations:
-    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
