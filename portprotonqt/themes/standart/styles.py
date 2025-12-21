@@ -6,7 +6,6 @@ current_theme_name = read_theme_from_config()
 
 # КОНСТАНТЫ
 favoriteLabelSize = 48, 48
-pixmapsScaledSize = 60, 60
 
 # VARS
 font_family = "Play"
@@ -652,26 +651,6 @@ PLAY_BUTTON_STYLE = f"""
     }}
 """
 
-# СТИЛЬ КНОПКИ "ОБЗОР..." В ДИАЛОГЕ "ДОБАВИТЬ ИГРУ"
-DIALOG_BROWSE_BUTTON_STYLE = f"""
-    QPushButton {{
-        background: rgba(20, 20, 20, 0.40);
-        border:  {border_a} rgba(255, 255, 255, 0.20);
-        border-radius: {border_radius_b};
-        color: {color_f};
-        font-size: {font_size_a};
-        padding: 5px 10px;
-    }}
-    QPushButton:hover {{
-        background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-            stop:0 rgba(0,122,255,0.20),
-            stop:1 rgba(0,122,255,0.15));
-    }}
-    QPushButton:pressed {{
-        background: rgba(20, 20, 20, 0.60);
-        border:  {border_a} rgba(255, 255, 255, 0.25);
-    }}
-"""
 
 ADDGAME_INPUT_STYLE = f"""
     QLineEdit {{

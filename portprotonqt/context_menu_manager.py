@@ -29,7 +29,7 @@ class ContextMenuSignals(QObject):
 class ContextMenuManager:
     """Manages context menu actions for game management in PortProtonQt."""
 
-    def __init__(self, parent, portproton_location, theme, load_games_callback, game_library_manager):
+    def __init__(self, parent, portproton_location, theme, game_library_manager):
         """
         Initialize the ContextMenuManager.
 
@@ -44,7 +44,6 @@ class ContextMenuManager:
         self.portproton_location = portproton_location
         self.theme = theme
         self.theme_manager = ThemeManager()
-        self.load_games = load_games_callback
         self.game_library_manager = game_library_manager
         self.update_game_grid = game_library_manager.update_game_grid
         self.legendary_path = os.path.join(

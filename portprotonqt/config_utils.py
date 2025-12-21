@@ -77,22 +77,6 @@ def invalidate_config_cache(config_file: str = CONFIG_FILE):
         del _config_last_modified[config_file]
     logger.debug(f"Config cache invalidated for {config_file}")
 
-def read_config():
-    """Reads the configuration file and returns a dictionary of parameters.
-    Example line in config (no sections):
-      detail_level = detailed
-    """
-    config_dict = {}
-    if os.path.exists(CONFIG_FILE):
-        with open(CONFIG_FILE, encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if not line or line.startswith("#"):
-                    continue
-                key, sep, value = line.partition("=")
-                if sep:
-                    config_dict[key.strip()] = value.strip()
-    return config_dict
 
 def read_theme_from_config():
     """Reads the theme from the [Appearance] section of the configuration file.

@@ -126,8 +126,6 @@ class Downloader(QObject):
                 self._has_internet = True
         return self._has_internet
 
-    def reset_internet_check(self):
-        self._has_internet = None
 
     def _get_url_lock(self, url):
         with self._global_lock:
@@ -247,9 +245,6 @@ class Downloader(QObject):
         with self._global_lock:
             self._cache.clear()
 
-    def is_cached(self, url):
-        with self._global_lock:
-            return url in self._cache
 
     def get_latest_legendary_release(self):
         """Get the latest legendary release info from GitHub API."""

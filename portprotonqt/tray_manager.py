@@ -72,8 +72,6 @@ class TrayManager:
         self.tray_icon.setContextMenu(self.tray_menu)
         self.tray_icon.show()
 
-        self.main_window.is_exiting = False
-
         self.click_count = 0
         self.click_timer = QTimer()
         self.click_timer.setSingleShot(True)
@@ -231,7 +229,6 @@ class TrayManager:
             executable = sys.executable
             args = sys.argv
 
-            self.main_window.is_exiting = True
             QApplication.quit()
 
             subprocess.Popen([executable] + args)
@@ -241,11 +238,9 @@ class TrayManager:
             save_theme_to_config("standart")
             executable = sys.executable
             args = sys.argv
-            self.main_window.is_exiting = True
             QApplication.quit()
             subprocess.Popen([executable] + args)
 
     def force_exit(self):
-        self.main_window.is_exiting = True
         self.main_window.close()
         sys.exit(0)

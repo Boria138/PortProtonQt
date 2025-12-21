@@ -555,44 +555,6 @@ def get_egs_game_description_async(
         cleaned = re.sub(r'[^a-z0-9 ]', '', title.lower()).strip()
         return re.sub(r'\s+', '-', cleaned)
 
-    def get_product_slug(namespace: str) -> str:
-        """Fetches the product slug using the namespace via GraphQL."""
-        search_query = {
-            "query": """
-                query {
-                    Catalog {
-                        catalogNs(namespace: $namespace) {
-                            mappings(pageType: "productHome") {
-                                pageSlug
-                                pageType
-                            }
-                        }
-                    }
-                }
-            """,
-            "variables": {"namespace": namespace}
-        }
-        try:
-            response = requests.post(
-                "https://launcher.store.epicgames.com/graphql",
-                json=search_query,
-                headers=headers,
-                timeout=10
-            )
-            response.raise_for_status()
-            data = orjson.loads(response.content)
-            mappings = data.get("data", {}).get("Catalog", {}).get("catalogNs", {}).get("mappings", [])
-            for mapping in mappings:
-                if mapping.get("pageType") == "productHome":
-                    return mapping.get("pageSlug", "")
-            logger.warning("No productHome slug found for namespace %s", namespace)
-            return ""
-        except requests.RequestException as e:
-            logger.warning("Failed to fetch product slug for namespace %s: %s", namespace, str(e))
-            return ""
-        except orjson.JSONDecodeError:
-            logger.warning("Invalid JSON response for namespace %s", namespace)
-            return ""
 
     def fetch_legacy_description(url: str) -> str:
         """Fetches description from the legacy API, handling DNS failures."""

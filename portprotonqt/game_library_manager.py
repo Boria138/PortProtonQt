@@ -33,7 +33,6 @@ class MainWindowProtocol(Protocol):
 
     # Required attributes
     searchEdit: CustomLineEdit
-    _last_card_width: int
     card_width: int
     current_hovered_card: GameCard | None
     current_focused_card: GameCard | None
@@ -134,7 +133,6 @@ class GameLibraryManager:
         self.sizeSlider.setToolTip(f"{self.card_width} px")
         save_card_size(self.card_width)
         self.main_window.card_width = self.card_width
-        self.main_window._last_card_width = self.card_width
         for card in self.game_card_cache.values():
             card.update_card_size(self.card_width)
         self.update_game_grid()
@@ -266,7 +264,7 @@ class GameLibraryManager:
         if self.is_filtering:
             # Filter mode: use the pre-computed filtered_games from optimized search
             # This means we already have the exact games to show
-            self._update_search_results()
+            self._update_search_results(search_text)
         else:
             # Full update: sorting, removal/addition, reorganization
             games_list = self.filtered_games if self.filtered_games else self.games
@@ -385,13 +383,11 @@ class GameLibraryManager:
                 if self.gamesListLayout is not None:
                     self.gamesListLayout.update()
                 self.gamesListWidget.updateGeometry()
-                self.main_window._last_card_width = self.card_width
-
                 self.force_update_cards_library()
 
         self.is_filtering = False  # Reset flag in any case
 
-    def _update_search_results(self):
+    def _update_search_results(self, search_text: str = ""):
         """Update the grid with pre-computed search results."""
         if self.gamesListLayout is None or self.gamesListWidget is None:
             return
@@ -449,35 +445,12 @@ class GameLibraryManager:
             if self.gamesListLayout is not None:
                 self.gamesListLayout.update()
             self.gamesListWidget.updateGeometry()
-            self.main_window._last_card_width = self.card_width
 
             self.force_update_cards_library()
 
-    def _apply_filter_visibility(self, search_text: str):
-        """Applies visibility to cards based on search, without changing the layout."""
-        # This method is used for simple substring matching
-        # For the new optimized search, we'll use a different approach in update_game_grid
-        # when is_filter=True
-        visible_count = 0
-        for game_key, card in self.game_card_cache.items():
-            game_name = card.name  # Assume GameCard has 'name' attribute
-            should_be_visible = not search_text or search_text in game_name.lower()
-            if card.isVisible() != should_be_visible:
-                card.setVisible(should_be_visible)
-            if should_be_visible:
-                visible_count += 1
-                # Load image only for newly visible cards
-                if game_key in self.pending_images:
-                    cover_path, width, height, callback = self.pending_images.pop(game_key)
-                    load_pixmap_async(cover_path, width, height, callback)
-
-        # Force full relayout after visibility changes
-        if self.gamesListLayout is not None:
-            self.gamesListLayout.invalidate()  # Принудительно инвалидируем для пересчёта
             self.gamesListLayout.update()
         if self.gamesListWidget is not None:
             self.gamesListWidget.updateGeometry()
-        self.main_window._last_card_width = self.card_width
 
         # If search is empty, load images for visible ones
         if not search_text:

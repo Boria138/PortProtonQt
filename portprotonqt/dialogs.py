@@ -853,7 +853,6 @@ class AddGameDialog(QDialog):
         from portprotonqt.context_menu_manager import CustomLineEdit   # Локальный импорт
         self.theme = theme if theme else theme_manager.apply_theme(read_theme_from_config())
         self.edit_mode = edit_mode
-        self.original_name = game_name
         self.last_exe_path = exe_path  # Store last selected exe path
         self.last_cover_path = cover_path  # Store last selected cover path
         self.downloader = Downloader(max_workers=4)  # Initialize Downloader

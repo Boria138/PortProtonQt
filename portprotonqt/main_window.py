@@ -57,7 +57,6 @@ class MainWindow(QMainWindow):
     def __init__(self, app_name: str, version: str):
         super().__init__()
         self.theme_manager = ThemeManager()
-        self.is_exiting = False
         selected_theme = read_theme_from_config()
         self.current_theme_name = selected_theme
         # Apply theme but defer heavy font loading
@@ -65,7 +64,6 @@ class MainWindow(QMainWindow):
         self.tray_manager = TrayManager(self, app_name, self.current_theme_name)
         self.card_width = read_card_size()
         self.auto_card_width = read_auto_card_size()
-        self._last_card_width = self.card_width
         self.setWindowTitle(f"{app_name} {version}")
         self.setMinimumSize(800, 600)
 
@@ -85,7 +83,6 @@ class MainWindow(QMainWindow):
             self,
             self.portproton_location,
             self.theme,
-            self.loadGames,
             self.game_library_manager
         )
 
@@ -144,7 +141,6 @@ class MainWindow(QMainWindow):
         QApplication.processEvents()  # Process to show progress bar immediately
 
         self.installing = False
-        self.current_install_script = None
         self.install_process = None
         self.install_monitor_timer = None
 
@@ -647,7 +643,6 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, _("Warning"), _("Installation already in progress."))
             return
         self.installing = True
-        self.current_install_script = script_name
         self.seen_progress = False
         self.current_percent = 0.0
         start_sh = self.start_sh
@@ -735,7 +730,6 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, _("Error"), f"Installation failed (code: {exit_code}).")
 
         self.progress_bar.setVisible(False)
-        self.current_install_script = None
         if self.install_process:
             self.install_process.deleteLater()
             self.install_process = None
@@ -1165,7 +1159,7 @@ class MainWindow(QMainWindow):
         self.searchEdit = CustomLineEdit(self, theme=self.theme)
         icon: QIcon = cast(QIcon, self.theme_manager.get_icon("search"))
         action_pos = cast(QLineEdit.ActionPosition, QLineEdit.ActionPosition.LeadingPosition)
-        self.search_action = self.searchEdit.addAction(icon, action_pos)
+        self.searchEdit.addAction(icon, action_pos)
         self.searchEdit.setMaximumWidth(200)
         self.searchEdit.setPlaceholderText(_("Find Games ..."))
         self.searchEdit.setClearButtonEnabled(True)
@@ -1452,7 +1446,7 @@ class MainWindow(QMainWindow):
         self.autoInstallSearchLineEdit = CustomLineEdit(self, theme=self.theme)
         icon: QIcon = cast(QIcon, self.theme_manager.get_icon("search"))
         action_pos = QLineEdit.ActionPosition.LeadingPosition
-        self.search_action = self.autoInstallSearchLineEdit.addAction(icon, action_pos)
+        self.autoInstallSearchLineEdit.addAction(icon, action_pos)
         self.autoInstallSearchLineEdit.setMaximumWidth(200)
         self.autoInstallSearchLineEdit.setPlaceholderText(_("Find Games ..."))
         self.autoInstallSearchLineEdit.setClearButtonEnabled(True)
@@ -1627,12 +1621,10 @@ class MainWindow(QMainWindow):
     def filterAutoInstallGames(self):
         """Filter auto install game cards based on search text."""
         search_text = self.autoInstallSearchLineEdit.text().lower().strip()
-        visible_count = 0
 
         for card in self.allAutoInstallCards:
             if search_text in card.name.lower():
                 card.setVisible(True)
-                visible_count += 1
             else:
                 card.setVisible(False)
 
@@ -1781,7 +1773,7 @@ class MainWindow(QMainWindow):
         self.update_status_message.emit(_("Launching tool..."), 0)
 
         proc = QProcess(self)
-        proc.finished.connect(lambda exitCode, exitStatus: self._on_wine_tool_finished(exitCode, cli_arg))
+        proc.finished.connect(lambda exitCode: self._on_wine_tool_finished(exitCode, cli_arg))
         proc.errorOccurred.connect(lambda error: self._on_wine_tool_error(error, cli_arg))
         proc.start(cmd[0], cmd[1:])
 
@@ -1878,7 +1870,7 @@ class MainWindow(QMainWindow):
         self.update_status_message.emit(_("Clearing prefix..."), 0)
 
         self.clear_process = QProcess(self)
-        self.clear_process.finished.connect(lambda exitCode, exitStatus: self._on_clear_prefix_finished(exitCode))
+        self.clear_process.finished.connect(lambda exitCode: self._on_clear_prefix_finished(exitCode))
         self.clear_process.errorOccurred.connect(lambda error: self._on_clear_prefix_error(error))
         cmd = start_sh + ["cli", "--clear_pfx", selected_wine, selected_prefix]
         self.clear_process.start(cmd[0], cmd[1:])
@@ -1916,7 +1908,7 @@ class MainWindow(QMainWindow):
             return
         start_sh = self.start_sh
         self.backup_process = QProcess(self)
-        self.backup_process.finished.connect(lambda exitCode, exitStatus: self._on_backup_finished(exitCode))
+        self.backup_process.finished.connect(lambda exitCode: self._on_backup_finished(exitCode))
         cmd = start_sh + ["--backup-prefix", prefix_name, backup_dir]
         self.backup_process.start(cmd[0], cmd[1:])
         if not self.backup_process.waitForStarted():
@@ -1934,7 +1926,7 @@ class MainWindow(QMainWindow):
             return
         start_sh = self.start_sh
         self.restore_process = QProcess(self)
-        self.restore_process.finished.connect(lambda exitCode, exitStatus: self._on_restore_finished(exitCode))
+        self.restore_process.finished.connect(lambda exitCode: self._on_restore_finished(exitCode))
         cmd = start_sh + ["--restore-prefix", file_path]
         self.restore_process.start(cmd[0], cmd[1:])
         if not self.restore_process.waitForStarted():
@@ -2684,7 +2676,6 @@ class MainWindow(QMainWindow):
 
         if target_running:
             # Игра стартовала – устанавливаем флаг, обновляем кнопку на "Stop"
-            self._gameLaunched = True
             if self.current_running_button is not None:
                 try:
                     self.current_running_button.setText(_("Stop"))
@@ -2693,7 +2684,6 @@ class MainWindow(QMainWindow):
                 #self._inhibit_screensaver()
         elif not child_running:
             # Игра завершилась – сбрасываем флаг, сбрасываем кнопку и останавливаем таймер
-            self._gameLaunched = False
             self.resetPlayButton()
             #self._uninhibit_screensaver()
             if hasattr(self, 'checkProcessTimer') and self.checkProcessTimer is not None:
@@ -2786,7 +2776,6 @@ class MainWindow(QMainWindow):
                     self.checkProcessTimer = None
                 self.current_running_button = None
                 self.target_exe = None
-                self._gameLaunched = False
             else:
                 # Запускаем игру через PortProton
                 env_vars = os.environ.copy()
@@ -2883,7 +2872,6 @@ class MainWindow(QMainWindow):
                 self.checkProcessTimer = None
             self.current_running_button = None
             self.target_exe = None
-            self._gameLaunched = False
             #self._uninhibit_screensaver()
         else:
             # Сохраняем ссылку на кнопку для сброса после завершения игры
@@ -2929,7 +2917,6 @@ class MainWindow(QMainWindow):
             return
 
         # Полное закрытие приложения
-        self.is_exiting = True
         event.accept()
 
         # Скрываем и удаляем иконку трея
