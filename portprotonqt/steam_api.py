@@ -427,16 +427,23 @@ def build_index(steam_apps):
 
 def search_app(candidate, steam_apps_index):
     """
-    Searches for an application by candidate: exact match only.
-    This prevents false positives from fuzzy matching.
+    Searches for an application by candidate: tries exact match first, then partial match.
     """
     candidate_norm = normalize_name(candidate)
     logger.info("Searching for app with candidate: '%s' -> '%s'", candidate, candidate_norm)
 
-    # Exact match only (O(1) lookup)
+    # Exact match first (O(1) lookup)
     if candidate_norm in steam_apps_index:
         logger.info("Found exact match: '%s'", candidate_norm)
         return steam_apps_index[candidate_norm]
+
+    # If no exact match, try partial matching
+    for name_norm, app in steam_apps_index.items():
+        if candidate_norm in name_norm:
+            ratio = len(candidate_norm) / len(name_norm)
+            if ratio > 0.8:
+                logger.info("Found partial match: candidate '%s' in '%s' (ratio: %.2f)", candidate_norm, name_norm, ratio)
+                return app
 
     logger.info("No app found for candidate '%s'", candidate_norm)
     return None
@@ -640,17 +647,25 @@ def build_weanticheatyet_index(anti_cheat_data):
 
 def search_anticheat_status(candidate, anti_cheat_index):
     """
-    Searches for anti-cheat status by candidate: exact match only.
-    This prevents false positives from fuzzy matching.
+    Searches for anti-cheat status by candidate: tries exact match first, then partial match.
     """
     candidate_norm = normalize_name(candidate)
     logger.info("Searching for anti-cheat status for candidate: '%s' -> '%s'", candidate, candidate_norm)
 
-    # Exact match only (O(1) lookup)
+    # Exact match first (O(1) lookup)
     if candidate_norm in anti_cheat_index:
         status = anti_cheat_index[candidate_norm]["status"]
         logger.info("Found exact match: '%s', status: '%s'", candidate_norm, status)
         return status
+
+    # If no exact match, try partial matching
+    for name_norm, entry in anti_cheat_index.items():
+        if candidate_norm in name_norm:
+            ratio = len(candidate_norm) / len(name_norm)
+            if ratio > 0.8:
+                status = entry["status"]
+                logger.info("Found partial match: candidate '%s' in '%s' (ratio: %.2f), status: '%s'", candidate_norm, name_norm, ratio, status)
+                return status
 
     logger.info("No anti-cheat status found for candidate '%s'", candidate_norm)
     return ""
