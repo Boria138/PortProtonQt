@@ -1,4 +1,3 @@
-import functools
 import os
 import shlex
 import subprocess
@@ -262,21 +261,58 @@ def remove_duplicates(candidates):
     """
     return list(dict.fromkeys(candidates))
 
-@functools.lru_cache(maxsize=256)
+# Simple TTL cache for exiftool data with max entries to control memory usage
+_EXIFTOOL_CACHE = {}
+_CACHE_MAX_ENTRIES = 64  # Limit cache size to control memory
+_CACHE_TTL = 300  # 5 minutes TTL
+
 def get_exiftool_data(game_exe):
-    """Retrieves metadata using exiftool."""
+    """Retrieves metadata using exiftool with TTL-based caching."""
+    import time
+
+    current_time = time.time()
+
+    # Clean up expired entries periodically
+    if len(_EXIFTOOL_CACHE) > _CACHE_MAX_ENTRIES // 2:  # Clean when half full
+        # Remove expired entries
+        expired_keys = [
+            key for key, (data, timestamp) in _EXIFTOOL_CACHE.items()
+            if current_time - timestamp > _CACHE_TTL
+        ]
+        for key in expired_keys:
+            del _EXIFTOOL_CACHE[key]
+
+    # Check cache first
+    if game_exe in _EXIFTOOL_CACHE:
+        data, timestamp = _EXIFTOOL_CACHE[game_exe]
+        if current_time - timestamp <= _CACHE_TTL:
+            return data
+        else:
+            # Entry expired, remove it
+            del _EXIFTOOL_CACHE[game_exe]
+
     try:
         proc = subprocess.run(
             ["exiftool", "-j", game_exe],
             capture_output=True,
             text=True,
-            check=False
+            check=False,
+            timeout=10  # Add timeout to prevent hanging
         )
         if proc.returncode != 0:
             logger.error(f"exiftool failed for {game_exe}: {proc.stderr.strip()}")
             return {}
         meta_data_list = orjson.loads(proc.stdout.encode("utf-8"))
-        return meta_data_list[0] if meta_data_list else {}
+        result = meta_data_list[0] if meta_data_list else {}
+
+        # Add to cache if we have a reasonable result
+        if result and len(_EXIFTOOL_CACHE) < _CACHE_MAX_ENTRIES:
+            _EXIFTOOL_CACHE[game_exe] = (result, current_time)
+
+        return result
+    except subprocess.TimeoutExpired:
+        logger.error(f"exiftool timed out for {game_exe}")
+        return {}
     except Exception as e:
         logger.error(f"Unexpected error in get_exiftool_data for {game_exe}: {e}")
         return {}
@@ -323,6 +359,17 @@ def load_steam_apps_async(callback: Callable[[list], None]):
                 logger.info("Deleted archive: %s", cache_tar)
             # Delete all cached app detail files (steam_app_*.json)
             delete_cached_app_files(cache_dir, "steam_app_*.json")
+
+            # Build the new index in the background and atomically update the cache
+            new_index = build_index(data) if isinstance(data, list) else {}
+            current_time = time.time()
+
+            # Atomically update the cache
+            with _STEAM_APPS_LOCK:
+                _STEAM_APPS_CACHE['data'] = data if isinstance(data, list) else []
+                _STEAM_APPS_CACHE['index'] = new_index
+                _STEAM_APPS_CACHE['timestamp'] = current_time
+
             steam_apps = data if isinstance(data, list) else []
             logger.info("Loaded %d apps from archive", len(steam_apps))
             callback(steam_apps)
@@ -373,25 +420,24 @@ def build_index(steam_apps):
         return steam_apps_index
     logger.info("Building Steam apps index")
     for app in steam_apps:
-        normalized = app["normalized_name"]
-        steam_apps_index[normalized] = app
+        normalized = app.get("normalized_name", "")
+        if normalized:  # Only add if normalized_name exists
+            steam_apps_index[normalized] = app
     return steam_apps_index
 
 def search_app(candidate, steam_apps_index):
     """
-    Searches for an application by candidate: tries exact match first, then substring match.
+    Searches for an application by candidate: exact match only.
+    This prevents false positives from fuzzy matching.
     """
     candidate_norm = normalize_name(candidate)
     logger.info("Searching for app with candidate: '%s' -> '%s'", candidate, candidate_norm)
+
+    # Exact match only (O(1) lookup)
     if candidate_norm in steam_apps_index:
         logger.info("Found exact match: '%s'", candidate_norm)
         return steam_apps_index[candidate_norm]
-    for name_norm, app in steam_apps_index.items():
-        if candidate_norm in name_norm:
-            ratio = len(candidate_norm) / len(name_norm)
-            if ratio > 0.8:
-                logger.info("Found partial match: candidate '%s' in '%s' (ratio: %.2f)", candidate_norm, name_norm, ratio)
-                return app
+
     logger.info("No app found for candidate '%s'", candidate_norm)
     return None
 
@@ -531,6 +577,16 @@ def load_weanticheatyet_data_async(callback: Callable[[list], None]):
             if os.path.exists(cache_tar):
                 os.remove(cache_tar)
                 logger.info("Deleted archive: %s", cache_tar)
+            # Build the new index in the background and atomically update the cache
+            new_index = build_weanticheatyet_index(data) if isinstance(data, list) else {}
+            current_time = time.time()
+
+            # Atomically update the cache
+            with _ANTICHEAT_LOCK:
+                _ANTICHEAT_CACHE['data'] = data if isinstance(data, list) else []
+                _ANTICHEAT_CACHE['index'] = new_index
+                _ANTICHEAT_CACHE['timestamp'] = current_time
+
             anti_cheat_data = data or []
             logger.info("Loaded %d anti-cheat entries from archive", len(anti_cheat_data))
             callback(anti_cheat_data)
@@ -577,38 +633,140 @@ def build_weanticheatyet_index(anti_cheat_data):
         return anti_cheat_index
     logger.info("Building WeAntiCheatYet data index")
     for entry in anti_cheat_data:
-        normalized = entry["normalized_name"]
-        anti_cheat_index[normalized] = entry
+        normalized = entry.get("normalized_name", "")
+        if normalized:  # Only add if normalized_name exists
+            anti_cheat_index[normalized] = entry
     return anti_cheat_index
 
 def search_anticheat_status(candidate, anti_cheat_index):
+    """
+    Searches for anti-cheat status by candidate: exact match only.
+    This prevents false positives from fuzzy matching.
+    """
     candidate_norm = normalize_name(candidate)
     logger.info("Searching for anti-cheat status for candidate: '%s' -> '%s'", candidate, candidate_norm)
+
+    # Exact match only (O(1) lookup)
     if candidate_norm in anti_cheat_index:
         status = anti_cheat_index[candidate_norm]["status"]
         logger.info("Found exact match: '%s', status: '%s'", candidate_norm, status)
         return status
-    for name_norm, entry in anti_cheat_index.items():
-        if candidate_norm in name_norm:
-            ratio = len(candidate_norm) / len(name_norm)
-            if ratio > 0.8:
-                status = entry["status"]
-                logger.info("Found partial match: candidate '%s' in '%s' (ratio: %.2f), status: '%s'", candidate_norm, name_norm, ratio, status)
-                return status
+
     logger.info("No anti-cheat status found for candidate '%s'", candidate_norm)
     return ""
+
+# Cache for WeAntiCheatYet data with timestamp for expiration
+_ANTICHEAT_CACHE = {
+    'data': None,
+    'index': None,
+    'timestamp': 0
+}
+_ANTICHEAT_LOCK = threading.RLock()  # Use RLock to allow reentrant calls
+
+# Use a class to track loading state instead of dynamic function attributes
+class AntiCheatDataLoader:
+    def __init__(self):
+        self._loading = False
+        self._pending_callbacks = []
+
+    def get_anticheat_data_and_index_async(self, callback: Callable[[tuple[list | None, dict | None]], None]):
+        """
+        Asynchronously loads and caches anti-cheat data and their index.
+        Calls the callback with (anti_cheat_data, anti_cheat_index).
+        Implements proper cache expiration and thread safety with single index building.
+        """
+        cache_duration = CACHE_DURATION
+        current_time = time.time()
+
+        with _ANTICHEAT_LOCK:
+            # Check if we have valid cached data
+            if (_ANTICHEAT_CACHE['data'] is not None and
+                _ANTICHEAT_CACHE['index'] is not None and
+                current_time - _ANTICHEAT_CACHE['timestamp'] < cache_duration):
+                callback((_ANTICHEAT_CACHE['data'], _ANTICHEAT_CACHE['index']))
+                return
+
+            # Check if there's already a loading operation in progress
+            if self._loading:
+                # Add this callback to the pending list to be called when loading completes
+                self._pending_callbacks.append(callback)
+                return
+
+            # Mark that loading is in progress
+            self._loading = True
+            self._pending_callbacks = []
+
+        def on_anticheat_data(anti_cheat_data: list):
+            current_time = time.time()
+            with _ANTICHEAT_LOCK:
+                # Only update cache if data is valid
+                if anti_cheat_data:
+                    _ANTICHEAT_CACHE['data'] = anti_cheat_data
+                    _ANTICHEAT_CACHE['index'] = build_weanticheatyet_index(anti_cheat_data)
+                    _ANTICHEAT_CACHE['timestamp'] = current_time
+                    cached_data = (_ANTICHEAT_CACHE['data'], _ANTICHEAT_CACHE['index'])
+                else:
+                    # If loading failed, clear the cache to force reload on next attempt
+                    _ANTICHEAT_CACHE['data'] = None
+                    _ANTICHEAT_CACHE['index'] = None
+                    _ANTICHEAT_CACHE['timestamp'] = 0
+                    cached_data = (None, None)
+
+                # Mark loading as complete
+                self._loading = False
+                pending_callbacks = self._pending_callbacks
+                self._pending_callbacks = []
+
+            # Call the original callback
+            callback(cached_data)
+            # Call any pending callbacks that accumulated during loading
+            for pending_callback in pending_callbacks:
+                pending_callback(cached_data)
+
+        load_weanticheatyet_data_async(on_anticheat_data)
+
+# Create a global instance for the anti-cheat data loader
+_anticheat_loader = AntiCheatDataLoader()
+
+def get_anticheat_data_and_index_async(callback: Callable[[tuple[list | None, dict | None]], None]):
+    """
+    Asynchronously loads and caches anti-cheat data and their index.
+    Calls the callback with (anti_cheat_data, anti_cheat_index).
+    Implements proper cache expiration and thread safety with single index building.
+    """
+    _anticheat_loader.get_anticheat_data_and_index_async(callback)
 
 def get_weanticheatyet_status_async(game_name: str, callback: Callable[[str], None]):
     """
     Asynchronously retrieves WeAntiCheatYet status for a game by name.
     Calls the callback with the status string or empty string if not found.
     """
-    def on_anticheat_data(anti_cheat_data: list):
-        anti_cheat_index = build_weanticheatyet_index(anti_cheat_data)
-        status = search_anticheat_status(game_name, anti_cheat_index)
+    def on_anticheat_data_and_index(data_and_index: tuple[list | None, dict | None]):
+        anti_cheat_data, anti_cheat_index = data_and_index
+        if anti_cheat_data and anti_cheat_index:
+            status = search_anticheat_status(game_name, anti_cheat_index)
+        else:
+            status = ""
         callback(status)
 
-    load_weanticheatyet_data_async(on_anticheat_data)
+    get_anticheat_data_and_index_async(on_anticheat_data_and_index)
+
+def clear_steam_api_caches():
+    """Clears all cached data to force reload from files."""
+    global _STEAM_APPS_CACHE, _ANTICHEAT_CACHE
+    with _STEAM_APPS_LOCK:
+        _STEAM_APPS_CACHE = {
+            'data': None,
+            'index': None,
+            'timestamp': 0
+        }
+    with _ANTICHEAT_LOCK:
+        _ANTICHEAT_CACHE = {
+            'data': None,
+            'index': None,
+            'timestamp': 0
+        }
+    logger.info("Cleared Steam API caches")
 
 def load_protondb_status(appid):
     """Loads cached ProtonDB data for a game by appid if not outdated."""
@@ -760,9 +918,30 @@ def get_steam_game_info_async(desktop_name: str, exec_line: str, callback: Calla
     candidates_ordered = sorted(candidates, key=lambda s: len(s.split()), reverse=True)
     logger.info("Sorted candidates: %s", candidates_ordered)
 
-    def on_steam_apps(steam_apps: list):
-        steam_apps_index = build_index(steam_apps)
+    def on_steam_apps_and_index(data_and_index: tuple[list | None, dict | None]):
+        steam_apps, steam_apps_index = data_and_index
         matching_app = None
+        if not steam_apps or not steam_apps_index:
+            # Handle case where data loading failed
+            game_name = desktop_name or exe_name
+            cover = fetch_sgdb_cover(game_name) or ""
+            logger.info("Using SGDB cover for non-Steam game due to data loading failure: %s", game_name)
+
+            def on_anticheat_status(anticheat_status: str):
+                callback({
+                    "appid": "",
+                    "name": decode_text(game_name),
+                    "description": "",
+                    "cover": cover,
+                    "controller_support": "",
+                    "protondb_tier": "",
+                    "steam_game": "false",
+                    "anticheat_status": anticheat_status
+                })
+
+            get_weanticheatyet_status_async(game_name, on_anticheat_status)
+            return
+
         for candidate in candidates_ordered:
             if not candidate:
                 continue
@@ -839,31 +1018,88 @@ def get_steam_game_info_async(desktop_name: str, exec_line: str, callback: Calla
 
         fetch_app_info_async(appid, on_app_info)
 
-    load_steam_apps_async(on_steam_apps)
+    get_steam_apps_and_index_async(on_steam_apps_and_index)
 
-_STEAM_APPS = None
-_STEAM_APPS_INDEX = None
-_STEAM_APPS_LOCK = threading.Lock()
+# Cache for Steam apps data with timestamp for expiration
+_STEAM_APPS_CACHE = {
+    'data': None,
+    'index': None,
+    'timestamp': 0
+}
+_STEAM_APPS_LOCK = threading.RLock()  # Use RLock to allow reentrant calls
 
-def get_steam_apps_and_index_async(callback: Callable[[tuple[list, dict]], None]):
+# Use a class to track loading state instead of dynamic function attributes
+class SteamAppsLoader:
+    def __init__(self):
+        self._loading = False
+        self._pending_callbacks = []
+
+    def get_steam_apps_and_index_async(self, callback: Callable[[tuple[list | None, dict | None]], None]):
+        """
+        Asynchronously loads and caches Steam apps and their index.
+        Calls the callback with (steam_apps, steam_apps_index).
+        Implements proper cache expiration and thread safety with single index building.
+        """
+        cache_duration = CACHE_DURATION
+        current_time = time.time()
+
+        with _STEAM_APPS_LOCK:
+            # Check if we have valid cached data
+            if (_STEAM_APPS_CACHE['data'] is not None and
+                _STEAM_APPS_CACHE['index'] is not None and
+                current_time - _STEAM_APPS_CACHE['timestamp'] < cache_duration):
+                callback((_STEAM_APPS_CACHE['data'], _STEAM_APPS_CACHE['index']))
+                return
+
+            # Check if there's already a loading operation in progress
+            if self._loading:
+                # Add this callback to the pending list to be called when loading completes
+                self._pending_callbacks.append(callback)
+                return
+
+            # Mark that loading is in progress
+            self._loading = True
+            self._pending_callbacks = []
+
+        def on_steam_apps(steam_apps: list):
+            current_time = time.time()
+            with _STEAM_APPS_LOCK:
+                # Only update cache if data is valid
+                if steam_apps:
+                    _STEAM_APPS_CACHE['data'] = steam_apps
+                    _STEAM_APPS_CACHE['index'] = build_index(steam_apps)
+                    _STEAM_APPS_CACHE['timestamp'] = current_time
+                    cached_data = (_STEAM_APPS_CACHE['data'], _STEAM_APPS_CACHE['index'])
+                else:
+                    # If loading failed, clear the cache to force reload on next attempt
+                    _STEAM_APPS_CACHE['data'] = None
+                    _STEAM_APPS_CACHE['index'] = None
+                    _STEAM_APPS_CACHE['timestamp'] = 0
+                    cached_data = (None, None)
+
+                # Mark loading as complete
+                self._loading = False
+                pending_callbacks = self._pending_callbacks
+                self._pending_callbacks = []
+
+            # Call the original callback
+            callback(cached_data)
+            # Call any pending callbacks that accumulated during loading
+            for pending_callback in pending_callbacks:
+                pending_callback(cached_data)
+
+        load_steam_apps_async(on_steam_apps)
+
+# Create a global instance for the Steam apps loader
+_steam_apps_loader = SteamAppsLoader()
+
+def get_steam_apps_and_index_async(callback: Callable[[tuple[list | None, dict | None]], None]):
     """
     Asynchronously loads and caches Steam apps and their index.
     Calls the callback with (steam_apps, steam_apps_index).
+    Implements proper cache expiration and thread safety with single index building.
     """
-    global _STEAM_APPS, _STEAM_APPS_INDEX
-    with _STEAM_APPS_LOCK:
-        if _STEAM_APPS is not None and _STEAM_APPS_INDEX is not None:
-            callback((_STEAM_APPS, _STEAM_APPS_INDEX))
-            return
-
-    def on_steam_apps(steam_apps: list):
-        global _STEAM_APPS, _STEAM_APPS_INDEX
-        with _STEAM_APPS_LOCK:
-            _STEAM_APPS = steam_apps
-            _STEAM_APPS_INDEX = build_index(steam_apps)
-            callback((_STEAM_APPS, _STEAM_APPS_INDEX))
-
-    load_steam_apps_async(on_steam_apps)
+    _steam_apps_loader.get_steam_apps_and_index_async(callback)
 
 def enable_steam_cef() -> tuple[bool, str]:
     """
