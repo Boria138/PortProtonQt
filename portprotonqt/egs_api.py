@@ -458,9 +458,13 @@ export LEGENDARY_CONFIG_PATH="{legendary_config_path}"
             if downloaded_count == total_covers:
                 callback((True, f"Game '{game_title}' added to Steam with covers"))
 
-    def on_steam_apps(steam_data: tuple[list, dict]):
+    def on_steam_apps(steam_data: tuple[list | None, dict | None]):
         nonlocal steam_appid
         steam_apps, steam_apps_index = steam_data
+        if not steam_apps or not steam_apps_index:
+            logger.info(f"No Steam data available for EGS game {game_title}, skipping cover download")
+            callback((True, f"Game '{game_title}' added to Steam"))
+            return
         matching_app = search_app(game_title, steam_apps_index)
         steam_appid = matching_app.get("appid") if matching_app else None
 
@@ -903,10 +907,14 @@ def _continue_loading_egs_games(legendary_path: str, callback: Callable[[list[tu
             image_folder = os.path.join(os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache")), "PortProtonQt", "images")
             local_path = os.path.join(image_folder, f"{app_name}.jpg") if cover_url else ""
 
-            def on_steam_apps(steam_data: tuple[list, dict]):
+            def on_steam_apps(steam_data: tuple[list | None, dict | None]):
                 steam_apps, steam_apps_index = steam_data
-                matching_app = search_app(title, steam_apps_index)
-                steam_appid = matching_app.get("appid") if matching_app else None
+                if not steam_apps or not steam_apps_index:
+                    logger.info(f"No Steam data available for EGS game {title}, skipping appid lookup")
+                    steam_appid = None
+                else:
+                    matching_app = search_app(title, steam_apps_index)
+                    steam_appid = matching_app.get("appid") if matching_app else None
 
                 def on_protondb_tier(protondb_tier: str):
                     def on_description_fetched(api_description: str):
