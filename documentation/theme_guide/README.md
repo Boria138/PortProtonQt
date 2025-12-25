@@ -31,17 +31,49 @@ mkdir -p ~/.local/share/PortProtonQT/themes/my_custom_theme
 
 ## 🎨 Style File (`styles.py`)
 
-Create a `styles.py` in the theme root. It should define variables or functions that return CSS.
+Create a `styles.py` in the theme root. It should define variables or functions that return QSS (Qt Style Sheets). For better organization, you can split your theme into multiple submodules by creating a `styles` subdirectory with separate Python files for different components, and import them in `styles.py`.
 
-**Example:**
+**Example of modular structure:**
+```
+my_custom_theme/
+├── styles.py
+├── metainfo.ini
+├── fonts/
+├── images/
+└── styles/
+    ├── __init__.py  # This empty file makes the directory a Python package
+    ├── constants.py
+    ├── base.py
+    ├── game_card.py
+    ├── detail_page.py
+    ├── settings.py
+    ├── winetricks.py
+    └── theme_utils.py
+```
+
+**Main styles.py file:**
 ```python
-def custom_button_style(color1, color2):
-    return f"""
-    QPushButton {{
-        background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                                    stop:0 {color1}, stop:1 {color2});
-    }}
-    """
+# Import from the theme's submodules using absolute paths relative to the package
+# Replace 'my_custom_theme' with your actual theme folder name
+from portprotonqt.themes.my_custom_theme.styles.constants import *
+from portprotonqt.themes.my_custom_theme.styles.base import *
+from portprotonqt.themes.my_custom_theme.styles.game_card import *
+from portprotonqt.themes.my_custom_theme.styles.detail_page import *
+from portprotonqt.themes.my_custom_theme.styles.settings import *
+from portprotonqt.themes.my_custom_theme.styles.winetricks import *
+from portprotonqt.themes.my_custom_theme.styles.theme_utils import *
+```
+
+**Example submodule (styles/constants.py):**
+```python
+# Theme constants
+font_family = "Play"
+font_size_a = "16px"
+font_size_b = "24px"
+border_radius_a = "10px"
+color_a = "#409EFF"
+color_b = "#282a33"
+# ... other constants
 ```
 
 ---

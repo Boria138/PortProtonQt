@@ -1,88 +1,31 @@
-📘 This documentation is also available in [English](README.md)
+from portprotonqt.theme_manager import ThemeManager
+from portprotonqt.config_utils import read_theme_from_config
 
----
+theme_manager = ThemeManager()
+current_theme_name = read_theme_from_config()
 
-## 📋 Содержание
-- [Обзор](#-обзор)
-- [Создание папки темы](#-создание-папки-темы)
-- [Файл стилей](#-файл-стилей-stylespy)
-- [Конфигурация анимации](#-конфигурация-анимации)
-- [Метаинформация](#-метаинформация-metainfoini)
-- [Скриншоты](#-скриншоты)
-- [Шрифты и иконки](#-шрифты-и-иконки-опционально)
+# КОНСТАНТЫ
+favoriteLabelSize = 48, 48
 
----
-
-## 📖 Обзор
-
-Темы в `PortProtonQT` позволяют изменить внешний вид интерфейса. Все темы хранятся в папке:
-
-- `~/.local/share/PortProtonQT/themes`.
-
----
-
-## 📁 Создание папки темы
-
-```bash
-mkdir -p ~/.local/share/PortProtonQT/themes/my_custom_theme
-```
-
----
-
-## 🎨 Файл стилей (`styles.py`)
-
-Создайте `styles.py` в корне темы. В нём определите переменные и/или функции, возвращающие QSS-оформление (Qt Style Sheets). Для лучшей организации кода, вы можете разделить тему на несколько подмодулей, создав поддиректорию `styles` с отдельными Python-файлами для разных компонентов, и импортировать их в `styles.py`.
-
-**Пример модульной структуры:**
-```
-my_custom_theme/
-├── styles.py
-├── metainfo.ini
-├── fonts/
-├── images/
-└── styles/
-    ├── __init__.py  # Этот пустой файл делает директорию Python-пакетом
-    ├── constants.py
-    ├── base.py
-    ├── game_card.py
-    ├── detail_page.py
-    ├── settings.py
-    ├── winetricks.py
-    └── theme_utils.py
-```
-
-**Основной файл styles.py:**
-```python
-# Импорт из подмодулей темы с использованием абсолютных путей относительно пакета
-# Замените 'my_custom_theme' на фактическое имя папки вашей темы
-from portprotonqt.themes.my_custom_theme.styles.constants import *
-from portprotonqt.themes.my_custom_theme.styles.base import *
-from portprotonqt.themes.my_custom_theme.styles.game_card import *
-from portprotonqt.themes.my_custom_theme.styles.detail_page import *
-from portprotonqt.themes.my_custom_theme.styles.settings import *
-from portprotonqt.themes.my_custom_theme.styles.winetricks import *
-from portprotonqt.themes.my_custom_theme.styles.theme_utils import *
-```
-
-**Пример подмодуля (styles/constants.py):**
-```python
-# Константы темы
+# VARS
 font_family = "Play"
 font_size_a = "16px"
 font_size_b = "24px"
+border_a = "0px solid"
+border_b = "1px solid"
+border_c = "2px solid"
 border_radius_a = "10px"
+border_radius_b = "15px"
 color_a = "#409EFF"
 color_b = "#282a33"
-# ... другие константы
-```
+color_c = "#3f424d"
+color_d = "#32343d"
+color_e = "#404554"
+color_f = "#ffffff"
+color_g = "rgba(0, 0, 0, 0)"
+color_h = "transparent"
+color_i = "rgba(40, 42, 51, 0.9)"
 
----
-
-## 🎥 Конфигурация анимации
-
-Словарь `GAME_CARD_ANIMATION` управляет всеми параметрами анимации для карточек игр:
-
-```python
 GAME_CARD_ANIMATION = {
     # Тип анимации при входе и выходе на детальную страницу
     # Возможные значения: "fade", "slide_left", "slide_right", "slide_up", "slide_down", "bounce"
@@ -231,31 +174,3 @@ GAME_CARD_ANIMATION = {
     # Возможные значения: строки, соответствующие QEasingCurve.Type
     "detail_page_easing_curve_exit": "InCubic"
 }
-```
-
----
-
-## 📝 Метаинформация (`metainfo.ini`)
-
-```ini
-[Metainfo]
-name = My Custom Theme
-author = Ваше имя
-author_link = https://example.com
-description = Описание вашей темы.
-```
-
----
-
-## 🖼 Скриншоты
-
-Папка: `images/screenshots/` — любые изображения оформления темы.
-
----
-
-## 🔡 Шрифты и иконки (опционально)
-
-- Шрифты: `fonts/*.ttf` или `.otf`
-- Иконки: `images/icons/*.svg/.png`
-
----
