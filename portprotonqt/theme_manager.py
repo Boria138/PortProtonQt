@@ -1,7 +1,7 @@
 import importlib.util
 import os
-import ast
 from portprotonqt.logger import get_logger
+from portprotonqt.theme_security import check_theme_safety, is_safe_image_file
 from PySide6.QtGui import QIcon, QFontDatabase, QPixmap
 from portprotonqt.config_utils import save_theme_to_config, load_theme_metainfo
 
@@ -18,57 +18,6 @@ THEMES_DIRS = [
 ]
 _loaded_theme = None
 
-# Запрещенные модули и функции
-FORBIDDEN_MODULES = {
-    "os",
-    "subprocess",
-    "shutil",
-    "sys",
-    "socket",
-    "ctypes",
-    "pathlib",
-    "glob",
-}
-FORBIDDEN_FUNCTIONS = {
-    "exec",
-    "eval",
-    "open",
-    "__import__",
-}
-
-def check_theme_safety(theme_file: str) -> bool:
-    """
-    Проверяет файл темы на наличие запрещённых модулей и функций.
-    Возвращает True, если файл безопасен, иначе False.
-    """
-    has_errors = False
-    try:
-        with open(theme_file) as f:
-            content = f.read()
-
-            # Проверка на опасные импорты и функции
-            try:
-                tree = ast.parse(content)
-                for node in ast.walk(tree):
-                    # Проверка импортов
-                    if isinstance(node, ast.Import | ast.ImportFrom):
-                        for name in node.names:
-                            if name.name in FORBIDDEN_MODULES:
-                                logger.error(f"Forbidden module '{name.name}' found in file {theme_file}")
-                                has_errors = True
-                    # Проверка вызовов функций
-                    if isinstance(node, ast.Call):
-                        if isinstance(node.func, ast.Name) and node.func.id in FORBIDDEN_FUNCTIONS:
-                            logger.error(f"Forbidden function '{node.func.id}' found in file {theme_file}")
-                            has_errors = True
-            except SyntaxError as e:
-                logger.error(f"Syntax error in file {theme_file}: {e}")
-                has_errors = True
-    except Exception as e:
-        logger.error(f"Failed to check theme safety for {theme_file}: {e}")
-        has_errors = True
-
-    return not has_errors
 
 def list_themes():
     """
@@ -96,7 +45,7 @@ def load_theme_screenshots(theme_name):
         if os.path.exists(screenshots_folder) and os.path.isdir(screenshots_folder):
             for file in os.listdir(screenshots_folder):
                 screenshot_path = os.path.join(screenshots_folder, file)
-                if os.path.isfile(screenshot_path):
+                if os.path.isfile(screenshot_path) and is_safe_image_file(screenshot_path):
                     pixmap = QPixmap(screenshot_path)
                     if not pixmap.isNull():
                         screenshots.append((pixmap, file))
@@ -288,14 +237,14 @@ class ThemeManager:
             # Если передано имя с расширением, проверяем только этот файл
             if has_extension:
                 candidate = os.path.join(icons_folder, str(base_name))
-                if os.path.exists(candidate):
+                if os.path.exists(candidate) and is_safe_image_file(candidate):
                     icon_path = candidate
                     break
             else:
                 # Проверяем все поддерживаемые расширения
                 for ext in supported_extensions:
                     candidate = os.path.join(icons_folder, str(base_name) + str(ext))
-                    if os.path.exists(candidate):
+                    if os.path.exists(candidate) and is_safe_image_file(candidate):
                         icon_path = candidate
                         break
                 if icon_path:
@@ -309,12 +258,12 @@ class ThemeManager:
             # Аналогично проверяем в стандартной теме
             if has_extension:
                 icon_path = os.path.join(standard_icons_folder, base_name)
-                if not os.path.exists(icon_path):
+                if not os.path.exists(icon_path) or not is_safe_image_file(icon_path):
                     icon_path = None
             else:
                 for ext in supported_extensions:
                     candidate = os.path.join(standard_icons_folder, base_name + ext)
-                    if os.path.exists(candidate):
+                    if os.path.exists(candidate) and is_safe_image_file(candidate):
                         icon_path = candidate
                         break
 
@@ -357,13 +306,13 @@ class ThemeManager:
 
             if has_extension:
                 candidate = os.path.join(images_folder, str(base_name))
-                if os.path.exists(candidate):
+                if os.path.exists(candidate) and is_safe_image_file(candidate):
                     image_path = candidate
                     break
             else:
                 for ext in supported_extensions:
                     candidate = os.path.join(images_folder, str(base_name) + str(ext))
-                    if os.path.exists(candidate):
+                    if os.path.exists(candidate) and is_safe_image_file(candidate):
                         image_path = candidate
                         break
                 if image_path:
@@ -376,12 +325,12 @@ class ThemeManager:
 
             if has_extension:
                 image_path = os.path.join(standard_images_folder, base_name)
-                if not os.path.exists(image_path):
+                if not os.path.exists(image_path) or not is_safe_image_file(image_path):
                     image_path = None
             else:
                 for ext in supported_extensions:
                     candidate = os.path.join(standard_images_folder, base_name + ext)
-                    if os.path.exists(candidate):
+                    if os.path.exists(candidate) and is_safe_image_file(candidate):
                         image_path = candidate
                         break
 
