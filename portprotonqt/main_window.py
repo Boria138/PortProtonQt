@@ -37,6 +37,7 @@ from portprotonqt.downloader import Downloader
 from portprotonqt.tray_manager import TrayManager
 from portprotonqt.game_library_manager import GameLibraryManager
 from portprotonqt.virtual_keyboard import VirtualKeyboard
+from portprotonqt.get_wine_module import show_proton_manager
 
 from PySide6.QtWidgets import (QLineEdit, QMainWindow, QStatusBar, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox,
                                QDialog, QFormLayout, QMessageBox, QApplication, QPushButton, QProgressBar, QCheckBox, QSizePolicy, QGridLayout, QScrollArea, QScroller, QSlider)
@@ -1724,6 +1725,7 @@ class MainWindow(QMainWindow):
             (_("Delete Compatibility Tool"), self.delete_compat_tool),
             (_("Delete Prefix"), self.delete_prefix),
             (_("Clear Prefix"), self.clear_prefix),
+            (_("Download other WINE"), self.show_proton_manager),
         ]
 
         for i, (text, callback) in enumerate(additional_buttons):
@@ -1843,6 +1845,10 @@ class MainWindow(QMainWindow):
             self.wine_monitor_timer = None
         logger.error(f"Wine tool {cli_arg} error: {error}")
         QMessageBox.warning(self, _("Error"), f"Failed to launch tool: {error}")
+
+    def show_proton_manager(self):
+        """Shows the Proton/WINE manager for downloading other WINE versions"""
+        show_proton_manager(self, self.portproton_location)
 
     def clear_prefix(self):
         """Очищает префикс"""
