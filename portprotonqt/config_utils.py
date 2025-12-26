@@ -3,6 +3,7 @@ import configparser
 import shutil
 import subprocess
 from portprotonqt.logger import get_logger
+from portprotonqt.localization import get_theme_translations
 
 logger = get_logger(__name__)
 
@@ -228,13 +229,17 @@ def load_theme_metainfo(theme_name):
         theme_folder = os.path.join(themes_dir, theme_name)
         metainfo_file = os.path.join(theme_folder, "metainfo.ini")
         if os.path.exists(metainfo_file):
+            # Load translated theme name and description
+            theme_translations = get_theme_translations(metainfo_file)
+
             cp = configparser.ConfigParser()
             cp.read(metainfo_file, encoding="utf-8")
             if "Metainfo" in cp:
                 meta["author"] = cp.get("Metainfo", "author", fallback="Unknown")
                 meta["author_link"] = cp.get("Metainfo", "author_link", fallback="")
-                meta["description"] = cp.get("Metainfo", "description", fallback="")
-                meta["name"] = cp.get("Metainfo", "name", fallback=theme_name)
+                # Use translated name and description
+                meta["name"] = theme_translations.get("name", theme_name)
+                meta["description"] = theme_translations.get("description", "")
             break
     return meta
 

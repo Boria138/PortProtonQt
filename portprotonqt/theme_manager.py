@@ -4,6 +4,7 @@ from portprotonqt.logger import get_logger
 from portprotonqt.theme_security import check_theme_safety, is_safe_image_file
 from PySide6.QtGui import QIcon, QFontDatabase, QPixmap
 from portprotonqt.config_utils import save_theme_to_config, load_theme_metainfo
+from portprotonqt.localization import get_screenshot_caption
 
 # Icon caching for performance optimization
 _icon_cache = {}
@@ -35,10 +36,20 @@ def list_themes():
 def load_theme_screenshots(theme_name):
     """
     Загружает все скриншоты из папки "screenshots", расположенной в папке темы.
-    Возвращает список кортежей (pixmap, filename).
+    Возвращает список кортежей (pixmap, caption), где caption - это перевод названия скриншота.
     Если папка отсутствует или пуста, возвращается пустой список.
     """
     screenshots = []
+
+    # Find the metainfo file for the theme
+    metainfo_file = None
+    for themes_dir in THEMES_DIRS:
+        theme_folder = os.path.join(themes_dir, theme_name)
+        temp_metainfo_file = os.path.join(theme_folder, "metainfo.ini")
+        if os.path.exists(temp_metainfo_file):
+            metainfo_file = temp_metainfo_file
+            break
+
     for themes_dir in THEMES_DIRS:
         theme_folder = os.path.join(themes_dir, theme_name)
         screenshots_folder = os.path.join(theme_folder, "images", "screenshots")
@@ -48,7 +59,13 @@ def load_theme_screenshots(theme_name):
                 if os.path.isfile(screenshot_path) and is_safe_image_file(screenshot_path):
                     pixmap = QPixmap(screenshot_path)
                     if not pixmap.isNull():
-                        screenshots.append((pixmap, file))
+                        # Get the base filename without extension
+                        base_filename = os.path.splitext(file)[0]
+
+                        # Get translated caption using localization function
+                        caption = get_screenshot_caption(base_filename, metainfo_file)
+
+                        screenshots.append((pixmap, caption))
     return screenshots
 
 def load_theme_fonts(theme_name):

@@ -31,7 +31,7 @@ mkdir -p ~/.local/share/PortProtonQT/themes/my_custom_theme
 
 ## 🎨 Style File (`styles.py`)
 
-Create a `styles.py` in the theme root. It should define variables or functions that return QSS (Qt Style Sheets). For better organization, you can split your theme into multiple submodules by creating a `styles` subdirectory with separate Python files for different components, and import them in `styles.py`.
+Create a `styles.py` in the theme root. It should define variables or functions that return QSS (Qt Style Sheets). For better organization, you can split your theme into multiple submodules by creating a subdirectory (e.g., `styles`, `components`, etc.) with separate Python files for different components, and import them in `styles.py`.
 
 **Example of modular structure:**
 ```
@@ -40,7 +40,7 @@ my_custom_theme/
 ├── metainfo.ini
 ├── fonts/
 ├── images/
-└── styles/
+└── styles/  # This can be named anything (e.g., components, modules, etc.)
     ├── __init__.py  # This empty file makes the directory a Python package
     ├── constants.py
     ├── base.py
@@ -54,7 +54,7 @@ my_custom_theme/
 **Main styles.py file:**
 ```python
 # Import from the theme's submodules using absolute paths relative to the package
-# Replace 'my_custom_theme' with your actual theme folder name
+# Replace 'my_custom_theme' with your actual theme folder name and 'styles' with your subdirectory name
 from portprotonqt.themes.my_custom_theme.styles.constants import *
 from portprotonqt.themes.my_custom_theme.styles.base import *
 from portprotonqt.themes.my_custom_theme.styles.game_card import *
@@ -239,17 +239,51 @@ GAME_CARD_ANIMATION = {
 
 ```ini
 [Metainfo]
-name = My Custom Theme
+name_en = My Custom Theme
+name_ru = Моя пользовательская тема
 author = Your Name
 author_link = https://example.com
-description = Description of your theme.
+description_en = Description of your theme.
+description_ru = Описание вашей темы.
 ```
+
+### Translation Support
+
+You must provide translations for your theme's name and description by adding language-specific fields:
+- `name_en`, `name_ru`, etc. for theme names
+- `description_en`, `description_ru`, etc. for theme descriptions
+
+The application will automatically select the appropriate translation based on the user's system language, falling back to English if translations are not available for the user's language.
 
 ---
 
 ## 🖼 Screenshots
 
 Folder: `images/screenshots/` — place UI screenshots there.
+
+### Screenshot Translation Support
+
+You can provide translations for screenshot captions by adding entries to the `[Screenshots]` section in your `metainfo.ini` file:
+
+```ini
+[Screenshots]
+auto_installs_en = Auto-installs
+auto_installs_ru = Автоустановки
+library_en = Library
+library_ru = Библиотека
+game_card_en = Game Card
+game_card_ru = Карточка
+context_menu_en = Context Menu
+context_menu_ru = Контекстное меню
+portproton_settings_en = PortProton Settings
+portproton_settings_ru = Настройки PortProton
+wine_settings_en = Wine Settings
+wine_settings_ru = Настройки Wine
+themes_en = Themes
+themes_ru = Темы
+```
+
+Screenshot files should be named in English (without spaces), and the application will display the appropriate translated caption based on the user's system language, falling back to English if translations are not available.
 
 ---
 

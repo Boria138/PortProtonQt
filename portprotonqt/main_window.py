@@ -2494,8 +2494,8 @@ class MainWindow(QMainWindow):
             screenshots = load_theme_screenshots(theme_name)
             if screenshots:
                 self.screenshotsCarousel.update_images([
-                    (pixmap, os.path.splitext(filename)[0])
-                    for pixmap, filename in screenshots
+                    (pixmap, caption)
+                    for pixmap, caption in screenshots
                 ])
                 self.screenshotsCarousel.show()
             else:
