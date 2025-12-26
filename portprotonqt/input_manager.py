@@ -6,7 +6,7 @@ from typing import Protocol, cast, Any
 from evdev import InputDevice, InputEvent, UInput, ecodes, list_devices, ff
 from enum import Enum
 from pyudev import Context, Monitor, Device, Devices
-from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea, QLineEdit, QDialog, QMenu, QComboBox, QListView, QMessageBox, QListWidget, QTableWidget, QAbstractItemView, QTableWidgetItem
+from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea, QLineEdit, QDialog, QMenu, QComboBox, QListView, QMessageBox, QListWidget, QTableWidget, QAbstractItemView, QTableWidgetItem, QSlider
 from PySide6.QtCore import Qt, QObject, QEvent, QPoint, Signal, Slot, QTimer
 from PySide6.QtGui import QKeyEvent, QMouseEvent
 from portprotonqt.logger import get_logger
@@ -35,6 +35,8 @@ class MainWindowProtocol(Protocol):
         ...
     def on_slider_released(self) -> None:
         ...
+    def on_auto_slider_released(self) -> None:
+        ...
     def isActiveWindow(self) -> bool:
         ...
     def refreshGames(self) -> None:
@@ -46,6 +48,8 @@ class MainWindowProtocol(Protocol):
     currentDetailPage: QWidget | None
     current_exec_line: str | None
     current_add_game_dialog: AddGameDialog | None
+    game_library_manager: Any  # GameLibraryManager - using Any to avoid circular import
+    auto_size_slider: QSlider | None
 
 # Mapping of actions to evdev button codes, includes Xbox, PlayStation and Nintendo Switch controllers
 # https://github.com/torvalds/linux/blob/master/drivers/hid/hid-playstation.c
@@ -1411,20 +1415,38 @@ class InputManager(QObject):
                 idx = (self._parent.stackedWidget.currentIndex() + 1) % len(self._parent.tabButtons)
                 self._parent.switchTab(idx)
                 self._parent.tabButtons[idx].setFocus(Qt.FocusReason.OtherFocusReason)
-            elif button_code in BUTTONS['increase_size'] and self._parent.stackedWidget.currentIndex() == 0:
-                # Increase card size with RT (Xbox) / R2 (PS)
-                size_slider = getattr(self._parent, 'sizeSlider', None)
-                if size_slider:
-                    new_value = min(size_slider.value() + 10, size_slider.maximum())
-                    size_slider.setValue(new_value)
-                    self._parent.on_slider_released()
-            elif button_code in BUTTONS['decrease_size'] and self._parent.stackedWidget.currentIndex() == 0:
-                # Decrease card size with LT (Xbox) / L2 (PS)
-                size_slider = getattr(self._parent, 'sizeSlider', None)
-                if size_slider:
-                    new_value = max(size_slider.value() - 10, size_slider.minimum())
-                    size_slider.setValue(new_value)
-                    self._parent.on_slider_released()
+            elif button_code in BUTTONS['increase_size']:
+                current_tab = self._parent.stackedWidget.currentIndex()
+                if current_tab == 0:  # Main games library
+                    if hasattr(self._parent, 'game_library_manager') and self._parent.game_library_manager:
+                        size_slider = getattr(self._parent.game_library_manager, 'sizeSlider', None)
+                        if size_slider:
+                            new_value = min(size_slider.value() + 10, size_slider.maximum())
+                            size_slider.setValue(new_value)
+                            self._parent.on_slider_released()
+                elif current_tab == 1:  # Auto-install tab
+                    auto_size_slider = getattr(self._parent, 'auto_size_slider', None)
+                    if auto_size_slider:
+                        new_value = min(auto_size_slider.value() + 10, auto_size_slider.maximum())
+                        auto_size_slider.setValue(new_value)
+                        if hasattr(self._parent, 'on_auto_slider_released'):
+                            self._parent.on_auto_slider_released()
+            elif button_code in BUTTONS['decrease_size']:
+                current_tab = self._parent.stackedWidget.currentIndex()
+                if current_tab == 0:  # Main games library
+                    if hasattr(self._parent, 'game_library_manager') and self._parent.game_library_manager:
+                        size_slider = getattr(self._parent.game_library_manager, 'sizeSlider', None)
+                        if size_slider:
+                            new_value = max(size_slider.value() - 10, size_slider.minimum())
+                            size_slider.setValue(new_value)
+                            self._parent.on_slider_released()
+                elif current_tab == 1:  # Auto-install tab
+                    auto_size_slider = getattr(self._parent, 'auto_size_slider', None)
+                    if auto_size_slider:
+                        new_value = max(auto_size_slider.value() - 10, auto_size_slider.minimum())
+                        auto_size_slider.setValue(new_value)
+                        if hasattr(self._parent, 'on_auto_slider_released'):
+                            self._parent.on_auto_slider_released()
         except Exception as e:
             logger.error(f"Error in handle_button_slot: {e}", exc_info=True)
 
