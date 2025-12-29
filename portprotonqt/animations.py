@@ -100,6 +100,11 @@ class GameCardAnimations:
             self.scale_anim.setEasingCurve(QEasingCurve(QEasingCurve.Type[self.theme.GAME_CARD_ANIMATION["scale_easing_curve"]]))
             self.scale_anim.setStartValue(self.game_card._scale)
             self.scale_anim.setEndValue(self.theme.GAME_CARD_ANIMATION["hover_scale"])
+
+            def reset_scale_anim():
+                self.scale_anim = None
+
+            self.scale_anim.finished.connect(reset_scale_anim)
             self.scale_anim.start()
 
     def handle_leave_event(self):
@@ -120,6 +125,11 @@ class GameCardAnimations:
                 self.scale_anim.setEasingCurve(QEasingCurve(QEasingCurve.Type[self.theme.GAME_CARD_ANIMATION["scale_easing_curve_out"]]))
                 self.scale_anim.setStartValue(self.game_card._scale)
                 self.scale_anim.setEndValue(self.theme.GAME_CARD_ANIMATION["default_scale"])
+
+                def reset_scale_anim():
+                    self.scale_anim = None
+
+                self.scale_anim.finished.connect(reset_scale_anim)
                 self.scale_anim.start()
             if self.pulse_anim:
                 self.pulse_anim.stop()
@@ -174,6 +184,11 @@ class GameCardAnimations:
                 self.scale_anim.setEasingCurve(QEasingCurve(QEasingCurve.Type[self.theme.GAME_CARD_ANIMATION["scale_easing_curve"]]))
                 self.scale_anim.setStartValue(self.game_card._scale)
                 self.scale_anim.setEndValue(self.theme.GAME_CARD_ANIMATION["focus_scale"])
+
+                def reset_scale_anim():
+                    self.scale_anim = None
+
+                self.scale_anim.finished.connect(reset_scale_anim)
                 self.scale_anim.start()
 
     def handle_focus_out_event(self):
@@ -194,6 +209,11 @@ class GameCardAnimations:
                 self.scale_anim.setEasingCurve(QEasingCurve(QEasingCurve.Type[self.theme.GAME_CARD_ANIMATION["scale_easing_curve_out"]]))
                 self.scale_anim.setStartValue(self.game_card._scale)
                 self.scale_anim.setEndValue(self.theme.GAME_CARD_ANIMATION["default_scale"])
+
+                def reset_scale_anim():
+                    self.scale_anim = None
+
+                self.scale_anim.finished.connect(reset_scale_anim)
                 self.scale_anim.start()
             if self.pulse_anim:
                 self.pulse_anim.stop()
@@ -283,6 +303,12 @@ class DetailPageAnimations:
             if detail_page and not detail_page.isHidden():
                 animation.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
                 self.animations[detail_page] = animation
+
+                def cleanup_animation_ref():
+                    if detail_page in self.animations:
+                        self.animations.pop(detail_page, None)
+
+                animation.finished.connect(cleanup_animation_ref)
                 animation.finished.connect(restore_effect)
                 animation.finished.connect(load_image_and_restore_effect)
                 animation.finished.connect(opacity_effect.deleteLater)
@@ -319,6 +345,12 @@ class DetailPageAnimations:
             if detail_page and not detail_page.isHidden():
                 animation.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
                 self.animations[detail_page] = animation
+
+                def cleanup_animation_ref():
+                    if detail_page in self.animations:
+                        self.animations.pop(detail_page, None)
+
+                animation.finished.connect(cleanup_animation_ref)
                 animation.finished.connect(cleanup_animation)
                 animation.finished.connect(load_image_and_restore_effect)
             else:
@@ -356,6 +388,12 @@ class DetailPageAnimations:
             if detail_page and not detail_page.isHidden():
                 group_anim.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
                 self.animations[detail_page] = group_anim
+
+                def cleanup_animation_ref():
+                    if detail_page in self.animations:
+                        self.animations.pop(detail_page, None)
+
+                group_anim.finished.connect(cleanup_animation_ref)
                 group_anim.finished.connect(load_image_and_restore_effect)
                 group_anim.finished.connect(cleanup_animation)
             else:
@@ -419,6 +457,12 @@ class DetailPageAnimations:
                 if animation and not detail_page.isHidden():
                     animation.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
                     self.animations[detail_page] = animation
+
+                    def cleanup_animation_ref():
+                        if detail_page in self.animations:
+                            self.animations.pop(detail_page, None)
+
+                    animation.finished.connect(cleanup_animation_ref)
                     animation.finished.connect(restore_and_cleanup)
                     animation.finished.connect(opacity_effect.deleteLater)
                 else:
@@ -459,6 +503,12 @@ class DetailPageAnimations:
                 if animation and not detail_page.isHidden():
                     animation.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
                     self.animations[detail_page] = animation
+
+                    def cleanup_animation_ref():
+                        if detail_page in self.animations:
+                            self.animations.pop(detail_page, None)
+
+                    animation.finished.connect(cleanup_animation_ref)
                     animation.finished.connect(slide_cleanup)
                 else:
                     logger.warning("Animation or detail page invalid when starting slide exit, cleaning up")
@@ -510,6 +560,12 @@ class DetailPageAnimations:
 
                 group_anim.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
                 self.animations[detail_page] = group_anim
+
+                def cleanup_animation_ref():
+                    if detail_page in self.animations:
+                        self.animations.pop(detail_page, None)
+
+                group_anim.finished.connect(cleanup_animation_ref)
                 group_anim.finished.connect(bounce_cleanup)
         except RuntimeError:
             # Widget was already deleted, which is expected after deleteLater()
