@@ -88,7 +88,7 @@ jobs:
     name: Build Arch Package
     runs-on: ubuntu-22.04
     container:
-      image: archlinux:base-devel@sha256:9414f5b766a34ebd769608b9ec80e1b4bfd7ea5e86dd49cae06ae308ad6c4221
+      image: archlinux:base-devel@sha256:f6b259c6c0cd1bc4c86510485acb6a5f053c15789c9c68c7434b6fe99564906c
 
     steps:
       - name: Prepare container
