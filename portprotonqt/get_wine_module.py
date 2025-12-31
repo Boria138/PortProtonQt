@@ -1,8 +1,10 @@
 import os
+import shutil
+import tempfile
+import time
+import libarchive
 import requests
 import orjson
-import tarfile
-import shutil
 from PySide6.QtWidgets import (QDialog, QTabWidget, QTableWidget,
                                QTableWidgetItem, QVBoxLayout, QWidget, QCheckBox,
                                QPushButton, QHeaderView, QMessageBox,
@@ -10,20 +12,11 @@ from PySide6.QtWidgets import (QDialog, QTabWidget, QTableWidget,
                                QFrame, QSizePolicy)
 from PySide6.QtCore import Qt, QThread, Signal, QMutex, QWaitCondition, QTimer
 import urllib.parse
-from portprotonqt.config_utils import read_proxy_config
+from portprotonqt.config_utils import read_proxy_config, get_portproton_start_command
 from portprotonqt.logger import get_logger
 from portprotonqt.localization import _
 
 logger = get_logger(__name__)
-
-def get_requests_session():
-    """Create a requests session with proxy support"""
-    session = requests.Session()
-    proxy = read_proxy_config() or {}
-    if proxy:
-        session.proxies.update(proxy)
-    session.verify = True
-    return session
 
 class DownloadThread(QThread):
     progress = Signal(int)
@@ -40,7 +33,13 @@ class DownloadThread(QThread):
 
     def run(self):
         try:
-            session = get_requests_session()
+            # Create a session with proxy support
+            session = requests.Session()
+            proxy = read_proxy_config() or {}
+            if proxy:
+                session.proxies.update(proxy)
+            session.verify = True
+
             response = session.get(self.download_url, stream=True)
             response.raise_for_status()
 
@@ -102,158 +101,140 @@ class DownloadThread(QThread):
 
 
 class ExtractionThread(QThread):
-    progress = Signal(int)
-    finished = Signal(str, bool)  # filename, success
+    progress = Signal(int)          # %
+    speed = Signal(float)           # MB/s
+    eta = Signal(int)               # seconds
+    finished = Signal(str, bool)    # archive_path, success
     error = Signal(str)
 
-    def __init__(self, archive_path, extract_dir):
+    def __init__(self, archive_path: str, extract_dir: str):
         super().__init__()
         self.archive_path = archive_path
         self.extract_dir = extract_dir
+
         self._is_running = True
         self._mutex = QMutex()
 
+    # ========================
+    # Internal helpers
+    # ========================
+
+    def _should_stop(self) -> bool:
+        self._mutex.lock()
+        running = self._is_running
+        self._mutex.unlock()
+        return not running
+
+    # ========================
+    # Main logic
+    # ========================
+
     def run(self):
         try:
-            # Update progress to show extraction is starting
             self.progress.emit(0)
+            self.speed.emit(0.0)
+            self.eta.emit(0)
 
-            # Create dist directory if it doesn't exist
-            os.makedirs(os.path.dirname(self.extract_dir), exist_ok=True)
+            os.makedirs(self.extract_dir, exist_ok=True)
 
-            # Remove existing directory if it exists
-            if os.path.exists(self.extract_dir):
-                shutil.rmtree(self.extract_dir)
+            # ---------- First pass: total size ----------
+            total_size = 0
+            # Emit initial progress to show we're starting
+            self.progress.emit(0)
+            self.speed.emit(0.0)
+            self.eta.emit(0)
 
-            # Extract the archive (only .tar.gz and .tar.xz are supported according to metadata)
-            if self.archive_path.lower().endswith(('.tar.gz', '.tar.xz')):
-                with tarfile.open(self.archive_path, 'r:*') as tar_ref:
-                    # Get total number of members for progress tracking (only once)
-                    members = tar_ref.getmembers()
-                    total_members = len(members)
-                    extracted_count = 0
+            # Calculate total size with progress updates
+            size_calc_start_time = time.monotonic()
+            last_update_time = size_calc_start_time
 
-                    # Extract to a temporary directory first, then move contents to final destination
-                    # to avoid nested directory structures
-                    import tempfile
-                    with tempfile.TemporaryDirectory() as temp_dir:
-                        # Extract with progress tracking
-                        last_progress = -1  # Track last emitted progress to avoid too frequent updates
-                        for member in members:
-                            self._mutex.lock()
-                            if not self._is_running:
-                                self._mutex.unlock()
-                                return
-                            self._mutex.unlock()
+            with libarchive.file_reader(self.archive_path) as archive:
+                entry_count = 0
+                for entry in archive:
+                    if self._should_stop():
+                        return
+                    if entry.isfile:
+                        total_size += entry.size or 0
+                    entry_count += 1
 
-                            tar_ref.extract(member, temp_dir)
-                            extracted_count += 1
+                    # Update progress based on elapsed time to show activity
+                    current_time = time.monotonic()
+                    if current_time - last_update_time >= 0.2:  # Update every 0.2 seconds
+                        # Show minimal progress to indicate activity during size calculation
+                        self.progress.emit(0)
+                        self.speed.emit(0.0)
+                        self.eta.emit(0)
+                        last_update_time = current_time
 
-                            # Update progress
-                            if total_members > 0:
-                                progress = int((extracted_count / total_members) * 100)
-                                # Only emit progress if it changed significantly (at least 1%) or at start/end
+            extracted_size = 0
+            start_time = time.monotonic()
+            last_emit_time = start_time
+            last_progress = -1
+
+            # Direct extraction to destination without flattening
+            with libarchive.file_reader(self.archive_path) as archive:
+                for entry in archive:
+                    if self._should_stop():
+                        return
+
+                    pathname = entry.pathname
+                    if not pathname:
+                        continue
+
+                    target_path = os.path.join(self.extract_dir, pathname)
+
+                    if entry.isdir:
+                        os.makedirs(target_path, exist_ok=True)
+                        continue
+
+                    os.makedirs(os.path.dirname(target_path), exist_ok=True)
+
+                    with open(target_path, "wb", buffering=1024 * 1024) as f:
+                        for block in entry.get_blocks():
+                            f.write(block)
+                            extracted_size += len(block)
+
+                            now = time.monotonic()
+                            elapsed = now - start_time
+
+                            if elapsed <= 0:
+                                continue
+
+                            # -------- UI update ~10 раз/сек --------
+                            if now - last_emit_time >= 0.1:
+                                # Progress (0–100%)
+                                progress = int((extracted_size / total_size) * 100)
                                 if progress != last_progress:
                                     self.progress.emit(progress)
                                     last_progress = progress
-                            else:
-                                # If total_members is 0, emit a default progress to show activity
-                                if extracted_count == 1:
-                                    self.progress.emit(50)  # Show partial progress to indicate activity
-                            # Process events to ensure UI updates
-                            QThread.yieldCurrentThread()  # Allow other threads to run
 
-                        # Find the actual content directory (often the archive creates a subdirectory)
-                        extracted_dirs = os.listdir(temp_dir)
-                        if len(extracted_dirs) == 1:
-                            # If there's only one directory, move its contents directly to extract_dir
-                            content_dir = os.path.join(temp_dir, extracted_dirs[0])
-                            if os.path.isdir(content_dir):
-                                # Move all contents from content_dir to extract_dir
-                                items = os.listdir(content_dir)
-                                total_items = len(items)
-                                moved_items = 0
-                                last_progress = -1  # Track last emitted progress to avoid too frequent updates
+                                # Speed MB/s
+                                speed = (extracted_size / (1024 * 1024)) / elapsed
+                                self.speed.emit(round(speed, 2))
 
-                                for item in items:
-                                    self._mutex.lock()
-                                    if not self._is_running:
-                                        self._mutex.unlock()
-                                        return
-                                    self._mutex.unlock()
+                                # ETA
+                                if speed > 0:
+                                    remaining_mb = (total_size - extracted_size) / (1024 * 1024)
+                                    eta_sec = int(remaining_mb / speed)
+                                    self.eta.emit(max(0, eta_sec))
+                                else:
+                                    self.eta.emit(0)
 
-                                    source = os.path.join(content_dir, item)
-                                    destination = os.path.join(self.extract_dir, item)
+                                last_emit_time = now
 
-                                    if os.path.isdir(source):
-                                        shutil.copytree(source, destination)
-                                    else:
-                                        shutil.copy2(source, destination)
-
-                                    moved_items += 1
-                                    # Update progress during file copying (50% to 100% of extraction)
-                                    progress = min(100, 50 + int((moved_items / total_items) * 50))
-                                    # Only emit progress if it changed significantly (at least 1%)
-                                    if progress != last_progress:
-                                        self.progress.emit(progress)
-                                        last_progress = progress
-                                    # Process events to ensure UI updates
-                                    QThread.yieldCurrentThread()  # Allow other threads to run
-                            else:
-                                # If it's just files, move them directly
-                                items = os.listdir(temp_dir)
-                                total_items = len(items)
-                                moved_items = 0
-                                last_progress = -1  # Track last emitted progress to avoid too frequent updates
-
-                                for item in items:
-                                    self._mutex.lock()
-                                    if not self._is_running:
-                                        self._mutex.unlock()
-                                        return
-                                    self._mutex.unlock()
-
-                                    source = os.path.join(temp_dir, item)
-                                    destination = os.path.join(self.extract_dir, item)
-
-                                    if os.path.isdir(source):
-                                        shutil.copytree(source, destination)
-                                    else:
-                                        shutil.copy2(source, destination)
-
-                                    moved_items += 1
-                                    # Update progress during file copying (50% to 100% of extraction)
-                                    progress = min(100, 50 + int((moved_items / total_items) * 50))
-                                    # Only emit progress if it changed significantly (at least 1%)
-                                    if progress != last_progress:
-                                        self.progress.emit(progress)
-                                        last_progress = progress
-                                    # Process events to ensure UI updates
-                                    QThread.yieldCurrentThread()  # Allow other threads to run
-                        else:
-                            # If multiple top-level items, extract directly to target
-                            # This is a simpler case where we extract directly to the target
-                            tar_ref.extractall(self.extract_dir)
-                            # Set progress to 100% when extraction is complete
-                            self.progress.emit(100)
-                            QThread.yieldCurrentThread()  # Allow other threads to run
-            else:
-                raise ValueError(f"Unsupported archive format: {self.archive_path}. Only .tar.gz and .tar.xz are supported.")
-
-            self._mutex.lock()
-            if self._is_running:
-                self._mutex.unlock()
-                self.finished.emit(self.archive_path, True)
-            else:
-                self._mutex.unlock()
+            # Final progress update
+            self.progress.emit(100)
+            self.speed.emit(0.0)
+            self.eta.emit(0)
+            self.finished.emit(self.archive_path, True)
 
         except Exception as e:
-            self._mutex.lock()
-            if self._is_running:
-                self._mutex.unlock()
+            if not self._should_stop():
                 self.error.emit(str(e))
-            else:
-                self._mutex.unlock()
+
+    # ========================
+    # Thread control
+    # ========================
 
     def stop(self):
         """Безопасная остановка потока"""
@@ -263,17 +244,15 @@ class ExtractionThread(QThread):
 
         if self.isRunning():
             self.quit()
-            if not self.wait(1000):  # Ждем до 1 секунды
-                logger.warning("Thread did not stop gracefully, but continuing...")
-
+            self.wait(1000)
 
 class ProtonManager(QDialog):
     def __init__(self, parent=None, portproton_location=None):
         super().__init__(parent)
         self.selected_assets = {}  # {unique_id: asset_data}
-        self.current_download_thread = None
         self.current_extraction_thread = None
-        self.is_downloading = False
+        self.current_download_thread = None  # Still keep this for compatibility with Downloader's thread
+        self.is_downloading = False  # Actually extraction in progress now
         self.assets_to_download = []
         self.current_download_index = 0
         self.portproton_location = portproton_location
@@ -281,7 +260,7 @@ class ProtonManager(QDialog):
         self.load_proton_data_from_json()
 
     def initUI(self):
-        self.setWindowTitle(_('Proton | WINE Download Manager'))
+        self.setWindowTitle(_('Proton | WINE Archive Extractor'))
         self.resize(800, 600)
 
         layout = QVBoxLayout(self)
@@ -343,7 +322,7 @@ class ProtonManager(QDialog):
 
         # Кнопки управления
         button_layout = QHBoxLayout()
-        self.download_btn = QPushButton(_('Download Selected'))
+        self.download_btn = QPushButton(_('Extract Selected'))
         self.download_btn.clicked.connect(self.download_selected)
         self.download_btn.setEnabled(False)
         self.download_btn.setMinimumHeight(40)
@@ -360,7 +339,12 @@ class ProtonManager(QDialog):
 
         try:
             logger.debug(f"Loading JSON metadata from: {json_url}")
-            session = get_requests_session()
+            # Create a session with proxy support
+            session = requests.Session()
+            proxy = read_proxy_config() or {}
+            if proxy:
+                session.proxies.update(proxy)
+            session.verify = True
             response = session.get(json_url, timeout=30)
             response.raise_for_status()
 
@@ -505,7 +489,8 @@ class ProtonManager(QDialog):
         }
 
         # Проверяем, установлен ли уже этот ассет
-        is_installed = self.is_asset_installed(filename, source_name)
+        uppercase_filename = filename.upper() # Преобразование имени WINE в верхний регистр
+        is_installed = self.is_asset_installed(uppercase_filename, source_name)
 
         checkbox.stateChanged.connect(lambda state, a=asset_data, v=version_from_name,
                                              s=source_name:
@@ -649,7 +634,7 @@ class ProtonManager(QDialog):
     def clear_selection(self):
         """Очищаем (сбрасываем) всё выбранное"""
         if self.is_downloading:
-            QMessageBox.warning(self, _("Download in Progress"), _("Cannot clear selection while downloading."))
+            QMessageBox.warning(self, _("Extraction in Progress"), _("Cannot clear selection while extraction is in progress."))
             return
 
         self.selected_assets.clear()
@@ -668,13 +653,13 @@ class ProtonManager(QDialog):
         self.update_selection_display()
 
     def download_selected(self):
-        """Загружаем все выбранные элементы (протоны)"""
+        """Extract all selected archives"""
         if not self.selected_assets:
-            QMessageBox.warning(self, _("No Selection"), _("Please select at least one asset to download."))
+            QMessageBox.warning(self, _("No Selection"), _("Please select at least one archive to extract."))
             return
 
         if self.is_downloading:
-            QMessageBox.warning(self, _("Download in Progress"), _("Please wait for current download to complete."))
+            QMessageBox.warning(self, _("Extraction in Progress"), _("Please wait for current extraction to complete."))
             return
 
         downloads_dir = "proton_downloads"
@@ -687,22 +672,25 @@ class ProtonManager(QDialog):
         self.start_next_download()
 
     def start_next_download(self):
-        """Запуск загрузки следующего элемента в списке"""
+        """Start extraction of next archive in the list"""
         if self.current_download_index >= len(self.assets_to_download):
-            # Все загрузки завершены
+            # All extractions completed
             self.download_frame.setVisible(False)
             self.download_btn.setEnabled(True)
             self.clear_btn.setEnabled(True)
             self.is_downloading = False
-            QMessageBox.information(self, _("Download Complete"), _("All selected assets have been downloaded!"))
+            QMessageBox.information(self, _("Extraction Complete"), _("All selected archives have been extracted!"))
             return
 
         asset_data = self.assets_to_download[self.current_download_index]
         self.download_asset(asset_data)
 
     def download_asset(self, asset_data):
-        """Загрузка конкретного элемента (протона)"""
-        filename = os.path.join("proton_downloads", asset_data['asset_name'])
+        """Download and then extract the archive"""
+        # Create a temporary file path for download
+        temp_dir = tempfile.mkdtemp(prefix="portproton_wine_")
+        filename = os.path.join(temp_dir, asset_data['asset_name'])
+        download_url = asset_data['download_url']
 
         download_info = f"{asset_data['source_name'].upper()} - {asset_data['asset_name']}"
         if len(download_info) > 80:
@@ -713,132 +701,195 @@ class ProtonManager(QDialog):
         self.download_btn.setEnabled(False)
         self.clear_btn.setEnabled(False)
 
-        if os.path.exists(filename):
-            reply = QMessageBox.question(self, _("File Exists"),
-                                         _("File {0} already exists. Overwrite?").format(asset_data['asset_name']),
-                                         QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-            if reply == QMessageBox.StandardButton.No:
-                self.current_download_index += 1
-                self.start_next_download()
-                return
-
-        download_url = asset_data.get('download_url', '')
-        if not download_url:
-            QMessageBox.critical(self, _("Download Error"), _("No download URL for {0}").format(asset_data['asset_name']))
-            self.current_download_index += 1
-            self.start_next_download()
-            return
-
-        # Проверка, что предыдущий поток завершен
-        if self.current_download_thread and self.current_download_thread.isRunning():
-            logger.warning("Previous thread still running, waiting...")
-            self.current_download_thread.stop()
-
+        # Create and start download thread
         self.current_download_thread = DownloadThread(download_url, filename)
 
-        def update_progress(progress):
+        def update_download_progress(progress):
             self.download_progress.setValue(progress)
+            self.download_info_label.setText(_("Downloading: {0} ({1}%)").format(asset_data['asset_name'], progress))
 
-        def download_finished(filename, success):
-            logger.debug(f"Download finished callback: {filename}, success: {success}")
+        def download_finished(filepath, success):
             if success:
-                logger.info(f"Successfully downloaded: {filename}")
-
-                # Update progress bar to show extraction phase
-                self.download_info_label.setText(_("Extracting: {0}").format(asset_data['asset_name']))
-
-                # Extract archive to PortProton data/dist directory using a separate thread
-                if self.portproton_location:
-                    try:
-                        # Determine the name for the extraction directory from the asset name
-                        asset_name = asset_data['asset_name']
-
-                        # Remove common archive extensions to get the directory name (only .tar.gz and .tar.xz)
-                        name_without_ext = asset_name
-                        for ext in ['.tar.gz', '.tar.xz']:
-                            if name_without_ext.lower().endswith(ext):
-                                name_without_ext = name_without_ext[:-len(ext)]
-                                break
-
-                        # Create the destination directory in PortProton data/dist
-                        dist_path = os.path.join(self.portproton_location, "data", "dist")
-                        extract_dir = os.path.join(dist_path, name_without_ext)
-
-                        # Create and start extraction thread
-                        self.current_extraction_thread = ExtractionThread(filename, extract_dir)
-
-                        def update_extraction_progress(progress):
-                            self.download_progress.setValue(progress)
-                            # Update the info label to show current progress percentage during extraction
-                            self.download_info_label.setText(_("Extracting: {0} ({1}%)").format(asset_data['asset_name'], progress))
-
-                        def extraction_finished(archive_path, success):
-                            if success:
-                                logger.info(f"Successfully extracted: {archive_path}")
-                            else:
-                                logger.error(f"Failed to extract: {archive_path}")
-                                QMessageBox.critical(self, _("Extraction Error"), _("Failed to extract archive: {0}").format(archive_path))
-
-                            if self.current_extraction_thread and self.current_extraction_thread.isRunning():
-                                logger.debug("Waiting for extraction thread to finish...")
-                                if not self.current_extraction_thread.wait(500):
-                                    logger.warning("Extraction thread still running, but continuing...")
-
-                            self.current_download_index += 1
-                            QTimer.singleShot(100, self.start_next_download)
-
-                        def extraction_error(error_msg):
-                            logger.error(f"Extraction error: {error_msg}")
-                            QMessageBox.critical(self, "Extraction Error", f"Failed to extract archive: {error_msg}")
-
-                            if self.current_extraction_thread and self.current_extraction_thread.isRunning():
-                                logger.debug("Waiting for extraction thread to finish after error...")
-                                if not self.current_extraction_thread.wait(500):
-                                    logger.warning("Extraction thread still running after error, but continuing...")
-
-                            self.current_download_index += 1
-                            QTimer.singleShot(100, self.start_next_download)
-
-                        self.current_extraction_thread.progress.connect(update_extraction_progress)
-                        self.current_extraction_thread.finished.connect(extraction_finished)
-                        self.current_extraction_thread.error.connect(extraction_error)
-                        self.current_extraction_thread.start()
-
-                    except Exception as e:
-                        logger.error(f"Error starting extraction thread for {filename}: {e}")
-                        QMessageBox.critical(self, "Extraction Error", f"Failed to start extraction: {e}")
-                        self.current_download_index += 1
-                        QTimer.singleShot(100, self.start_next_download)
-                else:
-                    logger.warning("PortProton location not provided, skipping extraction")
-                    self.current_download_index += 1
-                    QTimer.singleShot(100, self.start_next_download)
+                logger.info(f"Successfully downloaded: {filepath}")
+                # Now start extraction
+                self.start_extraction_for_asset(asset_data, filepath)
             else:
-                QMessageBox.critical(self, _("Download Failed"),
-                                     _("Failed to download:\n{0}").format(filename))
+                logger.error(f"Failed to download: {filepath}")
+                # Clean up temp directory
+                temp_dir = os.path.dirname(filepath)
+                try:
+                    shutil.rmtree(temp_dir)
+                except (OSError, FileNotFoundError):
+                    pass
+                self.current_download_index += 1
+                QTimer.singleShot(100, self.start_next_download)
 
         def download_error(error_msg):
             logger.error(f"Download error: {error_msg}")
-            QMessageBox.critical(self, _("Download Error"), error_msg)
-
-            if self.current_download_thread and self.current_download_thread.isRunning():
-                if not self.current_download_thread.wait(500):
-                    logger.warning("Thread still running after error, but continuing...")
-
+            QMessageBox.critical(self, "Download Error", f"Failed to download archive: {error_msg}")
+            # Clean up temp directory
+            temp_dir = os.path.dirname(filename)
+            try:
+                shutil.rmtree(temp_dir)
+            except (OSError, FileNotFoundError):
+                pass
             self.current_download_index += 1
             QTimer.singleShot(100, self.start_next_download)
 
-        self.current_download_thread.progress.connect(update_progress)
+        self.current_download_thread.progress.connect(update_download_progress)
         self.current_download_thread.finished.connect(download_finished)
         self.current_download_thread.error.connect(download_error)
         self.current_download_thread.start()
 
+    def start_extraction_for_asset(self, asset_data, filepath):
+        """Start extraction for a downloaded asset"""
+        # Update progress bar to show extraction phase
+        self.download_info_label.setText(_("Extracting: {0}").format(asset_data['asset_name']))
+
+        # Extract archive to PortProton data/dist directory using a separate thread
+        if self.portproton_location:
+            try:
+                # Extract directly to dist directory - let the archive create its own folder structure
+                dist_path = os.path.join(self.portproton_location, "data", "dist")
+                extract_dir = dist_path
+
+                # Create and start extraction thread
+                self.current_extraction_thread = ExtractionThread(filepath, extract_dir)
+
+                # Store speed and ETA values to use in the display
+                current_speed = 0.0
+                current_eta = 0
+
+                def update_extraction_progress(progress):
+                    self.download_progress.setValue(progress)
+                    # Update the info label to show current progress during extraction
+                    eta_text = f", ETA: {current_eta}s" if current_eta > 0 else ""
+                    speed_text = f", Speed: {current_speed:.1f}MB/s" if current_speed > 0 else ""
+                    self.download_info_label.setText(_("Extracting: {0}{1}{2}").format(
+                        asset_data['asset_name'], speed_text, eta_text))
+
+                def update_extraction_speed(speed):
+                    nonlocal current_speed
+                    current_speed = speed
+
+                def update_extraction_eta(eta):
+                    # Use ETA to pass actual ETA information during extraction
+                    nonlocal current_eta
+                    # Now we only use ETA for actual estimated time of arrival
+                    current_eta = eta
+
+                def extraction_finished(archive_path, success):
+                    if success:
+                        logger.info(f"Successfully extracted: {archive_path}")
+
+                        # Run the initial command after successful extraction
+                        import subprocess
+                        try:
+                            # Get the proper PortProton start command
+                            start_cmd = get_portproton_start_command()
+                            if start_cmd:
+                                result = subprocess.run(start_cmd + ["cli", "--initial"], timeout=10)
+                                if result.returncode != 0:
+                                    logger.warning(f"Initial PortProton command returned non-zero exit code: {result.returncode}")
+                            else:
+                                logger.warning("Could not determine PortProton start command, skipping initial command")
+                        except subprocess.TimeoutExpired:
+                            logger.warning("Initial PortProton command timed out")
+                        except Exception as e:
+                            logger.error(f"Error running initial PortProton command: {e}")
+                    else:
+                        logger.error(f"Failed to extract: {archive_path}")
+                        QMessageBox.critical(self, _("Extraction Error"), _("Failed to extract archive: {0}").format(archive_path))
+
+                    # Clean up temp directory after extraction
+                    temp_dir = os.path.dirname(filepath)
+                    try:
+                        shutil.rmtree(temp_dir)
+                        logger.debug(f"Cleaned up temporary directory: {temp_dir}")
+                    except Exception as e:
+                        logger.warning(f"Could not clean up temporary directory {temp_dir}: {e}")
+
+                    if self.current_extraction_thread and self.current_extraction_thread.isRunning():
+                        logger.debug("Waiting for extraction thread to finish...")
+                        if not self.current_extraction_thread.wait(500):
+                            logger.warning("Extraction thread still running, but continuing...")
+
+                    self.current_download_index += 1
+                    QTimer.singleShot(100, self.start_next_download)
+
+                def extraction_error(error_msg):
+                    logger.error(f"Extraction error: {error_msg}")
+                    QMessageBox.critical(self, "Extraction Error", f"Failed to extract archive: {error_msg}")
+
+                    # Clean up temp directory after error
+                    temp_dir = os.path.dirname(filepath)
+                    try:
+                        shutil.rmtree(temp_dir)
+                        logger.debug(f"Cleaned up temporary directory after error: {temp_dir}")
+                    except Exception as e:
+                        logger.warning(f"Could not clean up temporary directory {temp_dir}: {e}")
+
+                    if self.current_extraction_thread and self.current_extraction_thread.isRunning():
+                        logger.debug("Waiting for extraction thread to finish after error...")
+                        if not self.current_extraction_thread.wait(500):
+                            logger.warning("Extraction thread still running after error, but continuing...")
+
+                    self.current_download_index += 1
+                    QTimer.singleShot(100, self.start_next_download)
+
+                self.current_extraction_thread.progress.connect(update_extraction_progress)
+                self.current_extraction_thread.speed.connect(update_extraction_speed)
+                self.current_extraction_thread.eta.connect(update_extraction_eta)
+                self.current_extraction_thread.finished.connect(extraction_finished)
+                self.current_extraction_thread.error.connect(extraction_error)
+                self.current_extraction_thread.start()
+
+            except Exception as e:
+                # Clean up temp directory in case of exception
+                temp_dir = os.path.dirname(filepath)
+                try:
+                    shutil.rmtree(temp_dir)
+                    logger.debug(f"Cleaned up temporary directory after exception: {temp_dir}")
+                except Exception as cleanup_error:
+                    logger.warning(f"Could not clean up temporary directory {temp_dir}: {cleanup_error}")
+
+                logger.error(f"Error starting extraction thread for {filepath}: {e}")
+                QMessageBox.critical(self, "Extraction Error", f"Failed to start extraction: {e}")
+                self.current_download_index += 1
+                QTimer.singleShot(100, self.start_next_download)
+        else:
+            # Clean up temp directory if portproton location is not provided
+            temp_dir = os.path.dirname(filepath)
+            try:
+                shutil.rmtree(temp_dir)
+                logger.debug(f"Cleaned up temporary directory: {temp_dir}")
+            except Exception as e:
+                logger.warning(f"Could not clean up temporary directory {temp_dir}: {e}")
+
+            logger.warning("PortProton location not provided, skipping extraction")
+            self.current_download_index += 1
+            QTimer.singleShot(100, self.start_next_download)
+
     def cancel_current_download(self):
-        """Отмена текущей загрузки"""
-        if self.current_download_thread and self.current_download_thread.isRunning():
-            self.current_download_thread.stop()
-            if not self.current_download_thread.wait(1000):
-                logger.warning("Thread did not stop gracefully")
+        """Cancel current download or extraction"""
+        # Stop extraction thread if running
+        if self.current_extraction_thread and self.current_extraction_thread.isRunning():
+            self.current_extraction_thread.stop()
+            if not self.current_extraction_thread.wait(1000):
+                logger.warning("Extraction thread did not stop gracefully")
+
+        # Stop download thread if running
+        try:
+            if (self.current_download_thread and
+                hasattr(self.current_download_thread, 'isRunning') and
+                self.current_download_thread.isRunning()):
+                if hasattr(self.current_download_thread, 'stop'):
+                    self.current_download_thread.stop()
+                if not self.current_download_thread.wait(1000):
+                    logger.warning("Download thread did not stop gracefully")
+        except RuntimeError:
+            # Object already deleted, which is fine
+            logger.debug("Download thread object already deleted during cancel")
 
         # Очищаем список загрузок
         self.assets_to_download = []
@@ -850,18 +901,11 @@ class ProtonManager(QDialog):
         self.download_btn.setEnabled(True)
         self.clear_btn.setEnabled(True)
 
-        QMessageBox.information(self, _("Download Cancelled"), _("Download has been cancelled."))
+        QMessageBox.information(self, _("Operation Cancelled"), _("Download or extraction has been cancelled."))
 
     def closeEvent(self, event):
         """Проверка, что все потоки останавливаются при закрытии приложения"""
         logger.debug("Closing ProtonManager dialog...")
-
-        # Stop download thread if running
-        if self.is_downloading and self.current_download_thread and self.current_download_thread.isRunning():
-            logger.debug("Stopping current download thread...")
-            self.current_download_thread.stop()
-            if not self.current_download_thread.wait(2000):
-                logger.warning("Thread did not stop gracefully during close")
 
         # Stop extraction thread if running
         if self.current_extraction_thread and self.current_extraction_thread.isRunning():
@@ -870,13 +914,27 @@ class ProtonManager(QDialog):
             if not self.current_extraction_thread.wait(2000):
                 logger.warning("Extraction thread did not stop gracefully during close")
 
+        # Stop download thread if running
+        try:
+            if (self.current_download_thread and
+                hasattr(self.current_download_thread, 'isRunning') and
+                self.current_download_thread.isRunning()):
+                logger.debug("Stopping current download thread...")
+                if hasattr(self.current_download_thread, 'stop'):
+                    self.current_download_thread.stop()
+                if not self.current_download_thread.wait(2000):
+                    logger.warning("Download thread did not stop gracefully during close")
+        except RuntimeError:
+            # Object already deleted, which is fine
+            logger.debug("Download thread object already deleted during close")
+
         event.accept()
 
 
 
 def show_proton_manager(parent=None, portproton_location=None):
     """
-    Shows the Proton/WINE manager dialog.
+    Shows the Proton/WINE archive extractor dialog.
 
     Args:
         parent: Parent widget for the dialog
