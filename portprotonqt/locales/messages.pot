@@ -1,15 +1,15 @@
 # Translations template for PortProtonQt.
-# Copyright (C) 2025 boria138
+# Copyright (C) 2026 boria138
 # This file is distributed under the same license as the PortProtonQt
 # project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
 #
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-11-30 13:20+0500\n"
+"POT-Creation-Date: 2026-01-01 23:29+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -254,6 +254,52 @@ msgstr ""
 msgid "Select All"
 msgstr ""
 
+msgid "Back"
+msgstr ""
+
+msgid "LAST LAUNCH"
+msgstr ""
+
+msgid "PLAY TIME"
+msgstr ""
+
+msgid "MAIN STORY"
+msgstr ""
+
+msgid "MAIN + SIDES"
+msgstr ""
+
+msgid "COMPLETIONIST"
+msgstr ""
+
+msgid "full"
+msgstr ""
+
+msgid "partial"
+msgstr ""
+
+msgid "none"
+msgstr ""
+
+#, python-brace-format
+msgid "Gamepad Support: {0}"
+msgstr ""
+
+msgid "Stop"
+msgstr ""
+
+msgid "Play"
+msgstr ""
+
+msgid "Settings"
+msgstr ""
+
+msgid "Reinstall"
+msgstr ""
+
+msgid "Install"
+msgstr ""
+
 msgid "Open"
 msgstr ""
 
@@ -267,9 +313,6 @@ msgid "Cancel"
 msgstr ""
 
 msgid "Toggle"
-msgstr ""
-
-msgid "Install"
 msgstr ""
 
 msgid "Force Install"
@@ -356,9 +399,6 @@ msgid "Information"
 msgstr ""
 
 msgid "Fonts"
-msgstr ""
-
-msgid "Settings"
 msgstr ""
 
 msgid "Winetricks not found. Please try again."
@@ -454,6 +494,89 @@ msgstr ""
 msgid "Pending"
 msgstr ""
 
+msgid "Get other Wine"
+msgstr ""
+
+msgid "Selected assets:"
+msgstr ""
+
+msgid "No assets selected"
+msgstr ""
+
+msgid "Downloading: "
+msgstr ""
+
+msgid "Download Selected"
+msgstr ""
+
+msgid "Clear All"
+msgstr ""
+
+msgid "Asset Name"
+msgstr ""
+
+#, python-brace-format
+msgid "{display_name} (installed)"
+msgstr ""
+
+#, python-brace-format
+msgid "Selected {} assets:\n"
+msgstr ""
+
+msgid "Downloading in Progress"
+msgstr ""
+
+msgid "Cannot clear selection while extraction is in progress."
+msgstr ""
+
+msgid "No Selection"
+msgstr ""
+
+msgid "Please select at least one archive to download."
+msgstr ""
+
+msgid "Please wait for current downloading to complete."
+msgstr ""
+
+msgid "Downloading Complete"
+msgstr ""
+
+msgid "All selected archives have been downloaded!"
+msgstr ""
+
+#, python-brace-format
+msgid "Downloading: {0} ({1}%)"
+msgstr ""
+
+#, python-brace-format
+msgid "Extracting: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid ", ETA: {}s"
+msgstr ""
+
+#, python-brace-format
+msgid ", Speed: {:.1f}MB/s"
+msgstr ""
+
+#, python-brace-format
+msgid "Extracting: {0}{1}{2}"
+msgstr ""
+
+msgid "Extraction Error"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to extract archive: {0}"
+msgstr ""
+
+msgid "Operation Cancelled"
+msgstr ""
+
+msgid "Download or extraction has been cancelled."
+msgstr ""
+
 msgid "Unknown Game"
 msgstr ""
 
@@ -473,9 +596,6 @@ msgid "PortProton Settings"
 msgstr ""
 
 msgid "Themes"
-msgstr ""
-
-msgid "Back"
 msgstr ""
 
 msgid "Fullscreen"
@@ -562,6 +682,9 @@ msgid "Delete Prefix"
 msgstr ""
 
 msgid "Clear Prefix"
+msgstr ""
+
+msgid "Download other WINE"
 msgstr ""
 
 msgid "Launching tool..."
@@ -778,40 +901,6 @@ msgstr ""
 
 #, python-brace-format
 msgid "Executable not found: {0}"
-msgstr ""
-
-msgid "LAST LAUNCH"
-msgstr ""
-
-msgid "PLAY TIME"
-msgstr ""
-
-msgid "MAIN STORY"
-msgstr ""
-
-msgid "MAIN + SIDES"
-msgstr ""
-
-msgid "COMPLETIONIST"
-msgstr ""
-
-msgid "full"
-msgstr ""
-
-msgid "partial"
-msgstr ""
-
-msgid "none"
-msgstr ""
-
-#, python-brace-format
-msgid "Gamepad Support: {0}"
-msgstr ""
-
-msgid "Stop"
-msgstr ""
-
-msgid "Play"
 msgstr ""
 
 #, python-brace-format

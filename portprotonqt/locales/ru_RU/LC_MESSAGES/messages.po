@@ -1,15 +1,15 @@
 # Russian (Russia) translations for PortProtonQt.
-# Copyright (C) 2025 boria138
+# Copyright (C) 2026 boria138
 # This file is distributed under the same license as the PortProtonQt
 # project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
 #
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-11-30 13:20+0500\n"
+"POT-Creation-Date: 2026-01-01 23:29+0500\n"
 "PO-Revision-Date: 2025-11-30 13:18+0500\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
@@ -263,6 +263,53 @@ msgstr "Удалить"
 msgid "Select All"
 msgstr "Выбрать всё"
 
+msgid "Back"
+msgstr "Назад"
+
+msgid "LAST LAUNCH"
+msgstr "Последний запуск"
+
+msgid "PLAY TIME"
+msgstr "Время игры"
+
+msgid "MAIN STORY"
+msgstr "СЮЖЕТ"
+
+msgid "MAIN + SIDES"
+msgstr "СЮЖЕТ + ПОБОЧКИ"
+
+msgid "COMPLETIONIST"
+msgstr "100%"
+
+msgid "full"
+msgstr "полная"
+
+msgid "partial"
+msgstr "частичная"
+
+msgid "none"
+msgstr "отсутствует"
+
+#, python-brace-format
+msgid "Gamepad Support: {0}"
+msgstr "Поддержка геймпадов: {0}"
+
+msgid "Stop"
+msgstr "Остановить"
+
+msgid "Play"
+msgstr "Играть"
+
+msgid "Settings"
+msgstr "Настройки"
+
+#, fuzzy
+msgid "Reinstall"
+msgstr "Установить"
+
+msgid "Install"
+msgstr "Установить"
+
 msgid "Open"
 msgstr "Открыть"
 
@@ -277,9 +324,6 @@ msgstr "Отмена"
 
 msgid "Toggle"
 msgstr "Переключить"
-
-msgid "Install"
-msgstr "Установить"
 
 msgid "Force Install"
 msgstr "Принудительно установить"
@@ -367,9 +411,6 @@ msgstr "Описание"
 msgid "Fonts"
 msgstr "Шрифты"
 
-msgid "Settings"
-msgstr "Настройки"
-
 msgid "Winetricks not found. Please try again."
 msgstr "Winetricks не найден. Повторите попытку."
 
@@ -416,7 +457,7 @@ msgid "Info"
 msgstr "Информация"
 
 msgid "No changes to apply."
-msgstr "Изменений для применения нет."
+msgstr "Нет изменений для применения."
 
 msgid "Failed to apply changes. Check logs."
 msgstr "Не удалось применить изменения. Проверьте логи."
@@ -463,6 +504,99 @@ msgstr "Бронза"
 msgid "Pending"
 msgstr "В ожидании"
 
+msgid "Get other Wine"
+msgstr "Загрузка другого WINE"
+
+#, fuzzy
+msgid "Selected assets:"
+msgstr "Выбранные WINE:"
+
+#, fuzzy
+msgid "No assets selected"
+msgstr "WINE не выбраны"
+
+#, fuzzy
+msgid "Downloading: "
+msgstr "Скачивание:"
+
+#, fuzzy
+msgid "Download Selected"
+msgstr "Установить выбранное"
+
+#, fuzzy
+msgid "Clear All"
+msgstr "Очистить выбранное"
+
+#, fuzzy
+msgid "Asset Name"
+msgstr "Наименование WINE"
+
+#, python-brace-format
+msgid "{display_name} (installed)"
+msgstr "{display_name} (установлено)"
+
+#, fuzzy, python-brace-format
+msgid "Selected {} assets:\n"
+msgstr "Выбранно {} WINE:\n"
+
+#, fuzzy
+msgid "Downloading in Progress"
+msgstr "Скачивание"
+
+msgid "Cannot clear selection while extraction is in progress."
+msgstr "Невозможно очистить выделение во время распаковки."
+
+#, fuzzy
+msgid "No Selection"
+msgstr "Не выбрано"
+
+msgid "Please select at least one archive to download."
+msgstr "Пожалуйста выберите хотя бы один архив для скачивания."
+
+msgid "Please wait for current downloading to complete."
+msgstr "Пожалуйста подождите завершения скачивания."
+
+#, fuzzy
+msgid "Downloading Complete"
+msgstr "Скачивание завершено"
+
+msgid "All selected archives have been downloaded!"
+msgstr "Все выбранные архивы успешно загружены!"
+
+#, python-brace-format
+msgid "Downloading: {0} ({1}%)"
+msgstr "Загрузка: {0} ({1}%)"
+
+#, fuzzy, python-brace-format
+msgid "Extracting: {0}"
+msgstr "Распаковка {0}"
+
+#, fuzzy, python-brace-format
+msgid ", ETA: {}s"
+msgstr ", Расчетное время: {}с"
+
+#, fuzzy, python-brace-format
+msgid ", Speed: {:.1f}MB/s"
+msgstr ", Скорость: {:.1f}МБ/с"
+
+#, python-brace-format
+msgid "Extracting: {0}{1}{2}"
+msgstr "Распаковка: {0}{1}{2}"
+
+#, fuzzy
+msgid "Extraction Error"
+msgstr "Ошибка распаковки"
+
+#, fuzzy, python-brace-format
+msgid "Failed to extract archive: {0}"
+msgstr "Не удалось запустить игру: {0}"
+
+msgid "Operation Cancelled"
+msgstr "Операция отменена"
+
+msgid "Download or extraction has been cancelled."
+msgstr "Скачивание или распаковка успешно отменена."
+
 msgid "Unknown Game"
 msgstr "Неизвестная игра"
 
@@ -476,16 +610,13 @@ msgid "Auto Install"
 msgstr "Автоустановка"
 
 msgid "Wine Settings"
-msgstr "Настройки wine"
+msgstr "Настройки WINE"
 
 msgid "PortProton Settings"
 msgstr "Настройки PortProton"
 
 msgid "Themes"
 msgstr "Темы"
-
-msgid "Back"
-msgstr "Назад"
 
 msgid "Fullscreen"
 msgstr "Полный экран"
@@ -541,13 +672,13 @@ msgid "Added '{name}'"
 msgstr "'{name}' добавлен(а)"
 
 msgid "Compatibility tool:"
-msgstr "Инструмент совместимости:"
+msgstr "WINE:"
 
 msgid "Prefix:"
 msgstr "Префикс:"
 
 msgid "Wine Configuration"
-msgstr "Конфигурация Wine"
+msgstr "Конфигурация WINE"
 
 msgid "Registry Editor"
 msgstr "Редактор реестра"
@@ -565,13 +696,16 @@ msgid "Load Prefix Backup"
 msgstr "Загрузить резервную копию префикса"
 
 msgid "Delete Compatibility Tool"
-msgstr "Удалить Инструмент совместимости"
+msgstr "Удалить WINE"
 
 msgid "Delete Prefix"
 msgstr "Удалить Префикс"
 
 msgid "Clear Prefix"
 msgstr "Очистить Префикс"
+
+msgid "Download other WINE"
+msgstr "Скачать другие WINE"
 
 msgid "Launching tool..."
 msgstr "Запуск инструмента..."
@@ -639,11 +773,11 @@ msgstr "Вы уверены, что хотите удалить инструме
 
 #, python-brace-format
 msgid "Compatibility tool '{}' deleted."
-msgstr "Инструмент совместимости «{}» удален."
+msgstr "WINE «{}» удален."
 
 #, python-brace-format
 msgid "Failed to delete compatibility tool: {}"
-msgstr "Не удалось удалить инструмент совместимости: {}"
+msgstr "Не удалось удалить WINE: {}"
 
 msgid "Main PortProton parameters..."
 msgstr "Основные параметры PortProton..."
@@ -790,40 +924,6 @@ msgstr "Ошибка при применение темы '{0}'"
 #, python-brace-format
 msgid "Executable not found: {0}"
 msgstr "Исполняемый файл не найден: {0}"
-
-msgid "LAST LAUNCH"
-msgstr "Последний запуск"
-
-msgid "PLAY TIME"
-msgstr "Время игры"
-
-msgid "MAIN STORY"
-msgstr "СЮЖЕТ"
-
-msgid "MAIN + SIDES"
-msgstr "СЮЖЕТ + ПОБОЧКИ"
-
-msgid "COMPLETIONIST"
-msgstr "100%"
-
-msgid "full"
-msgstr "полная"
-
-msgid "partial"
-msgstr "частичная"
-
-msgid "none"
-msgstr "отсутствует"
-
-#, python-brace-format
-msgid "Gamepad Support: {0}"
-msgstr "Поддержка геймпадов: {0}"
-
-msgid "Stop"
-msgstr "Остановить"
-
-msgid "Play"
-msgstr "Играть"
 
 #, python-brace-format
 msgid "Executable not found for EGS game: {0}"
@@ -989,22 +1089,22 @@ msgid "Use WineD3D Vulkan backend (Damavand)"
 msgstr "Использовать бэкенд Vulkan WineD3D (Damavand)"
 
 msgid "Use bundled dxvk/vkd3d from Wine/Proton"
-msgstr "Использовать встроенные dxvk/vkd3d из Wine/Proton"
+msgstr "Использовать встроенные dxvk/vkd3d из WINE/Proton"
 
 msgid "Use async dxvk-sarek (experimental)"
 msgstr "Использовать асинхронный dxvk-sarek (экспериментально)"
 
 msgid "Wine Version"
-msgstr "Версия Wine"
+msgstr "Версия WINE"
 
 msgid "Select the Wine or Proton version to use for this executable."
-msgstr "Выбор версии Wine или Proton для использования с этим исполняемым файлом."
+msgstr "Выбор версии WINE или Proton для использования с этим исполняемым файлом."
 
 msgid "Prefix Name"
 msgstr "Имя префикса"
 
 msgid "Specify the Wine prefix to run this game with"
-msgstr "Укажите префикс Wine для запуска этой игры"
+msgstr "Укажите префикс WINE для запуска этой игры"
 
 msgid "Newest"
 msgstr "Новейший"

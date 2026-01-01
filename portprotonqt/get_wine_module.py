@@ -485,7 +485,7 @@ class ProtonManager(QDialog):
             table = QTableWidget()
             table.verticalHeader().setVisible(False)
             table.setColumnCount(2)  # Только Checkbox и Имя
-            table.setHorizontalHeaderLabels(['', 'Asset Name'])
+            table.setHorizontalHeaderLabels(['', _('Asset Name')])
             table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
 
             header = table.horizontalHeader()
@@ -591,7 +591,7 @@ class ProtonManager(QDialog):
             checkbox.setEnabled(False)
             asset_name_item.setFlags(asset_name_item.flags() & ~Qt.ItemFlag.ItemIsEnabled)
             # Add "(installed)" suffix to indicate it's already installed
-            asset_name_item.setText(f"{display_name} (installed)")
+            asset_name_item.setText(_('{display_name} (installed)').format(display_name=display_name))
 
         table.setItem(row_index, 1, asset_name_item)
 
@@ -695,7 +695,7 @@ class ProtonManager(QDialog):
     def update_selection_display(self):
         """Обновляем отображение выбора"""
         if self.selected_assets:
-            selection_text = f"Selected {len(self.selected_assets)} assets:\n"
+            selection_text = _('Selected {} assets:\n').format(len(self.selected_assets))
 
             for i, asset_data in enumerate(self.selected_assets.values(), 1):
                 selection_text += f"{i}. {asset_data['source_name'].upper()} - {asset_data['asset_name']}\n"
@@ -837,8 +837,8 @@ class ProtonManager(QDialog):
                 def update_extraction_progress(progress):
                     self.download_progress.setValue(progress)
                     # Update the info label to show current progress during extraction
-                    eta_text = f", ETA: {current_eta}s" if current_eta > 0 else ""
-                    speed_text = f", Speed: {current_speed:.1f}MB/s" if current_speed > 0 else ""
+                    eta_text = _(', ETA: {}s').format(current_eta) if current_eta > 0 else ""
+                    speed_text = _(', Speed: {:.1f}MB/s').format(current_speed) if current_speed > 0 else ""
                     self.download_info_label.setText(_("Extracting: {0}{1}{2}").format(
                         asset_data['asset_name'], speed_text, eta_text))
 
