@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (QDialog, QTabWidget, QTableWidget,
                                QTableWidgetItem, QVBoxLayout, QWidget, QCheckBox,
                                QPushButton, QHeaderView, QMessageBox,
                                QLabel, QTextEdit, QHBoxLayout, QProgressBar,
-                               QFrame, QSizePolicy)
+                               QFrame, QSizePolicy, QAbstractItemView)
 from PySide6.QtCore import Qt, QThread, Signal, QMutex, QWaitCondition, QTimer
 import urllib.parse
 from portprotonqt.config_utils import read_proxy_config, get_portproton_start_command
@@ -260,17 +260,12 @@ class ProtonManager(QDialog):
         self.load_proton_data_from_json()
 
     def initUI(self):
-        self.setWindowTitle(_('Proton | WINE Archive Extractor'))
+        self.setWindowTitle(_('Get other Wine'))
         self.resize(800, 600)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(5, 5, 5, 5)
         layout.setSpacing(5)
-
-        # Info label
-        self.info_label = QLabel(_("Loading Proton versions from JSON metadata..."))
-        self.info_label.setMaximumHeight(20)
-        layout.addWidget(self.info_label)
 
         # Tab widget - основной растягивающийся элемент
         self.tab_widget = QTabWidget()
@@ -290,6 +285,7 @@ class ProtonManager(QDialog):
         self.selection_text = QTextEdit()
         self.selection_text.setMaximumHeight(80)
         self.selection_text.setReadOnly(True)
+        self.selection_text.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction)
         self.selection_text.setPlainText(_("No assets selected"))
         selection_layout.addWidget(self.selection_text)
 
@@ -322,7 +318,7 @@ class ProtonManager(QDialog):
 
         # Кнопки управления
         button_layout = QHBoxLayout()
-        self.download_btn = QPushButton(_('Extract Selected'))
+        self.download_btn = QPushButton(_('Download Selected'))
         self.download_btn.clicked.connect(self.download_selected)
         self.download_btn.setEnabled(False)
         self.download_btn.setMinimumHeight(40)
@@ -350,23 +346,15 @@ class ProtonManager(QDialog):
 
             metadata = orjson.loads(response.content)
             logger.info(f"Successfully loaded JSON metadata with {len(metadata)} entries")
+            self.process_metadata(metadata)
 
-            successful_tabs = self.process_metadata(metadata)
-
-            if successful_tabs == 0:
-                self.info_label.setText(_("Error: Could not process any data from JSON."))
-            else:
-                self.info_label.setText(f"Loaded {successful_tabs} Proton/WINE sources from JSON")
 
         except requests.exceptions.RequestException as e:
             logger.error(f"Network error loading JSON: {e}")
-            self.info_label.setText(_("Error loading JSON: {0}").format(e))
         except orjson.JSONDecodeError as e:
             logger.error(f"JSON parsing error: {e}")
-            self.info_label.setText(_("Error parsing JSON: {0}").format(e))
         except Exception as e:
             logger.error(f"Error loading metadata: {e}")
-            self.info_label.setText(_("Error: {0}").format(e))
 
     def process_metadata(self, metadata):
         """Обработка JSON, создание Табов"""
@@ -410,8 +398,10 @@ class ProtonManager(QDialog):
             layout.setSpacing(2)
 
             table = QTableWidget()
+            table.verticalHeader().setVisible(False)
             table.setColumnCount(2)  # Только Checkbox и Имя
             table.setHorizontalHeaderLabels(['', 'Asset Name'])
+            table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
 
             header = table.horizontalHeader()
             header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
@@ -634,7 +624,7 @@ class ProtonManager(QDialog):
     def clear_selection(self):
         """Очищаем (сбрасываем) всё выбранное"""
         if self.is_downloading:
-            QMessageBox.warning(self, _("Extraction in Progress"), _("Cannot clear selection while extraction is in progress."))
+            QMessageBox.warning(self, _("Downloading in Progress"), _("Cannot clear selection while extraction is in progress."))
             return
 
         self.selected_assets.clear()
@@ -655,11 +645,11 @@ class ProtonManager(QDialog):
     def download_selected(self):
         """Extract all selected archives"""
         if not self.selected_assets:
-            QMessageBox.warning(self, _("No Selection"), _("Please select at least one archive to extract."))
+            QMessageBox.warning(self, _("No Selection"), _("Please select at least one archive to download."))
             return
 
         if self.is_downloading:
-            QMessageBox.warning(self, _("Extraction in Progress"), _("Please wait for current extraction to complete."))
+            QMessageBox.warning(self, _("Downloading in Progress"), _("Please wait for current downloading to complete."))
             return
 
         downloads_dir = "proton_downloads"
@@ -679,7 +669,7 @@ class ProtonManager(QDialog):
             self.download_btn.setEnabled(True)
             self.clear_btn.setEnabled(True)
             self.is_downloading = False
-            QMessageBox.information(self, _("Extraction Complete"), _("All selected archives have been extracted!"))
+            QMessageBox.information(self, _("Downloading Complete"), _("All selected archives have been downloaded!"))
             return
 
         asset_data = self.assets_to_download[self.current_download_index]
@@ -695,7 +685,6 @@ class ProtonManager(QDialog):
         download_info = f"{asset_data['source_name'].upper()} - {asset_data['asset_name']}"
         if len(download_info) > 80:
             download_info = download_info[:77] + "..."
-        self.download_info_label.setText(f"Downloading: {download_info}")
         self.download_progress.setValue(0)
         self.download_frame.setVisible(True)
         self.download_btn.setEnabled(False)
