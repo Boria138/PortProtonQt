@@ -18,6 +18,49 @@ from portprotonqt.localization import _
 
 logger = get_logger(__name__)
 
+
+def get_cpu_level():
+    """
+    Determine CPU level based on feature flags
+    Returns:
+        int: CPU level (0-4) based on supported instruction sets
+    """
+    try:
+        with open('/proc/cpuinfo') as f:
+            # Read line by line to find flags without loading entire file
+            for line in f:
+                if line.startswith('flags'):
+                    # Extract the actual flags
+                    flags = set(line.split(':')[1].strip().split())
+                    break
+            else:
+                # If no flags line found
+                logger.warning("Could not find flags in /proc/cpuinfo, defaulting to CPU level 4")
+                return 4
+    except FileNotFoundError:
+        logger.warning("Could not read /proc/cpuinfo, defaulting to CPU level 4")
+        return 4  # Default to highest level if we can't read cpuinfo
+
+    # Check for required flags for each level using a more efficient approach
+    # Pre-define the flag requirements for each level
+    level1_required = {'lm', 'cmov', 'cx8', 'fpu', 'fxsr', 'mmx', 'syscall', 'sse2'}
+    if not level1_required.issubset(flags):
+        return 0
+
+    level2_required = {'cx16', 'lahf_lm', 'popcnt', 'sse4_1', 'sse4_2', 'ssse3'}
+    if not level2_required.issubset(flags):
+        return 1
+
+    level3_required = {'avx', 'avx2', 'bmi1', 'bmi2', 'f16c', 'fma', 'abm', 'movbe', 'xsave'}
+    if not level3_required.issubset(flags):
+        return 2
+
+    level4_required = {'avx512f', 'avx512bw', 'avx512cd', 'avx512dq', 'avx512vl'}
+    if level4_required.issubset(flags):
+        return 4
+
+    return 3
+
 class DownloadThread(QThread):
     progress = Signal(int)
     finished = Signal(str, bool)
@@ -360,6 +403,10 @@ class ProtonManager(QDialog):
         """Обработка JSON, создание Табов"""
         successful_tabs = 0
 
+        # Get CPU level to filter incompatible versions
+        self.cpu_level = get_cpu_level()
+        logger.info(f"Detected CPU level: {self.cpu_level}")
+
         # Собираем табы в словарь для сортировки
         tabs_dict = {}
 
@@ -369,7 +416,9 @@ class ProtonManager(QDialog):
                 logger.debug(f"Skipping tab: {source_key}")
                 continue
 
-            tabs_dict[source_key] = entries
+            # Filter entries based on CPU compatibility
+            filtered_entries = self.filter_entries_by_cpu_level(entries, source_key)
+            tabs_dict[source_key] = filtered_entries
 
         # Proton_LG в самое начало кидаем
         if 'proton_lg' in tabs_dict:
@@ -383,6 +432,42 @@ class ProtonManager(QDialog):
                 successful_tabs += 1
 
         return successful_tabs
+
+    def filter_entries_by_cpu_level(self, entries, source_name):
+        """Filter entries based on CPU compatibility"""
+        if self.cpu_level >= 4:
+            # If CPU supports all features, return all entries
+            return entries
+
+        filtered_entries = []
+
+        for entry in entries:
+            # Get the filename from the entry
+            url = entry.get('url', '')
+            filename = entry.get('name', '')
+
+            if url:
+                parsed_url = urllib.parse.urlparse(url)
+                url_filename = os.path.basename(parsed_url.path)
+                if url_filename:
+                    filename = url_filename
+
+            # Check if the filename contains version indicators that require specific CPU levels
+            should_include = True
+
+            # Check for v2, v3, v4 indicators in the filename
+            if 'v2' in filename and self.cpu_level < 2:
+                should_include = False
+            elif 'v3' in filename and self.cpu_level < 3:
+                should_include = False
+            elif 'v4' in filename and self.cpu_level < 4:
+                should_include = False
+
+            if should_include:
+                filtered_entries.append(entry)
+
+        logger.info(f"Filtered {len(entries)} -> {len(filtered_entries)} entries for {source_name} based on CPU level {self.cpu_level}")
+        return filtered_entries
 
     def create_tab_from_entries(self, source_name, entries):
         """Создаем вкладку с таблицей для источника Proton из записей JSON"""
