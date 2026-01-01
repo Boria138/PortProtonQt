@@ -46,6 +46,7 @@ Requires:       python3-pefile
 Requires:       python3-pillow
 Requires:       python3-beautifulsoup4
 Requires:       python3-rapidfuzz
+Requires:       python3-libarchive-c
 Requires:       perl-Image-ExifTool
 Requires:       xdg-utils
 Requires:       cabextract

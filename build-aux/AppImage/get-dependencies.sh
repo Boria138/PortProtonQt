@@ -25,29 +25,7 @@ fi
 echo "Installing dependencies..."
 echo "---------------------------------------------------------------"
 pacman-key --init
-pacman -Syy --needed --noconfirm archlinux-keyring
-pacman -Syu --needed --noconfirm \
-	cabextract                \
-	curl                      \
-	perl-image-exiftool       \
-	pyside6                   \
-	python-babel              \
-	python-beautifulsoup4     \
-	python-evdev              \
-	python-numpy              \
-	python-orjson             \
-	python-pillow             \
-	python-psutil             \
-	python-pyudev             \
-	python-rapidfuzz          \
-	python-requests           \
-	python-tqdm               \
-	python-websocket-client   \
-	unrar                     \
-	unzip                     \
-	qt6-svg                   \
-	qt6-wayland               \
-	xdg-utils
+pacman -Syy --needed --noconfirm archlinux-keyring qt6-wayland
 
 echo "Installing debloated packages..."
 echo "---------------------------------------------------------------"
