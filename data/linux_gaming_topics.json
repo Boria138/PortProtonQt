@@ -1,5 +1,133 @@
 [
   {
+    "normalized_title": "back to the future the game",
+    "slug": "back-to-the-future-the-game"
+  },
+  {
+    "normalized_title": "resident evil revelations 2",
+    "slug": "resident-evil-revelations-2"
+  },
+  {
+    "normalized_title": "hi fi rush",
+    "slug": "hi-fi-rush"
+  },
+  {
+    "normalized_title": "medal of honor warfighter",
+    "slug": "medal-of-honor-warfighter"
+  },
+  {
+    "normalized_title": "medal of honor",
+    "slug": "medal-of-honor"
+  },
+  {
+    "normalized_title": "will rock",
+    "slug": "will-rock"
+  },
+  {
+    "normalized_title": "beyond good & evil",
+    "slug": "beyond-good-evil"
+  },
+  {
+    "normalized_title": "industry giant 2",
+    "slug": "industry-giant-2"
+  },
+  {
+    "normalized_title": "rise of the tomb raider 20 year celebration",
+    "slug": "rise-of-the-tomb-raider-20-year-celebration"
+  },
+  {
+    "normalized_title": "need for speed underground",
+    "slug": "need-for-speed-underground"
+  },
+  {
+    "normalized_title": "deus ex 2 invisible war",
+    "slug": "deus-ex-2-invisible-war"
+  },
+  {
+    "normalized_title": "lords of the fallen game of the year 2014",
+    "slug": "lords-of-the-fallen-game-of-the-year-edition-2014"
+  },
+  {
+    "normalized_title": "crysis 3",
+    "slug": "crysis-3"
+  },
+  {
+    "normalized_title": "south park the fractured but whole",
+    "slug": "south-park-the-fractured-but-whole"
+  },
+  {
+    "normalized_title": "mount & blade ii bannerlord",
+    "slug": "mount-blade-ii-bannerlord"
+  },
+  {
+    "normalized_title": "need for speed rivals",
+    "slug": "need-for-speed-rivals"
+  },
+  {
+    "normalized_title": "just cause 3",
+    "slug": "just-cause-3"
+  },
+  {
+    "normalized_title": "warhammer 40 000 boltgun",
+    "slug": "warhammer-40-000-boltgun"
+  },
+  {
+    "normalized_title": "metal eden",
+    "slug": "metal-eden"
+  },
+  {
+    "normalized_title": "dead cells",
+    "slug": "dead-cells"
+  },
+  {
+    "normalized_title": "teardown",
+    "slug": "teardown"
+  },
+  {
+    "normalized_title": "hell is us",
+    "slug": "hell-is-us"
+  },
+  {
+    "normalized_title": "alien breed impact",
+    "slug": "alien-breed-impact"
+  },
+  {
+    "normalized_title": "indiana jones and the great circle",
+    "slug": "indiana-jones-and-the-great-circle"
+  },
+  {
+    "normalized_title": "myst",
+    "slug": "myst"
+  },
+  {
+    "normalized_title": "warhammer 40 000 dawn of war",
+    "slug": "warhammer-40-000-dawn-of-war-definitive-edition"
+  },
+  {
+    "normalized_title": "lego star wars iii the clone wars",
+    "slug": "lego-star-wars-iii-the-clone-wars"
+  },
+  {
+    "normalized_title": "battlefield 4",
+    "slug": "battlefield-4"
+  },
+  {
+    "normalized_title": "bulletstorm full clip",
+    "slug": "bulletstorm-full-clip-edition"
+  },
+  {
+    "normalized_title": "call of duty black ops ii",
+    "slug": "call-of-duty-black-ops-ii"
+  },
+  {
+    "normalized_title": "battlefield 3",
+    "slug": "battlefield-3"
+  },
+  {
+    "normalized_title": "call of duty modern warfare 3 (2011)",
+    "slug": "call-of-duty-modern-warfare-3-2011"
+  },
+  {
     "normalized_title": "metal gear solid v the phantom pain",
     "slug": "metal-gear-solid-v-the-phantom-pain"
   },
@@ -262,14 +390,6 @@
   {
     "normalized_title": "far cry 5",
     "slug": "far-cry-5"
-  },
-  {
-    "normalized_title": "metal eden",
-    "slug": "metal-eden"
-  },
-  {
-    "normalized_title": "indiana jones and the great circle",
-    "slug": "indiana-jones-and-the-great-circle"
   },
   {
     "normalized_title": "old world",
@@ -1278,10 +1398,6 @@
   {
     "normalized_title": "mafia",
     "slug": "mafia-definitive-edition"
-  },
-  {
-    "normalized_title": "teardown",
-    "slug": "teardown"
   },
   {
     "normalized_title": "spellforce conquest of eo",

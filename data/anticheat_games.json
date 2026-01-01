@@ -2097,7 +2097,7 @@
   },
   {
     "normalized_name": "breachers",
-    "status": "Running"
+    "status": "Denied"
   },
   {
     "normalized_name": "line of sight",
@@ -2153,7 +2153,7 @@
   },
   {
     "normalized_name": "ghosts of tabor",
-    "status": "Broken"
+    "status": "Denied"
   },
   {
     "normalized_name": "undawn",
@@ -3801,7 +3801,7 @@
   },
   {
     "normalized_name": "phantasy star online 2 new genesis",
-    "status": "Broken"
+    "status": "Running"
   },
   {
     "normalized_name": "fortress forever",
@@ -4425,7 +4425,7 @@
   },
   {
     "normalized_name": "carx street",
-    "status": "Broken"
+    "status": "Running"
   },
   {
     "normalized_name": "warcos 2",
@@ -4505,7 +4505,7 @@
   },
   {
     "normalized_name": "redmatch 2",
-    "status": "Broken"
+    "status": "Running"
   },
   {
     "normalized_name": "blade & soul heroes",
@@ -4541,6 +4541,126 @@
   },
   {
     "normalized_name": "call of duty black ops 7",
+    "status": "Denied"
+  },
+  {
+    "normalized_name": "skate.",
+    "status": "Denied"
+  },
+  {
+    "normalized_name": "wildgate",
+    "status": "Running"
+  },
+  {
+    "normalized_name": "fellowship",
+    "status": "Running"
+  },
+  {
+    "normalized_name": "dragon ball xenoverse",
+    "status": "Running"
+  },
+  {
+    "normalized_name": "king of meat",
+    "status": "Running"
+  },
+  {
+    "normalized_name": "last flag",
+    "status": "Broken"
+  },
+  {
+    "normalized_name": "skidrush",
+    "status": "Broken"
+  },
+  {
+    "normalized_name": "nosgoth",
+    "status": "Running"
+  },
+  {
+    "normalized_name": "counter strike online 2",
+    "status": "Broken"
+  },
+  {
+    "normalized_name": "game of thrones kingsroad",
+    "status": "Running"
+  },
+  {
+    "normalized_name": "vindictus defying fate",
+    "status": "Broken"
+  },
+  {
+    "normalized_name": "gears of war reloaded",
+    "status": "Running"
+  },
+  {
+    "normalized_name": "swords & soldiers",
+    "status": "Running"
+  },
+  {
+    "normalized_name": "super people (2025)",
+    "status": "Broken"
+  },
+  {
+    "normalized_name": "afk journey",
+    "status": "Running"
+  },
+  {
+    "normalized_name": "the midnight walkers",
+    "status": "Broken"
+  },
+  {
+    "normalized_name": "異世界∞異世界 ～次はどの作品を、集めよう～",
+    "status": "Broken"
+  },
+  {
+    "normalized_name": "chrono odyssey",
+    "status": "Running"
+  },
+  {
+    "normalized_name": "madoka magica magia exedra",
+    "status": "Broken"
+  },
+  {
+    "normalized_name": "pubg black budget",
+    "status": "Broken"
+  },
+  {
+    "normalized_name": "sniper elite resistance",
+    "status": "Running"
+  },
+  {
+    "normalized_name": "gigantic",
+    "status": "Broken"
+  },
+  {
+    "normalized_name": "team fortress 2 classified",
+    "status": "Running"
+  },
+  {
+    "normalized_name": "panzer arena coop",
+    "status": "Broken"
+  },
+  {
+    "normalized_name": "girls' frontline",
+    "status": "Running"
+  },
+  {
+    "normalized_name": "battlefield redsec",
+    "status": "Denied"
+  },
+  {
+    "normalized_name": "evolve stage 2",
+    "status": "Running"
+  },
+  {
+    "normalized_name": "aura kingdom impact",
+    "status": "Running"
+  },
+  {
+    "normalized_name": "risk your life",
+    "status": "Broken"
+  },
+  {
+    "normalized_name": "forefront",
     "status": "Denied"
   }
 ]
