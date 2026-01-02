@@ -180,127 +180,64 @@ class ExtractionThread(QThread):
 
             os.makedirs(self.extract_dir, exist_ok=True)
 
-            # ---------- First pass: total size ----------
-            total_size = 0
-            # Emit initial progress to show we're starting
-            self.progress.emit(0)
-            self.speed.emit(0.0)
-            self.eta.emit(0)
+            archive_size = os.path.getsize(self.archive_path)
+            if archive_size <= 0:
+                archive_size = 1
 
-            # Calculate total size with progress updates
-            size_calc_start_time = time.monotonic()
-            last_update_time = size_calc_start_time
-
-            with libarchive.file_reader(self.archive_path) as archive:
-                entry_count = 0
-                for entry in archive:
-                    if self._should_stop():
-                        return
-                    if entry.isfile:
-                        total_size += entry.size or 0
-                    entry_count += 1
-
-                    # Update progress based on elapsed time to show activity
-                    current_time = time.monotonic()
-                    if current_time - last_update_time >= 0.2:  # Update every 0.2 seconds
-                        # Show minimal progress to indicate activity during size calculation
-                        self.progress.emit(0)
-                        self.speed.emit(0.0)
-                        self.eta.emit(0)
-                        last_update_time = current_time
-
-            extracted_size = 0
             start_time = time.monotonic()
             last_emit_time = start_time
             last_progress = -1
+            last_bytes_read = 0
 
-            # Collect hard links to process after all files are extracted
-            hard_links_to_create = []
+            # ---------- PASS 1: extraction (официальный API) ----------
+            original_dir = os.getcwd()
+            old_umask = os.umask(0)
+            os.chdir(self.extract_dir)
 
-            # First pass: extract all regular files and directories, collect hard links
+            try:
+                libarchive.extract_file(self.archive_path)
+            finally:
+                os.chdir(original_dir)
+                os.umask(old_umask)
+
+            # ---------- PASS 2: progress simulation (documented way) ----------
             with libarchive.file_reader(self.archive_path) as archive:
                 for entry in archive:
                     if self._should_stop():
                         return
 
-                    pathname = entry.pathname
-                    if not pathname:
-                        continue
+                    # просто потребляем данные
+                    for _ in entry.get_blocks():
+                        pass
 
-                    target_path = os.path.join(self.extract_dir, pathname)
+                    bytes_read = archive.bytes_read
+                    now = time.monotonic()
+                    elapsed = now - start_time
 
-                    if entry.isdir:
-                        os.makedirs(target_path, exist_ok=True)
-                        continue
+                    if bytes_read != last_bytes_read:
+                        last_bytes_read = bytes_read
 
-                    # Handle symbolic links
-                    if entry.issym:
-                        os.makedirs(os.path.dirname(target_path), exist_ok=True)
-                        # Create the symbolic link
-                        # Remove the target path if it already exists (to handle overwrites)
-                        if os.path.exists(target_path) or os.path.islink(target_path):
-                            os.unlink(target_path)
-                        os.symlink(entry.linkname, target_path)
-                        continue
+                        if now - last_emit_time >= 0.1 or elapsed < 0.1:
+                            progress = int((bytes_read / archive_size) * 100)
+                            if progress != last_progress:
+                                self.progress.emit(min(progress, 99))
+                                last_progress = progress
 
-                    # Collect hard links to create later
-                    if entry.islnk:
-                        hard_links_to_create.append((entry.linkname, target_path))
-                        continue
-
-                    os.makedirs(os.path.dirname(target_path), exist_ok=True)
-
-                    with open(target_path, "wb", buffering=1024 * 1024) as f:
-                        for block in entry.get_blocks():
-                            f.write(block)
-                            extracted_size += len(block)
-
-                            now = time.monotonic()
-                            elapsed = now - start_time
-
-                            if elapsed <= 0:
-                                continue
-
-                            # -------- UI update ~10 раз/сек --------
-                            if now - last_emit_time >= 0.1:
-                                # Progress (0–100%)
-                                progress = int((extracted_size / total_size) * 100)
-                                if progress != last_progress:
-                                    self.progress.emit(progress)
-                                    last_progress = progress
-
-                                # Speed MB/s
-                                speed = (extracted_size / (1024 * 1024)) / elapsed
+                            if elapsed > 0:
+                                speed = (bytes_read / (1024 * 1024)) / elapsed
                                 self.speed.emit(round(speed, 2))
 
-                                # ETA
                                 if speed > 0:
-                                    remaining_mb = (total_size - extracted_size) / (1024 * 1024)
-                                    eta_sec = int(remaining_mb / speed)
-                                    self.eta.emit(max(0, eta_sec))
+                                    remaining_mb = (archive_size - bytes_read) / (1024 * 1024)
+                                    self.eta.emit(max(0, int(remaining_mb / speed)))
                                 else:
                                     self.eta.emit(0)
+                            else:
+                                self.speed.emit(0.0)
+                                self.eta.emit(0)
 
-                                last_emit_time = now
+                            last_emit_time = now
 
-            # Second pass: create all hard links now that all target files exist
-            for link_source, link_target in hard_links_to_create:
-                if self._should_stop():
-                    return
-                # The link source should be the full path to the target file in the extraction directory
-                full_link_source = os.path.join(self.extract_dir, link_source)
-
-                # Ensure the directory for the hard link exists
-                os.makedirs(os.path.dirname(link_target), exist_ok=True)
-
-                # Remove the target path if it already exists (to handle overwrites)
-                if os.path.exists(link_target) or os.path.islink(link_target):
-                    os.unlink(link_target)
-
-                # Create the hard link
-                os.link(full_link_source, link_target)
-
-            # Final progress update
             self.progress.emit(100)
             self.speed.emit(0.0)
             self.eta.emit(0)
@@ -315,7 +252,6 @@ class ExtractionThread(QThread):
     # ========================
 
     def stop(self):
-        """Безопасная остановка потока"""
         self._mutex.lock()
         self._is_running = False
         self._mutex.unlock()
@@ -323,6 +259,8 @@ class ExtractionThread(QThread):
         if self.isRunning():
             self.quit()
             self.wait(1000)
+
+
 
 class ProtonManager(QDialog):
     def __init__(self, parent=None, portproton_location=None):
