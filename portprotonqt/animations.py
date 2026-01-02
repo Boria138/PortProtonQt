@@ -33,6 +33,47 @@ class GameCardAnimations:
         self.pulse_anim: QPropertyAnimation | None = None
         self._isPulseAnimationConnected = False
 
+    def cleanup(self):
+        """Clean up all animation objects to prevent memory leaks."""
+        if self.thickness_anim:
+            try:
+                self.thickness_anim.stop()
+                if self._isPulseAnimationConnected:
+                    try:
+                        self.thickness_anim.finished.disconnect(self.start_pulse_animation)
+                    except RuntimeError:
+                        pass  # Signal was already disconnected
+                self.thickness_anim.deleteLater()
+            except RuntimeError:
+                pass  # Object already deleted
+            self.thickness_anim = None
+
+        if self.gradient_anim:
+            try:
+                self.gradient_anim.stop()
+                self.gradient_anim.deleteLater()
+            except RuntimeError:
+                pass  # Object already deleted
+            self.gradient_anim = None
+
+        if self.scale_anim:
+            try:
+                self.scale_anim.stop()
+                self.scale_anim.deleteLater()
+            except RuntimeError:
+                pass  # Object already deleted
+            self.scale_anim = None
+
+        if self.pulse_anim:
+            try:
+                self.pulse_anim.stop()
+                self.pulse_anim.deleteLater()
+            except RuntimeError:
+                pass  # Object already deleted
+            self.pulse_anim = None
+
+        self._isPulseAnimationConnected = False
+
     def setup_animations(self):
         """Initialize animation properties based on theme."""
         self.thickness_anim = QPropertyAnimation(self.game_card, QByteArray(b"borderWidth"))
@@ -50,8 +91,16 @@ class GameCardAnimations:
         """Start pulse animation for border width when hovered or focused."""
         if not (self.game_card._hovered or self.game_card._focused):
             return
+
+        # Clean up existing pulse animation to prevent memory leaks
         if self.pulse_anim:
-            self.pulse_anim.stop()
+            try:
+                self.pulse_anim.stop()
+                self.pulse_anim.deleteLater()
+            except RuntimeError:
+                pass  # Object already deleted
+            self.pulse_anim = None
+
         self.pulse_anim = QPropertyAnimation(self.game_card, QByteArray(b"borderWidth"))
         self.pulse_anim.setDuration(self.theme.GAME_CARD_ANIMATION["pulse_anim_duration"])
         self.pulse_anim.setLoopCount(0)
@@ -74,7 +123,10 @@ class GameCardAnimations:
         if self.thickness_anim:
             self.thickness_anim.stop()
             if self._isPulseAnimationConnected:
-                self.thickness_anim.finished.disconnect(self.start_pulse_animation)
+                try:
+                    self.thickness_anim.finished.disconnect(self.start_pulse_animation)
+                except RuntimeError:
+                    pass  # Signal was already disconnected
                 self._isPulseAnimationConnected = False
             self.thickness_anim.setEasingCurve(QEasingCurve(QEasingCurve.Type[self.theme.GAME_CARD_ANIMATION["thickness_easing_curve"]]))
             self.thickness_anim.setStartValue(self.game_card._borderWidth)
@@ -84,8 +136,15 @@ class GameCardAnimations:
             self.thickness_anim.start()
 
         if animation_type == "gradient":
+            # Clean up existing gradient animation to prevent memory leaks
             if self.gradient_anim:
-                self.gradient_anim.stop()
+                try:
+                    self.gradient_anim.stop()
+                    self.gradient_anim.deleteLater()
+                except RuntimeError:
+                    pass  # Object already deleted
+                self.gradient_anim = None
+
             self.gradient_anim = QPropertyAnimation(self.game_card, QByteArray(b"gradientAngle"))
             self.gradient_anim.setDuration(self.theme.GAME_CARD_ANIMATION["gradient_anim_duration"])
             self.gradient_anim.setStartValue(self.theme.GAME_CARD_ANIMATION["gradient_start_angle"])
@@ -93,8 +152,15 @@ class GameCardAnimations:
             self.gradient_anim.setLoopCount(-1)
             self.gradient_anim.start()
         elif animation_type == "scale":
+            # Clean up existing scale animation to prevent memory leaks
             if self.scale_anim:
-                self.scale_anim.stop()
+                try:
+                    self.scale_anim.stop()
+                    self.scale_anim.deleteLater()
+                except RuntimeError:
+                    pass  # Object already deleted
+                self.scale_anim = None
+
             self.scale_anim = QPropertyAnimation(self.game_card, QByteArray(b"scale"))
             self.scale_anim.setDuration(self.theme.GAME_CARD_ANIMATION["scale_anim_duration"])
             self.scale_anim.setEasingCurve(QEasingCurve(QEasingCurve.Type[self.theme.GAME_CARD_ANIMATION["scale_easing_curve"]]))
@@ -110,11 +176,21 @@ class GameCardAnimations:
             animation_type = self.theme.GAME_CARD_ANIMATION.get("card_animation_type", "gradient")
             if animation_type == "gradient":
                 if self.gradient_anim:
-                    self.gradient_anim.stop()
+                    try:
+                        self.gradient_anim.stop()
+                        self.gradient_anim.deleteLater()
+                    except RuntimeError:
+                        pass  # Object already deleted
                     self.gradient_anim = None
             elif animation_type == "scale":
                 if self.scale_anim:
-                    self.scale_anim.stop()
+                    try:
+                        self.scale_anim.stop()
+                        self.scale_anim.deleteLater()
+                    except RuntimeError:
+                        pass  # Object already deleted
+                    self.scale_anim = None
+
                 self.scale_anim = QPropertyAnimation(self.game_card, QByteArray(b"scale"))
                 self.scale_anim.setDuration(self.theme.GAME_CARD_ANIMATION["scale_anim_duration"])
                 self.scale_anim.setEasingCurve(QEasingCurve(QEasingCurve.Type[self.theme.GAME_CARD_ANIMATION["scale_easing_curve_out"]]))
@@ -122,12 +198,19 @@ class GameCardAnimations:
                 self.scale_anim.setEndValue(self.theme.GAME_CARD_ANIMATION["default_scale"])
                 self.scale_anim.start()
             if self.pulse_anim:
-                self.pulse_anim.stop()
+                try:
+                    self.pulse_anim.stop()
+                    self.pulse_anim.deleteLater()
+                except RuntimeError:
+                    pass  # Object already deleted
                 self.pulse_anim = None
             if self.thickness_anim:
                 self.thickness_anim.stop()
                 if self._isPulseAnimationConnected:
-                    self.thickness_anim.finished.disconnect(self.start_pulse_animation)
+                    try:
+                        self.thickness_anim.finished.disconnect(self.start_pulse_animation)
+                    except RuntimeError:
+                        pass  # Signal was already disconnected
                     self._isPulseAnimationConnected = False
                 self.thickness_anim.setEasingCurve(QEasingCurve(QEasingCurve.Type[self.theme.GAME_CARD_ANIMATION["thickness_easing_curve_out"]]))
                 self.thickness_anim.setStartValue(self.game_card._borderWidth)
@@ -148,7 +231,10 @@ class GameCardAnimations:
             if self.thickness_anim:
                 self.thickness_anim.stop()
                 if self._isPulseAnimationConnected:
-                    self.thickness_anim.finished.disconnect(self.start_pulse_animation)
+                    try:
+                        self.thickness_anim.finished.disconnect(self.start_pulse_animation)
+                    except RuntimeError:
+                        pass  # Signal was already disconnected
                     self._isPulseAnimationConnected = False
                 self.thickness_anim.setEasingCurve(QEasingCurve(QEasingCurve.Type[self.theme.GAME_CARD_ANIMATION["thickness_easing_curve"]]))
                 self.thickness_anim.setStartValue(self.game_card._borderWidth)
@@ -158,8 +244,15 @@ class GameCardAnimations:
                 self.thickness_anim.start()
 
             if animation_type == "gradient":
+                # Clean up existing gradient animation to prevent memory leaks
                 if self.gradient_anim:
-                    self.gradient_anim.stop()
+                    try:
+                        self.gradient_anim.stop()
+                        self.gradient_anim.deleteLater()
+                    except RuntimeError:
+                        pass  # Object already deleted
+                    self.gradient_anim = None
+
                 self.gradient_anim = QPropertyAnimation(self.game_card, QByteArray(b"gradientAngle"))
                 self.gradient_anim.setDuration(self.theme.GAME_CARD_ANIMATION["gradient_anim_duration"])
                 self.gradient_anim.setStartValue(self.theme.GAME_CARD_ANIMATION["gradient_start_angle"])
@@ -167,8 +260,15 @@ class GameCardAnimations:
                 self.gradient_anim.setLoopCount(-1)
                 self.gradient_anim.start()
             elif animation_type == "scale":
+                # Clean up existing scale animation to prevent memory leaks
                 if self.scale_anim:
-                    self.scale_anim.stop()
+                    try:
+                        self.scale_anim.stop()
+                        self.scale_anim.deleteLater()
+                    except RuntimeError:
+                        pass  # Object already deleted
+                    self.scale_anim = None
+
                 self.scale_anim = QPropertyAnimation(self.game_card, QByteArray(b"scale"))
                 self.scale_anim.setDuration(self.theme.GAME_CARD_ANIMATION["scale_anim_duration"])
                 self.scale_anim.setEasingCurve(QEasingCurve(QEasingCurve.Type[self.theme.GAME_CARD_ANIMATION["scale_easing_curve"]]))
@@ -184,11 +284,21 @@ class GameCardAnimations:
             animation_type = self.theme.GAME_CARD_ANIMATION.get("card_animation_type", "gradient")
             if animation_type == "gradient":
                 if self.gradient_anim:
-                    self.gradient_anim.stop()
+                    try:
+                        self.gradient_anim.stop()
+                        self.gradient_anim.deleteLater()
+                    except RuntimeError:
+                        pass  # Object already deleted
                     self.gradient_anim = None
             elif animation_type == "scale":
                 if self.scale_anim:
-                    self.scale_anim.stop()
+                    try:
+                        self.scale_anim.stop()
+                        self.scale_anim.deleteLater()
+                    except RuntimeError:
+                        pass  # Object already deleted
+                    self.scale_anim = None
+
                 self.scale_anim = QPropertyAnimation(self.game_card, QByteArray(b"scale"))
                 self.scale_anim.setDuration(self.theme.GAME_CARD_ANIMATION["scale_anim_duration"])
                 self.scale_anim.setEasingCurve(QEasingCurve(QEasingCurve.Type[self.theme.GAME_CARD_ANIMATION["scale_easing_curve_out"]]))
@@ -196,12 +306,19 @@ class GameCardAnimations:
                 self.scale_anim.setEndValue(self.theme.GAME_CARD_ANIMATION["default_scale"])
                 self.scale_anim.start()
             if self.pulse_anim:
-                self.pulse_anim.stop()
+                try:
+                    self.pulse_anim.stop()
+                    self.pulse_anim.deleteLater()
+                except RuntimeError:
+                    pass  # Object already deleted
                 self.pulse_anim = None
             if self.thickness_anim:
                 self.thickness_anim.stop()
                 if self._isPulseAnimationConnected:
-                    self.thickness_anim.finished.disconnect(self.start_pulse_animation)
+                    try:
+                        self.thickness_anim.finished.disconnect(self.start_pulse_animation)
+                    except RuntimeError:
+                        pass  # Signal was already disconnected
                     self._isPulseAnimationConnected = False
                 self.thickness_anim.setEasingCurve(QEasingCurve(QEasingCurve.Type[self.theme.GAME_CARD_ANIMATION["thickness_easing_curve_out"]]))
                 self.thickness_anim.setStartValue(self.game_card._borderWidth)
@@ -242,6 +359,18 @@ class DetailPageAnimations:
             main_window._animations = {}
         self.animations = main_window._animations
 
+    def cleanup(self):
+        """Clean up all animations to prevent memory leaks."""
+        # Stop and clean up all animations in the dict
+        for _detail_page, animation in list(self.animations.items()):
+            try:
+                if isinstance(animation, QAbstractAnimation):
+                    animation.stop()
+                    animation.deleteLater()
+            except RuntimeError:
+                pass  # Object already deleted
+        self.animations.clear()
+
     def animate_detail_page(self, detail_page: QWidget, load_image_and_restore_effect: Callable, cleanup_animation: Callable):
         """Animate the detail page based on theme settings."""
         # Check if the detail page is still valid before proceeding
@@ -253,6 +382,20 @@ class DetailPageAnimations:
 
         animation_type = self.theme.GAME_CARD_ANIMATION.get("detail_page_animation_type", "fade")
         duration = self.theme.GAME_CARD_ANIMATION.get("detail_page_fade_duration", 350)
+
+        # Safely stop and remove any existing animation for this detail page
+        if detail_page in self.animations:
+            try:
+                existing_animation = self.animations[detail_page]
+                if isinstance(existing_animation, QAbstractAnimation) and existing_animation.state() == QAbstractAnimation.State.Running:
+                    existing_animation.stop()
+                    existing_animation.deleteLater()
+            except RuntimeError:
+                logger.debug("Existing animation already deleted")
+            except Exception as e:
+                logger.error(f"Error stopping existing animation: {e}", exc_info=True)
+            finally:
+                self.animations.pop(detail_page, None)
 
         if animation_type == "fade":
             # Check again if page is still valid before starting animation
@@ -380,6 +523,7 @@ class DetailPageAnimations:
                     animation = self.animations[detail_page]
                     if isinstance(animation, QAbstractAnimation) and animation.state() == QAbstractAnimation.State.Running:
                         animation.stop()
+                        animation.deleteLater()
                 except RuntimeError:
                     logger.warning("Animation already deleted for page")
                 except Exception as e:

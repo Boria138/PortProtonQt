@@ -2984,6 +2984,14 @@ class MainWindow(QMainWindow):
                 timer.deleteLater()
                 setattr(self, tname, None)
 
+        # Clean up animations to prevent memory leaks
+        if hasattr(self, 'detail_animations'):
+            try:
+                self.detail_animations.cleanup()
+            except RuntimeError:
+                # Object already deleted
+                pass
+
     def _update_card_name_from_metadata(self, exe_name: str, metadata_path: str):
         """Update card name from metadata file."""
         # Read the translated metadata using the existing function

@@ -560,6 +560,23 @@ class GameCard(QFrame):
             )
         super().mousePressEvent(event)
 
+    def cleanup(self):
+        """Clean up animations to prevent memory leaks when the card is destroyed."""
+        if hasattr(self, 'animations') and self.animations:
+            try:
+                self.animations.cleanup()
+            except RuntimeError:
+                # Object already deleted
+                pass
+
+    def __del__(self):
+        """Destructor to ensure cleanup happens."""
+        try:
+            self.cleanup()
+        except RuntimeError:
+            # Object already deleted
+            pass
+
 
     def keyPressEvent(self, event):
         if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):

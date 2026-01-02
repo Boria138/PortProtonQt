@@ -1,6 +1,6 @@
 import os
 import shlex
-from PySide6.QtWidgets import (QFrame, QGraphicsDropShadowEffect, QVBoxLayout, QLabel, QHBoxLayout, QWidget)
+from PySide6.QtWidgets import (QFrame, QGraphicsDropShadowEffect, QVBoxLayout, QLabel, QHBoxLayout, QWidget, QApplication)
 from PySide6.QtCore import Qt, QUrl, QTimer, QAbstractAnimation
 from PySide6.QtGui import QColor, QDesktopServices
 from portprotonqt.image_utils import load_pixmap_async, round_corners
@@ -500,7 +500,7 @@ class DetailPageManager:
                 return
 
             # Process events to ensure UI state is updated
-            self.main_window.processEvents()
+            QApplication.processEvents()
             self.main_window.activateWindow()
             self.main_window.stackedWidget.setCurrentWidget(detailPage)
             detailPage.raise_()
@@ -511,7 +511,7 @@ class DetailPageManager:
                 logger.debug("Final retry...")
                 playButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
                 playButton.setFocus(Qt.FocusReason.OtherFocusReason)
-                self.main_window.processEvents()
+                QApplication.processEvents()
 
                 if playButton.hasFocus():
                     logger.debug("Play button received focus after final retry")
@@ -728,7 +728,7 @@ class DetailPageManager:
                 return
 
             # Process events to ensure UI state is updated
-            self.main_window.processEvents()
+            QApplication.processEvents()
             self.main_window.activateWindow()
             self.main_window.stackedWidget.setCurrentWidget(detailPage)
             detailPage.raise_()
@@ -739,7 +739,7 @@ class DetailPageManager:
                 logger.debug("Final retry...")
                 installButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
                 installButton.setFocus(Qt.FocusReason.OtherFocusReason)
-                self.main_window.processEvents()
+                QApplication.processEvents()
 
                 if installButton.hasFocus():
                     logger.debug("Install button received focus after final retry")
