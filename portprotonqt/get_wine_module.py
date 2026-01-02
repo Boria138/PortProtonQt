@@ -214,7 +214,10 @@ class ExtractionThread(QThread):
             last_emit_time = start_time
             last_progress = -1
 
-            # Direct extraction to destination without flattening
+            # Collect hard links to process after all files are extracted
+            hard_links_to_create = []
+
+            # First pass: extract all regular files and directories, collect hard links
             with libarchive.file_reader(self.archive_path) as archive:
                 for entry in archive:
                     if self._should_stop():
@@ -228,6 +231,21 @@ class ExtractionThread(QThread):
 
                     if entry.isdir:
                         os.makedirs(target_path, exist_ok=True)
+                        continue
+
+                    # Handle symbolic links
+                    if entry.issym:
+                        os.makedirs(os.path.dirname(target_path), exist_ok=True)
+                        # Create the symbolic link
+                        # Remove the target path if it already exists (to handle overwrites)
+                        if os.path.exists(target_path) or os.path.islink(target_path):
+                            os.unlink(target_path)
+                        os.symlink(entry.linkname, target_path)
+                        continue
+
+                    # Collect hard links to create later
+                    if entry.islnk:
+                        hard_links_to_create.append((entry.linkname, target_path))
                         continue
 
                     os.makedirs(os.path.dirname(target_path), exist_ok=True)
@@ -264,6 +282,23 @@ class ExtractionThread(QThread):
                                     self.eta.emit(0)
 
                                 last_emit_time = now
+
+            # Second pass: create all hard links now that all target files exist
+            for link_source, link_target in hard_links_to_create:
+                if self._should_stop():
+                    return
+                # The link source should be the full path to the target file in the extraction directory
+                full_link_source = os.path.join(self.extract_dir, link_source)
+
+                # Ensure the directory for the hard link exists
+                os.makedirs(os.path.dirname(link_target), exist_ok=True)
+
+                # Remove the target path if it already exists (to handle overwrites)
+                if os.path.exists(link_target) or os.path.islink(link_target):
+                    os.unlink(link_target)
+
+                # Create the hard link
+                os.link(full_link_source, link_target)
 
             # Final progress update
             self.progress.emit(100)
@@ -762,35 +797,78 @@ class ProtonManager(QDialog):
 
     def download_asset(self, asset_data):
         """Download and then extract the archive"""
-        # Create a temporary file path for download
-        temp_dir = tempfile.mkdtemp(prefix="portproton_wine_")
-        filename = os.path.join(temp_dir, asset_data['asset_name'])
-        download_url = asset_data['download_url']
 
-        download_info = f"{asset_data['source_name'].upper()} - {asset_data['asset_name']}"
-        if len(download_info) > 80:
-            download_info = download_info[:77] + "..."
-        self.download_progress.setValue(0)
-        self.download_frame.setVisible(True)
-        self.download_btn.setEnabled(False)
-        self.clear_btn.setEnabled(False)
+        # DEBUG FEATURE: Check if proton_downloads folder exists in repo root and contains the file
+        # This is a debug feature to use local files instead of downloading - remember to remove for production
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # Go up from portprotonqt/
+        proton_downloads_path = os.path.join(repo_root, "proton_downloads")
 
-        # Create and start download thread
-        self.current_download_thread = DownloadThread(download_url, filename)
+        local_file_path = None
+        if os.path.exists(proton_downloads_path) and os.path.isdir(proton_downloads_path):
+            # Look for the asset file in proton_downloads
+            for filename in os.listdir(proton_downloads_path):
+                if filename == asset_data['asset_name']:
+                    local_file_path = os.path.join(proton_downloads_path, filename)
+                    logger.info(f"DEBUG: Using local file instead of downloading: {local_file_path}")
+                    break
 
-        def update_download_progress(progress):
-            self.download_progress.setValue(progress)
-            self.download_info_label.setText(_("Downloading: {0} ({1}%)").format(asset_data['asset_name'], progress))
+        if local_file_path and os.path.exists(local_file_path):
+            # Use local file, skip download
+            logger.info(f"DEBUG: Skipping download, using local file: {local_file_path}")
+            download_info = f"{asset_data['source_name'].upper()} - {asset_data['asset_name']} (DEBUG: local)"
+            if len(download_info) > 80:
+                download_info = download_info[:77] + "..."
+            self.download_progress.setValue(0)
+            self.download_frame.setVisible(True)
+            self.download_btn.setEnabled(False)
+            self.clear_btn.setEnabled(False)
+            self.download_info_label.setText(_("Using local file: {0}").format(asset_data['asset_name']))
 
-        def download_finished(filepath, success):
-            if success:
-                logger.info(f"Successfully downloaded: {filepath}")
-                # Now start extraction
-                self.start_extraction_for_asset(asset_data, filepath)
-            else:
-                logger.error(f"Failed to download: {filepath}")
+            # Simulate download completion and start extraction immediately
+            QTimer.singleShot(100, lambda: self.start_extraction_for_asset(asset_data, local_file_path))
+        else:
+            # Normal download process
+            # Create a temporary file path for download
+            temp_dir = tempfile.mkdtemp(prefix="portproton_wine_")
+            filename = os.path.join(temp_dir, asset_data['asset_name'])
+            download_url = asset_data['download_url']
+
+            download_info = f"{asset_data['source_name'].upper()} - {asset_data['asset_name']}"
+            if len(download_info) > 80:
+                download_info = download_info[:77] + "..."
+            self.download_progress.setValue(0)
+            self.download_frame.setVisible(True)
+            self.download_btn.setEnabled(False)
+            self.clear_btn.setEnabled(False)
+
+            # Create and start download thread
+            self.current_download_thread = DownloadThread(download_url, filename)
+
+            def update_download_progress(progress):
+                self.download_progress.setValue(progress)
+                self.download_info_label.setText(_("Downloading: {0} ({1}%)").format(asset_data['asset_name'], progress))
+
+            def download_finished(filepath, success):
+                if success:
+                    logger.info(f"Successfully downloaded: {filepath}")
+                    # Now start extraction
+                    self.start_extraction_for_asset(asset_data, filepath)
+                else:
+                    logger.error(f"Failed to download: {filepath}")
+                    # Clean up temp directory
+                    temp_dir = os.path.dirname(filepath)
+                    try:
+                        shutil.rmtree(temp_dir)
+                    except (OSError, FileNotFoundError):
+                        pass
+                    self.current_download_index += 1
+                    QTimer.singleShot(100, self.start_next_download)
+
+            def download_error(error_msg):
+                logger.error(f"Download error: {error_msg}")
+                QMessageBox.critical(self, "Download Error", f"Failed to download archive: {error_msg}")
                 # Clean up temp directory
-                temp_dir = os.path.dirname(filepath)
+                temp_dir = os.path.dirname(filename)
                 try:
                     shutil.rmtree(temp_dir)
                 except (OSError, FileNotFoundError):
@@ -798,22 +876,10 @@ class ProtonManager(QDialog):
                 self.current_download_index += 1
                 QTimer.singleShot(100, self.start_next_download)
 
-        def download_error(error_msg):
-            logger.error(f"Download error: {error_msg}")
-            QMessageBox.critical(self, "Download Error", f"Failed to download archive: {error_msg}")
-            # Clean up temp directory
-            temp_dir = os.path.dirname(filename)
-            try:
-                shutil.rmtree(temp_dir)
-            except (OSError, FileNotFoundError):
-                pass
-            self.current_download_index += 1
-            QTimer.singleShot(100, self.start_next_download)
-
-        self.current_download_thread.progress.connect(update_download_progress)
-        self.current_download_thread.finished.connect(download_finished)
-        self.current_download_thread.error.connect(download_error)
-        self.current_download_thread.start()
+            self.current_download_thread.progress.connect(update_download_progress)
+            self.current_download_thread.finished.connect(download_finished)
+            self.current_download_thread.error.connect(download_error)
+            self.current_download_thread.start()
 
     def start_extraction_for_asset(self, asset_data, filepath):
         """Start extraction for a downloaded asset"""
