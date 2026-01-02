@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-01-01 23:29+0500\n"
+"POT-Creation-Date: 2026-01-03 01:29+0500\n"
 "PO-Revision-Date: 2025-11-30 13:18+0500\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
@@ -117,15 +117,15 @@ msgstr "Импортируется '{game_name}' в Legendary..."
 
 #, python-brace-format
 msgid "Added '{game_name}' to favorites"
-msgstr "'{game_name}' был(а) добавлен(а) в избранное"
+msgstr "'{game_name}' добавлен(а) в избранное"
 
 #, python-brace-format
 msgid "Removed '{game_name}' from favorites"
-msgstr "'{game_name}' был(а) удалён(а) из избранного"
+msgstr "'{game_name}' удалён(а) из избранного"
 
 #, python-brace-format
 msgid "start.sh not found at {path}"
-msgstr "start.sh не найден по адресу {path}"
+msgstr "start.sh не найден в {path}"
 
 #, python-brace-format
 msgid "Launch game \"{name}\" with PortProton"
@@ -137,7 +137,7 @@ msgstr "Не удалось создать файл .desktop: {error}"
 
 #, python-brace-format
 msgid "Added '{game_name}' to {location}"
-msgstr "`'{game_name}' был(а) добавлен(а) в {location}`"
+msgstr "`'{game_name}' добавлен(а) в {location}`"
 
 msgid "Desktop"
 msgstr "Рабочий стол"
@@ -152,7 +152,7 @@ msgstr "Не удалось удалить '{game_name}' из {location}: {error
 
 #, python-brace-format
 msgid "Removed '{game_name}' from {location}"
-msgstr "'{game_name}' был(а) удалён(а) из {location}"
+msgstr "'{game_name}' удалён(а) из {location}"
 
 msgid "Menu"
 msgstr "Меню"
@@ -171,7 +171,7 @@ msgstr "Ошибка при чтении файла .desktop: {error}"
 
 #, python-brace-format
 msgid "No .desktop file found for '{game_name}'"
-msgstr "Файл .desktop для '{game_name}' не найден"
+msgstr "Не найден файл .desktop для '{game_name}'"
 
 msgid "Confirm Deletion"
 msgstr "Подтвердите удаление"
@@ -190,7 +190,7 @@ msgstr "Не удалось удалить файл .desktop: {error}"
 
 #, python-brace-format
 msgid "Deleted '{game_name}' successfully"
-msgstr "'{game_name}' был(а) успешно удалён(а)"
+msgstr "'{game_name}' успешно удалён(а)"
 
 #, python-brace-format
 msgid "Failed to delete custom data: {error}"
@@ -212,7 +212,7 @@ msgstr "Не удалось удалить старый файл .desktop: {erro
 
 #, python-brace-format
 msgid "Removed old .desktop file for '{game_name}'"
-msgstr "Старый файл .desktop для '{game_name}' был(а) удалён(а)"
+msgstr "Удален старый файл .desktop для '{game_name}'"
 
 #, python-brace-format
 msgid "Failed to save .desktop file: {error}"
@@ -305,7 +305,7 @@ msgstr "Настройки"
 
 #, fuzzy
 msgid "Reinstall"
-msgstr "Установить"
+msgstr "Переустановить"
 
 msgid "Install"
 msgstr "Установить"
@@ -314,7 +314,7 @@ msgid "Open"
 msgstr "Открыть"
 
 msgid "Select Dir"
-msgstr "Выбрать папку"
+msgstr "Выбрать каталог"
 
 msgid "Prev Dir"
 msgstr "Предыдущий каталог"
@@ -342,7 +342,7 @@ msgstr "Поиск"
 
 #, python-brace-format
 msgid "Launching {0}"
-msgstr "Идёт запуск {0}"
+msgstr "Запуск {0}"
 
 msgid "File Explorer"
 msgstr "Проводник"
@@ -373,7 +373,7 @@ msgid "Browse..."
 msgstr "Обзор..."
 
 msgid "Custom Cover:"
-msgstr "Обложка:"
+msgstr "Пользовательская обложка:"
 
 msgid "Enter local path or URL for cover image"
 msgstr "Введите локальный путь или URL обложки"
@@ -505,7 +505,7 @@ msgid "Pending"
 msgstr "В ожидании"
 
 msgid "Get other Wine"
-msgstr "Загрузка другого WINE"
+msgstr "Загрузка WINE"
 
 #, fuzzy
 msgid "Selected assets:"
@@ -551,7 +551,7 @@ msgid "No Selection"
 msgstr "Не выбрано"
 
 msgid "Please select at least one archive to download."
-msgstr "Пожалуйста выберите хотя бы один архив для скачивания."
+msgstr "Пожалуйста выберите хотя бы один WINE для скачивания."
 
 msgid "Please wait for current downloading to complete."
 msgstr "Пожалуйста подождите завершения скачивания."
@@ -561,7 +561,11 @@ msgid "Downloading Complete"
 msgstr "Скачивание завершено"
 
 msgid "All selected archives have been downloaded!"
-msgstr "Все выбранные архивы успешно загружены!"
+msgstr "Все выбранные WINE успешно загружены!"
+
+#, python-brace-format
+msgid "Using local file: {0}"
+msgstr "Использование локального файла: {0}"
 
 #, python-brace-format
 msgid "Downloading: {0} ({1}%)"
@@ -601,7 +605,7 @@ msgid "Unknown Game"
 msgstr "Неизвестная игра"
 
 msgid "Starting PortProton..."
-msgstr "Инициализация PortProton"
+msgstr "Инициализация PortProton..."
 
 msgid "Library"
 msgstr "Библиотека"
@@ -632,7 +636,7 @@ msgstr "Не удалось запустить установку."
 
 #, python-brace-format
 msgid "Processed {} installation..."
-msgstr "В процессе установки {}..."
+msgstr "{} в процессе установки..."
 
 msgid "Installation completed successfully."
 msgstr "Установка завершена успешно."
@@ -647,10 +651,10 @@ msgid "Game library refreshed"
 msgstr "Игровая библиотека обновлена"
 
 msgid "Loading Steam games..."
-msgstr "Загрузка игр из Steam..."
+msgstr "Загрузка игр Steam..."
 
 msgid "Loading PortProton games..."
-msgstr "Загрузка игр из PortProton..."
+msgstr "Загрузка игр PortProton..."
 
 msgid "Game Library"
 msgstr "Игровая библиотека"
@@ -727,11 +731,11 @@ msgid "Failed to start prefix clear process."
 msgstr "Не удалось запустить процесс очистки префикса."
 
 msgid "Prefix cleared successfully."
-msgstr "Префикс удален успешно."
+msgstr "Префикс очищен успешно."
 
 #, python-brace-format
 msgid "Prefix clear failed with exit code {}."
-msgstr "Очистка префикса завершилась с кодом завершения {}."
+msgstr "Очистка префикса завершилась с кодом ошибки {}."
 
 #, python-brace-format
 msgid "Failed to run clear prefix command: {}"
@@ -769,11 +773,11 @@ msgstr "Не удалось удалить префикс: {}"
 
 #, python-brace-format
 msgid "Are you sure you want to delete compatibility tool '{}'?"
-msgstr "Вы уверены, что хотите удалить инструмент совместимости «{}»?"
+msgstr "Вы уверены, что хотите удалить WINE «{}»?"
 
 #, python-brace-format
 msgid "Compatibility tool '{}' deleted."
-msgstr "WINE «{}» удален."
+msgstr "«{}» удален."
 
 #, python-brace-format
 msgid "Failed to delete compatibility tool: {}"
@@ -783,31 +787,31 @@ msgid "Main PortProton parameters..."
 msgstr "Основные параметры PortProton..."
 
 msgid "detailed"
-msgstr "детальный"
+msgstr "Детальный"
 
 msgid "brief"
-msgstr "упрощённый"
+msgstr "Упрощённый"
 
 msgid "Time Detail Level:"
 msgstr "Уровень детализации вывода времени:"
 
 msgid "last launch"
-msgstr "последний запуск"
+msgstr "Последний запуск"
 
 msgid "playtime"
-msgstr "время игры"
+msgstr "Время игры"
 
 msgid "alphabetical"
-msgstr "алфавитный"
+msgstr "Алфавитный"
 
 msgid "favorites"
-msgstr "избранное"
+msgstr "Избранное"
 
 msgid "Games Sort Method:"
 msgstr "Метод сортировки игр:"
 
 msgid "all"
-msgstr "все"
+msgstr "Все"
 
 msgid "Games Display Filter:"
 msgstr "Фильтр игр:"
@@ -919,7 +923,7 @@ msgstr "Тема '{0}' применена успешно"
 
 #, python-brace-format
 msgid "Error applying theme '{0}'"
-msgstr "Ошибка при применение темы '{0}'"
+msgstr "Ошибка применения темы '{0}'"
 
 #, python-brace-format
 msgid "Executable not found: {0}"
@@ -953,8 +957,8 @@ msgid ""
 "Using FPS and system load monitoring (Turns on and off by the key "
 "combination - right Shift + F12)"
 msgstr ""
-"Использование мониторинга FPS и нагрузки системы (включается и "
-"выключается комбинацией клавиш - правая Shift + F12)"
+"Использование мониторинга производительности и FPS(включается и "
+"выключается комбинацией клавиш - R_Shift + F12)"
 
 msgid "Forced use of MANGOHUD system settings (GOverlay, etc.)"
 msgstr "Принудительное использование системных настроек MANGOHUD (GOverlay и т.д.)"
@@ -963,11 +967,11 @@ msgid ""
 "Enable vkBasalt by default to improve graphics in games running on "
 "Vulkan. (The HOME hotkey disables vkbasalt)"
 msgstr ""
-"Включить vkBasalt по умолчанию для улучшения графики в играх на Vulkan. "
+"Включить vkBasalt по умолчанию, для улучшения графики в играх на Vulkan. "
 "(Горячая клавиша HOME отключает vkbasalt)"
 
 msgid "Forced use of VKBASALT system settings (GOverlay, etc.)"
-msgstr "Принудительное использование системных настроек VKBASALT (GOverlay и т.д.)"
+msgstr "Принудительное использование системных настроек vkBasalt (GOverlay и т.д.)"
 
 msgid ""
 "Enable dgVoodoo2. Forced use all dgVoodoo2 libs (Glide 2.11-3.1, "
@@ -987,16 +991,16 @@ msgid ""
 "Super + G : Toggle keyboard grab\n"
 "Super + C : Update clipboard"
 msgstr ""
-"Super + F: Переключить полноэкранный режим\n"
-"Super + N: Переключить фильтрацию ближайшего соседа\n"
-"Super + U: Переключить апскейлинг FSR\n"
-"Super + Y: Переключить апскейлинг NIS\n"
-"Super + I: Увеличить резкость FSR на 1\n"
-"Super + O: Уменьшить резкость FSR на 1\n"
+"Super + F: Переключение полноэкранного режима\n"
+"Super + N: Переключение фильтрации\n"
+"Super + U: Переключение режима масштабирования на FSR\n"
+"Super + Y: Переключение режима масштабирования на NIS\n"
+"Super + I: Увеличение резкости FSR на 1\n"
+"Super + O: Уменьшение резкости FSR на 1\n"
 "Super + S: Сделать скриншот (сейчас сохраняется в "
 "/tmp/gamescope_DATE.png)\n"
-"Super + G: Переключить захват клавиатуры\n"
-"Super + C: Обновить буфер обмена"
+"Super + G: Переключение захвата клавиатуры\n"
+"Super + C: Обновление буфера обмена"
 
 msgid "Enable in-process synchronization primitives based on eventfd."
 msgstr "Включить примитивы синхронизации в процессе на основе eventfd."
@@ -1017,7 +1021,7 @@ msgid "Enable OptiScaler (replacement upscaler / frame generator)"
 msgstr "Включить OptiScaler (замена апскейлера / генератора кадров)"
 
 msgid "Enable Lossless Scaling frame generation (experimental)"
-msgstr "Включить генерацию кадров Lossless Scaling (экспериментально)"
+msgstr "Включить генерацию кадров Lossless Scaling + lsfg-vk (экспериментально)"
 
 msgid "FSR upscaling in fullscreen with ProtonGE below native resolution"
 msgstr "Апскейлинг FSR в полноэкранном режиме с ProtonGE ниже родного разрешения"
@@ -1056,10 +1060,10 @@ msgid "Force use of built-in DXGI library"
 msgstr "Принудительно использовать встроенную библиотеку DXGI"
 
 msgid "Enable Easy Anti-Cheat and BattlEye runtimes"
-msgstr "Включить среды выполнения Easy Anti-Cheat и BattlEye"
+msgstr "Включить поддержку Easy Anti-Cheat и BattlEye"
 
 msgid "Use system Vulkan layers (MangoHud, vkBasalt, OBS, etc.)"
-msgstr "Использовать системные слои Vulkan (MangoHud, vkBasalt, OBS и т.д.)"
+msgstr "Использовать системные Vulkan layers (MangoHud, vkBasalt, OBS и т.д.)"
 
 msgid "Enable OBS Studio capture via obs-vkcapture"
 msgstr "Включить захват OBS Studio через obs-vkcapture"
@@ -1288,7 +1292,7 @@ msgid "Return to Desktop"
 msgstr "Вернуться на рабочий стол"
 
 msgid "portprotonqt-session-select file not found at /usr/bin/"
-msgstr "portprotonqt-session-select не найдет"
+msgstr "portprotonqt-session-select файл не найден в /usr/bin/"
 
 msgid "Failed to reboot the system"
 msgstr "Не удалось перезагрузить систему"

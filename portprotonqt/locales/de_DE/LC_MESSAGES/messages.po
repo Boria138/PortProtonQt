@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-01-01 23:29+0500\n"
+"POT-Creation-Date: 2026-01-03 01:29+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: de_DE\n"
@@ -544,6 +544,10 @@ msgid "Downloading Complete"
 msgstr ""
 
 msgid "All selected archives have been downloaded!"
+msgstr ""
+
+#, python-brace-format
+msgid "Using local file: {0}"
 msgstr ""
 
 #, python-brace-format

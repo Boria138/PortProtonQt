@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-01-01 23:29+0500\n"
+"POT-Creation-Date: 2026-01-03 01:29+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -542,6 +542,10 @@ msgid "Downloading Complete"
 msgstr ""
 
 msgid "All selected archives have been downloaded!"
+msgstr ""
+
+#, python-brace-format
+msgid "Using local file: {0}"
 msgstr ""
 
 #, python-brace-format
