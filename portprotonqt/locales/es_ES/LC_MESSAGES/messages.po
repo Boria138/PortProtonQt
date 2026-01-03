@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-01-03 01:29+0500\n"
+"POT-Creation-Date: 2026-01-03 20:33+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es_ES\n"
@@ -254,6 +254,55 @@ msgid "Delete"
 msgstr ""
 
 msgid "Select All"
+msgstr ""
+
+msgid "Delete Wine"
+msgstr ""
+
+msgid "Selected WINE:"
+msgstr ""
+
+msgid "No WINE selected"
+msgstr ""
+
+msgid "Delete Selected"
+msgstr ""
+
+msgid "Clear All"
+msgstr ""
+
+#, python-brace-format
+msgid "Selected {} WINE:\n"
+msgstr ""
+
+msgid "No Selection"
+msgstr ""
+
+msgid "Please select at least one WINE to delete."
+msgstr ""
+
+#, python-brace-format
+msgid ""
+"Are you sure you want to delete the following WINE versions?\n"
+"\n"
+"{}"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to delete WINE '{}': {}"
+msgstr ""
+
+msgid "Some Deletions Failed"
+msgstr ""
+
+#, python-brace-format
+msgid ""
+"Some WINE versions could not be deleted:\n"
+"\n"
+"{}"
+msgstr ""
+
+msgid "Selected WINE versions deleted successfully."
 msgstr ""
 
 msgid "Back"
@@ -511,14 +560,7 @@ msgstr ""
 msgid "Download Selected"
 msgstr ""
 
-msgid "Clear All"
-msgstr ""
-
 msgid "Asset Name"
-msgstr ""
-
-#, python-brace-format
-msgid "{display_name} (installed)"
 msgstr ""
 
 #, python-brace-format
@@ -531,9 +573,6 @@ msgstr ""
 msgid "Cannot clear selection while extraction is in progress."
 msgstr ""
 
-msgid "No Selection"
-msgstr ""
-
 msgid "Please select at least one archive to download."
 msgstr ""
 
@@ -544,10 +583,6 @@ msgid "Downloading Complete"
 msgstr ""
 
 msgid "All selected archives have been downloaded!"
-msgstr ""
-
-#, python-brace-format
-msgid "Using local file: {0}"
 msgstr ""
 
 #, python-brace-format
@@ -751,18 +786,6 @@ msgstr ""
 
 #, python-brace-format
 msgid "Failed to delete prefix: {}"
-msgstr ""
-
-#, python-brace-format
-msgid "Are you sure you want to delete compatibility tool '{}'?"
-msgstr ""
-
-#, python-brace-format
-msgid "Compatibility tool '{}' deleted."
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to delete compatibility tool: {}"
 msgstr ""
 
 msgid "Main PortProton parameters..."
