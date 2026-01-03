@@ -1984,37 +1984,26 @@ class MainWindow(QMainWindow):
                 QMessageBox.warning(self, _("Error"), _("Failed to delete prefix: {}").format(str(e)))
 
     def delete_compat_tool(self):
-        """Удаляет выбранный Wine/Proton дистрибутив из каталога dist."""
+        """Shows the WINE deletion dialog to select and delete wine versions."""
+        from portprotonqt.delete_wine_module import show_wine_delete_manager
+        selected_tool = self.wineCombo.currentText()
+        show_wine_delete_manager(self, self.portproton_location, selected_tool)
+        # Refresh the combo box after deletion
+        self.refresh_wine_combo()
+
+    def refresh_wine_combo(self):
+        """Refresh the wine combo box after deletion."""
         if not self.portproton_location:
             return
 
-        selected_tool = self.wineCombo.currentText()
-        if not selected_tool:
+        dist_path = os.path.join(self.portproton_location, "data", "dist")
+        if not os.path.exists(dist_path):
             return
 
-        tool_path = os.path.join(self.portproton_location, "data", "dist", selected_tool)
-        if not os.path.exists(tool_path):
-            return
-
-        reply = QMessageBox.question(
-            self,
-            _("Confirm Deletion"),
-            _("Are you sure you want to delete compatibility tool '{}'?").format(selected_tool),
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No
-        )
-
-        if reply == QMessageBox.StandardButton.Yes:
-            try:
-                shutil.rmtree(tool_path)
-                QMessageBox.information(self, _("Success"), _("Compatibility tool '{}' deleted.").format(selected_tool))
-                # обновляем список
-                self.wineCombo.clear()
-                self.wine_versions = [d for d in os.listdir(os.path.join(self.portproton_location, "data", "dist"))
-                                      if os.path.isdir(os.path.join(self.portproton_location, "data", "dist", d))]
-                self.wineCombo.addItems(self.wine_versions)
-            except Exception as e:
-                QMessageBox.warning(self, _("Error"), _("Failed to delete compatibility tool: {}").format(str(e)))
+        # Update the wine versions list
+        self.wine_versions = [d for d in os.listdir(dist_path) if os.path.isdir(os.path.join(dist_path, d))]
+        self.wineCombo.clear()
+        self.wineCombo.addItems(self.wine_versions)
 
     def open_winetricks(self):
         """Open the Winetricks dialog for the selected prefix and wine."""
