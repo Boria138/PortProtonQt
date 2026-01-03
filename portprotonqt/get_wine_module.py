@@ -189,59 +189,123 @@ class ExtractionThread(QThread):
             last_progress = -1
             last_bytes_read = 0
 
-            # ---------- PASS 1: extraction (официальный API) ----------
+            # Меняем рабочую директорию для корректной распаковки
             original_dir = os.getcwd()
-            old_umask = os.umask(0)
+            old_umask = os.umask(0)  # Сохраняем и сбрасываем umask
             os.chdir(self.extract_dir)
 
             try:
-                libarchive.extract_file(self.archive_path)
-            finally:
-                os.chdir(original_dir)
-                os.umask(old_umask)
+                # Список для отложенной установки времени модификации
+                deferred_times = []
 
-            # ---------- PASS 2: progress simulation (documented way) ----------
-            with libarchive.file_reader(self.archive_path) as archive:
-                for entry in archive:
-                    if self._should_stop():
-                        return
+                with libarchive.file_reader(self.archive_path) as archive:
+                    for entry in archive:
+                        if self._should_stop():
+                            return
 
-                    # просто потребляем данные
-                    for _ in entry.get_blocks():
+                        entry_path = entry.pathname
+
+                        # Создаём директории
+                        if entry.isdir:
+                            os.makedirs(entry_path, exist_ok=True)
+
+                            # Права для директорий
+                            if entry.mode:
+                                try:
+                                    os.chmod(entry_path, entry.mode)
+                                except (OSError, PermissionError):
+                                    pass
+
+                            # Откладываем установку времени для директорий
+                            if entry.mtime:
+                                deferred_times.append((entry_path, entry.mtime))
+
+                        # Извлекаем файлы
+                        elif entry.isfile:
+                            parent_dir = os.path.dirname(entry_path)
+                            if parent_dir:
+                                os.makedirs(parent_dir, exist_ok=True)
+
+                            # Записываем содержимое файла
+                            with open(entry_path, 'wb') as f:
+                                for block in entry.get_blocks():
+                                    if self._should_stop():
+                                        return
+                                    f.write(block)
+
+                            # Устанавливаем права (включая execute bit)
+                            if entry.mode:
+                                try:
+                                    os.chmod(entry_path, entry.mode)
+                                except (OSError, PermissionError):
+                                    pass
+
+                            # Устанавливаем время модификации
+                            if entry.mtime:
+                                try:
+                                    os.utime(entry_path, (entry.mtime, entry.mtime))
+                                except (OSError, PermissionError):
+                                    pass
+
+                        # Символические ссылки
+                        elif entry.issym:
+                            parent_dir = os.path.dirname(entry_path)
+                            if parent_dir:
+                                os.makedirs(parent_dir, exist_ok=True)
+
+                            if os.path.lexists(entry_path):
+                                os.remove(entry_path)
+
+                            try:
+                                os.symlink(entry.linkpath, entry_path)
+                            except (OSError, NotImplementedError):
+                                pass
+
+                        # Обновляем прогресс
+                        bytes_read = archive.bytes_read
+                        now = time.monotonic()
+                        elapsed = now - start_time
+
+                        if bytes_read != last_bytes_read:
+                            last_bytes_read = bytes_read
+
+                            if now - last_emit_time >= 0.1 or elapsed < 0.1:
+                                progress = int((bytes_read / archive_size) * 100)
+                                if progress != last_progress:
+                                    self.progress.emit(min(progress, 99))
+                                    last_progress = progress
+
+                                if elapsed > 0:
+                                    speed = (bytes_read / (1024 * 1024)) / elapsed
+                                    self.speed.emit(round(speed, 2))
+
+                                    if speed > 0:
+                                        remaining_mb = (archive_size - bytes_read) / (1024 * 1024)
+                                        self.eta.emit(max(0, int(remaining_mb / speed)))
+                                    else:
+                                        self.eta.emit(0)
+                                else:
+                                    self.speed.emit(0.0)
+                                    self.eta.emit(0)
+
+                                last_emit_time = now
+
+                # Устанавливаем время модификации для директорий в обратном порядке
+                # (чтобы родительские директории обновлялись последними)
+                for dir_path, mtime in reversed(deferred_times):
+                    try:
+                        os.utime(dir_path, (mtime, mtime))
+                    except (OSError, PermissionError):
                         pass
 
-                    bytes_read = archive.bytes_read
-                    now = time.monotonic()
-                    elapsed = now - start_time
+                self.progress.emit(100)
+                self.speed.emit(0.0)
+                self.eta.emit(0)
+                self.finished.emit(self.archive_path, True)
 
-                    if bytes_read != last_bytes_read:
-                        last_bytes_read = bytes_read
-
-                        if now - last_emit_time >= 0.1 or elapsed < 0.1:
-                            progress = int((bytes_read / archive_size) * 100)
-                            if progress != last_progress:
-                                self.progress.emit(min(progress, 99))
-                                last_progress = progress
-
-                            if elapsed > 0:
-                                speed = (bytes_read / (1024 * 1024)) / elapsed
-                                self.speed.emit(round(speed, 2))
-
-                                if speed > 0:
-                                    remaining_mb = (archive_size - bytes_read) / (1024 * 1024)
-                                    self.eta.emit(max(0, int(remaining_mb / speed)))
-                                else:
-                                    self.eta.emit(0)
-                            else:
-                                self.speed.emit(0.0)
-                                self.eta.emit(0)
-
-                            last_emit_time = now
-
-            self.progress.emit(100)
-            self.speed.emit(0.0)
-            self.eta.emit(0)
-            self.finished.emit(self.archive_path, True)
+            finally:
+                os.chdir(original_dir)
+                os.umask(old_umask)  # Восстанавливаем umask
 
         except Exception as e:
             if not self._should_stop():
@@ -465,14 +529,33 @@ class ProtonManager(QDialog):
             header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
             header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
 
-            table.setRowCount(len(entries))
+            # Filter out installed entries before setting row count
+            non_installed_entries = []
+            for entry in entries:
+                # Извлекаем имя файла из URL
+                url = entry.get('url', '')
+                filename = entry.get('name', '')
+
+                if url:
+                    parsed_url = urllib.parse.urlparse(url)
+                    url_filename = os.path.basename(parsed_url.path)
+                    if url_filename:
+                        filename = url_filename
+
+                uppercase_filename = filename.upper()  # Преобразование имени WINE в верхний регистр
+                is_installed = self.is_asset_installed(uppercase_filename, source_name)
+
+                if not is_installed:
+                    non_installed_entries.append(entry)
+
+            table.setRowCount(len(non_installed_entries))
             table.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
             table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
             table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
             table.cellClicked.connect(self.on_cell_clicked)
 
-            for row_index, entry in enumerate(entries):
+            for row_index, entry in enumerate(non_installed_entries):
                 self.add_asset_row_from_json(table, row_index, entry, source_name)
 
             layout.addWidget(table, 1)
@@ -480,7 +563,7 @@ class ProtonManager(QDialog):
             tab_name = (self.get_short_source_name(source_name) or "UNKNOWN").upper()  # Название для Таба в верхний регистр
             self.tab_widget.addTab(tab, tab_name)
 
-            logger.info(f"Successfully created tab for {source_name} with {len(entries)} assets")
+            logger.info(f"Successfully created tab for {source_name} with {len(non_installed_entries)} assets (filtered from {len(entries)})")
             return True
 
         except Exception as e:
@@ -510,13 +593,6 @@ class ProtonManager(QDialog):
 
     def add_asset_row_from_json(self, table, row_index, entry, source_name):
         """Добавляем строку для определенной позиции из JSON"""
-        checkbox_widget = QWidget()
-        checkbox_layout = QHBoxLayout(checkbox_widget)
-        checkbox_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        checkbox_layout.setContentsMargins(0, 0, 0, 0)
-
-        checkbox = QCheckBox()
-
         # Извлекаем имя файла из URL
         url = entry.get('url', '')
         filename = entry.get('name', '')
@@ -530,15 +606,26 @@ class ProtonManager(QDialog):
         # Извлекаем версию для уникального ID
         version_from_name = self.extract_version_from_name(filename)
 
+        # Проверяем, установлен ли уже этот ассет
+        uppercase_filename = filename.upper() # Преобразование имени WINE в верхний регистр
+        is_installed = self.is_asset_installed(uppercase_filename, source_name)
+
+        # Если ассет уже установлен, не показываем его вообще
+        if is_installed:
+            return
+
+        checkbox_widget = QWidget()
+        checkbox_layout = QHBoxLayout(checkbox_widget)
+        checkbox_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        checkbox_layout.setContentsMargins(0, 0, 0, 0)
+
+        checkbox = QCheckBox()
+
         # Создаем структуру для позиции (элемента)
         asset_data = {
             'name': filename,  # имя с расширением
             'browser_download_url': url,
         }
-
-        # Проверяем, установлен ли уже этот ассет
-        uppercase_filename = filename.upper() # Преобразование имени WINE в верхний регистр
-        is_installed = self.is_asset_installed(uppercase_filename, source_name)
 
         checkbox.stateChanged.connect(lambda state, a=asset_data, v=version_from_name,
                                              s=source_name:
@@ -547,25 +634,12 @@ class ProtonManager(QDialog):
 
         table.setCellWidget(row_index, 0, checkbox_widget)
 
-        # Имя элемента (без расширения для красивого отображения)
         # Remove .tar.xz and .tar.gz extensions completely
         display_name = filename
-        if filename.lower().endswith('.tar.xz'):
-            display_name = filename[:-7]  # Remove '.tar.xz'
-        elif filename.lower().endswith('.tar.gz'):
-            display_name = filename[:-7]  # Remove '.tar.gz'
-        else:
-            # Fallback to removing just the last extension if needed
-            display_name = os.path.splitext(filename)[0]
+        if filename.lower().endswith(('.tar.xz', '.tar.gz')):
+            display_name = filename[:-7]
+
         asset_name_item = QTableWidgetItem(display_name)
-
-        # Если ассет уже установлен, делаем его недоступным для выбора
-        if is_installed:
-            checkbox.setEnabled(False)
-            asset_name_item.setFlags(asset_name_item.flags() & ~Qt.ItemFlag.ItemIsEnabled)
-            # Add "(installed)" suffix to indicate it's already installed
-            asset_name_item.setText(_('{display_name} (installed)').format(display_name=display_name))
-
         table.setItem(row_index, 1, asset_name_item)
 
         # Собираем метаданные в данных элемента
@@ -760,7 +834,6 @@ class ProtonManager(QDialog):
             self.download_frame.setVisible(True)
             self.download_btn.setEnabled(False)
             self.clear_btn.setEnabled(False)
-            self.download_info_label.setText(_("Using local file: {0}").format(asset_data['asset_name']))
 
             # Simulate download completion and start extraction immediately
             QTimer.singleShot(100, lambda: self.start_extraction_for_asset(asset_data, local_file_path))
