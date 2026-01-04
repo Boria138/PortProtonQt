@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-01-03 20:33+0500\n"
+"POT-Creation-Date: 2026-01-04 00:12+0500\n"
 "PO-Revision-Date: 2026-01-03 20:32+0500\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
@@ -85,8 +85,8 @@ msgid ""
 "'{game_name}' was added to Steam. Please restart Steam for changes to "
 "take effect."
 msgstr ""
-"'{game_name}' был(а) добавлен(а) в Steam. Пожалуйста, перезапустите "
-"Steam, чтобы изменения вступили в силу."
+"'{game_name}' добавлен(а) в Steam. Пожалуйста, перезапустите Steam, чтобы"
+" изменения вступили в силу."
 
 #, python-brace-format
 msgid "Executable not found for game: {game_name}"
@@ -264,19 +264,19 @@ msgid "Select All"
 msgstr "Выбрать всё"
 
 msgid "Delete Wine"
-msgstr "Удалить Wine"
+msgstr "Удалить WINE"
 
 msgid "Selected WINE:"
 msgstr "Выбранные WINE:"
 
 msgid "No WINE selected"
-msgstr "Обложка не выбрана"
+msgstr "WINE не выбраны"
 
 msgid "Delete Selected"
 msgstr "Удалить выбранное"
 
 msgid "Clear All"
-msgstr "Очистить всё"
+msgstr "Очистить выбранное"
 
 #, python-brace-format
 msgid "Selected {} WINE:\n"
