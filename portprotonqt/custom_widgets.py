@@ -1,115 +1,160 @@
-import numpy as np
 from PySide6.QtWidgets import QLabel, QPushButton, QWidget, QLayout, QLayoutItem
-from PySide6.QtCore import Qt, Signal, QRect, QPoint, QSize
+from PySide6.QtCore import Qt, Signal, QRect, QSize
 from PySide6.QtGui import QFont, QFontMetrics, QPainter
 
 def compute_layout(nat_sizes, rect_width, spacing, max_scale):
     """
-    Computes the layout of elements considering spacing and potential scaling of cards.
-    nat_sizes: Array (N, 2) with natural sizes of elements (width, height).
-    rect_width: Available container width.
-    spacing: Spacing between elements (horizontal and vertical).
-    max_scale: Maximum scaling factor (e.g., 1.0).
-
-    Returns:
-      result: Array (N, 4), where each row contains [x, y, new_width, new_height].
-      total_height: Total height of all rows.
+    Оптимизированная версия на чистом Python без numpy.
+    nat_sizes: list of tuples [(width, height), ...]
     """
-    N = nat_sizes.shape[0]
-    result = np.zeros((N, 4), dtype=np.int32)
-    y = 0
-    i = 0
-    min_margin = 20  # Minimum margin on edges
+    N = len(nat_sizes)
+    if N == 0:
+        return [], 0
 
-    # Determine the maximum number of items per row and overall scale
-    max_items_per_row = 0
+    result = [[0, 0, 0, 0] for _ in range(N)]
+    min_margin = 20
+    available_width = rect_width - 2 * min_margin
+
+    # Быстрый поиск максимального количества элементов в строке
+    max_items_per_row = 1
     global_scale = 1.0
-    max_row_x_start = min_margin  # Starting x position of the widest row
-    temp_i = 0
+    max_row_x_start = min_margin
 
-    # First pass: Find the maximum number of items in a row
-    while temp_i < N:
-        sum_width = 0
-        count = 0
-        temp_j = temp_i
-        while temp_j < N:
-            w = nat_sizes[temp_j, 0]
-            if count > 0 and (sum_width + spacing + w) > rect_width - 2 * min_margin:
-                break
-            sum_width += w
-            count += 1
-            temp_j += 1
+    i = 0
+    while i < N:
+        # Бинарный поиск максимального количества элементов
+        left, right = 1, N - i
+        best_count = 1
+
+        while left <= right:
+            mid = (left + right) // 2
+            end_idx = min(i + mid, N)
+            sum_w = sum(nat_sizes[j][0] for j in range(i, end_idx))
+            needed_width = sum_w + spacing * (mid - 1)
+
+            if needed_width <= available_width:
+                best_count = mid
+                left = mid + 1
+            else:
+                right = mid - 1
+
+        count = best_count
+        sum_width = sum(nat_sizes[j][0] for j in range(i, i + count))
 
         if count > max_items_per_row:
             max_items_per_row = count
-            # Calculate scale for the most populated row
-            available_width = rect_width - spacing * (count - 1) - 2 * min_margin
-            desired_scale = available_width / sum_width if sum_width > 0 else 1.0
-            global_scale = desired_scale if desired_scale < max_scale else max_scale
-            # Store starting x position for the widest row
+            desired_scale = available_width / (sum_width + spacing * (count - 1)) if sum_width > 0 else 1.0
+            global_scale = min(desired_scale, max_scale)
             scaled_row_width = int(sum_width * global_scale) + spacing * (count - 1)
             max_row_x_start = max(min_margin, (rect_width - scaled_row_width) // 2)
-        temp_i = temp_j
 
-    # Second pass: Place elements
+        i += count
+
+    # Второй проход: размещение элементов
+    y = 0
+    i = 0
+
     while i < N:
+        # Бинарный поиск для текущей строки
+        left, right = 1, N - i
+        best_count = 1
+
+        while left <= right:
+            mid = (left + right) // 2
+            end_idx = min(i + mid, N)
+            sum_w = sum(nat_sizes[j][0] for j in range(i, end_idx))
+            needed_width = sum_w + spacing * (mid - 1)
+
+            if needed_width <= available_width:
+                best_count = mid
+                left = mid + 1
+            else:
+                right = mid - 1
+
+        count = best_count
+        j = i + count
+
+        # Расчёт размеров для строки
         sum_width = 0
         row_max_height = 0
-        count = 0
-        j = i
-
-        # Determine the number of items for the current row
-        while j < N:
-            w = nat_sizes[j, 0]
-            if count > 0 and (sum_width + spacing + w) > rect_width - 2 * min_margin:
-                break
+        for k in range(i, j):
+            w, h = nat_sizes[k]
             sum_width += w
-            count += 1
-            h = nat_sizes[j, 1]
             if h > row_max_height:
                 row_max_height = h
-            j += 1
 
-        # Use global scale for all rows
-        scale = global_scale
-        scaled_row_width = int(sum_width * scale) + spacing * (count - 1)
+        scaled_row_width = int(sum_width * global_scale) + spacing * (count - 1)
 
-        # Determine starting x coordinate
+        # Определение начальной позиции
         if count == max_items_per_row:
-            # Center the full row
             x = max(min_margin, (rect_width - scaled_row_width) // 2)
         else:
-            # Align incomplete row to the left, matching the widest row's start
             x = max_row_x_start
 
+        # Размещение элементов в строке
         for k in range(i, j):
-            new_w = int(nat_sizes[k, 0] * scale)
-            new_h = int(nat_sizes[k, 1] * scale)
-            result[k, 0] = x
-            result[k, 1] = y
-            result[k, 2] = new_w
-            result[k, 3] = new_h
+            w, h = nat_sizes[k]
+            new_w = int(w * global_scale)
+            new_h = int(h * global_scale)
+            result[k][0] = x
+            result[k][1] = y
+            result[k][2] = new_w
+            result[k][3] = new_h
             x += new_w + spacing
 
-        y += int(row_max_height * scale) + spacing
+        y += int(row_max_height * global_scale) + spacing
         i = j
+
     return result, y
+
 
 class FlowLayout(QLayout):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.itemList = []
-        self.setContentsMargins(20, 20, 20, 20)  # Margins around the layout
-        self._spacing = 20  # Spacing for animation and overlap prevention
-        self._max_scale = 1.0  # Scaling disabled in layout
+        self.setContentsMargins(20, 20, 20, 20)
+        self._spacing = 20
+        self._max_scale = 1.0
+
+        # Простой кеш
+        self._cache_width = None
+        self._cache_visible_hash = None
+        self._cache_result = None
+
+    def _get_visible_data(self):
+        """Возвращает список видимых элементов и их размеры"""
+        visible_items = []
+        visible_indices = []
+        visible_sizes = []
+
+        for i, item in enumerate(self.itemList):
+            widget = item.widget()
+            if widget and widget.isVisible():
+                visible_items.append(item)
+                visible_indices.append(i)
+                s = item.sizeHint()
+                visible_sizes.append((s.width(), s.height()))
+
+        return visible_items, visible_indices, visible_sizes
+
+    def _make_visible_hash(self, visible_sizes):
+        """Создаёт хеш для проверки изменений"""
+        return hash(tuple(visible_sizes))
 
     def addItem(self, item: QLayoutItem) -> None:
         self.itemList.append(item)
+        self._invalidate_cache()
 
     def takeAt(self, index: int) -> QLayoutItem:
         if 0 <= index < len(self.itemList):
+            self._invalidate_cache()
             return self.itemList.pop(index)
         raise IndexError("Index out of range")
+
+    def _invalidate_cache(self):
+        self._cache_width = None
+        self._cache_visible_hash = None
+        self._cache_result = None
 
     def count(self) -> int:
         return len(self.itemList)
@@ -126,20 +171,27 @@ class FlowLayout(QLayout):
         return True
 
     def heightForWidth(self, width):
-        # Аналогично фильтруем видимые для тестового расчёта высоты
-        visible_items = []
-        nat_sizes = np.empty((0, 2), dtype=np.int32)
-        for item in self.itemList:
-            if item.widget() and item.widget().isVisible():
-                visible_items.append(item)
-                s = item.sizeHint()
-                new_row = np.array([[s.width(), s.height()]], dtype=np.int32)
-                nat_sizes = np.vstack([nat_sizes, new_row]) if len(nat_sizes) > 0 else new_row
+        _, _, visible_sizes = self._get_visible_data()
 
-        if len(visible_items) == 0:
+        if not visible_sizes:
             return 0
 
-        _, total_height = compute_layout(nat_sizes, width, self._spacing, self._max_scale)
+        # Проверка кеша
+        visible_hash = self._make_visible_hash(visible_sizes)
+        if (self._cache_width == width and
+            self._cache_visible_hash == visible_hash and
+            self._cache_result is not None):
+            return self._cache_result[1]
+
+        # Вычисление
+        geom_array, total_height = compute_layout(visible_sizes, width,
+                                                   self._spacing, self._max_scale)
+
+        # Сохранение в кеш
+        self._cache_width = width
+        self._cache_visible_hash = visible_hash
+        self._cache_result = (geom_array, total_height)
+
         return total_height
 
     def setGeometry(self, rect):
@@ -163,40 +215,42 @@ class FlowLayout(QLayout):
         if N_total == 0:
             return 0
 
-        # Фильтруем только видимые элементы
-        visible_items = []
-        visible_indices = []  # Индексы в оригинальном itemList для установки геометрии
-        nat_sizes = np.empty((0, 2), dtype=np.int32)
-        for i, item in enumerate(self.itemList):
-            if item.widget() and item.widget().isVisible():
-                visible_items.append(item)
-                visible_indices.append(i)
-                s = item.sizeHint()
-                new_row = np.array([[s.width(), s.height()]], dtype=np.int32)
-                nat_sizes = np.vstack([nat_sizes, new_row]) if len(nat_sizes) > 0 else new_row
+        visible_items, visible_indices, visible_sizes = self._get_visible_data()
 
-        N = len(visible_items)
-        if N == 0:
-            # Если все скрыты, устанавливаем нулевые геометрии для всех
+        if not visible_sizes:
             if not testOnly:
                 for item in self.itemList:
                     item.setGeometry(QRect())
             return 0
 
-        geom_array, total_height = compute_layout(nat_sizes, rect.width(), self._spacing, self._max_scale)
+        # Проверка кеша
+        visible_hash = self._make_visible_hash(visible_sizes)
+        if (self._cache_width == rect.width() and
+            self._cache_visible_hash == visible_hash and
+            self._cache_result is not None):
+            geom_array, total_height = self._cache_result
+        else:
+            # Вычисление layout
+            geom_array, total_height = compute_layout(visible_sizes, rect.width(),
+                                                      self._spacing, self._max_scale)
+
+            # Сохранение в кеш
+            self._cache_width = rect.width()
+            self._cache_visible_hash = visible_hash
+            self._cache_result = (geom_array, total_height)
 
         if not testOnly:
-            # Устанавливаем геометрии только для видимых
-            for idx, (_vis_idx, item) in enumerate(zip(visible_indices, visible_items, strict=True)):
-                x = geom_array[idx, 0] + rect.x()
-                y = geom_array[idx, 1] + rect.y()
-                w = geom_array[idx, 2]
-                h = geom_array[idx, 3]
-                item.setGeometry(QRect(QPoint(x, y), QSize(w, h)))
+            rx, ry = rect.x(), rect.y()
 
-            # Для невидимых — нулевая геометрия
+            # Установка геометрии для видимых элементов
+            for idx, item in enumerate(visible_items):
+                x, y, w, h = geom_array[idx]
+                item.setGeometry(QRect(x + rx, y + ry, w, h))
+
+            # Скрытие невидимых элементов
+            visible_set = set(visible_indices)
             for i in range(N_total):
-                if i not in visible_indices:
+                if i not in visible_set:
                     self.itemList[i].setGeometry(QRect())
 
         return total_height
