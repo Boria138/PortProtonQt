@@ -25,13 +25,7 @@ fi
 echo "Installing dependencies..."
 echo "---------------------------------------------------------------"
 pacman-key --init
-pacman -Syy --needed --noconfirm archlinux-keyring qt6-wayland
-
-echo "Installing debloated packages..."
-echo "---------------------------------------------------------------"
-wget --retry-connrefused --tries=30 "$EXTRA_PACKAGES" -O ./get-debloated-pkgs.sh
-chmod +x ./get-debloated-pkgs.sh
-./get-debloated-pkgs.sh --add-common --prefer-nano
+pacman -Syy --needed --noconfirm archlinux-keyring
 
 echo "Installing AUR packages..."
 echo "---------------------------------------------------------------"
@@ -45,6 +39,12 @@ echo "Building PortProtonQt from PKGBUILD..."
 echo "---------------------------------------------------------------"
 wget --retry-connrefused --tries=30 "$PPQT_PKGBUILD" -O ./PKGBUILD
 makepkg -si --noconfirm
+
+echo "Installing debloated packages..."
+echo "---------------------------------------------------------------"
+wget --retry-connrefused --tries=30 "$EXTRA_PACKAGES" -O ./get-debloated-pkgs.sh
+chmod +x ./get-debloated-pkgs.sh
+./get-debloated-pkgs.sh --add-common --prefer-nano
 
 if [ "$GIT_MODE" = true ]; then
     # For git version, we use portprotonqt-git
