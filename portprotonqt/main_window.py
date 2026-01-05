@@ -41,7 +41,7 @@ from portprotonqt.get_wine_module import show_proton_manager
 
 from PySide6.QtWidgets import (QLineEdit, QMainWindow, QStatusBar, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox,
                                QDialog, QFormLayout, QMessageBox, QApplication, QPushButton, QProgressBar, QCheckBox, QSizePolicy, QGridLayout, QScrollArea, QScroller, QSlider)
-from PySide6.QtCore import Qt, QAbstractAnimation, QUrl, Signal, QTimer, Slot, QProcess
+from PySide6.QtCore import Qt, QAbstractAnimation, QUrl, Signal, QTimer, Slot, QProcess, QFileSystemWatcher
 from PySide6.QtGui import QIcon, QPixmap, QColor, QDesktopServices
 from typing import cast
 from collections.abc import Callable
@@ -110,7 +110,14 @@ class MainWindow(QMainWindow):
         self.settingsDebounceTimer.setInterval(300)
         self.settingsDebounceTimer.timeout.connect(self.applySettingsDelayed)
 
+        # Initialize file system watcher for dist and prefixes directories
+        self.fs_watcher = QFileSystemWatcher(self)
+        self.fs_watcher.directoryChanged.connect(self.on_directory_changed)
+
         read_time_config()
+
+        # Start watching dist and prefixes directories if they exist
+        QTimer.singleShot(0, self.start_watching_directories)  # Delay to ensure portproton_location is set
         self.legendary_config_path = os.path.join(
             os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache")),
             "PortProtonQt", "legendary_cache"
@@ -250,6 +257,39 @@ class MainWindow(QMainWindow):
         """Delegate to game library manager."""
         if hasattr(self, 'game_library_manager'):
             self.game_library_manager.on_slider_released()
+
+    def on_directory_changed(self, path: str):
+        """Handle directory change events for dist and prefixes directories."""
+        if not self.portproton_location:
+            return
+
+        dist_path = os.path.join(self.portproton_location, "data", "dist")
+        prefixes_path = os.path.join(self.portproton_location, "data", "prefixes")
+
+        if path == dist_path:
+            # Wine/Proton directory changed, refresh wine combo
+            QTimer.singleShot(100, self.refresh_wine_combo)  # Small delay to allow file operations to complete
+        elif path == prefixes_path:
+            # Prefixes directory changed, refresh prefix combo
+            QTimer.singleShot(100, self.refresh_prefix_combo)  # Small delay to allow file operations to complete
+
+    def start_watching_directories(self):
+        """Start watching dist and prefixes directories for changes."""
+        if not self.portproton_location:
+            return
+
+        dist_path = os.path.join(self.portproton_location, "data", "dist")
+        prefixes_path = os.path.join(self.portproton_location, "data", "prefixes")
+
+        # Create directories if they don't exist
+        os.makedirs(dist_path, exist_ok=True)
+        os.makedirs(prefixes_path, exist_ok=True)
+
+        # Add dist directory to watcher
+        self.fs_watcher.addPath(dist_path)
+
+        # Add prefixes directory to watcher
+        self.fs_watcher.addPath(prefixes_path)
 
     def get_button_icon(self, action: str, gtype: GamepadType) -> str:
         """Get the icon name for a specific action and gamepad type."""
@@ -1974,12 +2014,6 @@ class MainWindow(QMainWindow):
             try:
                 shutil.rmtree(prefix_path)
                 QMessageBox.information(self, _("Success"), _("Prefix '{}' deleted.").format(selected_prefix))
-                # обновляем список
-                self.prefixCombo.clear()
-                prefixes_path = os.path.join(self.portproton_location, "data", "prefixes")
-                self.prefixes = [d for d in os.listdir(prefixes_path)
-                                if os.path.isdir(os.path.join(prefixes_path, d))]
-                self.prefixCombo.addItems(self.prefixes)
             except Exception as e:
                 QMessageBox.warning(self, _("Error"), _("Failed to delete prefix: {}").format(str(e)))
 
@@ -2004,6 +2038,20 @@ class MainWindow(QMainWindow):
         self.wine_versions = [d for d in os.listdir(dist_path) if os.path.isdir(os.path.join(dist_path, d))]
         self.wineCombo.clear()
         self.wineCombo.addItems(self.wine_versions)
+
+    def refresh_prefix_combo(self):
+        """Refresh the prefix combo box when prefixes directory changes."""
+        if not self.portproton_location:
+            return
+
+        prefixes_path = os.path.join(self.portproton_location, "data", "prefixes")
+        if not os.path.exists(prefixes_path):
+            return
+
+        # Update the prefixes list
+        self.prefixes = [d for d in os.listdir(prefixes_path) if os.path.isdir(os.path.join(prefixes_path, d))]
+        self.prefixCombo.clear()
+        self.prefixCombo.addItems(self.prefixes)
 
     def open_winetricks(self):
         """Open the Winetricks dialog for the selected prefix and wine."""
