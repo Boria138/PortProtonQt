@@ -15,6 +15,7 @@ import urllib.parse
 from portprotonqt.config_utils import read_proxy_config, get_portproton_start_command
 from portprotonqt.logger import get_logger
 from portprotonqt.localization import _
+from portprotonqt.version_utils import version_sort_key
 
 logger = get_logger(__name__)
 
@@ -463,8 +464,9 @@ class ProtonManager(QDialog):
                 successful_tabs += 1
             del tabs_dict['proton_lg']
 
-        # Остальные табы после Proton_LG
-        for source_key, entries in tabs_dict.items():
+        # Остальные табы после Proton_LG, сортируем по алфавиту
+        for source_key in sorted(tabs_dict.keys()):
+            entries = tabs_dict[source_key]
             if self.create_tab_from_entries(source_key, entries):
                 successful_tabs += 1
 
@@ -506,6 +508,7 @@ class ProtonManager(QDialog):
         logger.info(f"Filtered {len(entries)} -> {len(filtered_entries)} entries for {source_name} based on CPU level {self.cpu_level}")
         return filtered_entries
 
+
     def create_tab_from_entries(self, source_name, entries):
         """Создаем вкладку с таблицей для источника Proton из записей JSON"""
 
@@ -529,33 +532,31 @@ class ProtonManager(QDialog):
             header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
             header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
 
-            # Filter out installed entries before setting row count
-            non_installed_entries = []
+            # Include all entries (both installed and non-installed)
+            all_entries = []
             for entry in entries:
                 # Извлекаем имя файла из URL
                 url = entry.get('url', '')
-                filename = entry.get('name', '')
 
                 if url:
                     parsed_url = urllib.parse.urlparse(url)
                     url_filename = os.path.basename(parsed_url.path)
                     if url_filename:
-                        filename = url_filename
+                        entry['filename'] = url_filename
 
-                uppercase_filename = filename.upper()  # Преобразование имени WINE в верхний регистр
-                is_installed = self.is_asset_installed(uppercase_filename, source_name)
+                all_entries.append(entry)
 
-                if not is_installed:
-                    non_installed_entries.append(entry)
+            # Sort entries by version before displaying
+            all_entries.sort(key=version_sort_key)
 
-            table.setRowCount(len(non_installed_entries))
+            table.setRowCount(len(all_entries))
             table.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
             table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
             table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
             table.cellClicked.connect(self.on_cell_clicked)
 
-            for row_index, entry in enumerate(non_installed_entries):
+            for row_index, entry in enumerate(all_entries):
                 self.add_asset_row_from_json(table, row_index, entry, source_name)
 
             layout.addWidget(table, 1)
@@ -563,7 +564,7 @@ class ProtonManager(QDialog):
             tab_name = (self.get_short_source_name(source_name) or "UNKNOWN").upper()  # Название для Таба в верхний регистр
             self.tab_widget.addTab(tab, tab_name)
 
-            logger.info(f"Successfully created tab for {source_name} with {len(non_installed_entries)} assets (filtered from {len(entries)})")
+            logger.info(f"Successfully created tab for {source_name} with {len(all_entries)} assets (filtered from {len(entries)})")
             return True
 
         except Exception as e:
@@ -610,10 +611,6 @@ class ProtonManager(QDialog):
         uppercase_filename = filename.upper() # Преобразование имени WINE в верхний регистр
         is_installed = self.is_asset_installed(uppercase_filename, source_name)
 
-        # Если ассет уже установлен, не показываем его вообще
-        if is_installed:
-            return
-
         checkbox_widget = QWidget()
         checkbox_layout = QHBoxLayout(checkbox_widget)
         checkbox_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -627,9 +624,16 @@ class ProtonManager(QDialog):
             'browser_download_url': url,
         }
 
-        checkbox.stateChanged.connect(lambda state, a=asset_data, v=version_from_name,
-                                             s=source_name:
-                                      self.on_asset_toggled_json(state, a, v, s))
+        if is_installed:
+            # If asset is already installed, disable the checkbox
+            checkbox.setEnabled(False)
+            checkbox.setChecked(False)  # Ensure it's not checked
+        else:
+            # Only connect the signal if the asset is not installed
+            checkbox.stateChanged.connect(lambda state, a=asset_data, v=version_from_name,
+                                                 s=source_name:
+                                          self.on_asset_toggled_json(state, a, v, s))
+
         checkbox_layout.addWidget(checkbox)
 
         table.setCellWidget(row_index, 0, checkbox_widget)
@@ -640,6 +644,13 @@ class ProtonManager(QDialog):
             display_name = filename[:-7]
 
         asset_name_item = QTableWidgetItem(display_name)
+
+        if is_installed:
+            # Make the item disabled and add "(installed)" suffix
+            asset_name_item.setFlags(asset_name_item.flags() & ~Qt.ItemFlag.ItemIsEnabled)
+            # Add "(installed)" suffix to indicate it's already installed
+            asset_name_item.setText(_('{display_name} (installed)').format(display_name=display_name))
+
         table.setItem(row_index, 1, asset_name_item)
 
         # Собираем метаданные в данных элемента

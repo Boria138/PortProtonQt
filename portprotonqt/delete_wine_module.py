@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QWidget, QCheckBox,
                                QListWidget, QListWidgetItem)
 from PySide6.QtCore import Qt
 from portprotonqt.localization import _
+from portprotonqt.version_utils import version_sort_key
 
 
 class WineDeleteManager(QDialog):
@@ -70,8 +71,8 @@ class WineDeleteManager(QDialog):
         if not os.path.exists(dist_path):
             return
 
-        # Get all wine directories
-        wine_dirs = [d for d in os.listdir(dist_path) if os.path.isdir(os.path.join(dist_path, d))]
+        # Get all wine directories and sort them by version
+        wine_dirs = sorted([d for d in os.listdir(dist_path) if os.path.isdir(os.path.join(dist_path, d))], key=version_sort_key)
 
         # Add each wine to the list
         for wine_name in wine_dirs:

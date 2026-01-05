@@ -32,6 +32,7 @@ from portprotonqt.config_utils import (
     clear_cache, read_auto_fullscreen_gamepad, save_auto_fullscreen_gamepad, read_rumble_config, save_rumble_config, read_gamepad_type, save_gamepad_type, read_minimize_to_tray, save_minimize_to_tray,
     read_auto_card_size, save_auto_card_size, get_portproton_start_command
 )
+from portprotonqt.version_utils import version_sort_key
 from portprotonqt.localization import _, get_egs_language, read_metadata_translations
 from portprotonqt.downloader import Downloader
 from portprotonqt.tray_manager import TrayManager
@@ -1700,7 +1701,7 @@ class MainWindow(QMainWindow):
         formLayout.setSpacing(10)
         formLayout.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
 
-        self.wine_versions = [d for d in os.listdir(dist_path) if os.path.isdir(os.path.join(dist_path, d))]
+        self.wine_versions = sorted([d for d in os.listdir(dist_path) if os.path.isdir(os.path.join(dist_path, d))], key=version_sort_key)
         self.wineCombo = QComboBox()
         self.wineCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.wineCombo.addItems(self.wine_versions)
@@ -1713,7 +1714,7 @@ class MainWindow(QMainWindow):
             self.wineCombo.setCurrentIndex(0)
         formLayout.addRow(self.wineTitleLabel, self.wineCombo)
 
-        self.prefixes = [d for d in os.listdir(prefixes_path) if os.path.isdir(os.path.join(prefixes_path, d))] if os.path.exists(prefixes_path) else []
+        self.prefixes = sorted([d for d in os.listdir(prefixes_path) if os.path.isdir(os.path.join(prefixes_path, d))], key=version_sort_key) if os.path.exists(prefixes_path) else []
         self.prefixCombo = QComboBox()
         self.prefixCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.prefixCombo.addItems(self.prefixes)

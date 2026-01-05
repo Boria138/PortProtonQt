@@ -19,6 +19,7 @@ from portprotonqt.downloader import Downloader
 from portprotonqt.virtual_keyboard import VirtualKeyboard
 from portprotonqt.preloader import Preloader
 from portprotonqt.settings_manager import get_toggle_settings, get_advanced_settings, ADVANCED_SETTING_KEYS
+from portprotonqt.version_utils import version_sort_key
 import psutil
 
 if TYPE_CHECKING:
@@ -1738,10 +1739,10 @@ class ExeSettingsDialog(QDialog):
         if self.portproton_path:
             dist_dir = os.path.join(self.portproton_path, "data", 'dist')
             if os.path.exists(dist_dir):
-                self.dist_options = [f for f in os.listdir(dist_dir) if os.path.isdir(os.path.join(dist_dir, f))]
+                self.dist_options = sorted([f for f in os.listdir(dist_dir) if os.path.isdir(os.path.join(dist_dir, f))], key=version_sort_key)
             prefixes_dir = os.path.join(self.portproton_path, 'prefixes')
             if os.path.exists(prefixes_dir):
-                self.prefix_options = [f for f in os.listdir(prefixes_dir) if os.path.isdir(os.path.join(prefixes_dir, f))]
+                self.prefix_options = sorted([f for f in os.listdir(prefixes_dir) if os.path.isdir(os.path.join(prefixes_dir, f))], key=version_sort_key)
 
         self.current_settings = {}
         self.value_widgets = {}
