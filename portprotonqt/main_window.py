@@ -2035,8 +2035,8 @@ class MainWindow(QMainWindow):
         if not os.path.exists(dist_path):
             return
 
-        # Update the wine versions list
-        self.wine_versions = [d for d in os.listdir(dist_path) if os.path.isdir(os.path.join(dist_path, d))]
+        # Update the wine versions list with sorting
+        self.wine_versions = sorted([d for d in os.listdir(dist_path) if os.path.isdir(os.path.join(dist_path, d))], key=version_sort_key)
         self.wineCombo.clear()
         self.wineCombo.addItems(self.wine_versions)
 
@@ -2049,8 +2049,8 @@ class MainWindow(QMainWindow):
         if not os.path.exists(prefixes_path):
             return
 
-        # Update the prefixes list
-        self.prefixes = [d for d in os.listdir(prefixes_path) if os.path.isdir(os.path.join(prefixes_path, d))]
+        # Update the prefixes list with sorting
+        self.prefixes = sorted([d for d in os.listdir(prefixes_path) if os.path.isdir(os.path.join(prefixes_path, d))], key=version_sort_key)
         self.prefixCombo.clear()
         self.prefixCombo.addItems(self.prefixes)
 
