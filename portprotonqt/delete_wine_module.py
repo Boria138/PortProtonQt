@@ -7,11 +7,16 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QWidget, QCheckBox,
 from PySide6.QtCore import Qt
 from portprotonqt.localization import _
 from portprotonqt.version_utils import version_sort_key
+from portprotonqt.config_utils import read_theme_from_config
+from portprotonqt.theme_manager import ThemeManager
+
+theme_manager = ThemeManager()
 
 
 class WineDeleteManager(QDialog):
-    def __init__(self, parent=None, portproton_location=None, selected_wine=None):
+    def __init__(self, parent=None, portproton_location=None, selected_wine=None, theme=None):
         super().__init__(parent)
+        self.theme = theme if theme else theme_manager.apply_theme(read_theme_from_config())
         self.selected_wines = set()  # Use set to store selected wine names
         self.portproton_location = portproton_location
         self.selected_wine = selected_wine  # The wine that should be pre-selected
@@ -20,7 +25,8 @@ class WineDeleteManager(QDialog):
 
     def initUI(self):
         self.setWindowTitle(_('Delete Wine'))
-        self.resize(800, 600)
+        self.resize(1100, 720)
+        self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE + self.theme.MESSAGE_BOX_STYLE)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(5, 5, 5, 5)
@@ -28,6 +34,7 @@ class WineDeleteManager(QDialog):
 
         # Wine list widget - основной растягивающийся элемент
         self.list_widget = QListWidget()
+        self.list_widget.setStyleSheet(self.theme.GETWINE_WINDOW_STYLE)
         self.list_widget.setSelectionMode(QListWidget.SelectionMode.NoSelection)  # Disable default selection to use checkboxes
         layout.addWidget(self.list_widget, 1)
 
@@ -44,6 +51,7 @@ class WineDeleteManager(QDialog):
         self.selection_text.setMaximumHeight(80)
         self.selection_text.setReadOnly(True)
         self.selection_text.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction)
+        self.selection_text.setStyleSheet(self.theme.GETWINE_WINDOW_STYLE)
         self.selection_text.setPlainText(_("No WINE selected"))
         selection_layout.addWidget(self.selection_text)
 
@@ -82,8 +90,9 @@ class WineDeleteManager(QDialog):
         """Add a wine to the list with checkbox"""
         # Create a widget with checkbox and wine name
         item_widget = QWidget()
+        item_widget.setStyleSheet(self.theme.GETWINE_WINDOW_STYLE)
         item_layout = QHBoxLayout(item_widget)
-        item_layout.setContentsMargins(5, 2, 5, 2)
+        item_layout.setContentsMargins(5, 5, 5, 5)
         item_layout.setSpacing(5)
 
         checkbox = QCheckBox(wine_name)

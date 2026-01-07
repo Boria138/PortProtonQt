@@ -344,11 +344,8 @@ PROXY_INPUT_STYLE = f"""
 # СТИЛИ ДЛЯ QMessageBox (ОКНА СООБЩЕНИЙ)
 MESSAGE_BOX_STYLE = f"""
     QMessageBox {{
-        background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-            stop:0 rgba(40, 40, 40, 0.95),
-            stop:1 rgba(25, 25, 25, 0.95));
-        border: {border_b} rgba(255, 255, 255, 0.15);
-        border-radius: 12px;
+        background: {color_b};
+        border: {border_a};
     }}
     QMessageBox QLabel {{
         color: {color_f};
@@ -356,8 +353,8 @@ MESSAGE_BOX_STYLE = f"""
         font-size: {font_size_a};
     }}
     QMessageBox QPushButton {{
-        background: rgba(30, 30, 30, 0.6);
-        border: {border_b} rgba(255, 255, 255, 0.2);
+        background: {color_c};
+        border: {border_a} {color_h};
         border-radius: {border_radius_a};
         color: {color_f};
         font-family: '{font_family}';
@@ -365,12 +362,12 @@ MESSAGE_BOX_STYLE = f"""
         min-width: 80px;
     }}
     QMessageBox QPushButton:hover {{
-        background: #09bec8;
-        border-color: rgba(255, 255, 255, 0.3);
+        background: {color_a};
+        border-color: border: {border_b} {color_a};
     }}
     QMessageBox QPushButton:focus {{
         border: {border_c} {color_a};
-        background: {color_e};
+        background: {color_a};
     }}
 """
 

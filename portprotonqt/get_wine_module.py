@@ -12,12 +12,14 @@ from PySide6.QtWidgets import (QDialog, QTabWidget, QTableWidget,
                                QFrame, QSizePolicy, QAbstractItemView)
 from PySide6.QtCore import Qt, QThread, Signal, QMutex, QWaitCondition, QTimer
 import urllib.parse
-from portprotonqt.config_utils import read_proxy_config, get_portproton_start_command
+from portprotonqt.config_utils import read_proxy_config, get_portproton_start_command, read_theme_from_config
 from portprotonqt.logger import get_logger
+from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.localization import _
 from portprotonqt.version_utils import version_sort_key
 
 logger = get_logger(__name__)
+theme_manager = ThemeManager()
 
 
 def get_cpu_level():
@@ -328,8 +330,9 @@ class ExtractionThread(QThread):
 
 
 class ProtonManager(QDialog):
-    def __init__(self, parent=None, portproton_location=None):
+    def __init__(self, parent=None, portproton_location=None, theme=None):
         super().__init__(parent)
+        self.theme = theme if theme else theme_manager.apply_theme(read_theme_from_config())
         self.selected_assets = {}  # {unique_id: asset_data}
         self.current_extraction_thread = None
         self.current_download_thread = None  # Still keep this for compatibility with Downloader's thread
@@ -342,7 +345,8 @@ class ProtonManager(QDialog):
 
     def initUI(self):
         self.setWindowTitle(_('Get other Wine'))
-        self.resize(800, 600)
+        self.resize(1100, 720)
+        self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE + self.theme.MESSAGE_BOX_STYLE)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(5, 5, 5, 5)
@@ -350,6 +354,7 @@ class ProtonManager(QDialog):
 
         # Tab widget - основной растягивающийся элемент
         self.tab_widget = QTabWidget()
+        self.tab_widget.setStyleSheet(self.theme.GETWINE_WINDOW_STYLE)
         self.tab_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         layout.addWidget(self.tab_widget, 1)
 
@@ -367,6 +372,7 @@ class ProtonManager(QDialog):
         self.selection_text.setMaximumHeight(80)
         self.selection_text.setReadOnly(True)
         self.selection_text.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction)
+        self.selection_text.setStyleSheet(self.theme.GETWINE_WINDOW_STYLE)
         self.selection_text.setPlainText(_("No assets selected"))
         selection_layout.addWidget(self.selection_text)
 
@@ -519,14 +525,17 @@ class ProtonManager(QDialog):
             tab.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
             layout = QVBoxLayout(tab)
-            layout.setContentsMargins(2, 2, 2, 2)
-            layout.setSpacing(2)
+            layout.setContentsMargins(5, 5, 5, 5)
+            layout.setSpacing(5)
 
             table = QTableWidget()
+            table.setAlternatingRowColors(True)
             table.verticalHeader().setVisible(False)
             table.setColumnCount(2)  # Только Checkbox и Имя
             table.setHorizontalHeaderLabels(['', _('Asset Name')])
             table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+            table.verticalHeader().setDefaultSectionSize(36)
+            table.setStyleSheet(self.theme.GETWINE_WINDOW_STYLE)
 
             header = table.horizontalHeader()
             header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
@@ -843,6 +852,7 @@ class ProtonManager(QDialog):
                 download_info = download_info[:77] + "..."
             self.download_progress.setValue(0)
             self.download_frame.setVisible(True)
+            self.download_frame.setStyleSheet(self.theme.GETWINE_WINDOW_STYLE)
             self.download_btn.setEnabled(False)
             self.clear_btn.setEnabled(False)
 
@@ -860,6 +870,7 @@ class ProtonManager(QDialog):
                 download_info = download_info[:77] + "..."
             self.download_progress.setValue(0)
             self.download_frame.setVisible(True)
+            self.download_frame.setStyleSheet(self.theme.GETWINE_WINDOW_STYLE)
             self.download_btn.setEnabled(False)
             self.clear_btn.setEnabled(False)
 
