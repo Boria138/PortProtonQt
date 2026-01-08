@@ -1889,7 +1889,7 @@ class MainWindow(QMainWindow):
 
     def show_proton_manager(self):
         """Shows the Proton/WINE manager for downloading other WINE versions"""
-        show_proton_manager(self, self.portproton_location)
+        show_proton_manager(self, self.portproton_location, input_manager=self.input_manager)
 
     def clear_prefix(self):
         """Очищает префикс"""

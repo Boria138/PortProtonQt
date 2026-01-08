@@ -135,6 +135,15 @@ def create_dialog_hints_widget(theme, main_window, input_manager, context='defau
             ("prev_tab", _("Prev Tab")),      # LB / L1
             ("next_tab", _("Next Tab")),      # RB / R1
         ]
+    elif context == 'proton_manager':
+        dialog_actions = [
+            ("confirm", _("Toggle")),         # A / Cross
+            ("add_game", _("Download")),      # X / Triangle
+            ("prev_dir", _("Clear All")),     # Y / Square
+            ("back", _("Cancel")),            # B / Circle
+            ("prev_tab", _("Prev Tab")),      # LB / L1
+            ("next_tab", _("Next Tab")),      # RB / R1
+        ]
 
     hints_labels = []  # Store for updates (returned for class storage)
 

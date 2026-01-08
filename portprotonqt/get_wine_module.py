@@ -17,6 +17,7 @@ from portprotonqt.logger import get_logger
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.localization import _
 from portprotonqt.version_utils import version_sort_key
+from portprotonqt.dialogs import create_dialog_hints_widget, update_dialog_hints
 
 logger = get_logger(__name__)
 theme_manager = ThemeManager()
@@ -330,7 +331,7 @@ class ExtractionThread(QThread):
 
 
 class ProtonManager(QDialog):
-    def __init__(self, parent=None, portproton_location=None, theme=None):
+    def __init__(self, parent=None, portproton_location=None, theme=None, input_manager=None):
         super().__init__(parent)
         self.theme = theme if theme else theme_manager.apply_theme(read_theme_from_config())
         self.selected_assets = {}  # {unique_id: asset_data}
@@ -340,8 +341,24 @@ class ProtonManager(QDialog):
         self.assets_to_download = []
         self.current_download_index = 0
         self.portproton_location = portproton_location
+        self.input_manager = input_manager  # Input manager for gamepad support
+        self.initial_command_executed = False  # Track if --initial command has been executed
+
+        # Find main window
+        self.main_window = None
+        parent_widget = self.parent()
+        while parent_widget:
+            if hasattr(parent_widget, 'input_manager'):
+                self.main_window = parent_widget
+                break
+            parent_widget = parent_widget.parent()
+
         self.initUI()
         self.load_proton_data_from_json()
+
+        # Enable gamepad support if input manager is provided
+        if self.input_manager:
+            self.enable_proton_manager_mode()
 
     def initUI(self):
         self.setWindowTitle(_('Get other Wine'))
@@ -403,6 +420,14 @@ class ProtonManager(QDialog):
 
         layout.addWidget(self.download_frame)
 
+        # Create hints widget using common function
+        if self.input_manager and self.main_window:
+            self.current_theme_name = read_theme_from_config()
+            self.hints_widget, self.hints_labels = create_dialog_hints_widget(
+                self.theme, self.main_window, self.input_manager, context='proton_manager'
+            )
+            layout.addWidget(self.hints_widget)
+
         # Кнопки управления
         button_layout = QHBoxLayout()
         self.download_btn = QPushButton(_('Download Selected'))
@@ -415,6 +440,26 @@ class ProtonManager(QDialog):
         button_layout.addWidget(self.download_btn)
         button_layout.addWidget(self.clear_btn)
         layout.addLayout(button_layout)
+
+        # Connect signals for hints updates
+        if self.input_manager and self.main_window:
+            self.input_manager.button_event.connect(
+                lambda *args: update_dialog_hints(
+                    self.hints_labels, self.main_window, self.input_manager,
+                    theme_manager, self.current_theme_name
+                )
+            )
+            self.input_manager.dpad_moved.connect(
+                lambda *args: update_dialog_hints(
+                    self.hints_labels, self.main_window, self.input_manager,
+                    theme_manager, self.current_theme_name
+                )
+            )
+            # Initial update
+            update_dialog_hints(
+                self.hints_labels, self.main_window, self.input_manager,
+                theme_manager, self.current_theme_name
+            )
 
     def load_proton_data_from_json(self):
         """Загружаем данные по Протонам из файла JSON"""
@@ -821,6 +866,26 @@ class ProtonManager(QDialog):
             self.download_btn.setEnabled(True)
             self.clear_btn.setEnabled(True)
             self.is_downloading = False
+
+            # Run the initial command after all assets have been processed
+            import subprocess
+            try:
+                # Get the proper PortProton start command
+                start_cmd = get_portproton_start_command()
+                if start_cmd and not self.initial_command_executed:
+                    result = subprocess.run(start_cmd + ["cli", "--initial"], timeout=10)
+                    if result.returncode != 0:
+                        logger.warning(f"Initial PortProton command returned non-zero exit code: {result.returncode}")
+                    else:
+                        logger.info("Initial PortProton command executed successfully after all assets processed")
+                    self.initial_command_executed = True  # Mark that command has been executed
+                elif self.initial_command_executed:
+                    logger.debug("Initial PortProton command already executed, skipping")
+            except subprocess.TimeoutExpired:
+                logger.warning("Initial PortProton command timed out")
+            except Exception as e:
+                logger.error(f"Error running initial PortProton command: {e}")
+
             QMessageBox.information(self, _("Downloading Complete"), _("All selected archives have been downloaded!"))
             return
 
@@ -954,22 +1019,6 @@ class ProtonManager(QDialog):
                 def extraction_finished(archive_path, success):
                     if success:
                         logger.info(f"Successfully extracted: {archive_path}")
-
-                        # Run the initial command after successful extraction
-                        import subprocess
-                        try:
-                            # Get the proper PortProton start command
-                            start_cmd = get_portproton_start_command()
-                            if start_cmd:
-                                result = subprocess.run(start_cmd + ["cli", "--initial"], timeout=10)
-                                if result.returncode != 0:
-                                    logger.warning(f"Initial PortProton command returned non-zero exit code: {result.returncode}")
-                            else:
-                                logger.warning("Could not determine PortProton start command, skipping initial command")
-                        except subprocess.TimeoutExpired:
-                            logger.warning("Initial PortProton command timed out")
-                        except Exception as e:
-                            logger.error(f"Error running initial PortProton command: {e}")
                     else:
                         logger.error(f"Failed to extract: {archive_path}")
                         QMessageBox.critical(self, _("Extraction Error"), _("Failed to extract archive: {0}").format(archive_path))
@@ -1043,6 +1092,15 @@ class ProtonManager(QDialog):
             self.current_download_index += 1
             QTimer.singleShot(100, self.start_next_download)
 
+    def has_active_processes(self):
+        """Check if there are active download or extraction processes"""
+        extraction_active = (self.current_extraction_thread and
+                            self.current_extraction_thread.isRunning())
+        download_active = (self.current_download_thread and
+                          hasattr(self.current_download_thread, 'isRunning') and
+                          self.current_download_thread.isRunning())
+        return extraction_active or download_active
+
     def cancel_current_download(self):
         """Cancel current download or extraction"""
         # Stop extraction thread if running
@@ -1068,6 +1126,8 @@ class ProtonManager(QDialog):
         self.assets_to_download = []
         self.current_download_index = 0
         self.is_downloading = False
+        # Сбрасываем флаг выполнения команды --initial, так как процесс отменен
+        self.initial_command_executed = False
 
         # Сброс/перезапуск UI
         self.download_frame.setVisible(False)
@@ -1076,46 +1136,87 @@ class ProtonManager(QDialog):
 
         QMessageBox.information(self, _("Operation Cancelled"), _("Download or extraction has been cancelled."))
 
+    def enable_proton_manager_mode(self):
+        """Enable gamepad mode for ProtonManager"""
+        if self.input_manager:
+            self.input_manager.enable_proton_manager_mode(self)
+
+    def disable_proton_manager_mode(self):
+        """Disable gamepad mode for ProtonManager"""
+        if self.input_manager:
+            self.input_manager.disable_proton_manager_mode()
+
     def closeEvent(self, event):
         """Проверка, что все потоки останавливаются при закрытии приложения"""
         logger.debug("Closing ProtonManager dialog...")
 
-        # Stop extraction thread if running
-        if self.current_extraction_thread and self.current_extraction_thread.isRunning():
-            logger.debug("Stopping current extraction thread...")
-            self.current_extraction_thread.stop()
-            if not self.current_extraction_thread.wait(2000):
-                logger.warning("Extraction thread did not stop gracefully during close")
+        # Disable gamepad mode before closing
+        if self.input_manager:
+            self.disable_proton_manager_mode()
 
-        # Stop download thread if running
-        try:
-            if (self.current_download_thread and
-                hasattr(self.current_download_thread, 'isRunning') and
-                self.current_download_thread.isRunning()):
-                logger.debug("Stopping current download thread...")
-                if hasattr(self.current_download_thread, 'stop'):
-                    self.current_download_thread.stop()
-                if not self.current_download_thread.wait(2000):
-                    logger.warning("Download thread did not stop gracefully during close")
-        except RuntimeError:
-            # Object already deleted, which is fine
-            logger.debug("Download thread object already deleted during close")
+        # Check if there are active processes and cancel them
+        if self.has_active_processes():
+            logger.debug("Active processes detected, cancelling before close...")
+            self.cancel_current_download()
+        else:
+            # Stop extraction thread if running
+            if self.current_extraction_thread and self.current_extraction_thread.isRunning():
+                logger.debug("Stopping current extraction thread...")
+                self.current_extraction_thread.stop()
+                if not self.current_extraction_thread.wait(2000):
+                    logger.warning("Extraction thread did not stop gracefully during close")
+
+            # Stop download thread if running
+            try:
+                if (self.current_download_thread and
+                    hasattr(self.current_download_thread, 'isRunning') and
+                    self.current_download_thread.isRunning()):
+                    logger.debug("Stopping current download thread...")
+                    if hasattr(self.current_download_thread, 'stop'):
+                        self.current_download_thread.stop()
+                    if not self.current_download_thread.wait(2000):
+                        logger.warning("Download thread did not stop gracefully during close")
+            except RuntimeError:
+                # Object already deleted, which is fine
+                logger.debug("Download thread object already deleted during close")
+
+            # If we're closing without active processes but haven't completed all downloads,
+            # reset the initial command flag so it can run if the dialog is opened again
+            if self.is_downloading and self.current_download_index < len(self.assets_to_download):
+                self.initial_command_executed = False
 
         event.accept()
 
+    def reject(self):
+        """Override reject to properly cancel active processes before closing"""
+        # Disable gamepad mode before rejecting
+        if self.input_manager:
+            self.disable_proton_manager_mode()
+
+        if self.has_active_processes():
+            logger.debug("Active processes detected, cancelling before reject...")
+            self.cancel_current_download()
+        else:
+            # If we're rejecting without active processes but haven't completed all downloads,
+            # reset the initial command flag so it can run if the dialog is opened again
+            if self.is_downloading and self.current_download_index < len(self.assets_to_download):
+                self.initial_command_executed = False
+            super().reject()
 
 
-def show_proton_manager(parent=None, portproton_location=None):
+
+def show_proton_manager(parent=None, portproton_location=None, input_manager=None):
     """
     Shows the Proton/WINE archive extractor dialog.
 
     Args:
         parent: Parent widget for the dialog
         portproton_location: Location of PortProton installation
+        input_manager: Input manager for gamepad support
 
     Returns:
         ProtonManager dialog instance
     """
-    dialog = ProtonManager(parent, portproton_location)
+    dialog = ProtonManager(parent, portproton_location, input_manager=input_manager)
     dialog.exec()  # Use exec() for modal dialog
     return dialog

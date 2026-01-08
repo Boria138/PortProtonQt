@@ -33,3 +33,6 @@ Thumbs.db
 .vscode
 .ropeproject
 .zed
+
+# get_wine debug folder
+proton_downloads
