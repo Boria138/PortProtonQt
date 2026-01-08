@@ -1763,10 +1763,9 @@ class MainWindow(QMainWindow):
             ("Winetricks", self.open_winetricks),
             (_("Create Prefix Backup"), self.create_prefix_backup),
             (_("Load Prefix Backup"), self.load_prefix_backup),
-            (_("Delete Compatibility Tool"), self.delete_compat_tool),
             (_("Delete Prefix"), self.delete_prefix),
             (_("Clear Prefix"), self.clear_prefix),
-            (_("Download other WINE"), self.show_proton_manager),
+            (_("Manage WINE versions"), self.show_proton_manager),
         ]
 
         for i, (text, callback) in enumerate(additional_buttons):
@@ -2017,14 +2016,6 @@ class MainWindow(QMainWindow):
                 QMessageBox.information(self, _("Success"), _("Prefix '{}' deleted.").format(selected_prefix))
             except Exception as e:
                 QMessageBox.warning(self, _("Error"), _("Failed to delete prefix: {}").format(str(e)))
-
-    def delete_compat_tool(self):
-        """Shows the WINE deletion dialog to select and delete wine versions."""
-        from portprotonqt.delete_wine_module import show_wine_delete_manager
-        selected_tool = self.wineCombo.currentText()
-        show_wine_delete_manager(self, self.portproton_location, selected_tool)
-        # Refresh the combo box after deletion
-        self.refresh_wine_combo()
 
     def refresh_wine_combo(self):
         """Refresh the wine combo box after deletion."""
