@@ -60,13 +60,13 @@ BUTTONS = {
     'back':          {ecodes.BTN_EAST},            # B (Xbox) / Circle (PS) / A (Switch)
     'add_game':      {ecodes.BTN_NORTH},           # X (Xbox) / Triangle (PS) / Y (Switch)
     'prev_dir':      {ecodes.BTN_WEST},            # Y (Xbox) / Square (PS) / X (Switch)
-    'prev_tab':      {ecodes.BTN_TL},              # LB (Xbox) / L1 (PS) / L (Switch)
-    'next_tab':      {ecodes.BTN_TR},              # RB (Xbox) / R1 (PS) / R (Switch)
+    'prev_tab':      {ecodes.BTN_TL, ecodes.BTN_Z},              # LB (Xbox) / L1 (PS) / L (Switch) and BTN_Z for hat switch
+    'next_tab':      {ecodes.BTN_TR, ecodes.BTN_C},              # RB (Xbox) / R1 (PS) / R (Switch) and BTN_C for hat switch
     'context_menu':  {ecodes.BTN_START},           # Start (Xbox) / Options (PS) / + (Switch)
     'menu':          {ecodes.BTN_SELECT},          # Select (Xbox) / Share (PS) / - (Switch)
     'guide':         {ecodes.BTN_MODE},            # Xbox Button / PS Button / Home (Switch)
-    'increase_size': {ecodes.ABS_RZ},              # RT (Xbox) / R2 (PS) / ZR (Switch)
-    'decrease_size': {ecodes.ABS_Z},               # LT (Xbox) / L2 (PS) / ZL (Switch)
+    'increase_size': {ecodes.ABS_RZ, ecodes.BTN_TR2},              # RT (Xbox) / R2 (PS) / ZR (Switch) and BTN_TR2 for Bluetooth
+    'decrease_size': {ecodes.ABS_Z, ecodes.BTN_TL2},               # LT (Xbox) / L2 (PS) / ZL (Switch) and BTN_TL2 for Bluetooth
 }
 
 class GamepadType(Enum):
@@ -2652,6 +2652,28 @@ class InputManager(QObject):
 
                                 if event.code in BUTTONS['guide']:
                                     self.guide_held = (event.value == 1)
+
+                                # Trigger handling for UI (digital buttons like BTN_TL2/BTN_TR2)
+                                if event.code in {ecodes.BTN_TL2, ecodes.BTN_TR2}:
+                                    if current_time - self.last_trigger_time < self.trigger_cooldown:
+                                        pass  # Skip if in cooldown
+                                    else:
+                                        if event.code == ecodes.BTN_TL2:  # LT/L2
+                                            if event.value == 1 and not self.lt_pressed:  # Press
+                                                self.lt_pressed = True
+                                                self.button_event.emit(event.code, 1)
+                                                self.last_trigger_time = current_time
+                                            elif event.value == 0 and self.lt_pressed:  # Release
+                                                self.lt_pressed = False
+                                                self.button_event.emit(event.code, 0)
+                                        elif event.code == ecodes.BTN_TR2:  # RT/R2
+                                            if event.value == 1 and not self.rt_pressed:  # Press
+                                                self.rt_pressed = True
+                                                self.button_event.emit(event.code, 1)
+                                                self.last_trigger_time = current_time
+                                            elif event.value == 0 and self.rt_pressed:  # Release
+                                                self.rt_pressed = False
+                                                self.button_event.emit(event.code, 0)
 
                                 if event.value == 1:
                                     if ((event.code in BUTTONS['guide'] and self.start_held) or
