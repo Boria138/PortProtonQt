@@ -664,17 +664,6 @@ class InputManager(QObject):
                     table.setCurrentCell(new_row, 0)
                     table.setFocus(Qt.FocusReason.OtherFocusReason)
 
-            elif code == ecodes.ABS_HAT0X:  # Left/Right (Tabs)
-                current_index = self.winetricks_dialog.tab_widget.currentIndex()
-                if value < 0:  # Left
-                    new_index = max(0, current_index - 1)
-                else:  # Right
-                    new_index = min(self.winetricks_dialog.tab_widget.count() - 1, current_index + 1)
-
-                if new_index != current_index:
-                    self.winetricks_dialog.tab_widget.setCurrentIndex(new_index)
-                    self._focus_first_row_in_current_table()
-
         except Exception as e:
             logger.error(f"Error in handle_winetricks_dpad: {e}")
 
@@ -1036,17 +1025,6 @@ class InputManager(QObject):
                     table.setCurrentCell(new_row, 0)
                     table.setFocus(Qt.FocusReason.OtherFocusReason)
 
-            elif code == ecodes.ABS_HAT0X:  # Left/Right (Tabs)
-                current_index = self.proton_manager_dialog.tab_widget.currentIndex()
-                if value < 0:  # Left
-                    new_index = max(0, current_index - 1)
-                else:  # Right
-                    new_index = min(self.proton_manager_dialog.tab_widget.count() - 1, current_index + 1)
-
-                if new_index != current_index:
-                    self.proton_manager_dialog.tab_widget.setCurrentIndex(new_index)
-                    self._focus_first_row_in_current_proton_manager_table()
-
         except Exception as e:
             logger.error(f"Error in handle_proton_manager_dpad: {e}")
 
@@ -1294,17 +1272,9 @@ class InputManager(QObject):
                 if value < 0:  # Left
                     if current_col > 0:
                         table.setCurrentCell(current_row, max(0, current_col - 1))
-                    else:
-                        idx = max(0, self.settings_dialog.tab_widget.currentIndex() - 1)
-                        self.settings_dialog.tab_widget.setCurrentIndex(idx)
-                        self._focus_first_row_in_current_settings_table()
                 else:  # Right
                     if current_col < table.columnCount() - 1:
                         table.setCurrentCell(current_row, min(table.columnCount() - 1, current_col + 1))
-                    else:
-                        idx = min(self.settings_dialog.tab_widget.count() - 1, self.settings_dialog.tab_widget.currentIndex() + 1)
-                        self.settings_dialog.tab_widget.setCurrentIndex(idx)
-                        self._focus_first_row_in_current_settings_table()
 
         except Exception as e:
             logger.error(f"Error in handle_settings_dpad: {e}")
@@ -2258,18 +2228,20 @@ class InputManager(QObject):
             if (key in (Qt.Key.Key_Left, Qt.Key.Key_Right) and
                 not isinstance(focused, GameCard | QLineEdit | QTableWidget | AutoSizeButton) and
                 not self.file_explorer):
-                idx = self._parent.stackedWidget.currentIndex()
-                total = len(self._parent.tabButtons)
-                if key == Qt.Key.Key_Left:
-                    new_idx = (idx - 1) % total
-                    self._parent.switchTab(new_idx)
-                    self._parent.tabButtons[new_idx].setFocus(Qt.FocusReason.OtherFocusReason)
-                    return True
-                elif key == Qt.Key.Key_Right:
-                    new_idx = (idx + 1) % total
-                    self._parent.switchTab(new_idx)
-                    self._parent.tabButtons[new_idx].setFocus(Qt.FocusReason.OtherFocusReason)
-                    return True
+                active = QApplication.activeWindow()
+                if not isinstance(active, QDialog) or not hasattr(active, 'tab_widget'):
+                    idx = self._parent.stackedWidget.currentIndex()
+                    total = len(self._parent.tabButtons)
+                    if key == Qt.Key.Key_Left:
+                        new_idx = (idx - 1) % total
+                        self._parent.switchTab(new_idx)
+                        self._parent.tabButtons[new_idx].setFocus(Qt.FocusReason.OtherFocusReason)
+                        return True
+                    elif key == Qt.Key.Key_Right:
+                        new_idx = (idx + 1) % total
+                        self._parent.switchTab(new_idx)
+                        self._parent.tabButtons[new_idx].setFocus(Qt.FocusReason.OtherFocusReason)
+                        return True
 
             # Map arrow keys to D-pad press events for other contexts
             if key in (Qt.Key.Key_Up, Qt.Key.Key_Down, Qt.Key.Key_Left, Qt.Key.Key_Right):
