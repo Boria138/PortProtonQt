@@ -1548,6 +1548,11 @@ class InputManager(QObject):
 
     @Slot(int, int)
     def handle_button_slot(self, button_code: int, value: int) -> None:
+        # Handle common UI elements like QMessageBox, QMenu, etc. FIRST
+        # This ensures that any active dialogs are handled before main window logic
+        if self._handle_common_ui_elements(button_code):
+            return
+
         active_window = QApplication.activeWindow()
 
         # Обработка виртуальной клавиатуры в AddGameDialog (handle both press and release)
@@ -1637,10 +1642,6 @@ class InputManager(QObject):
                         self.guide_held = False
                         self.guide_pressed_time = 0
                         self.select_pressed_time = 0
-
-            # Handle common UI elements like QMenu and QMessageBox
-            if self._handle_common_ui_elements(button_code):
-                return
 
             # Handle QComboBox
             if isinstance(focused, QComboBox):
@@ -2224,11 +2225,23 @@ class InputManager(QObject):
                         active_win.show_next()
                     return True  # Consume event to prevent tab switching
 
+            # Handle common UI elements like QMessageBox before tab switching
+            # Check if there's an active QMessageBox that should handle the arrow keys first
+            active = QApplication.activeWindow()
+            if isinstance(active, QMessageBox):
+                # Prevent tab switching when there's an active QMessageBox
+                # Let the default Qt behavior handle the QMessageBox focus navigation
+                if key in (Qt.Key.Key_Left, Qt.Key.Key_Right, Qt.Key.Key_Up, Qt.Key.Key_Down):
+                    # Just continue to let the default processing handle the QMessageBox
+                    pass  # Allow the event to continue to the default processing
+
             # Handle tab switching with Left/Right arrow keys when not in GameCard focus or QLineEdit or QTableWidget or AutoSizeButton
+            # Also skip if there's an active QMessageBox or other QDialog
+            active = QApplication.activeWindow()
             if (key in (Qt.Key.Key_Left, Qt.Key.Key_Right) and
                 not isinstance(focused, GameCard | QLineEdit | QTableWidget | AutoSizeButton) and
-                not self.file_explorer):
-                active = QApplication.activeWindow()
+                not self.file_explorer and
+                not isinstance(active, QMessageBox)):
                 if not isinstance(active, QDialog) or not hasattr(active, 'tab_widget'):
                     idx = self._parent.stackedWidget.currentIndex()
                     total = len(self._parent.tabButtons)
