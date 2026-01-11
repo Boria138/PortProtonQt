@@ -41,7 +41,9 @@ QTableWidget {{
 QTableWidget::item:!enabled {{
     color: #7a7a7a;
 }}
-QTableWidget::item:focus {{
+QTableWidget::item:selected,
+QTableWidget::item:selected:!active,
+QTableWidget::item:hover {{
     background: {color_a};
 }}
 /* CheckBox */
