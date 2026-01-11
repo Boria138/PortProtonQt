@@ -355,13 +355,14 @@ class ProtonManager(QDialog):
 
         self.initUI()
         self.load_proton_data_from_json()
+        self.create_installed_tab()
 
         # Enable gamepad support if input manager is provided
         if self.input_manager:
             self.enable_proton_manager_mode()
 
     def initUI(self):
-        self.setWindowTitle(_('Get other Wine'))
+        self.setWindowTitle(_('Manage Wine versions'))
         self.resize(1100, 720)
         self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE + self.theme.MESSAGE_BOX_STYLE)
 
@@ -440,6 +441,9 @@ class ProtonManager(QDialog):
         button_layout.addWidget(self.download_btn)
         button_layout.addWidget(self.clear_btn)
         layout.addLayout(button_layout)
+
+        # Connect tab change signal
+        self.tab_widget.currentChanged.connect(self.tab_changed)
 
         # Connect signals for hints updates
         if self.input_manager and self.main_window:
@@ -764,6 +768,132 @@ class ProtonManager(QDialog):
 
         return os.path.exists(expected_dir)
 
+    def create_installed_tab(self):
+        """Create the 'Installed' tab showing installed wine versions with removal option"""
+        if not self.portproton_location:
+            return
+
+        dist_path = os.path.join(self.portproton_location, "data", "dist")
+        if not os.path.exists(dist_path):
+            os.makedirs(dist_path, exist_ok=True)
+
+        installed_versions = [d for d in os.listdir(dist_path) if os.path.isdir(os.path.join(dist_path, d))]
+
+        if not installed_versions:
+            # Create empty tab with message
+            tab = QWidget()
+            layout = QVBoxLayout(tab)
+
+            label = QLabel(_("No Wine/Proton versions installed"))
+            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            label.setStyleSheet("font-size: 16px; padding: 50px;")
+            layout.addWidget(label)
+
+            self.tab_widget.addTab(tab, _("Installed"))
+            return
+
+        # Create tab with table for installed versions
+        tab = QWidget()
+        tab.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
+        layout = QVBoxLayout(tab)
+        layout.setContentsMargins(5, 5, 5, 5)
+        layout.setSpacing(5)
+
+        table = QTableWidget()
+        table.setAlternatingRowColors(True)
+        table.verticalHeader().setVisible(False)
+        table.setColumnCount(3)  # Checkbox, Name, Size
+        table.setHorizontalHeaderLabels(['', _('Version Name'), _('Size')])
+        table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        table.verticalHeader().setDefaultSectionSize(36)
+        table.setStyleSheet(self.theme.GETWINE_WINDOW_STYLE)
+
+        header = table.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+
+        # Sort installed versions
+        installed_versions.sort(key=version_sort_key)
+        table.setRowCount(len(installed_versions))
+        table.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
+        for row_index, version_name in enumerate(installed_versions):
+            self.add_installed_row(table, row_index, version_name)
+
+        layout.addWidget(table, 1)
+
+        # Настройка выделения строк и обработчика кликов для вкладки Installed
+        table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+        table.cellClicked.connect(self.on_cell_clicked)
+
+        self.tab_widget.addTab(tab, _("Installed"))
+
+    def add_installed_row(self, table, row_index, version_name):
+        """Add a row for an installed version with delete option"""
+        checkbox_widget = QWidget()
+        checkbox_layout = QHBoxLayout(checkbox_widget)
+        checkbox_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        checkbox_layout.setContentsMargins(0, 0, 0, 0)
+
+        checkbox = QCheckBox()
+        checkbox_widget.setToolTip(_("Select to remove this version"))
+        checkbox.stateChanged.connect(lambda state: self.on_installed_version_toggled(state))
+        checkbox_layout.addWidget(checkbox)
+
+        table.setCellWidget(row_index, 0, checkbox_widget)
+
+        # Add version name
+        version_item = QTableWidgetItem(version_name)
+        version_item.setFlags(version_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+        table.setItem(row_index, 1, version_item)
+
+        # Calculate and add size
+        if self.portproton_location:
+            dist_path = os.path.join(self.portproton_location, "data", "dist")
+            version_path = os.path.join(dist_path, version_name)
+            size_str = self.get_directory_size(version_path)
+        else:
+            size_str = _("Unknown")
+            version_path = ""  # Provide a default value when portproton_location is None
+        size_item = QTableWidgetItem(size_str)
+        size_item.setFlags(size_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+        table.setItem(row_index, 2, size_item)
+
+        # Store version name in user data for later use
+        for col in range(table.columnCount()):
+            item = table.item(row_index, col)
+            if item:
+                item.setData(Qt.ItemDataRole.UserRole, {
+                    'version_name': version_name,
+                    'version_path': version_path
+                })
+
+    def on_installed_version_toggled(self, state):
+        """Handle checkbox state changes in the installed tab"""
+        self.update_selection_display()
+
+    def get_directory_size(self, path):
+        """Calculate directory size and return human-readable string"""
+        try:
+            total_size = 0
+            for dirpath, _dirnames, filenames in os.walk(path):
+                for filename in filenames:
+                    filepath = os.path.join(dirpath, filename)
+                    if os.path.exists(filepath):
+                        total_size += os.path.getsize(filepath)
+
+            # Convert to human readable format
+            for unit in ['B', 'KB', 'MB', 'GB']:
+                if total_size < 1024.0:
+                    return f"{total_size:.1f} {unit}"
+                total_size /= 1024.0
+            return f"{total_size:.1f} TB"
+        except Exception:
+            return _("Unknown")
+
     def on_cell_clicked(self, row):
         """Обработка клика по ячейке - переключение флажка при клике по любой ячейке в строке"""
         tab = self.tab_widget.currentWidget()
@@ -774,6 +904,8 @@ class ProtonManager(QDialog):
                 checkbox = checkbox_widget.findChild(QCheckBox)
                 if checkbox and checkbox.isEnabled():
                     checkbox.setChecked(not checkbox.isChecked())
+                    # Update selection display after clicking
+                    self.update_selection_display()
 
     def on_asset_toggled_json(self, state, asset, version, source_name):
         """Обработка выбора/отмены выбора элемента из данных JSON"""
@@ -806,17 +938,102 @@ class ProtonManager(QDialog):
 
     def update_selection_display(self):
         """Обновляем отображение выбора"""
-        if self.selected_assets:
-            selection_text = _('Selected {} assets:\n').format(len(self.selected_assets))
+        current_tab_index = self.tab_widget.currentIndex()
+        current_tab_text = self.tab_widget.tabText(current_tab_index)
 
-            for i, asset_data in enumerate(self.selected_assets.values(), 1):
-                selection_text += f"{i}. {asset_data['source_name'].upper()} - {asset_data['asset_name']}\n"
+        if current_tab_text == _("Installed"):
+            # Handle installed tab - count selected checkboxes
+            current_tab = self.tab_widget.currentWidget()
+            table = current_tab.findChild(QTableWidget)
+            if table:
+                selected_count = 0
+                for row in range(table.rowCount()):
+                    checkbox_widget = table.cellWidget(row, 0)
+                    if checkbox_widget:
+                        checkbox = checkbox_widget.findChild(QCheckBox)
+                        if checkbox and checkbox.isChecked():
+                            selected_count += 1
 
-            self.selection_text.setPlainText(selection_text)
-            self.download_btn.setEnabled(True)
+                if selected_count > 0:
+                    selection_text = _('Selected {} assets:\n').format(selected_count)
+
+                    # Add the specific version names that are selected
+                    current_tab = self.tab_widget.currentWidget()
+                    table = current_tab.findChild(QTableWidget)
+                    if table:
+                        # Create a counter for numbering the selected items
+                        item_number = 1
+                        for row in range(table.rowCount()):
+                            checkbox_widget = table.cellWidget(row, 0)
+                            if checkbox_widget:
+                                checkbox = checkbox_widget.findChild(QCheckBox)
+                                if checkbox and checkbox.isChecked():
+                                    version_item = table.item(row, 1)  # Version name column
+                                    if version_item:
+                                        version_name = version_item.text()
+                                        selection_text += f"{item_number}. {version_name}\n"
+                                        item_number += 1
+
+                    self.download_btn.setText(_('Delete Selected'))
+                    self.download_btn.setEnabled(True)
+                else:
+                    selection_text = _("No assets selected")
+                    self.download_btn.setText(_('Delete Selected'))
+                    self.download_btn.setEnabled(False)
+
+                self.selection_text.setPlainText(selection_text)
+            else:
+                self.selection_text.setPlainText(_("No assets selected"))
+                self.download_btn.setText(_('Delete Selected'))
+                self.download_btn.setEnabled(False)
         else:
-            self.selection_text.setPlainText(_("No assets selected"))
-            self.download_btn.setEnabled(False)
+            # Handle other tabs - use selected_assets dictionary
+            if self.selected_assets:
+                selection_text = _('Selected {} assets:\n').format(len(self.selected_assets))
+
+                for i, asset_data in enumerate(self.selected_assets.values(), 1):
+                    selection_text += f"{i}. {asset_data['source_name'].upper()} - {asset_data['asset_name']}\n"
+
+                self.selection_text.setPlainText(selection_text)
+                self.download_btn.setText(_('Download Selected'))
+                self.download_btn.setEnabled(True)
+            else:
+                self.selection_text.setPlainText(_("No assets selected"))
+                self.download_btn.setText(_('Download Selected'))
+                self.download_btn.setEnabled(False)
+
+    def tab_changed(self, index):
+        """Handle tab change to update button text appropriately"""
+        current_tab_text = self.tab_widget.tabText(index)
+        if current_tab_text == _("Installed"):
+            # Count selected items in installed tab
+            current_tab = self.tab_widget.widget(index)
+            table = current_tab.findChild(QTableWidget)
+            if table:
+                selected_count = 0
+                for row in range(table.rowCount()):
+                    checkbox_widget = table.cellWidget(row, 0)
+                    if checkbox_widget:
+                        checkbox = checkbox_widget.findChild(QCheckBox)
+                        if checkbox and checkbox.isChecked():
+                            selected_count += 1
+
+                if selected_count > 0:
+                    self.download_btn.setText(_('Delete Selected'))
+                    self.download_btn.setEnabled(True)
+                else:
+                    self.download_btn.setText(_('Delete Selected'))
+                    self.download_btn.setEnabled(False)
+        else:
+            # For other tabs, use the selected_assets dictionary
+            if self.selected_assets:
+                self.download_btn.setText(_('Download Selected'))
+                self.download_btn.setEnabled(True)
+            else:
+                self.download_btn.setText(_('Download Selected'))
+                self.download_btn.setEnabled(False)
+
+        self.update_selection_display()
 
     def clear_selection(self):
         """Очищаем (сбрасываем) всё выбранное"""
@@ -824,8 +1041,10 @@ class ProtonManager(QDialog):
             QMessageBox.warning(self, _("Downloading in Progress"), _("Cannot clear selection while extraction is in progress."))
             return
 
+        # Clear selected assets for download tabs
         self.selected_assets.clear()
 
+        # Clear checkboxes in all tabs
         for tab_index in range(self.tab_widget.count()):
             tab = self.tab_widget.widget(tab_index)
             table = tab.findChild(QTableWidget)
@@ -834,29 +1053,123 @@ class ProtonManager(QDialog):
                     checkbox_widget = table.cellWidget(row, 0)
                     if checkbox_widget:
                         checkbox = checkbox_widget.findChild(QCheckBox)
-                        if checkbox and checkbox.isEnabled():
+                        if checkbox:
                             checkbox.setChecked(False)
 
         self.update_selection_display()
 
     def download_selected(self):
-        """Extract all selected archives"""
-        if not self.selected_assets:
-            QMessageBox.warning(self, _("No Selection"), _("Please select at least one archive to download."))
+        """Handle both downloading new versions and removing installed versions"""
+        # Check if we're on the Installed tab
+        current_tab_index = self.tab_widget.currentIndex()
+        current_tab_text = self.tab_widget.tabText(current_tab_index)
+
+        if current_tab_text == _("Installed"):
+            # Handle removal of selected installed versions
+            self.remove_selected_installed_versions()
+        else:
+            # Handle downloading of selected versions (existing functionality)
+            if not self.selected_assets:
+                QMessageBox.warning(self, _("No Selection"), _("Please select at least one archive to download."))
+                return
+
+            if self.is_downloading:
+                QMessageBox.warning(self, _("Downloading in Progress"), _("Please wait for current downloading to complete."))
+                return
+
+            downloads_dir = "proton_downloads"
+            if not os.path.exists(downloads_dir):
+                os.makedirs(downloads_dir)
+
+            self.assets_to_download = list(self.selected_assets.values())
+            self.current_download_index = 0
+            self.is_downloading = True
+            self.start_next_download()
+
+    def remove_selected_installed_versions(self):
+        """Delete selected installed wine/proton versions"""
+        # Get the current tab (Installed tab)
+        current_tab = self.tab_widget.currentWidget()
+        table = current_tab.findChild(QTableWidget)
+        if not table:
             return
 
-        if self.is_downloading:
-            QMessageBox.warning(self, _("Downloading in Progress"), _("Please wait for current downloading to complete."))
+        # Find all selected versions to remove
+        versions_to_remove = []
+        for row in range(table.rowCount()):
+            checkbox_widget = table.cellWidget(row, 0)
+            if checkbox_widget:
+                checkbox = checkbox_widget.findChild(QCheckBox)
+                if checkbox and checkbox.isChecked():
+                    item = table.item(row, 1)  # Version name column
+                    if item:
+                        user_data = item.data(Qt.ItemDataRole.UserRole)
+                        if user_data:
+                            versions_to_remove.append(user_data['version_path'])
+
+        if not versions_to_remove:
+            # Temporarily disable proton manager mode to allow gamepad input in QMessageBox
+            if self.input_manager:
+                self.disable_proton_manager_mode()
+            try:
+                QMessageBox.warning(self, _("No Selection"), _("Please select at least one version to delete."))
+            finally:
+                # Re-enable proton manager mode after QMessageBox closes
+                if self.input_manager:
+                    self.enable_proton_manager_mode()
             return
 
-        downloads_dir = "proton_downloads"
-        if not os.path.exists(downloads_dir):
-            os.makedirs(downloads_dir)
+        # Temporarily disable proton manager mode to allow gamepad input in QMessageBox
+        if self.input_manager:
+            self.disable_proton_manager_mode()
+        try:
+            # Confirm deletion
+            reply = QMessageBox.question(
+                self,
+                _("Confirm Deletion"),
+                _("Are you sure you want to delete {} selected version(s)?\n\nThis action cannot be undone.").format(len(versions_to_remove)),
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No
+            )
+        finally:
+            # Re-enable proton manager mode after QMessageBox closes
+            if self.input_manager:
+                self.enable_proton_manager_mode()
 
-        self.assets_to_download = list(self.selected_assets.values())
-        self.current_download_index = 0
-        self.is_downloading = True
-        self.start_next_download()
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        # Remove the selected versions
+        removed_count = 0
+        for version_path in versions_to_remove:
+            try:
+                if os.path.exists(version_path):
+                    import shutil
+                    shutil.rmtree(version_path)
+                    removed_count += 1
+            except Exception as e:
+                logger.error(f"Error removing version at {version_path}: {e}")
+                QMessageBox.warning(self, _("Error"), _("Failed to remove version at {}: {}").format(version_path, str(e)))
+
+        if removed_count > 0:
+            QMessageBox.information(self, _("Success"), _("Successfully removed {} version(s).").format(removed_count))
+            # Refresh the installed tab to show updated list
+            self.refresh_installed_tab()
+
+    def refresh_installed_tab(self):
+        """Refresh the installed tab to show current installed versions"""
+        # Find the installed tab index
+        installed_tab_index = -1
+        for i in range(self.tab_widget.count()):
+            if self.tab_widget.tabText(i) == _("Installed"):
+                installed_tab_index = i
+                break
+
+        if installed_tab_index != -1:
+            # Remove the old installed tab
+            self.tab_widget.removeTab(installed_tab_index)
+            # Create a new one
+            self.create_installed_tab()
 
     def start_next_download(self):
         """Start extraction of next archive in the list"""
