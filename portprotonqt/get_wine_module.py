@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (QDialog, QTabWidget, QTableWidget,
                                QTableWidgetItem, QVBoxLayout, QWidget, QCheckBox,
                                QPushButton, QHeaderView, QMessageBox,
                                QLabel, QTextEdit, QHBoxLayout, QProgressBar,
-                               QFrame, QSizePolicy, QAbstractItemView)
+                               QFrame, QSizePolicy, QAbstractItemView, QStackedWidget)
 from PySide6.QtCore import Qt, QThread, Signal, QMutex, QWaitCondition, QTimer
 import urllib.parse
 from portprotonqt.config_utils import read_proxy_config, get_portproton_start_command, read_theme_from_config
@@ -18,9 +18,40 @@ from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.localization import _
 from portprotonqt.version_utils import version_sort_key
 from portprotonqt.dialogs import create_dialog_hints_widget, update_dialog_hints
+from portprotonqt.preloader import Preloader
 
 logger = get_logger(__name__)
 theme_manager = ThemeManager()
+
+
+class WineLoadingThread(QThread):
+    """Thread for loading wine metadata in the background"""
+    loading_complete = Signal(object)  # Emits the metadata
+    loading_error = Signal(str)       # Emits error message
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+    def run(self):
+        try:
+            json_url = "https://git.linux-gaming.ru/Boria138/PortProton-Wine-Metadata/raw/branch/main/wine_metadata.json"
+
+            # Create a session with proxy support
+            session = requests.Session()
+            proxy = read_proxy_config() or {}
+            if proxy:
+                session.proxies.update(proxy)
+            session.verify = True
+            response = session.get(json_url, timeout=30)
+            response.raise_for_status()
+
+            metadata = orjson.loads(response.content)
+            logger.info(f"Successfully loaded JSON metadata with {len(metadata)} entries")
+
+            self.loading_complete.emit(metadata)
+        except Exception as e:
+            logger.error(f"Error loading metadata: {e}")
+            self.loading_error.emit(str(e))
 
 
 def get_cpu_level():
@@ -343,6 +374,7 @@ class ProtonManager(QDialog):
         self.portproton_location = portproton_location
         self.input_manager = input_manager  # Input manager for gamepad support
         self.initial_command_executed = False  # Track if --initial command has been executed
+        self.wine_loading_thread = None  # Thread for loading wine data
 
         # Find main window
         self.main_window = None
@@ -354,9 +386,9 @@ class ProtonManager(QDialog):
             parent_widget = parent_widget.parent()
 
         self.initUI()
-        self.load_proton_data_from_json()
-        self.create_installed_tab()
-
+        # Start loading wine data in the background after UI is initialized
+        self.start_loading_wine_data()
+        # The installed tab will be created after wine data is loaded
         # Enable gamepad support if input manager is provided
         if self.input_manager:
             self.enable_proton_manager_mode()
@@ -370,11 +402,48 @@ class ProtonManager(QDialog):
         layout.setContentsMargins(5, 5, 5, 5)
         layout.setSpacing(5)
 
+        # Create a stacked widget to hold preloader and content
+        self.content_stack = QStackedWidget()
+
+        # Preloader widget
+        self.preloader_widget = QWidget()
+        preloader_layout = QVBoxLayout(self.preloader_widget)
+        preloader_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        # Center the preloader
+        preloader_container = QWidget()
+        preloader_container_layout = QVBoxLayout(preloader_container)
+        preloader_container_layout.addStretch()
+        preloader_hlayout = QHBoxLayout()
+        preloader_hlayout.addStretch()
+
+        self.preloader = Preloader()
+        preloader_hlayout.addWidget(self.preloader)
+        preloader_hlayout.addStretch()
+        preloader_container_layout.addLayout(preloader_hlayout)
+        preloader_container_layout.addStretch()
+        preloader_container_layout.setContentsMargins(0, 0, 0, 0)
+
+        preloader_layout.addWidget(preloader_container)
+
+        # Content widget (tabs and controls)
+        self.content_widget = QWidget()
+        content_layout = QVBoxLayout(self.content_widget)
+        content_layout.setContentsMargins(5, 5, 5, 5)
+        content_layout.setSpacing(5)
+
         # Tab widget - основной растягивающийся элемент
         self.tab_widget = QTabWidget()
         self.tab_widget.setStyleSheet(self.theme.GETWINE_WINDOW_STYLE)
         self.tab_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        layout.addWidget(self.tab_widget, 1)
+        content_layout.addWidget(self.tab_widget, 1)
+
+        # Add widgets to stacked widget
+        self.content_stack.addWidget(self.preloader_widget)  # Index 0: preloader
+        self.content_stack.addWidget(self.content_widget)   # Index 1: content
+        self.content_stack.setCurrentIndex(0)  # Show preloader initially
+
+        layout.addWidget(self.content_stack, 1)
 
         # Инфо-блок для показа выбранного (компактный для информации по выбранным закачкам)
         selection_widget = QWidget()
@@ -465,32 +534,52 @@ class ProtonManager(QDialog):
                 theme_manager, self.current_theme_name
             )
 
-    def load_proton_data_from_json(self):
-        """Загружаем данные по Протонам из файла JSON"""
-        json_url = "https://git.linux-gaming.ru/Boria138/PortProton-Wine-Metadata/raw/branch/main/wine_metadata.json"
+    def start_loading_wine_data(self):
+        """Start loading wine data in a background thread"""
+        # Create and start the loading thread
+        self.wine_loading_thread = WineLoadingThread()
+        self.wine_loading_thread.loading_complete.connect(self.on_wine_data_loaded)
+        self.wine_loading_thread.loading_error.connect(self.on_wine_data_load_error)
+        self.wine_loading_thread.start()
 
-        try:
-            logger.debug(f"Loading JSON metadata from: {json_url}")
-            # Create a session with proxy support
-            session = requests.Session()
-            proxy = read_proxy_config() or {}
-            if proxy:
-                session.proxies.update(proxy)
-            session.verify = True
-            response = session.get(json_url, timeout=30)
-            response.raise_for_status()
+    def on_wine_data_loaded(self, metadata):
+        """Handle when wine data is loaded successfully"""
+        # Process the metadata in the main thread
+        self.process_metadata(metadata)
 
-            metadata = orjson.loads(response.content)
-            logger.info(f"Successfully loaded JSON metadata with {len(metadata)} entries")
-            self.process_metadata(metadata)
+        # Create the installed tab after other tabs are created (to be last)
+        # First remove the existing installed tab if it exists
+        for i in range(self.tab_widget.count()):
+            if self.tab_widget.tabText(i) == _("Installed"):
+                self.tab_widget.removeTab(i)
+                break
+        # Then create the installed tab (will be added as the last tab)
+        self.create_installed_tab()
 
+        # Hide the preloader and show the content
+        if hasattr(self, 'content_stack'):
+            self.content_stack.setCurrentIndex(1)  # Show content, hide preloader
 
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Network error loading JSON: {e}")
-        except orjson.JSONDecodeError as e:
-            logger.error(f"JSON parsing error: {e}")
-        except Exception as e:
-            logger.error(f"Error loading metadata: {e}")
+    def on_wine_data_load_error(self, error_msg):
+        """Handle when wine data loading fails"""
+        logger.error(f"Wine data loading failed: {error_msg}")
+
+        # Show error message but still allow the dialog to function
+        if hasattr(self, 'content_stack'):
+            self.content_stack.setCurrentIndex(1)  # Show content even if loading failed
+
+        # Show error message to user
+        error_label = QLabel(_("Error loading wine data: {error}").format(error=error_msg))
+        error_label.setStyleSheet(self.theme.GETWINE_WINDOW_STYLE)
+        error_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        # Add error message to the tab widget or replace empty content
+        if hasattr(self, 'tab_widget'):
+            # Add error as a new tab or replace empty content
+            error_tab = QWidget()
+            error_layout = QVBoxLayout(error_tab)
+            error_layout.addWidget(error_label)
+            self.tab_widget.addTab(error_tab, _("Error"))
 
     def process_metadata(self, metadata):
         """Обработка JSON, создание Табов"""
@@ -504,11 +593,6 @@ class ProtonManager(QDialog):
         tabs_dict = {}
 
         for source_key, entries in metadata.items():
-            # Пропускаем таб "gdk_proton" (вроде ненужный протон, скипаем)
-            if source_key.lower() == 'gdk_proton':
-                logger.debug(f"Skipping tab: {source_key}")
-                continue
-
             # Filter entries based on CPU compatibility
             filtered_entries = self.filter_entries_by_cpu_level(entries, source_key)
             tabs_dict[source_key] = filtered_entries
@@ -528,7 +612,11 @@ class ProtonManager(QDialog):
         return successful_tabs
 
     def filter_entries_by_cpu_level(self, entries, source_name):
-        """Filter entries based on CPU compatibility"""
+        """Filter entries based on CPU compatibility - only filter CachyOS Proton"""
+        # Only apply CPU filtering to CachyOS Proton, show all versions for other sources
+        if source_name.lower() != 'proton_cachyos':
+            return entries
+
         if self.cpu_level >= 4:
             # If CPU supports all features, return all entries
             return entries
@@ -1518,7 +1606,7 @@ class ProtonManager(QDialog):
 
 def show_proton_manager(parent=None, portproton_location=None, input_manager=None):
     """
-    Shows the Proton/WINE archive extractor dialog.
+    Shows the Proton/WINE archive extractor dialog asynchronously.
 
     Args:
         parent: Parent widget for the dialog
@@ -1529,5 +1617,5 @@ def show_proton_manager(parent=None, portproton_location=None, input_manager=Non
         ProtonManager dialog instance
     """
     dialog = ProtonManager(parent, portproton_location, input_manager=input_manager)
-    dialog.exec()  # Use exec() for modal dialog
+    dialog.show()  # Show the dialog without blocking
     return dialog
