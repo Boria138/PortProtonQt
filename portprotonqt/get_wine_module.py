@@ -564,6 +564,29 @@ class ProtonManager(QDialog):
         return filtered_entries
 
 
+    def create_table_widget(self):
+        """Helper method to create a standardized table widget"""
+        table = QTableWidget()
+        table.setAlternatingRowColors(True)
+        table.verticalHeader().setVisible(False)
+        table.setColumnCount(3)  # Checkbox, Version Name, Size
+        table.setHorizontalHeaderLabels(['', _('Version Name'), _('Size')])
+        table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        table.verticalHeader().setDefaultSectionSize(36)
+        table.setStyleSheet(self.theme.GETWINE_WINDOW_STYLE)
+        table.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        table.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+        table.cellClicked.connect(self.on_cell_clicked)
+        table.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        header = table.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+
+        return table
+
     def create_tab_from_entries(self, source_name, entries):
         """Создаем вкладку с таблицей для источника Proton из записей JSON"""
 
@@ -577,18 +600,7 @@ class ProtonManager(QDialog):
             layout.setContentsMargins(5, 5, 5, 5)
             layout.setSpacing(5)
 
-            table = QTableWidget()
-            table.setAlternatingRowColors(True)
-            table.verticalHeader().setVisible(False)
-            table.setColumnCount(2)  # Только Checkbox и Имя
-            table.setHorizontalHeaderLabels(['', _('Asset Name')])
-            table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-            table.verticalHeader().setDefaultSectionSize(36)
-            table.setStyleSheet(self.theme.GETWINE_WINDOW_STYLE)
-
-            header = table.horizontalHeader()
-            header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
-            header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+            table = self.create_table_widget()
 
             # Include all entries (both installed and non-installed)
             all_entries = []
@@ -608,11 +620,6 @@ class ProtonManager(QDialog):
             all_entries.sort(key=version_sort_key)
 
             table.setRowCount(len(all_entries))
-            table.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-
-            table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-            table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
-            table.cellClicked.connect(self.on_cell_clicked)
 
             for row_index, entry in enumerate(all_entries):
                 self.add_asset_row_from_json(table, row_index, entry, source_name)
@@ -655,6 +662,7 @@ class ProtonManager(QDialog):
         # Извлекаем имя файла из URL
         url = entry.get('url', '')
         filename = entry.get('name', '')
+        size_human = entry.get('size_human', _('Unknown'))  # Get size from JSON, default to 'Unknown'
 
         if url:
             parsed_url = urllib.parse.urlparse(url)
@@ -710,6 +718,11 @@ class ProtonManager(QDialog):
             asset_name_item.setText(_('{display_name} (installed)').format(display_name=display_name))
 
         table.setItem(row_index, 1, asset_name_item)
+
+        # Add size information to the third column
+        size_item = QTableWidgetItem(size_human)
+        size_item.setFlags(size_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+        table.setItem(row_index, 2, size_item)
 
         # Собираем метаданные в данных элемента
         unique_id = f"{source_name}_{version_from_name}_{filename}"
@@ -800,34 +813,18 @@ class ProtonManager(QDialog):
         layout.setContentsMargins(5, 5, 5, 5)
         layout.setSpacing(5)
 
-        table = QTableWidget()
-        table.setAlternatingRowColors(True)
-        table.verticalHeader().setVisible(False)
-        table.setColumnCount(3)  # Checkbox, Name, Size
-        table.setHorizontalHeaderLabels(['', _('Version Name'), _('Size')])
-        table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        table.verticalHeader().setDefaultSectionSize(36)
-        table.setStyleSheet(self.theme.GETWINE_WINDOW_STYLE)
-
-        header = table.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+        table = self.create_table_widget()
 
         # Sort installed versions
         installed_versions.sort(key=version_sort_key)
         table.setRowCount(len(installed_versions))
-        table.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         for row_index, version_name in enumerate(installed_versions):
             self.add_installed_row(table, row_index, version_name)
 
         layout.addWidget(table, 1)
 
-        # Настройка выделения строк и обработчика кликов для вкладки Installed
-        table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
-        table.cellClicked.connect(self.on_cell_clicked)
+
 
         self.tab_widget.addTab(tab, _("Installed"))
 
@@ -947,6 +944,7 @@ class ProtonManager(QDialog):
             table = current_tab.findChild(QTableWidget)
             if table:
                 selected_count = 0
+
                 for row in range(table.rowCount()):
                     checkbox_widget = table.cellWidget(row, 0)
                     if checkbox_widget:
@@ -992,7 +990,7 @@ class ProtonManager(QDialog):
                 selection_text = _('Selected {} assets:\n').format(len(self.selected_assets))
 
                 for i, asset_data in enumerate(self.selected_assets.values(), 1):
-                    selection_text += f"{i}. {asset_data['source_name'].upper()} - {asset_data['asset_name']}\n"
+                    selection_text += f"{i}. {asset_data['asset_name']}\n"
 
                 self.selection_text.setPlainText(selection_text)
                 self.download_btn.setText(_('Download Selected'))
