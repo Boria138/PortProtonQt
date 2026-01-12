@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-01-12 20:38+0500\n"
+"POT-Creation-Date: 2026-01-12 20:59+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es_ES\n"
@@ -544,7 +544,19 @@ msgstr ""
 msgid "Selected {} assets:\n"
 msgstr ""
 
+#, python-brace-format
+msgid ""
+"\n"
+"Total size to delete: {}\n"
+msgstr ""
+
 msgid "Delete Selected"
+msgstr ""
+
+#, python-brace-format
+msgid ""
+"\n"
+"Total size to download: {}\n"
 msgstr ""
 
 msgid "Downloading in Progress"
