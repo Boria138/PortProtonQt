@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-01-12 19:50+0500\n"
-"PO-Revision-Date: 2026-01-03 20:32+0500\n"
+"POT-Creation-Date: 2026-01-12 20:38+0500\n"
+"PO-Revision-Date: 2026-01-12 20:38+0500\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
@@ -506,7 +506,6 @@ msgstr "Бронза"
 msgid "Pending"
 msgstr "В ожидании"
 
-#, fuzzy
 msgid "Manage Wine versions"
 msgstr "Управление версиями WINE"
 
@@ -522,19 +521,16 @@ msgstr "Скачивание: "
 msgid "Download Selected"
 msgstr "Скачать выбранное"
 
-#, fuzzy
 msgid "Installed"
-msgstr "Удаление WINE"
+msgstr "Установленные"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Error loading wine data: {error}"
 msgstr "Ошибка загрузки WINE: {error}"
 
-#, fuzzy
 msgid "Version Name"
 msgstr "Версия WINE"
 
-#, fuzzy
 msgid "Size"
 msgstr "Размер"
 
@@ -573,27 +569,26 @@ msgstr "Пожалуйста выберите хотя бы один WINE для
 msgid "Please wait for current downloading to complete."
 msgstr "Пожалуйста подождите завершения скачивания."
 
-#, fuzzy
 msgid "Please select at least one version to delete."
 msgstr "Пожалуйста выберите хотя бы один WINE для удаления."
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid ""
 "Are you sure you want to delete {} selected version(s)?\n"
 "\n"
 "This action cannot be undone."
 msgstr ""
-"Вы уверены, что хотите удалить выбранные WINE?\n"
+"Вы уверены, что хотите удалить {} выбранные WINE?\n"
 "\n"
 "Это действие нельзя отменить."
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Failed to remove version at {}: {}"
 msgstr "Не удалось удалить WINE '{}': {}"
 
 #, python-brace-format
 msgid "Successfully removed {} version(s)."
-msgstr "Успешно удалено {} WINE"
+msgstr "Успешно удалено {} WINE."
 
 msgid "Downloading Complete"
 msgstr "Скачивание завершено"
@@ -738,7 +733,6 @@ msgstr "Удалить Префикс"
 msgid "Clear Prefix"
 msgstr "Очистить Префикс"
 
-#, fuzzy
 msgid "Manage WINE versions"
 msgstr "Управление версиями WINE"
 
