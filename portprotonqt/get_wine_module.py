@@ -971,14 +971,68 @@ class ProtonManager(QDialog):
                     if os.path.exists(filepath):
                         total_size += os.path.getsize(filepath)
 
-            # Convert to human readable format
-            for unit in ['B', 'KB', 'MB', 'GB']:
-                if total_size < 1024.0:
-                    return f"{total_size:.1f} {unit}"
-                total_size /= 1024.0
-            return f"{total_size:.1f} TB"
+            # Convert to human readable format (binary units)
+            if total_size == 0:
+                return "0 B"
+            elif total_size < 1024:
+                return f"{total_size}.0 B"
+            elif total_size < 1024 * 1024:
+                return f"{int(total_size / 1024)}.{int((total_size / 1024 * 10) % 10)} KiB"
+            elif total_size < 1024 * 1024 * 1024:
+                return f"{int(total_size / (1024 * 1024))}.{int((total_size / (1024 * 1024) * 10) % 10)} MiB"
+            elif total_size < 1024 * 1024 * 1024 * 1024:
+                return f"{int(total_size / (1024 * 1024 * 1024))}.{int((total_size / (1024 * 1024 * 1024) * 10) % 10)} GiB"
+            else:
+                return f"{int(total_size / (1024 * 1024 * 1024 * 1024))}.{int((total_size / (1024 * 1024 * 1024 * 1024) * 10) % 10)} TiB"
         except Exception:
             return _("Unknown")
+
+    def convert_size_to_bytes(self, size_str):
+        """Convert human-readable size string to bytes"""
+        if not size_str or size_str == _("Unknown"):
+            return 0
+
+        # Remove any extra text and extract the number and unit
+        size_str = size_str.strip()
+
+        # Handle different units
+        if size_str.endswith("TiB"):
+            num = float(size_str[:-3].strip())
+            return int(num * 1024 * 1024 * 1024 * 1024)
+        elif size_str.endswith("GiB"):
+            num = float(size_str[:-3].strip())
+            return int(num * 1024 * 1024 * 1024)
+        elif size_str.endswith("MiB"):
+            num = float(size_str[:-3].strip())
+            return int(num * 1024 * 1024)
+        elif size_str.endswith("KiB"):
+            num = float(size_str[:-3].strip())
+            return int(num * 1024)
+        elif size_str.endswith("B"):
+            num = float(size_str[:-1].strip())
+            return int(num)
+        else:
+            # If format is unknown, return 0
+            return 0
+
+    def format_bytes(self, bytes_value):
+        """Format bytes to human-readable string"""
+        if bytes_value == 0:
+            return "0 B"
+        elif bytes_value < 1024:
+            return f"{bytes_value} B"
+        elif bytes_value < 1024 * 1024:
+            kb_value = bytes_value / 1024
+            return f"{kb_value:.1f} KiB"
+        elif bytes_value < 1024 * 1024 * 1024:
+            mb_value = bytes_value / (1024 * 1024)
+            return f"{mb_value:.1f} MiB"
+        elif bytes_value < 1024 * 1024 * 1024 * 1024:
+            gb_value = bytes_value / (1024 * 1024 * 1024)
+            return f"{gb_value:.1f} GiB"
+        else:
+            tb_value = bytes_value / (1024 * 1024 * 1024 * 1024)
+            return f"{tb_value:.1f} TiB"
 
     def on_cell_clicked(self, row):
         """Обработка клика по ячейке - переключение флажка при клике по любой ячейке в строке"""
@@ -1033,6 +1087,7 @@ class ProtonManager(QDialog):
             table = current_tab.findChild(QTableWidget)
             if table:
                 selected_count = 0
+                total_size = 0
 
                 for row in range(table.rowCount()):
                     checkbox_widget = table.cellWidget(row, 0)
@@ -1040,6 +1095,14 @@ class ProtonManager(QDialog):
                         checkbox = checkbox_widget.findChild(QCheckBox)
                         if checkbox and checkbox.isChecked():
                             selected_count += 1
+
+                            # Get the size for the selected item
+                            size_item = table.item(row, 2)  # Size column
+                            if size_item:
+                                size_text = size_item.text()
+                                size_bytes = self.convert_size_to_bytes(size_text)
+                                if size_bytes:
+                                    total_size += size_bytes
 
                 if selected_count > 0:
                     selection_text = _('Selected {} assets:\n').format(selected_count)
@@ -1061,6 +1124,10 @@ class ProtonManager(QDialog):
                                         selection_text += f"{item_number}. {version_name}\n"
                                         item_number += 1
 
+                    # Add total size to the selection text
+                    total_size_text = self.format_bytes(total_size)
+                    selection_text += _("\nTotal size to delete: {}\n").format(total_size_text)
+
                     self.download_btn.setText(_('Delete Selected'))
                     self.download_btn.setEnabled(True)
                 else:
@@ -1078,8 +1145,48 @@ class ProtonManager(QDialog):
             if self.selected_assets:
                 selection_text = _('Selected {} assets:\n').format(len(self.selected_assets))
 
+                total_size = 0
+
                 for i, asset_data in enumerate(self.selected_assets.values(), 1):
                     selection_text += f"{i}. {asset_data['asset_name']}\n"
+
+                    # Get size from JSON entry if available
+                    # We need to search through all tabs to find the matching entry
+                    for tab_index in range(self.tab_widget.count()):
+                        tab = self.tab_widget.widget(tab_index)
+                        table = tab.findChild(QTableWidget)
+                        if table and self.tab_widget.tabText(tab_index) != _("Installed"):
+                            # Search for the item in the table to get its size
+                            for row in range(table.rowCount()):
+                                table_item = table.item(row, 1)  # Name column
+                                if table_item:
+                                    # Extract just the name without extensions for comparison
+                                    table_item_name = table_item.text()
+                                    # Remove common extensions for comparison
+                                    for ext in ['.tar.xz', '.tar.gz', '.zip']:
+                                        if table_item_name.lower().endswith(ext):
+                                            table_item_name = table_item_name[:-len(ext)]
+                                            break
+
+                                    asset_name_for_comparison = asset_data['asset_name']
+                                    for ext in ['.tar.xz', '.tar.gz', '.zip']:
+                                        if asset_name_for_comparison.lower().endswith(ext):
+                                            asset_name_for_comparison = asset_name_for_comparison[:-len(ext)]
+                                            break
+
+                                    if table_item_name == asset_name_for_comparison:
+                                        user_data = table_item.data(Qt.ItemDataRole.UserRole)
+                                        if user_data and 'json_entry' in user_data:
+                                            json_entry = user_data['json_entry']
+                                            size_text = json_entry.get('size_human', 'Unknown')
+                                            size_bytes = self.convert_size_to_bytes(size_text)
+                                            if size_bytes:
+                                                total_size += size_bytes
+                                            break
+
+                # Add total size to the selection text
+                total_size_text = self.format_bytes(total_size)
+                selection_text += _("\nTotal size to download: {}\n").format(total_size_text)
 
                 self.selection_text.setPlainText(selection_text)
                 self.download_btn.setText(_('Download Selected'))
