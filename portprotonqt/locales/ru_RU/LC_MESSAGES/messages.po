@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-01-04 00:12+0500\n"
+"POT-Creation-Date: 2026-01-12 19:50+0500\n"
 "PO-Revision-Date: 2026-01-03 20:32+0500\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
@@ -263,61 +263,6 @@ msgstr "Удалить"
 msgid "Select All"
 msgstr "Выбрать всё"
 
-msgid "Delete Wine"
-msgstr "Удалить WINE"
-
-msgid "Selected WINE:"
-msgstr "Выбранные WINE:"
-
-msgid "No WINE selected"
-msgstr "WINE не выбраны"
-
-msgid "Delete Selected"
-msgstr "Удалить выбранное"
-
-msgid "Clear All"
-msgstr "Очистить выбранное"
-
-#, python-brace-format
-msgid "Selected {} WINE:\n"
-msgstr "Выбранно {} WINE:\n"
-
-msgid "No Selection"
-msgstr "Не выбрано"
-
-msgid "Please select at least one WINE to delete."
-msgstr "Пожалуйста выберите хотя бы один WINE для удаления."
-
-#, python-brace-format
-msgid ""
-"Are you sure you want to delete the following WINE versions?\n"
-"\n"
-"{}"
-msgstr ""
-"Вы уверены, что хотите удалить следующие версии WINE?\n"
-"\n"
-"{}"
-
-#, python-brace-format
-msgid "Failed to delete WINE '{}': {}"
-msgstr "Не удалось удалить WINE '{}': {}"
-
-msgid "Some Deletions Failed"
-msgstr "Некоторые удаления не удалось выполнить"
-
-#, python-brace-format
-msgid ""
-"Some WINE versions could not be deleted:\n"
-"\n"
-"{}"
-msgstr ""
-"Некоторые версии WINE не удалось удалить:\n"
-"\n"
-"{}"
-
-msgid "Selected WINE versions deleted successfully."
-msgstr "Выбранные версии WINE успешно удалены."
-
 msgid "Back"
 msgstr "Назад"
 
@@ -394,6 +339,12 @@ msgstr "Сохранить"
 msgid "Search"
 msgstr "Поиск"
 
+msgid "Apply"
+msgstr "Применить"
+
+msgid "Clear All"
+msgstr "Очистить выбранное"
+
 #, python-brace-format
 msgid "Launching {0}"
 msgstr "Запуск {0}"
@@ -434,9 +385,6 @@ msgstr "Введите локальный путь или URL обложки"
 
 msgid "Cover Preview:"
 msgstr "Предпросмотр обложки:"
-
-msgid "Apply"
-msgstr "Применить"
 
 msgid "Invalid image"
 msgstr "Недопустимое изображение"
@@ -558,8 +506,9 @@ msgstr "Бронза"
 msgid "Pending"
 msgstr "В ожидании"
 
-msgid "Get other Wine"
-msgstr "Загрузка WINE"
+#, fuzzy
+msgid "Manage Wine versions"
+msgstr "Управление версиями WINE"
 
 msgid "Selected assets:"
 msgstr "Выбранные WINE:"
@@ -573,12 +522,41 @@ msgstr "Скачивание: "
 msgid "Download Selected"
 msgstr "Скачать выбранное"
 
-msgid "Asset Name"
-msgstr "Наименование WINE"
+#, fuzzy
+msgid "Installed"
+msgstr "Удаление WINE"
+
+#, fuzzy, python-brace-format
+msgid "Error loading wine data: {error}"
+msgstr "Ошибка загрузки WINE: {error}"
+
+#, fuzzy
+msgid "Version Name"
+msgstr "Версия WINE"
+
+#, fuzzy
+msgid "Size"
+msgstr "Размер"
+
+msgid "Unknown"
+msgstr "Неизвестен"
+
+#, python-brace-format
+msgid "{display_name} (installed)"
+msgstr "{display_name} (установлен)"
+
+msgid "No Wine/Proton versions installed"
+msgstr "Отсутствуют установленные WINE/Proton"
+
+msgid "Select to remove this version"
+msgstr "Выберите, чтобы удалить WINE"
 
 #, python-brace-format
 msgid "Selected {} assets:\n"
 msgstr "Выбранно {} WINE:\n"
+
+msgid "Delete Selected"
+msgstr "Удалить выбранное"
 
 msgid "Downloading in Progress"
 msgstr "Скачивание"
@@ -586,11 +564,36 @@ msgstr "Скачивание"
 msgid "Cannot clear selection while extraction is in progress."
 msgstr "Невозможно очистить выделение во время распаковки."
 
+msgid "No Selection"
+msgstr "Не выбрано"
+
 msgid "Please select at least one archive to download."
 msgstr "Пожалуйста выберите хотя бы один WINE для скачивания."
 
 msgid "Please wait for current downloading to complete."
 msgstr "Пожалуйста подождите завершения скачивания."
+
+#, fuzzy
+msgid "Please select at least one version to delete."
+msgstr "Пожалуйста выберите хотя бы один WINE для удаления."
+
+#, fuzzy, python-brace-format
+msgid ""
+"Are you sure you want to delete {} selected version(s)?\n"
+"\n"
+"This action cannot be undone."
+msgstr ""
+"Вы уверены, что хотите удалить выбранные WINE?\n"
+"\n"
+"Это действие нельзя отменить."
+
+#, fuzzy, python-brace-format
+msgid "Failed to remove version at {}: {}"
+msgstr "Не удалось удалить WINE '{}': {}"
+
+#, python-brace-format
+msgid "Successfully removed {} version(s)."
+msgstr "Успешно удалено {} WINE"
 
 msgid "Downloading Complete"
 msgstr "Скачивание завершено"
@@ -729,17 +732,15 @@ msgstr "Создать резервную копию префикса"
 msgid "Load Prefix Backup"
 msgstr "Загрузить резервную копию префикса"
 
-msgid "Delete Compatibility Tool"
-msgstr "Удалить WINE"
-
 msgid "Delete Prefix"
 msgstr "Удалить Префикс"
 
 msgid "Clear Prefix"
 msgstr "Очистить Префикс"
 
-msgid "Download other WINE"
-msgstr "Скачать другие WINE"
+#, fuzzy
+msgid "Manage WINE versions"
+msgstr "Управление версиями WINE"
 
 msgid "Launching tool..."
 msgstr "Запуск инструмента..."
@@ -919,9 +920,6 @@ msgstr "Применить тему"
 
 msgid "No link"
 msgstr "Нет ссылки"
-
-msgid "Unknown"
-msgstr "Неизвестен"
 
 msgid "Name:"
 msgstr "Название:"
