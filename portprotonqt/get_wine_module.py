@@ -395,7 +395,7 @@ class ProtonManager(QDialog):
 
     def initUI(self):
         self.setWindowTitle(_('Manage Wine versions'))
-        self.resize(1100, 720)
+        self.resize(1133, 720)
         self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE + self.theme.MESSAGE_BOX_STYLE)
 
         layout = QVBoxLayout(self)
@@ -434,6 +434,7 @@ class ProtonManager(QDialog):
 
         # Tab widget - основной растягивающийся элемент
         self.tab_widget = QTabWidget()
+        self.tab_widget.setUsesScrollButtons(False)
         self.tab_widget.setStyleSheet(self.theme.GETWINE_WINDOW_STYLE)
         self.tab_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         content_layout.addWidget(self.tab_widget, 1)
