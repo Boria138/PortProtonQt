@@ -556,8 +556,11 @@ class DetailPageAnimations:
                         if detail_page and not detail_page.isHidden():
                             detail_page.setGraphicsEffect(cast(Any, original_effect))
                     except RuntimeError:
-                        logger.debug("Original effect already deleted")
-                    cleanup_callback()
+                        logger.debug("Detail page or effect already deleted")
+                    try:
+                        cleanup_callback()
+                    except RuntimeError:
+                        logger.debug("Error during cleanup callback")
 
                 # Check if animation is still valid before starting
                 if animation and not detail_page.isHidden():
@@ -594,10 +597,10 @@ class DetailPageAnimations:
                 animation.setEasingCurve(easing_curve)
 
                 def slide_cleanup():
-                    # Check if page is still valid before cleanup
-                    if not detail_page or detail_page.isHidden():
-                        logger.debug("Detail page already cleaned up")
-                    cleanup_callback()
+                    try:
+                        cleanup_callback()
+                    except RuntimeError:
+                        logger.debug("Error during slide cleanup callback")
 
                 # Check if animation is still valid before starting
                 if animation and not detail_page.isHidden():
@@ -647,20 +650,28 @@ class DetailPageAnimations:
                     return
 
                 def bounce_cleanup():
-                    # Check if page is still valid before cleanup
-                    if not detail_page or detail_page.isHidden():
-                        logger.debug("Detail page already cleaned up")
-                    cleanup_callback()
+                    try:
+                        cleanup_callback()
+                    except RuntimeError:
+                        logger.debug("Error during bounce cleanup callback")
 
                 group_anim.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
                 self.animations[detail_page] = group_anim
                 group_anim.finished.connect(bounce_cleanup)
         except RuntimeError:
-            # Widget was already deleted, which is expected after deleteLater()
             logger.debug("Detail page already deleted during animation setup")
-            cleanup_callback()
+            try:
+                cleanup_callback()
+            except RuntimeError:
+                pass
         except Exception as e:
             logger.error(f"Error in animate_detail_page_exit: {e}", exc_info=True)
-            if detail_page in self.animations:
-                self.animations.pop(detail_page, None)
-            cleanup_callback()
+            try:
+                if detail_page in self.animations:
+                    self.animations.pop(detail_page, None)
+            except RuntimeError:
+                pass
+            try:
+                cleanup_callback()
+            except RuntimeError:
+                pass

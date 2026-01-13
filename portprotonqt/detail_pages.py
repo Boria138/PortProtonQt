@@ -863,10 +863,12 @@ class DetailPageManager:
                 logger.warning("Detail page not valid, bypassing animation and cleaning up directly")
                 self._exit_animation_in_progress = False
                 cleanup()
+        except RuntimeError:
+            logger.debug("Page deleted before animation could start")
+            self._exit_animation_in_progress = False
         except Exception as e:
             logger.error(f"Error starting exit animation: {e}", exc_info=True)
             self._exit_animation_in_progress = False
-            cleanup()  # Fallback to cleanup if animation fails
 
     def open_portproton_forum_topic(self, name):
         result = self.portproton_api.get_forum_topic_slug(name)
