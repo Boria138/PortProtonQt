@@ -71,9 +71,11 @@ def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[Q
                         pixmap = QPixmap(local_path)
                         # Check if the pixmap loaded successfully
                         if pixmap.isNull():
-                            logger.warning(f"Failed to load image from {local_path}")
-                        finish_with(pixmap)
-                        return
+                            logger.warning(f"Failed to load image from {local_path}, removing corrupted file")
+                            os.remove(local_path)
+                        else:
+                            finish_with(pixmap)
+                            return
 
                     def on_downloaded(result: str | None):
                         pixmap = QPixmap()
@@ -111,9 +113,11 @@ def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[Q
                     pixmap = QPixmap(local_path)
                     # Check if the pixmap loaded successfully
                     if pixmap.isNull():
-                        logger.warning(f"Failed to load image from {local_path}")
-                    finish_with(pixmap)
-                    return
+                        logger.warning(f"Failed to load image from {local_path}, removing corrupted file")
+                        os.remove(local_path)
+                    else:
+                        finish_with(pixmap)
+                        return
 
                 def on_downloaded(result: str | None):
                     pixmap = QPixmap()
@@ -148,9 +152,11 @@ def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[Q
                     pixmap = QPixmap(local_path)
                     # Check if the pixmap loaded successfully
                     if pixmap.isNull():
-                        logger.warning(f"Failed to load image from {local_path}")
-                    finish_with(pixmap)
-                    return
+                        logger.warning(f"Failed to load image from {local_path}, removing corrupted file")
+                        os.remove(local_path)
+                    else:
+                        finish_with(pixmap)
+                        return
 
                 def on_downloaded(result: str | None):
                     pixmap = QPixmap()
@@ -181,8 +187,13 @@ def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[Q
             # Check if the pixmap loaded successfully
             if pixmap.isNull():
                 logger.warning(f"Failed to load image from {cover}")
-            finish_with(pixmap)
-            return
+                # Remove corrupted file only if it's in the cache directory
+                if cover.startswith(image_folder):
+                    logger.warning(f"Removing corrupted cached file {cover}")
+                    os.remove(cover)
+            else:
+                finish_with(pixmap)
+                return
 
         placeholder_path = theme_manager.get_theme_image("placeholder", current_theme_name)
         pixmap = QPixmap()
