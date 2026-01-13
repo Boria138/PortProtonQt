@@ -94,8 +94,13 @@ def parse_playtime_file(file_path):
             if len(parts) < 3:
                 continue
             exe_path = parts[0]
-            seconds = int(parts[2])
-            playtime_data[exe_path] = seconds
+            # Find playtime: first numeric value after exe_path
+            # Format: <exe_path> <hash> <playtime_seconds> <platform> ...
+            # Hash is 64 hex chars, playtime is digits only
+            for i in range(1, len(parts)):
+                if parts[i].isdigit():
+                    playtime_data[exe_path] = int(parts[i])
+                    break
     return playtime_data
 
 def format_playtime(seconds):
