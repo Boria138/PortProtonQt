@@ -45,6 +45,7 @@ Requires:       python3-rapidfuzz
 Requires:       python3-libarchive-c
 Requires:       perl-Image-ExifTool
 Requires:       xdg-utils
+Requires:       qt6-qtsvg
 Requires:       cabextract
 Requires:       gzip
 Requires:       unzip
