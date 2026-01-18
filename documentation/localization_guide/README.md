@@ -13,7 +13,7 @@
 
 ## 📖 Overview
 
-Localization in `PortProtonQT` is powered by `Babel` using `.po/.mo` files stored under `LC_MESSAGES/messages.po` for each language.
+Localization in `PortProtonQT` is powered by `Babel` using `.po/.mo` files stored under `LC_MESSAGES/portprotonqt.po` for each language.
 
 Current translation status:
 
@@ -21,9 +21,10 @@ Current translation status:
 
 | Locale | Progress | Translated |
 | :----- | -------: | ---------: |
-| [de_DE](./de_DE/LC_MESSAGES/messages.po) | 0% | 0 of 376 |
-| [es_ES](./es_ES/LC_MESSAGES/messages.po) | 0% | 0 of 376 |
-| [ru_RU](./ru_RU/LC_MESSAGES/messages.po) | 100% | 376 of 376 |
+| [de](./de/LC_MESSAGES/portprotonqt.po) | 0% | 0 of 376 |
+| [es](./es/LC_MESSAGES/portprotonqt.po) | 0% | 0 of 376 |
+| [pt](./pt/LC_MESSAGES/portprotonqt.po) | 0% | 0 of 376 |
+| [ru](./ru/LC_MESSAGES/portprotonqt.po) | 100% | 376 of 376 |
 
 ---
 
@@ -39,7 +40,7 @@ source .venv/bin/activate
 python dev-scripts/l10n.py --create-new <locale_code>
 ```
 
-2. Edit the file `portprotonqt/locales/<locale>/LC_MESSAGES/messages.po` in Poedit or any text editor.
+2. Edit the file `portprotonqt/locales/<locale>/LC_MESSAGES/portprotonqt.po` in Poedit or any text editor.
 
 ---
 

@@ -1,4 +1,4 @@
-name: Check Translations (disabled until yaspeller is fixed)
+name: Check Translations
 run-name: Check spelling in translation files
 on:
   push:

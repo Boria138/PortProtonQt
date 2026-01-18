@@ -3,7 +3,7 @@
 %global oname PortProtonQt
 %global _python_no_extras_requires 1
 
-Name:           python-%{pypi_name}
+Name:           %{pypi_name}
 Version:        %{pypi_version}
 Release:        1%{?dist}
 Summary:        Modern GUI for managing and launching games from PortProton, Steam, and Epic Games Store
@@ -12,21 +12,15 @@ License:        GPL-3.0
 URL:            https://git.linux-gaming.ru/Boria138/PortProtonQt
 BuildArch:      noarch
 
+BuildRequires:  meson >= 0.61.2
+BuildRequires:  ninja-build
 BuildRequires:  python3-devel
-BuildRequires:  python3-wheel
-BuildRequires:  python3-pip
-BuildRequires:  python3-build
-BuildRequires:  pyproject-rpm-macros
-BuildRequires:  python3dist(setuptools)
 BuildRequires:  git
 BuildRequires:  systemd-rpm-macros
 
-%description
-%{summary}
+Obsoletes:      python3-%{pypi_name} < %{version}-%{release}
+Provides:       python3-%{pypi_name} = %{version}-%{release}
 
-%package -n     python3-%{pypi_name}
-Summary:        %{summary}
-%{?python_provide:%python_provide python3-%{pypi_name}}
 Requires:       python3-babel
 Requires:       python3-evdev
 Requires:       python3-icoextract
@@ -52,7 +46,7 @@ Requires:       unzip
 Requires:       curl
 Requires:       unrar
 
-%description -n python3-%{pypi_name}
+%description
 This application provides a sleek, intuitive graphical interface for managing and launching games from PortProton, Steam, and Epic Games Store. It consolidates your game libraries into a single, user-friendly hub for seamless navigation and organization. Its lightweight structure and cross-platform support deliver a cohesive gaming experience, eliminating the need for multiple launchers. Unique PortProton integration enhances Linux gaming, enabling effortless play of Windows-based titles with minimal setup.
 
 %{?python_disable_dependency_generator}
@@ -64,17 +58,17 @@ git checkout v%{pypi_version}
 
 %build
 cd %{oname}
-%pyproject_wheel
+%meson -Dpython_libdir=%{python3_sitelib} -Dudevdir=%{_udevrulesdir}
+%meson_build
 
 %install
 cd %{oname}
-%pyproject_install
-%pyproject_save_files %{pypi_name}
-cp -r build-aux/share %{buildroot}/usr/
-cp -r build-aux/lib %{buildroot}/usr/
+%meson_install
+%find_lang %{pypi_name}
 
-%files -n python3-%{pypi_name} -f %{pyproject_files}
+%files -f %{oname}/%{pypi_name}.lang
 %{_bindir}/%{pypi_name}
+%{python3_sitelib}/%{pypi_name}/
 %{_datadir}/icons/hicolor/scalable/apps/ru.linux_gaming.PortProtonQt.svg
 %{_metainfodir}/ru.linux_gaming.PortProtonQt.metainfo.xml
 %{_udevrulesdir}/60-portprotonqt.rules

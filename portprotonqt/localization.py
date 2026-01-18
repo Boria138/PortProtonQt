@@ -33,11 +33,21 @@ LOCALE_MAP = {
     'el': 'greek',
 }
 
-translate = gettext.translation(
-    domain="messages",
-    localedir = Path(__file__).parent / "locales",
-    fallback=True,
-)
+# Try system locale directory first, fallback to local for development
+_system_localedir = Path("/usr/share/locale")
+_local_localedir = Path(__file__).parent / "locales"
+
+try:
+    translate = gettext.translation(
+        domain="portprotonqt",
+        localedir=_system_localedir,
+    )
+except FileNotFoundError:
+    translate = gettext.translation(
+        domain="portprotonqt",
+        localedir=_local_localedir,
+        fallback=True,
+    )
 _ = translate.gettext
 
 def get_system_locale():

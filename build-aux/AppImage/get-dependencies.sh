@@ -2,22 +2,52 @@
 
 set -eu
 
-# Determine if git mode is enabled based on the first argument
-if [ "${1:-}" = "--git" ] || [ "${1:-}" = "-g" ]; then
-    GIT_MODE=true
-else
-    GIT_MODE=false
-fi
+# Initialize variables
+LOCAL_MODE=false
+BRANCH="main"
+REPO_URL="https://git.linux-gaming.ru/Boria138/PortProtonQt.git"
+
+# Parse arguments
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --local|-l)
+            LOCAL_MODE=true
+            ;;
+        --branch)
+            if [ -n "${2:-}" ] && [ "${2#-}" = "$2" ]; then
+                BRANCH="$2"
+                shift
+            else
+                echo "Error: --branch requires an argument"
+                exit 1
+            fi
+            ;;
+        --repo)
+            if [ -n "${2:-}" ] && [ "${2#-}" = "$2" ]; then
+                REPO_URL="$2"
+                shift
+            else
+                echo "Error: --repo requires an argument"
+                exit 1
+            fi
+            ;;
+        *)
+            echo "Unknown option: $1"
+            exit 1
+            ;;
+    esac
+    shift
+done
 
 ARCH="$(uname -m)"
 PACKAGE_BUILDER="https://raw.githubusercontent.com/pkgforge-dev/Anylinux-AppImages/refs/heads/main/useful-tools/make-aur-package.sh"
 EXTRA_PACKAGES="https://raw.githubusercontent.com/pkgforge-dev/Anylinux-AppImages/refs/heads/main/useful-tools/get-debloated-pkgs.sh"
 
-if [ "$GIT_MODE" = true ]; then
-    echo "Using git version of PortProtonQt..."
-    PPQT_PKGBUILD="https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/build-aux/PKGBUILD-git"
+if [ "$LOCAL_MODE" = true ]; then
+    echo "Using local PKGBUILD-git from repository..."
+    PPQT_PKGBUILD=""
 else
-    echo "Using stable version of PortProtonQt..."
+    echo "Using stable version of PortProtonQt from main branch..."
     PPQT_PKGBUILD="https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/build-aux/PKGBUILD"
 fi
 
@@ -37,7 +67,12 @@ chmod +x ./make-aur-package.sh
 
 echo "Building PortProtonQt from PKGBUILD..."
 echo "---------------------------------------------------------------"
-wget --retry-connrefused --tries=30 "$PPQT_PKGBUILD" -O ./PKGBUILD
+if [ "$LOCAL_MODE" = true ]; then
+    cp ../PKGBUILD-git ./PKGBUILD
+else
+    wget --retry-connrefused --tries=30 "$PPQT_PKGBUILD" -O ./PKGBUILD
+fi
+sed -i "s|source=(\"git+https://git.linux-gaming.ru/Boria138/PortProtonQt.git\")|source=(\"git+${REPO_URL}#branch=$BRANCH\")|" PKGBUILD
 makepkg -si --noconfirm
 
 echo "Installing debloated packages..."
@@ -46,7 +81,7 @@ wget --retry-connrefused --tries=30 "$EXTRA_PACKAGES" -O ./get-debloated-pkgs.sh
 chmod +x ./get-debloated-pkgs.sh
 ./get-debloated-pkgs.sh --add-common --prefer-nano
 
-if [ "$GIT_MODE" = true ]; then
+if [ "$LOCAL_MODE" = true ]; then
     # For git version, we use portprotonqt-git
     pacman -Q portprotonqt-git | awk '{print $2}' | cut -d- -f1 > ~/version
 else

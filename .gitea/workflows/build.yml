@@ -77,16 +77,16 @@ jobs:
           chown user -R /tmp
           chown user -R ..
 
+      - name: Checkout
+        uses: https://gitea.com/actions/checkout@v4
+
       - name: Build
         run: |
           cd /__w/portproton-repo
-          git clone https://git.linux-gaming.ru/Boria138/PortProtonQt.git
+          cp -r "$GITHUB_WORKSPACE" PortProtonQt
           cd /__w/portproton-repo/PortProtonQt/build-aux
           chown user -R ..
           su user -c "yes '' | makepkg --noconfirm -s"
-
-      - name: Checkout
-        uses: https://gitea.com/actions/checkout@v4
 
       - name: Upload Arch package
         uses: https://gitea.com/actions/gitea-upload-artifact@v4
@@ -109,9 +109,8 @@ jobs:
     steps:
       - name: Install build dependencies
         run: |
-          dnf install -y git rpmdevtools python3-devel python3-wheel python3-pip \
-                         python3-build pyproject-rpm-macros systemd-rpm-macros python3-setuptools \
-                         redhat-rpm-config nodejs npm
+          dnf install -y git rpmdevtools meson ninja-build python3-devel \
+                         systemd-rpm-macros redhat-rpm-config nodejs npm
 
       - name: Setup rpmbuild environment
         run: |

@@ -2,8 +2,14 @@ name: Nightly Build - AppImage, Arch, Fedora
 
 on:
   workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to build'
+        required: false
+        default: 'main'
 
 env:
+  BUILD_BRANCH: ${{ inputs.branch || 'main' }}
   PKGDEST: "/tmp/portprotonqt"
   PACKAGE: "portprotonqt"
 
@@ -22,12 +28,14 @@ jobs:
           pacman -Syu --noconfirm --disable-download-timeout --needed git wget gnupg nodejs npm xorg-server-xvfb zsync
 
       - uses: https://gitea.com/actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        with:
+          ref: ${{ env.BUILD_BRANCH }}
 
       - name: Install appimage dependencies
         run: |
           cd build-aux/AppImage
           chmod +x get-dependencies.sh portprotonqt-appimage.sh
-          ./get-dependencies.sh --git
+          ./get-dependencies.sh --local --branch "${{ env.BUILD_BRANCH }}"
 
       - name: Build AppImage
         run: |
@@ -55,9 +63,8 @@ jobs:
     steps:
       - name: Install build dependencies
         run: |
-          dnf install -y git rpmdevtools python3-devel python3-wheel python3-pip \
-                         python3-build pyproject-rpm-macros systemd-rpm-macros python3-setuptools \
-                         redhat-rpm-config nodejs npm
+          dnf install -y git rpmdevtools meson ninja-build python3-devel \
+                         systemd-rpm-macros redhat-rpm-config nodejs npm
 
       - name: Setup rpmbuild environment
         run: |
@@ -68,10 +75,13 @@ jobs:
 
       - name: Checkout repo
         uses: https://gitea.com/actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        with:
+          ref: ${{ env.BUILD_BRANCH }}
 
       - name: Copy fedora.spec
         run: |
-          cp build-aux/fedora-git.spec /home/rpmbuild/SPECS/${{ env.PACKAGE }}.spec
+          sed "s|git clone https://git.linux-gaming.ru/Boria138/PortProtonQt.git|git clone -b ${{ env.BUILD_BRANCH }} https://git.linux-gaming.ru/Boria138/PortProtonQt.git|" \
+            build-aux/fedora-git.spec > /home/rpmbuild/SPECS/${{ env.PACKAGE }}.spec
           chown -R rpmbuild:users /home/rpmbuild
 
       - name: Build RPM
@@ -115,16 +125,19 @@ jobs:
           chown user -R /tmp
           chown user -R ..
 
+      - name: Checkout
+        uses: https://gitea.com/actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        with:
+          ref: ${{ env.BUILD_BRANCH }}
+
       - name: Build
         run: |
           cd /__w/portproton-repo
-          git clone https://git.linux-gaming.ru/Boria138/PortProtonQt.git
+          cp -r "$GITHUB_WORKSPACE" PortProtonQt
           cd /__w/portproton-repo/PortProtonQt/build-aux
+          sed -i "s|source=(\"git+https://git.linux-gaming.ru/Boria138/PortProtonQt.git\")|source=(\"git+https://git.linux-gaming.ru/Boria138/PortProtonQt.git#branch=${{ env.BUILD_BRANCH }}\")|" PKGBUILD-git
           chown user -R ..
           su user -c "yes '' | makepkg --noconfirm -s -p PKGBUILD-git"
-
-      - name: Checkout
-        uses: https://gitea.com/actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
       - name: Upload Arch package
         uses: https://gitea.com/actions/gitea-upload-artifact@v4

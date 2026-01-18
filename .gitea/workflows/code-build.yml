@@ -9,6 +9,8 @@ on:
 env:
   PKGDEST: "/tmp/portprotonqt"
   PACKAGE: "portprotonqt"
+  PR_REPO_URL: ${{ github.event.pull_request.head.repo.clone_url }}
+  PR_BRANCH: ${{ github.head_ref }}
 
 jobs:
   changes:
@@ -78,7 +80,7 @@ jobs:
         run: |
           cd build-aux/AppImage
           chmod +x get-dependencies.sh portprotonqt-appimage.sh
-          ./get-dependencies.sh
+          ./get-dependencies.sh --local --branch "${{ env.PR_BRANCH }}" --repo "${{ env.PR_REPO_URL }}"
 
       - name: Build AppImage
         run: |
@@ -108,9 +110,8 @@ jobs:
     steps:
       - name: Install build dependencies
         run: |
-          dnf install -y git rpmdevtools python3-devel python3-wheel python3-pip \
-                         python3-build pyproject-rpm-macros python3-setuptools \
-                         redhat-rpm-config nodejs npm
+          dnf install -y git rpmdevtools meson ninja-build python3-devel \
+                         systemd-rpm-macros redhat-rpm-config nodejs npm
 
       - name: Setup rpmbuild environment
         run: |
@@ -124,7 +125,8 @@ jobs:
 
       - name: Copy fedora-git.spec
         run: |
-          cp build-aux/fedora-git.spec /home/rpmbuild/SPECS/${{ env.PACKAGE }}.spec
+          sed "s|git clone https://git.linux-gaming.ru/Boria138/PortProtonQt.git|git clone -b ${{ env.PR_BRANCH }} ${{ env.PR_REPO_URL }}|" \
+            build-aux/fedora-git.spec > /home/rpmbuild/SPECS/${{ env.PACKAGE }}.spec
           chown -R rpmbuild:users /home/rpmbuild
 
       - name: Build RPM
@@ -170,16 +172,17 @@ jobs:
           chown user -R /tmp
           chown user -R ..
 
+      - name: Checkout
+        uses: https://gitea.com/actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+
       - name: Build
         run: |
           cd /__w/portproton-repo
-          git clone https://git.linux-gaming.ru/Boria138/PortProtonQt.git
+          git clone -b ${{ env.PR_BRANCH }} ${{ env.PR_REPO_URL }} PortProtonQt
           cd /__w/portproton-repo/PortProtonQt/build-aux
+          sed -i "s|source=(\"git+https://git.linux-gaming.ru/Boria138/PortProtonQt.git\")|source=(\"git+${{ env.PR_REPO_URL }}#branch=${{ env.PR_BRANCH }}\")|" PKGBUILD-git
           chown user -R ..
           su user -c "yes '' | makepkg --noconfirm -s -p PKGBUILD-git"
-
-      - name: Checkout
-        uses: https://gitea.com/actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
       - name: Upload Arch package
         uses: https://gitea.com/actions/gitea-upload-artifact@v4

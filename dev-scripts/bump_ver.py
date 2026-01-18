@@ -12,7 +12,9 @@ BASE_DIR = Path(__file__).parent.parent
 APPIMAGE_RECIPE = BASE_DIR / "build-aux" / "AppImageBuilder.yml"
 ARCH_PKGBUILD = BASE_DIR / "build-aux" / "PKGBUILD"
 FEDORA_SPEC = BASE_DIR / "build-aux" / "fedora.spec"
+FEDORA_GIT_SPEC = BASE_DIR / "build-aux" / "fedora-git.spec"
 PYPROJECT = BASE_DIR / "pyproject.toml"
+MESON_BUILD = BASE_DIR / "meson.build"
 APP_PY = BASE_DIR / "portprotonqt" / "app.py"
 GITEA_WORKFLOW = BASE_DIR / ".gitea" / "workflows" / "build.yml"
 CHANGELOG = BASE_DIR / "CHANGELOG.md"
@@ -56,6 +58,7 @@ def bump_fedora(path: Path, old: str, new: str) -> bool:
         path.write_text(new_text, encoding='utf-8')
     return bool(count)
 
+
 def bump_pyproject(path: Path, old: str, new: str) -> bool:
     """
     Update version in pyproject.toml under [project]
@@ -65,6 +68,19 @@ def bump_pyproject(path: Path, old: str, new: str) -> bool:
     text = path.read_text(encoding='utf-8')
     pattern = re.compile(r"(?m)^(version\s*=\s*)\"" + re.escape(old) + r"\"$")
     new_text, count = pattern.subn(lambda m: m.group(1) + f'"{new}"', text)
+    if count:
+        path.write_text(new_text, encoding='utf-8')
+    return bool(count)
+
+def bump_meson(path: Path, old: str, new: str) -> bool:
+    """
+    Update version in meson.build
+    """
+    if not path.exists():
+        return False
+    text = path.read_text(encoding='utf-8')
+    pattern = re.compile(r"(version:\s*)'" + re.escape(old) + r"'")
+    new_text, count = pattern.subn(lambda m: m.group(1) + f"'{new}'", text)
     if count:
         path.write_text(new_text, encoding='utf-8')
     return bool(count)
@@ -120,7 +136,9 @@ def main():
         (APPIMAGE_RECIPE, bump_appimage),
         (ARCH_PKGBUILD, bump_arch),
         (FEDORA_SPEC, bump_fedora),
+        (FEDORA_GIT_SPEC, bump_fedora),
         (PYPROJECT, bump_pyproject),
+        (MESON_BUILD, bump_meson),
         (APP_PY, bump_app_py),
         (GITEA_WORKFLOW, bump_workflow),
         (CHANGELOG, bump_changelog)

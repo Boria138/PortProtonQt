@@ -1,12 +1,12 @@
 %global pypi_name portprotonqt
-%global pypi_version 0.1.1
+%global pypi_version 0.1.10
 %global oname PortProtonQt
 %global build_timestamp %(date +"%Y%m%d")
 %global _python_no_extras_requires 1
 
 %global rel_build 1.git.%{build_timestamp}%{?dist}
 
-Name:           python-%{pypi_name}-git
+Name:           %{pypi_name}-git
 Version:        %{pypi_version}
 Release:        %{rel_build}
 Summary:        Modern GUI for managing and launching games from PortProton, Steam, and Epic Games Store (development build)
@@ -15,21 +15,15 @@ License:        GPL-3.0
 URL:            https://git.linux-gaming.ru/Boria138/PortProtonQt
 BuildArch:      noarch
 
+BuildRequires:  meson >= 0.61.2
+BuildRequires:  ninja-build
 BuildRequires:  python3-devel
-BuildRequires:  python3-wheel
-BuildRequires:  python3-pip
-BuildRequires:  python3-build
-BuildRequires:  pyproject-rpm-macros
-BuildRequires:  python3dist(setuptools)
 BuildRequires:  git
 BuildRequires:  systemd-rpm-macros
 
-%description
-%{summary}
+Obsoletes:      python3-%{pypi_name}-git < %{version}-%{release}
+Provides:       python3-%{pypi_name}-git = %{version}-%{release}
 
-%package -n     python3-%{pypi_name}-git
-Summary:        %{summary}
-%{?python_provide:%python_provide python3-%{pypi_name}}
 Requires:       python3-babel
 Requires:       python3-evdev
 Requires:       python3-icoextract
@@ -55,7 +49,7 @@ Requires:       unzip
 Requires:       curl
 Requires:       unrar
 
-%description -n python3-%{pypi_name}-git
+%description
 This application provides a sleek, intuitive graphical interface for managing and launching games from PortProton, Steam, and Epic Games Store. It consolidates your game libraries into a single, user-friendly hub for seamless navigation and organization. Its lightweight structure and cross-platform support deliver a cohesive gaming experience, eliminating the need for multiple launchers. Unique PortProton integration enhances Linux gaming, enabling effortless play of Windows-based titles with minimal setup.
 
 %{?python_disable_dependency_generator}
@@ -65,17 +59,17 @@ git clone https://git.linux-gaming.ru/Boria138/PortProtonQt.git
 
 %build
 cd %{oname}
-%pyproject_wheel
+%meson -Dpython_libdir=%{python3_sitelib} -Dudevdir=%{_udevrulesdir}
+%meson_build
 
 %install
 cd %{oname}
-%pyproject_install
-%pyproject_save_files %{pypi_name}
-cp -r build-aux/share %{buildroot}/usr/
-cp -r build-aux/lib %{buildroot}/usr/
+%meson_install
+%find_lang %{pypi_name}
 
-%files -n python3-%{pypi_name}-git -f %{pyproject_files}
+%files -f %{oname}/%{pypi_name}.lang
 %{_bindir}/%{pypi_name}
+%{python3_sitelib}/%{pypi_name}/
 %{_datadir}/icons/hicolor/scalable/apps/ru.linux_gaming.PortProtonQt.svg
 %{_metainfodir}/ru.linux_gaming.PortProtonQt.metainfo.xml
 %{_udevrulesdir}/60-portprotonqt.rules

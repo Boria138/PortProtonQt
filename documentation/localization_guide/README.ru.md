@@ -13,7 +13,7 @@
 
 ## 📖 Обзор
 
-Локализация в `PortProtonQT` осуществляется через систему `.po/.mo` файлов и управляется утилитой `Babel`. Все переводы находятся в подкаталогах вида `LC_MESSAGES/messages.po` для каждой поддерживаемой локали.
+Локализация в `PortProtonQT` осуществляется через систему `.po/.mo` файлов и управляется утилитой `Babel`. Все переводы находятся в подкаталогах вида `LC_MESSAGES/portprotonqt.po` для каждой поддерживаемой локали.
 
 Текущий статус перевода:
 
@@ -21,9 +21,10 @@
 
 | Локаль | Прогресс | Переведено |
 | :----- | -------: | ---------: |
-| [de_DE](./de_DE/LC_MESSAGES/messages.po) | 0% | 0 из 376 |
-| [es_ES](./es_ES/LC_MESSAGES/messages.po) | 0% | 0 из 376 |
-| [ru_RU](./ru_RU/LC_MESSAGES/messages.po) | 100% | 376 из 376 |
+| [de](./de/LC_MESSAGES/portprotonqt.po) | 0% | 0 из 376 |
+| [es](./es/LC_MESSAGES/portprotonqt.po) | 0% | 0 из 376 |
+| [pt](./pt/LC_MESSAGES/portprotonqt.po) | 0% | 0 из 376 |
+| [ru](./ru/LC_MESSAGES/portprotonqt.po) | 100% | 376 из 376 |
 
 ---
 
@@ -39,7 +40,7 @@ source .venv/bin/activate
 python dev-scripts/l10n.py --create-new <код_локали>
 ```
 
-2. Отредактируйте файл `portprotonqt/locales/<локаль>/LC_MESSAGES/messages.po` в Poedit или любом текстовом редакторе.
+2. Отредактируйте файл `portprotonqt/locales/<локаль>/LC_MESSAGES/portprotonqt.po` в Poedit или любом текстовом редакторе.
 
 ---
 

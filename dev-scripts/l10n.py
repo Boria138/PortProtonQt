@@ -17,8 +17,9 @@ README_EN    = GUIDE_DIR / "README.md"
 README_RU    = GUIDE_DIR / "README.ru.md"
 LOCALES_PATH = Path(__file__).parent.parent / "portprotonqt" / "locales"
 THEMES_PATH  = Path(__file__).parent.parent / "portprotonqt" / "themes"
+MESON_BUILD  = Path(__file__).parent.parent / "portprotonqt" / "meson.build"
 README_FILES = [README_EN, README_RU]
-POT_FILE     = LOCALES_PATH / "messages.pot"
+POT_FILE     = LOCALES_PATH / "portprotonqt.pot"
 
 # ---------- Версия проекта ----------
 def _get_version() -> str:
@@ -27,16 +28,16 @@ def _get_version() -> str:
 # ---------- Обновление README ----------
 def _update_coverage(lines: list[str]) -> None:
     # Парсим статистику из вывода pybabel --statistics
-    locales_stats = [line for line in lines if line.endswith(".po")]
+    locales_stats = [line for line in lines if "portprotonqt.po" in line]
     # Извлекаем (count, pct, locale) и сортируем
     rows = sorted(
-        (m := re.search(
+        row for stat in locales_stats
+        if (m := re.search(
             r"""(\d+\ of\ \d+).*         # message counts
             \((\d+\%)\).*                # message percentage
-            locales\/(.*)\/LC_MESSAGES  # locale name""",
+            locales\/([^/]+)\/LC_MESSAGES  # locale name""",
             stat, re.VERBOSE
-        )) and m.groups()
-        for stat in locales_stats
+        )) and (row := m.groups())
     )
 
     for md_file in README_FILES:
@@ -59,14 +60,14 @@ def _update_coverage(lines: list[str]) -> None:
                 "| Локаль | Прогресс | Переведено |\n"
                 "| :----- | -------: | ---------: |\n"
             )
-            fmt = lambda count, pct, loc: f"| [{loc}](./{loc}/LC_MESSAGES/messages.po) | {pct} | {count.replace(' of ', ' из ')} |"
+            fmt = lambda count, pct, loc: f"| [{loc}](./{loc}/LC_MESSAGES/portprotonqt.po) | {pct} | {count.replace(' of ', ' из ')} |"
         else:
             table_header = (
                 "<!-- Auto-generated coverage table -->\n\n"
                 "| Locale | Progress | Translated |\n"
                 "| :----- | -------: | ---------: |\n"
             )
-            fmt = lambda count, pct, loc: f"| [{loc}](./{loc}/LC_MESSAGES/messages.po) | {pct} | {count} |"
+            fmt = lambda count, pct, loc: f"| [{loc}](./{loc}/LC_MESSAGES/portprotonqt.po) | {pct} | {count} |"
 
         # Собираем строки и добавляем '---' в конце
         coverage_table = (
@@ -100,7 +101,7 @@ def _update_coverage(lines: list[str]) -> None:
 def compile_locales() -> None:
     CommandLineInterface().run([
         "pybabel", "compile", "--use-fuzzy", "--directory",
-        f"{LOCALES_PATH.resolve()}", "--statistics"
+        f"{LOCALES_PATH.resolve()}", "--domain=portprotonqt", "--statistics"
     ])
 
 def extract_strings() -> None:
@@ -121,9 +122,38 @@ def update_locales() -> None:
         "pybabel", "update",
         f"--input-file={POT_FILE.resolve()}",
         f"--output-dir={LOCALES_PATH.resolve()}",
+        "--domain=portprotonqt",
         "--ignore-obsolete",
         "--update-header-comment",
     ])
+
+def _update_meson_locales(new_locales: list[str]) -> None:
+    """Обновляет список языков в meson.build."""
+    if not MESON_BUILD.exists():
+        return
+
+    text = MESON_BUILD.read_text(encoding="utf-8")
+
+    # Ищем foreach lang : ['de', 'es', 'pt', 'ru']
+    pattern = r"(foreach\s+lang\s*:\s*\[)([^\]]+)(\])"
+    match = re.search(pattern, text)
+    if not match:
+        return
+
+    # Парсим текущий список языков
+    current_langs_str = match.group(2)
+    current_langs = re.findall(r"'([^']+)'", current_langs_str)
+
+    # Добавляем новые языки и сортируем
+    all_langs = sorted(set(current_langs) | set(new_locales))
+
+    # Формируем новый список
+    new_langs_str = ", ".join(f"'{lang}'" for lang in all_langs)
+    new_text = text[:match.start()] + match.group(1) + new_langs_str + match.group(3) + text[match.end():]
+
+    if new_text != text:
+        MESON_BUILD.write_text(new_text, encoding="utf-8")
+        print(f"Updated meson.build with locales: {all_langs}")
 
 def create_new(locales: list[str]) -> None:
     if not POT_FILE.exists():
@@ -133,8 +163,11 @@ def create_new(locales: list[str]) -> None:
             "pybabel", "init",
             f"--input-file={POT_FILE.resolve()}",
             f"--output-dir={LOCALES_PATH.resolve()}",
+            "--domain=portprotonqt",
             f"--locale={locale}"
         ])
+    # Обновляем meson.build с новыми локалями
+    _update_meson_locales(locales)
 
 # ---------- Игнорируемые префиксы для spellcheck ----------
 IGNORED_PREFIXES = ()
@@ -147,6 +180,41 @@ def load_ignored_prefixes(ignore_file=".spellignore"):
         return ()
 
 IGNORED_PREFIXES = load_ignored_prefixes() + ("PortProton", "flatpak")
+
+# ---------- Проверка fuzzy строк ----------
+def find_fuzzy_entries(filepath: Path) -> list[tuple[int, str, str]]:
+    """Находит fuzzy записи в .po файле. Возвращает список (номер_строки, msgid, флаги)."""
+    fuzzy_entries = []
+    lines = filepath.read_text(encoding='utf-8').splitlines()
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
+        # Ищем комментарий с флагами, содержащий fuzzy
+        if line.startswith('#,') and 'fuzzy' in line:
+            flags = line[2:].strip()
+            line_num = i + 1
+            # Ищем следующий msgid
+            msgid = ""
+            i += 1
+            while i < len(lines):
+                next_line = lines[i].strip()
+                if next_line.startswith('msgid '):
+                    match = re.match(r'^msgid\s+"(.*)"', next_line)
+                    if match:
+                        msgid = match.group(1)
+                    i += 1
+                    # Собираем многострочный msgid
+                    while i < len(lines) and lines[i].strip().startswith('"'):
+                        msgid += lines[i].strip()[1:-1]
+                        i += 1
+                    break
+                i += 1
+            # Пропускаем пустой msgid (заголовок PO файла)
+            if msgid:
+                fuzzy_entries.append((line_num, msgid, flags))
+        else:
+            i += 1
+    return fuzzy_entries
 
 # ---------- Проверка орфографии с параллелизмом ----------
 speller = YandexSpeller()
@@ -208,17 +276,36 @@ def main(args) -> int:
     if args.create_new:
         create_new(args.create_new)
     if args.spellcheck:
-        files = list(LOCALES_PATH.glob("**/*.po")) + [POT_FILE]
+        files = list(LOCALES_PATH.glob("**/portprotonqt.po")) + [POT_FILE]
         seen = set(); has_err = False
         issues_summary = defaultdict(list)
+        fuzzy_summary = defaultdict(list)
         for f in files:
             if not f.exists() or f in seen: continue
             seen.add(f)
+            # Проверка fuzzy строк (только для .po файлов)
+            if f.suffix == '.po':
+                fuzzy_entries = find_fuzzy_entries(f)
+                if fuzzy_entries:
+                    fuzzy_summary[f] = fuzzy_entries
+                    has_err = True
             if check_file(f, issues_summary):
                 has_err = True
             else:
-                print(f"✅ {f} — no errors found.")
-        if has_err:
+                if f not in fuzzy_summary:
+                    print(f"✅ {f} — no errors found.")
+        # Вывод fuzzy строк
+        if fuzzy_summary:
+            print("\n⚠️  Fuzzy Entries (require review before release):")
+            for file, entries in fuzzy_summary.items():
+                print(f"\n⚠ {file}")
+                print("-----")
+                for idx, (line_num, msgid, flags) in enumerate(entries, 1):
+                    print(f"{idx}. Line {line_num}: [{flags}]")
+                    print(f"   msgid: \"{msgid[:80]}{'...' if len(msgid) > 80 else ''}\"")
+                print("-----")
+        # Вывод орфографических ошибок
+        if issues_summary:
             print("\n📋 Summary of Spelling Errors:")
             for file, errs in issues_summary.items():
                 print(f"\n✗ {file}")
