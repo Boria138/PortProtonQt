@@ -152,7 +152,7 @@ class GameCard(QFrame):
         self.portprotonLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
         self.portprotonLabel.setCardWidth(card_width)
         self.portprotonLabel.setVisible(self.portproton_visible)
-        self.portprotonLabel.clicked.connect(self.open_portproton_forum_topic)
+        self.portprotonLabel.clicked.connect(self.open_ppdb_page)
 
         anticheat_text = self.getAntiCheatText(anticheat_status)
         if anticheat_text:
@@ -426,14 +426,8 @@ class GameCard(QFrame):
             return "broken"
         return ""
 
-    def open_portproton_forum_topic(self):
-        result = self.portproton_api.get_forum_topic_slug(self.name)
-        base_url = "https://linux-gaming.ru/"
-        if result.startswith("search?q="):
-            url = QUrl(f"{base_url}{result}")
-        else:
-            url = QUrl(f"{base_url}t/{result}")
-        QDesktopServices.openUrl(url)
+    def open_ppdb_page(self):
+        self.portproton_api.open_ppdb_page(self.name, self.exec_line)
 
     def open_protondb_report(self):
         url = QUrl(f"https://www.protondb.com/app/{self.appid}")

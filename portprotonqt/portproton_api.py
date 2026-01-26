@@ -1,5 +1,4 @@
 import os
-import tarfile
 import orjson
 import requests
 import urllib.parse
@@ -8,13 +7,13 @@ import glob
 import re
 import hashlib
 from collections.abc import Callable
-from PySide6.QtCore import QThread, Signal
+from PySide6.QtCore import QThread, Signal, QUrl
+from PySide6.QtGui import QDesktopServices
 from portprotonqt.downloader import Downloader
 from portprotonqt.logger import get_logger
 from portprotonqt.config_utils import get_portproton_location
 
 logger = get_logger(__name__)
-CACHE_DURATION = 30 * 24 * 60 * 60  # 30 days in seconds
 AUTOINSTALL_CACHE_DURATION = 3600  # 1 hour for autoinstall cache
 
 def normalize_name(s):
@@ -42,6 +41,49 @@ def normalize_name(s):
     filtered_words = [word for word in words if word not in keywords_to_remove]
     return " ".join(filtered_words)
 
+
+def extract_exe_name(exec_line: str) -> str:
+    """Extract executable name from exec_line.
+
+    Handles various exec_line formats:
+    - Full command: 'env VAR=val /path/to/script /path/to/game.exe' -> 'game.exe'
+    - Autoinstall: 'autoinstall:script_name' -> ''
+    - Simple path: '/path/to/game.exe' -> 'game.exe'
+
+    Returns:
+        Executable name with .exe extension, or empty string if not found
+    """
+    import shlex
+
+    if not exec_line:
+        return ""
+
+    # Handle autoinstall scripts - they don't have a direct exe
+    if exec_line.startswith("autoinstall:"):
+        return ""
+
+    try:
+        parts = shlex.split(exec_line)
+        # PortProton exec_line format: env VAR=val script game.exe
+        # The exe is usually the 4th part (index 3) or last part ending with .exe
+        if len(parts) >= 4:
+            game_exe = os.path.expanduser(parts[3])
+        else:
+            # Fallback: find first .exe in the command
+            game_exe = exec_line
+            for part in parts:
+                if part.lower().endswith(".exe"):
+                    game_exe = os.path.expanduser(part)
+                    break
+
+        exe_name = os.path.basename(game_exe)
+        # Ensure .exe extension
+        if exe_name and not exe_name.lower().endswith(".exe"):
+            exe_name = f"{exe_name}.exe"
+        return exe_name
+    except (ValueError, IndexError):
+        return ""
+
 def get_cache_dir():
     """Return the cache directory path, creating it if necessary."""
     xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
@@ -53,7 +95,6 @@ class PortProtonAPI:
     """API to fetch game assets (cover, metadata) and forum topics from the PortProtonQt repository."""
     def __init__(self, downloader: Downloader | None = None):
         self.base_url = "https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/portprotonqt/custom_data"
-        self.topics_url = "https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/data/linux_gaming_topics.tar.xz"
         self.downloader = downloader or Downloader(max_workers=4)
         self.xdg_data_home = os.getenv("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share"))
         self.custom_data_dir = os.path.join(self.xdg_data_home, "PortProtonQt", "custom_data")
@@ -61,8 +102,7 @@ class PortProtonAPI:
         self.portproton_location = get_portproton_location()
         self.repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         self.builtin_custom_folder = os.path.join(self.repo_root, "custom_data")
-        self._topics_data = None
-        self._autoinstall_cache = None  # New: In-memory cache
+        self._autoinstall_cache = None  # In-memory cache
 
     def _get_game_dir(self, exe_name: str) -> str:
         game_dir = os.path.join(self.custom_data_dir, exe_name)
@@ -503,65 +543,64 @@ class PortProtonAPI:
         logger.info("Started background load of autoinstall games")
         return worker
 
-    def _load_topics_data(self):
-        """Load and cache linux_gaming_topics_min.json from the archive."""
-        if self._topics_data is not None:
-            return self._topics_data
+    def get_ppdb_url(self, game_name: str, exe_name: str) -> str:
+        """Get the PPDB URL for a given game.
 
-        cache_dir = get_cache_dir()
-        cache_tar = os.path.join(cache_dir, "linux_gaming_topics.tar.xz")
-        cache_json = os.path.join(cache_dir, "linux_gaming_topics_min.json")
+        Makes an API call to ppdb.linux-gaming.ru to look up the game by exe name.
+        If the returned name matches the game name, returns the direct URL.
+        Otherwise returns a search URL to avoid false positives (e.g., launcher.exe matches many games).
 
-        if os.path.exists(cache_json) and (time.time() - os.path.getmtime(cache_json) < CACHE_DURATION):
-            logger.info("Using cached topics JSON: %s", cache_json)
-            try:
-                with open(cache_json, "rb") as f:
-                    self._topics_data = orjson.loads(f.read())
-                logger.debug("Loaded %d topics from cache", len(self._topics_data))
-                return self._topics_data
-            except Exception as e:
-                logger.error("Error reading cached topics JSON: %s", e)
-                self._topics_data = []
+        Args:
+            game_name: Display name of the game
+            exe_name: Executable name (with or without .exe extension)
 
-        def process_tar(result: str | None):
-            if not result or not os.path.exists(result):
-                logger.error("Failed to download topics archive")
-                self._topics_data = []
-                return
-            try:
-                with tarfile.open(result, mode="r:xz") as tar:
-                    member = next((m for m in tar.getmembers() if m.name == "linux_gaming_topics_min.json"), None)
-                    if member is None:
-                        raise RuntimeError("linux_gaming_topics_min.json not found in archive")
-                    fobj = tar.extractfile(member)
-                    if fobj is None:
-                        raise RuntimeError("Failed to extract linux_gaming_topics_min.json from archive")
-                    raw = fobj.read()
-                    fobj.close()
-                    self._topics_data = orjson.loads(raw)
-                    with open(cache_json, "wb") as f:
-                        f.write(orjson.dumps(self._topics_data))
-                    if os.path.exists(cache_tar):
-                        os.remove(cache_tar)
-                        logger.info("Archive %s deleted after extraction", cache_tar)
-                    logger.info("Loaded %d topics from archive", len(self._topics_data))
-            except Exception as e:
-                logger.error("Error processing topics archive: %s", e)
-                self._topics_data = []
+        Returns:
+            Full URL to the PPDB page or search page
+        """
+        base_url = "https://ppdb.linux-gaming.ru"
 
-        self.downloader.download_async(self.topics_url, cache_tar, timeout=5, callback=process_tar)
-        # Wait for async download to complete if called synchronously
-        while self._topics_data is None:
-            time.sleep(0.1)
-        return self._topics_data
+        # Ensure exe_name has .exe extension
+        if not exe_name.lower().endswith(".exe"):
+            exe_name = f"{exe_name}.exe"
 
-    def get_forum_topic_slug(self, game_name: str) -> str:
-        """Get the forum topic slug or search URL for a given game name."""
-        topics = self._load_topics_data()
-        normalized_name = normalize_name(game_name)
-        for topic in topics:
-            if topic["normalized_title"] == normalized_name:
-                return topic["slug"]
-        logger.debug("No forum topic found for game: %s, redirecting to search", game_name)
-        encoded_name = urllib.parse.quote(f"#ppdb {game_name}")
-        return f"search?q={encoded_name}"
+        api_url = f"{base_url}/api/lookup/exe/{urllib.parse.quote(exe_name)}"
+
+        try:
+            response = requests.get(api_url, timeout=5)
+            if response.status_code == 200:
+                data = response.json()
+                api_name = data.get("name", "")
+                api_url_result = data.get("url", "")
+
+                # Compare normalized names to avoid false positives
+                if api_name and api_url_result:
+                    normalized_game = normalize_name(game_name)
+                    normalized_api = normalize_name(api_name)
+
+                    if normalized_game == normalized_api:
+                        logger.debug("PPDB exact match for %s: %s", game_name, api_url_result)
+                        return api_url_result
+
+                    logger.debug(
+                        "PPDB name mismatch for %s (exe: %s): API returned '%s', redirecting to search",
+                        game_name, exe_name, api_name
+                    )
+        except requests.RequestException as e:
+            logger.debug("PPDB API request failed for %s: %s", exe_name, e)
+        except (ValueError, KeyError) as e:
+            logger.debug("PPDB API response parsing failed for %s: %s", exe_name, e)
+
+        # Fallback to search URL
+        encoded_name = urllib.parse.quote(game_name)
+        return f"{base_url}/browse?search={encoded_name}"
+
+    def open_ppdb_page(self, game_name: str, exec_line: str) -> None:
+        """Open the PPDB page for a game in the default browser.
+
+        Args:
+            game_name: Display name of the game
+            exec_line: Exec line from which to extract the exe name
+        """
+        exe_name = extract_exe_name(exec_line)
+        url = self.get_ppdb_url(game_name, exe_name)
+        QDesktopServices.openUrl(QUrl(url))

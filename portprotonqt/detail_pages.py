@@ -210,7 +210,7 @@ class DetailPageManager:
         portprotonLabel.setStyleSheet(self.main_window.theme.STEAM_BADGE_STYLE)
         portprotonLabel.setFixedWidth(badge_width)
         portprotonLabel.setVisible(portproton_visible)
-        portprotonLabel.clicked.connect(lambda: self.open_portproton_forum_topic(name))
+        portprotonLabel.clicked.connect(lambda: self.portproton_api.open_ppdb_page(name, exec_line))
 
         # WeAntiCheatYet badge
         anticheat_text = GameCard.getAntiCheatText(anticheat_status)
@@ -869,12 +869,3 @@ class DetailPageManager:
         except Exception as e:
             logger.error(f"Error starting exit animation: {e}", exc_info=True)
             self._exit_animation_in_progress = False
-
-    def open_portproton_forum_topic(self, name):
-        result = self.portproton_api.get_forum_topic_slug(name)
-        base_url = "https://linux-gaming.ru/"
-        if result.startswith("search?q="):
-            url = QUrl(f"{base_url}{result}")
-        else:
-            url = QUrl(f"{base_url}t/{result}")
-        QDesktopServices.openUrl(url)

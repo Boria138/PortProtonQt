@@ -804,16 +804,6 @@ class MainWindow(QMainWindow):
             self.refreshButton.setText(_("Refresh Grid"))
             self.update_status_message.emit(_("Game library refreshed"), 3000)
 
-    def open_portproton_forum_topic(self, topic_name: str):
-        """Open the PortProton forum topic or search page for this game."""
-        result = self.portproton_api.get_forum_topic_slug(topic_name)
-        base_url = "https://linux-gaming.ru/"
-        if result.startswith("search?q="):
-            url = QUrl(f"{base_url}{result}")
-        else:
-            url = QUrl(f"{base_url}t/{result}")
-        QDesktopServices.openUrl(url)
-
     def loadGames(self):
         display_filter = read_display_filter()
         favorites = read_favorites()
