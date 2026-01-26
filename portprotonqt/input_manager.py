@@ -1099,7 +1099,8 @@ class InputManager(QObject):
                     return
 
             # Handle common UI elements like QMessageBox, QMenu, etc.
-            if self._handle_common_ui_elements(button_code):
+            # Only handle press events (value != 0), ignore release events
+            if value != 0 and self._handle_common_ui_elements(button_code):
                 return
 
             # Handle other QDialogs
@@ -1550,7 +1551,8 @@ class InputManager(QObject):
     def handle_button_slot(self, button_code: int, value: int) -> None:
         # Handle common UI elements like QMessageBox, QMenu, etc. FIRST
         # This ensures that any active dialogs are handled before main window logic
-        if self._handle_common_ui_elements(button_code):
+        # Only handle press events (value=1), ignore release events (value=0)
+        if value == 1 and self._handle_common_ui_elements(button_code):
             return
 
         active_window = QApplication.activeWindow()
