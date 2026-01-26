@@ -28,7 +28,7 @@ class DetailPageManager:
         self._animations = {}
         self.portproton_api = PortProtonAPI(Downloader(max_workers=4))
 
-    def openGameDetailPage(self, name, description, cover_path=None, appid="", exec_line="", controller_support="",
+    def openGameDetailPage(self, name, description, cover_path=None, appid="", controller_support="", exec_line="",
                           last_launch="", formatted_playtime="", protondb_tier="", game_source="", anticheat_status=""):
         """Open detailed game information page showing all game stats, playtime and settings."""
         detailPage = QWidget()

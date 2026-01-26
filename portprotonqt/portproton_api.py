@@ -64,23 +64,15 @@ def extract_exe_name(exec_line: str) -> str:
 
     try:
         parts = shlex.split(exec_line)
-        # PortProton exec_line format: env VAR=val script game.exe
-        # The exe is usually the 4th part (index 3) or last part ending with .exe
-        if len(parts) >= 4:
-            game_exe = os.path.expanduser(parts[3])
-        else:
-            # Fallback: find first .exe in the command
-            game_exe = exec_line
-            for part in parts:
-                if part.lower().endswith(".exe"):
-                    game_exe = os.path.expanduser(part)
-                    break
 
-        exe_name = os.path.basename(game_exe)
-        # Ensure .exe extension
-        if exe_name and not exe_name.lower().endswith(".exe"):
-            exe_name = f"{exe_name}.exe"
-        return exe_name
+        # Search for the last part ending with .exe
+        # In PortProton format, the game exe is always the last argument
+        for part in reversed(parts):
+            if part.lower().endswith(".exe"):
+                game_exe = os.path.expanduser(part)
+                return os.path.basename(game_exe)
+
+        return ""
     except (ValueError, IndexError):
         return ""
 
