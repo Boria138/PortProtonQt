@@ -1591,16 +1591,10 @@ class InputManager(QObject):
             current_tab_index = self._parent.stackedWidget.currentIndex()
 
             if button_code in BUTTONS['confirm'] and isinstance(focused, QLineEdit):
-                search_edit = None
-                if current_tab_index == 0:
-                    search_edit = getattr(self._parent, 'searchEdit', None)
-                elif current_tab_index == 1:
-                    search_edit = getattr(self._parent, 'autoInstallSearchLineEdit', None)
-                if focused == search_edit:
-                    keyboard = getattr(self._parent, 'keyboard', None)
-                    if keyboard:
-                        keyboard.show_for_widget(focused)
-                        return
+                keyboard = getattr(self._parent, 'keyboard', None)
+                if keyboard:
+                    keyboard.show_for_widget(focused)
+                    return
 
             # Handle Y button to focus search
             if button_code in BUTTONS['prev_dir']:  # Y button
