@@ -2433,6 +2433,9 @@ class MainWindow(QMainWindow):
             else:
                 self.input_manager.gamepad_type = GamepadType.UNKNOWN
             self.updateControlHints()
+            # Update virtual keyboard icons
+            if hasattr(self, 'keyboard'):
+                self.keyboard.update_keyboard()
 
         for card in self.game_library_manager.game_card_cache.values():
             card.update_badge_visibility(filter_key)
