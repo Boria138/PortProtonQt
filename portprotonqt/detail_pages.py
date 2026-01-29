@@ -1,18 +1,19 @@
 import os
 import shlex
-from PySide6.QtWidgets import (QFrame, QGraphicsDropShadowEffect, QVBoxLayout, QLabel, QHBoxLayout, QWidget, QApplication)
+from PySide6.QtWidgets import (QFrame, QGraphicsDropShadowEffect, QVBoxLayout, QLabel, QHBoxLayout, QWidget, QApplication, QMessageBox)
 from PySide6.QtCore import Qt, QUrl, QTimer, QAbstractAnimation
 from PySide6.QtGui import QColor, QDesktopServices
 from portprotonqt.image_utils import load_pixmap_async, round_corners
 from portprotonqt.custom_widgets import ClickableLabel, AutoSizeButton
 from portprotonqt.game_card import GameCard
 from portprotonqt.howlongtobeat_api import HowLongToBeat
-from portprotonqt.config_utils import read_favorites, save_favorites, read_display_filter
+from portprotonqt.config_utils import read_favorites, save_favorites, read_display_filter, get_portproton_start_command
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
 from portprotonqt.portproton_api import PortProtonAPI
 from portprotonqt.downloader import Downloader
 from portprotonqt.animations import DetailPageAnimations
+from portprotonqt.debug_utils import DebugLogManager
 
 logger = get_logger(__name__)
 
@@ -27,6 +28,9 @@ class DetailPageManager:
         self._exit_animation_in_progress = False
         self._animations = {}
         self.portproton_api = PortProtonAPI(Downloader(max_workers=4))
+        self.debug_log_manager = DebugLogManager()
+        self._debug_log_button = None
+        self._debug_log_timer = None
 
     def openGameDetailPage(self, name, description, cover_path=None, appid="", controller_support="", exec_line="",
                           last_launch="", formatted_playtime="", protondb_tier="", game_source="", anticheat_status=""):
@@ -452,6 +456,16 @@ class DetailPageManager:
         settings_button.setStyleSheet(self.main_window.theme.PLAY_BUTTON_STYLE)
         settings_button.clicked.connect(lambda: self.main_window.open_exe_settings(file_to_check))
         buttons_layout.addWidget(settings_button, alignment=Qt.AlignmentFlag.AlignLeft)
+
+        # Create Log button
+        log_icon = self.main_window.theme_manager.get_icon("edit")
+        log_button = AutoSizeButton(_("Create Log"), icon=log_icon)
+        log_button.setFixedSize(120, 40)
+        log_button.setStyleSheet(self.main_window.theme.PLAY_BUTTON_STYLE)
+        log_button.clicked.connect(lambda: self.toggleDebugLog(file_to_check, log_button))
+        buttons_layout.addWidget(log_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        self._debug_log_button = log_button
+
         buttons_layout.addStretch()
         detailsLayout.addLayout(buttons_layout)
 
@@ -784,6 +798,105 @@ class DetailPageManager:
             label.setText("★")
         save_favorites(favorites)
         self.main_window.game_library_manager.update_game_grid()
+
+    def toggleDebugLog(self, exe_path: str | None, button: AutoSizeButton):
+        """Toggle debug log creation - start or stop game with PW_LOG=1."""
+        if self.debug_log_manager.is_running:
+            # Stop and save log
+            self._stopDebugTimer()
+            log_file = self.debug_log_manager.stop()
+
+            # Update button
+            button.setText(_("Create Log"))
+            icon = self.main_window.theme_manager.get_icon("edit")
+            if icon:
+                button.setIcon(icon)
+
+            # Show result
+            if log_file:
+                QMessageBox.information(
+                    self.main_window,
+                    _("Log Saved"),
+                    _("Debug log saved to:") + f"\n{log_file}"
+                )
+            else:
+                QMessageBox.warning(
+                    self.main_window,
+                    _("Error"),
+                    _("Failed to save debug log")
+                )
+        else:
+            # Check if exe_path is None before starting debug session
+            if exe_path is None:
+                QMessageBox.warning(
+                    self.main_window,
+                    _("Error"),
+                    _("Executable path is not available for this entry")
+                )
+                return
+
+            # Start debug session
+            start_command = get_portproton_start_command()
+            if not start_command:
+                QMessageBox.warning(
+                    self.main_window,
+                    _("Error"),
+                    _("PortProton start command not found")
+                )
+                return
+
+            if self.debug_log_manager.start(exe_path, start_command):
+                # Update button
+                button.setText(_("Stop Log"))
+                icon = self.main_window.theme_manager.get_icon("stop")
+                if icon:
+                    button.setIcon(icon)
+
+                # Start timer to read output and check process
+                self._startDebugTimer()
+            else:
+                QMessageBox.warning(
+                    self.main_window,
+                    _("Error"),
+                    _("Failed to start debug session")
+                )
+
+    def _startDebugTimer(self):
+        """Start timer to periodically read debug output."""
+        if self._debug_log_timer is not None:
+            self._debug_log_timer.stop()
+
+        self._debug_log_timer = QTimer(self.main_window)
+        self._debug_log_timer.timeout.connect(self._onDebugTimerTick)
+        self._debug_log_timer.start(500)
+
+    def _stopDebugTimer(self):
+        """Stop debug output timer."""
+        if self._debug_log_timer is not None:
+            self._debug_log_timer.stop()
+            self._debug_log_timer.deleteLater()
+            self._debug_log_timer = None
+
+    def _onDebugTimerTick(self):
+        if not self.debug_log_manager.check_running():
+            # Process finished on its own
+            self._stopDebugTimer()
+            log_file = self.debug_log_manager.stop()
+
+            # Update button
+            if self._debug_log_button:
+                self._debug_log_button.setText(_("Create Log"))
+                icon = self.main_window.theme_manager.get_icon("edit")
+                if icon:
+                    self._debug_log_button.setIcon(icon)
+
+            # Show result
+            if log_file:
+                QMessageBox.information(
+                    self.main_window,
+                    _("Log Saved"),
+                    _("Debug log saved to:") + f"\n{log_file}"
+                )
 
     def goBackDetailPage(self, page: QWidget | None) -> None:
         if page is None or page != self.main_window.stackedWidget.currentWidget() or getattr(self, '_exit_animation_in_progress', False):
