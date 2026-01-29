@@ -9,6 +9,7 @@ install_data(
   'custom_widgets.py',
   'detail_pages.py',
   'dialogs.py',
+  'debug_utils.py',
   'downloader.py',
   'egs_api.py',
   'game_card.py',

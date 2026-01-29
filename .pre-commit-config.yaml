@@ -39,3 +39,12 @@ repos:
         types: [file]
         files: ^portprotonqt/themes/[^/]+/styles\.py$
         pass_filenames: false
+
+  - repo: local
+    hooks:
+      - id: check-meson
+        name: Check meson.build syntax and file inclusion
+        entry: ./dev-scripts/check_meson_files.py
+        language: system
+        files: (^portprotonqt/.*\.py$|meson\.build$)
+        pass_filenames: false
