@@ -12,13 +12,88 @@ from portprotonqt import app
 
 logger = get_logger(__name__)
 
-# DXVK and VKD3D version mappings for PW_VULKAN_USE
-VULKAN_VERSIONS = {
-    "6": ("DXVK v.2.6.2", "VKD3D-PROTON v.2.14.1"),
-    "2": ("DXVK v.2.4", "VKD3D-PROTON v.2.12"),
-    "1": ("DXVK-Sarek", "VKD3D-Sarek"),
-    "0": ("WINED3D", "OpenGL"),
-}
+# Cache for exported variables to avoid repeated subprocess calls
+_exported_vars_cache: dict[str, dict[str, str]] = {}
+
+
+def get_portproton_env(exe_path: str | None) -> dict[str, str]:
+    """
+    Get environment variables as they would be exported by PortProton.
+
+    Sources var, user.conf, and .ppdb files in bash and returns the exported variables.
+    This matches the actual behavior of start.sh when launching a game.
+
+    Args:
+        exe_path: Path to the executable, or None
+
+    Returns:
+        Dictionary of environment variable names to values
+    """
+    cache_key = exe_path or "__no_exe__"
+
+    # Check cache first
+    if cache_key in _exported_vars_cache:
+        return _exported_vars_cache[cache_key]
+
+    portproton_path = get_portproton_location()
+    if not portproton_path:
+        return {}
+
+    scripts_path = os.path.join(portproton_path, "data", "scripts")
+    var_file = os.path.join(scripts_path, "var")
+    user_conf = os.path.join(portproton_path, "data", "user.conf")
+
+    if not os.path.exists(var_file):
+        logger.debug(f"var file not found: {var_file}")
+        return {}
+
+    # Build bash command to source files and output variables
+    # We need to source in order: var -> user.conf -> .ppdb
+    bash_script = f'source "{var_file}" 2>/dev/null; '
+
+    if os.path.exists(user_conf):
+        bash_script += f'source "{user_conf}" 2>/dev/null; '
+
+    if exe_path:
+        ppdb_file = f"{exe_path}.ppdb"
+        if os.path.exists(ppdb_file):
+            bash_script += f'source "{ppdb_file}" 2>/dev/null; '
+
+    # Output all relevant variables (PW_, DXVK_, VKD3D_)
+    bash_script += 'env | grep -E "^(PW_|DXVK_|VKD3D_)"'
+
+    try:
+        result = subprocess.run(
+            ["bash", "-c", bash_script],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False
+        )
+
+        env_vars: dict[str, str] = {}
+        for line in result.stdout.strip().split("\n"):
+            if "=" in line:
+                key, val = line.split("=", 1)
+                env_vars[key] = val
+
+        # Cache the result
+        _exported_vars_cache[cache_key] = env_vars
+        return env_vars
+
+    except Exception as e:
+        logger.debug(f"Error getting portproton env: {e}")
+        return {}
+
+
+def clear_portproton_env_cache(exe_path: str | None = None):
+    """Clear the exported variables cache."""
+    if exe_path:
+        _exported_vars_cache.pop(exe_path, None)
+        _exported_vars_cache.pop("__no_exe__", None)
+    else:
+        _exported_vars_cache.clear()
+
 
 
 def get_file_content(file_path: str, default: str = "") -> str:
@@ -201,7 +276,6 @@ def get_locale_available() -> str:
         pass
     return ""
 
-
 def get_glibc_version() -> str:
     """Get GLIBC version."""
     try:
@@ -223,51 +297,44 @@ def get_glibc_version() -> str:
     return _("Unknown")
 
 def get_runtime_status(portproton_path: str, exe_path: str | None = None) -> str:
-    """Check if RUNTIME is enabled by checking PW_USE_RUNTIME environment variable."""
-    # Get value from environment variable
-    runtime_env = os.environ.get("PW_USE_RUNTIME")
-    if runtime_env is not None:
-        if str(runtime_env) == "1":
-            return _("RUNTIME is enabled")
-        return _("RUNTIME is disabled")
+    """Check if RUNTIME is enabled by checking PW_USE_RUNTIME variable."""
+    env_vars = get_portproton_env(exe_path)
+    runtime_val = env_vars.get("PW_USE_RUNTIME", "1")  # Default is 1 in var file
 
-    # Default is disabled
+    if runtime_val == "1":
+        return _("RUNTIME is enabled")
     return _("RUNTIME is disabled")
 
 
 def get_vulkan_use_info(portproton_path: str, exe_path: str | None = None) -> str:
     """Get PW_VULKAN_USE info with DXVK and VKD3D versions."""
-    # Get value from environment variable
-    pw_vulkan_use = os.environ.get("PW_VULKAN_USE")
-    if pw_vulkan_use is not None:
-        dxvk, vkd3d = VULKAN_VERSIONS.get(pw_vulkan_use, ("DXVK", "VKD3D-PROTON"))
-        return f"PW_VULKAN_USE={pw_vulkan_use} - {dxvk}, {vkd3d}"
+    env_vars = get_portproton_env(exe_path)
+    pw_vulkan_use = env_vars.get("PW_VULKAN_USE", "6")
 
-    # Default to 6
-    pw_vulkan_use = "6"
-    dxvk, vkd3d = VULKAN_VERSIONS.get(pw_vulkan_use, ("DXVK", "VKD3D-PROTON"))
+    # Get versions from var file based on PW_VULKAN_USE value
+    if pw_vulkan_use == "6":
+        dxvk = f"DXVK v.{env_vars.get('DXVK_NEW_VER', '')}"
+        vkd3d = f"VKD3D-PROTON v.{env_vars.get('VKD3D_NEW_VER', '')}"
+    elif pw_vulkan_use == "2":
+        dxvk = f"DXVK v.{env_vars.get('DXVK_OLD_VER', '')}"
+        vkd3d = f"VKD3D-PROTON v.{env_vars.get('VKD3D_OLD_VER', '')}"
+    elif pw_vulkan_use == "1":
+        dxvk = f"DXVK {env_vars.get('DXVK_SAREK_VER', 'Sarek')}"
+        vkd3d = f"VKD3D {env_vars.get('VKD3D_SAREK_VER', 'Sarek')}"
+    elif pw_vulkan_use == "0":
+        dxvk = "WINED3D"
+        vkd3d = "OpenGL"
+    else:
+        dxvk = "DXVK"
+        vkd3d = "VKD3D-PROTON"
+
     return f"PW_VULKAN_USE={pw_vulkan_use} - {dxvk}, {vkd3d}"
 
 
 def get_wine_version(portproton_path: str, exe_path: str | None = None) -> str:
     """Get Wine/Proton version in use."""
-    # Get value from environment variable
-    wine_version = os.environ.get("PW_WINE_USE")
-    if wine_version:
-        return wine_version
-
-    # Try to find from dist directory
-    dist_path = os.path.join(portproton_path, "data", "dist")
-    if os.path.exists(dist_path):
-        try:
-            versions = [d for d in os.listdir(dist_path)
-                       if os.path.isdir(os.path.join(dist_path, d))]
-            if versions:
-                wine_version = versions[0]  # Return first found
-        except OSError:
-            pass
-
-    return wine_version or _("Unknown")
+    env_vars = get_portproton_env(exe_path)
+    return env_vars.get("PW_WINE_USE", _("Unknown"))
 
 
 def get_program_bit_depth(exe_path: str | None) -> str:
@@ -312,42 +379,53 @@ def get_program_bit_depth(exe_path: str | None) -> str:
 
 def get_filesystem_info(exe_path: str | None, portproton_path: str) -> str:
     """Get filesystem info for game and PortProton directories."""
-    lines = []
+    import psutil
 
     def get_fs_type(path: str) -> str:
-        """Get filesystem type for a given path."""
+        """Get filesystem type using psutil, with lsblk fallback for fuseblk."""
         try:
-            result = subprocess.run(
-                ["df", "-T", path],
-                capture_output=True,
-                text=True,
-                timeout=5,
-                check=False
-            )
-            if result.returncode == 0:
-                output_lines = result.stdout.strip().split("\n")
-                if len(output_lines) >= 2:
-                    # Second line contains: Filesystem Type ...
-                    parts = output_lines[1].split()
-                    if len(parts) >= 2:
-                        return parts[1]
+            path = os.path.realpath(path)
+            partitions = {p.mountpoint: (p.device, p.fstype) for p in psutil.disk_partitions(all=True)}
+
+            # Find longest matching mount point
+            device, fstype = None, None
+            check_path = path
+            while check_path != "/":
+                if check_path in partitions:
+                    device, fstype = partitions[check_path]
+                    break
+                check_path = os.path.dirname(check_path)
+
+            if fstype is None:
+                device, fstype = partitions.get("/", (None, _("Unknown")))
+
+            # For fuseblk, get real fstype via lsblk
+            if fstype == "fuseblk" and device:
+                try:
+                    result = subprocess.run(
+                        ["lsblk", "-no", "FSTYPE", device],
+                        capture_output=True, text=True, timeout=2, check=False
+                    )
+                    if result.returncode == 0 and result.stdout.strip():
+                        fstype = result.stdout.strip()
+                except Exception:
+                    pass
+
+            return fstype
         except Exception:
-            pass
-        return _("Unknown")
+            return _("Unknown")
+
+    lines = []
 
     if exe_path:
         game_dir = os.path.dirname(exe_path)
-        fs_type = get_fs_type(game_dir)
-        lines.append(f"Filesystem {game_dir} - {fs_type}")
+        lines.append(f"Filesystem {game_dir} - {get_fs_type(game_dir)}")
 
-    fs_type = get_fs_type(portproton_path)
-    lines.append(f"Filesystem {portproton_path} - {fs_type}")
+    lines.append(f"Filesystem {portproton_path} - {get_fs_type(portproton_path)}")
 
-    # Check tmp directory
     tmp_dir = f"/tmp/PortProton_{os.environ.get('USER', 'user')}"
     if os.path.exists(tmp_dir):
-        fs_type = get_fs_type(tmp_dir)
-        lines.append(f"Filesystem {tmp_dir} - {fs_type}")
+        lines.append(f"Filesystem {tmp_dir} - {get_fs_type(tmp_dir)}")
 
     return "\n".join(lines) if lines else _("Unable to retrieve filesystem info")
 
@@ -356,7 +434,7 @@ def get_graphics_info_detailed() -> str:
     """Get detailed graphics card info using lspci, glxinfo, and inxi."""
     lines = []
 
-    # lspci output
+    # Parse lspci output to extract graphics devices info in the required format
     try:
         result = subprocess.run(
             ["lspci", "-k"],
@@ -366,18 +444,130 @@ def get_graphics_info_detailed() -> str:
             check=False
         )
         if result.returncode == 0:
-            lines.append("lspci -k | grep -EA3 VGA|3D|Display :")
-            in_block = False
-            block_lines = 0
-            for line in result.stdout.split("\n"):
+            # Extract graphics devices and format them
+            device_count = 1
+            all_lines = result.stdout.split("\n")
+
+            devices_info = []
+            i = 0
+            while i < len(all_lines):
+                line = all_lines[i]
                 if any(x in line for x in ["VGA", "3D", "Display"]):
-                    in_block = True
-                    block_lines = 0
-                if in_block:
-                    lines.append(line)
-                    block_lines += 1
-                    if block_lines >= 4:
-                        in_block = False
+                    # Parse the line to extract device info
+                    parts = line.split(maxsplit=1)
+                    device_desc = parts[1] if len(parts) > 1 else ""
+
+                    # Extract driver info from the next few lines after the graphics line
+                    driver_info = ""
+                    # Look for driver info in the next 3 lines (usually appears right after the device line)
+                    for j in range(i + 1, min(i + 4, len(all_lines))):
+                        next_line = all_lines[j]
+                        if "Kernel driver in use:" in next_line:
+                            driver_part = next_line.split("Kernel driver in use:")[1].strip()
+                            driver_info = driver_part
+                            break
+
+                    # Extract the GPU name in the format we want
+                    # From: "VGA compatible controller: NVIDIA Corporation GP104 [GeForce GTX 1060 3GB] (rev a1)"
+                    # To: "NVIDIA GP104 [GeForce GTX 1060 3GB]"
+                    import re
+                    # Match pattern like "NVIDIA Corporation GP104 [GeForce GTX 1060 3GB]"
+                    gpu_match = re.search(r'(NVIDIA Corporation )?([A-Z0-9]+\s*\[[^\]]+\])', device_desc)
+                    if gpu_match:
+                        # Get the GPU chip and model part
+                        gpu_part = gpu_match.group(2)
+                        formatted_device_desc = f"NVIDIA {gpu_part}"
+                    else:
+                        # Fallback to original if pattern doesn't match
+                        formatted_device_desc = device_desc
+
+                    device_line = f"Device-{device_count}: {formatted_device_desc}"
+                    # Always add driver info if available
+                    if driver_info:
+                        device_line += f" driver: {driver_info}"
+
+                    # Try to get the driver version from the system
+                    try:
+                        with open('/sys/module/nvidia/version') as f:
+                            driver_version = f.read().strip()
+                            device_line += f" v: {driver_version}"
+                    except OSError:
+                        # If we can't get it from /sys/module/nvidia/version, try glxinfo
+                        try:
+                            glxinfo_result = subprocess.run(
+                                ["glxinfo"],
+                                capture_output=True,
+                                text=True,
+                                timeout=10,
+                                check=False
+                            )
+                            if glxinfo_result.returncode == 0:
+                                for glx_line in glxinfo_result.stdout.split("\n"):
+                                    if "OpenGL core profile version string:" in glx_line or \
+                                       "OpenGL version string:" in glx_line:
+                                        # Extract version number after NVIDIA
+                                        version_match = re.search(r'NVIDIA\s+(\d+\.\d+(?:\.\d+)?)', glx_line)
+                                        if version_match:
+                                            version_num = version_match.group(1)
+                                            device_line += f" v: {version_num}"
+                                            break
+                        except Exception:
+                            pass
+
+                    devices_info.append(device_line)
+                    device_count += 1
+                i += 1
+
+            # Create the Graphics section with devices and display info
+            graphics_lines = []
+            for device_info in devices_info:
+                graphics_lines.append(f"Graphics:  {device_info}")
+
+            # Add display info to the Graphics section
+            session_type = os.environ.get("XDG_SESSION_TYPE", "unknown")
+            display_info = f"Display: {session_type}"
+            if session_type == "wayland":
+                display_info += f" server: {os.environ.get('WAYLAND_DISPLAY', 'N/A')}"
+            else:
+                display_info += f" server: {os.environ.get('DISPLAY', 'N/A')}"
+
+            # X.Org version
+            try:
+                result = subprocess.run(
+                    ["xdpyinfo"],
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
+                    check=False
+                )
+                if result.returncode == 0:
+                    for line in result.stdout.split("\n"):
+                        if "X.Org version" in line:
+                            display_info += f" X.Org version: {line.split('X.Org version')[1].strip()}"
+                            break
+            except FileNotFoundError:
+                pass
+
+            # Add driver info to display line if available
+            # We'll add a generic "driver: loaded: nvidia" type info if we can determine it
+            if devices_info:
+                # Extract driver from the first device if available
+                first_device = devices_info[0]
+                if "driver: " in first_device:
+                    driver_part = first_device.split("driver: ")[1]
+                    if " " in driver_part:
+                        driver_name = driver_part.split(" ")[0]
+                    else:
+                        driver_name = driver_part
+                    display_info += f" driver: loaded: {driver_name}"
+
+            # Add indented display info after the device info
+            if graphics_lines:
+                # Add the display info as an indented line after the first device
+                graphics_lines.append(f"           {display_info}")
+
+            lines.extend(graphics_lines)
+
     except Exception as e:
         lines.append(f"lspci error: {e}")
 
@@ -423,47 +613,73 @@ def get_graphics_info_detailed() -> str:
 
     lines.append("-----")
 
-    # inxi -G output
+    # EGL info
     try:
         result = subprocess.run(
-            ["inxi", "-G"],
+            ["eglinfo"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False
+        )
+        if result.returncode == 0:
+            for line in result.stdout.split("\n"):
+                if "EGL API version" in line or "EGL vendor" in line:
+                    lines.append(line.strip())
+                    break
+    except FileNotFoundError:
+        pass
+
+    lines.append("-----")
+
+    # Vulkan info
+    try:
+        result = subprocess.run(
+            ["vulkaninfo", "--summary"],
             capture_output=True,
             text=True,
             timeout=10,
             check=False
         )
         if result.returncode == 0:
-            lines.append("inxi -G:")
-            lines.append(result.stdout.strip())
+            lines.append("Vulkan:")
+            for line in result.stdout.split("\n"):
+                stripped = line.strip()
+                if stripped.startswith("GPU") or "deviceName" in line or "driverName" in line:
+                    lines.append(line.rstrip())
     except FileNotFoundError:
-        lines.append("inxi not found")
-    except Exception as e:
-        lines.append(f"inxi error: {e}")
+        lines.append("vulkaninfo not found")
 
-    # Screen resolution
+    # Vulkan cube test
     try:
-        result = subprocess.run(
-            ["xrandr", "--current"],
+        portproton_path = get_portproton_location()
+        if portproton_path:
+            vkcube_path = os.path.join(portproton_path, "data", "plugins", "portable", "bin", "vkcube")
+        else:
+            vkcube_path = "vkcube"
+
+        if not os.path.exists(vkcube_path):
+            vkcube_path = "vkcube"  # Fallback to system-wide
+
+        vkcube_result = subprocess.run(
+            [vkcube_path, "--c", "10"],  # Run for 10 frames to get quick result
             capture_output=True,
             text=True,
-            timeout=5,
-            check=False,
-            env={**os.environ, "DISPLAY": os.environ.get("DISPLAY", ":0")}
+            timeout=30,
+            check=False
         )
-        if result.returncode == 0:
-            for line in result.stdout.split("\n"):
-                if " connected" in line and "x" in line:
-                    # Extract resolution
-                    match = re.search(r'(\d+x\d+)', line)
-                    if match:
-                        lines.append(f"PW_SCREEN_RESOLUTION={match.group(1)}")
-                    # Extract output name
-                    output_name = line.split()[0]
-                    if " primary " in line:
-                        lines.append(f"PW_SCREEN_PRIMARY={output_name}")
-                    break
-    except Exception:
-        pass
+        if vkcube_result.returncode == 0:
+            lines.append("Vulkan Cube Test: PASSED")
+        else:
+            lines.append(f"Vulkan Cube Test: FAILED (code: {vkcube_result.returncode})")
+    except FileNotFoundError:
+        lines.append("Vulkan Cube Test: vkcube not found, test skipped")
+    except subprocess.TimeoutExpired:
+        lines.append("Vulkan Cube Test: timed out")
+    except Exception as e:
+        lines.append(f"Vulkan Cube Test: error: {e}")
+
+    # Screen resolution info is obtained separately from PortProton variables
 
     return "\n".join(lines) if lines else _("Unable to retrieve graphics info")
 
@@ -527,16 +743,33 @@ def get_user_overrides(portproton_path: str) -> str:
 
 
 
-def get_d3d_extras_status(portproton_path: str, exe_path: str | None = None) -> str:
-    """Check if D3D_EXTRAS is enabled by checking PW_USE_D3D_EXTRAS environment variable."""
-    # Get value from environment variable
-    d3d_extras_env = os.environ.get("PW_USE_D3D_EXTRAS")
-    if d3d_extras_env is not None:
-        if d3d_extras_env == "1":
-            return "D3D_EXTRAS - enabled"
-        return "D3D_EXTRAS - disabled"
+def get_screen_resolution_info(portproton_path: str, exe_path: str | None = None) -> str:
+    """Get screen resolution info from PW_SCREEN_RESOLUTION variable."""
+    env_vars = get_portproton_env(exe_path)
+    resolution = env_vars.get("PW_SCREEN_RESOLUTION", "")
 
-    # Default is disabled
+    if resolution:
+        return f"PW_SCREEN_RESOLUTION={resolution}"
+    return ""
+
+
+def get_screen_primary_info(portproton_path: str, exe_path: str | None = None) -> str:
+    """Get primary screen info from PW_SCREEN_PRIMARY variable."""
+    env_vars = get_portproton_env(exe_path)
+    primary = env_vars.get("PW_SCREEN_PRIMARY", "")
+
+    if primary:
+        return f"PW_SCREEN_PRIMARY={primary}"
+    return ""
+
+
+def get_d3d_extras_status(portproton_path: str, exe_path: str | None = None) -> str:
+    """Check if D3D_EXTRAS is enabled by checking PW_USE_D3D_EXTRAS variable."""
+    env_vars = get_portproton_env(exe_path)
+    d3d_extras_val = env_vars.get("PW_USE_D3D_EXTRAS", "1")  # Default is 1 in var file
+
+    if d3d_extras_val == "1":
+        return "D3D_EXTRAS - enabled"
     return "D3D_EXTRAS - disabled"
 
 
@@ -675,6 +908,16 @@ def generate_system_info(exe_path: str | None = None) -> str:
     # Graphic cards and drivers (detailed)
     lines.append("Graphic cards and drivers:")
     lines.append(get_graphics_info_detailed())
+    lines.append("-" * 61)
+
+    # Screen resolution info from PortProton variables
+    screen_resolution = get_screen_resolution_info(portproton_path, exe_path)
+    if screen_resolution:
+        lines.append(screen_resolution)
+
+    screen_primary = get_screen_primary_info(portproton_path, exe_path)
+    if screen_primary:
+        lines.append(screen_primary)
     lines.append("-" * 61)
 
     # Locale
