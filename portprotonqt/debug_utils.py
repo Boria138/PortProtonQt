@@ -1097,27 +1097,28 @@ def process_portproton_log(log_content: str) -> str:
     # Anonymize the content
     username = os.environ.get("USER", "")
     if username:
-        deduplicated_content = deduplicated_content.replace(username, "xuser")
         deduplicated_content = deduplicated_content.replace(f"/home/{username}", "/home/xuser")
+        deduplicated_content = deduplicated_content.replace(f"PortProton_{username}", "PortProton_xuser")
 
     # Filter noise
     filtered_lines = []
     for line in deduplicated_content.split("\n"):
         # Skip lines that match known noise patterns
         skip_line = False
-        if any(x in line for x in [
+        if any(x in line.lower() for x in [
             "kerberos",
             "ntlm",
-            "HACK_does_openvr_work",
-            "Uploading is disabled",
-            "wine: RLIMIT_NICE is <= 20",
+            "hack_does_openvr_work",
+            "uploading is disabled",
+            "wine: rlimit_nice is <= 20",
+            "are assuming",
             "to be private",
-            "UDEV monitor"
+            "udev monitor"
         ]):
             skip_line = True
 
         # Skip lines ending with .fx
-        if not skip_line and line.rstrip().endswith('.fx'):
+        if not skip_line and line.rstrip().lower().endswith('.fx'):
             skip_line = True
 
         if not skip_line:
