@@ -1099,6 +1099,7 @@ def process_portproton_log(log_content: str) -> str:
     if username:
         deduplicated_content = deduplicated_content.replace(f"/home/{username}", "/home/xuser")
         deduplicated_content = deduplicated_content.replace(f"PortProton_{username}", "PortProton_xuser")
+        deduplicated_content = deduplicated_content.replace(f"#Author: {username}", "#Author: xuser")
 
     # Filter noise
     filtered_lines = []
@@ -1143,6 +1144,17 @@ class DebugLogManager:
 
         self.exe_path = exe_path
         self.wine_output = []
+
+        # Delete PortProton.log if it exists before starting with PW_LOG=1
+        portproton_path = get_portproton_location()
+        if portproton_path:
+            portproton_log_path = os.path.join(portproton_path, "PortProton.log")
+            try:
+                if os.path.exists(portproton_log_path):
+                    os.remove(portproton_log_path)
+                    logger.debug(f"Deleted existing PortProton.log at {portproton_log_path}")
+            except OSError as e:
+                logger.debug(f"Could not delete PortProton.log at {portproton_log_path}: {e}")
 
         env_vars = os.environ.copy()
         env_vars["PW_LOG"] = "1"
@@ -1256,6 +1268,16 @@ class DebugLogManager:
 
         # Process the log content (remove duplicates, anonymize, filter noise)
         log_content = process_portproton_log(log_content)
+
+        # Delete PortProton.log before saving PPQT.log
+        if portproton_path:
+            portproton_log_path = os.path.join(portproton_path, "PortProton.log")
+            try:
+                if os.path.exists(portproton_log_path):
+                    os.remove(portproton_log_path)
+                    logger.debug(f"Deleted PortProton.log at {portproton_log_path} before saving PPQT.log")
+            except OSError as e:
+                logger.debug(f"Could not delete PortProton.log at {portproton_log_path}: {e}")
 
         log_file = os.path.join(portproton_path, "PPQT.log")
 
