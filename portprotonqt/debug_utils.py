@@ -262,12 +262,41 @@ def get_locale_available() -> str:
 
 
 def get_libc_version() -> str:
-    """Get C library version using platform module."""
+    """Get C library version using shell commands to properly detect musl/glibc."""
     try:
-        lib, version = platform.libc_ver()
-        if lib and version:
-            return f"{lib} {version}"
-        return "Unknown"
+        # Run ldd --version to get libc information
+        result = subprocess.run(['ldd', '--version'], capture_output=True, text=True, check=False)
+        libc_version_output = result.stdout or result.stderr
+
+        # Check if this is musl by looking for musl in the output
+        if 'musl' in libc_version_output.lower():
+            # Extract musl version from output like:
+            # musl libc (x86_64)
+            # Version 1.2.5
+            lines = libc_version_output.split('\n')
+            for line in lines:
+                if 'version' in line.lower() and re.search(r'\d+\.\d+', line):
+                    # Extract version number like "1.2.5" from "Version 1.2.5" or similar
+                    version_match = re.search(r'(\d+\.\d+(?:\.\d+)?)', line)
+                    if version_match:
+                        return f"musl {version_match.group(1)}"
+            return "musl (version unknown)"
+        else:
+            # This is glibc, extract version
+            # Format might be like: "ldd (GNU libc) 2.40" or similar
+            for line in libc_version_output.split('\n'):
+                if 'ldd' in line.lower():
+                    # Look for version number after the name
+                    version_match = re.search(r'(\d+\.\d+(?:\.\d+)?)', line)
+                    if version_match:
+                        return f"glibc {version_match.group(1)}"
+
+            # Alternative parsing for glibc if the above didn't work
+            version_match = re.search(r'(\d+\.\d+(?:\.\d+)?)', libc_version_output)
+            if version_match:
+                return f"glibc {version_match.group(1)}"
+
+            return "glibc (version unknown)"
     except Exception:
         return "Unknown"
 
@@ -445,7 +474,6 @@ def get_graphics_info_detailed() -> str:
                     # Extract the GPU name in the format we want
                     # From: "VGA compatible controller: NVIDIA Corporation GP104 [GeForce GTX 1060 3GB] (rev a1)"
                     # To: "NVIDIA GP104 [GeForce GTX 1060 3GB]"
-                    import re
                     # Match pattern like "NVIDIA Corporation GP104 [GeForce GTX 1060 3GB]"
                     gpu_match = re.search(r'(NVIDIA Corporation )?([A-Z0-9]+\s*\[[^\]]+\])', device_desc)
                     if gpu_match:
@@ -674,7 +702,6 @@ def get_ram_info_detailed() -> str:
     except Exception:
         pass
 
-    # Fallback to /proc/meminfo
     return get_ram_info()
 
 
