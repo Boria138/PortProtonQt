@@ -9,6 +9,7 @@ from portprotonqt.config_utils import get_portproton_location
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
 from portprotonqt import app
+import orjson
 
 logger = get_logger(__name__)
 
@@ -209,40 +210,29 @@ def test_vulkan(portproton_path: str) -> str:
 
 
 def get_locale_info() -> str:
-    """Get locale information from environment."""
-    import locale
+    """Get locale information from environment, filling missing LC_* values from LANG if empty."""
 
-    # Get locale settings using Python's locale module
     try:
-        # Get the current locale settings
-        current_locale = locale.getlocale()
+        lang = os.environ.get("LANG", "")
 
-        # Get all locale environment variables
-        locale_vars = ["LANG", "LC_ALL", "LC_CTYPE", "LC_MESSAGES", "LC_COLLATE",
-                      "LC_TIME", "LC_NUMERIC", "LC_MONETARY", "LC_PAPER",
-                      "LC_NAME", "LC_ADDRESS", "LC_TELEPHONE", "LC_MEASUREMENT",
-                      "LC_IDENTIFICATION"]
+        locale_vars = [
+            "LANG", "LC_ALL", "LC_CTYPE", "LC_MESSAGES", "LC_COLLATE",
+            "LC_TIME", "LC_NUMERIC", "LC_MONETARY", "LC_PAPER",
+            "LC_NAME", "LC_ADDRESS", "LC_TELEPHONE", "LC_MEASUREMENT",
+            "LC_IDENTIFICATION"
+        ]
 
         lines = []
         for var in locale_vars:
             value = os.environ.get(var, "")
-            if value:
-                lines.append(f"{var}={value}")
+            if not value and var != "LC_ALL" and lang:
+                value = lang
+            lines.append(f"{var}={value}")
 
-        # If no environment variables are set, fall back to locale.getlocale()
-        if not lines and current_locale != (None, None):
-            lines.append(f"Current locale: {current_locale}")
+        return "\n".join(lines) if lines else "No locale info available"
 
-        return "\n".join(lines) if lines else _("No locale info available")
-    except Exception:
-        # Fallback to environment variables if Python locale module fails
-        locale_vars = ["LANG", "LC_ALL", "LC_CTYPE", "LC_MESSAGES"]
-        lines = []
-        for var in locale_vars:
-            value = os.environ.get(var, "")
-            if value:
-                lines.append(f"{var}={value}")
-        return "\n".join(lines) if lines else _("No locale info available")
+    except Exception as e:
+        return f"Error getting locale info: {e}"
 
 
 def get_locale_available() -> str:
@@ -727,14 +717,14 @@ def get_user_overrides(portproton_path: str) -> str:
         return ""
 
     lines = []
-    lines.append('# User overides db and var settings..."')
+    lines.append('# User overrides db and var settings...')
 
     for line in content.split("\n"):
         line = line.strip()
         if line and not line.startswith("#") and "bash" not in line.lower():
-            # Convert to comment format for disabled settings
+            # Properly format the line
             if line.startswith("export "):
-                lines.append(f'# {line}"')
+                lines.append(line)
             else:
                 lines.append(f"export {line}")
 
@@ -743,24 +733,70 @@ def get_user_overrides(portproton_path: str) -> str:
 
 
 
-def get_screen_resolution_info(portproton_path: str, exe_path: str | None = None) -> str:
-    """Get screen resolution info from PW_SCREEN_RESOLUTION variable."""
-    env_vars = get_portproton_env(exe_path)
-    resolution = env_vars.get("PW_SCREEN_RESOLUTION", "")
+def get_screen_info(portproton_path: str, exe_path: str | None = None) -> tuple[str, str]:
+    """Get screen resolution and primary info using xrandr or hyprctl."""
+    resolution = ""
+    primary = ""
 
-    if resolution:
-        return f"PW_SCREEN_RESOLUTION={resolution}"
-    return ""
+    try:
+        # Try to get resolution from xrandr
+        result = subprocess.run(['xrandr', '--current'], capture_output=True, text=True)
 
+        if result.returncode == 0:
+            xrandr_output = result.stdout
 
-def get_screen_primary_info(portproton_path: str, exe_path: str | None = None) -> str:
-    """Get primary screen info from PW_SCREEN_PRIMARY variable."""
-    env_vars = get_portproton_env(exe_path)
-    primary = env_vars.get("PW_SCREEN_PRIMARY", "")
+            # Extract resolution and primary screen from xrandr output
+            for line in xrandr_output.splitlines():
+                if 'primary' in line:
+                    # Extract resolution pattern like "1920x1080"
+                    res_match = re.search(r'^.*primary.* ([0-9]+x[0-9]+).*$', line)
+                    if res_match:
+                        resolution = res_match.group(1)
 
-    if primary:
-        return f"PW_SCREEN_PRIMARY={primary}"
-    return ""
+                    # Extract primary screen name
+                    parts = line.split()
+                    if len(parts) > 0:
+                        primary = parts[0]
+                    break  # Only get the first primary display
+    except (subprocess.SubprocessError, FileNotFoundError):
+        pass  # If xrandr fails, continue to try hyprctl
+
+    # If resolution wasn't found from xrandr, try hyprctl
+    if not resolution or 'x' not in resolution:
+        try:
+            # Check if hyprctl is available
+            if subprocess.run(['which', 'hyprctl'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
+                result = subprocess.run(['hyprctl', 'monitors', '-j'], capture_output=True, text=True)
+
+                if result.returncode == 0:
+                    try:
+                        # Parse with orjson
+                        monitors_data = orjson.loads(result.stdout)
+
+                        # Find the focused monitor
+                        for monitor in monitors_data:
+                            if monitor.get('focused', False):
+                                width = monitor.get('width')
+                                height = monitor.get('height')
+                                name = monitor.get('name')
+
+                                if width and height:
+                                    resolution = f"{width}x{height}"
+
+                                if name:
+                                    primary = name
+
+                                break
+                    except (orjson.JSONDecodeError, ValueError):
+                        pass
+        except (subprocess.SubprocessError, FileNotFoundError):
+            pass
+
+    # Default to 1920x1080 if no resolution found
+    if not resolution or 'x' not in resolution:
+        resolution = "1920x1080"
+
+    return f"PW_SCREEN_RESOLUTION={resolution}", f"PW_SCREEN_PRIMARY={primary}"
 
 
 def get_d3d_extras_status(portproton_path: str, exe_path: str | None = None) -> str:
@@ -785,7 +821,18 @@ def get_winetricks_log(portproton_path: str, prefix_name: str = "DEFAULT") -> st
         )
 
     content = get_file_content(winetricks_log)
-    return content if content else ""
+    if not content:
+        return ""
+
+    # Apply filtering similar to bash script: remove d3dcomp* and d3dx* lines
+    lines = content.split('\n')
+    filtered_lines = []
+    for line in lines:
+        # Skip lines that start with d3dcomp or d3dx
+        if not (line.startswith('d3dcomp') or line.startswith('d3dx')):
+            filtered_lines.append(line)
+
+    return '\n'.join(filtered_lines)
 
 
 def get_prefix_name(exe_path: str | None) -> str:
@@ -910,12 +957,11 @@ def generate_system_info(exe_path: str | None = None) -> str:
     lines.append(get_graphics_info_detailed())
     lines.append("-" * 61)
 
-    # Screen resolution info from PortProton variables
-    screen_resolution = get_screen_resolution_info(portproton_path, exe_path)
+    # Screen resolution and primary info from system
+    screen_resolution, screen_primary = get_screen_info(portproton_path, exe_path)
     if screen_resolution:
         lines.append(screen_resolution)
 
-    screen_primary = get_screen_primary_info(portproton_path, exe_path)
     if screen_primary:
         lines.append(screen_primary)
     lines.append("-" * 61)
@@ -926,7 +972,6 @@ def generate_system_info(exe_path: str | None = None) -> str:
     lines.append("-" * 61)
     locale_avail = get_locale_available()
     if locale_avail:
-        lines.append('locale -a | grep -i "$(locale | grep -e ^LANG= | sed s/LANG=// | sed  s/-8//)" :')
         lines.append(locale_avail)
         lines.append("-" * 61)
 
