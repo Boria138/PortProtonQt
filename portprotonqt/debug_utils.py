@@ -4,6 +4,7 @@ import re
 import subprocess
 import signal
 from datetime import datetime
+import psutil
 
 from portprotonqt.config_utils import get_portproton_location
 from portprotonqt.localization import _
@@ -96,7 +97,6 @@ def clear_portproton_env_cache(exe_path: str | None = None):
         _exported_vars_cache.clear()
 
 
-
 def get_file_content(file_path: str, default: str = "") -> str:
     """Safely read file content."""
     try:
@@ -108,12 +108,12 @@ def get_file_content(file_path: str, default: str = "") -> str:
 
 
 def get_os_info() -> str:
-    """Get operating system info from /etc/os-release."""
-    content = get_file_content("/etc/os-release")
-    for line in content.split("\n"):
-        if line.startswith("PRETTY_NAME="):
-            return line.split("=", 1)[1].strip().strip('"')
-    return platform.platform()
+    """Get operating system info using platform module."""
+    try:
+        info = platform.freedesktop_os_release()
+        return info.get("PRETTY_NAME", platform.platform())
+    except Exception:
+        return platform.platform()
 
 
 def get_cpu_info() -> dict:
@@ -154,24 +154,18 @@ def get_cpu_info() -> dict:
 
 
 def get_ram_info() -> str:
-    """Get RAM information from /proc/meminfo."""
-    content = get_file_content("/proc/meminfo")
-    if not content:
+    """Get RAM information using psutil."""
+    try:
+        mem = psutil.virtual_memory()
+        swap = psutil.swap_memory()
+
+        mem_total = f"{mem.total // 1024} kB"
+        mem_available = f"{mem.available // 1024} kB"
+        swap_total = f"{swap.total // 1024} kB"
+
+        return f"MemTotal: {mem_total}\nMemAvailable: {mem_available}\nSwapTotal: {swap_total}"
+    except Exception:
         return _("Unable to retrieve RAM info")
-
-    mem_total = ""
-    mem_available = ""
-    swap_total = ""
-
-    for line in content.split("\n"):
-        if line.startswith("MemTotal:"):
-            mem_total = line.split(":")[1].strip()
-        elif line.startswith("MemAvailable:"):
-            mem_available = line.split(":")[1].strip()
-        elif line.startswith("SwapTotal:"):
-            swap_total = line.split(":")[1].strip()
-
-    return f"MemTotal: {mem_total}\nMemAvailable: {mem_available}\nSwapTotal: {swap_total}"
 
 
 def get_desktop_environment() -> dict:
@@ -266,25 +260,17 @@ def get_locale_available() -> str:
         pass
     return ""
 
-def get_glibc_version() -> str:
-    """Get GLIBC version."""
+
+def get_libc_version() -> str:
+    """Get C library version using platform module."""
     try:
-        result = subprocess.run(
-            ["ldd", "--version"],
-            capture_output=True,
-            text=True,
-            timeout=5,
-            check=False
-        )
-        if result.returncode == 0:
-            first_line = result.stdout.strip().split("\n")[0]
-            # Extract version number (e.g., "ldd (GNU libc) 2.40" -> "2.40")
-            match = re.search(r'(\d+\.\d+)', first_line)
-            if match:
-                return match.group(1)
+        lib, version = platform.libc_ver()
+        if lib and version:
+            return f"{lib} {version}"
+        return "Unknown"
     except Exception:
-        pass
-    return _("Unknown")
+        return "Unknown"
+
 
 def get_runtime_status(portproton_path: str, exe_path: str | None = None) -> str:
     """Check if RUNTIME is enabled by checking PW_USE_RUNTIME variable."""
@@ -369,7 +355,6 @@ def get_program_bit_depth(exe_path: str | None) -> str:
 
 def get_filesystem_info(exe_path: str | None, portproton_path: str) -> str:
     """Get filesystem info for game and PortProton directories."""
-    import psutil
 
     def get_fs_type(path: str) -> str:
         """Get filesystem type using psutil, with lsblk fallback for fuseblk."""
@@ -731,8 +716,6 @@ def get_user_overrides(portproton_path: str) -> str:
     return "\n".join(lines)
 
 
-
-
 def get_screen_info(portproton_path: str, exe_path: str | None = None) -> tuple[str, str]:
     """Get screen resolution and primary info using xrandr or hyprctl."""
     resolution = ""
@@ -850,8 +833,6 @@ def get_prefix_name(exe_path: str | None) -> str:
     return "DEFAULT"
 
 
-
-
 def generate_system_info(exe_path: str | None = None) -> str:
     """Generate system information part of debug log matching PortProton format."""
     portproton_path = get_portproton_location()
@@ -888,9 +869,9 @@ def generate_system_info(exe_path: str | None = None) -> str:
         lines.append(exe_path)
         lines.append("-" * 61)
 
-    # GLIBC version
-    lines.append("GLIBC version:")
-    lines.append(get_glibc_version())
+    # C library version (glibc or musl)
+    lines.append("libc version:")
+    lines.append(get_libc_version())
     lines.append("-" * 61)
 
     # PW_VULKAN_USE with DXVK/VKD3D versions
