@@ -1100,6 +1100,8 @@ def process_portproton_log(log_content: str) -> str:
         deduplicated_content = deduplicated_content.replace(f"/home/{username}", "/home/xuser")
         deduplicated_content = deduplicated_content.replace(f"PortProton_{username}", "PortProton_xuser")
         deduplicated_content = deduplicated_content.replace(f"#Author: {username}", "#Author: xuser")
+        deduplicated_content = deduplicated_content.replace(f"/run/media/{username}", "/run/media/xuser")
+        deduplicated_content = deduplicated_content.replace(f"/media/{username}", "/media/xuser")
 
     # Filter noise
     filtered_lines = []
