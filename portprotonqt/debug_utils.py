@@ -653,37 +653,6 @@ def get_graphics_info_detailed() -> str:
     except FileNotFoundError:
         lines.append("vulkaninfo not found")
 
-    # Vulkan cube test
-    try:
-        portproton_path = get_portproton_location()
-        if portproton_path:
-            vkcube_path = os.path.join(portproton_path, "data", "plugins", "portable", "bin", "vkcube")
-        else:
-            vkcube_path = "vkcube"
-
-        if not os.path.exists(vkcube_path):
-            vkcube_path = "vkcube"  # Fallback to system-wide
-
-        vkcube_result = subprocess.run(
-            [vkcube_path, "--c", "10"],  # Run for 10 frames to get quick result
-            capture_output=True,
-            text=True,
-            timeout=30,
-            check=False
-        )
-        if vkcube_result.returncode == 0:
-            lines.append("Vulkan Cube Test: PASSED")
-        else:
-            lines.append(f"Vulkan Cube Test: FAILED (code: {vkcube_result.returncode})")
-    except FileNotFoundError:
-        lines.append("Vulkan Cube Test: vkcube not found, test skipped")
-    except subprocess.TimeoutExpired:
-        lines.append("Vulkan Cube Test: timed out")
-    except Exception as e:
-        lines.append(f"Vulkan Cube Test: error: {e}")
-
-    # Screen resolution info is obtained separately from PortProton variables
-
     return "\n".join(lines) if lines else _("Unable to retrieve graphics info")
 
 
