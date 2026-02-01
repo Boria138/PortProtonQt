@@ -646,10 +646,57 @@ def get_graphics_info_detailed() -> str:
         )
         if result.returncode == 0:
             lines.append("Vulkan:")
+            in_gpu_section = False
+            current_gpu_info = {}
+
             for line in result.stdout.split("\n"):
                 stripped = line.strip()
-                if stripped.startswith("GPU") or "deviceName" in line or "driverName" in line:
-                    lines.append(line.rstrip())
+
+                if stripped.startswith("GPU"):
+                    # Save previous GPU info if exists
+                    if current_gpu_info:
+                        # Format the GPU info line
+                        gpu_id = current_gpu_info.get('id', 'Unknown')
+                        device_name = current_gpu_info.get('deviceName', 'Unknown')
+                        driver_name = current_gpu_info.get('driverName', 'Unknown')
+                        api_version = current_gpu_info.get('apiVersion', 'Unknown')
+                        driver_version = current_gpu_info.get('driverVersion', 'Unknown')
+
+                        lines.append(f"GPU {gpu_id}: {device_name} driver: {driver_name} api: {api_version} driver_version: {driver_version}")
+
+                    # Start new GPU info
+                    # Extract GPU ID from line like "GPU0:"
+                    gpu_match = re.match(r'GPU(\d+):', stripped)
+                    if gpu_match:
+                        current_gpu_info = {'id': gpu_match.group(1)}
+                    else:
+                        current_gpu_info = {'id': 'Unknown'}
+                    in_gpu_section = True
+                elif in_gpu_section and '=' in line:
+                    # Parse key=value pairs
+                    parts = line.split('=', 1)
+                    if len(parts) == 2:
+                        key = parts[0].strip()
+                        value = parts[1].strip().strip('"')
+                        if key == 'deviceName':
+                            current_gpu_info['deviceName'] = value
+                        elif key == 'driverName':
+                            current_gpu_info['driverName'] = value
+                        elif key == 'apiVersion':
+                            current_gpu_info['apiVersion'] = value
+                        elif key == 'driverVersion':
+                            current_gpu_info['driverVersion'] = value
+
+            # Don't forget the last GPU
+            if current_gpu_info:
+                gpu_id = current_gpu_info.get('id', 'Unknown')
+                device_name = current_gpu_info.get('deviceName', 'Unknown')
+                driver_name = current_gpu_info.get('driverName', 'Unknown')
+                api_version = current_gpu_info.get('apiVersion', 'Unknown')
+                driver_version = current_gpu_info.get('driverVersion', 'Unknown')
+
+                lines.append(f"GPU {gpu_id}: {device_name} driver: {driver_name} api: {api_version} driver_version: {driver_version}")
+
     except FileNotFoundError:
         lines.append("vulkaninfo not found")
 
