@@ -889,8 +889,8 @@ def generate_system_info(exe_path: str | None = None) -> str:
     lines.append(_("To diagnose the problem, copy the ENTIRE log to the site:") + " https://linux-gaming.ru/t/opisanie-kategorii-portproton-pomoshh/1642")
     lines.append("-" * 61)
 
-    # PPQT version
-    lines.append("PPQT version:")
+    # PortProtonQt version
+    lines.append("PortProtonQt version:")
     ppqt_version = app.get_version()
     lines.append(ppqt_version)
     lines.append("-" * 61)
@@ -1287,17 +1287,17 @@ class DebugLogManager:
         # Process the log content (remove duplicates, anonymize, filter noise)
         log_content = process_portproton_log(log_content)
 
-        # Delete PortProton.log before saving PPQT.log
+        # Delete PortProton.log before saving PortProtonQt.log
         if portproton_path:
             portproton_log_path = os.path.join(portproton_path, "PortProton.log")
             try:
                 if os.path.exists(portproton_log_path):
                     os.remove(portproton_log_path)
-                    logger.debug(f"Deleted PortProton.log at {portproton_log_path} before saving PPQT.log")
+                    logger.debug(f"Deleted PortProton.log at {portproton_log_path} before saving PortProtonQt.log")
             except OSError as e:
                 logger.debug(f"Could not delete PortProton.log at {portproton_log_path}: {e}")
 
-        log_file = os.path.join(portproton_path, "PPQT.log")
+        log_file = os.path.join(portproton_path, "PortProtonQt.log")
 
         try:
             with open(log_file, "w", encoding="utf-8") as f:
