@@ -1,5 +1,53 @@
 [
   {
+    "normalized_title": "описание категории «portprotongames»",
+    "slug": "opisanie-kategorii-portprotongames"
+  },
+  {
+    "normalized_title": "о закрытии категории portprotondb",
+    "slug": "o-zakrytii-kategorii-portprotondb"
+  },
+  {
+    "normalized_title": "factorio",
+    "slug": "factorio"
+  },
+  {
+    "normalized_title": "vampire the masquerade — bloodlines",
+    "slug": "vampire-the-masquerade-bloodlines"
+  },
+  {
+    "normalized_title": "flatout",
+    "slug": "flatout"
+  },
+  {
+    "normalized_title": "max payne 3",
+    "slug": "max-payne-3"
+  },
+  {
+    "normalized_title": "rogue legacy 2",
+    "slug": "rogue-legacy-2"
+  },
+  {
+    "normalized_title": "disciples 2 rise of the elves",
+    "slug": "disciples-2-rise-of-the-elves"
+  },
+  {
+    "normalized_title": "disciples 2 dark prophecy and gallean's return",
+    "slug": "disciples-2-dark-prophecy-and-galleans-return"
+  },
+  {
+    "normalized_title": "need for speed prostreet",
+    "slug": "need-for-speed-prostreet"
+  },
+  {
+    "normalized_title": "halo the master chief collection",
+    "slug": "halo-the-master-chief-collection"
+  },
+  {
+    "normalized_title": "wall world 2",
+    "slug": "wall-world-2"
+  },
+  {
     "normalized_title": "back to the future the game",
     "slug": "back-to-the-future-the-game"
   },
@@ -2314,10 +2362,6 @@
   {
     "normalized_title": "phantom fury",
     "slug": "phantom-fury"
-  },
-  {
-    "normalized_title": "factorio",
-    "slug": "factorio"
   },
   {
     "normalized_title": "signalis",
