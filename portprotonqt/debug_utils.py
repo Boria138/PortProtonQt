@@ -121,7 +121,7 @@ def get_os_info() -> str:
 def get_cpu_info() -> dict:
     """Get CPU information from /proc/cpuinfo."""
     info = {
-        "model": _("Unknown"),
+        "model": "Unknown",
         "physical_cores": "0",
         "logical_cores": "0"
     }
@@ -167,42 +167,16 @@ def get_ram_info() -> str:
 
         return f"MemTotal: {mem_total}\nMemAvailable: {mem_available}\nSwapTotal: {swap_total}"
     except Exception:
-        return _("Unable to retrieve RAM info")
+        return "Unable to retrieve RAM info"
 
 
 def get_desktop_environment() -> dict:
     """Get desktop environment information."""
     return {
-        "session": os.environ.get("DESKTOP_SESSION", _("Unknown")),
-        "current_desktop": os.environ.get("XDG_CURRENT_DESKTOP", _("Unknown")),
-        "session_type": os.environ.get("XDG_SESSION_TYPE", _("Unknown"))
+        "session": os.environ.get("DESKTOP_SESSION", "Unknown"),
+        "current_desktop": os.environ.get("XDG_CURRENT_DESKTOP", "Unknown"),
+        "session_type": os.environ.get("XDG_SESSION_TYPE", "Unknown")
     }
-
-
-def test_vulkan(portproton_path: str) -> str:
-    """Test Vulkan using vkcube."""
-    vkcube_path = os.path.join(portproton_path, "data", "plugins", "portable", "bin", "vkcube")
-
-    if not os.path.exists(vkcube_path):
-        vkcube_path = "vkcube"
-
-    try:
-        result = subprocess.run(
-            [vkcube_path, "--c", "50"],
-            capture_output=True,
-            text=True,
-            timeout=30,
-            check=False
-        )
-        if result.returncode == 0:
-            return _("Vulkan test PASSED")
-        return _("Vulkan test FAILED") + f" (code: {result.returncode})"
-    except FileNotFoundError:
-        return _("vkcube not found, test skipped")
-    except subprocess.TimeoutExpired:
-        return _("Vulkan test timed out")
-    except Exception as e:
-        return _("Vulkan test error:") + f" {e}"
 
 
 def get_locale_info() -> str:
@@ -308,8 +282,8 @@ def get_runtime_status(portproton_path: str, exe_path: str | None = None) -> str
     runtime_val = env_vars.get("PW_USE_RUNTIME", "1")  # Default is 1 in var file
 
     if runtime_val == "1":
-        return _("RUNTIME is enabled")
-    return _("RUNTIME is disabled")
+        return "RUNTIME is enabled"
+    return "RUNTIME is disabled"
 
 
 def get_vulkan_use_info(portproton_path: str, exe_path: str | None = None) -> str:
@@ -340,20 +314,20 @@ def get_vulkan_use_info(portproton_path: str, exe_path: str | None = None) -> st
 def get_wine_version(portproton_path: str, exe_path: str | None = None) -> str:
     """Get Wine/Proton version in use."""
     env_vars = get_portproton_env(exe_path)
-    return env_vars.get("PW_WINE_USE", _("Unknown"))
+    return env_vars.get("PW_WINE_USE", "Unknown")
 
 
 def get_program_bit_depth(exe_path: str | None) -> str:
     """Get program bit depth (32 or 64 bit) from PE header."""
     if not exe_path or not os.path.exists(exe_path):
-        return _("Unknown")
+        return "Unknown"
 
     try:
         with open(exe_path, 'rb') as f:
             # Read DOS header
             dos_header = f.read(64)
             if len(dos_header) < 64 or dos_header[:2] != b'MZ':
-                return _("Not a valid PE file")
+                return "Not a valid PE file"
 
             # Get PE header offset
             pe_offset = int.from_bytes(dos_header[60:64], 'little')
@@ -362,7 +336,7 @@ def get_program_bit_depth(exe_path: str | None) -> str:
             # Read PE signature
             pe_sig = f.read(4)
             if pe_sig != b'PE\x00\x00':
-                return _("Not a valid PE file")
+                return "Not a valid PE file"
 
             # Read machine type
             machine = f.read(2)
@@ -377,10 +351,10 @@ def get_program_bit_depth(exe_path: str | None) -> str:
             elif machine_type == 0xAA64:  # IMAGE_FILE_MACHINE_ARM64
                 return "64 bit (ARM64)"
             else:
-                return _("Unknown") + f" (0x{machine_type:04x})"
+                return "Unknown" + f" (0x{machine_type:04x})"
     except Exception as e:
         logger.debug(f"Failed to detect bit depth: {e}")
-        return _("Unknown")
+        return "Unknown"
 
 
 def get_filesystem_info(exe_path: str | None, portproton_path: str) -> str:
@@ -402,7 +376,7 @@ def get_filesystem_info(exe_path: str | None, portproton_path: str) -> str:
                 check_path = os.path.dirname(check_path)
 
             if fstype is None:
-                device, fstype = partitions.get("/", (None, _("Unknown")))
+                device, fstype = partitions.get("/", (None, "Unknown"))
 
             # For fuseblk, get real fstype via lsblk
             if fstype == "fuseblk" and device:
@@ -418,7 +392,7 @@ def get_filesystem_info(exe_path: str | None, portproton_path: str) -> str:
 
             return fstype
         except Exception:
-            return _("Unknown")
+            return "Unknown"
 
     lines = []
 
@@ -432,7 +406,7 @@ def get_filesystem_info(exe_path: str | None, portproton_path: str) -> str:
     if os.path.exists(tmp_dir):
         lines.append(f"Filesystem {tmp_dir} - {get_fs_type(tmp_dir)}")
 
-    return "\n".join(lines) if lines else _("Unable to retrieve filesystem info")
+    return "\n".join(lines) if lines else "Unable to retrieve filesystem info"
 
 
 def get_graphics_info_detailed() -> str:
@@ -475,14 +449,36 @@ def get_graphics_info_detailed() -> str:
                     # Extract the GPU name in the format we want
                     # From: "VGA compatible controller: NVIDIA Corporation GP104 [GeForce GTX 1060 3GB] (rev a1)"
                     # To: "NVIDIA GP104 [GeForce GTX 1060 3GB]"
-                    # Match pattern like "NVIDIA Corporation GP104 [GeForce GTX 1060 3GB]"
-                    gpu_match = re.search(r'(NVIDIA Corporation )?([A-Z0-9]+\s*\[[^\]]+\])', device_desc)
-                    if gpu_match:
-                        # Get the GPU chip and model part
-                        gpu_part = gpu_match.group(2)
-                        formatted_device_desc = f"NVIDIA {gpu_part}"
+                    # Also handles AMD and Intel GPUs like:
+                    # "VGA compatible controller: Advanced Micro Devices, Inc. [AMD/ATI] Navi 23 [Radeon RX 6600/6600 XT/6600M] (rev c7)"
+                    # "00:02.0 Display controller: Intel Corporation Raptor Lake-S GT1 [UHD Graphics 770] (rev 04)"
+
+                    # Updated regex to handle NVIDIA, AMD, and Intel GPUs properly
+                    if "NVIDIA" in device_desc:
+                        gpu_match = re.search(r'NVIDIA Corporation (.+)', device_desc)
+                        if gpu_match:
+                            formatted_device_desc = f"NVIDIA {gpu_match.group(1)}"
+                        else:
+                            formatted_device_desc = device_desc
+                    elif "AMD" in device_desc or "ATI" in device_desc:
+                        gpu_match = re.search(r'Advanced Micro Devices, Inc. \[AMD/ATI\] (.+)', device_desc)
+                        if gpu_match:
+                            formatted_device_desc = f"AMD {gpu_match.group(1)}"
+                        else:
+                            # Handle other AMD formats
+                            gpu_match = re.search(r'(AMD|ATI) (.+)', device_desc)
+                            if gpu_match:
+                                formatted_device_desc = f"{gpu_match.group(1)} {gpu_match.group(2)}"
+                            else:
+                                formatted_device_desc = device_desc
+                    elif "Intel" in device_desc:
+                        gpu_match = re.search(r'Intel Corporation (.+)', device_desc)
+                        if gpu_match:
+                            formatted_device_desc = f"Intel {gpu_match.group(1)}"
+                        else:
+                            formatted_device_desc = device_desc
                     else:
-                        # Fallback to original if pattern doesn't match
+                        # Fallback to original if pattern doesn't match any known manufacturer
                         formatted_device_desc = device_desc
 
                     device_line = f"Device-{device_count}: {formatted_device_desc}"
@@ -490,32 +486,12 @@ def get_graphics_info_detailed() -> str:
                     if driver_info:
                         device_line += f" driver: {driver_info}"
 
-                    # Try to get the driver version from the system
-                    try:
-                        with open('/sys/module/nvidia/version') as f:
-                            driver_version = f.read().strip()
-                            device_line += f" v: {driver_version}"
-                    except OSError:
-                        # If we can't get it from /sys/module/nvidia/version, try glxinfo
+                    if "NVIDIA" in device_desc:
                         try:
-                            glxinfo_result = subprocess.run(
-                                ["glxinfo"],
-                                capture_output=True,
-                                text=True,
-                                timeout=10,
-                                check=False
-                            )
-                            if glxinfo_result.returncode == 0:
-                                for glx_line in glxinfo_result.stdout.split("\n"):
-                                    if "OpenGL core profile version string:" in glx_line or \
-                                       "OpenGL version string:" in glx_line:
-                                        # Extract version number after NVIDIA
-                                        version_match = re.search(r'NVIDIA\s+(\d+\.\d+(?:\.\d+)?)', glx_line)
-                                        if version_match:
-                                            version_num = version_match.group(1)
-                                            device_line += f" v: {version_num}"
-                                            break
-                        except Exception:
+                            with open('/sys/module/nvidia/version') as f:
+                                driver_version = f.read().strip()
+                                device_line += f" v: {driver_version}"
+                        except FileNotFoundError:
                             pass
 
                     devices_info.append(device_line)
@@ -547,7 +523,8 @@ def get_graphics_info_detailed() -> str:
                 if result.returncode == 0:
                     for line in result.stdout.split("\n"):
                         if "X.Org version" in line:
-                            display_info += f" X.Org version: {line.split('X.Org version')[1].strip()}"
+                            version_part = line.split('X.Org version:')[1].strip().lstrip(':').strip()
+                            display_info += f" X.Org version: {version_part}"
                             break
             except FileNotFoundError:
                 pass
@@ -617,25 +594,6 @@ def get_graphics_info_detailed() -> str:
 
     lines.append("-----")
 
-    # EGL info
-    try:
-        result = subprocess.run(
-            ["eglinfo"],
-            capture_output=True,
-            text=True,
-            timeout=5,
-            check=False
-        )
-        if result.returncode == 0:
-            for line in result.stdout.split("\n"):
-                if "EGL API version" in line or "EGL vendor" in line:
-                    lines.append(line.strip())
-                    break
-    except FileNotFoundError:
-        pass
-
-    lines.append("-----")
-
     # Vulkan info
     try:
         result = subprocess.run(
@@ -663,7 +621,7 @@ def get_graphics_info_detailed() -> str:
                         api_version = current_gpu_info.get('apiVersion', 'Unknown')
                         driver_version = current_gpu_info.get('driverVersion', 'Unknown')
 
-                        lines.append(f"GPU {gpu_id}: {device_name} driver: {driver_name} api: {api_version} driver_version: {driver_version}")
+                        lines.append(f"GPU {gpu_id}: {device_name} driverName: {driver_name} apiVersion: {api_version} driverVersion: {driver_version}")
 
                     # Start new GPU info
                     # Extract GPU ID from line like "GPU0:"
@@ -696,12 +654,12 @@ def get_graphics_info_detailed() -> str:
                 api_version = current_gpu_info.get('apiVersion', 'Unknown')
                 driver_version = current_gpu_info.get('driverVersion', 'Unknown')
 
-                lines.append(f"GPU {gpu_id}: {device_name} driver: {driver_name} api: {api_version} driver_version: {driver_version}")
+                lines.append(f"GPU {gpu_id}: {device_name} driverName: {driver_name} apiVersion: {api_version} driverVersion: {driver_version}")
 
     except FileNotFoundError:
         lines.append("vulkaninfo not found")
 
-    return "\n".join(lines) if lines else _("Unable to retrieve graphics info")
+    return "\n".join(lines) if lines else "Unable to retrieve graphics info"
 
 
 def get_ram_info_detailed() -> str:
@@ -881,7 +839,7 @@ def generate_system_info(exe_path: str | None = None) -> str:
     """Generate system information part of debug log matching PortProton format."""
     portproton_path = get_portproton_location()
     if not portproton_path:
-        return _("Error: PortProton location not found")
+        return "Error: PortProton location not found"
 
     lines = []
 
@@ -899,7 +857,7 @@ def generate_system_info(exe_path: str | None = None) -> str:
     # Scripts version
     lines.append("Scripts version:")
     scripts_ver_file = os.path.join(portproton_path, "data", "tmp", "scripts_ver")
-    scripts_version = get_file_content(scripts_ver_file, _("Unknown"))
+    scripts_version = get_file_content(scripts_ver_file, "Unknown")
     lines.append(scripts_version)
     lines.append("-" * 61)
 
