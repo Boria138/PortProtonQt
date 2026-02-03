@@ -814,11 +814,22 @@ class DetailPageManager:
 
             # Show result
             if log_file:
-                QMessageBox.information(
-                    self.main_window,
-                    _("Log Saved"),
-                    _("Debug log saved to:") + f"\n{log_file}"
-                )
+                # Create a custom dialog with option to open log folder
+                msg_box = QMessageBox(self.main_window)
+                msg_box.setWindowTitle(_("Log Saved"))
+                msg_box.setText(_("Debug log saved to:") + f"\n{log_file}")
+                msg_box.setStandardButtons(QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Open)
+                msg_box.setButtonText(QMessageBox.StandardButton.Open, _("Open Folder"))
+
+                result = msg_box.exec()
+
+                if result == QMessageBox.StandardButton.Open:
+                    # Open the folder containing the log file
+                    log_folder = os.path.dirname(log_file)
+                    try:
+                        QDesktopServices.openUrl(QUrl.fromLocalFile(log_folder))
+                    except Exception as e:
+                        logger.error(f"Failed to open folder {log_folder}: {e}")
             else:
                 QMessageBox.warning(
                     self.main_window,
@@ -826,40 +837,68 @@ class DetailPageManager:
                     _("Failed to save debug log")
                 )
         else:
-            # Check if exe_path is None before starting debug session
-            if exe_path is None:
-                QMessageBox.warning(
-                    self.main_window,
-                    _("Error"),
-                    _("Executable path is not available for this entry")
-                )
-                return
+            # Check if button currently shows "Stop Log" - this indicates a previous session that ended
+            if button.text() == _("Stop Log"):
+                # Previous session ended (game closed by user or crashed), but we should still try to save any available log
+                # Stop the timer if it's still running
+                self._stopDebugTimer()
 
-            # Start debug session
-            start_command = get_portproton_start_command()
-            if not start_command:
-                QMessageBox.warning(
-                    self.main_window,
-                    _("Error"),
-                    _("PortProton start command not found")
-                )
-                return
+                # Attempt to save any available log data even if process is no longer running
+                log_file = self.debug_log_manager.stop()
 
-            if self.debug_log_manager.start(exe_path, start_command):
-                # Update button
-                button.setText(_("Stop Log"))
-                icon = self.main_window.theme_manager.get_icon("stop")
+                # Reset button to "Create Log"
+                button.setText(_("Create Log"))
+                icon = self.main_window.theme_manager.get_icon("edit")
                 if icon:
                     button.setIcon(icon)
 
-                # Start timer to read output and check process
-                self._startDebugTimer()
+                # Show result - always try to save the log if possible
+                # Attempt to save any available log data
+                log_file = self.debug_log_manager.stop()
+
+                if log_file:
+                    # Create a custom dialog with option to open log folder
+                    msg_box = QMessageBox(self.main_window)
+                    msg_box.setWindowTitle(_("Log Saved"))
+                    msg_box.setText(_("Debug log saved to:") + f"\n{log_file}")
+                    msg_box.setStandardButtons(QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Open)
+                    msg_box.setButtonText(QMessageBox.StandardButton.Open, _("Open Folder"))
+
+                    result = msg_box.exec()
+
+                    if result == QMessageBox.StandardButton.Open:
+                        # Open the folder containing the log file
+                        log_folder = os.path.dirname(log_file)
+                        try:
+                            QDesktopServices.openUrl(QUrl.fromLocalFile(log_folder))
+                        except Exception as e:
+                            logger.error(f"Failed to open folder {log_folder}: {e}")
+                # If no log file was saved, don't show any message - just reset the button
             else:
-                QMessageBox.warning(
-                    self.main_window,
-                    _("Error"),
-                    _("Failed to start debug session")
-                )
+                # Check if exe_path is None before starting debug session
+                if exe_path is None:
+                    return
+
+                # Start debug session
+                start_command = get_portproton_start_command()
+                if not start_command:
+                    return
+
+                if self.debug_log_manager.start(exe_path, start_command):
+                    # Update button
+                    button.setText(_("Stop Log"))
+                    icon = self.main_window.theme_manager.get_icon("stop")
+                    if icon:
+                        button.setIcon(icon)
+
+                    # Start timer to read output and check process
+                    self._startDebugTimer()
+                else:
+                    QMessageBox.warning(
+                        self.main_window,
+                        _("Error"),
+                        _("Failed to start debug session")
+                    )
 
     def _startDebugTimer(self):
         """Start timer to periodically read debug output."""
@@ -879,24 +918,13 @@ class DetailPageManager:
 
     def _onDebugTimerTick(self):
         if not self.debug_log_manager.check_running():
-            # Process finished on its own
+            # Process finished on its own (game crashed or exited)
+            # Do NOT change the button state - only user interaction should change the button
             self._stopDebugTimer()
-            log_file = self.debug_log_manager.stop()
-
-            # Update button
-            if self._debug_log_button:
-                self._debug_log_button.setText(_("Create Log"))
-                icon = self.main_window.theme_manager.get_icon("edit")
-                if icon:
-                    self._debug_log_button.setIcon(icon)
-
-            # Show result
-            if log_file:
-                QMessageBox.information(
-                    self.main_window,
-                    _("Log Saved"),
-                    _("Debug log saved to:") + f"\n{log_file}"
-                )
+            # Just stop the timer, don't stop the logging manager or change button state
+            # The logging manager will be stopped when the user clicks the button
+            # However, we can still save the log if there's data available
+            pass
 
     def goBackDetailPage(self, page: QWidget | None) -> None:
         if page is None or page != self.main_window.stackedWidget.currentWidget() or getattr(self, '_exit_animation_in_progress', False):

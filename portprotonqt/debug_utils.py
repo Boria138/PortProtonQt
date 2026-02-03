@@ -5,6 +5,8 @@ import subprocess
 import signal
 from datetime import datetime
 import psutil
+import threading
+import queue
 
 from portprotonqt.config_utils import get_portproton_location
 from portprotonqt.localization import _
@@ -242,7 +244,6 @@ def get_locale_available() -> str:
         # Use subprocess to get available locales
         # Note: Python doesn't have a direct way to list all available system locales
         # so we still need to use the locale command
-        import subprocess
         result = subprocess.run(
             ["locale", "-a"],
             capture_output=True,
@@ -1049,8 +1050,6 @@ def process_portproton_log(log_content: str) -> str:
     Returns:
         str: Fully processed log content
     """
-    import re
-
     if not log_content:
         return log_content
 
@@ -1154,6 +1153,9 @@ class DebugLogManager:
         self.exe_path: str | None = None
         self.wine_output: list[str] = []
         self.is_running = False
+        self.output_queue = queue.Queue()
+        self.output_thread = None
+        self._stop_event = threading.Event()
 
     def start(self, exe_path: str, start_command: list[str]) -> bool:
         """Start game with PW_LOG=1 and capture output."""
@@ -1162,6 +1164,7 @@ class DebugLogManager:
 
         self.exe_path = exe_path
         self.wine_output = []
+        self._stop_event.clear()
 
         # Delete PortProton.log if it exists before starting with PW_LOG=1
         portproton_path = get_portproton_location()
@@ -1186,8 +1189,14 @@ class DebugLogManager:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
+                bufsize=1,  # Line buffered
                 preexec_fn=os.setsid
             )
+
+            # Start a separate thread to read output to prevent buffer overflow
+            self.output_thread = threading.Thread(target=self._read_output, daemon=True)
+            self.output_thread.start()
+
             self.is_running = True
             logger.info(f"Started debug session for {exe_path}")
             return True
@@ -1195,49 +1204,66 @@ class DebugLogManager:
             logger.error(f"Failed to start debug session: {e}")
             return False
 
+    def _read_output(self):
+        """Read output from subprocess in a separate thread to prevent blocking."""
+        if self.process and self.process.stdout:
+            try:
+                for line in iter(self.process.stdout.readline, ''):
+                    if self._stop_event.is_set():
+                        break
+                    self.output_queue.put(line)
+            except Exception as e:
+                logger.debug(f"Error reading output: {e}")
+
     def stop(self) -> str | None:
         """Stop game and save debug log with captured Wine output."""
-        if not self.is_running or self.process is None:
-            return None
+        # Even if process is not running, we can still save any collected data
+        # Signal the output thread to stop
+        self._stop_event.set()
 
-        # Read any remaining output
-        try:
-            if self.process.stdout:
-                remaining = self.process.stdout.read()
-                if remaining:
-                    self.wine_output.append(remaining)
-        except Exception as e:
-            logger.debug(f"Error reading remaining output: {e}")
-
-        # Terminate process with shorter timeout to prevent UI freezing
-        try:
-            os.killpg(os.getpgid(self.process.pid), signal.SIGTERM)
-            # Use a very short timeout to avoid blocking the UI
+        # If process is still running, terminate it
+        if self.is_running and self.process:
+            # Terminate process without blocking the UI
             try:
-                self.process.wait(timeout=0.1)  # Very short timeout
-            except subprocess.TimeoutExpired:
-                # If process doesn't terminate quickly, force kill
-                logger.debug("Process didn't terminate quickly, attempting SIGKILL")
-                os.killpg(os.getpgid(self.process.pid), signal.SIGKILL)
+                os.killpg(os.getpgid(self.process.pid), signal.SIGTERM)
+
+                # Don't wait here - let the process terminate in background
+                # We'll collect any remaining output from the queue
                 try:
-                    self.process.wait(timeout=0.1)
-                except subprocess.TimeoutExpired:
-                    logger.warning("Process still hasn't terminated after SIGKILL")
-        except Exception as e:
-            logger.debug(f"Error terminating process: {e}")
-            try:
-                os.killpg(os.getpgid(self.process.pid), signal.SIGKILL)
-            except Exception:
-                pass
+                    # Give the process a moment to terminate gracefully
+                    import time
+                    time.sleep(0.1)
+
+                    # Kill forcefully if still running
+                    if self.process.poll() is None:
+                        os.killpg(os.getpgid(self.process.pid), signal.SIGKILL)
+                except ProcessLookupError:
+                    # Process already terminated
+                    pass
+            except Exception as e:
+                logger.debug(f"Error terminating process: {e}")
+
+        # Collect any remaining output from the queue
+        try:
+            while True:
+                line = self.output_queue.get_nowait()
+                self.wine_output.append(line)
+        except queue.Empty:
+            pass
 
         # Generate and save log
         log_file = self._save_log()
 
+        # Clean up resources
+        if self.process and self.process.stdout:
+            try:
+                self.process.stdout.close()
+            except (AttributeError, OSError):
+                pass
         self.process = None
         self.is_running = False
 
         return log_file
-
 
     def check_running(self) -> bool:
         """Check if process is still running."""
@@ -1287,17 +1313,23 @@ class DebugLogManager:
         # Process the log content (remove duplicates, anonymize, filter noise)
         log_content = process_portproton_log(log_content)
 
-        # Delete PortProton.log before saving PortProtonQt.log
-        if portproton_path:
-            portproton_log_path = os.path.join(portproton_path, "PortProton.log")
-            try:
-                if os.path.exists(portproton_log_path):
-                    os.remove(portproton_log_path)
-                    logger.debug(f"Deleted PortProton.log at {portproton_log_path} before saving PortProtonQt.log")
-            except OSError as e:
-                logger.debug(f"Could not delete PortProton.log at {portproton_log_path}: {e}")
+        # Determine log file path - save in game directory instead of PortProton directory
+        if self.exe_path and os.path.exists(self.exe_path):
+            game_dir = os.path.dirname(self.exe_path)
+            log_file = os.path.join(game_dir, "PortProtonQt.log")
+        else:
+            # Fallback to PortProton directory if exe_path is not available
+            log_file = os.path.join(portproton_path, "PortProtonQt.log")
 
-        log_file = os.path.join(portproton_path, "PortProtonQt.log")
+        # # Delete PortProton.log before saving the new log
+        # if portproton_path:
+        #     portproton_log_path = os.path.join(portproton_path, "PortProton.log")
+        #     try:
+        #         if os.path.exists(portproton_log_path):
+        #             os.remove(portproton_log_path)
+        #             logger.debug(f"Deleted PortProton.log at {portproton_log_path} before saving {log_file}")
+        #     except OSError as e:
+        #         logger.debug(f"Could not delete PortProton.log at {portproton_log_path}: {e}")
 
         try:
             with open(log_file, "w", encoding="utf-8") as f:
