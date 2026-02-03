@@ -1,6 +1,7 @@
 import sys
 import os
 import subprocess
+import shutil
 from PySide6.QtCore import QLocale, QTranslator, QLibraryInfo, QTimer, Qt
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QIcon
@@ -29,7 +30,33 @@ def get_version():
     except (subprocess.CalledProcessError, FileNotFoundError, OSError):
         return __app_version__
 
+
+def is_apple_silicon():
+    path = "/proc/device-tree/compatible"
+
+    if not os.path.exists(path):
+        return False
+
+    try:
+        with open(path, "rb") as f:
+            dtcompat = f.read().decode('utf-8', errors='ignore')
+
+            if "apple,arm-platform" in dtcompat:
+                return True
+            else:
+                return False
+    except OSError:
+        return False
+
 def main():
+    # Check if running on Apple Silicon/Asahi Linux and re-execute under muvm if needed
+    if is_apple_silicon() and 'PORTPROTONQT_MUVM' not in os.environ:
+        muvm_path = shutil.which('muvm')
+        if muvm_path:
+            env = os.environ.copy()
+            args = [muvm_path, "-i", "-e", "PORTPROTONQT_MUVM=1", sys.executable, os.path.abspath(__file__)]
+            os.execvpe(muvm_path, args + sys.argv[1:], env)
+
     os.environ["PW_CLI"] = "1"
     os.environ["PROCESS_LOG"] = "1"
     os.environ["START_FROM_STEAM"] = "1"
