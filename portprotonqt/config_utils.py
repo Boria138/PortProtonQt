@@ -164,9 +164,6 @@ def get_portproton_location():
 
 def get_portproton_start_command():
     """Возвращает список команд для запуска PortProton (start.sh или flatpak run)."""
-    portproton_path = get_portproton_location()
-    if not portproton_path:
-        return None
 
     # Check if flatpak command exists before trying to run it
     try:
@@ -183,6 +180,7 @@ def get_portproton_start_command():
     except Exception:
         flatpak_available = False
 
+    # Приоритет отдается Flatpak-версии, если она доступна
     if flatpak_available:
         try:
             result = subprocess.run(
@@ -201,6 +199,11 @@ def get_portproton_start_command():
         except Exception as e:
             logger.warning(f"Error checking flatpak list: {e}")
             pass
+
+    # Если Flatpak недоступен или PortProton не установлен как Flatpak, используем локальную версию
+    portproton_path = get_portproton_location()
+    if not portproton_path:
+        return None
 
     start_sh_path = os.path.join(portproton_path, "data", "scripts", "start.sh")
     if os.path.exists(start_sh_path):
