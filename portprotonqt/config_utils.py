@@ -565,9 +565,30 @@ def save_favorite_folders(folders):
     # Invalidate cache after saving
     invalidate_config_cache()
 
+def read_hide_autoinstall_tab():
+    """Reads the hide auto-install tab setting from the [Appearance] section.
+    Returns False if the parameter is not set.
+    """
+    cp = read_config_safely(CONFIG_FILE)
+    if cp is None or not cp.has_section("Appearance") or not cp.has_option("Appearance", "hide_autoinstall_tab"):
+        save_hide_autoinstall_tab(False)
+        return False
+    return cp.getboolean("Appearance", "hide_autoinstall_tab", fallback=False)
+
+def save_hide_autoinstall_tab(hide_autoinstall_tab):
+    """Saves the hide auto-install tab setting to the [Appearance] section."""
+    cp = read_config_safely(CONFIG_FILE) or configparser.ConfigParser()
+    if "Appearance" not in cp:
+        cp["Appearance"] = {}
+    cp["Appearance"]["hide_autoinstall_tab"] = str(hide_autoinstall_tab)
+    with open(CONFIG_FILE, "w", encoding="utf-8") as configfile:
+        cp.write(configfile)
+    # Invalidate cache after saving
+    invalidate_config_cache()
+
 def read_minimize_to_tray():
     """Reads the minimize-to-tray setting from the [Display] section.
-    Returns True if the parameter is missing (default: minimize to tray).
+    Returns True if the parameter is not set (default: minimize to tray).
     """
     cp = read_config_safely(CONFIG_FILE)
     if cp is None or not cp.has_section("Display") or not cp.has_option("Display", "minimize_to_tray"):

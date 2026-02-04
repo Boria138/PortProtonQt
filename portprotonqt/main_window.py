@@ -30,7 +30,7 @@ from portprotonqt.config_utils import (
     save_display_filter, save_proxy_config, read_proxy_config, read_fullscreen_config,
     save_fullscreen_config, read_window_geometry, save_window_geometry, reset_config,
     clear_cache, read_auto_fullscreen_gamepad, save_auto_fullscreen_gamepad, read_rumble_config, save_rumble_config, read_gamepad_type, save_gamepad_type, read_minimize_to_tray, save_minimize_to_tray,
-    read_auto_card_size, save_auto_card_size, get_portproton_start_command
+    read_auto_card_size, save_auto_card_size, get_portproton_start_command, read_hide_autoinstall_tab, save_hide_autoinstall_tab
 )
 from portprotonqt.version_utils import version_sort_key
 from portprotonqt.localization import _, get_egs_language, read_metadata_translations
@@ -220,7 +220,11 @@ class MainWindow(QMainWindow):
         mainLayout.addWidget(self.stackedWidget)
 
         self.createInstalledTab()
-        self.createAutoInstallTab()
+
+        # Only create auto-install tab if it's not hidden
+        if not read_hide_autoinstall_tab():
+            self.createAutoInstallTab()
+
         self.createWineTab()
         self.createPortProtonTab()
         self.createThemeTab()
@@ -1136,9 +1140,20 @@ class MainWindow(QMainWindow):
     # ВКЛАДКИ
     def switchTab(self, index):
         """Устанавливает активную вкладку по индексу."""
-        for i, btn in self.tabButtons.items():
-            btn.setChecked(i == index)
-        self.stackedWidget.setCurrentIndex(index)
+        # Check if the requested tab index is valid and exists
+        if hasattr(self, 'tabButtons') and index in self.tabButtons:
+            # Only allow switching to existing tabs
+            for i, btn in self.tabButtons.items():
+                btn.setChecked(i == index)
+            self.stackedWidget.setCurrentIndex(index)
+        else:
+            # If trying to switch to a non-existent tab (like auto-install when it's hidden),
+            # default to the first tab
+            if hasattr(self, 'tabButtons') and 0 in self.tabButtons:
+                for i, btn in self.tabButtons.items():
+                    btn.setChecked(i == 0)
+                self.stackedWidget.setCurrentIndex(0)
+
         if hasattr(self, "game_library_manager"):
             mgr = self.game_library_manager
             if mgr.gamesListWidget and mgr.gamesListLayout:
@@ -2208,7 +2223,19 @@ class MainWindow(QMainWindow):
         self.minimizeToTrayCheckBox.toggled.connect(lambda checked: save_minimize_to_tray(checked))
         formLayout.addRow(self.minimizeToTrayTitle, self.minimizeToTrayCheckBox)
 
-        # 8. Automatic fullscreen on gamepad connection
+        # 8. Hide auto-install tab setting
+        self.hideAutoInstallTabCheckBox = QCheckBox(_("Hide Auto-Install Tab"))
+        self.hideAutoInstallTabCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
+        self.hideAutoInstallTabCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.hideAutoInstallTabTitle = QLabel(_("Hide Auto-Install Tab:"))
+        self.hideAutoInstallTabTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.hideAutoInstallTabTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        current_hide_autoinstall = read_hide_autoinstall_tab()
+        self.hideAutoInstallTabCheckBox.setChecked(current_hide_autoinstall)
+        self.hideAutoInstallTabCheckBox.toggled.connect(lambda checked: save_hide_autoinstall_tab(checked))
+        formLayout.addRow(self.hideAutoInstallTabTitle, self.hideAutoInstallTabCheckBox)
+
+        # 9. Automatic fullscreen on gamepad connection
         self.autoFullscreenGamepadCheckBox = QCheckBox(_("Auto Fullscreen on Gamepad connected"))
         self.autoFullscreenGamepadCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
         self.autoFullscreenGamepadCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -2411,6 +2438,9 @@ class MainWindow(QMainWindow):
         rumble_enabled = self.gamepadRumbleCheckBox.isChecked()
         save_rumble_config(rumble_enabled)
 
+        # Get hide auto-install tab setting
+        hide_autoinstall = self.hideAutoInstallTabCheckBox.isChecked()
+
         gamepad_type_text = self.gamepadTypeCombo.currentText()
         gpad_type = "playstation" if gamepad_type_text == "PlayStation" else "xbox"
         save_gamepad_type(gpad_type)
@@ -2443,6 +2473,50 @@ class MainWindow(QMainWindow):
         gamepad_connected = self.input_manager.find_gamepad() is not None
         if fullscreen or (auto_fullscreen_gamepad and gamepad_connected):
             self.showFullScreen()
+
+        # Apply the hide auto-install tab setting
+        auto_install_index = 1  # Auto Install tab is at index 1
+
+        if hide_autoinstall:  # Hide the tab
+            # Find the auto-install tab button and hide it
+            if hasattr(self, 'tabButtons') and auto_install_index in self.tabButtons:
+                tab_button = self.tabButtons[auto_install_index]
+                tab_button.setVisible(False)
+
+                # If currently on the hidden tab, switch to the first tab
+                if self.stackedWidget.currentIndex() == auto_install_index:
+                    self.switchTab(0)  # Switch to Library tab
+
+            # Hide the stacked widget page too
+            if hasattr(self, 'stackedWidget'):
+                auto_install_page = self.stackedWidget.widget(auto_install_index)
+                if auto_install_page:
+                    auto_install_page.setVisible(False)
+
+            # Stop any ongoing auto-install loading if present
+            if hasattr(self, 'autoInstallLoadThread') and self.autoInstallLoadThread:
+                self.autoInstallLoadThread.requestInterruption()
+                self.autoInstallLoadThread.wait(5000)  # Wait up to 5 seconds for thread to finish
+                self.autoInstallLoadThread = None
+        else:  # Show the tab - create it if it doesn't exist
+            # Check if auto-install tab already exists
+            if not hasattr(self, 'autoInstallContainer'):  # If it doesn't exist, create it
+                # We need to create the auto-install tab since it wasn't created at startup
+                self.createAutoInstallTab()
+
+                # Make sure the tab button is visible
+                if hasattr(self, 'tabButtons') and auto_install_index in self.tabButtons:
+                    tab_button = self.tabButtons[auto_install_index]
+                    tab_button.setVisible(True)
+            else:  # If it exists, make sure it's visible
+                if hasattr(self, 'tabButtons') and auto_install_index in self.tabButtons:
+                    tab_button = self.tabButtons[auto_install_index]
+                    tab_button.setVisible(True)
+
+                if hasattr(self, 'stackedWidget'):
+                    auto_install_page = self.stackedWidget.widget(auto_install_index)
+                    if auto_install_page:
+                        auto_install_page.setVisible(True)
 
         self.statusBar().showMessage(_("Settings saved"), 3000)
 
