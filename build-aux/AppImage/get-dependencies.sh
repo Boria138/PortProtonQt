@@ -73,6 +73,7 @@ else
     wget --retry-connrefused --tries=30 "$PPQT_PKGBUILD" -O ./PKGBUILD
 fi
 sed -i "s|source=(\"git+https://git.linux-gaming.ru/Boria138/PortProtonQt.git\")|source=(\"git+${REPO_URL}#branch=$BRANCH\")|" PKGBUILD
+cat PKGBUILD
 makepkg -si --noconfirm
 
 echo "Installing debloated packages..."

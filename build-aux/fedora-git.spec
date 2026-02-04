@@ -59,7 +59,7 @@ git clone https://git.linux-gaming.ru/Boria138/PortProtonQt.git
 
 %build
 cd %{oname}
-%meson -Dpython_libdir=%{python3_sitelib} -Dudevdir=%{_udevrulesdir}
+%meson
 %meson_build
 
 %install

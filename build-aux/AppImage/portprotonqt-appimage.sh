@@ -13,6 +13,7 @@ export OUTNAME=PortProtonQt-"$VERSION"-anylinux-"$ARCH".AppImage
 export DEPLOY_OPENGL=1
 export DEPLOY_SYS_PYTHON=1
 export OPTIMIZE_LAUNCH=1
+export DEBLOAT_LOCALE=0
 
 # Adjust comp settings to bypass oom-killer
 export DWARFS_COMP="zstd:level=15 -S22 -B5"

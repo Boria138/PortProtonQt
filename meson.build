@@ -4,43 +4,35 @@ project('portprotonqt',
   license: 'GPL-3.0',
 )
 
-# Project directories
+# Python installation
+python3 = import('python').find_installation('python3')
+
+# Configuration
+conf = configuration_data()
+conf.set('PYTHON', python3.full_path())
+
+# Directories
 prefix = get_option('prefix')
 datadir = prefix / get_option('datadir')
 bindir = prefix / get_option('bindir')
-
-# Python module for site-packages path
-python = import('python')
-python3 = python.find_installation('python3')
 pythondir = join_paths(prefix, python3.get_path('purelib'))
-
-python_libdir = get_option('python_libdir')
-if python_libdir == ''
-  python_installdir = pythondir
-else
-  python_installdir = python_libdir
-endif
-
-pkgdatadir = python_installdir / meson.project_name()
-
-conf = configuration_data()
-conf.set('PYTHON', python.find_installation('python3').full_path())
+pkgdatadir = pythondir / meson.project_name()
 
 # Install Python package
 subdir('portprotonqt')
 
-# Install entry point script with proper name to avoid conflict in build directory
+# Install entry point script
 configured_portprotonqt = configure_file(
   input: 'build-aux/portprotonqt',
   output: 'portprotonqt-script',
   configuration: conf,
 )
 
-# Install the configured script with the correct name
 install_data(configured_portprotonqt,
   install_dir: bindir,
   install_mode: 'rwxr-xr-x',
-  rename: 'portprotonqt')
+  rename: 'portprotonqt',
+)
 
 # Install desktop file
 install_data(
@@ -67,15 +59,13 @@ install_data(
 )
 
 # Install udev rules
-udevdir = get_option('udevdir')
-if udevdir == ''
-  udev = dependency('udev', required: false)
-  if udev.found()
-    udevdir = udev.get_variable(pkgconfig: 'udevdir') / 'rules.d'
-  else
-    udevdir = prefix / get_option('libdir') / 'udev/rules.d'
-  endif
-endif
+udev = dependency('udev', required: false)
+udevdir = udev.found() ? udev.get_variable(pkgconfig: 'udevdir') / 'rules.d' : prefix / get_option('libdir') / 'udev/rules.d'
+
+install_data(
+  'build-aux/lib/udev/rules.d/60-portprotonqt.rules',
+  install_dir: udevdir,
+)
 
 install_data(
   'build-aux/lib/udev/rules.d/60-portprotonqt.rules',

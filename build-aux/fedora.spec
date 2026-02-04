@@ -58,7 +58,7 @@ git checkout v%{pypi_version}
 
 %build
 cd %{oname}
-%meson -Dpython_libdir=%{python3_sitelib} -Dudevdir=%{_udevrulesdir}
+%meson
 %meson_build
 
 %install

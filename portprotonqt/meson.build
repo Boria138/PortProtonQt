@@ -1,5 +1,5 @@
 # Install Python source files
-install_data(
+python3.install_sources(
   '__init__.py',
   'animations.py',
   'app.py',
@@ -34,7 +34,7 @@ install_data(
   'tray_manager.py',
   'version_utils.py',
   'virtual_keyboard.py',
-  install_dir: pkgdatadir,
+  subdir: meson.project_name(),
 )
 
 # Install themes

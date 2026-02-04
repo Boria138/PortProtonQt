@@ -665,22 +665,45 @@ def get_python_files_from_directory(directory):
 
 
 def get_files_from_meson_build(meson_file_path):
-    """Extract file names from the install_data section in meson.build"""
+    """Extract file names from all install_* sections in meson.build"""
     with open(meson_file_path, 'r', encoding='utf-8') as f:
         content = f.read()
 
-    # Find the install_data section that contains the Python files
-    # Look for content between install_data( and the corresponding closing parenthesis
-    pattern = r'install_data\(\s*((?:[^()]|\((?:[^()]|\([^()]*\))*\))*)\s*\)'
-    matches = re.findall(pattern, content, re.DOTALL)
-
     files = []
+    
+    # Define all possible install functions that could contain files
+    install_functions = [
+        'install_data',           # Standard data installation
+        'install_sources',        # Source files installation
+        'install_subdir',         # Subdirectory installation (doesn't list individual files)
+        'install_headers',        # Header files installation
+        'install_man',            # Manual pages installation
+        'install_symlink',        # Symlinks installation
+        'install_emptydir'        # Empty directories installation
+    ]
+    
+    # Process each install function
+    for func_name in install_functions:
+        # Skip install_subdir since it installs whole directories, not individual files
+        if func_name == 'install_subdir':
+            continue
+            
+        # Create regex pattern for this function
+        pattern = rf'{func_name}\(\s*((?:[^()]|\((?:[^()]|\([^()]*\))*\))*)\s*\)'
+        matches = re.findall(pattern, content, re.DOTALL)
+
+        for match in matches:
+            # Extract individual file names (strings between quotes)
+            # Looking for common file extensions used in the project
+            file_matches = re.findall(r"'([^']*(?:\.py|\.ui|\.qml|\.js|\.css|\.svg|\.json|\.txt|\.md|\.h|\.c|\.cpp|\.hpp|\.xml|\.ini|\.desktop|\.metainfo|\.pot|\.po|\.mo))'", match)
+            files.extend(file_matches)
+    
     for match in matches:
         # Extract individual file names (strings between quotes)
         file_matches = re.findall(r"'([^']*(?:\.py|\.ui|\.qml|\.js|\.css|\.svg|\.json|\.txt|\.md))'", match)
         files.extend(file_matches)
 
-    return sorted(files)
+    return sorted(set(files))  # Use set to remove duplicates
 
 
 def check_syntax(repo_root: Path) -> tuple[list[str], list[str]]:
