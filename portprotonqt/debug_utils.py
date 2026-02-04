@@ -276,14 +276,25 @@ def get_libc_version() -> str:
         return "Unknown"
 
 
-def get_runtime_status(portproton_path: str, exe_path: str | None = None) -> str:
-    """Check if RUNTIME is enabled by checking PW_USE_RUNTIME variable."""
+def get_runtime_status(portproton_path: str, exe_path: str | None = None, start_cmd: list[str] | None = None) -> str:
+    """Check if RUNTIME is enabled by checking PW_USE_RUNTIME variable and detect Flatpak usage."""
     env_vars = get_portproton_env(exe_path)
     runtime_val = env_vars.get("PW_USE_RUNTIME", "1")  # Default is 1 in var file
 
-    if runtime_val == "1":
+    # Determine if Flatpak is used
+    is_flatpak = False
+    if start_cmd:
+        # Check if the start command contains 'flatpak run'
+        start_cmd_str = " ".join(start_cmd)
+        is_flatpak = "flatpak run" in start_cmd_str
+
+    # Return status based on Flatpak usage and runtime setting
+    if is_flatpak:
+        return "FLATPAK is used"
+    elif runtime_val == "0":
+        return "RUNTIME is disabled"
+    else:
         return "RUNTIME is enabled"
-    return "RUNTIME is disabled"
 
 
 def get_vulkan_use_info(portproton_path: str, exe_path: str | None = None) -> str:
@@ -835,7 +846,7 @@ def get_prefix_name(exe_path: str | None) -> str:
     return "DEFAULT"
 
 
-def generate_system_info(exe_path: str | None = None) -> str:
+def generate_system_info(exe_path: str | None = None, start_cmd: list[str] | None = None) -> str:
     """Generate system information part of debug log matching PortProton format."""
     portproton_path = get_portproton_location()
     if not portproton_path:
@@ -862,7 +873,7 @@ def generate_system_info(exe_path: str | None = None) -> str:
     lines.append("-" * 61)
 
     # RUNTIME status
-    lines.append(get_runtime_status(portproton_path, exe_path))
+    lines.append(get_runtime_status(portproton_path, exe_path, start_cmd))
     lines.append("-" * 61)
 
     # Debug for program
@@ -1109,6 +1120,7 @@ class DebugLogManager:
     def __init__(self):
         self.process: subprocess.Popen | None = None
         self.exe_path: str | None = None
+        self.start_command: list[str] | None = None
         self.wine_output: list[str] = []
         self.is_running = False
         self.output_queue = queue.Queue()
@@ -1121,6 +1133,7 @@ class DebugLogManager:
             return False
 
         self.exe_path = exe_path
+        self.start_command = start_command
         self.wine_output = []
         self._stop_event.clear()
 
@@ -1244,7 +1257,7 @@ class DebugLogManager:
             return None
 
         # Generate system info (without the Wine log part since bash script handles it)
-        system_info = generate_system_info(self.exe_path)
+        system_info = generate_system_info(self.exe_path, self.start_command)
 
         # Build complete log with system info
         lines = [system_info]
