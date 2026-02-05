@@ -2,7 +2,7 @@ import sys
 import os
 import subprocess
 import shutil
-from PySide6.QtCore import QLocale, QTranslator, QLibraryInfo, QTimer, Qt
+from PySide6.QtCore import QTimer, Qt
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QIcon
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
@@ -100,17 +100,6 @@ def main():
     if not local_server.listen(server_name):
         logger.warning(f"Failed to start local server: {local_server.errorString()}")
         return
-
-    # --- Qt translations ---
-    system_locale = QLocale.system()
-    qt_translator = QTranslator()
-    translations_path = QLibraryInfo.path(QLibraryInfo.LibraryPath.TranslationsPath)
-    if qt_translator.load(system_locale, "qtbase", "_", translations_path):
-        app.installTranslator(qt_translator)
-    else:
-        logger.warning(
-            f"Qt translations for {system_locale.name()} not found in {translations_path}, using English"
-        )
 
     # --- Main Window ---
     version = get_version()

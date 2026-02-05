@@ -13,7 +13,6 @@ export OUTNAME=PortProtonQt-"$VERSION"-anylinux-"$ARCH".AppImage
 export DEPLOY_OPENGL=1
 export DEPLOY_SYS_PYTHON=1
 export OPTIMIZE_LAUNCH=1
-export DEBLOAT_LOCALE=0
 
 # Adjust comp settings to bypass oom-killer
 export DWARFS_COMP="zstd:level=15 -S22 -B5"
@@ -25,10 +24,6 @@ chmod +x ./quick-sharun
 # Add udev rules
 mkdir -p ./AppDir/etc/udev/rules.d
 cp /usr/lib/udev/rules.d/60-portprotonqt.rules ./AppDir/etc/udev/rules.d
-
-# Deploy Qt translations
-mkdir -p ./AppDir/usr/share/qt6/translations
-cp -r /usr/share/qt6/translations/* ./AppDir/usr/share/qt6/translations/
 
 # Deploy dependencies
 # Qt libs have to be passed manually due to the app being a python script

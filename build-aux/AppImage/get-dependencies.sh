@@ -51,6 +51,9 @@ else
     PPQT_PKGBUILD="https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/build-aux/PKGBUILD"
 fi
 
+echo "Disable locale noextract..."
+echo "---------------------------------------------------------------"
+sed -i -E 's@[[:space:]]*usr/share/locale/\*@@g; s@[[:space:]]+@ @g; s@[[:space:]]+$@@' /etc/pacman.conf
 
 echo "Installing dependencies..."
 echo "---------------------------------------------------------------"
@@ -73,7 +76,6 @@ else
     wget --retry-connrefused --tries=30 "$PPQT_PKGBUILD" -O ./PKGBUILD
 fi
 sed -i "s|source=(\"git+https://git.linux-gaming.ru/Boria138/PortProtonQt.git\")|source=(\"git+${REPO_URL}#branch=$BRANCH\")|" PKGBUILD
-cat PKGBUILD
 makepkg -si --noconfirm
 
 echo "Installing debloated packages..."

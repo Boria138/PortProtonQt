@@ -34,7 +34,7 @@ LOCALE_MAP = {
 }
 
 # Try system locale directory first, fallback to local for development
-_system_localedir = Path("/usr/share/locale")
+_system_localedir = Path(os.getenv("SHARUN_DIR", "/usr")) / "share" / "locale"
 _local_localedir = Path(__file__).parent / "locales"
 
 try:
