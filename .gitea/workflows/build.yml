@@ -139,7 +139,6 @@ jobs:
 
   release:
     name: Create and Publish Release
-    needs: [build-appimage, build-arch, build-fedora]
     runs-on: ubuntu-latest
     steps:
       - uses: https://gitea.com/actions/checkout@v4
@@ -151,6 +150,7 @@ jobs:
 
       - name: Download all artifacts
         uses: https://gitea.com/actions/download-artifact@v3
+        continue-on-error: true
         with:
           path: release/
 
