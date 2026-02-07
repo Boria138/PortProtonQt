@@ -8,6 +8,8 @@ from portprotonqt.localization import get_screenshot_caption
 
 # Icon caching for performance optimization
 _icon_cache = {}
+# Directory structure cache for performance optimization
+_icon_dirs_cache = {}
 
 logger = get_logger(__name__)
 
@@ -67,6 +69,54 @@ def load_theme_screenshots(theme_name):
 
                         screenshots.append((pixmap, caption))
     return screenshots
+
+def build_icon_cache(theme_name):
+    """
+    Builds a cache of all image files in the theme for fast lookup.
+    """
+    global _icon_dirs_cache
+
+    # Check if cache already exists for this theme
+    if theme_name in _icon_dirs_cache:
+        return _icon_dirs_cache[theme_name]
+
+    image_map = {}
+
+    # Find the theme directory and scan all image files
+    for themes_dir in THEMES_DIRS:
+        theme_folder = os.path.join(themes_dir, theme_name)
+        images_folder = os.path.join(theme_folder, "images")
+
+        if os.path.exists(images_folder):
+            # Walk through all subdirectories to build image map
+            for root, _dirs, files in os.walk(images_folder):
+                for file in files:
+                    if file.lower().endswith(('.svg', '.png', '.jpg', '.jpeg')):
+                        image_name = os.path.splitext(file)[0]
+                        image_path = os.path.join(root, file)
+                        image_map[image_name] = image_path
+            break
+
+    # Also check standard theme if not found in custom theme
+    if theme_name != "standart":
+        for themes_dir in THEMES_DIRS:
+            theme_folder = os.path.join(themes_dir, "standart")
+            images_folder = os.path.join(theme_folder, "images")
+
+            if os.path.exists(images_folder):
+                # Walk through all subdirectories to build image map
+                for root, _dirs, files in os.walk(images_folder):
+                    for file in files:
+                        if file.lower().endswith(('.svg', '.png', '.jpg', '.jpeg')):
+                            image_name = os.path.splitext(file)[0]
+                            # Only add to map if not already present (custom theme takes precedence)
+                            if image_name not in image_map:
+                                image_path = os.path.join(root, file)
+                                image_map[image_name] = image_path
+                break
+
+    _icon_dirs_cache[theme_name] = image_map
+    return image_map
 
 def load_theme_fonts(theme_name):
     """
@@ -220,6 +270,13 @@ class ThemeManager:
             save_theme_to_config("standart")
 
         load_theme_fonts(theme_name)
+
+        # Clear icon cache when theme changes to rebuild it for the new theme
+        if self.current_theme_name != theme_name:
+            global _icon_dirs_cache
+            if theme_name in _icon_dirs_cache:
+                del _icon_dirs_cache[theme_name]
+
         self.current_theme_name = theme_name
         self.current_theme_module = theme_module
         save_theme_to_config(theme_name)
@@ -228,7 +285,7 @@ class ThemeManager:
 
     def get_icon(self, icon_name, theme_name=None, as_path=False):
         """
-        Возвращает QIcon из папки icons текущей темы,
+        Возвращает QIcon из папки icons текущей темы (включая поддиректории),
         а если файл не найден, то из стандартной темы.
         Если as_path=True, возвращает путь к иконке вместо QIcon.
         """
@@ -242,47 +299,20 @@ class ThemeManager:
 
         icon_path = None
         theme_name = theme_name or self.current_theme_name
+
+        # Extract base name without extension if present
         supported_extensions = ['.svg', '.png', '.jpg', '.jpeg']
         has_extension = any(icon_name.lower().endswith(ext) for ext in supported_extensions)
-        base_name = icon_name if has_extension else icon_name
+        base_name = os.path.splitext(icon_name)[0] if has_extension else icon_name
 
-        # Поиск иконки в папке текущей темы
-        for themes_dir in THEMES_DIRS:
-            theme_folder = os.path.join(str(themes_dir), str(theme_name))
-            icons_folder = os.path.join(theme_folder, "images", "icons")
+        # Build icon cache for this theme if not already done
+        icon_map = build_icon_cache(theme_name)
 
-            # Если передано имя с расширением, проверяем только этот файл
-            if has_extension:
-                candidate = os.path.join(icons_folder, str(base_name))
-                if os.path.exists(candidate) and is_safe_image_file(candidate):
-                    icon_path = candidate
-                    break
-            else:
-                # Проверяем все поддерживаемые расширения
-                for ext in supported_extensions:
-                    candidate = os.path.join(icons_folder, str(base_name) + str(ext))
-                    if os.path.exists(candidate) and is_safe_image_file(candidate):
-                        icon_path = candidate
-                        break
-                if icon_path:
-                    break
-
-        # Если не нашли – используем стандартную тему
-        if not icon_path:
-            base_dir = os.path.dirname(os.path.abspath(__file__))
-            standard_icons_folder = os.path.join(base_dir, "themes", "standart", "images", "icons")
-
-            # Аналогично проверяем в стандартной теме
-            if has_extension:
-                icon_path = os.path.join(standard_icons_folder, base_name)
-                if not os.path.exists(icon_path) or not is_safe_image_file(icon_path):
-                    icon_path = None
-            else:
-                for ext in supported_extensions:
-                    candidate = os.path.join(standard_icons_folder, base_name + ext)
-                    if os.path.exists(candidate) and is_safe_image_file(candidate):
-                        icon_path = candidate
-                        break
+        # Look up the icon in the cache
+        if base_name in icon_map:
+            icon_path = icon_map[base_name]
+            if not is_safe_image_file(icon_path):
+                icon_path = None
 
         # Если иконка всё равно не найдена
         if not icon_path or not os.path.exists(icon_path):
@@ -311,44 +341,20 @@ class ThemeManager:
         """
         image_path = None
         theme_name = theme_name or self.current_theme_name
+
+        # Extract base name without extension if present
         supported_extensions = ['.svg', '.png', '.jpg', '.jpeg']
-
         has_extension = any(image_name.lower().endswith(ext) for ext in supported_extensions)
-        base_name = image_name if has_extension else image_name
+        base_name = os.path.splitext(image_name)[0] if has_extension else image_name
 
-        # Check theme-specific images
-        for themes_dir in THEMES_DIRS:
-            theme_folder = os.path.join(str(themes_dir), str(theme_name))
-            images_folder = os.path.join(theme_folder, "images")
+        # Build icon cache for this theme if not already done
+        # Note: We reuse the same cache mechanism for all images in the theme
+        icon_map = build_icon_cache(theme_name)
 
-            if has_extension:
-                candidate = os.path.join(images_folder, str(base_name))
-                if os.path.exists(candidate) and is_safe_image_file(candidate):
-                    image_path = candidate
-                    break
-            else:
-                for ext in supported_extensions:
-                    candidate = os.path.join(images_folder, str(base_name) + str(ext))
-                    if os.path.exists(candidate) and is_safe_image_file(candidate):
-                        image_path = candidate
-                        break
-                if image_path:
-                    break
-
-        # Check standard theme
-        if not image_path:
-            base_dir = os.path.dirname(os.path.abspath(__file__))
-            standard_images_folder = os.path.join(base_dir, "themes", "standart", "images")
-
-            if has_extension:
-                image_path = os.path.join(standard_images_folder, base_name)
-                if not os.path.exists(image_path) or not is_safe_image_file(image_path):
-                    image_path = None
-            else:
-                for ext in supported_extensions:
-                    candidate = os.path.join(standard_images_folder, base_name + ext)
-                    if os.path.exists(candidate) and is_safe_image_file(candidate):
-                        image_path = candidate
-                        break
+        # Look up the image in the cache
+        if base_name in icon_map:
+            image_path = icon_map[base_name]
+            if not is_safe_image_file(image_path):
+                image_path = None
 
         return image_path

@@ -290,6 +290,16 @@ Screenshot files should be named in English (without spaces), and the applicatio
 ## 🔡 Fonts and Icons (optional)
 
 - Fonts: `fonts/*.ttf` or `.otf`
-- Icons: `images/icons/*.svg/.png`
+- Icons and Images: `images/` directory for all visual assets:
+  - `images/icons/` - Main application icons (organized in subdirectories like actions/, navigation/, platforms/, etc.)
+  - `images/icons/buttons/` - Button icons for UI elements
+  - `images/icons/keyboards/` - Keyboard key icons (key_+, key_enter, etc.)
+  - `images/icons/controllers/` - Controller button icons
+  - `images/icons/controllers/xbox/` - Xbox controller button icons (xbox_a, xbox_b, etc.)
+  - `images/icons/controllers/playstation/` - PlayStation controller button icons (ps_circle, ps_cross, etc.)
+  - `images/ui_elements/` - UI elements (placeholder images, etc.)
+  - `images/screenshots/` - Theme preview screenshots
+  
+Icons and images can be referenced by name without specifying the subdirectory, as the system will search through all subdirectories automatically. Theme creators can organize images in any logical subdirectory structure.
 
 ---
