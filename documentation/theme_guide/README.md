@@ -52,6 +52,8 @@ my_custom_theme/
 ```
 
 **Main styles.py file:**
+
+You can use either absolute imports (recommended for built-in themes):
 ```python
 # Import from the theme's submodules using absolute paths relative to the package
 # Replace 'my_custom_theme' with your actual theme folder name and 'styles' with your subdirectory name
@@ -62,6 +64,18 @@ from portprotonqt.themes.my_custom_theme.styles.detail_page import *
 from portprotonqt.themes.my_custom_theme.styles.settings import *
 from portprotonqt.themes.my_custom_theme.styles.winetricks import *
 from portprotonqt.themes.my_custom_theme.styles.theme_utils import *
+```
+
+Or you can use relative imports (recommended for custom user themes):
+```python
+# Import from the theme's submodules using relative paths
+from .styles.constants import *
+from .styles.base import *
+from .styles.game_card import *
+from .styles.detail_page import *
+from .styles.settings import *
+from .styles.winetricks import *
+from .styles.theme_utils import *
 ```
 
 **Example submodule (styles/constants.py):**

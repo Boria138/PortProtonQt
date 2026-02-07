@@ -52,6 +52,8 @@ my_custom_theme/
 ```
 
 **Основной файл styles.py:**
+
+Вы можете использовать абсолютные импорты (рекомендуется для встроенных тем):
 ```python
 # Импорт из подмодулей темы с использованием абсолютных путей относительно пакета
 # Замените 'my_custom_theme' на фактическое имя папки вашей темы и 'styles' на имя вашей поддиректории
@@ -62,6 +64,18 @@ from portprotonqt.themes.my_custom_theme.styles.detail_page import *
 from portprotonqt.themes.my_custom_theme.styles.settings import *
 from portprotonqt.themes.my_custom_theme.styles.winetricks import *
 from portprotonqt.themes.my_custom_theme.styles.theme_utils import *
+```
+
+Или вы можете использовать относительные импорты (рекомендуется для пользовательских тем):
+```python
+# Импорт из подмодулей темы с использованием относительных путей
+from .styles.constants import *
+from .styles.base import *
+from .styles.game_card import *
+from .styles.detail_page import *
+from .styles.settings import *
+from .styles.winetricks import *
+from .styles.theme_utils import *
 ```
 
 **Пример подмодуля (styles/constants.py):**

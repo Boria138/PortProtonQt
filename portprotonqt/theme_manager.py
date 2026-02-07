@@ -212,6 +212,10 @@ def load_theme(theme_name):
     Все темы, включая стандартную, проходят проверку безопасности.
     Для кастомных тем возвращается обёртка, которая подставляет недостающие атрибуты.
     """
+    import sys
+    import types
+    import os
+
     for themes_dir in THEMES_DIRS:
         theme_folder = os.path.join(themes_dir, theme_name)
         styles_file = os.path.join(theme_folder, "styles.py")
@@ -221,11 +225,83 @@ def load_theme(theme_name):
                 logger.error(f"Theme '{theme_name}' is unsafe, falling back to 'standart'")
                 raise FileNotFoundError(f"Theme '{theme_name}' contains forbidden modules or functions")
 
-            spec = importlib.util.spec_from_file_location("theme_styles", styles_file)
+            # Determine the appropriate module name based on theme location
+            # For standard theme, use the full module name to match existing imports
+            # For custom themes, we need to support various import styles
+            if themes_dir == THEMES_DIRS[1]:  # Standard theme location (second in list)
+                module_name = f"portprotonqt.themes.{theme_name}"
+            else:  # Custom theme location (user's local directory - first in list)
+                # For custom themes, we'll use the simple name but need to set up proper package structure
+                module_name = theme_name
+
+            spec = importlib.util.spec_from_file_location(module_name, styles_file)
             if spec is None or spec.loader is None:
                 continue
             custom_theme = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(custom_theme)
+
+            # Temporarily add the theme directory to sys.path to support relative imports
+            theme_dir = os.path.dirname(styles_file)
+            if theme_dir not in sys.path:
+                sys.path.insert(0, theme_dir)
+                path_added = True
+            else:
+                path_added = False
+
+            # Register parent packages for the standard theme to support its imports
+            if themes_dir == THEMES_DIRS[1]:  # Standard theme location (second in list)
+                # Register the parent packages to support imports like 'portprotonqt.themes.standart.styles.constants'
+                theme_parts = module_name.split('.')
+                for i in range(1, len(theme_parts)):
+                    pkg_name = '.'.join(theme_parts[:i])
+                    if pkg_name not in sys.modules:
+                        pkg_module = types.ModuleType(pkg_name)
+                        if pkg_name == 'portprotonqt':
+                            pkg_module.__path__ = [os.path.dirname(os.path.dirname(__file__))]
+                        elif pkg_name == 'portprotonqt.themes':
+                            pkg_module.__path__ = [os.path.join(os.path.dirname(os.path.dirname(__file__)), 'themes')]
+                        elif pkg_name == f'portprotonqt.themes.{theme_name}':
+                            pkg_module.__path__ = [theme_dir]
+                        sys.modules[pkg_name] = pkg_module
+
+                # Also register the 'styles' subpackage for the standard theme
+                styles_subdir = os.path.join(theme_dir, 'styles')
+                if os.path.isdir(styles_subdir):
+                    styles_module_name = f"{module_name}.styles"
+                    if styles_module_name not in sys.modules:
+                        styles_pkg_module = types.ModuleType(styles_module_name)
+                        styles_pkg_module.__path__ = [styles_subdir]
+                        styles_pkg_module.__file__ = os.path.join(styles_subdir, '__init__.py')
+                        sys.modules[styles_module_name] = styles_pkg_module
+
+            # For custom themes, register the package structure to support various import styles
+            if themes_dir == THEMES_DIRS[0] and theme_name != "standart":  # Custom theme (first in list) but not standard
+                # Register the theme as a package to support relative imports
+                theme_pkg_module = types.ModuleType(module_name)
+                theme_pkg_module.__path__ = [theme_dir]
+                theme_pkg_module.__file__ = os.path.join(theme_dir, '__init__.py')
+                sys.modules[module_name] = theme_pkg_module
+
+                # Also register the subpackages like 'themename.styles'
+                styles_subdir = os.path.join(theme_dir, 'styles')
+                if os.path.isdir(styles_subdir):
+                    styles_module_name = f"{module_name}.styles"
+                    styles_pkg_module = types.ModuleType(styles_module_name)
+                    styles_pkg_module.__path__ = [styles_subdir]
+                    styles_pkg_module.__file__ = os.path.join(styles_subdir, '__init__.py')
+                    sys.modules[styles_module_name] = styles_pkg_module
+
+            # Register the actual theme module and set its package if it's a custom theme
+            sys.modules[module_name] = custom_theme
+            if themes_dir == THEMES_DIRS[0] and theme_name != "standart":  # Custom theme but not standard
+                custom_theme.__package__ = module_name  # This enables relative imports
+
+            try:
+                spec.loader.exec_module(custom_theme)
+            finally:
+                # Remove the theme directory from sys.path if we added it
+                if path_added:
+                    sys.path.remove(theme_dir)
+
             if theme_name == "standart":
                 return custom_theme
             meta = load_theme_metainfo(theme_name)
