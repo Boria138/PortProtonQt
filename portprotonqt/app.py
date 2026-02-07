@@ -14,7 +14,9 @@ from portprotonqt.config_utils import (
     get_portproton_start_command
 )
 from portprotonqt.logger import get_logger, setup_logger
-from portprotonqt.cli import parse_args
+from portprotonqt.cli import parse_args, is_portproton_url, parse_portproton_url
+from portprotonqt.portproton_api import PortProtonAPI
+from portprotonqt.downloader import Downloader
 
 __app_id__ = "ru.linux_gaming.PortProtonQt"
 __app_name__ = "PortProtonQt"
@@ -100,6 +102,29 @@ def main():
     if not local_server.listen(server_name):
         logger.warning(f"Failed to start local server: {local_server.errorString()}")
         return
+
+    # Check if we have a portproton:// URL to handle
+    if args.url and is_portproton_url(args.url):
+        # Parse the portproton:// URL to get the full download URL
+        download_url = parse_portproton_url(args.url)
+        if download_url:
+
+            # Create PortProtonAPI instance to handle the download
+            downloader = Downloader(max_workers=4)
+            api = PortProtonAPI(downloader=downloader)
+
+            # Perform the PPDB download - user will select the .exe file via FileExplorer
+            success = api.download_ppdb_from_url(download_url)
+            if success:
+                logger.info(f"Successfully downloaded PPDB from {download_url}")
+            else:
+                logger.error(f"Failed to download PPDB from {download_url}")
+
+            # Exit after handling the URL
+            return
+        else:
+            logger.error(f"Failed to parse portproton:// URL: {args.url}")
+            return
 
     # --- Main Window ---
     version = get_version()

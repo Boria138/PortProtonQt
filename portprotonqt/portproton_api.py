@@ -596,3 +596,118 @@ class PortProtonAPI:
         exe_name = extract_exe_name(exec_line)
         url = self.get_ppdb_url(game_name, exe_name)
         QDesktopServices.openUrl(QUrl(url))
+
+    def download_ppdb_from_url(self, download_url: str) -> bool:
+        """Download PPDB file from the given URL and place it next to the selected .exe file.
+
+        Args:
+            download_url: The full URL to download the PPDB file from
+
+        Returns:
+            True if download was successful, False otherwise
+        """
+        try:
+            # Get the .exe file path directly from FileExplorer
+            exe_path = self.ask_user_for_exe_location("the game executable")
+            if not exe_path:
+                logger.error("User did not provide .exe file location")
+                return False
+
+            # Determine the destination directory for the PPDB file (next to the .exe file)
+            exe_dir = os.path.dirname(exe_path)
+
+            # Generate the PPDB filename based on the .exe filename
+            exe_basename = os.path.basename(exe_path)
+            if exe_basename.lower().endswith('.exe'):
+                ppdb_filename = f"{os.path.splitext(exe_basename)[0]}.ppdb"
+            else:
+                ppdb_filename = f"{exe_basename}.ppdb"
+
+            destination_path = os.path.join(exe_dir, ppdb_filename)
+
+            logger.info(f"Downloading PPDB from {download_url} to {destination_path}")
+
+            # Use the existing downloader synchronously
+            try:
+                # Download to a temporary file first
+                temp_path = destination_path + ".tmp"
+                response = requests.get(download_url, timeout=30)
+                if response.status_code == 200:
+                    with open(temp_path, 'wb') as f:
+                        f.write(response.content)
+
+                    # Move the file to its final location
+                    import shutil
+                    shutil.move(temp_path, destination_path)
+                    logger.info(f"Successfully downloaded PPDB to {destination_path}")
+                    return True
+                else:
+                    logger.error(f"Failed to download PPDB: HTTP {response.status_code}")
+                    return False
+            except Exception as e:
+                logger.error(f"Error during download: {e}")
+                # Clean up temp file if it exists
+                if os.path.exists(destination_path + ".tmp"):
+                    os.remove(destination_path + ".tmp")
+                return False
+
+        except requests.RequestException as e:
+            logger.error(f"Request error downloading PPDB: {e}")
+            return False
+        except Exception as e:
+            logger.error(f"Error downloading PPDB: {e}")
+            return False
+
+
+    def ask_user_for_exe_location(self, exe_name: str) -> str | None:
+        """Ask the user for the location of the .exe file.
+
+        Args:
+            exe_name: Name of the executable to find
+
+        Returns:
+            Path to the .exe file if provided by user, None otherwise
+        """
+        # Import FileExplorer as requested
+        from PySide6.QtWidgets import QApplication
+        from portprotonqt.dialogs import FileExplorer
+
+        # Check if we're running in GUI mode
+        app = QApplication.instance()
+        if app is not None:
+            # Use FileExplorer which is adapted for gamepad control
+            import queue
+            result_queue = queue.Queue()
+
+            def on_file_selected(file_path):
+                result_queue.put(file_path)
+
+            # Create and configure FileExplorer
+            from portprotonqt.dialogs import FileExplorer
+            file_explorer = FileExplorer(
+                file_filter=".exe",
+                initial_path=os.path.expanduser("~")
+            )
+            file_explorer.setWindowTitle(f"Select {exe_name} file for PPDB download")
+
+            # Connect the file selection signal
+            file_explorer.file_signal.file_selected.connect(on_file_selected)
+
+            # Show the dialog
+            file_explorer.exec()
+
+            # Get the selected file from the queue
+            try:
+                selected_file = result_queue.get(timeout=0.1)  # Small timeout to get result
+                if selected_file and os.path.exists(selected_file) and selected_file.lower().endswith('.exe'):
+                    logger.info(f"User selected .exe file: {selected_file}")
+                    return selected_file
+                else:
+                    logger.info("No valid .exe file selected by user")
+                    return None
+            except queue.Empty:
+                logger.info("No file selected in FileExplorer")
+                return None
+        else:
+            logger.info("No GUI application instance available for FileExplorer")
+            return None

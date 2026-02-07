@@ -1,9 +1,10 @@
 [Desktop Entry]
 Name=PortProtonQt
-Exec=portprotonqt
+Exec=portprotonqt %u
 Type=Application
 Comment=A modern GUI for PortProton project
 Terminal=false
 Icon=ru.linux_gaming.PortProtonQt
 StartupWMClass=ru.linux_gaming.PortProtonQt
 Categories=Game;Utility;
+MimeType=x-scheme-handler/portproton;
