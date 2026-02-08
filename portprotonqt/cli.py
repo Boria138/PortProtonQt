@@ -15,7 +15,12 @@ def parse_args():
         "--debug-level",
         choices=['ALL', 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
         default='NOTSET',
-        help="Установить уровень логирования (ALL для всех сообщений, по умолчанию: без логов)"
+        help="Set logging level (ALL for all messages, default: NOTSET)"
+    )
+    parser.add_argument(
+        "--force-muvm",
+        action="store_true",
+        help="Force running the application under muvm even if not on Apple Silicon"
     )
     # Add positional argument to accept portproton:// URLs or other arguments
     parser.add_argument(

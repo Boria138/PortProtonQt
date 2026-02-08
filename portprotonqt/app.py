@@ -51,13 +51,17 @@ def is_apple_silicon():
         return False
 
 def main():
-    # Check if running on Apple Silicon/Asahi Linux and re-execute under muvm if needed
-    if is_apple_silicon() and 'PORTPROTONQT_MUVM' not in os.environ:
+    # Parse args early to check for force-muvm flag
+    parsed_args = parse_args()
+
+    # Check if running on Apple Silicon/Asahi Linux or if forced to run under muvm, and re-execute under muvm if needed
+    should_run_under_muvm = (is_apple_silicon() or parsed_args.force_muvm) and 'PORTPROTONQT_MUVM' not in os.environ
+    if should_run_under_muvm:
         muvm_path = shutil.which('muvm')
         if muvm_path:
             env = os.environ.copy()
-            args = [muvm_path, "-i", "-e", "PORTPROTONQT_MUVM=1", sys.executable, os.path.abspath(__file__)]
-            os.execvpe(muvm_path, args + sys.argv[1:], env)
+            args_list = [muvm_path, "-i", "-e", "PORTPROTONQT_MUVM=1", sys.executable, os.path.abspath(__file__)]
+            os.execvpe(muvm_path, args_list + sys.argv[1:], env)
 
     os.environ["PW_CLI"] = "1"
     os.environ["PROCESS_LOG"] = "1"
@@ -75,7 +79,7 @@ def main():
     app.setApplicationName(__app_name__)
     app.setApplicationVersion(__app_version__)
 
-    args = parse_args()
+    args = parsed_args
     setup_logger(args.debug_level)
     logger = get_logger(__name__)
 
