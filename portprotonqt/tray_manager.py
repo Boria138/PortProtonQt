@@ -4,6 +4,7 @@ import shlex
 import signal
 import psutil
 import os
+import shutil
 from PySide6.QtWidgets import QSystemTrayIcon, QMenu, QApplication, QMessageBox
 from PySide6.QtGui import QIcon, QAction
 from PySide6.QtCore import QTimer
@@ -226,21 +227,36 @@ class TrayManager:
             save_theme_to_config(theme_name)
             logger.info(f"Saved theme {theme_name}, restarting application to apply changes")
 
-            executable = sys.executable
-            args = sys.argv
-
-            QApplication.quit()
-
-            subprocess.Popen([executable] + args)
+            restart_application_with_muvm()
 
         except Exception as e:
             logger.error(f"Failed to switch theme to {theme_name}: {e}")
             save_theme_to_config("standart")
-            executable = sys.executable
-            args = sys.argv
-            QApplication.quit()
-            subprocess.Popen([executable] + args)
+            restart_application_with_muvm()
 
     def force_exit(self):
         self.main_window.close()
         sys.exit(0)
+
+
+def restart_application_with_muvm():
+    """
+    Универсальная функция перезапуска приложения с учетом muvm.
+    Проверяет, было ли приложение запущено через muvm, и если да,
+    перезапускает с тем же контекстом.
+    """
+    if 'PORTPROTONQT_MUVM' in os.environ:
+        # Мы запущены под muvm, нужно перезапустить с muvm
+        muvm_path = shutil.which('muvm')
+        if muvm_path:
+            env = os.environ.copy()
+            args = [muvm_path, "-i", "-e", "PORTPROTONQT_MUVM=1", sys.executable] + sys.argv[1:]
+            QApplication.quit()
+            subprocess.Popen(args, env=env)
+            return
+
+    # Обычный перезапуск без muvm
+    executable = sys.executable
+    args = sys.argv
+    QApplication.quit()
+    subprocess.Popen([executable] + args)
