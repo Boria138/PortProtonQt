@@ -33,19 +33,19 @@ LOCALE_MAP = {
     'el': 'greek',
 }
 
-# Try system locale directory first, fallback to local for development
-_system_localedir = Path(os.getenv("SHARUN_DIR", "/usr")) / "share" / "locale"
+# Try local locale directory first, fallback to system for development
 _local_localedir = Path(__file__).parent / "locales"
+_system_localedir = Path(os.getenv("SHARUN_DIR", "/usr")) / "share" / "locale"
 
 try:
     translate = gettext.translation(
         domain="portprotonqt",
-        localedir=_system_localedir,
+        localedir=_local_localedir,
     )
 except FileNotFoundError:
     translate = gettext.translation(
         domain="portprotonqt",
-        localedir=_local_localedir,
+        localedir=_system_localedir,
         fallback=True,
     )
 _ = translate.gettext
