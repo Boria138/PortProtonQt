@@ -40,7 +40,7 @@ source .venv/bin/activate
 python dev-scripts/l10n.py --create-new <locale_code>
 ```
 
-2. Edit the file `portprotonqt/locales/<locale>/LC_MESSAGES/portprotonqt.po` in Poedit or any text editor.
+2. Edit the file `portprotonqt/locales/<locale>/LC_MESSAGES/portprotonqt.po` in Poedit or GTranslator.
 
 ---
 
