@@ -1709,13 +1709,51 @@ class InputManager(QObject):
                 if self._parent.stackedWidget.currentIndex() == 0:
                     self._parent.openAddGameDialog()
             elif button_code in BUTTONS['prev_tab']:
-                idx = (self._parent.stackedWidget.currentIndex() - 1) % len(self._parent.tabButtons)
-                self._parent.switchTab(idx)
-                self._parent.tabButtons[idx].setFocus(Qt.FocusReason.OtherFocusReason)
+                idx = self._parent.stackedWidget.currentIndex()
+
+                # Get only visible tab indices
+                visible_tab_indices = []
+                if hasattr(self._parent, 'tabButtons'):
+                    for i, btn in self._parent.tabButtons.items():
+                        if btn.isVisible():
+                            visible_tab_indices.append(i)
+                    visible_tab_indices.sort()  # Ensure they're in order
+
+                if visible_tab_indices:
+                    # Find current position in the visible tabs list
+                    try:
+                        current_visible_pos = visible_tab_indices.index(idx)
+                    except ValueError:
+                        # Current index is not visible, default to first visible
+                        current_visible_pos = 0
+
+                    new_visible_pos = (current_visible_pos - 1) % len(visible_tab_indices)
+                    idx = visible_tab_indices[new_visible_pos]
+                    self._parent.switchTab(idx)
+                    self._parent.tabButtons[idx].setFocus(Qt.FocusReason.OtherFocusReason)
             elif button_code in BUTTONS['next_tab']:
-                idx = (self._parent.stackedWidget.currentIndex() + 1) % len(self._parent.tabButtons)
-                self._parent.switchTab(idx)
-                self._parent.tabButtons[idx].setFocus(Qt.FocusReason.OtherFocusReason)
+                idx = self._parent.stackedWidget.currentIndex()
+
+                # Get only visible tab indices
+                visible_tab_indices = []
+                if hasattr(self._parent, 'tabButtons'):
+                    for i, btn in self._parent.tabButtons.items():
+                        if btn.isVisible():
+                            visible_tab_indices.append(i)
+                    visible_tab_indices.sort()  # Ensure they're in order
+
+                if visible_tab_indices:
+                    # Find current position in the visible tabs list
+                    try:
+                        current_visible_pos = visible_tab_indices.index(idx)
+                    except ValueError:
+                        # Current index is not visible, default to first visible
+                        current_visible_pos = 0
+
+                    new_visible_pos = (current_visible_pos + 1) % len(visible_tab_indices)
+                    idx = visible_tab_indices[new_visible_pos]
+                    self._parent.switchTab(idx)
+                    self._parent.tabButtons[idx].setFocus(Qt.FocusReason.OtherFocusReason)
             elif button_code in BUTTONS['increase_size']:
                 current_tab = self._parent.stackedWidget.currentIndex()
                 if current_tab == 0:  # Main games library
@@ -2240,17 +2278,35 @@ class InputManager(QObject):
                 not isinstance(active, QMessageBox)):
                 if not isinstance(active, QDialog) or not hasattr(active, 'tab_widget'):
                     idx = self._parent.stackedWidget.currentIndex()
-                    total = len(self._parent.tabButtons)
-                    if key == Qt.Key.Key_Left:
-                        new_idx = (idx - 1) % total
-                        self._parent.switchTab(new_idx)
-                        self._parent.tabButtons[new_idx].setFocus(Qt.FocusReason.OtherFocusReason)
-                        return True
-                    elif key == Qt.Key.Key_Right:
-                        new_idx = (idx + 1) % total
-                        self._parent.switchTab(new_idx)
-                        self._parent.tabButtons[new_idx].setFocus(Qt.FocusReason.OtherFocusReason)
-                        return True
+
+                    # Get only visible tab indices
+                    visible_tab_indices = []
+                    if hasattr(self._parent, 'tabButtons'):
+                        for i, btn in self._parent.tabButtons.items():
+                            if btn.isVisible():
+                                visible_tab_indices.append(i)
+                        visible_tab_indices.sort()  # Ensure they're in order
+
+                    if visible_tab_indices:
+                        # Find current position in the visible tabs list
+                        try:
+                            current_visible_pos = visible_tab_indices.index(idx)
+                        except ValueError:
+                            # Current index is not visible, default to first visible
+                            current_visible_pos = 0
+
+                        if key == Qt.Key.Key_Left:
+                            new_visible_pos = (current_visible_pos - 1) % len(visible_tab_indices)
+                            new_idx = visible_tab_indices[new_visible_pos]
+                            self._parent.switchTab(new_idx)
+                            self._parent.tabButtons[new_idx].setFocus(Qt.FocusReason.OtherFocusReason)
+                            return True
+                        elif key == Qt.Key.Key_Right:
+                            new_visible_pos = (current_visible_pos + 1) % len(visible_tab_indices)
+                            new_idx = visible_tab_indices[new_visible_pos]
+                            self._parent.switchTab(new_idx)
+                            self._parent.tabButtons[new_idx].setFocus(Qt.FocusReason.OtherFocusReason)
+                            return True
 
             # Map arrow keys to D-pad press events for other contexts
             if key in (Qt.Key.Key_Up, Qt.Key.Key_Down, Qt.Key.Key_Left, Qt.Key.Key_Right):

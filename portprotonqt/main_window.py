@@ -221,9 +221,22 @@ class MainWindow(QMainWindow):
 
         self.createInstalledTab()
 
-        # Only create auto-install tab if it's not hidden
-        if not read_hide_autoinstall_tab():
-            self.createAutoInstallTab()
+        # Always create auto-install tab but set visibility based on settings
+        self.createAutoInstallTab()
+        self.auto_install_tab_index = 1  # Auto Install tab is always at index 1
+
+        # Set visibility based on settings
+        hide_autoinstall = read_hide_autoinstall_tab()
+        if hide_autoinstall:
+            # Hide the tab button and page
+            if hasattr(self, 'tabButtons') and self.auto_install_tab_index in self.tabButtons:
+                tab_button = self.tabButtons[self.auto_install_tab_index]
+                tab_button.setVisible(False)
+
+            if hasattr(self, 'stackedWidget'):
+                auto_install_page = self.stackedWidget.widget(self.auto_install_tab_index)
+                if auto_install_page:
+                    auto_install_page.setVisible(False)
 
         self.createWineTab()
         self.createPortProtonTab()
@@ -1140,16 +1153,30 @@ class MainWindow(QMainWindow):
     # ВКЛАДКИ
     def switchTab(self, index):
         """Устанавливает активную вкладку по индексу."""
-        # Check if the requested tab index is valid and exists
-        if hasattr(self, 'tabButtons') and index in self.tabButtons:
-            # Only allow switching to existing tabs
+        # Check if the requested tab index is valid, exists, and is visible
+        if (hasattr(self, 'tabButtons') and
+            index in self.tabButtons and
+            self.tabButtons[index].isVisible()):
+
+            # Only allow switching to existing and visible tabs
             for i, btn in self.tabButtons.items():
                 btn.setChecked(i == index)
             self.stackedWidget.setCurrentIndex(index)
         else:
-            # If trying to switch to a non-existent tab (like auto-install when it's hidden),
-            # default to the first tab
-            if hasattr(self, 'tabButtons') and 0 in self.tabButtons:
+            # If trying to switch to a non-existent or hidden tab (like auto-install when it's hidden),
+            # find the first visible tab to switch to
+            visible_tab_found = False
+            if hasattr(self, 'tabButtons'):
+                for i, btn in self.tabButtons.items():
+                    if btn.isVisible():
+                        for j, other_btn in self.tabButtons.items():
+                            other_btn.setChecked(j == i)
+                        self.stackedWidget.setCurrentIndex(i)
+                        visible_tab_found = True
+                        break
+
+            # If no visible tab found (shouldn't happen), default to the first tab
+            if not visible_tab_found and hasattr(self, 'tabButtons') and 0 in self.tabButtons:
                 for i, btn in self.tabButtons.items():
                     btn.setChecked(i == 0)
                 self.stackedWidget.setCurrentIndex(0)
@@ -2475,21 +2502,19 @@ class MainWindow(QMainWindow):
             self.showFullScreen()
 
         # Apply the hide auto-install tab setting
-        auto_install_index = 1  # Auto Install tab is at index 1
-
         if hide_autoinstall:  # Hide the tab
             # Find the auto-install tab button and hide it
-            if hasattr(self, 'tabButtons') and auto_install_index in self.tabButtons:
-                tab_button = self.tabButtons[auto_install_index]
+            if hasattr(self, 'tabButtons') and self.auto_install_tab_index in self.tabButtons:
+                tab_button = self.tabButtons[self.auto_install_tab_index]
                 tab_button.setVisible(False)
 
                 # If currently on the hidden tab, switch to the first tab
-                if self.stackedWidget.currentIndex() == auto_install_index:
+                if self.stackedWidget.currentIndex() == self.auto_install_tab_index:
                     self.switchTab(0)  # Switch to Library tab
 
             # Hide the stacked widget page too
             if hasattr(self, 'stackedWidget'):
-                auto_install_page = self.stackedWidget.widget(auto_install_index)
+                auto_install_page = self.stackedWidget.widget(self.auto_install_tab_index)
                 if auto_install_page:
                     auto_install_page.setVisible(False)
 
@@ -2498,25 +2523,20 @@ class MainWindow(QMainWindow):
                 self.autoInstallLoadThread.requestInterruption()
                 self.autoInstallLoadThread.wait(5000)  # Wait up to 5 seconds for thread to finish
                 self.autoInstallLoadThread = None
-        else:  # Show the tab - create it if it doesn't exist
-            # Check if auto-install tab already exists
-            if not hasattr(self, 'autoInstallContainer'):  # If it doesn't exist, create it
-                # We need to create the auto-install tab since it wasn't created at startup
-                self.createAutoInstallTab()
+        else:  # Show the tab
+            # Make sure the tab button is visible
+            if hasattr(self, 'tabButtons') and self.auto_install_tab_index in self.tabButtons:
+                tab_button = self.tabButtons[self.auto_install_tab_index]
+                tab_button.setVisible(True)
 
-                # Make sure the tab button is visible
-                if hasattr(self, 'tabButtons') and auto_install_index in self.tabButtons:
-                    tab_button = self.tabButtons[auto_install_index]
-                    tab_button.setVisible(True)
-            else:  # If it exists, make sure it's visible
-                if hasattr(self, 'tabButtons') and auto_install_index in self.tabButtons:
-                    tab_button = self.tabButtons[auto_install_index]
-                    tab_button.setVisible(True)
+            # Make sure the stacked widget page is visible
+            if hasattr(self, 'stackedWidget'):
+                auto_install_page = self.stackedWidget.widget(self.auto_install_tab_index)
+                if auto_install_page:
+                    auto_install_page.setVisible(True)
 
-                if hasattr(self, 'stackedWidget'):
-                    auto_install_page = self.stackedWidget.widget(auto_install_index)
-                    if auto_install_page:
-                        auto_install_page.setVisible(True)
+        # Save the hide auto-install tab setting to config
+        save_hide_autoinstall_tab(hide_autoinstall)
 
         self.statusBar().showMessage(_("Settings saved"), 3000)
 
