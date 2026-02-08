@@ -6,12 +6,18 @@ import time
 import glob
 import re
 import hashlib
+import queue
+import shutil
+import shlex
 from collections.abc import Callable
 from PySide6.QtCore import QThread, Signal, QUrl
 from PySide6.QtGui import QDesktopServices
+from PySide6.QtWidgets import QApplication
 from portprotonqt.downloader import Downloader
 from portprotonqt.logger import get_logger
 from portprotonqt.config_utils import get_portproton_location
+from portprotonqt.localization import _
+from portprotonqt.dialogs import FileExplorer
 
 logger = get_logger(__name__)
 AUTOINSTALL_CACHE_DURATION = 3600  # 1 hour for autoinstall cache
@@ -53,7 +59,6 @@ def extract_exe_name(exec_line: str) -> str:
     Returns:
         Executable name with .exe extension, or empty string if not found
     """
-    import shlex
 
     if not exec_line:
         return ""
@@ -292,7 +297,6 @@ class PortProtonAPI:
             else:
                 pattern = r'^description_en=(.*)$'
 
-            import re
             match = re.search(pattern, content, re.MULTILINE)
             if match:
                 description = match.group(1).strip()
@@ -608,7 +612,7 @@ class PortProtonAPI:
         """
         try:
             # Get the .exe file path directly from FileExplorer
-            exe_path = self.ask_user_for_exe_location("the game executable")
+            exe_path = self.ask_user_for_exe_location()
             if not exe_path:
                 logger.error("User did not provide .exe file location")
                 return False
@@ -637,9 +641,9 @@ class PortProtonAPI:
                         f.write(response.content)
 
                     # Move the file to its final location
-                    import shutil
                     shutil.move(temp_path, destination_path)
                     logger.info(f"Successfully downloaded PPDB to {destination_path}")
+
                     return True
                 else:
                     logger.error(f"Failed to download PPDB: HTTP {response.status_code}")
@@ -659,36 +663,27 @@ class PortProtonAPI:
             return False
 
 
-    def ask_user_for_exe_location(self, exe_name: str) -> str | None:
+    def ask_user_for_exe_location(self) -> str | None:
         """Ask the user for the location of the .exe file.
-
-        Args:
-            exe_name: Name of the executable to find
 
         Returns:
             Path to the .exe file if provided by user, None otherwise
         """
-        # Import FileExplorer as requested
-        from PySide6.QtWidgets import QApplication
-        from portprotonqt.dialogs import FileExplorer
-
         # Check if we're running in GUI mode
         app = QApplication.instance()
         if app is not None:
             # Use FileExplorer which is adapted for gamepad control
-            import queue
             result_queue = queue.Queue()
 
             def on_file_selected(file_path):
                 result_queue.put(file_path)
 
             # Create and configure FileExplorer
-            from portprotonqt.dialogs import FileExplorer
             file_explorer = FileExplorer(
                 file_filter=".exe",
                 initial_path=os.path.expanduser("~")
             )
-            file_explorer.setWindowTitle(f"Select {exe_name} file for PPDB download")
+            file_explorer.setWindowTitle(_("Select file for PPDB download"))
 
             # Connect the file selection signal
             file_explorer.file_signal.file_selected.connect(on_file_selected)
