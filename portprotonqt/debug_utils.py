@@ -855,7 +855,7 @@ def generate_system_info(exe_path: str | None = None, start_cmd: list[str] | Non
     lines = []
 
     # Header message
-    lines.append(_("Debug log mode was launched and the log was successfully saved in the PortProton root directory"))
+    lines.append(_("Debug log mode was launched"))
     lines.append(_("To diagnose the problem, copy the ENTIRE log to the site:") + " https://linux-gaming.ru/t/opisanie-kategorii-portproton-pomoshh/1642")
     lines.append("-" * 61)
 
