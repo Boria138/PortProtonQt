@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-02-08 13:59+0500\n"
+"POT-Creation-Date: 2026-02-08 15:20+0500\n"
 "PO-Revision-Date: 2026-01-18 11:09+0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: pt\n"
@@ -993,6 +993,9 @@ msgstr ""
 
 #, python-brace-format
 msgid "File not found: {0}"
+msgstr ""
+
+msgid "Select file for PPDB download"
 msgstr ""
 
 msgid ""
