@@ -5,7 +5,7 @@ _portprotonqt_completions() {
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     # Available options
-    opts="--fullscreen --debug-level --help -h"
+    opts="--fullscreen --debug-level --force-muvm --help -h"
 
     # Debug level choices
     debug_levels="ALL DEBUG INFO WARNING ERROR CRITICAL"
@@ -24,6 +24,14 @@ _portprotonqt_completions() {
     if [[ ${cur} == -* ]]; then
         COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
         return 0
+    fi
+
+    # Complete positional arguments (URLs) if needed
+    if [[ ${cur} != -* ]]; then
+        # Allow URL completion for portproton:// URLs
+        if [[ ${cur} == portproton://* ]]; then
+            COMPREPLY=( $(compgen -W "${cur}" -- ${cur}) )
+        fi
     fi
 }
 
