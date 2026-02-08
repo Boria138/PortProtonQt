@@ -288,7 +288,7 @@ def get_runtime_status(portproton_path: str, exe_path: str | None = None, start_
 
     # Return status based on Flatpak usage and runtime setting
     if is_flatpak:
-        return "FLATPAK is used"
+        return "FLATPAK in used"
     elif runtime_val == "0":
         return "RUNTIME is disabled"
     else:
@@ -1096,10 +1096,10 @@ def process_portproton_log(log_content: str) -> str:
         deduplicated_content = deduplicated_content.replace(f"/run/media/{username}", "/run/media/xuser")
         deduplicated_content = deduplicated_content.replace(f"/media/{username}", "/media/xuser")
 
-    # Check if FLATPAK is used in the log content
-    is_flatpak_used = "FLATPAK is used" in deduplicated_content
+    # Check if FLATPAK in used in the log content
+    is_flatpak_used = "FLATPAK in used" in deduplicated_content
 
-    # Filter noise and PW_USE_RUNTIME if Flatpak is used
+    # Filter noise and PW_USE_RUNTIME if Flatpak in used
     filtered_lines = []
     for line in deduplicated_content.split("\n"):
         # Skip lines that match known noise patterns
@@ -1120,7 +1120,7 @@ def process_portproton_log(log_content: str) -> str:
         if not skip_line and line.rstrip().lower().endswith('.fx'):
             skip_line = True
 
-        # Skip PW_USE_RUNTIME line if Flatpak is used
+        # Skip PW_USE_RUNTIME line if Flatpak in used
         if not skip_line and is_flatpak_used:
             stripped_line = line.strip()
             if stripped_line.startswith("PW_USE_RUNTIME=") or stripped_line.startswith("export PW_USE_RUNTIME="):
