@@ -103,7 +103,19 @@ def get_file_content(file_path: str, default: str = "") -> str:
     """Safely read file content."""
     try:
         with open(file_path, encoding="utf-8", errors="ignore") as f:
-            return f.read().strip()
+            content = f.read()
+
+        # Remove comments (lines starting with #) and empty lines
+        lines = content.split('\n')
+        filtered_lines = []
+        for line in lines:
+            stripped_line = line.strip()
+            # Skip comments and empty lines
+            if not stripped_line.startswith('#') and stripped_line:
+                filtered_lines.append(line)
+        content = '\n'.join(filtered_lines)
+
+        return content.strip()
     except OSError as e:
         logger.debug(f"Failed to read {file_path}: {e}")
         return default
@@ -691,16 +703,25 @@ def get_ram_info_detailed() -> str:
     return get_ram_info()
 
 
-def get_ppdb_content(exe_path: str | None) -> str:
+def get_ppdb_content(exe_path: str | None, start_cmd: list[str] | None = None) -> str:
     """Get content of PPDB file for the executable."""
     if not exe_path:
         return ""
 
     ppdb_path = f"{exe_path}.ppdb"
-    if not os.path.exists(ppdb_path):
-        return ""
 
-    content = get_file_content(ppdb_path)
+    # Check if PPDB file exists, if not use default path
+    content = ""
+    if os.path.exists(ppdb_path):
+        content = get_file_content(ppdb_path)
+    else:
+        # Try to get default PPDB from PortProton/data/scripts/portwine_db/default
+        portproton_path = get_portproton_location()
+        if portproton_path:
+            default_ppdb_path = os.path.join(portproton_path, "data", "scripts", "portwine_db", "default")
+            if os.path.exists(default_ppdb_path):
+                content = get_file_content(default_ppdb_path)
+
     return content if content else ""
 
 
@@ -983,7 +1004,7 @@ def generate_system_info(exe_path: str | None = None, start_cmd: list[str] | Non
 
     # PPDB file content
     if exe_path:
-        ppdb_content = get_ppdb_content(exe_path)
+        ppdb_content = get_ppdb_content(exe_path, start_cmd)
         if ppdb_content:
             lines.append(f"Use {exe_path}.ppdb db file:")
             lines.append(ppdb_content)
@@ -1087,7 +1108,10 @@ def process_portproton_log(log_content: str) -> str:
         deduplicated_content = deduplicated_content.replace(f"/run/media/{username}", "/run/media/xuser")
         deduplicated_content = deduplicated_content.replace(f"/media/{username}", "/media/xuser")
 
-    # Filter noise
+    # Check if FLATPAK is used in the log content
+    is_flatpak_used = "FLATPAK is used" in deduplicated_content
+
+    # Filter noise and PW_USE_RUNTIME if Flatpak is used
     filtered_lines = []
     for line in deduplicated_content.split("\n"):
         # Skip lines that match known noise patterns
@@ -1107,6 +1131,12 @@ def process_portproton_log(log_content: str) -> str:
         # Skip lines ending with .fx
         if not skip_line and line.rstrip().lower().endswith('.fx'):
             skip_line = True
+
+        # Skip PW_USE_RUNTIME line if Flatpak is used
+        if not skip_line and is_flatpak_used:
+            stripped_line = line.strip()
+            if stripped_line.startswith("PW_USE_RUNTIME=") or stripped_line.startswith("export PW_USE_RUNTIME="):
+                skip_line = True
 
         if not skip_line:
             filtered_lines.append(line)
