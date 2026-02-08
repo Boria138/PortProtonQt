@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-01-12 20:59+0500\n"
+"POT-Creation-Date: 2026-02-08 11:00+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es_ES\n"
@@ -256,6 +256,14 @@ msgstr ""
 msgid "Select All"
 msgstr ""
 
+msgid ""
+"Debug log mode was launched and the log was successfully saved in the "
+"PortProton root directory"
+msgstr ""
+
+msgid "To diagnose the problem, copy the ENTIRE log to the site:"
+msgstr ""
+
 msgid "Back"
 msgstr ""
 
@@ -296,10 +304,31 @@ msgstr ""
 msgid "Settings"
 msgstr ""
 
+msgid "Create Log"
+msgstr ""
+
 msgid "Reinstall"
 msgstr ""
 
 msgid "Install"
+msgstr ""
+
+msgid "Log Saved"
+msgstr ""
+
+msgid "Debug log saved to:"
+msgstr ""
+
+msgid "Open Folder"
+msgstr ""
+
+msgid "Failed to save debug log"
+msgstr ""
+
+msgid "Stop Log"
+msgstr ""
+
+msgid "Failed to start debug session"
 msgstr ""
 
 msgid "Open"
@@ -862,6 +891,12 @@ msgid "Minimize to tray on close"
 msgstr ""
 
 msgid "Application Close Mode:"
+msgstr ""
+
+msgid "Hide Auto-Install Tab"
+msgstr ""
+
+msgid "Hide Auto-Install Tab:"
 msgstr ""
 
 msgid "Auto Fullscreen on Gamepad connected"
