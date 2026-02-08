@@ -16,10 +16,6 @@ import orjson
 
 logger = get_logger(__name__)
 
-# Cache for exported variables to avoid repeated subprocess calls
-_exported_vars_cache: dict[str, dict[str, str]] = {}
-
-
 def get_portproton_env(exe_path: str | None) -> dict[str, str]:
     """
     Get environment variables as they would be exported by PortProton.
@@ -33,12 +29,6 @@ def get_portproton_env(exe_path: str | None) -> dict[str, str]:
     Returns:
         Dictionary of environment variable names to values
     """
-    cache_key = exe_path or "__no_exe__"
-
-    # Check cache first
-    if cache_key in _exported_vars_cache:
-        return _exported_vars_cache[cache_key]
-
     portproton_path = get_portproton_location()
     if not portproton_path:
         return {}
@@ -61,7 +51,10 @@ def get_portproton_env(exe_path: str | None) -> dict[str, str]:
     if exe_path:
         ppdb_file = f"{exe_path}.ppdb"
         if os.path.exists(ppdb_file):
+            logger.debug(f"Found .ppdb file: {ppdb_file}")
             bash_script += f'source "{ppdb_file}" 2>/dev/null; '
+        else:
+            logger.debug(f".ppdb file not found: {ppdb_file}")
 
     # Output all relevant variables (PW_, DXVK_, VKD3D_)
     bash_script += 'env | grep -E "^(PW_|DXVK_|VKD3D_)"'
@@ -81,22 +74,15 @@ def get_portproton_env(exe_path: str | None) -> dict[str, str]:
                 key, val = line.split("=", 1)
                 env_vars[key] = val
 
-        # Cache the result
-        _exported_vars_cache[cache_key] = env_vars
+        # Log the found variables for debugging
+        logger.debug(f"Environment variables found: {env_vars}")
+
         return env_vars
 
     except Exception as e:
         logger.debug(f"Error getting portproton env: {e}")
         return {}
 
-
-def clear_portproton_env_cache(exe_path: str | None = None):
-    """Clear the exported variables cache."""
-    if exe_path:
-        _exported_vars_cache.pop(exe_path, None)
-        _exported_vars_cache.pop("__no_exe__", None)
-    else:
-        _exported_vars_cache.clear()
 
 
 def get_file_content(file_path: str, default: str = "") -> str:
@@ -312,10 +298,12 @@ def get_runtime_status(portproton_path: str, exe_path: str | None = None, start_
 def get_vulkan_use_info(portproton_path: str, exe_path: str | None = None) -> str:
     """Get PW_VULKAN_USE info with DXVK and VKD3D versions."""
     env_vars = get_portproton_env(exe_path)
-    pw_vulkan_use = env_vars.get("PW_VULKAN_USE", "6")
+    pw_vulkan_use = env_vars.get("PW_VULKAN_USE")
 
-    # Get versions from var file based on PW_VULKAN_USE value
-    if pw_vulkan_use == "6":
+    # If PW_VULKAN_USE is not found in environment variables, show a stub
+    if pw_vulkan_use is None:
+        return "PW_VULKAN_USE: Variable not found (stub)"
+    elif pw_vulkan_use == "6":
         dxvk = f"DXVK v.{env_vars.get('DXVK_NEW_VER', '')}"
         vkd3d = f"VKD3D-PROTON v.{env_vars.get('VKD3D_NEW_VER', '')}"
     elif pw_vulkan_use == "2":
