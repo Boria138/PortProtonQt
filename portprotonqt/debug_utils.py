@@ -1328,3 +1328,9 @@ class DebugLogManager:
         except OSError as e:
             logger.error(f"Failed to save debug log: {e}")
             return None
+
+    def cleanup_on_exit(self):
+        """Clean up resources and save log when application exits."""
+        if self.is_running:
+            logger.info("Cleaning up debug log manager on application exit...")
+            self.stop()

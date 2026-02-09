@@ -3108,6 +3108,13 @@ class MainWindow(QMainWindow):
                 # Object already deleted
                 pass
 
+        # Clean up debug log manager to ensure logs are properly saved if application closes
+        if hasattr(self, 'detail_page_manager') and hasattr(self.detail_page_manager, 'debug_log_manager'):
+            try:
+                self.detail_page_manager.debug_log_manager.cleanup_on_exit()
+            except Exception as e:
+                logger.warning(f"Failed to cleanup debug log manager: {e}")
+
     def _update_card_name_from_metadata(self, exe_name: str, metadata_path: str):
         """Update card name from metadata file."""
         # Read the translated metadata using the existing function
