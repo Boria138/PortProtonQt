@@ -11,7 +11,8 @@ from portprotonqt.game_card import GameCard
 from portprotonqt.animations import DetailPageAnimations
 from portprotonqt.custom_widgets import ClickableLabel, AutoSizeButton, NavLabel, FlowLayout
 from portprotonqt.detail_pages import DetailPageManager
-from portprotonqt.portproton_api import PortProtonAPI
+from portprotonqt.portproton_api import PortProtonAPI, get_user_conf_setting, set_user_conf_setting
+from portprotonqt.debug_utils import get_gpu_list
 from portprotonqt.input_manager import InputManager, MainWindowProtocol
 from portprotonqt.context_menu_manager import ContextMenuManager, CustomLineEdit
 from portprotonqt.system_overlay import SystemOverlay
@@ -2286,6 +2287,40 @@ class MainWindow(QMainWindow):
         self.gamepadRumbleCheckBox.setChecked(current_rumble_state)
         formLayout.addRow(self.gamepadRumbleTitle, self.gamepadRumbleCheckBox)
 
+        # 10. GPU Selection
+        gpu_list = get_gpu_list()
+        # Filter out llvmpipe software renderer
+        filtered_gpu_list = [gpu for gpu in gpu_list if 'llvmpipe' not in gpu.lower()]
+
+        if filtered_gpu_list:  # Only show the GPU selection if there are GPUs available
+            self.gpuCombo = QComboBox()
+            self.gpuCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+            self.gpuCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+            self.gpuCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
+
+            # Add filtered GPUs to the combo box
+            self.gpuCombo.addItems(filtered_gpu_list)
+
+            # Set current selection based on saved value
+            current_gpu = get_user_conf_setting('PW_GPU_USE')
+            if current_gpu and current_gpu in filtered_gpu_list:
+                self.gpuCombo.setCurrentText(current_gpu)
+            elif current_gpu:  # If there's a saved GPU but it's not in the current list, add it temporarily
+                # Add the saved GPU to the combo box if it's not already there
+                if current_gpu not in filtered_gpu_list:
+                    self.gpuCombo.addItem(current_gpu)
+                self.gpuCombo.setCurrentText(current_gpu)
+            else:
+                self.gpuCombo.setCurrentIndex(0)  # Select first GPU in the list
+
+            self.gpuTitle = QLabel(_("GPU to use:"))
+            self.gpuTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+            self.gpuTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            formLayout.addRow(self.gpuTitle, self.gpuCombo)
+        else:
+            # If no GPUs are available, don't show the GPU selection
+            pass
+
         # # 9. Legendary Authentication
         # self.legendaryAuthButton = AutoSizeButton(
         #     _("Open Legendary Login"),
@@ -2465,6 +2500,11 @@ class MainWindow(QMainWindow):
 
         rumble_enabled = self.gamepadRumbleCheckBox.isChecked()
         save_rumble_config(rumble_enabled)
+
+        # Save GPU selection to user.conf (only if the combo box exists)
+        if hasattr(self, 'gpuCombo'):
+            selected_gpu = self.gpuCombo.currentText()
+            set_user_conf_setting('PW_GPU_USE', selected_gpu)
 
         # Get hide auto-install tab setting
         hide_autoinstall = self.hideAutoInstallTabCheckBox.isChecked()

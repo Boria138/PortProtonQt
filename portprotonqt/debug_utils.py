@@ -16,6 +16,88 @@ import orjson
 
 logger = get_logger(__name__)
 
+# Global variable to cache vulkaninfo output
+_vulkaninfo_output = None
+
+def get_cached_vulkaninfo():
+    """Get cached vulkaninfo output, running it only once."""
+    global _vulkaninfo_output
+    import subprocess
+
+    if _vulkaninfo_output is None:
+        try:
+            result = subprocess.run(
+                ["vulkaninfo", "--summary"],
+                capture_output=True,
+                text=True,
+                timeout=10,
+                check=False
+            )
+            if result.returncode == 0:
+                _vulkaninfo_output = result.stdout
+            else:
+                _vulkaninfo_output = ""
+        except FileNotFoundError:
+            _vulkaninfo_output = ""
+        except Exception as e:
+            logger.error(f"Error running vulkaninfo: {e}")
+            _vulkaninfo_output = ""
+
+    return _vulkaninfo_output
+
+def get_gpu_list() -> list[str]:
+    """Get list of available GPUs using cached vulkaninfo output."""
+    import re
+
+    gpu_list = []
+    vulkan_output = get_cached_vulkaninfo()
+
+    if not vulkan_output:
+        return gpu_list
+
+    in_gpu_section = False
+    current_gpu_info = {}
+
+    for line in vulkan_output.split("\n"):
+        stripped = line.strip()
+
+        if stripped.startswith("GPU"):
+            # Save previous GPU info if exists
+            if current_gpu_info:
+                device_name = current_gpu_info.get('deviceName', 'Unknown')
+                if device_name and device_name not in gpu_list:
+                    # Filter out llvmpipe software renderer
+                    if 'llvmpipe' not in device_name.lower():
+                        gpu_list.append(device_name)
+
+            # Start new GPU info
+            # Extract GPU ID from line like "GPU0:"
+            gpu_match = re.match(r'GPU(\d+):', stripped)
+            if gpu_match:
+                current_gpu_info = {'id': gpu_match.group(1)}
+            else:
+                current_gpu_info = {'id': 'Unknown'}
+            in_gpu_section = True
+        elif in_gpu_section and '=' in line:
+            # Parse key=value pairs
+            parts = line.split('=', 1)
+            if len(parts) == 2:
+                key = parts[0].strip()
+                value = parts[1].strip().strip('"')
+
+                if key == 'deviceName':
+                    current_gpu_info['deviceName'] = value
+
+    # Don't forget the last GPU
+    if current_gpu_info:
+        device_name = current_gpu_info.get('deviceName', 'Unknown')
+        if device_name and device_name not in gpu_list:
+            # Filter out llvmpipe software renderer
+            if 'llvmpipe' not in device_name.lower():
+                gpu_list.append(device_name)
+
+    return gpu_list
+
 def get_portproton_env(exe_path: str | None) -> dict[str, str]:
     """
     Get environment variables as they would be exported by PortProton.
@@ -605,21 +687,15 @@ def get_graphics_info_detailed() -> str:
 
     lines.append("-----")
 
-    # Vulkan info
+    # Vulkan info - use cached output
     try:
-        result = subprocess.run(
-            ["vulkaninfo", "--summary"],
-            capture_output=True,
-            text=True,
-            timeout=10,
-            check=False
-        )
-        if result.returncode == 0:
+        vulkan_output = get_cached_vulkaninfo()
+        if vulkan_output:
             lines.append("Vulkan:")
             in_gpu_section = False
             current_gpu_info = {}
 
-            for line in result.stdout.split("\n"):
+            for line in vulkan_output.split("\n"):
                 stripped = line.strip()
 
                 if stripped.startswith("GPU"):
@@ -666,7 +742,8 @@ def get_graphics_info_detailed() -> str:
                 driver_version = current_gpu_info.get('driverVersion', 'Unknown')
 
                 lines.append(f"GPU {gpu_id}: {device_name} driverName: {driver_name} apiVersion: {api_version} driverVersion: {driver_version}")
-
+        else:
+            lines.append("vulkaninfo not found")
     except FileNotFoundError:
         lines.append("vulkaninfo not found")
 

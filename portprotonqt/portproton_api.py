@@ -9,6 +9,7 @@ import hashlib
 import queue
 import shutil
 import shlex
+import locale
 from collections.abc import Callable
 from PySide6.QtCore import QThread, Signal, QUrl
 from PySide6.QtGui import QDesktopServices
@@ -443,7 +444,6 @@ class PortProtonAPI:
             portproton_location: str | None
 
             def run(self):
-                import time
                 # Check cache in this background thread, not in main thread
                 start_time = time.time()
                 cached_games = self.api._load_autoinstall_cache()
@@ -510,7 +510,6 @@ class PortProtonAPI:
                     description = ""
                     # Look for metadata in the expected location
                     try:
-                        import locale
                         current_locale = locale.getlocale()[0] or 'en'
                     except (AttributeError, IndexError, TypeError):
                         current_locale = 'en'
@@ -706,3 +705,124 @@ class PortProtonAPI:
         else:
             logger.info("No GUI application instance available for FileExplorer")
             return None
+
+
+
+
+def get_user_conf_setting(variable_name):
+    """
+    Gets the value of a specific variable from user.conf.
+
+    Args:
+        variable_name: Name of the variable to get
+
+    Returns:
+        Value of the variable or None if not set
+    """
+
+    portproton_location = get_portproton_location()
+    if not portproton_location:
+        logger.error("Could not determine PortProton location")
+        return None
+
+    user_conf_path = os.path.join(portproton_location, "data", "user.conf")
+
+    if not os.path.exists(user_conf_path):
+        return None
+
+    # Read current content
+    with open(user_conf_path, encoding='utf-8') as f:
+        lines = f.readlines()
+
+    # Look for the variable
+    for line in lines:
+        if line.strip().startswith(f"export {variable_name}=") and not line.strip().startswith(f"#export {variable_name}="):
+            # Extract value from the line
+            match = re.match(rf'^export {re.escape(variable_name)}=(.*)$', line.strip())
+            if match:
+                value = match.group(1).strip().strip('"\'')
+                return value
+
+    return None
+
+
+def set_user_conf_setting(variable_name, value):
+    """
+    Sets the value of a specific variable in user.conf.
+
+    Args:
+        variable_name: Name of the variable to set
+        value: Value to set, or None to remove the variable
+    """
+
+    portproton_location = get_portproton_location()
+    if not portproton_location:
+        logger.error("Could not determine PortProton location")
+        return False
+
+    user_conf_path = os.path.join(portproton_location, "data", "user.conf")
+
+    # Create the file if it doesn't exist
+    if not os.path.exists(user_conf_path):
+        os.makedirs(os.path.dirname(user_conf_path), exist_ok=True)
+        with open(user_conf_path, 'w', encoding='utf-8') as f:
+            f.write("")
+
+    # Read current content
+    with open(user_conf_path, encoding='utf-8') as f:
+        lines = f.readlines()
+
+    # Process modifications for the specific variable
+    new_lines = []
+    var_found = False
+    for line in lines:
+        # Check if line contains the variable assignment (uncommented)
+        if line.strip().startswith(f"export {variable_name}=") and not line.strip().startswith(f"#export {variable_name}="):
+            var_found = True
+            if value is None or not value:
+                # Skip this line (effectively removing it)
+                continue
+            else:
+                # Handle enabled/disabled states
+                processed_value = value
+                if isinstance(value, str):
+                    # Map variations to standard values
+                    if value.lower() in ['disabled', 'disable']:
+                        processed_value = 'disabled'
+                    elif value.lower() in ['enabled', 'enable']:
+                        processed_value = 'enabled'
+
+                # Extract current value from the line
+                current_value_match = re.match(rf'^export {re.escape(variable_name)}=(.*)$', line.strip())
+                if current_value_match:
+                    current_value = current_value_match.group(1).strip().strip('"\'')
+
+                    # Update the line if value changed
+                    if processed_value != current_value:
+                        new_lines.append(f'export {variable_name}="{processed_value}"\n')
+                    else:
+                        new_lines.append(line)
+                else:
+                    new_lines.append(f'export {variable_name}="{processed_value}"\n')
+        else:
+            # Keep lines that don't match the variable we're modifying
+            new_lines.append(line)
+
+    # If variable doesn't exist and we're setting a value, add it
+    if not var_found and value is not None and value != "":
+        # Handle enabled/disabled states
+        processed_value = value
+        if isinstance(value, str):
+            # Map variations to standard values
+            if value.lower() in ['disabled', 'disable']:
+                processed_value = 'disabled'
+            elif value.lower() in ['enabled', 'enable']:
+                processed_value = 'enabled'
+
+        new_lines.append(f'export {variable_name}="{processed_value}"\n')
+
+    # Write back to file
+    with open(user_conf_path, 'w', encoding='utf-8') as f:
+        f.writelines(new_lines)
+
+    return True
