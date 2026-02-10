@@ -6,6 +6,7 @@ import signal
 from datetime import datetime
 import psutil
 import threading
+import time
 import queue
 import ctypes
 from ctypes import c_char_p, c_int, c_void_p
@@ -57,7 +58,7 @@ def get_xorg_version() -> str:
 
 def get_cached_vulkaninfo():
     """Get cached vulkaninfo output, running it only once."""
-    import subprocess
+
     global _vulkaninfo_output
 
     if _vulkaninfo_output is None:
@@ -83,7 +84,6 @@ def get_cached_vulkaninfo():
 
 def get_gpu_list() -> list[str]:
     """Get list of available GPUs using cached vulkaninfo output."""
-    import re
 
     gpu_list = []
     vulkan_output = get_cached_vulkaninfo()
@@ -1322,7 +1322,6 @@ class DebugLogManager:
                 # We'll collect any remaining output from the queue
                 try:
                     # Give the process a moment to terminate gracefully
-                    import time
                     time.sleep(0.1)
 
                     # Kill forcefully if still running

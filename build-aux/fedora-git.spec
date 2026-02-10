@@ -49,7 +49,6 @@ Requires:       unzip
 Requires:       curl
 Requires:       unrar
 Requires:       glx-utils
-Requires:       xdpyinfo
 Requires:       xrandr
 Requires:       pciutils
 Requires:       vulkan-tools
