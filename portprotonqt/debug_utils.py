@@ -7,6 +7,8 @@ from datetime import datetime
 import psutil
 import threading
 import queue
+import ctypes
+from ctypes import c_char_p, c_int, c_void_p
 
 from portprotonqt.config_utils import get_portproton_location
 from portprotonqt.localization import _
@@ -15,6 +17,40 @@ from portprotonqt import app
 import orjson
 
 logger = get_logger(__name__)
+
+def decode_xorg_release(rel: int) -> str:
+    # Xorg packs version as a*10^7 + b*10^5 + c*10^3 + d
+    a = rel // 10_000_000
+    b = (rel // 100_000) % 100
+    c = (rel // 1_000) % 100
+    d = rel % 1_000
+    return f"{a}.{b}.{c}.{d}"
+
+def get_xorg_version() -> str:
+    lib = ctypes.cdll.LoadLibrary("libX11.so.6")
+
+    lib.XOpenDisplay.argtypes = [c_char_p]
+    lib.XOpenDisplay.restype = c_void_p
+
+    lib.XCloseDisplay.argtypes = [c_void_p]
+    lib.XCloseDisplay.restype = c_int
+
+    lib.XServerVendor.argtypes = [c_void_p]
+    lib.XServerVendor.restype = c_char_p
+
+    lib.XVendorRelease.argtypes = [c_void_p]
+    lib.XVendorRelease.restype = c_int
+
+    display_name = os.environ.get("DISPLAY")
+    dpy = lib.XOpenDisplay(display_name.encode() if display_name else None)
+    if not dpy:
+        raise SystemExit("Не удалось открыть X Display. Проверь DISPLAY.")
+
+    try:
+        release = lib.XVendorRelease(dpy)
+        return decode_xorg_release(release)
+    finally:
+        lib.XCloseDisplay(dpy)
 
 def _decode_str(value):
     import vulkan as vk
@@ -737,20 +773,9 @@ def get_graphics_info_detailed() -> str:
 
             # X.Org version
             try:
-                result = subprocess.run(
-                    ["xdpyinfo"],
-                    capture_output=True,
-                    text=True,
-                    timeout=5,
-                    check=False
-                )
-                if result.returncode == 0:
-                    for line in result.stdout.split("\n"):
-                        if "X.Org version" in line:
-                            version_part = line.split('X.Org version:')[1].strip().lstrip(':').strip()
-                            display_info += f" X.Org version: {version_part}"
-                            break
-            except FileNotFoundError:
+                xorg_version = get_xorg_version()
+                display_info += f" X.Org version: {xorg_version}"
+            except SystemExit:
                 pass
 
             # Add driver info to display line if available
