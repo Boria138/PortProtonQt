@@ -79,7 +79,8 @@ install_data(
 
 # Install udev rules
 udev = dependency('udev', required: false)
-udevdir = udev.found() ? udev.get_variable(pkgconfig: 'udevdir') / 'rules.d' : prefix / get_option('libdir') / 'udev/rules.d'
+udev_rulesdir_opt = get_option('udev_rulesdir')
+udevdir = udev_rulesdir_opt != '' ? udev_rulesdir_opt : (udev.found() ? udev.get_variable(pkgconfig: 'udevdir') / 'rules.d' : '')
 
 install_data(
   'build-aux/lib/udev/rules.d/60-portprotonqt.rules',

@@ -1,3 +1,4 @@
 # Meson options for PortProtonQt
 
 option('python_purelibdir', type: 'string', value: '', description: 'Python pure library installation directory (overrides purelib)')
+option('udev_rulesdir', type: 'string', value: '', description: 'Udev rules installation directory (overrides default)')

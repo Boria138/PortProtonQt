@@ -20,7 +20,6 @@ BuildRequires:  ninja-build
 BuildRequires:  python3-devel
 BuildRequires:  git
 BuildRequires:  systemd-rpm-macros
-BuildRequires:  systemd-devel
 
 Obsoletes:      python3-%{pypi_name}-git < %{version}-%{release}
 Provides:       python3-%{pypi_name}-git = %{version}-%{release}
@@ -70,7 +69,8 @@ git clone https://git.linux-gaming.ru/Boria138/PortProtonQt.git
 %build
 cd %{oname}
 %meson \
-    -Dpython_purelibdir=%{python3_sitelib}
+    -Dpython_purelibdir=%{python3_sitelib} \
+    -Dudev_rulesdir=%{_udevrulesdir}
 %meson_build
 
 %install
