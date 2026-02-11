@@ -1,6 +1,6 @@
 # Install Python source files
-python3.install_sources(
-  '__init__.py',
+install_data(
+  ['__init__.py',
   'animations.py',
   'app.py',
   'cli.py',
@@ -33,14 +33,14 @@ python3.install_sources(
   'time_utils.py',
   'tray_manager.py',
   'version_utils.py',
-  'virtual_keyboard.py',
-  subdir: meson.project_name(),
+  'virtual_keyboard.py'],
+  install_dir: pythondir / meson.project_name(),
 )
 
 # Install themes
 install_subdir(
   'themes',
-  install_dir: pkgdatadir,
+  install_dir: pythondir / meson.project_name(),
   exclude_directories: ['__pycache__'],
   exclude_files: ['*.pyc'],
 )

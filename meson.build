@@ -16,7 +16,10 @@ conf.set('PYTHON', python3.full_path())
 prefix = get_option('prefix')
 datadir = prefix / get_option('datadir')
 bindir = prefix / get_option('bindir')
-pythondir = join_paths(prefix, python3.get_path('purelib'))
+
+# Use custom purelibdir if specified, otherwise use default
+purelibdir_opt = get_option('python_purelibdir')
+pythondir = purelibdir_opt != '' ? purelibdir_opt : join_paths(prefix, python3.get_path('purelib'))
 pkgdatadir = pythondir / meson.project_name()
 
 # C compiler for vk_gpu_info
@@ -77,11 +80,6 @@ install_data(
 # Install udev rules
 udev = dependency('udev', required: false)
 udevdir = udev.found() ? udev.get_variable(pkgconfig: 'udevdir') / 'rules.d' : prefix / get_option('libdir') / 'udev/rules.d'
-
-install_data(
-  'build-aux/lib/udev/rules.d/60-portprotonqt.rules',
-  install_dir: udevdir,
-)
 
 install_data(
   'build-aux/lib/udev/rules.d/60-portprotonqt.rules',

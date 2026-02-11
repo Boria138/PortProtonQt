@@ -1,0 +1,3 @@
+# Meson options for PortProtonQt
+
+option('python_purelibdir', type: 'string', value: '', description: 'Python pure library installation directory (overrides purelib)')

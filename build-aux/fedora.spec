@@ -68,7 +68,8 @@ git checkout v%{pypi_version}
 
 %build
 cd %{oname}
-%meson
+%meson \
+    -Dpython_purelibdir=%{python3_sitelib}
 %meson_build
 
 %install

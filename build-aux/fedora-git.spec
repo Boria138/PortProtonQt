@@ -69,7 +69,8 @@ git clone https://git.linux-gaming.ru/Boria138/PortProtonQt.git
 
 %build
 cd %{oname}
-%meson
+%meson \
+    -Dpython_purelibdir=%{python3_sitelib}
 %meson_build
 
 %install
