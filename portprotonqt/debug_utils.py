@@ -15,7 +15,10 @@ from portprotonqt.config_utils import get_portproton_location
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
 from portprotonqt import app
-import orjson
+
+from PySide6.QtWidgets import QApplication
+from PySide6.QtCore import QRect
+from PySide6.QtGui import QGuiApplication
 
 logger = get_logger(__name__)
 
@@ -886,63 +889,41 @@ def get_user_overrides(portproton_path: str) -> str:
 
 
 def get_screen_info(portproton_path: str, exe_path: str | None = None) -> tuple[str, str]:
-    """Get screen resolution and primary info using xrandr or hyprctl."""
+    """Get screen resolution and primary info using PySide6."""
     resolution = ""
     primary = ""
 
-    try:
-        # Try to get resolution from xrandr
-        result = subprocess.run(['xrandr', '--current'], capture_output=True, text=True)
+    # Get the existing QApplication instance (should already exist in the app)
+    app = QApplication.instance()
 
-        if result.returncode == 0:
-            xrandr_output = result.stdout
+    # If no QApplication exists, this is an error condition in a Qt app
+    if app is None:
+        return "PW_SCREEN_RESOLUTION=1920x1080", "PW_SCREEN_PRIMARY=unknown"
 
-            # Extract resolution and primary screen from xrandr output
-            for line in xrandr_output.splitlines():
-                if 'primary' in line:
-                    # Extract resolution pattern like "1920x1080"
-                    res_match = re.search(r'^.*primary.* ([0-9]+x[0-9]+).*$', line)
-                    if res_match:
-                        resolution = res_match.group(1)
+    # Type guard: ensure we have QGuiApplication (which has screens/primaryScreen)
+    if not isinstance(app, QGuiApplication):
+        return "PW_SCREEN_RESOLUTION=1920x1080", "PW_SCREEN_PRIMARY=unknown"
 
-                    # Extract primary screen name
-                    parts = line.split()
-                    if len(parts) > 0:
-                        primary = parts[0]
-                    break  # Only get the first primary display
-    except (subprocess.SubprocessError, FileNotFoundError):
-        pass  # If xrandr fails, continue to try hyprctl
+    # Get all available screens
+    screens = app.screens()
+    primary_screen = app.primaryScreen()
 
-    # If resolution wasn't found from xrandr, try hyprctl
-    if not resolution or 'x' not in resolution:
-        try:
-            # Check if hyprctl is available
-            if subprocess.run(['which', 'hyprctl'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
-                result = subprocess.run(['hyprctl', 'monitors', '-j'], capture_output=True, text=True)
+    # Process each screen to find the primary one and its resolution
+    for screen in screens:
+        geometry: QRect = screen.geometry()
+        is_primary = screen == primary_screen
 
-                if result.returncode == 0:
-                    try:
-                        # Parse with orjson
-                        monitors_data = orjson.loads(result.stdout)
+        if is_primary:
+            resolution = f"{geometry.width()}x{geometry.height()}"
+            primary = screen.name()
+            break  # We only need the primary screen info
 
-                        # Find the focused monitor
-                        for monitor in monitors_data:
-                            if monitor.get('focused', False):
-                                width = monitor.get('width')
-                                height = monitor.get('height')
-                                name = monitor.get('name')
-
-                                if width and height:
-                                    resolution = f"{width}x{height}"
-
-                                if name:
-                                    primary = name
-
-                                break
-                    except (orjson.JSONDecodeError, ValueError):
-                        pass
-        except (subprocess.SubprocessError, FileNotFoundError):
-            pass
+    # If no primary screen was found, use the first screen as fallback
+    if not resolution and screens:
+        first_screen = screens[0]
+        geometry = first_screen.geometry()
+        resolution = f"{geometry.width()}x{geometry.height()}"
+        primary = first_screen.name()
 
     # Default to 1920x1080 if no resolution found
     if not resolution or 'x' not in resolution:

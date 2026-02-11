@@ -15,8 +15,9 @@ from portprotonqt.config_utils import (
 )
 from portprotonqt.logger import get_logger, setup_logger
 from portprotonqt.cli import parse_args, is_portproton_url, parse_portproton_url
-from portprotonqt.portproton_api import PortProtonAPI
+from portprotonqt.portproton_api import PortProtonAPI, set_user_conf_setting
 from portprotonqt.downloader import Downloader
+from portprotonqt.debug_utils import get_screen_info
 
 __app_id__ = "ru.linux_gaming.PortProtonQt"
 __app_name__ = "PortProtonQt"
@@ -193,6 +194,24 @@ def main():
         nonlocal start_sh
         if start_sh:
             try:
+                # Get screen information before running the initial command
+                # Hack: avoid script from dependency on xorg-xrandr
+                from portprotonqt.config_utils import get_portproton_location
+                portproton_path = get_portproton_location()
+
+                if portproton_path:
+                    screen_resolution, screen_primary = get_screen_info(portproton_path)
+
+                    # Store screen information in user.conf
+                    if screen_resolution and '=' in screen_resolution:
+                        var_name, var_value = screen_resolution.split('=', 1)
+                        set_user_conf_setting(var_name, var_value)
+
+                    if screen_primary and '=' in screen_primary:
+                        var_name, var_value = screen_primary.split('=', 1)
+                        set_user_conf_setting(var_name, var_value)
+
+                # Run the initial PortProton command
                 subprocess.run(start_sh + ["cli", "--initial"], timeout=10)
             except subprocess.TimeoutExpired:
                 logger.warning("Initial PortProton command timed out")

@@ -50,7 +50,6 @@ Requires:       unzip
 Requires:       curl
 Requires:       unrar
 Requires:       glx-utils
-Requires:       xrandr
 Requires:       pciutils
 
 %ifarch aarch64
