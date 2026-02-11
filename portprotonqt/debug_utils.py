@@ -19,8 +19,8 @@ import orjson
 
 logger = get_logger(__name__)
 
-# Global variable to cache vulkaninfo output
-_vulkaninfo_output: str | None = None
+# Global variable to cache vk_gpu_info output
+_vk_gpu_info_output: str | None = None
 
 def decode_xorg_release(rel: int) -> str:
     # Xorg packs version as a*10^7 + b*10^5 + c*10^3 + d
@@ -56,81 +56,115 @@ def get_xorg_version() -> str:
     finally:
         lib.XCloseDisplay(dpy)
 
-def get_cached_vulkaninfo():
-    """Get cached vulkaninfo output, running it only once."""
+def get_cached_vk_gpu_info():
+    """Get cached vk_gpu_info output, running it only once."""
 
-    global _vulkaninfo_output
+    import os
+    global _vk_gpu_info_output
 
-    if _vulkaninfo_output is None:
+    if _vk_gpu_info_output is None:
         try:
-            result = subprocess.run(
-                ["vulkaninfo", "--summary"],
-                capture_output=True,
-                text=True,
-                timeout=10,
-                check=False
-            )
-            if result.returncode == 0:
-                _vulkaninfo_output = result.stdout
-            else:
-                _vulkaninfo_output = ""
-        except FileNotFoundError:
-            _vulkaninfo_output = ""
-        except Exception as e:
-            logger.error(f"Error running vulkaninfo: {e}")
-            _vulkaninfo_output = ""
+            # First try to run from dev-scripts directory if available
+            dev_scripts_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "dev-scripts", "vk_gpu_info")
 
-    return _vulkaninfo_output
+            # Check if the script exists in dev-scripts
+            if os.path.exists(dev_scripts_path):
+                result = subprocess.run(
+                    [dev_scripts_path],
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                    check=False
+                )
+            else:
+                # Fallback to system PATH
+                result = subprocess.run(
+                    ["vk_gpu_info"],
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                    check=False
+                )
+
+            if result.returncode == 0:
+                _vk_gpu_info_output = result.stdout
+            else:
+                _vk_gpu_info_output = ""
+        except FileNotFoundError:
+            _vk_gpu_info_output = ""
+        except Exception as e:
+            logger.error(f"Error running vk_gpu_info: {e}")
+            _vk_gpu_info_output = ""
+
+    return _vk_gpu_info_output
 
 def get_gpu_list() -> list[str]:
-    """Get list of available GPUs using cached vulkaninfo output."""
+    """Get list of available GPUs using cached vk_gpu_info output, with discrete GPUs first and CPU/VIRTUAL_GPU hidden."""
 
     gpu_list = []
-    vulkan_output = get_cached_vulkaninfo()
+    discrete_gpus = []
+    integrated_gpus = []
+    other_gpus = []
 
-    if not vulkan_output:
+    vk_gpu_info_output = get_cached_vk_gpu_info()
+
+    if not vk_gpu_info_output:
         return gpu_list
 
-    in_gpu_section = False
-    current_gpu_info = {}
+    # Parse vk_gpu_info output
+    lines = vk_gpu_info_output.split("\n")
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
 
-    for line in vulkan_output.split("\n"):
-        stripped = line.strip()
+        if line.startswith("GPU #"):
+            # Parse GPU information
+            gpu_info = {}
 
-        if stripped.startswith("GPU"):
-            # Save previous GPU info if exists
-            if current_gpu_info:
-                device_name = current_gpu_info.get('deviceName', 'Unknown')
-                if device_name and device_name not in gpu_list:
-                    # Filter out llvmpipe software renderer
-                    if 'llvmpipe' not in device_name.lower():
-                        gpu_list.append(device_name)
+            # Extract GPU number
+            gpu_num_match = re.search(r'GPU #(\d+)', line)
+            if gpu_num_match:
+                gpu_info['id'] = gpu_num_match.group(1)
 
-            # Start new GPU info
-            # Extract GPU ID from line like "GPU0:"
-            gpu_match = re.match(r'GPU(\d+):', stripped)
-            if gpu_match:
-                current_gpu_info = {'id': gpu_match.group(1)}
+            # Parse the following lines for GPU properties
+            i += 1
+            while i < len(lines) and lines[i].strip() and not lines[i].startswith("GPU #"):
+                prop_line = lines[i].strip()
+
+                if ':' in prop_line:
+                    key_value = prop_line.split(':', 1)
+                    if len(key_value) == 2:
+                        key = key_value[0].strip()
+                        value = key_value[1].strip()
+
+                        if key == 'device_name':
+                            gpu_info['deviceName'] = value
+                        elif key == 'device_type':
+                            gpu_info['deviceType'] = value
+
+                i += 1
+
+            # Check if this GPU should be included
+            device_name = gpu_info.get('deviceName', 'Unknown')
+            device_type = gpu_info.get('deviceType', 'Unknown')
+
+            # Skip CPU and VIRTUAL_GPU types
+            if device_type in ['CPU', 'VIRTUAL_GPU']:
+                continue
+
+            # Categorize GPUs based on type for sorting
+            if device_type == 'DISCRETE_GPU':
+                discrete_gpus.append(device_name)
+            elif device_type == 'INTEGRATED_GPU':
+                integrated_gpus.append(device_name)
             else:
-                current_gpu_info = {'id': 'Unknown'}
-            in_gpu_section = True
-        elif in_gpu_section and '=' in line:
-            # Parse key=value pairs
-            parts = line.split('=', 1)
-            if len(parts) == 2:
-                key = parts[0].strip()
-                value = parts[1].strip().strip('"')
+                other_gpus.append(device_name)
 
-                if key == 'deviceName':
-                    current_gpu_info['deviceName'] = value
+        else:
+            i += 1
 
-    # Don't forget the last GPU
-    if current_gpu_info:
-        device_name = current_gpu_info.get('deviceName', 'Unknown')
-        if device_name and device_name not in gpu_list:
-            # Filter out llvmpipe software renderer
-            if 'llvmpipe' not in device_name.lower():
-                gpu_list.append(device_name)
+    # Combine lists in priority order: discrete GPUs first, then integrated, then others
+    gpu_list = discrete_gpus + integrated_gpus + other_gpus
 
     return gpu_list
 
@@ -714,63 +748,74 @@ def get_graphics_info_detailed() -> str:
 
     # Vulkan info - use cached output
     try:
-        vulkan_output = get_cached_vulkaninfo()
-        if vulkan_output:
+        vk_gpu_info_output = get_cached_vk_gpu_info()
+        if vk_gpu_info_output:
             lines.append("Vulkan:")
-            in_gpu_section = False
-            current_gpu_info = {}
 
-            for line in vulkan_output.split("\n"):
-                stripped = line.strip()
+            # Parse vk_gpu_info output
+            lines_vk = vk_gpu_info_output.split("\n")
+            i = 0
+            while i < len(lines_vk):
+                line = lines_vk[i].strip()
 
-                if stripped.startswith("GPU"):
-                    # Save previous GPU info if exists
-                    if current_gpu_info:
-                        # Format the GPU info line
-                        gpu_id = current_gpu_info.get('id', 'Unknown')
-                        device_name = current_gpu_info.get('deviceName', 'Unknown')
-                        driver_name = current_gpu_info.get('driverName', 'Unknown')
-                        api_version = current_gpu_info.get('apiVersion', 'Unknown')
-                        driver_version = current_gpu_info.get('driverVersion', 'Unknown')
+                if line.startswith("GPU #"):
+                    # Parse GPU information
+                    gpu_info = {}
+
+                    # Extract GPU number
+                    gpu_num_match = re.search(r'GPU #(\d+)', line)
+                    if gpu_num_match:
+                        gpu_info['id'] = gpu_num_match.group(1)
+
+                    # Parse the following lines for GPU properties
+                    i += 1
+                    while i < len(lines_vk) and lines_vk[i].strip() and not lines_vk[i].startswith("GPU #"):
+                        prop_line = lines_vk[i].strip()
+
+                        if ':' in prop_line:
+                            key_value = prop_line.split(':', 1)
+                            if len(key_value) == 2:
+                                key = key_value[0].strip()
+                                value = key_value[1].strip()
+
+                                if key == 'device_name':
+                                    gpu_info['deviceName'] = value
+                                elif key == 'driver_name':
+                                    gpu_info['driverName'] = value
+                                elif key == 'driver_info':
+                                    gpu_info['driverInfo'] = value
+                                elif key == 'api_version':
+                                    gpu_info['apiVersion'] = value
+                                elif key == 'driver_version':
+                                    gpu_info['driverVersion'] = value
+                                elif key == 'device_type':
+                                    gpu_info['deviceType'] = value
+
+                        i += 1
+
+                    # Only show GPU if it's not CPU or VIRTUAL_GPU
+                    device_type = gpu_info.get('deviceType', 'Unknown')
+                    if device_type not in ['CPU', 'VIRTUAL_GPU']:
+                        gpu_id = gpu_info.get('id', 'Unknown')
+                        device_name = gpu_info.get('deviceName', 'Unknown')
+                        driver_name = gpu_info.get('driverName', 'Unknown')
+                        api_version = gpu_info.get('apiVersion', 'Unknown')
+
+                        # For NVIDIA GPUs, use driver_info instead of driver_version
+                        if 'NVIDIA' in device_name.upper():
+                            driver_version = gpu_info.get('driverInfo', 'Unknown')
+                        else:
+                            driver_version = gpu_info.get('driverVersion', 'Unknown')
 
                         lines.append(f"GPU {gpu_id}: {device_name} driverName: {driver_name} apiVersion: {api_version} driverVersion: {driver_version}")
 
-                    # Start new GPU info
-                    # Extract GPU ID from line like "GPU0:"
-                    gpu_match = re.match(r'GPU(\d+):', stripped)
-                    if gpu_match:
-                        current_gpu_info = {'id': gpu_match.group(1)}
-                    else:
-                        current_gpu_info = {'id': 'Unknown'}
-                    in_gpu_section = True
-                elif in_gpu_section and '=' in line:
-                    # Parse key=value pairs
-                    parts = line.split('=', 1)
-                    if len(parts) == 2:
-                        key = parts[0].strip()
-                        value = parts[1].strip().strip('"')
-                        if key == 'deviceName':
-                            current_gpu_info['deviceName'] = value
-                        elif key == 'driverName':
-                            current_gpu_info['driverName'] = value
-                        elif key == 'apiVersion':
-                            current_gpu_info['apiVersion'] = value
-                        elif key == 'driverVersion':
-                            current_gpu_info['driverVersion'] = value
-
-            # Don't forget the last GPU
-            if current_gpu_info:
-                gpu_id = current_gpu_info.get('id', 'Unknown')
-                device_name = current_gpu_info.get('deviceName', 'Unknown')
-                driver_name = current_gpu_info.get('driverName', 'Unknown')
-                api_version = current_gpu_info.get('apiVersion', 'Unknown')
-                driver_version = current_gpu_info.get('driverVersion', 'Unknown')
-
-                lines.append(f"GPU {gpu_id}: {device_name} driverName: {driver_name} apiVersion: {api_version} driverVersion: {driver_version}")
+                    # Continue to next iteration since we incremented i inside the loop
+                    continue
+                i += 1
         else:
-            lines.append("vulkaninfo not found")
+            lines.append("vk_gpu_info not found")
     except FileNotFoundError:
-        lines.append("vulkaninfo not found")
+        lines.append("vk_gpu_info not found")
 
     return "\n".join(lines) if lines else "Unable to retrieve graphics info"
 
