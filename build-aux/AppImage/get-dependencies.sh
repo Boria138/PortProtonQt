@@ -40,7 +40,6 @@ while [ $# -gt 0 ]; do
 done
 
 ARCH="$(uname -m)"
-PACKAGE_BUILDER="https://raw.githubusercontent.com/pkgforge-dev/Anylinux-AppImages/refs/heads/main/useful-tools/make-aur-package.sh"
 EXTRA_PACKAGES="https://raw.githubusercontent.com/pkgforge-dev/Anylinux-AppImages/refs/heads/main/useful-tools/get-debloated-pkgs.sh"
 
 if [ "$LOCAL_MODE" = true ]; then
@@ -51,22 +50,45 @@ else
     PPQT_PKGBUILD="https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/build-aux/PKGBUILD"
 fi
 
-echo "Disable locale noextract..."
+echo "Tweak makepkg..."
 echo "---------------------------------------------------------------"
-sed -i -E 's@[[:space:]]*usr/share/locale/\*@@g; s@[[:space:]]+@ @g; s@[[:space:]]+$@@' /etc/pacman.conf
+# Disable creating debug packages
+sed -i 's/OPTIONS=(.*)/OPTIONS=(strip docs !libtool !staticlibs emptydirs zipman purge lto)/g' /etc/makepkg.conf
+# Setup packager name
+sed -i 's/#PACKAGER=".*"/PACKAGER="Linux Gaming Team"/g' /etc/makepkg.conf
+# Use all threads for building
+sed -i 's/#MAKEFLAGS="-j2"/MAKEFLAGS="-j$(nproc) -l$(nproc)"/g' /etc/makepkg.conf
+# makepkg cannot not as root by default
+sed -i -e 's|EUID == 0|EUID == 69|g' /usr/bin/makepkg
+# always disable this nonsense that was recently added to makepkg
+sed -i -e 's/(( ${#arch\[@\]} != $(printf "%s\\n" ${arch\[@\]} | sort -u | wc -l) ))/false/' /usr/share/makepkg/lint_pkgbuild/arch.sh 2>/dev/null || :
 
-echo "Installing dependencies..."
+echo "Tweak pacman..."
 echo "---------------------------------------------------------------"
 pacman-key --init
-pacman -Syy --needed --noconfirm archlinux-keyring
+pacman -S --noconfirm archlinux-keyring
 
-echo "Installing AUR packages..."
-echo "---------------------------------------------------------------"
-wget --retry-connrefused --tries=30 "$PACKAGE_BUILDER" -O ./make-aur-package.sh
-chmod +x ./make-aur-package.sh
+# Chaotic-AUR keys
+pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
+pacman-key --lsign-key 3056513887B78AEB
 
-./make-aur-package.sh --chaotic-aur icoextract
-./make-aur-package.sh --chaotic-aur python-vdf
+pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst'
+pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst'
+
+# Enable the multilib repository
+cat << EOM >> /etc/pacman.conf
+[multilib]
+Include = /etc/pacman.d/mirrorlist
+
+[chaotic-aur]
+Include = /etc/pacman.d/chaotic-mirrorlist
+SigLevel = Never
+EOM
+
+# Disable locale noextract
+sed -i -E 's@[[:space:]]*usr/share/locale/\*@@g; s@[[:space:]]+@ @g; s@[[:space:]]+$@@' /etc/pacman.conf
+
+pacman -Syy
 
 echo "Building PortProtonQt from PKGBUILD..."
 echo "---------------------------------------------------------------"

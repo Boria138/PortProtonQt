@@ -10,14 +10,13 @@ Summary:        Modern GUI for managing and launching games from PortProton, Ste
 
 License:        GPL-3.0
 URL:            https://git.linux-gaming.ru/Boria138/PortProtonQt
-BuildArch:      noarch
+ExclusiveArch:  x86_64 aarch64
 
 BuildRequires:  meson >= 0.61.2
 BuildRequires:  ninja-build
 BuildRequires:  python3-devel
 BuildRequires:  git
 BuildRequires:  systemd-rpm-macros
-BuildRequires:  vulkan-loader-devel
 
 Obsoletes:      python3-%{pypi_name} < %{version}-%{release}
 Provides:       python3-%{pypi_name} = %{version}-%{release}
@@ -48,6 +47,7 @@ Requires:       curl
 Requires:       unrar
 Requires:       glx-utils
 Requires:       pciutils
+Requires:       vulkan-loader
 
 %ifarch aarch64
 Requires:       muvm
@@ -57,6 +57,9 @@ Requires:       muvm
 This application provides a sleek, intuitive graphical interface for managing and launching games from PortProton, Steam, and Epic Games Store. It consolidates your game libraries into a single, user-friendly hub for seamless navigation and organization. Its lightweight structure and cross-platform support deliver a cohesive gaming experience, eliminating the need for multiple launchers. Unique PortProton integration enhances Linux gaming, enabling effortless play of Windows-based titles with minimal setup.
 
 %{?python_disable_dependency_generator}
+
+BuildRequires:  vulkan-loader-devel
+BuildRequires:  gcc
 
 %prep
 git clone https://git.linux-gaming.ru/Boria138/PortProtonQt
@@ -75,12 +78,12 @@ cd %{oname}
 
 %files -f %{oname}/%{pypi_name}.lang
 %{_bindir}/%{pypi_name}
-%{_bindir}/vk_gpu_info
 %{python3_sitelib}/%{pypi_name}/
 %{_datadir}/icons/hicolor/scalable/apps/ru.linux_gaming.PortProtonQt.svg
 %{_metainfodir}/ru.linux_gaming.PortProtonQt.metainfo.xml
 %{_udevrulesdir}/60-portprotonqt.rules
 %{_datadir}/applications/ru.linux_gaming.PortProtonQt.desktop
 %{bash_completions_dir}/portprotonqt
+%{_bindir}/vk_gpu_info
 
 %changelog
