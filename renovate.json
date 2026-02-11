@@ -1,41 +1,41 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:best-practices"
-  ],
+  "extends": ["config:best-practices"],
   "rebaseWhen": "never",
+
   "lockFileMaintenance": {
     "enabled": true
   },
+
   "pre-commit": {
     "enabled": false
   },
+
   "packageRules": [
     {
       "description": "Update renovate only weekly",
-      "matchDepNames": ["ghcr.io/renovatebot/renovate"],
+      "matchPackageNames": ["ghcr.io/renovatebot/renovate"],
       "extends": ["schedule:weekly"]
     },
     {
       "description": "Automerge renovate updates",
-      "matchPackageNames": [
-        "ghcr.io/renovatebot/renovate"
-      ],
-      "matchUpdateTypes": [
-        "minor",
-        "patch",
-        "digest"
-      ],
+      "matchPackageNames": ["ghcr.io/renovatebot/renovate"],
+      "matchUpdateTypes": ["minor", "patch", "digest"],
       "automerge": true
     },
     {
+      "description": "Automerge safe minor/patch updates",
       "matchUpdateTypes": ["minor", "patch"],
       "automerge": true
     },
     {
-      "matchFileNames": [".gitea/workflows/build.yml", ".gitea/workflows/build-vk-gpu-info-debian.yml"],
-      "enabled": false,
-      "description": "Disabled because download-artifact@v4 is not working"
+      "description": "Disable updates for broken workflows",
+      "matchManagers": ["github-actions"],
+      "matchFileNames": [
+        ".gitea/workflows/build.yml",
+        ".gitea/workflows/build-vk-gpu-info-debian.yml"
+      ],
+      "enabled": false
     },
     {
       "matchFileNames": [".python-version"],
@@ -52,14 +52,25 @@
       "groupName": "Python dependencies"
     },
     {
-      "matchPackageNames": ["setuptools", "python"],
-      "enabled": false,
-      "description": "Disabled due to Python 3.10 incompatibility with numpy>=2.3.2 (requires Python>=3.11)"
+      "description": "We use meson",
+      "matchPackageNames": ["setuptools"],
+      "enabled": false
     },
     {
       "matchDatasources": ["github-runners", "python-version"],
       "enabled": false,
       "description": "Prevent Renovate from updating runs-on to unsupported ubuntu-24.04"
     }
-  ]
+  ],
+
+  "hostRules": [
+    {
+      "description": "Make renovate know this is a gitea compatible host",
+      "matchHost": "git.linux-gaming.ru",
+      "hostType": "gitea",
+      "maxRequestsPerSecond": 8
+    }
+  ],
+
+  "prConcurrentLimit": 3
 }
