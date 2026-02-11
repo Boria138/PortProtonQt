@@ -65,7 +65,7 @@ jobs:
         run: |
           dnf install -y git rpmdevtools meson ninja-build python3-devel \
                          systemd-rpm-macros vulkan-loader-devel redhat-rpm-config nodejs npm \
-                         gcc
+                         gcc libudev-devel
 
       - name: Setup rpmbuild environment
         run: |

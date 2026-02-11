@@ -17,6 +17,7 @@ BuildRequires:  ninja-build
 BuildRequires:  python3-devel
 BuildRequires:  git
 BuildRequires:  systemd-rpm-macros
+BuildRequires:  systemd-devel
 
 Obsoletes:      python3-%{pypi_name} < %{version}-%{release}
 Provides:       python3-%{pypi_name} = %{version}-%{release}
@@ -38,7 +39,6 @@ Requires:       python3-beautifulsoup4
 Requires:       python3-rapidfuzz
 Requires:       python3-libarchive-c
 Requires:       perl-Image-ExifTool
-Requires:       xdg-utils
 Requires:       qt6-qtsvg
 Requires:       cabextract
 Requires:       gzip

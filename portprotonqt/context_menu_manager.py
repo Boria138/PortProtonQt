@@ -8,7 +8,7 @@ import orjson
 import psutil
 import signal
 from PySide6.QtWidgets import QMessageBox, QDialog, QMenu, QLineEdit, QApplication
-from PySide6.QtCore import QUrl, QPoint, QObject, Signal, Qt
+from PySide6.QtCore import QUrl, QPoint, QObject, Signal, Qt, QStandardPaths
 from PySide6.QtGui import QDesktopServices, QIcon, QKeySequence
 from portprotonqt.localization import _
 from portprotonqt.config_utils import parse_desktop_entry, read_favorites, save_favorites, read_favorite_folders, save_favorite_folders, get_portproton_start_command
@@ -285,7 +285,7 @@ class ContextMenuManager:
                 open_folder_action.triggered.connect(
                     lambda: self.open_egs_game_folder(game_card.appid)
                 )
-                desktop_dir = subprocess.check_output(['xdg-user-dir', 'DESKTOP']).decode('utf-8').strip()
+                desktop_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DesktopLocation)
                 desktop_path = os.path.join(desktop_dir, f"{game_card.name}.desktop")
                 icon_name = "delete" if os.path.exists(desktop_path) else "desktop"
                 text = _("Remove from Desktop") if os.path.exists(desktop_path) else _("Add to Desktop")
@@ -308,7 +308,7 @@ class ContextMenuManager:
                 )
 
         if game_card.game_source not in ("steam", "epic"):
-            desktop_dir = subprocess.check_output(['xdg-user-dir', 'DESKTOP']).decode('utf-8').strip()
+            desktop_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DesktopLocation)
             desktop_path = os.path.join(desktop_dir, f"{game_card.name}.desktop")
             icon_name = "delete" if os.path.exists(desktop_path) else "desktop"
             text = _("Remove from Desktop") if os.path.exists(desktop_path) else _("Add to Desktop")
@@ -646,7 +646,7 @@ Icon={icon_path}
         if not os.path.exists(desktop_path):
             if not self._create_egs_desktop_file(game_name, app_name):
                 return
-        desktop_dir = subprocess.check_output(['xdg-user-dir', 'DESKTOP']).decode('utf-8').strip()
+        desktop_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DesktopLocation)
         os.makedirs(desktop_dir, exist_ok=True)
         dest_path = os.path.join(desktop_dir, f"{game_name}.desktop")
         try:
@@ -670,7 +670,7 @@ Icon={icon_path}
         Args:
             game_name: The display name of the game.
         """
-        desktop_dir = subprocess.check_output(['xdg-user-dir', 'DESKTOP']).decode('utf-8').strip()
+        desktop_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DesktopLocation)
         desktop_path = os.path.join(desktop_dir, f"{game_name}.desktop")
         self._remove_file(
             desktop_path,
@@ -936,7 +936,7 @@ Icon={icon_path}
             if not generate_thumbnail(exe_path, icon_path, size=128):
                 logger.error("Failed to generate thumbnail for game: %s", exe_path)
 
-        desktop_dir = subprocess.check_output(['xdg-user-dir', 'DESKTOP']).decode('utf-8').strip()
+        desktop_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DesktopLocation)
         os.makedirs(desktop_dir, exist_ok=True)
         dest_path = os.path.join(desktop_dir, f"{game_name}.desktop")
         try:
@@ -960,7 +960,7 @@ Icon={icon_path}
         Args:
             game_name: The display name of the game.
         """
-        desktop_dir = subprocess.check_output(['xdg-user-dir', 'DESKTOP']).decode('utf-8').strip()
+        desktop_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DesktopLocation)
         desktop_path = os.path.join(desktop_dir, f"{game_name}.desktop")
         self._remove_file(
             desktop_path,
