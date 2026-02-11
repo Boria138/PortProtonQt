@@ -20,7 +20,7 @@ jobs:
       fedora:   ${{ steps.check.outputs.fedora }}
       arch:     ${{ steps.check.outputs.arch }}
     steps:
-      - uses: https://gitea.com/actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+      - uses: https://gitea.com/actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 0
 
@@ -74,7 +74,7 @@ jobs:
           pacman -Sy --noconfirm --disable-download-timeout --needed archlinux-keyring
           pacman -Syu --noconfirm --disable-download-timeout --needed git wget gnupg nodejs npm xorg-server-xvfb zsync
 
-      - uses: https://gitea.com/actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+      - uses: https://gitea.com/actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Install appimage dependencies
         run: |
@@ -121,7 +121,7 @@ jobs:
           echo '%_topdir /home/rpmbuild' > /home/rpmbuild/.rpmmacros
 
       - name: Checkout repo
-        uses: https://gitea.com/actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        uses: https://gitea.com/actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Copy fedora-git.spec
         run: |
@@ -173,7 +173,7 @@ jobs:
           chown user -R ..
 
       - name: Checkout
-        uses: https://gitea.com/actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        uses: https://gitea.com/actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Build
         run: |
