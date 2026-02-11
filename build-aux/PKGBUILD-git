@@ -6,9 +6,9 @@ arch=('any')
 url="https://git.linux-gaming.ru/Boria138/PortProtonQt"
 license=('GPL-3.0')
 depends=('python-requests' 'python-babel' 'python-evdev' 'python-pyudev' 'python-orjson'
-    'python-psutil' 'python-tqdm' 'python-vdf' 'python-libarchive-c' 'pyside6' 'python-rapidfuzz' 'icoextract' 'python-pillow' 'perl-image-exiftool' 'xdg-utils' 'python-beautifulsoup4' 'python-websocket-client' 'cabextract' 'unzip' 'curl' 'unrar' 'qt6-svg' 'pciutils' 'mesa-utils' 'vulkan-tools' 'xorg-xrandr')
+    'python-psutil' 'python-tqdm' 'python-vdf' 'python-libarchive-c' 'pyside6' 'python-rapidfuzz' 'icoextract' 'python-pillow' 'perl-image-exiftool' 'xdg-utils' 'python-beautifulsoup4' 'python-websocket-client' 'cabextract' 'unzip' 'curl' 'unrar' 'qt6-svg' 'pciutils' 'mesa-utils' 'vulkan-icd-loader' 'xorg-xrandr')
 depends_aarch64=('muvm')
-makedepends=('meson' 'ninja')
+makedepends=('meson' 'ninja' 'vulkan-headers')
 source=("git+https://git.linux-gaming.ru/Boria138/PortProtonQt.git")
 sha256sums=('SKIP')
 

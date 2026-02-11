@@ -33,7 +33,7 @@
       "automerge": true
     },
     {
-      "matchFileNames": [".gitea/workflows/build.yml"],
+      "matchFileNames": [".gitea/workflows/build.yml", ".gitea/workflows/build-vk-gpu-info-debian.yml"],
       "enabled": false,
       "description": "Disabled because download-artifact@v4 is not working"
     },
@@ -52,7 +52,7 @@
       "groupName": "Python dependencies"
     },
     {
-      "matchPackageNames": ["numpy", "setuptools", "python"],
+      "matchPackageNames": ["setuptools", "python"],
       "enabled": false,
       "description": "Disabled due to Python 3.10 incompatibility with numpy>=2.3.2 (requires Python>=3.11)"
     },

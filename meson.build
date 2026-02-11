@@ -1,8 +1,9 @@
-project('portprotonqt',
+project('portprotonqt', 'c',
   version: '0.1.10',
   meson_version: '>= 0.61.2',
   license: 'GPL-3.0',
 )
+
 
 # Python installation
 python3 = import('python').find_installation('python3')
@@ -18,6 +19,9 @@ bindir = prefix / get_option('bindir')
 pythondir = join_paths(prefix, python3.get_path('purelib'))
 pkgdatadir = pythondir / meson.project_name()
 
+# C compiler for vk_gpu_info
+cc = meson.get_compiler('c')
+
 # Install Python package
 subdir('portprotonqt')
 
@@ -32,6 +36,18 @@ install_data(configured_portprotonqt,
   install_dir: bindir,
   install_mode: 'rwxr-xr-x',
   rename: 'portprotonqt',
+)
+
+# Build and install vk_gpu_info executable
+vk_gpu_info_sources = files('build-aux/vk_gpu_info.c')
+vk_gpu_info_deps = [dependency('vulkan', required: true)]
+
+executable('vk_gpu_info',
+  sources: vk_gpu_info_sources,
+  dependencies: vk_gpu_info_deps,
+  install: true,
+  install_dir: bindir,
+  c_args: ['-std=c99'],
 )
 
 # Install desktop file

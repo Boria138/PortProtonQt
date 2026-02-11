@@ -17,6 +17,7 @@ BuildRequires:  ninja-build
 BuildRequires:  python3-devel
 BuildRequires:  git
 BuildRequires:  systemd-rpm-macros
+BuildRequires:  vulkan-loader-devel
 
 Obsoletes:      python3-%{pypi_name} < %{version}-%{release}
 Provides:       python3-%{pypi_name} = %{version}-%{release}
@@ -48,7 +49,6 @@ Requires:       unrar
 Requires:       glx-utils
 Requires:       xrandr
 Requires:       pciutils
-Requires:       vulkan-tools
 
 %ifarch aarch64
 Requires:       muvm
@@ -76,6 +76,7 @@ cd %{oname}
 
 %files -f %{oname}/%{pypi_name}.lang
 %{_bindir}/%{pypi_name}
+%{_bindir}/vk_gpu_info
 %{python3_sitelib}/%{pypi_name}/
 %{_datadir}/icons/hicolor/scalable/apps/ru.linux_gaming.PortProtonQt.svg
 %{_metainfodir}/ru.linux_gaming.PortProtonQt.metainfo.xml

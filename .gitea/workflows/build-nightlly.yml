@@ -64,7 +64,7 @@ jobs:
       - name: Install build dependencies
         run: |
           dnf install -y git rpmdevtools meson ninja-build python3-devel \
-                         systemd-rpm-macros redhat-rpm-config nodejs npm
+                         systemd-rpm-macros vulkan-loader-devel redhat-rpm-config nodejs npm
 
       - name: Setup rpmbuild environment
         run: |
