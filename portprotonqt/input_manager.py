@@ -218,8 +218,9 @@ class InputManager(QObject):
 
     def _update_emulation_flag(self):
         """Update emulation_active flag based on Qt app focus (main thread only)."""
-        active = QApplication.activeWindow()
-        self.emulation_active = (active is None)  # True for external windows (e.g., winefile)
+        # True when mouse emulation is enabled (works regardless of focus)
+        # The difference is whether other inputs are disabled (based on focus)
+        self.emulation_active = self.mouse_emulation_enabled
         if not self.emulation_active:
             self.emulation_triggered = False
 
@@ -1536,10 +1537,13 @@ class InputManager(QObject):
                 logger.debug("Guide + Select combination detected, refreshing game grid")
                 self._parent.refreshGames()
             else:
-                logger.debug("Guide button pressed alone, opening system overlay")
-                active = QApplication.activeWindow()
-                if not isinstance(active, QDialog):
-                    self._parent.openSystemOverlay()
+                # Only open system overlay if mouse emulation is not active/triggered
+                # This prevents conflicts when mouse emulation is enabled
+                if not (self.mouse_emulation_enabled and self.emulation_triggered):
+                    logger.debug("Guide button pressed alone, opening system overlay")
+                    active = QApplication.activeWindow()
+                    if not isinstance(active, QDialog):
+                        self._parent.openSystemOverlay()
 
         self.guide_held = False
         self.in_guide_combination_attempt = False
@@ -2682,19 +2686,63 @@ class InputManager(QObject):
                             if not self.running:
                                 break
 
-                            # UI signal handling (always, for internal app)
+                            # Handle guide+start combination for toggling mouse emulation (always process this first)
+                            # This needs to be processed even when mouse emulation is active
                             if event.type == ecodes.EV_KEY:
-                                if event.code == ecodes.BTN_START:
-                                    self.start_held = (event.value == 1)
-
                                 if event.code in BUTTONS['guide']:
                                     self.guide_held = (event.value == 1)
 
-                                if event.value == 1:
+                                if event.code == ecodes.BTN_START:
+                                    self.start_held = (event.value == 1)
+
+                                if event.value == 1:  # Button press
                                     if ((event.code in BUTTONS['guide'] and self.start_held) or
                                         (event.code == ecodes.BTN_START and self.guide_held)):
                                         self.emulation_triggered = not self.emulation_triggered
 
+                            # Check if mouse emulation is active to determine if we should process regular events
+                            mouse_emulation_active = self.mouse_emulation_enabled and self.emulation_active and self.emulation_triggered
+
+                            # Mouse emulation (works regardless of focus)
+                            # Only process mouse emulation when enabled and active
+                            if mouse_emulation_active:
+                                if event.type == ecodes.EV_ABS:
+                                    if event.code == ecodes.ABS_HAT0X:
+                                        if event.value == -1:
+                                            self.move_mouse(-10, 0)
+                                        elif event.value == 1:
+                                            self.move_mouse(10, 0)
+                                    elif event.code == ecodes.ABS_HAT0Y:
+                                        if event.value == -1:
+                                            self.move_mouse(0, -10)
+                                        elif event.value == 1:
+                                            self.move_mouse(0, 10)
+                                    elif event.code == ecodes.ABS_X:
+                                        self.stick_x_raw = event.value
+                                    elif event.code == ecodes.ABS_Y:
+                                        if event.code not in (ecodes.ABS_GAS, ecodes.ABS_BRAKE):
+                                            self.stick_y_raw = event.value
+                                    elif event.code == ecodes.ABS_RY:
+                                        self.handle_scroll(event.value)
+                                    elif event.code in (ecodes.ABS_GAS, ecodes.ABS_BRAKE):
+                                        pass  # Триггеры - не обрабатываем
+                                elif event.type == ecodes.EV_KEY:
+                                    if event.code in (ecodes.BTN_SOUTH, ecodes.BTN_A) and event.value == 1:
+                                        self.click_left()
+                                    elif event.code in (ecodes.BTN_EAST, ecodes.BTN_B) and event.value == 1:
+                                        self.click_right()
+
+                            # Determine if we should process regular events based on focus
+                            # When the main window is in focus and mouse emulation is active, skip regular events to avoid conflicts
+                            active_window = QApplication.activeWindow()
+                            should_skip_regular_events = (mouse_emulation_active and active_window is not None)
+
+                            if should_skip_regular_events:
+                                # Skip regular button/dpad events when mouse emulation is active and window is in focus to avoid conflicts
+                                continue
+
+                            # UI signal handling (only when mouse emulation is not active or window is not in focus, to avoid conflicts)
+                            if event.type == ecodes.EV_KEY:
                                 self.button_event.emit(event.code, event.value)
                                 # Special handling for menu on press only
                                 # Only handle menu button if our main window is currently active
@@ -2727,36 +2775,9 @@ class InputManager(QObject):
                                 else:
                                     self.dpad_moved.emit(event.code, event.value, current_time)
 
-                            # Mouse emulation (only for external windows + triggered)
-                            if self.mouse_emulation_enabled and self.emulation_active and self.emulation_triggered:
-                                if event.type == ecodes.EV_ABS:
-                                    if event.code == ecodes.ABS_HAT0X:
-                                        if event.value == -1:
-                                            self.move_mouse(-10, 0)
-                                        elif event.value == 1:
-                                            self.move_mouse(10, 0)
-                                    elif event.code == ecodes.ABS_HAT0Y:
-                                        if event.value == -1:
-                                            self.move_mouse(0, -10)
-                                        elif event.value == 1:
-                                            self.move_mouse(0, 10)
-                                    elif event.code == ecodes.ABS_X:
-                                        self.stick_x_raw = event.value
-                                    elif event.code == ecodes.ABS_Y:
-                                        if event.code not in (ecodes.ABS_GAS, ecodes.ABS_BRAKE):
-                                            self.stick_y_raw = event.value
-                                    elif event.code == ecodes.ABS_RY:
-                                        self.handle_scroll(event.value)
-                                    elif event.code in (ecodes.ABS_GAS, ecodes.ABS_BRAKE):
-                                        pass  # Триггеры - не обрабатываем
-                                elif event.type == ecodes.EV_KEY:
-                                    if event.code in (ecodes.BTN_SOUTH, ecodes.BTN_A) and event.value == 1:
-                                        self.click_left()
-                                    elif event.code in (ecodes.BTN_EAST, ecodes.BTN_B) and event.value == 1:
-                                        self.click_right()
-
-                        # Periodic mouse position update
-                        if current_time - self.last_update >= self.update_interval:
+                        # Periodic mouse position update (only when mouse emulation is active)
+                        if (current_time - self.last_update >= self.update_interval and
+                            self.mouse_emulation_enabled and self.emulation_active and self.emulation_triggered):
                             self.update_mouse_position()
                             self.last_update = current_time
 
