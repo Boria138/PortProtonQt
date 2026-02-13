@@ -810,7 +810,7 @@ def get_graphics_info_detailed() -> str:
                         else:
                             driver_version = gpu_info.get('driverVersion', 'Unknown')
 
-                        lines.append(f"GPU {gpu_id}: {device_name} driverName: {driver_name} apiVersion: {api_version} driverVersion: {driver_version}")
+                        lines.append(f"GPU {gpu_id}: {device_name} deviceType: {device_type} driverName: {driver_name} apiVersion: {api_version} driverVersion: {driver_version}")
 
                     # Continue to next iteration since we incremented i inside the loop
                     continue
