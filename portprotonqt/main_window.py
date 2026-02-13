@@ -386,6 +386,7 @@ class MainWindow(QMainWindow):
             ("menu", _("Fullscreen")),
             ("search", _("Search")),
             ("guide_select", _("Refresh Grid")),
+            ("mouse_emulation", _("Mouse Emulation")),
         ]
 
         keyboard_hints = [
@@ -442,7 +443,7 @@ class MainWindow(QMainWindow):
 
             hintsLayout.addWidget(container)
 
-        # Special function to create combination hint for Guide+Select
+        # Special function to create combination hint for Guide+Select or Guide+Start
         def makeCombinationHint(action_text: str, action: str | None = None):
             container = QWidget()
             layout = QHBoxLayout(container)
@@ -494,19 +495,30 @@ class MainWindow(QMainWindow):
 
             layout.addWidget(plus_icon)
 
-            # Second icon (Select button)
+            # Second icon (Select button for guide_select, Start button for mouse_emulation)
             select_icon = QLabel()
             select_icon.setFixedSize(26, 26)
             select_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-            pixmap2 = QPixmap()
-            for candidate in (
-                self.theme_manager.get_theme_image("xbox_view", self.current_theme_name),  # Xbox Select
-                self.theme_manager.get_theme_image("ps_share", self.current_theme_name),  # PS Share
-                self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
-            ):
-                if candidate is not None and pixmap2.load(str(candidate)):
-                    break
+            # Determine which icon to use based on action
+            if action == "mouse_emulation":  # Guide+Start combination for mouse emulation
+                pixmap2 = QPixmap()
+                for candidate in (
+                    self.theme_manager.get_theme_image("xbox_start", self.current_theme_name),  # Xbox Start
+                    self.theme_manager.get_theme_image("ps_options", self.current_theme_name),  # PS Options
+                    self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
+                ):
+                    if candidate is not None and pixmap2.load(str(candidate)):
+                        break
+            else:  # Default to Select for guide_select
+                pixmap2 = QPixmap()
+                for candidate in (
+                    self.theme_manager.get_theme_image("xbox_view", self.current_theme_name),  # Xbox Select
+                    self.theme_manager.get_theme_image("ps_share", self.current_theme_name),  # PS Share
+                    self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
+                ):
+                    if candidate is not None and pixmap2.load(str(candidate)):
+                        break
 
             if not pixmap2.isNull():
                 select_icon.setPixmap(pixmap2.scaled(
@@ -531,8 +543,8 @@ class MainWindow(QMainWindow):
 
         # Create gamepad hints
         for action, text in gamepad_actions:
-            if action == "guide_select":
-                # For the Guide+Select combination, create a special combination hint
+            if action in ("guide_select", "mouse_emulation"):
+                # For the Guide+Select or Guide+Start combination, create a special combination hint
                 makeCombinationHint(text, action)
             else:
                 makeHint("placeholder", text, True, action)  # Initial placeholder
@@ -590,15 +602,15 @@ class MainWindow(QMainWindow):
         gtype = self.input_manager.gamepad_type
         logger.debug("Updating control hints, gamepad connected: %s, type: %s", is_gamepad_connected, gtype.value)
 
-        gamepad_actions = ['confirm', 'back', 'add_game', 'context_menu', 'menu', 'search', 'guide_select']
+        gamepad_actions = ['confirm', 'back', 'add_game', 'context_menu', 'menu', 'search', 'guide_select', 'mouse_emulation']
 
         for container, icon_element, action in self.hintsLabels:
             if action in gamepad_actions:  # Gamepad hint
                 if is_gamepad_connected:
                     container.setVisible(True)
                     # Check if this is a combination hint (array of icons) or single icon hint
-                    if isinstance(icon_element, list) and len(icon_element) == 3 and action == "guide_select":
-                        # This is a combination hint for Guide+Select
+                    if isinstance(icon_element, list) and len(icon_element) == 3 and action in ("guide_select", "mouse_emulation"):
+                        # This is a combination hint for Guide+Select or Guide+Start (mouse emulation)
                         guide_icon, plus_icon, select_icon = icon_element
 
                         # Determine guide icon based on gamepad type
@@ -641,15 +653,22 @@ class MainWindow(QMainWindow):
                                 Qt.TransformationMode.SmoothTransformation
                             ))
 
-                        # Determine select icon based on gamepad type
-                        if gtype == GamepadType.XBOX:
-                            select_icon_name = "xbox_view"  # Xbox Select button
-                        elif gtype == GamepadType.PLAYSTATION:
-                            select_icon_name = "ps_share"  # PS Share button
-                        else:
-                            select_icon_name = "xbox_view"  # Default to Xbox Select
+                        # Determine second icon based on gamepad type and action
+                        select_icon_name = "xbox_view"  # Default to Xbox Select
+                        if action == "guide_select":  # Guide+Select combination
+                            if gtype == GamepadType.XBOX:
+                                select_icon_name = "xbox_view"  # Xbox Select button
+                            elif gtype == GamepadType.PLAYSTATION:
+                                select_icon_name = "ps_share"  # PS Share button
+                        elif action == "mouse_emulation":  # Guide+Start combination
+                            if gtype == GamepadType.XBOX:
+                                select_icon_name = "xbox_start"  # Xbox Start button
+                            elif gtype == GamepadType.PLAYSTATION:
+                                select_icon_name = "ps_options"  # PS Options button
+                            else:
+                                select_icon_name = "xbox_start"  # Default to Xbox Start
 
-                        # Load Select icon
+                        # Load second icon
                         select_pixmap = QPixmap()
                         for candidate in (
                             self.theme_manager.get_theme_image(select_icon_name, self.current_theme_name),
