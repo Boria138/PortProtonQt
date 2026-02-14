@@ -6,6 +6,9 @@ dist/
 wheels/
 *.egg-info
 
+# Meson
+builddir/
+
 # Virtual environments
 .venv
 venv
