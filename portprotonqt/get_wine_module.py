@@ -1374,6 +1374,9 @@ class ProtonManager(QDialog):
             self.clear_btn.setEnabled(True)
             self.is_downloading = False
 
+            # Clear the selected assets list after successful download
+            self.selected_assets.clear()
+
             # Run the initial command after all assets have been processed
             import subprocess
             try:
@@ -1394,6 +1397,9 @@ class ProtonManager(QDialog):
                 logger.error(f"Error running initial PortProton command: {e}")
 
             QMessageBox.information(self, _("Downloading Complete"), _("All selected archives have been downloaded!"))
+
+            # Update the selection display to reflect cleared selections
+            self.update_selection_display()
             return
 
         asset_data = self.assets_to_download[self.current_download_index]
