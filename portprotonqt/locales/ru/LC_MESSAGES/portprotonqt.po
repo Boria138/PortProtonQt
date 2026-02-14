@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-02-08 15:20+0500\n"
-"PO-Revision-Date: 2026-02-08 15:20+0500\n"
+"POT-Creation-Date: 2026-02-14 20:52+0500\n"
+"PO-Revision-Date: 2026-02-14 20:52+0500\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
@@ -699,6 +699,9 @@ msgstr "Полный экран"
 msgid "Refresh Grid"
 msgstr "Обновить"
 
+msgid "Mouse Emulation"
+msgstr "Эмуляция мыши"
+
 msgid "Installation already in progress."
 msgstr "Установка уже выполняется."
 
@@ -922,6 +925,9 @@ msgstr "Тактильная отдача на геймпаде"
 
 msgid "Gamepad haptic feedback:"
 msgstr "Тактильная отдача на геймпаде:"
+
+msgid "GPU to use:"
+msgstr "Подходящий GPU:"
 
 msgid "Save Settings"
 msgstr "Сохранить настройки"
@@ -1313,16 +1319,6 @@ msgstr ""
 "mailbox — Трёхбуферная. Неограниченная частота кадров + без разрывов.\n"
 "relaxed — То же, что fifo, но позволяет разрывы при частоте ниже частоты "
 "обновления монитора."
-
-msgid "AMD Vulkan Driver"
-msgstr "Драйвер Vulkan AMD"
-
-msgid ""
-"Select needed AMD vulkan implementation. Choosing which implementation of"
-" vulkan will be used to run the game"
-msgstr ""
-"Выберите нужную реализацию Vulkan AMD. Выбор, какая реализация Vulkan "
-"будет использоваться для запуска игры"
 
 msgid "NUMA Node"
 msgstr "Узел NUMA"

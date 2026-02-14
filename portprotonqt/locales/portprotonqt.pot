@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-02-08 15:20+0500\n"
+"POT-Creation-Date: 2026-02-14 20:52+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -683,6 +683,9 @@ msgstr ""
 msgid "Refresh Grid"
 msgstr ""
 
+msgid "Mouse Emulation"
+msgstr ""
+
 msgid "Installation already in progress."
 msgstr ""
 
@@ -905,6 +908,9 @@ msgid "Gamepad haptic feedback"
 msgstr ""
 
 msgid "Gamepad haptic feedback:"
+msgstr ""
+
+msgid "GPU to use:"
 msgstr ""
 
 msgid "Save Settings"
@@ -1233,14 +1239,6 @@ msgid ""
 "mailbox - Triple buffering. Unlimited frame rate + no tearing.\n"
 "relaxed - Same as fifo but allows tearing when below the monitors refresh"
 " rate."
-msgstr ""
-
-msgid "AMD Vulkan Driver"
-msgstr ""
-
-msgid ""
-"Select needed AMD vulkan implementation. Choosing which implementation of"
-" vulkan will be used to run the game"
 msgstr ""
 
 msgid "NUMA Node"
