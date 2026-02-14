@@ -35,29 +35,29 @@
   <url type="bugtracker">https://git.linux-gaming.ru/Boria138/PortProtonQt/issues</url>
   <screenshots>
     <screenshot type="default">
-      <image>https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/%D0%91%D0%B8%D0%B1%D0%BB%D0%B8%D0%BE%D1%82%D0%B5%D0%BA%D0%B0.png</image>
+      <image>https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/library.jpg</image>
       <caption>Library</caption>
       <caption xml:lang="ru">Библиотека</caption>
     </screenshot>
     <screenshot>
-      <image>https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/%D0%9A%D0%B0%D1%80%D1%82%D0%BE%D1%87%D0%BA%D0%B0.png</image>
+      <image>https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/game_card.jpg</image>
       <caption>Card detail page</caption>
       <caption xml:lang="ru">Детали игры</caption>
     </screenshot>
     <screenshot>
-      <image>https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/%D0%9D%D0%B0%D1%81%D1%82%D1%80%D0%BE%D0%B9%D0%BA%D0%B8.png</image>
+      <image>https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/portproton_settings.jpg</image>
       <caption>Settings</caption>
       <caption xml:lang="ru">Настройки</caption>
     </screenshot>
     <screenshot>
-      <image>https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/%D0%9A%D0%BE%D0%BD%D1%82%D0%B5%D0%BA%D1%81%D1%82%D0%BD%D0%BE%D0%B5%20%D0%BC%D0%B5%D0%BD%D1%8E.png</image>
+      <image>https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/context_menu.jpg</image>
       <caption>Context Menu</caption>
       <caption xml:lang="ru">Контекстное меню</caption>
     </screenshot>
     <screenshot>
-      <image>https://git.linux-gaming.ru/Boria138/PortProtonQt/src/branch/main/portprotonqt/themes/standart/images/screenshots/%D0%9E%D0%B2%D0%B5%D1%80%D0%BB%D0%B5%D0%B9.png</image>
-      <caption>Overlay</caption>
-      <caption xml:lang="ru">Оверлей</caption>
+      <image>https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/wine_settings.jpg</image>
+      <caption>Wine Settings</caption>
+      <caption xml:lang="ru">Настройки Wine</caption>
     </screenshot>
   </screenshots>
   <keywords>
