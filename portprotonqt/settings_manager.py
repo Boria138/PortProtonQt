@@ -45,7 +45,7 @@ def get_toggle_settings():
 
 
 def get_advanced_settings(disabled_text, logical_core_options, locale_options,
-                          amd_vulkan_drivers, is_amd, numa_nodes, dist_options=None, prefix_options=None):
+                          numa_nodes, dist_options=None, prefix_options=None):
     """Get advanced settings configuration."""
     from portprotonqt.localization import _
 
@@ -185,16 +185,6 @@ def get_advanced_settings(disabled_text, logical_core_options, locale_options,
         'default': disabled_text
     })
 
-    # 12. AMD Vulkan driver
-    amd_options = [disabled_text] + amd_vulkan_drivers if is_amd and amd_vulkan_drivers else [disabled_text]
-    advanced_settings.append({
-        'key': 'PW_AMD_VULKAN_USE',
-        'name': _("AMD Vulkan Driver"),
-        'description': _("Select needed AMD vulkan implementation. Choosing which implementation of vulkan will be used to run the game"),
-        'type': 'combo',
-        'options': amd_options,
-        'default': disabled_text
-    })
 
     # 13. NUMA node
     numa_ids = sorted(numa_nodes.keys())
@@ -224,6 +214,5 @@ ADVANCED_SETTING_KEYS = [
     'PW_VKD3D_FEATURE_LEVEL',
     'PW_LOCALE_SELECT',
     'PW_MESA_VK_WSI_PRESENT_MODE',
-    'PW_AMD_VULKAN_USE',
     'PW_CPU_NUMA_NODE_INDEX',
 ]

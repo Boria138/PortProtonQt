@@ -1761,10 +1761,8 @@ class ExeSettingsDialog(QDialog):
         self.available_keys = set()
         self.blocked_keys = set()
         self.numa_nodes = {}
-        self.is_amd = False
         self.locale_options = []
         self.logical_core_options = []
-        self.amd_vulkan_drivers = []
 
         self.setWindowTitle(_("Exe Settings"))
         self.setModal(True)
@@ -1985,10 +1983,8 @@ class ExeSettingsDialog(QDialog):
             output = bytes(process.readAllStandardOutput().data()).decode('utf-8', 'ignore')
             lines = output.splitlines()
             self.numa_nodes = {}
-            self.is_amd = False
             self.logical_core_options = []
             self.locale_options = []
-            self.amd_vulkan_drivers = []
             for line in lines:
                 line_stripped = line.strip()
                 if not line_stripped:
@@ -2008,8 +2004,6 @@ class ExeSettingsDialog(QDialog):
                         self.logical_core_options = v.split('!') if v else []
                     elif k == 'LOCALE_LIST':
                         self.locale_options = v.split('!') if v else []
-                    elif k == 'AMD_VULKAN_DRIVER_LIST':
-                        self.amd_vulkan_drivers = v.split('!') if v else []
                     continue
                 if line_stripped.startswith('PW_'):
                     parts = line_stripped.split(maxsplit=1)
@@ -2138,8 +2132,6 @@ class ExeSettingsDialog(QDialog):
             disabled_text=disabled_text,
             logical_core_options=self.logical_core_options,
             locale_options=self.locale_options,
-            amd_vulkan_drivers=self.amd_vulkan_drivers,
-            is_amd=self.is_amd,
             numa_nodes=self.numa_nodes,
             dist_options=self.dist_options,
             prefix_options=self.prefix_options
@@ -2166,8 +2158,6 @@ class ExeSettingsDialog(QDialog):
                 current_raw = current.get(setting['key'], setting['default'])
                 if setting['key'] == 'PW_WINE_CPU_TOPOLOGY':
                     current_val = disabled_text if current_raw == 'disabled' else (current_raw.split(':')[0] if isinstance(current_raw, str) and ':' in current_raw else current_raw)
-                elif setting['key'] == 'PW_AMD_VULKAN_USE':
-                    current_val = disabled_text if not current_raw or current_raw == '' or current_raw == 'disabled' else current_raw
                 elif setting['key'] == 'PW_WINE_USE':
                     current_val = current_raw
                 else:
