@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-02-14 20:52+0500\n"
-"PO-Revision-Date: 2026-02-14 20:52+0500\n"
+"POT-Creation-Date: 2026-02-15 14:00+0500\n"
+"PO-Revision-Date: 2026-02-15 14:00+0500\n"
 "Last-Translator: \n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
@@ -455,6 +455,9 @@ msgstr "Установка не удалась. Проверьте журнал�
 msgid "Components installed successfully."
 msgstr "Компоненты успешно установлены."
 
+msgid "System WINE"
+msgstr "Системный WINE"
+
 msgid "Exe Settings"
 msgstr "Настройки EXE"
 
@@ -478,6 +481,33 @@ msgstr "Значение"
 
 msgid "Description"
 msgstr "Описание"
+
+msgid "Open PPDB"
+msgstr "Открыть PPDB"
+
+msgid "Executable path is not available."
+msgstr "Путь к исполняемому файлу недоступен."
+
+msgid "PPDB file does not exist at: "
+msgstr "Файл PPDB не существует по адресу: "
+
+msgid "PPDB Location"
+msgstr "Местоположение PPDB"
+
+msgid "PPDB file is located at:\n"
+msgstr "Файл PPDB находится по адресу:\n"
+
+msgid ""
+"\n"
+"\n"
+"Please open it manually in a text editor."
+msgstr ""
+"\n"
+"\n"
+"Пожалуйста, откройте его вручную в текстовом редакторе."
+
+msgid "Failed to open PPDB file: "
+msgstr "Не удалось открыть файл PPDB: "
 
 msgid "disabled"
 msgstr "отключено"
@@ -1166,14 +1196,8 @@ msgstr "Использовать встроенные dxvk/vkd3d из WINE/Proto
 msgid "Use async dxvk-sarek (experimental)"
 msgstr "Использовать асинхронный dxvk-sarek (экспериментально)"
 
-msgid "Wine Version"
-msgstr "Версия WINE"
-
 msgid "Select the Wine or Proton version to use for this executable."
 msgstr "Выбор версии WINE или Proton для использования с этим исполняемым файлом."
-
-msgid "Prefix Name"
-msgstr "Имя префикса"
 
 msgid "Specify the Wine prefix to run this game with"
 msgstr "Укажите префикс WINE для запуска этой игры"
@@ -1183,9 +1207,6 @@ msgstr "Новейший"
 
 msgid "Stable"
 msgstr "Стабильный"
-
-msgid "Vulkan Backend"
-msgstr "Vulkan рендеринг"
 
 msgid ""
 "Select the DirectX → Vulkan/OpenGL backend:\n"
@@ -1210,18 +1231,12 @@ msgstr ""
 "• WINED3D — резервный вариант OpenGL (наименьшая производительность, "
 "используйте только в случае сбоя других вариантов)"
 
-msgid "Windows version"
-msgstr "Версия Windows"
-
 msgid ""
 "Changing the WINDOWS emulation version may be required to run older "
 "games. WINDOWS versions below 10 do not support new games with DirectX 12"
 msgstr ""
 "Изменение версии эмуляции WINDOWS может потребоваться для запуска старых "
 "игр. Версии WINDOWS ниже 10 не поддерживают новые игры с DirectX 12"
-
-msgid "DLL Overrides"
-msgstr "Переопределения DLL"
 
 msgid ""
 "Forced to use/disable the library only for the given application.\n"
@@ -1251,9 +1266,6 @@ msgstr ""
 "\n"
 "Пример: libglesv2=;d3dx9_36,d3dx9_42=n,b;mfc120=b,n"
 
-msgid "Launch Arguments"
-msgstr "Аргументы запуска"
-
 msgid ""
 "Adding an argument after the .exe file, just like you would add an "
 "argument in a shortcut on a WINDOWS system.\n"
@@ -1265,18 +1277,12 @@ msgstr ""
 "\n"
 "Пример: -dx11 -skipintro 1"
 
-msgid "CPU Cores Limit"
-msgstr "Ограничение ядер CPU"
-
 msgid ""
 "Limiting the number of CPU cores is useful for Unity games (It is "
 "recommended to set the value equal to 8)"
 msgstr ""
 "Ограничение количества ядер CPU полезно для игр на Unity (рекомендуется "
 "установить значение равным 8)"
-
-msgid "OpenGL Version"
-msgstr "Версия OpenGL"
 
 msgid ""
 "You can select the required OpenGL version, some games require a forced "
@@ -1285,24 +1291,15 @@ msgstr ""
 "Вы можете выбрать требуемую версию OpenGL, некоторые игры требуют "
 "принудительного профиля совместимости (COMP)."
 
-msgid "VKD3D Feature Level"
-msgstr "Уровень возможностей VKD3D"
-
 msgid "You can set a forced feature level VKD3D for games on DirectX12"
 msgstr ""
 "Вы можете установить принудительный уровень возможностей VKD3D для игр на"
 " DirectX12"
 
-msgid "Locale"
-msgstr "Локаль"
-
 msgid "Force certain locale for an app. Fixes encoding issues in legacy software"
 msgstr ""
 "Принудительно установить определённую локаль для приложения. Исправляет "
 "проблемы с кодировкой в устаревшем ПО"
-
-msgid "Window Mode"
-msgstr "Режим окна"
 
 msgid ""
 "Window mode (for Vulkan and OpenGL):\n"
@@ -1319,9 +1316,6 @@ msgstr ""
 "mailbox — Трёхбуферная. Неограниченная частота кадров + без разрывов.\n"
 "relaxed — То же, что fifo, но позволяет разрывы при частоте ниже частоты "
 "обновления монитора."
-
-msgid "NUMA Node"
-msgstr "Узел NUMA"
 
 msgid ""
 "NUMA node for CPU affinity. In multi-core systems, CPUs are split into "
