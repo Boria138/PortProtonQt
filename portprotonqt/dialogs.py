@@ -1753,6 +1753,13 @@ class ExeSettingsDialog(QDialog):
             if os.path.exists(prefixes_dir):
                 self.prefix_options = sorted([f for f in os.listdir(prefixes_dir) if os.path.isdir(os.path.join(prefixes_dir, f))], key=version_sort_key)
 
+        # Check if system WINE is available and add it to dist_options
+        import shutil
+        if shutil.which('wine'):
+            # Add system WINE option if it's available
+            if _('System WINE') not in self.dist_options:
+                self.dist_options.append(_('System WINE'))
+
         self.current_settings = {}
         self.value_widgets = {}
         self.original_values = {}
@@ -2208,7 +2215,11 @@ class ExeSettingsDialog(QDialog):
                 if setting['key'] == 'PW_WINE_CPU_TOPOLOGY':
                     current_val = disabled_text if current_raw == 'disabled' else (current_raw.split(':')[0] if isinstance(current_raw, str) and ':' in current_raw else current_raw)
                 elif setting['key'] == 'PW_WINE_USE':
-                    current_val = current_raw
+                    # Special handling for PW_WINE_USE: USE_SYSTEM_WINE value means system wine
+                    if current_raw == 'USE_SYSTEM_WINE':
+                        current_val = _('System WINE')
+                    else:
+                        current_val = current_raw
                 else:
                     current_val = disabled_text if current_raw == 'disabled' else current_raw
 
@@ -2400,6 +2411,10 @@ class ExeSettingsDialog(QDialog):
                 else:
                     # No value mapping, regular comparison
                     has_changed = (new_val != orig_val)
+
+                # Special handling for PW_WINE_USE: System WINE should be saved as USE_SYSTEM_WINE
+                if key == 'PW_WINE_USE' and new_val == _('System WINE'):
+                    new_val = 'USE_SYSTEM_WINE'
 
                 if new_val.lower() == _('disabled').lower():
                     new_val = 'disabled'

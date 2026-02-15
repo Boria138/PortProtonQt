@@ -56,12 +56,18 @@ def get_advanced_settings(disabled_text, logical_core_options, locale_options,
         prefix_options = []
 
     # 1. Wine Version
+    # Add System WINE option if available
+    wine_options = dist_options[:]
+    import shutil
+    if shutil.which('wine') and _('System WINE') not in wine_options:
+        wine_options.append(_('System WINE'))
+
     advanced_settings.append({
         'key': 'PW_WINE_USE',
         'name': format_setting_name_for_display('PW_WINE_USE'),
         'description': _("Select the Wine or Proton version to use for this executable."),
         'type': 'combo',
-        'options': dist_options,
+        'options': wine_options,
         'default': ''
     })
 
