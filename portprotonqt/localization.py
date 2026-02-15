@@ -207,3 +207,23 @@ def get_theme_translations(metainfo_file, language_code=None):
                 translations['description'] = cp.get("Metainfo", "description")
 
     return translations
+
+
+def format_setting_name_for_display(key):
+    """
+    Format setting names for display by removing the 'PW_' prefix and replacing underscores with spaces.
+
+    Args:
+        key (str): The original setting key (e.g., 'PW_MANGOHUD', 'PW_WINE_FULLSCREEN_FSR')
+
+    Returns:
+        str: The formatted setting name for display (e.g., 'MANGOHUD', 'WINE FULLSCREEN FSR')
+    """
+    if key.startswith('PW_'):
+        # Remove the 'PW_' prefix and replace underscores with spaces
+        display_name = key[3:]  # Remove 'PW_' prefix
+        display_name = display_name.replace('_', ' ')  # Replace underscores with spaces
+        return display_name
+    else:
+        # For non-PW settings, just replace underscores with spaces
+        return key.replace('_', ' ')

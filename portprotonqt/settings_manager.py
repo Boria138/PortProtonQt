@@ -47,7 +47,7 @@ def get_toggle_settings():
 def get_advanced_settings(disabled_text, logical_core_options, locale_options,
                           numa_nodes, dist_options=None, prefix_options=None):
     """Get advanced settings configuration."""
-    from portprotonqt.localization import _
+    from portprotonqt.localization import _, format_setting_name_for_display
 
     advanced_settings = []
     if dist_options is None:
@@ -58,7 +58,7 @@ def get_advanced_settings(disabled_text, logical_core_options, locale_options,
     # 1. Wine Version
     advanced_settings.append({
         'key': 'PW_WINE_USE',
-        'name': _("Wine Version"),
+        'name': format_setting_name_for_display('PW_WINE_USE'),
         'description': _("Select the Wine or Proton version to use for this executable."),
         'type': 'combo',
         'options': dist_options,
@@ -68,7 +68,7 @@ def get_advanced_settings(disabled_text, logical_core_options, locale_options,
     # 2. Prefix Name
     advanced_settings.append({
         'key': 'PW_PREFIX_NAME',
-        'name': _("Prefix Name"),
+        'name': format_setting_name_for_display('PW_PREFIX_NAME'),
         'description': _("Specify the Wine prefix to run this game with"),
         'type': 'combo',
         'options': prefix_options,
@@ -93,7 +93,7 @@ def get_advanced_settings(disabled_text, logical_core_options, locale_options,
 
     advanced_settings.append({
         'key': 'PW_VULKAN_USE',
-        'name': _("Vulkan Backend"),
+        'name': format_setting_name_for_display('PW_VULKAN_USE'),
         'description': _(
             "Select the DirectX → Vulkan/OpenGL backend:\n\n"
             "• Newest – latest DXVK + VKD3D (best compatibility/performance, requires modern drivers: AMD Mesa 25+, NVIDIA 550.54.14+, Intel Mesa 24.2+)\n"
@@ -110,7 +110,7 @@ def get_advanced_settings(disabled_text, logical_core_options, locale_options,
     # 4. Windows version
     advanced_settings.append({
         'key': 'PW_WINDOWS_VER',
-        'name': _("Windows version"),
+        'name': format_setting_name_for_display('PW_WINDOWS_VER'),
         'description': _("Changing the WINDOWS emulation version may be required to run older games. WINDOWS versions below 10 do not support new games with DirectX 12"),
         'type': 'combo',
         'options': ['11', '10', '7', 'XP'],
@@ -120,7 +120,7 @@ def get_advanced_settings(disabled_text, logical_core_options, locale_options,
     # 5. DLL Overrides
     advanced_settings.append({
         'key': 'WINEDLLOVERRIDES',
-        'name': _("DLL Overrides"),
+        'name': format_setting_name_for_display('WINEDLLOVERRIDES'),
         'description': _("Forced to use/disable the library only for the given application.\n\nA brief instruction:\n* libraries are written WITHOUT the .dll file extension\n* libraries are separated by semicolons - ;\n* library=n - use the WINDOWS (third-party) library\n* library=b - use WINE (built-in) library\n* library=n,b - use WINDOWS library and then WINE\n* library=b,n - use WINE library and then WINDOWS\n* library= - disable the use of this library\n\nExample: libglesv2=;d3dx9_36,d3dx9_42=n,b;mfc120=b,n"),
         'type': 'text',
         'default': ''
@@ -129,7 +129,7 @@ def get_advanced_settings(disabled_text, logical_core_options, locale_options,
     # 6. Launch arguments
     advanced_settings.append({
         'key': 'LAUNCH_PARAMETERS',
-        'name': _("Launch Arguments"),
+        'name': format_setting_name_for_display('LAUNCH_PARAMETERS'),
         'description': _("Adding an argument after the .exe file, just like you would add an argument in a shortcut on a WINDOWS system.\n\nExample: -dx11 -skipintro 1"),
         'type': 'text',
         'default': ''
@@ -138,7 +138,7 @@ def get_advanced_settings(disabled_text, logical_core_options, locale_options,
     # 7. CPU cores limit
     advanced_settings.append({
         'key': 'PW_WINE_CPU_TOPOLOGY',
-        'name': _("CPU Cores Limit"),
+        'name': format_setting_name_for_display('PW_WINE_CPU_TOPOLOGY'),
         'description': _("Limiting the number of CPU cores is useful for Unity games (It is recommended to set the value equal to 8)"),
         'type': 'combo',
         'options': [disabled_text] + logical_core_options,
@@ -148,7 +148,7 @@ def get_advanced_settings(disabled_text, logical_core_options, locale_options,
     # 8. OpenGL version
     advanced_settings.append({
         'key': 'PW_MESA_GL_VERSION_OVERRIDE',
-        'name': _("OpenGL Version"),
+        'name': format_setting_name_for_display('PW_MESA_GL_VERSION_OVERRIDE'),
         'description': _("You can select the required OpenGL version, some games require a forced Compatibility Profile (COMP)."),
         'type': 'combo',
         'options': [disabled_text, '4.6COMPAT', '4.5COMPAT', '4.3COMPAT', '4.1COMPAT', '3.3COMPAT', '3.2COMPAT'],
@@ -158,7 +158,7 @@ def get_advanced_settings(disabled_text, logical_core_options, locale_options,
     # 9. VKD3D feature level
     advanced_settings.append({
         'key': 'PW_VKD3D_FEATURE_LEVEL',
-        'name': _("VKD3D Feature Level"),
+        'name': format_setting_name_for_display('PW_VKD3D_FEATURE_LEVEL'),
         'description': _("You can set a forced feature level VKD3D for games on DirectX12"),
         'type': 'combo',
         'options': [disabled_text, '12_2', '12_1', '12_0', '11_1', '11_0'],
@@ -168,7 +168,7 @@ def get_advanced_settings(disabled_text, logical_core_options, locale_options,
     # 10. Locale
     advanced_settings.append({
         'key': 'PW_LOCALE_SELECT',
-        'name': _("Locale"),
+        'name': format_setting_name_for_display('PW_LOCALE_SELECT'),
         'description': _("Force certain locale for an app. Fixes encoding issues in legacy software"),
         'type': 'combo',
         'options': [disabled_text] + locale_options,
@@ -178,7 +178,7 @@ def get_advanced_settings(disabled_text, logical_core_options, locale_options,
     # 11. Present mode
     advanced_settings.append({
         'key': 'PW_MESA_VK_WSI_PRESENT_MODE',
-        'name': _("Window Mode"),
+        'name': format_setting_name_for_display('PW_MESA_VK_WSI_PRESENT_MODE'),
         'description': _("Window mode (for Vulkan and OpenGL):\nfifo - First in, first out. Limits the frame rate + no tearing. (VSync)\nimmediate - Unlimited frame rate + tearing.\nmailbox - Triple buffering. Unlimited frame rate + no tearing.\nrelaxed - Same as fifo but allows tearing when below the monitors refresh rate."),
         'type': 'combo',
         'options': [disabled_text, 'fifo', 'immediate', 'mailbox', 'relaxed'],
@@ -191,7 +191,7 @@ def get_advanced_settings(disabled_text, logical_core_options, locale_options,
     numa_options = [disabled_text] + numa_ids if len(numa_ids) > 1 else [disabled_text]
     advanced_settings.append({
         'key': 'PW_CPU_NUMA_NODE_INDEX',
-        'name': _("NUMA Node"),
+        'name': format_setting_name_for_display('PW_CPU_NUMA_NODE_INDEX'),
         'description': _("NUMA node for CPU affinity. In multi-core systems, CPUs are split into NUMA nodes, each with its own local memory and cores. Binding a game to a single node reduces memory-access latency and limits costly core-to-core switches."),
         'type': 'combo',
         'options': numa_options,

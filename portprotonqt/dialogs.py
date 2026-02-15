@@ -1954,14 +1954,18 @@ class ExeSettingsDialog(QDialog):
         button_layout = QHBoxLayout()
         self.apply_button = AutoSizeButton(_("Apply"), icon=ThemeManager().get_icon("apply"))
         self.cancel_button = AutoSizeButton(_("Cancel"), icon=ThemeManager().get_icon("cancel"))
+        self.open_ppdb_button = AutoSizeButton(_("Open PPDB"), icon=ThemeManager().get_icon("folder"))
         self.apply_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.cancel_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        self.open_ppdb_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         button_layout.addWidget(self.apply_button)
         button_layout.addWidget(self.cancel_button)
+        button_layout.addWidget(self.open_ppdb_button)
         self.main_layout.addLayout(button_layout)
 
         self.apply_button.clicked.connect(self.apply_changes)
         self.cancel_button.clicked.connect(self.reject)
+        self.open_ppdb_button.clicked.connect(self.open_ppdb_file)
 
     def load_current_settings(self):
         """Load available toggles first, then current settings."""
@@ -2066,6 +2070,49 @@ class ExeSettingsDialog(QDialog):
         self.settings_container.setCurrentIndex(1)    # Show main settings table
         self.advanced_container.setCurrentIndex(1)    # Show advanced settings table
 
+    def open_ppdb_file(self):
+        """Open the PPDB file for the current executable in the default text editor."""
+        import subprocess
+        import os
+
+        try:
+            # Check if exe_path is available
+            if not self.exe_path:
+                QMessageBox.critical(self, _("Error"), _("Executable path is not available."))
+                return
+
+            # The PPDB file is named after the executable with .ppdb extension
+            db_path = self.exe_path + ".ppdb"
+
+            # Check if the file exists
+            if not os.path.exists(db_path):
+                QMessageBox.critical(self, _("Error"), _("PPDB file does not exist at: ") + db_path)
+                return
+
+            # Try to open the file with the default text editor
+            try:
+                # On Linux, try xdg-open first
+                subprocess.run(['xdg-open', db_path], check=True)
+            except (subprocess.CalledProcessError, FileNotFoundError):
+                # If xdg-open fails, try other methods
+                try:
+                    # Try using 'open' on macOS
+                    subprocess.run(['open', db_path], check=True)
+                except (subprocess.CalledProcessError, FileNotFoundError):
+                    try:
+                        # Try using 'start' on Windows
+                        subprocess.run(['start', db_path], check=True, shell=True)
+                    except (subprocess.CalledProcessError, FileNotFoundError):
+                        # If all else fails, show the path to the user
+                        QMessageBox.information(
+                            self,
+                            _("PPDB Location"),
+                            _("PPDB file is located at:\n") + db_path +
+                            _("\n\nPlease open it manually in a text editor.")
+                        )
+        except Exception as e:
+            QMessageBox.critical(self, _("Error"), _("Failed to open PPDB file: ") + str(e))
+
     def populate_table(self):
         """Populate the table with settings that are available in both lists."""
         self.settings_table.setRowCount(0)
@@ -2082,7 +2129,9 @@ class ExeSettingsDialog(QDialog):
             row = self.settings_table.rowCount()
             self.settings_table.insertRow(row)
 
-            name_item = QTableWidgetItem(toggle)
+            from portprotonqt.localization import format_setting_name_for_display
+            name_item = QTableWidgetItem(format_setting_name_for_display(toggle))
+            name_item.setData(Qt.ItemDataRole.UserRole, toggle)  # Store original key
             name_item.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled)
 
             current_val = self.current_settings.get(toggle, '0')
@@ -2315,7 +2364,8 @@ class ExeSettingsDialog(QDialog):
             row = -1
             for r in range(self.settings_table.rowCount()):
                 item0 = self.settings_table.item(r, 0)
-                if item0 and item0.text() == key:
+                # Retrieve the original key from user data instead of comparing display text
+                if item0 and item0.data(Qt.ItemDataRole.UserRole) == key:
                     row = r
                     break
             if row == -1:
