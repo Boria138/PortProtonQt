@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-02-15 14:00+0500\n"
+"POT-Creation-Date: 2026-02-17 20:10+0500\n"
 "PO-Revision-Date: 2026-01-18 11:09+0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: pt\n"
@@ -483,19 +483,7 @@ msgstr ""
 msgid "PPDB file does not exist at: "
 msgstr ""
 
-msgid "PPDB Location"
-msgstr ""
-
-msgid "PPDB file is located at:\n"
-msgstr ""
-
-msgid ""
-"\n"
-"\n"
-"Please open it manually in a text editor."
-msgstr ""
-
-msgid "Failed to open PPDB file: "
+msgid "Failed to open PPDB file:\n"
 msgstr ""
 
 msgid "disabled"
@@ -1160,7 +1148,13 @@ msgstr ""
 msgid "Use async dxvk-sarek (experimental)"
 msgstr ""
 
+msgid "Wine Version"
+msgstr ""
+
 msgid "Select the Wine or Proton version to use for this executable."
+msgstr ""
+
+msgid "Prefix Name"
 msgstr ""
 
 msgid "Specify the Wine prefix to run this game with"
@@ -1170,6 +1164,9 @@ msgid "Newest"
 msgstr ""
 
 msgid "Stable"
+msgstr ""
+
+msgid "Vulkan Backend"
 msgstr ""
 
 msgid ""
@@ -1184,9 +1181,15 @@ msgid ""
 "• WINED3D – OpenGL fallback (lowest performance, use only if others fail)"
 msgstr ""
 
+msgid "Windows version"
+msgstr ""
+
 msgid ""
 "Changing the WINDOWS emulation version may be required to run older "
 "games. WINDOWS versions below 10 do not support new games with DirectX 12"
+msgstr ""
+
+msgid "DLL Overrides"
 msgstr ""
 
 msgid ""
@@ -1204,6 +1207,9 @@ msgid ""
 "Example: libglesv2=;d3dx9_36,d3dx9_42=n,b;mfc120=b,n"
 msgstr ""
 
+msgid "Launch Arguments"
+msgstr ""
+
 msgid ""
 "Adding an argument after the .exe file, just like you would add an "
 "argument in a shortcut on a WINDOWS system.\n"
@@ -1211,9 +1217,15 @@ msgid ""
 "Example: -dx11 -skipintro 1"
 msgstr ""
 
+msgid "CPU Cores Limit"
+msgstr ""
+
 msgid ""
 "Limiting the number of CPU cores is useful for Unity games (It is "
 "recommended to set the value equal to 8)"
+msgstr ""
+
+msgid "OpenGL Version"
 msgstr ""
 
 msgid ""
@@ -1221,10 +1233,19 @@ msgid ""
 "Compatibility Profile (COMP)."
 msgstr ""
 
+msgid "VKD3D Feature Level"
+msgstr ""
+
 msgid "You can set a forced feature level VKD3D for games on DirectX12"
 msgstr ""
 
+msgid "Locale"
+msgstr ""
+
 msgid "Force certain locale for an app. Fixes encoding issues in legacy software"
+msgstr ""
+
+msgid "Window Mode"
 msgstr ""
 
 msgid ""
@@ -1234,6 +1255,9 @@ msgid ""
 "mailbox - Triple buffering. Unlimited frame rate + no tearing.\n"
 "relaxed - Same as fifo but allows tearing when below the monitors refresh"
 " rate."
+msgstr ""
+
+msgid "NUMA Node"
 msgstr ""
 
 msgid ""
