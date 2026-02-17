@@ -2,12 +2,12 @@ import os
 import tempfile
 import re
 from typing import cast, TYPE_CHECKING
-from PySide6.QtGui import QPixmap, QIcon, QTextCursor, QColor
+from PySide6.QtGui import QPixmap, QIcon, QTextCursor, QColor, QDesktopServices
 from PySide6.QtWidgets import (
     QDialog, QFormLayout, QHBoxLayout, QLabel, QVBoxLayout, QListWidget, QScrollArea, QWidget, QListWidgetItem, QSizePolicy, QApplication, QProgressBar, QScroller,
     QTabWidget, QTableWidget, QHeaderView, QMessageBox, QTableWidgetItem, QTextEdit, QAbstractItemView, QStackedWidget, QComboBox, QLineEdit
 )
-from PySide6.QtCore import Qt, QObject, Signal, QMimeDatabase, QTimer, QThreadPool, QRunnable, Slot, QProcess, QProcessEnvironment
+from PySide6.QtCore import Qt, QObject, Signal, QMimeDatabase, QTimer, QThreadPool, QRunnable, Slot, QProcess, QProcessEnvironment, QUrl
 from icoextract import IconExtractor, IconExtractorError
 from PIL import Image
 from portprotonqt.config_utils import get_portproton_location, get_portproton_start_command, read_favorite_folders, read_theme_from_config
@@ -2079,46 +2079,23 @@ class ExeSettingsDialog(QDialog):
 
     def open_ppdb_file(self):
         """Open the PPDB file for the current executable in the default text editor."""
-        import subprocess
-        import os
 
-        try:
-            # Check if exe_path is available
-            if not self.exe_path:
-                QMessageBox.critical(self, _("Error"), _("Executable path is not available."))
-                return
+        if not self.exe_path:
+            QMessageBox.critical(self, _("Error"), _("Executable path is not available."))
+            return
 
-            # The PPDB file is named after the executable with .ppdb extension
-            db_path = self.exe_path + ".ppdb"
+        db_path = self.exe_path + ".ppdb"
 
-            # Check if the file exists
-            if not os.path.exists(db_path):
-                QMessageBox.critical(self, _("Error"), _("PPDB file does not exist at: ") + db_path)
-                return
+        if not os.path.exists(db_path):
+            QMessageBox.critical(self, _("Error"), _("PPDB file does not exist at: ") + db_path)
+            return
 
-            # Try to open the file with the default text editor
-            try:
-                # On Linux, try xdg-open first
-                subprocess.run(['xdg-open', db_path], check=True)
-            except (subprocess.CalledProcessError, FileNotFoundError):
-                # If xdg-open fails, try other methods
-                try:
-                    # Try using 'open' on macOS
-                    subprocess.run(['open', db_path], check=True)
-                except (subprocess.CalledProcessError, FileNotFoundError):
-                    try:
-                        # Try using 'start' on Windows
-                        subprocess.run(['start', db_path], check=True, shell=True)
-                    except (subprocess.CalledProcessError, FileNotFoundError):
-                        # If all else fails, show the path to the user
-                        QMessageBox.information(
-                            self,
-                            _("PPDB Location"),
-                            _("PPDB file is located at:\n") + db_path +
-                            _("\n\nPlease open it manually in a text editor.")
-                        )
-        except Exception as e:
-            QMessageBox.critical(self, _("Error"), _("Failed to open PPDB file: ") + str(e))
+        if not QDesktopServices.openUrl(QUrl.fromLocalFile(db_path)):
+            QMessageBox.critical(
+                self,
+                _("Error"),
+                _("Failed to open PPDB file:\n") + db_path
+            )
 
     def populate_table(self):
         """Populate the table with settings that are available in both lists."""
