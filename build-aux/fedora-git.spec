@@ -1,5 +1,5 @@
 %global pypi_name portprotonqt
-%global pypi_version 0.1.10
+%global pypi_version 0.1.11
 %global oname PortProtonQt
 %global build_timestamp %(date +"%Y%m%d")
 %global _python_no_extras_requires 1

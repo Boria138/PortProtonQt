@@ -21,7 +21,7 @@ from portprotonqt.debug_utils import get_screen_info
 
 __app_id__ = "ru.linux_gaming.PortProtonQt"
 __app_name__ = "PortProtonQt"
-__app_version__ = "0.1.10"
+__app_version__ = "0.1.11"
 
 def get_version():
     try:
