@@ -449,22 +449,24 @@ class DetailPageManager:
         playButton.clicked.connect(lambda: self.main_window.toggleGame(exec_line, playButton))
         buttons_layout.addWidget(playButton, alignment=Qt.AlignmentFlag.AlignLeft)
 
-        # Settings button
-        settings_icon = self.main_window.theme_manager.get_icon("settings")
-        settings_button = AutoSizeButton(_("Settings"), icon=settings_icon)
-        settings_button.setFixedSize(120, 40)
-        settings_button.setStyleSheet(self.main_window.theme.PLAY_BUTTON_STYLE)
-        settings_button.clicked.connect(lambda: self.main_window.open_exe_settings(file_to_check))
-        buttons_layout.addWidget(settings_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        # Settings and Log buttons only for PortProton games
+        if str(game_source).lower() == "portproton":
+            # Settings button
+            settings_icon = self.main_window.theme_manager.get_icon("settings")
+            settings_button = AutoSizeButton(_("Settings"), icon=settings_icon)
+            settings_button.setFixedSize(120, 40)
+            settings_button.setStyleSheet(self.main_window.theme.PLAY_BUTTON_STYLE)
+            settings_button.clicked.connect(lambda: self.main_window.open_exe_settings(file_to_check))
+            buttons_layout.addWidget(settings_button, alignment=Qt.AlignmentFlag.AlignLeft)
 
-        # Create Log button
-        log_icon = self.main_window.theme_manager.get_icon("edit")
-        log_button = AutoSizeButton(_("Create Log"), icon=log_icon)
-        log_button.setFixedSize(120, 40)
-        log_button.setStyleSheet(self.main_window.theme.PLAY_BUTTON_STYLE)
-        log_button.clicked.connect(lambda: self.toggleDebugLog(file_to_check, log_button))
-        buttons_layout.addWidget(log_button, alignment=Qt.AlignmentFlag.AlignLeft)
-        self._debug_log_button = log_button
+            # Create Log button
+            log_icon = self.main_window.theme_manager.get_icon("edit")
+            log_button = AutoSizeButton(_("Create Log"), icon=log_icon)
+            log_button.setFixedSize(120, 40)
+            log_button.setStyleSheet(self.main_window.theme.PLAY_BUTTON_STYLE)
+            log_button.clicked.connect(lambda: self.toggleDebugLog(file_to_check, log_button))
+            buttons_layout.addWidget(log_button, alignment=Qt.AlignmentFlag.AlignLeft)
+            self._debug_log_button = log_button
 
         buttons_layout.addStretch()
         detailsLayout.addLayout(buttons_layout)
