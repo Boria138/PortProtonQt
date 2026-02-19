@@ -43,7 +43,7 @@ from portprotonqt.virtual_keyboard import VirtualKeyboard
 from portprotonqt.get_wine_module import show_proton_manager
 
 from PySide6.QtWidgets import (QLineEdit, QMainWindow, QStatusBar, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox,
-                               QDialog, QFormLayout, QMessageBox, QApplication, QPushButton, QProgressBar, QCheckBox, QSizePolicy, QGridLayout, QScrollArea, QScroller, QSlider)
+                               QDialog, QFormLayout, QMessageBox, QApplication, QPushButton, QProgressBar, QCheckBox, QSizePolicy, QGridLayout, QScrollArea, QScroller, QSlider, QFrame)
 from PySide6.QtCore import Qt, QAbstractAnimation, QUrl, Signal, QTimer, Slot, QProcess, QFileSystemWatcher
 from PySide6.QtGui import QIcon, QPixmap, QColor, QDesktopServices
 from typing import cast
@@ -2138,13 +2138,44 @@ class MainWindow(QMainWindow):
         content.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         layout.addWidget(content)
 
-        # Форма с настройками
-        formLayout = QFormLayout()
-        formLayout.setContentsMargins(0, 10, 0, 0)
-        formLayout.setSpacing(10)
-        formLayout.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
+        # --- New: Scroll Area for settings ---
+        self.settingsScrollArea = QScrollArea()
+        self.settingsScrollArea.setWidgetResizable(True)
+        self.settingsScrollArea.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.settingsScrollArea.setStyleSheet(self.theme.SCROLL_AREA_STYLE)
+        self.settingsScrollArea.setFrameShape(QFrame.Shape.NoFrame)
+        # Отключаем горизонтальный скролл
+        self.settingsScrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        QScroller.grabGesture(self.settingsScrollArea.viewport(), QScroller.ScrollerGestureType.LeftMouseButtonGesture)
 
-        # 1. Time detail_level
+        scrollWidget = QWidget()
+        scrollWidget.setStyleSheet("background: transparent;")
+        scrollLayout = QVBoxLayout(scrollWidget)
+        scrollLayout.setContentsMargins(0, 0, 10, 0)
+        scrollLayout.setSpacing(10)  # Единый отступ между секциями
+
+        # Helper to create styled sections
+        def create_section(title_text):
+            section_frame = QFrame()
+            section_frame.setStyleSheet(self.theme.DETAIL_CONTENT_FRAME_STYLE)
+            section_layout = QVBoxLayout(section_frame)
+            section_layout.setContentsMargins(15, 15, 15, 15)
+            section_layout.setSpacing(10)
+
+            section_title = QLabel(title_text)
+            section_title.setStyleSheet(f"font-weight: bold; font-size: {self.theme.font_size_a}; color: {self.theme.color_a}; margin-bottom: 5px;")
+            section_layout.addWidget(section_title)
+
+            section_form = QFormLayout()
+            section_form.setSpacing(15)  # Единый отступ между строками в форме
+            section_form.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
+            section_layout.addLayout(section_form)
+            return section_frame, section_form
+
+        # 1. General Settings Section
+        genFrame, genForm = create_section(_("General Settings"))
+        scrollLayout.addWidget(genFrame)
+
         self.timeDetailCombo = QComboBox()
         self.timeDetailCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.time_keys = ["detailed", "brief"]
@@ -2161,13 +2192,12 @@ class MainWindow(QMainWindow):
         except ValueError:
             idx = 0
         self.timeDetailCombo.setCurrentIndex(idx)
-        formLayout.addRow(self.timeDetailTitle, self.timeDetailCombo)
+        genForm.addRow(self.timeDetailTitle, self.timeDetailCombo)
 
-        # 2. Games sort_method
         self.gamesSortCombo = QComboBox()
         self.gamesSortCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        self.sort_keys = ["last_launch", "playtime", "alphabetical", "favorites"]
-        self.sort_labels = [_("last launch"), _("playtime"), _("alphabetical"), _("favorites")]
+        self.sort_keys = ["last_launch", "playtime", "alphabetical"]
+        self.sort_labels = [_("last launch"), _("playtime"), _("alphabetical")]
         self.gamesSortCombo.addItems(self.sort_labels)
         self.gamesSortCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
         self.gamesSortCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -2180,9 +2210,8 @@ class MainWindow(QMainWindow):
         except ValueError:
             idx = 0
         self.gamesSortCombo.setCurrentIndex(idx)
-        formLayout.addRow(self.gamesSortTitle, self.gamesSortCombo)
+        genForm.addRow(self.gamesSortTitle, self.gamesSortCombo)
 
-        # 3. Games display_filter
         self.filter_keys = ["all", "steam", "portproton", "favorites", "epic"]
         self.filter_labels = [_("all"), "steam", "portproton", _("favorites"), "epic games store"]
         self.gamesDisplayCombo = QComboBox()
@@ -2199,9 +2228,48 @@ class MainWindow(QMainWindow):
         except ValueError:
             idx = 0
         self.gamesDisplayCombo.setCurrentIndex(idx)
-        formLayout.addRow(self.gamesDisplayTitle, self.gamesDisplayCombo)
+        genForm.addRow(self.gamesDisplayTitle, self.gamesDisplayCombo)
 
-        # 4 Gamepad Type
+        # 2. Interface Settings Section
+        uiFrame, uiForm = create_section(_("Interface Settings"))
+        scrollLayout.addWidget(uiFrame)
+
+        self.fullscreenCheckBox = QCheckBox()  # Убрали текст
+        self.fullscreenCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
+        self.fullscreenCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.fullscreenTitle = QLabel(_("Launch Application in Fullscreen:"))
+        self.fullscreenTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.fullscreenTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        current_fullscreen = read_fullscreen_config()
+        self.fullscreenCheckBox.setChecked(current_fullscreen)
+        uiForm.addRow(self.fullscreenTitle, self.fullscreenCheckBox)
+
+        self.minimizeToTrayCheckBox = QCheckBox()  # Убрали текст
+        self.minimizeToTrayCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
+        self.minimizeToTrayCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.minimizeToTrayTitle = QLabel(_("Minimize to tray on close:"))
+        self.minimizeToTrayTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.minimizeToTrayTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        current_minimize_to_tray = read_minimize_to_tray()
+        self.minimizeToTrayCheckBox.setChecked(current_minimize_to_tray)
+        self.minimizeToTrayCheckBox.toggled.connect(lambda checked: save_minimize_to_tray(checked))
+        uiForm.addRow(self.minimizeToTrayTitle, self.minimizeToTrayCheckBox)
+
+        self.hideAutoInstallTabCheckBox = QCheckBox()  # Убрали текст
+        self.hideAutoInstallTabCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
+        self.hideAutoInstallTabCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.hideAutoInstallTabTitle = QLabel(_("Hide Auto-Install Tab:"))
+        self.hideAutoInstallTabTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.hideAutoInstallTabTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        current_hide_autoinstall = read_hide_autoinstall_tab()
+        self.hideAutoInstallTabCheckBox.setChecked(current_hide_autoinstall)
+        self.hideAutoInstallTabCheckBox.toggled.connect(lambda checked: save_hide_autoinstall_tab(checked))
+        uiForm.addRow(self.hideAutoInstallTabTitle, self.hideAutoInstallTabCheckBox)
+
+        # 3. Gamepad Settings Section
+        padFrame, padForm = create_section(_("Gamepad Settings"))
+        scrollLayout.addWidget(padFrame)
+
         self.gamepadTypeCombo = QComboBox()
         self.gamepadTypeCombo.addItems(["Xbox", "PlayStation"])
         self.gamepadTypeCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -2214,9 +2282,60 @@ class MainWindow(QMainWindow):
             self.gamepadTypeCombo.setCurrentText("PlayStation")
         else:
             self.gamepadTypeCombo.setCurrentText("Xbox")
-        formLayout.addRow(self.gamepadTypeTitle, self.gamepadTypeCombo)
+        padForm.addRow(self.gamepadTypeTitle, self.gamepadTypeCombo)
 
-        # 5. Proxy settings
+        self.autoFullscreenGamepadCheckBox = QCheckBox()  # Убрали текст
+        self.autoFullscreenGamepadCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
+        self.autoFullscreenGamepadCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.autoFullscreenGamepadTitle = QLabel(_("Auto Fullscreen on Gamepad connected:"))
+        self.autoFullscreenGamepadTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.autoFullscreenGamepadTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        current_auto_fullscreen = read_auto_fullscreen_gamepad()
+        self.autoFullscreenGamepadCheckBox.setChecked(current_auto_fullscreen)
+        padForm.addRow(self.autoFullscreenGamepadTitle, self.autoFullscreenGamepadCheckBox)
+
+        self.gamepadRumbleCheckBox = QCheckBox()  # Убрали текст
+        self.gamepadRumbleCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.gamepadRumbleCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
+        self.gamepadRumbleTitle = QLabel(_("Gamepad haptic feedback:"))
+        self.gamepadRumbleTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.gamepadRumbleTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        current_rumble_state = read_rumble_config()
+        self.gamepadRumbleCheckBox.setChecked(current_rumble_state)
+        padForm.addRow(self.gamepadRumbleTitle, self.gamepadRumbleCheckBox)
+
+        # 4. Hardware Settings Section
+        hwFrame, hwForm = create_section(_("Hardware Settings"))
+        scrollLayout.addWidget(hwFrame)
+
+        gpu_list = get_gpu_list()
+        filtered_gpu_list = [gpu for gpu in gpu_list if 'llvmpipe' not in gpu.lower()]
+        if filtered_gpu_list:
+            self.gpuCombo = QComboBox()
+            self.gpuCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+            self.gpuCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+            self.gpuCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
+            self.gpuCombo.addItems(filtered_gpu_list)
+            current_gpu = get_user_conf_setting('PW_GPU_USE')
+            if current_gpu and current_gpu in filtered_gpu_list:
+                self.gpuCombo.setCurrentText(current_gpu)
+            elif current_gpu:
+                if current_gpu not in filtered_gpu_list:
+                    self.gpuCombo.addItem(current_gpu)
+                self.gpuCombo.setCurrentText(current_gpu)
+            else:
+                self.gpuCombo.setCurrentIndex(0)
+            self.gpuTitle = QLabel(_("GPU to use:"))
+            self.gpuTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+            self.gpuTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            hwForm.addRow(self.gpuTitle, self.gpuCombo)
+        else:
+            hwForm.addRow(QLabel(_("No GPUs found")), QLabel(""))
+
+        # 5. Proxy Settings Section
+        proxyFrame, proxyForm = create_section(_("Proxy Settings"))
+        scrollLayout.addWidget(proxyFrame)
+
         self.proxyUrlEdit = CustomLineEdit(self, theme=self.theme)
         self.proxyUrlEdit.setPlaceholderText(_("Proxy URL"))
         self.proxyUrlEdit.setStyleSheet(self.theme.PROXY_INPUT_STYLE)
@@ -2227,7 +2346,7 @@ class MainWindow(QMainWindow):
         proxy_cfg = read_proxy_config()
         if proxy_cfg.get("http", ""):
             self.proxyUrlEdit.setText(proxy_cfg["http"])
-        formLayout.addRow(self.proxyUrlTitle, self.proxyUrlEdit)
+        proxyForm.addRow(self.proxyUrlTitle, self.proxyUrlEdit)
 
         self.proxyUserEdit = CustomLineEdit(self, theme=self.theme)
         self.proxyUserEdit.setPlaceholderText(_("Proxy Username"))
@@ -2236,7 +2355,7 @@ class MainWindow(QMainWindow):
         self.proxyUserTitle = QLabel(_("Proxy Username:"))
         self.proxyUserTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         self.proxyUserTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        formLayout.addRow(self.proxyUserTitle, self.proxyUserEdit)
+        proxyForm.addRow(self.proxyUserTitle, self.proxyUserEdit)
 
         self.proxyPasswordEdit = CustomLineEdit(self, theme=self.theme)
         self.proxyPasswordEdit.setPlaceholderText(_("Proxy Password"))
@@ -2246,169 +2365,35 @@ class MainWindow(QMainWindow):
         self.proxyPasswordTitle = QLabel(_("Proxy Password:"))
         self.proxyPasswordTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         self.proxyPasswordTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        formLayout.addRow(self.proxyPasswordTitle, self.proxyPasswordEdit)
+        proxyForm.addRow(self.proxyPasswordTitle, self.proxyPasswordEdit)
 
-        # 6. Fullscreen setting for application
-        self.fullscreenCheckBox = QCheckBox(_("Launch Application in Fullscreen"))
-        self.fullscreenCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
-        self.fullscreenCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.fullscreenTitle = QLabel(_("Application Fullscreen Mode:"))
-        self.fullscreenTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
-        self.fullscreenTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        current_fullscreen = read_fullscreen_config()
-        self.fullscreenCheckBox.setChecked(current_fullscreen)
-        formLayout.addRow(self.fullscreenTitle, self.fullscreenCheckBox)
+        scrollLayout.addStretch(1)
+        self.settingsScrollArea.setWidget(scrollWidget)
+        layout.addWidget(self.settingsScrollArea)
 
-        # 7. Minimize to tray setting
-        self.minimizeToTrayCheckBox = QCheckBox(_("Minimize to tray on close"))
-        self.minimizeToTrayCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
-        self.minimizeToTrayCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.minimizeToTrayTitle = QLabel(_("Application Close Mode:"))
-        self.minimizeToTrayTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
-        self.minimizeToTrayTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        current_minimize_to_tray = read_minimize_to_tray()
-        self.minimizeToTrayCheckBox.setChecked(current_minimize_to_tray)
-        self.minimizeToTrayCheckBox.toggled.connect(lambda checked: save_minimize_to_tray(checked))
-        formLayout.addRow(self.minimizeToTrayTitle, self.minimizeToTrayCheckBox)
-
-        # 8. Hide auto-install tab setting
-        self.hideAutoInstallTabCheckBox = QCheckBox(_("Hide Auto-Install Tab"))
-        self.hideAutoInstallTabCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
-        self.hideAutoInstallTabCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.hideAutoInstallTabTitle = QLabel(_("Hide Auto-Install Tab:"))
-        self.hideAutoInstallTabTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
-        self.hideAutoInstallTabTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        current_hide_autoinstall = read_hide_autoinstall_tab()
-        self.hideAutoInstallTabCheckBox.setChecked(current_hide_autoinstall)
-        self.hideAutoInstallTabCheckBox.toggled.connect(lambda checked: save_hide_autoinstall_tab(checked))
-        formLayout.addRow(self.hideAutoInstallTabTitle, self.hideAutoInstallTabCheckBox)
-
-        # 9. Automatic fullscreen on gamepad connection
-        self.autoFullscreenGamepadCheckBox = QCheckBox(_("Auto Fullscreen on Gamepad connected"))
-        self.autoFullscreenGamepadCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
-        self.autoFullscreenGamepadCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.autoFullscreenGamepadCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
-        self.autoFullscreenGamepadTitle = QLabel(_("Auto Fullscreen on Gamepad connected:"))
-        self.autoFullscreenGamepadTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
-        self.autoFullscreenGamepadTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        current_auto_fullscreen = read_auto_fullscreen_gamepad()
-        self.autoFullscreenGamepadCheckBox.setChecked(current_auto_fullscreen)
-        formLayout.addRow(self.autoFullscreenGamepadTitle, self.autoFullscreenGamepadCheckBox)
-
-        # 9. Gamepad haptic feedback config
-        self.gamepadRumbleCheckBox = QCheckBox(_("Gamepad haptic feedback"))
-        self.gamepadRumbleCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.gamepadRumbleCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
-        self.gamepadRumbleTitle = QLabel(_("Gamepad haptic feedback:"))
-        self.gamepadRumbleTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
-        self.gamepadRumbleTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        current_rumble_state = read_rumble_config()
-        self.gamepadRumbleCheckBox.setChecked(current_rumble_state)
-        formLayout.addRow(self.gamepadRumbleTitle, self.gamepadRumbleCheckBox)
-
-        # 10. GPU Selection
-        gpu_list = get_gpu_list()
-        # Filter out llvmpipe software renderer
-        filtered_gpu_list = [gpu for gpu in gpu_list if 'llvmpipe' not in gpu.lower()]
-
-        if filtered_gpu_list:  # Only show the GPU selection if there are GPUs available
-            self.gpuCombo = QComboBox()
-            self.gpuCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-            self.gpuCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-            self.gpuCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
-
-            # Add filtered GPUs to the combo box
-            self.gpuCombo.addItems(filtered_gpu_list)
-
-            # Set current selection based on saved value
-            current_gpu = get_user_conf_setting('PW_GPU_USE')
-            if current_gpu and current_gpu in filtered_gpu_list:
-                self.gpuCombo.setCurrentText(current_gpu)
-            elif current_gpu:  # If there's a saved GPU but it's not in the current list, add it temporarily
-                # Add the saved GPU to the combo box if it's not already there
-                if current_gpu not in filtered_gpu_list:
-                    self.gpuCombo.addItem(current_gpu)
-                self.gpuCombo.setCurrentText(current_gpu)
-            else:
-                self.gpuCombo.setCurrentIndex(0)  # Select first GPU in the list
-
-            self.gpuTitle = QLabel(_("GPU to use:"))
-            self.gpuTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
-            self.gpuTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-            formLayout.addRow(self.gpuTitle, self.gpuCombo)
-        else:
-            # If no GPUs are available, don't show the GPU selection
-            pass
-
-        # # 9. Legendary Authentication
-        # self.legendaryAuthButton = AutoSizeButton(
-        #     _("Open Legendary Login"),
-        #     icon=self.theme_manager.get_icon("login")self.theme_manager.get_icon("login")
-        # )
-        # self.legendaryAuthButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
-        # self.legendaryAuthButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        # self.legendaryAuthButton.clicked.connect(self.openLegendaryLogin)
-        # self.legendaryAuthTitle = QLabel(_("Legendary Authentication:"))
-        # self.legendaryAuthTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
-        # self.legendaryAuthTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # formLayout.addRow(self.legendaryAuthTitle, self.legendaryAuthButton)
-        #
-        # self.legendaryCodeEdit = CustomLineEdit(self, theme=self.theme)
-        # self.legendaryCodeEdit.setPlaceholderText(_("Enter Legendary Authorization Code"))
-        # self.legendaryCodeEdit.setStyleSheet(self.theme.PROXY_INPUT_STYLE)
-        # self.legendaryCodeEdit.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        # self.legendaryCodeTitle = QLabel(_("Authorization Code:"))
-        # self.legendaryCodeTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
-        # self.legendaryCodeTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # formLayout.addRow(self.legendaryCodeTitle, self.legendaryCodeEdit)
-        #
-        # self.submitCodeButton = AutoSizeButton(
-        #     _("Submit Code"),
-        #     icon=self.theme_manager.get_icon("save")
-        # )
-        # self.submitCodeButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
-        # self.submitCodeButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        # self.submitCodeButton.clicked.connect(self.submitLegendaryCode)
-        # formLayout.addRow(QLabel(""), self.submitCodeButton)
-
-        layout.addLayout(formLayout)
-
-        # Кнопки
+        # Кнопки (вне области прокрутки, всегда видимы)
         buttonsLayout = QHBoxLayout()
         buttonsLayout.setSpacing(10)
 
-        # Кнопка сохранения настроек
-        self.saveButton = AutoSizeButton(
-            _("Save Settings"),
-            icon=self.theme_manager.get_icon("save")
-        )
+        self.saveButton = AutoSizeButton(_("Save Settings"), icon=self.theme_manager.get_icon("save"))
         self.saveButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.saveButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.saveButton.clicked.connect(self.savePortProtonSettings)
         buttonsLayout.addWidget(self.saveButton)
 
-        # Кнопка сброса настроек
-        self.resetSettingsButton = AutoSizeButton(
-            _("Reset Settings"),
-            icon=self.theme_manager.get_icon("update")
-        )
+        self.resetSettingsButton = AutoSizeButton(_("Reset Settings"), icon=self.theme_manager.get_icon("update"))
         self.resetSettingsButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.resetSettingsButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.resetSettingsButton.clicked.connect(self.resetSettings)
         buttonsLayout.addWidget(self.resetSettingsButton)
 
-        # Кнопка очистки кэша
-        self.clearCacheButton = AutoSizeButton(
-            _("Clear Cache"),
-            icon=self.theme_manager.get_icon("update")
-        )
+        self.clearCacheButton = AutoSizeButton(_("Clear Cache"), icon=self.theme_manager.get_icon("update"))
         self.clearCacheButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.clearCacheButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.clearCacheButton.clicked.connect(self.clearCache)
         buttonsLayout.addWidget(self.clearCacheButton)
 
         layout.addLayout(buttonsLayout)
-        layout.addStretch(1)
         self.stackedWidget.addWidget(self.portProtonWidget)
 
     # def openLegendaryLogin(self):
