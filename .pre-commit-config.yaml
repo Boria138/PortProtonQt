@@ -28,7 +28,7 @@ repos:
         language: system
         types_or: [python, pyi]
         require_serial: true
-        exclude: '^portprotonqt/themes/[^/]+/styles\.py$'
+        exclude: 'themes/.*/styles\.py$'
 
   - repo: local
     hooks:
