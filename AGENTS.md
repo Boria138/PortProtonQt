@@ -1,482 +1,229 @@
-# PortProtonQt — Инструкция для AI-агентов
+# PortProtonQt — AI Agent Guidelines
 
-**Проект:** PortProtonQt — GUI для управления играми из PortProton, Steam и Epic Games Store
-**Язык:** Python 3.10+
-**Платформа:** Linux (POSIX)
-**Лицензия:** GPL-3.0
-**Сборка:** Meson + uv
+**Project:** PortProtonQt — GUI for PortProton, Steam, Epic Games Store
+**Language:** Python 3.10+
+**Platform:** Linux (POSIX)
+**License:** GPL-3.0
+**Build:** Meson + uv
 
 ---
 
-## 🎯 Core Principles (ALWAYS apply)
+## Core Principles
 
-| Principle | ✅ Do | ❌ Never |
-|-----------|------|---------|
-| KISS | ≤30 lines functions | Nested if hell |
+| Principle | Required | Forbidden |
+|-----------|----------|-----------|
+| KISS | Functions ≤30 lines | Deep nesting |
 | YAGNI | Concrete code | Future abstractions |
 | DRY | Extract methods | Copy-paste |
 | SRP | 1 task per method | God functions |
-| Linux | /usr/bin/env, #!/bin/bash | .bat, cmd.exe |
+| Linux | POSIX paths, shebangs | Windows-specific code |
+| Minimal changes | Modify relevant section only | Rewrite entire files |
+
+**Priority order (highest to lowest):**
+
+1. Minimal changes (overrides DRY, SRP)
+2. Security (no shell=True, no hardcoded credentials)
+3. Linux compatibility
+4. KISS / YAGNI
+5. DRY / SRP
+
+**When principles conflict:**
+
+- Prefer minimal diff over extracting methods
+- Prefer existing patterns over "correct" refactoring
+- Prefer small targeted fix over comprehensive cleanup
+- Never break security for code quality
+- Remove duplicates only if directly related to current task
 
 ---
 
-## 📏 Linux Metrics
+## Code Metrics
 
-| Check | Target |
-|-------|--------|
-| Shebang | `#!/usr/bin/env python3` |
-| Paths | `/tmp/`, `$HOME/`, `~` |
-| EOL | LF only |
-| Commit | English, ≤72 chars |
+| Check | Limit |
+|-------|-------|
 | Functions | ≤30 lines, ≤4 params |
 | Files | ≤800 lines |
 | Nesting | ≤4 levels |
+| Comments | English, 1-2 lines max |
+| Indentation | 4 spaces (no tabs) |
+| Whitespace | No trailing spaces |
+| Blank lines | No extra blank lines |
+| EOF | Exactly one newline |
+| Commits | English, ≤72 chars |
 
 ---
 
-## 🚫 Forbidden Patterns
+## Forbidden Patterns
 
 ```python
-# ❌ NEVER — 6+ parameters
-def process_game(user, ctx, log, val, map, cache):
-    ...
+# NEVER: 6+ parameters
+def process_game(user, ctx, log, val, map, cache): ...
 
-# ✅ ALWAYS — ≤4 parameters
-def process_game(game_id: str, config: dict) -> Game:
-    """Краткое описание."""
-    ...
+# NEVER: Deep nesting
+if c1:
+    if c2:
+        if c3:
+            if c4: ...
+
+# NEVER: print statements
+print(f"Game {name} started")
+
+# NEVER: shell=True
+subprocess.run(cmd, shell=True)
+
+# NEVER: Hardcoded credentials
+API_KEY = "sk-abc123"
+
+# NEVER: Path traversal
+file_path = f"/data/{user_filename}"
 ```
 
 ```python
-# ❌ NEVER — Deep nesting
-if condition1:
-    if condition2:
-        if condition3:
-            if condition4:
-                ...
+# ALWAYS: ≤4 parameters
+def process_game(game_id: str, config: dict) -> Game:
+    """Process game data."""
+    ...
 
-# ✅ ALWAYS — Early returns
+# ALWAYS: Early returns
 if not condition1:
     return
 if not condition2:
     return
-...
-```
 
-```python
-# ❌ NEVER — print statements
-print(f"Game {name} started")
-
-# ✅ ALWAYS — logging
+# ALWAYS: Logging
 from portprotonqt.logger import get_logger
 logger = get_logger(__name__)
 logger.info("Game %s started", name)
-```
 
----
+# ALWAYS: Explicit subprocess
+subprocess.run(["cmd", "arg1", "arg2"])
 
-## 🏗️ Project Structure
-
-```
-PortProtonQt/
-├── portprotonqt/          # Main Python package
-│   ├── app.py            # Entry point
-│   ├── main_window.py    # Main window
-│   ├── game_card.py      # Game card widget
-│   ├── steam_api.py      # Steam integration
-│   ├── egs_api.py        # Epic Games integration
-│   ├── theme_manager.py  # Theme management
-│   ├── logger.py         # Logging module
-│   └── themes/           # Theme files (styles.py)
-├── build-aux/            # Build resources (icons, desktop, udev)
-├── dev-scripts/          # Development scripts
-├── documentation/        # Documentation
-├── meson.build          # Meson configuration
-├── pyproject.toml       # Python/uv configuration
-└── .pre-commit-config.yaml
-```
-
----
-
-## 🛠️ Development Workflow
-
-### Setup (development)
-
-```bash
-uv python install 3.10
-uv sync
-source .venv/bin/activate
-pre-commit install
-```
-
-### Run
-
-```bash
-portprotonqt
-```
-
-### Pre-commit checks
-
-```bash
-# Automatic on commit
-pre-commit run --all-files
-
-# Manual
-pre-commit run ruff-check --all-files
-pre-commit run pyright --all-files
-pre-commit run uv-lock --all-files
-```
-
-### Build (release)
-
-```bash
-meson setup builddir
-meson compile -C builddir
-meson install -C builddir
-```
-
----
-
-## 📋 AI Agent Checklist
-
-### When writing code
-
-- [ ] Functions ≤30 lines
-- [ ] Parameters ≤4
-- [ ] Nesting ≤4 levels
-- [ ] LF line endings
-- [ ] Type hints
-- [ ] Logging via `portprotonqt.logger`, not `print`
-- [ ] Error handling (try/except)
-
-### When refactoring
-
-- [ ] No code duplicates
-- [ ] No unused imports
-- [ ] No commented-out code
-- [ ] No TODO without tickets
-- [ ] Clear variable names (not `x`, `tmp`, `data`)
-
-### When adding dependencies
-
-- [ ] Check license (GPL-3.0 compatible)
-- [ ] Add to `pyproject.toml`
-- [ ] Run `uv lock`
-
----
-
-## 🔒 Security (CRITICAL)
-
-```python
-# ❌ NEVER — Hardcoded credentials
-API_KEY = "sk-abc123..."
-
-# ✅ ALWAYS — Environment variables
+# ALWAYS: Environment variables
 API_KEY = os.getenv("API_KEY")
-```
 
-```python
-# ❌ NEVER — Path traversal
-file_path = f"/data/{user_filename}"
-
-# ✅ ALWAYS — Sanitize paths
+# ALWAYS: Sanitize paths
 file_path = os.path.join(BASE_DIR, os.path.basename(user_filename))
 ```
 
 ---
 
-## 📝 Code Style
+## Code Modification Rules
 
-### Imports
+- NEVER rewrite entire file unless explicitly requested
+- Modify only the relevant section
+- Preserve existing architecture and naming
+- Do not auto-format unrelated code
+- Do not reorder imports unless necessary
+- Do not introduce abstractions without request
+- Do not change logging system
+- Do not change public APIs without reason
+- Do not add dependencies unless required
+- Do not refactor unrelated code
+- Do not add comments for obvious code
+- Do not invent modules
+- Do not move files unless requested
+- No circular imports
+- Subprocess calls in dedicated functions
+- No mutable global state (except logger)
 
-```python
-# Standard library
-import os
-from pathlib import Path
+**ALWAYS:**
 
-# Third-party
-from PySide6.QtWidgets import QApplication
-import requests
-
-# Local (absolute imports)
-from portprotonqt.steam_api import SteamAPI
-from portprotonqt.game_card import GameCard
-from portprotonqt.logger import get_logger
-```
-
-### Type hints
-
-```python
-def get_game(game_id: str, cache: dict | None = None) -> Game | None:
-    ...
-
-class Game:
-    name: str
-    playtime: int
-    cover_url: str | None
-```
-
-### Logging
-
-```python
-from portprotonqt.logger import get_logger
-
-logger = get_logger(__name__)
-
-logger.debug("Debug message")
-logger.info("Game %s started", name)
-logger.warning("Low disk space")
-logger.error("Failed to load: %s", error)
-```
-
-### Exceptions
-
-```python
-try:
-    risky_operation()
-except SpecificError as e:
-    logger.error("Operation failed: %s", e)
-    raise
-```
+- Minimal diff
+- Targeted changes only
+- Preserve existing patterns
+- Keep surrounding code unchanged
 
 ---
 
-## 🎨 Themes
+## LLM Prohibitions
 
-### Theme structure
+**Specific prohibitions for AI-generated code:**
 
-```
-portprotonqt/themes/
-└── theme_name/
-    ├── styles.py      # QSS styles
-    ├── metadata.json  # Theme metadata
-    └── icons/         # Theme icons
-```
-
-### Validate themes
-
-```bash
-python dev-scripts/check_qss_properties.py
-```
-
-> [!WARNING]
-> `styles.py` is a regular Python file. Check third-party themes for malicious code.
+- Add type hints to existing code unless requested
+- Replace existing patterns with "better" alternatives
+- Consolidate similar code blocks
+- Extract methods or functions without request
+- Add validation or error handling beyond scope
+- Generate boilerplate or scaffolding
+- Add configuration options
+- Create new files for "organization"
+- Split or merge existing modules
+- Change function signatures
+- Modify docstrings unnecessarily
+- Add or remove blank lines for "style"
+- Normalize or standardize code patterns
 
 ---
 
-## 🌐 Localization
+## Performance Rules
 
-### Usage
-
-```python
-from portprotonqt.localization import get_translation
-_ = get_translation()
-
-label = _("Game")
-```
-
-### Update translations
-
-```bash
-uv sync --all-extras --dev
-source .venv/bin/activate
-
-# Update all .po files
-python dev-scripts/l10n.py --update-all
-
-# Compile .mo files
-python dev-scripts/l10n.py
-
-# Spell check
-python dev-scripts/l10n.py --spellcheck
-```
-
-### Add new language
-
-```bash
-python dev-scripts/l10n.py --create-new <locale_code>
-```
+- No blocking I/O in UI thread
+- No synchronous HTTP in UI thread
+- Cache API responses in `~/.cache/PortProtonQt`
+- Avoid repeated disk reads in loops
+- Avoid O(n²) in game lists
+- Lazy load images
+- Limit threads to CPU cores
 
 ---
 
-## 🧹 Dead Code Removal
+## PySide6 Rules
 
-```bash
-# Find unused imports
-ruff check --select=F401 portprotonqt/
-
-# Find unused variables
-ruff check --select=F841 portprotonqt/
-
-# Type check
-pyright portprotonqt/
-```
+- No business logic in widgets
+- Use signals/slots (no direct coupling)
+- No heavy operations in paintEvent
+- Use methods instead of lambda for complex logic
+- Use QThread for long tasks
 
 ---
 
-## 📦 Dependencies
+## Refactoring Constraints
 
-### Core
-
-- **PySide6** — GUI framework
-- **Legendary** — Epic Games integration (GPL-3.0)
-- **Icoextract** — Icon extraction (MIT)
-- **HowLongToBeat API** — Playtime data (MIT)
-- **Requests** — HTTP requests
-- **Pillow** — Image handling
-
-### License compatibility
-
-- ✅ MIT, Apache-2.0, BSD — compatible with GPL-3.0
-- ⚠️ LGPL — requires dynamic linking
-- ❌ Proprietary — incompatible
+- Max 1 module per task
+- Preserve git blame
+- Avoid renaming unless necessary
 
 ---
 
-## 🚀 Release Process
+## When Uncertain
 
-```bash
-# Update version in pyproject.toml and meson.build
-# Update CHANGELOG.md
+Ask before proceeding if unsure about:
+- Architecture
+- Naming
+- Design decisions
 
-git commit -m "chore: bump version to 0.1.12"
-```
-
-### Changelog format
-
-```markdown
-## [0.1.12] - 2026-02-19
-
-### Added
-- New feature X
-
-### Fixed
-- Bug Y
-
-### Changed
-- Improved performance Z
-```
+Do not assume conventions. Do not invent behavior.
 
 ---
 
-## 🔍 Code Review Guidelines
+## Never Invent
 
-### When invoked for review:
-
-1. Run `git diff` to see recent changes
-2. Focus on modified files
-3. Begin review immediately
-
-### Review Checklist
-
-- [ ] Code is simple and readable
-- [ ] Functions and variables are well-named
-- [ ] No duplicated code
-- [ ] Proper error handling
-- [ ] No exposed secrets or API keys
-- [ ] Input validation implemented
-- [ ] Performance considerations addressed
-- [ ] Time complexity analyzed
-- [ ] Licenses of integrated libraries checked
-
-### Security Checks (CRITICAL)
-
-- Hardcoded credentials (API keys, passwords, tokens)
-- SQL injection risks (string concatenation in queries)
-- Missing input validation
-- Insecure dependencies (outdated, vulnerable)
-- Path traversal risks (user-controlled file paths)
-- Authentication bypasses
-
-### Code Quality (HIGH)
-
-- Large functions (>50 lines)
-- Large files (>800 lines)
-- Deep nesting (>4 levels)
-- Missing error handling (try/except)
-- Missing tests for new code
-
-### Performance (MEDIUM)
-
-- Inefficient algorithms (O(n²) when O(n log n) possible)
-- Missing caching
-- N+1 queries
-
-### Best Practices (MEDIUM)
-
-- Emoji usage in code/comments
-- TODO/FIXME without tickets
-- Accessibility issues (missing ARIA labels, poor contrast)
-- Poor variable naming (x, tmp, data)
-- Magic numbers without explanation
-- Inconsistent formatting
-
-### Review Output Format
-
-For each issue:
-
-```
-[CRITICAL] Hardcoded API key
-File: portprotonqt/steam_api.py:42
-Issue: API key exposed in source code
-Fix: Move to environment variable
-
-API_KEY = "sk-abc123"  # ❌ Bad
-API_KEY = os.getenv("API_KEY")  # ✓ Good
-```
-
-### Approval Criteria
-
-- ✅ **Approve:** No CRITICAL or HIGH issues
-- ⚠️ **Warning:** MEDIUM issues only (can merge with caution)
-- ❌ **Block:** CRITICAL or HIGH issues found
-
-### Project-Specific Guidelines
-
-- Follow MANY SMALL FILES principle (200-400 lines typical)
-- No emojis in codebase
-- Verify theme security (check `styles.py` for malicious code)
-- Check Steam/EGS API integration error handling
-- Validate cache fallback behavior
+- CLI arguments
+- Config files
+- API endpoints
+- Environment variables
+- Theme structure
+- Localization keys
 
 ---
 
-## 🆘 Troubleshooting
-
-```bash
-# Pre-commit not running
-pre-commit install --install-hooks
-
-# Check specific file
-pyright portprotonqt/game_card.py
-
-# Ruff checks
-ruff check portprotonqt/
-```
-
----
-
-## 📚 Resources
-
-- [Theme documentation](documentation/theme_guide)
-- [Localization guide](documentation/localization_guide)
-- [Metadata override guide](documentation/metadata_override)
-- [TODO list](TODO.md)
-- [Changelog](CHANGELOG.md)
-
----
-
-## ⚡ Quick Reference
+## Development Workflow
 
 ```bash
 # Setup
-uv sync && source .venv/bin/activate
+uv python install 3.10
+uv sync
+source .venv/bin/activate
+pre-commit install --install-hooks
 
 # Run
 portprotonqt
 
-# Checks
-ruff check && pyright && pre-commit run --all-files
+# Manual checks
+pre-commit run --all-files
+pyright portprotonqt/game_card.py
+ruff check portprotonqt/
+python dev-scripts/check_meson_files.py
 
 # Build
 meson setup builddir && meson compile -C builddir
@@ -489,8 +236,424 @@ python dev-scripts/l10n.py
 git commit -m "feat: description in English ≤72 chars"
 ```
 
+### Pre-commit Hooks
+
+| Hook | Checks |
+|------|--------|
+| uv-lock | uv.lock up to date |
+| ruff-check | Linting (E, W, F, B, C4, UP) |
+| pyright | Type checking |
+| check-meson | meson.build syntax + files |
+| check-qss-properties | Theme QSS validation |
+| trailing-whitespace | Whitespace cleanup |
+| end-of-file-fixer | EOF newline |
+
+---
+
+## AI Agent Checklist
+
+### Writing Code
+
+- [ ] Functions ≤30 lines, ≤4 params
+- [ ] Nesting ≤4 levels
+- [ ] LF line endings, 4-space indent
+- [ ] No trailing whitespace, extra blank lines
+- [ ] Type hints
+- [ ] Logging via `portprotonqt.logger`
+- [ ] Error handling (try/except)
+- [ ] Files in `portprotonqt/meson.build`
+- [ ] Comments in English, concise
+- [ ] No circular imports
+- [ ] Subprocess in dedicated functions
+- [ ] No global state (except logger)
+- [ ] No blocking calls in UI thread
+
+### Refactoring
+
+- [ ] No code duplicates (only if directly related to current task)
+- [ ] No unused imports
+- [ ] No commented-out code
+- [ ] No TODO without tickets
+- [ ] Clear variable names
+
+### Dependencies
+
+- [ ] Prefer standard library
+- [ ] No heavy frameworks
+- [ ] No async frameworks (use QThread instead)
+- [ ] No additional logging libraries
+- [ ] License GPL-3.0 compatible
+- [ ] Added to `pyproject.toml`
+- [ ] `uv lock` run
+
+---
+
+## Error Handling Policy
+
+### When to Rethrow
+
+| Condition | Action | Example |
+|-----------|--------|---------|
+| Cannot handle locally | Rethrow | API errors in business logic |
+| Need to add context | Wrap & rethrow | `raise ValueError(f"Invalid game ID: {game_id}") from e` |
+| Public API boundary | Rethrow | Let caller decide |
+| Expected & recoverable | Handle silently | Cache miss → fetch from source |
+
+```python
+# Bad: Silent swallow
+try:
+    data = load_config()
+except Exception:
+    pass
+
+# Good: Rethrow with context
+try:
+    data = load_config()
+except FileNotFoundError as e:
+    raise ConfigError(f"Config not found: {path}") from e
+```
+
+### When to Log and Continue
+
+| Condition | Action | Example |
+|-----------|--------|---------|
+| Non-critical failure | Log, continue | Thumbnail download failed |
+| Fallback available | Log, use fallback | Cache miss → network request |
+| Best-effort operation | Log, skip | Optional metadata |
+| User notification only | Log, notify UI | Network timeout |
+
+```python
+# Log and continue for non-critical
+try:
+    cover = download_cover(url)
+except requests.RequestException as e:
+    logger.warning("Cover download failed: %s", e)
+    cover = QPixmap()  # Use placeholder
+```
+
+### When to Fail Fast
+
+| Condition | Action | Example |
+|-----------|--------|---------|
+| Critical dependency | Raise immediately | Database connection lost |
+| Data corruption | Raise immediately | Invalid config format |
+| Security violation | Raise immediately | Path traversal attempt |
+| Unrecoverable state | Raise immediately | Missing required file |
+
+```python
+# Fail fast for critical
+if not config_path.exists():
+    raise ConfigError(f"Required config missing: {config_path}")
+```
+
+### Exception Hierarchy
+
+```python
+# Base exception for application errors
+class PortProtonError(Exception):
+    """Base exception for PortProtonQt."""
+
+# Domain-specific exceptions
+class ConfigError(PortProtonError):
+    """Configuration-related errors."""
+
+class APIError(PortProtonError):
+    """External API errors."""
+
+class ValidationError(PortProtonError):
+    """Input validation errors."""
+```
+
+### Error Handling Patterns
+
+```python
+# Pattern 1: Guard clauses for validation
+def process_game(game_id: str) -> Game:
+    if not game_id:
+        raise ValidationError("Game ID required")
+    ...
+
+# Pattern 2: Context manager for resources
+with open(path) as f:
+    data = json.load(f)
+
+# Pattern 3: Specific exception handling
+try:
+    response = requests.get(url, timeout=5)
+except requests.Timeout:
+    logger.warning("Request timeout for %s", url)
+    return None
+except requests.ConnectionError:
+    logger.error("Connection failed for %s", url)
+    raise APIError("Network unavailable") from None
+
+# Pattern 4: Exception chaining
+try:
+    value = int(text)
+except ValueError as e:
+    raise ParseError(f"Invalid integer: {text}") from e
+```
+
+### UI Thread Rules
+
+| Context | Strategy |
+|---------|----------|
+| UI thread | Never block, use signals for errors |
+| Worker thread | Catch, emit error signal |
+| Async operations | Return error in result tuple |
+
+```python
+# Worker thread pattern
+def run_in_thread():
+    try:
+        result = long_operation()
+        success_signal.emit(result)
+    except Exception as e:
+        logger.error("Operation failed: %s", e)
+        error_signal.emit(str(e))
+```
+
+### Logging Guidelines
+
+| Level | When to Use |
+|-------|-------------|
+| DEBUG | Detailed diagnostic info |
+| INFO | Normal operation events |
+| WARNING | Recoverable issues |
+| ERROR | Failures requiring attention |
+| CRITICAL | System-wide failures |
+
+```python
+# Log with context
+logger.error("Failed to load game %s: %s", game_id, e)
+
+# Include stack trace for unexpected errors
+try:
+    ...
+except Exception as e:
+    logger.exception("Unexpected error processing %s", game_id)
+```
+
+### Forbidden Patterns
+
+```python
+# NEVER: Bare except
+try:
+    ...
+except:
+    pass
+
+# NEVER: Catch Exception without logging
+try:
+    ...
+except Exception:
+    pass
+
+# NEVER: Silent failures in critical paths
+if not critical_file.exists():
+    return None  # Should raise
+
+# NEVER: Multiple exceptions in one handler
+try:
+    ...
+except (FileNotFoundError, ValueError, TypeError, KeyError):
+    pass  # Each needs separate handling
+```
+
+---
+
+## Code Style
+
+### Imports
+```python
+# Standard library
+import os
+from pathlib import Path
+
+# Third-party
+from PySide6.QtWidgets import QApplication
+import requests
+
+# Local
+from portprotonqt.steam_api import SteamAPI
+from portprotonqt.logger import get_logger
+```
+
+### Type Hints
+```python
+def get_game(game_id: str, cache: dict | None = None) -> Game | None:
+    ...
+
+class Game:
+    name: str
+    playtime: int
+    cover_url: str | None
+```
+
+### Comments
+```python
+# NEVER: Russian or verbose
+# Проверить существование файла
+
+# ALWAYS: Concise English
+# Check if file exists
+if os.path.exists(path):
+    ...
+
+# ALWAYS: Docstrings for public APIs
+def check_file_exists(path: str) -> bool:
+    """Check if file exists at given path."""
+    ...
+```
+
+---
+
+## Code Review Guidelines
+
+### Security (CRITICAL)
+
+- Hardcoded credentials
+- SQL injection risks
+- Missing input validation
+- Insecure dependencies
+- Path traversal risks
+- `shell=True` in subprocess
+
+### Code Quality (HIGH)
+
+- Functions >50 lines
+- Files >800 lines
+- Nesting >4 levels
+- Missing error handling
+- Circular imports
+- Global state
+- Blocking calls in UI thread
+
+### Performance (MEDIUM)
+
+- O(n²) when O(n log n) possible
+- Missing caching
+- N+1 queries
+
+### Best Practices (MEDIUM)
+
+- Emoji usage
+- TODO without tickets
+- Poor variable naming (x, tmp, data)
+- Magic numbers
+- Non-English comments
+
+### Review Output
+
+```
+[CRITICAL] Hardcoded API key
+File: portprotonqt/steam_api.py:42
+Issue: API key exposed in source code
+Fix: Use environment variable
+
+API_KEY = "sk-abc123"  # Bad
+API_KEY = os.getenv("API_KEY")  # Good
+```
+
+### Approval
+
+- **Approve:** No CRITICAL or HIGH issues
+- **Warning:** MEDIUM issues only
+- **Block:** CRITICAL or HIGH issues found
+
+---
+
+## Meson Build Guidelines
+
+The `check-meson` hook validates `meson.build` on commit.
+
+**Checks:**
+- Syntax: brackets, quotes, commas, control structures
+- All `.py` files in `install_data()`
+- No duplicates or missing files
+
+### Adding Files
+
+```meson
+# portprotonqt/meson.build
+install_data(
+  ['existing.py',
+   'new_module.py',
+  ],
+  install_dir: pythondir / meson.project_name(),
+)
+```
+
+### Common Errors
+
+```meson
+# Bad: Missing comma      # Bad: Unclosed
+install_data(             install_data(
+  'file1.py'                'file1.py',
+  'file2.py'                'file2.py'
+)                         # Missing )
+
+# Good
+install_data(
+  'file1.py',
+  'file2.py',
+)
+```
+
+---
+
+## Project Structure
+
+```
+PortProtonQt/
+├── portprotonqt/          # Python package
+│   ├── app.py            # Entry point
+│   ├── main_window.py    # Main window
+│   ├── game_card.py      # Game card widget
+│   ├── steam_api.py      # Steam integration
+│   ├── egs_api.py        # Epic Games integration
+│   ├── theme_manager.py  # Theme management
+│   ├── logger.py         # Logging
+│   └── themes/           # Theme files
+├── build-aux/            # Build resources
+├── dev-scripts/          # Development scripts
+├── documentation/        # Documentation
+├── meson.build          # Meson config
+├── pyproject.toml       # Python config
+└── .pre-commit-config.yaml
+```
+
+---
+
+## Dependencies
+
+### Core
+
+| Package | Purpose | License |
+|---------|---------|---------|
+| PySide6 | GUI | LGPL |
+| Legendary | EGS integration | GPL-3.0 |
+| Icoextract | Icon extraction | MIT |
+| Requests | HTTP | Apache-2.0 |
+| Pillow | Image handling | MIT |
+
+**License compatibility:**
+- MIT, Apache-2.0, BSD: Compatible
+- LGPL: Requires dynamic linking
+- Proprietary: Incompatible
+
+---
+
+## Resources
+
+- [Theme documentation](documentation/theme_guide)
+- [Localization guide](documentation/localization_guide)
+- [Metadata override guide](documentation/metadata_override)
+- [TODO list](TODO.md)
+- [Changelog](CHANGELOG.md)
+
 ---
 
 **Last updated:** 2026-02-19
-**Version:** 0.1.11
+**Version:** 0.2.0
 **Status:** Work in Progress (Beta)
