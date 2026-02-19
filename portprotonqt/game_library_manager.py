@@ -286,8 +286,6 @@ class GameLibraryManager:
                         return (fav_order, -game[11] if game[11] else 0, -game[10] if game[10] else 0)
                     elif sort_method == "alphabetical":
                         return (fav_order, name.lower())
-                    elif sort_method == "favorites":
-                        return (fav_order,)
                     else:
                         return (fav_order, -game[10] if game[10] else 0, -game[11] if game[11] else 0)
 
