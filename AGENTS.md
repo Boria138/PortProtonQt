@@ -122,9 +122,9 @@ portprotonqt
 pre-commit run --all-files
 
 # Manual
-ruff check portprotonqt/
-pyright portprotonqt/
-uv lock --check
+pre-commit run ruff-check --all-files
+pre-commit run pyright --all-files
+pre-commit run uv-lock --all-files
 ```
 
 ### Build (release)
