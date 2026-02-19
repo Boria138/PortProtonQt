@@ -17,6 +17,8 @@ BuildRequires:  ninja-build
 BuildRequires:  python3-devel
 BuildRequires:  git
 BuildRequires:  systemd-rpm-macros
+BuildRequires:  vulkan-loader-devel
+BuildRequires:  gcc
 
 Obsoletes:      python3-%{pypi_name} < %{version}-%{release}
 Provides:       python3-%{pypi_name} = %{version}-%{release}
@@ -57,9 +59,6 @@ This application provides a sleek, intuitive graphical interface for managing an
 
 %{?python_disable_dependency_generator}
 
-BuildRequires:  vulkan-loader-devel
-BuildRequires:  gcc
-
 %prep
 git clone https://git.linux-gaming.ru/Boria138/PortProtonQt
 cd %{oname}
@@ -79,12 +78,12 @@ cd %{oname}
 
 %files -f %{oname}/%{pypi_name}.lang
 %{_bindir}/%{pypi_name}
+%{_bindir}/vk_gpu_info
 %{python3_sitelib}/%{pypi_name}/
 %{_datadir}/icons/hicolor/scalable/apps/ru.linux_gaming.PortProtonQt.svg
 %{_metainfodir}/ru.linux_gaming.PortProtonQt.metainfo.xml
 %{_udevrulesdir}/60-portprotonqt.rules
 %{_datadir}/applications/ru.linux_gaming.PortProtonQt.desktop
 %{bash_completions_dir}/portprotonqt
-%{_bindir}/vk_gpu_info
 
 %changelog
