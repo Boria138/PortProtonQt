@@ -1,6 +1,6 @@
 import os
 import shlex
-from PySide6.QtWidgets import (QFrame, QGraphicsDropShadowEffect, QVBoxLayout, QLabel, QHBoxLayout, QWidget, QApplication, QMessageBox)
+from PySide6.QtWidgets import (QFrame, QGraphicsDropShadowEffect, QVBoxLayout, QLabel, QHBoxLayout, QWidget, QApplication, QMessageBox, QScrollArea, QBoxLayout, QSizePolicy, QScroller)
 from PySide6.QtCore import Qt, QUrl, QTimer, QAbstractAnimation
 from PySide6.QtGui import QColor, QDesktopServices
 from portprotonqt.image_utils import load_pixmap_async, round_corners
@@ -97,7 +97,23 @@ class DetailPageManager:
             if detailPage in self._animations:
                 del self._animations[detailPage]
 
-        mainLayout = QVBoxLayout(detailPage)
+        # Use a main layout to hold the scrollable content area
+        pageLayout = QVBoxLayout(detailPage)
+        pageLayout.setContentsMargins(0, 0, 0, 0)
+        pageLayout.setSpacing(0)
+
+        # Scroll area for the content
+        scrollArea = QScrollArea()
+        scrollArea.setWidgetResizable(True)
+        scrollArea.setFrameShape(QFrame.Shape.NoFrame)
+        scrollArea.setStyleSheet(self.main_window.theme.SCROLL_AREA_STYLE)
+        QScroller.grabGesture(scrollArea.viewport(), QScroller.ScrollerGestureType.LeftMouseButtonGesture)
+
+        scrollContent = QWidget()
+        scrollArea.setWidget(scrollContent)
+        pageLayout.addWidget(scrollArea)
+
+        mainLayout = QVBoxLayout(scrollContent)
         mainLayout.setContentsMargins(30, 30, 30, 30)
         mainLayout.setSpacing(20)
 
@@ -109,10 +125,25 @@ class DetailPageManager:
 
         contentFrame = QFrame()
         contentFrame.setStyleSheet(self.main_window.theme.DETAIL_CONTENT_FRAME_STYLE)
-        contentFrameLayout = QHBoxLayout(contentFrame)
+        # Use QBoxLayout to switch between horizontal and vertical
+        contentFrameLayout = QBoxLayout(QBoxLayout.Direction.LeftToRight, contentFrame)
         contentFrameLayout.setContentsMargins(20, 20, 20, 20)
         contentFrameLayout.setSpacing(40)
         mainLayout.addWidget(contentFrame)
+
+        # Handle adaptive layout switching on resize
+        def on_detail_page_resize(event):
+            if detailPage.width() < 900:
+                if contentFrameLayout.direction() != QBoxLayout.Direction.TopToBottom:
+                    contentFrameLayout.setDirection(QBoxLayout.Direction.TopToBottom)
+                    contentFrameLayout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            else:
+                if contentFrameLayout.direction() != QBoxLayout.Direction.LeftToRight:
+                    contentFrameLayout.setDirection(QBoxLayout.Direction.LeftToRight)
+                    contentFrameLayout.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+            QWidget.resizeEvent(detailPage, event)
+
+        detailPage.resizeEvent = on_detail_page_resize
 
         # Cover (at left)
         coverFrame = QFrame()
@@ -274,9 +305,11 @@ class DetailPageManager:
         # Game details (at right)
         detailsWidget = QWidget()
         detailsWidget.setStyleSheet(self.main_window.theme.DETAILS_WIDGET_STYLE)
+        detailsWidget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         detailsLayout = QVBoxLayout(detailsWidget)
         detailsLayout.setContentsMargins(20, 20, 20, 20)
         detailsLayout.setSpacing(15)
+
 
         titleLabel = QLabel(name)
         titleLabel.setStyleSheet(self.main_window.theme.DETAIL_PAGE_TITLE_STYLE)
@@ -623,7 +656,23 @@ class DetailPageManager:
             if detailPage in self._animations:
                 del self._animations[detailPage]
 
-        mainLayout = QVBoxLayout(detailPage)
+        # Use a main layout to hold the scrollable content area
+        pageLayout = QVBoxLayout(detailPage)
+        pageLayout.setContentsMargins(0, 0, 0, 0)
+        pageLayout.setSpacing(0)
+
+        # Scroll area for the content
+        scrollArea = QScrollArea()
+        scrollArea.setWidgetResizable(True)
+        scrollArea.setFrameShape(QFrame.Shape.NoFrame)
+        scrollArea.setStyleSheet(self.main_window.theme.SCROLL_AREA_STYLE)
+        QScroller.grabGesture(scrollArea.viewport(), QScroller.ScrollerGestureType.LeftMouseButtonGesture)
+
+        scrollContent = QWidget()
+        scrollArea.setWidget(scrollContent)
+        pageLayout.addWidget(scrollArea)
+
+        mainLayout = QVBoxLayout(scrollContent)
         mainLayout.setContentsMargins(30, 30, 30, 30)
         mainLayout.setSpacing(20)
 
@@ -635,10 +684,25 @@ class DetailPageManager:
 
         contentFrame = QFrame()
         contentFrame.setStyleSheet(self.main_window.theme.DETAIL_CONTENT_FRAME_STYLE)
-        contentFrameLayout = QHBoxLayout(contentFrame)
+        # Use QBoxLayout to switch between horizontal and vertical
+        contentFrameLayout = QBoxLayout(QBoxLayout.Direction.LeftToRight, contentFrame)
         contentFrameLayout.setContentsMargins(20, 20, 20, 20)
         contentFrameLayout.setSpacing(40)
         mainLayout.addWidget(contentFrame)
+
+        # Handle adaptive layout switching on resize
+        def on_detail_page_resize(event):
+            if detailPage.width() < 900:
+                if contentFrameLayout.direction() != QBoxLayout.Direction.TopToBottom:
+                    contentFrameLayout.setDirection(QBoxLayout.Direction.TopToBottom)
+                    contentFrameLayout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            else:
+                if contentFrameLayout.direction() != QBoxLayout.Direction.LeftToRight:
+                    contentFrameLayout.setDirection(QBoxLayout.Direction.LeftToRight)
+                    contentFrameLayout.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+            QWidget.resizeEvent(detailPage, event)
+
+        detailPage.resizeEvent = on_detail_page_resize
 
         # Cover (at left)
         coverFrame = QFrame()
@@ -662,6 +726,7 @@ class DetailPageManager:
         # Game details (at right) - minimal version without time info
         detailsWidget = QWidget()
         detailsWidget.setStyleSheet(self.main_window.theme.DETAILS_WIDGET_STYLE)
+        detailsWidget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         detailsLayout = QVBoxLayout(detailsWidget)
         detailsLayout.setContentsMargins(20, 20, 20, 20)
         detailsLayout.setSpacing(15)
