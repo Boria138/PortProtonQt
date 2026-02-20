@@ -4,6 +4,9 @@ from pathlib import Path
 import locale
 import os
 from babel import Locale
+from portprotonqt.logger import get_logger
+
+logger = get_logger(__name__)
 
 LOCALE_MAP = {
     'ru': 'russian',
@@ -65,7 +68,7 @@ def get_steam_language():
             language_code = locale.language
             return LOCALE_MAP.get(language_code, 'english')
     except Exception as e:
-        print(f"Failed to detect locale: {e}")
+        logger.warning("Failed to detect locale: %s", e)
 
     # Fallback to English by default
     return 'english'
@@ -80,7 +83,7 @@ def get_egs_language():
             language_code = locale.language
             return language_code
     except Exception as e:
-        print(f"Failed to detect locale: {e}")
+        logger.warning("Failed to detect locale: %s", e)
 
     # Fallback to English by default
     return 'en'

@@ -984,7 +984,8 @@ class ProtonManager(QDialog):
                 return f"{int(total_size / (1024 * 1024 * 1024))}.{int((total_size / (1024 * 1024 * 1024) * 10) % 10)} GiB"
             else:
                 return f"{int(total_size / (1024 * 1024 * 1024 * 1024))}.{int((total_size / (1024 * 1024 * 1024 * 1024) * 10) % 10)} TiB"
-        except Exception:
+        except Exception as e:
+            logger.debug("Failed to format size: %s", e)
             return _("Unknown")
 
     def convert_size_to_bytes(self, size_str):

@@ -9,7 +9,10 @@ import requests
 from bs4 import BeautifulSoup, Tag
 from portprotonqt.config_utils import read_proxy_config
 from portprotonqt.time_utils import format_playtime
+from portprotonqt.logger import get_logger
 from PySide6.QtCore import QObject, Signal
+
+logger = get_logger(__name__)
 
 @dataclass
 class GameEntry:
@@ -365,7 +368,7 @@ class HowLongToBeat(QObject):
                 results = self.search(game_name, case_sensitive)
                 self.searchCompleted.emit(results if results else [])
             except Exception as e:
-                print(f"Error in search_with_callback: {e}")
+                logger.error("Error in search_with_callback: %s", e)
                 self.searchCompleted.emit([])
 
         thread = Thread(target=search_thread)

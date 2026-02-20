@@ -594,7 +594,8 @@ class DetailPageManager:
             import locale
             try:
                 current_locale = locale.getlocale()[0] or 'en'
-            except Exception:
+            except Exception as e:
+                logger.debug("Failed to get current locale: %s", e)
                 current_locale = 'en'
             lang_code = 'ru' if current_locale and 'ru' in current_locale.lower() else 'en'
 

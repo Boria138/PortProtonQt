@@ -267,7 +267,8 @@ def get_os_info() -> str:
     try:
         info = platform.freedesktop_os_release()
         return info.get("PRETTY_NAME", platform.platform())
-    except Exception:
+    except Exception as e:
+        logger.debug("Failed to get OS info: %s", e)
         return platform.platform()
 
 
@@ -319,7 +320,8 @@ def get_ram_info() -> str:
         swap_total = f"{swap.total // 1024} kB"
 
         return f"MemTotal: {mem_total}\nMemAvailable: {mem_available}\nSwapTotal: {swap_total}"
-    except Exception:
+    except Exception as e:
+        logger.debug("Failed to get RAM info: %s", e)
         return "Unable to retrieve RAM info"
 
 
@@ -384,8 +386,8 @@ def get_locale_available() -> str:
             matching = [loc for loc in locales if base_locale.lower().replace(".utf-8", "") in loc.lower()]
             if matching:
                 return "\n".join(matching)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("Failed to get available locales: %s", e)
     return ""
 
 
@@ -425,7 +427,8 @@ def get_libc_version() -> str:
                 return f"glibc {version_match.group(1)}"
 
             return "glibc (version unknown)"
-    except Exception:
+    except Exception as e:
+        logger.debug("Failed to get libc version: %s", e)
         return "Unknown"
 
 
@@ -553,11 +556,12 @@ def get_filesystem_info(exe_path: str | None, portproton_path: str) -> str:
                     )
                     if result.returncode == 0 and result.stdout.strip():
                         fstype = result.stdout.strip()
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug("Failed to get fstype for %s: %s", device, e)
 
             return fstype
-        except Exception:
+        except Exception as e:
+            logger.debug("Failed to get filesystem info: %s", e)
             return "Unknown"
 
     lines = []
@@ -835,7 +839,8 @@ def get_ram_info_detailed() -> str:
         )
         if result.returncode == 0:
             return result.stdout.strip()
-    except Exception:
+    except Exception as e:
+        logger.debug("Failed to get free memory info: %s", e)
         pass
 
     return get_ram_info()

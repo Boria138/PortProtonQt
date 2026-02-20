@@ -2435,7 +2435,8 @@ class InputManager(QObject):
                 try:
                     _ = monitor.poll(timeout=0)  # just read, do not process
                     drained_count += 1
-                except Exception:
+                except Exception as e:
+                    logger.debug("Failed to drain initial udev events: %s", e)
                     break
 
             self.monitor_ready = True
@@ -2808,8 +2809,8 @@ class InputManager(QObject):
                 try:
                     self.stop_rumble()
                     self.gamepad.close()
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug("Failed to close gamepad: %s", e)
             self.gamepad = None
             self.start_held = False
             self.guide_held = False

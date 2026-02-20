@@ -202,10 +202,11 @@ class ThreadedSearchWorker(QObject):
                         results = self.search_optimizer.fuzzy_search(search_text, limit=20, min_score=50.0)
 
             end_time = time.time()
-            print(f"Search completed in {end_time - start_time:.4f} seconds")
+            logger.debug("Search completed in %.4f seconds", end_time - start_time)
 
             self.search_finished.emit(results)
         except Exception as e:
+            logger.exception("Search failed: %s", e)
             self.search_error.emit(str(e))
 
 

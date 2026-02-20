@@ -177,7 +177,8 @@ def get_portproton_start_command():
         flatpak_available = True
     except FileNotFoundError:
         flatpak_available = False
-    except Exception:
+    except Exception as e:
+        logger.debug("Flatpak version check failed: %s", e)
         flatpak_available = False
 
     # Flatpak version has priority if available

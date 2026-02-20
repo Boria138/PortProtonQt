@@ -35,12 +35,13 @@ def safe_vdf_load(path: str | Path) -> dict:
             data = vdf.binary_load(f)
         return data
     except Exception as e:
+        logger.debug("Failed to binary load VDF %s: %s, trying text mode", path, e)
         try:
             with open(path, encoding='utf-8', errors='ignore') as f:
                 data = vdf.load(f)
             return data
         except Exception:
-            logger.error(f"Failed to load VDF file {path}: {e}")
+            logger.error("Failed to load VDF file %s: %s", path, e)
             return {}
 
 def decode_text(text: str) -> str:
