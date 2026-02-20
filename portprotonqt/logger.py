@@ -1,7 +1,7 @@
 import logging
 
 def setup_logger(level='NOTSET'):
-    """Настройка базовой конфигурации логирования."""
+    """Set up basic logging configuration."""
     # Clear existing handlers to prevent duplicates
     root_logger = logging.getLogger()
     for handler in root_logger.handlers[:]:
@@ -27,8 +27,8 @@ def setup_logger(level='NOTSET'):
         )
 
 def get_logger(name):
-    """Возвращает логгер для указанного модуля."""
+    """Return a logger for the specified module."""
     return logging.getLogger(name)
 
-# Инициализация логгера при импорте модуля (без логов по умолчанию)
+# Initialize logger on module import (no logs by default)
 setup_logger()

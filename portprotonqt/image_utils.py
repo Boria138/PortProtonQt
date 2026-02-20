@@ -15,7 +15,7 @@ import threading
 downloader = Downloader()
 logger = get_logger(__name__)
 
-# Глобальная очередь и пул потоков для загрузки изображений
+# Global queue and thread pool for image loading
 image_load_queue = Queue()
 image_executor = ThreadPoolExecutor(max_workers=4)
 queue_lock = threading.Lock()
@@ -29,7 +29,7 @@ def get_device_pixel_ratio() -> float:
 
 def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[QPixmap], None], app_name: str = ""):
     """
-    Асинхронно загружает обложку через очередь задач.
+    Asynchronously load cover through task queue.
     """
     def process_image():
         theme_manager = ThemeManager()
@@ -99,14 +99,14 @@ def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[Q
                     downloader.download_async(cover, local_path, timeout=5, callback=on_downloaded)
                     return
             except Exception as e:
-                logger.error(f"Ошибка обработки URL {cover}: {e}")
+                logger.error(f"URL processing error {cover}: {e}")
 
         # SteamGridDB (SGDB)
         if cover and cover.startswith("https://cdn2.steamgriddb.com"):
             try:
                 parts = cover.split("/")
                 filename = parts[-1] if parts else "sgdb_cover.png"
-                # SGDB ссылки содержат уникальный хеш в названии — используем как имя
+                # SGDB links contain unique hash in name - use as filename
                 local_path = os.path.join(image_folder, filename)
 
                 if os.path.exists(local_path):
@@ -143,7 +143,7 @@ def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[Q
                 return
 
             except Exception as e:
-                logger.error(f"Ошибка обработки SGDB URL {cover}: {e}")
+                logger.error(f"SGDB URL processing error {cover}: {e}")
 
         if cover and cover.startswith(("http://", "https://")):
             try:
@@ -216,7 +216,7 @@ def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[Q
 
 def round_corners(pixmap, radius):
     """
-    Возвращает QPixmap с закруглёнными углами.
+    Return QPixmap with rounded corners.
     """
     if pixmap.isNull():
         return pixmap
@@ -242,19 +242,19 @@ def round_corners(pixmap, radius):
 
 class FullscreenDialog(QDialog):
     """
-    Диалог для просмотра изображений без стандартных элементов управления.
-    Изображение отображается в области фиксированного размера, а подпись располагается чуть выше нижней границы.
-    В окне есть кнопки-стрелки для перелистывания изображений.
-    Диалог закрывается при клике по изображению или подписи.
+    Dialog for viewing images without standard controls.
+    Image displayed in fixed-size area, caption positioned slightly above bottom edge.
+    Window has arrow buttons for flipping through images.
+    Dialog closes on click on image or caption.
     """
     FIXED_WIDTH = 800
     FIXED_HEIGHT = 400
 
     def __init__(self, images, current_index=0, parent=None, theme=None):
         """
-        :param images: Список кортежей (QPixmap, caption)
-        :param current_index: Индекс текущего изображения
-        :param theme: Объект темы для стилизации (если None, используется default_styles)
+        :param images: List of tuples (QPixmap, caption)
+        :param current_index: Index of current image
+        :param theme: Theme object for styling (if None, default_styles used)
         """
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
@@ -322,7 +322,7 @@ class FullscreenDialog(QDialog):
         self.mainLayout.addWidget(self.captionLabel)
 
     def update_display(self):
-        """Обновляет изображение и подпись согласно текущему индексу."""
+        """Update image and caption according to current index."""
         if not self.images:
             return
 
@@ -342,12 +342,12 @@ class FullscreenDialog(QDialog):
             painter.end()
             self.imageLabel.setPixmap(placeholder_pixmap)
         else:
-            # Учитываем devicePixelRatio для масштабирования высокого качества
+            # Account for devicePixelRatio for high-quality scaling
             device_pixel_ratio = get_device_pixel_ratio()
             target_width = int((self.FIXED_WIDTH - 80) * device_pixel_ratio)
             target_height = int(self.FIXED_HEIGHT * device_pixel_ratio)
 
-            # Масштабируем изображение из оригинального pixmap
+            # Scale image from original pixmap
             scaled_pixmap = pixmap.scaled(
                 target_width,
                 target_height,
@@ -364,38 +364,38 @@ class FullscreenDialog(QDialog):
         self.repaint()
 
     def resizeEvent(self, event):
-        """Обновляет изображение при изменении размера окна."""
+        """Update image on window resize."""
         super().resizeEvent(event)
-        self.update_display()  # Перерисовываем изображение с учетом нового размера
+        self.update_display()  # Redraw image with new size
 
     def show_prev(self):
-        """Показывает предыдущее изображение."""
+        """Show previous image."""
         if self.images:
             self.current_index = (self.current_index - 1) % len(self.images)
             self.update_display()
 
     def show_next(self):
-        """Показывает следующее изображение."""
+        """Show next image."""
         if self.images:
             self.current_index = (self.current_index + 1) % len(self.images)
             self.update_display()
 
     def eventFilter(self, obj, event):
-        """Закрывает диалог при клике по изображению или подписи."""
+        """Close dialog on click on image or caption."""
         if event.type() == QEvent.Type.MouseButtonPress and obj in [self.imageLabel, self.captionLabel]:
             self.close()
             return True
         return super().eventFilter(obj, event)
 
     def changeEvent(self, event):
-        """Закрывает диалог при потере фокуса."""
+        """Close dialog on focus loss."""
         if event.type() == QEvent.Type.ActivationChange:
             if not self.isActiveWindow():
                 self.close()
         super().changeEvent(event)
 
     def mousePressEvent(self, event):
-        """Закрывает диалог при клике на пустую область."""
+        """Close dialog on click on empty area."""
         pos = event.pos()
         if not (self.imageContainer.geometry().contains(pos) or
                 self.captionLabel.geometry().contains(pos)):
@@ -404,16 +404,16 @@ class FullscreenDialog(QDialog):
 
 class ClickablePixmapItem(QGraphicsPixmapItem):
     """
-    Элемент карусели, реагирующий на клик.
-    При клике открывается FullscreenDialog с возможностью перелистывания изображений.
+    Carousel element that responds to clicks.
+    On click, opens FullscreenDialog with ability to flip through images.
     """
-    def __init__(self, pixmap, caption="Просмотр изображения", images_list=None, index=0, carousel=None):
+    def __init__(self, pixmap, caption="Viewing image", images_list=None, index=0, carousel=None):
         """
-        :param pixmap: QPixmap для отображения в карусели (оригинальное, высокое разрешение)
-        :param caption: Подпись к изображению
-        :param images_list: Список всех изображений (кортежей (QPixmap, caption))
-        :param index: Индекс текущего изображения в images_list
-        :param carousel: Ссылка на родительскую карусель (ImageCarousel)
+        :param pixmap: QPixmap for display in carousel (original, high resolution)
+        :param caption: Caption for image
+        :param images_list: List of all images (tuples (QPixmap, caption))
+        :param index: Index of current image in images_list
+        :param carousel: Reference to parent carousel (ImageCarousel)
         """
         super().__init__()
         self.original_pixmap = pixmap  # Store original high-resolution pixmap
@@ -466,14 +466,14 @@ class ClickablePixmapItem(QGraphicsPixmapItem):
 
 class ImageCarousel(QGraphicsView):
     """
-    Карусель изображений с адаптивностью, возможностью увеличения по клику
-    и перетаскиванием мыши.
+    Image carousel with adaptivity, click-to-zoom capability
+    and mouse dragging.
     """
     def __init__(self, images: list[tuple], parent: QWidget | None = None, theme: object | None = None):
         super().__init__(parent)
         self.carousel_scene: QGraphicsScene = QGraphicsScene(self)
         self.setScene(self.carousel_scene)
-        self.images = images  # Список кортежей: (QPixmap, caption)
+        self.images = images  # List of tuples: (QPixmap, caption)
         self.image_items = []
         self._animation = None
         self.theme_manager = ThemeManager()
@@ -520,7 +520,7 @@ class ImageCarousel(QGraphicsView):
         self.setSceneRect(0, 0, x, self.max_height)
 
     def create_arrows(self):
-        """Создаёт кнопки-стрелки и привязывает их к функциям прокрутки."""
+        """Create arrow buttons and bind them to scroll functions."""
         self.prevArrow = QToolButton(self)
         self.prevArrow.setArrowType(Qt.ArrowType.LeftArrow)
         self.prevArrow.setStyleSheet(getattr(self.theme, "PREV_BUTTON_STYLE", ""))

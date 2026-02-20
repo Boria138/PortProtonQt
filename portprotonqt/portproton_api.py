@@ -25,13 +25,13 @@ AUTOINSTALL_CACHE_DURATION = 3600  # 1 hour for autoinstall cache
 
 def normalize_name(s):
     """
-    Приведение строки к нормальному виду:
-    - перевод в нижний регистр,
-    - удаление символов ™ и ®,
-    - замена разделителей (-, :, ,) на пробел,
-    - удаление лишних пробелов,
-    - удаление суффиксов 'bin' или 'app' в конце строки,
-    - удаление ключевых слов типа 'ultimate', 'edition' и т.п.
+    Normalize string:
+    - convert to lowercase,
+    - remove ™ and ® symbols,
+    - replace separators (-, :, ,) with space,
+    - remove extra spaces,
+    - remove 'bin' or 'app' suffixes at end of string,
+    - remove keywords like 'ultimate', 'edition', etc.
     """
     s = s.lower()
     for ch in ["™", "®"]:

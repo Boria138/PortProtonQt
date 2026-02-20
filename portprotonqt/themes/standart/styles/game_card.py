@@ -1,6 +1,6 @@
 from .constants import *
 
-# СТИЛЬ КАРТОЧКИ ИГРЫ (GAMECARD)
+# GAME CARD STYLE (GAMECARD)
 GAME_CARD_WINDOW_STYLE = f"""
     QFrame {{
         border-radius: 20px;
@@ -9,7 +9,7 @@ GAME_CARD_WINDOW_STYLE = f"""
     }}
 """
 
-# НАЗВАНИЕ В КАРТОЧКЕ (QLabel)
+# GAME NAME LABEL IN CARD (QLabel)
 GAME_CARD_NAME_LABEL_STYLE = f"""
     QLabel {{
         color: {color_f};
@@ -24,7 +24,7 @@ GAME_CARD_NAME_LABEL_STYLE = f"""
     }}
 """
 
-# СТИЛИ БЕЙДЖА PROTONDB НА КАРТОЧКЕ
+# PROTONDB BADGE STYLES ON CARD
 def get_protondb_badge_style(tier):
     tier = tier.lower()
     tier_colors = {
@@ -45,7 +45,7 @@ def get_protondb_badge_style(tier):
         font-weight: bold;
     """
 
-# СТИЛИ БЕЙДЖА WEANTICHEATYET
+# WEANTICHEATYET BADGE STYLES
 def get_anticheat_badge_style(status):
     status = status.lower()
     status_colors = {
@@ -65,7 +65,7 @@ def get_anticheat_badge_style(status):
         font-weight: bold;
     """
 
-# СТИЛИ БЕЙДЖА STEAM
+# STEAM BADGE STYLES
 STEAM_BADGE_STYLE= f"""
     qproperty-alignment: AlignCenter;
     background: rgba(0, 0, 0, 0.5);
@@ -75,7 +75,7 @@ STEAM_BADGE_STYLE= f"""
     font-weight: bold;
 """
 
-# ДОПОЛНИТЕЛЬНЫЕ СТИЛИ ИНФОРМАЦИИ НА СТРАНИЦЕ ИГР
+# ADDITIONAL INFO STYLES ON GAMES PAGE
 LAST_LAUNCH_TITLE_STYLE = f"font-family: '{font_family}'; font-size: 11px; color: #bbbbbb; text-transform: uppercase; letter-spacing: 0.75px; margin-bottom: 2px;"
 LAST_LAUNCH_VALUE_STYLE = f"font-family: '{font_family}'; font-size: 13px; color: {color_f}; font-weight: 600; letter-spacing: 0.75px;"
 PLAY_TIME_TITLE_STYLE = f"font-family: '{font_family}'; font-size: 11px; color: #bbbbbb; text-transform: uppercase; letter-spacing: 0.75px; margin-bottom: 2px;"

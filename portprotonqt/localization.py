@@ -51,46 +51,46 @@ except FileNotFoundError:
 _ = translate.gettext
 
 def get_system_locale():
-    """Возвращает системную локаль, например, 'ru_RU'. Если не удаётся определить – возвращает 'en'."""
+    """Return system locale, e.g., 'ru_RU'. Returns 'en' if detection fails."""
     loc = locale.getdefaultlocale()[0]
     return loc if loc else 'en'
 
 def get_steam_language():
     try:
-        # Babel автоматически разбирает сложные локали, например, 'zh_Hant_HK' → 'zh_Hant'
+        # Babel automatically parses complex locales, e.g., 'zh_Hant_HK' → 'zh_Hant'
         system_locale = get_system_locale()
         if system_locale:
             locale = Locale.parse(system_locale)
-            # Используем только языковой код ('ru', 'en', и т.д.)
+            # Use only the language code ('ru', 'en', etc.)
             language_code = locale.language
             return LOCALE_MAP.get(language_code, 'english')
     except Exception as e:
         print(f"Failed to detect locale: {e}")
 
-    # Если что-то пошло не так — используем английский по умолчанию
+    # Fallback to English by default
     return 'english'
 
 def get_egs_language():
     try:
-        # Babel автоматически разбирает сложные локали, например, 'zh_Hant_HK' → 'zh_Hant'
+        # Babel automatically parses complex locales, e.g., 'zh_Hant_HK' → 'zh_Hant'
         system_locale = get_system_locale()
         if system_locale:
             locale = Locale.parse(system_locale)
-            # Используем только языковой код ('ru', 'en', и т.д.)
+            # Use only the language code ('ru', 'en', etc.)
             language_code = locale.language
             return language_code
     except Exception as e:
         print(f"Failed to detect locale: {e}")
 
-    # Если что-то пошло не так — используем английский по умолчанию
+    # Fallback to English by default
     return 'en'
 
 def read_metadata_translations(metadata_file, language_code):
     """
-    Читает переводы из metadata.txt для указанного языка.
-    Возвращает словарь с полями name и description.
-    Для name: использует name_<language_code>, затем name_en, затем name, и наконец _('Unknown Game').
-    Для description: использует description_<language_code>, затем description_en, затем description.
+    Read translations from metadata.txt for the specified language.
+    Returns a dictionary with name and description fields.
+    For name: uses name_<language_code>, then name_en, then name, and finally _('Unknown Game').
+    For description: uses description_<language_code>, then description_en, then description.
     """
     translations = {'name': _('Unknown Game'), 'description': ''}
     if not os.path.exists(metadata_file):
@@ -116,21 +116,21 @@ def read_metadata_translations(metadata_file, language_code):
 
 def get_screenshot_caption(base_filename, metainfo_file, language_code=None):
     """
-    Возвращает перевод названия скриншота на основе языка пользователя.
+    Return translated screenshot caption based on user's language.
 
     Args:
-        base_filename: Имя файла без расширения
-        metainfo_file: Путь к файлу metainfo.ini
-        language_code: Код языка (если None, будет определен автоматически)
+        base_filename: Base filename without extension
+        metainfo_file: Path to metainfo.ini file
+        language_code: Language code (if None, will be auto-detected)
 
     Returns:
-        Переведенное название скриншота
+        Translated screenshot caption
     """
     if language_code is None:
         system_locale = get_system_locale()
         language_code = system_locale.split('_')[0] if '_' in system_locale else system_locale
 
-    # Загружаем переводы из metainfo.ini
+    # Load translations from metainfo.ini
     screenshot_translations = {}
     if metainfo_file and os.path.exists(metainfo_file):
         cp = configparser.ConfigParser()
@@ -139,13 +139,13 @@ def get_screenshot_caption(base_filename, metainfo_file, language_code=None):
             for key in cp.options("Screenshots"):
                 screenshot_translations[key] = cp.get("Screenshots", key)
 
-    # Ищем перевод в формате: base_filename_languagecode
-    caption = base_filename  # По умолчанию используем базовое имя файла
+    # Look for translation in format: base_filename_languagecode
+    caption = base_filename  # Default to base filename
 
     if screenshot_translations:
-        # Попробуем перевод для конкретного языка (например, "library_ru")
+        # Try translation for specific language (e.g., "library_ru")
         lang_specific_key = f"{base_filename}_{language_code}"
-        # Попробуем английский перевод (например, "library_en")
+        # Try English translation (e.g., "library_en")
         english_key = f"{base_filename}_en"
 
         if lang_specific_key in screenshot_translations:
@@ -159,20 +159,20 @@ def get_screenshot_caption(base_filename, metainfo_file, language_code=None):
 
 def get_theme_translations(metainfo_file, language_code=None):
     """
-    Возвращает переводы названия и описания темы на основе языка пользователя.
+    Return translated theme name and description based on user's language.
 
     Args:
-        metainfo_file: Путь к файлу metainfo.ini
-        language_code: Код языка (если None, будет определен автоматически)
+        metainfo_file: Path to metainfo.ini file
+        language_code: Language code (if None, will be auto-detected)
 
     Returns:
-        Словарь с полями 'name' и 'description' с переведенными значениями
+        Dictionary with 'name' and 'description' fields containing translated values
     """
     if language_code is None:
         system_locale = get_system_locale()
         language_code = system_locale.split('_')[0] if '_' in system_locale else system_locale
 
-    # Загружаем переводы из metainfo.ini
+    # Load translations from metainfo.ini
     translations = {'name': '', 'description': ''}
 
     if metainfo_file and os.path.exists(metainfo_file):
@@ -180,12 +180,12 @@ def get_theme_translations(metainfo_file, language_code=None):
         cp.read(metainfo_file, encoding="utf-8")
 
         if "Metainfo" in cp:
-            # Попробуем перевод названия для конкретного языка (например, "name_ru")
+            # Try translation for specific language (e.g., "name_ru")
             lang_specific_name_key = f"name_{language_code}"
-            # Попробуем английский перевод названия (например, "name_en")
+            # Try English translation (e.g., "name_en")
             english_name_key = "name_en"
 
-            # Ищем перевод названия
+            # Look for name translation
             if cp.has_option("Metainfo", lang_specific_name_key):
                 translations['name'] = cp.get("Metainfo", lang_specific_name_key)
             elif cp.has_option("Metainfo", english_name_key):
@@ -193,12 +193,12 @@ def get_theme_translations(metainfo_file, language_code=None):
             elif cp.has_option("Metainfo", "name"):
                 translations['name'] = cp.get("Metainfo", "name")
 
-            # Попробуем перевод описания для конкретного языка (например, "description_ru")
+            # Try translation for specific language (e.g., "description_ru")
             lang_specific_desc_key = f"description_{language_code}"
-            # Попробуем английский перевод описания (например, "description_en")
+            # Try English translation (e.g., "description_en")
             english_desc_key = "description_en"
 
-            # Ищем перевод описания
+            # Look for description translation
             if cp.has_option("Metainfo", lang_specific_desc_key):
                 translations['description'] = cp.get("Metainfo", lang_specific_desc_key)
             elif cp.has_option("Metainfo", english_desc_key):

@@ -8,14 +8,14 @@ from portprotonqt.logger import get_logger
 logger = get_logger(__name__)
 
 def get_cache_file_path():
-    """Возвращает путь к файлу кеша portproton_last_launch."""
+    """Return path to portproton_last_launch cache file."""
     cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
     return os.path.join(cache_home, "PortProtonQt", "last_launch")
 
 def save_last_launch(exe_name, launch_time):
     """
-    Сохраняет время запуска для exe.
-    Формат файла: <exe_name> <isoformatted_time>
+    Save launch time for exe.
+    File format: <exe_name> <isoformatted_time>
     """
     file_path = get_cache_file_path()
     data = {}
@@ -33,17 +33,17 @@ def save_last_launch(exe_name, launch_time):
 
 def format_last_launch(launch_time):
     """
-    Форматирует время запуска с использованием Babel.
+    Format launch time using Babel.
 
-    Для detail_level "detailed" возвращает относительный формат с добавлением "назад"
-    (например, "2 мин. назад"). Если время меньше минуты – возвращает переведённую строку.
-    Для "brief" – дату в формате "день месяц год" (например, "1 апреля 2023")
-    на основе системной локали.
+    For detail_level "detailed" returns relative format with "ago" added
+    (e.g., "2 min. ago"). If time is less than a minute - returns translated string.
+    For "brief" – date in "day month year" format (e.g., "April 1, 2023")
+    based on system locale.
     """
     detail_level = read_time_config() or "detailed"
     system_locale = get_system_locale()
     if detail_level == "detailed":
-        # Вычисляем delta как launch_time - datetime.now() чтобы получить отрицательное значение для прошедшего времени.
+        # Calculate delta as launch_time - datetime.now() to get negative value for elapsed time.
         delta = launch_time - datetime.now()
         if abs(delta.total_seconds()) < 60:
             return _("just now")
@@ -53,8 +53,8 @@ def format_last_launch(launch_time):
 
 def get_last_launch(exe_name):
     """
-    Читает время последнего запуска для заданного exe из файла кеша.
-    Возвращает время запуска в нужном формате или перевод строки "Never".
+    Read last launch time for given exe from cache file.
+    Return launch time in required format or translated "Never" string.
     """
     file_path = get_cache_file_path()
     if not os.path.exists(file_path):
@@ -70,12 +70,12 @@ def get_last_launch(exe_name):
 
 def parse_playtime_file(file_path):
     """
-    Парсит файл с данными о времени игры.
+    Parse playtime data file.
 
-    Формат строки в файле:
-      <полный путь к exe> <хэш> <playtime_seconds> <platform> <build>
+    Line format in file:
+      <full exe path> <hash> <playtime_seconds> <platform> <build>
 
-    Возвращает словарь вида:
+    Return dictionary like:
       {
          '<exe_path>': playtime_seconds (int),
          ...
@@ -83,7 +83,7 @@ def parse_playtime_file(file_path):
     """
     playtime_data = {}
     if not os.path.exists(file_path):
-        logger.error(f"Файл не найден: {file_path}")
+        logger.error(f"File not found: {file_path}")
         return playtime_data
 
     with open(file_path, encoding="utf-8") as f:
@@ -105,14 +105,14 @@ def parse_playtime_file(file_path):
 
 def format_playtime(seconds):
     """
-    Конвертирует время в секундах в форматированную строку с использованием Babel.
+    Convert time in seconds to formatted string using Babel.
 
-    При "detailed" выводится полный разбор времени, без округления
-    (например, "1 ч 1 мин 15 сек").
+    For "detailed" outputs full time breakdown, without rounding
+    (e.g., "1 h 1 min 15 sec").
 
-    При "brief":
-      - если время менее часа, выводится точное время с секундами (например, "9 мин 28 сек"),
-      - если больше часа – только часы (например, "3 ч").
+    For "brief":
+      - if time is less than hour, output exact time with seconds (e.g., "9 min 28 sec"),
+      - if more than hour – only hours (e.g., "3 h").
     """
     detail_level = read_time_config() or "detailed"
     system_locale = get_system_locale()
@@ -133,7 +133,7 @@ def format_playtime(seconds):
             parts.append(f"{secs} " + _("sec."))
         return " ".join(parts)
     else:
-        # Режим brief
+        # Brief mode
         if seconds < 3600:
             minutes, secs = divmod(seconds, 60)
             parts = []
@@ -148,8 +148,8 @@ def format_playtime(seconds):
 
 def get_last_launch_timestamp(exe_name):
     """
-    Возвращает метку времени последнего запуска (timestamp) для заданного exe.
-    Если записи нет, возвращает 0.
+    Return last launch timestamp for given exe.
+    If no record, return 0.
     """
     file_path = get_cache_file_path()
     if not os.path.exists(file_path):

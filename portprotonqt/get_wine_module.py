@@ -129,7 +129,7 @@ class DownloadThread(QThread):
                     self._mutex.lock()
                     if not self._is_running:
                         self._mutex.unlock()
-                        # Если загрузка отменена, удаляем частично скачанный файл
+                        # If download cancelled, remove partially downloaded file
                         if os.path.exists(self.filename):
                             os.remove(self.filename)
                         return
@@ -148,7 +148,7 @@ class DownloadThread(QThread):
                 self.finished.emit(self.filename, True)
             else:
                 self._mutex.unlock()
-                # Если загрузка отменена в последний момент, удаляем файл
+                # If download cancelled at last moment, remove file
                 if os.path.exists(self.filename):
                     os.remove(self.filename)
 
@@ -156,7 +156,7 @@ class DownloadThread(QThread):
             self._mutex.lock()
             if self._is_running:
                 self._mutex.unlock()
-                # Удаляем частично скачанный файл при ошибке
+                # Remove partially downloaded file on error
                 if os.path.exists(self.filename):
                     try:
                         os.remove(self.filename)
@@ -167,14 +167,14 @@ class DownloadThread(QThread):
                 self._mutex.unlock()
 
     def stop(self):
-        """Безопасная остановка потока"""
+        """Safe thread stop"""
         self._mutex.lock()
         self._is_running = False
         self._mutex.unlock()
 
         if self.isRunning():
             self.quit()
-            if not self.wait(1000):  # Ждем до 1 секунды
+            if not self.wait(1000):  # Wait up to 1 second
                 logger.warning("Thread did not stop gracefully, but continuing...")
 
 
@@ -224,13 +224,13 @@ class ExtractionThread(QThread):
             last_progress = -1
             last_bytes_read = 0
 
-            # Меняем рабочую директорию для корректной распаковки
+            # Change working directory for correct extraction
             original_dir = os.getcwd()
-            old_umask = os.umask(0)  # Сохраняем и сбрасываем umask
+            old_umask = os.umask(0)  # Save and reset umask
             os.chdir(self.extract_dir)
 
             try:
-                # Список для отложенной установки времени модификации
+                # List for deferred modification time setting
                 deferred_times = []
 
                 with libarchive.file_reader(self.archive_path) as archive:
@@ -240,49 +240,49 @@ class ExtractionThread(QThread):
 
                         entry_path = entry.pathname
 
-                        # Создаём директории
+                        # Create directories
                         if entry.isdir:
                             os.makedirs(entry_path, exist_ok=True)
 
-                            # Права для директорий
+                            # Permissions for directories
                             if entry.mode:
                                 try:
                                     os.chmod(entry_path, entry.mode)
                                 except (OSError, PermissionError):
                                     pass
 
-                            # Откладываем установку времени для директорий
+                            # Defer time setting for directories
                             if entry.mtime:
                                 deferred_times.append((entry_path, entry.mtime))
 
-                        # Извлекаем файлы
+                        # Extract files
                         elif entry.isfile:
                             parent_dir = os.path.dirname(entry_path)
                             if parent_dir:
                                 os.makedirs(parent_dir, exist_ok=True)
 
-                            # Записываем содержимое файла
+                            # Write file content
                             with open(entry_path, 'wb') as f:
                                 for block in entry.get_blocks():
                                     if self._should_stop():
                                         return
                                     f.write(block)
 
-                            # Устанавливаем права (включая execute bit)
+                            # Set permissions (including execute bit)
                             if entry.mode:
                                 try:
                                     os.chmod(entry_path, entry.mode)
                                 except (OSError, PermissionError):
                                     pass
 
-                            # Устанавливаем время модификации
+                            # Set modification time
                             if entry.mtime:
                                 try:
                                     os.utime(entry_path, (entry.mtime, entry.mtime))
                                 except (OSError, PermissionError):
                                     pass
 
-                        # Символические ссылки
+                        # Symbolic links
                         elif entry.issym:
                             parent_dir = os.path.dirname(entry_path)
                             if parent_dir:
@@ -296,7 +296,7 @@ class ExtractionThread(QThread):
                             except (OSError, NotImplementedError):
                                 pass
 
-                        # Обновляем прогресс
+                        # Update progress
                         bytes_read = archive.bytes_read
                         now = time.monotonic()
                         elapsed = now - start_time
@@ -325,8 +325,8 @@ class ExtractionThread(QThread):
 
                                 last_emit_time = now
 
-                # Устанавливаем время модификации для директорий в обратном порядке
-                # (чтобы родительские директории обновлялись последними)
+                # Set modification time for directories in reverse order
+                # (so parent directories updated last)
                 for dir_path, mtime in reversed(deferred_times):
                     try:
                         os.utime(dir_path, (mtime, mtime))
@@ -340,7 +340,7 @@ class ExtractionThread(QThread):
 
             finally:
                 os.chdir(original_dir)
-                os.umask(old_umask)  # Восстанавливаем umask
+                os.umask(old_umask)  # Restore umask
 
         except Exception as e:
             if not self._should_stop():
@@ -432,7 +432,7 @@ class ProtonManager(QDialog):
         content_layout.setContentsMargins(5, 5, 5, 5)
         content_layout.setSpacing(5)
 
-        # Tab widget - основной растягивающийся элемент
+        # Tab widget - main stretchable element
         self.tab_widget = QTabWidget()
         self.tab_widget.setUsesScrollButtons(False)
         self.tab_widget.setStyleSheet(self.theme.GETWINE_WINDOW_STYLE)
@@ -446,7 +446,7 @@ class ProtonManager(QDialog):
 
         layout.addWidget(self.content_stack, 1)
 
-        # Инфо-блок для показа выбранного (компактный для информации по выбранным закачкам)
+        # Info block for showing selection (compact for selected downloads info)
         selection_widget = QWidget()
         selection_layout = QVBoxLayout(selection_widget)
         selection_layout.setContentsMargins(0, 2, 0, 2)
@@ -466,7 +466,7 @@ class ProtonManager(QDialog):
 
         layout.addWidget(selection_widget)
 
-        # Область прогресса загрузки
+        # Download progress area
         self.download_frame = QFrame()
         self.download_frame.setFrameStyle(QFrame.Shape.StyledPanel)
         self.download_frame.setVisible(False)
@@ -499,7 +499,7 @@ class ProtonManager(QDialog):
             )
             layout.addWidget(self.hints_widget)
 
-        # Кнопки управления
+        # Control buttons
         button_layout = QHBoxLayout()
         self.download_btn = QPushButton(_('Download Selected'))
         self.download_btn.clicked.connect(self.download_selected)
@@ -583,14 +583,14 @@ class ProtonManager(QDialog):
             self.tab_widget.addTab(error_tab, _("Error"))
 
     def process_metadata(self, metadata):
-        """Обработка JSON, создание Табов"""
+        """Process JSON, create Tabs"""
         successful_tabs = 0
 
         # Get CPU level to filter incompatible versions
         self.cpu_level = get_cpu_level()
         logger.info(f"Detected CPU level: {self.cpu_level}")
 
-        # Собираем табы в словарь для сортировки
+        # Collect tabs into dictionary for sorting
         tabs_dict = {}
 
         for source_key, entries in metadata.items():
@@ -598,13 +598,13 @@ class ProtonManager(QDialog):
             filtered_entries = self.filter_entries_by_cpu_level(entries, source_key)
             tabs_dict[source_key] = filtered_entries
 
-        # Proton_LG в самое начало кидаем
+        # Put Proton_LG at the very beginning
         if 'proton_lg' in tabs_dict:
             if self.create_tab_from_entries('proton_lg', tabs_dict['proton_lg']):
                 successful_tabs += 1
             del tabs_dict['proton_lg']
 
-        # Остальные табы после Proton_LG, сортируем по алфавиту
+        # Other tabs after Proton_LG, sort alphabetically
         for source_key in sorted(tabs_dict.keys()):
             entries = tabs_dict[source_key]
             if self.create_tab_from_entries(source_key, entries):
@@ -677,7 +677,7 @@ class ProtonManager(QDialog):
         return table
 
     def create_tab_from_entries(self, source_name, entries):
-        """Создаем вкладку с таблицей для источника Proton из записей JSON"""
+        """Create tab with table for Proton source from JSON records"""
 
         try:
             logger.debug(f"Processing {len(entries)} entries for source: {source_name}")
@@ -694,7 +694,7 @@ class ProtonManager(QDialog):
             # Include all entries (both installed and non-installed)
             all_entries = []
             for entry in entries:
-                # Извлекаем имя файла из URL
+                # Extract filename from URL
                 url = entry.get('url', '')
 
                 if url:
@@ -715,7 +715,7 @@ class ProtonManager(QDialog):
 
             layout.addWidget(table, 1)
 
-            tab_name = (self.get_short_source_name(source_name) or "UNKNOWN").upper()  # Название для Таба в верхний регистр
+            tab_name = (self.get_short_source_name(source_name) or "UNKNOWN").upper()  # Tab name in uppercase
             self.tab_widget.addTab(tab, tab_name)
 
             logger.info(f"Successfully created tab for {source_name} with {len(all_entries)} assets (filtered from {len(entries)})")
@@ -726,7 +726,7 @@ class ProtonManager(QDialog):
             return False
 
     def get_short_source_name(self, full_name):
-        """Получаем короткое имя для вкладки (Таба) из полного имени источника"""
+        """Get short name for tab from full source name"""
         if full_name is None:
             return "UNKNOWN"
 
@@ -747,8 +747,8 @@ class ProtonManager(QDialog):
         return short_names.get(full_name.lower(), full_name.upper())
 
     def add_asset_row_from_json(self, table, row_index, entry, source_name):
-        """Добавляем строку для определенной позиции из JSON"""
-        # Извлекаем имя файла из URL
+        """Add row for specific item from JSON"""
+        # Extract filename from URL
         url = entry.get('url', '')
         filename = entry.get('name', '')
         size_human = entry.get('size_human', _('Unknown'))  # Get size from JSON, default to 'Unknown'
@@ -759,11 +759,11 @@ class ProtonManager(QDialog):
             if url_filename:
                 filename = url_filename
 
-        # Извлекаем версию для уникального ID
+        # Extract version for unique ID
         version_from_name = self.extract_version_from_name(filename)
 
-        # Проверяем, установлен ли уже этот ассет
-        uppercase_filename = filename.upper() # Преобразование имени WINE в верхний регистр
+        # Check if this asset is already installed
+        uppercase_filename = filename.upper() # Convert WINE name to uppercase
         is_installed = self.is_asset_installed(uppercase_filename, source_name)
 
         checkbox_widget = QWidget()
@@ -773,9 +773,9 @@ class ProtonManager(QDialog):
 
         checkbox = QCheckBox()
 
-        # Создаем структуру для позиции (элемента)
+        # Create structure for item (element)
         asset_data = {
-            'name': filename,  # имя с расширением
+            'name': filename,  # name with extension
             'browser_download_url': url,
         }
 
@@ -813,7 +813,7 @@ class ProtonManager(QDialog):
         size_item.setFlags(size_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
         table.setItem(row_index, 2, size_item)
 
-        # Собираем метаданные в данных элемента
+        # Collect metadata in item data
         unique_id = f"{source_name}_{version_from_name}_{filename}"
         for col in range(table.columnCount()):
             item = table.item(row_index, col)
@@ -827,15 +827,15 @@ class ProtonManager(QDialog):
                 })
 
     def extract_version_from_name(self, name):
-        """Получаем версию из имени элемента"""
+        """Get version from item name"""
         if not name:
             return "N/A"
 
-        # Убираем расширение файла
+        # Remove file extension
         basename = os.path.splitext(name)[0]
-        basename = os.path.splitext(basename)[0]  # Для двойных расширений .tar.gz
+        basename = os.path.splitext(basename)[0]  # For double extensions .tar.gz
 
-        # Получаем версию по паттернам
+        # Get version by patterns
         if 'GE-Proton' in basename:
             parts = basename.split('-')
             if len(parts) >= 2:
@@ -849,7 +849,7 @@ class ProtonManager(QDialog):
             if len(parts) >= 2:
                 return parts[1]
 
-        # Общий случай для всего
+        # General case for everything
         return basename.split('-')[0] if '-' in basename else basename
 
     def is_asset_installed(self, asset_filename, source_name):
@@ -1035,7 +1035,7 @@ class ProtonManager(QDialog):
             return f"{tb_value:.1f} TiB"
 
     def on_cell_clicked(self, row):
-        """Обработка клика по ячейке - переключение флажка при клике по любой ячейке в строке"""
+        """Handle cell click - toggle checkbox on click in any cell in row"""
         tab = self.tab_widget.currentWidget()
         table = tab.findChild(QTableWidget)
         if table:
@@ -1048,16 +1048,16 @@ class ProtonManager(QDialog):
                     self.update_selection_display()
 
     def on_asset_toggled_json(self, state, asset, version, source_name):
-        """Обработка выбора/отмены выбора элемента из данных JSON"""
-        # Всегда извлекаем имя файла из URL
+        """Handle select/deselect item from JSON data"""
+        # Always extract filename from URL
         url = asset.get('browser_download_url', '')
-        filename = asset.get('name', '')  # Исходное имя из JSON
+        filename = asset.get('name', '')  # Original name from JSON
 
-        # Получаем имя файла из URL (оно всегда с расширением)
+        # Get filename from URL (it always has extension)
         if url:
             parsed_url = urllib.parse.urlparse(url)
             url_filename = os.path.basename(parsed_url.path)
-            if url_filename:  # Если удалось получить имя из URL
+            if url_filename:  # If managed to get name from URL
                 filename = url_filename
 
         unique_id = f"{source_name}_{version}_{filename}"
@@ -1067,7 +1067,7 @@ class ProtonManager(QDialog):
                 'source_name': source_name,
                 'version': version,
                 'asset': asset,
-                'asset_name': filename,  # Используем имя файла с расширением
+                'asset_name': filename,  # Use filename with extension
                 'download_url': asset['browser_download_url']
             }
         else:
@@ -1077,7 +1077,7 @@ class ProtonManager(QDialog):
         self.update_selection_display()
 
     def update_selection_display(self):
-        """Обновляем отображение выбора"""
+        """Update selection display"""
         current_tab_index = self.tab_widget.currentIndex()
         current_tab_text = self.tab_widget.tabText(current_tab_index)
 
@@ -1230,7 +1230,7 @@ class ProtonManager(QDialog):
         self.update_selection_display()
 
     def clear_selection(self):
-        """Очищаем (сбрасываем) всё выбранное"""
+        """Clear (reset) all selections"""
         if self.is_downloading:
             QMessageBox.warning(self, _("Downloading in Progress"), _("Cannot clear selection while extraction is in progress."))
             return
@@ -1635,14 +1635,14 @@ class ProtonManager(QDialog):
             # Object already deleted, which is fine
             logger.debug("Download thread object already deleted during cancel")
 
-        # Очищаем список загрузок
+        # Clear downloads list
         self.assets_to_download = []
         self.current_download_index = 0
         self.is_downloading = False
-        # Сбрасываем флаг выполнения команды --initial, так как процесс отменен
+        # Reset --initial command flag as process cancelled
         self.initial_command_executed = False
 
-        # Сброс/перезапуск UI
+        # Reset/restart UI
         self.download_frame.setVisible(False)
         self.download_btn.setEnabled(True)
         self.clear_btn.setEnabled(True)
@@ -1660,7 +1660,7 @@ class ProtonManager(QDialog):
             self.input_manager.disable_proton_manager_mode()
 
     def closeEvent(self, event):
-        """Проверка, что все потоки останавливаются при закрытии приложения"""
+        """Check that all threads stop on application close"""
         logger.debug("Closing ProtonManager dialog...")
 
         # Disable gamepad mode before closing

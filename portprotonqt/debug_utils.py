@@ -51,7 +51,7 @@ def get_xorg_version() -> str:
     display_name = os.environ.get("DISPLAY")
     dpy = lib.XOpenDisplay(display_name.encode() if display_name else None)
     if not dpy:
-        raise SystemExit("Не удалось открыть X Display. Проверь DISPLAY.")
+        raise SystemExit("Failed to open X Display. Check DISPLAY.")
 
     try:
         release = lib.XVendorRelease(dpy)

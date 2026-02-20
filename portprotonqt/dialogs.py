@@ -36,38 +36,38 @@ def generate_thumbnail(inputfile, outfile, size=128, force_resize=True):
     outfile: output filename (%o)
     size: determines the thumbnail output size (%s)
     """
-    logger.debug(f"Начинаем генерацию миниатюры: {inputfile} → {outfile}, размер={size}, принудительно={force_resize}")
+    logger.debug(f"Starting thumbnail generation: {inputfile} → {outfile}, size={size}, force={force_resize}")
 
     try:
         extractor = IconExtractor(inputfile)
-        logger.debug("IconExtractor успешно создан.")
+        logger.debug("IconExtractor created successfully.")
     except (RuntimeError, IconExtractorError) as e:
-        logger.warning(f"Не удалось создать IconExtractor: {e}")
+        logger.warning(f"Failed to create IconExtractor: {e}")
         return False
 
     try:
         data = extractor.get_icon()
         im = Image.open(data)
-        logger.debug(f"Извлечена иконка размером {im.size}, форматы: {im.format}, кадры: {getattr(im, 'n_frames', 1)}")
+        logger.debug(f"Extracted icon size {im.size}, formats: {im.format}, frames: {getattr(im, 'n_frames', 1)}")
     except Exception as e:
-        logger.warning(f"Ошибка при извлечении иконки: {e}")
+        logger.warning(f"Error extracting icon: {e}")
         return False
 
     if force_resize:
-        logger.debug(f"Принудительное изменение размера иконки на {size}x{size}")
+        logger.debug(f"Forcing icon resize to {size}x{size}")
         im = im.resize((size, size))
     else:
         if size > 256:
-            logger.warning('Запрошен размер больше 256, установлен 256')
+            logger.warning('Requested size larger than 256, set to 256')
             size = 256
         elif size not in (128, 256):
-            logger.warning(f'Неподдерживаемый размер {size}, установлен 128')
+            logger.warning(f'Unsupported size {size}, set to 128')
             size = 128
 
         if size == 256:
-            logger.debug("Сохраняем иконку без изменения размера (256x256)")
+            logger.debug("Saving icon without resize (256x256)")
             im.save(outfile, "PNG")
-            logger.info(f"Иконка сохранена в {outfile}")
+            logger.info(f"Icon saved to {outfile}")
             return True
 
         frames = getattr(im, 'n_frames', 1)
@@ -75,21 +75,21 @@ def generate_thumbnail(inputfile, outfile, size=128, force_resize=True):
             for frame in range(frames):
                 im.seek(frame)
                 if im.size == (size, size):
-                    logger.debug(f"Найден кадр с размером {size}x{size}")
+                    logger.debug(f"Found frame with size {size}x{size}")
                     break
         except EOFError:
-            logger.debug("Кадры закончились до нахождения нужного размера.")
+            logger.debug("Frames ended before finding required size.")
 
         if im.size != (size, size):
-            logger.debug(f"Изменение размера с {im.size} на {size}x{size}")
+            logger.debug(f"Resizing from {im.size} to {size}x{size}")
             im = im.resize((size, size))
 
     try:
         im.save(outfile, "PNG")
-        logger.info(f"Миниатюра успешно сохранена в {outfile}")
+        logger.info(f"Thumbnail successfully saved to {outfile}")
         return True
     except Exception as e:
-        logger.error(f"Ошибка при сохранении миниатюры: {e}")
+        logger.error(f"Error saving thumbnail: {e}")
         return False
 
 def create_dialog_hints_widget(theme, main_window, input_manager, context='default'):
@@ -235,7 +235,7 @@ def update_dialog_hints(hints_labels, main_window, input_manager, theme_manager,
             container.setVisible(False)
 
 class FileSelectedSignal(QObject):
-    file_selected = Signal(str)  # Сигнал с путем к выбранному файлу
+    file_selected = Signal(str)  # Signal with path to selected file
 
 class GameLaunchDialog(QDialog):
     """Modal dialog to indicate game launch progress, similar to Steam's launch dialog."""
@@ -860,7 +860,7 @@ class FileExplorer(QDialog):
 class AddGameDialog(QDialog):
     def __init__(self, parent=None, theme=None, edit_mode=False, game_name=None, exe_path=None, cover_path=None):
         super().__init__(parent)
-        from portprotonqt.context_menu_manager import CustomLineEdit   # Локальный импорт
+        from portprotonqt.context_menu_manager import CustomLineEdit   # Local import
         self.theme = theme if theme else theme_manager.apply_theme(read_theme_from_config())
         self.edit_mode = edit_mode
         self.last_exe_path = exe_path  # Store last selected exe path
@@ -899,12 +899,12 @@ class AddGameDialog(QDialog):
         exeBrowseButton = AutoSizeButton(_("Browse..."), icon=theme_manager.get_icon("search"))
         exeBrowseButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         exeBrowseButton.clicked.connect(self.browseExe)
-        exeBrowseButton.setObjectName("exeBrowseButton")  # Для поиска кнопки
+        exeBrowseButton.setObjectName("exeBrowseButton")  # For button search
 
-        # Добавляем поле ввода для exe
+        # Add input field for exe
         layout.addRow(exe_label, self.exeEdit)
 
-        # Добавляем кнопку обзора под полем ввода с выравниванием
+        # Add browse button below input field with alignment
         empty_label = QLabel("")
         empty_label.setFixedWidth(exe_label.sizeHint().width())
         layout.addRow(empty_label, exeBrowseButton)
@@ -922,12 +922,12 @@ class AddGameDialog(QDialog):
         coverBrowseButton = AutoSizeButton(_("Browse..."), icon=theme_manager.get_icon("search"))
         coverBrowseButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         coverBrowseButton.clicked.connect(self.browseCover)
-        coverBrowseButton.setObjectName("coverBrowseButton")  # Для поиска кнопки
+        coverBrowseButton.setObjectName("coverBrowseButton")  # For button search
 
-        # Добавляем поле ввода для обложки
+        # Add input field for cover
         layout.addRow(cover_label, self.coverEdit)
 
-        # Добавляем кнопку обзора под полем ввода с выравниванием
+        # Add browse button below input field with alignment
         layout.addRow(empty_label, coverBrowseButton)
 
         # Preview
@@ -956,7 +956,7 @@ class AddGameDialog(QDialog):
         self.button_layout.addWidget(self.cancel_button)
         layout.addRow(self.button_layout)
 
-        # Подключение сигналов
+        # Connect signals
         self.select_button.clicked.connect(self.accept)
         self.cancel_button.clicked.connect(self.reject)
         # Set up a timer for debounced cover preview updates
@@ -967,82 +967,81 @@ class AddGameDialog(QDialog):
         self.coverEdit.textChanged.connect(self.onCoverTextChanged)
         self.exeEdit.textChanged.connect(self.updatePreview)
 
-        # Установка одинаковой ширины для кнопок и полей ввода
+        # Set equal width for buttons and input fields
         def update_button_widths():
             exeBrowseButton.setFixedWidth(self.exeEdit.width())
             coverBrowseButton.setFixedWidth(self.coverEdit.width())
 
-        # Вызываем после отображения окна, когда размеры установлены
+        # Call after window display, when sizes are set
         QTimer.singleShot(0, update_button_widths)
 
-        # Обновляем превью, если в режиме редактирования
+        # Update preview if in edit mode
         if edit_mode:
             self.updatePreview()
 
-        # Инициализация клавиатуры (отдельным методом вроде лучше)
+        # Initialize keyboard (separate method seems better)
         self.init_keyboard()
 
-        # Устанавливаем фокус на первое поле при открытии
+        # Set focus to first field on open
         QTimer.singleShot(0, self.nameEdit.setFocus)
 
     def init_keyboard(self):
-        """Инициализация виртуальной клавиатуры"""
+        """Initialize virtual keyboard"""
         self.keyboard = VirtualKeyboard(self, theme=self.theme, button_width=40)
         self.keyboard.hide()
 
     def show_keyboard_for_widget(self, widget):
-        """Показывает клавиатуру для указанного виджета"""
+        """Show keyboard for specified widget"""
         if not widget or not widget.isVisible():
             return
 
-        # Устанавливаем текущий виджет ввода
+        # Set current input widget
         self.keyboard.current_input_widget = widget
 
-        # Позиционирование клавиатуры
+        # Keyboard positioning
         keyboard_height = 220
         self.keyboard.setFixedWidth(self.width())
         self.keyboard.setFixedHeight(keyboard_height)
         self.keyboard.move(0, self.height() - keyboard_height)
 
-        # Показываем и поднимаем клавиатуру
+        # Show and raise keyboard
         self.keyboard.setParent(self)
         self.keyboard.show()
         self.keyboard.raise_()
 
-        # TODO: доработать.
-        # Устанавливаем фокус на первую кнопку клавиатуры
+        # Set focus to first keyboard button
         first_button = self.keyboard.findFirstFocusableButton()
         if first_button:
             QTimer.singleShot(50, lambda: first_button.setFocus())
 
     def closeEvent(self, event):
-        """Обработчик закрытия окна"""
+        """Handle window close"""
         if hasattr(self, 'keyboard'):
             self.keyboard.hide()
         super().closeEvent(event)
 
     def reject(self):
-        """Обработчик кнопки Cancel"""
+        """Handle Cancel button"""
         if hasattr(self, 'keyboard'):
             self.keyboard.hide()
         super().reject()
 
     def accept(self):
-        """Обработчик кнопки Apply"""
+        """Handle Apply button"""
         if hasattr(self, 'keyboard'):
             self.keyboard.hide()
         super().accept()
 
     def browseExe(self):
-        """Открывает файловый менеджер для выбора exe-файла"""
+        """Open file manager to select exe file"""
         try:
             # Use last_exe_path if available and valid, otherwise fallback to home
             initial_path = os.path.dirname(self.last_exe_path) if self.last_exe_path and os.path.isfile(self.last_exe_path) else None
             file_explorer = FileExplorer(self, file_filter='.exe', initial_path=initial_path)
             file_explorer.file_signal.file_selected.connect(self.onExeSelected)
 
-            # Центрируем FileExplorer относительно родительского виджета
-            parent_widget = self.parentWidget()  # QWidget или None
+            # Center FileExplorer relative to parent widget
+            parent_widget = self.parentWidget()  # QWidget or None
             if parent_widget:
                 parent_geometry = parent_widget.geometry()
                 center_point = parent_geometry.center()
@@ -1055,26 +1054,26 @@ class AddGameDialog(QDialog):
             logger.error(f"Error in browseExe: {e}")
 
     def onExeSelected(self, file_path):
-        """Обработчик выбора файла в FileExplorer"""
+        """Handle file selection in FileExplorer"""
         self.exeEdit.setText(file_path)
         self.last_exe_path = file_path  # Update last selected exe path
         if not self.edit_mode and not self.nameEdit.text().strip():
-            # Автоматически заполняем имя игры, если не в режиме редактирования или если оно не введено вручную
+            # Auto-fill game name if not in edit mode or if not manually entered
             game_name = os.path.splitext(os.path.basename(file_path))[0]
             self.nameEdit.setText(game_name)
 
-        # Обновляем превью
+        # Update preview
         self.updatePreview()
 
     def browseCover(self):
-        """Открывает файловый менеджер для выбора изображения обложки"""
+        """Open file manager to select cover image"""
         try:
             # Use last_cover_path if available and valid, otherwise fallback to home
             initial_path = os.path.dirname(self.last_cover_path) if self.last_cover_path and os.path.isfile(self.last_cover_path) else None
             file_explorer = FileExplorer(self, file_filter=('.png', '.jpg', '.jpeg', '.bmp'), initial_path=initial_path)
             file_explorer.file_signal.file_selected.connect(self.onCoverSelected)
 
-            # Центрируем FileExplorer относительно родительского виджета
+            # Center FileExplorer relative to parent widget
             parent_widget = self.parentWidget()
             if parent_widget:
                 parent_geometry = parent_widget.geometry()
@@ -1088,7 +1087,7 @@ class AddGameDialog(QDialog):
             logger.error(f"Error in browseCover: {e}")
 
     def onCoverSelected(self, file_path):
-        """Обработчик выбора файла обложки в FileExplorer"""
+        """Handle cover file selection in FileExplorer"""
         if file_path and os.path.splitext(file_path)[1].lower() in ('.png', '.jpg', '.jpeg', '.bmp'):
             self.coverEdit.setText(file_path)
             self.last_cover_path = file_path
@@ -1524,7 +1523,7 @@ class WinetricksDialog(QDialog):
         self._start_list_process("settings", self.settings_table, self.get_settings_exclusions(), env, cwd)
 
     def _start_list_process(self, category, table, exclusion_pattern, env, cwd):
-        """Запускает QProcess для списка."""
+        """Start QProcess for list."""
         process = QProcess(self)
         process.setProcessChannelMode(QProcess.ProcessChannelMode.MergedChannels)
         process.setProcessEnvironment(env)
@@ -1532,7 +1531,7 @@ class WinetricksDialog(QDialog):
         process.start(self.winetricks_path, [category, "list"])
 
     def _on_list_finished(self, category, table, exclusion_pattern, process: QProcess | None, exit_code, exit_status):
-        """Обработчик завершения списка."""
+        """Handle list completion."""
         if process is None:
             logger.error(f"Process is None for {category}")
             self.containers[category].setCurrentIndex(1)
@@ -1573,7 +1572,7 @@ class WinetricksDialog(QDialog):
                 for line in f:
                     installed.add(line.strip())
 
-        # regex-парсинг (имя - первое слово, остальное - описание)
+        # regex parsing (name - first word, rest - description)
         line_re = re.compile(r"^\s*(?:\[(.)]\s+)?([^\s]+)\s*(.*)")
 
         for line in lines:
@@ -1588,14 +1587,14 @@ class WinetricksDialog(QDialog):
                 continue
 
             _status, name, info = match.groups()
-            # Очищаем info от мусора
-            info = re.sub(r'\[.*?\]', '', info).strip()  # Удаляем [скачивания] и т.п.
+            # Clean info from garbage
+            info = re.sub(r'\[.*?\]', '', info).strip()  # Remove [downloads] etc.
 
             # To match bash desc extraction: after name, substr(2) to trim leading space
             if info.startswith(' '):
                 info = info[1:].lstrip()
 
-            # Фильтр служебных строк
+            # Filter service strings
             if '/' in name or '\\' in name or name.lower() in ('executing', 'using', 'warning:') or name.endswith(':'):
                 continue
 
@@ -1651,7 +1650,7 @@ class WinetricksDialog(QDialog):
         self._start_install_process(new_selected, force)
 
     def _start_install_process(self, selected, force):
-        """Запускает QProcess для установки."""
+        """Start QProcess for install."""
         assert self.prefix_path is not None
         env = QProcessEnvironment.systemEnvironment()
         env.insert("WINEPREFIX", self.prefix_path)
@@ -1675,16 +1674,16 @@ class WinetricksDialog(QDialog):
         self._log(message)
 
     def _on_install_finished(self, exit_code, exit_status, selected):
-        """Обработчик завершения установки."""
+        """Handle install completion."""
         error_message = ""
         if self.apply_process is not None:
-            # Читаем вывод в зависимости от режима каналов
+            # Read output depending on channel mode
             if self.apply_process.processChannelMode() == QProcess.ProcessChannelMode.MergedChannels:
-                # Если каналы объединены, читаем из StandardOutput
+                # If channels merged, read from StandardOutput
                 output_data = self.apply_process.readAllStandardOutput().data()
                 error_message = bytes(output_data).decode('utf-8', 'ignore')
             else:
-                # Если каналы разделены, читаем из StandardError
+                # If channels separate, read from StandardError
                 error_data = self.apply_process.readAllStandardError().data()
                 error_message = bytes(error_data).decode('utf-8', 'ignore')
 
@@ -1705,13 +1704,13 @@ class WinetricksDialog(QDialog):
             QMessageBox.information(self, _("Success"), _("Components installed successfully."))
             self.load_lists()
 
-        # Разблокировка
+        # Unlock
         self.install_button.setEnabled(True)
         self.force_button.setEnabled(True)
         self.cancel_button.setEnabled(True)
 
     def _log(self, message):
-        """Добавляет в лог."""
+        """Add to log."""
         self.log_output.append(message)
         self.log_output.moveCursor(QTextCursor.MoveOperation.End)
 

@@ -1,9 +1,9 @@
 from .constants import *
 
-# ФОН ДЛЯ ДЕТАЛЬНОЙ СТРАНИЦЫ, ЕСЛИ ОБЛОЖКА НЕ ЗАГРУЖЕНА
+# BACKGROUND FOR DETAIL PAGE IF COVER NOT LOADED
 DETAIL_PAGE_NO_COVER_STYLE = f"background: rgba(20,20,20,0.95); border-radius: {border_radius_b};"
 
-# СТИЛЬ КНОПКИ "ДОБАВИТЬ ИГРУ" И "НАЗАД" НА ДЕТАЛЬНОЙ СТРАНИЦЕ И БИБЛИОТЕКИ
+# STYLE FOR "ADD GAME" AND "BACK" BUTTONS ON DETAIL PAGE AND LIBRARY
 ADDGAME_BACK_BUTTON_STYLE = f"""
     QPushButton {{
         background: rgba(20, 20, 20, 0.40);
@@ -22,7 +22,7 @@ ADDGAME_BACK_BUTTON_STYLE = f"""
     }}
 """
 
-# ОСНОВНОЙ ФРЕЙМ ДЕТАЛЕЙ ИГРЫ
+# MAIN FRAME FOR GAME DETAILS
 DETAIL_CONTENT_FRAME_STYLE = f"""
     QFrame {{
         background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
@@ -33,7 +33,7 @@ DETAIL_CONTENT_FRAME_STYLE = f"""
     }}
 """
 
-# ФРЕЙМ ПОД ОБЛОЖКОЙ
+# FRAME UNDER COVER
 COVER_FRAME_STYLE = f"""
     QFrame {{
         background: rgba(30, 30, 30, 0.80);
@@ -42,22 +42,22 @@ COVER_FRAME_STYLE = f"""
     }}
 """
 
-# СКРУГЛЕНИЕ LABEL ПОД ОБЛОЖКУ
+# COVER LABEL BORDER RADIUS
 COVER_LABEL_STYLE = f"border-radius: {border_radius_b};"
 
-# ВИДЖЕТ ДЕТАЛЕЙ (ТЕКСТ, ОПИСАНИЕ)
+# DETAILS WIDGET (TEXT, DESCRIPTION)
 DETAILS_WIDGET_STYLE = f"background: rgba(20,20,20,0.40); border-radius: {border_radius_b}; padding: 10px;"
 
-# НАЗВАНИЕ (ЗАГОЛОВОК) НА ДЕТАЛЬНОЙ СТРАНИЦЕ
+# TITLE (HEADER) ON DETAIL PAGE
 DETAIL_PAGE_TITLE_STYLE = f"font-family: '{font_family}'; font-size: 32px; color: #007AFF;"
 
-# ЛИНИЯ-РАЗДЕЛИТЕЛЬ
+# DIVIDER LINE
 DETAIL_PAGE_LINE_STYLE = "color: rgba(255,255,255,0.12); margin: 10px 0;"
 
-# ТЕКСТ ОПИСАНИЯ
+# DESCRIPTION TEXT
 DETAIL_PAGE_DESC_STYLE = f"font-family: '{font_family}'; font-size: {font_size_a}; color: {color_f}; line-height: 1.5;"
 
-# СТИЛЬ КНОПКИ "ИГРАТЬ"
+# PLAY BUTTON STYLE
 PLAY_BUTTON_STYLE = f"""
     QPushButton {{
         background: rgba(20, 20, 20, 0.40);
@@ -103,8 +103,8 @@ ADDGAME_INPUT_STYLE = f"""
     }}
 """
 
-# ФУНКЦИЯ ДЛЯ ДИНАМИЧЕСКОГО ГРАДИЕНТА (ДЕТАЛИ ИГР)
-# Функции из этой темы срабатывает всегда вне зависимости от выбранной темы, функции из других тем работают только в этих темах
+# FUNCTION FOR DYNAMIC GRADIENT (GAME DETAILS)
+# Functions from this theme always work regardless of selected theme, functions from other themes work only in those themes
 def detail_page_style(stops):
     return f"""
     QWidget {{

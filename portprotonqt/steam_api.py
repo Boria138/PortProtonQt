@@ -478,7 +478,7 @@ def fetch_sgdb_cover(game_name: str) -> str:
             logger.warning("SGDB request failed for %s: %s", game_name, resp.status_code)
             return ""
         text = resp.text.strip()
-        # Убираем возможные кавычки вокруг строки
+        # Remove possible quotes around string
         if text.startswith('"') and text.endswith('"'):
             text = text[1:-1]
         if text:

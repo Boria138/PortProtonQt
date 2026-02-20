@@ -132,7 +132,7 @@ def read_file_content(file_path):
         raise  # Re-raise the exception to be handled by the caller
 
 def get_portproton_location():
-    """Возвращает путь к PortProton каталогу (строку) или None."""
+    """Return PortProton directory path (string) or None."""
     global _portproton_location
 
     if _portproton_location is not None:
@@ -163,7 +163,7 @@ def get_portproton_location():
     return None
 
 def get_portproton_start_command():
-    """Возвращает список команд для запуска PortProton (start.sh или flatpak run)."""
+    """Return command list for PortProton launch (start.sh or flatpak run)."""
 
     # Check if flatpak command exists before trying to run it
     try:
@@ -180,7 +180,7 @@ def get_portproton_start_command():
     except Exception:
         flatpak_available = False
 
-    # Приоритет отдается Flatpak-версии, если она доступна
+    # Flatpak version has priority if available
     if flatpak_available:
         try:
             result = subprocess.run(
@@ -200,7 +200,7 @@ def get_portproton_start_command():
             logger.warning(f"Error checking flatpak list: {e}")
             pass
 
-    # Если Flatpak недоступен или PortProton не установлен как Flatpak, используем локальную версию
+    # If Flatpak unavailable or PortProton not installed as Flatpak, use local version
     portproton_path = get_portproton_location()
     if not portproton_path:
         return None

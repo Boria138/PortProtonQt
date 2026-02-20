@@ -13,7 +13,7 @@ from PySide6.QtCore import QObject, Signal
 
 @dataclass
 class GameEntry:
-    """Информация об игре из HowLongToBeat."""
+    """Game information from HowLongToBeat."""
     game_id: int = -1
     game_name: str | None = None
     main_story: float | None = None
@@ -24,12 +24,12 @@ class GameEntry:
 
 @dataclass
 class SearchConfig:
-    """Конфигурация для поиска."""
+    """Search configuration."""
     api_key: str | None = None
     search_url: str | None = None
 
 class APIKeyExtractor:
-    """Извлекает API ключ и URL поиска из скриптов сайта."""
+    """Extract API key and search URL from site scripts."""
     @staticmethod
     def extract_from_script(script_content: str) -> SearchConfig:
         config = SearchConfig()
@@ -71,7 +71,7 @@ class APIKeyExtractor:
         return None
 
 class HTTPClient:
-    """HTTP клиент для работы с API HowLongToBeat."""
+    """HTTP client for HowLongToBeat API."""
     BASE_URL = 'https://howlongtobeat.com/'
     SEARCH_URL = BASE_URL + "api/s/"
 
@@ -185,7 +185,7 @@ class HTTPClient:
         return payload
 
 class ResultParser:
-    """Парсер результатов поиска."""
+    """Search results parser."""
     def __init__(self, search_query: str, minimum_similarity: float = 0.4, case_sensitive: bool = True):
         self.search_query = search_query
         self.minimum_similarity = minimum_similarity
@@ -255,14 +255,14 @@ class ResultParser:
         return any(num in text_numbers for num in numbers)
 
 def get_cache_dir():
-    """Возвращает путь к каталогу кэша, создаёт его при необходимости."""
+    """Return cache directory path, creating it if necessary."""
     xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
     cache_dir = os.path.join(xdg_cache_home, "PortProtonQt")
     os.makedirs(cache_dir, exist_ok=True)
     return cache_dir
 
 class HowLongToBeat(QObject):
-    """Основной класс для работы с API HowLongToBeat."""
+    """Main class for HowLongToBeat API."""
     searchCompleted = Signal(list)
 
     def __init__(self, minimum_similarity: float = 0.4, timeout: int = 60, parent=None):
@@ -272,13 +272,13 @@ class HowLongToBeat(QObject):
         self.cache_dir = get_cache_dir()
 
     def _get_cache_file_path(self, game_name: str) -> str:
-        """Возвращает путь к файлу кэша для заданного имени игры."""
+        """Return cache file path for given game name."""
         safe_game_name = re.sub(r'[^\w\s-]', '', game_name).replace(' ', '_').lower()
         cache_file = f"hltb_{safe_game_name}.json"
         return os.path.join(self.cache_dir, cache_file)
 
     def _load_from_cache(self, game_name: str) -> str | None:
-        """Пытается загрузить данные из кэша, если они существуют."""
+        """Try to load data from cache if it exists."""
         cache_file = self._get_cache_file_path(game_name)
         try:
             if os.path.exists(cache_file):
@@ -289,10 +289,10 @@ class HowLongToBeat(QObject):
         return None
 
     def _save_to_cache(self, game_name: str, json_response: str):
-        """Сохраняет данные в кэш, храня только первую игру и необходимые поля."""
+        """Save data to cache, storing only first game and required fields."""
         cache_file = self._get_cache_file_path(game_name)
         try:
-            # Парсим JSON и берем только первую игру
+            # Parse JSON and take only the first game
             data = orjson.loads(json_response)
             if data.get("data"):
                 first_game = data["data"][0]
@@ -313,7 +313,7 @@ class HowLongToBeat(QObject):
     def search(self, game_name: str, case_sensitive: bool = True) -> list[GameEntry] | None:
         if not game_name or not game_name.strip():
             return None
-        # Проверяем кэш
+        # Check cache
         cached_response = self._load_from_cache(game_name)
         if cached_response:
             try:
@@ -338,11 +338,11 @@ class HowLongToBeat(QObject):
                 return parser.parse_results(orjson.dumps(full_json).decode('utf-8'))
             except orjson.JSONDecodeError:
                 pass
-        # Если нет в кэше, делаем запрос
+        # If not in cache, make request
         json_response = self.http_client.search_games(game_name)
         if not json_response:
             return None
-        # Сохраняем в кэш только первую игру
+        # Save only first game to cache
         self._save_to_cache(game_name, json_response)
         parser = ResultParser(
             game_name,
@@ -359,7 +359,7 @@ class HowLongToBeat(QObject):
         return format_playtime(time_seconds)
 
     def search_with_callback(self, game_name: str, case_sensitive: bool = True):
-        """Выполняет поиск игры в фоновом потоке и испускает сигнал с результатами."""
+        """Search for game in background thread and emit signal with results."""
         def search_thread():
             try:
                 results = self.search(game_name, case_sensitive)

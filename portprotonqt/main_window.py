@@ -132,7 +132,7 @@ class MainWindow(QMainWindow):
         self.downloader = Downloader(max_workers=4)
         self.portproton_api = PortProtonAPI(self.downloader)
 
-        # Статус-бар
+        # Status bar
         self.setStatusBar(QStatusBar(self))
         self.statusBar().setStyleSheet(self.theme.STATUS_BAR_STYLE)
         self.progress_bar = QProgressBar()
@@ -155,14 +155,14 @@ class MainWindow(QMainWindow):
         self.install_process = None
         self.install_monitor_timer = None
 
-        # Центральный виджет и основной layout
+        # Central widget and main layout
         centralWidget = QWidget()
         self.setCentralWidget(centralWidget)
         mainLayout = QVBoxLayout(centralWidget)
         mainLayout.setSpacing(0)
         mainLayout.setContentsMargins(0, 0, 0, 0)
 
-        # 1. ШАПКА (HEADER)
+        # 1. HEADER
         self.header = QWidget()
         self.header.setFixedHeight(80)
         self.header.setStyleSheet(self.theme.MAIN_WINDOW_HEADER_STYLE)
@@ -174,7 +174,7 @@ class MainWindow(QMainWindow):
         self.input_manager.button_event.connect(self.updateControlHints)
         self.input_manager.dpad_moved.connect(self.updateControlHints)
 
-        # 2. НАВИГАЦИЯ (КНОПКИ ВКЛАДОК)
+        # 2. NAVIGATION (TAB BUTTONS)
         self.navWidget = QWidget()
         self.navWidget.setStyleSheet(self.theme.NAV_WIDGET_STYLE)
         navLayout = QHBoxLayout(self.navWidget)
@@ -187,7 +187,7 @@ class MainWindow(QMainWindow):
         self.leftNavButton.setAlignment(Qt.AlignmentFlag.AlignCenter)
         navLayout.addWidget(self.leftNavButton)
 
-        # Вкладки
+        # Tabs
         self.tabButtons = {}
         tabs = [
             _("Library"),
@@ -217,7 +217,7 @@ class MainWindow(QMainWindow):
 
         mainLayout.addWidget(self.navWidget)
 
-        # 3. QStackedWidget (ВКЛАДКИ)
+        # 3. QStackedWidget (TABS)
         self.stackedWidget = QStackedWidget()
         mainLayout.addWidget(self.stackedWidget)
 
@@ -406,7 +406,7 @@ class MainWindow(QMainWindow):
             layout.setContentsMargins(0, 5, 0, 0)
             layout.setSpacing(6)
 
-            # иконка кнопки
+            # button icon
             icon_label = QLabel()
             icon_label.setFixedSize(26, 26)
             icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -428,7 +428,7 @@ class MainWindow(QMainWindow):
 
             layout.addWidget(icon_label)
 
-            # текст действия
+            # action text
             text_label = QLabel(action_text)
             text_label.setStyleSheet(self.theme.LAST_LAUNCH_VALUE_STYLE)
             text_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
@@ -529,7 +529,7 @@ class MainWindow(QMainWindow):
 
             layout.addWidget(select_icon)
 
-            # текст действия
+            # action text
             text_label = QLabel(action_text)
             text_label.setStyleSheet(self.theme.LAST_LAUNCH_VALUE_STYLE)
             text_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
@@ -924,7 +924,7 @@ class MainWindow(QMainWindow):
                     seen = set()
                     games = []
                     for game in results['portproton'] + results['steam'] + results['epic']:
-                        # Уникальный ключ: имя + exec_line
+                        # Unique key: name + exec_line
                         key = (game[0], game[4])
                         if key not in seen:
                             seen.add(key)
@@ -1171,9 +1171,9 @@ class MainWindow(QMainWindow):
             self.progress_bar.setVisible(False)
             self.update_status_message.emit("", 0)  # Clear status message
 
-    # ВКЛАДКИ
+    # TABS
     def switchTab(self, index):
-        """Устанавливает активную вкладку по индексу."""
+        """Set active tab by index."""
         # Check if the requested tab index is valid, exists, and is visible
         if (hasattr(self, 'tabButtons') and
             index in self.tabButtons and
@@ -1523,13 +1523,13 @@ class MainWindow(QMainWindow):
         autoInstallLayout = QVBoxLayout(autoInstallPage)
         autoInstallLayout.setSpacing(15)
 
-        # Верхняя панель с заголовком и поиском
+        # Top panel with title and search
         headerWidget = QWidget()
         headerLayout = QHBoxLayout(headerWidget)
         headerLayout.setContentsMargins(0, 10, 0, 10)
         headerLayout.setSpacing(10)
 
-        # Заголовок
+        # Title
         titleLabel = QLabel(_("Auto Install"))
         titleLabel.setStyleSheet(self.theme.TAB_TITLE_STYLE)
         titleLabel.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
@@ -1537,7 +1537,7 @@ class MainWindow(QMainWindow):
 
         headerLayout.addStretch()
 
-        # Поисковая строка
+        # Search line
         self.autoInstallSearchLineEdit = CustomLineEdit(self, theme=self.theme)
         icon: QIcon = cast(QIcon, self.theme_manager.get_icon("search"))
         action_pos = QLineEdit.ActionPosition.LeadingPosition
@@ -1551,13 +1551,13 @@ class MainWindow(QMainWindow):
 
         autoInstallLayout.addWidget(headerWidget)
 
-        # Прогресс-бар
+        # Progress bar
         self.autoInstallProgress = QProgressBar()
         self.autoInstallProgress.setStyleSheet(self.theme.PROGRESS_BAR_STYLE)
         self.autoInstallProgress.setVisible(False)
         autoInstallLayout.addWidget(self.autoInstallProgress)
 
-        # Скролл
+        # Scroll
         self.autoInstallScrollArea = QScrollArea()
         self.autoInstallScrollArea.setWidgetResizable(True)
         self.autoInstallScrollArea.setStyleSheet(self.theme.SCROLL_AREA_STYLE)
@@ -1589,11 +1589,11 @@ class MainWindow(QMainWindow):
 
         autoInstallLayout.addLayout(sliderLayout)
 
-        # Хранение карточек
+        # Store cards
         self.autoInstallGameCards = {}
         self.allAutoInstallCards = []
 
-        # Обновление обложки
+        # Cover update
         def on_autoinstall_cover_updated(exe_name, local_path):
             if exe_name in self.autoInstallGameCards and local_path:
                 card = self.autoInstallGameCards[exe_name]
@@ -1601,11 +1601,11 @@ class MainWindow(QMainWindow):
                 load_pixmap_async(local_path, self.auto_card_width, int(self.auto_card_width * 1.5), card.on_cover_loaded)
 
 
-        # Загрузка игр
+        # Load games
         def on_autoinstall_games_loaded(games: list[tuple]):
             self.autoInstallProgress.setVisible(False)
 
-            # Очистка
+            # Clear
             while self.autoInstallContainerLayout.count():
                 child = self.autoInstallContainerLayout.takeAt(0)
                 if child:
@@ -1619,14 +1619,14 @@ class MainWindow(QMainWindow):
             if not games:
                 return
 
-            # Callback для открытия детальной страницы автоустановки
+            # Callback for opening autoinstall detail page
             def select_callback(name, description, cover_path, appid, exec_line, controller_support, *_):
                 if not exec_line or not exec_line.startswith("autoinstall:"):
                     logger.warning(f"Invalid exec_line for autoinstall: {exec_line}")
                     return
                 self.detail_page_manager.openAutoInstallDetailPage(name, description, cover_path, exec_line, "portproton")
 
-            # Создаём карточки
+            # Create cards
             for game_tuple in games:
                 name, description, cover_path, appid, controller_support, exec_line, *_ , game_source, exe_name = game_tuple
 
@@ -1658,7 +1658,7 @@ class MainWindow(QMainWindow):
                 self.allAutoInstallCards.append(card)
                 self.autoInstallContainerLayout.addWidget(card)
 
-            # Загружаем недостающие обложки и метаданные
+            # Load missing covers and metadata
             for game_tuple in games:
                 name, description, cover_path, appid, controller_support, exec_line, *_ , game_source, exe_name = game_tuple
                 if not cover_path:
@@ -1686,7 +1686,7 @@ class MainWindow(QMainWindow):
             self.autoInstallScrollArea.updateGeometry()
             self.filterAutoInstallGames()
 
-        # Показываем прогресс
+        # Show progress
         self.autoInstallProgress.setVisible(True)
         self.autoInstallProgress.setRange(0, 0)
 
@@ -1729,7 +1729,7 @@ class MainWindow(QMainWindow):
         self.autoInstallScrollArea.updateGeometry()
 
     def createWineTab(self):
-        """Вкладка 'Wine Settings'."""
+        """Wine Settings tab."""
         self.wineWidget = QWidget()
         self.wineWidget.setStyleSheet(self.theme.OTHER_PAGES_WIDGET_STYLE)
         layout = QVBoxLayout(self.wineWidget)
@@ -1863,7 +1863,7 @@ class MainWindow(QMainWindow):
         start_sh = self.start_sh
         cmd = start_sh + ["cli", cli_arg, wine, prefix]
 
-        # Показываем прогресс-бар перед запуском
+        # Show progress bar before launch
         self.wine_progress_bar.setVisible(True)
         self.update_status_message.emit(_("Launching tool..."), 0)
 
@@ -1881,14 +1881,14 @@ class MainWindow(QMainWindow):
         self._start_wine_process_monitor(cli_arg)
 
     def _start_wine_process_monitor(self, cli_arg):
-        """Запускает таймер для мониторинга запуска Wine утилиты."""
+        """Start timer for Wine utility launch monitoring."""
         self.wine_monitor_timer = QTimer(self)
         self.wine_monitor_timer.setInterval(500)
         self.wine_monitor_timer.timeout.connect(lambda: self._check_wine_process(cli_arg))
         self.wine_monitor_timer.start()
 
     def _check_wine_process(self, cli_arg):
-        """Проверяет, запустился ли целевой .exe процесс."""
+        """Check if target .exe process started."""
         exe_map = {
             "--winecfg": "winecfg.exe",
             "--winereg": "regedit.exe",
@@ -1900,10 +1900,10 @@ class MainWindow(QMainWindow):
         if not target_exe:
             return
 
-        # Проверяем процессы через psutil
+        # Check processes via psutil
         for proc in psutil.process_iter(attrs=["name"]):
             if proc.info["name"].lower() == target_exe.lower():
-                # Процесс запустился — скрываем прогресс-бар и останавливаем мониторинг
+                # Process started - hide progress bar and stop monitoring
                 self.wine_progress_bar.setVisible(False)
                 self.update_status_message.emit("", 0)
                 if hasattr(self, 'wine_monitor_timer') and self.wine_monitor_timer is not None:
@@ -1914,10 +1914,10 @@ class MainWindow(QMainWindow):
                 return
 
     def _on_wine_tool_finished(self, exitCode, cli_arg):
-        """Обработчик завершения Wine утилиты."""
+        """Handle Wine utility completion."""
         self.wine_progress_bar.setVisible(False)
         self.update_status_message.emit("", 0)
-        # Останавливаем мониторинг, если он активен
+        # Stop monitoring if active
         if hasattr(self, 'wine_monitor_timer') and self.wine_monitor_timer is not None:
             self.wine_monitor_timer.stop()
             self.wine_monitor_timer.deleteLater()
@@ -1928,10 +1928,10 @@ class MainWindow(QMainWindow):
             logger.warning(f"Wine tool {cli_arg} finished with exit code {exitCode}")
 
     def _on_wine_tool_error(self, error, cli_arg):
-        """Обработчик ошибки запуска Wine утилиты."""
+        """Handle Wine utility launch error."""
         self.wine_progress_bar.setVisible(False)
         self.update_status_message.emit("", 0)
-        # Останавливаем мониторинг, если он активен
+        # Stop monitoring if active
         if hasattr(self, 'wine_monitor_timer') and self.wine_monitor_timer is not None:
             self.wine_monitor_timer.stop()
             self.wine_monitor_timer.deleteLater()
@@ -1944,7 +1944,7 @@ class MainWindow(QMainWindow):
         show_proton_manager(self, self.portproton_location, input_manager=self.input_manager)
 
     def clear_prefix(self):
-        """Очищает префикс"""
+        """Clear prefix"""
         selected_prefix = self.prefixCombo.currentText()
         selected_wine = self.wineCombo.currentText()
 
@@ -2117,21 +2117,21 @@ class MainWindow(QMainWindow):
         dialog.exec()
 
     def createPortProtonTab(self):
-        """Вкладка 'PortProton Settings'."""
+        """PortProton Settings tab."""
         self.portProtonWidget = QWidget()
         self.portProtonWidget.setStyleSheet(self.theme.OTHER_PAGES_WIDGET_STYLE)
         self.portProtonWidget.setObjectName("otherPage")
         layout = QVBoxLayout(self.portProtonWidget)
         layout.setContentsMargins(10, 18, 10, 10)
 
-        # Заголовок
+        # Title
         title = QLabel(_("PortProton Settings"))
         title.setStyleSheet(self.theme.TAB_TITLE_STYLE)
         title.setObjectName("tabTitle")
         title.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         layout.addWidget(title)
 
-        # Подзаголовок/описание
+        # Subtitle/description
         content = QLabel(_("Main PortProton parameters..."))
         content.setStyleSheet(self.theme.CONTENT_STYLE)
         content.setObjectName("tabContent")
@@ -2144,7 +2144,7 @@ class MainWindow(QMainWindow):
         self.settingsScrollArea.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.settingsScrollArea.setStyleSheet(self.theme.SCROLL_AREA_STYLE)
         self.settingsScrollArea.setFrameShape(QFrame.Shape.NoFrame)
-        # Отключаем горизонтальный скролл
+        # Disable horizontal scroll
         self.settingsScrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         QScroller.grabGesture(self.settingsScrollArea.viewport(), QScroller.ScrollerGestureType.LeftMouseButtonGesture)
 
@@ -2152,7 +2152,7 @@ class MainWindow(QMainWindow):
         scrollWidget.setStyleSheet("background: transparent;")
         scrollLayout = QVBoxLayout(scrollWidget)
         scrollLayout.setContentsMargins(0, 0, 10, 0)
-        scrollLayout.setSpacing(10)  # Единый отступ между секциями
+        scrollLayout.setSpacing(10)  # Uniform spacing between sections
 
         # Helper to create styled sections
         def create_section(title_text):
@@ -2167,7 +2167,7 @@ class MainWindow(QMainWindow):
             section_layout.addWidget(section_title)
 
             section_form = QFormLayout()
-            section_form.setSpacing(15)  # Единый отступ между строками в форме
+            section_form.setSpacing(15)  # Uniform spacing between form rows
             section_form.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
             section_layout.addLayout(section_form)
             return section_frame, section_form
@@ -2234,7 +2234,7 @@ class MainWindow(QMainWindow):
         uiFrame, uiForm = create_section(_("Interface Settings"))
         scrollLayout.addWidget(uiFrame)
 
-        self.fullscreenCheckBox = QCheckBox()  # Убрали текст
+        self.fullscreenCheckBox = QCheckBox()  # Removed text
         self.fullscreenCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
         self.fullscreenCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.fullscreenTitle = QLabel(_("Launch Application in Fullscreen:"))
@@ -2244,7 +2244,7 @@ class MainWindow(QMainWindow):
         self.fullscreenCheckBox.setChecked(current_fullscreen)
         uiForm.addRow(self.fullscreenTitle, self.fullscreenCheckBox)
 
-        self.minimizeToTrayCheckBox = QCheckBox()  # Убрали текст
+        self.minimizeToTrayCheckBox = QCheckBox()  # Removed text
         self.minimizeToTrayCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
         self.minimizeToTrayCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.minimizeToTrayTitle = QLabel(_("Minimize to tray on close:"))
@@ -2255,7 +2255,7 @@ class MainWindow(QMainWindow):
         self.minimizeToTrayCheckBox.toggled.connect(lambda checked: save_minimize_to_tray(checked))
         uiForm.addRow(self.minimizeToTrayTitle, self.minimizeToTrayCheckBox)
 
-        self.hideAutoInstallTabCheckBox = QCheckBox()  # Убрали текст
+        self.hideAutoInstallTabCheckBox = QCheckBox()  # Removed text
         self.hideAutoInstallTabCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
         self.hideAutoInstallTabCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.hideAutoInstallTabTitle = QLabel(_("Hide Auto-Install Tab:"))
@@ -2284,7 +2284,7 @@ class MainWindow(QMainWindow):
             self.gamepadTypeCombo.setCurrentText("Xbox")
         padForm.addRow(self.gamepadTypeTitle, self.gamepadTypeCombo)
 
-        self.autoFullscreenGamepadCheckBox = QCheckBox()  # Убрали текст
+        self.autoFullscreenGamepadCheckBox = QCheckBox()  # Removed text
         self.autoFullscreenGamepadCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
         self.autoFullscreenGamepadCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.autoFullscreenGamepadTitle = QLabel(_("Auto Fullscreen on Gamepad connected:"))
@@ -2294,7 +2294,7 @@ class MainWindow(QMainWindow):
         self.autoFullscreenGamepadCheckBox.setChecked(current_auto_fullscreen)
         padForm.addRow(self.autoFullscreenGamepadTitle, self.autoFullscreenGamepadCheckBox)
 
-        self.gamepadRumbleCheckBox = QCheckBox()  # Убрали текст
+        self.gamepadRumbleCheckBox = QCheckBox()  # Removed text
         self.gamepadRumbleCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.gamepadRumbleCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
         self.gamepadRumbleTitle = QLabel(_("Gamepad haptic feedback:"))
@@ -2371,7 +2371,7 @@ class MainWindow(QMainWindow):
         self.settingsScrollArea.setWidget(scrollWidget)
         layout.addWidget(self.settingsScrollArea)
 
-        # Кнопки (вне области прокрутки, всегда видимы)
+        # Buttons (outside scroll area, always visible)
         buttonsLayout = QHBoxLayout()
         buttonsLayout.setSpacing(10)
 
@@ -2438,7 +2438,7 @@ class MainWindow(QMainWindow):
     #         self.statusBar().showMessage(_("Unexpected error during authentication"), 5000)
 
     def resetSettings(self):
-        """Сбрасывает настройки и перезапускает приложение."""
+        """Reset settings and restart application."""
         reply = QMessageBox.question(
             self,
             _("Confirm Reset"),
@@ -2449,14 +2449,14 @@ class MainWindow(QMainWindow):
         if reply == QMessageBox.StandardButton.Yes:
             reset_config()
 
-            # Показываем сообщение
+            # Show message
             self.statusBar().showMessage(_("Settings reset. Restarting..."), 3000)
 
-            # Перезапускаем приложение
+            # Restart application
             QTimer.singleShot(1000, lambda: self.restart_application())
 
     def clearCache(self):
-        """Очищает кэш."""
+        """Clear cache."""
         reply = QMessageBox.question(
             self,
             _("Confirm Clear Cache"),
@@ -2467,7 +2467,7 @@ class MainWindow(QMainWindow):
         if reply == QMessageBox.StandardButton.Yes:
             clear_cache()
 
-            # Показываем сообщение
+            # Show message
             self.statusBar().showMessage(_("Cache cleared"), 3000)
 
     def applySettingsDelayed(self):
@@ -2586,7 +2586,7 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(_("Settings saved"), 3000)
 
     def createThemeTab(self):
-        """Вкладка 'Themes'"""
+        """Themes tab"""
         self.themeTabWidget = QWidget()
         self.themeTabWidget.setStyleSheet(self.theme.OTHER_PAGES_WIDGET_STYLE)
         self.themeTabWidget.setObjectName("otherPage")
@@ -2594,7 +2594,7 @@ class MainWindow(QMainWindow):
         mainLayout.setContentsMargins(10, 14, 10, 10)
         mainLayout.setSpacing(10)
 
-        # 1. Верхняя строка: Заголовок и список тем
+        # 1. Top line: Title and theme list
         self.themeTabHeaderLayout = QHBoxLayout()
 
         self.themeTabTitleLabel = QLabel(_("Select Theme:"))
@@ -2615,12 +2615,12 @@ class MainWindow(QMainWindow):
 
         mainLayout.addLayout(self.themeTabHeaderLayout)
 
-        # 2. Карусель скриншотов
+        # 2. Screenshots carousel
         self.screenshotsCarousel = ImageCarousel([])
         self.screenshotsCarousel.setStyleSheet(self.theme.CAROUSEL_WIDGET_STYLE)
         mainLayout.addWidget(self.screenshotsCarousel, stretch=1)
 
-        # 3. Информация о теме
+        # 3. Theme info
         self.themeInfoLayout = QVBoxLayout()
         self.themeInfoLayout.setSpacing(10)
 
@@ -2635,7 +2635,7 @@ class MainWindow(QMainWindow):
 
         mainLayout.addLayout(self.themeInfoLayout)
 
-        # Функция обновления превью
+        # Preview update function
         def updateThemePreview(theme_name):
             meta = load_theme_metainfo(theme_name)
             link = meta.get("author_link", "")
@@ -2665,7 +2665,7 @@ class MainWindow(QMainWindow):
         updateThemePreview(self.current_theme_name)
         self.themesCombo.currentTextChanged.connect(updateThemePreview)
 
-        # Логика применения темы
+        # Theme apply logic
         def on_apply():
             selected_theme = self.themesCombo.currentText()
             if selected_theme:
@@ -2689,17 +2689,17 @@ class MainWindow(QMainWindow):
 
         self.applyButton.clicked.connect(on_apply)
 
-        # Добавляем виджет в stackedWidget
+        # Add widget to stackedWidget
         self.stackedWidget.addWidget(self.themeTabWidget)
 
     def restart_application(self):
-        """Перезапускает приложение."""
+        """Restart application."""
         if not self.isFullScreen():
             save_window_geometry(self.width(), self.height())
         restart_application_with_muvm()
 
     def restore_state(self):
-        """Восстанавливает состояние приложения после перезапуска."""
+        """Restore application state after restart."""
         xdg_data_home = os.getenv("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share"))
         state_file = os.path.join(xdg_data_home, "PortProtonQt", "state.txt")
         logger.info(f"Checking for state file: {state_file}")
@@ -2723,7 +2723,7 @@ class MainWindow(QMainWindow):
         else:
             logger.info(f"State file {state_file} does not exist")
 
-    # ЛОГИКА ДЕТАЛЬНОЙ СТРАНИЦЫ ИГРЫ
+    # GAME DETAIL PAGE LOGIC
     def getColorPalette_async(self, cover_path, num_colors=5, sample_step=10, callback=None):
         def on_pixmap(pixmap):
             if pixmap.isNull():
@@ -2823,7 +2823,7 @@ class MainWindow(QMainWindow):
 
 
     def is_target_exe_running(self):
-        """Проверяет, запущен ли процесс с именем self.target_exe через psutil."""
+        """Check if process named self.target_exe is running via psutil."""
         if not self.target_exe:
             return False
         for proc in psutil.process_iter(attrs=["name"]):
@@ -2833,15 +2833,15 @@ class MainWindow(QMainWindow):
 
     def checkTargetExe(self):
         """
-        Проверяет, запущена ли игра.
-        Если процесс игры (target_exe) обнаружен – устанавливаем флаг и обновляем кнопку.
-        Если игра завершилась – сбрасываем флаг, обновляем кнопку и останавливаем таймер.
+        Check if game is running.
+        If game process (target_exe) detected - set flag and update button.
+        If game completed - reset flag, update button and stop timer.
         """
         target_running = self.is_target_exe_running()
         child_running = any(proc.poll() is None for proc in self.game_processes)
 
         if target_running:
-            # Игра стартовала – устанавливаем флаг, обновляем кнопку на "Stop"
+            # Game started - set flag, update button to "Stop"
             if self.current_running_button is not None:
                 try:
                     self.current_running_button.setText(_("Stop"))
@@ -2849,7 +2849,7 @@ class MainWindow(QMainWindow):
                     self.current_running_button = None
                 #self._inhibit_screensaver()
         elif not child_running:
-            # Игра завершилась – сбрасываем флаг, сбрасываем кнопку и останавливаем таймер
+            # Game completed - reset flag, reset button and stop timer
             self.resetPlayButton()
             #self._uninhibit_screensaver()
             if hasattr(self, 'checkProcessTimer') and self.checkProcessTimer is not None:
@@ -2859,9 +2859,9 @@ class MainWindow(QMainWindow):
 
     def resetPlayButton(self):
         """
-        Сбрасывает кнопку запуска игры:
-        меняет текст на "Играть", устанавливает иконку и сбрасывает переменные.
-        Вызывается, когда игра завершилась (не по нажатию кнопки).
+        Reset game launch button:
+        change text to "Play", set icon and reset variables.
+        Called when game completed (not by button press).
         """
         if self.current_running_button is not None:
             try:
@@ -2878,17 +2878,17 @@ class MainWindow(QMainWindow):
         self.target_exe = None
 
     def toggleGame(self, exec_line, button=None):
-        # Обработка Steam-игр
+        # Handle Steam games
         if exec_line.startswith("steam://"):
             url = QUrl(exec_line)
             QDesktopServices.openUrl(url)
             return
 
-        # Обработка EGS-игр
+        # Handle EGS games
         if exec_line.startswith("legendary:launch:"):
             app_name = exec_line.split("legendary:launch:")[1]
 
-            # Получаем путь к .exe из installed.json
+            # Get path to .exe from installed.json
             game_exe = get_egs_executable(app_name, self.legendary_config_path)
             if not game_exe or not os.path.exists(game_exe):
                 QMessageBox.warning(self, _("Error"), _("Executable not found for EGS game: {0}").format(app_name))
@@ -2899,15 +2899,15 @@ class MainWindow(QMainWindow):
                 QMessageBox.warning(self, _("Error"), _("Cannot launch game while another game is running"))
                 return
 
-            # Обновляем кнопку
+            # Update button
             update_button = button if button is not None else self.current_play_button
             self.current_running_button = update_button
             self.target_exe = current_exe
             exe_name = os.path.splitext(current_exe)[0]
 
-            # Проверяем, запущена ли игра
+            # Check if game is running
             if self.game_processes and self.target_exe == current_exe:
-                # Останавливаем игру
+                # Stop game
                 for proc in self.game_processes:
                     try:
                         parent = psutil.Process(proc.pid)
@@ -2943,7 +2943,7 @@ class MainWindow(QMainWindow):
                 self.current_running_button = None
                 self.target_exe = None
             else:
-                # Запускаем игру через PortProton
+                # Launch game via PortProton
                 env_vars = os.environ.copy()
                 env_vars['LEGENDARY_CONFIG_PATH'] = self.legendary_config_path
 
@@ -2975,7 +2975,7 @@ class MainWindow(QMainWindow):
                     QMessageBox.warning(self, _("Error"), _("Failed to launch game: {0}").format(str(e)))
             return
 
-        # Обработка PortProton-игр
+        # Handle PortProton games
         entry_exec_split = shlex.split(exec_line)
         if entry_exec_split[0] == "env":
             if len(entry_exec_split) < 3:
@@ -2999,10 +2999,10 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, _("Error"), _("Cannot launch game while another game is running"))
             return
 
-        # Обновляем кнопку
+        # Update button
         update_button = button if button is not None else self.current_play_button
 
-        # Если игра уже запущена для этого exe – останавливаем её
+        # If game already running for this exe - stop it
         if self.game_processes and self.target_exe == current_exe:
             for proc in self.game_processes:
                 try:
@@ -3040,13 +3040,13 @@ class MainWindow(QMainWindow):
             self.target_exe = None
             #self._uninhibit_screensaver()
         else:
-            # Сохраняем ссылку на кнопку для сброса после завершения игры
+            # Save button reference for reset after game completion
             self.current_running_button = update_button
             self.target_exe = current_exe
             exe_name = os.path.splitext(current_exe)[0]
             env_vars = os.environ.copy()
 
-            # Запускаем игру
+            # Launch game
             try:
                 process = subprocess.Popen(entry_exec_split, env=env_vars, shell=False, preexec_fn=os.setsid)
                 self.game_processes.append(process)
@@ -3071,35 +3071,35 @@ class MainWindow(QMainWindow):
                 QMessageBox.warning(self, _("Error"), _("Failed to launch game: {0}").format(str(e)))
 
     def closeEvent(self, event):
-        """Обработчик закрытия окна: проверяет настройку minimize_to_tray.
-        Если True — сворачиваем в трей (по умолчанию). Иначе — полностью закрываем.
+        """Handle window close: check minimize_to_tray setting.
+        If True - minimize to tray (default). Otherwise - fully close.
         """
         minimize_to_tray = read_minimize_to_tray()
 
         if minimize_to_tray:
-            # Просто сворачиваем в трей
+            # Just minimize to tray
             event.ignore()
             self.hide()
             return
 
-        # Полное закрытие приложения
+        # Full application close
         event.accept()
 
-        # Скрываем и удаляем иконку трея
+        # Hide and remove tray icon
         if hasattr(self, "tray_manager") and self.tray_manager.tray_icon:
             self.tray_manager.tray_icon.hide()
             self.tray_manager.tray_icon.deleteLater()
 
-        # Сохраняем размеры карточек
+        # Save card sizes
         save_card_size(self.card_width)
         save_auto_card_size(self.auto_card_width)
 
-        # Сохраняем размеры окна (если не в полноэкранном режиме)
+        # Save window sizes (if not in fullscreen mode)
         if not read_fullscreen_config():
             logger.debug(f"Saving window geometry: {self.width()}x{self.height()}")
             save_window_geometry(self.width(), self.height())
 
-        # Завершаем все игровые процессы
+        # Terminate all game processes
         for proc in getattr(self, "game_processes", []):
             try:
                 parent = psutil.Process(proc.pid)
@@ -3127,7 +3127,7 @@ class MainWindow(QMainWindow):
 
         self.game_processes = []
 
-        # Универсальная остановка и удаление таймеров
+        # Universal stop and delete timers
         timers = [
             "games_load_timer",
             "settingsDebounceTimer",

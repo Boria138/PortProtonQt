@@ -13,7 +13,7 @@ _icon_dirs_cache = {}
 
 logger = get_logger(__name__)
 
-# Папка, где располагаются все дополнительные темы
+# Folder where all custom themes are located
 xdg_data_home = os.getenv("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share"))
 THEMES_DIRS = [
     os.path.join(xdg_data_home, "PortProtonQt", "themes"),
@@ -24,7 +24,7 @@ _loaded_theme = None
 
 def list_themes():
     """
-    Возвращает список доступных тем (названий папок) из каталогов THEMES_DIRS.
+    Return list of available themes (folder names) from THEMES_DIRS directories.
     """
     themes = []
     for themes_dir in THEMES_DIRS:
@@ -37,9 +37,9 @@ def list_themes():
 
 def load_theme_screenshots(theme_name):
     """
-    Загружает все скриншоты из папки "screenshots", расположенной в папке темы.
-    Возвращает список кортежей (pixmap, caption), где caption - это перевод названия скриншота.
-    Если папка отсутствует или пуста, возвращается пустой список.
+    Load all screenshots from "screenshots" folder in theme directory.
+    Return list of tuples (pixmap, caption), where caption is translated screenshot name.
+    If folder missing or empty, return empty list.
     """
     screenshots = []
 
@@ -120,7 +120,7 @@ def build_icon_cache(theme_name):
 
 def load_theme_fonts(theme_name):
     """
-    Загружает все шрифты выбранной темы, если они ещё не были загружены.
+    Load all fonts from selected theme if not already loaded.
     """
     global _loaded_theme
     if _loaded_theme == theme_name:
@@ -189,9 +189,9 @@ def load_theme_fonts(theme_name):
 
 class ThemeWrapper:
     """
-    Обёртка для кастомной темы с поддержкой метаинформации.
-    При обращении к атрибуту сначала ищется его наличие в кастомной теме,
-    если атрибут отсутствует, значение берётся из стандартного модуля стилей.
+    Wrapper for custom theme with metainfo support.
+    When accessing attribute, first look for it in custom theme,
+    if attribute missing, value taken from standard styles module.
     """
     def __init__(self, custom_theme, metainfo=None):
         self.custom_theme = custom_theme
@@ -208,9 +208,9 @@ class ThemeWrapper:
 
 def load_theme(theme_name):
     """
-    Динамически загружает модуль стилей выбранной темы и метаинформацию.
-    Все темы, включая стандартную, проходят проверку безопасности.
-    Для кастомных тем возвращается обёртка, которая подставляет недостающие атрибуты.
+    Dynamically load style module of selected theme and metainfo.
+    All themes, including standard, pass security check.
+    For custom themes, return wrapper that supplies missing attributes.
     """
     import sys
     import types
@@ -220,7 +220,7 @@ def load_theme(theme_name):
         theme_folder = os.path.join(themes_dir, theme_name)
         styles_file = os.path.join(theme_folder, "styles.py")
         if os.path.exists(styles_file):
-            # Проверяем безопасность темы перед загрузкой
+            # Check theme security before loading
             if not check_theme_safety(styles_file):
                 logger.error(f"Theme '{theme_name}' is unsafe, falling back to 'standart'")
                 raise FileNotFoundError(f"Theme '{theme_name}' contains forbidden modules or functions")
@@ -312,8 +312,8 @@ def load_theme(theme_name):
 
 class ThemeManager:
     """
-    Класс для управления темами приложения.
-    Реализует паттерн Singleton для единого экземпляра.
+    Class for managing application themes.
+    Implement Singleton pattern for single instance.
     """
     _instance = None
 
@@ -325,13 +325,13 @@ class ThemeManager:
         return cls._instance
 
     def get_available_themes(self) -> list:
-        """Возвращает список доступных тем."""
+        """Return list of available themes."""
         return list_themes()
 
     def apply_theme(self, theme_name: str):
         """
-        Применяет указанную тему, если она ещё не применена.
-        Возвращает модуль темы или обёртку.
+        Apply selected theme if not already applied.
+        Return theme module or wrapper.
         """
         if self.current_theme_name == theme_name and self.current_theme_module is not None:
             logger.debug(f"Theme '{theme_name}' is already applied, skipping")
@@ -361,9 +361,9 @@ class ThemeManager:
 
     def get_icon(self, icon_name, theme_name=None, as_path=False):
         """
-        Возвращает QIcon из папки icons текущей темы (включая поддиректории),
-        а если файл не найден, то из стандартной темы.
-        Если as_path=True, возвращает путь к иконке вместо QIcon.
+        Return QIcon from icons folder of current theme (including subdirectories),
+        if file not found, from standard theme.
+        If as_path=True, return icon path instead of QIcon.
         """
         # Create cache key
         cache_key = f"{icon_name}_{theme_name or self.current_theme_name}_{as_path}"
@@ -390,7 +390,7 @@ class ThemeManager:
             if not is_safe_image_file(icon_path):
                 icon_path = None
 
-        # Если иконка всё равно не найдена
+        # If icon still not found
         if not icon_path or not os.path.exists(icon_path):
             logger.error(f"Warning: icon '{icon_name}' not found")
             result = QIcon() if not as_path else None
@@ -410,10 +410,10 @@ class ThemeManager:
 
     def get_theme_image(self, image_name, theme_name=None):
         """
-        Возвращает путь к изображению из папки текущей темы.
-        Если не найдено, проверяет стандартную тему.
-        Принимает название иконки без расширения и находит соответствующий файл
-        с поддерживаемым расширением (.svg, .png, .jpg и др.).
+        Return path to image from current theme folder.
+        If not found, check standard theme.
+        Accept icon name without extension and find matching file
+        with supported extension (.svg, .png, .jpg, etc.).
         """
         image_path = None
         theme_name = theme_name or self.current_theme_name

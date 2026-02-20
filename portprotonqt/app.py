@@ -90,7 +90,7 @@ def main():
     socket.connectToServer(server_name)
 
     if socket.waitForConnected(200):
-        # Второй экземпляр — передаём команду первому
+        # Second instance — send command to the first one
         fullscreen = args.fullscreen or read_fullscreen_config()
         msg = b"show:fullscreen" if fullscreen else b"show"
         socket.write(msg)
@@ -100,7 +100,7 @@ def main():
         logger.info("Restored existing instance from tray")
         return
 
-    # Если старый сокет остался — удалить
+    # Remove old socket if it exists
     QLocalServer.removeServer(server_name)
 
     local_server = QLocalServer()
@@ -169,7 +169,7 @@ def main():
                 except Exception as e:
                     logger.warning(f"Failed to restore window: {e}")
 
-            # Выполняем в основном потоке
+            # Execute in the main thread
             QTimer.singleShot(0, restore_window)
 
         conn.disconnectFromServer()

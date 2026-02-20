@@ -22,7 +22,7 @@ class VirtualKeyboard(QFrame):
         self.current_layout: str = self.available_layouts[0]
 
         self.focus_timer = None
-        self.focus_delay = 150  # Задержка между перемещениями в мс
+        self.focus_delay = 150  # Delay between moves in ms
         self.last_focus_time = 0
 
         self.backspace_pressed = False
@@ -62,12 +62,12 @@ class VirtualKeyboard(QFrame):
         self.setStyleSheet(self.theme.VIRTUAL_KEYBOARD_STYLE)
 
     def highlight_cursor_position(self):
-        """Подсвечиваем текущую позицию курсора"""
+        """Highlight current cursor position"""
         if not self.current_input_widget or not isinstance(self.current_input_widget, QLineEdit):
             return
 
         try:
-            # Просто устанавливаем курсор на нужную позицию без выделения
+            # Just set cursor to position without selection
             self.current_input_widget.setCursorPosition(self.current_input_widget.cursorPosition())
         except RuntimeError:
             self.current_input_widget = None
@@ -108,7 +108,7 @@ class VirtualKeyboard(QFrame):
             return None
 
     def get_layouts_setxkbmap(self) -> list[str]:
-        """Получаем раскладки, которые используются в системе, возвращаем список вида ['us', 'ru'] и т.п."""
+        """Get layouts used in system, return list like ['us', 'ru'] etc."""
         cmd = r'''localectl status | awk -F: '/X11 Layout/ {gsub(/^[ \t]+/, "", $2); print $2}' '''
         output = self.run_shell_command(cmd)
         if output:
@@ -118,9 +118,8 @@ class VirtualKeyboard(QFrame):
             return ['en']
 
     def create_keyboard(self):
-        # TODO: сделать нормальное описание (сейчас лень)
-        # Основные раскладки с учетом Shift
-        # Фильтруем доступные раскладки
+        # Main layouts with Shift
+        # Filter available layouts
 
         LAYOUT_MAP = {'us': 'en'}
 
@@ -166,7 +165,7 @@ class VirtualKeyboard(QFrame):
     def update_keyboard(self):
         coords = self._save_focused_coords()
 
-        # Очищаем предыдущие кнопки
+        # Clear previous buttons
         while self.keyboard_layout.count():
             item = self.keyboard_layout.takeAt(0)
             if item:
@@ -177,23 +176,23 @@ class VirtualKeyboard(QFrame):
         fixed_w = self.button_width
         fixed_h = self.button_height
 
-        # Выбираем текущую раскладку (обычная или с shift)
+        # Select current layout (normal or with shift)
         layout_mode = 'shift' if self.shift_pressed else 'normal'
         layout_data = self.layouts.get(self.current_layout, {})
         buttons: list[list[str]] = layout_data.get(layout_mode, [])
 
-        # Добавляем основные кнопки
+        # Add main buttons
         for row_idx, row in enumerate(buttons):
             for col_idx, key in enumerate(row):
                 button = QPushButton(key)
                 button.setFixedSize(fixed_w, fixed_h)
 
-                # Обработчики для CAPS и левого Shift
+                # Handlers for CAPS and left Shift
                 if key == 'CAPS':
                     button.setCheckable(True)
                     button.setChecked(self.caps_lock)
                     button.clicked.connect(self.on_caps_click)
-                elif key == '⬆':  # Левый Shift
+                elif key == '⬆':  # Left Shift
                     button.setCheckable(True)
                     button.setChecked(self.shift_pressed)
                     button.clicked.connect(lambda checked: self.on_shift_click(checked))
@@ -206,7 +205,7 @@ class VirtualKeyboard(QFrame):
                 self.keyboard_layout.addWidget(button, row_idx, col_idx)
                 self.buttons[key] = button
 
-        # Нижний ряд (специальные кнопки)
+        # Bottom row (special buttons)
         shift = QPushButton('⬆')
         shift.setFixedSize(fixed_w * 3 + 2 * self.spacing, fixed_h)
         shift.setCheckable(True)
@@ -256,7 +255,7 @@ class VirtualKeyboard(QFrame):
 
         up = QPushButton('▲')
         up.setFixedSize(fixed_w, fixed_h)
-        up.clicked.connect(self.up_key)  # Обработка клика мышью - управление курсором
+        up.clicked.connect(self.up_key)  # Handle mouse click - cursor control
         self.keyboard_layout.addWidget(up, 4, 6, 1, 1)
 
         down = QPushButton('▼')
@@ -291,7 +290,7 @@ class VirtualKeyboard(QFrame):
                     widget.setFocus()
 
     def up_key(self):
-        """Перемещает курсор в QLineEdit вверх/в начало, если клавиатура видима"""
+        """Move cursor in QLineEdit up/to start if keyboard visible"""
         if self.current_input_widget and isinstance(self.current_input_widget, QLineEdit):
             try:
                 self.current_input_widget.setCursorPosition(0)
@@ -300,7 +299,7 @@ class VirtualKeyboard(QFrame):
                 self.current_input_widget = None
 
     def down_key(self):
-        """Перемещает курсор в QLineEdit вниз/в конец, если клавиатура видима"""
+        """Move cursor in QLineEdit down/to end if keyboard visible"""
         if self.current_input_widget and isinstance(self.current_input_widget, QLineEdit):
             try:
                 self.current_input_widget.setCursorPosition(len(self.current_input_widget.text()))
@@ -309,7 +308,7 @@ class VirtualKeyboard(QFrame):
                 self.current_input_widget = None
 
     def left_key(self):
-        """Перемещает курсор в QLineEdit влево, если клавиатура видима"""
+        """Move cursor in QLineEdit left if keyboard visible"""
         if self.current_input_widget and isinstance(self.current_input_widget, QLineEdit):
             try:
                 pos = self.current_input_widget.cursorPosition()
@@ -320,7 +319,7 @@ class VirtualKeyboard(QFrame):
                 self.current_input_widget = None
 
     def right_key(self):
-        """Перемещает курсор в QLineEdit вправо, если клавиатура видима"""
+        """Move cursor in QLineEdit right if keyboard visible"""
         if self.current_input_widget and isinstance(self.current_input_widget, QLineEdit):
             try:
                 pos = self.current_input_widget.cursorPosition()
@@ -332,40 +331,40 @@ class VirtualKeyboard(QFrame):
                 self.current_input_widget = None
 
     def move_focus_up(self):
-        """Перемещает фокус по кнопкам клавиатуры вверх с фиксированной скоростью"""
+        """Move focus up across keyboard buttons with fixed speed"""
         current_time = self.get_current_time()
         if current_time - self.last_focus_time >= self.focus_delay:
             self.focusNextKey("up")
             self.last_focus_time = current_time
 
     def move_focus_down(self):
-        """Перемещает фокус по кнопкам клавиатуры вниз с фиксированной скоростью"""
+        """Move focus down across keyboard buttons with fixed speed"""
         current_time = self.get_current_time()
         if current_time - self.last_focus_time >= self.focus_delay:
             self.focusNextKey("down")
             self.last_focus_time = current_time
 
     def move_focus_left(self):
-        """Перемещает фокус по кнопкам клавиатуры влево с фиксированной скоростью"""
+        """Move focus left across keyboard buttons with fixed speed"""
         current_time = self.get_current_time()
         if current_time - self.last_focus_time >= self.focus_delay:
             self.focusNextKey("left")
             self.last_focus_time = current_time
 
     def move_focus_right(self):
-        """Перемещает фокус по кнопкам клавиатуры вправо с фиксированной скоростью"""
+        """Move focus right across keyboard buttons with fixed speed"""
         current_time = self.get_current_time()
         if current_time - self.last_focus_time >= self.focus_delay:
             self.focusNextKey("right")
             self.last_focus_time = current_time
 
     def get_current_time(self):
-        """Возвращает текущее время в миллисекундах"""
+        """Return current time in milliseconds"""
         from time import time
         return int(time() * 1000)
 
     def _save_focused_coords(self) -> tuple[int, int] | None:
-        """Возвращает (row, col) кнопки с фокусом или None"""
+        """Return (row, col) of focused button or None"""
         current = self.focusWidget()
         if not current:
             return None
@@ -386,7 +385,7 @@ class VirtualKeyboard(QFrame):
             self.highlight_cursor_position()
         elif self.current_input_widget is not None:
             try:
-                # Сохраняем текущую кнопку с фокусом
+                # Save current focused button
                 focused_button = self.focusWidget()
                 key_to_restore = None
                 if isinstance(focused_button, QPushButton) and focused_button in self.buttons.values():
@@ -401,7 +400,7 @@ class VirtualKeyboard(QFrame):
                 self.keyPressed.emit(key)
                 self.highlight_cursor_position()
 
-                # Если был нажат SHIFT, но не CapsLock, отключаем его после ввода символа
+                # If SHIFT was pressed but not CapsLock, disable it after character input
                 if self.shift_pressed and not self.caps_lock:
                     self.shift_pressed = False
                     self.update_keyboard()
@@ -422,21 +421,21 @@ class VirtualKeyboard(QFrame):
                 self.current_input_widget = None
 
     def on_caps_click(self):
-        """Включаем/выключаем CapsLock"""
+        """Toggle CapsLock"""
         self.caps_lock = not self.caps_lock
         self.shift_pressed = self.caps_lock
         self.update_keyboard()
 
-    # ---------- таймерное событие ----------
+    # ---------- timer event ----------
     def timerEvent(self, event):
         if event.timerId() == self.backspace_timer:
-            self.on_backspace_click()  # стираем ещё один символ
-            # первое срабатывание прошло – ускоряем
+            self.on_backspace_click()  # erase one more character
+            # first trigger passed - speed up
             if self.backspace_timer:
                 self.killTimer(self.backspace_timer)
                 self.backspace_timer = self.startTimer(self.backspace_repeat_delay)
     def on_backspace_click(self):
-        """Обработка одного нажатия Backspace"""
+        """Handle single Backspace press"""
         if self.current_input_widget is not None:
             try:
                 cursor_pos = self.current_input_widget.cursorPosition()
@@ -452,26 +451,25 @@ class VirtualKeyboard(QFrame):
                 self.current_input_widget = None
 
     def on_backspace_pressed(self):
-        """Обработка зажатого Backspace"""
+        """Handle held Backspace"""
         self.backspace_pressed = True
         self.start_backspace_repeat()
 
     def start_backspace_repeat(self):
-        """Запуск автоповтора нажатия Backspace"""
-        self.on_backspace_click()  # Первое нажатие
+        """Start Backspace auto-repeat"""
+        self.on_backspace_click()  # First press
         self.backspace_timer = self.startTimer(self.backspace_initial_delay)
 
     def stop_backspace_repeat(self):
-        """Остановка автоповтора нажатия Backspace"""
+        """Stop Backspace auto-repeat"""
         if self.backspace_timer:
             self.killTimer(self.backspace_timer)
             self.backspace_timer = None
         self.backspace_pressed = False
 
     def on_enter_click(self):
-        """Обработка действия кнопки Enter"""
-        # TODO: тут подумать, как обрабатывать нажатие.
-        #  Пока болванка перехода на новую строку, в QlineEdit работает как нажатие пробела
+        """Handle Enter button action"""
+        #  For now placeholder for new line, in QLineEdit works as space press
         if self.current_input_widget is not None:
             try:
                 self.current_input_widget.insert('\n')
@@ -480,7 +478,7 @@ class VirtualKeyboard(QFrame):
                 self.current_input_widget = None
 
     def on_clear_click(self):
-        """Чистим строку от введённого текста"""
+        """Clear line from entered text"""
         if self.current_input_widget is not None:
             try:
                 self.current_input_widget.clear()
@@ -490,7 +488,7 @@ class VirtualKeyboard(QFrame):
                 self.current_input_widget = None
 
     def on_lang_click(self):
-        """Переключение раскладки"""
+        """Switch layout"""
         if not self.available_layouts:
             return
 
@@ -499,7 +497,7 @@ class VirtualKeyboard(QFrame):
             next_index = (current_index + 1) % len(self.available_layouts)
             self.current_layout = self.available_layouts[next_index]
         except ValueError:
-            # Если текущей раскладки нет в available_layouts
+            # If current layout not in available_layouts
             self.current_layout = self.available_layouts[0] if self.available_layouts else 'en'
 
         self.update_keyboard()
@@ -519,7 +517,7 @@ class VirtualKeyboard(QFrame):
             except RuntimeError:
                 self.current_input_widget = None
 
-        # Позиционирование клавиатуры внизу родительского виджета
+        # Position keyboard at bottom of parent widget
         if self._parent and isinstance(self._parent, QWidget):
             keyboard_height = 220
             self.setFixedWidth(self._parent.width())
@@ -529,20 +527,20 @@ class VirtualKeyboard(QFrame):
         self.show()
         self.raise_()
 
-        # Установить фокус на первую кнопку, если нет фокуса на виджете ввода
+        # Set focus to first button if no focus on input widget
         if not widget:
             first_button: QPushButton | None = next((cast(QPushButton, btn) for btn in self.buttons.values()), None)
             if first_button:
                 first_button.setFocus()
 
     def activateFocusedKey(self):
-        """Активирует текущую выделенную кнопку на клавиатуре"""
+        """Activate current highlighted button on keyboard"""
         focused = self.focusWidget()
         if isinstance(focused, QPushButton):
             focused.animateClick()
 
     def focusNextKey(self, direction: str):
-        """Перемещает фокус на следующую кнопку в указанном направлении с обертыванием"""
+        """Move focus to next button in specified direction with wrapping"""
         current = self.focusWidget()
         if not current:
             first_button = self.findFirstFocusableButton()
@@ -563,7 +561,7 @@ class VirtualKeyboard(QFrame):
         found = False
 
         if direction == "right":
-            # Сначала ищем в той же строке вправо
+            # First search right in same row
             search_row = current_row
             search_col = current_col + col_span
             while search_col < num_cols:
@@ -577,10 +575,10 @@ class VirtualKeyboard(QFrame):
                 search_col += 1
 
             if not found:
-                # Переходим к следующей строке, начиная с col 0
+                # Move to next row, starting at col 0
                 search_row = (current_row + 1) % num_rows
                 search_col = 0
-                # Ищем первую кнопку в этой строке
+                # Find first button in this row
                 while search_col < num_cols:
                     item = self.keyboard_layout.itemAtPosition(search_row, search_col)
                     widget = item.widget() if item else None
@@ -592,7 +590,7 @@ class VirtualKeyboard(QFrame):
                     search_col += 1
 
         elif direction == "left":
-            # Сначала ищем в той же строке влево
+            # First search left in same row
             search_row = current_row
             search_col = current_col - 1
             while search_col >= 0:
@@ -606,10 +604,10 @@ class VirtualKeyboard(QFrame):
                 search_col -= 1
 
             if not found:
-                # Переходим к предыдущей строке, начиная с последнего столбца
+                # Move to previous row, starting at last column
                 search_row = (current_row - 1) % num_rows
                 search_col = num_cols - 1
-                # Ищем последнюю кнопку в этой строке
+                # Find last button in this row
                 while search_col >= 0:
                     item = self.keyboard_layout.itemAtPosition(search_row, search_col)
                     widget = item.widget() if item else None
@@ -621,7 +619,7 @@ class VirtualKeyboard(QFrame):
                     search_col -= 1
 
         elif direction == "down":
-            # Сначала ищем в том же столбце вниз
+            # First search down in same column
             search_col = current_col
             search_row = current_row + row_span
             while search_row < num_rows:
@@ -635,10 +633,10 @@ class VirtualKeyboard(QFrame):
                 search_row += 1
 
             if not found:
-                # Переходим к следующему столбцу, начиная с row 0
+                # Move to next column, starting at row 0
                 search_col = (current_col + col_span) % num_cols
                 search_row = 0
-                # Ищем первую кнопку в этом столбце
+                # Find first button in this column
                 while search_row < num_rows:
                     item = self.keyboard_layout.itemAtPosition(search_row, search_col)
                     widget = item.widget() if item else None
@@ -650,7 +648,7 @@ class VirtualKeyboard(QFrame):
                     search_row += 1
 
         elif direction == "up":
-            # Сначала ищем в том же столбце вверх
+            # First search up in same column
             search_col = current_col
             search_row = current_row - 1
             while search_row >= 0:
@@ -664,10 +662,10 @@ class VirtualKeyboard(QFrame):
                 search_row -= 1
 
             if not found:
-                # Переходим к предыдущему столбцу, начиная с последней строки
+                # Move to previous column, starting at last row
                 search_col = (current_col - 1) % num_cols
                 search_row = num_rows - 1
-                # Ищем последнюю кнопку в этом столбце
+                # Find last button in this column
                 while search_row >= 0:
                     item = self.keyboard_layout.itemAtPosition(search_row, search_col)
                     widget = item.widget() if item else None
@@ -679,7 +677,7 @@ class VirtualKeyboard(QFrame):
                     search_row -= 1
 
     def findFirstFocusableButton(self) -> QPushButton | None:
-        """Находит первую фокусируемую кнопку на клавиатуре"""
+        """Find first focusable button on keyboard"""
         for row in range(self.keyboard_layout.rowCount()):
             for col in range(self.keyboard_layout.columnCount()):
                 item = self.keyboard_layout.itemAtPosition(row, col)

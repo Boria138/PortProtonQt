@@ -29,7 +29,7 @@ logger = get_logger(__name__)
 downloader = Downloader()
 
 def read_installed_json(legendary_config_path: str) -> dict | None:
-    """Читает installed.json и возвращает словарь с данными или None в случае ошибки."""
+    """Read installed.json and return dictionary with data or None on error."""
     installed_json_path = os.path.join(legendary_config_path, "installed.json")
     try:
         with open(installed_json_path, "rb") as f:
@@ -45,7 +45,7 @@ def read_installed_json(legendary_config_path: str) -> dict | None:
         return None
 
 def get_egs_executable(app_name: str, legendary_config_path: str) -> str | None:
-    """Получает путь к исполняемому файлу EGS-игры из installed.json."""
+    """Get path to EGS game executable from installed.json."""
     installed_data = read_installed_json(legendary_config_path)
     if installed_data is None or app_name not in installed_data:
         return None
@@ -722,7 +722,7 @@ def get_egs_game_description_async(
 
 def run_legendary_list_async(legendary_path: str, callback: Callable[[list | None], None]):
     """
-    Асинхронно выполняет команду 'legendary list --json' и возвращает результат через callback.
+    Asynchronously executes legendary list --json command and returns result via callback.
     """
     def execute_command():
         process = None
@@ -764,9 +764,9 @@ def run_legendary_list_async(legendary_path: str, callback: Callable[[list | Non
 
 def load_egs_games_async(legendary_path: str, callback: Callable[[list[tuple]], None], downloader, update_progress: Callable[[int], None], update_status_message: Callable[[str, int], None]):
     """
-    Асинхронно загружает Epic Games Store игры с использованием legendary CLI.
-    Читает статистику времени игры и последнего запуска из файла statistics.
-    Проверяет наличие игры в Steam для получения ProtonDB статуса.
+    Asynchronously loads Epic Games Store games using legendary CLI.
+    Reads playtime and last launch statistics from statistics file.
+    Checks if game exists in Steam to get ProtonDB status.
     """
     logger.debug("Starting to load Epic Games Store games")
     games: list[tuple] = []
@@ -775,7 +775,7 @@ def load_egs_games_async(legendary_path: str, callback: Callable[[list[tuple]], 
     cache_file = cache_dir / "legendary_games.json"
     cache_ttl = 3600  # Cache TTL in seconds (1 hour)
 
-    # Путь к файлу statistics
+    # Path to statistics file
     portproton_location = get_portproton_location()
     if portproton_location is None:
         logger.error("PortProton location is not set, cannot locate statistics file")
@@ -809,7 +809,7 @@ def load_egs_games_async(legendary_path: str, callback: Callable[[list[tuple]], 
 
 def _continue_loading_egs_games(legendary_path: str, callback: Callable[[list[tuple]], None], metadata_dir: Path, cache_dir: Path, cache_file: Path, cache_ttl: int, update_progress: Callable[[int], None], update_status_message: Callable[[str, int], None], statistics_file: str):
     """
-    Продолжает процесс загрузки EGS игр, либо из кэша, либо через legendary CLI.
+    Continues EGS games loading process, either from cache or via legendary CLI.
     """
     games: list[tuple] = []
     cache_dir.mkdir(parents=True, exist_ok=True)
@@ -825,7 +825,7 @@ def _continue_loading_egs_games(legendary_path: str, callback: Callable[[list[tu
             callback(games)
             return
 
-        # Сохраняем в кэш
+        # Save to cache
         try:
             with open(cache_file, "wb") as f:
                 f.write(orjson.dumps(installed_games))
@@ -833,7 +833,7 @@ def _continue_loading_egs_games(legendary_path: str, callback: Callable[[list[tu
         except Exception as e:
             logger.error("Failed to save cache: %s", str(e))
 
-        # Фильтруем игры
+        # Filter games
         valid_games = [game for game in installed_games if isinstance(game, dict) and game.get("app_name") and not game.get("is_dlc", False)]
         if len(valid_games) != len(installed_games):
             logger.warning("Filtered out %d invalid game records", len(installed_games) - len(valid_games))
@@ -864,13 +864,13 @@ def _continue_loading_egs_games(legendary_path: str, callback: Callable[[list[tu
                         callback(final_games)
                 return
 
-            # Получаем путь к .exe для извлечения имени
+            # Get path to .exe for name extraction
             game_exe = get_egs_executable(app_name, os.path.dirname(legendary_path))
             exe_name = ""
             if game_exe:
                 exe_name = os.path.splitext(os.path.basename(game_exe))[0]
 
-            # Читаем статистику из файла statistics
+            # Read statistics from statistics file
             playtime_seconds = 0
             formatted_playtime = ""
             last_launch = _("Never")
@@ -965,7 +965,7 @@ def _continue_loading_egs_games(legendary_path: str, callback: Callable[[list[tu
             for i, game in enumerate(valid_games):
                 executor.submit(process_game_metadata, game, i)
 
-    # Проверяем кэш
+    # Check cache
     use_cache = False
     if cache_file.exists():
         try:

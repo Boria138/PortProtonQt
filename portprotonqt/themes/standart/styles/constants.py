@@ -4,7 +4,7 @@ from portprotonqt.config_utils import read_theme_from_config
 theme_manager = ThemeManager()
 current_theme_name = read_theme_from_config()
 
-# КОНСТАНТЫ
+# CONSTANTS
 favoriteLabelSize = 48, 48
 
 # VARS
@@ -27,150 +27,150 @@ color_h = "transparent"
 color_i = "rgba(40, 42, 51, 0.9)"
 
 GAME_CARD_ANIMATION = {
-    # Тип анимации при входе и выходе на детальную страницу
-    # Возможные значения: "fade", "slide_left", "slide_right", "slide_up", "slide_down", "bounce"
-    # Определяет, как детальная страница появляется и исчезает
+    # Animation type for entering/exiting detail page
+    # Possible values: "fade", "slide_left", "slide_right", "slide_up", "slide_down", "bounce"
+    # Defines how the detail page appears and disappears
     "detail_page_animation_type": "fade",
 
-    # Ширина обводки карточки в состоянии покоя (без наведения или фокуса)
-    # Влияет на толщину рамки вокруг карточки, когда она не выделена
-    # Значение в пикселях
+    # Border width of card in idle state (no hover or focus)
+    # Affects border thickness around card when not highlighted
+    # Value in pixels
     "default_border_width": 2,
 
-    # Ширина обводки при наведении курсора
-    # Увеличивает толщину рамки, когда курсор находится над карточкой
-    # Значение в пикселях
+    # Border width on hover
+    # Increases border thickness when cursor is over card
+    # Value in pixels
     "hover_border_width": 8,
 
-    # Ширина обводки при фокусе (например, при выборе с клавиатуры)
-    # Увеличивает толщину рамки, когда карточка в фокусе
-    # Значение в пикселях
+    # Border width on focus (e.g., keyboard selection)
+    # Increases border thickness when card is focused
+    # Value in pixels
     "focus_border_width": 12,
 
-    # Минимальная ширина обводки во время пульсирующей анимации
-    # Определяет минимальную толщину рамки при пульсации (анимация "дыхания")
-    # Значение в пикселях
+    # Minimum border width during pulse animation
+    # Defines minimum border thickness during pulse (breathing) animation
+    # Value in pixels
     "pulse_min_border_width": 8,
 
-    # Максимальная ширина обводки во время пульсирующей анимации
-    # Определяет максимальную толщину рамки при пульсации
-    # Значение в пикселях
+    # Maximum border width during pulse animation
+    # Defines maximum border thickness during pulse
+    # Value in pixels
     "pulse_max_border_width": 10,
 
-    # Длительность анимации изменения толщины обводки (например, при наведении или фокусе)
-    # Влияет на скорость перехода от одной ширины обводки к другой
-    # Значение в миллисекундах
+    # Duration of border thickness change animation (e.g., on hover or focus)
+    # Affects speed of transition between border widths
+    # Value in milliseconds
     "thickness_anim_duration": 300,
 
-    # Длительность одного цикла пульсирующей анимации
-    # Определяет, как быстро рамка "пульсирует" между min и max значениями
-    # Значение в миллисекундах
+    # Duration of one pulse animation cycle
+    # Defines how fast border "pulses" between min and max values
+    # Value in milliseconds
     "pulse_anim_duration": 800,
 
-    # Длительность анимации вращения градиента
-    # Влияет на скорость, с которой градиентная обводка вращается вокруг карточки
-    # Значение в миллисекундах
+    # Duration of gradient rotation animation
+    # Affects speed of gradient border rotation around card
+    # Value in milliseconds
     "gradient_anim_duration": 3000,
 
-    # Начальный угол градиента (в градусах)
-    # Определяет начальную точку вращения градиента при старте анимации
+    # Starting gradient angle (in degrees)
+    # Defines starting point of gradient rotation
     "gradient_start_angle": 360,
 
-    # Конечный угол градиента (в градусах)
-    # Определяет конечную точку вращения градиента
-    # Значение 0 означает полный поворот на 360 градусов
+    # Ending gradient angle (in degrees)
+    # Defines ending point of gradient rotation
+    # Value 0 means full 360 degree rotation
     "gradient_end_angle": 0,
 
-    # Тип анимации для карточки при наведении или фокусе
-    # Возможные значения: "gradient", "scale"
-    # "gradient" включает вращающийся градиент для обводки, "scale" увеличивает размер карточки
+    # Animation type for card on hover or focus
+    # Possible values: "gradient", "scale"
+    # "gradient" enables rotating gradient border, "scale" increases card size
     "card_animation_type": "gradient",
 
-    # Масштаб карточки в состоянии покоя
-    # Определяет базовый размер карточки (1.0 = 100% от исходного размера)
-    # Значение в долях (например, 1.0 для нормального размера)
+    # Card scale in idle state
+    # Defines base card size (1.0 = 100% of original size)
+    # Value as fraction (e.g., 1.0 for normal size)
     "default_scale": 1.0,
 
-    # Масштаб карточки при наведении курсора
-    # Увеличивает размер карточки при наведении
-    # Значение в долях (например, 1.1 = 110% от исходного размера)
+    # Card scale on hover
+    # Increases card size on hover
+    # Value as fraction (e.g., 1.1 = 110% of original size)
     "hover_scale": 1.1,
 
-    # Масштаб карточки при фокусе (например, при выборе с клавиатуры)
-    # Увеличивает размер карточки при фокусе
-    # Значение в долях (например, 1.05 = 105% от исходного размера)
+    # Card scale on focus (e.g., keyboard selection)
+    # Increases card size on focus
+    # Value as fraction (e.g., 1.05 = 105% of original size)
     "focus_scale": 1.05,
 
-    # Длительность анимации масштабирования
-    # Влияет на скорость изменения размера карточки при наведении или фокусе
-    # Значение в миллисекундах
+    # Duration of scale animation
+    # Affects speed of card size change on hover or focus
+    # Value in milliseconds
     "scale_anim_duration": 200,
 
-    # Тип кривой сглаживания для анимации увеличения обводки (при наведении/фокусе)
-    # Влияет на "чувство" анимации (например, плавное ускорение или замедление)
-    # Возможные значения: строки, соответствующие QEasingCurve.Type (например, "OutBack", "InOutQuad")
+    # Easing curve type for border thickness increase animation (on hover/focus)
+    # Affects animation "feel" (e.g., smooth acceleration or deceleration)
+    # Possible values: strings matching QEasingCurve.Type (e.g., "OutBack", "InOutQuad")
     "thickness_easing_curve": "OutBack",
 
-    # Тип кривой сглаживания для анимации уменьшения обводки (при уходе курсора/потере фокуса)
-    # Влияет на "чувство" возврата к исходной ширине обводки
+    # Easing curve type for border thickness decrease animation (on hover/focus loss)
+    # Affects "feel" of return to original border width
     "thickness_easing_curve_out": "InBack",
 
-    # Тип кривой сглаживания для анимации увеличения масштаба (при наведении/фокусе)
-    # Влияет на "чувство" анимации масштабирования (например, с эффектом "отскока")
-    # Возможные значения: строки, соответствующие QEasingCurve.Type
+    # Easing curve type for scale increase animation (on hover/focus)
+    # Affects scale animation "feel" (e.g., with "bounce" effect)
+    # Possible values: strings matching QEasingCurve.Type
     "scale_easing_curve": "OutBack",
 
-    # Тип кривой сглаживания для анимации уменьшения масштаба (при уходе курсора/потере фокуса)
-    # Влияет на "чувство" возврата к исходному масштабу
+    # Easing curve type for scale decrease animation (on hover/focus loss)
+    # Affects "feel" of return to original scale
     "scale_easing_curve_out": "InBack",
 
-    # Цвета градиента для анимированной обводки
-    # Список словарей, где каждый словарь задает позицию (0.0–1.0) и цвет в формате hex
-    # Влияет на внешний вид обводки при наведении или фокусе, если card_animation_type="gradient"
+    # Gradient colors for animated border
+    # List of dicts, each specifying position (0.0–1.0) and hex color
+    # Affects border appearance on hover or focus if card_animation_type="gradient"
     "gradient_colors": [
-        {"position": 0, "color": "#00fff5"},    # Начальный цвет (циан)
-        {"position": 0.33, "color": "#FF5733"}, # Цвет на 33% (оранжевый)
-        {"position": 0.66, "color": "#9B59B6"}, # Цвет на 66% (пурпурный)
-        {"position": 1, "color": "#00fff5"}     # Конечный цвет (возвращение к циану)
+        {"position": 0, "color": "#00fff5"},    # Start color (cyan)
+        {"position": 0.33, "color": "#FF5733"}, # Color at 33% (orange)
+        {"position": 0.66, "color": "#9B59B6"}, # Color at 66% (purple)
+        {"position": 1, "color": "#00fff5"}     # End color (return to cyan)
     ],
 
-    # Длительность анимации fade при входе на детальную страницу
-    # Влияет на скорость появления страницы при fade-анимации
-    # Значение в миллисекундах
+    # Fade animation duration on detail page enter
+    # Affects page appearance speed for fade animation
+    # Value in milliseconds
     "detail_page_fade_duration": 350,
 
-    # Длительность анимации slide при входе на детальную страницу
-    # Влияет на скорость скольжения страницы при slide-анимации
-    # Значение в миллисекундах
+    # Slide animation duration on detail page enter
+    # Affects page sliding speed for slide animation
+    # Value in milliseconds
     "detail_page_slide_duration": 500,
 
-    # Длительность анимации bounce при входе на детальную страницу
-    # Влияет на скорость "прыжка" страницы при bounce-анимации
-    # Значение в миллисекундах
+    # Bounce animation duration on detail page enter
+    # Affects page "bounce" speed for bounce animation
+    # Value in milliseconds
     "detail_page_bounce_duration": 400,
 
-    # Длительность анимации fade при выходе из детальной страницы
-    # Влияет на скорость исчезновения страницы при fade-анимации
-    # Значение в миллисекундах
+    # Fade animation duration on detail page exit
+    # Affects page disappearance speed for fade animation
+    # Value in milliseconds
     "detail_page_fade_duration_exit": 350,
 
-    # Длительность анимации slide при выходе из детальной страницы
-    # Влияет на скорость скольжения страницы при slide-анимации
-    # Значение в миллисекундах
+    # Slide animation duration on detail page exit
+    # Affects page sliding speed for slide animation
+    # Value in milliseconds
     "detail_page_slide_duration_exit": 500,
 
-    # Длительность анимации bounce при выходе из детальной страницы
-    # Влияет на скорость "сжатия" страницы при bounce-анимации
-    # Значение в миллисекундах
+    # Bounce animation duration on detail page exit
+    # Affects page "squeeze" speed for bounce animation
+    # Value in milliseconds
     "detail_page_bounce_duration_exit": 400,
 
-    # Тип кривой сглаживания для анимации при входе на детальную страницу
-    # Применяется к slide и bounce анимациям, влияет на "чувство" движения
-    # Возможные значения: строки, соответствующие QEasingCurve.Type
+    # Easing curve type for detail page enter animation
+    # Applied to slide and bounce animations, affects movement "feel"
+    # Possible values: strings matching QEasingCurve.Type
     "detail_page_easing_curve": "OutCubic",
 
-    # Тип кривой сглаживания для анимации при выходе из детальной страницы
-    # Применяется к slide и bounce анимациям, влияет на "чувство" движения
-    # Возможные значения: строки, соответствующие QEasingCurve.Type
+    # Easing curve type for detail page exit animation
+    # Applied to slide and bounce animations, affects movement "feel"
+    # Possible values: strings matching QEasingCurve.Type
     "detail_page_easing_curve_exit": "InCubic"
 }

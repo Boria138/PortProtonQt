@@ -129,12 +129,12 @@ class InputManager(QObject):
         self.stick_x_raw = 0
         self.stick_y_raw = 0
 
-        # Параметры осей (будут заполнены из ядра)
-        self.center_x = 127      # центр X оси
-        self.center_y = 127      # центр Y оси
-        self.min_value = 0       # минимум осей
-        self.max_value = 255     # максимум осей
-        self.deadzone_value = 15 # мёртвая зона из ядра (flat параметр)
+        # Axis parameters (will be filled from kernel)
+        self.center_x = 127      # X axis center
+        self.center_y = 127      # Y axis center
+        self.min_value = 0       # axis minimum
+        self.max_value = 255     # axis maximum
+        self.deadzone_value = 15 # deadzone from kernel (flat parameter)
 
         self.sensitivity = 8.0
 
@@ -185,11 +185,11 @@ class InputManager(QObject):
         self.nav_timer.timeout.connect(self.handle_navigation_repeat)
         self.current_direction = 0
         self.last_nav_time = 0
-        self.initial_nav_delay = 0.1  # Начальная задержка перед первым повторением (сек)
-        self.repeat_nav_delay = 0.05  # Интервал между повторениями (сек)
+        self.initial_nav_delay = 0.1  # Initial delay before first repeat (sec)
+        self.repeat_nav_delay = 0.05  # Interval between repeats (sec)
         self.stick_activated = False
-        self.stick_value = 0  # Текущее значение стика (для плавности)
-        self.dead_zone = 8000  # Мертвая зона стика
+        self.stick_value = 0  # Current stick value (for smoothness)
+        self.dead_zone = 8000  # Stick deadzone
 
         self._is_gamescope_session = 'gamescope' in os.environ.get('DESKTOP_SESSION', '').lower()
 
@@ -352,7 +352,7 @@ class InputManager(QObject):
 
     # FILE EXPLORER MODE
     def enable_file_explorer_mode(self, file_explorer):
-        """Настройка обработки геймпада для FileExplorer"""
+        """Configure gamepad handling for FileExplorer"""
         try:
             self._setup_mode_handlers(
                 file_explorer,
@@ -365,7 +365,7 @@ class InputManager(QObject):
             logger.error(f"Error connecting gamepad handlers for FileExplorer: {e}")
 
     def disable_file_explorer_mode(self):
-        """Восстановление оригинальных обработчиков (дефолт возвращаем)"""
+        """Restore original handlers (return default)"""
         try:
             if self.file_explorer:
                 # Additional cleanup for file explorer
@@ -686,12 +686,12 @@ class InputManager(QObject):
     # TABLE NAVIGATION METHODS
     def handle_table_navigation(self, table: QTableWidget, code: int, value: int):
         """
-        Обрабатывает навигацию по таблице
+        Handle navigation in table
 
         Args:
-            table: QTableWidget для обработки навигации
-            code: Код события (обычно ABS_HAT0X или ABS_HAT0Y)
-            value: Значение события (направление)
+            table: QTableWidget for navigation handling
+            code: Event code (usually ABS_HAT0X or ABS_HAT0Y)
+            value: Event value (direction)
         """
         row_count = table.rowCount()
         if row_count <= 0:
@@ -739,10 +739,10 @@ class InputManager(QObject):
 
     def handle_table_confirm(self, table: QTableWidget):
         """
-        Обрабатывает подтверждение (например, нажатие A) для таблицы
+        Handle confirmation (e.g., A press) for table
 
         Args:
-            table: QTableWidget для обработки подтверждения
+            table: QTableWidget for confirmation handling
         """
         current_row = table.currentRow()
         current_col = table.currentColumn()
@@ -764,12 +764,12 @@ class InputManager(QObject):
     # WIDGET NAVIGATION METHODS
     def setup_widget_navigation(self, widget: QWidget, navigation_type: str = "default", **kwargs):
         """
-        Устанавливает навигацию для виджета
+        Set navigation for widget
 
         Args:
-            widget: QWidget для настройки навигации
-            navigation_type: Тип навигации ('table', 'list', 'combo', 'default')
-            **kwargs: Дополнительные параметры для навигации
+            widget: QWidget for navigation setup
+            navigation_type: Navigation type ('table', 'list', 'combo', 'default')
+            **kwargs: Additional parameters for navigation
         """
         widget.installEventFilter(self)
         # Use direct assignment for custom navigation properties, with type ignore for pyright
@@ -779,12 +779,12 @@ class InputManager(QObject):
 
     def handle_widget_navigation(self, widget: QWidget, code: int, value: int):
         """
-        Обрабатывает навигацию по виджету
+        Handle navigation in widget
 
         Args:
-            widget: QWidget для обработки навигации
-            code: Код события (обычно ABS_HAT0X или ABS_HAT0Y)
-            value: Значение события (направление)
+            widget: QWidget for navigation handling
+            code: Event code (usually ABS_HAT0X or ABS_HAT0Y)
+            value: Event value (direction)
         """
         nav_type = getattr(widget, '_navigation_type', 'default')  # type: ignore
 
@@ -805,12 +805,12 @@ class InputManager(QObject):
 
     def handle_list_navigation(self, list_widget: QListWidget, code: int, value: int):
         """
-        Обрабатывает навигацию по списку
+        Handle navigation in list
 
         Args:
-            list_widget: QListWidget для обработки навигации
-            code: Код события (обычно ABS_HAT0X или ABS_HAT0Y)
-            value: Значение события (направление)
+            list_widget: QListWidget for navigation handling
+            code: Event code (usually ABS_HAT0X or ABS_HAT0Y)
+            value: Event value (direction)
         """
         if code == ecodes.ABS_HAT0Y and value != 0:
             model = list_widget.model()
@@ -828,12 +828,12 @@ class InputManager(QObject):
 
     def handle_combo_navigation(self, combo_widget: QComboBox, code: int, value: int):
         """
-        Обрабатывает навигацию по комбинированному виджету
+        Handle navigation in combo widget
 
         Args:
-            combo_widget: QComboBox для обработки навигации
-            code: Код события (обычно ABS_HAT0X или ABS_HAT0Y)
-            value: Значение события (направление)
+            combo_widget: QComboBox for navigation handling
+            code: Event code (usually ABS_HAT0X or ABS_HAT0Y)
+            value: Event value (direction)
         """
         if code == ecodes.ABS_HAT0Y and value != 0:
             current_index = combo_widget.currentIndex()
@@ -1298,14 +1298,14 @@ class InputManager(QObject):
             table.setFocus(Qt.FocusReason.OtherFocusReason)
 
     def handle_navigation_repeat(self):
-        """Плавное повторение движения с переменной скоростью для FileExplorer"""
+        """Smooth movement repeat with variable speed for FileExplorer"""
         try:
             if not self.file_explorer or not hasattr(self.file_explorer, 'file_list') or not self.file_explorer.file_list:
                 return
 
             if self.current_direction != 0:
                 now = time.time()
-                # Динамический интервал в зависимости от stick_value
+                # Dynamic interval based on stick_value
                 dynamic_delay = self.repeat_nav_delay / self.stick_value
                 if now - self.last_nav_time >= dynamic_delay:
                     self.file_explorer.move_selection(self.current_direction)
@@ -1363,40 +1363,40 @@ class InputManager(QObject):
 
 
     def handle_scroll(self, raw_value):
-        """Обработка прокрутки с правого стика Y"""
+        """Handle scrolling from right stick Y"""
         if not self.mouse_emulation_enabled or not self.emulation_active or not self.ui:
             return
 
-        # Нормализуем от центра
+        # Normalize from center
         centered_value = raw_value - self.center_y
 
         if abs(centered_value) < self.deadzone_value:
             self.scroll_accumulator = 0.0
             return
 
-        # Нормализуем значение (-1.0 до 1.0)
+        # Normalize value (-1.0 to 1.0)
         range_val = (self.max_value - self.min_value) / 2
         normalized = centered_value / range_val
 
-        # Накапливаем прокрутку
+        # Accumulate scroll
         self.scroll_accumulator += normalized * self.scroll_sensitivity
 
-        # Отправляем события прокрутки
+        # Send scroll events
         while abs(self.scroll_accumulator) >= self.scroll_threshold:
             scroll_step = 1 if self.scroll_accumulator > 0 else -1
             self.scroll_wheel(-scroll_step)
             self.scroll_accumulator -= scroll_step * self.scroll_threshold
 
     def update_mouse_position(self):
-        """Постоянное обновление позиции мыши на основе состояния стика"""
+        """Constant update of mouse position based on stick state"""
         if not self.ui or not self.emulation_active:
             return
 
-        # Центрируем значения
+        # Center values
         x = self.stick_x_raw - self.center_x
         y = self.stick_y_raw - self.center_y
 
-        # Применяем мёртвую зону из ядра
+        # Apply deadzone from kernel
         magnitude = math.sqrt(x * x + y * y)
 
         if magnitude < self.deadzone_value:
@@ -1408,12 +1408,12 @@ class InputManager(QObject):
         else:
             return
 
-        # Нормализуем по диапазону оси
+        # Normalize to axis range
         max_range = (self.max_value - self.min_value) / 2
         adjusted_magnitude = (magnitude - self.deadzone_value) / (max_range - self.deadzone_value)
         adjusted_magnitude = max(0.0, min(1.0, adjusted_magnitude))
 
-        # Нелинейная кривая
+        # Non-linear curve
         adjusted_magnitude = math.pow(adjusted_magnitude, 1.5)
 
         speed = adjusted_magnitude * self.sensitivity
@@ -1424,20 +1424,20 @@ class InputManager(QObject):
             self.move_mouse(dx, dy)
 
     def move_mouse(self, dx, dy):
-        """Сдвиг системного курсора"""
+        """Move system cursor"""
         if self.ui:
             self.ui.write(ecodes.EV_REL, ecodes.REL_X, dx)
             self.ui.write(ecodes.EV_REL, ecodes.REL_Y, dy)
             self.ui.syn()
 
     def scroll_wheel(self, steps):
-        """Прокрутка колеса мыши"""
+        """Mouse wheel scroll"""
         if self.ui:
             self.ui.write(ecodes.EV_REL, ecodes.REL_WHEEL, steps)
             self.ui.syn()
 
     def click_left(self):
-        """Клик левой кнопкой мыши"""
+        """Left mouse button click"""
         if self.ui:
             self.ui.write(ecodes.EV_KEY, ecodes.BTN_LEFT, 1)
             self.ui.syn()
@@ -1445,7 +1445,7 @@ class InputManager(QObject):
             self.ui.syn()
 
     def click_right(self):
-        """Клик правой кнопкой мыши"""
+        """Right mouse button click"""
         if self.ui:
             self.ui.write(ecodes.EV_KEY, ecodes.BTN_RIGHT, 1)
             self.ui.syn()
@@ -1474,14 +1474,14 @@ class InputManager(QObject):
             logger.error(f"Error in handle_fullscreen_slot: {e}", exc_info=True)
 
     def disable_gamepad_handling(self) -> None:
-        """Отключает обработку событий геймпада."""
+        """Disable gamepad event handling."""
         self._gamepad_handling_enabled = False
         self.stop_rumble()
         self.dpad_timer.stop()
         self.nav_timer.stop()
 
     def enable_gamepad_handling(self) -> None:
-        """Включает обработку событий геймпада."""
+        """Enable gamepad event handling."""
         self._gamepad_handling_enabled = True
 
     def trigger_rumble(self, duration_ms: int = 200, strong_magnitude: int = 0x8000, weak_magnitude: int = 0x8000) -> None:
@@ -1561,15 +1561,15 @@ class InputManager(QObject):
 
         active_window = QApplication.activeWindow()
 
-        # Обработка виртуальной клавиатуры в AddGameDialog (handle both press and release)
+        # Handle virtual keyboard in AddGameDialog (handle both press and release)
         if isinstance(active_window, AddGameDialog):
             focused = QApplication.focusWidget()
             if button_code in BUTTONS['confirm'] and value == 1 and isinstance(focused, QLineEdit):
-                # Показываем клавиатуру при нажатии A на поле ввода (only on press)
+                # Show keyboard on A press on input field (only on press)
                 active_window.show_keyboard_for_widget(focused)
                 return
 
-            # Если клавиатура видима, обрабатываем её кнопки (including release)
+            # If keyboard visible, handle its buttons (including release)
             if hasattr(active_window, 'keyboard') and active_window.keyboard.isVisible():
                 self.handle_virtual_keyboard(button_code, value)
                 return
@@ -1807,7 +1807,7 @@ class InputManager(QObject):
         keyboard = None
         active_window = QApplication.activeWindow()
 
-        # Проверяем клавиатуру в активном окне (AddGameDialog или главном окне)
+        # Check keyboard in active window (AddGameDialog or main window)
         if isinstance(active_window, AddGameDialog):
             keyboard = getattr(active_window, 'keyboard', None)
         else:
@@ -1832,11 +1832,11 @@ class InputManager(QObject):
             self.dpad_timer.start(int(self.repeat_axis_move_delay * 1000))
 
         if keyboard and keyboard.isVisible():
-            # Обработка горизонтального перемещения (LEFT/RIGHT)
+            # Handle horizontal movement (LEFT/RIGHT)
             if code in (ecodes.ABS_HAT0X, ecodes.ABS_X):
                 normalized_value = 0
-                if code == ecodes.ABS_X:  # Левый стик
-                    # Применяем мертвую зону
+                if code == ecodes.ABS_X:  # Left stick
+                    # Apply deadzone
                     if abs(value) < self.dead_zone:
                         self.current_dpad_code = None
                         self.current_dpad_value = 0
@@ -1845,20 +1845,20 @@ class InputManager(QObject):
                         return
                     normalized_value = 1 if value > self.dead_zone else -1
                 else:  # D-pad
-                    normalized_value = value  # D-pad уже дает -1, 0, 1
+                    normalized_value = value  # D-pad already gives -1, 0, 1
 
                 if normalized_value != 0:
-                    if normalized_value > 0:  # Вправо
+                    if normalized_value > 0:  # Right
                         keyboard.move_focus_right()
-                    elif normalized_value < 0:  # Влево
+                    elif normalized_value < 0:  # Left
                         keyboard.move_focus_left()
                 return
 
-            # Обработка вертикального перемещения (UP/DOWN)
+            # Handle vertical movement (UP/DOWN)
             elif code in (ecodes.ABS_HAT0Y, ecodes.ABS_Y):
                 normalized_value = 0
-                if code == ecodes.ABS_Y:  # Левый стик
-                    # Применяем мертвую зону
+                if code == ecodes.ABS_Y:  # Left stick
+                    # Apply deadzone
                     if abs(value) < self.dead_zone:
                         self.current_dpad_code = None
                         self.current_dpad_value = 0
@@ -1867,12 +1867,12 @@ class InputManager(QObject):
                         return
                     normalized_value = 1 if value > self.dead_zone else -1
                 else:  # D-pad
-                    normalized_value = value  # D-pad уже дает -1, 0, 1
+                    normalized_value = value  # D-pad already gives -1, 0, 1
 
                 if normalized_value != 0:
-                    if normalized_value > 0:  # Вниз
+                    if normalized_value > 0:  # Down
                         keyboard.move_focus_down()
-                    elif normalized_value < 0:  # Вверх
+                    elif normalized_value < 0:  # Up
                         keyboard.move_focus_up()
                 return
 
@@ -2084,46 +2084,46 @@ class InputManager(QObject):
             logger.error(f"Error in handle_dpad_slot: {e}", exc_info=True)
 
     def handle_virtual_keyboard(self, button_code: int, value: int) -> None:
-        # Проверяем клавиатуру в активном окне
+        # Check keyboard in active window
         active_window = QApplication.activeWindow()
         keyboard = None
 
-        # Сначала проверяем AddGameDialog
+        # First check AddGameDialog
         if isinstance(active_window, AddGameDialog):
             keyboard = getattr(active_window, 'keyboard', None)
         else:
-            # Если это не AddGameDialog, проверяем клавиатуру в главном окне
+            # If not AddGameDialog, check keyboard in main window
             keyboard = getattr(self._parent, 'keyboard', None)
 
         if not keyboard or not isinstance(keyboard, VirtualKeyboard) or not keyboard.isVisible():
             return
 
-        # Обработка кнопок геймпада
-        if button_code in BUTTONS['confirm']:  # Кнопка A/Cross - подтверждение
+        # Handle gamepad buttons
+        if button_code in BUTTONS['confirm']:  # A/Cross button - confirm
             if value == 1:
                 keyboard.activateFocusedKey()
-        elif button_code in BUTTONS['back']:  # Кнопка B/Circle - скрыть клавиатуру
+        elif button_code in BUTTONS['back']:  # B/Circle button - hide keyboard
             if value == 1:
                 keyboard.hide()
-                # Возвращаем фокус на поле ввода
+                # Return focus to input field
                 if keyboard.current_input_widget:
                     keyboard.current_input_widget.setFocus()
-        elif button_code in BUTTONS['prev_tab']:  # LB/L1 - переключение раскладки
+        elif button_code in BUTTONS['prev_tab']:  # LB/L1 - switch layout
             if value == 1:
                 keyboard.on_lang_click()
-        elif button_code in BUTTONS['next_tab']:  # RB/R1 - переключение Shift
+        elif button_code in BUTTONS['next_tab']:  # RB/R1 - toggle Shift
             if value == 1:
                 keyboard.on_shift_click(not keyboard.shift_pressed)
-        elif button_code in BUTTONS['context_menu']:  # Кнопка Start - подтверждение
+        elif button_code in BUTTONS['context_menu']:  # Start button - confirm
             if value == 1:
                 keyboard.activateFocusedKey()
-        elif button_code in BUTTONS['menu']:  # Кнопка Select - скрыть клавиатуру
+        elif button_code in BUTTONS['menu']:  # Select button - hide keyboard
             if value == 1:
                 keyboard.hide()
-                # Возвращаем фокус на поле ввода
+                # Return focus to input field
                 if keyboard.current_input_widget:
                     keyboard.current_input_widget.setFocus()
-        elif button_code in BUTTONS['add_game']:  # Кнопка X - Backspace (now holdable)
+        elif button_code in BUTTONS['add_game']:  # X button - Backspace (now holdable)
             if value == 1:
                 keyboard.on_backspace_pressed()
             elif value == 0:
@@ -2390,25 +2390,25 @@ class InputManager(QObject):
         self.monitor_ready = False
         self.monitor_event = threading.Event()
 
-        # Подключаем сигнал hotplug к обработчику в главном потоке
+        # Connect hotplug signal to handler in main thread
         self.gamepad_hotplug.connect(self._on_gamepad_hotplug)
 
-        # Debounce timer для отложенной проверки геймпада (в главном потоке Qt)
+        # Debounce timer for delayed gamepad check (in main Qt thread)
         self.gamepad_check_timer = QTimer()
         self.gamepad_check_timer.setSingleShot(True)
         self.gamepad_check_timer.timeout.connect(self.check_gamepad)
 
-        # Первоначальная проверка
+        # Initial check
         self.check_gamepad()
 
-        # Запускаем udev monitor в отдельном потоке
+        # Start udev monitor in separate thread
         threading.Thread(target=self.run_udev_monitor, daemon=True).start()
         logger.info("Gamepad support initialized with hotplug (evdev + pyudev)")
 
     def run_udev_monitor(self) -> None:
         """
-        Безопасный неблокирующий udev monitor для геймпадов.
-        Использует select.poll() вместо блокирующего monitor.poll().
+        Safe non-blocking udev monitor for gamepads.
+        Uses select.poll() instead of blocking monitor.poll().
         """
         try:
             logger.info("Starting udev monitor...")
@@ -2425,7 +2425,7 @@ class InputManager(QObject):
             poller = select.poll()
             poller.register(fd, select.POLLIN)
 
-            # Короткий дренаж событий при запуске (0.5 сек)
+            # Short event drain on startup (0.5 sec)
             drain_start = time.time()
             drained_count = 0
             while time.time() - drain_start < 0.5:
@@ -2433,7 +2433,7 @@ class InputManager(QObject):
                 if not events:
                     continue
                 try:
-                    _ = monitor.poll(timeout=0)  # просто читаем, не обрабатываем
+                    _ = monitor.poll(timeout=0)  # just read, do not process
                     drained_count += 1
                 except Exception:
                     break
@@ -2442,11 +2442,11 @@ class InputManager(QObject):
             self.monitor_event.set()
             logger.info(f"Drained {drained_count} initial events, now monitoring hotplug...")
 
-            # Основной цикл
+            # Main loop
             while self.running:
-                events = poller.poll(1000)  # 1 сек таймаут
+                events = poller.poll(1000)  # 1 sec timeout
                 if not events:
-                    continue  # просто ждём, не блокируем
+                    continue  # just wait, do not block
 
                 try:
                     device = monitor.poll(timeout=0)
@@ -2460,7 +2460,7 @@ class InputManager(QObject):
                 action = device.action
                 if action and self._is_joystick_device(device):
                     logger.info(f"Joystick hotplug event: {action} for {device.sys_name}")
-                    # отправляем сигнал в Qt-поток
+                    # send signal to Qt thread
                     self.handle_udev_event(action, device)
 
             logger.info("udev monitor stopped gracefully")
@@ -2470,16 +2470,16 @@ class InputManager(QObject):
 
     def _is_joystick_device(self, device: Device) -> bool:
         """
-        Быстрая проверка: является ли устройство джойстиком.
-        Проверяет ID_INPUT_JOYSTICK из udev базы данных.
+        Quick check: is device a joystick.
+        Checks ID_INPUT_JOYSTICK from udev database.
         """
         try:
-            # Проверяем свойство ID_INPUT_JOYSTICK
+            # Check ID_INPUT_JOYSTICK property
             if device.get('ID_INPUT_JOYSTICK') == '1':
                 return True
 
-            # Дополнительно: проверяем родительские устройства
-            # (некоторые контроллеры имеют свойство только у родителя)
+            # Additionally: check parent devices
+            # (some controllers have property only on parent)
             parent = device.parent
             if parent and parent.get('ID_INPUT_JOYSTICK') == '1':
                 return True
@@ -2492,23 +2492,23 @@ class InputManager(QObject):
 
     def handle_udev_event(self, action: str, device: Device) -> None:
         """
-        Обработчик udev событий для джойстиков.
-        Отправляет сигнал в главный поток Qt вместо прямого вызова QTimer.
+        Udev event handler for joysticks.
+        Sends signal to main Qt thread instead of direct QTimer call.
         """
         try:
             if action == 'add':
-                # Отправляем сигнал в главный поток Qt
-                # QTimer будет запущен там безопасно
+                # Send signal to main Qt thread
+                # QTimer will be started there safely
                 logger.debug("Emitting gamepad add signal")
                 self.gamepad_hotplug.emit('add')
 
             elif action == 'remove' and self.gamepad:
-                # Проверяем конкретно наш геймпад по пути устройства
-                device_node = device.device_node  # например, /dev/input/event3
+                # Check specifically our gamepad by device path
+                device_node = device.device_node  # e.g., /dev/input/event3
 
                 if device_node and self.gamepad.path == device_node:
                     logger.info(f"Connected gamepad disconnected: {device_node}")
-                    # Отправляем сигнал в главный поток
+                    # Send signal to main thread
                     self.gamepad_hotplug.emit('remove')
 
         except Exception as e:
@@ -2517,18 +2517,18 @@ class InputManager(QObject):
 
     def _on_gamepad_hotplug(self, action: str) -> None:
         """
-        Обработчик сигнала hotplug, выполняется в главном потоке Qt.
-        Безопасно работает с QTimer.
+        Hotplug signal handler, executed in main Qt thread.
+        Safely works with QTimer.
         """
         try:
             if action == 'add':
-                # Debounce: откладываем проверку на 200ms
-                # Множественные события за короткое время объединяются в один вызов
+                # Debounce: delay check by 200ms
+                # Multiple events in short time merge into one call
                 logger.debug("Scheduling gamepad check (debounced)")
                 self.gamepad_check_timer.start(200)
 
             elif action == 'remove':
-                # Немедленная обработка отключения
+                # Immediate disconnect handling
                 self.stop_rumble()
                 self.gamepad = None
 
@@ -2543,8 +2543,8 @@ class InputManager(QObject):
 
     def check_gamepad(self) -> None:
         """
-        Проверка и подключение геймпада.
-        Вызывается из главного потока Qt через QTimer (debounced).
+        Check and connect gamepad.
+        Called from main Qt thread via QTimer (debounced).
         """
         try:
             new_gamepad = self.find_gamepad()
@@ -2559,7 +2559,7 @@ class InputManager(QObject):
                         self.gamepad_thread.join(timeout=2.0)
 
                     def start_monitoring():
-                        # Ожидание готовности udev monitor без busy-wait
+                        # Wait for udev monitor readiness without busy-wait
                         if not self.monitor_event.wait(timeout=2.0):
                             logger.warning("Timeout waiting for udev monitor readiness")
                         self.monitor_gamepad()
@@ -2570,7 +2570,7 @@ class InputManager(QObject):
                     )
                     self.gamepad_thread.start()
 
-                    # Автоматический фуллскрин при подключении геймпада
+                    # Auto fullscreen on gamepad connect
                     if read_auto_fullscreen_gamepad() and not read_fullscreen_config():
                         self.toggle_fullscreen.emit(True)
 
@@ -2590,8 +2590,8 @@ class InputManager(QObject):
 
     def find_gamepad(self) -> InputDevice | None:
         """
-        Находит первый доступный геймпад.
-        Оптимизирован: предварительная фильтрация по capabilities перед udev-запросами.
+        Find first available gamepad.
+        Optimized: pre-filter by capabilities before udev queries.
         """
         try:
             devices = [InputDevice(path) for path in list_devices()]
@@ -2602,13 +2602,13 @@ class InputManager(QObject):
             logger.debug(f"Checking {len(devices)} devices for gamepad...")
 
             for device in devices:
-                # Skip ASRock LED controller (известная проблема)
+                # Skip ASRock LED controller (known issue)
                 if device.info.vendor == 0x26ce and device.info.product == 0x01a2:
                     continue
 
-                # Предварительная фильтрация: проверяем capabilities
-                # Джойстик должен иметь хотя бы оси (ABS) или кнопки (KEY)
-                # Это избегает udev-запросов для явно не-джойстиков
+                # Pre-filter: check capabilities
+                # Joystick must have at least axes (ABS) or buttons (KEY)
+                # This avoids udev queries for obviously non-joysticks
                 caps = device.capabilities(verbose=False)
                 has_abs_axes = ecodes.EV_ABS in caps
                 has_buttons = ecodes.EV_KEY in caps
@@ -2616,7 +2616,7 @@ class InputManager(QObject):
                 if not (has_abs_axes or has_buttons):
                     continue
 
-                # Только для потенциальных джойстиков делаем udev-запрос
+                # Only do udev query for potential joysticks
                 try:
                     udev_device = self.Devices.from_device_file(
                         self.udev_context,
@@ -2641,7 +2641,7 @@ class InputManager(QObject):
             return None
 
     def detect_gamepad_axes(self, device: InputDevice) -> None:
-        """Читаем параметры осей из ядра (диапазон и мёртвую зону)"""
+        """Read axis parameters from kernel (range and deadzone)"""
         try:
             caps = device.capabilities()
             if ecodes.EV_ABS not in caps:
@@ -2657,7 +2657,7 @@ class InputManager(QObject):
                     self.stick_x_raw = self.center_x
                     self.stick_y_raw = self.center_y
 
-                    # Берём мёртвую зону из ядра (flat параметр)
+                    # Get deadzone from kernel (flat parameter)
                     self.deadzone_value = absinfo.flat if absinfo.flat > 0 else 15
 
                     logger.info(
@@ -2725,7 +2725,7 @@ class InputManager(QObject):
                                     elif event.code == ecodes.ABS_RY:
                                         self.handle_scroll(event.value)
                                     elif event.code in (ecodes.ABS_GAS, ecodes.ABS_BRAKE):
-                                        pass  # Триггеры - не обрабатываем
+                                        pass  # Triggers - do not process
                                 elif event.type == ecodes.EV_KEY:
                                     if event.code in (ecodes.BTN_SOUTH, ecodes.BTN_A) and event.value == 1:
                                         self.click_left()
@@ -2817,7 +2817,7 @@ class InputManager(QObject):
 
     def cleanup(self) -> None:
         """
-        Корректное завершение работы с геймпадом и udev монитором.
+        Proper shutdown of gamepad and udev monitor.
         """
         try:
             # Mouse emulation cleanup
@@ -2826,16 +2826,16 @@ class InputManager(QObject):
             # Stop focus check timer
             self.focus_check_timer.stop()
 
-            # Флаг для остановки udev monitor loop
+            # Flag to stop udev monitor loop
             self.running = False
 
-            # Останавливаем все таймеры
+            # Stop all timers
             if hasattr(self, 'gamepad_check_timer'):
                 self.gamepad_check_timer.stop()
             self.dpad_timer.stop()
             self.nav_timer.stop()
 
-            # Очистка геймпада
+            # Clear gamepad
             self.stop_rumble()
 
             if self.gamepad_thread:

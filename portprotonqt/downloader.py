@@ -40,7 +40,7 @@ def download_with_cache(url, local_path, timeout=5, downloader_instance=None):
                             pbar.update(len(chunk))
         return local_path
     except Exception as e:
-        logger.error(f"Ошибка загрузки {url}: {e}")
+        logger.error(f"Download error {url}: {e}")
         if downloader_instance and hasattr(downloader_instance, '_last_error'):
             downloader_instance._last_error[url] = True
         if os.path.exists(local_path):
@@ -72,7 +72,7 @@ def download_with_parallel(urls, local_paths, max_workers=4, timeout=5, download
                                 pbar.update(len(chunk))
             return local_path
         except Exception as e:
-            logger.error(f"Ошибка загрузки {url}: {e}")
+            logger.error(f"Download error {url}: {e}")
             if downloader_instance and hasattr(downloader_instance, '_last_error'):
                 downloader_instance._last_error[url] = True
             if os.path.exists(local_path):
@@ -87,7 +87,7 @@ def download_with_parallel(urls, local_paths, max_workers=4, timeout=5, download
                 res = future.result()
                 results[url] = res
             except Exception as e:
-                logger.error(f"Ошибка при загрузке {url}: {e}")
+                logger.error(f"Download error {url}: {e}")
                 results[url] = None
     return results
 
@@ -120,7 +120,7 @@ class Downloader(QObject):
             except Exception as e:
                 errors.append(f"google.com: {e}")
             if errors:
-                logger.warning("Интернет недоступен:\n" + "\n".join(errors))
+                logger.warning("Internet unavailable:\n" + "\n".join(errors))
                 self._has_internet = False
             else:
                 self._has_internet = True
@@ -135,11 +135,11 @@ class Downloader(QObject):
 
     def download(self, url, local_path, timeout=5):
         if not self.has_internet():
-            logger.warning(f"Нет интернета, пропускаем загрузку {url}")
+            logger.warning(f"No internet, skipping download {url}")
             return None
         with self._global_lock:
             if url in self._last_error:
-                logger.warning(f"Предыдущая ошибка загрузки для {url}, пропускаем")
+                logger.warning(f"Previous download error for {url}, skipping")
                 return None
             if url in self._cache:
                 cached_path = self._cache[url]
@@ -167,7 +167,7 @@ class Downloader(QObject):
 
     def download_parallel(self, urls, local_paths, timeout=5):
         if not self.has_internet():
-            logger.warning("Нет интернета, пропускаем параллельную загрузку")
+            logger.warning("No internet, skipping parallel download")
             return dict.fromkeys(urls)
 
         filtered_urls = []
@@ -175,7 +175,7 @@ class Downloader(QObject):
         with self._global_lock:
             for url, path in zip(urls, local_paths, strict=False):
                 if url in self._last_error:
-                    logger.warning(f"Предыдущая ошибка загрузки для {url}, пропускаем")
+                    logger.warning(f"Previous download error for {url}, skipping")
                     continue
                 if url in self._cache:
                     continue
@@ -188,7 +188,7 @@ class Downloader(QObject):
             for url, path in results.items():
                 if path:
                     self._cache[url] = path
-        # Для URL которые были пропущены, добавляем их из кэша или None
+        # For URLs that were skipped, add them from cache or None
         final_results = {}
         with self._global_lock:
             for url in urls:
@@ -222,7 +222,7 @@ class Downloader(QObject):
                     if callback:
                         callback(result)
                 except Exception as e:
-                    logger.error(f"Ошибка при асинхронной загрузке {self.url}: {e}")
+                    logger.error(f"Async download error {self.url}: {e}")
                     self.downloader.download_completed.emit(self.url, "", False)
                     if callback:
                         callback(None)
@@ -230,14 +230,14 @@ class Downloader(QObject):
         thread = DownloadThread(self, url, local_path, timeout, parallel)
         thread.finished.connect(thread.deleteLater)
 
-        # Удалить из списка после завершения
+        # Remove from list after completion
         def cleanup():
             self._active_threads.remove(thread)
 
         thread.finished.connect(cleanup)
 
-        self._active_threads.append(thread)  # Сохраняем поток, чтобы не уничтожился досрочно
-        logger.debug(f"Запуск потока для асинхронной загрузки {url}")
+        self._active_threads.append(thread)  # Keep thread to prevent premature destruction
+        logger.debug(f"Starting thread for async download {url}")
         thread.start()
         return thread
 

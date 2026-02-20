@@ -4,7 +4,7 @@ from PySide6.QtGui import QFont, QFontMetrics, QPainter
 
 def compute_layout(nat_sizes, rect_width, spacing, max_scale):
     """
-    Оптимизированная версия на чистом Python без numpy.
+    Compute layout for flow arrangement.
     nat_sizes: list of tuples [(width, height), ...]
     """
     N = len(nat_sizes)
@@ -15,14 +15,14 @@ def compute_layout(nat_sizes, rect_width, spacing, max_scale):
     min_margin = 20
     available_width = rect_width - 2 * min_margin
 
-    # Быстрый поиск максимального количества элементов в строке
+    # Fast search for max items per row
     max_items_per_row = 1
     global_scale = 1.0
     max_row_x_start = min_margin
 
     i = 0
     while i < N:
-        # Бинарный поиск максимального количества элементов
+        # Binary search for max items count
         left, right = 1, N - i
         best_count = 1
 
@@ -50,12 +50,12 @@ def compute_layout(nat_sizes, rect_width, spacing, max_scale):
 
         i += count
 
-    # Второй проход: размещение элементов
+    # Second pass: place elements
     y = 0
     i = 0
 
     while i < N:
-        # Бинарный поиск для текущей строки
+        # Binary search for current row
         left, right = 1, N - i
         best_count = 1
 
@@ -74,7 +74,7 @@ def compute_layout(nat_sizes, rect_width, spacing, max_scale):
         count = best_count
         j = i + count
 
-        # Расчёт размеров для строки
+        # Calculate sizes for row
         sum_width = 0
         row_max_height = 0
         for k in range(i, j):
@@ -85,13 +85,13 @@ def compute_layout(nat_sizes, rect_width, spacing, max_scale):
 
         scaled_row_width = int(sum_width * global_scale) + spacing * (count - 1)
 
-        # Определение начальной позиции
+        # Determine starting position
         if count == max_items_per_row:
             x = max(min_margin, (rect_width - scaled_row_width) // 2)
         else:
             x = max_row_x_start
 
-        # Размещение элементов в строке
+        # Place elements in row
         for k in range(i, j):
             w, h = nat_sizes[k]
             new_w = int(w * global_scale)
@@ -116,13 +116,13 @@ class FlowLayout(QLayout):
         self._spacing = 20
         self._max_scale = 1.0
 
-        # Простой кеш
+        # Simple cache
         self._cache_width = None
         self._cache_visible_hash = None
         self._cache_result = None
 
     def _get_visible_data(self):
-        """Возвращает список видимых элементов и их размеры"""
+        """Return list of visible items and their sizes"""
         visible_items = []
         visible_indices = []
         visible_sizes = []
@@ -138,7 +138,7 @@ class FlowLayout(QLayout):
         return visible_items, visible_indices, visible_sizes
 
     def _make_visible_hash(self, visible_sizes):
-        """Создаёт хеш для проверки изменений"""
+        """Create hash for change detection"""
         return hash(tuple(visible_sizes))
 
     def addItem(self, item: QLayoutItem) -> None:
@@ -176,18 +176,18 @@ class FlowLayout(QLayout):
         if not visible_sizes:
             return 0
 
-        # Проверка кеша
+        # Check cache
         visible_hash = self._make_visible_hash(visible_sizes)
         if (self._cache_width == width and
             self._cache_visible_hash == visible_hash and
             self._cache_result is not None):
             return self._cache_result[1]
 
-        # Вычисление
+        # Calculate
         geom_array, total_height = compute_layout(visible_sizes, width,
                                                    self._spacing, self._max_scale)
 
-        # Сохранение в кеш
+        # Save to cache
         self._cache_width = width
         self._cache_visible_hash = visible_hash
         self._cache_result = (geom_array, total_height)
@@ -223,18 +223,18 @@ class FlowLayout(QLayout):
                     item.setGeometry(QRect())
             return 0
 
-        # Проверка кеша
+        # Check cache
         visible_hash = self._make_visible_hash(visible_sizes)
         if (self._cache_width == rect.width() and
             self._cache_visible_hash == visible_hash and
             self._cache_result is not None):
             geom_array, total_height = self._cache_result
         else:
-            # Вычисление layout
+            # Calculate layout
             geom_array, total_height = compute_layout(visible_sizes, rect.width(),
                                                       self._spacing, self._max_scale)
 
-            # Сохранение в кеш
+            # Save to cache
             self._cache_width = rect.width()
             self._cache_visible_hash = visible_hash
             self._cache_result = (geom_array, total_height)
@@ -242,12 +242,12 @@ class FlowLayout(QLayout):
         if not testOnly:
             rx, ry = rect.x(), rect.y()
 
-            # Установка геометрии для видимых элементов
+            # Set geometry for visible items
             for idx, item in enumerate(visible_items):
                 x, y, w, h = geom_array[idx]
                 item.setGeometry(QRect(x + rx, y + ry, w, h))
 
-            # Скрытие невидимых элементов
+            # Hide invisible items
             visible_set = set(visible_indices)
             for i in range(N_total):
                 if i not in visible_set:

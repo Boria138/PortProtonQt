@@ -1,6 +1,6 @@
 from .constants import *
 
-# ГЛОБАЛЬНЫЙ СТИЛЬ ДЛЯ ОКНА (ФОН), ЛЭЙБЛОВ, КНОПОК
+# GLOBAL STYLE FOR WINDOW (BACKGROUND), LABELS, BUTTONS
 MAIN_WINDOW_STYLE = f"""
     QWidget {{
         background: {color_b};
@@ -32,7 +32,7 @@ MAIN_WINDOW_STYLE = f"""
     }}
 """
 
-# СТИЛЬ ПРОГРЕСС-БАРА
+# PROGRESS BAR STYLE
 PROGRESS_BAR_STYLE = f"""
     QProgressBar {{
         color: {color_f};
@@ -44,14 +44,14 @@ PROGRESS_BAR_STYLE = f"""
     }}
 """
 
-# СТИЛЬ СТАТУС-БАРА
+# STATUS BAR STYLE
 STATUS_BAR_STYLE = f"""
     QStatusBar {{
         color: {color_f};
     }}
 """
 
-# СТИЛЬ ШАПКИ ГЛАВНОГО ОКНА
+# MAIN WINDOW HEADER STYLE
 MAIN_WINDOW_HEADER_STYLE = f"""
     QFrame {{
         background: {color_h};
@@ -63,7 +63,7 @@ MAIN_WINDOW_HEADER_STYLE = f"""
     }}
 """
 
-# СТИЛЬ ОБЛАСТИ НАВИГАЦИИ (КНОПКИ ВКЛАДОК)
+# NAVIGATION AREA STYLE (TAB BUTTONS)
 NAV_WIDGET_STYLE = f"""
     QWidget {{
         background: {color_h};
@@ -71,7 +71,7 @@ NAV_WIDGET_STYLE = f"""
     }}
 """
 
-# СТИЛЬ КНОПОК ВКЛАДОК НАВИГАЦИИ
+# NAVIGATION TAB BUTTON STYLE
 NAV_BUTTON_STYLE = f"""
     NavLabel {{
         background: rgba(0,0,0,0);
@@ -97,7 +97,7 @@ NAV_BUTTON_STYLE = f"""
     }}
 """
 
-# СТИЛЬ ПОЛЯ ПОИСКА
+# SEARCH FIELD STYLE
 SEARCH_EDIT_STYLE = f"""
     QLineEdit {{
         background-color: rgba(30, 30, 30, 0.50);
@@ -113,7 +113,7 @@ SEARCH_EDIT_STYLE = f"""
     }}
 """
 
-# ОТКЛЮЧАЕМ РАМКУ У QScrollArea
+# DISABLE FRAME FOR QScrollArea
 SCROLL_AREA_STYLE = f"""
     QWidget {{
         background: {color_h};
@@ -194,7 +194,7 @@ SLIDER_SIZE_STYLE= f"""
     }}
 """
 
-# СТИЛЬ ОБЛАСТИ ДЛЯ КАРТОЧЕК ИГР (QWidget)
+# GAME CARD AREA STYLE (QWidget)
 LIST_WIDGET_STYLE = """
     QWidget {
         background: none;
@@ -203,7 +203,7 @@ LIST_WIDGET_STYLE = """
     }
 """
 
-# ЗАГОЛОВОК "БИБЛИОТЕКА" НА ВКЛАДКЕ
+# LIBRARY TAB TITLE
 INSTALLED_TAB_TITLE_STYLE = f"""
     QLabel {{
         font-family: '{font_family}';
@@ -212,7 +212,7 @@ INSTALLED_TAB_TITLE_STYLE = f"""
     }}
 """
 
-# СТИЛЬ КНОПОК "СОХРАНЕНИЯ, ПРИМЕНЕНИЯ И Т.Д."
+# ACTION BUTTONS STYLE (SAVE, APPLY, ETC.)
 ACTION_BUTTON_STYLE = f"""
     QPushButton {{
         background: {color_c};
@@ -236,7 +236,7 @@ ACTION_BUTTON_STYLE = f"""
     }}
 """
 
-# СТИЛЬ ОВЕРЛЕЯ
+# OVERLAY STYLE
 OVERLAY_WINDOW_STYLE = f"background: {color_b};"
 OVERLAY_BUTTON_STYLE = f"""
     QPushButton {{
@@ -261,7 +261,7 @@ OVERLAY_BUTTON_STYLE = f"""
     }}
 """
 
-# ТЕКСТОВЫЕ СТИЛИ: ЗАГОЛОВКИ И ОСНОВНОЙ КОНТЕНТ
+# TEXT STYLES: HEADINGS AND MAIN CONTENT
 TAB_TITLE_STYLE = f"font-family: '{font_family}'; font-size: {font_size_b}; color: {color_f}; background-color: none;"
 CONTENT_STYLE = f"""
     QLabel {{
@@ -282,7 +282,7 @@ PREVIEW_WIDGET_STYLE = f"""
     }}
 """
 
-# СТИЛЬ ОСНОВНЫХ СТРАНИЦ
+# MAIN PAGES STYLE
 # LIBRARY_WIDGET_STYLE
 LIBRARY_WIDGET_STYLE= """
     QWidget {
@@ -316,7 +316,7 @@ CAROUSEL_WIDGET_STYLE= f"""
     }}
 """
 
-# СТИЛИ ДЛЯ ВКЛАДКИ НАСТРОЕК PORTPROTON
+# PORTPROTON SETTINGS TAB STYLES
 # PARAMS_TITLE_STYLE
 PARAMS_TITLE_STYLE = f"color: {color_f}; font-family: '{font_family}'; font-size: {font_size_a}; padding: 10px; background: {color_h};"
 
@@ -341,7 +341,7 @@ PROXY_INPUT_STYLE = f"""
     }}
 """
 
-# СТИЛИ ДЛЯ QMessageBox (ОКНА СООБЩЕНИЙ)
+# QMessageBox STYLES (MESSAGE BOXES)
 MESSAGE_BOX_STYLE = f"""
     QMessageBox {{
         background: {color_b};

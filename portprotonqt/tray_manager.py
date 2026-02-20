@@ -17,13 +17,13 @@ from portprotonqt.dialogs import GameLaunchDialog
 logger = get_logger(__name__)
 
 class TrayManager:
-    """Модуль управления системным треем для PortProtonQt.
+    """Tray management module for PortProtonQt.
 
-    Обеспечивает:
-    - Показ/скрытие главного окна по двойному клику на иконку трея.
-    - Контекстное меню с опциями: Show/Hide, Favorites, Recent Games, Themes, Exit.
-    - Динамическое заполнение меню Favorites, Recent Games и Themes.
-    - Сворачивание в трей при закрытии окна, полное закрытие через Exit.
+    Provides:
+    - Show/hide main window on double-click tray icon.
+    - Context menu with options: Show/Hide, Favorites, Recent Games, Themes, Exit.
+    - Dynamic population of Favorites, Recent Games, and Themes menus.
+    - Minimize to tray on window close, full exit via Exit.
     """
 
     def __init__(self, main_window, app_name: str | None = None, theme=None):
@@ -241,12 +241,12 @@ class TrayManager:
 
 def restart_application_with_muvm():
     """
-    Универсальная функция перезапуска приложения с учетом muvm.
-    Проверяет, было ли приложение запущено через muvm, и если да,
-    перезапускает с тем же контекстом.
+    Universal application restart function with muvm support.
+    Checks if app was launched under muvm, and if so,
+    restarts with the same context.
     """
     if 'PORTPROTONQT_MUVM' in os.environ:
-        # Мы запущены под muvm, нужно перезапустить с muvm
+        # App is running under muvm, need to restart with muvm
         muvm_path = shutil.which('muvm')
         if muvm_path:
             env = os.environ.copy()
@@ -255,7 +255,7 @@ def restart_application_with_muvm():
             subprocess.Popen(args, env=env)
             return
 
-    # Обычный перезапуск без muvm
+    # Normal restart without muvm
     executable = sys.executable
     args = sys.argv
     QApplication.quit()
