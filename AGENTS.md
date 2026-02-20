@@ -8,13 +8,19 @@
 
 ---
 
+**Summary:** AI agents MUST behave as conservative patching assistants, prioritizing minimal changes and existing patterns over architectural refactoring or code cleanup. AI MUST NOT perform architectural improvements unless explicitly requested.
+
+**Scope:** These guidelines apply exclusively to AI-generated code. Documentation updates and human maintainers are exempt from line limits and these constraints.
+
+---
+
 ## Core Principles
 
 | Principle | Required | Forbidden |
 |-----------|----------|-----------|
-| KISS | Functions ≤30 lines | Deep nesting |
+| KISS | Functions ≤50 lines | Deep nesting |
 | YAGNI | Concrete code | Future abstractions |
-| DRY | Extract methods | Copy-paste |
+| DRY | Extract methods (if directly related to task) | Copy-paste |
 | SRP | 1 task per method | God functions |
 | Linux | POSIX paths, shebangs | Windows-specific code |
 | Minimal changes | Modify relevant section only | Rewrite entire files |
@@ -41,13 +47,13 @@
 
 | Check | Limit |
 |-------|-------|
-| Functions | ≤30 lines, ≤4 params |
+| Functions | ≤50 lines, ≤4 params |
 | Files | ≤800 lines |
 | Nesting | ≤4 levels |
 | Comments | English, 1-2 lines max |
 | Indentation | 4 spaces (no tabs) |
 | Whitespace | No trailing spaces |
-| Blank lines | No extra blank lines |
+| Blank lines | No excessive blank lines |
 | EOF | Exactly one newline |
 | Commits | English, ≤72 chars |
 
@@ -120,8 +126,9 @@ file_path = os.path.join(BASE_DIR, os.path.basename(user_filename))
 - Do not add dependencies unless required
 - Do not refactor unrelated code
 - Do not add comments for obvious code
-- Do not invent modules
+- Never invent modules
 - Do not move files unless requested
+- Do not create new files for organization (unless task requires a new module)
 - No circular imports
 - Subprocess calls in dedicated functions
 - No mutable global state (except logger)
@@ -139,19 +146,30 @@ file_path = os.path.join(BASE_DIR, os.path.basename(user_filename))
 
 **Specific prohibitions for AI-generated code:**
 
-- Add type hints to existing code unless requested
+- Add type hints to existing code unless requested (new code MUST include type hints)
 - Replace existing patterns with "better" alternatives
 - Consolidate similar code blocks
 - Extract methods or functions without request
-- Add validation or error handling beyond scope
+- Add validation or error handling beyond scope (unless it fixes a security vulnerability)
 - Generate boilerplate or scaffolding
 - Add configuration options
-- Create new files for "organization"
+- Create new files for "organization" (unless explicitly requested for a new module)
 - Split or merge existing modules
 - Change function signatures
 - Modify docstrings unnecessarily
 - Add or remove blank lines for "style"
 - Normalize or standardize code patterns
+- Invent CLI arguments, config files, API endpoints, environment variables, theme structures, or localization keys
+
+---
+
+## AI Permissions
+
+AI agents MAY:
+- Fix obvious bugs within the modified block
+- Improve variable naming inside the modified block
+- Add missing logging if required by policy
+- Add missing type hints in new functions
 
 ---
 
@@ -179,7 +197,7 @@ file_path = os.path.join(BASE_DIR, os.path.basename(user_filename))
 
 ## Refactoring Constraints
 
-- Max 1 module per task
+- Max 1 module per task (unless explicitly requested)
 - Preserve git blame
 - Avoid renaming unless necessary
 
@@ -192,18 +210,7 @@ Ask before proceeding if unsure about:
 - Naming
 - Design decisions
 
-Do not assume conventions. Do not invent behavior.
-
----
-
-## Never Invent
-
-- CLI arguments
-- Config files
-- API endpoints
-- Environment variables
-- Theme structure
-- Localization keys
+Do not assume conventions. Never invent behavior.
 
 ---
 
@@ -245,17 +252,45 @@ git commit -m "feat: description in English ≤72 chars"
 | trailing-whitespace | Whitespace cleanup |
 | end-of-file-fixer | EOF newline |
 
+### Linting and Type-Checking
+
+AI agents MUST NOT run linting or type-checking tools directly.
+
+#### Forbidden
+
+- Running `ruff`
+- Running `pyright`
+- Running `uv run ruff`
+- Running `uv run pyright`
+- Running any linter/type checker binary directly
+- Installing dev tools automatically
+
+These tools are executed ONLY via pre-commit hooks.
+
+#### Allowed
+
+- `pre-commit run --all-files`
+- `pre-commit run ruff-check`
+- `pre-commit run pyright`
+
+#### Rationale
+
+`ruff` and `pyright` are managed by pre-commit.
+Direct execution bypasses project configuration and is forbidden.
+
+Do not attempt to execute binaries manually.
+
 ---
 
 ## AI Agent Checklist
 
 ### Writing Code
 
-- [ ] Functions ≤30 lines, ≤4 params
+- [ ] Functions ≤50 lines, ≤4 params
 - [ ] Nesting ≤4 levels
 - [ ] LF line endings, 4-space indent
-- [ ] No trailing whitespace, extra blank lines
-- [ ] Type hints
+- [ ] No excessive blank lines, no trailing whitespace
+- [ ] Type hints (required for new code)
 - [ ] Logging via `portprotonqt.logger`
 - [ ] Error handling (try/except)
 - [ ] Files in `portprotonqt/meson.build`
@@ -359,6 +394,9 @@ class APIError(PortProtonError):
 
 class ValidationError(PortProtonError):
     """Input validation errors."""
+
+class ParseError(PortProtonError):
+    """Parsing-related errors."""
 ```
 
 ### Error Handling Patterns
@@ -450,7 +488,7 @@ except Exception:
 if not critical_file.exists():
     return None  # Should raise
 
-# NEVER: Multiple exceptions in one handler
+# NEVER: Multiple exceptions in one handler (unless re-throwing as a unified domain exception)
 try:
     ...
 except (FileNotFoundError, ValueError, TypeError, KeyError):
@@ -651,6 +689,6 @@ PortProtonQt/
 
 ---
 
-**Last updated:** 2026-02-19
-**Version:** 0.2.0
-**Status:** Work in Progress (Beta)
+**Last updated:** 2026-02-20
+**Version:** 1.0
+**Status:** Release
