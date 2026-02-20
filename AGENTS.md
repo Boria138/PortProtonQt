@@ -662,6 +662,18 @@ PortProtonQt/
 
 ---
 
+## Development Scripts
+
+**`dev-scripts/`** contains development utilities that are not part of the application codebase.
+
+**Policy:**
+- Scripts in `dev-scripts/` are exempt from code quality guidelines
+- No type hints, linting, or code style requirements apply
+- These scripts are for developer convenience only
+- Do not refactor or improve dev-scripts unless explicitly requested
+
+---
+
 ## Dependencies
 
 ### Core
@@ -692,5 +704,5 @@ PortProtonQt/
 ---
 
 **Last updated:** 2026-02-20
-**Version:** 1.0
+**Version:** 1.1
 **Status:** Release
