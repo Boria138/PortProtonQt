@@ -221,9 +221,6 @@ portprotonqt
 
 # Manual checks
 pre-commit run --all-files
-pyright portprotonqt/game_card.py
-ruff check portprotonqt/
-python dev-scripts/check_meson_files.py
 
 # Build
 meson setup builddir && meson compile -C builddir
