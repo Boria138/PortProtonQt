@@ -39,3 +39,7 @@ Thumbs.db
 
 # get_wine debug folder
 proton_downloads
+
+# Need for refactoring
+REFRACTORING_PLAN.md
+AUDIT_CHECKLIST.md

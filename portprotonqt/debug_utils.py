@@ -579,173 +579,233 @@ def get_filesystem_info(exe_path: str | None, portproton_path: str) -> str:
     return "\n".join(lines) if lines else "Unable to retrieve filesystem info"
 
 
+def _format_gpu_description(device_desc: str) -> str:
+    """Format GPU description from lspci output."""
+    if "NVIDIA" in device_desc:
+        gpu_match = re.search(r'NVIDIA Corporation (.+)', device_desc)
+        if gpu_match:
+            return f"NVIDIA {gpu_match.group(1)}"
+    elif "AMD" in device_desc or "ATI" in device_desc:
+        gpu_match = re.search(r'Advanced Micro Devices, Inc. \[AMD/ATI\] (.+)', device_desc)
+        if gpu_match:
+            return f"AMD {gpu_match.group(1)}"
+        gpu_match = re.search(r'(AMD|ATI) (.+)', device_desc)
+        if gpu_match:
+            return f"{gpu_match.group(1)} {gpu_match.group(2)}"
+    elif "Intel" in device_desc:
+        gpu_match = re.search(r'Intel Corporation (.+)', device_desc)
+        if gpu_match:
+            return f"Intel {gpu_match.group(1)}"
+    return device_desc
+
+
+def _extract_driver_info(all_lines: list[str], start_idx: int) -> str:
+    """Extract driver info from lspci output lines."""
+    for j in range(start_idx + 1, min(start_idx + 4, len(all_lines))):
+        next_line = all_lines[j]
+        if "Kernel driver in use:" in next_line:
+            return next_line.split("Kernel driver in use:")[1].strip()
+    return ""
+
+
+def _get_nvidia_driver_version() -> str | None:
+    """Get NVIDIA driver version from sysfs."""
+    try:
+        with open('/sys/module/nvidia/version') as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        return None
+
+
+def _build_device_line(device_count: int, device_desc: str, driver_info: str) -> str:
+    """Build formatted device line with driver and version info."""
+    formatted_device_desc = _format_gpu_description(device_desc)
+    device_line = f"Device-{device_count}: {formatted_device_desc}"
+
+    if driver_info:
+        device_line += f" driver: {driver_info}"
+
+    if "NVIDIA" in device_desc:
+        version = _get_nvidia_driver_version()
+        if version:
+            device_line += f" v: {version}"
+
+    return device_line
+
+
+def _parse_lspci_output(stdout: str) -> list[str]:
+    """Parse lspci -k output and return formatted graphics device lines."""
+    device_count = 1
+    all_lines = stdout.split("\n")
+    devices_info = []
+
+    i = 0
+    while i < len(all_lines):
+        line = all_lines[i]
+        if any(x in line for x in ["VGA", "3D", "Display"]):
+            parts = line.split(maxsplit=1)
+            device_desc = parts[1] if len(parts) > 1 else ""
+
+            driver_info = _extract_driver_info(all_lines, i)
+            device_line = _build_device_line(device_count, device_desc, driver_info)
+
+            devices_info.append(device_line)
+            device_count += 1
+        i += 1
+
+    return devices_info
+
+
+def _build_graphics_section(devices_info: list[str]) -> list[str]:
+    """Build Graphics section with devices and display info."""
+    graphics_lines = [f"Graphics:  {device}" for device in devices_info]
+
+    if not graphics_lines:
+        return graphics_lines
+
+    session_type = os.environ.get("XDG_SESSION_TYPE", "unknown")
+    display_info = f"Display: {session_type}"
+
+    if session_type == "wayland":
+        display_info += f" server: {os.environ.get('WAYLAND_DISPLAY', 'N/A')}"
+    else:
+        display_info += f" server: {os.environ.get('DISPLAY', 'N/A')}"
+
+    try:
+        xorg_version = get_xorg_version()
+        display_info += f" X.Org version: {xorg_version}"
+    except SystemExit:
+        pass
+
+    first_device = devices_info[0]
+    if "driver: " in first_device:
+        driver_part = first_device.split("driver: ")[1]
+        driver_name = driver_part.split(" ")[0] if " " in driver_part else driver_part
+        display_info += f" driver: loaded: {driver_name}"
+
+    graphics_lines.append(f"           {display_info}")
+    return graphics_lines
+
+
+def _parse_glxinfo_output(stdout: str) -> list[str]:
+    """Parse glxinfo output and return relevant lines."""
+    keep_patterns = [
+        "name of display",
+        "display:",
+        "direct rendering",
+        "Memory info",
+        "Dedicated video memory",
+        "Total available memory",
+        "Currently available",
+        "OpenGL vendor",
+        "OpenGL renderer",
+        "OpenGL core profile version",
+        "OpenGL core profile shading",
+        "OpenGL core profile context",
+        "OpenGL core profile profile",
+        "OpenGL version string",
+        "OpenGL shading language",
+        "OpenGL context flags",
+        "OpenGL profile mask",
+        "OpenGL ES profile",
+    ]
+    return [line for line in stdout.split("\n") if any(p in line for p in keep_patterns)]
+
+
+def _parse_gpu_properties(lines_vk: list[str], start_idx: int) -> tuple[dict[str, str], int]:
+    """Parse GPU properties from vk_gpu_info output starting at start_idx.
+
+    Returns tuple of (gpu_info dict, next index to process).
+    """
+    gpu_info: dict[str, str] = {}
+    i = start_idx
+
+    while i < len(lines_vk) and lines_vk[i].strip() and not lines_vk[i].startswith("GPU #"):
+        prop_line = lines_vk[i].strip()
+        if ':' in prop_line:
+            key_value = prop_line.split(':', 1)
+            if len(key_value) == 2:
+                key = key_value[0].strip()
+                value = key_value[1].strip()
+                gpu_info[key] = value
+        i += 1
+
+    return gpu_info, i
+
+
+def _format_vulkan_gpu_line(gpu_info: dict[str, str]) -> str | None:
+    """Format a single GPU line for vulkan output.
+
+    Returns None if GPU should be skipped (CPU or VIRTUAL_GPU).
+    """
+    device_type = gpu_info.get('device_type', 'Unknown')
+    if device_type in ['CPU', 'VIRTUAL_GPU']:
+        return None
+
+    gpu_id = gpu_info.get('id', 'Unknown')
+    device_name = gpu_info.get('device_name', 'Unknown')
+    driver_name = gpu_info.get('driver_name', 'Unknown')
+    api_version = gpu_info.get('api_version', 'Unknown')
+
+    if 'NVIDIA' in device_name.upper():
+        driver_version = gpu_info.get('driver_info', 'Unknown')
+    else:
+        driver_version = gpu_info.get('driver_version', 'Unknown')
+
+    return (
+        f"GPU {gpu_id}: {device_name} deviceType: {device_type} "
+        f"driverName: {driver_name} apiVersion: {api_version} "
+        f"driverVersion: {driver_version}"
+    )
+
+
+def _parse_vulkan_output(vk_output: str) -> list[str]:
+    """Parse vk_gpu_info output and return formatted GPU lines."""
+    lines = []
+    lines_vk = vk_output.split("\n")
+    i = 0
+
+    while i < len(lines_vk):
+        line = lines_vk[i].strip()
+
+        if line.startswith("GPU #"):
+            gpu_num_match = re.search(r'GPU #(\d+)', line)
+            gpu_id = gpu_num_match.group(1) if gpu_num_match else 'Unknown'
+
+            gpu_info, i = _parse_gpu_properties(lines_vk, i + 1)
+            gpu_info['id'] = gpu_id
+
+            gpu_line = _format_vulkan_gpu_line(gpu_info)
+            if gpu_line:
+                lines.append(gpu_line)
+                continue
+        i += 1
+
+    return lines
+
+
 def get_graphics_info_detailed() -> str:
     """Get detailed graphics card info using lspci, glxinfo, and inxi."""
     lines = []
 
-    # Parse lspci output to extract graphics devices info in the required format
     try:
         result = subprocess.run(
-            ["lspci", "-k"],
-            capture_output=True,
-            text=True,
-            timeout=10,
-            check=False
+            ["lspci", "-k"], capture_output=True, text=True, timeout=10, check=False
         )
         if result.returncode == 0:
-            # Extract graphics devices and format them
-            device_count = 1
-            all_lines = result.stdout.split("\n")
-
-            devices_info = []
-            i = 0
-            while i < len(all_lines):
-                line = all_lines[i]
-                if any(x in line for x in ["VGA", "3D", "Display"]):
-                    # Parse the line to extract device info
-                    parts = line.split(maxsplit=1)
-                    device_desc = parts[1] if len(parts) > 1 else ""
-
-                    # Extract driver info from the next few lines after the graphics line
-                    driver_info = ""
-                    # Look for driver info in the next 3 lines (usually appears right after the device line)
-                    for j in range(i + 1, min(i + 4, len(all_lines))):
-                        next_line = all_lines[j]
-                        if "Kernel driver in use:" in next_line:
-                            driver_part = next_line.split("Kernel driver in use:")[1].strip()
-                            driver_info = driver_part
-                            break
-
-                    # Extract the GPU name in the format we want
-                    # From: "VGA compatible controller: NVIDIA Corporation GP104 [GeForce GTX 1060 3GB] (rev a1)"
-                    # To: "NVIDIA GP104 [GeForce GTX 1060 3GB]"
-                    # Also handles AMD and Intel GPUs like:
-                    # "VGA compatible controller: Advanced Micro Devices, Inc. [AMD/ATI] Navi 23 [Radeon RX 6600/6600 XT/6600M] (rev c7)"
-                    # "00:02.0 Display controller: Intel Corporation Raptor Lake-S GT1 [UHD Graphics 770] (rev 04)"
-
-                    # Updated regex to handle NVIDIA, AMD, and Intel GPUs properly
-                    if "NVIDIA" in device_desc:
-                        gpu_match = re.search(r'NVIDIA Corporation (.+)', device_desc)
-                        if gpu_match:
-                            formatted_device_desc = f"NVIDIA {gpu_match.group(1)}"
-                        else:
-                            formatted_device_desc = device_desc
-                    elif "AMD" in device_desc or "ATI" in device_desc:
-                        gpu_match = re.search(r'Advanced Micro Devices, Inc. \[AMD/ATI\] (.+)', device_desc)
-                        if gpu_match:
-                            formatted_device_desc = f"AMD {gpu_match.group(1)}"
-                        else:
-                            # Handle other AMD formats
-                            gpu_match = re.search(r'(AMD|ATI) (.+)', device_desc)
-                            if gpu_match:
-                                formatted_device_desc = f"{gpu_match.group(1)} {gpu_match.group(2)}"
-                            else:
-                                formatted_device_desc = device_desc
-                    elif "Intel" in device_desc:
-                        gpu_match = re.search(r'Intel Corporation (.+)', device_desc)
-                        if gpu_match:
-                            formatted_device_desc = f"Intel {gpu_match.group(1)}"
-                        else:
-                            formatted_device_desc = device_desc
-                    else:
-                        # Fallback to original if pattern doesn't match any known manufacturer
-                        formatted_device_desc = device_desc
-
-                    device_line = f"Device-{device_count}: {formatted_device_desc}"
-                    # Always add driver info if available
-                    if driver_info:
-                        device_line += f" driver: {driver_info}"
-
-                    if "NVIDIA" in device_desc:
-                        try:
-                            with open('/sys/module/nvidia/version') as f:
-                                driver_version = f.read().strip()
-                                device_line += f" v: {driver_version}"
-                        except FileNotFoundError:
-                            pass
-
-                    devices_info.append(device_line)
-                    device_count += 1
-                i += 1
-
-            # Create the Graphics section with devices and display info
-            graphics_lines = []
-            for device_info in devices_info:
-                graphics_lines.append(f"Graphics:  {device_info}")
-
-            # Add display info to the Graphics section
-            session_type = os.environ.get("XDG_SESSION_TYPE", "unknown")
-            display_info = f"Display: {session_type}"
-            if session_type == "wayland":
-                display_info += f" server: {os.environ.get('WAYLAND_DISPLAY', 'N/A')}"
-            else:
-                display_info += f" server: {os.environ.get('DISPLAY', 'N/A')}"
-
-            # X.Org version
-            try:
-                xorg_version = get_xorg_version()
-                display_info += f" X.Org version: {xorg_version}"
-            except SystemExit:
-                pass
-
-            # Add driver info to display line if available
-            # We'll add a generic "driver: loaded: nvidia" type info if we can determine it
-            if devices_info:
-                # Extract driver from the first device if available
-                first_device = devices_info[0]
-                if "driver: " in first_device:
-                    driver_part = first_device.split("driver: ")[1]
-                    if " " in driver_part:
-                        driver_name = driver_part.split(" ")[0]
-                    else:
-                        driver_name = driver_part
-                    display_info += f" driver: loaded: {driver_name}"
-
-            # Add indented display info after the device info
-            if graphics_lines:
-                # Add the display info as an indented line after the first device
-                graphics_lines.append(f"           {display_info}")
-
-            lines.extend(graphics_lines)
-
+            devices_info = _parse_lspci_output(result.stdout)
+            lines.extend(_build_graphics_section(devices_info))
     except Exception as e:
         lines.append(f"lspci error: {e}")
 
     lines.append("----")
 
-    # glxinfo output
     try:
         result = subprocess.run(
-            ["glxinfo"],
-            capture_output=True,
-            text=True,
-            timeout=10,
-            check=False
+            ["glxinfo"], capture_output=True, text=True, timeout=10, check=False
         )
         if result.returncode == 0:
-            keep_patterns = [
-                "name of display",
-                "display:",
-                "direct rendering",
-                "Memory info",
-                "Dedicated video memory",
-                "Total available memory",
-                "Currently available",
-                "OpenGL vendor",
-                "OpenGL renderer",
-                "OpenGL core profile version",
-                "OpenGL core profile shading",
-                "OpenGL core profile context",
-                "OpenGL core profile profile",
-                "OpenGL version string",
-                "OpenGL shading language",
-                "OpenGL context flags",
-                "OpenGL profile mask",
-                "OpenGL ES profile",
-            ]
-            for line in result.stdout.split("\n"):
-                if any(p in line for p in keep_patterns):
-                    lines.append(line)
+            lines.extend(_parse_glxinfo_output(result.stdout))
     except FileNotFoundError:
         lines.append("glxinfo not found")
     except Exception as e:
@@ -753,72 +813,11 @@ def get_graphics_info_detailed() -> str:
 
     lines.append("-----")
 
-    # Vulkan info - use cached output
     try:
         vk_gpu_info_output = get_cached_vk_gpu_info()
         if vk_gpu_info_output:
             lines.append("Vulkan:")
-
-            # Parse vk_gpu_info output
-            lines_vk = vk_gpu_info_output.split("\n")
-            i = 0
-            while i < len(lines_vk):
-                line = lines_vk[i].strip()
-
-                if line.startswith("GPU #"):
-                    # Parse GPU information
-                    gpu_info = {}
-
-                    # Extract GPU number
-                    gpu_num_match = re.search(r'GPU #(\d+)', line)
-                    if gpu_num_match:
-                        gpu_info['id'] = gpu_num_match.group(1)
-
-                    # Parse the following lines for GPU properties
-                    i += 1
-                    while i < len(lines_vk) and lines_vk[i].strip() and not lines_vk[i].startswith("GPU #"):
-                        prop_line = lines_vk[i].strip()
-
-                        if ':' in prop_line:
-                            key_value = prop_line.split(':', 1)
-                            if len(key_value) == 2:
-                                key = key_value[0].strip()
-                                value = key_value[1].strip()
-
-                                if key == 'device_name':
-                                    gpu_info['deviceName'] = value
-                                elif key == 'driver_name':
-                                    gpu_info['driverName'] = value
-                                elif key == 'driver_info':
-                                    gpu_info['driverInfo'] = value
-                                elif key == 'api_version':
-                                    gpu_info['apiVersion'] = value
-                                elif key == 'driver_version':
-                                    gpu_info['driverVersion'] = value
-                                elif key == 'device_type':
-                                    gpu_info['deviceType'] = value
-
-                        i += 1
-
-                    # Only show GPU if it's not CPU or VIRTUAL_GPU
-                    device_type = gpu_info.get('deviceType', 'Unknown')
-                    if device_type not in ['CPU', 'VIRTUAL_GPU']:
-                        gpu_id = gpu_info.get('id', 'Unknown')
-                        device_name = gpu_info.get('deviceName', 'Unknown')
-                        driver_name = gpu_info.get('driverName', 'Unknown')
-                        api_version = gpu_info.get('apiVersion', 'Unknown')
-
-                        # For NVIDIA GPUs, use driver_info instead of driver_version
-                        if 'NVIDIA' in device_name.upper():
-                            driver_version = gpu_info.get('driverInfo', 'Unknown')
-                        else:
-                            driver_version = gpu_info.get('driverVersion', 'Unknown')
-
-                        lines.append(f"GPU {gpu_id}: {device_name} deviceType: {device_type} driverName: {driver_name} apiVersion: {api_version} driverVersion: {driver_version}")
-
-                    # Continue to next iteration since we incremented i inside the loop
-                    continue
-                i += 1
+            lines.extend(_parse_vulkan_output(vk_gpu_info_output))
         else:
             lines.append("vk_gpu_info not found")
     except FileNotFoundError:
