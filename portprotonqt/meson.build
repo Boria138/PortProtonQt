@@ -9,7 +9,6 @@ install_data(
   'custom_widgets.py',
   'detail_pages.py',
   'dialogs.py',
-  'debug_utils.py',
   'downloader.py',
   'egs_api.py',
   'game_card.py',
@@ -35,6 +34,20 @@ install_data(
   'version_utils.py',
   'virtual_keyboard.py'],
   install_dir: pythondir / meson.project_name(),
+)
+
+# Install debug_utils package
+install_data(
+  ['debug_utils/__init__.py',
+   'debug_utils/debug_log_manager.py',
+   'debug_utils/env_utils.py',
+   'debug_utils/game_debug.py',
+   'debug_utils/gpu_info.py',
+   'debug_utils/log_processor.py',
+   'debug_utils/system_info.py',
+   'debug_utils/xorg_utils.py',
+  ],
+  install_dir: pythondir / meson.project_name() / 'debug_utils',
 )
 
 # Install themes
