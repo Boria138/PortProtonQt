@@ -128,6 +128,8 @@ file_path = os.path.join(BASE_DIR, os.path.basename(user_filename))
 - Do not add comments for obvious code
 - **NEVER leave outdated comments after refactoring** (e.g., "without numpy" after numpy removal, "legacy" after rewrite)
 - **ALWAYS update or remove comments that reference removed dependencies, patterns, or context**
+- **NEVER leave stub/no-op functions** (e.g., `def func(): pass` with comment "removed")
+- **When removing a feature, delete the function entirely, not stub it**
 - Never invent modules
 - Do not move files unless requested
 - Do not create new files for organization (unless task requires a new module)
