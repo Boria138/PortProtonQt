@@ -26,7 +26,7 @@ SETTINGS_COMBO_STYLE = f"""
         border: {border_c} {color_a};
         background: {color_a};
     }}
-    * Focus state */
+    /* Focus state */
     QComboBox:focus {{
         border: {border_c} {color_a};
         background-color: {color_a};
@@ -51,7 +51,7 @@ SETTINGS_COMBO_STYLE = f"""
         height: 12px;
         width: 12px;
     }}
-    * List when combobox is open */
+    /* List when combobox is open */
     QComboBox QAbstractItemView {{
         outline: none;
         border: {border_c} {color_a};
@@ -76,7 +76,7 @@ SETTINGS_COMBO_STYLE = f"""
     QListView::item:selected {{
         background: {color_b};
     }}
-    * Selection in list when item is focused */
+    /* Selection in list when item is focused */
     QListView::item:focus {{
         background: {color_a};
         color: {color_f};
