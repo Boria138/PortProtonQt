@@ -58,6 +58,24 @@ install_data(
   install_dir: pythondir / meson.project_name() / 'debug_utils',
 )
 
+# Install config package
+install_data(
+  ['config/__init__.py',
+   'config/base.py',
+   'config/ui.py',
+   'config/game.py',
+   'config/cache.py',
+   'config/gamepad.py',
+   'config/proxy.py',
+   'config/display.py',
+   'config/window.py',
+   'config/favorites.py',
+   'config/portproton.py',
+   'config/validators.py',
+  ],
+  install_dir: pythondir / meson.project_name() / 'config',
+)
+
 # Install themes
 install_subdir(
   'themes',
