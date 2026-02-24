@@ -539,19 +539,20 @@ class GameCard(QFrame):
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
-            self.select_callback(
-                self.name,
-                self.description,
-                self.cover_path,
-                self.appid,
-                self.controller_support,
-                self.exec_line,
-                self.last_launch,
-                self.formatted_playtime,
-                self.protondb_tier,
-                self.game_source,
-                self.anticheat_status
-            )
+            game_data = {
+                "name": self.name,
+                "description": self.description,
+                "cover_path": self.cover_path,
+                "appid": self.appid,
+                "controller_support": self.controller_support,
+                "exec_line": self.exec_line,
+                "last_launch": self.last_launch,
+                "formatted_playtime": self.formatted_playtime,
+                "protondb_tier": self.protondb_tier,
+                "game_source": self.game_source,
+                "anticheat_status": self.anticheat_status,
+            }
+            self.select_callback(game_data)
         super().mousePressEvent(event)
 
     def cleanup(self):
@@ -574,18 +575,19 @@ class GameCard(QFrame):
 
     def keyPressEvent(self, event):
         if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
-            self.select_callback(
-                self.name,
-                self.description,
-                self.cover_path,
-                self.appid,
-                self.controller_support,
-                self.exec_line,
-                self.last_launch,
-                self.formatted_playtime,
-                self.protondb_tier,
-                self.game_source,
-                self.anticheat_status
-            )
+            game_data = {
+                "name": self.name,
+                "description": self.description,
+                "cover_path": self.cover_path,
+                "appid": self.appid,
+                "controller_support": self.controller_support,
+                "exec_line": self.exec_line,
+                "last_launch": self.last_launch,
+                "formatted_playtime": self.formatted_playtime,
+                "protondb_tier": self.protondb_tier,
+                "game_source": self.game_source,
+                "anticheat_status": self.anticheat_status,
+            }
+            self.select_callback(game_data)
         else:
             super().keyPressEvent(event)

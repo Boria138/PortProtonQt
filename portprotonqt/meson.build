@@ -7,7 +7,6 @@ install_data(
   'config_utils.py',
   'context_menu_manager.py',
   'custom_widgets.py',
-  'detail_pages.py',
   'dialogs.py',
   'downloader.py',
   'egs_api.py',
@@ -34,6 +33,15 @@ install_data(
   'version_utils.py',
   'virtual_keyboard.py'],
   install_dir: pythondir / meson.project_name(),
+)
+
+# Install detail_pages package
+install_data(
+  ['detail_pages/__init__.py',
+   'detail_pages/widgets.py',
+   'detail_pages/utils.py',
+  ],
+  install_dir: pythondir / meson.project_name() / 'detail_pages',
 )
 
 # Install debug_utils package

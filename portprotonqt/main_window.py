@@ -1620,15 +1620,24 @@ class MainWindow(QMainWindow):
                 return
 
             # Callback for opening autoinstall detail page
-            def select_callback(name, description, cover_path, appid, exec_line, controller_support, *_):
+            def select_callback(game_data: dict):
+                exec_line = game_data.get("exec_line", "")
                 if not exec_line or not exec_line.startswith("autoinstall:"):
                     logger.warning(f"Invalid exec_line for autoinstall: {exec_line}")
                     return
-                self.detail_page_manager.openAutoInstallDetailPage(name, description, cover_path, exec_line, "portproton")
+                game_data["game_source"] = "portproton"
+                self.detail_page_manager.openAutoInstallDetailPage(game_data)
 
             # Create cards
             for game_tuple in games:
-                name, description, cover_path, appid, controller_support, exec_line, *_ , game_source, exe_name = game_tuple
+                name = game_tuple[0]
+                description = game_tuple[1]
+                cover_path = game_tuple[2]
+                appid = game_tuple[3]
+                controller_support = game_tuple[4]
+                exec_line = game_tuple[5]
+                game_source = game_tuple[12]
+                exe_name = game_tuple[13]
 
                 card = GameCard(
                     name, description, cover_path, appid, controller_support,
@@ -1660,7 +1669,14 @@ class MainWindow(QMainWindow):
 
             # Load missing covers and metadata
             for game_tuple in games:
-                name, description, cover_path, appid, controller_support, exec_line, *_ , game_source, exe_name = game_tuple
+                name = game_tuple[0]
+                description = game_tuple[1]
+                cover_path = game_tuple[2]
+                appid = game_tuple[3]
+                controller_support = game_tuple[4]
+                exec_line = game_tuple[5]
+                game_source = game_tuple[12]
+                exe_name = game_tuple[13]
                 if not cover_path:
                     self.portproton_api.download_autoinstall_cover_async(
                         exe_name, timeout=5,
@@ -2552,12 +2568,25 @@ class MainWindow(QMainWindow):
             card.update_badge_visibility(filter_key)
 
         if self.currentDetailPage and self.current_exec_line:
-            current_game = next((game for game in self.games if game[4] == self.current_exec_line), None)
+            current_game = next((game for game in self.games if game[5] == self.current_exec_line), None)
             if current_game:
                 self.stackedWidget.removeWidget(self.currentDetailPage)
                 self.currentDetailPage.deleteLater()
                 self.currentDetailPage = None
-                self.detail_page_manager.openGameDetailPage(*current_game)
+                game_data = {
+                    "name": current_game[0],
+                    "description": current_game[1],
+                    "cover_path": current_game[2],
+                    "appid": current_game[3],
+                    "controller_support": current_game[4],
+                    "exec_line": current_game[5],
+                    "last_launch": current_game[6],
+                    "formatted_playtime": current_game[7],
+                    "protondb_tier": current_game[8],
+                    "anticheat_status": current_game[9],
+                    "game_source": current_game[12],
+                }
+                self.detail_page_manager.openGameDetailPage(game_data)
 
         self.settingsDebounceTimer.start()
 
@@ -2784,18 +2813,15 @@ class MainWindow(QMainWindow):
 
     def open_exe_settings(self, exe_path):
         """Open the ExeSettingsDialog for the given executable."""
-        if not os.path.exists(exe_path):
+        if not exe_path or not os.path.exists(exe_path):
             QMessageBox.warning(self, _("Error"), _("Executable not found: {0}").format(exe_path))
             return
         dialog = ExeSettingsDialog(self, self.theme, exe_path)
         dialog.exec()
 
-    def openGameDetailPage(self, name, description, cover_path=None, appid="", exec_line="", controller_support="", last_launch="", formatted_playtime="", protondb_tier="", game_source="", anticheat_status=""):
-        # Delegate to the detail page manager
-        self.detail_page_manager.openGameDetailPage(
-            name, description, cover_path, appid, exec_line, controller_support,
-            last_launch, formatted_playtime, protondb_tier, game_source, anticheat_status
-        )
+    def openGameDetailPage(self, game_data: dict) -> None:
+        """Open game detail page."""
+        self.detail_page_manager.openGameDetailPage(game_data)
 
 
     def activateFocusedWidget(self):
@@ -2821,18 +2847,19 @@ class MainWindow(QMainWindow):
         elif isinstance(focused_widget, QCheckBox):
             focused_widget.setChecked(not focused_widget.isChecked())
         elif isinstance(focused_widget, GameCard):
-                    focused_widget.select_callback(
-                        focused_widget.name,
-                        focused_widget.description,
-                        focused_widget.cover_path,
-                        focused_widget.appid,
-                        focused_widget.controller_support,
-                        focused_widget.exec_line,
-                        focused_widget.last_launch,
-                        focused_widget.formatted_playtime,
-                        focused_widget.protondb_tier,
-                        focused_widget.game_source
-                    )
+            game_data = {
+                "name": focused_widget.name,
+                "description": focused_widget.description,
+                "cover_path": focused_widget.cover_path,
+                "appid": focused_widget.appid,
+                "controller_support": focused_widget.controller_support,
+                "exec_line": focused_widget.exec_line,
+                "last_launch": focused_widget.last_launch,
+                "formatted_playtime": focused_widget.formatted_playtime,
+                "protondb_tier": focused_widget.protondb_tier,
+                "game_source": focused_widget.game_source,
+            }
+            focused_widget.select_callback(game_data)
         parent = focused_widget.parent()
         while parent:
             if isinstance(parent, FileExplorer):
@@ -2996,6 +3023,9 @@ class MainWindow(QMainWindow):
 
         # Handle PortProton games
         entry_exec_split = shlex.split(exec_line)
+        if not entry_exec_split:
+            QMessageBox.warning(self, _("Error"), _("Invalid command format (empty exec line)"))
+            return
         if entry_exec_split[0] == "env":
             if len(entry_exec_split) < 3:
                 QMessageBox.warning(self, _("Error"), _("Invalid command format (native)"))

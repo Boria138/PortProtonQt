@@ -12,20 +12,7 @@ from collections import deque
 class MainWindowProtocol(Protocol):
     """Protocol defining the interface that MainWindow must implement for GameLibraryManager."""
 
-    def openGameDetailPage(
-        self,
-        name: str,
-        description: str,
-        cover_path: str | None = None,
-        appid: str = "",
-        exec_line: str = "",
-        controller_support: str = "",
-        last_launch: str = "",
-        formatted_playtime: str = "",
-        protondb_tier: str = "",
-        game_source: str = "",
-        anticheat_status: str = "",
-    ) -> None: ...
+    def openGameDetailPage(self, game_data: dict) -> None: ...
 
     def createSearchWidget(self) -> tuple[QWidget, CustomLineEdit]: ...
 

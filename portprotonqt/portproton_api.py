@@ -521,8 +521,8 @@ class PortProtonAPI:
                         description = metadata_description
 
                     game_tuple = (
-                        display_name, description, cover_path, "", f"autoinstall:{script_name}",
-                        "", "Never", "0h 0m", "", "", 0, 0, "autoinstall", exe_name
+                        display_name, description, cover_path, "",
+                        "", f"autoinstall:{script_name}", "Never", "0h 0m", "", "", 0, 0, "autoinstall", exe_name
                     )
                     games.append(game_tuple)
 
