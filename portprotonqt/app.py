@@ -2,7 +2,7 @@ import sys
 import os
 import subprocess
 import shutil
-from PySide6.QtCore import QTimer, Qt
+from PySide6.QtCore import QTimer, Qt, QThread, Signal
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QIcon
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
@@ -211,9 +211,15 @@ def main():
         window.showNormal()
 
     # Execute the initial PortProton command after the UI is set up
-    def run_initial_command():
-        nonlocal start_sh
-        if start_sh:
+    class InitialCommandWorker(QThread):
+        """Worker thread to run initial PortProton command without blocking UI."""
+        finished = Signal()
+
+        def __init__(self, start_cmd: list[str]):
+            super().__init__()
+            self.start_cmd = start_cmd
+
+        def run(self):
             try:
                 # Get screen information before running the initial command
                 # Hack: avoid script from dependency on xorg-xrandr
@@ -233,16 +239,19 @@ def main():
                         set_user_conf_setting(var_name, var_value)
 
                 # Run the initial PortProton command
-                subprocess.run(start_sh + ["cli", "--initial"], timeout=10)
+                subprocess.run(self.start_cmd + ["cli", "--initial"], timeout=10)
             except subprocess.TimeoutExpired:
                 logger.warning("Initial PortProton command timed out")
             except Exception as e:
                 logger.error(f"Error running initial PortProton command: {e}")
-        else:
-            logger.warning("PortProton start command not available, skipping initial command")
+            finally:
+                self.finished.emit()
 
-    # Run the initial command after the UI is displayed
-    QTimer.singleShot(100, run_initial_command)
+    if start_sh:
+        worker = InitialCommandWorker(start_sh)
+        worker.start()
+    else:
+        logger.warning("PortProton start command not available, skipping initial command")
 
     # --- Cleanup ---
     def cleanup_on_exit():
