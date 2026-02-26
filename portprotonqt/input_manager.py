@@ -7,7 +7,7 @@ from evdev import InputDevice, InputEvent, UInput, ecodes, list_devices, ff
 from enum import Enum
 from pyudev import Context, Monitor, Device, Devices
 from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea, QLineEdit, QDialog, QMenu, QComboBox, QListView, QMessageBox, QListWidget, QTableWidget, QAbstractItemView, QSlider, QCheckBox
-from PySide6.QtCore import Qt, QObject, QEvent, QPoint, Signal, Slot, QTimer
+from PySide6.QtCore import Qt, QObject, QEvent, QPoint, Signal, Slot, QTimer, QThread
 from PySide6.QtGui import QKeyEvent, QMouseEvent
 from portprotonqt.logger import get_logger
 from portprotonqt.image_utils import FullscreenDialog
@@ -74,6 +74,45 @@ class GamepadType(Enum):
     PLAYSTATION = "PlayStation"
     UNKNOWN = "Unknown"
 
+class MouseEmulationThread(QThread):
+    """Thread for creating UInput virtual mouse device without blocking UI."""
+
+    finished = Signal(bool)  # Emitted when done (True = success, False = failed)
+
+    def run(self):
+        """Run UInput device creation in background thread."""
+        try:
+            if not os.path.exists('/dev/uinput'):
+                logger.error("EMUL: /dev/uinput does not exist")
+                self.finished.emit(False)
+                return
+
+            if not os.access('/dev/uinput', os.W_OK):
+                logger.error("EMUL: No write access to /dev/uinput")
+                self.finished.emit(False)
+                return
+
+            ui = UInput({
+                ecodes.EV_KEY: [ecodes.BTN_LEFT, ecodes.BTN_RIGHT],
+                ecodes.EV_REL: [ecodes.REL_X, ecodes.REL_Y, ecodes.REL_WHEEL],
+            }, name="Virtual DPad Mouse")
+
+            self.finished.emit(True)
+            # Store device in thread result
+            self._device = ui
+
+        except PermissionError as e:
+            logger.error("EMUL: Permission denied for /dev/uinput: %s", e)
+            self.finished.emit(False)
+        except Exception as ex:
+            logger.error(f"EMUL: Error creating virtual mouse: {ex}", exc_info=True)
+            self.finished.emit(False)
+
+    def get_device(self) -> UInput | None:
+        """Get the created UInput device after thread finishes."""
+        return getattr(self, '_device', None)
+
+
 class InputManager(QObject):
     """
     Manages input from gamepads and keyboards for navigating the application interface.
@@ -126,6 +165,7 @@ class InputManager(QObject):
         # Mouse emulation attributes
         self.mouse_emulation_enabled = True
         self.ui = None
+        self.mouse_emulation_thread: MouseEmulationThread | None = None
         self.stick_x_raw = 0
         self.stick_y_raw = 0
 
@@ -214,7 +254,21 @@ class InputManager(QObject):
 
     def _async_enable_mouse_emulation(self):
         """Asynchronously enable mouse emulation to avoid blocking startup."""
-        self.enable_mouse_emulation()
+        logger.info("EMUL: Attempting to create UInput virtual mouse...")
+        self.mouse_emulation_thread = MouseEmulationThread()
+        self.mouse_emulation_thread.finished.connect(self._on_mouse_emulation_finished)
+        self.mouse_emulation_thread.start()
+
+    def _on_mouse_emulation_finished(self, success: bool):
+        """Handle mouse emulation thread completion."""
+        if success and self.mouse_emulation_thread:
+            device = self.mouse_emulation_thread.get_device()
+            if device:
+                self.ui = device
+                self.mouse_emulation_enabled = True
+                logger.info("EMUL: Virtual mouse created successfully")
+        else:
+            self.mouse_emulation_enabled = False
 
     def _update_emulation_flag(self):
         """Update emulation_active flag based on Qt app focus (main thread only)."""
@@ -1313,42 +1367,16 @@ class InputManager(QObject):
         except Exception as e:
             logger.error(f"Error in navigation repeat: {e}")
 
-    def enable_mouse_emulation(self):
-        """Enable mouse emulation mode (creates virtual mouse device)."""
-        if self.mouse_emulation_enabled and self.ui is not None:
-            logger.debug("EMUL: Mouse emulation already enabled, skipping")
-            return
-
-        try:
-            logger.info("EMUL: Attempting to create UInput virtual mouse...")
-            if not os.path.exists('/dev/uinput'):
-                logger.error("EMUL: /dev/uinput does not exist")
-                self.mouse_emulation_enabled = False
-                return
-
-            if not os.access('/dev/uinput', os.W_OK):
-                logger.error("EMUL: No write access to /dev/uinput")
-                self.mouse_emulation_enabled = False
-                return
-
-            self.ui = UInput({
-                ecodes.EV_KEY: [ecodes.BTN_LEFT, ecodes.BTN_RIGHT],
-                ecodes.EV_REL: [ecodes.REL_X, ecodes.REL_Y, ecodes.REL_WHEEL],
-            }, name="Virtual DPad Mouse")
-
-            self.mouse_emulation_enabled = True
-            logger.info("EMUL: Virtual mouse created successfully")
-
-        except PermissionError as e:
-            logger.error("EMUL: Permission denied for /dev/uinput: %s", e)
-            self.mouse_emulation_enabled = False
-        except Exception as ex:
-            logger.error(f"EMUL: Error creating virtual mouse: {ex}", exc_info=True)
-            self.mouse_emulation_enabled = False
-
     def disable_mouse_emulation(self):
         """Disable mouse emulation mode (closes virtual mouse device)."""
         logger.info("EMUL: Disabling mouse emulation...")
+
+        # Stop the thread if still running
+        thread = self.mouse_emulation_thread
+        if thread and thread.isRunning():
+            thread.wait()
+            self.mouse_emulation_thread = None
+
         if self.ui:
             try:
                 self.ui.close()
