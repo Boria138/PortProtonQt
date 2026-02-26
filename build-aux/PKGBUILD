@@ -19,7 +19,6 @@ build() {
 
 package_portprotonqt() {
     pkgdesc="Modern GUI for managing and launching games from PortProton, Steam, and Epic Games Store"
-    depends+=('portprotonqt-steam-compat')
 
     DESTDIR="$pkgdir" meson install -C build --skip-subprojects
 
@@ -34,12 +33,5 @@ package_portprotonqt-steam-compat() {
     DESTDIR="$pkgdir" meson install -C build --skip-subprojects
 
     # Keep only steam-compat files
-    rm -rf "$pkgdir/usr/bin"
-    rm -rf "$pkgdir/usr/lib"
-    rm -rf "$pkgdir/usr/share/applications"
-    rm -rf "$pkgdir/usr/share/bash-completion"
-    rm -rf "$pkgdir/usr/share/icons"
-    rm -rf "$pkgdir/usr/share/metainfo"
-    rm -rf "$pkgdir/usr/lib/udev"
-    rm -rf "$pkgdir/usr/share/portprotonqt"
+    find "$pkgdir" -not -path "$pkgdir/usr/share/steam/*" -delete
 }
