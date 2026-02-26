@@ -2,14 +2,9 @@ name: Nightly Build - AppImage, Arch, Fedora
 
 on:
   workflow_dispatch:
-    inputs:
-      branch:
-        description: 'Branch to build'
-        required: false
-        default: 'main'
 
 env:
-  BUILD_BRANCH: ${{ inputs.branch || 'main' }}
+  BUILD_BRANCH: ${{ github.ref_name }}
   PKGDEST: "/tmp/portprotonqt"
   PACKAGE: "portprotonqt"
 
