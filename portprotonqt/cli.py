@@ -1,5 +1,8 @@
 import argparse
 import os
+from pathlib import Path
+
+from portprotonqt.steam_api import get_steam_home
 
 
 def parse_args():
@@ -23,6 +26,11 @@ def parse_args():
         action="store_true",
         help="Force running the application under muvm even if not on Apple Silicon"
     )
+    parser.add_argument(
+        "--add-steam-compat-tool",
+        action="store_true",
+        help="Add PortProtonQt as a Steam compatibility tool if not already installed"
+    )
     # Add positional argument to accept exe files or portproton:// URLs
     parser.add_argument(
         'file_or_url',
@@ -30,6 +38,104 @@ def parse_args():
         help="Executable file path or portproton:// URL"
     )
     return parser.parse_args()
+
+
+def add_steam_compat_tool() -> bool:
+    """
+    Add PortProtonQt as a Steam compatibility tool.
+
+    Creates the following files in Steam's compatibilitytools.d directory:
+    - compatibilitytool.vdf
+    - toolmanifest.vdf
+    - portproton (launch script)
+
+    Returns:
+        True if successful, False otherwise
+    """
+    steam_home = get_steam_home()
+    if not steam_home:
+        print("Steam directory not found")
+        return False
+
+    compat_tools_dir = steam_home / "compatibilitytools.d" / "PortProtonQt"
+    system_compat_dir = Path("/usr/share/steam/compatibilitytools.d/PortProtonQt")
+
+    # Check if already installed in user or system directory
+    if compat_tools_dir.exists():
+        print("PortProtonQt is already installed as a Steam compatibility tool")
+        return True
+
+    if system_compat_dir.exists():
+        print("PortProtonQt is already installed as a Steam compatibility tool (system-wide)")
+        return True
+
+    # Create directory structure
+    compat_tools_dir.mkdir(parents=True, exist_ok=True)
+
+    # Create compatibilitytool.vdf
+    compatibilitytool_vdf = compat_tools_dir / "compatibilitytool.vdf"
+    compatibilitytool_vdf.write_text('''"compatibilitytools"
+{
+	"compat_tools"
+	{
+		"PortProtonQt"
+		{
+			"install_path" "."
+			"display_name" "PortProtonQt"
+			"from_oslist" "windows"
+			"to_oslist" "linux"
+			"Priority" "75"
+		}
+	}
+}
+''')
+
+    # Create toolmanifest.vdf
+    toolmanifest_vdf = compat_tools_dir / "toolmanifest.vdf"
+    toolmanifest_vdf.write_text('''"manifest"
+{
+	"commandline" "/portproton"
+}
+''')
+
+    # Create portproton launch script
+    portproton_script = compat_tools_dir / "portproton"
+    portproton_script.write_text('''#!/usr/bin/env bash
+
+# Remove Steam Runtime libraries
+unset LD_LIBRARY_PATH
+unset LD_PRELOAD
+
+exe_name="$(basename "$1")"
+
+# Ignore specific executables
+if [[ "$exe_name" == "iscriptevaluator.exe" ]] || \\
+   [[ "$exe_name" == "d3ddriverquery64.exe" ]]; then
+    exit 0
+fi
+
+# Activate virtual environment if available
+if [[ -n "$PPQT_PATH" ]]; then
+    cd "$PPQT_PATH" || exit 1
+    source .venv/bin/activate || exit 1
+fi
+
+# Use AppImage if specified, otherwise use portprotonqt from PATH
+if [[ -n "$PPQT_BIN_PATH" ]]; then
+    "$PPQT_BIN_PATH" --debug-level INFO "$@"
+else
+    portprotonqt --debug-level INFO "$@"
+fi
+''')
+
+    # Make script executable
+    os.chmod(portproton_script, 0o755)
+
+    print("PortProtonQt has been added as a Steam compatibility tool")
+    print(f"Installed to: {compat_tools_dir}")
+    print("Restart Steam to use the new compatibility tool")
+
+    return True
 
 
 def is_portproton_url(url: str) -> bool:
