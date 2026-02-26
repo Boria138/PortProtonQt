@@ -36,20 +36,20 @@ def _on_pixmap_ready(pixmap: QPixmap, detail_page: QWidget, image_label: QLabel,
         rounded = round_corners(pixmap, 10)
         image_label.setPixmap(rounded)
         logger.debug("Pixmap set for imageLabel")
-        _setup_palette_stylesheet(detail_page, None, main_window)
+        _setup_palette_stylesheet(detail_page, pixmap, main_window)
     except RuntimeError:
         logger.warning("Detail page already deleted, skipping pixmap update")
 
 
-def _setup_palette_stylesheet(detail_page: QWidget, cover_path: str | None, main_window) -> None:
+def _setup_palette_stylesheet(detail_page: QWidget, pixmap: QPixmap | None, main_window) -> None:
     """Setup palette-based stylesheet after image load."""
-    if cover_path is None:
+    if pixmap is None:
         return
 
     def on_palette_ready(palette: list) -> None:
         _on_palette_ready(palette, detail_page, main_window)
 
-    main_window.getColorPalette_async(cover_path, num_colors=5, callback=on_palette_ready)
+    main_window.getColorPalette_from_pixmap(pixmap, num_colors=5, callback=on_palette_ready)
 
 
 def _on_palette_ready(palette: list, detail_page: QWidget, main_window) -> None:

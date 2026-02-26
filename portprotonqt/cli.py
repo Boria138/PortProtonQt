@@ -1,4 +1,5 @@
 import argparse
+import os
 
 
 def parse_args():
@@ -22,11 +23,11 @@ def parse_args():
         action="store_true",
         help="Force running the application under muvm even if not on Apple Silicon"
     )
-    # Add positional argument to accept portproton:// URLs or other arguments
+    # Add positional argument to accept exe files or portproton:// URLs
     parser.add_argument(
-        'url',
+        'file_or_url',
         nargs='?',
-        help="Optional URL argument (e.g., portproton:// URL for PPDB download)"
+        help="Executable file path or portproton:// URL"
     )
     return parser.parse_args()
 
@@ -41,6 +42,18 @@ def is_portproton_url(url: str) -> bool:
         True if it's a portproton:// URL, False otherwise
     """
     return url.lower().startswith('portproton://')
+
+
+def is_exe_file(path: str) -> bool:
+    """Check if the given path is an exe file.
+
+    Args:
+        path: The path to check
+
+    Returns:
+        True if it's an exe file, False otherwise
+    """
+    return path.lower().endswith('.exe') and os.path.isfile(path)
 
 
 def parse_portproton_url(url: str) -> str | None:

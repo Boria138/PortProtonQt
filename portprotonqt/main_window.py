@@ -41,6 +41,7 @@ from portprotonqt.tray_manager import TrayManager
 from portprotonqt.game_library_manager import GameLibraryManager
 from portprotonqt.virtual_keyboard import VirtualKeyboard
 from portprotonqt.get_wine_module import show_proton_manager
+from portprotonqt.config_utils import find_game_by_exe, create_desktop_file
 
 from PySide6.QtWidgets import (QLineEdit, QMainWindow, QStatusBar, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox,
                                QDialog, QFormLayout, QMessageBox, QApplication, QPushButton, QProgressBar, QCheckBox, QSizePolicy, QGridLayout, QScrollArea, QScroller, QSlider, QFrame)
@@ -58,7 +59,7 @@ class MainWindow(QMainWindow):
     update_progress = Signal(int)
     update_status_message = Signal(str, int)
 
-    def __init__(self, app_name: str, version: str):
+    def __init__(self, app_name: str, version: str, launch_exe: str | None = None):
         super().__init__()
         self.theme_manager = ThemeManager()
         selected_theme = read_theme_from_config()
@@ -77,6 +78,7 @@ class MainWindow(QMainWindow):
         self.current_running_button = None
         self.portproton_location = get_portproton_location()
         self.start_sh = get_portproton_start_command()
+        self.launch_exe = launch_exe  # Store launch_exe path
 
         self.game_library_manager = GameLibraryManager(self, self.theme, None)
 
@@ -843,6 +845,15 @@ class MainWindow(QMainWindow):
             self.update_status_message.emit(_("Game library refreshed"), 3000)
 
     def loadGames(self):
+        # Skip loading library if launching a specific exe
+        if self.launch_exe:
+            # Hide progress bar and status message when skipping library load
+            self.progress_bar.setVisible(False)
+            self.progress_bar.setRange(0, 100)
+            self.progress_bar.setValue(0)
+            self.statusBar().clearMessage()
+            return
+
         display_filter = read_display_filter()
         favorites = read_favorites()
         self.pending_games = []
@@ -2808,6 +2819,40 @@ class MainWindow(QMainWindow):
 
         load_pixmap_async(cover_path, 180, 250, on_pixmap)
 
+    def getColorPalette_from_pixmap(self, pixmap, num_colors=5, sample_step=10, callback=None):
+        """Extract color palette from a QPixmap directly."""
+        if pixmap.isNull():
+            if callback:
+                callback([QColor("#1a1a1a")] * num_colors)
+                return
+
+        image = pixmap.toImage()
+        width, height = image.width(), image.height()
+        histogram = {}
+        for x in range(0, width, sample_step):
+            for y in range(0, height, sample_step):
+                color = image.pixelColor(x, y)
+                key = (color.red() // 32, color.green() // 32, color.blue() // 32)
+                if key in histogram:
+                    histogram[key][0] += color.red()
+                    histogram[key][1] += color.green()
+                    histogram[key][2] += color.blue()
+                    histogram[key][3] += 1
+                else:
+                    histogram[key] = [color.red(), color.green(), color.blue(), 1]
+        avg_colors = []
+        for _unused, (r_sum, g_sum, b_sum, count) in histogram.items():
+            avg_r = r_sum // count
+            avg_g = g_sum // count
+            avg_b = b_sum // count
+            avg_colors.append((count, QColor(avg_r, avg_g, avg_b)))
+        avg_colors.sort(key=lambda x: x[0], reverse=True)
+        palette = [color for count, color in avg_colors[:num_colors]]
+        if len(palette) < num_colors:
+            palette += [palette[-1]] * (num_colors - len(palette))
+        if callback:
+            callback(palette)
+
     def darkenColor(self, color, factor=200):
         return color.darker(factor)
 
@@ -2822,6 +2867,104 @@ class MainWindow(QMainWindow):
     def openGameDetailPage(self, game_data: dict) -> None:
         """Open game detail page."""
         self.detail_page_manager.openGameDetailPage(game_data)
+
+    def handle_launch_exe(self, exe_path: str) -> None:
+        """Handle launching an exe file from CLI.
+
+        If the game exists in the library, open its detail page.
+        If not, add it to the library and then open the detail page.
+
+        Args:
+            exe_path: Full path to the executable file
+        """
+        import configparser
+
+        # Normalize the exe path
+        exe_path = os.path.abspath(exe_path)
+
+        # Check if the game already exists in the library
+        existing_entry = find_game_by_exe(exe_path)
+
+        if existing_entry:
+            # Game exists - open detail page
+            game_name = existing_entry.get("Name", _("Unknown Game"))
+            icon_path = existing_entry.get("Icon", "")
+            exec_line = existing_entry.get("Exec", "")
+
+            # Get Steam game info asynchronously to fetch appid, cover, etc.
+            def on_steam_info(steam_info: dict):
+                game_data = {
+                    "name": game_name,
+                    "description": steam_info.get("description", ""),
+                    "cover_path": steam_info.get("cover", icon_path),
+                    "appid": steam_info.get("appid", ""),
+                    "controller_support": steam_info.get("controller_support", ""),
+                    "exec_line": exec_line,
+                    "last_launch": _("Never"),
+                    "formatted_playtime": "0:00",
+                    "protondb_tier": steam_info.get("protondb_tier", ""),
+                    "anticheat_status": steam_info.get("anticheat_status", ""),
+                    "game_source": "portproton",
+                }
+                # Open detail page for the newly added game
+                self.openGameDetailPage(game_data)
+
+            get_steam_game_info_async(game_name, exec_line, on_steam_info)
+        else:
+            # Game not found - create desktop entry and open detail page
+            result = create_desktop_file(exe_path)
+
+            if not result:
+                logger.error(f"Failed to create desktop file for {exe_path}")
+                return
+
+            desktop_entry, desktop_path = result
+
+            # Write the desktop file
+            try:
+                with open(desktop_path, "w", encoding="utf-8") as f:
+                    f.write(desktop_entry)
+                logger.info(f"Created desktop file: {desktop_path}")
+
+                # Make it executable
+                os.chmod(desktop_path, 0o644)
+
+                # Parse the entry to get game data
+                entry = configparser.ConfigParser(interpolation=None)
+                entry.read(desktop_path, encoding="utf-8")
+
+                if "Desktop Entry" not in entry:
+                    logger.error(f"Invalid desktop file: {desktop_path}")
+                    return
+
+                desktop_section = entry["Desktop Entry"]
+
+                game_name = desktop_section.get("Name", os.path.splitext(os.path.basename(exe_path))[0])
+                exec_line = desktop_section.get("Exec", "")
+                icon_path = desktop_section.get("Icon", "")
+
+                # Get Steam game info asynchronously to fetch appid, cover, etc.
+                def on_steam_info(steam_info: dict):
+                    game_data = {
+                        "name": game_name,
+                        "description": steam_info.get("description", ""),
+                        "cover_path": steam_info.get("cover", icon_path),
+                        "appid": steam_info.get("appid", ""),
+                        "controller_support": steam_info.get("controller_support", ""),
+                        "exec_line": exec_line,
+                        "last_launch": _("Never"),
+                        "formatted_playtime": "0:00",
+                        "protondb_tier": steam_info.get("protondb_tier", ""),
+                        "anticheat_status": steam_info.get("anticheat_status", ""),
+                        "game_source": "portproton",
+                    }
+                    # Open detail page for the newly added game
+                    self.openGameDetailPage(game_data)
+
+                get_steam_game_info_async(game_name, exec_line, on_steam_info)
+
+            except Exception as e:
+                logger.error(f"Error creating desktop file: {e}")
 
 
     def activateFocusedWidget(self):

@@ -14,7 +14,7 @@ from portprotonqt.config_utils import (
     get_portproton_start_command
 )
 from portprotonqt.logger import get_logger, setup_logger
-from portprotonqt.cli import parse_args, is_portproton_url, parse_portproton_url
+from portprotonqt.cli import parse_args, is_portproton_url, parse_portproton_url, is_exe_file
 from portprotonqt.portproton_api import PortProtonAPI, set_user_conf_setting
 from portprotonqt.downloader import Downloader
 from portprotonqt.debug_utils import get_screen_info
@@ -108,32 +108,48 @@ def main():
         logger.warning(f"Failed to start local server: {local_server.errorString()}")
         return
 
-    # Check if we have a portproton:// URL to handle
-    if args.url and is_portproton_url(args.url):
-        # Parse the portproton:// URL to get the full download URL
-        download_url = parse_portproton_url(args.url)
-        if download_url:
+    # Check if we have a portproton:// URL or exe file to handle
+    if args.file_or_url:
+        if is_portproton_url(args.file_or_url):
+            # Parse the portproton:// URL to get the full download URL
+            download_url = parse_portproton_url(args.file_or_url)
+            if download_url:
 
-            # Create PortProtonAPI instance to handle the download
-            downloader = Downloader(max_workers=4)
-            api = PortProtonAPI(downloader=downloader)
+                # Create PortProtonAPI instance to handle the download
+                downloader = Downloader(max_workers=4)
+                api = PortProtonAPI(downloader=downloader)
 
-            # Perform the PPDB download - user will select the .exe file via FileExplorer
-            success = api.download_ppdb_from_url(download_url)
-            if success:
-                logger.info(f"Successfully downloaded PPDB from {download_url}")
+                # Perform the PPDB download - user will select the .exe file via FileExplorer
+                success = api.download_ppdb_from_url(download_url)
+                if success:
+                    logger.info(f"Successfully downloaded PPDB from {download_url}")
+                else:
+                    logger.error(f"Failed to download PPDB from {download_url}")
+
+                # Exit after handling the URL
+                return
             else:
-                logger.error(f"Failed to download PPDB from {download_url}")
-
-            # Exit after handling the URL
-            return
+                logger.error(f"Failed to parse portproton:// URL: {args.file_or_url}")
+                return
+        elif is_exe_file(args.file_or_url):
+            # Store exe path for later processing after window is created
+            exe_path = os.path.abspath(os.path.expanduser(args.file_or_url))
         else:
-            logger.error(f"Failed to parse portproton:// URL: {args.url}")
-            return
+            logger.warning(f"Unknown file or URL format: {args.file_or_url}")
+            exe_path = None
+    else:
+        exe_path = None
 
     # --- Main Window ---
     version = get_version()
-    window = MainWindow(app_name=__app_name__, version=version)
+    window = MainWindow(app_name=__app_name__, version=version, launch_exe=exe_path)
+
+    # Handle exe file if provided
+    if exe_path:
+        # Defer the call until after the window is shown
+        def handle_launch_exe():
+            window.handle_launch_exe(exe_path)
+        QTimer.singleShot(0, handle_launch_exe)
 
     # --- Handle incoming connections ---
     def handle_new_connection():

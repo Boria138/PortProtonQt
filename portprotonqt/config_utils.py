@@ -8,6 +8,7 @@ import configparser
 import subprocess
 from pathlib import Path
 from portprotonqt.logger import get_logger
+from portprotonqt.localization import _
 from portprotonqt.config import (
     UIConfig,
     GameConfig,
@@ -382,6 +383,125 @@ def parse_desktop_entry(file_path: str) -> configparser.SectionProxy | None:
     if "Desktop Entry" not in cp:
         return None
     return cp["Desktop Entry"]
+
+
+def find_game_by_exe(exe_path: str) -> configparser.SectionProxy | None:
+    """Find a game in the library by its executable path.
+
+    Args:
+        exe_path: Full path to the executable file
+
+    Returns:
+        Parsed desktop entry if found, None otherwise
+    """
+    import shlex
+
+    portproton_path = get_portproton_location()
+    if not portproton_path:
+        return None
+
+    desktop_files = [entry.path for entry in os.scandir(portproton_path)
+                     if entry.name.endswith(".desktop")]
+
+    # Normalize the target exe path for comparison
+    target_exe = os.path.abspath(exe_path)
+
+    for desktop_path in desktop_files:
+        desktop_name = os.path.basename(desktop_path)
+
+        # Skip system desktop files
+        if desktop_name.lower() in ["portproton.desktop", "readme.desktop"]:
+            continue
+
+        entry = parse_desktop_entry(desktop_path)
+        if not entry:
+            continue
+
+        exec_line = entry.get("Exec", "")
+        if not exec_line:
+            continue
+
+        # Parse exec line to extract the game executable
+        try:
+            parts = shlex.split(exec_line)
+
+            # For PortProton: env "/path/to/start.sh" "/path/to/game.exe"
+            # The game exe is typically the 4th element (index 3)
+            game_exe = None
+            if len(parts) >= 4:
+                game_exe = os.path.expanduser(parts[3])
+            elif len(parts) >= 2:
+                # Try to find .exe in any part
+                for part in parts:
+                    if part.endswith(".exe"):
+                        game_exe = part
+                        break
+
+            if not game_exe:
+                continue
+
+            # Compare paths (normalize for comparison)
+            if os.path.abspath(game_exe) == target_exe:
+                return entry
+        except (ValueError, IndexError):
+            # shlex.split can fail on malformed exec lines
+            continue
+
+    return None
+
+
+def create_desktop_file(exe_path: str, game_name: str | None = None) -> tuple[str, str] | None:
+    """Create a .desktop file for a game.
+
+    Args:
+        exe_path: Full path to the executable file
+        game_name: Optional game name (defaults to exe filename without extension)
+
+    Returns:
+        Tuple of (desktop_entry_content, desktop_file_path) if successful, None otherwise
+    """
+    if not os.path.isfile(exe_path):
+        logger.error(f"Executable not found: {exe_path}")
+        return None
+
+    if not game_name:
+        game_name = os.path.splitext(os.path.basename(exe_path))[0]
+
+    portproton_path = get_portproton_location()
+    if not portproton_path:
+        logger.error("PortProton location not found")
+        return None
+
+    is_flatpak = ".var" in portproton_path
+    base_path = os.path.join(portproton_path, "data")
+
+    if is_flatpak:
+        exec_str = f'flatpak run ru.linux_gaming.PortProton "{exe_path}"'
+    else:
+        start_sh = os.path.join(base_path, "scripts", "start.sh")
+        exec_str = f'env "{start_sh}" "{exe_path}"'
+
+    icon_path = os.path.join(base_path, "img", f"{game_name}.png")
+    desktop_path = os.path.join(portproton_path, f"{game_name}.desktop")
+    working_dir = os.path.join(base_path, "scripts")
+
+    os.makedirs(os.path.dirname(icon_path), exist_ok=True)
+
+    comment = _('Launch game "{name}" with PortProton').format(name=game_name)
+
+    desktop_entry = f"""[Desktop Entry]
+Name={game_name}
+Comment={comment}
+Exec={exec_str}
+Terminal=false
+Type=Application
+Categories=Game;
+StartupNotify=true
+Path={working_dir}
+Icon={icon_path}
+"""
+
+    return desktop_entry, desktop_path
 
 
 def read_config_safely(config_file: str | Path = CONFIG_FILE) -> configparser.ConfigParser | None:
