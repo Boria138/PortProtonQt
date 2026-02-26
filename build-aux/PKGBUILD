@@ -33,5 +33,6 @@ package_portprotonqt-steam-compat() {
     DESTDIR="$pkgdir" meson install -C build --skip-subprojects
 
     # Keep only steam-compat files
-    find "$pkgdir" -not -path "$pkgdir/usr/share/steam/*" -delete
+    find "$pkgdir/usr" -mindepth 1 -type f -not -path "${pkgdir}/usr/share/steam*" -print0 | xargs -0 rm -f
+    find "$pkgdir/usr" -mindepth 1 -type d -not -path "${pkgdir}/usr/share/steam*" -empty -delete
 }
