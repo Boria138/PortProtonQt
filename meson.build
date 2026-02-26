@@ -77,6 +77,9 @@ install_data(
   install_dir: datadir / 'bash-completion/completions',
 )
 
+# Install Steam compatibility tool
+subdir('build-aux/share/steam/compatibilitytools.d/PortProtonQt')
+
 # Install udev rules
 udev_rulesdir_opt = get_option('udev_rulesdir')
 udevdir = udev_rulesdir_opt != '' ? udev_rulesdir_opt : prefix / 'lib' / 'udev' / 'rules.d'

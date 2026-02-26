@@ -1,0 +1,14 @@
+"compatibilitytools"
+{
+	"compat_tools"
+	{
+		"PortProtonQt"
+		{
+			"install_path" "."
+			"display_name" "PortProtonQt"
+			"from_oslist" "windows"
+			"to_oslist" "linux"
+			"Priority" "75"
+		}
+	}
+}

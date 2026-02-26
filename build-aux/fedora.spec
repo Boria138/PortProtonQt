@@ -57,6 +57,15 @@ Requires:       muvm
 %description
 This application provides a sleek, intuitive graphical interface for managing and launching games from PortProton, Steam, and Epic Games Store. It consolidates your game libraries into a single, user-friendly hub for seamless navigation and organization. Its lightweight structure and cross-platform support deliver a cohesive gaming experience, eliminating the need for multiple launchers. Unique PortProton integration enhances Linux gaming, enabling effortless play of Windows-based titles with minimal setup.
 
+%package -n %{pypi_name}-steam-compat
+Summary:        Steam compatibility tool for PortProtonQt
+License:        GPL-3.0
+Requires:       %{pypi_name} = %{version}-%{release}
+
+%description -n %{pypi_name}-steam-compat
+Steam compatibility tool integration for PortProtonQt. This package installs
+the necessary files to use PortProtonQt as a Proton compatibility tool in Steam.
+
 %{?python_disable_dependency_generator}
 
 %prep
@@ -85,5 +94,8 @@ cd %{oname}
 %{_udevrulesdir}/60-portprotonqt.rules
 %{_datadir}/applications/ru.linux_gaming.PortProtonQt.desktop
 %{bash_completions_dir}/portprotonqt
+
+%files -n %{pypi_name}-steam-compat
+%{_datadir}/steam/compatibilitytools.d/PortProtonQt/
 
 %changelog

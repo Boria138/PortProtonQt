@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+# Remove Steam Runtime libraries
+unset LD_LIBRARY_PATH
+unset LD_PRELOAD
+
+exe_name="$(basename "$1")"
+
+# Ignore specific executables
+if [[ "$exe_name" == "iscriptevaluator.exe" ]] || \
+   [[ "$exe_name" == "d3ddriverquery64.exe" ]]; then
+    exit 0
+fi
+
+# Activate virtual environment if available
+if [[ -n "$PPQT_VENV_PATH" ]]; then
+    cd "$PPQT_VENV_PATH" || exit 1
+    source .venv/bin/activate || exit 1
+fi
+
+# Use AppImage if specified, otherwise use portprotonqt from PATH
+if [[ -n "$PPQT_BIN_PATH" ]]; then
+    "$PPQT_BIN_PATH" --debug-level INFO "$@"
+else
+    portprotonqt --debug-level INFO "$@"
+fi

@@ -115,8 +115,8 @@ if [[ "$exe_name" == "iscriptevaluator.exe" ]] || \\
 fi
 
 # Activate virtual environment if available
-if [[ -n "$PPQT_PATH" ]]; then
-    cd "$PPQT_PATH" || exit 1
+if [[ -n "$PPQT_VENV_PATH" ]]; then
+    cd "$PPQT_VENV_PATH" || exit 1
     source .venv/bin/activate || exit 1
 fi
 

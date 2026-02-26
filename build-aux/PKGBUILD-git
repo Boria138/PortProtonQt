@@ -1,7 +1,7 @@
-pkgname=portprotonqt-git
+pkgname=('portprotonqt-git' 'portprotonqt-git-steam-compat')
 pkgver=.
 pkgrel=1
-pkgdesc="Modern GUI for managing and launching games from PortProton, Steam, and Epic Games Store.(developerment build)"
+pkgdesc="Modern GUI for managing and launching games from PortProton, Steam, and Epic Games Store (development build)"
 arch=('any')
 url="https://git.linux-gaming.ru/Boria138/PortProtonQt"
 license=('GPL-3.0')
@@ -22,6 +22,29 @@ build() {
     meson compile -C build
 }
 
-package() {
-    meson install -C build --destdir "$pkgdir"
+package_portprotonqt-git() {
+    pkgdesc="Modern GUI for managing and launching games from PortProton, Steam, and Epic Games Store (development build)"
+    depends+=('portprotonqt-git-steam-compat')
+
+    DESTDIR="$pkgdir" meson install -C build --skip-subprojects
+
+    # Remove steam-compat files from main package
+    rm -rf "$pkgdir/usr/share/steam"
+}
+
+package_portprotonqt-git-steam-compat() {
+    pkgdesc="Steam compatibility tool for PortProtonQt (development build)"
+    depends=('portprotonqt-git')
+
+    DESTDIR="$pkgdir" meson install -C build --skip-subprojects
+
+    # Keep only steam-compat files
+    rm -rf "$pkgdir/usr/bin"
+    rm -rf "$pkgdir/usr/lib"
+    rm -rf "$pkgdir/usr/share/applications"
+    rm -rf "$pkgdir/usr/share/bash-completion"
+    rm -rf "$pkgdir/usr/share/icons"
+    rm -rf "$pkgdir/usr/share/metainfo"
+    rm -rf "$pkgdir/usr/lib/udev"
+    rm -rf "$pkgdir/usr/share/portprotonqt"
 }
