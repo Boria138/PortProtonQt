@@ -13,7 +13,6 @@ from PySide6.QtGui import QGuiApplication
 
 from portprotonqt.logger import get_logger
 from portprotonqt.localization import _
-from portprotonqt import app
 
 from portprotonqt.debug_utils.env_utils import get_file_content
 from portprotonqt.debug_utils.gpu_info import get_graphics_info_detailed
@@ -366,7 +365,8 @@ def generate_system_info(
     lines.append("-" * 61)
 
     lines.append("PortProtonQt version:")
-    ppqt_version = app.get_version()
+    from portprotonqt.app import get_version
+    ppqt_version = get_version()
     lines.append(ppqt_version)
     lines.append("-" * 61)
 

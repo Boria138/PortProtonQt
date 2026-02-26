@@ -12,7 +12,6 @@ install_data(
   'egs_api.py',
   'game_card.py',
   'game_library_manager.py',
-  'get_wine_module.py',
   'howlongtobeat_api.py',
   'image_utils.py',
   'input_manager.py',
@@ -33,6 +32,22 @@ install_data(
   'version_utils.py',
   'virtual_keyboard.py'],
   install_dir: pythondir / meson.project_name(),
+)
+
+# Install dialogs package
+install_data(
+  ['dialogs/__init__.py',
+   'dialogs/base.py',
+   'dialogs/dialog_utils.py',
+   'dialogs/file_explorer.py',
+   'dialogs/winetricks_dialog.py',
+   'dialogs/settings_dialog.py',
+   'dialogs/proton_manager.py',
+   'dialogs/wine_loader.py',
+   'dialogs/wine_downloader.py',
+   'dialogs/wine_extractor.py',
+  ],
+  install_dir: pythondir / meson.project_name() / 'dialogs',
 )
 
 # Install detail_pages package

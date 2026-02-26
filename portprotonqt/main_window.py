@@ -40,7 +40,7 @@ from portprotonqt.downloader import Downloader
 from portprotonqt.tray_manager import TrayManager
 from portprotonqt.game_library_manager import GameLibraryManager
 from portprotonqt.virtual_keyboard import VirtualKeyboard
-from portprotonqt.get_wine_module import show_proton_manager
+from portprotonqt.dialogs.proton_manager import show_proton_manager
 from portprotonqt.config_utils import find_game_by_exe, create_desktop_file
 
 from PySide6.QtWidgets import (QLineEdit, QMainWindow, QStatusBar, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox,
