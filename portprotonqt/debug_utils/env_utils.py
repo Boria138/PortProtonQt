@@ -30,7 +30,36 @@ def get_file_content(file_path: str, default: str = "") -> str:
 
 
 def get_portproton_env(exe_path: str | None) -> dict[str, str]:
-    """Get environment variables as exported by PortProton."""
+    """Get environment variables as exported by PortProton.
+
+    Priority order:
+    1. /tmp/PortProton_$USER/var.log (runtime variables from active session)
+    2. var file + user.conf + .ppdb (static configuration)
+    """
+    env_vars: dict[str, str] = {}
+
+    # Priority 1: Read from /tmp/PortProton_$USER/var.log (most authoritative)
+    user = os.getenv('USER', 'unknown')
+    var_log_path = f'/tmp/PortProton_{user}/var.log'
+
+    if os.path.exists(var_log_path):
+        logger.debug("Reading variables from %s", var_log_path)
+        try:
+            with open(var_log_path, encoding='utf-8', errors='ignore') as f:
+                content = f.read()
+
+            for line in content.split('\n'):
+                line = line.strip()
+                if '=' in line:
+                    key, val = line.split('=', 1)
+                    env_vars[key.strip()] = val.strip()
+
+            logger.debug("Found %d variables from var.log", len(env_vars))
+            return env_vars
+        except Exception as e:
+            logger.debug("Error reading var.log: %s", e)
+
+    # Priority 2: Read from static configuration files
     portproton_path = get_portproton_location()
     if not portproton_path:
         return {}
