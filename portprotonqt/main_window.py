@@ -752,39 +752,50 @@ class MainWindow(QMainWindow):
         self.install_monitor_timer.timeout.connect(self.monitor_install_progress)
         self.install_monitor_timer.start(2000)  # Start monitoring after 2s
 
-    def monitor_install_progress(self):
-        """Monitor /tmp/PortProton_$USER/process.log for progress."""
+    def _parse_process_log_progress(self) -> float | None:
+        """Parse progress percentage from /tmp/PortProton_$USER/process.log.
+
+        Returns:
+            float | None: Progress percentage (0.0-100.0) if found, None otherwise.
+        """
         user = os.getenv('USER', 'unknown')
         log_file = f"/tmp/PortProton_{user}/process.log"
         if not os.path.exists(log_file):
-            return
+            return None
         try:
             with open(log_file, encoding='utf-8') as f:
                 content = f.read()
-            # Extract all percentage matches, including .0% as 0.0
             matches = re.findall(r'([0-9]*\.?[0-9]+)%', content)
             if matches:
-                try:
-                    percent = float(matches[-1])
-                    if percent > 0:
-                        self.seen_progress = True
-                        self.current_percent = percent
-                    elif self.seen_progress and percent == 0:
-                        self.current_percent = 100.0
-                        if self.install_monitor_timer is not None:
-                            self.install_monitor_timer.stop()
-                    # Update progress bar to determinate if not already
-                    if self.progress_bar.maximum() == 0:
-                        self.progress_bar.setRange(0, 100)
-                        self.progress_bar.setFormat("%p")  # Show percentage
-                    self.progress_bar.setValue(int(self.current_percent))
-                    if self.current_percent >= 100:
-                        if self.install_monitor_timer is not None:
-                            self.install_monitor_timer.stop()
-                except ValueError:
-                    pass  # Ignore invalid floats
+                percent = float(matches[-1])
+                return percent
         except Exception as e:
-            logger.error(f"Error monitoring log: {e}")
+            logger.error(f"Error parsing process log: {e}")
+        return None
+
+    def monitor_install_progress(self):
+        """Monitor /tmp/PortProton_$USER/process.log for progress."""
+        percent = self._parse_process_log_progress()
+        if percent is None:
+            return
+        try:
+            if percent > 0:
+                self.seen_progress = True
+                self.current_percent = percent
+            elif self.seen_progress and percent == 0:
+                self.current_percent = 100.0
+                if self.install_monitor_timer is not None:
+                    self.install_monitor_timer.stop()
+            # Update progress bar to determinate if not already
+            if self.progress_bar.maximum() == 0:
+                self.progress_bar.setRange(0, 100)
+                self.progress_bar.setFormat("%p")  # Show percentage
+            self.progress_bar.setValue(int(self.current_percent))
+            if self.current_percent >= 100:
+                if self.install_monitor_timer is not None:
+                    self.install_monitor_timer.stop()
+        except ValueError:
+            pass  # Ignore invalid floats
 
     @Slot(int, int)
     def on_install_finished(self, exit_code: int, exit_status: int):
@@ -3074,33 +3085,23 @@ class MainWindow(QMainWindow):
         Returns:
             bool: True if Wine download is in progress, False otherwise.
         """
-        user = os.getenv('USER', 'unknown')
-        log_file = f"/tmp/PortProton_{user}/process.log"
-        if not os.path.exists(log_file):
+        percent = self._parse_process_log_progress()
+        if percent is None:
             return False
         try:
-            with open(log_file, encoding='utf-8') as f:
-                content = f.read()
-            # Extract all percentage matches
-            matches = re.findall(r'([0-9]*\.?[0-9]+)%', content)
-            if matches:
-                try:
-                    percent = float(matches[-1])
-                    logger.debug(f"Wine download progress: {percent}% (matches: {matches})")
-                    if percent > 0:
-                        self.wine_download_seen = True
-                        self.wine_download_percent = percent
-                        return True
-                    elif self.wine_download_seen and percent == 0:
-                        # Download completed
-                        self.wine_download_percent = 100.0
-                        if self.wine_download_timer is not None:
-                            self.wine_download_timer.stop()
-                        return False
-                except ValueError as e:
-                    logger.debug(f"Invalid percent value: {e}")
-        except Exception as e:
-            logger.error(f"Error monitoring Wine download log: {e}")
+            logger.debug(f"Wine download progress: {percent}%")
+            if percent > 0:
+                self.wine_download_seen = True
+                self.wine_download_percent = percent
+                return True
+            elif self.wine_download_seen and percent == 0:
+                # Download completed
+                self.wine_download_percent = 100.0
+                if self.wine_download_timer is not None:
+                    self.wine_download_timer.stop()
+                return False
+        except ValueError as e:
+            logger.debug(f"Invalid percent value: {e}")
         return False
 
     def resetPlayButton(self):
