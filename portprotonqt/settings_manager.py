@@ -40,7 +40,8 @@ def get_toggle_settings():
         'PW_USE_GALLIUM_NINE': _("Use Gallium Nine (native DirectX 9 for Mesa)"),
         'PW_USE_WINED3D_VULKAN': _("Use WineD3D Vulkan backend (Damavand)"),
         'PW_USE_SUPPLIED_DXVK_VKD3D': _("Use bundled dxvk/vkd3d from Wine/Proton"),
-        'PW_USE_SAREK_ASYNC': _("Use async dxvk-sarek (experimental)")
+        'PW_USE_SAREK_ASYNC': _("Use async dxvk-sarek (experimental)"),
+        'PW_USE_INHIBIT_SLEEP_INFO': _("Prevent the system from going to sleep and disable the screensaver while the game is running")
     }
 
 
