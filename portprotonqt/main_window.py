@@ -2928,6 +2928,30 @@ class MainWindow(QMainWindow):
 
             get_steam_game_info_async(game_name, exec_line, on_steam_info)
         else:
+            # Skip desktop file creation for games in steamapps/common
+            if "steamapps/common" in exe_path:
+                game_name_from_exe = os.path.splitext(os.path.basename(exe_path))[0]
+                logger.info("Game in steamapps/common, skipping desktop file creation: %s", game_name_from_exe)
+
+                def on_steam_info_skip(steam_info: dict):
+                    game_data = {
+                        "name": game_name_from_exe,
+                        "description": steam_info.get("description", ""),
+                        "cover_path": steam_info.get("cover", ""),
+                        "appid": steam_info.get("appid", ""),
+                        "controller_support": steam_info.get("controller_support", ""),
+                        "exec_line": exe_path,
+                        "last_launch": _("Never"),
+                        "formatted_playtime": "0:00",
+                        "protondb_tier": steam_info.get("protondb_tier", ""),
+                        "anticheat_status": steam_info.get("anticheat_status", ""),
+                        "game_source": "portproton",
+                    }
+                    self.openGameDetailPage(game_data)
+
+                get_steam_game_info_async(game_name_from_exe, exe_path, on_steam_info_skip)
+                return
+
             # Game not found - create desktop entry and open detail page
             result = create_desktop_file(exe_path)
 
