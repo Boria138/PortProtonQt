@@ -343,7 +343,8 @@ class DetailPageManager:
     def _make_action_button(self, text: str, icon) -> AutoSizeButton:
         """Create styled action button."""
         button = AutoSizeButton(text, icon=icon)
-        button.setFixedSize(120, 40)
+        button.setFixedHeight(40)
+        button.setMinimumWidth(120)
         button.setStyleSheet(self.main_window.theme.PLAY_BUTTON_STYLE)
         button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         return button

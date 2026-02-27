@@ -157,6 +157,11 @@ class MainWindow(QMainWindow):
         self.install_process = None
         self.install_monitor_timer = None
 
+        # Wine download monitoring during game launch
+        self.wine_download_timer = None
+        self.wine_download_percent = 0.0
+        self.wine_download_seen = False
+
         # Central widget and main layout
         centralWidget = QWidget()
         self.setCentralWidget(centralWidget)
@@ -3030,7 +3035,23 @@ class MainWindow(QMainWindow):
         target_running = self.is_target_exe_running()
         child_running = any(proc.poll() is None for proc in self.game_processes)
 
-        if target_running:
+        # Check Wine download progress first
+        wine_downloading = self.monitor_wine_download_progress()
+
+        if wine_downloading:
+            # Wine is downloading - update button with progress
+            if self.current_running_button is not None:
+                try:
+                    self.current_running_button.setText(_("Downloading Wine... {0}%").format(int(self.wine_download_percent)))
+                    icon = self.theme_manager.get_icon("save")
+                    if isinstance(icon, str):
+                        icon = QIcon(icon)
+                    elif icon is None:
+                        icon = QIcon()
+                    self.current_running_button.setIcon(icon)
+                except RuntimeError:
+                    pass
+        elif target_running:
             # Game started - set flag, update button to "Stop"
             if self.current_running_button is not None:
                 try:
@@ -3046,6 +3067,41 @@ class MainWindow(QMainWindow):
                 self.checkProcessTimer.stop()
                 self.checkProcessTimer.deleteLater()
                 self.checkProcessTimer = None
+
+    def monitor_wine_download_progress(self) -> bool:
+        """Monitor /tmp/PortProton_$USER/process.log for Wine download progress.
+
+        Returns:
+            bool: True if Wine download is in progress, False otherwise.
+        """
+        user = os.getenv('USER', 'unknown')
+        log_file = f"/tmp/PortProton_{user}/process.log"
+        if not os.path.exists(log_file):
+            return False
+        try:
+            with open(log_file, encoding='utf-8') as f:
+                content = f.read()
+            # Extract all percentage matches
+            matches = re.findall(r'([0-9]*\.?[0-9]+)%', content)
+            if matches:
+                try:
+                    percent = float(matches[-1])
+                    logger.debug(f"Wine download progress: {percent}% (matches: {matches})")
+                    if percent > 0:
+                        self.wine_download_seen = True
+                        self.wine_download_percent = percent
+                        return True
+                    elif self.wine_download_seen and percent == 0:
+                        # Download completed
+                        self.wine_download_percent = 100.0
+                        if self.wine_download_timer is not None:
+                            self.wine_download_timer.stop()
+                        return False
+                except ValueError as e:
+                    logger.debug(f"Invalid percent value: {e}")
+        except Exception as e:
+            logger.error(f"Error monitoring Wine download log: {e}")
+        return False
 
     def resetPlayButton(self):
         """
@@ -3066,6 +3122,9 @@ class MainWindow(QMainWindow):
                 pass
             self.current_running_button = None
         self.target_exe = None
+        # Reset Wine download monitoring
+        self.wine_download_seen = False
+        self.wine_download_percent = 0.0
 
     def toggleGame(self, exec_line, button=None):
         # Handle Steam games
@@ -3156,6 +3215,10 @@ class MainWindow(QMainWindow):
                             update_button.setIcon(icon)
                         except RuntimeError:
                             pass
+
+                    # Reset Wine download monitoring
+                    self.wine_download_seen = False
+                    self.wine_download_percent = 0.0
 
                     self.checkProcessTimer = QTimer(self)
                     self.checkProcessTimer.timeout.connect(self.checkTargetExe)
@@ -3255,6 +3318,10 @@ class MainWindow(QMainWindow):
                         update_button.setIcon(icon)
                     except RuntimeError:
                         pass
+
+                # Reset Wine download monitoring
+                self.wine_download_seen = False
+                self.wine_download_percent = 0.0
 
                 self.checkProcessTimer = QTimer(self)
                 self.checkProcessTimer.timeout.connect(self.checkTargetExe)
