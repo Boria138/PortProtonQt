@@ -829,6 +829,7 @@ class MainWindow(QMainWindow):
 
     @Slot(list)
     def on_games_loaded(self, games: list[tuple]):
+        self.games = games
         self.game_library_manager.set_games(games)
         self.progress_bar.setVisible(False)
         self.progress_bar.setRange(0, 100)  # Reset to determinate state for next use

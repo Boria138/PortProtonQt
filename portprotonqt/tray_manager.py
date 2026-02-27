@@ -116,7 +116,7 @@ class TrayManager:
             self.favorites_menu.addAction(no_fav_action)
             return
 
-        game_map = {game[0]: (game[4], game[12]) for game in self.main_window.games}
+        game_map = {game[0]: (game[5], game[12]) for game in self.main_window.games}
 
         for fav in sorted(favorites):
             game_data = game_map.get(fav)
@@ -141,7 +141,7 @@ class TrayManager:
 
         for game in recent_games:
             game_name = game[0]
-            exec_line = game[4]
+            exec_line = game[5]
             source = game[12]
             action_text = f"{game_name} ({source})"
             action = QAction(action_text, self.main_window)
