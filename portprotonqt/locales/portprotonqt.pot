@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-02-17 20:10+0500\n"
+"POT-Creation-Date: 2026-02-28 19:51+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,6 +17,10 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
+
+#, python-brace-format
+msgid "Launch game \"{name}\" with PortProton"
+msgstr ""
 
 msgid "Error"
 msgstr ""
@@ -120,10 +124,6 @@ msgstr ""
 
 #, python-brace-format
 msgid "start.sh not found at {path}"
-msgstr ""
-
-#, python-brace-format
-msgid "Launch game \"{name}\" with PortProton"
 msgstr ""
 
 #, python-brace-format
@@ -254,252 +254,6 @@ msgstr ""
 msgid "Select All"
 msgstr ""
 
-msgid "Debug log mode was launched"
-msgstr ""
-
-msgid "To diagnose the problem, copy the ENTIRE log to the site:"
-msgstr ""
-
-msgid "Back"
-msgstr ""
-
-msgid "LAST LAUNCH"
-msgstr ""
-
-msgid "PLAY TIME"
-msgstr ""
-
-msgid "MAIN STORY"
-msgstr ""
-
-msgid "MAIN + SIDES"
-msgstr ""
-
-msgid "COMPLETIONIST"
-msgstr ""
-
-msgid "full"
-msgstr ""
-
-msgid "partial"
-msgstr ""
-
-msgid "none"
-msgstr ""
-
-#, python-brace-format
-msgid "Gamepad Support: {0}"
-msgstr ""
-
-msgid "Stop"
-msgstr ""
-
-msgid "Play"
-msgstr ""
-
-msgid "Settings"
-msgstr ""
-
-msgid "Create Log"
-msgstr ""
-
-msgid "Reinstall"
-msgstr ""
-
-msgid "Install"
-msgstr ""
-
-msgid "Log Saved"
-msgstr ""
-
-msgid "Debug log saved to:"
-msgstr ""
-
-msgid "Open Folder"
-msgstr ""
-
-msgid "Failed to save debug log"
-msgstr ""
-
-msgid "Stop Log"
-msgstr ""
-
-msgid "Failed to start debug session"
-msgstr ""
-
-msgid "Open"
-msgstr ""
-
-msgid "Select Dir"
-msgstr ""
-
-msgid "Prev Dir"
-msgstr ""
-
-msgid "Cancel"
-msgstr ""
-
-msgid "Toggle"
-msgstr ""
-
-msgid "Force Install"
-msgstr ""
-
-msgid "Prev Tab"
-msgstr ""
-
-msgid "Next Tab"
-msgstr ""
-
-msgid "Save"
-msgstr ""
-
-msgid "Search"
-msgstr ""
-
-msgid "Apply"
-msgstr ""
-
-msgid "Clear All"
-msgstr ""
-
-#, python-brace-format
-msgid "Launching {0}"
-msgstr ""
-
-msgid "File Explorer"
-msgstr ""
-
-msgid "Select"
-msgstr ""
-
-msgid "Path: "
-msgstr ""
-
-#, python-format
-msgid "Access denied: %s"
-msgstr ""
-
-msgid "Edit Game"
-msgstr ""
-
-msgid "Add Game"
-msgstr ""
-
-msgid "Game Name:"
-msgstr ""
-
-msgid "Path to Executable:"
-msgstr ""
-
-msgid "Browse..."
-msgstr ""
-
-msgid "Custom Cover:"
-msgstr ""
-
-msgid "Enter local path or URL for cover image"
-msgstr ""
-
-msgid "Cover Preview:"
-msgstr ""
-
-msgid "Invalid image"
-msgstr ""
-
-msgid "Failed to download cover"
-msgstr ""
-
-msgid "Downloading cover..."
-msgstr ""
-
-msgid "No cover selected"
-msgstr ""
-
-msgid "Prefix Manager"
-msgstr ""
-
-msgid "Set"
-msgstr ""
-
-msgid "Libraries"
-msgstr ""
-
-msgid "Information"
-msgstr ""
-
-msgid "Fonts"
-msgstr ""
-
-msgid "Winetricks not found. Please try again."
-msgstr ""
-
-msgid "Warning"
-msgstr ""
-
-msgid "No components selected."
-msgstr ""
-
-msgid "Installation failed. Check logs."
-msgstr ""
-
-msgid "Components installed successfully."
-msgstr ""
-
-msgid "System WINE"
-msgstr ""
-
-msgid "Exe Settings"
-msgstr ""
-
-msgid "Search:"
-msgstr ""
-
-msgid "Search settings..."
-msgstr ""
-
-msgid "Main"
-msgstr ""
-
-msgid "Advanced"
-msgstr ""
-
-msgid "Setting"
-msgstr ""
-
-msgid "Value"
-msgstr ""
-
-msgid "Description"
-msgstr ""
-
-msgid "Open PPDB"
-msgstr ""
-
-msgid "Executable path is not available."
-msgstr ""
-
-msgid "PPDB file does not exist at: "
-msgstr ""
-
-msgid "Failed to open PPDB file:\n"
-msgstr ""
-
-msgid "disabled"
-msgstr ""
-
-msgid "Info"
-msgstr ""
-
-msgid "No changes to apply."
-msgstr ""
-
-msgid "Failed to apply changes. Check logs."
-msgstr ""
-
-msgid "Settings updated successfully."
-msgstr ""
-
 msgid "Loading Epic Games Store games..."
 msgstr ""
 
@@ -539,138 +293,6 @@ msgstr ""
 msgid "Pending"
 msgstr ""
 
-msgid "Manage Wine versions"
-msgstr ""
-
-msgid "Selected assets:"
-msgstr ""
-
-msgid "No assets selected"
-msgstr ""
-
-msgid "Downloading: "
-msgstr ""
-
-msgid "Download Selected"
-msgstr ""
-
-msgid "Installed"
-msgstr ""
-
-#, python-brace-format
-msgid "Error loading wine data: {error}"
-msgstr ""
-
-msgid "Version Name"
-msgstr ""
-
-msgid "Size"
-msgstr ""
-
-msgid "Unknown"
-msgstr ""
-
-#, python-brace-format
-msgid "{display_name} (installed)"
-msgstr ""
-
-msgid "No Wine/Proton versions installed"
-msgstr ""
-
-msgid "Select to remove this version"
-msgstr ""
-
-#, python-brace-format
-msgid "Selected {} assets:\n"
-msgstr ""
-
-#, python-brace-format
-msgid ""
-"\n"
-"Total size to delete: {}\n"
-msgstr ""
-
-msgid "Delete Selected"
-msgstr ""
-
-#, python-brace-format
-msgid ""
-"\n"
-"Total size to download: {}\n"
-msgstr ""
-
-msgid "Downloading in Progress"
-msgstr ""
-
-msgid "Cannot clear selection while extraction is in progress."
-msgstr ""
-
-msgid "No Selection"
-msgstr ""
-
-msgid "Please select at least one archive to download."
-msgstr ""
-
-msgid "Please wait for current downloading to complete."
-msgstr ""
-
-msgid "Please select at least one version to delete."
-msgstr ""
-
-#, python-brace-format
-msgid ""
-"Are you sure you want to delete {} selected version(s)?\n"
-"\n"
-"This action cannot be undone."
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to remove version at {}: {}"
-msgstr ""
-
-#, python-brace-format
-msgid "Successfully removed {} version(s)."
-msgstr ""
-
-msgid "Downloading Complete"
-msgstr ""
-
-msgid "All selected archives have been downloaded!"
-msgstr ""
-
-#, python-brace-format
-msgid "Downloading: {0} ({1}%)"
-msgstr ""
-
-#, python-brace-format
-msgid "Extracting: {0}"
-msgstr ""
-
-#, python-brace-format
-msgid ", ETA: {}s"
-msgstr ""
-
-#, python-brace-format
-msgid ", Speed: {:.1f}MB/s"
-msgstr ""
-
-#, python-brace-format
-msgid "Extracting: {0}{1}{2}"
-msgstr ""
-
-msgid "Extraction Error"
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to extract archive: {0}"
-msgstr ""
-
-msgid "Operation Cancelled"
-msgstr ""
-
-msgid "Download or extraction has been cancelled."
-msgstr ""
-
 msgid "Unknown Game"
 msgstr ""
 
@@ -692,13 +314,28 @@ msgstr ""
 msgid "Themes"
 msgstr ""
 
+msgid "Select"
+msgstr ""
+
+msgid "Back"
+msgstr ""
+
+msgid "Add Game"
+msgstr ""
+
 msgid "Fullscreen"
+msgstr ""
+
+msgid "Search"
 msgstr ""
 
 msgid "Refresh Grid"
 msgstr ""
 
 msgid "Mouse Emulation"
+msgstr ""
+
+msgid "Warning"
 msgstr ""
 
 msgid "Installation already in progress."
@@ -758,6 +395,9 @@ msgid "Wine Configuration"
 msgstr ""
 
 msgid "Registry Editor"
+msgstr ""
+
+msgid "File Explorer"
 msgstr ""
 
 msgid "Command Prompt"
@@ -844,6 +484,9 @@ msgstr ""
 msgid "Main PortProton parameters..."
 msgstr ""
 
+msgid "General Settings"
+msgstr ""
+
 msgid "detailed"
 msgstr ""
 
@@ -862,19 +505,52 @@ msgstr ""
 msgid "alphabetical"
 msgstr ""
 
-msgid "favorites"
-msgstr ""
-
 msgid "Games Sort Method:"
 msgstr ""
 
 msgid "all"
 msgstr ""
 
+msgid "favorites"
+msgstr ""
+
 msgid "Games Display Filter:"
 msgstr ""
 
+msgid "Interface Settings"
+msgstr ""
+
+msgid "Launch Application in Fullscreen:"
+msgstr ""
+
+msgid "Minimize to tray on close:"
+msgstr ""
+
+msgid "Hide Auto-Install Tab:"
+msgstr ""
+
+msgid "Gamepad Settings"
+msgstr ""
+
 msgid "Gamepad Type:"
+msgstr ""
+
+msgid "Auto Fullscreen on Gamepad connected:"
+msgstr ""
+
+msgid "Gamepad haptic feedback:"
+msgstr ""
+
+msgid "Hardware Settings"
+msgstr ""
+
+msgid "GPU to use:"
+msgstr ""
+
+msgid "No GPUs found"
+msgstr ""
+
+msgid "Proxy Settings"
 msgstr ""
 
 msgid "Proxy URL"
@@ -893,39 +569,6 @@ msgid "Proxy Password"
 msgstr ""
 
 msgid "Proxy Password:"
-msgstr ""
-
-msgid "Launch Application in Fullscreen"
-msgstr ""
-
-msgid "Application Fullscreen Mode:"
-msgstr ""
-
-msgid "Minimize to tray on close"
-msgstr ""
-
-msgid "Application Close Mode:"
-msgstr ""
-
-msgid "Hide Auto-Install Tab"
-msgstr ""
-
-msgid "Hide Auto-Install Tab:"
-msgstr ""
-
-msgid "Auto Fullscreen on Gamepad connected"
-msgstr ""
-
-msgid "Auto Fullscreen on Gamepad connected:"
-msgstr ""
-
-msgid "Gamepad haptic feedback"
-msgstr ""
-
-msgid "Gamepad haptic feedback:"
-msgstr ""
-
-msgid "GPU to use:"
 msgstr ""
 
 msgid "Save Settings"
@@ -967,6 +610,9 @@ msgstr ""
 msgid "No link"
 msgstr ""
 
+msgid "Unknown"
+msgstr ""
+
 msgid "Name:"
 msgstr ""
 
@@ -992,6 +638,16 @@ msgid "Executable not found: {0}"
 msgstr ""
 
 #, python-brace-format
+msgid "Downloading Wine... {0}%"
+msgstr ""
+
+msgid "Stop"
+msgstr ""
+
+msgid "Play"
+msgstr ""
+
+#, python-brace-format
 msgid "Executable not found for EGS game: {0}"
 msgstr ""
 
@@ -1003,6 +659,9 @@ msgstr ""
 
 #, python-brace-format
 msgid "Failed to launch game: {0}"
+msgstr ""
+
+msgid "Invalid command format (empty exec line)"
 msgstr ""
 
 msgid "Invalid command format (native)"
@@ -1147,6 +806,14 @@ msgstr ""
 msgid "Use async dxvk-sarek (experimental)"
 msgstr ""
 
+msgid ""
+"Prevent the system from going to sleep and disable the screensaver while "
+"the game is running"
+msgstr ""
+
+msgid "System WINE"
+msgstr ""
+
 msgid "Wine Version"
 msgstr ""
 
@@ -1284,6 +951,9 @@ msgstr ""
 msgid "portprotonqt-session-select file not found at /usr/bin/"
 msgstr ""
 
+msgid "Cancel"
+msgstr ""
+
 msgid "Failed to reboot the system"
 msgstr ""
 
@@ -1330,5 +1000,347 @@ msgid "No favorites"
 msgstr ""
 
 msgid "No recent games"
+msgstr ""
+
+msgid "Debug log mode was launched"
+msgstr ""
+
+msgid "To diagnose the problem, copy the ENTIRE log to the site:"
+msgstr ""
+
+msgid "LAST LAUNCH"
+msgstr ""
+
+msgid "PLAY TIME"
+msgstr ""
+
+msgid "MAIN STORY"
+msgstr ""
+
+msgid "MAIN + SIDES"
+msgstr ""
+
+msgid "COMPLETIONIST"
+msgstr ""
+
+msgid "Settings"
+msgstr ""
+
+msgid "Create Log"
+msgstr ""
+
+msgid "Install"
+msgstr ""
+
+msgid "Reinstall"
+msgstr ""
+
+msgid "Stop Log"
+msgstr ""
+
+msgid "Failed to start debug session"
+msgstr ""
+
+msgid "Log Saved"
+msgstr ""
+
+msgid "Debug log saved to:"
+msgstr ""
+
+msgid "Open Folder"
+msgstr ""
+
+#, python-brace-format
+msgid "Gamepad Support: {0}"
+msgstr ""
+
+msgid "full"
+msgstr ""
+
+msgid "partial"
+msgstr ""
+
+msgid "none"
+msgstr ""
+
+#, python-brace-format
+msgid "Launching {0}"
+msgstr ""
+
+msgid "Edit Game"
+msgstr ""
+
+msgid "Game Name:"
+msgstr ""
+
+msgid "Path to Executable:"
+msgstr ""
+
+msgid "Browse..."
+msgstr ""
+
+msgid "Custom Cover:"
+msgstr ""
+
+msgid "Enter local path or URL for cover image"
+msgstr ""
+
+msgid "Cover Preview:"
+msgstr ""
+
+msgid "Apply"
+msgstr ""
+
+msgid "Invalid image"
+msgstr ""
+
+msgid "Failed to download cover"
+msgstr ""
+
+msgid "Downloading cover..."
+msgstr ""
+
+msgid "No cover selected"
+msgstr ""
+
+msgid "Open"
+msgstr ""
+
+msgid "Select Dir"
+msgstr ""
+
+msgid "Prev Dir"
+msgstr ""
+
+msgid "Toggle"
+msgstr ""
+
+msgid "Force Install"
+msgstr ""
+
+msgid "Prev Tab"
+msgstr ""
+
+msgid "Next Tab"
+msgstr ""
+
+msgid "Save"
+msgstr ""
+
+msgid "Clear All"
+msgstr ""
+
+msgid "Path: "
+msgstr ""
+
+#, python-format
+msgid "Access denied: %s"
+msgstr ""
+
+msgid "Manage Wine versions"
+msgstr ""
+
+msgid "Selected assets:"
+msgstr ""
+
+msgid "No assets selected"
+msgstr ""
+
+msgid "Downloading: "
+msgstr ""
+
+msgid "Download Selected"
+msgstr ""
+
+msgid "Installed"
+msgstr ""
+
+#, python-brace-format
+msgid "Error loading wine data: {error}"
+msgstr ""
+
+msgid "Version Name"
+msgstr ""
+
+msgid "Size"
+msgstr ""
+
+#, python-brace-format
+msgid "{display_name} (installed)"
+msgstr ""
+
+msgid "No Wine/Proton versions installed"
+msgstr ""
+
+msgid "Select to remove this version"
+msgstr ""
+
+#, python-brace-format
+msgid "Selected {} assets:\n"
+msgstr ""
+
+#, python-brace-format
+msgid ""
+"\n"
+"Total size to delete: {}\n"
+msgstr ""
+
+msgid "Delete Selected"
+msgstr ""
+
+#, python-brace-format
+msgid ""
+"\n"
+"Total size to download: {}\n"
+msgstr ""
+
+msgid "Downloading in Progress"
+msgstr ""
+
+msgid "Cannot clear selection while extraction is in progress."
+msgstr ""
+
+msgid "No Selection"
+msgstr ""
+
+msgid "Please select at least one archive to download."
+msgstr ""
+
+msgid "Please wait for current downloading to complete."
+msgstr ""
+
+msgid "Please select at least one version to delete."
+msgstr ""
+
+#, python-brace-format
+msgid ""
+"Are you sure you want to delete {} selected version(s)?\n"
+"\n"
+"This action cannot be undone."
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to remove version at {}: {}"
+msgstr ""
+
+#, python-brace-format
+msgid "Successfully removed {} version(s)."
+msgstr ""
+
+msgid "Downloading Complete"
+msgstr ""
+
+msgid "All selected archives have been downloaded!"
+msgstr ""
+
+#, python-brace-format
+msgid "Downloading: {0} ({1}%)"
+msgstr ""
+
+#, python-brace-format
+msgid "Extracting: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid ", ETA: {}s"
+msgstr ""
+
+#, python-brace-format
+msgid ", Speed: {:.1f}MB/s"
+msgstr ""
+
+#, python-brace-format
+msgid "Extracting: {0}{1}{2}"
+msgstr ""
+
+msgid "Extraction Error"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to extract archive: {0}"
+msgstr ""
+
+msgid "Operation Cancelled"
+msgstr ""
+
+msgid "Download or extraction has been cancelled."
+msgstr ""
+
+msgid "Exe Settings"
+msgstr ""
+
+msgid "Search:"
+msgstr ""
+
+msgid "Search settings..."
+msgstr ""
+
+msgid "Main"
+msgstr ""
+
+msgid "Advanced"
+msgstr ""
+
+msgid "Setting"
+msgstr ""
+
+msgid "Value"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "Open PPDB"
+msgstr ""
+
+msgid "Executable path is not available."
+msgstr ""
+
+msgid "PPDB file does not exist at: "
+msgstr ""
+
+msgid "Failed to open PPDB file:\n"
+msgstr ""
+
+msgid "disabled"
+msgstr ""
+
+msgid "Info"
+msgstr ""
+
+msgid "No changes to apply."
+msgstr ""
+
+msgid "Failed to apply changes. Check logs."
+msgstr ""
+
+msgid "Settings updated successfully."
+msgstr ""
+
+msgid "Prefix Manager"
+msgstr ""
+
+msgid "Set"
+msgstr ""
+
+msgid "Libraries"
+msgstr ""
+
+msgid "Information"
+msgstr ""
+
+msgid "Fonts"
+msgstr ""
+
+msgid "Winetricks not found. Please try again."
+msgstr ""
+
+msgid "No components selected."
+msgstr ""
+
+msgid "Installation failed. Check logs."
+msgstr ""
+
+msgid "Components installed successfully."
 msgstr ""
 
