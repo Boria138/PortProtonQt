@@ -73,6 +73,27 @@ def get_steam_home():
             return expanded_path
     return None
 
+def get_steam_compat_tool(appid: int) -> str | None:
+    """Returns the compatibility tool name for a given Steam appid from config.vdf, or None if not using a compat tool."""
+    steam_home = get_steam_home()
+    if steam_home is None or not steam_home.exists():
+        return None
+
+    config_vdf = steam_home / "config" / "config.vdf"
+    if not config_vdf.exists():
+        return None
+
+    data = safe_vdf_load(config_vdf)
+    compat_tools = data.get('InstallConfigStore', {}).get('Software', {}).get('Valve', {}).get('Steam', {}).get('CompatToolMapping', {})
+
+    appid_str = str(appid)
+    if appid_str in compat_tools:
+        tool_info = compat_tools[appid_str]
+        if isinstance(tool_info, dict):
+            return tool_info.get('name')
+
+    return None
+
 def get_last_steam_user(steam_home: Path) -> dict | None:
     """Returns data for the last Steam user from loginusers.vdf."""
     loginusers_path = steam_home / "config/loginusers.vdf"

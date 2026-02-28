@@ -48,6 +48,7 @@ from portprotonqt.portproton_api import PortProtonAPI
 from portprotonqt.downloader import Downloader
 from portprotonqt.animations import DetailPageAnimations
 from portprotonqt.debug_utils import DebugLogManager
+from portprotonqt.steam_api import get_steam_compat_tool
 
 logger = get_logger(__name__)
 
@@ -274,13 +275,22 @@ class DetailPageManager:
         buttons_layout = QHBoxLayout()
         exec_line = game_data.get("exec_line", "")
         game_source = game_data.get("game_source", "")
+        appid = game_data.get("appid", "")
 
         current_exe = self._get_current_exe(exec_line)
         play_button = self._create_play_button(exec_line, current_exe)
         buttons_layout.addWidget(play_button, alignment=Qt.AlignmentFlag.AlignLeft)
 
+        # Show settings button for PortProton games or Steam games using PortProtonQt
         if str(game_source).lower() == "portproton":
             self._add_portproton_buttons(buttons_layout, exec_line)
+        elif str(game_source).lower() == "steam" and appid:
+            try:
+                compat_tool = get_steam_compat_tool(int(appid))
+                if compat_tool == "PortProtonQt":
+                    self._add_steam_settings_button(buttons_layout, exec_line, str(appid))
+            except (ValueError, TypeError):
+                pass
 
         buttons_layout.addStretch()
         return buttons_layout
@@ -327,6 +337,24 @@ class DetailPageManager:
         log_button.clicked.connect(lambda: self.toggleDebugLog(file_to_check, log_button))
         buttons_layout.addWidget(log_button, alignment=Qt.AlignmentFlag.AlignLeft)
         self._debug_log_button = log_button
+
+    def _add_steam_settings_button(self, buttons_layout: QHBoxLayout, exec_line: str, appid: str) -> None:
+        """Add only settings button for Steam games."""
+        # Create fake exe path in steam_scripts folder
+        portproton_location = self.main_window.portproton_location
+        if not portproton_location:
+            return
+        steam_scripts_dir = os.path.join(portproton_location, "steam_scripts")
+        os.makedirs(steam_scripts_dir, exist_ok=True)
+        fake_exe_path = os.path.join(steam_scripts_dir, f"{appid}.exe")
+        # Create empty file if it doesn't exist
+        if not os.path.exists(fake_exe_path):
+            open(fake_exe_path, 'a').close()
+
+        settings_icon = self.main_window.theme_manager.get_icon("settings")
+        settings_button = self._make_action_button(_("Settings"), settings_icon)
+        settings_button.clicked.connect(lambda: self.main_window.open_exe_settings(fake_exe_path, appid))
+        buttons_layout.addWidget(settings_button, alignment=Qt.AlignmentFlag.AlignLeft)
 
     def _get_file_from_exec(self, exec_line: str) -> str | None:
         """Get file path from exec line."""

@@ -36,11 +36,12 @@ theme_manager = ThemeManager()
 class ExeSettingsDialog(QDialog):
     """Dialog for configuring executable-specific settings."""
 
-    def __init__(self, parent=None, theme=None, exe_path=None):
+    def __init__(self, parent=None, theme=None, exe_path=None, appid=None):
         super().__init__(parent)
         self.theme = theme if theme else theme_manager.apply_theme(read_theme_from_config())
         self.exe_path = exe_path
-        if not self.exe_path:
+        self.appid = appid
+        if not self.exe_path and not self.appid:
             return
         self.portproton_path = get_portproton_location()
         if self.portproton_path is None:

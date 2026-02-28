@@ -2873,12 +2873,12 @@ class MainWindow(QMainWindow):
     def darkenColor(self, color, factor=200):
         return color.darker(factor)
 
-    def open_exe_settings(self, exe_path):
+    def open_exe_settings(self, exe_path, appid=None):
         """Open the ExeSettingsDialog for the given executable."""
         if not exe_path or not os.path.exists(exe_path):
             QMessageBox.warning(self, _("Error"), _("Executable not found: {0}").format(exe_path))
             return
-        dialog = ExeSettingsDialog(self, self.theme, exe_path)
+        dialog = ExeSettingsDialog(self, self.theme, exe_path, appid=appid)
         dialog.exec()
 
     def openGameDetailPage(self, game_data: dict) -> None:
