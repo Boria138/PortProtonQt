@@ -4,12 +4,43 @@
 unset LD_LIBRARY_PATH
 unset LD_PRELOAD
 
+# Set Steam compatibility mode flag (unless GUI mode is requested)
+if [[ ! -n "$PPQT_GUI" ]]; then
+    export STEAM_COMPAT=1
+fi
+
 exe_name="$(basename "$1")"
+exe_dir="$(dirname "$1")"
 
 # Ignore specific executables
 if [[ "$exe_name" == "iscriptevaluator.exe" ]] || \
    [[ "$exe_name" == "d3ddriverquery64.exe" ]]; then
     exit 0
+fi
+
+# Copy PPDB file from steam_scripts to exe directory if it exists
+# Steam passes the appid via SteamAppId environment variable
+if [[ -n "$SteamAppId" ]]; then
+    # Get PortProton directory from config file or Flatpak default
+    portproton_dir=""
+    config_file="$HOME/.config/PortProton.conf"
+
+    if [[ -f "$config_file" ]]; then
+        portproton_dir="$(cat "$config_file" | tr -d '\n')"
+    fi
+
+    if [[ -z "$portproton_dir" ]] || [[ ! -d "$portproton_dir" ]]; then
+        # Fallback to Flatpak default
+        portproton_dir="$HOME/.var/app/ru.linux_gaming.PortProton"
+    fi
+
+    ppdb_source="$portproton_dir/steam_scripts/${SteamAppId}.exe.ppdb"
+    ppdb_dest="$exe_dir/${exe_name}.ppdb"
+
+    if [[ -f "$ppdb_source" ]]; then
+        cp "$ppdb_source" "$ppdb_dest"
+        echo "Copied PPDB from $ppdb_source to $ppdb_dest"
+    fi
 fi
 
 # Activate virtual environment if available

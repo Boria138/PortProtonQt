@@ -73,11 +73,38 @@ def main():
     os.environ["PROCESS_LOG"] = "1"
     os.environ["START_FROM_STEAM"] = "1"
 
+    # Check if running as Steam compatibility tool (STEAM_COMPAT=1)
+    # In this mode, launch game immediately without GUI
+    is_steam_compat = os.environ.get("STEAM_COMPAT") == "1"
+
     # Get the PortProton start command
     start_sh = get_portproton_start_command()
 
     if start_sh is None:
         return
+
+    # Handle Steam compatibility mode - launch game directly without GUI
+    if is_steam_compat:
+        # In Steam compatibility mode, exe path is passed as first argument
+        exe_path = parsed_args.file_or_url if parsed_args.file_or_url else None
+        if exe_path and is_exe_file(exe_path):
+            exe_path = os.path.abspath(os.path.expanduser(exe_path))
+            logger = get_logger(__name__)
+            setup_logger(parsed_args.debug_level)
+            logger.info("Running in Steam compatibility mode, launching: %s", exe_path)
+
+            # Launch game via PortProton without GUI
+            env_vars = os.environ.copy()
+            cmd = start_sh + [exe_path]
+            try:
+                subprocess.run(cmd, env=env_vars)
+            except Exception as e:
+                logger.error("Failed to launch game in Steam compatibility mode: %s", e)
+                sys.exit(1)
+            sys.exit(0)
+        else:
+            # No exe provided, fall back to GUI mode
+            is_steam_compat = False
 
     app = QApplication(sys.argv)
     app.setWindowIcon(QIcon.fromTheme(__app_id__))
