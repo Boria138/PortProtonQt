@@ -584,9 +584,44 @@ class ExeSettingsDialog(QDialog):
 
             self.advanced_table.setRowHidden(row, not should_show)
 
+    def _get_default_mangohud_config(self) -> str | None:
+        """Read DEFAULT_MANGOHUD_CONFIG from portproton_path/data/scripts/var.
+
+        Returns:
+            The value of DEFAULT_MANGOHUD_CONFIG without the 'DEFAULT_' prefix,
+            or None if not found.
+        """
+        if not self.portproton_path:
+            logger.warning("PortProton path not set")
+            return None
+
+        var_path = os.path.join(self.portproton_path, "data", "scripts", "var")
+        if not os.path.exists(var_path):
+            logger.warning("var file not found: %s", var_path)
+            return None
+
+        try:
+            with open(var_path, encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith("export DEFAULT_MANGOHUD_CONFIG="):
+                        # Extract value: export DEFAULT_MANGOHUD_CONFIG="value"
+                        match = re.match(r'^export DEFAULT_MANGOHUD_CONFIG=(.*)$', line)
+                        if match:
+                            value = match.group(1).strip().strip('"\'')
+                            # Remove 'DEFAULT_' prefix from the value if present
+                            if value.startswith("DEFAULT_"):
+                                value = value[8:]
+                            return value
+        except Exception as e:
+            logger.warning("Failed to read var file: %s", e)
+
+        return None
+
     def apply_changes(self):
         """Apply changes by collecting diffs from both main and advanced tabs."""
         changes = []
+        mangohud_enabled = False
 
         for key, orig_val in self.original_values.items():
             if key in self.blocked_keys:
@@ -607,6 +642,9 @@ class ExeSettingsDialog(QDialog):
             new_val = '1' if item.checkState() == Qt.CheckState.Checked else '0'
             if new_val != orig_val:
                 changes.append(f"{key}={new_val}")
+                # Track if PW_MANGOHUD is being enabled
+                if key == 'PW_MANGOHUD' and new_val == '1':
+                    mangohud_enabled = True
 
         for key, widget in self.advanced_widgets.items():
             orig_val = self.original_display_values.get(key, '')
@@ -636,6 +674,14 @@ class ExeSettingsDialog(QDialog):
                     changes.append(f"{key}={new_val}")
             else:
                 continue
+
+        # If PW_MANGOHUD is being enabled and MANGOHUD_CONFIG is not in current settings,
+        # add it from the var file
+        if mangohud_enabled and 'MANGOHUD_CONFIG' not in self.current_settings:
+            default_config = self._get_default_mangohud_config()
+            if default_config:
+                changes.append(f"MANGOHUD_CONFIG={default_config}")
+                logger.info("Added MANGOHUD_CONFIG from var file: %s", default_config)
 
         if not changes:
             QMessageBox.information(self, _("Info"), _("No changes to apply."))
