@@ -29,8 +29,8 @@ from portprotonqt.steam_api.cache import (
     search_anticheat_status,
 )
 from portprotonqt.steam_api.api import (
-    fetch_sgdb_cover,
-    check_url_exists,
+    fetch_sgdb_cover_async,
+    check_url_exists_async,
     fetch_app_info_async,
     get_protondb_tier_async,
     get_full_steam_game_info_async,
@@ -76,8 +76,8 @@ __all__ = [
     "search_app",
     "search_anticheat_status",
     # API
-    "fetch_sgdb_cover",
-    "check_url_exists",
+    "fetch_sgdb_cover_async",
+    "check_url_exists_async",
     "fetch_app_info_async",
     "get_protondb_tier_async",
     "get_full_steam_game_info_async",

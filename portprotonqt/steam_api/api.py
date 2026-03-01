@@ -35,46 +35,54 @@ _STEAM_APPS_CACHE = CacheManager("steam_apps")
 _ANTICHEAT_CACHE = CacheManager("anticheat")
 
 
-def fetch_sgdb_cover(game_name: str) -> str:
-    """Fetch cover image URL from steamgrid.usebottles.com."""
-    try:
-        encoded = urllib.parse.quote(game_name)
-        url = f"https://steamgrid.usebottles.com/api/search/{encoded}"
-        resp = requests.get(url, timeout=10)
-        if resp.status_code != 200:
-            logger.warning("SGDB request failed for %s: %s", game_name, resp.status_code)
-            return ""
-        text = resp.text.strip()
-        if text.startswith('"') and text.endswith('"'):
-            text = text[1:-1]
-        if text:
-            logger.info("Fetched SGDB cover for %s: %s", game_name, text)
-        return text
-    except requests.exceptions.Timeout:
-        logger.warning(f"SGDB request timed out for {game_name}")
-        return ""
-    except requests.exceptions.RequestException as e:
-        logger.warning(f"SGDB request error for {game_name}: {e}")
-        return ""
-    except Exception as e:
-        logger.warning(f"Unexpected error while fetching SGDB cover for {game_name}: {e}")
-        return ""
+def fetch_sgdb_cover_async(game_name: str, callback: Callable[[str], None]) -> None:
+    """Asynchronously fetch cover image URL from steamgrid.usebottles.com."""
+    encoded = urllib.parse.quote(game_name)
+    url = f"https://steamgrid.usebottles.com/api/search/{encoded}"
+
+    def process_response(result: str | None) -> None:
+        if not result or not os.path.exists(result):
+            logger.warning("Failed to download SGDB data for %s", game_name)
+            callback("")
+            return
+        try:
+            with open(result, encoding="utf-8") as f:
+                text = f.read().strip()
+            if text.startswith('"') and text.endswith('"'):
+                text = text[1:-1]
+            if text:
+                logger.info("Fetched SGDB cover for %s: %s", game_name, text)
+            callback(text)
+        except Exception as e:
+            logger.warning("Failed to process SGDB data for %s: %s", game_name, e)
+            callback("")
+
+    cache_dir = get_cache_dir()
+    safe_name = "".join(c for c in game_name if c.isalnum() or c in " -_")[:50]
+    cache_file = os.path.join(cache_dir, f"sgdb_{safe_name}.json")
+    downloader.download_async(url, cache_file, timeout=10, callback=process_response)
 
 
-def check_url_exists(url: str) -> bool:
-    """Check whether a URL returns HTTP 200."""
-    try:
-        r = requests.head(url, timeout=5)
-        return r.status_code == 200
-    except requests.exceptions.Timeout:
-        logger.warning(f"URL check timed out for: {url}")
-        return False
-    except requests.exceptions.RequestException as e:
-        logger.warning(f"Request error when checking URL {url}: {e}")
-        return False
-    except Exception as e:
-        logger.warning(f"Unexpected error when checking URL {url}: {e}")
-        return False
+def check_url_exists_async(url: str, callback: Callable[[bool], None]) -> None:
+    """Asynchronously check whether a URL returns HTTP 200 using HEAD request."""
+    import threading
+
+    def head_request():
+        try:
+            r = requests.head(url, timeout=5)
+            callback(r.status_code == 200)
+        except requests.exceptions.Timeout:
+            logger.warning(f"URL check timed out for: {url}")
+            callback(False)
+        except requests.exceptions.RequestException as e:
+            logger.warning(f"Request error when checking URL {url}: {e}")
+            callback(False)
+        except Exception as e:
+            logger.warning(f"Unexpected error when checking URL {url}: {e}")
+            callback(False)
+
+    thread = threading.Thread(target=head_request, daemon=True)
+    thread.start()
 
 
 def fetch_app_info_async(app_id: int, callback: Callable[[dict | None], None]) -> None:
@@ -224,29 +232,55 @@ def get_full_steam_game_info_async(appid: int, callback: Callable[[dict], None])
         title = decode_text(app_info.get("name", ""))
         description = decode_text(app_info.get("short_description", ""))
         cover = f"https://steamcdn-a.akamaihd.net/steam/apps/{appid}/library_600x900_2x.jpg"
-        if not check_url_exists(cover):
-            logger.info("Steam cover not found for %s, trying SGDB", title)
-            alt_cover = fetch_sgdb_cover(title)
-            if alt_cover:
-                cover = alt_cover
 
-        def on_protondb_tier(tier: str) -> None:
-            def on_anticheat_status(anticheat_status: str) -> None:
-                result = _build_game_info_result(
-                    appid=appid,
-                    name=title,
-                    description=description,
-                    cover=cover,
-                    controller_support=app_info.get('controller_support', ''),
-                    protondb_tier=tier,
-                    steam_game="true",
-                    anticheat_status=anticheat_status,
-                )
-                callback(result)
+        def on_url_checked(exists: bool) -> None:
+            if not exists:
+                logger.info("Steam cover not found for %s, trying SGDB", title)
 
-            get_weanticheatyet_status_async(title, on_anticheat_status)
+                def on_sgdb_cover(alt_cover: str) -> None:
+                    if alt_cover:
+                        nonlocal cover
+                        cover = alt_cover
 
-        get_protondb_tier_async(appid, on_protondb_tier)
+                    def on_protondb_tier(tier: str) -> None:
+                        def on_anticheat_status(anticheat_status: str) -> None:
+                            result = _build_game_info_result(
+                                appid=appid,
+                                name=title,
+                                description=description,
+                                cover=cover,
+                                controller_support=app_info.get('controller_support', ''),
+                                protondb_tier=tier,
+                                steam_game="true",
+                                anticheat_status=anticheat_status,
+                            )
+                            callback(result)
+
+                        get_weanticheatyet_status_async(title, on_anticheat_status)
+
+                    get_protondb_tier_async(appid, on_protondb_tier)
+
+                fetch_sgdb_cover_async(title, on_sgdb_cover)
+            else:
+                def on_protondb_tier_direct(tier: str) -> None:
+                    def on_anticheat_status_direct(anticheat_status: str) -> None:
+                        result = _build_game_info_result(
+                            appid=appid,
+                            name=title,
+                            description=description,
+                            cover=cover,
+                            controller_support=app_info.get('controller_support', ''),
+                            protondb_tier=tier,
+                            steam_game="true",
+                            anticheat_status=anticheat_status,
+                        )
+                        callback(result)
+
+                    get_weanticheatyet_status_async(title, on_anticheat_status_direct)
+
+                get_protondb_tier_async(appid, on_protondb_tier_direct)
+
+        check_url_exists_async(cover, on_url_checked)
 
     fetch_app_info_async(appid, on_app_info)
 
@@ -324,10 +358,8 @@ def get_steam_game_info_async(
 
         if not steam_apps or not steam_apps_index:
             game_name = desktop_name or exe_name
-            cover = fetch_sgdb_cover(game_name) or ""
-            logger.info("Using SGDB cover for non-Steam game due to data loading failure: %s", game_name)
 
-            def on_anticheat_status_failure(anticheat_status: str) -> None:
+            def on_sgdb_cover_failure(cover: str) -> None:
                 result = _build_game_info_result(
                     appid="",
                     name=decode_text(game_name),
@@ -336,11 +368,16 @@ def get_steam_game_info_async(
                     controller_support="",
                     protondb_tier="",
                     steam_game="false",
-                    anticheat_status=anticheat_status,
+                    anticheat_status="",
                 )
-                callback(result)
 
-            get_weanticheatyet_status_async(game_name, on_anticheat_status_failure)
+                def on_anticheat_status_failure(anticheat_status: str) -> None:
+                    result["anticheat_status"] = anticheat_status
+                    callback(result)
+
+                get_weanticheatyet_status_async(game_name, on_anticheat_status_failure)
+
+            fetch_sgdb_cover_async(game_name, on_sgdb_cover_failure)
             return
 
         for candidate in candidates_ordered:
@@ -354,23 +391,25 @@ def get_steam_game_info_async(
         game_name = desktop_name or exe_name.capitalize()
 
         if not matching_app:
-            cover = fetch_sgdb_cover(game_name) or ""
-            logger.info("Using SGDB cover for non-Steam game '%s': %s", game_name, cover)
+            def on_sgdb_cover_non_steam(cover: str) -> None:
+                logger.info("Using SGDB cover for non-Steam game '%s': %s", game_name, cover)
 
-            def on_anticheat_status_non_steam(anticheat_status: str) -> None:
-                result = _build_game_info_result(
-                    appid="",
-                    name=decode_text(game_name),
-                    description="",
-                    cover=cover,
-                    controller_support="",
-                    protondb_tier="",
-                    steam_game="false",
-                    anticheat_status=anticheat_status,
-                )
-                callback(result)
+                def on_anticheat_status_non_steam(anticheat_status: str) -> None:
+                    result = _build_game_info_result(
+                        appid="",
+                        name=decode_text(game_name),
+                        description="",
+                        cover=cover,
+                        controller_support="",
+                        protondb_tier="",
+                        steam_game="false",
+                        anticheat_status=anticheat_status,
+                    )
+                    callback(result)
 
-            get_weanticheatyet_status_async(game_name, on_anticheat_status_non_steam)
+                get_weanticheatyet_status_async(game_name, on_anticheat_status_non_steam)
+
+            fetch_sgdb_cover_async(game_name, on_sgdb_cover_non_steam)
             return
 
         appid = matching_app["appid"]
@@ -396,30 +435,58 @@ def get_steam_game_info_async(
             title = decode_text(app_info.get("name", game_name))
             description = decode_text(app_info.get("short_description", ""))
             cover = f"https://steamcdn-a.akamaihd.net/steam/apps/{appid}/library_600x900_2x.jpg"
-            if not check_url_exists(cover):
-                logger.info("Steam cover not found for %s, trying SGDB", title)
-                alt_cover = fetch_sgdb_cover(title)
-                if alt_cover:
-                    cover = alt_cover
-            controller_support = app_info.get("controller_support", "")
 
-            def on_protondb_tier(tier: str) -> None:
-                def on_anticheat_status_final(anticheat_status: str) -> None:
-                    result = _build_game_info_result(
-                        appid=appid,
-                        name=title,
-                        description=description,
-                        cover=cover,
-                        controller_support=controller_support,
-                        protondb_tier=tier,
-                        steam_game="true",
-                        anticheat_status=anticheat_status,
-                    )
-                    callback(result)
+            def on_url_checked_final(exists: bool) -> None:
+                if not exists:
+                    logger.info("Steam cover not found for %s, trying SGDB", title)
 
-                get_weanticheatyet_status_async(title, on_anticheat_status_final)
+                    def on_sgdb_cover_final(alt_cover: str) -> None:
+                        nonlocal cover
+                        if alt_cover:
+                            cover = alt_cover
+                        controller_support = app_info.get("controller_support", "")
 
-            get_protondb_tier_async(appid, on_protondb_tier)
+                        def on_protondb_tier(tier: str) -> None:
+                            def on_anticheat_status_final(anticheat_status: str) -> None:
+                                result = _build_game_info_result(
+                                    appid=appid,
+                                    name=title,
+                                    description=description,
+                                    cover=cover,
+                                    controller_support=controller_support,
+                                    protondb_tier=tier,
+                                    steam_game="true",
+                                    anticheat_status=anticheat_status,
+                                )
+                                callback(result)
+
+                            get_weanticheatyet_status_async(title, on_anticheat_status_final)
+
+                        get_protondb_tier_async(appid, on_protondb_tier)
+
+                    fetch_sgdb_cover_async(title, on_sgdb_cover_final)
+                else:
+                    controller_support = app_info.get("controller_support", "")
+
+                    def on_protondb_tier(tier: str) -> None:
+                        def on_anticheat_status_final(anticheat_status: str) -> None:
+                            result = _build_game_info_result(
+                                appid=appid,
+                                name=title,
+                                description=description,
+                                cover=cover,
+                                controller_support=controller_support,
+                                protondb_tier=tier,
+                                steam_game="true",
+                                anticheat_status=anticheat_status,
+                            )
+                            callback(result)
+
+                        get_weanticheatyet_status_async(title, on_anticheat_status_final)
+
+                    get_protondb_tier_async(appid, on_protondb_tier)
+
+            check_url_exists_async(cover, on_url_checked_final)
 
         fetch_app_info_async(appid, on_app_info)
 
