@@ -19,18 +19,29 @@ STEAM_DATA_DIRS = (
 def safe_vdf_load(path: str | Path) -> dict:
     """Load VDF file, trying binary format first, then text."""
     path = str(path)
+    # Check first byte to determine format
     try:
         with open(path, "rb") as f:
-            data = vdf.binary_load(f)
-        return data
-    except Exception as e:
-        logger.debug("Failed to binary load VDF %s: %s, trying text mode", path, e)
+            first_byte = f.read(1)
+            if not first_byte:
+                return {}
+    except Exception:
+        return {}
+
+    # Binary VDF starts with 0x00 or 0x01, text VDF starts with ASCII
+    if first_byte in (b"\x00", b"\x01"):
+        try:
+            with open(path, "rb") as f:
+                return vdf.binary_load(f)
+        except Exception as e:
+            logger.debug("Failed to load binary VDF %s: %s", path, e)
+            return {}
+    else:
         try:
             with open(path, encoding="utf-8", errors="ignore") as f:
-                data = vdf.load(f)
-            return data
-        except Exception:
-            logger.error("Failed to load VDF file %s: %s", path, e)
+                return vdf.load(f)
+        except Exception as e:
+            logger.debug("Failed to load text VDF %s: %s", path, e)
             return {}
 
 
