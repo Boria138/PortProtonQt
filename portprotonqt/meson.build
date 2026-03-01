@@ -23,7 +23,6 @@ install_data(
   'preloader.py',
   'search_utils.py',
   'settings_manager.py',
-  'steam_api.py',
   'system_overlay.py',
   'theme_manager.py',
   'theme_security.py',
@@ -32,6 +31,17 @@ install_data(
   'version_utils.py',
   'virtual_keyboard.py'],
   install_dir: pythondir / meson.project_name(),
+)
+
+# Install steam_api package
+install_data(
+  ['steam_api/__init__.py',
+   'steam_api/utils.py',
+   'steam_api/cache.py',
+   'steam_api/api.py',
+   'steam_api/shortcuts.py',
+  ],
+  install_dir: pythondir / meson.project_name() / 'steam_api',
 )
 
 # Install dialogs package

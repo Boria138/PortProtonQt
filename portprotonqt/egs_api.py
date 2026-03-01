@@ -14,9 +14,10 @@ from portprotonqt.logger import get_logger
 from portprotonqt.image_utils import load_pixmap_async
 from portprotonqt.time_utils import parse_playtime_file, format_playtime, get_last_launch, get_last_launch_timestamp
 from portprotonqt.config_utils import get_portproton_location, get_portproton_start_command
+from portprotonqt.dialogs import generate_thumbnail
 from portprotonqt.steam_api import (
     get_weanticheatyet_status_async, get_steam_apps_and_index_async, get_protondb_tier_async,
-    search_app, get_steam_home, get_last_steam_user, convert_steam_id, generate_thumbnail, call_steam_api
+    search_app, get_steam_home, get_last_steam_user, convert_steam_id, call_steam_api
 )
 import vdf
 import shutil
