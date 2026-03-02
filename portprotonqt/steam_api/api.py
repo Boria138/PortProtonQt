@@ -85,6 +85,30 @@ def check_url_exists_async(url: str, callback: Callable[[bool], None]) -> None:
     thread.start()
 
 
+def check_local_cover_cache(url: str) -> bool:
+    """Check if cover exists in local cache."""
+    if not url or not url.startswith("https://steamcdn-a.akamaihd.net/steam/apps/"):
+        return False
+
+    try:
+        parts = url.split("/")
+        appid = None
+        if "apps" in parts:
+            idx = parts.index("apps")
+            if idx + 1 < len(parts):
+                appid = parts[idx + 1]
+        if not appid:
+            return False
+
+        xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
+        image_folder = os.path.join(xdg_cache_home, "PortProtonQt", "images")
+        local_path = os.path.join(image_folder, f"{appid}.jpg")
+        return os.path.exists(local_path)
+    except Exception as e:
+        logger.warning(f"Error checking local cover cache: {e}")
+        return False
+
+
 def fetch_app_info_async(app_id: int, callback: Callable[[dict | None], None]) -> None:
     """Asynchronously fetch detailed app info from Steam API."""
     cached = load_app_details(app_id)
@@ -280,7 +304,10 @@ def get_full_steam_game_info_async(appid: int, callback: Callable[[dict], None])
 
                 get_protondb_tier_async(appid, on_protondb_tier_direct)
 
-        check_url_exists_async(cover, on_url_checked)
+        if check_local_cover_cache(cover):
+            on_url_checked(True)
+        else:
+            check_url_exists_async(cover, on_url_checked)
 
     fetch_app_info_async(appid, on_app_info)
 
@@ -486,7 +513,10 @@ def get_steam_game_info_async(
 
                     get_protondb_tier_async(appid, on_protondb_tier)
 
-            check_url_exists_async(cover, on_url_checked_final)
+            if check_local_cover_cache(cover):
+                on_url_checked_final(True)
+            else:
+                check_url_exists_async(cover, on_url_checked_final)
 
         fetch_app_info_async(appid, on_app_info)
 
