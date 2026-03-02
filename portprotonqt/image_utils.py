@@ -109,6 +109,7 @@ def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[Q
                 # SGDB links contain unique hash in name - use as filename
                 local_path = os.path.join(image_folder, filename)
 
+                logger.debug("SGDB cover check: %s exists=%s", local_path, os.path.exists(local_path))
                 if os.path.exists(local_path):
                     pixmap = QPixmap(local_path)
                     # Check if the pixmap loaded successfully
@@ -116,6 +117,7 @@ def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[Q
                         logger.warning(f"Failed to load image from {local_path}, removing corrupted file")
                         os.remove(local_path)
                     else:
+                        logger.debug("SGDB cover loaded from cache: %s", filename)
                         finish_with(pixmap)
                         return
 

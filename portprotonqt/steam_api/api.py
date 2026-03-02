@@ -51,7 +51,7 @@ def fetch_sgdb_cover_async(game_name: str, callback: Callable[[str], None]) -> N
             if text.startswith('"') and text.endswith('"'):
                 text = text[1:-1]
             if text:
-                logger.info("Fetched SGDB cover for %s: %s", game_name, text)
+                logger.debug("Got SGDB cover URL for %s: %s", game_name, text)
             callback(text)
         except Exception as e:
             logger.warning("Failed to process SGDB data for %s: %s", game_name, e)
@@ -419,7 +419,7 @@ def get_steam_game_info_async(
 
         if not matching_app:
             def on_sgdb_cover_non_steam(cover: str) -> None:
-                logger.info("Using SGDB cover for non-Steam game '%s': %s", game_name, cover)
+                logger.debug("Using SGDB cover URL for non-Steam game '%s': %s", game_name, cover)
 
                 def on_anticheat_status_non_steam(anticheat_status: str) -> None:
                     result = _build_game_info_result(
