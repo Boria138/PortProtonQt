@@ -252,20 +252,16 @@ def build_index(steam_apps: list) -> dict:
 def search_app(candidate: str, steam_apps_index: dict) -> dict | None:
     """Search for application by candidate: exact match first, then partial."""
     candidate_norm = normalize_name(candidate)
-    logger.info("Searching for app with candidate: '%s' -> '%s'", candidate, candidate_norm)
 
     if candidate_norm in steam_apps_index:
-        logger.info("Found exact match: '%s'", candidate_norm)
         return steam_apps_index[candidate_norm]
 
     for name_norm, app in steam_apps_index.items():
         if candidate_norm in name_norm:
             ratio = len(candidate_norm) / len(name_norm)
             if ratio > 0.8:
-                logger.info("Found partial match: candidate '%s' in '%s' (ratio: %.2f)", candidate_norm, name_norm, ratio)
                 return app
 
-    logger.info("No app found for candidate '%s'", candidate_norm)
     return None
 
 
@@ -370,12 +366,12 @@ def save_protondb_status(appid: int, data: dict) -> None:
 
 def search_anticheat_status(candidate: str, anti_cheat_index: dict) -> str:
     """Search for anti-cheat status by candidate: exact match first, then partial."""
+    if not candidate:
+        return ""
     candidate_norm = normalize_name(candidate)
-    logger.info("Searching for anti-cheat status for candidate: '%s' -> '%s'", candidate, candidate_norm)
 
     if candidate_norm in anti_cheat_index:
         status = anti_cheat_index[candidate_norm]["status"]
-        logger.info("Found exact match: '%s', status: '%s'", candidate_norm, status)
         return status
 
     for name_norm, entry in anti_cheat_index.items():
@@ -383,8 +379,6 @@ def search_anticheat_status(candidate: str, anti_cheat_index: dict) -> str:
             ratio = len(candidate_norm) / len(name_norm)
             if ratio > 0.8:
                 status = entry["status"]
-                logger.info("Found partial match: candidate '%s' in '%s' (ratio: %.2f), status: '%s'", candidate_norm, name_norm, ratio, status)
                 return status
 
-    logger.info("No anti-cheat status found for candidate '%s'", candidate_norm)
     return ""

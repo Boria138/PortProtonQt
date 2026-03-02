@@ -1040,13 +1040,11 @@ class MainWindow(QMainWindow):
             processed_count += 1
             self.pending_games.append(None)
             self.update_progress.emit(len(self.pending_games))  # Update progress bar
-            logger.info("Game %s processed, processed_count: %d/%d", name, processed_count, len(installed_games))
             if processed_count == len(installed_games):
                 callback(steam_games)
 
         for name, appid, last_played, playtime_seconds in installed_games:
-            logger.debug("Requesting info for game %s (appid %s)", name, appid)
-            get_full_steam_game_info_async(appid, lambda info, n=name, a=appid, lp=last_played, pt=playtime_seconds: on_game_info(info, n, a, lp, pt))
+            get_full_steam_game_info_async(appid, lambda info, n=name, a=appid, lp=last_played, pt=playtime_seconds: on_game_info(info, n, a, lp, pt), fallback_name=name)
 
     def _load_portproton_games_async(self, callback: Callable[[list[tuple]], None]):
         games = []
