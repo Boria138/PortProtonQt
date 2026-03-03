@@ -432,10 +432,22 @@ class ContextMenuManager:
 
         def on_add_to_steam_result(result: tuple[bool, str]):
             success, message = result
-            self.signals.show_info_dialog.emit(
-                _("Success"),
-                _("'{game_name}' was added to Steam. Please restart Steam for changes to take effect.").format(game_name=game_name)
-            )
+            if success:
+                if "restart" in message.lower():
+                    self.signals.show_info_dialog.emit(
+                        _("Success"),
+                        _("'{game_name}' was added to Steam. Please restart Steam for changes to take effect.").format(game_name=game_name)
+                    )
+                else:
+                    self.signals.show_info_dialog.emit(
+                        _("Success"),
+                        _("'{game_name}' was added to Steam.").format(game_name=game_name)
+                    )
+            else:
+                self.signals.show_warning_dialog.emit(
+                    _("Error"),
+                    _(message).format(game_name=game_name)
+                )
 
         logger.debug("Adding EGS game '%s' to Steam", game_name)
         add_egs_to_steam(app_name, game_name, self.legendary_path, on_add_to_steam_result)
@@ -1090,10 +1102,22 @@ Icon={icon_path}
         logger.debug("Adding game '%s' to Steam", game_name)
         try:
             success, message = add_to_steam(game_name, exec_line, cover_path)
-            self.signals.show_info_dialog.emit(
-                _("Success"),
-                _("'{game_name}' was added to Steam. Please restart Steam for changes to take effect.").format(game_name=game_name)
-            )
+            if success:
+                if "restart" in message.lower():
+                    self.signals.show_info_dialog.emit(
+                        _("Success"),
+                        _("'{game_name}' was added to Steam. Please restart Steam for changes to take effect.").format(game_name=game_name)
+                    )
+                else:
+                    self.signals.show_info_dialog.emit(
+                        _("Success"),
+                        _("'{game_name}' was added to Steam.").format(game_name=game_name)
+                    )
+            else:
+                self.signals.show_warning_dialog.emit(
+                    _("Error"),
+                    _(message).format(game_name=game_name)
+                )
         except Exception as e:
             self.signals.show_warning_dialog.emit(
                 _("Error"),
@@ -1110,10 +1134,16 @@ Icon={icon_path}
         def on_remove_from_steam_result(result: tuple[bool, str]):
             success, message = result
             if success:
-                self.signals.show_info_dialog.emit(
-                    _("Success"),
-                    _("'{game_name}' was removed from Steam. Please restart Steam for changes to take effect.").format(game_name=game_name)
-                )
+                if "restart" in message.lower():
+                    self.signals.show_info_dialog.emit(
+                        _("Success"),
+                        _("'{game_name}' was removed from Steam. Please restart Steam for changes to take effect.").format(game_name=game_name)
+                    )
+                else:
+                    self.signals.show_info_dialog.emit(
+                        _("Success"),
+                        _("'{game_name}' was removed from Steam.").format(game_name=game_name)
+                    )
             else:
                 self.signals.show_warning_dialog.emit(
                     _("Error"),
@@ -1133,10 +1163,22 @@ Icon={icon_path}
             logger.debug("Removing game '%s' from Steam", game_name)
             try:
                 success, message = remove_from_steam(game_name, exec_line)
-                self.signals.show_info_dialog.emit(
-                    _("Success"),
-                    _("'{game_name}' was removed from Steam. Please restart Steam for changes to take effect.").format(game_name=game_name)
-                )
+                if success:
+                    if "restart" in message.lower():
+                        self.signals.show_info_dialog.emit(
+                            _("Success"),
+                            _("'{game_name}' was removed from Steam. Please restart Steam for changes to take effect.").format(game_name=game_name)
+                        )
+                    else:
+                        self.signals.show_info_dialog.emit(
+                            _("Success"),
+                            _("'{game_name}' was removed from Steam.").format(game_name=game_name)
+                        )
+                else:
+                    self.signals.show_warning_dialog.emit(
+                        _("Error"),
+                        _(message).format(game_name=game_name)
+                    )
             except Exception as e:
                 self.signals.show_warning_dialog.emit(
                     _("Error"),

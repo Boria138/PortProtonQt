@@ -131,9 +131,11 @@ def call_steam_api(js_cmd: str, *args) -> dict | None:
         payload = {
             "id": random.randint(0, 32767),
             "method": "Runtime.evaluate",
-            "expression": expression,
-            "awaitPromise": True,
-            "returnByValue": True
+            "params": {
+                "expression": expression,
+                "awaitPromise": True,
+                "returnByValue": True
+            }
         }
 
         ws.send(orjson.dumps(payload))
@@ -445,7 +447,11 @@ def add_to_steam(game_name: str, exec_line: str, cover_path: str) -> tuple[bool,
         _download_covers(appid, steam_appid, str(grid_dir), was_api_used)
 
     get_steam_game_info_async(game_name, exec_line, on_game_info)
-    return (True, "Adding game to Steam, checking for covers...")
+
+    if was_api_used:
+        return (True, "Game added to Steam via CEF API")
+    else:
+        return (True, "Game added to Steam. Please restart Steam for changes to take effect.")
 
 
 def _delete_cover_files(grid_dir: str, appid: int) -> None:
@@ -535,7 +541,9 @@ def remove_from_steam(game_name: str, exec_line: str) -> tuple[bool, str]:
         return (False, f"Game '{game_name}' not found in Steam")
 
     api_response = call_steam_api("removeShortcut", appid)
-    if api_response is not None:
+    was_api_used = api_response is not None
+
+    if was_api_used:
         logger.info(f"Shortcut for AppID {appid} successfully removed via API")
     else:
         logger.warning("Failed to remove shortcut via API. Falling back to editing shortcuts.vdf")
@@ -574,7 +582,10 @@ def remove_from_steam(game_name: str, exec_line: str) -> tuple[bool, str]:
         logger.info(f"Steam script not found: {script_path}")
 
     logger.info(f"Game '{game_name}' successfully removed from Steam")
-    return (True, f"Game '{game_name}' removed from Steam")
+    if was_api_used:
+        return (True, f"Game '{game_name}' removed from Steam")
+    else:
+        return (True, f"Game '{game_name}' removed from Steam. Please restart Steam for changes to take effect.")
 
 
 def is_game_in_steam(game_name: str) -> bool:

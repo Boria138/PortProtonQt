@@ -161,7 +161,7 @@ def remove_egs_from_steam(game_name: str, portproton_dir: str, callback: Callabl
             except OSError as e:
                 logger.warning(f"Failed to remove EGS script '{script_path}': {str(e)}")
 
-        callback((True, f"Game '{game_name}' was removed from Steam. Please restart Steam for changes to take effect."))
+        callback((True, f"Game '{game_name}' was removed from Steam"))
         return
 
     # Fallback to VDF modification
@@ -439,7 +439,10 @@ export LEGENDARY_CONFIG_PATH="{legendary_config_path}"
                 with download_lock:
                     downloaded_count += 1
                     if downloaded_count == total_covers:
-                        callback((True, f"Game '{game_title}' added to Steam with covers"))
+                        if was_api_used:
+                            callback((True, f"Game '{game_title}' added to Steam"))
+                        else:
+                            callback((True, f"Game '{game_title}' added to Steam. Please restart Steam for changes to take effect."))
                 return
 
             logger.info(f"Downloaded cover {cover_type} to {cover_file}")
@@ -457,21 +460,30 @@ export LEGENDARY_CONFIG_PATH="{legendary_config_path}"
         with download_lock:
             downloaded_count += 1
             if downloaded_count == total_covers:
-                callback((True, f"Game '{game_title}' added to Steam with covers"))
+                if was_api_used:
+                    callback((True, f"Game '{game_title}' added to Steam"))
+                else:
+                    callback((True, f"Game '{game_title}' added to Steam. Please restart Steam for changes to take effect."))
 
     def on_steam_apps(steam_data: tuple[list | None, dict | None]):
         nonlocal steam_appid
         steam_apps, steam_apps_index = steam_data
         if not steam_apps or not steam_apps_index:
             logger.info(f"No Steam data available for EGS game {game_title}, skipping cover download")
-            callback((True, f"Game '{game_title}' added to Steam"))
+            if was_api_used:
+                callback((True, f"Game '{game_title}' added to Steam"))
+            else:
+                callback((True, f"Game '{game_title}' added to Steam. Please restart Steam for changes to take effect."))
             return
         matching_app = search_app(game_title, steam_apps_index)
         steam_appid = matching_app.get("appid") if matching_app else None
 
         if not steam_appid:
             logger.info(f"No Steam appid found for EGS game {game_title}, skipping cover download")
-            callback((True, f"Game '{game_title}' added to Steam"))
+            if was_api_used:
+                callback((True, f"Game '{game_title}' added to Steam"))
+            else:
+                callback((True, f"Game '{game_title}' added to Steam. Please restart Steam for changes to take effect."))
             return
 
         cover_types = [
