@@ -318,7 +318,18 @@ CAROUSEL_WIDGET_STYLE= f"""
 
 # PORTPROTON SETTINGS TAB STYLES
 # PARAMS_TITLE_STYLE
-PARAMS_TITLE_STYLE = f"color: {color_f}; font-family: '{font_family}'; font-size: {font_size_a}; padding: 10px; background: {color_h};"
+PARAMS_TITLE_STYLE = f"""
+    QLabel {{
+        color: {color_f};
+        font-family: '{font_family}';
+        font-size: 14px;
+        font-weight: bold;
+        padding: 5px;
+        background: {color_d};
+        border-radius: {border_radius_a};
+        min-width: 150px;
+    }}
+"""
 
 PROXY_INPUT_STYLE = f"""
     QLineEdit {{

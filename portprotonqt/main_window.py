@@ -2168,17 +2168,21 @@ class MainWindow(QMainWindow):
 
         # Title
         title = QLabel(_("PortProton Settings"))
-        title.setStyleSheet(self.theme.TAB_TITLE_STYLE)
+        title.setStyleSheet(f"""
+            QLabel {{
+                font-family: '{self.theme.font_family}';
+                font-size: 20px;
+                font-weight: bold;
+                color: {self.theme.color_f};
+                background-color: {self.theme.color_d};
+                padding: 10px;
+                border-radius: {self.theme.border_radius_a};
+            }}
+        """)
         title.setObjectName("tabTitle")
+        title.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
         title.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         layout.addWidget(title)
-
-        # Subtitle/description
-        content = QLabel(_("Main PortProton parameters..."))
-        content.setStyleSheet(self.theme.CONTENT_STYLE)
-        content.setObjectName("tabContent")
-        content.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        layout.addWidget(content)
 
         # --- New: Scroll Area for settings ---
         self.settingsScrollArea = QScrollArea()
@@ -2206,19 +2210,31 @@ class MainWindow(QMainWindow):
             section_layout.setSpacing(10)
 
             section_title = QLabel(title_text)
-            section_title.setStyleSheet(f"font-weight: bold; font-size: {self.theme.font_size_a}; color: {self.theme.color_a}; margin-bottom: 5px;")
+            section_title.setStyleSheet(f"""
+                QLabel {{
+                    font-weight: bold;
+                    font-size: 16px;
+                    color: {self.theme.color_f};
+                    background-color: {self.theme.color_c};
+                    padding: 8px;
+                    border-radius: {self.theme.border_radius_a};
+                }}
+            """)
             section_layout.addWidget(section_title)
 
             section_form = QFormLayout()
-            section_form.setSpacing(15)  # Uniform spacing between form rows
-            section_form.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
-            section_form.setFormAlignment(Qt.AlignmentFlag.AlignTop)
+            section_form.setSpacing(10)
+            section_form.setLabelAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+            section_form.setFormAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
             section_form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow)
+            section_form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapAllRows)
+            section_form.setHorizontalSpacing(15)
+            section_form.setVerticalSpacing(10)
             section_layout.addLayout(section_form)
             return section_frame, section_form
 
-        # 1. General Settings Section
-        genFrame, genForm = create_section(_("General Settings"))
+        # 1. Library Settings Section
+        genFrame, genForm = create_section(_("Library Settings"))
         scrollLayout.addWidget(genFrame)
 
         self.timeDetailCombo = QComboBox()
@@ -2291,7 +2307,12 @@ class MainWindow(QMainWindow):
         self.fullscreenTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         current_fullscreen = read_fullscreen_config()
         self.fullscreenCheckBox.setChecked(current_fullscreen)
-        uiForm.addRow(self.fullscreenTitle, self.fullscreenCheckBox)
+        fullscreen_layout = QHBoxLayout()
+        fullscreen_layout.setContentsMargins(0, 0, 0, 0)
+        fullscreen_layout.addWidget(self.fullscreenCheckBox)
+        fullscreen_layout.addWidget(self.fullscreenTitle)
+        fullscreen_layout.addStretch()
+        uiForm.addRow(fullscreen_layout)
 
         self.minimizeToTrayCheckBox = QCheckBox()  # Removed text
         self.minimizeToTrayCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
@@ -2303,7 +2324,12 @@ class MainWindow(QMainWindow):
         current_minimize_to_tray = read_minimize_to_tray()
         self.minimizeToTrayCheckBox.setChecked(current_minimize_to_tray)
         self.minimizeToTrayCheckBox.toggled.connect(lambda checked: save_minimize_to_tray(checked))
-        uiForm.addRow(self.minimizeToTrayTitle, self.minimizeToTrayCheckBox)
+        minimize_layout = QHBoxLayout()
+        minimize_layout.setContentsMargins(0, 0, 0, 0)
+        minimize_layout.addWidget(self.minimizeToTrayCheckBox)
+        minimize_layout.addWidget(self.minimizeToTrayTitle)
+        minimize_layout.addStretch()
+        uiForm.addRow(minimize_layout)
 
         self.hideAutoInstallTabCheckBox = QCheckBox()  # Removed text
         self.hideAutoInstallTabCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
@@ -2315,7 +2341,12 @@ class MainWindow(QMainWindow):
         current_hide_autoinstall = read_hide_autoinstall_tab()
         self.hideAutoInstallTabCheckBox.setChecked(current_hide_autoinstall)
         self.hideAutoInstallTabCheckBox.toggled.connect(lambda checked: save_hide_autoinstall_tab(checked))
-        uiForm.addRow(self.hideAutoInstallTabTitle, self.hideAutoInstallTabCheckBox)
+        hide_autoinstall_layout = QHBoxLayout()
+        hide_autoinstall_layout.setContentsMargins(0, 0, 0, 0)
+        hide_autoinstall_layout.addWidget(self.hideAutoInstallTabCheckBox)
+        hide_autoinstall_layout.addWidget(self.hideAutoInstallTabTitle)
+        hide_autoinstall_layout.addStretch()
+        uiForm.addRow(hide_autoinstall_layout)
 
         # 3. Gamepad Settings Section
         padFrame, padForm = create_section(_("Gamepad Settings"))
@@ -2345,7 +2376,12 @@ class MainWindow(QMainWindow):
         self.autoFullscreenGamepadTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         current_auto_fullscreen = read_auto_fullscreen_gamepad()
         self.autoFullscreenGamepadCheckBox.setChecked(current_auto_fullscreen)
-        padForm.addRow(self.autoFullscreenGamepadTitle, self.autoFullscreenGamepadCheckBox)
+        auto_fullscreen_layout = QHBoxLayout()
+        auto_fullscreen_layout.setContentsMargins(0, 0, 0, 0)
+        auto_fullscreen_layout.addWidget(self.autoFullscreenGamepadCheckBox)
+        auto_fullscreen_layout.addWidget(self.autoFullscreenGamepadTitle)
+        auto_fullscreen_layout.addStretch()
+        padForm.addRow(auto_fullscreen_layout)
 
         self.gamepadRumbleCheckBox = QCheckBox()  # Removed text
         self.gamepadRumbleCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -2356,7 +2392,12 @@ class MainWindow(QMainWindow):
         self.gamepadRumbleTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         current_rumble_state = read_rumble_config()
         self.gamepadRumbleCheckBox.setChecked(current_rumble_state)
-        padForm.addRow(self.gamepadRumbleTitle, self.gamepadRumbleCheckBox)
+        rumble_layout = QHBoxLayout()
+        rumble_layout.setContentsMargins(0, 0, 0, 0)
+        rumble_layout.addWidget(self.gamepadRumbleCheckBox)
+        rumble_layout.addWidget(self.gamepadRumbleTitle)
+        rumble_layout.addStretch()
+        padForm.addRow(rumble_layout)
 
         # 4. Hardware Settings Section
         hwFrame, hwForm = create_section(_("Hardware Settings"))

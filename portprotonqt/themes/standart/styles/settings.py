@@ -85,27 +85,27 @@ SETTINGS_COMBO_STYLE = f"""
 
 SETTINGS_CHECKBOX_STYLE = f"""
     QCheckBox {{
-        height: 34px;
         color: {color_f};
         font-family: '{font_family}';
-        font-size: {font_size_a};
+        font-size: 14px;
     }}
     QCheckBox::indicator {{
-        width: 24px;
-        height: 24px;
-        border: {border_c} {color_g};
-        border-radius: {border_radius_a};
+        width: 20px;
+        height: 20px;
+        border: 2px solid {color_f};
+        border-radius: 4px;
         background: {color_b};
     }}
     QCheckBox::indicator:hover {{
         background: {color_c};
-        border: {border_c} {color_a};
+        border-color: {color_a};
     }}
     QCheckBox::indicator:focus {{
-        border: {border_c} {color_a};
+        border-color: {color_a};
     }}
     QCheckBox::indicator:checked {{
         image: url({theme_manager.get_icon("check", current_theme_name, as_path=True)});
-        border: {border_c} {color_a};
+        background: {color_a};
+        border-color: {color_a};
     }}
 """
