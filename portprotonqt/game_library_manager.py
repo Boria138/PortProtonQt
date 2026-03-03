@@ -39,6 +39,11 @@ class GameLibraryManager:
         self.gamesListLayout: FlowLayout | None = None
         self.sizeSlider: QSlider | None = None
         self._update_timer: QTimer | None = None
+        self._incremental_add_timer: QTimer | None = None
+        self._incremental_add_queue: deque[tuple[str, str]] = deque()
+        self._incremental_new_games_map: dict[tuple[str, str], tuple] = {}
+        self._incremental_search_text: str = ""
+        self._incremental_batch_size: int = 16
         self._pending_update = False
         self.pending_deletions = deque()
         self.is_filtering = False
@@ -94,6 +99,9 @@ class GameLibraryManager:
         self._update_timer.setSingleShot(True)
         self._update_timer.setInterval(100)  # 100ms debounce
         self._update_timer.timeout.connect(self._perform_update)
+        self._incremental_add_timer = QTimer()
+        self._incremental_add_timer.setSingleShot(True)
+        self._incremental_add_timer.timeout.connect(self._process_incremental_add_batch)
 
         # Calculate initial card width
         def calculate_card_width():
@@ -241,10 +249,85 @@ class GameLibraryManager:
             self.gamesListWidget.adjustSize()
             self.gamesListWidget.updateGeometry()
 
+    def _cancel_incremental_add(self) -> None:
+        if self._incremental_add_timer is not None and self._incremental_add_timer.isActive():
+            self._incremental_add_timer.stop()
+        self._incremental_add_queue.clear()
+        self._incremental_new_games_map = {}
+        self._incremental_search_text = ""
+
+    def _start_incremental_add(
+        self,
+        card_order: list[tuple[str, str]],
+        new_games_map: dict[tuple[str, str], tuple],
+        search_text: str
+    ) -> None:
+        if self.gamesListLayout is None:
+            return
+        self._cancel_incremental_add()
+        while self.gamesListLayout.count():
+            self.gamesListLayout.takeAt(0)
+        for card in self.game_card_cache.values():
+            if card.isVisible():
+                card.setVisible(False)
+        self._incremental_add_queue = deque(card_order)
+        self._incremental_new_games_map = new_games_map
+        self._incremental_search_text = search_text
+        if self._incremental_add_timer is not None:
+            self._incremental_add_timer.start(0)
+
+    def _process_incremental_add_batch(self) -> None:
+        if self.gamesListLayout is None or self.gamesListWidget is None:
+            self._cancel_incremental_add()
+            return
+
+        added_new_card = False
+        processed = 0
+        max_batch = min(self._incremental_batch_size, len(self._incremental_add_queue))
+        self.gamesListWidget.setUpdatesEnabled(False)
+        try:
+            while processed < max_batch:
+                game_key = self._incremental_add_queue.popleft()
+                card = self.game_card_cache.get(game_key)
+                if card is None:
+                    if self.context_menu_manager is None:
+                        processed += 1
+                        continue
+                    game_data = self._incremental_new_games_map.get(game_key)
+                    if game_data is None:
+                        processed += 1
+                        continue
+                    card = self._create_game_card(game_data)
+                    self.game_card_cache[game_key] = card
+                    added_new_card = True
+                should_be_visible = (
+                    not self._incremental_search_text or
+                    self._incremental_search_text in str(game_key[0]).lower()
+                )
+                if card.isVisible() != should_be_visible:
+                    card.setVisible(should_be_visible)
+                self.gamesListLayout.addWidget(card)
+                processed += 1
+        finally:
+            self.gamesListWidget.setUpdatesEnabled(True)
+            self.gamesListLayout.update()
+            self.gamesListWidget.updateGeometry()
+
+        if self._incremental_add_queue:
+            if self._incremental_add_timer is not None:
+                self._incremental_add_timer.start(0)
+            return
+
+        if added_new_card:
+            self.load_visible_images()
+        self.force_update_cards_library()
+        self._cancel_incremental_add()
+
     def _update_game_grid_immediate(self):
         """Updates the game grid with the provided or current game list."""
         if self.gamesListLayout is None or self.gamesListWidget is None:
             return
+        self._cancel_incremental_add()
 
         search_text = self.main_window.searchEdit.text().strip().lower()
 
@@ -317,7 +400,8 @@ class GameLibraryManager:
                     current_layout_order = None  # Skip reorg if not dirty
 
                 new_card_order = []
-                cards_to_add = []
+                new_games_map: dict[tuple[str, str], tuple] = {}
+                has_new_cards = False
 
                 for game_data in sorted_games:
                     game_name = game_data[0]
@@ -331,25 +415,26 @@ class GameLibraryManager:
                             card.setVisible(should_be_visible)
                         new_card_order.append(game_key)
                     else:
-                        if self.context_menu_manager is None:
-                            continue
-
-                        card = self._create_game_card(game_data)
-                        self.game_card_cache[game_key] = card
-                        card.setVisible(should_be_visible)
+                        new_games_map[game_key] = game_data
                         new_card_order.append(game_key)
-                        cards_to_add.append((game_key, card))
 
                 # Only reorganize if order changed AND dirty
                 if self.dirty and self.gamesListLayout is not None and (current_layout_order is None or new_card_order != current_layout_order):
-                    # Remove all widgets from layout (batch)
-                    while self.gamesListLayout.count():
-                        self.gamesListLayout.takeAt(0)
-
-                    # Add widgets in new order (batch)
+                    self._start_incremental_add(new_card_order, new_games_map, search_text)
+                else:
                     for game_key in new_card_order:
-                        card = self.game_card_cache[game_key]
+                        if game_key in self.game_card_cache:
+                            continue
+                        if self.context_menu_manager is None:
+                            continue
+                        game_data = new_games_map.get(game_key)
+                        if game_data is None:
+                            continue
+                        card = self._create_game_card(game_data)
+                        self.game_card_cache[game_key] = card
+                        card.setVisible(not search_text or search_text in str(game_key[0]).lower())
                         self.gamesListLayout.addWidget(card)
+                        has_new_cards = True
 
                 self.dirty = False  # Reset flag
 
@@ -358,7 +443,7 @@ class GameLibraryManager:
                     QTimer.singleShot(0, lambda: self._flush_deletions())
 
                 # Load visible images for new cards only
-                if cards_to_add:
+                if has_new_cards:
                     self.load_visible_images()
 
             finally:
@@ -483,6 +568,7 @@ class GameLibraryManager:
         """Clears all widgets from the layout."""
         if layout is None:
             return
+        self._cancel_incremental_add()
         # Remove all widgets from the layout and clean up caches
         while layout.count():
             child = layout.takeAt(0)
@@ -511,7 +597,14 @@ class GameLibraryManager:
         self._build_search_indices(games)
 
         self.dirty = True  # Full resort needed
-        self.update_game_grid()
+        self._pending_update = True
+        if self._update_timer is not None:
+            if self._update_timer.isActive():
+                self._update_timer.stop()
+            # Run at the next event loop tick without blocking current UI work.
+            self._update_timer.start(0)
+        else:
+            self._update_game_grid_immediate()
 
     def _build_search_indices(self, games: list[tuple]):
         """Build search indices for fast searching."""
