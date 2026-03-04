@@ -1622,14 +1622,6 @@ class MainWindow(QMainWindow):
         self.autoInstallGameCards = {}
         self.allAutoInstallCards = []
 
-        # Cover update
-        def on_autoinstall_cover_updated(exe_name, local_path):
-            if exe_name in self.autoInstallGameCards and local_path:
-                card = self.autoInstallGameCards[exe_name]
-                card.cover_path = local_path
-                load_pixmap_async(local_path, self.auto_card_width, int(self.auto_card_width * 1.5), card.on_cover_loaded)
-
-
         # Load games
         def on_autoinstall_games_loaded(games: list[tuple]):
             self.autoInstallProgress.setVisible(False)
@@ -1696,35 +1688,28 @@ class MainWindow(QMainWindow):
                 self.allAutoInstallCards.append(card)
                 self.autoInstallContainerLayout.addWidget(card)
 
-            # Load missing covers and metadata
-            for game_tuple in games:
-                name = game_tuple[0]
-                description = game_tuple[1]
-                cover_path = game_tuple[2]
-                appid = game_tuple[3]
-                controller_support = game_tuple[4]
-                exec_line = game_tuple[5]
-                game_source = game_tuple[12]
-                exe_name = game_tuple[13]
-                if not cover_path:
-                    self.portproton_api.download_autoinstall_cover_async(
-                        exe_name, timeout=5,
-                        callback=lambda path, ex=exe_name: on_autoinstall_cover_updated(ex, path)
-                    )
+            # Load missing covers and metadata in batch
+            exe_names_to_load = [game_tuple[13] for game_tuple in games]
 
-                # Always try to download metadata for better descriptions
-                # Update the card when metadata is downloaded
-                def metadata_callback(path, exe_name=exe_name):
-                    if path and os.path.exists(path):  # If metadata file was successfully downloaded
-                        try:
-                            # Update card name from metadata
-                            self._update_card_name_from_metadata(exe_name, path)
-                        except Exception as e:
-                            logger.error(f"Error updating card metadata for {exe_name}: {e}")
+            def batch_cover_callback(exe_name, local_path):
+                if local_path and exe_name in self.autoInstallGameCards:
+                    card = self.autoInstallGameCards[exe_name]
+                    card.cover_path = local_path
+                    load_pixmap_async(local_path, self.auto_card_width, int(self.auto_card_width * 1.5), card.on_cover_loaded)
 
-                self.portproton_api.download_autoinstall_metadata_async(
-                    exe_name, timeout=5,
-                    callback=metadata_callback
+            def batch_metadata_callback(exe_name, local_path):
+                if local_path and os.path.exists(local_path):
+                    try:
+                        self._update_card_name_from_metadata(exe_name, local_path)
+                    except Exception as e:
+                        logger.error(f"Error updating card metadata for {exe_name}: {e}")
+
+            if exe_names_to_load:
+                self.portproton_api.download_autoinstall_assets_batch_async(
+                    exe_names_to_load,
+                    timeout=5,
+                    cover_callback=batch_cover_callback,
+                    metadata_callback=batch_metadata_callback
                 )
 
             self.autoInstallContainer.updateGeometry()

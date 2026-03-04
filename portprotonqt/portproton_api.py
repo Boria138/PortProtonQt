@@ -283,6 +283,91 @@ class PortProtonAPI:
             if callback:
                 callback(None)
 
+    def download_autoinstall_assets_batch_async(
+        self,
+        exe_names: list[str],
+        timeout: int = 5,
+        cover_callback: Callable[[str, str | None], None] | None = None,
+        metadata_callback: Callable[[str, str | None], None] | None = None
+    ) -> None:
+        """Download covers and metadata for multiple autoinstall games in parallel.
+
+        Args:
+            exe_names: List of executable names to download assets for
+            timeout: Request timeout in seconds
+            cover_callback: Callback(exe_name, local_path) for cover downloads
+            metadata_callback: Callback(exe_name, local_path) for metadata downloads
+        """
+        xdg_data_home = os.getenv("XDG_DATA_HOME",
+                                os.path.join(os.path.expanduser("~"), ".local", "share"))
+        autoinstall_root = os.path.join(xdg_data_home, "PortProtonQt", "custom_data", "autoinstall")
+
+        cover_urls = []
+        cover_paths = []
+        metadata_urls = []
+        metadata_paths = []
+        exe_name_mapping = {}
+
+        for exe_name in exe_names:
+            user_game_folder = os.path.join(autoinstall_root, exe_name)
+            if not os.path.isdir(user_game_folder):
+                try:
+                    os.makedirs(user_game_folder, exist_ok=True)
+                except FileExistsError:
+                    pass
+
+            local_cover_path = os.path.join(user_game_folder, "cover.png")
+            local_metadata_path = os.path.join(user_game_folder, "metadata.txt")
+
+            cover_exists = os.path.exists(local_cover_path)
+            metadata_exists = os.path.exists(local_metadata_path)
+
+            if cover_exists:
+                logger.debug(f"Batch cover already exists for {exe_name}: {local_cover_path}")
+                if cover_callback:
+                    cover_callback(exe_name, local_cover_path)
+            else:
+                cover_url = f"{self.base_url}/{exe_name}/cover.png"
+                cover_urls.append(cover_url)
+                cover_paths.append(local_cover_path)
+                exe_name_mapping[("cover", cover_url)] = exe_name
+
+            if metadata_exists:
+                logger.debug(f"Batch metadata already exists for {exe_name}: {local_metadata_path}")
+                if metadata_callback:
+                    metadata_callback(exe_name, local_metadata_path)
+            else:
+                metadata_url = f"{self.base_url}/{exe_name}/metadata.txt"
+                metadata_urls.append(metadata_url)
+                metadata_paths.append(local_metadata_path)
+                exe_name_mapping[("metadata", metadata_url)] = exe_name
+
+        # Download covers in parallel (2 workers, 0.5s delay to avoid 429)
+        if cover_urls:
+            results = self.downloader.download_parallel(cover_urls, cover_paths, timeout, throttle_delay=0.5, max_workers=2)
+            for url, local_path in results.items():
+                exe_name = exe_name_mapping.get(("cover", url))
+                if exe_name:
+                    if local_path:
+                        logger.info(f"Batch cover downloaded for {exe_name}: {local_path}")
+                    else:
+                        logger.debug(f"No cover found for {exe_name}")
+                    if cover_callback:
+                        cover_callback(exe_name, local_path)
+
+        # Download metadata in parallel (2 workers, 0.5s delay to avoid 429)
+        if metadata_urls:
+            results = self.downloader.download_parallel(metadata_urls, metadata_paths, timeout, throttle_delay=0.5, max_workers=2)
+            for url, local_path in results.items():
+                exe_name = exe_name_mapping.get(("metadata", url))
+                if exe_name:
+                    if local_path:
+                        logger.info(f"Batch metadata downloaded for {exe_name}: {local_path}")
+                    else:
+                        logger.debug(f"No metadata found for {exe_name}")
+                    if metadata_callback:
+                        metadata_callback(exe_name, local_path)
+
     def get_autoinstall_description(self, exe_name: str, lang_code: str = "en") -> str | None:
         """Read description from downloaded metadata.txt file for autoinstall game.
 

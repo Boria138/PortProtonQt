@@ -47,50 +47,6 @@ def download_with_cache(url, local_path, timeout=5, downloader_instance=None):
             os.remove(local_path)
         return None
 
-def download_with_parallel(urls, local_paths, max_workers=4, timeout=5, downloader_instance=None):
-    from concurrent.futures import ThreadPoolExecutor, as_completed
-
-    results = {}
-    session = get_requests_session()
-
-    def _download_one(url, local_path):
-        if os.path.exists(local_path):
-            return local_path
-        try:
-            with session.get(url, stream=True, timeout=timeout) as response:
-                response.raise_for_status()
-                total_size = int(response.headers.get('Content-Length', 0))
-                os.makedirs(os.path.dirname(local_path), exist_ok=True)
-                desc = Path(local_path).name
-                with tqdm(total=total_size if total_size > 0 else None,
-                          unit='B', unit_scale=True, unit_divisor=1024,
-                          desc=f"Downloading {desc}", ascii=True) as pbar:
-                    with open(local_path, 'wb') as f:
-                        for chunk in response.iter_content(chunk_size=8192):
-                            if chunk:
-                                f.write(chunk)
-                                pbar.update(len(chunk))
-            return local_path
-        except Exception as e:
-            logger.error(f"Download error {url}: {e}")
-            if downloader_instance and hasattr(downloader_instance, '_last_error'):
-                downloader_instance._last_error[url] = True
-            if os.path.exists(local_path):
-                os.remove(local_path)
-            return None
-
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        future_to_url = {executor.submit(_download_one, url, local_path): url for url, local_path in zip(urls, local_paths, strict=False)}
-        for future in tqdm(as_completed(future_to_url), total=len(urls), desc="Downloading in parallel", ascii=True):
-            url = future_to_url[future]
-            try:
-                res = future.result()
-                results[url] = res
-            except Exception as e:
-                logger.error(f"Download error {url}: {e}")
-                results[url] = None
-    return results
-
 class Downloader(QObject):
     download_completed = Signal(str, str, bool)  # url, local_path, success
 
@@ -133,6 +89,93 @@ class Downloader(QObject):
                 self._locks[url] = threading.Lock()
             return self._locks[url]
 
+    def _download_with_parallel(self, urls, local_paths, timeout=5, throttle_delay=0.2, max_workers=4):
+        """Internal parallel download with rate limiting and 429 retry."""
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        import time
+
+        results = {}
+        session = get_requests_session()
+        rate_limit_lock = threading.Lock()
+        last_request_time = [0.0]
+
+        def _download_one(url, local_path):
+            if os.path.exists(local_path):
+                return local_path
+            try:
+                with rate_limit_lock:
+                    elapsed = time.time() - last_request_time[0]
+                    if elapsed < throttle_delay:
+                        time.sleep(throttle_delay - elapsed)
+                    last_request_time[0] = time.time()
+
+                with session.get(url, stream=True, timeout=timeout) as response:
+                    response.raise_for_status()
+                    total_size = int(response.headers.get('Content-Length', 0))
+                    os.makedirs(os.path.dirname(local_path), exist_ok=True)
+                    desc = Path(local_path).name
+                    with tqdm(total=total_size if total_size > 0 else None,
+                              unit='B', unit_scale=True, unit_divisor=1024,
+                              desc=f"Downloading {desc}", ascii=True) as pbar:
+                        with open(local_path, 'wb') as f:
+                            for chunk in response.iter_content(chunk_size=8192):
+                                if chunk:
+                                    f.write(chunk)
+                                    pbar.update(len(chunk))
+                return local_path
+            except requests.exceptions.HTTPError as e:
+                if e.response.status_code == 429:
+                    logger.warning(f"Rate limited (429) for {url}, retrying after delay")
+                    time.sleep(2.0)
+                    try:
+                        with session.get(url, stream=True, timeout=timeout) as response:
+                            response.raise_for_status()
+                            total_size = int(response.headers.get('Content-Length', 0))
+                            os.makedirs(os.path.dirname(local_path), exist_ok=True)
+                            desc = Path(local_path).name
+                            with tqdm(total=total_size if total_size > 0 else None,
+                                      unit='B', unit_scale=True, unit_divisor=1024,
+                                      desc=f"Downloading {desc}", ascii=True) as pbar:
+                                with open(local_path, 'wb') as f:
+                                    for chunk in response.iter_content(chunk_size=8192):
+                                        if chunk:
+                                            f.write(chunk)
+                                            pbar.update(len(chunk))
+                        return local_path
+                    except Exception as retry_e:
+                        logger.error(f"Retry download error {url}: {retry_e}")
+                        with self._global_lock:
+                            self._last_error[url] = True
+                        if os.path.exists(local_path):
+                            os.remove(local_path)
+                        return None
+                else:
+                    logger.error(f"Download error {url}: {e}")
+                    with self._global_lock:
+                        self._last_error[url] = True
+                    if os.path.exists(local_path):
+                        os.remove(local_path)
+                    return None
+            except Exception as e:
+                logger.error(f"Download error {url}: {e}")
+                with self._global_lock:
+                    self._last_error[url] = True
+                if os.path.exists(local_path):
+                    os.remove(local_path)
+                return None
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            future_to_url = {executor.submit(_download_one, url, local_path): url for url, local_path in zip(urls, local_paths, strict=False)}
+            for future in tqdm(as_completed(future_to_url), total=len(urls), desc="Downloading in parallel", ascii=True):
+                url = future_to_url[future]
+                try:
+                    res = future.result()
+                    results[url] = res
+                except Exception as e:
+                    logger.error(f"Download error {url}: {e}")
+                    results[url] = None
+        return results
+
     def download(self, url, local_path, timeout=5):
         if not self.has_internet():
             logger.warning(f"No internet, skipping download {url}")
@@ -165,7 +208,7 @@ class Downloader(QObject):
                     del self._locks[url]
             return result
 
-    def download_parallel(self, urls, local_paths, timeout=5):
+    def download_parallel(self, urls, local_paths, timeout=5, throttle_delay=0.2, max_workers=None):
         if not self.has_internet():
             logger.warning("No internet, skipping parallel download")
             return dict.fromkeys(urls)
@@ -182,13 +225,13 @@ class Downloader(QObject):
                 filtered_urls.append(url)
                 filtered_paths.append(path)
 
-        results = download_with_parallel(filtered_urls, filtered_paths, max_workers=self.max_workers, timeout=timeout, downloader_instance=self)
+        workers = max_workers if max_workers is not None else self.max_workers
+        results = self._download_with_parallel(filtered_urls, filtered_paths, timeout, throttle_delay, workers)
 
         with self._global_lock:
             for url, path in results.items():
                 if path:
                     self._cache[url] = path
-        # For URLs that were skipped, add them from cache or None
         final_results = {}
         with self._global_lock:
             for url in urls:
