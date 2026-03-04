@@ -1212,6 +1212,8 @@ class MainWindow(QMainWindow):
             for i, btn in self.tabButtons.items():
                 btn.setChecked(i == index)
             self.stackedWidget.setCurrentIndex(index)
+            if index == self.auto_install_tab_index:
+                self._start_autoinstall_load()
         else:
             # If trying to switch to a non-existent or hidden tab (like auto-install when it's hidden),
             # find the first visible tab to switch to
@@ -1580,12 +1582,6 @@ class MainWindow(QMainWindow):
 
         autoInstallLayout.addWidget(headerWidget)
 
-        # Progress bar
-        self.autoInstallProgress = QProgressBar()
-        self.autoInstallProgress.setStyleSheet(self.theme.PROGRESS_BAR_STYLE)
-        self.autoInstallProgress.setVisible(False)
-        autoInstallLayout.addWidget(self.autoInstallProgress)
-
         # Scroll
         self.autoInstallScrollArea = QScrollArea()
         self.autoInstallScrollArea.setWidgetResizable(True)
@@ -1621,10 +1617,13 @@ class MainWindow(QMainWindow):
         # Store cards
         self.autoInstallGameCards = {}
         self.allAutoInstallCards = []
+        self.autoInstallLoaded = False
+        self.autoInstallLoading = False
 
         # Load games
         def on_autoinstall_games_loaded(games: list[tuple]):
-            self.autoInstallProgress.setVisible(False)
+            self.autoInstallLoaded = True
+            self.autoInstallLoading = False
 
             # Clear
             while self.autoInstallContainerLayout.count():
@@ -1698,9 +1697,11 @@ class MainWindow(QMainWindow):
                     load_pixmap_async(local_path, self.auto_card_width, int(self.auto_card_width * 1.5), card.on_cover_loaded)
 
             def batch_metadata_callback(exe_name, local_path):
+                logger.debug(f"Metadata callback called for {exe_name}: {local_path}")
                 if local_path and os.path.exists(local_path):
                     try:
                         self._update_card_name_from_metadata(exe_name, local_path)
+                        logger.info(f"Updated metadata for {exe_name}")
                     except Exception as e:
                         logger.error(f"Error updating card metadata for {exe_name}: {e}")
 
@@ -1716,20 +1717,23 @@ class MainWindow(QMainWindow):
             self.autoInstallScrollArea.updateGeometry()
             self.filterAutoInstallGames()
 
-        # Show progress
-        self.autoInstallProgress.setVisible(True)
-        self.autoInstallProgress.setRange(0, 0)
+        self._on_autoinstall_games_loaded = on_autoinstall_games_loaded
 
-        # Store the thread to prevent premature destruction
-        self.autoInstallLoadThread = self.portproton_api.start_autoinstall_games_load(on_autoinstall_games_loaded)
+        self.stackedWidget.addWidget(autoInstallPage)
 
-        # Optional: Clean up thread when finished (prevents leak)
+    def _start_autoinstall_load(self) -> None:
+        if self.autoInstallLoaded or self.autoInstallLoading:
+            return
+        if not hasattr(self, "_on_autoinstall_games_loaded"):
+            return
+        self.autoInstallLoading = True
+        self.autoInstallLoadThread = self.portproton_api.start_autoinstall_games_load(
+            self._on_autoinstall_games_loaded
+        )
         if self.autoInstallLoadThread:
             def on_thread_finished():
                 self.autoInstallLoadThread = None  # Release reference
             self.autoInstallLoadThread.finished.connect(on_thread_finished)
-
-        self.stackedWidget.addWidget(autoInstallPage)
 
     def on_auto_slider_released(self):
         """Handles auto-install slider release to update card size."""
@@ -3472,12 +3476,12 @@ class MainWindow(QMainWindow):
                 logger.warning(f"Failed to cleanup debug log manager: {e}")
 
     def _update_card_name_from_metadata(self, exe_name: str, metadata_path: str):
-        """Update card name from metadata file."""
+        """Update card name and description from metadata file."""
         # Read the translated metadata using the existing function
         language_code = get_egs_language()  # Use the same language detection as elsewhere
         translations = read_metadata_translations(metadata_path, language_code)
 
-        # Update the card with the new name if available
+        # Update the card with the new name and description if available
         if exe_name in self.autoInstallGameCards:
             card = self.autoInstallGameCards[exe_name]
 
@@ -3501,6 +3505,12 @@ class MainWindow(QMainWindow):
                 # Update the display label
                 if hasattr(card, 'nameLabel') and card.nameLabel:
                     card.nameLabel.setText(translations['name'])
+
+            # Update description if available
+            if translations and 'description' in translations and translations['description']:
+                card.description = translations['description']
+                if hasattr(card, 'descriptionLabel') and card.descriptionLabel:
+                    card.descriptionLabel.setText(translations['description'])
 
 
     def goBackDetailPage(self, page):

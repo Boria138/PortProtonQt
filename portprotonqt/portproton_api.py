@@ -10,8 +10,9 @@ import queue
 import shutil
 import shlex
 import locale
+import threading
 from collections.abc import Callable
-from PySide6.QtCore import QThread, Signal, QUrl
+from PySide6.QtCore import QThread, Signal, QUrl, QObject, Qt, SignalInstance
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QApplication
 from portprotonqt.downloader import Downloader
@@ -102,6 +103,7 @@ class PortProtonAPI:
         self.builtin_custom_folder = os.path.join(self.repo_root, "custom_data")
         self._autoinstall_cache = None  # In-memory cache
         self._head_negative_cache: set[str] = set()
+        self._pending_asset_notifier: QObject | None = None
 
     def _get_game_dir(self, exe_name: str) -> str:
         game_dir = os.path.join(self.custom_data_dir, exe_name)
@@ -298,23 +300,70 @@ class PortProtonAPI:
             cover_callback: Callback(exe_name, local_path) for cover downloads
             metadata_callback: Callback(exe_name, local_path) for metadata downloads
         """
-        xdg_data_home = os.getenv("XDG_DATA_HOME",
-                                os.path.join(os.path.expanduser("~"), ".local", "share"))
-        autoinstall_root = os.path.join(xdg_data_home, "PortProtonQt", "custom_data", "autoinstall")
+        xdg_data_home = os.getenv(
+            "XDG_DATA_HOME",
+            os.path.join(os.path.expanduser("~"), ".local", "share"),
+        )
+        autoinstall_root = os.path.join(
+            xdg_data_home, "PortProtonQt", "custom_data", "autoinstall"
+        )
 
-        cover_urls = []
-        cover_paths = []
-        metadata_urls = []
-        metadata_paths = []
-        exe_name_mapping = {}
+        class AssetNotifier(QObject):
+            cover_ready = Signal(str, object)
+            metadata_ready = Signal(str, object)
+
+        notifier = AssetNotifier()
+        if cover_callback:
+            notifier.cover_ready.connect(cover_callback, Qt.ConnectionType.DirectConnection)
+        if metadata_callback:
+            notifier.metadata_ready.connect(metadata_callback, Qt.ConnectionType.DirectConnection)
+        self._pending_asset_notifier = notifier
+
+        pending_tasks: list[tuple[str, str, SignalInstance, str, str]] = []
+        max_concurrent_downloads = 2
+        active_downloads = 0
+        lock = threading.Lock()
+        throttle_delay = 0.5
+        last_request_time = [0.0]
+
+        def finish_download():
+            nonlocal active_downloads
+            with lock:
+                active_downloads -= 1
+            start_next()
+
+        def start_next():
+            nonlocal active_downloads
+            with lock:
+                while active_downloads < max_concurrent_downloads and pending_tasks:
+                    url, local_path, signal, exe_name, asset_type = pending_tasks.pop(0)
+                    elapsed = time.time() - last_request_time[0]
+                    if elapsed < throttle_delay:
+                        time.sleep(throttle_delay - elapsed)
+                    last_request_time[0] = time.time()
+                    active_downloads += 1
+
+                    def on_download(result: str | None, signal=signal, exe_name=exe_name, asset_type=asset_type):
+                        if result:
+                            logger.info(f"{asset_type.capitalize()} downloaded for {exe_name}: {result}")
+                        else:
+                            logger.debug(f"No {asset_type} found for {exe_name}")
+                        signal.emit(exe_name, result)
+                        finish_download()
+
+                    self.downloader.download_async(
+                        url,
+                        local_path,
+                        timeout=timeout,
+                        callback=on_download,
+                    )
 
         for exe_name in exe_names:
             user_game_folder = os.path.join(autoinstall_root, exe_name)
-            if not os.path.isdir(user_game_folder):
-                try:
-                    os.makedirs(user_game_folder, exist_ok=True)
-                except FileExistsError:
-                    pass
+            try:
+                os.makedirs(user_game_folder, exist_ok=True)
+            except FileExistsError:
+                pass
 
             local_cover_path = os.path.join(user_game_folder, "cover.png")
             local_metadata_path = os.path.join(user_game_folder, "metadata.txt")
@@ -324,49 +373,19 @@ class PortProtonAPI:
 
             if cover_exists:
                 logger.debug(f"Batch cover already exists for {exe_name}: {local_cover_path}")
-                if cover_callback:
-                    cover_callback(exe_name, local_cover_path)
+                notifier.cover_ready.emit(exe_name, local_cover_path)
             else:
                 cover_url = f"{self.base_url}/{exe_name}/cover.png"
-                cover_urls.append(cover_url)
-                cover_paths.append(local_cover_path)
-                exe_name_mapping[("cover", cover_url)] = exe_name
+                pending_tasks.append((cover_url, local_cover_path, notifier.cover_ready, exe_name, "cover"))
 
             if metadata_exists:
                 logger.debug(f"Batch metadata already exists for {exe_name}: {local_metadata_path}")
-                if metadata_callback:
-                    metadata_callback(exe_name, local_metadata_path)
+                notifier.metadata_ready.emit(exe_name, local_metadata_path)
             else:
                 metadata_url = f"{self.base_url}/{exe_name}/metadata.txt"
-                metadata_urls.append(metadata_url)
-                metadata_paths.append(local_metadata_path)
-                exe_name_mapping[("metadata", metadata_url)] = exe_name
+                pending_tasks.append((metadata_url, local_metadata_path, notifier.metadata_ready, exe_name, "metadata"))
 
-        # Download covers in parallel (2 workers, 0.5s delay to avoid 429)
-        if cover_urls:
-            results = self.downloader.download_parallel(cover_urls, cover_paths, timeout, throttle_delay=0.5, max_workers=2)
-            for url, local_path in results.items():
-                exe_name = exe_name_mapping.get(("cover", url))
-                if exe_name:
-                    if local_path:
-                        logger.info(f"Batch cover downloaded for {exe_name}: {local_path}")
-                    else:
-                        logger.debug(f"No cover found for {exe_name}")
-                    if cover_callback:
-                        cover_callback(exe_name, local_path)
-
-        # Download metadata in parallel (2 workers, 0.5s delay to avoid 429)
-        if metadata_urls:
-            results = self.downloader.download_parallel(metadata_urls, metadata_paths, timeout, throttle_delay=0.5, max_workers=2)
-            for url, local_path in results.items():
-                exe_name = exe_name_mapping.get(("metadata", url))
-                if exe_name:
-                    if local_path:
-                        logger.info(f"Batch metadata downloaded for {exe_name}: {local_path}")
-                    else:
-                        logger.debug(f"No metadata found for {exe_name}")
-                    if metadata_callback:
-                        metadata_callback(exe_name, local_path)
+        start_next()
 
     def get_autoinstall_description(self, exe_name: str, lang_code: str = "en") -> str | None:
         """Read description from downloaded metadata.txt file for autoinstall game.
