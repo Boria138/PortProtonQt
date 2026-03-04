@@ -330,8 +330,9 @@ class GameCard(QFrame):
             pass
 
     def update_card_size(self, new_width: int):
+        """Update card size by scaling existing base_pixmap without reloading."""
         self.base_card_width = new_width
-        load_pixmap_async(self.cover_path or "", new_width, int(new_width * 1.5), self.on_cover_loaded)
+        self.update_cover_pixmap()
         self.update_scale()
 
     def update_badge_visibility(self, display_filter: str):
