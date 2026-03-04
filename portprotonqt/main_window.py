@@ -1059,12 +1059,15 @@ class MainWindow(QMainWindow):
         self.total_games = len(desktop_files)
         self.update_progress.emit(0)  # Initialize progress bar
         self.update_status_message.emit(_("Loading PortProton games..."), 3000)
+        processed_count = 0
         def on_desktop_processed(result: tuple | None, games=games):
+            nonlocal processed_count
             if result:
                 games.append(result)
             self.pending_games.append(None)
             self.update_progress.emit(len(self.pending_games))  # Update progress bar
-            if len(self.pending_games) == len(desktop_files):
+            processed_count += 1
+            if processed_count == len(desktop_files):
                 callback(games)
         with ThreadPoolExecutor() as executor:
             for file_path in desktop_files:

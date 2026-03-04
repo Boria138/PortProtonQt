@@ -101,6 +101,7 @@ class PortProtonAPI:
         self.repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         self.builtin_custom_folder = os.path.join(self.repo_root, "custom_data")
         self._autoinstall_cache = None  # In-memory cache
+        self._head_negative_cache: set[str] = set()
 
     def _get_game_dir(self, exe_name: str) -> str:
         game_dir = os.path.join(self.custom_data_dir, exe_name)
@@ -108,8 +109,13 @@ class PortProtonAPI:
         return game_dir
 
     def _check_file_exists(self, url: str, timeout: int = 5) -> bool:
+        if url in self._head_negative_cache:
+            return False
         try:
             response = requests.head(url, timeout=timeout)
+            if response.status_code == 404:
+                self._head_negative_cache.add(url)
+                return False
             response.raise_for_status()
             return response.status_code == 200
         except requests.RequestException as e:
@@ -118,7 +124,7 @@ class PortProtonAPI:
 
     def download_game_assets_async(self, exe_name: str, timeout: int = 5, callback: Callable[[dict[str, str | None]], None] | None = None) -> None:
         game_dir = self._get_game_dir(exe_name)
-        cover_extensions = [".png", ".jpg", ".jpeg", ".bmp"]
+        cover_extensions = [".png"]
         cover_url_base = f"{self.base_url}/{exe_name}/cover"
         metadata_url = f"{self.base_url}/{exe_name}/metadata.txt"
 
@@ -149,6 +155,28 @@ class PortProtonAPI:
             if pending_downloads == 0 and callback:
                 callback(results)
 
+        metadata_found = False
+        local_metadata_path = os.path.join(game_dir, "metadata.txt")
+        if os.path.exists(local_metadata_path):
+            logger.debug(f"Metadata already exists locally for {exe_name}: {local_metadata_path}")
+            results["metadata"] = local_metadata_path
+            metadata_found = True
+        elif self._check_file_exists(metadata_url, timeout):
+            metadata_found = True
+            pending_downloads += 1
+            self.downloader.download_async(
+                metadata_url,
+                local_metadata_path,
+                timeout=timeout,
+                callback=on_metadata_downloaded
+            )
+
+        if not metadata_found:
+            logger.debug(f"No metadata found for {exe_name}, skipping cover checks")
+            if callback:
+                callback(results)
+            return
+
         for ext in cover_extensions:
             cover_url = f"{cover_url_base}{ext}"
             if self._check_file_exists(cover_url, timeout):
@@ -161,20 +189,6 @@ class PortProtonAPI:
                     callback=lambda path, ext=ext: on_cover_downloaded(path, ext)
                 )
                 break
-
-        # Check if metadata already exists locally before attempting download
-        local_metadata_path = os.path.join(game_dir, "metadata.txt")
-        if os.path.exists(local_metadata_path):
-            logger.debug(f"Metadata already exists locally for {exe_name}: {local_metadata_path}")
-            results["metadata"] = local_metadata_path
-        elif self._check_file_exists(metadata_url, timeout):
-            pending_downloads += 1
-            self.downloader.download_async(
-                metadata_url,
-                local_metadata_path,
-                timeout=timeout,
-                callback=on_metadata_downloaded
-            )
 
         if pending_downloads == 0:
             logger.debug(f"No assets found for {exe_name}")
