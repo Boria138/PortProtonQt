@@ -21,10 +21,10 @@
 
 | Локаль | Прогресс | Переведено |
 | :----- | -------: | ---------: |
-| [de](./de/LC_MESSAGES/portprotonqt.po) | 0% | 0 из 398 |
-| [es](./es/LC_MESSAGES/portprotonqt.po) | 0% | 0 из 398 |
-| [pt](./pt/LC_MESSAGES/portprotonqt.po) | 0% | 0 из 398 |
-| [ru](./ru/LC_MESSAGES/portprotonqt.po) | 99% | 397 из 398 |
+| [de](./de/LC_MESSAGES/portprotonqt.po) | 0% | 0 из 397 |
+| [es](./es/LC_MESSAGES/portprotonqt.po) | 0% | 0 из 397 |
+| [pt](./pt/LC_MESSAGES/portprotonqt.po) | 0% | 0 из 397 |
+| [ru](./ru/LC_MESSAGES/portprotonqt.po) | 100% | 397 из 397 |
 
 ---
 

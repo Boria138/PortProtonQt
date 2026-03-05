@@ -1,12 +1,13 @@
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
-exclude: '(data/|documentation/|portprotonqt/locales/|portprotonqt/custom_data/|dev-scripts/|\.venv/|venv/|.*\.svg$)'
+exclude: '(data/|portprotonqt/custom_data/|\.venv/|venv/|.*\.svg$)'
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
+        exclude: \.(po|pot)$
       - id: check-toml
       - id: check-yaml
 
@@ -47,4 +48,13 @@ repos:
         entry: ./dev-scripts/check_meson_files.py
         language: system
         files: (^portprotonqt/.*\.py$|meson\.build$)
+        pass_filenames: false
+
+  - repo: local
+    hooks:
+      - id: check-l10n-coverage
+        name: Check localization coverage table is up to date
+        entry: python dev-scripts/l10n.py --update-all
+        language: system
+        files: ^portprotonqt/locales/.*/LC_MESSAGES/portprotonqt\.po$
         pass_filenames: false

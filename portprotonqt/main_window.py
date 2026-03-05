@@ -2232,7 +2232,7 @@ class MainWindow(QMainWindow):
         self.timeDetailCombo = QComboBox()
         self.timeDetailCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.time_keys = ["detailed", "brief"]
-        self.time_labels = [_("detailed"), _("brief")]
+        self.time_labels = [_("Detailed"), _("Brief")]
         self.timeDetailCombo.addItems(self.time_labels)
         self.timeDetailCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
         self.timeDetailCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -2251,7 +2251,7 @@ class MainWindow(QMainWindow):
         self.gamesSortCombo = QComboBox()
         self.gamesSortCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.sort_keys = ["last_launch", "playtime", "alphabetical"]
-        self.sort_labels = [_("last launch"), _("playtime"), _("alphabetical")]
+        self.sort_labels = [_("Last launch"), _("Playtime"), _("Alphabetical")]
         self.gamesSortCombo.addItems(self.sort_labels)
         self.gamesSortCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
         self.gamesSortCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -2268,7 +2268,7 @@ class MainWindow(QMainWindow):
         genForm.addRow(self.gamesSortTitle, self.gamesSortCombo)
 
         self.filter_keys = ["all", "steam", "portproton", "favorites", "epic"]
-        self.filter_labels = [_("all"), "steam", "portproton", _("favorites"), "epic games store"]
+        self.filter_labels = [_("All"), "Steam", "PortProton", _("Favorites"), "Epic Games Store"]
         self.gamesDisplayCombo = QComboBox()
         self.gamesDisplayCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.gamesDisplayCombo.addItems(self.filter_labels)

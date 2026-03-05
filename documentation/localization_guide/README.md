@@ -21,10 +21,10 @@ Current translation status:
 
 | Locale | Progress | Translated |
 | :----- | -------: | ---------: |
-| [de](./de/LC_MESSAGES/portprotonqt.po) | 0% | 0 of 398 |
-| [es](./es/LC_MESSAGES/portprotonqt.po) | 0% | 0 of 398 |
-| [pt](./pt/LC_MESSAGES/portprotonqt.po) | 0% | 0 of 398 |
-| [ru](./ru/LC_MESSAGES/portprotonqt.po) | 99% | 397 of 398 |
+| [de](./de/LC_MESSAGES/portprotonqt.po) | 0% | 0 of 397 |
+| [es](./es/LC_MESSAGES/portprotonqt.po) | 0% | 0 of 397 |
+| [pt](./pt/LC_MESSAGES/portprotonqt.po) | 0% | 0 of 397 |
+| [ru](./ru/LC_MESSAGES/portprotonqt.po) | 100% | 397 of 397 |
 
 ---
 
@@ -79,4 +79,3 @@ python dev-scripts/l10n.py --spellcheck
 ```
 
 The script performs parallel spellchecking of strings in `.po` and `.pot` files. For each file, it prints the list of strings being checked and highlights any spelling errors with suggestions. Words listed in `dev-scripts/.spellignore` are ignored and not treated as typos.
-

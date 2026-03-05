@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-03-05 12:40+0500\n"
+"POT-Creation-Date: 2026-03-05 13:20+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -492,31 +492,31 @@ msgstr ""
 msgid "Library Settings"
 msgstr ""
 
-msgid "detailed"
+msgid "Detailed"
 msgstr ""
 
-msgid "brief"
+msgid "Brief"
 msgstr ""
 
 msgid "Time Detail Level:"
 msgstr ""
 
-msgid "last launch"
+msgid "Last launch"
 msgstr ""
 
-msgid "playtime"
+msgid "Playtime"
 msgstr ""
 
-msgid "alphabetical"
+msgid "Alphabetical"
 msgstr ""
 
 msgid "Games Sort Method:"
 msgstr ""
 
-msgid "all"
+msgid "All"
 msgstr ""
 
-msgid "favorites"
+msgid "Favorites"
 msgstr ""
 
 msgid "Games Display Filter:"
@@ -987,9 +987,6 @@ msgid "sec."
 msgstr ""
 
 msgid "Show"
-msgstr ""
-
-msgid "Favorites"
 msgstr ""
 
 msgid "Recent Games"
