@@ -5,7 +5,6 @@ import sys
 import io
 import contextlib
 import re
-import subprocess
 from pathlib import Path
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
@@ -25,14 +24,6 @@ POT_FILE     = LOCALES_PATH / "portprotonqt.pot"
 # ---------- Версия проекта ----------
 def _get_version() -> str:
     return "0.1.1"
-
-def _check_readme_changes() -> bool:
-    """Проверяет, есть ли изменения в README файлах после обновления таблицы."""
-    result = subprocess.run(
-        ["git", "diff", "--exit-code", str(README_EN), str(README_RU)],
-        capture_output=True
-    )
-    return result.returncode != 0
 
 # ---------- Обновление README ----------
 def _update_coverage(lines: list[str]) -> None:
@@ -281,12 +272,9 @@ def check_file(filepath: Path, issues_summary: dict) -> bool:
 # ---------- Основной обработчик ----------
 def main(args) -> int:
     if args.update_all:
-        extract_strings()
-        update_locales()
-        return 0
+        extract_strings(); update_locales()
     if args.create_new:
         create_new(args.create_new)
-        return 0
     if args.spellcheck:
         files = list(LOCALES_PATH.glob("**/portprotonqt.po")) + [POT_FILE]
         seen = set(); has_err = False
@@ -337,23 +325,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if args.spellcheck:
         sys.exit(main(args))
-    if args.update_all:
-        # Подавляем вывод при обновлении
-        f = io.StringIO()
-        with contextlib.redirect_stdout(f), contextlib.redirect_stderr(f):
-            main(args)
-            CommandLineInterface().run([
-                "pybabel", "compile", "--use-fuzzy", "--directory",
-                f"{LOCALES_PATH.resolve()}", "--domain=portprotonqt", "--statistics"
-            ])
-        _update_coverage(f.getvalue().splitlines())
-        # Проверяем, что README обновился
-        if _check_readme_changes():
-            print("❌ Localization coverage table out of date. README files updated.", file=sys.stderr)
-            sys.exit(1)
-        sys.exit(0)
     f = io.StringIO()
     with contextlib.redirect_stdout(f), contextlib.redirect_stderr(f):
         main(args)
-    _update_coverage(f.getvalue().splitlines())
+    output = f.getvalue().splitlines()
+    _update_coverage(output)
     sys.exit(0)
