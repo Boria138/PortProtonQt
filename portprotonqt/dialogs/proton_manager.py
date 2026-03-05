@@ -153,8 +153,12 @@ class ProtonManager(QDialog):
         self.clear_btn = QPushButton(_('Clear All'))
         self.clear_btn.clicked.connect(self.clear_selection)
         self.clear_btn.setMinimumHeight(40)
+        self.cancel_btn_dialog = QPushButton(_('Cancel'))
+        self.cancel_btn_dialog.clicked.connect(self.reject)
+        self.cancel_btn_dialog.setMinimumHeight(40)
         button_layout.addWidget(self.download_btn)
         button_layout.addWidget(self.clear_btn)
+        button_layout.addWidget(self.cancel_btn_dialog)
         layout.addLayout(button_layout)
 
         self.tab_widget.currentChanged.connect(self.tab_changed)

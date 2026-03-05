@@ -54,7 +54,7 @@ def create_dialog_hints_widget(theme, main_window, input_manager, context='defau
     elif context == 'proton_manager':
         dialog_actions = [
             ("confirm", _("Toggle")),
-            ("add_game", _("Apply")),
+            ("add_game", _("Download")),
             ("prev_dir", _("Clear All")),
             ("back", _("Cancel")),
             ("prev_tab", _("Prev Tab")),
