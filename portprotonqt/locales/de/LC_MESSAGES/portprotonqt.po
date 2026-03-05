@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-02-28 19:46+0500\n"
+"POT-Creation-Date: 2026-03-05 12:40+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: de_DE\n"
@@ -87,6 +87,10 @@ msgstr ""
 msgid ""
 "'{game_name}' was added to Steam. Please restart Steam for changes to "
 "take effect."
+msgstr ""
+
+#, python-brace-format
+msgid "'{game_name}' was added to Steam."
 msgstr ""
 
 #, python-brace-format
@@ -229,6 +233,10 @@ msgstr ""
 msgid ""
 "'{game_name}' was removed from Steam. Please restart Steam for changes to"
 " take effect."
+msgstr ""
+
+#, python-brace-format
+msgid "'{game_name}' was removed from Steam."
 msgstr ""
 
 #, python-brace-format
@@ -483,10 +491,7 @@ msgstr ""
 msgid "Failed to delete prefix: {}"
 msgstr ""
 
-msgid "Main PortProton parameters..."
-msgstr ""
-
-msgid "General Settings"
+msgid "Library Settings"
 msgstr ""
 
 msgid "detailed"
@@ -1127,6 +1132,9 @@ msgid "Next Tab"
 msgstr ""
 
 msgid "Save"
+msgstr ""
+
+msgid "Download"
 msgstr ""
 
 msgid "Clear All"

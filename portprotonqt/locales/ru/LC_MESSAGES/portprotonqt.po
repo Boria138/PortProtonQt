@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-02-28 19:46+0500\n"
-"PO-Revision-Date: 2026-02-28 19:50+0500\n"
+"POT-Creation-Date: 2026-03-05 12:40+0500\n"
+"PO-Revision-Date: 2026-03-05 12:43+0500\n"
 "Last-Translator: \n"
 "Language-Team: ru_RU <LL@li.org>\n"
 "Language: ru_RU\n"
@@ -92,6 +92,10 @@ msgid ""
 msgstr ""
 "'{game_name}' добавлен(а) в Steam. Пожалуйста, перезапустите Steam, чтобы "
 "изменения вступили в силу."
+
+#, python-brace-format
+msgid "'{game_name}' was added to Steam."
+msgstr "'{game_name}' добавлен(а) в Steam."
 
 #, python-brace-format
 msgid "Executable not found for game: {game_name}"
@@ -182,8 +186,8 @@ msgid ""
 "Are you sure you want to delete '{game_name}'? This will remove the .desktop "
 "file and custom data."
 msgstr ""
-"Вы уверены, что хотите удалить '{game_name}'? Это приведёт к удалению "
-"файла .desktop и пользовательских данных."
+"Вы уверены, что хотите удалить '{game_name}'? Это приведёт к удалению файла ."
+"desktop и пользовательских данных."
 
 #, python-brace-format
 msgid "Failed to delete .desktop file: {error}"
@@ -238,6 +242,10 @@ msgid ""
 msgstr ""
 "'{game_name}' был(а) удалён(а) из Steam. Пожалуйста, перезапустите Steam, чтобы "
 "изменения вступили в силу."
+
+#, python-brace-format
+msgid "'{game_name}' was removed from Steam."
+msgstr "'{game_name}' был(а) удален(а) из Steam."
 
 #, python-brace-format
 msgid "Failed to remove game '{game_name}' from Steam: {error}"
@@ -491,11 +499,8 @@ msgstr "Префикс «{}» удален."
 msgid "Failed to delete prefix: {}"
 msgstr "Не удалось удалить префикс: {}"
 
-msgid "Main PortProton parameters..."
-msgstr "Основные параметры PortProton..."
-
-msgid "General Settings"
-msgstr "Глобальные настройки"
+msgid "Library Settings"
+msgstr "Настройки Библиотеки"
 
 msgid "detailed"
 msgstr "Детальный"
@@ -1199,6 +1204,9 @@ msgstr "Следующая вкладка"
 
 msgid "Save"
 msgstr "Сохранить"
+
+msgid "Download"
+msgstr "Скачивание"
 
 msgid "Clear All"
 msgstr "Очистить выбранное"
