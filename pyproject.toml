@@ -43,6 +43,12 @@ dependencies = [
 [project.scripts]
 portprotonqt = "portprotonqt.app:main"
 
+[tool.setuptools.packages.find]
+include = ["portprotonqt*"]
+
+[tool.uv]
+package = true
+
 [dependency-groups]
 dev = [
     "pre-commit>=4.5.1",
