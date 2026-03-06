@@ -1,11 +1,8 @@
-[build-system]
-requires = ["setuptools >= 77.0.3"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "portprotonqt"
 version = "0.1.11"
 description = "A project to rewrite PortProton (PortWINE) using PySide"
+requires-python = ">=3.10"
 readme = "README.md"
 license = { text = "GPL-3.0" }
 authors = [
@@ -22,9 +19,9 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Operating System :: POSIX :: Linux"
 ]
-requires-python = ">=3.10"
 dependencies = [
     "babel>=2.17.0",
     "beautifulsoup4>=4.14.3",
@@ -43,68 +40,25 @@ dependencies = [
     "websocket-client>=1.9.0",
 ]
 
-[project.scripts]
-portprotonqt = "portprotonqt.app:main"
-
-[tool.setuptools.package-data]
-"portprotonqt" = ["themes/**/*", "locales/**/*"]
-
-[tool.setuptools.packages.find]
-exclude = ["build-aux", "dev-scripts", "documentation", "data"]
-
-[tool.ruff.lint]
-select = [
-    "E",  # pycodestyle errors
-    "W",  # pycodestyle warnings
-    "F",  # pyflakes
-    "B",  # flake8-bugbear
-    "C4", # flake8-comprehensions
-    "UP", # pyupgrade
-]
-ignore = [
-    "B008",  # do not perform function calls in argument defaults
-    "C901",  # too complex
-    "W191",  # indentation contains tabs
-    "E501"   # Line too long
-]
-
-[tool.ruff.lint.isort]
-known-third-party = ["portprotonqt"]
-
-[tool.ruff]
-exclude = [
-  ".eggs",
-  ".git",
-  "build",
-  "dist",
-  "portprotonqt.egg-info",
-  ".venv",
-  "venv",
-  "dev-scripts",
-  "portprotonqt/themes",
-  ".vscode",
-]
-target-version = "py310"
-
-[tool.pyright]
-pythonVersion = "3.10"
-pythonPlatform = "Linux"
-ignore = [
-    ".eggs",
-    ".git",
-    "build",
-    "dist",
-    "portprotonqt.egg-info",
-    ".venv",
-    "venv",
-    "dev-scripts",
-    "portprotonqt/themes",
-    ".vscode",
-]
-
 [dependency-groups]
 dev = [
     "pre-commit>=4.5.1",
     "pyaspeller>=2.0.2",
     "pyright>=1.1.407",
 ]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "B", "C4", "UP"]
+ignore = ["B008", "C901", "W191", "E501"]
+
+[tool.ruff.lint.isort]
+known-third-party = ["portprotonqt"]
+
+[tool.ruff]
+exclude = [".eggs", ".git", "build", "dist", "portprotonqt.egg-info", ".venv", "venv", "dev-scripts", "portprotonqt/themes", ".vscode"]
+target-version = "py310"
+
+[tool.pyright]
+pythonVersion = "3.10"
+pythonPlatform = "Linux"
+ignore = [".eggs", ".git", "build", "dist", "portprotonqt.egg-info", ".venv", "venv", "dev-scripts", "portprotonqt/themes", ".vscode"]
