@@ -40,6 +40,9 @@ dependencies = [
     "websocket-client>=1.9.0",
 ]
 
+[project.scripts]
+portprotonqt = "portprotonqt.app:main"
+
 [dependency-groups]
 dev = [
     "pre-commit>=4.5.1",
