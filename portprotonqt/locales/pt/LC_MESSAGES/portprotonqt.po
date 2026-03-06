@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-03-06 21:05+0500\n"
+"POT-Creation-Date: 2026-03-06 21:28+0500\n"
 "PO-Revision-Date: 2026-01-18 11:09+0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: pt\n"
@@ -526,13 +526,13 @@ msgstr ""
 msgid "Interface Settings"
 msgstr ""
 
-msgid "Launch Application in Fullscreen:"
+msgid "Launch Application in Fullscreen"
 msgstr ""
 
-msgid "Minimize to tray on close:"
+msgid "Minimize to tray on close"
 msgstr ""
 
-msgid "Hide Auto-Install Tab:"
+msgid "Hide Auto-Install Tab"
 msgstr ""
 
 msgid "Gamepad Settings"
@@ -541,10 +541,10 @@ msgstr ""
 msgid "Gamepad Type:"
 msgstr ""
 
-msgid "Auto Fullscreen on Gamepad connected:"
+msgid "Auto Fullscreen on Gamepad connected"
 msgstr ""
 
-msgid "Gamepad haptic feedback:"
+msgid "Gamepad haptic feedback"
 msgstr ""
 
 msgid "Hardware Settings"
@@ -1146,10 +1146,10 @@ msgstr ""
 msgid "Manage Wine versions"
 msgstr ""
 
-msgid "Selected assets:"
+msgid "Selected WINE/Proton:"
 msgstr ""
 
-msgid "No assets selected"
+msgid "No WINE/Proton selected"
 msgstr ""
 
 msgid "Downloading: "
@@ -1162,10 +1162,10 @@ msgid "Installed"
 msgstr ""
 
 #, python-brace-format
-msgid "Error loading wine data: {error}"
+msgid "Error loading WINE/Proton: {error}"
 msgstr ""
 
-msgid "Version Name"
+msgid "Version WINE/Proton"
 msgstr ""
 
 msgid "Size"
@@ -1178,11 +1178,11 @@ msgstr ""
 msgid "No Wine/Proton versions installed"
 msgstr ""
 
-msgid "Select to remove this version"
+msgid "Select to remove this WINE/Proton"
 msgstr ""
 
 #, python-brace-format
-msgid "Selected {} assets:\n"
+msgid "Selected {} WINE/Proton:\n"
 msgstr ""
 
 #, python-brace-format
@@ -1192,6 +1192,13 @@ msgid ""
 msgstr ""
 
 msgid "Delete Selected"
+msgstr ""
+
+msgid "No assets selected"
+msgstr ""
+
+#, python-brace-format
+msgid "Selected {} assets:\n"
 msgstr ""
 
 #, python-brace-format
@@ -1209,34 +1216,34 @@ msgstr ""
 msgid "No Selection"
 msgstr ""
 
-msgid "Please select at least one archive to download."
+msgid "Please select at least one WINE/Proton to download."
 msgstr ""
 
 msgid "Please wait for current downloading to complete."
 msgstr ""
 
-msgid "Please select at least one version to delete."
+msgid "Please select at least one WINE/Proton to delete."
 msgstr ""
 
 #, python-brace-format
 msgid ""
-"Are you sure you want to delete {} selected version(s)?\n"
+"Are you sure you want to delete {} selected WINE/Proton?\n"
 "\n"
 "This action cannot be undone."
 msgstr ""
 
 #, python-brace-format
-msgid "Failed to remove version at {}: {}"
+msgid "Failed to remove WINE/Proton at {}: {}"
 msgstr ""
 
 #, python-brace-format
-msgid "Successfully removed {} version(s)."
+msgid "Successfully removed {} WINE/Proton."
 msgstr ""
 
 msgid "Downloading Complete"
 msgstr ""
 
-msgid "All selected archives have been downloaded!"
+msgid "All selected WINE/Proton have been downloaded!"
 msgstr ""
 
 #, python-brace-format

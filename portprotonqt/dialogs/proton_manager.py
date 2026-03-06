@@ -106,7 +106,7 @@ class ProtonManager(QDialog):
         selection_layout = QVBoxLayout(selection_widget)
         selection_layout.setContentsMargins(0, 2, 0, 2)
         selection_layout.setSpacing(2)
-        selection_label = QLabel(_("Selected assets:"))
+        selection_label = QLabel(_("Selected WINE/Proton:"))
         selection_label.setMaximumHeight(20)
         selection_layout.addWidget(selection_label)
         self.selection_text = QTextEdit()
@@ -114,7 +114,7 @@ class ProtonManager(QDialog):
         self.selection_text.setReadOnly(True)
         self.selection_text.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction)
         self.selection_text.setStyleSheet(self.theme.GETWINE_WINDOW_STYLE)
-        self.selection_text.setPlainText(_("No assets selected"))
+        self.selection_text.setPlainText(_("No WINE/Proton selected"))
         selection_layout.addWidget(self.selection_text)
         layout.addWidget(selection_widget)
 
@@ -201,7 +201,7 @@ class ProtonManager(QDialog):
         logger.error(f"Wine data loading failed: {error_msg}")
         if hasattr(self, 'content_stack'):
             self.content_stack.setCurrentIndex(1)
-        error_label = QLabel(_("Error loading wine data: {error}").format(error=error_msg))
+        error_label = QLabel(_("Error loading WINE/Proton: {error}").format(error=error_msg))
         error_label.setStyleSheet(self.theme.GETWINE_WINDOW_STYLE)
         error_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         if hasattr(self, 'tab_widget'):
@@ -258,7 +258,7 @@ class ProtonManager(QDialog):
         table.setAlternatingRowColors(True)
         table.verticalHeader().setVisible(False)
         table.setColumnCount(3)
-        table.setHorizontalHeaderLabels(['', _('Version Name'), _('Size')])
+        table.setHorizontalHeaderLabels(['', _('Version WINE/Proton'), _('Size')])
         table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         table.verticalHeader().setDefaultSectionSize(36)
         table.setStyleSheet(self.theme.GETWINE_WINDOW_STYLE)
@@ -426,7 +426,7 @@ class ProtonManager(QDialog):
         checkbox_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         checkbox_layout.setContentsMargins(0, 0, 0, 0)
         checkbox = QCheckBox()
-        checkbox_widget.setToolTip(_("Select to remove this version"))
+        checkbox_widget.setToolTip(_("Select to remove this WINE/Proton"))
         checkbox.stateChanged.connect(lambda state: self.on_installed_version_toggled(state))
         checkbox_layout.addWidget(checkbox)
         table.setCellWidget(row_index, 0, checkbox_widget)
@@ -572,7 +572,7 @@ class ProtonManager(QDialog):
                                 if size_bytes:
                                     total_size += size_bytes
                 if selected_count > 0:
-                    selection_text = _('Selected {} assets:\n').format(selected_count)
+                    selection_text = _('Selected {} WINE/Proton:\n').format(selected_count)
                     current_tab = self.tab_widget.currentWidget()
                     table = current_tab.findChild(QTableWidget)
                     if table:
@@ -694,7 +694,7 @@ class ProtonManager(QDialog):
             self.remove_selected_installed_versions()
         else:
             if not self.selected_assets:
-                QMessageBox.warning(self, _("No Selection"), _("Please select at least one archive to download."))
+                QMessageBox.warning(self, _("No Selection"), _("Please select at least one WINE/Proton to download."))
                 return
             if self.is_downloading:
                 QMessageBox.warning(self, _("Downloading in Progress"), _("Please wait for current downloading to complete."))
@@ -727,7 +727,7 @@ class ProtonManager(QDialog):
             if self.input_manager:
                 self.disable_proton_manager_mode()
             try:
-                QMessageBox.warning(self, _("No Selection"), _("Please select at least one version to delete."))
+                QMessageBox.warning(self, _("No Selection"), _("Please select at least one WINE/Proton to delete."))
             finally:
                 if self.input_manager:
                     self.enable_proton_manager_mode()
@@ -737,7 +737,7 @@ class ProtonManager(QDialog):
         try:
             reply = QMessageBox.question(
                 self, _("Confirm Deletion"),
-                _("Are you sure you want to delete {} selected version(s)?\n\nThis action cannot be undone.").format(len(versions_to_remove)),
+                _("Are you sure you want to delete {} selected WINE/Proton?\n\nThis action cannot be undone.").format(len(versions_to_remove)),
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                 QMessageBox.StandardButton.No
             )
@@ -754,9 +754,9 @@ class ProtonManager(QDialog):
                     removed_count += 1
             except Exception as e:
                 logger.error(f"Error removing version at {version_path}: {e}")
-                QMessageBox.warning(self, _("Error"), _("Failed to remove version at {}: {}").format(version_path, str(e)))
+                QMessageBox.warning(self, _("Error"), _("Failed to remove WINE/Proton at {}: {}").format(version_path, str(e)))
         if removed_count > 0:
-            QMessageBox.information(self, _("Success"), _("Successfully removed {} version(s).").format(removed_count))
+            QMessageBox.information(self, _("Success"), _("Successfully removed {} WINE/Proton.").format(removed_count))
             self.refresh_installed_tab()
 
     def refresh_installed_tab(self):
@@ -799,7 +799,7 @@ class ProtonManager(QDialog):
                 logger.warning("Initial PortProton command timed out")
             except Exception as e:
                 logger.error(f"Error running initial PortProton command: {e}")
-            QMessageBox.information(self, _("Downloading Complete"), _("All selected archives have been downloaded!"))
+            QMessageBox.information(self, _("Downloading Complete"), _("All selected WINE/Proton have been downloaded!"))
             return
         asset_data = self.assets_to_download[self.current_download_index]
         self.download_asset(asset_data)

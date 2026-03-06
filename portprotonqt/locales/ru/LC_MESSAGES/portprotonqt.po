@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-03-06 21:05+0500\n"
-"PO-Revision-Date: 2026-03-06 21:05+0500\n"
+"POT-Creation-Date: 2026-03-06 21:28+0500\n"
+"PO-Revision-Date: 2026-03-06 21:30+0500\n"
 "Last-Translator: \n"
 "Language-Team: ru_RU <LL@li.org>\n"
 "Language: ru_RU\n"
@@ -48,7 +48,7 @@ msgid "Launch Game"
 msgstr "Запустить игру"
 
 msgid "Import to Legendary"
-msgstr "Импортировать игру"
+msgstr "Импортировать в Legendary"
 
 msgid "Remove from Steam"
 msgstr "Удалить из Steam"
@@ -72,11 +72,11 @@ msgid "Add to Menu"
 msgstr "Добавить в меню"
 
 msgid "Edit Shortcut"
-msgstr "Редактировать"
+msgstr "Редактировать ярлык"
 
 #, python-brace-format
 msgid "Stopped '{game_name}'"
-msgstr "Остановлен(а) '{game_name}'"
+msgstr "'{game_name}' остановлен(а)"
 
 #, python-brace-format
 msgid "Legendary executable not found at {path}"
@@ -179,7 +179,7 @@ msgid "No .desktop file found for '{game_name}'"
 msgstr "Не найден файл .desktop для '{game_name}'"
 
 msgid "Confirm Deletion"
-msgstr "Подтвердите удаление"
+msgstr "Подтверждение удаления"
 
 #, python-brace-format
 msgid ""
@@ -315,7 +315,7 @@ msgid "Unknown Game"
 msgstr "Неизвестная игра"
 
 msgid "Starting PortProton..."
-msgstr "Инициализация PortProton..."
+msgstr "Запуск PortProton..."
 
 msgid "Library"
 msgstr "Библиотека"
@@ -535,14 +535,14 @@ msgstr "Фильтр игр:"
 msgid "Interface Settings"
 msgstr "Настройки интерфейса"
 
-msgid "Launch Application in Fullscreen:"
-msgstr "Запуск приложения в полноэкранном режиме:"
+msgid "Launch Application in Fullscreen"
+msgstr "Запуск приложения в полноэкранном режиме"
 
-msgid "Minimize to tray on close:"
-msgstr "Сворачивать в трей при закрытии:"
+msgid "Minimize to tray on close"
+msgstr "Сворачивать в трей при закрытии"
 
-msgid "Hide Auto-Install Tab:"
-msgstr "Скрыть вкладку \"Автоустановка\":"
+msgid "Hide Auto-Install Tab"
+msgstr "Скрыть вкладку \"Автоустановка\""
 
 msgid "Gamepad Settings"
 msgstr "Настройки геймпада"
@@ -550,17 +550,17 @@ msgstr "Настройки геймпада"
 msgid "Gamepad Type:"
 msgstr "Тип геймпада:"
 
-msgid "Auto Fullscreen on Gamepad connected:"
-msgstr "Режим полноэкранного отображения приложения при подключении геймпада:"
+msgid "Auto Fullscreen on Gamepad connected"
+msgstr "Режим полноэкранного отображения приложения при подключении геймпада"
 
-msgid "Gamepad haptic feedback:"
-msgstr "Тактильная отдача на геймпаде:"
+msgid "Gamepad haptic feedback"
+msgstr "Тактильная отдача на геймпаде"
 
 msgid "Hardware Settings"
 msgstr "Настройки оборудования"
 
 msgid "GPU to use:"
-msgstr "Подходящий GPU:"
+msgstr "Выбор видеокарты:"
 
 msgid "No GPUs found"
 msgstr "Видеокарты отсутствуют"
@@ -596,7 +596,7 @@ msgid "Clear Cache"
 msgstr "Очистить кэш"
 
 msgid "Confirm Reset"
-msgstr "Подтвердите удаление"
+msgstr "Подтверждение сброса"
 
 msgid "Are you sure you want to reset all settings? This action cannot be undone."
 msgstr ""
@@ -606,7 +606,7 @@ msgid "Settings reset. Restarting..."
 msgstr "Настройки сброшены. Перезапуск..."
 
 msgid "Confirm Clear Cache"
-msgstr "Подтвердите очистку кэша"
+msgstr "Подтверждение очистки кэша"
 
 msgid "Are you sure you want to clear the cache? This action cannot be undone."
 msgstr "Вы уверены, что хотите очистить кэш? Это действие нельзя отменить."
@@ -671,7 +671,7 @@ msgid "Cannot launch game while another game is running"
 msgstr "Невозможно запустить игру пока запущена другая"
 
 msgid "Launching"
-msgstr "Идёт запуск"
+msgstr "Запуск"
 
 #, python-brace-format
 msgid "Failed to launch game: {0}"
@@ -1218,11 +1218,11 @@ msgstr "Доступ запрещён: %s"
 msgid "Manage Wine versions"
 msgstr "Управление версиями WINE"
 
-msgid "Selected assets:"
-msgstr "Выбранные WINE:"
+msgid "Selected WINE/Proton:"
+msgstr "Выбранные WINE/Proton:"
 
-msgid "No assets selected"
-msgstr "WINE не выбраны"
+msgid "No WINE/Proton selected"
+msgstr "WINE/Proton не выбраны"
 
 msgid "Downloading: "
 msgstr "Скачивание: "
@@ -1234,11 +1234,11 @@ msgid "Installed"
 msgstr "Установленные"
 
 #, python-brace-format
-msgid "Error loading wine data: {error}"
-msgstr "Ошибка загрузки WINE: {error}"
+msgid "Error loading WINE/Proton: {error}"
+msgstr "Ошибка загрузки WINE/Proton: {error}"
 
-msgid "Version Name"
-msgstr "Версия WINE"
+msgid "Version WINE/Proton"
+msgstr "Версия WINE/Proton:"
 
 msgid "Size"
 msgstr "Размер"
@@ -1250,12 +1250,12 @@ msgstr "{display_name} (установлен)"
 msgid "No Wine/Proton versions installed"
 msgstr "Отсутствуют установленные WINE/Proton"
 
-msgid "Select to remove this version"
-msgstr "Выберите, чтобы удалить WINE"
+msgid "Select to remove this WINE/Proton"
+msgstr "Выберите, чтобы удалить WINE/Proton"
 
 #, python-brace-format
-msgid "Selected {} assets:\n"
-msgstr "Выбранно {} WINE:\n"
+msgid "Selected {} WINE/Proton:\n"
+msgstr "Выбранно {} WINE/Proton:\n"
 
 #, python-brace-format
 msgid ""
@@ -1267,6 +1267,13 @@ msgstr ""
 
 msgid "Delete Selected"
 msgstr "Удалить выбранное"
+
+msgid "No assets selected"
+msgstr "WINE не выбраны"
+
+#, python-brace-format
+msgid "Selected {} assets:\n"
+msgstr "Выбранно {} WINE:\n"
 
 #, python-brace-format
 msgid ""
@@ -1285,38 +1292,38 @@ msgstr "Невозможно очистить выделение во время
 msgid "No Selection"
 msgstr "Не выбрано"
 
-msgid "Please select at least one archive to download."
-msgstr "Пожалуйста выберите хотя бы один WINE для скачивания."
+msgid "Please select at least one WINE/Proton to download."
+msgstr "Пожалуйста выберите хотя бы один WINE/Proton для скачивания."
 
 msgid "Please wait for current downloading to complete."
 msgstr "Пожалуйста подождите завершения скачивания."
 
-msgid "Please select at least one version to delete."
-msgstr "Пожалуйста выберите хотя бы один WINE для удаления."
+msgid "Please select at least one WINE/Proton to delete."
+msgstr "Пожалуйста выберите хотя бы один WINE/Proton для удаления."
 
 #, python-brace-format
 msgid ""
-"Are you sure you want to delete {} selected version(s)?\n"
+"Are you sure you want to delete {} selected WINE/Proton?\n"
 "\n"
 "This action cannot be undone."
 msgstr ""
-"Вы уверены, что хотите удалить {} выбранные WINE?\n"
+"Вы уверены, что хотите удалить {} выбранные WINE/Proton?\n"
 "\n"
 "Это действие нельзя отменить."
 
 #, python-brace-format
-msgid "Failed to remove version at {}: {}"
-msgstr "Не удалось удалить WINE '{}': {}"
+msgid "Failed to remove WINE/Proton at {}: {}"
+msgstr "Не удалось удалить WINE/Proton {}: {}"
 
 #, python-brace-format
-msgid "Successfully removed {} version(s)."
-msgstr "Успешно удалено {} WINE."
+msgid "Successfully removed {} WINE/Proton."
+msgstr "Успешно удалено {} WINE/Proton."
 
 msgid "Downloading Complete"
 msgstr "Скачивание завершено"
 
-msgid "All selected archives have been downloaded!"
-msgstr "Все выбранные WINE успешно загружены!"
+msgid "All selected WINE/Proton have been downloaded!"
+msgstr "Все выбранные WINE/Proton успешно загружены!"
 
 #, python-brace-format
 msgid "Downloading: {0} ({1}%)"

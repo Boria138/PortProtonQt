@@ -2293,7 +2293,7 @@ class MainWindow(QMainWindow):
         self.fullscreenCheckBox = QCheckBox()  # Removed text
         self.fullscreenCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
         self.fullscreenCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.fullscreenTitle = QLabel(_("Launch Application in Fullscreen:"))
+        self.fullscreenTitle = QLabel(_("Launch Application in Fullscreen"))
         self.fullscreenTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.fullscreenTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         self.fullscreenTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -2309,7 +2309,7 @@ class MainWindow(QMainWindow):
         self.minimizeToTrayCheckBox = QCheckBox()  # Removed text
         self.minimizeToTrayCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
         self.minimizeToTrayCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.minimizeToTrayTitle = QLabel(_("Minimize to tray on close:"))
+        self.minimizeToTrayTitle = QLabel(_("Minimize to tray on close"))
         self.minimizeToTrayTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.minimizeToTrayTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         self.minimizeToTrayTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -2326,7 +2326,7 @@ class MainWindow(QMainWindow):
         self.hideAutoInstallTabCheckBox = QCheckBox()  # Removed text
         self.hideAutoInstallTabCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
         self.hideAutoInstallTabCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.hideAutoInstallTabTitle = QLabel(_("Hide Auto-Install Tab:"))
+        self.hideAutoInstallTabTitle = QLabel(_("Hide Auto-Install Tab"))
         self.hideAutoInstallTabTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.hideAutoInstallTabTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         self.hideAutoInstallTabTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -2362,7 +2362,7 @@ class MainWindow(QMainWindow):
         self.autoFullscreenGamepadCheckBox = QCheckBox()  # Removed text
         self.autoFullscreenGamepadCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
         self.autoFullscreenGamepadCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.autoFullscreenGamepadTitle = QLabel(_("Auto Fullscreen on Gamepad connected:"))
+        self.autoFullscreenGamepadTitle = QLabel(_("Auto Fullscreen on Gamepad connected"))
         self.autoFullscreenGamepadTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.autoFullscreenGamepadTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         self.autoFullscreenGamepadTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -2378,7 +2378,7 @@ class MainWindow(QMainWindow):
         self.gamepadRumbleCheckBox = QCheckBox()  # Removed text
         self.gamepadRumbleCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.gamepadRumbleCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
-        self.gamepadRumbleTitle = QLabel(_("Gamepad haptic feedback:"))
+        self.gamepadRumbleTitle = QLabel(_("Gamepad haptic feedback"))
         self.gamepadRumbleTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.gamepadRumbleTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         self.gamepadRumbleTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
