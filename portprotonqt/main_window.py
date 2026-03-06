@@ -1794,7 +1794,7 @@ class MainWindow(QMainWindow):
         self.wineCombo.addItems(self.wine_versions)
         self.wineCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
         self.wineCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.wineTitleLabel = QLabel(_("Compatibility tool:"))
+        self.wineTitleLabel = QLabel(_("WINE/Proton:"))
         self.wineTitleLabel.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         self.wineTitleLabel.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         if self.wine_versions:

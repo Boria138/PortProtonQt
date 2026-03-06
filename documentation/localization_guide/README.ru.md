@@ -24,7 +24,7 @@
 | [de](./de/LC_MESSAGES/portprotonqt.po) | 0% | 0 из 397 |
 | [es](./es/LC_MESSAGES/portprotonqt.po) | 0% | 0 из 397 |
 | [pt](./pt/LC_MESSAGES/portprotonqt.po) | 0% | 0 из 397 |
-| [ru](./ru/LC_MESSAGES/portprotonqt.po) | 100% | 397 из 397 |
+| [ru](./ru/LC_MESSAGES/portprotonqt.po) | 99% | 396 из 397 |
 
 ---
 
