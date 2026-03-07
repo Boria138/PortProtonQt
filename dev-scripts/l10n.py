@@ -60,14 +60,14 @@ def _update_coverage(lines: list[str]) -> None:
                 "| Локаль | Прогресс | Переведено |\n"
                 "| :----- | -------: | ---------: |\n"
             )
-            fmt = lambda count, pct, loc: f"| [{loc}](./{loc}/LC_MESSAGES/portprotonqt.po) | {pct} | {count.replace(' of ', ' из ')} |"
+            fmt = lambda count, pct, loc: f"| [{loc}](../../portprotonqt/locales/{loc}/LC_MESSAGES/portprotonqt.po) | {pct} | {count.replace(' of ', ' из ')} |"
         else:
             table_header = (
                 "<!-- Auto-generated coverage table -->\n\n"
                 "| Locale | Progress | Translated |\n"
                 "| :----- | -------: | ---------: |\n"
             )
-            fmt = lambda count, pct, loc: f"| [{loc}](./{loc}/LC_MESSAGES/portprotonqt.po) | {pct} | {count} |"
+            fmt = lambda count, pct, loc: f"| [{loc}](../../portprotonqt/locales/{loc}/LC_MESSAGES/portprotonqt.po) | {pct} | {count} |"
 
         # Собираем строки и добавляем '---' в конце
         coverage_table = (
