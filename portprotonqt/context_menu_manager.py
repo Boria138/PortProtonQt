@@ -817,13 +817,15 @@ Icon={icon_path}
             return False
 
     def delete_game(self, game_name, exec_line):
-        reply = QMessageBox.question(
-            self.parent,
-            _("Confirm Deletion"),
-            _("Are you sure you want to delete '{game_name}'? This will remove the .desktop file and custom data.").format(game_name=game_name),
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No
-        )
+        msg_box = QMessageBox(self.parent)
+        msg_box.setIcon(QMessageBox.Icon.Question)
+        msg_box.setWindowTitle(_("Confirm Deletion"))
+        msg_box.setText(_("Are you sure you want to delete '{game_name}'? This will remove the .desktop file and custom data.").format(game_name=game_name))
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        msg_box.setDefaultButton(QMessageBox.StandardButton.No)
+        msg_box.setButtonText(QMessageBox.StandardButton.Yes, _("Yes"))
+        msg_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
+        reply = msg_box.exec()
         if reply != QMessageBox.StandardButton.Yes:
             return
         if not self._check_portproton():

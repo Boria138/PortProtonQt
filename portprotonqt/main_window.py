@@ -1992,13 +1992,15 @@ class MainWindow(QMainWindow):
         if not self.portproton_location or not self.start_sh:
             return
 
-        reply = QMessageBox.question(
-            self,
-            _("Confirm Clear"),
-            _("Are you sure you want to clear prefix '{}'?").format(selected_prefix),
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No
-        )
+        msg_box = QMessageBox(self)
+        msg_box.setIcon(QMessageBox.Icon.Question)
+        msg_box.setWindowTitle(_("Confirm Clear"))
+        msg_box.setText(_("Are you sure you want to clear prefix '{}'?").format(selected_prefix))
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        msg_box.setDefaultButton(QMessageBox.StandardButton.No)
+        msg_box.setButtonText(QMessageBox.StandardButton.Yes, _("Yes"))
+        msg_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
+        reply = msg_box.exec()
         if reply != QMessageBox.StandardButton.Yes:
             return
 
@@ -2094,13 +2096,15 @@ class MainWindow(QMainWindow):
         if not os.path.exists(prefix_path):
             return
 
-        reply = QMessageBox.question(
-            self,
-            _("Confirm Deletion"),
-            _("Are you sure you want to delete prefix '{}'?").format(selected_prefix),
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No
-        )
+        msg_box = QMessageBox(self)
+        msg_box.setIcon(QMessageBox.Icon.Question)
+        msg_box.setWindowTitle(_("Confirm Deletion"))
+        msg_box.setText(_("Are you sure you want to delete prefix '{}'?").format(selected_prefix))
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        msg_box.setDefaultButton(QMessageBox.StandardButton.No)
+        msg_box.setButtonText(QMessageBox.StandardButton.Yes, _("Yes"))
+        msg_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
+        reply = msg_box.exec()
 
         if reply == QMessageBox.StandardButton.Yes:
             try:
@@ -2538,13 +2542,15 @@ class MainWindow(QMainWindow):
 
     def resetSettings(self):
         """Reset settings and restart application."""
-        reply = QMessageBox.question(
-            self,
-            _("Confirm Reset"),
-            _("Are you sure you want to reset all settings? This action cannot be undone."),
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No
-        )
+        msg_box = QMessageBox(self)
+        msg_box.setIcon(QMessageBox.Icon.Question)
+        msg_box.setWindowTitle(_("Confirm Reset"))
+        msg_box.setText(_("Are you sure you want to reset all settings? This action cannot be undone."))
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        msg_box.setDefaultButton(QMessageBox.StandardButton.No)
+        msg_box.setButtonText(QMessageBox.StandardButton.Yes, _("Yes"))
+        msg_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
+        reply = msg_box.exec()
         if reply == QMessageBox.StandardButton.Yes:
             reset_config()
 
@@ -2556,13 +2562,15 @@ class MainWindow(QMainWindow):
 
     def clearCache(self):
         """Clear cache."""
-        reply = QMessageBox.question(
-            self,
-            _("Confirm Clear Cache"),
-            _("Are you sure you want to clear the cache? This action cannot be undone."),
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No
-        )
+        msg_box = QMessageBox(self)
+        msg_box.setIcon(QMessageBox.Icon.Question)
+        msg_box.setWindowTitle(_("Confirm Clear Cache"))
+        msg_box.setText(_("Are you sure you want to clear the cache? This action cannot be undone."))
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        msg_box.setDefaultButton(QMessageBox.StandardButton.No)
+        msg_box.setButtonText(QMessageBox.StandardButton.Yes, _("Yes"))
+        msg_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
+        reply = msg_box.exec()
         if reply == QMessageBox.StandardButton.Yes:
             clear_cache()
 
