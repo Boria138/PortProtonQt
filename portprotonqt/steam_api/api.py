@@ -15,23 +15,22 @@ from portprotonqt.steam_api.cache import (
     CACHE_DURATION,
     load_app_details,
     save_app_details,
-    get_cache_dir,
     load_steam_apps_async,
     build_index,
     search_app,
     load_weanticheatyet_data_async,
     build_weanticheatyet_index,
     search_anticheat_status,
-    CacheManager,
     load_protondb_status,
     save_protondb_status,
 )
+from portprotonqt.config.cache import CacheManager
 
 logger = get_logger(__name__)
 downloader = Downloader()
 
-_STEAM_APPS_CACHE = CacheManager("steam_apps")
-_ANTICHEAT_CACHE = CacheManager("anticheat")
+_STEAM_APPS_CACHE = CacheManager(name="steam_apps")
+_ANTICHEAT_CACHE = CacheManager(name="anticheat")
 
 
 def fetch_sgdb_cover_async(game_name: str, callback: Callable[[str], None]) -> None:
@@ -56,10 +55,10 @@ def fetch_sgdb_cover_async(game_name: str, callback: Callable[[str], None]) -> N
             logger.warning("Failed to process SGDB data for %s: %s", game_name, e)
             callback("")
 
-    cache_dir = get_cache_dir()
+    cache_manager = CacheManager()
     safe_name = "".join(c for c in game_name if c.isalnum() or c in " -_")[:50]
-    cache_file = os.path.join(cache_dir, f"sgdb_{safe_name}.json")
-    downloader.download_async(url, cache_file, timeout=10, callback=process_response)
+    cache_file = cache_manager.cache_dir / f"sgdb_{safe_name}.json"
+    downloader.download_async(url, str(cache_file), timeout=10, callback=process_response)
 
 
 def fetch_app_info_async(app_id: int, callback: Callable[[dict | None], None]) -> None:
@@ -97,9 +96,9 @@ def fetch_app_info_async(app_id: int, callback: Callable[[dict | None], None]) -
             logger.error("Failed to process Steam app info for appid %s: %s", app_id, e)
             callback(None)
 
-    cache_dir = get_cache_dir()
-    cache_file = os.path.join(cache_dir, f"steam_app_{app_id}.json")
-    downloader.download_async(url, cache_file, timeout=5, callback=process_response)
+    cache_manager = CacheManager()
+    cache_file = cache_manager.cache_dir / f"steam_app_{app_id}.json"
+    downloader.download_async(url, str(cache_file), timeout=5, callback=process_response)
 
 
 def get_protondb_tier_async(appid: int, callback: Callable[[str], None]) -> None:
@@ -126,9 +125,9 @@ def get_protondb_tier_async(appid: int, callback: Callable[[str], None]) -> None
             logger.info("Failed to process ProtonDB data for appid %s: %s", appid, e)
             callback("")
 
-    cache_dir = get_cache_dir()
-    cache_file = os.path.join(cache_dir, f"protondb_{appid}.json")
-    downloader.download_async(url, cache_file, timeout=5, callback=process_response)
+    cache_manager = CacheManager()
+    cache_file = cache_manager.cache_dir / f"protondb_{appid}.json"
+    downloader.download_async(url, str(cache_file), timeout=5, callback=process_response)
 
 
 def get_steam_apps_and_index_async(
@@ -172,9 +171,9 @@ def get_weanticheatyet_status_async(game_name: str, callback: Callable[[str], No
 
 def clear_steam_api_caches() -> None:
     """Clear all cached data to force reload from files."""
-    _STEAM_APPS_CACHE.clear()
-    _ANTICHEAT_CACHE.clear()
-    logger.info("Cleared Steam API caches")
+    _STEAM_APPS_CACHE.clear_memory_cache()
+    _ANTICHEAT_CACHE.clear_memory_cache()
+    logger.info("Cleared Steam API in-memory caches")
 
 
 def _build_game_info_result(

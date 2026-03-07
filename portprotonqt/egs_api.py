@@ -25,6 +25,7 @@ import zlib
 from portprotonqt.downloader import Downloader
 from PySide6.QtGui import QPixmap
 import base64
+from portprotonqt.config.cache import CacheManager
 
 logger = get_logger(__name__)
 downloader = Downloader()
@@ -56,15 +57,6 @@ def get_egs_executable(app_name: str, legendary_config_path: str) -> str | None:
         return os.path.join(install_path, executable)
     return None
 
-def get_cache_dir() -> Path:
-    """Returns the path to the cache directory, creating it if necessary."""
-    xdg_cache_home = os.getenv(
-        "XDG_CACHE_HOME",
-        os.path.join(os.path.expanduser("~"), ".cache")
-    )
-    cache_dir = Path(xdg_cache_home) / "PortProtonQt"
-    cache_dir.mkdir(parents=True, exist_ok=True)
-    return cache_dir
 
 def remove_egs_from_steam(game_name: str, portproton_dir: str, callback: Callable[[tuple[bool, str]], None]) -> None:
     """
@@ -518,47 +510,22 @@ def get_egs_game_description_async(
     Caches results in ~/.cache/PortProtonQt/egs_app_{app_name}.json.
     Handles DNS resolution failures gracefully.
     """
-    cache_dir = get_cache_dir()
-    cache_file = cache_dir / f"egs_app_{app_name.lower().replace(':', '_').replace(' ', '_')}.json"
+    cache_manager = CacheManager()
+    cache_key = f"egs_app_{app_name.lower().replace(':', '_').replace(' ', '_')}"
 
     # Check cache
-    if cache_file.exists():
-        try:
-            with open(cache_file, "rb") as f:
-                content = f.read()
-            cached_entry = orjson.loads(content)
-            if not isinstance(cached_entry, dict):
-                logger.warning(
-                    "Invalid cache format in %s: expected dict, got %s",
-                    cache_file,
-                    type(cached_entry)
-                )
-                cache_file.unlink(missing_ok=True)
-            else:
-                cached_time = cached_entry.get("timestamp", 0)
-                if time.time() - cached_time < cache_ttl:
-                    description = cached_entry.get("description", "")
-                    logger.debug(
-                        "Using cached description for %s: %s",
-                        app_name,
-                        (description[:100] + "...") if len(description) > 100 else description
-                    )
-                    callback(description)
-                    return
-        except orjson.JSONDecodeError as e:
-            logger.warning(
-                "Failed to parse description cache for %s: %s",
+    cached_entry = cache_manager.load_json(cache_key)
+    if cached_entry and isinstance(cached_entry, dict):
+        cached_time = cached_entry.get("timestamp", 0)
+        if time.time() - cached_time < cache_ttl:
+            description = cached_entry.get("description", "")
+            logger.debug(
+                "Using cached description for %s: %s",
                 app_name,
-                str(e)
+                (description[:100] + "...") if len(description) > 100 else description
             )
-            cache_file.unlink(missing_ok=True)
-        except Exception as e:
-            logger.error(
-                "Unexpected error reading description cache for %s: %s",
-                app_name,
-                str(e)
-            )
-            cache_file.unlink(missing_ok=True)
+            callback(description)
+            return
 
     lang = get_egs_language()
     headers = {
@@ -719,14 +686,8 @@ def get_egs_game_description_async(
 
         # Save to cache
         cache_entry = {"description": description, "timestamp": time.time()}
-        try:
-            temp_file = cache_file.with_suffix('.tmp')
-            with open(temp_file, "wb") as f:
-                f.write(orjson.dumps(cache_entry))
-            temp_file.replace(cache_file)
-            logger.debug("Saved description to cache for %s", app_name)
-        except Exception as e:
-            logger.error("Failed to save description cache for %s: %s", app_name, str(e))
+        cache_manager.save_json(cache_key, cache_entry)
+        logger.debug("Saved description to cache for %s", app_name)
 
         callback(description)
 

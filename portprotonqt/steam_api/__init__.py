@@ -3,7 +3,6 @@
 from portprotonqt.steam_api.utils import (
     safe_vdf_load,
     decode_text,
-    get_cache_dir,
     get_steam_home,
     get_steam_compat_tool,
     get_steam_libs,
@@ -51,7 +50,6 @@ __all__ = [
     # Utils
     "safe_vdf_load",
     "decode_text",
-    "get_cache_dir",
     "get_steam_home",
     "get_steam_compat_tool",
     "get_steam_libs",

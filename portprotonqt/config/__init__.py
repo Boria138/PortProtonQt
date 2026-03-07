@@ -9,7 +9,7 @@ from portprotonqt.config.base import (
 )
 from portprotonqt.config.ui import UIConfig
 from portprotonqt.config.game import GameConfig
-from portprotonqt.config.cache import CacheConfig
+from portprotonqt.config.cache import CacheConfig, CacheManager
 from portprotonqt.config.gamepad import GamepadConfig
 from portprotonqt.config.proxy import ProxyConfig
 from portprotonqt.config.display import DisplayConfig
@@ -23,6 +23,7 @@ __all__ = [
     "UIConfig",
     "GameConfig",
     "CacheConfig",
+    "CacheManager",
     "GamepadConfig",
     "ProxyConfig",
     "DisplayConfig",

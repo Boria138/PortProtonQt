@@ -1,6 +1,5 @@
 import orjson
 import re
-import os
 from dataclasses import dataclass, field
 from typing import Any
 from difflib import SequenceMatcher
@@ -10,6 +9,7 @@ from bs4 import BeautifulSoup, Tag
 from portprotonqt.config_utils import read_proxy_config
 from portprotonqt.time_utils import format_playtime
 from portprotonqt.logger import get_logger
+from portprotonqt.config.cache import CacheManager
 from PySide6.QtCore import QObject, Signal
 
 logger = get_logger(__name__)
@@ -257,12 +257,6 @@ class ResultParser:
         text_numbers = [word for word in cleaned_text.split() if word.isdigit()]
         return any(num in text_numbers for num in numbers)
 
-def get_cache_dir():
-    """Return cache directory path, creating it if necessary."""
-    xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
-    cache_dir = os.path.join(xdg_cache_home, "PortProtonQt")
-    os.makedirs(cache_dir, exist_ok=True)
-    return cache_dir
 
 class HowLongToBeat(QObject):
     """Main class for HowLongToBeat API."""
@@ -272,30 +266,15 @@ class HowLongToBeat(QObject):
         super().__init__(parent)
         self.minimum_similarity = minimum_similarity
         self.http_client = HTTPClient(timeout)
-        self.cache_dir = get_cache_dir()
-
-    def _get_cache_file_path(self, game_name: str) -> str:
-        """Return cache file path for given game name."""
-        safe_game_name = re.sub(r'[^\w\s-]', '', game_name).replace(' ', '_').lower()
-        cache_file = f"hltb_{safe_game_name}.json"
-        return os.path.join(self.cache_dir, cache_file)
+        self.cache_manager = CacheManager()
 
     def _load_from_cache(self, game_name: str) -> str | None:
         """Try to load data from cache if it exists."""
-        cache_file = self._get_cache_file_path(game_name)
-        try:
-            if os.path.exists(cache_file):
-                with open(cache_file, 'rb') as f:
-                    return f.read().decode('utf-8')
-        except (OSError, UnicodeDecodeError):
-            pass
-        return None
+        return self.cache_manager.load_text(f"hltb_{game_name}")
 
     def _save_to_cache(self, game_name: str, json_response: str):
         """Save data to cache, storing only first game and required fields."""
-        cache_file = self._get_cache_file_path(game_name)
         try:
-            # Parse JSON and take only the first game
             data = orjson.loads(json_response)
             if data.get("data"):
                 first_game = data["data"][0]
@@ -308,9 +287,8 @@ class HowLongToBeat(QObject):
                         "comp_100": first_game.get("comp_100", 0)
                     }]
                 }
-                with open(cache_file, 'wb') as f:
-                    f.write(orjson.dumps(simplified_data))
-        except (OSError, orjson.JSONDecodeError, IndexError):
+                self.cache_manager.save_json(f"hltb_{game_name}", simplified_data)
+        except (orjson.JSONDecodeError, IndexError):
             pass
 
     def search(self, game_name: str, case_sensitive: bool = True) -> list[GameEntry] | None:

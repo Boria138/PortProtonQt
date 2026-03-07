@@ -1,5 +1,4 @@
 import os
-import orjson
 import requests
 import urllib.parse
 import time
@@ -20,6 +19,7 @@ from portprotonqt.logger import get_logger
 from portprotonqt.config_utils import get_portproton_location
 from portprotonqt.localization import _
 from portprotonqt.dialogs import FileExplorer
+from portprotonqt.config.cache import CacheManager
 
 logger = get_logger(__name__)
 AUTOINSTALL_CACHE_DURATION = 3600  # 1 hour for autoinstall cache
@@ -83,12 +83,6 @@ def extract_exe_name(exec_line: str) -> str:
     except (ValueError, IndexError):
         return ""
 
-def get_cache_dir():
-    """Return the cache directory path, creating it if necessary."""
-    xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
-    cache_dir = os.path.join(xdg_cache_home, "PortProtonQt")
-    os.makedirs(cache_dir, exist_ok=True)
-    return cache_dir
 
 class PortProtonAPI:
     """API to fetch game assets (cover, metadata) and forum topics from the PortProtonQt repository."""
@@ -511,23 +505,19 @@ class PortProtonAPI:
         """Load cached autoinstall games if fresh and scripts unchanged."""
         if self._autoinstall_cache is not None:
             return self._autoinstall_cache
-        cache_dir = get_cache_dir()
-        cache_file = os.path.join(cache_dir, "autoinstall_games_cache.json")
-        if os.path.exists(cache_file):
+        cache_manager = CacheManager()
+        if cache_manager.exists("autoinstall_games_cache"):
             try:
-                mod_time = os.path.getmtime(cache_file)
-                if time.time() - mod_time < AUTOINSTALL_CACHE_DURATION:
-                    # Add timeout protection for file operations
-                    start_time = time.time()
-                    with open(cache_file, "rb") as f:
-                        data = orjson.loads(f.read())
-                        # Check signature
+                data = cache_manager.load_json("autoinstall_games_cache")
+                if data:
+                    mod_time = cache_manager.get_file_age("autoinstall_games_cache")
+                    if mod_time is not None and mod_time < AUTOINSTALL_CACHE_DURATION:
+                        start_time = time.time()
                         cached_signature = data.get("scripts_signature", "")
                         current_signature = self._compute_scripts_signature(
                             os.path.join(self.portproton_location or "", "data", "scripts", "pw_autoinstall")
                         )
-                        # Check for timeout during signature computation
-                        if time.time() - start_time > 3:  # 3 second timeout
+                        if time.time() - start_time > 3:
                             logger.warning("Cache loading took too long, skipping cache")
                             return None
                         if cached_signature != current_signature:
@@ -543,13 +533,11 @@ class PortProtonAPI:
     def _save_autoinstall_cache(self, games):
         """Save parsed autoinstall games to cache with scripts signature."""
         try:
-            cache_dir = get_cache_dir()
-            cache_file = os.path.join(cache_dir, "autoinstall_games_cache.json")
+            cache_manager = CacheManager()
             auto_dir = os.path.join(self.portproton_location or "", "data", "scripts", "pw_autoinstall")
             scripts_signature = self._compute_scripts_signature(auto_dir)
             data = {"games": games, "scripts_signature": scripts_signature, "timestamp": time.time()}
-            with open(cache_file, "wb") as f:
-                f.write(orjson.dumps(data))
+            cache_manager.save_json("autoinstall_games_cache", data)
             logger.debug(f"Saved {len(games)} autoinstall games to cache with signature {scripts_signature}")
         except Exception as e:
             logger.error(f"Failed to save autoinstall cache: {e}")
