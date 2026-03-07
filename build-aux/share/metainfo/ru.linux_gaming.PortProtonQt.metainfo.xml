@@ -55,6 +55,11 @@
       <caption xml:lang="ru">Контекстное меню</caption>
     </screenshot>
     <screenshot>
+      <image>https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/exe_settings.jpg</image>
+      <caption>Exe Settings</caption>
+      <caption xml:lang="ru">Настройки exe</caption>
+    </screenshot>
+    <screenshot>
       <image>https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/wine_settings.jpg</image>
       <caption>Wine Settings</caption>
       <caption xml:lang="ru">Настройки Wine</caption>
