@@ -592,12 +592,12 @@ class ProtonManager(QDialog):
                     self.download_btn.setText(_('Delete Selected'))
                     self.download_btn.setEnabled(True)
                 else:
-                    selection_text = _("No assets selected")
+                    selection_text = _("No WINE/Proton selected")
                     self.download_btn.setText(_('Delete Selected'))
                     self.download_btn.setEnabled(False)
                 self.selection_text.setPlainText(selection_text)
             else:
-                self.selection_text.setPlainText(_("No assets selected"))
+                self.selection_text.setPlainText(_("No WINE/Proton selected"))
                 self.download_btn.setText(_('Delete Selected'))
                 self.download_btn.setEnabled(False)
         else:
@@ -638,7 +638,7 @@ class ProtonManager(QDialog):
                 self.download_btn.setText(_('Download Selected'))
                 self.download_btn.setEnabled(True)
             else:
-                self.selection_text.setPlainText(_("No assets selected"))
+                self.selection_text.setPlainText(_("No WINE/Proton selected"))
                 self.download_btn.setText(_('Download Selected'))
                 self.download_btn.setEnabled(False)
 
@@ -734,16 +734,15 @@ class ProtonManager(QDialog):
             return
         if self.input_manager:
             self.disable_proton_manager_mode()
-        try:
-            reply = QMessageBox.question(
-                self, _("Confirm Deletion"),
-                _("Are you sure you want to delete {} selected WINE/Proton?\n\nThis action cannot be undone.").format(len(versions_to_remove)),
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.No
-            )
-        finally:
-            if self.input_manager:
-                self.enable_proton_manager_mode()
+        msg_box = QMessageBox(self)
+        msg_box.setIcon(QMessageBox.Icon.Question)
+        msg_box.setWindowTitle(_("Confirm Clear"))
+        msg_box.setText(_("Are you sure you want to delete {} selected WINE/Proton?\n\nThis action cannot be undone.").format(len(versions_to_remove)))
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        msg_box.setDefaultButton(QMessageBox.StandardButton.No)
+        msg_box.setButtonText(QMessageBox.StandardButton.Yes, _("Yes"))
+        msg_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
+        reply = msg_box.exec()
         if reply != QMessageBox.StandardButton.Yes:
             return
         removed_count = 0
@@ -856,7 +855,7 @@ class ProtonManager(QDialog):
                     QTimer.singleShot(100, self.start_next_download)
             def download_error(error_msg):
                 logger.error(f"Download error: {error_msg}")
-                QMessageBox.critical(self, "Download Error", f"Failed to download archive: {error_msg}")
+                QMessageBox.critical(self, "Download Error", f"Failed to download WINE/Proton: {error_msg}")
                 temp_dir = os.path.dirname(filename)
                 try:
                     shutil.rmtree(temp_dir)

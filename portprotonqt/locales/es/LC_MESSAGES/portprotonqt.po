@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-03-07 20:19+0500\n"
+"POT-Creation-Date: 2026-03-07 20:46+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es_ES\n"
@@ -1199,9 +1199,6 @@ msgid ""
 msgstr ""
 
 msgid "Delete Selected"
-msgstr ""
-
-msgid "No assets selected"
 msgstr ""
 
 #, python-brace-format
