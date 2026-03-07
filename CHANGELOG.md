@@ -36,6 +36,7 @@
 - Кэш обложек со SteamCDN
 - Исправлены некорректные комментарии в CSS для combobox
 - Исправлена валидация синтаксиса комментариев CSS и опечатки в winetricks.py
+- Перевод кнопок «Yes»/«No» в QMessageBox
 
 ### Contributors
 - @Simple16
