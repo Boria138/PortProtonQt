@@ -14,7 +14,7 @@ from portprotonqt.config_utils import (
     get_portproton_start_command
 )
 from portprotonqt.logger import get_logger, setup_logger
-from portprotonqt.cli import parse_args, is_portproton_url, parse_portproton_url, is_exe_file, add_steam_compat_tool
+from portprotonqt.cli import parse_args, is_portproton_url, parse_portproton_url, is_exe_file, add_steam_compat_tool, parse_resolution
 from portprotonqt.portproton_api import PortProtonAPI, set_user_conf_setting
 from portprotonqt.downloader import Downloader
 from portprotonqt.debug_utils import get_screen_info
@@ -174,7 +174,15 @@ def main():
 
     # --- Main Window ---
     version = get_version()
-    window = MainWindow(app_name=__app_name__, version=version, launch_exe=exe_path)
+
+    # Parse resolution if provided
+    window_resolution = None
+    if args.resolution:
+        window_resolution = parse_resolution(args.resolution)
+        if window_resolution is None:
+            logger.warning(f"Invalid resolution format: {args.resolution}, expected WIDTHxHEIGHT (e.g., 1920x1080)")
+
+    window = MainWindow(app_name=__app_name__, version=version, launch_exe=exe_path, resolution=window_resolution)
 
     # Handle exe file if provided
     if exe_path:
@@ -232,6 +240,10 @@ def main():
         )
         save_fullscreen_config(True)
         window.showFullScreen()
+    elif window_resolution:
+        logger.info(f"Launching with resolution: {window_resolution[0]}x{window_resolution[1]}")
+        window.resize(window_resolution[0], window_resolution[1])
+        window.showNormal()
     else:
         logger.info("Launching in normal mode")
         save_fullscreen_config(False)

@@ -5,7 +5,7 @@ _portprotonqt_completions() {
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     # Available options
-    opts="--fullscreen --debug-level --force-muvm --add-steam-compat-tool --help -h"
+    opts="--fullscreen --resolution --debug-level --force-muvm --add-steam-compat-tool --help -h"
 
     # Debug level choices
     debug_levels="ALL DEBUG INFO WARNING ERROR CRITICAL"

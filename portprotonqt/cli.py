@@ -1,5 +1,6 @@
 import argparse
 import os
+import re
 from pathlib import Path
 
 from portprotonqt.steam_api import get_steam_home
@@ -14,6 +15,12 @@ def parse_args():
         "--fullscreen",
         action="store_true",
         help="Launch the application in fullscreen mode and save this setting"
+    )
+    parser.add_argument(
+        "--resolution",
+        type=str,
+        metavar="WIDTHxHEIGHT",
+        help="Launch the application with a specific resolution (e.g., 1920x1080)"
     )
     parser.add_argument(
         "--debug-level",
@@ -225,3 +232,32 @@ def parse_portproton_url(url: str) -> str | None:
         corrected_url = actual_url
 
     return corrected_url
+
+
+def parse_resolution(resolution: str) -> tuple[int, int] | None:
+    """Parse a resolution string in the format WIDTHxHEIGHT.
+
+    Args:
+        resolution: Resolution string (e.g., "1920x1080")
+
+    Returns:
+        Tuple of (width, height) if valid, None otherwise
+    """
+    try:
+        # Match pattern like "1920x1080"
+        match = re.match(r'^(\d+)x(\d+)$', resolution, re.IGNORECASE)
+        if not match:
+            return None
+
+        width = int(match.group(1))
+        height = int(match.group(2))
+
+        # Validate reasonable resolution bounds
+        if width < 320 or height < 200:
+            return None
+        if width > 7680 or height > 4320:
+            return None
+
+        return (width, height)
+    except (ValueError, AttributeError):
+        return None

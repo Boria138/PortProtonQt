@@ -59,7 +59,7 @@ class MainWindow(QMainWindow):
     update_progress = Signal(int)
     update_status_message = Signal(str, int)
 
-    def __init__(self, app_name: str, version: str, launch_exe: str | None = None):
+    def __init__(self, app_name: str, version: str, launch_exe: str | None = None, resolution: tuple[int, int] | None = None):
         super().__init__()
         self.theme_manager = ThemeManager()
         selected_theme = read_theme_from_config()
@@ -71,6 +71,7 @@ class MainWindow(QMainWindow):
         self.auto_card_width = read_auto_card_size()
         self.setWindowTitle(f"{app_name} {version}")
         self.setMinimumSize(800, 600)
+        self._pending_resolution = resolution  # Store resolution for later application
 
         self.games = []
         self.game_processes = []
@@ -265,6 +266,10 @@ class MainWindow(QMainWindow):
 
         if read_fullscreen_config():
             self.showFullScreen()
+        elif self._pending_resolution:
+            # Apply resolution from command line
+            self.resize(self._pending_resolution[0], self._pending_resolution[1])
+            self.showNormal()
         else:
             width, height = read_window_geometry()
             if width > 0 and height > 0:
