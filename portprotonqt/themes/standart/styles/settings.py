@@ -31,6 +31,20 @@ SETTINGS_TITLE_STYLE = f"""
     }}
 """
 
+SETTINGS_TITLE_CHECKBOX_STYLE = f"""
+    QLabel {{
+        color: {color_f};
+        height: 34px;
+        font-family: '{font_family}';
+        font-size: {font_size_a};
+        font-weight: bold;
+        padding: 7px;
+        background: {color_h};
+        border-radius: {border_radius_a};
+        min-width: 180px;
+    }}
+"""
+
 SETTINGS_COMBO_STYLE = f"""
     QComboBox {{
         background: {color_c};
