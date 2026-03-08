@@ -385,7 +385,7 @@ class ExeSettingsDialog(QDialog):
         self.advanced_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         self.advanced_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
         self.advanced_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
-        self.advanced_table.horizontalHeader().resizeSection(1, 200)
+        self.advanced_table.horizontalHeader().resizeSection(1, 230)
         self.advanced_table.setWordWrap(True)
         self.advanced_table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         self.advanced_table.setTextElideMode(Qt.TextElideMode.ElideNone)
