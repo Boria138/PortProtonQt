@@ -155,6 +155,10 @@ MANGOHUD_VALUE_DEFAULTS = {
     'table_columns': '3',
 }
 
+MANGOHUD_HIDDEN_EXTRA_KEYS = {
+    'font_size',
+}
+
 MANGOHUD_BUTTON_PRESETS = {
     'fps_only': {
         'config': 'position=top-left',
@@ -265,6 +269,7 @@ class ExeSettingsDialog(QDialog):
         self.original_display_values = {}
         self.mangohud_widgets = {}
         self.mangohud_original_values = {}
+        self.mangohud_hidden_extra_tokens = []
         self.mangohud_toggle_widgets = {}
         self.mangohud_fps_widgets = {}
         self.mangohud_category_groups = {}
@@ -727,13 +732,6 @@ class ExeSettingsDialog(QDialog):
 
     def setup_mangohud_tab(self):
         """Create MangoHud tab widgets."""
-        info_label = QLabel(_(
-            "Configure MangoHud for this executable. Main options are available as checkboxes, "
-            "FPS limit is configured separately, and unsupported parameters can be added below."
-        ))
-        info_label.setWordWrap(True)
-        info_label.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
-        self.mangohud_tab_layout.addWidget(info_label)
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -974,6 +972,7 @@ class ExeSettingsDialog(QDialog):
         parsed_config, raw_tokens = self._parse_mangohud_config(
             self.current_settings.get('MANGOHUD_CONFIG', '')
         )
+        visible_raw_tokens, hidden_raw_tokens = self._split_mangohud_extra_tokens(raw_tokens)
 
         for spec in MANGOHUD_VALUE_SPECS:
             self._set_mangohud_value_widget(spec, parsed_config.get(spec['key']))
@@ -986,12 +985,13 @@ class ExeSettingsDialog(QDialog):
         for fps, checkbox in self.mangohud_fps_widgets.items():
             checkbox.setChecked(fps in fps_limit_values)
 
-        self.mangohud_extra_edit.setPlainText(', '.join(raw_tokens))
+        self.mangohud_hidden_extra_tokens = hidden_raw_tokens
+        self.mangohud_extra_edit.setPlainText(', '.join(visible_raw_tokens))
         self.mangohud_original_values = {
             'MANGOHUD_CONFIG': self.current_settings.get('MANGOHUD_CONFIG', ''),
             'FPS_LIMIT': self.current_settings.get('FPS_LIMIT', ''),
         }
-        self.mangohud_original_values['extra'] = ', '.join(raw_tokens)
+        self.mangohud_original_values['extra'] = ', '.join(visible_raw_tokens)
 
     def apply_portproton_default_mangohud(self):
         """Apply MangoHud defaults from PortProton var file."""
@@ -1060,6 +1060,7 @@ class ExeSettingsDialog(QDialog):
     def _apply_mangohud_config_to_widgets(self, config_text, fps_limit, forced_toggles=None):
         """Apply MangoHud config text to the tab widgets."""
         parsed_config, raw_tokens = self._parse_mangohud_config(config_text)
+        visible_raw_tokens, hidden_raw_tokens = self._split_mangohud_extra_tokens(raw_tokens)
 
         for spec in MANGOHUD_VALUE_SPECS:
             self._set_mangohud_value_widget(spec, parsed_config.get(spec['key']))
@@ -1075,7 +1076,20 @@ class ExeSettingsDialog(QDialog):
         for fps, checkbox in self.mangohud_fps_widgets.items():
             checkbox.setChecked(fps in fps_values)
 
-        self.mangohud_extra_edit.setPlainText(', '.join(raw_tokens))
+        self.mangohud_hidden_extra_tokens = hidden_raw_tokens
+        self.mangohud_extra_edit.setPlainText(', '.join(visible_raw_tokens))
+
+    def _split_mangohud_extra_tokens(self, raw_tokens):
+        """Split hidden MangoHud extra tokens from visible ones."""
+        visible_tokens = []
+        hidden_tokens = []
+        for token in raw_tokens:
+            key = token.split('=', 1)[0].strip()
+            if key in MANGOHUD_HIDDEN_EXTRA_KEYS:
+                hidden_tokens.append(token)
+            else:
+                visible_tokens.append(token)
+        return visible_tokens, hidden_tokens
 
     def _set_mangohud_value_widget(self, spec, value):
         """Apply parsed value to a MangoHud value widget."""
@@ -1172,6 +1186,8 @@ class ExeSettingsDialog(QDialog):
         extra_text = self.mangohud_extra_edit.toPlainText().replace('\n', ',').strip(' ,')
         if extra_text:
             tokens.append(extra_text)
+        if self.mangohud_hidden_extra_tokens:
+            tokens.extend(self.mangohud_hidden_extra_tokens)
         return ','.join(tokens)
 
     def _build_mangohud_toggle_token(self, key):
