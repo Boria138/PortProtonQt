@@ -3,13 +3,14 @@
 import os
 import re
 import shutil
+import configparser
 from typing import cast, TYPE_CHECKING
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QTabWidget,
     QTableWidget, QHeaderView, QTableWidgetItem, QAbstractItemView,
     QStackedWidget, QWidget, QMessageBox, QComboBox, QApplication,
     QCheckBox, QGroupBox, QPlainTextEdit, QScrollArea, QFormLayout,
-    QGridLayout, QPushButton
+    QGridLayout, QPushButton, QSizePolicy
 )
 from PySide6.QtCore import Qt, QProcess, QTimer, QUrl
 from PySide6.QtGui import QColor, QDesktopServices
@@ -30,6 +31,7 @@ from portprotonqt.preloader import Preloader
 from portprotonqt.virtual_keyboard import VirtualKeyboard
 from portprotonqt.localization import _, format_setting_name_for_display
 from portprotonqt.dialogs.dialog_utils import create_dialog_hints_widget, update_dialog_hints
+from portprotonqt.config import CONFIG_FILE
 
 logger = get_logger(__name__)
 theme_manager = ThemeManager()
@@ -145,6 +147,14 @@ MANGOHUD_VALUE_SPECS = [
      'options': ['1', '2', '3', '4', '5', '6']},
 ]
 
+MANGOHUD_VALUE_DEFAULTS = {
+    'position': 'top-left',
+    'fps_limit_method': 'late',
+    'af': '0',
+    'fcat_screen_edge': '1',
+    'table_columns': '3',
+}
+
 MANGOHUD_BUTTON_PRESETS = {
     'fps_only': {
         'config': 'position=top-left',
@@ -166,6 +176,11 @@ MANGOHUD_BUTTON_PRESETS = {
         },
     },
     'clear': {
+        'config': '',
+        'fps_limit': '',
+        'toggles': set(),
+    },
+    'custom': {
         'config': '',
         'fps_limit': '',
         'toggles': set(),
@@ -766,6 +781,8 @@ class ExeSettingsDialog(QDialog):
             (_("FPS only"), lambda: self.apply_mangohud_button_preset('fps_only')),
             (_("Compact"), lambda: self.apply_mangohud_button_preset('compact')),
             (_("Extended"), lambda: self.apply_mangohud_button_preset('extended')),
+            (_("Custom"), lambda: self.apply_mangohud_button_preset('custom')),
+            (_("Save custom"), self.save_custom_mangohud_preset),
             (_("Clear"), lambda: self.apply_mangohud_button_preset('clear')),
         ]
 
@@ -903,7 +920,13 @@ class ExeSettingsDialog(QDialog):
         widget.addItems(spec['options'])
         widget.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         widget.setMinimumHeight(40)
+        widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         widget.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
+        default_value = MANGOHUD_VALUE_DEFAULTS.get(spec['key'], '')
+        if default_value and default_value in [widget.itemText(i) for i in range(widget.count())]:
+            widget.setCurrentText(default_value)
+        else:
+            widget.setCurrentIndex(0)
         self.mangohud_widgets[spec['key']] = widget
         return widget
 
@@ -980,8 +1003,59 @@ class ExeSettingsDialog(QDialog):
 
     def apply_mangohud_button_preset(self, preset_name):
         """Apply a built-in MangoHud preset button."""
+        if preset_name == 'custom':
+            preset = self._load_custom_mangohud_preset()
+            if preset is None:
+                QMessageBox.information(self, _("Info"), _("Custom preset is empty. Save one first."))
+                return
+            self._apply_mangohud_config_to_widgets(preset['config'], preset['fps_limit'])
+            return
         preset = MANGOHUD_BUTTON_PRESETS[preset_name]
         self._apply_mangohud_config_to_widgets(preset['config'], preset['fps_limit'], preset['toggles'])
+
+    def save_custom_mangohud_preset(self):
+        """Save current MangoHud settings as custom preset."""
+        preset = {
+            'config': self._build_mangohud_config(),
+            'fps_limit': '+'.join(
+                fps for fps, checkbox in self.mangohud_fps_widgets.items() if checkbox.isChecked()
+            ),
+        }
+        cp = configparser.ConfigParser()
+        try:
+            if CONFIG_FILE.exists():
+                cp.read(CONFIG_FILE, encoding='utf-8')
+            if 'MangoHudPresets' not in cp:
+                cp['MangoHudPresets'] = {}
+            cp['MangoHudPresets']['custom_config'] = preset['config']
+            cp['MangoHudPresets']['custom_fps_limit'] = preset['fps_limit']
+            with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
+                cp.write(f)
+            QMessageBox.information(self, _("Success"), _("Custom preset saved."))
+        except Exception as e:
+            logger.warning("Failed to save custom MangoHud preset: %s", e)
+            QMessageBox.warning(self, _("Error"), _("Failed to save custom preset."))
+
+    def _load_custom_mangohud_preset(self):
+        """Load custom MangoHud preset from config file."""
+        cp = configparser.ConfigParser()
+        try:
+            if not CONFIG_FILE.exists():
+                return None
+            cp.read(CONFIG_FILE, encoding='utf-8')
+            if not cp.has_section('MangoHudPresets'):
+                return None
+            custom_config = cp.get('MangoHudPresets', 'custom_config', fallback='').strip()
+            custom_fps_limit = cp.get('MangoHudPresets', 'custom_fps_limit', fallback='').strip()
+            if not custom_config and not custom_fps_limit:
+                return None
+            return {
+                'config': custom_config,
+                'fps_limit': custom_fps_limit,
+            }
+        except Exception as e:
+            logger.warning("Failed to load custom MangoHud preset: %s", e)
+            return None
 
     def _apply_mangohud_config_to_widgets(self, config_text, fps_limit, forced_toggles=None):
         """Apply MangoHud config text to the tab widgets."""
@@ -1009,7 +1083,14 @@ class ExeSettingsDialog(QDialog):
         text = value if isinstance(value, str) else ''
         if text and text not in [widget.itemText(i) for i in range(widget.count())]:
             widget.addItem(text)
-        widget.setCurrentText(text)
+        if text:
+            widget.setCurrentText(text)
+        else:
+            default_value = MANGOHUD_VALUE_DEFAULTS.get(spec['key'], '')
+            if default_value and default_value in [widget.itemText(i) for i in range(widget.count())]:
+                widget.setCurrentText(default_value)
+            else:
+                widget.setCurrentIndex(0)
 
     def _mangohud_bool_value(self, value, default_enabled):
         """Convert a MangoHud token to checkbox state."""
@@ -1104,6 +1185,13 @@ class ExeSettingsDialog(QDialog):
         widget = self.mangohud_widgets[spec['key']]
         value = widget.currentText().strip()
         if not value:
+            return ''
+        parsed_original, _raw_tokens = self._parse_mangohud_config(
+            self.mangohud_original_values.get('MANGOHUD_CONFIG', '')
+        )
+        key = spec['key']
+        default_value = MANGOHUD_VALUE_DEFAULTS.get(key, '')
+        if key not in parsed_original and default_value and value == default_value:
             return ''
         return f"{spec['key']}={value}"
 
