@@ -13,8 +13,7 @@ SETTINGS_FRAME_TITLE_STYLE = f"""
         font-family: '{font_family}';
         font-size: {font_size_a};
         font-weight: bold;
-        color: {color_f};
-        text-decoration: underline;
+        color: {color_a};
     }}
 """
 
@@ -28,7 +27,7 @@ SETTINGS_TITLE_STYLE = f"""
         padding: 7px;
         background: {color_d};
         border-radius: {border_radius_a};
-        min-width: 150px;
+        min-width: 180px;
     }}
 """
 
