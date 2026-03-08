@@ -6,7 +6,7 @@ from typing import Protocol, cast, Any
 from evdev import InputDevice, InputEvent, UInput, ecodes, list_devices, ff
 from enum import Enum
 from pyudev import Context, Monitor, Device, Devices
-from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea, QLineEdit, QDialog, QMenu, QComboBox, QListView, QMessageBox, QListWidget, QTableWidget, QAbstractItemView, QSlider, QCheckBox
+from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea, QLineEdit, QDialog, QMenu, QComboBox, QListView, QMessageBox, QListWidget, QTableWidget, QAbstractItemView, QSlider, QCheckBox, QPushButton
 from PySide6.QtCore import Qt, QObject, QEvent, QPoint, Signal, Slot, QTimer, QThread
 from PySide6.QtGui import QKeyEvent, QMouseEvent
 from portprotonqt.logger import get_logger
@@ -1168,15 +1168,9 @@ class InputManager(QObject):
                         popup.reject()
                     return
 
-                # 3. Advanced Tab Combo Box Logic
+                # 3. Combo Box popup handling in settings (Advanced + MangoHud)
                 table = self._get_current_settings_table()
-                open_combo = None
-                if table and table == self.settings_dialog.advanced_table:
-                    for r in range(table.rowCount()):
-                        w = table.cellWidget(r, 1)
-                        if isinstance(w, QComboBox) and w.view().isVisible():
-                            open_combo = w
-                            break
+                open_combo = self._get_open_settings_combo()
 
                 # B Button - Close combo or dialog
                 if button_code in BUTTONS['back']:
@@ -1220,6 +1214,18 @@ class InputManager(QObject):
 
                     if isinstance(focused, QLineEdit):
                         self.settings_dialog.show_virtual_keyboard(focused)
+                        return
+                    if self.settings_dialog.tab_widget.currentIndex() == 2:
+                        if isinstance(focused, QCheckBox):
+                            focused.toggle()
+                            return
+                        if isinstance(focused, QPushButton):
+                            focused.click()
+                            return
+                        if isinstance(focused, QComboBox):
+                            focused.showPopup()
+                            return
+                        self._parent.activateFocusedWidget()
                     return
 
                 # 4. Global Shortcuts
@@ -1278,6 +1284,64 @@ class InputManager(QObject):
                             kb.move_focus_down()
                         else:
                             kb.move_focus_up()
+                return
+
+            if self.settings_dialog.tab_widget.currentIndex() == 2:
+                focused = QApplication.focusWidget()
+                open_combo = self._get_open_settings_combo()
+                if open_combo:
+                    if code == ecodes.ABS_HAT0Y and value != 0:
+                        view = open_combo.view()
+                        model = view.model()
+                        current_index = view.currentIndex()
+                        if model and current_index.isValid():
+                            row_count = model.rowCount()
+                            current_row = current_index.row()
+                            if value > 0:
+                                next_row = min(current_row + 1, row_count - 1)
+                            else:
+                                next_row = max(current_row - 1, 0)
+                            new_index = model.index(next_row, current_index.column())
+                            view.setCurrentIndex(new_index)
+                            view.scrollTo(new_index, QAbstractItemView.ScrollHint.PositionAtCenter)
+                    return
+
+                if code not in (ecodes.ABS_HAT0X, ecodes.ABS_HAT0Y, ecodes.ABS_X, ecodes.ABS_Y):
+                    return
+
+                normalized_value = value
+                if code in (ecodes.ABS_X, ecodes.ABS_Y):
+                    if abs(value) < self.dead_zone:
+                        normalized_value = 0
+                    else:
+                        normalized_value = 1 if value > 0 else -1
+
+                if normalized_value == 0:
+                    self.dpad_timer.stop()
+                    self.current_dpad_code = None
+                    self.current_dpad_value = 0
+                    return
+
+                if code in (ecodes.ABS_HAT0X, ecodes.ABS_HAT0Y):
+                    if self.current_dpad_code != code or self.current_dpad_value != normalized_value:
+                        self.dpad_timer.stop()
+                        self.dpad_timer.setInterval(120 if self.dpad_timer.isActive() else 220)
+                        self.dpad_timer.start()
+                        self.current_dpad_code = code
+                        self.current_dpad_value = normalized_value
+
+                sections = self._get_mangohud_nav_sections()
+                if not sections:
+                    return
+
+                if not focused or not self._find_widget_in_sections(focused, sections):
+                    self._focus_first_row_in_current_settings_table()
+                    return
+
+                if code in (ecodes.ABS_HAT0X, ecodes.ABS_X):
+                    self._move_mangohud_horizontal(focused, normalized_value, sections)
+                elif code in (ecodes.ABS_HAT0Y, ecodes.ABS_Y):
+                    self._move_mangohud_vertical(focused, normalized_value, sections)
                 return
 
             # 2. Combo Box Navigation (within Advanced Table)
@@ -1344,12 +1408,267 @@ class InputManager(QObject):
                 return self.settings_dialog.advanced_table
         return None
 
+    def _get_open_settings_combo(self):
+        """Return currently opened combo popup in settings dialog if any."""
+        if not self.settings_dialog:
+            return None
+        for combo in self.settings_dialog.findChildren(
+            QComboBox, options=Qt.FindChildOption.FindChildrenRecursively
+        ):
+            if combo.isVisible() and combo.view().isVisible():
+                return combo
+        return None
+
     def _focus_first_row_in_current_settings_table(self):
         table = self._get_current_settings_table()
         if table and table.rowCount() > 0:
             col = 1 if (self.settings_dialog and table == self.settings_dialog.advanced_table) else 0
             table.setCurrentCell(0, col)
             table.setFocus(Qt.FocusReason.OtherFocusReason)
+            return
+
+        if self.settings_dialog and self.settings_dialog.tab_widget.currentIndex() == 2:
+            sections = self._get_mangohud_nav_sections()
+            if sections and sections[0]:
+                self._focus_mangohud_widget(sections[0][0])
+
+    def _get_mangohud_nav_sections(self):
+        """Return MangoHud focusable widgets grouped by visual sections."""
+        if not self.settings_dialog or self.settings_dialog.tab_widget.currentIndex() != 2:
+            return []
+
+        sections = []
+
+        value_widgets = [
+            widget for widget in self.settings_dialog.mangohud_widgets.values()
+            if widget.isVisible() and widget.isEnabled()
+        ]
+        if value_widgets:
+            sections.append(self._sort_widgets_by_position(value_widgets))
+
+        mangohud_tab = self.settings_dialog.tab_widget.currentWidget()
+        preset_buttons = []
+        if mangohud_tab:
+            preset_buttons = [
+                widget for widget in mangohud_tab.findChildren(
+                    QPushButton, options=Qt.FindChildOption.FindChildrenRecursively
+                )
+                if widget.isVisible() and widget.isEnabled()
+            ]
+        if preset_buttons:
+            sections.append(self._sort_widgets_by_position(preset_buttons))
+
+        toggle_widgets = []
+        category_combo = getattr(self.settings_dialog, 'mangohud_category_combo', None)
+        if category_combo and category_combo.isVisible() and category_combo.isEnabled():
+            toggle_widgets.append(category_combo)
+        category_stack = getattr(self.settings_dialog, 'mangohud_category_stack', None)
+        if category_stack:
+            category_widget = category_stack.currentWidget()
+            if category_widget:
+                category_checkboxes = [
+                    checkbox for checkbox in category_widget.findChildren(
+                        QCheckBox, options=Qt.FindChildOption.FindChildrenRecursively
+                    )
+                    if checkbox.isVisible() and checkbox.isEnabled()
+                ]
+                toggle_widgets.extend(self._sort_widgets_by_position(category_checkboxes))
+        if toggle_widgets:
+            sections.append(toggle_widgets)
+
+        fps_widgets = [
+            checkbox for checkbox in self.settings_dialog.mangohud_fps_widgets.values()
+            if checkbox.isVisible() and checkbox.isEnabled()
+        ]
+        if fps_widgets:
+            sections.append(self._sort_widgets_by_position(fps_widgets))
+
+        extra_edit = getattr(self.settings_dialog, 'mangohud_extra_edit', None)
+        if extra_edit and extra_edit.isVisible() and extra_edit.isEnabled():
+            sections.append([extra_edit])
+
+        return sections
+
+    def _sort_widgets_by_position(self, widgets):
+        """Sort widgets by their y/x position in settings dialog coordinates."""
+        return sorted(
+            widgets,
+            key=lambda widget: (
+                widget.mapTo(self.settings_dialog, widget.rect().topLeft()).y(),
+                widget.mapTo(self.settings_dialog, widget.rect().topLeft()).x(),
+            ),
+        )
+
+    def _find_widget_in_sections(self, widget, sections):
+        """Find widget position in sections list."""
+        for section_index, section in enumerate(sections):
+            for widget_index, item in enumerate(section):
+                if item is widget:
+                    return section_index, widget_index
+        return None
+
+    def _focus_mangohud_widget(self, widget):
+        """Focus MangoHud widget and ensure it is visible in scroll area."""
+        widget.setFocus(Qt.FocusReason.OtherFocusReason)
+        self._ensure_mangohud_widget_visible(widget)
+
+    def _ensure_mangohud_widget_visible(self, widget):
+        """Auto-scroll MangoHud tab to the currently focused widget."""
+        if not self.settings_dialog:
+            return
+        mangohud_tab = self.settings_dialog.tab_widget.currentWidget()
+        if not mangohud_tab:
+            return
+        scroll_area = mangohud_tab.findChild(QScrollArea)
+        if scroll_area:
+            scroll_area.ensureWidgetVisible(widget, 20, 20)
+
+    def _move_mangohud_horizontal(self, focused, direction, sections):
+        """Move focus left/right inside current MangoHud section."""
+        position = self._find_widget_in_sections(focused, sections)
+        if not position:
+            return
+        section_index, _widget_index = position
+        target = self._find_mangohud_neighbor_in_section(
+            focused, sections[section_index], direction, is_vertical=False
+        )
+        if target:
+            self._focus_mangohud_widget(target)
+
+    def _move_mangohud_vertical(self, focused, direction, sections):
+        """Move focus up/down inside section, then across sections."""
+        position = self._find_widget_in_sections(focused, sections)
+        if not position:
+            return
+
+        section_index, _widget_index = position
+        if self._is_mangohud_fps_widget(focused):
+            fps_target = self._find_mangohud_fps_vertical_target(
+                focused, direction, sections[section_index]
+            )
+            if fps_target:
+                self._focus_mangohud_widget(fps_target)
+                return
+
+        target_in_section = self._find_mangohud_neighbor_in_section(
+            focused, sections[section_index], direction, is_vertical=True
+        )
+        if target_in_section:
+            self._focus_mangohud_widget(target_in_section)
+            return
+
+        target_section_index = section_index + direction
+        if target_section_index < 0 or target_section_index >= len(sections):
+            return
+
+        target_section = sections[target_section_index]
+        if not target_section:
+            return
+
+        category_combo = getattr(self.settings_dialog, 'mangohud_category_combo', None)
+        if category_combo and category_combo in target_section:
+            self._focus_mangohud_widget(category_combo)
+            return
+
+        if target_section_index == 1:
+            self._focus_mangohud_widget(target_section[0])
+            return
+
+        current_center = focused.mapTo(self.settings_dialog, focused.rect().center()).x()
+        target_widget = min(
+            target_section,
+            key=lambda widget: abs(widget.mapTo(self.settings_dialog, widget.rect().center()).x() - current_center),
+        )
+        self._focus_mangohud_widget(target_widget)
+
+    def _find_mangohud_neighbor_in_section(self, focused, section, direction, is_vertical):
+        """Find closest focusable neighbor in current section by direction."""
+        focused_center = focused.mapTo(self.settings_dialog, focused.rect().center())
+        fx = focused_center.x()
+        fy = focused_center.y()
+        candidates = []
+
+        for widget in section:
+            if widget is focused:
+                continue
+            center = widget.mapTo(self.settings_dialog, widget.rect().center())
+            dx = center.x() - fx
+            dy = center.y() - fy
+
+            if is_vertical:
+                if direction < 0 and dy >= -4:
+                    continue
+                if direction > 0 and dy <= 4:
+                    continue
+                score = abs(dy) + abs(dx) * 3
+            else:
+                if direction < 0 and dx >= -4:
+                    continue
+                if direction > 0 and dx <= 4:
+                    continue
+                score = abs(dx) + abs(dy) * 3
+
+            candidates.append((score, widget))
+
+        if not candidates:
+            return None
+        candidates.sort(key=lambda item: item[0])
+        return candidates[0][1]
+
+    def _is_mangohud_fps_widget(self, widget):
+        """Check if widget belongs to MangoHud FPS section."""
+        if not self.settings_dialog:
+            return False
+        return widget in set(self.settings_dialog.mangohud_fps_widgets.values())
+
+    def _find_mangohud_fps_vertical_target(self, focused, direction, section):
+        """Navigate FPS widgets down/up with automatic next/prev column jump."""
+        sorted_widgets = sorted(
+            section,
+            key=lambda widget: (
+                widget.mapTo(self.settings_dialog, widget.rect().center()).x(),
+                widget.mapTo(self.settings_dialog, widget.rect().center()).y(),
+            ),
+        )
+
+        columns = []
+        tolerance = 24
+        for widget in sorted_widgets:
+            x = widget.mapTo(self.settings_dialog, widget.rect().center()).x()
+            if not columns:
+                columns.append([widget])
+                continue
+            last_x = columns[-1][0].mapTo(self.settings_dialog, columns[-1][0].rect().center()).x()
+            if abs(x - last_x) <= tolerance:
+                columns[-1].append(widget)
+            else:
+                columns.append([widget])
+
+        col_idx = -1
+        row_idx = -1
+        for index, column in enumerate(columns):
+            if focused in column:
+                col_idx = index
+                row_idx = column.index(focused)
+                break
+        if col_idx == -1:
+            return None
+
+        if direction > 0:
+            if row_idx + 1 < len(columns[col_idx]):
+                return columns[col_idx][row_idx + 1]
+            if col_idx + 1 < len(columns):
+                return columns[col_idx + 1][0]
+            return None
+
+        if direction < 0:
+            if row_idx - 1 >= 0:
+                return columns[col_idx][row_idx - 1]
+            if col_idx - 1 >= 0:
+                return columns[col_idx - 1][-1]
+            return None
+
+        return None
 
     def handle_navigation_repeat(self):
         """Smooth movement repeat with variable speed for FileExplorer"""
