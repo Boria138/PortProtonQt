@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QTabWidget,
     QTableWidget, QHeaderView, QTableWidgetItem, QAbstractItemView,
     QStackedWidget, QWidget, QMessageBox, QComboBox, QApplication,
-    QCheckBox, QGroupBox, QPlainTextEdit, QScrollArea, QFormLayout,
+    QCheckBox, QGroupBox, QScrollArea, QFormLayout,
     QGridLayout, QPushButton, QSizePolicy
 )
 from PySide6.QtCore import Qt, QProcess, QTimer, QUrl
@@ -901,14 +901,12 @@ class ExeSettingsDialog(QDialog):
         label.setWordWrap(True)
         label.setStyleSheet("background: transparent; color: inherit;")
         layout.addWidget(label)
-        self.mangohud_extra_edit = QPlainTextEdit()
+        self.mangohud_extra_edit = QLineEdit()
         self.mangohud_extra_edit.setPlaceholderText(_("Example: battery,gpu_junction_temp,fps_color=39f900"))
-        self.mangohud_extra_edit.setMinimumHeight(120)
+        self.mangohud_extra_edit.setMinimumHeight(40)
         self.mangohud_extra_edit.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.mangohud_extra_edit.installEventFilter(self)
-        self.mangohud_extra_edit.setStyleSheet(
-            self.theme.ADDGAME_INPUT_STYLE.replace("QLineEdit", "QPlainTextEdit")
-        )
+        self.mangohud_extra_edit.setStyleSheet(self.theme.ADDGAME_INPUT_STYLE)
         layout.addWidget(self.mangohud_extra_edit)
         parent_layout.addWidget(group)
 
@@ -986,7 +984,7 @@ class ExeSettingsDialog(QDialog):
             checkbox.setChecked(fps in fps_limit_values)
 
         self.mangohud_hidden_extra_tokens = hidden_raw_tokens
-        self.mangohud_extra_edit.setPlainText(', '.join(visible_raw_tokens))
+        self.mangohud_extra_edit.setText(', '.join(visible_raw_tokens))
         self.mangohud_original_values = {
             'MANGOHUD_CONFIG': self.current_settings.get('MANGOHUD_CONFIG', ''),
             'FPS_LIMIT': self.current_settings.get('FPS_LIMIT', ''),
@@ -1077,7 +1075,7 @@ class ExeSettingsDialog(QDialog):
             checkbox.setChecked(fps in fps_values)
 
         self.mangohud_hidden_extra_tokens = hidden_raw_tokens
-        self.mangohud_extra_edit.setPlainText(', '.join(visible_raw_tokens))
+        self.mangohud_extra_edit.setText(', '.join(visible_raw_tokens))
 
     def _split_mangohud_extra_tokens(self, raw_tokens):
         """Split hidden MangoHud extra tokens from visible ones."""
@@ -1183,7 +1181,7 @@ class ExeSettingsDialog(QDialog):
                 tokens.append('show_fps_limit')
             tokens.append(f'fps_limit={fps_limit}')
 
-        extra_text = self.mangohud_extra_edit.toPlainText().replace('\n', ',').strip(' ,')
+        extra_text = self.mangohud_extra_edit.text().strip(' ,')
         if extra_text:
             tokens.append(extra_text)
         if self.mangohud_hidden_extra_tokens:
