@@ -27,7 +27,7 @@ SETTINGS_TITLE_STYLE = f"""
         padding: 7px;
         background: {color_d};
         border-radius: {border_radius_a};
-        min-width: 180px;
+        min-width: 320px;
     }}
 """
 
