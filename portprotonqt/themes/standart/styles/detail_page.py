@@ -25,9 +25,7 @@ ADDGAME_BACK_BUTTON_STYLE = f"""
 # MAIN FRAME FOR GAME DETAILS
 DETAIL_CONTENT_FRAME_STYLE = f"""
     QFrame {{
-        background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-            stop:0 rgba(20, 20, 20, 0.40),
-            stop:1 rgba(20, 20, 20, 0.35));
+        background: {color_b};
         border:  {border_a} {color_g};
         border-radius: {border_radius_b};
     }}

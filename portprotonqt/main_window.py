@@ -2169,17 +2169,7 @@ class MainWindow(QMainWindow):
 
         # Title
         title = QLabel(_("PortProton Settings"))
-        title.setStyleSheet(f"""
-            QLabel {{
-                font-family: '{self.theme.font_family}';
-                font-size: 20px;
-                font-weight: bold;
-                color: {self.theme.color_f};
-                background-color: {self.theme.color_d};
-                padding: 10px;
-                border-radius: {self.theme.border_radius_a};
-            }}
-        """)
+        title.setStyleSheet(self.theme.TAB_TITLE_STYLE)
         title.setObjectName("tabTitle")
         title.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
         title.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -2205,22 +2195,13 @@ class MainWindow(QMainWindow):
         def create_section(title_text):
             section_frame = QFrame()
             section_frame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-            section_frame.setStyleSheet(self.theme.DETAIL_CONTENT_FRAME_STYLE)
+            section_frame.setStyleSheet(self.theme.SETTINGS_FRAME_STYLE)
             section_layout = QVBoxLayout(section_frame)
             section_layout.setContentsMargins(15, 15, 15, 15)
             section_layout.setSpacing(10)
 
             section_title = QLabel(title_text)
-            section_title.setStyleSheet(f"""
-                QLabel {{
-                    font-weight: bold;
-                    font-size: 16px;
-                    color: {self.theme.color_f};
-                    background-color: {self.theme.color_c};
-                    padding: 8px;
-                    border-radius: {self.theme.border_radius_a};
-                }}
-            """)
+            section_title.setStyleSheet(self.theme.SETTINGS_FRAME_TITLE_STYLE)
             section_layout.addWidget(section_title)
 
             section_form = QFormLayout()
@@ -2236,6 +2217,7 @@ class MainWindow(QMainWindow):
 
         # 1. Library Settings Section
         genFrame, genForm = create_section(_("Library Settings"))
+        genForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
         scrollLayout.addWidget(genFrame)
 
         self.timeDetailCombo = QComboBox()
@@ -2247,7 +2229,7 @@ class MainWindow(QMainWindow):
         self.timeDetailCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.timeDetailTitle = QLabel(_("Time Detail Level:"))
         self.timeDetailTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.timeDetailTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.timeDetailTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
         self.timeDetailTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         current = read_time_config()
         try:
@@ -2266,7 +2248,7 @@ class MainWindow(QMainWindow):
         self.gamesSortCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.gamesSortTitle = QLabel(_("Games Sort Method:"))
         self.gamesSortTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.gamesSortTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.gamesSortTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
         self.gamesSortTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         current = read_sort_method()
         try:
@@ -2285,7 +2267,7 @@ class MainWindow(QMainWindow):
         self.gamesDisplayCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.gamesDisplayTitle = QLabel(_("Games Display Filter:"))
         self.gamesDisplayTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.gamesDisplayTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.gamesDisplayTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
         self.gamesDisplayTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         current = read_display_filter()
         try:
@@ -2297,6 +2279,7 @@ class MainWindow(QMainWindow):
 
         # 2. Interface Settings Section
         uiFrame, uiForm = create_section(_("Interface Settings"))
+        uiForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
         scrollLayout.addWidget(uiFrame)
 
         self.fullscreenCheckBox = QCheckBox()  # Removed text
@@ -2304,7 +2287,7 @@ class MainWindow(QMainWindow):
         self.fullscreenCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.fullscreenTitle = QLabel(_("Launch Application in Fullscreen"))
         self.fullscreenTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.fullscreenTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.fullscreenTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
         self.fullscreenTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         current_fullscreen = read_fullscreen_config()
         self.fullscreenCheckBox.setChecked(current_fullscreen)
@@ -2320,7 +2303,7 @@ class MainWindow(QMainWindow):
         self.minimizeToTrayCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.minimizeToTrayTitle = QLabel(_("Minimize to tray on close"))
         self.minimizeToTrayTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.minimizeToTrayTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.minimizeToTrayTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
         self.minimizeToTrayTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         current_minimize_to_tray = read_minimize_to_tray()
         self.minimizeToTrayCheckBox.setChecked(current_minimize_to_tray)
@@ -2337,7 +2320,7 @@ class MainWindow(QMainWindow):
         self.hideAutoInstallTabCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.hideAutoInstallTabTitle = QLabel(_("Hide Auto-Install Tab"))
         self.hideAutoInstallTabTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.hideAutoInstallTabTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.hideAutoInstallTabTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
         self.hideAutoInstallTabTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         current_hide_autoinstall = read_hide_autoinstall_tab()
         self.hideAutoInstallTabCheckBox.setChecked(current_hide_autoinstall)
@@ -2351,6 +2334,7 @@ class MainWindow(QMainWindow):
 
         # 3. Gamepad Settings Section
         padFrame, padForm = create_section(_("Gamepad Settings"))
+        padForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
         scrollLayout.addWidget(padFrame)
 
         self.gamepadTypeCombo = QComboBox()
@@ -2359,7 +2343,7 @@ class MainWindow(QMainWindow):
         self.gamepadTypeCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
         self.gamepadTypeTitle = QLabel(_("Gamepad Type:"))
         self.gamepadTypeTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.gamepadTypeTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.gamepadTypeTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
         self.gamepadTypeTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         current_type_str = read_gamepad_type()
         if current_type_str == "playstation":
@@ -2373,7 +2357,7 @@ class MainWindow(QMainWindow):
         self.autoFullscreenGamepadCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.autoFullscreenGamepadTitle = QLabel(_("Auto Fullscreen on Gamepad connected"))
         self.autoFullscreenGamepadTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.autoFullscreenGamepadTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.autoFullscreenGamepadTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
         self.autoFullscreenGamepadTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         current_auto_fullscreen = read_auto_fullscreen_gamepad()
         self.autoFullscreenGamepadCheckBox.setChecked(current_auto_fullscreen)
@@ -2389,7 +2373,7 @@ class MainWindow(QMainWindow):
         self.gamepadRumbleCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
         self.gamepadRumbleTitle = QLabel(_("Gamepad haptic feedback"))
         self.gamepadRumbleTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.gamepadRumbleTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.gamepadRumbleTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
         self.gamepadRumbleTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         current_rumble_state = read_rumble_config()
         self.gamepadRumbleCheckBox.setChecked(current_rumble_state)
@@ -2402,6 +2386,7 @@ class MainWindow(QMainWindow):
 
         # 4. Hardware Settings Section
         hwFrame, hwForm = create_section(_("Hardware Settings"))
+        hwForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
         scrollLayout.addWidget(hwFrame)
 
         gpu_list = get_gpu_list()
@@ -2423,7 +2408,7 @@ class MainWindow(QMainWindow):
                 self.gpuCombo.setCurrentIndex(0)
             self.gpuTitle = QLabel(_("GPU to use:"))
             self.gpuTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-            self.gpuTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+            self.gpuTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
             self.gpuTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
             hwForm.addRow(self.gpuTitle, self.gpuCombo)
         else:
@@ -2431,16 +2416,17 @@ class MainWindow(QMainWindow):
 
         # 5. Proxy Settings Section
         proxyFrame, proxyForm = create_section(_("Proxy Settings"))
+        proxyForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
         scrollLayout.addWidget(proxyFrame)
 
         self.proxyUrlEdit = CustomLineEdit(self, theme=self.theme)
         self.proxyUrlEdit.setPlaceholderText(_("Proxy URL"))
         self.proxyUrlEdit.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        self.proxyUrlEdit.setStyleSheet(self.theme.PROXY_INPUT_STYLE)
+        self.proxyUrlEdit.setStyleSheet(self.theme.SETTINGS_LINE_EDIT_STYLE)
         self.proxyUrlEdit.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.proxyUrlTitle = QLabel(_("Proxy URL:"))
         self.proxyUrlTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.proxyUrlTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.proxyUrlTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
         self.proxyUrlTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         proxy_cfg = read_proxy_config()
         if proxy_cfg.get("http", ""):
@@ -2450,11 +2436,11 @@ class MainWindow(QMainWindow):
         self.proxyUserEdit = CustomLineEdit(self, theme=self.theme)
         self.proxyUserEdit.setPlaceholderText(_("Proxy Username"))
         self.proxyUserEdit.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        self.proxyUserEdit.setStyleSheet(self.theme.PROXY_INPUT_STYLE)
+        self.proxyUserEdit.setStyleSheet(self.theme.SETTINGS_LINE_EDIT_STYLE)
         self.proxyUserEdit.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.proxyUserTitle = QLabel(_("Proxy Username:"))
         self.proxyUserTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.proxyUserTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.proxyUserTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
         self.proxyUserTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         proxyForm.addRow(self.proxyUserTitle, self.proxyUserEdit)
 
@@ -2462,11 +2448,11 @@ class MainWindow(QMainWindow):
         self.proxyPasswordEdit.setPlaceholderText(_("Proxy Password"))
         self.proxyPasswordEdit.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.proxyPasswordEdit.setEchoMode(QLineEdit.EchoMode.Password)
-        self.proxyPasswordEdit.setStyleSheet(self.theme.PROXY_INPUT_STYLE)
+        self.proxyPasswordEdit.setStyleSheet(self.theme.SETTINGS_LINE_EDIT_STYLE)
         self.proxyPasswordEdit.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.proxyPasswordTitle = QLabel(_("Proxy Password:"))
         self.proxyPasswordTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.proxyPasswordTitle.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.proxyPasswordTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
         self.proxyPasswordTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         proxyForm.addRow(self.proxyPasswordTitle, self.proxyPasswordEdit)
 
