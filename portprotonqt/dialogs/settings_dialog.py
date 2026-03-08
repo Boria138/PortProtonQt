@@ -137,6 +137,8 @@ MANGOHUD_VALUE_SPECS = [
     {'key': 'position', 'label': _("Overlay position"), 'type': 'combo',
      'options': ['top-left', 'top-right', 'middle-left', 'middle-right',
                  'bottom-left', 'bottom-right', 'top-center', 'bottom-center']},
+    {'key': 'device_battery', 'label': _("Device battery"), 'type': 'combo',
+     'options': ['', 'gamepad', 'mouse', 'gamepad,mouse']},
     {'key': 'fps_limit_method', 'label': _("FPS limit method"), 'type': 'combo',
      'options': ['late', 'early']},
     {'key': 'af', 'label': _("Anisotropic filtering"), 'type': 'combo',
@@ -149,6 +151,7 @@ MANGOHUD_VALUE_SPECS = [
 
 MANGOHUD_VALUE_DEFAULTS = {
     'position': 'top-left',
+    'device_battery': '',
     'fps_limit_method': 'late',
     'af': '0',
     'fcat_screen_edge': '1',
