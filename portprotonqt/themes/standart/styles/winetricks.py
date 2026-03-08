@@ -12,6 +12,8 @@ QTabBar::tab {{
     border-top-left-radius: {border_radius_a};
     border-top-right-radius: {border_radius_a};
     margin-right: 2px;
+    font-family: '{font_family}';
+    font-size: {font_size_a};
 }}
 QTabBar::tab:selected {{
     background: {color_a};
