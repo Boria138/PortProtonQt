@@ -7,7 +7,9 @@ from typing import cast, TYPE_CHECKING
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QTabWidget,
     QTableWidget, QHeaderView, QTableWidgetItem, QAbstractItemView,
-    QStackedWidget, QWidget, QMessageBox, QComboBox, QApplication
+    QStackedWidget, QWidget, QMessageBox, QComboBox, QApplication,
+    QCheckBox, QGroupBox, QPlainTextEdit, QScrollArea, QFormLayout,
+    QGridLayout, QPushButton
 )
 from PySide6.QtCore import Qt, QProcess, QTimer, QUrl
 from PySide6.QtGui import QColor, QDesktopServices
@@ -32,6 +34,175 @@ from portprotonqt.dialogs.dialog_utils import create_dialog_hints_widget, update
 logger = get_logger(__name__)
 theme_manager = ThemeManager()
 
+MANGOHUD_ENV_KEYS = [
+    'MANGOHUD_CONFIG',
+    'FPS_LIMIT',
+]
+
+MANGOHUD_TOGGLE_SPECS = [
+    ('arch', _("Arch")),
+    ('battery', _("Battery")),
+    ('battery_icon', _("Battery icon")),
+    ('battery_time', _("Battery time")),
+    ('battery_watt', _("Battery watt")),
+    ('bicubic', _("Bicubic")),
+    ('core_bars', _("Core bars")),
+    ('core_load', _("Core load")),
+    ('core_load_change', _("Core load change")),
+    ('core_type', _("Core type")),
+    ('cpu_efficiency', _("CPU efficiency")),
+    ('cpu_load_change', _("CPU load change")),
+    ('cpu_mhz', _("CPU MHz")),
+    ('cpu_power', _("CPU power")),
+    ('cpu_temp', _("CPU temperature")),
+    ('debug', _("Debug")),
+    ('device_battery_icon', _("Device battery icon")),
+    ('display_server', _("Display server")),
+    ('dynamic_frame_timing', _("Dynamic frame timing")),
+    ('engine_short_names', _("Short engine names")),
+    ('engine_version', _("Engine version")),
+    ('exec_name', _("Executable name")),
+    ('fan', _("Fan")),
+    ('fcat', _("FCAT")),
+    ('flip_efficiency', _("Flip efficiency")),
+    ('fps_color_change', _("FPS color change")),
+    ('fps_metrics', _("FPS metrics")),
+    ('fps_only', _("FPS only")),
+    ('frame_count', _("Frame count")),
+    ('frametime', _("Frametime")),
+    ('frame_timing_detailed', _("Detailed frametime")),
+    ('fsr', _("FSR status")),
+    ('full', _("Full preset")),
+    ('gamemode', _("GameMode")),
+    ('gpu_core_clock', _("GPU core clock")),
+    ('gpu_efficiency', _("GPU efficiency")),
+    ('gpu_fan', _("GPU fan")),
+    ('gpu_junction_temp', _("GPU junction temp")),
+    ('gpu_load_change', _("GPU load change")),
+    ('gpu_mem_clock', _("GPU memory clock")),
+    ('gpu_mem_temp', _("GPU memory temp")),
+    ('gpu_name', _("GPU name")),
+    ('gpu_power', _("GPU power")),
+    ('gpu_power_limit', _("GPU power limit")),
+    ('gpu_temp', _("GPU temperature")),
+    ('gpu_voltage', _("GPU voltage")),
+    ('hdr', _("HDR status")),
+    ('hide_fsr_sharpness', _("Hide FSR sharpness")),
+    ('histogram', _("Histogram")),
+    ('horizontal', _("Horizontal")),
+    ('horizontal_stretch', _("Horizontal stretch")),
+    ('hud_compact', _("Compact HUD")),
+    ('hud_no_margin', _("No margins")),
+    ('io_read', _("IO read")),
+    ('io_write', _("IO write")),
+    ('log_versioning', _("Log versioning")),
+    ('media_player', _("Media player")),
+    ('no_display', _("Hidden by default")),
+    ('no_small_font', _("No small font")),
+    ('permit_upload', _("Permit upload")),
+    ('present_mode', _("Present mode")),
+    ('proc_vram', _("Process VRAM")),
+    ('procmem', _("Process memory")),
+    ('procmem_shared', _("Shared memory")),
+    ('procmem_virt', _("Virtual memory")),
+    ('ram', _("RAM")),
+    ('ram_temp', _("RAM temperature")),
+    ('read_cfg', _("Read config")),
+    ('refresh_rate', _("Refresh rate")),
+    ('resolution', _("Resolution")),
+    ('retro', _("Retro")),
+    ('show_fps_limit', _("Show FPS limit")),
+    ('swap', _("Swap")),
+    ('temp_fahrenheit', _("Fahrenheit")),
+    ('text_outline', _("Text outline")),
+    ('throttling_status', _("Throttling status")),
+    ('throttling_status_graph', _("Throttling graph")),
+    ('time', _("Time")),
+    ('time_no_label', _("Time without label")),
+    ('trilinear', _("Trilinear")),
+    ('upload_logs', _("Upload logs")),
+    ('version', _("Version")),
+    ('vkbasalt', _("vkBasalt")),
+    ('vram', _("VRAM")),
+    ('vulkan_driver', _("Vulkan driver")),
+    ('wine', _("Wine")),
+    ('winesync', _("Wine sync")),
+]
+
+MANGOHUD_FPS_OPTIONS = ['30', '40', '45', '48', '60', '75', '90', '120', '144', '165', '175', '240']
+
+MANGOHUD_VALUE_SPECS = [
+    {'key': 'position', 'label': _("Overlay position"), 'type': 'combo',
+     'options': ['top-left', 'top-right', 'middle-left', 'middle-right',
+                 'bottom-left', 'bottom-right', 'top-center', 'bottom-center']},
+    {'key': 'fps_limit_method', 'label': _("FPS limit method"), 'type': 'combo',
+     'options': ['late', 'early']},
+    {'key': 'af', 'label': _("Anisotropic filtering"), 'type': 'combo',
+     'options': [str(value) for value in range(17)]},
+    {'key': 'fcat_screen_edge', 'label': _("FCAT screen edge"), 'type': 'combo',
+     'options': ['1', '2', '3', '4']},
+    {'key': 'table_columns', 'label': _("Table columns"), 'type': 'combo',
+     'options': ['1', '2', '3', '4', '5', '6']},
+]
+
+MANGOHUD_BUTTON_PRESETS = {
+    'fps_only': {
+        'config': 'position=top-left',
+        'fps_limit': '',
+        'toggles': {'show_fps_limit'},
+    },
+    'compact': {
+        'config': 'position=top-right,hud_compact',
+        'fps_limit': '',
+        'toggles': {'frametime', 'cpu_temp', 'gpu_temp', 'ram', 'vram', 'wine', 'winesync'},
+    },
+    'extended': {
+        'config': 'position=top-left',
+        'fps_limit': '',
+        'toggles': {
+            'frametime', 'frame_count', 'cpu_mhz', 'cpu_power', 'cpu_temp',
+            'gpu_power', 'gpu_temp', 'ram', 'vram', 'io_read', 'io_write',
+            'resolution', 'engine_version', 'vulkan_driver', 'wine', 'winesync', 'gamemode'
+        },
+    },
+    'clear': {
+        'config': '',
+        'fps_limit': '',
+        'toggles': set(),
+    },
+}
+
+MANGOHUD_TOGGLE_CATEGORIES = {
+    _("General"): [
+        'arch', 'battery', 'battery_icon', 'battery_time', 'battery_watt',
+        'device_battery_icon', 'display_server', 'exec_name', 'gamemode',
+        'media_player', 'time', 'time_no_label', 'version', 'vkbasalt',
+        'wine', 'winesync',
+    ],
+    _("Performance"): [
+        'bicubic', 'dynamic_frame_timing', 'flip_efficiency', 'fps_color_change',
+        'fps_metrics', 'fps_only', 'frametime', 'frame_timing_detailed',
+        'full', 'hide_fsr_sharpness', 'histogram', 'present_mode',
+        'read_cfg', 'retro', 'show_fps_limit', 'trilinear',
+    ],
+    _("CPU / GPU"): [
+        'core_bars', 'core_load', 'core_load_change', 'core_type',
+        'cpu_efficiency', 'cpu_load_change', 'cpu_mhz', 'cpu_power', 'cpu_temp',
+        'gpu_core_clock', 'gpu_efficiency', 'gpu_fan', 'gpu_junction_temp',
+        'gpu_load_change', 'gpu_mem_clock', 'gpu_mem_temp', 'gpu_name',
+        'gpu_power', 'gpu_power_limit', 'gpu_temp', 'gpu_voltage',
+        'ram', 'ram_temp', 'swap', 'vram',
+    ],
+    _("Overlay"): [
+        'debug', 'engine_short_names', 'engine_version', 'fan', 'fcat', 'fsr',
+        'frame_count', 'hdr', 'horizontal', 'horizontal_stretch', 'hud_compact',
+        'hud_no_margin', 'io_read', 'io_write', 'log_versioning', 'no_display',
+        'no_small_font', 'permit_upload', 'proc_vram', 'procmem',
+        'procmem_shared', 'procmem_virt', 'refresh_rate', 'resolution',
+        'temp_fahrenheit', 'text_outline', 'throttling_status',
+        'throttling_status_graph', 'upload_logs', 'vulkan_driver',
+    ],
+}
 
 class ExeSettingsDialog(QDialog):
     """Dialog for configuring executable-specific settings."""
@@ -77,6 +248,11 @@ class ExeSettingsDialog(QDialog):
         self.original_values = {}
         self.advanced_widgets = {}
         self.original_display_values = {}
+        self.mangohud_widgets = {}
+        self.mangohud_original_values = {}
+        self.mangohud_toggle_widgets = {}
+        self.mangohud_fps_widgets = {}
+        self.mangohud_category_groups = {}
         self.available_keys = set()
         self.blocked_keys = set()
         self.numa_nodes = {}
@@ -144,6 +320,7 @@ class ExeSettingsDialog(QDialog):
         self.search_edit.setPlaceholderText(_("Search settings..."))
         self.search_edit.textChanged.connect(self.filter_settings)
         self.search_edit.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.search_edit.installEventFilter(self)
         search_layout.addWidget(self.search_label)
         search_layout.addWidget(self.search_edit)
         self.main_layout.addLayout(search_layout)
@@ -154,9 +331,12 @@ class ExeSettingsDialog(QDialog):
         self.main_tab_layout = QVBoxLayout(self.main_tab)
         self.advanced_tab = QWidget()
         self.advanced_tab_layout = QVBoxLayout(self.advanced_tab)
+        self.mangohud_tab = QWidget()
+        self.mangohud_tab_layout = QVBoxLayout(self.mangohud_tab)
 
         self.tab_widget.addTab(self.main_tab, _("Main"))
         self.tab_widget.addTab(self.advanced_tab, _("Advanced"))
+        self.tab_widget.addTab(self.mangohud_tab, _("MangoHud"))
         self.tab_widget.currentChanged.connect(self.on_table_selection_changed)
 
         self.settings_table = QTableWidget()
@@ -229,6 +409,8 @@ class ExeSettingsDialog(QDialog):
         self.advanced_container.addWidget(self.advanced_table)
         self.advanced_tab_layout.addWidget(self.advanced_container)
         self.advanced_table.currentCellChanged.connect(self.on_table_selection_changed)
+
+        self.setup_mangohud_tab()
 
         self.main_layout.addWidget(self.tab_widget)
 
@@ -327,6 +509,8 @@ class ExeSettingsDialog(QDialog):
                 self.current_settings[adv_key] = 'disabled' if any(
                     x in adv_key for x in ['TOPOLOGY', 'SELECT', 'MODE', 'LEVEL', 'GL_VERSION', 'NUMA']
                 ) else ''
+            for key in MANGOHUD_ENV_KEYS:
+                self.current_settings[key] = ''
         else:
             output = bytes(process.readAllStandardOutput().data()).decode('utf-8', 'ignore').strip()
             self.current_settings = {}
@@ -335,7 +519,7 @@ class ExeSettingsDialog(QDialog):
                 if '=' in line_stripped:
                     try:
                         key, val = line_stripped.split('=', 1)
-                        if key in self.toggle_settings or key in ADVANCED_SETTING_KEYS:
+                        if key in self.toggle_settings or key in ADVANCED_SETTING_KEYS or key in MANGOHUD_ENV_KEYS:
                             if val.startswith('"') and val.endswith('"') and len(val) >= 2:
                                 val = val[1:-1]
                             self.current_settings[key] = val
@@ -355,6 +539,7 @@ class ExeSettingsDialog(QDialog):
 
         self.populate_table()
         self.populate_advanced()
+        self.populate_mangohud()
 
         self.settings_container.setCurrentIndex(1)
         self.advanced_container.setCurrentIndex(1)
@@ -525,6 +710,423 @@ class ExeSettingsDialog(QDialog):
         if self.input_manager and self.input_manager.gamepad and self.advanced_table.rowCount() > 0:
             self.on_table_selection_changed()
 
+    def setup_mangohud_tab(self):
+        """Create MangoHud tab widgets."""
+        info_label = QLabel(_(
+            "Configure MangoHud for this executable. Main options are available as checkboxes, "
+            "FPS limit is configured separately, and unsupported parameters can be added below."
+        ))
+        info_label.setWordWrap(True)
+        info_label.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        self.mangohud_tab_layout.addWidget(info_label)
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        scroll.setStyleSheet(self.theme.SCROLL_AREA_STYLE)
+        container = QWidget()
+        container.setStyleSheet("background: transparent;")
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(14)
+
+        self._add_mangohud_values_group(layout)
+        self._add_mangohud_presets_group(layout)
+        self._add_mangohud_toggle_group(layout)
+        self._add_mangohud_fps_group(layout)
+        self._add_mangohud_extra_group(layout)
+        layout.addStretch()
+
+        scroll.setWidget(container)
+
+        self.mangohud_tab_layout.addWidget(scroll)
+
+    def _add_mangohud_values_group(self, parent_layout):
+        """Add MangoHud value controls."""
+        group = QGroupBox(_("Layout and limiter"))
+        group.setStyleSheet(self._get_mangohud_group_style())
+        form = QFormLayout(group)
+        form.setSpacing(10)
+        form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
+
+        for spec in MANGOHUD_VALUE_SPECS:
+            form.addRow(spec['label'], self._create_mangohud_value_widget(spec))
+
+        parent_layout.addWidget(group)
+
+    def _add_mangohud_presets_group(self, parent_layout):
+        """Add preset buttons for common MangoHud layouts."""
+        group = QGroupBox(_("Quick presets"))
+        group.setStyleSheet(self._get_mangohud_group_style())
+        layout = QHBoxLayout(group)
+        layout.setSpacing(10)
+
+        buttons = [
+            (_("PortProton default"), self.apply_portproton_default_mangohud),
+            (_("FPS only"), lambda: self.apply_mangohud_button_preset('fps_only')),
+            (_("Compact"), lambda: self.apply_mangohud_button_preset('compact')),
+            (_("Extended"), lambda: self.apply_mangohud_button_preset('extended')),
+            (_("Clear"), lambda: self.apply_mangohud_button_preset('clear')),
+        ]
+
+        for label, handler in buttons:
+            button = QPushButton(label)
+            button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+            button.setMinimumHeight(44)
+            button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+            button.clicked.connect(handler)
+            layout.addWidget(button)
+
+        parent_layout.addWidget(group)
+
+    def _add_mangohud_toggle_group(self, parent_layout):
+        """Add categorized MangoHud toggle checkboxes."""
+        selector_group = QGroupBox(_("MangoHud switches"))
+        selector_group.setStyleSheet(self._get_mangohud_group_style())
+        selector_layout = QVBoxLayout(selector_group)
+
+        self.mangohud_category_combo = QComboBox()
+        self.mangohud_category_combo.addItems(list(MANGOHUD_TOGGLE_CATEGORIES.keys()))
+        self.mangohud_category_combo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
+        self.mangohud_category_combo.setMinimumHeight(40)
+        self.mangohud_category_combo.currentTextChanged.connect(self.on_mangohud_category_changed)
+        selector_layout.addWidget(self.mangohud_category_combo)
+
+        self.mangohud_category_stack = QStackedWidget()
+        self.mangohud_category_stack.setStyleSheet("background: transparent;")
+        selector_layout.addWidget(self.mangohud_category_stack)
+
+        toggle_lookup = dict(MANGOHUD_TOGGLE_SPECS)
+        uncategorized = set(toggle_lookup.keys())
+
+        for category, keys in MANGOHUD_TOGGLE_CATEGORIES.items():
+            category_widget = QWidget()
+            layout = QGridLayout(category_widget)
+            layout.setContentsMargins(8, 8, 8, 8)
+            layout.setHorizontalSpacing(16)
+            layout.setVerticalSpacing(10)
+
+            for index, key in enumerate(keys):
+                if key not in toggle_lookup:
+                    continue
+                label = toggle_lookup[key]
+                checkbox = self._create_mangohud_checkbox(label)
+                row = index // 2
+                column = index % 2
+                layout.addWidget(checkbox, row, column)
+                self.mangohud_toggle_widgets[key] = checkbox
+                uncategorized.discard(key)
+
+            self.mangohud_category_groups[category] = category_widget
+            self.mangohud_category_stack.addWidget(category_widget)
+
+        if uncategorized:
+            category_widget = QWidget()
+            layout = QGridLayout(category_widget)
+            layout.setContentsMargins(8, 8, 8, 8)
+            layout.setHorizontalSpacing(16)
+            layout.setVerticalSpacing(10)
+
+            for index, key in enumerate(sorted(uncategorized)):
+                label = toggle_lookup[key]
+                checkbox = self._create_mangohud_checkbox(label)
+                row = index // 2
+                column = index % 2
+                layout.addWidget(checkbox, row, column)
+                self.mangohud_toggle_widgets[key] = checkbox
+
+            self.mangohud_category_combo.addItem(_("Other"))
+            self.mangohud_category_groups[_("Other")] = category_widget
+            self.mangohud_category_stack.addWidget(category_widget)
+
+        parent_layout.addWidget(selector_group)
+
+    def _add_mangohud_fps_group(self, parent_layout):
+        """Add FPS limit presets."""
+        group = QGroupBox(_("FPS limit"))
+        group.setStyleSheet(self._get_mangohud_group_style())
+        layout = QVBoxLayout(group)
+        layout.setSpacing(10)
+
+        label = QLabel(_(
+            "Select one or more FPS presets. The values are saved into FPS_LIMIT "
+            "and MangoHud will also show the active FPS limit."
+        ))
+        label.setWordWrap(True)
+        layout.addWidget(label)
+
+        grid = QGridLayout()
+        grid.setHorizontalSpacing(16)
+        grid.setVerticalSpacing(10)
+
+        for index, fps in enumerate(MANGOHUD_FPS_OPTIONS):
+            checkbox = QCheckBox(fps)
+            checkbox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+            checkbox.setMinimumHeight(36)
+            checkbox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE + """
+                QCheckBox {
+                    spacing: 10px;
+                    padding: 4px 2px;
+                }
+            """)
+            row = index // 4
+            column = index % 4
+            grid.addWidget(checkbox, row, column)
+            self.mangohud_fps_widgets[fps] = checkbox
+
+        layout.addLayout(grid)
+        parent_layout.addWidget(group)
+
+    def _add_mangohud_extra_group(self, parent_layout):
+        """Add raw config field for unsupported MangoHud parameters."""
+        group = QGroupBox(_("Extra config"))
+        group.setStyleSheet(self._get_mangohud_group_style())
+        layout = QVBoxLayout(group)
+        label = QLabel(_("Additional comma-separated MangoHud options not covered by the GUI."))
+        label.setWordWrap(True)
+        label.setStyleSheet("background: transparent; color: inherit;")
+        layout.addWidget(label)
+        self.mangohud_extra_edit = QPlainTextEdit()
+        self.mangohud_extra_edit.setPlaceholderText(_("Example: battery,gpu_junction_temp,fps_color=39f900"))
+        self.mangohud_extra_edit.setMinimumHeight(120)
+        self.mangohud_extra_edit.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.mangohud_extra_edit.installEventFilter(self)
+        self.mangohud_extra_edit.setStyleSheet(
+            self.theme.ADDGAME_INPUT_STYLE.replace("QLineEdit", "QPlainTextEdit")
+        )
+        layout.addWidget(self.mangohud_extra_edit)
+        parent_layout.addWidget(group)
+
+    def _create_mangohud_value_widget(self, spec):
+        """Create a MangoHud value widget."""
+        widget = QComboBox()
+        widget.addItems(spec['options'])
+        widget.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        widget.setMinimumHeight(40)
+        widget.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
+        self.mangohud_widgets[spec['key']] = widget
+        return widget
+
+    def _create_mangohud_checkbox(self, label):
+        """Create a styled MangoHud checkbox."""
+        checkbox = QCheckBox(label)
+        checkbox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        checkbox.setMinimumHeight(36)
+        checkbox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE + """
+            QCheckBox {
+                spacing: 10px;
+                padding: 4px 2px;
+            }
+        """)
+        return checkbox
+
+    def on_mangohud_category_changed(self, category):
+        """Switch visible MangoHud toggle category."""
+        widget = self.mangohud_category_groups.get(category)
+        if widget:
+            self.mangohud_category_stack.setCurrentWidget(widget)
+
+    def _get_mangohud_group_style(self):
+        """Return group box style matching the rest of the settings UI."""
+        return """
+            QGroupBox {
+                font-size: 16px;
+                font-weight: bold;
+                color: palette(window-text);
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                border-radius: 10px;
+                margin-top: 10px;
+                padding-top: 14px;
+                background: transparent;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 12px;
+                padding: 0 6px;
+            }
+        """
+
+    def populate_mangohud(self):
+        """Populate MangoHud tab from current settings."""
+        parsed_config, raw_tokens = self._parse_mangohud_config(
+            self.current_settings.get('MANGOHUD_CONFIG', '')
+        )
+
+        for spec in MANGOHUD_VALUE_SPECS:
+            self._set_mangohud_value_widget(spec, parsed_config.get(spec['key']))
+
+        for key, _label in MANGOHUD_TOGGLE_SPECS:
+            checkbox = self.mangohud_toggle_widgets[key]
+            checkbox.setChecked(self._mangohud_bool_value(parsed_config.get(key), False))
+
+        fps_limit_values = self._get_mangohud_fps_values(parsed_config)
+        for fps, checkbox in self.mangohud_fps_widgets.items():
+            checkbox.setChecked(fps in fps_limit_values)
+
+        self.mangohud_extra_edit.setPlainText(', '.join(raw_tokens))
+        self.mangohud_original_values = {
+            'MANGOHUD_CONFIG': self.current_settings.get('MANGOHUD_CONFIG', ''),
+            'FPS_LIMIT': self.current_settings.get('FPS_LIMIT', ''),
+        }
+        self.mangohud_original_values['extra'] = ', '.join(raw_tokens)
+
+    def apply_portproton_default_mangohud(self):
+        """Apply MangoHud defaults from PortProton var file."""
+        default_config = self._get_default_mangohud_config()
+        if default_config is None:
+            QMessageBox.warning(self, _("Error"), _("Failed to read default MangoHud config."))
+            return
+        self._apply_mangohud_config_to_widgets(default_config, '')
+
+    def apply_mangohud_button_preset(self, preset_name):
+        """Apply a built-in MangoHud preset button."""
+        preset = MANGOHUD_BUTTON_PRESETS[preset_name]
+        self._apply_mangohud_config_to_widgets(preset['config'], preset['fps_limit'], preset['toggles'])
+
+    def _apply_mangohud_config_to_widgets(self, config_text, fps_limit, forced_toggles=None):
+        """Apply MangoHud config text to the tab widgets."""
+        parsed_config, raw_tokens = self._parse_mangohud_config(config_text)
+
+        for spec in MANGOHUD_VALUE_SPECS:
+            self._set_mangohud_value_widget(spec, parsed_config.get(spec['key']))
+
+        enabled_toggles = forced_toggles if forced_toggles is not None else set()
+        for key, _label in MANGOHUD_TOGGLE_SPECS:
+            checkbox = self.mangohud_toggle_widgets[key]
+            checkbox.setChecked(
+                key in enabled_toggles or self._mangohud_bool_value(parsed_config.get(key), False)
+            )
+
+        fps_values = {value.strip() for value in fps_limit.replace('+', ',').split(',') if value.strip()}
+        for fps, checkbox in self.mangohud_fps_widgets.items():
+            checkbox.setChecked(fps in fps_values)
+
+        self.mangohud_extra_edit.setPlainText(', '.join(raw_tokens))
+
+    def _set_mangohud_value_widget(self, spec, value):
+        """Apply parsed value to a MangoHud value widget."""
+        widget = self.mangohud_widgets[spec['key']]
+        text = value if isinstance(value, str) else ''
+        if text and text not in [widget.itemText(i) for i in range(widget.count())]:
+            widget.addItem(text)
+        widget.setCurrentText(text)
+
+    def _mangohud_bool_value(self, value, default_enabled):
+        """Convert a MangoHud token to checkbox state."""
+        if value is None:
+            return default_enabled
+        if value is True:
+            return True
+        return str(value).lower() not in {'0', 'false', 'no', 'off', 'disabled'}
+
+    def _parse_mangohud_config(self, config_text):
+        """Parse MANGOHUD_CONFIG into known values and raw tokens."""
+        known_keys = {key for key, label in MANGOHUD_TOGGLE_SPECS}
+        known_keys.update(spec['key'] for spec in MANGOHUD_VALUE_SPECS)
+        known_keys.add('fps_limit')
+        bool_keys = {key for key, label in MANGOHUD_TOGGLE_SPECS}
+        parsed = {}
+        raw_tokens = []
+        current_key = None
+        current_value = None
+
+        for part in [token.strip() for token in config_text.split(',') if token.strip()]:
+            if '=' in part:
+                if current_key is not None:
+                    self._store_mangohud_token(current_key, current_value, known_keys, parsed, raw_tokens)
+                current_key, current_value = self._split_mangohud_token(part)
+                continue
+
+            if current_key is not None and part not in bool_keys:
+                current_value = f"{current_value},{part}"
+                continue
+
+            if current_key is not None:
+                self._store_mangohud_token(current_key, current_value, known_keys, parsed, raw_tokens)
+                current_key = None
+                current_value = None
+
+            self._store_mangohud_token(part, True, known_keys, parsed, raw_tokens)
+
+        if current_key is not None:
+            self._store_mangohud_token(current_key, current_value, known_keys, parsed, raw_tokens)
+
+        return parsed, raw_tokens
+
+    def _split_mangohud_token(self, token):
+        """Split a MangoHud token into key and value."""
+        if '=' not in token:
+            return token, True
+        key, value = token.split('=', 1)
+        return key.strip(), value.strip()
+
+    def _store_mangohud_token(self, key, value, known_keys, parsed, raw_tokens):
+        """Store a parsed MangoHud token in known or raw collections."""
+        if key in known_keys:
+            parsed[key] = value
+            return
+        raw_tokens.append(key if value is True else f"{key}={value}")
+
+    def _build_mangohud_config(self):
+        """Build MANGOHUD_CONFIG from the MangoHud tab."""
+        tokens = []
+        for spec in MANGOHUD_VALUE_SPECS:
+            token = self._build_mangohud_value_token(spec)
+            if token:
+                tokens.append(token)
+
+        for key, _label in MANGOHUD_TOGGLE_SPECS:
+            token = self._build_mangohud_toggle_token(key)
+            if token:
+                tokens.append(token)
+
+        fps_limit = '+'.join(
+            fps for fps, checkbox in self.mangohud_fps_widgets.items() if checkbox.isChecked()
+        )
+        if fps_limit:
+            if 'show_fps_limit' not in [key for key, label in MANGOHUD_TOGGLE_SPECS if self.mangohud_toggle_widgets[key].isChecked()]:
+                tokens.append('show_fps_limit')
+            tokens.append(f'fps_limit={fps_limit}')
+
+        extra_text = self.mangohud_extra_edit.toPlainText().replace('\n', ',').strip(' ,')
+        if extra_text:
+            tokens.append(extra_text)
+        return ','.join(tokens)
+
+    def _build_mangohud_toggle_token(self, key):
+        """Build one MangoHud toggle token from a checkbox."""
+        if self.mangohud_toggle_widgets[key].isChecked():
+            return key
+        return ''
+
+    def _build_mangohud_value_token(self, spec):
+        """Build one MangoHud value token."""
+        widget = self.mangohud_widgets[spec['key']]
+        value = widget.currentText().strip()
+        if not value:
+            return ''
+        return f"{spec['key']}={value}"
+
+    def _get_mangohud_fps_values(self, parsed_config):
+        """Get FPS limit values from settings."""
+        fps_limit = self.current_settings.get('FPS_LIMIT', '').strip()
+        if not fps_limit:
+            fps_limit = parsed_config.get('fps_limit', '')
+        return {value.strip() for value in fps_limit.replace('+', ',').split(',') if value.strip()}
+
+    def _collect_mangohud_changes(self):
+        """Collect MangoHud-specific changes."""
+        changes = []
+        config_value = self._build_mangohud_config()
+        if config_value != self.mangohud_original_values.get('MANGOHUD_CONFIG', ''):
+            changes.append(f"MANGOHUD_CONFIG={config_value}")
+
+        fps_limit = '+'.join(fps for fps, checkbox in self.mangohud_fps_widgets.items() if checkbox.isChecked())
+        if fps_limit != self.mangohud_original_values.get('FPS_LIMIT', ''):
+            changes.append(f"FPS_LIMIT={fps_limit}")
+
+        return changes
+
     def init_virtual_keyboard(self):
         """Initialize virtual keyboard."""
         self.keyboard = VirtualKeyboard(self, theme=self.theme, button_width=50)
@@ -583,6 +1185,20 @@ class ExeSettingsDialog(QDialog):
                 should_show = True
 
             self.advanced_table.setRowHidden(row, not should_show)
+
+        self._filter_mangohud_settings(search_text)
+
+    def _filter_mangohud_settings(self, search_text):
+        """Filter MangoHud groups based on search text."""
+        for group_box in self.mangohud_tab.findChildren(QGroupBox):
+            if not search_text:
+                group_box.setVisible(True)
+                continue
+            group_text = group_box.title().lower()
+            label_text = ' '.join(widget.text().lower() for widget in group_box.findChildren(QLabel))
+            checkbox_text = ' '.join(widget.text().lower() for widget in group_box.findChildren(QCheckBox))
+            content_text = f"{label_text} {checkbox_text}"
+            group_box.setVisible(search_text in group_text or search_text in content_text)
 
     def _get_default_mangohud_config(self) -> str | None:
         """Read DEFAULT_MANGOHUD_CONFIG from portproton_path/data/scripts/var.
@@ -675,9 +1291,12 @@ class ExeSettingsDialog(QDialog):
             else:
                 continue
 
+        changes.extend(self._collect_mangohud_changes())
+
         # If PW_MANGOHUD is being enabled and MANGOHUD_CONFIG is not in current settings,
         # add it from the var file
-        if mangohud_enabled and 'MANGOHUD_CONFIG' not in self.current_settings:
+        has_mangohud_config_change = any(change.startswith("MANGOHUD_CONFIG=") for change in changes)
+        if mangohud_enabled and 'MANGOHUD_CONFIG' not in self.current_settings and not has_mangohud_config_change:
             default_config = self._get_default_mangohud_config()
             if default_config:
                 changes.append(f"MANGOHUD_CONFIG={default_config}")
@@ -759,6 +1378,8 @@ class ExeSettingsDialog(QDialog):
     def get_current_description(self):
         """Get the description text for the currently selected row."""
         current_table = self.advanced_table if self.tab_widget.currentIndex() == 1 else self.settings_table
+        if self.tab_widget.currentIndex() == 2:
+            return ""
         current_row = current_table.currentRow()
         if current_row >= 0:
             desc_item = current_table.item(current_row, 2)
@@ -769,6 +1390,9 @@ class ExeSettingsDialog(QDialog):
     def on_table_selection_changed(self):
         """Called when table selection changes to update the gamepad tooltip."""
         if self.input_manager and self.input_manager.gamepad:
+            if self.tab_widget.currentIndex() == 2:
+                self.show_gamepad_tooltip(show=False)
+                return
             current_table = self.advanced_table if self.tab_widget.currentIndex() == 1 else self.settings_table
             current_column = current_table.currentColumn() if current_table else -1
             if current_column == 2:
