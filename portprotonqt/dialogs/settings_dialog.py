@@ -147,6 +147,8 @@ MANGOHUD_VALUE_SPECS = [
      'options': ['1', '2', '3', '4']},
     {'key': 'table_columns', 'label': _("Table columns"), 'type': 'combo',
      'options': ['1', '2', '3', '4', '5', '6']},
+    {'key': 'network', 'label': _("Network (tx/rx kb/s)"), 'type': 'combo',
+     'options': ['']},
 ]
 
 MANGOHUD_VALUE_DEFAULTS = {
@@ -156,6 +158,7 @@ MANGOHUD_VALUE_DEFAULTS = {
     'af': '0',
     'fcat_screen_edge': '1',
     'table_columns': '3',
+    'network': '',
 }
 
 MANGOHUD_HIDDEN_EXTRA_KEYS = {
@@ -916,7 +919,10 @@ class ExeSettingsDialog(QDialog):
     def _create_mangohud_value_widget(self, spec):
         """Create a MangoHud value widget."""
         widget = QComboBox()
-        widget.addItems(spec['options'])
+        options = spec['options']
+        if spec['key'] == 'network':
+            options = self._get_mangohud_network_options()
+        widget.addItems(options)
         widget.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         widget.setMinimumHeight(40)
         widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
@@ -928,6 +934,26 @@ class ExeSettingsDialog(QDialog):
             widget.setCurrentIndex(0)
         self.mangohud_widgets[spec['key']] = widget
         return widget
+
+    def _get_mangohud_network_options(self) -> list[str]:
+        """Get available network interfaces for MangoHud network option."""
+        options = ['']
+        net_class_path = '/sys/class/net'
+        try:
+            if not os.path.isdir(net_class_path):
+                return options
+
+            interfaces = sorted(
+                iface for iface in os.listdir(net_class_path)
+                if iface and iface != 'lo'
+            )
+            options.extend(interfaces)
+        except OSError as e:
+            logger.warning("Failed to read network interfaces: %s", e)
+
+        if len(options) == 1:
+            options.append('eth0')
+        return options
 
     def _create_mangohud_checkbox(self, label):
         """Create a styled MangoHud checkbox."""
