@@ -791,7 +791,7 @@ class ExeSettingsDialog(QDialog):
     def _add_mangohud_values_group(self, parent_layout):
         """Add MangoHud value controls."""
         group = QGroupBox(_("Layout and limiter"))
-        group.setStyleSheet(self._get_mangohud_group_style())
+        group.setStyleSheet(self.theme.QGROUP_BOX_STYLE)
         form = QFormLayout(group)
         form.setSpacing(10)
         form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
@@ -828,7 +828,7 @@ class ExeSettingsDialog(QDialog):
     def _add_mangohud_presets_group(self, parent_layout):
         """Add preset buttons for common MangoHud layouts."""
         group = QGroupBox(_("Quick presets"))
-        group.setStyleSheet(self._get_mangohud_group_style())
+        group.setStyleSheet(self.theme.QGROUP_BOX_STYLE)
         layout = QHBoxLayout(group)
         layout.setSpacing(10)
 
@@ -855,7 +855,7 @@ class ExeSettingsDialog(QDialog):
     def _add_mangohud_toggle_group(self, parent_layout):
         """Add categorized MangoHud toggle checkboxes."""
         selector_group = QGroupBox(_("MangoHud switches"))
-        selector_group.setStyleSheet(self._get_mangohud_group_style())
+        selector_group.setStyleSheet(self.theme.QGROUP_BOX_STYLE)
         selector_layout = QVBoxLayout(selector_group)
 
         self.mangohud_category_combo = QComboBox()
@@ -918,7 +918,7 @@ class ExeSettingsDialog(QDialog):
     def _add_mangohud_fps_group(self, parent_layout):
         """Add FPS limit presets."""
         group = QGroupBox(_("FPS limit"))
-        group.setStyleSheet(self._get_mangohud_group_style())
+        group.setStyleSheet(self.theme.QGROUP_BOX_STYLE)
         layout = QVBoxLayout(group)
         layout.setSpacing(10)
 
@@ -967,11 +967,11 @@ class ExeSettingsDialog(QDialog):
     def _add_mangohud_extra_group(self, parent_layout):
         """Add raw config field for unsupported MangoHud parameters."""
         group = QGroupBox(_("Extra config"))
-        group.setStyleSheet(self._get_mangohud_group_style())
+        group.setStyleSheet(self.theme.QGROUP_BOX_STYLE)
         layout = QVBoxLayout(group)
         label = QLabel(_("Additional comma-separated MangoHud options not covered by the GUI."))
         label.setWordWrap(True)
-        label.setStyleSheet("background: transparent; color: inherit;")
+        # label.setStyleSheet("background: transparent; color: inherit;")
         layout.addWidget(label)
         self.mangohud_extra_edit = QLineEdit()
         self.mangohud_extra_edit.setPlaceholderText(_("Example: battery,gpu_junction_temp,fps_color=39f900"))
@@ -1032,25 +1032,6 @@ class ExeSettingsDialog(QDialog):
             self.mangohud_category_stack.setMinimumHeight(target_height)
             self.mangohud_category_stack.setMaximumHeight(target_height)
 
-    def _get_mangohud_group_style(self):
-        """Return group box style matching the rest of the settings UI."""
-        return """
-            QGroupBox {
-                font-size: 16px;
-                font-weight: bold;
-                color: palette(window-text);
-                border: 1px solid rgba(255, 255, 255, 0.12);
-                border-radius: 10px;
-                margin-top: 10px;
-                padding-top: 14px;
-                background: transparent;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 12px;
-                padding: 0 6px;
-            }
-        """
 
     def populate_mangohud(self):
         """Populate MangoHud tab from current settings."""
