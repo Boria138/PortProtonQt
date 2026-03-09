@@ -769,6 +769,8 @@ class ExeSettingsDialog(QDialog):
         form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
 
         for spec in MANGOHUD_VALUE_SPECS:
+            if spec['key'] == 'fps_limit_method':
+                continue
             form.addRow(spec['label'], self._create_mangohud_value_widget(spec))
 
         parent_layout.addWidget(group)
@@ -832,8 +834,8 @@ class ExeSettingsDialog(QDialog):
                     continue
                 label = toggle_lookup[key]
                 checkbox = self._create_mangohud_checkbox(label)
-                row = index // 2
-                column = index % 2
+                row = index // 4
+                column = index % 4
                 layout.addWidget(checkbox, row, column)
                 self.mangohud_toggle_widgets[key] = checkbox
                 uncategorized.discard(key)
@@ -851,8 +853,8 @@ class ExeSettingsDialog(QDialog):
             for index, key in enumerate(sorted(uncategorized)):
                 label = toggle_lookup[key]
                 checkbox = self._create_mangohud_checkbox(label)
-                row = index // 2
-                column = index % 2
+                row = index // 4
+                column = index % 4
                 layout.addWidget(checkbox, row, column)
                 self.mangohud_toggle_widgets[key] = checkbox
 
@@ -860,6 +862,7 @@ class ExeSettingsDialog(QDialog):
             self.mangohud_category_groups[_("Other")] = category_widget
             self.mangohud_category_stack.addWidget(category_widget)
 
+        self._update_mangohud_category_stack_height()
         parent_layout.addWidget(selector_group)
 
     def _add_mangohud_fps_group(self, parent_layout):
@@ -868,6 +871,19 @@ class ExeSettingsDialog(QDialog):
         group.setStyleSheet(self._get_mangohud_group_style())
         layout = QVBoxLayout(group)
         layout.setSpacing(10)
+
+        fps_limit_method_spec = next(
+            (spec for spec in MANGOHUD_VALUE_SPECS if spec['key'] == 'fps_limit_method'),
+            None,
+        )
+        if fps_limit_method_spec:
+            form = QFormLayout()
+            form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
+            form.addRow(
+                fps_limit_method_spec['label'],
+                self._create_mangohud_value_widget(fps_limit_method_spec),
+            )
+            layout.addLayout(form)
 
         label = QLabel(_(
             "Select one or more FPS presets. The values are saved into FPS_LIMIT "
@@ -973,6 +989,17 @@ class ExeSettingsDialog(QDialog):
         widget = self.mangohud_category_groups.get(category)
         if widget:
             self.mangohud_category_stack.setCurrentWidget(widget)
+            self._update_mangohud_category_stack_height()
+
+    def _update_mangohud_category_stack_height(self):
+        """Update MangoHud category block height to current visible page."""
+        current_widget = self.mangohud_category_stack.currentWidget()
+        if not current_widget:
+            return
+        target_height = current_widget.sizeHint().height()
+        if target_height > 0:
+            self.mangohud_category_stack.setMinimumHeight(target_height)
+            self.mangohud_category_stack.setMaximumHeight(target_height)
 
     def _get_mangohud_group_style(self):
         """Return group box style matching the rest of the settings UI."""
