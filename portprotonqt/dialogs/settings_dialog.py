@@ -135,10 +135,10 @@ MANGOHUD_FPS_OPTIONS = ['30', '40', '45', '48', '60', '75', '90', '120', '144', 
 
 MANGOHUD_VALUE_SPECS = [
     {'key': 'position', 'label': _("Overlay position"), 'type': 'combo',
-     'options': [_("Top-left"), _("Top-right"), _("Middle-left"), _("Middle-right"),
-                 _("Bottom-left"), _("Bottom-right"), _("Top-center"), _("Bottom-center")]},
+     'options': ['top-left', 'top-right', 'middle-left', 'middle-right',
+                 'bottom-left', 'bottom-right', 'top-center', 'bottom-center']},
     {'key': 'device_battery', 'label': _("Device battery"), 'type': 'combo',
-     'options': ['', _("Gamepad"), _("Mouse"), _("Gamepad, mouse")]},
+     'options': ['', 'gamepad', 'mouse', 'gamepad,mouse']},
     {'key': 'fps_limit_method', 'label': _("FPS limit method"), 'type': 'combo',
      'options': ['late', 'early']},
     {'key': 'af', 'label': _("Anisotropic filtering"), 'type': 'combo',
@@ -150,6 +150,28 @@ MANGOHUD_VALUE_SPECS = [
     {'key': 'network', 'label': _("Network (tx/rx kb/s)"), 'type': 'combo',
      'options': ['']},
 ]
+
+MANGOHUD_VALUE_OPTION_TRANSLATIONS = {
+    'position': {
+        'top-left': _("Top-left"),
+        'top-right': _("Top-right"),
+        'middle-left': _("Middle-left"),
+        'middle-right': _("Middle-right"),
+        'bottom-left': _("Bottom-left"),
+        'bottom-right': _("Bottom-right"),
+        'top-center': _("Top-center"),
+        'bottom-center': _("Bottom-center"),
+    },
+    'device_battery': {
+        'gamepad': _("Gamepad"),
+        'mouse': _("Mouse"),
+        'gamepad,mouse': _("Gamepad, mouse"),
+    },
+    'fps_limit_method': {
+        'late': _("Late"),
+        'early': _("Early"),
+    },
+}
 
 MANGOHUD_VALUE_DEFAULTS = {
     'position': 'top-left',
@@ -938,14 +960,17 @@ class ExeSettingsDialog(QDialog):
         options = spec['options']
         if spec['key'] == 'network':
             options = self._get_mangohud_network_options()
-        widget.addItems(options)
+        value_translations = MANGOHUD_VALUE_OPTION_TRANSLATIONS.get(spec['key'], {})
+        for option in options:
+            widget.addItem(value_translations.get(option, option), option)
         widget.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         widget.setMinimumHeight(40)
         widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         widget.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
         default_value = MANGOHUD_VALUE_DEFAULTS.get(spec['key'], '')
-        if default_value and default_value in [widget.itemText(i) for i in range(widget.count())]:
-            widget.setCurrentText(default_value)
+        default_index = widget.findData(default_value)
+        if default_value and default_index >= 0:
+            widget.setCurrentIndex(default_index)
         else:
             widget.setCurrentIndex(0)
         self.mangohud_widgets[spec['key']] = widget
@@ -1149,14 +1174,17 @@ class ExeSettingsDialog(QDialog):
         """Apply parsed value to a MangoHud value widget."""
         widget = self.mangohud_widgets[spec['key']]
         text = value if isinstance(value, str) else ''
-        if text and text not in [widget.itemText(i) for i in range(widget.count())]:
-            widget.addItem(text)
+        index = widget.findData(text)
+        if text and index < 0:
+            widget.addItem(text, text)
+            index = widget.findData(text)
         if text:
-            widget.setCurrentText(text)
+            widget.setCurrentIndex(index)
         else:
             default_value = MANGOHUD_VALUE_DEFAULTS.get(spec['key'], '')
-            if default_value and default_value in [widget.itemText(i) for i in range(widget.count())]:
-                widget.setCurrentText(default_value)
+            default_index = widget.findData(default_value)
+            if default_value and default_index >= 0:
+                widget.setCurrentIndex(default_index)
             else:
                 widget.setCurrentIndex(0)
 
@@ -1253,7 +1281,9 @@ class ExeSettingsDialog(QDialog):
     def _build_mangohud_value_token(self, spec):
         """Build one MangoHud value token."""
         widget = self.mangohud_widgets[spec['key']]
-        value = widget.currentText().strip()
+        value = str(widget.currentData()).strip()
+        if not value:
+            value = widget.currentText().strip()
         if not value:
             return ''
         parsed_original, _raw_tokens = self._parse_mangohud_config(
