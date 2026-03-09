@@ -149,6 +149,10 @@ MANGOHUD_VALUE_SPECS = [
      'options': ['1', '2', '3', '4', '5', '6']},
     {'key': 'network', 'label': _("Network (tx/rx kb/s)"), 'type': 'combo',
      'options': ['']},
+    {'key': 'background_alpha', 'label': _("Background opacity"), 'type': 'combo',
+     'options': [f'{i / 10:.1f}' for i in range(11)]},
+    {'key': 'round_corners', 'label': _("Round corners (px)"), 'type': 'combo',
+     'options': [str(i) for i in range(16)]},
 ]
 
 MANGOHUD_VALUE_OPTION_TRANSLATIONS = {
@@ -181,6 +185,8 @@ MANGOHUD_VALUE_DEFAULTS = {
     'fcat_screen_edge': '1',
     'table_columns': '3',
     'network': '',
+    'background_alpha': '0.5',
+    'round_corners': '0',
 }
 
 MANGOHUD_HIDDEN_EXTRA_KEYS = {
@@ -797,6 +803,28 @@ class ExeSettingsDialog(QDialog):
 
         parent_layout.addWidget(group)
 
+    def _create_mangohud_value_widget(self, spec):
+        """Create a MangoHud value widget."""
+        widget = QComboBox()
+        options = spec['options']
+        if spec['key'] == 'network':
+            options = self._get_mangohud_network_options()
+        value_translations = MANGOHUD_VALUE_OPTION_TRANSLATIONS.get(spec['key'], {})
+        for option in options:
+            widget.addItem(value_translations.get(option, option), option)
+        widget.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        widget.setMinimumHeight(40)
+        widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        widget.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
+        default_value = MANGOHUD_VALUE_DEFAULTS.get(spec['key'], '')
+        default_index = widget.findData(default_value)
+        if default_value and default_index >= 0:
+            widget.setCurrentIndex(default_index)
+        else:
+            widget.setCurrentIndex(0)
+        self.mangohud_widgets[spec['key']] = widget
+        return widget
+
     def _add_mangohud_presets_group(self, parent_layout):
         """Add preset buttons for common MangoHud layouts."""
         group = QGroupBox(_("Quick presets"))
@@ -953,28 +981,6 @@ class ExeSettingsDialog(QDialog):
         self.mangohud_extra_edit.setStyleSheet(self.theme.ADDGAME_INPUT_STYLE)
         layout.addWidget(self.mangohud_extra_edit)
         parent_layout.addWidget(group)
-
-    def _create_mangohud_value_widget(self, spec):
-        """Create a MangoHud value widget."""
-        widget = QComboBox()
-        options = spec['options']
-        if spec['key'] == 'network':
-            options = self._get_mangohud_network_options()
-        value_translations = MANGOHUD_VALUE_OPTION_TRANSLATIONS.get(spec['key'], {})
-        for option in options:
-            widget.addItem(value_translations.get(option, option), option)
-        widget.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        widget.setMinimumHeight(40)
-        widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        widget.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
-        default_value = MANGOHUD_VALUE_DEFAULTS.get(spec['key'], '')
-        default_index = widget.findData(default_value)
-        if default_value and default_index >= 0:
-            widget.setCurrentIndex(default_index)
-        else:
-            widget.setCurrentIndex(0)
-        self.mangohud_widgets[spec['key']] = widget
-        return widget
 
     def _get_mangohud_network_options(self) -> list[str]:
         """Get available network interfaces for MangoHud network option."""
