@@ -3261,7 +3261,7 @@ class MainWindow(QMainWindow):
                     save_last_launch(exe_name, datetime.now())
                     if update_button:
                         try:
-                            update_button.setText(_("Launching"))
+                            update_button.setText(_("Stop"))
                             icon = self.theme_manager.get_icon("stop")
                             if isinstance(icon, str):
                                 icon = QIcon(icon)
@@ -3364,7 +3364,7 @@ class MainWindow(QMainWindow):
                 save_last_launch(exe_name, datetime.now())
                 if update_button:
                     try:
-                        update_button.setText(_("Launching"))
+                        update_button.setText(_("Stop"))
                         icon = self.theme_manager.get_icon("stop")
                         if isinstance(icon, str):
                             icon = QIcon(icon)

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-03-07 20:46+0500\n"
+"POT-Creation-Date: 2026-03-09 09:10+0500\n"
 "PO-Revision-Date: 2026-01-18 11:09+0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: pt\n"
@@ -666,9 +666,6 @@ msgstr ""
 msgid "Cannot launch game while another game is running"
 msgstr ""
 
-msgid "Launching"
-msgstr ""
-
 #, python-brace-format
 msgid "Failed to launch game: {0}"
 msgstr ""
@@ -1282,6 +1279,333 @@ msgstr ""
 msgid "Download or extraction has been cancelled."
 msgstr ""
 
+msgid "Arch"
+msgstr ""
+
+msgid "Battery"
+msgstr ""
+
+msgid "Battery icon"
+msgstr ""
+
+msgid "Battery time"
+msgstr ""
+
+msgid "Battery watt"
+msgstr ""
+
+msgid "Bicubic"
+msgstr ""
+
+msgid "Core bars"
+msgstr ""
+
+msgid "Core load"
+msgstr ""
+
+msgid "Core load change"
+msgstr ""
+
+msgid "Core type"
+msgstr ""
+
+msgid "CPU efficiency"
+msgstr ""
+
+msgid "CPU load change"
+msgstr ""
+
+msgid "CPU MHz"
+msgstr ""
+
+msgid "CPU power"
+msgstr ""
+
+msgid "CPU temperature"
+msgstr ""
+
+msgid "Debug"
+msgstr ""
+
+msgid "Device battery icon"
+msgstr ""
+
+msgid "Display server"
+msgstr ""
+
+msgid "Dynamic frame timing"
+msgstr ""
+
+msgid "Short engine names"
+msgstr ""
+
+msgid "Engine version"
+msgstr ""
+
+msgid "Executable name"
+msgstr ""
+
+msgid "Fan"
+msgstr ""
+
+msgid "FCAT"
+msgstr ""
+
+msgid "Flip efficiency"
+msgstr ""
+
+msgid "FPS color change"
+msgstr ""
+
+msgid "FPS metrics"
+msgstr ""
+
+msgid "FPS only"
+msgstr ""
+
+msgid "Frame count"
+msgstr ""
+
+msgid "Frametime"
+msgstr ""
+
+msgid "Detailed frametime"
+msgstr ""
+
+msgid "FSR status"
+msgstr ""
+
+msgid "Full preset"
+msgstr ""
+
+msgid "GameMode"
+msgstr ""
+
+msgid "GPU core clock"
+msgstr ""
+
+msgid "GPU efficiency"
+msgstr ""
+
+msgid "GPU fan"
+msgstr ""
+
+msgid "GPU junction temp"
+msgstr ""
+
+msgid "GPU load change"
+msgstr ""
+
+msgid "GPU memory clock"
+msgstr ""
+
+msgid "GPU memory temp"
+msgstr ""
+
+msgid "GPU name"
+msgstr ""
+
+msgid "GPU power"
+msgstr ""
+
+msgid "GPU power limit"
+msgstr ""
+
+msgid "GPU temperature"
+msgstr ""
+
+msgid "GPU voltage"
+msgstr ""
+
+msgid "HDR status"
+msgstr ""
+
+msgid "Hide FSR sharpness"
+msgstr ""
+
+msgid "Histogram"
+msgstr ""
+
+msgid "Horizontal"
+msgstr ""
+
+msgid "Horizontal stretch"
+msgstr ""
+
+msgid "Compact HUD"
+msgstr ""
+
+msgid "No margins"
+msgstr ""
+
+msgid "IO read"
+msgstr ""
+
+msgid "IO write"
+msgstr ""
+
+msgid "Log versioning"
+msgstr ""
+
+msgid "Media player"
+msgstr ""
+
+msgid "Hidden by default"
+msgstr ""
+
+msgid "No small font"
+msgstr ""
+
+msgid "Permit upload"
+msgstr ""
+
+msgid "Present mode"
+msgstr ""
+
+msgid "Process VRAM"
+msgstr ""
+
+msgid "Process memory"
+msgstr ""
+
+msgid "Shared memory"
+msgstr ""
+
+msgid "Virtual memory"
+msgstr ""
+
+msgid "RAM"
+msgstr ""
+
+msgid "RAM temperature"
+msgstr ""
+
+msgid "Read config"
+msgstr ""
+
+msgid "Refresh rate"
+msgstr ""
+
+msgid "Resolution"
+msgstr ""
+
+msgid "Retro"
+msgstr ""
+
+msgid "Show FPS limit"
+msgstr ""
+
+msgid "Swap"
+msgstr ""
+
+msgid "Fahrenheit"
+msgstr ""
+
+msgid "Text outline"
+msgstr ""
+
+msgid "Throttling status"
+msgstr ""
+
+msgid "Throttling graph"
+msgstr ""
+
+msgid "Time"
+msgstr ""
+
+msgid "Time without label"
+msgstr ""
+
+msgid "Trilinear"
+msgstr ""
+
+msgid "Upload logs"
+msgstr ""
+
+msgid "Version"
+msgstr ""
+
+msgid "vkBasalt"
+msgstr ""
+
+msgid "VRAM"
+msgstr ""
+
+msgid "Vulkan driver"
+msgstr ""
+
+msgid "Wine"
+msgstr ""
+
+msgid "Wine sync"
+msgstr ""
+
+msgid "Overlay position"
+msgstr ""
+
+msgid "Top-left"
+msgstr ""
+
+msgid "Top-right"
+msgstr ""
+
+msgid "Middle-left"
+msgstr ""
+
+msgid "Middle-right"
+msgstr ""
+
+msgid "Bottom-left"
+msgstr ""
+
+msgid "Bottom-right"
+msgstr ""
+
+msgid "Top-center"
+msgstr ""
+
+msgid "Bottom-center"
+msgstr ""
+
+msgid "Device battery"
+msgstr ""
+
+msgid "Gamepad"
+msgstr ""
+
+msgid "Mouse"
+msgstr ""
+
+msgid "Gamepad, mouse"
+msgstr ""
+
+msgid "FPS limit method"
+msgstr ""
+
+msgid "Anisotropic filtering"
+msgstr ""
+
+msgid "FCAT screen edge"
+msgstr ""
+
+msgid "Table columns"
+msgstr ""
+
+msgid "Network (tx/rx kb/s)"
+msgstr ""
+
+msgid "General"
+msgstr ""
+
+msgid "Performance"
+msgstr ""
+
+msgid "CPU / GPU"
+msgstr ""
+
+msgid "Overlay"
+msgstr ""
+
 msgid "Exe Settings"
 msgstr ""
 
@@ -1295,6 +1619,9 @@ msgid "Main"
 msgstr ""
 
 msgid "Advanced"
+msgstr ""
+
+msgid "MangoHud"
 msgstr ""
 
 msgid "Setting"
@@ -1321,7 +1648,66 @@ msgstr ""
 msgid "disabled"
 msgstr ""
 
+msgid "Layout and limiter"
+msgstr ""
+
+msgid "Quick presets"
+msgstr ""
+
+msgid "PortProton default"
+msgstr ""
+
+msgid "Compact"
+msgstr ""
+
+msgid "Extended"
+msgstr ""
+
+msgid "Custom"
+msgstr ""
+
+msgid "Save custom"
+msgstr ""
+
+msgid "Clear"
+msgstr ""
+
+msgid "MangoHud switches"
+msgstr ""
+
+msgid "Other"
+msgstr ""
+
+msgid "FPS limit"
+msgstr ""
+
+msgid ""
+"Select one or more FPS presets. The values are saved into FPS_LIMIT and "
+"MangoHud will also show the active FPS limit."
+msgstr ""
+
+msgid "Extra config"
+msgstr ""
+
+msgid "Additional comma-separated MangoHud options not covered by the GUI."
+msgstr ""
+
+msgid "Example: battery,gpu_junction_temp,fps_color=39f900"
+msgstr ""
+
+msgid "Failed to read default MangoHud config."
+msgstr ""
+
 msgid "Info"
+msgstr ""
+
+msgid "Custom preset is empty. Save one first."
+msgstr ""
+
+msgid "Custom preset saved."
+msgstr ""
+
+msgid "Failed to save custom preset."
 msgstr ""
 
 msgid "No changes to apply."

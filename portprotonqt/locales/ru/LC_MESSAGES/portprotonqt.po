@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-03-07 20:46+0500\n"
-"PO-Revision-Date: 2026-03-07 20:47+0500\n"
+"POT-Creation-Date: 2026-03-09 09:10+0500\n"
+"PO-Revision-Date: 2026-03-09 09:12+0500\n"
 "Last-Translator: \n"
 "Language-Team: ru_RU <LL@li.org>\n"
 "Language: ru_RU\n"
@@ -675,9 +675,6 @@ msgstr "Не найден исполняемый файл для игры EGS: {
 
 msgid "Cannot launch game while another game is running"
 msgstr "Невозможно запустить игру пока запущена другая"
-
-msgid "Launching"
-msgstr "Запуск"
 
 #, python-brace-format
 msgid "Failed to launch game: {0}"
@@ -1361,6 +1358,333 @@ msgstr "Операция отменена"
 msgid "Download or extraction has been cancelled."
 msgstr "Скачивание или распаковка успешно отменена."
 
+msgid "Arch"
+msgstr ""
+
+msgid "Battery"
+msgstr ""
+
+msgid "Battery icon"
+msgstr ""
+
+msgid "Battery time"
+msgstr ""
+
+msgid "Battery watt"
+msgstr ""
+
+msgid "Bicubic"
+msgstr ""
+
+msgid "Core bars"
+msgstr ""
+
+msgid "Core load"
+msgstr ""
+
+msgid "Core load change"
+msgstr ""
+
+msgid "Core type"
+msgstr ""
+
+msgid "CPU efficiency"
+msgstr ""
+
+msgid "CPU load change"
+msgstr ""
+
+msgid "CPU MHz"
+msgstr ""
+
+msgid "CPU power"
+msgstr ""
+
+msgid "CPU temperature"
+msgstr ""
+
+msgid "Debug"
+msgstr ""
+
+msgid "Device battery icon"
+msgstr ""
+
+msgid "Display server"
+msgstr ""
+
+msgid "Dynamic frame timing"
+msgstr ""
+
+msgid "Short engine names"
+msgstr ""
+
+msgid "Engine version"
+msgstr ""
+
+msgid "Executable name"
+msgstr ""
+
+msgid "Fan"
+msgstr ""
+
+msgid "FCAT"
+msgstr ""
+
+msgid "Flip efficiency"
+msgstr ""
+
+msgid "FPS color change"
+msgstr ""
+
+msgid "FPS metrics"
+msgstr ""
+
+msgid "FPS only"
+msgstr "Только FPS"
+
+msgid "Frame count"
+msgstr ""
+
+msgid "Frametime"
+msgstr ""
+
+msgid "Detailed frametime"
+msgstr ""
+
+msgid "FSR status"
+msgstr ""
+
+msgid "Full preset"
+msgstr ""
+
+msgid "GameMode"
+msgstr ""
+
+msgid "GPU core clock"
+msgstr ""
+
+msgid "GPU efficiency"
+msgstr ""
+
+msgid "GPU fan"
+msgstr ""
+
+msgid "GPU junction temp"
+msgstr ""
+
+msgid "GPU load change"
+msgstr ""
+
+msgid "GPU memory clock"
+msgstr ""
+
+msgid "GPU memory temp"
+msgstr ""
+
+msgid "GPU name"
+msgstr ""
+
+msgid "GPU power"
+msgstr ""
+
+msgid "GPU power limit"
+msgstr ""
+
+msgid "GPU temperature"
+msgstr ""
+
+msgid "GPU voltage"
+msgstr ""
+
+msgid "HDR status"
+msgstr ""
+
+msgid "Hide FSR sharpness"
+msgstr ""
+
+msgid "Histogram"
+msgstr ""
+
+msgid "Horizontal"
+msgstr ""
+
+msgid "Horizontal stretch"
+msgstr ""
+
+msgid "Compact HUD"
+msgstr ""
+
+msgid "No margins"
+msgstr ""
+
+msgid "IO read"
+msgstr ""
+
+msgid "IO write"
+msgstr ""
+
+msgid "Log versioning"
+msgstr ""
+
+msgid "Media player"
+msgstr ""
+
+msgid "Hidden by default"
+msgstr ""
+
+msgid "No small font"
+msgstr ""
+
+msgid "Permit upload"
+msgstr ""
+
+msgid "Present mode"
+msgstr ""
+
+msgid "Process VRAM"
+msgstr ""
+
+msgid "Process memory"
+msgstr ""
+
+msgid "Shared memory"
+msgstr ""
+
+msgid "Virtual memory"
+msgstr ""
+
+msgid "RAM"
+msgstr ""
+
+msgid "RAM temperature"
+msgstr ""
+
+msgid "Read config"
+msgstr ""
+
+msgid "Refresh rate"
+msgstr ""
+
+msgid "Resolution"
+msgstr ""
+
+msgid "Retro"
+msgstr ""
+
+msgid "Show FPS limit"
+msgstr ""
+
+msgid "Swap"
+msgstr ""
+
+msgid "Fahrenheit"
+msgstr ""
+
+msgid "Text outline"
+msgstr ""
+
+msgid "Throttling status"
+msgstr ""
+
+msgid "Throttling graph"
+msgstr ""
+
+msgid "Time"
+msgstr ""
+
+msgid "Time without label"
+msgstr ""
+
+msgid "Trilinear"
+msgstr ""
+
+msgid "Upload logs"
+msgstr ""
+
+msgid "Version"
+msgstr ""
+
+msgid "vkBasalt"
+msgstr ""
+
+msgid "VRAM"
+msgstr ""
+
+msgid "Vulkan driver"
+msgstr ""
+
+msgid "Wine"
+msgstr ""
+
+msgid "Wine sync"
+msgstr ""
+
+msgid "Overlay position"
+msgstr "Позиция MangoHud"
+
+msgid "Top-left"
+msgstr "Слева сверху"
+
+msgid "Top-right"
+msgstr "Справа сверху"
+
+msgid "Middle-left"
+msgstr "Середина слева"
+
+msgid "Middle-right"
+msgstr "Середина справа"
+
+msgid "Bottom-left"
+msgstr "Слева снизу"
+
+msgid "Bottom-right"
+msgstr "Справа снизу"
+
+msgid "Top-center"
+msgstr "Сверху по середине"
+
+msgid "Bottom-center"
+msgstr "Снизу по середине"
+
+msgid "Device battery"
+msgstr "Батарея устройства"
+
+msgid "Gamepad"
+msgstr "Геймпад"
+
+msgid "Mouse"
+msgstr "Мышь"
+
+msgid "Gamepad, mouse"
+msgstr "Геймпад, мышь"
+
+msgid "FPS limit method"
+msgstr "Метод ограничения FPS"
+
+msgid "Anisotropic filtering"
+msgstr "Анизотропная фильтрация"
+
+msgid "FCAT screen edge"
+msgstr "Край области FCAT"
+
+msgid "Table columns"
+msgstr "Кол-во колонок"
+
+msgid "Network (tx/rx kb/s)"
+msgstr "Сеть (tx/rx kb/s)"
+
+msgid "General"
+msgstr "Общие"
+
+msgid "Performance"
+msgstr "Производительность"
+
+msgid "CPU / GPU"
+msgstr ""
+
+msgid "Overlay"
+msgstr "Наложение"
+
 msgid "Exe Settings"
 msgstr "Настройки EXE"
 
@@ -1375,6 +1699,9 @@ msgstr "Основные"
 
 msgid "Advanced"
 msgstr "Расширенные"
+
+msgid "MangoHud"
+msgstr ""
 
 msgid "Setting"
 msgstr "Параметр"
@@ -1400,8 +1727,69 @@ msgstr "Не удалось открыть файл PPDB:\n"
 msgid "disabled"
 msgstr "отключено"
 
+msgid "Layout and limiter"
+msgstr "Компоновка и ограничения"
+
+msgid "Quick presets"
+msgstr "Профили"
+
+msgid "PortProton default"
+msgstr "Стандартные PortProton"
+
+msgid "Compact"
+msgstr "Компактный"
+
+msgid "Extended"
+msgstr "Расширенный"
+
+msgid "Custom"
+msgstr "Пользовательский"
+
+msgid "Save custom"
+msgstr "Сохранение пользовательских настроек"
+
+msgid "Clear"
+msgstr "Очистить"
+
+msgid "MangoHud switches"
+msgstr "Настройки MangoHud"
+
+msgid "Other"
+msgstr "Другие"
+
+msgid "FPS limit"
+msgstr "Ограничение FPS"
+
+msgid ""
+"Select one or more FPS presets. The values are saved into FPS_LIMIT and MangoHud "
+"will also show the active FPS limit."
+msgstr ""
+"Выберите один или несколько предустановленных профилей FPS. Значения будут "
+"сохранены в FPS_LIMIT и MangoHud также отобразит активное ограничение FPS."
+
+msgid "Extra config"
+msgstr "Расширенные настройки"
+
+msgid "Additional comma-separated MangoHud options not covered by the GUI."
+msgstr "Дополнительные параметры MangoHud (через запятую), отсутствующие в GUI."
+
+msgid "Example: battery,gpu_junction_temp,fps_color=39f900"
+msgstr "Пример: battery,gpu_junction_temp,fps_color=39f900"
+
+msgid "Failed to read default MangoHud config."
+msgstr "Ошибка при чтении стандартной конфигурации MangoHud."
+
 msgid "Info"
 msgstr "Информация"
+
+msgid "Custom preset is empty. Save one first."
+msgstr "Пользовательские настройки пусты. Сначала сохраните их."
+
+msgid "Custom preset saved."
+msgstr "Пользовательские настройки сохранены."
+
+msgid "Failed to save custom preset."
+msgstr "Ошибка сохранения пользовательских настроек."
 
 msgid "No changes to apply."
 msgstr "Нет изменений для применения."
