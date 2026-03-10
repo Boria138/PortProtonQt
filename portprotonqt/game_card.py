@@ -77,9 +77,9 @@ class GameCard(QFrame):
         self.animations.setup_animations()
 
         self.shadow = QGraphicsDropShadowEffect(self)
-        self.shadow.setBlurRadius(20)
-        self.shadow.setColor(QColor(0, 0, 0, 150))
-        self.shadow.setOffset(0, 0)
+        self.shadow.setBlurRadius(self.theme.shadow_blur_radius)
+        self.shadow.setColor(QColor(self.theme.color_shadow_card))
+        self.shadow.setOffset(*self.theme.shadow_offset)
         self.setGraphicsEffect(self.shadow)
 
         self.layout_ = QVBoxLayout(self)

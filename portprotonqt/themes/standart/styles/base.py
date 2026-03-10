@@ -274,6 +274,9 @@ CONTENT_STYLE = f"""
     }}
 """
 
+# Transparent background style
+TRANSPARENT_BACKGROUND_STYLE = "background: transparent;"
+
 PREVIEW_WIDGET_STYLE = f"""
     QWidget {{
         margin-top: 3px;

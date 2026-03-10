@@ -82,6 +82,12 @@ API_KEY = "sk-abc123"
 
 # NEVER: Path traversal
 file_path = f"/data/{user_filename}"
+
+# NEVER: Hardcoded styles or constants (colors, sizes, etc.)
+shadow.setBlurRadius(20)
+shadow.setColor(QColor(0, 0, 0, 150))
+label.setStyleSheet("color: #bbbbbb;")
+QColor(128, 128, 128)
 ```
 
 ```python
@@ -109,6 +115,17 @@ API_KEY = os.getenv("API_KEY")
 
 # ALWAYS: Sanitize paths
 file_path = os.path.join(BASE_DIR, os.path.basename(user_filename))
+
+# ALWAYS: Use theme constants for styles
+shadow.setBlurRadius(self.theme.shadow_blur_radius)
+shadow.setColor(QColor(self.theme.color_shadow_card))
+label.setStyleSheet(self.theme.CONTENT_STYLE)
+QColor(self.theme.color_disabled_text)
+
+# ALWAYS: Add new constants to theme files
+# New colors → portprotonqt/themes/standart/styles/constants.py
+# New QSS styles → portprotonqt/themes/standart/styles/base.py or submodule
+# Never add style constants to application code
 ```
 
 ---
@@ -303,6 +320,8 @@ Do not attempt to execute binaries manually.
 - [ ] Subprocess in dedicated functions
 - [ ] No global state (except logger)
 - [ ] No blocking calls in UI thread
+- [ ] **No hardcoded styles or constants (use theme constants)**
+- [ ] **New constants added to theme files only**
 
 ### Refactoring
 
@@ -529,6 +548,47 @@ class Game:
     cover_url: str | None
 ```
 
+### Theme Constants
+All style-related constants MUST be defined in theme files, not in application code.
+
+**File structure for theme constants:**
+- `portprotonqt/themes/standart/styles/constants.py` — Color constants, sizes, shadow values
+- `portprotonqt/themes/standart/styles/base.py` — Global widget styles (MAIN_WINDOW_STYLE, etc.)
+- `portprotonqt/themes/standart/styles/game_card.py` — Game card specific styles
+- `portprotonqt/themes/standart/styles/detail_page.py` — Detail page styles
+- `portprotonqt/themes/standart/styles/settings.py` — Settings dialog styles
+- `portprotonqt/themes/standart/styles/get_wine.py` — Wine manager styles
+- `portprotonqt/themes/standart/styles/winetricks.py` — Winetricks styles
+- `portprotonqt/themes/standart/styles/theme_utils.py` — Utility styles (context menus, etc.)
+
+**Adding new constants:**
+```python
+# In constants.py — add color constant
+color_new_feature = "#FF5733"
+
+# In constants.py — add size constant
+new_widget_size = 42
+
+# In base.py or submodule — add QSS style
+NEW_WIDGET_STYLE = f"""
+    QWidget {{
+        background: {color_new_feature};
+        border-radius: {border_radius_a};
+    }}
+"""
+```
+
+**Usage in application code:**
+```python
+# Bad: Hardcoded in application code
+shadow.setBlurRadius(20)
+label.setStyleSheet("color: #bbbbbb;")
+
+# Good: Use theme constants
+shadow.setBlurRadius(self.theme.shadow_blur_radius)
+label.setStyleSheet(self.theme.CONTENT_STYLE)
+```
+
 ### Comments
 ```python
 # NEVER: Russian or verbose
@@ -581,6 +641,7 @@ def check_file_exists(path: str) -> bool:
 - Poor variable naming (x, tmp, data)
 - Magic numbers
 - Non-English comments
+- **Hardcoded styles or constants (colors, sizes, shadow values, etc.)**
 
 ### Review Output
 
@@ -592,6 +653,14 @@ Fix: Use environment variable
 
 API_KEY = "sk-abc123"  # Bad
 API_KEY = os.getenv("API_KEY")  # Good
+
+[MEDIUM] Hardcoded style value
+File: portprotonqt/game_card.py:81
+Issue: Shadow color hardcoded instead of using theme
+Fix: Use theme constant
+
+shadow.setColor(QColor(0, 0, 0, 150))  # Bad
+shadow.setColor(QColor(self.theme.color_shadow_card))  # Good
 ```
 
 ### Approval

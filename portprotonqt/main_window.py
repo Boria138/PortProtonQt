@@ -2186,7 +2186,7 @@ class MainWindow(QMainWindow):
         QScroller.grabGesture(self.settingsScrollArea.viewport(), QScroller.ScrollerGestureType.LeftMouseButtonGesture)
 
         scrollWidget = QWidget()
-        scrollWidget.setStyleSheet("background: transparent;")
+        scrollWidget.setStyleSheet(self.theme.TRANSPARENT_BACKGROUND_STYLE)
         scrollLayout = QVBoxLayout(scrollWidget)
         scrollLayout.setContentsMargins(0, 0, 0, 0)
         scrollLayout.setSpacing(10)  # Uniform spacing between sections

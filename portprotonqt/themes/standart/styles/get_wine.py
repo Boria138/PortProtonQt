@@ -144,3 +144,6 @@ QProgressBar::chunk {{
     background-color: {color_a};
 }}
 """
+
+# Empty state label style
+GETWINE_EMPTY_LABEL_STYLE = f"font-size: {font_size_a}; padding: 50px;"

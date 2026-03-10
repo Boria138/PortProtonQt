@@ -117,7 +117,7 @@ def create_cover_frame(
     cover_frame.setFixedSize(COVER_WIDTH, COVER_HEIGHT)
     cover_frame.setStyleSheet(theme.COVER_FRAME_STYLE)
 
-    _setup_cover_shadow(cover_frame)
+    _setup_cover_shadow(cover_frame, theme)
 
     cover_layout = QVBoxLayout(cover_frame)
     cover_layout.setContentsMargins(0, 0, 0, 0)
@@ -132,12 +132,12 @@ def create_cover_frame(
     return cover_frame
 
 
-def _setup_cover_shadow(cover_frame: QFrame) -> None:
+def _setup_cover_shadow(cover_frame: QFrame, theme) -> None:
     """Add shadow effect to cover frame."""
     shadow = QGraphicsDropShadowEffect(cover_frame)
-    shadow.setBlurRadius(20)
-    shadow.setColor(QColor(0, 0, 0, 200))
-    shadow.setOffset(0, 0)
+    shadow.setBlurRadius(theme.shadow_blur_radius)
+    shadow.setColor(QColor(theme.color_shadow_detail))
+    shadow.setOffset(*theme.shadow_offset)
     cover_frame.setGraphicsEffect(shadow)
 
 

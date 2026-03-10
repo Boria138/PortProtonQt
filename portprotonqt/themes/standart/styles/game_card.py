@@ -76,12 +76,12 @@ STEAM_BADGE_STYLE= f"""
 """
 
 # ADDITIONAL INFO STYLES ON GAMES PAGE
-LAST_LAUNCH_TITLE_STYLE = f"font-family: '{font_family}'; font-size: 11px; color: #bbbbbb; text-transform: uppercase; letter-spacing: 0.75px; margin-bottom: 2px;"
+LAST_LAUNCH_TITLE_STYLE = f"font-family: '{font_family}'; font-size: 11px; color: {color_text_muted}; text-transform: uppercase; letter-spacing: 0.75px; margin-bottom: 2px;"
 LAST_LAUNCH_VALUE_STYLE = f"font-family: '{font_family}'; font-size: 13px; color: {color_f}; font-weight: 600; letter-spacing: 0.75px;"
-PLAY_TIME_TITLE_STYLE = f"font-family: '{font_family}'; font-size: 11px; color: #bbbbbb; text-transform: uppercase; letter-spacing: 0.75px; margin-bottom: 2px;"
+PLAY_TIME_TITLE_STYLE = f"font-family: '{font_family}'; font-size: 11px; color: {color_text_muted}; text-transform: uppercase; letter-spacing: 0.75px; margin-bottom: 2px;"
 PLAY_TIME_VALUE_STYLE = f"font-family: '{font_family}'; font-size: 13px; color: {color_f}; font-weight: 600; letter-spacing: 0.75px;"
 GAMEPAD_SUPPORT_VALUE_STYLE = f"""
-    font-family: '{font_family}'; font-size: {font_size_a}; color: #00ff00;
+    font-family: '{font_family}'; font-size: {font_size_a}; color: {color_gamepad_supported};
     font-weight: bold; background: {color_g};
     border-radius: 5px; padding: 4px 8px;
 """

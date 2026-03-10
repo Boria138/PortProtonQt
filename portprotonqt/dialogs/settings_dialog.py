@@ -739,15 +739,15 @@ class ExeSettingsDialog(QDialog):
             checkbox.setCheckState(check_state)
             if is_blocked:
                 checkbox.setFlags(checkbox.flags() & ~Qt.ItemFlag.ItemIsUserCheckable)
-                checkbox.setBackground(QColor(240, 240, 240))
-                name_item.setForeground(QColor(128, 128, 128))
+                checkbox.setBackground(QColor(self.theme.color_disabled_bg))
+                name_item.setForeground(QColor(self.theme.color_disabled_text))
             self.settings_table.setItem(row, 1, checkbox)
 
             desc_item = QTableWidgetItem(description)
             desc_item.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled)
             desc_item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
             if is_blocked:
-                desc_item.setForeground(QColor(128, 128, 128))
+                desc_item.setForeground(QColor(self.theme.color_disabled_text))
             self.settings_table.setItem(row, 2, desc_item)
 
             self.settings_table.setItem(row, 0, name_item)
@@ -814,7 +814,7 @@ class ExeSettingsDialog(QDialog):
 
                 if is_blocked:
                     combo.setEnabled(False)
-                    name_item.setForeground(QColor(128, 128, 128))
+                    name_item.setForeground(QColor(self.theme.color_disabled_text))
 
                 combo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
@@ -844,7 +844,7 @@ class ExeSettingsDialog(QDialog):
 
                 if is_blocked:
                     line_edit.setEnabled(False)
-                    line_edit.setStyleSheet("background-color: #f0f0f0;")
+                    line_edit.setStyleSheet(self.theme.SETTINGS_DISABLED_INPUT_STYLE)
 
                 self.advanced_table.setCellWidget(row, 1, line_edit)
                 self.advanced_widgets[setting['key']] = line_edit
@@ -854,7 +854,7 @@ class ExeSettingsDialog(QDialog):
             desc_item.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled)
             desc_item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
             if is_blocked:
-                desc_item.setForeground(QColor(128, 128, 128))
+                desc_item.setForeground(QColor(self.theme.color_disabled_text))
             self.advanced_table.setItem(row, 2, desc_item)
 
         if self.advanced_table.rowCount() > 0:
@@ -868,7 +868,7 @@ class ExeSettingsDialog(QDialog):
         scroll.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         scroll.setStyleSheet(self.theme.SCROLL_AREA_STYLE)
         container = QWidget()
-        container.setStyleSheet("background: transparent;")
+        container.setStyleSheet(self.theme.TRANSPARENT_BACKGROUND_STYLE)
         layout = QVBoxLayout(container)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(14)

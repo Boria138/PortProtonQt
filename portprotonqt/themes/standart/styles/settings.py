@@ -187,3 +187,34 @@ SETTINGS_TOOLTIP_STYLE = f"""
         font-size: {font_size_a};
     }}
 """
+
+# Disabled line edit style
+SETTINGS_DISABLED_INPUT_STYLE = f"background-color: {color_disabled_bg};"
+
+# Checkbox with inline style
+SETTINGS_CHECKBOX_CUSTOM_STYLE = f"""
+    QCheckBox {{
+        height: 34px;
+        color: {color_f};
+        font-family: '{font_family}';
+        font-size: {font_size_a};
+    }}
+    QCheckBox::indicator {{
+        width: 24px;
+        height: 24px;
+        border: {border_c} {color_g};
+        border-radius: {border_radius_a};
+        background: {color_c};
+    }}
+    QCheckBox::indicator:hover {{
+        background: {color_c};
+        border: {border_c} {color_a};
+    }}
+    QCheckBox::indicator:focus {{
+        border: {border_c} {color_a};
+    }}
+    QCheckBox::indicator:checked {{
+        image: url({theme_manager.get_icon("check", current_theme_name, as_path=True)});
+        border: {border_c} {color_a};
+    }}
+"""

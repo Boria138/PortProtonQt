@@ -403,7 +403,7 @@ class ProtonManager(QDialog):
             layout = QVBoxLayout(tab)
             label = QLabel(_("No Wine/Proton versions installed"))
             label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            label.setStyleSheet("font-size: 16px; padding: 50px;")
+            label.setStyleSheet(self.theme.GETWINE_EMPTY_LABEL_STYLE)
             layout.addWidget(label)
             self.tab_widget.addTab(tab, _("Installed"))
             return

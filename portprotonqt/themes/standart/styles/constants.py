@@ -26,6 +26,22 @@ color_g = "rgba(0, 0, 0, 0)"
 color_h = "transparent"
 color_i = "rgba(40, 42, 51, 0.9)"
 
+# QColor constants for programmatic use
+color_shadow_card = "#00000096"  # rgba(0, 0, 0, 150)
+color_shadow_detail = "#000000c8"  # rgba(0, 0, 0, 200)
+color_placeholder_bg = "#333333"
+color_default_fallback = "#1a1a1a"
+color_disabled_bg = "#f0f0f0"
+color_disabled_text = "#777a84"
+color_text_muted = "#bbbbbb"
+color_accent_blue = "#007AFF"
+color_gamepad_supported = "#00ff00"
+color_white = "#ffffff"
+
+# Shadow constants
+shadow_blur_radius = 20
+shadow_offset = (0, 0)
+
 GAME_CARD_ANIMATION = {
     # Animation type for entering/exiting detail page
     # Possible values: "fade", "slide_left", "slide_right", "slide_up", "slide_down", "bounce"

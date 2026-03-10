@@ -47,7 +47,7 @@ COVER_LABEL_STYLE = f"border-radius: {border_radius_b};"
 DETAILS_WIDGET_STYLE = f"background: rgba(20,20,20,0.40); border-radius: {border_radius_b}; padding: 10px;"
 
 # TITLE (HEADER) ON DETAIL PAGE
-DETAIL_PAGE_TITLE_STYLE = f"font-family: '{font_family}'; font-size: 32px; color: #007AFF;"
+DETAIL_PAGE_TITLE_STYLE = f"font-family: '{font_family}'; font-size: 32px; color: {color_accent_blue};"
 
 # DIVIDER LINE
 DETAIL_PAGE_LINE_STYLE = "color: rgba(255,255,255,0.12); margin: 10px 0;"
