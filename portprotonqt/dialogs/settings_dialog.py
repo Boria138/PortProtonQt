@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
     QGridLayout, QPushButton, QSizePolicy
 )
 from PySide6.QtCore import Qt, QEvent, QProcess, QTimer, QUrl
-from PySide6.QtGui import QColor, QDesktopServices
+from PySide6.QtGui import QColor, QDesktopServices, QGuiApplication
 
 if TYPE_CHECKING:
     from portprotonqt.main_window import MainWindow
@@ -506,6 +506,7 @@ class ExeSettingsDialog(QDialog):
         self.settings_table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         self.settings_table.setTextElideMode(Qt.TextElideMode.ElideNone)
         self.settings_table.setStyleSheet(self.theme.WINETRICKS_TABBLE_STYLE)
+        self.settings_table.setMouseTracking(True)
 
         self.settings_preloader = Preloader()
         settings_preloader_container = QWidget()
@@ -525,6 +526,8 @@ class ExeSettingsDialog(QDialog):
         self.settings_container.addWidget(self.settings_table)
         self.main_tab_layout.addWidget(self.settings_container)
         self.settings_table.currentCellChanged.connect(self.on_table_selection_changed)
+        self.settings_table.cellEntered.connect(self.on_table_cell_hovered)
+        self.settings_table.installEventFilter(self)
 
         self.advanced_table = QTableWidget()
         self.advanced_table.setAlternatingRowColors(True)
@@ -542,6 +545,7 @@ class ExeSettingsDialog(QDialog):
         self.advanced_table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         self.advanced_table.setTextElideMode(Qt.TextElideMode.ElideNone)
         self.advanced_table.setStyleSheet(self.theme.WINETRICKS_TABBLE_STYLE)
+        self.advanced_table.setMouseTracking(True)
 
         self.advanced_preloader = Preloader()
         advanced_preloader_container = QWidget()
@@ -561,6 +565,8 @@ class ExeSettingsDialog(QDialog):
         self.advanced_container.addWidget(self.advanced_table)
         self.advanced_tab_layout.addWidget(self.advanced_container)
         self.advanced_table.currentCellChanged.connect(self.on_table_selection_changed)
+        self.advanced_table.cellEntered.connect(self.on_table_cell_hovered)
+        self.advanced_table.installEventFilter(self)
 
         self.setup_mangohud_tab()
 
@@ -568,19 +574,14 @@ class ExeSettingsDialog(QDialog):
 
         self.gamepad_tooltip = QLabel()
         self.gamepad_tooltip.setWordWrap(True)
-        self.gamepad_tooltip.setStyleSheet("""
-            QLabel {
-                background-color: #2d2d2d;
-                border: 1px solid #555;
-                border-radius: 4px;
-                padding: 8px;
-                color: white;
-                font-size: 14px;
-            }
-        """)
+        self.gamepad_tooltip.setStyleSheet(self.theme.SETTINGS_TOOLTIP_STYLE)
         self.gamepad_tooltip.setVisible(False)
         self.gamepad_tooltip.setParent(self)
         self.gamepad_tooltip.setWindowFlags(Qt.WindowType.ToolTip)
+        self.gamepad_tooltip.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.gamepad_tooltip_timer = QTimer(self)
+        self.gamepad_tooltip_timer.setSingleShot(True)
+        self.gamepad_tooltip_timer.timeout.connect(lambda: self.gamepad_tooltip.setVisible(False))
 
         button_layout = QHBoxLayout()
         self.apply_button = AutoSizeButton(_("Apply"), icon=ThemeManager().get_icon("apply"))
@@ -744,7 +745,6 @@ class ExeSettingsDialog(QDialog):
 
             desc_item = QTableWidgetItem(description)
             desc_item.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled)
-            desc_item.setToolTip(description)
             desc_item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
             if is_blocked:
                 desc_item.setForeground(QColor(128, 128, 128))
@@ -758,8 +758,7 @@ class ExeSettingsDialog(QDialog):
             self.settings_table.setCurrentCell(0, 0)
             self.settings_table.setFocus(Qt.FocusReason.OtherFocusReason)
 
-        if self.input_manager and self.input_manager.gamepad:
-            self.on_table_selection_changed()
+        self.on_table_selection_changed()
 
     def populate_advanced(self):
         """Populate the advanced tab with table format."""
@@ -853,13 +852,12 @@ class ExeSettingsDialog(QDialog):
 
             desc_item = QTableWidgetItem(setting['description'])
             desc_item.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled)
-            desc_item.setToolTip(setting['description'])
             desc_item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
             if is_blocked:
                 desc_item.setForeground(QColor(128, 128, 128))
             self.advanced_table.setItem(row, 2, desc_item)
 
-        if self.input_manager and self.input_manager.gamepad and self.advanced_table.rowCount() > 0:
+        if self.advanced_table.rowCount() > 0:
             self.on_table_selection_changed()
 
     def setup_mangohud_tab(self):
@@ -1685,18 +1683,21 @@ class ExeSettingsDialog(QDialog):
         super().closeEvent(event)
 
     def eventFilter(self, obj, event):
-        if isinstance(obj, QCheckBox) and obj in self.mangohud_toggle_widget_keys:
+        mangohud_toggle_widget_keys = getattr(self, 'mangohud_toggle_widget_keys', {})
+
+        if isinstance(obj, QCheckBox) and obj in mangohud_toggle_widget_keys:
             if event.type() in (QEvent.Type.Enter, QEvent.Type.FocusIn):
                 self._show_mangohud_toggle_tooltip(obj)
             elif event.type() in (QEvent.Type.Leave, QEvent.Type.FocusOut):
                 focused_widget = QApplication.focusWidget()
-                if not (isinstance(focused_widget, QCheckBox) and focused_widget in self.mangohud_toggle_widget_keys):
+                if not (isinstance(focused_widget, QCheckBox) and focused_widget in mangohud_toggle_widget_keys):
                     self.show_gamepad_tooltip(show=False)
         return super().eventFilter(obj, event)
 
-    def show_gamepad_tooltip(self, show=True, text="", anchor_widget=None):
+    def show_gamepad_tooltip(self, show=True, text="", anchor_widget=None, anchor_global_pos=None):
         """Show or hide the gamepad tooltip with the provided text."""
         if show and text:
+            tooltip_timeout_ms = max(2500, min(12000, 1500 + len(text) * 30))
             self.gamepad_tooltip.setText(text)
             self.gamepad_tooltip.setFixedSize(500, 300)
 
@@ -1712,12 +1713,45 @@ class ExeSettingsDialog(QDialog):
             required_width = min(max_width, text_rect.width() + 25)
             required_height = min(300, text_rect.height() + 25)
 
-            if anchor_widget and anchor_widget.isVisible():
-                widget_rect = anchor_widget.rect()
-                global_pos = anchor_widget.mapToGlobal(widget_rect.topRight())
+            if anchor_global_pos is not None:
+                global_pos = anchor_global_pos
+                global_pos.setY(global_pos.y() + 4)
+
+                screen = QGuiApplication.screenAt(global_pos) or QGuiApplication.primaryScreen()
+                if screen:
+                    available_rect = screen.availableGeometry()
+                    if global_pos.x() + required_width > available_rect.right():
+                        global_pos.setX(max(available_rect.left(), available_rect.right() - required_width))
+                    if global_pos.x() < available_rect.left():
+                        global_pos.setX(available_rect.left())
+                    if global_pos.y() + required_height > available_rect.bottom():
+                        global_pos.setY(max(available_rect.top(), available_rect.bottom() - required_height))
+
                 self.gamepad_tooltip.setFixedSize(required_width, required_height)
                 self.gamepad_tooltip.move(global_pos.x(), global_pos.y())
                 self.gamepad_tooltip.setVisible(True)
+                self.gamepad_tooltip_timer.start(tooltip_timeout_ms)
+                return
+
+            if anchor_widget and anchor_widget.isVisible():
+                widget_rect = anchor_widget.rect()
+                global_pos = anchor_widget.mapToGlobal(widget_rect.bottomLeft())
+                global_pos.setY(global_pos.y() + 4)
+
+                screen = QGuiApplication.screenAt(global_pos) or QGuiApplication.primaryScreen()
+                if screen:
+                    available_rect = screen.availableGeometry()
+                    if global_pos.x() + required_width > available_rect.right():
+                        global_pos.setX(max(available_rect.left(), available_rect.right() - required_width))
+                    if global_pos.x() < available_rect.left():
+                        global_pos.setX(available_rect.left())
+                    if global_pos.y() + required_height > available_rect.bottom():
+                        global_pos.setY(max(available_rect.top(), available_rect.bottom() - required_height))
+
+                self.gamepad_tooltip.setFixedSize(required_width, required_height)
+                self.gamepad_tooltip.move(global_pos.x(), global_pos.y())
+                self.gamepad_tooltip.setVisible(True)
+                self.gamepad_tooltip_timer.start(tooltip_timeout_ms)
                 return
 
             current_table = self.advanced_table if self.tab_widget.currentIndex() == 1 else self.settings_table
@@ -1725,13 +1759,28 @@ class ExeSettingsDialog(QDialog):
                 row = current_table.currentRow()
                 col = current_table.currentColumn()
                 item_rect = current_table.visualRect(current_table.model().index(row, col))
-                global_pos = current_table.mapToGlobal(item_rect.topRight())
+                global_pos = current_table.mapToGlobal(item_rect.bottomLeft())
+                global_pos.setY(global_pos.y() + 4)
+
+                screen = QGuiApplication.screenAt(global_pos) or QGuiApplication.primaryScreen()
+                if screen:
+                    available_rect = screen.availableGeometry()
+                    if global_pos.x() + required_width > available_rect.right():
+                        global_pos.setX(max(available_rect.left(), available_rect.right() - required_width))
+                    if global_pos.x() < available_rect.left():
+                        global_pos.setX(available_rect.left())
+                    if global_pos.y() + required_height > available_rect.bottom():
+                        global_pos.setY(max(available_rect.top(), available_rect.bottom() - required_height))
+
                 self.gamepad_tooltip.setFixedSize(required_width, required_height)
                 self.gamepad_tooltip.move(global_pos.x(), global_pos.y())
                 self.gamepad_tooltip.setVisible(True)
+                self.gamepad_tooltip_timer.start(tooltip_timeout_ms)
             else:
+                self.gamepad_tooltip_timer.stop()
                 self.gamepad_tooltip.setVisible(False)
         else:
+            self.gamepad_tooltip_timer.stop()
             self.gamepad_tooltip.setVisible(False)
 
     def get_current_description(self):
@@ -1748,17 +1797,39 @@ class ExeSettingsDialog(QDialog):
 
     def on_table_selection_changed(self):
         """Called when table selection changes to update the gamepad tooltip."""
-        if self.input_manager and self.input_manager.gamepad:
-            if self.tab_widget.currentIndex() == 2:
-                self.show_gamepad_tooltip(show=False)
-                return
-            current_table = self.advanced_table if self.tab_widget.currentIndex() == 1 else self.settings_table
-            current_column = current_table.currentColumn() if current_table else -1
-            if current_column == 2:
-                description = self.get_current_description()
-                self.show_gamepad_tooltip(show=True, text=description)
-            else:
-                self.show_gamepad_tooltip(show=False)
+        if self.tab_widget.currentIndex() == 2:
+            self.show_gamepad_tooltip(show=False)
+            return
+
+        current_table = self.advanced_table if self.tab_widget.currentIndex() == 1 else self.settings_table
+        current_column = current_table.currentColumn() if current_table else -1
+        if current_column != 2:
+            self.show_gamepad_tooltip(show=False)
+            return
+
+        description = self.get_current_description()
+        if description:
+            self.show_gamepad_tooltip(show=True, text=description)
+        else:
+            self.show_gamepad_tooltip(show=False)
+
+    def on_table_cell_hovered(self, row, column):
+        """Show custom tooltip on hover for description cells."""
+        if self.tab_widget.currentIndex() == 2 or column != 2:
+            self.show_gamepad_tooltip(show=False)
+            return
+
+        table = cast(QTableWidget | None, self.sender())
+        if table is None:
+            self.show_gamepad_tooltip(show=False)
+            return
+
+        desc_item = table.item(row, 2)
+        description = desc_item.text() if desc_item else ""
+        if description:
+            item_rect = table.visualRect(table.model().index(row, 2))
+            cell_pos = table.mapToGlobal(item_rect.bottomLeft())
+            self.show_gamepad_tooltip(show=True, text=description, anchor_global_pos=cell_pos)
         else:
             self.show_gamepad_tooltip(show=False)
 

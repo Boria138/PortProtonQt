@@ -175,3 +175,15 @@ SETTINGS_LINE_EDIT_STYLE = f"""
         background-color: {color_e};
     }}
 """
+
+SETTINGS_TOOLTIP_STYLE = f"""
+    QLabel {{
+        background-color: {color_b};
+        border: {border_b} {color_c};
+        border-radius: {border_radius_a};
+        padding: 8px;
+        color: {color_f};
+        font-family: '{font_family}';
+        font-size: {font_size_a};
+    }}
+"""
