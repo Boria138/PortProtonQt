@@ -1440,8 +1440,8 @@ class InputManager(QObject):
         sections = []
 
         value_widgets = [
-            widget for widget in self.settings_dialog.mangohud_widgets.values()
-            if widget.isVisible() and widget.isEnabled()
+            widget for key, widget in self.settings_dialog.mangohud_widgets.items()
+            if key != 'fps_limit_method' and widget.isVisible() and widget.isEnabled()
         ]
         if value_widgets:
             sections.append(self._sort_widgets_by_position(value_widgets))
@@ -1476,10 +1476,15 @@ class InputManager(QObject):
         if toggle_widgets:
             sections.append(toggle_widgets)
 
-        fps_widgets = [
+        fps_widgets = []
+        fps_limit_method = self.settings_dialog.mangohud_widgets.get('fps_limit_method')
+        if fps_limit_method and fps_limit_method.isVisible() and fps_limit_method.isEnabled():
+            fps_widgets.append(fps_limit_method)
+
+        fps_widgets.extend([
             checkbox for checkbox in self.settings_dialog.mangohud_fps_widgets.values()
             if checkbox.isVisible() and checkbox.isEnabled()
-        ]
+        ])
         if fps_widgets:
             sections.append(self._sort_widgets_by_position(fps_widgets))
 
@@ -1572,6 +1577,13 @@ class InputManager(QObject):
 
         if target_section_index == 1:
             self._focus_mangohud_widget(target_section[0])
+            return
+
+        fps_limit_method = None
+        if self.settings_dialog:
+            fps_limit_method = self.settings_dialog.mangohud_widgets.get('fps_limit_method')
+        if fps_limit_method and fps_limit_method in target_section:
+            self._focus_mangohud_widget(fps_limit_method)
             return
 
         current_center = focused.mapTo(self.settings_dialog, focused.rect().center()).x()
