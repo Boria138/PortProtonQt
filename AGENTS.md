@@ -18,7 +18,7 @@
 
 | Principle | Required | Forbidden |
 |-----------|----------|-----------|
-| KISS | Functions ≤50 lines | Deep nesting |
+| KISS | New/rewritten functions ≤50 lines | Deep nesting |
 | YAGNI | Concrete code | Future abstractions |
 | DRY | Extract methods (if directly related to task) | Copy-paste |
 | SRP | 1 task per method | God functions |
@@ -40,6 +40,8 @@
 - Prefer small targeted fix over comprehensive cleanup
 - Never break security for code quality
 - Remove duplicates only if directly related to current task
+- Do not split untouched legacy functions only to satisfy line limits
+- Do not rewrite untouched legacy files or blocks only to satisfy metrics
 
 ---
 
@@ -47,9 +49,9 @@
 
 | Check | Limit |
 |-------|-------|
-| Functions | ≤50 lines, ≤4 params |
-| Files | ≤800 lines |
-| Nesting | ≤4 levels |
+| Functions | ≤50 lines, ≤4 params (required for new/fully rewritten functions) |
+| Files | ≤800 lines (required for new/fully rewritten files) |
+| Nesting | ≤4 levels (required in new/modified code) |
 | Comments | English, 1-2 lines max |
 | Indentation | 4 spaces (no tabs) |
 | Whitespace | No trailing spaces |
@@ -107,7 +109,7 @@ from portprotonqt.logger import get_logger
 logger = get_logger(__name__)
 logger.info("Game %s started", name)
 
-# ALWAYS: Explicit subprocess
+# ALWAYS: Explicit subprocess arguments
 subprocess.run(["cmd", "arg1", "arg2"])
 
 # ALWAYS: Environment variables
@@ -151,8 +153,8 @@ QColor(self.theme.color_disabled_text)
 - Do not move files unless requested
 - Do not create new files for organization (unless task requires a new module)
 - No circular imports
-- Subprocess calls in dedicated functions
-- No mutable global state (except logger)
+- Prefer dedicated functions for subprocess calls when practical within task scope
+- No shared mutable global state (except logger and explicit cache/session infrastructure)
 
 **ALWAYS:**
 
@@ -171,7 +173,7 @@ QColor(self.theme.color_disabled_text)
 - Replace existing patterns with "better" alternatives
 - Consolidate similar code blocks
 - Extract methods or functions without request
-- Add validation or error handling beyond scope (unless it fixes a security vulnerability)
+- Add validation or error handling outside the modified block unless it fixes a security issue or directly supports the current change
 - Generate boilerplate or scaffolding
 - Add configuration options
 - Create new files for "organization" (unless explicitly requested for a new module)
@@ -190,6 +192,7 @@ AI agents MAY:
 - Fix obvious bugs within the modified block
 - Improve variable naming inside the modified block
 - Add missing logging if required by policy
+- Add missing validation or error handling in new/modified code when required by this policy
 - Add missing type hints in new functions
 
 ---
@@ -203,6 +206,18 @@ AI agents MAY:
 - Avoid O(n²) in game lists
 - Lazy load images
 - Limit threads to CPU cores
+
+### Clarification: "No Shared Mutable Global State" Does NOT Mean Removing Caches
+
+Rule intent: avoid shared mutable globals that hold application state or cause hidden side effects.
+
+This does not prohibit:
+- Module-level cache constants (e.g., cache TTL values)
+- Dedicated cache managers or classes with explicit lifecycle
+- Disk caches under `~/.cache/PortProtonQt`
+- `requests.Session()` objects if they are encapsulated and not mutated unpredictably
+
+Do not delete or disable caching or downloaders to satisfy this rule. Caching is required by the Performance Rules ("Cache API responses in `~/.cache/PortProtonQt`" and "Avoid repeated disk reads in loops").
 
 ---
 
@@ -218,7 +233,8 @@ AI agents MAY:
 
 ## Refactoring Constraints
 
-- Max 1 module per task (unless explicitly requested)
+- Max 1 business module per task (unless explicitly requested)
+- Related technical files are allowed in the same task (`meson.build`, tests, theme constants)
 - Preserve git blame
 - Avoid renaming unless necessary
 
@@ -307,19 +323,19 @@ Do not attempt to execute binaries manually.
 
 ### Writing Code
 
-- [ ] Functions ≤50 lines, ≤4 params
-- [ ] Nesting ≤4 levels
+- [ ] New/rewritten functions ≤50 lines, ≤4 params
+- [ ] New/modified code nesting ≤4 levels
 - [ ] LF line endings, 4-space indent
 - [ ] No excessive blank lines, no trailing whitespace
 - [ ] Type hints (required for new code)
 - [ ] Logging via `portprotonqt.logger`
-- [ ] Error handling (try/except)
-- [ ] Files in `portprotonqt/meson.build`
+- [ ] New/modified code handles expected/recoverable failures
+- [ ] New installable Python files added to `portprotonqt/meson.build`
 - [ ] Comments in English, concise
-- [ ] No circular imports
-- [ ] Subprocess in dedicated functions
-- [ ] No global state (except logger)
-- [ ] No blocking calls in UI thread
+- [ ] No circular imports introduced by the change
+- [ ] Prefer dedicated functions for subprocess calls when practical within task scope
+- [ ] No shared mutable global state (except logger and explicit cache/session infrastructure)
+- [ ] No blocking calls introduced in the UI thread
 - [ ] **No hardcoded styles or constants (use theme constants)**
 - [ ] **New constants added to theme files only**
 
@@ -338,8 +354,8 @@ Do not attempt to execute binaries manually.
 - [ ] No async frameworks (use QThread instead)
 - [ ] No additional logging libraries
 - [ ] License GPL-3.0 compatible
-- [ ] Added to `pyproject.toml`
-- [ ] `uv lock` run
+- [ ] If dependencies are added: added to `pyproject.toml`
+- [ ] If dependencies change: `uv lock` run
 
 ---
 
@@ -352,7 +368,7 @@ Do not attempt to execute binaries manually.
 | Cannot handle locally | Rethrow | API errors in business logic |
 | Need to add context | Wrap & rethrow | `raise ValueError(f"Invalid game ID: {game_id}") from e` |
 | Public API boundary | Rethrow | Let caller decide |
-| Expected & recoverable | Handle silently | Cache miss → fetch from source |
+| Expected & recoverable | Handle with fallback (log when useful) | Cache miss → fetch from source |
 
 ```python
 # Bad: Silent swallow
@@ -609,24 +625,27 @@ def check_file_exists(path: str) -> bool:
 
 ## Code Review Guidelines
 
+Review scope: prioritize new/modified code. Existing unrelated legacy issues should not block unless they are CRITICAL security issues. Development scripts under `dev-scripts/` follow their exemption rules unless explicitly requested.
+
 ### Security (CRITICAL)
 
 - Hardcoded credentials
 - SQL injection risks
-- Missing input validation
+- Missing input validation on external boundaries (user input, files, network, subprocess args)
 - Insecure dependencies
 - Path traversal risks
 - `shell=True` in subprocess
 
 ### Code Quality (HIGH)
 
-- Functions >50 lines
-- Files >800 lines
-- Nesting >4 levels
-- Missing error handling
-- Circular imports
-- Global state
-- Blocking calls in UI thread
+- New/rewritten functions >50 lines
+- New/rewritten functions >4 params
+- New/rewritten files >800 lines
+- New/modified code nesting >4 levels
+- Missing error handling for expected/recoverable failures in new/modified code
+- Circular imports introduced by the change
+- Shared mutable global state introduced in new/modified code (except logger and explicit cache/session infrastructure)
+- Blocking calls introduced in the UI thread
 
 ### Performance (MEDIUM)
 
@@ -774,6 +793,6 @@ PortProtonQt/
 
 ---
 
-**Last updated:** 2026-02-20
+**Last updated:** 2026-03-10
 **Version:** 1.1
 **Status:** Release
