@@ -829,8 +829,9 @@ class ExeSettingsDialog(QDialog):
         """Add preset buttons for common MangoHud layouts."""
         group = QGroupBox(_("Quick presets"))
         group.setStyleSheet(self.theme.QGROUP_BOX_STYLE)
-        layout = QHBoxLayout(group)
+        layout = QGridLayout(group)
         layout.setSpacing(10)
+        columns = 2
 
         buttons = [
             (_("PortProton default"), self.apply_portproton_default_mangohud),
@@ -842,13 +843,16 @@ class ExeSettingsDialog(QDialog):
             (_("Clear"), lambda: self.apply_mangohud_button_preset('clear')),
         ]
 
-        for label, handler in buttons:
+        for index, (label, handler) in enumerate(buttons):
             button = QPushButton(label)
             button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
             button.setMinimumHeight(44)
             button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+            button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
             button.clicked.connect(handler)
-            layout.addWidget(button)
+            row = index // columns
+            column = index % columns
+            layout.addWidget(button, row, column)
 
         parent_layout.addWidget(group)
 
