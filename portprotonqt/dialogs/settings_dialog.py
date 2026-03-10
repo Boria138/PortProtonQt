@@ -32,6 +32,7 @@ from portprotonqt.virtual_keyboard import VirtualKeyboard
 from portprotonqt.localization import _, format_setting_name_for_display
 from portprotonqt.dialogs.dialog_utils import create_dialog_hints_widget, update_dialog_hints
 from portprotonqt.config import CONFIG_FILE
+from portprotonqt.debug_utils import get_cached_vk_gpu_info
 
 logger = get_logger(__name__)
 theme_manager = ThemeManager()
@@ -149,6 +150,8 @@ MANGOHUD_VALUE_SPECS = [
      'options': ['1', '2', '3', '4', '5', '6']},
     {'key': 'network', 'label': _("Network (tx/rx kb/s)"), 'type': 'combo',
      'options': ['']},
+    {'key': 'gpu_list', 'label': _("GPU list"), 'type': 'combo',
+     'options': ['']},
     {'key': 'background_alpha', 'label': _("Background opacity"), 'type': 'combo',
      'options': [f'{i / 10:.1f}' for i in range(11)]},
     {'key': 'round_corners', 'label': _("Round corners (px)"), 'type': 'combo',
@@ -185,6 +188,7 @@ MANGOHUD_VALUE_DEFAULTS = {
     'fcat_screen_edge': '1',
     'table_columns': '3',
     'network': '',
+    'gpu_list': '',
     'background_alpha': '0.5',
     'round_corners': '0',
 }
@@ -903,9 +907,13 @@ class ExeSettingsDialog(QDialog):
         options = spec['options']
         if spec['key'] == 'network':
             options = self._get_mangohud_network_options()
-        value_translations = MANGOHUD_VALUE_OPTION_TRANSLATIONS.get(spec['key'], {})
-        for option in options:
-            widget.addItem(value_translations.get(option, option), option)
+        if spec['key'] == 'gpu_list':
+            for text, value in self._get_mangohud_gpu_options():
+                widget.addItem(text, value)
+        else:
+            value_translations = MANGOHUD_VALUE_OPTION_TRANSLATIONS.get(spec['key'], {})
+            for option in options:
+                widget.addItem(value_translations.get(option, option), option)
         widget.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         widget.setMinimumHeight(40)
         widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
@@ -1100,6 +1108,44 @@ class ExeSettingsDialog(QDialog):
 
         if len(options) == 1:
             options.append('eth0')
+        return options
+
+    def _get_mangohud_gpu_options(self) -> list[tuple[str, str]]:
+        """Get available GPU options for MangoHud gpu_list value."""
+        options = [('', '')]
+        vk_gpu_info_output = get_cached_vk_gpu_info()
+        if not vk_gpu_info_output:
+            return options
+
+        gpu_entries = []
+        for gpu_block in vk_gpu_info_output.split("GPU #")[1:]:
+            lines = [line.strip() for line in gpu_block.splitlines() if line.strip()]
+            if not lines:
+                continue
+            gpu_id = lines[0].rstrip(':')
+            if not gpu_id.isdigit():
+                continue
+            gpu_props = {
+                key.strip(): value.strip()
+                for line in lines[1:] if ':' in line
+                for key, value in [line.split(':', 1)]
+            }
+            device_name = gpu_props.get('device_name', '').strip()
+            device_type = gpu_props.get('device_type', '').strip()
+            if device_type in {'CPU', 'VIRTUAL_GPU'}:
+                continue
+            if not device_name:
+                continue
+            gpu_entries.append((gpu_id, device_name))
+
+        if not gpu_entries:
+            return options
+
+        all_gpu_ids = ','.join(gpu_id for gpu_id, _name in gpu_entries)
+        options.append((_("All GPUs"), all_gpu_ids))
+        for gpu_id, device_name in gpu_entries:
+            options.append((device_name, gpu_id))
+
         return options
 
     def _create_mangohud_checkbox(self, label):
