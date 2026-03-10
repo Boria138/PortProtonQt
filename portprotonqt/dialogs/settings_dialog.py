@@ -257,6 +257,96 @@ MANGOHUD_TOGGLE_CATEGORIES = {
     ],
 }
 
+MANGOHUD_TOGGLE_DESCRIPTIONS = {
+    'arch': _("Application architecture (32/64-bit)"),
+    'battery': _("Battery percent and energy consumption"),
+    'battery_icon': _("Battery icon instead of percent"),
+    'battery_time': _("Remaining battery time"),
+    'battery_watt': _("Battery wattage"),
+    'bicubic': _("Force bicubic filtering"),
+    'core_bars': _("Core load as vertical bars"),
+    'core_load': _("Per-core load and frequency"),
+    'core_load_change': _("Core load color change"),
+    'core_type': _("CPU core type (P/E/ARM)"),
+    'cpu_efficiency': _("CPU efficiency (frames/joule)"),
+    'cpu_load_change': _("CPU load color change"),
+    'cpu_mhz': _("CPU frequency in MHz"),
+    'cpu_power': _("CPU power draw (watts)"),
+    'cpu_temp': _("CPU temperature"),
+    'debug': _("Gamescope frametime graphs"),
+    'device_battery_icon': _("Wireless device battery icon"),
+    'display_server': _("Display server type (X11/Wayland)"),
+    'dynamic_frame_timing': _("Dynamic frametime Y-axis"),
+    'engine_short_names': _("Short engine names"),
+    'engine_version': _("Engine version (OpenGL/Vulkan)"),
+    'exec_name': _("Executable name"),
+    'fan': _("Steam Deck fan RPM"),
+    'fcat': _("Frame capture analysis"),
+    'flip_efficiency': _("Flip efficiency (joules/frame)"),
+    'fps_color_change': _("FPS text color by value"),
+    'fps_metrics': _("FPS percentiles"),
+    'fps_only': _("Show FPS only"),
+    'frame_count': _("Frame counter"),
+    'frametime': _("Frametime next to FPS"),
+    'frame_timing_detailed': _("Detailed frame timing chart"),
+    'fsr': _("FSR status (gamescope)"),
+    'full': _("Enable most parameters"),
+    'gamemode': _("GameMode status"),
+    'gpu_core_clock': _("GPU core frequency"),
+    'gpu_efficiency': _("GPU efficiency (frames/joule)"),
+    'gpu_fan': _("GPU fan (RPM/%)"),
+    'gpu_junction_temp': _("GPU junction temperature"),
+    'gpu_load_change': _("GPU load color change"),
+    'gpu_mem_clock': _("GPU memory frequency"),
+    'gpu_mem_temp': _("GPU memory temperature"),
+    'gpu_name': _("GPU name from pci.ids"),
+    'gpu_power': _("GPU power draw (watts)"),
+    'gpu_power_limit': _("GPU power limit"),
+    'gpu_temp': _("GPU temperature"),
+    'gpu_voltage': _("GPU voltage"),
+    'hdr': _("HDR status (gamescope)"),
+    'hide_fsr_sharpness': _("Hide FSR sharpness info"),
+    'histogram': _("FPS histogram"),
+    'horizontal': _("Horizontal HUD layout"),
+    'horizontal_stretch': _("Stretch background horizontally"),
+    'hud_compact': _("Compact HUD mode"),
+    'hud_no_margin': _("Remove HUD margins"),
+    'io_read': _("IO read rate (MiB/s)"),
+    'io_write': _("IO write rate (MiB/s)"),
+    'log_versioning': _("Add versioning to logs"),
+    'media_player': _("Media player metadata"),
+    'no_display': _("Hide HUD by default"),
+    'no_small_font': _("Use primary font size"),
+    'permit_upload': _("Allow log uploads"),
+    'present_mode': _("Vulkan present mode"),
+    'proc_vram': _("Process VRAM usage"),
+    'procmem': _("Process memory (resident)"),
+    'procmem_shared': _("Process shared memory"),
+    'procmem_virt': _("Process virtual memory"),
+    'ram': _("System RAM usage"),
+    'ram_temp': _("RAM temperature (DDR5)"),
+    'read_cfg': _("Load config file"),
+    'refresh_rate': _("Refresh rate (gamescope)"),
+    'resolution': _("Current resolution"),
+    'retro': _("Retro filtering (unfiltered)"),
+    'show_fps_limit': _("Show FPS limit"),
+    'swap': _("Swap usage"),
+    'temp_fahrenheit': _("Temperature in Fahrenheit"),
+    'text_outline': _("Text outline"),
+    'throttling_status': _("GPU throttling status"),
+    'throttling_status_graph': _("Throttling in frame graph"),
+    'time': _("Local time"),
+    'time_no_label': _("Time without label"),
+    'trilinear': _("Force trilinear filtering"),
+    'upload_logs': _("Automatic log uploads"),
+    'version': _("MangoHud version"),
+    'vkbasalt': _("vkBasalt status"),
+    'vulkan_driver': _("Vulkan driver (radv/amdvlk)"),
+    'wine': _("Wine/Proton version"),
+    'winesync': _("Wine sync method"),
+    'vram': _("VRAM usage"),
+}
+
 class ExeSettingsDialog(QDialog):
     """Dialog for configuring executable-specific settings."""
 
@@ -305,6 +395,7 @@ class ExeSettingsDialog(QDialog):
         self.mangohud_original_values = {}
         self.mangohud_hidden_extra_tokens = []
         self.mangohud_toggle_widgets = {}
+        self.mangohud_toggle_widget_keys = {}
         self.mangohud_fps_widgets = {}
         self.mangohud_category_groups = {}
         self.available_keys = set()
@@ -322,6 +413,9 @@ class ExeSettingsDialog(QDialog):
         self.toggle_settings = get_toggle_settings()
 
         self.setup_ui()
+        app = QApplication.instance()
+        if isinstance(app, QApplication):
+            app.focusChanged.connect(self._on_focus_changed)
 
         self.input_manager = None
         self.main_window = None
@@ -872,6 +966,9 @@ class ExeSettingsDialog(QDialog):
         self.mangohud_category_stack = QStackedWidget()
         self.mangohud_category_stack.setStyleSheet("background: transparent;")
         selector_layout.addWidget(self.mangohud_category_stack)
+        self.mangohud_toggle_description_label = QLabel("")
+        self.mangohud_toggle_description_label.setWordWrap(True)
+        selector_layout.addWidget(self.mangohud_toggle_description_label)
 
         toggle_lookup = dict(MANGOHUD_TOGGLE_SPECS)
         uncategorized = set(toggle_lookup.keys())
@@ -888,10 +985,12 @@ class ExeSettingsDialog(QDialog):
                     continue
                 label = toggle_lookup[key]
                 checkbox = self._create_mangohud_checkbox(label)
+                checkbox.setToolTip(MANGOHUD_TOGGLE_DESCRIPTIONS.get(key, ""))
                 row = index // 4
                 column = index % 4
                 layout.addWidget(checkbox, row, column)
                 self.mangohud_toggle_widgets[key] = checkbox
+                self.mangohud_toggle_widget_keys[checkbox] = key
                 uncategorized.discard(key)
 
             self.mangohud_category_groups[category] = category_widget
@@ -907,16 +1006,19 @@ class ExeSettingsDialog(QDialog):
             for index, key in enumerate(sorted(uncategorized)):
                 label = toggle_lookup[key]
                 checkbox = self._create_mangohud_checkbox(label)
+                checkbox.setToolTip(MANGOHUD_TOGGLE_DESCRIPTIONS.get(key, ""))
                 row = index // 4
                 column = index % 4
                 layout.addWidget(checkbox, row, column)
                 self.mangohud_toggle_widgets[key] = checkbox
+                self.mangohud_toggle_widget_keys[checkbox] = key
 
             self.mangohud_category_combo.addItem(_("Other"))
             self.mangohud_category_groups[_("Other")] = category_widget
             self.mangohud_category_stack.addWidget(category_widget)
 
         self._update_mangohud_category_stack_height()
+        self._update_mangohud_toggle_description_for_category()
         parent_layout.addWidget(selector_group)
 
     def _add_mangohud_fps_group(self, parent_layout):
@@ -1025,6 +1127,46 @@ class ExeSettingsDialog(QDialog):
         if widget:
             self.mangohud_category_stack.setCurrentWidget(widget)
             self._update_mangohud_category_stack_height()
+            self._update_mangohud_toggle_description_for_category()
+
+    def _update_mangohud_toggle_description(self, key):
+        """Update description text for selected MangoHud toggle key."""
+        if not hasattr(self, 'mangohud_toggle_description_label'):
+            return
+        self.mangohud_toggle_description_label.setText(MANGOHUD_TOGGLE_DESCRIPTIONS.get(key, ""))
+
+    def _update_mangohud_toggle_description_for_category(self):
+        """Set description for the first visible toggle in current category."""
+        category_widget = self.mangohud_category_stack.currentWidget()
+        if not category_widget:
+            return
+        checkboxes = [
+            checkbox for checkbox in category_widget.findChildren(
+                QCheckBox, options=Qt.FindChildOption.FindChildrenRecursively
+            )
+            if checkbox.isVisible() and checkbox.isEnabled()
+        ]
+        if not checkboxes:
+            self.mangohud_toggle_description_label.setText("")
+            return
+        first_checkbox = sorted(
+            checkboxes,
+            key=lambda checkbox: (
+                checkbox.mapTo(category_widget, checkbox.rect().topLeft()).y(),
+                checkbox.mapTo(category_widget, checkbox.rect().topLeft()).x(),
+            ),
+        )[0]
+        key = self.mangohud_toggle_widget_keys.get(first_checkbox)
+        if key:
+            self._update_mangohud_toggle_description(key)
+
+    def _on_focus_changed(self, _old, new):
+        """Track focused MangoHud toggle checkbox and show short description."""
+        if not isinstance(new, QCheckBox):
+            return
+        key = self.mangohud_toggle_widget_keys.get(new)
+        if key:
+            self._update_mangohud_toggle_description(key)
 
     def _update_mangohud_category_stack_height(self):
         """Update MangoHud category block height to current visible page."""
