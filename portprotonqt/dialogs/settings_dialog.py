@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
     QCheckBox, QGroupBox, QScrollArea, QFormLayout,
     QGridLayout, QPushButton, QSizePolicy
 )
-from PySide6.QtCore import Qt, QProcess, QTimer, QUrl
+from PySide6.QtCore import Qt, QEvent, QProcess, QTimer, QUrl
 from PySide6.QtGui import QColor, QDesktopServices
 
 if TYPE_CHECKING:
@@ -966,9 +966,6 @@ class ExeSettingsDialog(QDialog):
         self.mangohud_category_stack = QStackedWidget()
         self.mangohud_category_stack.setStyleSheet("background: transparent;")
         selector_layout.addWidget(self.mangohud_category_stack)
-        self.mangohud_toggle_description_label = QLabel("")
-        self.mangohud_toggle_description_label.setWordWrap(True)
-        selector_layout.addWidget(self.mangohud_toggle_description_label)
 
         toggle_lookup = dict(MANGOHUD_TOGGLE_SPECS)
         uncategorized = set(toggle_lookup.keys())
@@ -985,7 +982,6 @@ class ExeSettingsDialog(QDialog):
                     continue
                 label = toggle_lookup[key]
                 checkbox = self._create_mangohud_checkbox(label)
-                checkbox.setToolTip(MANGOHUD_TOGGLE_DESCRIPTIONS.get(key, ""))
                 row = index // 4
                 column = index % 4
                 layout.addWidget(checkbox, row, column)
@@ -1006,7 +1002,6 @@ class ExeSettingsDialog(QDialog):
             for index, key in enumerate(sorted(uncategorized)):
                 label = toggle_lookup[key]
                 checkbox = self._create_mangohud_checkbox(label)
-                checkbox.setToolTip(MANGOHUD_TOGGLE_DESCRIPTIONS.get(key, ""))
                 row = index // 4
                 column = index % 4
                 layout.addWidget(checkbox, row, column)
@@ -1018,7 +1013,6 @@ class ExeSettingsDialog(QDialog):
             self.mangohud_category_stack.addWidget(category_widget)
 
         self._update_mangohud_category_stack_height()
-        self._update_mangohud_toggle_description_for_category()
         parent_layout.addWidget(selector_group)
 
     def _add_mangohud_fps_group(self, parent_layout):
@@ -1113,6 +1107,7 @@ class ExeSettingsDialog(QDialog):
         checkbox = QCheckBox(label)
         checkbox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         checkbox.setMinimumHeight(36)
+        checkbox.installEventFilter(self)
         checkbox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE + """
             QCheckBox {
                 spacing: 10px;
@@ -1127,46 +1122,25 @@ class ExeSettingsDialog(QDialog):
         if widget:
             self.mangohud_category_stack.setCurrentWidget(widget)
             self._update_mangohud_category_stack_height()
-            self._update_mangohud_toggle_description_for_category()
 
-    def _update_mangohud_toggle_description(self, key):
-        """Update description text for selected MangoHud toggle key."""
-        if not hasattr(self, 'mangohud_toggle_description_label'):
+    def _show_mangohud_toggle_tooltip(self, checkbox):
+        """Show gamepad tooltip for MangoHud toggle checkbox."""
+        key = self.mangohud_toggle_widget_keys.get(checkbox)
+        if not key:
             return
-        self.mangohud_toggle_description_label.setText(MANGOHUD_TOGGLE_DESCRIPTIONS.get(key, ""))
-
-    def _update_mangohud_toggle_description_for_category(self):
-        """Set description for the first visible toggle in current category."""
-        category_widget = self.mangohud_category_stack.currentWidget()
-        if not category_widget:
+        text = MANGOHUD_TOGGLE_DESCRIPTIONS.get(key, "")
+        if not text:
+            self.show_gamepad_tooltip(show=False)
             return
-        checkboxes = [
-            checkbox for checkbox in category_widget.findChildren(
-                QCheckBox, options=Qt.FindChildOption.FindChildrenRecursively
-            )
-            if checkbox.isVisible() and checkbox.isEnabled()
-        ]
-        if not checkboxes:
-            self.mangohud_toggle_description_label.setText("")
-            return
-        first_checkbox = sorted(
-            checkboxes,
-            key=lambda checkbox: (
-                checkbox.mapTo(category_widget, checkbox.rect().topLeft()).y(),
-                checkbox.mapTo(category_widget, checkbox.rect().topLeft()).x(),
-            ),
-        )[0]
-        key = self.mangohud_toggle_widget_keys.get(first_checkbox)
-        if key:
-            self._update_mangohud_toggle_description(key)
+        self.show_gamepad_tooltip(show=True, text=text, anchor_widget=checkbox)
 
     def _on_focus_changed(self, _old, new):
-        """Track focused MangoHud toggle checkbox and show short description."""
-        if not isinstance(new, QCheckBox):
+        """Track focused MangoHud toggle checkbox and show tooltip."""
+        if isinstance(new, QCheckBox) and new in self.mangohud_toggle_widget_keys:
+            self._show_mangohud_toggle_tooltip(new)
             return
-        key = self.mangohud_toggle_widget_keys.get(new)
-        if key:
-            self._update_mangohud_toggle_description(key)
+        if self.tab_widget.currentIndex() == 2:
+            self.show_gamepad_tooltip(show=False)
 
     def _update_mangohud_category_stack_height(self):
         """Update MangoHud category block height to current visible page."""
@@ -1664,7 +1638,17 @@ class ExeSettingsDialog(QDialog):
             self.input_manager.disable_settings_mode()
         super().closeEvent(event)
 
-    def show_gamepad_tooltip(self, show=True, text=""):
+    def eventFilter(self, obj, event):
+        if isinstance(obj, QCheckBox) and obj in self.mangohud_toggle_widget_keys:
+            if event.type() in (QEvent.Type.Enter, QEvent.Type.FocusIn):
+                self._show_mangohud_toggle_tooltip(obj)
+            elif event.type() in (QEvent.Type.Leave, QEvent.Type.FocusOut):
+                focused_widget = QApplication.focusWidget()
+                if not (isinstance(focused_widget, QCheckBox) and focused_widget in self.mangohud_toggle_widget_keys):
+                    self.show_gamepad_tooltip(show=False)
+        return super().eventFilter(obj, event)
+
+    def show_gamepad_tooltip(self, show=True, text="", anchor_widget=None):
         """Show or hide the gamepad tooltip with the provided text."""
         if show and text:
             self.gamepad_tooltip.setText(text)
@@ -1681,6 +1665,14 @@ class ExeSettingsDialog(QDialog):
 
             required_width = min(max_width, text_rect.width() + 25)
             required_height = min(300, text_rect.height() + 25)
+
+            if anchor_widget and anchor_widget.isVisible():
+                widget_rect = anchor_widget.rect()
+                global_pos = anchor_widget.mapToGlobal(widget_rect.topRight())
+                self.gamepad_tooltip.setFixedSize(required_width, required_height)
+                self.gamepad_tooltip.move(global_pos.x(), global_pos.y())
+                self.gamepad_tooltip.setVisible(True)
+                return
 
             current_table = self.advanced_table if self.tab_widget.currentIndex() == 1 else self.settings_table
             if current_table and current_table.currentRow() >= 0 and current_table.currentColumn() >= 0:
