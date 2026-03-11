@@ -129,6 +129,9 @@ SETTINGS_COMBO_STYLE = f"""
 """
 
 SETTINGS_CHECKBOX_STYLE = f"""
+    QWidget {{
+        background: {color_h};
+    }}
     QCheckBox {{
         height: 34px;
         color: {color_f};

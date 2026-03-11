@@ -440,6 +440,7 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
             checkbox_widget.setEnabled(not is_blocked)
             checkbox_widget.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
             checkbox_container = QWidget()
+            checkbox_container.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
             checkbox_layout = QHBoxLayout(checkbox_container)
             checkbox_layout.setContentsMargins(0, 0, 0, 0)
             checkbox_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
