@@ -26,6 +26,10 @@ package_portprotonqt-git() {
     pkgdesc="Modern GUI for managing and launching games from PortProton, Steam, and Epic Games Store (development build)"
 
     DESTDIR="$pkgdir" meson install -C build --skip-subprojects
+    bash "$srcdir/PortProtonQt/dev-scripts/generate-completions.sh"
+    install -Dpm 0644 "$srcdir/PortProtonQt/completions/portprotonqt.bash" -t "$pkgdir/usr/share/bash-completion/completions"
+    install -Dpm 0644 "$srcdir/PortProtonQt/completions/portprotonqt.fish" -t "$pkgdir/usr/share/fish/vendor_completions.d"
+    install -Dpm 0644 "$srcdir/PortProtonQt/completions/_portprotonqt" -t "$pkgdir/usr/share/zsh/site-functions"
 
     # Remove steam-compat files from main package
     rm -rf "$pkgdir/usr/share/steam"

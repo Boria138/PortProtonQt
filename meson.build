@@ -71,12 +71,6 @@ install_data(
   install_dir: datadir / 'metainfo',
 )
 
-# Install bash completion
-install_data(
-  'build-aux/share/bash-completion/completions/portprotonqt',
-  install_dir: datadir / 'bash-completion/completions',
-)
-
 # Install Steam compatibility tool
 subdir('build-aux/share/steam/compatibilitytools.d/PortProtonQt')
 
