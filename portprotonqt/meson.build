@@ -52,6 +52,7 @@ install_data(
    'dialogs/file_explorer.py',
    'dialogs/winetricks_dialog.py',
    'dialogs/settings_dialog.py',
+   'dialogs/settings_mangohud.py',
    'dialogs/proton_manager.py',
    'dialogs/wine_loader.py',
    'dialogs/wine_downloader.py',
