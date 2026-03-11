@@ -137,6 +137,17 @@ GAMESCOPE_VALUE_DEFAULTS = {
     'nested_unfocused_refresh': '',
 }
 
+GAMESCOPE_SHORT_TOGGLE_ALIASES = {
+    'f': 'fullscreen',
+}
+
+GAMESCOPE_SHORT_VALUE_ALIASES = {
+    'W': 'output_width',
+    'H': 'output_height',
+    'w': 'nested_width',
+    'h': 'nested_height',
+}
+
 GAMESCOPE_TOGGLE_CATEGORIES = {
     _("Window"): [
         'borderless', 'fullscreen', 'grab', 'force_grab_cursor',
@@ -629,6 +640,12 @@ class GamescopeSettingsMixin:
         known_keys.update(spec['key'] for spec in GAMESCOPE_VALUE_SPECS)
         parsed = {}
         extra_tokens = []
+        parsed_resolution_tokens = {
+            'output_width': [],
+            'output_height': [],
+            'nested_width': [],
+            'nested_height': [],
+        }
 
         args_text = args_text.strip()
         if not args_text:
@@ -645,6 +662,8 @@ class GamescopeSettingsMixin:
                     key = key.replace('-', '_')
                     if key in known_keys:
                         parsed[key] = value
+                        if key in parsed_resolution_tokens:
+                            parsed_resolution_tokens[key] = [token]
                     else:
                         extra_tokens.append(token)
                 else:
@@ -653,9 +672,77 @@ class GamescopeSettingsMixin:
                         parsed[key] = True
                     else:
                         extra_tokens.append(token)
+            elif token.startswith('-') and len(token) > 1:
+                short_key = token[1:2]
+                toggle_key = GAMESCOPE_SHORT_TOGGLE_ALIASES.get(short_key)
+                value_key = GAMESCOPE_SHORT_VALUE_ALIASES.get(short_key)
+                if toggle_key and toggle_key in known_keys and len(token) == 2:
+                    parsed[toggle_key] = True
+                elif value_key and value_key in known_keys:
+                    inline_value = token[2:]
+                    if inline_value:
+                        parsed[value_key] = inline_value
+                        if value_key in parsed_resolution_tokens:
+                            parsed_resolution_tokens[value_key] = [token]
+                    elif i + 1 < len(tokens):
+                        next_token = tokens[i + 1]
+                        i += 1
+                        parsed[value_key] = tokens[i]
+                        if value_key in parsed_resolution_tokens:
+                            parsed_resolution_tokens[value_key] = [token, next_token]
+                    else:
+                        extra_tokens.append(token)
+                else:
+                    extra_tokens.append(token)
             else:
                 extra_tokens.append(token)
             i += 1
+
+        max_width = 0
+        max_height = 0
+        app_instance = QGuiApplication.instance()
+        if isinstance(app_instance, QGuiApplication):
+            active_screen = None
+            window_method = getattr(self, 'window', None)
+            window = window_method() if callable(window_method) else None
+            if isinstance(window, QWidget):
+                window_handle = window.windowHandle()
+                if window_handle is not None:
+                    active_screen = window_handle.screen()
+            if active_screen is None:
+                active_screen = app_instance.primaryScreen()
+            if active_screen is not None:
+                geometry = active_screen.geometry()
+                max_width = geometry.width()
+                max_height = geometry.height()
+            else:
+                for screen in app_instance.screens():
+                    geometry = screen.geometry()
+                    max_width = max(max_width, geometry.width())
+                    max_height = max(max_height, geometry.height())
+        if max_width <= 0 or max_height <= 0:
+            max_width = 1920
+            max_height = 1080
+
+        for width_key, height_key in (('output_width', 'output_height'), ('nested_width', 'nested_height')):
+            width_value = parsed.get(width_key)
+            height_value = parsed.get(height_key)
+            if not (isinstance(width_value, str) and width_value.isdigit()):
+                continue
+            if not (isinstance(height_value, str) and height_value.isdigit()):
+                continue
+            if int(width_value) <= max_width and int(height_value) <= max_height:
+                continue
+
+            logger.debug(
+                "Drop unsupported gamescope resolution for active screen: %sx%s (max %sx%s)",
+                width_value,
+                height_value,
+                max_width,
+                max_height,
+            )
+            parsed.pop(width_key, None)
+            parsed.pop(height_key, None)
 
         if extra_tokens:
             parsed['_extra'] = ' ' + ' '.join(extra_tokens)
