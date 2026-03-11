@@ -241,9 +241,9 @@ class GamescopeSettingsMixin:
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(14)
 
-        self._add_gamescope_value_group(layout)
         self._add_gamescope_presets_group(layout)
         self._add_gamescope_toggle_group(layout)
+        self._add_gamescope_value_group(layout)
         self._add_gamescope_extra_group(layout)
         layout.addStretch()
 
