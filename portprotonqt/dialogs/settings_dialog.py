@@ -402,6 +402,7 @@ class ExeSettingsDialog(QDialog):
         self.mangohud_toggle_widget_keys = {}
         self.mangohud_fps_widgets = {}
         self.mangohud_category_groups = {}
+        self.mangohud_gpu_options = []
         self.available_keys = set()
         self.blocked_keys = set()
         self.numa_nodes = {}
@@ -841,6 +842,8 @@ class ExeSettingsDialog(QDialog):
                 line_edit = QLineEdit()
                 current_val = current.get(setting['key'], setting['default'])
                 line_edit.setText(current_val)
+                if not current_val and not setting['default']:
+                    line_edit.setPlaceholderText(_("Default value"))
 
                 if is_blocked:
                     line_edit.setEnabled(False)
@@ -891,9 +894,13 @@ class ExeSettingsDialog(QDialog):
         form = QFormLayout(group)
         form.setSpacing(10)
         form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
+        self.mangohud_gpu_options = self._get_mangohud_gpu_options()
+        gpu_count = sum(1 for _text, value in self.mangohud_gpu_options if value.isdigit())
 
         for spec in MANGOHUD_VALUE_SPECS:
             if spec['key'] == 'fps_limit_method':
+                continue
+            if spec['key'] == 'gpu_list' and gpu_count < 2:
                 continue
             form.addRow(spec['label'], self._create_mangohud_value_widget(spec))
 
@@ -903,15 +910,18 @@ class ExeSettingsDialog(QDialog):
         """Create a MangoHud value widget."""
         widget = QComboBox()
         options = spec['options']
+        placeholder_text = _("Default value")
         if spec['key'] == 'network':
             options = self._get_mangohud_network_options()
         if spec['key'] == 'gpu_list':
-            for text, value in self._get_mangohud_gpu_options():
+            gpu_options = self.mangohud_gpu_options or self._get_mangohud_gpu_options()
+            for text, value in gpu_options:
                 widget.addItem(text, value)
         else:
             value_translations = MANGOHUD_VALUE_OPTION_TRANSLATIONS.get(spec['key'], {})
             for option in options:
-                widget.addItem(value_translations.get(option, option), option)
+                display_text = placeholder_text if option == '' else value_translations.get(option, option)
+                widget.addItem(display_text, option)
         widget.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         widget.setMinimumHeight(40)
         widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
@@ -1110,7 +1120,7 @@ class ExeSettingsDialog(QDialog):
 
     def _get_mangohud_gpu_options(self) -> list[tuple[str, str]]:
         """Get available GPU options for MangoHud gpu_list value."""
-        options = [('', '')]
+        options = [(_("Default value"), '')]
         vk_gpu_info_output = get_cached_vk_gpu_info()
         if not vk_gpu_info_output:
             return options
@@ -1139,8 +1149,9 @@ class ExeSettingsDialog(QDialog):
         if not gpu_entries:
             return options
 
-        all_gpu_ids = ','.join(gpu_id for gpu_id, _name in gpu_entries)
-        options.append((_("All GPUs"), all_gpu_ids))
+        if len(gpu_entries) > 1:
+            all_gpu_ids = ','.join(gpu_id for gpu_id, _name in gpu_entries)
+            options.append((_("All GPUs"), all_gpu_ids))
         for gpu_id, device_name in gpu_entries:
             options.append((device_name, gpu_id))
 
@@ -1205,6 +1216,8 @@ class ExeSettingsDialog(QDialog):
         visible_raw_tokens, hidden_raw_tokens = self._split_mangohud_extra_tokens(raw_tokens)
 
         for spec in MANGOHUD_VALUE_SPECS:
+            if spec['key'] not in self.mangohud_widgets:
+                continue
             self._set_mangohud_value_widget(spec, parsed_config.get(spec['key']))
 
         for key, _label in MANGOHUD_TOGGLE_SPECS:
@@ -1293,6 +1306,8 @@ class ExeSettingsDialog(QDialog):
         visible_raw_tokens, hidden_raw_tokens = self._split_mangohud_extra_tokens(raw_tokens)
 
         for spec in MANGOHUD_VALUE_SPECS:
+            if spec['key'] not in self.mangohud_widgets:
+                continue
             self._set_mangohud_value_widget(spec, parsed_config.get(spec['key']))
 
         enabled_toggles = forced_toggles if forced_toggles is not None else set()
@@ -1323,7 +1338,9 @@ class ExeSettingsDialog(QDialog):
 
     def _set_mangohud_value_widget(self, spec, value):
         """Apply parsed value to a MangoHud value widget."""
-        widget = self.mangohud_widgets[spec['key']]
+        widget = self.mangohud_widgets.get(spec['key'])
+        if widget is None:
+            return
         text = value if isinstance(value, str) else ''
         index = widget.findData(text)
         if text and index < 0:
@@ -1399,6 +1416,8 @@ class ExeSettingsDialog(QDialog):
         """Build MANGOHUD_CONFIG from the MangoHud tab."""
         tokens = []
         for spec in MANGOHUD_VALUE_SPECS:
+            if spec['key'] not in self.mangohud_widgets:
+                continue
             token = self._build_mangohud_value_token(spec)
             if token:
                 tokens.append(token)
@@ -1431,9 +1450,13 @@ class ExeSettingsDialog(QDialog):
 
     def _build_mangohud_value_token(self, spec):
         """Build one MangoHud value token."""
-        widget = self.mangohud_widgets[spec['key']]
-        value = str(widget.currentData()).strip()
-        if not value:
+        widget = self.mangohud_widgets.get(spec['key'])
+        if widget is None:
+            return ''
+
+        current_data = widget.currentData()
+        value = '' if current_data is None else str(current_data).strip()
+        if not value and current_data is None:
             value = widget.currentText().strip()
         if not value:
             return ''
