@@ -1514,8 +1514,8 @@ class InputManager(QObject):
 
     def _focus_mangohud_widget(self, widget):
         """Focus MangoHud widget and ensure it is visible in scroll area."""
-        widget.setFocus(Qt.FocusReason.OtherFocusReason)
         self._ensure_mangohud_widget_visible(widget)
+        widget.setFocus(Qt.FocusReason.OtherFocusReason)
 
     def _ensure_mangohud_widget_visible(self, widget):
         """Auto-scroll MangoHud tab to the currently focused widget."""
@@ -1534,6 +1534,12 @@ class InputManager(QObject):
         if not position:
             return
         section_index, _widget_index = position
+        target = self._find_mangohud_grid_horizontal_target(
+            focused, direction, sections[section_index]
+        )
+        if target:
+            self._focus_mangohud_widget(target)
+            return
         target = self._find_mangohud_neighbor_in_section(
             focused, sections[section_index], direction, is_vertical=False
         )
@@ -1545,6 +1551,9 @@ class InputManager(QObject):
         position = self._find_widget_in_sections(focused, sections)
         if not position:
             return
+        settings_dialog = self.settings_dialog
+        if not settings_dialog:
+            return
 
         section_index, _widget_index = position
         if self._is_mangohud_fps_widget(focused):
@@ -1554,6 +1563,42 @@ class InputManager(QObject):
             if fps_target:
                 self._focus_mangohud_widget(fps_target)
                 return
+        if self._is_mangohud_toggle_widget(focused):
+            toggle_target = self._find_mangohud_toggle_vertical_target(
+                focused, direction, sections[section_index]
+            )
+            if toggle_target:
+                self._focus_mangohud_widget(toggle_target)
+                return
+
+        fps_limit_method = None
+        if settings_dialog:
+            fps_limit_method = settings_dialog.mangohud_widgets.get('fps_limit_method')
+        if direction > 0 and fps_limit_method and focused is fps_limit_method:
+            fps_checkboxes = [
+                checkbox for checkbox in settings_dialog.mangohud_fps_widgets.values()
+                if checkbox.isVisible() and checkbox.isEnabled()
+            ]
+            if fps_checkboxes:
+                first_fps_checkbox = self._sort_widgets_by_position(fps_checkboxes)[0]
+                self._focus_mangohud_widget(first_fps_checkbox)
+                return
+
+        category_combo = getattr(settings_dialog, 'mangohud_category_combo', None)
+        category_stack = getattr(settings_dialog, 'mangohud_category_stack', None)
+        if direction > 0 and category_combo and focused is category_combo and category_stack:
+            current_category_widget = category_stack.currentWidget()
+            if current_category_widget:
+                category_checkboxes = [
+                    checkbox for checkbox in current_category_widget.findChildren(
+                        QCheckBox, options=Qt.FindChildOption.FindChildrenRecursively
+                    )
+                    if checkbox.isVisible() and checkbox.isEnabled()
+                ]
+                if category_checkboxes:
+                    first_checkbox = self._sort_widgets_by_position(category_checkboxes)[0]
+                    self._focus_mangohud_widget(first_checkbox)
+                    return
 
         target_in_section = self._find_mangohud_neighbor_in_section(
             focused, sections[section_index], direction, is_vertical=True
@@ -1570,7 +1615,7 @@ class InputManager(QObject):
         if not target_section:
             return
 
-        category_combo = getattr(self.settings_dialog, 'mangohud_category_combo', None)
+        category_combo = getattr(settings_dialog, 'mangohud_category_combo', None)
         if category_combo and category_combo in target_section:
             self._focus_mangohud_widget(category_combo)
             return
@@ -1580,22 +1625,25 @@ class InputManager(QObject):
             return
 
         fps_limit_method = None
-        if self.settings_dialog:
-            fps_limit_method = self.settings_dialog.mangohud_widgets.get('fps_limit_method')
+        if settings_dialog:
+            fps_limit_method = settings_dialog.mangohud_widgets.get('fps_limit_method')
         if fps_limit_method and fps_limit_method in target_section:
             self._focus_mangohud_widget(fps_limit_method)
             return
 
-        current_center = focused.mapTo(self.settings_dialog, focused.rect().center()).x()
+        current_center = focused.mapTo(settings_dialog, focused.rect().center()).x()
         target_widget = min(
             target_section,
-            key=lambda widget: abs(widget.mapTo(self.settings_dialog, widget.rect().center()).x() - current_center),
+            key=lambda widget: abs(widget.mapTo(settings_dialog, widget.rect().center()).x() - current_center),
         )
         self._focus_mangohud_widget(target_widget)
 
     def _find_mangohud_neighbor_in_section(self, focused, section, direction, is_vertical):
         """Find closest focusable neighbor in current section by direction."""
-        focused_center = focused.mapTo(self.settings_dialog, focused.rect().center())
+        settings_dialog = self.settings_dialog
+        if not settings_dialog:
+            return None
+        focused_center = focused.mapTo(settings_dialog, focused.rect().center())
         fx = focused_center.x()
         fy = focused_center.y()
         candidates = []
@@ -1603,7 +1651,7 @@ class InputManager(QObject):
         for widget in section:
             if widget is focused:
                 continue
-            center = widget.mapTo(self.settings_dialog, widget.rect().center())
+            center = widget.mapTo(settings_dialog, widget.rect().center())
             dx = center.x() - fx
             dy = center.y() - fy
 
@@ -1627,30 +1675,110 @@ class InputManager(QObject):
         candidates.sort(key=lambda item: item[0])
         return candidates[0][1]
 
+    def _find_mangohud_grid_horizontal_target(
+        self, focused: QWidget, direction: int, section: list[QWidget]
+    ) -> QWidget | None:
+        """Navigate left/right in MangoHud grids with row wrap at edges."""
+        settings_dialog = self.settings_dialog
+        if not settings_dialog:
+            return None
+        sorted_widgets = sorted(
+            section,
+            key=lambda widget: (
+                widget.mapTo(settings_dialog, widget.rect().center()).y(),
+                widget.mapTo(settings_dialog, widget.rect().center()).x(),
+            ),
+        )
+        rows = []
+        tolerance = 24
+        for widget in sorted_widgets:
+            y = widget.mapTo(settings_dialog, widget.rect().center()).y()
+            if not rows:
+                rows.append([widget])
+                continue
+            last_y = rows[-1][0].mapTo(settings_dialog, rows[-1][0].rect().center()).y()
+            if abs(y - last_y) <= tolerance:
+                rows[-1].append(widget)
+            else:
+                rows.append([widget])
+        for row in rows:
+            row.sort(key=lambda widget: widget.mapTo(settings_dialog, widget.rect().center()).x())
+
+        row_idx = -1
+        col_idx = -1
+        for index, row in enumerate(rows):
+            if focused in row:
+                row_idx = index
+                col_idx = row.index(focused)
+                break
+        if row_idx == -1:
+            return None
+
+        if direction > 0:
+            if col_idx + 1 < len(rows[row_idx]):
+                return rows[row_idx][col_idx + 1]
+            if row_idx + 1 < len(rows):
+                return rows[row_idx + 1][0]
+            return None
+        if direction < 0:
+            if col_idx - 1 >= 0:
+                return rows[row_idx][col_idx - 1]
+            if row_idx - 1 >= 0:
+                return rows[row_idx - 1][-1]
+            return None
+        return None
+
     def _is_mangohud_fps_widget(self, widget):
         """Check if widget belongs to MangoHud FPS section."""
         if not self.settings_dialog:
             return False
         return widget in set(self.settings_dialog.mangohud_fps_widgets.values())
 
+    def _is_mangohud_toggle_widget(self, widget: QWidget) -> bool:
+        """Check if widget belongs to MangoHud toggle checkbox section."""
+        if not self.settings_dialog:
+            return False
+        toggle_keys = getattr(self.settings_dialog, 'mangohud_toggle_widget_keys', {})
+        return isinstance(widget, QCheckBox) and widget in toggle_keys
+
+    def _find_mangohud_toggle_vertical_target(
+        self, focused: QWidget, direction: int, section: list[QWidget]
+    ) -> QWidget | None:
+        """Navigate toggle checkboxes down/up with automatic next/prev column jump."""
+        toggle_widgets = [widget for widget in section if self._is_mangohud_toggle_widget(widget)]
+        if not toggle_widgets:
+            return None
+        return self._find_mangohud_vertical_grid_target(focused, direction, toggle_widgets)
+
     def _find_mangohud_fps_vertical_target(self, focused, direction, section):
         """Navigate FPS widgets down/up with automatic next/prev column jump."""
+        fps_widgets = [widget for widget in section if self._is_mangohud_fps_widget(widget)]
+        if not fps_widgets:
+            return None
+        return self._find_mangohud_vertical_grid_target(focused, direction, fps_widgets)
+
+    def _find_mangohud_vertical_grid_target(
+        self, focused: QWidget, direction: int, widgets: list[QWidget]
+    ) -> QWidget | None:
+        """Find vertical target in grid columns with column-to-column wrap."""
+        settings_dialog = self.settings_dialog
+        if not settings_dialog:
+            return None
         sorted_widgets = sorted(
-            section,
+            widgets,
             key=lambda widget: (
-                widget.mapTo(self.settings_dialog, widget.rect().center()).x(),
-                widget.mapTo(self.settings_dialog, widget.rect().center()).y(),
+                widget.mapTo(settings_dialog, widget.rect().center()).x(),
+                widget.mapTo(settings_dialog, widget.rect().center()).y(),
             ),
         )
-
         columns = []
         tolerance = 24
         for widget in sorted_widgets:
-            x = widget.mapTo(self.settings_dialog, widget.rect().center()).x()
+            x = widget.mapTo(settings_dialog, widget.rect().center()).x()
             if not columns:
                 columns.append([widget])
                 continue
-            last_x = columns[-1][0].mapTo(self.settings_dialog, columns[-1][0].rect().center()).x()
+            last_x = columns[-1][0].mapTo(settings_dialog, columns[-1][0].rect().center()).x()
             if abs(x - last_x) <= tolerance:
                 columns[-1].append(widget)
             else:
@@ -1679,7 +1807,6 @@ class InputManager(QObject):
             if col_idx - 1 >= 0:
                 return columns[col_idx - 1][-1]
             return None
-
         return None
 
     def handle_navigation_repeat(self):

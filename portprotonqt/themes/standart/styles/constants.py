@@ -41,6 +41,8 @@ color_white = "#ffffff"
 # Shadow constants
 shadow_blur_radius = 20
 shadow_offset = (0, 0)
+settings_tooltip_offset_x = 28
+settings_tooltip_offset_y = 4
 
 GAME_CARD_ANIMATION = {
     # Animation type for entering/exiting detail page

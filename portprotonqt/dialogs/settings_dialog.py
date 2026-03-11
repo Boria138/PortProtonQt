@@ -580,6 +580,7 @@ class ExeSettingsDialog(QDialog):
         self.gamepad_tooltip.setParent(self)
         self.gamepad_tooltip.setWindowFlags(Qt.WindowType.ToolTip)
         self.gamepad_tooltip.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.gamepad_tooltip.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
         self.gamepad_tooltip_timer = QTimer(self)
         self.gamepad_tooltip_timer.setSingleShot(True)
         self.gamepad_tooltip_timer.timeout.connect(lambda: self.gamepad_tooltip.setVisible(False))
@@ -1720,6 +1721,8 @@ class ExeSettingsDialog(QDialog):
     def show_gamepad_tooltip(self, show=True, text="", anchor_widget=None, anchor_global_pos=None):
         """Show or hide the gamepad tooltip with the provided text."""
         if show and text:
+            tooltip_x_offset = self.theme.settings_tooltip_offset_x
+            tooltip_y_offset = self.theme.settings_tooltip_offset_y
             tooltip_timeout_ms = max(2500, min(12000, 1500 + len(text) * 30))
             self.gamepad_tooltip.setText(text)
             self.gamepad_tooltip.setFixedSize(500, 300)
@@ -1738,7 +1741,8 @@ class ExeSettingsDialog(QDialog):
 
             if anchor_global_pos is not None:
                 global_pos = anchor_global_pos
-                global_pos.setY(global_pos.y() + 4)
+                global_pos.setX(global_pos.x() + tooltip_x_offset)
+                global_pos.setY(global_pos.y() + tooltip_y_offset)
 
                 screen = QGuiApplication.screenAt(global_pos) or QGuiApplication.primaryScreen()
                 if screen:
@@ -1759,7 +1763,8 @@ class ExeSettingsDialog(QDialog):
             if anchor_widget and anchor_widget.isVisible():
                 widget_rect = anchor_widget.rect()
                 global_pos = anchor_widget.mapToGlobal(widget_rect.bottomLeft())
-                global_pos.setY(global_pos.y() + 4)
+                global_pos.setX(global_pos.x() + tooltip_x_offset)
+                global_pos.setY(global_pos.y() + tooltip_y_offset)
 
                 screen = QGuiApplication.screenAt(global_pos) or QGuiApplication.primaryScreen()
                 if screen:
@@ -1783,7 +1788,8 @@ class ExeSettingsDialog(QDialog):
                 col = current_table.currentColumn()
                 item_rect = current_table.visualRect(current_table.model().index(row, col))
                 global_pos = current_table.mapToGlobal(item_rect.bottomLeft())
-                global_pos.setY(global_pos.y() + 4)
+                global_pos.setX(global_pos.x() + tooltip_x_offset)
+                global_pos.setY(global_pos.y() + tooltip_y_offset)
 
                 screen = QGuiApplication.screenAt(global_pos) or QGuiApplication.primaryScreen()
                 if screen:
