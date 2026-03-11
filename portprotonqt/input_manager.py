@@ -801,6 +801,16 @@ class InputManager(QObject):
         current_row = table.currentRow()
         current_col = table.currentColumn()
         if current_row >= 0 and current_col >= 0:
+            cell_widget = table.cellWidget(current_row, current_col)
+            if isinstance(cell_widget, QCheckBox) and cell_widget.isEnabled():
+                cell_widget.setChecked(not cell_widget.isChecked())
+                return True
+            if cell_widget is not None:
+                checkbox = cell_widget.findChild(QCheckBox)
+                if checkbox and checkbox.isEnabled():
+                    checkbox.setChecked(not checkbox.isChecked())
+                    return True
+
             # Check if the cell contains a checkbox
             item = table.item(current_row, current_col)
             if item and (item.flags() & Qt.ItemFlag.ItemIsUserCheckable):
@@ -1176,8 +1186,10 @@ class InputManager(QObject):
                 if button_code in BUTTONS['back']:
                     if open_combo:
                         open_combo.hidePopup()
-                        if table:
-                            table.setFocus()
+                        if open_combo.isEditable() and open_combo.lineEdit() is not None:
+                            open_combo.lineEdit().setFocus()
+                        else:
+                            open_combo.setFocus()
                     else:
                         self.settings_dialog.reject()
                     return
@@ -1189,12 +1201,28 @@ class InputManager(QObject):
                         if view.currentIndex().isValid():
                             open_combo.setCurrentIndex(view.currentIndex().row())
                         open_combo.hidePopup()
-                        if table:
-                            table.setFocus()
+                        if open_combo.isEditable() and open_combo.lineEdit() is not None:
+                            open_combo.lineEdit().setFocus()
+                        else:
+                            open_combo.setFocus()
                         return
 
                     # Standard interaction
                     focused = QApplication.focusWidget()
+                    if isinstance(focused, QCheckBox) and focused.isEnabled():
+                        focused.setChecked(not focused.isChecked())
+                        return
+                    combo_from_focus = None
+                    if isinstance(focused, QComboBox):
+                        combo_from_focus = focused
+                    else:
+                        parent = focused.parentWidget() if focused else None
+                        if isinstance(parent, QComboBox):
+                            combo_from_focus = parent
+                    if combo_from_focus and combo_from_focus.isEnabled():
+                        combo_from_focus.showPopup()
+                        combo_from_focus.setFocus()
+                        return
                     if isinstance(focused, QTableWidget) and table and focused.currentRow() >= 0:
                         # Main settings (checkboxes)
                         if self.settings_dialog and table == self.settings_dialog.settings_table:
@@ -1233,6 +1261,29 @@ class InputManager(QObject):
                     self.settings_dialog.apply_changes()
 
                 elif button_code in BUTTONS['prev_dir']:  # Y: Search + Keyboard
+                    focused = QApplication.focusWidget()
+                    focused_combo = None
+                    if isinstance(focused, QTableWidget) and self.settings_dialog:
+                        table = self._get_current_settings_table()
+                        if table is not None and table == self.settings_dialog.advanced_table:
+                            row = focused.currentRow()
+                            if row >= 0:
+                                cell_widget = focused.cellWidget(row, 1)
+                                if isinstance(cell_widget, QComboBox):
+                                    focused_combo = cell_widget
+                    if focused_combo is None:
+                        if isinstance(focused, QComboBox):
+                            focused_combo = focused
+                        else:
+                            parent = focused.parentWidget() if focused else None
+                            if isinstance(parent, QComboBox):
+                                focused_combo = parent
+                    if focused_combo and focused_combo.isEditable() and focused_combo.isEnabled():
+                        line_edit = focused_combo.lineEdit()
+                        if line_edit is not None:
+                            line_edit.setFocus()
+                            self.settings_dialog.show_virtual_keyboard(line_edit)
+                            return
                     self.settings_dialog.search_edit.setFocus()
                     self.settings_dialog.show_virtual_keyboard(self.settings_dialog.search_edit)
 
@@ -1383,18 +1434,28 @@ class InputManager(QObject):
                     new_row += step
 
                 if 0 <= new_row < table.rowCount():
-                    focus_column = 1 if (self.settings_dialog and table == self.settings_dialog.advanced_table) else 0
+                    focus_column = 1
                     table.setCurrentCell(new_row, focus_column)
-                    table.setFocus(Qt.FocusReason.OtherFocusReason)
+                    self._focus_settings_advanced_value_widget(table, new_row)
 
             elif code == ecodes.ABS_HAT0X:  # Left/Right
                 current_col = table.currentColumn()
                 if value < 0:  # Left
                     if current_col > 0:
-                        table.setCurrentCell(current_row, max(0, current_col - 1))
+                        new_col = max(0, current_col - 1)
+                        table.setCurrentCell(current_row, new_col)
+                        if new_col == 1:
+                            self._focus_settings_advanced_value_widget(table, current_row)
+                        else:
+                            table.setFocus(Qt.FocusReason.OtherFocusReason)
                 else:  # Right
                     if current_col < table.columnCount() - 1:
-                        table.setCurrentCell(current_row, min(table.columnCount() - 1, current_col + 1))
+                        new_col = min(table.columnCount() - 1, current_col + 1)
+                        table.setCurrentCell(current_row, new_col)
+                        if new_col == 1:
+                            self._focus_settings_advanced_value_widget(table, current_row)
+                        else:
+                            table.setFocus(Qt.FocusReason.OtherFocusReason)
 
         except Exception as e:
             logger.error(f"Error in handle_settings_dpad: {e}")
@@ -1419,12 +1480,44 @@ class InputManager(QObject):
                 return combo
         return None
 
+    def _focus_settings_advanced_value_widget(self, table, row):
+        """Focus value widget in settings row when available."""
+        if not self.settings_dialog:
+            table.setFocus(Qt.FocusReason.OtherFocusReason)
+            return
+
+        if table == self.settings_dialog.settings_table:
+            cell_widget = table.cellWidget(row, 1)
+            if cell_widget is not None:
+                checkbox = cell_widget.findChild(QCheckBox)
+                if checkbox and checkbox.isEnabled():
+                    checkbox.setFocus(Qt.FocusReason.OtherFocusReason)
+                    return
+            table.setFocus(Qt.FocusReason.OtherFocusReason)
+            return
+
+        if table != self.settings_dialog.advanced_table:
+            table.setFocus(Qt.FocusReason.OtherFocusReason)
+            return
+        cell_widget = table.cellWidget(row, 1)
+        if isinstance(cell_widget, QComboBox):
+            line_edit = cell_widget.lineEdit()
+            if cell_widget.isEditable() and line_edit is not None:
+                line_edit.setFocus(Qt.FocusReason.OtherFocusReason)
+            else:
+                cell_widget.setFocus(Qt.FocusReason.OtherFocusReason)
+            return
+        if isinstance(cell_widget, QLineEdit):
+            cell_widget.setFocus(Qt.FocusReason.OtherFocusReason)
+            return
+        table.setFocus(Qt.FocusReason.OtherFocusReason)
+
     def _focus_first_row_in_current_settings_table(self):
         table = self._get_current_settings_table()
         if table and table.rowCount() > 0:
-            col = 1 if (self.settings_dialog and table == self.settings_dialog.advanced_table) else 0
+            col = 1
             table.setCurrentCell(0, col)
-            table.setFocus(Qt.FocusReason.OtherFocusReason)
+            self._focus_settings_advanced_value_widget(table, 0)
             return
 
         if self.settings_dialog and self.settings_dialog.tab_widget.currentIndex() == 2:
@@ -2088,6 +2181,23 @@ class InputManager(QObject):
                     keyboard.show_for_widget(focused)
                     return
 
+            # Y on editable combo opens keyboard for combo input
+            if button_code in BUTTONS['prev_dir']:
+                focused_combo = None
+                if isinstance(focused, QComboBox):
+                    focused_combo = focused
+                else:
+                    parent = focused.parentWidget() if focused else None
+                    if isinstance(parent, QComboBox):
+                        focused_combo = parent
+                if focused_combo and focused_combo.isEditable():
+                    line_edit = focused_combo.lineEdit()
+                    keyboard = getattr(self._parent, 'keyboard', None)
+                    if line_edit and keyboard:
+                        line_edit.setFocus()
+                        keyboard.show_for_widget(line_edit)
+                        return
+
             # Handle Y button to focus search
             if button_code in BUTTONS['prev_dir']:  # Y button
                 search_edit = None
@@ -2707,6 +2817,14 @@ class InputManager(QObject):
                     focused.cursorForward(False, 1)  # Move cursor right by one character
                 return True  # Consume the event to prevent further processing
 
+            # Allow text editing in editable combo boxes
+            if key == Qt.Key.Key_Backspace:
+                if isinstance(focused, QComboBox) and focused.isEditable():
+                    return False
+                parent = focused.parentWidget() if focused else None
+                if isinstance(parent, QComboBox) and parent.isEditable():
+                    return False
+
             # Open system overlay with Insert
             if key == Qt.Key.Key_Insert:
                 if not popup and not isinstance(active_win, QDialog):
@@ -2837,6 +2955,11 @@ class InputManager(QObject):
                 return True
             elif key in (Qt.Key.Key_Escape, Qt.Key.Key_Backspace):
                 if isinstance(focused, QLineEdit):
+                    return False
+                if isinstance(focused, QComboBox) and focused.isEditable():
+                    return False
+                parent = focused.parentWidget() if focused else None
+                if isinstance(parent, QComboBox) and parent.isEditable():
                     return False
                 self._parent.goBackDetailPage(self._parent.currentDetailPage)
                 return True

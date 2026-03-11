@@ -425,14 +425,24 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin):
 
             current_val = self.current_settings.get(toggle, '0')
             is_blocked = toggle in self.blocked_keys
-            checkbox = QTableWidgetItem()
-            check_state = Qt.CheckState.Checked if current_val == '1' and not is_blocked else Qt.CheckState.Unchecked
-            checkbox.setCheckState(check_state)
+            checkbox_widget = QCheckBox()
+            checkbox_widget.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
+            checkbox_widget.setChecked(current_val == '1' and not is_blocked)
+            checkbox_widget.setEnabled(not is_blocked)
+            checkbox_widget.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+            checkbox_container = QWidget()
+            checkbox_layout = QHBoxLayout(checkbox_container)
+            checkbox_layout.setContentsMargins(0, 0, 0, 0)
+            checkbox_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            checkbox_layout.addWidget(checkbox_widget)
+            checkbox_container.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            checkbox_item = QTableWidgetItem()
+            checkbox_item.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled)
             if is_blocked:
-                checkbox.setFlags(checkbox.flags() & ~Qt.ItemFlag.ItemIsUserCheckable)
-                checkbox.setBackground(QColor(self.theme.color_disabled_bg))
                 name_item.setForeground(QColor(self.theme.color_disabled_text))
-            self.settings_table.setItem(row, 1, checkbox)
+                checkbox_container.setStyleSheet(f"background-color: {self.theme.color_disabled_bg};")
+            self.settings_table.setItem(row, 1, checkbox_item)
+            self.settings_table.setCellWidget(row, 1, checkbox_container)
 
             desc_item = QTableWidgetItem(description)
             desc_item.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled)
@@ -442,12 +452,16 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin):
             self.settings_table.setItem(row, 2, desc_item)
 
             self.settings_table.setItem(row, 0, name_item)
-            self.value_widgets[(row, 1)] = checkbox
+            self.value_widgets[(row, 1)] = checkbox_widget
 
         self.settings_table.resizeRowsToContents()
         if self.settings_table.rowCount() > 0:
-            self.settings_table.setCurrentCell(0, 0)
-            self.settings_table.setFocus(Qt.FocusReason.OtherFocusReason)
+            self.settings_table.setCurrentCell(0, 1)
+            first_widget = self.value_widgets.get((0, 1))
+            if isinstance(first_widget, QCheckBox):
+                first_widget.setFocus(Qt.FocusReason.OtherFocusReason)
+            else:
+                self.settings_table.setFocus(Qt.FocusReason.OtherFocusReason)
 
         self.on_table_selection_changed()
 
@@ -483,6 +497,12 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin):
             if setting['type'] == 'combo':
                 combo = QComboBox()
                 combo.addItems(setting['options'])
+                if setting['key'] == 'PW_PREFIX_NAME':
+                    combo.setEditable(True)
+                    combo.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
+                    prefix_line_edit = combo.lineEdit()
+                    if prefix_line_edit is not None:
+                        prefix_line_edit.setPlaceholderText(_("Enter prefix name"))
 
                 current_raw = current.get(setting['key'], setting['default'])
                 if setting['key'] == 'PW_WINE_CPU_TOPOLOGY':
@@ -616,11 +636,11 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin):
             if row == -1:
                 continue
 
-            item = self.settings_table.item(row, 1)
-            if not item:
+            widget = self.value_widgets.get((row, 1))
+            if not isinstance(widget, QCheckBox):
                 continue
 
-            new_val = '1' if item.checkState() == Qt.CheckState.Checked else '0'
+            new_val = '1' if widget.isChecked() else '0'
             if new_val != orig_val:
                 changes.append(f"{key}={new_val}")
                 # Track if PW_MANGOHUD is being enabled
@@ -631,6 +651,8 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin):
             orig_val = self.original_display_values.get(key, '')
             if isinstance(widget, QComboBox):
                 new_val = widget.currentText()
+                if key == 'PW_PREFIX_NAME':
+                    new_val = new_val.strip()
 
                 if key in self.value_mapping and 'forward' in self.value_mapping[key]:
                     value_map = self.value_mapping[key]['forward']

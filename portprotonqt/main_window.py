@@ -12,7 +12,7 @@ from portprotonqt.animations import DetailPageAnimations
 from portprotonqt.custom_widgets import ClickableLabel, AutoSizeButton, NavLabel, FlowLayout
 from portprotonqt.detail_pages import DetailPageManager
 from portprotonqt.portproton_api import PortProtonAPI, get_user_conf_setting, set_user_conf_setting
-from portprotonqt.debug_utils import get_gpu_list
+from portprotonqt.debug_utils import get_gpu_list, get_prefix_name
 from portprotonqt.input_manager import InputManager, MainWindowProtocol
 from portprotonqt.context_menu_manager import ContextMenuManager, CustomLineEdit
 from portprotonqt.system_overlay import SystemOverlay
@@ -45,7 +45,7 @@ from portprotonqt.config_utils import find_game_by_exe, create_desktop_file
 
 from PySide6.QtWidgets import (QLineEdit, QMainWindow, QStatusBar, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox,
                                QDialog, QFormLayout, QMessageBox, QApplication, QPushButton, QProgressBar, QCheckBox, QSizePolicy, QGridLayout, QScrollArea, QScroller, QSlider, QFrame)
-from PySide6.QtCore import Qt, QAbstractAnimation, QUrl, Signal, QTimer, Slot, QProcess, QFileSystemWatcher
+from PySide6.QtCore import Qt, QAbstractAnimation, QUrl, Signal, QTimer, Slot, QProcess, QProcessEnvironment, QFileSystemWatcher
 from PySide6.QtGui import QIcon, QPixmap, QColor, QDesktopServices
 from typing import cast
 from collections.abc import Callable
@@ -1810,6 +1810,11 @@ class MainWindow(QMainWindow):
         self.prefixCombo = QComboBox()
         self.prefixCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.prefixCombo.addItems(self.prefixes)
+        self.prefixCombo.setEditable(True)
+        self.prefixCombo.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
+        prefix_line_edit = self.prefixCombo.lineEdit()
+        if prefix_line_edit is not None:
+            prefix_line_edit.setPlaceholderText(_("Enter prefix name"))
         self.prefixCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
         self.prefixCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.prefixTitleLabel = QLabel(_("Prefix:"))
@@ -1894,11 +1899,13 @@ class MainWindow(QMainWindow):
 
     def launch_generic_tool(self, cli_arg):
         wine = self.wineCombo.currentText()
-        prefix = self.prefixCombo.currentText()
+        prefix = self.prefixCombo.currentText().strip()
         if not wine or not prefix:
             return
         if not self.portproton_location or not self.start_sh:
             return
+        env_vars = os.environ.copy()
+        self._check_missing_prefix_by_name_before_launch(prefix, env_vars)
         start_sh = self.start_sh
         cmd = start_sh + ["cli", cli_arg, wine, prefix]
 
@@ -1907,6 +1914,12 @@ class MainWindow(QMainWindow):
         self.update_status_message.emit(_("Launching tool..."), 0)
 
         proc = QProcess(self)
+        process_env = QProcessEnvironment.systemEnvironment()
+        if env_vars.get("DISABLE_CP_DEFPFX") == "1":
+            process_env.insert("DISABLE_CP_DEFPFX", "1")
+        else:
+            process_env.remove("DISABLE_CP_DEFPFX")
+        proc.setProcessEnvironment(process_env)
         proc.finished.connect(lambda exitCode: self._on_wine_tool_finished(exitCode, cli_arg))
         proc.errorOccurred.connect(lambda error: self._on_wine_tool_error(error, cli_arg))
         proc.start(cmd[0], cmd[1:])
@@ -1984,7 +1997,7 @@ class MainWindow(QMainWindow):
 
     def clear_prefix(self):
         """Clear prefix"""
-        selected_prefix = self.prefixCombo.currentText()
+        selected_prefix = self.prefixCombo.currentText().strip()
         selected_wine = self.wineCombo.currentText()
 
         if not selected_prefix or not selected_wine:
@@ -2035,7 +2048,7 @@ class MainWindow(QMainWindow):
         QMessageBox.warning(self, _("Error"), _("Failed to run clear prefix command: {}").format(error))
 
     def create_prefix_backup(self):
-        selected_prefix = self.prefixCombo.currentText()
+        selected_prefix = self.prefixCombo.currentText().strip()
         if not selected_prefix:
             return
         file_explorer = FileExplorer(self, directory_only=True)
@@ -2085,7 +2098,7 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, _("Error"), _("Prefix restore failed."))
 
     def delete_prefix(self):
-        selected_prefix = self.prefixCombo.currentText()
+        selected_prefix = self.prefixCombo.currentText().strip()
         if not self.portproton_location:
             return
 
@@ -2132,6 +2145,7 @@ class MainWindow(QMainWindow):
         if not self.portproton_location:
             return
 
+        current_prefix = self.prefixCombo.currentText().strip()
         prefixes_path = os.path.join(self.portproton_location, "data", "prefixes")
         if not os.path.exists(prefixes_path):
             return
@@ -2140,10 +2154,12 @@ class MainWindow(QMainWindow):
         self.prefixes = sorted([d for d in os.listdir(prefixes_path) if os.path.isdir(os.path.join(prefixes_path, d))], key=version_sort_key)
         self.prefixCombo.clear()
         self.prefixCombo.addItems(self.prefixes)
+        if current_prefix:
+            self.prefixCombo.setCurrentText(current_prefix)
 
     def open_winetricks(self):
         """Open the Winetricks dialog for the selected prefix and wine."""
-        selected_prefix = self.prefixCombo.currentText()
+        selected_prefix = self.prefixCombo.currentText().strip()
         if not selected_prefix:
             return
 
@@ -3181,6 +3197,35 @@ class MainWindow(QMainWindow):
         self.wine_download_seen = False
         self.wine_download_percent = 0.0
 
+    def _check_missing_prefix_by_name_before_launch(self, prefix_name: str, env_vars: dict[str, str]) -> None:
+        """Check prefix presence and optionally disable default recommended libs."""
+        if not prefix_name or not self.portproton_location:
+            return
+
+        prefix_path = os.path.join(self.portproton_location, "data", "prefixes", prefix_name)
+        if os.path.isdir(prefix_path):
+            return
+
+        msg_box = QMessageBox(self)
+        msg_box.setIcon(QMessageBox.Icon.Question)
+        msg_box.setWindowTitle(_("Prefix not found"))
+        msg_box.setText(_("Prefix '{0}' was not found. Install recommended libraries?").format(prefix_name))
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        msg_box.setDefaultButton(QMessageBox.StandardButton.Yes)
+        msg_box.setButtonText(QMessageBox.StandardButton.Yes, _("Yes"))
+        msg_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
+        reply = msg_box.exec()
+        if reply == QMessageBox.StandardButton.No:
+            env_vars["DISABLE_CP_DEFPFX"] = "1"
+
+    def _check_missing_prefix_before_launch(self, game_exe_path: str, env_vars: dict[str, str]) -> None:
+        """Check game prefix and optionally disable default recommended libs."""
+        if not game_exe_path:
+            return
+
+        prefix_name = get_prefix_name(game_exe_path)
+        self._check_missing_prefix_by_name_before_launch(prefix_name, env_vars)
+
     def toggleGame(self, exec_line, button=None):
         # Handle Steam games
         if exec_line.startswith("steam://"):
@@ -3250,6 +3295,7 @@ class MainWindow(QMainWindow):
                 # Launch game via PortProton
                 env_vars = os.environ.copy()
                 env_vars['LEGENDARY_CONFIG_PATH'] = self.legendary_config_path
+                self._check_missing_prefix_before_launch(game_exe, env_vars)
 
                 wrapper = self.start_sh or ""
 
@@ -3356,6 +3402,14 @@ class MainWindow(QMainWindow):
             self.target_exe = current_exe
             exe_name = os.path.splitext(current_exe)[0]
             env_vars = os.environ.copy()
+            game_exe_for_prefix = ""
+            for part in reversed(entry_exec_split):
+                if part.lower().endswith(".exe"):
+                    game_exe_for_prefix = os.path.expanduser(part)
+                    break
+            if not game_exe_for_prefix and file_to_check.lower().endswith(".exe"):
+                game_exe_for_prefix = os.path.expanduser(file_to_check)
+            self._check_missing_prefix_before_launch(game_exe_for_prefix, env_vars)
 
             # Launch game
             try:
