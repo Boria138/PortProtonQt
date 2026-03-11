@@ -37,6 +37,7 @@ from portprotonqt.config_utils import (
 from portprotonqt.custom_widgets import AutoSizeButton
 from portprotonqt.dialogs.dialog_utils import create_dialog_hints_widget, update_dialog_hints
 from portprotonqt.dialogs.settings_mangohud import MANGOHUD_ENV_KEYS, MangoHudSettingsMixin
+from portprotonqt.dialogs.settings_gamescope import GAMESCOPE_ENV_KEYS, GamescopeSettingsMixin
 from portprotonqt.localization import _, format_setting_name_for_display
 from portprotonqt.logger import get_logger
 from portprotonqt.preloader import Preloader
@@ -47,7 +48,7 @@ from portprotonqt.virtual_keyboard import VirtualKeyboard
 logger = get_logger(__name__)
 theme_manager = ThemeManager()
 
-class ExeSettingsDialog(QDialog, MangoHudSettingsMixin):
+class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
     """Dialog for configuring executable-specific settings."""
 
     def __init__(self, parent=None, theme=None, exe_path=None, appid=None):
@@ -92,6 +93,7 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin):
         self.advanced_widgets = {}
         self.original_display_values = {}
         self.init_mangohud_state()
+        self.init_gamescope_state()
         self.available_keys = set()
         self.blocked_keys = set()
         self.numa_nodes = {}
@@ -175,10 +177,13 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin):
         self.advanced_tab_layout = QVBoxLayout(self.advanced_tab)
         self.mangohud_tab = QWidget()
         self.mangohud_tab_layout = QVBoxLayout(self.mangohud_tab)
+        self.gamescope_tab = QWidget()
+        self.gamescope_tab_layout = QVBoxLayout(self.gamescope_tab)
 
         self.tab_widget.addTab(self.main_tab, _("Main"))
         self.tab_widget.addTab(self.advanced_tab, _("Advanced"))
-        self.tab_widget.addTab(self.mangohud_tab, _("MangoHud"))
+        self.tab_widget.addTab(self.mangohud_tab, "MangoHud")
+        self.tab_widget.addTab(self.gamescope_tab, "Gamescope")
         self.tab_widget.currentChanged.connect(self.on_table_selection_changed)
 
         self.settings_table = QTableWidget()
@@ -259,6 +264,7 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin):
         self.advanced_table.installEventFilter(self)
 
         self.setup_mangohud_tab()
+        self.setup_gamescope_tab()
 
         self.main_layout.addWidget(self.tab_widget)
 
@@ -355,6 +361,8 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin):
                 ) else ''
             for key in MANGOHUD_ENV_KEYS:
                 self.current_settings[key] = ''
+            for key in GAMESCOPE_ENV_KEYS:
+                self.current_settings[key] = ''
         else:
             output = bytes(process.readAllStandardOutput().data()).decode('utf-8', 'ignore').strip()
             self.current_settings = {}
@@ -363,7 +371,7 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin):
                 if '=' in line_stripped:
                     try:
                         key, val = line_stripped.split('=', 1)
-                        if key in self.toggle_settings or key in ADVANCED_SETTING_KEYS or key in MANGOHUD_ENV_KEYS:
+                        if key in self.toggle_settings or key in ADVANCED_SETTING_KEYS or key in MANGOHUD_ENV_KEYS or key in GAMESCOPE_ENV_KEYS:
                             if val.startswith('"') and val.endswith('"') and len(val) >= 2:
                                 val = val[1:-1]
                             self.current_settings[key] = val
@@ -384,6 +392,7 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin):
         self.populate_table()
         self.populate_advanced()
         self.populate_mangohud()
+        self.populate_gamescope()
 
         self.settings_container.setCurrentIndex(1)
         self.advanced_container.setCurrentIndex(1)
@@ -618,6 +627,7 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin):
             self.advanced_table.setRowHidden(row, not should_show)
 
         self._filter_mangohud_settings(search_text)
+        self._filter_gamescope_settings(search_text)
 
     def apply_changes(self):
         """Apply changes by collecting diffs from both main and advanced tabs."""
@@ -679,6 +689,7 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin):
                 continue
 
         changes.extend(self._collect_mangohud_changes())
+        changes.extend(self._collect_gamescope_changes())
 
         # If PW_MANGOHUD is being enabled and MANGOHUD_CONFIG is not in current settings,
         # add it from the var file
@@ -732,6 +743,7 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin):
 
     def eventFilter(self, obj, event):
         mangohud_toggle_widget_keys = getattr(self, 'mangohud_toggle_widget_keys', {})
+        gamescope_toggle_widget_keys = getattr(self, 'gamescope_toggle_widget_keys', {})
 
         if isinstance(obj, QCheckBox) and obj in mangohud_toggle_widget_keys:
             if event.type() in (QEvent.Type.Enter, QEvent.Type.FocusIn):
@@ -740,6 +752,15 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin):
                 focused_widget = QApplication.focusWidget()
                 if not (isinstance(focused_widget, QCheckBox) and focused_widget in mangohud_toggle_widget_keys):
                     self.show_gamepad_tooltip(show=False)
+
+        if isinstance(obj, QCheckBox) and obj in gamescope_toggle_widget_keys:
+            if event.type() in (QEvent.Type.Enter, QEvent.Type.FocusIn):
+                self._show_gamescope_toggle_tooltip(obj)
+            elif event.type() in (QEvent.Type.Leave, QEvent.Type.FocusOut):
+                focused_widget = QApplication.focusWidget()
+                if not (isinstance(focused_widget, QCheckBox) and focused_widget in gamescope_toggle_widget_keys):
+                    self.show_gamepad_tooltip(show=False)
+
         return super().eventFilter(obj, event)
 
     def show_gamepad_tooltip(self, show=True, text="", anchor_widget=None, anchor_global_pos=None):
