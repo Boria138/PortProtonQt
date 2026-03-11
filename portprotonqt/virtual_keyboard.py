@@ -1,6 +1,6 @@
 from typing import cast, Any
 from PySide6.QtWidgets import (QFrame, QVBoxLayout, QPushButton, QGridLayout,
-                               QSizePolicy, QWidget, QLineEdit)
+                               QSizePolicy, QWidget, QLineEdit, QScrollArea)
 from PySide6.QtCore import Qt, Signal, QProcess, QSize
 from PySide6.QtGui import QPixmap, QIcon
 from portprotonqt.keyboard_layouts import keyboard_layouts
@@ -526,12 +526,42 @@ class VirtualKeyboard(QFrame):
 
         self.show()
         self.raise_()
+        self.ensure_input_visible()
 
         # Set focus to first button if no focus on input widget
         if not widget:
             first_button: QPushButton | None = next((cast(QPushButton, btn) for btn in self.buttons.values()), None)
             if first_button:
                 first_button.setFocus()
+
+    def ensure_input_visible(self):
+        if (
+            not self._parent
+            or not isinstance(self._parent, QWidget)
+            or not self.current_input_widget
+            or not isinstance(self.current_input_widget, QWidget)
+            or not self.current_input_widget.isVisible()
+        ):
+            return
+
+        widget = self.current_input_widget
+        keyboard_top = self.y()
+        widget_bottom = widget.mapTo(self._parent, widget.rect().bottomLeft()).y()
+        if widget_bottom <= keyboard_top:
+            return
+
+        parent_widget = widget.parentWidget()
+        while parent_widget:
+            if isinstance(parent_widget, QScrollArea):
+                parent_widget.ensureWidgetVisible(widget, 0, self.button_height)
+                widget_bottom = widget.mapTo(self._parent, widget.rect().bottomLeft()).y()
+                if widget_bottom <= keyboard_top:
+                    return
+                break
+            parent_widget = parent_widget.parentWidget()
+
+        # Fallback for dialogs without scrollable container.
+        self.move(0, 0)
 
     def activateFocusedKey(self):
         """Activate current highlighted button on keyboard"""

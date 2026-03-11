@@ -294,20 +294,7 @@ class AddGameDialog(QDialog):
         if not widget or not widget.isVisible():
             return
 
-        self.keyboard.current_input_widget = widget
-
-        keyboard_height = 220
-        self.keyboard.setFixedWidth(self.width())
-        self.keyboard.setFixedHeight(keyboard_height)
-        self.keyboard.move(0, self.height() - keyboard_height)
-
-        self.keyboard.setParent(self)
-        self.keyboard.show()
-        self.keyboard.raise_()
-
-        first_button = self.keyboard.findFirstFocusableButton()
-        if first_button:
-            QTimer.singleShot(50, lambda: first_button.setFocus())
+        self.keyboard.show_for_widget(widget)
 
     def closeEvent(self, event):
         """Handle window close."""
