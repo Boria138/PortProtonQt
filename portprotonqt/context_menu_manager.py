@@ -1220,49 +1220,45 @@ class CustomLineEdit(QLineEdit):
     def __init__(self, *args, theme=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.theme = theme
-        self.theme_manager = ThemeManager()
 
     def contextMenuEvent(self, event):
-        def get_safe_icon(icon_name: str) -> QIcon:
-            icon = self.theme_manager.get_icon(icon_name)
-            if isinstance(icon, QIcon):
-                return icon
-            elif isinstance(icon, str) and os.path.exists(icon):
-                return QIcon(icon)
-            return QIcon()
-
-        def add_action(text: str, shortcut: QKeySequence.StandardKey, icon_name: str, slot, enabled=True):
-            icon = get_safe_icon(icon_name)
-            shortcut_str = QKeySequence(shortcut).toString(QKeySequence.SequenceFormat.NativeText)
-            action_text = f"{text}\t{shortcut_str}"
-            action = menu.addAction(icon, action_text)
-            action.triggered.connect(slot)
-            action.setEnabled(enabled)
-
-        menu = QMenu(self)
-
-        if self.theme and hasattr(self.theme, "CONTEXT_MENU_STYLE"):
-            menu.setStyleSheet(self.theme.CONTEXT_MENU_STYLE)
-
-        add_action(_("Undo"), QKeySequence.StandardKey.Undo, "undo", self.undo, self.isUndoAvailable())
-        add_action(_("Redo"), QKeySequence.StandardKey.Redo, "redo", self.redo, self.isRedoAvailable())
-
-        menu.addSeparator()
-
-        add_action(_("Cut"), QKeySequence.StandardKey.Cut, "cut", self.cut, self.hasSelectedText())
-        add_action(_("Copy"), QKeySequence.StandardKey.Copy, "copy", self.copy, self.hasSelectedText())
-        add_action(_("Paste"), QKeySequence.StandardKey.Paste, "paste", self.paste,
-                   QApplication.clipboard().mimeData().hasText())
-        add_action(_("Delete"), QKeySequence.StandardKey.Delete, "delete", self._delete_selected_text,
-                   self.hasSelectedText())
-
-        menu.addSeparator()
-
-        add_action(_("Select All"), QKeySequence.StandardKey.SelectAll, "select_all", self.selectAll, bool(self.text()))
-
-        menu.exec(event.globalPos())
+        show_themed_line_edit_context_menu(self, event.globalPos(), self.theme)
 
     def _delete_selected_text(self):
         cursor_pos = self.cursorPosition()
         self.backspace()
         self.setCursorPosition(cursor_pos)
+
+
+def show_themed_line_edit_context_menu(line_edit: QLineEdit, global_pos: QPoint, theme=None) -> None:
+    """Show a themed context menu for any line edit widget."""
+    theme_manager = ThemeManager()
+
+    def add_action(menu: QMenu, text: str, shortcut: QKeySequence.StandardKey,
+                   icon_name: str, slot, enabled: bool = True) -> None:
+        raw_icon = theme_manager.get_icon(icon_name)
+        icon = raw_icon if isinstance(raw_icon, QIcon) else QIcon(raw_icon) if isinstance(raw_icon, str) else QIcon()
+        shortcut_str = QKeySequence(shortcut).toString(QKeySequence.SequenceFormat.NativeText)
+        action = menu.addAction(icon, f"{text}\t{shortcut_str}")
+        action.triggered.connect(slot)
+        action.setEnabled(enabled)
+
+    menu = QMenu(line_edit)
+    current_theme = theme if theme is not None else getattr(line_edit, "theme", None)
+    if current_theme and hasattr(current_theme, "CONTEXT_MENU_STYLE"):
+        menu.setStyleSheet(current_theme.CONTEXT_MENU_STYLE)
+
+    add_action(menu, _("Undo"), QKeySequence.StandardKey.Undo, "undo", line_edit.undo, line_edit.isUndoAvailable())
+    add_action(menu, _("Redo"), QKeySequence.StandardKey.Redo, "redo", line_edit.redo, line_edit.isRedoAvailable())
+    menu.addSeparator()
+    add_action(menu, _("Cut"), QKeySequence.StandardKey.Cut, "cut", line_edit.cut, line_edit.hasSelectedText())
+    add_action(menu, _("Copy"), QKeySequence.StandardKey.Copy, "copy", line_edit.copy, line_edit.hasSelectedText())
+    add_action(menu, _("Paste"), QKeySequence.StandardKey.Paste, "paste", line_edit.paste,
+               QApplication.clipboard().mimeData().hasText())
+    add_action(menu, _("Delete"), QKeySequence.StandardKey.Delete, "delete", line_edit.backspace,
+               line_edit.hasSelectedText())
+    menu.addSeparator()
+    add_action(menu, _("Select All"), QKeySequence.StandardKey.SelectAll, "select_all", line_edit.selectAll,
+               bool(line_edit.text()))
+
+    menu.exec(global_pos)

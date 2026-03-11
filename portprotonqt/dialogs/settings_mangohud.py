@@ -354,6 +354,8 @@ class MangoHudSettingsMixin:
     mangohud_tab: QWidget
     mangohud_tab_layout: QVBoxLayout
     show_gamepad_tooltip: Any
+    register_gamepad_tooltip: Any
+    show_registered_gamepad_tooltip: Any
 
     def init_mangohud_state(self):
         self.mangohud_widgets = {}
@@ -505,6 +507,7 @@ class MangoHudSettingsMixin:
                 layout.addWidget(checkbox, row, column)
                 self.mangohud_toggle_widgets[key] = checkbox
                 self.mangohud_toggle_widget_keys[checkbox] = key
+                self.register_gamepad_tooltip(checkbox, MANGOHUD_TOGGLE_DESCRIPTIONS.get(key, ""))
                 uncategorized.discard(key)
 
             self.mangohud_category_groups[category] = category_widget
@@ -525,6 +528,7 @@ class MangoHudSettingsMixin:
                 layout.addWidget(checkbox, row, column)
                 self.mangohud_toggle_widgets[key] = checkbox
                 self.mangohud_toggle_widget_keys[checkbox] = key
+                self.register_gamepad_tooltip(checkbox, MANGOHUD_TOGGLE_DESCRIPTIONS.get(key, ""))
 
             self.mangohud_category_combo.addItem(_("Other"))
             self.mangohud_category_groups[_("Other")] = category_widget
@@ -679,21 +683,9 @@ class MangoHudSettingsMixin:
             self.mangohud_category_stack.setCurrentWidget(widget)
             self._update_mangohud_category_stack_height()
 
-    def _show_mangohud_toggle_tooltip(self, checkbox):
-        """Show gamepad tooltip for MangoHud toggle checkbox."""
-        key = self.mangohud_toggle_widget_keys.get(checkbox)
-        if not key:
-            return
-        text = MANGOHUD_TOGGLE_DESCRIPTIONS.get(key, "")
-        if not text:
-            self.show_gamepad_tooltip(show=False)
-            return
-        self.show_gamepad_tooltip(show=True, text=text, anchor_widget=checkbox)
-
     def _on_focus_changed(self, _old, new):
         """Track focused MangoHud toggle checkbox and show tooltip."""
-        if isinstance(new, QCheckBox) and new in self.mangohud_toggle_widget_keys:
-            self._show_mangohud_toggle_tooltip(new)
+        if isinstance(new, QCheckBox) and self.show_registered_gamepad_tooltip(new):
             return
         if self.tab_widget.currentIndex() == 2:
             self.show_gamepad_tooltip(show=False)

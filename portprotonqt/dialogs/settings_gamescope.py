@@ -218,6 +218,7 @@ class GamescopeSettingsMixin:
     gamescope_tab: QWidget
     gamescope_tab_layout: QVBoxLayout
     show_gamepad_tooltip: Any
+    register_gamepad_tooltip: Any
     sender: Any
 
     def init_gamescope_state(self):
@@ -486,6 +487,7 @@ class GamescopeSettingsMixin:
                 layout.addWidget(checkbox, row, column)
                 self.gamescope_toggle_widgets[key] = checkbox
                 self.gamescope_toggle_widget_keys[checkbox] = key
+                self.register_gamepad_tooltip(checkbox, GAMESCOPE_TOGGLE_DESCRIPTIONS.get(key, ""))
                 uncategorized.discard(key)
 
             self.gamescope_category_groups[category] = category_widget
@@ -506,6 +508,7 @@ class GamescopeSettingsMixin:
                 layout.addWidget(checkbox, row, column)
                 self.gamescope_toggle_widgets[key] = checkbox
                 self.gamescope_toggle_widget_keys[checkbox] = key
+                self.register_gamepad_tooltip(checkbox, GAMESCOPE_TOGGLE_DESCRIPTIONS.get(key, ""))
 
             self.gamescope_category_combo.addItem(_("Other"))
             self.gamescope_category_groups[_("Other")] = category_widget
@@ -765,14 +768,3 @@ class GamescopeSettingsMixin:
             checkbox_text = ' '.join(widget.text().lower() for widget in group_box.findChildren(QCheckBox))
             content_text = f"{label_text} {checkbox_text}"
             group_box.setVisible(search_text in group_text or search_text in content_text)
-
-    def _show_gamescope_toggle_tooltip(self, checkbox):
-        """Show gamepad tooltip for Gamescope toggle checkbox."""
-        key = self.gamescope_toggle_widget_keys.get(checkbox)
-        if not key:
-            return
-        text = GAMESCOPE_TOGGLE_DESCRIPTIONS.get(key, "")
-        if not text:
-            self.show_gamepad_tooltip(show=False)
-            return
-        self.show_gamepad_tooltip(show=True, text=text, anchor_widget=checkbox)

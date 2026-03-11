@@ -6,7 +6,7 @@ import shutil
 from typing import cast, TYPE_CHECKING
 
 from PySide6.QtCore import Qt, QEvent, QProcess, QTimer, QUrl
-from PySide6.QtGui import QColor, QDesktopServices, QGuiApplication
+from PySide6.QtGui import QColor, QContextMenuEvent, QDesktopServices, QGuiApplication
 from PySide6.QtWidgets import (
     QApplication,
     QAbstractItemView,
@@ -99,6 +99,7 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
         self.numa_nodes = {}
         self.locale_options = []
         self.logical_core_options = []
+        self._gamepad_tooltip_map = {}
 
         self.setWindowTitle(_("Exe Settings"))
         self.setModal(True)
@@ -295,6 +296,7 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
         self.apply_button.clicked.connect(self.apply_changes)
         self.cancel_button.clicked.connect(self.reject)
         self.open_ppdb_button.clicked.connect(self.open_ppdb_file)
+        self._install_line_edit_event_filters()
 
     def load_current_settings(self):
         """Load available toggles first, then current settings."""
@@ -583,6 +585,7 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
 
         if self.advanced_table.rowCount() > 0:
             self.on_table_selection_changed()
+        self._install_line_edit_event_filters()
 
     def init_virtual_keyboard(self):
         """Initialize virtual keyboard."""
@@ -599,6 +602,27 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
             return
 
         self.keyboard.show_for_widget(widget)
+
+    def register_gamepad_tooltip(self, widget: QWidget, text: str) -> None:
+        """Register tooltip text for a focusable widget."""
+        if text:
+            self._gamepad_tooltip_map[widget] = text
+
+    def show_registered_gamepad_tooltip(self, widget: QWidget) -> bool:
+        """Show registered tooltip for the provided widget."""
+        text = self._gamepad_tooltip_map.get(widget, "")
+        if not text:
+            return False
+        self.show_gamepad_tooltip(show=True, text=text, anchor_widget=widget)
+        return True
+
+    def _install_line_edit_event_filters(self) -> None:
+        """Install event filter for all line edits in the dialog."""
+        for line_edit in self.findChildren(QLineEdit):
+            if line_edit.property("ppqt_ctx_menu_filter_installed"):
+                continue
+            line_edit.setProperty("ppqt_ctx_menu_filter_installed", True)
+            line_edit.installEventFilter(self)
 
     def filter_settings(self, text):
         """Filter settings based on search text."""
@@ -743,23 +767,19 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
         super().closeEvent(event)
 
     def eventFilter(self, obj, event):
-        mangohud_toggle_widget_keys = getattr(self, 'mangohud_toggle_widget_keys', {})
-        gamescope_toggle_widget_keys = getattr(self, 'gamescope_toggle_widget_keys', {})
+        if isinstance(obj, QLineEdit) and event.type() == QEvent.Type.ContextMenu:
+            context_event = cast(QContextMenuEvent, event)
+            from portprotonqt.context_menu_manager import show_themed_line_edit_context_menu
 
-        if isinstance(obj, QCheckBox) and obj in mangohud_toggle_widget_keys:
+            show_themed_line_edit_context_menu(obj, context_event.globalPos(), self.theme)
+            return True
+
+        if isinstance(obj, QCheckBox) and obj in self._gamepad_tooltip_map:
             if event.type() in (QEvent.Type.Enter, QEvent.Type.FocusIn):
-                self._show_mangohud_toggle_tooltip(obj)
+                self.show_registered_gamepad_tooltip(obj)
             elif event.type() in (QEvent.Type.Leave, QEvent.Type.FocusOut):
                 focused_widget = QApplication.focusWidget()
-                if not (isinstance(focused_widget, QCheckBox) and focused_widget in mangohud_toggle_widget_keys):
-                    self.show_gamepad_tooltip(show=False)
-
-        if isinstance(obj, QCheckBox) and obj in gamescope_toggle_widget_keys:
-            if event.type() in (QEvent.Type.Enter, QEvent.Type.FocusIn):
-                self._show_gamescope_toggle_tooltip(obj)
-            elif event.type() in (QEvent.Type.Leave, QEvent.Type.FocusOut):
-                focused_widget = QApplication.focusWidget()
-                if not (isinstance(focused_widget, QCheckBox) and focused_widget in gamescope_toggle_widget_keys):
+                if focused_widget not in self._gamepad_tooltip_map:
                     self.show_gamepad_tooltip(show=False)
 
         return super().eventFilter(obj, event)
