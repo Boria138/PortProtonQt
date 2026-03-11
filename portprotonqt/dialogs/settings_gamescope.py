@@ -469,6 +469,7 @@ class GamescopeSettingsMixin:
 
         toggle_lookup = dict(GAMESCOPE_TOGGLE_SPECS)
         uncategorized = set(toggle_lookup.keys())
+        columns = 4
 
         for category, keys in GAMESCOPE_TOGGLE_CATEGORIES.items():
             category_widget = QWidget()
@@ -476,14 +477,16 @@ class GamescopeSettingsMixin:
             layout.setContentsMargins(8, 8, 8, 8)
             layout.setHorizontalSpacing(16)
             layout.setVerticalSpacing(10)
+            for column in range(columns):
+                layout.setColumnStretch(column, 1)
 
             for index, key in enumerate(keys):
                 if key not in toggle_lookup:
                     continue
                 label = toggle_lookup[key]
                 checkbox = self._create_gamescope_checkbox(key, label)
-                row = index // 4
-                column = index % 4
+                row = index // columns
+                column = index % columns
                 layout.addWidget(checkbox, row, column)
                 self.gamescope_toggle_widgets[key] = checkbox
                 self.gamescope_toggle_widget_keys[checkbox] = key
@@ -499,12 +502,14 @@ class GamescopeSettingsMixin:
             layout.setContentsMargins(8, 8, 8, 8)
             layout.setHorizontalSpacing(16)
             layout.setVerticalSpacing(10)
+            for column in range(columns):
+                layout.setColumnStretch(column, 1)
 
             for index, key in enumerate(sorted(uncategorized)):
                 label = toggle_lookup[key]
                 checkbox = self._create_gamescope_checkbox(key, label)
-                row = index // 4
-                column = index % 4
+                row = index // columns
+                column = index % columns
                 layout.addWidget(checkbox, row, column)
                 self.gamescope_toggle_widgets[key] = checkbox
                 self.gamescope_toggle_widget_keys[checkbox] = key

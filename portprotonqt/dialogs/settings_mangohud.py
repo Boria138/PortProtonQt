@@ -489,6 +489,7 @@ class MangoHudSettingsMixin:
 
         toggle_lookup = dict(MANGOHUD_TOGGLE_SPECS)
         uncategorized = set(toggle_lookup.keys())
+        columns = 4
 
         for category, keys in MANGOHUD_TOGGLE_CATEGORIES.items():
             category_widget = QWidget()
@@ -496,14 +497,16 @@ class MangoHudSettingsMixin:
             layout.setContentsMargins(8, 8, 8, 8)
             layout.setHorizontalSpacing(16)
             layout.setVerticalSpacing(10)
+            for column in range(columns):
+                layout.setColumnStretch(column, 1)
 
             for index, key in enumerate(keys):
                 if key not in toggle_lookup:
                     continue
                 label = toggle_lookup[key]
                 checkbox = self._create_mangohud_checkbox(label)
-                row = index // 4
-                column = index % 4
+                row = index // columns
+                column = index % columns
                 layout.addWidget(checkbox, row, column)
                 self.mangohud_toggle_widgets[key] = checkbox
                 self.mangohud_toggle_widget_keys[checkbox] = key
@@ -519,12 +522,14 @@ class MangoHudSettingsMixin:
             layout.setContentsMargins(8, 8, 8, 8)
             layout.setHorizontalSpacing(16)
             layout.setVerticalSpacing(10)
+            for column in range(columns):
+                layout.setColumnStretch(column, 1)
 
             for index, key in enumerate(sorted(uncategorized)):
                 label = toggle_lookup[key]
                 checkbox = self._create_mangohud_checkbox(label)
-                row = index // 4
-                column = index % 4
+                row = index // columns
+                column = index % columns
                 layout.addWidget(checkbox, row, column)
                 self.mangohud_toggle_widgets[key] = checkbox
                 self.mangohud_toggle_widget_keys[checkbox] = key
