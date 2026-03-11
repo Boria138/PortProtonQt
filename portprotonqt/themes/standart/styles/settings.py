@@ -106,6 +106,17 @@ SETTINGS_COMBO_STYLE = f"""
         border-bottom-left-radius: 10px;
         border-bottom-right-radius: 10px;
     }}
+    QComboBox:editable {{
+        background: {color_c};
+    }}
+    QComboBox::drop-down:editable:focus,
+    QComboBox::drop-down:editable:hover {{
+        background: {color_a};
+        border-top-left-radius: 0px;
+        border-top-right-radius: 10px;
+        border-bottom-left-radius: 0px;
+        border-bottom-right-radius: 10px;
+    }}
     QListView {{
         background: {color_c};
     }}
@@ -125,6 +136,56 @@ SETTINGS_COMBO_STYLE = f"""
     QListView::item:focus {{
         background: {color_a};
         color: {color_f};
+    }}
+    QScrollBar:vertical {{
+        width: 10px;
+        border:  {border_a};
+        border-radius: 5px;
+        background: rgba(20, 20, 20, 0.30);
+    }}
+    QScrollBar::handle:vertical {{
+        background: #bebebe;
+        border:  {border_a};
+        border-radius: 5px;
+    }}
+    QScrollBar::add-line:vertical {{
+        border:  {border_a};
+        background: none;
+    }}
+    QScrollBar::sub-line:vertical {{
+        border:  {border_a};
+        background: none;
+    }}
+    QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical {{
+        border:  {border_a};
+        width: 3px;
+        height: 3px;
+        background: none;
+    }}
+    QScrollBar:horizontal {{
+        height: 10px;
+        border:  {border_a};
+        border-radius: 5px;
+        background: rgba(20, 20, 20, 0.30);
+    }}
+    QScrollBar::handle:horizontal {{
+        background: #bebebe;
+        border:  {border_a};
+        border-radius: 5px;
+    }}
+    QScrollBar::add-line:horizontal {{
+        border:  {border_a};
+        background: none;
+    }}
+    QScrollBar::sub-line:horizontal {{
+        border:  {border_a};
+        background: none;
+    }}
+    QScrollBar::up-arrow:horizontal, QScrollBar::down-arrow:horizontal {{
+        border:  {border_a};
+        width: 3px;
+        height: 3px;
+        background: none;
     }}
 """
 

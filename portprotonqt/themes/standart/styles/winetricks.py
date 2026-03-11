@@ -90,6 +90,16 @@ QComboBox QAbstractItemView {{
     border-bottom-left-radius: 10px;
     border-bottom-right-radius: 10px;
 }}
+QComboBox:editable {{
+    background: {color_c};
+}}
+QComboBox::drop-down:editable:focus {{
+    background: {color_a};
+    border-top-left-radius: 0px;
+    border-top-right-radius: 10px;
+    border-bottom-left-radius: 0px;
+    border-bottom-right-radius: 10px;
+}}
 QListView {{
     background: {color_c};
 }}
