@@ -10,7 +10,7 @@ OUTPUT_DIR="$PROJECT_ROOT/completions"
 mkdir -p "$OUTPUT_DIR"
 
 # Bash completion
-cat > "$OUTPUT_DIR/portprotonqt.bash" << 'EOF'
+cat > "$OUTPUT_DIR/portprotonqt" << 'EOF'
 _portprotonqt_completions() {
     local cur prev opts long_opts flags
     COMPREPLY=()
