@@ -112,65 +112,6 @@ SEARCH_EDIT_STYLE = f"""
         border: {border_b} {color_a};
     }}
 """
-
-# DISABLE FRAME FOR QScrollArea
-SCROLL_AREA_STYLE = f"""
-    QWidget {{
-        background: {color_h};
-    }}
-    QScrollBar:vertical {{
-        width: 10px;
-        border:  {border_a};
-        border-radius: 5px;
-        background: rgba(20, 20, 20, 0.30);
-    }}
-    QScrollBar::handle:vertical {{
-        background: #bebebe;
-        border:  {border_a};
-        border-radius: 5px;
-    }}
-    QScrollBar::add-line:vertical {{
-        border:  {border_a};
-        background: none;
-    }}
-    QScrollBar::sub-line:vertical {{
-        border:  {border_a};
-        background: none;
-    }}
-    QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical {{
-        border:  {border_a};
-        width: 3px;
-        height: 3px;
-        background: none;
-    }}
-
-    QScrollBar:horizontal {{
-        height: 10px;
-        border:  {border_a};
-        border-radius: 5px;
-        background: rgba(20, 20, 20, 0.30);
-    }}
-    QScrollBar::handle:horizontal {{
-        background: #bebebe;
-        border:  {border_a};
-        border-radius: 5px;
-    }}
-    QScrollBar::add-line:horizontal {{
-        border:  {border_a};
-        background: none;
-    }}
-    QScrollBar::sub-line:horizontal {{
-        border:  {border_a};
-        background: none;
-    }}
-    QScrollBar::up-arrow:horizontal, QScrollBar::down-arrow:horizontal {{
-        border:  {border_a};
-        width: 3px;
-        height: 3px;
-        background: none;
-    }}
-"""
-
 # SLIDER_SIZE_STYLE
 SLIDER_SIZE_STYLE= f"""
     QWidget {{
@@ -273,10 +214,6 @@ CONTENT_STYLE = f"""
         padding-bottom: 15px;
     }}
 """
-
-# Transparent background style
-TRANSPARENT_BACKGROUND_STYLE = "background: transparent;"
-
 PREVIEW_WIDGET_STYLE = f"""
     QWidget {{
         margin-top: 3px;
@@ -325,33 +262,13 @@ PARAMS_TITLE_STYLE = f"""
     QLabel {{
         color: {color_f};
         font-family: '{font_family}';
-        font-size: 14px;
+        font-size: {font_size_a};
         font-weight: bold;
-        padding: 5px;
+        height: 34px;
+        padding: 7px;
         background: {color_d};
         border-radius: {border_radius_a};
         min-width: 150px;
-    }}
-"""
-
-PROXY_INPUT_STYLE = f"""
-    QLineEdit {{
-        background: {color_b};
-        border: {border_c} rgba(255, 255, 255, 0.01);
-        border-radius: {border_radius_a};
-        height: 34px;
-        padding-left: 12px;
-        color: {color_f};
-        font-family: '{font_family}';
-        font-size: {font_size_a};
-    }}
-    QLineEdit:hover {{
-        background: {color_c};
-        border: {border_c} {color_a};
-    }}
-    QLineEdit:focus {{
-        border: {border_c} {color_a};
-        background-color: {color_e};
     }}
 """
 
@@ -388,6 +305,13 @@ MESSAGE_BOX_STYLE = f"""
 # Favorite Star
 FAVORITE_LABEL_STYLE = f"color: gold; font-size: 32px; background: {color_h};"
 
+# Transparent background style
+TRANSPARENT_BACKGROUND_STYLE = f"""
+    QWidget {{
+        background: {color_h};
+    }}
+"""
+
 # QGroupBox STYLES
 QGROUP_BOX_STYLE = f"""
     QGroupBox {{
@@ -406,5 +330,267 @@ QGROUP_BOX_STYLE = f"""
         subcontrol-origin: margin;
         left: 12px;
         padding: 0 6px;
+    }}
+"""
+
+# COMBOBOX
+COMBOBOX_STYLE = f"""
+    QComboBox {{
+        background: {color_c};
+        border: {border_c} {color_g};
+        border-radius: {border_radius_a};
+        padding-left: 12px;
+        height: 34px;
+        color: {color_f};
+        font-family: '{font_family}';
+        font-size: {font_size_a};
+        min-width: 120px;
+        combobox-popup: 0;
+    }}
+    QComboBox:on {{
+        background: {color_b};
+        border: {border_c} {color_a};
+        border-bottom-style: none;
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
+        border-bottom-left-radius: 0px;
+        border-bottom-right-radius: 0px;
+    }}
+    QComboBox:hover {{
+        border: {border_c} {color_a};
+        background: {color_a};
+    }}
+    /* Focus state */
+    QComboBox:focus {{
+        border: {border_c} {color_a};
+        background-color: {color_a};
+    }}
+    QComboBox:disabled {{
+        background: #2a2c35;
+        border: {border_c} #2a2c35;
+        color: #777a84;
+    }}
+    QComboBox::drop-down {{
+        subcontrol-origin: padding;
+        subcontrol-position: center right;
+        border-left: {border_b} rgba(255, 255, 255, 0.05);
+        padding: 12px;
+        height: 12px;
+        width: 12px;
+    }}
+    QComboBox::down-arrow {{
+        image: url({theme_manager.get_icon("down", current_theme_name, as_path=True)});
+        padding: 12px;
+        height: 12px;
+        width: 12px;
+    }}
+    QComboBox::down-arrow:on {{
+        image: url({theme_manager.get_icon("up", current_theme_name, as_path=True)});
+        padding: 12px;
+        height: 12px;
+        width: 12px;
+    }}
+/* List when combobox is open */
+    QComboBox QAbstractItemView {{
+        outline: none;
+        background: {color_c};
+        border: {border_c} {color_a};
+        border-top-style: none;
+        border-top-left-radius: 0px;
+        border-top-right-radius: 0px;
+        border-bottom-left-radius: 10px;
+        border-bottom-right-radius: 10px;
+    }}
+    QComboBox:editable {{
+        background: {color_c};
+    }}
+    QComboBox::drop-down:editable:focus {{
+        background: {color_a};
+        border-top-left-radius: 0px;
+        border-top-right-radius: 10px;
+        border-bottom-left-radius: 0px;
+        border-bottom-right-radius: 10px;
+    }}
+    QListView {{
+        background: {color_c};
+    }}
+    QListView::item {{
+        padding: 7px 7px 7px 12px;
+        margin: 3px;
+        border-radius: {border_radius_a};
+        color: {color_f};
+    }}
+    QListView::item:hover {{
+        background: {color_b};
+    }}
+    QListView::item:selected {{
+        background: {color_b};
+    }}
+    /* Selection in list when item is focused */
+    QListView::item:focus {{
+        background: {color_a};
+        color: {color_f};
+    }}
+"""
+
+SCROLL_STYLE = f"""
+    QScrollBar:vertical {{
+        width: 10px;
+        border:  {border_a};
+        border-radius: 5px;
+        background: rgba(20, 20, 20, 0.30);
+    }}
+    QScrollBar::handle:vertical {{
+        background: #bebebe;
+        border:  {border_a};
+        border-radius: 5px;
+    }}
+    QScrollBar::add-line:vertical {{
+        border:  {border_a};
+        background: none;
+    }}
+    QScrollBar::sub-line:vertical {{
+        border:  {border_a};
+        background: none;
+    }}
+    QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical {{
+        border:  {border_a};
+        width: 3px;
+        height: 3px;
+        background: none;
+    }}
+    QScrollBar:horizontal {{
+        height: 10px;
+        border:  {border_a};
+        border-radius: 5px;
+        background: rgba(20, 20, 20, 0.30);
+    }}
+    QScrollBar::handle:horizontal {{
+        background: #bebebe;
+        border:  {border_a};
+        border-radius: 5px;
+    }}
+    QScrollBar::add-line:horizontal {{
+        border:  {border_a};
+        background: none;
+    }}
+    QScrollBar::sub-line:horizontal {{
+        border:  {border_a};
+        background: none;
+    }}
+    QScrollBar::up-arrow:horizontal, QScrollBar::down-arrow:horizontal {{
+        border:  {border_a};
+        width: 3px;
+        height: 3px;
+        background: none;
+    }}
+"""
+
+CHECKBOX_STYLE = f"""
+    QCheckBox {{
+        height: 34px;
+        color: {color_f};
+        font-family: '{font_family}';
+        font-size: {font_size_a};
+    }}
+    QCheckBox::indicator {{
+        width: 24px;
+        height: 24px;
+        border: {border_c} {color_g};
+        border-radius: {border_radius_a};
+        background: {color_c};
+    }}
+    QCheckBox::indicator:hover {{
+        background: {color_c};
+        border: {border_c} {color_a};
+    }}
+    QCheckBox::indicator:focus {{
+        border: {border_c} {color_a};
+    }}
+    QCheckBox::indicator:checked {{
+        image: url({theme_manager.get_icon("check", current_theme_name, as_path=True)});
+        border: {border_c} {color_a};
+    }}
+
+    QTableWidget::indicator {{
+        width: 24px;
+        height: 24px;
+        border: {border_c} {color_h};
+        border-radius: {border_radius_a};
+        background: {color_b};
+    }}
+    QTableWidget::indicator:unchecked {{
+        background: rgba(255, 255, 255, 0.1);
+        image: none;
+    }}
+    QTableWidget::indicator:checked {{
+        background: {color_b};
+        image: url({theme_manager.get_icon("check", current_theme_name, as_path=True)});
+        border: {border_c} {color_a};
+    }}
+    QTableWidget::indicator:hover {{
+        background: rgba(255, 255, 255, 0.2);
+        border: {border_c} {color_a};
+    }}
+    QTableWidget::indicator:focus {{
+        background: rgba(255, 255, 255, 0.2);
+        border: {border_c} {color_a};
+    }}
+"""
+
+LINE_EDIT_STYLE = f"""
+    QLineEdit {{
+        background: {color_c};
+        border: {border_c} rgba(255, 255, 255, 0.01);
+        border-radius: {border_radius_a};
+        height: 34px;
+        padding-left: 12px;
+        color: {color_f};
+        font-family: '{font_family}';
+        font-size: {font_size_a};
+    }}
+    QLineEdit:hover {{
+        background: {color_c};
+        border: {border_c} {color_a};
+    }}
+    QLineEdit:focus {{
+        border: {border_c} {color_a};
+        background-color: {color_e};
+    }}
+"""
+
+TOOLTIP_STYLE = f"""
+    QLabel {{
+        background-color: {color_b};
+        border: {border_b} {color_c};
+        border-radius: {border_radius_a};
+        padding: 8px;
+        color: {color_f};
+        font-family: '{font_family}';
+        font-size: {font_size_a};
+    }}
+"""
+
+TAB_STYLE = f"""
+    QTabWidget::pane {{
+        border-top: 1px solid {color_c};
+        background: {color_h};
+    }}
+    QTabBar::tab {{
+        background: {color_c};
+        color: {color_f};
+        padding: 8px 16px;
+        border-top-left-radius: {border_radius_a};
+        border-top-right-radius: {border_radius_a};
+        margin-right: 2px;
+        font-family: '{font_family}';
+        font-size: {font_size_a};
+    }}
+    QTabBar::tab:selected {{
+        background: {color_a};
+        color: {color_f};
+    }}
+    QTabBar::tab:hover {{
+        background: {color_a};
     }}
 """

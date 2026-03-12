@@ -208,7 +208,7 @@ class FileExplorer(QDialog):
         self.drives_container = QWidget()
         self.drives_container.setLayout(self.drives_layout)
         self.drives_scroll.setWidget(self.drives_container)
-        self.drives_scroll.setStyleSheet(self.theme.SCROLL_AREA_STYLE)
+        self.drives_scroll.setStyleSheet(self.theme.SCROLL_STYLE + self.theme.TRANSPARENT_BACKGROUND_STYLE)
         self.drives_scroll.setFixedHeight(70)
         self.main_layout.addWidget(self.drives_scroll)
         self.drives_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
@@ -219,7 +219,7 @@ class FileExplorer(QDialog):
         self.main_layout.addWidget(self.path_label)
 
         self.file_list = QListWidget()
-        self.file_list.setStyleSheet(self.theme.FILE_EXPLORER_STYLE)
+        self.file_list.setStyleSheet(self.theme.FILE_EXPLORER_STYLE + self.theme.SCROLL_STYLE)
         self.file_list.itemClicked.connect(self.handle_item_click)
         self.file_list.itemDoubleClicked.connect(self.handle_item_double_click)
         self.file_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)

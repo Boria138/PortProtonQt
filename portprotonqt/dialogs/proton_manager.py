@@ -92,7 +92,7 @@ class ProtonManager(QDialog):
 
         self.tab_widget = QTabWidget()
         self.tab_widget.setUsesScrollButtons(False)
-        self.tab_widget.setStyleSheet(self.theme.GETWINE_WINDOW_STYLE)
+        self.tab_widget.setStyleSheet(self.theme.GETWINE_WINDOW_STYLE + self.theme.TAB_STYLE)
         self.tab_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         content_layout.addWidget(self.tab_widget, 1)
 
@@ -113,7 +113,7 @@ class ProtonManager(QDialog):
         self.selection_text.setMaximumHeight(80)
         self.selection_text.setReadOnly(True)
         self.selection_text.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction)
-        self.selection_text.setStyleSheet(self.theme.GETWINE_WINDOW_STYLE)
+        self.selection_text.setStyleSheet(self.theme.GETWINE_WINDOW_STYLE + self.theme.SCROLL_STYLE)
         self.selection_text.setPlainText(_("No WINE/Proton selected"))
         selection_layout.addWidget(self.selection_text)
         layout.addWidget(selection_widget)
@@ -261,7 +261,7 @@ class ProtonManager(QDialog):
         table.setHorizontalHeaderLabels(['', _('Version WINE/Proton'), _('Size')])
         table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         table.verticalHeader().setDefaultSectionSize(36)
-        table.setStyleSheet(self.theme.GETWINE_WINDOW_STYLE)
+        table.setStyleSheet(self.theme.GETWINE_WINDOW_STYLE + self.theme.CHECKBOX_STYLE)
         table.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         table.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)

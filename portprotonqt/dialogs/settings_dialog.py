@@ -171,7 +171,7 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
         self.main_layout.addLayout(search_layout)
 
         self.tab_widget = QTabWidget()
-        self.tab_widget.setStyleSheet(self.theme.WINETRICKS_TAB_STYLE)
+        self.tab_widget.setStyleSheet(self.theme.TAB_STYLE)
         self.main_tab = QWidget()
         self.main_tab_layout = QVBoxLayout(self.main_tab)
         self.advanced_tab = QWidget()
@@ -201,7 +201,7 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
         self.settings_table.setWordWrap(True)
         self.settings_table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         self.settings_table.setTextElideMode(Qt.TextElideMode.ElideNone)
-        self.settings_table.setStyleSheet(self.theme.WINETRICKS_TABBLE_STYLE)
+        self.settings_table.setStyleSheet(self.theme.WINETRICKS_TABBLE_STYLE + self.theme.COMBOBOX_STYLE + self.theme.LINE_EDIT_STYLE)
         self.settings_table.setMouseTracking(True)
 
         self.settings_preloader = Preloader()
@@ -240,7 +240,7 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
         self.advanced_table.setWordWrap(True)
         self.advanced_table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         self.advanced_table.setTextElideMode(Qt.TextElideMode.ElideNone)
-        self.advanced_table.setStyleSheet(self.theme.WINETRICKS_TABBLE_STYLE)
+        self.advanced_table.setStyleSheet(self.theme.WINETRICKS_TABBLE_STYLE + self.theme.COMBOBOX_STYLE + self.theme.LINE_EDIT_STYLE)
         self.advanced_table.setMouseTracking(True)
 
         self.advanced_preloader = Preloader()
@@ -271,7 +271,7 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
 
         self.gamepad_tooltip = QLabel()
         self.gamepad_tooltip.setWordWrap(True)
-        self.gamepad_tooltip.setStyleSheet(self.theme.SETTINGS_TOOLTIP_STYLE)
+        self.gamepad_tooltip.setStyleSheet(self.theme.TOOLTIP_STYLE)
         self.gamepad_tooltip.setVisible(False)
         self.gamepad_tooltip.setParent(self)
         self.gamepad_tooltip.setWindowFlags(Qt.WindowType.ToolTip)
@@ -437,12 +437,12 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
             current_val = self.current_settings.get(toggle, '0')
             is_blocked = toggle in self.blocked_keys
             checkbox_widget = QCheckBox()
-            checkbox_widget.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
+            checkbox_widget.setStyleSheet(self.theme.CHECKBOX_STYLE)
             checkbox_widget.setChecked(current_val == '1' and not is_blocked)
             checkbox_widget.setEnabled(not is_blocked)
             checkbox_widget.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
             checkbox_container = QWidget()
-            checkbox_container.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
+            checkbox_container.setStyleSheet(self.theme.CHECKBOX_STYLE + self.theme.TRANSPARENT_BACKGROUND_STYLE)
             checkbox_layout = QHBoxLayout(checkbox_container)
             checkbox_layout.setContentsMargins(0, 0, 0, 0)
             checkbox_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)

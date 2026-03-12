@@ -373,7 +373,7 @@ class MangoHudSettingsMixin:
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        scroll.setStyleSheet(self.theme.SCROLL_AREA_STYLE)
+        scroll.setStyleSheet(self.theme.SCROLL_STYLE + self.theme.TRANSPARENT_BACKGROUND_STYLE)
         container = QWidget()
         container.setStyleSheet(self.theme.TRANSPARENT_BACKGROUND_STYLE)
         layout = QVBoxLayout(container)
@@ -429,7 +429,7 @@ class MangoHudSettingsMixin:
         widget.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         widget.setMinimumHeight(40)
         widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        widget.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
+        widget.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
         default_value = MANGOHUD_VALUE_DEFAULTS.get(spec['key'], '')
         default_index = widget.findData(default_value)
         if default_value and default_index >= 0:
@@ -478,7 +478,7 @@ class MangoHudSettingsMixin:
 
         self.mangohud_category_combo = QComboBox()
         self.mangohud_category_combo.addItems(list(MANGOHUD_TOGGLE_CATEGORIES.keys()))
-        self.mangohud_category_combo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
+        self.mangohud_category_combo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
         self.mangohud_category_combo.setMinimumHeight(40)
         self.mangohud_category_combo.currentTextChanged.connect(self.on_mangohud_category_changed)
         selector_layout.addWidget(self.mangohud_category_combo)
@@ -577,7 +577,7 @@ class MangoHudSettingsMixin:
             checkbox = QCheckBox(fps)
             checkbox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
             checkbox.setMinimumHeight(36)
-            checkbox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE + """
+            checkbox.setStyleSheet(self.theme.CHECKBOX_STYLE + """
                 QCheckBox {
                     spacing: 10px;
                     padding: 4px 2px;
@@ -673,7 +673,7 @@ class MangoHudSettingsMixin:
         checkbox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         checkbox.setMinimumHeight(36)
         checkbox.installEventFilter(cast(QWidget, self))
-        checkbox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE + """
+        checkbox.setStyleSheet(self.theme.CHECKBOX_STYLE + """
             QCheckBox {
                 spacing: 10px;
                 padding: 4px 2px;

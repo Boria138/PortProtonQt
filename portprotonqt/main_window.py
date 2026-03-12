@@ -1590,7 +1590,7 @@ class MainWindow(QMainWindow):
         # Scroll
         self.autoInstallScrollArea = QScrollArea()
         self.autoInstallScrollArea.setWidgetResizable(True)
-        self.autoInstallScrollArea.setStyleSheet(self.theme.SCROLL_AREA_STYLE)
+        self.autoInstallScrollArea.setStyleSheet(self.theme.SCROLL_STYLE + " QWidget { background: transparent; }")
         QScroller.grabGesture(self.autoInstallScrollArea.viewport(), QScroller.ScrollerGestureType.LeftMouseButtonGesture)
 
         self.autoInstallContainer = QWidget()
@@ -1797,7 +1797,7 @@ class MainWindow(QMainWindow):
         self.wineCombo = QComboBox()
         self.wineCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.wineCombo.addItems(self.wine_versions)
-        self.wineCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
+        self.wineCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
         self.wineCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.wineTitleLabel = QLabel(_("WINE/Proton:"))
         self.wineTitleLabel.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
@@ -1815,7 +1815,7 @@ class MainWindow(QMainWindow):
         prefix_line_edit = self.prefixCombo.lineEdit()
         if prefix_line_edit is not None:
             prefix_line_edit.setPlaceholderText(_("Enter prefix name"))
-        self.prefixCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
+        self.prefixCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
         self.prefixCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.prefixTitleLabel = QLabel(_("Prefix:"))
         self.prefixTitleLabel.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
@@ -2195,7 +2195,7 @@ class MainWindow(QMainWindow):
         self.settingsScrollArea = QScrollArea()
         self.settingsScrollArea.setWidgetResizable(True)
         self.settingsScrollArea.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.settingsScrollArea.setStyleSheet(self.theme.SCROLL_AREA_STYLE)
+        self.settingsScrollArea.setStyleSheet(self.theme.SCROLL_STYLE + self.theme.TRANSPARENT_BACKGROUND_STYLE)
         self.settingsScrollArea.setFrameShape(QFrame.Shape.NoFrame)
         # Disable horizontal scroll
         self.settingsScrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
@@ -2241,7 +2241,7 @@ class MainWindow(QMainWindow):
         self.time_keys = ["detailed", "brief"]
         self.time_labels = [_("Detailed"), _("Brief")]
         self.timeDetailCombo.addItems(self.time_labels)
-        self.timeDetailCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
+        self.timeDetailCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
         self.timeDetailCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.timeDetailTitle = QLabel(_("Time Detail Level:"))
         self.timeDetailTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
@@ -2260,7 +2260,7 @@ class MainWindow(QMainWindow):
         self.sort_keys = ["last_launch", "playtime", "alphabetical"]
         self.sort_labels = [_("Last launch"), _("Playtime"), _("Alphabetical")]
         self.gamesSortCombo.addItems(self.sort_labels)
-        self.gamesSortCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
+        self.gamesSortCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
         self.gamesSortCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.gamesSortTitle = QLabel(_("Games Sort Method:"))
         self.gamesSortTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
@@ -2279,7 +2279,7 @@ class MainWindow(QMainWindow):
         self.gamesDisplayCombo = QComboBox()
         self.gamesDisplayCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.gamesDisplayCombo.addItems(self.filter_labels)
-        self.gamesDisplayCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
+        self.gamesDisplayCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
         self.gamesDisplayCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.gamesDisplayTitle = QLabel(_("Games Display Filter:"))
         self.gamesDisplayTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
@@ -2299,7 +2299,7 @@ class MainWindow(QMainWindow):
         scrollLayout.addWidget(uiFrame)
 
         self.fullscreenCheckBox = QCheckBox()  # Removed text
-        self.fullscreenCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
+        self.fullscreenCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.fullscreenCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.fullscreenTitle = QLabel(_("Launch Application in Fullscreen"))
         self.fullscreenTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
@@ -2315,7 +2315,7 @@ class MainWindow(QMainWindow):
         uiForm.addRow(fullscreen_layout)
 
         self.minimizeToTrayCheckBox = QCheckBox()  # Removed text
-        self.minimizeToTrayCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
+        self.minimizeToTrayCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.minimizeToTrayCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.minimizeToTrayTitle = QLabel(_("Minimize to tray on close"))
         self.minimizeToTrayTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
@@ -2332,7 +2332,7 @@ class MainWindow(QMainWindow):
         uiForm.addRow(minimize_layout)
 
         self.hideAutoInstallTabCheckBox = QCheckBox()  # Removed text
-        self.hideAutoInstallTabCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
+        self.hideAutoInstallTabCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.hideAutoInstallTabCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.hideAutoInstallTabTitle = QLabel(_("Hide Auto-Install Tab"))
         self.hideAutoInstallTabTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
@@ -2356,7 +2356,7 @@ class MainWindow(QMainWindow):
         self.gamepadTypeCombo = QComboBox()
         self.gamepadTypeCombo.addItems(["Xbox", "PlayStation"])
         self.gamepadTypeCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.gamepadTypeCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
+        self.gamepadTypeCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
         self.gamepadTypeTitle = QLabel(_("Gamepad Type:"))
         self.gamepadTypeTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.gamepadTypeTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
@@ -2369,7 +2369,7 @@ class MainWindow(QMainWindow):
         padForm.addRow(self.gamepadTypeTitle, self.gamepadTypeCombo)
 
         self.autoFullscreenGamepadCheckBox = QCheckBox()  # Removed text
-        self.autoFullscreenGamepadCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
+        self.autoFullscreenGamepadCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.autoFullscreenGamepadCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.autoFullscreenGamepadTitle = QLabel(_("Auto Fullscreen on Gamepad connected"))
         self.autoFullscreenGamepadTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
@@ -2386,7 +2386,7 @@ class MainWindow(QMainWindow):
 
         self.gamepadRumbleCheckBox = QCheckBox()  # Removed text
         self.gamepadRumbleCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.gamepadRumbleCheckBox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
+        self.gamepadRumbleCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.gamepadRumbleTitle = QLabel(_("Gamepad haptic feedback"))
         self.gamepadRumbleTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.gamepadRumbleTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
@@ -2411,7 +2411,7 @@ class MainWindow(QMainWindow):
             self.gpuCombo = QComboBox()
             self.gpuCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
             self.gpuCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-            self.gpuCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
+            self.gpuCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
             self.gpuCombo.addItems(filtered_gpu_list)
             current_gpu = get_user_conf_setting('PW_GPU_USE')
             if current_gpu and current_gpu in filtered_gpu_list:
@@ -2438,7 +2438,7 @@ class MainWindow(QMainWindow):
         self.proxyUrlEdit = CustomLineEdit(self, theme=self.theme)
         self.proxyUrlEdit.setPlaceholderText(_("Proxy URL"))
         self.proxyUrlEdit.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        self.proxyUrlEdit.setStyleSheet(self.theme.SETTINGS_LINE_EDIT_STYLE)
+        self.proxyUrlEdit.setStyleSheet(self.theme.LINE_EDIT_STYLE)
         self.proxyUrlEdit.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.proxyUrlTitle = QLabel(_("Proxy URL:"))
         self.proxyUrlTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
@@ -2452,7 +2452,7 @@ class MainWindow(QMainWindow):
         self.proxyUserEdit = CustomLineEdit(self, theme=self.theme)
         self.proxyUserEdit.setPlaceholderText(_("Proxy Username"))
         self.proxyUserEdit.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        self.proxyUserEdit.setStyleSheet(self.theme.SETTINGS_LINE_EDIT_STYLE)
+        self.proxyUserEdit.setStyleSheet(self.theme.LINE_EDIT_STYLE)
         self.proxyUserEdit.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.proxyUserTitle = QLabel(_("Proxy Username:"))
         self.proxyUserTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
@@ -2464,7 +2464,7 @@ class MainWindow(QMainWindow):
         self.proxyPasswordEdit.setPlaceholderText(_("Proxy Password"))
         self.proxyPasswordEdit.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.proxyPasswordEdit.setEchoMode(QLineEdit.EchoMode.Password)
-        self.proxyPasswordEdit.setStyleSheet(self.theme.SETTINGS_LINE_EDIT_STYLE)
+        self.proxyPasswordEdit.setStyleSheet(self.theme.LINE_EDIT_STYLE)
         self.proxyPasswordEdit.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.proxyPasswordTitle = QLabel(_("Proxy Password:"))
         self.proxyPasswordTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
@@ -2725,7 +2725,7 @@ class MainWindow(QMainWindow):
         self.themeTabHeaderLayout.addWidget(self.themeTabTitleLabel)
 
         self.themesCombo = QComboBox()
-        self.themesCombo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
+        self.themesCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
         self.themesCombo.setObjectName("comboString")
         available_themes = self.theme_manager.get_available_themes()
         if self.current_theme_name in available_themes:

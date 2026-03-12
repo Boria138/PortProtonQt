@@ -169,13 +169,13 @@ class WinetricksDialog(QDialog):
         self.log_output = QTextEdit()
         self.log_output.setReadOnly(True)
         self.log_output.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction)
-        self.log_output.setStyleSheet(self.theme.WINETRICKS_LOG_STYLE)
+        self.log_output.setStyleSheet(self.theme.GETWINE_WINDOW_STYLE + self.theme.SCROLL_STYLE)
         self.main_layout.addWidget(self.log_output)
 
         self.tab_widget = QTabWidget()
-        self.tab_widget.setStyleSheet(self.theme.WINETRICKS_TAB_STYLE)
+        self.tab_widget.setStyleSheet(self.theme.GETWINE_WINDOW_STYLE + self.theme.TAB_STYLE)
 
-        table_base_style = self.theme.WINETRICKS_TABBLE_STYLE
+        table_base_style = self.theme.WINETRICKS_TABBLE_STYLE + self.theme.SCROLL_STYLE + self.theme.CHECKBOX_STYLE
 
         self.dll_table = QTableWidget()
         self.dll_table.setAlternatingRowColors(True)
