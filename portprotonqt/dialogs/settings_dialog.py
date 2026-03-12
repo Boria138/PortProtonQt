@@ -201,7 +201,7 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
         self.settings_table.setWordWrap(True)
         self.settings_table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         self.settings_table.setTextElideMode(Qt.TextElideMode.ElideNone)
-        self.settings_table.setStyleSheet(self.theme.WINETRICKS_TABBLE_STYLE + self.theme.COMBOBOX_STYLE + self.theme.LINE_EDIT_STYLE)
+        self.settings_table.setStyleSheet(self.theme.WINETRICKS_TABBLE_STYLE + self.theme.COMBOBOX_STYLE + self.theme.LINE_EDIT_STYLE + self.theme.SCROLL_STYLE)
         self.settings_table.setMouseTracking(True)
 
         self.settings_preloader = Preloader()
@@ -240,7 +240,7 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
         self.advanced_table.setWordWrap(True)
         self.advanced_table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         self.advanced_table.setTextElideMode(Qt.TextElideMode.ElideNone)
-        self.advanced_table.setStyleSheet(self.theme.WINETRICKS_TABBLE_STYLE + self.theme.COMBOBOX_STYLE + self.theme.LINE_EDIT_STYLE)
+        self.advanced_table.setStyleSheet(self.theme.WINETRICKS_TABBLE_STYLE + self.theme.COMBOBOX_STYLE + self.theme.LINE_EDIT_STYLE + self.theme.SCROLL_STYLE)
         self.advanced_table.setMouseTracking(True)
 
         self.advanced_preloader = Preloader()
