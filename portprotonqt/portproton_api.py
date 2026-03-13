@@ -1,4 +1,5 @@
 import os
+import subprocess
 import requests
 import urllib.parse
 import time
@@ -16,7 +17,7 @@ from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QApplication
 from portprotonqt.downloader import Downloader
 from portprotonqt.logger import get_logger
-from portprotonqt.config_utils import get_portproton_location
+from portprotonqt.config_utils import get_portproton_location, get_portproton_start_command
 from portprotonqt.localization import _
 from portprotonqt.dialogs import FileExplorer
 from portprotonqt.config.cache import CacheManager
@@ -826,109 +827,67 @@ def get_user_conf_setting(variable_name):
         Value of the variable or None if not set
     """
 
-    portproton_location = get_portproton_location()
-    if not portproton_location:
-        logger.error("Could not determine PortProton location")
+    start_cmd = get_portproton_start_command()
+    if not start_cmd:
+        logger.error("Could not determine PortProton start command")
+        return None
+    try:
+        result = subprocess.run(
+            start_cmd + ["cli", "--get-user-conf", variable_name],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+    except (subprocess.SubprocessError, OSError) as e:
+        logger.warning("Failed to get user.conf value for %s: %s", variable_name, e)
         return None
 
-    user_conf_path = os.path.join(portproton_location, "data", "user.conf")
-
-    if not os.path.exists(user_conf_path):
+    if result.returncode != 0:
+        logger.debug("PortProton CLI returned %s for --get-user-conf %s", result.returncode, variable_name)
         return None
 
-    # Read current content
-    with open(user_conf_path, encoding='utf-8') as f:
-        lines = f.readlines()
-
-    # Look for the variable
-    for line in lines:
-        if line.strip().startswith(f"export {variable_name}=") and not line.strip().startswith(f"#export {variable_name}="):
-            # Extract value from the line
-            match = re.match(rf'^export {re.escape(variable_name)}=(.*)$', line.strip())
-            if match:
-                value = match.group(1).strip().strip('"\'')
-                return value
-
-    return None
+    value = result.stdout.strip()
+    return value if value else None
 
 
 def set_user_conf_setting(variable_name, value):
     """
-    Sets the value of a specific variable in user.conf.
+    Sets or deletes a specific variable in user.conf via PortProton CLI.
 
     Args:
-        variable_name: Name of the variable to set
-        value: Value to set, or None to remove the variable
+        variable_name: Name of the variable to set or delete
+        value: Value to set, or None/empty to delete the variable
     """
-
-    portproton_location = get_portproton_location()
-    if not portproton_location:
-        logger.error("Could not determine PortProton location")
+    start_cmd = get_portproton_start_command()
+    if not start_cmd:
+        logger.error("Could not determine PortProton start command")
         return False
 
-    user_conf_path = os.path.join(portproton_location, "data", "user.conf")
+    if value is None or value == "":
+        cli_args = ["cli", "--delete-user-conf", variable_name]
+    else:
+        cli_args = ["cli", "--set-user-conf", variable_name, str(value)]
 
-    # Create the file if it doesn't exist
-    if not os.path.exists(user_conf_path):
-        os.makedirs(os.path.dirname(user_conf_path), exist_ok=True)
-        with open(user_conf_path, 'w', encoding='utf-8') as f:
-            f.write("")
+    try:
+        result = subprocess.run(
+            start_cmd + cli_args,
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+    except (subprocess.SubprocessError, OSError) as e:
+        logger.warning("Failed to update user.conf value for %s: %s", variable_name, e)
+        return False
 
-    # Read current content
-    with open(user_conf_path, encoding='utf-8') as f:
-        lines = f.readlines()
-
-    # Process modifications for the specific variable
-    new_lines = []
-    var_found = False
-    for line in lines:
-        # Check if line contains the variable assignment (uncommented)
-        if line.strip().startswith(f"export {variable_name}=") and not line.strip().startswith(f"#export {variable_name}="):
-            var_found = True
-            if value is None or not value:
-                # Skip this line (effectively removing it)
-                continue
-            else:
-                # Handle enabled/disabled states
-                processed_value = value
-                if isinstance(value, str):
-                    # Map variations to standard values
-                    if value.lower() in ['disabled', 'disable']:
-                        processed_value = 'disabled'
-                    elif value.lower() in ['enabled', 'enable']:
-                        processed_value = 'enabled'
-
-                # Extract current value from the line
-                current_value_match = re.match(rf'^export {re.escape(variable_name)}=(.*)$', line.strip())
-                if current_value_match:
-                    current_value = current_value_match.group(1).strip().strip('"\'')
-
-                    # Update the line if value changed
-                    if processed_value != current_value:
-                        new_lines.append(f'export {variable_name}="{processed_value}"\n')
-                    else:
-                        new_lines.append(line)
-                else:
-                    new_lines.append(f'export {variable_name}="{processed_value}"\n')
-        else:
-            # Keep lines that don't match the variable we're modifying
-            new_lines.append(line)
-
-    # If variable doesn't exist and we're setting a value, add it
-    if not var_found and value is not None and value != "":
-        # Handle enabled/disabled states
-        processed_value = value
-        if isinstance(value, str):
-            # Map variations to standard values
-            if value.lower() in ['disabled', 'disable']:
-                processed_value = 'disabled'
-            elif value.lower() in ['enabled', 'enable']:
-                processed_value = 'enabled'
-
-        new_lines.append(f'export {variable_name}="{processed_value}"\n')
-
-    # Write back to file
-    with open(user_conf_path, 'w', encoding='utf-8') as f:
-        f.writelines(new_lines)
+    if result.returncode != 0:
+        logger.warning(
+            "PortProton CLI failed for %s (code %s): %s",
+            variable_name,
+            result.returncode,
+            result.stderr.strip(),
+        )
+        return False
 
     return True
