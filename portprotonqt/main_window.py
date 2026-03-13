@@ -1866,8 +1866,8 @@ class MainWindow(QMainWindow):
         ]
 
         for i, (text, callback) in enumerate(additional_buttons):
-            row = i // 3
-            col = i % 3
+            row = i // 2
+            col = i % 2
             btn = AutoSizeButton(text, update_size=False)
             btn.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
             btn.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -1875,7 +1875,7 @@ class MainWindow(QMainWindow):
                 btn.clicked.connect(callback)
             additional_grid.addWidget(btn, row, col)
 
-        for col in range(3):
+        for col in range(2):
             additional_grid.setColumnStretch(col, 1)
 
         layout.addLayout(additional_grid)
