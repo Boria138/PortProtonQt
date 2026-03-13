@@ -386,9 +386,8 @@ class MainWindow(QMainWindow):
         hintsWidget = QWidget()
         hintsWidget.setStyleSheet(self.theme.STATUS_BAR_STYLE)
 
-        hintsLayout = QHBoxLayout(hintsWidget)
+        hintsLayout = FlowLayout(hintsWidget)
         hintsLayout.setContentsMargins(10, 0, 10, 0)
-        hintsLayout.setSpacing(20)
 
         gamepad_actions = [
             ("confirm", _("Select")),
@@ -565,7 +564,6 @@ class MainWindow(QMainWindow):
         for icon, text in keyboard_hints:
             makeHint(icon, text, False)
 
-        hintsLayout.addStretch()
         return hintsWidget
 
     def updateNavButtons(self, *args) -> None:
