@@ -138,14 +138,39 @@ GAMESCOPE_VALUE_DEFAULTS = {
 }
 
 GAMESCOPE_SHORT_TOGGLE_ALIASES = {
+    'b': 'borderless',
     'f': 'fullscreen',
+    'g': 'grab',
 }
 
 GAMESCOPE_SHORT_VALUE_ALIASES = {
+    'F': 'filter',
+    'S': 'scaler',
     'W': 'output_width',
     'H': 'output_height',
+    'm': 'max_scale',
+    'r': 'framerate_limit',
+    's': 'mouse_sensitivity',
     'w': 'nested_width',
     'h': 'nested_height',
+}
+
+GAMESCOPE_SHORT_TOGGLE_TOKENS = {
+    'borderless': '-b',
+    'fullscreen': '-f',
+    'grab': '-g',
+}
+
+GAMESCOPE_SHORT_VALUE_TOKENS = {
+    'filter': '-F',
+    'scaler': '-S',
+    'output_width': '-W',
+    'output_height': '-H',
+    'max_scale': '-m',
+    'framerate_limit': '-r',
+    'mouse_sensitivity': '-s',
+    'nested_width': '-w',
+    'nested_height': '-h',
 }
 
 GAMESCOPE_TOGGLE_CATEGORIES = {
@@ -644,8 +669,9 @@ class GamescopeSettingsMixin:
         Args format: ' --flag --key=value --another-flag'
         Note: Leading space is required in the stored format.
         """
-        known_keys = {key for key, _label in GAMESCOPE_TOGGLE_SPECS}
-        known_keys.update(spec['key'] for spec in GAMESCOPE_VALUE_SPECS)
+        known_toggle_keys = {key for key, _label in GAMESCOPE_TOGGLE_SPECS}
+        known_value_keys = {spec['key'] for spec in GAMESCOPE_VALUE_SPECS}
+        known_keys = known_toggle_keys | known_value_keys
         parsed = {}
         extra_tokens = []
 
@@ -668,7 +694,10 @@ class GamescopeSettingsMixin:
                         extra_tokens.append(token)
                 else:
                     key = token_content.replace('-', '_')
-                    if key in known_keys:
+                    if key in known_value_keys and i + 1 < len(tokens):
+                        i += 1
+                        parsed[key] = tokens[i]
+                    elif key in known_toggle_keys:
                         parsed[key] = True
                     else:
                         extra_tokens.append(token)
@@ -727,6 +756,9 @@ class GamescopeSettingsMixin:
     def _build_gamescope_toggle_token(self, key):
         """Build one Gamescope toggle token from a checkbox."""
         if self.gamescope_toggle_widgets[key].isChecked():
+            short_token = GAMESCOPE_SHORT_TOGGLE_TOKENS.get(key)
+            if short_token:
+                return short_token
             key_with_dashes = key.replace('_', '-')
             return f"--{key_with_dashes}"
         return ''
@@ -749,6 +781,10 @@ class GamescopeSettingsMixin:
 
         if not value:
             return ''
+
+        short_token = GAMESCOPE_SHORT_VALUE_TOKENS.get(spec['key'])
+        if short_token:
+            return f"{short_token} {value}"
 
         key_with_dashes = spec['key'].replace('_', '-')
         return f"--{key_with_dashes}={value}"
