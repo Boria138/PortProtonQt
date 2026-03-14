@@ -713,8 +713,18 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
             else:
                 continue
 
-        changes.extend(self._collect_mangohud_changes())
-        changes.extend(self._collect_gamescope_changes())
+        mangohud_changes = self._collect_mangohud_changes()
+        gamescope_changes = self._collect_gamescope_changes()
+        changes.extend(mangohud_changes)
+        changes.extend(gamescope_changes)
+
+        if mangohud_changes:
+            changes = [change for change in changes if not change.startswith("PW_MANGOHUD=")]
+            changes.append("PW_MANGOHUD=1")
+
+        if gamescope_changes:
+            changes = [change for change in changes if not change.startswith("PW_GAMESCOPE=")]
+            changes.append("PW_GAMESCOPE=1")
 
         # If PW_MANGOHUD is being enabled and MANGOHUD_CONFIG is not in current settings,
         # add it from the var file
