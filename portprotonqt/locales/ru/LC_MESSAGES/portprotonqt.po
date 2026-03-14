@@ -10,7 +10,7 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-03-11 20:40+0500\n"
-"PO-Revision-Date: 2026-03-14 13:13+0500\n"
+"PO-Revision-Date: 2026-03-14 14:54+0500\n"
 "Last-Translator: \n"
 "Language-Team: ru_RU <LL@li.org>\n"
 "Language: ru_RU\n"
@@ -412,9 +412,8 @@ msgstr "'{name}' добавлен(а)"
 msgid "WINE/Proton:"
 msgstr "WINE/Proton:"
 
-#, fuzzy
 msgid "Enter prefix name"
-msgstr "Имя префикса"
+msgstr "Введите имя префикса"
 
 msgid "Prefix:"
 msgstr "Префикс:"
@@ -1425,53 +1424,52 @@ msgid "Settings updated successfully."
 msgstr "Настройки успешно обновлены."
 
 msgid "Borderless window"
-msgstr ""
+msgstr "Без рамок"
 
-#, fuzzy
 msgid "Fullscreen window"
-msgstr "Полный экран"
+msgstr "Полноэкранный режим"
 
 msgid "Grab keyboard"
-msgstr ""
+msgstr "Перехват клавиатуры"
 
 msgid "Always use relative mouse mode"
-msgstr ""
+msgstr "Использование относительного режима мыши"
 
 msgid "Expose Wayland"
-msgstr ""
+msgstr "Поддержка клиентов Wayland"
 
 msgid "Use realtime scheduling"
-msgstr ""
+msgstr "Планирование в реальном времени"
 
 msgid "Force windows fullscreen"
-msgstr ""
+msgstr "Принудительный полноэкранный режим"
 
 msgid "Enable HDR output"
-msgstr ""
+msgstr "Включить вывод HDR"
 
 msgid "Enable SDR→HDR inverse tone mapping"
-msgstr ""
+msgstr "Включить SDR→HDR инвертированное тональное отображение"
 
 msgid "Force HDR support"
-msgstr ""
+msgstr "Принудительная поддержка HDR"
 
 msgid "Force HDR10 PQ output"
-msgstr ""
+msgstr "Принудительный выход HDR10 PQ"
 
 msgid "HDR luminance heatmap"
-msgstr ""
+msgstr "Тепловая карта яркости HDR"
 
 msgid "Enable mangoapp overlay"
-msgstr ""
+msgstr "Включить наложение mangoapp"
 
 msgid "Enable adaptive sync"
-msgstr ""
+msgstr "Включить адаптивную синхронизацию"
 
 msgid "Allow deferred backend"
 msgstr ""
 
 msgid "Keep alive after primary process dies"
-msgstr ""
+msgstr "Не закрывать после того, как основной процесс закроется"
 
 msgid "Output width"
 msgstr "Выходная ширина"
@@ -1528,7 +1526,7 @@ msgid "Rendering backend"
 msgstr "Движок отрисовки"
 
 msgid "Ready FD"
-msgstr "Готовность файлов дискрипторов"
+msgstr "Готовность файлов дескрипторов"
 
 msgid "e.g., 3"
 msgstr "Например: 3"
@@ -1594,54 +1592,65 @@ msgid "Overlay"
 msgstr "Наложение"
 
 msgid "Make the window borderless"
-msgstr ""
+msgstr "Режим окна без рамок"
 
 msgid "Make the window fullscreen"
-msgstr ""
+msgstr "Полноэкранный режим окна"
 
 msgid "Grab the keyboard"
-msgstr ""
+msgstr "Перехват нажатий кнопок клавиатуры"
 
 msgid ""
 "Always use relative mouse mode instead of flipping dependent on cursor visibility"
 msgstr ""
+"Использование относительного режима мыши, вместо зеркального отображения, в "
+"зависимости от видимости курсора."
 
 msgid "Support Wayland clients using xdg-shell"
-msgstr ""
+msgstr "Поддержка клиентов Wayland с помощью xdg-shell"
 
 msgid ""
 "Force windows inside of gamescope to be the size of the nested display "
 "(fullscreen)"
 msgstr ""
+"Размер окон внутри gamescope соответствует размеру вложенного дисплея "
+"(полноэкранный режим)."
 
 msgid ""
 "Enable HDR output (needs Gamescope WSI layer enabled for support from clients)"
 msgstr ""
+"Включить вывод HDR (для поддержки со стороны клиентов необходимо включить "
+"Gamescope WSI layer)"
 
 msgid "Enable SDR->HDR inverse tone mapping. only works for SDR input"
 msgstr ""
+"Включите SDR->HDR- отображение обратного тона. работает только для SDR-ввода"
 
 msgid "Force support for HDR even if the display doesn't support it"
-msgstr ""
+msgstr "Принудительная поддержка HDR, даже если дисплей ее не поддерживает"
 
 msgid "Force output to HDR10 PQ even if unsupported (will look wrong)"
 msgstr ""
+"Принудительный вывод на HDR10 PQ, даже если он не поддерживается (будет "
+"выглядеть неправильно)"
 
 msgid "Display heatmap-style debug view of HDR luminance in nits"
-msgstr ""
+msgstr "Отображение отладочной тепловой карты вида яркости HDR в нитах"
 
 msgid "Launch with the mangoapp (mangohud) performance overlay enabled"
-msgstr ""
+msgstr "Запуск с включенным mangoapp (mangohud)"
 
 msgid "Enable adaptive sync if available (variable rate refresh)"
 msgstr ""
+"Включает адаптивную синхронизацию, если она доступна (обновление с переменной "
+"частотой)"
 
 msgid ""
 "Allows initting the backend in a deferred way, if it doesn't work immediately"
 msgstr ""
 
 msgid "Keep Gamescope alive even when the primary process has died"
-msgstr ""
+msgstr "Поддерживает работу Gamescope даже после завершения основного процесса"
 
 msgid "Resolution and scaling"
 msgstr "Разрешение и масштабирование"
@@ -1866,7 +1875,7 @@ msgid "GPU fan (RPM/%)"
 msgstr "Вентилятор ГП (об/мин и %)"
 
 msgid "GPU junction temperature"
-msgstr "Температура кристала ГП"
+msgstr "Температура кристалла ГП"
 
 msgid "GPU load color change"
 msgstr "Изменение цвета при нагрузке на ГП"
@@ -1965,7 +1974,7 @@ msgid "Current resolution"
 msgstr "Текущее разрешение"
 
 msgid "Retro filtering (unfiltered)"
-msgstr "Ретрофильтрация (без фильтра)"
+msgstr "Ретро-фильтрация (без фильтра)"
 
 msgid "Show FPS limit"
 msgstr "Показать ограничение по кадрам в секунду"
@@ -1995,7 +2004,7 @@ msgid "Force trilinear filtering"
 msgstr "Включить трилинейную фильтрацию"
 
 msgid "Automatic log uploads"
-msgstr "Авоматическая загрузка лога в flightlessmango.com"
+msgstr "Автоматическая загрузка лога в flightlessmango.com"
 
 msgid "MangoHud version"
 msgstr "Версия MangoHud"
