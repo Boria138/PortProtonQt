@@ -24,7 +24,7 @@
 | [de](../../portprotonqt/locales/de/LC_MESSAGES/portprotonqt.po) | 0% | 0 из 616 |
 | [es](../../portprotonqt/locales/es/LC_MESSAGES/portprotonqt.po) | 0% | 0 из 616 |
 | [pt](../../portprotonqt/locales/pt/LC_MESSAGES/portprotonqt.po) | 0% | 0 из 616 |
-| [ru](../../portprotonqt/locales/ru/LC_MESSAGES/portprotonqt.po) | 74% | 461 из 616 |
+| [ru](../../portprotonqt/locales/ru/LC_MESSAGES/portprotonqt.po) | 88% | 546 из 616 |
 
 ---
 

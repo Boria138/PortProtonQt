@@ -10,7 +10,7 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-03-11 20:40+0500\n"
-"PO-Revision-Date: 2026-03-11 21:13+0500\n"
+"PO-Revision-Date: 2026-03-14 12:05+0500\n"
 "Last-Translator: \n"
 "Language-Team: ru_RU <LL@li.org>\n"
 "Language: ru_RU\n"
@@ -20,7 +20,7 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 "
 "&& (n%100<10 || n%100>=20) ? 1 : 2);\n"
 "Generated-By: Babel 2.17.0\n"
-"X-Generator: Poedit 3.8\n"
+"X-Generator: Poedit 3.5\n"
 
 #, python-brace-format
 msgid "Launch game \"{name}\" with PortProton"
@@ -186,8 +186,8 @@ msgid ""
 "Are you sure you want to delete '{game_name}'? This will remove the .desktop "
 "file and custom data."
 msgstr ""
-"Вы уверены, что хотите удалить '{game_name}'? Это приведёт к удалению "
-"файла .desktop и пользовательских данных."
+"Вы уверены, что хотите удалить '{game_name}'? Это приведёт к удалению файла ."
+"desktop и пользовательских данных."
 
 msgid "Yes"
 msgstr "Да"
@@ -673,13 +673,13 @@ msgstr "Остановить"
 msgid "Play"
 msgstr "Играть"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Prefix not found"
-msgstr "Файл не найден: {0}"
+msgstr "Префикс не найден"
 
 #, python-brace-format
 msgid "Prefix '{0}' was not found. Install recommended libraries?"
-msgstr ""
+msgstr "Префикс '{0}' не найден. Установить рекомендуемые библиотеки?"
 
 #, python-brace-format
 msgid "Executable not found for EGS game: {0}"
@@ -1410,7 +1410,7 @@ msgid "disabled"
 msgstr "отключено"
 
 msgid "Default value"
-msgstr ""
+msgstr "По умолчанию"
 
 msgid "Info"
 msgstr "Информация"
@@ -1711,10 +1711,10 @@ msgid "GPU list"
 msgstr "Лист ГП"
 
 msgid "Background opacity"
-msgstr ""
+msgstr "Прозрачность фона"
 
 msgid "Round corners (px)"
-msgstr ""
+msgstr "Скругление углов (пикс)"
 
 msgid "Top-left"
 msgstr "Слева сверху"
@@ -1749,13 +1749,11 @@ msgstr "Мышь"
 msgid "Gamepad, mouse"
 msgstr "Геймпад, мышь"
 
-#, fuzzy
 msgid "Late"
-msgstr "Время игры"
+msgstr "После отображения кадра"
 
-#, fuzzy
 msgid "Early"
-msgstr "Наложение"
+msgstr "До отображения кадра"
 
 msgid "General"
 msgstr "Общие"
@@ -1833,35 +1831,34 @@ msgid "Steam Deck fan RPM"
 msgstr "Обороты вентилятора Steam Deck"
 
 msgid "Frame capture analysis"
-msgstr ""
+msgstr "Анализ захвата кадров"
 
 msgid "Flip efficiency (joules/frame)"
-msgstr ""
+msgstr "Переключение эффективности на джоуль/кадр"
 
 msgid "FPS text color by value"
-msgstr ""
+msgstr "Цвет текста FPS в зависимости от значения"
 
 msgid "FPS percentiles"
-msgstr ""
+msgstr "Стабильность FPS"
 
-#, fuzzy
 msgid "Show FPS only"
-msgstr "Только FPS"
+msgstr "Показывать только FPS"
 
 msgid "Frame counter"
-msgstr ""
+msgstr "Счетчик кадров"
 
 msgid "Frametime next to FPS"
-msgstr ""
+msgstr "Время кадра рядом с частотой кадров"
 
 msgid "Detailed frame timing chart"
-msgstr ""
+msgstr "Подробная диаграмма времени кадра"
 
 msgid "FSR status (gamescope)"
-msgstr ""
+msgstr "Статус FSR (gamescope)"
 
 msgid "Enable most parameters"
-msgstr ""
+msgstr "Активировать больше параметров"
 
 msgid "GameMode status"
 msgstr "Статус GameMode"
@@ -1870,16 +1867,16 @@ msgid "GPU core frequency"
 msgstr "Частота ядра ГП"
 
 msgid "GPU efficiency (frames/joule)"
-msgstr ""
+msgstr "Эффективность ГП (кадры/джоуль)"
 
 msgid "GPU fan (RPM/%)"
 msgstr "Вентилятор ГП (об/мин и %)"
 
 msgid "GPU junction temperature"
-msgstr ""
+msgstr "Температура кристала ГП"
 
 msgid "GPU load color change"
-msgstr ""
+msgstr "Изменение цвета при нагрузке на ГП"
 
 msgid "GPU memory frequency"
 msgstr "Частота памяти ГП"
@@ -1891,7 +1888,7 @@ msgid "GPU name from pci.ids"
 msgstr "Имя ГП в pci.ids"
 
 msgid "GPU power draw (watts)"
-msgstr ""
+msgstr "Потребляемая мощность ГП, Вт"
 
 msgid "GPU power limit"
 msgstr "Ограничение мощности ГП"
@@ -1906,109 +1903,106 @@ msgid "HDR status (gamescope)"
 msgstr "Состояние HDR (GameScope)"
 
 msgid "Hide FSR sharpness info"
-msgstr ""
+msgstr "Скрыть информацию о резкости FSR"
 
 msgid "FPS histogram"
-msgstr ""
+msgstr "Гистограмма частоты кадров в секунду"
 
 msgid "Horizontal HUD layout"
-msgstr ""
+msgstr "Горизонтальное расположение HUD"
 
 msgid "Stretch background horizontally"
-msgstr ""
+msgstr "В горизонтальном режиме растягивает фон до ширины экрана"
 
 msgid "Compact HUD mode"
 msgstr "Режим компактного HUD"
 
 msgid "Remove HUD margins"
-msgstr ""
+msgstr "Удаление полей вокруг HUD"
 
 msgid "IO read rate (MiB/s)"
-msgstr ""
+msgstr "Скорость операций ввода-вывода для чтения, МБ/с"
 
 msgid "IO write rate (MiB/s)"
-msgstr ""
+msgstr "Скорость операций ввода-вывода для записи, МБ/с"
 
 msgid "Add versioning to logs"
-msgstr ""
+msgstr "Добавление в лог информацию о версиях"
 
 msgid "Media player metadata"
-msgstr ""
+msgstr "Метаданные медиаплеера"
 
 msgid "Hide HUD by default"
-msgstr ""
+msgstr "Скрыть HUD по умолчанию"
 
 msgid "Use primary font size"
-msgstr ""
+msgstr "Использование основного размера шрифта"
 
 msgid "Allow log uploads"
-msgstr ""
+msgstr "Разрешить загрузку лога"
 
-#, fuzzy
 msgid "Vulkan present mode"
-msgstr "Vulkan рендеринг"
+msgstr "Текущий режим Vulkan"
 
 msgid "Process VRAM usage"
-msgstr ""
+msgstr "Использование видеопамяти процессом"
 
 msgid "Process memory (resident)"
-msgstr ""
+msgstr "Резидентная память процесса"
 
 msgid "Process shared memory"
-msgstr ""
+msgstr "Всего памяти процесса"
 
 msgid "Process virtual memory"
-msgstr ""
+msgstr "Виртуальная память процесса"
 
 msgid "System RAM usage"
-msgstr ""
+msgstr "Использование ОЗУ системой"
 
 msgid "RAM temperature (DDR5)"
 msgstr "Температура ОЗУ (DDR5)"
 
 msgid "Load config file"
-msgstr ""
+msgstr "Загрузка файла конфигурации"
 
 msgid "Refresh rate (gamescope)"
-msgstr ""
+msgstr "Частота обновления (gamescope)"
 
 msgid "Current resolution"
-msgstr ""
+msgstr "Текущее разрешение"
 
 msgid "Retro filtering (unfiltered)"
-msgstr ""
+msgstr "Ретрофильтрация (без фильтра)"
 
 msgid "Show FPS limit"
-msgstr ""
+msgstr "Показать ограничение по кадрам в секунду"
 
 msgid "Swap usage"
-msgstr ""
+msgstr "Использование подкачки"
 
 msgid "Temperature in Fahrenheit"
-msgstr ""
+msgstr "Температура в градусах Фаренгейта"
 
 msgid "Text outline"
-msgstr ""
+msgstr "Контур текста"
 
 msgid "GPU throttling status"
-msgstr ""
+msgstr "Статус троттлинга ГП"
 
 msgid "Throttling in frame graph"
-msgstr ""
+msgstr "Троттлинг на графике кадров"
 
-#, fuzzy
 msgid "Local time"
-msgstr "Локаль"
+msgstr "Местное время"
 
 msgid "Time without label"
-msgstr ""
+msgstr "Скрыть слово \"Time\" перед временем"
 
-#, fuzzy
 msgid "Force trilinear filtering"
-msgstr "Анизотропная фильтрация"
+msgstr "Включить трилинейную фильтрацию"
 
 msgid "Automatic log uploads"
-msgstr ""
+msgstr "Авоматическая загрузка лога в flightlessmango.com"
 
 msgid "MangoHud version"
 msgstr "Версия MangoHud"
@@ -2023,7 +2017,7 @@ msgid "Wine/Proton version"
 msgstr "Версия WINE/Proton"
 
 msgid "Wine sync method"
-msgstr ""
+msgstr "Метод синхронизации Wine"
 
 msgid "VRAM usage"
 msgstr "Использование видеопамяти"
