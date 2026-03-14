@@ -1,6 +1,8 @@
 """Gamescope settings support for executable settings dialog."""
 
 import re
+import shutil
+import subprocess
 from typing import Any, cast
 
 from PySide6.QtCore import Qt
@@ -173,6 +175,16 @@ GAMESCOPE_SHORT_VALUE_TOKENS = {
     'nested_height': '-h',
 }
 
+GAMESCOPE_OPTION_ALIASES = {
+    'hdr_itm_enabled': ('hdr-itm-enabled', 'hdr-itm-enable'),
+}
+
+GAMESCOPE_OPTION_ALIAS_TO_KEY = {
+    alias.replace('-', '_'): key
+    for key, aliases in GAMESCOPE_OPTION_ALIASES.items()
+    for alias in aliases
+}
+
 GAMESCOPE_TOGGLE_CATEGORIES = {
     _("Window"): [
         'borderless', 'fullscreen', 'grab', 'force_grab_cursor',
@@ -253,6 +265,67 @@ class GamescopeSettingsMixin:
         self.gamescope_toggle_widget_keys = {}
         self.gamescope_category_groups = {}
         self.gamescope_resolution_widgets = {}
+        self.gamescope_path = shutil.which('gamescope')
+        self.gamescope_available = bool(self.gamescope_path)
+        self.gamescope_supported_options = None
+        self.gamescope_supported_toggle_keys = {key for key, _label in GAMESCOPE_TOGGLE_SPECS}
+        self.gamescope_supported_value_keys = {spec['key'] for spec in GAMESCOPE_VALUE_SPECS}
+        if self.gamescope_available:
+            self._detect_gamescope_supported_options()
+
+    def _detect_gamescope_supported_options(self) -> None:
+        """Read gamescope --help and cache supported long options."""
+        if not self.gamescope_path:
+            return
+        try:
+            result = subprocess.run(
+                [self.gamescope_path, '--help'],
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=3,
+            )
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            logger.warning("Failed to detect gamescope options: %s", exc)
+            return
+
+        help_text = f"{result.stdout}\n{result.stderr}"
+        options = set(re.findall(r'--([a-z0-9][a-z0-9-]*)', help_text))
+        if not options:
+            return
+
+        self.gamescope_supported_options = options
+        self.gamescope_supported_toggle_keys = {
+            key for key, _label in GAMESCOPE_TOGGLE_SPECS if self._is_gamescope_option_supported(key)
+        }
+        self.gamescope_supported_value_keys = {
+            spec['key'] for spec in GAMESCOPE_VALUE_SPECS if self._is_gamescope_option_supported(spec['key'])
+        }
+
+    def _is_gamescope_option_supported(self, option_key: str) -> bool:
+        """Check if gamescope supports a long option from key name."""
+        if self.gamescope_supported_options is None:
+            return True
+        if option_key in GAMESCOPE_SHORT_TOGGLE_TOKENS or option_key in GAMESCOPE_SHORT_VALUE_TOKENS:
+            return True
+        aliases = GAMESCOPE_OPTION_ALIASES.get(option_key, (option_key.replace('_', '-'),))
+        return any(alias in self.gamescope_supported_options for alias in aliases)
+
+    def _normalize_gamescope_option_key(self, option_key: str) -> str:
+        """Normalize long-option key aliases to a canonical setting key."""
+        return GAMESCOPE_OPTION_ALIAS_TO_KEY.get(option_key, option_key)
+
+    def _get_gamescope_option_name(self, option_key: str) -> str:
+        """Get long option name for serialization, preferring supported aliases."""
+        aliases = GAMESCOPE_OPTION_ALIASES.get(option_key)
+        if not aliases:
+            return option_key.replace('_', '-')
+        if self.gamescope_supported_options is None:
+            return aliases[0]
+        for alias in aliases:
+            if alias in self.gamescope_supported_options:
+                return alias
+        return aliases[0]
 
     def setup_gamescope_tab(self):
         """Create Gamescope tab widgets."""
@@ -289,21 +362,36 @@ class GamescopeSettingsMixin:
             'output_width', 'output_height', 'nested_width', 'nested_height',
         }
         for spec in GAMESCOPE_VALUE_SPECS:
-            if spec['key'] not in resolution_keys:
+            if (
+                spec['key'] not in resolution_keys
+                or spec['key'] not in self.gamescope_supported_value_keys
+            ):
                 continue
             self._create_gamescope_text_widget(spec)
 
-        form.addRow(
-            f"{_('Output width')} x {_('Output height')}",
-            self._create_gamescope_resolution_widget('output'),
+        output_resolution_supported = (
+            'output_width' in self.gamescope_widgets and 'output_height' in self.gamescope_widgets
         )
-        form.addRow(
-            f"{_('Game width')} x {_('Game height')}",
-            self._create_gamescope_resolution_widget('nested'),
+        nested_resolution_supported = (
+            'nested_width' in self.gamescope_widgets and 'nested_height' in self.gamescope_widgets
         )
 
+        if output_resolution_supported:
+            form.addRow(
+                f"{_('Output width')} x {_('Output height')}",
+                self._create_gamescope_resolution_widget('output'),
+            )
+        if nested_resolution_supported:
+            form.addRow(
+                f"{_('Game width')} x {_('Game height')}",
+                self._create_gamescope_resolution_widget('nested'),
+            )
+
         for spec in GAMESCOPE_VALUE_SPECS:
-            if spec['key'] in resolution_keys:
+            if (
+                spec['key'] in resolution_keys
+                or spec['key'] not in self.gamescope_supported_value_keys
+            ):
                 continue
             if spec['type'] == 'text':
                 form.addRow(spec['label'], self._create_gamescope_text_widget(spec))
@@ -482,10 +570,8 @@ class GamescopeSettingsMixin:
         selector_layout = QVBoxLayout(selector_group)
 
         self.gamescope_category_combo = QComboBox()
-        self.gamescope_category_combo.addItems(list(GAMESCOPE_TOGGLE_CATEGORIES.keys()))
         self.gamescope_category_combo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
         self.gamescope_category_combo.setMinimumHeight(40)
-        self.gamescope_category_combo.currentTextChanged.connect(self.on_gamescope_category_changed)
         selector_layout.addWidget(self.gamescope_category_combo)
 
         self.gamescope_category_stack = QStackedWidget()
@@ -497,6 +583,9 @@ class GamescopeSettingsMixin:
         columns = 4
 
         for category, keys in GAMESCOPE_TOGGLE_CATEGORIES.items():
+            supported_keys = [key for key in keys if key in self.gamescope_supported_toggle_keys]
+            if not supported_keys:
+                continue
             category_widget = QWidget()
             layout = QGridLayout(category_widget)
             layout.setContentsMargins(8, 8, 8, 8)
@@ -505,7 +594,7 @@ class GamescopeSettingsMixin:
             for column in range(columns):
                 layout.setColumnStretch(column, 1)
 
-            for index, key in enumerate(keys):
+            for index, key in enumerate(supported_keys):
                 if key not in toggle_lookup:
                     continue
                 label = toggle_lookup[key]
@@ -520,7 +609,9 @@ class GamescopeSettingsMixin:
 
             self.gamescope_category_groups[category] = category_widget
             self.gamescope_category_stack.addWidget(category_widget)
+            self.gamescope_category_combo.addItem(category)
 
+        uncategorized &= self.gamescope_supported_toggle_keys
         if uncategorized:
             category_widget = QWidget()
             layout = QGridLayout(category_widget)
@@ -544,6 +635,10 @@ class GamescopeSettingsMixin:
             self.gamescope_category_groups[_("Other")] = category_widget
             self.gamescope_category_stack.addWidget(category_widget)
 
+        if not self.gamescope_category_groups:
+            return
+
+        self.gamescope_category_combo.currentTextChanged.connect(self.on_gamescope_category_changed)
         self._update_gamescope_category_stack_height()
         parent_layout.addWidget(selector_group)
 
@@ -581,7 +676,7 @@ class GamescopeSettingsMixin:
     def on_gamescope_category_changed(self, category):
         """Handle Gamescope category selection change."""
         widget = self.gamescope_category_groups.get(category)
-        if widget:
+        if widget and self.gamescope_category_stack.indexOf(widget) >= 0:
             self.gamescope_category_stack.setCurrentWidget(widget)
             self._update_gamescope_category_stack_height()
 
@@ -607,7 +702,9 @@ class GamescopeSettingsMixin:
             self._set_gamescope_value_widget(spec, parsed_args.get(spec['key']))
 
         for key, _label in GAMESCOPE_TOGGLE_SPECS:
-            checkbox = self.gamescope_toggle_widgets[key]
+            checkbox = self.gamescope_toggle_widgets.get(key)
+            if checkbox is None:
+                continue
             checkbox.setChecked(key in parsed_args)
 
         self._sync_gamescope_resolution_combos()
@@ -633,7 +730,9 @@ class GamescopeSettingsMixin:
 
         enabled_toggles = forced_toggles if forced_toggles is not None else set()
         for key, _label in GAMESCOPE_TOGGLE_SPECS:
-            checkbox = self.gamescope_toggle_widgets[key]
+            checkbox = self.gamescope_toggle_widgets.get(key)
+            if checkbox is None:
+                continue
             checkbox.setChecked(key in enabled_toggles or key in parsed_args)
 
         self._sync_gamescope_resolution_combos()
@@ -669,8 +768,8 @@ class GamescopeSettingsMixin:
         Args format: ' --flag --key=value --another-flag'
         Note: Leading space is required in the stored format.
         """
-        known_toggle_keys = {key for key, _label in GAMESCOPE_TOGGLE_SPECS}
-        known_value_keys = {spec['key'] for spec in GAMESCOPE_VALUE_SPECS}
+        known_toggle_keys = set(self.gamescope_supported_toggle_keys)
+        known_value_keys = set(self.gamescope_supported_value_keys)
         known_keys = known_toggle_keys | known_value_keys
         parsed = {}
         extra_tokens = []
@@ -687,13 +786,13 @@ class GamescopeSettingsMixin:
                 token_content = token[2:]
                 if '=' in token_content:
                     key, value = token_content.split('=', 1)
-                    key = key.replace('-', '_')
+                    key = self._normalize_gamescope_option_key(key.replace('-', '_'))
                     if key in known_keys:
                         parsed[key] = value
                     else:
                         extra_tokens.append(token)
                 else:
-                    key = token_content.replace('-', '_')
+                    key = self._normalize_gamescope_option_key(token_content.replace('-', '_'))
                     if key in known_value_keys and i + 1 < len(tokens):
                         i += 1
                         parsed[key] = tokens[i]
@@ -755,12 +854,15 @@ class GamescopeSettingsMixin:
 
     def _build_gamescope_toggle_token(self, key):
         """Build one Gamescope toggle token from a checkbox."""
-        if self.gamescope_toggle_widgets[key].isChecked():
+        checkbox = self.gamescope_toggle_widgets.get(key)
+        if checkbox is None:
+            return ''
+        if checkbox.isChecked():
             short_token = GAMESCOPE_SHORT_TOGGLE_TOKENS.get(key)
             if short_token:
                 return short_token
-            key_with_dashes = key.replace('_', '-')
-            return f"--{key_with_dashes}"
+            option_name = self._get_gamescope_option_name(key)
+            return f"--{option_name}"
         return ''
 
     def _build_gamescope_value_token(self, spec):
@@ -786,8 +888,8 @@ class GamescopeSettingsMixin:
         if short_token:
             return f"{short_token} {value}"
 
-        key_with_dashes = spec['key'].replace('_', '-')
-        return f"--{key_with_dashes}={value}"
+        option_name = self._get_gamescope_option_name(spec['key'])
+        return f"--{option_name}={value}"
 
     def _collect_gamescope_changes(self):
         """Collect Gamescope-specific changes."""

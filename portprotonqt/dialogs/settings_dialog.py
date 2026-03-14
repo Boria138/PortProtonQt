@@ -184,7 +184,8 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
         self.tab_widget.addTab(self.main_tab, _("Main"))
         self.tab_widget.addTab(self.advanced_tab, _("Advanced"))
         self.tab_widget.addTab(self.mangohud_tab, "MangoHud")
-        self.tab_widget.addTab(self.gamescope_tab, "Gamescope")
+        if self.gamescope_available:
+            self.tab_widget.addTab(self.gamescope_tab, "Gamescope")
         self.tab_widget.currentChanged.connect(self.on_table_selection_changed)
 
         self.settings_table = QTableWidget()
@@ -265,7 +266,8 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
         self.advanced_table.installEventFilter(self)
 
         self.setup_mangohud_tab()
-        self.setup_gamescope_tab()
+        if self.gamescope_available:
+            self.setup_gamescope_tab()
 
         self.main_layout.addWidget(self.tab_widget)
 
@@ -394,7 +396,8 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
         self.populate_table()
         self.populate_advanced()
         self.populate_mangohud()
-        self.populate_gamescope()
+        if self.gamescope_available:
+            self.populate_gamescope()
 
         self.settings_container.setCurrentIndex(1)
         self.advanced_container.setCurrentIndex(1)
@@ -714,7 +717,9 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
                 continue
 
         mangohud_changes = self._collect_mangohud_changes()
-        gamescope_changes = self._collect_gamescope_changes()
+        gamescope_changes = []
+        if self.gamescope_available:
+            gamescope_changes = self._collect_gamescope_changes()
         changes.extend(mangohud_changes)
         changes.extend(gamescope_changes)
 
