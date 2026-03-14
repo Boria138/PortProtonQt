@@ -10,7 +10,7 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-03-11 20:40+0500\n"
-"PO-Revision-Date: 2026-03-14 12:05+0500\n"
+"PO-Revision-Date: 2026-03-14 13:13+0500\n"
 "Last-Translator: \n"
 "Language-Team: ru_RU <LL@li.org>\n"
 "Language: ru_RU\n"
@@ -20,7 +20,7 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 "
 "&& (n%100<10 || n%100>=20) ? 1 : 2);\n"
 "Generated-By: Babel 2.17.0\n"
-"X-Generator: Poedit 3.5\n"
+"X-Generator: Poedit 3.8\n"
 
 #, python-brace-format
 msgid "Launch game \"{name}\" with PortProton"
@@ -186,8 +186,8 @@ msgid ""
 "Are you sure you want to delete '{game_name}'? This will remove the .desktop "
 "file and custom data."
 msgstr ""
-"Вы уверены, что хотите удалить '{game_name}'? Это приведёт к удалению файла ."
-"desktop и пользовательских данных."
+"Вы уверены, что хотите удалить '{game_name}'? Это приведёт к удалению "
+"файла .desktop и пользовательских данных."
 
 msgid "Yes"
 msgstr "Да"
@@ -1474,124 +1474,121 @@ msgid "Keep alive after primary process dies"
 msgstr ""
 
 msgid "Output width"
-msgstr ""
+msgstr "Выходная ширина"
 
 msgid "e.g., 1920"
-msgstr ""
+msgstr "Например: 1920"
 
 msgid "Output height"
-msgstr ""
+msgstr "Выходная высота"
 
 msgid "e.g., 1080"
-msgstr ""
+msgstr "Например: 1080"
 
 msgid "Game width"
-msgstr ""
+msgstr "Ширина игры"
 
 msgid "e.g., 1280"
-msgstr ""
+msgstr "Например: 1280"
 
 msgid "Game height"
-msgstr ""
+msgstr "Высота игры"
 
 msgid "e.g., 720"
-msgstr ""
+msgstr "Например: 720"
 
 msgid "Game refresh rate (Hz)"
-msgstr ""
+msgstr "Частота обновления игры, Гц"
 
 msgid "Maximum scale factor"
-msgstr ""
+msgstr "Максимальный коэффициент масштабирования"
 
 msgid "e.g., 4"
-msgstr ""
+msgstr "Например: 4"
 
 msgid "Upscaler type"
-msgstr ""
+msgstr "Режим масштабирования"
 
 msgid "Upscaler filter"
-msgstr ""
+msgstr "Режим интерполяции"
 
 msgid "Upscaler sharpness (0-20)"
-msgstr ""
+msgstr "Улучшение резкости (0-20)"
 
 msgid "e.g., 5"
-msgstr ""
+msgstr "Например: 5"
 
 msgid "Mouse sensitivity"
-msgstr ""
+msgstr "Чувствительность мыши"
 
 msgid "e.g., 1.0"
-msgstr ""
+msgstr "Например: 1,0"
 
 msgid "Rendering backend"
-msgstr ""
+msgstr "Движок отрисовки"
 
 msgid "Ready FD"
-msgstr ""
+msgstr "Готовность файлов дискрипторов"
 
 msgid "e.g., 3"
-msgstr ""
+msgstr "Например: 3"
 
 msgid "Hide cursor delay (ms)"
-msgstr ""
+msgstr "Задержка скрытия курсора, мс"
 
 msgid "e.g., 5000"
-msgstr ""
+msgstr "Например: 5000"
 
 msgid "XWayland servers count"
-msgstr ""
+msgstr "Количество серверов XWayland"
 
 msgid "e.g., 1"
-msgstr ""
+msgstr "Например: 1"
 
-#, fuzzy
 msgid "Force orientation"
-msgstr "Принудительно установить"
+msgstr "Принудительная ориентация"
 
 msgid "Cursor scale height"
-msgstr ""
+msgstr "Линейное масштабирование курсора"
 
 msgid "SDR gamut wideness (0-1)"
-msgstr ""
+msgstr "Ширина диапазона SDR (0-1)"
 
 msgid "e.g., 0.5"
-msgstr ""
+msgstr "Например: 0,5"
 
 msgid "HDR SDR content nits"
-msgstr ""
+msgstr "Яркость дисплея, нт"
 
 msgid "e.g., 400"
-msgstr ""
+msgstr "Например: 400"
 
 msgid "HDR ITM SDR nits"
-msgstr ""
+msgstr "Яркость дисплея с инверсией, нт"
 
 msgid "e.g., 100"
-msgstr ""
+msgstr "Например: 100"
 
 msgid "HDR ITM target nits"
-msgstr ""
+msgstr "Целевая яркость дисплея с инверсией, нт"
 
 msgid "e.g., 1000"
-msgstr ""
+msgstr "Например: 1000"
 
 msgid "Framerate limit"
-msgstr ""
+msgstr "Ограничение частоты кадров"
 
 msgid "Unfocused refresh rate (Hz)"
-msgstr ""
+msgstr "Частота обновления при расфокусировке, Гц"
 
-#, fuzzy
 msgid "Window"
-msgstr "Режим окна"
+msgstr "Окно"
 
-#, fuzzy
 msgid "Platform"
-msgstr "Время игры"
+msgstr "Платформа"
 
 msgid "HDR"
-msgstr ""
+msgstr "HDR"
 
 msgid "Overlay"
 msgstr "Наложение"
@@ -1647,20 +1644,19 @@ msgid "Keep Gamescope alive even when the primary process has died"
 msgstr ""
 
 msgid "Resolution and scaling"
-msgstr ""
+msgstr "Разрешение и масштабирование"
 
 msgid "Quick presets"
 msgstr "Профили"
 
-#, fuzzy
 msgid "Default"
-msgstr "Удалить"
+msgstr "Стандартный"
 
 msgid "FSR upscaling"
-msgstr ""
+msgstr "FSR масштабирование"
 
 msgid "HDR setup"
-msgstr ""
+msgstr "HDR"
 
 msgid "Performance"
 msgstr "Производительность"
@@ -1668,23 +1664,20 @@ msgstr "Производительность"
 msgid "Clear"
 msgstr "Очистить"
 
-#, fuzzy
 msgid "Gamescope switches"
-msgstr "Настройки MangoHud"
+msgstr "Настройки Gamescope"
 
 msgid "Other"
 msgstr "Другие"
 
-#, fuzzy
 msgid "Extra args"
 msgstr "Расширенные настройки"
 
-#, fuzzy
 msgid "Additional Gamescope options not covered by the GUI."
-msgstr "Дополнительные параметры MangoHud (через запятую), отсутствующие в GUI."
+msgstr "Дополнительные параметры Gamescope (через запятую), отсутствующие в GUI."
 
 msgid "Example: --cursor-scale-height=1080 --force-orientation=left"
-msgstr ""
+msgstr "Например: --cursor-scale-height=1080 --force-orientation=left"
 
 msgid "Overlay position"
 msgstr "Позиция MangoHud"
