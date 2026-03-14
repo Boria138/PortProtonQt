@@ -67,7 +67,7 @@ GAMESCOPE_TOGGLE_SPECS = [
     ('borderless', _("Borderless window")),
     ('fullscreen', _("Fullscreen window")),
     ('grab', _("Grab keyboard")),
-    ('force_grab_cursor', _("Always use relative mouse mode")),
+    ('force_grab_cursor', _("Force grab cursor (always relative mouse mode)")),
     ('expose_wayland', _("Expose Wayland")),
     ('rt', _("Use realtime scheduling")),
     ('force_windows_fullscreen', _("Force windows fullscreen")),
@@ -78,8 +78,6 @@ GAMESCOPE_TOGGLE_SPECS = [
     ('hdr_debug_heatmap', _("HDR luminance heatmap")),
     ('mangoapp', _("Enable mangoapp overlay")),
     ('adaptive_sync', _("Enable adaptive sync")),
-    ('allow_deferred_backend', _("Allow deferred backend")),
-    ('keep_alive', _("Keep alive after primary process dies")),
 ]
 
 GAMESCOPE_VALUE_SPECS = [
@@ -191,8 +189,7 @@ GAMESCOPE_TOGGLE_CATEGORIES = {
         'force_windows_fullscreen',
     ],
     _("Platform"): [
-        'expose_wayland', 'backend', 'rt', 'allow_deferred_backend',
-        'keep_alive',
+        'expose_wayland', 'backend', 'rt',
     ],
     _("HDR"): [
         'hdr_enabled', 'hdr_itm_enabled', 'hdr_debug_force_support',
@@ -207,7 +204,7 @@ GAMESCOPE_TOGGLE_DESCRIPTIONS = {
     'borderless': _("Make the window borderless"),
     'fullscreen': _("Make the window fullscreen"),
     'grab': _("Grab the keyboard"),
-    'force_grab_cursor': _("Always use relative mouse mode instead of flipping dependent on cursor visibility"),
+    'force_grab_cursor': _("Force grab cursor: always use relative mouse mode instead of switching with cursor visibility"),
     'expose_wayland': _("Support Wayland clients using xdg-shell"),
     'rt': _("Use realtime scheduling"),
     'force_windows_fullscreen': _("Force windows inside of gamescope to be the size of the nested display (fullscreen)"),
@@ -218,8 +215,6 @@ GAMESCOPE_TOGGLE_DESCRIPTIONS = {
     'hdr_debug_heatmap': _("Display heatmap-style debug view of HDR luminance in nits"),
     'mangoapp': _("Launch with the mangoapp (mangohud) performance overlay enabled"),
     'adaptive_sync': _("Enable adaptive sync if available (variable rate refresh)"),
-    'allow_deferred_backend': _("Allows initting the backend in a deferred way, if it doesn't work immediately"),
-    'keep_alive': _("Keep Gamescope alive even when the primary process has died"),
 }
 
 GAMESCOPE_BUTTON_PRESETS = {
@@ -580,7 +575,7 @@ class GamescopeSettingsMixin:
 
         toggle_lookup = dict(GAMESCOPE_TOGGLE_SPECS)
         uncategorized = set(toggle_lookup.keys())
-        columns = 4
+        columns = 2
 
         for category, keys in GAMESCOPE_TOGGLE_CATEGORIES.items():
             supported_keys = [key for key in keys if key in self.gamescope_supported_toggle_keys]
