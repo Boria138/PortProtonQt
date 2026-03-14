@@ -847,8 +847,27 @@ def get_user_conf_setting(variable_name):
         logger.debug("PortProton CLI returned %s for --get-user-conf %s", result.returncode, variable_name)
         return None
 
-    value = result.stdout.strip()
-    return value if value else None
+    clean_lines = []
+    for line in result.stdout.splitlines():
+        stripped_line = line.strip()
+        if not stripped_line:
+            continue
+        if any(char in stripped_line for char in "█░▄▀╔╗╚╝║"):
+            continue
+        if stripped_line.startswith(("Warning:", "Info:")):
+            continue
+        if "must use subscript when assigning associative array" in stripped_line:
+            continue
+        if " '" in stripped_line and stripped_line.endswith("'"):
+            line_start, quoted_path = stripped_line.rsplit(" '", 1)
+            if line_start and quoted_path.startswith("/"):
+                continue
+        clean_lines.append(stripped_line)
+
+    if not clean_lines:
+        return None
+
+    return clean_lines[-1]
 
 
 def set_user_conf_setting(variable_name, value):
