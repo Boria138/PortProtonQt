@@ -21,10 +21,10 @@ Current translation status:
 
 | Locale | Progress | Translated |
 | :----- | -------: | ---------: |
-| [de](../../portprotonqt/locales/de/LC_MESSAGES/portprotonqt.po) | 0% | 0 of 528 |
-| [es](../../portprotonqt/locales/es/LC_MESSAGES/portprotonqt.po) | 0% | 0 of 528 |
-| [pt](../../portprotonqt/locales/pt/LC_MESSAGES/portprotonqt.po) | 0% | 0 of 528 |
-| [ru](../../portprotonqt/locales/ru/LC_MESSAGES/portprotonqt.po) | 83% | 440 of 528 |
+| [de](../../portprotonqt/locales/de/LC_MESSAGES/portprotonqt.po) | 0% | 0 of 616 |
+| [es](../../portprotonqt/locales/es/LC_MESSAGES/portprotonqt.po) | 0% | 0 of 616 |
+| [pt](../../portprotonqt/locales/pt/LC_MESSAGES/portprotonqt.po) | 0% | 0 of 616 |
+| [ru](../../portprotonqt/locales/ru/LC_MESSAGES/portprotonqt.po) | 74% | 461 of 616 |
 
 ---
 
