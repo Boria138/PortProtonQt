@@ -66,7 +66,7 @@ class GameLibraryManager:
         # Scroll area for game grid
         scrollArea = QScrollArea()
         scrollArea.setWidgetResizable(True)
-        scrollArea.setStyleSheet(self.theme.SCROLL_AREA_STYLE)
+        scrollArea.setStyleSheet(self.theme.SCROLL_STYLE + self.theme.TRANSPARENT_BACKGROUND_STYLE)
         QScroller.grabGesture(scrollArea.viewport(), QScroller.ScrollerGestureType.LeftMouseButtonGesture)
 
         self.gamesListWidget = QWidget()

@@ -354,6 +354,8 @@ class MangoHudSettingsMixin:
     mangohud_tab: QWidget
     mangohud_tab_layout: QVBoxLayout
     show_gamepad_tooltip: Any
+    register_gamepad_tooltip: Any
+    show_registered_gamepad_tooltip: Any
 
     def init_mangohud_state(self):
         self.mangohud_widgets = {}
@@ -371,7 +373,7 @@ class MangoHudSettingsMixin:
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        scroll.setStyleSheet(self.theme.SCROLL_AREA_STYLE)
+        scroll.setStyleSheet(self.theme.SCROLL_STYLE + self.theme.TRANSPARENT_BACKGROUND_STYLE)
         container = QWidget()
         container.setStyleSheet(self.theme.TRANSPARENT_BACKGROUND_STYLE)
         layout = QVBoxLayout(container)
@@ -427,7 +429,7 @@ class MangoHudSettingsMixin:
         widget.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         widget.setMinimumHeight(40)
         widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        widget.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
+        widget.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
         default_value = MANGOHUD_VALUE_DEFAULTS.get(spec['key'], '')
         default_index = widget.findData(default_value)
         if default_value and default_index >= 0:
@@ -476,7 +478,7 @@ class MangoHudSettingsMixin:
 
         self.mangohud_category_combo = QComboBox()
         self.mangohud_category_combo.addItems(list(MANGOHUD_TOGGLE_CATEGORIES.keys()))
-        self.mangohud_category_combo.setStyleSheet(self.theme.SETTINGS_COMBO_STYLE)
+        self.mangohud_category_combo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
         self.mangohud_category_combo.setMinimumHeight(40)
         self.mangohud_category_combo.currentTextChanged.connect(self.on_mangohud_category_changed)
         selector_layout.addWidget(self.mangohud_category_combo)
@@ -487,6 +489,7 @@ class MangoHudSettingsMixin:
 
         toggle_lookup = dict(MANGOHUD_TOGGLE_SPECS)
         uncategorized = set(toggle_lookup.keys())
+        columns = 4
 
         for category, keys in MANGOHUD_TOGGLE_CATEGORIES.items():
             category_widget = QWidget()
@@ -494,17 +497,20 @@ class MangoHudSettingsMixin:
             layout.setContentsMargins(8, 8, 8, 8)
             layout.setHorizontalSpacing(16)
             layout.setVerticalSpacing(10)
+            for column in range(columns):
+                layout.setColumnStretch(column, 1)
 
             for index, key in enumerate(keys):
                 if key not in toggle_lookup:
                     continue
                 label = toggle_lookup[key]
                 checkbox = self._create_mangohud_checkbox(label)
-                row = index // 4
-                column = index % 4
+                row = index // columns
+                column = index % columns
                 layout.addWidget(checkbox, row, column)
                 self.mangohud_toggle_widgets[key] = checkbox
                 self.mangohud_toggle_widget_keys[checkbox] = key
+                self.register_gamepad_tooltip(checkbox, MANGOHUD_TOGGLE_DESCRIPTIONS.get(key, ""))
                 uncategorized.discard(key)
 
             self.mangohud_category_groups[category] = category_widget
@@ -516,15 +522,18 @@ class MangoHudSettingsMixin:
             layout.setContentsMargins(8, 8, 8, 8)
             layout.setHorizontalSpacing(16)
             layout.setVerticalSpacing(10)
+            for column in range(columns):
+                layout.setColumnStretch(column, 1)
 
             for index, key in enumerate(sorted(uncategorized)):
                 label = toggle_lookup[key]
                 checkbox = self._create_mangohud_checkbox(label)
-                row = index // 4
-                column = index % 4
+                row = index // columns
+                column = index % columns
                 layout.addWidget(checkbox, row, column)
                 self.mangohud_toggle_widgets[key] = checkbox
                 self.mangohud_toggle_widget_keys[checkbox] = key
+                self.register_gamepad_tooltip(checkbox, MANGOHUD_TOGGLE_DESCRIPTIONS.get(key, ""))
 
             self.mangohud_category_combo.addItem(_("Other"))
             self.mangohud_category_groups[_("Other")] = category_widget
@@ -568,7 +577,7 @@ class MangoHudSettingsMixin:
             checkbox = QCheckBox(fps)
             checkbox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
             checkbox.setMinimumHeight(36)
-            checkbox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE + """
+            checkbox.setStyleSheet(self.theme.CHECKBOX_STYLE + """
                 QCheckBox {
                     spacing: 10px;
                     padding: 4px 2px;
@@ -664,7 +673,7 @@ class MangoHudSettingsMixin:
         checkbox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         checkbox.setMinimumHeight(36)
         checkbox.installEventFilter(cast(QWidget, self))
-        checkbox.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE + """
+        checkbox.setStyleSheet(self.theme.CHECKBOX_STYLE + """
             QCheckBox {
                 spacing: 10px;
                 padding: 4px 2px;
@@ -679,21 +688,9 @@ class MangoHudSettingsMixin:
             self.mangohud_category_stack.setCurrentWidget(widget)
             self._update_mangohud_category_stack_height()
 
-    def _show_mangohud_toggle_tooltip(self, checkbox):
-        """Show gamepad tooltip for MangoHud toggle checkbox."""
-        key = self.mangohud_toggle_widget_keys.get(checkbox)
-        if not key:
-            return
-        text = MANGOHUD_TOGGLE_DESCRIPTIONS.get(key, "")
-        if not text:
-            self.show_gamepad_tooltip(show=False)
-            return
-        self.show_gamepad_tooltip(show=True, text=text, anchor_widget=checkbox)
-
     def _on_focus_changed(self, _old, new):
         """Track focused MangoHud toggle checkbox and show tooltip."""
-        if isinstance(new, QCheckBox) and new in self.mangohud_toggle_widget_keys:
-            self._show_mangohud_toggle_tooltip(new)
+        if isinstance(new, QCheckBox) and self.show_registered_gamepad_tooltip(new):
             return
         if self.tab_widget.currentIndex() == 2:
             self.show_gamepad_tooltip(show=False)

@@ -39,7 +39,7 @@ def create_scroll_area(parent: QWidget, theme) -> tuple[QScrollArea, QWidget, QV
     scroll_area = QScrollArea()
     scroll_area.setWidgetResizable(True)
     scroll_area.setFrameShape(QFrame.Shape.NoFrame)
-    scroll_area.setStyleSheet(theme.SCROLL_AREA_STYLE)
+    scroll_area.setStyleSheet(theme.SCROLL_STYLE + theme.TRANSPARENT_BACKGROUND_STYLE)
     QScroller.grabGesture(scroll_area.viewport(), QScroller.ScrollerGestureType.LeftMouseButtonGesture)
 
     scroll_content = QWidget()

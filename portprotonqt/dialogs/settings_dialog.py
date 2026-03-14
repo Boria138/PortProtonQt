@@ -6,7 +6,7 @@ import shutil
 from typing import cast, TYPE_CHECKING
 
 from PySide6.QtCore import Qt, QEvent, QProcess, QTimer, QUrl
-from PySide6.QtGui import QColor, QDesktopServices, QGuiApplication
+from PySide6.QtGui import QColor, QContextMenuEvent, QDesktopServices, QGuiApplication
 from PySide6.QtWidgets import (
     QApplication,
     QAbstractItemView,
@@ -99,6 +99,7 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
         self.numa_nodes = {}
         self.locale_options = []
         self.logical_core_options = []
+        self._gamepad_tooltip_map = {}
 
         self.setWindowTitle(_("Exe Settings"))
         self.setModal(True)
@@ -170,7 +171,7 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
         self.main_layout.addLayout(search_layout)
 
         self.tab_widget = QTabWidget()
-        self.tab_widget.setStyleSheet(self.theme.WINETRICKS_TAB_STYLE)
+        self.tab_widget.setStyleSheet(self.theme.TAB_STYLE)
         self.main_tab = QWidget()
         self.main_tab_layout = QVBoxLayout(self.main_tab)
         self.advanced_tab = QWidget()
@@ -183,7 +184,8 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
         self.tab_widget.addTab(self.main_tab, _("Main"))
         self.tab_widget.addTab(self.advanced_tab, _("Advanced"))
         self.tab_widget.addTab(self.mangohud_tab, "MangoHud")
-        self.tab_widget.addTab(self.gamescope_tab, "Gamescope")
+        if self.gamescope_available:
+            self.tab_widget.addTab(self.gamescope_tab, "Gamescope")
         self.tab_widget.currentChanged.connect(self.on_table_selection_changed)
 
         self.settings_table = QTableWidget()
@@ -200,7 +202,7 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
         self.settings_table.setWordWrap(True)
         self.settings_table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         self.settings_table.setTextElideMode(Qt.TextElideMode.ElideNone)
-        self.settings_table.setStyleSheet(self.theme.WINETRICKS_TABBLE_STYLE)
+        self.settings_table.setStyleSheet(self.theme.WINETRICKS_TABBLE_STYLE + self.theme.COMBOBOX_STYLE + self.theme.LINE_EDIT_STYLE + self.theme.SCROLL_STYLE)
         self.settings_table.setMouseTracking(True)
 
         self.settings_preloader = Preloader()
@@ -239,7 +241,7 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
         self.advanced_table.setWordWrap(True)
         self.advanced_table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         self.advanced_table.setTextElideMode(Qt.TextElideMode.ElideNone)
-        self.advanced_table.setStyleSheet(self.theme.WINETRICKS_TABBLE_STYLE)
+        self.advanced_table.setStyleSheet(self.theme.WINETRICKS_TABBLE_STYLE + self.theme.COMBOBOX_STYLE + self.theme.LINE_EDIT_STYLE + self.theme.SCROLL_STYLE)
         self.advanced_table.setMouseTracking(True)
 
         self.advanced_preloader = Preloader()
@@ -264,13 +266,14 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
         self.advanced_table.installEventFilter(self)
 
         self.setup_mangohud_tab()
-        self.setup_gamescope_tab()
+        if self.gamescope_available:
+            self.setup_gamescope_tab()
 
         self.main_layout.addWidget(self.tab_widget)
 
         self.gamepad_tooltip = QLabel()
         self.gamepad_tooltip.setWordWrap(True)
-        self.gamepad_tooltip.setStyleSheet(self.theme.SETTINGS_TOOLTIP_STYLE)
+        self.gamepad_tooltip.setStyleSheet(self.theme.TOOLTIP_STYLE)
         self.gamepad_tooltip.setVisible(False)
         self.gamepad_tooltip.setParent(self)
         self.gamepad_tooltip.setWindowFlags(Qt.WindowType.ToolTip)
@@ -295,6 +298,7 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
         self.apply_button.clicked.connect(self.apply_changes)
         self.cancel_button.clicked.connect(self.reject)
         self.open_ppdb_button.clicked.connect(self.open_ppdb_file)
+        self._install_line_edit_event_filters()
 
     def load_current_settings(self):
         """Load available toggles first, then current settings."""
@@ -392,7 +396,8 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
         self.populate_table()
         self.populate_advanced()
         self.populate_mangohud()
-        self.populate_gamescope()
+        if self.gamescope_available:
+            self.populate_gamescope()
 
         self.settings_container.setCurrentIndex(1)
         self.advanced_container.setCurrentIndex(1)
@@ -435,12 +440,12 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
             current_val = self.current_settings.get(toggle, '0')
             is_blocked = toggle in self.blocked_keys
             checkbox_widget = QCheckBox()
-            checkbox_widget.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
+            checkbox_widget.setStyleSheet(self.theme.CHECKBOX_STYLE)
             checkbox_widget.setChecked(current_val == '1' and not is_blocked)
             checkbox_widget.setEnabled(not is_blocked)
             checkbox_widget.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
             checkbox_container = QWidget()
-            checkbox_container.setStyleSheet(self.theme.SETTINGS_CHECKBOX_STYLE)
+            checkbox_container.setStyleSheet(self.theme.CHECKBOX_STYLE + self.theme.TRANSPARENT_BACKGROUND_STYLE)
             checkbox_layout = QHBoxLayout(checkbox_container)
             checkbox_layout.setContentsMargins(0, 0, 0, 0)
             checkbox_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -583,6 +588,7 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
 
         if self.advanced_table.rowCount() > 0:
             self.on_table_selection_changed()
+        self._install_line_edit_event_filters()
 
     def init_virtual_keyboard(self):
         """Initialize virtual keyboard."""
@@ -599,6 +605,27 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
             return
 
         self.keyboard.show_for_widget(widget)
+
+    def register_gamepad_tooltip(self, widget: QWidget, text: str) -> None:
+        """Register tooltip text for a focusable widget."""
+        if text:
+            self._gamepad_tooltip_map[widget] = text
+
+    def show_registered_gamepad_tooltip(self, widget: QWidget) -> bool:
+        """Show registered tooltip for the provided widget."""
+        text = self._gamepad_tooltip_map.get(widget, "")
+        if not text:
+            return False
+        self.show_gamepad_tooltip(show=True, text=text, anchor_widget=widget)
+        return True
+
+    def _install_line_edit_event_filters(self) -> None:
+        """Install event filter for all line edits in the dialog."""
+        for line_edit in self.findChildren(QLineEdit):
+            if line_edit.property("ppqt_ctx_menu_filter_installed"):
+                continue
+            line_edit.setProperty("ppqt_ctx_menu_filter_installed", True)
+            line_edit.installEventFilter(self)
 
     def filter_settings(self, text):
         """Filter settings based on search text."""
@@ -689,8 +716,20 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
             else:
                 continue
 
-        changes.extend(self._collect_mangohud_changes())
-        changes.extend(self._collect_gamescope_changes())
+        mangohud_changes = self._collect_mangohud_changes()
+        gamescope_changes = []
+        if self.gamescope_available:
+            gamescope_changes = self._collect_gamescope_changes()
+        changes.extend(mangohud_changes)
+        changes.extend(gamescope_changes)
+
+        if mangohud_changes:
+            changes = [change for change in changes if not change.startswith("PW_MANGOHUD=")]
+            changes.append("PW_MANGOHUD=1")
+
+        if gamescope_changes:
+            changes = [change for change in changes if not change.startswith("PW_GAMESCOPE=")]
+            changes.append("PW_GAMESCOPE=1")
 
         # If PW_MANGOHUD is being enabled and MANGOHUD_CONFIG is not in current settings,
         # add it from the var file
@@ -743,23 +782,19 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
         super().closeEvent(event)
 
     def eventFilter(self, obj, event):
-        mangohud_toggle_widget_keys = getattr(self, 'mangohud_toggle_widget_keys', {})
-        gamescope_toggle_widget_keys = getattr(self, 'gamescope_toggle_widget_keys', {})
+        if isinstance(obj, QLineEdit) and event.type() == QEvent.Type.ContextMenu:
+            context_event = cast(QContextMenuEvent, event)
+            from portprotonqt.context_menu_manager import show_themed_line_edit_context_menu
 
-        if isinstance(obj, QCheckBox) and obj in mangohud_toggle_widget_keys:
+            show_themed_line_edit_context_menu(obj, context_event.globalPos(), self.theme)
+            return True
+
+        if isinstance(obj, QCheckBox) and obj in self._gamepad_tooltip_map:
             if event.type() in (QEvent.Type.Enter, QEvent.Type.FocusIn):
-                self._show_mangohud_toggle_tooltip(obj)
+                self.show_registered_gamepad_tooltip(obj)
             elif event.type() in (QEvent.Type.Leave, QEvent.Type.FocusOut):
                 focused_widget = QApplication.focusWidget()
-                if not (isinstance(focused_widget, QCheckBox) and focused_widget in mangohud_toggle_widget_keys):
-                    self.show_gamepad_tooltip(show=False)
-
-        if isinstance(obj, QCheckBox) and obj in gamescope_toggle_widget_keys:
-            if event.type() in (QEvent.Type.Enter, QEvent.Type.FocusIn):
-                self._show_gamescope_toggle_tooltip(obj)
-            elif event.type() in (QEvent.Type.Leave, QEvent.Type.FocusOut):
-                focused_widget = QApplication.focusWidget()
-                if not (isinstance(focused_widget, QCheckBox) and focused_widget in gamescope_toggle_widget_keys):
+                if focused_widget not in self._gamepad_tooltip_map:
                     self.show_gamepad_tooltip(show=False)
 
         return super().eventFilter(obj, event)

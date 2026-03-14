@@ -1243,7 +1243,7 @@ class InputManager(QObject):
                     if isinstance(focused, QLineEdit):
                         self.settings_dialog.show_virtual_keyboard(focused)
                         return
-                    if self.settings_dialog.tab_widget.currentIndex() == 2:
+                    if self.settings_dialog.tab_widget.currentIndex() in (2, 3):
                         if isinstance(focused, QCheckBox):
                             focused.toggle()
                             return
@@ -1337,7 +1337,7 @@ class InputManager(QObject):
                             kb.move_focus_up()
                 return
 
-            if self.settings_dialog.tab_widget.currentIndex() == 2:
+            if self.settings_dialog.tab_widget.currentIndex() in (2, 3):
                 focused = QApplication.focusWidget()
                 open_combo = self._get_open_settings_combo()
                 if open_combo:
@@ -1520,24 +1520,36 @@ class InputManager(QObject):
             self._focus_settings_advanced_value_widget(table, 0)
             return
 
-        if self.settings_dialog and self.settings_dialog.tab_widget.currentIndex() == 2:
+        if self.settings_dialog and self.settings_dialog.tab_widget.currentIndex() in (2, 3):
             sections = self._get_mangohud_nav_sections()
             if sections and sections[0]:
                 self._focus_mangohud_widget(sections[0][0])
 
     def _get_mangohud_nav_sections(self):
-        """Return MangoHud focusable widgets grouped by visual sections."""
-        if not self.settings_dialog or self.settings_dialog.tab_widget.currentIndex() != 2:
+        """Return MangoHud/Gamescope focusable widgets grouped by visual sections."""
+        if not self.settings_dialog:
+            return []
+        tab_index = self.settings_dialog.tab_widget.currentIndex()
+        if tab_index not in (2, 3):
             return []
 
         sections = []
 
-        value_widgets = [
-            widget for key, widget in self.settings_dialog.mangohud_widgets.items()
-            if key != 'fps_limit_method' and widget.isVisible() and widget.isEnabled()
-        ]
-        if value_widgets:
-            sections.append(self._sort_widgets_by_position(value_widgets))
+        value_widgets = []
+        if tab_index == 2:
+            value_widgets = [
+                widget for key, widget in self.settings_dialog.mangohud_widgets.items()
+                if key != 'fps_limit_method' and widget.isVisible() and widget.isEnabled()
+            ]
+        elif tab_index == 3:
+            value_widgets = [
+                widget for widget in self.settings_dialog.gamescope_widgets.values()
+                if widget.isVisible() and widget.isEnabled()
+            ]
+            value_widgets.extend([
+                widget for widget in self.settings_dialog.gamescope_resolution_widgets.values()
+                if widget.isVisible() and widget.isEnabled()
+            ])
 
         mangohud_tab = self.settings_dialog.tab_widget.currentWidget()
         preset_buttons = []
@@ -1548,14 +1560,15 @@ class InputManager(QObject):
                 )
                 if widget.isVisible() and widget.isEnabled()
             ]
-        if preset_buttons:
-            sections.append(self._sort_widgets_by_position(preset_buttons))
+        preset_section = self._sort_widgets_by_position(preset_buttons) if preset_buttons else []
 
         toggle_widgets = []
-        category_combo = getattr(self.settings_dialog, 'mangohud_category_combo', None)
+        category_combo_attr = 'mangohud_category_combo' if tab_index == 2 else 'gamescope_category_combo'
+        category_stack_attr = 'mangohud_category_stack' if tab_index == 2 else 'gamescope_category_stack'
+        category_combo = getattr(self.settings_dialog, category_combo_attr, None)
         if category_combo and category_combo.isVisible() and category_combo.isEnabled():
             toggle_widgets.append(category_combo)
-        category_stack = getattr(self.settings_dialog, 'mangohud_category_stack', None)
+        category_stack = getattr(self.settings_dialog, category_stack_attr, None)
         if category_stack:
             category_widget = category_stack.currentWidget()
             if category_widget:
@@ -1566,24 +1579,47 @@ class InputManager(QObject):
                     if checkbox.isVisible() and checkbox.isEnabled()
                 ]
                 toggle_widgets.extend(self._sort_widgets_by_position(category_checkboxes))
-        if toggle_widgets:
-            sections.append(toggle_widgets)
+        toggle_section = toggle_widgets if toggle_widgets else []
 
-        fps_widgets = []
-        fps_limit_method = self.settings_dialog.mangohud_widgets.get('fps_limit_method')
-        if fps_limit_method and fps_limit_method.isVisible() and fps_limit_method.isEnabled():
-            fps_widgets.append(fps_limit_method)
+        fps_section = []
+        if tab_index == 2:
+            fps_widgets = []
+            fps_limit_method = self.settings_dialog.mangohud_widgets.get('fps_limit_method')
+            if fps_limit_method and fps_limit_method.isVisible() and fps_limit_method.isEnabled():
+                fps_widgets.append(fps_limit_method)
 
-        fps_widgets.extend([
-            checkbox for checkbox in self.settings_dialog.mangohud_fps_widgets.values()
-            if checkbox.isVisible() and checkbox.isEnabled()
-        ])
-        if fps_widgets:
-            sections.append(self._sort_widgets_by_position(fps_widgets))
+            fps_widgets.extend([
+                checkbox for checkbox in self.settings_dialog.mangohud_fps_widgets.values()
+                if checkbox.isVisible() and checkbox.isEnabled()
+            ])
+            if fps_widgets:
+                fps_section = self._sort_widgets_by_position(fps_widgets)
 
-        extra_edit = getattr(self.settings_dialog, 'mangohud_extra_edit', None)
-        if extra_edit and extra_edit.isVisible() and extra_edit.isEnabled():
-            sections.append([extra_edit])
+        extra_edit_attr = 'mangohud_extra_edit' if tab_index == 2 else 'gamescope_extra_edit'
+        extra_edit = getattr(self.settings_dialog, extra_edit_attr, None)
+        extra_section = [extra_edit] if extra_edit and extra_edit.isVisible() and extra_edit.isEnabled() else []
+
+        if tab_index == 2:
+            if value_widgets:
+                sections.append(self._sort_widgets_by_position(value_widgets))
+            if preset_section:
+                sections.append(preset_section)
+            if toggle_section:
+                sections.append(toggle_section)
+            if fps_section:
+                sections.append(fps_section)
+            if extra_section:
+                sections.append(extra_section)
+        else:
+            # Gamescope UI order: presets -> toggles -> values -> extra.
+            if preset_section:
+                sections.append(preset_section)
+            if toggle_section:
+                sections.append(toggle_section)
+            if value_widgets:
+                sections.append(self._sort_widgets_by_position(value_widgets))
+            if extra_section:
+                sections.append(extra_section)
 
         return sections
 
@@ -1649,6 +1685,7 @@ class InputManager(QObject):
             return
 
         section_index, _widget_index = position
+        toggle_boundary_reached = False
         if self._is_mangohud_fps_widget(focused):
             fps_target = self._find_mangohud_fps_vertical_target(
                 focused, direction, sections[section_index]
@@ -1663,11 +1700,13 @@ class InputManager(QObject):
             if toggle_target:
                 self._focus_mangohud_widget(toggle_target)
                 return
+            toggle_boundary_reached = True
 
+        tab_index = settings_dialog.tab_widget.currentIndex()
         fps_limit_method = None
-        if settings_dialog:
+        if tab_index == 2:
             fps_limit_method = settings_dialog.mangohud_widgets.get('fps_limit_method')
-        if direction > 0 and fps_limit_method and focused is fps_limit_method:
+        if direction > 0 and tab_index == 2 and fps_limit_method and focused is fps_limit_method:
             fps_checkboxes = [
                 checkbox for checkbox in settings_dialog.mangohud_fps_widgets.values()
                 if checkbox.isVisible() and checkbox.isEnabled()
@@ -1677,8 +1716,10 @@ class InputManager(QObject):
                 self._focus_mangohud_widget(first_fps_checkbox)
                 return
 
-        category_combo = getattr(settings_dialog, 'mangohud_category_combo', None)
-        category_stack = getattr(settings_dialog, 'mangohud_category_stack', None)
+        category_combo_attr = 'mangohud_category_combo' if tab_index == 2 else 'gamescope_category_combo'
+        category_stack_attr = 'mangohud_category_stack' if tab_index == 2 else 'gamescope_category_stack'
+        category_combo = getattr(settings_dialog, category_combo_attr, None)
+        category_stack = getattr(settings_dialog, category_stack_attr, None)
         if direction > 0 and category_combo and focused is category_combo and category_stack:
             current_category_widget = category_stack.currentWidget()
             if current_category_widget:
@@ -1693,12 +1734,13 @@ class InputManager(QObject):
                     self._focus_mangohud_widget(first_checkbox)
                     return
 
-        target_in_section = self._find_mangohud_neighbor_in_section(
-            focused, sections[section_index], direction, is_vertical=True
-        )
-        if target_in_section:
-            self._focus_mangohud_widget(target_in_section)
-            return
+        if not toggle_boundary_reached:
+            target_in_section = self._find_mangohud_neighbor_in_section(
+                focused, sections[section_index], direction, is_vertical=True
+            )
+            if target_in_section:
+                self._focus_mangohud_widget(target_in_section)
+                return
 
         target_section_index = section_index + direction
         if target_section_index < 0 or target_section_index >= len(sections):
@@ -1708,7 +1750,7 @@ class InputManager(QObject):
         if not target_section:
             return
 
-        category_combo = getattr(settings_dialog, 'mangohud_category_combo', None)
+        category_combo = getattr(settings_dialog, category_combo_attr, None)
         if category_combo and category_combo in target_section:
             self._focus_mangohud_widget(category_combo)
             return
@@ -1718,7 +1760,7 @@ class InputManager(QObject):
             return
 
         fps_limit_method = None
-        if settings_dialog:
+        if tab_index == 2:
             fps_limit_method = settings_dialog.mangohud_widgets.get('fps_limit_method')
         if fps_limit_method and fps_limit_method in target_section:
             self._focus_mangohud_widget(fps_limit_method)
@@ -1828,10 +1870,16 @@ class InputManager(QObject):
         return widget in set(self.settings_dialog.mangohud_fps_widgets.values())
 
     def _is_mangohud_toggle_widget(self, widget: QWidget) -> bool:
-        """Check if widget belongs to MangoHud toggle checkbox section."""
+        """Check if widget belongs to MangoHud/Gamescope toggle checkbox section."""
         if not self.settings_dialog:
             return False
-        toggle_keys = getattr(self.settings_dialog, 'mangohud_toggle_widget_keys', {})
+        tab_index = self.settings_dialog.tab_widget.currentIndex()
+        if tab_index == 2:
+            toggle_keys = getattr(self.settings_dialog, 'mangohud_toggle_widget_keys', {})
+        elif tab_index == 3:
+            toggle_keys = getattr(self.settings_dialog, 'gamescope_toggle_widget_keys', {})
+        else:
+            toggle_keys = {}
         return isinstance(widget, QCheckBox) and widget in toggle_keys
 
     def _find_mangohud_toggle_vertical_target(

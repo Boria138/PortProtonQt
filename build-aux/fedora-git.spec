@@ -84,6 +84,10 @@ cd %{oname}
 %install
 cd %{oname}
 %meson_install
+bash ./dev-scripts/generate-completions.sh
+install -Dpm 0644 ./completions/portprotonqt -t %{buildroot}%{bash_completions_dir}
+install -Dpm 0644 ./completions/portprotonqt.fish -t %{buildroot}%{fish_completions_dir}
+install -Dpm 0644 ./completions/_portprotonqt -t %{buildroot}%{zsh_completions_dir}
 %find_lang %{pypi_name}
 
 %files -f %{oname}/%{pypi_name}.lang
@@ -95,6 +99,8 @@ cd %{oname}
 %{_udevrulesdir}/60-portprotonqt.rules
 %{_datadir}/applications/ru.linux_gaming.PortProtonQt.desktop
 %{bash_completions_dir}/portprotonqt
+%{fish_completions_dir}/portprotonqt.fish
+%{zsh_completions_dir}/_portprotonqt
 
 %files -n %{pypi_name}-git-steam-compat
 %{_datadir}/steam/compatibilitytools.d/PortProtonQt/
