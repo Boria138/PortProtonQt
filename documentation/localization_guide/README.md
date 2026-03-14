@@ -24,7 +24,7 @@ Current translation status:
 | [de](../../portprotonqt/locales/de/LC_MESSAGES/portprotonqt.po) | 0% | 0 of 616 |
 | [es](../../portprotonqt/locales/es/LC_MESSAGES/portprotonqt.po) | 0% | 0 of 616 |
 | [pt](../../portprotonqt/locales/pt/LC_MESSAGES/portprotonqt.po) | 0% | 0 of 616 |
-| [ru](../../portprotonqt/locales/ru/LC_MESSAGES/portprotonqt.po) | 88% | 546 of 616 |
+| [ru](../../portprotonqt/locales/ru/LC_MESSAGES/portprotonqt.po) | 95% | 586 of 616 |
 
 ---
 
