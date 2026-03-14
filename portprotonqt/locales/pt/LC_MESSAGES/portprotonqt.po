@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-03-09 09:10+0500\n"
+"POT-Creation-Date: 2026-03-11 20:40+0500\n"
 "PO-Revision-Date: 2026-01-18 11:09+0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: pt\n"
@@ -403,6 +403,9 @@ msgstr ""
 msgid "WINE/Proton:"
 msgstr ""
 
+msgid "Enter prefix name"
+msgstr ""
+
 msgid "Prefix:"
 msgstr ""
 
@@ -657,6 +660,13 @@ msgid "Stop"
 msgstr ""
 
 msgid "Play"
+msgstr ""
+
+msgid "Prefix not found"
+msgstr ""
+
+#, python-brace-format
+msgid "Prefix '{0}' was not found. Install recommended libraries?"
 msgstr ""
 
 #, python-brace-format
@@ -1279,333 +1289,6 @@ msgstr ""
 msgid "Download or extraction has been cancelled."
 msgstr ""
 
-msgid "Arch"
-msgstr ""
-
-msgid "Battery"
-msgstr ""
-
-msgid "Battery icon"
-msgstr ""
-
-msgid "Battery time"
-msgstr ""
-
-msgid "Battery watt"
-msgstr ""
-
-msgid "Bicubic"
-msgstr ""
-
-msgid "Core bars"
-msgstr ""
-
-msgid "Core load"
-msgstr ""
-
-msgid "Core load change"
-msgstr ""
-
-msgid "Core type"
-msgstr ""
-
-msgid "CPU efficiency"
-msgstr ""
-
-msgid "CPU load change"
-msgstr ""
-
-msgid "CPU MHz"
-msgstr ""
-
-msgid "CPU power"
-msgstr ""
-
-msgid "CPU temperature"
-msgstr ""
-
-msgid "Debug"
-msgstr ""
-
-msgid "Device battery icon"
-msgstr ""
-
-msgid "Display server"
-msgstr ""
-
-msgid "Dynamic frame timing"
-msgstr ""
-
-msgid "Short engine names"
-msgstr ""
-
-msgid "Engine version"
-msgstr ""
-
-msgid "Executable name"
-msgstr ""
-
-msgid "Fan"
-msgstr ""
-
-msgid "FCAT"
-msgstr ""
-
-msgid "Flip efficiency"
-msgstr ""
-
-msgid "FPS color change"
-msgstr ""
-
-msgid "FPS metrics"
-msgstr ""
-
-msgid "FPS only"
-msgstr ""
-
-msgid "Frame count"
-msgstr ""
-
-msgid "Frametime"
-msgstr ""
-
-msgid "Detailed frametime"
-msgstr ""
-
-msgid "FSR status"
-msgstr ""
-
-msgid "Full preset"
-msgstr ""
-
-msgid "GameMode"
-msgstr ""
-
-msgid "GPU core clock"
-msgstr ""
-
-msgid "GPU efficiency"
-msgstr ""
-
-msgid "GPU fan"
-msgstr ""
-
-msgid "GPU junction temp"
-msgstr ""
-
-msgid "GPU load change"
-msgstr ""
-
-msgid "GPU memory clock"
-msgstr ""
-
-msgid "GPU memory temp"
-msgstr ""
-
-msgid "GPU name"
-msgstr ""
-
-msgid "GPU power"
-msgstr ""
-
-msgid "GPU power limit"
-msgstr ""
-
-msgid "GPU temperature"
-msgstr ""
-
-msgid "GPU voltage"
-msgstr ""
-
-msgid "HDR status"
-msgstr ""
-
-msgid "Hide FSR sharpness"
-msgstr ""
-
-msgid "Histogram"
-msgstr ""
-
-msgid "Horizontal"
-msgstr ""
-
-msgid "Horizontal stretch"
-msgstr ""
-
-msgid "Compact HUD"
-msgstr ""
-
-msgid "No margins"
-msgstr ""
-
-msgid "IO read"
-msgstr ""
-
-msgid "IO write"
-msgstr ""
-
-msgid "Log versioning"
-msgstr ""
-
-msgid "Media player"
-msgstr ""
-
-msgid "Hidden by default"
-msgstr ""
-
-msgid "No small font"
-msgstr ""
-
-msgid "Permit upload"
-msgstr ""
-
-msgid "Present mode"
-msgstr ""
-
-msgid "Process VRAM"
-msgstr ""
-
-msgid "Process memory"
-msgstr ""
-
-msgid "Shared memory"
-msgstr ""
-
-msgid "Virtual memory"
-msgstr ""
-
-msgid "RAM"
-msgstr ""
-
-msgid "RAM temperature"
-msgstr ""
-
-msgid "Read config"
-msgstr ""
-
-msgid "Refresh rate"
-msgstr ""
-
-msgid "Resolution"
-msgstr ""
-
-msgid "Retro"
-msgstr ""
-
-msgid "Show FPS limit"
-msgstr ""
-
-msgid "Swap"
-msgstr ""
-
-msgid "Fahrenheit"
-msgstr ""
-
-msgid "Text outline"
-msgstr ""
-
-msgid "Throttling status"
-msgstr ""
-
-msgid "Throttling graph"
-msgstr ""
-
-msgid "Time"
-msgstr ""
-
-msgid "Time without label"
-msgstr ""
-
-msgid "Trilinear"
-msgstr ""
-
-msgid "Upload logs"
-msgstr ""
-
-msgid "Version"
-msgstr ""
-
-msgid "vkBasalt"
-msgstr ""
-
-msgid "VRAM"
-msgstr ""
-
-msgid "Vulkan driver"
-msgstr ""
-
-msgid "Wine"
-msgstr ""
-
-msgid "Wine sync"
-msgstr ""
-
-msgid "Overlay position"
-msgstr ""
-
-msgid "Top-left"
-msgstr ""
-
-msgid "Top-right"
-msgstr ""
-
-msgid "Middle-left"
-msgstr ""
-
-msgid "Middle-right"
-msgstr ""
-
-msgid "Bottom-left"
-msgstr ""
-
-msgid "Bottom-right"
-msgstr ""
-
-msgid "Top-center"
-msgstr ""
-
-msgid "Bottom-center"
-msgstr ""
-
-msgid "Device battery"
-msgstr ""
-
-msgid "Gamepad"
-msgstr ""
-
-msgid "Mouse"
-msgstr ""
-
-msgid "Gamepad, mouse"
-msgstr ""
-
-msgid "FPS limit method"
-msgstr ""
-
-msgid "Anisotropic filtering"
-msgstr ""
-
-msgid "FCAT screen edge"
-msgstr ""
-
-msgid "Table columns"
-msgstr ""
-
-msgid "Network (tx/rx kb/s)"
-msgstr ""
-
-msgid "General"
-msgstr ""
-
-msgid "Performance"
-msgstr ""
-
-msgid "CPU / GPU"
-msgstr ""
-
-msgid "Overlay"
-msgstr ""
-
 msgid "Exe Settings"
 msgstr ""
 
@@ -1619,9 +1302,6 @@ msgid "Main"
 msgstr ""
 
 msgid "Advanced"
-msgstr ""
-
-msgid "MangoHud"
 msgstr ""
 
 msgid "Setting"
@@ -1648,13 +1328,621 @@ msgstr ""
 msgid "disabled"
 msgstr ""
 
-msgid "Layout and limiter"
+msgid "Default value"
+msgstr ""
+
+msgid "Info"
+msgstr ""
+
+msgid "No changes to apply."
+msgstr ""
+
+msgid "Failed to apply changes. Check logs."
+msgstr ""
+
+msgid "Settings updated successfully."
+msgstr ""
+
+msgid "Borderless window"
+msgstr ""
+
+msgid "Fullscreen window"
+msgstr ""
+
+msgid "Grab keyboard"
+msgstr ""
+
+msgid "Always use relative mouse mode"
+msgstr ""
+
+msgid "Expose Wayland"
+msgstr ""
+
+msgid "Use realtime scheduling"
+msgstr ""
+
+msgid "Force windows fullscreen"
+msgstr ""
+
+msgid "Enable HDR output"
+msgstr ""
+
+msgid "Enable SDR→HDR inverse tone mapping"
+msgstr ""
+
+msgid "Force HDR support"
+msgstr ""
+
+msgid "Force HDR10 PQ output"
+msgstr ""
+
+msgid "HDR luminance heatmap"
+msgstr ""
+
+msgid "Enable mangoapp overlay"
+msgstr ""
+
+msgid "Enable adaptive sync"
+msgstr ""
+
+msgid "Allow deferred backend"
+msgstr ""
+
+msgid "Keep alive after primary process dies"
+msgstr ""
+
+msgid "Output width"
+msgstr ""
+
+msgid "e.g., 1920"
+msgstr ""
+
+msgid "Output height"
+msgstr ""
+
+msgid "e.g., 1080"
+msgstr ""
+
+msgid "Game width"
+msgstr ""
+
+msgid "e.g., 1280"
+msgstr ""
+
+msgid "Game height"
+msgstr ""
+
+msgid "e.g., 720"
+msgstr ""
+
+msgid "Game refresh rate (Hz)"
+msgstr ""
+
+msgid "Maximum scale factor"
+msgstr ""
+
+msgid "e.g., 4"
+msgstr ""
+
+msgid "Upscaler type"
+msgstr ""
+
+msgid "Upscaler filter"
+msgstr ""
+
+msgid "Upscaler sharpness (0-20)"
+msgstr ""
+
+msgid "e.g., 5"
+msgstr ""
+
+msgid "Mouse sensitivity"
+msgstr ""
+
+msgid "e.g., 1.0"
+msgstr ""
+
+msgid "Rendering backend"
+msgstr ""
+
+msgid "Ready FD"
+msgstr ""
+
+msgid "e.g., 3"
+msgstr ""
+
+msgid "Hide cursor delay (ms)"
+msgstr ""
+
+msgid "e.g., 5000"
+msgstr ""
+
+msgid "XWayland servers count"
+msgstr ""
+
+msgid "e.g., 1"
+msgstr ""
+
+msgid "Force orientation"
+msgstr ""
+
+msgid "Cursor scale height"
+msgstr ""
+
+msgid "SDR gamut wideness (0-1)"
+msgstr ""
+
+msgid "e.g., 0.5"
+msgstr ""
+
+msgid "HDR SDR content nits"
+msgstr ""
+
+msgid "e.g., 400"
+msgstr ""
+
+msgid "HDR ITM SDR nits"
+msgstr ""
+
+msgid "e.g., 100"
+msgstr ""
+
+msgid "HDR ITM target nits"
+msgstr ""
+
+msgid "e.g., 1000"
+msgstr ""
+
+msgid "Framerate limit"
+msgstr ""
+
+msgid "Unfocused refresh rate (Hz)"
+msgstr ""
+
+msgid "Window"
+msgstr ""
+
+msgid "Platform"
+msgstr ""
+
+msgid "HDR"
+msgstr ""
+
+msgid "Overlay"
+msgstr ""
+
+msgid "Make the window borderless"
+msgstr ""
+
+msgid "Make the window fullscreen"
+msgstr ""
+
+msgid "Grab the keyboard"
+msgstr ""
+
+msgid ""
+"Always use relative mouse mode instead of flipping dependent on cursor "
+"visibility"
+msgstr ""
+
+msgid "Support Wayland clients using xdg-shell"
+msgstr ""
+
+msgid ""
+"Force windows inside of gamescope to be the size of the nested display "
+"(fullscreen)"
+msgstr ""
+
+msgid ""
+"Enable HDR output (needs Gamescope WSI layer enabled for support from "
+"clients)"
+msgstr ""
+
+msgid "Enable SDR->HDR inverse tone mapping. only works for SDR input"
+msgstr ""
+
+msgid "Force support for HDR even if the display doesn't support it"
+msgstr ""
+
+msgid "Force output to HDR10 PQ even if unsupported (will look wrong)"
+msgstr ""
+
+msgid "Display heatmap-style debug view of HDR luminance in nits"
+msgstr ""
+
+msgid "Launch with the mangoapp (mangohud) performance overlay enabled"
+msgstr ""
+
+msgid "Enable adaptive sync if available (variable rate refresh)"
+msgstr ""
+
+msgid ""
+"Allows initting the backend in a deferred way, if it doesn't work "
+"immediately"
+msgstr ""
+
+msgid "Keep Gamescope alive even when the primary process has died"
+msgstr ""
+
+msgid "Resolution and scaling"
 msgstr ""
 
 msgid "Quick presets"
 msgstr ""
 
+msgid "Default"
+msgstr ""
+
+msgid "FSR upscaling"
+msgstr ""
+
+msgid "HDR setup"
+msgstr ""
+
+msgid "Performance"
+msgstr ""
+
+msgid "Clear"
+msgstr ""
+
+msgid "Gamescope switches"
+msgstr ""
+
+msgid "Other"
+msgstr ""
+
+msgid "Extra args"
+msgstr ""
+
+msgid "Additional Gamescope options not covered by the GUI."
+msgstr ""
+
+msgid "Example: --cursor-scale-height=1080 --force-orientation=left"
+msgstr ""
+
+msgid "Overlay position"
+msgstr ""
+
+msgid "Device battery"
+msgstr ""
+
+msgid "FPS limit method"
+msgstr ""
+
+msgid "Anisotropic filtering"
+msgstr ""
+
+msgid "FCAT screen edge"
+msgstr ""
+
+msgid "Table columns"
+msgstr ""
+
+msgid "Network (tx/rx kb/s)"
+msgstr ""
+
+msgid "GPU list"
+msgstr ""
+
+msgid "Background opacity"
+msgstr ""
+
+msgid "Round corners (px)"
+msgstr ""
+
+msgid "Top-left"
+msgstr ""
+
+msgid "Top-right"
+msgstr ""
+
+msgid "Middle-left"
+msgstr ""
+
+msgid "Middle-right"
+msgstr ""
+
+msgid "Bottom-left"
+msgstr ""
+
+msgid "Bottom-right"
+msgstr ""
+
+msgid "Top-center"
+msgstr ""
+
+msgid "Bottom-center"
+msgstr ""
+
+msgid "Gamepad"
+msgstr ""
+
+msgid "Mouse"
+msgstr ""
+
+msgid "Gamepad, mouse"
+msgstr ""
+
+msgid "Late"
+msgstr ""
+
+msgid "Early"
+msgstr ""
+
+msgid "General"
+msgstr ""
+
+msgid "CPU / GPU"
+msgstr ""
+
+msgid "Application architecture (32/64-bit)"
+msgstr ""
+
+msgid "Battery percent and energy consumption"
+msgstr ""
+
+msgid "Battery icon instead of percent"
+msgstr ""
+
+msgid "Remaining battery time"
+msgstr ""
+
+msgid "Battery wattage"
+msgstr ""
+
+msgid "Force bicubic filtering"
+msgstr ""
+
+msgid "Core load as vertical bars"
+msgstr ""
+
+msgid "Per-core load and frequency"
+msgstr ""
+
+msgid "Core load color change"
+msgstr ""
+
+msgid "CPU core type (P/E/ARM)"
+msgstr ""
+
+msgid "CPU efficiency (frames/joule)"
+msgstr ""
+
+msgid "CPU load color change"
+msgstr ""
+
+msgid "CPU frequency in MHz"
+msgstr ""
+
+msgid "CPU power draw (watts)"
+msgstr ""
+
+msgid "CPU temperature"
+msgstr ""
+
+msgid "Gamescope frametime graphs"
+msgstr ""
+
+msgid "Wireless device battery icon"
+msgstr ""
+
+msgid "Display server type (X11/Wayland)"
+msgstr ""
+
+msgid "Dynamic frametime Y-axis"
+msgstr ""
+
+msgid "Short engine names"
+msgstr ""
+
+msgid "Engine version (OpenGL/Vulkan)"
+msgstr ""
+
+msgid "Executable name"
+msgstr ""
+
+msgid "Steam Deck fan RPM"
+msgstr ""
+
+msgid "Frame capture analysis"
+msgstr ""
+
+msgid "Flip efficiency (joules/frame)"
+msgstr ""
+
+msgid "FPS text color by value"
+msgstr ""
+
+msgid "FPS percentiles"
+msgstr ""
+
+msgid "Show FPS only"
+msgstr ""
+
+msgid "Frame counter"
+msgstr ""
+
+msgid "Frametime next to FPS"
+msgstr ""
+
+msgid "Detailed frame timing chart"
+msgstr ""
+
+msgid "FSR status (gamescope)"
+msgstr ""
+
+msgid "Enable most parameters"
+msgstr ""
+
+msgid "GameMode status"
+msgstr ""
+
+msgid "GPU core frequency"
+msgstr ""
+
+msgid "GPU efficiency (frames/joule)"
+msgstr ""
+
+msgid "GPU fan (RPM/%)"
+msgstr ""
+
+msgid "GPU junction temperature"
+msgstr ""
+
+msgid "GPU load color change"
+msgstr ""
+
+msgid "GPU memory frequency"
+msgstr ""
+
+msgid "GPU memory temperature"
+msgstr ""
+
+msgid "GPU name from pci.ids"
+msgstr ""
+
+msgid "GPU power draw (watts)"
+msgstr ""
+
+msgid "GPU power limit"
+msgstr ""
+
+msgid "GPU temperature"
+msgstr ""
+
+msgid "GPU voltage"
+msgstr ""
+
+msgid "HDR status (gamescope)"
+msgstr ""
+
+msgid "Hide FSR sharpness info"
+msgstr ""
+
+msgid "FPS histogram"
+msgstr ""
+
+msgid "Horizontal HUD layout"
+msgstr ""
+
+msgid "Stretch background horizontally"
+msgstr ""
+
+msgid "Compact HUD mode"
+msgstr ""
+
+msgid "Remove HUD margins"
+msgstr ""
+
+msgid "IO read rate (MiB/s)"
+msgstr ""
+
+msgid "IO write rate (MiB/s)"
+msgstr ""
+
+msgid "Add versioning to logs"
+msgstr ""
+
+msgid "Media player metadata"
+msgstr ""
+
+msgid "Hide HUD by default"
+msgstr ""
+
+msgid "Use primary font size"
+msgstr ""
+
+msgid "Allow log uploads"
+msgstr ""
+
+msgid "Vulkan present mode"
+msgstr ""
+
+msgid "Process VRAM usage"
+msgstr ""
+
+msgid "Process memory (resident)"
+msgstr ""
+
+msgid "Process shared memory"
+msgstr ""
+
+msgid "Process virtual memory"
+msgstr ""
+
+msgid "System RAM usage"
+msgstr ""
+
+msgid "RAM temperature (DDR5)"
+msgstr ""
+
+msgid "Load config file"
+msgstr ""
+
+msgid "Refresh rate (gamescope)"
+msgstr ""
+
+msgid "Current resolution"
+msgstr ""
+
+msgid "Retro filtering (unfiltered)"
+msgstr ""
+
+msgid "Show FPS limit"
+msgstr ""
+
+msgid "Swap usage"
+msgstr ""
+
+msgid "Temperature in Fahrenheit"
+msgstr ""
+
+msgid "Text outline"
+msgstr ""
+
+msgid "GPU throttling status"
+msgstr ""
+
+msgid "Throttling in frame graph"
+msgstr ""
+
+msgid "Local time"
+msgstr ""
+
+msgid "Time without label"
+msgstr ""
+
+msgid "Force trilinear filtering"
+msgstr ""
+
+msgid "Automatic log uploads"
+msgstr ""
+
+msgid "MangoHud version"
+msgstr ""
+
+msgid "vkBasalt status"
+msgstr ""
+
+msgid "Vulkan driver (radv/amdvlk)"
+msgstr ""
+
+msgid "Wine/Proton version"
+msgstr ""
+
+msgid "Wine sync method"
+msgstr ""
+
+msgid "VRAM usage"
+msgstr ""
+
+msgid "Layout and limiter"
+msgstr ""
+
 msgid "PortProton default"
+msgstr ""
+
+msgid "FPS only"
 msgstr ""
 
 msgid "Compact"
@@ -1669,13 +1957,7 @@ msgstr ""
 msgid "Save custom"
 msgstr ""
 
-msgid "Clear"
-msgstr ""
-
 msgid "MangoHud switches"
-msgstr ""
-
-msgid "Other"
 msgstr ""
 
 msgid "FPS limit"
@@ -1695,10 +1977,10 @@ msgstr ""
 msgid "Example: battery,gpu_junction_temp,fps_color=39f900"
 msgstr ""
 
-msgid "Failed to read default MangoHud config."
+msgid "All GPUs"
 msgstr ""
 
-msgid "Info"
+msgid "Failed to read default MangoHud config."
 msgstr ""
 
 msgid "Custom preset is empty. Save one first."
@@ -1708,15 +1990,6 @@ msgid "Custom preset saved."
 msgstr ""
 
 msgid "Failed to save custom preset."
-msgstr ""
-
-msgid "No changes to apply."
-msgstr ""
-
-msgid "Failed to apply changes. Check logs."
-msgstr ""
-
-msgid "Settings updated successfully."
 msgstr ""
 
 msgid "Prefix Manager"
