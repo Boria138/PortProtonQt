@@ -48,6 +48,35 @@ from portprotonqt.virtual_keyboard import VirtualKeyboard
 logger = get_logger(__name__)
 theme_manager = ThemeManager()
 
+
+def _normalize_prefix_directories(prefixes_dir):
+    if not os.path.isdir(prefixes_dir):
+        return
+
+    for prefix_name in os.listdir(prefixes_dir):
+        current_path = os.path.join(prefixes_dir, prefix_name)
+        if not os.path.isdir(current_path):
+            continue
+
+        normalized_name = re.sub(r"[ \t]", "_", prefix_name).upper()
+        if normalized_name == prefix_name:
+            continue
+
+        normalized_path = os.path.join(prefixes_dir, normalized_name)
+        if os.path.isdir(normalized_path):
+            logger.warning(
+                "Cannot rename prefix %s to %s: target already exists",
+                prefix_name,
+                normalized_name
+            )
+            continue
+
+        try:
+            os.rename(current_path, normalized_path)
+        except OSError as exc:
+            logger.warning("Failed to rename prefix %s: %s", prefix_name, exc)
+
+
 class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
     """Dialog for configuring executable-specific settings."""
 
@@ -78,6 +107,7 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
                 )
             prefixes_dir = os.path.join(self.portproton_path, 'prefixes')
             if os.path.exists(prefixes_dir):
+                _normalize_prefix_directories(prefixes_dir)
                 self.prefix_options = sorted(
                     [f for f in os.listdir(prefixes_dir) if os.path.isdir(os.path.join(prefixes_dir, f))],
                     key=lambda x: x.lower()
@@ -690,7 +720,7 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
             if isinstance(widget, QComboBox):
                 new_val = widget.currentText()
                 if key == 'PW_PREFIX_NAME':
-                    new_val = new_val.strip()
+                    new_val = re.sub(r"[ \t]", "_", new_val.strip()).upper()
 
                 if key in self.value_mapping and 'forward' in self.value_mapping[key]:
                     value_map = self.value_mapping[key]['forward']

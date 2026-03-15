@@ -1782,6 +1782,7 @@ class MainWindow(QMainWindow):
 
         dist_path = os.path.join(self.portproton_location, "data", "dist")
         prefixes_path = os.path.join(self.portproton_location, "data", "prefixes")
+        self._normalize_prefix_directories(prefixes_path)
 
         if not os.path.exists(dist_path):
             return
@@ -2144,16 +2145,46 @@ class MainWindow(QMainWindow):
             return
 
         current_prefix = self.prefixCombo.currentText().strip()
+        normalized_current_prefix = re.sub(r"[ \t]", "_", current_prefix).upper() if current_prefix else ""
         prefixes_path = os.path.join(self.portproton_location, "data", "prefixes")
         if not os.path.exists(prefixes_path):
             return
+
+        self._normalize_prefix_directories(prefixes_path)
 
         # Update the prefixes list with sorting
         self.prefixes = sorted([d for d in os.listdir(prefixes_path) if os.path.isdir(os.path.join(prefixes_path, d))], key=version_sort_key)
         self.prefixCombo.clear()
         self.prefixCombo.addItems(self.prefixes)
-        if current_prefix:
-            self.prefixCombo.setCurrentText(current_prefix)
+        if normalized_current_prefix:
+            self.prefixCombo.setCurrentText(normalized_current_prefix)
+
+    def _normalize_prefix_directories(self, prefixes_path):
+        if not os.path.isdir(prefixes_path):
+            return
+
+        for prefix_name in os.listdir(prefixes_path):
+            current_path = os.path.join(prefixes_path, prefix_name)
+            if not os.path.isdir(current_path):
+                continue
+
+            normalized_name = re.sub(r"[ \t]", "_", prefix_name).upper()
+            if normalized_name == prefix_name:
+                continue
+
+            normalized_path = os.path.join(prefixes_path, normalized_name)
+            if os.path.isdir(normalized_path):
+                logger.warning(
+                    "Cannot rename prefix %s to %s: target already exists",
+                    prefix_name,
+                    normalized_name
+                )
+                continue
+
+            try:
+                os.rename(current_path, normalized_path)
+            except OSError as exc:
+                logger.warning("Failed to rename prefix %s: %s", prefix_name, exc)
 
     def open_winetricks(self):
         """Open the Winetricks dialog for the selected prefix and wine."""
