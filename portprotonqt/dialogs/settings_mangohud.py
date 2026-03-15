@@ -337,7 +337,7 @@ MANGOHUD_TOGGLE_DESCRIPTIONS = {
     'trilinear': _("Force trilinear filtering"),
     'upload_logs': _("Automatic log uploads"),
     'version': _("MangoHud version"),
-    'vkbasalt': _("vkBasalt status"),
+    'vkbasalt': _("Status vkBasalt"),
     'vulkan_driver': _("Vulkan driver (radv/amdvlk)"),
     'wine': _("Wine/Proton version"),
     'winesync': _("Wine sync method"),
@@ -593,7 +593,7 @@ class MangoHudSettingsMixin:
 
     def _add_mangohud_extra_group(self, parent_layout):
         """Add raw config field for unsupported MangoHud parameters."""
-        group = QGroupBox(_("Extra config"))
+        group = QGroupBox(_("Extra args"))
         group.setStyleSheet(self.theme.QGROUP_BOX_STYLE)
         layout = QVBoxLayout(group)
         label = QLabel(_("Additional comma-separated MangoHud options not covered by the GUI."))

@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-03-11 20:40+0500\n"
+"POT-Creation-Date: 2026-03-15 00:23+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: de_DE\n"
@@ -1353,7 +1353,7 @@ msgstr ""
 msgid "Grab keyboard"
 msgstr ""
 
-msgid "Always use relative mouse mode"
+msgid "Force grab cursor (always relative mouse mode)"
 msgstr ""
 
 msgid "Expose Wayland"
@@ -1386,34 +1386,16 @@ msgstr ""
 msgid "Enable adaptive sync"
 msgstr ""
 
-msgid "Allow deferred backend"
-msgstr ""
-
-msgid "Keep alive after primary process dies"
-msgstr ""
-
 msgid "Output width"
-msgstr ""
-
-msgid "e.g., 1920"
 msgstr ""
 
 msgid "Output height"
 msgstr ""
 
-msgid "e.g., 1080"
-msgstr ""
-
 msgid "Game width"
 msgstr ""
 
-msgid "e.g., 1280"
-msgstr ""
-
 msgid "Game height"
-msgstr ""
-
-msgid "e.g., 720"
 msgstr ""
 
 msgid "Game refresh rate (Hz)"
@@ -1422,7 +1404,7 @@ msgstr ""
 msgid "Maximum scale factor"
 msgstr ""
 
-msgid "e.g., 4"
+msgid "E.g., 5"
 msgstr ""
 
 msgid "Upscaler type"
@@ -1434,13 +1416,10 @@ msgstr ""
 msgid "Upscaler sharpness (0-20)"
 msgstr ""
 
-msgid "e.g., 5"
-msgstr ""
-
 msgid "Mouse sensitivity"
 msgstr ""
 
-msgid "e.g., 1.0"
+msgid "E.g., 0.5"
 msgstr ""
 
 msgid "Rendering backend"
@@ -1449,19 +1428,19 @@ msgstr ""
 msgid "Ready FD"
 msgstr ""
 
-msgid "e.g., 3"
+msgid "E.g., 3"
 msgstr ""
 
 msgid "Hide cursor delay (ms)"
 msgstr ""
 
-msgid "e.g., 5000"
+msgid "E.g., 1000"
 msgstr ""
 
 msgid "XWayland servers count"
 msgstr ""
 
-msgid "e.g., 1"
+msgid "E.g., 1"
 msgstr ""
 
 msgid "Force orientation"
@@ -1473,25 +1452,16 @@ msgstr ""
 msgid "SDR gamut wideness (0-1)"
 msgstr ""
 
-msgid "e.g., 0.5"
-msgstr ""
-
 msgid "HDR SDR content nits"
 msgstr ""
 
-msgid "e.g., 400"
+msgid "E.g., 400"
 msgstr ""
 
 msgid "HDR ITM SDR nits"
 msgstr ""
 
-msgid "e.g., 100"
-msgstr ""
-
 msgid "HDR ITM target nits"
-msgstr ""
-
-msgid "e.g., 1000"
 msgstr ""
 
 msgid "Framerate limit"
@@ -1522,8 +1492,8 @@ msgid "Grab the keyboard"
 msgstr ""
 
 msgid ""
-"Always use relative mouse mode instead of flipping dependent on cursor "
-"visibility"
+"Force grab cursor: always use relative mouse mode instead of switching "
+"with cursor visibility"
 msgstr ""
 
 msgid "Support Wayland clients using xdg-shell"
@@ -1555,14 +1525,6 @@ msgid "Launch with the mangoapp (mangohud) performance overlay enabled"
 msgstr ""
 
 msgid "Enable adaptive sync if available (variable rate refresh)"
-msgstr ""
-
-msgid ""
-"Allows initting the backend in a deferred way, if it doesn't work "
-"immediately"
-msgstr ""
-
-msgid "Keep Gamescope alive even when the primary process has died"
 msgstr ""
 
 msgid "Resolution and scaling"
@@ -1922,7 +1884,7 @@ msgstr ""
 msgid "MangoHud version"
 msgstr ""
 
-msgid "vkBasalt status"
+msgid "Status vkBasalt"
 msgstr ""
 
 msgid "Vulkan driver (radv/amdvlk)"
@@ -1967,9 +1929,6 @@ msgstr ""
 msgid ""
 "Select one or more FPS presets. The values are saved into FPS_LIMIT and "
 "MangoHud will also show the active FPS limit."
-msgstr ""
-
-msgid "Extra config"
 msgstr ""
 
 msgid "Additional comma-separated MangoHud options not covered by the GUI."

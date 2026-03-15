@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-03-11 20:40+0500\n"
-"PO-Revision-Date: 2026-03-14 14:54+0500\n"
+"POT-Creation-Date: 2026-03-15 00:23+0500\n"
+"PO-Revision-Date: 2026-03-15 00:29+0500\n"
 "Last-Translator: \n"
 "Language-Team: ru_RU <LL@li.org>\n"
 "Language: ru_RU\n"
@@ -672,7 +672,6 @@ msgstr "Остановить"
 msgid "Play"
 msgstr "Играть"
 
-#, python-brace-format
 msgid "Prefix not found"
 msgstr "Префикс не найден"
 
@@ -1432,8 +1431,8 @@ msgstr "Полноэкранный режим"
 msgid "Grab keyboard"
 msgstr "Перехват клавиатуры"
 
-msgid "Always use relative mouse mode"
-msgstr "Использование относительного режима мыши"
+msgid "Force grab cursor (always relative mouse mode)"
+msgstr "Принудительный захват курсора (всегда режим относительной мыши)"
 
 msgid "Expose Wayland"
 msgstr "Поддержка клиентов Wayland"
@@ -1465,35 +1464,17 @@ msgstr "Включить наложение mangoapp"
 msgid "Enable adaptive sync"
 msgstr "Включить адаптивную синхронизацию"
 
-msgid "Allow deferred backend"
-msgstr ""
-
-msgid "Keep alive after primary process dies"
-msgstr "Не закрывать после того, как основной процесс закроется"
-
 msgid "Output width"
 msgstr "Выходная ширина"
-
-msgid "e.g., 1920"
-msgstr "Например: 1920"
 
 msgid "Output height"
 msgstr "Выходная высота"
 
-msgid "e.g., 1080"
-msgstr "Например: 1080"
-
 msgid "Game width"
 msgstr "Ширина игры"
 
-msgid "e.g., 1280"
-msgstr "Например: 1280"
-
 msgid "Game height"
 msgstr "Высота игры"
-
-msgid "e.g., 720"
-msgstr "Например: 720"
 
 msgid "Game refresh rate (Hz)"
 msgstr "Частота обновления игры, Гц"
@@ -1501,8 +1482,8 @@ msgstr "Частота обновления игры, Гц"
 msgid "Maximum scale factor"
 msgstr "Максимальный коэффициент масштабирования"
 
-msgid "e.g., 4"
-msgstr "Например: 4"
+msgid "E.g., 5"
+msgstr "Например: 5"
 
 msgid "Upscaler type"
 msgstr "Режим масштабирования"
@@ -1513,14 +1494,11 @@ msgstr "Режим интерполяции"
 msgid "Upscaler sharpness (0-20)"
 msgstr "Улучшение резкости (0-20)"
 
-msgid "e.g., 5"
-msgstr "Например: 5"
-
 msgid "Mouse sensitivity"
 msgstr "Чувствительность мыши"
 
-msgid "e.g., 1.0"
-msgstr "Например: 1,0"
+msgid "E.g., 0.5"
+msgstr "Например: 0,5"
 
 msgid "Rendering backend"
 msgstr "Движок отрисовки"
@@ -1528,19 +1506,19 @@ msgstr "Движок отрисовки"
 msgid "Ready FD"
 msgstr "Готовность файлов дескрипторов"
 
-msgid "e.g., 3"
+msgid "E.g., 3"
 msgstr "Например: 3"
 
 msgid "Hide cursor delay (ms)"
 msgstr "Задержка скрытия курсора, мс"
 
-msgid "e.g., 5000"
-msgstr "Например: 5000"
+msgid "E.g., 1000"
+msgstr "Например: 1000"
 
 msgid "XWayland servers count"
 msgstr "Количество серверов XWayland"
 
-msgid "e.g., 1"
+msgid "E.g., 1"
 msgstr "Например: 1"
 
 msgid "Force orientation"
@@ -1552,26 +1530,17 @@ msgstr "Линейное масштабирование курсора"
 msgid "SDR gamut wideness (0-1)"
 msgstr "Ширина диапазона SDR (0-1)"
 
-msgid "e.g., 0.5"
-msgstr "Например: 0,5"
-
 msgid "HDR SDR content nits"
 msgstr "Яркость дисплея, нт"
 
-msgid "e.g., 400"
+msgid "E.g., 400"
 msgstr "Например: 400"
 
 msgid "HDR ITM SDR nits"
 msgstr "Яркость дисплея с инверсией, нт"
 
-msgid "e.g., 100"
-msgstr "Например: 100"
-
 msgid "HDR ITM target nits"
 msgstr "Целевая яркость дисплея с инверсией, нт"
-
-msgid "e.g., 1000"
-msgstr "Например: 1000"
 
 msgid "Framerate limit"
 msgstr "Ограничение частоты кадров"
@@ -1601,10 +1570,11 @@ msgid "Grab the keyboard"
 msgstr "Перехват нажатий кнопок клавиатуры"
 
 msgid ""
-"Always use relative mouse mode instead of flipping dependent on cursor visibility"
+"Force grab cursor: always use relative mouse mode instead of switching with "
+"cursor visibility"
 msgstr ""
-"Использование относительного режима мыши, вместо зеркального отображения, в "
-"зависимости от видимости курсора."
+"Принудительный захват курсора: всегда используйте относительный режим мыши "
+"вместо переключения с видимостью курсора"
 
 msgid "Support Wayland clients using xdg-shell"
 msgstr "Поддержка клиентов Wayland с помощью xdg-shell"
@@ -1644,13 +1614,6 @@ msgid "Enable adaptive sync if available (variable rate refresh)"
 msgstr ""
 "Включает адаптивную синхронизацию, если она доступна (обновление с переменной "
 "частотой)"
-
-msgid ""
-"Allows initting the backend in a deferred way, if it doesn't work immediately"
-msgstr ""
-
-msgid "Keep Gamescope alive even when the primary process has died"
-msgstr "Поддерживает работу Gamescope даже после завершения основного процесса"
 
 msgid "Resolution and scaling"
 msgstr "Разрешение и масштабирование"
@@ -2009,8 +1972,8 @@ msgstr "Автоматическая загрузка лога в flightlessmang
 msgid "MangoHud version"
 msgstr "Версия MangoHud"
 
-msgid "vkBasalt status"
-msgstr "Состояние vkBasalt"
+msgid "Status vkBasalt"
+msgstr "Статус vkBasalt"
 
 msgid "Vulkan driver (radv/amdvlk)"
 msgstr "Драйвер Vulkan (radv/amdvlk)"
@@ -2057,9 +2020,6 @@ msgid ""
 msgstr ""
 "Выберите один или несколько предустановленных профилей FPS. Значения будут "
 "сохранены в FPS_LIMIT и MangoHud также отобразит активное ограничение FPS."
-
-msgid "Extra config"
-msgstr "Расширенные настройки"
 
 msgid "Additional comma-separated MangoHud options not covered by the GUI."
 msgstr "Дополнительные параметры MangoHud (через запятую), отсутствующие в GUI."
