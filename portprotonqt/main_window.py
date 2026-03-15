@@ -1898,7 +1898,8 @@ class MainWindow(QMainWindow):
 
     def launch_generic_tool(self, cli_arg):
         wine = self.wineCombo.currentText()
-        prefix = self.prefixCombo.currentText().strip()
+        raw_prefix = self.prefixCombo.currentText().strip()
+        prefix = re.sub(r"[ \t]", "_", raw_prefix).upper() if raw_prefix else ""
         if not wine or not prefix:
             return
         if not self.portproton_location or not self.start_sh:
