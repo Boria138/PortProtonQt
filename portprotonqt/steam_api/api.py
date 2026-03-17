@@ -58,7 +58,7 @@ def fetch_sgdb_cover_async(game_name: str, callback: Callable[[str], None]) -> N
     cache_manager = CacheManager()
     safe_name = "".join(c for c in game_name if c.isalnum() or c in " -_")[:50]
     cache_file = cache_manager.cache_dir / f"sgdb_{safe_name}.json"
-    downloader.download_async(url, str(cache_file), timeout=10, callback=process_response)
+    downloader.download_async(url, str(cache_file), timeout=3, callback=process_response)
 
 
 def fetch_app_info_async(app_id: int, callback: Callable[[dict | None], None]) -> None:
