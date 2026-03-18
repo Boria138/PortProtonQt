@@ -63,18 +63,36 @@ class Downloader(QObject):
     def has_internet(self, timeout=3):
         if self._has_internet is None:
             errors = []
+            # Primary: Yandex
             try:
-                socket.create_connection(("8.8.8.8", 53), timeout=timeout)
+                socket.create_connection(("77.88.8.8", 53), timeout=timeout)
             except Exception as e:
-                errors.append(f"8.8.8.8: {e}")
+                errors.append(f"Yandex DNS (77.88.8.8): {e}")
             try:
-                socket.create_connection(("8.8.4.4", 53), timeout=timeout)
+                socket.create_connection(("77.88.8.1", 53), timeout=timeout)
             except Exception as e:
-                errors.append(f"8.8.4.4: {e}")
+                errors.append(f"Yandex DNS (77.88.8.1): {e}")
             try:
-                requests.get("https://www.google.com", timeout=timeout)
+                requests.get("https://ya.ru", timeout=timeout)
             except Exception as e:
-                errors.append(f"google.com: {e}")
+                errors.append(f"ya.ru: {e}")
+
+            # Fallback: Google (if Yandex failed)
+            if errors:
+                logger.debug("Yandex check failed, trying Google fallback")
+                try:
+                    socket.create_connection(("8.8.8.8", 53), timeout=timeout)
+                except Exception as e:
+                    errors.append(f"Google DNS (8.8.8.8): {e}")
+                try:
+                    socket.create_connection(("8.8.4.4", 53), timeout=timeout)
+                except Exception as e:
+                    errors.append(f"Google DNS (8.8.4.4): {e}")
+                try:
+                    requests.get("https://www.google.com", timeout=timeout)
+                except Exception as e:
+                    errors.append(f"google.com: {e}")
+
             if errors:
                 logger.warning("Internet unavailable:\n" + "\n".join(errors))
                 self._has_internet = False
