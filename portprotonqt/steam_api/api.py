@@ -199,6 +199,34 @@ def _build_game_info_result(
     }
 
 
+def _has_custom_data_for_exe(exe_name: str) -> bool:
+    """Return True when custom_data contains metadata or cover for executable name."""
+    if not exe_name:
+        return False
+
+    package_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    builtin_game_folder = os.path.join(package_root, "custom_data", exe_name)
+    xdg_data_home = os.getenv("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share"))
+    user_game_folder = os.path.join(xdg_data_home, "PortProtonQt", "custom_data", exe_name)
+
+    candidate_dirs = [builtin_game_folder, user_game_folder]
+    cover_names = {"cover.png", "cover.jpg", "cover.jpeg", "cover.bmp"}
+    metadata_name = "metadata.txt"
+
+    for game_dir in candidate_dirs:
+        if not os.path.isdir(game_dir):
+            continue
+        try:
+            files = set(os.listdir(game_dir))
+        except OSError:
+            continue
+        if metadata_name in files:
+            return True
+        if files & cover_names:
+            return True
+    return False
+
+
 def get_full_steam_game_info_async(
     appid: int,
     callback: Callable[[dict], None],
@@ -295,6 +323,7 @@ def get_steam_game_info_async(
     candidates = filter_candidates(candidates)
     candidates = remove_duplicates(candidates)
     candidates_ordered = sorted(candidates, key=lambda s: len(s.split()), reverse=True)
+    has_custom_data = _has_custom_data_for_exe(exe_name)
 
     def on_steam_apps_and_index(
         data_and_index: tuple[list | None, dict | None]
@@ -323,7 +352,10 @@ def get_steam_game_info_async(
 
                 get_weanticheatyet_status_async(game_name, on_anticheat_status_failure)
 
-            fetch_sgdb_cover_async(game_name, on_sgdb_cover_failure)
+            if has_custom_data:
+                on_sgdb_cover_failure("")
+            else:
+                fetch_sgdb_cover_async(game_name, on_sgdb_cover_failure)
             return
 
         for candidate in candidates_ordered:
@@ -352,7 +384,10 @@ def get_steam_game_info_async(
 
                 get_weanticheatyet_status_async(game_name, on_anticheat_status_non_steam)
 
-            fetch_sgdb_cover_async(game_name, on_sgdb_cover_non_steam)
+            if has_custom_data:
+                on_sgdb_cover_non_steam("")
+            else:
+                fetch_sgdb_cover_async(game_name, on_sgdb_cover_non_steam)
             return
 
         appid = matching_app["appid"]
@@ -377,7 +412,9 @@ def get_steam_game_info_async(
 
             title = decode_text(app_info.get("name", game_name))
             description = decode_text(app_info.get("short_description", ""))
-            cover = f"https://steamcdn-a.akamaihd.net/steam/apps/{appid}/library_600x900_2x.jpg"
+            cover = ""
+            if not has_custom_data:
+                cover = f"https://steamcdn-a.akamaihd.net/steam/apps/{appid}/library_600x900_2x.jpg"
             controller_support = app_info.get("controller_support", "")
 
             def on_protondb_tier(tier: str) -> None:
