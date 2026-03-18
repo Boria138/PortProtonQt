@@ -2446,6 +2446,38 @@ class InputManager(QObject):
                 self.last_move_time = now
                 self.current_axis_delay = self.repeat_axis_move_delay
 
+    def _get_theme_tab_focusables(self) -> list[QWidget]:
+        """Return focusable widgets for the themes tab gamepad navigation."""
+        widgets = []
+        for attr_name in ("themesCombo", "screenshotsCarousel", "applyButton"):
+            widget = getattr(self._parent, attr_name, None)
+            if isinstance(widget, QWidget) and widget.isVisible() and widget.isEnabled():
+                widgets.append(widget)
+        return widgets
+
+    def _handle_theme_tab_navigation(self, value: int) -> bool:
+        """Handle up/down focus movement in themes tab."""
+        theme_tab_index = getattr(self._parent, "theme_tab_index", None)
+        if theme_tab_index is None or self._parent.stackedWidget.currentIndex() != theme_tab_index:
+            return False
+
+        focusables = self._get_theme_tab_focusables()
+        if not focusables:
+            return False
+
+        focused = QApplication.focusWidget()
+        if focused not in focusables:
+            focusables[0].setFocus(Qt.FocusReason.OtherFocusReason)
+            return True
+
+        current_index = focusables.index(focused)
+        if value > 0:
+            next_index = (current_index + 1) % len(focusables)
+        else:
+            next_index = (current_index - 1) % len(focusables)
+        focusables[next_index].setFocus(Qt.FocusReason.OtherFocusReason)
+        return True
+
     @Slot(int, int, float)
     def handle_dpad_slot(self, code: int, value: int, current_time: float) -> None:
         keyboard = None
@@ -2661,6 +2693,9 @@ class InputManager(QObject):
                         return
                     self._navigate_game_cards(container, current_index, code, value)
                     return
+
+            if code == ecodes.ABS_HAT0Y and value != 0 and self._handle_theme_tab_navigation(value):
+                return
 
             # Button navigation on detail pages (horizontal layout)
             if code in (ecodes.ABS_HAT0X, ecodes.ABS_HAT0Y):

@@ -2740,7 +2740,7 @@ class MainWindow(QMainWindow):
     def createThemeTab(self):
         """Themes tab"""
         self.themeTabWidget = QWidget()
-        self.themeTabWidget.setStyleSheet(self.theme.OTHER_PAGES_WIDGET_STYLE)
+        self.themeTabWidget.setStyleSheet(self.theme.OTHER_PAGES_WIDGET_STYLE + self.theme.THEME_TAB_FOCUS_STYLE)
         self.themeTabWidget.setObjectName("otherPage")
         mainLayout = QVBoxLayout(self.themeTabWidget)
         mainLayout.setContentsMargins(10, 14, 10, 10)
@@ -2752,11 +2752,13 @@ class MainWindow(QMainWindow):
         self.themeTabTitleLabel = QLabel(_("Select Theme:"))
         self.themeTabTitleLabel.setObjectName("tabTitle")
         self.themeTabTitleLabel.setStyleSheet(self.theme.TAB_TITLE_STYLE)
+        self.themeTabTitleLabel.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.themeTabHeaderLayout.addWidget(self.themeTabTitleLabel)
 
         self.themesCombo = QComboBox()
         self.themesCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
-        self.themesCombo.setObjectName("comboString")
+        self.themesCombo.setObjectName("themeTabCombo")
+        self.themesCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         available_themes = self.theme_manager.get_available_themes()
         if self.current_theme_name in available_themes:
             available_themes.remove(self.current_theme_name)
@@ -2770,6 +2772,10 @@ class MainWindow(QMainWindow):
         # 2. Screenshots carousel
         self.screenshotsCarousel = ImageCarousel([])
         self.screenshotsCarousel.setStyleSheet(self.theme.CAROUSEL_WIDGET_STYLE)
+        self.screenshotsCarousel.setObjectName("themeScreenshotsCarousel")
+        self.screenshotsCarousel.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.screenshotsCarousel.prevArrow.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.screenshotsCarousel.nextArrow.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         mainLayout.addWidget(self.screenshotsCarousel, stretch=1)
 
         # 3. Theme info
@@ -2778,11 +2784,15 @@ class MainWindow(QMainWindow):
 
         self.themeMetainfoLabel = QLabel()
         self.themeMetainfoLabel.setWordWrap(True)
+        self.themeMetainfoLabel.setOpenExternalLinks(True)
+        self.themeMetainfoLabel.setTextInteractionFlags(Qt.TextInteractionFlag.LinksAccessibleByMouse)
+        self.themeMetainfoLabel.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.themeInfoLayout.addWidget(self.themeMetainfoLabel)
 
         self.applyButton = AutoSizeButton(_("Apply Theme"), icon=self.theme_manager.get_icon("apply"))
         self.applyButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
-        self.applyButton.setObjectName("actionButton")
+        self.applyButton.setObjectName("themeApplyButton")
+        self.applyButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.themeInfoLayout.addWidget(self.applyButton)
 
         mainLayout.addLayout(self.themeInfoLayout)
@@ -2802,7 +2812,6 @@ class MainWindow(QMainWindow):
             )
             self.themeMetainfoLabel.setText(preview_text)
             self.themeMetainfoLabel.setStyleSheet(self.theme.CONTENT_STYLE)
-            self.themeMetainfoLabel.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
             screenshots = load_theme_screenshots(theme_name)
             if screenshots:
@@ -2842,7 +2851,7 @@ class MainWindow(QMainWindow):
         self.applyButton.clicked.connect(on_apply)
 
         # Add widget to stackedWidget
-        self.stackedWidget.addWidget(self.themeTabWidget)
+        self.theme_tab_index = self.stackedWidget.addWidget(self.themeTabWidget)
 
     def restart_application(self):
         """Restart application."""

@@ -256,6 +256,23 @@ CAROUSEL_WIDGET_STYLE= f"""
     }}
 """
 
+THEME_TAB_FOCUS_STYLE = f"""
+    QComboBox#themeTabCombo:focus {{
+        border: {border_b} {color_f};
+        background-color: {color_a};
+    }}
+    QPushButton#themeApplyButton:focus {{
+        border: {border_b} {color_f};
+    }}
+    QGraphicsView#themeScreenshotsCarousel {{
+        border: {border_c} {color_g};
+        border-radius: {border_radius_a};
+    }}
+    QGraphicsView#themeScreenshotsCarousel:focus {{
+        border: {border_b} {color_a};
+    }}
+"""
+
 # PORTPROTON SETTINGS TAB STYLES
 # PARAMS_TITLE_STYLE
 PARAMS_TITLE_STYLE = f"""
