@@ -16,7 +16,7 @@ import psutil
 if TYPE_CHECKING:
     from portprotonqt.main_window import MainWindow
 
-from portprotonqt.config_utils import get_portproton_location, read_theme_from_config
+from portprotonqt.config_utils import create_desktop_file, read_theme_from_config
 from portprotonqt.logger import get_logger
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.custom_widgets import AutoSizeButton
@@ -443,41 +443,15 @@ class AddGameDialog(QDialog):
         if not name:
             return None, None
 
-        portproton_path = get_portproton_location()
-        if portproton_path is None:
+        result = create_desktop_file(exe_path, name)
+        if not result:
             return None, None
-
-        is_flatpak = ".var" in portproton_path
-        base_path = os.path.join(portproton_path, "data")
-
-        if is_flatpak:
-            exec_str = f'flatpak run ru.linux_gaming.PortProton "{exe_path}"'
-        else:
-            start_sh = os.path.join(base_path, "scripts", "start.sh")
-            exec_str = f'env "{start_sh}" "{exe_path}"'
-
+        desktop_entry, desktop_path = result
+        base_path = os.path.join(os.path.dirname(desktop_path), "data")
         icon_path = os.path.join(base_path, "img", f"{name}.png")
-        desktop_path = os.path.join(portproton_path, f"{name}.desktop")
-        working_dir = os.path.join(base_path, "scripts")
-
-        os.makedirs(os.path.dirname(icon_path), exist_ok=True)
 
         if not self.last_cover_path and not generate_thumbnail(exe_path, icon_path, size=128):
             logger.error(f"Failed to generate thumbnail from exe: {exe_path}")
-            icon_path = ""
-
-        comment = _('Launch game "{name}" with PortProton').format(name=name)
-
-        desktop_entry = f"""[Desktop Entry]
-Name={name}
-Comment={comment}
-Exec={exec_str}
-Terminal=false
-Type=Application
-Categories=Game;
-StartupNotify=true
-Path={working_dir}
-Icon={icon_path}
-"""
+            desktop_entry = desktop_entry.replace(f"Icon={icon_path}\n", "Icon=\n")
 
         return desktop_entry, desktop_path

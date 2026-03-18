@@ -1435,9 +1435,7 @@ class MainWindow(QMainWindow):
 
             desktop_entry, desktop_path = dialog.getDesktopEntryData()
             if desktop_entry and desktop_path:
-                with open(desktop_path, "w", encoding="utf-8") as f:
-                    f.write(desktop_entry)
-                    os.chmod(desktop_path, 0o755)
+                self._write_desktop_file(desktop_entry, desktop_path)
 
                 exe_name = os.path.splitext(os.path.basename(exe_path))[0]
                 xdg_data_home = os.getenv("XDG_DATA_HOME",
@@ -2970,6 +2968,13 @@ class MainWindow(QMainWindow):
         """Open game detail page."""
         self.detail_page_manager.openGameDetailPage(game_data)
 
+    def _write_desktop_file(self, desktop_entry: str, desktop_path: str) -> None:
+        """Write desktop file with executable permissions."""
+        with open(desktop_path, "w", encoding="utf-8") as f:
+            f.write(desktop_entry)
+        os.chmod(desktop_path, 0o755)
+        logger.info("Created desktop file: %s", desktop_path)
+
     def handle_launch_exe(self, exe_path: str) -> None:
         """Handle launching an exe file from CLI.
 
@@ -3048,12 +3053,7 @@ class MainWindow(QMainWindow):
 
             # Write the desktop file
             try:
-                with open(desktop_path, "w", encoding="utf-8") as f:
-                    f.write(desktop_entry)
-                logger.info(f"Created desktop file: {desktop_path}")
-
-                # Make it executable
-                os.chmod(desktop_path, 0o644)
+                self._write_desktop_file(desktop_entry, desktop_path)
 
                 # Parse the entry to get game data
                 entry = configparser.ConfigParser(interpolation=None)
