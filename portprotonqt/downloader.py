@@ -56,6 +56,7 @@ def download_with_cache(url, local_path, timeout=5, downloader_instance=None):
 
 class Downloader(QObject):
     download_completed = Signal(str, str, bool)  # url, local_path, success
+    callback_requested = Signal(object, object)
 
     def __init__(self, max_workers=4):
         super().__init__()
@@ -66,6 +67,11 @@ class Downloader(QObject):
         self._active_threads: list[QThread] = []
         self._global_lock = threading.Lock()
         self._has_internet = None
+        self.callback_requested.connect(self._run_callback)
+
+    def _run_callback(self, callback, result):
+        if callback:
+            callback(result)
 
     def has_internet(self, timeout=3):
         if self._has_internet is None:
@@ -287,13 +293,11 @@ class Downloader(QObject):
                     success = result is not None
                     logger.debug(f"Async download completed {self.url}: success={success}, path={result or ''}")
                     self.downloader.download_completed.emit(self.url, result or "", success)
-                    if callback:
-                        callback(result)
+                    self.downloader.callback_requested.emit(callback, result)
                 except Exception as e:
                     logger.error(f"Async download error {self.url}: {e}")
                     self.downloader.download_completed.emit(self.url, "", False)
-                    if callback:
-                        callback(None)
+                    self.downloader.callback_requested.emit(callback, None)
 
         thread = DownloadThread(self, url, local_path, timeout, parallel)
         thread.finished.connect(thread.deleteLater)
