@@ -2813,6 +2813,17 @@ class InputManager(QObject):
         if not app:
             return super().eventFilter(obj, event)
 
+        if event.type() == QEvent.Type.Wheel:
+            combo = obj if isinstance(obj, QComboBox) else None
+            parent = obj.parent() if isinstance(obj, QObject) else None
+            while combo is None and isinstance(parent, QObject):
+                if isinstance(parent, QComboBox):
+                    combo = parent
+                    break
+                parent = parent.parent()
+            if isinstance(combo, QComboBox) and not combo.view().isVisible():
+                return True
+
         if event.type() == QEvent.Type.MouseButtonPress:
             mouse_event = cast(QMouseEvent, event)
             if mouse_event.button() == Qt.MouseButton.ExtraButton1:
