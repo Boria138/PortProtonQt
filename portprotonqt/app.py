@@ -2,6 +2,11 @@ import sys
 import os
 import subprocess
 import shutil
+
+__app_id__ = "ru.linux_gaming.PortProtonQt"
+__app_name__ = "PortProtonQt"
+__app_version__ = "0.1.11"
+
 from PySide6.QtCore import QTimer, Qt, QThread, Signal
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QIcon
@@ -18,10 +23,6 @@ from portprotonqt.cli import parse_args, is_portproton_url, parse_portproton_url
 from portprotonqt.portproton_api import PortProtonAPI, set_user_conf_setting
 from portprotonqt.downloader import Downloader
 from portprotonqt.debug_utils import get_screen_info
-
-__app_id__ = "ru.linux_gaming.PortProtonQt"
-__app_name__ = "PortProtonQt"
-__app_version__ = "0.1.11"
 
 def get_version():
     try:

@@ -2,10 +2,9 @@
 
 import os
 
-import requests
 from PySide6.QtCore import QThread, Signal, QMutex
 
-from portprotonqt.config_utils import read_proxy_config
+from portprotonqt.downloader import get_requests_session
 from portprotonqt.logger import get_logger
 
 logger = get_logger(__name__)
@@ -27,12 +26,7 @@ class DownloadThread(QThread):
 
     def run(self):
         try:
-            session = requests.Session()
-            proxy = read_proxy_config() or {}
-            if proxy:
-                session.proxies.update(proxy)
-            session.verify = True
-
+            session = get_requests_session()
             response = session.get(self.download_url, stream=True)
             response.raise_for_status()
 

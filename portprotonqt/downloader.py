@@ -12,11 +12,18 @@ from portprotonqt.logger import get_logger
 
 logger = get_logger(__name__)
 
+
+def get_default_user_agent() -> str:
+    from portprotonqt.app import __app_version__
+
+    return f"PortProtonQt/{__app_version__}"
+
 def get_requests_session():
     session = requests.Session()
     proxy = read_proxy_config() or {}
     if proxy:
         session.proxies.update(proxy)
+    session.headers.update({"User-Agent": get_default_user_agent()})
     session.verify = True
     return session
 

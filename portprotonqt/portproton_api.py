@@ -15,7 +15,7 @@ from collections.abc import Callable
 from PySide6.QtCore import QThread, Signal, QUrl, QObject, Qt, SignalInstance
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QApplication
-from portprotonqt.downloader import Downloader
+from portprotonqt.downloader import Downloader, get_requests_session
 from portprotonqt.logger import get_logger
 from portprotonqt.config_utils import get_portproton_location, get_portproton_start_command
 from portprotonqt.localization import _
@@ -109,7 +109,8 @@ class PortProtonAPI:
         if url in self._head_negative_cache:
             return False
         try:
-            response = requests.head(url, timeout=timeout)
+            session = get_requests_session()
+            response = session.head(url, timeout=timeout)
             if response.status_code == 404:
                 self._head_negative_cache.add(url)
                 return False

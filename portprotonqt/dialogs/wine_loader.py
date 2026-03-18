@@ -4,11 +4,10 @@ import os
 import tempfile
 
 import orjson
-import requests
 from PySide6.QtCore import QThread, Signal
 from PySide6.QtWidgets import QWidget
 
-from portprotonqt.downloader import Downloader
+from portprotonqt.downloader import Downloader, get_requests_session
 from portprotonqt.logger import get_logger
 
 logger = get_logger(__name__)
@@ -71,7 +70,7 @@ class WineLoadingThread(QThread):
                 temp_path = tmp.name
 
             try:
-                session = requests.Session()
+                session = get_requests_session()
                 response = session.get(json_url, stream=True, timeout=30)
                 response.raise_for_status()
 
