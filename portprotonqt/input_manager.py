@@ -2586,6 +2586,28 @@ class InputManager(QObject):
                     elif value < 0:  # Up
                         active.focusPreviousChild()
                 return
+            # Handle horizontal navigation between AddGameDialog shortcut checkboxes
+            if isinstance(active, AddGameDialog) and code in (ecodes.ABS_HAT0X, ecodes.ABS_X) and value != 0:
+                normalized_value = value
+                if code == ecodes.ABS_X:
+                    if abs(value) < self.dead_zone:
+                        return
+                    normalized_value = 1 if value > self.dead_zone else -1
+                checkbox_row = [
+                    active.add_to_steam_checkbox,
+                    active.add_to_menu_checkbox,
+                    active.add_to_desktop_checkbox,
+                ]
+                focused_checkbox = focused if isinstance(focused, QCheckBox) else None
+                if focused_checkbox and focused_checkbox in checkbox_row:
+                    current_index = checkbox_row.index(focused_checkbox)
+                    if normalized_value < 0 and current_index > 0:
+                        checkbox_row[current_index - 1].setFocus(Qt.FocusReason.OtherFocusReason)
+                        return
+                    if normalized_value > 0 and current_index < len(checkbox_row) - 1:
+                        checkbox_row[current_index + 1].setFocus(Qt.FocusReason.OtherFocusReason)
+                        return
+
             # Handle SystemOverlay, AddGameDialog, or other QDialog navigation with D-pad
             elif isinstance(active, QDialog) and code == ecodes.ABS_HAT0X and value != 0:
                 if not focused or not active.focusWidget():
@@ -2698,48 +2720,102 @@ class InputManager(QObject):
                 return
 
             # Button navigation on detail pages (horizontal layout)
-            if code in (ecodes.ABS_HAT0X, ecodes.ABS_HAT0Y):
+            if code in (ecodes.ABS_HAT0X, ecodes.ABS_HAT0Y, ecodes.ABS_X, ecodes.ABS_Y):
                 focused = QApplication.focusWidget()
                 page = self._parent.stackedWidget.currentWidget()
+                current_detail_page = getattr(self._parent, "currentDetailPage", None)
+
+                normalized_code = code
+                normalized_value = value
+                if code in (ecodes.ABS_X, ecodes.ABS_Y):
+                    if abs(value) < self.dead_zone:
+                        normalized_value = 0
+                    else:
+                        normalized_value = 1 if value > self.dead_zone else -1
+                    normalized_code = ecodes.ABS_HAT0X if code == ecodes.ABS_X else ecodes.ABS_HAT0Y
 
                 # Check if we're on a detail page and focused widget is a button
-                if isinstance(focused, AutoSizeButton):
-                    # Find all buttons in the same horizontal layout (same parent, same Y position)
+                if (
+                    isinstance(focused, AutoSizeButton)
+                    and page is not None
+                    and current_detail_page is not None
+                    and page == current_detail_page
+                    and normalized_value != 0
+                ):
                     parent_widget = focused.parentWidget()
                     if parent_widget:
-                        # Find all AutoSizeButtons in the parent that are horizontally aligned
-                        buttons = parent_widget.findChildren(AutoSizeButton)
-                        # Filter buttons that are approximately on the same horizontal level (similar Y positions)
-                        y_tolerance = 20  # pixels tolerance for vertical alignment
-                        current_y = focused.geometry().y() + focused.geometry().height() // 2
-                        aligned_buttons = []
-                        for btn in buttons:
-                            btn_center_y = btn.geometry().y() + btn.geometry().height() // 2
-                            if abs(btn_center_y - current_y) <= y_tolerance:
-                                aligned_buttons.append(btn)
+                        buttons = parent_widget.findChildren(
+                            AutoSizeButton,
+                            options=Qt.FindChildOption.FindDirectChildrenOnly,
+                        )
+                        buttons = [btn for btn in buttons if btn.isVisible() and btn.isEnabled()]
+                        if len(buttons) > 1 and focused in buttons:
+                            centers = {
+                                btn: (
+                                    btn.geometry().x() + btn.geometry().width() // 2,
+                                    btn.geometry().y() + btn.geometry().height() // 2,
+                                )
+                                for btn in buttons
+                            }
+                            sorted_by_yx = sorted(
+                                buttons,
+                                key=lambda btn: (centers[btn][1], centers[btn][0]),
+                            )
+                            row_tolerance = 24
+                            rows = []
+                            for btn in sorted_by_yx:
+                                if not rows:
+                                    rows.append([btn])
+                                    continue
+                                last_row = rows[-1]
+                                last_row_y = centers[last_row[0]][1]
+                                if abs(centers[btn][1] - last_row_y) <= row_tolerance:
+                                    last_row.append(btn)
+                                else:
+                                    rows.append([btn])
+                            for row in rows:
+                                row.sort(key=lambda btn: centers[btn][0])
 
-                        # Sort buttons by x position for left-to-right navigation
-                        if len(aligned_buttons) > 1:
-                            aligned_buttons.sort(key=lambda b: b.geometry().x() + b.geometry().width() // 2)
+                            current_row_idx = -1
+                            current_col_idx = -1
+                            for row_idx, row in enumerate(rows):
+                                if focused in row:
+                                    current_row_idx = row_idx
+                                    current_col_idx = row.index(focused)
+                                    break
+                            if current_row_idx == -1:
+                                return
 
-                            # Find current button index
-                            try:
-                                current_index = aligned_buttons.index(focused)
-                            except ValueError:
-                                current_index = -1
+                            target = None
+                            if normalized_code == ecodes.ABS_HAT0X and normalized_value > 0:
+                                if current_col_idx < len(rows[current_row_idx]) - 1:
+                                    target = rows[current_row_idx][current_col_idx + 1]
+                                elif current_row_idx < len(rows) - 1:
+                                    target = rows[current_row_idx + 1][0]
+                            elif normalized_code == ecodes.ABS_HAT0X and normalized_value < 0:
+                                if current_col_idx > 0:
+                                    target = rows[current_row_idx][current_col_idx - 1]
+                                elif current_row_idx > 0:
+                                    target = rows[current_row_idx - 1][-1]
+                            elif normalized_code == ecodes.ABS_HAT0Y and normalized_value > 0:
+                                if current_row_idx < len(rows) - 1:
+                                    next_row = rows[current_row_idx + 1]
+                                    current_x = centers[focused][0]
+                                    target = min(next_row, key=lambda btn: abs(centers[btn][0] - current_x))
+                            elif normalized_code == ecodes.ABS_HAT0Y and normalized_value < 0:
+                                if current_row_idx > 0:
+                                    prev_row = rows[current_row_idx - 1]
+                                    current_x = centers[focused][0]
+                                    target = min(prev_row, key=lambda btn: abs(centers[btn][0] - current_x))
 
-                            if current_index >= 0:
-                                if code == ecodes.ABS_HAT0X:  # Horizontal navigation (left/right)
-                                    if value < 0 and current_index > 0:  # Left
-                                        aligned_buttons[current_index - 1].setFocus(Qt.FocusReason.OtherFocusReason)
-                                        return
-                                    elif value > 0 and current_index < len(aligned_buttons) - 1:  # Right
-                                        aligned_buttons[current_index + 1].setFocus(Qt.FocusReason.OtherFocusReason)
-                                        return
-                                elif code == ecodes.ABS_HAT0Y:  # Vertical navigation (up/down)
-                                    # For buttons on the same row, up/down should go to other controls
-                                    # So we'll continue to the next section of code for general navigation
-                                    pass
+                            if target:
+                                target.setFocus(Qt.FocusReason.OtherFocusReason)
+                                scroll_area = target.parentWidget()
+                                while scroll_area and not isinstance(scroll_area, QScrollArea):
+                                    scroll_area = scroll_area.parentWidget()
+                                if isinstance(scroll_area, QScrollArea):
+                                    scroll_area.ensureWidgetVisible(target, 20, 20)
+                                return
 
             # Vertical navigation in other tabs
             if code == ecodes.ABS_HAT0Y and value != 0:
@@ -2975,10 +3051,10 @@ class InputManager(QObject):
             # Also skip if there's an active QMessageBox or other QDialog
             active = QApplication.activeWindow()
             if (key in (Qt.Key.Key_Left, Qt.Key.Key_Right) and
-                not isinstance(focused, GameCard | QLineEdit | QTableWidget | AutoSizeButton) and
+                not isinstance(focused, GameCard | QLineEdit | QTableWidget | AutoSizeButton | QCheckBox) and
                 not self.file_explorer and
                 not isinstance(active, QMessageBox)):
-                if not isinstance(active, QDialog) or not hasattr(active, 'tab_widget'):
+                if not isinstance(active, QDialog):
                     idx = self._parent.stackedWidget.currentIndex()
 
                     # Get only visible tab indices
