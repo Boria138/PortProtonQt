@@ -9,7 +9,9 @@
 ```sh
 uv python install 3.10
 uv sync
-source .venv/bin/activate
+source .venv/bin/activate  # For bash/zsh
+# or
+source .venv/bin/activate.fish  # For fish
 ```
 
 Запуск производится по команде portprotonqt
@@ -27,7 +29,9 @@ source .venv/bin/activate
 ```sh
 uv python install 3.10
 uv sync --all-extras --dev
-source .venv/bin/activate
+source .venv/bin/activate  # For bash/zsh
+# or
+source .venv/bin/activate.fish  # For fish
 pre-commit install
 ```
 
