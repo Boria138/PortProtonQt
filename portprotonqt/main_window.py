@@ -3037,6 +3037,32 @@ class MainWindow(QMainWindow):
         """
         # Normalize the exe path
         exe_path = os.path.abspath(exe_path)
+        exe_name = os.path.splitext(os.path.basename(exe_path))[0]
+
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        builtin_game_folder = os.path.join(repo_root, "portprotonqt", "custom_data", exe_name)
+        xdg_data_home = os.getenv(
+            "XDG_DATA_HOME",
+            os.path.join(os.path.expanduser("~"), ".local", "share")
+        )
+        user_game_folder = os.path.join(
+            xdg_data_home,
+            "PortProtonQt",
+            "custom_data",
+            exe_name
+        )
+
+        local_cover_path = ""
+        for folder in (user_game_folder, builtin_game_folder):
+            if not os.path.isdir(folder):
+                continue
+            for ext in (".jpg", ".png", ".jpeg", ".bmp"):
+                candidate_cover = os.path.join(folder, f"cover{ext}")
+                if os.path.exists(candidate_cover):
+                    local_cover_path = candidate_cover
+                    break
+            if local_cover_path:
+                break
 
         # Check if the game already exists in the library
         existing_entry = find_game_by_exe(exe_path)
@@ -3052,7 +3078,7 @@ class MainWindow(QMainWindow):
                 game_data = {
                     "name": game_name,
                     "description": steam_info.get("description", ""),
-                    "cover_path": steam_info.get("cover", icon_path),
+                    "cover_path": local_cover_path or steam_info.get("cover", icon_path),
                     "appid": steam_info.get("appid", ""),
                     "controller_support": steam_info.get("controller_support", ""),
                     "exec_line": exec_line,
@@ -3070,29 +3096,6 @@ class MainWindow(QMainWindow):
             # Game not found in library: open detail page without creating .desktop file
             game_name_from_exe = os.path.splitext(os.path.basename(exe_path))[0]
             direct_exec_line = shlex.quote(exe_path)
-            repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            builtin_game_folder = os.path.join(repo_root, "portprotonqt", "custom_data", game_name_from_exe)
-            xdg_data_home = os.getenv(
-                "XDG_DATA_HOME",
-                os.path.join(os.path.expanduser("~"), ".local", "share")
-            )
-            user_game_folder = os.path.join(
-                xdg_data_home,
-                "PortProtonQt",
-                "custom_data",
-                game_name_from_exe
-            )
-            local_cover_path = ""
-            for folder in (user_game_folder, builtin_game_folder):
-                if not os.path.isdir(folder):
-                    continue
-                for ext in (".png", ".jpg", ".jpeg", ".bmp"):
-                    candidate_cover = os.path.join(folder, f"cover{ext}")
-                    if os.path.exists(candidate_cover):
-                        local_cover_path = candidate_cover
-                        break
-                if local_cover_path:
-                    break
 
             def on_steam_info_missing(steam_info: dict):
                 game_data = {
