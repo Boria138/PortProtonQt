@@ -1069,8 +1069,15 @@ Icon={icon_path}
                 cover_to_copy = dialog.last_cover_path if is_url and dialog.last_cover_path and os.path.isfile(dialog.last_cover_path) else new_cover_path
                 ext = os.path.splitext(cover_to_copy)[1].lower()
                 if ext in [".png", ".jpg", ".jpeg", ".bmp"]:
+                    target_cover_path = os.path.join(custom_folder, f"cover{ext}")
                     try:
-                        shutil.copyfile(cover_to_copy, os.path.join(custom_folder, f"cover{ext}"))
+                        if os.path.exists(target_cover_path) and os.path.samefile(cover_to_copy, target_cover_path):
+                            logger.debug(
+                                "Skipping cover copy for %s: source and destination are identical",
+                                new_name,
+                            )
+                        else:
+                            shutil.copyfile(cover_to_copy, target_cover_path)
                     except OSError as e:
                         self.signals.show_warning_dialog.emit(
                             _("Error"),
