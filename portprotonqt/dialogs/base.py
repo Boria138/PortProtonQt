@@ -6,9 +6,9 @@ from typing import cast, TYPE_CHECKING
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QDialog, QFormLayout, QHBoxLayout, QLabel, QVBoxLayout,
-    QProgressBar, QSizePolicy, QWidget
+    QProgressBar, QSizePolicy, QWidget, QCheckBox
 )
-from PySide6.QtCore import Qt, QObject, Signal, QTimer
+from PySide6.QtCore import Qt, QObject, Signal, QTimer, QStandardPaths
 from icoextract import IconExtractor, IconExtractorError
 from PIL import Image
 import psutil
@@ -238,6 +238,21 @@ class AddGameDialog(QDialog):
         layout.addRow(cover_label, self.coverEdit)
         layout.addRow(empty_label, coverBrowseButton)
 
+        self.add_to_steam_checkbox = QCheckBox(_("Add to Steam"))
+        self.add_to_menu_checkbox = QCheckBox(_("Add to Menu"))
+        self.add_to_desktop_checkbox = QCheckBox(_("Add to Desktop"))
+        self.add_to_steam_checkbox.setStyleSheet(self.theme.CHECKBOX_STYLE)
+        self.add_to_menu_checkbox.setStyleSheet(self.theme.CHECKBOX_STYLE)
+        self.add_to_desktop_checkbox.setStyleSheet(self.theme.CHECKBOX_STYLE)
+        layout.addRow(self.add_to_steam_checkbox)
+        layout.addRow(self.add_to_menu_checkbox)
+        layout.addRow(self.add_to_desktop_checkbox)
+
+        current_name = game_name.strip() if game_name else self.nameEdit.text().strip()
+        self.add_to_steam_checkbox.setChecked(self._steam_shortcut_exists(current_name))
+        self.add_to_menu_checkbox.setChecked(self._menu_shortcut_exists(current_name))
+        self.add_to_desktop_checkbox.setChecked(self._desktop_shortcut_exists(current_name))
+
         self.coverPreview = QLabel(self)
         self.coverPreview.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.coverPreview.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
@@ -283,6 +298,27 @@ class AddGameDialog(QDialog):
 
         self.init_keyboard()
         QTimer.singleShot(0, lambda: self.nameEdit.setFocus())
+
+    def _steam_shortcut_exists(self, game_name):
+        """Check whether the game already exists in Steam shortcuts."""
+        if not game_name:
+            return False
+        from portprotonqt.steam_api import is_game_in_steam
+        return is_game_in_steam(game_name)
+
+    def _menu_shortcut_exists(self, game_name):
+        """Check whether the game .desktop shortcut exists in applications menu."""
+        if not game_name:
+            return False
+        applications_dir = os.path.join(os.path.expanduser("~"), ".local", "share", "applications")
+        return os.path.exists(os.path.join(applications_dir, f"{game_name}.desktop"))
+
+    def _desktop_shortcut_exists(self, game_name):
+        """Check whether the game .desktop shortcut exists on the Desktop."""
+        if not game_name:
+            return False
+        desktop_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DesktopLocation)
+        return os.path.exists(os.path.join(desktop_dir, f"{game_name}.desktop"))
 
     def init_keyboard(self):
         """Initialize virtual keyboard."""

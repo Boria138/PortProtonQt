@@ -1084,6 +1084,40 @@ Icon={icon_path}
                     )
                     return
 
+            applications_dir = os.path.join(os.path.expanduser("~"), ".local", "share", "applications")
+            old_menu_path = os.path.join(applications_dir, f"{game_name}.desktop")
+            new_menu_path = os.path.join(applications_dir, f"{new_name}.desktop")
+            desktop_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DesktopLocation)
+            old_desktop_path = os.path.join(desktop_dir, f"{game_name}.desktop")
+            new_desktop_path_target = os.path.join(desktop_dir, f"{new_name}.desktop")
+
+            if game_name != new_name:
+                if os.path.exists(old_menu_path):
+                    self.remove_from_menu(game_name)
+                if os.path.exists(old_desktop_path):
+                    self.remove_from_desktop(game_name)
+                if is_game_in_steam(game_name):
+                    self.remove_from_steam(game_name, new_exe_path, "portproton")
+
+            if dialog.add_to_menu_checkbox.isChecked():
+                if not os.path.exists(new_menu_path):
+                    self.add_to_menu(new_name, new_exe_path)
+            elif os.path.exists(new_menu_path):
+                self.remove_from_menu(new_name)
+
+            if dialog.add_to_desktop_checkbox.isChecked():
+                if not os.path.exists(new_desktop_path_target):
+                    self.add_to_desktop(new_name, new_exe_path)
+            elif os.path.exists(new_desktop_path_target):
+                self.remove_from_desktop(new_name)
+
+            is_in_steam = is_game_in_steam(new_name)
+            if dialog.add_to_steam_checkbox.isChecked():
+                if not is_in_steam:
+                    self.add_to_steam(new_name, new_exe_path, new_cover_path)
+            elif is_in_steam:
+                self.remove_from_steam(new_name, new_exe_path, "portproton")
+
     def add_to_steam(self, game_name, exec_line, cover_path):
         """
         Adds a non-Steam game to Steam using steam_api.

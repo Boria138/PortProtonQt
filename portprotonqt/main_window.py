@@ -19,7 +19,7 @@ from portprotonqt.system_overlay import SystemOverlay
 from portprotonqt.input_manager import GamepadType
 
 from portprotonqt.image_utils import load_pixmap_async, ImageCarousel
-from portprotonqt.steam_api import get_steam_game_info_async, get_full_steam_game_info_async, get_steam_installed_games
+from portprotonqt.steam_api import get_steam_game_info_async, get_full_steam_game_info_async, get_steam_installed_games, is_game_in_steam
 from portprotonqt.egs_api import load_egs_games_async, get_egs_executable
 from portprotonqt.theme_manager import ThemeManager, load_theme_screenshots
 from portprotonqt.time_utils import save_last_launch, get_last_launch, parse_playtime_file, format_playtime, get_last_launch_timestamp, format_last_launch
@@ -45,7 +45,7 @@ from portprotonqt.config_utils import find_game_by_exe, create_desktop_file
 
 from PySide6.QtWidgets import (QLineEdit, QMainWindow, QStatusBar, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox,
                                QDialog, QFormLayout, QMessageBox, QApplication, QPushButton, QProgressBar, QCheckBox, QSizePolicy, QGridLayout, QScrollArea, QScroller, QSlider, QFrame)
-from PySide6.QtCore import Qt, QAbstractAnimation, QUrl, Signal, QTimer, Slot, QProcess, QProcessEnvironment, QFileSystemWatcher
+from PySide6.QtCore import Qt, QAbstractAnimation, QUrl, Signal, QTimer, Slot, QProcess, QProcessEnvironment, QFileSystemWatcher, QStandardPaths
 from PySide6.QtGui import QIcon, QPixmap, QColor, QDesktopServices
 from typing import cast
 from collections.abc import Callable
@@ -1463,6 +1463,8 @@ class MainWindow(QMainWindow):
                     return
                 description = entry.get("Comment", "")
                 exec_line = entry.get("Exec", exe_path)
+                cover_for_shortcut = dialog.last_cover_path if dialog.last_cover_path else user_cover
+                self._sync_game_shortcuts_from_dialog(dialog, name, exec_line, cover_for_shortcut)
 
                 # Builtin custom folder (adapt path)
                 repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -1548,6 +1550,31 @@ class MainWindow(QMainWindow):
 
                 from portprotonqt.steam_api import get_steam_game_info_async
                 get_steam_game_info_async(final_name, exec_line, on_steam_info)
+
+    def _sync_game_shortcuts_from_dialog(self, dialog, game_name, exec_line, cover_path):
+        """Apply shortcut options selected in add/edit game dialog."""
+        applications_dir = os.path.join(os.path.expanduser("~"), ".local", "share", "applications")
+        menu_path = os.path.join(applications_dir, f"{game_name}.desktop")
+        if dialog.add_to_menu_checkbox.isChecked():
+            if not os.path.exists(menu_path):
+                self.context_menu_manager.add_to_menu(game_name, exec_line)
+        elif os.path.exists(menu_path):
+            self.context_menu_manager.remove_from_menu(game_name)
+
+        desktop_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DesktopLocation)
+        desktop_path = os.path.join(desktop_dir, f"{game_name}.desktop")
+        if dialog.add_to_desktop_checkbox.isChecked():
+            if not os.path.exists(desktop_path):
+                self.context_menu_manager.add_to_desktop(game_name, exec_line)
+        elif os.path.exists(desktop_path):
+            self.context_menu_manager.remove_from_desktop(game_name)
+
+        is_in_steam = is_game_in_steam(game_name)
+        if dialog.add_to_steam_checkbox.isChecked():
+            if not is_in_steam:
+                self.context_menu_manager.add_to_steam(game_name, exec_line, cover_path)
+        elif is_in_steam:
+            self.context_menu_manager.remove_from_steam(game_name, exec_line, "portproton")
 
     def createAutoInstallTab(self):
         autoInstallPage = QWidget()
