@@ -41,7 +41,7 @@ from portprotonqt.config_utils import (
     read_favorites,
     get_portproton_start_command,
 )
-from portprotonqt.custom_widgets import AutoSizeButton, ClickableLabel
+from portprotonqt.custom_widgets import AutoSizeButton, ClickableLabel, FlowLayout
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
 from portprotonqt.portproton_api import PortProtonAPI
@@ -270,16 +270,42 @@ class DetailPageManager:
         layout.addWidget(value)
         layout.addSpacing(30)
 
-    def _create_game_buttons_layout(self, game_data: dict) -> QHBoxLayout:
+    def _create_game_buttons_layout(self, game_data: dict) -> FlowLayout:
         """Create buttons layout for game detail page."""
-        buttons_layout = QHBoxLayout()
+        buttons_layout = FlowLayout(center_rows=False)
+        buttons_layout.setContentsMargins(0, 0, 0, 0)
         exec_line = game_data.get("exec_line", "")
         game_source = game_data.get("game_source", "")
         appid = game_data.get("appid", "")
+        game_name = game_data.get("name", "")
+        cover_path = game_data.get("cover_path", "")
 
         current_exe = self._get_current_exe(exec_line)
         play_button = self._create_play_button(exec_line, current_exe)
-        buttons_layout.addWidget(play_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        buttons_layout.addWidget(play_button)
+
+        if self._has_game_shortcut(game_name):
+            edit_button = self._make_action_button(
+                _("Edit Game"),
+                self.main_window.theme_manager.get_icon("edit"),
+            )
+            edit_button.clicked.connect(
+                lambda: self.main_window.context_menu_manager.edit_game_shortcut(
+                    game_name, exec_line, cover_path
+                )
+            )
+            buttons_layout.addWidget(edit_button)
+        else:
+            add_button = self._make_action_button(
+                _("Add Game"),
+                self.main_window.theme_manager.get_icon("addgame"),
+            )
+            add_button.clicked.connect(
+                lambda: self.main_window.openAddGameDialog(
+                    self._get_file_from_exec(exec_line) or exec_line
+                )
+            )
+            buttons_layout.addWidget(add_button)
 
         # Show settings button for PortProton games or Steam games using PortProtonQt
         if str(game_source).lower() == "portproton":
@@ -292,7 +318,6 @@ class DetailPageManager:
             except (ValueError, TypeError):
                 pass
 
-        buttons_layout.addStretch()
         return buttons_layout
 
     def _get_current_exe(self, exec_line: str) -> str | None:
@@ -323,22 +348,22 @@ class DetailPageManager:
         play_button.clicked.connect(lambda: self.main_window.toggleGame(exec_line, play_button))
         return play_button
 
-    def _add_portproton_buttons(self, buttons_layout: QHBoxLayout, exec_line: str) -> None:
+    def _add_portproton_buttons(self, buttons_layout: FlowLayout, exec_line: str) -> None:
         """Add settings and log buttons for PortProton games."""
         file_to_check = self._get_file_from_exec(exec_line)
 
         settings_icon = self.main_window.theme_manager.get_icon("settings")
         settings_button = self._make_action_button(_("Settings"), settings_icon)
         settings_button.clicked.connect(lambda: self.main_window.open_exe_settings(file_to_check))
-        buttons_layout.addWidget(settings_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        buttons_layout.addWidget(settings_button)
 
         log_icon = self.main_window.theme_manager.get_icon("edit")
         log_button = self._make_action_button(_("Create Log"), log_icon)
         log_button.clicked.connect(lambda: self.toggleDebugLog(file_to_check, log_button))
-        buttons_layout.addWidget(log_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        buttons_layout.addWidget(log_button)
         self._debug_log_button = log_button
 
-    def _add_steam_settings_button(self, buttons_layout: QHBoxLayout, exec_line: str, appid: str) -> None:
+    def _add_steam_settings_button(self, buttons_layout: FlowLayout, exec_line: str, appid: str) -> None:
         """Add only settings button for Steam games."""
         # Create fake exe path in steam_scripts folder
         portproton_location = self.main_window.portproton_location
@@ -354,7 +379,7 @@ class DetailPageManager:
         settings_icon = self.main_window.theme_manager.get_icon("settings")
         settings_button = self._make_action_button(_("Settings"), settings_icon)
         settings_button.clicked.connect(lambda: self.main_window.open_exe_settings(fake_exe_path, appid))
-        buttons_layout.addWidget(settings_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        buttons_layout.addWidget(settings_button)
 
     def _get_file_from_exec(self, exec_line: str) -> str | None:
         """Get file path from exec line."""
@@ -367,6 +392,14 @@ class DetailPageManager:
         elif entry_exec_split[0] == "flatpak":
             return entry_exec_split[3] if len(entry_exec_split) >= 4 else None
         return entry_exec_split[0]
+
+    def _has_game_shortcut(self, game_name: str) -> bool:
+        """Check whether game has a desktop shortcut in PortProton location."""
+        context_menu_manager = getattr(self.main_window, "context_menu_manager", None)
+        if context_menu_manager is None:
+            return False
+        desktop_path = context_menu_manager._get_desktop_path(game_name)
+        return bool(desktop_path and os.path.exists(desktop_path))
 
     def _make_action_button(self, text: str, icon) -> AutoSizeButton:
         """Create styled action button."""
@@ -532,11 +565,11 @@ class DetailPageManager:
             image_label=image_label,
         )
 
-        buttons_layout = QHBoxLayout()
+        buttons_layout = FlowLayout(center_rows=False)
+        buttons_layout.setContentsMargins(0, 0, 0, 0)
         install_button = self._create_autoinstall_buttons_layout(
             script_name, game_data.get("name", ""), buttons_layout
         )
-        buttons_layout.addStretch()
 
         details_widget = create_details_widget(
             parent=detail_page,
@@ -574,12 +607,12 @@ class DetailPageManager:
         return metadata_description if metadata_description else description
 
     def _create_autoinstall_buttons_layout(
-        self, script_name: str, name: str, buttons_layout: QHBoxLayout
+        self, script_name: str, name: str, buttons_layout: FlowLayout
     ) -> AutoSizeButton:
         """Create install button for auto-install page."""
         install_button = self._make_action_button(_("Install"), self.main_window.theme_manager.get_icon("save"))
         install_button.clicked.connect(lambda: self.main_window.launch_autoinstall(script_name))
-        buttons_layout.addWidget(install_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        buttons_layout.addWidget(install_button)
 
         self._check_install_status(script_name, name, install_button)
 

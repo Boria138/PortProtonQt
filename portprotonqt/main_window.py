@@ -42,7 +42,7 @@ from portprotonqt.tray_manager import TrayManager
 from portprotonqt.game_library_manager import GameLibraryManager
 from portprotonqt.virtual_keyboard import VirtualKeyboard
 from portprotonqt.dialogs.proton_manager import show_proton_manager
-from portprotonqt.config_utils import find_game_by_exe, create_desktop_file
+from portprotonqt.config_utils import find_game_by_exe
 
 from PySide6.QtWidgets import (QLineEdit, QMainWindow, QStatusBar, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox,
                                QDialog, QFormLayout, QMessageBox, QApplication, QPushButton, QProgressBar, QCheckBox, QSizePolicy, QGridLayout, QScrollArea, QScroller, QSlider, QFrame)
@@ -3030,13 +3030,11 @@ class MainWindow(QMainWindow):
         """Handle launching an exe file from CLI.
 
         If the game exists in the library, open its detail page.
-        If not, add it to the library and then open the detail page.
+        If not, open detail page without creating a shortcut automatically.
 
         Args:
             exe_path: Full path to the executable file
         """
-        import configparser
-
         # Normalize the exe path
         exe_path = os.path.abspath(exe_path)
 
@@ -3069,79 +3067,50 @@ class MainWindow(QMainWindow):
 
             get_steam_game_info_async(game_name, exec_line, on_steam_info)
         else:
-            # Skip desktop file creation for games in steamapps/common
-            if "steamapps/common" in exe_path:
-                game_name_from_exe = os.path.splitext(os.path.basename(exe_path))[0]
-                logger.info("Game in steamapps/common, skipping desktop file creation: %s", game_name_from_exe)
+            # Game not found in library: open detail page without creating .desktop file
+            game_name_from_exe = os.path.splitext(os.path.basename(exe_path))[0]
+            direct_exec_line = shlex.quote(exe_path)
+            repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            builtin_game_folder = os.path.join(repo_root, "portprotonqt", "custom_data", game_name_from_exe)
+            xdg_data_home = os.getenv(
+                "XDG_DATA_HOME",
+                os.path.join(os.path.expanduser("~"), ".local", "share")
+            )
+            user_game_folder = os.path.join(
+                xdg_data_home,
+                "PortProtonQt",
+                "custom_data",
+                game_name_from_exe
+            )
+            local_cover_path = ""
+            for folder in (user_game_folder, builtin_game_folder):
+                if not os.path.isdir(folder):
+                    continue
+                for ext in (".png", ".jpg", ".jpeg", ".bmp"):
+                    candidate_cover = os.path.join(folder, f"cover{ext}")
+                    if os.path.exists(candidate_cover):
+                        local_cover_path = candidate_cover
+                        break
+                if local_cover_path:
+                    break
 
-                def on_steam_info_skip(steam_info: dict):
-                    game_data = {
-                        "name": game_name_from_exe,
-                        "description": steam_info.get("description", ""),
-                        "cover_path": steam_info.get("cover", ""),
-                        "appid": steam_info.get("appid", ""),
-                        "controller_support": steam_info.get("controller_support", ""),
-                        "exec_line": exe_path,
-                        "last_launch": _("Never"),
-                        "formatted_playtime": "0:00",
-                        "protondb_tier": steam_info.get("protondb_tier", ""),
-                        "anticheat_status": steam_info.get("anticheat_status", ""),
-                        "game_source": "portproton",
-                    }
-                    self.openGameDetailPage(game_data)
+            def on_steam_info_missing(steam_info: dict):
+                game_data = {
+                    "name": game_name_from_exe,
+                    "description": steam_info.get("description", ""),
+                    "cover_path": local_cover_path or steam_info.get("cover", ""),
+                    "appid": steam_info.get("appid", ""),
+                    "controller_support": steam_info.get("controller_support", ""),
+                    "exec_line": direct_exec_line,
+                    "last_launch": _("Never"),
+                    "formatted_playtime": "0:00",
+                    "protondb_tier": steam_info.get("protondb_tier", ""),
+                    "anticheat_status": steam_info.get("anticheat_status", ""),
+                    "game_source": "portproton",
+                }
+                self.openGameDetailPage(game_data)
 
-                get_steam_game_info_async(game_name_from_exe, exe_path, on_steam_info_skip)
-                return
-
-            # Game not found - create desktop entry and open detail page
-            result = create_desktop_file(exe_path)
-
-            if not result:
-                logger.error(f"Failed to create desktop file for {exe_path}")
-                return
-
-            desktop_entry, desktop_path = result
-
-            # Write the desktop file
-            try:
-                self._write_desktop_file(desktop_entry, desktop_path)
-
-                # Parse the entry to get game data
-                entry = configparser.ConfigParser(interpolation=None)
-                entry.read(desktop_path, encoding="utf-8")
-
-                if "Desktop Entry" not in entry:
-                    logger.error(f"Invalid desktop file: {desktop_path}")
-                    return
-
-                desktop_section = entry["Desktop Entry"]
-
-                game_name = desktop_section.get("Name", os.path.splitext(os.path.basename(exe_path))[0])
-                exec_line = desktop_section.get("Exec", "")
-                icon_path = desktop_section.get("Icon", "")
-
-                # Get Steam game info asynchronously to fetch appid, cover, etc.
-                def on_steam_info(steam_info: dict):
-                    game_data = {
-                        "name": game_name,
-                        "description": steam_info.get("description", ""),
-                        "cover_path": steam_info.get("cover", icon_path),
-                        "appid": steam_info.get("appid", ""),
-                        "controller_support": steam_info.get("controller_support", ""),
-                        "exec_line": exec_line,
-                        "last_launch": _("Never"),
-                        "formatted_playtime": "0:00",
-                        "protondb_tier": steam_info.get("protondb_tier", ""),
-                        "anticheat_status": steam_info.get("anticheat_status", ""),
-                        "game_source": "portproton",
-                    }
-                    # Open detail page for the newly added game
-                    self.openGameDetailPage(game_data)
-
-                get_steam_game_info_async(game_name, exec_line, on_steam_info)
-
-            except Exception as e:
-                logger.error(f"Error creating desktop file: {e}")
+            get_steam_game_info_async(game_name_from_exe, direct_exec_line, on_steam_info_missing)
 
 
     def activateFocusedWidget(self):

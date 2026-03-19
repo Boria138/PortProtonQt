@@ -2,7 +2,7 @@ from PySide6.QtWidgets import QLabel, QPushButton, QWidget, QLayout, QLayoutItem
 from PySide6.QtCore import Qt, Signal, QRect, QSize, Property, QPropertyAnimation, QEasingCurve
 from PySide6.QtGui import QFont, QFontMetrics, QPainter
 
-def compute_layout(nat_sizes, rect_width, spacing, max_scale):
+def compute_layout(nat_sizes, rect_width, spacing, max_scale, center_rows=True):
     """
     Compute layout for flow arrangement.
     nat_sizes: list of tuples [(width, height), ...]
@@ -46,7 +46,8 @@ def compute_layout(nat_sizes, rect_width, spacing, max_scale):
             desired_scale = available_width / (sum_width + spacing * (count - 1)) if sum_width > 0 else 1.0
             global_scale = min(desired_scale, max_scale)
             scaled_row_width = int(sum_width * global_scale) + spacing * (count - 1)
-            max_row_x_start = max(min_margin, (rect_width - scaled_row_width) // 2)
+            if center_rows:
+                max_row_x_start = max(min_margin, (rect_width - scaled_row_width) // 2)
 
         i += count
 
@@ -86,10 +87,13 @@ def compute_layout(nat_sizes, rect_width, spacing, max_scale):
         scaled_row_width = int(sum_width * global_scale) + spacing * (count - 1)
 
         # Determine starting position
-        if count == max_items_per_row:
-            x = max(min_margin, (rect_width - scaled_row_width) // 2)
+        if center_rows:
+            if count == max_items_per_row:
+                x = max(min_margin, (rect_width - scaled_row_width) // 2)
+            else:
+                x = max_row_x_start
         else:
-            x = max_row_x_start
+            x = min_margin
 
         # Place elements in row
         for k in range(i, j):
@@ -109,12 +113,13 @@ def compute_layout(nat_sizes, rect_width, spacing, max_scale):
 
 
 class FlowLayout(QLayout):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, center_rows=True):
         super().__init__(parent)
         self.itemList = []
         self.setContentsMargins(20, 20, 20, 20)
         self._spacing = 20
         self._max_scale = 1.0
+        self._center_rows = center_rows
 
         # Simple cache
         self._cache_width = None
@@ -184,8 +189,13 @@ class FlowLayout(QLayout):
             return self._cache_result[1]
 
         # Calculate
-        geom_array, total_height = compute_layout(visible_sizes, width,
-                                                   self._spacing, self._max_scale)
+        geom_array, total_height = compute_layout(
+            visible_sizes,
+            width,
+            self._spacing,
+            self._max_scale,
+            self._center_rows,
+        )
 
         # Save to cache
         self._cache_width = width
@@ -231,8 +241,13 @@ class FlowLayout(QLayout):
             geom_array, total_height = self._cache_result
         else:
             # Calculate layout
-            geom_array, total_height = compute_layout(visible_sizes, rect.width(),
-                                                      self._spacing, self._max_scale)
+            geom_array, total_height = compute_layout(
+                visible_sizes,
+                rect.width(),
+                self._spacing,
+                self._max_scale,
+                self._center_rows,
+            )
 
             # Save to cache
             self._cache_width = rect.width()

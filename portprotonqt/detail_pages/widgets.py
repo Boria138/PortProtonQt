@@ -7,12 +7,12 @@ from PySide6.QtWidgets import (
     QGraphicsDropShadowEffect,
     QVBoxLayout,
     QLabel,
-    QHBoxLayout,
     QWidget,
     QScrollArea,
     QBoxLayout,
     QSizePolicy,
     QScroller,
+    QLayout,
 )
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QColor, QDesktopServices
@@ -313,7 +313,7 @@ def create_details_widget(
     description: str,
     game_info_layout: QVBoxLayout | None = None,
     controller_support: str | None = None,
-    buttons_layout: QHBoxLayout | None = None,
+    buttons_layout: QLayout | None = None,
 ) -> QWidget:
     """Create details widget with title, description, and optional content."""
     details_widget = QWidget()
