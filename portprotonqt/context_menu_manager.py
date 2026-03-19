@@ -1047,6 +1047,12 @@ Icon={icon_path}
                     _("Failed to save .desktop file: {error}").format(error=str(e))
                 )
                 return
+            saved_entry = parse_desktop_entry(new_desktop_path)
+            updated_exec_line = new_exe_path
+            if saved_entry:
+                parsed_exec = saved_entry.get("Exec", saved_entry.get("exec", "")).strip()
+                if parsed_exec:
+                    updated_exec_line = parsed_exec
 
             # Check if new_cover_path is a URL by checking for common image extensions
             image_extensions = ('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.webp')
@@ -1108,22 +1114,22 @@ Icon={icon_path}
 
             if dialog.add_to_menu_checkbox.isChecked():
                 if not os.path.exists(new_menu_path):
-                    self.add_to_menu(new_name, new_exe_path)
+                    self.add_to_menu(new_name, updated_exec_line)
             elif os.path.exists(new_menu_path):
                 self.remove_from_menu(new_name)
 
             if dialog.add_to_desktop_checkbox.isChecked():
                 if not os.path.exists(new_desktop_path_target):
-                    self.add_to_desktop(new_name, new_exe_path)
+                    self.add_to_desktop(new_name, updated_exec_line)
             elif os.path.exists(new_desktop_path_target):
                 self.remove_from_desktop(new_name)
 
             is_in_steam = is_game_in_steam(new_name)
             if dialog.add_to_steam_checkbox.isChecked():
                 if not is_in_steam:
-                    self.add_to_steam(new_name, new_exe_path, new_cover_path)
+                    self.add_to_steam(new_name, updated_exec_line, new_cover_path)
             elif is_in_steam:
-                self.remove_from_steam(new_name, new_exe_path, "portproton")
+                self.remove_from_steam(new_name, updated_exec_line, "portproton")
 
     def add_to_steam(self, game_name, exec_line, cover_path):
         """
