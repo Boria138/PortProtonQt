@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (
     QDialog, QFormLayout, QHBoxLayout, QLabel, QVBoxLayout,
     QProgressBar, QSizePolicy, QWidget, QCheckBox
 )
-from PySide6.QtCore import Qt, QObject, Signal, QTimer, QStandardPaths
+from PySide6.QtCore import Qt, QObject, Signal, QTimer, QStandardPaths, QSize
 from icoextract import IconExtractor, IconExtractorError
 from PIL import Image
 import psutil
@@ -238,15 +238,32 @@ class AddGameDialog(QDialog):
         layout.addRow(cover_label, self.coverEdit)
         layout.addRow(empty_label, coverBrowseButton)
 
-        self.add_to_steam_checkbox = QCheckBox(_("Add to Steam"))
-        self.add_to_menu_checkbox = QCheckBox(_("Add to Menu"))
-        self.add_to_desktop_checkbox = QCheckBox(_("Add to Desktop"))
+        self.add_to_steam_checkbox = QCheckBox()
+        self.add_to_menu_checkbox = QCheckBox()
+        self.add_to_desktop_checkbox = QCheckBox()
         self.add_to_steam_checkbox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.add_to_menu_checkbox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.add_to_desktop_checkbox.setStyleSheet(self.theme.CHECKBOX_STYLE)
-        layout.addRow(self.add_to_steam_checkbox)
-        layout.addRow(self.add_to_menu_checkbox)
-        layout.addRow(self.add_to_desktop_checkbox)
+        if icon := theme_manager.get_icon("steam"):
+            self.add_to_steam_checkbox.setIcon(icon)
+        if icon := theme_manager.get_icon("menu"):
+            self.add_to_menu_checkbox.setIcon(icon)
+        if icon := theme_manager.get_icon("desktop"):
+            self.add_to_desktop_checkbox.setIcon(icon)
+        self.add_to_steam_checkbox.setIconSize(QSize(20, 20))
+        self.add_to_menu_checkbox.setIconSize(QSize(20, 20))
+        self.add_to_desktop_checkbox.setIconSize(QSize(20, 20))
+        options_layout = QHBoxLayout()
+        options_layout.setSpacing(12)
+        options_layout.addWidget(self.add_to_steam_checkbox)
+        options_layout.addWidget(self.add_to_menu_checkbox)
+        options_layout.addWidget(self.add_to_desktop_checkbox)
+        options_layout.addStretch()
+        options_widget = QWidget(self)
+        options_widget.setLayout(options_layout)
+        options_label = QLabel(_("Add shortcut to:"))
+        options_label.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
+        layout.addRow(options_label, options_widget)
 
         current_name = game_name.strip() if game_name else self.nameEdit.text().strip()
         self.add_to_steam_checkbox.setChecked(self._steam_shortcut_exists(current_name))
