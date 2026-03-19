@@ -120,7 +120,15 @@ class Downloader(QObject):
                 self._locks[url] = threading.Lock()
             return self._locks[url]
 
-    def _download_with_parallel(self, urls, local_paths, timeout=5, throttle_delay=0.2, max_workers=4):
+    def _download_with_parallel(
+        self,
+        urls,
+        local_paths,
+        timeout=5,
+        throttle_delay=0.2,
+        max_workers=4,
+        on_result: Callable[[str, str | None], None] | None = None,
+    ):
         """Internal parallel download with rate limiting and 429 retry."""
         from concurrent.futures import ThreadPoolExecutor, as_completed
         import time
@@ -202,9 +210,13 @@ class Downloader(QObject):
                 try:
                     res = future.result()
                     results[url] = res
+                    if on_result:
+                        on_result(url, res)
                 except Exception as e:
                     logger.error(f"Download error {url}: {e}")
                     results[url] = None
+                    if on_result:
+                        on_result(url, None)
         return results
 
     def download(self, url, local_path, timeout=5):
@@ -239,25 +251,56 @@ class Downloader(QObject):
                     del self._locks[url]
             return result
 
-    def download_parallel(self, urls, local_paths, timeout=5, throttle_delay=0.2, max_workers=None):
+    def download_parallel(
+        self,
+        urls,
+        local_paths,
+        timeout=5,
+        throttle_delay=0.2,
+        max_workers=None,
+        on_result: Callable[[str, str | None], None] | None = None,
+    ):
         if not self.has_internet():
             logger.warning("No internet, skipping parallel download")
-            return dict.fromkeys(urls)
+            results = dict.fromkeys(urls)
+            if on_result:
+                for url, result in results.items():
+                    on_result(url, result)
+            return results
 
         filtered_urls = []
         filtered_paths = []
+        emitted_urls = set()
         with self._global_lock:
             for url, path in zip(urls, local_paths, strict=False):
                 if url in self._last_error:
                     logger.warning(f"Previous download error for {url}, skipping")
+                    if on_result and url not in emitted_urls:
+                        on_result(url, None)
+                        emitted_urls.add(url)
                     continue
                 if url in self._cache:
+                    if on_result and url not in emitted_urls:
+                        on_result(url, self._cache[url])
+                        emitted_urls.add(url)
                     continue
                 filtered_urls.append(url)
                 filtered_paths.append(path)
 
+        def emit_result(url: str, result: str | None):
+            if on_result:
+                on_result(url, result)
+            emitted_urls.add(url)
+
         workers = max_workers if max_workers is not None else self.max_workers
-        results = self._download_with_parallel(filtered_urls, filtered_paths, timeout, throttle_delay, workers)
+        results = self._download_with_parallel(
+            filtered_urls,
+            filtered_paths,
+            timeout,
+            throttle_delay,
+            workers,
+            on_result=emit_result,
+        )
 
         with self._global_lock:
             for url, path in results.items():
@@ -270,6 +313,10 @@ class Downloader(QObject):
                     final_results[url] = self._cache[url]
                 else:
                     final_results[url] = None
+        if on_result:
+            for url in urls:
+                if url not in emitted_urls:
+                    on_result(url, final_results[url])
         return final_results
 
 

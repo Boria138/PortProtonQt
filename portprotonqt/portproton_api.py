@@ -10,7 +10,6 @@ import queue
 import shutil
 import shlex
 import locale
-import threading
 from collections.abc import Callable
 from PySide6.QtCore import QThread, Signal, QUrl, QObject, Qt, SignalInstance
 from PySide6.QtGui import QDesktopServices
@@ -24,6 +23,7 @@ from portprotonqt.config.cache import CacheManager
 
 logger = get_logger(__name__)
 AUTOINSTALL_CACHE_DURATION = 3600  # 1 hour for autoinstall cache
+HEAD_FAILURE_RETRY_DELAY = 60  # 1 minute cooldown for failed HEAD checks
 
 def normalize_name(s):
     """
@@ -97,8 +97,11 @@ class PortProtonAPI:
         self.repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         self.builtin_custom_folder = os.path.join(self.repo_root, "custom_data")
         self._autoinstall_cache = None  # In-memory cache
+        self._head_positive_cache: set[str] = set()
         self._head_negative_cache: set[str] = set()
+        self._head_failure_cache: dict[str, float] = {}
         self._pending_asset_notifier: QObject | None = None
+        self._pending_asset_batch_thread: QThread | None = None
 
     def _get_game_dir(self, exe_name: str) -> str:
         game_dir = os.path.join(self.custom_data_dir, exe_name)
@@ -108,16 +111,28 @@ class PortProtonAPI:
     def _check_file_exists(self, url: str, timeout: int = 5) -> bool:
         if url in self._head_negative_cache:
             return False
+        if url in self._head_positive_cache:
+            return True
+        last_failed_check = self._head_failure_cache.get(url)
+        if last_failed_check and (time.time() - last_failed_check) < HEAD_FAILURE_RETRY_DELAY:
+            return False
         try:
             session = get_requests_session()
             response = session.head(url, timeout=timeout)
             if response.status_code == 404:
                 self._head_negative_cache.add(url)
+                self._head_positive_cache.discard(url)
+                self._head_failure_cache.pop(url, None)
                 return False
             response.raise_for_status()
-            return response.status_code == 200
+            if response.status_code == 200:
+                self._head_positive_cache.add(url)
+                self._head_failure_cache.pop(url, None)
+                return True
+            return False
         except requests.RequestException as e:
             logger.debug(f"Failed to check file at {url}: {e}")
+            self._head_failure_cache[url] = time.time()
             return False
 
     def download_game_assets_async(self, exe_name: str, timeout: int = 5, callback: Callable[[dict[str, str | None]], None] | None = None) -> None:
@@ -225,17 +240,12 @@ class PortProtonAPI:
             if callback:
                 callback(local_path)
 
-        if self._check_file_exists(cover_url, timeout):
-            self.downloader.download_async(
-                cover_url,
-                local_cover_path,
-                timeout=timeout,
-                callback=on_cover_downloaded
-            )
-        else:
-            logger.debug(f"No autoinstall cover found for {exe_name}")
-            if callback:
-                callback(None)
+        self.downloader.download_async(
+            cover_url,
+            local_cover_path,
+            timeout=timeout,
+            callback=on_cover_downloaded
+        )
 
     def download_autoinstall_metadata_async(self, exe_name: str, timeout: int = 5, callback: Callable[[str | None], None] | None = None) -> None:
         """Download autoinstall metadata.txt file."""
@@ -269,17 +279,12 @@ class PortProtonAPI:
             if callback:
                 callback(local_path)
 
-        if self._check_file_exists(metadata_url, timeout):
-            self.downloader.download_async(
-                metadata_url,
-                local_metadata_path,
-                timeout=timeout,
-                callback=on_metadata_downloaded
-            )
-        else:
-            logger.debug(f"No autoinstall metadata found for {exe_name}")
-            if callback:
-                callback(None)
+        self.downloader.download_async(
+            metadata_url,
+            local_metadata_path,
+            timeout=timeout,
+            callback=on_metadata_downloaded
+        )
 
     def download_autoinstall_assets_batch_async(
         self,
@@ -316,43 +321,6 @@ class PortProtonAPI:
         self._pending_asset_notifier = notifier
 
         pending_tasks: list[tuple[str, str, SignalInstance, str, str]] = []
-        max_concurrent_downloads = 2
-        active_downloads = 0
-        lock = threading.Lock()
-        throttle_delay = 0.5
-        last_request_time = [0.0]
-
-        def finish_download():
-            nonlocal active_downloads
-            with lock:
-                active_downloads -= 1
-            start_next()
-
-        def start_next():
-            nonlocal active_downloads
-            with lock:
-                while active_downloads < max_concurrent_downloads and pending_tasks:
-                    url, local_path, signal, exe_name, asset_type = pending_tasks.pop(0)
-                    elapsed = time.time() - last_request_time[0]
-                    if elapsed < throttle_delay:
-                        time.sleep(throttle_delay - elapsed)
-                    last_request_time[0] = time.time()
-                    active_downloads += 1
-
-                    def on_download(result: str | None, signal=signal, exe_name=exe_name, asset_type=asset_type):
-                        if result:
-                            logger.info(f"{asset_type.capitalize()} downloaded for {exe_name}: {result}")
-                        else:
-                            logger.debug(f"No {asset_type} found for {exe_name}")
-                        signal.emit(exe_name, result)
-                        finish_download()
-
-                    self.downloader.download_async(
-                        url,
-                        local_path,
-                        timeout=timeout,
-                        callback=on_download,
-                    )
 
         for exe_name in exe_names:
             user_game_folder = os.path.join(autoinstall_root, exe_name)
@@ -381,7 +349,53 @@ class PortProtonAPI:
                 metadata_url = f"{self.base_url}/{exe_name}/metadata.txt"
                 pending_tasks.append((metadata_url, local_metadata_path, notifier.metadata_ready, exe_name, "metadata"))
 
-        start_next()
+        if not pending_tasks:
+            return
+
+        pending_tasks_by_url = {task[0]: task for task in pending_tasks}
+
+        class BatchDownloadWorker(QThread):
+            item_ready = Signal(str, object)
+            finished = Signal()
+            downloader: Downloader
+            urls: list[str]
+            local_paths: list[str]
+            timeout: int
+
+            def run(self):
+                self.downloader.download_parallel(
+                    self.urls,
+                    self.local_paths,
+                    timeout=self.timeout,
+                    on_result=lambda url, result: self.item_ready.emit(url, result),
+                )
+                self.finished.emit()
+
+        worker = BatchDownloadWorker()
+        worker.downloader = self.downloader
+        worker.urls = [task[0] for task in pending_tasks]
+        worker.local_paths = [task[1] for task in pending_tasks]
+        worker.timeout = timeout
+
+        def on_item_ready(url: str, result: str | None):
+            task = pending_tasks_by_url.get(url)
+            if task is None:
+                return
+            _url, _local_path, signal, exe_name, asset_type = task
+            if result:
+                logger.info(f"{asset_type.capitalize()} downloaded for {exe_name}: {result}")
+            else:
+                logger.debug(f"No {asset_type} found for {exe_name}")
+            signal.emit(exe_name, result)
+
+        def on_batch_finished():
+            self._pending_asset_batch_thread = None
+
+        worker.item_ready.connect(on_item_ready)
+        worker.finished.connect(on_batch_finished)
+        worker.finished.connect(worker.deleteLater)
+        self._pending_asset_batch_thread = worker
+        worker.start()
 
     def get_autoinstall_description(self, exe_name: str, lang_code: str = "en") -> str | None:
         """Read description from downloaded metadata.txt file for autoinstall game.
