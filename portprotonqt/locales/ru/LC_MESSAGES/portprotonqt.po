@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-03-15 00:23+0500\n"
-"PO-Revision-Date: 2026-03-15 00:29+0500\n"
+"POT-Creation-Date: 2026-03-19 22:27+0500\n"
+"PO-Revision-Date: 2026-03-19 22:29+0500\n"
 "Last-Translator: \n"
 "Language-Team: ru_RU <LL@li.org>\n"
 "Language: ru_RU\n"
@@ -540,6 +540,12 @@ msgstr "Избранное"
 
 msgid "Games Display Filter:"
 msgstr "Фильтр игр:"
+
+msgid "Compact"
+msgstr "Компактный"
+
+msgid "Badge View Type:"
+msgstr "Тип отображения бейджа:"
 
 msgid "Interface Settings"
 msgstr "Настройки интерфейса"
@@ -1111,6 +1117,9 @@ msgstr "СЮЖЕТ + ПОБОЧКИ"
 msgid "COMPLETIONIST"
 msgstr "100%"
 
+msgid "Edit Game"
+msgstr "Редактировать игру"
+
 msgid "Settings"
 msgstr "Настройки"
 
@@ -1155,9 +1164,6 @@ msgstr "отсутствует"
 msgid "Launching {0}"
 msgstr "Запуск {0}"
 
-msgid "Edit Game"
-msgstr "Редактировать игру"
-
 msgid "Game Name:"
 msgstr "Имя игры:"
 
@@ -1172,6 +1178,9 @@ msgstr "Пользовательская обложка:"
 
 msgid "Enter local path or URL for cover image"
 msgstr "Введите локальный путь или URL обложки"
+
+msgid "Add shortcut to:"
+msgstr "Добавить ярлык:"
 
 msgid "Cover Preview:"
 msgstr "Предпросмотр обложки:"
@@ -1995,9 +2004,6 @@ msgstr "Стандартный PortProton"
 
 msgid "FPS only"
 msgstr "Только FPS"
-
-msgid "Compact"
-msgstr "Компактный"
 
 msgid "Extended"
 msgstr "Расширенный"

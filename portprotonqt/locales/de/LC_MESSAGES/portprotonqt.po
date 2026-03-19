@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-03-15 00:23+0500\n"
+"POT-Creation-Date: 2026-03-19 22:27+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: de_DE\n"
@@ -533,6 +533,12 @@ msgstr ""
 msgid "Games Display Filter:"
 msgstr ""
 
+msgid "Compact"
+msgstr ""
+
+msgid "Badge View Type:"
+msgstr ""
+
 msgid "Interface Settings"
 msgstr ""
 
@@ -1040,6 +1046,9 @@ msgstr ""
 msgid "COMPLETIONIST"
 msgstr ""
 
+msgid "Edit Game"
+msgstr ""
+
 msgid "Settings"
 msgstr ""
 
@@ -1084,9 +1093,6 @@ msgstr ""
 msgid "Launching {0}"
 msgstr ""
 
-msgid "Edit Game"
-msgstr ""
-
 msgid "Game Name:"
 msgstr ""
 
@@ -1100,6 +1106,9 @@ msgid "Custom Cover:"
 msgstr ""
 
 msgid "Enter local path or URL for cover image"
+msgstr ""
+
+msgid "Add shortcut to:"
 msgstr ""
 
 msgid "Cover Preview:"
@@ -1906,9 +1915,6 @@ msgid "PortProton default"
 msgstr ""
 
 msgid "FPS only"
-msgstr ""
-
-msgid "Compact"
 msgstr ""
 
 msgid "Extended"
