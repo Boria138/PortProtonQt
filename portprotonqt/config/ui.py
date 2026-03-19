@@ -64,3 +64,12 @@ class UIConfig(BaseConfig):
         """Set hide auto-install tab setting."""
         validate_bool(hide, "hide_autoinstall_tab")
         self._save_value("hide_autoinstall_tab", hide, "bool")
+
+    def get_badge_view_mode(self) -> str:
+        """Get badge view mode ('detailed' or 'compact')."""
+        return self._get_str("badge_view_mode", "detailed")
+
+    def set_badge_view_mode(self, mode: str):
+        """Set badge view mode."""
+        validate_string(mode, "badge_view_mode", min_len=1, max_len=20)
+        self._save_value("badge_view_mode", mode, "str")

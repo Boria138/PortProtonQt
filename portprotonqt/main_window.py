@@ -30,7 +30,8 @@ from portprotonqt.config_utils import (
     save_display_filter, save_proxy_config, read_proxy_config, read_fullscreen_config,
     save_fullscreen_config, read_window_geometry, save_window_geometry, reset_config,
     clear_cache, read_auto_fullscreen_gamepad, save_auto_fullscreen_gamepad, read_rumble_config, save_rumble_config, read_gamepad_type, save_gamepad_type, read_minimize_to_tray, save_minimize_to_tray,
-    read_auto_card_size, save_auto_card_size, get_portproton_start_command, read_hide_autoinstall_tab, save_hide_autoinstall_tab
+    read_auto_card_size, save_auto_card_size, get_portproton_start_command, read_hide_autoinstall_tab, save_hide_autoinstall_tab,
+    read_badge_view_mode, save_badge_view_mode
 )
 
 from portprotonqt.tray_manager import restart_application_with_muvm
@@ -2348,6 +2349,25 @@ class MainWindow(QMainWindow):
         self.gamesDisplayCombo.setCurrentIndex(idx)
         genForm.addRow(self.gamesDisplayTitle, self.gamesDisplayCombo)
 
+        self.badge_view_keys = ["detailed", "compact"]
+        self.badge_view_labels = [_("Detailed"), _("Compact")]
+        self.badgeViewCombo = QComboBox()
+        self.badgeViewCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.badgeViewCombo.addItems(self.badge_view_labels)
+        self.badgeViewCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
+        self.badgeViewCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.badgeViewTitle = QLabel(_("Badge View Type:"))
+        self.badgeViewTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.badgeViewTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
+        self.badgeViewTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        current = read_badge_view_mode()
+        try:
+            idx = self.badge_view_keys.index(current)
+        except ValueError:
+            idx = 0
+        self.badgeViewCombo.setCurrentIndex(idx)
+        genForm.addRow(self.badgeViewTitle, self.badgeViewCombo)
+
         # 2. Interface Settings Section
         uiFrame, uiForm = create_section(_("Interface Settings"))
         uiForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
@@ -2654,6 +2674,9 @@ class MainWindow(QMainWindow):
         filter_idx = self.gamesDisplayCombo.currentIndex()
         filter_key = self.filter_keys[filter_idx]
         save_display_filter(filter_key)
+        badge_view_idx = self.badgeViewCombo.currentIndex()
+        badge_view_mode = self.badge_view_keys[badge_view_idx]
+        save_badge_view_mode(badge_view_mode)
 
         proxy_url = self.proxyUrlEdit.text().strip()
         proxy_user = self.proxyUserEdit.text().strip()
@@ -2695,6 +2718,7 @@ class MainWindow(QMainWindow):
 
         for card in self.game_library_manager.game_card_cache.values():
             card.update_badge_visibility(filter_key)
+            card.update_badge_view_mode(badge_view_mode)
 
         if self.currentDetailPage and self.current_exec_line:
             current_game = next((game for game in self.games if game[5] == self.current_exec_line), None)

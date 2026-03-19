@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import QLabel, QPushButton, QWidget, QLayout, QLayoutItem
-from PySide6.QtCore import Qt, Signal, QRect, QSize
+from PySide6.QtCore import Qt, Signal, QRect, QSize, Property, QPropertyAnimation, QEasingCurve
 from PySide6.QtGui import QFont, QFontMetrics, QPainter
 
 def compute_layout(nat_sizes, rect_width, spacing, max_scale):
@@ -278,6 +278,14 @@ class ClickableLabel(QLabel):
         self._icon_space = icon_space
         self._font_scale_factor = font_scale_factor
         self._card_width = 250
+        self._compact_mode = False
+        self._compact_collapsed_width = 0
+        self._compact_expanded_width = 0
+        self._compact_relayout_callback = None
+        self._animated_width = 0
+        self._width_animation = QPropertyAnimation(self, b"animatedWidth")
+        self._width_animation.setDuration(160)
+        self._width_animation.setEasingCurve(QEasingCurve.Type.OutCubic)
         if change_cursor:
             self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.updateFontSize()
@@ -297,6 +305,53 @@ class ClickableLabel(QLabel):
     def setCardWidth(self, card_width: int):
         self._card_width = card_width
         self.updateFontSize()
+
+    def _set_animated_width(self, width: int):
+        width = max(1, int(width))
+        if self.width() == width:
+            return
+        self.setFixedWidth(width)
+        self._animated_width = width
+        if self._compact_relayout_callback:
+            self._compact_relayout_callback()
+
+    def _get_animated_width(self) -> int:
+        if self._animated_width > 0:
+            return self._animated_width
+        return self.width()
+
+    animatedWidth = Property(int, _get_animated_width, _set_animated_width)
+
+    def _animate_width_to(self, target_width: int):
+        target_width = max(1, int(target_width))
+        if self.width() == target_width:
+            return
+        self._width_animation.stop()
+        self._width_animation.setStartValue(self.width())
+        self._width_animation.setEndValue(target_width)
+        self._width_animation.start()
+
+    def setCompactMode(
+        self,
+        enabled: bool,
+        collapsed_width: int,
+        expanded_width: int,
+        relayout_callback=None,
+    ):
+        self._compact_mode = bool(enabled)
+        self._compact_collapsed_width = max(1, int(collapsed_width))
+        self._compact_expanded_width = max(self._compact_collapsed_width, int(expanded_width))
+        self._compact_relayout_callback = relayout_callback
+
+        if self._compact_mode:
+            target_width = self._compact_expanded_width if self.underMouse() else self._compact_collapsed_width
+        else:
+            target_width = self._compact_expanded_width
+        self._set_animated_width(target_width)
+        self.update()
+
+    def setCompactRelayoutCallback(self, relayout_callback):
+        self._compact_relayout_callback = relayout_callback
 
     def updateFontSize(self):
         font = self.font()
@@ -361,6 +416,16 @@ class ClickableLabel(QLabel):
             event.accept()
         else:
             super().mousePressEvent(event)
+
+    def enterEvent(self, event):
+        if self._compact_mode:
+            self._animate_width_to(self._compact_expanded_width)
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        if self._compact_mode:
+            self._animate_width_to(self._compact_collapsed_width)
+        super().leaveEvent(event)
 
 class AutoSizeButton(QPushButton):
     def __init__(self, *args, icon=None, icon_size=16,

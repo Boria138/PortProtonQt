@@ -20,14 +20,23 @@ from PySide6.QtGui import QColor, QDesktopServices
 from portprotonqt.custom_widgets import ClickableLabel, AutoSizeButton
 from portprotonqt.game_card import GameCard
 from portprotonqt.localization import _
+from portprotonqt.config_utils import read_badge_view_mode
 
 
 COVER_WIDTH = 300
 COVER_HEIGHT = 450
 BADGE_WIDTH = int(COVER_WIDTH * 2 / 3)
+BADGE_ICON_SIZE = 16
+BADGE_COMPACT_WIDTH = BADGE_ICON_SIZE + 14
 BADGE_RIGHT_MARGIN = 8
 BADGE_SPACING = 5
 BADGE_TOP_Y = 10
+
+
+def _apply_badge_view_mode(badge: ClickableLabel) -> None:
+    """Apply configured badge view mode."""
+    compact_mode = read_badge_view_mode() == "compact"
+    badge.setCompactMode(compact_mode, BADGE_COMPACT_WIDTH, BADGE_WIDTH)
 
 
 def create_scroll_area(parent: QWidget, theme) -> tuple[QScrollArea, QWidget, QVBoxLayout]:
@@ -163,7 +172,8 @@ def _position_badges(cover_frame: QFrame, badges: list) -> None:
         badge = badge_data["label"]
         # Reparent badge to cover_frame
         badge.setParent(cover_frame)
-        badge_x = COVER_WIDTH - BADGE_WIDTH - BADGE_RIGHT_MARGIN
+        badge.setCompactRelayoutCallback(lambda: _position_badges(cover_frame, badges))
+        badge_x = COVER_WIDTH - badge.width() - BADGE_RIGHT_MARGIN
 
         if badge_y_positions:
             badge_y = badge_y_positions[-1] + BADGE_SPACING
@@ -193,11 +203,11 @@ def create_protondb_badge(
         protondb_text,
         icon=icon,
         parent=parent,
-        icon_size=16,
+        icon_size=BADGE_ICON_SIZE,
         icon_space=3,
     )
     badge.setStyleSheet(main_window.theme.get_protondb_badge_style(protondb_tier))
-    badge.setFixedWidth(BADGE_WIDTH)
+    _apply_badge_view_mode(badge)
     badge.clicked.connect(
         lambda: QDesktopServices.openUrl(QUrl(f"https://www.protondb.com/app/{appid}"))
     )
@@ -215,11 +225,11 @@ def create_steam_badge(
         "Steam",
         icon=steam_icon,
         parent=parent,
-        icon_size=16,
+        icon_size=BADGE_ICON_SIZE,
         icon_space=5,
     )
     badge.setStyleSheet(main_window.theme.STEAM_BADGE_STYLE)
-    badge.setFixedWidth(BADGE_WIDTH)
+    _apply_badge_view_mode(badge)
     badge.clicked.connect(
         lambda: QDesktopServices.openUrl(QUrl(f"https://steamcommunity.com/app/{appid}"))
     )
@@ -236,12 +246,12 @@ def create_egs_badge(
         "Epic Games",
         icon=egs_icon,
         parent=parent,
-        icon_size=16,
+        icon_size=BADGE_ICON_SIZE,
         icon_space=5,
         change_cursor=False,
     )
     badge.setStyleSheet(main_window.theme.STEAM_BADGE_STYLE)
-    badge.setFixedWidth(BADGE_WIDTH)
+    _apply_badge_view_mode(badge)
     return badge
 
 
@@ -256,11 +266,11 @@ def create_portproton_badge(
         "PortProton",
         icon=portproton_icon,
         parent=parent,
-        icon_size=16,
+        icon_size=BADGE_ICON_SIZE,
         icon_space=5,
     )
     badge.setStyleSheet(main_window.theme.STEAM_BADGE_STYLE)
-    badge.setFixedWidth(BADGE_WIDTH)
+    _apply_badge_view_mode(badge)
     badge.clicked.connect(on_click)
     return badge
 
@@ -283,11 +293,11 @@ def create_anticheat_badge(
         anticheat_text,
         icon=icon,
         parent=parent,
-        icon_size=16,
+        icon_size=BADGE_ICON_SIZE,
         icon_space=3,
     )
     badge.setStyleSheet(main_window.theme.get_anticheat_badge_style(anticheat_status))
-    badge.setFixedWidth(BADGE_WIDTH)
+    _apply_badge_view_mode(badge)
     badge.clicked.connect(
         lambda: QDesktopServices.openUrl(
             QUrl(f"https://areweanticheatyet.com/game/{game_name.lower().replace(' ', '-')}")

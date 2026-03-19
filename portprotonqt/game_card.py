@@ -3,7 +3,13 @@ from PySide6.QtCore import Signal, Property, Qt, QUrl, QTimer
 from PySide6.QtWidgets import QFrame, QGraphicsDropShadowEffect, QVBoxLayout, QWidget, QStackedLayout, QLabel
 from portprotonqt.image_utils import load_pixmap_async, round_corners
 from portprotonqt.localization import _
-from portprotonqt.config_utils import read_favorites, save_favorites, read_display_filter, read_theme_from_config
+from portprotonqt.config_utils import (
+    read_favorites,
+    save_favorites,
+    read_display_filter,
+    read_theme_from_config,
+    read_badge_view_mode,
+)
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.custom_widgets import ClickableLabel
 from portprotonqt.portproton_api import PortProtonAPI
@@ -55,6 +61,7 @@ class GameCard(QFrame):
         self.theme = theme if theme is not None else self.theme_manager.apply_theme(read_theme_from_config())
 
         self.display_filter = read_display_filter()
+        self.badge_view_mode = read_badge_view_mode()
         self.current_theme_name = read_theme_from_config()
         self.downloader = Downloader(max_workers=4)
         self.portproton_api = PortProtonAPI(self.downloader)
@@ -225,8 +232,6 @@ class GameCard(QFrame):
         badge_spacing = int(current_width * 0.02)
         top_y = int(10 * self._scale)
         badge_y_positions = []
-        badge_width = int(current_width * 2/3)
-
         badges = [
             (self.steam_visible, self.steamLabel),
             (self.egs_visible, self.egsLabel),
@@ -237,7 +242,7 @@ class GameCard(QFrame):
 
         for is_visible, badge in badges:
             if is_visible:
-                badge_x = current_width - badge_width - right_margin
+                badge_x = current_width - badge.width() - right_margin
                 badge_y = badge_y_positions[-1] + badge_spacing if badge_y_positions else top_y
                 try:
                     badge.move(int(badge_x), int(badge_y))
@@ -279,12 +284,20 @@ class GameCard(QFrame):
         badge_width = int(scaled_width * 2/3)
         icon_size = int(scaled_width * 0.06)
         icon_space = int(scaled_width * 0.012)
+        compact_badge_width = int(scaled_width * 0.12)
+        compact_badge_width = max(compact_badge_width, icon_size + icon_space + 8)
+        compact_badge = self.badge_view_mode == "compact"
         for label in [self.steamLabel, self.egsLabel, self.portprotonLabel, self.protondbLabel, self.anticheatLabel]:
             if label is not None:
                 try:
-                    label.setFixedWidth(badge_width)
                     label.setIconSize(icon_size, icon_space)
                     label.setCardWidth(scaled_width)
+                    label.setCompactMode(
+                        compact_badge,
+                        compact_badge_width,
+                        badge_width,
+                        self._on_badge_width_changed
+                    )
                 except RuntimeError:
                     # Handle the case where the Qt object was deleted
                     pass
@@ -369,6 +382,17 @@ class GameCard(QFrame):
                 layout.invalidate()
                 layout.update()
             parent.updateGeometry()
+
+    def _on_badge_width_changed(self):
+        if not hasattr(self, 'coverLabel') or self.coverLabel is None:
+            return
+        scaled_width = int(self.base_card_width * self._scale)
+        self._position_badges(scaled_width)
+
+    def update_badge_view_mode(self, badge_view_mode: str):
+        """Update badge rendering mode."""
+        self.badge_view_mode = badge_view_mode if badge_view_mode in ("detailed", "compact") else "detailed"
+        self.update_scale()
 
     def _show_context_menu(self, pos):
         if self.context_menu_manager:

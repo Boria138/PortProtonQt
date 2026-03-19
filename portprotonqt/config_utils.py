@@ -171,6 +171,17 @@ def save_hide_autoinstall_tab(hide_autoinstall_tab: bool):
     _get_ui_config().set_hide_autoinstall_tab(hide_autoinstall_tab)
 
 
+def read_badge_view_mode() -> str:
+    """Reads badge view mode from the [Appearance] section."""
+    mode = _get_ui_config().get_badge_view_mode()
+    return mode if mode in ("detailed", "compact") else "detailed"
+
+
+def save_badge_view_mode(mode: str):
+    """Saves badge view mode to the [Appearance] section."""
+    _get_ui_config().set_badge_view_mode(mode)
+
+
 def load_theme_metainfo(theme_name: str) -> dict:
     """Loads theme metadata from metainfo.ini."""
     from portprotonqt.localization import get_theme_translations
