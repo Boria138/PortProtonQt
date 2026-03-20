@@ -1,4 +1,4 @@
-# Spanish (Spain) translations for PortProtonQt.
+# Spanish translations for PortProtonQt.
 # Copyright (C) 2026 boria138
 # This file is distributed under the same license as the PortProtonQt
 # project.
@@ -8,17 +8,16 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-03-19 22:27+0500\n"
+"POT-Creation-Date: 2026-03-20 13:39+0500\n"
 "PO-Revision-Date: 2026-03-20 07:27+0000\n"
 "Last-Translator: Boria138 <boria138@noreply.codeberg.org>\n"
-"Language-Team: Spanish <https://translate.codeberg.org/projects/portprotonqt/"
-"portprotonqt/es/>\n"
 "Language: es\n"
+"Language-Team: Spanish "
+"<https://translate.codeberg.org/projects/portprotonqt/portprotonqt/es/>\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.16.2\n"
 "Generated-By: Babel 2.17.0\n"
 
 #, python-brace-format
@@ -400,9 +399,6 @@ msgstr ""
 
 #, python-brace-format
 msgid "Added '{name}'"
-msgstr ""
-
-msgid "WINE/Proton:"
 msgstr ""
 
 msgid "Enter prefix name"
@@ -1985,3 +1981,4 @@ msgstr ""
 
 msgid "Components installed successfully."
 msgstr ""
+
