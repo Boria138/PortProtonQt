@@ -11,13 +11,12 @@ msgstr ""
 "POT-Creation-Date: 2026-03-20 13:39+0500\n"
 "PO-Revision-Date: 2026-03-20 07:27+0000\n"
 "Last-Translator: Boria138 <boria138@noreply.codeberg.org>\n"
+"Language-Team: Spanish <https://translate.codeberg.org/projects/portprotonqt/portprotonqt/es/>\n"
 "Language: es\n"
-"Language-Team: Spanish "
-"<https://translate.codeberg.org/projects/portprotonqt/portprotonqt/es/>\n"
-"Plural-Forms: nplurals=2; plural=n != 1;\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
 "Generated-By: Babel 2.17.0\n"
 
 #, python-brace-format
@@ -25,702 +24,872 @@ msgid "Launch game \"{name}\" with PortProton"
 msgstr "Iniciar el juego \"{name}\" con PortProton"
 
 msgid "Error"
-msgstr ""
+msgstr "Error"
 
 msgid "PortProton directory not found"
 msgstr "Directorio de PortProton no encontrado"
 
 msgid "Remove from Favorites"
-msgstr ""
+msgstr "Eliminar de Favoritos"
 
 msgid "Add to Favorites"
-msgstr ""
+msgstr "Añadir a Favoritos"
 
 msgid "Delete from PortProton"
-msgstr ""
+msgstr "Eliminar de PortProton"
 
 msgid "Stop Game"
-msgstr ""
+msgstr "Detener juego"
 
 msgid "Launch Game"
-msgstr ""
+msgstr "Iniciar juego"
 
 msgid "Import to Legendary"
-msgstr ""
+msgstr "Importar a Legendary"
 
 msgid "Remove from Steam"
-msgstr ""
+msgstr "Eliminar de Steam"
 
 msgid "Add to Steam"
-msgstr ""
+msgstr "Añadir a Steam"
 
 msgid "Open Game Folder"
-msgstr ""
+msgstr "Abrir carpeta del juego"
 
 msgid "Remove from Desktop"
-msgstr ""
+msgstr "Eliminar del escritorio"
 
 msgid "Add to Desktop"
-msgstr ""
+msgstr "Añadir al escritorio"
 
 msgid "Remove from Menu"
-msgstr ""
+msgstr "Eliminar del menú"
 
 msgid "Add to Menu"
-msgstr ""
+msgstr "Añadir al menú"
 
 msgid "Edit Shortcut"
-msgstr ""
+msgstr "Editar acceso directo"
 
+#. TODO: Translate from Russian: '{game_name}' остановлен(а)
 #, python-brace-format
 msgid "Stopped '{game_name}'"
 msgstr ""
 
+#. TODO: Translate from Russian: Legendary не найден по пути {path}
 #, python-brace-format
 msgid "Legendary executable not found at {path}"
 msgstr ""
 
 msgid "Success"
-msgstr ""
+msgstr "Éxito"
 
+#. TODO: Translate from Russian: '{game_name}' добавлен(а) в Steam.
+#. Пожалуйста, перезапустите Steam, чтобы изменения вступили в силу.
 #, python-brace-format
 msgid ""
-"'{game_name}' was added to Steam. Please restart Steam for changes to "
-"take effect."
+"'{game_name}' was added to Steam. Please restart Steam for changes to take "
+"effect."
 msgstr ""
 
+#. TODO: Translate from Russian: '{game_name}' добавлен(а) в Steam.
 #, python-brace-format
 msgid "'{game_name}' was added to Steam."
 msgstr ""
 
+#. TODO: Translate from Russian: Исполняемый файл не найден для игры:
+#. {game_name}
 #, python-brace-format
 msgid "Executable not found for game: {game_name}"
 msgstr ""
 
+#. TODO: Translate from Russian: Открыта папка для '{game_name}'
 #, python-brace-format
 msgid "Opened folder for '{game_name}'"
 msgstr ""
 
+#. TODO: Translate from Russian: Не удалось открыть папку для игры: {error}
 #, python-brace-format
 msgid "Failed to open folder: {error}"
 msgstr ""
 
+#. TODO: Translate from Russian: Не выбрана ни одна папка
 msgid "No folder selected"
 msgstr ""
 
+#. TODO: Translate from Russian: Импортировано '{game_name}' в Legendary
 #, python-brace-format
 msgid "Imported '{game_name}' to Legendary"
 msgstr ""
 
+#. TODO: Translate from Russian: Не удалось импортировать '{game_name}' в
+#. Legendary: {error}
 #, python-brace-format
 msgid "Failed to import '{game_name}' to Legendary: {error}"
 msgstr ""
 
+#. TODO: Translate from Russian: Импортируется '{game_name}' в Legendary...
 #, python-brace-format
 msgid "Importing '{game_name}' to Legendary..."
 msgstr ""
 
+#. TODO: Translate from Russian: '{game_name}' добавлен(а) в избранное
 #, python-brace-format
 msgid "Added '{game_name}' to favorites"
 msgstr ""
 
+#. TODO: Translate from Russian: '{game_name}' удалён(а) из избранного
 #, python-brace-format
 msgid "Removed '{game_name}' from favorites"
 msgstr ""
 
+#. TODO: Translate from Russian: start.sh не найден в {path}
 #, python-brace-format
 msgid "start.sh not found at {path}"
 msgstr ""
 
+#. TODO: Translate from Russian: Не удалось создать файл .desktop: {error}
 #, python-brace-format
 msgid "Failed to create .desktop file: {error}"
 msgstr ""
 
+#. TODO: Translate from Russian: `'{game_name}' добавлен(а) в {location}`
 #, python-brace-format
 msgid "Added '{game_name}' to {location}"
 msgstr ""
 
+#. TODO: Translate from Russian: Рабочий стол
 msgid "Desktop"
 msgstr ""
 
+#. TODO: Translate from Russian: Не удалось добавить '{game_name}' в
+#. {location}: {error}
 #, python-brace-format
 msgid "Failed to add '{game_name}' to {location}: {error}"
 msgstr ""
 
+#. TODO: Translate from Russian: Не удалось удалить '{game_name}' из
+#. {location}: {error}
 #, python-brace-format
 msgid "Failed to remove '{game_name}' from {location}: {error}"
 msgstr ""
 
+#. TODO: Translate from Russian: '{game_name}' удалён(а) из {location}
 #, python-brace-format
 msgid "Removed '{game_name}' from {location}"
 msgstr ""
 
+#. TODO: Translate from Russian: Меню
 msgid "Menu"
 msgstr ""
 
+#. TODO: Translate from Russian: В файле .desktop не найдена исполняемая
+#. команда для '{game_name}'
 #, python-brace-format
 msgid "No executable command found in .desktop file for '{game_name}'"
 msgstr ""
 
+#. TODO: Translate from Russian: Не удалось разобрать файл .desktop для
+#. '{game_name}'
 #, python-brace-format
 msgid "Failed to parse .desktop file for '{game_name}'"
 msgstr ""
 
+#. TODO: Translate from Russian: Ошибка при чтении файла .desktop: {error}
 #, python-brace-format
 msgid "Error reading .desktop file: {error}"
 msgstr ""
 
+#. TODO: Translate from Russian: Не найден файл .desktop для '{game_name}'
 #, python-brace-format
 msgid "No .desktop file found for '{game_name}'"
 msgstr ""
 
+#. TODO: Translate from Russian: Подтверждение удаления
 msgid "Confirm Deletion"
 msgstr ""
 
+#. TODO: Translate from Russian: Вы уверены, что хотите удалить '{game_name}'?
+#. Это приведёт к удалению файла .desktop и пользовательских данных.
 #, python-brace-format
 msgid ""
-"Are you sure you want to delete '{game_name}'? This will remove the "
-".desktop file and custom data."
+"Are you sure you want to delete '{game_name}'? This will remove the .desktop"
+" file and custom data."
 msgstr ""
 
 msgid "Yes"
-msgstr ""
+msgstr "Sí"
 
 msgid "No"
-msgstr ""
+msgstr "No"
 
+#. TODO: Translate from Russian: Не удалось удалить файл .desktop: {error}
 #, python-brace-format
 msgid "Failed to delete .desktop file: {error}"
 msgstr ""
 
+#. TODO: Translate from Russian: '{game_name}' успешно удалён(а)
 #, python-brace-format
 msgid "Deleted '{game_name}' successfully"
 msgstr ""
 
+#. TODO: Translate from Russian: Не удалось удалить пользовательские данные:
+#. {error}
 #, python-brace-format
 msgid "Failed to delete custom data: {error}"
 msgstr ""
 
+#. TODO: Translate from Russian: '{game_name}' успешно добавлен(а)
 #, python-brace-format
 msgid "Added '{game_name}' successfully"
 msgstr ""
 
+#. TODO: Translate from Russian: Требуются название игры и путь к исполняемому
+#. файлу
 msgid "Game name and executable path are required"
 msgstr ""
 
+#. TODO: Translate from Russian: Не удалось сгенерировать данные файла
+#. .desktop
 msgid "Failed to generate .desktop file data"
 msgstr ""
 
+#. TODO: Translate from Russian: Не удалось удалить старый файл .desktop:
+#. {error}
 #, python-brace-format
 msgid "Failed to delete old .desktop file: {error}"
 msgstr ""
 
+#. TODO: Translate from Russian: Удален старый файл .desktop для '{game_name}'
 #, python-brace-format
 msgid "Removed old .desktop file for '{game_name}'"
 msgstr ""
 
+#. TODO: Translate from Russian: Не удалось сохранить файл .desktop: {error}
 #, python-brace-format
 msgid "Failed to save .desktop file: {error}"
 msgstr ""
 
+#. TODO: Translate from Russian: Не удалось скопировать обложку: {error}
 #, python-brace-format
 msgid "Failed to copy cover image: {error}"
 msgstr ""
 
+#. TODO: Translate from Russian: Неподдерживаемый формат изображения:
+#. {extension}
 #, python-brace-format
 msgid "Unsupported image format: {extension}"
 msgstr ""
 
+#. TODO: Translate from Russian: Не удалось добавить '{game_name}' в Steam:
+#. {error}
 #, python-brace-format
 msgid "Failed to add '{game_name}' to Steam: {error}"
 msgstr ""
 
+#. TODO: Translate from Russian: '{game_name}' был(а) удалён(а) из Steam.
+#. Пожалуйста, перезапустите Steam, чтобы изменения вступили в силу.
 #, python-brace-format
 msgid ""
-"'{game_name}' was removed from Steam. Please restart Steam for changes to"
-" take effect."
+"'{game_name}' was removed from Steam. Please restart Steam for changes to "
+"take effect."
 msgstr ""
 
+#. TODO: Translate from Russian: '{game_name}' был(а) удален(а) из Steam.
 #, python-brace-format
 msgid "'{game_name}' was removed from Steam."
 msgstr ""
 
+#. TODO: Translate from Russian: Не удалось удалить игру '{game_name}' из
+#. Steam: {error}
 #, python-brace-format
 msgid "Failed to remove game '{game_name}' from Steam: {error}"
 msgstr ""
 
 msgid "Undo"
-msgstr ""
+msgstr "Cancelar"
 
+#. TODO: Translate from Russian: Повтор
 msgid "Redo"
 msgstr ""
 
+#. TODO: Translate from Russian: Вырезать
 msgid "Cut"
 msgstr ""
 
+#. TODO: Translate from Russian: Копировать
 msgid "Copy"
 msgstr ""
 
+#. TODO: Translate from Russian: Вставить
 msgid "Paste"
 msgstr ""
 
 msgid "Delete"
-msgstr ""
+msgstr "Eliminar"
 
+#. TODO: Translate from Russian: Выбрать всё
 msgid "Select All"
 msgstr ""
 
+#. TODO: Translate from Russian: Загрузка игр из Epic Games Store...
 msgid "Loading Epic Games Store games..."
 msgstr ""
 
+#. TODO: Translate from Russian: Никогда
 msgid "Never"
 msgstr ""
 
+#. TODO: Translate from Russian: Описание не найдено
 msgid "No description available"
 msgstr ""
 
+#. TODO: Translate from Russian: Поддерживается
 msgid "Supported"
 msgstr ""
 
+#. TODO: Translate from Russian: Запускается
 msgid "Running"
 msgstr ""
 
+#. TODO: Translate from Russian: Планируется
 msgid "Planned"
 msgstr ""
 
+#. TODO: Translate from Russian: Сломано
 msgid "Broken"
 msgstr ""
 
+#. TODO: Translate from Russian: Отказано
 msgid "Denied"
 msgstr ""
 
+#. TODO: Translate from Russian: Платина
 msgid "Platinum"
 msgstr ""
 
+#. TODO: Translate from Russian: Золото
 msgid "Gold"
 msgstr ""
 
+#. TODO: Translate from Russian: Серебро
 msgid "Silver"
 msgstr ""
 
+#. TODO: Translate from Russian: Бронза
 msgid "Bronze"
 msgstr ""
 
+#. TODO: Translate from Russian: В ожидании
 msgid "Pending"
 msgstr ""
 
+#. TODO: Translate from Russian: Неизвестная игра
 msgid "Unknown Game"
 msgstr ""
 
+#. TODO: Translate from Russian: Запуск PortProton...
 msgid "Starting PortProton..."
 msgstr ""
 
 msgid "Library"
-msgstr ""
+msgstr "Biblioteca"
 
 msgid "Auto Install"
-msgstr ""
+msgstr "Instalación automática"
 
 msgid "Wine Settings"
-msgstr ""
+msgstr "Ajustes de WINE"
 
+#. TODO: Translate from Russian: Настройки PortProton
 msgid "PortProton Settings"
 msgstr ""
 
 msgid "Themes"
-msgstr ""
+msgstr "Temas"
 
 msgid "Select"
-msgstr ""
+msgstr "Seleccionar"
 
 msgid "Back"
-msgstr ""
+msgstr "Atrás"
 
 msgid "Add Game"
-msgstr ""
+msgstr "Añadir juego"
 
 msgid "Fullscreen"
-msgstr ""
+msgstr "Pantalla completa"
 
 msgid "Search"
-msgstr ""
+msgstr "Buscar"
 
 msgid "Refresh Grid"
-msgstr ""
+msgstr "Actualizar"
 
+#. TODO: Translate from Russian: Эмуляция мыши
 msgid "Mouse Emulation"
 msgstr ""
 
 msgid "Warning"
-msgstr ""
+msgstr "Advertencia"
 
+#. TODO: Translate from Russian: Установка уже выполняется.
 msgid "Installation already in progress."
 msgstr ""
 
+#. TODO: Translate from Russian: Не удалось запустить установку.
 msgid "Failed to start installation."
 msgstr ""
 
+#. TODO: Translate from Russian: {} в процессе установки...
 #, python-brace-format
 msgid "Processed {} installation..."
 msgstr ""
 
+#. TODO: Translate from Russian: Установка завершена успешно.
 msgid "Installation completed successfully."
 msgstr ""
 
+#. TODO: Translate from Russian: Установка не удалась.
 msgid "Installation failed."
 msgstr ""
 
+#. TODO: Translate from Russian: Ошибка установки.
 msgid "Installation error."
 msgstr ""
 
 msgid "Game library refreshed"
-msgstr ""
+msgstr "Biblioteca de juegos actualizada"
 
+#. TODO: Translate from Russian: Загрузка игр Steam...
 msgid "Loading Steam games..."
 msgstr ""
 
+#. TODO: Translate from Russian: Загрузка игр PortProton...
 msgid "Loading PortProton games..."
 msgstr ""
 
 msgid "Game Library"
-msgstr ""
+msgstr "Biblioteca de juegos"
 
+#. TODO: Translate from Russian: Найти игры...
 msgid "Find Games ..."
 msgstr ""
 
+#. TODO: Translate from Russian: Обновление уже выполняется...
 msgid "A refresh is already in progress..."
 msgstr ""
 
+#. TODO: Translate from Russian: Обновление...
 msgid "Refreshing..."
 msgstr ""
 
+#. TODO: Translate from Russian: Обновление игровой библиотеки...
 msgid "Refreshing game library..."
 msgstr ""
 
+#. TODO: Translate from Russian: '{name}' добавлен(а)
 #, python-brace-format
 msgid "Added '{name}'"
 msgstr ""
 
 msgid "Enter prefix name"
-msgstr ""
+msgstr "Ingrese nombre del prefijo"
 
 msgid "Prefix:"
-msgstr ""
+msgstr "Prefijo:"
 
 msgid "Wine Configuration"
-msgstr ""
+msgstr "Configuración de WINE"
 
 msgid "Registry Editor"
-msgstr ""
+msgstr "Editor de registro"
 
 msgid "File Explorer"
-msgstr ""
+msgstr "Explorador de archivos"
 
 msgid "Command Prompt"
-msgstr ""
+msgstr "Símbolo del sistema"
 
 msgid "Uninstaller"
-msgstr ""
+msgstr "Desinstalador"
 
 msgid "Create Prefix Backup"
-msgstr ""
+msgstr "Crear copia de seguridad del prefijo"
 
 msgid "Load Prefix Backup"
-msgstr ""
+msgstr "Cargar copia de seguridad del prefijo"
 
+#. TODO: Translate from Russian: Удалить Префикс
 msgid "Delete Prefix"
 msgstr ""
 
+#. TODO: Translate from Russian: Очистить Префикс
 msgid "Clear Prefix"
 msgstr ""
 
 msgid "Manage WINE versions"
-msgstr ""
+msgstr "Gestionar versiones de WINE"
 
+#. TODO: Translate from Russian: Запуск инструмента...
 msgid "Launching tool..."
 msgstr ""
 
+#. TODO: Translate from Russian: Не удалось запустить процесс.
 msgid "Failed to start process."
 msgstr ""
 
 msgid "Confirm Clear"
-msgstr ""
+msgstr "Confirmar limpieza"
 
+#. TODO: Translate from Russian: Вы уверены, что хотите очистить префикс «{}»?
 #, python-brace-format
 msgid "Are you sure you want to clear prefix '{}'?"
 msgstr ""
 
+#. TODO: Translate from Russian: Очистка префикса...
 msgid "Clearing prefix..."
 msgstr ""
 
+#. TODO: Translate from Russian: Не удалось запустить процесс очистки
+#. префикса.
 msgid "Failed to start prefix clear process."
 msgstr ""
 
+#. TODO: Translate from Russian: Префикс очищен успешно.
 msgid "Prefix cleared successfully."
 msgstr ""
 
+#. TODO: Translate from Russian: Очистка префикса завершилась с кодом ошибки
+#. {}.
 #, python-brace-format
 msgid "Prefix clear failed with exit code {}."
 msgstr ""
 
+#. TODO: Translate from Russian: Не удалось выполнить команду очистки
+#. префикса: {}
 #, python-brace-format
 msgid "Failed to run clear prefix command: {}"
 msgstr ""
 
+#. TODO: Translate from Russian: Не удалось запустить процесс резервного
+#. копирования.
 msgid "Failed to start backup process."
 msgstr ""
 
+#. TODO: Translate from Russian: Не удалось запустить процесс восстановления.
 msgid "Failed to start restore process."
 msgstr ""
 
+#. TODO: Translate from Russian: Резервное копирование префикса завершено.
 msgid "Prefix backup completed."
 msgstr ""
 
+#. TODO: Translate from Russian: Сбой резервного копирования префикса.
 msgid "Prefix backup failed."
 msgstr ""
 
+#. TODO: Translate from Russian: Восстановление префикса завершено.
 msgid "Prefix restore completed."
 msgstr ""
 
+#. TODO: Translate from Russian: Восстановление префикса не удалось.
 msgid "Prefix restore failed."
 msgstr ""
 
+#. TODO: Translate from Russian: Вы уверены, что хотите удалить префикс «{}»?
 #, python-brace-format
 msgid "Are you sure you want to delete prefix '{}'?"
 msgstr ""
 
+#. TODO: Translate from Russian: Префикс «{}» удален.
 #, python-brace-format
 msgid "Prefix '{}' deleted."
 msgstr ""
 
+#. TODO: Translate from Russian: Не удалось удалить префикс: {}
 #, python-brace-format
 msgid "Failed to delete prefix: {}"
 msgstr ""
 
+#. TODO: Translate from Russian: Настройки Библиотеки
 msgid "Library Settings"
 msgstr ""
 
 msgid "Detailed"
-msgstr ""
+msgstr "Detallado"
 
 msgid "Brief"
-msgstr ""
+msgstr "Breve"
 
+#. TODO: Translate from Russian: Уровень детализации вывода времени:
 msgid "Time Detail Level:"
 msgstr ""
 
 msgid "Last launch"
-msgstr ""
+msgstr "Último lanzamiento"
 
 msgid "Playtime"
-msgstr ""
+msgstr "Tiempo de juego"
 
 msgid "Alphabetical"
-msgstr ""
+msgstr "Alfabético"
 
+#. TODO: Translate from Russian: Метод сортировки игр:
 msgid "Games Sort Method:"
 msgstr ""
 
 msgid "All"
-msgstr ""
+msgstr "Todos"
 
 msgid "Favorites"
-msgstr ""
+msgstr "Favoritos"
 
+#. TODO: Translate from Russian: Фильтр игр:
 msgid "Games Display Filter:"
 msgstr ""
 
 msgid "Compact"
-msgstr ""
+msgstr "Compacto"
 
+#. TODO: Translate from Russian: Тип отображения бейджа:
 msgid "Badge View Type:"
 msgstr ""
 
 msgid "Interface Settings"
-msgstr ""
+msgstr "Ajustes de interfaz"
 
 msgid "Launch Application in Fullscreen"
-msgstr ""
+msgstr "Iniciar aplicación en pantalla completa"
 
 msgid "Minimize to tray on close"
-msgstr ""
+msgstr "Minimizar a la bandeja al cerrar"
 
 msgid "Hide Auto-Install Tab"
-msgstr ""
+msgstr "Ocultar pestaña de instalación automática"
 
 msgid "Gamepad Settings"
-msgstr ""
+msgstr "Ajustes del mando"
 
+#. TODO: Translate from Russian: Тип геймпада:
 msgid "Gamepad Type:"
 msgstr ""
 
 msgid "Auto Fullscreen on Gamepad connected"
-msgstr ""
+msgstr "Pantalla completa automática al conectar mando"
 
 msgid "Gamepad haptic feedback"
-msgstr ""
+msgstr "Respuesta háptica del mando"
 
 msgid "Hardware Settings"
-msgstr ""
+msgstr "Ajustes de hardware"
 
+#. TODO: Translate from Russian: Выбор видеокарты:
 msgid "GPU to use:"
 msgstr ""
 
 msgid "No GPUs found"
-msgstr ""
+msgstr "No se encontraron tarjetas gráficas"
 
 msgid "Proxy Settings"
-msgstr ""
+msgstr "Ajustes de proxy"
 
 msgid "Proxy URL"
-msgstr ""
+msgstr "URL del proxy"
 
+#. TODO: Translate from Russian: Адрес прокси:
 msgid "Proxy URL:"
 msgstr ""
 
 msgid "Proxy Username"
-msgstr ""
+msgstr "Nombre de usuario del proxy"
 
+#. TODO: Translate from Russian: Имя пользователя прокси:
 msgid "Proxy Username:"
 msgstr ""
 
 msgid "Proxy Password"
-msgstr ""
+msgstr "Contraseña del proxy"
 
+#. TODO: Translate from Russian: Пароль прокси:
 msgid "Proxy Password:"
 msgstr ""
 
 msgid "Save Settings"
-msgstr ""
+msgstr "Guardar ajustes"
 
 msgid "Reset Settings"
-msgstr ""
+msgstr "Restablecer ajustes"
 
 msgid "Clear Cache"
-msgstr ""
+msgstr "Limpiar caché"
 
 msgid "Confirm Reset"
-msgstr ""
+msgstr "Confirmar restablecimiento"
 
-msgid "Are you sure you want to reset all settings? This action cannot be undone."
+msgid ""
+"Are you sure you want to reset all settings? This action cannot be undone."
 msgstr ""
+"¿Está seguro de que desea restablecer todos los ajustes? Esta acción no se "
+"puede deshacer."
 
 msgid "Settings reset. Restarting..."
-msgstr ""
+msgstr "Ajustes restablecidos. Reiniciando..."
 
 msgid "Confirm Clear Cache"
-msgstr ""
+msgstr "Confirmar limpieza de caché"
 
-msgid "Are you sure you want to clear the cache? This action cannot be undone."
+msgid ""
+"Are you sure you want to clear the cache? This action cannot be undone."
 msgstr ""
+"¿Está seguro de que desea limpiar la caché? Esta acción no se puede "
+"deshacer."
 
 msgid "Cache cleared"
-msgstr ""
+msgstr "Caché limpiada"
 
 msgid "Settings saved"
-msgstr ""
+msgstr "Ajustes guardados"
 
+#. TODO: Translate from Russian: Выбрать тему:
 msgid "Select Theme:"
 msgstr ""
 
 msgid "Apply Theme"
-msgstr ""
+msgstr "Aplicar tema"
 
 msgid "No link"
-msgstr ""
+msgstr "Sin enlace"
 
 msgid "Unknown"
-msgstr ""
+msgstr "Desconocido"
 
+#. TODO: Translate from Russian: Название:
 msgid "Name:"
 msgstr ""
 
+#. TODO: Translate from Russian: Описание:
 msgid "Description:"
 msgstr ""
 
+#. TODO: Translate from Russian: Автор:
 msgid "Author:"
 msgstr ""
 
+#. TODO: Translate from Russian: Ссылка:
 msgid "Link:"
 msgstr ""
 
+#. TODO: Translate from Russian: Тема '{0}' применена успешно
 #, python-brace-format
 msgid "Theme '{0}' applied successfully"
 msgstr ""
 
+#. TODO: Translate from Russian: Ошибка применения темы '{0}'
 #, python-brace-format
 msgid "Error applying theme '{0}'"
 msgstr ""
 
+#. TODO: Translate from Russian: Исполняемый файл не найден: {0}
 #, python-brace-format
 msgid "Executable not found: {0}"
 msgstr ""
 
+#. TODO: Translate from Russian: Скачивание Wine... {0}%
 #, python-brace-format
 msgid "Downloading Wine... {0}%"
 msgstr ""
 
 msgid "Stop"
-msgstr ""
+msgstr "Detener"
 
 msgid "Play"
-msgstr ""
+msgstr "Jugar"
 
 msgid "Prefix not found"
-msgstr ""
+msgstr "Prefijo no encontrado"
 
+#. TODO: Translate from Russian: Префикс '{0}' не найден. Установить
+#. рекомендуемые библиотеки?
 #, python-brace-format
 msgid "Prefix '{0}' was not found. Install recommended libraries?"
 msgstr ""
 
+#. TODO: Translate from Russian: Не найден исполняемый файл для игры EGS: {0}
 #, python-brace-format
 msgid "Executable not found for EGS game: {0}"
 msgstr ""
 
 msgid "Cannot launch game while another game is running"
-msgstr ""
+msgstr "No se puede iniciar el juego mientras otro está en ejecución"
 
+#. TODO: Translate from Russian: Не удалось запустить игру: {0}
 #, python-brace-format
 msgid "Failed to launch game: {0}"
 msgstr ""
 
+#. TODO: Translate from Russian: Неправильный формат команды (пустая строка
+#. exec)
 msgid "Invalid command format (empty exec line)"
 msgstr ""
 
+#. TODO: Translate from Russian: Неправильный формат команды (нативная версия)
 msgid "Invalid command format (native)"
 msgstr ""
 
+#. TODO: Translate from Russian: Неправильный формат команды (flatpak)
 msgid "Invalid command format (flatpak)"
 msgstr ""
 
+#. TODO: Translate from Russian: Файл не найден: {0}
 #, python-brace-format
 msgid "File not found: {0}"
 msgstr ""
 
 msgid "Select file for PPDB download"
-msgstr ""
+msgstr "Seleccionar archivo para descarga PPDB"
 
+#. TODO: Translate from Russian: Использование мониторинга производительности
+#. и FPS(включается и выключается комбинацией клавиш - R_Shift + F12)
 msgid ""
 "Using FPS and system load monitoring (Turns on and off by the key "
 "combination - right Shift + F12)"
 msgstr ""
 
+#. TODO: Translate from Russian: Принудительное использование системных
+#. настроек MANGOHUD (GOverlay и т.д.)
 msgid "Forced use of MANGOHUD system settings (GOverlay, etc.)"
 msgstr ""
 
+#. TODO: Translate from Russian: Включить vkBasalt по умолчанию, для улучшения
+#. графики в играх на Vulkan. (Горячая клавиша HOME отключает vkbasalt)
 msgid ""
-"Enable vkBasalt by default to improve graphics in games running on "
-"Vulkan. (The HOME hotkey disables vkbasalt)"
+"Enable vkBasalt by default to improve graphics in games running on Vulkan. "
+"(The HOME hotkey disables vkbasalt)"
 msgstr ""
 
+#. TODO: Translate from Russian: Принудительное использование системных
+#. настроек vkBasalt (GOverlay и т.д.)
 msgid "Forced use of VKBASALT system settings (GOverlay, etc.)"
 msgstr ""
 
+#. TODO: Translate from Russian: Включить dgVoodoo2. Принудительное
+#. использование всех библиотек dgVoodoo2 (Glide 2.11-3.1, DirectDraw 1-7,
+#. Direct3D 2-9) на всех 3D API.
 msgid ""
-"Enable dgVoodoo2. Forced use all dgVoodoo2 libs (Glide 2.11-3.1, "
-"DirectDraw 1-7, Direct3D 2-9) on all 3D API."
+"Enable dgVoodoo2. Forced use all dgVoodoo2 libs (Glide 2.11-3.1, DirectDraw "
+"1-7, Direct3D 2-9) on all 3D API."
 msgstr ""
 
+#. TODO: Translate from Russian: Super + F: Переключение полноэкранного режима
+#. Super + N: Переключение фильтрации
+#. Super + U: Переключение режима масштабирования на FSR
+#. Super + Y: Переключение режима масштабирования на NIS
+#. Super + I: Увеличение резкости FSR на 1
+#. Super + O: Уменьшение резкости FSR на 1
+#. Super + S: Сделать скриншот (сейчас сохраняется в /tmp/gamescope_DATE.png)
+#. Super + G: Переключение захвата клавиатуры
+#. Super + C: Обновление буфера обмена
 msgid ""
 "Super + F : Toggle fullscreen\n"
 "Super + N : Toggle nearest neighbour filtering\n"
@@ -733,154 +902,211 @@ msgid ""
 "Super + C : Update clipboard"
 msgstr ""
 
+#. TODO: Translate from Russian: Включить примитивы синхронизации в процессе
+#. на основе eventfd.
 msgid "Enable in-process synchronization primitives based on eventfd."
 msgstr ""
 
+#. TODO: Translate from Russian: Включить примитивы синхронизации в процессе
+#. на основе futex.
 msgid "Enable futex-based in-process synchronization primitives."
 msgstr ""
 
+#. TODO: Translate from Russian: Включить синхронизацию в процессе через
+#. драйвер ntsync в Linux.
 msgid "Enable in-process synchronization via the Linux ntsync driver."
 msgstr ""
 
+#. TODO: Translate from Russian: Включить поддержку vkd3d — трассировка лучей
 msgid "Enable vkd3d support - Ray Tracing"
 msgstr ""
 
 msgid "Enable DLSS on supported NVIDIA graphics cards"
-msgstr ""
+msgstr "Habilitar DLSS en tarjetas gráficas NVIDIA compatibles"
 
+#. TODO: Translate from Russian: Включить OptiScaler (замена апскейлера /
+#. генератора кадров)
 msgid "Enable OptiScaler (replacement upscaler / frame generator)"
 msgstr ""
 
+#. TODO: Translate from Russian: Включить генерацию кадров Lossless Scaling +
+#. lsfg-vk (экспериментально)
 msgid "Enable Lossless Scaling frame generation (experimental)"
 msgstr ""
 
 msgid "FSR upscaling in fullscreen with ProtonGE below native resolution"
 msgstr ""
+"Escalado FSR en pantalla completa con ProtonGE por debajo de la resolución "
+"nativa"
 
 msgid "Disguise all NVIDIA GPU features"
-msgstr ""
+msgstr "Disfrazar todas las funciones de GPU NVIDIA"
 
 msgid "Run the application in WINE virtual desktop"
-msgstr ""
+msgstr "Ejecutar aplicación en escritorio virtual WINE"
 
 msgid "Run the application in a terminal"
-msgstr ""
+msgstr "Ejecutar aplicación en terminal"
 
 msgid "Use system GameMode for performance optimization"
-msgstr ""
+msgstr "Usar GameMode del sistema para optimización de rendimiento"
 
 msgid "Enable forced use of third-party DirectX libraries"
-msgstr ""
+msgstr "Habilitar uso forzado de bibliotecas DirectX de terceros"
 
 msgid "Fix pink-tinted video playback in some games"
-msgstr ""
+msgstr "Corregir reproducción de video con tinte rosa en algunos juegos"
 
 msgid "Reduce PulseAudio latency to fix intermittent sound"
-msgstr ""
+msgstr "Reducir latencia PulseAudio para corregir sonido intermitente"
 
 msgid "Force US keyboard layout"
-msgstr ""
+msgstr "Forzar diseño de teclado US"
 
+#. TODO: Translate from Russian: Использовать GStreamer для внутриигровых
+#. клипов (поддержка WMF)
 msgid "Use GStreamer for in-game clips (WMF support)"
 msgstr ""
 
 msgid "Use WINE shader caching"
-msgstr ""
+msgstr "Usar caché de shaders WINE"
 
 msgid "Force use of built-in DXGI library"
-msgstr ""
+msgstr "Forzar uso de biblioteca DXGI integrada"
 
 msgid "Enable Easy Anti-Cheat and BattlEye runtimes"
-msgstr ""
+msgstr "Habilitar soporte Easy Anti-Cheat y BattlEye"
 
+#. TODO: Translate from Russian: Использовать системные Vulkan layers
+#. (MangoHud, vkBasalt, OBS и т.д.)
 msgid "Use system Vulkan layers (MangoHud, vkBasalt, OBS, etc.)"
 msgstr ""
 
 msgid "Enable OBS Studio capture via obs-vkcapture"
-msgstr ""
+msgstr "Habilitar captura de OBS Studio mediante obs-vkcapture"
 
 msgid "Disable desktop compositing for performance"
-msgstr ""
+msgstr "Deshabilitar composición de escritorio para rendimiento"
 
+#. TODO: Translate from Russian: Использовать режим запуска в контейнере
+#. (рекомендуемый по умолчанию)
 msgid "Use container launch mode (recommended default)"
 msgstr ""
 
 msgid "Force DirectInput protocol instead of XInput"
-msgstr ""
+msgstr "Forzar protocolo DirectInput en lugar de XInput"
 
 msgid "Enable experimental native Wayland support"
-msgstr ""
+msgstr "Habilitar soporte nativo experimental de Wayland"
 
 msgid "Enable HDR settings under native Wayland"
-msgstr ""
+msgstr "Habilitar ajustes HDR bajo Wayland nativo"
 
+#. TODO: Translate from Russian: Использовать Gallium Zink (OpenGL через
+#. Vulkan)
 msgid "Use Gallium Zink (OpenGL via Vulkan)"
 msgstr ""
 
+#. TODO: Translate from Russian: Использовать Gallium Nine (нативный DirectX 9
+#. для Mesa)
 msgid "Use Gallium Nine (native DirectX 9 for Mesa)"
 msgstr ""
 
+#. TODO: Translate from Russian: Использовать бэкенд Vulkan WineD3D (Damavand)
 msgid "Use WineD3D Vulkan backend (Damavand)"
 msgstr ""
 
 msgid "Use bundled dxvk/vkd3d from Wine/Proton"
-msgstr ""
+msgstr "Usar dxvk/vkd3d incluidos en Wine/Proton"
 
+#. TODO: Translate from Russian: Использовать асинхронный dxvk-sarek
+#. (экспериментально)
 msgid "Use async dxvk-sarek (experimental)"
 msgstr ""
 
 msgid ""
-"Prevent the system from going to sleep and disable the screensaver while "
-"the game is running"
+"Prevent the system from going to sleep and disable the screensaver while the"
+" game is running"
 msgstr ""
+"Evitar que el sistema entre en suspensión y deshabilitar salvapantallas "
+"mientras el juego está en ejecución"
 
 msgid "System WINE"
-msgstr ""
+msgstr "WINE del sistema"
 
 msgid "Wine Version"
-msgstr ""
+msgstr "Versión de WINE"
 
+#. TODO: Translate from Russian: Выбор версии WINE или Proton для
+#. использования с этим исполняемым файлом.
 msgid "Select the Wine or Proton version to use for this executable."
 msgstr ""
 
 msgid "Prefix Name"
-msgstr ""
+msgstr "Nombre del prefijo"
 
+#. TODO: Translate from Russian: Укажите префикс WINE для запуска этой игры
 msgid "Specify the Wine prefix to run this game with"
 msgstr ""
 
 msgid "Newest"
-msgstr ""
+msgstr "Más reciente"
 
 msgid "Stable"
-msgstr ""
+msgstr "Estable"
 
 msgid "Vulkan Backend"
-msgstr ""
+msgstr "Backend Vulkan"
 
+#. TODO: Translate from Russian: Выберите бэкэнд DirectX → Vulkan/OpenGL:
+#. 
+#. • Новейший — последние версии DXVK + VKD3D (наилучшая
+#. совместимость/производительность, требует современных драйверов: AMD Mesa
+#. 25+, NVIDIA 550.54.14+, Intel Mesa 24.2+)
+#. • Стабильный — более старая, хорошо протестированная версия DXVK + VKD3D
+#. (работает с любыми драйверами Vulkan 1.3+)
+#. • Sarek — экспериментальная версия DXVK-Sarek + VKD3D-Sarek (поддерживает
+#. более старые драйверы, Vulkan 1.1+)
+#. • WINED3D — резервный вариант OpenGL (наименьшая производительность,
+#. используйте только в случае сбоя других вариантов)
 msgid ""
 "Select the DirectX → Vulkan/OpenGL backend:\n"
 "\n"
-"• Newest – latest DXVK + VKD3D (best compatibility/performance, requires "
-"modern drivers: AMD Mesa 25+, NVIDIA 550.54.14+, Intel Mesa 24.2+)\n"
-"• Stable – older, well-tested DXVK + VKD3D (works on any Vulkan 1.3+ "
-"driver)\n"
-"• Sarek – experimental DXVK-Sarek + VKD3D-Sarek (supports older drivers, "
-"Vulkan 1.1+)\n"
+"• Newest – latest DXVK + VKD3D (best compatibility/performance, requires modern drivers: AMD Mesa 25+, NVIDIA 550.54.14+, Intel Mesa 24.2+)\n"
+"• Stable – older, well-tested DXVK + VKD3D (works on any Vulkan 1.3+ driver)\n"
+"• Sarek – experimental DXVK-Sarek + VKD3D-Sarek (supports older drivers, Vulkan 1.1+)\n"
 "• WINED3D – OpenGL fallback (lowest performance, use only if others fail)"
 msgstr ""
 
+#. TODO: Translate from Russian: Версия Windows
 msgid "Windows version"
 msgstr ""
 
+#. TODO: Translate from Russian: Изменение версии эмуляции WINDOWS может
+#. потребоваться для запуска старых игр. Версии WINDOWS ниже 10 не
+#. поддерживают новые игры с DirectX 12
 msgid ""
-"Changing the WINDOWS emulation version may be required to run older "
-"games. WINDOWS versions below 10 do not support new games with DirectX 12"
+"Changing the WINDOWS emulation version may be required to run older games. "
+"WINDOWS versions below 10 do not support new games with DirectX 12"
 msgstr ""
 
+#. TODO: Translate from Russian: Переопределения DLL
 msgid "DLL Overrides"
 msgstr ""
 
+#. TODO: Translate from Russian: Принудительное использование/отключение
+#. библиотеки только для данного приложения.
+#. 
+#. Краткая инструкция:
+#. * библиотеки пишутся БЕЗ расширения .dll
+#. * библиотеки разделяются точкой с запятой - ;
+#. * library=n — использовать библиотеку WINDOWS (стороннюю)
+#. * library=b — использовать библиотеку WINE (встроенную)
+#. * library=n,b — использовать библиотеку WINDOWS, затем WINE
+#. * library=b,n — использовать библиотеку WINE, затем WINDOWS
+#. * library= — отключить использование этой библиотеки
+#. 
+#. Пример: libglesv2=;d3dx9_36,d3dx9_42=n,b;mfc120=b,n
 msgid ""
 "Forced to use/disable the library only for the given application.\n"
 "\n"
@@ -896,315 +1122,406 @@ msgid ""
 "Example: libglesv2=;d3dx9_36,d3dx9_42=n,b;mfc120=b,n"
 msgstr ""
 
+#. TODO: Translate from Russian: Аргументы запуска
 msgid "Launch Arguments"
 msgstr ""
 
+#. TODO: Translate from Russian: Добавление аргумента после файла .exe, как вы
+#. бы добавили аргумент в ярлыке на системе WINDOWS.
+#. 
+#. Пример: -dx11 -skipintro 1
 msgid ""
-"Adding an argument after the .exe file, just like you would add an "
-"argument in a shortcut on a WINDOWS system.\n"
+"Adding an argument after the .exe file, just like you would add an argument in a shortcut on a WINDOWS system.\n"
 "\n"
 "Example: -dx11 -skipintro 1"
 msgstr ""
 
+#. TODO: Translate from Russian: Ограничение ядер CPU
 msgid "CPU Cores Limit"
 msgstr ""
 
+#. TODO: Translate from Russian: Ограничение количества ядер CPU полезно для
+#. игр на Unity (рекомендуется установить значение равным 8)
 msgid ""
 "Limiting the number of CPU cores is useful for Unity games (It is "
 "recommended to set the value equal to 8)"
 msgstr ""
 
+#. TODO: Translate from Russian: Версия OpenGL
 msgid "OpenGL Version"
 msgstr ""
 
+#. TODO: Translate from Russian: Вы можете выбрать требуемую версию OpenGL,
+#. некоторые игры требуют принудительного профиля совместимости (COMP).
 msgid ""
 "You can select the required OpenGL version, some games require a forced "
 "Compatibility Profile (COMP)."
 msgstr ""
 
+#. TODO: Translate from Russian: Уровень возможностей VKD3D
 msgid "VKD3D Feature Level"
 msgstr ""
 
+#. TODO: Translate from Russian: Вы можете установить принудительный уровень
+#. возможностей VKD3D для игр на DirectX12
 msgid "You can set a forced feature level VKD3D for games on DirectX12"
 msgstr ""
 
+#. TODO: Translate from Russian: Локаль
 msgid "Locale"
 msgstr ""
 
-msgid "Force certain locale for an app. Fixes encoding issues in legacy software"
+#. TODO: Translate from Russian: Принудительно установить определённую локаль
+#. для приложения. Исправляет проблемы с кодировкой в устаревшем ПО
+msgid ""
+"Force certain locale for an app. Fixes encoding issues in legacy software"
 msgstr ""
 
+#. TODO: Translate from Russian: Режим окна
 msgid "Window Mode"
 msgstr ""
 
+#. TODO: Translate from Russian: Режим окна (для Vulkan и OpenGL):
+#. fifo — Первый вошёл, первый вышел. Ограничивает частоту кадров + без
+#. разрывов. (VSync)
+#. immediate — Неограниченная частота кадров + разрывы.
+#. mailbox — Трёхбуферная. Неограниченная частота кадров + без разрывов.
+#. relaxed — То же, что fifo, но позволяет разрывы при частоте ниже частоты
+#. обновления монитора.
 msgid ""
 "Window mode (for Vulkan and OpenGL):\n"
 "fifo - First in, first out. Limits the frame rate + no tearing. (VSync)\n"
 "immediate - Unlimited frame rate + tearing.\n"
 "mailbox - Triple buffering. Unlimited frame rate + no tearing.\n"
-"relaxed - Same as fifo but allows tearing when below the monitors refresh"
-" rate."
+"relaxed - Same as fifo but allows tearing when below the monitors refresh rate."
 msgstr ""
 
+#. TODO: Translate from Russian: Узел NUMA
 msgid "NUMA Node"
 msgstr ""
 
+#. TODO: Translate from Russian: Узел NUMA для аффинности CPU. В многоядерных
+#. системах CPU разделены на узлы NUMA, каждый со своей локальной памятью и
+#. ядрами. Привязка игры к одному узлу уменьшает задержку доступа к памяти и
+#. ограничивает дорогостоящие переключения между ядрами.
 msgid ""
-"NUMA node for CPU affinity. In multi-core systems, CPUs are split into "
-"NUMA nodes, each with its own local memory and cores. Binding a game to a"
-" single node reduces memory-access latency and limits costly core-to-core"
-" switches."
+"NUMA node for CPU affinity. In multi-core systems, CPUs are split into NUMA "
+"nodes, each with its own local memory and cores. Binding a game to a single "
+"node reduces memory-access latency and limits costly core-to-core switches."
 msgstr ""
 
+#. TODO: Translate from Russian: Перезагрузить
 msgid "Reboot"
 msgstr ""
 
+#. TODO: Translate from Russian: Выключить
 msgid "Shutdown"
 msgstr ""
 
+#. TODO: Translate from Russian: Перейти в ждущий режим
 msgid "Suspend"
 msgstr ""
 
+#. TODO: Translate from Russian: Выйти из приложения
 msgid "Exit Application"
 msgstr ""
 
+#. TODO: Translate from Russian: Вернуться на рабочий стол
 msgid "Return to Desktop"
 msgstr ""
 
+#. TODO: Translate from Russian: portprotonqt-session-select файл не найден в
+#. /usr/bin/
 msgid "portprotonqt-session-select file not found at /usr/bin/"
 msgstr ""
 
 msgid "Cancel"
-msgstr ""
+msgstr "Cancelar"
 
+#. TODO: Translate from Russian: Не удалось перезагрузить систему
 msgid "Failed to reboot the system"
 msgstr ""
 
+#. TODO: Translate from Russian: Не удалось завершить работу системы
 msgid "Failed to shutdown the system"
 msgstr ""
 
+#. TODO: Translate from Russian: Не удалось перейти в ждущий режим
 msgid "Failed to suspend the system"
 msgstr ""
 
+#. TODO: Translate from Russian: Не удалось вернуться на рабочий стол
 msgid "Failed to return to desktop"
 msgstr ""
 
+#. TODO: Translate from Russian: только что
 msgid "just now"
 msgstr ""
 
+#. TODO: Translate from Russian: д.
 msgid "d."
 msgstr ""
 
+#. TODO: Translate from Russian: ч.
 msgid "h."
 msgstr ""
 
+#. TODO: Translate from Russian: мин.
 msgid "min."
 msgstr ""
 
+#. TODO: Translate from Russian: сек.
 msgid "sec."
 msgstr ""
 
 msgid "Show"
-msgstr ""
+msgstr "Mostrar"
 
+#. TODO: Translate from Russian: Недавние
 msgid "Recent Games"
 msgstr ""
 
 msgid "Exit"
-msgstr ""
+msgstr "Salir"
 
 msgid "Hide"
-msgstr ""
+msgstr "Ocultar"
 
+#. TODO: Translate from Russian: Нет избранных
 msgid "No favorites"
 msgstr ""
 
+#. TODO: Translate from Russian: Нет недавних игр
 msgid "No recent games"
 msgstr ""
 
+#. TODO: Translate from Russian: Запущен режим логирования
 msgid "Debug log mode was launched"
 msgstr ""
 
+#. TODO: Translate from Russian: Для диагностики проблемы скопируйте ВЕСЬ
+#. журнал на сайт:
 msgid "To diagnose the problem, copy the ENTIRE log to the site:"
 msgstr ""
 
 msgid "LAST LAUNCH"
-msgstr ""
+msgstr "Último lanzamiento"
 
 msgid "PLAY TIME"
-msgstr ""
+msgstr "Tiempo de juego"
 
+#. TODO: Translate from Russian: СЮЖЕТ
 msgid "MAIN STORY"
 msgstr ""
 
+#. TODO: Translate from Russian: СЮЖЕТ + ПОБОЧКИ
 msgid "MAIN + SIDES"
 msgstr ""
 
+#. TODO: Translate from Russian: 100%
 msgid "COMPLETIONIST"
 msgstr ""
 
 msgid "Edit Game"
-msgstr ""
+msgstr "Editar juego"
 
 msgid "Settings"
-msgstr ""
+msgstr "Ajustes"
 
+#. TODO: Translate from Russian: Создать лог
 msgid "Create Log"
 msgstr ""
 
 msgid "Install"
-msgstr ""
+msgstr "Establecer"
 
+#. TODO: Translate from Russian: Переустановить
 msgid "Reinstall"
 msgstr ""
 
+#. TODO: Translate from Russian: Остановить создание лога
 msgid "Stop Log"
 msgstr ""
 
+#. TODO: Translate from Russian: Не удалось запустить процесс отладки
 msgid "Failed to start debug session"
 msgstr ""
 
+#. TODO: Translate from Russian: Лог сохранен
 msgid "Log Saved"
 msgstr ""
 
+#. TODO: Translate from Russian: Лог сохранен в:
 msgid "Debug log saved to:"
 msgstr ""
 
+#. TODO: Translate from Russian: Открыть папку
 msgid "Open Folder"
 msgstr ""
 
+#. TODO: Translate from Russian: Поддержка геймпадов: {0}
 #, python-brace-format
 msgid "Gamepad Support: {0}"
 msgstr ""
 
+#. TODO: Translate from Russian: полная
 msgid "full"
 msgstr ""
 
+#. TODO: Translate from Russian: частичная
 msgid "partial"
 msgstr ""
 
+#. TODO: Translate from Russian: отсутствует
 msgid "none"
 msgstr ""
 
+#. TODO: Translate from Russian: Запуск {0}
 #, python-brace-format
 msgid "Launching {0}"
 msgstr ""
 
+#. TODO: Translate from Russian: Имя игры:
 msgid "Game Name:"
 msgstr ""
 
 msgid "Path to Executable:"
-msgstr ""
+msgstr "Ruta del ejecutable:"
 
+#. TODO: Translate from Russian: Обзор...
 msgid "Browse..."
 msgstr ""
 
 msgid "Custom Cover:"
-msgstr ""
+msgstr "Portada personalizada:"
 
+#. TODO: Translate from Russian: Введите локальный путь или URL обложки
 msgid "Enter local path or URL for cover image"
 msgstr ""
 
+#. TODO: Translate from Russian: Добавить ярлык:
 msgid "Add shortcut to:"
 msgstr ""
 
 msgid "Cover Preview:"
-msgstr ""
+msgstr "Vista previa de la portada:"
 
 msgid "Apply"
-msgstr ""
+msgstr "Aplicar"
 
+#. TODO: Translate from Russian: Недопустимое изображение
 msgid "Invalid image"
 msgstr ""
 
+#. TODO: Translate from Russian: Не удалось скачать обложку
 msgid "Failed to download cover"
 msgstr ""
 
+#. TODO: Translate from Russian: Скачивание обложки...
 msgid "Downloading cover..."
 msgstr ""
 
 msgid "No cover selected"
-msgstr ""
+msgstr "No se seleccionó portada"
 
 msgid "Open"
-msgstr ""
+msgstr "Abrir"
 
+#. TODO: Translate from Russian: Выбрать каталог
 msgid "Select Dir"
 msgstr ""
 
+#. TODO: Translate from Russian: Предыдущий каталог
 msgid "Prev Dir"
 msgstr ""
 
 msgid "Toggle"
-msgstr ""
+msgstr "Cambiar"
 
+#. TODO: Translate from Russian: Принудительно установить
 msgid "Force Install"
 msgstr ""
 
 msgid "Prev Tab"
-msgstr ""
+msgstr "Pestaña anterior"
 
 msgid "Next Tab"
-msgstr ""
+msgstr "Pestaña siguiente"
 
 msgid "Save"
-msgstr ""
+msgstr "Guardar"
 
+#. TODO: Translate from Russian: Скачивание
 msgid "Download"
 msgstr ""
 
+#. TODO: Translate from Russian: Очистить выбранное
 msgid "Clear All"
 msgstr ""
 
 msgid "Path: "
-msgstr ""
+msgstr "Ruta: "
 
+#. TODO: Translate from Russian: Доступ запрещён: %s
 #, python-format
 msgid "Access denied: %s"
 msgstr ""
 
 msgid "Manage Wine versions"
-msgstr ""
+msgstr "Gestionar versiones de WINE"
 
+#. TODO: Translate from Russian: Выбранные WINE/Proton:
 msgid "Selected WINE/Proton:"
 msgstr ""
 
+#. TODO: Translate from Russian: WINE/Proton не выбраны
 msgid "No WINE/Proton selected"
 msgstr ""
 
+#. TODO: Translate from Russian: Скачивание: 
 msgid "Downloading: "
 msgstr ""
 
 msgid "Download Selected"
-msgstr ""
+msgstr "Descargar seleccionado"
 
+#. TODO: Translate from Russian: Установленные
 msgid "Installed"
 msgstr ""
 
+#. TODO: Translate from Russian: Ошибка загрузки WINE/Proton: {error}
 #, python-brace-format
 msgid "Error loading WINE/Proton: {error}"
 msgstr ""
 
 msgid "Version WINE/Proton"
-msgstr ""
+msgstr "Versión de WINE/Proton"
 
 msgid "Size"
-msgstr ""
+msgstr "Tamaño"
 
+#. TODO: Translate from Russian: {display_name} (установлен)
 #, python-brace-format
 msgid "{display_name} (installed)"
 msgstr ""
 
+#. TODO: Translate from Russian: Отсутствуют установленные WINE/Proton
 msgid "No Wine/Proton versions installed"
 msgstr ""
 
+#. TODO: Translate from Russian: Выберите, чтобы удалить WINE/Proton
 msgid "Select to remove this WINE/Proton"
 msgstr ""
 
+#. TODO: Translate from Russian: Выбранно {} WINE/Proton:
+#. 
 #, python-brace-format
 msgid "Selected {} WINE/Proton:\n"
 msgstr ""
 
+#. TODO: Translate from Russian: 
+#. Общий размер на удаление: {}
+#. 
 #, python-brace-format
 msgid ""
 "\n"
@@ -1212,36 +1529,54 @@ msgid ""
 msgstr ""
 
 msgid "Delete Selected"
-msgstr ""
+msgstr "Eliminar seleccionado"
 
+#. TODO: Translate from Russian: Выбранно {} WINE/Proton:
+#. 
 #, python-brace-format
 msgid "Selected {} assets:\n"
 msgstr ""
 
+#. TODO: Translate from Russian: 
+#. Общий размер на загрузку: {}
+#. 
 #, python-brace-format
 msgid ""
 "\n"
 "Total size to download: {}\n"
 msgstr ""
 
+#. TODO: Translate from Russian: Скачивание
 msgid "Downloading in Progress"
 msgstr ""
 
+#. TODO: Translate from Russian: Невозможно очистить выделение во время
+#. распаковки.
 msgid "Cannot clear selection while extraction is in progress."
 msgstr ""
 
+#. TODO: Translate from Russian: Не выбрано
 msgid "No Selection"
 msgstr ""
 
+#. TODO: Translate from Russian: Пожалуйста выберите хотя бы один WINE/Proton
+#. для скачивания.
 msgid "Please select at least one WINE/Proton to download."
 msgstr ""
 
+#. TODO: Translate from Russian: Пожалуйста подождите завершения скачивания.
 msgid "Please wait for current downloading to complete."
 msgstr ""
 
+#. TODO: Translate from Russian: Пожалуйста выберите хотя бы один WINE/Proton
+#. для удаления.
 msgid "Please select at least one WINE/Proton to delete."
 msgstr ""
 
+#. TODO: Translate from Russian: Вы уверены, что хотите удалить {} выбранные
+#. WINE/Proton?
+#. 
+#. Это действие нельзя отменить.
 #, python-brace-format
 msgid ""
 "Are you sure you want to delete {} selected WINE/Proton?\n"
@@ -1249,736 +1584,953 @@ msgid ""
 "This action cannot be undone."
 msgstr ""
 
+#. TODO: Translate from Russian: Не удалось удалить WINE/Proton {}: {}
 #, python-brace-format
 msgid "Failed to remove WINE/Proton at {}: {}"
 msgstr ""
 
+#. TODO: Translate from Russian: Успешно удалено {} WINE/Proton.
 #, python-brace-format
 msgid "Successfully removed {} WINE/Proton."
 msgstr ""
 
+#. TODO: Translate from Russian: Скачивание завершено
 msgid "Downloading Complete"
 msgstr ""
 
+#. TODO: Translate from Russian: Все выбранные WINE/Proton успешно загружены!
 msgid "All selected WINE/Proton have been downloaded!"
 msgstr ""
 
+#. TODO: Translate from Russian: Загрузка: {0} ({1}%)
 #, python-brace-format
 msgid "Downloading: {0} ({1}%)"
 msgstr ""
 
+#. TODO: Translate from Russian: Распаковка {0}
 #, python-brace-format
 msgid "Extracting: {0}"
 msgstr ""
 
+#. TODO: Translate from Russian: , Расчетное время: {}с
 #, python-brace-format
 msgid ", ETA: {}s"
 msgstr ""
 
+#. TODO: Translate from Russian: , Скорость: {:.1f}МБ/с
 #, python-brace-format
 msgid ", Speed: {:.1f}MB/s"
 msgstr ""
 
+#. TODO: Translate from Russian: Распаковка: {0}{1}{2}
 #, python-brace-format
 msgid "Extracting: {0}{1}{2}"
 msgstr ""
 
+#. TODO: Translate from Russian: Ошибка распаковки
 msgid "Extraction Error"
 msgstr ""
 
+#. TODO: Translate from Russian: Не удалось извлечь архив: {0}
 #, python-brace-format
 msgid "Failed to extract archive: {0}"
 msgstr ""
 
 msgid "Operation Cancelled"
-msgstr ""
+msgstr "Operación cancelada"
 
+#. TODO: Translate from Russian: Скачивание или распаковка успешно отменена.
 msgid "Download or extraction has been cancelled."
 msgstr ""
 
+#. TODO: Translate from Russian: Настройки EXE
 msgid "Exe Settings"
 msgstr ""
 
 msgid "Search:"
-msgstr ""
+msgstr "Buscar:"
 
+#. TODO: Translate from Russian: Поиск настроек...
 msgid "Search settings..."
 msgstr ""
 
+#. TODO: Translate from Russian: Основные
 msgid "Main"
 msgstr ""
 
+#. TODO: Translate from Russian: Расширенные
 msgid "Advanced"
 msgstr ""
 
+#. TODO: Translate from Russian: Параметр
 msgid "Setting"
 msgstr ""
 
 msgid "Value"
-msgstr ""
+msgstr "Valor"
 
 msgid "Description"
-msgstr ""
+msgstr "Descripción"
 
 msgid "Open PPDB"
-msgstr ""
+msgstr "Abrir PPDB"
 
+#. TODO: Translate from Russian: Путь к исполняемому файлу недоступен.
 msgid "Executable path is not available."
 msgstr ""
 
+#. TODO: Translate from Russian: Файл PPDB не существует по адресу: 
 msgid "PPDB file does not exist at: "
 msgstr ""
 
+#. TODO: Translate from Russian: Не удалось открыть файл PPDB:
+#. 
 msgid "Failed to open PPDB file:\n"
 msgstr ""
 
 msgid "disabled"
-msgstr ""
+msgstr "deshabilitado"
 
+#. TODO: Translate from Russian: По умолчанию
 msgid "Default value"
 msgstr ""
 
 msgid "Info"
-msgstr ""
+msgstr "Información"
 
+#. TODO: Translate from Russian: Нет изменений для применения.
 msgid "No changes to apply."
 msgstr ""
 
+#. TODO: Translate from Russian: Не удалось применить изменения. Проверьте
+#. логи.
 msgid "Failed to apply changes. Check logs."
 msgstr ""
 
+#. TODO: Translate from Russian: Настройки успешно обновлены.
 msgid "Settings updated successfully."
 msgstr ""
 
+#. TODO: Translate from Russian: Без рамок
 msgid "Borderless window"
 msgstr ""
 
+#. TODO: Translate from Russian: Полноэкранный режим
 msgid "Fullscreen window"
 msgstr ""
 
+#. TODO: Translate from Russian: Перехват клавиатуры
 msgid "Grab keyboard"
 msgstr ""
 
+#. TODO: Translate from Russian: Принудительный захват курсора (всегда режим
+#. относительной мыши)
 msgid "Force grab cursor (always relative mouse mode)"
 msgstr ""
 
+#. TODO: Translate from Russian: Поддержка клиентов Wayland
 msgid "Expose Wayland"
 msgstr ""
 
+#. TODO: Translate from Russian: Планирование в реальном времени
 msgid "Use realtime scheduling"
 msgstr ""
 
+#. TODO: Translate from Russian: Принудительный полноэкранный режим
 msgid "Force windows fullscreen"
 msgstr ""
 
 msgid "Enable HDR output"
-msgstr ""
+msgstr "Habilitar salida HDR"
 
+#. TODO: Translate from Russian: Включить SDR→HDR инвертированное тональное
+#. отображение
 msgid "Enable SDR→HDR inverse tone mapping"
 msgstr ""
 
 msgid "Force HDR support"
-msgstr ""
+msgstr "Forzar compatibilidad con HDR"
 
+#. TODO: Translate from Russian: Принудительный выход HDR10 PQ
 msgid "Force HDR10 PQ output"
 msgstr ""
 
 msgid "HDR luminance heatmap"
-msgstr ""
+msgstr "Mapa de calor de luminancia HDR"
 
+#. TODO: Translate from Russian: Включить наложение mangoapp
 msgid "Enable mangoapp overlay"
 msgstr ""
 
 msgid "Enable adaptive sync"
-msgstr ""
+msgstr "Habilitar sincronización adaptativa"
 
+#. TODO: Translate from Russian: Выходная ширина
 msgid "Output width"
 msgstr ""
 
+#. TODO: Translate from Russian: Выходная высота
 msgid "Output height"
 msgstr ""
 
 msgid "Game width"
-msgstr ""
+msgstr "Ancho del juego"
 
 msgid "Game height"
-msgstr ""
+msgstr "Alto del juego"
 
+#. TODO: Translate from Russian: Частота обновления игры, Гц
 msgid "Game refresh rate (Hz)"
 msgstr ""
 
 msgid "Maximum scale factor"
-msgstr ""
+msgstr "Factor de escala máximo"
 
+#. TODO: Translate from Russian: Например: 5
 msgid "E.g., 5"
 msgstr ""
 
+#. TODO: Translate from Russian: Режим масштабирования
 msgid "Upscaler type"
 msgstr ""
 
+#. TODO: Translate from Russian: Режим интерполяции
 msgid "Upscaler filter"
 msgstr ""
 
+#. TODO: Translate from Russian: Улучшение резкости (0-20)
 msgid "Upscaler sharpness (0-20)"
 msgstr ""
 
 msgid "Mouse sensitivity"
-msgstr ""
+msgstr "Sensibilidad del ratón"
 
+#. TODO: Translate from Russian: Например: 0,5
 msgid "E.g., 0.5"
 msgstr ""
 
+#. TODO: Translate from Russian: Движок отрисовки
 msgid "Rendering backend"
 msgstr ""
 
+#. TODO: Translate from Russian: Готовность файлов дескрипторов
 msgid "Ready FD"
 msgstr ""
 
+#. TODO: Translate from Russian: Например: 3
 msgid "E.g., 3"
 msgstr ""
 
+#. TODO: Translate from Russian: Задержка скрытия курсора, мс
 msgid "Hide cursor delay (ms)"
 msgstr ""
 
+#. TODO: Translate from Russian: Например: 1000
 msgid "E.g., 1000"
 msgstr ""
 
 msgid "XWayland servers count"
-msgstr ""
+msgstr "Número de servidores XWayland"
 
+#. TODO: Translate from Russian: Например: 1
 msgid "E.g., 1"
 msgstr ""
 
 msgid "Force orientation"
-msgstr ""
+msgstr "Forzar orientación"
 
+#. TODO: Translate from Russian: Линейное масштабирование курсора
 msgid "Cursor scale height"
 msgstr ""
 
+#. TODO: Translate from Russian: Ширина диапазона SDR (0-1)
 msgid "SDR gamut wideness (0-1)"
 msgstr ""
 
+#. TODO: Translate from Russian: Яркость дисплея, нт
 msgid "HDR SDR content nits"
 msgstr ""
 
+#. TODO: Translate from Russian: Например: 400
 msgid "E.g., 400"
 msgstr ""
 
+#. TODO: Translate from Russian: Яркость дисплея с инверсией, нт
 msgid "HDR ITM SDR nits"
 msgstr ""
 
+#. TODO: Translate from Russian: Целевая яркость дисплея с инверсией, нт
 msgid "HDR ITM target nits"
 msgstr ""
 
 msgid "Framerate limit"
-msgstr ""
+msgstr "Límite de tasa de cuadros"
 
+#. TODO: Translate from Russian: Частота обновления при расфокусировке, Гц
 msgid "Unfocused refresh rate (Hz)"
 msgstr ""
 
+#. TODO: Translate from Russian: Окно
 msgid "Window"
 msgstr ""
 
+#. TODO: Translate from Russian: Платформа
 msgid "Platform"
 msgstr ""
 
 msgid "HDR"
-msgstr ""
+msgstr "HDR"
 
+#. TODO: Translate from Russian: Наложение
 msgid "Overlay"
 msgstr ""
 
+#. TODO: Translate from Russian: Режим окна без рамок
 msgid "Make the window borderless"
 msgstr ""
 
+#. TODO: Translate from Russian: Полноэкранный режим окна
 msgid "Make the window fullscreen"
 msgstr ""
 
+#. TODO: Translate from Russian: Перехват нажатий кнопок клавиатуры
 msgid "Grab the keyboard"
 msgstr ""
 
+#. TODO: Translate from Russian: Принудительный захват курсора: всегда
+#. используйте относительный режим мыши вместо переключения с видимостью
+#. курсора
 msgid ""
-"Force grab cursor: always use relative mouse mode instead of switching "
-"with cursor visibility"
+"Force grab cursor: always use relative mouse mode instead of switching with "
+"cursor visibility"
 msgstr ""
 
+#. TODO: Translate from Russian: Поддержка клиентов Wayland с помощью xdg-
+#. shell
 msgid "Support Wayland clients using xdg-shell"
 msgstr ""
 
+#. TODO: Translate from Russian: Размер окон внутри gamescope соответствует
+#. размеру вложенного дисплея (полноэкранный режим)
 msgid ""
 "Force windows inside of gamescope to be the size of the nested display "
 "(fullscreen)"
 msgstr ""
 
+#. TODO: Translate from Russian: Включить вывод HDR (для поддержки со стороны
+#. клиентов необходимо включить Gamescope WSI layer)
 msgid ""
 "Enable HDR output (needs Gamescope WSI layer enabled for support from "
 "clients)"
 msgstr ""
 
+#. TODO: Translate from Russian: Включите SDR->HDR- отображение обратного
+#. тона. работает только для SDR-ввода
 msgid "Enable SDR->HDR inverse tone mapping. only works for SDR input"
 msgstr ""
 
+#. TODO: Translate from Russian: Принудительная поддержка HDR, даже если
+#. дисплей ее не поддерживает
 msgid "Force support for HDR even if the display doesn't support it"
 msgstr ""
 
+#. TODO: Translate from Russian: Принудительный вывод на HDR10 PQ, даже если
+#. он не поддерживается (будет выглядеть неправильно)
 msgid "Force output to HDR10 PQ even if unsupported (will look wrong)"
 msgstr ""
 
+#. TODO: Translate from Russian: Отображение отладочной тепловой карты вида
+#. яркости HDR в нитах
 msgid "Display heatmap-style debug view of HDR luminance in nits"
 msgstr ""
 
+#. TODO: Translate from Russian: Запуск с включенным mangoapp (mangohud)
 msgid "Launch with the mangoapp (mangohud) performance overlay enabled"
 msgstr ""
 
+#. TODO: Translate from Russian: Включает адаптивную синхронизацию, если она
+#. доступна (обновление с переменной частотой)
 msgid "Enable adaptive sync if available (variable rate refresh)"
 msgstr ""
 
+#. TODO: Translate from Russian: Разрешение и масштабирование
 msgid "Resolution and scaling"
 msgstr ""
 
+#. TODO: Translate from Russian: Профили
 msgid "Quick presets"
 msgstr ""
 
+#. TODO: Translate from Russian: Стандартный
 msgid "Default"
 msgstr ""
 
+#. TODO: Translate from Russian: FSR масштабирование
 msgid "FSR upscaling"
 msgstr ""
 
 msgid "HDR setup"
-msgstr ""
+msgstr "HDR"
 
+#. TODO: Translate from Russian: Производительность
 msgid "Performance"
 msgstr ""
 
+#. TODO: Translate from Russian: Очистить
 msgid "Clear"
 msgstr ""
 
+#. TODO: Translate from Russian: Настройки Gamescope
 msgid "Gamescope switches"
 msgstr ""
 
+#. TODO: Translate from Russian: Другие
 msgid "Other"
 msgstr ""
 
+#. TODO: Translate from Russian: Расширенные настройки
 msgid "Extra args"
 msgstr ""
 
+#. TODO: Translate from Russian: Дополнительные параметры Gamescope (через
+#. запятую), отсутствующие в GUI.
 msgid "Additional Gamescope options not covered by the GUI."
 msgstr ""
 
+#. TODO: Translate from Russian: Например: --cursor-scale-height=1080 --force-
+#. orientation=left
 msgid "Example: --cursor-scale-height=1080 --force-orientation=left"
 msgstr ""
 
+#. TODO: Translate from Russian: Позиция MangoHud
 msgid "Overlay position"
 msgstr ""
 
 msgid "Device battery"
-msgstr ""
+msgstr "Batería del dispositivo"
 
 msgid "FPS limit method"
-msgstr ""
+msgstr "Método de límite de FPS"
 
 msgid "Anisotropic filtering"
-msgstr ""
+msgstr "Filtrado anisotrópico"
 
+#. TODO: Translate from Russian: Край области FCAT
 msgid "FCAT screen edge"
 msgstr ""
 
+#. TODO: Translate from Russian: Кол-во колонок
 msgid "Table columns"
 msgstr ""
 
+#. TODO: Translate from Russian: Сеть (tx/rx kb/s)
 msgid "Network (tx/rx kb/s)"
 msgstr ""
 
+#. TODO: Translate from Russian: Лист ГП
 msgid "GPU list"
 msgstr ""
 
+#. TODO: Translate from Russian: Прозрачность фона
 msgid "Background opacity"
 msgstr ""
 
+#. TODO: Translate from Russian: Скругление углов (пикс)
 msgid "Round corners (px)"
 msgstr ""
 
+#. TODO: Translate from Russian: Слева сверху
 msgid "Top-left"
 msgstr ""
 
+#. TODO: Translate from Russian: Справа сверху
 msgid "Top-right"
 msgstr ""
 
+#. TODO: Translate from Russian: Середина слева
 msgid "Middle-left"
 msgstr ""
 
+#. TODO: Translate from Russian: Середина справа
 msgid "Middle-right"
 msgstr ""
 
+#. TODO: Translate from Russian: Слева снизу
 msgid "Bottom-left"
 msgstr ""
 
+#. TODO: Translate from Russian: Справа снизу
 msgid "Bottom-right"
 msgstr ""
 
+#. TODO: Translate from Russian: Посередине сверху
 msgid "Top-center"
 msgstr ""
 
+#. TODO: Translate from Russian: Посередине снизу
 msgid "Bottom-center"
 msgstr ""
 
 msgid "Gamepad"
-msgstr ""
+msgstr "Mando"
 
 msgid "Mouse"
-msgstr ""
+msgstr "Ratón"
 
+#. TODO: Translate from Russian: Геймпад, мышь
 msgid "Gamepad, mouse"
 msgstr ""
 
+#. TODO: Translate from Russian: После отображения кадра
 msgid "Late"
 msgstr ""
 
+#. TODO: Translate from Russian: До отображения кадра
 msgid "Early"
 msgstr ""
 
+#. TODO: Translate from Russian: Общие
 msgid "General"
 msgstr ""
 
+#. TODO: Translate from Russian: ЦП/ГП
 msgid "CPU / GPU"
 msgstr ""
 
+#. TODO: Translate from Russian: Архитектура (32/64-бит)
 msgid "Application architecture (32/64-bit)"
 msgstr ""
 
+#. TODO: Translate from Russian: Процент заряда батареи и энергопотребление
 msgid "Battery percent and energy consumption"
 msgstr ""
 
+#. TODO: Translate from Russian: Значок батареи вместо процентов
 msgid "Battery icon instead of percent"
 msgstr ""
 
+#. TODO: Translate from Russian: Оставшееся время работы от батареи
 msgid "Remaining battery time"
 msgstr ""
 
 msgid "Battery wattage"
-msgstr ""
+msgstr "Potencia de batería"
 
 msgid "Force bicubic filtering"
-msgstr ""
+msgstr "Forzar filtrado bicúbico"
 
+#. TODO: Translate from Russian: Нагрузка ядра в виде диаграмм
 msgid "Core load as vertical bars"
 msgstr ""
 
+#. TODO: Translate from Russian: Нагрузка на ядро и частота
 msgid "Per-core load and frequency"
 msgstr ""
 
+#. TODO: Translate from Russian: Изменение цвета при нагрузке на ядро
 msgid "Core load color change"
 msgstr ""
 
+#. TODO: Translate from Russian: Тип ЦП (P/E/ARM)
 msgid "CPU core type (P/E/ARM)"
 msgstr ""
 
+#. TODO: Translate from Russian: Эффективность ЦП (кадры/джоуль)
 msgid "CPU efficiency (frames/joule)"
 msgstr ""
 
+#. TODO: Translate from Russian: Изменение цвета при нагрузке на ЦП
 msgid "CPU load color change"
 msgstr ""
 
+#. TODO: Translate from Russian: Частота ЦП, МГц
 msgid "CPU frequency in MHz"
 msgstr ""
 
+#. TODO: Translate from Russian: Энергопотребление ЦП, Вт
 msgid "CPU power draw (watts)"
 msgstr ""
 
+#. TODO: Translate from Russian: Температура ЦП
 msgid "CPU temperature"
 msgstr ""
 
+#. TODO: Translate from Russian: График времени кадра Gamescope
 msgid "Gamescope frametime graphs"
 msgstr ""
 
+#. TODO: Translate from Russian: Иконка батареи беспроводного устройства
 msgid "Wireless device battery icon"
 msgstr ""
 
+#. TODO: Translate from Russian: Тип сервера отображения (X11/Wayland)
 msgid "Display server type (X11/Wayland)"
 msgstr ""
 
+#. TODO: Translate from Russian: Динамическая ордината времени кадра
 msgid "Dynamic frametime Y-axis"
 msgstr ""
 
+#. TODO: Translate from Russian: Короткое имя графического API
 msgid "Short engine names"
 msgstr ""
 
+#. TODO: Translate from Russian: Версия графического API (OpenGL/Vulkan)
 msgid "Engine version (OpenGL/Vulkan)"
 msgstr ""
 
 msgid "Executable name"
-msgstr ""
+msgstr "Nombre del ejecutable"
 
+#. TODO: Translate from Russian: Обороты вентилятора Steam Deck
 msgid "Steam Deck fan RPM"
 msgstr ""
 
 msgid "Frame capture analysis"
-msgstr ""
+msgstr "Análisis de captura"
 
+#. TODO: Translate from Russian: Переключение эффективности на джоуль/кадр
 msgid "Flip efficiency (joules/frame)"
 msgstr ""
 
+#. TODO: Translate from Russian: Цвет текста FPS в зависимости от значения
 msgid "FPS text color by value"
 msgstr ""
 
+#. TODO: Translate from Russian: Стабильность FPS
 msgid "FPS percentiles"
 msgstr ""
 
+#. TODO: Translate from Russian: Показывать только FPS
 msgid "Show FPS only"
 msgstr ""
 
+#. TODO: Translate from Russian: Счетчик кадров
 msgid "Frame counter"
 msgstr ""
 
+#. TODO: Translate from Russian: Время кадра рядом с частотой кадров
 msgid "Frametime next to FPS"
 msgstr ""
 
+#. TODO: Translate from Russian: Подробная диаграмма времени кадра
 msgid "Detailed frame timing chart"
 msgstr ""
 
+#. TODO: Translate from Russian: Статус FSR (gamescope)
 msgid "FSR status (gamescope)"
 msgstr ""
 
+#. TODO: Translate from Russian: Активировать больше параметров
 msgid "Enable most parameters"
 msgstr ""
 
 msgid "GameMode status"
-msgstr ""
+msgstr "Estado GameMode"
 
+#. TODO: Translate from Russian: Частота ядра ГП
 msgid "GPU core frequency"
 msgstr ""
 
+#. TODO: Translate from Russian: Эффективность ГП (кадры/джоуль)
 msgid "GPU efficiency (frames/joule)"
 msgstr ""
 
+#. TODO: Translate from Russian: Вентилятор ГП (об/мин и %)
 msgid "GPU fan (RPM/%)"
 msgstr ""
 
+#. TODO: Translate from Russian: Температура кристалла ГП
 msgid "GPU junction temperature"
 msgstr ""
 
+#. TODO: Translate from Russian: Изменение цвета при нагрузке на ГП
 msgid "GPU load color change"
 msgstr ""
 
+#. TODO: Translate from Russian: Частота памяти ГП
 msgid "GPU memory frequency"
 msgstr ""
 
+#. TODO: Translate from Russian: Температура памяти ГП
 msgid "GPU memory temperature"
 msgstr ""
 
+#. TODO: Translate from Russian: Имя ГП в pci.ids
 msgid "GPU name from pci.ids"
 msgstr ""
 
+#. TODO: Translate from Russian: Потребляемая мощность ГП, Вт
 msgid "GPU power draw (watts)"
 msgstr ""
 
+#. TODO: Translate from Russian: Ограничение мощности ГП
 msgid "GPU power limit"
 msgstr ""
 
+#. TODO: Translate from Russian: Температура ГП
 msgid "GPU temperature"
 msgstr ""
 
+#. TODO: Translate from Russian: Напряжение ГП
 msgid "GPU voltage"
 msgstr ""
 
+#. TODO: Translate from Russian: Состояние HDR (GameScope)
 msgid "HDR status (gamescope)"
 msgstr ""
 
+#. TODO: Translate from Russian: Скрыть информацию о резкости FSR
 msgid "Hide FSR sharpness info"
 msgstr ""
 
+#. TODO: Translate from Russian: Гистограмма частоты кадров в секунду
 msgid "FPS histogram"
 msgstr ""
 
+#. TODO: Translate from Russian: Горизонтальное расположение HUD
 msgid "Horizontal HUD layout"
 msgstr ""
 
+#. TODO: Translate from Russian: В горизонтальном режиме растягивает фон до
+#. ширины экрана
 msgid "Stretch background horizontally"
 msgstr ""
 
+#. TODO: Translate from Russian: Режим компактного HUD
 msgid "Compact HUD mode"
 msgstr ""
 
+#. TODO: Translate from Russian: Удаление полей вокруг HUD
 msgid "Remove HUD margins"
 msgstr ""
 
+#. TODO: Translate from Russian: Скорость операций ввода-вывода для чтения,
+#. МБ/с
 msgid "IO read rate (MiB/s)"
 msgstr ""
 
+#. TODO: Translate from Russian: Скорость операций ввода-вывода для записи,
+#. МБ/с
 msgid "IO write rate (MiB/s)"
 msgstr ""
 
+#. TODO: Translate from Russian: Добавление в лог информацию о версиях
 msgid "Add versioning to logs"
 msgstr ""
 
 msgid "Media player metadata"
-msgstr ""
+msgstr "Metadatos del reproductor"
 
 msgid "Hide HUD by default"
-msgstr ""
+msgstr "Ocultar HUD por defecto"
 
+#. TODO: Translate from Russian: Использование основного размера шрифта
 msgid "Use primary font size"
 msgstr ""
 
+#. TODO: Translate from Russian: Разрешить загрузку лога
 msgid "Allow log uploads"
 msgstr ""
 
+#. TODO: Translate from Russian: Текущий режим Vulkan
 msgid "Vulkan present mode"
 msgstr ""
 
+#. TODO: Translate from Russian: Использование видеопамяти процессом
 msgid "Process VRAM usage"
 msgstr ""
 
+#. TODO: Translate from Russian: Резидентная память процесса
 msgid "Process memory (resident)"
 msgstr ""
 
+#. TODO: Translate from Russian: Всего памяти процесса
 msgid "Process shared memory"
 msgstr ""
 
 msgid "Process virtual memory"
-msgstr ""
+msgstr "Memoria virtual"
 
+#. TODO: Translate from Russian: Использование ОЗУ системой
 msgid "System RAM usage"
 msgstr ""
 
+#. TODO: Translate from Russian: Температура ОЗУ (DDR5)
 msgid "RAM temperature (DDR5)"
 msgstr ""
 
+#. TODO: Translate from Russian: Загрузка файла конфигурации
 msgid "Load config file"
 msgstr ""
 
+#. TODO: Translate from Russian: Частота обновления (gamescope)
 msgid "Refresh rate (gamescope)"
 msgstr ""
 
 msgid "Current resolution"
-msgstr ""
+msgstr "Resolución actual"
 
+#. TODO: Translate from Russian: Ретро-фильтрация (без фильтра)
 msgid "Retro filtering (unfiltered)"
 msgstr ""
 
+#. TODO: Translate from Russian: Показать ограничение по кадрам в секунду
 msgid "Show FPS limit"
 msgstr ""
 
+#. TODO: Translate from Russian: Использование подкачки
 msgid "Swap usage"
 msgstr ""
 
+#. TODO: Translate from Russian: Температура в градусах Фаренгейта
 msgid "Temperature in Fahrenheit"
 msgstr ""
 
 msgid "Text outline"
-msgstr ""
+msgstr "Contorno de texto"
 
+#. TODO: Translate from Russian: Статус троттлинга ГП
 msgid "GPU throttling status"
 msgstr ""
 
+#. TODO: Translate from Russian: Троттлинг на графике кадров
 msgid "Throttling in frame graph"
 msgstr ""
 
 msgid "Local time"
-msgstr ""
+msgstr "Hora local"
 
+#. TODO: Translate from Russian: Скрыть слово "Time" перед временем
 msgid "Time without label"
 msgstr ""
 
+#. TODO: Translate from Russian: Включить трилинейную фильтрацию
 msgid "Force trilinear filtering"
 msgstr ""
 
+#. TODO: Translate from Russian: Автоматическая загрузка лога в
+#. flightlessmango.com
 msgid "Automatic log uploads"
 msgstr ""
 
 msgid "MangoHud version"
-msgstr ""
+msgstr "Versión de MangoHud"
 
 msgid "Status vkBasalt"
-msgstr ""
+msgstr "Estado de vkBasalt"
 
+#. TODO: Translate from Russian: Драйвер Vulkan (radv/amdvlk)
 msgid "Vulkan driver (radv/amdvlk)"
 msgstr ""
 
 msgid "Wine/Proton version"
-msgstr ""
+msgstr "Versión de WINE/Proton"
 
 msgid "Wine sync method"
-msgstr ""
+msgstr "Método de sincronización"
 
+#. TODO: Translate from Russian: Использование видеопамяти
 msgid "VRAM usage"
 msgstr ""
 
+#. TODO: Translate from Russian: Компоновка и ограничения
 msgid "Layout and limiter"
 msgstr ""
 
+#. TODO: Translate from Russian: Стандартный PortProton
 msgid "PortProton default"
 msgstr ""
 
 msgid "FPS only"
-msgstr ""
+msgstr "Solo FPS"
 
 msgid "Extended"
-msgstr ""
+msgstr "Extendido"
 
 msgid "Custom"
-msgstr ""
+msgstr "Personalizado"
 
+#. TODO: Translate from Russian: Сохранение пользовательских настроек
 msgid "Save custom"
 msgstr ""
 
+#. TODO: Translate from Russian: Настройки MangoHud
 msgid "MangoHud switches"
 msgstr ""
 
+#. TODO: Translate from Russian: Ограничение FPS
 msgid "FPS limit"
 msgstr ""
 
+#. TODO: Translate from Russian: Выберите один или несколько предустановленных
+#. профилей FPS. Значения будут сохранены в FPS_LIMIT и MangoHud также
+#. отобразит активное ограничение FPS.
 msgid ""
 "Select one or more FPS presets. The values are saved into FPS_LIMIT and "
 "MangoHud will also show the active FPS limit."
 msgstr ""
 
+#. TODO: Translate from Russian: Дополнительные параметры MangoHud (через
+#. запятую), отсутствующие в GUI.
 msgid "Additional comma-separated MangoHud options not covered by the GUI."
 msgstr ""
 
+#. TODO: Translate from Russian: Пример:
+#. battery,gpu_junction_temp,fps_color=39f900
 msgid "Example: battery,gpu_junction_temp,fps_color=39f900"
 msgstr ""
 
+#. TODO: Translate from Russian: Все ГП
 msgid "All GPUs"
 msgstr ""
 
+#. TODO: Translate from Russian: Ошибка при чтении стандартной конфигурации
+#. MangoHud.
 msgid "Failed to read default MangoHud config."
 msgstr ""
 
+#. TODO: Translate from Russian: Пользовательские настройки пусты. Сначала
+#. сохраните их.
 msgid "Custom preset is empty. Save one first."
 msgstr ""
 
+#. TODO: Translate from Russian: Пользовательские настройки сохранены.
 msgid "Custom preset saved."
 msgstr ""
 
+#. TODO: Translate from Russian: Ошибка сохранения пользовательских настроек.
 msgid "Failed to save custom preset."
 msgstr ""
 
 msgid "Prefix Manager"
-msgstr ""
+msgstr "Gestor de prefijos"
 
+#. TODO: Translate from Russian: Выбор
 msgid "Set"
 msgstr ""
 
 msgid "Libraries"
-msgstr ""
+msgstr "Bibliotecas"
 
 msgid "Information"
-msgstr ""
+msgstr "Descripción"
 
 msgid "Fonts"
-msgstr ""
+msgstr "Fuentes"
 
+#. TODO: Translate from Russian: Winetricks не найден. Повторите попытку.
 msgid "Winetricks not found. Please try again."
 msgstr ""
 
+#. TODO: Translate from Russian: Не выбрано ни одного компонента.
 msgid "No components selected."
 msgstr ""
 
+#. TODO: Translate from Russian: Установка не удалась. Проверьте журналы.
 msgid "Installation failed. Check logs."
 msgstr ""
 
+#. TODO: Translate from Russian: Компоненты успешно установлены.
 msgid "Components installed successfully."
 msgstr ""
-
