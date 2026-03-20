@@ -4,6 +4,7 @@
 
 ## 📋 Contents
 - [Overview](#-overview)
+- [Translate Online](#-translate-online)
 - [Adding a New Translation](#-adding-a-new-translation)
 - [Updating Existing Translations](#-updating-existing-translations)
 - [Compiling Translations](#-compiling-translations)
@@ -17,17 +18,27 @@ Localization in `PortProtonQT` is powered by `Babel` using `.po/.mo` files store
 
 Current translation status:
 
-<!-- Auto-generated coverage table -->
-
-| Locale | Progress | Translated |
-| :----- | -------: | ---------: |
-| [de](../../portprotonqt/locales/de/LC_MESSAGES/portprotonqt.po) | 0% | 0 of 604 |
-| [pt](../../portprotonqt/locales/pt/LC_MESSAGES/portprotonqt.po) | 0% | 0 of 604 |
-| [es](../../portprotonqt/locales/es/LC_MESSAGES/portprotonqt.po) | 0% | 2 of 604 |
-| [ru](../../portprotonqt/locales/ru/LC_MESSAGES/portprotonqt.po) | 100% | 604 of 604 |
+<a href="https://translate.codeberg.org/engage/portprotonqt/">
+<img src="https://translate.codeberg.org/widget/portprotonqt/multi-auto.svg" alt="Translation status" />
+</a>
 
 ---
 
+## 🌐 Translate Online
+
+You can help translate PortProtonQt using our web-based translation platform:
+
+**[translate.codeberg.org/engage/portprotonqt](https://translate.codeberg.org/engage/portprotonqt)**
+
+Benefits of using the web platform:
+- No need to set up a development environment
+- Work directly in your browser
+- See context and suggestions from other translators
+- Collaborate with the community
+
+Translations submitted online are periodically reviewed and merged into the main repository.
+
+---
 
 ## 🏁 Adding a New Translation
 

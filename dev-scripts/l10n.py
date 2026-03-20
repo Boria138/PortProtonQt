@@ -2,8 +2,6 @@
 
 import argparse
 import sys
-import io
-import contextlib
 import re
 from pathlib import Path
 from collections import defaultdict
@@ -12,90 +10,14 @@ from babel.messages.frontend import CommandLineInterface
 from pyaspeller import YandexSpeller
 
 # ---------- Пути ----------
-GUIDE_DIR    = Path(__file__).parent.parent / "documentation" / "localization_guide"
-README_EN    = GUIDE_DIR / "README.md"
-README_RU    = GUIDE_DIR / "README.ru.md"
 LOCALES_PATH = Path(__file__).parent.parent / "portprotonqt" / "locales"
 THEMES_PATH  = Path(__file__).parent.parent / "portprotonqt" / "themes"
 MESON_BUILD  = Path(__file__).parent.parent / "portprotonqt" / "meson.build"
-README_FILES = [README_EN, README_RU]
 POT_FILE     = LOCALES_PATH / "portprotonqt.pot"
 
 # ---------- Версия проекта ----------
 def _get_version() -> str:
     return "0.1.1"
-
-# ---------- Обновление README ----------
-def _update_coverage(lines: list[str]) -> None:
-    # Парсим статистику из вывода pybabel --statistics
-    locales_stats = [line for line in lines if "portprotonqt.po" in line]
-    # Извлекаем (count, pct, locale) и сортируем
-    rows = sorted(
-        row for stat in locales_stats
-        if (m := re.search(
-            r"""(\d+\ of\ \d+).*         # message counts
-            \((\d+\%)\).*                # message percentage
-            locales\/([^/]+)\/LC_MESSAGES  # locale name""",
-            stat, re.VERBOSE
-        )) and (row := m.groups())
-    )
-
-    for md_file in README_FILES:
-        if not md_file.exists():
-            continue
-
-        text = md_file.read_text(encoding="utf-8")
-        is_ru = (md_file == README_RU)
-
-        # Выбираем заголовок раздела
-        status_header = (
-            "Current translation status:" if not is_ru
-            else "Текущий статус перевода:"
-        )
-
-        # Формируем шапку и строки таблицы
-        if is_ru:
-            table_header = (
-                "<!-- Сгенерировано автоматически! -->\n\n"
-                "| Локаль | Прогресс | Переведено |\n"
-                "| :----- | -------: | ---------: |\n"
-            )
-            fmt = lambda count, pct, loc: f"| [{loc}](../../portprotonqt/locales/{loc}/LC_MESSAGES/portprotonqt.po) | {pct} | {count.replace(' of ', ' из ')} |"
-        else:
-            table_header = (
-                "<!-- Auto-generated coverage table -->\n\n"
-                "| Locale | Progress | Translated |\n"
-                "| :----- | -------: | ---------: |\n"
-            )
-            fmt = lambda count, pct, loc: f"| [{loc}](../../portprotonqt/locales/{loc}/LC_MESSAGES/portprotonqt.po) | {pct} | {count} |"
-
-        # Собираем строки и добавляем '---' в конце
-        coverage_table = (
-            table_header
-            + "\n".join(fmt(c, p, l) for c, p, l in rows)
-            + "\n\n---"
-        )
-
-        # Удаляем старую автоматически сгенерированную таблицу
-        old_block = (
-            r"<!--\s*(?:Сгенерировано автоматически!|Auto-generated coverage table)\s*-->"
-            r".*?(?=\n(?:##|\Z))"
-        )
-        cleaned = re.sub(old_block, "", text, flags=re.DOTALL)
-
-        # Вставляем новую таблицу сразу после строки с заголовком
-        insert_pattern = rf"(^.*{re.escape(status_header)}.*$)"
-        new_text = re.sub(
-            insert_pattern,
-            lambda m: m.group(1) + "\n\n" + coverage_table,
-            cleaned,
-            count=1,
-            flags=re.MULTILINE
-        )
-
-        # Записываем файл, если были изменения
-        if new_text != text:
-            md_file.write_text(new_text, encoding="utf-8")
 
 # ---------- PyBabel команды ----------
 def compile_locales() -> None:
@@ -320,14 +242,10 @@ def main(args) -> int:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="l10n", description="Localization utility for PortProtonQt.")
     parser.add_argument("--create-new", nargs='+', type=str, default=False, help="Create .po for new locales")
-    parser.add_argument("--update-all", action='store_true', help="Extract/update locales and update README coverage")
+    parser.add_argument("--update-all", action='store_true', help="Extract/update locales")
     parser.add_argument("--spellcheck", action='store_true', help="Run spellcheck on POT and PO files")
     args = parser.parse_args()
     if args.spellcheck:
         sys.exit(main(args))
-    f = io.StringIO()
-    with contextlib.redirect_stdout(f), contextlib.redirect_stderr(f):
-        main(args)
-    output = f.getvalue().splitlines()
-    _update_coverage(output)
+    extract_strings(); compile_locales()
     sys.exit(0)
