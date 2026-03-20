@@ -1824,7 +1824,7 @@ class MainWindow(QMainWindow):
         self.wineCombo.addItems(self.wine_versions)
         self.wineCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
         self.wineCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.wineTitleLabel = QLabel(_("WINE/Proton:"))
+        self.wineTitleLabel = QLabel("WINE/Proton:")
         self.wineTitleLabel.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         self.wineTitleLabel.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         if self.wine_versions:
