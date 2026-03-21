@@ -16,7 +16,8 @@ from portprotonqt.main_window import MainWindow
 from portprotonqt.config_utils import (
     save_fullscreen_config,
     read_fullscreen_config,
-    get_portproton_start_command
+    get_portproton_start_command,
+    read_start_minimized,
 )
 from portprotonqt.logger import get_logger, setup_logger
 from portprotonqt.cli import parse_args, is_portproton_url, parse_portproton_url, is_exe_file, add_steam_compat_tool, parse_resolution
@@ -235,7 +236,16 @@ def main():
 
     # --- Initial fullscreen state ---
     launch_fullscreen = args.fullscreen or read_fullscreen_config()
-    if launch_fullscreen:
+    launch_minimized = (
+        read_start_minimized()
+        and not args.fullscreen
+        and window_resolution is None
+        and exe_path is None
+    )
+    if launch_minimized:
+        logger.info("Launching in tray (config)")
+        window.hide()
+    elif launch_fullscreen:
         logger.info(
             f"Launching in fullscreen mode ({'--fullscreen' if args.fullscreen else 'config'})"
         )

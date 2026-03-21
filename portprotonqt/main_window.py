@@ -31,6 +31,7 @@ from portprotonqt.config_utils import (
     save_fullscreen_config, read_window_geometry, save_window_geometry, reset_config,
     clear_cache, read_auto_fullscreen_gamepad, save_auto_fullscreen_gamepad, read_rumble_config, save_rumble_config, read_gamepad_type, save_gamepad_type, read_minimize_to_tray, save_minimize_to_tray,
     read_auto_card_size, save_auto_card_size, get_portproton_start_command, read_hide_autoinstall_tab, save_hide_autoinstall_tab,
+    read_autostart_enabled, save_autostart_enabled, apply_xdg_autostart, read_start_minimized, save_start_minimized,
     read_badge_view_mode, save_badge_view_mode
 )
 
@@ -2406,6 +2407,36 @@ class MainWindow(QMainWindow):
         minimize_layout.addStretch()
         uiForm.addRow(minimize_layout)
 
+        self.autostartCheckBox = QCheckBox()
+        self.autostartCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
+        self.autostartCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.autostartTitle = QLabel(_("Run at system startup"))
+        self.autostartTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.autostartTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
+        self.autostartTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.autostartCheckBox.setChecked(read_autostart_enabled())
+        autostart_layout = QHBoxLayout()
+        autostart_layout.setContentsMargins(0, 0, 0, 0)
+        autostart_layout.addWidget(self.autostartCheckBox)
+        autostart_layout.addWidget(self.autostartTitle)
+        autostart_layout.addStretch()
+        uiForm.addRow(autostart_layout)
+
+        self.startMinimizedCheckBox = QCheckBox()
+        self.startMinimizedCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
+        self.startMinimizedCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.startMinimizedTitle = QLabel(_("Start in tray"))
+        self.startMinimizedTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.startMinimizedTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
+        self.startMinimizedTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.startMinimizedCheckBox.setChecked(read_start_minimized())
+        start_minimized_layout = QHBoxLayout()
+        start_minimized_layout.setContentsMargins(0, 0, 0, 0)
+        start_minimized_layout.addWidget(self.startMinimizedCheckBox)
+        start_minimized_layout.addWidget(self.startMinimizedTitle)
+        start_minimized_layout.addStretch()
+        uiForm.addRow(start_minimized_layout)
+
         self.hideAutoInstallTabCheckBox = QCheckBox()  # Removed text
         self.hideAutoInstallTabCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.hideAutoInstallTabCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -2691,6 +2722,14 @@ class MainWindow(QMainWindow):
 
         rumble_enabled = self.gamepadRumbleCheckBox.isChecked()
         save_rumble_config(rumble_enabled)
+
+        autostart_enabled = self.autostartCheckBox.isChecked()
+        save_autostart_enabled(autostart_enabled)
+        if not apply_xdg_autostart(autostart_enabled):
+            QMessageBox.warning(self, _("Error"), _("Failed to update xdg-autostart entry."))
+
+        start_minimized = self.startMinimizedCheckBox.isChecked()
+        save_start_minimized(start_minimized)
 
         # Save GPU selection to user.conf (only if the combo box exists)
         if hasattr(self, 'gpuCombo'):

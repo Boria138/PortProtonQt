@@ -34,3 +34,21 @@ class DisplayConfig(BaseConfig):
         """Set minimize-to-tray setting."""
         validate_bool(minimize, "minimize_to_tray")
         self._save_value("minimize_to_tray", minimize, "bool")
+
+    def get_autostart_enabled(self) -> bool:
+        """Get autostart on login setting."""
+        return self._get_bool("autostart_enabled", False)
+
+    def set_autostart_enabled(self, enabled: bool):
+        """Set autostart on login setting."""
+        validate_bool(enabled, "autostart_enabled")
+        self._save_value("autostart_enabled", enabled, "bool")
+
+    def get_start_minimized(self) -> bool:
+        """Get start minimized setting."""
+        return self._get_bool("start_minimized", False)
+
+    def set_start_minimized(self, minimized: bool):
+        """Set start minimized setting."""
+        validate_bool(minimized, "start_minimized")
+        self._save_value("start_minimized", minimized, "bool")
