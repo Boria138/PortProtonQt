@@ -619,7 +619,9 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
                     if is_blocked:
                         browse_button.setEnabled(False)
 
-                    def open_run_after_exe_selector(target_line_edit=line_edit):
+                    def open_run_after_exe_selector(
+                        _checked: bool = False, target_line_edit=line_edit
+                    ):
                         from portprotonqt.dialogs.file_explorer import FileExplorer
 
                         initial_path = os.path.expanduser("~")
