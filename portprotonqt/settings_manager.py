@@ -141,7 +141,16 @@ def get_advanced_settings(disabled_text, logical_core_options, locale_options,
         'default': ''
     })
 
-    # 7. CPU cores limit
+    # 7. Run second executable after launch
+    advanced_settings.append({
+        'key': 'PW_RUN_AFTER_EXE',
+        'name': _("Run After Exe"),
+        'description': _("Path to a second .exe that should be started after the main executable."),
+        'type': 'text',
+        'default': ''
+    })
+
+    # 8. CPU cores limit
     advanced_settings.append({
         'key': 'PW_WINE_CPU_TOPOLOGY',
         'name': _("CPU Cores Limit"),
@@ -151,7 +160,7 @@ def get_advanced_settings(disabled_text, logical_core_options, locale_options,
         'default': disabled_text
     })
 
-    # 8. OpenGL version
+    # 9. OpenGL version
     advanced_settings.append({
         'key': 'PW_MESA_GL_VERSION_OVERRIDE',
         'name': _("OpenGL Version"),
@@ -161,7 +170,7 @@ def get_advanced_settings(disabled_text, logical_core_options, locale_options,
         'default': disabled_text
     })
 
-    # 9. VKD3D feature level
+    # 10. VKD3D feature level
     advanced_settings.append({
         'key': 'PW_VKD3D_FEATURE_LEVEL',
         'name': _("VKD3D Feature Level"),
@@ -171,7 +180,7 @@ def get_advanced_settings(disabled_text, logical_core_options, locale_options,
         'default': disabled_text
     })
 
-    # 10. Locale
+    # 11. Locale
     advanced_settings.append({
         'key': 'PW_LOCALE_SELECT',
         'name': _("Locale"),
@@ -181,7 +190,7 @@ def get_advanced_settings(disabled_text, logical_core_options, locale_options,
         'default': disabled_text
     })
 
-    # 11. Present mode
+    # 12. Present mode
     advanced_settings.append({
         'key': 'PW_MESA_VK_WSI_PRESENT_MODE',
         'name': _("Window Mode"),
@@ -214,6 +223,7 @@ ADVANCED_SETTING_KEYS = [
     'PW_WINDOWS_VER',
     'WINEDLLOVERRIDES',
     'LAUNCH_PARAMETERS',
+    'PW_RUN_AFTER_EXE',
     'PW_WINE_CPU_TOPOLOGY',
     'PW_MESA_GL_VERSION_OVERRIDE',
     'PW_VKD3D_FEATURE_LEVEL',

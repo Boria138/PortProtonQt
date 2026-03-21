@@ -605,7 +605,48 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
                     line_edit.setEnabled(False)
                     line_edit.setStyleSheet(self.theme.SETTINGS_DISABLED_INPUT_STYLE)
 
-                self.advanced_table.setCellWidget(row, 1, line_edit)
+                if setting['key'] == 'PW_RUN_AFTER_EXE':
+                    text_container = QWidget()
+                    text_layout = QHBoxLayout(text_container)
+                    text_layout.setContentsMargins(0, 0, 0, 0)
+                    text_layout.setSpacing(6)
+                    text_layout.addWidget(line_edit)
+
+                    browse_button = AutoSizeButton("...", icon=ThemeManager().get_icon("folder"))
+                    browse_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+                    browse_button.setFixedWidth(56)
+                    browse_button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+                    if is_blocked:
+                        browse_button.setEnabled(False)
+
+                    def open_run_after_exe_selector(target_line_edit=line_edit):
+                        from portprotonqt.dialogs.file_explorer import FileExplorer
+
+                        initial_path = os.path.expanduser("~")
+                        current_path = target_line_edit.text().strip()
+                        if current_path:
+                            normalized = os.path.normpath(current_path)
+                            if os.path.isfile(normalized):
+                                initial_path = os.path.dirname(normalized)
+                            elif os.path.isdir(normalized):
+                                initial_path = normalized
+
+                        file_explorer = FileExplorer(
+                            self,
+                            theme=self.theme,
+                            file_filter=".exe",
+                            initial_path=initial_path,
+                        )
+                        file_explorer.file_signal.file_selected.connect(
+                            lambda file_path, target=target_line_edit: target.setText(os.path.normpath(file_path))
+                        )
+                        file_explorer.exec()
+
+                    browse_button.clicked.connect(open_run_after_exe_selector)
+                    text_layout.addWidget(browse_button)
+                    self.advanced_table.setCellWidget(row, 1, text_container)
+                else:
+                    self.advanced_table.setCellWidget(row, 1, line_edit)
                 self.advanced_widgets[setting['key']] = line_edit
                 self.original_display_values[setting['key']] = current_val
 
