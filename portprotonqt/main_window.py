@@ -6,7 +6,7 @@ import subprocess
 import psutil
 import re
 from portprotonqt.logger import get_logger
-from portprotonqt.dialogs import AddGameDialog, FileExplorer, WinetricksDialog, ExeSettingsDialog
+from portprotonqt.dialogs import AddGameDialog, FileExplorer, WinetricksDialog, ExeSettingsDialog, generate_thumbnail
 from portprotonqt.game_card import GameCard
 from portprotonqt.animations import DetailPageAnimations
 from portprotonqt.custom_widgets import ClickableLabel, AutoSizeButton, NavLabel, FlowLayout
@@ -19,7 +19,7 @@ from portprotonqt.system_overlay import SystemOverlay
 from portprotonqt.input_manager import GamepadType
 
 from portprotonqt.image_utils import load_pixmap_async, ImageCarousel
-from portprotonqt.steam_api import get_steam_game_info_async, get_full_steam_game_info_async, get_steam_installed_games, is_game_in_steam
+from portprotonqt.steam_api import get_steam_game_info_async, get_full_steam_game_info_async, get_steam_installed_games, is_game_in_steam, fetch_sgdb_cover_async
 from portprotonqt.egs_api import load_egs_games_async, get_egs_executable
 from portprotonqt.theme_manager import ThemeManager, load_theme_screenshots
 from portprotonqt.time_utils import save_last_launch, get_last_launch, parse_playtime_file, format_playtime, get_last_launch_timestamp, format_last_launch
@@ -3105,6 +3105,22 @@ class MainWindow(QMainWindow):
             if local_cover_path:
                 break
 
+        generated_cover_path = ""
+        if not local_cover_path and os.path.isfile(exe_path):
+            xdg_cache_home = os.getenv(
+                "XDG_CACHE_HOME",
+                os.path.join(os.path.expanduser("~"), ".cache")
+            )
+            icon_cache_dir = os.path.join(xdg_cache_home, "PortProtonQt", "images", "exe_icons")
+            os.makedirs(icon_cache_dir, exist_ok=True)
+            safe_exe_name = re.sub(r"[^A-Za-z0-9._-]", "_", os.path.basename(exe_path))
+            generated_cover_path = os.path.join(icon_cache_dir, f"{safe_exe_name}.png")
+            if not os.path.exists(generated_cover_path):
+                if not generate_thumbnail(exe_path, generated_cover_path, size=128):
+                    generated_cover_path = ""
+            if generated_cover_path and not os.path.exists(generated_cover_path):
+                generated_cover_path = ""
+
         # Check if the game already exists in the library
         existing_entry = find_game_by_exe(exe_path)
 
@@ -3116,10 +3132,44 @@ class MainWindow(QMainWindow):
 
             # Get Steam game info asynchronously to fetch appid, cover, etc.
             def on_steam_info(steam_info: dict):
+                steam_cover_path = ""
+                sgdb_cover_path = ""
+                steam_info_cover = steam_info.get("cover", "")
+                is_steam_game = steam_info.get("steam_game", "false") == "true"
+                if is_steam_game:
+                    steam_cover_path = steam_info_cover
+                    appid = str(steam_info.get("appid", "")).strip()
+                    if not steam_cover_path and appid:
+                        steam_cover_path = f"https://steamcdn-a.akamaihd.net/steam/apps/{appid}/library_600x900_2x.jpg"
+                else:
+                    sgdb_cover_path = steam_info_cover
+
+                final_cover_path = local_cover_path or steam_cover_path or sgdb_cover_path or generated_cover_path or icon_path
+
+                if not (local_cover_path or steam_cover_path or sgdb_cover_path):
+                    def on_sgdb_cover(cover: str) -> None:
+                        game_data = {
+                            "name": game_name,
+                            "description": steam_info.get("description", ""),
+                            "cover_path": local_cover_path or steam_cover_path or cover or generated_cover_path or icon_path,
+                            "appid": steam_info.get("appid", ""),
+                            "controller_support": steam_info.get("controller_support", ""),
+                            "exec_line": exec_line,
+                            "last_launch": _("Never"),
+                            "formatted_playtime": "0:00",
+                            "protondb_tier": steam_info.get("protondb_tier", ""),
+                            "anticheat_status": steam_info.get("anticheat_status", ""),
+                            "game_source": "portproton",
+                        }
+                        self.openGameDetailPage(game_data)
+
+                    fetch_sgdb_cover_async(game_name, on_sgdb_cover)
+                    return
+
                 game_data = {
                     "name": game_name,
                     "description": steam_info.get("description", ""),
-                    "cover_path": local_cover_path or steam_info.get("cover", icon_path),
+                    "cover_path": final_cover_path,
                     "appid": steam_info.get("appid", ""),
                     "controller_support": steam_info.get("controller_support", ""),
                     "exec_line": exec_line,
@@ -3139,10 +3189,44 @@ class MainWindow(QMainWindow):
             direct_exec_line = shlex.quote(exe_path)
 
             def on_steam_info_missing(steam_info: dict):
+                steam_cover_path = ""
+                sgdb_cover_path = ""
+                steam_info_cover = steam_info.get("cover", "")
+                is_steam_game = steam_info.get("steam_game", "false") == "true"
+                if is_steam_game:
+                    steam_cover_path = steam_info_cover
+                    appid = str(steam_info.get("appid", "")).strip()
+                    if not steam_cover_path and appid:
+                        steam_cover_path = f"https://steamcdn-a.akamaihd.net/steam/apps/{appid}/library_600x900_2x.jpg"
+                else:
+                    sgdb_cover_path = steam_info_cover
+
+                final_cover_path = local_cover_path or steam_cover_path or sgdb_cover_path or generated_cover_path
+
+                if not (local_cover_path or steam_cover_path or sgdb_cover_path):
+                    def on_sgdb_cover(cover: str) -> None:
+                        game_data = {
+                            "name": game_name_from_exe,
+                            "description": steam_info.get("description", ""),
+                            "cover_path": local_cover_path or steam_cover_path or cover or generated_cover_path,
+                            "appid": steam_info.get("appid", ""),
+                            "controller_support": steam_info.get("controller_support", ""),
+                            "exec_line": direct_exec_line,
+                            "last_launch": _("Never"),
+                            "formatted_playtime": "0:00",
+                            "protondb_tier": steam_info.get("protondb_tier", ""),
+                            "anticheat_status": steam_info.get("anticheat_status", ""),
+                            "game_source": "portproton",
+                        }
+                        self.openGameDetailPage(game_data)
+
+                    fetch_sgdb_cover_async(game_name_from_exe, on_sgdb_cover)
+                    return
+
                 game_data = {
                     "name": game_name_from_exe,
                     "description": steam_info.get("description", ""),
-                    "cover_path": local_cover_path or steam_info.get("cover", ""),
+                    "cover_path": final_cover_path,
                     "appid": steam_info.get("appid", ""),
                     "controller_support": steam_info.get("controller_support", ""),
                     "exec_line": direct_exec_line,
