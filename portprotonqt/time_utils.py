@@ -1,4 +1,5 @@
 import os
+import hashlib
 from datetime import datetime, timedelta
 from babel.dates import format_timedelta, format_date
 from portprotonqt.config_utils import read_time_config
@@ -111,7 +112,18 @@ def get_playtime_for_exe(file_path: str, exe_path: str) -> int | None:
 
     target_path = os.path.normpath(exe_path)
     target_name = os.path.splitext(os.path.basename(target_path))[0].lower()
+    target_sha = None
+    try:
+        sha = hashlib.sha256()
+        with open(target_path, "rb") as exe_file:
+            for chunk in iter(lambda: exe_file.read(1024 * 1024), b""):
+                sha.update(chunk)
+        target_sha = sha.hexdigest()
+    except OSError:
+        target_sha = None
 
+    sha_seconds = None
+    sha_last_launch = -1
     exact_seconds = None
     exact_last_launch = -1
     fallback_seconds = None
@@ -140,6 +152,14 @@ def get_playtime_for_exe(file_path: str, exe_path: str) -> int | None:
                     break
 
             stat_path = os.path.normpath(parts[0].replace("#@_@#", " "))
+            stat_sha = parts[1] if len(parts) > 1 and len(parts[1]) == 64 else ""
+
+            if target_sha and stat_sha == target_sha:
+                if last_launch_index >= sha_last_launch:
+                    sha_seconds = seconds
+                    sha_last_launch = last_launch_index
+                continue
+
             if stat_path == target_path:
                 if last_launch_index >= exact_last_launch:
                     exact_seconds = seconds
@@ -151,6 +171,8 @@ def get_playtime_for_exe(file_path: str, exe_path: str) -> int | None:
                 fallback_seconds = seconds
                 fallback_last_launch = last_launch_index
 
+    if sha_seconds is not None:
+        return sha_seconds
     if exact_seconds is not None:
         return exact_seconds
     return fallback_seconds
