@@ -20,7 +20,7 @@ class TrayManager:
     """Tray management module for PortProtonQt.
 
     Provides:
-    - Show/hide main window on double-click tray icon.
+    - Show/hide main window on tray click.
     - Context menu with options: Show/Hide, Favorites, Recent Games, Themes, Exit.
     - Dynamic population of Favorites, Recent Games, and Themes menus.
     - Minimize to tray on window close, full exit via Exit.
@@ -41,7 +41,6 @@ class TrayManager:
         elif icon is None:
             icon = QIcon()
         self.tray_icon.setIcon(icon)
-
         self.tray_icon.activated.connect(self.handle_tray_click)
         self.tray_icon.setToolTip(self.app_name)
 
@@ -50,13 +49,8 @@ class TrayManager:
         self.toggle_action.triggered.connect(self.toggle_window_action)
 
         self.favorites_menu = QMenu(_("Favorites"))
-        self.favorites_menu.aboutToShow.connect(self.populate_favorites_menu)
-
         self.recent_menu = QMenu(_("Recent Games"))
-        self.recent_menu.aboutToShow.connect(self.populate_recent_menu)
-
         self.themes_menu = QMenu(_("Themes"))
-        self.themes_menu.aboutToShow.connect(self.populate_themes_menu)
 
         self.tray_menu.addAction(self.toggle_action)
         self.tray_menu.addSeparator()
@@ -68,8 +62,7 @@ class TrayManager:
         exit_action.triggered.connect(self.force_exit)
         self.tray_menu.addAction(exit_action)
 
-        self.tray_menu.aboutToShow.connect(self.update_toggle_action)
-
+        self.tray_menu.aboutToShow.connect(self.refresh_tray_menu)
         self.tray_icon.setContextMenu(self.tray_menu)
         self.tray_icon.show()
 
@@ -80,6 +73,12 @@ class TrayManager:
 
         self.launch_dialog = None
 
+    def refresh_tray_menu(self):
+        self.update_toggle_action()
+        self.populate_favorites_menu()
+        self.populate_recent_menu()
+        self.populate_themes_menu()
+
     def update_toggle_action(self):
         if self.main_window.isVisible():
             self.toggle_action.setText(_("Hide"))
@@ -87,6 +86,9 @@ class TrayManager:
             self.toggle_action.setText(_("Show"))
 
     def handle_tray_click(self, reason):
+        if reason == QSystemTrayIcon.ActivationReason.Context:
+            self.refresh_tray_menu()
+            return
         if reason == QSystemTrayIcon.ActivationReason.Trigger:
             self.click_count += 1
             if self.click_count == 1:
@@ -237,6 +239,11 @@ class TrayManager:
     def force_exit(self):
         self.main_window.close()
         sys.exit(0)
+
+    def shutdown(self):
+        if self.tray_icon:
+            self.tray_icon.hide()
+            self.tray_icon.deleteLater()
 
 
 def restart_application_with_muvm():

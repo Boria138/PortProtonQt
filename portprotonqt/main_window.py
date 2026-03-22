@@ -3642,9 +3642,8 @@ class MainWindow(QMainWindow):
         event.accept()
 
         # Hide and remove tray icon
-        if hasattr(self, "tray_manager") and self.tray_manager.tray_icon:
-            self.tray_manager.tray_icon.hide()
-            self.tray_manager.tray_icon.deleteLater()
+        if hasattr(self, "tray_manager"):
+            self.tray_manager.shutdown()
 
         # Save card sizes
         save_card_size(self.card_width)
