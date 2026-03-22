@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-03-20 13:39+0500\n"
+"POT-Creation-Date: 2026-03-22 13:50+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: de_DE\n"
@@ -545,6 +545,12 @@ msgstr ""
 msgid "Minimize to tray on close"
 msgstr ""
 
+msgid "Run at system startup"
+msgstr ""
+
+msgid "Start in tray"
+msgstr ""
+
 msgid "Hide Auto-Install Tab"
 msgstr ""
 
@@ -615,6 +621,9 @@ msgid "Are you sure you want to clear the cache? This action cannot be undone."
 msgstr ""
 
 msgid "Cache cleared"
+msgstr ""
+
+msgid "Failed to update xdg-autostart entry."
 msgstr ""
 
 msgid "Settings saved"
@@ -904,6 +913,12 @@ msgid ""
 "argument in a shortcut on a WINDOWS system.\n"
 "\n"
 "Example: -dx11 -skipintro 1"
+msgstr ""
+
+msgid "Run After Exe"
+msgstr ""
+
+msgid "Path to a second .exe that should be started after the main executable."
 msgstr ""
 
 msgid "CPU Cores Limit"

@@ -245,7 +245,4 @@ if __name__ == "__main__":
     parser.add_argument("--update-all", action='store_true', help="Extract/update locales")
     parser.add_argument("--spellcheck", action='store_true', help="Run spellcheck on POT and PO files")
     args = parser.parse_args()
-    if args.spellcheck:
-        sys.exit(main(args))
-    extract_strings(); compile_locales()
-    sys.exit(0)
+    sys.exit(main(args))
