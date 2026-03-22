@@ -20,6 +20,12 @@ def _get_version() -> str:
     return "0.1.1"
 
 # ---------- PyBabel команды ----------
+def compile_locales() -> None:
+    CommandLineInterface().run([
+        "pybabel", "compile", "--use-fuzzy", "--directory",
+        f"{LOCALES_PATH.resolve()}", "--domain=portprotonqt", "--statistics"
+    ])
+
 def extract_strings() -> None:
     input_dir = (Path(__file__).parent.parent / "portprotonqt").resolve()
     CommandLineInterface().run([
@@ -284,7 +290,7 @@ def main(args) -> int:
                     print(f"{idx}. In '{text}': typo '{err['word']}', suggestions: {', '.join(err['s'])}")
                 print("-----")
         return 1 if has_err else 0
-    extract_strings()
+    extract_strings(); compile_locales()
     return 0
 
 if __name__ == "__main__":

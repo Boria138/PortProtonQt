@@ -14,6 +14,7 @@
 ## 📖 Обзор
 
 Локализация в `PortProtonQT` осуществляется через систему `.po` файлов и управляется утилитой `Babel`. Все переводы находятся в подкаталогах вида `LC_MESSAGES/portprotonqt.po` для каждой поддерживаемой локали.
+Для отображения изменений в приложении необходимо сгенерировать `.mo` файлы после правок в `.po`.
 
 Текущий статус перевода:
 
@@ -51,6 +52,11 @@ python dev-scripts/l10n.py --create-new <код_локали>
 ```
 
 2. Отредактируйте файл `portprotonqt/locales/<локаль>/LC_MESSAGES/portprotonqt.po` в Poedit или GTranslator.
+3. Сгенерируйте `.mo` файлы:
+
+```bash
+python dev-scripts/l10n.py
+```
 
 ---
 
@@ -63,6 +69,12 @@ uv python install 3.10
 uv sync --all-extras --dev
 source .venv/bin/activate
 python dev-scripts/l10n.py --update-all
+```
+
+После изменения `.po` файлов сгенерируйте `.mo`, иначе новые переводы не появятся в интерфейсе:
+
+```bash
+python dev-scripts/l10n.py
 ```
 
 ---

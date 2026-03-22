@@ -14,6 +14,7 @@
 ## 📖 Overview
 
 Localization in `PortProtonQT` is powered by `Babel` using `.po` files stored under `LC_MESSAGES/portprotonqt.po` for each language.
+To see updated translations in the app, you must generate `.mo` files after editing `.po`.
 
 Current translation status:
 
@@ -51,6 +52,11 @@ python dev-scripts/l10n.py --create-new <locale_code>
 ```
 
 2. Edit the file `portprotonqt/locales/<locale>/LC_MESSAGES/portprotonqt.po` in Poedit or GTranslator.
+3. Generate `.mo` files:
+
+```bash
+python dev-scripts/l10n.py
+```
 
 ---
 
@@ -63,6 +69,12 @@ uv python install 3.10
 uv sync --all-extras --dev
 source .venv/bin/activate
 python dev-scripts/l10n.py --update-all
+```
+
+After editing `.po` files, generate `.mo`; otherwise new translations will not be visible in the UI:
+
+```bash
+python dev-scripts/l10n.py
 ```
 
 ---
