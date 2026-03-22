@@ -111,11 +111,19 @@ install_subdir(
   exclude_files: ['*.pyc'],
 )
 
-# Install locales - only .mo files (compiled translations)
-# exclude_files doesn't work recursively, so we install each language manually
+# Compile and install locales from .po files
+msgfmt = find_program('msgfmt', required: true)
 foreach lang : ['de', 'es', 'pt', 'ru']
+  mo_target = custom_target(
+    'locale_' + lang,
+    input: 'locales' / lang / 'LC_MESSAGES' / 'portprotonqt.po',
+    output: lang + '_portprotonqt.mo',
+    command: [msgfmt, '@INPUT@', '-o', '@OUTPUT@'],
+  )
   install_data(
-    'locales' / lang / 'LC_MESSAGES' / 'portprotonqt.mo',
+    mo_target,
+    rename: 'portprotonqt.mo',
     install_dir: get_option('localedir') / lang / 'LC_MESSAGES',
+    install_tag: 'i18n'
   )
 endforeach

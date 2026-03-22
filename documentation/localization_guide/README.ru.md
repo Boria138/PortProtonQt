@@ -74,8 +74,10 @@ python dev-scripts/l10n.py --update-all
 uv python install 3.10
 uv sync --all-extras --dev
 source .venv/bin/activate
-python dev-scripts/l10n.py
+python dev-scripts/l10n.py --compile-only
 ```
+
+Для запуска напрямую из git-дерева перед стартом нужно локально скомпилировать переводы. Скомпилированные `*.mo` файлы в репозитории не хранятся.
 
 ## 🔍 Проверка орфографии
 

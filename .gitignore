@@ -43,3 +43,6 @@ proton_downloads
 # Need for refactoring
 REFRACTORING_PLAN.md
 AUDIT_CHECKLIST.md
+
+# Compiled gettext catalogs
+portprotonqt/locales/*/LC_MESSAGES/*.mo

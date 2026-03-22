@@ -193,6 +193,9 @@ def check_file(filepath: Path, issues_summary: dict) -> bool:
 
 # ---------- Основной обработчик ----------
 def main(args) -> int:
+    if args.compile_only:
+        compile_locales()
+        return 0
     if args.update_all:
         extract_strings(); update_locales()
     if args.create_new:
@@ -243,6 +246,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="l10n", description="Localization utility for PortProtonQt.")
     parser.add_argument("--create-new", nargs='+', type=str, default=False, help="Create .po for new locales")
     parser.add_argument("--update-all", action='store_true', help="Extract/update locales")
+    parser.add_argument("--compile-only", action='store_true', help="Compile .po to .mo without extract/update")
     parser.add_argument("--spellcheck", action='store_true', help="Run spellcheck on POT and PO files")
     args = parser.parse_args()
     sys.exit(main(args))

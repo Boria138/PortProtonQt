@@ -74,8 +74,10 @@ python dev-scripts/l10n.py --update-all
 uv python install 3.10
 uv sync --all-extras --dev
 source .venv/bin/activate
-python dev-scripts/l10n.py
+python dev-scripts/l10n.py --compile-only
 ```
+
+For a run directly from the Git working tree, compile translations locally before launch. Compiled `*.mo` files are not stored in the repository.
 
 
 ## 🔍 Spell Check
