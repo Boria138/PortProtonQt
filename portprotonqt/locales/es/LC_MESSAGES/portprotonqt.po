@@ -9,15 +9,16 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-03-22 13:50+0500\n"
-"PO-Revision-Date: 2026-03-20 07:27+0000\n"
+"PO-Revision-Date: 2026-03-22 09:28+0000\n"
 "Last-Translator: Boria138 <boria138@noreply.codeberg.org>\n"
+"Language-Team: Spanish <https://translate.codeberg.org/projects/portprotonqt/"
+"portprotonqt/es/>\n"
 "Language: es\n"
-"Language-Team: Spanish "
-"<https://translate.codeberg.org/projects/portprotonqt/portprotonqt/es/>\n"
-"Plural-Forms: nplurals=2; plural=n != 1;\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 5.16.2\n"
 "Generated-By: Babel 2.17.0\n"
 
 #, python-brace-format
@@ -25,13 +26,13 @@ msgid "Launch game \"{name}\" with PortProton"
 msgstr "Iniciar el juego \"{name}\" con PortProton"
 
 msgid "Error"
-msgstr ""
+msgstr "Error"
 
 msgid "PortProton directory not found"
 msgstr "Directorio de PortProton no encontrado"
 
 msgid "Remove from Favorites"
-msgstr ""
+msgstr "Eliminar de Favoritos"
 
 msgid "Add to Favorites"
 msgstr ""
@@ -1996,4 +1997,3 @@ msgstr ""
 
 msgid "Components installed successfully."
 msgstr ""
-
