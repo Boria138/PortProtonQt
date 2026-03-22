@@ -317,7 +317,11 @@ def save_minimize_to_tray(minimize_to_tray: bool):
 
 def read_autostart_enabled() -> bool:
     """Reads the autostart setting."""
-    return _get_display_config().get_autostart_enabled()
+    autostart_enabled = _get_display_config().get_autostart_enabled()
+    if autostart_enabled and not AUTOSTART_FILE.exists():
+        _get_display_config().set_autostart_enabled(False)
+        return False
+    return autostart_enabled
 
 
 def save_autostart_enabled(autostart_enabled: bool):
