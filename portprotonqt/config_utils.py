@@ -344,7 +344,7 @@ def apply_xdg_autostart(enabled: bool) -> bool:
             repo_root = Path(__file__).resolve().parent.parent
             venv_portprotonqt = repo_root / ".venv" / "bin" / "portprotonqt"
             if repo_root.joinpath(".git").exists() and venv_portprotonqt.exists():
-                exec_command = f'bash -lc "source \\"{repo_root}/.venv/bin/activate\\" && portprotonqt"'
+                exec_command = f'"{venv_portprotonqt}"'
 
             desktop_entry = (
                 "[Desktop Entry]\n"
