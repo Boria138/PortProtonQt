@@ -16,6 +16,7 @@ BuildRequires:  meson >= 0.61.2
 BuildRequires:  ninja-build
 BuildRequires:  python3-devel
 BuildRequires:  git
+BuildRequires:  gettext
 BuildRequires:  systemd-rpm-macros
 BuildRequires:  vulkan-loader-devel
 BuildRequires:  gcc
