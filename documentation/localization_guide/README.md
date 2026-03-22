@@ -7,14 +7,13 @@
 - [Translate Online](#-translate-online)
 - [Adding a New Translation](#-adding-a-new-translation)
 - [Updating Existing Translations](#-updating-existing-translations)
-- [Compiling Translations](#-compiling-translations)
 - [Spell Check](#-spell-check)
 
 ---
 
 ## 📖 Overview
 
-Localization in `PortProtonQT` is powered by `Babel` using `.po/.mo` files stored under `LC_MESSAGES/portprotonqt.po` for each language.
+Localization in `PortProtonQT` is powered by `Babel` using `.po` files stored under `LC_MESSAGES/portprotonqt.po` for each language.
 
 Current translation status:
 
@@ -67,18 +66,6 @@ python dev-scripts/l10n.py --update-all
 ```
 
 ---
-
-## 🧵 Compiling Translations
-
-```bash
-uv python install 3.10
-uv sync --all-extras --dev
-source .venv/bin/activate
-python dev-scripts/l10n.py --compile-only
-```
-
-For a run directly from the Git working tree, compile translations locally before launch. Compiled `*.mo` files are not stored in the repository.
-
 
 ## 🔍 Spell Check
 

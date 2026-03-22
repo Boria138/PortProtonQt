@@ -695,7 +695,7 @@ def get_files_from_meson_build(meson_file_path):
         for match in matches:
             # Extract individual file names (strings between quotes)
             # Looking for common file extensions used in the project
-            file_matches = re.findall(r"'([^']*(?:\.py|\.ui|\.qml|\.js|\.css|\.svg|\.json|\.txt|\.md|\.h|\.c|\.cpp|\.hpp|\.xml|\.ini|\.desktop|\.metainfo|\.pot|\.po|\.mo))'", match)
+            file_matches = re.findall(r"'([^']*(?:\.py|\.ui|\.qml|\.js|\.css|\.svg|\.json|\.txt|\.md|\.h|\.c|\.cpp|\.hpp|\.xml|\.ini|\.desktop|\.metainfo|\.pot|\.po))'", match)
             files.extend(file_matches)
     
     for match in matches:

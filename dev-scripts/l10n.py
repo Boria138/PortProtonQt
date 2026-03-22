@@ -20,12 +20,6 @@ def _get_version() -> str:
     return "0.1.1"
 
 # ---------- PyBabel команды ----------
-def compile_locales() -> None:
-    CommandLineInterface().run([
-        "pybabel", "compile", "--use-fuzzy", "--directory",
-        f"{LOCALES_PATH.resolve()}", "--domain=portprotonqt", "--statistics"
-    ])
-
 def extract_strings() -> None:
     input_dir = (Path(__file__).parent.parent / "portprotonqt").resolve()
     CommandLineInterface().run([
@@ -40,14 +34,67 @@ def extract_strings() -> None:
     ])
 
 def update_locales() -> None:
+    saved_language_team: dict[Path, list[str]] = {}
+    for po_file in LOCALES_PATH.glob("**/portprotonqt.po"):
+        saved_block = _get_header_field_block(po_file, "Language-Team")
+        if saved_block:
+            saved_language_team[po_file] = saved_block
+
     CommandLineInterface().run([
         "pybabel", "update",
         f"--input-file={POT_FILE.resolve()}",
         f"--output-dir={LOCALES_PATH.resolve()}",
         "--domain=portprotonqt",
+        "--no-wrap",
         "--ignore-obsolete",
+        "--ignore-pot-creation-date",
         "--update-header-comment",
     ])
+
+    for po_file, block in saved_language_team.items():
+        _set_header_field_block(po_file, "Language-Team", block)
+
+def _get_header_field_block(po_path: Path, field_name: str) -> list[str] | None:
+    lines = po_path.read_text(encoding="utf-8").splitlines()
+    in_header = False
+    for i, line in enumerate(lines):
+        if line == 'msgstr ""':
+            in_header = True
+            continue
+        if not in_header:
+            continue
+        if not line.startswith('"'):
+            break
+        if line.startswith(f'"{field_name}:'):
+            end = i
+            while end < len(lines) and not lines[end].endswith('\\n"'):
+                end += 1
+            return lines[i:end + 1]
+    return None
+
+def _set_header_field_block(po_path: Path, field_name: str, block: list[str]) -> None:
+    lines = po_path.read_text(encoding="utf-8").splitlines()
+    in_header = False
+    header_end = None
+    for i, line in enumerate(lines):
+        if line == 'msgstr ""':
+            in_header = True
+            continue
+        if not in_header:
+            continue
+        if not line.startswith('"'):
+            header_end = i
+            break
+        if line.startswith(f'"{field_name}:'):
+            end = i
+            while end < len(lines) and not lines[end].endswith('\\n"'):
+                end += 1
+            lines[i:end + 1] = block
+            po_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+            return
+    if header_end is not None:
+        lines[header_end:header_end] = block
+        po_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 def _update_meson_locales(new_locales: list[str]) -> None:
     """Обновляет список языков в meson.build."""
@@ -86,6 +133,7 @@ def create_new(locales: list[str]) -> None:
             f"--input-file={POT_FILE.resolve()}",
             f"--output-dir={LOCALES_PATH.resolve()}",
             "--domain=portprotonqt",
+            "--no-wrap",
             f"--locale={locale}"
         ])
     # Обновляем meson.build с новыми локалями
@@ -193,9 +241,6 @@ def check_file(filepath: Path, issues_summary: dict) -> bool:
 
 # ---------- Основной обработчик ----------
 def main(args) -> int:
-    if args.compile_only:
-        compile_locales()
-        return 0
     if args.update_all:
         extract_strings(); update_locales()
     if args.create_new:
@@ -239,14 +284,13 @@ def main(args) -> int:
                     print(f"{idx}. In '{text}': typo '{err['word']}', suggestions: {', '.join(err['s'])}")
                 print("-----")
         return 1 if has_err else 0
-    extract_strings(); compile_locales()
+    extract_strings()
     return 0
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="l10n", description="Localization utility for PortProtonQt.")
     parser.add_argument("--create-new", nargs='+', type=str, default=False, help="Create .po for new locales")
     parser.add_argument("--update-all", action='store_true', help="Extract/update locales")
-    parser.add_argument("--compile-only", action='store_true', help="Compile .po to .mo without extract/update")
     parser.add_argument("--spellcheck", action='store_true', help="Run spellcheck on POT and PO files")
     args = parser.parse_args()
     sys.exit(main(args))
