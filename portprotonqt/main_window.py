@@ -22,7 +22,7 @@ from portprotonqt.image_utils import load_pixmap_async, ImageCarousel
 from portprotonqt.steam_api import get_steam_game_info_async, get_full_steam_game_info_async, get_steam_installed_games, is_game_in_steam, fetch_sgdb_cover_async
 from portprotonqt.egs_api import load_egs_games_async, get_egs_executable
 from portprotonqt.theme_manager import ThemeManager, load_theme_screenshots
-from portprotonqt.time_utils import save_last_launch, get_last_launch, parse_playtime_file, format_playtime, get_last_launch_timestamp, format_last_launch
+from portprotonqt.time_utils import save_last_launch, get_last_launch, get_playtime_for_exe, format_playtime, get_last_launch_timestamp, format_last_launch
 from portprotonqt.config_utils import (
     get_portproton_location, read_theme_from_config, save_theme_to_config, parse_desktop_entry,
     load_theme_metainfo, read_time_config, read_card_size, save_card_size, read_sort_method,
@@ -1148,13 +1148,9 @@ class MainWindow(QMainWindow):
             if self.portproton_location:
                 statistics_file = os.path.join(self.portproton_location, "data", "tmp", "statistics")
                 try:
-                    playtime_data = parse_playtime_file(statistics_file)
-                    matching_key = next(
-                        (key for key in playtime_data if os.path.basename(key).split('.')[0] == exe_name),
-                        None
-                    )
-                    if matching_key:
-                        playtime_seconds = playtime_data[matching_key]
+                    playtime_from_stats = get_playtime_for_exe(statistics_file, game_exe)
+                    if playtime_from_stats is not None:
+                        playtime_seconds = playtime_from_stats
                         formatted_playtime = format_playtime(playtime_seconds)
                 except Exception as e:
                     logger.error(f"Failed to parse playtime data: {e}")

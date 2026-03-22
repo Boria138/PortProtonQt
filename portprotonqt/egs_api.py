@@ -12,7 +12,7 @@ from collections.abc import Callable
 from portprotonqt.localization import get_egs_language, _
 from portprotonqt.logger import get_logger
 from portprotonqt.image_utils import load_pixmap_async
-from portprotonqt.time_utils import parse_playtime_file, format_playtime, get_last_launch, get_last_launch_timestamp
+from portprotonqt.time_utils import get_playtime_for_exe, format_playtime, get_last_launch, get_last_launch_timestamp
 from portprotonqt.config_utils import get_portproton_location, get_portproton_start_command
 from portprotonqt.dialogs import generate_thumbnail
 from portprotonqt.steam_api import (
@@ -849,15 +849,11 @@ def _continue_loading_egs_games(legendary_path: str, callback: Callable[[list[tu
             formatted_playtime = ""
             last_launch = _("Never")
             last_launch_timestamp = 0
-            if exe_name and os.path.exists(statistics_file):
+            if game_exe and os.path.exists(statistics_file):
                 try:
-                    playtime_data = parse_playtime_file(statistics_file)
-                    matching_key = next(
-                        (key for key in playtime_data if os.path.basename(key).split('.')[0] == exe_name),
-                        None
-                    )
-                    if matching_key:
-                        playtime_seconds = playtime_data[matching_key]
+                    playtime_from_stats = get_playtime_for_exe(statistics_file, game_exe)
+                    if playtime_from_stats is not None:
+                        playtime_seconds = playtime_from_stats
                         formatted_playtime = format_playtime(playtime_seconds)
                 except Exception as e:
                     logger.error(f"Failed to parse playtime data for {app_name}: {e}")

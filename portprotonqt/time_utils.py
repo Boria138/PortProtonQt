@@ -103,6 +103,58 @@ def parse_playtime_file(file_path):
                     break
     return playtime_data
 
+
+def get_playtime_for_exe(file_path: str, exe_path: str) -> int | None:
+    """Return playtime for the target executable from statistics file."""
+    if not exe_path or not os.path.exists(file_path):
+        return None
+
+    target_path = os.path.normpath(exe_path)
+    target_name = os.path.splitext(os.path.basename(target_path))[0].lower()
+
+    exact_seconds = None
+    exact_last_launch = -1
+    fallback_seconds = None
+    fallback_last_launch = -1
+
+    with open(file_path, encoding="utf-8") as f:
+        for line in f:
+            if not line.strip():
+                continue
+            parts = line.strip().split()
+            if len(parts) < 3:
+                continue
+
+            seconds = None
+            for token in parts[1:]:
+                if token.isdigit():
+                    seconds = int(token)
+                    break
+            if seconds is None:
+                continue
+
+            last_launch_index = -1
+            for token in parts[1:]:
+                if token.startswith("L5-") and token[3:].isdigit():
+                    last_launch_index = int(token[3:])
+                    break
+
+            stat_path = os.path.normpath(parts[0].replace("#@_@#", " "))
+            if stat_path == target_path:
+                if last_launch_index >= exact_last_launch:
+                    exact_seconds = seconds
+                    exact_last_launch = last_launch_index
+                continue
+
+            stat_name = os.path.splitext(os.path.basename(stat_path))[0].lower()
+            if stat_name == target_name and last_launch_index >= fallback_last_launch:
+                fallback_seconds = seconds
+                fallback_last_launch = last_launch_index
+
+    if exact_seconds is not None:
+        return exact_seconds
+    return fallback_seconds
+
 def format_playtime(seconds):
     """
     Convert time in seconds to formatted string using Babel.

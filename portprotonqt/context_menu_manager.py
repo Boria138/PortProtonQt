@@ -816,6 +816,39 @@ Icon={icon_path}
             )
             return False
 
+    def _remove_statistics_entry(self, exe_path, game_name):
+        """Remove statistics entry for exact executable path."""
+        if not exe_path or not self.portproton_location:
+            return
+
+        statistics_file = os.path.join(self.portproton_location, "data", "tmp", "statistics")
+        if not os.path.exists(statistics_file):
+            return
+
+        target_path = os.path.normpath(exe_path)
+        kept_lines = []
+        removed = False
+
+        try:
+            with open(statistics_file, encoding="utf-8") as f:
+                for line in f:
+                    token = line.strip().split(maxsplit=1)
+                    if not token:
+                        kept_lines.append(line)
+                        continue
+                    stat_path = os.path.normpath(token[0].replace("#@_@#", " "))
+                    if stat_path == target_path:
+                        removed = True
+                        continue
+                    kept_lines.append(line)
+
+            if removed:
+                with open(statistics_file, "w", encoding="utf-8") as f:
+                    f.writelines(kept_lines)
+                logger.info("Removed statistics entry for '%s' (%s)", game_name, exe_path)
+        except OSError as e:
+            logger.warning("Failed to clean statistics for '%s': %s", game_name, e)
+
     def delete_game(self, game_name, exec_line):
         msg_box = QMessageBox(self.parent)
         msg_box.setIcon(QMessageBox.Icon.Question)
@@ -849,6 +882,7 @@ Icon={icon_path}
             game_name
         ):
             return
+        self._remove_statistics_entry(exe_path, game_name)
         if exe_name:
             xdg_data_home = os.getenv(
                 "XDG_DATA_HOME",
