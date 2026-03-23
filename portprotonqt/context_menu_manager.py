@@ -563,11 +563,83 @@ class ContextMenuManager:
         self._show_status_message(message)
 
     def _get_desktop_path(self, game_name):
-        """Construct the .desktop file path, trying both original and sanitized game names."""
+        """Construct the .desktop file path, trying direct and fallback matching."""
         desktop_path = os.path.join(self.portproton_location, f"{game_name}.desktop")
-        if not os.path.exists(desktop_path):
-            sanitized_name = game_name.replace("/", "_").replace(":", "_").replace(" ", "_")
-            desktop_path = os.path.join(self.portproton_location, f"{sanitized_name}.desktop")
+        if os.path.exists(desktop_path):
+            return desktop_path
+
+        sanitized_name = game_name.replace("/", "_").replace(":", "_").replace(" ", "_")
+        desktop_path = os.path.join(self.portproton_location, f"{sanitized_name}.desktop")
+        if os.path.exists(desktop_path):
+            return desktop_path
+
+        normalized_game_name = "".join(ch for ch in game_name.lower() if ch.isalnum())
+        desktop_files = glob.glob(os.path.join(self.portproton_location, "*.desktop"))
+
+        if normalized_game_name:
+            repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            xdg_data_home = os.getenv(
+                "XDG_DATA_HOME",
+                os.path.join(os.path.expanduser("~"), ".local", "share")
+            )
+            custom_roots = [
+                os.path.join(xdg_data_home, "PortProtonQt", "custom_data"),
+                os.path.join(repo_root, "portprotonqt", "custom_data"),
+            ]
+            for custom_root in custom_roots:
+                if not os.path.isdir(custom_root):
+                    continue
+                metadata_files = glob.glob(
+                    os.path.join(custom_root, "**", "metadata.txt"),
+                    recursive=True,
+                )
+                for metadata_path in metadata_files:
+                    try:
+                        metadata_name = ""
+                        with open(metadata_path, encoding="utf-8") as metadata_file:
+                            for line in metadata_file:
+                                if line.startswith("name="):
+                                    metadata_name = line[5:].strip()
+                                    break
+                        if not metadata_name:
+                            continue
+                        normalized_metadata_name = "".join(
+                            ch for ch in metadata_name.lower() if ch.isalnum()
+                        )
+                        if normalized_metadata_name != normalized_game_name:
+                            continue
+                        script_name = os.path.basename(os.path.dirname(metadata_path))
+                        for file_path in desktop_files:
+                            entry = parse_desktop_entry(file_path)
+                            if not entry:
+                                continue
+                            exec_line = entry.get("Exec", entry.get("exec", ""))
+                            if script_name.lower() in exec_line.lower():
+                                return file_path
+                    except OSError:
+                        continue
+
+        for file_path in desktop_files:
+            entry = parse_desktop_entry(file_path)
+            if entry:
+                entry_name = entry.get("Name", entry.get("name", "")).strip()
+                normalized_entry_name = "".join(ch for ch in entry_name.lower() if ch.isalnum())
+                if normalized_entry_name and (
+                    normalized_entry_name == normalized_game_name
+                    or normalized_entry_name in normalized_game_name
+                    or normalized_game_name in normalized_entry_name
+                ):
+                    return file_path
+
+            stem = os.path.splitext(os.path.basename(file_path))[0]
+            normalized_stem = "".join(ch for ch in stem.lower() if ch.isalnum())
+            if normalized_stem and (
+                normalized_stem == normalized_game_name
+                or normalized_stem in normalized_game_name
+                or normalized_game_name in normalized_stem
+            ):
+                return file_path
+
         return desktop_path
 
     def _get_egs_desktop_path(self, game_name):
