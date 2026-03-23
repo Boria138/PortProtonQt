@@ -3472,12 +3472,23 @@ class MainWindow(QMainWindow):
         digest = hashlib.sha1(normalized_iso.encode("utf-8")).hexdigest()[:16]
         return os.path.join(runtime_dir, "PortProtonQt", "iso_rw", digest)
 
+    def _get_7zip_binary(self) -> str | None:
+        """Return preferred 7-Zip binary path."""
+        seven_zip = shutil.which("7zz")
+        if seven_zip:
+            return seven_zip
+        return shutil.which("7z")
+
     def _sync_iso_to_rw(self, iso_path: str) -> str | None:
         """Extract ISO content to writable runtime directory if source changed."""
         normalized_iso = os.path.abspath(os.path.expanduser(iso_path))
         rw_root = self._iso_rw_paths.get(normalized_iso, self._get_iso_rw_root(normalized_iso))
         os.makedirs(rw_root, exist_ok=True)
         stamp_path = os.path.join(rw_root, ".iso_source_stamp")
+        seven_zip_binary = self._get_7zip_binary()
+        if not seven_zip_binary:
+            logger.error("7zz or 7z is required to extract ISO %s", iso_path)
+            return None
 
         try:
             source_stamp = f"{os.path.getsize(normalized_iso)}:{int(os.path.getmtime(normalized_iso))}"
@@ -3504,7 +3515,7 @@ class MainWindow(QMainWindow):
                     else:
                         os.remove(entry.path)
                 subprocess.run(
-                    ["7z", "x", normalized_iso, f"-o{rw_root}", "-y"],
+                    [seven_zip_binary, "x", normalized_iso, f"-o{rw_root}", "-y"],
                     capture_output=True,
                     text=True,
                     check=True
@@ -3582,10 +3593,6 @@ class MainWindow(QMainWindow):
 
     def _resolve_iso_executable(self, iso_path: str) -> str | None:
         """Resolve executable for ISO by reading [autorun] open= in autorun.inf."""
-        if not shutil.which("7z"):
-            logger.error("7z is required to extract ISO %s", iso_path)
-            return None
-
         rw_root = self._sync_iso_to_rw(iso_path)
         if not rw_root:
             return None
