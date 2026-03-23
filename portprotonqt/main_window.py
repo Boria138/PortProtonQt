@@ -82,9 +82,7 @@ class MainWindow(QMainWindow):
         self.game_processes = []
         self.target_exe = None
         self.current_running_button = None
-        self._mounted_iso_paths = {}
         self._iso_rw_paths = {}
-        self._session_iso_loop_devices = {}
         self.portproton_location = get_portproton_location()
         self.start_sh = get_portproton_start_command()
         self.launch_exe = launch_exe  # Store launch_exe path
@@ -3459,90 +3457,6 @@ class MainWindow(QMainWindow):
                 return None
         return None
 
-    def _mount_iso_in_run_media(self, iso_path: str) -> str | None:
-        """Mount ISO using udisksctl and return mount path under /run/media."""
-        normalized_iso = os.path.abspath(os.path.expanduser(iso_path))
-        cached_mount = self._mounted_iso_paths.get(normalized_iso)
-        if cached_mount and os.path.isdir(cached_mount):
-            return cached_mount
-        existing_mount = self._find_existing_iso_mount(normalized_iso)
-        if existing_mount:
-            self._mounted_iso_paths[normalized_iso] = existing_mount
-            return existing_mount
-
-        try:
-            loop_result = subprocess.run(
-                ["udisksctl", "loop-setup", "-f", normalized_iso],
-                capture_output=True,
-                text=True,
-                check=True
-            )
-        except (subprocess.CalledProcessError, OSError) as e:
-            logger.error("Failed to setup loop for ISO %s: %s", normalized_iso, e)
-            return None
-
-        loop_output = f"{loop_result.stdout}\n{loop_result.stderr}"
-        loop_match = re.search(r"(/dev/loop\d+)", loop_output)
-        if not loop_match:
-            logger.error("Failed to parse loop device for ISO %s", normalized_iso)
-            return None
-        loop_device = loop_match.group(1)
-
-        try:
-            mount_result = subprocess.run(
-                ["udisksctl", "mount", "-b", loop_device],
-                capture_output=True,
-                text=True,
-                check=True
-            )
-        except (subprocess.CalledProcessError, OSError) as e:
-            logger.error("Failed to mount loop device %s for ISO %s: %s", loop_device, normalized_iso, e)
-            return None
-
-        mount_output = f"{mount_result.stdout}\n{mount_result.stderr}"
-        mount_match = re.search(r"\sat\s(.+?)(?:\.\s*$|\n|$)", mount_output, re.MULTILINE)
-        if not mount_match:
-            logger.error("Failed to parse mount point for loop device %s", loop_device)
-            return None
-
-        mount_path = mount_match.group(1).strip()
-        if not mount_path.startswith("/run/media/"):
-            logger.warning("ISO mounted outside /run/media: %s", mount_path)
-        if not os.path.isdir(mount_path):
-            logger.error("Mounted path not found: %s", mount_path)
-            return None
-
-        self._mounted_iso_paths[normalized_iso] = mount_path
-        self._session_iso_loop_devices[normalized_iso] = loop_device
-        return mount_path
-
-    def _find_existing_iso_mount(self, iso_path: str) -> str | None:
-        """Find an existing /run/media mount for the same ISO backing file."""
-        try:
-            with open("/proc/mounts", encoding="utf-8") as mounts_file:
-                for line in mounts_file:
-                    parts = line.split()
-                    if len(parts) < 2:
-                        continue
-                    device, mount_point = parts[0], parts[1]
-                    if not device.startswith("/dev/loop") or not mount_point.startswith("/run/media/"):
-                        continue
-                    loop_name = os.path.basename(device)
-                    backing_file_path = os.path.join("/sys/block", loop_name, "loop", "backing_file")
-                    if not os.path.isfile(backing_file_path):
-                        continue
-                    with open(backing_file_path, encoding="utf-8") as backing_file:
-                        backing_value = backing_file.read().strip().replace("\\040", " ")
-                    if not backing_value:
-                        continue
-                    if not backing_value.startswith("/"):
-                        backing_value = f"/{backing_value}"
-                    if os.path.abspath(backing_value) == iso_path and os.path.isdir(mount_point):
-                        return mount_point
-        except OSError as e:
-            logger.warning("Failed to inspect existing ISO mounts for %s: %s", iso_path, e)
-        return None
-
     def _find_autorun_file(self, root_dir: str) -> str | None:
         """Find autorun.inf in extracted ISO content without case sensitivity."""
         for current_root, _dir_names, files in os.walk(root_dir):
@@ -3558,8 +3472,8 @@ class MainWindow(QMainWindow):
         digest = hashlib.sha1(normalized_iso.encode("utf-8")).hexdigest()[:16]
         return os.path.join(runtime_dir, "PortProtonQt", "iso_rw", digest)
 
-    def _sync_iso_to_rw(self, iso_path: str, mount_path: str) -> str | None:
-        """Copy mounted ISO content to writable runtime directory if source changed."""
+    def _sync_iso_to_rw(self, iso_path: str) -> str | None:
+        """Extract ISO content to writable runtime directory if source changed."""
         normalized_iso = os.path.abspath(os.path.expanduser(iso_path))
         rw_root = self._iso_rw_paths.get(normalized_iso, self._get_iso_rw_root(normalized_iso))
         os.makedirs(rw_root, exist_ok=True)
@@ -3589,15 +3503,15 @@ class MainWindow(QMainWindow):
                         shutil.rmtree(entry.path)
                     else:
                         os.remove(entry.path)
-                for entry in os.scandir(mount_path):
-                    dst = os.path.join(rw_root, entry.name)
-                    if entry.is_dir(follow_symlinks=False):
-                        shutil.copytree(entry.path, dst, dirs_exist_ok=True)
-                    else:
-                        shutil.copy2(entry.path, dst)
+                subprocess.run(
+                    ["7z", "x", normalized_iso, f"-o{rw_root}", "-y"],
+                    capture_output=True,
+                    text=True,
+                    check=True
+                )
                 with open(stamp_path, "w", encoding="utf-8") as file:
                     file.write(source_stamp)
-            except OSError as e:
+            except (subprocess.CalledProcessError, OSError) as e:
                 logger.error("Failed to sync ISO content to RW path %s: %s", rw_root, e)
                 return None
 
@@ -3647,37 +3561,6 @@ class MainWindow(QMainWindow):
             except OSError:
                 continue
 
-    def _cleanup_mounted_iso_paths(self):
-        """Unmount and detach ISO loop devices created during this session."""
-        if not shutil.which("udisksctl"):
-            self._session_iso_loop_devices.clear()
-            self._mounted_iso_paths.clear()
-            return
-
-        for loop_device in set(self._session_iso_loop_devices.values()):
-            try:
-                subprocess.run(
-                    ["udisksctl", "unmount", "-b", loop_device],
-                    capture_output=True,
-                    text=True,
-                    check=True
-                )
-            except (subprocess.CalledProcessError, OSError) as e:
-                logger.warning("Failed to unmount loop device %s: %s", loop_device, e)
-
-            try:
-                subprocess.run(
-                    ["udisksctl", "loop-delete", "-b", loop_device],
-                    capture_output=True,
-                    text=True,
-                    check=True
-                )
-            except (subprocess.CalledProcessError, OSError) as e:
-                logger.warning("Failed to delete loop device %s: %s", loop_device, e)
-
-        self._session_iso_loop_devices.clear()
-        self._mounted_iso_paths.clear()
-
     def _resolve_iso_relative_path(self, root_dir: str, relative_path: str) -> str | None:
         """Resolve path inside root_dir without case sensitivity."""
         normalized = relative_path.replace("\\", "/").lstrip("/").split("/")
@@ -3699,14 +3582,11 @@ class MainWindow(QMainWindow):
 
     def _resolve_iso_executable(self, iso_path: str) -> str | None:
         """Resolve executable for ISO by reading [autorun] open= in autorun.inf."""
-        if not shutil.which("udisksctl"):
-            logger.error("udisksctl is required to mount ISO %s", iso_path)
+        if not shutil.which("7z"):
+            logger.error("7z is required to extract ISO %s", iso_path)
             return None
 
-        mount_path = self._mount_iso_in_run_media(iso_path)
-        if not mount_path:
-            return None
-        rw_root = self._sync_iso_to_rw(iso_path, mount_path)
+        rw_root = self._sync_iso_to_rw(iso_path)
         if not rw_root:
             return None
 
@@ -4037,7 +3917,6 @@ class MainWindow(QMainWindow):
                 logger.warning(f"Failed to terminate process {getattr(proc, 'pid', '?')}: {e}")
 
         self.game_processes = []
-        self._cleanup_mounted_iso_paths()
         self._cleanup_iso_rw_paths()
 
         # Universal stop and delete timers

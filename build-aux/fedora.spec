@@ -50,7 +50,7 @@ Requires:       unrar
 Requires:       glx-utils
 Requires:       pciutils
 Requires:       vulkan-loader
-Requires:       udisks2
+Requires:       7zip
 
 %ifarch aarch64
 Requires:       muvm
