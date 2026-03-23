@@ -110,7 +110,6 @@ def add_steam_compat_tool() -> bool:
     portproton_script.write_text('''#!/usr/bin/env bash
 
 # Remove Steam Runtime libraries
-unset LD_LIBRARY_PATH
 unset LD_PRELOAD
 
 # Set Steam compatibility mode flag (unless GUI mode is requested)
