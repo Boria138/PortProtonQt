@@ -3517,6 +3517,7 @@ class MainWindow(QMainWindow):
         if not entry_exec_split:
             QMessageBox.warning(self, _("Error"), _("Invalid command format (empty exec line)"))
             return
+        launch_cmd = entry_exec_split
         if entry_exec_split[0] == "env":
             if len(entry_exec_split) < 3:
                 QMessageBox.warning(self, _("Error"), _("Invalid command format (native)"))
@@ -3529,6 +3530,8 @@ class MainWindow(QMainWindow):
             file_to_check = entry_exec_split[3]
         else:
             file_to_check = entry_exec_split[0]
+            if file_to_check.lower().endswith(".exe") and self.start_sh:
+                launch_cmd = self.start_sh + entry_exec_split
 
         if not os.path.exists(file_to_check):
             QMessageBox.warning(self, _("Error"), _("File not found: {0}").format(file_to_check))
@@ -3596,7 +3599,7 @@ class MainWindow(QMainWindow):
 
             # Launch game
             try:
-                process = subprocess.Popen(entry_exec_split, env=env_vars, shell=False, preexec_fn=os.setsid)
+                process = subprocess.Popen(launch_cmd, env=env_vars, shell=False, preexec_fn=os.setsid)
                 self.game_processes.append(process)
                 save_last_launch(exe_name, datetime.now())
                 if update_button:
