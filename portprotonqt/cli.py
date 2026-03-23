@@ -38,11 +38,11 @@ def parse_args():
         action="store_true",
         help="Add PortProtonQt as a Steam compatibility tool if not already installed"
     )
-    # Add positional argument to accept exe files or portproton:// URLs
+    # Add positional argument to accept launch files or portproton:// URLs
     parser.add_argument(
         'file_or_url',
         nargs='?',
-        help="Executable file path or portproton:// URL"
+        help="Launch file path (.exe/.iso) or portproton:// URL"
     )
     return parser.parse_args()
 
@@ -198,6 +198,11 @@ def is_exe_file(path: str) -> bool:
         True if it's an exe file, False otherwise
     """
     return path.lower().endswith('.exe') and os.path.isfile(path)
+
+
+def is_launch_file(path: str) -> bool:
+    """Check if the given path is a supported launch file (.exe or .iso)."""
+    return path.lower().endswith(('.exe', '.iso')) and os.path.isfile(path)
 
 
 def parse_portproton_url(url: str) -> str | None:

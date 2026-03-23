@@ -713,12 +713,15 @@ class DetailPageManager:
         """Start debug logging session."""
         if exe_path is None:
             return
+        resolved_exe_path = self.main_window.resolve_launch_file_path(exe_path)
+        if resolved_exe_path is None:
+            return
 
         start_command = get_portproton_start_command()
         if not start_command:
             return
 
-        if self.debug_log_manager.start(exe_path, start_command):
+        if self.debug_log_manager.start(resolved_exe_path, start_command):
             button.setText(_("Stop Log"))
             icon = self.main_window.theme_manager.get_icon("stop")
             if icon:

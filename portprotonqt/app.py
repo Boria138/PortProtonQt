@@ -20,7 +20,7 @@ from portprotonqt.config_utils import (
     read_start_minimized,
 )
 from portprotonqt.logger import get_logger, setup_logger
-from portprotonqt.cli import parse_args, is_portproton_url, parse_portproton_url, is_exe_file, add_steam_compat_tool, parse_resolution
+from portprotonqt.cli import parse_args, is_portproton_url, parse_portproton_url, is_launch_file, add_steam_compat_tool, parse_resolution
 from portprotonqt.portproton_api import PortProtonAPI, set_user_conf_setting
 from portprotonqt.downloader import Downloader
 from portprotonqt.debug_utils import get_screen_info
@@ -87,9 +87,9 @@ def main():
 
     # Handle Steam compatibility mode - launch game directly without GUI
     if is_steam_compat:
-        # In Steam compatibility mode, exe path is passed as first argument
+        # In Steam compatibility mode, launch file path is passed as first argument
         exe_path = parsed_args.file_or_url if parsed_args.file_or_url else None
-        if exe_path and is_exe_file(exe_path):
+        if exe_path and is_launch_file(exe_path):
             exe_path = os.path.abspath(os.path.expanduser(exe_path))
             logger = get_logger(__name__)
             setup_logger(parsed_args.debug_level)
@@ -105,7 +105,7 @@ def main():
                 sys.exit(1)
             sys.exit(0)
         else:
-            # No exe provided, fall back to GUI mode
+            # No launch file provided, fall back to GUI mode
             is_steam_compat = False
 
     app = QApplication(sys.argv)
@@ -142,7 +142,7 @@ def main():
         logger.warning(f"Failed to start local server: {local_server.errorString()}")
         return
 
-    # Check if we have a portproton:// URL or exe file to handle
+    # Check if we have a portproton:// URL or launch file to handle
     if args.file_or_url:
         if is_portproton_url(args.file_or_url):
             # Parse the portproton:// URL to get the full download URL
@@ -165,8 +165,8 @@ def main():
             else:
                 logger.error(f"Failed to parse portproton:// URL: {args.file_or_url}")
                 return
-        elif is_exe_file(args.file_or_url):
-            # Store exe path for later processing after window is created
+        elif is_launch_file(args.file_or_url):
+            # Store launch file path for later processing after window is created
             exe_path = os.path.abspath(os.path.expanduser(args.file_or_url))
         else:
             logger.warning(f"Unknown file or URL format: {args.file_or_url}")
@@ -186,7 +186,7 @@ def main():
 
     window = MainWindow(app_name=__app_name__, version=version, launch_exe=exe_path, resolution=window_resolution)
 
-    # Handle exe file if provided
+    # Handle launch file if provided
     if exe_path:
         # Defer the call until after the window is shown
         def handle_launch_exe():

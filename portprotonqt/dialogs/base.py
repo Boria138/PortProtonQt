@@ -368,11 +368,11 @@ class AddGameDialog(QDialog):
         super().accept()
 
     def browseExe(self):
-        """Open file manager to select exe file."""
+        """Open file manager to select executable or ISO file."""
         try:
             from portprotonqt.dialogs.file_explorer import FileExplorer
             initial_path = os.path.dirname(self.last_exe_path) if self.last_exe_path and os.path.isfile(self.last_exe_path) else None
-            file_explorer = FileExplorer(self, file_filter='.exe', initial_path=initial_path)
+            file_explorer = FileExplorer(self, file_filter=('.exe', '.iso'), initial_path=initial_path)
             file_explorer.file_signal.file_selected.connect(self.onExeSelected)
 
             parent_widget = self.parentWidget()
@@ -452,6 +452,14 @@ class AddGameDialog(QDialog):
         """Update the cover preview image."""
         cover_path = self.coverEdit.text().strip()
         exe_path = self.exeEdit.text().strip()
+        launch_path = exe_path
+
+        if exe_path.lower().endswith(".iso"):
+            parent_widget = cast("MainWindow | None", self.parentWidget())
+            if parent_widget and hasattr(parent_widget, "resolve_launch_file_path"):
+                resolved_path = parent_widget.resolve_launch_file_path(exe_path)
+                if resolved_path and os.path.isfile(resolved_path):
+                    launch_path = resolved_path
 
         image_extensions = ('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.webp')
         has_image_extension = any(cover_path.lower().endswith(ext) for ext in image_extensions)
@@ -475,10 +483,10 @@ class AddGameDialog(QDialog):
                 self.coverPreview.setPixmap(pixmap.scaled(250, 250, Qt.AspectRatioMode.KeepAspectRatio))
             else:
                 self.coverPreview.setText(_("Invalid image"))
-        elif os.path.isfile(exe_path):
+        elif os.path.isfile(launch_path) and launch_path.lower().endswith(".exe"):
             tmp = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
             tmp.close()
-            if generate_thumbnail(exe_path, tmp.name, size=128):
+            if generate_thumbnail(launch_path, tmp.name, size=128):
                 pixmap = QPixmap(tmp.name)
                 self.coverPreview.setPixmap(pixmap)
             os.unlink(tmp.name)
@@ -489,12 +497,22 @@ class AddGameDialog(QDialog):
         """Returns the .desktop content and save path."""
         exe_path = self.exeEdit.text().strip()
         name = self.nameEdit.text().strip()
+        launch_path = exe_path
 
         if not exe_path or not os.path.isfile(exe_path):
             return None, None
 
         if not name:
             return None, None
+
+        if exe_path.lower().endswith(".iso"):
+            parent_widget = cast("MainWindow | None", self.parentWidget())
+            if not parent_widget or not hasattr(parent_widget, "resolve_launch_file_path"):
+                return None, None
+            resolved_path = parent_widget.resolve_launch_file_path(exe_path)
+            if not resolved_path or not os.path.isfile(resolved_path):
+                return None, None
+            launch_path = resolved_path
 
         result = create_desktop_file(exe_path, name)
         if not result:
@@ -503,8 +521,8 @@ class AddGameDialog(QDialog):
         base_path = os.path.join(os.path.dirname(desktop_path), "data")
         icon_path = os.path.join(base_path, "img", f"{name}.png")
 
-        if not self.last_cover_path and not generate_thumbnail(exe_path, icon_path, size=128):
-            logger.error(f"Failed to generate thumbnail from exe: {exe_path}")
+        if not self.last_cover_path and not generate_thumbnail(launch_path, icon_path, size=128):
+            logger.error(f"Failed to generate thumbnail from exe: {launch_path}")
             desktop_entry = desktop_entry.replace(f"Icon={icon_path}\n", "Icon=\n")
 
         return desktop_entry, desktop_path

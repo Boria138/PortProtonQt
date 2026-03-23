@@ -2,6 +2,7 @@
 
 import os
 import tempfile
+from collections.abc import Callable
 from typing import cast, TYPE_CHECKING
 from PySide6.QtGui import QPixmap, QIcon
 from PySide6.QtWidgets import (
@@ -34,11 +35,18 @@ class FileExplorer(QDialog):
         class Signals(QObject):
             thumbnail_ready = Signal(str, QIcon)
 
-        def __init__(self, file_path, mime_type, size=64):
+        def __init__(
+            self,
+            file_path: str,
+            mime_type: str,
+            size=64,
+            resolve_launch_file_path: Callable[[str | None], str | None] | None = None
+        ):
             super().__init__()
             self.file_path = file_path
             self.mime_type = mime_type
             self.size = size
+            self.resolve_launch_file_path = resolve_launch_file_path
             self.signals = self.Signals()
 
         @Slot()
@@ -52,15 +60,26 @@ class FileExplorer(QDialog):
                         self.signals.thumbnail_ready.emit(self.file_path, QIcon(scaled_pixmap))
                     else:
                         logger.warning("Failed to load image: %s", self.file_path)
-                elif self.file_path.lower().endswith(".exe"):
+                elif self.file_path.lower().endswith((".exe", ".iso")):
+                    thumbnail_source = self.file_path
+                    if self.file_path.lower().endswith(".iso") and callable(self.resolve_launch_file_path):
+                        resolved_path = self.resolve_launch_file_path(self.file_path)
+                        if not resolved_path or not os.path.isfile(resolved_path):
+                            logger.warning("Failed to resolve executable in ISO for preview: %s", self.file_path)
+                            return
+                        thumbnail_source = resolved_path
+
+                    if not thumbnail_source.lower().endswith(".exe"):
+                        return
+
                     with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
-                        if generate_thumbnail(self.file_path, tmp.name, size=self.size):
+                        if generate_thumbnail(thumbnail_source, tmp.name, size=self.size):
                             pixmap = QPixmap(tmp.name)
                             if not pixmap.isNull():
                                 self.signals.thumbnail_ready.emit(self.file_path, QIcon(pixmap))
                             os.unlink(tmp.name)
                         else:
-                            logger.warning("Failed to generate thumbnail for .exe: %s", self.file_path)
+                            logger.warning("Failed to generate thumbnail for file: %s", self.file_path)
             except Exception as e:
                 logger.error("Error loading thumbnail for %s: %s", self.file_path, str(e))
 
@@ -127,9 +146,13 @@ class FileExplorer(QDialog):
             if file_path in self.thumbnail_cache or file_path in self.pending_thumbnails:
                 continue
             mime_type = mime_db.mimeTypeForFile(file_path).name()
-            if mime_type.startswith("image/") or file_path.lower().endswith(".exe"):
+            if mime_type.startswith("image/") or file_path.lower().endswith((".exe", ".iso")):
                 self.pending_thumbnails.add(file_path)
-                loader = self.ThumbnailLoader(file_path, mime_type, size=64)
+                resolver = None
+                main_window = cast("MainWindow | None", self.main_window)
+                if main_window and hasattr(main_window, "resolve_launch_file_path"):
+                    resolver = main_window.resolve_launch_file_path
+                loader = self.ThumbnailLoader(file_path, mime_type, size=64, resolve_launch_file_path=resolver)
                 loader.signals.thumbnail_ready.connect(self.update_thumbnail)
                 thread_pool.start(loader)
 
