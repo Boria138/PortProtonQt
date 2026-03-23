@@ -3,6 +3,7 @@
 import configparser
 import os
 import re
+from pathlib import Path
 from typing import Any, cast
 
 from PySide6.QtCore import Qt
@@ -454,6 +455,7 @@ class MangoHudSettingsMixin:
             (_("Extended"), lambda: self.apply_mangohud_button_preset('extended')),
             (_("Custom"), lambda: self.apply_mangohud_button_preset('custom')),
             (_("Save custom"), self.save_custom_mangohud_preset),
+            (_("Write system config"), self.write_system_mangohud_config),
             (_("Clear"), lambda: self.apply_mangohud_button_preset('clear')),
         ]
 
@@ -775,6 +777,45 @@ class MangoHudSettingsMixin:
         except Exception as e:
             logger.warning("Failed to save custom MangoHud preset: %s", e)
             QMessageBox.warning(cast(QWidget, self), _("Error"), _("Failed to save custom preset."))
+
+    def write_system_mangohud_config(self) -> None:
+        """Write current MangoHud env config as system MangoHud.conf."""
+        config_text = self._build_mangohud_config()
+        parsed_config, raw_tokens = self._parse_mangohud_config(config_text)
+        lines = []
+
+        for key, value in parsed_config.items():
+            if value is True:
+                lines.append(key)
+            else:
+                line_value = str(value)
+                if key == 'fps_limit':
+                    line_value = line_value.replace('+', ',')
+                lines.append(f"{key}={line_value}")
+
+        lines.extend(raw_tokens)
+
+        config_dir = Path(os.getenv("XDG_CONFIG_HOME", Path.home() / ".config")) / "MangoHud"
+        config_path = config_dir / "MangoHud.conf"
+
+        try:
+            config_dir.mkdir(parents=True, exist_ok=True)
+            with open(config_path, 'w', encoding='utf-8') as file:
+                file.write("\n".join(lines))
+                file.write("\n")
+            logger.info("MangoHud system config saved: %s", config_path)
+            QMessageBox.information(
+                cast(QWidget, self),
+                _("Success"),
+                _("System MangoHud config has been written."),
+            )
+        except OSError as e:
+            logger.warning("Failed to write MangoHud system config %s: %s", config_path, e)
+            QMessageBox.warning(
+                cast(QWidget, self),
+                _("Error"),
+                _("Failed to write system MangoHud config."),
+            )
 
     def _load_custom_mangohud_preset(self):
         """Load custom MangoHud preset from config file."""
