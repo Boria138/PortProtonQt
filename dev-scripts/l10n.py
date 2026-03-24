@@ -3,6 +3,7 @@
 import argparse
 import sys
 import re
+import ast
 from pathlib import Path
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
@@ -40,67 +41,155 @@ def extract_strings() -> None:
     ])
 
 def update_locales() -> None:
-    saved_language_team: dict[Path, list[str]] = {}
+    saved_headers: dict[Path, list[str]] = {}
+    saved_po_texts: dict[Path, str] = {}
     for po_file in LOCALES_PATH.glob("**/portprotonqt.po"):
-        saved_block = _get_header_field_block(po_file, "Language-Team")
-        if saved_block:
-            saved_language_team[po_file] = saved_block
+        saved_po_texts[po_file] = po_file.read_text(encoding="utf-8")
+        header_block = _get_po_header_block(po_file)
+        if header_block:
+            saved_headers[po_file] = header_block
 
     CommandLineInterface().run([
         "pybabel", "update",
         f"--input-file={POT_FILE.resolve()}",
         f"--output-dir={LOCALES_PATH.resolve()}",
         "--domain=portprotonqt",
-        "--no-wrap",
         "--ignore-obsolete",
         "--ignore-pot-creation-date",
         "--update-header-comment",
     ])
 
-    for po_file, block in saved_language_team.items():
-        _set_header_field_block(po_file, "Language-Team", block)
+    for po_file, header_block in saved_headers.items():
+        _set_po_header_block(po_file, header_block)
 
-def _get_header_field_block(po_path: Path, field_name: str) -> list[str] | None:
+    for po_file, original_text in saved_po_texts.items():
+        _restore_unchanged_po_entries(po_file, original_text)
+
+def _get_po_header_block(po_path: Path) -> list[str] | None:
     lines = po_path.read_text(encoding="utf-8").splitlines()
     in_header = False
-    for i, line in enumerate(lines):
-        if line == 'msgstr ""':
-            in_header = True
-            continue
-        if not in_header:
-            continue
-        if not line.startswith('"'):
-            break
-        if line.startswith(f'"{field_name}:'):
-            end = i
-            while end < len(lines) and not lines[end].endswith('\\n"'):
-                end += 1
-            return lines[i:end + 1]
-    return None
-
-def _set_header_field_block(po_path: Path, field_name: str, block: list[str]) -> None:
-    lines = po_path.read_text(encoding="utf-8").splitlines()
-    in_header = False
+    header_start = None
     header_end = None
     for i, line in enumerate(lines):
         if line == 'msgstr ""':
             in_header = True
+            header_start = i + 1
             continue
         if not in_header:
             continue
         if not line.startswith('"'):
             header_end = i
             break
-        if line.startswith(f'"{field_name}:'):
-            end = i
-            while end < len(lines) and not lines[end].endswith('\\n"'):
-                end += 1
-            lines[i:end + 1] = block
-            po_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-            return
-    if header_end is not None:
-        lines[header_end:header_end] = block
-        po_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    if header_start is None or header_end is None or header_end <= header_start:
+        return None
+    return lines[header_start:header_end]
+
+def _set_po_header_block(po_path: Path, block: list[str]) -> None:
+    lines = po_path.read_text(encoding="utf-8").splitlines()
+    in_header = False
+    header_start = None
+    header_end = None
+    for i, line in enumerate(lines):
+        if line == 'msgstr ""':
+            in_header = True
+            header_start = i + 1
+            continue
+        if not in_header:
+            continue
+        if not line.startswith('"'):
+            header_end = i
+            break
+    if header_start is None or header_end is None:
+        return
+    lines[header_start:header_end] = block
+    po_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+def _parse_po_entry_signature(block: list[str]) -> tuple[str, tuple[tuple[str, str], ...]] | None:
+    msgctxt = ""
+    msgid = None
+    msgstr_values: dict[str, str] = {}
+    i = 0
+    while i < len(block):
+        line = block[i]
+        if line.startswith("msgctxt "):
+            msgctxt, i = _read_po_value(block, i, "msgctxt ")
+            continue
+        if line.startswith("msgid "):
+            msgid, i = _read_po_value(block, i, "msgid ")
+            continue
+        if line.startswith("msgstr "):
+            value, i = _read_po_value(block, i, "msgstr ")
+            msgstr_values["msgstr"] = value
+            continue
+        if line.startswith("msgstr["):
+            key = line.split(" ", maxsplit=1)[0]
+            value, i = _read_po_value(block, i, f"{key} ")
+            msgstr_values[key] = value
+            continue
+        i += 1
+    if msgid is None or msgid == "":
+        return None
+    return f"{msgctxt}\x04{msgid}", tuple(sorted(msgstr_values.items()))
+
+def _read_po_value(block: list[str], idx: int, prefix: str) -> tuple[str, int]:
+    value = _unquote_po_string(block[idx][len(prefix):])
+    idx += 1
+    while idx < len(block) and block[idx].startswith('"'):
+        value += _unquote_po_string(block[idx])
+        idx += 1
+    return value, idx
+
+def _unquote_po_string(value: str) -> str:
+    value = value.strip()
+    if not value.startswith('"'):
+        return ""
+    return ast.literal_eval(value)
+
+def _split_po_blocks(text: str) -> list[list[str]]:
+    blocks: list[list[str]] = []
+    current: list[str] = []
+    for line in text.splitlines():
+        if line == "":
+            if current:
+                blocks.append(current)
+                current = []
+            continue
+        current.append(line)
+    if current:
+        blocks.append(current)
+    return blocks
+
+def _restore_unchanged_po_entries(po_path: Path, original_text: str) -> None:
+    original_blocks = _split_po_blocks(original_text)
+    original_entries: dict[str, tuple[tuple[tuple[str, str], ...], list[str]]] = {}
+    for block in original_blocks:
+        signature = _parse_po_entry_signature(block)
+        if signature is None:
+            continue
+        key, values = signature
+        original_entries[key] = (values, block)
+
+    current_blocks = _split_po_blocks(po_path.read_text(encoding="utf-8"))
+    changed = False
+    for i, block in enumerate(current_blocks):
+        signature = _parse_po_entry_signature(block)
+        if signature is None:
+            continue
+        key, values = signature
+        if key not in original_entries:
+            continue
+        original_values, original_block = original_entries[key]
+        if values != original_values:
+            continue
+        if block == original_block:
+            continue
+        current_blocks[i] = original_block
+        changed = True
+
+    if not changed:
+        return
+    rebuilt = "\n\n".join("\n".join(block) for block in current_blocks)
+    po_path.write_text(rebuilt + "\n", encoding="utf-8")
 
 def _update_meson_locales(new_locales: list[str]) -> None:
     """Обновляет список языков в meson.build."""

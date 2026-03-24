@@ -1937,6 +1937,9 @@ msgstr ""
 msgid "Save custom"
 msgstr ""
 
+msgid "Write system config"
+msgstr ""
+
 msgid "MangoHud switches"
 msgstr ""
 
@@ -1967,6 +1970,12 @@ msgid "Custom preset saved."
 msgstr ""
 
 msgid "Failed to save custom preset."
+msgstr ""
+
+msgid "System MangoHud config has been written."
+msgstr ""
+
+msgid "Failed to write system MangoHud config."
 msgstr ""
 
 msgid "Prefix Manager"

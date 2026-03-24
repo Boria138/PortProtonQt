@@ -2035,6 +2035,9 @@ msgstr "Пользовательский"
 msgid "Save custom"
 msgstr "Сохранение пользовательских настроек"
 
+msgid "Write system config"
+msgstr ""
+
 msgid "MangoHud switches"
 msgstr "Настройки MangoHud"
 
@@ -2069,6 +2072,13 @@ msgstr "Пользовательские настройки сохранены."
 
 msgid "Failed to save custom preset."
 msgstr "Ошибка сохранения пользовательских настроек."
+
+msgid "System MangoHud config has been written."
+msgstr ""
+
+#, fuzzy
+msgid "Failed to write system MangoHud config."
+msgstr "Ошибка при чтении стандартной конфигурации MangoHud."
 
 msgid "Prefix Manager"
 msgstr "Менеджер префиксов"
