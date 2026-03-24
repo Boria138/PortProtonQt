@@ -363,7 +363,9 @@ class DetailPageManager:
 
         settings_icon = self.main_window.theme_manager.get_icon("settings")
         settings_button = self._make_action_button(_("Settings"), settings_icon)
-        settings_button.clicked.connect(lambda: self.main_window.open_exe_settings(file_to_check))
+        settings_button.clicked.connect(
+            lambda: self.main_window.open_exe_settings(file_to_check, game_source="portproton")
+        )
         buttons_layout.addWidget(settings_button)
 
         log_icon = self.main_window.theme_manager.get_icon("edit")
@@ -387,7 +389,9 @@ class DetailPageManager:
 
         settings_icon = self.main_window.theme_manager.get_icon("settings")
         settings_button = self._make_action_button(_("Settings"), settings_icon)
-        settings_button.clicked.connect(lambda: self.main_window.open_exe_settings(fake_exe_path, appid))
+        settings_button.clicked.connect(
+            lambda: self.main_window.open_exe_settings(fake_exe_path, appid, "steam")
+        )
         buttons_layout.addWidget(settings_button)
 
     def _get_file_from_exec(self, exec_line: str) -> str | None:

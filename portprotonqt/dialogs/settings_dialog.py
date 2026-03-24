@@ -80,11 +80,12 @@ def _normalize_prefix_directories(prefixes_dir):
 class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
     """Dialog for configuring executable-specific settings."""
 
-    def __init__(self, parent=None, theme=None, exe_path=None, appid=None):
+    def __init__(self, parent=None, theme=None, exe_path=None, appid=None, game_source=None):
         super().__init__(parent)
         self.theme = theme if theme else theme_manager.apply_theme(read_theme_from_config())
         self.exe_path = exe_path
         self.appid = appid
+        self.game_source = str(game_source).lower() if game_source else ""
         if not self.exe_path and not self.appid:
             return
         self.portproton_path = get_portproton_location()
@@ -569,7 +570,10 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
                     combo.addItem(current_val_text)
                 combo.setCurrentText(current_val_text)
 
-                if is_blocked:
+                if setting['key'] == 'PW_PREFIX_NAME' and self.game_source == "steam":
+                    combo.setEnabled(False)
+                    name_item.setForeground(QColor(self.theme.color_disabled_text))
+                elif is_blocked:
                     combo.setEnabled(False)
                     name_item.setForeground(QColor(self.theme.color_disabled_text))
 
@@ -762,6 +766,8 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
             orig_val = self.original_display_values.get(key, '')
             if isinstance(widget, QComboBox):
                 new_val = widget.currentText()
+                if key == 'PW_PREFIX_NAME' and self.game_source == "steam":
+                    continue
                 if key == 'PW_PREFIX_NAME':
                     new_val = re.sub(r"[ \t]", "_", new_val.strip()).upper()
 

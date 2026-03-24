@@ -3060,13 +3060,15 @@ class MainWindow(QMainWindow):
             return None
         return normalized
 
-    def open_exe_settings(self, exe_path, appid=None):
+    def open_exe_settings(self, exe_path, appid=None, game_source=None):
         """Open the ExeSettingsDialog for the given executable."""
         resolved_exe_path = self.resolve_launch_file_path(exe_path)
         if not resolved_exe_path or not os.path.exists(resolved_exe_path):
             QMessageBox.warning(self, _("Error"), _("Executable not found: {0}").format(exe_path))
             return
-        dialog = ExeSettingsDialog(self, self.theme, resolved_exe_path, appid=appid)
+        dialog = ExeSettingsDialog(
+            self, self.theme, resolved_exe_path, appid=appid, game_source=game_source
+        )
         dialog.exec()
 
     def openGameDetailPage(self, game_data: dict) -> None:
