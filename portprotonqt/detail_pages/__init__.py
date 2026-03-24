@@ -48,7 +48,7 @@ from portprotonqt.portproton_api import PortProtonAPI
 from portprotonqt.downloader import Downloader
 from portprotonqt.animations import DetailPageAnimations
 from portprotonqt.debug_utils import DebugLogManager
-from portprotonqt.steam_api import get_steam_compat_tool
+from portprotonqt.steam_api import get_steam_compat_tool, get_steam_home, get_steam_libs, safe_vdf_load
 
 logger = get_logger(__name__)
 
@@ -295,6 +295,15 @@ class DetailPageManager:
                 )
             )
             buttons_layout.addWidget(edit_button)
+        elif str(game_source).lower() == "steam" and appid:
+            open_folder_button = self._make_action_button(
+                _("Open Game Folder"),
+                self.main_window.theme_manager.get_icon("search"),
+            )
+            open_folder_button.clicked.connect(
+                lambda: self._open_steam_game_folder(str(appid))
+            )
+            buttons_layout.addWidget(open_folder_button)
         else:
             add_button = self._make_action_button(
                 _("Add Game"),
@@ -392,6 +401,29 @@ class DetailPageManager:
         elif entry_exec_split[0] == "flatpak":
             return entry_exec_split[3] if len(entry_exec_split) >= 4 else None
         return entry_exec_split[0]
+
+    def _open_steam_game_folder(self, appid: str) -> None:
+        """Open Steam game installation folder by appid."""
+        steam_home = get_steam_home()
+        if steam_home is None:
+            return
+
+        for lib in get_steam_libs(steam_home):
+            manifest = lib / "steamapps" / f"appmanifest_{appid}.acf"
+            if not manifest.exists():
+                continue
+            data = safe_vdf_load(manifest)
+            install_dir = data.get("AppState", {}).get("installdir")
+            if not install_dir:
+                return
+            folder_path = lib / "steamapps" / "common" / install_dir
+            if not folder_path.exists():
+                return
+            linux_subdir = folder_path / f"{install_dir}_linux"
+            if linux_subdir.exists():
+                folder_path = linux_subdir
+            QDesktopServices.openUrl(QUrl.fromLocalFile(str(folder_path)))
+            return
 
     def _has_game_shortcut(self, game_name: str) -> bool:
         """Check whether game has a desktop shortcut in PortProton location."""
