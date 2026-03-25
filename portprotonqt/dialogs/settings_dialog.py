@@ -570,7 +570,7 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
                     combo.addItem(current_val_text)
                 combo.setCurrentText(current_val_text)
 
-                if setting['key'] == 'PW_PREFIX_NAME' and self.game_source == "steam":
+                if setting['key'] in ('PW_PREFIX_NAME', 'PW_VULKAN_USE') and self.game_source == "steam":
                     combo.setEnabled(False)
                     name_item.setForeground(QColor(self.theme.color_disabled_text))
                 elif is_blocked:
@@ -766,7 +766,7 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
             orig_val = self.original_display_values.get(key, '')
             if isinstance(widget, QComboBox):
                 new_val = widget.currentText()
-                if key == 'PW_PREFIX_NAME' and self.game_source == "steam":
+                if key in ('PW_PREFIX_NAME', 'PW_VULKAN_USE') and self.game_source == "steam":
                     continue
                 if key == 'PW_PREFIX_NAME':
                     new_val = re.sub(r"[ \t]", "_", new_val.strip()).upper()
