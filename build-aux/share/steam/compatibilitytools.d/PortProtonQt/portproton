@@ -1,9 +1,28 @@
 #!/usr/bin/env bash
 
-# Remove Steam Runtime libraries
-unset LD_LIBRARY_PATH
-
 export STEAM_COMPAT=1
+
+if [[ -n "$LD_LIBRARY_PATH" ]]; then
+    filtered_ld_library_path=""
+    IFS=':' read -r -a ld_paths <<< "$LD_LIBRARY_PATH"
+
+    for path_entry in "${ld_paths[@]}"; do
+        if [[ "$path_entry" == *"/steam-runtime/pinned_libs_32"* ]] || [[ "$path_entry" == *"/steam-runtime/pinned_libs_64"* ]]; then
+            continue
+        fi
+        if [[ -n "$filtered_ld_library_path" ]]; then
+            filtered_ld_library_path="$filtered_ld_library_path:$path_entry"
+        else
+            filtered_ld_library_path="$path_entry"
+        fi
+    done
+
+    if [[ -n "$filtered_ld_library_path" ]]; then
+        export LD_LIBRARY_PATH="$filtered_ld_library_path"
+    else
+        unset LD_LIBRARY_PATH
+    fi
+fi
 
 exe_name="$(basename "$1")"
 exe_dir="$(dirname "$1")"

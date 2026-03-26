@@ -7,12 +7,6 @@ __app_id__ = "ru.linux_gaming.PortProtonQt"
 __app_name__ = "PortProtonQt"
 __app_version__ = "0.1.11"
 
-from PySide6.QtCore import QTimer, Qt, QThread, Signal
-from PySide6.QtWidgets import QApplication
-from PySide6.QtGui import QIcon
-from PySide6.QtNetwork import QLocalServer, QLocalSocket
-
-from portprotonqt.main_window import MainWindow
 from portprotonqt.config_utils import (
     save_fullscreen_config,
     read_fullscreen_config,
@@ -21,9 +15,6 @@ from portprotonqt.config_utils import (
 )
 from portprotonqt.logger import get_logger, setup_logger
 from portprotonqt.cli import parse_args, is_portproton_url, parse_portproton_url, is_launch_file, add_steam_compat_tool, parse_resolution
-from portprotonqt.portproton_api import PortProtonAPI, set_user_conf_setting
-from portprotonqt.downloader import Downloader
-from portprotonqt.debug_utils import get_screen_info
 
 def get_version():
     try:
@@ -107,6 +98,26 @@ def main():
         else:
             # No launch file provided, fall back to GUI mode
             is_steam_compat = False
+
+    if os.environ.get("SteamEnv") == "1" or os.environ.get("STEAM_COMPAT") == "1":
+        python_version = f"{sys.version_info.major}.{sys.version_info.minor}"
+        pyside_qt_lib = os.path.join(
+            sys.prefix, "lib", f"python{python_version}", "site-packages", "PySide6", "Qt", "lib"
+        )
+        if os.path.isdir(pyside_qt_lib):
+            current_ld_library_path = os.environ.get("LD_LIBRARY_PATH")
+            if current_ld_library_path:
+                os.environ["LD_LIBRARY_PATH"] = f"{pyside_qt_lib}:{current_ld_library_path}"
+            else:
+                os.environ["LD_LIBRARY_PATH"] = pyside_qt_lib
+
+    from PySide6.QtCore import QTimer, Qt, QThread, Signal
+    from PySide6.QtWidgets import QApplication
+    from PySide6.QtGui import QIcon
+    from PySide6.QtNetwork import QLocalServer, QLocalSocket
+    from portprotonqt.main_window import MainWindow
+    from portprotonqt.portproton_api import PortProtonAPI, set_user_conf_setting
+    from portprotonqt.downloader import Downloader
 
     app = QApplication(sys.argv)
     app.setWindowIcon(QIcon.fromTheme(__app_id__))
@@ -274,6 +285,7 @@ def main():
                 # Get screen information before running the initial command
                 # Hack: avoid script from dependency on xorg-xrandr
                 from portprotonqt.config_utils import get_portproton_location
+                from portprotonqt.debug_utils.system_info import get_screen_info
                 portproton_path = get_portproton_location()
 
                 if portproton_path:
