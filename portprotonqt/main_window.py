@@ -2761,7 +2761,11 @@ class MainWindow(QMainWindow):
             card.update_badge_visibility(filter_key)
             card.update_badge_view_mode(badge_view_mode)
 
-        if self.currentDetailPage and self.current_exec_line:
+        if (
+            self.currentDetailPage
+            and self.current_exec_line
+            and self.stackedWidget.currentWidget() is self.currentDetailPage
+        ):
             current_game = next((game for game in self.games if game[5] == self.current_exec_line), None)
             if current_game:
                 self.stackedWidget.removeWidget(self.currentDetailPage)
