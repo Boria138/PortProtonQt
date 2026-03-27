@@ -3,6 +3,8 @@ import os
 import re
 from pathlib import Path
 
+from portprotonqt.steam_api import get_steam_home
+
 
 def parse_args():
     """
@@ -57,8 +59,6 @@ def add_steam_compat_tool() -> bool:
     Returns:
         True if successful, False otherwise
     """
-    from portprotonqt.steam_api import get_steam_home
-
     steam_home = get_steam_home()
     if not steam_home:
         print("Steam directory not found")
@@ -109,29 +109,10 @@ def add_steam_compat_tool() -> bool:
     portproton_script = compat_tools_dir / "portproton"
     portproton_script.write_text('''#!/usr/bin/env bash
 
+# Remove Steam Runtime libraries
+unset LD_LIBRARY_PATH
+
 export STEAM_COMPAT=1
-
-if [[ -n "$LD_LIBRARY_PATH" ]]; then
-    filtered_ld_library_path=""
-    IFS=':' read -r -a ld_paths <<< "$LD_LIBRARY_PATH"
-
-    for path_entry in "${ld_paths[@]}"; do
-        if [[ "$path_entry" == *"/steam-runtime/pinned_libs_32"* ]] || [[ "$path_entry" == *"/steam-runtime/pinned_libs_64"* ]]; then
-            continue
-        fi
-        if [[ -n "$filtered_ld_library_path" ]]; then
-            filtered_ld_library_path="$filtered_ld_library_path:$path_entry"
-        else
-            filtered_ld_library_path="$path_entry"
-        fi
-    done
-
-    if [[ -n "$filtered_ld_library_path" ]]; then
-        export LD_LIBRARY_PATH="$filtered_ld_library_path"
-    else
-        unset LD_LIBRARY_PATH
-    fi
-fi
 
 
 exe_name="$(basename "$1")"
