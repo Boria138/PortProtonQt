@@ -2291,7 +2291,10 @@ class InputManager(QObject):
             if isinstance(focused, QComboBox):
                 if button_code in BUTTONS['confirm']:
                     focused.showPopup()
-                return
+                    return
+                if button_code in BUTTONS['back'] and focused.view().isVisible():
+                    focused.hidePopup()
+                    return
 
             # Handle QListView
             if isinstance(focused, QListView):
