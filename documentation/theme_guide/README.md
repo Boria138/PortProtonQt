@@ -274,30 +274,7 @@ The application will automatically select the appropriate translation based on t
 ## 🖼 Screenshots
 
 Folder: `images/screenshots/` — place UI screenshots there.
-
-### Screenshot Translation Support
-
-You can provide translations for screenshot captions by adding entries to the `[Screenshots]` section in your `metainfo.ini` file:
-
-```ini
-[Screenshots]
-auto_installs_en = Auto-installs
-auto_installs_ru = Автоустановки
-library_en = Library
-library_ru = Библиотека
-game_card_en = Game Card
-game_card_ru = Карточка
-context_menu_en = Context Menu
-context_menu_ru = Контекстное меню
-portproton_settings_en = PortProton Settings
-portproton_settings_ru = Настройки PortProton
-wine_settings_en = Wine Settings
-wine_settings_ru = Настройки Wine
-themes_en = Themes
-themes_ru = Темы
-```
-
-Screenshot files should be named in English (without spaces), and the application will display the appropriate translated caption based on the user's system language, falling back to English if translations are not available.
+Screenshot files can have any convenient names.
 
 ---
 

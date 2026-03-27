@@ -245,16 +245,16 @@ def round_corners(pixmap, radius):
 class FullscreenDialog(QDialog):
     """
     Dialog for viewing images without standard controls.
-    Image displayed in fixed-size area, caption positioned slightly above bottom edge.
+    Image displayed in fixed-size area.
     Window has arrow buttons for flipping through images.
-    Dialog closes on click on image or caption.
+    Dialog closes on click on image.
     """
     FIXED_WIDTH = 800
     FIXED_HEIGHT = 400
 
     def __init__(self, images, current_index=0, parent=None, theme=None):
         """
-        :param images: List of tuples (QPixmap, caption)
+        :param images: List of tuples (QPixmap, str)
         :param current_index: Index of current image
         :param theme: Theme object for styling (if None, default_styles used)
         """
@@ -275,7 +275,6 @@ class FullscreenDialog(QDialog):
         self.update_display()
 
         self.imageLabel.installEventFilter(self)
-        self.captionLabel.installEventFilter(self)
 
     def init_ui(self):
         self.mainLayout = QVBoxLayout(self)
@@ -312,27 +311,18 @@ class FullscreenDialog(QDialog):
 
         self.mainLayout.addWidget(self.imageContainer)
 
-        spacer = QSpacerItem(20, 10, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
+        spacer = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
         self.mainLayout.addItem(spacer)
 
-        self.captionLabel = QLabel()
-        self.captionLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.captionLabel.setFixedHeight(40)
-        self.captionLabel.setWordWrap(True)
-        self.captionLabel.setStyleSheet(getattr(self.theme, "CAPTION_LABEL_STYLE", ""))
-        self.captionLabel.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.mainLayout.addWidget(self.captionLabel)
-
     def update_display(self):
-        """Update image and caption according to current index."""
+        """Update image according to current index."""
         if not self.images:
             return
 
         self.imageLabel.clear()
-        self.captionLabel.clear()
         QApplication.processEvents()
 
-        pixmap, caption = self.images[self.current_index]
+        pixmap, _ = self.images[self.current_index]
         # Check if pixmap is valid before attempting to scale it
         if pixmap.isNull():
             # Create a default placeholder pixmap instead of trying to scale a null pixmap
@@ -358,11 +348,8 @@ class FullscreenDialog(QDialog):
             )
             scaled_pixmap.setDevicePixelRatio(device_pixel_ratio)
             self.imageLabel.setPixmap(scaled_pixmap)
-        self.captionLabel.setText(caption)
-        self.setWindowTitle(caption)
 
         self.imageLabel.repaint()
-        self.captionLabel.repaint()
         self.repaint()
 
     def resizeEvent(self, event):
@@ -383,8 +370,8 @@ class FullscreenDialog(QDialog):
             self.update_display()
 
     def eventFilter(self, obj, event):
-        """Close dialog on click on image or caption."""
-        if event.type() == QEvent.Type.MouseButtonPress and obj in [self.imageLabel, self.captionLabel]:
+        """Close dialog on click on image."""
+        if event.type() == QEvent.Type.MouseButtonPress and obj == self.imageLabel:
             self.close()
             return True
         return super().eventFilter(obj, event)
@@ -399,8 +386,7 @@ class FullscreenDialog(QDialog):
     def mousePressEvent(self, event):
         """Close dialog on click on empty area."""
         pos = event.pos()
-        if not (self.imageContainer.geometry().contains(pos) or
-                self.captionLabel.geometry().contains(pos)):
+        if not self.imageContainer.geometry().contains(pos):
             self.close()
         super().mousePressEvent(event)
 
@@ -409,22 +395,20 @@ class ClickablePixmapItem(QGraphicsPixmapItem):
     Carousel element that responds to clicks.
     On click, opens FullscreenDialog with ability to flip through images.
     """
-    def __init__(self, pixmap, caption="Viewing image", images_list=None, index=0, carousel=None):
+    def __init__(self, pixmap, images_list=None, index=0, carousel=None):
         """
         :param pixmap: QPixmap for display in carousel (original, high resolution)
-        :param caption: Caption for image
-        :param images_list: List of all images (tuples (QPixmap, caption))
+        :param images_list: List of all images (tuples (QPixmap, str))
         :param index: Index of current image in images_list
         :param carousel: Reference to parent carousel (ImageCarousel)
         """
         super().__init__()
         self.original_pixmap = pixmap  # Store original high-resolution pixmap
-        self.caption = caption
-        self.images_list = images_list if images_list is not None else [(pixmap, caption)]
+        self.images_list = images_list if images_list is not None else [(pixmap, "")]
         self.index = index
         self.carousel = carousel
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setToolTip(caption)
+        self.setToolTip("")
         self._click_start_position = None
         self.setAcceptedMouseButtons(Qt.MouseButton.LeftButton)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
@@ -475,7 +459,7 @@ class ImageCarousel(QGraphicsView):
         super().__init__(parent)
         self.carousel_scene: QGraphicsScene = QGraphicsScene(self)
         self.setScene(self.carousel_scene)
-        self.images = images  # List of tuples: (QPixmap, caption)
+        self.images = images  # List of tuples: (QPixmap, str)
         self.image_items = []
         self._animation = None
         self.theme_manager = ThemeManager()
@@ -505,10 +489,9 @@ class ImageCarousel(QGraphicsView):
         x = 0
         device_pixel_ratio = get_device_pixel_ratio()
 
-        for i, (pixmap, caption) in enumerate(self.images):
+        for i, (pixmap, _caption) in enumerate(self.images):
             item = ClickablePixmapItem(
                 pixmap,  # Pass original pixmap
-                caption,
                 images_list=self.images,
                 index=i,
                 carousel=self

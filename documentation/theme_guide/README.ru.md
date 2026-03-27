@@ -274,30 +274,7 @@ description_ru = Описание вашей темы.
 ## 🖼 Скриншоты
 
 Папка: `images/screenshots/` — любые изображения оформления темы.
-
-### Поддержка перевода скриншотов
-
-Вы можете предоставить переводы для подписей к скриншотам, добавив записи в секцию `[Screenshots]` в файле `metainfo.ini`:
-
-```ini
-[Screenshots]
-auto_installs_en = Auto-installs
-auto_installs_ru = Автоустановки
-library_en = Library
-library_ru = Библиотека
-game_card_en = Game Card
-game_card_ru = Карточка
-context_menu_en = Context Menu
-context_menu_ru = Контекстное меню
-portproton_settings_en = PortProton Settings
-portproton_settings_ru = Настройки PortProton
-wine_settings_en = Wine Settings
-wine_settings_ru = Настройки Wine
-themes_en = Themes
-themes_ru = Темы
-```
-
-Файлы скриншотов должны быть названы на английском языке (без пробелов), и приложение будет отображать соответствующую переведенную подпись в зависимости от языка системы пользователя, с откатом к английскому языку, если переводы недоступны.
+Файлы скриншотов можно называть в удобном для вас формате.
 
 ---
 

@@ -117,49 +117,6 @@ def read_metadata_translations(metadata_file, language_code):
 
     return translations
 
-def get_screenshot_caption(base_filename, metainfo_file, language_code=None):
-    """
-    Return translated screenshot caption based on user's language.
-
-    Args:
-        base_filename: Base filename without extension
-        metainfo_file: Path to metainfo.ini file
-        language_code: Language code (if None, will be auto-detected)
-
-    Returns:
-        Translated screenshot caption
-    """
-    if language_code is None:
-        system_locale = get_system_locale()
-        language_code = system_locale.split('_')[0] if '_' in system_locale else system_locale
-
-    # Load translations from metainfo.ini
-    screenshot_translations = {}
-    if metainfo_file and os.path.exists(metainfo_file):
-        cp = configparser.ConfigParser()
-        cp.read(metainfo_file, encoding="utf-8")
-        if "Screenshots" in cp:
-            for key in cp.options("Screenshots"):
-                screenshot_translations[key] = cp.get("Screenshots", key)
-
-    # Look for translation in format: base_filename_languagecode
-    caption = base_filename  # Default to base filename
-
-    if screenshot_translations:
-        # Try translation for specific language (e.g., "library_ru")
-        lang_specific_key = f"{base_filename}_{language_code}"
-        # Try English translation (e.g., "library_en")
-        english_key = f"{base_filename}_en"
-
-        if lang_specific_key in screenshot_translations:
-            caption = screenshot_translations[lang_specific_key]
-        elif english_key in screenshot_translations:
-            caption = screenshot_translations[english_key]
-        elif base_filename in screenshot_translations:
-            caption = screenshot_translations[base_filename]  # fallback to untranslated key
-
-    return caption
-
 def get_theme_translations(metainfo_file, language_code=None):
     """
     Return translated theme name and description based on user's language.

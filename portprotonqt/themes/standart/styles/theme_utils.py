@@ -81,4 +81,3 @@ QPushButton[checked="true"]:focus {{
 # FULLSCREEN THEME SCREENSHOT PREVIEW STYLES
 PREV_BUTTON_STYLE="background-color: rgba(0, 0, 0, 0.5); color: white; border: none;"
 NEXT_BUTTON_STYLE="background-color: rgba(0, 0, 0, 0.5); color: white; border: none;"
-CAPTION_LABEL_STYLE=f"color: white; font-size: {font_size_a};"
