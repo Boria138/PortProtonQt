@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-03-22 13:50+0500\n"
-"PO-Revision-Date: 2026-03-25 06:57+0000\n"
+"PO-Revision-Date: 2026-03-28 14:27+0000\n"
 "Last-Translator: Boria138 <boria138@noreply.codeberg.org>\n"
 "Language-Team: Russian <https://translate.codeberg.org/projects/portprotonqt/"
 "portprotonqt/ru/>\n"
@@ -2049,9 +2049,8 @@ msgstr "Сохранение пользовательских настроек"
 msgid "Write system config"
 msgstr "Записать в системный конфиг"
 
-#, fuzzy
 msgid "Preview"
-msgstr "Предыдущий каталог"
+msgstr "Предпросмотр"
 
 msgid "MangoHud switches"
 msgstr "Настройки MangoHud"
@@ -2094,9 +2093,8 @@ msgstr "Конфигурация записана в системный конф
 msgid "Failed to write system MangoHud config."
 msgstr "Ошибка при записи конфигурации MangoHud."
 
-#, fuzzy
 msgid "Failed to run MangoHud preview."
-msgstr "Ошибка при чтении стандартной конфигурации MangoHud."
+msgstr "Ошибка при запуске предпросмотра."
 
 msgid "Prefix Manager"
 msgstr "Менеджер префиксов"
