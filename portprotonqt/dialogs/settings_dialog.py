@@ -827,7 +827,7 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
                 logger.info("Added MANGOHUD_CONFIG from var file: %s", default_config)
 
         if not changes:
-            QMessageBox.information(self, _("Info"), _("No changes to apply."))
+            QMessageBox.information(self, _("Information"), _("No changes to apply."))
             return
 
         process = QProcess(self)

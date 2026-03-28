@@ -59,7 +59,7 @@ class ProtonManager(QDialog):
             self.enable_proton_manager_mode()
 
     def initUI(self):
-        self.setWindowTitle(_('Manage Wine versions'))
+        self.setWindowTitle(_('Manage WINE versions'))
         self.resize(1133, 720)
         self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE + self.theme.MESSAGE_BOX_STYLE)
 

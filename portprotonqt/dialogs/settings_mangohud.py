@@ -752,7 +752,7 @@ class MangoHudSettingsMixin:
         if preset_name == 'custom':
             preset = self._load_custom_mangohud_preset()
             if preset is None:
-                QMessageBox.information(cast(QWidget, self), _("Info"), _("Custom preset is empty. Save one first."))
+                QMessageBox.information(cast(QWidget, self), _("Information"), _("Custom preset is empty. Save one first."))
                 return
             self._apply_mangohud_config_to_widgets(preset['config'], preset['fps_limit'])
             return

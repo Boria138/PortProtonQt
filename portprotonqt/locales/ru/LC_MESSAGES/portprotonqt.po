@@ -1267,9 +1267,6 @@ msgstr "Путь: "
 msgid "Access denied: %s"
 msgstr "Доступ запрещён: %s"
 
-msgid "Manage Wine versions"
-msgstr "Управление версиями Wine"
-
 msgid "Selected WINE/Proton:"
 msgstr "Выбранные WINE/Proton:"
 
@@ -1449,7 +1446,7 @@ msgstr "отключено"
 msgid "Default value"
 msgstr "По умолчанию"
 
-msgid "Info"
+msgid "Information"
 msgstr "Информация"
 
 msgid "No changes to apply."
@@ -2105,9 +2102,6 @@ msgstr "Выбор"
 
 msgid "Libraries"
 msgstr "Библиотеки"
-
-msgid "Information"
-msgstr "Информация"
 
 msgid "Fonts"
 msgstr "Шрифты"

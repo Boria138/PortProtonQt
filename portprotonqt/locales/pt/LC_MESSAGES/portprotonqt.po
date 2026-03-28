@@ -1186,9 +1186,6 @@ msgstr ""
 msgid "Access denied: %s"
 msgstr ""
 
-msgid "Manage Wine versions"
-msgstr ""
-
 msgid "Selected WINE/Proton:"
 msgstr ""
 
@@ -1361,7 +1358,7 @@ msgstr ""
 msgid "Default value"
 msgstr ""
 
-msgid "Info"
+msgid "Information"
 msgstr ""
 
 msgid "No changes to apply."
@@ -2000,9 +1997,6 @@ msgid "Set"
 msgstr ""
 
 msgid "Libraries"
-msgstr ""
-
-msgid "Information"
 msgstr ""
 
 msgid "Fonts"

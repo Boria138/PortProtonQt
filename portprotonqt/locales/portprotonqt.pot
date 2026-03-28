@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-03-28 19:32+0500\n"
+"POT-Creation-Date: 2026-03-28 19:41+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1185,9 +1185,6 @@ msgstr ""
 msgid "Access denied: %s"
 msgstr ""
 
-msgid "Manage Wine versions"
-msgstr ""
-
 msgid "Selected WINE/Proton:"
 msgstr ""
 
@@ -1360,7 +1357,7 @@ msgstr ""
 msgid "Default value"
 msgstr ""
 
-msgid "Info"
+msgid "Information"
 msgstr ""
 
 msgid "No changes to apply."
@@ -1999,9 +1996,6 @@ msgid "Set"
 msgstr ""
 
 msgid "Libraries"
-msgstr ""
-
-msgid "Information"
 msgstr ""
 
 msgid "Fonts"
