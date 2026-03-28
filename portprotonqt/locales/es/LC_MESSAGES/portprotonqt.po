@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-03-22 13:50+0500\n"
-"PO-Revision-Date: 2026-03-22 09:28+0000\n"
+"PO-Revision-Date: 2026-03-28 17:34+0000\n"
 "Last-Translator: Boria138 <boria138@noreply.codeberg.org>\n"
 "Language-Team: Spanish <https://translate.codeberg.org/projects/portprotonqt/"
 "portprotonqt/es/>\n"
@@ -35,16 +35,16 @@ msgid "Remove from Favorites"
 msgstr "Eliminar de Favoritos"
 
 msgid "Add to Favorites"
-msgstr ""
+msgstr "Añadir a Favoritos"
 
 msgid "Delete from PortProton"
-msgstr ""
+msgstr "Eliminar de PortProton"
 
 msgid "Stop Game"
-msgstr ""
+msgstr "Detener juego"
 
 msgid "Launch Game"
-msgstr ""
+msgstr "Iniciar juego"
 
 msgid "Import to Legendary"
 msgstr ""
@@ -2015,4 +2015,3 @@ msgstr ""
 
 msgid "Components installed successfully."
 msgstr ""
-
