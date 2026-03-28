@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-03-22 13:50+0500\n"
-"PO-Revision-Date: 2026-03-28 14:27+0000\n"
+"PO-Revision-Date: 2026-03-28 14:42+0000\n"
 "Last-Translator: Boria138 <boria138@noreply.codeberg.org>\n"
 "Language-Team: Russian <https://translate.codeberg.org/projects/portprotonqt/"
 "portprotonqt/ru/>\n"
@@ -430,9 +430,8 @@ msgstr "Командная строка"
 msgid "Uninstaller"
 msgstr "Удаление программ"
 
-#, fuzzy
 msgid "Set default WINE"
-msgstr "По умолчанию"
+msgstr "Выбрать WINE по умолчанию"
 
 msgid "Create Prefix Backup"
 msgstr "Создать резервную копию префикса"
@@ -455,12 +454,11 @@ msgstr "Запуск инструмента..."
 msgid "Failed to start process."
 msgstr "Не удалось запустить процесс."
 
-#, fuzzy
 msgid "Failed to update user.conf."
-msgstr "Не удалось обновить запись xdg-autostart."
+msgstr "Не удалось обновит user.conf."
 
 msgid "Default WINE updated in user.conf"
-msgstr ""
+msgstr "WINE по умолчанию обновлён в user.conf"
 
 msgid "Confirm Clear"
 msgstr "Подтвердите очистку"
@@ -2085,12 +2083,11 @@ msgid "Failed to save custom preset."
 msgstr "Ошибка сохранения пользовательских настроек."
 
 msgid "System MangoHud config has been written."
-msgstr "Конфигурация записана в системный конфиг"
+msgstr "Конфигурация записана в системный конфиг."
 
 msgid "Failed to write system MangoHud config."
 msgstr "Ошибка при записи конфигурации MangoHud."
 
-#, fuzzy
 msgid "Failed to run preview."
 msgstr "Ошибка при запуске предпросмотра."
 
