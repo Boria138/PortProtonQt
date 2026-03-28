@@ -843,21 +843,6 @@ class MangoHudSettingsMixin:
             return
         process = cast(QProcess, self.sender())
         error_output = bytes(process.readAllStandardError().data()).decode('utf-8', 'ignore')
-        non_empty_lines = [line.strip() for line in error_output.splitlines() if line.strip()]
-        lowered_output = error_output.lower()
-        has_capsule_warning = "capsule-capture-libs: warning:" in lowered_output
-        has_real_error_marker = any(marker in lowered_output for marker in (
-            "error:",
-            "failed",
-            "traceback",
-            "exception",
-        ))
-        if has_capsule_warning and not has_real_error_marker:
-            logger.info("MangoHud preview container warning ignored: %s", error_output.strip())
-            return
-        if non_empty_lines and all("warning:" in line.lower() for line in non_empty_lines):
-            logger.info("MangoHud preview container warning ignored: %s", error_output.strip())
-            return
         if error_output:
             logger.warning("MangoHud preview failed: %s", error_output.strip())
         QMessageBox.warning(cast(QWidget, self), _("Error"), _("Failed to run preview."))
