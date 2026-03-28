@@ -2038,6 +2038,10 @@ msgstr "Сохранение пользовательских настроек"
 msgid "Write system config"
 msgstr "Записать в системный конфиг"
 
+#, fuzzy
+msgid "Preview"
+msgstr "Предыдущий каталог"
+
 msgid "MangoHud switches"
 msgstr "Настройки MangoHud"
 
@@ -2078,6 +2082,10 @@ msgstr "Конфигурация записана в системный конф
 
 msgid "Failed to write system MangoHud config."
 msgstr "Ошибка при записи конфигурации MangoHud."
+
+#, fuzzy
+msgid "Failed to run MangoHud preview."
+msgstr "Ошибка при чтении стандартной конфигурации MangoHud."
 
 msgid "Prefix Manager"
 msgstr "Менеджер префиксов"

@@ -1940,6 +1940,9 @@ msgstr ""
 msgid "Write system config"
 msgstr ""
 
+msgid "Preview"
+msgstr ""
+
 msgid "MangoHud switches"
 msgstr ""
 
@@ -1976,6 +1979,9 @@ msgid "System MangoHud config has been written."
 msgstr ""
 
 msgid "Failed to write system MangoHud config."
+msgstr ""
+
+msgid "Failed to run MangoHud preview."
 msgstr ""
 
 msgid "Prefix Manager"

@@ -6,7 +6,7 @@ import re
 from pathlib import Path
 from typing import Any, cast
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QProcess
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -357,6 +357,9 @@ class MangoHudSettingsMixin:
     show_gamepad_tooltip: Any
     register_gamepad_tooltip: Any
     show_registered_gamepad_tooltip: Any
+    start_sh: list[str] | None
+    _get_process_args: Any
+    sender: Any
 
     def init_mangohud_state(self):
         self.mangohud_widgets = {}
@@ -456,6 +459,7 @@ class MangoHudSettingsMixin:
             (_("Custom"), lambda: self.apply_mangohud_button_preset('custom')),
             (_("Save custom"), self.save_custom_mangohud_preset),
             (_("Write system config"), self.write_system_mangohud_config),
+            (_("Preview"), self.start_mangohud_preview),
             (_("Clear"), lambda: self.apply_mangohud_button_preset('clear')),
         ]
 
@@ -816,6 +820,47 @@ class MangoHudSettingsMixin:
                 _("Error"),
                 _("Failed to write system MangoHud config."),
             )
+
+    def start_mangohud_preview(self) -> None:
+        """Start MangoHud preview using vkcube via PortProton CLI."""
+        if not self.start_sh:
+            logger.error("PortProton start command not found")
+            return
+
+        config_text = self._build_mangohud_config()
+
+        process = QProcess(cast(QWidget, self))
+        process.finished.connect(self._on_mangohud_preview_finished)
+        process_args = ["cli", "--mangohud-preview", config_text]
+        args = self._get_process_args(process_args)
+        process.start(args[0], args[1:])
+        if not process.waitForStarted(5000):
+            QMessageBox.warning(cast(QWidget, self), _("Error"), _("Failed to run MangoHud preview."))
+
+    def _on_mangohud_preview_finished(self, exit_code: int, exit_status: QProcess.ExitStatus) -> None:
+        """Show error if MangoHud preview process fails."""
+        if exit_code == 0 and exit_status == QProcess.ExitStatus.NormalExit:
+            return
+        process = cast(QProcess, self.sender())
+        error_output = bytes(process.readAllStandardError().data()).decode('utf-8', 'ignore')
+        non_empty_lines = [line.strip() for line in error_output.splitlines() if line.strip()]
+        lowered_output = error_output.lower()
+        has_capsule_warning = "capsule-capture-libs: warning:" in lowered_output
+        has_real_error_marker = any(marker in lowered_output for marker in (
+            "error:",
+            "failed",
+            "traceback",
+            "exception",
+        ))
+        if has_capsule_warning and not has_real_error_marker:
+            logger.info("MangoHud preview container warning ignored: %s", error_output.strip())
+            return
+        if non_empty_lines and all("warning:" in line.lower() for line in non_empty_lines):
+            logger.info("MangoHud preview container warning ignored: %s", error_output.strip())
+            return
+        if error_output:
+            logger.warning("MangoHud preview failed: %s", error_output.strip())
+        QMessageBox.warning(cast(QWidget, self), _("Error"), _("Failed to run MangoHud preview."))
 
     def _load_custom_mangohud_preset(self):
         """Load custom MangoHud preset from config file."""
