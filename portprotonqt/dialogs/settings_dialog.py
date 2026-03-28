@@ -387,6 +387,13 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
     def on_show_ppdb_finished(self, exit_code, exit_status):
         """Handle --show-ppdb output."""
         process = cast(QProcess, self.sender())
+        if self.game_source == "steam":
+            self.blocked_keys.update({
+                "PW_USE_GSTREAMER",
+                "PW_USE_RUNTIME",
+                "PW_DGVOODOO2",
+            })
+
         if exit_code != 0 or exit_status != QProcess.ExitStatus.NormalExit:
             for key in self.toggle_settings:
                 self.current_settings[key] = '0'
