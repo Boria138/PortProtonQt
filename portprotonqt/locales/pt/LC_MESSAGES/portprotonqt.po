@@ -421,6 +421,9 @@ msgstr ""
 msgid "Uninstaller"
 msgstr ""
 
+msgid "Set default WINE"
+msgstr ""
+
 msgid "Create Prefix Backup"
 msgstr ""
 
@@ -440,6 +443,12 @@ msgid "Launching tool..."
 msgstr ""
 
 msgid "Failed to start process."
+msgstr ""
+
+msgid "Failed to update user.conf."
+msgstr ""
+
+msgid "Default WINE updated in user.conf"
 msgstr ""
 
 msgid "Confirm Clear"
