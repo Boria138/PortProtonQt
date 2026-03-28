@@ -1,6 +1,7 @@
 import argparse
 import os
 import re
+import shutil
 from pathlib import Path
 
 from portprotonqt.steam_api import get_steam_home
@@ -38,6 +39,11 @@ def parse_args():
         action="store_true",
         help="Add PortProtonQt as a Steam compatibility tool if not already installed"
     )
+    parser.add_argument(
+        "--reinstall-steam-compat-tool",
+        action="store_true",
+        help="Reinstall PortProtonQt Steam compatibility tool in user Steam directory"
+    )
     # Add positional argument to accept launch files or portproton:// URLs
     parser.add_argument(
         'file_or_url',
@@ -47,7 +53,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def add_steam_compat_tool() -> bool:
+def add_steam_compat_tool(force_install: bool = False) -> bool:
     """
     Add PortProtonQt as a Steam compatibility tool.
 
@@ -69,10 +75,12 @@ def add_steam_compat_tool() -> bool:
 
     # Check if already installed in user or system directory
     if compat_tools_dir.exists():
-        print("PortProtonQt is already installed as a Steam compatibility tool")
-        return True
+        if not force_install:
+            print("PortProtonQt is already installed as a Steam compatibility tool")
+            return True
+        shutil.rmtree(compat_tools_dir)
 
-    if system_compat_dir.exists():
+    if system_compat_dir.exists() and not force_install:
         print("PortProtonQt is already installed as a Steam compatibility tool (system-wide)")
         return True
 
@@ -171,6 +179,24 @@ fi
     print("Restart Steam to use the new compatibility tool")
 
     return True
+
+
+def reinstall_steam_compat_tool() -> bool:
+    """Reinstall PortProtonQt as a Steam compatibility tool."""
+    steam_home = get_steam_home()
+    if not steam_home:
+        print("Steam directory not found")
+        return False
+
+    compat_tools_dir = steam_home / "compatibilitytools.d" / "PortProtonQt"
+    if compat_tools_dir.exists():
+        try:
+            shutil.rmtree(compat_tools_dir)
+        except OSError as e:
+            print(f"Failed to remove existing compatibility tool: {e}")
+            return False
+
+    return add_steam_compat_tool(force_install=True)
 
 
 def is_portproton_url(url: str) -> bool:

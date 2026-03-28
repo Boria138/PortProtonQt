@@ -20,7 +20,15 @@ from portprotonqt.config_utils import (
     read_start_minimized,
 )
 from portprotonqt.logger import get_logger, setup_logger
-from portprotonqt.cli import parse_args, is_portproton_url, parse_portproton_url, is_launch_file, add_steam_compat_tool, parse_resolution
+from portprotonqt.cli import (
+    parse_args,
+    is_portproton_url,
+    parse_portproton_url,
+    is_launch_file,
+    add_steam_compat_tool,
+    reinstall_steam_compat_tool,
+    parse_resolution,
+)
 from portprotonqt.portproton_api import PortProtonAPI, set_user_conf_setting
 from portprotonqt.downloader import Downloader
 from portprotonqt.debug_utils import get_screen_info
@@ -56,6 +64,11 @@ def is_apple_silicon():
 def main():
     # Parse args early to check for force-muvm flag
     parsed_args = parse_args()
+
+    # Handle --reinstall-steam-compat-tool flag
+    if parsed_args.reinstall_steam_compat_tool:
+        success = reinstall_steam_compat_tool()
+        sys.exit(0 if success else 1)
 
     # Handle --add-steam-compat-tool flag
     if parsed_args.add_steam_compat_tool:
