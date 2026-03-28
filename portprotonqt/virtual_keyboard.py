@@ -1,7 +1,7 @@
 from typing import cast, Any
 from PySide6.QtWidgets import (QFrame, QVBoxLayout, QPushButton, QGridLayout,
                                QSizePolicy, QWidget, QLineEdit, QScrollArea)
-from PySide6.QtCore import Qt, Signal, QProcess, QSize
+from PySide6.QtCore import Qt, Signal, QProcess, QSize, QEvent
 from PySide6.QtGui import QPixmap, QIcon
 from portprotonqt.keyboard_layouts import keyboard_layouts
 from portprotonqt.theme_manager import ThemeManager
@@ -39,6 +39,7 @@ class VirtualKeyboard(QFrame):
         self.base_button_width = 40
         self.base_min_width = 574
         self.button_width = button_width
+        self.max_button_width = button_width
         self.button_height = 40
         self.spacing = 4
         self.margins = 10
@@ -57,9 +58,30 @@ class VirtualKeyboard(QFrame):
 
         self.current_theme_name = read_theme_from_config()
         self.initUI()
+        if self._parent and isinstance(self._parent, QWidget):
+            self._parent.installEventFilter(self)
         self.hide()
 
         self.setStyleSheet(self.theme.VIRTUAL_KEYBOARD_STYLE)
+
+    def _apply_responsive_metrics(self) -> None:
+        if not self._parent or not isinstance(self._parent, QWidget):
+            return
+
+        available_width = max(0, self._parent.width() - self.margins * 2)
+        width_without_spacing = available_width - self.spacing * (self.num_cols - 1)
+        new_button_width = max(18, width_without_spacing // self.num_cols)
+        self.button_width = min(self.max_button_width, new_button_width)
+
+    def _sync_keyboard_geometry(self) -> None:
+        if not self._parent or not isinstance(self._parent, QWidget):
+            return
+
+        self._apply_responsive_metrics()
+        keyboard_height = 220
+        self.setFixedWidth(self._parent.width())
+        self.setFixedHeight(keyboard_height)
+        self.move(0, self._parent.height() - keyboard_height)
 
     def highlight_cursor_position(self):
         """Highlight current cursor position"""
@@ -163,6 +185,7 @@ class VirtualKeyboard(QFrame):
                 return
 
     def update_keyboard(self):
+        self._apply_responsive_metrics()
         coords = self._save_focused_coords()
 
         # Clear previous buttons
@@ -519,10 +542,8 @@ class VirtualKeyboard(QFrame):
 
         # Position keyboard at bottom of parent widget
         if self._parent and isinstance(self._parent, QWidget):
-            keyboard_height = 220
-            self.setFixedWidth(self._parent.width())
-            self.setFixedHeight(keyboard_height)
-            self.move(0, self._parent.height() - keyboard_height)
+            self._sync_keyboard_geometry()
+            self.update_keyboard()
 
         self.show()
         self.raise_()
@@ -533,6 +554,17 @@ class VirtualKeyboard(QFrame):
             first_button: QPushButton | None = next((cast(QPushButton, btn) for btn in self.buttons.values()), None)
             if first_button:
                 first_button.setFocus()
+
+    def eventFilter(self, obj, event):
+        if (
+            self._parent
+            and obj is self._parent
+            and event.type() == QEvent.Type.Resize
+            and self.isVisible()
+        ):
+            self._sync_keyboard_geometry()
+            self.update_keyboard()
+        return super().eventFilter(obj, event)
 
     def ensure_input_visible(self):
         if (
