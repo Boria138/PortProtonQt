@@ -835,7 +835,7 @@ class MangoHudSettingsMixin:
         args = self._get_process_args(process_args)
         process.start(args[0], args[1:])
         if not process.waitForStarted(5000):
-            QMessageBox.warning(cast(QWidget, self), _("Error"), _("Failed to run MangoHud preview."))
+            QMessageBox.warning(cast(QWidget, self), _("Error"), _("Failed to run preview."))
 
     def _on_mangohud_preview_finished(self, exit_code: int, exit_status: QProcess.ExitStatus) -> None:
         """Show error if MangoHud preview process fails."""
@@ -860,7 +860,7 @@ class MangoHudSettingsMixin:
             return
         if error_output:
             logger.warning("MangoHud preview failed: %s", error_output.strip())
-        QMessageBox.warning(cast(QWidget, self), _("Error"), _("Failed to run MangoHud preview."))
+        QMessageBox.warning(cast(QWidget, self), _("Error"), _("Failed to run preview."))
 
     def _load_custom_mangohud_preset(self):
         """Load custom MangoHud preset from config file."""

@@ -1992,7 +1992,7 @@ msgstr ""
 msgid "Failed to write system MangoHud config."
 msgstr ""
 
-msgid "Failed to run MangoHud preview."
+msgid "Failed to run preview."
 msgstr ""
 
 msgid "Prefix Manager"

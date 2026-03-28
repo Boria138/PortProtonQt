@@ -2093,7 +2093,8 @@ msgstr "Конфигурация записана в системный конф
 msgid "Failed to write system MangoHud config."
 msgstr "Ошибка при записи конфигурации MangoHud."
 
-msgid "Failed to run MangoHud preview."
+#, fuzzy
+msgid "Failed to run preview."
 msgstr "Ошибка при запуске предпросмотра."
 
 msgid "Prefix Manager"
