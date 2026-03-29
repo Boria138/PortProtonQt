@@ -25,6 +25,7 @@ from portprotonqt.cli import (
     is_portproton_url,
     parse_portproton_url,
     is_launch_file,
+    normalize_launch_path,
     add_steam_compat_tool,
     reinstall_steam_compat_tool,
     remove_steam_compat_tool,
@@ -109,7 +110,7 @@ def main():
         # In Steam compatibility mode, launch file path is passed as first argument
         exe_path = parsed_args.file_or_url if parsed_args.file_or_url else None
         if exe_path and is_launch_file(exe_path):
-            exe_path = os.path.abspath(os.path.expanduser(exe_path))
+            exe_path = normalize_launch_path(exe_path)
             logger = get_logger(__name__)
             setup_logger(parsed_args.debug_level)
             logger.info("Running in Steam compatibility mode, launching: %s", exe_path)
@@ -186,7 +187,7 @@ def main():
                 return
         elif is_launch_file(args.file_or_url):
             # Store launch file path for later processing after window is created
-            exe_path = os.path.abspath(os.path.expanduser(args.file_or_url))
+            exe_path = normalize_launch_path(args.file_or_url)
         else:
             logger.warning(f"Unknown file or URL format: {args.file_or_url}")
             exe_path = None

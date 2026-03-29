@@ -2,6 +2,7 @@ import argparse
 import os
 import re
 import shutil
+import urllib.parse
 from pathlib import Path
 
 from portprotonqt.steam_api import get_steam_home
@@ -248,12 +249,27 @@ def is_exe_file(path: str) -> bool:
     Returns:
         True if it's an exe file, False otherwise
     """
-    return path.lower().endswith('.exe') and os.path.isfile(path)
+    normalized_path = normalize_launch_path(path)
+    return normalized_path.lower().endswith('.exe') and os.path.isfile(normalized_path)
+
+
+def normalize_launch_path(path: str) -> str:
+    """Normalize path and convert file:// URI to local filesystem path."""
+    parsed = urllib.parse.urlparse(path)
+    if parsed.scheme.lower() != "file":
+        return os.path.abspath(os.path.expanduser(path))
+
+    decoded_path = urllib.parse.unquote(parsed.path)
+    if parsed.netloc and parsed.netloc != "localhost":
+        decoded_path = f"//{parsed.netloc}{decoded_path}"
+
+    return os.path.abspath(os.path.expanduser(decoded_path))
 
 
 def is_launch_file(path: str) -> bool:
     """Check if the given path is a supported launch file (.exe or .iso)."""
-    return path.lower().endswith(('.exe', '.iso')) and os.path.isfile(path)
+    normalized_path = normalize_launch_path(path)
+    return normalized_path.lower().endswith(('.exe', '.iso')) and os.path.isfile(normalized_path)
 
 
 def parse_portproton_url(url: str) -> str | None:
