@@ -27,6 +27,7 @@ from portprotonqt.cli import (
     is_launch_file,
     add_steam_compat_tool,
     reinstall_steam_compat_tool,
+    remove_steam_compat_tool,
     parse_resolution,
 )
 from portprotonqt.portproton_api import PortProtonAPI, set_user_conf_setting
@@ -73,6 +74,11 @@ def main():
     # Handle --add-steam-compat-tool flag
     if parsed_args.add_steam_compat_tool:
         success = add_steam_compat_tool()
+        sys.exit(0 if success else 1)
+
+    # Handle --remove-steam-compat-tool flag
+    if parsed_args.remove_steam_compat_tool:
+        success = remove_steam_compat_tool()
         sys.exit(0 if success else 1)
 
     # Check if running on Apple Silicon/Asahi Linux or if forced to run under muvm, and re-execute under muvm if needed

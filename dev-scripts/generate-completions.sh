@@ -18,8 +18,8 @@ _portprotonqt_completions() {
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     # All available options
-    opts="--fullscreen --resolution --debug-level --force-muvm --add-steam-compat-tool --reinstall-steam-compat-tool --help -h"
-    long_opts="--fullscreen --resolution --debug-level --force-muvm --add-steam-compat-tool --reinstall-steam-compat-tool --help"
+    opts="--fullscreen --resolution --debug-level --force-muvm --add-steam-compat-tool --reinstall-steam-compat-tool --remove-steam-compat-tool --help -h"
+    long_opts="--fullscreen --resolution --debug-level --force-muvm --add-steam-compat-tool --reinstall-steam-compat-tool --remove-steam-compat-tool --help"
     
     # Values for options with arguments
     local debug_levels="ALL DEBUG INFO WARNING ERROR CRITICAL"
@@ -69,6 +69,7 @@ _portprotonqt() {
         '--force-muvm[Force running under muvm]'
         '--add-steam-compat-tool[Add as Steam compatibility tool]'
         '--reinstall-steam-compat-tool[Reinstall Steam compatibility tool]'
+        '--remove-steam-compat-tool[Remove Steam compatibility tool]'
         '(-h --help)'{-h,--help}'[Show help message]'
     )
 
@@ -83,13 +84,14 @@ cat > "$OUTPUT_DIR/portprotonqt.fish" << 'EOF'
 # Fish completion for portprotonqt
 
 complete -c portprotonqt -f
-complete -c portprotonqt -n "test -z (commandline -ct)" -a "--fullscreen --resolution --debug-level --force-muvm --add-steam-compat-tool --reinstall-steam-compat-tool --help"
+complete -c portprotonqt -n "test -z (commandline -ct)" -a "--fullscreen --resolution --debug-level --force-muvm --add-steam-compat-tool --reinstall-steam-compat-tool --remove-steam-compat-tool --help"
 complete -c portprotonqt -l fullscreen -d "Launch in fullscreen mode"
 complete -c portprotonqt -l resolution -d "Launch with specific resolution" -r -f -a "1920x1080 1280x720 2560x1440 3840x2160"
 complete -c portprotonqt -l debug-level -d "Set logging level" -r -f -a "ALL DEBUG INFO WARNING ERROR CRITICAL"
 complete -c portprotonqt -l force-muvm -d "Force running under muvm"
 complete -c portprotonqt -l add-steam-compat-tool -d "Add as Steam compatibility tool"
 complete -c portprotonqt -l reinstall-steam-compat-tool -d "Reinstall Steam compatibility tool"
+complete -c portprotonqt -l remove-steam-compat-tool -d "Remove Steam compatibility tool"
 complete -c portprotonqt -s h -l help -d "Show help message"
 complete -c portprotonqt -n "test -n (commandline -ct)" -a "(__fish_complete_suffix .exe)" -d "Executable file or URL"
 EOF

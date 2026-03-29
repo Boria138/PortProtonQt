@@ -44,6 +44,11 @@ def parse_args():
         action="store_true",
         help="Reinstall PortProtonQt Steam compatibility tool in user Steam directory"
     )
+    parser.add_argument(
+        "--remove-steam-compat-tool",
+        action="store_true",
+        help="Remove PortProtonQt Steam compatibility tool from user Steam directory"
+    )
     # Add positional argument to accept launch files or portproton:// URLs
     parser.add_argument(
         'file_or_url',
@@ -197,6 +202,29 @@ def reinstall_steam_compat_tool() -> bool:
             return False
 
     return add_steam_compat_tool(force_install=True)
+
+
+def remove_steam_compat_tool() -> bool:
+    """Remove PortProtonQt Steam compatibility tool from user Steam directory."""
+    steam_home = get_steam_home()
+    if not steam_home:
+        print("Steam directory not found")
+        return False
+
+    compat_tools_dir = steam_home / "compatibilitytools.d" / "PortProtonQt"
+    if not compat_tools_dir.exists():
+        print("PortProtonQt Steam compatibility tool is not installed in user directory")
+        return True
+
+    try:
+        shutil.rmtree(compat_tools_dir)
+    except OSError as e:
+        print(f"Failed to remove compatibility tool: {e}")
+        return False
+
+    print("PortProtonQt Steam compatibility tool removed")
+    print("Restart Steam to apply changes")
+    return True
 
 
 def is_portproton_url(url: str) -> bool:
