@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-03-28 19:41+0500\n"
+"POT-Creation-Date: 2026-03-29 19:05+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1570,6 +1570,12 @@ msgstr ""
 msgid "Performance"
 msgstr ""
 
+msgid "Custom"
+msgstr ""
+
+msgid "Save custom"
+msgstr ""
+
 msgid "Clear"
 msgstr ""
 
@@ -1586,6 +1592,15 @@ msgid "Additional Gamescope options not covered by the GUI."
 msgstr ""
 
 msgid "Example: --cursor-scale-height=1080 --force-orientation=left"
+msgstr ""
+
+msgid "Custom preset is empty. Save one first."
+msgstr ""
+
+msgid "Custom preset saved."
+msgstr ""
+
+msgid "Failed to save custom preset."
 msgstr ""
 
 msgid "Overlay position"
@@ -1936,12 +1951,6 @@ msgstr ""
 msgid "Extended"
 msgstr ""
 
-msgid "Custom"
-msgstr ""
-
-msgid "Save custom"
-msgstr ""
-
 msgid "Write system config"
 msgstr ""
 
@@ -1969,15 +1978,6 @@ msgid "All GPUs"
 msgstr ""
 
 msgid "Failed to read default MangoHud config."
-msgstr ""
-
-msgid "Custom preset is empty. Save one first."
-msgstr ""
-
-msgid "Custom preset saved."
-msgstr ""
-
-msgid "Failed to save custom preset."
 msgstr ""
 
 msgid "System MangoHud config has been written."

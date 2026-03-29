@@ -1571,6 +1571,12 @@ msgstr ""
 msgid "Performance"
 msgstr ""
 
+msgid "Custom"
+msgstr ""
+
+msgid "Save custom"
+msgstr ""
+
 msgid "Clear"
 msgstr ""
 
@@ -1587,6 +1593,15 @@ msgid "Additional Gamescope options not covered by the GUI."
 msgstr ""
 
 msgid "Example: --cursor-scale-height=1080 --force-orientation=left"
+msgstr ""
+
+msgid "Custom preset is empty. Save one first."
+msgstr ""
+
+msgid "Custom preset saved."
+msgstr ""
+
+msgid "Failed to save custom preset."
 msgstr ""
 
 msgid "Overlay position"
@@ -1937,12 +1952,6 @@ msgstr ""
 msgid "Extended"
 msgstr ""
 
-msgid "Custom"
-msgstr ""
-
-msgid "Save custom"
-msgstr ""
-
 msgid "Write system config"
 msgstr ""
 
@@ -1970,15 +1979,6 @@ msgid "All GPUs"
 msgstr ""
 
 msgid "Failed to read default MangoHud config."
-msgstr ""
-
-msgid "Custom preset is empty. Save one first."
-msgstr ""
-
-msgid "Custom preset saved."
-msgstr ""
-
-msgid "Failed to save custom preset."
 msgstr ""
 
 msgid "System MangoHud config has been written."

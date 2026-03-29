@@ -1,5 +1,6 @@
 """Gamescope settings support for executable settings dialog."""
 
+import configparser
 import re
 import shutil
 import subprocess
@@ -15,6 +16,7 @@ from PySide6.QtWidgets import (
     QGroupBox,
     QLabel,
     QLineEdit,
+    QMessageBox,
     QPushButton,
     QScrollArea,
     QSizePolicy,
@@ -24,6 +26,7 @@ from PySide6.QtWidgets import (
 )
 
 from portprotonqt.dialogs.settings_mangohud import MANGOHUD_FPS_OPTIONS
+from portprotonqt.config import CONFIG_FILE
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
 
@@ -235,6 +238,10 @@ GAMESCOPE_BUTTON_PRESETS = {
         'toggles': {'adaptive_sync'},
     },
     'clear': {
+        'args': '',
+        'toggles': set(),
+    },
+    'custom': {
         'args': '',
         'toggles': set(),
     },
@@ -542,6 +549,8 @@ class GamescopeSettingsMixin:
             (_("FSR upscaling"), lambda: self.apply_gamescope_button_preset('fsr_upscaling')),
             (_("HDR setup"), lambda: self.apply_gamescope_button_preset('hdr_setup')),
             (_("Performance"), lambda: self.apply_gamescope_button_preset('performance')),
+            (_("Custom"), lambda: self.apply_gamescope_button_preset('custom')),
+            (_("Save custom"), self.save_custom_gamescope_preset),
             (_("Clear"), lambda: self.apply_gamescope_button_preset('clear')),
         ]
 
@@ -711,8 +720,48 @@ class GamescopeSettingsMixin:
 
     def apply_gamescope_button_preset(self, preset_name):
         """Apply a built-in Gamescope preset button."""
+        if preset_name == 'custom':
+            preset = self._load_custom_gamescope_preset()
+            if preset is None:
+                QMessageBox.information(cast(QWidget, self), _("Information"), _("Custom preset is empty. Save one first."))
+                return
+            self._apply_gamescope_args_to_widgets(preset['args'])
+            return
         preset = GAMESCOPE_BUTTON_PRESETS[preset_name]
         self._apply_gamescope_args_to_widgets(preset['args'], preset['toggles'])
+
+    def save_custom_gamescope_preset(self):
+        """Save current Gamescope settings as custom preset."""
+        cp = configparser.ConfigParser()
+        try:
+            if CONFIG_FILE.exists():
+                cp.read(CONFIG_FILE, encoding='utf-8')
+            if 'GamescopePresets' not in cp:
+                cp['GamescopePresets'] = {}
+            cp['GamescopePresets']['custom_args'] = self._build_gamescope_args()
+            with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
+                cp.write(f)
+            QMessageBox.information(cast(QWidget, self), _("Success"), _("Custom preset saved."))
+        except Exception as e:
+            logger.warning("Failed to save custom Gamescope preset: %s", e)
+            QMessageBox.warning(cast(QWidget, self), _("Error"), _("Failed to save custom preset."))
+
+    def _load_custom_gamescope_preset(self):
+        """Load custom Gamescope preset from config file."""
+        cp = configparser.ConfigParser()
+        try:
+            if not CONFIG_FILE.exists():
+                return None
+            cp.read(CONFIG_FILE, encoding='utf-8')
+            if not cp.has_section('GamescopePresets'):
+                return None
+            custom_args = cp.get('GamescopePresets', 'custom_args', fallback='').strip()
+            if not custom_args:
+                return None
+            return {'args': custom_args}
+        except Exception as e:
+            logger.warning("Failed to load custom Gamescope preset: %s", e)
+            return None
 
     def _apply_gamescope_args_to_widgets(self, args_text, forced_toggles=None):
         """Apply Gamescope args text to the tab widgets."""

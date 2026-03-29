@@ -1669,6 +1669,12 @@ msgstr "HDR настройки"
 msgid "Performance"
 msgstr "Производительность"
 
+msgid "Custom"
+msgstr "Пользовательский"
+
+msgid "Save custom"
+msgstr "Сохранение пользовательских настроек"
+
 msgid "Clear"
 msgstr "Очистить"
 
@@ -1686,6 +1692,15 @@ msgstr "Дополнительные параметры Gamescope (через з
 
 msgid "Example: --cursor-scale-height=1080 --force-orientation=left"
 msgstr "Например: --cursor-scale-height=1080 --force-orientation=left"
+
+msgid "Custom preset is empty. Save one first."
+msgstr "Пользовательские настройки пусты. Сначала сохраните их."
+
+msgid "Custom preset saved."
+msgstr "Пользовательские настройки сохранены."
+
+msgid "Failed to save custom preset."
+msgstr "Ошибка сохранения пользовательских настроек."
 
 msgid "Overlay position"
 msgstr "Позиция MangoHud"
@@ -2035,12 +2050,6 @@ msgstr "Только FPS"
 msgid "Extended"
 msgstr "Расширенный"
 
-msgid "Custom"
-msgstr "Пользовательский"
-
-msgid "Save custom"
-msgstr "Сохранение пользовательских настроек"
-
 msgid "Write system config"
 msgstr "Записать в системный конфиг"
 
@@ -2072,15 +2081,6 @@ msgstr "Все ГП"
 
 msgid "Failed to read default MangoHud config."
 msgstr "Ошибка при чтении стандартной конфигурации MangoHud."
-
-msgid "Custom preset is empty. Save one first."
-msgstr "Пользовательские настройки пусты. Сначала сохраните их."
-
-msgid "Custom preset saved."
-msgstr "Пользовательские настройки сохранены."
-
-msgid "Failed to save custom preset."
-msgstr "Ошибка сохранения пользовательских настроек."
 
 msgid "System MangoHud config has been written."
 msgstr "Конфигурация записана в системный конфиг."
