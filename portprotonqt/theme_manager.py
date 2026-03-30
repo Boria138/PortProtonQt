@@ -138,8 +138,21 @@ def load_theme_fonts(theme_name):
                         break
 
             if not fonts_folder or not os.path.exists(fonts_folder):
-                logger.error(f"Fonts folder not found for theme '{theme_name}'")
-                return
+                standard_fonts_folder = os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)),
+                    "themes",
+                    "standart",
+                    "fonts",
+                )
+                if os.path.exists(standard_fonts_folder):
+                    logger.info(
+                        "Fonts folder not found for theme '%s', using standard fonts",
+                        theme_name,
+                    )
+                    fonts_folder = standard_fonts_folder
+                else:
+                    logger.error(f"Fonts folder not found for theme '{theme_name}'")
+                    return
 
             font_files = []
             for filename in os.listdir(fonts_folder):
@@ -182,13 +195,64 @@ class ThemeWrapper:
         self.metainfo = metainfo or {}
         self.screenshots = load_theme_screenshots(self.metainfo.get("name", ""))
         self._default_theme = None  # Lazy-loaded default theme
+        self._generated_styles = None  # Lazy-generated standard styles with custom constants
 
     def __getattr__(self, name):
         if hasattr(self.custom_theme, name):
             return getattr(self.custom_theme, name)
+        generated = self._get_generated_style(name)
+        if generated is not None:
+            return generated
         if self._default_theme is None:
             self._default_theme = load_theme("standart")  # Dynamically load standard theme
         return getattr(self._default_theme, name)
+
+    def _get_generated_style(self, name):
+        if self._generated_styles is None:
+            self._generated_styles = self._build_generated_styles()
+        return self._generated_styles.get(name)
+
+    def _build_generated_styles(self):
+        generated = {}
+        standard_styles_dir = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "themes",
+            "standart",
+            "styles",
+        )
+        constants = {
+            key: value
+            for key, value in vars(self.custom_theme).items()
+            if not key.startswith("_")
+        }
+        for style_file in (
+            "base.py",
+            "game_card.py",
+            "detail_page.py",
+            "settings.py",
+            "winetricks.py",
+            "get_wine.py",
+            "file_explorer.py",
+            "theme_utils.py",
+        ):
+            style_path = os.path.join(standard_styles_dir, style_file)
+            try:
+                with open(style_path, encoding="utf-8") as source_file:
+                    source = source_file.read()
+            except OSError:
+                continue
+
+            source = source.replace("from .constants import *\n", "")
+            module_globals = {"__builtins__": __builtins__, **constants}
+            try:
+                exec(compile(source, style_path, "exec"), module_globals, module_globals)
+            except Exception:
+                continue
+            for key, value in module_globals.items():
+                if key.startswith("_"):
+                    continue
+                generated[key] = value
+        return generated
 
 def load_theme(theme_name):
     """
