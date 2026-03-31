@@ -493,7 +493,7 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
             checkbox_item.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled)
             if is_blocked:
                 name_item.setForeground(QColor(self.theme.color_disabled_text))
-                checkbox_container.setStyleSheet(f"background-color: {self.theme.color_disabled_bg};")
+                checkbox_container.setStyleSheet(f"background-color: {self.theme.color_d};")
             self.settings_table.setItem(row, 1, checkbox_item)
             self.settings_table.setCellWidget(row, 1, checkbox_container)
 
