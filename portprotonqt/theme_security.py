@@ -8,6 +8,7 @@ from portprotonqt.logger import get_logger
 
 
 logger = get_logger(__name__)
+MAX_THEME_PY_FILE_SIZE = 512 * 1024
 
 
 class ThemeSecurityChecker:
@@ -26,6 +27,7 @@ class ThemeSecurityChecker:
         "subprocess", "sys", "ctypes", "cffi", "platform", "resource", "signal",
         "multiprocessing", "concurrent", "threading", "asyncio", "select",
         "selectors", "queue", "sched", "contextvars",
+        "posix", "nt", "pwd", "grp",
 
         # Network operations
         "socket", "urllib", "urllib2", "urllib.request", "urllib.parse",
@@ -88,6 +90,8 @@ class ThemeSecurityChecker:
         "os.startfile", "os.execv", "os.execve", "os.execl", "os.execle", "os.execlp",
         "os.execlpe", "subprocess.run", "subprocess.call",
         "subprocess.check_call", "subprocess.check_output", "subprocess.Popen",
+        "posix.system", "nt.system",
+        "system", "popen",
 
         # Network operations
         "socket.socket", "socket.create_connection", "urllib.request.urlopen",
@@ -132,7 +136,7 @@ class ThemeSecurityChecker:
         self.has_errors = False
         self.errors = []
 
-    def check_theme_safety(self, theme_file: str) -> tuple[bool, list[str]]:
+    def check_theme_safety(self, theme_file: str, allow_absolute_imports: bool = True) -> tuple[bool, list[str]]:
         """
         Enhanced security check for theme files.
         Returns (is_safe, list_of_errors).
@@ -141,6 +145,20 @@ class ThemeSecurityChecker:
         self.errors = []
 
         try:
+            try:
+                file_size = os.path.getsize(theme_file)
+            except OSError as e:
+                self.errors.append(f"Failed to read theme file size for {theme_file}: {e}")
+                self.has_errors = True
+                return not self.has_errors, self.errors
+
+            if file_size > MAX_THEME_PY_FILE_SIZE:
+                self.errors.append(
+                    f"Theme file {theme_file} is too large ({file_size} bytes)"
+                )
+                self.has_errors = True
+                return not self.has_errors, self.errors
+
             with open(theme_file, encoding='utf-8') as f:
                 content = f.read()
 
@@ -151,6 +169,8 @@ class ThemeSecurityChecker:
                 self.errors.append(f"Syntax error in file {theme_file}: {e}")
                 self.has_errors = True
                 return not self.has_errors, self.errors
+
+            self._check_top_level_safety(tree, theme_file, allow_absolute_imports)
 
             # Walk through the AST and check for dangerous patterns
             for node in ast.walk(tree):
@@ -205,6 +225,16 @@ class ThemeSecurityChecker:
                 # Check just the attribute name
                 elif node.func.attr in self.FORBIDDEN_FUNCTIONS:
                     error_msg = f"Forbidden method '{node.func.attr}' called in file {theme_file}"
+                    self.errors.append(error_msg)
+                    self.has_errors = True
+            elif isinstance(node.func, ast.Subscript):
+                subscript_name = self._get_subscript_target_name(node.func)
+                if subscript_name in self.FORBIDDEN_FUNCTIONS:
+                    error_msg = f"Forbidden function '{subscript_name}' found in file {theme_file}"
+                    self.errors.append(error_msg)
+                    self.has_errors = True
+                if self._is_builtins_subscript_access(node.func):
+                    error_msg = f"Forbidden builtins subscript call found in file {theme_file}"
                     self.errors.append(error_msg)
                     self.has_errors = True
 
@@ -315,7 +345,7 @@ class ThemeSecurityChecker:
         # Check for character code arrays (another obfuscation method)
         elif isinstance(node, ast.List) or isinstance(node, ast.Tuple):
             # Check if it's a list of character codes that might be converted to dangerous strings
-            if all(isinstance(elt, (ast.Num, ast.Constant)) and isinstance(self._get_constant_value(elt), int) for elt in node.elts):
+            if all(isinstance(self._get_constant_value(elt), int) for elt in node.elts):
                 # This might be an array of ASCII codes
                 try:
                     char_codes = [self._get_constant_value(elt) for elt in node.elts if self._get_constant_value(elt) is not None]
@@ -338,6 +368,175 @@ class ThemeSecurityChecker:
                     # If conversion fails, continue
                     pass
 
+        elif isinstance(node, ast.While):
+            if isinstance(node.test, ast.Constant) and node.test.value is True:
+                if not self._contains_break(node.body):
+                    error_msg = f"Infinite while loop detected in file {theme_file}"
+                    self.errors.append(error_msg)
+                    self.has_errors = True
+
+    def _check_top_level_safety(self, tree: ast.AST, theme_file: str, allow_absolute_imports: bool):
+        """Block executable top-level statements in theme files."""
+        if not isinstance(tree, ast.Module):
+            return
+
+        disallowed_nodes = (
+            ast.While,
+            ast.For,
+            ast.AsyncFor,
+            ast.With,
+            ast.AsyncWith,
+            ast.Try,
+            ast.Match,
+        )
+        for node in tree.body:
+            if isinstance(node, disallowed_nodes):
+                self.errors.append(
+                    f"Top-level executable control flow is forbidden in file {theme_file}"
+                )
+                self.has_errors = True
+                continue
+
+            if isinstance(node, ast.Expr):
+                is_docstring = (
+                    isinstance(node.value, ast.Constant)
+                    and isinstance(node.value.value, str)
+                )
+                if not is_docstring:
+                    self.errors.append(
+                        f"Top-level executable expression is forbidden in file {theme_file}"
+                    )
+                    self.has_errors = True
+                    continue
+
+            if not allow_absolute_imports:
+                if isinstance(node, ast.ClassDef):
+                    self.errors.append(
+                        f"Top-level classes are forbidden in custom theme file {theme_file}"
+                    )
+                    self.has_errors = True
+                    continue
+
+                if isinstance(node, ast.Import):
+                    self.errors.append(
+                        f"Absolute imports are forbidden in custom theme file {theme_file}"
+                    )
+                    self.has_errors = True
+                    continue
+
+                if isinstance(node, ast.ImportFrom) and node.level == 0:
+                    self.errors.append(
+                        f"Absolute imports are forbidden in custom theme file {theme_file}"
+                    )
+                    self.has_errors = True
+                    continue
+
+                if self._has_top_level_runtime_call(node):
+                    self.errors.append(
+                        f"Top-level function calls are forbidden in custom theme file {theme_file}"
+                    )
+                    self.has_errors = True
+                    continue
+
+    def _contains_break(self, body: list[ast.stmt]) -> bool:
+        """Return True if body contains break statement."""
+        for stmt in body:
+            if isinstance(stmt, ast.Break):
+                return True
+            for child in ast.iter_child_nodes(stmt):
+                if isinstance(child, ast.Break):
+                    return True
+        return False
+
+    def _get_subscript_target_name(self, node: ast.Subscript) -> str:
+        """Return static string key for calls like obj['name']()."""
+        key_value = self._get_constant_value(node.slice)
+        if isinstance(key_value, str):
+            return key_value
+        return ""
+
+    def _is_builtins_subscript_access(self, node: ast.Subscript) -> bool:
+        """Detect __builtins__['...'] style callable access."""
+        target = node.value
+        if isinstance(target, ast.Name):
+            return target.id == "__builtins__"
+        if isinstance(target, ast.Attribute):
+            return target.attr == "__builtins__"
+        return False
+
+    def _has_top_level_runtime_call(self, node: ast.AST) -> bool:
+        """Detect calls that execute during module import."""
+        if isinstance(node, (ast.Import, ast.ImportFrom)):
+            return False
+
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            return self._function_header_has_call(node)
+
+        if isinstance(node, ast.ClassDef):
+            for element in [*node.decorator_list, *node.bases]:
+                if any(isinstance(child, ast.Call) for child in ast.walk(element)):
+                    return True
+            for keyword in node.keywords:
+                if any(isinstance(child, ast.Call) for child in ast.walk(keyword.value)):
+                    return True
+            return False
+
+        stack = [node]
+        while stack:
+            current = stack.pop()
+            if isinstance(current, ast.Call):
+                return True
+            if isinstance(current, (ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)):
+                return True
+            if isinstance(current, ast.BinOp) and isinstance(
+                current.op, (ast.Mult, ast.MatMult, ast.Pow, ast.LShift, ast.RShift)
+            ):
+                return True
+            for child in ast.iter_child_nodes(current):
+                if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Lambda)):
+                    continue
+                stack.append(child)
+        return False
+
+    def _function_header_has_call(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> bool:
+        """Check function header expressions executed at definition time."""
+        if node.decorator_list:
+            return True
+
+        expressions = []
+        if node.returns is not None:
+            expressions.append(node.returns)
+
+        args = node.args
+        expressions.extend(args.defaults)
+        expressions.extend(default for default in args.kw_defaults if default is not None)
+
+        for arg in [*args.posonlyargs, *args.args, *args.kwonlyargs]:
+            if arg.annotation is not None:
+                expressions.append(arg.annotation)
+        if args.vararg and args.vararg.annotation is not None:
+            expressions.append(args.vararg.annotation)
+        if args.kwarg and args.kwarg.annotation is not None:
+            expressions.append(args.kwarg.annotation)
+
+        for expr in expressions:
+            if self._has_runtime_expression(expr):
+                return True
+        return False
+
+    def _has_runtime_expression(self, expr: ast.AST) -> bool:
+        """Detect expressions that may execute or consume large resources at import time."""
+        for child in ast.walk(expr):
+            if isinstance(child, ast.Call):
+                return True
+            if isinstance(child, (ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)):
+                return True
+            if isinstance(child, ast.BinOp) and isinstance(
+                child.op, (ast.Mult, ast.MatMult, ast.Pow, ast.LShift, ast.RShift)
+            ):
+                return True
+        return False
+
     def _get_attribute_path(self, attr_node):
         """Extract the full attribute path from an AST node (e.g., 'os.path.join')."""
         if isinstance(attr_node, ast.Name):
@@ -349,29 +548,97 @@ class ThemeSecurityChecker:
 
     def _get_constant_value(self, node):
         """Extract the constant value from an AST node if it's a constant."""
-        if isinstance(node, ast.Str):  # Python < 3.8
-            return node.s
-        elif isinstance(node, ast.Constant):  # Python 3.8+
+        if isinstance(node, ast.Constant):  # Python 3.8+
             return node.value
-        elif isinstance(node, ast.Num):  # Python < 3.8 for numbers
-            return node.n
-        elif isinstance(node, ast.Bytes):  # For bytes
-            return node.s
         return None
 
 
-def check_theme_safety(theme_file: str) -> bool:
+def check_theme_safety(theme_file: str, allow_absolute_imports: bool = True) -> bool:
     """
     Convenience function to check theme safety.
     Returns True if the theme is safe, False otherwise.
     """
     checker = ThemeSecurityChecker()
-    is_safe, errors = checker.check_theme_safety(theme_file)
+    is_safe, errors = checker.check_theme_safety(theme_file, allow_absolute_imports)
 
     for error in errors:
         logger.error(error)
 
     return is_safe
+
+
+def check_theme_directory_safety(theme_dir: str, allow_absolute_imports: bool = True) -> bool:
+    """Check all Python files in theme directory for safety."""
+    if not os.path.isdir(theme_dir):
+        logger.error("Theme directory does not exist: %s", theme_dir)
+        return False
+    if os.path.islink(theme_dir):
+        logger.error("Theme directory symlink is not allowed: %s", theme_dir)
+        return False
+
+    theme_root = os.path.realpath(theme_dir)
+    prefix = theme_root + os.sep
+
+    for root, dirs, files in os.walk(theme_dir):
+        for dir_name in dirs:
+            dir_path = os.path.join(root, dir_name)
+            if os.path.islink(dir_path):
+                logger.error("Symlinked directory is not allowed in theme: %s", dir_path)
+                return False
+        dirs[:] = [d for d in dirs if d != "__pycache__"]
+        for filename in files:
+            if not filename.endswith(".py"):
+                continue
+
+            file_path = os.path.join(root, filename)
+            real_path = os.path.realpath(file_path)
+            if real_path != theme_root and not real_path.startswith(prefix):
+                logger.error("Theme file outside theme directory blocked: %s", file_path)
+                return False
+
+            if os.path.islink(file_path):
+                logger.error("Symlinked Python file is not allowed in theme: %s", file_path)
+                return False
+
+            if not check_theme_safety(file_path, allow_absolute_imports):
+                return False
+
+    return True
+
+
+def is_safe_font_file(file_path: str) -> bool:
+    """Check if a font file is safe to load."""
+    safe_extensions = {".ttf", ".otf"}
+    _, ext = os.path.splitext(file_path.lower())
+    if ext not in safe_extensions:
+        logger.warning("Unsafe font file extension for %s: %s", file_path, ext)
+        return False
+
+    try:
+        file_size = os.path.getsize(file_path)
+        if file_size > 10 * 1024 * 1024:
+            logger.warning("Font file too large (%s bytes): %s", file_size, file_path)
+            return False
+    except OSError:
+        logger.error("Could not get font size for %s", file_path)
+        return False
+
+    try:
+        with open(file_path, "rb") as f:
+            header = f.read(12)
+        if (
+            not header.startswith(b"\x00\x01\x00\x00")
+            and not header.startswith(b"OTTO")
+            and not header.startswith(b"true")
+            and not header.startswith(b"ttcf")
+        ):
+            logger.warning("Font file %s has invalid signature", file_path)
+            return False
+    except OSError as e:
+        logger.error("Error checking font file signature for %s: %s", file_path, e)
+        return False
+
+    return True
 
 
 def is_safe_image_file(file_path: str) -> bool:
@@ -391,9 +658,11 @@ def is_safe_image_file(file_path: str) -> bool:
     # Check file size (prevent loading extremely large files)
     try:
         file_size = os.path.getsize(file_path)
-        # Limit to 50MB to prevent memory exhaustion attacks
-        if file_size > 50 * 1024 * 1024:  # 50MB
+        if file_size > 20 * 1024 * 1024:
             logger.warning(f"Image file too large ({file_size} bytes): {file_path}")
+            return False
+        if ext == ".svg" and file_size > 2 * 1024 * 1024:
+            logger.warning(f"SVG file too large ({file_size} bytes): {file_path}")
             return False
     except OSError:
         logger.error(f"Could not get file size for {file_path}")
@@ -429,10 +698,25 @@ def is_safe_image_file(file_path: str) -> bool:
         # SVG is text-based, so we just check if it contains XML-like structure
         elif ext == '.svg':
             try:
-                header_str = header.decode('utf-8', errors='ignore')
+                with open(file_path, 'rb') as f:
+                    svg_bytes = f.read()
+                header_str = svg_bytes.decode('utf-8', errors='ignore')
+                lower_svg = header_str.lower()
                 # Basic check for SVG XML structure
-                if not ('<svg' in header_str or '<?xml' in header_str):
+                if not ('<svg' in lower_svg or '<?xml' in lower_svg):
                     logger.warning(f"File {file_path} does not appear to be a valid SVG")
+                    return False
+                if (
+                    "<script" in lower_svg
+                    or "foreignobject" in lower_svg
+                    or "<!entity" in lower_svg
+                    or "xlink:href=\"http" in lower_svg
+                    or "href=\"http" in lower_svg
+                    or "xlink:href='http" in lower_svg
+                    or "href='http" in lower_svg
+                    or "file://" in lower_svg
+                ):
+                    logger.warning(f"SVG file contains unsafe content: {file_path}")
                     return False
             except UnicodeDecodeError:
                 logger.warning(f"SVG file {file_path} contains invalid UTF-8")

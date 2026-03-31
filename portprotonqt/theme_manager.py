@@ -1,7 +1,11 @@
 import importlib.util
 import os
 from portprotonqt.logger import get_logger
-from portprotonqt.theme_security import check_theme_safety, is_safe_image_file
+from portprotonqt.theme_security import (
+    check_theme_directory_safety,
+    is_safe_font_file,
+    is_safe_image_file,
+)
 from PySide6.QtGui import QIcon, QFontDatabase, QPixmap
 from portprotonqt.config_utils import save_theme_to_config, load_theme_metainfo
 
@@ -19,6 +23,20 @@ THEMES_DIRS = [
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "themes")
 ]
 _loaded_theme = None
+
+
+def _is_valid_theme_name(theme_name: str) -> bool:
+    """Return True when theme name is safe to use in filesystem paths."""
+    if not isinstance(theme_name, str) or not theme_name or len(theme_name) > 50:
+        return False
+    if os.path.isabs(theme_name):
+        return False
+    if os.sep in theme_name or (os.altsep and os.altsep in theme_name):
+        return False
+    if theme_name in (".", ".."):
+        return False
+    normalized = os.path.normpath(theme_name)
+    return normalized == theme_name and normalized not in (".", "..")
 
 
 def list_themes():
@@ -41,6 +59,9 @@ def load_theme_screenshots(theme_name):
     If folder missing or empty, return empty list.
     """
     screenshots = []
+    if not _is_valid_theme_name(theme_name):
+        logger.warning("Unsafe theme name for screenshots: %s", theme_name)
+        return screenshots
 
     for themes_dir in THEMES_DIRS:
         theme_folder = os.path.join(themes_dir, theme_name)
@@ -59,6 +80,9 @@ def build_icon_cache(theme_name):
     Builds a cache of all image files in the theme for fast lookup.
     """
     global _icon_dirs_cache
+    if not _is_valid_theme_name(theme_name):
+        logger.warning("Unsafe theme name for icon cache: %s", theme_name)
+        return {}
 
     # Check if cache already exists for this theme
     if theme_name in _icon_dirs_cache:
@@ -157,7 +181,11 @@ def load_theme_fonts(theme_name):
             font_files = []
             for filename in os.listdir(fonts_folder):
                 if filename.lower().endswith((".ttf", ".otf")):
-                    font_files.append(filename)
+                    font_path = os.path.join(fonts_folder, filename)
+                    if is_safe_font_file(font_path):
+                        font_files.append(filename)
+                    else:
+                        logger.warning("Skipping unsafe font file: %s", font_path)
 
             # Limit number of fonts loaded to prevent too much blocking
             font_files = font_files[:10]  # Only load first 10 fonts to prevent too much blocking
@@ -264,12 +292,24 @@ def load_theme(theme_name):
     import types
     import os
 
-    for themes_dir in THEMES_DIRS:
+    if not _is_valid_theme_name(theme_name):
+        raise FileNotFoundError(f"Invalid theme name '{theme_name}'")
+
+    if theme_name == "standart":
+        themes_dirs_to_check = [THEMES_DIRS[1]]
+    else:
+        themes_dirs_to_check = THEMES_DIRS
+
+    for themes_dir in themes_dirs_to_check:
         theme_folder = os.path.join(themes_dir, theme_name)
         styles_file = os.path.join(theme_folder, "styles.py")
         if os.path.exists(styles_file):
             # Check theme security before loading
-            if not check_theme_safety(styles_file):
+            allow_absolute_imports = themes_dir == THEMES_DIRS[1]
+            if not check_theme_directory_safety(
+                theme_folder,
+                allow_absolute_imports=allow_absolute_imports,
+            ):
                 logger.error(f"Theme '{theme_name}' is unsafe, falling back to 'standart'")
                 raise FileNotFoundError(f"Theme '{theme_name}' contains forbidden modules or functions")
 
