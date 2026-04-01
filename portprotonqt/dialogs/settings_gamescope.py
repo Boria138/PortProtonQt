@@ -713,8 +713,9 @@ class GamescopeSettingsMixin:
 
         self._sync_gamescope_resolution_combos()
         self.gamescope_extra_edit.setText(parsed_args.get('_extra', ''))
+        canonical_args_value = self._build_gamescope_args()
         self.gamescope_original_values = {
-            'PW_GAMESCOPE_ARGS_NEW': self.current_settings.get('PW_GAMESCOPE_ARGS_NEW', ''),
+            'PW_GAMESCOPE_ARGS_NEW': canonical_args_value,
         }
         self.gamescope_original_values['extra'] = parsed_args.get('_extra', '')
 
