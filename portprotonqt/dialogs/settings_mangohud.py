@@ -4,7 +4,7 @@ import configparser
 import os
 import re
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, TYPE_CHECKING, cast
 
 from PySide6.QtCore import Qt, QProcess
 from PySide6.QtWidgets import (
@@ -23,6 +23,9 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+if TYPE_CHECKING:
+    from portprotonqt.dialogs.settings_dialog import ExeSettingsDialog
 
 from portprotonqt.config import CONFIG_FILE
 from portprotonqt.debug_utils import get_cached_vk_gpu_info
@@ -451,6 +454,24 @@ class MangoHudSettingsMixin:
         layout.setSpacing(10)
         columns = 2
 
+        # Toggle buttons for PW_MANGOHUD and PW_MANGOHUD_USER_CONF
+        self.mangohud_enable_button = QPushButton(_("Enable MangoHud"))
+        self.mangohud_enable_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        self.mangohud_enable_button.setMinimumHeight(44)
+        self.mangohud_enable_button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.mangohud_enable_button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.mangohud_enable_button.clicked.connect(self.toggle_mangohud_enable)
+
+        self.mangohud_user_conf_button = QPushButton(_("Use system config"))
+        self.mangohud_user_conf_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        self.mangohud_user_conf_button.setMinimumHeight(44)
+        self.mangohud_user_conf_button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.mangohud_user_conf_button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.mangohud_user_conf_button.clicked.connect(self.toggle_mangohud_user_conf)
+
+        layout.addWidget(self.mangohud_enable_button, 0, 0)
+        layout.addWidget(self.mangohud_user_conf_button, 0, 1)
+
         buttons = [
             (_("PortProton default"), self.apply_portproton_default_mangohud),
             (_("FPS only"), lambda: self.apply_mangohud_button_preset('fps_only')),
@@ -470,7 +491,7 @@ class MangoHudSettingsMixin:
             button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
             button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
             button.clicked.connect(handler)
-            row = index // columns
+            row = (index // columns) + 1
             column = index % columns
             layout.addWidget(button, row, column)
 
@@ -738,6 +759,36 @@ class MangoHudSettingsMixin:
             'FPS_LIMIT': self.current_settings.get('FPS_LIMIT', ''),
         }
         self.mangohud_original_values['extra'] = ', '.join(visible_raw_tokens)
+        self._update_mangohud_toggle_buttons()
+
+    def _update_mangohud_toggle_buttons(self):
+        """Update toggle button text based on current settings."""
+        mangohud_enabled = self.current_settings.get('PW_MANGOHUD') == '1'
+        mangohud_user_conf_enabled = self.current_settings.get('PW_MANGOHUD_USER_CONF') == '1'
+
+        if mangohud_enabled:
+            self.mangohud_enable_button.setText(_("Disable MangoHud"))
+        else:
+            self.mangohud_enable_button.setText(_("Enable MangoHud"))
+
+        if mangohud_user_conf_enabled:
+            self.mangohud_user_conf_button.setText(_("Don't use system config"))
+        else:
+            self.mangohud_user_conf_button.setText(_("Use system config"))
+
+    def toggle_mangohud_enable(self):
+        """Toggle PW_MANGOHUD setting."""
+        current_val = self.current_settings.get('PW_MANGOHUD', '0')
+        new_val = '0' if current_val == '1' else '1'
+        self.current_settings['PW_MANGOHUD'] = new_val
+        self._update_mangohud_toggle_buttons()
+
+    def toggle_mangohud_user_conf(self):
+        """Toggle PW_MANGOHUD_USER_CONF setting."""
+        current_val = self.current_settings.get('PW_MANGOHUD_USER_CONF', '0')
+        new_val = '0' if current_val == '1' else '1'
+        self.current_settings['PW_MANGOHUD_USER_CONF'] = new_val
+        self._update_mangohud_toggle_buttons()
 
     def apply_portproton_default_mangohud(self):
         """Apply MangoHud defaults from PortProton var file."""
@@ -1049,6 +1100,21 @@ class MangoHudSettingsMixin:
     def _collect_mangohud_changes(self):
         """Collect MangoHud-specific changes."""
         changes = []
+
+        # Handle PW_MANGOHUD toggle
+        mangohud_enabled = self.current_settings.get('PW_MANGOHUD') == '1'
+        orig_mangohud = '1' if cast(ExeSettingsDialog, self).original_values.get('PW_MANGOHUD') == '1' else '0'
+        new_mangohud = '1' if mangohud_enabled else '0'
+        if new_mangohud != orig_mangohud:
+            changes.append(f"PW_MANGOHUD={new_mangohud}")
+
+        # Handle PW_MANGOHUD_USER_CONF toggle
+        mangohud_user_conf_enabled = self.current_settings.get('PW_MANGOHUD_USER_CONF') == '1'
+        orig_user_conf = '1' if cast(ExeSettingsDialog, self).original_values.get('PW_MANGOHUD_USER_CONF') == '1' else '0'
+        new_user_conf = '1' if mangohud_user_conf_enabled else '0'
+        if new_user_conf != orig_user_conf:
+            changes.append(f"PW_MANGOHUD_USER_CONF={new_user_conf}")
+
         config_value = self._build_mangohud_config()
         if config_value != self.mangohud_original_values.get('MANGOHUD_CONFIG', ''):
             changes.append(f"MANGOHUD_CONFIG={config_value}")

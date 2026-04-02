@@ -719,14 +719,6 @@ msgid "Select file for PPDB download"
 msgstr ""
 
 msgid ""
-"Using FPS and system load monitoring (Turns on and off by the key "
-"combination - right Shift + F12)"
-msgstr ""
-
-msgid "Forced use of MANGOHUD system settings (GOverlay, etc.)"
-msgstr ""
-
-msgid ""
 "Enable vkBasalt by default to improve graphics in games running on "
 "Vulkan. (The HOME hotkey disables vkbasalt)"
 msgstr ""
@@ -739,16 +731,22 @@ msgid ""
 "DirectDraw 1-7, Direct3D 2-9) on all 3D API."
 msgstr ""
 
-msgid ""
-"Super + F : Toggle fullscreen\n"
-"Super + N : Toggle nearest neighbour filtering\n"
-"Super + U : Toggle FSR upscaling\n"
-"Super + Y : Toggle NIS upscaling\n"
-"Super + I : Increase FSR sharpness by 1\n"
-"Super + O : Decrease FSR sharpness by 1\n"
-"Super + S : Take screenshot (currently goes to /tmp/gamescope_DATE.png)\n"
-"Super + G : Toggle keyboard grab\n"
-"Super + C : Update clipboard"
+msgid "Enable OptiScaler (replacement upscaler / frame generator)"
+msgstr ""
+
+msgid "Enable Lossless Scaling frame generation (experimental)"
+msgstr ""
+
+msgid "FSR upscaling in fullscreen with ProtonGE below native resolution"
+msgstr ""
+
+msgid "Enable vkd3d support - Ray Tracing"
+msgstr ""
+
+msgid "Enable DLSS on supported NVIDIA graphics cards"
+msgstr ""
+
+msgid "Disguise all NVIDIA GPU features"
 msgstr ""
 
 msgid "Enable in-process synchronization primitives based on eventfd."
@@ -760,34 +758,16 @@ msgstr ""
 msgid "Enable in-process synchronization via the Linux ntsync driver."
 msgstr ""
 
-msgid "Enable vkd3d support - Ray Tracing"
+msgid "Enable forced use of third-party DirectX libraries"
 msgstr ""
 
-msgid "Enable DLSS on supported NVIDIA graphics cards"
-msgstr ""
-
-msgid "Enable OptiScaler (replacement upscaler / frame generator)"
-msgstr ""
-
-msgid "Enable Lossless Scaling frame generation (experimental)"
-msgstr ""
-
-msgid "FSR upscaling in fullscreen with ProtonGE below native resolution"
-msgstr ""
-
-msgid "Disguise all NVIDIA GPU features"
-msgstr ""
-
-msgid "Run the application in WINE virtual desktop"
-msgstr ""
-
-msgid "Run the application in a terminal"
+msgid "Force use of built-in DXGI library"
 msgstr ""
 
 msgid "Use system GameMode for performance optimization"
 msgstr ""
 
-msgid "Enable forced use of third-party DirectX libraries"
+msgid "Disable desktop compositing for performance"
 msgstr ""
 
 msgid "Fix pink-tinted video playback in some games"
@@ -796,16 +776,22 @@ msgstr ""
 msgid "Reduce PulseAudio latency to fix intermittent sound"
 msgstr ""
 
+msgid "Run the application in WINE virtual desktop"
+msgstr ""
+
+msgid "Run the application in a terminal"
+msgstr ""
+
 msgid "Force US keyboard layout"
+msgstr ""
+
+msgid "Force DirectInput protocol instead of XInput"
 msgstr ""
 
 msgid "Use GStreamer for in-game clips (WMF support)"
 msgstr ""
 
 msgid "Use WINE shader caching"
-msgstr ""
-
-msgid "Force use of built-in DXGI library"
 msgstr ""
 
 msgid "Enable Easy Anti-Cheat and BattlEye runtimes"
@@ -815,15 +801,6 @@ msgid "Use system Vulkan layers (MangoHud, vkBasalt, OBS, etc.)"
 msgstr ""
 
 msgid "Enable OBS Studio capture via obs-vkcapture"
-msgstr ""
-
-msgid "Disable desktop compositing for performance"
-msgstr ""
-
-msgid "Use container launch mode (recommended default)"
-msgstr ""
-
-msgid "Force DirectInput protocol instead of XInput"
 msgstr ""
 
 msgid "Enable experimental native Wayland support"
@@ -850,6 +827,29 @@ msgstr ""
 msgid ""
 "Prevent the system from going to sleep and disable the screensaver while "
 "the game is running"
+msgstr ""
+
+msgid "Use container launch mode (recommended default)"
+msgstr ""
+
+msgid ""
+"Using FPS and system load monitoring (Turns on and off by the key "
+"combination - right Shift + F12)"
+msgstr ""
+
+msgid "Forced use of MANGOHUD system settings (GOverlay, etc.)"
+msgstr ""
+
+msgid ""
+"Super + F : Toggle fullscreen\n"
+"Super + N : Toggle nearest neighbour filtering\n"
+"Super + U : Toggle FSR upscaling\n"
+"Super + Y : Toggle NIS upscaling\n"
+"Super + I : Increase FSR sharpness by 1\n"
+"Super + O : Decrease FSR sharpness by 1\n"
+"Super + S : Take screenshot (currently goes to /tmp/gamescope_DATE.png)\n"
+"Super + G : Toggle keyboard grab\n"
+"Super + C : Update clipboard"
 msgstr ""
 
 msgid "System WINE"
@@ -1560,6 +1560,9 @@ msgstr ""
 msgid "Quick presets"
 msgstr ""
 
+msgid "Enable Gamescope"
+msgstr ""
+
 msgid "Default"
 msgstr ""
 
@@ -1594,6 +1597,9 @@ msgid "Additional Gamescope options not covered by the GUI."
 msgstr ""
 
 msgid "Example: --cursor-scale-height=1080 --force-orientation=left"
+msgstr ""
+
+msgid "Disable Gamescope"
 msgstr ""
 
 msgid "Custom preset is empty. Save one first."
@@ -1944,6 +1950,12 @@ msgstr ""
 msgid "Layout and limiter"
 msgstr ""
 
+msgid "Enable MangoHud"
+msgstr ""
+
+msgid "Use system config"
+msgstr ""
+
 msgid "PortProton default"
 msgstr ""
 
@@ -1977,6 +1989,12 @@ msgid "Example: battery,gpu_junction_temp,fps_color=39f900"
 msgstr ""
 
 msgid "All GPUs"
+msgstr ""
+
+msgid "Disable MangoHud"
+msgstr ""
+
+msgid "Don't use system config"
 msgstr ""
 
 msgid "Failed to read default MangoHud config."

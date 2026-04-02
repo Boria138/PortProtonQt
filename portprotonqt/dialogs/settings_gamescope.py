@@ -4,7 +4,7 @@ import configparser
 import re
 import shutil
 import subprocess
-from typing import Any, cast
+from typing import Any, TYPE_CHECKING, cast
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication
@@ -24,6 +24,9 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+if TYPE_CHECKING:
+    from portprotonqt.dialogs.settings_dialog import ExeSettingsDialog
 
 from portprotonqt.dialogs.settings_mangohud import MANGOHUD_FPS_OPTIONS
 from portprotonqt.config import CONFIG_FILE
@@ -544,6 +547,16 @@ class GamescopeSettingsMixin:
         layout.setSpacing(10)
         columns = 2
 
+        # Toggle button for PW_GAMESCOPE
+        self.gamescope_enable_button = QPushButton(_("Enable Gamescope"))
+        self.gamescope_enable_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        self.gamescope_enable_button.setMinimumHeight(44)
+        self.gamescope_enable_button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.gamescope_enable_button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.gamescope_enable_button.clicked.connect(self.toggle_gamescope_enable)
+
+        layout.addWidget(self.gamescope_enable_button, 0, 0, 1, 2)
+
         buttons = [
             (_("Default"), lambda: self.apply_gamescope_button_preset('default')),
             (_("FSR upscaling"), lambda: self.apply_gamescope_button_preset('fsr_upscaling')),
@@ -561,7 +574,7 @@ class GamescopeSettingsMixin:
             button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
             button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
             button.clicked.connect(handler)
-            row = index // columns
+            row = (index // columns) + 1
             column = index % columns
             layout.addWidget(button, row, column)
 
@@ -718,6 +731,23 @@ class GamescopeSettingsMixin:
             'PW_GAMESCOPE_ARGS_NEW': canonical_args_value,
         }
         self.gamescope_original_values['extra'] = parsed_args.get('_extra', '')
+        self._update_gamescope_toggle_button()
+
+    def _update_gamescope_toggle_button(self):
+        """Update toggle button text based on current settings."""
+        gamescope_enabled = self.current_settings.get('PW_GAMESCOPE') == '1'
+
+        if gamescope_enabled:
+            self.gamescope_enable_button.setText(_("Disable Gamescope"))
+        else:
+            self.gamescope_enable_button.setText(_("Enable Gamescope"))
+
+    def toggle_gamescope_enable(self):
+        """Toggle PW_GAMESCOPE setting."""
+        current_val = self.current_settings.get('PW_GAMESCOPE', '0')
+        new_val = '0' if current_val == '1' else '1'
+        self.current_settings['PW_GAMESCOPE'] = new_val
+        self._update_gamescope_toggle_button()
 
     def apply_gamescope_button_preset(self, preset_name):
         """Apply a built-in Gamescope preset button."""
@@ -939,6 +969,14 @@ class GamescopeSettingsMixin:
     def _collect_gamescope_changes(self):
         """Collect Gamescope-specific changes."""
         changes = []
+
+        # Handle PW_GAMESCOPE toggle
+        gamescope_enabled = self.current_settings.get('PW_GAMESCOPE') == '1'
+        orig_gamescope = '1' if cast(ExeSettingsDialog, self).original_values.get('PW_GAMESCOPE') == '1' else '0'
+        new_gamescope = '1' if gamescope_enabled else '0'
+        if new_gamescope != orig_gamescope:
+            changes.append(f"PW_GAMESCOPE={new_gamescope}")
+
         args_value = self._build_gamescope_args()
         if args_value != self.gamescope_original_values.get('PW_GAMESCOPE_ARGS_NEW', ''):
             changes.append(f"PW_GAMESCOPE_ARGS_NEW={args_value}")

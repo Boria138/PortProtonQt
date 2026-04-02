@@ -729,16 +729,6 @@ msgid "Select file for PPDB download"
 msgstr "Выберите файл для загрузки PPDB"
 
 msgid ""
-"Using FPS and system load monitoring (Turns on and off by the key "
-"combination - right Shift + F12)"
-msgstr ""
-"Использование мониторинга производительности и FPS(включается и "
-"выключается комбинацией клавиш - R_Shift + F12)"
-
-msgid "Forced use of MANGOHUD system settings (GOverlay, etc.)"
-msgstr "Принудительное использование системных настроек MANGOHUD (GOverlay и т.д.)"
-
-msgid ""
 "Enable vkBasalt by default to improve graphics in games running on "
 "Vulkan. (The HOME hotkey disables vkbasalt)"
 msgstr ""
@@ -755,27 +745,23 @@ msgstr ""
 "Включить dgVoodoo2. Принудительное использование всех библиотек dgVoodoo2"
 " (Glide 2.11-3.1, DirectDraw 1-7, Direct3D 2-9) на всех 3D API."
 
-msgid ""
-"Super + F : Toggle fullscreen\n"
-"Super + N : Toggle nearest neighbour filtering\n"
-"Super + U : Toggle FSR upscaling\n"
-"Super + Y : Toggle NIS upscaling\n"
-"Super + I : Increase FSR sharpness by 1\n"
-"Super + O : Decrease FSR sharpness by 1\n"
-"Super + S : Take screenshot (currently goes to /tmp/gamescope_DATE.png)\n"
-"Super + G : Toggle keyboard grab\n"
-"Super + C : Update clipboard"
-msgstr ""
-"Super + F: Переключение полноэкранного режима\n"
-"Super + N: Переключение фильтрации\n"
-"Super + U: Переключение режима масштабирования на FSR\n"
-"Super + Y: Переключение режима масштабирования на NIS\n"
-"Super + I: Увеличение резкости FSR на 1\n"
-"Super + O: Уменьшение резкости FSR на 1\n"
-"Super + S: Сделать скриншот (сейчас сохраняется в "
-"/tmp/gamescope_DATE.png)\n"
-"Super + G: Переключение захвата клавиатуры\n"
-"Super + C: Обновление буфера обмена"
+msgid "Enable OptiScaler (replacement upscaler / frame generator)"
+msgstr "Включить OptiScaler (замена апскейлера / генератора кадров)"
+
+msgid "Enable Lossless Scaling frame generation (experimental)"
+msgstr "Включить генерацию кадров Lossless Scaling + lsfg-vk (экспериментально)"
+
+msgid "FSR upscaling in fullscreen with ProtonGE below native resolution"
+msgstr "Апскейлинг FSR в полноэкранном режиме с ProtonGE ниже родного разрешения"
+
+msgid "Enable vkd3d support - Ray Tracing"
+msgstr "Включить поддержку vkd3d — трассировка лучей"
+
+msgid "Enable DLSS on supported NVIDIA graphics cards"
+msgstr "Включить DLSS на поддерживаемых видеокартах NVIDIA"
+
+msgid "Disguise all NVIDIA GPU features"
+msgstr "Маскировать все функции GPU NVIDIA"
 
 msgid "Enable in-process synchronization primitives based on eventfd."
 msgstr "Включить примитивы синхронизации в процессе на основе eventfd."
@@ -786,35 +772,17 @@ msgstr "Включить примитивы синхронизации в про
 msgid "Enable in-process synchronization via the Linux ntsync driver."
 msgstr "Включить синхронизацию в процессе через драйвер ntsync в Linux."
 
-msgid "Enable vkd3d support - Ray Tracing"
-msgstr "Включить поддержку vkd3d — трассировка лучей"
+msgid "Enable forced use of third-party DirectX libraries"
+msgstr "Включить принудительное использование сторонних библиотек DirectX"
 
-msgid "Enable DLSS on supported NVIDIA graphics cards"
-msgstr "Включить DLSS на поддерживаемых видеокартах NVIDIA"
-
-msgid "Enable OptiScaler (replacement upscaler / frame generator)"
-msgstr "Включить OptiScaler (замена апскейлера / генератора кадров)"
-
-msgid "Enable Lossless Scaling frame generation (experimental)"
-msgstr "Включить генерацию кадров Lossless Scaling + lsfg-vk (экспериментально)"
-
-msgid "FSR upscaling in fullscreen with ProtonGE below native resolution"
-msgstr "Апскейлинг FSR в полноэкранном режиме с ProtonGE ниже родного разрешения"
-
-msgid "Disguise all NVIDIA GPU features"
-msgstr "Маскировать все функции GPU NVIDIA"
-
-msgid "Run the application in WINE virtual desktop"
-msgstr "Запускать приложение в виртуальном рабочем столе WINE"
-
-msgid "Run the application in a terminal"
-msgstr "Запускать приложение в терминале"
+msgid "Force use of built-in DXGI library"
+msgstr "Принудительно использовать встроенную библиотеку DXGI"
 
 msgid "Use system GameMode for performance optimization"
 msgstr "Использовать системный GameMode для оптимизации производительности"
 
-msgid "Enable forced use of third-party DirectX libraries"
-msgstr "Включить принудительное использование сторонних библиотек DirectX"
+msgid "Disable desktop compositing for performance"
+msgstr "Отключить композицию рабочего стола для производительности"
 
 msgid "Fix pink-tinted video playback in some games"
 msgstr "Исправить розовый оттенок видео в некоторых играх"
@@ -822,17 +790,23 @@ msgstr "Исправить розовый оттенок видео в неко�
 msgid "Reduce PulseAudio latency to fix intermittent sound"
 msgstr "Уменьшить задержку PulseAudio для исправления прерывистого звука"
 
+msgid "Run the application in WINE virtual desktop"
+msgstr "Запускать приложение в виртуальном рабочем столе WINE"
+
+msgid "Run the application in a terminal"
+msgstr "Запускать приложение в терминале"
+
 msgid "Force US keyboard layout"
 msgstr "Принудительно использовать раскладку клавиатуры US"
+
+msgid "Force DirectInput protocol instead of XInput"
+msgstr "Принудительно использовать протокол DirectInput вместо XInput"
 
 msgid "Use GStreamer for in-game clips (WMF support)"
 msgstr "Использовать GStreamer для внутриигровых клипов (поддержка WMF)"
 
 msgid "Use WINE shader caching"
 msgstr "Использовать кэширование шейдеров WINE"
-
-msgid "Force use of built-in DXGI library"
-msgstr "Принудительно использовать встроенную библиотеку DXGI"
 
 msgid "Enable Easy Anti-Cheat and BattlEye runtimes"
 msgstr "Включить поддержку Easy Anti-Cheat и BattlEye"
@@ -842,15 +816,6 @@ msgstr "Использовать системные Vulkan layers (MangoHud, vkB
 
 msgid "Enable OBS Studio capture via obs-vkcapture"
 msgstr "Включить захват OBS Studio через obs-vkcapture"
-
-msgid "Disable desktop compositing for performance"
-msgstr "Отключить композицию рабочего стола для производительности"
-
-msgid "Use container launch mode (recommended default)"
-msgstr "Использовать режим запуска в контейнере (рекомендуемый по умолчанию)"
-
-msgid "Force DirectInput protocol instead of XInput"
-msgstr "Принудительно использовать протокол DirectInput вместо XInput"
 
 msgid "Enable experimental native Wayland support"
 msgstr "Включить экспериментальную нативную поддержку Wayland"
@@ -879,6 +844,41 @@ msgid ""
 msgstr ""
 "Предотвратите переход системы в спящий режим и отключите заставку во "
 "время игры"
+
+msgid "Use container launch mode (recommended default)"
+msgstr "Использовать режим запуска в контейнере (рекомендуемый по умолчанию)"
+
+msgid ""
+"Using FPS and system load monitoring (Turns on and off by the key "
+"combination - right Shift + F12)"
+msgstr ""
+"Использование мониторинга производительности и FPS(включается и "
+"выключается комбинацией клавиш - R_Shift + F12)"
+
+msgid "Forced use of MANGOHUD system settings (GOverlay, etc.)"
+msgstr "Принудительное использование системных настроек MANGOHUD (GOverlay и т.д.)"
+
+msgid ""
+"Super + F : Toggle fullscreen\n"
+"Super + N : Toggle nearest neighbour filtering\n"
+"Super + U : Toggle FSR upscaling\n"
+"Super + Y : Toggle NIS upscaling\n"
+"Super + I : Increase FSR sharpness by 1\n"
+"Super + O : Decrease FSR sharpness by 1\n"
+"Super + S : Take screenshot (currently goes to /tmp/gamescope_DATE.png)\n"
+"Super + G : Toggle keyboard grab\n"
+"Super + C : Update clipboard"
+msgstr ""
+"Super + F: Переключение полноэкранного режима\n"
+"Super + N: Переключение фильтрации\n"
+"Super + U: Переключение режима масштабирования на FSR\n"
+"Super + Y: Переключение режима масштабирования на NIS\n"
+"Super + I: Увеличение резкости FSR на 1\n"
+"Super + O: Уменьшение резкости FSR на 1\n"
+"Super + S: Сделать скриншот (сейчас сохраняется в "
+"/tmp/gamescope_DATE.png)\n"
+"Super + G: Переключение захвата клавиатуры\n"
+"Super + C: Обновление буфера обмена"
 
 msgid "System WINE"
 msgstr "Системный WINE"
@@ -1657,6 +1657,10 @@ msgstr "Разрешение и масштабирование"
 msgid "Quick presets"
 msgstr "Профили"
 
+#, fuzzy
+msgid "Enable Gamescope"
+msgstr "Частота обновления (gamescope)"
+
 msgid "Default"
 msgstr "Стандартный"
 
@@ -1692,6 +1696,10 @@ msgstr "Дополнительные параметры Gamescope (через з
 
 msgid "Example: --cursor-scale-height=1080 --force-orientation=left"
 msgstr "Например: --cursor-scale-height=1080 --force-orientation=left"
+
+#, fuzzy
+msgid "Disable Gamescope"
+msgstr "Частота обновления (gamescope)"
 
 msgid "Custom preset is empty. Save one first."
 msgstr "Пользовательские настройки пусты. Сначала сохраните их."
@@ -2041,6 +2049,14 @@ msgstr "Использование видеопамяти"
 msgid "Layout and limiter"
 msgstr "Компоновка и ограничения"
 
+#, fuzzy
+msgid "Enable MangoHud"
+msgstr "Включить наложение mangoapp"
+
+#, fuzzy
+msgid "Use system config"
+msgstr "Записать в системный конфиг"
+
 msgid "PortProton default"
 msgstr "Стандартный PortProton"
 
@@ -2078,6 +2094,14 @@ msgstr "Пример: battery,gpu_junction_temp,fps_color=39f900"
 
 msgid "All GPUs"
 msgstr "Все ГП"
+
+#, fuzzy
+msgid "Disable MangoHud"
+msgstr "отключено"
+
+#, fuzzy
+msgid "Don't use system config"
+msgstr "Записать в системный конфиг"
 
 msgid "Failed to read default MangoHud config."
 msgstr "Ошибка при чтении стандартной конфигурации MangoHud."

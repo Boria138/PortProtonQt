@@ -3,9 +3,6 @@ def get_toggle_settings():
     from portprotonqt.localization import _
 
     return {
-        # Monitoring
-        'PW_MANGOHUD': _("Using FPS and system load monitoring (Turns on and off by the key combination - right Shift + F12)"),
-        'PW_MANGOHUD_USER_CONF': _("Forced use of MANGOHUD system settings (GOverlay, etc.)"),
         # Graphics enhancements
         'PW_VKBASALT': _("Enable vkBasalt by default to improve graphics in games running on Vulkan. (The HOME hotkey disables vkbasalt)"),
         'PW_VKBASALT_USER_CONF': _("Forced use of VKBASALT system settings (GOverlay, etc.)"),
@@ -61,6 +58,9 @@ def get_toggle_settings():
         'PW_USE_INHIBIT_SLEEP_INFO': _("Prevent the system from going to sleep and disable the screensaver while the game is running"),
         # Runtime
         'PW_USE_RUNTIME': _("Use container launch mode (recommended default)"),
+        # Monitoring
+        'PW_MANGOHUD': _("Using FPS and system load monitoring (Turns on and off by the key combination - right Shift + F12)"),
+        'PW_MANGOHUD_USER_CONF': _("Forced use of MANGOHUD system settings (GOverlay, etc.)"),
         # Gamescope
         'PW_GAMESCOPE': _("Super + F : Toggle fullscreen\nSuper + N : Toggle nearest neighbour filtering\nSuper + U : Toggle FSR upscaling\nSuper + Y : Toggle NIS upscaling\nSuper + I : Increase FSR sharpness by 1\nSuper + O : Decrease FSR sharpness by 1\nSuper + S : Take screenshot (currently goes to /tmp/gamescope_DATE.png)\nSuper + G : Toggle keyboard grab\nSuper + C : Update clipboard"),
     }
