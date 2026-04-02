@@ -461,7 +461,10 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
         self.value_widgets.clear()
         self.settings_table.verticalHeader().setVisible(False)
 
-        visible_keys = sorted(self.available_keys) if self.available_keys else sorted(self.toggle_settings.keys())
+        visible_keys = [
+            key for key in self.toggle_settings
+            if not self.available_keys or key in self.available_keys
+        ]
 
         for toggle in visible_keys:
             description = self.toggle_settings.get(toggle)
