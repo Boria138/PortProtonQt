@@ -1600,12 +1600,12 @@ class InputManager(QObject):
         extra_section = [extra_edit] if extra_edit and extra_edit.isVisible() and extra_edit.isEnabled() else []
 
         if tab_index == 2:
-            if value_widgets:
-                sections.append(self._sort_widgets_by_position(value_widgets))
             if preset_section:
                 sections.append(preset_section)
             if toggle_section:
                 sections.append(toggle_section)
+            if value_widgets:
+                sections.append(self._sort_widgets_by_position(value_widgets))
             if fps_section:
                 sections.append(fps_section)
             if extra_section:

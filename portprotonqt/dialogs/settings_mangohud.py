@@ -387,9 +387,9 @@ class MangoHudSettingsMixin:
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(14)
 
-        self._add_mangohud_values_group(layout)
         self._add_mangohud_presets_group(layout)
         self._add_mangohud_toggle_group(layout)
+        self._add_mangohud_values_group(layout)
         self._add_mangohud_fps_group(layout)
         self._add_mangohud_extra_group(layout)
         layout.addStretch()
