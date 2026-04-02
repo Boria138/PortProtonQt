@@ -4,7 +4,7 @@ import configparser
 import os
 import re
 from pathlib import Path
-from typing import Any, TYPE_CHECKING, cast
+from typing import Any, cast
 
 from PySide6.QtCore import Qt, QProcess
 from PySide6.QtWidgets import (
@@ -23,9 +23,6 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
-if TYPE_CHECKING:
-    from portprotonqt.dialogs.settings_dialog import ExeSettingsDialog
 
 from portprotonqt.config import CONFIG_FILE
 from portprotonqt.debug_utils import get_cached_vk_gpu_info
@@ -1100,17 +1097,18 @@ class MangoHudSettingsMixin:
     def _collect_mangohud_changes(self):
         """Collect MangoHud-specific changes."""
         changes = []
+        original_values = cast(dict[str, str], getattr(self, 'original_values', {}))
 
         # Handle PW_MANGOHUD toggle
         mangohud_enabled = self.current_settings.get('PW_MANGOHUD') == '1'
-        orig_mangohud = '1' if cast(ExeSettingsDialog, self).original_values.get('PW_MANGOHUD') == '1' else '0'
+        orig_mangohud = '1' if original_values.get('PW_MANGOHUD') == '1' else '0'
         new_mangohud = '1' if mangohud_enabled else '0'
         if new_mangohud != orig_mangohud:
             changes.append(f"PW_MANGOHUD={new_mangohud}")
 
         # Handle PW_MANGOHUD_USER_CONF toggle
         mangohud_user_conf_enabled = self.current_settings.get('PW_MANGOHUD_USER_CONF') == '1'
-        orig_user_conf = '1' if cast(ExeSettingsDialog, self).original_values.get('PW_MANGOHUD_USER_CONF') == '1' else '0'
+        orig_user_conf = '1' if original_values.get('PW_MANGOHUD_USER_CONF') == '1' else '0'
         new_user_conf = '1' if mangohud_user_conf_enabled else '0'
         if new_user_conf != orig_user_conf:
             changes.append(f"PW_MANGOHUD_USER_CONF={new_user_conf}")
