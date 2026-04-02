@@ -3,45 +3,66 @@ def get_toggle_settings():
     from portprotonqt.localization import _
 
     return {
+        # Monitoring
         'PW_MANGOHUD': _("Using FPS and system load monitoring (Turns on and off by the key combination - right Shift + F12)"),
         'PW_MANGOHUD_USER_CONF': _("Forced use of MANGOHUD system settings (GOverlay, etc.)"),
+        # Graphics enhancements
         'PW_VKBASALT': _("Enable vkBasalt by default to improve graphics in games running on Vulkan. (The HOME hotkey disables vkbasalt)"),
         'PW_VKBASALT_USER_CONF': _("Forced use of VKBASALT system settings (GOverlay, etc.)"),
         'PW_DGVOODOO2': _("Enable dgVoodoo2. Forced use all dgVoodoo2 libs (Glide 2.11-3.1, DirectDraw 1-7, Direct3D 2-9) on all 3D API."),
-        'PW_GAMESCOPE': _("Super + F : Toggle fullscreen\nSuper + N : Toggle nearest neighbour filtering\nSuper + U : Toggle FSR upscaling\nSuper + Y : Toggle NIS upscaling\nSuper + I : Increase FSR sharpness by 1\nSuper + O : Decrease FSR sharpness by 1\nSuper + S : Take screenshot (currently goes to /tmp/gamescope_DATE.png)\nSuper + G : Toggle keyboard grab\nSuper + C : Update clipboard"),
-        'PW_USE_ESYNC': _("Enable in-process synchronization primitives based on eventfd."),
-        'PW_USE_FSYNC': _("Enable futex-based in-process synchronization primitives."),
-        'PW_USE_NTSYNC': _("Enable in-process synchronization via the Linux ntsync driver."),
-        'PW_USE_RAY_TRACING': _("Enable vkd3d support - Ray Tracing"),
-        'PW_USE_NVAPI_AND_DLSS': _("Enable DLSS on supported NVIDIA graphics cards"),
+        # Upscalers and Frame Generation
         'PW_USE_OPTISCALER': _("Enable OptiScaler (replacement upscaler / frame generator)"),
         'PW_USE_LS_FRAME_GEN': _("Enable Lossless Scaling frame generation (experimental)"),
         'PW_WINE_FULLSCREEN_FSR': _("FSR upscaling in fullscreen with ProtonGE below native resolution"),
+        # Ray Tracing
+        'PW_USE_RAY_TRACING': _("Enable vkd3d support - Ray Tracing"),
+        # NVIDIA
+        'PW_USE_NVAPI_AND_DLSS': _("Enable DLSS on supported NVIDIA graphics cards"),
         'PW_HIDE_NVIDIA_GPU': _("Disguise all NVIDIA GPU features"),
-        'PW_VIRTUAL_DESKTOP': _("Run the application in WINE virtual desktop"),
-        'PW_USE_TERMINAL': _("Run the application in a terminal"),
-        'PW_USE_GAMEMODE': _("Use system GameMode for performance optimization"),
+        # Synchronization
+        'PW_USE_ESYNC': _("Enable in-process synchronization primitives based on eventfd."),
+        'PW_USE_FSYNC': _("Enable futex-based in-process synchronization primitives."),
+        'PW_USE_NTSYNC': _("Enable in-process synchronization via the Linux ntsync driver."),
+        # DirectX / Graphics
         'PW_USE_D3D_EXTRAS': _("Enable forced use of third-party DirectX libraries"),
+        'PW_USE_WINE_DXGI': _("Force use of built-in DXGI library"),
+        # Performance
+        'PW_USE_GAMEMODE': _("Use system GameMode for performance optimization"),
+        'PW_DISABLE_COMPOSITING': _("Disable desktop compositing for performance"),
+        # Video / Audio fixes
         'PW_FIX_VIDEO_IN_GAME': _("Fix pink-tinted video playback in some games"),
         'PW_REDUCE_PULSE_LATENCY': _("Reduce PulseAudio latency to fix intermittent sound"),
+        # Launch options
+        'PW_VIRTUAL_DESKTOP': _("Run the application in WINE virtual desktop"),
+        'PW_USE_TERMINAL': _("Run the application in a terminal"),
+        # Input / Locale
         'PW_USE_US_LAYOUT': _("Force US keyboard layout"),
+        'PW_DINPUT_PROTOCOL': _("Force DirectInput protocol instead of XInput"),
+        # Media
         'PW_USE_GSTREAMER': _("Use GStreamer for in-game clips (WMF support)"),
+        # Shader caching
         'PW_USE_SHADER_CACHE': _("Use WINE shader caching"),
-        'PW_USE_WINE_DXGI': _("Force use of built-in DXGI library"),
+        # Anti-cheat
         'PW_USE_EAC_AND_BE': _("Enable Easy Anti-Cheat and BattlEye runtimes"),
+        # Vulkan layers
         'PW_USE_SYSTEM_VK_LAYERS': _("Use system Vulkan layers (MangoHud, vkBasalt, OBS, etc.)"),
         'PW_USE_OBS_VKCAPTURE': _("Enable OBS Studio capture via obs-vkcapture"),
-        'PW_DISABLE_COMPOSITING': _("Disable desktop compositing for performance"),
-        'PW_USE_RUNTIME': _("Use container launch mode (recommended default)"),
-        'PW_DINPUT_PROTOCOL': _("Force DirectInput protocol instead of XInput"),
+        # Wayland
         'PW_USE_NATIVE_WAYLAND': _("Enable experimental native Wayland support"),
         'PW_USE_DXVK_HDR': _("Enable HDR settings under native Wayland"),
+        # Gallium
         'PW_USE_GALLIUM_ZINK': _("Use Gallium Zink (OpenGL via Vulkan)"),
         'PW_USE_GALLIUM_NINE': _("Use Gallium Nine (native DirectX 9 for Mesa)"),
         'PW_USE_WINED3D_VULKAN': _("Use WineD3D Vulkan backend (Damavand)"),
+        # Proton
         'PW_USE_SUPPLIED_DXVK_VKD3D': _("Use bundled dxvk/vkd3d from Wine/Proton"),
         'PW_USE_SAREK_ASYNC': _("Use async dxvk-sarek (experimental)"),
-        'PW_USE_INHIBIT_SLEEP_INFO': _("Prevent the system from going to sleep and disable the screensaver while the game is running")
+        # Power management
+        'PW_USE_INHIBIT_SLEEP_INFO': _("Prevent the system from going to sleep and disable the screensaver while the game is running"),
+        # Runtime
+        'PW_USE_RUNTIME': _("Use container launch mode (recommended default)"),
+        # Gamescope
+        'PW_GAMESCOPE': _("Super + F : Toggle fullscreen\nSuper + N : Toggle nearest neighbour filtering\nSuper + U : Toggle FSR upscaling\nSuper + Y : Toggle NIS upscaling\nSuper + I : Increase FSR sharpness by 1\nSuper + O : Decrease FSR sharpness by 1\nSuper + S : Take screenshot (currently goes to /tmp/gamescope_DATE.png)\nSuper + G : Toggle keyboard grab\nSuper + C : Update clipboard"),
     }
 
 
