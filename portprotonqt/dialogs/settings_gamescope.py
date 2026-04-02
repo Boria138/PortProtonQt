@@ -4,7 +4,7 @@ import configparser
 import re
 import shutil
 import subprocess
-from typing import Any, TYPE_CHECKING, cast
+from typing import Any, cast
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication
@@ -24,9 +24,6 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
-if TYPE_CHECKING:
-    from portprotonqt.dialogs.settings_dialog import ExeSettingsDialog
 
 from portprotonqt.dialogs.settings_mangohud import MANGOHUD_FPS_OPTIONS
 from portprotonqt.config import CONFIG_FILE
@@ -969,10 +966,11 @@ class GamescopeSettingsMixin:
     def _collect_gamescope_changes(self):
         """Collect Gamescope-specific changes."""
         changes = []
+        original_values = cast(dict[str, str], getattr(self, 'original_values', {}))
 
         # Handle PW_GAMESCOPE toggle
         gamescope_enabled = self.current_settings.get('PW_GAMESCOPE') == '1'
-        orig_gamescope = '1' if cast(ExeSettingsDialog, self).original_values.get('PW_GAMESCOPE') == '1' else '0'
+        orig_gamescope = '1' if original_values.get('PW_GAMESCOPE') == '1' else '0'
         new_gamescope = '1' if gamescope_enabled else '0'
         if new_gamescope != orig_gamescope:
             changes.append(f"PW_GAMESCOPE={new_gamescope}")
