@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-03-22 13:50+0500\n"
-"PO-Revision-Date: 2026-03-28 17:34+0000\n"
+"PO-Revision-Date: 2026-04-02 05:41+0000\n"
 "Last-Translator: Boria138 <boria138@noreply.codeberg.org>\n"
 "Language-Team: Russian <https://translate.codeberg.org/projects/portprotonqt/"
 "portprotonqt/ru/>\n"
@@ -1657,9 +1657,8 @@ msgstr "Разрешение и масштабирование"
 msgid "Quick presets"
 msgstr "Профили"
 
-#, fuzzy
 msgid "Enable Gamescope"
-msgstr "Частота обновления (gamescope)"
+msgstr "Включить Gamescope"
 
 msgid "Default"
 msgstr "Стандартный"
@@ -1697,9 +1696,8 @@ msgstr "Дополнительные параметры Gamescope (через з
 msgid "Example: --cursor-scale-height=1080 --force-orientation=left"
 msgstr "Например: --cursor-scale-height=1080 --force-orientation=left"
 
-#, fuzzy
 msgid "Disable Gamescope"
-msgstr "Частота обновления (gamescope)"
+msgstr "Отключить Gamescope"
 
 msgid "Custom preset is empty. Save one first."
 msgstr "Пользовательские настройки пусты. Сначала сохраните их."
@@ -2049,13 +2047,11 @@ msgstr "Использование видеопамяти"
 msgid "Layout and limiter"
 msgstr "Компоновка и ограничения"
 
-#, fuzzy
 msgid "Enable MangoHud"
-msgstr "Включить наложение mangoapp"
+msgstr "Включить MangoHud"
 
-#, fuzzy
 msgid "Use system config"
-msgstr "Записать в системный конфиг"
+msgstr "Использовать системный конфиг"
 
 msgid "PortProton default"
 msgstr "Стандартный PortProton"
@@ -2095,13 +2091,11 @@ msgstr "Пример: battery,gpu_junction_temp,fps_color=39f900"
 msgid "All GPUs"
 msgstr "Все ГП"
 
-#, fuzzy
 msgid "Disable MangoHud"
-msgstr "отключено"
+msgstr "Отключить MangoHud"
 
-#, fuzzy
 msgid "Don't use system config"
-msgstr "Записать в системный конфиг"
+msgstr "Не использовать системный конфиг"
 
 msgid "Failed to read default MangoHud config."
 msgstr "Ошибка при чтении стандартной конфигурации MangoHud."
