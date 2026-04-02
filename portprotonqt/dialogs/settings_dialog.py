@@ -393,6 +393,7 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
                 "PW_USE_RUNTIME",
                 "PW_DGVOODOO2",
                 "PW_USE_EAC_AND_BE",
+                "PW_USE_GALLIUM_NINE",
             })
 
         if exit_code != 0 or exit_status != QProcess.ExitStatus.NormalExit:
