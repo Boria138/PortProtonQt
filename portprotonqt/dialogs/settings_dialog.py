@@ -395,6 +395,7 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
                 "PW_USE_D3D_EXTRAS",
                 "PW_USE_GALLIUM_NINE",
                 "PW_USE_SUPPLIED_DXVK_VKD3D",
+                "PW_USE_SAREK_ASYNC",
             })
 
         if exit_code != 0 or exit_status != QProcess.ExitStatus.NormalExit:
