@@ -537,9 +537,9 @@ class GameCard(QFrame):
             self.update_scale()
             self.scaleChanged.emit()
 
-    borderWidth = Property(int, getBorderWidth, setBorderWidth, None, "", notify=borderWidthChanged)
-    gradientAngle = Property(float, getGradientAngle, setGradientAngle, None, "", notify=gradientAngleChanged)
-    scale = Property(float, getScale, setScale, None, "", notify=scaleChanged)
+    borderWidth = Property(int, fget=getBorderWidth, fset=setBorderWidth, notify=borderWidthChanged)
+    gradientAngle = Property(float, fget=getGradientAngle, fset=setGradientAngle, notify=gradientAngleChanged)
+    scale = Property(float, fget=getScale, fset=setScale, notify=scaleChanged)
 
 
     def paintEvent(self, event):
