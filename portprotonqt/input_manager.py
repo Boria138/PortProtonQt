@@ -175,6 +175,11 @@ class InputManager(QObject):
         self.min_value = 0       # axis minimum
         self.max_value = 255     # axis maximum
         self.deadzone_value = 15 # deadzone from kernel (flat parameter)
+        self.scroll_axis_code = ecodes.ABS_RY
+        self.scroll_center = self.center_y
+        self.scroll_min_value = self.min_value
+        self.scroll_max_value = self.max_value
+        self.scroll_deadzone_value = self.deadzone_value
 
         self.sensitivity = 8.0
 
@@ -1995,14 +2000,16 @@ class InputManager(QObject):
             return
 
         # Normalize from center
-        centered_value = raw_value - self.center_y
+        centered_value = raw_value - self.scroll_center
 
-        if abs(centered_value) < self.deadzone_value:
+        if abs(centered_value) < self.scroll_deadzone_value:
             self.scroll_accumulator = 0.0
             return
 
         # Normalize value (-1.0 to 1.0)
-        range_val = (self.max_value - self.min_value) / 2
+        range_val = (self.scroll_max_value - self.scroll_min_value) / 2
+        if range_val <= 0:
+            return
         normalized = centered_value / range_val
 
         # Accumulate scroll
@@ -3431,6 +3438,8 @@ class InputManager(QObject):
                 return
 
             abs_axes = caps[ecodes.EV_ABS]
+            axis_info = dict(cast(Any, abs_axes))
+            self.scroll_axis_code = ecodes.ABS_RY
             for code, absinfo in cast(Any, abs_axes):
                 if code == ecodes.ABS_X:
                     self.min_value = absinfo.min
@@ -3442,12 +3451,39 @@ class InputManager(QObject):
 
                     # Get deadzone from kernel (flat parameter)
                     self.deadzone_value = absinfo.flat if absinfo.flat > 0 else 15
+                    self.scroll_center = self.center_y
+                    self.scroll_min_value = self.min_value
+                    self.scroll_max_value = self.max_value
+                    self.scroll_deadzone_value = self.deadzone_value
 
                     logger.info(
                         f"Gamepad axes: min={self.min_value}, max={self.max_value}, "
                         f"center={self.center_x}, deadzone={self.deadzone_value}"
                     )
                     break
+
+            for code in (ecodes.ABS_RY, ecodes.ABS_RZ):
+                absinfo = axis_info.get(code)
+                if not absinfo:
+                    continue
+                axis_center = (absinfo.min + absinfo.max) // 2
+                axis_deadzone = absinfo.flat if absinfo.flat > 0 else self.deadzone_value
+                if code == ecodes.ABS_RY or abs(absinfo.value - axis_center) <= axis_deadzone:
+                    self.scroll_axis_code = code
+                    self.scroll_center = axis_center
+                    self.scroll_min_value = absinfo.min
+                    self.scroll_max_value = absinfo.max
+                    self.scroll_deadzone_value = axis_deadzone
+                    break
+
+            logger.info(
+                "Gamepad scroll axis: code=%s, min=%s, max=%s, center=%s, deadzone=%s",
+                self.scroll_axis_code,
+                self.scroll_min_value,
+                self.scroll_max_value,
+                self.scroll_center,
+                self.scroll_deadzone_value,
+            )
         except Exception as ex:
             logger.error(f"Error detecting gamepad axes: {ex}")
 
@@ -3505,7 +3541,7 @@ class InputManager(QObject):
                                     elif event.code == ecodes.ABS_Y:
                                         if event.code not in (ecodes.ABS_GAS, ecodes.ABS_BRAKE):
                                             self.stick_y_raw = event.value
-                                    elif event.code == ecodes.ABS_RY:
+                                    elif event.code == self.scroll_axis_code:
                                         self.handle_scroll(event.value)
                                     elif event.code in (ecodes.ABS_GAS, ecodes.ABS_BRAKE):
                                         pass  # Triggers - do not process
