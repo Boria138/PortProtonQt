@@ -872,15 +872,18 @@ class MainWindow(QMainWindow):
             self.refreshButton.setText(_("Refresh Grid"))
             self.update_status_message.emit(_("Game library refreshed"), 3000)
 
-    def loadGames(self):
+    def loadGames(self, force_load: bool = False):
         # Skip loading library if launching a specific exe
-        if self.launch_exe:
+        if self.launch_exe and not force_load:
             # Hide progress bar and status message when skipping library load
             self.progress_bar.setVisible(False)
             self.progress_bar.setRange(0, 100)
             self.progress_bar.setValue(0)
             self.statusBar().clearMessage()
             return
+
+        if force_load:
+            self.launch_exe = None
 
         display_filter = read_display_filter()
         favorites = read_favorites()
@@ -1355,7 +1358,7 @@ class MainWindow(QMainWindow):
 
         # Reload games using the existing loadGames functionality
         # Use a small delay to allow UI to update before starting the refresh
-        QTimer.singleShot(50, lambda: self.loadGames())
+        QTimer.singleShot(50, lambda: self.loadGames(force_load=True))
 
     def on_search_text_changed(self, text: str):
         """Search text change handler with debounce."""
