@@ -342,7 +342,7 @@ class MainWindow(QMainWindow):
             },
             'add_game': {
                 GamepadType.XBOX: "xbox_x",
-                GamepadType.PLAYSTATION: "ps_triangle",
+                GamepadType.PLAYSTATION: "ps_square",
             },
             'context_menu': {
                 GamepadType.XBOX: "xbox_start",
@@ -354,11 +354,11 @@ class MainWindow(QMainWindow):
             },
             'search': {
                 GamepadType.XBOX: "xbox_y",
-                GamepadType.PLAYSTATION: "ps_square",
+                GamepadType.PLAYSTATION: "ps_triangle",
             },
             'prev_dir': {
                 GamepadType.XBOX: "xbox_y",
-                GamepadType.PLAYSTATION: "ps_square",
+                GamepadType.PLAYSTATION: "ps_triangle",
             },
             'guide_select': {
                 GamepadType.XBOX: "xbox_xbox",  # Xbox Guide button
