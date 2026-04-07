@@ -35,6 +35,7 @@ class VirtualKeyboard(QFrame):
         self.current_input_widget = None
         self.cursor_visible = True
         self.last_focused_button = None
+        self.selected_button = None
 
         self.base_button_width = 40
         self.base_min_width = 574
@@ -187,6 +188,7 @@ class VirtualKeyboard(QFrame):
     def update_keyboard(self):
         self._apply_responsive_metrics()
         coords = self._save_focused_coords()
+        self.selected_button = None
 
         # Clear previous buttons
         while self.keyboard_layout.count():
@@ -311,6 +313,13 @@ class VirtualKeyboard(QFrame):
                 widget = item.widget()
                 if widget:
                     widget.setFocus()
+        focused = self.focusWidget()
+        if isinstance(focused, QPushButton) and self.keyboard_layout.indexOf(focused) != -1:
+            self._set_selected_button(focused)
+            return
+        first_button = self.findFirstFocusableButton()
+        if first_button:
+            self._set_selected_button(first_button)
 
     def up_key(self):
         """Move cursor in QLineEdit up/to start if keyboard visible"""
@@ -554,6 +563,16 @@ class VirtualKeyboard(QFrame):
             first_button: QPushButton | None = next((cast(QPushButton, btn) for btn in self.buttons.values()), None)
             if first_button:
                 first_button.setFocus()
+                self._set_selected_button(first_button)
+                return
+
+        focused = self.focusWidget()
+        if isinstance(focused, QPushButton) and self.keyboard_layout.indexOf(focused) != -1:
+            self._set_selected_button(focused)
+        else:
+            first_button = self.findFirstFocusableButton()
+            if first_button:
+                self._set_selected_button(first_button)
 
     def eventFilter(self, obj, event):
         if (
@@ -598,16 +617,22 @@ class VirtualKeyboard(QFrame):
     def activateFocusedKey(self):
         """Activate current highlighted button on keyboard"""
         focused = self.focusWidget()
+        if not isinstance(focused, QPushButton) or self.keyboard_layout.indexOf(focused) == -1:
+            focused = self.selected_button
         if isinstance(focused, QPushButton):
+            self._set_selected_button(focused)
             focused.animateClick()
 
     def focusNextKey(self, direction: str):
         """Move focus to next button in specified direction with wrapping"""
         current = self.focusWidget()
+        if not isinstance(current, QPushButton) or self.keyboard_layout.indexOf(current) == -1:
+            current = self.selected_button
         if not current:
             first_button = self.findFirstFocusableButton()
             if first_button:
                 first_button.setFocus()
+                self._set_selected_button(first_button)
             return
 
         current_idx = self.keyboard_layout.indexOf(current)
@@ -632,6 +657,7 @@ class VirtualKeyboard(QFrame):
                 if widget and widget.isEnabled():
                     next_button = cast(QPushButton, widget)
                     next_button.setFocus()
+                    self._set_selected_button(next_button)
                     found = True
                     break
                 search_col += 1
@@ -647,6 +673,7 @@ class VirtualKeyboard(QFrame):
                     if widget and widget.isEnabled():
                         next_button = cast(QPushButton, widget)
                         next_button.setFocus()
+                        self._set_selected_button(next_button)
                         found = True
                         break
                     search_col += 1
@@ -661,6 +688,7 @@ class VirtualKeyboard(QFrame):
                 if widget and widget.isEnabled():
                     next_button = cast(QPushButton, widget)
                     next_button.setFocus()
+                    self._set_selected_button(next_button)
                     found = True
                     break
                 search_col -= 1
@@ -676,6 +704,7 @@ class VirtualKeyboard(QFrame):
                     if widget and widget.isEnabled():
                         next_button = cast(QPushButton, widget)
                         next_button.setFocus()
+                        self._set_selected_button(next_button)
                         found = True
                         break
                     search_col -= 1
@@ -690,6 +719,7 @@ class VirtualKeyboard(QFrame):
                 if widget and widget.isEnabled():
                     next_button = cast(QPushButton, widget)
                     next_button.setFocus()
+                    self._set_selected_button(next_button)
                     found = True
                     break
                 search_row += 1
@@ -705,6 +735,7 @@ class VirtualKeyboard(QFrame):
                     if widget and widget.isEnabled():
                         next_button = cast(QPushButton, widget)
                         next_button.setFocus()
+                        self._set_selected_button(next_button)
                         found = True
                         break
                     search_row += 1
@@ -719,6 +750,7 @@ class VirtualKeyboard(QFrame):
                 if widget and widget.isEnabled():
                     next_button = cast(QPushButton, widget)
                     next_button.setFocus()
+                    self._set_selected_button(next_button)
                     found = True
                     break
                 search_row -= 1
@@ -734,6 +766,7 @@ class VirtualKeyboard(QFrame):
                     if widget and widget.isEnabled():
                         next_button = cast(QPushButton, widget)
                         next_button.setFocus()
+                        self._set_selected_button(next_button)
                         found = True
                         break
                     search_row -= 1
@@ -747,3 +780,16 @@ class VirtualKeyboard(QFrame):
                 if widget and widget.isEnabled():
                     return cast(QPushButton, widget)
         return None
+
+    def _set_selected_button(self, button):
+        if self.selected_button and self.selected_button != button:
+            self.selected_button.setProperty("vk_selected", False)
+            self.selected_button.style().unpolish(self.selected_button)
+            self.selected_button.style().polish(self.selected_button)
+            self.selected_button.update()
+        self.selected_button = button
+        self.last_focused_button = button
+        self.selected_button.setProperty("vk_selected", True)
+        self.selected_button.style().unpolish(self.selected_button)
+        self.selected_button.style().polish(self.selected_button)
+        self.selected_button.update()

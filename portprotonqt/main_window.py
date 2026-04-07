@@ -18,7 +18,6 @@ from portprotonqt.portproton_api import PortProtonAPI, get_user_conf_setting, se
 from portprotonqt.debug_utils import get_gpu_list, get_prefix_name
 from portprotonqt.input_manager import InputManager, MainWindowProtocol
 from portprotonqt.context_menu_manager import ContextMenuManager, CustomLineEdit
-from portprotonqt.system_overlay import SystemOverlay
 from portprotonqt.input_manager import GamepadType
 
 from portprotonqt.image_utils import load_pixmap_async, ImageCarousel
@@ -48,11 +47,14 @@ from portprotonqt.game_library_manager import GameLibraryManager
 from portprotonqt.virtual_keyboard import VirtualKeyboard
 from portprotonqt.dialogs.proton_manager import show_proton_manager
 from portprotonqt.config_utils import find_game_by_exe
+from portprotonqt.tabs.control_hints import MainWindowControlHintsMixin
+from portprotonqt.tabs.system_tab import MainWindowSystemTabMixin
+from portprotonqt.tabs.workers import MainWindowWorkersMixin
 
 from PySide6.QtWidgets import (QLineEdit, QMainWindow, QStatusBar, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox,
                                QDialog, QFormLayout, QMessageBox, QApplication, QPushButton, QProgressBar, QCheckBox, QSizePolicy, QGridLayout, QScrollArea, QScroller, QSlider, QFrame)
 from PySide6.QtCore import Qt, QAbstractAnimation, QUrl, Signal, QTimer, Slot, QProcess, QProcessEnvironment, QFileSystemWatcher, QStandardPaths
-from PySide6.QtGui import QIcon, QPixmap, QColor, QDesktopServices
+from PySide6.QtGui import QIcon, QColor, QDesktopServices
 from typing import cast
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
@@ -60,12 +62,12 @@ from datetime import datetime
 
 logger = get_logger(__name__)
 
-class MainWindow(QMainWindow):
+class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWindowWorkersMixin, QMainWindow):
     games_loaded = Signal(list)
     update_progress = Signal(int)
     update_status_message = Signal(str, int)
 
-    def __init__(self, app_name: str, version: str, launch_exe: str | None = None, resolution: tuple[int, int] | None = None):
+    def __init__(self, app_name: str, version: str, launch_exe: str | None = None, resolution: tuple[int, int] | None = None, show_system_tab: bool = False):
         super().__init__()
         self.theme_manager = ThemeManager()
         selected_theme = read_theme_from_config()
@@ -78,6 +80,8 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(f"{app_name} {version}")
         self.setMinimumSize(800, 600)
         self._pending_resolution = resolution  # Store resolution for later application
+        self._show_system_tab = show_system_tab
+        self.system_tab_index = -1  # Default, set when system tab is created
 
         self.games = []
         self.game_processes = []
@@ -209,6 +213,7 @@ class MainWindow(QMainWindow):
             _("Auto Install"),
             _("Wine Settings"),
             _("PortProton Settings"),
+            _("System"),
             _("Themes")
         ]
         for i, tabName in enumerate(tabs):
@@ -234,6 +239,7 @@ class MainWindow(QMainWindow):
 
         # 3. QStackedWidget (TABS)
         self.stackedWidget = QStackedWidget()
+        self.stackedWidget.currentChanged.connect(self.updateControlHints)
         mainLayout.addWidget(self.stackedWidget)
 
         self.createInstalledTab()
@@ -257,6 +263,17 @@ class MainWindow(QMainWindow):
 
         self.createWineTab()
         self.createPortProtonTab()
+        if self._show_system_tab:
+            self.createSystemTab()
+        else:
+            # Keep tab indexes stable when System tab is disabled.
+            self.stackedWidget.addWidget(QWidget())
+            if hasattr(self, 'tabButtons') and 4 in self.tabButtons:
+                system_tab_button = self.tabButtons[4]
+                system_tab_button.setVisible(False)
+            hidden_system_page = self.stackedWidget.widget(4)
+            if hidden_system_page:
+                hidden_system_page.setVisible(False)
         self.createThemeTab()
 
         self.controlHintsWidget = self.createControlHintsWidget()
@@ -329,410 +346,6 @@ class MainWindow(QMainWindow):
 
         # Add prefixes directory to watcher
         self.fs_watcher.addPath(prefixes_path)
-
-    def get_button_icon(self, action: str, gtype: GamepadType) -> str:
-        """Get the icon name for a specific action and gamepad type."""
-        mappings = {
-            'confirm': {
-                GamepadType.XBOX: "xbox_a",
-                GamepadType.PLAYSTATION: "ps_cross",
-            },
-            'back': {
-                GamepadType.XBOX: "xbox_b",
-                GamepadType.PLAYSTATION: "ps_circle",
-            },
-            'add_game': {
-                GamepadType.XBOX: "xbox_x",
-                GamepadType.PLAYSTATION: "ps_triangle",
-            },
-            'context_menu': {
-                GamepadType.XBOX: "xbox_start",
-                GamepadType.PLAYSTATION: "ps_options",
-            },
-            'menu': {
-                GamepadType.XBOX: "xbox_view",  # Select button on Xbox
-                GamepadType.PLAYSTATION: "ps_share",
-            },
-            'search': {
-                GamepadType.XBOX: "xbox_y",
-                GamepadType.PLAYSTATION: "ps_square",
-            },
-            'prev_dir': {
-                GamepadType.XBOX: "xbox_y",
-                GamepadType.PLAYSTATION: "ps_square",
-            },
-            'guide_select': {
-                GamepadType.XBOX: "xbox_xbox",  # Xbox Guide button
-                GamepadType.PLAYSTATION: "ps_ps",  # PS button
-            },
-        }
-        return mappings.get(action, {}).get(gtype, "placeholder")
-
-    def get_nav_icon(self, direction: str, gtype: GamepadType) -> str:
-        """Get the icon name for navigation direction and gamepad type."""
-        if direction == 'left':
-            action = 'prev_tab'
-        else:
-            action = 'next_tab'
-        mappings = {
-            'prev_tab': {
-                GamepadType.XBOX: "xbox_lb",
-                GamepadType.PLAYSTATION: "ps_l1",
-            },
-            'next_tab': {
-                GamepadType.XBOX: "xbox_rb",
-                GamepadType.PLAYSTATION: "ps_r1",
-            },
-        }
-        return mappings.get(action, {}).get(gtype, "placeholder")
-
-    def createControlHintsWidget(self) -> QWidget:
-        from portprotonqt.localization import _
-        """Creates a widget displaying control hints for gamepad and keyboard."""
-        logger.debug("Creating control hints widget")
-        hintsWidget = QWidget()
-        hintsWidget.setStyleSheet(self.theme.STATUS_BAR_STYLE)
-
-        hintsLayout = FlowLayout(hintsWidget)
-        hintsLayout.setContentsMargins(10, 0, 10, 0)
-
-        gamepad_actions = [
-            ("confirm", _("Select")),
-            ("back", _("Back")),
-            ("add_game", _("Add Game")),
-            ("context_menu", _("Menu")),
-            ("menu", _("Fullscreen")),
-            ("search", _("Search")),
-            ("guide_select", _("Refresh Grid")),
-            ("mouse_emulation", _("Mouse Emulation")),
-        ]
-
-        keyboard_hints = [
-            ("key_enter", _("Select")),
-            ("key_backspace", _("Back")),
-            ("key_e", _("Add Game")),
-            ("key_context", _("Menu")),
-            ("key_f11", _("Fullscreen")),
-            ("key_f5", _("Refresh Grid")),
-        ]
-
-        self.hintsLabels = []
-
-        def makeHint(icon_name: str, action_text: str, is_gamepad: bool, action: str | None = None,):
-            container = QWidget()
-            layout = QHBoxLayout(container)
-            layout.setContentsMargins(0, 5, 0, 0)
-            layout.setSpacing(6)
-
-            # button icon
-            icon_label = QLabel()
-            icon_label.setFixedSize(26, 26)
-            icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-            pixmap = QPixmap()
-            for candidate in (
-                self.theme_manager.get_theme_image(icon_name, self.current_theme_name),
-                self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
-            ):
-                if candidate is not None and pixmap.load(str(candidate)):
-                    break
-
-            if not pixmap.isNull():
-                icon_label.setPixmap(pixmap.scaled(
-                    26, 26,
-                    Qt.AspectRatioMode.KeepAspectRatio,
-                    Qt.TransformationMode.SmoothTransformation
-                ))
-
-            layout.addWidget(icon_label)
-
-            # action text
-            text_label = QLabel(action_text)
-            text_label.setStyleSheet(self.theme.LAST_LAUNCH_VALUE_STYLE)
-            text_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
-            layout.addWidget(text_label)
-
-            if is_gamepad:
-                container.setVisible(False)
-                self.hintsLabels.append((container, icon_label, action))  # Store action for dynamic update
-            else:
-                container.setVisible(True)
-                self.hintsLabels.append((container, icon_label, None))  # Keyboard, no action
-
-            hintsLayout.addWidget(container)
-
-        # Special function to create combination hint for Guide+Select or Guide+Start
-        def makeCombinationHint(action_text: str, action: str | None = None):
-            container = QWidget()
-            layout = QHBoxLayout(container)
-            layout.setContentsMargins(0, 5, 0, 0)
-            layout.setSpacing(6)
-
-            # First icon (Guide button)
-            guide_icon = QLabel()
-            guide_icon.setFixedSize(26, 26)
-            guide_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-            pixmap = QPixmap()
-            for candidate in (
-                self.theme_manager.get_theme_image("xbox_xbox", self.current_theme_name),  # Xbox Guide
-                self.theme_manager.get_theme_image("ps_ps", self.current_theme_name),  # PS Button
-                self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
-            ):
-                if candidate is not None and pixmap.load(str(candidate)):
-                    break
-
-            if not pixmap.isNull():
-                guide_icon.setPixmap(pixmap.scaled(
-                    26, 26,
-                    Qt.AspectRatioMode.KeepAspectRatio,
-                    Qt.TransformationMode.SmoothTransformation
-                ))
-
-            layout.addWidget(guide_icon)
-
-            # Plus sign between icons
-            plus_icon = QLabel()
-            plus_icon.setFixedSize(26, 26)
-            plus_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-            plus_pixmap = QPixmap()
-            for candidate in (
-                self.theme_manager.get_theme_image("key_+", self.current_theme_name),
-                self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
-            ):
-                if candidate is not None and plus_pixmap.load(str(candidate)):
-                    break
-
-            if not plus_pixmap.isNull():
-                plus_icon.setPixmap(plus_pixmap.scaled(
-                    26, 26,
-                    Qt.AspectRatioMode.KeepAspectRatio,
-                    Qt.TransformationMode.SmoothTransformation
-                ))
-
-            layout.addWidget(plus_icon)
-
-            # Second icon (Select button for guide_select, Start button for mouse_emulation)
-            select_icon = QLabel()
-            select_icon.setFixedSize(26, 26)
-            select_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-            # Determine which icon to use based on action
-            if action == "mouse_emulation":  # Guide+Start combination for mouse emulation
-                pixmap2 = QPixmap()
-                for candidate in (
-                    self.theme_manager.get_theme_image("xbox_start", self.current_theme_name),  # Xbox Start
-                    self.theme_manager.get_theme_image("ps_options", self.current_theme_name),  # PS Options
-                    self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
-                ):
-                    if candidate is not None and pixmap2.load(str(candidate)):
-                        break
-            else:  # Default to Select for guide_select
-                pixmap2 = QPixmap()
-                for candidate in (
-                    self.theme_manager.get_theme_image("xbox_view", self.current_theme_name),  # Xbox Select
-                    self.theme_manager.get_theme_image("ps_share", self.current_theme_name),  # PS Share
-                    self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
-                ):
-                    if candidate is not None and pixmap2.load(str(candidate)):
-                        break
-
-            if not pixmap2.isNull():
-                select_icon.setPixmap(pixmap2.scaled(
-                    26, 26,
-                    Qt.AspectRatioMode.KeepAspectRatio,
-                    Qt.TransformationMode.SmoothTransformation
-                ))
-
-            layout.addWidget(select_icon)
-
-            # action text
-            text_label = QLabel(action_text)
-            text_label.setStyleSheet(self.theme.LAST_LAUNCH_VALUE_STYLE)
-            text_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
-            layout.addWidget(text_label)
-
-            # For gamepad combination hints
-            container.setVisible(False)
-            self.hintsLabels.append((container, [guide_icon, plus_icon, select_icon], action))  # Store all three elements for dynamic update
-
-            hintsLayout.addWidget(container)
-
-        # Create gamepad hints
-        for action, text in gamepad_actions:
-            if action in ("guide_select", "mouse_emulation"):
-                # For the Guide+Select or Guide+Start combination, create a special combination hint
-                makeCombinationHint(text, action)
-            else:
-                makeHint("placeholder", text, True, action)  # Initial placeholder
-
-        # Create keyboard hints
-        for icon, text in keyboard_hints:
-            makeHint(icon, text, False)
-
-        return hintsWidget
-
-    def updateNavButtons(self, *args) -> None:
-        """Updates navigation buttons based on gamepad connection status and type."""
-        is_gamepad_connected = self.input_manager.gamepad is not None
-        gtype = self.input_manager.gamepad_type
-        logger.debug("Updating nav buttons, gamepad connected: %s, type: %s", is_gamepad_connected, gtype.value)
-
-        # Left navigation button
-        left_pix = QPixmap()
-        if is_gamepad_connected:
-            left_icon_name = self.get_nav_icon('left', gtype)
-        else:
-            left_icon_name = "key_left"
-        left_icon = self.theme_manager.get_theme_image(left_icon_name, self.current_theme_name)
-        if left_icon:
-            left_pix.load(str(left_icon))
-        if not left_pix.isNull():
-            self.leftNavButton.setPixmap(left_pix.scaled(
-                32, 32,
-                Qt.AspectRatioMode.KeepAspectRatio,
-                Qt.TransformationMode.SmoothTransformation
-            ))
-        self.leftNavButton.setVisible(True)  # Always visible, icon changes
-
-        # Right navigation button
-        right_pix = QPixmap()
-        if is_gamepad_connected:
-            right_icon_name = self.get_nav_icon('right', gtype)
-        else:
-            right_icon_name = "key_right"
-        right_icon = self.theme_manager.get_theme_image(right_icon_name, self.current_theme_name)
-        if right_icon:
-            right_pix.load(str(right_icon))
-        if not right_pix.isNull():
-            self.rightNavButton.setPixmap(right_pix.scaled(
-                32, 32,
-                Qt.AspectRatioMode.KeepAspectRatio,
-                Qt.TransformationMode.SmoothTransformation
-            ))
-        self.rightNavButton.setVisible(True)  # Always visible, icon changes
-
-    def updateControlHints(self, *args) -> None:
-        """Updates control hints based on gamepad connection status and type."""
-        is_gamepad_connected = self.input_manager.gamepad is not None
-        gtype = self.input_manager.gamepad_type
-        logger.debug("Updating control hints, gamepad connected: %s, type: %s", is_gamepad_connected, gtype.value)
-
-        gamepad_actions = ['confirm', 'back', 'add_game', 'context_menu', 'menu', 'search', 'guide_select', 'mouse_emulation']
-
-        for container, icon_element, action in self.hintsLabels:
-            if action in gamepad_actions:  # Gamepad hint
-                if is_gamepad_connected:
-                    container.setVisible(True)
-                    # Check if this is a combination hint (array of icons) or single icon hint
-                    if isinstance(icon_element, list) and len(icon_element) == 3 and action in ("guide_select", "mouse_emulation"):
-                        # This is a combination hint for Guide+Select or Guide+Start (mouse emulation)
-                        guide_icon, plus_icon, select_icon = icon_element
-
-                        # Determine guide icon based on gamepad type
-                        if gtype == GamepadType.XBOX:
-                            guide_icon_name = "xbox_xbox"  # Xbox Guide button
-                        elif gtype == GamepadType.PLAYSTATION:
-                            guide_icon_name = "ps_ps"  # PS Button
-                        else:
-                            guide_icon_name = "xbox_xbox"  # Default to Xbox guide
-
-                        # Load Guide icon
-                        guide_pixmap = QPixmap()
-                        for candidate in (
-                            self.theme_manager.get_theme_image(guide_icon_name, self.current_theme_name),
-                            self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
-                        ):
-                            if candidate is not None and guide_pixmap.load(str(candidate)):
-                                break
-
-                        if not guide_pixmap.isNull():
-                            guide_icon.setPixmap(guide_pixmap.scaled(
-                                26, 26,
-                                Qt.AspectRatioMode.KeepAspectRatio,
-                                Qt.TransformationMode.SmoothTransformation
-                            ))
-
-                        # Load Plus icon
-                        plus_pixmap = QPixmap()
-                        for candidate in (
-                            self.theme_manager.get_theme_image("key_+", self.current_theme_name),
-                            self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
-                        ):
-                            if candidate is not None and plus_pixmap.load(str(candidate)):
-                                break
-
-                        if not plus_pixmap.isNull():
-                            plus_icon.setPixmap(plus_pixmap.scaled(
-                                26, 26,
-                                Qt.AspectRatioMode.KeepAspectRatio,
-                                Qt.TransformationMode.SmoothTransformation
-                            ))
-
-                        # Determine second icon based on gamepad type and action
-                        select_icon_name = "xbox_view"  # Default to Xbox Select
-                        if action == "guide_select":  # Guide+Select combination
-                            if gtype == GamepadType.XBOX:
-                                select_icon_name = "xbox_view"  # Xbox Select button
-                            elif gtype == GamepadType.PLAYSTATION:
-                                select_icon_name = "ps_share"  # PS Share button
-                        elif action == "mouse_emulation":  # Guide+Start combination
-                            if gtype == GamepadType.XBOX:
-                                select_icon_name = "xbox_start"  # Xbox Start button
-                            elif gtype == GamepadType.PLAYSTATION:
-                                select_icon_name = "ps_options"  # PS Options button
-                            else:
-                                select_icon_name = "xbox_start"  # Default to Xbox Start
-
-                        # Load second icon
-                        select_pixmap = QPixmap()
-                        for candidate in (
-                            self.theme_manager.get_theme_image(select_icon_name, self.current_theme_name),
-                            self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
-                        ):
-                            if candidate is not None and select_pixmap.load(str(candidate)):
-                                break
-
-                        if not select_pixmap.isNull():
-                            select_icon.setPixmap(select_pixmap.scaled(
-                                26, 26,
-                                Qt.AspectRatioMode.KeepAspectRatio,
-                                Qt.TransformationMode.SmoothTransformation
-                            ))
-                    else:
-                        # This is a regular single-icon hint
-                        # Verify that icon_element is not a list before assigning
-                        if isinstance(icon_element, list):
-                            # This shouldn't happen based on current logic, but added for safety
-                            logger.warning(f"Unexpected list found for single-icon hint with action: {action}")
-                            continue  # Skip this iteration to prevent error
-                        icon_label = icon_element
-                        # Update icon based on type
-                        icon_name = self.get_button_icon(action, gtype)
-                        icon_path = self.theme_manager.get_theme_image(icon_name, self.current_theme_name)
-                        pixmap = QPixmap()
-                        if icon_path:
-                            pixmap.load(str(icon_path))
-                        if not pixmap.isNull():
-                            icon_label.setPixmap(pixmap.scaled(
-                                26, 26,
-                                Qt.AspectRatioMode.KeepAspectRatio,
-                                Qt.TransformationMode.SmoothTransformation
-                            ))
-                        else:
-                            # Fallback to placeholder
-                            placeholder = self.theme_manager.get_theme_image("placeholder", self.current_theme_name)
-                            if placeholder:
-                                pixmap.load(str(placeholder))
-                                icon_label.setPixmap(pixmap.scaled(26, 26, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
-                else:
-                    container.setVisible(False)
-            else:  # Keyboard hint
-                container.setVisible(not is_gamepad_connected)
-
-        # Update navigation buttons
-        self.updateNavButtons()
 
     def launch_autoinstall(self, script_name: str):
         """Launch auto-install script."""
@@ -1262,11 +875,8 @@ class MainWindow(QMainWindow):
             QTimer.singleShot(10, lambda: auto_widget.adjustSize())
             QTimer.singleShot(15, lambda: auto_widget.updateGeometry())
 
-
-    def openSystemOverlay(self):
-        """Opens the system overlay dialog."""
-        overlay = SystemOverlay(self, self.theme)
-        overlay.exec()
+        if self.stackedWidget.currentIndex() == getattr(self, "system_tab_index", -1):
+            QTimer.singleShot(0, self._focusSystemNetworkOnTabEnter)
 
     def createSearchWidget(self) -> tuple[QWidget, CustomLineEdit]:
         self.container = QWidget()
@@ -2631,47 +2241,6 @@ class MainWindow(QMainWindow):
         layout.addLayout(buttonsLayout)
         self.stackedWidget.addWidget(self.portProtonWidget)
 
-    # def openLegendaryLogin(self):
-    #     """Opens the Legendary login page in the default web browser."""
-    #     login_url = "https://legendary.gl/epiclogin"
-    #     try:
-    #         QDesktopServices.openUrl(QUrl(login_url))
-    #         self.statusBar().showMessage(_("Opened Legendary login page in browser"), 3000)
-    #     except Exception as e:
-    #         logger.error(f"Failed to open Legendary login page: {e}")
-    #         self.statusBar().showMessage(_("Failed to open Legendary login page"), 3000)
-    #
-    # def submitLegendaryCode(self):
-    #     """Submits the Legendary authorization code using the legendary CLI."""
-    #     auth_code = self.legendaryCodeEdit.text().strip()
-    #     if not auth_code:
-    #         QMessageBox.warning(self, _("Error"), _("Please enter an authorization code"))
-    #         return
-    #
-    #     try:
-    #         # Execute legendary auth command
-    #         result = subprocess.run(
-    #             [self.legendary_path, "auth", "--code", auth_code],
-    #             capture_output=True,
-    #             text=True,
-    #             check=True
-    #         )
-    #         logger.info("Legendary authentication successful: %s", result.stdout)
-    #         self.statusBar().showMessage(_("Successfully authenticated with Legendary"), 3000)
-    #         self.legendaryCodeEdit.clear()
-    #         # Reload Epic Games Store games after successful authentication
-    #         self.games = self.loadGames()
-    #         self.updateGameGrid()
-    #     except subprocess.CalledProcessError as e:
-    #         logger.error("Legendary authentication failed: %s", e.stderr)
-    #         self.statusBar().showMessage(_("Legendary authentication failed: {0}").format(e.stderr), 5000)
-    #     except FileNotFoundError:
-    #         logger.error("Legendary executable not found at %s", self.legendary_path)
-    #         self.statusBar().showMessage(_("Legendary executable not found"), 5000)
-    #     except Exception as e:
-    #         logger.error("Unexpected error during Legendary authentication: %s", str(e))
-    #         self.statusBar().showMessage(_("Unexpected error during authentication"), 5000)
-
     def resetSettings(self):
         """Reset settings and restart application."""
         msg_box = QMessageBox(self)
@@ -2994,11 +2563,12 @@ class MainWindow(QMainWindow):
                     state = f.read().strip()
                     logger.info(f"State file contents: '{state}'")
                     if state == "theme_tab":
-                        logger.info("Restoring to theme tab (index 5)")
-                        if self.stackedWidget.count() > 5:
-                            self.switchTab(5)
+                        logger.info("Restoring to theme tab")
+                        theme_index = getattr(self, "theme_tab_index", -1)
+                        if theme_index >= 0 and self.stackedWidget.count() > theme_index:
+                            self.switchTab(theme_index)
                         else:
-                            logger.warning("Theme tab (index 5) not available yet")
+                            logger.warning("Theme tab is not available yet")
                     else:
                         logger.warning(f"Unexpected state value: '{state}'")
                 os.remove(state_file)
@@ -3971,6 +3541,7 @@ class MainWindow(QMainWindow):
 
         self.game_processes = []
         self._cleanup_iso_rw_paths()
+        self._stopBackgroundWorkers()
 
         # Universal stop and delete timers
         timers = [
@@ -3979,6 +3550,7 @@ class MainWindow(QMainWindow):
             "searchDebounceTimer",
             "checkProcessTimer",
             "wine_monitor_timer",
+            "bluetoothAutoReloadTimer",
         ]
 
         for tname in timers:

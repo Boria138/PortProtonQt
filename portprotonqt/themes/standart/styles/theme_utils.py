@@ -64,6 +64,10 @@ QPushButton:focus {{
     border: {border_b} {color_a};
     background-color: {color_a};
 }}
+QPushButton[vk_selected="true"] {{
+    border: {border_b} {color_a};
+    background-color: {color_a};
+}}
 QPushButton:pressed {{
     background-color: {color_c};
     border: {border_a} {color_h};

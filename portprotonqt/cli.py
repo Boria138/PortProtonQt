@@ -49,6 +49,11 @@ def parse_args():
         action="store_true",
         help="Remove PortProtonQt Steam compatibility tool from user Steam directory"
     )
+    parser.add_argument(
+        "--ppqtos",
+        action="store_true",
+        help="Show the system tab in the application"
+    )
     # Add positional argument to accept launch files or portproton:// URLs
     parser.add_argument(
         'file_or_url',

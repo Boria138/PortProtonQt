@@ -34,10 +34,12 @@ dependencies = [
     "pyside6>=6.10.1",
     "pyudev>=0.24.4",
     "rapidfuzz>=3.14.3",
+    "qrcode>=8.2",
     "requests>=2.32.5",
     "tqdm>=4.67.1",
     "vdf>=3.4",
     "websocket-client>=1.9.0",
+    "dbus-fast>=4.0.4",
 ]
 
 [project.scripts]

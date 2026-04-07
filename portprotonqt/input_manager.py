@@ -31,8 +31,6 @@ class MainWindowProtocol(Protocol):
         ...
     def toggleGame(self, exec_line: str | None, button: QWidget | None = None) -> None:
         ...
-    def openSystemOverlay(self) -> None:
-        ...
     def on_slider_released(self) -> None:
         ...
     def on_auto_slider_released(self) -> None:
@@ -40,6 +38,10 @@ class MainWindowProtocol(Protocol):
     def isActiveWindow(self) -> bool:
         ...
     def refreshGames(self) -> None:
+        ...
+    def handleSystemTableGamepadAction(self, table: QTableWidget, action: str) -> bool:
+        ...
+    def handleSystemGamepadAction(self, action: str) -> bool:
         ...
     stackedWidget: QStackedWidget
     tabButtons: dict[int, QWidget]
@@ -522,18 +524,7 @@ class InputManager(QObject):
             popup = QApplication.activePopupWidget()
             if isinstance(popup, QMenu):
                 if code == ecodes.ABS_HAT0Y and value != 0:
-                    actions = popup.actions()
-                    if not actions:
-                        return
-                    current_action = popup.activeAction()
-                    current_idx = actions.index(current_action) if current_action in actions else -1
-
-                    if value > 0:  # Down
-                        next_idx = (current_idx + 1) % len(actions) if current_idx != -1 else 0
-                    else:  # Up
-                        next_idx = (current_idx - 1) % len(actions) if current_idx != -1 else len(actions) - 1
-
-                    popup.setActiveAction(actions[next_idx])
+                    self._navigate_menu_actions(popup, direction_down=value > 0)
                 return
 
             # 2. Validate State
@@ -741,6 +732,27 @@ class InputManager(QObject):
         if table and table.rowCount() > 0:
             table.setCurrentCell(0, 0)
             table.setFocus(Qt.FocusReason.OtherFocusReason)
+
+    def _get_navigable_menu_actions(self, menu: QMenu) -> list:
+        return [
+            action
+            for action in menu.actions()
+            if not action.isSeparator() and action.isEnabled() and action.isVisible()
+        ]
+
+    def _navigate_menu_actions(self, menu: QMenu, direction_down: bool) -> None:
+        actions = self._get_navigable_menu_actions(menu)
+        if not actions:
+            return
+        current_action = menu.activeAction()
+        if current_action not in actions:
+            target_index = 0 if direction_down else len(actions) - 1
+            menu.setActiveAction(actions[target_index])
+            return
+        current_index = actions.index(current_action)
+        step = 1 if direction_down else -1
+        next_index = (current_index + step) % len(actions)
+        menu.setActiveAction(actions[next_index])
 
     # TABLE NAVIGATION METHODS
     def handle_table_navigation(self, table: QTableWidget, code: int, value: int):
@@ -2171,13 +2183,7 @@ class InputManager(QObject):
                 logger.debug("Guide + Select combination detected, refreshing game grid")
                 self._parent.refreshGames()
             else:
-                # Only open system overlay if mouse emulation is not active/triggered
-                # This prevents conflicts when mouse emulation is enabled
-                if not (self.mouse_emulation_enabled and self.emulation_triggered):
-                    logger.debug("Guide button pressed alone, opening system overlay")
-                    active = QApplication.activeWindow()
-                    if not isinstance(active, QDialog):
-                        self._parent.openSystemOverlay()
+                logger.debug("Guide button pressed alone")
 
         self.guide_held = False
         self.in_guide_combination_attempt = False
@@ -2208,6 +2214,12 @@ class InputManager(QObject):
                 self.handle_virtual_keyboard(button_code, value)
                 return
 
+        # Active dialog keyboard handling (including release)
+        dialog_keyboard = getattr(active_window, 'keyboard', None) if active_window else None
+        if isinstance(dialog_keyboard, VirtualKeyboard) and dialog_keyboard.isVisible():
+            self.handle_virtual_keyboard(button_code, value)
+            return
+
         # Main window keyboard handling (including release)
         keyboard = getattr(self._parent, 'keyboard', None)
         if keyboard and keyboard.isVisible():
@@ -2231,7 +2243,10 @@ class InputManager(QObject):
             current_tab_index = self._parent.stackedWidget.currentIndex()
 
             if button_code in BUTTONS['confirm'] and isinstance(focused, QLineEdit):
-                keyboard = getattr(self._parent, 'keyboard', None)
+                if isinstance(active, AddGameDialog):
+                    keyboard = getattr(active, 'keyboard', None)
+                else:
+                    keyboard = getattr(self._parent, 'keyboard', None)
                 if keyboard:
                     keyboard.show_for_widget(focused)
                     return
@@ -2350,6 +2365,29 @@ class InputManager(QObject):
                 return
 
             # Context menu for GameCard
+            if button_code in BUTTONS['context_menu'] and isinstance(focused, QTableWidget):
+                current_row = focused.currentRow()
+                current_col = focused.currentColumn()
+                if current_col < 0:
+                    current_col = 0
+                if current_row >= 0:
+                    item = focused.item(current_row, current_col)
+                    if item is None:
+                        item = focused.item(current_row, 0)
+                    if item is not None:
+                        point = focused.visualItemRect(item).center()
+                    else:
+                        point = focused.viewport().rect().center()
+                else:
+                    point = focused.viewport().rect().center()
+                focused.customContextMenuRequested.emit(point)
+                return
+
+            if button_code in BUTTONS['context_menu'] and isinstance(focused, QWidget):
+                if focused.contextMenuPolicy() == Qt.ContextMenuPolicy.CustomContextMenu:
+                    focused.customContextMenuRequested.emit(focused.rect().center())
+                    return
+
             if isinstance(focused, GameCard):
                 if button_code in BUTTONS['context_menu']:
                     pos = QPoint(focused.width() // 2, focused.height() // 2)
@@ -2357,6 +2395,26 @@ class InputManager(QObject):
                     if menu:
                         menu.setFocus(Qt.FocusReason.OtherFocusReason)
                     return
+
+            if isinstance(focused, QTableWidget):
+                system_action = getattr(self._parent, "handleSystemTableGamepadAction", None)
+                if callable(system_action):
+                    if button_code in BUTTONS['confirm'] and system_action(focused, "confirm"):
+                        return
+                    if button_code in BUTTONS['back'] and system_action(focused, "back"):
+                        return
+                    if button_code in BUTTONS['prev_dir'] and system_action(focused, "prev_dir"):
+                        return
+                    if button_code in BUTTONS['add_game'] and system_action(focused, "add_game"):
+                        return
+
+            system_quick_action = getattr(self._parent, "handleSystemGamepadAction", None)
+            if (
+                callable(system_quick_action)
+                and button_code in BUTTONS['add_game']
+                and system_quick_action("add_game")
+            ):
+                return
 
             # Standard navigation
             if button_code in BUTTONS['confirm']:
@@ -2412,8 +2470,23 @@ class InputManager(QObject):
                     idx = visible_tab_indices[new_visible_pos]
                     self._parent.switchTab(idx)
                     self._parent.tabButtons[idx].setFocus(Qt.FocusReason.OtherFocusReason)
-            elif button_code in BUTTONS['increase_size']:
+            elif button_code in BUTTONS['increase_size'] and value > 0:
                 current_tab = self._parent.stackedWidget.currentIndex()
+                system_tab_index = getattr(self._parent, "system_tab_index", -1)
+                if current_tab == system_tab_index:
+                    section_stack = getattr(self._parent, "systemSectionStack", None)
+                    volume_slider = getattr(self._parent, "audioVolumeSlider", None)
+                    apply_volume = getattr(self._parent, "_applySelectedAudioVolume", None)
+                    if (
+                        isinstance(section_stack, QStackedWidget)
+                        and section_stack.currentIndex() == 4
+                        and isinstance(volume_slider, QSlider)
+                    ):
+                        new_value = min(volume_slider.value() + 5, volume_slider.maximum())
+                        volume_slider.setValue(new_value)
+                        if callable(apply_volume):
+                            apply_volume()
+                        return
                 if current_tab == 0:  # Main games library
                     if hasattr(self._parent, 'game_library_manager') and self._parent.game_library_manager:
                         size_slider = getattr(self._parent.game_library_manager, 'sizeSlider', None)
@@ -2428,8 +2501,23 @@ class InputManager(QObject):
                         auto_size_slider.setValue(new_value)
                         if hasattr(self._parent, 'on_auto_slider_released'):
                             self._parent.on_auto_slider_released()
-            elif button_code in BUTTONS['decrease_size']:
+            elif button_code in BUTTONS['decrease_size'] and value > 0:
                 current_tab = self._parent.stackedWidget.currentIndex()
+                system_tab_index = getattr(self._parent, "system_tab_index", -1)
+                if current_tab == system_tab_index:
+                    section_stack = getattr(self._parent, "systemSectionStack", None)
+                    volume_slider = getattr(self._parent, "audioVolumeSlider", None)
+                    apply_volume = getattr(self._parent, "_applySelectedAudioVolume", None)
+                    if (
+                        isinstance(section_stack, QStackedWidget)
+                        and section_stack.currentIndex() == 4
+                        and isinstance(volume_slider, QSlider)
+                    ):
+                        new_value = max(volume_slider.value() - 5, volume_slider.minimum())
+                        volume_slider.setValue(new_value)
+                        if callable(apply_volume):
+                            apply_volume()
+                        return
                 if current_tab == 0:  # Main games library
                     if hasattr(self._parent, 'game_library_manager') and self._parent.game_library_manager:
                         size_slider = getattr(self._parent.game_library_manager, 'sizeSlider', None)
@@ -2490,10 +2578,7 @@ class InputManager(QObject):
 
     @Slot(int, int, float)
     def handle_dpad_slot(self, code: int, value: int, current_time: float) -> None:
-        keyboard = None
         active_window = QApplication.activeWindow()
-
-        # Check keyboard in active window (AddGameDialog or main window)
         if isinstance(active_window, AddGameDialog):
             keyboard = getattr(active_window, 'keyboard', None)
         else:
@@ -2509,6 +2594,7 @@ class InputManager(QObject):
             return
 
         # Update D-pad state for continuous movement
+        is_initial_press = not self.axis_moving
         self.current_dpad_code = code
         self.current_dpad_value = value
         if not self.axis_moving:
@@ -2618,7 +2704,7 @@ class InputManager(QObject):
                         checkbox_row[current_index + 1].setFocus(Qt.FocusReason.OtherFocusReason)
                         return
 
-            # Handle SystemOverlay, AddGameDialog, or other QDialog navigation with D-pad
+            # Handle AddGameDialog or other QDialog navigation with D-pad
             elif isinstance(active, QDialog) and code == ecodes.ABS_HAT0X and value != 0:
                 if not focused or not active.focusWidget():
                     # If no widget is focused, focus the first focusable widget
@@ -2649,15 +2735,7 @@ class InputManager(QObject):
             # Handle QMenu navigation with D-pad
             if isinstance(popup, QMenu):
                 if code == ecodes.ABS_HAT0Y and value != 0:
-                    actions = popup.actions()
-                    if actions:
-                        current_idx = actions.index(popup.activeAction()) if popup.activeAction() in actions else 0
-                        if value < 0:  # Up
-                            next_idx = (current_idx - 1) % len(actions)
-                            popup.setActiveAction(actions[next_idx])
-                        elif value > 0:  # Down
-                            next_idx = (current_idx + 1) % len(actions)
-                            popup.setActiveAction(actions[next_idx])
+                    self._navigate_menu_actions(popup, direction_down=value > 0)
                     return
                 return
 
@@ -2685,6 +2763,22 @@ class InputManager(QObject):
                     active.show_next()
                 return
 
+
+            # Table navigation using generalized methods
+            if code == ecodes.ABS_HAT0X and value != 0:
+                system_tab_index = getattr(self._parent, "system_tab_index", -1)
+                if self._parent.stackedWidget.currentIndex() == system_tab_index:
+                    switch_relative = getattr(self._parent, "switchSystemSectionRelative", None)
+                    if callable(switch_relative) and is_initial_press:
+                        switched = switch_relative(1 if value > 0 else -1)
+                        if switched:
+                            section_stack = getattr(self._parent, "systemSectionStack", None)
+                            section_buttons = getattr(self._parent, "systemSectionButtons", [])
+                            if section_stack is not None and section_buttons:
+                                current_index = section_stack.currentIndex()
+                                if 0 <= current_index < len(section_buttons):
+                                    section_buttons[current_index].setFocus(Qt.FocusReason.OtherFocusReason)
+                            return
 
             # Table navigation using generalized methods
             if isinstance(focused, QTableWidget):
@@ -2728,6 +2822,24 @@ class InputManager(QObject):
 
             if code == ecodes.ABS_HAT0Y and value != 0 and self._handle_theme_tab_navigation(value):
                 return
+
+            # System tab section buttons: do not cycle tabs on Up/Down.
+            if code == ecodes.ABS_HAT0Y and value != 0:
+                system_tab_index = getattr(self._parent, "system_tab_index", -1)
+                if self._parent.stackedWidget.currentIndex() == system_tab_index:
+                    focused = QApplication.focusWidget()
+                    section_buttons = getattr(self._parent, "systemSectionButtons", [])
+                    if focused in section_buttons:
+                        if value > 0:
+                            section_stack = getattr(self._parent, "systemSectionStack", None)
+                            focus_targets = getattr(self._parent, "systemSectionFocusTargets", [])
+                            if section_stack is not None:
+                                current_index = section_stack.currentIndex()
+                                if 0 <= current_index < len(focus_targets):
+                                    target = focus_targets[current_index]
+                                    if target is not None and target.isVisible() and target.isEnabled():
+                                        target.setFocus(Qt.FocusReason.OtherFocusReason)
+                        return
 
             # Button navigation on detail pages (horizontal layout)
             if code in (ecodes.ABS_HAT0X, ecodes.ABS_HAT0Y, ecodes.ABS_X, ecodes.ABS_Y):
@@ -2849,15 +2961,10 @@ class InputManager(QObject):
             logger.error(f"Error in handle_dpad_slot: {e}", exc_info=True)
 
     def handle_virtual_keyboard(self, button_code: int, value: int) -> None:
-        # Check keyboard in active window
         active_window = QApplication.activeWindow()
-        keyboard = None
-
-        # First check AddGameDialog
         if isinstance(active_window, AddGameDialog):
             keyboard = getattr(active_window, 'keyboard', None)
         else:
-            # If not AddGameDialog, check keyboard in main window
             keyboard = getattr(self._parent, 'keyboard', None)
 
         if not keyboard or not isinstance(keyboard, VirtualKeyboard) or not keyboard.isVisible():
@@ -2936,7 +3043,6 @@ class InputManager(QObject):
         key = event.key()
         modifiers = event.modifiers()
         focused = QApplication.focusWidget()
-        popup = QApplication.activePopupWidget()
         active_win = QApplication.activeWindow()
 
         # Handle key press events
@@ -3004,12 +3110,6 @@ class InputManager(QObject):
                 parent = focused.parentWidget() if focused else None
                 if isinstance(parent, QComboBox) and parent.isEditable():
                     return False
-
-            # Open system overlay with Insert
-            if key == Qt.Key.Key_Insert:
-                if not popup and not isinstance(active_win, QDialog):
-                    self._parent.openSystemOverlay()
-                    return True
 
             # Refresh game grid with F5
             if key == Qt.Key.Key_F5:

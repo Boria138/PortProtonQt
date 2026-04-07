@@ -106,3 +106,9 @@ install_data(
   'build-aux/lib/udev/rules.d/60-portprotonqt.rules',
   install_dir: udevdir,
 )
+
+# Install polkit rules
+install_data(
+  'build-aux/share/polkit-1/rules.d/ru.linux_gaming.PortProtonQt.rules',
+  install_dir: prefix / 'share' / 'polkit-1' / 'rules.d',
+)

@@ -23,7 +23,6 @@ install_data(
   'preloader.py',
   'search_utils.py',
   'settings_manager.py',
-  'system_overlay.py',
   'theme_manager.py',
   'theme_security.py',
   'time_utils.py',
@@ -69,6 +68,28 @@ install_data(
    'detail_pages/utils.py',
   ],
   install_dir: pythondir / meson.project_name() / 'detail_pages',
+)
+
+# Install system_manager package
+install_data(
+  ['system_manager/__init__.py',
+   'system_manager/audio.py',
+   'system_manager/bluetooth.py',
+   'system_manager/common.py',
+   'system_manager/network.py',
+   'system_manager/storage.py',
+  ],
+  install_dir: pythondir / meson.project_name() / 'system_manager',
+)
+
+# Install tabs package
+install_data(
+  ['tabs/__init__.py',
+   'tabs/control_hints.py',
+   'tabs/system_tab.py',
+   'tabs/workers.py',
+  ],
+  install_dir: pythondir / meson.project_name() / 'tabs',
 )
 
 # Install debug_utils package

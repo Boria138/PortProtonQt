@@ -207,7 +207,7 @@ def main():
         if window_resolution is None:
             logger.warning(f"Invalid resolution format: {args.resolution}, expected WIDTHxHEIGHT (e.g., 1920x1080)")
 
-    window = MainWindow(app_name=__app_name__, version=version, launch_exe=exe_path, resolution=window_resolution)
+    window = MainWindow(app_name=__app_name__, version=version, launch_exe=exe_path, resolution=window_resolution, show_system_tab=args.ppqtos)
 
     # Handle launch file if provided
     if exe_path:

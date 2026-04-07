@@ -55,6 +55,14 @@ Requires:       pciutils
 Requires:       vulkan-loader
 Requires:       7zip
 
+# System Tab
+Recommends:     NetworkManager
+Recommends:     bluez
+Recommends:     upower
+Recommends:     pulseaudio-utils
+Recommends:     python3-dbus-fast
+Recommends:     python3-qrcode
+
 %ifarch aarch64
 Requires:       muvm
 %endif
@@ -99,6 +107,7 @@ install -Dpm 0644 ./completions/_portprotonqt -t %{buildroot}%{zsh_completions_d
 %{_datadir}/icons/hicolor/scalable/apps/ru.linux_gaming.PortProtonQt.svg
 %{_metainfodir}/ru.linux_gaming.PortProtonQt.metainfo.xml
 %{_udevrulesdir}/60-portprotonqt.rules
+%{_datadir}/polkit-1/rules.d/ru.linux_gaming.PortProtonQt.rules
 %{_datadir}/applications/ru.linux_gaming.PortProtonQt.desktop
 %{bash_completions_dir}/portprotonqt
 %{fish_completions_dir}/portprotonqt.fish

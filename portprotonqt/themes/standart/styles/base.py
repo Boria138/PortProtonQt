@@ -177,6 +177,7 @@ ACTION_BUTTON_STYLE = f"""
     }}
 """
 
+
 # OVERLAY STYLE
 OVERLAY_WINDOW_STYLE = f"background: {color_b};"
 OVERLAY_BUTTON_STYLE = f"""
