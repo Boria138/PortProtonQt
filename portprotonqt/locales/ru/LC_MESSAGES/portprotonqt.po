@@ -430,9 +430,6 @@ msgstr "Командная строка"
 msgid "Uninstaller"
 msgstr "Удаление программ"
 
-msgid "Set default WINE"
-msgstr "Выбрать WINE по умолчанию"
-
 msgid "Create Prefix Backup"
 msgstr "Создать резервную копию префикса"
 
@@ -453,12 +450,6 @@ msgstr "Запуск инструмента..."
 
 msgid "Failed to start process."
 msgstr "Не удалось запустить процесс."
-
-msgid "Failed to update user.conf."
-msgstr "Не удалось обновить user.conf."
-
-msgid "Default WINE updated in user.conf"
-msgstr "WINE по умолчанию обновлён в user.conf"
 
 msgid "Confirm Clear"
 msgstr "Подтвердите очистку"

@@ -1889,7 +1889,6 @@ class MainWindow(QMainWindow):
 
         additional_buttons = [
             ("Winetricks", self.open_winetricks),
-            (_("Set default WINE"), self.set_default_wine_in_use_conf),
             (_("Create Prefix Backup"), self.create_prefix_backup),
             (_("Load Prefix Backup"), self.load_prefix_backup),
             (_("Delete Prefix"), self.delete_prefix),
@@ -2027,17 +2026,6 @@ class MainWindow(QMainWindow):
     def show_proton_manager(self):
         """Shows the Proton/WINE manager for downloading other WINE versions"""
         show_proton_manager(self, self.portproton_location, input_manager=self.input_manager)
-
-    def set_default_wine_in_use_conf(self) -> None:
-        selected_wine = self.wineCombo.currentText().strip()
-        if not selected_wine:
-            return
-
-        if not set_user_conf_setting('PW_WINE_USE', selected_wine):
-            QMessageBox.warning(self, _("Error"), _("Failed to update user.conf."))
-            return
-
-        self.statusBar().showMessage(_("Default WINE updated in user.conf"), 3000)
 
     def clear_prefix(self):
         """Clear prefix"""
