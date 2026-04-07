@@ -20,34 +20,6 @@ import select
 
 logger = get_logger(__name__)
 
-XBOX_BUTTON_A = ecodes.BTN_SOUTH
-XBOX_BUTTON_B = ecodes.BTN_EAST
-XBOX_BUTTON_X = ecodes.BTN_WEST
-XBOX_BUTTON_Y = ecodes.BTN_NORTH
-XBOX_BUTTON_LB = ecodes.BTN_TL
-XBOX_BUTTON_RB = ecodes.BTN_TR
-XBOX_BUTTON_VIEW = ecodes.BTN_SELECT
-XBOX_BUTTON_START = ecodes.BTN_START
-XBOX_BUTTON_GUIDE = ecodes.BTN_MODE
-XBOX_TRIGGER_LT = ecodes.BTN_TL2
-XBOX_TRIGGER_RT = ecodes.BTN_TR2
-XBOX_TRIGGER_LT_AXIS = ecodes.ABS_Z
-XBOX_TRIGGER_RT_AXIS = ecodes.ABS_RZ
-
-PLAYSTATION_BUTTON_CROSS = XBOX_BUTTON_A
-PLAYSTATION_BUTTON_CIRCLE = XBOX_BUTTON_B
-PLAYSTATION_BUTTON_SQUARE = XBOX_BUTTON_X
-PLAYSTATION_BUTTON_TRIANGLE = XBOX_BUTTON_Y
-PLAYSTATION_BUTTON_L1 = XBOX_BUTTON_LB
-PLAYSTATION_BUTTON_R1 = XBOX_BUTTON_RB
-PLAYSTATION_BUTTON_SHARE = XBOX_BUTTON_VIEW
-PLAYSTATION_BUTTON_OPTIONS = XBOX_BUTTON_START
-PLAYSTATION_BUTTON_PS = XBOX_BUTTON_GUIDE
-PLAYSTATION_TRIGGER_L2 = XBOX_TRIGGER_LT
-PLAYSTATION_TRIGGER_R2 = XBOX_TRIGGER_RT
-PLAYSTATION_TRIGGER_L2_AXIS = XBOX_TRIGGER_LT_AXIS
-PLAYSTATION_TRIGGER_R2_AXIS = XBOX_TRIGGER_RT_AXIS
-
 class MainWindowProtocol(Protocol):
     def activateFocusedWidget(self) -> None:
         ...
@@ -84,17 +56,17 @@ class MainWindowProtocol(Protocol):
 # https://github.com/torvalds/linux/blob/master/drivers/input/joystick/xpad.c
 # https://github.com/torvalds/linux/blob/master/drivers/hid/hid-nintendo
 BUTTONS = {
-    'confirm':       {XBOX_BUTTON_A},                        # A (Xbox) / Cross (PS) / B (Switch)
-    'back':          {XBOX_BUTTON_B},                        # B (Xbox) / Circle (PS) / A (Switch)
-    'add_game':      {XBOX_BUTTON_X},                        # X (Xbox) / Square (PS) / X (Switch left)
-    'prev_dir':      {XBOX_BUTTON_Y},                        # Y (Xbox) / Triangle (PS) / Y (Switch top)
-    'prev_tab':      {XBOX_BUTTON_LB, ecodes.BTN_Z},         # LB (Xbox) / L1 (PS) / L (Switch) and BTN_Z for hat switch
-    'next_tab':      {XBOX_BUTTON_RB, ecodes.BTN_C},         # RB (Xbox) / R1 (PS) / R (Switch) and BTN_C for hat switch
-    'context_menu':  {XBOX_BUTTON_START},                    # Start (Xbox) / Options (PS) / + (Switch)
-    'menu':          {XBOX_BUTTON_VIEW},                     # Select (Xbox) / Share (PS) / - (Switch)
-    'guide':         {XBOX_BUTTON_GUIDE},                    # Xbox Button / PS Button / Home (Switch)
-    'increase_size': {XBOX_TRIGGER_RT_AXIS, XBOX_TRIGGER_RT},  # RT (Xbox) / R2 (PS) / ZR (Switch)
-    'decrease_size': {XBOX_TRIGGER_LT_AXIS, XBOX_TRIGGER_LT},  # LT (Xbox) / L2 (PS) / ZL (Switch)
+    'confirm':       {ecodes.BTN_SOUTH},           # A (Xbox) / Cross (PS) / B (Switch)
+    'back':          {ecodes.BTN_EAST},            # B (Xbox) / Circle (PS) / A (Switch)
+    'add_game':      {ecodes.BTN_NORTH},           # X (Xbox) / Triangle (PS) / Y (Switch)
+    'prev_dir':      {ecodes.BTN_WEST},            # Y (Xbox) / Square (PS) / X (Switch)
+    'prev_tab':      {ecodes.BTN_TL, ecodes.BTN_Z},              # LB (Xbox) / L1 (PS) / L (Switch) and BTN_Z for hat switch
+    'next_tab':      {ecodes.BTN_TR, ecodes.BTN_C},              # RB (Xbox) / R1 (PS) / R (Switch) and BTN_C for hat switch
+    'context_menu':  {ecodes.BTN_START},           # Start (Xbox) / Options (PS) / + (Switch)
+    'menu':          {ecodes.BTN_SELECT},          # Select (Xbox) / Share (PS) / - (Switch)
+    'guide':         {ecodes.BTN_MODE},            # Xbox Button / PS Button / Home (Switch)
+    'increase_size': {ecodes.ABS_RZ, ecodes.BTN_TR2},              # RT (Xbox) / R2 (PS) / ZR (Switch) and BTN_TR2 for Bluetooth
+    'decrease_size': {ecodes.ABS_Z, ecodes.BTN_TL2},               # LT (Xbox) / L2 (PS) / ZL (Switch) and BTN_TL2 for Bluetooth
 }
 
 class GamepadType(Enum):
