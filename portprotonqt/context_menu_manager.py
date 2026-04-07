@@ -922,6 +922,7 @@ Icon={icon_path}
             logger.warning("Failed to clean statistics for '%s': %s", game_name, e)
 
     def delete_game(self, game_name, exec_line):
+        card_exec_line = exec_line
         msg_box = QMessageBox(self.parent)
         msg_box.setIcon(QMessageBox.Icon.Question)
         msg_box.setWindowTitle(_("Confirm Deletion"))
@@ -942,10 +943,10 @@ Icon={icon_path}
                 _("No .desktop file found for '{game_name}'").format(game_name=game_name)
             )
             return
-        exec_line = self._get_exec_line(game_name, exec_line)
-        if not exec_line:
+        resolved_exec_line = self._get_exec_line(game_name, exec_line)
+        if not resolved_exec_line:
             return
-        exe_path = self._parse_exe_path(exec_line, game_name)
+        exe_path = self._parse_exe_path(resolved_exec_line, game_name)
         exe_name = os.path.splitext(os.path.basename(exe_path))[0] if exe_path else None
         if not self._remove_file(
             desktop_path,
@@ -970,8 +971,7 @@ Icon={icon_path}
                         _("Failed to delete custom data: {error}").format(error=str(e))
                     )
 
-        self.update_game_grid = self.game_library_manager.remove_game_incremental
-        self.game_library_manager.remove_game_incremental(game_name, exec_line)
+        self.game_library_manager.remove_game_incremental(game_name, card_exec_line or resolved_exec_line)
 
     def add_game_incremental(self, game_data: tuple):
         """Add game after .desktop creation."""

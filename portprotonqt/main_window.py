@@ -967,7 +967,7 @@ class MainWindow(QMainWindow):
                     games = []
                     for game in results['portproton'] + results['steam'] + results['epic']:
                         # Unique key: name + exec_line
-                        key = (game[0], game[4])
+                        key = (game[0], game[5])
                         if key not in seen:
                             seen.add(key)
                             games.append(game)

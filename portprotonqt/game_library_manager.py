@@ -368,7 +368,7 @@ class GameLibraryManager:
                 sorted_games = sorted_fav + sorted_non_fav
 
                 # Build set of current game keys for faster lookup
-                current_game_keys = {(game[0], game[4]) for game in sorted_games}
+                current_game_keys = {(game[0], game[5]) for game in sorted_games}
 
                 # Remove cards that no longer exist (batch)
                 cards_to_remove = []
@@ -405,7 +405,7 @@ class GameLibraryManager:
 
                 for game_data in sorted_games:
                     game_name = game_data[0]
-                    exec_line = game_data[4]
+                    exec_line = game_data[5]
                     game_key = (game_name, exec_line)
                     should_be_visible = not search_text or search_text in game_name.lower()
 
@@ -469,7 +469,7 @@ class GameLibraryManager:
 
         try:
             # Create set of keys for current filtered games for fast lookup
-            filtered_keys = {(game[0], game[4]) for game in self.filtered_games}  # (name, exec_line)
+            filtered_keys = {(game[0], game[5]) for game in self.filtered_games}  # (name, exec_line)
 
             # Process existing cards: show cards that are in filtered results, hide others
             cards_to_hide = []
@@ -488,7 +488,7 @@ class GameLibraryManager:
             cards_to_add = []
             for game_data in self.filtered_games:
                 game_name = game_data[0]
-                exec_line = game_data[4]
+                exec_line = game_data[5]
                 game_key = (game_name, exec_line)
 
                 if game_key not in self.game_card_cache:
@@ -612,7 +612,7 @@ class GameLibraryManager:
         # We'll index by game name (index 0) and potentially other fields
         items = []
         for game in games:
-            # game is a tuple: (name, description, cover, appid, exec_line, controller_support,
+            # game is a tuple: (name, description, cover, appid, controller_support, exec_line,
             #                   last_launch, formatted_playtime, protondb_tier, anticheat_status,
             #                   last_played_timestamp, playtime_seconds, game_source)
             name = str(game[0]).lower() if game[0] else ""
@@ -641,8 +641,8 @@ class GameLibraryManager:
     def remove_game_incremental(self, game_name: str, exec_line: str):
         """Remove a single game without full reload."""
         key = (game_name, exec_line)
-        self.games = [g for g in self.games if (g[0], g[4]) != key]
-        self.filtered_games = [g for g in self.filtered_games if (g[0], g[4]) != key]
+        self.games = [g for g in self.games if (g[0], g[5]) != key]
+        self.filtered_games = [g for g in self.filtered_games if (g[0], g[5]) != key]
         if key in self.game_card_cache and self.gamesListLayout is not None:
             card = self.game_card_cache.pop(key)
             self.gamesListLayout.removeWidget(card)
