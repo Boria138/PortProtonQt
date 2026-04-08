@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-03-22 13:50+0500\n"
-"PO-Revision-Date: 2026-04-02 05:41+0000\n"
+"PO-Revision-Date: 2026-04-08 15:47+0000\n"
 "Last-Translator: Boria138 <boria138@noreply.codeberg.org>\n"
 "Language-Team: Russian <https://translate.codeberg.org/projects/portprotonqt/"
 "portprotonqt/ru/>\n"
@@ -1635,7 +1635,7 @@ msgid "Custom"
 msgstr "Пользовательский"
 
 msgid "Save custom"
-msgstr "Сохранение пользовательских настроек"
+msgstr "Сохранить пользовательские настройки"
 
 msgid "Clear"
 msgstr "Очистить"
@@ -2006,13 +2006,11 @@ msgstr "Использование видеопамяти"
 msgid "Layout and limiter"
 msgstr "Компоновка и ограничения"
 
-#, fuzzy
 msgid "Presets"
 msgstr "Профили"
 
-#, fuzzy
 msgid "Actions"
-msgstr "100%"
+msgstr "Действия"
 
 msgid "Enable MangoHud"
 msgstr "Включить MangoHud"
