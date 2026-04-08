@@ -824,26 +824,6 @@ msgstr ""
 msgid "Use container launch mode (recommended default)"
 msgstr ""
 
-msgid ""
-"Using FPS and system load monitoring (Turns on and off by the key "
-"combination - right Shift + F12)"
-msgstr ""
-
-msgid "Forced use of MANGOHUD system settings (GOverlay, etc.)"
-msgstr ""
-
-msgid ""
-"Super + F : Toggle fullscreen\n"
-"Super + N : Toggle nearest neighbour filtering\n"
-"Super + U : Toggle FSR upscaling\n"
-"Super + Y : Toggle NIS upscaling\n"
-"Super + I : Increase FSR sharpness by 1\n"
-"Super + O : Decrease FSR sharpness by 1\n"
-"Super + S : Take screenshot (currently goes to /tmp/gamescope_DATE.png)\n"
-"Super + G : Toggle keyboard grab\n"
-"Super + C : Update clipboard"
-msgstr ""
-
 msgid "System WINE"
 msgstr ""
 
@@ -1940,6 +1920,12 @@ msgid "VRAM usage"
 msgstr ""
 
 msgid "Layout and limiter"
+msgstr ""
+
+msgid "Presets"
+msgstr ""
+
+msgid "Actions"
 msgstr ""
 
 msgid "Enable MangoHud"

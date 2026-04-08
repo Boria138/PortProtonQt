@@ -221,6 +221,21 @@ MANGOHUD_BUTTON_PRESETS = {
         'fps_limit': '',
         'toggles': set(),
     },
+    'rivatuner': {
+        'config': (
+            'background_alpha=0.5,round_corners=0,text_color=e07a30,'
+            'position=top-left,table_columns=5,gpu_text=GPU,gpu_stats,'
+            'gpu_load_value=50+90,gpu_load_color=FFFFFF+FFAA7F+CC0000,gpu_temp,gpu_fan,'
+            'gpu_power,gpu_color=258640,cpu_text=CPU,vram,cpu_load_value=50+90,'
+            'cpu_load_color=FFFFFF+FFAA7F+CC0000,cpu_mhz,cpu_temp,cpu_color=30708d,'
+            'cpu_stats,vram_color=258640,vram_color=258640,ram,fps,ram_color=30708d,'
+            'wine_color=EB4B4B,frametime_color=d88989,fps_color=ff0000+FDFD09+ffffff,'
+            'media_player_color=FFFFFF,engine_short_names,'
+            'frame_timing,engine_color=d88989,text_outline_thickness=1.9'
+        ),
+        'fps_limit': '',
+        'toggles': set(),
+    },
 }
 
 MANGOHUD_TOGGLE_CATEGORIES = {
@@ -445,10 +460,15 @@ class MangoHudSettingsMixin:
 
     def _add_mangohud_presets_group(self, parent_layout):
         """Add preset buttons for common MangoHud layouts."""
-        group = QGroupBox(_("Quick presets"))
-        group.setStyleSheet(self.theme.QGROUP_BOX_STYLE)
-        layout = QGridLayout(group)
-        layout.setSpacing(10)
+        presets_group = QGroupBox(_("Presets"))
+        presets_group.setStyleSheet(self.theme.QGROUP_BOX_STYLE)
+        presets_layout = QGridLayout(presets_group)
+        presets_layout.setSpacing(10)
+
+        actions_group = QGroupBox(_("Actions"))
+        actions_group.setStyleSheet(self.theme.QGROUP_BOX_STYLE)
+        actions_layout = QGridLayout(actions_group)
+        actions_layout.setSpacing(10)
         columns = 2
 
         # Toggle buttons for PW_MANGOHUD and PW_MANGOHUD_USER_CONF
@@ -466,22 +486,37 @@ class MangoHudSettingsMixin:
         self.mangohud_user_conf_button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.mangohud_user_conf_button.clicked.connect(self.toggle_mangohud_user_conf)
 
-        layout.addWidget(self.mangohud_enable_button, 0, 0)
-        layout.addWidget(self.mangohud_user_conf_button, 0, 1)
+        actions_layout.addWidget(self.mangohud_enable_button, 0, 0)
+        actions_layout.addWidget(self.mangohud_user_conf_button, 0, 1)
 
-        buttons = [
+        preset_buttons = [
             (_("PortProton default"), self.apply_portproton_default_mangohud),
             (_("FPS only"), lambda: self.apply_mangohud_button_preset('fps_only')),
             (_("Compact"), lambda: self.apply_mangohud_button_preset('compact')),
             (_("Extended"), lambda: self.apply_mangohud_button_preset('extended')),
+            ("Riva Tuner", lambda: self.apply_mangohud_button_preset('rivatuner')),
             (_("Custom"), lambda: self.apply_mangohud_button_preset('custom')),
             (_("Save custom"), self.save_custom_mangohud_preset),
-            (_("Write system config"), self.write_system_mangohud_config),
-            (_("Preview"), self.start_mangohud_preview),
             (_("Clear"), lambda: self.apply_mangohud_button_preset('clear')),
         ]
 
-        for index, (label, handler) in enumerate(buttons):
+        action_buttons = [
+            (_("Write system config"), self.write_system_mangohud_config),
+            (_("Preview"), self.start_mangohud_preview),
+        ]
+
+        for index, (label, handler) in enumerate(preset_buttons):
+            button = QPushButton(label)
+            button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+            button.setMinimumHeight(44)
+            button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+            button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+            button.clicked.connect(handler)
+            row = index // columns
+            column = index % columns
+            presets_layout.addWidget(button, row, column)
+
+        for index, (label, handler) in enumerate(action_buttons):
             button = QPushButton(label)
             button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
             button.setMinimumHeight(44)
@@ -490,9 +525,10 @@ class MangoHudSettingsMixin:
             button.clicked.connect(handler)
             row = (index // columns) + 1
             column = index % columns
-            layout.addWidget(button, row, column)
+            actions_layout.addWidget(button, row, column)
 
-        parent_layout.addWidget(group)
+        parent_layout.addWidget(presets_group)
+        parent_layout.addWidget(actions_group)
 
     def _add_mangohud_toggle_group(self, parent_layout):
         """Add categorized MangoHud toggle checkboxes."""
@@ -888,6 +924,10 @@ class MangoHudSettingsMixin:
     def _on_mangohud_preview_finished(self, exit_code: int, exit_status: QProcess.ExitStatus) -> None:
         """Show error if MangoHud preview process fails."""
         if exit_code == 0 and exit_status == QProcess.ExitStatus.NormalExit:
+            return
+        # vkcube/mangoapp may exit with SIGSEGV (139) on manual window close.
+        if exit_code == 139:
+            logger.info("MangoHud preview closed by user (exit code 139).")
             return
         process = cast(QProcess, self.sender())
         error_output = bytes(process.readAllStandardError().data()).decode('utf-8', 'ignore')

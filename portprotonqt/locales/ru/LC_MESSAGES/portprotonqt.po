@@ -839,38 +839,6 @@ msgstr ""
 msgid "Use container launch mode (recommended default)"
 msgstr "Использовать режим запуска в контейнере (рекомендуемый по умолчанию)"
 
-msgid ""
-"Using FPS and system load monitoring (Turns on and off by the key "
-"combination - right Shift + F12)"
-msgstr ""
-"Использование мониторинга производительности и FPS(включается и "
-"выключается комбинацией клавиш - R_Shift + F12)"
-
-msgid "Forced use of MANGOHUD system settings (GOverlay, etc.)"
-msgstr "Принудительное использование системных настроек MANGOHUD (GOverlay и т.д.)"
-
-msgid ""
-"Super + F : Toggle fullscreen\n"
-"Super + N : Toggle nearest neighbour filtering\n"
-"Super + U : Toggle FSR upscaling\n"
-"Super + Y : Toggle NIS upscaling\n"
-"Super + I : Increase FSR sharpness by 1\n"
-"Super + O : Decrease FSR sharpness by 1\n"
-"Super + S : Take screenshot (currently goes to /tmp/gamescope_DATE.png)\n"
-"Super + G : Toggle keyboard grab\n"
-"Super + C : Update clipboard"
-msgstr ""
-"Super + F: Переключение полноэкранного режима\n"
-"Super + N: Переключение фильтрации\n"
-"Super + U: Переключение режима масштабирования на FSR\n"
-"Super + Y: Переключение режима масштабирования на NIS\n"
-"Super + I: Увеличение резкости FSR на 1\n"
-"Super + O: Уменьшение резкости FSR на 1\n"
-"Super + S: Сделать скриншот (сейчас сохраняется в "
-"/tmp/gamescope_DATE.png)\n"
-"Super + G: Переключение захвата клавиатуры\n"
-"Super + C: Обновление буфера обмена"
-
 msgid "System WINE"
 msgstr "Системный WINE"
 
@@ -2037,6 +2005,14 @@ msgstr "Использование видеопамяти"
 
 msgid "Layout and limiter"
 msgstr "Компоновка и ограничения"
+
+#, fuzzy
+msgid "Presets"
+msgstr "Профили"
+
+#, fuzzy
+msgid "Actions"
+msgstr "100%"
 
 msgid "Enable MangoHud"
 msgstr "Включить MangoHud"
