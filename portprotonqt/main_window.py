@@ -747,8 +747,7 @@ class MainWindow(QMainWindow):
             return
         cmd = start_sh + ["cli", "--autoinstall", script_name]
         self.install_process = QProcess(self)
-        self.install_process.setStandardOutputFile("/dev/stdout")
-        self.install_process.setStandardErrorFile("/dev/stdout")
+        self.install_process.setProcessChannelMode(QProcess.ProcessChannelMode.ForwardedChannels)
         self.install_process.finished.connect(self.on_install_finished)
         self.install_process.errorOccurred.connect(self.on_install_error)
         self.install_process.start(cmd[0], cmd[1:])
