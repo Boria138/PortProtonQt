@@ -1049,7 +1049,8 @@ class MainWindow(QMainWindow):
                 info.get("anticheat_status", ""),
                 last_played,
                 playtime_seconds,
-                "steam"
+                "steam",
+                info.get("anticheat_slug", ""),
             ))
             processed_count += 1
             self.pending_games.append(None)
@@ -1196,7 +1197,8 @@ class MainWindow(QMainWindow):
                 steam_info.get("anticheat_status", ""),
                 get_last_launch_timestamp(exe_name) if exe_name else 0,
                 playtime_seconds,
-                "portproton"
+                "portproton",
+                steam_info.get("anticheat_slug", ""),
             ))
 
         get_steam_game_info_async(desktop_name, exec_line, on_steam_info)
@@ -1542,7 +1544,8 @@ class MainWindow(QMainWindow):
                         steam_info.get("anticheat_status", ""),
                         last_played_timestamp,
                         playtime_seconds,
-                        "portproton"
+                        "portproton",
+                        steam_info.get("anticheat_slug", ""),
                     )
 
                     # Incremental add
@@ -2786,6 +2789,7 @@ class MainWindow(QMainWindow):
                     "protondb_tier": current_game[8],
                     "anticheat_status": current_game[9],
                     "game_source": current_game[12],
+                    "anticheat_slug": current_game[13] if len(current_game) > 13 else "",
                 }
                 self.detail_page_manager.openGameDetailPage(game_data)
 
@@ -3182,6 +3186,7 @@ class MainWindow(QMainWindow):
                             "protondb_tier": steam_info.get("protondb_tier", ""),
                             "anticheat_status": steam_info.get("anticheat_status", ""),
                             "game_source": "portproton",
+                            "anticheat_slug": steam_info.get("anticheat_slug", ""),
                         }
                         self.openGameDetailPage(game_data)
 
@@ -3200,6 +3205,7 @@ class MainWindow(QMainWindow):
                     "protondb_tier": steam_info.get("protondb_tier", ""),
                     "anticheat_status": steam_info.get("anticheat_status", ""),
                     "game_source": "portproton",
+                    "anticheat_slug": steam_info.get("anticheat_slug", ""),
                 }
                 # Open detail page for the newly added game
                 self.openGameDetailPage(game_data)
@@ -3239,6 +3245,7 @@ class MainWindow(QMainWindow):
                             "protondb_tier": steam_info.get("protondb_tier", ""),
                             "anticheat_status": steam_info.get("anticheat_status", ""),
                             "game_source": "portproton",
+                            "anticheat_slug": steam_info.get("anticheat_slug", ""),
                         }
                         self.openGameDetailPage(game_data)
 
@@ -3257,6 +3264,7 @@ class MainWindow(QMainWindow):
                     "protondb_tier": steam_info.get("protondb_tier", ""),
                     "anticheat_status": steam_info.get("anticheat_status", ""),
                     "game_source": "portproton",
+                    "anticheat_slug": steam_info.get("anticheat_slug", ""),
                 }
                 self.openGameDetailPage(game_data)
 

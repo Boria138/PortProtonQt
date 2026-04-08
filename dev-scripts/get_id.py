@@ -77,7 +77,7 @@ async def get_app_list(session, last_appid, endpoint):
 
 async def fetch_games_json(session):
     """
-    Загружает JSON с данными из AreWeAntiCheatYet и извлекает поля normalized_name и status.
+    Загружает JSON с данными из AreWeAntiCheatYet и извлекает normalized_name, status и slug.
     """
     url = "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/HEAD/games.json"
     try:
@@ -85,7 +85,15 @@ async def fetch_games_json(session):
             response.raise_for_status()
             text = await response.text()
             data = json.loads(text)
-            return [{"normalized_name": normalize_name(game["name"]), "status": game["status"]} for game in data]
+            result = []
+            for game in data:
+                slug = game.get("slug") or game.get("id") or ""
+                result.append({
+                    "normalized_name": normalize_name(game["name"]),
+                    "status": game["status"],
+                    "slug": slug,
+                })
+            return result
     except Exception as error:
         print(f"Ошибка загрузки games.json: {error}")
         return []

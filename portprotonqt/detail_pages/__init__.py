@@ -156,7 +156,10 @@ class DetailPageManager:
 
     def _create_anticheat_badge(self, parent: QWidget, game_data: dict) -> dict | None:
         badge, visible = create_anticheat_badge(
-            parent, game_data.get("anticheat_status", ""), game_data.get("name", ""),
+            parent,
+            game_data.get("anticheat_status", ""),
+            game_data.get("name", ""),
+            game_data.get("anticheat_slug", ""),
             self.main_window
         )
         return {"label": badge, "visible": True} if badge and visible else None

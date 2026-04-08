@@ -20,7 +20,7 @@ from portprotonqt.steam_api.cache import (
     search_app,
     load_weanticheatyet_data_async,
     build_weanticheatyet_index,
-    search_anticheat_status,
+    search_anticheat_entry,
     load_protondb_status,
     save_protondb_status,
 )
@@ -156,15 +156,28 @@ def get_anticheat_data_and_index_async(
 
 def get_weanticheatyet_status_async(game_name: str, callback: Callable[[str], None]) -> None:
     """Asynchronously retrieve WeAntiCheatYet status for a game by name."""
+    def on_anticheat_info(anticheat_info: dict) -> None:
+        callback(anticheat_info.get("status", ""))
+
+    get_weanticheatyet_info_async(game_name, on_anticheat_info)
+
+
+def get_weanticheatyet_info_async(game_name: str, callback: Callable[[dict], None]) -> None:
+    """Asynchronously retrieve WeAntiCheatYet status and slug for a game by name."""
     def on_anticheat_data_and_index(
         data_and_index: tuple[list | None, dict | None]
     ) -> None:
         anti_cheat_data, anti_cheat_index = data_and_index
         if anti_cheat_data and anti_cheat_index:
-            status = search_anticheat_status(game_name, anti_cheat_index)
+            entry = search_anticheat_entry(game_name, anti_cheat_index) or {}
         else:
-            status = ""
-        callback(status)
+            entry = {}
+        callback(
+            {
+                "status": entry.get("status", ""),
+                "slug": entry.get("slug", ""),
+            }
+        )
 
     get_anticheat_data_and_index_async(on_anticheat_data_and_index)
 
@@ -185,6 +198,7 @@ def _build_game_info_result(
     protondb_tier: str,
     steam_game: str,
     anticheat_status: str,
+    anticheat_slug: str = "",
 ) -> dict:
     """Build game info result dictionary."""
     return {
@@ -196,6 +210,7 @@ def _build_game_info_result(
         "protondb_tier": protondb_tier,
         "steam_game": steam_game,
         "anticheat_status": anticheat_status,
+        "anticheat_slug": anticheat_slug,
     }
 
 
@@ -242,7 +257,7 @@ def get_full_steam_game_info_async(
         cover = f"https://steamcdn-a.akamaihd.net/steam/apps/{appid}/library_600x900_2x.jpg"
 
         def on_protondb_tier(tier: str) -> None:
-            def on_anticheat_status(anticheat_status: str) -> None:
+            def on_anticheat_info(anticheat_info: dict) -> None:
                 result = _build_game_info_result(
                     appid=appid,
                     name=title,
@@ -251,11 +266,12 @@ def get_full_steam_game_info_async(
                     controller_support=app_info.get('controller_support', ''),
                     protondb_tier=tier,
                     steam_game="true",
-                    anticheat_status=anticheat_status,
+                    anticheat_status=anticheat_info.get("status", ""),
+                    anticheat_slug=anticheat_info.get("slug", ""),
                 )
                 callback(result)
 
-            get_weanticheatyet_status_async(title, on_anticheat_status)
+            get_weanticheatyet_info_async(title, on_anticheat_info)
 
         get_protondb_tier_async(appid, on_protondb_tier)
 
@@ -346,11 +362,12 @@ def get_steam_game_info_async(
                     anticheat_status="",
                 )
 
-                def on_anticheat_status_failure(anticheat_status: str) -> None:
-                    result["anticheat_status"] = anticheat_status
+                def on_anticheat_info_failure(anticheat_info: dict) -> None:
+                    result["anticheat_status"] = anticheat_info.get("status", "")
+                    result["anticheat_slug"] = anticheat_info.get("slug", "")
                     callback(result)
 
-                get_weanticheatyet_status_async(game_name, on_anticheat_status_failure)
+                get_weanticheatyet_info_async(game_name, on_anticheat_info_failure)
 
             if has_custom_data:
                 on_sgdb_cover_failure("")
@@ -369,7 +386,7 @@ def get_steam_game_info_async(
 
         if not matching_app:
             def on_sgdb_cover_non_steam(cover: str) -> None:
-                def on_anticheat_status_non_steam(anticheat_status: str) -> None:
+                def on_anticheat_info_non_steam(anticheat_info: dict) -> None:
                     result = _build_game_info_result(
                         appid="",
                         name=decode_text(game_name),
@@ -378,11 +395,12 @@ def get_steam_game_info_async(
                         controller_support="",
                         protondb_tier="",
                         steam_game="false",
-                        anticheat_status=anticheat_status,
+                        anticheat_status=anticheat_info.get("status", ""),
+                        anticheat_slug=anticheat_info.get("slug", ""),
                     )
                     callback(result)
 
-                get_weanticheatyet_status_async(game_name, on_anticheat_status_non_steam)
+                get_weanticheatyet_info_async(game_name, on_anticheat_info_non_steam)
 
             if has_custom_data:
                 on_sgdb_cover_non_steam("")
@@ -394,7 +412,7 @@ def get_steam_game_info_async(
 
         def on_app_info(app_info: dict | None) -> None:
             if not app_info:
-                def on_anticheat_status_no_info(anticheat_status: str) -> None:
+                def on_anticheat_info_no_info(anticheat_info: dict) -> None:
                     result = _build_game_info_result(
                         appid="",
                         name=decode_text(game_name),
@@ -403,11 +421,12 @@ def get_steam_game_info_async(
                         controller_support="",
                         protondb_tier="",
                         steam_game="false",
-                        anticheat_status=anticheat_status,
+                        anticheat_status=anticheat_info.get("status", ""),
+                        anticheat_slug=anticheat_info.get("slug", ""),
                     )
                     callback(result)
 
-                get_weanticheatyet_status_async(game_name, on_anticheat_status_no_info)
+                get_weanticheatyet_info_async(game_name, on_anticheat_info_no_info)
                 return
 
             title = decode_text(app_info.get("name", game_name))
@@ -418,7 +437,7 @@ def get_steam_game_info_async(
             controller_support = app_info.get("controller_support", "")
 
             def on_protondb_tier(tier: str) -> None:
-                def on_anticheat_status_final(anticheat_status: str) -> None:
+                def on_anticheat_info_final(anticheat_info: dict) -> None:
                     result = _build_game_info_result(
                         appid=appid,
                         name=title,
@@ -427,11 +446,12 @@ def get_steam_game_info_async(
                         controller_support=controller_support,
                         protondb_tier=tier,
                         steam_game="true",
-                        anticheat_status=anticheat_status,
+                        anticheat_status=anticheat_info.get("status", ""),
+                        anticheat_slug=anticheat_info.get("slug", ""),
                     )
                     callback(result)
 
-                get_weanticheatyet_status_async(title, on_anticheat_status_final)
+                get_weanticheatyet_info_async(title, on_anticheat_info_final)
 
             get_protondb_tier_async(appid, on_protondb_tier)
 

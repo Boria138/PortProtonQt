@@ -34,7 +34,7 @@ class GameCard(QFrame):
 
     def __init__(self, name, description, cover_path, appid, controller_support, exec_line,
                  last_launch, formatted_playtime, protondb_tier, anticheat_status, last_launch_ts, playtime_seconds, game_source,
-                 select_callback, theme=None, card_width=250, parent=None, context_menu_manager=None):
+                 anticheat_slug="", *, select_callback, theme=None, card_width=250, parent=None, context_menu_manager=None):
         super().__init__(parent)
         self.name = name
         self.description = description
@@ -46,6 +46,7 @@ class GameCard(QFrame):
         self.formatted_playtime = formatted_playtime
         self.protondb_tier = protondb_tier
         self.anticheat_status = anticheat_status
+        self.anticheat_slug = anticheat_slug or ""
         self.game_source = game_source
         self.last_launch_ts = last_launch_ts
         self.playtime_seconds = playtime_seconds
@@ -463,8 +464,11 @@ class GameCard(QFrame):
         QDesktopServices.openUrl(url)
 
     def open_weanticheatyet_page(self):
-        formatted_name = self.name.lower().replace(" ", "-")
-        url = QUrl(f"https://areweanticheatyet.com/game/{formatted_name}")
+        if self.anticheat_slug:
+            url = QUrl(f"https://areweanticheatyet.com/game/{self.anticheat_slug}")
+        else:
+            formatted_name = self.name.lower().replace(" ", "-")
+            url = QUrl(f"https://areweanticheatyet.com/game/{formatted_name}")
         QDesktopServices.openUrl(url)
 
     def update_favorite_icon(self):
@@ -576,6 +580,7 @@ class GameCard(QFrame):
                 "protondb_tier": self.protondb_tier,
                 "game_source": self.game_source,
                 "anticheat_status": self.anticheat_status,
+                "anticheat_slug": self.anticheat_slug,
             }
             self.select_callback(game_data)
         super().mousePressEvent(event)
@@ -612,6 +617,7 @@ class GameCard(QFrame):
                 "protondb_tier": self.protondb_tier,
                 "game_source": self.game_source,
                 "anticheat_status": self.anticheat_status,
+                "anticheat_slug": self.anticheat_slug,
             }
             self.select_callback(game_data)
         else:

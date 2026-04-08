@@ -234,6 +234,9 @@ def load_weanticheatyet_data_async(callback: Callable[[list], None]) -> None:
                 if not isinstance(entry, dict) or "normalized_name" not in entry or "status" not in entry:
                     logger.error("Invalid anti-cheat entry in cached JSON %s, re-downloading", cache_json_path)
                     raise ValueError("Invalid anti-cheat entry structure")
+                if "slug" not in entry:
+                    logger.error("Anti-cheat entry without slug in cached JSON %s, re-downloading", cache_json_path)
+                    raise ValueError("Missing anti-cheat slug field")
             callback(data)
         except Exception as e:
             logger.error("Failed to read or validate cached WeAntiCheatYet JSON %s: %s", cache_json_path, e)
@@ -277,19 +280,25 @@ def save_protondb_status(appid: int, data: dict) -> None:
 
 def search_anticheat_status(candidate: str, anti_cheat_index: dict) -> str:
     """Search for anti-cheat status by candidate: exact match first, then partial."""
-    if not candidate:
+    entry = search_anticheat_entry(candidate, anti_cheat_index)
+    if not entry:
         return ""
+    return entry.get("status", "")
+
+
+def search_anticheat_entry(candidate: str, anti_cheat_index: dict) -> dict | None:
+    """Search for anti-cheat entry by candidate: exact match first, then partial."""
+    if not candidate:
+        return None
     candidate_norm = normalize_name(candidate)
 
     if candidate_norm in anti_cheat_index:
-        status = anti_cheat_index[candidate_norm]["status"]
-        return status
+        return anti_cheat_index[candidate_norm]
 
     for name_norm, entry in anti_cheat_index.items():
         if candidate_norm in name_norm:
             ratio = len(candidate_norm) / len(name_norm)
             if ratio > 0.8:
-                status = entry["status"]
-                return status
+                return entry
 
-    return ""
+    return None

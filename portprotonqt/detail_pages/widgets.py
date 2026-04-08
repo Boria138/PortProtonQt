@@ -279,6 +279,7 @@ def create_anticheat_badge(
     parent: QWidget,
     anticheat_status: str,
     game_name: str,
+    anticheat_slug: str,
     main_window,
 ) -> tuple[ClickableLabel | None, bool]:
     """Create WeAntiCheatYet badge."""
@@ -298,9 +299,13 @@ def create_anticheat_badge(
     )
     badge.setStyleSheet(main_window.theme.get_anticheat_badge_style(anticheat_status))
     _apply_badge_view_mode(badge)
+    if anticheat_slug:
+        anticheat_url = f"https://areweanticheatyet.com/game/{anticheat_slug}"
+    else:
+        anticheat_url = f"https://areweanticheatyet.com/game/{game_name.lower().replace(' ', '-')}"
     badge.clicked.connect(
         lambda: QDesktopServices.openUrl(
-            QUrl(f"https://areweanticheatyet.com/game/{game_name.lower().replace(' ', '-')}")
+            QUrl(anticheat_url)
         )
     )
     return badge, True
