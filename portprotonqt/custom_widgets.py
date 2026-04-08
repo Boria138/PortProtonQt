@@ -291,6 +291,8 @@ class ClickableLabel(QLabel):
         self._icon = icon
         self._icon_size = icon_size
         self._icon_space = icon_space
+        self._base_icon_size = icon_size
+        self._base_icon_space = icon_space
         self._font_scale_factor = font_scale_factor
         self._card_width = 250
         self._compact_mode = False
@@ -313,8 +315,14 @@ class ClickableLabel(QLabel):
         return self._icon
 
     def setIconSize(self, icon_size: int, icon_space: int):
-        self._icon_size = icon_size
-        self._icon_space = icon_space
+        self._base_icon_size = icon_size
+        self._base_icon_space = icon_space
+        if self._compact_mode:
+            self._icon_size = max(1, int(self._base_icon_size * 1.5))
+            self._icon_space = 0
+        else:
+            self._icon_size = self._base_icon_size
+            self._icon_space = self._base_icon_space
         self.update()
 
     def setCardWidth(self, card_width: int):
@@ -354,7 +362,17 @@ class ClickableLabel(QLabel):
         relayout_callback=None,
     ):
         self._compact_mode = bool(enabled)
-        self._compact_collapsed_width = max(1, int(collapsed_width))
+        if self._compact_mode:
+            self._icon_size = max(1, int(self._base_icon_size * 1.5))
+            self._icon_space = 0
+            compact_min_width = self._icon_size + 8
+            self._compact_collapsed_width = max(1, int(collapsed_width), compact_min_width)
+            self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        else:
+            self._icon_size = self._base_icon_size
+            self._icon_space = self._base_icon_space
+            self._compact_collapsed_width = max(1, int(collapsed_width))
+            self.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         self._compact_expanded_width = max(self._compact_collapsed_width, int(expanded_width))
         self._compact_relayout_callback = relayout_callback
 
