@@ -227,6 +227,18 @@ def remove_steam_compat_tool() -> bool:
     return True
 
 
+def is_steam_compat_tool_installed() -> bool:
+    """Check if PortProtonQt is installed as Steam compatibility tool."""
+    steam_home = get_steam_home()
+    if not steam_home:
+        return False
+
+    compat_tools_dir = steam_home / "compatibilitytools.d" / "PortProtonQt"
+    system_compat_dir = Path("/usr/share/steam/compatibilitytools.d/PortProtonQt")
+
+    return compat_tools_dir.exists() or system_compat_dir.exists()
+
+
 def is_portproton_url(url: str) -> bool:
     """Check if the given URL is a portproton:// URL.
 

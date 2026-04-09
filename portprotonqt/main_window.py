@@ -37,6 +37,7 @@ from portprotonqt.config_utils import (
     read_autostart_enabled, save_autostart_enabled, apply_xdg_autostart, read_start_minimized, save_start_minimized,
     read_badge_view_mode, save_badge_view_mode
 )
+from portprotonqt.cli import add_steam_compat_tool, remove_steam_compat_tool, is_steam_compat_tool_installed
 
 from portprotonqt.tray_manager import restart_application_with_muvm
 from portprotonqt.version_utils import version_sort_key
@@ -2461,6 +2462,22 @@ class MainWindow(QMainWindow):
         hide_autoinstall_layout.addStretch()
         uiForm.addRow(hide_autoinstall_layout)
 
+        self.steamCompatCheckBox = QCheckBox()
+        self.steamCompatCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
+        self.steamCompatCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.steamCompatTitle = QLabel(_("Add to Steam compatibility tools"))
+        self.steamCompatTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.steamCompatTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
+        self.steamCompatTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        current_steam_compat = is_steam_compat_tool_installed()
+        self.steamCompatCheckBox.setChecked(current_steam_compat)
+        steam_compat_layout = QHBoxLayout()
+        steam_compat_layout.setContentsMargins(0, 0, 0, 0)
+        steam_compat_layout.addWidget(self.steamCompatCheckBox)
+        steam_compat_layout.addWidget(self.steamCompatTitle)
+        steam_compat_layout.addStretch()
+        uiForm.addRow(steam_compat_layout)
+
         # 3. Gamepad Settings Section
         padFrame, padForm = create_section(_("Gamepad Settings"))
         padForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
@@ -2737,6 +2754,13 @@ class MainWindow(QMainWindow):
 
         start_minimized = self.startMinimizedCheckBox.isChecked()
         save_start_minimized(start_minimized)
+
+        steam_compat = self.steamCompatCheckBox.isChecked()
+        currently_installed = is_steam_compat_tool_installed()
+        if steam_compat and not currently_installed:
+            add_steam_compat_tool()
+        elif not steam_compat and currently_installed:
+            remove_steam_compat_tool()
 
         # Save GPU selection to user.conf (only if the combo box exists)
         if hasattr(self, 'gpuCombo'):
