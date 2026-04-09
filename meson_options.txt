@@ -2,3 +2,4 @@
 
 option('python_purelibdir', type: 'string', value: '', description: 'Python pure library installation directory (overrides purelib)')
 option('udev_rulesdir', type: 'string', value: '', description: 'Udev rules installation directory (overrides default)')
+option('build_i586_req_dummy', type: 'boolean', value: false, description: 'Build dummy binary linked with i586 auto-requirement libraries')
