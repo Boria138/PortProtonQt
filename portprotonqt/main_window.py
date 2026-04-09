@@ -2358,8 +2358,8 @@ class MainWindow(QMainWindow):
         self.gamesDisplayCombo.setCurrentIndex(idx)
         genForm.addRow(self.gamesDisplayTitle, self.gamesDisplayCombo)
 
-        self.badge_view_keys = ["detailed", "compact"]
-        self.badge_view_labels = [_("Detailed"), _("Compact")]
+        self.badge_view_keys = ["detailed", "compact", "hidden"]
+        self.badge_view_labels = [_("Detailed"), _("Compact"), _("Hidden")]
         self.badgeViewCombo = QComboBox()
         self.badgeViewCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.badgeViewCombo.addItems(self.badge_view_labels)

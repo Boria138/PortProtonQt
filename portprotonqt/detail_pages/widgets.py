@@ -35,8 +35,10 @@ BADGE_TOP_Y = 10
 
 def _apply_badge_view_mode(badge: ClickableLabel) -> None:
     """Apply configured badge view mode."""
-    compact_mode = read_badge_view_mode() == "compact"
+    mode = read_badge_view_mode()
+    compact_mode = mode == "compact"
     badge.setCompactMode(compact_mode, BADGE_COMPACT_WIDTH, BADGE_WIDTH)
+    badge.setVisible(mode != "hidden")
 
 
 def create_scroll_area(parent: QWidget, theme) -> tuple[QScrollArea, QWidget, QVBoxLayout]:

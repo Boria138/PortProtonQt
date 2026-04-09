@@ -288,6 +288,7 @@ class GameCard(QFrame):
         compact_badge_width = int(scaled_width * 0.12)
         compact_badge_width = max(compact_badge_width, icon_size + icon_space + 8)
         compact_badge = self.badge_view_mode == "compact"
+        hidden_badges = self.badge_view_mode == "hidden"
         for label in [self.steamLabel, self.egsLabel, self.portprotonLabel, self.protondbLabel, self.anticheatLabel]:
             if label is not None:
                 try:
@@ -299,6 +300,7 @@ class GameCard(QFrame):
                         badge_width,
                         self._on_badge_width_changed
                     )
+                    label.setVisible(not hidden_badges)
                 except RuntimeError:
                     # Handle the case where the Qt object was deleted
                     pass
@@ -361,12 +363,14 @@ class GameCard(QFrame):
         protondb_visible = bool(self.getProtonDBText(self.protondb_tier))
         anticheat_visible = bool(self.getAntiCheatText(self.anticheat_status))
 
+        hidden_badges = self.badge_view_mode == "hidden"
+
         try:
-            self.steamLabel.setVisible(self.steam_visible)
-            self.egsLabel.setVisible(self.egs_visible)
-            self.portprotonLabel.setVisible(self.portproton_visible)
-            self.protondbLabel.setVisible(protondb_visible)
-            self.anticheatLabel.setVisible(anticheat_visible)
+            self.steamLabel.setVisible(self.steam_visible and not hidden_badges)
+            self.egsLabel.setVisible(self.egs_visible and not hidden_badges)
+            self.portprotonLabel.setVisible(self.portproton_visible and not hidden_badges)
+            self.protondbLabel.setVisible(protondb_visible and not hidden_badges)
+            self.anticheatLabel.setVisible(anticheat_visible and not hidden_badges)
         except RuntimeError:
             # Handle the case where the Qt object was deleted
             return
@@ -392,7 +396,7 @@ class GameCard(QFrame):
 
     def update_badge_view_mode(self, badge_view_mode: str):
         """Update badge rendering mode."""
-        self.badge_view_mode = badge_view_mode if badge_view_mode in ("detailed", "compact") else "detailed"
+        self.badge_view_mode = badge_view_mode if badge_view_mode in ("detailed", "compact", "hidden") else "detailed"
         self.update_scale()
 
     def _show_context_menu(self, pos):

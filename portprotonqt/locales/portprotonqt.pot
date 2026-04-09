@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-04-08 20:36+0500\n"
+"POT-Creation-Date: 2026-04-09 21:22+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -531,6 +531,9 @@ msgstr ""
 msgid "Compact"
 msgstr ""
 
+msgid "Hidden"
+msgstr ""
+
 msgid "Badge View Type:"
 msgstr ""
 
@@ -550,6 +553,9 @@ msgid "Start in tray"
 msgstr ""
 
 msgid "Hide Auto-Install Tab"
+msgstr ""
+
+msgid "Add to Steam compatibility tools"
 msgstr ""
 
 msgid "Gamepad Settings"

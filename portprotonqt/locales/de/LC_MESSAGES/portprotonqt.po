@@ -533,6 +533,9 @@ msgstr ""
 msgid "Compact"
 msgstr ""
 
+msgid "Hidden"
+msgstr ""
+
 msgid "Badge View Type:"
 msgstr ""
 
@@ -552,6 +555,9 @@ msgid "Start in tray"
 msgstr ""
 
 msgid "Hide Auto-Install Tab"
+msgstr ""
+
+msgid "Add to Steam compatibility tools"
 msgstr ""
 
 msgid "Gamepad Settings"
