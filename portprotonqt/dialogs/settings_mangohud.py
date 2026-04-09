@@ -494,7 +494,7 @@ class MangoHudSettingsMixin:
             (_("FPS only"), lambda: self.apply_mangohud_button_preset('fps_only')),
             (_("Compact"), lambda: self.apply_mangohud_button_preset('compact')),
             (_("Extended"), lambda: self.apply_mangohud_button_preset('extended')),
-            ("Riva Tuner", lambda: self.apply_mangohud_button_preset('rivatuner')),
+            ("RivaTuner", lambda: self.apply_mangohud_button_preset('rivatuner')),
             (_("Custom"), lambda: self.apply_mangohud_button_preset('custom')),
             (_("Save custom"), self.save_custom_mangohud_preset),
             (_("Clear"), lambda: self.apply_mangohud_button_preset('clear')),
@@ -527,8 +527,8 @@ class MangoHudSettingsMixin:
             column = index % columns
             actions_layout.addWidget(button, row, column)
 
-        parent_layout.addWidget(presets_group)
         parent_layout.addWidget(actions_group)
+        parent_layout.addWidget(presets_group)
 
     def _add_mangohud_toggle_group(self, parent_layout):
         """Add categorized MangoHud toggle checkboxes."""
