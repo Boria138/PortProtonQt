@@ -176,7 +176,7 @@ def save_hide_autoinstall_tab(hide_autoinstall_tab: bool):
 def read_badge_view_mode() -> str:
     """Reads badge view mode from the [Appearance] section."""
     mode = _get_ui_config().get_badge_view_mode()
-    return mode if mode in ("detailed", "compact") else "detailed"
+    return mode if mode in ("detailed", "compact", "hidden") else "detailed"
 
 
 def save_badge_view_mode(mode: str):

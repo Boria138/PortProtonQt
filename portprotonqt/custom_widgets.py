@@ -371,12 +371,13 @@ class ClickableLabel(QLabel):
         else:
             self._icon_size = self._base_icon_size
             self._icon_space = self._base_icon_space
-            self._compact_collapsed_width = max(1, int(collapsed_width))
-            self.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+            self._compact_collapsed_width = max(0, int(collapsed_width))
         self._compact_expanded_width = max(self._compact_collapsed_width, int(expanded_width))
         self._compact_relayout_callback = relayout_callback
 
-        if self._compact_mode:
+        if self._compact_collapsed_width == 0:
+            target_width = 0
+        elif self._compact_mode:
             target_width = self._compact_expanded_width if self.underMouse() else self._compact_collapsed_width
         else:
             target_width = self._compact_expanded_width
