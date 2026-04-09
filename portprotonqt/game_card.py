@@ -289,7 +289,14 @@ class GameCard(QFrame):
         compact_badge_width = max(compact_badge_width, icon_size + icon_space + 8)
         compact_badge = self.badge_view_mode == "compact"
         hidden_badges = self.badge_view_mode == "hidden"
-        for label in [self.steamLabel, self.egsLabel, self.portprotonLabel, self.protondbLabel, self.anticheatLabel]:
+        badge_visibility = [
+            (self.steam_visible, self.steamLabel),
+            (self.egs_visible, self.egsLabel),
+            (self.portproton_visible, self.portprotonLabel),
+            (bool(self.getProtonDBText(self.protondb_tier)), self.protondbLabel),
+            (bool(self.getAntiCheatText(self.anticheat_status)), self.anticheatLabel),
+        ]
+        for is_visible, label in badge_visibility:
             if label is not None:
                 try:
                     label.setIconSize(icon_size, icon_space)
@@ -300,7 +307,7 @@ class GameCard(QFrame):
                         badge_width,
                         self._on_badge_width_changed
                     )
-                    label.setVisible(not hidden_badges)
+                    label.setVisible(is_visible and not hidden_badges)
                 except RuntimeError:
                     # Handle the case where the Qt object was deleted
                     pass

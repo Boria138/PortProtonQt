@@ -375,9 +375,7 @@ class ClickableLabel(QLabel):
         self._compact_expanded_width = max(self._compact_collapsed_width, int(expanded_width))
         self._compact_relayout_callback = relayout_callback
 
-        if self._compact_collapsed_width == 0:
-            target_width = 0
-        elif self._compact_mode:
+        if self._compact_mode:
             target_width = self._compact_expanded_width if self.underMouse() else self._compact_collapsed_width
         else:
             target_width = self._compact_expanded_width
