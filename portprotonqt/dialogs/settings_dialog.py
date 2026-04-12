@@ -47,6 +47,11 @@ from portprotonqt.virtual_keyboard import VirtualKeyboard
 
 logger = get_logger(__name__)
 theme_manager = ThemeManager()
+TOGGLE_BOOL_KEYS = {
+    'PW_MANGOHUD',
+    'PW_MANGOHUD_USER_CONF',
+    'PW_GAMESCOPE',
+}
 
 
 def _normalize_prefix_directories(prefixes_dir):
@@ -417,7 +422,13 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
                 if '=' in line_stripped:
                     try:
                         key, val = line_stripped.split('=', 1)
-                        if key in self.toggle_settings or key in ADVANCED_SETTING_KEYS or key in MANGOHUD_ENV_KEYS or key in GAMESCOPE_ENV_KEYS:
+                        if (
+                            key in self.toggle_settings
+                            or key in ADVANCED_SETTING_KEYS
+                            or key in MANGOHUD_ENV_KEYS
+                            or key in GAMESCOPE_ENV_KEYS
+                            or key in TOGGLE_BOOL_KEYS
+                        ):
                             if val.startswith('"') and val.endswith('"') and len(val) >= 2:
                                 val = val[1:-1]
                             self.current_settings[key] = val
