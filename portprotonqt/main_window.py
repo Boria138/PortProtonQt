@@ -3377,6 +3377,12 @@ class MainWindow(QMainWindow):
             if self.current_running_button is not None:
                 try:
                     self.current_running_button.setText(_("Stop"))
+                    icon = self.theme_manager.get_icon("stop")
+                    if isinstance(icon, str):
+                        icon = QIcon(icon)
+                    elif icon is None:
+                        icon = QIcon()
+                    self.current_running_button.setIcon(icon)
                 except RuntimeError:
                     self.current_running_button = None
                 #self._inhibit_screensaver()
