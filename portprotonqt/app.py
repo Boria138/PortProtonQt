@@ -138,6 +138,11 @@ def main():
     setup_logger(args.debug_level)
     logger = get_logger(__name__)
 
+    fullscreen = args.fullscreen or read_fullscreen_config()
+    ipc_message = "show:fullscreen" if fullscreen else "show"
+    if args.file_or_url and is_launch_file(args.file_or_url):
+        ipc_message = f"open:{normalize_launch_path(args.file_or_url)}"
+
     # --- Single-instance logic ---
     server_name = __app_id__
     socket = QLocalSocket()
@@ -145,9 +150,7 @@ def main():
 
     if socket.waitForConnected(200):
         # Second instance — send command to the first one
-        fullscreen = args.fullscreen or read_fullscreen_config()
-        msg = b"show:fullscreen" if fullscreen else b"show"
-        socket.write(msg)
+        socket.write(ipc_message.encode("utf-8"))
         socket.flush()
         socket.waitForBytesWritten(500)
         socket.disconnectFromServer()
@@ -226,7 +229,7 @@ def main():
 
             def restore_window():
                 try:
-                    if msg.startswith("show"):
+                    if msg.startswith("show") or msg.startswith("open:"):
                         # Ensure the window is visible and not minimized
                         window.setWindowState(window.windowState() & ~Qt.WindowState.WindowMinimized)
                         window.show()
@@ -241,9 +244,18 @@ def main():
                             save_fullscreen_config(True)
                             window.showFullScreen()
                         else:
-                            logger.info("Switching to normal window via IPC")
-                            save_fullscreen_config(False)
-                            window.showNormal()
+                            if msg.startswith("show"):
+                                logger.info("Switching to normal window via IPC")
+                                save_fullscreen_config(False)
+                                window.showNormal()
+
+                        if msg.startswith("open:"):
+                            launch_path = msg[5:].strip()
+                            if launch_path and is_launch_file(launch_path):
+                                logger.info("Opening launch file via IPC: %s", launch_path)
+                                window.handle_launch_exe(launch_path)
+                            else:
+                                logger.warning("Invalid launch file via IPC: %s", launch_path)
                 except Exception as e:
                     logger.warning(f"Failed to restore window: {e}")
 
