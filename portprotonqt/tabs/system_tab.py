@@ -601,7 +601,7 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
         self.storageTable.setColumnCount(6)
         self.storageTable.setMinimumHeight(120)
         self.storageTable.setHorizontalHeaderLabels(
-            [_("Device"), _("Label"), _("Size"), _("Used"), _("Mount point"), _("State")]
+            [_("Device"), _("Volume label"), _("Size"), _("Used"), _("Mount point"), _("State")]
         )
         self.storageTable.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.storageTable.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
@@ -644,7 +644,7 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
         layout.addWidget(self.audioStatusLabel)
 
         volume_layout = QHBoxLayout()
-        self.audioVolumeTitle = QLabel(_("Volume:"))
+        self.audioVolumeTitle = QLabel(_("Volume"))
         self.audioVolumeTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
         self.audioVolumeTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         volume_layout.addWidget(self.audioVolumeTitle)

@@ -442,7 +442,7 @@ class BluetoothManagerService:
             request = {
                 "kind": "confirm",
                 "title": _("Bluetooth pairing"),
-                "message": _("Confirm the passkey on the device: {0}").format(passkey_match.group(1)),
+                "message": _("Confirm the passkey on devices: {0}").format(passkey_match.group(1)),
             }
             return None if request["message"] == last_request else request
 
@@ -452,7 +452,7 @@ class BluetoothManagerService:
             request = {
                 "kind": "confirm",
                 "title": _("Bluetooth pairing"),
-                "message": _("Confirm the passkey on the phone: {0}").format(
+                "message": _("Confirm the passkey on devices: {0}").format(
                     passkey_display_match.group(1)
                 ),
             }
