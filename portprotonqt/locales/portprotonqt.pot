@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-04-15 18:00+0500\n"
+"POT-Creation-Date: 2026-04-15 18:25+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1985,11 +1985,7 @@ msgid "Bluetooth pairing"
 msgstr ""
 
 #, python-brace-format
-msgid "Confirm the passkey on the device: {0}"
-msgstr ""
-
-#, python-brace-format
-msgid "Confirm the passkey on the phone: {0}"
+msgid "Confirm the passkey on devices: {0}"
 msgstr ""
 
 msgid "Confirm pairing on the device?"
@@ -2119,16 +2115,13 @@ msgstr ""
 msgid "Battery"
 msgstr ""
 
-msgid "Label"
+msgid "Volume label"
 msgstr ""
 
 msgid "Used"
 msgstr ""
 
 msgid "Mount point"
-msgstr ""
-
-msgid "Volume:"
 msgstr ""
 
 msgid "Playback devices"

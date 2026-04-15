@@ -1988,11 +1988,7 @@ msgid "Bluetooth pairing"
 msgstr ""
 
 #, python-brace-format
-msgid "Confirm the passkey on the device: {0}"
-msgstr ""
-
-#, python-brace-format
-msgid "Confirm the passkey on the phone: {0}"
+msgid "Confirm the passkey on devices: {0}"
 msgstr ""
 
 msgid "Confirm pairing on the device?"
@@ -2123,16 +2119,13 @@ msgstr ""
 msgid "Battery"
 msgstr ""
 
-msgid "Label"
+msgid "Volume label"
 msgstr ""
 
 msgid "Used"
 msgstr ""
 
 msgid "Mount point"
-msgstr ""
-
-msgid "Volume:"
 msgstr ""
 
 msgid "Playback devices"

@@ -2074,13 +2074,9 @@ msgstr "Компоненты успешно установлены."
 msgid "Bluetooth pairing"
 msgstr "Сопряжение по Bluetooth"
 
-#, python-brace-format
-msgid "Confirm the passkey on the device: {0}"
+#, fuzzy, python-brace-format
+msgid "Confirm the passkey on devices: {0}"
 msgstr "Подтвердите пароль на устройстве: {0}"
-
-#, python-brace-format
-msgid "Confirm the passkey on the phone: {0}"
-msgstr ""
 
 msgid "Confirm pairing on the device?"
 msgstr "Подтвердите сопряжение на устройстве?"
@@ -2211,17 +2207,14 @@ msgid "Battery"
 msgstr "Батарея"
 
 #, fuzzy
-msgid "Label"
-msgstr "После отображения кадра"
+msgid "Volume label"
+msgstr "Громкость"
 
 msgid "Used"
 msgstr "Использовано"
 
 msgid "Mount point"
 msgstr "Точка монтирования"
-
-msgid "Volume:"
-msgstr "Громкость:"
 
 msgid "Playback devices"
 msgstr "Устройства воспроизведения"
