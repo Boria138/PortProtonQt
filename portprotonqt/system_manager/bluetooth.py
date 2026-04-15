@@ -118,7 +118,7 @@ class BluetoothManagerService:
         elif operation == "forget":
             self.forget_device(params.get("address", ""))
         else:
-            raise NetworkManagerError(_("Unsupported Bluetooth operation"))
+            raise NetworkManagerError("Unsupported Bluetooth operation")
 
     def list_devices(self, discovered: list[tuple[str, str]] | None = None) -> dict:
         show_output = self._run_commands(["show"])
@@ -187,7 +187,7 @@ class BluetoothManagerService:
             return
         device = self._require_device(address)
         if not device["connected"]:
-            raise NetworkManagerError(_("The selected Bluetooth device is not connected"))
+            raise NetworkManagerError("The selected Bluetooth device is not connected")
         output = self._run_commands([f"disconnect {address}"])
         if "Successful disconnected" in output or "disconnect successful" in output.lower():
             logger.info("Bluetooth device disconnected")
@@ -264,7 +264,7 @@ class BluetoothManagerService:
 
     def _finish_bluetooth_scan(self, process: subprocess.Popen) -> str:
         if process.stdin is None:
-            raise NetworkManagerError(_("Bluetooth control channel is unavailable"))
+            raise NetworkManagerError("Bluetooth control channel is unavailable")
 
         process.stdin.write("devices\n")
         process.stdin.write("scan off\n")
@@ -275,7 +275,7 @@ class BluetoothManagerService:
         except subprocess.TimeoutExpired as exc:
             process.kill()
             stdout, _stderr = process.communicate()
-            raise NetworkManagerError(_("Bluetooth scan timed out")) from exc
+            raise NetworkManagerError("Bluetooth scan timed out") from exc
         return self._strip_ansi(stdout or "")
 
     def _parse_bluetooth_devices(self, output: str) -> dict[str, str]:
@@ -298,18 +298,18 @@ class BluetoothManagerService:
     def _require_adapter(self) -> None:
         payload = self.list_devices()
         if not payload["available"]:
-            raise NetworkManagerError(_("Bluetooth adapter not found"))
+            raise NetworkManagerError("Bluetooth adapter not found")
 
     def _require_powered(self) -> None:
         payload = self.list_devices()
         if not payload["powered"]:
-            raise NetworkManagerError(_("Bluetooth is disabled"))
+            raise NetworkManagerError("Bluetooth is disabled")
 
     def _require_device(self, address: str) -> dict:
         for device in self.list_devices()["devices"]:
             if device["address"] == address:
                 return device
-        raise NetworkManagerError(_("Bluetooth device not found"))
+        raise NetworkManagerError("Bluetooth device not found")
 
     def _resolve_paired_device(self, device: dict) -> dict:
         devices = self.list_devices()["devices"]
@@ -357,7 +357,7 @@ class BluetoothManagerService:
 
     def _read_pairing_chunk(self, process: subprocess.Popen) -> str:
         if process.stdout is None:
-            raise NetworkManagerError(_("Bluetooth output channel is unavailable"))
+            raise NetworkManagerError("Bluetooth output channel is unavailable")
         ready, _write_ready, _error_ready = select.select([process.stdout], [], [], 0.2)
         if not ready:
             return ""
@@ -427,12 +427,12 @@ class BluetoothManagerService:
 
     def _get_pairing_response(self, request: dict) -> str:
         if self.request_pairing_response is None:
-            raise NetworkManagerError(_("Bluetooth pairing requires user confirmation"))
+            raise NetworkManagerError("Bluetooth pairing requires user confirmation")
         response = self.request_pairing_response(request).strip()
         if request["kind"] == "confirm":
             return "yes" if response == "yes" else "no"
         if not response:
-            raise NetworkManagerError(_("Bluetooth pairing cancelled"))
+            raise NetworkManagerError("Bluetooth pairing cancelled")
         return response
 
     def _parse_pairing_output(self, output: str, last_request: str) -> dict | None:
@@ -506,7 +506,7 @@ class BluetoothManagerService:
                 timeout=15,
             )
         except subprocess.TimeoutExpired as exc:
-            raise NetworkManagerError(_("Bluetooth command timed out")) from exc
+            raise NetworkManagerError("Bluetooth command timed out") from exc
         output = self._strip_ansi((process.stdout or "") + (process.stderr or ""))
         if process.returncode != 0 and output.strip():
             raise NetworkManagerError(self._extract_bluetooth_error(output))
@@ -514,7 +514,7 @@ class BluetoothManagerService:
 
     def _write_process_command(self, process: subprocess.Popen, command: str) -> None:
         if process.stdin is None:
-            raise NetworkManagerError(_("Bluetooth control channel is unavailable"))
+            raise NetworkManagerError("Bluetooth control channel is unavailable")
         payload = f"{command}\n"
         try:
             process.stdin.write(payload)

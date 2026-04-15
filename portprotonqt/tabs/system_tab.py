@@ -59,7 +59,7 @@ class WifiPasswordDialog(QDialog):
         super().__init__(parent)
         self.theme = theme
 
-        self.setWindowTitle(_("Wi-Fi password"))
+        self.setWindowTitle("Wi-Fi")
         self.setModal(True)
         self.setMinimumWidth(400)
         self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE + self.theme.MESSAGE_BOX_STYLE if self.theme else "")
@@ -68,7 +68,7 @@ class WifiPasswordDialog(QDialog):
         layout.setSpacing(16)
         layout.setContentsMargins(20, 20, 20, 20)
 
-        ssid_label = QLabel(_("Enter password for: {0}").format(ssid) if ssid else _("Enter Wi-Fi password"))
+        ssid_label = QLabel(_("Enter password for: {0}").format(ssid) if ssid else "")
         if self.theme and hasattr(self.theme, 'PARAMS_TITLE_STYLE'):
             ssid_label.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         layout.addWidget(ssid_label)
@@ -205,7 +205,7 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
         self._addSystemPowerSection()
 
     def _addSystemNetworkSection(self) -> None:
-        network_frame, network_layout = self._createSystemSection("WIFI")
+        network_frame, network_layout = self._createSystemSection("Wi-Fi")
         self.networkSectionFrame = network_frame
         self._setupSystemNetworkControls(network_layout)
         self._setupSystemNetworkTable(network_layout)
@@ -245,7 +245,7 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
         self.systemSectionStack.addWidget(power_frame)
 
     def _setupSystemSectionButtons(self, section_switcher_layout: QHBoxLayout) -> None:
-        section_titles = ["WIFI", "VPN", _("Bluetooth"), _("Storage"), _("Audio"), _("Power")]
+        section_titles = ["Wi-Fi", "VPN", "Bluetooth", _("Storage"), _("Audio"), _("Power")]
         for index, section_title in enumerate(section_titles):
             button = AutoSizeButton(section_title)
             button.setCheckable(True)
@@ -401,7 +401,7 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
         return section_frame, section_layout
 
     def _setupSystemNetworkControls(self, layout: QVBoxLayout) -> None:
-        self.networkStatusLabel = QLabel(_("Loading network status..."))
+        self.networkStatusLabel = QLabel("")
         self.networkStatusLabel.setStyleSheet(self.theme.CONTENT_STYLE)
         self.networkStatusLabel.setWordWrap(True)
         layout.addWidget(self.networkStatusLabel)
@@ -413,7 +413,7 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
         self.wirelessEnabledCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.wirelessEnabledCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.wirelessEnabledCheckBox.toggled.connect(self.toggleWirelessNetworking)
-        self.wirelessEnabledTitle = QLabel(_("Enable Wi-Fi"))
+        self.wirelessEnabledTitle = QLabel(f"{_('Enable')} Wi-Fi")
         self.wirelessEnabledTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.wirelessEnabledTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
         wireless_layout.addWidget(self.wirelessEnabledCheckBox)
@@ -473,7 +473,7 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
         layout.addWidget(self.networkActionButtonsWidget)
 
     def _setupSystemVpnControls(self, layout) -> None:
-        self.vpnStatusLabel = QLabel(_("Loading VPN profiles..."))
+        self.vpnStatusLabel = QLabel("")
         self.vpnStatusLabel.setStyleSheet(self.theme.CONTENT_STYLE)
         self.vpnStatusLabel.setWordWrap(True)
         layout.addWidget(self.vpnStatusLabel)
@@ -512,7 +512,7 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
         layout.addLayout(vpn_layout)
 
     def _setupSystemBluetoothControls(self, layout) -> None:
-        self.bluetoothStatusLabel = QLabel(_("Loading Bluetooth status..."))
+        self.bluetoothStatusLabel = QLabel("")
         self.bluetoothStatusLabel.setStyleSheet(self.theme.CONTENT_STYLE)
         self.bluetoothStatusLabel.setWordWrap(True)
         layout.addWidget(self.bluetoothStatusLabel)
@@ -522,7 +522,7 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
         self.bluetoothEnabledCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.bluetoothEnabledCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.bluetoothEnabledCheckBox.toggled.connect(self.toggleBluetooth)
-        self.bluetoothEnabledTitle = QLabel(_("Enable Bluetooth"))
+        self.bluetoothEnabledTitle = QLabel(f"{_('Enable')} Bluetooth")
         self.bluetoothEnabledTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.bluetoothEnabledTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
         bluetooth_layout.addWidget(self.bluetoothEnabledCheckBox)
@@ -591,7 +591,7 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
         layout.addLayout(buttons_layout)
 
     def _setupSystemStorageControls(self, layout) -> None:
-        self.storageStatusLabel = QLabel(_("Loading storage devices..."))
+        self.storageStatusLabel = QLabel("")
         self.storageStatusLabel.setStyleSheet(self.theme.CONTENT_STYLE)
         self.storageStatusLabel.setWordWrap(True)
         layout.addWidget(self.storageStatusLabel)
@@ -638,7 +638,7 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
         layout.addLayout(buttons_layout)
 
     def _setupSystemAudioControls(self, layout) -> None:
-        self.audioStatusLabel = QLabel(_("Loading audio devices..."))
+        self.audioStatusLabel = QLabel("")
         self.audioStatusLabel.setStyleSheet(self.theme.CONTENT_STYLE)
         self.audioStatusLabel.setWordWrap(True)
         layout.addWidget(self.audioStatusLabel)
@@ -879,20 +879,19 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
         layout.addLayout(buttons_layout)
         layout.addStretch()
 
-    def _runSystemctlAction(self, action: str, fail_message: str) -> None:
+    def _runSystemctlAction(self, action: str) -> None:
         if QProcess.startDetached("systemctl", [action]):
             return
         logger.error("Failed to execute systemctl %s", action)
-        QMessageBox.warning(self, _("Error"), fail_message)
 
     def rebootSystem(self) -> None:
-        self._runSystemctlAction("reboot", _("Failed to reboot the system"))
+        self._runSystemctlAction("reboot")
 
     def shutdownSystem(self) -> None:
-        self._runSystemctlAction("poweroff", _("Failed to shutdown the system"))
+        self._runSystemctlAction("poweroff")
 
     def suspendSystem(self) -> None:
-        self._runSystemctlAction("suspend", _("Failed to suspend the system"))
+        self._runSystemctlAction("suspend")
 
     def loadSystemNetworks(self) -> None:
         self.runNetworkOperation("load")
@@ -980,7 +979,7 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
         payload = self._buildWifiQrPayload(ssid, security, password)
         qr_pixmap = self._createWifiQrPixmap(payload)
         if qr_pixmap is None or qr_pixmap.isNull():
-            self.statusBar().showMessage(_("Failed to generate QR"), 3000)
+            logger.warning("Failed to generate QR")
             return
 
         dialog = QDialog(self)
@@ -1181,8 +1180,9 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
 
     def onNetworkOperationFailed(self, _operation: str, error_text: str) -> None:
         self.setNetworkBusy(False)
-        self.statusBar().showMessage(error_text, 4000)
-        self.networkStatusLabel.setText(error_text)
+        logger.warning("Network operation failed: %s", error_text)
+        self.statusBar().showMessage("Error", 4000)
+        self.networkStatusLabel.setText("Error")
         self.wirelessEnabledCheckBox.blockSignals(True)
         self.wirelessEnabledCheckBox.setChecked(self.systemWirelessEnabled)
         self.wirelessEnabledCheckBox.blockSignals(False)
@@ -1196,7 +1196,7 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
         self.wirelessEnabledCheckBox.setChecked(self.systemWirelessEnabled)
         self.wirelessEnabledCheckBox.blockSignals(False)
         if not payload.get("available"):
-            self.networkStatusLabel.setText(_("NetworkManager Wi-Fi device not found"))
+            self.networkStatusLabel.setText("NetworkManager Wi-Fi device not found")
             self.networkStatusLabel.setVisible(False)
             self.wirelessControlsWidget.setVisible(False)
             self.networkTable.setVisible(False)
@@ -1400,8 +1400,9 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
     def onBluetoothOperationFailed(self, operation: str, error_text: str) -> None:
         self._setBluetoothScanPreloaderVisible(False)
         self.setBluetoothBusy(False)
-        self.statusBar().showMessage(error_text, 4000)
-        self.bluetoothStatusLabel.setText(error_text)
+        logger.warning("Bluetooth operation failed: %s", error_text)
+        self.statusBar().showMessage("Error", 4000)
+        self.bluetoothStatusLabel.setText("Error")
         if operation == "load":
             self.bluetoothRows = []
             self.bluetoothTable.setRowCount(0)
@@ -1439,7 +1440,7 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
         self.bluetoothEnabledCheckBox.setChecked(self.systemBluetoothEnabled)
         self.bluetoothEnabledCheckBox.blockSignals(False)
         if not payload.get("available"):
-            self.bluetoothStatusLabel.setText(_("Bluetooth adapter not found"))
+            self.bluetoothStatusLabel.setText("Bluetooth adapter not found")
             self.bluetoothTable.setRowCount(0)
             self.updateSystemBluetoothButtons(None, payload.get("powered", False))
             return
@@ -1566,12 +1567,13 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
 
     def onStorageOperationFailed(self, _operation: str, error_text: str) -> None:
         self.setStorageBusy(False)
-        self.statusBar().showMessage(error_text, 4000)
-        self.storageStatusLabel.setText(error_text)
+        logger.warning("Storage operation failed: %s", error_text)
+        self.statusBar().showMessage("Error", 4000)
+        self.storageStatusLabel.setText("Error")
 
     def populateSystemStorageDevices(self, payload: dict) -> None:
         if not payload.get("available"):
-            self.storageStatusLabel.setText(_("Storage management is not available"))
+            self.storageStatusLabel.setText("Storage management is not available")
             self.storageTable.setRowCount(0)
             self.updateSystemStorageButtons(None)
             return
@@ -1701,12 +1703,13 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
 
     def onAudioOperationFailed(self, _operation: str, error_text: str) -> None:
         self.setAudioBusy(False)
-        self.statusBar().showMessage(error_text, 4000)
-        self.audioStatusLabel.setText(error_text)
+        logger.warning("Audio operation failed: %s", error_text)
+        self.statusBar().showMessage("Error", 4000)
+        self.audioStatusLabel.setText("Error")
 
     def populateSystemAudioDevices(self, payload: dict) -> None:
         if not payload.get("available"):
-            self.audioStatusLabel.setText(payload.get("status", _("Audio management is not available")))
+            self.audioStatusLabel.setText(payload.get("status", "Audio management is not available"))
             self.audioSinksTable.setRowCount(0)
             self._setAudioVolumeFromSink(None)
             self.updateSystemAudioButtons(None)

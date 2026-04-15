@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-04-15 13:58+0500\n"
+"POT-Creation-Date: 2026-04-15 18:00+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1981,42 +1981,6 @@ msgstr ""
 msgid "Components installed successfully."
 msgstr ""
 
-msgid "Invalid volume value"
-msgstr ""
-
-msgid "Unsupported audio operation"
-msgstr ""
-
-msgid "Unsupported Bluetooth operation"
-msgstr ""
-
-msgid "The selected Bluetooth device is not connected"
-msgstr ""
-
-msgid "Bluetooth control channel is unavailable"
-msgstr ""
-
-msgid "Bluetooth scan timed out"
-msgstr ""
-
-msgid "Bluetooth adapter not found"
-msgstr ""
-
-msgid "Bluetooth is disabled"
-msgstr ""
-
-msgid "Bluetooth device not found"
-msgstr ""
-
-msgid "Bluetooth output channel is unavailable"
-msgstr ""
-
-msgid "Bluetooth pairing requires user confirmation"
-msgstr ""
-
-msgid "Bluetooth pairing cancelled"
-msgstr ""
-
 msgid "Bluetooth pairing"
 msgstr ""
 
@@ -2049,9 +2013,6 @@ msgstr ""
 msgid "Enter the Bluetooth passkey shown on the device"
 msgstr ""
 
-msgid "Bluetooth command timed out"
-msgstr ""
-
 msgid "Connected"
 msgstr ""
 
@@ -2061,37 +2022,7 @@ msgstr ""
 msgid "Available"
 msgstr ""
 
-msgid "Unsupported network operation"
-msgstr ""
-
-msgid "The selected VPN is not active"
-msgstr ""
-
-msgid "VPN config file not found"
-msgstr ""
-
-msgid "Unsupported VPN config format"
-msgstr ""
-
-msgid "Password is required for this network"
-msgstr ""
-
-msgid "The selected network is not active"
-msgstr ""
-
-msgid "No saved profile found for this network"
-msgstr ""
-
 msgid "Disconnected"
-msgstr ""
-
-msgid "VPN profile not found"
-msgstr ""
-
-msgid "Wi-Fi device not found"
-msgstr ""
-
-msgid "Failed to read VPN config file"
 msgstr ""
 
 msgid "Protected"
@@ -2100,28 +2031,10 @@ msgstr ""
 msgid "Saved"
 msgstr ""
 
-msgid "Unexpected storage error"
-msgstr ""
-
-msgid "Unsupported storage operation"
-msgstr ""
-
-msgid "The selected device is already mounted"
-msgstr ""
-
-msgid "The selected device is not mounted"
-msgstr ""
-
-msgid "Failed to parse storage device list"
-msgstr ""
-
 msgid "Mounted"
 msgstr ""
 
 msgid "Not mounted"
-msgstr ""
-
-msgid "Storage device not found"
 msgstr ""
 
 msgid "Volume"
@@ -2160,14 +2073,8 @@ msgstr ""
 msgid "Refresh"
 msgstr ""
 
-msgid "Wi-Fi password"
-msgstr ""
-
 #, python-brace-format
 msgid "Enter password for: {0}"
-msgstr ""
-
-msgid "Enter Wi-Fi password"
 msgstr ""
 
 msgid "Storage"
@@ -2177,15 +2084,6 @@ msgid "Audio"
 msgstr ""
 
 msgid "Power"
-msgstr ""
-
-msgid "Bluetooth"
-msgstr ""
-
-msgid "Loading network status..."
-msgstr ""
-
-msgid "Enable Wi-Fi"
 msgstr ""
 
 msgid "Network"
@@ -2206,9 +2104,6 @@ msgstr ""
 msgid "Share"
 msgstr ""
 
-msgid "Loading VPN profiles..."
-msgstr ""
-
 msgid "Profile"
 msgstr ""
 
@@ -2218,19 +2113,10 @@ msgstr ""
 msgid "Add"
 msgstr ""
 
-msgid "Loading Bluetooth status..."
-msgstr ""
-
-msgid "Enable Bluetooth"
-msgstr ""
-
 msgid "Device"
 msgstr ""
 
 msgid "Battery"
-msgstr ""
-
-msgid "Loading storage devices..."
 msgstr ""
 
 msgid "Label"
@@ -2240,9 +2126,6 @@ msgid "Used"
 msgstr ""
 
 msgid "Mount point"
-msgstr ""
-
-msgid "Loading audio devices..."
 msgstr ""
 
 msgid "Volume:"
@@ -2261,27 +2144,6 @@ msgid "Shutdown"
 msgstr ""
 
 msgid "Suspend"
-msgstr ""
-
-msgid "Failed to reboot the system"
-msgstr ""
-
-msgid "Failed to shutdown the system"
-msgstr ""
-
-msgid "Failed to suspend the system"
-msgstr ""
-
-msgid "Failed to generate QR"
-msgstr ""
-
-msgid "NetworkManager Wi-Fi device not found"
-msgstr ""
-
-msgid "Storage management is not available"
-msgstr ""
-
-msgid "Audio management is not available"
 msgstr ""
 
 msgid "Selected"

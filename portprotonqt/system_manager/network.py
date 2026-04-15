@@ -103,7 +103,7 @@ class NetworkManagerService:
         elif operation == "get_password":
             self._get_saved_connection_password(params.get("ssid", ""))
         else:
-            raise NetworkManagerError(_("Unsupported network operation"))
+            raise NetworkManagerError("Unsupported network operation")
 
     def list_networks(self) -> dict:
         wireless_enabled = self._extract_bool(
@@ -150,11 +150,11 @@ class NetworkManagerService:
             return
         vpn = self._require_vpn(connection_path)
         if not vpn["active"]:
-            raise NetworkManagerError(_("The selected VPN is not active"))
+            raise NetworkManagerError("The selected VPN is not active")
         active_connections = self._get_active_vpn_connections()
         active_path = active_connections.get(vpn["uuid"], "")
         if not active_path:
-            raise NetworkManagerError(_("The selected VPN is not active"))
+            raise NetworkManagerError("The selected VPN is not active")
         self._call(NM_PATH, f"{NM_INTERFACE}.DeactivateConnection", active_path)
         logger.info("VPN disconnection started")
 
@@ -164,9 +164,9 @@ class NetworkManagerService:
             return
         normalized_path = os.path.normpath(file_path)
         if not os.path.isfile(normalized_path):
-            raise NetworkManagerError(_("VPN config file not found"))
+            raise NetworkManagerError("VPN config file not found")
         if not normalized_path.lower().endswith((".ovpn", ".conf")):
-            raise NetworkManagerError(_("Unsupported VPN config format"))
+            raise NetworkManagerError("Unsupported VPN config format")
         if not self.nmcli_path:
             raise NetworkManagerError("nmcli is not available")
         vpn_type = self._detect_vpn_import_type(normalized_path)
@@ -231,7 +231,7 @@ class NetworkManagerService:
             return
 
         if network["secured"] and not clean_password:
-            raise NetworkManagerError(_("Password is required for this network"))
+            raise NetworkManagerError("Password is required for this network")
 
         settings = self._build_connection_settings(
             network["ssid"],
@@ -256,7 +256,7 @@ class NetworkManagerService:
             self._get_property(device_path, NM_WIRELESS_INTERFACE, "ActiveAccessPoint")
         )
         if network_path and active_ap not in ("", "/", network_path):
-            raise NetworkManagerError(_("The selected network is not active"))
+            raise NetworkManagerError("The selected network is not active")
         if active_connection and active_connection != "/":
             self._call(NM_PATH, f"{NM_INTERFACE}.DeactivateConnection", active_connection)
             logger.info("Disconnection started")
@@ -272,7 +272,7 @@ class NetworkManagerService:
 
         saved = self._find_saved_connection(ssid)
         if not saved:
-            raise NetworkManagerError(_("No saved profile found for this network"))
+            raise NetworkManagerError("No saved profile found for this network")
 
         device_path = self._get_wifi_device_path()
         if device_path:
@@ -377,7 +377,7 @@ class NetworkManagerService:
         for vpn in self._build_vpns():
             if vpn["path"] == connection_path:
                 return vpn
-        raise NetworkManagerError(_("VPN profile not found"))
+        raise NetworkManagerError("VPN profile not found")
 
     def _find_saved_connection(self, ssid: str) -> dict | None:
         for connection in self._get_saved_connections():
@@ -418,7 +418,7 @@ class NetworkManagerService:
     def _require_wifi_device_path(self) -> str:
         device_path = self._get_wifi_device_path()
         if not device_path:
-            raise NetworkManagerError(_("Wi-Fi device not found"))
+            raise NetworkManagerError("Wi-Fi device not found")
         return device_path
 
     def _get_active_access_point(self, device_path: str) -> str:
@@ -570,7 +570,7 @@ class NetworkManagerService:
                     if token.startswith(("client", "remote ", "proto ", "dev ")):
                         return "openvpn"
         except OSError as exc:
-            raise NetworkManagerError(_("Failed to read VPN config file")) from exc
+            raise NetworkManagerError("Failed to read VPN config file") from exc
 
         return "wireguard" if suffix == ".conf" else "openvpn"
 

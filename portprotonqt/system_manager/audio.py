@@ -79,7 +79,7 @@ class AudioManagerService:
             try:
                 volume_value = int(volume)
             except (TypeError, ValueError) as exc:
-                raise NetworkManagerError(_("Invalid volume value")) from exc
+                raise NetworkManagerError("Invalid volume value") from exc
             volume_value = max(0, min(AUDIO_MAX_VOLUME, volume_value))
             self._run_pactl(["set-sink-volume", sink_name, f"{volume_value}%"])
             logger.info("Output volume updated")
@@ -105,7 +105,7 @@ class AudioManagerService:
             logger.info("Audio profile updated")
 
         else:
-            raise NetworkManagerError(_("Unsupported audio operation"))
+            raise NetworkManagerError("Unsupported audio operation")
 
     def list_audio(self) -> dict:
         if not self.pactl_path:

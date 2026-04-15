@@ -31,7 +31,7 @@ class StorageManagerWorker(QThread):
             return
         except Exception as exc:
             logger.exception("Unexpected storage operation failure: %s", exc)
-            self.operation_failed.emit(self.operation, _("Unexpected storage error"))
+            self.operation_failed.emit(self.operation, "Unexpected storage error")
             return
 
         self.operation_finished.emit(self.operation, payload)
@@ -68,7 +68,7 @@ class StorageManagerService:
         elif operation == "unmount":
             self.unmount_device(params.get("device_path", ""))
         else:
-            raise NetworkManagerError(_("Unsupported storage operation"))
+            raise NetworkManagerError("Unsupported storage operation")
 
     def list_devices(self) -> dict:
         objects = self._get_managed_objects()
@@ -85,7 +85,7 @@ class StorageManagerService:
         objects = self._get_managed_objects()
         device = self._require_device(device_path, objects)
         if device["mounted"]:
-            raise NetworkManagerError(_("The selected device is already mounted"))
+            raise NetworkManagerError("The selected device is already mounted")
         self._call_filesystem_method(device["object_path"], "Mount")
         logger.info("Device mounted")
 
@@ -96,7 +96,7 @@ class StorageManagerService:
         objects = self._get_managed_objects()
         device = self._require_device(device_path, objects)
         if not device["mounted"]:
-            raise NetworkManagerError(_("The selected device is not mounted"))
+            raise NetworkManagerError("The selected device is not mounted")
         self._call_filesystem_method(device["object_path"], "Unmount")
         logger.info("Device unmounted")
 
@@ -108,7 +108,7 @@ class StorageManagerService:
             "GetManagedObjects",
         )
         if not isinstance(managed_objects, dict):
-            raise NetworkManagerError(_("Failed to parse storage device list"))
+            raise NetworkManagerError("Failed to parse storage device list")
         return managed_objects
 
     def _collect_storage_devices(self, objects: dict) -> list[dict]:
@@ -188,7 +188,7 @@ class StorageManagerService:
         for device in self._collect_storage_devices(objects):
             if device["path"] == device_path:
                 return device
-        raise NetworkManagerError(_("Storage device not found"))
+        raise NetworkManagerError("Storage device not found")
 
     def _call_filesystem_method(self, object_path: str, method_name: str) -> None:
         self.dbus.call(

@@ -2072,47 +2072,6 @@ msgstr "Установка не удалась. Проверьте журнал�
 msgid "Components installed successfully."
 msgstr "Компоненты успешно установлены."
 
-#, fuzzy
-msgid "Invalid volume value"
-msgstr "Недопустимое изображение"
-
-#, fuzzy, python-brace-format
-msgid "Unsupported audio operation"
-msgstr "Неподдерживаемый формат изображения: {extension}"
-
-#, fuzzy, python-brace-format
-msgid "Unsupported Bluetooth operation"
-msgstr "Неподдерживаемый формат изображения: {extension}"
-
-msgid "The selected Bluetooth device is not connected"
-msgstr ""
-
-msgid "Bluetooth control channel is unavailable"
-msgstr ""
-
-msgid "Bluetooth scan timed out"
-msgstr ""
-
-msgid "Bluetooth adapter not found"
-msgstr ""
-
-msgid "Bluetooth is disabled"
-msgstr ""
-
-#, fuzzy
-msgid "Bluetooth device not found"
-msgstr "Не найден каталог PortProton"
-
-msgid "Bluetooth output channel is unavailable"
-msgstr ""
-
-msgid "Bluetooth pairing requires user confirmation"
-msgstr ""
-
-#, fuzzy
-msgid "Bluetooth pairing cancelled"
-msgstr "Операция отменена"
-
 msgid "Bluetooth pairing"
 msgstr ""
 
@@ -2145,9 +2104,6 @@ msgstr ""
 msgid "Enter the Bluetooth passkey shown on the device"
 msgstr ""
 
-msgid "Bluetooth command timed out"
-msgstr ""
-
 msgid "Connected"
 msgstr ""
 
@@ -2158,44 +2114,8 @@ msgstr "Планируется"
 msgid "Available"
 msgstr ""
 
-#, fuzzy, python-brace-format
-msgid "Unsupported network operation"
-msgstr "Неподдерживаемый формат изображения: {extension}"
-
-msgid "The selected VPN is not active"
-msgstr ""
-
-#, fuzzy, python-brace-format
-msgid "VPN config file not found"
-msgstr "Файл не найден: {0}"
-
-#, fuzzy, python-brace-format
-msgid "Unsupported VPN config format"
-msgstr "Неподдерживаемый формат изображения: {extension}"
-
-msgid "Password is required for this network"
-msgstr ""
-
-msgid "The selected network is not active"
-msgstr ""
-
-msgid "No saved profile found for this network"
-msgstr ""
-
 msgid "Disconnected"
 msgstr ""
-
-#, fuzzy
-msgid "VPN profile not found"
-msgstr "Префикс не найден"
-
-#, fuzzy, python-brace-format
-msgid "Wi-Fi device not found"
-msgstr "Файл не найден: {0}"
-
-#, fuzzy
-msgid "Failed to read VPN config file"
-msgstr "Загрузка файла конфигурации"
 
 msgid "Protected"
 msgstr ""
@@ -2204,33 +2124,12 @@ msgstr ""
 msgid "Saved"
 msgstr "Сохранить"
 
-msgid "Unexpected storage error"
-msgstr ""
-
-#, fuzzy, python-brace-format
-msgid "Unsupported storage operation"
-msgstr "Неподдерживаемый формат изображения: {extension}"
-
-msgid "The selected device is already mounted"
-msgstr ""
-
-msgid "The selected device is not mounted"
-msgstr ""
-
-#, fuzzy
-msgid "Failed to parse storage device list"
-msgstr "Не удалось запустить процесс восстановления."
-
 #, fuzzy
 msgid "Mounted"
 msgstr "Мышь"
 
 msgid "Not mounted"
 msgstr ""
-
-#, fuzzy
-msgid "Storage device not found"
-msgstr "Префикс не найден"
 
 #, fuzzy
 msgid "Volume"
@@ -2273,15 +2172,8 @@ msgstr ""
 msgid "Refresh"
 msgstr "Обновить"
 
-#, fuzzy
-msgid "Wi-Fi password"
-msgstr "Пароль прокси"
-
 #, python-brace-format
 msgid "Enter password for: {0}"
-msgstr ""
-
-msgid "Enter Wi-Fi password"
 msgstr ""
 
 #, fuzzy
@@ -2295,16 +2187,6 @@ msgstr "Отменить"
 #, fuzzy
 msgid "Power"
 msgstr "Другие"
-
-msgid "Bluetooth"
-msgstr ""
-
-#, fuzzy
-msgid "Loading network status..."
-msgstr "Загрузка игр Steam..."
-
-msgid "Enable Wi-Fi"
-msgstr ""
 
 msgid "Network"
 msgstr ""
@@ -2327,10 +2209,6 @@ msgstr ""
 msgid "Share"
 msgstr "Сохранить"
 
-#, fuzzy
-msgid "Loading VPN profiles..."
-msgstr "Загрузка игр PortProton..."
-
 msgid "Profile"
 msgstr ""
 
@@ -2338,13 +2216,6 @@ msgid "Type"
 msgstr ""
 
 msgid "Add"
-msgstr ""
-
-#, fuzzy
-msgid "Loading Bluetooth status..."
-msgstr "Загрузка игр PortProton..."
-
-msgid "Enable Bluetooth"
 msgstr ""
 
 #, fuzzy
@@ -2356,10 +2227,6 @@ msgid "Battery"
 msgstr "Батарея устройства"
 
 #, fuzzy
-msgid "Loading storage devices..."
-msgstr "Загрузка игр Steam..."
-
-#, fuzzy
 msgid "Label"
 msgstr "После отображения кадра"
 
@@ -2369,10 +2236,6 @@ msgstr "Перейти в ждущий режим"
 
 msgid "Mount point"
 msgstr ""
-
-#, fuzzy
-msgid "Loading audio devices..."
-msgstr "Загрузка игр Steam..."
 
 #, fuzzy
 msgid "Volume:"
@@ -2393,30 +2256,6 @@ msgstr "Выключить"
 
 msgid "Suspend"
 msgstr "Перейти в ждущий режим"
-
-msgid "Failed to reboot the system"
-msgstr "Не удалось перезагрузить систему"
-
-msgid "Failed to shutdown the system"
-msgstr "Не удалось завершить работу системы"
-
-msgid "Failed to suspend the system"
-msgstr "Не удалось перейти в ждущий режим"
-
-#, fuzzy, python-brace-format
-msgid "Failed to generate QR"
-msgstr "Не удалось удалить префикс: {}"
-
-msgid "NetworkManager Wi-Fi device not found"
-msgstr ""
-
-#, fuzzy
-msgid "Storage management is not available"
-msgstr "Путь к исполняемому файлу недоступен."
-
-#, fuzzy
-msgid "Audio management is not available"
-msgstr "Путь к исполняемому файлу недоступен."
 
 #, fuzzy
 msgid "Selected"
