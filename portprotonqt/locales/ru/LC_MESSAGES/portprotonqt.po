@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-03-22 13:50+0500\n"
-"PO-Revision-Date: 2026-04-15 13:17+0000\n"
+"PO-Revision-Date: 2026-04-15 13:27+0000\n"
 "Last-Translator: Boria138 <boria138@noreply.codeberg.org>\n"
 "Language-Team: Russian <https://translate.codeberg.org/projects/portprotonqt/"
 "portprotonqt/ru/>\n"
@@ -2074,7 +2074,7 @@ msgstr "Компоненты успешно установлены."
 msgid "Bluetooth pairing"
 msgstr "Сопряжение по Bluetooth"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Confirm the passkey on devices: {0}"
 msgstr "Подтвердите пароль на устройстве: {0}"
 
@@ -2147,12 +2147,11 @@ msgstr "Добавить VPN"
 msgid "Scan"
 msgstr "Сканировать"
 
-#, fuzzy
 msgid "Mount"
-msgstr "Мышь"
+msgstr "Подключить"
 
 msgid "Unmount"
-msgstr ""
+msgstr "Размонтировать"
 
 msgid "Set output"
 msgstr "Выбрать выход"
@@ -2206,9 +2205,8 @@ msgstr "Девайс"
 msgid "Battery"
 msgstr "Батарея"
 
-#, fuzzy
 msgid "Volume label"
-msgstr "Громкость"
+msgstr "Имя тома"
 
 msgid "Used"
 msgstr "Использовано"
