@@ -56,20 +56,19 @@ class StorageManagerService:
             if operation == "load":
                 return self.list_devices()
 
-            message = self._run_operation(operation, params)
+            self._run_operation(operation, params)
             time.sleep(1)
-            payload = self.list_devices()
-            payload["message"] = message
-            return payload
+            return self.list_devices()
         finally:
             self.dbus.close()
 
-    def _run_operation(self, operation: str, params: dict) -> str:
+    def _run_operation(self, operation: str, params: dict) -> None:
         if operation == "mount":
-            return self.mount_device(params.get("device_path", ""))
-        if operation == "unmount":
-            return self.unmount_device(params.get("device_path", ""))
-        raise NetworkManagerError(_("Unsupported storage operation"))
+            self.mount_device(params.get("device_path", ""))
+        elif operation == "unmount":
+            self.unmount_device(params.get("device_path", ""))
+        else:
+            raise NetworkManagerError(_("Unsupported storage operation"))
 
     def list_devices(self) -> dict:
         objects = self._get_managed_objects()
@@ -79,27 +78,27 @@ class StorageManagerService:
             "devices": devices,
         }
 
-    def mount_device(self, device_path: str) -> str:
+    def mount_device(self, device_path: str) -> None:
         if not device_path:
             logger.error("Storage operation mount called without device_path")
-            return ""
+            return
         objects = self._get_managed_objects()
         device = self._require_device(device_path, objects)
         if device["mounted"]:
             raise NetworkManagerError(_("The selected device is already mounted"))
         self._call_filesystem_method(device["object_path"], "Mount")
-        return _("Device mounted")
+        logger.info("Device mounted")
 
-    def unmount_device(self, device_path: str) -> str:
+    def unmount_device(self, device_path: str) -> None:
         if not device_path:
             logger.error("Storage operation unmount called without device_path")
-            return ""
+            return
         objects = self._get_managed_objects()
         device = self._require_device(device_path, objects)
         if not device["mounted"]:
             raise NetworkManagerError(_("The selected device is not mounted"))
         self._call_filesystem_method(device["object_path"], "Unmount")
-        return _("Device unmounted")
+        logger.info("Device unmounted")
 
     def _get_managed_objects(self) -> dict:
         managed_objects = self.dbus.call(

@@ -328,28 +328,10 @@ msgstr ""
 msgid "PortProton Settings"
 msgstr ""
 
+msgid "System"
+msgstr ""
+
 msgid "Themes"
-msgstr ""
-
-msgid "Select"
-msgstr ""
-
-msgid "Back"
-msgstr ""
-
-msgid "Add Game"
-msgstr ""
-
-msgid "Fullscreen"
-msgstr ""
-
-msgid "Search"
-msgstr ""
-
-msgid "Refresh Grid"
-msgstr ""
-
-msgid "Mouse Emulation"
 msgstr ""
 
 msgid "Warning"
@@ -374,6 +356,9 @@ msgstr ""
 msgid "Installation error."
 msgstr ""
 
+msgid "Refresh Grid"
+msgstr ""
+
 msgid "Game library refreshed"
 msgstr ""
 
@@ -384,6 +369,9 @@ msgid "Loading PortProton games..."
 msgstr ""
 
 msgid "Game Library"
+msgstr ""
+
+msgid "Add Game"
 msgstr ""
 
 msgid "Find Games ..."
@@ -958,39 +946,6 @@ msgid ""
 " switches."
 msgstr ""
 
-msgid "Reboot"
-msgstr ""
-
-msgid "Shutdown"
-msgstr ""
-
-msgid "Suspend"
-msgstr ""
-
-msgid "Exit Application"
-msgstr ""
-
-msgid "Return to Desktop"
-msgstr ""
-
-msgid "portprotonqt-session-select file not found at /usr/bin/"
-msgstr ""
-
-msgid "Cancel"
-msgstr ""
-
-msgid "Failed to reboot the system"
-msgstr ""
-
-msgid "Failed to shutdown the system"
-msgstr ""
-
-msgid "Failed to suspend the system"
-msgstr ""
-
-msgid "Failed to return to desktop"
-msgstr ""
-
 msgid "just now"
 msgstr ""
 
@@ -1075,6 +1030,9 @@ msgstr ""
 msgid "Open Folder"
 msgstr ""
 
+msgid "Back"
+msgstr ""
+
 #, python-brace-format
 msgid "Gamepad Support: {0}"
 msgstr ""
@@ -1090,6 +1048,9 @@ msgstr ""
 
 #, python-brace-format
 msgid "Launching {0}"
+msgstr ""
+
+msgid "Cancel"
 msgstr ""
 
 msgid "Game Name:"
@@ -1152,10 +1113,16 @@ msgstr ""
 msgid "Save"
 msgstr ""
 
+msgid "Search"
+msgstr ""
+
 msgid "Download"
 msgstr ""
 
 msgid "Clear All"
+msgstr ""
+
+msgid "Select"
 msgstr ""
 
 msgid "Path: "
@@ -2015,5 +1982,317 @@ msgid "Installation failed. Check logs."
 msgstr ""
 
 msgid "Components installed successfully."
+msgstr ""
+
+msgid "Invalid volume value"
+msgstr ""
+
+msgid "Unsupported audio operation"
+msgstr ""
+
+msgid "Unsupported Bluetooth operation"
+msgstr ""
+
+msgid "The selected Bluetooth device is not connected"
+msgstr ""
+
+msgid "Bluetooth control channel is unavailable"
+msgstr ""
+
+msgid "Bluetooth scan timed out"
+msgstr ""
+
+msgid "Bluetooth adapter not found"
+msgstr ""
+
+msgid "Bluetooth is disabled"
+msgstr ""
+
+#, fuzzy
+msgid "Bluetooth device not found"
+msgstr "Directorio de PortProton no encontrado"
+
+msgid "Bluetooth output channel is unavailable"
+msgstr ""
+
+msgid "Bluetooth pairing requires user confirmation"
+msgstr ""
+
+msgid "Bluetooth pairing cancelled"
+msgstr ""
+
+msgid "Bluetooth pairing"
+msgstr ""
+
+#, python-brace-format
+msgid "Confirm the passkey on the device: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Confirm the passkey on the phone: {0}"
+msgstr ""
+
+msgid "Confirm pairing on the device?"
+msgstr ""
+
+msgid "Bluetooth authorization"
+msgstr ""
+
+msgid "Authorize the Bluetooth service on the device?"
+msgstr ""
+
+msgid "Bluetooth PIN code"
+msgstr ""
+
+msgid "Enter the Bluetooth PIN code shown on the device"
+msgstr ""
+
+msgid "Bluetooth passkey"
+msgstr ""
+
+msgid "Enter the Bluetooth passkey shown on the device"
+msgstr ""
+
+msgid "Bluetooth command timed out"
+msgstr ""
+
+msgid "Connected"
+msgstr ""
+
+msgid "Paired"
+msgstr ""
+
+msgid "Available"
+msgstr ""
+
+msgid "Unsupported network operation"
+msgstr ""
+
+msgid "The selected VPN is not active"
+msgstr ""
+
+msgid "VPN config file not found"
+msgstr ""
+
+msgid "Unsupported VPN config format"
+msgstr ""
+
+msgid "Password is required for this network"
+msgstr ""
+
+msgid "The selected network is not active"
+msgstr ""
+
+msgid "No saved profile found for this network"
+msgstr ""
+
+msgid "Disconnected"
+msgstr ""
+
+#, fuzzy
+msgid "VPN profile not found"
+msgstr "Directorio de PortProton no encontrado"
+
+msgid "Wi-Fi device not found"
+msgstr ""
+
+msgid "Failed to read VPN config file"
+msgstr ""
+
+msgid "Protected"
+msgstr ""
+
+msgid "Saved"
+msgstr ""
+
+msgid "Unexpected storage error"
+msgstr ""
+
+msgid "Unsupported storage operation"
+msgstr ""
+
+msgid "The selected device is already mounted"
+msgstr ""
+
+msgid "The selected device is not mounted"
+msgstr ""
+
+msgid "Failed to parse storage device list"
+msgstr ""
+
+msgid "Mounted"
+msgstr ""
+
+msgid "Not mounted"
+msgstr ""
+
+msgid "Storage device not found"
+msgstr ""
+
+msgid "Volume"
+msgstr ""
+
+msgid "Fullscreen"
+msgstr ""
+
+msgid "Mouse Emulation"
+msgstr ""
+
+msgid "Connect"
+msgstr ""
+
+msgid "Disconnect"
+msgstr ""
+
+msgid "Enable/Disable"
+msgstr ""
+
+msgid "Add VPN"
+msgstr ""
+
+msgid "Scan"
+msgstr ""
+
+msgid "Mount"
+msgstr ""
+
+msgid "Unmount"
+msgstr ""
+
+msgid "Set output"
+msgstr ""
+
+msgid "Refresh"
+msgstr ""
+
+msgid "Wi-Fi password"
+msgstr ""
+
+#, python-brace-format
+msgid "Enter password for: {0}"
+msgstr ""
+
+msgid "Enter Wi-Fi password"
+msgstr ""
+
+#, fuzzy
+msgid "Storage"
+msgstr "Detener juego"
+
+msgid "Audio"
+msgstr ""
+
+msgid "Power"
+msgstr ""
+
+msgid "Bluetooth"
+msgstr ""
+
+msgid "Loading network status..."
+msgstr ""
+
+msgid "Enable Wi-Fi"
+msgstr ""
+
+msgid "Network"
+msgstr ""
+
+msgid "Security"
+msgstr ""
+
+msgid "Signal"
+msgstr ""
+
+msgid "State"
+msgstr ""
+
+msgid "Forget"
+msgstr ""
+
+msgid "Share"
+msgstr ""
+
+msgid "Loading VPN profiles..."
+msgstr ""
+
+msgid "Profile"
+msgstr ""
+
+msgid "Type"
+msgstr ""
+
+msgid "Add"
+msgstr ""
+
+msgid "Loading Bluetooth status..."
+msgstr ""
+
+msgid "Enable Bluetooth"
+msgstr ""
+
+msgid "Device"
+msgstr ""
+
+msgid "Battery"
+msgstr ""
+
+msgid "Loading storage devices..."
+msgstr ""
+
+msgid "Label"
+msgstr ""
+
+msgid "Used"
+msgstr ""
+
+msgid "Mount point"
+msgstr ""
+
+msgid "Loading audio devices..."
+msgstr ""
+
+msgid "Volume:"
+msgstr ""
+
+msgid "Playback devices"
+msgstr ""
+
+msgid "Output"
+msgstr ""
+
+msgid "Reboot"
+msgstr ""
+
+msgid "Shutdown"
+msgstr ""
+
+msgid "Suspend"
+msgstr ""
+
+msgid "Failed to reboot the system"
+msgstr ""
+
+msgid "Failed to shutdown the system"
+msgstr ""
+
+msgid "Failed to suspend the system"
+msgstr ""
+
+msgid "Failed to generate QR"
+msgstr ""
+
+msgid "NetworkManager Wi-Fi device not found"
+msgstr ""
+
+msgid "Storage management is not available"
+msgstr ""
+
+msgid "Audio management is not available"
+msgstr ""
+
+msgid "Selected"
+msgstr ""
+
+msgid "Not selected"
 msgstr ""
 

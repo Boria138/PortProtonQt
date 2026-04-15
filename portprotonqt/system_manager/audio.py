@@ -52,62 +52,60 @@ class AudioManagerService:
         if operation == "load":
             return self.list_audio()
 
-        message = self._run_operation(operation, params)
+        self._run_operation(operation, params)
         if operation == "set_sink_volume":
             return {
                 "available": True,
-                "message": message,
                 "volume_updated": True,
             }
         time.sleep(0.5)
-        payload = self.list_audio()
-        payload["message"] = message
-        return payload
+        return self.list_audio()
 
-    def _run_operation(self, operation: str, params: dict) -> str:
+    def _run_operation(self, operation: str, params: dict) -> None:
         if operation == "set_default_sink":
             sink_name = params.get("sink_name", "")
             if not sink_name:
                 logger.error("Audio operation set_default_sink called without sink_name")
-                return ""
+                return
             self._run_pactl(["set-default-sink", sink_name])
-            return _("Default output device updated")
+            logger.info("Default output device updated")
 
-        if operation == "set_sink_volume":
+        elif operation == "set_sink_volume":
             sink_name = params.get("sink_name", "")
             volume = params.get("volume", 0)
             if not sink_name:
                 logger.error("Audio operation set_sink_volume called without sink_name")
-                return ""
+                return
             try:
                 volume_value = int(volume)
             except (TypeError, ValueError) as exc:
                 raise NetworkManagerError(_("Invalid volume value")) from exc
             volume_value = max(0, min(AUDIO_MAX_VOLUME, volume_value))
             self._run_pactl(["set-sink-volume", sink_name, f"{volume_value}%"])
-            return _("Output volume updated")
+            logger.info("Output volume updated")
 
-        if operation == "set_default_source":
+        elif operation == "set_default_source":
             source_name = params.get("source_name", "")
             if not source_name:
                 logger.error("Audio operation set_default_source called without source_name")
-                return ""
+                return
             self._run_pactl(["set-default-source", source_name])
-            return _("Default input device updated")
+            logger.info("Default input device updated")
 
-        if operation == "set_card_profile":
+        elif operation == "set_card_profile":
             card_name = params.get("card_name", "")
             profile_name = params.get("profile_name", "")
             if not card_name:
                 logger.error("Audio operation set_card_profile called without card_name")
-                return ""
+                return
             if not profile_name:
                 logger.error("Audio operation set_card_profile called without profile_name")
-                return ""
+                return
             self._run_pactl(["set-card-profile", card_name, profile_name])
-            return _("Audio profile updated")
+            logger.info("Audio profile updated")
 
-        raise NetworkManagerError(_("Unsupported audio operation"))
+        else:
+            raise NetworkManagerError(_("Unsupported audio operation"))
 
     def list_audio(self) -> dict:
         if not self.pactl_path:

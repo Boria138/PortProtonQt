@@ -335,29 +335,12 @@ msgstr "Настройки Wine"
 msgid "PortProton Settings"
 msgstr "Настройки PortProton"
 
+#, fuzzy
+msgid "System"
+msgstr "Системный WINE"
+
 msgid "Themes"
 msgstr "Темы"
-
-msgid "Select"
-msgstr "Выбрать"
-
-msgid "Back"
-msgstr "Назад"
-
-msgid "Add Game"
-msgstr "Добавить игру"
-
-msgid "Fullscreen"
-msgstr "Полный экран"
-
-msgid "Search"
-msgstr "Поиск"
-
-msgid "Refresh Grid"
-msgstr "Обновить"
-
-msgid "Mouse Emulation"
-msgstr "Эмуляция мыши"
 
 msgid "Warning"
 msgstr "Предупреждение"
@@ -381,6 +364,9 @@ msgstr "Установка не удалась."
 msgid "Installation error."
 msgstr "Ошибка установки."
 
+msgid "Refresh Grid"
+msgstr "Обновить"
+
 msgid "Game library refreshed"
 msgstr "Игровая библиотека обновлена"
 
@@ -392,6 +378,9 @@ msgstr "Загрузка игр PortProton..."
 
 msgid "Game Library"
 msgstr "Игровая библиотека"
+
+msgid "Add Game"
+msgstr "Добавить игру"
 
 msgid "Find Games ..."
 msgstr "Найти игры..."
@@ -1023,39 +1012,6 @@ msgstr ""
 "одному узлу уменьшает задержку доступа к памяти и ограничивает "
 "дорогостоящие переключения между ядрами."
 
-msgid "Reboot"
-msgstr "Перезагрузить"
-
-msgid "Shutdown"
-msgstr "Выключить"
-
-msgid "Suspend"
-msgstr "Перейти в ждущий режим"
-
-msgid "Exit Application"
-msgstr "Выйти из приложения"
-
-msgid "Return to Desktop"
-msgstr "Вернуться на рабочий стол"
-
-msgid "portprotonqt-session-select file not found at /usr/bin/"
-msgstr "portprotonqt-session-select файл не найден в /usr/bin/"
-
-msgid "Cancel"
-msgstr "Отмена"
-
-msgid "Failed to reboot the system"
-msgstr "Не удалось перезагрузить систему"
-
-msgid "Failed to shutdown the system"
-msgstr "Не удалось завершить работу системы"
-
-msgid "Failed to suspend the system"
-msgstr "Не удалось перейти в ждущий режим"
-
-msgid "Failed to return to desktop"
-msgstr "Не удалось вернуться на рабочий стол"
-
 msgid "just now"
 msgstr "только что"
 
@@ -1140,6 +1096,9 @@ msgstr "Лог сохранен в:"
 msgid "Open Folder"
 msgstr "Открыть папку"
 
+msgid "Back"
+msgstr "Назад"
+
 #, python-brace-format
 msgid "Gamepad Support: {0}"
 msgstr "Поддержка геймпадов: {0}"
@@ -1156,6 +1115,9 @@ msgstr "отсутствует"
 #, python-brace-format
 msgid "Launching {0}"
 msgstr "Запуск {0}"
+
+msgid "Cancel"
+msgstr "Отмена"
 
 msgid "Game Name:"
 msgstr "Имя игры:"
@@ -1217,11 +1179,17 @@ msgstr "Следующая вкладка"
 msgid "Save"
 msgstr "Сохранить"
 
+msgid "Search"
+msgstr "Поиск"
+
 msgid "Download"
 msgstr "Скачивание"
 
 msgid "Clear All"
 msgstr "Очистить выбранное"
+
+msgid "Select"
+msgstr "Выбрать"
 
 msgid "Path: "
 msgstr "Путь: "
@@ -2103,3 +2071,357 @@ msgstr "Установка не удалась. Проверьте журнал�
 
 msgid "Components installed successfully."
 msgstr "Компоненты успешно установлены."
+
+#, fuzzy
+msgid "Invalid volume value"
+msgstr "Недопустимое изображение"
+
+#, fuzzy, python-brace-format
+msgid "Unsupported audio operation"
+msgstr "Неподдерживаемый формат изображения: {extension}"
+
+#, fuzzy, python-brace-format
+msgid "Unsupported Bluetooth operation"
+msgstr "Неподдерживаемый формат изображения: {extension}"
+
+msgid "The selected Bluetooth device is not connected"
+msgstr ""
+
+msgid "Bluetooth control channel is unavailable"
+msgstr ""
+
+msgid "Bluetooth scan timed out"
+msgstr ""
+
+msgid "Bluetooth adapter not found"
+msgstr ""
+
+msgid "Bluetooth is disabled"
+msgstr ""
+
+#, fuzzy
+msgid "Bluetooth device not found"
+msgstr "Не найден каталог PortProton"
+
+msgid "Bluetooth output channel is unavailable"
+msgstr ""
+
+msgid "Bluetooth pairing requires user confirmation"
+msgstr ""
+
+#, fuzzy
+msgid "Bluetooth pairing cancelled"
+msgstr "Операция отменена"
+
+msgid "Bluetooth pairing"
+msgstr ""
+
+#, python-brace-format
+msgid "Confirm the passkey on the device: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "Confirm the passkey on the phone: {0}"
+msgstr ""
+
+msgid "Confirm pairing on the device?"
+msgstr ""
+
+msgid "Bluetooth authorization"
+msgstr ""
+
+msgid "Authorize the Bluetooth service on the device?"
+msgstr ""
+
+msgid "Bluetooth PIN code"
+msgstr ""
+
+msgid "Enter the Bluetooth PIN code shown on the device"
+msgstr ""
+
+msgid "Bluetooth passkey"
+msgstr ""
+
+msgid "Enter the Bluetooth passkey shown on the device"
+msgstr ""
+
+msgid "Bluetooth command timed out"
+msgstr ""
+
+msgid "Connected"
+msgstr ""
+
+#, fuzzy
+msgid "Paired"
+msgstr "Планируется"
+
+msgid "Available"
+msgstr ""
+
+#, fuzzy, python-brace-format
+msgid "Unsupported network operation"
+msgstr "Неподдерживаемый формат изображения: {extension}"
+
+msgid "The selected VPN is not active"
+msgstr ""
+
+#, fuzzy, python-brace-format
+msgid "VPN config file not found"
+msgstr "Файл не найден: {0}"
+
+#, fuzzy, python-brace-format
+msgid "Unsupported VPN config format"
+msgstr "Неподдерживаемый формат изображения: {extension}"
+
+msgid "Password is required for this network"
+msgstr ""
+
+msgid "The selected network is not active"
+msgstr ""
+
+msgid "No saved profile found for this network"
+msgstr ""
+
+msgid "Disconnected"
+msgstr ""
+
+#, fuzzy
+msgid "VPN profile not found"
+msgstr "Префикс не найден"
+
+#, fuzzy, python-brace-format
+msgid "Wi-Fi device not found"
+msgstr "Файл не найден: {0}"
+
+#, fuzzy
+msgid "Failed to read VPN config file"
+msgstr "Загрузка файла конфигурации"
+
+msgid "Protected"
+msgstr ""
+
+#, fuzzy
+msgid "Saved"
+msgstr "Сохранить"
+
+msgid "Unexpected storage error"
+msgstr ""
+
+#, fuzzy, python-brace-format
+msgid "Unsupported storage operation"
+msgstr "Неподдерживаемый формат изображения: {extension}"
+
+msgid "The selected device is already mounted"
+msgstr ""
+
+msgid "The selected device is not mounted"
+msgstr ""
+
+#, fuzzy
+msgid "Failed to parse storage device list"
+msgstr "Не удалось запустить процесс восстановления."
+
+#, fuzzy
+msgid "Mounted"
+msgstr "Мышь"
+
+msgid "Not mounted"
+msgstr ""
+
+#, fuzzy
+msgid "Storage device not found"
+msgstr "Префикс не найден"
+
+#, fuzzy
+msgid "Volume"
+msgstr "Значение"
+
+msgid "Fullscreen"
+msgstr "Полный экран"
+
+msgid "Mouse Emulation"
+msgstr "Эмуляция мыши"
+
+msgid "Connect"
+msgstr ""
+
+msgid "Disconnect"
+msgstr ""
+
+#, fuzzy
+msgid "Enable/Disable"
+msgstr "отключено"
+
+msgid "Add VPN"
+msgstr ""
+
+#, fuzzy
+msgid "Scan"
+msgstr "Отмена"
+
+#, fuzzy
+msgid "Mount"
+msgstr "Мышь"
+
+msgid "Unmount"
+msgstr ""
+
+msgid "Set output"
+msgstr ""
+
+#, fuzzy
+msgid "Refresh"
+msgstr "Обновить"
+
+#, fuzzy
+msgid "Wi-Fi password"
+msgstr "Пароль прокси"
+
+#, python-brace-format
+msgid "Enter password for: {0}"
+msgstr ""
+
+msgid "Enter Wi-Fi password"
+msgstr ""
+
+#, fuzzy
+msgid "Storage"
+msgstr "Остановить игру"
+
+#, fuzzy
+msgid "Audio"
+msgstr "Отменить"
+
+#, fuzzy
+msgid "Power"
+msgstr "Другие"
+
+msgid "Bluetooth"
+msgstr ""
+
+#, fuzzy
+msgid "Loading network status..."
+msgstr "Загрузка игр Steam..."
+
+msgid "Enable Wi-Fi"
+msgstr ""
+
+msgid "Network"
+msgstr ""
+
+msgid "Security"
+msgstr ""
+
+#, fuzzy
+msgid "Signal"
+msgstr "Установить"
+
+#, fuzzy
+msgid "State"
+msgstr "Стабильный"
+
+msgid "Forget"
+msgstr ""
+
+#, fuzzy
+msgid "Share"
+msgstr "Сохранить"
+
+#, fuzzy
+msgid "Loading VPN profiles..."
+msgstr "Загрузка игр PortProton..."
+
+msgid "Profile"
+msgstr ""
+
+msgid "Type"
+msgstr ""
+
+msgid "Add"
+msgstr ""
+
+#, fuzzy
+msgid "Loading Bluetooth status..."
+msgstr "Загрузка игр PortProton..."
+
+msgid "Enable Bluetooth"
+msgstr ""
+
+#, fuzzy
+msgid "Device"
+msgstr "Отказано"
+
+#, fuzzy
+msgid "Battery"
+msgstr "Батарея устройства"
+
+#, fuzzy
+msgid "Loading storage devices..."
+msgstr "Загрузка игр Steam..."
+
+#, fuzzy
+msgid "Label"
+msgstr "После отображения кадра"
+
+#, fuzzy
+msgid "Used"
+msgstr "Перейти в ждущий режим"
+
+msgid "Mount point"
+msgstr ""
+
+#, fuzzy
+msgid "Loading audio devices..."
+msgstr "Загрузка игр Steam..."
+
+#, fuzzy
+msgid "Volume:"
+msgstr "Значение"
+
+msgid "Playback devices"
+msgstr ""
+
+#, fuzzy
+msgid "Output"
+msgstr "Выходная ширина"
+
+msgid "Reboot"
+msgstr "Перезагрузить"
+
+msgid "Shutdown"
+msgstr "Выключить"
+
+msgid "Suspend"
+msgstr "Перейти в ждущий режим"
+
+msgid "Failed to reboot the system"
+msgstr "Не удалось перезагрузить систему"
+
+msgid "Failed to shutdown the system"
+msgstr "Не удалось завершить работу системы"
+
+msgid "Failed to suspend the system"
+msgstr "Не удалось перейти в ждущий режим"
+
+#, fuzzy, python-brace-format
+msgid "Failed to generate QR"
+msgstr "Не удалось удалить префикс: {}"
+
+msgid "NetworkManager Wi-Fi device not found"
+msgstr ""
+
+#, fuzzy
+msgid "Storage management is not available"
+msgstr "Путь к исполняемому файлу недоступен."
+
+#, fuzzy
+msgid "Audio management is not available"
+msgstr "Путь к исполняемому файлу недоступен."
+
+#, fuzzy
+msgid "Selected"
+msgstr "Выбрать"
+
+#, fuzzy
+msgid "Not selected"
+msgstr "Обложка не выбрана"

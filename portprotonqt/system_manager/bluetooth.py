@@ -90,15 +90,13 @@ class BluetoothManagerService:
             if operation == "scan":
                 return self.scan_devices()
 
-            message = self._run_operation(operation, params)
+            self._run_operation(operation, params)
             if operation in {"connect", "disconnect", "forget"}:
                 self._sleep_if_needed(2)
             elif operation != "load":
                 self._sleep_if_needed(1)
 
-            payload = self.list_devices()
-            payload["message"] = message
-            return payload
+            return self.list_devices()
         finally:
             if self.dbus is not None:
                 self.dbus.close()
@@ -110,17 +108,17 @@ class BluetoothManagerService:
         while time.monotonic() < deadline:
             time.sleep(0.2)
 
-    def _run_operation(self, operation: str, params: dict) -> str:
+    def _run_operation(self, operation: str, params: dict) -> None:
         if operation == "toggle_bluetooth":
-            return self.set_powered(bool(params.get("enabled")))
-        if operation == "connect":
-            return self.connect_device(params.get("address", ""))
-        if operation == "disconnect":
-            return self.disconnect_device(params.get("address", ""))
-        if operation == "forget":
-            return self.forget_device(params.get("address", ""))
-
-        raise NetworkManagerError(_("Unsupported Bluetooth operation"))
+            self.set_powered(bool(params.get("enabled")))
+        elif operation == "connect":
+            self.connect_device(params.get("address", ""))
+        elif operation == "disconnect":
+            self.disconnect_device(params.get("address", ""))
+        elif operation == "forget":
+            self.forget_device(params.get("address", ""))
+        else:
+            raise NetworkManagerError(_("Unsupported Bluetooth operation"))
 
     def list_devices(self, discovered: list[tuple[str, str]] | None = None) -> dict:
         show_output = self._run_commands(["show"])
@@ -147,20 +145,18 @@ class BluetoothManagerService:
         discovered = self._scan_nearby_devices()
         return self.list_devices(discovered)
 
-    def set_powered(self, enabled: bool) -> str:
+    def set_powered(self, enabled: bool) -> None:
         self._require_adapter()
         state = "on" if enabled else "off"
         output = self._run_commands([f"power {state}"])
         if "Failed" in output:
             raise NetworkManagerError(self._extract_bluetooth_error(output))
-        if enabled:
-            return _("Bluetooth enabled")
-        return _("Bluetooth disabled")
+        logger.info("Bluetooth %s", "enabled" if enabled else "disabled")
 
-    def connect_device(self, address: str) -> str:
+    def connect_device(self, address: str) -> None:
         if not address:
             logger.error("Bluetooth operation connect called without address")
-            return ""
+            return
         device = self._require_device(address)
         self._require_powered()
         if not device["paired"]:
@@ -178,33 +174,37 @@ class BluetoothManagerService:
         self._run_commands([f"trust {target_address}"])
         output = self._run_commands([f"connect {target_address}"])
         if "Connection successful" in output:
-            return _("Bluetooth device connected")
+            logger.info("Bluetooth device connected")
+            return
         if device["connected"]:
-            return _("Bluetooth device already connected")
+            logger.info("Bluetooth device already connected")
+            return
         raise NetworkManagerError(self._extract_bluetooth_error(output))
 
-    def disconnect_device(self, address: str) -> str:
+    def disconnect_device(self, address: str) -> None:
         if not address:
             logger.error("Bluetooth operation disconnect called without address")
-            return ""
+            return
         device = self._require_device(address)
         if not device["connected"]:
             raise NetworkManagerError(_("The selected Bluetooth device is not connected"))
         output = self._run_commands([f"disconnect {address}"])
         if "Successful disconnected" in output or "disconnect successful" in output.lower():
-            return _("Bluetooth device disconnected")
+            logger.info("Bluetooth device disconnected")
+            return
         if "Failed" in output:
             raise NetworkManagerError(self._extract_bluetooth_error(output))
-        return _("Bluetooth device disconnected")
+        logger.info("Bluetooth device disconnected")
 
-    def forget_device(self, address: str) -> str:
+    def forget_device(self, address: str) -> None:
         if not address:
             logger.error("Bluetooth operation forget called without address")
-            return ""
+            return
         self._require_device(address)
         output = self._run_commands([f"remove {address}"])
         if "Device has been removed" in output:
-            return _("Bluetooth device removed")
+            logger.info("Bluetooth device removed")
+            return
         raise NetworkManagerError(self._extract_bluetooth_error(output))
 
     def _build_devices(self, discovered: list[tuple[str, str]] | None = None) -> list[dict]:

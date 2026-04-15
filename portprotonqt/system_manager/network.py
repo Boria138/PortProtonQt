@@ -71,41 +71,39 @@ class NetworkManagerService:
                 payload = {"password": self._get_saved_connection_password(params.get("ssid", ""))}
                 return payload
 
-            message = self._run_operation(operation, params)
+            self._run_operation(operation, params)
             if operation in {"connect", "connect_vpn"}:
                 time.sleep(2)
             elif operation != "load":
                 time.sleep(1)
 
-            payload = self.list_networks()
-            payload["message"] = message
-            return payload
+            return self.list_networks()
         finally:
             self.dbus.close()
 
-    def _run_operation(self, operation: str, params: dict) -> str:
+    def _run_operation(self, operation: str, params: dict) -> None:
         if operation == "scan":
-            return self.request_scan()
-        if operation == "connect":
-            return self.connect_network(params.get("network_path", ""), params.get("password", ""))
-        if operation == "disconnect":
-            return self.disconnect_network(params.get("network_path", ""))
-        if operation == "forget":
-            return self.forget_network(params.get("ssid", ""), params.get("network_path", ""))
-        if operation == "toggle_wireless":
-            return self.set_wireless_enabled(bool(params.get("enabled")))
-        if operation == "connect_vpn":
-            return self.connect_vpn(params.get("connection_path", ""))
-        if operation == "disconnect_vpn":
-            return self.disconnect_vpn(params.get("connection_path", ""))
-        if operation == "add_vpn":
-            return self.add_vpn(params.get("file_path", ""))
-        if operation == "delete_vpn":
-            return self.delete_vpn(params.get("connection_path", ""))
-        if operation == "get_password":
-            return self._get_saved_connection_password(params.get("ssid", ""))
-
-        raise NetworkManagerError(_("Unsupported network operation"))
+            self.request_scan()
+        elif operation == "connect":
+            self.connect_network(params.get("network_path", ""), params.get("password", ""))
+        elif operation == "disconnect":
+            self.disconnect_network(params.get("network_path", ""))
+        elif operation == "forget":
+            self.forget_network(params.get("ssid", ""), params.get("network_path", ""))
+        elif operation == "toggle_wireless":
+            self.set_wireless_enabled(bool(params.get("enabled")))
+        elif operation == "connect_vpn":
+            self.connect_vpn(params.get("connection_path", ""))
+        elif operation == "disconnect_vpn":
+            self.disconnect_vpn(params.get("connection_path", ""))
+        elif operation == "add_vpn":
+            self.add_vpn(params.get("file_path", ""))
+        elif operation == "delete_vpn":
+            self.delete_vpn(params.get("connection_path", ""))
+        elif operation == "get_password":
+            self._get_saved_connection_password(params.get("ssid", ""))
+        else:
+            raise NetworkManagerError(_("Unsupported network operation"))
 
     def list_networks(self) -> dict:
         wireless_enabled = self._extract_bool(
@@ -129,13 +127,14 @@ class NetworkManagerService:
         payload["networks"] = self._build_networks(device_path)
         return payload
 
-    def connect_vpn(self, connection_path: str) -> str:
+    def connect_vpn(self, connection_path: str) -> None:
         if not connection_path:
             logger.error("Network operation connect_vpn called without connection_path")
-            return ""
+            return
         vpn = self._require_vpn(connection_path)
         if vpn["active"]:
-            return _("VPN already connected")
+            logger.info("VPN already connected")
+            return
         self._call(
             NM_PATH,
             f"{NM_INTERFACE}.ActivateConnection",
@@ -143,12 +142,12 @@ class NetworkManagerService:
             "/",
             "/",
         )
-        return _("VPN connection started")
+        logger.info("VPN connection started")
 
-    def disconnect_vpn(self, connection_path: str) -> str:
+    def disconnect_vpn(self, connection_path: str) -> None:
         if not connection_path:
             logger.error("Network operation disconnect_vpn called without connection_path")
-            return ""
+            return
         vpn = self._require_vpn(connection_path)
         if not vpn["active"]:
             raise NetworkManagerError(_("The selected VPN is not active"))
@@ -157,12 +156,12 @@ class NetworkManagerService:
         if not active_path:
             raise NetworkManagerError(_("The selected VPN is not active"))
         self._call(NM_PATH, f"{NM_INTERFACE}.DeactivateConnection", active_path)
-        return _("VPN disconnection started")
+        logger.info("VPN disconnection started")
 
-    def add_vpn(self, file_path: str) -> str:
+    def add_vpn(self, file_path: str) -> None:
         if not file_path:
             logger.error("Network operation add_vpn called without file_path")
-            return ""
+            return
         normalized_path = os.path.normpath(file_path)
         if not os.path.isfile(normalized_path):
             raise NetworkManagerError(_("VPN config file not found"))
@@ -189,29 +188,28 @@ class NetworkManagerService:
         if result.returncode != 0:
             error_text = result.stderr.strip() or result.stdout.strip()
             raise NetworkManagerError(self._clean_error(error_text))
-        return _("VPN profile imported")
+        logger.info("VPN profile imported")
 
-    def delete_vpn(self, connection_path: str) -> str:
+    def delete_vpn(self, connection_path: str) -> None:
         if not connection_path:
             logger.error("Network operation delete_vpn called without connection_path")
-            return ""
+            return
         vpn = self._require_vpn(connection_path)
         active_connections = self._get_active_vpn_connections()
         active_path = active_connections.get(vpn["uuid"], "")
         if active_path:
             self._call(NM_PATH, f"{NM_INTERFACE}.DeactivateConnection", active_path)
         self._delete_connection(connection_path)
-        return _("VPN profile removed")
+        logger.info("VPN profile removed")
 
-    def request_scan(self) -> str:
+    def request_scan(self) -> None:
         device_path = self._require_wifi_device_path()
         self._call(device_path, f"{NM_WIRELESS_INTERFACE}.RequestScan", {})
-        return ""
 
-    def connect_network(self, network_path: str, password: str) -> str:
+    def connect_network(self, network_path: str, password: str) -> None:
         if not network_path:
             logger.error("Network operation connect called without network_path")
-            return ""
+            return
 
         device_path = self._require_wifi_device_path()
         network = self._read_network(network_path)
@@ -229,7 +227,8 @@ class NetworkManagerService:
                 device_path,
                 network_path,
             )
-            return _("Connection activation started")
+            logger.info("Connection activation started")
+            return
 
         if network["secured"] and not clean_password:
             raise NetworkManagerError(_("Password is required for this network"))
@@ -246,9 +245,9 @@ class NetworkManagerService:
             device_path,
             network_path,
         )
-        return _("Connection activation started")
+        logger.info("Connection activation started")
 
-    def disconnect_network(self, network_path: str) -> str:
+    def disconnect_network(self, network_path: str) -> None:
         device_path = self._require_wifi_device_path()
         active_connection = self._extract_first_path(
             self._get_property(device_path, NM_DEVICE_INTERFACE, "ActiveConnection")
@@ -260,15 +259,16 @@ class NetworkManagerService:
             raise NetworkManagerError(_("The selected network is not active"))
         if active_connection and active_connection != "/":
             self._call(NM_PATH, f"{NM_INTERFACE}.DeactivateConnection", active_connection)
-            return _("Disconnection started")
+            logger.info("Disconnection started")
+            return
 
         self._call(device_path, f"{NM_DEVICE_INTERFACE}.Disconnect")
-        return _("Disconnection started")
+        logger.info("Disconnection started")
 
-    def forget_network(self, ssid: str, network_path: str) -> str:
+    def forget_network(self, ssid: str, network_path: str) -> None:
         if not ssid:
             logger.error("Network operation forget called without ssid")
-            return ""
+            return
 
         saved = self._find_saved_connection(ssid)
         if not saved:
@@ -278,13 +278,11 @@ class NetworkManagerService:
         if device_path:
             self._deactivate_if_selected(device_path, network_path)
         self._delete_connection(saved["path"])
-        return _("Network profile removed")
+        logger.info("Network profile removed")
 
-    def set_wireless_enabled(self, enabled: bool) -> str:
+    def set_wireless_enabled(self, enabled: bool) -> None:
         self._set_property(NM_PATH, NM_INTERFACE, "WirelessEnabled", "b", enabled)
-        if enabled:
-            return _("Wi-Fi enabled")
-        return _("Wi-Fi disabled")
+        logger.info("Wi-Fi %s", "enabled" if enabled else "disabled")
 
     def _build_networks(self, device_path: str) -> list[dict]:
         saved = self._get_saved_connections()

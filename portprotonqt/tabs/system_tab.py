@@ -218,7 +218,7 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
         self.systemSectionStack.addWidget(vpn_frame)
 
     def _addSystemBluetoothSection(self) -> None:
-        bluetooth_frame, bluetooth_layout = self._createSystemSection(_("Bluetooth"))
+        bluetooth_frame, bluetooth_layout = self._createSystemSection("Bluetooth")
         self.bluetoothSectionFrame = bluetooth_frame
         self._setupSystemBluetoothControls(bluetooth_layout)
         self._setupSystemBluetoothTable(bluetooth_layout)
@@ -820,6 +820,7 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
             },
             self.audioSinksTable: {
                 "confirm": self.setSelectedAudioSinkDefault,
+                "prev_dir": self.loadSystemAudioDevices,
             },
         }
 
@@ -1169,10 +1170,7 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
         self.vpnRows = payload.get("vpns", [])
         self.populateSystemNetworks(payload)
         self.setNetworkBusy(False)
-        message = payload.get("message")
-        if message:
-            self.statusBar().showMessage(message, 3000)
-        elif operation == "scan":
+        if operation == "scan":
             logger.info("Network scan finished: wifi_networks=%d", len(self.networkRows))
         elif operation == "load":
             logger.info(
@@ -1394,10 +1392,7 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
         self.setBluetoothBusy(False)
         if operation != "load":
             QTimer.singleShot(800, self.loadSystemBluetoothDevices)
-        message = payload.get("message")
-        if message:
-            self.statusBar().showMessage(message, 3000)
-        elif operation == "scan":
+        if operation == "scan":
             logger.info("Bluetooth scan finished: devices=%d", len(self.bluetoothRows))
         elif operation == "load":
             logger.info("Bluetooth list updated: devices=%d", len(self.bluetoothRows))
@@ -1566,10 +1561,7 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
         self.storageRows = payload.get("devices", [])
         self.populateSystemStorageDevices(payload)
         self.setStorageBusy(False)
-        message = payload.get("message")
-        if message:
-            self.statusBar().showMessage(message, 3000)
-        elif operation == "load":
+        if operation == "load":
             logger.info("Storage list updated: devices=%d", len(self.storageRows))
 
     def onStorageOperationFailed(self, _operation: str, error_text: str) -> None:
@@ -1696,9 +1688,6 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
             sink = self.getSelectedAudioSinkData()
             if sink is not None:
                 sink["volume"] = int(self.audioVolumeSlider.value())
-            message = payload.get("message")
-            if message:
-                self.statusBar().showMessage(message, 2000)
             return
 
         self.audioSinksRows = payload.get("sinks", [])
@@ -1707,10 +1696,7 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
         if operation == "set_default_sink" and self.audioFocusSinkName:
             self._restoreAudioSinkFocusByName(self.audioFocusSinkName)
             self.audioFocusSinkName = ""
-        message = payload.get("message")
-        if message:
-            self.statusBar().showMessage(message, 3000)
-        elif operation == "load":
+        if operation == "load":
             logger.info("Audio list updated: outputs=%d", len(self.audioSinksRows))
 
     def onAudioOperationFailed(self, _operation: str, error_text: str) -> None:

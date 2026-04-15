@@ -593,7 +593,9 @@ class MainWindowControlHintsMixin:
             return
         if section_index == audio_index:
             self._setGamepadHintVisible("confirm", True)
+            self._setGamepadHintVisible("search", True)
             self._setGamepadHintVisible("decrease_size", True)
             self._setGamepadHintVisible("increase_size", True)
             self._setGamepadHintText("confirm", _("Set output"))
+            self._setGamepadHintText("search", _("Refresh"))
             return
