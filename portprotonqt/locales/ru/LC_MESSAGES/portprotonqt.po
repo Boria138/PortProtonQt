@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-03-22 13:50+0500\n"
-"PO-Revision-Date: 2026-04-09 16:27+0000\n"
+"PO-Revision-Date: 2026-04-15 13:17+0000\n"
 "Last-Translator: Boria138 <boria138@noreply.codeberg.org>\n"
 "Language-Team: Russian <https://translate.codeberg.org/projects/portprotonqt/"
 "portprotonqt/ru/>\n"
@@ -19,7 +19,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
-"X-Generator: Weblate 5.16.2\n"
+"X-Generator: Weblate 5.17\n"
 "Generated-By: Babel 2.17.0\n"
 
 #, python-brace-format
@@ -335,9 +335,8 @@ msgstr "Настройки Wine"
 msgid "PortProton Settings"
 msgstr "Настройки PortProton"
 
-#, fuzzy
 msgid "System"
-msgstr "Системный WINE"
+msgstr "Система"
 
 msgid "Themes"
 msgstr "Темы"
@@ -2073,67 +2072,63 @@ msgid "Components installed successfully."
 msgstr "Компоненты успешно установлены."
 
 msgid "Bluetooth pairing"
-msgstr ""
+msgstr "Сопряжение по Bluetooth"
 
 #, python-brace-format
 msgid "Confirm the passkey on the device: {0}"
-msgstr ""
+msgstr "Подтвердите пароль на устройстве: {0}"
 
 #, python-brace-format
 msgid "Confirm the passkey on the phone: {0}"
 msgstr ""
 
 msgid "Confirm pairing on the device?"
-msgstr ""
+msgstr "Подтвердите сопряжение на устройстве?"
 
 msgid "Bluetooth authorization"
-msgstr ""
+msgstr "Авторизация Bluetooth"
 
 msgid "Authorize the Bluetooth service on the device?"
-msgstr ""
+msgstr "Разрешить службу Bluetooth на устройстве?"
 
 msgid "Bluetooth PIN code"
-msgstr ""
+msgstr "ПИН-код Bluetooth"
 
 msgid "Enter the Bluetooth PIN code shown on the device"
-msgstr ""
+msgstr "Введите PIN-код Bluetooth, отображаемый на устройстве"
 
 msgid "Bluetooth passkey"
-msgstr ""
+msgstr "Bluetooth-ключ доступа"
 
 msgid "Enter the Bluetooth passkey shown on the device"
-msgstr ""
+msgstr "Введите пароль Bluetooth, отображаемый на устройстве"
 
 msgid "Connected"
-msgstr ""
+msgstr "Подключено"
 
-#, fuzzy
 msgid "Paired"
-msgstr "Планируется"
+msgstr "Сопреженно"
 
 msgid "Available"
-msgstr ""
+msgstr "Доступно"
 
 msgid "Disconnected"
-msgstr ""
+msgstr "Отключено"
 
 msgid "Protected"
-msgstr ""
+msgstr "Защищенный"
 
-#, fuzzy
 msgid "Saved"
-msgstr "Сохранить"
+msgstr "Сохранено"
 
-#, fuzzy
 msgid "Mounted"
-msgstr "Мышь"
+msgstr "Смонтировано"
 
 msgid "Not mounted"
-msgstr ""
+msgstr "Не смонтировано"
 
-#, fuzzy
 msgid "Volume"
-msgstr "Значение"
+msgstr "Громкость"
 
 msgid "Fullscreen"
 msgstr "Полный экран"
@@ -2142,21 +2137,19 @@ msgid "Mouse Emulation"
 msgstr "Эмуляция мыши"
 
 msgid "Connect"
-msgstr ""
+msgstr "Подключиться"
 
 msgid "Disconnect"
-msgstr ""
+msgstr "Отключиться"
 
-#, fuzzy
 msgid "Enable/Disable"
-msgstr "отключено"
+msgstr "Включить/Выключить"
 
 msgid "Add VPN"
-msgstr ""
+msgstr "Добавить VPN"
 
-#, fuzzy
 msgid "Scan"
-msgstr "Отмена"
+msgstr "Сканировать"
 
 #, fuzzy
 msgid "Mount"
@@ -2166,87 +2159,75 @@ msgid "Unmount"
 msgstr ""
 
 msgid "Set output"
-msgstr ""
+msgstr "Выбрать выход"
 
-#, fuzzy
 msgid "Refresh"
 msgstr "Обновить"
 
 #, python-brace-format
 msgid "Enter password for: {0}"
-msgstr ""
+msgstr "Введите пароль для: {0}"
 
-#, fuzzy
 msgid "Storage"
-msgstr "Остановить игру"
+msgstr "Накопитель"
 
-#, fuzzy
 msgid "Audio"
-msgstr "Отменить"
+msgstr "Аудио"
 
-#, fuzzy
 msgid "Power"
-msgstr "Другие"
+msgstr "Питание"
 
 msgid "Network"
-msgstr ""
+msgstr "Сеть"
 
 msgid "Security"
-msgstr ""
+msgstr "Защита"
 
-#, fuzzy
 msgid "Signal"
-msgstr "Установить"
+msgstr "Сигнал"
 
-#, fuzzy
 msgid "State"
-msgstr "Стабильный"
+msgstr "Состояние"
 
 msgid "Forget"
-msgstr ""
+msgstr "Забыть"
 
-#, fuzzy
 msgid "Share"
-msgstr "Сохранить"
+msgstr "Поделиться"
 
 msgid "Profile"
-msgstr ""
+msgstr "Профиль"
 
 msgid "Type"
-msgstr ""
+msgstr "Тип"
 
 msgid "Add"
-msgstr ""
+msgstr "Добавить"
 
-#, fuzzy
 msgid "Device"
-msgstr "Отказано"
+msgstr "Девайс"
 
-#, fuzzy
 msgid "Battery"
-msgstr "Батарея устройства"
+msgstr "Батарея"
 
 #, fuzzy
 msgid "Label"
 msgstr "После отображения кадра"
 
-#, fuzzy
 msgid "Used"
-msgstr "Перейти в ждущий режим"
+msgstr "Использовано"
 
 msgid "Mount point"
-msgstr ""
+msgstr "Точка монтирования"
 
-#, fuzzy
 msgid "Volume:"
-msgstr "Значение"
+msgstr "Громкость:"
 
 msgid "Playback devices"
-msgstr ""
+msgstr "Устройства воспроизведения"
 
-#, fuzzy
 msgid "Output"
-msgstr "Выходная ширина"
+msgstr "Вывод"
 
 msgid "Reboot"
 msgstr "Перезагрузить"
@@ -2257,10 +2238,8 @@ msgstr "Выключить"
 msgid "Suspend"
 msgstr "Перейти в ждущий режим"
 
-#, fuzzy
 msgid "Selected"
-msgstr "Выбрать"
+msgstr "Выбранный"
 
-#, fuzzy
 msgid "Not selected"
-msgstr "Обложка не выбрана"
+msgstr "Не выбранный"
