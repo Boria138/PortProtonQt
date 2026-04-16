@@ -12,6 +12,24 @@
 
 **Scope:** These guidelines apply exclusively to AI-generated code. Documentation updates and human maintainers are exempt from line limits and these constraints.
 
+## License and Attribution
+
+- All code MUST be compatible with GPL-3.0.
+- Use appropriate SPDX license identifiers where applicable.
+- AI agents MUST NOT add `Signed-off-by` tags.
+
+When AI contributes to the project, add an `Assisted-by` tag:
+
+`Assisted-by: AGENT_NAME:MODEL_VERSION`
+
+Where:
+- `AGENT_NAME` is the AI agent or framework name.
+- `MODEL_VERSION` is the specific model version.
+
+Example:
+
+`Assisted-by: Claude:claude-3-opus`
+
 ---
 
 ## Core Principles
@@ -794,5 +812,5 @@ PortProtonQt/
 ---
 
 **Last updated:** 2026-03-10
-**Version:** 1.1
+**Version:** 1.2
 **Status:** Release
