@@ -1,11 +1,20 @@
 polkit.addRule(function(action, subject) {
-	var cmd_line = polkit.spawn(["ps", subject.pid]);
+	var cmd_line = polkit.spawn(["ps", "-o", "args=", "-p", String(subject.pid)]);
+    var ppid = polkit.spawn(["ps", "-o", "ppid=", "-p", String(subject.pid)]).trim();
+    var parent_cmd_line = "";
+    if (ppid) {
+        parent_cmd_line = polkit.spawn(["ps", "-o", "args=", "-p", ppid]);
+    }
+    var is_ppqt_call =
+        cmd_line.includes("ppqtos") ||
+        parent_cmd_line.includes("ppqtos");
+
     if (  (
     action.id === "org.freedesktop.NetworkManager.settings.modify.system" ||
 	action.id == "org.freedesktop.udisks2.filesystem-mount-system" ||
 	action.id == "org.freedesktop.udisks2.filesystem-mount-other-seat" ||
 	action.id == "org.freedesktop.udisks2.filesystem-unmount-others" ) &&
-    cmd_line.includes("ppqtos"))
+    is_ppqt_call)
     {
     return polkit.Result.YES;
     }
