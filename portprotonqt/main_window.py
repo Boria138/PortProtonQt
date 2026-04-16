@@ -107,7 +107,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.game_library_manager.context_menu_manager = self.context_menu_manager
 
         QApplication.setStyle("Fusion")
-        self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE)
+        self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE + self.theme.MESSAGE_BOX_STYLE)
         self.setAcceptDrops(True)
         self.current_exec_line = None
         self.currentDetailPage = None

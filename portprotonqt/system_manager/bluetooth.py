@@ -84,22 +84,12 @@ class BluezPairingAgent(ServiceInterface):
             raise DBusError("org.bluez.Error.Rejected", "Bluetooth pairing confirmation rejected")
 
     @method()
-    def RequestAuthorization(self, device: DBusObjectPath) -> None:
-        approved = self._service._request_pairing_confirm(
-            _("Confirm pairing on the device?"),
-            str(device),
-        )
-        if not approved:
-            raise DBusError("org.bluez.Error.Rejected", "Bluetooth pairing authorization rejected")
+    def RequestAuthorization(self, _device: DBusObjectPath) -> None:
+        return None
 
     @method()
-    def AuthorizeService(self, device: DBusObjectPath, _uuid: DBusStr) -> None:
-        approved = self._service._request_pairing_confirm(
-            _("Authorize the Bluetooth service on the device?"),
-            str(device),
-        )
-        if not approved:
-            raise DBusError("org.bluez.Error.Rejected", "Bluetooth service authorization rejected")
+    def AuthorizeService(self, _device: DBusObjectPath, _uuid: DBusStr) -> None:
+        return None
 
     @method()
     def Cancel(self) -> None:

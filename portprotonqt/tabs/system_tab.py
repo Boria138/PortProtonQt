@@ -424,7 +424,8 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
         self.wirelessEnabledCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.wirelessEnabledCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.wirelessEnabledCheckBox.toggled.connect(self.toggleWirelessNetworking)
-        self.wirelessEnabledTitle = QLabel(f"{_('Enable')} Wi-Fi")
+        enable_text = _("Enable/Disable").split("/", maxsplit=1)[0]
+        self.wirelessEnabledTitle = QLabel(enable_text + " Wi-Fi")
         self.wirelessEnabledTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.wirelessEnabledTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
         wireless_layout.addWidget(self.wirelessEnabledCheckBox)
@@ -528,7 +529,8 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
         self.bluetoothEnabledCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.bluetoothEnabledCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.bluetoothEnabledCheckBox.toggled.connect(self.toggleBluetooth)
-        self.bluetoothEnabledTitle = QLabel(f"{_('Enable')} Bluetooth")
+        enable_text = _("Enable/Disable").split("/", maxsplit=1)[0]
+        self.bluetoothEnabledTitle = QLabel(enable_text + " Bluetooth")
         self.bluetoothEnabledTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.bluetoothEnabledTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
         bluetooth_layout.addWidget(self.bluetoothEnabledCheckBox)
@@ -1429,13 +1431,15 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
             worker.submit_pairing_response("ok")
             return
         if request.get("kind") == "confirm":
-            button = QMessageBox.question(
-                self,
-                request.get("title", _("Bluetooth pairing")),
-                request.get("message", ""),
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.Yes,
-            )
+            msg_box = QMessageBox(self)
+            msg_box.setIcon(QMessageBox.Icon.Question)
+            msg_box.setWindowTitle(request.get("title", _("Bluetooth pairing")))
+            msg_box.setText(request.get("message", ""))
+            msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+            msg_box.setDefaultButton(QMessageBox.StandardButton.Yes)
+            msg_box.setButtonText(QMessageBox.StandardButton.Yes, _("Yes"))
+            msg_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
+            button = msg_box.exec()
             worker.submit_pairing_response("yes" if button == QMessageBox.StandardButton.Yes else "no")
             return
 

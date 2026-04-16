@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-04-15 18:25+0500\n"
+"POT-Creation-Date: 2026-04-16 12:09+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1981,22 +1981,6 @@ msgstr ""
 msgid "Components installed successfully."
 msgstr ""
 
-msgid "Bluetooth pairing"
-msgstr ""
-
-#, python-brace-format
-msgid "Confirm the passkey on devices: {0}"
-msgstr ""
-
-msgid "Confirm pairing on the device?"
-msgstr ""
-
-msgid "Bluetooth authorization"
-msgstr ""
-
-msgid "Authorize the Bluetooth service on the device?"
-msgstr ""
-
 msgid "Bluetooth PIN code"
 msgstr ""
 
@@ -2007,6 +1991,13 @@ msgid "Bluetooth passkey"
 msgstr ""
 
 msgid "Enter the Bluetooth passkey shown on the device"
+msgstr ""
+
+#, python-brace-format
+msgid "Confirm the passkey on devices: {0}"
+msgstr ""
+
+msgid "Bluetooth pairing"
 msgstr ""
 
 msgid "Connected"
@@ -2051,6 +2042,9 @@ msgstr ""
 msgid "Enable/Disable"
 msgstr ""
 
+msgid "Refresh"
+msgstr ""
+
 msgid "Add VPN"
 msgstr ""
 
@@ -2064,9 +2058,6 @@ msgid "Unmount"
 msgstr ""
 
 msgid "Set output"
-msgstr ""
-
-msgid "Refresh"
 msgstr ""
 
 #, python-brace-format

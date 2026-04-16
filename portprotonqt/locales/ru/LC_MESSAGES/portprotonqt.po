@@ -2071,22 +2071,6 @@ msgstr "Установка не удалась. Проверьте журнал�
 msgid "Components installed successfully."
 msgstr "Компоненты успешно установлены."
 
-msgid "Bluetooth pairing"
-msgstr "Сопряжение по Bluetooth"
-
-#, python-brace-format
-msgid "Confirm the passkey on devices: {0}"
-msgstr "Подтвердите пароль на устройстве: {0}"
-
-msgid "Confirm pairing on the device?"
-msgstr "Подтвердите сопряжение на устройстве?"
-
-msgid "Bluetooth authorization"
-msgstr "Авторизация Bluetooth"
-
-msgid "Authorize the Bluetooth service on the device?"
-msgstr "Разрешить службу Bluetooth на устройстве?"
-
 msgid "Bluetooth PIN code"
 msgstr "ПИН-код Bluetooth"
 
@@ -2098,6 +2082,13 @@ msgstr "Bluetooth-ключ доступа"
 
 msgid "Enter the Bluetooth passkey shown on the device"
 msgstr "Введите пароль Bluetooth, отображаемый на устройстве"
+
+#, python-brace-format
+msgid "Confirm the passkey on devices: {0}"
+msgstr "Подтвердите пароль на устройстве: {0}"
+
+msgid "Bluetooth pairing"
+msgstr "Сопряжение по Bluetooth"
 
 msgid "Connected"
 msgstr "Подключено"
@@ -2141,6 +2132,9 @@ msgstr "Отключиться"
 msgid "Enable/Disable"
 msgstr "Включить/Выключить"
 
+msgid "Refresh"
+msgstr "Обновить"
+
 msgid "Add VPN"
 msgstr "Добавить VPN"
 
@@ -2155,9 +2149,6 @@ msgstr "Размонтировать"
 
 msgid "Set output"
 msgstr "Выбрать выход"
-
-msgid "Refresh"
-msgstr "Обновить"
 
 #, python-brace-format
 msgid "Enter password for: {0}"

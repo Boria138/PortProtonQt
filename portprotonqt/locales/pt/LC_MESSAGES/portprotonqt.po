@@ -1982,22 +1982,6 @@ msgstr ""
 msgid "Components installed successfully."
 msgstr ""
 
-msgid "Bluetooth pairing"
-msgstr ""
-
-#, python-brace-format
-msgid "Confirm the passkey on devices: {0}"
-msgstr ""
-
-msgid "Confirm pairing on the device?"
-msgstr ""
-
-msgid "Bluetooth authorization"
-msgstr ""
-
-msgid "Authorize the Bluetooth service on the device?"
-msgstr ""
-
 msgid "Bluetooth PIN code"
 msgstr ""
 
@@ -2008,6 +1992,13 @@ msgid "Bluetooth passkey"
 msgstr ""
 
 msgid "Enter the Bluetooth passkey shown on the device"
+msgstr ""
+
+#, python-brace-format
+msgid "Confirm the passkey on devices: {0}"
+msgstr ""
+
+msgid "Bluetooth pairing"
 msgstr ""
 
 msgid "Connected"
@@ -2052,6 +2043,9 @@ msgstr ""
 msgid "Enable/Disable"
 msgstr ""
 
+msgid "Refresh"
+msgstr ""
+
 msgid "Add VPN"
 msgstr ""
 
@@ -2065,9 +2059,6 @@ msgid "Unmount"
 msgstr ""
 
 msgid "Set output"
-msgstr ""
-
-msgid "Refresh"
 msgstr ""
 
 #, python-brace-format
