@@ -46,3 +46,7 @@ AUDIT_CHECKLIST.md
 
 # Compiled gettext catalogs
 portprotonqt/locales/*/LC_MESSAGES/*.mo
+
+
+# AI
+.codex

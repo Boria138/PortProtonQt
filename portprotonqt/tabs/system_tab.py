@@ -1421,12 +1421,6 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
         if worker is None:
             return
         if request.get("kind") == "display":
-            QMessageBox.information(
-                self,
-                request.get("title", _("Bluetooth pairing")),
-                request.get("message", ""),
-                QMessageBox.StandardButton.Ok,
-            )
             worker.submit_pairing_response("ok")
             return
         if request.get("kind") == "confirm":

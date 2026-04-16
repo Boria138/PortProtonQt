@@ -26,7 +26,7 @@ package_portprotonqt-git() {
     pkgdesc="Modern GUI for managing and launching games from PortProton, Steam, and Epic Games Store (development build)"
     optdepends=(
         'networkmanager: System tab network management'
-        'bluez-utils: System tab bluetooth management'
+        'bluez: System tab bluetooth management'
         'upower: System tab bluetooth battery level'
         'libpulse: System tab audio volume/output management'
         'python-dbus-fast: System tab D-Bus integration'

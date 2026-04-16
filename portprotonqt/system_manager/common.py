@@ -114,6 +114,12 @@ class DbusFastSystemBus:
             _create_variant(signature, value),
         )
 
+    def export_interface(self, path: str, interface: Any) -> None:
+        self._bus.export(path, interface)
+
+    def unexport_interface(self, path: str, interface: Any | str | None = None) -> None:
+        self._bus.unexport(path, interface)
+
     def _run(self, coroutine):
         return self._loop.run_until_complete(coroutine)
 
