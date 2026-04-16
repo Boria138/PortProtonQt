@@ -82,6 +82,7 @@ class BluetoothManagerService:
             raise NetworkManagerError("bluetoothctl is not available")
         self.dbus: DbusFastSystemBus | None = None
         self.request_pairing_response = request_pairing_response
+        self._pending_passkey = ""
 
     def execute(self, operation: str, params: dict) -> dict:
         try:
@@ -350,7 +351,7 @@ class BluetoothManagerService:
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
         )
-        self._write_process_command(process, "agent DisplayYesNo")
+        self._write_process_command(process, "agent KeyboardDisplay")
         self._write_process_command(process, "default-agent")
         self._write_process_command(process, f"pair {address}")
         return process
@@ -373,6 +374,8 @@ class BluetoothManagerService:
             return output_text, last_request
         last_request = request["message"]
         response = self._get_pairing_response(request)
+        if request["kind"] == "display":
+            return "", last_request
         self._write_process_command(process, response)
         # Clear output after sending response to avoid re-parsing old messages
         return "", last_request
@@ -429,6 +432,8 @@ class BluetoothManagerService:
         if self.request_pairing_response is None:
             raise NetworkManagerError("Bluetooth pairing requires user confirmation")
         response = self.request_pairing_response(request).strip()
+        if request["kind"] == "display":
+            return response
         if request["kind"] == "confirm":
             return "yes" if response == "yes" else "no"
         if not response:
@@ -439,6 +444,7 @@ class BluetoothManagerService:
         # Handle "Confirm passkey 123456 (yes/no):" from DisplayYesNo agent
         passkey_match = re.search(r"Confirm passkey\s+(\d+)", output)
         if passkey_match:
+            self._pending_passkey = ""
             request = {
                 "kind": "confirm",
                 "title": _("Bluetooth pairing"),
@@ -449,21 +455,30 @@ class BluetoothManagerService:
         # Handle "Passkey: 123456" from agent
         passkey_display_match = re.search(r"Passkey:\s*(\d+)", output)
         if passkey_display_match:
-            request = {
-                "kind": "confirm",
-                "title": _("Bluetooth pairing"),
-                "message": _("Confirm the passkey on devices: {0}").format(
-                    passkey_display_match.group(1)
-                ),
-            }
-            return None if request["message"] == last_request else request
+            self._pending_passkey = passkey_display_match.group(1)
+            return None
 
         # Handle "Request confirmation" prompt
         if "Request confirmation" in output:
+            confirmation_code_match = re.search(
+                r"(?:passkey|pin(?:\s+code)?)\D*(\d{4,16})",
+                output,
+                re.IGNORECASE,
+            )
+            if confirmation_code_match:
+                message = _("Confirm the passkey on devices: {0}").format(
+                    confirmation_code_match.group(1)
+                )
+                self._pending_passkey = ""
+            elif self._pending_passkey:
+                message = _("Confirm the passkey on devices: {0}").format(self._pending_passkey)
+                self._pending_passkey = ""
+            else:
+                message = _("Confirm pairing on the device?")
             request = {
                 "kind": "confirm",
                 "title": _("Bluetooth pairing"),
-                "message": _("Confirm pairing on the device?"),
+                "message": message,
             }
             return None if request["message"] == last_request else request
 
@@ -587,14 +602,21 @@ class BluetoothManagerService:
         return 0
 
     def _extract_bluetooth_error(self, output: str) -> str:
+        prompt_pattern = re.compile(r"^\[[^\]]+\]>\s*$")
         for line in reversed(output.splitlines()):
             cleaned_line = line.strip()
-            if cleaned_line.startswith("Failed") or "not available" in cleaned_line.lower():
+            if not cleaned_line or prompt_pattern.match(cleaned_line):
+                continue
+            lowered_line = cleaned_line.lower()
+            if (
+                cleaned_line.startswith("Failed")
+                or "not available" in lowered_line
+                or "error" in lowered_line
+                or "authenticationfailed" in lowered_line
+                or "authenticationcanceled" in lowered_line
+            ):
                 return cleaned_line
-        cleaned_output = output.strip()
-        if cleaned_output:
-            return cleaned_output.splitlines()[-1].strip()
-        logger.error("Bluetooth operation failed without detailed error")
+        logger.warning("Bluetooth operation failed without detailed error text")
         return ""
 
     def _strip_ansi(self, text: str) -> str:

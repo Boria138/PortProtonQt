@@ -1400,9 +1400,14 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
     def onBluetoothOperationFailed(self, operation: str, error_text: str) -> None:
         self._setBluetoothScanPreloaderVisible(False)
         self.setBluetoothBusy(False)
-        logger.warning("Bluetooth operation failed: %s", error_text)
-        self.statusBar().showMessage("Error", 4000)
-        self.bluetoothStatusLabel.setText("Error")
+        cleaned_error = error_text.strip()
+        if cleaned_error:
+            logger.warning("Bluetooth operation failed: %s", cleaned_error)
+            self.statusBar().showMessage("Error", 4000)
+            self.bluetoothStatusLabel.setText("Error")
+        else:
+            logger.info("Bluetooth operation finished without actionable error text")
+            self.statusBar().clearMessage()
         if operation == "load":
             self.bluetoothRows = []
             self.bluetoothTable.setRowCount(0)
@@ -1414,6 +1419,15 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
     def onBluetoothPairingRequested(self, request: dict) -> None:
         worker = getattr(self, "bluetoothWorker", None)
         if worker is None:
+            return
+        if request.get("kind") == "display":
+            QMessageBox.information(
+                self,
+                request.get("title", _("Bluetooth pairing")),
+                request.get("message", ""),
+                QMessageBox.StandardButton.Ok,
+            )
+            worker.submit_pairing_response("ok")
             return
         if request.get("kind") == "confirm":
             button = QMessageBox.question(
