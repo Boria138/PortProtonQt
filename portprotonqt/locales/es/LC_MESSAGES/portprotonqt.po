@@ -807,9 +807,6 @@ msgstr ""
 msgid "Use bundled dxvk/vkd3d from Wine/Proton"
 msgstr ""
 
-msgid "Use async dxvk-sarek (experimental)"
-msgstr ""
-
 msgid ""
 "Prevent the system from going to sleep and disable the screensaver while "
 "the game is running"
