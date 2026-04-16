@@ -563,9 +563,11 @@ class MainWindowControlHintsMixin:
             self._setGamepadHintVisible("confirm", True)
             self._setGamepadHintVisible("back", True)
             self._setGamepadHintVisible("add_game", True)
+            self._setGamepadHintVisible("search", True)
             self._setGamepadHintText("confirm", _("Connect"))
             self._setGamepadHintText("back", _("Disconnect"))
             self._setGamepadHintText("add_game", _("Enable/Disable"))
+            self._setGamepadHintText("search", _("Refresh"))
             return
         if section_index == vpn_index:
             self._setGamepadHintVisible("confirm", True)

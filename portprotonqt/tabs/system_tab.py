@@ -468,11 +468,6 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
         self.systemRefreshButton.clicked.connect(self.loadSystemNetworks)
         buttons_layout.addWidget(self.systemRefreshButton)
 
-        self.networkScanButton = AutoSizeButton(_("Scan"), icon=self.theme_manager.get_icon("search"))
-        self.networkScanButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
-        self.networkScanButton.clicked.connect(self.scanSystemNetworks)
-        buttons_layout.addWidget(self.networkScanButton)
-
         self.networkConnectButton = AutoSizeButton(_("Connect"), icon=self.theme_manager.get_icon("login"))
 
         self.networkDisconnectButton = AutoSizeButton(_("Disconnect"), icon=self.theme_manager.get_icon("stop"))
@@ -811,7 +806,7 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
             self.networkTable: {
                 "confirm": self.connectSelectedNetwork,
                 "back": self.disconnectSelectedNetwork,
-                "prev_dir": self.scanSystemNetworks,
+                "prev_dir": self.loadSystemNetworks,
                 "add_game": self.loadSystemNetworks,
             },
             self.vpnTable: {
@@ -1267,7 +1262,6 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
         for widget in (
             self.wirelessEnabledCheckBox,
             self.systemRefreshButton,
-            self.networkScanButton,
             self.networkShareButton,
             self.vpnConnectButton,
             self.vpnDisconnectButton,
