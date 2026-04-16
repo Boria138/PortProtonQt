@@ -83,11 +83,12 @@ class WifiPasswordDialog(QDialog):
         self.passwordEdit.returnPressed.connect(self.accept)
         input_layout.addWidget(self.passwordEdit)
 
-        self.toggleButton = QPushButton(_("Show"), self)
+        self.toggleButton = QPushButton("", self)
         if self.theme and hasattr(self.theme, 'ACTION_BUTTON_STYLE'):
             self.toggleButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
-        self.toggleButton.setFixedWidth(80)
+        self.toggleButton.setText("")
         self.toggleButton.clicked.connect(self._togglePasswordVisibility)
+        self._updatePasswordToggleIcon()
         input_layout.addWidget(self.toggleButton)
 
         layout.addLayout(input_layout)
@@ -114,10 +115,20 @@ class WifiPasswordDialog(QDialog):
     def _togglePasswordVisibility(self) -> None:
         if self.passwordEdit.echoMode() == QLineEdit.EchoMode.Password:
             self.passwordEdit.setEchoMode(QLineEdit.EchoMode.Normal)
-            self.toggleButton.setText(_("Hide"))
         else:
             self.passwordEdit.setEchoMode(QLineEdit.EchoMode.Password)
-            self.toggleButton.setText(_("Show"))
+        self._updatePasswordToggleIcon()
+
+    def _updatePasswordToggleIcon(self) -> None:
+        icon_name = "wifi_show" if self.passwordEdit.echoMode() == QLineEdit.EchoMode.Password else "wifi_hide"
+        parent = self.parent()
+        theme_manager = getattr(parent, "theme_manager", None)
+        if theme_manager is None:
+            self.toggleButton.setIcon(QIcon())
+            return
+        raw_icon = theme_manager.get_icon(icon_name)
+        icon = raw_icon if isinstance(raw_icon, QIcon) else QIcon(raw_icon) if isinstance(raw_icon, str) else QIcon()
+        self.toggleButton.setIcon(icon)
 
     def getPassword(self) -> str:
         """Return the entered password."""
