@@ -4,12 +4,13 @@ import re
 import threading
 import time
 from collections.abc import Callable
-from typing import Any, cast
+from typing import Annotated, Any, cast
 
 from PySide6.QtCore import QThread, Signal
 
 try:
     from dbus_fast import DBusError as _DBusError
+    from dbus_fast.annotations import DBusSignature as _DBusSignature
     from dbus_fast.service import ServiceInterface as _ServiceInterface
     from dbus_fast.service import method as _method
 except ModuleNotFoundError:
@@ -32,8 +33,15 @@ except ModuleNotFoundError:
             return func
 
         return decorator
+
+    class DBusSignature:
+        """Fallback D-Bus signature holder when dbus-fast is unavailable."""
+
+        def __init__(self, signature: str) -> None:
+            self.signature = signature
 else:
     DBusError = cast(Any, _DBusError)
+    DBusSignature = cast(Any, _DBusSignature)
     ServiceInterface = cast(Any, _ServiceInterface)
     method = cast(Any, _method)
 
@@ -70,7 +78,10 @@ class BluezPairingAgent(ServiceInterface):
         self._service = service
 
     @method()
-    def RequestPinCode(self, device: str) -> str:
+    def RequestPinCode(
+        self,
+        device: Annotated[str, DBusSignature("o")],
+    ) -> Annotated[str, DBusSignature("s")]:
         response = self._service._request_pairing_input(
             _("Bluetooth PIN code"),
             _("Enter the Bluetooth PIN code shown on the device"),
@@ -81,11 +92,18 @@ class BluezPairingAgent(ServiceInterface):
         return response
 
     @method()
-    def DisplayPinCode(self, _device: str, _pincode: str) -> None:
+    def DisplayPinCode(
+        self,
+        _device: Annotated[str, DBusSignature("o")],
+        _pincode: Annotated[str, DBusSignature("s")],
+    ) -> None:
         return None
 
     @method()
-    def RequestPasskey(self, device: str) -> int:
+    def RequestPasskey(
+        self,
+        device: Annotated[str, DBusSignature("o")],
+    ) -> Annotated[int, DBusSignature("u")]:
         response = self._service._request_pairing_input(
             _("Bluetooth passkey"),
             _("Enter the Bluetooth passkey shown on the device"),
@@ -98,25 +116,33 @@ class BluezPairingAgent(ServiceInterface):
     @method()
     def DisplayPasskey(
         self,
-        _device: str,
-        _passkey: int,
-        _entered: int,
+        _device: Annotated[str, DBusSignature("o")],
+        _passkey: Annotated[int, DBusSignature("u")],
+        _entered: Annotated[int, DBusSignature("q")],
     ) -> None:
         return None
 
     @method()
-    def RequestConfirmation(self, device: str, passkey: int) -> None:
+    def RequestConfirmation(
+        self,
+        device: Annotated[str, DBusSignature("o")],
+        passkey: Annotated[int, DBusSignature("u")],
+    ) -> None:
         message = _("Confirm the passkey on devices: {0}").format(f"{int(passkey):06d}")
         approved = self._service._request_pairing_confirm(message, str(device))
         if not approved:
             raise DBusError("org.bluez.Error.Rejected", "Bluetooth pairing confirmation rejected")
 
     @method()
-    def RequestAuthorization(self, _device: str) -> None:
+    def RequestAuthorization(self, _device: Annotated[str, DBusSignature("o")]) -> None:
         return None
 
     @method()
-    def AuthorizeService(self, _device: str, _uuid: str) -> None:
+    def AuthorizeService(
+        self,
+        _device: Annotated[str, DBusSignature("o")],
+        _uuid: Annotated[str, DBusSignature("s")],
+    ) -> None:
         return None
 
     @method()
