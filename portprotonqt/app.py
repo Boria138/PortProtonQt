@@ -5,7 +5,7 @@ import shutil
 
 __app_id__ = "ru.linux_gaming.PortProtonQt"
 __app_name__ = "PortProtonQt"
-__app_version__ = "0.1.11"
+__app_version__ = "0.1.12"
 
 from PySide6.QtCore import QTimer, Qt, QThread, Signal
 from PySide6.QtWidgets import QApplication

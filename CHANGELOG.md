@@ -3,7 +3,7 @@
 Все заметные изменения в этом проекте фиксируются в этом файле.
 Формат основан на [Keep a Changelog](https://keepachangelog.com/) и придерживается принципов [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.1.12] - 2026-04-17
 
 ### Added
 - В настройки PortProton добавлена галочка добавления/удаления инструмента совместимости Steam
