@@ -3,11 +3,39 @@
 import re
 import threading
 import time
+from collections.abc import Callable
+from typing import Any, cast
 
 from PySide6.QtCore import QThread, Signal
-from dbus_fast import DBusError
-from dbus_fast.annotations import DBusObjectPath, DBusStr, DBusUInt16, DBusUInt32
-from dbus_fast.service import ServiceInterface, method
+
+try:
+    from dbus_fast import DBusError as _DBusError
+    from dbus_fast.service import ServiceInterface as _ServiceInterface
+    from dbus_fast.service import method as _method
+except ModuleNotFoundError:
+    class DBusError(Exception):
+        """Fallback D-Bus error when dbus-fast is unavailable."""
+
+    class ServiceInterface:
+        """Fallback service interface for environments without dbus-fast."""
+
+        def __init__(self, _name: str) -> None:
+            return None
+
+    def method(
+        name: str | None = None,
+        disabled: bool = False,
+    ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+        del name, disabled
+
+        def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+            return func
+
+        return decorator
+else:
+    DBusError = cast(Any, _DBusError)
+    ServiceInterface = cast(Any, _ServiceInterface)
+    method = cast(Any, _method)
 
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
@@ -42,7 +70,7 @@ class BluezPairingAgent(ServiceInterface):
         self._service = service
 
     @method()
-    def RequestPinCode(self, device: DBusObjectPath) -> DBusStr:
+    def RequestPinCode(self, device: str) -> str:
         response = self._service._request_pairing_input(
             _("Bluetooth PIN code"),
             _("Enter the Bluetooth PIN code shown on the device"),
@@ -53,11 +81,11 @@ class BluezPairingAgent(ServiceInterface):
         return response
 
     @method()
-    def DisplayPinCode(self, _device: DBusObjectPath, _pincode: DBusStr) -> None:
+    def DisplayPinCode(self, _device: str, _pincode: str) -> None:
         return None
 
     @method()
-    def RequestPasskey(self, device: DBusObjectPath) -> DBusUInt32:
+    def RequestPasskey(self, device: str) -> int:
         response = self._service._request_pairing_input(
             _("Bluetooth passkey"),
             _("Enter the Bluetooth passkey shown on the device"),
@@ -70,30 +98,44 @@ class BluezPairingAgent(ServiceInterface):
     @method()
     def DisplayPasskey(
         self,
-        _device: DBusObjectPath,
-        _passkey: DBusUInt32,
-        _entered: DBusUInt16,
+        _device: str,
+        _passkey: int,
+        _entered: int,
     ) -> None:
         return None
 
     @method()
-    def RequestConfirmation(self, device: DBusObjectPath, passkey: DBusUInt32) -> None:
+    def RequestConfirmation(self, device: str, passkey: int) -> None:
         message = _("Confirm the passkey on devices: {0}").format(f"{int(passkey):06d}")
         approved = self._service._request_pairing_confirm(message, str(device))
         if not approved:
             raise DBusError("org.bluez.Error.Rejected", "Bluetooth pairing confirmation rejected")
 
     @method()
-    def RequestAuthorization(self, _device: DBusObjectPath) -> None:
+    def RequestAuthorization(self, _device: str) -> None:
         return None
 
     @method()
-    def AuthorizeService(self, _device: DBusObjectPath, _uuid: DBusStr) -> None:
+    def AuthorizeService(self, _device: str, _uuid: str) -> None:
         return None
 
     @method()
     def Cancel(self) -> None:
         return None
+
+
+BluezPairingAgent.RequestPinCode.__annotations__ = {"device": "o", "return": "s"}
+BluezPairingAgent.DisplayPinCode.__annotations__ = {"_device": "o", "_pincode": "s"}
+BluezPairingAgent.RequestPasskey.__annotations__ = {"device": "o", "return": "u"}
+BluezPairingAgent.DisplayPasskey.__annotations__ = {
+    "_device": "o",
+    "_passkey": "u",
+    "_entered": "q",
+}
+BluezPairingAgent.RequestConfirmation.__annotations__ = {"device": "o", "passkey": "u"}
+BluezPairingAgent.RequestAuthorization.__annotations__ = {"_device": "o"}
+BluezPairingAgent.AuthorizeService.__annotations__ = {"_device": "o", "_uuid": "s"}
+BluezPairingAgent.Cancel.__annotations__ = {}
 
 
 class BluetoothManagerWorker(QThread):
