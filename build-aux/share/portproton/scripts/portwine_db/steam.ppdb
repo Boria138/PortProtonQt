@@ -15,7 +15,7 @@ export PW_VULKAN_USE="2"
 
 add_in_start_portwine () {
     echo "Disabled silent autostart steam."
-    if [[ -f "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/user.reg" ]] ; then
-        sed -i '/steam.exe\\" -silent"/d' "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/user.reg"
+    if [[ -f "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/user.reg" ]] ; then
+        sed -i '/steam.exe\\" -silent"/d' "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/user.reg"
     fi
 }

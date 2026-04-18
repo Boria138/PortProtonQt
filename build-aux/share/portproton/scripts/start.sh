@@ -22,36 +22,36 @@ then
     exit 1
 fi
 
-PORT_SCRIPTS_PATH="$(cd "$(dirname "$0")" && pwd)"
-PORT_WINE_PATH="$(dirname "$(dirname "$PORT_SCRIPTS_PATH")")"
-PW_LOG_FILE="${PORT_WINE_PATH}/PortProton.log"
-export PORT_SCRIPTS_PATH PORT_WINE_PATH PW_LOG_FILE
+if [[ "$(realpath "$0")" == "/usr/share/portproton/scripts/start.sh" ]] ; then
+    PORT_SCRIPTS_PATH="/usr/share/portproton/scripts/"
+else
+    PORT_SCRIPTS_PATH="$(dirname "$(realpath "$0")")"
+fi
+
+# PORT_DATA_PATH будет определяться из ppqt, проверить переменную во всех скриптах
+# PORT_DATA_PATH="$(dirname "$(dirname "$PORT_SCRIPTS_PATH")")"
+
+export PORT_SCRIPTS_PATH PORT_DATA_PATH
 
 # shellcheck source=/dev/null
 source "$PORT_SCRIPTS_PATH/functions_helper"
 
-export PORT_WINE_TMP_PATH="${PORT_WINE_PATH}/data/tmp"
+export PORT_WINE_TMP_PATH="${PORT_DATA_PATH}/data/tmp"
 create_new_dir "$PORT_WINE_TMP_PATH"
 rm -f "$PORT_WINE_TMP_PATH"/*.{exe,msi,tar}*
 
 if mkdir -p "/tmp/PortProton_$USER" ; then
     export PW_TMPFS_PATH="/tmp/PortProton_$USER"
 else
-    create_new_dir "${PORT_WINE_PATH}/data/tmp/PortProton_$USER"
-    export PW_TMPFS_PATH="${PORT_WINE_PATH}/data/tmp/PortProton_$USER"
+    create_new_dir "${PORT_DATA_PATH}/data/tmp/PortProton_$USER"
+    export PW_TMPFS_PATH="${PORT_DATA_PATH}/data/tmp/PortProton_$USER"
 fi
 
-export PW_GUI_ICON_PATH="${PORT_WINE_PATH}/data/img/gui"
-export PW_GUI_THEMES_PATH="${PORT_WINE_PATH}/data/themes"
-
 export PW_START_PID="$$"
-export NO_AT_BRIDGE="1"
-export GDK_BACKEND="x11"
+
 read -r -a pw_full_command_line <<< "$0 $*"
 export pw_full_command_line
 export orig_IFS="$IFS"
-
-MISSING_DESKTOP_FILE="0"
 
 unset PW_NO_RESTART_PPDB PW_DISABLED_CREATE_DB
 
@@ -126,26 +126,26 @@ else
     unset PW_GUI_DISABLED_CS
 fi
 
-create_new_dir "${PORT_WINE_PATH}/data/dist"
+create_new_dir "${PORT_DATA_PATH}/data/dist"
 IFS=$'\n'
-for dist_dir in $(lsbash "${PORT_WINE_PATH}/data/dist/") ; do
+for dist_dir in $(lsbash "${PORT_DATA_PATH}/data/dist/") ; do
     dist_dir_new=$(echo "${dist_dir}" | awk '$1=$1' | sed -e s/[[:blank:]]/_/g)
-    if [[ ! -d "${PORT_WINE_PATH}/data/dist/${dist_dir_new^^}" ]] ; then
-        mv -- "${PORT_WINE_PATH}/data/dist/$dist_dir" "${PORT_WINE_PATH}/data/dist/${dist_dir_new^^}"
+    if [[ ! -d "${PORT_DATA_PATH}/data/dist/${dist_dir_new^^}" ]] ; then
+        mv -- "${PORT_DATA_PATH}/data/dist/$dist_dir" "${PORT_DATA_PATH}/data/dist/${dist_dir_new^^}"
     fi
 done
 IFS="$orig_IFS"
 
-create_new_dir "${PORT_WINE_PATH}/data/prefixes/DEFAULT"
-create_new_dir "${PORT_WINE_PATH}/data/prefixes/DOTNET"
-try_force_link_dir "${PORT_WINE_PATH}/data/prefixes" "${PORT_WINE_PATH}"
+create_new_dir "${PORT_DATA_PATH}/data/prefixes/DEFAULT"
+create_new_dir "${PORT_DATA_PATH}/data/prefixes/DOTNET"
+try_force_link_dir "${PORT_DATA_PATH}/data/prefixes" "${PORT_DATA_PATH}"
 
-pushd "${PORT_WINE_PATH}/data/prefixes/" 1>/dev/null || fatal
+pushd "${PORT_DATA_PATH}/data/prefixes/" 1>/dev/null || fatal
 for pfx_dir in ./* ; do
     [[ -d "$pfx_dir" ]] || continue
     pfx_dir_new="${pfx_dir//[[:blank:]]/_}"
-    if [[ ! -d "${PORT_WINE_PATH}/data/prefixes/${pfx_dir_new^^}" ]] ; then
-        mv -- "${PORT_WINE_PATH}/data/prefixes/$pfx_dir" "${PORT_WINE_PATH}/data/prefixes/${pfx_dir_new^^}"
+    if [[ ! -d "${PORT_DATA_PATH}/data/prefixes/${pfx_dir_new^^}" ]] ; then
+        mv -- "${PORT_DATA_PATH}/data/prefixes/$pfx_dir" "${PORT_DATA_PATH}/data/prefixes/${pfx_dir_new^^}"
     fi
 done
 popd 1>/dev/null || fatal
@@ -161,7 +161,7 @@ cd "${PORT_SCRIPTS_PATH}" || fatal
 # shellcheck source=/dev/null
 source "${PORT_SCRIPTS_PATH}/var"
 
-export STEAM_SCRIPTS="${PORT_WINE_PATH}/steam_scripts"
+export STEAM_SCRIPTS="${PORT_DATA_PATH}/steam_scripts"
 create_new_dir "$STEAM_SCRIPTS"
 
 export PW_PLUGINS_PATH="${PORT_WINE_TMP_PATH}/plugins${PW_PLUGINS_VER}"
@@ -255,7 +255,7 @@ pw_init_db
 if [[ ! -d "${HOME}/PortProtonQt" ]] \
 && check_flatpak 
 then
-    ln -s "${PORT_WINE_PATH}" "${HOME}/PortProtonQt"
+    ln -s "${PORT_DATA_PATH}" "${HOME}/PortProtonQt"
 fi
 
 pw_check_and_download_dxvk_and_vkd3d
@@ -285,7 +285,7 @@ case "$1" in
 --reinstall                                         ${translations[Reinstalls PortProton and resets all settings to default]}
 --generate-pot                                      ${translations[Creates a files with translations .pot and .po]}
 --debug                                             ${translations[Debug scripts for PortProton
-                                                    (saved log in]} $PORT_WINE_PATH/scripts-debug.log)
+                                                    (saved log in]} $PORT_DATA_PATH/scripts-debug.log)
 --update                                            ${translations[Check update scripts for PortProton]}
 --launch                                            ${translations[Launches the application immediately, requires the path to the .exe file]}
 --edit-db                                           ${translations[After the variable, the path to the .exe file is required and then the variables.
@@ -340,7 +340,7 @@ ${translations[Usage examples:]}
     --debug)
         clear
         export PW_DEBUG="set -x"
-        /usr/bin/env bash -c "${pw_full_command_line[@]}" 2>&1 | tee "$PORT_WINE_PATH/scripts-debug.log" &
+        /usr/bin/env bash -c "${pw_full_command_line[@]}" 2>&1 | tee "$PORT_DATA_PATH/scripts-debug.log" &
         exit 0
         ;;
     --update)

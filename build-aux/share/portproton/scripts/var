@@ -3,8 +3,8 @@
 export PROTON_USE_XALIA="0"
 export PW_USE_RUNTIME="1"
 export PW_RT_MOUNT_RO=("")
-export PW_RT_MOUNT_RW=("/media" "/mnt" "/run/media/${USER}" "${PORT_WINE_PATH}")
-#export PW_SANDBOX_HOME_PATH="${PORT_WINE_PATH}"
+export PW_RT_MOUNT_RW=("/media" "/mnt" "/run/media/${USER}" "${PORT_DATA_PATH}")
+#export PW_SANDBOX_HOME_PATH="${PORT_DATA_PATH}"
 export PW_USE_ESYNC="0"
 export PW_USE_FSYNC="0"
 export PW_USE_NTSYNC="0"
@@ -111,7 +111,7 @@ export DOTPFX_VER="48v9"
 export DEFPFX_VER="v1"
 export PW_MUST_WINEDLLOVERRIDES="steam_api,steam_api64,steamclient,steamclient64=n;dotnetfx35.exe,dotnetfx35setup.exe=b;winemenubuilder.exe="
 #################################################################
-export DXVK_CONFIG_FILE="${PORT_WINE_PATH}/data/dxvk.conf"
+export DXVK_CONFIG_FILE="${PORT_DATA_PATH}/data/dxvk.conf"
 #################################################################
 pw_list_install_dll_in_prefix ()
 {

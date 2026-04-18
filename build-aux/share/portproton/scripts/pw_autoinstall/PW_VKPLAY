@@ -8,7 +8,7 @@
 ########################################################################
 export PW_PREFIX_NAME="VK_PLAY"
 # export LAUNCH_PARAMETERS=""
-export PW_AUTOINSTALL_EXE="${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/users/steamuser/AppData/Local/VKPlayLoader.exe"
+export PW_AUTOINSTALL_EXE="${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/users/steamuser/AppData/Local/VKPlayLoader.exe"
 export PORTWINE_CREATE_SHORTCUT_NAME="VK Play"
 
 export WINEDLLOVERRIDES="mscoree,mshtml="

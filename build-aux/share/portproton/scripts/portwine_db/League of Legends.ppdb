@@ -23,7 +23,7 @@ export PW_DISABLED_CREATE_DB=1
 export PW_USE_D3D_EXTRAS=1
 export DISABLE_CP_DEFPFX=1
 
-try_remove_dir "${PORT_WINE_PATH}/data/dist/WINE_LOL_GE_8.12"
+try_remove_dir "${PORT_DATA_PATH}/data/dist/WINE_LOL_GE_8.12"
 gui_proton_downloader silent "${PW_WINE_USE}"
 
 add_in_start_portwine () {

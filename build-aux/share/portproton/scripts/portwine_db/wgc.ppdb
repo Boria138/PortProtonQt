@@ -15,8 +15,8 @@ export PW_PREFIX_NAME="WGC"
 export PW_USE_SHADER_CACHE="0"
 
 add_in_start_portwine () {
-    if [[ -f "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/users/${USER}/AppData/Roaming/Wargaming.net/WorldOfTanks/preferences.xml" ]] ; then
-        sed -i 's%<igbHardwareAccelerationEnabled> true </igbHardwareAccelerationEnabled>%<igbHardwareAccelerationEnabled> false </igbHardwareAccelerationEnabled>%' "${PORT_WINE_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/users/${USER}/AppData/Roaming/Wargaming.net/WorldOfTanks/preferences.xml"
+    if [[ -f "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/users/${USER}/AppData/Roaming/Wargaming.net/WorldOfTanks/preferences.xml" ]] ; then
+        sed -i 's%<igbHardwareAccelerationEnabled> true </igbHardwareAccelerationEnabled>%<igbHardwareAccelerationEnabled> false </igbHardwareAccelerationEnabled>%' "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/users/${USER}/AppData/Roaming/Wargaming.net/WorldOfTanks/preferences.xml"
     fi
     if [[ "${PW_VULKAN_USE}" == "0" || "${PW_VULKAN_USE}" == "3" ]] ; then
         export LAUNCH_PARAMETERS="--disable-gpu"
