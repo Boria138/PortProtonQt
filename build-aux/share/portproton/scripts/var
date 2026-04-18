@@ -1,12 +1,6 @@
 #!/usr/bin/env bash
-#Author: Castro-Fidel (linux-gaming.ru)
-#SCRIPTS_NEXT_VERSION=2479
-#SCRIPTS_STABLE_VERSION=2479
 ########################################################################
-export PW_EMULS="0"
-export AI_TOP_GAMES="PW_LGC PW_VKPLAY PW_EPIC PW_BATTLE_NET PW_WORLD_OF_SEA_BATTLE PW_RUSSIAN_FISHING PW_HO_YO_PLAY PW_FARLIGHT84 PW_WARFRAME PW_WGC PW_UBISOFT"
 export PROTON_USE_XALIA="0"
-export LANGUAGES_LIST="ru es"
 export PW_USE_RUNTIME="1"
 export PW_RT_MOUNT_RO=("")
 export PW_RT_MOUNT_RW=("/media" "/mnt" "/run/media/${USER}" "${PORT_WINE_PATH}")
@@ -116,10 +110,6 @@ export PW_DGV2_FILTER_POINT_SAMPLED="0"
 export DOTPFX_VER="48v9"
 export DEFPFX_VER="v1"
 export PW_MUST_WINEDLLOVERRIDES="steam_api,steam_api64,steamclient,steamclient64=n;dotnetfx35.exe,dotnetfx35setup.exe=b;winemenubuilder.exe="
-#################################################################
-# Get our APi on https://www.steamgriddb.com/profile/preferences/api/
-export BASESTEAMGRIDDBAPI="https://www.steamgriddb.com/api/v2"
-export SGDBAPIKEY="4a022f8848eaaa8e9c30067cd6676129"
 #################################################################
 export DXVK_CONFIG_FILE="${PORT_WINE_PATH}/data/dxvk.conf"
 #################################################################

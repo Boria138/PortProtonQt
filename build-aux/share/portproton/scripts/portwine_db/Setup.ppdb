@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+#Author: fidel
+#setup.exe
+#install.exe
+#Rating=1-5
+export PW_VULKAN_USE="1"
+export PW_MANGOHUD="0"
+export PW_USE_NTSYNC="0"
+export PW_USE_FSYNC="0"
+export PW_USE_ESYNC="0"
+export WINE_LARGE_ADDRESS_AWARE="0"
+export PW_USE_GAMEMODE="0"
+export PW_DLL_INSTALL=""
+# export WINEDLLOVERRIDES="mscoree,mshtml="
+export PW_WINE_USE="WINE_LG"
+export PW_USE_SETUP_FILE="1"
