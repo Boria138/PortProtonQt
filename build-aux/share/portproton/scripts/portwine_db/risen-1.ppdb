@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+#Author: Ridbowt
+#Risen.exe 
+#Rating 4
+#####################examples###########################
+export PW_VULKAN_USE=0                       # dxvk, vkd3d or 0 for OpenGL
+export PW_DLL_INSTALL="physx d3dx9"        # Install DLL in port prefix (used winetricks)

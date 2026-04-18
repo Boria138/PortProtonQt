@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+#Author: Garrett
+#RockstarService.exe
+#rockstar_launcher_pp.exe
+#LauncherPatcher.exe
+#Rating=?
+################################################
+export WINEDLLOVERRIDES="vulkan-1=n,b"
+export PW_WINE_USE="WINE_LG"
+export PW_PREFIX_NAME="ROCKSTAR"

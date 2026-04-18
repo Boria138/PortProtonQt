@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+#Author: linux-gaming.ru
+#DOOMEternalx64vk.exe
+#Rating=?
+################################################
+export PW_VULKAN_USE=1
+export PW_REDUCE_PULSE_LATENCY=1
+export LAUNCH_PARAMETERS="+in_terminal 1 +com_skipIntroVideo 1 +com_skipSignInManager 1"

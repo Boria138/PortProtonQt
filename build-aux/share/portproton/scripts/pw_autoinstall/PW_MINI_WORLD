@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Author: chal55rus
+# type: games
+# name: Mini World
+# image: miniworld
+# info_en: A sandbox game where players can explore, build, and create their unique worlds in a 3D environment. The game offers various modes, including survival and creative, as well as the ability to interact with other players in a multiplayer format.
+# info_ru: Песочница, в которой игроки могут исследовать, строить и создавать свои уникальные миры в 3D-окружении. Игра предлагает разнообразные режимы, включая выживание и творчество, а также возможность взаимодействовать с другими игроками в многопользовательском формате.
+########################################################################
+URL_VER=$(curl https://www.miniworldgame.com/ | awk -F"/app_install/" '{print $2}' |  awk -F"universal" '{print $1}')
+
+export PW_PREFIX_NAME="MINI_WORLD"
+export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/miniworld_universal.exe"
+export PORTWINE_CREATE_SHORTCUT_NAME="Mini World"
+
+start_portwine
+if try_download "https://mwu-api.miniworldgame.com/app_install/${URL_VER//[[:space:]]/}universal" "${PW_AUTOINSTALL_EXE}" no_mirror
+then
+    pw_start_progress_bar_install_game "Mini World."
+    "$pw_7z" x -y "${PW_AUTOINSTALL_EXE}" -o"$WINEPREFIX/drive_c/users/steamuser/AppData/Roaming/miniworldOverseasgame"
+    portwine_exe="$WINEPREFIX/drive_c/users/steamuser/AppData/Roaming/miniworldOverseasgame/MicroMiniNew.exe"
+    try_remove_file "${PW_AUTOINSTALL_EXE}"
+    try_remove_file "${portwine_exe}.ppdb"
+    kill_portwine
+    pw_stop_progress_bar
+    portwine_create_shortcut
+fi
+stop_portwine

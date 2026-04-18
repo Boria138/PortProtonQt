@@ -1,0 +1,139 @@
+#!/usr/bin/env bash
+#Author: Castro-Fidel (linux-gaming.ru)
+#SCRIPTS_NEXT_VERSION=2479
+#SCRIPTS_STABLE_VERSION=2479
+########################################################################
+export PW_EMULS="0"
+export AI_TOP_GAMES="PW_LGC PW_VKPLAY PW_EPIC PW_BATTLE_NET PW_WORLD_OF_SEA_BATTLE PW_RUSSIAN_FISHING PW_HO_YO_PLAY PW_FARLIGHT84 PW_WARFRAME PW_WGC PW_UBISOFT"
+export PROTON_USE_XALIA="0"
+export LANGUAGES_LIST="ru es"
+export PW_USE_RUNTIME="1"
+export PW_RT_MOUNT_RO=("")
+export PW_RT_MOUNT_RW=("/media" "/mnt" "/run/media/${USER}" "${PORT_WINE_PATH}")
+#export PW_SANDBOX_HOME_PATH="${PORT_WINE_PATH}"
+export PW_USE_ESYNC="0"
+export PW_USE_FSYNC="0"
+export PW_USE_NTSYNC="0"
+export PW_USE_GAMEMODE="0"
+export PW_USE_INHIBIT_SLEEP="1"
+export PW_USE_TERMINAL="0"
+export PW_WINDOWS_VER="10"
+export WINEARCH="win64"
+export PW_LIBS_VER="_v3.0.20260218"
+export PW_USE_GSTREAMER="1"
+export PW_USE_D3D_EXTRAS="1"
+export PW_PREFIX_NAME="DEFAULT"
+export WINE_WIN_START="start /wait /high /unix"
+export WINE_ALLOW_XIM="0"
+export PW_USE_SHADER_CACHE="1"
+export PW_WINE_DPI_VALUE="96"
+export PW_WINE_CPU_TOPOLOGY="disabled"
+export PW_MESA_GL_VERSION_OVERRIDE="disabled"
+export PW_MESA_VK_WSI_PRESENT_MODE="disabled"
+export PW_VKD3D_FEATURE_LEVEL="disabled"
+export PW_SOUND_DRIVER_USE="disabled"
+export PW_USE_EAC_AND_BE="1"
+export PW_USE_US_LAYOUT="0"
+export PW_LOCALE_SELECT="disabled"
+export PW_DINPUT_PROTOCOL="0"
+export PW_USE_VRCLIENT="0"
+export STAGING_SHARED_MEMORY="1"
+export PW_USE_GALLIUM_NINE="0"
+export PW_USE_GALLIUM_ZINK="0"
+export PW_USE_WINED3D_VULKAN="0"
+export PW_USE_SUPPLIED_DXVK_VKD3D="1"
+export PW_USE_SAREK_ASYNC="0"
+export WINEUSERNAME="steamuser"
+###DEFAULT_WINE###
+export PW_WINE_USE="PROTON_LG"
+export PW_PLUGINS_VER="_v20"
+export PW_OPTISCALER_VER="v03-0.9.0-pre8"
+export PW_GALLIUM_NINE_VER="0.10"
+export PW_LSFG_VK_VER="2.0.0-dev25-p11"
+###WINE_AND_PROTON_LG###
+export PW_PROTON_LG_VER="PROTON_LG_10-28"
+export PW_WINE_LG_VER="WINE_LG_11-1"
+export PW_WINE_FULLSCREEN_FSR="1"
+export WINE_FULLSCREEN_FSR_MODE="0"
+###DXVK_AND_VKD3D###
+export PW_VULKAN_UNLOCKED="unlocked"
+export VKD3D_LIMIT_TESS_FACTORS="64"
+export DXVK_NEW_VER="2.7.1-509"
+export DXVK_OLD_VER="2.6.2"
+export DXVK_SAREK_VER="sarek-1.11.0"
+export VKD3D_NEW_VER="1.1-5122"
+export VKD3D_OLD_VER="2.14.1"
+export VKD3D_SAREK_VER="sarek-2.6.0"
+###VKBASALT###
+export PW_VKBASALT="0"
+export PW_VKBASALT_EFFECTS="Curves:cas"
+export PW_VKBASALT_FFX_CAS="0.50"
+###GAMESCOPE###
+export PW_GAMESCOPE="0"
+export PW_GS_SDL_VIDEODRIVER_X11="0"
+export PW_GS_ENABLE_GAMESCOPE_WSI="0"
+export PW_GAMESCOPE_ARGS_NEW=" -f --sharpness 10 --hdr-sdr-content-nits 0"
+###MANGOHUD###
+export PW_MANGOHUD="0"
+export DEFAULT_MANGOHUD_CONFIG="arch,cpu_mhz,cpu_temp,engine_version,gamemode,gpu_core_clock,gpu_mem_clock,gpu_name,gpu_temp,ram,resolution,vkbasalt,vram,vulkan_driver,wine,winesync"
+###DGVOODOO2###
+export PW_DGVOODOO2="0"
+export DGV2_VER="2.79.3"
+export PW_DGV2_ANTIALIASING="disabled"
+export PW_DGV2_FILTERING="disabled"
+export PW_DGV2_DISABLE_D3D="0"
+export PW_DGV2_16BIT_MODE="0"
+export PW_DGV2_USE_DX12="0"
+export PW_DGV2_FASTMEMORY="0"
+export PW_DGV2_ENABLE_CRT="0"
+export PW_DGV2_DISABLE_MIPMAPPING="0"
+export PW_DGV2_GLIDE_GAMMA_RAMP="1"
+export PW_DGV2_GLIDE_NAPALM="0"
+export PW_DGV2_FREE_MOUSE="0"
+export PW_DGV2_VRAM="256"
+export PW_DGV2_RESOLUTION="disabled"
+export PW_DGV2_DISPLAY_ROI="disabled"
+export PW_DGV2_FPS_LIMIT="disabled"
+export PW_DGV2_BLIT_STRETCH="0"
+export PW_DGV2_PHONG_SHADING="0"
+export PW_DGV2_BIT_DEPTH="disabled"
+export PW_DGV2_VIDEOCARD="dgVoodoo2 Virtual 3D"
+export PW_DGV2_BRIGHTNESS="100"
+export PW_DGV2_COLOR="100"
+export PW_DGV2_CONTRAST="100"
+export PW_DGV2_ONBOARD_RAM="0"
+export PW_DGV2_16_BIT_DEPTH_BUFFER="0"
+export PW_DGV2_CURSOR_SCALE="0"
+export PW_DGV2_INACTIVE_APP_STATE="0"
+export PW_DGV2_RESAMPLING="disabled"
+export PW_DGV2_FORCE_VSYNC="0"
+export PW_DGV2_3DFX_SPLASH_SCREEN="0"
+export PW_DGV2_3DFX_WATERMARK="0"
+export PW_DGV2_EMULATING_PCI_ACCESS="0"
+export PW_DGV2_DGVOODOO_WATERMARK="0"
+export PW_DGV2_FILTER_POINT_SAMPLED="0"
+###PREFIX_VERSION###
+export DOTPFX_VER="48v9"
+export DEFPFX_VER="v1"
+export PW_MUST_WINEDLLOVERRIDES="steam_api,steam_api64,steamclient,steamclient64=n;dotnetfx35.exe,dotnetfx35setup.exe=b;winemenubuilder.exe="
+#################################################################
+# Get our APi on https://www.steamgriddb.com/profile/preferences/api/
+export BASESTEAMGRIDDBAPI="https://www.steamgriddb.com/api/v2"
+export SGDBAPIKEY="4a022f8848eaaa8e9c30067cd6676129"
+#################################################################
+export DXVK_CONFIG_FILE="${PORT_WINE_PATH}/data/dxvk.conf"
+#################################################################
+pw_list_install_dll_in_prefix ()
+{
+    case $PW_PREFIX_NAME in
+        DEFAULT)    export PW_MUST_HAVE_DLL="sandbox" ;;
+        DOTNET)     export PW_MUST_HAVE_DLL="sandbox" ;;
+        *)          export PW_MUST_HAVE_DLL="sandbox" ;;
+    esac
+}
+########################################################################
+add_in_start_portwine () { echo "" ;}
+add_in_stop_portwine () { echo "" ;}
+pw_other_fixes () { echo "" ;}
+export -f add_in_stop_portwine add_in_stop_portwine pw_other_fixes
+########################################################################

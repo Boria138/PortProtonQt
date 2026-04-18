@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Author: linux-gaming.ru
+# type: emulators
+# name: Cemu
+# image: cemu
+# info_en: A Wii U emulator that allows users to launch and play games released on this console with high performance and enhanced graphics.
+# info_ru: Эмулятор Wii U, который позволяет пользователям запускать и играть в игры, выпущенные на этой консоли, с высокой производительностью и улучшенной графикой.
+########################################################################
+export PW_URL_CEMU=$(curl -s "https://api.github.com/repos/cemu-project/Cemu/releases" | grep -iEo 'https.*download.*' | grep "windows" | head -n1)
+export PW_CEMU_NAME=Cemu_$(echo "$PW_URL_CEMU" | awk -F"-" '{print $3}')
+export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/${PW_CEMU_NAME}.zip"
+
+start_portwine
+if try_download "${PW_URL_CEMU//\"/}" "${PW_AUTOINSTALL_EXE}" no_mirror
+then
+    pw_start_progress_bar_install_game "Cemu."
+    "$pw_7z" x -y "${PW_AUTOINSTALL_EXE}" -o"${WINEPREFIX}/drive_c/Program Files (x86)/"
+    portwine_exe="${WINEPREFIX}/drive_c/Program Files (x86)/${PW_CEMU_NAME}/Cemu.exe"
+    try_remove_file "${PW_AUTOINSTALL_EXE}"
+    try_remove_file "${portwine_exe}.ppdb"
+    kill_portwine
+    pw_stop_progress_bar
+    export PORTWINE_CREATE_SHORTCUT_NAME="${PW_CEMU_NAME}"
+    portwine_create_shortcut
+fi
+stop_portwine

@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Author: ValoKarDin
+# type: games
+# name: Modern Warships
+# image: mw
+# info_en: A multiplayer military game where players control modern battle ships and fight on naval arenas. The game offers a wide selection of vessels, realistic graphics, and thrilling multiplayer battles.
+# info_ru: Многопользовательская военная игра, где игроки управляют современными боевыми кораблями и сражаются на морских аренах. Игра предлагает широкий выбор судов, реалистичную графику и захватывающие многопользовательские сражения.
+########################################################################
+export LAUNCH_PARAMETERS="/VERYSILENT"
+export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/modern_warships.exe"
+export PW_PREFIX_NAME="MODERN_WARSHIPS"
+export PORTWINE_CREATE_SHORTCUT_NAME="Modern Warships"
+
+start_portwine
+
+if try_download "https://gdn.gaijin.net/launcher/current.php?id=ModernWarshipsLauncher" "${PW_AUTOINSTALL_EXE}" no_mirror
+then
+    pw_start_progress_bar_install_game "Modern Warships."
+    pw_kill_autostart launcher.exe &
+    pw_run "${PW_AUTOINSTALL_EXE}"
+    portwine_exe="$WINEPREFIX/drive_c/users/$USER/AppData/Local/ModernWarships/launcher.exe"
+    pw_create_unique_exe "modern_warships_pp"
+    try_remove_file "${PW_AUTOINSTALL_EXE}"
+    try_remove_file "${portwine_exe}.ppdb"
+    kill_portwine
+    portwine_create_shortcut
+fi
+
+stop_portwine

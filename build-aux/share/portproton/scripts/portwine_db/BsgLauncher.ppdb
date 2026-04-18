@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+#Author: fidel
+#BsgLauncher.exe
+#EscapeFromTarkov.exe
+#EscapeFromTarkov_BE.exe
+#Rating=1-5
+#####################examples###########################
+export PW_USE_FSYNC="0"
+export PW_USE_ESYNC="0"
+export PW_PREFIX_NAME="DOTNET"
+
+# add_in_start_portwine () {
+#     if [[ ! -f "${PATH_TO_GAME}/dxvk.conf" ]] ; then
+#         echo "d3d9.shaderModel = 1" > "${PATH_TO_GAME}/dxvk.conf"
+#     fi
+# }

@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#Author: chal55rus
+#wotblitz.exe 
+#Rating=1-5
+#####################examples###########################
+export PW_DLL_INSTALL="vcrun2013 vcrun2017 dotnet472"

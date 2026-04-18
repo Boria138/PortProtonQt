@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+#Author: licrit
+#SystemShock.exe
+#SystemReShock-Win64-Shipping.exe
+#Rating=1-5
+#####################examples###########################
+export PW_WINE_USE="WINE_LG"
+export PW_PREFIX_NAME="SystemShock"

@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Author: chal55rus
+# type: games
+# name: Toribash
+# image: toribash
+# info_en: A fighting game where players control the joints of a character, creating their own movements and combos in real time. The game offers a deep level of strategy and creative expression, allowing users to develop their own techniques and engage in battles with other players.
+# info_ru: Файтинг, где игроки управляют суставами персонажа, создавая собственные движения и комбо в реальном времени. Игра предлагает глубокий уровень стратегии и творческого самовыражения, позволяя пользователям разрабатывать свои собственные приемы и участвовать в боях с другими игроками.
+########################################################################
+URL_VER=$(curl https://www.toribash.com/downloads.php \
+| awk -F"https://cache.toribash.com/Toribash-" '{print $2}' \
+| awk -F"-Setup.exe" '{print $1}' | grep "5" | head -n1)
+
+export PW_PREFIX_NAME="TORIBASH"
+export LAUNCH_PARAMETERS="/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-"
+export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/Toribash-${URL_VER}-Setup.exe"
+export PORTWINE_CREATE_SHORTCUT_NAME="Toribash"
+
+start_portwine
+if try_download "https://cache.toribash.com/Toribash-${URL_VER}-Setup.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
+then
+    pw_start_progress_bar_install_game "Toribash."
+    pw_run "${PW_AUTOINSTALL_EXE}"
+    portwine_exe="$WINEPREFIX/drive_c/Games/Toribash/toribash.exe"
+    try_remove_file "${PW_AUTOINSTALL_EXE}"
+    try_remove_file "${portwine_exe}.ppdb"
+    kill_portwine
+    pw_stop_progress_bar
+    portwine_create_shortcut
+fi
+stop_portwine

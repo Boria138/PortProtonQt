@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+#Author: PortWINE
+#EALauncher.exe
+#EADesktop.exe
+#Rating=5
+#####################examples###########################
+export PW_WINE_USE="PROTON_LG"
+export PW_PREFIX_NAME="EAAPP"
+export WINE_SIMULATE_WRITECOPY="1"
+add_in_start_portwine () { export LC_CTYPE=C ;}
+

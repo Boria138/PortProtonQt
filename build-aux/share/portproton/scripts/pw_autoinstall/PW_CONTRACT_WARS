@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Author: chal55rus
+# type: games
+# name: CONTRACT WARS
+# image: cwc
+# info_en: A multiplayer first-person shooter where players engage in battles between two teams on various maps. The game offers a wide selection of weapons and character customization options, making each match unique.
+# info_ru: Многопользовательский шутер от первого лица, где игроки участвуют в противостоянии между двумя командами на разнообразных картах. Игра предлагает широкий выбор оружия и возможностей для настройки персонажей, что делает каждый матч уникальным.
+########################################################################
+export LAUNCH_PARAMETERS="/VERYSILENT"
+export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/CWClient_Install.exe"
+export PW_PREFIX_NAME="CONTRACT_WARS"
+export PW_WINE_USE="WINE_LG"
+
+start_portwine
+if try_download "https://cdn-01.contractwarsgame.com/standalone/CWClient_Install.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
+then
+    pw_start_progress_bar_install_game "CONTRACT WARS Client."
+    pw_run "${PW_AUTOINSTALL_EXE}"
+    portwine_exe="$WINEPREFIX/drive_c/Games/CWClient/CWClientLauncher.exe"
+    try_remove_file "${PW_AUTOINSTALL_EXE}"
+    try_remove_file "${portwine_exe}.ppdb"
+    kill_portwine
+    pw_stop_progress_bar
+    export PORTWINE_CREATE_SHORTCUT_NAME="CONTRACT WARS"
+    portwine_create_shortcut
+fi
+stop_portwine

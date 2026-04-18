@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Author: Castro Fidel
+# type: games
+# name: Indiegala Client
+# image: igclient
+# info_en: Launcher for the Indiegala game library.
+# info_ru: Лаунчер для библиотеки игр Indiegala.
+########################################################################
+export LAUNCH_PARAMETERS="/S"
+export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/igclient_setup.exe"
+export PW_DLL_INSTALL="vcrun2019"
+
+start_portwine
+if try_download "https://content.indiegalacdn.com/common/IGClientSetup.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
+then
+    pw_start_progress_bar_install_game "Indiegala Client."
+    pw_kill_autostart IGClient.exe 3 &
+    pw_run "${PW_AUTOINSTALL_EXE}"
+    portwine_exe="${WINEPREFIX}/drive_c/Program Files/IGClient/IGClient.exe"
+    try_remove_file "${PW_AUTOINSTALL_EXE}"
+    try_remove_file "${portwine_exe}.ppdb"
+    kill_portwine
+    pw_stop_progress_bar
+    export PORTWINE_CREATE_SHORTCUT_NAME="IGClient"
+    portwine_create_shortcut
+fi
+stop_portwine

@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+#Author:
+#RDR2.exe
+#PlayRDR2.exe
+#Rating=?
+################################################
+export LAUNCH_PARAMETERS="-vulkan -fullscreen -adapter=1 -USEALLAVAILABLECORES -cpuLoadRebalancing -ignorepipelinecach"

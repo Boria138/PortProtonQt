@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+#Author: Сергей 33(46)
+#hulk.exe 
+#Rating=5
+################################################
+export PW_VULKAN_USE=0
+export PW_WINDOWS_VER="XP"
+export LAUNCH_PARAMETERS="-d3d9"

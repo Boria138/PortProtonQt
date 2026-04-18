@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+#Author: xuser
+#osu!.exe
+#OSU.exe
+#osu!install.exe
+#Rating=1-5
+#####################examples###########################
+export PW_VULKAN_USE=0
+export PW_PREFIX_NAME="DOTNET"
+export PW_DLL_INSTALL="dotnet40"
+export PW_WINE_USE="WINE_LG"

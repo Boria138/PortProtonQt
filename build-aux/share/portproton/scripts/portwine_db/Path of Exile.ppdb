@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+#Author: castro-fidel
+#PathOfExile.exe
+#PathOfExile_x64.exe
+#Rating=1-5
+#####################examples###########################
+export LAUNCH_PARAMETERS="--nologo --noasync --nopreload -gc 2"
+export PW_VULKAN_USE=1
+export PW_USE_D3D_EXTRAS=1
+export PW_WINDOWS_VER=7

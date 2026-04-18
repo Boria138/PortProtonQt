@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+#Author: vbb
+#JustCause4.exe
+#Rating=1-5
+#####################examples###########################
+export PW_DLL_INSTALL="vcrun2019"
+
+ADD_IN_START_PORTWINE () { 
+    if [[ -f "${PATH_TO_GAME}/EOSSDK-Win64-Shipping.dll" ]] && [[ ! -f "${PATH_TO_GAME}/eossdk-win64-shipping.dll" ]] ; then
+        try_copy_file "${PATH_TO_GAME}/EOSSDK-Win64-Shipping.dll" "${PATH_TO_GAME}/eossdk-win64-shipping.dll"
+    fi
+}

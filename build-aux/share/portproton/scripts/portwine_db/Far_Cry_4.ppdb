@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+#Author: nixon
+#FarCry4.exe
+#Rating=1-5
+#####################examples###########################
+export PW_DLL_INSTALL="d3dcompiler_43 d3dcompiler_4 xact xact_x64"
+export PW_PREFIX_NAME="FARCRY_4"

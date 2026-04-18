@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# Author: chal55rus (Sergey P.), cefeiko, Castro-Fidel (linux-gaming.ru)
+# type: games
+# name: Gameforge Client
+# image: gameforge
+# info_en: Launcher for Gameforge studio games.
+# info_ru: Лаунчер для игр Gameforge.
+##########################################################################
+pw_shutdown_please () {
+    if [[ "$PW_USE_RUNTIME" != 1 ]]
+    then echo "PW_USE_RUNTIME: `echo $PW_USE_RUNTIME`"
+    else
+        sleep 10
+        while true ; do
+            if  [[ -z "`ps aux | grep -v grep | grep -wm 1 "$1" | awk '{print $2}'`" ]] && [[ -n "`pgrep wrap | head -n 1`" ]] ; then
+                echo -e "PID "$1" not found"
+                sleep 1
+            else
+                killall -s TERM gfclient.exe
+                killall -s TERM GameforgeInstaller.exe
+                break
+            fi
+        done
+    fi
+}
+
+export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/GameforgeInstaller.exe"
+start_portwine
+if try_download "https://raw.githubusercontent.com/WarfaceZ/lutris-clients/master/GameforgeInstaller.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
+then
+    pw_start_progress_bar_install_game "Gameforge-Client."
+    pw_shutdown_please SparkWebHelper.exe &
+    pw_run "${PW_AUTOINSTALL_EXE}"
+    portwine_exe="$WINEPREFIX/drive_c/Program Files (x86)/GameforgeClient/gfclient.exe"
+    try_remove_file "${PW_AUTOINSTALL_EXE}"
+    try_remove_file "${portwine_exe}.ppdb"
+    kill_portwine
+    pw_stop_progress_bar
+    export PORTWINE_CREATE_SHORTCUT_NAME="GameforgeClient"
+    portwine_create_shortcut
+fi
+stop_portwine

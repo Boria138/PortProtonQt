@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+#Author: nixon
+#Photoshop.exe
+#Rating=1-5
+#####################examples###########################
+export PW_VIRTUAL_DESKTOP=1
+export PW_DLL_INSTALL="atmlib corefonts gdiplus msxml3 msxml6 vcrun2012 vcrun2013 vcrun2019"

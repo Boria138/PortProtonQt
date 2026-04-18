@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+#Author: user
+#Control_DX12.exe
+#Rating=1-5
+#####################examples###########################
+export PW_COMMENT_DB="Control (DX12)"
+export WINEDLLOVERRIDES="d3d12,d3d_rmdwin10_f,renderer_rmdwin10_f,apw_rmdwin10_f,input_rmdwin10_f,renderer_rmdwin10_f,physics_rmdwin10_f,snd_rmdwin10_f,ui_rmdwin10_f=n"

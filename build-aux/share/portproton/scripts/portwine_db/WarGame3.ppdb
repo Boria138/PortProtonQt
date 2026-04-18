@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#Author: chal55rus
+#WarGame3.exe
+#Rating=1-5
+#####################examples###########################
+export PW_DLL_INSTALL="wmp9"

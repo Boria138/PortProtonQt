@@ -1,0 +1,6 @@
+#!/bin/bash
+#Author: user
+#VampireLife.2.exe
+#Rating=1-5
+#####################examples###########################
+export PW_VULKAN_USE="1"
