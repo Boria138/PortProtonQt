@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-#Author: 
-#Frozen Throne.exe 
+#Author:
+#Frozen Throne.exe
 #Rating=4 - no video
 ################################################
 export PW_VULKAN_USE=0

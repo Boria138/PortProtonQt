@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #Author: xuser
-#ACIII.exe 
-#ACLiberation.exe     
+#ACIII.exe
+#ACLiberation.exe
 #Rating=1-5
 #####################examples###########################
 export PW_VULKAN_USE="2"

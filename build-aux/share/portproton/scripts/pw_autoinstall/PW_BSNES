@@ -8,7 +8,7 @@
 ########################################################################
 export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/bsnes-windows.zip"
 start_portwine
-if try_download "https://github.com/bsnes-emu/bsnes/releases/download/nightly/bsnes-windows.zip" "${PW_AUTOINSTALL_EXE}" no_mirror 
+if try_download "https://github.com/bsnes-emu/bsnes/releases/download/nightly/bsnes-windows.zip" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
     pw_start_progress_bar_install_game "bsnes."
     "$pw_7z" x -y "${PW_AUTOINSTALL_EXE}" -o"$WINEPREFIX/drive_c/Program Files"

@@ -8,4 +8,3 @@ export PW_OLD_GL_STRING="0"
 export PW_VIRTUAL_DESKTOP="1"
 export PW_USE_FSYNC="1"
 export PW_USE_ESYNC="0"
-

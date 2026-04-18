@@ -17,4 +17,3 @@ Grub Customizer utility"
     fi
 fi
 export PW_VULKAN_USE="2"
-

@@ -1576,7 +1576,7 @@ pw_mangohud_check () {
 
 pw_mangohud_preview () {
     if pgrep -f "${PW_PLUGINS_PATH}/portable/bin/vkcube" ; then
-        return 0 
+        return 0
     fi
     local preview_config="${1:-}"
 
@@ -1826,7 +1826,7 @@ stop_portwine () {
                     *) unset SKIP_CHECK_UPDATES ;;
         esac
     fi
-    exit 0 
+    exit 0
 }
 export -f stop_portwine
 
@@ -3140,7 +3140,7 @@ start_portwine () {
 
     if [[ -f "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/winetricks.log" ]] \
     && grep -q "based_on" "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/winetricks.log"
-    then export PW_BASE_PFX="$(awk -F'based_on_' '$2 != "" {print $2}' "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/winetricks.log")" 
+    then export PW_BASE_PFX="$(awk -F'based_on_' '$2 != "" {print $2}' "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/winetricks.log")"
     else export PW_BASE_PFX="none"
     fi
 
@@ -4147,7 +4147,7 @@ fi
             fi
         done
     fi
-    
+
     if [[ "${PW_DISABLE_COMPOSITING}" == "1" ]] \
     && ! check_gamescope_session
     then
@@ -7412,4 +7412,3 @@ find_ext_ppdb () {
         restart_pp
     fi
 }
-

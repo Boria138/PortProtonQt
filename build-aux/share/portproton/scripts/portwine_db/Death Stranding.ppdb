@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-#Author: 
-#ds.exe 
+#Author:
+#ds.exe
 #Rating=5
 ################################################
 export PW_VULKAN_USE=1

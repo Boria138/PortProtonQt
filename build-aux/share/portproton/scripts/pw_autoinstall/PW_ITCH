@@ -5,7 +5,7 @@
 # image: itch
 # info_en: Launcher for the library of indie games.
 # info_ru: Лаунчер для библиотеки инди-игр.
-########################################################################## 
+##########################################################################
 export LAUNCH_PARAMETERS="--silent"
 export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/itch-setup.exe"
 

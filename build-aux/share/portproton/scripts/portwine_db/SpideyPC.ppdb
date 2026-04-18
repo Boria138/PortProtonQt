@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-#Author: 
-#SpideyPC.exe 
+#Author:
+#SpideyPC.exe
 #Rating=5
 ################################################
 export PW_VULKAN_USE=0

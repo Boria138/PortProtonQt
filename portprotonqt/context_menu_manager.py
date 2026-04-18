@@ -665,16 +665,14 @@ class ContextMenuManager:
                 _("Legendary executable not found at {path}").format(path=self.legendary_path)
             )
             return False
-        wrapper = "flatpak run ru.linux_gaming.PortProton"
-        start_sh_path = os.path.join(self.portproton_location, "data", "scripts", "start.sh")
-        if self.portproton_location and ".var" not in self.portproton_location:
-            wrapper = start_sh_path
-            if not os.path.exists(start_sh_path):
-                self.signals.show_warning_dialog.emit(
-                    _("Error"),
-                    _("start.sh not found at {path}").format(path=start_sh_path)
-                )
-                return False
+        wrapper_command = get_portproton_start_command()
+        if not wrapper_command:
+            self.signals.show_warning_dialog.emit(
+                _("Error"),
+                _("start.sh not found at {path}").format(path="/usr/share/portproton/scripts/start.sh")
+            )
+            return False
+        wrapper = shlex.join(wrapper_command)
         icon_path = os.path.join(self.portproton_location, "data", "img", f"{game_name}.png")
         os.makedirs(os.path.dirname(icon_path), exist_ok=True)
 

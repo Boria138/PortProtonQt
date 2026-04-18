@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #Author: Veil
-#LifeIsStrange.exe 
+#LifeIsStrange.exe
 #Rating=1-5
 ################################################
 export WINEDLLOVERRIDES="xapofx1_5,xaudio2_7=n,b"

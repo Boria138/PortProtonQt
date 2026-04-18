@@ -17,6 +17,7 @@ from portprotonqt.config_utils import (
     save_fullscreen_config,
     read_fullscreen_config,
     get_portproton_start_command,
+    get_portproton_location,
     read_start_minimized,
 )
 from portprotonqt.logger import get_logger, setup_logger
@@ -34,6 +35,7 @@ from portprotonqt.cli import (
 from portprotonqt.portproton_api import PortProtonAPI, set_user_conf_setting
 from portprotonqt.downloader import Downloader
 from portprotonqt.debug_utils import get_screen_info
+from portprotonqt.localization import get_steam_language
 
 def get_version():
     try:
@@ -94,6 +96,10 @@ def main():
     os.environ["PW_CLI"] = "1"
     os.environ["PROCESS_LOG"] = "1"
     os.environ["START_FROM_STEAM"] = "1"
+    os.environ["FULL_LN"] = get_steam_language()
+    portproton_location = get_portproton_location()
+    if portproton_location:
+        os.environ["PORT_DATA_PATH"] = portproton_location
 
     # Check if running as Steam compatibility tool (STEAM_COMPAT=1)
     # In this mode, launch game immediately without GUI

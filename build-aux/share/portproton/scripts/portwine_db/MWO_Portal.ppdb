@@ -4,4 +4,3 @@
 #Rating=1-5
 #####################examples###########################
 export LAUNCH_PARAMETERS="-noprompt -anygpu"
-

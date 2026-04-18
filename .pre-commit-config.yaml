@@ -32,6 +32,15 @@ repos:
 
   - repo: local
     hooks:
+      - id: bash-n
+        name: bash -n
+        entry: bash -c 'for file in "$@"; do bash -n "$file" || exit 1; done' --
+        language: system
+        files: ^build-aux/share/portproton/scripts/
+        types: [shell]
+
+  - repo: local
+    hooks:
       - id: check-qss-properties
         name: Check theme for invalid QSS properties
         entry: ./dev-scripts/check_qss_properties.py

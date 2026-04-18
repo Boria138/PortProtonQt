@@ -8,7 +8,7 @@
 ########################################################################
 export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/melonDS-windows-x86_64.zip"
 start_portwine
-if try_download "https://melonds.kuribo64.net/downloads/melonDS-windows-x86_64.zip" "${PW_AUTOINSTALL_EXE}" no_mirror 
+if try_download "https://melonds.kuribo64.net/downloads/melonDS-windows-x86_64.zip" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
     pw_start_progress_bar_install_game "melonDS."
     "$pw_7z" x -y "${PW_AUTOINSTALL_EXE}" -o"$WINEPREFIX/drive_c/Program Files (x86)/melonDS"

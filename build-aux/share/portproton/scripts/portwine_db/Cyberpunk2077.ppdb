@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #Author: xuser
-#Cyberpunk2077.exe 
+#Cyberpunk2077.exe
 #Rating=1-5
 #####################examples###########################
 export WINEDLLOVERRIDES="Crash*,REDEngineErrorReporter.exe="

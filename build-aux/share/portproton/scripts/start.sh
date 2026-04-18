@@ -15,6 +15,8 @@ fi
 
 $PW_DEBUG
 
+echo "test 11111 $PORT_DATA_PATH"
+
 if [[ $(id -u) = 0 ]] \
 && [[ ! -e "/userdata/system/batocera.conf" ]]
 then
@@ -253,7 +255,7 @@ fi
 pw_init_db
 
 if [[ ! -d "${HOME}/PortProtonQt" ]] \
-&& check_flatpak 
+&& check_flatpak
 then
     ln -s "${PORT_DATA_PATH}" "${HOME}/PortProtonQt"
 fi

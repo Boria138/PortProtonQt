@@ -388,6 +388,16 @@ def get_portproton_location() -> str | None:
     return _get_portproton_config().get_location()
 
 
+def _resolve_start_sh_path() -> str | None:
+    repo_start_sh = Path(__file__).resolve().parent.parent / "build-aux" / "share" / "portproton" / "scripts" / "start.sh"
+    system_start_sh = Path("/usr/share/portproton/scripts/start.sh")
+
+    for start_sh_path in (repo_start_sh, system_start_sh):
+        if start_sh_path.exists():
+            return str(start_sh_path)
+    return None
+
+
 def get_portproton_start_command() -> list[str] | None:
     """Return command list for PortProton launch."""
     global _portproton_start_sh
@@ -431,12 +441,8 @@ def get_portproton_start_command() -> list[str] | None:
             logger.warning("Error checking flatpak list: %s", e)
             pass
 
-    portproton_path = get_portproton_location()
-    if not portproton_path:
-        return None
-
-    start_sh_path = os.path.join(portproton_path, "data", "scripts", "start.sh")
-    if os.path.exists(start_sh_path):
+    start_sh_path = _resolve_start_sh_path()
+    if start_sh_path:
         _portproton_start_sh = [start_sh_path]
         return _portproton_start_sh
 
@@ -547,7 +553,10 @@ def create_desktop_file(exe_path: str, game_name: str | None = None) -> tuple[st
     if is_flatpak:
         exec_str = f'flatpak run ru.linux_gaming.PortProton "{exe_path}"'
     else:
-        start_sh = os.path.join(base_path, "scripts", "start.sh")
+        start_sh = _resolve_start_sh_path()
+        if not start_sh:
+            logger.error("start.sh not found in supported paths")
+            return None
         exec_str = f'env "{start_sh}" "{exe_path}"'
 
     icon_path = os.path.join(base_path, "img", f"{game_name}.png")

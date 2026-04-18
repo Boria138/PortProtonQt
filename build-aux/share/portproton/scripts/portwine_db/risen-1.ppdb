@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #Author: Ridbowt
-#Risen.exe 
+#Risen.exe
 #Rating 4
 #####################examples###########################
 export PW_VULKAN_USE=0                       # dxvk, vkd3d or 0 for OpenGL

@@ -48,7 +48,7 @@ then
     portwine_exe="${EVE_LAUNCHER_DIR}/eve-online.exe"
     try_remove_file "${PW_AUTOINSTALL_EXE}"
     try_remove_file "${portwine_exe}.ppdb"
-    
+
     export PORTWINE_CREATE_SHORTCUT_NAME="EVE Online Launcher"
     portwine_create_shortcut
 

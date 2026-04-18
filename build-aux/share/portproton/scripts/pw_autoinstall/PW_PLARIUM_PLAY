@@ -26,5 +26,3 @@ then
     portwine_create_shortcut
 fi
 stop_portwine
-
-
