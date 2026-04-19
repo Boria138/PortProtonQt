@@ -3,7 +3,7 @@
 import os
 
 from portprotonqt.logger import get_logger
-from portprotonqt.config_utils import get_portproton_location
+from portprotonqt.config_utils import get_portproton_location, get_portproton_scripts_path
 
 from portprotonqt.debug_utils.env_utils import get_file_content
 
@@ -23,11 +23,11 @@ def get_ppdb_content(exe_path: str | None, start_cmd: list[str] | None = None) -
     else:
         portproton_path = get_portproton_location()
         if portproton_path:
-            default_ppdb_path = os.path.join(
-                portproton_path, "data", "scripts", "portwine_db", "default"
-            )
-            if os.path.exists(default_ppdb_path):
-                content = get_file_content(default_ppdb_path)
+            scripts_path = get_portproton_scripts_path()
+            if scripts_path:
+                default_ppdb_path = os.path.join(scripts_path, "portwine_db", "default")
+                if os.path.exists(default_ppdb_path):
+                    content = get_file_content(default_ppdb_path)
 
     return content if content else ""
 

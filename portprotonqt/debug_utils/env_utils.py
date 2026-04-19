@@ -4,7 +4,7 @@ import os
 import subprocess
 
 from portprotonqt.logger import get_logger
-from portprotonqt.config_utils import get_portproton_location
+from portprotonqt.config_utils import get_portproton_location, get_portproton_scripts_path
 
 logger = get_logger(__name__)
 
@@ -64,7 +64,10 @@ def get_portproton_env(exe_path: str | None) -> dict[str, str]:
     if not portproton_path:
         return {}
 
-    scripts_path = os.path.join(portproton_path, "data", "scripts")
+    scripts_path = get_portproton_scripts_path()
+    if not scripts_path:
+        return {}
+
     var_file = os.path.join(scripts_path, "var")
     user_conf = os.path.join(portproton_path, "data", "user.conf")
 

@@ -16,7 +16,11 @@ from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QApplication
 from portprotonqt.downloader import Downloader, get_requests_session
 from portprotonqt.logger import get_logger
-from portprotonqt.config_utils import get_portproton_location, get_portproton_start_command
+from portprotonqt.config_utils import (
+    get_portproton_location,
+    get_portproton_scripts_path,
+    get_portproton_start_command,
+)
 from portprotonqt.localization import _
 from portprotonqt.dialogs import FileExplorer
 from portprotonqt.config.cache import CacheManager
@@ -517,30 +521,6 @@ class PortProtonAPI:
         filenames_str = "".join(sorted([os.path.basename(s) for s in scripts]))
         return hashlib.md5(filenames_str.encode()).hexdigest()
 
-    def _get_autoinstall_scripts_dir(self) -> str:
-        """Return existing autoinstall scripts directory."""
-        start_cmd = get_portproton_start_command()
-        if start_cmd and len(start_cmd) == 1:
-            start_sh = start_cmd[0]
-            if os.path.basename(start_sh) == "start.sh":
-                scripts_root = os.path.dirname(start_sh)
-                scripts_dir = os.path.join(scripts_root, "pw_autoinstall")
-                if os.path.exists(scripts_dir):
-                    return scripts_dir
-
-        scripts_dirs = [
-            os.path.join(
-                self.repo_root, "build-aux", "share", "portproton", "scripts", "pw_autoinstall"
-            ),
-            "/usr/share/portproton/scripts/pw_autoinstall",
-        ]
-
-        for scripts_dir in scripts_dirs:
-            if os.path.exists(scripts_dir):
-                return scripts_dir
-
-        return ""
-
     def _load_autoinstall_cache(self):
         """Load cached autoinstall games if fresh and scripts unchanged."""
         if self._autoinstall_cache is not None:
@@ -554,9 +534,9 @@ class PortProtonAPI:
                     if mod_time is not None and mod_time < AUTOINSTALL_CACHE_DURATION:
                         start_time = time.time()
                         cached_signature = data.get("scripts_signature", "")
-                        current_signature = self._compute_scripts_signature(
-                            self._get_autoinstall_scripts_dir()
-                        )
+                        scripts_path = get_portproton_scripts_path()
+                        auto_dir = os.path.join(scripts_path, "pw_autoinstall") if scripts_path else ""
+                        current_signature = self._compute_scripts_signature(auto_dir)
                         if time.time() - start_time > 3:
                             logger.warning("Cache loading took too long, skipping cache")
                             return None
@@ -574,7 +554,8 @@ class PortProtonAPI:
         """Save parsed autoinstall games to cache with scripts signature."""
         try:
             cache_manager = CacheManager()
-            auto_dir = self._get_autoinstall_scripts_dir()
+            scripts_path = get_portproton_scripts_path()
+            auto_dir = os.path.join(scripts_path, "pw_autoinstall") if scripts_path else ""
             scripts_signature = self._compute_scripts_signature(auto_dir)
             data = {"games": games, "scripts_signature": scripts_signature, "timestamp": time.time()}
             cache_manager.save_json("autoinstall_games_cache", data)
@@ -604,7 +585,8 @@ class PortProtonAPI:
 
                 # No cache: Load games from scratch
                 games = []
-                auto_dir = self.api._get_autoinstall_scripts_dir()
+                scripts_path = get_portproton_scripts_path()
+                auto_dir = os.path.join(scripts_path, "pw_autoinstall") if scripts_path else ""
                 if not os.path.exists(auto_dir):
                     self.finished.emit(games)
                     return
