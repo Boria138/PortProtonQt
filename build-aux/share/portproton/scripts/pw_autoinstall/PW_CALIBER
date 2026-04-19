@@ -16,7 +16,6 @@ export PORTWINE_CREATE_SHORTCUT_NAME="CALIBER"
 start_portwine
 if try_download "https://cdn.playcaliber.com/caliber-s3/p1/a88c3b70f76a0e56b1e08b62c9895cfe/launcher/setup/CaliberSetup.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
-    pw_start_progress_bar_install_game "CALIBER."
     pw_kill_autostart VC_redist.x64.exe 3 &
     pw_run "${PW_AUTOINSTALL_EXE}"
     PW_EXE_FILE="$WINEPREFIX/drive_c/Program Files (x86)/1C Game Studios/Caliber/Launcher.exe"
@@ -24,7 +23,6 @@ then
     try_remove_file "${PW_AUTOINSTALL_EXE}"
     try_remove_file "${PW_EXE_FILE}.ppdb"
     kill_portwine
-    pw_stop_progress_bar
     portwine_create_shortcut
 fi
 stop_portwine

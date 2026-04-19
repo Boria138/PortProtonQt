@@ -14,7 +14,6 @@ export PW_PREFIX_NAME="ROCKSTAR"
 start_portwine
 if try_download "https://gamedownloads.rockstargames.com/public/installer/Rockstar-Games-Launcher.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
-    pw_start_progress_bar_install_game "Rockstar Games Launcher."
     try_remove_dir "$WINEPREFIX/drive_c/Program Files/Rockstar Games/Launcher"
     pw_kill_autostart RockstarService.exe &
     pw_run "${PW_AUTOINSTALL_EXE}"
@@ -23,7 +22,6 @@ then
     try_remove_file "${PW_AUTOINSTALL_EXE}"
     try_remove_file "${PW_EXE_FILE}.ppdb"
     kill_portwine
-    pw_stop_progress_bar
     portwine_create_shortcut
 fi
 stop_portwine

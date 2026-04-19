@@ -11,13 +11,11 @@ export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/dolphin-x64-5.0.exe"
 start_portwine
 if try_download "https://dl-mirror.dolphin-emu.org/5.0/dolphin-x64-5.0.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
-    pw_start_progress_bar_install_game "Dolphin 5.0."
     pw_run "${PW_AUTOINSTALL_EXE}"
     PW_EXE_FILE="$WINEPREFIX/drive_c/Program Files/Dolphin/Dolphin.exe"
     try_remove_file "${PW_AUTOINSTALL_EXE}"
     try_remove_file "${PW_EXE_FILE}.ppdb"
     kill_portwine
-    pw_stop_progress_bar
     export PORTWINE_CREATE_SHORTCUT_NAME="Dolphin 5.0"
     portwine_create_shortcut
 fi

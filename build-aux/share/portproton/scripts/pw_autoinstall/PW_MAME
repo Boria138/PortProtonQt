@@ -10,13 +10,11 @@ export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/mame0259b_64bit.exe"
 start_portwine
 if try_download "https://github.com/mamedev/mame/releases/download/mame0259/mame0259b_64bit.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
-    pw_start_progress_bar_install_game "MAME."
     "$pw_7z" x -y "${PW_AUTOINSTALL_EXE}" -o"$WINEPREFIX/drive_c/Program Files (x86)/Mame"
     PW_EXE_FILE="$WINEPREFIX/drive_c/Program Files (x86)/Mame/mame.exe"
     try_remove_file "${PW_AUTOINSTALL_EXE}"
     try_remove_file "${PW_EXE_FILE}.ppdb"
     kill_portwine
-    pw_stop_progress_bar
     export PORTWINE_CREATE_SHORTCUT_NAME="MAME"
     portwine_create_shortcut
 fi

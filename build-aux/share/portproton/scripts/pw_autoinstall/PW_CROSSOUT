@@ -15,7 +15,6 @@ export PW_WINE_USE="WINE_LG"
 start_portwine
 if try_download "https://yupmaster.gaijinent.com/launcher/current.php?id=CrossoutLauncher" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
-    pw_start_progress_bar_install_game "Crossout."
     get_and_set_reg_file --add 'Software\Wine\X11 Driver' 'Decorated' 'REG_SZ' "N" "user"
     pw_kill_autostart launcher.exe 3 &
     pw_run "${PW_AUTOINSTALL_EXE}"
@@ -24,7 +23,6 @@ then
     try_remove_file "${PW_AUTOINSTALL_EXE}"
     try_remove_file "${PW_EXE_FILE}.ppdb"
     kill_portwine
-    pw_stop_progress_bar
     portwine_create_shortcut
 fi
 stop_portwine

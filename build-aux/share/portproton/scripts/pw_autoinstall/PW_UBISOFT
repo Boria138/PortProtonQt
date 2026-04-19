@@ -14,14 +14,12 @@ export WINE_SIMULATE_WRITECOPY="1"
 start_portwine
 if try_download "https://static3.cdn.ubi.com/orbit/launcher_installer/UbisoftConnectInstaller.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
-    pw_start_progress_bar_install_game "Ubisoft Connect."
     pw_kill_autostart UbisoftConnect.exe &
     pw_run "${PW_AUTOINSTALL_EXE}"
     PW_EXE_FILE="$WINEPREFIX/drive_c/Program Files (x86)/Ubisoft Game Launcher/UbisoftConnect.exe"
     try_remove_file "${PW_AUTOINSTALL_EXE}"
     try_remove_file "${PW_EXE_FILE}.ppdb"
     kill_portwine
-    pw_stop_progress_bar
     portwine_create_shortcut
 fi
 stop_portwine

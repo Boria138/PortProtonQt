@@ -29,7 +29,7 @@ else
 fi
 
 export PORT_SCRIPTS_PATH
-export PW_LOG_FILE="${PORT_WINE_PATH}/PortProton.log"
+export PW_LOG_FILE="${PORT_DATA_PATH}/PortProton.log"
 
 echo "PORT_DATA_PATH=$PORT_DATA_PATH"
 echo "PORT_SCRIPTS_PATH=$PORT_SCRIPTS_PATH"
@@ -227,13 +227,6 @@ then PW_TERM="env LANG=C xterm -fullscreen -bg black -fg white -e"
 else PW_TERM="env LANG=C xterm -bg black -fg white -e"
 fi
 
-pw_check_and_download_plugins
-
-if [[ -z $PW_GPU_USE || $PW_GPU_USE == "disabled" ]] ; then
-    PW_GPU_USE="disabled"
-    pw_check_dxvk
-fi
-
 pw_cleanup () {
     CURL_PID="$(pgrep -a curl | grep -i "portproton" | cut -d' ' -f1)"
     if [[ -n $CURL_PID ]] ; then
@@ -246,11 +239,6 @@ pw_cleanup () {
 }
 trap "pw_cleanup" EXIT
 
-if check_flatpak ; then
-    try_remove_dir "${PORT_WINE_TMP_PATH}/libs${PW_LIBS_VER}"
-else pw_download_libs
-fi
-
 pw_init_db
 
 if [[ ! -d "${HOME}/PortProtonQt" ]] \
@@ -258,8 +246,6 @@ if [[ ! -d "${HOME}/PortProtonQt" ]] \
 then
     ln -s "${PORT_DATA_PATH}" "${HOME}/PortProtonQt"
 fi
-
-pw_check_and_download_dxvk_and_vkd3d
 
 # shellcheck source=/dev/null
 source "${USER_CONF}"
@@ -503,8 +489,7 @@ esac
 
 # case "$PW_YAD_SET" in
 #     DEBUG|102) portwine_start_debug ;;
-#     gui_clear_pfx) gui_clear_pfx ;;
-#     gui_rm_portproton) gui_rm_portproton ;;
+#     rm_portproton
 #     gui_pw_reinstall_pp) pw_reinstall_pp ;;
 #     gui_proton_downloader) gui_proton_downloader ;;
 #     gui_open_scripts_from_backup) gui_open_scripts_from_backup ;;

@@ -15,7 +15,6 @@ export PORTWINE_CREATE_SHORTCUT_NAME="Panzar"
 start_portwine
 if try_download "https://www.panzar.ru/ru/download/installer/" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
-    pw_start_progress_bar_install_game "Panzar."
     pw_kill_autostart start.exe 3 &
     pw_run "${PW_AUTOINSTALL_EXE}"
     export PW_EXE_FILE="${WINEPREFIX}/drive_c/Games/Panzar/start.exe"
@@ -23,7 +22,6 @@ then
     try_remove_file "${PW_AUTOINSTALL_EXE}"
     try_remove_file "${PW_EXE_FILE}.ppdb"
     kill_portwine
-    pw_stop_progress_bar
     portwine_create_shortcut
 fi
 stop_portwine

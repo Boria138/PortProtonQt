@@ -20,7 +20,6 @@ if try_download "https://static.gc.vkplay.ru/VKPlayLoader.exe" "${PW_AUTOINSTALL
 then
     PW_EXE_FILE="$WINEPREFIX/drive_c/users/steamuser/AppData/Local/VKPlayLoader.exe"
     try_remove_file "${PW_EXE_FILE}.ppdb"
-    pw_stop_progress_bar
     portwine_create_shortcut
 fi
 stop_portwine

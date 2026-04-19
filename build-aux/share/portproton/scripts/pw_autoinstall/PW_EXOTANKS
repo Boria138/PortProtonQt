@@ -14,7 +14,6 @@ export PORTWINE_CREATE_SHORTCUT_NAME="ExoTanks"
 start_portwine
 if try_download "https://www.exotanks.com/ExoTanksMOBA_Setup.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
-    pw_start_progress_bar_install_game "ExoTanks."
     pw_kill_autostart ExoTanksMOBA_Launcher.exe &
     pw_run "${PW_AUTOINSTALL_EXE}"
     PW_EXE_FILE="$WINEPREFIX/drive_c/Games/ExoTanksMOBA/ExoTanksMOBA_LauncherUpdater/Engine/Binaries/Win64/ExoTanksMOBA_LauncherUpdater.exe"
@@ -22,7 +21,6 @@ then
     try_remove_file "${PW_AUTOINSTALL_EXE}"
     try_remove_file "${PW_EXE_FILE}.ppdb"
     kill_portwine
-    pw_stop_progress_bar
     portwine_create_shortcut
 fi
 stop_portwine

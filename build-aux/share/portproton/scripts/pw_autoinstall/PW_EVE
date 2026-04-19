@@ -24,7 +24,6 @@ export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/eve-online-latest+Setup.exe"
 start_portwine
 if try_download "https://launcher.ccpgames.com/eve-online/release/win32/x64/eve-online-latest+Setup.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
-    pw_start_progress_bar_install_game "EVE Online Launcher."
     EVE_LAUNCHER_DIR="${WINEPREFIX}/drive_c/users/steamuser/AppData/Local/eve-online"
 
     $pw_7z x "${PW_USER_TEMP}/eve-online-latest+Setup.exe" -o"${EVE_LAUNCHER_DIR}" -y
@@ -43,7 +42,6 @@ then
     mv "${EVE_LAUNCHER_DIR}/setupIcon.ico" "${EVE_LAUNCHER_DIR}/app.ico"
     rm -rf  "${EVE_LAUNCHER_DIR}/background.gif" "${EVE_LAUNCHER_DIR}/eve-online-${EVE_VERSION}-full.nupkg" "${EVE_LAUNCHER_DIR}/RELEASES" "${EVE_LAUNCHER_DIR}/tmp"
 
-    pw_stop_progress_bar
 
     PW_EXE_FILE="${EVE_LAUNCHER_DIR}/eve-online.exe"
     try_remove_file "${PW_AUTOINSTALL_EXE}"

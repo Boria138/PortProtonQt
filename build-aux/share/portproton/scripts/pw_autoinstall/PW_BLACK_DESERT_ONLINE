@@ -18,13 +18,11 @@ wait_wineserver
 
 if try_download "https://nez-o-dn.playblackdesert.com/UploadData/installer/BlackDesert_Installer_RU.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
-    pw_start_progress_bar_install_game "Black Desert Online."
     pw_run "${PW_AUTOINSTALL_EXE}"
     PW_EXE_FILE="$WINEPREFIX/drive_c/Pearlabyss/BlackDesert/BlackDesertLauncher.exe"
     try_remove_file "${PW_AUTOINSTALL_EXE}"
     try_remove_file "${PW_EXE_FILE}.ppdb"
     kill_portwine
-    pw_stop_progress_bar
     export PORTWINE_CREATE_SHORTCUT_NAME="Black Desert Online"
     portwine_create_shortcut
 fi

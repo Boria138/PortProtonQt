@@ -18,7 +18,6 @@ WOSB_VERSION="$(curl -s --list-only --connect-timeout 3 https://www.worldofseaba
 start_portwine
 if try_download "https://installer.launcher.xsolla.com/xlauncher-builds/xsolla-launcher-update/${WOSB_VERSION}/bin/installer.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
-    pw_start_progress_bar_install_game "World of Sea Battle."
     pw_run "${PW_AUTOINSTALL_EXE}"
     try_remove_file "${PW_AUTOINSTALL_EXE}"
     if [[ -f "$WINEPREFIX/drive_c/Games/Wosb Launcher/launcher.exe" ]]
@@ -27,7 +26,6 @@ then
     fi
     pw_create_unique_exe "wosb_launcher_pp"
     kill_portwine
-    pw_stop_progress_bar
     portwine_create_shortcut
 fi
 stop_portwine

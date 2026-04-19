@@ -14,7 +14,6 @@ export PORTWINE_CREATE_SHORTCUT_NAME="Anomaly Zone"
 start_portwine
 if try_download "https://anomaly-zone.ru/file/az_webinst.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
-    pw_start_progress_bar_install_game "Anomaly Zone."
     pw_kill_autostart Launcher.exe &
     pw_run "${PW_AUTOINSTALL_EXE}"
     PW_EXE_FILE="$WINEPREFIX/drive_c/Program Files/New Story Games/Anomaly-Zone/Launcher.exe"
@@ -22,7 +21,6 @@ then
     try_remove_file "${PW_AUTOINSTALL_EXE}"
     try_remove_file "${PW_EXE_FILE}.ppdb"
     kill_portwine
-    pw_stop_progress_bar
     portwine_create_shortcut
 fi
 stop_portwine

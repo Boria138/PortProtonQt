@@ -12,14 +12,12 @@ export PW_PREFIX_NAME="DOTNET"
 start_portwine
 if try_download "https://exbo2.b-cdn.net/EXBO_Setup_ru.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
-    pw_start_progress_bar_install_game "STALCRAFT Launcher."
     pw_kill_autostart ExboLauncher &
     pw_run "${PW_AUTOINSTALL_EXE}"
     PW_EXE_FILE="$WINEPREFIX/drive_c/users/steamuser/AppData/Roaming/EXBO/java/bin/ExboLauncher.exe"
     try_remove_file "${PW_AUTOINSTALL_EXE}"
     try_remove_file "${PW_EXE_FILE}.ppdb"
     kill_portwine
-    pw_stop_progress_bar
     export PORTWINE_CREATE_SHORTCUT_NAME="STALCRAFT"
     portwine_create_shortcut
 fi

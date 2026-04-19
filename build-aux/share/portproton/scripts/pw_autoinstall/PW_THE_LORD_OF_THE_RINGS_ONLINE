@@ -14,13 +14,11 @@ export PORTWINE_CREATE_SHORTCUT_NAME="The Lord of the Rings Online"
 start_portwine
 if try_download "https://files.lotro.com/lotro/installers/lotrolive.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
-    pw_start_progress_bar_install_game "The Lord of the Rings Online."
     pw_run "${PW_AUTOINSTALL_EXE}"
     PW_EXE_FILE="$WINEPREFIX/drive_c/Program Files (x86)/StandingStoneGames/The Lord of the Rings Online/LotroLauncher.exe"
     try_remove_file "${PW_AUTOINSTALL_EXE}"
     try_remove_file "${PW_EXE_FILE}.ppdb"
     kill_portwine
-    pw_stop_progress_bar
     portwine_create_shortcut
 fi
 stop_portwine

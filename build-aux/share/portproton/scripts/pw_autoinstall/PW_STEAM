@@ -13,7 +13,6 @@ export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/SteamSetup.exe"
 start_portwine
 if try_download "https://cdn.akamai.steamstatic.com/client/installer/SteamSetup.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
-    pw_start_progress_bar_install_game "Steam."
     pw_kill_autostart steam.exe &
     pw_run "${PW_AUTOINSTALL_EXE}"
     if [[ -f "$WINEPREFIX/drive_c/Program Files (x86)/Steam/Steam.exe" ]]
@@ -23,7 +22,6 @@ then
     try_remove_file "${PW_AUTOINSTALL_EXE}"
     try_remove_file "${PW_EXE_FILE}.ppdb"
     kill_portwine
-    pw_stop_progress_bar
     export PORTWINE_CREATE_SHORTCUT_NAME="STEAM_PP"
     portwine_create_shortcut
 fi

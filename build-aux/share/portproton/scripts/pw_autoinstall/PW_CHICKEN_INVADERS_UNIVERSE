@@ -14,13 +14,11 @@ export PORTWINE_CREATE_SHORTCUT_NAME="Chicken Invaders Universe"
 start_portwine
 if try_download "https://universe.chickeninvaders.com/files/ChickenInvadersUniverseInstaller.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
-    pw_start_progress_bar_install_game "Chicken Invaders Universe."
     pw_run "${PW_AUTOINSTALL_EXE}"
     PW_EXE_FILE="$WINEPREFIX/drive_c/Program Files (x86)/ChickenInvadersUniverse/CIU.exe"
     try_remove_file "${PW_AUTOINSTALL_EXE}"
     try_remove_file "${PW_EXE_FILE}.ppdb"
     kill_portwine
-    pw_stop_progress_bar
     portwine_create_shortcut
 fi
 stop_portwine
