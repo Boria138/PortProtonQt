@@ -18,9 +18,9 @@ then
     pw_start_progress_bar_install_game "Arizona Games Launcher."
     pw_kill_autostart "Arizona Games" &
     pw_run "${PW_AUTOINSTALL_EXE}"
-    portwine_exe="$WINEPREFIX/drive_c/users/steamuser/AppData/Local/Programs/Arizona Games Launcher/Arizona Games Launcher.exe"
+    PW_EXE_FILE="$WINEPREFIX/drive_c/users/steamuser/AppData/Local/Programs/Arizona Games Launcher/Arizona Games Launcher.exe"
     try_remove_file "${PW_AUTOINSTALL_EXE}"
-    try_remove_file "${portwine_exe}.ppdb"
+    try_remove_file "${PW_EXE_FILE}.ppdb"
     kill_portwine
     pw_stop_progress_bar
     portwine_create_shortcut

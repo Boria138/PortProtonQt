@@ -22,9 +22,9 @@ then
     pw_start_progress_bar_install_game "Guild Wars 2."
     pw_kill_autostart Gw2.exe 3 &
     pw_run "${PW_AUTOINSTALL_EXE}"
-    portwine_exe="${WINEPREFIX}/drive_c/Program Files/Guild Wars 2/Gw2.exe"
+    PW_EXE_FILE="${WINEPREFIX}/drive_c/Program Files/Guild Wars 2/Gw2.exe"
     try_remove_file "${PW_AUTOINSTALL_EXE}"
-    try_remove_file "${portwine_exe}.ppdb"
+    try_remove_file "${PW_EXE_FILE}.ppdb"
     kill_portwine
     mv -f "${WINEPREFIX}/drive_c/users/steamuser/Temp/"* "${WINEPREFIX}/drive_c/Program Files/Guild Wars 2/"
     pw_stop_progress_bar

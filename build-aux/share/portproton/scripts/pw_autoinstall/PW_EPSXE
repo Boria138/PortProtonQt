@@ -12,9 +12,9 @@ if try_download "https://www.epsxe.com/files/ePSXe205.zip" "${PW_AUTOINSTALL_EXE
 then
     pw_start_progress_bar_install_game "ePSXe."
     "$pw_7z" x -y "${PW_AUTOINSTALL_EXE}" -o"$WINEPREFIX/drive_c/Program Files (x86)/ePSXe"
-    portwine_exe="$WINEPREFIX/drive_c/Program Files (x86)/ePSXe/ePSXe.exe"
+    PW_EXE_FILE="$WINEPREFIX/drive_c/Program Files (x86)/ePSXe/ePSXe.exe"
     try_remove_file "${PW_AUTOINSTALL_EXE}"
-    try_remove_file "${portwine_exe}.ppdb"
+    try_remove_file "${PW_EXE_FILE}.ppdb"
     kill_portwine
     pw_stop_progress_bar
     export PORTWINE_CREATE_SHORTCUT_NAME="ePSXe"

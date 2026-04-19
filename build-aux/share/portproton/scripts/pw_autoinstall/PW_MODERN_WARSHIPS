@@ -18,10 +18,10 @@ then
     pw_start_progress_bar_install_game "Modern Warships."
     pw_kill_autostart launcher.exe &
     pw_run "${PW_AUTOINSTALL_EXE}"
-    portwine_exe="$WINEPREFIX/drive_c/users/$USER/AppData/Local/ModernWarships/launcher.exe"
+    PW_EXE_FILE="$WINEPREFIX/drive_c/users/$USER/AppData/Local/ModernWarships/launcher.exe"
     pw_create_unique_exe "modern_warships_pp"
     try_remove_file "${PW_AUTOINSTALL_EXE}"
-    try_remove_file "${portwine_exe}.ppdb"
+    try_remove_file "${PW_EXE_FILE}.ppdb"
     kill_portwine
     portwine_create_shortcut
 fi

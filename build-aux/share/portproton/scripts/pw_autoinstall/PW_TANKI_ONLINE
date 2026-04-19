@@ -16,9 +16,9 @@ if try_download "https://tankionline.com/desktop/TankiOnlineSetup.exe" "${PW_AUT
 then
     pw_start_progress_bar_install_game "Tanki Online."
     pw_run "${PW_AUTOINSTALL_EXE}"
-    portwine_exe="$WINEPREFIX/drive_c/users/steamuser/AppData/Local/Programs/Tanki Online/Tanki Online.exe"
+    PW_EXE_FILE="$WINEPREFIX/drive_c/users/steamuser/AppData/Local/Programs/Tanki Online/Tanki Online.exe"
     try_remove_file "${PW_AUTOINSTALL_EXE}"
-    try_remove_file "${portwine_exe}.ppdb"
+    try_remove_file "${PW_EXE_FILE}.ppdb"
     kill_portwine
     pw_stop_progress_bar
     portwine_create_shortcut

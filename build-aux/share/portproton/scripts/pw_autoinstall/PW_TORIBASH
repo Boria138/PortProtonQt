@@ -20,9 +20,9 @@ if try_download "https://cache.toribash.com/Toribash-${URL_VER}-Setup.exe" "${PW
 then
     pw_start_progress_bar_install_game "Toribash."
     pw_run "${PW_AUTOINSTALL_EXE}"
-    portwine_exe="$WINEPREFIX/drive_c/Games/Toribash/toribash.exe"
+    PW_EXE_FILE="$WINEPREFIX/drive_c/Games/Toribash/toribash.exe"
     try_remove_file "${PW_AUTOINSTALL_EXE}"
-    try_remove_file "${portwine_exe}.ppdb"
+    try_remove_file "${PW_EXE_FILE}.ppdb"
     kill_portwine
     pw_stop_progress_bar
     portwine_create_shortcut

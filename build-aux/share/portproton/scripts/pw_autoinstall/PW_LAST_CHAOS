@@ -15,9 +15,9 @@ if try_download "https://last-chaos.ru/download/Last%20Chaos.zip" "${PW_AUTOINST
 then
     pw_start_progress_bar_install_game "Last Chaos."
     "$pw_7z" x -y "${PW_AUTOINSTALL_EXE}" -o"${WINEPREFIX}/drive_c/Program Files/"
-    portwine_exe="${WINEPREFIX}/drive_c/Program Files/Last Chaos/LC.exe"
+    PW_EXE_FILE="${WINEPREFIX}/drive_c/Program Files/Last Chaos/LC.exe"
     try_remove_file "${PW_AUTOINSTALL_EXE}"
-    try_remove_file "${portwine_exe}.ppdb"
+    try_remove_file "${PW_EXE_FILE}.ppdb"
     kill_portwine
     pw_stop_progress_bar
     portwine_create_shortcut

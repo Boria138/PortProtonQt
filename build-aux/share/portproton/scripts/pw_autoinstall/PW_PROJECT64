@@ -23,9 +23,9 @@ then
     try_download "https://www.pj64-emu.com/file/setup-project64${PR64_VER}${GET_URL_POSTFIX}/" "${PW_AUTOINSTALL_EXE}" no_mirror
     pw_start_progress_bar_install_game "Project64."
     pw_run "${PW_AUTOINSTALL_EXE}"
-    portwine_exe="$WINEPREFIX/drive_c/Program Files (x86)/Project64 3.0/Project64.exe"
+    PW_EXE_FILE="$WINEPREFIX/drive_c/Program Files (x86)/Project64 3.0/Project64.exe"
     try_remove_file "${PW_AUTOINSTALL_EXE}"
-    try_remove_file "${portwine_exe}.ppdb"
+    try_remove_file "${PW_EXE_FILE}.ppdb"
     kill_portwine
     pw_stop_progress_bar
     portwine_create_shortcut

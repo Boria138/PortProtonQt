@@ -18,10 +18,10 @@ then
     create_new_dir "$WINEPREFIX/drive_c/Program Files (x86)/Farlight84"
     "$pw_7z" x -y "${PW_AUTOINSTALL_EXE}" -o"$WINEPREFIX/drive_c/Program Files (x86)/Farlight84"
     "$pw_7z" x -y "$WINEPREFIX/drive_c/Program Files (x86)/Farlight84/launcher.7z" -o"$WINEPREFIX/drive_c/Program Files (x86)/Farlight84"
-    portwine_exe="$WINEPREFIX/drive_c/Program Files (x86)/Farlight84/Farlight84Launcher.exe"
+    PW_EXE_FILE="$WINEPREFIX/drive_c/Program Files (x86)/Farlight84/Farlight84Launcher.exe"
     try_remove_file "$WINEPREFIX/drive_c/Program Files (x86)/Farlight84/launcher.7z"
     try_remove_file "${PW_AUTOINSTALL_EXE}"
-    try_remove_file "${portwine_exe}.ppdb"
+    try_remove_file "${PW_EXE_FILE}.ppdb"
     pw_stop_progress_bar
     portwine_create_shortcut
 fi

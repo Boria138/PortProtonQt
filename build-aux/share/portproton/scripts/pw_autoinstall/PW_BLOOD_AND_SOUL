@@ -16,10 +16,10 @@ if try_download "https://bsclassic.com/files/bs-install.exe" "${PW_AUTOINSTALL_E
 then
     pw_start_progress_bar_install_game "Blood and Soul."
     pw_run "${PW_AUTOINSTALL_EXE}"
-    portwine_exe="$WINEPREFIX/drive_c/Program Files (x86)/Blood and Soul Classic/launcher.exe"
+    PW_EXE_FILE="$WINEPREFIX/drive_c/Program Files (x86)/Blood and Soul Classic/launcher.exe"
     pw_create_unique_exe
     try_remove_file "${PW_AUTOINSTALL_EXE}"
-    try_remove_file "${portwine_exe}.ppdb"
+    try_remove_file "${PW_EXE_FILE}.ppdb"
     kill_portwine
     pw_stop_progress_bar
 

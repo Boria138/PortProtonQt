@@ -15,9 +15,9 @@ if try_download "https://launch.daybreakgames.com/installer/DCUO_setup.exe" "${P
 then
     pw_start_progress_bar_install_game "DC Universe Online."
     "$pw_7z" x -y "${PW_AUTOINSTALL_EXE}" -o"$WINEPREFIX/drive_c/Program Files (x86)/Daybreak Game Company"
-    portwine_exe="$WINEPREFIX/drive_c/Program Files (x86)/Daybreak Game Company/LaunchPad.exe"
+    PW_EXE_FILE="$WINEPREFIX/drive_c/Program Files (x86)/Daybreak Game Company/LaunchPad.exe"
     try_remove_file "${PW_AUTOINSTALL_EXE}"
-    try_remove_file "${portwine_exe}.ppdb"
+    try_remove_file "${PW_EXE_FILE}.ppdb"
     kill_portwine
     pw_stop_progress_bar
     portwine_create_shortcut

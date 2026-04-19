@@ -18,10 +18,10 @@ then
     pw_start_progress_bar_install_game "Panzar."
     pw_kill_autostart start.exe 3 &
     pw_run "${PW_AUTOINSTALL_EXE}"
-    export portwine_exe="${WINEPREFIX}/drive_c/Games/Panzar/start.exe"
+    export PW_EXE_FILE="${WINEPREFIX}/drive_c/Games/Panzar/start.exe"
     pw_create_unique_exe
     try_remove_file "${PW_AUTOINSTALL_EXE}"
-    try_remove_file "${portwine_exe}.ppdb"
+    try_remove_file "${PW_EXE_FILE}.ppdb"
     kill_portwine
     pw_stop_progress_bar
     portwine_create_shortcut

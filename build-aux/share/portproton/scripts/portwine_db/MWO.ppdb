@@ -13,7 +13,7 @@ fi
 add_in_start_portwine ()
 {
     if [[ -f "${PATH_TO_GAME}/MWO.exe" ]] ; then
-        #echo "Override $portwine_exe to ${PATH_TO_GAME}/MWO.exe"
-        export portwine_exe="${PATH_TO_GAME}/MWO.exe"
+        #echo "Override $PW_EXE_FILE to ${PATH_TO_GAME}/MWO.exe"
+        export PW_EXE_FILE="${PATH_TO_GAME}/MWO.exe"
     fi
 }

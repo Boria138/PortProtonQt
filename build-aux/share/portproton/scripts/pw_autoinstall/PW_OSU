@@ -21,9 +21,9 @@ then
     if  [[ -f "${PORT_DATA_PATH}/data/pfx_dotnet/drive_c/Program Files (x86)/OSU/osu!install.exe" ]] ; then
         mv -f  "${PORT_DATA_PATH}/data/pfx_dotnet/drive_c/Program Files (x86)/OSU/osu!install.exe" "${PORT_DATA_PATH}/data/pfx_dotnet/drive_c/Program Files (x86)/OSU/osu!.exe"
     fi
-    export portwine_exe="$WINEPREFIX/drive_c/Program Files (x86)/OSU/osu!.exe"
+    export PW_EXE_FILE="$WINEPREFIX/drive_c/Program Files (x86)/OSU/osu!.exe"
     pw_create_unique_exe
-    try_remove_file "${portwine_exe}.ppdb"
+    try_remove_file "${PW_EXE_FILE}.ppdb"
     pw_stop_progress_bar
     portwine_create_shortcut
     kill_portwine

@@ -15,6 +15,6 @@ export DISABLE_CP_DEFPFX="1"
 
 add_in_stop_portwine () {
     # pw_find_exe news
-    export portwine_exe="$WINEPREFIX/drive_c/Program Files (x86)/Учитель/Учитель.exe"
+    export PW_EXE_FILE="$WINEPREFIX/drive_c/Program Files (x86)/Учитель/Учитель.exe"
     portwine_create_shortcut
 }

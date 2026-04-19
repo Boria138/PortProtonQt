@@ -16,9 +16,9 @@ if try_download "https://www.eldevin.com/cdn/files/eldevin_win64.exe" "${PW_AUTO
 then
     pw_start_progress_bar_install_game "Eldevin."
     pw_run "${PW_AUTOINSTALL_EXE}"
-    portwine_exe="$WINEPREFIX/drive_c/Program Files/Eldevin/Eldevin.exe"
+    PW_EXE_FILE="$WINEPREFIX/drive_c/Program Files/Eldevin/Eldevin.exe"
     try_remove_file "${PW_AUTOINSTALL_EXE}"
-    try_remove_file "${portwine_exe}.ppdb"
+    try_remove_file "${PW_EXE_FILE}.ppdb"
     kill_portwine
     pw_stop_progress_bar
     portwine_create_shortcut

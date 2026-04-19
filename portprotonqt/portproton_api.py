@@ -487,7 +487,7 @@ class PortProtonAPI:
                     stripped = line.strip()
                     if stripped.startswith("#"):
                         continue
-                    if "portwine_exe" in stripped and "=" in stripped:
+                    if "PW_EXE_FILE" in stripped and "=" in stripped:
                         portwine_match = stripped
                         break
 

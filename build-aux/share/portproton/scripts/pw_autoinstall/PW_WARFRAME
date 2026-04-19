@@ -16,10 +16,10 @@ then
     pw_start_progress_bar_install_game "Warframe."
     pw_kill_autostart Launcher.exe 3 &
     pw_run msiexec /i "${PW_AUTOINSTALL_EXE}"
-    export portwine_exe="${WINEPREFIX}/drive_c/users/$USER/AppData/Local/Warframe/Downloaded/Public/Tools/Launcher.exe"
+    export PW_EXE_FILE="${WINEPREFIX}/drive_c/users/$USER/AppData/Local/Warframe/Downloaded/Public/Tools/Launcher.exe"
     pw_create_unique_exe "warframe_launcher_pp"
     try_remove_file "${PW_AUTOINSTALL_EXE}"
-    try_remove_file "${portwine_exe}.ppdb"
+    try_remove_file "${PW_EXE_FILE}.ppdb"
     kill_portwine
     pw_stop_progress_bar
     portwine_create_shortcut

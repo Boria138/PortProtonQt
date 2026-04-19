@@ -748,13 +748,13 @@ fix_icon_name_png () {
     fi
 }
 
-# Поиск нужного .desktop файла по $portwine_exe (для показа в комментариях нужного времени)
+# Поиск нужного .desktop файла по $PW_EXE_FILE (для показа в комментариях нужного времени)
 # Параллельное создание базы по времени после завершения приложения
 search_desktop_file () {
     [[ $PW_USE_SETUP_FILE == "1" ]] && return 0
     local desktop_file desktop_file_new line1 line2 FILE_SHA256SUM_ARRAY EXEC_DESKTOP ICON_NAME BROKEN_LINE FILE_SHA256SUM_FOUND FILE_SHA256SUM_NOT_FOUND
     if [[ -z $FILE_SHA256SUM ]] ; then
-        read -r -a FILE_SHA256SUM_ARRAY < <(sha256sum "$portwine_exe")
+        read -r -a FILE_SHA256SUM_ARRAY < <(sha256sum "$PW_EXE_FILE")
         FILE_SHA256SUM=${FILE_SHA256SUM_ARRAY[0]}
         edit_db_from_gui FILE_SHA256SUM
     fi
@@ -773,7 +773,7 @@ search_desktop_file () {
                     [[ $line1 =~ ^Icon= ]] && ICON_NAME=${line1//Icon=/}
                 done < "$desktop_file"
                 fix_icon_name_png "$ICON_NAME" "$desktop_file"
-                if [[ $portwine_exe == "${EXEC_DESKTOP//\"/}" ]] ; then
+                if [[ $PW_EXE_FILE == "${EXEC_DESKTOP//\"/}" ]] ; then
                     DESKTOP_CORRECT_FILE="$desktop_file"
                     break
                 fi
@@ -792,7 +792,7 @@ search_desktop_file () {
             break
         fi
         if [[ ${line2[1]} != "$FILE_SHA256SUM" ]] \
-        && [[ ${line2[0]} == "${portwine_exe// /#@_@#}" ]] ; then
+        && [[ ${line2[0]} == "${PW_EXE_FILE// /#@_@#}" ]] ; then
             FILE_SHA256SUM_NOT_FOUND=1
             break
         fi
@@ -825,9 +825,9 @@ search_desktop_file () {
     fi
 
     # Ремонтирует путь на новый, если вдруг путь до .exe файла битый или изменился, но .exe файл он опознал
-    if [[ $FILE_SHA256SUM_FOUND == 1 ]] && [[ ${line2[0]} != "${portwine_exe// /#@_@#}" ]] ; then
-        sed -i "s|${line2[0]} ${line2[1]}|${portwine_exe// /#@_@#} ${line2[1]}|" "$PORT_WINE_TMP_PATH/statistics"
-        line2[0]=${portwine_exe// /#@_@#}
+    if [[ $FILE_SHA256SUM_FOUND == 1 ]] && [[ ${line2[0]} != "${PW_EXE_FILE// /#@_@#}" ]] ; then
+        sed -i "s|${line2[0]} ${line2[1]}|${PW_EXE_FILE// /#@_@#} ${line2[1]}|" "$PORT_WINE_TMP_PATH/statistics"
+        line2[0]=${PW_EXE_FILE// /#@_@#}
     fi
 
     # Ремонт, если sha256sum изменилась, но путь до .exe тот же
@@ -861,7 +861,7 @@ search_desktop_file () {
         if [[ $FILE_SHA256SUM_FOUND == 1 ]] ; then
             sed -i "s|${line2[1]} \(.*\) ${line2[3]}|${line2[1]} \1 NEW_DESKTOP|" "$PORT_WINE_TMP_PATH/statistics"
         else
-            echo "${portwine_exe// /#@_@#} $FILE_SHA256SUM $TIME_CURRENT NEW_DESKTOP" >> "$PORT_WINE_TMP_PATH/statistics"
+            echo "${PW_EXE_FILE// /#@_@#} $FILE_SHA256SUM $TIME_CURRENT NEW_DESKTOP" >> "$PORT_WINE_TMP_PATH/statistics"
         fi
     fi
     unset PW_NEW_DESKTOP
@@ -874,7 +874,7 @@ search_desktop_file () {
             sed -i "s|$FILE_SHA256SUM $TIME_CURRENT|$FILE_SHA256SUM $TIME_TOTAL|" "$PORT_WINE_TMP_PATH/statistics"
         else
             # Когда только запустили приложение первый раз
-            echo "${portwine_exe// /#@_@#} $FILE_SHA256SUM $TIME_TOTAL OLD_DESKTOP" >> "$PORT_WINE_TMP_PATH/statistics"
+            echo "${PW_EXE_FILE// /#@_@#} $FILE_SHA256SUM $TIME_TOTAL OLD_DESKTOP" >> "$PORT_WINE_TMP_PATH/statistics"
         fi
         # Для ремонта если вдруг в линии ещё что-то есть
         count_line=6
@@ -898,7 +898,7 @@ search_desktop_file () {
                 for i in $(seq $count_line ${#line2[@]}) ; do
                     unset 'line2[$i]'
                 done
-                sed -i "s|${portwine_exe// /#@_@#} $FILE_SHA256SUM \(.*\)|${line2[*]}|" "$PORT_WINE_TMP_PATH/statistics"
+                sed -i "s|${PW_EXE_FILE// /#@_@#} $FILE_SHA256SUM \(.*\)|${line2[*]}|" "$PORT_WINE_TMP_PATH/statistics"
             fi
             # Для правильной работы L4
             sed -i "s|$FILE_SHA256SUM \(.*\) ${line2[4]}|$FILE_SHA256SUM \1 L4-$NUMBER_OF_STARTS|" "$PORT_WINE_TMP_PATH/statistics"
@@ -949,7 +949,7 @@ create_name_desktop () {
         DESKTOP_NAME_FILE="${DESKTOP_NAME_FILE//.desktop/}"
     fi
 
-    PORTWINE_DB_DESKTOP="$(basename "${portwine_exe%.[Ee][Xx][Ee]}")"
+    PORTWINE_DB_DESKTOP="$(basename "${PW_EXE_FILE%.[Ee][Xx][Ee]}")"
 
     if [[ -n $PORTPROTON_NAME ]] ; then
         PORTPROTON_NAME_ABBR=$(make_abbreviation "$PORTPROTON_NAME")
@@ -2081,16 +2081,16 @@ pw_init_db () {
         export PW_USE_RAY_TRACING="1"
     fi
 
-    if [[ -f "${portwine_exe}" ]] ; then
-        PORTWINE_DB="$(basename "${portwine_exe%.[Ee][Xx][Ee]}")"
+    if [[ -f "${PW_EXE_FILE}" ]] ; then
+        PORTWINE_DB="$(basename "${PW_EXE_FILE%.[Ee][Xx][Ee]}")"
         export PORTWINE_DB
         if echo "${PORTWINE_DB}" | grep -i "_vo_\|_gv_" &>/dev/null ; then
             print_warning "Force use gamesvoice.ppdb file!"
             PORTWINE_DB_FILE="${PORT_SCRIPTS_PATH}/portwine_db/gamesvoice.ppdb"
             # shellcheck source=/dev/null
             source "${PORTWINE_DB_FILE}"
-        elif [[ -f "${portwine_exe}".ppdb ]] ; then
-            PORTWINE_DB_FILE="${portwine_exe}".ppdb
+        elif [[ -f "${PW_EXE_FILE}".ppdb ]] ; then
+            PORTWINE_DB_FILE="${PW_EXE_FILE}".ppdb
             if grep -q "PW_NO_" "${PORTWINE_DB_FILE}" ; then
                 sed -i \
                     -e "s/PW_NO_ESYNC=.*1.*/PW_USE_ESYNC=\"0\"/g" \
@@ -2103,11 +2103,11 @@ pw_init_db () {
             fi
             # shellcheck source=/dev/null
             source "${PORTWINE_DB_FILE}"
-            if echo "${portwine_exe}" | grep "/prefixes/" &>/dev/null ; then
+            if echo "${PW_EXE_FILE}" | grep "/prefixes/" &>/dev/null ; then
                 if [[ ("${PW_CLI}" != "1" && -z $(lsbash "${PORT_DATA_PATH}/prefixes/" --grep ^"${PW_PREFIX_NAME}"$)) \
                 || -z $(grep -e ^"export PW_PREFIX_NAME=" "${PORTWINE_DB_FILE}" 2>/dev/null) ]]
                 then
-                    PW_PREFIX_NAME=$(echo "${portwine_exe}" | awk -F"/prefixes/" '{print $2}' | awk -F"/" '{print $1}')
+                    PW_PREFIX_NAME=$(echo "${PW_EXE_FILE}" | awk -F"/prefixes/" '{print $2}' | awk -F"/" '{print $1}')
                     edit_db_from_gui PW_PREFIX_NAME
                 fi
             fi
@@ -2142,13 +2142,13 @@ pw_init_db () {
             if [[ -f "${PW_FIND_DB_FILE}" ]] \
             && [[ "${PW_DISABLED_CREATE_DB}" != 1 ]]
             then
-                try_copy_file "${PW_FIND_DB_FILE}" "${portwine_exe}".ppdb
-                PORTWINE_DB_FILE="${portwine_exe}".ppdb
-                if echo "${portwine_exe}" | grep "/prefixes/" &>/dev/null ; then
+                try_copy_file "${PW_FIND_DB_FILE}" "${PW_EXE_FILE}".ppdb
+                PORTWINE_DB_FILE="${PW_EXE_FILE}".ppdb
+                if echo "${PW_EXE_FILE}" | grep "/prefixes/" &>/dev/null ; then
                     if [[ ("${PW_CLI}" != "1" && -z $(lsbash "${PORT_DATA_PATH}/prefixes/" --grep ^"${PW_PREFIX_NAME}"$)) \
                     || -z $(grep -e ^"export PW_PREFIX_NAME=" "${PORTWINE_DB_FILE}" 2>/dev/null) ]]
                     then
-                        PW_PREFIX_NAME=$(echo "${portwine_exe}" | awk -F"/prefixes/" '{print $2}' | awk -F"/" '{print $1}')
+                        PW_PREFIX_NAME=$(echo "${PW_EXE_FILE}" | awk -F"/prefixes/" '{print $2}' | awk -F"/" '{print $1}')
                         edit_db_from_gui PW_PREFIX_NAME
                     fi
                 fi
@@ -2166,7 +2166,7 @@ pw_init_db () {
                 if [[ -n "${PORTWINE_DB}" ]] ; then
                     PORTWINE_DB_FILE=$(grep -il "#${PORTWINE_DB}.exe" "${PORT_SCRIPTS_PATH}/portwine_db"/*)
                     export PORTWINE_DB_FILE
-                    use_exiftool "$portwine_exe"
+                    use_exiftool "$PW_EXE_FILE"
                     grep -q "Sony" "${PW_TMPFS_PATH}/exiftool.tmp" && PW_WINE_USE="WINE_LG"
                     if [[ -z "${PORTWINE_DB_FILE}" ]] ; then
                         {
@@ -2174,13 +2174,13 @@ pw_init_db () {
                             echo "#Author: ${USER}"
                             echo "#${PORTWINE_DB}.exe"
                             echo "#Rating=1-5"
-                        } > "${portwine_exe}".ppdb
-                        export PORTWINE_DB_FILE="${portwine_exe}".ppdb
+                        } > "${PW_EXE_FILE}".ppdb
+                        export PORTWINE_DB_FILE="${PW_EXE_FILE}".ppdb
                     fi
-                    if [[ "${portwine_exe}" =~ "/prefixes/" ]] && \
-                    [[ ! "${portwine_exe}" =~ "/prefixes/DEFAULT/" ]]
+                    if [[ "${PW_EXE_FILE}" =~ "/prefixes/" ]] && \
+                    [[ ! "${PW_EXE_FILE}" =~ "/prefixes/DEFAULT/" ]]
                     then
-                        PW_PREFIX_NAME=$(echo "${portwine_exe}" | awk -F"/prefixes/" '{print $2}' | awk -F"/" '{print $1}')
+                        PW_PREFIX_NAME=$(echo "${PW_EXE_FILE}" | awk -F"/prefixes/" '{print $2}' | awk -F"/" '{print $1}')
                     fi
                     # shellcheck source=/dev/null
                     source "${PORTWINE_DB_FILE}"
@@ -2190,7 +2190,7 @@ pw_init_db () {
         fi
 
         if [[ -z "${PATH_TO_GAME}" ]] || [[ ! -d "${PATH_TO_GAME}" ]] ; then
-            PATH_TO_GAME="$( cd "$( dirname "${portwine_exe}" )" >/dev/null 2>&1 && pwd )"
+            PATH_TO_GAME="$( cd "$( dirname "${PW_EXE_FILE}" )" >/dev/null 2>&1 && pwd )"
             export PATH_TO_GAME
         fi
 
@@ -2660,16 +2660,16 @@ use_exiftool () {
 
 pw_create_gui_png () {
     if [[ -z $name_desktop_png ]] ; then
-        basename_portwine_exe="$(basename "${portwine_exe}")"
-        if echo "$basename_portwine_exe" | grep -ie 'setup\|install\|\.msi$' &>/dev/null ; then
+        basename_PW_EXE_FILE="$(basename "${PW_EXE_FILE}")"
+        if echo "$basename_PW_EXE_FILE" | grep -ie 'setup\|install\|\.msi$' &>/dev/null ; then
             export PW_ICON_FOR_YAD="${PORT_DATA_PATH}/data/img/setup.png"
             export name_desktop_png="setup"
             return 0
-        elif echo "$basename_portwine_exe" | grep -ie '\.reg$' &>/dev/null ; then
+        elif echo "$basename_PW_EXE_FILE" | grep -ie '\.reg$' &>/dev/null ; then
             export PW_ICON_FOR_YAD="${PORT_DATA_PATH}/data/img/reg.png"
             export name_desktop_png="reg"
             return 0
-        elif echo "$basename_portwine_exe"| grep -ie '\.bat$' &>/dev/null ; then
+        elif echo "$basename_PW_EXE_FILE"| grep -ie '\.bat$' &>/dev/null ; then
             export PW_ICON_FOR_YAD="${PORT_DATA_PATH}/data/img/bat.png"
             export name_desktop_png="bat"
             return 0
@@ -2682,7 +2682,7 @@ pw_create_gui_png () {
         if [[ -n "${PORTWINE_CREATE_SHORTCUT_NAME}" ]] ; then
             PORTPROTON_NAME="${PORTWINE_CREATE_SHORTCUT_NAME}"
         else
-            use_exiftool "$portwine_exe"
+            use_exiftool "$PW_EXE_FILE"
             PW_PRODUCTNAME=$(sed -n 's/^Product Name\s*:\s*//p' "${PW_TMPFS_PATH}/exiftool.tmp")
             FILE_DESCRIPTION=$(sed -n 's/^File Description\s*:\s*//p' "${PW_TMPFS_PATH}/exiftool.tmp")
 
@@ -2696,7 +2696,7 @@ pw_create_gui_png () {
             then
                 PORTPROTON_NAME="$PW_PRODUCTNAME"
             else
-                PORTPROTON_NAME="$(basename "${portwine_exe%.[Ee][Xx][Ee]}")"
+                PORTPROTON_NAME="$(basename "${PW_EXE_FILE%.[Ee][Xx][Ee]}")"
             fi
         fi
 
@@ -2715,7 +2715,7 @@ pw_create_gui_png () {
         fi
     fi
 
-    resize_png "$portwine_exe" "${PORTPROTON_NAME}" "48" "128"
+    resize_png "$PW_EXE_FILE" "${PORTPROTON_NAME}" "48" "128"
 
     PORTPROTON_NAME_PNG="${PORTPROTON_NAME// /_}"
     if [[ $PORTPROTON_NAME_PNG =~ [\!\%\$\&\<] ]] ; then
@@ -2734,21 +2734,21 @@ pw_create_gui_png () {
 }
 
 pw_create_unique_exe () {
-    BASEDIR_GAME="$(dirname "$portwine_exe")"
+    BASEDIR_GAME="$(dirname "$PW_EXE_FILE")"
     if [[ -d "$BASEDIR_GAME" ]] ; then
         pushd "$BASEDIR_GAME" || fatal
-        BASENAME_GAME_EXE="$(basename "$portwine_exe")"
+        BASENAME_GAME_EXE="$(basename "$PW_EXE_FILE")"
         if [[ -n "$1" ]] ; then
             BASENAME_GAME="$(basename "$1" .exe).exe"
             ln -sf "$BASENAME_GAME_EXE" "$BASENAME_GAME"
-            export portwine_exe="$BASEDIR_GAME/$BASENAME_GAME"
+            export PW_EXE_FILE="$BASEDIR_GAME/$BASENAME_GAME"
         elif [[ -n "$PORTWINE_CREATE_SHORTCUT_NAME" ]] ; then
             ln -sf "$BASENAME_GAME_EXE" "$PORTWINE_CREATE_SHORTCUT_NAME.exe"
-            export portwine_exe="$BASEDIR_GAME/$PORTWINE_CREATE_SHORTCUT_NAME.exe"
+            export PW_EXE_FILE="$BASEDIR_GAME/$PORTWINE_CREATE_SHORTCUT_NAME.exe"
         else
             print_warning "There are no arguments for creating a symbolic link! Skip it..."
         fi
-        try_remove_file "${portwine_exe}.ppdb"
+        try_remove_file "${PW_EXE_FILE}.ppdb"
         popd || fatal
     fi
 }
@@ -4061,7 +4061,7 @@ fi
         echo "Set to win${PW_WINDOWS_VER}"
     fi
 
-    if [[ $portwine_exe == *-Shipping.exe ]] ; then
+    if [[ $PW_EXE_FILE == *-Shipping.exe ]] ; then
         echo "Disable EAC"
         [[ -z "$LAUNCH_PARAMETERS" ]] && export LAUNCH_PARAMETERS+=" -eac-nop-loaded "
     fi
@@ -4183,21 +4183,20 @@ pw_run () {
     && [[ -d "${PATH_TO_GAME}" ]]
     then
         cd "${PATH_TO_GAME}" || :
-    elif [[ -f "$portwine_exe" ]]
+    elif [[ -f "$PW_EXE_FILE" ]]
     then
-        PATH_TO_GAME="$( cd "$( dirname "${portwine_exe}" )" >/dev/null 2>&1 && pwd )"
+        PATH_TO_GAME="$( cd "$( dirname "${PW_EXE_FILE}" )" >/dev/null 2>&1 && pwd )"
         cd "${PATH_TO_GAME}" || :
     else
         cd "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c" || :
     fi
 
-    if file "$portwine_exe" | grep -q "x86-64" ; then
+    if file "$PW_EXE_FILE" | grep -q "x86-64" ; then
         check_variables WINE_LARGE_ADDRESS_AWARE "0"
     else
         check_variables WINE_LARGE_ADDRESS_AWARE "1"
     fi
 
-    PW_LOG_TO_FILE="$PW_LOG_FILE"
     PW_LD_LIBRARY_PATH="${PW_LD_LIBRARY_PATH}:${WINE_LIBRARY_PATH}"
 
     echo "##### Current variables #####" > "$PW_TMPFS_PATH/var.log"
@@ -4211,11 +4210,11 @@ pw_run () {
     then
         if [[ "${PW_LOG}" == 1 ]] ; then
             echo "export PW_BASE_PFX=$PW_BASE_PFX" >> "$PW_LOG_FILE"
-            echo "WINEDLLOVERRIDES=${WINEDLLOVERRIDES}" >> "${PW_LOG_TO_FILE}"
-            echo "------------------------------------" >> "${PW_LOG_TO_FILE}"
-            [[ -f "${PW_TMPFS_PATH}/update_pfx_log" ]] && cat "${PW_TMPFS_PATH}/update_pfx_log" >> "${PW_LOG_TO_FILE}"
-            echo "-" >> "${PW_LOG_TO_FILE}"
-            echo "Log WINE:" >> "${PW_LOG_TO_FILE}"
+            echo "WINEDLLOVERRIDES=${WINEDLLOVERRIDES}" >> "${PW_LOG_FILE}"
+            echo "------------------------------------" >> "${PW_LOG_FILE}"
+            [[ -f "${PW_TMPFS_PATH}/update_pfx_log" ]] && cat "${PW_TMPFS_PATH}/update_pfx_log" >> "${PW_LOG_FILE}"
+            echo "-" >> "${PW_LOG_FILE}"
+            echo "Log WINE:" >> "${PW_LOG_FILE}"
             echo ""
             print_info "Log from RUNTIME and WINE:"
             ${PW_RUN_GAMESCOPE} \
@@ -4229,14 +4228,14 @@ pw_run () {
             VK_INSTANCE_LAYERS=${PW_VK_INSTANCE_LAYERS} \
             ${PW_GAMEMODERUN_SLR} \
             ${PW_ADD_VAR_SLR} \
-            "${WINELOADER}" "$@" ${proxy_launch_parameters} &>>"${PW_LOG_TO_FILE}"
+            "${WINELOADER}" "$@" ${proxy_launch_parameters} &>>"${PW_LOG_FILE}"
         else
             if [[ "$PW_USE_TERMINAL" == 1 ]] ; then
                 PW_ADD_TO_ARGS_IN_RUNTIME="--xterm"
                 pw_init_runtime
             fi
             echo ""
-            echo "Log WINE:" > "${PW_LOG_TO_FILE}"
+            echo "Log WINE:" > "${PW_LOG_FILE}"
             ${PW_RUN_GAMESCOPE} \
             ${PW_INHIBIT_SLR} \
             ${PW_TASKSET_SLR} \
@@ -4248,21 +4247,21 @@ pw_run () {
             VK_INSTANCE_LAYERS="${PW_VK_INSTANCE_LAYERS}" \
             ${PW_GAMEMODERUN_SLR} \
             ${PW_ADD_VAR_SLR} \
-            "${WINELOADER}" "$@" ${proxy_launch_parameters} &>>"${PW_LOG_TO_FILE}"
+            "${WINELOADER}" "$@" ${proxy_launch_parameters} &>>"${PW_LOG_FILE}"
             print_info "Update prefix log:"
             [[ -f "${PW_TMPFS_PATH}/update_pfx_log" ]] && cat "${PW_TMPFS_PATH}/update_pfx_log"
             echo
             print_info "Log from RUNTIME and WINE:"
-            awk '! a[$0]++' "${PW_LOG_TO_FILE}"
+            awk '! a[$0]++' "${PW_LOG_FILE}"
             echo
         fi
     else
         if [[ "${PW_LOG}" == 1 ]] ; then
-            echo "WINEDLLOVERRIDES=${WINEDLLOVERRIDES}" >> "${PW_LOG_TO_FILE}"
-            echo "------------------------------------" >> "${PW_LOG_TO_FILE}"
-            [[ -f "${PW_TMPFS_PATH}/update_pfx_log" ]] && cat "${PW_TMPFS_PATH}/update_pfx_log" >> "${PW_LOG_TO_FILE}"
-            echo "-" >> "${PW_LOG_TO_FILE}"
-            echo "Log WINE:" >> "${PW_LOG_TO_FILE}"
+            echo "WINEDLLOVERRIDES=${WINEDLLOVERRIDES}" >> "${PW_LOG_FILE}"
+            echo "------------------------------------" >> "${PW_LOG_FILE}"
+            [[ -f "${PW_TMPFS_PATH}/update_pfx_log" ]] && cat "${PW_TMPFS_PATH}/update_pfx_log" >> "${PW_LOG_FILE}"
+            echo "-" >> "${PW_LOG_FILE}"
+            echo "Log WINE:" >> "${PW_LOG_FILE}"
             echo ""
             print_info "Log WINE:"
             env FAKE_VAR= \
@@ -4276,13 +4275,13 @@ pw_run () {
             ${PW_ADD_VAR_SLR} \
             ${PW_INHIBIT_SLR} \
             ${PW_TASKSET_SLR} \
-            "${WINELOADER}" "$@" ${proxy_launch_parameters} &>>"${PW_LOG_TO_FILE}"
+            "${WINELOADER}" "$@" ${proxy_launch_parameters} &>>"${PW_LOG_FILE}"
             wait_wineserver
         else
             print_info "Update prefix log:"
             [[ -f "${PW_TMPFS_PATH}/update_pfx_log" ]] && cat "${PW_TMPFS_PATH}/update_pfx_log"
             echo ""
-            echo "Log WINE:" > "${PW_LOG_TO_FILE}"
+            echo "Log WINE:" > "${PW_LOG_FILE}"
             print_info "Log WINE:"
             env FAKE_VAR= \
             LD_LIBRARY_PATH="${PW_LD_LIBRARY_PATH}" \
@@ -4332,11 +4331,11 @@ pw_yad_form_vulkan () {
 }
 
 steamplay_launch () {
-    if [[ -n "${portwine_exe:-}" ]]; then
+    if [[ -n "${PW_EXE_FILE:-}" ]]; then
         local steamplay_ld_library_path
-        cd "$(dirname "${portwine_exe}")"
+        cd "$(dirname "${PW_EXE_FILE}")"
         export PATH_TO_GAME="$(pwd)"
-        export PORTWINE_DB_FILE="${portwine_exe}.ppdb"
+        export PORTWINE_DB_FILE="${PW_EXE_FILE}.ppdb"
         [[ -f "${PORTWINE_DB_FILE}" ]] && source "${PORTWINE_DB_FILE}"
 
         steamplay_ld_library_path="${LD_LIBRARY_PATH}:${STEAM_RUNTIME_LIBRARY_PATH}:${PW_PLUGINS_PATH}/portable/lib/lib64:${PW_PLUGINS_PATH}/portable/lib/lib32"
@@ -4432,7 +4431,7 @@ steamplay_launch () {
         ${PW_GAMEMODERUN_SLR} \
         ${PW_INHIBIT_SLR} \
         ${PW_TASKSET_SLR} \
-        "${proton_runner}" waitforexitandrun "${portwine_exe}" "$@"
+        "${proton_runner}" waitforexitandrun "${PW_EXE_FILE}" "$@"
         stop_activity_simulation
         if [[ $PW_LOG != 1 ]] && [[ -n $START_PW_TIME_IN_GAME ]] ; then
             debug_timer --end -s "PW_TIME_IN_GAME"
@@ -4469,8 +4468,8 @@ portwine_launch () {
     else
         if [[ -n "${PW_RUN_AFTER_EXE:-}" ]] \
         && [[ -f "${PW_RUN_AFTER_EXE}" ]] \
-        && [[ "${PW_RUN_AFTER_EXE}" != "${portwine_exe}" ]] \
-        && [[ "${portwine_exe,,}" =~ \.exe$ ]]
+        && [[ "${PW_RUN_AFTER_EXE}" != "${PW_EXE_FILE}" ]] \
+        && [[ "${PW_EXE_FILE,,}" =~ \.exe$ ]]
         then
             local wait_delay wait_delay_int run_after_bat
             wait_delay="${PW_RUN_AFTER_DELAY:-3}"
@@ -4481,7 +4480,7 @@ portwine_launch () {
 
             cat > "${run_after_bat}" <<EOF
 @echo off
-start "" "z:${portwine_exe}"
+start "" "z:${PW_EXE_FILE}"
 timeout /t ${wait_delay_int} /nobreak
 start "" "z:${PW_RUN_AFTER_EXE}"
 EOF
@@ -4489,19 +4488,19 @@ EOF
             pw_run "${PW_VD_TMP[@]}" cmd /c "z:${run_after_bat}"
             try_remove_file "${run_after_bat}"
         else
-            case "${portwine_exe,,}" in
+            case "${PW_EXE_FILE,,}" in
                 *.exe)
-                    pw_run "${PW_VD_TMP[@]}" ${WINE_WIN_START} "${portwine_exe}"
+                    pw_run "${PW_VD_TMP[@]}" ${WINE_WIN_START} "${PW_EXE_FILE}"
                 ;;
                 *.bat)
                     PW_USE_TERMINAL=1
-                    pw_run "${PW_VD_TMP[@]}" "${portwine_exe}"
+                    pw_run "${PW_VD_TMP[@]}" "${PW_EXE_FILE}"
                 ;;
                 *.msi)
-                    pw_run "${PW_VD_TMP[@]}" msiexec /i "${portwine_exe}"
+                    pw_run "${PW_VD_TMP[@]}" msiexec /i "${PW_EXE_FILE}"
                 ;;
                 *.reg)
-                    pw_run "${PW_VD_TMP[@]}" regedit "${portwine_exe}"
+                    pw_run "${PW_VD_TMP[@]}" regedit "${PW_EXE_FILE}"
                 ;;
                 *)
                     pw_run "${PW_VD_TMP[@]}" winefile
@@ -4746,7 +4745,7 @@ gui_proton_downloader () {
         if try_download "${URL_VERSION_PROTON_GIT}" "${PORT_DATA_PATH}/data/tmp/$FILENAME" "$USE_MIRROR" ; then
             if unpack "${PORT_DATA_PATH}/data/tmp/${FILENAME}" "${PORT_DATA_PATH}/data/dist/" ; then
                 try_remove_file "${PORT_DATA_PATH}/data/tmp/${FILENAME}"
-                if [[ -n "${portwine_exe}" ]] ; then
+                if [[ -n "${PW_EXE_FILE}" ]] ; then
                     PW_WINE_USE=${VERSION^^}
                     edit_db_from_gui PW_WINE_USE
                 fi
@@ -5018,7 +5017,7 @@ Binding a game to a single node reduces memory‑access latency and limits costl
             restart_pp
             ;;
         2)
-            try_remove_file "$portwine_exe".ppdb
+            try_remove_file "$PW_EXE_FILE".ppdb
             restart_pp
             ;;
         150)
@@ -5214,7 +5213,7 @@ gui_vkbasalt () {
             restart_pp
             ;;
         178)
-            sed -i '/VKBASALT/d' "$portwine_exe".ppdb
+            sed -i '/VKBASALT/d' "$PW_EXE_FILE".ppdb
             restart_pp
             ;;
         180)
@@ -5392,8 +5391,8 @@ gui_mangohud () {
             restart_pp
             ;;
         180)
-            sed -i '/FPS_LIMIT/d' "$portwine_exe".ppdb
-            sed -i '/MANGOHUD/d' "$portwine_exe".ppdb
+            sed -i '/FPS_LIMIT/d' "$PW_EXE_FILE".ppdb
+            sed -i '/MANGOHUD/d' "$PW_EXE_FILE".ppdb
             restart_pp
             ;;
         182)
@@ -5592,8 +5591,8 @@ gui_dgvoodoo2 () {
             restart_pp
             ;;
         162)
-            sed -i '/PW_DGV2/d' "$portwine_exe".ppdb
-            sed -i '/DGVOODOO2/d' "$portwine_exe".ppdb
+            sed -i '/PW_DGV2/d' "$PW_EXE_FILE".ppdb
+            sed -i '/DGVOODOO2/d' "$PW_EXE_FILE".ppdb
             restart_pp
             ;;
         164)
@@ -6009,8 +6008,8 @@ gui_gamescope () {
             restart_pp
             ;;
         162)
-            sed -i '/PW_GS/d' "$portwine_exe".ppdb
-            sed -i '/GAMESCOPE/d' "$portwine_exe".ppdb
+            sed -i '/PW_GS/d' "$PW_EXE_FILE".ppdb
+            sed -i '/GAMESCOPE/d' "$PW_EXE_FILE".ppdb
             restart_pp
             ;;
         164)
@@ -6055,8 +6054,8 @@ gui_gamescope () {
     pw_gamescope_process sanitize
 
     # Keep ppdb export list consistent before re-writing gamescope keys
-    sed -i '/^export PW_GS_/d' "${portwine_exe}.ppdb"
-    sed -i '/^export PW_GAMESCOPE_ARGS_NEW=/d' "${portwine_exe}.ppdb"
+    sed -i '/^export PW_GS_/d' "${PW_EXE_FILE}.ppdb"
+    sed -i '/^export PW_GAMESCOPE_ARGS_NEW=/d' "${PW_EXE_FILE}.ppdb"
     edit_db_from_gui "${gs_ppdb_vars[@]}"
 
     restart_pp
@@ -6064,7 +6063,7 @@ gui_gamescope () {
 
 # GUI USERCONF
 gui_userconf () {
-    if [[ -f $portwine_exe ]] ; then
+    if [[ -f $PW_EXE_FILE ]] ; then
         export PW_YAD_FORM_TAB="1"
         export TAB_START="2"
     fi
@@ -6355,9 +6354,9 @@ portwine_create_shortcut () {
     export GDK_BACKEND="x11"
     pw_stop_progress_bar
     pw_exit_tray
-    if [[ ! -e $portwine_exe ]]
+    if [[ ! -e $PW_EXE_FILE ]]
     then return 1
-    elif [[ $(basename "$portwine_exe") =~ (unins0|uninstall|remove) ]]
+    elif [[ $(basename "$PW_EXE_FILE") =~ (unins0|uninstall|remove) ]]
     then return 0
     fi
     pw_create_gui_png
@@ -6394,7 +6393,7 @@ portwine_create_shortcut () {
 portwine_output_yad_shortcut () {
     if [[ $PW_YAD_OUT == "0" ]] || [[ $1 == "--silent" ]] ; then
         if [[ $1 == "--silent" ]] ; then
-            [[ ! -e ${portwine_exe} ]] && return 1
+            [[ ! -e ${PW_EXE_FILE} ]] && return 1
             pw_create_gui_png
             unset name_desktop
             check_variables PW_SHORTCUT_MENU "TRUE"
@@ -6419,8 +6418,8 @@ portwine_output_yad_shortcut () {
         echo "[Desktop Entry]" > "${PORT_DATA_PATH}/${name_desktop}.desktop"
         echo "Name=${name_desktop}" >> "${PORT_DATA_PATH}/${name_desktop}.desktop"
         if check_flatpak
-        then echo "Exec=flatpak run ru.linux_gaming.PortProton \"${portwine_exe}\"" >> "${PORT_DATA_PATH}/${name_desktop}.desktop"
-        else echo "Exec=env \"${PORT_SCRIPTS_PATH}/start.sh\" \"${portwine_exe}\"" >> "${PORT_DATA_PATH}/${name_desktop}.desktop"
+        then echo "Exec=flatpak run ru.linux_gaming.PortProton \"${PW_EXE_FILE}\"" >> "${PORT_DATA_PATH}/${name_desktop}.desktop"
+        else echo "Exec=env \"${PORT_SCRIPTS_PATH}/start.sh\" \"${PW_EXE_FILE}\"" >> "${PORT_DATA_PATH}/${name_desktop}.desktop"
         fi
         {
             echo "Type=Application"
@@ -6460,7 +6459,7 @@ portwine_output_yad_shortcut () {
         fi
     elif [[ "$PW_YAD_OUT" =~ ^(1|2|252)$ ]] ; then
         print_info "Restarting PP..."
-        [[ -n $KEY_MENU ]] && unset portwine_exe
+        [[ -n $KEY_MENU ]] && unset PW_EXE_FILE
         [[ "$PW_GUI_START" == "NOTEBOOK" ]] && unset PW_YAD_FORM_TAB
         [[ -z ${LINKS[0]} ]] && restart_pp
     fi
@@ -6486,14 +6485,14 @@ get_lnk_path () {
 pw_auto_create_shortcut () {
     if [[ "${PW_CHECK_AUTOINSTALL}" == "1" ]] \
     || [[ "${PW_NO_AUTO_CREATE_SHORTCUT}" == "1" ]] \
-    || [[ -z "${portwine_exe}" ]] \
-    || echo "${portwine_exe}" | grep -i "gc_api.exe\|vkplay\|pulseonline\|hoyoplay_launcher_pp" &>/dev/null
+    || [[ -z "${PW_EXE_FILE}" ]] \
+    || echo "${PW_EXE_FILE}" | grep -i "gc_api.exe\|vkplay\|pulseonline\|hoyoplay_launcher_pp" &>/dev/null
     then
         print_warning "Skipping auto create shortcut"
         return 0
     fi
 
-    if [[ "${portwine_exe}" =~ EpicGamesLauncher.exe$ ]]; then
+    if [[ "${PW_EXE_FILE}" =~ EpicGamesLauncher.exe$ ]]; then
         for item_file in "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/ProgramData/Epic/EpicGamesLauncher/Data/Manifests/"*".item"; do
             if [[ -f "${item_file}" ]]; then
                 exe_path=$(jq -r '.InstallLocation + "\\" + .LaunchExecutable' "${item_file}")
@@ -6504,8 +6503,8 @@ pw_auto_create_shortcut () {
                 elif [[ ! -f "${exe_path}.ppdb" ]]; then
                     unset FILE_SHA256SUM DESKTOP_NAME_FILE DESKTOP_CORRECT_FILE
                     item_id=$(jq -r '.AppName' "${item_file}")
-                    portwine_exe="${exe_path}"
-                    PORTWINE_DB_FILE="${portwine_exe}.ppdb"
+                    PW_EXE_FILE="${exe_path}"
+                    PORTWINE_DB_FILE="${PW_EXE_FILE}.ppdb"
                     LAUNCH_URI="com.epicgames.launcher://apps/${item_id}?action=launch&silent=true"
                     pw_init_db
                     export PW_NO_RESTART_PPDB="1"
@@ -6533,18 +6532,18 @@ pw_auto_create_shortcut () {
         parse_lnk "${link_file}"
         link_path="${link_path//\.exe\//\.exe}"
         if exe_path="$(realpath "${link_path}" 2>/dev/null)" ; then
-            export portwine_exe="$exe_path"
+            export PW_EXE_FILE="$exe_path"
         elif exe_path="$(realpath "${link_path//\/Games\//\/games\//}" 2>/dev/null)" ; then
-            export portwine_exe="$exe_path"
+            export PW_EXE_FILE="$exe_path"
         elif exe_path="$(realpath "${link_path//\/Games\//\/GAMES\//}" 2>/dev/null)" ; then
-            export portwine_exe="$exe_path"
+            export PW_EXE_FILE="$exe_path"
         else
             print_warning "Link broken for: $link_name"
             continue
         fi
         print_info "Created link for: $link_name"
         PORTPROTON_NAME="$link_name"
-        resize_png "$portwine_exe" "${PORTPROTON_NAME}" "48" "128"
+        resize_png "$PW_EXE_FILE" "${PORTPROTON_NAME}" "48" "128"
         export PW_NO_RESTART_PPDB=1
         unset PW_ICON_FOR_YAD name_desktop_png
         portwine_create_shortcut
@@ -6610,26 +6609,26 @@ portwine_change_shortcut () {
 
 portwine_search_shortcut () {
     unset PW_DELETE_SHORTCUT_MENU PW_DELETE_SHORTCUT_STEAM PW_DELETE_SHORTCUT_DESKTOP
-    if [[ -n "${portwine_exe}" ]]; then
-        PW_DELETE_MENU="$(grep -il "${portwine_exe}" "${HOME}/.local/share/applications"/*.desktop 2>/dev/null)"
+    if [[ -n "${PW_EXE_FILE}" ]]; then
+        PW_DELETE_MENU="$(grep -il "${PW_EXE_FILE}" "${HOME}/.local/share/applications"/*.desktop 2>/dev/null)"
         read -r -d '' -a PW_DELETE_SHORTCUT_MENU <<< "${PW_DELETE_SHORTCUT_MENU[*]} ${PW_DELETE_MENU// /#@_@#}"
 
-        PW_DELETE_PP="$(grep -il "${portwine_exe}" "${PORT_DATA_PATH}"/*.desktop 2>/dev/null)"
+        PW_DELETE_PP="$(grep -il "${PW_EXE_FILE}" "${PORT_DATA_PATH}"/*.desktop 2>/dev/null)"
         read -r -d '' -a PW_DELETE_SHORTCUT_MENU <<< "${PW_DELETE_SHORTCUT_MENU[*]} ${PW_DELETE_PP// /#@_@#}"
 
-        PW_DELETE_STEAM="$(grep -il "${portwine_exe}" "${STEAM_SCRIPTS}"/*.sh 2>/dev/null)"
+        PW_DELETE_STEAM="$(grep -il "${PW_EXE_FILE}" "${STEAM_SCRIPTS}"/*.sh 2>/dev/null)"
         read -r -d '' -a PW_DELETE_SHORTCUT_STEAM <<< "${PW_DELETE_SHORTCUT_STEAM[*]} ${PW_DELETE_STEAM// /#@_@#}"
 
         if [[ -d "${HOME}/Desktop" ]] ; then
-            PW_DELETE_DESKTOP="$(grep -il "${portwine_exe}" "${HOME}/Desktop"/*.desktop 2>/dev/null)"
+            PW_DELETE_DESKTOP="$(grep -il "${PW_EXE_FILE}" "${HOME}/Desktop"/*.desktop 2>/dev/null)"
             read -r -d '' -a PW_DELETE_SHORTCUT_DESKTOP <<< "${PW_DELETE_SHORTCUT_DESKTOP[*]} ${PW_DELETE_DESKTOP// /#@_@#}"
         fi
         if [[ -d "${HOME}/Рабочий стол" ]] ; then
-            PW_DELETE_DESKTOP="$(grep -il "${portwine_exe}" "${HOME}/Рабочий стол"/*.desktop 2>/dev/null)"
+            PW_DELETE_DESKTOP="$(grep -il "${PW_EXE_FILE}" "${HOME}/Рабочий стол"/*.desktop 2>/dev/null)"
             read -r -d '' -a PW_DELETE_SHORTCUT_DESKTOP <<< "${PW_DELETE_SHORTCUT_DESKTOP[*]} ${PW_DELETE_DESKTOP// /#@_@#}"
         fi
         if [[ $(xdg-user-dir DESKTOP) ]] ; then
-            PW_DELETE_DESKTOP="$(grep -il "${portwine_exe}" "$(xdg-user-dir DESKTOP)"/*.desktop 2>/dev/null)"
+            PW_DELETE_DESKTOP="$(grep -il "${PW_EXE_FILE}" "$(xdg-user-dir DESKTOP)"/*.desktop 2>/dev/null)"
             read -r -d '' -a PW_DELETE_SHORTCUT_DESKTOP <<< "${PW_DELETE_SHORTCUT_DESKTOP[*]} ${PW_DELETE_DESKTOP// /#@_@#}"
         fi
     fi
@@ -6794,9 +6793,9 @@ portwine_start_debug () {
         echo "RUNTIME is enabled" >> "$PW_LOG_FILE"
     fi
     echo "----------------------------------------------------------" >> "$PW_LOG_FILE"
-    if [[ -n "${portwine_exe}" ]] ; then
+    if [[ -n "${PW_EXE_FILE}" ]] ; then
         echo "Debug for programm:" >> "$PW_LOG_FILE"
-        echo "${portwine_exe}" >> "$PW_LOG_FILE"
+        echo "${PW_EXE_FILE}" >> "$PW_LOG_FILE"
         echo "---------------------------------------------------------" >> "$PW_LOG_FILE"
     fi
     echo "libc version:" >> "$PW_LOG_FILE"
@@ -6825,7 +6824,7 @@ portwine_start_debug () {
     echo "$PW_WINE_USE" >> "$PW_LOG_FILE"
     echo "-------------------------------------------------------" >> "$PW_LOG_FILE"
     echo "Program bit depth:" >> "$PW_LOG_FILE"
-    if [[ $(file "$portwine_exe") =~ x86-64 ]] ; then
+    if [[ $(file "$PW_EXE_FILE") =~ x86-64 ]] ; then
         echo "64 bit" >> "$PW_LOG_FILE"
     echo "-----------------------------------------------------------------" >> "$PW_LOG_FILE"
     else
@@ -7072,7 +7071,7 @@ pw_unpack_prefix () {
         if [[ -f "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/.create_shortcut" ]] ; then
             while read -r line
             do
-                export portwine_exe="$PORT_DATA_PATH/data/prefixes/$PW_PREFIX_NAME/$line"
+                export PW_EXE_FILE="$PORT_DATA_PATH/data/prefixes/$PW_PREFIX_NAME/$line"
                 if check_start_from_steam
                 then portwine_output_yad_shortcut --silent
                 else portwine_create_shortcut
@@ -7103,44 +7102,6 @@ pw_autoinstall_from_db () {
     . "${PORT_SCRIPTS_PATH}/pw_autoinstall/${1}"
 }
 
-button_click () {
-    echo "$2" > "${PW_TMPFS_PATH}/tmp_yad_form"
-
-    case "$1" in
-        --normal)
-            kill -s SIGUSR1 "$(pgrep -a yad | grep "\--key=${KEY_MENU}" | awk '{print $1}')" &>/dev/null
-            ;;
-        --start)
-            kill -s SIGUSR1 "$(pgrep -a yad | grep "\--key=${KEY_START}" | awk '{print $1}')" &>/dev/null
-            ;;
-        --userconf)
-            kill -s SIGUSR1 "$(pgrep -a yad | grep "\--key=${KEY_USERCONF_GUI}" | awk '{print $1}')" &>/dev/null
-            ;;
-        --desktop)
-            kill -s SIGUSR1 "$(pgrep -a yad | grep "\--key=${KEY_MENU}" | awk '{print $1}')" &>/dev/null
-            PW_YAD_SET="${PORT_DATA_PATH}/${PW_YAD_SET//#@_@#/ }"
-            if [[ -n $PW_DESKTOP_FILES_REGEX ]] ; then
-                local count=1
-                for y in "${PW_DESKTOP_FILES_REGEX[@]}" ; do
-                    PW_YAD_SET="${PW_YAD_SET//#+_$count#/$y}"
-                    (( count++ ))
-                done
-            fi
-            export DESKTOP_NAME_YAD="${PW_YAD_SET//"$PORT_DATA_PATH/"/}"
-            if check_flatpak
-            then PW_EXEC_FROM_DESKTOP="$(grep Exec "$PW_YAD_SET" | head -n 1 | sed 's|flatpak run ru.linux_gaming.PortProton|\"${PORT_SCRIPTS_PATH}/start.sh\"|' | awk -F'=' '{print $2}')"
-            else PW_EXEC_FROM_DESKTOP="$(grep Exec "$PW_YAD_SET" | head -n 1 | awk -F"=env " '{print $2}')"
-            fi
-
-            print_info "Restarting PP after choose desktop file..."
-            # stop_portwine
-            /usr/bin/env bash -c "${PW_EXEC_FROM_DESKTOP}" &
-            exit 0
-            ;;
-    esac
-}
-export -f button_click
-
 gui_clear_pfx () {
     if yad_question "${translations[Do you want to clear prefix in PortProton?]}" ; then
         pw_clear_pfx
@@ -7163,22 +7124,6 @@ gui_rm_portproton () {
 }
 export -f gui_rm_portproton
 
-gui_pw_update () {
-    export PW_FORCE_UPDATE="1"
-    try_remove_file "${PORT_WINE_TMP_PATH}/scripts_update_notifier"
-    print_info "Restarting PP for check update..."
-    unset SKIP_CHECK_UPDATES
-    restart_pp
-}
-export -f gui_pw_update
-
-change_loc () {
-    export PW_FORCE_CHANGE_LOC="1"
-    print_info "Restarting PP for change language..."
-    restart_pp
-}
-export -f change_loc
-
 open_game_folder () {
     xdg-open "${PATH_TO_GAME}"
     print_info "Restarting PP after open game folder..."
@@ -7192,124 +7137,6 @@ wine_uninstaller () {
     stop_portwine --restart
 }
 export -f wine_uninstaller
-
-gui_open_user_conf () {
-    PW_USERCONF_GUI="$("${pw_yad}" --title="${translations[EDIT USER CONFIG]}" \
-    --text-info --editable --width=800 --height=600 \
-    --window-icon="$PW_GUI_ICON_PATH/portproton.svg" \
-    --button="${translations[BACK]}!$PW_GUI_ICON_PATH/$BUTTON_SIZE.png!":1 \
-    --button="${translations[SAVE]}!$PW_GUI_ICON_PATH/$BUTTON_SIZE.png!":2 \
-    --filename="${PORT_DATA_PATH}/data/user.conf" 2>/dev/null)"
-    YAD_STATUS="$?"
-
-    case "${YAD_STATUS}" in
-        1|252)
-                print_info "Restarting..."
-                restart_pp --userconf
-                ;;
-            2)
-                unset PW_VULKAN_DRIVER_USE
-                echo "${PW_USERCONF_GUI}" > "${PORT_DATA_PATH}/data/user.conf"
-                print_info "Restarting..."
-                restart_pp --userconf
-                ;;
-    esac
-}
-export -f gui_open_user_conf
-
-gui_open_scripts_from_backup () {
-    [[ -d "${PORT_WINE_TMP_PATH}/scripts_backup/" ]] && cd "${PORT_WINE_TMP_PATH}/scripts_backup/" || cd "$HOME"
-    PW_SCRIPT_FROM_BACKUP=$("${pw_yad}" --file --width=650 --height=500 \
-    --window-icon="$PW_GUI_ICON_PATH/portproton.svg" --title "SCRIPTS FROM BACKUP" --file-filter="backup_scripts|scripts_v*.tar.gz" 2>/dev/null )
-    YAD_STATUS="$?"
-
-    if [[ "$YAD_STATUS" == "1" || "$YAD_STATUS" == "252" ]] ; then
-        restart_pp
-    fi
-    unpack "$PW_SCRIPT_FROM_BACKUP" "${PORT_DATA_PATH}/data/"
-    echo "0" > "${PORT_WINE_TMP_PATH}/scripts_update_notifier"
-    print_info "Restarting PP after backup..."
-    restart_pp
-}
-export -f gui_open_scripts_from_backup
-
-#GUI CREDITS AND ABOUT
-gui_credits () {
-    ########################################################################
-    # grep ';subscription;' stat-subscriptions.csv | awk -F';' '{print $1}' | sort -u | sed "s/\"//g" > thanks
-    ########################################################################
-    KEY_CREDITS=$RANDOM
-
-    # shellcheck source=/dev/null
-    source "${PORT_DATA_PATH}/data/scripts/thanks"
-
-    "${pw_yad}" --plug="${KEY_CREDITS}" --tabnum=1 --scroll \
-    --text-info <<< "${translations[Author:   Casro-Fidel (Mikhail Tergoev)
-
-Developer assistants and testers:]}
-$(credits_devel)" 2>/dev/null &
-
-    "${pw_yad}" --plug="${KEY_CREDITS}" --tabnum=2 --text-info --scroll <<< "MIT License
-
-Copyright © $(date +%Y) Castro-Fidel (linux-gaming.ru)
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the \"Software\"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED (AS IS), WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE." 2>/dev/null &
-
-    "${pw_yad}" --plug="${KEY_CREDITS}" --tabnum=3 \
-    --text-info --show-uri --scroll \
-    <<< "${translations[The project was supported:
-https://boosty.to/portwine-linux.ru]}
-$(credits_boosty)
-
-${translations[The list will be updated...]}" 2>/dev/null &
-
-    "${pw_yad}" --plug="${KEY_CREDITS}" --tabnum=4 \
-    --text="${translations[Do you want to join and help in the development of the project:]}" \
-    --image-path="$PW_GUI_ICON_PATH" --image="port_proton" \
-    --uri-color=red --show-uri --text-info --scroll <<< "${translations[Website:  http://linux-gaming.ru
-TG:       https://t.me/linux_gaming_ru
-VK:       https://vk.com/linuxgamingru
--------------------------------------------
-Become a paid subscriber:
-boosty:  https://boosty.to/portwine-linux.ru
-Yandex wallet:   410012267513818
--------------------------------------------]}" 2>/dev/null &
-
-    "${pw_yad}" --plug="${KEY_CREDITS}" --tabnum=5 --show-uri --title="THIRD PARTY LIBRARIES" \
-    --text-info <<< "${translations[                               Third-party libraries that are used in PortProton
-
-            PortProton is built on the basis of the following free software libraries:
-
-WINE-PROTON: https://github.com/ValveSoftware/Proton
-WINE-PROTON-GE: https://github.com/GloriousEggroll/proton-ge-custom/
-Kron4ek/Wine: https://github.com/Kron4ek/Wine-Builds
-YAD: https://github.com/v1cont/yad
-DGVOODOO2: https://dege.fw.hu/]}" 2>/dev/null &
-
-    "${pw_yad}" --title "${translations[ABOUT US]}" --key="${KEY_CREDITS}" --window-icon="$PW_GUI_ICON_PATH/portproton.svg" \
-    --notebook --no-buttons  --tab-pos=bottom --expand --width=950 --height=500 \
-    --tab="${translations[AUTORS]}" --tab="${translations[LICENSE]}" \
-    --tab="${translations[SPONSORS]}" --tab="${translations[JOIN]}" \
-    --tab="${translations[THIRD PARTY LIBRARIES]}"
-
-    restart_pp
-}
 
 update_ext_ppdb () {
     if [[ -f "$1" ]] ; then
@@ -7330,10 +7157,10 @@ update_ext_ppdb () {
             fi
             [[ -n $PW_EXEC_FROM_DESKTOP ]] && break
         done
-        portwine_exe="$(echo "$PW_EXEC_FROM_DESKTOP" | awk -F'"' '{print $4}')"
-        if [[ -f "$portwine_exe" ]] ; then
-            print_info "Moved new $tmp_ppdb_file to ${portwine_exe}.ppdb"
-            mv -f "$tmp_ppdb_file" "${portwine_exe}.ppdb"
+        PW_EXE_FILE="$(echo "$PW_EXEC_FROM_DESKTOP" | awk -F'"' '{print $4}')"
+        if [[ -f "$PW_EXE_FILE" ]] ; then
+            print_info "Moved new $tmp_ppdb_file to ${PW_EXE_FILE}.ppdb"
+            mv -f "$tmp_ppdb_file" "${PW_EXE_FILE}.ppdb"
             if [[ $PW_CLI == "1" ]] ; then
                 exit 0
             else
@@ -7346,17 +7173,17 @@ update_ext_ppdb () {
 
             if yad_question "${translations[No shortcut found to launch]}:<b>\n${tmp_ppdb_exe[@]}\n</b>\n     ${translations[Do you want to specify the path to the file manually?]}\n" ; then
                 cd "$HOME"
-                portwine_exe=$("${pw_yad}" --file --width=750 --height=600 \
+                PW_EXE_FILE=$("${pw_yad}" --file --width=750 --height=600 \
                 --window-icon="$PW_GUI_ICON_PATH/portproton.svg" --title "EXE FILE" --file-filter="*.exe" 2>/dev/null )
                 YAD_STATUS="$?"
 
                 if [[ "$YAD_STATUS" == "1" || "$YAD_STATUS" == "252" ]] ; then
                     exit 1
                 fi
-                print_info "Moved new $tmp_ppdb_file to ${portwine_exe}.ppdb"
-                mv -f "$tmp_ppdb_file" "${portwine_exe}.ppdb"
+                print_info "Moved new $tmp_ppdb_file to ${PW_EXE_FILE}.ppdb"
+                mv -f "$tmp_ppdb_file" "${PW_EXE_FILE}.ppdb"
                 print_info "Restarting PP after move new ppdb file..."
-                /usr/bin/env bash -c "${PORT_SCRIPTS_PATH}/start.sh $portwine_exe" &
+                /usr/bin/env bash -c "${PORT_SCRIPTS_PATH}/start.sh $PW_EXE_FILE" &
                 exit 0
             else
                 exit 1

@@ -20,9 +20,9 @@ if try_download "https://webinstallers.gog-statics.com/download/GOG_Galaxy_${GOG
 then
     pw_start_progress_bar_install_game "GOG Galaxy."
     pw_run "${PW_AUTOINSTALL_EXE}"
-    portwine_exe="$WINEPREFIX/drive_c/Program Files (x86)/GOG Galaxy/GalaxyClient.exe"
+    PW_EXE_FILE="$WINEPREFIX/drive_c/Program Files (x86)/GOG Galaxy/GalaxyClient.exe"
     try_remove_file "${PW_AUTOINSTALL_EXE}"
-    try_remove_file "${portwine_exe}.ppdb"
+    try_remove_file "${PW_EXE_FILE}.ppdb"
     kill_portwine
     pw_stop_progress_bar
     portwine_create_shortcut

@@ -19,10 +19,10 @@ then
     get_and_set_reg_file --add 'Software\Wine\X11 Driver' 'Decorated' 'REG_SZ' "N" "user"
     pw_kill_autostart launcher.exe 3 &
     pw_run "${PW_AUTOINSTALL_EXE}"
-    portwine_exe="${WINEPREFIX}/drive_c/users/$USER/AppData/Local/Crossout Launcher/launcher.exe"
+    PW_EXE_FILE="${WINEPREFIX}/drive_c/users/$USER/AppData/Local/Crossout Launcher/launcher.exe"
     pw_create_unique_exe "crossout_launcher_pp"
     try_remove_file "${PW_AUTOINSTALL_EXE}"
-    try_remove_file "${portwine_exe}.ppdb"
+    try_remove_file "${PW_EXE_FILE}.ppdb"
     kill_portwine
     pw_stop_progress_bar
     portwine_create_shortcut

@@ -16,10 +16,10 @@ then
     pw_start_progress_bar_install_game "Wargaming Game Center."
     pw_kill_autostart wgc.exe &
     pw_run "${PW_AUTOINSTALL_EXE}"
-    portwine_exe="$WINEPREFIX/drive_c/ProgramData/Wargaming.net/GameCenter/api/wgc_api.exe"
+    PW_EXE_FILE="$WINEPREFIX/drive_c/ProgramData/Wargaming.net/GameCenter/api/wgc_api.exe"
     export PORTWINE_CREATE_SHORTCUT_NAME="Wargaming Game Center"
     try_remove_file "${PW_AUTOINSTALL_EXE}"
-    try_remove_file "${portwine_exe}.ppdb"
+    try_remove_file "${PW_EXE_FILE}.ppdb"
     kill_portwine
     portwine_create_shortcut
 fi

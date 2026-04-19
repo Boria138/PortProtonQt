@@ -16,7 +16,7 @@ if try_download "https://cdn6.rf4game.ru/rf4/RF4SetupRU.exe" "${PW_AUTOINSTALL_E
 then
     create_new_dir "${WINEPREFIX}/drive_c/games/Russian Fishing 4"
     mv "${PW_USER_TEMP}/RF4SetupRU.exe" "${WINEPREFIX}/drive_c/games/Russian Fishing 4/RF4.exe"
-    portwine_exe="${WINEPREFIX}/drive_c/games/Russian Fishing 4/RF4.exe"
+    PW_EXE_FILE="${WINEPREFIX}/drive_c/games/Russian Fishing 4/RF4.exe"
     kill_portwine
     portwine_create_shortcut
 fi

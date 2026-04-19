@@ -14,12 +14,12 @@ then
     pw_start_progress_bar_install_game "Metal War Online."
     pw_run "${PW_AUTOINSTALL_EXE}"
     if [[ -d "$WINEPREFIX/drive_c/games/" ]] ; then
-        portwine_exe="$WINEPREFIX/drive_c/games/MetalWarOnline/MWOLauncher.exe"
+        PW_EXE_FILE="$WINEPREFIX/drive_c/games/MetalWarOnline/MWOLauncher.exe"
     else
-        portwine_exe="$WINEPREFIX/drive_c/Games/MetalWarOnline/MWOLauncher.exe"
+        PW_EXE_FILE="$WINEPREFIX/drive_c/Games/MetalWarOnline/MWOLauncher.exe"
     fi
     try_remove_file "${PW_AUTOINSTALL_EXE}"
-    try_remove_file "${portwine_exe}.ppdb"
+    try_remove_file "${PW_EXE_FILE}.ppdb"
     kill_portwine
     pw_stop_progress_bar
     export PORTWINE_CREATE_SHORTCUT_NAME="Metal War Online"

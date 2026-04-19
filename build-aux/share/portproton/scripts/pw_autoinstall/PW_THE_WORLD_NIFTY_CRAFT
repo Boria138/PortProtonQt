@@ -16,10 +16,10 @@ if try_download "https://installer.launcher.xsolla.com/xlauncher-builds/xsolla-l
 then
     pw_start_progress_bar_install_game "The World of Nifty Craft."
     pw_run "${PW_AUTOINSTALL_EXE}"
-    portwine_exe="$WINEPREFIX/drive_c/users/steamuser/AppData/Local/The World of Nifty Craft/launcher.exe"
+    PW_EXE_FILE="$WINEPREFIX/drive_c/users/steamuser/AppData/Local/The World of Nifty Craft/launcher.exe"
     pw_create_unique_exe "Nifty_Craft_launcher"
     try_remove_file "${PW_AUTOINSTALL_EXE}"
-    try_remove_file "${portwine_exe}.ppdb"
+    try_remove_file "${PW_EXE_FILE}.ppdb"
     kill_portwine
     pw_stop_progress_bar
     portwine_create_shortcut

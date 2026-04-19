@@ -20,10 +20,10 @@ then
     pw_start_progress_bar_install_game "Lesta Game Center."
     pw_kill_autostart lgc.exe &
     pw_run "${PW_AUTOINSTALL_EXE}"
-    portwine_exe="$WINEPREFIX/drive_c/ProgramData/Lesta/GameCenter/api/lgc_api.exe"
+    PW_EXE_FILE="$WINEPREFIX/drive_c/ProgramData/Lesta/GameCenter/api/lgc_api.exe"
     export PORTWINE_CREATE_SHORTCUT_NAME="Lesta Game Center"
     try_remove_file "${PW_AUTOINSTALL_EXE}"
-    try_remove_file "${portwine_exe}.ppdb"
+    try_remove_file "${PW_EXE_FILE}.ppdb"
     kill_portwine
     portwine_create_shortcut
 fi

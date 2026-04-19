@@ -29,6 +29,7 @@ else
 fi
 
 export PORT_SCRIPTS_PATH
+export PW_LOG_FILE="${PORT_WINE_PATH}/PortProton.log"
 
 echo "PORT_DATA_PATH=$PORT_DATA_PATH"
 echo "PORT_SCRIPTS_PATH=$PORT_SCRIPTS_PATH"
@@ -71,7 +72,7 @@ fi
 if [[ "${1,,}" =~ \.ppack$ ]] ; then
     export PW_NO_RESTART_PPDB="1"
     export PW_DISABLED_CREATE_DB="1"
-    portwine_exe="$1"
+    PW_EXE_FILE="$1"
 elif [[ "${1,,}" =~ \.ppdb$ ]] ; then
     update_ext_ppdb "$1"
 elif [[ "$1" == portproton://* ]] ; then
@@ -87,32 +88,32 @@ elif [[ "$1" == portproton://* ]] ; then
     fi
 elif [[ "${1,,}" =~ \.(exe|bat|msi|reg|lnk)$ ]] ; then
     if [[ -f "$1" ]] ; then
-        portwine_exe="$(realpath -s "$1")"
+        PW_EXE_FILE="$(realpath -s "$1")"
     elif [[ -f "$OLDPWD/$1" ]] ; then
-        portwine_exe="$(realpath -s "$OLDPWD/$1")"
+        PW_EXE_FILE="$(realpath -s "$OLDPWD/$1")"
     elif [[ ! -f "$1" ]] ; then
-        portwine_exe="$1"
+        PW_EXE_FILE="$1"
         MISSING_DESKTOP_FILE="1"
     fi
-    if [[ -n "${portwine_exe}" && "${1,,}" =~ \.lnk$ ]] ; then
-        get_lnk "${portwine_exe}"
-        portwine_exe="$(realpath "${link_path}" 2>/dev/null)"
+    if [[ -n "${PW_EXE_FILE}" && "${1,,}" =~ \.lnk$ ]] ; then
+        get_lnk "${PW_EXE_FILE}"
+        PW_EXE_FILE="$(realpath "${link_path}" 2>/dev/null)"
     fi
 elif [[ "$1" =~ ^--(debug|launch|edit-db)$ && "${2,,}" =~ \.(exe|bat|msi|reg)$ ]] ; then
     if [[ -f "$2" ]] ; then
-        portwine_exe="$(realpath -s "$2")"
+        PW_EXE_FILE="$(realpath -s "$2")"
     elif [[ -f "$OLDPWD/$2" ]] ; then
-        portwine_exe="$(realpath -s "$OLDPWD/$2")"
+        PW_EXE_FILE="$(realpath -s "$OLDPWD/$2")"
     fi
 fi
-export portwine_exe
+export PW_EXE_FILE
 
 # HOTFIX - ModernWarships
-if echo "$portwine_exe" | grep ModernWarships &>/dev/null \
-&& [[ -f "$(dirname "${portwine_exe}")/Modern Warships.exe" ]]
+if echo "$PW_EXE_FILE" | grep ModernWarships &>/dev/null \
+&& [[ -f "$(dirname "${PW_EXE_FILE}")/Modern Warships.exe" ]]
 then
-    portwine_exe="$(dirname "${portwine_exe}")/Modern Warships.exe"
-    export portwine_exe
+    PW_EXE_FILE="$(dirname "${PW_EXE_FILE}")/Modern Warships.exe"
+    export PW_EXE_FILE
     MISSING_DESKTOP_FILE="0"
 fi
 
@@ -402,7 +403,7 @@ ${translations[Usage examples:]}
 
         ppdb_path="${exe_path}.ppdb"
         if [[ ! -f "$ppdb_path" ]]; then
-            export portwine_exe="$exe_path"
+            export PW_EXE_FILE="$exe_path"
             pw_init_db
         fi
 
@@ -491,11 +492,11 @@ ${translations[Usage examples:]}
         stop_portwine
         ;;
     *)
-        if [[ -f "$portwine_exe" ]] ; then
+        if [[ -f "$PW_EXE_FILE" ]] ; then
             portwine_launch
             stop_portwine
         else
-            fatal "File not found: $portwine_exe"
+            fatal "File not found: $PW_EXE_FILE"
         fi
         ;;
 esac
@@ -507,7 +508,7 @@ esac
 #     gui_pw_reinstall_pp) pw_reinstall_pp ;;
 #     gui_proton_downloader) gui_proton_downloader ;;
 #     gui_open_scripts_from_backup) gui_open_scripts_from_backup ;;
-#     find_ext_ppdb) find_ext_ppdb "$portwine_exe" ;;
+#     find_ext_ppdb) find_ext_ppdb "$PW_EXE_FILE" ;;
 #     pw_create_prefix_backup) pw_create_prefix_backup ;;
 #     pw_start_cont_xterm) pw_start_cont_xterm ;;
 #     PW_*) pw_autoinstall_from_db ;;
