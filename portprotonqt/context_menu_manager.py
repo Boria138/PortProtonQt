@@ -5,8 +5,6 @@ import shutil
 import subprocess
 import threading
 import orjson
-import psutil
-import signal
 from PySide6.QtWidgets import QMessageBox, QDialog, QMenu, QLineEdit, QApplication
 from PySide6.QtCore import QUrl, QPoint, QObject, Signal, Qt, QStandardPaths
 from PySide6.QtGui import QDesktopServices, QIcon, QKeySequence
@@ -369,31 +367,10 @@ class ContextMenuManager:
 
         # Check if the game is running
         if self._is_game_running(game_card):
-            # Stop the game
-            if hasattr(self.parent, 'game_processes') and self.parent.game_processes:
-                for proc in self.parent.game_processes:
-                    try:
-                        parent = psutil.Process(proc.pid)
-                        children = parent.children(recursive=True)
-                        for child in children:
-                            try:
-                                child.terminate()
-                            except psutil.NoSuchProcess:
-                                pass
-                        psutil.wait_procs(children, timeout=5)
-                        for child in children:
-                            if child.is_running():
-                                child.kill()
-                        os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-                    except psutil.NoSuchProcess:
-                        pass
-                self.parent.game_processes = []
-                self.parent.resetPlayButton()
-                if hasattr(self.parent, 'checkProcessTimer') and self.parent.checkProcessTimer is not None:
-                    self.parent.checkProcessTimer.stop()
-                    self.parent.checkProcessTimer.deleteLater()
-                    self.parent.checkProcessTimer = None
+            if hasattr(self.parent, "stop_running_game") and self.parent.stop_running_game():
                 self._show_status_message(_("Stopped '{game_name}'").format(game_name=game_card.name))
+            else:
+                self.signals.show_warning_dialog.emit(_("Error"), _("Failed to stop game"))
             return
 
         # Launch the game
