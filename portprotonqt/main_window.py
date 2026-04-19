@@ -33,6 +33,7 @@ from portprotonqt.config_utils import (
     save_fullscreen_config, read_window_geometry, save_window_geometry, reset_config,
     clear_cache, read_auto_fullscreen_gamepad, save_auto_fullscreen_gamepad, read_rumble_config, save_rumble_config, read_gamepad_type, save_gamepad_type, read_minimize_to_tray, save_minimize_to_tray,
     read_auto_card_size, save_auto_card_size, get_portproton_start_command, read_hide_autoinstall_tab, save_hide_autoinstall_tab,
+    get_portproton_scripts_path,
     read_autostart_enabled, save_autostart_enabled, apply_xdg_autostart, read_start_minimized, save_start_minimized,
     read_badge_view_mode, save_badge_view_mode
 )
@@ -66,6 +67,32 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
     games_loaded = Signal(list)
     update_progress = Signal(int)
     update_status_message = Signal(str, int)
+
+    def _get_lg_versions_from_var(self) -> list[str]:
+        """Read Proton/Wine LG versions from scripts/var."""
+        scripts_path = get_portproton_scripts_path()
+        if not scripts_path:
+            return []
+
+        var_path = os.path.join(scripts_path, "var")
+        if not os.path.exists(var_path):
+            return []
+
+        versions: list[str] = []
+        target_keys = ("PW_PROTON_LG_VER", "PW_WINE_LG_VER")
+        try:
+            with open(var_path, encoding="utf-8") as var_file:
+                for line in var_file:
+                    line_stripped = line.strip()
+                    for key in target_keys:
+                        prefix = f"export {key}="
+                        if line_stripped.startswith(prefix):
+                            value = line_stripped[len(prefix):].strip().strip('"\'')
+                            if value and value not in versions:
+                                versions.append(value)
+        except OSError as exc:
+            logger.warning("Failed to read LG versions from %s: %s", var_path, exc)
+        return versions
 
     def __init__(self, app_name: str, version: str, launch_exe: str | None = None, resolution: tuple[int, int] | None = None, show_system_tab: bool = False):
         super().__init__()
@@ -1438,6 +1465,10 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         formLayout.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
 
         self.wine_versions = sorted([d for d in os.listdir(dist_path) if os.path.isdir(os.path.join(dist_path, d))], key=version_sort_key)
+        for version in self._get_lg_versions_from_var():
+            if version not in self.wine_versions:
+                self.wine_versions.append(version)
+        self.wine_versions.sort(key=version_sort_key)
         self.wineCombo = QComboBox()
         self.wineCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.wineCombo.addItems(self.wine_versions)
@@ -1782,6 +1813,10 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
         # Update the wine versions list with sorting
         self.wine_versions = sorted([d for d in os.listdir(dist_path) if os.path.isdir(os.path.join(dist_path, d))], key=version_sort_key)
+        for version in self._get_lg_versions_from_var():
+            if version not in self.wine_versions:
+                self.wine_versions.append(version)
+        self.wine_versions.sort(key=version_sort_key)
         self.wineCombo.clear()
         self.wineCombo.addItems(self.wine_versions)
 
