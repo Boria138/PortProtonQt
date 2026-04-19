@@ -577,15 +577,11 @@ class ContextMenuManager:
         desktop_files = glob.glob(os.path.join(self.portproton_location, "*.desktop"))
 
         if normalized_game_name:
-            repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             xdg_data_home = os.getenv(
                 "XDG_DATA_HOME",
                 os.path.join(os.path.expanduser("~"), ".local", "share")
             )
-            custom_roots = [
-                os.path.join(xdg_data_home, "PortProtonQt", "custom_data"),
-                os.path.join(repo_root, "portprotonqt", "custom_data"),
-            ]
+            custom_roots = [os.path.join(xdg_data_home, "PortProtonQt", "custom_data")]
             for custom_root in custom_roots:
                 if not os.path.isdir(custom_root):
                     continue

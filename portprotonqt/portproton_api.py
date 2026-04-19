@@ -88,14 +88,12 @@ def extract_exe_name(exec_line: str) -> str:
 class PortProtonAPI:
     """API to fetch game assets (cover, metadata) and forum topics from the PortProtonQt repository."""
     def __init__(self, downloader: Downloader | None = None):
-        self.base_url = "https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/portprotonqt/custom_data"
+        self.base_url = "https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt-Custom-Metadata/raw/branch/main"
         self.downloader = downloader or Downloader(max_workers=4)
         self.xdg_data_home = os.getenv("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share"))
         self.custom_data_dir = os.path.join(self.xdg_data_home, "PortProtonQt", "custom_data")
         os.makedirs(self.custom_data_dir, exist_ok=True)
         self.portproton_location = get_portproton_location()
-        self.repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        self.builtin_custom_folder = os.path.join(self.repo_root, "custom_data")
         self._autoinstall_cache = None  # In-memory cache
         self._head_positive_cache: set[str] = set()
         self._head_negative_cache: set[str] = set()

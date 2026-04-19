@@ -720,21 +720,16 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             parts = shlex.split(exec_line)
             game_exe = os.path.expanduser(parts[3] if len(parts) >= 4 else exec_line)
 
-        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        builtin_custom_folder = os.path.join(repo_root, "portprotonqt", "custom_data")
         xdg_data_home = os.getenv("XDG_DATA_HOME",
                                 os.path.join(os.path.expanduser("~"), ".local", "share"))
         user_custom_folder = os.path.join(xdg_data_home, "PortProtonQt", "custom_data")
         os.makedirs(user_custom_folder, exist_ok=True)
 
-        builtin_cover = ""
         user_cover = ""
         user_game_folder = ""
-        builtin_game_folder = ""
 
         if game_exe:
             exe_name = os.path.splitext(os.path.basename(game_exe))[0]
-            builtin_game_folder = os.path.join(builtin_custom_folder, exe_name)
             user_game_folder = os.path.join(user_custom_folder, exe_name)
             os.makedirs(user_game_folder, exist_ok=True)
 
@@ -749,14 +744,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                     if results["metadata"]:
                         logger.info(f"Downloaded metadata for {exe_name}: {results['metadata']}")
                 self.portproton_api.download_game_assets_async(exe_name, timeout=5, callback=on_assets_downloaded)
-
-            # Read cover
-            builtin_files = set(os.listdir(builtin_game_folder)) if os.path.exists(builtin_game_folder) else set()
-            for ext in [".jpg", ".png", ".jpeg", ".bmp"]:
-                candidate = f"cover{ext}"
-                if candidate in builtin_files:
-                    builtin_cover = os.path.join(builtin_game_folder, candidate)
-                    break
 
             user_files = set(os.listdir(user_game_folder)) if os.path.exists(user_game_folder) else set()
             for ext in [".jpg", ".png", ".jpeg", ".bmp"]:
@@ -782,19 +769,14 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
             # Read translations from metadata.txt
             user_metadata_file = os.path.join(user_game_folder, "metadata.txt")
-            builtin_metadata_file = os.path.join(builtin_game_folder, "metadata.txt")
 
-            # Try user translations first
             translations = {'name': desktop_name, 'description': ''}
             if os.path.exists(user_metadata_file):
                 translations = read_metadata_translations(user_metadata_file, language_code)
-            elif os.path.exists(builtin_metadata_file):
-                translations = read_metadata_translations(builtin_metadata_file, language_code)
 
             final_name = translations['name']
             final_desc = translations['description'] or steam_info.get("description", "")
             final_cover = (user_cover if user_cover else
-                        builtin_cover if builtin_cover else
                         steam_info.get("cover", "") or entry.get("Icon", ""))
 
             callback((
@@ -1085,19 +1067,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 cover_for_shortcut = dialog.last_cover_path if dialog.last_cover_path else user_cover
                 self._sync_game_shortcuts_from_dialog(dialog, name, exec_line, cover_for_shortcut)
 
-                # Builtin custom folder (adapt path)
-                repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                builtin_custom_folder = os.path.join(repo_root, "portprotonqt", "custom_data")
-                builtin_game_folder = os.path.join(builtin_custom_folder, exe_name)
-                builtin_cover = ""
-                if os.path.exists(builtin_game_folder):
-                    builtin_files = set(os.listdir(builtin_game_folder))
-                    for ext in [".jpg", ".png", ".jpeg", ".bmp"]:
-                        candidate = f"cover{ext}"
-                        if candidate in builtin_files:
-                            builtin_cover = os.path.join(builtin_game_folder, candidate)
-                            break
-
                 # User cover fallback
                 user_cover_path = cover_path  # Already set if user provided
 
@@ -1112,13 +1081,10 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
                 # Read translations from metadata.txt
                 user_metadata_file = os.path.join(custom_folder, "metadata.txt")
-                builtin_metadata_file = os.path.join(builtin_game_folder, "metadata.txt")
 
                 translations = {'name': name, 'description': description}
                 if os.path.exists(user_metadata_file):
                     translations = read_metadata_translations(user_metadata_file, language_code)
-                elif os.path.exists(builtin_metadata_file):
-                    translations = read_metadata_translations(builtin_metadata_file, language_code)
 
                 final_name = translations['name']
                 final_desc = translations['description']
@@ -1126,9 +1092,11 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 def on_steam_info(steam_info: dict):
                     nonlocal final_name, final_desc
                     # Adapt final_cover logic from _process_desktop_file_async
-                    final_cover = (user_cover_path if user_cover_path else
-                                builtin_cover if builtin_cover else
-                                steam_info.get("cover", "") or entry.get("Icon", ""))
+                    final_cover = (
+                        user_cover_path
+                        if user_cover_path
+                        else steam_info.get("cover", "") or entry.get("Icon", "")
+                    )
 
                     # Use Steam description as fallback if no translation
                     steam_desc = steam_info.get("description", "")
@@ -2699,8 +2667,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         exe_path = os.path.abspath(exe_path)
         exe_name = os.path.splitext(os.path.basename(exe_path))[0]
 
-        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        builtin_game_folder = os.path.join(repo_root, "portprotonqt", "custom_data", exe_name)
         xdg_data_home = os.getenv(
             "XDG_DATA_HOME",
             os.path.join(os.path.expanduser("~"), ".local", "share")
@@ -2713,16 +2679,12 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         )
 
         local_cover_path = ""
-        for folder in (user_game_folder, builtin_game_folder):
-            if not os.path.isdir(folder):
-                continue
+        if os.path.isdir(user_game_folder):
             for ext in (".jpg", ".png", ".jpeg", ".bmp"):
-                candidate_cover = os.path.join(folder, f"cover{ext}")
+                candidate_cover = os.path.join(user_game_folder, f"cover{ext}")
                 if os.path.exists(candidate_cover):
                     local_cover_path = candidate_cover
                     break
-            if local_cover_path:
-                break
 
         generated_cover_path = ""
         if not local_cover_path and os.path.isfile(exe_path) and exe_path.lower().endswith(".exe"):
