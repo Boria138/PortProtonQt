@@ -15,8 +15,6 @@ fi
 
 $PW_DEBUG
 
-echo "test 11111 $PORT_DATA_PATH"
-
 if [[ $(id -u) = 0 ]] \
 && [[ ! -e "/userdata/system/batocera.conf" ]]
 then
@@ -30,10 +28,10 @@ else
     PORT_SCRIPTS_PATH="$(dirname "$(realpath "$0")")"
 fi
 
-# PORT_DATA_PATH будет определяться из ppqt, проверить переменную во всех скриптах
-# PORT_DATA_PATH="$(dirname "$(dirname "$PORT_SCRIPTS_PATH")")"
+export PORT_SCRIPTS_PATH
 
-export PORT_SCRIPTS_PATH PORT_DATA_PATH
+echo "PORT_DATA_PATH=$PORT_DATA_PATH"
+echo "PORT_SCRIPTS_PATH=$PORT_SCRIPTS_PATH"
 
 # shellcheck source=/dev/null
 source "$PORT_SCRIPTS_PATH/functions_helper"
@@ -348,10 +346,6 @@ ${translations[Usage examples:]}
     --update)
         gui_pw_update
         ;;
-    --launch)
-        portwine_launch
-        stop_portwine
-        ;;
     --edit-db)
         # --edit-db /полный/путь/до/файла.exe PW_MANGOHUD=1 PW_VKBASALT=0 (и т.д) для примера
         set_several_variables "${@:3}"
@@ -492,6 +486,36 @@ ${translations[Usage examples:]}
     --initial)
         exit 0
         ;;
+    --launch)
+        portwine_launch
+        stop_portwine
+        ;;
+    *)
+        if [[ -f "$portwine_exe" ]] ; then
+            portwine_launch
+            stop_portwine
+        else
+            fatal "File not found: $portwine_exe"
+        fi
+        ;;
 esac
 
+# case "$PW_YAD_SET" in
+#     DEBUG|102) portwine_start_debug ;;
+#     gui_clear_pfx) gui_clear_pfx ;;
+#     gui_rm_portproton) gui_rm_portproton ;;
+#     gui_pw_reinstall_pp) pw_reinstall_pp ;;
+#     gui_proton_downloader) gui_proton_downloader ;;
+#     gui_open_scripts_from_backup) gui_open_scripts_from_backup ;;
+#     find_ext_ppdb) find_ext_ppdb "$portwine_exe" ;;
+#     pw_create_prefix_backup) pw_create_prefix_backup ;;
+#     pw_start_cont_xterm) pw_start_cont_xterm ;;
+#     PW_*) pw_autoinstall_from_db ;;
+#     *.desktop) button_click --desktop ;;
+    # WINETRICKS|116) pw_prefix_manager ;;
+    # gui_open_user_conf) gui_open_user_conf ;;
+
+
+
+print_warning "FINISH"
 stop_portwine
