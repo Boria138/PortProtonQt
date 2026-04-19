@@ -477,6 +477,9 @@ ${translations[Usage examples:]}
         portwine_launch
         stop_portwine
         ;;
+    --stop)
+        stop_portwine
+        ;;
     *)
         if [[ -f "$PW_EXE_FILE" ]] ; then
             portwine_launch
