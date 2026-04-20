@@ -499,7 +499,6 @@ ${translations[Usage examples:]}
 esac
 
 # portwine_start_debug ;;
-# gui_proton_downloader ;;
 
 #TODO: move to QT
 # update_ext_ppdb

@@ -7,4 +7,4 @@ export PW_WINE_USE="PROTON_LG_7-54"
 export PW_PREFIX_NAME="APOLLO_JUSTICE"
 export WINEDLLOVERRIDES="winmm.dll=n,b"
 
-gui_proton_downloader silent "$PW_WINE_USE"
+gui_proton_downloader "$PW_WINE_USE"

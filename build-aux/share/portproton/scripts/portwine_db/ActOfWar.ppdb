@@ -6,4 +6,4 @@
 export PW_WINE_USE="WINE-9.14-AMD64"
 export PW_PREFIX_NAME="ACT_OF_WAR"
 
-gui_proton_downloader silent "$PW_WINE_USE"
+gui_proton_downloader "$PW_WINE_USE"
