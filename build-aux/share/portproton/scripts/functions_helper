@@ -1668,7 +1668,7 @@ pw_check_and_download_dxvk_and_vkd3d () {
                     try_remove_file "${PW_VULKAN_DIR}/dxvk-${DXVK_VAR_VER}.tar.xz"
                     try_remove_dir "${PW_VULKAN_DIR}/dxvk-${DXVK_VAR_VER}"
 
-                    yad_error_download && pw_check_and_download_dxvk_and_vkd3d || exit 1
+                    fatal "Failed to download and unpack dxvk"
                 fi
             elif try_download "https://github.com/doitsujin/dxvk/releases/download/v${DXVK_VAR_VER}/dxvk-${DXVK_VAR_VER}.tar.gz" \
                                        "${PW_VULKAN_DIR}/dxvk-${DXVK_VAR_VER}.tar.gz"  no_mirror ; then
@@ -1678,10 +1678,10 @@ pw_check_and_download_dxvk_and_vkd3d () {
                     try_remove_file "${PW_VULKAN_DIR}/dxvk-${DXVK_VAR_VER}.tar.gz"
                     try_remove_dir "${PW_VULKAN_DIR}/dxvk-${DXVK_VAR_VER}"
 
-                    yad_error_download && pw_check_and_download_dxvk_and_vkd3d || exit 1
+                    fatal "Failed to download and unpack dxvk"
                 fi
             else
-                yad_error_download && pw_check_and_download_dxvk_and_vkd3d || exit 1
+                fatal "Failed to download and unpack dxvk"
             fi
         fi
     done
@@ -1697,8 +1697,7 @@ pw_check_and_download_dxvk_and_vkd3d () {
                 else
                     try_remove_file "${PW_VULKAN_DIR}/vkd3d-proton-${VKD3D_VAR_VER}.tar.xz"
                     try_remove_dir "${PW_VULKAN_DIR}/vkd3d-proton-${VKD3D_VAR_VER}"
-
-                    yad_error_download && pw_check_and_download_dxvk_and_vkd3d || exit 1
+                    fatal "Failed to download and unpack VKD3D"
                 fi
             elif try_download "https://github.com/HansKristian-Work/vkd3d-proton/releases/download/v${VKD3D_VAR_VER}/vkd3d-proton-${VKD3D_VAR_VER}.tar.zst" \
                                         "${PW_VULKAN_DIR}/vkd3d-proton-${VKD3D_VAR_VER}.tar.zst" no_mirror ; then
@@ -1707,11 +1706,10 @@ pw_check_and_download_dxvk_and_vkd3d () {
                 else
                     try_remove_file "${PW_VULKAN_DIR}/vkd3d-proton-${VKD3D_VAR_VER}.tar.zst"
                     try_remove_dir "${PW_VULKAN_DIR}/vkd3d-proton-${VKD3D_VAR_VER}"
-
-                    yad_error_download && pw_check_and_download_dxvk_and_vkd3d || exit 1
+                    fatal "Failed to download and unpack VKD3D"
                 fi
             else
-                yad_error_download && pw_check_and_download_dxvk_and_vkd3d || exit 1
+                fatal "Failed to download and unpack VKD3D"
             fi
         fi
     done
@@ -1737,20 +1735,14 @@ pw_check_and_download_plugins () {
                 else
                     try_remove_file "${PORT_WINE_TMP_PATH}/plugins${PW_PLUGINS_VER}.tar.xz"
                     try_remove_dir "${PORT_WINE_TMP_PATH}/plugins${PW_PLUGINS_VER}"
-                    if yad_error_download
-                    then pw_check_and_download_plugins
-                    else
-                        export PW_PLUGINS_VER="_v$((${PW_PLUGINS_VER//_v/} - 1))"
-                        export PW_PLUGINS_PATH="${PORT_WINE_TMP_PATH}/plugins${PW_PLUGINS_VER}"
-                    fi
+                    fatal "Failed to download and unpack plugins${PW_PLUGINS_VER}"
+                    # export PW_PLUGINS_VER="_v$((${PW_PLUGINS_VER//_v/} - 1))"
+                    # export PW_PLUGINS_PATH="${PORT_WINE_TMP_PATH}/plugins${PW_PLUGINS_VER}"
                 fi
             else
-                if yad_error_download
-                then pw_check_and_download_plugins
-                else
-                    export PW_PLUGINS_VER="_v$((${PW_PLUGINS_VER//_v/} - 1))"
-                    export PW_PLUGINS_PATH="${PORT_WINE_TMP_PATH}/plugins${PW_PLUGINS_VER}"
-                fi
+                fatal "Failed to download and unpack plugins${PW_PLUGINS_VER}"
+                # export PW_PLUGINS_VER="_v$((${PW_PLUGINS_VER//_v/} - 1))"
+                # export PW_PLUGINS_PATH="${PORT_WINE_TMP_PATH}/plugins${PW_PLUGINS_VER}"
             fi
         else
             pw_notify_send -i info \
@@ -1903,19 +1895,7 @@ pw_init_db () {
             #TODO: msi
             PW_FIND_DB_FILE=$(grep -ilw "#${PORTWINE_DB}.exe" "${PORT_SCRIPTS_PATH}/portwine_db"/* | sed s/".exe"/""/gi)
             if [[ $(echo "$PW_FIND_DB_FILE" | wc -l) -gt 1 ]] ; then
-                unset ADD_CB_DBFILE
-                for PW_CHECK_DB_FILE in $PW_FIND_DB_FILE ; do
-                    if [[ -z "${ADD_CB_DBFILE}" ]] ; then
-                        ADD_CB_DBFILE="$(echo "${PW_CHECK_DB_FILE}" | awk -F'/' '{print $NF}')"
-                    else
-                        ADD_CB_DBFILE="$(echo "${PW_CHECK_DB_FILE}" | awk -F'/' '{print $NF}')!${ADD_CB_DBFILE}"
-                    fi
-                done
-                PORTWINE_DB_FILE="${PORT_SCRIPTS_PATH}/portwine_db"/$("${pw_yad}" --text-align=center \
-                --text "${translations[More than one DB file found for the application being launched.\\nSelect the required one, or delete the extra DB file before the next run.\\n]}" --borders="${YAD_BORDERS}" --form \
-                --title "Database file selection..." --window-icon="$PW_GUI_ICON_PATH/portproton.svg"  --form --separator="" \
-                --field="DB FILE: :CB" "${ADD_CB_DBFILE}" 2>/dev/null)
-                if [[ "$?" == "1" || "$?" == "252" ]] ; then exit 0 ; fi
+                fatal "More than one ppdb file found!"
             elif [[ $(echo "$PW_FIND_DB_FILE" | wc -l) -eq 1 ]] ; then
                 PORTWINE_DB_FILE="${PW_FIND_DB_FILE}"
             fi
@@ -2755,14 +2735,14 @@ start_portwine () {
                     fi
                 else
                     try_remove_file "${PFX_TMP}/${FILE_NAME_PFX}.tar.xz"
-                    yad_error_download && exit 1
+                    fatal "Failed to download and unpack ${FILE_NAME_PFX}"
                 fi
             else
                 if unpack "${PFX_TMP}/${FILE_NAME_PFX}.tar.xz" "${PORT_DATA_PATH}/data/prefixes/"
                 then touch "${WINEPREFIX}/.${FILE_NAME_PFX}"
                 else
                     try_remove_file "${PFX_TMP}/${FILE_NAME_PFX}.tar.xz"
-                    yad_error_download && exit 1
+                    fatal "Failed to download and unpack ${FILE_NAME_PFX}"
                 fi
             fi
             echo "based_on_dotnet" >> "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/winetricks.log"
@@ -3383,11 +3363,10 @@ fi
                 else
                     try_remove_file "${PW_VULKAN_DIR}/dgvoodoo2-${DGV2_VER}.tar.xz"
                     try_remove_dir "${PW_VULKAN_DIR}/dgvoodoo2-${DGV2_VER}"
-
-                    yad_error_download && pw_check_and_download_dxvk_and_vkd3d || exit 1
+                    fatal "Failed to download and unpack DGVOODOO2"
                 fi
             else
-                yad_error_download && pw_check_and_download_dxvk_and_vkd3d || exit 1
+                fatal "Failed to download and unpack DGVOODOO2"
             fi
         fi
         print_info "Try create symlink DGVOODOO2 files..."
@@ -4267,8 +4246,7 @@ gui_proton_downloader () {
     METADATA_URL="https://git.linux-gaming.ru/Boria138/PortProton-Wine-Metadata/raw/branch/main/wine_metadata.json"
     METADATA=$(curl  -A 'PortProton' -s "$METADATA_URL")
     if [[ -z "$METADATA" ]] ; then
-        yad_error "${translations[Error: failed to fetch metadata.]}"
-        exit 0
+        fatal "failed to fetch metadata"
     fi
 
     if [[ "$1" != "silent" ]] ; then
@@ -4276,8 +4254,7 @@ gui_proton_downloader () {
         # Ensure proton_lg is always first
         WINE_CATEGORIES_RAW=($(echo "$METADATA" | jq -r 'keys[]' 2>/dev/null))
         if [[ ${#WINE_CATEGORIES_RAW[@]} -eq 0 ]] ; then
-            yad_error "${translations[Error: check wine.]}"
-            exit 0
+            fatal "check wine"
         fi
         WINE_CATEGORIES=()
         for CAT in "${WINE_CATEGORIES_RAW[@]}" ; do
@@ -4414,8 +4391,7 @@ gui_proton_downloader () {
         to_entries[] | .value[]? | select((.name | ascii_downcase) == ($version | ascii_downcase)) | .url
         ' 2>/dev/null | head -n 1)
         if [[ -z "$URL_VERSION_PROTON_GIT" ]]; then
-            yad_error "${translations[Error: no URL found for version]} ${VERSION}."
-            exit 1
+            fatal "no URL found for version ${VERSION}"
         fi
         FILENAME=$(echo "$URL_VERSION_PROTON_GIT" | awk -F/ '{print $NF}')
         if [[ "$URL_VERSION_PROTON_GIT" =~ (_LG|_HYP|_STEAM) ]]; then
@@ -4433,20 +4409,10 @@ gui_proton_downloader () {
             else
                 try_remove_file "${PORT_DATA_PATH}/data/tmp/${FILENAME}"
                 try_remove_dir "${PORT_DATA_PATH}/data/dist/${FILENAME}"
-                if yad_error_download
-                then gui_proton_downloader ""
-                else
-                    export PW_WINE_VER="$PW_WINE_USE"
-                    init_wine_ver
-                fi
+                fatal "Failed to download and unpack WINE"
             fi
         else
-            if yad_error_download
-            then gui_proton_downloader ""
-            else
-                export PW_WINE_VER="$PW_WINE_USE"
-                init_wine_ver
-            fi
+            fatal "Failed to download and unpack WINE"
         fi
     }
 
@@ -5070,9 +5036,7 @@ portwine_output_yad_shortcut () {
             PW_SHORTCUT_MENU=$(echo "$OUTPUT" | awk -F'|' '{print $2}')
             PW_SHORTCUT_DESKTOP=$(echo "$OUTPUT" | awk -F'|' '{print $3}')
             PW_SHORTCUT_STEAM=$(echo "$OUTPUT" | awk -F'|' '{print $4}')
-            if [[ $PORTWINE_CHANGE_SHORTCUT != 1 ]] ; then
-                edit_user_conf_from_gui PW_SHORTCUT_MENU PW_SHORTCUT_DESKTOP PW_SHORTCUT_STEAM
-            fi
+            # edit_user_conf_from_gui PW_SHORTCUT_MENU PW_SHORTCUT_DESKTOP PW_SHORTCUT_STEAM
             portwine_delete_shortcut
         fi
 
@@ -5216,62 +5180,6 @@ pw_auto_create_shortcut () {
     done
 }
 export -f pw_auto_create_shortcut
-
-# GUI CHANGE SHORTCUT
-portwine_change_shortcut () {
-    export GDK_BACKEND="x11"
-
-    portwine_search_shortcut
-    if [[ -n $PW_DELETE_MENU ]]
-    then PW_SHORTCUT_MENU="TRUE"
-    else PW_SHORTCUT_MENU="FALSE"
-    fi
-    if [[ -n ${PW_DELETE_SHORTCUT_DESKTOP[0]} ]]
-    then PW_SHORTCUT_DESKTOP="TRUE"
-    else PW_SHORTCUT_DESKTOP="FALSE"
-    fi
-    if [[ -n $PW_DELETE_STEAM ]]; then
-        source "${PORT_SCRIPTS_PATH}/add_in_steam.sh"
-        NOSTSHPATH="${PW_DELETE_SHORTCUT_STEAM[0]//#@_@#/ }"
-        NOSTAIDGRID=$(getAppId "${NOSTSHPATH}")
-        if [[ -n "${NOSTSHPATH}" ]] && [[ -n "${NOSTAIDGRID}" ]]; then
-            PW_SHORTCUT_STEAM="TRUE"
-        else
-            PW_SHORTCUT_STEAM="FALSE"
-        fi
-    else
-        PW_SHORTCUT_STEAM="FALSE"
-    fi
-
-    unset name_desktop
-    create_name_desktop
-    export name_desktop="$PW_NAME_DESKTOP_PROXY"
-
-    pw_create_gui_png
-
-    OUTPUT=$("${pw_yad}" --title="${translations[Choices]}" --form \
-    --gui-type="settings-shortcut" \
-    --gui-type-box="${NOTEBOOK_GUI_TYPE_BOX}" --gui-type-layout="${NOTEBOOK_GUI_TYPE_LAYOUT}" \
-    --gui-type-text="${NOTEBOOK_GUI_TYPE_TEXT}" --gui-type-images="${NOTEBOOK_GUI_TYPE_IMAGE}" \
-    --window-icon "$PW_GUI_ICON_PATH/portproton.svg" \
-    --image "${PORT_DATA_PATH}/data/img/${name_desktop_png}.png" \
-    --text-align="center" --text "${translations[The shortcut will be changed in the PortProton directory.]}" \
-    --field="${translations[Name]}" "${name_desktop}" \
-    --field="  ${translations[Add shortcut to MENU -> GAMES]}":CHK "$PW_SHORTCUT_MENU" \
-    --field="  ${translations[Add shortcut to Desktop]}":CHK "$PW_SHORTCUT_DESKTOP" \
-    --field="  ${translations[Add shortcut to STEAM library]}":CHK "$PW_SHORTCUT_STEAM" \
-    --button="${translations[REMOVE SHORTCUT]}!$PW_GUI_ICON_PATH/$BUTTON_SIZE.png":1 \
-    --button="${translations[CHANGE SHORTCUT]}!$PW_GUI_ICON_PATH/$BUTTON_SIZE.png":0 2>/dev/null)
-    PW_YAD_OUT=$?
-    PORTWINE_CHANGE_SHORTCUT=1
-    if [[ $PW_YAD_OUT == 1 ]] ; then
-        [[ "$PW_GUI_START" == "NOTEBOOK" ]] && unset PW_YAD_FORM_TAB
-        PW_SHORTCUT_STEAM="FALSE"
-        portwine_delete_shortcut
-        exit 0
-    fi
-    portwine_output_yad_shortcut
-}
 
 portwine_search_shortcut () {
     unset PW_DELETE_SHORTCUT_MENU PW_DELETE_SHORTCUT_STEAM PW_DELETE_SHORTCUT_DESKTOP
