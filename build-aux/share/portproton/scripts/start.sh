@@ -73,19 +73,6 @@ if [[ "${1,,}" =~ \.ppack$ ]] ; then
     export PW_NO_RESTART_PPDB="1"
     export PW_DISABLED_CREATE_DB="1"
     PW_EXE_FILE="$1"
-elif [[ "${1,,}" =~ \.ppdb$ ]] ; then
-    update_ext_ppdb "$1"
-elif [[ "$1" == portproton://* ]] ; then
-    PPDB_URL="${1#portproton://}"
-    PPDB_URL="${PPDB_URL//https\/\//https:\/\/}"
-    PW_TMP_PPDB_FILE="$PW_TMPFS_PATH/tmp_from_url.ppdb"
-
-    print_info "Downloading PPDB from: $PPDB_URL"
-    if curl -A 'PortProton' -fsSL "$PPDB_URL" -o "$PW_TMP_PPDB_FILE" ; then
-        update_ext_ppdb "$PW_TMP_PPDB_FILE" "url"
-    else
-        fatal "Failed to download PPDB from URL: $PPDB_URL"
-    fi
 elif [[ "${1,,}" =~ \.(exe|bat|msi|reg|lnk)$ ]] ; then
     if [[ -f "$1" ]] ; then
         PW_EXE_FILE="$(realpath -s "$1")"
@@ -524,6 +511,8 @@ esac
 
 # portwine_start_debug ;;
 # gui_proton_downloader ;;
+
+#TODO: move to QT
 # update_ext_ppdb
 # find_ext_ppdb
 
