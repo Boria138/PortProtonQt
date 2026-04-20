@@ -57,11 +57,8 @@ export orig_IFS="$IFS"
 unset PW_NO_RESTART_PPDB PW_DISABLED_CREATE_DB
 
 if [[ ${1,,} == "cli" ]] ; then
-    export PW_CLI="1"
-    export PROCESS_LOG="1"
     shift
 fi
-check_variables PW_CLI "0"
 
 if [[ "${1:-}" == file://* ]] ; then
     pw_file_path="${1#file://}"
@@ -105,14 +102,6 @@ then
 fi
 
 create_new_dir "${HOME}/.local/share/applications"
-if [[ "${PW_SILENT_RESTART}" == "1" ]] \
-|| [[ "${START_FROM_STEAM}" == "1" ]]
-then
-    export PW_GUI_DISABLED_CS="1"
-    unset PW_SILENT_RESTART
-else
-    unset PW_GUI_DISABLED_CS
-fi
 
 create_new_dir "${PORT_DATA_PATH}/data/dist"
 IFS=$'\n'
@@ -172,19 +161,6 @@ if [[ -n "${STEAM_COMPAT_DATA_PATH:-}" ]]; then
 fi
 unset WINEPREFIX
 
-# choose branch
-if [[ -z "$BRANCH" ]] ; then
-    echo 'export BRANCH="master"' >> "$USER_CONF"
-    export BRANCH="master"
-fi
-if [[ "$BRANCH" == "master" ]] ; then
-    [[ "${PW_CLI}" != 1 ]] && print_info "Branch in used: STABLE\n"
-    export BRANCH_VERSION=""
-else
-    [[ "${PW_CLI}" != 1 ]] && print_warning "Branch in used: DEVEL\n"
-    export BRANCH_VERSION="-dev"
-fi
-
 # choose mirror
 if [[ -z "$MIRROR" ]] \
 && [[ "$LANGUAGE" == "ru" ]]
@@ -199,9 +175,9 @@ fi
 if [[ $USE_ONLY_LG_RU == "1" ]] ; then
     export MIRROR="CLOUD"
     edit_user_conf_from_gui MIRROR USE_ONLY_LG_RU
-    [[ "${PW_CLI}" != 1 ]] && print_info "Force used linux-gaming.ru for all updates.\n"
+    print_info "Force used linux-gaming.ru for all updates."
 fi
-[[ "${PW_CLI}" != 1 ]] && print_info "The first mirror in used: $MIRROR\n"
+print_info "The first mirror in used: $MIRROR"
 
 # choose downloading covers from SteamGridDB or not
 if [[ -z "$DOWNLOAD_STEAM_GRID" ]] ; then
@@ -316,8 +292,22 @@ ${translations[Usage examples:]}
         exit 0
         ;;
     --autoinstall)
-        pw_autoinstall_from_db $2
-        exit 0
+        export PW_USE_GAMEMODE=0
+        export PW_CHECK_AUTOINSTALL=1
+        export PW_NO_WRITE_WATCH=0
+        export PW_VULKAN_USE=1
+        export PW_USE_EAC_AND_BE=0
+        export PW_USE_FSYNC=0
+        export PW_USE_ESYNC=0
+        unset PORTWINE_CREATE_SHORTCUT_NAME
+        export PW_DISABLED_CREATE_DB=1
+        export PW_MANGOHUD=0
+        export PW_VKBASALT=0
+        export PW_USE_D3D_EXTRAS=1
+        export WINE_LARGE_ADDRESS_AWARE=0
+        # shellcheck source=/dev/null
+        . "${PORT_SCRIPTS_PATH}/pw_autoinstall/${2}"
+        stop_portwine
         ;;
     --debug)
         clear

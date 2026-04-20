@@ -5,10 +5,8 @@
 $PW_DEBUG
 
 process_log () {
-    if [[ $PROCESS_LOG == "1" ]] ; then
-        local filter_word="mono|gecko"
-        echo "$@" | sed -r "/$filter_word/Id" >> "$PW_TMPFS_PATH/process.log"
-    fi
+    local filter_word="mono|gecko"
+    echo "$@" | sed -r "/$filter_word/Id" >> "$PW_TMPFS_PATH/process.log"
 }
 export -f process_log
 
@@ -463,7 +461,7 @@ try_download () {
     if [[ "$silent" == "true" ]] ; then
         curl -f -# -A 'Mozilla/5.0 (compatible; Konqueror/2.1.1; X11)' -H 'Cache-Control: no-cache, no-store' \
         -H 'Pragma: no-cache' -L "${FIRST_URL[@]}" -o "$dest" 2>&1
-    elif [[ $PROCESS_LOG == "1" ]] ; then
+    else
         # set -o pipefail
         curl -f -# -A 'Mozilla/5.0 (compatible; Konqueror/2.1.1; X11)' -H 'Cache-Control: no-cache, no-store' \
         -H 'Pragma: no-cache' -L "${FIRST_URL[@]}" -o "$dest" 2>&1 \
@@ -560,14 +558,6 @@ pw_notify_send () {
     fi
 }
 export -f pw_notify_send
-
-check_start_from_steam () {
-    if [[ "${START_FROM_STEAM}" == 1 ]] \
-    || [[ "${PW_CLI}" == 1 ]]
-    then return 0
-    else return 1
-    fi
-}
 
 check_gamescope_session () {
     if [[ -n "$GAMESCOPE_IN_USE" ]]
@@ -1903,9 +1893,7 @@ pw_init_db () {
             # shellcheck source=/dev/null
             source "${PORTWINE_DB_FILE}"
             if echo "${PW_EXE_FILE}" | grep "/prefixes/" &>/dev/null ; then
-                if [[ ("${PW_CLI}" != "1" && -z $(lsbash "${PORT_DATA_PATH}/prefixes/" --grep ^"${PW_PREFIX_NAME}"$)) \
-                || -z $(grep -e ^"export PW_PREFIX_NAME=" "${PORTWINE_DB_FILE}" 2>/dev/null) ]]
-                then
+                if [[ -z $(grep -e ^"export PW_PREFIX_NAME=" "${PORTWINE_DB_FILE}" 2>/dev/null) ]] ; then
                     PW_PREFIX_NAME=$(echo "${PW_EXE_FILE}" | awk -F"/prefixes/" '{print $2}' | awk -F"/" '{print $1}')
                     edit_db_from_gui PW_PREFIX_NAME
                 fi
@@ -1944,9 +1932,7 @@ pw_init_db () {
                 try_copy_file "${PW_FIND_DB_FILE}" "${PW_EXE_FILE}".ppdb
                 PORTWINE_DB_FILE="${PW_EXE_FILE}".ppdb
                 if echo "${PW_EXE_FILE}" | grep "/prefixes/" &>/dev/null ; then
-                    if [[ ("${PW_CLI}" != "1" && -z $(lsbash "${PORT_DATA_PATH}/prefixes/" --grep ^"${PW_PREFIX_NAME}"$)) \
-                    || -z $(grep -e ^"export PW_PREFIX_NAME=" "${PORTWINE_DB_FILE}" 2>/dev/null) ]]
-                    then
+                    if [[ -z $(grep -e ^"export PW_PREFIX_NAME=" "${PORTWINE_DB_FILE}" 2>/dev/null) ]] ; then
                         PW_PREFIX_NAME=$(echo "${PW_EXE_FILE}" | awk -F"/prefixes/" '{print $2}' | awk -F"/" '{print $1}')
                         edit_db_from_gui PW_PREFIX_NAME
                     fi
@@ -2004,10 +1990,6 @@ pw_init_db () {
             print_info "Automatic added fix for unity games: WINE_CPU_TOPOLOGY=8:0,1,2,3,4,5,6,7"
         fi
     fi
-
-
-    [[ "${START_FROM_STEAM}" == 1 ]] && export PW_GUI_DISABLED_CS=1
-    [[ "${START_FROM_PP_GUI}" == 1 ]] && export PW_GUI_DISABLED_CS=0 && unset START_FROM_PP_GUI
 
     return 0
 }
@@ -2553,12 +2535,8 @@ pw_create_unique_exe () {
 }
 
 pw_optiscaler_sync_files () {
-    local notify_conflict OPTISCALER_PATH OPTISCALER_FILES ORIGINAL_GAME_DLLS dll
-    if [[ "${START_FROM_STEAM}" == "1" ]] ; then
-        notify_conflict="print_error"
-    else
-        notify_conflict="yad_error"
-    fi
+    local OPTISCALER_PATH OPTISCALER_FILES ORIGINAL_GAME_DLLS dll
+
     OPTISCALER_PATH="${PW_PLUGINS_PATH}/fake_dlss/optiscaler-${PW_OPTISCALER_VER}"
     OPTISCALER_FILES="dxgi.dll amd_fidelityfx_dx12.dll amd_fidelityfx_vk.dll libxess.dll \
         libxess_dx11.dll libxess_fg.dll dlssg_to_fsr3_amd_is_better.dll fakenvapi.ini \
@@ -2595,8 +2573,7 @@ pw_optiscaler_sync_files () {
     sed -i "s|FGType =.*|FGType = $OPTISCALER_FG_TYPE|g" "$OPTISCALER_PATH/OptiScaler.ini"
     echo "" > "$PATH_TO_GAME/dxvk.conf"
     if [[ ! -f "$PATH_TO_GAME/dlssg_to_fsr3_amd_is_better.dll" && -f "$PATH_TO_GAME/dxgi.dll" ]] ; then
-        "${notify_conflict}" 'dxgi.dll is already present in the game folder!\nThis script uses dxgi.dll to load required files.\nRemove the mod using dxgi.dll.'
-        fatal "Force exit..."
+        fatal 'dxgi.dll is already present in the game folder!\nThis script uses dxgi.dll to load required files.\nRemove the mod using dxgi.dll.'
     fi
     for dll in $ORIGINAL_GAME_DLLS ; do [[ -e "$PATH_TO_GAME/$dll" && ! -e "$PATH_TO_GAME/${dll}.b" ]] && mv -f "$PATH_TO_GAME/$dll" "$PATH_TO_GAME/${dll}.b" 2>/dev/null; done
     if [[ ! -f "$PATH_TO_GAME/optiscaler_version" ]] || ! grep -q "$PW_OPTISCALER_VER" "$PATH_TO_GAME/optiscaler_version" ; then
@@ -2920,20 +2897,12 @@ start_portwine () {
         elif [[ "${PW_CHECK_AUTOINSTALL}" == 1 ]] \
         && [[ "${DISABLE_CP_DEFPFX}" == 1 ]] ; then
             pw_wineboot -i
-      elif [[ "${PW_CLI}" == "1" ]]; then
-          if [[ "${DISABLE_CP_DEFPFX}" == "1" ]]; then
-              pw_wineboot -i
-          else
-              unpack "${PW_PLUGINS_PATH}/default_pfx.tar.xz" "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/" silent
-              pw_wineboot -r
-              echo "based_on_default" >> "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/winetricks.log"
-          fi
-        elif yad_question "${translations[Do you want to installing recommended libraries in the new prefix:]} ${PW_PREFIX_NAME}" ; then
+        elif [[ "${DISABLE_CP_DEFPFX}" == "1" ]]; then
+            pw_wineboot -i
+        else
             unpack "${PW_PLUGINS_PATH}/default_pfx.tar.xz" "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/" silent
             pw_wineboot -r
             echo "based_on_default" >> "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/winetricks.log"
-        else
-            pw_wineboot -i
         fi
     else
         check_dirs_and_files_in_pfx
@@ -3926,17 +3895,7 @@ fi
             *) get_and_set_reg_file --delete 'Software\Wine\Drivers' 'Audio' ;;
     esac
 
-    if ! check_start_from_steam ; then
-        pw_tray_icon
-    fi
-
     add_in_start_portwine
-
-    #TODO: test without LC_ALL on SteamDeck
-    case "$FULL_LN" in
-        russian) check_start_from_steam && export LC_ALL=ru_RU.UTF-8 ;;
-        spanish) check_start_from_steam && export LC_ALL=es_ES.UTF-8 ;;
-    esac
 
     if [[ "$FULL_LN" == russian ]] ; then
         for chk_lang_and_uname in "steam_emu.ini" "steam_api.ini" "steam_api64.ini" "SteamConfig.ini" ; do
@@ -4517,12 +4476,12 @@ gui_edit_db () {
     KEY_EDIT_DB_GUI=$RANDOM
     PW_EDIT_DB_LIST=(PW_MANGOHUD PW_MANGOHUD_USER_CONF PW_VKBASALT PW_VKBASALT_USER_CONF PW_DGVOODOO2
     PW_USE_ESYNC PW_USE_FSYNC PW_USE_NTSYNC PW_USE_RAY_TRACING PW_USE_NVAPI_AND_DLSS PW_USE_OPTISCALER
-    PW_USE_LS_FRAME_GEN PW_WINE_FULLSCREEN_FSR PW_HIDE_NVIDIA_GPU PW_VIRTUAL_DESKTOP PW_USE_TERMINAL PW_GUI_DISABLED_CS
-    PW_USE_GAMEMODE PW_USE_INHIBIT_SLEEP PW_USE_D3D_EXTRAS PW_FIX_VIDEO_IN_GAME PW_REDUCE_PULSE_LATENCY PW_USE_US_LAYOUT PW_USE_GSTREAMER
-    PW_USE_SHADER_CACHE PW_USE_WINE_DXGI PW_USE_EAC_AND_BE PW_USE_SYSTEM_VK_LAYERS PW_USE_OBS_VKCAPTURE
-    PW_DISABLE_COMPOSITING PW_USE_RUNTIME PW_DINPUT_PROTOCOL PW_USE_GALLIUM_ZINK PW_USE_GALLIUM_NINE
-    PW_USE_WINED3D_VULKAN PW_USE_SUPPLIED_DXVK_VKD3D PW_USE_NATIVE_WAYLAND PW_USE_DXVK_HDR PW_GAMESCOPE
-    )
+    PW_USE_LS_FRAME_GEN PW_WINE_FULLSCREEN_FSR PW_HIDE_NVIDIA_GPU PW_VIRTUAL_DESKTOP PW_USE_TERMINAL
+    PW_USE_GAMEMODE PW_USE_INHIBIT_SLEEP PW_USE_D3D_EXTRAS PW_FIX_VIDEO_IN_GAME PW_REDUCE_PULSE_LATENCY
+    PW_USE_US_LAYOUT PW_USE_GSTREAMER PW_USE_SHADER_CACHE PW_USE_WINE_DXGI PW_USE_EAC_AND_BE
+    PW_USE_SYSTEM_VK_LAYERS PW_USE_OBS_VKCAPTURE PW_DISABLE_COMPOSITING PW_USE_RUNTIME PW_DINPUT_PROTOCOL
+    PW_USE_GALLIUM_ZINK PW_USE_GALLIUM_NINE PW_USE_WINED3D_VULKAN PW_USE_SUPPLIED_DXVK_VKD3D
+    PW_USE_NATIVE_WAYLAND PW_USE_DXVK_HDR PW_GAMESCOPE)
 
     if check_wayland_session
     then rm_from_array "PW_EDIT_DB_LIST" PW_USE_US_LAYOUT
@@ -4535,23 +4494,10 @@ gui_edit_db () {
         rm_from_array "PW_EDIT_DB_LIST" PW_USE_SUPPLIED_DXVK_VKD3D
     fi
     check_flatpak && rm_from_array "PW_EDIT_DB_LIST" PW_USE_RUNTIME
+
     # GALLIUM NINE
     [[ ! -f "${PW_TMPFS_PATH}/gallium_nine.tmp" ]] && rm_from_array "PW_EDIT_DB_LIST" PW_USE_GALLIUM_NINE
     [[ $PW_VULKAN_USE == "1" ]] && add_to_array "PW_EDIT_DB_LIST" PW_USE_SAREK_ASYNC
-
-    case "${PW_VULKAN_USE}" in
-        0)
-            # WineD3D OpenGL
-            VKD3D_CB="DCB"
-            DISABLE_EDIT_DB_LIST="PW_VKBASALT PW_VKBASALT_USER_CONF PW_USE_RAY_TRACING PW_USE_OBS_VKCAPTURE PW_USE_GALLIUM_ZINK PW_USE_WINED3D_VULKAN"
-            ;;
-        1|2|6)
-            # Sarek, Newest
-            VKD3D_CB="CB"
-            ;;
-    esac
-
-    [[ ! -e "/dev/ntsync" ]] && DISABLE_EDIT_DB_LIST+=" PW_USE_NTSYNC"
 
     if [[ -n "$PW_SOUND_DRIVER_USE" ]] \
     && [[ "$PW_SOUND_DRIVER_USE" != "disabled" ]]
@@ -4564,45 +4510,8 @@ gui_edit_db () {
     if ! check_flatpak \
     && ! compare_versions "$(ldd --version | head -n 1 | awk '{print $NF}')" "2.38"
     then
-        DISABLE_EDIT_DB_LIST+=" PW_USE_LS_FRAME_GEN"
         export PW_USE_LS_FRAME_GEN="0"
-        PW_USE_LS_FRAME_GEN_INFO=${translations[GLIBC version 2.38+ is required for use Lossless Scaling frame generation]}
     fi
-
-    unset ADD_CHK_BOX_EDIT_DB
-    for int_to_boole in "${PW_EDIT_DB_LIST[@]}" ; do
-        if [[ "${!int_to_boole}" == "1" ]]
-        then export "$int_to_boole"="TRUE"
-        else export "$int_to_boole"="FALSE"
-        fi
-        TMP_HELP_FOR_GUI="${int_to_boole}_INFO"
-        int_to_boole_non_pw="${int_to_boole//PW_/}"
-        int_to_boole_non_pw="${int_to_boole_non_pw//"_"/" "}"
-        if [[ -n $DISABLE_EDIT_DB_LIST ]] ; then
-            unset CHECK_BOOLE_TRUE
-            for check_boole in $DISABLE_EDIT_DB_LIST ; do
-                if [[ $check_boole == "$int_to_boole" ]] ; then
-                    CHECK_BOOLE_TRUE=1
-                    ADD_CHK_BOX_EDIT_DB+="--field=${CHKBOX_SPACE}${int_to_boole_non_pw}!${!TMP_HELP_FOR_GUI}:D${THEME_CHKBOX}%FALSE%"
-                fi
-            done
-        fi
-        if [[ $CHECK_BOOLE_TRUE != 1 ]] ; then
-            ADD_CHK_BOX_EDIT_DB+="--field=${CHKBOX_SPACE}${int_to_boole_non_pw}!${!TMP_HELP_FOR_GUI}:${THEME_CHKBOX}%${!int_to_boole}%"
-        fi
-    done
-
-    IFS="%"
-    "${pw_yad}" --plug=$KEY_EDIT_DB_GUI --tabnum="1" --form --separator=" " --columns=3 ${ADD_CHK_BOX_EDIT_DB} \
-    1> "${PW_TMPFS_PATH}/tmp_output_yad_edit_db" 2>/dev/null &
-    IFS="$orig_IFS"
-
-    case ${PW_WINDOWS_VER} in
-         "7") ADD_WINVER_EDIT_DB="7!10!11!XP" ;;
-        "XP") ADD_WINVER_EDIT_DB="XP!7!10!11" ;;
-        "10") ADD_WINVER_EDIT_DB="10!11!7!XP" ;;
-           *) ADD_WINVER_EDIT_DB="11!10!7!XP" ;;
-    esac
 
     if [[ "${PW_WINE_CPU_TOPOLOGY}" == *[0-9]:* ]] \
     && [[ "${PW_WINE_CPU_TOPOLOGY}" != "disabled" ]]
@@ -4629,41 +4538,6 @@ gui_edit_db () {
         NUMA_NODE_INDEX="disabled"
     fi
 
-    if [[ $NUMA_NODE_LIST == "0" ]] ; then
-        NUDA_CPU_CB=":LBLH"
-        translations[NUMA node for CPU affinity]=""
-    else
-        NUDA_CPU_CB=":CB"
-    fi
-
-    read -r -a output_yad_edit_db <"${PW_TMPFS_PATH}/tmp_output_yad_edit_db"
-    bool_from_yad="0"
-    for boole_to_int in "${PW_EDIT_DB_LIST[@]}" ; do
-        export "${boole_to_int}"="${output_yad_edit_db[$bool_from_yad]}"
-        if [[ "${!boole_to_int}" == "TRUE" ]]
-        then export "${boole_to_int}"="1"
-        else export "${boole_to_int}"="0"
-        fi
-        export bool_from_yad=$(( bool_from_yad + 1 ))
-    done
-
-    if [[ "${PW_CLI}" != "1" ]] ; then
-        IFS='%' read -r -a PW_ADD_SETTINGS <"${PW_TMPFS_PATH}/tmp_output_yad_fps_limit"
-        PW_WINDOWS_VER="${PW_ADD_SETTINGS[0]}"
-        PW_DLL_INSTALL="${PW_ADD_SETTINGS[1]}"
-        WINEDLLOVERRIDES="${PW_ADD_SETTINGS[2]}"
-        LAUNCH_PARAMETERS="${PW_ADD_SETTINGS[3]}"
-        PW_RUN_AFTER_EXE="${PW_ADD_SETTINGS[4]}"
-        PW_RUN_AFTER_DELAY="${PW_ADD_SETTINGS[5]}"
-        CPU_LIMIT="${PW_ADD_SETTINGS[6]}"
-        PW_MESA_GL_VERSION_OVERRIDE="${PW_ADD_SETTINGS[7]}"
-        PW_VKD3D_FEATURE_LEVEL="${PW_ADD_SETTINGS[8]}"
-        PW_LOCALE_SELECT="${PW_ADD_SETTINGS[9]}"
-        PW_MESA_VK_WSI_PRESENT_MODE="${PW_ADD_SETTINGS[10]}"
-        PW_SOUND_DRIVER_USE="${PW_ADD_SETTINGS[11]}"
-        NUMA_NODE_INDEX="${PW_ADD_SETTINGS[12]//[[:space:]]/}"
-    fi
-
     if [[ $NUMA_NODE_INDEX =~ ^[0-9]+$ ]] && [[ -v NODE_MAP[$NUMA_NODE_INDEX] ]] ; then
         NUMA_CORES="${NODE_MAP[$NUMA_NODE_INDEX]}"
         PW_CPU_NUMA_NODE_INDEX="$NUMA_NODE_INDEX"
@@ -4681,16 +4555,10 @@ gui_edit_db () {
     fi
     export PW_WINE_CPU_TOPOLOGY
 
-    if [[ "${PW_CLI}" != "1" ]] ; then
-        for dont_touch_var in $DISABLE_EDIT_DB_LIST ; do
-            rm_from_array "PW_EDIT_DB_LIST" "$dont_touch_var"
-        done
-    fi
-    PW_EDIT_DB_FINAL_LIST=("${PW_EDIT_DB_LIST[@]}" LAUNCH_PARAMETERS PW_RUN_AFTER_EXE PW_RUN_AFTER_DELAY PW_WINDOWS_VER PW_DLL_INSTALL \
-    WINEDLLOVERRIDES PW_WINE_CPU_TOPOLOGY PW_MESA_GL_VERSION_OVERRIDE PW_VKD3D_FEATURE_LEVEL \
-    PW_LOCALE_SELECT PW_MESA_VK_WSI_PRESENT_MODE PW_SOUND_DRIVER_USE \
-    PW_CPU_NUMA_NODE_INDEX PW_TASKSET_SLR)
-    export PW_EDIT_DB_FINAL_LIST
+    PW_EDIT_DB_FINAL_LIST=("${PW_EDIT_DB_LIST[@]}" LAUNCH_PARAMETERS PW_RUN_AFTER_EXE \
+    PW_RUN_AFTER_DELAY PW_WINDOWS_VER PW_DLL_INSTALL WINEDLLOVERRIDES PW_WINE_CPU_TOPOLOGY \
+    PW_MESA_GL_VERSION_OVERRIDE PW_VKD3D_FEATURE_LEVEL PW_LOCALE_SELECT PW_MESA_VK_WSI_PRESENT_MODE \
+    PW_SOUND_DRIVER_USE PW_CPU_NUMA_NODE_INDEX PW_TASKSET_SLR)
 
     edit_db_from_gui "${PW_EDIT_DB_FINAL_LIST[@]}"
 
@@ -4704,11 +4572,6 @@ gui_edit_db () {
         fi
 
         edit_db_from_gui MANGOHUD_CONFIG
-    fi
-
-    if [[ "$YAD_STATUS" == "0" ]] ; then
-        print_info "Restarting PP after update ppdb file..."
-        exit 0
     fi
 }
 
@@ -5190,26 +5053,7 @@ portwine_create_shortcut () {
     unset name_desktop
     create_name_desktop
     export name_desktop="$PW_NAME_DESKTOP_PROXY"
-
-    if [[ "${PW_CLI}" != 1 ]] ; then
-        OUTPUT=$("${pw_yad}" --title="${translations[Choices]}" --form \
-        --gui-type="settings-shortcut" \
-        --gui-type-box="${NOTEBOOK_GUI_TYPE_BOX}" --gui-type-layout="${NOTEBOOK_GUI_TYPE_LAYOUT}" \
-        --gui-type-text="${NOTEBOOK_GUI_TYPE_TEXT}" --gui-type-images="${NOTEBOOK_GUI_TYPE_IMAGE}" \
-        --window-icon "$PW_GUI_ICON_PATH/portproton.svg" \
-        --image "${PORT_DATA_PATH}/data/img/${name_desktop_png}.png" \
-        --text-align="center" --text "${translations[The shortcut will be created in the PortProton directory.]}" \
-        --field="${translations[Name]}" "${name_desktop}" \
-        --field="  ${translations[Add shortcut to MENU -> GAMES]}":CHK "$PW_SHORTCUT_MENU" \
-        --field="  ${translations[Add shortcut to Desktop]}":CHK "$PW_SHORTCUT_DESKTOP" \
-        --field="  ${translations[Add shortcut to STEAM library]}":CHK "$PW_SHORTCUT_STEAM" \
-        --button="${translations[CANCEL]}!$PW_GUI_ICON_PATH/$BUTTON_SIZE.png":2 \
-        --button="${translations[CREATE SHORTCUT]}!$PW_GUI_ICON_PATH/$BUTTON_SIZE.png":0 2>/dev/null)
-        PW_YAD_OUT=$?
-        portwine_output_yad_shortcut
-    else
-        portwine_output_yad_shortcut --silent
-    fi
+    portwine_output_yad_shortcut --silent
 }
 
 portwine_output_yad_shortcut () {
@@ -5536,32 +5380,9 @@ pw_unpack_prefix () {
             while read -r line
             do
                 export PW_EXE_FILE="$PORT_DATA_PATH/data/prefixes/$PW_PREFIX_NAME/$line"
-                if check_start_from_steam
-                then portwine_output_yad_shortcut --silent
-                else portwine_create_shortcut
-                fi
+                portwine_output_yad_shortcut --silent
             done < "$PORT_DATA_PATH/data/prefixes/$PW_PREFIX_NAME/.create_shortcut"
         fi
         return 0
     fi
-}
-
-pw_autoinstall_from_db () {
-    export PW_USER_TEMP="${PORT_WINE_TMP_PATH}"
-    export PW_USE_GAMEMODE=0
-    export PW_CHECK_AUTOINSTALL=1
-    export PW_GUI_DISABLED_CS=1
-    export PW_NO_WRITE_WATCH=0
-    export PW_VULKAN_USE=1
-    export PW_USE_EAC_AND_BE=0
-    export PW_USE_FSYNC=0
-    export PW_USE_ESYNC=0
-    unset PORTWINE_CREATE_SHORTCUT_NAME
-    export PW_DISABLED_CREATE_DB=1
-    export PW_MANGOHUD=0
-    export PW_VKBASALT=0
-    export PW_USE_D3D_EXTRAS=1
-    export WINE_LARGE_ADDRESS_AWARE=0
-    # shellcheck source=/dev/null
-    . "${PORT_SCRIPTS_PATH}/pw_autoinstall/${1}"
 }
