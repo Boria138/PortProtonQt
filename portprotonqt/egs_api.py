@@ -259,7 +259,7 @@ def add_egs_to_steam(app_name: str, game_title: str, legendary_path: str, callba
     script_content = f"""#!/usr/bin/env bash
 export LD_PRELOAD=
 export LEGENDARY_CONFIG_PATH="{legendary_config_path}"
-"{legendary_path}" launch {app_name} --no-wine --wrapper "env START_FROM_STEAM=1 {wrapper}" "$@"
+"{legendary_path}" launch {app_name} --no-wine --wrapper "{wrapper}" "$@"
 """
     try:
         with open(script_path, "w", encoding="utf-8") as f:

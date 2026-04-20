@@ -93,9 +93,6 @@ def main():
             args_list = [muvm_path, "-i", "-e", "PORTPROTONQT_MUVM=1", sys.executable, os.path.abspath(__file__)]
             os.execvpe(muvm_path, args_list + sys.argv[1:], env)
 
-    os.environ["PW_CLI"] = "1"
-    os.environ["PROCESS_LOG"] = "1"
-    os.environ["START_FROM_STEAM"] = "1"
     os.environ["FULL_LN"] = get_steam_language()
     portproton_location = get_portproton_location()
     if portproton_location:

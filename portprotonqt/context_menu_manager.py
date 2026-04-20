@@ -383,7 +383,7 @@ class ContextMenuManager:
                 return
             # Construct EGS launch command
             wrapper = get_portproton_start_command()
-            exec_line = f'"{self.legendary_path}" launch {game_card.appid} --no-wine --wrapper "env START_FROM_STEAM=1 {wrapper}"'
+            exec_line = f'"{self.legendary_path}" launch {game_card.appid} --no-wine --wrapper "{wrapper}"'
         else:
             exec_line = self._get_exec_line(game_card.name, game_card.exec_line)
             if not exec_line:
@@ -667,7 +667,7 @@ class ContextMenuManager:
 [Desktop Entry]
 Name={game_name}
 Comment={comment}
-Exec="{self.legendary_path}" launch {app_name} --no-wine --wrapper "env START_FROM_STEAM=1 {wrapper}"
+Exec="{self.legendary_path}" launch {app_name} --no-wine --wrapper "{wrapper}"
 Terminal=false
 Type=Application
 Categories=Game;
