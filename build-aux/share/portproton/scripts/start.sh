@@ -28,11 +28,10 @@ else
     PORT_SCRIPTS_PATH="$(dirname "$(realpath "$0")")"
 fi
 
-export PORT_SCRIPTS_PATH
-export PW_LOG_FILE="${PORT_DATA_PATH}/PortProton.log"
+PORT_IMG_PATH="$(dirname "$PORT_SCRIPTS_PATH")/img"
 
-echo "PORT_DATA_PATH=$PORT_DATA_PATH"
-echo "PORT_SCRIPTS_PATH=$PORT_SCRIPTS_PATH"
+export PORT_SCRIPTS_PATH PORT_IMG_PATH
+export PW_LOG_FILE="${PORT_DATA_PATH}/PortProton.log"
 
 # shellcheck source=/dev/null
 source "$PORT_SCRIPTS_PATH/functions_helper"

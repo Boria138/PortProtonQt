@@ -527,9 +527,9 @@ pw_notify_send () {
                     ;;
                 i)
                     case "$OPTARG" in
-                        info) local OPTARG="${PORT_DATA_PATH}/data/img/notify/info.svg";;
-                        warning) local OPTARG="${PORT_DATA_PATH}/data/img/notify/warning.svg";;
-                        error) local OPTARG="${PORT_DATA_PATH}/data/img/notify/error.svg";;
+                        info) local OPTARG="${PORT_IMG_PATH}/notify/info.svg";;
+                        warning) local OPTARG="${PORT_IMG_PATH}/notify/warning.svg";;
+                        error) local OPTARG="${PORT_IMG_PATH}/notify/error.svg";;
                     esac
                     icon=$OPTARG
                     ;;
