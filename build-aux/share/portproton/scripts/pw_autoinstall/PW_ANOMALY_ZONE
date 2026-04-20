@@ -8,7 +8,7 @@
 ########################################################################
 export PW_PREFIX_NAME="ANOMALY_ZONE"
 export LAUNCH_PARAMETERS="/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-"
-export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/az_webinst.exe"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/az_webinst.exe"
 export PORTWINE_CREATE_SHORTCUT_NAME="Anomaly Zone"
 
 start_portwine

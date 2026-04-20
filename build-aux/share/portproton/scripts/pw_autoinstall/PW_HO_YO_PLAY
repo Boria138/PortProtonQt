@@ -7,7 +7,7 @@
 # info_ru: Лаунчер для игр HoYoverse.
 ########################################################################
 export PW_VULKAN_USE=2
-export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/Hoyolauncher_installer.exe"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/Hoyolauncher_installer.exe"
 export PW_PREFIX_NAME="HO_YO_PLAY"
 export PORTWINE_CREATE_SHORTCUT_NAME="HoYoPlay"
 export PW_WINE_USE="WINE_HYP_10-10"
@@ -18,7 +18,7 @@ if try_download "https://sg-public-api.hoyoverse.com/event/download_porter/trace
 then
     get_and_set_reg_file --add 'Software\Wine\X11 Driver' 'Decorated' 'REG_SZ' "N" "user"
     pw_kill_autostart HYP.exe &
-    export PATH_TO_GAME="${PW_USER_TEMP}"
+    export PATH_TO_GAME="${PORT_WINE_TMP_PATH}"
     pw_run "${PW_AUTOINSTALL_EXE}"
     export PW_EXE_FILE="$WINEPREFIX/drive_c/Program Files/HoYoPlay/launcher.exe"
     pw_create_unique_exe "hoyoplay_launcher_pp"

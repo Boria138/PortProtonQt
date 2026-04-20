@@ -8,7 +8,7 @@
 ########################################################################
 GOG_VER=2.0
 
-export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/setup_galaxy_${GOG_VER}.exe"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/setup_galaxy_${GOG_VER}.exe"
 export LAUNCH_PARAMETERS="/VERYSILENT"
 export PW_PREFIX_NAME="GOG"
 export DISABLE_CP_DEFPFX="1"

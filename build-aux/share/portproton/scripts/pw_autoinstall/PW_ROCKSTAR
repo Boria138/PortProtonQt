@@ -6,7 +6,7 @@
 # info_en: Launcher for Rockstar studio games.
 # info_ru: Лаунчер для игр Rockstar.
 ########################################################################
-export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/Rockstar-Games-Launcher.exe"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/Rockstar-Games-Launcher.exe"
 export PORTWINE_CREATE_SHORTCUT_NAME="Rockstar"
 export PW_WINE_USE="WINE_LG"
 export PW_PREFIX_NAME="ROCKSTAR"

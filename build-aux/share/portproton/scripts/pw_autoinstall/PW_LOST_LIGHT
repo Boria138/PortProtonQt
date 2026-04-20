@@ -7,7 +7,7 @@
 # info_ru: Многопользовательская игра в жанре шутера от первого лица с элементами выживания, где игроки исследуют постапокалиптический мир и сражаются за ресурсы. Игроки должны объединяться в команды, чтобы преодолевать опасности и выполнять миссии, при этом постоянно испытывая напряжение от возможных столкновений с другими группами.
 ########################################################################
 export PW_PREFIX_NAME="LOST_LIGHT"
-export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/LostLight_installer.exe"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/LostLight_installer.exe"
 export PORTWINE_CREATE_SHORTCUT_NAME="Lost Light"
 
 URL_LOST_LIGHT="$(curl -s --list-only "https://adl.easebar.com/d/g/yhtj/c/lostlightcspc" | grep 'var pc_link =' | awk -F\" '{print $2}')"

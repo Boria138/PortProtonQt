@@ -7,7 +7,7 @@
 # info_ru: Лаунчер для игр Ankama.
 ########################################################################
 export LAUNCH_PARAMETERS="/S"
-export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/Ankama-Setup.exe"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/Ankama-Setup.exe"
 export PW_WINE_USE="WINE_LG"
 export PW_PREFIX_NAME="ANKAMA"
 

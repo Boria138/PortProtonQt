@@ -6,7 +6,7 @@
 # info_en: Launcher for Activision and Blizzard studio games.
 # info_ru: Лаунчер для игр Activision и Blizzard.
 ########################################################################
-export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/Battle.net-Setup.exe"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/Battle.net-Setup.exe"
 export PW_WINE_USE="PROTON_LG"
 export WINEDLLOVERRIDES="locationapi="
 export PW_PREFIX_NAME="BATTLE_NET"

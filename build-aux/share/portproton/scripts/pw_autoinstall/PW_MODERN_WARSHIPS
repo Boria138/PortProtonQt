@@ -7,7 +7,7 @@
 # info_ru: Многопользовательская военная игра, где игроки управляют современными боевыми кораблями и сражаются на морских аренах. Игра предлагает широкий выбор судов, реалистичную графику и захватывающие многопользовательские сражения.
 ########################################################################
 export LAUNCH_PARAMETERS="/VERYSILENT"
-export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/modern_warships.exe"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/modern_warships.exe"
 export PW_PREFIX_NAME="MODERN_WARSHIPS"
 export PORTWINE_CREATE_SHORTCUT_NAME="Modern Warships"
 

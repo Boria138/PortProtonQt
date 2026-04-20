@@ -8,7 +8,7 @@
 ########################################################################
 export PW_PREFIX_NAME="CALIBER"
 export LAUNCH_PARAMETERS="/VERYSILENT /CLOSEAPPLICATIONS"
-export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/CaliberSetup.exe"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/CaliberSetup.exe"
 export PW_WINE_USE="PROTON_LG"
 # export DISABLE_CP_DEFPFX="1"
 export PORTWINE_CREATE_SHORTCUT_NAME="CALIBER"

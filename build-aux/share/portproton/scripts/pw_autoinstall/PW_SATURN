@@ -8,7 +8,7 @@
 ########################################################################
 export PW_PREFIX_NAME="NINSAR"
 export PW_WINE_USE="WINE_LG"
-export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/saturn.zip"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/saturn.zip"
 start_portwine
 if try_download "https://cdn-s3.quadrosim.ru/saturn/saturn.zip" "${PW_AUTOINSTALL_EXE}" no_mirror
 then

@@ -12,7 +12,7 @@ URL_VER=$(curl https://www.toribash.com/downloads.php \
 
 export PW_PREFIX_NAME="TORIBASH"
 export LAUNCH_PARAMETERS="/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-"
-export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/Toribash-${URL_VER}-Setup.exe"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/Toribash-${URL_VER}-Setup.exe"
 export PORTWINE_CREATE_SHORTCUT_NAME="Toribash"
 
 start_portwine

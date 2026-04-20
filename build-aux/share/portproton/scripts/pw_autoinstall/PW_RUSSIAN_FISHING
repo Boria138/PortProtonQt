@@ -7,7 +7,7 @@
 # info_ru: Реалистичный симулятор рыбалки, который предлагает игрокам погрузиться в увлекательный процесс ловли рыбы в различных красивых водоемах России. Игра включает в себя широкий выбор снастей, видов рыб и возможностей для соревнований с другими рыбаками.
 ########################################################################
 export LAUNCH_PARAMETERS="/q"
-export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/RF4SetupRU.exe"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/RF4SetupRU.exe"
 export PORTWINE_CREATE_SHORTCUT_NAME="Russian Fishing 4"
 export PW_PREFIX_NAME="RUSSIAN_FISHING"
 
@@ -15,7 +15,7 @@ start_portwine
 if try_download "https://cdn6.rf4game.ru/rf4/RF4SetupRU.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
     create_new_dir "${WINEPREFIX}/drive_c/games/Russian Fishing 4"
-    mv "${PW_USER_TEMP}/RF4SetupRU.exe" "${WINEPREFIX}/drive_c/games/Russian Fishing 4/RF4.exe"
+    mv "${PORT_WINE_TMP_PATH}/RF4SetupRU.exe" "${WINEPREFIX}/drive_c/games/Russian Fishing 4/RF4.exe"
     PW_EXE_FILE="${WINEPREFIX}/drive_c/games/Russian Fishing 4/RF4.exe"
     kill_portwine
     portwine_create_shortcut

@@ -7,7 +7,7 @@
 # info_ru: Симулятор авиационных боев, действие которого происходит во время Первой мировой войны, предлагающий игрокам реалистичный опыт управления историческими истребителями. Игра включает в себя различные миссии, многопользовательский режим и детализированную графику, что позволяет ощутить атмосферу воздушных сражений того времени.
 ########################################################################
 export PW_PREFIX_NAME="RISE_OF_FLIGHT"
-export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/ROF_UE.zip"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/ROF_UE.zip"
 export LAUNCH_PARAMETERS="/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-"
 export PORTWINE_CREATE_SHORTCUT_NAME="Rise of Flight"
 

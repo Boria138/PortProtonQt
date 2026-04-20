@@ -9,7 +9,7 @@
 export LAUNCH_PARAMETERS="/VERYSILENT"
 export PW_WINDOWS_VER="7"
 export PW_PREFIX_NAME="PANZAR"
-export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/Panzar.exe"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/Panzar.exe"
 export PORTWINE_CREATE_SHORTCUT_NAME="Panzar"
 
 start_portwine

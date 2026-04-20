@@ -7,7 +7,7 @@
 # info_ru: Многопользовательская ролевая игра с открытым миром, известная своей потрясающей графикой и глубокой системой кастомизации персонажей. Игроки могут исследовать обширные земли, выполнять задания, участвовать в PvP-сражениях и заниматься различными ремеслами.
 ########################################################################
 export PW_PREFIX_NAME="DOTNET"
-export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/BlackDesert_Installer_RU.exe"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/BlackDesert_Installer_RU.exe"
 export LAUNCH_PARAMETERS="/silent"
 export PW_USE_D3D_EXTRAS="1"
 export PW_WINE_USE="PROTON_LG"

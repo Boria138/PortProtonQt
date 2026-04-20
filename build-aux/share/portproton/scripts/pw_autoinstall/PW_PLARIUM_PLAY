@@ -7,7 +7,7 @@
 # info_ru: Лаунчер для игр Plarium.
 ########################################################################
 export LAUNCH_PARAMETERS="/s"
-export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/plarium_play_setup.exe"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/plarium_play_setup.exe"
 export PW_WINDOWS_VER="10"
 export PW_PREFIX_NAME="DOTNET"
 export PORTWINE_CREATE_SHORTCUT_NAME="Plarium Play"

@@ -8,7 +8,7 @@
 ########################################################################
 export PW_PREFIX_NAME="GAMEXP"
 export LAUNCH_PARAMETERS="/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-"
-export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/InstallGameXPlauncher.exe"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/InstallGameXPlauncher.exe"
 export PORTWINE_CREATE_SHORTCUT_NAME="GameXP"
 
 start_portwine

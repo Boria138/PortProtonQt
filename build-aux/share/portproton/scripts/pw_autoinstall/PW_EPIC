@@ -7,7 +7,7 @@
 # info_ru: Лаунчер для библиотеки игр Epic Games.
 ########################################################################
 export LAUNCH_PARAMETERS="/q"
-export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/EpicGamesLauncherInstaller.msi"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/EpicGamesLauncherInstaller.msi"
 export PW_USE_D3D_EXTRAS="1"
 export PORTWINE_CREATE_SHORTCUT_NAME="Epic Games Launcher"
 export PW_WINE_USE="PROTON_LG"

@@ -7,7 +7,7 @@
 # info_ru: Лаунчер для библиотеки инди-игр.
 ##########################################################################
 export LAUNCH_PARAMETERS="--silent"
-export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/itch-setup.exe"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/itch-setup.exe"
 
 start_portwine
 if try_download "https://itch.io/app/download?platform=windows" "${PW_AUTOINSTALL_EXE}" no_mirror

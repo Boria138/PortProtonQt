@@ -7,7 +7,7 @@
 # info_ru: MMORPG, в которой игроки создают собственных супергероев или суперзлодеев во вселенной DC Comics и участвуют в эпических битвах с известными персонажами, такими как Супермен и Бэтмен. Игра предлагает обширные квесты, захватывающие PvP-режимы и возможность совместной игры с другими игроками.
 ########################################################################
 export PW_PREFIX_NAME="DC_UNIVERSE_ONLINE"
-export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/DCUO_setup.exe"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/DCUO_setup.exe"
 export PORTWINE_CREATE_SHORTCUT_NAME="DC Universe Online"
 
 start_portwine

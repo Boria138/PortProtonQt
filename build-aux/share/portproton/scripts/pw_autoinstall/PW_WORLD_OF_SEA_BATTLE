@@ -9,7 +9,7 @@
 export LAUNCH_PARAMETERS="/S"
 export PW_PREFIX_NAME="WORLD_OF_SEA_BATTLE"
 export PW_VULKAN_USE="2"
-export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/installer.exe"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/installer.exe"
 export PORTWINE_CREATE_SHORTCUT_NAME="World of Sea Battle"
 
 WOSB_VERSION="$(curl -s --list-only --connect-timeout 3 https://www.worldofseabattle.com/download2 2>/dev/null | grep 'installer.exe' | awk -F'xsolla-launcher-update/' '{print $2}' | awk -F'/' '{print $1}')"

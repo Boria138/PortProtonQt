@@ -8,7 +8,7 @@
 ########################################################################
 export PW_WINE_USE="WINE_LG"
 export LAUNCH_PARAMETERS="/S /D=c:\Program Files (x86)\Steam"
-export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/SteamSetup.exe"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/SteamSetup.exe"
 
 start_portwine
 if try_download "https://cdn.akamai.steamstatic.com/client/installer/SteamSetup.exe" "${PW_AUTOINSTALL_EXE}" no_mirror

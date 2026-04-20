@@ -8,7 +8,7 @@
 ########################################################################
 export PW_PREFIX_NAME="BROKEN_RANKS"
 export LAUNCH_PARAMETERS="/q"
-export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/BrokenRanksInstaller.exe"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/BrokenRanksInstaller.exe"
 export PORTWINE_CREATE_SHORTCUT_NAME="Broken Ranks"
 
 start_portwine

@@ -19,14 +19,14 @@ export PW_USE_SHADER_CACHE="0"
 export PW_USE_EAC_AND_BE="1"
 export PW_DLL_INSTALL="vcrun2022 d3dcompiler_47 arial tahoma" # msdelta
 export WINEDLLOVERRIDES="msvcp140,msvcp140_1=n"
-export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/eve-online-latest+Setup.exe"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/eve-online-latest+Setup.exe"
 
 start_portwine
 if try_download "https://launcher.ccpgames.com/eve-online/release/win32/x64/eve-online-latest+Setup.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
     EVE_LAUNCHER_DIR="${WINEPREFIX}/drive_c/users/steamuser/AppData/Local/eve-online"
 
-    $pw_7z x "${PW_USER_TEMP}/eve-online-latest+Setup.exe" -o"${EVE_LAUNCHER_DIR}" -y
+    $pw_7z x "${PORT_WINE_TMP_PATH}/eve-online-latest+Setup.exe" -o"${EVE_LAUNCHER_DIR}" -y
     EVE_VERSION="$(cat "${EVE_LAUNCHER_DIR}/RELEASES" | awk '{print $2}' | awk -F"-" '{print $3}')"
 
     $pw_7z x "${EVE_LAUNCHER_DIR}/eve-online-${EVE_VERSION}-full.nupkg" -o"${EVE_LAUNCHER_DIR}/tmp" -y

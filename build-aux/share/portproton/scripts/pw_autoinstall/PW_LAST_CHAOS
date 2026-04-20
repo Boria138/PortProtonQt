@@ -7,7 +7,7 @@
 # info_ru: Last Chaos – классическая MMORPG с шестью классами, осадами замков, корейским гриндом и километрами подземелий. Противостояние Апполона и Эреса набирает обороты, так что спешите принять одну из сторон.
 ########################################################################
 export PW_PREFIX_NAME="LAST_CHAOS"
-export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/Last Chaos.zip"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/Last Chaos.zip"
 export PORTWINE_CREATE_SHORTCUT_NAME="Last Chaos"
 
 start_portwine

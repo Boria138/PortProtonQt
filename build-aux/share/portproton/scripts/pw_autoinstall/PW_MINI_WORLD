@@ -9,7 +9,7 @@
 URL_VER=$(curl https://www.miniworldgame.com/ | awk -F"/app_install/" '{print $2}' |  awk -F"universal" '{print $1}')
 
 export PW_PREFIX_NAME="MINI_WORLD"
-export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/miniworld_universal.exe"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/miniworld_universal.exe"
 export PORTWINE_CREATE_SHORTCUT_NAME="Mini World"
 
 start_portwine

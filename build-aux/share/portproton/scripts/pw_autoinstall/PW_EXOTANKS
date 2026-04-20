@@ -8,7 +8,7 @@
 ########################################################################
 export PW_PREFIX_NAME="EXOTANKS"
 export LAUNCH_PARAMETERS="/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-"
-export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/ExoTanksMOBA_Setup.exe"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/ExoTanksMOBA_Setup.exe"
 export PORTWINE_CREATE_SHORTCUT_NAME="ExoTanks"
 
 start_portwine

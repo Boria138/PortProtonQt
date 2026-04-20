@@ -8,7 +8,7 @@
 ########################################################################
 export PW_PREFIX_NAME="CHICKEN_INVADERS_UNIVERSE"
 export LAUNCH_PARAMETERS="/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-"
-export PW_AUTOINSTALL_EXE="${PW_USER_TEMP}/ChickenInvadersUniverseInstaller.exe"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/ChickenInvadersUniverseInstaller.exe"
 export PORTWINE_CREATE_SHORTCUT_NAME="Chicken Invaders Universe"
 
 start_portwine
