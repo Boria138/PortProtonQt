@@ -270,10 +270,8 @@ case "$1" in
 --repair                                            ${translations[Forces all scripts to be updated to a working state
                                                     (helps if PortProton is not working)]}
 --reinstall                                         ${translations[Reinstalls PortProton and resets all settings to default]}
---generate-pot                                      ${translations[Creates a files with translations .pot and .po]}
 --debug                                             ${translations[Debug scripts for PortProton
                                                     (saved log in]} $PORT_DATA_PATH/scripts-debug.log)
---update                                            ${translations[Check update scripts for PortProton]}
 --launch                                            ${translations[Launches the application immediately, requires the path to the .exe file]}
 --edit-db                                           ${translations[After the variable, the path to the .exe file is required and then the variables.
                                                     (List their variables and values for example PW_MANGOHUD=1 PW_VKBASALT=0, etc.)]}
@@ -313,7 +311,22 @@ ${translations[Usage examples:]}
         exit 0
         ;;
     --reinstall)
-        pw_reinstall_pp
+        stop_portwine
+        pw_clear_pfx
+        try_remove_dir "${PORT_DATA_PATH}/data/dist"
+        create_new_dir "${PORT_DATA_PATH}/data/dist"
+        try_remove_dir "${PORT_WINE_TMP_PATH}/VULKAN"
+        try_remove_dir "${PORT_WINE_TMP_PATH}/gecko"
+        try_remove_dir "${PORT_WINE_TMP_PATH}/mono"
+        #TODO: что там в QT если try_remove_file "${PORT_DATA_PATH}/data/user.conf"
+        exit 0
+        ;;
+    --remove)
+        rm -fr "${PORT_DATA_PATH}"
+        rm -fr "${PORT_WINE_TMP_PATH}"
+        rm -f "$(grep -il PortProton "${HOME}/.local/share/applications"/*.desktop)"
+        update-desktop-database -q "${HOME}/.local/share/applications"
+        exit 0
         ;;
     --autoinstall)
         pw_autoinstall_from_db $2
@@ -324,9 +337,6 @@ ${translations[Usage examples:]}
         export PW_DEBUG="set -x"
         /usr/bin/env bash -c "${pw_full_command_line[@]}" 2>&1 | tee "$PORT_DATA_PATH/scripts-debug.log" &
         exit 0
-        ;;
-    --update)
-        gui_pw_update
         ;;
     --edit-db)
         # --edit-db /полный/путь/до/файла.exe PW_MANGOHUD=1 PW_VKBASALT=0 (и т.д) для примера
@@ -344,7 +354,7 @@ ${translations[Usage examples:]}
         manage_user_conf_value set "$2" "$3"
         exit 0
         ;;
-        --delete-user-conf)
+    --delete-user-conf)
         # --delete-user-conf VARIABLE_NAME
         manage_user_conf_value delete "$2"
         exit 0
@@ -433,28 +443,41 @@ ${translations[Usage examples:]}
         ;;
     --winefile)
         get_wine_and_pfx "$2" "$3"
-        pw_winefile
-        exit $?
+        start_portwine
+        pw_run winefile
+        stop_portwine
         ;;
     --winecfg)
         get_wine_and_pfx "$2" "$3"
-        pw_winecfg
-        exit $?
+        start_portwine
+        export GST_PLUGIN_SYSTEM_PATH_1_0=""
+        pw_run winecfg
+        stop_portwine
         ;;
     --winecmd)
         get_wine_and_pfx "$2" "$3"
-        pw_winecmd
-        exit $?
+        start_portwine
+        cd "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c" || fatal
+        if check_flatpak ; then
+            $PW_TERM "pw_run cmd"
+        else
+            export PW_USE_TERMINAL=1
+            pw_run cmd
+        fi
+        stop_portwine
         ;;
     --winereg)
         get_wine_and_pfx "$2" "$3"
-        pw_winereg
-        exit $?
+        start_portwine
+        export GST_PLUGIN_SYSTEM_PATH_1_0=""
+        pw_run regedit
+        stop_portwine
         ;;
     --wine_uninstaller)
         get_wine_and_pfx "$2" "$3"
-        wine_uninstaller
-        exit $?
+        start_portwine
+        pw_run uninstaller
+        stop_portwine
         ;;
     --clear_pfx)
         get_wine_and_pfx "$2" "$3"
@@ -464,6 +487,20 @@ ${translations[Usage examples:]}
     --mangohud-preview)
         pw_mangohud_preview "${2:-}"
         exit $?
+        ;;
+    --xterm)
+        cd "$HOME" || :
+        unset PW_SANDBOX_HOME_PATH
+        pw_init_runtime
+        ${pw_runtime} \
+        LD_PRELOAD="${PW_LD_PRELOAD}" \
+        VK_ADD_IMPLICIT_LAYER_PATH="${PW_VK_LAYER_PATH}" \
+        VK_ADD_LAYER_PATH="${PW_VK_LAYER_PATH}" \
+        VK_INSTANCE_LAYERS="${PW_VK_INSTANCE_LAYERS}" \
+        ${PW_GAMEMODERUN_SLR} \
+        ${PW_ADD_VAR_SLR} \
+        ${PW_TERM} bash
+        stop_portwine
         ;;
     --initial)
         exit 0
@@ -486,10 +523,7 @@ ${translations[Usage examples:]}
 esac
 
 # portwine_start_debug ;;
-# rm_portproton
 # gui_proton_downloader ;;
-# pw_create_prefix_backup ;;
-# pw_start_cont_xterm ;;
 # update_ext_ppdb
 # find_ext_ppdb
 

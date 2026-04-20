@@ -1161,18 +1161,6 @@ pw_clear_pfx () {
     return 0
 }
 
-pw_reinstall_pp () {
-    stop_portwine
-    pw_clear_pfx
-    try_remove_dir "${PORT_DATA_PATH}/data/dist"
-    create_new_dir "${PORT_DATA_PATH}/data/dist"
-    try_remove_dir "${PORT_WINE_TMP_PATH}/VULKAN"
-    try_remove_dir "${PORT_WINE_TMP_PATH}/gecko"
-    try_remove_dir "${PORT_WINE_TMP_PATH}/mono"
-    #TODO: не сломается в QT если try_remove_file "${PORT_DATA_PATH}/data/user.conf"
-    exit 0
-}
-
 check_user_conf () {
     export USER_CONF="${PORT_DATA_PATH}/data/user.conf"
 
@@ -4295,53 +4283,6 @@ EOF
     fi
 }
 
-pw_winecfg () {
-    start_portwine
-    export GST_PLUGIN_SYSTEM_PATH_1_0=""
-    pw_run winecfg
-    stop_portwine
-}
-
-pw_winefile () {
-    start_portwine
-    pw_run winefile
-    stop_portwine
-}
-
-pw_winecmd () {
-    start_portwine
-    cd "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c" || fatal
-    if check_flatpak ; then
-        $PW_TERM "pw_run cmd"
-    else
-        export PW_USE_TERMINAL=1
-        pw_run cmd
-    fi
-    stop_portwine
-}
-
-pw_winereg () {
-    start_portwine
-    export GST_PLUGIN_SYSTEM_PATH_1_0=""
-    pw_run regedit
-    stop_portwine
-}
-
-pw_start_cont_xterm () {
-    cd "$HOME" || :
-    unset PW_SANDBOX_HOME_PATH
-    pw_init_runtime
-    ${pw_runtime} \
-    LD_PRELOAD="${PW_LD_PRELOAD}" \
-    VK_ADD_IMPLICIT_LAYER_PATH="${PW_VK_LAYER_PATH}" \
-    VK_ADD_LAYER_PATH="${PW_VK_LAYER_PATH}" \
-    VK_INSTANCE_LAYERS="${PW_VK_INSTANCE_LAYERS}" \
-    ${PW_GAMEMODERUN_SLR} \
-    ${PW_ADD_VAR_SLR} \
-    ${PW_TERM} bash
-    exit 0
-}
-
 # GUI GET OTHER WINE
 gui_proton_downloader () {
     unset VERSION_WINE_GIT VERSION_INSTALLED_WINE URL_VERSION_PROTON_GIT GIVE_WINE_URL
@@ -5624,23 +5565,6 @@ pw_autoinstall_from_db () {
     # shellcheck source=/dev/null
     . "${PORT_SCRIPTS_PATH}/pw_autoinstall/${1}"
 }
-
-rm_portproton () {
-    rm -fr "${PORT_DATA_PATH}"
-    rm -fr "${PORT_WINE_TMP_PATH}"
-    rm -fr "${HOME}/PortWINE"
-    rm -f "$(grep -il PortProton "${HOME}/.local/share/applications"/*.desktop)"
-    update-desktop-database -q "${HOME}/.local/share/applications"
-    exit 0
-}
-export -f rm_portproton
-
-wine_uninstaller () {
-    start_portwine
-    pw_run uninstaller
-    stop_portwine
-}
-export -f wine_uninstaller
 
 update_ext_ppdb () {
     if [[ -f "$1" ]] ; then
