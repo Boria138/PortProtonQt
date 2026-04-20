@@ -313,15 +313,10 @@ ${translations[Usage examples:]}
         exit 0
         ;;
     --reinstall)
-        export PW_REINSTALL_FROM_TERMINAL=1
         pw_reinstall_pp
         ;;
     --autoinstall)
         pw_autoinstall_from_db $2
-        exit 0
-        ;;
-    --generate-pot)
-        generate_pot
         exit 0
         ;;
     --debug)
@@ -490,21 +485,12 @@ ${translations[Usage examples:]}
         ;;
 esac
 
-# case "$PW_YAD_SET" in
-#     DEBUG|102) portwine_start_debug ;;
-#     rm_portproton
-#     gui_pw_reinstall_pp) pw_reinstall_pp ;;
-#     gui_proton_downloader) gui_proton_downloader ;;
-#     gui_open_scripts_from_backup) gui_open_scripts_from_backup ;;
-#     find_ext_ppdb) find_ext_ppdb "$PW_EXE_FILE" ;;
-#     pw_create_prefix_backup) pw_create_prefix_backup ;;
-#     pw_start_cont_xterm) pw_start_cont_xterm ;;
-#     PW_*) pw_autoinstall_from_db ;;
-#     *.desktop) button_click --desktop ;;
-    # WINETRICKS|116) pw_prefix_manager ;;
-    # gui_open_user_conf) gui_open_user_conf ;;
+# portwine_start_debug ;;
+# rm_portproton
+# gui_proton_downloader ;;
+# pw_create_prefix_backup ;;
+# pw_start_cont_xterm ;;
+# update_ext_ppdb
+# find_ext_ppdb
 
-
-
-print_warning "FINISH"
 stop_portwine

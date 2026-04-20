@@ -1123,18 +1123,6 @@ fixes_after_update () {
     return 0
 }
 
-restart_pp () {
-    if [[ "${PW_CLI}" != 1 ]] ; then
-        case "$1" in
-            --userconf) export RESTART_PP_USED="userconf" ;;
-            --edit_db) export RESTART_PP_USED="edit_db" ;;
-        esac
-        /usr/bin/env bash -c "${pw_full_command_line[@]}" &
-        exit 0
-    fi
-    exit 0
-}
-
 pw_clear_pfx () {
     rm -f "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}"/.dot*
     rm -f "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}"/.prog*
@@ -1174,37 +1162,15 @@ pw_clear_pfx () {
 }
 
 pw_reinstall_pp () {
-    if [[ "${PW_REINSTALL_FROM_TERMINAL}" == 1 ]] ; then
-        read -p "Do you want to reinstall PortProton? (Y,y - Yes):   " -n 1 -r
-        if [[ ! $REPLY =~ ^[Yy]$ ]]
-        then
-            echo ""
-            exit 1
-        else
-            pw_clear_pfx
-            try_remove_dir "${PORT_DATA_PATH}/data/dist"
-            create_new_dir "${PORT_DATA_PATH}/data/dist"
-            try_remove_dir "${PORT_WINE_TMP_PATH}/VULKAN"
-            try_remove_file "${PORT_WINE_TMP_PATH}/scripts_update_notifier"
-            try_remove_file "${PORT_DATA_PATH}/data/user.conf"
-            try_remove_file "${PORT_WINE_TMP_PATH}/scripts_ver"
-            echo ""
-            unset SKIP_CHECK_UPDATES
-            print_info "Restarting PP for reinstall files..."
-        fi
-    elif yad_question "${translations[Do you really want to reinstall PortProton?\\nFor this, an internet connection will be required.]}" ; then
-        pw_clear_pfx
-        try_remove_dir "${PORT_DATA_PATH}/data/dist"
-        create_new_dir "${PORT_DATA_PATH}/data/dist"
-        try_remove_dir "${PORT_WINE_TMP_PATH}/VULKAN"
-        try_remove_file "${PORT_WINE_TMP_PATH}/scripts_update_notifier"
-        try_remove_file "${PORT_DATA_PATH}/data/user.conf"
-        try_remove_file "${PORT_WINE_TMP_PATH}/scripts_ver"
-        echo ""
-        unset SKIP_CHECK_UPDATES
-        print_info "Restarting PP for reinstall files..."
-    fi
-    restart_pp
+    stop_portwine
+    pw_clear_pfx
+    try_remove_dir "${PORT_DATA_PATH}/data/dist"
+    create_new_dir "${PORT_DATA_PATH}/data/dist"
+    try_remove_dir "${PORT_WINE_TMP_PATH}/VULKAN"
+    try_remove_dir "${PORT_WINE_TMP_PATH}/gecko"
+    try_remove_dir "${PORT_WINE_TMP_PATH}/mono"
+    #TODO: не сломается в QT если try_remove_file "${PORT_DATA_PATH}/data/user.conf"
+    exit 0
 }
 
 check_user_conf () {
@@ -1680,12 +1646,6 @@ stop_portwine () {
         create_name_desktop
     fi
 
-    if [[ $PW_CLI != "1" ]] ; then
-        case "$1" in
-            --restart) restart_pp ;;
-                    *) unset SKIP_CHECK_UPDATES ;;
-        esac
-    fi
     exit 0
 }
 export -f stop_portwine
@@ -4153,35 +4113,6 @@ pw_run () {
 }
 export -f pw_run
 
-pw_yad_set_form () {
-    if [[ -n $(<"${PW_TMPFS_PATH}/tmp_yad_form") ]] ; then
-        pw_skip_get_info
-        PW_YAD_SET=$(head -n 1 "${PW_TMPFS_PATH}/tmp_yad_form" | awk '{print $1}')
-        export PW_YAD_SET
-    fi
-}
-
-pw_yad_form_vulkan () {
-    if [[ -n "$(<"${PW_TMPFS_PATH}/tmp_yad_form_vulkan")" ]] ; then
-        if [[ -n "${KEY_START}" ]] ; then
-            YAD_FORM_VULKAN=$(sed 's/$/\;/' "${PW_TMPFS_PATH}/tmp_yad_form_vulkan")
-            VULKAN_MOD=$(echo "${YAD_FORM_VULKAN}" | grep \;\; | awk -F";" '{print $1}')
-            PW_WINE_VER=$(echo "${YAD_FORM_VULKAN}" | grep \;\; | awk -F";" '{print $2}')
-            PW_PREFIX_NAME=$(echo "${YAD_FORM_VULKAN}" | grep \;\; | awk -F";" '{print $3}' | sed -e s/[[:blank:]]/_/g)
-        else
-            YAD_FORM_VULKAN=$(<"${PW_TMPFS_PATH}/tmp_yad_form_vulkan")
-            VULKAN_MOD=$(echo "${YAD_FORM_VULKAN}" | grep \;\; | awk -F";" '{print $1}')
-            PW_PREFIX_NAME=$(echo "${YAD_FORM_VULKAN}" | grep \;\; | awk -F";" '{print $2}' | sed -e s/[[:blank:]]/_/g)
-            PW_WINE_VER=$(echo "${YAD_FORM_VULKAN}" | grep \;\; | awk -F";" '{print $3}')
-        fi
-        if [[ -z "${PW_PREFIX_NAME}" ]]
-        then PW_PREFIX_NAME="DEFAULT"
-        else PW_PREFIX_NAME="${PW_PREFIX_NAME^^}"
-        fi
-        export PW_PREFIX_NAME PW_WINE_VER VULKAN_MOD
-    fi
-}
-
 steamplay_launch () {
     pw_check_and_download_plugins
 
@@ -4368,13 +4299,13 @@ pw_winecfg () {
     start_portwine
     export GST_PLUGIN_SYSTEM_PATH_1_0=""
     pw_run winecfg
-    stop_portwine --restart
+    stop_portwine
 }
 
 pw_winefile () {
     start_portwine
     pw_run winefile
-    stop_portwine --restart
+    stop_portwine
 }
 
 pw_winecmd () {
@@ -4386,14 +4317,14 @@ pw_winecmd () {
         export PW_USE_TERMINAL=1
         pw_run cmd
     fi
-    stop_portwine --restart
+    stop_portwine
 }
 
 pw_winereg () {
     start_portwine
     export GST_PLUGIN_SYSTEM_PATH_1_0=""
     pw_run regedit
-    stop_portwine --restart
+    stop_portwine
 }
 
 pw_start_cont_xterm () {
@@ -4408,7 +4339,7 @@ pw_start_cont_xterm () {
     ${PW_GAMEMODERUN_SLR} \
     ${PW_ADD_VAR_SLR} \
     ${PW_TERM} bash
-    restart_pp
+    exit 0
 }
 
 # GUI GET OTHER WINE
@@ -4437,7 +4368,7 @@ gui_proton_downloader () {
     METADATA=$(curl  -A 'PortProton' -s "$METADATA_URL")
     if [[ -z "$METADATA" ]] ; then
         yad_error "${translations[Error: failed to fetch metadata.]}"
-        restart_pp
+        exit 0
     fi
 
     if [[ "$1" != "silent" ]] ; then
@@ -4446,7 +4377,7 @@ gui_proton_downloader () {
         WINE_CATEGORIES_RAW=($(echo "$METADATA" | jq -r 'keys[]' 2>/dev/null))
         if [[ ${#WINE_CATEGORIES_RAW[@]} -eq 0 ]] ; then
             yad_error "${translations[Error: check wine.]}"
-            restart_pp
+            exit 0
         fi
         WINE_CATEGORIES=()
         for CAT in "${WINE_CATEGORIES_RAW[@]}" ; do
@@ -4558,7 +4489,7 @@ gui_proton_downloader () {
         --button="${translations[OK]}!${PW_GUI_ICON_PATH}/${BUTTON_SIZE}.png!":0 2>/dev/null
         YAD_WINE_STATUS="$?"
         if [[ "$YAD_WINE_STATUS" == "1" || "$YAD_WINE_STATUS" == "252" ]] ; then
-            restart_pp
+            exit 0
         fi
         if [[ -n $(<"${PW_TMPFS_PATH}/tmp_set_wine") ]] ; then
             VERSION_WINE_GIT="$(sed 's/TRUE//' "${PW_TMPFS_PATH}/tmp_set_wine")"
@@ -4571,7 +4502,7 @@ gui_proton_downloader () {
         && [[ -z "${VERSION_INSTALLED_WINE}" ]]
         then
             print_info "Nothing to do."
-            restart_pp
+            exit 0
         fi
     fi
 
@@ -4624,7 +4555,7 @@ gui_proton_downloader () {
             try_remove_dir "${PORT_DATA_PATH}/data/dist/${REMOVE_WINE}"
         done
         if [[ -z "${VERSION_WINE_GIT}" ]] ; then
-            restart_pp
+            exit 0
         fi
     fi
 
@@ -4633,7 +4564,7 @@ gui_proton_downloader () {
             pw_download_get_wine "$GIVE_ALL_WINE"
         done
         edit_db_from_gui
-        restart_pp
+        exit 0
     else
         pw_download_get_wine "$PW_WINE_USE"
     fi
@@ -4836,7 +4767,7 @@ gui_edit_db () {
 
     if [[ "$YAD_STATUS" == "0" ]] ; then
         print_info "Restarting PP after update ppdb file..."
-        restart_pp
+        exit 0
     fi
 }
 
@@ -5189,12 +5120,12 @@ gui_gamescope () {
 
     case "${YAD_GAMESCOPE_STATUS}" in
         1|252)
-            restart_pp
+            exit 0
             ;;
         162)
             sed -i '/PW_GS/d' "$PW_EXE_FILE".ppdb
             sed -i '/GAMESCOPE/d' "$PW_EXE_FILE".ppdb
-            restart_pp
+            exit 0
             ;;
         164)
             export PW_GAMESCOPE="0"
@@ -5242,7 +5173,7 @@ gui_gamescope () {
     sed -i '/^export PW_GAMESCOPE_ARGS_NEW=/d' "${PW_EXE_FILE}.ppdb"
     edit_db_from_gui "${gs_ppdb_vars[@]}"
 
-    restart_pp
+    exit 0
 }
 
 # RESIZE PNG FILE
@@ -5405,13 +5336,13 @@ portwine_output_yad_shortcut () {
         if [[ "$PW_NO_RESTART_PPDB" != "1" ]] ; then
             print_info "Restarting PP..."
             [[ "$PW_GUI_START" == "NOTEBOOK" ]] && unset PW_YAD_FORM_TAB
-            restart_pp
+            exit 0
         fi
     elif [[ "$PW_YAD_OUT" =~ ^(1|2|252)$ ]] ; then
         print_info "Restarting PP..."
         [[ -n $KEY_MENU ]] && unset PW_EXE_FILE
         [[ "$PW_GUI_START" == "NOTEBOOK" ]] && unset PW_YAD_FORM_TAB
-        [[ -z ${LINKS[0]} ]] && restart_pp
+        [[ -z ${LINKS[0]} ]] && exit 0
     fi
 }
 
@@ -5552,7 +5483,7 @@ portwine_change_shortcut () {
         [[ "$PW_GUI_START" == "NOTEBOOK" ]] && unset PW_YAD_FORM_TAB
         PW_SHORTCUT_STEAM="FALSE"
         portwine_delete_shortcut
-        restart_pp
+        exit 0
     fi
     portwine_output_yad_shortcut
 }
@@ -5707,7 +5638,7 @@ export -f rm_portproton
 wine_uninstaller () {
     start_portwine
     pw_run uninstaller
-    stop_portwine --restart
+    stop_portwine
 }
 export -f wine_uninstaller
 
@@ -5780,10 +5711,10 @@ find_ext_ppdb () {
     get_ppdb_info=$(curl -A 'PortProton' -s "$find_metadata_url")
     if [[ -z "$get_ppdb_info" ]] ; then
         yad_error "${translations[Error: failed to fetch metadata.]}\n($find_metadata_url)"
-        restart_pp
+        exit 0
     elif [[ "$get_ppdb_info" =~ 'No game found' ]] ; then
         yad_error "${translations[Error: settings file not found for]} $exe_filename"
-        restart_pp
+        exit 0
     fi
 
     source <(jq -r 'to_entries[] | "json_\(.key)=\"\(.value)\""' <<< "$get_ppdb_info")
@@ -5803,12 +5734,12 @@ find_ext_ppdb () {
         print_info "Replacing PPDB from: $json_ppdb_url"
         try_remove_file "$current_ppdb_file"
         if curl -A 'PortProton' -fsSL "$json_ppdb_url" -o "$current_ppdb_file" ; then
-            restart_pp
+            exit 0
         else
             yad_error "${translations[Failed to download PPDB from URL: $json_ppdb_url]}"
             exit 1
         fi
     else
-        restart_pp
+        exit 0
     fi
 }
