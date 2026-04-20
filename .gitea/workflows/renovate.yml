@@ -1,0 +1,37 @@
+name: renovate
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * 0'
+
+jobs:
+  renovate:
+    runs-on: ubuntu-latest
+    container: ghcr.io/renovatebot/renovate:latest@sha256:eec497df1ca6ebe8bccf577c5dab8825ab5f3673a42a58f066e31dbf070664e6
+    steps:
+      - uses: https://gitea.com/actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Set up Node.js
+        uses: https://gitea.com/actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+        with:
+          node-version: 20
+
+      - name: Install uv manually
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          . $HOME/.local/bin/env
+          uv --version
+
+      - name: Download external renovate config
+        run: |
+          mkdir -p /tmp/renovate-config
+          curl -fsSL "https://git.linux-gaming.ru/Linux-Gaming/renovate-config/raw/branch/main/config.js" \
+            -o /tmp/renovate-config/config.js
+
+      - name: Run Renovate
+        run: renovate
+        env:
+          RENOVATE_CONFIG_FILE: "/tmp/renovate-config/config.js"
+          LOG_LEVEL: "debug"
+          RENOVATE_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
