@@ -5,7 +5,7 @@ set -eu
 # Initialize variables
 LOCAL_MODE=false
 BRANCH="main"
-REPO_URL="https://git.linux-gaming.ru/Boria138/PortProtonQt.git"
+REPO_URL="https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt.git"
 
 # Parse arguments
 while [ $# -gt 0 ]; do
@@ -47,7 +47,7 @@ if [ "$LOCAL_MODE" = true ]; then
     PPQT_PKGBUILD=""
 else
     echo "Using stable version of PortProtonQt from main branch..."
-    PPQT_PKGBUILD="https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/build-aux/PKGBUILD"
+    PPQT_PKGBUILD="https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/build-aux/PKGBUILD"
 fi
 
 echo "Tweak makepkg..."
@@ -97,7 +97,7 @@ if [ "$LOCAL_MODE" = true ]; then
 else
     wget --retry-connrefused --tries=30 "$PPQT_PKGBUILD" -O ./PKGBUILD
 fi
-sed -i "s|source=(\"git+https://git.linux-gaming.ru/Boria138/PortProtonQt.git\")|source=(\"git+${REPO_URL}#branch=$BRANCH\")|" PKGBUILD
+sed -i "s|source=(\"git+https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt.git\")|source=(\"git+${REPO_URL}#branch=$BRANCH\")|" PKGBUILD
 makepkg -si --noconfirm
 
 echo "Installing debloated packages..."

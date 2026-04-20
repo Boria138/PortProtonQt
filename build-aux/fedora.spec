@@ -9,7 +9,7 @@ Release:        1%{?dist}
 Summary:        Modern GUI for managing and launching games from PortProton, Steam, and Epic Games Store
 
 License:        GPL-3.0
-URL:            https://git.linux-gaming.ru/Boria138/PortProtonQt
+URL:            https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt
 ExclusiveArch:  x86_64 aarch64
 
 BuildRequires:  meson >= 0.61.2
@@ -79,7 +79,7 @@ the necessary files to use PortProtonQt as a Proton compatibility tool in Steam.
 %{?python_disable_dependency_generator}
 
 %prep
-git clone https://git.linux-gaming.ru/Boria138/PortProtonQt
+git clone https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt
 cd %{oname}
 git checkout v%{pypi_version}
 

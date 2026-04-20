@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+      - scripts
     paths:
       - 'build-aux/vk_gpu_info.c'
       - '.gitea/workflows/build-vk-gpu-info-debian.yml'
