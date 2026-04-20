@@ -1,25 +1,26 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-
-  "extends": ["config:best-practices"],
-
+  "extends": [
+    "config:best-practices"
+  ],
   "timezone": "Asia/Qyzylorda",
-  "schedule": ["after 11pm and before 5am"],
-
+  "schedule": [
+    "after 11pm",
+    "before 5am"
+  ],
   "rebaseWhen": "never",
   "prConcurrentLimit": 1,
   "prHourlyLimit": 1,
   "fetchChangeLogs": "off",
-
   "lockFileMaintenance": {
     "enabled": true,
-    "schedule": ["before 4am on monday"]
+    "schedule": [
+      "before 4am on monday"
+    ]
   },
-
   "pre-commit": {
     "enabled": false
   },
-
   "hostRules": [
     {
       "description": "Gitea host with reduced API pressure",
@@ -28,27 +29,41 @@
       "maxRequestsPerSecond": 1
     }
   ],
-
   "packageRules": [
     {
       "description": "Update Renovate image only weekly",
-      "matchPackageNames": ["ghcr.io/renovatebot/renovate"],
-      "extends": ["schedule:weekly"]
+      "matchPackageNames": [
+        "ghcr.io/renovatebot/renovate"
+      ],
+      "extends": [
+        "schedule:weekly"
+      ]
     },
     {
       "description": "Automerge Renovate image minor/patch/digest updates",
-      "matchPackageNames": ["ghcr.io/renovatebot/renovate"],
-      "matchUpdateTypes": ["minor", "patch", "digest"],
+      "matchPackageNames": [
+        "ghcr.io/renovatebot/renovate"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "digest"
+      ],
       "automerge": true
     },
     {
       "description": "Automerge safe minor/patch updates",
-      "matchUpdateTypes": ["minor", "patch"],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
       "automerge": true
     },
     {
       "description": "Disable updates for broken workflows",
-      "matchManagers": ["github-actions"],
+      "matchManagers": [
+        "github-actions"
+      ],
       "matchFileNames": [
         ".gitea/workflows/build.yml",
         ".gitea/workflows/build-vk-gpu-info-debian.yml"
@@ -57,29 +72,41 @@
     },
     {
       "description": "Do not update .python-version",
-      "matchFileNames": [".python-version"],
+      "matchFileNames": [
+        ".python-version"
+      ],
       "enabled": false
     },
     {
       "description": "Disable poetry and pyenv managers",
-      "matchManagers": ["poetry", "pyenv"],
+      "matchManagers": [
+        "poetry",
+        "pyenv"
+      ],
       "enabled": false
     },
     {
       "description": "Group PEP 621 Python dependencies",
-      "matchManagers": ["pep621"],
+      "matchManagers": [
+        "pep621"
+      ],
       "rangeStrategy": "bump",
       "versioning": "pep440",
       "groupName": "Python dependencies"
     },
     {
       "description": "Project uses meson, not setuptools",
-      "matchPackageNames": ["setuptools"],
+      "matchPackageNames": [
+        "setuptools"
+      ],
       "enabled": false
     },
     {
       "description": "Prevent unsupported runner/python-version updates",
-      "matchDatasources": ["github-runners", "python-version"],
+      "matchDatasources": [
+        "github-runners",
+        "python-version"
+      ],
       "enabled": false
     }
   ]
