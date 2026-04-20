@@ -23,7 +23,7 @@ Override types:
 | Type            | Location                                        | Priority |
 |-----------------|--------------------------------------------------|----------|
 | User            | `~/.local/share/PortProtonQT/custom_data/`       | Highest  |
-| Built-in        | `portprotonqt/custom_data/`                      | Lower    |
+| Remote defaults | `PortProtonQt-Custom-Metadata` repository        | Lower    |
 
 ---
 
@@ -34,7 +34,7 @@ Override types:
 Data is used in the following order:
 
 1. **User Overrides**
-2. **Built-in Overrides**
+2. **Remote defaults**
 3. **Steam Metadata**
 4. **`.desktop` file info**
 
@@ -76,31 +76,10 @@ Each `<exe_name>` folder can include:
 
 ## 🛠 For Developers
 
-### Adding Built-In Overrides
+### Adding Remote Defaults
 
-1. **Create a folder in the project**:
-   ```bash
-   mkdir -p portprotonqt/custom_data/mygame
-   ```
-
-2. **Add files**:
-
-- `metadata.txt`:
-  ```txt
-  name=Default Title
-  description=Default Description
-  ```
-
-- Cover image (`cover.png`, for example):
-  ```bash
-  cp path/to/cover.png portprotonqt/custom_data/mygame/cover.png
-  ```
-
-3. **Commit changes to repository**:
-   ```bash
-   git add portprotonqt/custom_data/mygame
-   git commit -m "Added built-in overrides for mygame"
-   ```
+Add metadata and covers in:
+`https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt-Custom-Metadata`
 
 ---
 

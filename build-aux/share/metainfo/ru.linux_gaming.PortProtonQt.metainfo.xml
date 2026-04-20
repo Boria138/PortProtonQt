@@ -31,37 +31,37 @@
     <category>Game</category>
     <category>Utility</category>
   </categories>
-  <url type="homepage">https://git.linux-gaming.ru/Boria138/PortProtonQt</url>
-  <url type="bugtracker">https://git.linux-gaming.ru/Boria138/PortProtonQt/issues</url>
+  <url type="homepage">https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt</url>
+  <url type="bugtracker">https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/issues</url>
   <url type="translate">https://translate.codeberg.org/engage/portprotonqt</url>
   <screenshots>
     <screenshot type="default">
-      <image>https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/library.jpg</image>
+      <image>https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/library.jpg</image>
       <caption>Library</caption>
       <caption xml:lang="ru">Библиотека</caption>
     </screenshot>
     <screenshot>
-      <image>https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/game_card.jpg</image>
+      <image>https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/game_card.jpg</image>
       <caption>Card detail page</caption>
       <caption xml:lang="ru">Детали игры</caption>
     </screenshot>
     <screenshot>
-      <image>https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/portproton_settings.jpg</image>
+      <image>https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/portproton_settings.jpg</image>
       <caption>Settings</caption>
       <caption xml:lang="ru">Настройки</caption>
     </screenshot>
     <screenshot>
-      <image>https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/context_menu.jpg</image>
+      <image>https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/context_menu.jpg</image>
       <caption>Context Menu</caption>
       <caption xml:lang="ru">Контекстное меню</caption>
     </screenshot>
     <screenshot>
-      <image>https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/exe_settings.jpg</image>
+      <image>https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/exe_settings.jpg</image>
       <caption>Exe Settings</caption>
       <caption xml:lang="ru">Настройки exe</caption>
     </screenshot>
     <screenshot>
-      <image>https://git.linux-gaming.ru/Boria138/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/wine_settings.jpg</image>
+      <image>https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/wine_settings.jpg</image>
       <caption>Wine Settings</caption>
       <caption xml:lang="ru">Настройки Wine</caption>
     </screenshot>

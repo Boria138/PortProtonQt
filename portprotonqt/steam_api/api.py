@@ -219,12 +219,10 @@ def _has_custom_data_for_exe(exe_name: str) -> bool:
     if not exe_name:
         return False
 
-    package_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    builtin_game_folder = os.path.join(package_root, "custom_data", exe_name)
     xdg_data_home = os.getenv("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share"))
     user_game_folder = os.path.join(xdg_data_home, "PortProtonQt", "custom_data", exe_name)
 
-    candidate_dirs = [builtin_game_folder, user_game_folder]
+    candidate_dirs = [user_game_folder]
     cover_names = {"cover.png", "cover.jpg", "cover.jpeg", "cover.bmp"}
     metadata_name = "metadata.txt"
 
