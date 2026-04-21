@@ -11,7 +11,7 @@ export LAUNCH_PARAMETERS="/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-"
 export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/InstallGameXPlauncher.exe"
 export PORTWINE_CREATE_SHORTCUT_NAME="GameXP"
 
-start_portwine
+start_portproton
 if try_download "https://clotho-install.gamexp.com/launcher/InstallGameXPlauncher-0-pr.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
     pw_kill_autostart gamexp-launcher.exe &
@@ -22,4 +22,4 @@ then
     kill_portwine
     portwine_create_shortcut
 fi
-stop_portwine
+stop_portproton

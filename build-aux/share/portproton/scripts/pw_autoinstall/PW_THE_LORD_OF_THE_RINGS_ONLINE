@@ -11,7 +11,7 @@ export LAUNCH_PARAMETERS="/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- /LANG=en
 export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/lotrolive.exe"
 export PORTWINE_CREATE_SHORTCUT_NAME="The Lord of the Rings Online"
 
-start_portwine
+start_portproton
 if try_download "https://files.lotro.com/lotro/installers/lotrolive.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
     pw_run "${PW_AUTOINSTALL_EXE}"
@@ -21,4 +21,4 @@ then
     kill_portwine
     portwine_create_shortcut
 fi
-stop_portwine
+stop_portproton

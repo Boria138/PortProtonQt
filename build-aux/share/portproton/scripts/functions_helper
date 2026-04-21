@@ -131,7 +131,7 @@ fatal () {
     #TODO
     pw_notify_send -i error "$@"
     print_error "$@"
-    stop_portwine
+    stop_portproton
     exit 1
 }
 
@@ -1564,7 +1564,7 @@ pw_kill_autostart () {
 }
 export -f pw_kill_autostart
 
-stop_portwine () {
+stop_portproton () {
     [[ "$int_xneur" == "1" ]] && xneur &
 
     if [[ "$PW_USE_US_LAYOUT" == "1" ]] \
@@ -1604,7 +1604,7 @@ stop_portwine () {
     find "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/" -maxdepth 1 -type f -name "*.tmp" -delete
     pw_auto_create_shortcut
     stop_activity_simulation
-    add_in_stop_portwine
+    add_in_stop_portproton
     if [[ -n "$PW_POWERPROFILECTL_PROFILE" ]] && [[ "$(pw_ppd_dbus_get_profile)" != "$PW_POWERPROFILECTL_PROFILE" ]] ; then
         pw_ppd_dbus_set_profile "$PW_POWERPROFILECTL_PROFILE"
     fi
@@ -1617,7 +1617,7 @@ stop_portwine () {
 
     exit 0
 }
-export -f stop_portwine
+export -f stop_portproton
 
 pw_check_and_download_runtime () {
     if [[ ! -f "${PW_WINELIB}/runtime/files/bin/vkcube" ]] \
@@ -2672,7 +2672,7 @@ pw_enable_gamemode_basic () {
     return 0
 }
 
-start_portwine () {
+start_portproton () {
     pw_check_and_download_plugins
 
     if check_flatpak ; then
@@ -3859,7 +3859,7 @@ fi
             *) get_and_set_reg_file --delete 'Software\Wine\Drivers' 'Audio' ;;
     esac
 
-    add_in_start_portwine
+    add_in_start_portproton
 
     if [[ "$FULL_LN" == russian ]] ; then
         for chk_lang_and_uname in "steam_emu.ini" "steam_api.ini" "steam_api64.ini" "SteamConfig.ini" ; do
@@ -4137,7 +4137,7 @@ steamplay_launch () {
 }
 
 portwine_launch () {
-    start_portwine
+    start_portproton
     unset PW_VD_TMP
     if [[ "${PW_VIRTUAL_DESKTOP}" == "1" ]] ; then
         PW_VD_TMP=(explorer "/desktop=PortProton,${PW_SCREEN_RESOLUTION}")

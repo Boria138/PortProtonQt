@@ -16,7 +16,7 @@ export PW_USE_ESYNC="1"
 export PW_USE_FSYNC="1"
 export PW_USE_NTSYNC="0"
 
-add_in_start_portwine () {
+add_in_start_portproton () {
     if [[ -f "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/users/${USER}/AppData/Roaming/Wargaming.net/WorldOfTanks/preferences.xml" ]] ; then
         sed -i 's%<igbHardwareAccelerationEnabled> true </igbHardwareAccelerationEnabled>%<igbHardwareAccelerationEnabled> false </igbHardwareAccelerationEnabled>%' "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/users/${USER}/AppData/Roaming/Wargaming.net/WorldOfTanks/preferences.xml"
     fi

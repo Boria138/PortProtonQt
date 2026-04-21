@@ -12,7 +12,7 @@ export LAUNCH_PARAMETERS="/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-"
 export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/ElswordInstaller_NA(64bit).exe"
 export PORTWINE_CREATE_SHORTCUT_NAME="Elsword"
 
-start_portwine
+start_portproton
 if try_download "https://elsword-us.dn.playkog.com/Download/Downloader/ElswordInstaller_NA(64bit).exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
     pw_run "${PW_AUTOINSTALL_EXE}"
@@ -22,4 +22,4 @@ then
     kill_portwine
     portwine_create_shortcut
 fi
-stop_portwine
+stop_portproton

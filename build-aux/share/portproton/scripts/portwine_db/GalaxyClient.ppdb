@@ -11,7 +11,7 @@ export PW_PREFIX_NAME="GOG"
 export DISABLE_CP_DEFPFX="1"
 export PW_WINE_USE="PROTON_LG_9-12"
 
-add_in_start_portwine ()
+add_in_start_portproton ()
 {
 if [[ -e "${WINEPREFIX}/drive_c/users/${USER}/Local Settings/Application Data/GOG.com/Galaxy/Configuration/config.json" ]] ; then
     sed -i 's/"featureOverlay" : true,/"featureOverlay" : false,/' "${WINEPREFIX}/drive_c/${USER}/Local Settings/Application Data/GOG.com/Galaxy/Configuration/config.json"

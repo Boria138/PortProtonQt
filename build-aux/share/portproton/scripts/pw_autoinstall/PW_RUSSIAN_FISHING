@@ -11,7 +11,7 @@ export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/RF4SetupRU.exe"
 export PORTWINE_CREATE_SHORTCUT_NAME="Russian Fishing 4"
 export PW_PREFIX_NAME="RUSSIAN_FISHING"
 
-start_portwine
+start_portproton
 if try_download "https://cdn6.rf4game.ru/rf4/RF4SetupRU.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
     create_new_dir "${WINEPREFIX}/drive_c/games/Russian Fishing 4"
@@ -20,4 +20,4 @@ then
     kill_portwine
     portwine_create_shortcut
 fi
-stop_portwine
+stop_portproton

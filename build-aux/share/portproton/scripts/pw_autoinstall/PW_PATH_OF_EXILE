@@ -9,7 +9,7 @@
 export LAUNCH_PARAMETERS="/S"
 export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/PathOfExileInstaller.exe"
 
-start_portwine
+start_portproton
 if try_download "https://web.poecdn.com/protected/downloads/PathOfExileInstaller.exe?key=lpKVe-ZJOqVrur8612s8gg" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
     pw_run "${PW_AUTOINSTALL_EXE}"
@@ -20,4 +20,4 @@ then
     export PORTWINE_CREATE_SHORTCUT_NAME="Path of Exile"
     portwine_create_shortcut
 fi
-stop_portwine
+stop_portproton

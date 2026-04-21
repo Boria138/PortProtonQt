@@ -11,7 +11,7 @@ export PORTWINE_CREATE_SHORTCUT_NAME="Rockstar"
 export PW_WINE_USE="WINE_LG"
 export PW_PREFIX_NAME="ROCKSTAR"
 
-start_portwine
+start_portproton
 if try_download "https://gamedownloads.rockstargames.com/public/installer/Rockstar-Games-Launcher.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
     try_remove_dir "$WINEPREFIX/drive_c/Program Files/Rockstar Games/Launcher"
@@ -24,4 +24,4 @@ then
     kill_portwine
     portwine_create_shortcut
 fi
-stop_portwine
+stop_portproton

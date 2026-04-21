@@ -14,7 +14,7 @@ export PORTWINE_CREATE_SHORTCUT_NAME="Doomsday"
 bad_url="$(curl https://dls.igg.com/download/pc/h/ | grep downloadUrl | awk -F'downloadUrl":"' '{print $2}' | awk -F'"' '{print $1}')"
 good_url="${bad_url//\\/}"
 
-start_portwine
+start_portproton
 if try_download "$good_url" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
     pw_kill_autostart Launcher.exe &
@@ -25,4 +25,4 @@ then
     kill_portwine
     portwine_create_shortcut
 fi
-stop_portwine
+stop_portproton

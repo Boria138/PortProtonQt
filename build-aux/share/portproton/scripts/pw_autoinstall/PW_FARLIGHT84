@@ -11,7 +11,7 @@ export PORTWINE_CREATE_SHORTCUT_NAME="Farlight 84"
 export PW_PREFIX_NAME="FARLIGHT_84"
 export PW_WINE_USE="WINE_LG"
 
-start_portwine
+start_portproton
 if try_download "https://static-gl.lilithgame.com/p/pcsdk/launcher/10060/prodef4621e968ad6b383b8754148b63/0/launcher/res/release/Farlight84_setup_1.3.0.1_238.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
     create_new_dir "$WINEPREFIX/drive_c/Program Files (x86)/Farlight84"
@@ -23,4 +23,4 @@ then
     try_remove_file "${PW_EXE_FILE}.ppdb"
     portwine_create_shortcut
 fi
-stop_portwine
+stop_portproton

@@ -11,7 +11,7 @@ export LAUNCH_PARAMETERS="/q"
 export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/BrokenRanksInstaller.exe"
 export PORTWINE_CREATE_SHORTCUT_NAME="Broken Ranks"
 
-start_portwine
+start_portproton
 if try_download "https://eu.brokenranks.com/BrokenRanksInstaller.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
     pw_kill_autostart ConsoleLauncher.exe &
@@ -22,4 +22,4 @@ then
     kill_portwine
     portwine_create_shortcut
 fi
-stop_portwine
+stop_portproton

@@ -15,7 +15,7 @@ export DISABLE_CP_DEFPFX="1"
 export PW_WINE_USE="PROTON_LG_9-12"
 export PORTWINE_CREATE_SHORTCUT_NAME="GOG GALAXY"
 
-start_portwine
+start_portproton
 if try_download "https://webinstallers.gog-statics.com/download/GOG_Galaxy_${GOG_VER}.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
     pw_run "${PW_AUTOINSTALL_EXE}"
@@ -25,4 +25,4 @@ then
     kill_portwine
     portwine_create_shortcut
 fi
-stop_portwine
+stop_portproton

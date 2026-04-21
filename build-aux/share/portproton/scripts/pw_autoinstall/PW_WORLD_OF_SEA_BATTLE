@@ -15,7 +15,7 @@ export PORTWINE_CREATE_SHORTCUT_NAME="World of Sea Battle"
 WOSB_VERSION="$(curl -s --list-only --connect-timeout 3 https://www.worldofseabattle.com/download2 2>/dev/null | grep 'installer.exe' | awk -F'xsolla-launcher-update/' '{print $2}' | awk -F'/' '{print $1}')"
 [[ -n "$WOSB_VERSION" ]] && print_info "Found version: $WOSB_VERSION" || fatal "Error while get version of WOSB INSTALLER."
 
-start_portwine
+start_portproton
 if try_download "https://installer.launcher.xsolla.com/xlauncher-builds/xsolla-launcher-update/${WOSB_VERSION}/bin/installer.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
     pw_run "${PW_AUTOINSTALL_EXE}"
@@ -28,4 +28,4 @@ then
     kill_portwine
     portwine_create_shortcut
 fi
-stop_portwine
+stop_portproton

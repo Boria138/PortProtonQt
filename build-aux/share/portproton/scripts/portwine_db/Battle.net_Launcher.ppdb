@@ -14,7 +14,7 @@ export PW_WINE_FULLSCREEN_FSR="0"
 export PW_WINE_USE="PROTON_LG"
 export WINE_SIMULATE_WRITECOPY="1"
 
-add_in_start_portwine () {
+add_in_start_portproton () {
     rm -fr "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/ProgramData/Agent/data"
     rm -fr "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/users/${USER}/Blizzard Entertainment/Battle.net/Cache"
     rm -fr "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/users/Public/Blizzard Entertainment/Battle.net/Cache"

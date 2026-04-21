@@ -5,7 +5,7 @@
 #####################examples###########################
 export PW_DLL_INSTALL="vcrun2019"
 
-ADD_IN_START_PORTWINE () {
+add_in_start_portproton () {
     if [[ -f "${PATH_TO_GAME}/EOSSDK-Win64-Shipping.dll" ]] && [[ ! -f "${PATH_TO_GAME}/eossdk-win64-shipping.dll" ]] ; then
         try_copy_file "${PATH_TO_GAME}/EOSSDK-Win64-Shipping.dll" "${PATH_TO_GAME}/eossdk-win64-shipping.dll"
     fi

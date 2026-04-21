@@ -87,8 +87,8 @@ pw_list_install_dll_in_prefix ()
     esac
 }
 ########################################################################
-add_in_start_portwine () { echo "" ;}
-add_in_stop_portwine () { echo "" ;}
+add_in_start_portproton () { echo "" ;}
+add_in_stop_portproton () { echo "" ;}
 pw_other_fixes () { echo "" ;}
-export -f add_in_stop_portwine add_in_stop_portwine pw_other_fixes
+export -f add_in_stop_portproton add_in_stop_portproton pw_other_fixes
 ########################################################################

@@ -11,7 +11,7 @@ export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/CWClient_Install.exe"
 export PW_PREFIX_NAME="CONTRACT_WARS"
 export PW_WINE_USE="WINE_LG"
 
-start_portwine
+start_portproton
 if try_download "https://cdn-01.contractwarsgame.com/standalone/CWClient_Install.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
     pw_run "${PW_AUTOINSTALL_EXE}"
@@ -22,4 +22,4 @@ then
     export PORTWINE_CREATE_SHORTCUT_NAME="CONTRACT WARS"
     portwine_create_shortcut
 fi
-stop_portwine
+stop_portproton

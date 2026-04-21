@@ -11,7 +11,7 @@ export LAUNCH_PARAMETERS="/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-"
 export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/ExoTanksMOBA_Setup.exe"
 export PORTWINE_CREATE_SHORTCUT_NAME="ExoTanks"
 
-start_portwine
+start_portproton
 if try_download "https://www.exotanks.com/ExoTanksMOBA_Setup.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
     pw_kill_autostart ExoTanksMOBA_Launcher.exe &
@@ -23,4 +23,4 @@ then
     kill_portwine
     portwine_create_shortcut
 fi
-stop_portwine
+stop_portproton

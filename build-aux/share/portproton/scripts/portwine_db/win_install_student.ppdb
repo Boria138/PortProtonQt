@@ -13,7 +13,7 @@ export PW_DLL_INSTALL=""
 export WINEDLLOVERRIDES="mscoree,mshtml="
 export DISABLE_CP_DEFPFX="1"
 
-add_in_stop_portwine () {
+add_in_stop_portproton () {
     # pw_find_exe news
     export PW_EXE_FILE="$WINEPREFIX/drive_c/Program Files (x86)/Ученик/Ученик.exe"
     portwine_create_shortcut

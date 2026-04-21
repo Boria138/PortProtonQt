@@ -15,7 +15,7 @@ export LAUNCH_PARAMETERS="/S"
 export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/TTRInstaller-$URL_VER.exe"
 export PORTWINE_CREATE_SHORTCUT_NAME="Toontown Rewritten"
 
-start_portwine
+start_portproton
 if try_download "https://cdn.toontownrewritten.com/launcher/windows/TTRInstaller-$URL_VER.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
     pw_kill_autostart Launcher.exe &
@@ -27,4 +27,4 @@ then
     kill_portwine
     portwine_create_shortcut
 fi
-stop_portwine
+stop_portproton

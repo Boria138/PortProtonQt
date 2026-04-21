@@ -16,7 +16,7 @@ export PW_USE_FSYNC="1"
 export PW_PREFIX_NAME="DEFAULT"
 
 pw_clear_pfx
-start_portwine
+start_portproton
 
 if try_download "https://launcher-public-service-prod06.ol.epicgames.com/launcher/api/installer/download/EpicGamesLauncherInstaller.msi" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
@@ -33,4 +33,4 @@ then
     portwine_create_shortcut
 fi
 
-stop_portwine
+stop_portproton

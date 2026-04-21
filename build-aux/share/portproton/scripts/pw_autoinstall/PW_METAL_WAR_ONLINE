@@ -8,7 +8,7 @@
 ########################################################################
 export LAUNCH_PARAMETERS="/s /nr /l=Russian"
 export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/MWO_Launcher_Setup.exe"
-start_portwine
+start_portproton
 if try_download "http://mwogame.com/download.php" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
     pw_run "${PW_AUTOINSTALL_EXE}"
@@ -23,4 +23,4 @@ then
     export PORTWINE_CREATE_SHORTCUT_NAME="Metal War Online"
     portwine_create_shortcut
 fi
-stop_portwine
+stop_portproton

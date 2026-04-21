@@ -11,7 +11,7 @@ export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/modern_warships.exe"
 export PW_PREFIX_NAME="MODERN_WARSHIPS"
 export PORTWINE_CREATE_SHORTCUT_NAME="Modern Warships"
 
-start_portwine
+start_portproton
 
 if try_download "https://gdn.gaijin.net/launcher/current.php?id=ModernWarshipsLauncher" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
@@ -25,4 +25,4 @@ then
     portwine_create_shortcut
 fi
 
-stop_portwine
+stop_portproton

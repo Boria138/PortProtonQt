@@ -12,7 +12,7 @@ export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/Arizona Installer.exe"
 export PORTWINE_CREATE_SHORTCUT_NAME="Arizona Games Launcher"
 export PW_VULKAN_USE="0"
 
-start_portwine
+start_portproton
 if try_download "https://pc.az-ins.com/Arizona%20Launcher.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
     pw_kill_autostart "Arizona Games" &
@@ -23,4 +23,4 @@ then
     kill_portwine
     portwine_create_shortcut
 fi
-stop_portwine
+stop_portproton

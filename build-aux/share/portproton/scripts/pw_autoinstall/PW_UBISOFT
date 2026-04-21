@@ -11,7 +11,7 @@ export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/UbisoftConnectInstaller.exe"
 export PORTWINE_CREATE_SHORTCUT_NAME="Ubisoft Connect"
 export WINE_SIMULATE_WRITECOPY="1"
 
-start_portwine
+start_portproton
 if try_download "https://static3.cdn.ubi.com/orbit/launcher_installer/UbisoftConnectInstaller.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
     pw_kill_autostart UbisoftConnect.exe &
@@ -22,4 +22,4 @@ then
     kill_portwine
     portwine_create_shortcut
 fi
-stop_portwine
+stop_portproton

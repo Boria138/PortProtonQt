@@ -12,7 +12,7 @@ export PW_PREFIX_NAME="PANZAR"
 export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/Panzar.exe"
 export PORTWINE_CREATE_SHORTCUT_NAME="Panzar"
 
-start_portwine
+start_portproton
 if try_download "https://www.panzar.ru/ru/download/installer/" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
     pw_kill_autostart start.exe 3 &
@@ -24,4 +24,4 @@ then
     kill_portwine
     portwine_create_shortcut
 fi
-stop_portwine
+stop_portproton

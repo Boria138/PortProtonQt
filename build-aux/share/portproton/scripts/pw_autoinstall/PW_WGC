@@ -10,7 +10,7 @@ export LAUNCH_PARAMETERS="/VERYSILENT"
 export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/Wargaming_Game_Center_Install_WoT_EU.exe"
 export PW_PREFIX_NAME="WGC"
 
-start_portwine
+start_portproton
 if try_download "https://redirect.wargaming.net/WGC/Wargaming_Game_Center_Install_WoT_EU.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
     pw_kill_autostart wgc.exe &
@@ -22,4 +22,4 @@ then
     kill_portwine
     portwine_create_shortcut
 fi
-stop_portwine
+stop_portproton

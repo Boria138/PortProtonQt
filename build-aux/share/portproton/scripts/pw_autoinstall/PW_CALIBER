@@ -13,7 +13,7 @@ export PW_WINE_USE="PROTON_LG"
 # export DISABLE_CP_DEFPFX="1"
 export PORTWINE_CREATE_SHORTCUT_NAME="CALIBER"
 
-start_portwine
+start_portproton
 if try_download "https://cdn.playcaliber.com/caliber-s3/p1/a88c3b70f76a0e56b1e08b62c9895cfe/launcher/setup/CaliberSetup.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
     pw_kill_autostart VC_redist.x64.exe 3 &
@@ -25,4 +25,4 @@ then
     kill_portwine
     portwine_create_shortcut
 fi
-stop_portwine
+stop_portproton

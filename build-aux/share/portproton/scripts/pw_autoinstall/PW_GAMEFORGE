@@ -25,7 +25,7 @@ pw_shutdown_please () {
 }
 
 export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/GameforgeInstaller.exe"
-start_portwine
+start_portproton
 if try_download "https://raw.githubusercontent.com/WarfaceZ/lutris-clients/master/GameforgeInstaller.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
     pw_shutdown_please SparkWebHelper.exe &
@@ -37,4 +37,4 @@ then
     export PORTWINE_CREATE_SHORTCUT_NAME="GameforgeClient"
     portwine_create_shortcut
 fi
-stop_portwine
+stop_portproton

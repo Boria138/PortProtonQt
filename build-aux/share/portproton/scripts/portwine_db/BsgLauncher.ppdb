@@ -9,7 +9,7 @@ export PW_USE_FSYNC="0"
 export PW_USE_ESYNC="0"
 export PW_PREFIX_NAME="DOTNET"
 
-# add_in_start_portwine () {
+# add_in_start_portproton () {
 #     if [[ ! -f "${PATH_TO_GAME}/dxvk.conf" ]] ; then
 #         echo "d3d9.shaderModel = 1" > "${PATH_TO_GAME}/dxvk.conf"
 #     fi

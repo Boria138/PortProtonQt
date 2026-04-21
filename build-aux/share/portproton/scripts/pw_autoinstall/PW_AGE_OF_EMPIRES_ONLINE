@@ -11,7 +11,7 @@ export LAUNCH_PARAMETERS="/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-"
 export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/Celeste.Installer.exe"
 export PORTWINE_CREATE_SHORTCUT_NAME="Age of Empires Online"
 
-start_portwine
+start_portproton
 if try_download "https://github.com/ProjectCeleste/Celeste.Launcher/releases/latest/download/Celeste.Installer.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
     pw_run "${PW_AUTOINSTALL_EXE}"
@@ -21,4 +21,4 @@ then
     kill_portwine
     portwine_create_shortcut
 fi
-stop_portwine
+stop_portproton

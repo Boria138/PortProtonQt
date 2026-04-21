@@ -11,7 +11,7 @@ export LAUNCH_PARAMETERS="/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-"
 export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/bs-install.exe"
 export PORTWINE_CREATE_SHORTCUT_NAME="Blood and Soul"
 
-start_portwine
+start_portproton
 if try_download "https://bsclassic.com/files/bs-install.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
     pw_run "${PW_AUTOINSTALL_EXE}"
@@ -23,4 +23,4 @@ then
 
     portwine_create_shortcut
 fi
-stop_portwine
+stop_portproton

@@ -13,7 +13,7 @@ export PW_MUST_HAVE_DLL=""
 export PW_WINE_USE="WINE_LG"
 export PW_PREFIX_NAME="GUILD_WARS_2"
 
-start_portwine
+start_portproton
 create_new_dir "${WINEPREFIX}/drive_c/Program Files/Guild Wars 2/"
 export PW_AUTOINSTALL_EXE="${WINEPREFIX}/drive_c/Program Files/Guild Wars 2/Gw2Setup-64.exe"
 
@@ -29,4 +29,4 @@ then
     export PORTWINE_CREATE_SHORTCUT_NAME="Guild Wars 2"
     portwine_create_shortcut
 fi
-stop_portwine
+stop_portproton

@@ -13,7 +13,7 @@ export PW_USE_D3D_EXTRAS="1"
 export PW_WINE_USE="PROTON_LG"
 
 pw_clear_pfx
-start_portwine
+start_portproton
 wait_wineserver
 
 if try_download "https://nez-o-dn.playblackdesert.com/UploadData/installer/BlackDesert_Installer_RU.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
@@ -26,4 +26,4 @@ then
     export PORTWINE_CREATE_SHORTCUT_NAME="Black Desert Online"
     portwine_create_shortcut
 fi
-stop_portwine
+stop_portproton

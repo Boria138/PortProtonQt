@@ -13,7 +13,7 @@ export LAUNCH_PARAMETERS="-cef-disable-gpu-compositing"
 
 export PW_VULKAN_USE="2"
 
-add_in_start_portwine () {
+add_in_start_portproton () {
     echo "Disabled silent autostart steam."
     if [[ -f "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/user.reg" ]] ; then
         sed -i '/steam.exe\\" -silent"/d' "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/user.reg"

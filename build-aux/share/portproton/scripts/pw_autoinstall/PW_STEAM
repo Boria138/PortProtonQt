@@ -10,7 +10,7 @@ export PW_WINE_USE="WINE_LG"
 export LAUNCH_PARAMETERS="/S /D=c:\Program Files (x86)\Steam"
 export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/SteamSetup.exe"
 
-start_portwine
+start_portproton
 if try_download "https://cdn.akamai.steamstatic.com/client/installer/SteamSetup.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
     pw_kill_autostart steam.exe &
@@ -25,4 +25,4 @@ then
     export PORTWINE_CREATE_SHORTCUT_NAME="STEAM_PP"
     portwine_create_shortcut
 fi
-stop_portwine
+stop_portproton

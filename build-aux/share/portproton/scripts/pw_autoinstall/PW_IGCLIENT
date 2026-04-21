@@ -10,7 +10,7 @@ export LAUNCH_PARAMETERS="/S"
 export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/igclient_setup.exe"
 export PW_DLL_INSTALL="vcrun2019"
 
-start_portwine
+start_portproton
 if try_download "https://content.indiegalacdn.com/common/IGClientSetup.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
     pw_kill_autostart IGClient.exe 3 &
@@ -22,4 +22,4 @@ then
     export PORTWINE_CREATE_SHORTCUT_NAME="IGClient"
     portwine_create_shortcut
 fi
-stop_portwine
+stop_portproton

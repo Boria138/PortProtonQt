@@ -12,7 +12,7 @@ export PORTWINE_CREATE_SHORTCUT_NAME="Lost Light"
 
 URL_LOST_LIGHT="$(curl -s --list-only "https://adl.easebar.com/d/g/yhtj/c/lostlightcspc" | grep 'var pc_link =' | awk -F\" '{print $2}')"
 
-start_portwine
+start_portproton
 if try_download "${URL_LOST_LIGHT}" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
     "$pw_7z" x -y "${PW_AUTOINSTALL_EXE}" -o"$WINEPREFIX/drive_c/Program Files (x86)/LostLight"
@@ -23,4 +23,4 @@ then
     kill_portwine
     portwine_create_shortcut
 fi
-stop_portwine
+stop_portproton

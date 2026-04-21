@@ -11,7 +11,7 @@ export LAUNCH_PARAMETERS="/VERYSILENT"
 export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/starconf_installer.exe"
 export PORTWINE_CREATE_SHORTCUT_NAME="Star Conflict"
 
-start_portwine
+start_portproton
 if try_download "https://yupmaster.gaijinent.com/launcher/current.php?id=StarConflictLauncher" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
     pw_kill_autostart launcher.exe &
@@ -23,4 +23,4 @@ then
 
     portwine_create_shortcut
 fi
-stop_portwine
+stop_portproton

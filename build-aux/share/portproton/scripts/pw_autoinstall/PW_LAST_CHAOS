@@ -10,7 +10,7 @@ export PW_PREFIX_NAME="LAST_CHAOS"
 export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/Last Chaos.zip"
 export PORTWINE_CREATE_SHORTCUT_NAME="Last Chaos"
 
-start_portwine
+start_portproton
 if try_download "https://last-chaos.ru/download/Last%20Chaos.zip" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
     "$pw_7z" x -y "${PW_AUTOINSTALL_EXE}" -o"${WINEPREFIX}/drive_c/Program Files/"
@@ -20,4 +20,4 @@ then
     kill_portwine
     portwine_create_shortcut
 fi
-stop_portwine
+stop_portproton

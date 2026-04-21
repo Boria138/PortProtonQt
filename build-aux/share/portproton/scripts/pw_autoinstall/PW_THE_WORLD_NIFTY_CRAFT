@@ -11,7 +11,7 @@ export LAUNCH_PARAMETERS="/S"
 export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/web_installer.exe"
 export PORTWINE_CREATE_SHORTCUT_NAME="The World of Nifty Craft"
 
-start_portwine
+start_portproton
 if try_download "https://installer.launcher.xsolla.com/xlauncher-builds/xsolla-launcher-update/9969/bin/web_installer.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
     pw_run "${PW_AUTOINSTALL_EXE}"
@@ -22,4 +22,4 @@ then
     kill_portwine
     portwine_create_shortcut
 fi
-stop_portwine
+stop_portproton

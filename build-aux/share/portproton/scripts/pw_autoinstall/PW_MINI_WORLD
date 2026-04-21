@@ -12,7 +12,7 @@ export PW_PREFIX_NAME="MINI_WORLD"
 export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/miniworld_universal.exe"
 export PORTWINE_CREATE_SHORTCUT_NAME="Mini World"
 
-start_portwine
+start_portproton
 if try_download "https://mwu-api.miniworldgame.com/app_install/${URL_VER//[[:space:]]/}universal" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
     "$pw_7z" x -y "${PW_AUTOINSTALL_EXE}" -o"$WINEPREFIX/drive_c/users/steamuser/AppData/Roaming/miniworldOverseasgame"
@@ -22,4 +22,4 @@ then
     kill_portwine
     portwine_create_shortcut
 fi
-stop_portwine
+stop_portproton

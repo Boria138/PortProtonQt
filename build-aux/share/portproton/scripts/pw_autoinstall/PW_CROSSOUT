@@ -12,7 +12,7 @@ export PORTWINE_CREATE_SHORTCUT_NAME="Crossout"
 export PW_PREFIX_NAME="CROSSOUT"
 export PW_WINE_USE="WINE_LG"
 
-start_portwine
+start_portproton
 if try_download "https://yupmaster.gaijinent.com/launcher/current.php?id=CrossoutLauncher" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
     get_and_set_reg_file --add 'Software\Wine\X11 Driver' 'Decorated' 'REG_SZ' "N" "user"
@@ -25,4 +25,4 @@ then
     kill_portwine
     portwine_create_shortcut
 fi
-stop_portwine
+stop_portproton

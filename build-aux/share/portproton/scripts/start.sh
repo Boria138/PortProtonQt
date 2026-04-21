@@ -282,7 +282,7 @@ ${translations[Usage examples:]}
         exit 0
         ;;
     --reinstall)
-        stop_portwine
+        stop_portproton
         pw_clear_pfx
         try_remove_dir "${PORT_DATA_PATH}/data/dist"
         create_new_dir "${PORT_DATA_PATH}/data/dist"
@@ -315,7 +315,7 @@ ${translations[Usage examples:]}
         export WINE_LARGE_ADDRESS_AWARE=0
         # shellcheck source=/dev/null
         . "${PORT_SCRIPTS_PATH}/pw_autoinstall/${2}"
-        stop_portwine
+        stop_portproton
         ;;
     --debug)
         clear
@@ -427,20 +427,20 @@ ${translations[Usage examples:]}
         ;;
     --winefile)
         get_wine_and_pfx "$2" "$3"
-        start_portwine
+        start_portproton
         pw_run winefile
-        stop_portwine
+        stop_portproton
         ;;
     --winecfg)
         get_wine_and_pfx "$2" "$3"
-        start_portwine
+        start_portproton
         export GST_PLUGIN_SYSTEM_PATH_1_0=""
         pw_run winecfg
-        stop_portwine
+        stop_portproton
         ;;
     --winecmd)
         get_wine_and_pfx "$2" "$3"
-        start_portwine
+        start_portproton
         cd "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c" || fatal
         if check_flatpak ; then
             $PW_TERM "pw_run cmd"
@@ -448,20 +448,20 @@ ${translations[Usage examples:]}
             export PW_USE_TERMINAL=1
             pw_run cmd
         fi
-        stop_portwine
+        stop_portproton
         ;;
     --winereg)
         get_wine_and_pfx "$2" "$3"
-        start_portwine
+        start_portproton
         export GST_PLUGIN_SYSTEM_PATH_1_0=""
         pw_run regedit
-        stop_portwine
+        stop_portproton
         ;;
     --wine_uninstaller)
         get_wine_and_pfx "$2" "$3"
-        start_portwine
+        start_portproton
         pw_run uninstaller
-        stop_portwine
+        stop_portproton
         ;;
     --clear_pfx)
         get_wine_and_pfx "$2" "$3"
@@ -484,22 +484,22 @@ ${translations[Usage examples:]}
         ${PW_GAMEMODERUN_SLR} \
         ${PW_ADD_VAR_SLR} \
         ${PW_TERM} bash
-        stop_portwine
+        stop_portproton
         ;;
     --initial)
         exit 0
         ;;
     --launch)
         portwine_launch
-        stop_portwine
+        stop_portproton
         ;;
     --stop)
-        stop_portwine
+        stop_portproton
         ;;
     *)
         if [[ -f "$PW_EXE_FILE" ]] ; then
             portwine_launch
-            stop_portwine
+            stop_portproton
         else
             fatal "File not found: $PW_EXE_FILE"
         fi
@@ -512,4 +512,4 @@ esac
 # update_ext_ppdb
 # find_ext_ppdb
 
-stop_portwine
+stop_portproton

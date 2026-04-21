@@ -15,11 +15,11 @@ export WINEDLLOVERRIDES="mscoree,mshtml="
 export PW_MUST_HAVE_DLL=""
 export PW_WINE_USE="WINE_LG"
 
-start_portwine
+start_portproton
 if try_download "https://static.gc.vkplay.ru/VKPlayLoader.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
     PW_EXE_FILE="$WINEPREFIX/drive_c/users/steamuser/AppData/Local/VKPlayLoader.exe"
     try_remove_file "${PW_EXE_FILE}.ppdb"
     portwine_create_shortcut
 fi
-stop_portwine
+stop_portproton

@@ -21,7 +21,7 @@ export PW_DLL_INSTALL="vcrun2022 d3dcompiler_47 arial tahoma" # msdelta
 export WINEDLLOVERRIDES="msvcp140,msvcp140_1=n"
 export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/eve-online-latest+Setup.exe"
 
-start_portwine
+start_portproton
 if try_download "https://launcher.ccpgames.com/eve-online/release/win32/x64/eve-online-latest+Setup.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
     EVE_LAUNCHER_DIR="${WINEPREFIX}/drive_c/users/steamuser/AppData/Local/eve-online"
@@ -51,4 +51,4 @@ then
     portwine_create_shortcut
 
 fi
-stop_portwine
+stop_portproton

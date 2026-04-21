@@ -10,7 +10,7 @@ export PW_PREFIX_NAME="OSU"
 export PORTWINE_CREATE_SHORTCUT_NAME="OSU"
 export PW_WINE_USE="WINE_LG"
 
-start_portwine
+start_portproton
 
 create_new_dir "${WINEPREFIX}/drive_c/Program Files (x86)/OSU/"
 export PW_AUTOINSTALL_EXE="${WINEPREFIX}/drive_c/Program Files (x86)/OSU/osu!.exe"
@@ -27,4 +27,4 @@ then
     kill_portwine
 fi
 
-stop_portwine
+stop_portproton

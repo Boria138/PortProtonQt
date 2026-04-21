@@ -12,7 +12,7 @@ export PW_PREFIX_NAME="HO_YO_PLAY"
 export PORTWINE_CREATE_SHORTCUT_NAME="HoYoPlay"
 export PW_WINE_USE="WINE_HYP_10-10"
 
-start_portwine
+start_portproton
 
 if try_download "https://sg-public-api.hoyoverse.com/event/download_porter/trace/hyp_global/hyphoyoverse/default?url=https%3A%2F%2Fhoyoplay.hoyoverse.com%2F" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
@@ -27,4 +27,4 @@ then
     portwine_create_shortcut
 fi
 
-stop_portwine
+stop_portproton

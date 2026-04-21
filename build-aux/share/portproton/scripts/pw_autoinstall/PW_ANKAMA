@@ -11,7 +11,7 @@ export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/Ankama-Setup.exe"
 export PW_WINE_USE="WINE_LG"
 export PW_PREFIX_NAME="ANKAMA"
 
-start_portwine
+start_portproton
 if try_download "https://download.ankama.com/launcher/full/win/" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
     get_and_set_reg_file --add 'Software\Wine\X11 Driver' 'Decorated' 'REG_SZ' "N" "user"
@@ -23,4 +23,4 @@ then
     export PORTWINE_CREATE_SHORTCUT_NAME="Ankama Launcher"
     portwine_create_shortcut
 fi
-stop_portwine
+stop_portproton
