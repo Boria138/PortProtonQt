@@ -513,7 +513,7 @@ class InputManager(QObject):
 
             else:
                 if self.original_button_handler:
-                    self.original_button_handler(button_code)
+                    self.original_button_handler(button_code, value)
 
         except Exception as e:
             logger.error(f"Error in FileExplorer button handler: {e}")
@@ -959,6 +959,10 @@ class InputManager(QObject):
 
     def _restore_original_handlers(self, dialog_attr_name):
         """Common method to restore original handlers"""
+        if self.original_button_handler is None or self.original_dpad_handler is None or self.original_gamepad_state is None:
+            logger.warning("Cannot restore original handlers: handlers not saved")
+            return
+
         # Restore original handlers
         self.handle_button_slot = self.original_button_handler
         self.handle_dpad_slot = self.original_dpad_handler

@@ -92,6 +92,22 @@ color_b = "#282a33"
 
 ---
 
+## 🧩 Library Layout Mode
+
+You can control the game library card layout directly from the theme via `styles.py`:
+
+```python
+# "grid" (default) or "list"
+LIBRARY_LAYOUT_MODE = "grid"
+```
+
+- `grid`: multi-column card grid (classic behavior).
+- `list`: horizontal row-style cards (launcher-style list).
+
+This is a theme-level option and does not depend on app settings.
+
+---
+
 ## 🎥 Animation configuration
 
 The `GAME_CARD_ANIMATION` dictionary controls all animation parameters for game cards:
@@ -153,9 +169,24 @@ GAME_CARD_ANIMATION = {
     "gradient_end_angle": 0,
 
     # Type of card animation on hover or focus
-    # Possible values: "gradient", "scale"
-    # "gradient" enables a rotating gradient for the border, "scale" enlarges the card
+    # Possible values: "gradient", "scale", "fill", "stripe"
+    # "gradient" enables a rotating gradient border, "scale" enlarges the card,
+    # "fill" applies a static overlay, "stripe" applies a static border color
     "card_animation_type": "gradient",
+
+    # Overlay color for "fill" animation type
+    # Any valid Qt color string (hex/rgb/rgba)
+    "fill_color": color_a,
+
+    # Overlay opacity for "fill" animation type (0-255)
+    "fill_alpha": 90,
+
+    # Border color for "stripe" animation type
+    # Any valid Qt color string (hex/rgb/rgba)
+    "stripe_color": color_a,
+
+    # Border opacity for "stripe" animation type (0-255)
+    "stripe_alpha": 255,
 
     # Card scale in idle state
     # Determines the base size of the card (1.0 = 100% of original size)

@@ -40,6 +40,7 @@ from portprotonqt.howlongtobeat_api import HowLongToBeat, GameEntry
 from portprotonqt.config_utils import (
     read_favorites,
     get_portproton_start_command,
+    read_economy_mode,
 )
 from portprotonqt.custom_widgets import AutoSizeButton, ClickableLabel, FlowLayout
 from portprotonqt.localization import _
@@ -107,8 +108,14 @@ class DetailPageManager:
     def _get_favorite_text(self, name: str) -> str:
         return "★" if name in read_favorites() else "☆"
 
+    def _is_economy_mode(self) -> bool:
+        return read_economy_mode()
+
     def _create_game_badges(self, parent: QWidget, game_data: dict) -> list:
         from portprotonqt.config_utils import read_display_filter
+
+        if self._is_economy_mode():
+            return []
 
         display_filter = read_display_filter()
         game_source = str(game_data.get("game_source", "")).lower()
@@ -206,6 +213,8 @@ class DetailPageManager:
         self, name: str, hltb_layout: QHBoxLayout, game_info_layout: QVBoxLayout
     ) -> None:
         """Setup HowLongToBeat data loading."""
+        if self._is_economy_mode():
+            return
         hltb = HowLongToBeat(parent=self.main_window)
 
         def on_hltb_results(results: list) -> None:

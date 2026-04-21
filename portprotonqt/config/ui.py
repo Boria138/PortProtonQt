@@ -73,3 +73,12 @@ class UIConfig(BaseConfig):
         """Set badge view mode."""
         validate_string(mode, "badge_view_mode", min_len=1, max_len=20)
         self._save_value("badge_view_mode", mode, "str")
+
+    def get_economy_mode(self) -> bool:
+        """Get economy mode setting."""
+        return self._get_bool("economy_mode", False)
+
+    def set_economy_mode(self, enabled: bool):
+        """Set economy mode setting."""
+        validate_bool(enabled, "economy_mode")
+        self._save_value("economy_mode", enabled, "bool")

@@ -35,8 +35,10 @@ class GameLibraryManager:
         self.game_card_cache = {}
         self.pending_images = {}
         self.card_width = read_card_size()
+        self.layout_mode = str(getattr(theme, "LIBRARY_LAYOUT_MODE", "grid")).lower()
         self.gamesListWidget: QWidget | None = None
         self.gamesListLayout: FlowLayout | None = None
+        self.gamesScrollArea: QScrollArea | None = None
         self.sizeSlider: QSlider | None = None
         self._update_timer: QTimer | None = None
         self._incremental_add_timer: QTimer | None = None
@@ -65,6 +67,7 @@ class GameLibraryManager:
 
         # Scroll area for game grid
         scrollArea = QScrollArea()
+        self.gamesScrollArea = scrollArea
         scrollArea.setWidgetResizable(True)
         scrollArea.setStyleSheet(self.theme.SCROLL_STYLE + self.theme.TRANSPARENT_BACKGROUND_STYLE)
         QScroller.grabGesture(scrollArea.viewport(), QScroller.ScrollerGestureType.LeftMouseButtonGesture)
@@ -91,6 +94,8 @@ class GameLibraryManager:
         self.sizeSlider.setStyleSheet(self.theme.SLIDER_SIZE_STYLE)
         self.sizeSlider.sliderReleased.connect(self.main_window.on_slider_released)
         sliderLayout.addWidget(self.sizeSlider)
+        if self.layout_mode == "list":
+            self.sizeSlider.setVisible(False)
 
         layout.addLayout(sliderLayout)
 
@@ -122,6 +127,8 @@ class GameLibraryManager:
 
     def on_slider_released(self):
         """Handles slider release to update card size."""
+        if self.layout_mode == "list":
+            return
         if self.sizeSlider is None:
             return
         self.card_width = self.sizeSlider.value()
@@ -219,6 +226,9 @@ class GameLibraryManager:
 
     def update_game_grid(self, games_list: list[tuple] | None = None, is_filter: bool = False):
         """Schedules a game grid update with debouncing."""
+        self.layout_mode = str(getattr(self.theme, "LIBRARY_LAYOUT_MODE", "grid")).lower()
+        if self.sizeSlider is not None:
+            self.sizeSlider.setVisible(self.layout_mode != "list")
         if not is_filter:
             if games_list is not None:
                 self.filtered_games = games_list

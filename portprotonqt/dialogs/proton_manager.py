@@ -608,6 +608,8 @@ class ProtonManager(QDialog):
                     selection_text += f"{i}. {asset_data['asset_name']}\n"
                     for tab_index in range(self.tab_widget.count()):
                         tab = self.tab_widget.widget(tab_index)
+                        if tab is None:
+                            continue
                         table = tab.findChild(QTableWidget)
                         if table and self.tab_widget.tabText(tab_index) != _("Installed"):
                             for row in range(table.rowCount()):
@@ -646,6 +648,8 @@ class ProtonManager(QDialog):
         current_tab_text = self.tab_widget.tabText(index)
         if current_tab_text == _("Installed"):
             current_tab = self.tab_widget.widget(index)
+            if current_tab is None:
+                return
             table = current_tab.findChild(QTableWidget)
             if table:
                 selected_count = 0
@@ -677,6 +681,8 @@ class ProtonManager(QDialog):
         self.selected_assets.clear()
         for tab_index in range(self.tab_widget.count()):
             tab = self.tab_widget.widget(tab_index)
+            if tab is None:
+                continue
             table = tab.findChild(QTableWidget)
             if table:
                 for row in range(table.rowCount()):

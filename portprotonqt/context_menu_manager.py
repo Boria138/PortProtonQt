@@ -270,15 +270,6 @@ class ContextMenuManager:
                 lambda: self.import_to_legendary(game_card.name, game_card.appid)
             )
             if self._is_egs_game_installed(game_card.appid):
-                is_in_steam = is_game_in_steam(game_card.name)
-                icon_name = "delete" if is_in_steam else "steam"
-                text = _("Remove from Steam") if is_in_steam else _("Add to Steam")
-                steam_action = menu.addAction(self._get_safe_icon(icon_name), text)
-                steam_action.triggered.connect(
-                    lambda: self.remove_from_steam(game_card.name, game_card.exec_line, game_card.game_source)
-                    if is_in_steam
-                    else self.add_egs_to_steam(game_card.name, game_card.appid)
-                )
                 open_folder_action = menu.addAction(self._get_safe_icon("search"), _("Open Game Folder"))
                 open_folder_action.triggered.connect(
                     lambda: self.open_egs_game_folder(game_card.appid)
@@ -335,17 +326,6 @@ class ContextMenuManager:
                 lambda: self.remove_from_menu(game_card.name)
                 if os.path.exists(menu_path)
                 else self.add_to_menu(game_card.name, game_card.exec_line)
-            )
-            is_in_steam = is_game_in_steam(game_card.name)
-            icon_name = "delete" if is_in_steam else "steam"
-            text = _("Remove from Steam") if is_in_steam else _("Add to Steam")
-            steam_action = menu.addAction(self._get_safe_icon(icon_name), text)
-            steam_action.triggered.connect(
-                lambda: (
-                    self.remove_from_steam(game_card.name, game_card.exec_line, game_card.game_source)
-                    if is_in_steam
-                    else self.add_to_steam(game_card.name, game_card.exec_line, game_card.cover_path)
-                )
             )
 
         # Set focus to the first menu item

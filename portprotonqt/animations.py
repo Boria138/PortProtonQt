@@ -332,6 +332,7 @@ class GameCardAnimations:
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         pen = QPen()
         pen.setWidth(self.game_card._borderWidth)
+        fill_brush = QBrush(Qt.BrushStyle.NoBrush)
         animation_type = self.theme.GAME_CARD_ANIMATION.get("card_animation_type", "gradient")
         if (self.game_card._hovered or self.game_card._focused) and animation_type == "gradient":
             center = self.game_card.rect().center()
@@ -339,9 +340,29 @@ class GameCardAnimations:
             for stop in self.theme.GAME_CARD_ANIMATION["gradient_colors"]:
                 gradient.setColorAt(stop["position"], QColor(stop["color"]))
             pen.setBrush(QBrush(gradient))
+        elif (self.game_card._hovered or self.game_card._focused) and animation_type == "fill":
+            fill_color_value = self.theme.GAME_CARD_ANIMATION.get(
+                "fill_color",
+                getattr(self.theme, "color_a", self.theme.color_f),
+            )
+            fill_alpha = int(self.theme.GAME_CARD_ANIMATION.get("fill_alpha", 90))
+            fill_color = QColor(fill_color_value)
+            fill_color.setAlpha(max(0, min(255, fill_alpha)))
+            fill_brush = QBrush(fill_color)
+            pen.setColor(QColor(0, 0, 0, 0))
+        elif (self.game_card._hovered or self.game_card._focused) and animation_type == "stripe":
+            stripe_color_value = self.theme.GAME_CARD_ANIMATION.get(
+                "stripe_color",
+                getattr(self.theme, "color_a", self.theme.color_f),
+            )
+            stripe_alpha = int(self.theme.GAME_CARD_ANIMATION.get("stripe_alpha", 255))
+            stripe_color = QColor(stripe_color_value)
+            stripe_color.setAlpha(max(0, min(255, stripe_alpha)))
+            pen.setColor(stripe_color)
         else:
             pen.setColor(QColor(0, 0, 0, 0))
         painter.setPen(pen)
+        painter.setBrush(fill_brush)
         radius = 18 * self.game_card._scale
         bw = round(self.game_card._borderWidth / 2)
         rect = self.game_card.rect().adjusted(bw, bw, -bw, -bw)

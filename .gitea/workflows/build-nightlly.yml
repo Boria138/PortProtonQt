@@ -13,7 +13,7 @@ jobs:
     name: Build AppImage
     runs-on: ubuntu-22.04
     container:
-      image: archlinux:base-devel@sha256:b3c1ff749031ca2e06df1cd83fda74df13206a047b7b0f96b818825d9dc60785
+      image: archlinux:base-devel@sha256:c528201c37821ac7883af233a18eba79fbce9bd900aeae07462888a607741abe
       options: --privileged --device /dev/fuse
     steps:
       - name: Prepare container
@@ -94,7 +94,7 @@ jobs:
     name: Build Arch Package
     runs-on: ubuntu-22.04
     container:
-      image: archlinux:base-devel@sha256:b3c1ff749031ca2e06df1cd83fda74df13206a047b7b0f96b818825d9dc60785
+      image: archlinux:base-devel@sha256:c528201c37821ac7883af233a18eba79fbce9bd900aeae07462888a607741abe
 
     steps:
       - name: Prepare container

@@ -184,6 +184,16 @@ def save_badge_view_mode(mode: str):
     _get_ui_config().set_badge_view_mode(mode)
 
 
+def read_economy_mode() -> bool:
+    """Reads economy mode from the [Appearance] section."""
+    return _get_ui_config().get_economy_mode()
+
+
+def save_economy_mode(enabled: bool):
+    """Saves economy mode to the [Appearance] section."""
+    _get_ui_config().set_economy_mode(enabled)
+
+
 def load_theme_metainfo(theme_name: str) -> dict:
     """Loads theme metadata from metainfo.ini."""
     from portprotonqt.localization import get_theme_translations

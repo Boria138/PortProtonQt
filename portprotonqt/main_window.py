@@ -34,7 +34,7 @@ from portprotonqt.config_utils import (
     read_auto_card_size, save_auto_card_size, get_portproton_start_command, read_hide_autoinstall_tab, save_hide_autoinstall_tab,
     get_portproton_scripts_path,
     read_autostart_enabled, save_autostart_enabled, apply_xdg_autostart, read_start_minimized, save_start_minimized,
-    read_badge_view_mode, save_badge_view_mode
+    read_badge_view_mode, save_badge_view_mode, read_economy_mode, save_economy_mode
 )
 from portprotonqt.cli import add_steam_compat_tool, remove_steam_compat_tool, is_steam_compat_tool_installed
 
@@ -538,23 +538,30 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         QApplication.processEvents()
 
         def start_loading():
+            economy_mode = read_economy_mode()
             # Make sure progress bar is still visible
             self.progress_bar.setValue(0)
             self.progress_bar.setVisible(True)
             QApplication.processEvents()  # Allow UI to update
 
             if display_filter == "steam":
-                self._load_steam_games_async(lambda games: self.games_loaded.emit(games))
+                if economy_mode:
+                    self.games_loaded.emit([])
+                else:
+                    self._load_steam_games_async(lambda games: self.games_loaded.emit(games))
             elif display_filter == "portproton":
                 self._load_portproton_games_async(lambda games: self.games_loaded.emit(games))
             elif display_filter == "epic":
-                load_egs_games_async(
-                    self.legendary_path,
-                    lambda games: self.games_loaded.emit(games),
-                    self.downloader,
-                    self.update_progress.emit,
-                    self.update_status_message.emit
-                )
+                if economy_mode:
+                    self.games_loaded.emit([])
+                else:
+                    load_egs_games_async(
+                        self.legendary_path,
+                        lambda games: self.games_loaded.emit(games),
+                        self.downloader,
+                        self.update_progress.emit,
+                        self.update_status_message.emit
+                    )
             elif display_filter == "favorites":
                 def on_all_games_favorites(portproton_games, steam_games, epic_games):
                     games = [game for game in portproton_games + steam_games + epic_games if game[0] in favorites]
@@ -562,7 +569,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
                 # Load games from different sources in parallel to prevent blocking
                 results = {'portproton': [], 'steam': [], 'epic': []}
-                completed = {'portproton': False, 'steam': False, 'epic': False}
+                completed = {'portproton': False, 'steam': economy_mode, 'epic': economy_mode}
 
                 def check_completion():
                     if all(completed.values()):
@@ -588,18 +595,19 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                     check_completion()
 
                 self._load_portproton_games_async(portproton_callback)
-                self._load_steam_games_async(steam_callback)
-                load_egs_games_async(
-                    self.legendary_path,
-                    epic_callback,
-                    self.downloader,
-                    self.update_progress.emit,
-                    self.update_status_message.emit
-                )
+                if not economy_mode:
+                    self._load_steam_games_async(steam_callback)
+                    load_egs_games_async(
+                        self.legendary_path,
+                        epic_callback,
+                        self.downloader,
+                        self.update_progress.emit,
+                        self.update_status_message.emit
+                    )
             else:
                 # For 'all' filter - load games from different sources in parallel to prevent blocking
                 results = {'portproton': [], 'steam': [], 'epic': []}
-                completed = {'portproton': False, 'steam': False, 'epic': False}
+                completed = {'portproton': False, 'steam': economy_mode, 'epic': economy_mode}
 
                 def on_all_games():
                     seen = set()
@@ -638,14 +646,15 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
                 # Load all sources in parallel
                 self._load_portproton_games_async(portproton_callback)
-                self._load_steam_games_async(steam_callback)
-                load_egs_games_async(
-                    self.legendary_path,
-                    epic_callback,
-                    self.downloader,
-                    self.update_progress.emit,
-                    self.update_status_message.emit
-                )
+                if not economy_mode:
+                    self._load_steam_games_async(steam_callback)
+                    load_egs_games_async(
+                        self.legendary_path,
+                        epic_callback,
+                        self.downloader,
+                        self.update_progress.emit,
+                        self.update_status_message.emit
+                    )
 
         # Run loading immediately to show status without delay
         start_loading()
@@ -753,6 +762,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
         user_cover = ""
         user_game_folder = ""
+        economy_mode = read_economy_mode()
 
         if game_exe:
             exe_name = os.path.splitext(os.path.basename(game_exe))[0]
@@ -760,7 +770,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             os.makedirs(user_game_folder, exist_ok=True)
 
             # Check if local game folder is empty and download assets if it is
-            if not os.listdir(user_game_folder):
+            if not economy_mode and not os.listdir(user_game_folder):
                 logger.debug(f"Local folder for {exe_name} is empty, checking repository")
                 def on_assets_downloaded(results):
                     nonlocal user_cover
@@ -821,6 +831,47 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 "portproton",
                 steam_info.get("anticheat_slug", ""),
             ))
+
+        if economy_mode:
+            language_code = get_egs_language()
+            user_metadata_file = os.path.join(user_game_folder, "metadata.txt")
+            translations = {'name': desktop_name, 'description': ''}
+            if os.path.exists(user_metadata_file):
+                translations = read_metadata_translations(user_metadata_file, language_code)
+            final_name = translations['name']
+            final_desc = translations['description']
+            final_cover = user_cover or entry.get("Icon", "")
+            if not final_cover and game_exe and game_exe.lower().endswith(".exe") and os.path.exists(game_exe):
+                xdg_cache_home = os.getenv(
+                    "XDG_CACHE_HOME",
+                    os.path.join(os.path.expanduser("~"), ".cache"),
+                )
+                icon_cache_dir = os.path.join(xdg_cache_home, "PortProtonQt", "images", "exe_icons")
+                os.makedirs(icon_cache_dir, exist_ok=True)
+                safe_exe_name = re.sub(r"[^A-Za-z0-9._-]", "_", os.path.basename(game_exe))
+                generated_cover_path = os.path.join(icon_cache_dir, f"{safe_exe_name}.png")
+                if not os.path.exists(generated_cover_path):
+                    if not generate_thumbnail(game_exe, generated_cover_path, size=128):
+                        generated_cover_path = ""
+                if generated_cover_path and os.path.exists(generated_cover_path):
+                    final_cover = generated_cover_path
+            callback((
+                final_name,
+                final_desc,
+                final_cover,
+                "",
+                "",
+                exec_line,
+                get_last_launch(exe_name) if exe_name else _("Never"),
+                formatted_playtime,
+                "",
+                "",
+                get_last_launch_timestamp(exe_name) if exe_name else 0,
+                playtime_seconds,
+                "portproton",
+                "",
+            ))
+            return
 
         get_steam_game_info_async(desktop_name, exec_line, on_steam_info)
 
@@ -1163,7 +1214,29 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                     QTimer.singleShot(200, self.game_library_manager.load_visible_images)
 
                 from portprotonqt.steam_api import get_steam_game_info_async
-                get_steam_game_info_async(final_name, exec_line, on_steam_info)
+                if read_economy_mode():
+                    game_data = (
+                        final_name,
+                        final_desc,
+                        user_cover_path or entry.get("Icon", ""),
+                        "",
+                        "",
+                        exec_line,
+                        last_launch,
+                        formatted_playtime,
+                        "",
+                        "",
+                        last_played_timestamp,
+                        playtime_seconds,
+                        "portproton",
+                        "",
+                    )
+                    self.game_library_manager.add_game_incremental(game_data)
+                    msg = _("Added '{name}'").format(name=final_name)
+                    self.statusBar().showMessage(msg, 3000)
+                    QTimer.singleShot(200, self.game_library_manager.load_visible_images)
+                else:
+                    get_steam_game_info_async(final_name, exec_line, on_steam_info)
 
     def _sync_game_shortcuts_from_dialog(self, dialog, game_name, exec_line, cover_path):
         """Apply shortcut options selected in add/edit game dialog."""
@@ -1183,12 +1256,13 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         elif os.path.exists(desktop_path):
             self.context_menu_manager.remove_from_desktop(game_name)
 
-        is_in_steam = is_game_in_steam(game_name)
-        if dialog.add_to_steam_checkbox.isChecked():
-            if not is_in_steam:
-                self.context_menu_manager.add_to_steam(game_name, exec_line, cover_path)
-        elif is_in_steam:
-            self.context_menu_manager.remove_from_steam(game_name, exec_line, "portproton")
+        if not read_economy_mode():
+            is_in_steam = is_game_in_steam(game_name)
+            if dialog.add_to_steam_checkbox.isChecked():
+                if not is_in_steam:
+                    self.context_menu_manager.add_to_steam(game_name, exec_line, cover_path)
+            elif is_in_steam:
+                self.context_menu_manager.remove_from_steam(game_name, exec_line, "portproton")
 
     def createAutoInstallTab(self):
         autoInstallPage = QWidget()
@@ -1266,6 +1340,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         def on_autoinstall_games_loaded(games: list[tuple]):
             self.autoInstallLoaded = True
             self.autoInstallLoading = False
+            economy_mode = read_economy_mode()
 
             # Clear
             while self.autoInstallContainerLayout.count():
@@ -1300,6 +1375,10 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 exec_line = game_tuple[5]
                 game_source = game_tuple[12]
                 exe_name = game_tuple[13]
+                if not cover_path:
+                    theme_cover = self.theme_manager.get_icon(exe_name, self.current_theme_name, as_path=True)
+                    if isinstance(theme_cover, str) and "autoinstall_covers" in theme_cover:
+                        cover_path = theme_cover
 
                 card = GameCard(
                     name, description, cover_path, appid, controller_support,
@@ -1347,7 +1426,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                     except Exception as e:
                         logger.error(f"Error updating card metadata for {exe_name}: {e}")
 
-            if exe_names_to_load:
+            if exe_names_to_load and not economy_mode:
                 self.portproton_api.download_autoinstall_assets_batch_async(
                     exe_names_to_load,
                     timeout=5,
@@ -1987,6 +2066,9 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         except ValueError:
             idx = 0
         self.badgeViewCombo.setCurrentIndex(idx)
+        if read_economy_mode():
+            self.badgeViewCombo.setCurrentIndex(self.badge_view_keys.index("hidden"))
+            self.badgeViewCombo.setEnabled(False)
         genForm.addRow(self.badgeViewTitle, self.badgeViewCombo)
 
         # 2. Interface Settings Section
@@ -2083,12 +2165,42 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.steamCompatTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         current_steam_compat = is_steam_compat_tool_installed()
         self.steamCompatCheckBox.setChecked(current_steam_compat)
+        if read_economy_mode():
+            self.steamCompatCheckBox.setChecked(False)
+            self.steamCompatCheckBox.setEnabled(False)
         steam_compat_layout = QHBoxLayout()
         steam_compat_layout.setContentsMargins(0, 0, 0, 0)
         steam_compat_layout.addWidget(self.steamCompatCheckBox)
         steam_compat_layout.addWidget(self.steamCompatTitle)
         steam_compat_layout.addStretch()
         uiForm.addRow(steam_compat_layout)
+
+        self.economyModeCheckBox = QCheckBox()
+        self.economyModeCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
+        self.economyModeCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.economyModeTitle = QLabel(_("Economy mode (disable Steam/HLTB/badges)"))
+        self.economyModeTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.economyModeTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
+        self.economyModeTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.economyModeCheckBox.setChecked(read_economy_mode())
+        def update_economy_controls(enabled: bool):
+            if enabled:
+                self.badgeViewCombo.setCurrentIndex(self.badge_view_keys.index("hidden"))
+                self.badgeViewCombo.setEnabled(False)
+                self.steamCompatCheckBox.setChecked(False)
+                self.steamCompatCheckBox.setEnabled(False)
+                return
+            self.badgeViewCombo.setEnabled(True)
+            self.steamCompatCheckBox.setEnabled(True)
+
+        self.economyModeCheckBox.toggled.connect(update_economy_controls)
+        update_economy_controls(self.economyModeCheckBox.isChecked())
+        economy_mode_layout = QHBoxLayout()
+        economy_mode_layout.setContentsMargins(0, 0, 0, 0)
+        economy_mode_layout.addWidget(self.economyModeCheckBox)
+        economy_mode_layout.addWidget(self.economyModeTitle)
+        economy_mode_layout.addStretch()
+        uiForm.addRow(economy_mode_layout)
 
         # 3. Gamepad Settings Section
         padFrame, padForm = create_section(_("Gamepad Settings"))
@@ -2289,6 +2401,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             card.update_badge_visibility(display_filter)
 
     def savePortProtonSettings(self):
+        previous_economy_mode = read_economy_mode()
         time_idx = self.timeDetailCombo.currentIndex()
         time_key = self.time_keys[time_idx]
         save_time_config(time_key)
@@ -2299,9 +2412,16 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
         filter_idx = self.gamesDisplayCombo.currentIndex()
         filter_key = self.filter_keys[filter_idx]
+        economy_mode = self.economyModeCheckBox.isChecked()
+        save_economy_mode(economy_mode)
+        economy_mode_changed = previous_economy_mode != economy_mode
+        if economy_mode and filter_key == "steam":
+            filter_key = "portproton"
         save_display_filter(filter_key)
         badge_view_idx = self.badgeViewCombo.currentIndex()
         badge_view_mode = self.badge_view_keys[badge_view_idx]
+        if economy_mode:
+            badge_view_mode = "hidden"
         save_badge_view_mode(badge_view_mode)
 
         proxy_url = self.proxyUrlEdit.text().strip()
@@ -2326,12 +2446,13 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         start_minimized = self.startMinimizedCheckBox.isChecked()
         save_start_minimized(start_minimized)
 
-        steam_compat = self.steamCompatCheckBox.isChecked()
-        currently_installed = is_steam_compat_tool_installed()
-        if steam_compat and not currently_installed:
-            add_steam_compat_tool()
-        elif not steam_compat and currently_installed:
-            remove_steam_compat_tool()
+        if not economy_mode:
+            steam_compat = self.steamCompatCheckBox.isChecked()
+            currently_installed = is_steam_compat_tool_installed()
+            if steam_compat and not currently_installed:
+                add_steam_compat_tool()
+            elif not steam_compat and currently_installed:
+                remove_steam_compat_tool()
 
         # Save GPU selection to user.conf (only if the combo box exists)
         if hasattr(self, 'gpuCombo'):
@@ -2357,9 +2478,13 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             if hasattr(self, 'keyboard'):
                 self.keyboard.update_keyboard()
 
-        for card in self.game_library_manager.game_card_cache.values():
-            card.update_badge_visibility(filter_key)
-            card.update_badge_view_mode(badge_view_mode)
+        if economy_mode_changed:
+            if self.game_library_manager.gamesListLayout is not None:
+                self.game_library_manager.clear_layout(self.game_library_manager.gamesListLayout)
+        else:
+            for card in self.game_library_manager.game_card_cache.values():
+                card.update_badge_visibility(filter_key)
+                card.update_badge_view_mode(badge_view_mode)
 
         if (
             self.currentDetailPage
@@ -2700,6 +2825,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         # Normalize the exe path
         exe_path = os.path.abspath(exe_path)
         exe_name = os.path.splitext(os.path.basename(exe_path))[0]
+        economy_mode = read_economy_mode()
 
         xdg_data_home = os.getenv(
             "XDG_DATA_HOME",
@@ -2744,6 +2870,23 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             game_name = existing_entry.get("Name", _("Unknown Game"))
             icon_path = existing_entry.get("Icon", "")
             exec_line = existing_entry.get("Exec", "")
+            if economy_mode:
+                game_data = {
+                    "name": game_name,
+                    "description": "",
+                    "cover_path": local_cover_path or generated_cover_path or icon_path,
+                    "appid": "",
+                    "controller_support": "",
+                    "exec_line": exec_line,
+                    "last_launch": _("Never"),
+                    "formatted_playtime": "0:00",
+                    "protondb_tier": "",
+                    "anticheat_status": "",
+                    "game_source": "portproton",
+                    "anticheat_slug": "",
+                }
+                self.openGameDetailPage(game_data)
+                return
 
             # Get Steam game info asynchronously to fetch appid, cover, etc.
             def on_steam_info(steam_info: dict):
@@ -2804,6 +2947,23 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             # Game not found in library: open detail page without creating .desktop file
             game_name_from_exe = os.path.splitext(os.path.basename(exe_path))[0]
             direct_exec_line = shlex.quote(exe_path)
+            if economy_mode:
+                game_data = {
+                    "name": game_name_from_exe,
+                    "description": "",
+                    "cover_path": local_cover_path or generated_cover_path,
+                    "appid": "",
+                    "controller_support": "",
+                    "exec_line": direct_exec_line,
+                    "last_launch": _("Never"),
+                    "formatted_playtime": "0:00",
+                    "protondb_tier": "",
+                    "anticheat_status": "",
+                    "game_source": "portproton",
+                    "anticheat_slug": "",
+                }
+                self.openGameDetailPage(game_data)
+                return
 
             def on_steam_info_missing(steam_info: dict):
                 steam_cover_path = ""
