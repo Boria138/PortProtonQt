@@ -377,10 +377,8 @@ ${translations[Usage examples:]}
         esac
 
         ppdb_path="${exe_path}.ppdb"
-        if [[ ! -f "$ppdb_path" ]]; then
-            export PW_EXE_FILE="$exe_path"
-            pw_init_db
-        fi
+        export PW_EXE_FILE="$exe_path"
+        pw_init_db
 
         declare -A all_vars
         while IFS='=' read -r key val; do
