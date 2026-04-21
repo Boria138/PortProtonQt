@@ -40,7 +40,7 @@ const char* device_type_name(VkPhysicalDeviceType device_type) {
 }
 
 // Проверка поддержки расширения для получения свойств драйвера
-VkBool32 device_supports_driver_props(VkPhysicalDevice device) {
+VkBool32 device_supports_extension(VkPhysicalDevice device, const char* extension_name) {
     uint32_t extension_count;
     VkResult result = vkEnumerateDeviceExtensionProperties(device, NULL, &extension_count, NULL);
     if (result != VK_SUCCESS) {
@@ -60,7 +60,7 @@ VkBool32 device_supports_driver_props(VkPhysicalDevice device) {
 
     VkBool32 supports = VK_FALSE;
     for (uint32_t i = 0; i < extension_count; i++) {
-        if (strcmp(extensions[i].extensionName, VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME) == 0) {
+        if (strcmp(extensions[i].extensionName, extension_name) == 0) {
             supports = VK_TRUE;
             break;
         }
@@ -68,6 +68,10 @@ VkBool32 device_supports_driver_props(VkPhysicalDevice device) {
 
     free(extensions);
     return supports;
+}
+
+VkBool32 device_supports_driver_props(VkPhysicalDevice device) {
+    return device_supports_extension(device, VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME);
 }
 
 int main() {
@@ -173,6 +177,8 @@ int main() {
         uint32_t api_version = props.apiVersion;
         uint32_t driver_version = props.driverVersion;
         const char* device_type = device_type_name(props.deviceType);
+        VkBool32 supports_drm_format_modifier =
+            device_supports_extension(devices[i], "VK_EXT_image_drm_format_modifier");
 
         char driver_name[VK_MAX_EXTENSION_NAME_SIZE] = "Unknown";
         char driver_info[VK_MAX_EXTENSION_NAME_SIZE] = "Unknown";
@@ -202,6 +208,8 @@ int main() {
 
         printf("GPU #%u\n", i);
         printf("gpu_id: %u\n", gpu_id);
+        printf("vendor_id: 0x%04x\n", props.vendorID);
+        printf("device_id: 0x%04x\n", props.deviceID);
         printf("device_name: %s\n", device_name);
         printf("driver_name: %s\n", driver_name);
         printf("driver_info: %s\n", driver_info);
@@ -214,6 +222,7 @@ int main() {
                VK_VERSION_MINOR(driver_version),
                VK_VERSION_PATCH(driver_version));
         printf("device_type: %s\n", device_type);
+        printf("supports_vk_ext_image_drm_format_modifier: %u\n", supports_drm_format_modifier ? 1 : 0);
         printf("\n");
     }
 

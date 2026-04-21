@@ -32,9 +32,9 @@ from portprotonqt.cli import (
     remove_steam_compat_tool,
     parse_resolution,
 )
-from portprotonqt.portproton_api import PortProtonAPI, set_user_conf_setting
+from portprotonqt.portproton_api import PortProtonAPI, get_user_conf_setting, set_user_conf_setting
 from portprotonqt.downloader import Downloader
-from portprotonqt.debug_utils import get_screen_info
+from portprotonqt.debug_utils import get_screen_info, get_selectable_gpu_entries
 from portprotonqt.localization import get_steam_language
 
 def get_version():
@@ -64,6 +64,7 @@ def is_apple_silicon():
                 return False
     except OSError:
         return False
+
 
 def main():
     # Parse args early to check for force-muvm flag
@@ -307,21 +308,40 @@ def main():
         def run(self):
             try:
                 # Get screen information before running the initial command
-                # Hack: avoid script from dependency on xorg-xrandr
                 from portprotonqt.config_utils import get_portproton_location
                 portproton_path = get_portproton_location()
 
                 if portproton_path:
                     screen_resolution, screen_primary = get_screen_info(portproton_path)
 
-                    # Store screen information in user.conf
                     if screen_resolution and '=' in screen_resolution:
                         var_name, var_value = screen_resolution.split('=', 1)
-                        set_user_conf_setting(var_name, var_value)
+                        if var_value:
+                            set_user_conf_setting(var_name, var_value)
 
                     if screen_primary and '=' in screen_primary:
                         var_name, var_value = screen_primary.split('=', 1)
-                        set_user_conf_setting(var_name, var_value)
+                        if var_value:
+                            set_user_conf_setting(var_name, var_value)
+
+                current_gpu_use = get_user_conf_setting("PW_GPU_USE")
+                selectable_gpu_entries = get_selectable_gpu_entries()
+                if selectable_gpu_entries:
+                    selected_entry = None
+                    for entry in selectable_gpu_entries:
+                        if entry["device_name"] == current_gpu_use:
+                            selected_entry = entry
+                            break
+                    if selected_entry is None:
+                        selected_entry = selectable_gpu_entries[0]
+                    if selected_entry is not None:
+                        selected_gpu = selected_entry["device_name"]
+                        if set_user_conf_setting("PW_GPU_USE", selected_gpu):
+                            logger.info("Set PW_GPU_USE in user.conf via vk_gpu_info: %s", selected_gpu)
+                        if selected_entry["vendor_id"]:
+                            set_user_conf_setting("PW_vendorID", selected_entry["vendor_id"])
+                        if selected_entry["device_id"]:
+                            set_user_conf_setting("PW_deviceID", selected_entry["device_id"])
 
                 # Run the initial PortProton command
                 subprocess.run(self.start_cmd + ["cli", "--initial"], timeout=10)

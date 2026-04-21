@@ -1,3 +1,47 @@
+import os
+import subprocess
+
+
+def get_available_locale_options() -> list[str]:
+    """Get locale options based on locales available in the system."""
+    target_locales = ("ru_RU", "en_US", "zh_CN", "ja_JP", "ko_KR")
+    try:
+        result = subprocess.run(
+            ["locale", "-a"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+        )
+        if result.returncode != 0:
+            return []
+    except (subprocess.TimeoutExpired, OSError):
+        return []
+
+    installed = {line.strip().lower() for line in result.stdout.splitlines() if line.strip()}
+    selected = []
+    for base in target_locales:
+        variants = (
+            f"{base}.utf8".lower(),
+            f"{base}.utf-8".lower(),
+            f"{base}.utf".lower(),
+        )
+        if any(variant in installed for variant in variants):
+            selected.append(f"{base}.utf8")
+    return selected
+
+
+def get_available_logical_core_options() -> list[str]:
+    """Get logical core options based on available CPU cores in the system."""
+    logical_cores = os.cpu_count() or 1
+    if logical_cores <= 4:
+        return [str(core) for core in range(1, logical_cores)]
+
+    options = ["1", "2"]
+    options.extend(str(core) for core in range(4, logical_cores, 4))
+    return options
+
+
 def get_toggle_settings():
     """Get predefined toggle settings with descriptions."""
     from portprotonqt.localization import _
@@ -60,8 +104,8 @@ def get_toggle_settings():
     }
 
 
-def get_advanced_settings(disabled_text, logical_core_options, locale_options,
-                          numa_nodes, dist_options=None, prefix_options=None):
+def get_advanced_settings(disabled_text, logical_core_options=None, locale_options=None,
+                          numa_nodes=None, dist_options=None, prefix_options=None):
     """Get advanced settings configuration."""
     from portprotonqt.localization import _
     import shutil
@@ -71,6 +115,12 @@ def get_advanced_settings(disabled_text, logical_core_options, locale_options,
         dist_options = []
     if prefix_options is None:
         prefix_options = []
+    if numa_nodes is None:
+        numa_nodes = {}
+    if not logical_core_options:
+        logical_core_options = get_available_logical_core_options()
+    if locale_options is None:
+        locale_options = get_available_locale_options()
 
     # 1. Wine Version
     # Add System WINE option if available
