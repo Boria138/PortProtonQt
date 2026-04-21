@@ -236,36 +236,36 @@ case "$1" in
     --help)
         help_info () {
             files_from_autoinstall=$(ls "${PORT_SCRIPTS_PATH}/pw_autoinstall")
-            echo -e "${translations[use]}: [--repair] [--reinstall] [--autoinstall]
+            echo -e "Usage: [--repair] [--reinstall] [--autoinstall]
 
---repair                                            ${translations[Forces all scripts to be updated to a working state
-                                                    (helps if PortProton is not working)]}
---reinstall                                         ${translations[Reinstalls PortProton and resets all settings to default]}
---debug                                             ${translations[Debug scripts for PortProton
-                                                    (saved log in]} $PORT_DATA_PATH/scripts-debug.log)
---launch                                            ${translations[Launches the application immediately, requires the path to the .exe file]}
---edit-db                                           ${translations[After the variable, the path to the .exe file is required and then the variables.
-                                                    (List their variables and values for example PW_MANGOHUD=1 PW_VKBASALT=0, etc.)]}
---get-user-conf                                     ${translations[Get a value from user.conf file, requires variable name]}
---set-user-conf                                     ${translations[Set a value in user.conf file, requires variable name and value]}
---del-user-conf                                     ${translations[Delete a value from user.conf file, requires variable name]}
---list-db                                           ${translations[List all available database variables]}
---show-ppdb                                         ${translations[Show the content of .ppdb file for specified .exe file]}
---backup-prefix                                     ${translations[Backup specified prefix to a file]}
---restore-prefix                                    ${translations[Restore prefix from backup file]}
---winefile                                          ${translations[Open wine file explorer, requires WINE version and prefix name]}
---winecfg                                           ${translations[Open wine configuration, requires WINE version and prefix name]}
---winecmd                                           ${translations[Open wine command prompt, requires WINE version and prefix name]}
---winereg                                           ${translations[Open wine registry editor, requires WINE version and prefix name]}
---wine_uninstaller                                  ${translations[Open wine uninstaller, requires WINE version and prefix name]}
---clear_pfx                                         ${translations[Clear specified prefix, requires WINE version and prefix name]}
---mangohud-preview                                  ${translations[Starts MangoHud preview in vkcube (optional argument: inline MangoHud config)]}
---initial                                           ${translations[Initial setup command]}
---autoinstall                                       ${translations[--autoinstall and the name of what needs to be installed is given in the list below:]}
+--repair                                            Forces all scripts to be updated to a working state
+                                                    (helps if PortProton is not working)
+--reinstall                                         Reinstalls PortProton and resets all settings to default
+--debug                                             Debug scripts for PortProton
+                                                    (saved log in) $PORT_DATA_PATH/scripts-debug.log)
+--launch                                            Launches the application immediately, requires the path to the .exe file
+--edit-db                                           After the variable, the path to the .exe file is required and then the variables.
+                                                    (List their variables and values for example PW_MANGOHUD=1 PW_VKBASALT=0, etc.)
+--get-user-conf                                     Get a value from user.conf file, requires variable name
+--set-user-conf                                     Set a value in user.conf file, requires variable name and value
+--del-user-conf                                     Delete a value from user.conf file, requires variable name
+--list-db                                           List all available database variables
+--show-ppdb                                         Show the content of .ppdb file for specified .exe file
+--backup-prefix                                     Backup specified prefix to a file
+--restore-prefix                                    Restore prefix from backup file
+--winefile                                          Open wine file explorer, requires WINE version and prefix name
+--winecfg                                           Open wine configuration, requires WINE version and prefix name
+--winecmd                                           Open wine command prompt, requires WINE version and prefix name
+--winereg                                           Open wine registry editor, requires WINE version and prefix name
+--wine_uninstaller                                  Open wine uninstaller, requires WINE version and prefix name
+--clear_pfx                                         Clear specified prefix, requires WINE version and prefix name
+--mangohud-preview                                  Starts MangoHud preview in vkcube (optional argument: inline MangoHud config)
+--initial                                           Initial setup command
+--autoinstall                                       --autoinstall and the name of what needs to be installed is given in the list below:
 
 $(echo $files_from_autoinstall | awk '{for (i = 1; i <= NF; i++) {if (i % 10 == 0) {print ""} printf "%s ", $i}}')
 
-${translations[Usage examples:]}
+Usage examples:
   portproton cli --launch /path/to/game.exe
   portproton cli --edit-db /path/to/game.exe PW_MANGOHUD=1 PW_VKBASALT=0
   portproton cli --get-user-conf PW_MANGOHUD

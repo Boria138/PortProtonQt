@@ -2290,12 +2290,10 @@ edit_db_from_gui () {
     then
         for mod_db in "$@" ; do
             proxy_mod_db="${!mod_db}"
-            if (( ${#translations[@]} > 0 )); then
-                if [[ $proxy_mod_db =~ (${translations[Disabled]}|${translations[Disable]}) ]] ; then
-                    proxy_mod_db=disabled
-                elif [[ $proxy_mod_db =~ (${translations[Enabled]}|${translations[Enable]}) ]] ; then
-                    proxy_mod_db=enabled
-                fi
+            if [[ $proxy_mod_db =~ (Disabled|Disable) ]] ; then
+                proxy_mod_db=disabled
+            elif [[ $proxy_mod_db =~ (Enabled|Enable) ]] ; then
+                proxy_mod_db=enabled
             fi
 
             # HACK: Escaping backslashes and quotes for Windows paths
@@ -2318,9 +2316,9 @@ edit_user_conf_from_gui () {
             continue
         fi
         proxy_mod_db="${!mod_db}"
-        if [[ $proxy_mod_db =~ (${translations[Disabled]}|${translations[Disable]}) ]] ; then
+        if [[ $proxy_mod_db =~ (Disabled|Disable) ]] ; then
             proxy_mod_db=disabled
-        elif [[ $proxy_mod_db =~ (${translations[Enabled]}|${translations[Enable]}) ]] ; then
+        elif [[ $proxy_mod_db =~ (Enabled|Enable) ]] ; then
             proxy_mod_db=enabled
         fi
         if ! grep "export ${mod_db}=" "${USER_CONF}" &>/dev/null
@@ -3142,7 +3140,7 @@ if [[ "$GAMEMODERUN" != "1" ]] && [[ "$PW_USE_INHIBIT_SLEEP" == "1" ]]; then
         PW_INHIBIT_SLR=""
         print_info "Screensaver will be inhibited using D-Bus (Flatpak mode)"
     elif [[ -e "/var/run/dbus/system_bus_socket" ]] && command -v systemd-inhibit &>/dev/null; then
-        PW_INHIBIT_SLR="systemd-inhibit --mode=block --who=ru.linux_gaming.PortProton --why=${translations[Launched]} --what=idle:sleep"
+        PW_INHIBIT_SLR="systemd-inhibit --mode=block --who=ru.linux_gaming.PortProton --why=Launched --what=idle:sleep"
         print_info "Screensaver will be inhibited using systemd-inhibit (Native mode)"
     fi
 fi
@@ -4060,7 +4058,7 @@ steamplay_launch () {
                 PW_INHIBIT_SLR=""
                 print_info "Screensaver will be inhibited using D-Bus (Flatpak mode)"
             elif [[ -e "/var/run/dbus/system_bus_socket" ]] && command -v systemd-inhibit &>/dev/null; then
-                PW_INHIBIT_SLR="systemd-inhibit --mode=block --who=ru.linux_gaming.PortProton --why=${translations[Launched]} --what=idle:sleep"
+                PW_INHIBIT_SLR="systemd-inhibit --mode=block --who=ru.linux_gaming.PortProton --why=Launched --what=idle:sleep"
                 print_info "Screensaver will be inhibited using systemd-inhibit (Native mode)"
             fi
         fi
@@ -4524,7 +4522,7 @@ pw_gamescope_process () {
             ;;
 
         sanitize)
-            local gs_disabled="${translations[Disabled]}" gs_disable="${translations[Disable]}"
+            local gs_disabled="Disabled" gs_disable="Disable"
             PW_GAMESCOPE_ARGS_NEW="${PW_GAMESCOPE_ARGS_NEW//${gs_disabled}/}"
             PW_GAMESCOPE_ARGS_NEW="${PW_GAMESCOPE_ARGS_NEW//${gs_disable}/}"
             read -r -a gs_args_input <<< "${PW_GAMESCOPE_ARGS_NEW}"
