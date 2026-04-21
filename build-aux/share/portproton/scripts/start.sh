@@ -30,7 +30,16 @@ fi
 
 PORT_IMG_PATH="$(dirname "$PORT_SCRIPTS_PATH")/img"
 
-export PORT_SCRIPTS_PATH PORT_IMG_PATH
+if [[ -z "$PORT_DATA_PATH" ]] ; then
+    if [[ -f "$HOME/.config/PortProton.conf" ]] ; then
+        PORT_DATA_PATH="$(head -n 1 "$HOME/.config/PortProton.conf")"
+    else
+        echo "FATAL ERROR: PortProton data path not found"
+        exit 1
+    fi
+fi
+
+export PORT_SCRIPTS_PATH PORT_IMG_PATH PORT_DATA_PATH
 export PW_LOG_FILE="${PORT_DATA_PATH}/PortProton.log"
 
 # shellcheck source=/dev/null
@@ -336,7 +345,6 @@ ${translations[Usage examples:]}
         exit 0
         ;;
     --list-db)
-        export pw_yad=""
         gui_edit_db
         pw_skip_get_info
         declare -A NODE_MAP

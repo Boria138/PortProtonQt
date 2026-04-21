@@ -1564,14 +1564,6 @@ pw_kill_autostart () {
 }
 export -f pw_kill_autostart
 
-pw_exit_tray () {
-    read -r -a PGREP_TRAY_GUI_PP < <(pgrep -a tray_gui_pp)
-    [[ -n ${PGREP_TRAY_GUI_PP[0]} ]] && kill "${PGREP_TRAY_GUI_PP[0]}" &>/dev/null
-    read -r -a PGREP_YAD_GUI_PP < <(pgrep -a yad_gui_pp)
-    [[ -n ${PGREP_YAD_GUI_PP[0]} ]] && kill -s SIGUSR1 "${PGREP_YAD_GUI_PP[0]}" &>/dev/null
-}
-export -f pw_exit_tray
-
 stop_portwine () {
     [[ "$int_xneur" == "1" ]] && xneur &
 
@@ -1610,7 +1602,6 @@ stop_portwine () {
     kill_portwine
     try_remove_dir "${PW_WINELIB}/var"
     find "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/" -maxdepth 1 -type f -name "*.tmp" -delete
-    pw_exit_tray
     pw_auto_create_shortcut
     stop_activity_simulation
     add_in_stop_portwine
@@ -1720,51 +1711,28 @@ pw_check_and_download_dxvk_and_vkd3d () {
 pw_check_and_download_plugins () {
     if [[ ! -f "${PW_PLUGINS_PATH}/portable/lib/lib64/libvkbasalt.so" ]] ; then
         print_info "Download and install plugins${PW_PLUGINS_VER}..."
-        if command -v yad &>/dev/null ; then
-            if try_download "github.com/Castro-Fidel/wine_builds/releases/download/plugins${PW_PLUGINS_VER}/plugins${PW_PLUGINS_VER}.tar.xz" "${PORT_WINE_TMP_PATH}/plugins${PW_PLUGINS_VER}.tar.xz" ; then
-                if unpack "${PORT_WINE_TMP_PATH}/plugins${PW_PLUGINS_VER}.tar.xz" "${PORT_WINE_TMP_PATH}" ; then
-                    try_remove_file "${PORT_WINE_TMP_PATH}/plugins${PW_PLUGINS_VER}.tar.xz"
-                    # TODO: drop clear prefix, and add update prefix from new plugins
-                    pw_clear_pfx
-                    if lsbash "${PORT_WINE_TMP_PATH}" --grep plugins_v --grep -v "plugins${PW_PLUGINS_VER}"
-                    then
-                        for RM_PLUGINS in $(lsbash "${PORT_WINE_TMP_PATH}" --grep plugins_v --grep -v "plugins${PW_PLUGINS_VER}")
-                        do try_remove_dir "${PORT_WINE_TMP_PATH}/${RM_PLUGINS}"
-                        done
-                    fi
-                else
-                    try_remove_file "${PORT_WINE_TMP_PATH}/plugins${PW_PLUGINS_VER}.tar.xz"
-                    try_remove_dir "${PORT_WINE_TMP_PATH}/plugins${PW_PLUGINS_VER}"
-                    fatal "Failed to download and unpack plugins${PW_PLUGINS_VER}"
-                    # export PW_PLUGINS_VER="_v$((${PW_PLUGINS_VER//_v/} - 1))"
-                    # export PW_PLUGINS_PATH="${PORT_WINE_TMP_PATH}/plugins${PW_PLUGINS_VER}"
+        if try_download "github.com/Castro-Fidel/wine_builds/releases/download/plugins${PW_PLUGINS_VER}/plugins${PW_PLUGINS_VER}.tar.xz" "${PORT_WINE_TMP_PATH}/plugins${PW_PLUGINS_VER}.tar.xz" ; then
+            if unpack "${PORT_WINE_TMP_PATH}/plugins${PW_PLUGINS_VER}.tar.xz" "${PORT_WINE_TMP_PATH}" ; then
+                try_remove_file "${PORT_WINE_TMP_PATH}/plugins${PW_PLUGINS_VER}.tar.xz"
+                # TODO: drop clear prefix, and add update prefix from new plugins
+                pw_clear_pfx
+                if lsbash "${PORT_WINE_TMP_PATH}" --grep plugins_v --grep -v "plugins${PW_PLUGINS_VER}"
+                then
+                    for RM_PLUGINS in $(lsbash "${PORT_WINE_TMP_PATH}" --grep plugins_v --grep -v "plugins${PW_PLUGINS_VER}")
+                    do try_remove_dir "${PORT_WINE_TMP_PATH}/${RM_PLUGINS}"
+                    done
                 fi
             else
+                try_remove_file "${PORT_WINE_TMP_PATH}/plugins${PW_PLUGINS_VER}.tar.xz"
+                try_remove_dir "${PORT_WINE_TMP_PATH}/plugins${PW_PLUGINS_VER}"
                 fatal "Failed to download and unpack plugins${PW_PLUGINS_VER}"
                 # export PW_PLUGINS_VER="_v$((${PW_PLUGINS_VER//_v/} - 1))"
                 # export PW_PLUGINS_PATH="${PORT_WINE_TMP_PATH}/plugins${PW_PLUGINS_VER}"
             fi
         else
-            pw_notify_send -i info \
-            "${translations[Please wait for update PortProton]}"
-            if try_download "github.com/Castro-Fidel/wine_builds/releases/download/plugins${PW_PLUGINS_VER}/plugins${PW_PLUGINS_VER}.tar.xz" \
-                                   "${PORT_WINE_TMP_PATH}/plugins${PW_PLUGINS_VER}.tar.xz" silent ; then
-                if unpack "${PORT_WINE_TMP_PATH}/plugins${PW_PLUGINS_VER}.tar.xz" "${PORT_WINE_TMP_PATH}" ; then
-                    try_remove_file "${PORT_WINE_TMP_PATH}/plugins${PW_PLUGINS_VER}.tar.xz"
-                    # TODO: drop clear prefix, and add update prefix from new plugins
-                    pw_clear_pfx
-                    if lsbash "${PORT_WINE_TMP_PATH}" --grep plugins_v --grep -v "plugins${PW_PLUGINS_VER}"
-                    then
-                        for RM_PLUGINS in $(lsbash "${PORT_WINE_TMP_PATH}" --grep plugins_v --grep -v "plugins${PW_PLUGINS_VER}")
-                        do try_remove_dir "${PORT_WINE_TMP_PATH}/${RM_PLUGINS}"
-                        done
-                    fi
-                else
-                    print_error "Failed updating PortProton!"
-                    pw_notify_send -i error \
-                    "${translations[Failed updating PortProton!]}"
-                fi
-            fi
+            fatal "Failed to download and unpack plugins${PW_PLUGINS_VER}"
+            # export PW_PLUGINS_VER="_v$((${PW_PLUGINS_VER//_v/} - 1))"
+            # export PW_PLUGINS_PATH="${PORT_WINE_TMP_PATH}/plugins${PW_PLUGINS_VER}"
         fi
     fi
     if command -v 7z &>/dev/null
@@ -3933,7 +3901,6 @@ fi
 }
 
 pw_run () {
-    unset GDK_BACKEND
     if [[ -n "${PATH_TO_GAME}" ]] \
     && [[ -d "${PATH_TO_GAME}" ]]
     then
@@ -4700,10 +4667,7 @@ resize_png () {
     done
 }
 
-# GUI CREATE SHORTCUT
 portwine_create_shortcut () {
-    export GDK_BACKEND="x11"
-    pw_exit_tray
     if [[ ! -e $PW_EXE_FILE ]]
     then return 1
     elif [[ $(basename "$PW_EXE_FILE") =~ (unins0|uninstall|remove) ]]
@@ -4713,31 +4677,21 @@ portwine_create_shortcut () {
 
     check_variables PW_SHORTCUT_MENU "TRUE"
     check_variables PW_SHORTCUT_DESKTOP "TRUE"
-    check_variables PW_SHORTCUT_STEAM "FALSE"
 
     unset name_desktop
     create_name_desktop
     export name_desktop="$PW_NAME_DESKTOP_PROXY"
-    portwine_output_yad_shortcut --silent
+    portwine_output_yad_shortcut
 }
 
 portwine_output_yad_shortcut () {
-    if [[ $PW_YAD_OUT == "0" ]] || [[ $1 == "--silent" ]] ; then
-        if [[ $1 == "--silent" ]] ; then
-            [[ ! -e ${PW_EXE_FILE} ]] && return 1
-            pw_create_gui_png
-            unset name_desktop
-            check_variables PW_SHORTCUT_MENU "TRUE"
-            check_variables PW_SHORTCUT_DESKTOP "TRUE"
-            check_variables PW_SHORTCUT_STEAM "FALSE"
-        else
-            name_desktop=$(echo "$OUTPUT" | awk -F'|' '{print $1}' | sed -e "s/\`//g" -e "s/\"//g" -e "s/'//g" -e "s/\!//g")
-            PW_SHORTCUT_MENU=$(echo "$OUTPUT" | awk -F'|' '{print $2}')
-            PW_SHORTCUT_DESKTOP=$(echo "$OUTPUT" | awk -F'|' '{print $3}')
-            PW_SHORTCUT_STEAM=$(echo "$OUTPUT" | awk -F'|' '{print $4}')
-            # edit_user_conf_from_gui PW_SHORTCUT_MENU PW_SHORTCUT_DESKTOP PW_SHORTCUT_STEAM
-            portwine_delete_shortcut
-        fi
+
+        [[ ! -e "${PW_EXE_FILE}" ]] && return 1
+
+        pw_create_gui_png
+        unset name_desktop
+        check_variables PW_SHORTCUT_MENU "TRUE"
+        check_variables PW_SHORTCUT_DESKTOP "TRUE"
 
         if [[ -z $name_desktop ]] ; then
             create_name_desktop
@@ -4774,24 +4728,13 @@ portwine_output_yad_shortcut () {
             fi
         fi
 
-        if [[ "${PW_SHORTCUT_STEAM}" == "TRUE" ]] ; then
-            source "${PORT_SCRIPTS_PATH}/add_in_steam.sh"
-            addNonSteamGame
-        fi
-
         export PW_NEW_DESKTOP="1"
 
-        if [[ "$PW_NO_RESTART_PPDB" != "1" ]] ; then
-            print_info "Restarting PP..."
-            [[ "$PW_GUI_START" == "NOTEBOOK" ]] && unset PW_YAD_FORM_TAB
+        if [[ "$PW_NO_RESTART_PPDB" != "1" ]] \
+        || [[ -z ${LINKS[0]} ]]
+        then
             exit 0
         fi
-    elif [[ "$PW_YAD_OUT" =~ ^(1|2|252)$ ]] ; then
-        print_info "Restarting PP..."
-        [[ -n $KEY_MENU ]] && unset PW_EXE_FILE
-        [[ "$PW_GUI_START" == "NOTEBOOK" ]] && unset PW_YAD_FORM_TAB
-        [[ -z ${LINKS[0]} ]] && exit 0
-    fi
 }
 
 parse_lnk () {
@@ -4987,7 +4930,7 @@ pw_unpack_prefix () {
             while read -r line
             do
                 export PW_EXE_FILE="$PORT_DATA_PATH/data/prefixes/$PW_PREFIX_NAME/$line"
-                portwine_output_yad_shortcut --silent
+                portwine_output_yad_shortcut
             done < "$PORT_DATA_PATH/data/prefixes/$PW_PREFIX_NAME/.create_shortcut"
         fi
         return 0
