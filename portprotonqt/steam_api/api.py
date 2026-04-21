@@ -10,6 +10,7 @@ import orjson
 from portprotonqt.logger import get_logger
 from portprotonqt.downloader import Downloader
 from portprotonqt.localization import get_steam_language
+from portprotonqt.config_utils import read_economy_mode
 from portprotonqt.steam_api.utils import decode_text
 from portprotonqt.steam_api.cache import (
     CACHE_DURATION,
@@ -246,6 +247,10 @@ def get_full_steam_game_info_async(
     fallback_name: str = "",
 ) -> None:
     """Asynchronously retrieve full Steam game info, including WeAntiCheatYet status."""
+    if read_economy_mode():
+        callback({})
+        return
+
     def on_app_info(app_info: dict | None) -> None:
         if not app_info:
             callback({})
@@ -282,6 +287,24 @@ def get_steam_game_info_async(
     callback: Callable[[dict], None]
 ) -> None:
     """Asynchronously retrieve game info based on desktop name and exec line."""
+    if read_economy_mode():
+        parts = shlex.split(exec_line)
+        game_exe = parts[-1] if parts else exec_line
+        exe_name = os.path.splitext(os.path.basename(game_exe))[0]
+        game_name = desktop_name or exe_name
+        callback(_build_game_info_result(
+            appid="",
+            name=decode_text(game_name),
+            description="",
+            cover="",
+            controller_support="",
+            protondb_tier="",
+            steam_game="false",
+            anticheat_status="",
+            anticheat_slug="",
+        ))
+        return
+
     from portprotonqt.steam_api.cache import get_exiftool_data
     from portprotonqt.steam_api.utils import filter_candidates, remove_duplicates
 

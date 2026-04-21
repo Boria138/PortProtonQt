@@ -92,6 +92,22 @@ color_b = "#282a33"
 
 ---
 
+## 🧩 Library Layout Mode
+
+You can control the game library card layout directly from the theme via `styles.py`:
+
+```python
+# "grid" (default) or "list"
+LIBRARY_LAYOUT_MODE = "grid"
+```
+
+- `grid`: multi-column card grid (classic behavior).
+- `list`: horizontal row-style cards (launcher-style list).
+
+This is a theme-level option and does not depend on app settings.
+
+---
+
 ## 🎥 Animation configuration
 
 The `GAME_CARD_ANIMATION` dictionary controls all animation parameters for game cards:

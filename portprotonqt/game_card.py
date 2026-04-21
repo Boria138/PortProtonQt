@@ -1,6 +1,6 @@
 from PySide6.QtGui import QPainter, QColor, QDesktopServices
 from PySide6.QtCore import Signal, Property, Qt, QUrl, QTimer
-from PySide6.QtWidgets import QFrame, QGraphicsDropShadowEffect, QVBoxLayout, QWidget, QStackedLayout, QLabel
+from PySide6.QtWidgets import QFrame, QGraphicsDropShadowEffect, QVBoxLayout, QHBoxLayout, QWidget, QStackedLayout, QLabel
 from portprotonqt.image_utils import load_pixmap_async, round_corners
 from portprotonqt.localization import _
 from portprotonqt.config_utils import (
@@ -9,6 +9,7 @@ from portprotonqt.config_utils import (
     read_display_filter,
     read_theme_from_config,
     read_badge_view_mode,
+    read_economy_mode,
 )
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.custom_widgets import ClickableLabel
@@ -64,14 +65,17 @@ class GameCard(QFrame):
         self.display_filter = read_display_filter()
         self.badge_view_mode = read_badge_view_mode()
         self.current_theme_name = read_theme_from_config()
+        self.layout_mode = str(getattr(self.theme, "LIBRARY_LAYOUT_MODE", "grid")).lower()
+        self.list_layout = self.layout_mode == "list"
+        self.economy_mode = read_economy_mode()
         self.downloader = Downloader(max_workers=4)
         self.portproton_api = PortProtonAPI(self.downloader)
 
-        self.steam_visible = (str(game_source).lower() == "steam" and self.display_filter in ("all", "favorites"))
-        self.egs_visible = (str(game_source).lower() == "epic" and self.display_filter in ("all", "favorites"))
-        self.portproton_visible = (str(game_source).lower() == "portproton" and self.display_filter in ("all", "favorites"))
+        self.steam_visible = (str(game_source).lower() == "steam" and self.display_filter in ("all", "favorites") and not self.economy_mode)
+        self.egs_visible = (str(game_source).lower() == "epic" and self.display_filter in ("all", "favorites") and not self.economy_mode)
+        self.portproton_visible = (str(game_source).lower() == "portproton" and self.display_filter in ("all", "favorites") and not self.economy_mode)
 
-        self.base_extra_margin = 20
+        self.base_extra_margin = 8 if self.list_layout else 20
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.setStyleSheet(self.theme.GAME_CARD_WINDOW_STYLE)
 
@@ -90,8 +94,12 @@ class GameCard(QFrame):
         self.shadow.setOffset(*self.theme.shadow_offset)
         self.setGraphicsEffect(self.shadow)
 
-        self.layout_ = QVBoxLayout(self)
-        self.layout_.setSpacing(5)
+        if self.list_layout:
+            self.layout_ = QHBoxLayout(self)
+            self.layout_.setSpacing(12)
+        else:
+            self.layout_ = QVBoxLayout(self)
+            self.layout_.setSpacing(5)
         self.layout_.setContentsMargins(self.base_extra_margin // 2, self.base_extra_margin // 2, self.base_extra_margin // 2, self.base_extra_margin // 2)
 
         self.coverWidget = QWidget()
@@ -103,15 +111,20 @@ class GameCard(QFrame):
         self.coverLabel.setStyleSheet(self.theme.COVER_LABEL_STYLE)
         coverLayout.addWidget(self.coverLabel)
 
-        load_pixmap_async(cover_path or "", self.base_card_width, int(self.base_card_width * 1.5), self.on_cover_loaded)
+        if self.list_layout:
+            load_pixmap_async(cover_path or "", 64, 64, self.on_cover_loaded)
+        else:
+            load_pixmap_async(cover_path or "", self.base_card_width, int(self.base_card_width * 1.5), self.on_cover_loaded)
 
         self.favoriteLabel = ClickableLabel(self.coverWidget)
         self.favoriteLabel.clicked.connect(self.toggle_favorite)
         self.is_favorite = self.name in set(read_favorites())
         self.update_favorite_icon()
         self.favoriteLabel.raise_()
+        if self.list_layout:
+            self.favoriteLabel.setVisible(False)
 
-        tier_text = self.getProtonDBText(protondb_tier)
+        tier_text = "" if self.economy_mode else self.getProtonDBText(protondb_tier)
         if tier_text:
             icon_filename = self.getProtonDBIconFilename(protondb_tier)
             icon = self.theme_manager.get_icon(icon_filename, self.current_theme_name)
@@ -137,6 +150,8 @@ class GameCard(QFrame):
         self.steamLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
         self.steamLabel.setCardWidth(card_width)
         self.steamLabel.setVisible(self.steam_visible)
+        if self.economy_mode:
+            self.steamLabel.setVisible(False)
 
         egs_icon = self.theme_manager.get_icon("epic_games")
         self.egsLabel = ClickableLabel(
@@ -149,6 +164,8 @@ class GameCard(QFrame):
         self.egsLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
         self.egsLabel.setCardWidth(card_width)
         self.egsLabel.setVisible(self.egs_visible)
+        if self.economy_mode:
+            self.egsLabel.setVisible(False)
 
         portproton_icon = self.theme_manager.get_icon("portproton")
         self.portprotonLabel = ClickableLabel(
@@ -161,8 +178,10 @@ class GameCard(QFrame):
         self.portprotonLabel.setCardWidth(card_width)
         self.portprotonLabel.setVisible(self.portproton_visible)
         self.portprotonLabel.clicked.connect(self.open_ppdb_page)
+        if self.economy_mode:
+            self.portprotonLabel.setVisible(False)
 
-        anticheat_text = self.getAntiCheatText(anticheat_status)
+        anticheat_text = "" if self.economy_mode else self.getAntiCheatText(anticheat_status)
         if anticheat_text:
             icon_filename = self.getAntiCheatIconFilename(anticheat_status)
             icon = self.theme_manager.get_icon(icon_filename, self.current_theme_name)
@@ -185,9 +204,14 @@ class GameCard(QFrame):
         self.layout_.addWidget(self.coverWidget)
 
         self.nameLabel = QLabel(name)
-        self.nameLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        if self.list_layout:
+            self.nameLabel.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
+        else:
+            self.nameLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.nameLabel.setStyleSheet(self.theme.GAME_CARD_NAME_LABEL_STYLE)
         self.layout_.addWidget(self.nameLabel)
+        if self.list_layout:
+            self.layout_.addStretch()
 
         font_size = self.nameLabel.font().pointSizeF()
         self.base_font_size = font_size if font_size > 0 else 10.0
@@ -215,9 +239,21 @@ class GameCard(QFrame):
             return
 
         if self.base_pixmap and not self.base_pixmap.isNull():
-            scaled_width = int(self.base_card_width * self._scale)
-            scaled_pixmap = self.base_pixmap.scaled(scaled_width, int(scaled_width * 1.5), Qt.AspectRatioMode.KeepAspectRatioByExpanding, Qt.TransformationMode.SmoothTransformation)
-            rounded_pixmap = round_corners(scaled_pixmap, int(15 * self._scale))
+            if self.list_layout:
+                target_width = self.coverLabel.width() if self.coverLabel.width() > 0 else 56
+                target_height = self.coverLabel.height() if self.coverLabel.height() > 0 else 56
+                radius = max(8, int(10 * self._scale))
+            else:
+                target_width = int(self.base_card_width * self._scale)
+                target_height = int(target_width * 1.5)
+                radius = int(15 * self._scale)
+            scaled_pixmap = self.base_pixmap.scaled(
+                target_width,
+                target_height,
+                Qt.AspectRatioMode.KeepAspectRatioByExpanding,
+                Qt.TransformationMode.SmoothTransformation,
+            )
+            rounded_pixmap = round_corners(scaled_pixmap, radius)
             try:
                 self.coverLabel.setPixmap(rounded_pixmap)
             except RuntimeError:
@@ -268,13 +304,19 @@ class GameCard(QFrame):
             return
 
         scaled_width = int(self.base_card_width * self._scale)
-        scaled_height = int(self.base_card_width * 1.8 * self._scale)
         scaled_extra = int(self.base_extra_margin * self._scale)
-        self.setFixedSize(scaled_width + scaled_extra, scaled_height + scaled_extra)
         self.layout_.setContentsMargins(scaled_extra // 2, scaled_extra // 2, scaled_extra // 2, scaled_extra // 2)
-
-        self.coverWidget.setFixedSize(scaled_width, int(scaled_width * 1.5))
-        self.coverLabel.setFixedSize(scaled_width, int(scaled_width * 1.5))
+        if self.list_layout:
+            row_height = max(68, int(72 * self._scale))
+            icon_size = max(48, int(56 * self._scale))
+            self.setFixedSize(scaled_width + scaled_extra, row_height + scaled_extra)
+            self.coverWidget.setFixedSize(icon_size, icon_size)
+            self.coverLabel.setFixedSize(icon_size, icon_size)
+        else:
+            scaled_height = int(self.base_card_width * 1.8 * self._scale)
+            self.setFixedSize(scaled_width + scaled_extra, scaled_height + scaled_extra)
+            self.coverWidget.setFixedSize(scaled_width, int(scaled_width * 1.5))
+            self.coverLabel.setFixedSize(scaled_width, int(scaled_width * 1.5))
 
         self.update_cover_pixmap()
 
@@ -312,7 +354,8 @@ class GameCard(QFrame):
                     # Handle the case where the Qt object was deleted
                     pass
 
-        self._position_badges(scaled_width)
+        if not self.list_layout:
+            self._position_badges(scaled_width)
 
         if self.base_font_size is not None:
             try:
@@ -364,11 +407,12 @@ class GameCard(QFrame):
             return
 
         self.display_filter = display_filter
-        self.steam_visible = (str(self.game_source).lower() == "steam" and self.display_filter in ("all", "favorites"))
-        self.egs_visible = (str(self.game_source).lower() == "epic" and self.display_filter in ("all", "favorites"))
-        self.portproton_visible = (str(self.game_source).lower() == "portproton" and self.display_filter in ("all", "favorites"))
-        protondb_visible = bool(self.getProtonDBText(self.protondb_tier))
-        anticheat_visible = bool(self.getAntiCheatText(self.anticheat_status))
+        self.economy_mode = read_economy_mode()
+        self.steam_visible = (str(self.game_source).lower() == "steam" and self.display_filter in ("all", "favorites") and not self.economy_mode)
+        self.egs_visible = (str(self.game_source).lower() == "epic" and self.display_filter in ("all", "favorites") and not self.economy_mode)
+        self.portproton_visible = (str(self.game_source).lower() == "portproton" and self.display_filter in ("all", "favorites") and not self.economy_mode)
+        protondb_visible = bool(self.getProtonDBText(self.protondb_tier)) and not self.economy_mode
+        anticheat_visible = bool(self.getAntiCheatText(self.anticheat_status)) and not self.economy_mode
 
         hidden_badges = self.badge_view_mode == "hidden"
 
@@ -383,7 +427,8 @@ class GameCard(QFrame):
             return
 
         scaled_width = int(self.base_card_width * self._scale)
-        self._position_badges(scaled_width)
+        if not self.list_layout:
+            self._position_badges(scaled_width)
 
         # Update layout after visibility changes
         self.updateGeometry()
@@ -397,6 +442,8 @@ class GameCard(QFrame):
 
     def _on_badge_width_changed(self):
         if not hasattr(self, 'coverLabel') or self.coverLabel is None:
+            return
+        if self.list_layout:
             return
         scaled_width = int(self.base_card_width * self._scale)
         self._position_badges(scaled_width)
