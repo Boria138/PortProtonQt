@@ -1882,6 +1882,23 @@ pw_init_db () {
                     -e "s/PW_NO_NTSYNC=.*0.*/PW_USE_NTSYNC=\"1\"/g" \
                 "${PORTWINE_DB_FILE}"
             fi
+            if grep -q "PW_GAMESCOPE" "${PORTWINE_DB_FILE}" \
+            && ! grep -q "PW_GAMESCOPE_ARGS_NEW" "${PORTWINE_DB_FILE}"
+            then
+                # shellcheck source=/dev/null
+                source "${PORTWINE_DB_FILE}"
+
+                local -a gs_ppdb_vars=(PW_GAMESCOPE PW_GAMESCOPE_ARGS_NEW PW_GS_ENABLE_GAMESCOPE_WSI PW_GS_SDL_VIDEODRIVER_X11)
+
+                # Rebuild args from current PW_GS_* values produced by yad widgets
+                pw_gamescope_process build_args
+                pw_gamescope_process sanitize
+
+                # Keep ppdb export list consistent before re-writing gamescope keys
+                sed -i '/^export PW_GS_/d' "${PORTWINE_DB_FILE}"
+                sed -i '/^export PW_GAMESCOPE_ARGS_NEW=/d' "${PORTWINE_DB_FILE}"
+                edit_db_from_gui "${gs_ppdb_vars[@]}"
+            fi
             # shellcheck source=/dev/null
             source "${PORTWINE_DB_FILE}"
             if echo "${PW_EXE_FILE}" | grep "/prefixes/" &>/dev/null ; then
@@ -4626,168 +4643,6 @@ pw_gamescope_process () {
             fi
             ;;
     esac
-}
-
-# GUI GAMESCOPE
-gui_gamescope () {
-    KEY_GS_GUI=$RANDOM
-    local -a gs_ppdb_vars=(PW_GAMESCOPE PW_GAMESCOPE_ARGS_NEW PW_GS_ENABLE_GAMESCOPE_WSI PW_GS_SDL_VIDEODRIVER_X11)
-    PW_GS_LIST=(PW_GS_FULLSCREEN PW_GS_FORCE_FULLSCREEN PW_GS_BORDERLESS_WINDOW PW_GS_FORCE_GRAB_CURSOR
-    PW_GS_FORCE_GRAB_KEYBOARD PW_GS_HDR_ENABLE PW_GS_ENABLE_GAMESCOPE_WSI PW_GS_HDR_ITM_ENABLE PW_GS_SDR_GAMMUT_WIDENESS
-    PW_GS_FORCE_COMPOSITION PW_GS_HDR_FORCE_SUPPORT PW_GS_HDR_FORCE_OUTPUT PW_GS_HDR_FORCE_HEATMAP
-    PW_GS_EXPOSE_WAYLAND PW_GS_REALTIME_SCHEDULING
-    )
-
-    if [[ $GAMESCOPE_INSTALLED == "1" ]] ; then
-        [[ $(<"${PW_TMPFS_PATH}/gamescope.tmp") =~ '--mangoapp' ]] && add_to_array "PW_GS_LIST" PW_GS_MANGOAPP
-        [[ $(<"${PW_TMPFS_PATH}/gamescope.tmp") =~ '--backend' ]] && add_to_array "PW_GS_LIST" PW_GS_BACKEND_SDL
-        check_wayland_session && add_to_array "PW_GS_LIST" PW_GS_SDL_VIDEODRIVER_X11
-
-        # Debian bookworm fix
-        if [[ $(<"${PW_TMPFS_PATH}/gamescope.tmp") =~ '-U, --fsr-upscaling' ]] ; then
-            GS_FILTER_CB="fsr!nis"
-            export PW_GS_FILTER_MODE_OLD="true"
-            rm_from_array "PW_GS_LIST" PW_GS_FORCE_GRAB_CURSOR PW_GS_FORCE_GRAB_KEYBOARD PW_GS_HDR_ENABLE PW_GS_HDR_FORCE_SUPPORT \
-            PW_GS_HDR_FORCE_OUTPUT
-        else
-            GS_FILTER_CB="linear!nearest!fsr!nis!pixel"
-        fi
-    fi
-
-    # Backfill PW_GS_* from PW_GAMESCOPE_ARGS_NEW so yad widgets reflect saved args
-    [[ -n "${PW_GAMESCOPE_ARGS_NEW// }" ]] && pw_gamescope_process parse_args
-
-    unset ADD_CHK_BOX_GS
-    if [[ $GAMESCOPE_INSTALLED == "1" ]] ; then
-        GAMESCOPE_NEED_INSTALL="${translations[Change settings gamescope for]} <b>$PW_NAME_DESKTOP_PROXY</b>\n ${translations[<b>NOTE:</b> To display help for each item, simply hover your mouse over the text]}"
-        GS_CB="CB" && GS_CBE="CBE" && GS_NUM="NUM" && GS_NUMN="NUMN"
-        for int_to_boole in "${PW_GS_LIST[@]}" ; do
-            if [[ ${!int_to_boole} == "1" ]]
-            then export "$int_to_boole"="TRUE"
-            else export "$int_to_boole"="FALSE"
-            fi
-            TMP_HELP_FOR_GUI="${int_to_boole}_INFO"
-            int_to_boole_non_pw="${int_to_boole//PW_GS/}"
-            int_to_boole_non_pw="${int_to_boole_non_pw//"_"/" "}"
-            ADD_CHK_BOX_GS+="--field=${CHKBOX_SPACE}${int_to_boole_non_pw}!${!TMP_HELP_FOR_GUI}:${THEME_CHKBOX}%${!int_to_boole}%"
-        done
-    else
-        if check_flatpak ; then
-            GAMESCOPE_VERSION="$(grep 'VERSION_ID=' /etc/os-release)"
-            GAMESCOPE_VERSION="${GAMESCOPE_VERSION//VERSION_ID=/}"
-            GAMESCOPE_NEED_INSTALL="<b>${translations[Gamescope is not detected on the system, to install it, run the command in the terminal]}:\\nflatpak install -y runtime/org.freedesktop.Platform.VulkanLayer.gamescope/x86_64/$(echo "$GAMESCOPE_VERSION")\\n(${translations[Can be selected and copied]})</b>"
-            YAD_TEXT_SELECTION="--selectable-labels"
-        else
-            GAMESCOPE_NEED_INSTALL="${translations[<b>Gamescope is not detected on the system, please contact the manufacturer of your distribution\\nor search the Internet for information on how to install gamescope on your system.</b>]}"
-        fi
-        GS_CB="DCB" && GS_CBE="DCBE" && GS_NUM="DNUM" && GS_NUMN="DNUMN"
-        for int_to_boole in "${PW_GS_LIST[@]}" ; do
-            if [[ "${!int_to_boole}" == "1" ]]
-            then export "$int_to_boole"="TRUE"
-            else export "$int_to_boole"="FALSE"
-            fi
-            TMP_HELP_FOR_GUI="${int_to_boole}_INFO"
-            int_to_boole_non_pw="${int_to_boole//PW_GS/}"
-            int_to_boole_non_pw="${int_to_boole_non_pw//"_"/" "}"
-            ADD_CHK_BOX_GS+="--field=${CHKBOX_SPACE}${int_to_boole_non_pw}!${!TMP_HELP_FOR_GUI}:D${THEME_CHKBOX}%${!int_to_boole}%"
-        done
-    fi
-
-    IFS="%"
-    "${pw_yad}" --plug=$KEY_GS_GUI --tabnum="1" --form --columns=4 --separator=" " --text-align=center --text "$GAMESCOPE_NEED_INSTALL" \
-    --gui-type-text="${PANED_GUI_TYPE_TEXT_UP}" --gui-type-layout="${PANED_GUI_TYPE_LAYOUT_UP}" $YAD_TEXT_SELECTION \
-    ${ADD_CHK_BOX_GS} \
-    1> "${PW_TMPFS_PATH}/tmp_yad_gs_set" 2>/dev/null &
-    IFS="$orig_IFS"
-
-    GAMESCOPE_XRANDR="$(grep -e '[0-9]x' "${PW_TMPFS_PATH}/xrandr.tmp" | awk '{print $1}' | sort -rVu | grep ^"[0-9]" | tr '\n' ' ')"
-    for drop_low in ${GAMESCOPE_XRANDR} ; do
-        if (( "${drop_low//x/}" > "1000000" )) ; then
-            GAMESCOPE_XRANDR_NEW+="${drop_low}!"
-        fi
-    done
-
-    "${pw_yad}" --plug=$KEY_GS_GUI --tabnum="2" --form --columns=2 --separator="%" --homogeneous-row \
-    --gui-type-text="${PANED_GUI_TYPE_TEXT_DOWN}" --gui-type-layout="${PANED_GUI_TYPE_LAYOUT_DOWN}" \
-    --field="${CHKBOX_SPACE}${translations[Show resolution]}!${translations[Set the resolution used by gamescope. Resizing the gamescope window will update these settings. Defaults to 1280x720.]} :${GS_CBE}" "$(combobox_fix --disabled "${PW_GS_SHOW_RESOLUTION}" "${GAMESCOPE_XRANDR_NEW::-1}")" \
-    --field="${CHKBOX_SPACE}${translations[Internal resolution]}!${translations[Scale internal resolution (0.0 is unused)]} :${GS_NUMN}" "${PW_GS_INTERNAL_RESOLUTION}:!0..2" \
-    --field="${CHKBOX_SPACE}${translations[Frame limit]}!${translations[Set a framerate limit. Specified in frames per second]} :${GS_CBE}" "$(combobox_fix --disabled "${PW_GS_FRAME_LIMIT}" "30!40!45!48!60!75!90!120!144!165!175!240")" \
-    --field="${CHKBOX_SPACE}${translations[Scaler mode]}!${translations[Specify how to scale the GameScope window content]} :${GS_CB}" "$(combobox_fix --disabled "${PW_GS_SCALER_MODE}" "auto!integer!fit!fill!stretch")" \
-    --field="${CHKBOX_SPACE}${translations[Filter mode]}!${translations[Use a filter such as AMD FidelityFX SuperResolution 1.0 (FSR) or NVIDIA Image Scaling v1.0.3 (NIS)]} :${GS_CB}" "$(combobox_fix --disabled "${PW_GS_FILTER_MODE}" "${GS_FILTER_CB}")" \
-    --field="${CHKBOX_SPACE}${translations[Upscale sharpness]}!${translations[Sharpening value for FidelityFX SuperResolution 1.0 (FSR) and NVIDIA Image Scaling v1.0.3 (NIS). 0 is max sharpening, 20 is min sharpening.]} :${GS_NUM}" "${PW_GS_UPSCALE_SHARPNESS}:!0..20" \
-    --field="${CHKBOX_SPACE}${translations[Max scale factor]}!${translations[Maximum Scale Factor. Working only on X11 or backend sdl (0.0 is unused)]} :${GS_NUMN}" "${PW_GS_MAX_SCALE_FACTOR}:!0..100" \
-    --field="${CHKBOX_SPACE}${translations[Mouse sensitivity]}!${translations[Configurable mouse sensitivity, multiply mouse movement by specified decimal number amount]} :${GS_NUMN}" "${PW_GS_MOUSE_SENSITIVITY}:!0..100" \
-    --field="${CHKBOX_SPACE}${translations[HDR SDR nits]}!${translations[Set the luminance of SDR content in nits. Default: 400 nits.]} :${GS_NUM}" "${PW_GS_SDR_CONTENT_NITS}:!0..10000" \
-    --field="${CHKBOX_SPACE}${translations[HDR inverse SDR]}!${translations[Set the luminance of SDR content in nets used as the input for the inverse tone mapping process - Maximum is 1000 nits]} :${GS_NUM}" "${PW_GS_ITM_SDR_NITS}:!0..1000" \
-    --field="${CHKBOX_SPACE}${translations[HDR inverse target]}!${translations[Set the target luninance of the inverse tone mapping process - Max is 10000 nits]} :${GS_NUM}" "${PW_GS_ITM_TARGET_NITS}:!0..10000" \
-    1> "${PW_TMPFS_PATH}/tmp_yad_gs_set_cb" 2>/dev/null &
-
-    "${pw_yad}" --paned --key="$KEY_GS_GUI" --title="GameScope" \
-    --separator=" " --window-icon="$PW_GUI_ICON_PATH/portproton.svg" \
-    --gui-type="settings-paned" \
-    --button="${translations[CANCEL THE CHANGES]}!$PW_GUI_ICON_PATH/$BUTTON_SIZE.png!${translations[Cancel the current changes and return to the previous menu]}":1 \
-    --button="${translations[RESET]} GAMESCOPE!$PW_GUI_ICON_PATH/$BUTTON_SIZE.png!${translations[Restore default settings for]} GameScope":162 \
-    --button="${translations[DISABLE]} GAMESCOPE!$PW_GUI_ICON_PATH/$BUTTON_SIZE.png!${translations[Disable GameScope and go to the previous menu]}":164 \
-    --button="${translations[SAVE CHANGES]}!$PW_GUI_ICON_PATH/$BUTTON_SIZE.png!${translations[Save the current changes, and go to the previous menu]}":166 \
-    2>/dev/null
-    YAD_GAMESCOPE_STATUS="$?"
-
-    case "${YAD_GAMESCOPE_STATUS}" in
-        1|252)
-            exit 0
-            ;;
-        162)
-            sed -i '/PW_GS/d' "$PW_EXE_FILE".ppdb
-            sed -i '/GAMESCOPE/d' "$PW_EXE_FILE".ppdb
-            exit 0
-            ;;
-        164)
-            export PW_GAMESCOPE="0"
-            ;;
-        166)
-            export PW_GAMESCOPE="1"
-            ;;
-    esac
-
-    # Read yad values into PW_GS_* and then rebuild PW_GAMESCOPE_ARGS_NEW from that state
-    read -r -a output_yad_gs <"${PW_TMPFS_PATH}/tmp_yad_gs_set"
-    bool_from_yad="0"
-    for boole_to_int in "${PW_GS_LIST[@]}" ; do
-        export "${boole_to_int}"="${output_yad_gs[$bool_from_yad]}"
-        if [[ "${!boole_to_int}" == "TRUE" ]]
-        then export "${boole_to_int}"="1"
-        else export "${boole_to_int}"="0"
-        fi
-        export bool_from_yad=$(( bool_from_yad + 1 ))
-    done
-
-    IFS='%' read -r -a PW_ADD_SETTINGS_GS <"${PW_TMPFS_PATH}/tmp_yad_gs_set_cb"
-    PW_GS_SHOW_RESOLUTION="${PW_ADD_SETTINGS_GS[0]}"
-    if [[ ! "${PW_GS_SHOW_RESOLUTION}" =~ ^[0-9]+x[0-9]+$ ]] ; then
-        PW_GS_SHOW_RESOLUTION="disabled"
-    fi
-    PW_GS_INTERNAL_RESOLUTION="${PW_ADD_SETTINGS_GS[1]//','/'.'}"
-    PW_GS_FRAME_LIMIT="${PW_ADD_SETTINGS_GS[2]}"
-    PW_GS_SCALER_MODE="${PW_ADD_SETTINGS_GS[3]}"
-    PW_GS_FILTER_MODE="${PW_ADD_SETTINGS_GS[4]}"
-    PW_GS_UPSCALE_SHARPNESS="${PW_ADD_SETTINGS_GS[5]}"
-    PW_GS_MAX_SCALE_FACTOR="${PW_ADD_SETTINGS_GS[6]//','/'.'}"
-    PW_GS_MOUSE_SENSITIVITY="${PW_ADD_SETTINGS_GS[7]//','/'.'}"
-    PW_GS_SDR_CONTENT_NITS="${PW_ADD_SETTINGS_GS[8]}"
-    PW_GS_ITM_SDR_NITS="${PW_ADD_SETTINGS_GS[9]}"
-    PW_GS_ITM_TARGET_NITS="${PW_ADD_SETTINGS_GS[10]}"
-
-    # Rebuild args from current PW_GS_* values produced by yad widgets
-    pw_gamescope_process build_args
-
-    pw_gamescope_process sanitize
-
-    # Keep ppdb export list consistent before re-writing gamescope keys
-    sed -i '/^export PW_GS_/d' "${PW_EXE_FILE}.ppdb"
-    sed -i '/^export PW_GAMESCOPE_ARGS_NEW=/d' "${PW_EXE_FILE}.ppdb"
-    edit_db_from_gui "${gs_ppdb_vars[@]}"
-
-    exit 0
 }
 
 # RESIZE PNG FILE
