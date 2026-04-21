@@ -5,7 +5,7 @@ import re
 import shutil
 from typing import cast, TYPE_CHECKING
 
-from PySide6.QtCore import Qt, QEvent, QProcess, QTimer, QUrl
+from PySide6.QtCore import Qt, QObject, QEvent, QProcess, QTimer, QUrl
 from PySide6.QtGui import QColor, QContextMenuEvent, QDesktopServices, QGuiApplication
 from PySide6.QtWidgets import (
     QApplication,
@@ -326,6 +326,9 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
         self.apply_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.cancel_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.open_ppdb_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        self.apply_button.installEventFilter(self)
+        self.cancel_button.installEventFilter(self)
+        self.open_ppdb_button.installEventFilter(self)
         button_layout.addWidget(self.apply_button)
         button_layout.addWidget(self.cancel_button)
         button_layout.addWidget(self.open_ppdb_button)
@@ -889,7 +892,20 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
             self.input_manager.disable_settings_mode()
         super().closeEvent(event)
 
-    def eventFilter(self, obj, event):
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
+        action_buttons = (
+            getattr(self, "apply_button", None),
+            getattr(self, "cancel_button", None),
+            getattr(self, "open_ppdb_button", None),
+        )
+        if obj in action_buttons:
+            if event.type() in (
+                QEvent.Type.Enter,
+                QEvent.Type.FocusIn,
+                QEvent.Type.MouseButtonPress,
+            ):
+                self.show_gamepad_tooltip(show=False)
+
         if isinstance(obj, QLineEdit) and event.type() == QEvent.Type.ContextMenu:
             context_event = cast(QContextMenuEvent, event)
             from portprotonqt.context_menu_manager import show_themed_line_edit_context_menu
@@ -928,47 +944,41 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
             required_width = min(max_width, text_rect.width() + 25)
             required_height = min(300, text_rect.height() + 25)
 
-            if anchor_global_pos is not None:
-                global_pos = anchor_global_pos
-                global_pos.setX(global_pos.x() + tooltip_x_offset)
-                global_pos.setY(global_pos.y() + tooltip_y_offset)
+            def _show_tooltip_at(anchor_pos):
+                x = anchor_pos.x() + tooltip_x_offset
+                y_below = anchor_pos.y() + tooltip_y_offset
+                y = y_below
 
-                screen = QGuiApplication.screenAt(global_pos) or QGuiApplication.primaryScreen()
+                screen = QGuiApplication.screenAt(anchor_pos) or QGuiApplication.primaryScreen()
                 if screen:
                     available_rect = screen.availableGeometry()
-                    if global_pos.x() + required_width > available_rect.right():
-                        global_pos.setX(max(available_rect.left(), available_rect.right() - required_width))
-                    if global_pos.x() < available_rect.left():
-                        global_pos.setX(available_rect.left())
-                    if global_pos.y() + required_height > available_rect.bottom():
-                        global_pos.setY(max(available_rect.top(), available_rect.bottom() - required_height))
+                    y_above = anchor_pos.y() - required_height - tooltip_y_offset
+                    fits_below = y_below + required_height <= available_rect.bottom()
+                    fits_above = y_above >= available_rect.top()
+                    if not fits_below and fits_above:
+                        y = y_above
+
+                    if x + required_width > available_rect.right():
+                        x = max(available_rect.left(), available_rect.right() - required_width)
+                    if x < available_rect.left():
+                        x = available_rect.left()
+                    if y + required_height > available_rect.bottom():
+                        y = max(available_rect.top(), available_rect.bottom() - required_height)
+                    if y < available_rect.top():
+                        y = available_rect.top()
 
                 self.gamepad_tooltip.setFixedSize(required_width, required_height)
-                self.gamepad_tooltip.move(global_pos.x(), global_pos.y())
+                self.gamepad_tooltip.move(x, y)
                 self.gamepad_tooltip.setVisible(True)
                 self.gamepad_tooltip_timer.start(tooltip_timeout_ms)
+
+            if anchor_global_pos is not None:
+                _show_tooltip_at(anchor_global_pos)
                 return
 
             if anchor_widget and anchor_widget.isVisible():
                 widget_rect = anchor_widget.rect()
-                global_pos = anchor_widget.mapToGlobal(widget_rect.bottomLeft())
-                global_pos.setX(global_pos.x() + tooltip_x_offset)
-                global_pos.setY(global_pos.y() + tooltip_y_offset)
-
-                screen = QGuiApplication.screenAt(global_pos) or QGuiApplication.primaryScreen()
-                if screen:
-                    available_rect = screen.availableGeometry()
-                    if global_pos.x() + required_width > available_rect.right():
-                        global_pos.setX(max(available_rect.left(), available_rect.right() - required_width))
-                    if global_pos.x() < available_rect.left():
-                        global_pos.setX(available_rect.left())
-                    if global_pos.y() + required_height > available_rect.bottom():
-                        global_pos.setY(max(available_rect.top(), available_rect.bottom() - required_height))
-
-                self.gamepad_tooltip.setFixedSize(required_width, required_height)
-                self.gamepad_tooltip.move(global_pos.x(), global_pos.y())
-                self.gamepad_tooltip.setVisible(True)
-                self.gamepad_tooltip_timer.start(tooltip_timeout_ms)
+                _show_tooltip_at(anchor_widget.mapToGlobal(widget_rect.bottomLeft()))
                 return
 
             current_table = self.advanced_table if self.tab_widget.currentIndex() == 1 else self.settings_table
@@ -976,24 +986,7 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
                 row = current_table.currentRow()
                 col = current_table.currentColumn()
                 item_rect = current_table.visualRect(current_table.model().index(row, col))
-                global_pos = current_table.mapToGlobal(item_rect.bottomLeft())
-                global_pos.setX(global_pos.x() + tooltip_x_offset)
-                global_pos.setY(global_pos.y() + tooltip_y_offset)
-
-                screen = QGuiApplication.screenAt(global_pos) or QGuiApplication.primaryScreen()
-                if screen:
-                    available_rect = screen.availableGeometry()
-                    if global_pos.x() + required_width > available_rect.right():
-                        global_pos.setX(max(available_rect.left(), available_rect.right() - required_width))
-                    if global_pos.x() < available_rect.left():
-                        global_pos.setX(available_rect.left())
-                    if global_pos.y() + required_height > available_rect.bottom():
-                        global_pos.setY(max(available_rect.top(), available_rect.bottom() - required_height))
-
-                self.gamepad_tooltip.setFixedSize(required_width, required_height)
-                self.gamepad_tooltip.move(global_pos.x(), global_pos.y())
-                self.gamepad_tooltip.setVisible(True)
-                self.gamepad_tooltip_timer.start(tooltip_timeout_ms)
+                _show_tooltip_at(current_table.mapToGlobal(item_rect.bottomLeft()))
             else:
                 self.gamepad_tooltip_timer.stop()
                 self.gamepad_tooltip.setVisible(False)
@@ -1013,6 +1006,37 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
                 return desc_item.text()
         return ""
 
+    def _is_description_clipped(self, table: QTableWidget, row: int) -> bool:
+        """Check whether description text is clipped in the table cell."""
+        if row < 0:
+            return False
+
+        desc_item = table.item(row, 2)
+        if not desc_item:
+            return False
+
+        description = desc_item.text()
+        if not description:
+            return False
+
+        item_rect = table.visualRect(table.model().index(row, 2))
+        if not item_rect.isValid() or item_rect.width() <= 0 or item_rect.height() <= 0:
+            return False
+
+        wrap_rect = table.fontMetrics().boundingRect(
+            0,
+            0,
+            max(1, item_rect.width() - 12),
+            10000,
+            Qt.TextFlag.TextWordWrap | Qt.TextFlag.TextExpandTabs,
+            description
+        )
+        if wrap_rect.height() > (item_rect.height() - 6):
+            return True
+
+        single_line_width = table.fontMetrics().horizontalAdvance(description)
+        return single_line_width > (item_rect.width() - 12)
+
     def on_table_selection_changed(self):
         """Called when table selection changes to update the gamepad tooltip."""
         if self.tab_widget.currentIndex() == 2:
@@ -1022,6 +1046,11 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
         current_table = self.advanced_table if self.tab_widget.currentIndex() == 1 else self.settings_table
         current_column = current_table.currentColumn() if current_table else -1
         if current_column != 2:
+            self.show_gamepad_tooltip(show=False)
+            return
+
+        current_row = current_table.currentRow()
+        if not self._is_description_clipped(current_table, current_row):
             self.show_gamepad_tooltip(show=False)
             return
 
@@ -1044,7 +1073,8 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
 
         desc_item = table.item(row, 2)
         description = desc_item.text() if desc_item else ""
-        if description:
+        should_show_tooltip = self._is_description_clipped(table, row) or len(description) > 80
+        if description and should_show_tooltip:
             item_rect = table.visualRect(table.model().index(row, 2))
             cell_pos = table.mapToGlobal(item_rect.bottomLeft())
             self.show_gamepad_tooltip(show=True, text=description, anchor_global_pos=cell_pos)
