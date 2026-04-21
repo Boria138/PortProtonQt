@@ -1160,6 +1160,7 @@ check_user_conf () {
 # User overides db and var settings...
 # export DXVK_HUD=full
 # export GALLIUM_HUD=fps
+export PW_GPU_USE="disabled"
 EOF
     else
         sed -i \
