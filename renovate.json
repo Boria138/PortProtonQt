@@ -40,26 +40,6 @@
       ]
     },
     {
-      "description": "Automerge Renovate image minor/patch/digest updates",
-      "matchPackageNames": [
-        "ghcr.io/renovatebot/renovate"
-      ],
-      "matchUpdateTypes": [
-        "minor",
-        "patch",
-        "digest"
-      ],
-      "automerge": true
-    },
-    {
-      "description": "Automerge safe minor/patch updates",
-      "matchUpdateTypes": [
-        "minor",
-        "patch"
-      ],
-      "automerge": true
-    },
-    {
       "description": "Disable updates for broken workflows",
       "matchManagers": [
         "github-actions"
