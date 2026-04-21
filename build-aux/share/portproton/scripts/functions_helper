@@ -1994,7 +1994,13 @@ pw_check_vulkan () {
 }
 
 pw_check_vulkan_extensions () {
-    if sed -n "/deviceName \+ = $PW_GPU_USE/,/GPU/p" "${PW_TMPFS_PATH}/vulkaninfo.tmp" | grep -w "$1" &>/dev/null
+    if awk -v gpu="$PW_GPU_USE" '
+        index($0, gpu) && index($0, "deviceName") { found=1 }
+        found {
+            print
+            if (index($0, "GPU")) { exit }
+        }
+    ' "${PW_TMPFS_PATH}/vulkaninfo.tmp" | grep -w "$1" &>/dev/null
     then return 0
     else return 1
     fi
@@ -2290,9 +2296,9 @@ edit_db_from_gui () {
     then
         for mod_db in "$@" ; do
             proxy_mod_db="${!mod_db}"
-            if [[ $proxy_mod_db =~ (Disabled|Disable) ]] ; then
+            if [[ $proxy_mod_db =~ ^(Disabled|Disable)$ ]] ; then
                 proxy_mod_db=disabled
-            elif [[ $proxy_mod_db =~ (Enabled|Enable) ]] ; then
+            elif [[ $proxy_mod_db =~ ^(Enabled|Enable)$ ]] ; then
                 proxy_mod_db=enabled
             fi
 
@@ -2316,9 +2322,9 @@ edit_user_conf_from_gui () {
             continue
         fi
         proxy_mod_db="${!mod_db}"
-        if [[ $proxy_mod_db =~ (Disabled|Disable) ]] ; then
+        if [[ $proxy_mod_db =~ ^(Disabled|Disable)$ ]] ; then
             proxy_mod_db=disabled
-        elif [[ $proxy_mod_db =~ (Enabled|Enable) ]] ; then
+        elif [[ $proxy_mod_db =~ ^(Enabled|Enable)$ ]] ; then
             proxy_mod_db=enabled
         fi
         if ! grep "export ${mod_db}=" "${USER_CONF}" &>/dev/null

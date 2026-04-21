@@ -2268,9 +2268,9 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             self.gpuCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
             self.gpuCombo.addItems(filtered_gpu_list)
             current_gpu = get_user_conf_setting('PW_GPU_USE')
-            if current_gpu and current_gpu in filtered_gpu_list:
+            if current_gpu and current_gpu != "disabled" and current_gpu in filtered_gpu_list:
                 self.gpuCombo.setCurrentText(current_gpu)
-            elif current_gpu:
+            elif current_gpu and current_gpu != "disabled":
                 if current_gpu not in filtered_gpu_list:
                     self.gpuCombo.addItem(current_gpu)
                 self.gpuCombo.setCurrentText(current_gpu)
