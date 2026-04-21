@@ -169,9 +169,24 @@ GAME_CARD_ANIMATION = {
     "gradient_end_angle": 0,
 
     # Type of card animation on hover or focus
-    # Possible values: "gradient", "scale"
-    # "gradient" enables a rotating gradient for the border, "scale" enlarges the card
+    # Possible values: "gradient", "scale", "fill", "stripe"
+    # "gradient" enables a rotating gradient border, "scale" enlarges the card,
+    # "fill" applies a static overlay, "stripe" applies a static border color
     "card_animation_type": "gradient",
+
+    # Overlay color for "fill" animation type
+    # Any valid Qt color string (hex/rgb/rgba)
+    "fill_color": color_a,
+
+    # Overlay opacity for "fill" animation type (0-255)
+    "fill_alpha": 90,
+
+    # Border color for "stripe" animation type
+    # Any valid Qt color string (hex/rgb/rgba)
+    "stripe_color": color_a,
+
+    # Border opacity for "stripe" animation type (0-255)
+    "stripe_alpha": 255,
 
     # Card scale in idle state
     # Determines the base size of the card (1.0 = 100% of original size)

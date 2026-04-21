@@ -108,6 +108,7 @@ class GameCard(QFrame):
         coverLayout.setStackingMode(QStackedLayout.StackingMode.StackAll)
 
         self.coverLabel = QLabel()
+        self.coverLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.coverLabel.setStyleSheet(self.theme.COVER_LABEL_STYLE)
         coverLayout.addWidget(self.coverLabel)
 
@@ -243,14 +244,16 @@ class GameCard(QFrame):
                 target_width = self.coverLabel.width() if self.coverLabel.width() > 0 else 56
                 target_height = self.coverLabel.height() if self.coverLabel.height() > 0 else 56
                 radius = max(8, int(10 * self._scale))
+                aspect_mode = Qt.AspectRatioMode.KeepAspectRatio
             else:
                 target_width = int(self.base_card_width * self._scale)
                 target_height = int(target_width * 1.5)
                 radius = int(15 * self._scale)
+                aspect_mode = Qt.AspectRatioMode.KeepAspectRatioByExpanding
             scaled_pixmap = self.base_pixmap.scaled(
                 target_width,
                 target_height,
-                Qt.AspectRatioMode.KeepAspectRatioByExpanding,
+                aspect_mode,
                 Qt.TransformationMode.SmoothTransformation,
             )
             rounded_pixmap = round_corners(scaled_pixmap, radius)
