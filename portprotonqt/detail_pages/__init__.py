@@ -27,6 +27,9 @@ from portprotonqt.detail_pages.widgets import (
     create_portproton_badge,
     create_anticheat_badge,
     create_details_widget,
+    COVER_WIDTH,
+    COVER_HEIGHT,
+    ECONOMY_COVER_SIZE,
 )
 from portprotonqt.detail_pages.utils import (
     setup_image_loading,
@@ -71,33 +74,36 @@ class DetailPageManager:
     def openGameDetailPage(self, game_data: dict) -> None:
         """Open detailed game information page."""
         detail_page = QWidget()
+        economy_mode = self._is_economy_mode()
+        cover_width = ECONOMY_COVER_SIZE if economy_mode else COVER_WIDTH
+        cover_height = ECONOMY_COVER_SIZE if economy_mode else COVER_HEIGHT
         image_label = QLabel()
-        image_label.setFixedSize(300, 450)
+        image_label.setFixedSize(cover_width, cover_height)
 
         self._setup_detail_page_common(detail_page, image_label, 0)
 
         badges = self._create_game_badges(detail_page, game_data)
-        favorite_text = self._get_favorite_text(game_data["name"])
-
         cover_frame = create_cover_frame(
             parent=detail_page,
             theme=self.main_window.theme,
             image_label=image_label,
-            favorite_label_text=favorite_text,
-            on_favorite_click=lambda: self._on_favorite_click(game_data["name"]),
             badges=badges,
+            cover_width=cover_width,
+            cover_height=cover_height,
         )
 
+        description = "" if economy_mode else game_data["description"]
         game_info_layout = self._create_game_info_layout(game_data)
         buttons_layout = self._create_game_buttons_layout(game_data)
         details_widget = create_details_widget(
             parent=detail_page,
             main_window=self.main_window,
             title=game_data["name"],
-            description=game_data["description"],
+            description=description,
             game_info_layout=game_info_layout,
-            controller_support=game_data.get("controller_support"),
+            controller_support=None if economy_mode else game_data.get("controller_support"),
             buttons_layout=buttons_layout,
+            show_description=not economy_mode,
         )
 
         self._finalize_detail_page(
@@ -521,7 +527,12 @@ class DetailPageManager:
             if not set_opacity_safe(detail_page):
                 return
             setup_image_loading(
-                detail_page, image_label, cover_path, self.main_window
+                detail_page,
+                image_label,
+                cover_path,
+                self.main_window,
+                image_label.width(),
+                image_label.height(),
             )
             if play_button:
                 self._setup_focus_after_animation(detail_page, play_button)
@@ -712,7 +723,12 @@ class DetailPageManager:
             if not set_opacity_safe(detail_page):
                 return
             setup_image_loading(
-                detail_page, image_label, cover_path, self.main_window
+                detail_page,
+                image_label,
+                cover_path,
+                self.main_window,
+                image_label.width(),
+                image_label.height(),
             )
             self._setup_autoinstall_focus(detail_page, install_button)
 

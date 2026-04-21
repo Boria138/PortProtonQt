@@ -25,6 +25,7 @@ from portprotonqt.config_utils import read_badge_view_mode
 
 COVER_WIDTH = 300
 COVER_HEIGHT = 450
+ECONOMY_COVER_SIZE = 128
 BADGE_WIDTH = int(COVER_WIDTH * 2 / 3)
 BADGE_ICON_SIZE = 16
 BADGE_COMPACT_WIDTH = BADGE_ICON_SIZE + 14
@@ -100,7 +101,8 @@ def setup_adaptive_layout(
     """Setup adaptive layout switching on resize."""
 
     def on_detail_page_resize(event) -> None:
-        if detail_page.width() < 900:
+        required_width = _get_required_horizontal_width(content_frame_layout)
+        if detail_page.width() < required_width:
             if content_frame_layout.direction() != QBoxLayout.Direction.TopToBottom:
                 content_frame_layout.setDirection(QBoxLayout.Direction.TopToBottom)
                 content_frame_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -115,6 +117,27 @@ def setup_adaptive_layout(
     detail_page.resizeEvent = on_detail_page_resize
 
 
+def _get_required_horizontal_width(content_frame_layout: QBoxLayout) -> int:
+    """Calculate minimal width for horizontal content layout."""
+    item_count = content_frame_layout.count()
+    widget_width_sum = 0
+
+    for index in range(item_count):
+        item = content_frame_layout.itemAt(index)
+        widget = item.widget() if item else None
+        if widget:
+            widget_width_sum += max(
+                widget.minimumSizeHint().width(),
+                widget.sizeHint().width(),
+            )
+
+    margins = content_frame_layout.contentsMargins()
+    spacing_width = content_frame_layout.spacing() * max(0, item_count - 1)
+    frame_padding = margins.left() + margins.right()
+
+    return max(900, widget_width_sum + spacing_width + frame_padding)
+
+
 def create_cover_frame(
     parent: QWidget,
     theme,
@@ -122,10 +145,12 @@ def create_cover_frame(
     favorite_label_text: str | None = None,
     on_favorite_click: Callable[..., None] | None = None,
     badges: list | None = None,
+    cover_width: int = COVER_WIDTH,
+    cover_height: int = COVER_HEIGHT,
 ) -> QFrame:
     """Create cover frame with image, favorite icon, and badges."""
     cover_frame = QFrame()
-    cover_frame.setFixedSize(COVER_WIDTH, COVER_HEIGHT)
+    cover_frame.setFixedSize(cover_width, cover_height)
     cover_frame.setStyleSheet(theme.COVER_FRAME_STYLE)
 
     _setup_cover_shadow(cover_frame, theme)
@@ -138,7 +163,7 @@ def create_cover_frame(
         _add_favorite_label(cover_frame, favorite_label_text, theme, on_favorite_click)
 
     if badges:
-        _position_badges(cover_frame, badges)
+        _position_badges(cover_frame, badges, cover_width)
 
     return cover_frame
 
@@ -166,7 +191,7 @@ def _add_favorite_label(
     favorite_label.raise_()
 
 
-def _position_badges(cover_frame: QFrame, badges: list) -> None:
+def _position_badges(cover_frame: QFrame, badges: list, cover_width: int = COVER_WIDTH) -> None:
     """Position badges on cover frame."""
     badge_y_positions = []
 
@@ -174,8 +199,10 @@ def _position_badges(cover_frame: QFrame, badges: list) -> None:
         badge = badge_data["label"]
         # Reparent badge to cover_frame
         badge.setParent(cover_frame)
-        badge.setCompactRelayoutCallback(lambda: _position_badges(cover_frame, badges))
-        badge_x = COVER_WIDTH - badge.width() - BADGE_RIGHT_MARGIN
+        badge.setCompactRelayoutCallback(
+            lambda: _position_badges(cover_frame, badges, cover_width)
+        )
+        badge_x = cover_width - badge.width() - BADGE_RIGHT_MARGIN
 
         if badge_y_positions:
             badge_y = badge_y_positions[-1] + BADGE_SPACING
@@ -321,20 +348,30 @@ def create_details_widget(
     game_info_layout: QVBoxLayout | None = None,
     controller_support: str | None = None,
     buttons_layout: QLayout | None = None,
+    show_description: bool = True,
 ) -> QWidget:
     """Create details widget with title, description, and optional content."""
     details_widget = QWidget()
     details_widget.setStyleSheet(main_window.theme.DETAILS_WIDGET_STYLE)
-    details_widget.setSizePolicy(
-        QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
-    )
 
     details_layout = QVBoxLayout(details_widget)
     details_layout.setContentsMargins(20, 20, 20, 20)
     details_layout.setSpacing(15)
 
+    has_description = show_description and bool(description.strip())
+    is_compact_layout = not has_description and game_info_layout is None and not controller_support
+    if is_compact_layout:
+        details_widget.setSizePolicy(
+            QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Maximum
+        )
+    else:
+        details_widget.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
+        )
+
     _add_details_header(details_layout, main_window.theme, title)
-    _add_details_description(details_layout, main_window.theme, description)
+    if has_description:
+        _add_details_description(details_layout, main_window.theme, description)
 
     if game_info_layout:
         details_layout.addLayout(game_info_layout)
@@ -342,9 +379,9 @@ def create_details_widget(
     if controller_support:
         _add_controller_support(details_layout, main_window.theme, controller_support)
 
-    details_layout.addStretch(1)
-
     if buttons_layout:
+        if not is_compact_layout:
+            details_layout.addStretch(1)
         details_layout.addLayout(buttons_layout)
 
     return details_widget
