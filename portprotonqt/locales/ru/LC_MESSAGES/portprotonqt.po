@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-03-22 13:50+0500\n"
-"PO-Revision-Date: 2026-04-15 13:31+0000\n"
+"PO-Revision-Date: 2026-04-22 18:16+0000\n"
 "Last-Translator: Boria138 <boria138@noreply.codeberg.org>\n"
 "Language-Team: Russian <https://translate.codeberg.org/projects/portprotonqt/"
 "portprotonqt/ru/>\n"
@@ -72,9 +72,9 @@ msgstr "Редактировать ярлык"
 msgid "Stopped '{game_name}'"
 msgstr "'{game_name}' остановлен(а)"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Failed to stop game"
-msgstr "Не удалось запустить игру: {0}"
+msgstr "Не удалось остановить игру"
 
 #, python-brace-format
 msgid "Legendary executable not found at {path}"
@@ -555,7 +555,7 @@ msgid "Add to Steam compatibility tools"
 msgstr "Добавить в инструменты совместимости Steam"
 
 msgid "Economy mode (disable Steam/HLTB/badges)"
-msgstr ""
+msgstr "Экономный режим"
 
 msgid "Gamepad Settings"
 msgstr "Настройки геймпада"
