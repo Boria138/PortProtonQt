@@ -66,6 +66,7 @@ def get_steam_language():
             locale = Locale.parse(system_locale)
             # Use only the language code ('ru', 'en', etc.)
             language_code = locale.language
+            os.environ["FULL_LN"] = LOCALE_MAP.get(language_code, 'english')
             return LOCALE_MAP.get(language_code, 'english')
     except Exception as e:
         logger.warning("Failed to detect locale: %s", e)

@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+#Author: norz3n
+#vocaloid4_4.3.0_setup.exe
+#Rating=1-5
+#####################examples###########################
+export PW_VULKAN_USE=0
+export PW_VIRTUAL_DESKTOP=1

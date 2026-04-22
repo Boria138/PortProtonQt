@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#Author: xuser
+#SR2_pc.exe
+#Rating=1-5
+#####################examples###########################
+export PW_DLL_INSTALL="faudio"               # Install DLL in port prefix (used winetricks)

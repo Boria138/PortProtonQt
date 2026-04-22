@@ -31,6 +31,7 @@ if TYPE_CHECKING:
 
 from portprotonqt.config_utils import (
     get_portproton_location,
+    get_portproton_scripts_path,
     get_portproton_start_command,
     read_theme_from_config,
 )
@@ -82,6 +83,30 @@ def _normalize_prefix_directories(prefixes_dir):
             logger.warning("Failed to rename prefix %s: %s", prefix_name, exc)
 
 
+def _read_lg_dist_versions_from_var(var_path: str) -> list[str]:
+    """Read Proton/Wine LG dist versions from scripts/var."""
+    if not os.path.exists(var_path):
+        return []
+
+    versions: list[str] = []
+    target_keys = ("PW_PROTON_LG_VER", "PW_WINE_LG_VER")
+
+    try:
+        with open(var_path, encoding="utf-8") as var_file:
+            for line in var_file:
+                line_stripped = line.strip()
+                for key in target_keys:
+                    prefix = f"export {key}="
+                    if line_stripped.startswith(prefix):
+                        value = line_stripped[len(prefix):].strip().strip('"\'')
+                        if value and value not in versions:
+                            versions.append(value)
+    except OSError as exc:
+        logger.warning("Failed to read LG versions from %s: %s", var_path, exc)
+
+    return versions
+
+
 class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
     """Dialog for configuring executable-specific settings."""
 
@@ -111,6 +136,13 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
                     [f for f in os.listdir(dist_dir) if os.path.isdir(os.path.join(dist_dir, f))],
                     key=lambda x: x.lower()
                 )
+            scripts_path = get_portproton_scripts_path()
+            if scripts_path:
+                var_path = os.path.join(scripts_path, "var")
+                lg_versions = _read_lg_dist_versions_from_var(var_path)
+                for version in lg_versions:
+                    if version not in self.dist_options:
+                        self.dist_options.append(version)
             prefixes_dir = os.path.join(self.portproton_path, 'prefixes')
             if os.path.exists(prefixes_dir):
                 _normalize_prefix_directories(prefixes_dir)

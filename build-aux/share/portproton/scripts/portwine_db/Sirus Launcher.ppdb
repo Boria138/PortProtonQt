@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#Author: linux-gaming.ru
+#Sirus Launcher.exe
+#Rating=4
+#####################examples###########################
+export PW_WINDOWS_VER=7                      # Set windows version 10, 7 or XP

@@ -2,7 +2,6 @@ import os
 import hashlib
 import shlex
 import shutil
-import signal
 import stat
 import subprocess
 import tempfile
@@ -33,6 +32,7 @@ from portprotonqt.config_utils import (
     save_fullscreen_config, read_window_geometry, save_window_geometry, reset_config,
     clear_cache, read_auto_fullscreen_gamepad, save_auto_fullscreen_gamepad, read_rumble_config, save_rumble_config, read_gamepad_type, save_gamepad_type, read_minimize_to_tray, save_minimize_to_tray,
     read_auto_card_size, save_auto_card_size, get_portproton_start_command, read_hide_autoinstall_tab, save_hide_autoinstall_tab,
+    get_portproton_scripts_path,
     read_autostart_enabled, save_autostart_enabled, apply_xdg_autostart, read_start_minimized, save_start_minimized,
     read_badge_view_mode, save_badge_view_mode, read_economy_mode, save_economy_mode
 )
@@ -66,6 +66,32 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
     games_loaded = Signal(list)
     update_progress = Signal(int)
     update_status_message = Signal(str, int)
+
+    def _get_lg_versions_from_var(self) -> list[str]:
+        """Read Proton/Wine LG versions from scripts/var."""
+        scripts_path = get_portproton_scripts_path()
+        if not scripts_path:
+            return []
+
+        var_path = os.path.join(scripts_path, "var")
+        if not os.path.exists(var_path):
+            return []
+
+        versions: list[str] = []
+        target_keys = ("PW_PROTON_LG_VER", "PW_WINE_LG_VER")
+        try:
+            with open(var_path, encoding="utf-8") as var_file:
+                for line in var_file:
+                    line_stripped = line.strip()
+                    for key in target_keys:
+                        prefix = f"export {key}="
+                        if line_stripped.startswith(prefix):
+                            value = line_stripped[len(prefix):].strip().strip('"\'')
+                            if value and value not in versions:
+                                versions.append(value)
+        except OSError as exc:
+            logger.warning("Failed to read LG versions from %s: %s", var_path, exc)
+        return versions
 
     def __init__(self, app_name: str, version: str, launch_exe: str | None = None, resolution: tuple[int, int] | None = None, show_system_tab: bool = False):
         super().__init__()
@@ -1485,6 +1511,10 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         formLayout.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
 
         self.wine_versions = sorted([d for d in os.listdir(dist_path) if os.path.isdir(os.path.join(dist_path, d))], key=version_sort_key)
+        for version in self._get_lg_versions_from_var():
+            if version not in self.wine_versions:
+                self.wine_versions.append(version)
+        self.wine_versions.sort(key=version_sort_key)
         self.wineCombo = QComboBox()
         self.wineCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.wineCombo.addItems(self.wine_versions)
@@ -1829,6 +1859,10 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
         # Update the wine versions list with sorting
         self.wine_versions = sorted([d for d in os.listdir(dist_path) if os.path.isdir(os.path.join(dist_path, d))], key=version_sort_key)
+        for version in self._get_lg_versions_from_var():
+            if version not in self.wine_versions:
+                self.wine_versions.append(version)
+        self.wine_versions.sort(key=version_sort_key)
         self.wineCombo.clear()
         self.wineCombo.addItems(self.wine_versions)
 
@@ -2234,9 +2268,9 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             self.gpuCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
             self.gpuCombo.addItems(filtered_gpu_list)
             current_gpu = get_user_conf_setting('PW_GPU_USE')
-            if current_gpu and current_gpu in filtered_gpu_list:
+            if current_gpu and current_gpu != "disabled" and current_gpu in filtered_gpu_list:
                 self.gpuCombo.setCurrentText(current_gpu)
-            elif current_gpu:
+            elif current_gpu and current_gpu != "disabled":
                 if current_gpu not in filtered_gpu_list:
                     self.gpuCombo.addItem(current_gpu)
                 self.gpuCombo.setCurrentText(current_gpu)
@@ -3135,6 +3169,43 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.wine_download_seen = False
         self.wine_download_percent = 0.0
 
+    def stop_running_game(self, button=None) -> bool:
+        """Stop current game via PortProton CLI stop command."""
+        if not self.start_sh:
+            logger.warning("PortProton start command is unavailable for stop")
+            return False
+
+        if button is not None:
+            self.current_running_button = button
+
+        try:
+            result = subprocess.run(
+                self.start_sh + ["cli", "--stop"],
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=30,
+            )
+        except (OSError, subprocess.SubprocessError) as e:
+            logger.error("Failed to execute PortProton stop command: %s", e)
+            return False
+
+        if result.returncode != 0:
+            logger.warning(
+                "PortProton stop command failed with code %s: %s",
+                result.returncode,
+                result.stderr.strip(),
+            )
+            return False
+
+        self.game_processes = []
+        if hasattr(self, 'checkProcessTimer') and self.checkProcessTimer is not None:
+            self.checkProcessTimer.stop()
+            self.checkProcessTimer.deleteLater()
+            self.checkProcessTimer = None
+        self.resetPlayButton()
+        return True
+
     def _check_missing_prefix_by_name_before_launch(self, prefix_name: str, env_vars: dict[str, str]) -> None:
         """Check prefix presence and optionally disable default recommended libs."""
         if not prefix_name or not self.portproton_location:
@@ -3382,41 +3453,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
             # Check if game is running
             if self.game_processes and self.target_exe == current_exe:
-                # Stop game
-                for proc in self.game_processes:
-                    try:
-                        parent = psutil.Process(proc.pid)
-                        children = parent.children(recursive=True)
-                        for child in children:
-                            try:
-                                child.terminate()
-                            except psutil.NoSuchProcess:
-                                pass
-                        psutil.wait_procs(children, timeout=5)
-                        for child in children:
-                            if child.is_running():
-                                child.kill()
-                        os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-                    except psutil.NoSuchProcess:
-                        pass
-                self.game_processes = []
-                if update_button:
-                    try:
-                        update_button.setText(_("Play"))
-                        icon = self.theme_manager.get_icon("play")
-                        if isinstance(icon, str):
-                            icon = QIcon(icon)
-                        elif icon is None:
-                            icon = QIcon()
-                        update_button.setIcon(icon)
-                    except RuntimeError:
-                        pass
-                if hasattr(self, 'checkProcessTimer') and self.checkProcessTimer is not None:
-                    self.checkProcessTimer.stop()
-                    self.checkProcessTimer.deleteLater()
-                    self.checkProcessTimer = None
-                self.current_running_button = None
-                self.target_exe = None
+                if not self.stop_running_game(update_button):
+                    QMessageBox.warning(self, _("Error"), _("Failed to stop game"))
             else:
                 # Launch game via PortProton
                 env_vars = os.environ.copy()
@@ -3461,6 +3499,15 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             QMessageBox.warning(self, _("Error"), _("Invalid command format (empty exec line)"))
             return
         launch_cmd = entry_exec_split
+        if entry_exec_split[0] == "env" and len(entry_exec_split) >= 3:
+            legacy_start_sh = entry_exec_split[1]
+            if legacy_start_sh.endswith("/data/scripts/start.sh"):
+                start_cmd = get_portproton_start_command()
+                if start_cmd and len(start_cmd) == 1 and start_cmd[0].endswith("start.sh"):
+                    launch_cmd = entry_exec_split.copy()
+                    launch_cmd[1] = start_cmd[0]
+                    entry_exec_split = launch_cmd
+                    logger.info("Updated legacy start.sh path for launch: %s", start_cmd[0])
         if entry_exec_split[0] == "env":
             if len(entry_exec_split) < 3:
                 QMessageBox.warning(self, _("Error"), _("Invalid command format (native)"))
@@ -3529,41 +3576,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
         # If game already running for this exe - stop it
         if self.game_processes and self.target_exe == current_exe:
-            for proc in self.game_processes:
-                try:
-                    parent = psutil.Process(proc.pid)
-                    children = parent.children(recursive=True)
-                    for child in children:
-                        try:
-                            child.terminate()
-                        except psutil.NoSuchProcess:
-                            pass
-                    psutil.wait_procs(children, timeout=5)
-                    for child in children:
-                        if child.is_running():
-                            child.kill()
-                    os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-                except psutil.NoSuchProcess:
-                    pass
-            self.game_processes = []
-            if update_button:
-                try:
-                    update_button.setText(_("Play"))
-                    icon = self.theme_manager.get_icon("play")
-                    if isinstance(icon, str):
-                        icon = QIcon(icon)
-                    elif icon is None:
-                        icon = QIcon()
-                    update_button.setIcon(icon)
-                except RuntimeError:
-                    pass
-            if hasattr(self, 'checkProcessTimer') and self.checkProcessTimer is not None:
-                self.checkProcessTimer.stop()
-                self.checkProcessTimer.deleteLater()
-                self.checkProcessTimer = None
-            self.current_running_button = None
-            self.target_exe = None
-            #self._uninhibit_screensaver()
+            if not self.stop_running_game(update_button):
+                QMessageBox.warning(self, _("Error"), _("Failed to stop game"))
         else:
             # Save button reference for reset after game completion
             self.current_running_button = update_button
@@ -3635,33 +3649,10 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             logger.debug(f"Saving window geometry: {self.width()}x{self.height()}")
             save_window_geometry(self.width(), self.height())
 
-        # Terminate all game processes
-        for proc in getattr(self, "game_processes", []):
-            try:
-                parent = psutil.Process(proc.pid)
-                children = parent.children(recursive=True)
-                for child in children:
-                    try:
-                        logger.debug(f"Terminating child process {child.pid}")
-                        child.terminate()
-                    except psutil.NoSuchProcess:
-                        logger.debug(f"Child process {child.pid} already terminated")
+        if self.game_processes:
+            if not self.stop_running_game():
+                logger.warning("Failed to stop running game during application shutdown")
 
-                psutil.wait_procs(children, timeout=5)
-                for child in children:
-                    if child.is_running():
-                        logger.debug(f"Killing child process {child.pid}")
-                        child.kill()
-
-                logger.debug(f"Terminating process group {proc.pid}")
-                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-
-            except (psutil.NoSuchProcess, ProcessLookupError) as e:
-                logger.debug(f"Process {getattr(proc, 'pid', '?')} already terminated: {e}")
-            except Exception as e:
-                logger.warning(f"Failed to terminate process {getattr(proc, 'pid', '?')}: {e}")
-
-        self.game_processes = []
         self._cleanup_iso_rw_paths()
         self._stopBackgroundWorkers()
 

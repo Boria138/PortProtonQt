@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
 )
 
 from portprotonqt.config import CONFIG_FILE
+from portprotonqt.config_utils import get_portproton_scripts_path
 from portprotonqt.debug_utils import get_cached_vk_gpu_info
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
@@ -1176,12 +1177,17 @@ class MangoHudSettingsMixin:
             group_box.setVisible(search_text in group_text or search_text in content_text)
 
     def _get_default_mangohud_config(self) -> str | None:
-        """Read DEFAULT_MANGOHUD_CONFIG from portproton_path/data/scripts/var."""
+        """Read DEFAULT_MANGOHUD_CONFIG from scripts/var."""
         if not self.portproton_path:
             logger.warning("PortProton path not set")
             return None
 
-        var_path = os.path.join(self.portproton_path, "data", "scripts", "var")
+        scripts_path = get_portproton_scripts_path()
+        if not scripts_path:
+            logger.warning("PortProton scripts path not set")
+            return None
+
+        var_path = os.path.join(scripts_path, "var")
         if not os.path.exists(var_path):
             logger.warning("var file not found: %s", var_path)
             return None

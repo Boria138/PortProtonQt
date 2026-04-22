@@ -398,6 +398,18 @@ def get_portproton_location() -> str | None:
     return _get_portproton_config().get_location()
 
 
+def get_portproton_scripts_path() -> str | None:
+    """Return PortProton scripts directory path."""
+    scripts_dirs = (
+        Path(__file__).resolve().parent.parent / "build-aux" / "share" / "portproton" / "scripts",
+        Path("/usr/share/portproton/scripts"),
+    )
+    for scripts_dir in scripts_dirs:
+        if scripts_dir.exists():
+            return str(scripts_dir)
+    return None
+
+
 def get_portproton_start_command() -> list[str] | None:
     """Return command list for PortProton launch."""
     global _portproton_start_sh
@@ -441,13 +453,9 @@ def get_portproton_start_command() -> list[str] | None:
             logger.warning("Error checking flatpak list: %s", e)
             pass
 
-    portproton_path = get_portproton_location()
-    if not portproton_path:
-        return None
-
-    start_sh_path = os.path.join(portproton_path, "data", "scripts", "start.sh")
-    if os.path.exists(start_sh_path):
-        _portproton_start_sh = [start_sh_path]
+    scripts_path = get_portproton_scripts_path()
+    if scripts_path:
+        _portproton_start_sh = [os.path.join(scripts_path, "start.sh")]
         return _portproton_start_sh
 
     logger.warning("Neither flatpak nor start.sh found for PortProton")
@@ -553,16 +561,22 @@ def create_desktop_file(exe_path: str, game_name: str | None = None) -> tuple[st
 
     is_flatpak = ".var" in portproton_path
     base_path = os.path.join(portproton_path, "data")
+    working_dir = get_portproton_scripts_path()
+    if not working_dir:
+        logger.error("PortProton scripts path not found")
+        return None
 
     if is_flatpak:
         exec_str = f'flatpak run ru.linux_gaming.PortProton "{exe_path}"'
     else:
-        start_sh = os.path.join(base_path, "scripts", "start.sh")
+        start_sh = os.path.join(working_dir, "start.sh")
+        if not os.path.exists(start_sh):
+            logger.error("start.sh not found in supported paths")
+            return None
         exec_str = f'env "{start_sh}" "{exe_path}"'
 
     icon_path = os.path.join(base_path, "img", f"{game_name}.png")
     desktop_path = os.path.join(portproton_path, f"{game_name}.desktop")
-    working_dir = os.path.join(base_path, "scripts")
 
     os.makedirs(os.path.dirname(icon_path), exist_ok=True)
 

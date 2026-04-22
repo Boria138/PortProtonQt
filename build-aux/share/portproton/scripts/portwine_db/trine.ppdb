@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#Author: xuser
+#trine.exe
+#Rating=1-5
+#####################examples###########################
+export PW_DLL_INSTALL="physx"               # Install DLL in port prefix (used winetricks)

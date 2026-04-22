@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#Author: fff555w
+#Esprit Games.exe
+#Rating=1-5
+#####################examples###########################
+export PW_WINDOWS_VER=7                        # Set windows version 10, 7 or XP

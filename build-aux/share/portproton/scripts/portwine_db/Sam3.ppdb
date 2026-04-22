@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+#Author: xihnik
+#Sam3.exe
+#Rating=3
+#####################examples###########################
+export PW_DLL_INSTALL="d3dx9 vcrun2013 d3dcompiller_47"
+export PW_REDUCE_PULSE_LATENCY=1                    # Fix crackling audio in games

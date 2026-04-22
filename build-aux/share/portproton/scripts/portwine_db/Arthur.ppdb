@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+#Author: akai
+#Arthur.exe
+#Rating=1-5
+#####################examples###########################
+export PW_REDUCE_PULSE_LATENCY=1
+export PW_VULKAN_USE=2

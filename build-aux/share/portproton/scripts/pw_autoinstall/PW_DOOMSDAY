@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Author: chal55rus
+# type: games
+# name: Doomsday
+# image: doomsday
+# info_en: A real-time strategy game where players manage a group of survivors in a post-apocalyptic world, aiming to rebuild civilization and defend against various threats. The game features base-building elements, tactical combat, and a deep narrative experience.
+# info_ru: Стратегическая игра в реальном времени, где игроки управляют отрядом выживших в постапокалиптическом мире, стремясь восстановить цивилизацию и защититься от различных угроз. Игра предлагает элементы строительства базы, тактические сражения и глубокую проработку сюжета.
+########################################################################
+export PW_PREFIX_NAME="DOOMSDAY"
+export LAUNCH_PARAMETERS="/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/dls_installer.exe"
+export PORTWINE_CREATE_SHORTCUT_NAME="Doomsday"
+
+bad_url="$(curl https://dls.igg.com/download/pc/h/ | grep downloadUrl | awk -F'downloadUrl":"' '{print $2}' | awk -F'"' '{print $1}')"
+good_url="${bad_url//\\/}"
+
+start_portproton
+if try_download "$good_url" "${PW_AUTOINSTALL_EXE}" no_mirror
+then
+    pw_kill_autostart Launcher.exe &
+    pw_run "${PW_AUTOINSTALL_EXE}"
+    PW_EXE_FILE="$WINEPREFIX/drive_c/Program Files (x86)/Doomsday/DoomsdayLastSurvivors.exe"
+    try_remove_file "${PW_AUTOINSTALL_EXE}"
+    try_remove_file "${PW_EXE_FILE}.ppdb"
+    kill_portwine
+    portwine_create_shortcut
+fi
+stop_portproton

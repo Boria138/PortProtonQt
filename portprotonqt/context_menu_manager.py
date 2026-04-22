@@ -5,8 +5,6 @@ import shutil
 import subprocess
 import threading
 import orjson
-import psutil
-import signal
 from PySide6.QtWidgets import QMessageBox, QDialog, QMenu, QLineEdit, QApplication
 from PySide6.QtCore import QUrl, QPoint, QObject, Signal, Qt, QStandardPaths
 from PySide6.QtGui import QDesktopServices, QIcon, QKeySequence
@@ -349,31 +347,10 @@ class ContextMenuManager:
 
         # Check if the game is running
         if self._is_game_running(game_card):
-            # Stop the game
-            if hasattr(self.parent, 'game_processes') and self.parent.game_processes:
-                for proc in self.parent.game_processes:
-                    try:
-                        parent = psutil.Process(proc.pid)
-                        children = parent.children(recursive=True)
-                        for child in children:
-                            try:
-                                child.terminate()
-                            except psutil.NoSuchProcess:
-                                pass
-                        psutil.wait_procs(children, timeout=5)
-                        for child in children:
-                            if child.is_running():
-                                child.kill()
-                        os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-                    except psutil.NoSuchProcess:
-                        pass
-                self.parent.game_processes = []
-                self.parent.resetPlayButton()
-                if hasattr(self.parent, 'checkProcessTimer') and self.parent.checkProcessTimer is not None:
-                    self.parent.checkProcessTimer.stop()
-                    self.parent.checkProcessTimer.deleteLater()
-                    self.parent.checkProcessTimer = None
+            if hasattr(self.parent, "stop_running_game") and self.parent.stop_running_game():
                 self._show_status_message(_("Stopped '{game_name}'").format(game_name=game_card.name))
+            else:
+                self.signals.show_warning_dialog.emit(_("Error"), _("Failed to stop game"))
             return
 
         # Launch the game
@@ -386,7 +363,7 @@ class ContextMenuManager:
                 return
             # Construct EGS launch command
             wrapper = get_portproton_start_command()
-            exec_line = f'"{self.legendary_path}" launch {game_card.appid} --no-wine --wrapper "env START_FROM_STEAM=1 {wrapper}"'
+            exec_line = f'"{self.legendary_path}" launch {game_card.appid} --no-wine --wrapper "{wrapper}"'
         else:
             exec_line = self._get_exec_line(game_card.name, game_card.exec_line)
             if not exec_line:
@@ -641,16 +618,14 @@ class ContextMenuManager:
                 _("Legendary executable not found at {path}").format(path=self.legendary_path)
             )
             return False
-        wrapper = "flatpak run ru.linux_gaming.PortProton"
-        start_sh_path = os.path.join(self.portproton_location, "data", "scripts", "start.sh")
-        if self.portproton_location and ".var" not in self.portproton_location:
-            wrapper = start_sh_path
-            if not os.path.exists(start_sh_path):
-                self.signals.show_warning_dialog.emit(
-                    _("Error"),
-                    _("start.sh not found at {path}").format(path=start_sh_path)
-                )
-                return False
+        wrapper_command = get_portproton_start_command()
+        if not wrapper_command:
+            self.signals.show_warning_dialog.emit(
+                _("Error"),
+                _("start.sh not found at {path}").format(path="/usr/share/portproton/scripts/start.sh")
+            )
+            return False
+        wrapper = shlex.join(wrapper_command)
         icon_path = os.path.join(self.portproton_location, "data", "img", f"{game_name}.png")
         os.makedirs(os.path.dirname(icon_path), exist_ok=True)
 
@@ -672,7 +647,7 @@ class ContextMenuManager:
 [Desktop Entry]
 Name={game_name}
 Comment={comment}
-Exec="{self.legendary_path}" launch {app_name} --no-wine --wrapper "env START_FROM_STEAM=1 {wrapper}"
+Exec="{self.legendary_path}" launch {app_name} --no-wine --wrapper "{wrapper}"
 Terminal=false
 Type=Application
 Categories=Game;

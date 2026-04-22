@@ -1,9 +1,10 @@
 """Detail page utilities for PortProtonQt."""
 
 import os
+from weakref import WeakKeyDictionary
 from collections.abc import Callable
 from PySide6.QtWidgets import QWidget, QApplication, QLabel
-from PySide6.QtCore import QTimer, Qt
+from PySide6.QtCore import QTimer, Qt, QObject, Signal
 from PySide6.QtGui import QPixmap
 
 from portprotonqt.image_utils import load_pixmap_async, round_corners
@@ -11,6 +12,13 @@ from portprotonqt.config_utils import read_favorites, save_favorites
 from portprotonqt.logger import get_logger
 
 logger = get_logger(__name__)
+_pixmap_relays: WeakKeyDictionary[QWidget, "_PixmapReadyRelay"] = WeakKeyDictionary()
+
+
+class _PixmapReadyRelay(QObject):
+    """Relay pixmap updates to GUI thread safely."""
+
+    pixmap_ready = Signal(object)
 
 
 def setup_image_loading(
@@ -18,12 +26,24 @@ def setup_image_loading(
     image_label: QLabel,
     cover_path: str | None,
     main_window,
+    cover_width: int = 300,
+    cover_height: int = 450,
 ) -> None:
     """Setup async image loading with palette-based stylesheet."""
+    relay = _PixmapReadyRelay(detail_page)
+    relay.pixmap_ready.connect(
+        lambda pixmap: _on_pixmap_ready(pixmap, detail_page, image_label, main_window),
+        Qt.ConnectionType.QueuedConnection,
+    )
+    _pixmap_relays[detail_page] = relay
+
     if cover_path:
-        load_pixmap_async(cover_path, 300, 450, lambda pixmap: _on_pixmap_ready(
-            pixmap, detail_page, image_label, main_window
-        ))
+        load_pixmap_async(
+            cover_path,
+            cover_width,
+            cover_height,
+            lambda pixmap: relay.pixmap_ready.emit(pixmap),
+        )
     else:
         _apply_no_cover_style(detail_page, main_window.theme)
 

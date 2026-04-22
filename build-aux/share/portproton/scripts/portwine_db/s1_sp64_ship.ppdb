@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+#Author: xihnik
+#s1_sp64_ship.exe
+#Rating=1-5
+#####################examples###########################
+export PW_DLL_INSTALL="vcrun2019 d3dx9"
+export PW_WINDOWS_VER=7

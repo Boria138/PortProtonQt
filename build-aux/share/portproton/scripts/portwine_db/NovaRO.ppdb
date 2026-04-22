@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+#Author: sergey
+#Nova Patcher.exe
+#NovaRO.exe
+#Rating=1-5
+#####################examples###########################
+export PW_DLL_INSTALL="d3dcompiler_42 d3dcompiler_43 d3dx9"

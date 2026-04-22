@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Author: Boria138
+# type: games
+# name: Russian Fishing 4
+# image: rf4launcher
+# info_en: A realistic fishing simulator that immerses players in the enjoyable process of catching fish in various beautiful bodies of water across Russia. The game features a wide selection of tackle, fish species, and opportunities for competition with other anglers.
+# info_ru: Реалистичный симулятор рыбалки, который предлагает игрокам погрузиться в увлекательный процесс ловли рыбы в различных красивых водоемах России. Игра включает в себя широкий выбор снастей, видов рыб и возможностей для соревнований с другими рыбаками.
+########################################################################
+export LAUNCH_PARAMETERS="/q"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/RF4SetupRU.exe"
+export PORTWINE_CREATE_SHORTCUT_NAME="Russian Fishing 4"
+export PW_PREFIX_NAME="RUSSIAN_FISHING"
+
+start_portproton
+if try_download "https://cdn6.rf4game.ru/rf4/RF4SetupRU.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
+then
+    create_new_dir "${WINEPREFIX}/drive_c/games/Russian Fishing 4"
+    mv "${PORT_WINE_TMP_PATH}/RF4SetupRU.exe" "${WINEPREFIX}/drive_c/games/Russian Fishing 4/RF4.exe"
+    PW_EXE_FILE="${WINEPREFIX}/drive_c/games/Russian Fishing 4/RF4.exe"
+    kill_portwine
+    portwine_create_shortcut
+fi
+stop_portproton

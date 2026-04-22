@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Author: cefeiko
+# type: games
+# name: OSU
+# image: osu
+# info_en: A rhythm game where players click circles in time with music and rhythm. The game features various modes and a community where users can create and share their own maps.
+# info_ru: Ритм-игра, в которой игроки нажимают кружки, следуя музыке и ритму. Игра предлагает различные режимы и комьюнити, где пользователи могут создавать и делиться собственными картами.
+########################################################################
+export PW_PREFIX_NAME="OSU"
+export PORTWINE_CREATE_SHORTCUT_NAME="OSU"
+export PW_WINE_USE="WINE_LG"
+
+start_portproton
+
+create_new_dir "${WINEPREFIX}/drive_c/Program Files (x86)/OSU/"
+export PW_AUTOINSTALL_EXE="${WINEPREFIX}/drive_c/Program Files (x86)/OSU/osu!.exe"
+
+if try_download "https://m1.ppy.sh/r/osu!install.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
+then
+    if  [[ -f "${PORT_DATA_PATH}/data/pfx_dotnet/drive_c/Program Files (x86)/OSU/osu!install.exe" ]] ; then
+        mv -f  "${PORT_DATA_PATH}/data/pfx_dotnet/drive_c/Program Files (x86)/OSU/osu!install.exe" "${PORT_DATA_PATH}/data/pfx_dotnet/drive_c/Program Files (x86)/OSU/osu!.exe"
+    fi
+    export PW_EXE_FILE="$WINEPREFIX/drive_c/Program Files (x86)/OSU/osu!.exe"
+    pw_create_unique_exe
+    try_remove_file "${PW_EXE_FILE}.ppdb"
+    portwine_create_shortcut
+    kill_portwine
+fi
+
+stop_portproton

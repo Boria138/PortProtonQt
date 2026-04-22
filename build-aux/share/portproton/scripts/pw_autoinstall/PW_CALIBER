@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Author: chal55rus
+# type: games
+# name: CALIBER
+# image: caliber
+# info_en: A tactical third-person shooter where players can choose from various characters with unique abilities and engage in team-based modes. The game features realistic graphics and dynamic combat, providing an engaging gameplay experience.
+# info_ru: Тактический шутер от третьего лица, где игроки могут выбирать из различных персонажей с уникальными способностями и сражаться в командных режимах. Игра предлагает реалистичную графику и динамичные бои, обеспечивая увлекательный игровой процесс.
+########################################################################
+export PW_PREFIX_NAME="CALIBER"
+export LAUNCH_PARAMETERS="/VERYSILENT /CLOSEAPPLICATIONS"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/CaliberSetup.exe"
+export PW_WINE_USE="PROTON_LG"
+# export DISABLE_CP_DEFPFX="1"
+export PORTWINE_CREATE_SHORTCUT_NAME="CALIBER"
+
+start_portproton
+if try_download "https://cdn.playcaliber.com/caliber-s3/p1/a88c3b70f76a0e56b1e08b62c9895cfe/launcher/setup/CaliberSetup.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
+then
+    pw_kill_autostart VC_redist.x64.exe 3 &
+    pw_run "${PW_AUTOINSTALL_EXE}"
+    PW_EXE_FILE="$WINEPREFIX/drive_c/Program Files (x86)/1C Game Studios/Caliber/Launcher.exe"
+    pw_create_unique_exe "caliber_launcher_pp"
+    try_remove_file "${PW_AUTOINSTALL_EXE}"
+    try_remove_file "${PW_EXE_FILE}.ppdb"
+    kill_portwine
+    portwine_create_shortcut
+fi
+stop_portproton

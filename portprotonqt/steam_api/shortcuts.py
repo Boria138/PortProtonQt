@@ -194,7 +194,6 @@ def _create_launch_script(
         start_cmd = " ".join(start_sh)
         script_content = f"""#!/usr/bin/env bash
 export LD_PRELOAD=
-export START_FROM_STEAM=1
 "{start_cmd}" "{exe_path}" "$@"
 """
         try:

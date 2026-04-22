@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Author: Castro-Fidel (linux-gaming.ru)
+# type: games
+# name: Black Desert Online (RU)
+# image: bdo
+# info_en: A massively multiplayer online role-playing game set in an open world, renowned for its stunning graphics and deep character customization system. Players can explore vast lands, complete quests, engage in PvP battles, and participate in various crafting activities.
+# info_ru: Многопользовательская ролевая игра с открытым миром, известная своей потрясающей графикой и глубокой системой кастомизации персонажей. Игроки могут исследовать обширные земли, выполнять задания, участвовать в PvP-сражениях и заниматься различными ремеслами.
+########################################################################
+export PW_PREFIX_NAME="DOTNET"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/BlackDesert_Installer_RU.exe"
+export LAUNCH_PARAMETERS="/silent"
+export PW_USE_D3D_EXTRAS="1"
+export PW_WINE_USE="PROTON_LG"
+
+pw_clear_pfx
+start_portproton
+wait_wineserver
+
+if try_download "https://nez-o-dn.playblackdesert.com/UploadData/installer/BlackDesert_Installer_RU.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
+then
+    pw_run "${PW_AUTOINSTALL_EXE}"
+    PW_EXE_FILE="$WINEPREFIX/drive_c/Pearlabyss/BlackDesert/BlackDesertLauncher.exe"
+    try_remove_file "${PW_AUTOINSTALL_EXE}"
+    try_remove_file "${PW_EXE_FILE}.ppdb"
+    kill_portwine
+    export PORTWINE_CREATE_SHORTCUT_NAME="Black Desert Online"
+    portwine_create_shortcut
+fi
+stop_portproton

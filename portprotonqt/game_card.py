@@ -141,7 +141,7 @@ class GameCard(QFrame):
             self.protondbLabel = ClickableLabel("", parent=self.coverWidget)
             self.protondbLabel.setVisible(False)
 
-        steam_icon = self.theme_manager.get_icon("steam")
+        steam_icon = self.theme_manager.get_icon("badge_steam")
         self.steamLabel = ClickableLabel(
             "Steam",
             icon=steam_icon,
@@ -154,7 +154,7 @@ class GameCard(QFrame):
         if self.economy_mode:
             self.steamLabel.setVisible(False)
 
-        egs_icon = self.theme_manager.get_icon("epic_games")
+        egs_icon = self.theme_manager.get_icon("badge_egs")
         self.egsLabel = ClickableLabel(
             "Epic Games",
             icon=egs_icon,
@@ -168,7 +168,7 @@ class GameCard(QFrame):
         if self.economy_mode:
             self.egsLabel.setVisible(False)
 
-        portproton_icon = self.theme_manager.get_icon("portproton")
+        portproton_icon = self.theme_manager.get_icon("badge_portproton")
         self.portprotonLabel = ClickableLabel(
             "PortProton",
             icon=portproton_icon,
@@ -271,6 +271,8 @@ class GameCard(QFrame):
         right_margin = int(8 * self._scale)
         badge_spacing = int(current_width * 0.02)
         top_y = int(10 * self._scale)
+        cover_height = self.coverWidget.height()
+        hidden_badges = self.badge_view_mode == "hidden"
         badge_y_positions = []
         badges = [
             (self.steam_visible, self.steamLabel),
@@ -281,15 +283,35 @@ class GameCard(QFrame):
         ]
 
         for is_visible, badge in badges:
-            if is_visible:
-                badge_x = current_width - badge.width() - right_margin
-                badge_y = badge_y_positions[-1] + badge_spacing if badge_y_positions else top_y
-                try:
-                    badge.move(int(badge_x), int(badge_y))
-                    badge_y_positions.append(badge_y + badge.height())
-                except RuntimeError:
-                    # Handle the case where the Qt object was deleted
-                    pass
+            if not is_visible or badge is None or hidden_badges:
+                if badge is not None:
+                    badge.setVisible(False)
+                continue
+            badge_x = current_width - badge.width() - right_margin
+            badge_y = badge_y_positions[-1] + badge_spacing if badge_y_positions else top_y
+            try:
+                if self.list_layout:
+                    full_text_width = badge.fontMetrics().horizontalAdvance(badge.text())
+                    icon_size = getattr(badge, "_icon_size", 0)
+                    icon_space = getattr(badge, "_icon_space", 0)
+                    has_icon = badge.icon() is not None
+                    required_width = full_text_width + 4
+                    if has_icon:
+                        required_width += icon_size + icon_space
+
+                    fits_horizontally = badge.width() <= (current_width - right_margin)
+                    fits_vertically = (badge_y + badge.height()) <= cover_height
+                    fits_content = required_width <= badge.width()
+                    if not (fits_horizontally and fits_vertically and fits_content):
+                        badge.setVisible(False)
+                        continue
+
+                badge.setVisible(True)
+                badge.move(int(badge_x), int(badge_y))
+                badge_y_positions.append(badge_y + badge.height())
+            except RuntimeError:
+                # Handle the case where the Qt object was deleted
+                pass
 
         try:
             self.anticheatLabel.raise_()
@@ -327,10 +349,11 @@ class GameCard(QFrame):
         self.favoriteLabel.setFixedSize(*favorite_size)
         self.favoriteLabel.move(int(8 * self._scale), int(8 * self._scale))
 
-        badge_width = int(scaled_width * 2/3)
-        icon_size = int(scaled_width * 0.06)
-        icon_space = int(scaled_width * 0.012)
-        compact_badge_width = int(scaled_width * 0.12)
+        badge_host_width = self.coverWidget.width()
+        badge_width = int(badge_host_width * 2 / 3)
+        icon_size = max(12, int(badge_host_width * 0.06))
+        icon_space = max(2, int(badge_host_width * 0.012))
+        compact_badge_width = int(badge_host_width * 0.12)
         compact_badge_width = max(compact_badge_width, icon_size + icon_space + 8)
         compact_badge = self.badge_view_mode == "compact"
         hidden_badges = self.badge_view_mode == "hidden"
@@ -357,8 +380,7 @@ class GameCard(QFrame):
                     # Handle the case where the Qt object was deleted
                     pass
 
-        if not self.list_layout:
-            self._position_badges(scaled_width)
+        self._position_badges(badge_host_width)
 
         if self.base_font_size is not None:
             try:
@@ -429,9 +451,8 @@ class GameCard(QFrame):
             # Handle the case where the Qt object was deleted
             return
 
-        scaled_width = int(self.base_card_width * self._scale)
-        if not self.list_layout:
-            self._position_badges(scaled_width)
+        badge_host_width = self.coverWidget.width()
+        self._position_badges(badge_host_width)
 
         # Update layout after visibility changes
         self.updateGeometry()
@@ -446,10 +467,8 @@ class GameCard(QFrame):
     def _on_badge_width_changed(self):
         if not hasattr(self, 'coverLabel') or self.coverLabel is None:
             return
-        if self.list_layout:
-            return
-        scaled_width = int(self.base_card_width * self._scale)
-        self._position_badges(scaled_width)
+        badge_host_width = self.coverWidget.width()
+        self._position_badges(badge_host_width)
 
     def update_badge_view_mode(self, badge_view_mode: str):
         """Update badge rendering mode."""

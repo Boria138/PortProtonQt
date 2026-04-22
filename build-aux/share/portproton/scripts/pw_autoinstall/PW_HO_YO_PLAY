@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Author: Castro-Fidel (linux-gaming.ru)
+# type: games
+# name: HoYoPlay
+# image: hoyoplay
+# info_en: Launcher for HoYoverse studio games.
+# info_ru: Лаунчер для игр HoYoverse.
+########################################################################
+export PW_VULKAN_USE=2
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/Hoyolauncher_installer.exe"
+export PW_PREFIX_NAME="HO_YO_PLAY"
+export PORTWINE_CREATE_SHORTCUT_NAME="HoYoPlay"
+export PW_WINE_USE="WINE_HYP_10-10"
+
+start_portproton
+
+if try_download "https://sg-public-api.hoyoverse.com/event/download_porter/trace/hyp_global/hyphoyoverse/default?url=https%3A%2F%2Fhoyoplay.hoyoverse.com%2F" "${PW_AUTOINSTALL_EXE}" no_mirror
+then
+    get_and_set_reg_file --add 'Software\Wine\X11 Driver' 'Decorated' 'REG_SZ' "N" "user"
+    pw_kill_autostart HYP.exe &
+    export PATH_TO_GAME="${PORT_WINE_TMP_PATH}"
+    pw_run "${PW_AUTOINSTALL_EXE}"
+    export PW_EXE_FILE="$WINEPREFIX/drive_c/Program Files/HoYoPlay/launcher.exe"
+    pw_create_unique_exe "hoyoplay_launcher_pp"
+    try_remove_file "${PW_AUTOINSTALL_EXE}"
+    kill_portwine
+    portwine_create_shortcut
+fi
+
+stop_portproton

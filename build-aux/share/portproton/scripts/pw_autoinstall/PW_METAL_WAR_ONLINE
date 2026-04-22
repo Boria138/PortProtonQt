@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Author: chal55rus
+# type: games
+# name: Metal War Online
+# image: mwo
+# info_en: A multiplayer online action game with strategic elements, where players control combat robots and battle on various arenas. The game offers extensive customization options for the machines and a variety of game modes, allowing each player to create a unique fighting style.
+# info_ru: Многопользовательская онлайн-игра в жанре экшен с элементами стратегии, где игроки управляют боевыми роботами и сражаются на различных аренах. Игра предлагает богатую кастомизацию техники и разнообразные игровые режимы, позволяя каждому игроку создавать уникальный стиль боя.
+########################################################################
+export LAUNCH_PARAMETERS="/s /nr /l=Russian"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/MWO_Launcher_Setup.exe"
+start_portproton
+if try_download "http://mwogame.com/download.php" "${PW_AUTOINSTALL_EXE}" no_mirror
+then
+    pw_run "${PW_AUTOINSTALL_EXE}"
+    if [[ -d "$WINEPREFIX/drive_c/games/" ]] ; then
+        PW_EXE_FILE="$WINEPREFIX/drive_c/games/MetalWarOnline/MWOLauncher.exe"
+    else
+        PW_EXE_FILE="$WINEPREFIX/drive_c/Games/MetalWarOnline/MWOLauncher.exe"
+    fi
+    try_remove_file "${PW_AUTOINSTALL_EXE}"
+    try_remove_file "${PW_EXE_FILE}.ppdb"
+    kill_portwine
+    export PORTWINE_CREATE_SHORTCUT_NAME="Metal War Online"
+    portwine_create_shortcut
+fi
+stop_portproton
