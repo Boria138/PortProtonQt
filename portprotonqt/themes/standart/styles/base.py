@@ -435,6 +435,7 @@ COMBOBOX_STYLE = f"""
     QListView::item {{
         padding: 7px 7px 7px 12px;
         margin: 3px;
+        min-height: 24px;
         border-radius: {border_radius_a};
         color: {color_f};
     }}
