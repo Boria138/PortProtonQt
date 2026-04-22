@@ -50,12 +50,6 @@ msgstr "Запустить игру"
 msgid "Import to Legendary"
 msgstr "Импортировать в Legendary"
 
-msgid "Remove from Steam"
-msgstr "Удалить из Steam"
-
-msgid "Add to Steam"
-msgstr "Добавить в Steam"
-
 msgid "Open Game Folder"
 msgstr "Открыть папку с игрой"
 
@@ -77,6 +71,10 @@ msgstr "Редактировать ярлык"
 #, python-brace-format
 msgid "Stopped '{game_name}'"
 msgstr "'{game_name}' остановлен(а)"
+
+#, fuzzy, python-brace-format
+msgid "Failed to stop game"
+msgstr "Не удалось запустить игру: {0}"
 
 #, python-brace-format
 msgid "Legendary executable not found at {path}"
@@ -555,6 +553,9 @@ msgstr "Скрыть вкладку \"Автоустановка\""
 
 msgid "Add to Steam compatibility tools"
 msgstr "Добавить в инструменты совместимости Steam"
+
+msgid "Economy mode (disable Steam/HLTB/badges)"
+msgstr ""
 
 msgid "Gamepad Settings"
 msgstr "Настройки геймпада"

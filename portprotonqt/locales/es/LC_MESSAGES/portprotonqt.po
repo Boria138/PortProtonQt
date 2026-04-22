@@ -49,12 +49,6 @@ msgstr "Iniciar juego"
 msgid "Import to Legendary"
 msgstr ""
 
-msgid "Remove from Steam"
-msgstr ""
-
-msgid "Add to Steam"
-msgstr ""
-
 msgid "Open Game Folder"
 msgstr ""
 
@@ -76,6 +70,10 @@ msgstr ""
 #, python-brace-format
 msgid "Stopped '{game_name}'"
 msgstr ""
+
+#, fuzzy
+msgid "Failed to stop game"
+msgstr "Detener juego"
 
 #, python-brace-format
 msgid "Legendary executable not found at {path}"
@@ -547,6 +545,9 @@ msgid "Hide Auto-Install Tab"
 msgstr ""
 
 msgid "Add to Steam compatibility tools"
+msgstr ""
+
+msgid "Economy mode (disable Steam/HLTB/badges)"
 msgstr ""
 
 msgid "Gamepad Settings"
