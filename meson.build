@@ -95,6 +95,28 @@ install_data(
   install_dir: datadir / 'metainfo',
 )
 
+# Install PortProton scripts
+install_data(
+  'build-aux/share/portproton/scripts/functions_helper',
+  'build-aux/share/portproton/scripts/start.sh',
+  'build-aux/share/portproton/scripts/thanks',
+  'build-aux/share/portproton/scripts/var',
+  install_dir: datadir / 'portproton' / 'scripts',
+  install_mode: 'rwxr-xr-x',
+)
+
+install_subdir(
+  'build-aux/share/portproton/scripts/portwine_db',
+  install_dir: datadir / 'portproton' / 'scripts',
+  install_mode: 'rwxr-xr-x',
+)
+
+install_subdir(
+  'build-aux/share/portproton/scripts/pw_autoinstall',
+  install_dir: datadir / 'portproton' / 'scripts',
+  install_mode: 'rwxr-xr-x',
+)
+
 # Install Steam compatibility tool
 subdir('build-aux/share/steam/compatibilitytools.d/PortProtonQt')
 
