@@ -400,9 +400,14 @@ def get_portproton_location() -> str | None:
 
 def get_portproton_scripts_path() -> str | None:
     """Return PortProton scripts directory path."""
+    sharun_prefix = os.getenv("SHARUN_DIR")
+    prefixes = [Path("/usr"), Path("/app")]
+    if sharun_prefix:
+        prefixes.append(Path(sharun_prefix))
+
     scripts_dirs = (
         Path(__file__).resolve().parent.parent / "build-aux" / "share" / "portproton" / "scripts",
-        Path("/usr/share/portproton/scripts"),
+        *[prefix / "share" / "portproton" / "scripts" for prefix in prefixes],
     )
     for scripts_dir in scripts_dirs:
         if scripts_dir.exists():

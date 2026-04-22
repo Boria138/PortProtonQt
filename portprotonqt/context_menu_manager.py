@@ -622,7 +622,7 @@ class ContextMenuManager:
         if not wrapper_command:
             self.signals.show_warning_dialog.emit(
                 _("Error"),
-                _("start.sh not found at {path}").format(path="/usr/share/portproton/scripts/start.sh")
+                _("start.sh not found at {path}").format(path="*/share/portproton/scripts/start.sh")
             )
             return False
         wrapper = shlex.join(wrapper_command)
