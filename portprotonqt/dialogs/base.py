@@ -244,7 +244,7 @@ class AddGameDialog(QDialog):
         self.add_to_steam_checkbox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.add_to_menu_checkbox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.add_to_desktop_checkbox.setStyleSheet(self.theme.CHECKBOX_STYLE)
-        if icon := theme_manager.get_icon("steam"):
+        if icon := theme_manager.get_icon("badge_steam"):
             self.add_to_steam_checkbox.setIcon(icon)
         if icon := theme_manager.get_icon("menu"):
             self.add_to_menu_checkbox.setIcon(icon)

@@ -87,6 +87,8 @@ class DetailPageManager:
             parent=detail_page,
             theme=self.main_window.theme,
             image_label=image_label,
+            favorite_label_text=self._get_favorite_text(game_data["name"]),
+            on_favorite_click=lambda: self._on_favorite_click(game_data["name"]),
             badges=badges,
             cover_width=cover_width,
             cover_height=cover_height,
@@ -600,9 +602,9 @@ class DetailPageManager:
         """Check if button text is Play or Stop."""
         return text in (_("Play"), _("Stop"))
 
-    def _on_favorite_click(self, name: str) -> None:
+    def _on_favorite_click(self, name: str) -> str:
         """Handle favorite toggle click."""
-        toggle_favorite(name, self.main_window)
+        return toggle_favorite(name, self.main_window)
 
     def openAutoInstallDetailPage(self, game_data: dict) -> None:
         """Open minimal detail page for auto-install games."""

@@ -143,7 +143,7 @@ def create_cover_frame(
     theme,
     image_label: QLabel,
     favorite_label_text: str | None = None,
-    on_favorite_click: Callable[..., None] | None = None,
+    on_favorite_click: Callable[[], str | None] | None = None,
     badges: list | None = None,
     cover_width: int = COVER_WIDTH,
     cover_height: int = COVER_HEIGHT,
@@ -178,7 +178,7 @@ def _setup_cover_shadow(cover_frame: QFrame, theme) -> None:
 
 
 def _add_favorite_label(
-    cover_frame: QFrame, favorite_label_text: str, theme, on_favorite_click: Callable[[], None] | None = None
+    cover_frame: QFrame, favorite_label_text: str, theme, on_favorite_click: Callable[[], str | None] | None = None
 ) -> None:
     """Add favorite label to cover frame."""
     favorite_label = ClickableLabel(cover_frame)
@@ -186,7 +186,11 @@ def _add_favorite_label(
     favorite_label.setStyleSheet(theme.FAVORITE_LABEL_STYLE)
     favorite_label.setText(favorite_label_text)
     if on_favorite_click:
-        favorite_label.clicked.connect(on_favorite_click)
+        def handle_click() -> None:
+            result = on_favorite_click()
+            if isinstance(result, str) and result in ("★", "☆"):
+                favorite_label.setText(result)
+        favorite_label.clicked.connect(handle_click)
     favorite_label.move(8, 8)
     favorite_label.raise_()
 
@@ -202,6 +206,8 @@ def _position_badges(cover_frame: QFrame, badges: list, cover_width: int = COVER
         badge.setCompactRelayoutCallback(
             lambda: _position_badges(cover_frame, badges, cover_width)
         )
+        if badge.isHidden():
+            continue
         badge_x = cover_width - badge.width() - BADGE_RIGHT_MARGIN
 
         if badge_y_positions:
@@ -249,7 +255,7 @@ def create_steam_badge(
     main_window,
 ) -> ClickableLabel:
     """Create Steam badge."""
-    steam_icon = main_window.theme_manager.get_icon("steam")
+    steam_icon = main_window.theme_manager.get_icon("badge_steam")
     badge = ClickableLabel(
         "Steam",
         icon=steam_icon,
@@ -270,7 +276,7 @@ def create_egs_badge(
     main_window,
 ) -> ClickableLabel:
     """Create Epic Games Store badge."""
-    egs_icon = main_window.theme_manager.get_icon("epic_games")
+    egs_icon = main_window.theme_manager.get_icon("badge_egs")
     badge = ClickableLabel(
         "Epic Games",
         icon=egs_icon,
@@ -290,7 +296,7 @@ def create_portproton_badge(
     main_window,
 ) -> ClickableLabel:
     """Create PortProton badge."""
-    portproton_icon = main_window.theme_manager.get_icon("portproton")
+    portproton_icon = main_window.theme_manager.get_icon("badge_portproton")
     badge = ClickableLabel(
         "PortProton",
         icon=portproton_icon,

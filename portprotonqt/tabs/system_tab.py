@@ -1045,7 +1045,7 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
     def _applyPortProtonLogoToQr(self, qr_pixmap: QPixmap) -> None:
         if qr_pixmap.isNull():
             return
-        logo_icon = self.theme_manager.get_icon("portproton")
+        logo_icon = self.theme_manager.get_icon("badge_portproton")
         if logo_icon is None or logo_icon.isNull():
             return
 
