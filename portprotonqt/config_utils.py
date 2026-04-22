@@ -393,9 +393,57 @@ def save_window_geometry(width: int, height: int):
 
 
 # Legacy functions for PortProton location
+def read_portdata_path_from_config() -> str | None:
+    """Reads PORT_DATA_PATH from PortProtonQt config."""
+    cp = read_config_safely(CONFIG_FILE)
+    if cp is None or not cp.has_section("PortProton"):
+        return None
+
+    portdata_path = cp.get("PortProton", "portdata_path", fallback="").strip()
+    if not portdata_path or not os.path.isdir(portdata_path):
+        return None
+    return portdata_path
+
+
+def save_portdata_path_to_config(portdata_path: str) -> bool:
+    """Saves PORT_DATA_PATH to PortProtonQt config."""
+    if not portdata_path or not os.path.isdir(portdata_path):
+        logger.warning("Invalid PORT_DATA_PATH for config save: %s", portdata_path)
+        return False
+
+    cp = read_config_safely(CONFIG_FILE) or configparser.ConfigParser()
+    if "PortProton" not in cp:
+        cp["PortProton"] = {}
+    cp["PortProton"]["portdata_path"] = portdata_path
+
+    try:
+        os.makedirs(CONFIG_FILE.parent, exist_ok=True)
+        with open(CONFIG_FILE, "w", encoding="utf-8") as config_file:
+            cp.write(config_file)
+
+        from portprotonqt.config.base import _config_cache, _config_mtime
+
+        config_path = str(CONFIG_FILE)
+        if config_path in _config_cache:
+            del _config_cache[config_path]
+        if config_path in _config_mtime:
+            del _config_mtime[config_path]
+        return True
+    except OSError as e:
+        logger.warning("Failed to save PORT_DATA_PATH to config: %s", e)
+        return False
+
+
 def get_portproton_location() -> str | None:
     """Return PortProton directory path."""
-    return _get_portproton_config().get_location()
+    saved_portdata_path = read_portdata_path_from_config()
+    if saved_portdata_path:
+        return saved_portdata_path
+
+    portproton_location = _get_portproton_config().get_location()
+    if portproton_location:
+        save_portdata_path_to_config(portproton_location)
+    return portproton_location
 
 
 def get_portproton_scripts_path() -> str | None:
