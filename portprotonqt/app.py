@@ -2,19 +2,18 @@ import sys
 import os
 import subprocess
 import shutil
-import psutil
 
 __app_id__ = "ru.linux_gaming.PortProtonQt"
 __app_name__ = "PortProtonQt"
 __app_version__ = "0.1.12"
 
 from PySide6.QtCore import QTimer, Qt, QThread, Signal
-from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
+from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QIcon
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 
 from portprotonqt.main_window import MainWindow
-from portprotonqt.dialogs import FileExplorer
+from portprotonqt.port_data_path_selector import ask_portdata_path
 from portprotonqt.config_utils import (
     save_fullscreen_config,
     read_fullscreen_config,
@@ -38,7 +37,7 @@ from portprotonqt.cli import (
 from portprotonqt.portproton_api import PortProtonAPI, set_user_conf_setting
 from portprotonqt.downloader import Downloader
 from portprotonqt.debug_utils import get_screen_info
-from portprotonqt.localization import _, get_steam_language
+from portprotonqt.localization import get_steam_language
 
 def get_version():
     try:
@@ -67,76 +66,6 @@ def is_apple_silicon():
                 return False
     except OSError:
         return False
-
-
-def _get_filesystem_type(path: str) -> str:
-    """Get filesystem type for a path."""
-    try:
-        resolved_path = os.path.realpath(path)
-        partitions = sorted(psutil.disk_partitions(all=True), key=lambda p: len(p.mountpoint), reverse=True)
-        for partition in partitions:
-            mount_point = partition.mountpoint.rstrip("/") or "/"
-            if resolved_path == mount_point or resolved_path.startswith(mount_point + "/"):
-                fs_type = partition.fstype.lower()
-                if fs_type != "fuseblk" or not partition.device:
-                    return fs_type
-
-                result = subprocess.run(
-                    ["lsblk", "-no", "FSTYPE", partition.device],
-                    capture_output=True,
-                    text=True,
-                    timeout=2,
-                    check=False,
-                )
-                if result.returncode == 0 and result.stdout.strip():
-                    return result.stdout.strip().lower()
-                return fs_type
-    except Exception:
-        return ""
-    return ""
-
-
-def _is_ntfs_path(path: str) -> bool:
-    """Check if path is on NTFS filesystem."""
-    fs_type = _get_filesystem_type(path)
-    return fs_type in {"ntfs", "ntfs3", "ntfs-3g"}
-
-
-def _ask_portdata_path() -> str | None:
-    """Ask user to select PORT_DATA_PATH when autodetection failed."""
-    default_path = os.path.join(os.path.expanduser("~"), "PortProtonQt")
-    current_path = default_path if os.path.isdir(default_path) else os.path.expanduser("~")
-
-    while True:
-        selected_path: str | None = None
-
-        file_explorer = FileExplorer(
-            parent=None,
-            initial_path=current_path,
-            directory_only=True,
-        )
-        file_explorer.setWindowTitle(_("Choose PortProton data folder"))
-
-        def on_path_selected(path: str) -> None:
-            nonlocal selected_path
-            selected_path = path
-
-        file_explorer.file_signal.file_selected.connect(on_path_selected)
-        dialog_result = file_explorer.exec()
-        if dialog_result != QDialog.DialogCode.Accepted or not selected_path:
-            return None
-        if _is_ntfs_path(selected_path):
-            message_box = QMessageBox(file_explorer)
-            message_box.setIcon(QMessageBox.Icon.Warning)
-            message_box.setWindowTitle(_("Error"))
-            message_box.setText(
-                _("Selected folder is on an NTFS disk. Choose another folder for PortProton data.")
-            )
-            message_box.setStyleSheet(file_explorer.theme.MAIN_WINDOW_STYLE + file_explorer.theme.MESSAGE_BOX_STYLE)
-            message_box.exec()
-            current_path = selected_path
-            continue
-        return os.path.normpath(selected_path)
 
 
 def main():
@@ -243,7 +172,7 @@ def main():
         return
 
     if not portproton_location:
-        portproton_location = _ask_portdata_path()
+        portproton_location = ask_portdata_path()
         if not portproton_location:
             logger.error("PORT_DATA_PATH is not configured, startup aborted")
             return
