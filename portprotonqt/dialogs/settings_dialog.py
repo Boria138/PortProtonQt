@@ -3,6 +3,7 @@
 import os
 import re
 import shutil
+import subprocess
 from typing import cast, TYPE_CHECKING
 
 from PySide6.QtCore import Qt, QObject, QEvent, QProcess, QTimer, QUrl
@@ -107,6 +108,33 @@ def _read_lg_dist_versions_from_var(var_path: str) -> list[str]:
     return versions
 
 
+def _get_numa_nodes() -> dict[str, str]:
+    """Read NUMA nodes from lscpu output."""
+    try:
+        result = subprocess.run(
+            ["lscpu"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+        )
+    except (subprocess.SubprocessError, OSError):
+        return {}
+
+    if result.returncode != 0:
+        return {}
+
+    numa_nodes: dict[str, str] = {}
+    for line in result.stdout.splitlines():
+        match = re.match(r"NUMA node(\d+) CPU\(s\):\s*(.+)$", line.strip())
+        if not match:
+            continue
+        node_id, node_cpus = match.groups()
+        if node_cpus:
+            numa_nodes[node_id] = node_cpus
+    return numa_nodes
+
+
 class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
     """Dialog for configuring executable-specific settings."""
 
@@ -162,7 +190,6 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
         self.original_display_values = {}
         self.init_mangohud_state()
         self.init_gamescope_state()
-        self.available_keys = set()
         self.blocked_keys = set()
         self.numa_nodes = {}
         self.locale_options = []
@@ -372,52 +399,9 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
         self._install_line_edit_event_filters()
 
     def load_current_settings(self):
-        """Load available toggles first, then current settings."""
+        """Load available toggles and current settings."""
         self.settings_container.setCurrentIndex(0)
         self.advanced_container.setCurrentIndex(0)
-
-        process = QProcess(self)
-        process.finished.connect(self.on_list_db_finished)
-        args = self._get_process_args(["cli", "--list-db"])
-        process.start(args[0], args[1:])
-
-    def on_list_db_finished(self, exit_code, exit_status):
-        """Handle --list-db output and extract available keys and system info."""
-        process = cast(QProcess, self.sender())
-        self.available_keys = set()
-        self.blocked_keys = set()
-        if exit_code == 0 and exit_status == QProcess.ExitStatus.NormalExit:
-            output = bytes(process.readAllStandardOutput().data()).decode('utf-8', 'ignore')
-            lines = output.splitlines()
-            self.numa_nodes = {}
-            self.logical_core_options = []
-            self.locale_options = []
-            for line in lines:
-                line_stripped = line.strip()
-                if not line_stripped:
-                    continue
-                if re.match(r'^[A-Z_0-9]+=[^=]+$', line_stripped) and not line_stripped.startswith('PW_'):
-                    k, v = line_stripped.split('=', 1)
-                    if v.startswith('"') and v.endswith('"') and len(v) >= 2:
-                        v = v[1:-1]
-                    if k.startswith('NUMA_NODE_'):
-                        node_id = k[10:]
-                        self.numa_nodes[node_id] = v
-                    elif k == 'IS_AMD':
-                        self.is_amd = v.lower() == 'true'
-                    elif k == 'LOGICAL_CORE_OPTIONS':
-                        self.logical_core_options = v.split('!') if v else []
-                    elif k == 'LOCALE_LIST':
-                        self.locale_options = v.split('!') if v else []
-                    continue
-                if line_stripped.startswith('PW_'):
-                    parts = line_stripped.split(maxsplit=1)
-                    key = parts[0]
-                    self.available_keys.add(key)
-                    if len(parts) > 1 and 'blocked' in parts[1]:
-                        self.blocked_keys.add(key)
-
-            self.available_keys &= set(self.toggle_settings.keys())
 
         process = QProcess(self)
         process.finished.connect(self.on_show_ppdb_finished)
@@ -427,32 +411,26 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
     def on_show_ppdb_finished(self, exit_code, exit_status):
         """Handle --show-ppdb output."""
         process = cast(QProcess, self.sender())
-        if self.game_source == "steam":
-            self.blocked_keys.update({
-                "PW_USE_GSTREAMER",
-                "PW_USE_RUNTIME",
-                "PW_DGVOODOO2",
-                "PW_USE_D3D_EXTRAS",
-                "PW_USE_GALLIUM_NINE",
-                "PW_USE_SUPPLIED_DXVK_VKD3D",
-            })
+        self.current_settings = {}
+        self.blocked_keys = set()
+        self.numa_nodes = _get_numa_nodes()
+        self.logical_core_options = []
+        self.locale_options = []
 
-        if exit_code != 0 or exit_status != QProcess.ExitStatus.NormalExit:
-            for key in self.toggle_settings:
-                self.current_settings[key] = '0'
-            for adv_key in ADVANCED_SETTING_KEYS:
-                self.current_settings[adv_key] = 'disabled' if any(
-                    x in adv_key for x in ['TOPOLOGY', 'SELECT', 'MODE', 'LEVEL', 'GL_VERSION', 'NUMA']
-                ) else ''
-            for key in MANGOHUD_ENV_KEYS:
-                self.current_settings[key] = ''
-            for key in GAMESCOPE_ENV_KEYS:
-                self.current_settings[key] = ''
-        else:
-            output = bytes(process.readAllStandardOutput().data()).decode('utf-8', 'ignore').strip()
-            self.current_settings = {}
-            for line in output.split('\n'):
+        if exit_code == 0 and exit_status == QProcess.ExitStatus.NormalExit:
+            output = bytes(process.readAllStandardOutput().data()).decode('utf-8', 'ignore')
+            for line in output.splitlines():
                 line_stripped = line.strip()
+                if not line_stripped:
+                    continue
+
+                if line_stripped.startswith('PW_') and '=' not in line_stripped:
+                    parts = line_stripped.split(maxsplit=1)
+                    key = parts[0]
+                    if len(parts) > 1 and 'blocked' in parts[1]:
+                        self.blocked_keys.add(key)
+                    continue
+
                 if '=' in line_stripped:
                     try:
                         key, val = line_stripped.split('=', 1)
@@ -468,6 +446,29 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
                             self.current_settings[key] = val
                     except ValueError:
                         continue
+
+        if self.game_source == "steam":
+            self.blocked_keys.update({
+                "PW_USE_GSTREAMER",
+                "PW_USE_RUNTIME",
+                "PW_DGVOODOO2",
+                "PW_USE_D3D_EXTRAS",
+                "PW_USE_GALLIUM_NINE",
+                "PW_USE_SUPPLIED_DXVK_VKD3D",
+            })
+        if exit_code != 0 or exit_status != QProcess.ExitStatus.NormalExit:
+            for key in self.toggle_settings:
+                self.current_settings[key] = '0'
+            for adv_key in ADVANCED_SETTING_KEYS:
+                self.current_settings[adv_key] = 'disabled' if any(
+                    x in adv_key for x in ['TOPOLOGY', 'SELECT', 'MODE', 'LEVEL', 'GL_VERSION', 'NUMA']
+                ) else ''
+            for key in MANGOHUD_ENV_KEYS:
+                self.current_settings[key] = ''
+            for key in GAMESCOPE_ENV_KEYS:
+                self.current_settings[key] = ''
+        else:
+            self.current_settings.setdefault('PW_MANGOHUD', '0')
 
         for key in self.blocked_keys:
             self.current_settings[key] = '0'
@@ -510,10 +511,7 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
         self.value_widgets.clear()
         self.settings_table.verticalHeader().setVisible(False)
 
-        visible_keys = [
-            key for key in self.toggle_settings
-            if not self.available_keys or key in self.available_keys
-        ]
+        visible_keys = list(self.toggle_settings.keys())
 
         for toggle in visible_keys:
             description = self.toggle_settings.get(toggle)
@@ -584,7 +582,6 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
         advanced_settings = get_advanced_settings(
             disabled_text=disabled_text,
             logical_core_options=self.logical_core_options,
-            locale_options=self.locale_options,
             numa_nodes=self.numa_nodes,
             dist_options=self.dist_options,
             prefix_options=self.prefix_options

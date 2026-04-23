@@ -647,9 +647,10 @@ check_vendor_gpu () {
 
     if [[ $PW_GPU_USE != "disabled" ]]
     then check_pci_driver "${PW_GPU_USE,,}"
-    elif pw_check_glxinfo
-    then check_pci_driver "$(<"${PW_TMPFS_PATH}/glxinfo.tmp" tr '[:upper:]' '[:lower:]')"
-    else check_pci_driver
+    elif [[ -n "${LSPCI_VGA}" ]]
+    then check_pci_driver "${LSPCI_VGA,,}"
+    else
+        check_pci_driver
     fi
 
     echo "$VENDOR_GPU_USE"
@@ -1960,50 +1961,53 @@ pw_init_db () {
     return 0
 }
 
-pw_check_command () {
-    local S_CMD="${1//" "*/}"
-    local F_CMD="$1"
+pw_check_vulkan_extensions () {
+    local ext_name="$1"
+    local ext_key
+    local current_device_name=""
+    local current_support=""
+    local vk_info_output
+    local vk_gpu_info_from_repo
+    local vk_gpu_info_cmd
+    ext_key="supports_$(echo "${ext_name}" | tr '[:upper:]' '[:lower:]')"
 
-    [[ -z "$TIMEOUT_CMD" ]] && TIMEOUT_CMD="3"
-
-    if command -v "$S_CMD" &>/dev/null ; then
-        if ! timeout "$TIMEOUT_CMD" $F_CMD &> "${PW_TMPFS_PATH}/$S_CMD.tmp" ; then
-            print_error "$S_CMD - broken!"
-            unset TIMEOUT_CMD
-            return 1
-        else
-            # print_info "$S_CMD - found"
-            unset TIMEOUT_CMD
-            return 0
-        fi
+    vk_gpu_info_from_repo="$(dirname "${BASH_SOURCE[0]}")/../../../../dev-scripts/vk_gpu_info"
+    if [[ -x "${vk_gpu_info_from_repo}" ]] ; then
+        vk_gpu_info_cmd="${vk_gpu_info_from_repo}"
     else
-        print_warning "$S_CMD - not found!"
-        unset TIMEOUT_CMD
+        vk_gpu_info_cmd="$(command -v vk_gpu_info 2>/dev/null || true)"
+    fi
+
+    if [[ -z "${vk_gpu_info_cmd}" ]] ; then
         return 1
     fi
-}
-export -f pw_check_command
 
-pw_check_vulkan () {
-    TIMEOUT_CMD="5"
-    export DISABLE_LAYER_AMD_SWITCHABLE_GRAPHICS_1="1"
-    if ! pw_check_command vulkaninfo ; then
-        print_warning "use portable vulkaninfo"
-        "$PW_PLUGINS_PATH"/portable/bin/x86_64-linux-gnu-vulkaninfo &> "${PW_TMPFS_PATH}/vulkaninfo.tmp"
+    if ! vk_info_output="$("${vk_gpu_info_cmd}" 2>/dev/null)" ; then
+        return 1
     fi
-}
 
-pw_check_vulkan_extensions () {
-    if awk -v gpu="$PW_GPU_USE" '
-        index($0, gpu) && index($0, "deviceName") { found=1 }
-        found {
-            print
-            if (index($0, "GPU")) { exit }
-        }
-    ' "${PW_TMPFS_PATH}/vulkaninfo.tmp" | grep -w "$1" &>/dev/null
-    then return 0
-    else return 1
-    fi
+    while IFS= read -r line ; do
+        case "$line" in
+            "GPU #"*)
+                current_device_name=""
+                current_support=""
+                ;;
+            "device_name: "*)
+                current_device_name="${line#device_name: }"
+                ;;
+            "${ext_key}: "*)
+                current_support="${line#${ext_key}: }"
+                ;;
+        esac
+
+        if [[ -n "${current_device_name}" ]] && [[ "${current_device_name}" == "${PW_GPU_USE}" ]] \
+        && [[ -n "${current_support}" ]]
+        then
+            [[ "${current_support}" == "1" ]] && return 0 || return 1
+        fi
+    done <<< "${vk_info_output}"
+
+    return 1
 }
 
 compare_versions () {
@@ -2023,234 +2027,44 @@ compare_versions () {
     return 0
 }
 
-get_gpu_names () {
-    GET_GPU_NAMES=$(awk -F '= ' '/deviceName/{print $2}' "${PW_TMPFS_PATH}/vulkaninfo.tmp" | \
-                   sed '/llvmpipe/I d' | \
-                   paste -sd '!')
-    export GET_GPU_NAMES
-}
-
-pw_check_dxvk () {
-    pw_check_vulkan
-    if [[ -z $PW_VULKAN_DRIVER_USE ]] && [[ -f "${PW_TMPFS_PATH}/vulkaninfo.tmp" ]] ; then
-        if [[ $PW_GPU_USE == "disabled" ]] ; then
-            [[ -z $GET_GPU_NAMES ]] && get_gpu_names
-            IFS='!' read -r -a SELECTED_VULKAN_GPU <<< "$GET_GPU_NAMES"
-        else
-            IFS='' read -r -a SELECTED_VULKAN_GPU <<< "$PW_GPU_USE"
-        fi
-
-        # Заходим сюда только, когда в системе есть vulkan драйвер
-        if [[ -n ${SELECTED_VULKAN_GPU[*]} ]] ; then
-            # Какие карты в приоритете, если не выбран изначально PW_GPU_USE
-            if [[ -n ${SELECTED_VULKAN_GPU[1]} ]] ; then
-                for elem in "${SELECTED_VULKAN_GPU[@]}"; do
-                    case ${elem,,} in
-                        *nvidia*) nvidia_group+=("$elem") ;;
-                           *amd*) amd_group+=("$elem") ;;
-                         *intel*) intel_group+=("$elem") ;;
-                               *) other_group+=("$elem") ;;
-                    esac
-                done
-                SELECTED_VULKAN_GPU=(
-                    "${nvidia_group[@]}"
-                    "${amd_group[@]}"
-                    "${intel_group[@]}"
-                    "${other_group[@]}"
-                )
-            fi
-            # получаем информацию о конкретном драйвере который выбран в PW_GPU_USE,
-            # либо ищем наилучший драйвер с учётом приоритета видеокарт + информация
-            mapfile -t PW_VULKAN_DRIVER_ARRAY < <(awk '/^GPU[0-9]+/ {
-            if (count == 7) {
-                # Выводим собранные значения перед переходом к следующему GPU
-                for (i = 1; i <= 7; i++) print values[i]
-                }
-                # Сбрасываем счетчик и массив значений для нового GPU
-                count = 0
-                delete values
-                next
-            }
-
-            count < 7 {
-                if (/apiVersion|driverVersion|vendorID|deviceID/) {
-                    values[++count] = $3
-                } else if (/deviceName|driverName|driverInfo/) {
-                    split($0, parts, "= ")
-                    values[++count] = parts[2]
-                }
-            }
-
-            END {
-                # Выводим значения для последнего GPU, если набралось 7
-                if (count == 7) {
-                    for (i = 1; i <= 7; i++) print values[i]
-                }
-            }' "${PW_TMPFS_PATH}/vulkaninfo.tmp")
-
-            for i in "${SELECTED_VULKAN_GPU[@]}" ; do
-                x="0" && y="7"
-                while true ; do
-                    PW_VULKAN_DRIVER_ARRAY_CHECK=("${PW_VULKAN_DRIVER_ARRAY[@]:x:y}")
-                    [[ ${PW_VULKAN_DRIVER_ARRAY_CHECK[4]} == "$i" ]] && break
-                    x=$(( x + 7 )) && y=$(( y + 7 ))
-                    # фикс, если вдруг PW_GPU_USE изменился или сломался
-                    if [[ -z ${PW_VULKAN_DRIVER_ARRAY_CHECK[4]} ]] ; then
-                        PW_GPU_USE="disabled"
-                        pw_check_dxvk
-                        break
-                    fi
-                done
-                if [[ ${PW_VULKAN_DRIVER_ARRAY_CHECK[5],,} =~ nvidia ]] ; then
-                    if compare_versions "${PW_VULKAN_DRIVER_ARRAY_CHECK[6]}" "550.54.14" ; then
-                        PW_VULKAN_DRIVER_USE="6" && break
-                    fi
-                elif [[ ${PW_VULKAN_DRIVER_ARRAY_CHECK[6],,} =~ mesa ]] ; then
-                    if compare_versions "${PW_VULKAN_DRIVER_ARRAY_CHECK[1]}" "25.0" ; then
-                        PW_VULKAN_DRIVER_USE="6" && break
-                    fi
-                elif [[ ${PW_VULKAN_DRIVER_ARRAY_CHECK[5],,} == *"amd open-source driver"* ]] \
-                || [[ ${PW_VULKAN_DRIVER_ARRAY_CHECK[5],,} == *"amd proprietary driver"* ]] ; then
-                    if compare_versions "${PW_VULKAN_DRIVER_ARRAY_CHECK[1]}" "2.0.310" ; then
-                        PW_VULKAN_DRIVER_USE="6" && break
-                    fi
-                fi
-            done
-
-            PW_vendorID="$(echo "${PW_VULKAN_DRIVER_ARRAY_CHECK[2]}" | awk -F'0x' '{print $2}')"
-            PW_deviceID="$(echo "${PW_VULKAN_DRIVER_ARRAY_CHECK[3]}" | awk -F'0x' '{print $2}')"
-            export PW_vendorID PW_deviceID
-
-            # если PW_GPU_USE изначально не было
-            if [[ $PW_GPU_USE == "disabled" ]] ; then
-                export PW_GPU_USE=${PW_VULKAN_DRIVER_ARRAY_CHECK[4]}
-                edit_user_conf_from_gui PW_GPU_USE
-            fi
-        fi
-    fi
-
-    # формируется в зависимости от выбранного PW_GPU_USE и поддержки самого драйвера
-    if [[ $PW_VULKAN_DRIVER_USE == "6" ]] || [[ $PW_VULKAN_UNLOCKED == "unlocked" ]] ; then
-        [[ -z $PW_VULKAN_USE ]] && PW_VULKAN_USE="6"
-        case "$PW_VULKAN_USE" in
-            0) PW_DEFAULT_VULKAN_USE="$SORT_OPENGL!$SORT_NEWEST!$SORT_STABLE!$SORT_SAREK" ;;
-            1) PW_DEFAULT_VULKAN_USE="$SORT_SAREK!$SORT_NEWEST!$SORT_STABLE!$SORT_OPENGL" ;;
-            2) PW_DEFAULT_VULKAN_USE="$SORT_STABLE!$SORT_NEWEST!$SORT_SAREK!$SORT_OPENGL" ;;
-            *) PW_DEFAULT_VULKAN_USE="$SORT_NEWEST!$SORT_STABLE!$SORT_SAREK!$SORT_OPENGL" ;;
-        esac
-    else
-        if [[ $PW_GPU_USE == "disabled" ]] ; then
-            PW_VULKAN_USE="0"
-            PW_DEFAULT_VULKAN_USE="$SORT_OPENGL"
-        else
-            if compare_versions "${PW_VULKAN_DRIVER_ARRAY_CHECK[0]}" "1.3" ; then
-                [[ -z $PW_VULKAN_USE ]] && PW_VULKAN_USE="2"
-                case "$PW_VULKAN_USE" in
-                    0) PW_DEFAULT_VULKAN_USE="$SORT_OPENGL!$SORT_STABLE!$SORT_SAREK" ;;
-                    1) PW_DEFAULT_VULKAN_USE="$SORT_SAREK!$SORT_STABLE!$SORT_OPENGL" ;;
-                    *) PW_DEFAULT_VULKAN_USE="$SORT_STABLE!$SORT_SAREK!$SORT_OPENGL" ;;
-                esac
-            else
-                [[ -z $PW_VULKAN_USE ]] && PW_VULKAN_USE="1"
-                case "$PW_VULKAN_USE" in
-                    0) PW_DEFAULT_VULKAN_USE="$SORT_OPENGL!$SORT_SAREK" ;;
-                    *) PW_DEFAULT_VULKAN_USE="$SORT_SAREK!$SORT_OPENGL" ;;
-                esac
-            fi
-        fi
-    fi
-}
-
-pw_check_glxinfo () {
-    TIMEOUT_CMD="5"
-    pw_check_command glxinfo -B
-}
-
-pw_get_tmp_files () {
-    for f_cmd in "gamescope --help" "lspci -k" "xrandr --current" "locale -a"
-    do pw_check_command "$f_cmd"
-    done
-
-    # GALLIUM NINE
-    unset FIND_D3D_MODULE D3D_MODULE_PATH
-    if ! check_flatpak ; then
-        FIND_D3D_MODULE="$(find /usr/ -maxdepth 4 -type f -name "d3dadapter9.so.*" 2>/dev/null)"
-        if [[ -n "$FIND_D3D_MODULE" ]] ; then
-            FIND_D3D_MODULE="$(dirname "$FIND_D3D_MODULE")"
-            IFS=$'\n'
-            for D3D_MP in $FIND_D3D_MODULE ; do
-                if [[ -n "$D3D_MODULE_PATH" ]]
-                then export D3D_MODULE_PATH="$D3D_MODULE_PATH:/run/host${D3D_MP}"
-                else export D3D_MODULE_PATH="/run/host${D3D_MP}"
-                fi
-            done
-            IFS="$orig_IFS"
-        fi
-    else
-        if [[ -d "/app/lib/i386-linux-gnu/GL/default/lib/d3d" && -d "/usr/lib/x86_64-linux-gnu/GL/default/lib/d3d" ]] ; then
-            export D3D_MODULE_PATH="/app/lib/i386-linux-gnu/GL/default/lib/d3d:/usr/lib/x86_64-linux-gnu/GL/default/lib/d3d"
-        fi
-    fi
-    [[ -n $D3D_MODULE_PATH ]] && echo "$D3D_MODULE_PATH" > "${PW_TMPFS_PATH}/gallium_nine.tmp"
-}
-
 pw_skip_get_info () {
     if [[ "${SKIP_CHECK_UPDATES_NEW}" != "1" ]] ; then
-        pw_get_tmp_files
-
-        if [[ -f "${PW_TMPFS_PATH}/gamescope.tmp" ]] ; then
-            export GAMESCOPE_INSTALLED="1"
+        rm -f "${PW_TMPFS_PATH}/lspci.tmp"
+        if command -v lspci &>/dev/null ; then
+            if ! timeout 3 lspci -k &> "${PW_TMPFS_PATH}/lspci.tmp" ; then
+                print_error "lspci - broken!"
+                rm -f "${PW_TMPFS_PATH}/lspci.tmp"
+            fi
+        else
+            print_warning "lspci - not found!"
         fi
 
-        if [[ -f "${PW_TMPFS_PATH}/vulkaninfo.tmp" ]] ; then
-            get_gpu_names
+        # GALLIUM NINE
+        unset FIND_D3D_MODULE D3D_MODULE_PATH
+        if ! check_flatpak ; then
+            FIND_D3D_MODULE="$(find /usr/ -maxdepth 4 -type f -name "d3dadapter9.so.*" 2>/dev/null)"
+            if [[ -n "$FIND_D3D_MODULE" ]] ; then
+                FIND_D3D_MODULE="$(dirname "$FIND_D3D_MODULE")"
+                IFS=$'\n'
+                for D3D_MP in $FIND_D3D_MODULE ; do
+                    if [[ -n "$D3D_MODULE_PATH" ]]
+                    then export D3D_MODULE_PATH="$D3D_MODULE_PATH:/run/host${D3D_MP}"
+                    else export D3D_MODULE_PATH="/run/host${D3D_MP}"
+                    fi
+                done
+                IFS="$orig_IFS"
+            fi
+        else
+            if [[ -d "/app/lib/i386-linux-gnu/GL/default/lib/d3d" && -d "/usr/lib/x86_64-linux-gnu/GL/default/lib/d3d" ]] ; then
+                export D3D_MODULE_PATH="/app/lib/i386-linux-gnu/GL/default/lib/d3d:/usr/lib/x86_64-linux-gnu/GL/default/lib/d3d"
+            fi
         fi
+        [[ -n $D3D_MODULE_PATH ]] && echo "$D3D_MODULE_PATH" > "${PW_TMPFS_PATH}/gallium_nine.tmp"
 
         if [[ -f "${PW_TMPFS_PATH}/lspci.tmp" ]] ; then
             LSPCI_VGA="$(grep -E 'VGA|3D' "${PW_TMPFS_PATH}/lspci.tmp" | tr -d '\n')"
             export LSPCI_VGA
         fi
-
-        if [[ -f "${PW_TMPFS_PATH}/xrandr.tmp" ]] ; then
-            PW_SCREEN_RESOLUTION="$(<"${PW_TMPFS_PATH}/xrandr.tmp" sed -rn 's/^.*primary.* ([0-9]+x[0-9]+).*$/\1/p')"
-            PW_SCREEN_PRIMARY="$(grep -e 'primary' "${PW_TMPFS_PATH}/xrandr.tmp" | awk '{print $1}')"
-        fi
-
-        if [[ $PW_SCREEN_RESOLUTION != *x* ]] ; then
-            if command -v hyprctl >/dev/null 2>&1 ; then
-                monitor_info=$(hyprctl monitors -j 2>/dev/null | jq -r '.[] | select(.focused==true)')
-                PW_SCREEN_PRIMARY=$(echo "$monitor_info" | jq -r '.name')
-                PW_SCREEN_RESOLUTION=$(echo "$monitor_info" | jq -r '"\(.width)x\(.height)"')
-            fi
-        fi
-
-        [[ $PW_SCREEN_RESOLUTION != *x* ]] && PW_SCREEN_RESOLUTION="1920x1080"
-
-        export PW_SCREEN_PRIMARY PW_SCREEN_RESOLUTION
-
-        if [[ -f "${PW_TMPFS_PATH}/locale.tmp" ]] ; then
-            GET_LOCALE_LIST="ru_RU.utf en_US.utf zh_CN.utf ja_JP.utf ko_KR.utf"
-            unset LOCALE_LIST LOCALE_UTF
-            [[ $(<"${PW_TMPFS_PATH}/locale.tmp") =~ utf8 ]] && LOCALE_UTF="8"
-            for LOCALE in $GET_LOCALE_LIST ; do
-                if [[ $(<"${PW_TMPFS_PATH}/locale.tmp") =~ $LOCALE ]] ; then
-                    if [[ -n "$LOCALE_LIST" ]]
-                    then LOCALE_LIST+="!$LOCALE$LOCALE_UTF"
-                    else LOCALE_LIST="$LOCALE$LOCALE_UTF"
-                    fi
-                fi
-            done
-            export LOCALE_LIST
-        fi
-
-
-        logical_cores=$(grep -c ^"processor" /proc/cpuinfo)
-        if (( logical_cores <= "4" )) ; then
-            GET_LOGICAL_CORE="$(seq -s! 1 $(( logical_cores - 1 )))"
-        else
-            GET_LOGICAL_CORE="1!2!$(seq -s! 4 4 $(( logical_cores - 1 )))"
-        fi
-        export GET_LOGICAL_CORE
 
         export SKIP_CHECK_UPDATES_NEW="1"
     fi
@@ -2556,19 +2370,14 @@ pw_optiscaler_sync_files () {
 
 pw_prepare_gamescope_launch () {
     local gpu_vendor
+    local gamescope_available="0"
 
     unset PW_GAMESCOPE_VARIABLES_BEFORE PW_GAMESCOPE_VARIABLES_AFTER
-    if [[ "${PW_GAMESCOPE}" == "1" ]] \
-    && [[ "${GAMESCOPE_INSTALLED}" != "1" ]]
-    then
-        if [[ -f "${PW_TMPFS_PATH}/gamescope.tmp" ]] \
-        || command -v gamescope &>/dev/null
-        then
-            export GAMESCOPE_INSTALLED="1"
-        fi
+    if command -v gamescope &>/dev/null ; then
+        gamescope_available="1"
     fi
 
-    if [[ "${PW_GAMESCOPE}" == "1" && "${GAMESCOPE_INSTALLED}" == "1" ]] \
+    if [[ "${PW_GAMESCOPE}" == "1" && "${gamescope_available}" == "1" ]] \
     || check_gamescope_session
     then
         export vk_xwayland_wait_ready="false"
@@ -2578,7 +2387,6 @@ pw_prepare_gamescope_launch () {
             export AMD_DEBUG="nodcc"
             if ! pw_check_vulkan_extensions "VK_EXT_image_drm_format_modifier" ; then
                 export R600_DEBUG="nodcc"
-                grep -e '--backend' "${PW_TMPFS_PATH}/gamescope.tmp" &>/dev/null && PW_GS_BACKEND_SDL="1"
             fi
         fi
         [[ "${gpu_vendor}" == "intel" ]] && export INTEL_DEBUG="norbc"
@@ -2588,7 +2396,7 @@ pw_prepare_gamescope_launch () {
         fi
     fi
 
-    if [[ "${PW_GAMESCOPE}" == "1" && "${GAMESCOPE_INSTALLED}" == "1" ]] \
+    if [[ "${PW_GAMESCOPE}" == "1" && "${gamescope_available}" == "1" ]] \
     && ! check_gamescope_session
     then
         if [[ $PW_GPU_USE != "disabled" ]]
@@ -2684,11 +2492,6 @@ start_portproton () {
         try_remove_dir "${PORT_WINE_TMP_PATH}/libs${PW_LIBS_VER}"
     else
         pw_check_and_download_runtime
-    fi
-
-    if [[ -z $PW_GPU_USE || $PW_GPU_USE == "disabled" ]] ; then
-        PW_GPU_USE="disabled"
-        pw_check_dxvk
     fi
 
     pw_check_and_download_dxvk_and_vkd3d
@@ -4267,6 +4070,7 @@ export -f gui_proton_downloader
 # GUI EDIT_DB
 gui_edit_db () {
     KEY_EDIT_DB_GUI=$RANDOM
+    DISABLE_EDIT_DB_LIST=""
     PW_EDIT_DB_LIST=(PW_MANGOHUD PW_MANGOHUD_USER_CONF PW_VKBASALT PW_VKBASALT_USER_CONF PW_DGVOODOO2
     PW_USE_ESYNC PW_USE_FSYNC PW_USE_NTSYNC PW_USE_RAY_TRACING PW_USE_NVAPI_AND_DLSS PW_USE_OPTISCALER
     PW_USE_LS_FRAME_GEN PW_WINE_FULLSCREEN_FSR PW_HIDE_NVIDIA_GPU PW_VIRTUAL_DESKTOP PW_USE_TERMINAL
@@ -4277,23 +4081,23 @@ gui_edit_db () {
     PW_USE_NATIVE_WAYLAND PW_USE_DXVK_HDR PW_GAMESCOPE)
 
     if check_wayland_session
-    then rm_from_array "PW_EDIT_DB_LIST" PW_USE_US_LAYOUT
-    else rm_from_array "PW_EDIT_DB_LIST" PW_USE_NATIVE_WAYLAND
+    then DISABLE_EDIT_DB_LIST+=" PW_USE_US_LAYOUT"
+    else DISABLE_EDIT_DB_LIST+=" PW_USE_NATIVE_WAYLAND"
     fi
     if [[ ! -e "/var/run/dbus/system_bus_socket" ]] ; then
-        rm_from_array "PW_EDIT_DB_LIST" PW_USE_INHIBIT_SLEEP
+        DISABLE_EDIT_DB_LIST+=" PW_USE_INHIBIT_SLEEP"
     fi
     if [[ $PW_WINE_USE =~ (PROTON_LG|WINE_LG) ]] || [[ $PW_VULKAN_USE == "0" ]] ; then
-        rm_from_array "PW_EDIT_DB_LIST" PW_USE_SUPPLIED_DXVK_VKD3D
+        DISABLE_EDIT_DB_LIST+=" PW_USE_SUPPLIED_DXVK_VKD3D"
     fi
-    check_flatpak && rm_from_array "PW_EDIT_DB_LIST" PW_USE_RUNTIME
+    check_flatpak && DISABLE_EDIT_DB_LIST+=" PW_USE_RUNTIME"
 
     # GALLIUM NINE
-    [[ ! -f "${PW_TMPFS_PATH}/gallium_nine.tmp" ]] && rm_from_array "PW_EDIT_DB_LIST" PW_USE_GALLIUM_NINE
+    [[ ! -f "${PW_TMPFS_PATH}/gallium_nine.tmp" ]] && DISABLE_EDIT_DB_LIST+=" PW_USE_GALLIUM_NINE"
     [[ $PW_VULKAN_USE == "1" ]] && add_to_array "PW_EDIT_DB_LIST"
 
     if [[ "$PW_VULKAN_USE" == "0" ]] ; then
-        DISABLE_EDIT_DB_LIST="PW_VKBASALT PW_VKBASALT_USER_CONF PW_USE_RAY_TRACING PW_USE_OBS_VKCAPTURE PW_USE_GALLIUM_ZINK PW_USE_WINED3D_VULKAN"
+        DISABLE_EDIT_DB_LIST+=" PW_VKBASALT PW_VKBASALT_USER_CONF PW_USE_RAY_TRACING PW_USE_OBS_VKCAPTURE PW_USE_GALLIUM_ZINK PW_USE_WINED3D_VULKAN"
     fi
 
     [[ ! -e "/dev/ntsync" ]] && DISABLE_EDIT_DB_LIST+=" PW_USE_NTSYNC"

@@ -2,6 +2,8 @@
 
 from portprotonqt.debug_utils.gpu_info import (
     get_gpu_list,
+    get_selectable_gpu_entries,
+    get_selectable_gpu_list,
     get_cached_vk_gpu_info,
     get_graphics_info_detailed,
 )
@@ -52,6 +54,8 @@ from portprotonqt.debug_utils.xorg_utils import (
 
 __all__ = [
     "get_gpu_list",
+    "get_selectable_gpu_entries",
+    "get_selectable_gpu_list",
     "get_cached_vk_gpu_info",
     "get_graphics_info_detailed",
     "get_os_info",

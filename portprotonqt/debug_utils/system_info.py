@@ -8,7 +8,6 @@ from datetime import datetime
 
 import psutil
 from PySide6.QtWidgets import QApplication
-from PySide6.QtCore import QRect
 from PySide6.QtGui import QGuiApplication
 
 from portprotonqt.logger import get_logger
@@ -303,38 +302,34 @@ def get_filesystem_info(exe_path: str | None, portproton_path: str) -> str:
 
 def get_screen_info(portproton_path: str, exe_path: str | None = None) -> tuple[str, str]:
     """Get screen resolution and primary info using PySide6."""
-    resolution = ""
-    primary = ""
-
     app_instance = QApplication.instance()
-
-    if app_instance is None:
-        return "PW_SCREEN_RESOLUTION=1920x1080", "PW_SCREEN_PRIMARY=unknown"
-
+    default_resolution = "1920x1080"
+    default_primary = ""
     if not isinstance(app_instance, QGuiApplication):
-        return "PW_SCREEN_RESOLUTION=1920x1080", "PW_SCREEN_PRIMARY=unknown"
+        return (
+            f"PW_SCREEN_RESOLUTION={default_resolution}",
+            f"PW_SCREEN_PRIMARY={default_primary}",
+        )
 
-    screens = app_instance.screens()
-    primary_screen = app_instance.primaryScreen()
+    screen = app_instance.primaryScreen()
+    if screen is None:
+        screens = app_instance.screens()
+        if screens:
+            screen = screens[0]
 
-    for screen in screens:
-        geometry: QRect = screen.geometry()
-        is_primary = screen == primary_screen
+    if screen is None:
+        return (
+            f"PW_SCREEN_RESOLUTION={default_resolution}",
+            f"PW_SCREEN_PRIMARY={default_primary}",
+        )
 
-        if is_primary:
-            resolution = f"{geometry.width()}x{geometry.height()}"
-            primary = screen.name()
-            break
-
-    if not resolution and screens:
-        first_screen = screens[0]
-        geometry = first_screen.geometry()
+    geometry = screen.geometry()
+    if geometry.width() > 0 and geometry.height() > 0:
         resolution = f"{geometry.width()}x{geometry.height()}"
-        primary = first_screen.name()
+    else:
+        resolution = default_resolution
 
-    if not resolution or 'x' not in resolution:
-        resolution = "1920x1080"
-
+    primary = screen.name() or default_primary
     return f"PW_SCREEN_RESOLUTION={resolution}", f"PW_SCREEN_PRIMARY={primary}"
 
 

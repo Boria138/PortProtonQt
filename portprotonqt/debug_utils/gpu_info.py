@@ -113,6 +113,67 @@ def get_gpu_list() -> list[str]:
     return gpu_list
 
 
+def get_selectable_gpu_entries() -> list[dict[str, str]]:
+    """Get selectable GPU entries from vk_gpu_info with ids."""
+    entries: list[dict[str, str]] = []
+    discrete_entries: list[dict[str, str]] = []
+    integrated_entries: list[dict[str, str]] = []
+    other_entries: list[dict[str, str]] = []
+
+    vk_gpu_info_output = get_cached_vk_gpu_info()
+    if not vk_gpu_info_output:
+        return entries
+
+    lines = vk_gpu_info_output.split("\n")
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
+        if not line.startswith("GPU #"):
+            i += 1
+            continue
+
+        gpu_info: dict[str, str] = {}
+        i += 1
+        while i < len(lines) and lines[i].strip() and not lines[i].startswith("GPU #"):
+            prop_line = lines[i].strip()
+            if ":" in prop_line:
+                key, value = prop_line.split(":", 1)
+                gpu_info[key.strip()] = value.strip()
+            i += 1
+
+        device_name = gpu_info.get("device_name", "").strip()
+        device_type = gpu_info.get("device_type", "").strip()
+        if not device_name or device_type in {"CPU", "VIRTUAL_GPU"}:
+            continue
+        if "llvmpipe" in device_name.lower():
+            continue
+
+        vendor_id = gpu_info.get("vendor_id", "").strip()
+        device_id = gpu_info.get("device_id", "").strip()
+        entry = {
+            "device_name": device_name,
+            "vendor_id": vendor_id,
+            "device_id": device_id,
+        }
+
+        if device_type == "DISCRETE_GPU":
+            discrete_entries.append(entry)
+        elif device_type == "INTEGRATED_GPU":
+            integrated_entries.append(entry)
+        else:
+            other_entries.append(entry)
+
+    entries.extend(discrete_entries)
+    entries.extend(integrated_entries)
+    entries.extend(other_entries)
+    return entries
+
+
+def get_selectable_gpu_list() -> list[str]:
+    """Get GPU list for UI/selection, excluding software rasterizers."""
+    return [entry["device_name"] for entry in get_selectable_gpu_entries()]
+
+
 def _format_gpu_description(device_desc: str) -> str:
     """Format GPU description from lspci output."""
     if "NVIDIA" in device_desc:

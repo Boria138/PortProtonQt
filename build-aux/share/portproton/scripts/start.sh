@@ -274,7 +274,7 @@ Usage examples:
   portproton cli --backup-prefix DEFAULT /path/to/backup/directory
   portproton cli --restore-prefix /path/to/backup/file.ppack
   portproton cli --winecfg WINE_LG DEFAULT
-  portproton cli --mangohud-preview "fps,frametime,cpu_temp,gpu_temp"
+  portproton cli --mangohud-preview \"fps,frametime,cpu_temp,gpu_temp\"
   portproton cli --autoinstall [script_name_from_pw_autoinstall]
             "
         }
@@ -344,29 +344,6 @@ Usage examples:
         manage_user_conf_value delete "$2"
         exit 0
         ;;
-    --list-db)
-        gui_edit_db
-        pw_skip_get_info
-        declare -A NODE_MAP
-        INDEX=0
-        while read -r line; do
-            NODE_MAP[$INDEX]="$line"
-            ((INDEX++))
-        done < <(lscpu | grep -Po "NUMA node\d+ CPU\(s\):\s+\K.*" 2>/dev/null || true)
-        for i in "${!NODE_MAP[@]}"; do
-            echo "NUMA_NODE_${i}=${NODE_MAP[$i]}"
-        done
-        echo "LOGICAL_CORE_OPTIONS=$GET_LOGICAL_CORE"
-        [[ -n "$LOCALE_LIST" ]] && echo "LOCALE_LIST=$LOCALE_LIST"
-        for var in "${PW_EDIT_DB_FINAL_LIST[@]}"; do
-            if echo "$DISABLE_EDIT_DB_LIST" | grep -qw "$var"; then
-                echo "$var blocked"
-            else
-                echo "$var"
-            fi
-        done
-        exit 0
-        ;;
     --show-ppdb)
         # --show-ppdb /полный/путь/до/файла.exe ИЛИ /полный/путь/до/файла.exe.ppdb
         input_path="$2"
@@ -379,6 +356,15 @@ Usage examples:
         ppdb_path="${exe_path}.ppdb"
         export PW_EXE_FILE="$exe_path"
         pw_init_db
+        gui_edit_db
+        pw_skip_get_info
+        for var in "${PW_EDIT_DB_FINAL_LIST[@]}"; do
+            if echo "$DISABLE_EDIT_DB_LIST" | grep -qw "$var"; then
+                echo "$var blocked"
+            else
+                echo "$var"
+            fi
+        done
 
         declare -A all_vars
         while IFS='=' read -r key val; do

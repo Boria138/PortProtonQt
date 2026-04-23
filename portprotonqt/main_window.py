@@ -14,7 +14,7 @@ from portprotonqt.animations import DetailPageAnimations
 from portprotonqt.custom_widgets import ClickableLabel, AutoSizeButton, NavLabel, FlowLayout
 from portprotonqt.detail_pages import DetailPageManager
 from portprotonqt.portproton_api import PortProtonAPI, get_user_conf_setting, set_user_conf_setting
-from portprotonqt.debug_utils import get_gpu_list, get_prefix_name
+from portprotonqt.debug_utils import get_selectable_gpu_list, get_prefix_name
 from portprotonqt.input_manager import InputManager, MainWindowProtocol
 from portprotonqt.context_menu_manager import ContextMenuManager, CustomLineEdit
 from portprotonqt.input_manager import GamepadType
@@ -2263,8 +2263,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         hwForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
         scrollLayout.addWidget(hwFrame)
 
-        gpu_list = get_gpu_list()
-        filtered_gpu_list = [gpu for gpu in gpu_list if 'llvmpipe' not in gpu.lower()]
+        filtered_gpu_list = get_selectable_gpu_list()
         if filtered_gpu_list:
             self.gpuCombo = QComboBox()
             self.gpuCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
