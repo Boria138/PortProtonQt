@@ -60,6 +60,7 @@ Recommends:     NetworkManager
 Recommends:     bluez
 Recommends:     upower
 Recommends:     pulseaudio-utils
+Recommends:     pipewire-utils
 Recommends:     python3-dbus-fast
 Recommends:     python3-qrcode
 

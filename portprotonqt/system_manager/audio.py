@@ -43,10 +43,12 @@ class AudioManagerWorker(QThread):
 
 
 class AudioManagerService:
-    """Minimal PulseAudio/PipeWire wrapper via pactl."""
+    """Minimal PulseAudio/PipeWire wrapper via pactl and pw-cli."""
 
     def __init__(self) -> None:
         self.pactl_path = shutil.which("pactl")
+        self.pw_cli_path = shutil.which("pw-cli")
+        self.audio_backend = self._detect_audio_backend()
 
     def execute(self, operation: str, params: dict) -> dict:
         if operation == "load":
@@ -117,14 +119,22 @@ class AudioManagerService:
                 "cards": [],
                 "default_sink": "",
                 "default_source": "",
+                "backend": "",
             }
 
         defaults = self._read_defaults()
-        sink_descriptions = self._read_device_descriptions("sinks")
-        sink_volumes = self._read_sink_volumes()
-        source_descriptions = self._read_device_descriptions("sources")
-        sinks = self._read_short_devices("sinks", defaults["sink"], sink_descriptions, sink_volumes)
-        sources = self._read_short_devices("sources", defaults["source"], source_descriptions)
+        sinks: list[dict]
+        sources: list[dict]
+
+        if self.audio_backend == "pipewire" and self.pw_cli_path:
+            sinks, sources = self._read_pipewire_devices(defaults)
+        else:
+            sink_descriptions = self._read_device_descriptions("sinks")
+            sink_volumes = self._read_sink_volumes()
+            source_descriptions = self._read_device_descriptions("sources")
+            sinks = self._read_short_devices("sinks", defaults["sink"], sink_descriptions, sink_volumes)
+            sources = self._read_short_devices("sources", defaults["source"], source_descriptions)
+
         cards = self._read_cards()
         return {
             "available": True,
@@ -134,7 +144,94 @@ class AudioManagerService:
             "cards": cards,
             "default_sink": defaults["sink"],
             "default_source": defaults["source"],
+            "backend": self.audio_backend,
         }
+
+    def _detect_audio_backend(self) -> str:
+        if not self.pactl_path:
+            return ""
+        try:
+            output = self._run_pactl(["info"])
+        except NetworkManagerError:
+            return ""
+        server_name = ""
+        for raw_line in output.splitlines():
+            line = raw_line.strip()
+            if not line.startswith("Server Name: "):
+                continue
+            server_name = line.split(": ", 1)[1].strip().lower()
+            break
+        if "pipewire" in server_name:
+            return "pipewire"
+        return "pulseaudio"
+
+    def _read_pipewire_devices(self, defaults: dict) -> tuple[list[dict], list[dict]]:
+        nodes = self._read_pipewire_nodes()
+        sink_volumes = self._read_sink_volumes()
+        sinks = self._build_pipewire_devices(
+            nodes=nodes,
+            media_class="Audio/Sink",
+            default_name=defaults["sink"],
+            sink_volumes=sink_volumes,
+        )
+        sources = self._build_pipewire_devices(
+            nodes=nodes,
+            media_class="Audio/Source",
+            default_name=defaults["source"],
+            sink_volumes={},
+        )
+        return sinks, sources
+
+    def _read_pipewire_nodes(self) -> list[dict]:
+        output = self._run_pw_cli(["list-objects", "Node"])
+        nodes: list[dict] = []
+        current_node: dict[str, str] | None = None
+        for raw_line in output.splitlines():
+            line = raw_line.strip()
+            if re.match(r"^id\s+\d+,\s+type\s+", line):
+                if current_node is not None:
+                    nodes.append(current_node)
+                current_node = {}
+                continue
+            if not line or current_node is None or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            clean_key = key.strip()
+            clean_value = self._strip_quoted_value(value.strip())
+            if clean_key and clean_value:
+                current_node[clean_key] = clean_value
+        if current_node is not None:
+            nodes.append(current_node)
+        return nodes
+
+    def _build_pipewire_devices(
+        self,
+        nodes: list[dict],
+        media_class: str,
+        default_name: str,
+        sink_volumes: dict[str, int],
+    ) -> list[dict]:
+        devices: list[dict] = []
+        for node in nodes:
+            if node.get("media.class") != media_class:
+                continue
+            node_name = node.get("node.name", "").strip()
+            if not node_name:
+                continue
+            raw_description = node.get("node.description", node.get("node.nick", node_name))
+            description = self._format_audio_device_description(node_name, raw_description)
+            state_text = node.get("node.state", _("Unknown"))
+            volume_value = sink_volumes.get(node_name, 0) if media_class == "Audio/Sink" else 0
+            devices.append(
+                {
+                    "name": node_name,
+                    "description": description,
+                    "state": state_text,
+                    "default": node_name == default_name,
+                    "volume": volume_value,
+                }
+            )
+        return sorted(devices, key=lambda item: (0 if item["default"] else 1, item["description"].lower()))
 
     def _read_defaults(self) -> dict:
         output = self._run_pactl(["info"])
@@ -336,6 +433,24 @@ class AudioManagerService:
         process_env["LANG"] = "C"
         result = subprocess.run(
             [self.pactl_path, *args],
+            capture_output=True,
+            text=True,
+            check=False,
+            env=process_env,
+        )
+        if result.returncode == 0:
+            return result.stdout
+        error_text = result.stderr.strip() or result.stdout.strip()
+        raise NetworkManagerError(self._clean_audio_error(error_text))
+
+    def _run_pw_cli(self, args: list[str]) -> str:
+        if not self.pw_cli_path:
+            raise NetworkManagerError("pw-cli is not available")
+        process_env = os.environ.copy()
+        process_env["LC_ALL"] = "C"
+        process_env["LANG"] = "C"
+        result = subprocess.run(
+            [self.pw_cli_path, *args],
             capture_output=True,
             text=True,
             check=False,

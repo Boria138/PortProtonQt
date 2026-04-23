@@ -29,6 +29,7 @@ package_portprotonqt-git() {
         'bluez: System tab bluetooth management'
         'upower: System tab bluetooth battery level'
         'libpulse: System tab audio volume/output management'
+        'pipewire: System tab PipeWire audio backend support'
         'python-dbus-fast: System tab D-Bus integration'
         'python-qrcode: Wi-Fi QR code generation'
     )
