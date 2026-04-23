@@ -53,30 +53,6 @@ executable('vk_gpu_info',
   c_args: ['-std=c99'],
 )
 
-if get_option('build_i586_req_dummy')
-  i586_req_dummy_link_args = [
-    '-Wl,--no-as-needed',
-    '-l:libGL.so.1',
-    '-l:libgio-2.0.so.0',
-    '-l:libnm.so.0',
-    '-l:libnss3.so',
-    '-l:libunwind.so.8',
-    '-l:libVkLayer_MESA_device_select.so',
-    '-l:libnsl.so.1',
-    '-l:libvulkan_intel.so',
-    '-l:libvulkan_radeon.so',
-    '-l:libvulkan_nouveau.so',
-  ]
-
-  executable('portprotonqt_i586_req_dummy',
-    sources: files('build-aux/i586_req_dummy.c'),
-    install: true,
-    install_dir: pkgdatadir,
-    c_args: ['-std=c99'],
-    link_args: i586_req_dummy_link_args,
-  )
-endif
-
 # Install desktop file
 install_data(
   'build-aux/share/applications/ru.linux_gaming.PortProtonQt.desktop',
