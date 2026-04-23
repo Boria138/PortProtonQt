@@ -180,6 +180,13 @@ class AudioManagerService:
             default_name=defaults["source"],
             sink_volumes={},
         )
+        compat_outputs = self._build_pipewire_compat_outputs(
+            nodes=nodes,
+            sink_names={sink["name"] for sink in sinks},
+        )
+        if compat_outputs:
+            sinks.extend(compat_outputs)
+            sinks = sorted(sinks, key=lambda item: (0 if item["default"] else 1, item["description"].lower()))
         return sinks, sources
 
     def _read_pipewire_nodes(self) -> list[dict]:
@@ -232,6 +239,52 @@ class AudioManagerService:
                 }
             )
         return sorted(devices, key=lambda item: (0 if item["default"] else 1, item["description"].lower()))
+
+    def _build_pipewire_compat_outputs(self, nodes: list[dict], sink_names: set[str]) -> list[dict]:
+        compat_outputs: list[dict] = []
+        sink_identity_keys = {self._pipewire_node_identity_key(name) for name in sink_names}
+        for node in nodes:
+            if node.get("media.class") != "Audio/Source":
+                continue
+            node_name = node.get("node.name", "").strip()
+            if not node_name or node_name in sink_names:
+                continue
+            if not self._is_pipewire_output_compat_candidate(node_name):
+                continue
+            if self._pipewire_node_identity_key(node_name) in sink_identity_keys:
+                continue
+            raw_description = node.get("node.description", node.get("node.nick", node_name))
+            description = self._format_audio_device_description(node_name, raw_description)
+            state_text = node.get("node.state", _("Unknown"))
+            compat_outputs.append(
+                {
+                    "name": node_name,
+                    "description": description,
+                    "state": state_text,
+                    "default": False,
+                    "volume": 0,
+                }
+            )
+        return compat_outputs
+
+    def _is_pipewire_output_compat_candidate(self, node_name: str) -> bool:
+        if node_name.startswith("alsa_input.") and ".analog-stereo" in node_name:
+            return True
+        if node_name.startswith("bluez_input.") and ".a2dp" in node_name:
+            return True
+        return False
+
+    def _pipewire_node_identity_key(self, node_name: str) -> str:
+        normalized = node_name.strip()
+        if normalized.startswith("alsa_input."):
+            return "alsa." + normalized[len("alsa_input."):]
+        if normalized.startswith("alsa_output."):
+            return "alsa." + normalized[len("alsa_output."):]
+        if normalized.startswith("bluez_input."):
+            return "bluez." + normalized[len("bluez_input."):]
+        if normalized.startswith("bluez_output."):
+            return "bluez." + normalized[len("bluez_output."):]
+        return normalized
 
     def _read_defaults(self) -> dict:
         output = self._run_pactl(["info"])
