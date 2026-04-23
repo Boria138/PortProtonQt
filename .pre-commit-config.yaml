@@ -34,10 +34,10 @@ repos:
     hooks:
       - id: bash-n
         name: bash -n
-        entry: bash -c 'for file in "$@"; do bash -n "$file" || exit 1; done' --
+        entry: ./dev-scripts/check_bash_scripts.sh
         language: system
         files: ^build-aux/share/portproton/scripts/
-        types: [shell]
+        types: [file]
 
   - repo: local
     hooks:
