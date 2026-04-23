@@ -609,8 +609,11 @@ class DetailPageManager:
     def openAutoInstallDetailPage(self, game_data: dict) -> None:
         """Open minimal detail page for auto-install games."""
         detail_page = QWidget()
+        economy_mode = self._is_economy_mode()
+        cover_width = ECONOMY_COVER_SIZE if economy_mode else COVER_WIDTH
+        cover_height = ECONOMY_COVER_SIZE if economy_mode else COVER_HEIGHT
         image_label = QLabel()
-        image_label.setFixedSize(300, 450)
+        image_label.setFixedSize(cover_width, cover_height)
 
         self._setup_detail_page_common(detail_page, image_label, 1)
 
@@ -624,6 +627,8 @@ class DetailPageManager:
             parent=detail_page,
             theme=self.main_window.theme,
             image_label=image_label,
+            cover_width=cover_width,
+            cover_height=cover_height,
         )
 
         buttons_layout = FlowLayout(center_rows=False)

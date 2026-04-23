@@ -1379,6 +1379,10 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                     theme_cover = self.theme_manager.get_icon(exe_name, self.current_theme_name, as_path=True)
                     if isinstance(theme_cover, str) and "autoinstall_covers" in theme_cover:
                         cover_path = theme_cover
+                    elif economy_mode:
+                        classic_cover = self.theme_manager.get_icon(exe_name, "classic", as_path=True)
+                        if isinstance(classic_cover, str) and "autoinstall_covers" in classic_cover:
+                            cover_path = classic_cover
 
                 card = GameCard(
                     name, description, cover_path, appid, controller_support,
