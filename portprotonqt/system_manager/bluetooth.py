@@ -4,6 +4,7 @@ import re
 import threading
 import time
 from collections.abc import Callable
+from pathlib import Path
 from typing import Annotated, Any, cast
 
 from PySide6.QtCore import QThread, Signal
@@ -259,17 +260,21 @@ class BluetoothManagerService:
             raise NetworkManagerError("Unsupported Bluetooth operation")
 
     def list_devices(self, discovered: list[tuple[str, str]] | None = None) -> dict:
-        objects = self._get_managed_objects()
-        adapter_path = self._get_adapter_path(objects)
         payload = {
-            "available": bool(adapter_path),
+            "available": False,
             "powered": False,
             "adapter_name": "",
             "devices": [],
         }
+        if not self._has_physical_adapter():
+            return payload
+
+        objects = self._get_managed_objects()
+        adapter_path = self._get_adapter_path(objects)
         if not adapter_path:
             return payload
 
+        payload["available"] = True
         adapter_props = self._interface_props(objects, adapter_path, BLUEZ_ADAPTER_INTERFACE)
         payload["powered"] = bool(adapter_props.get("Powered", False))
         payload["adapter_name"] = str(
@@ -420,10 +425,18 @@ class BluetoothManagerService:
         return ""
 
     def _require_adapter_path(self) -> str:
+        if not self._has_physical_adapter():
+            raise NetworkManagerError("Bluetooth adapter not found")
         adapter_path = self._get_adapter_path(self._get_managed_objects())
         if not adapter_path:
             raise NetworkManagerError("Bluetooth adapter not found")
         return adapter_path
+
+    def _has_physical_adapter(self) -> bool:
+        bluetooth_class_dir = Path("/sys/class/bluetooth")
+        if not bluetooth_class_dir.is_dir():
+            return False
+        return any(bluetooth_class_dir.iterdir())
 
     def _interface_props(self, objects: dict, object_path: str, interface: str) -> dict:
         interfaces = objects.get(object_path, {})
