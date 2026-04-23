@@ -1376,11 +1376,11 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 game_source = game_tuple[12]
                 exe_name = game_tuple[13]
                 if not cover_path:
-                    theme_cover = self.theme_manager.get_icon(exe_name, self.current_theme_name, as_path=True)
+                    theme_cover = self.theme_manager.get_theme_image(exe_name, self.current_theme_name)
                     if isinstance(theme_cover, str) and "autoinstall_covers" in theme_cover:
                         cover_path = theme_cover
                     elif economy_mode:
-                        classic_cover = self.theme_manager.get_icon(exe_name, "classic", as_path=True)
+                        classic_cover = self.theme_manager.get_theme_image(exe_name, "classic")
                         if isinstance(classic_cover, str) and "autoinstall_covers" in classic_cover:
                             cover_path = classic_cover
 
