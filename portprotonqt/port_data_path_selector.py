@@ -6,10 +6,13 @@ from typing import Any
 
 from PySide6.QtWidgets import QDialog, QMessageBox, QWidget, QStackedWidget, QSlider, QTableWidget
 
+from portprotonqt.config_utils import read_theme_from_config
+from portprotonqt.context_menu_manager import ContextMenuManager
 from portprotonqt.dialogs import FileExplorer
 from portprotonqt.input_manager import InputManager
 from portprotonqt.localization import _
 from portprotonqt.tabs.control_hints import MainWindowControlHintsMixin
+from portprotonqt.theme_manager import ThemeManager
 
 
 def _get_filesystem_type(path: str) -> str:
@@ -45,6 +48,20 @@ def _is_ntfs_path(path: str) -> bool:
     return fs_type in {"ntfs", "ntfs3", "ntfs-3g"}
 
 
+class _BootstrapStatusBar:
+    """Minimal status bar object for bootstrap ContextMenuManager."""
+
+    def showMessage(self, message: str, timeout: int = 0) -> None:
+        return
+
+
+class _BootstrapGameLibraryManager:
+    """Minimal game library object for bootstrap ContextMenuManager."""
+
+    def update_game_grid(self) -> None:
+        return
+
+
 class _BootstrapInputHost(MainWindowControlHintsMixin, QWidget):
     """Minimal host object for InputManager before MainWindow exists."""
 
@@ -56,7 +73,9 @@ class _BootstrapInputHost(MainWindowControlHintsMixin, QWidget):
     current_exec_line: str | None
     current_add_game_dialog: Any
     game_library_manager: Any
+    context_menu_manager: ContextMenuManager | None
     auto_size_slider: QSlider | None
+    _status_bar: _BootstrapStatusBar
 
     def __init__(self):
         super().__init__()
@@ -68,8 +87,13 @@ class _BootstrapInputHost(MainWindowControlHintsMixin, QWidget):
         self.currentDetailPage = None
         self.current_exec_line = None
         self.current_add_game_dialog = None
-        self.game_library_manager = None
+        self.game_library_manager = _BootstrapGameLibraryManager()
+        self.context_menu_manager = None
         self.auto_size_slider = None
+        self._status_bar = _BootstrapStatusBar()
+
+    def statusBar(self) -> _BootstrapStatusBar:
+        return self._status_bar
 
     def activateFocusedWidget(self) -> None:
         return
@@ -110,15 +134,23 @@ def ask_portdata_path() -> str | None:
         except OSError:
             pass
     current_path = default_path if os.path.isdir(default_path) else os.path.expanduser("~")
+    theme = ThemeManager().apply_theme(read_theme_from_config())
     input_host = _BootstrapInputHost()
     input_manager = InputManager(input_host)
     input_host.input_manager = input_manager
+    input_host.context_menu_manager = ContextMenuManager(
+        input_host,
+        None,
+        theme,
+        input_host.game_library_manager,
+    )
 
     try:
         while True:
             selected_path: str | None = None
             file_explorer = FileExplorer(
                 parent=input_host,
+                theme=theme,
                 initial_path=current_path,
                 directory_only=True,
             )
