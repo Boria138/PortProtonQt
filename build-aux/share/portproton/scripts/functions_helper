@@ -1956,6 +1956,10 @@ pw_init_db () {
             export PW_WINE_CPU_TOPOLOGY="8:0,1,2,3,4,5,6,7"
             print_info "Automatic added fix for unity games: WINE_CPU_TOPOLOGY=8:0,1,2,3,4,5,6,7"
         fi
+        if [[ -d "${PATH_TO_GAME}/MelonLoader" ]] ; then
+            var_winedlloverride_update "version=n,b"
+            print_info "Automatic added fix for Melon Mod-Loader"
+        fi
     fi
 
     return 0
