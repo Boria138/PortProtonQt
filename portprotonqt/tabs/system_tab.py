@@ -1716,8 +1716,7 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
             self._restoreAudioSinkFocusByName(self.audioFocusSinkName)
             self.audioFocusSinkName = ""
         if operation == "load":
-            audio_backend = str(payload.get("backend", "unknown") or "unknown")
-            logger.info("Audio list updated: backend=%s outputs=%d", audio_backend, len(self.audioSinksRows))
+            logger.info("Audio list updated: outputs=%d", len(self.audioSinksRows))
 
     def onAudioOperationFailed(self, _operation: str, error_text: str) -> None:
         self.setAudioBusy(False)
