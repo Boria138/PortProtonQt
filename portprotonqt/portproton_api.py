@@ -28,6 +28,7 @@ from portprotonqt.config.cache import CacheManager
 logger = get_logger(__name__)
 AUTOINSTALL_CACHE_DURATION = 3600  # 1 hour for autoinstall cache
 HEAD_FAILURE_RETRY_DELAY = 60  # 1 minute cooldown for failed HEAD checks
+HEAD_CACHE_DURATION = 24 * 60 * 60
 
 def normalize_name(s):
     """
@@ -118,18 +119,28 @@ class PortProtonAPI:
         last_failed_check = self._head_failure_cache.get(url)
         if last_failed_check and (time.time() - last_failed_check) < HEAD_FAILURE_RETRY_DELAY:
             return False
+
+        cache_manager = CacheManager()
+        cache_key = f"head_{hashlib.sha256(url.encode('utf-8')).hexdigest()}"
+        if cache_manager.is_fresh(cache_key, HEAD_CACHE_DURATION):
+            cached = cache_manager.load_json(cache_key)
+            if isinstance(cached, dict):
+                return cached.get("exists") is True
+
         try:
             session = get_requests_session()
-            response = session.head(url, timeout=timeout)
+            response = session.head(url, timeout=timeout, allow_redirects=True)
             if response.status_code == 404:
                 self._head_negative_cache.add(url)
                 self._head_positive_cache.discard(url)
                 self._head_failure_cache.pop(url, None)
+                cache_manager.save_json(cache_key, {"exists": False})
                 return False
             response.raise_for_status()
             if response.status_code == 200:
                 self._head_positive_cache.add(url)
                 self._head_failure_cache.pop(url, None)
+                cache_manager.save_json(cache_key, {"exists": True})
                 return True
             return False
         except requests.RequestException as e:

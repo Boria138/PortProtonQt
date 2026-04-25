@@ -20,7 +20,7 @@ from portprotonqt.context_menu_manager import ContextMenuManager, CustomLineEdit
 from portprotonqt.input_manager import GamepadType
 
 from portprotonqt.image_utils import load_pixmap_async, ImageCarousel
-from portprotonqt.steam_api import get_steam_game_info_async, get_full_steam_game_info_async, get_steam_installed_games, is_game_in_steam, fetch_sgdb_cover_async
+from portprotonqt.steam_api import get_steam_game_info_async, get_full_steam_game_info_async, get_cached_steam_game_info, get_steam_installed_games, is_game_in_steam, fetch_sgdb_cover_async
 from portprotonqt.egs_api import load_egs_games_async, get_egs_executable
 from portprotonqt.theme_manager import ThemeManager, load_theme_screenshots
 from portprotonqt.time_utils import save_last_launch, get_last_launch, get_playtime_for_exe, format_playtime, get_last_launch_timestamp, format_last_launch
@@ -835,9 +835,10 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             translations = {'name': desktop_name, 'description': ''}
             if os.path.exists(user_metadata_file):
                 translations = read_metadata_translations(user_metadata_file, language_code)
-            final_name = translations['name']
-            final_desc = translations['description']
-            final_cover = user_cover or entry.get("Icon", "")
+            cached_steam_info = get_cached_steam_game_info(desktop_name, exec_line)
+            final_name = translations['name'] or cached_steam_info.get("name", "")
+            final_desc = translations['description'] or cached_steam_info.get("description", "")
+            final_cover = user_cover or cached_steam_info.get("cover", "") or entry.get("Icon", "")
             if not final_cover and game_exe and game_exe.lower().endswith(".exe") and os.path.exists(game_exe):
                 xdg_cache_home = os.getenv(
                     "XDG_CACHE_HOME",
@@ -856,8 +857,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 final_name,
                 final_desc,
                 final_cover,
-                "",
-                "",
+                cached_steam_info.get("appid", ""),
+                cached_steam_info.get("controller_support", ""),
                 exec_line,
                 get_last_launch(exe_name) if exe_name else _("Never"),
                 formatted_playtime,
@@ -1212,21 +1213,22 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
                 from portprotonqt.steam_api import get_steam_game_info_async
                 if read_economy_mode():
+                    cached_steam_info = get_cached_steam_game_info(final_name, exec_line)
                     game_data = (
                         final_name,
-                        final_desc,
-                        user_cover_path or entry.get("Icon", ""),
-                        "",
-                        "",
+                        final_desc or cached_steam_info.get("description", ""),
+                        user_cover_path or cached_steam_info.get("cover", "") or entry.get("Icon", ""),
+                        cached_steam_info.get("appid", ""),
+                        cached_steam_info.get("controller_support", ""),
                         exec_line,
                         last_launch,
                         formatted_playtime,
-                        "",
-                        "",
+                        cached_steam_info.get("protondb_tier", ""),
+                        cached_steam_info.get("anticheat_status", ""),
                         last_played_timestamp,
                         playtime_seconds,
                         "portproton",
-                        "",
+                        cached_steam_info.get("anticheat_slug", ""),
                     )
                     self.game_library_manager.add_game_incremental(game_data)
                     msg = _("Added '{name}'").format(name=final_name)
@@ -2861,19 +2863,20 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             icon_path = existing_entry.get("Icon", "")
             exec_line = existing_entry.get("Exec", "")
             if economy_mode:
+                cached_steam_info = get_cached_steam_game_info(game_name, exec_line)
                 game_data = {
                     "name": game_name,
-                    "description": "",
-                    "cover_path": local_cover_path or generated_cover_path or icon_path,
-                    "appid": "",
-                    "controller_support": "",
+                    "description": cached_steam_info.get("description", ""),
+                    "cover_path": local_cover_path or cached_steam_info.get("cover", "") or generated_cover_path or icon_path,
+                    "appid": cached_steam_info.get("appid", ""),
+                    "controller_support": cached_steam_info.get("controller_support", ""),
                     "exec_line": exec_line,
                     "last_launch": _("Never"),
                     "formatted_playtime": "0:00",
-                    "protondb_tier": "",
-                    "anticheat_status": "",
+                    "protondb_tier": cached_steam_info.get("protondb_tier", ""),
+                    "anticheat_status": cached_steam_info.get("anticheat_status", ""),
                     "game_source": "portproton",
-                    "anticheat_slug": "",
+                    "anticheat_slug": cached_steam_info.get("anticheat_slug", ""),
                 }
                 self.openGameDetailPage(game_data)
                 return
@@ -2938,19 +2941,20 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             game_name_from_exe = os.path.splitext(os.path.basename(exe_path))[0]
             direct_exec_line = shlex.quote(exe_path)
             if economy_mode:
+                cached_steam_info = get_cached_steam_game_info(game_name_from_exe, direct_exec_line)
                 game_data = {
                     "name": game_name_from_exe,
-                    "description": "",
-                    "cover_path": local_cover_path or generated_cover_path,
-                    "appid": "",
-                    "controller_support": "",
+                    "description": cached_steam_info.get("description", ""),
+                    "cover_path": local_cover_path or cached_steam_info.get("cover", "") or generated_cover_path,
+                    "appid": cached_steam_info.get("appid", ""),
+                    "controller_support": cached_steam_info.get("controller_support", ""),
                     "exec_line": direct_exec_line,
                     "last_launch": _("Never"),
                     "formatted_playtime": "0:00",
-                    "protondb_tier": "",
-                    "anticheat_status": "",
+                    "protondb_tier": cached_steam_info.get("protondb_tier", ""),
+                    "anticheat_status": cached_steam_info.get("anticheat_status", ""),
                     "game_source": "portproton",
-                    "anticheat_slug": "",
+                    "anticheat_slug": cached_steam_info.get("anticheat_slug", ""),
                 }
                 self.openGameDetailPage(game_data)
                 return

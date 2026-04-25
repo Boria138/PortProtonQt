@@ -2,6 +2,7 @@
 
 import os
 import shlex
+import time
 import urllib.parse
 from collections.abc import Callable
 
@@ -32,6 +33,7 @@ downloader = Downloader()
 
 _STEAM_APPS_CACHE = CacheManager(name="steam_apps")
 _ANTICHEAT_CACHE = CacheManager(name="anticheat")
+SGDB_CACHE_DURATION = 24 * 60 * 60
 
 
 def fetch_sgdb_cover_async(game_name: str, callback: Callable[[str], None]) -> None:
@@ -42,6 +44,10 @@ def fetch_sgdb_cover_async(game_name: str, callback: Callable[[str], None]) -> N
     def process_response(result: str | None) -> None:
         if not result or not os.path.exists(result):
             logger.warning("Failed to download SGDB data for %s", game_name)
+            try:
+                cache_file.write_text('""', encoding="utf-8")
+            except OSError as e:
+                logger.warning("Failed to save SGDB miss cache for %s: %s", game_name, e)
             callback("")
             return
         try:
@@ -59,6 +65,9 @@ def fetch_sgdb_cover_async(game_name: str, callback: Callable[[str], None]) -> N
     cache_manager = CacheManager()
     safe_name = "".join(c for c in game_name if c.isalnum() or c in " -_")[:50]
     cache_file = cache_manager.cache_dir / f"sgdb_{safe_name}.json"
+    if cache_file.exists() and time.time() - cache_file.stat().st_mtime < SGDB_CACHE_DURATION:
+        process_response(str(cache_file))
+        return
     downloader.download_async(url, str(cache_file), timeout=3, callback=process_response)
 
 
@@ -220,10 +229,13 @@ def _has_custom_data_for_exe(exe_name: str) -> bool:
     if not exe_name:
         return False
 
+    clean_exe_name = exe_name.removeprefix("autoinstall:")
     xdg_data_home = os.getenv("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share"))
-    user_game_folder = os.path.join(xdg_data_home, "PortProtonQt", "custom_data", exe_name)
-
-    candidate_dirs = [user_game_folder]
+    custom_data_root = os.path.join(xdg_data_home, "PortProtonQt", "custom_data")
+    candidate_dirs = [
+        os.path.join(custom_data_root, clean_exe_name),
+        os.path.join(custom_data_root, "autoinstall", clean_exe_name),
+    ]
     cover_names = {"cover.png", "cover.jpg", "cover.jpeg", "cover.bmp"}
     metadata_name = "metadata.txt"
 
@@ -248,17 +260,7 @@ def get_full_steam_game_info_async(
 ) -> None:
     """Asynchronously retrieve full Steam game info, including WeAntiCheatYet status."""
     if read_economy_mode():
-        callback(_build_game_info_result(
-            appid=appid,
-            name=decode_text(fallback_name),
-            description="",
-            cover=get_local_steam_cover(appid, prefer_exact=False),
-            controller_support="",
-            protondb_tier="",
-            steam_game="true",
-            anticheat_status="",
-            anticheat_slug="",
-        ))
+        callback(get_cached_full_steam_game_info(appid, fallback_name))
         return
 
     def on_app_info(app_info: dict | None) -> None:
@@ -293,6 +295,96 @@ def get_full_steam_game_info_async(
     fetch_app_info_async(appid, on_app_info)
 
 
+def _load_cached_json_file(path: str) -> dict | list | None:
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, "rb") as f:
+            return orjson.loads(f.read())
+    except OSError as e:
+        logger.warning("Failed to read cached Steam data %s: %s", path, e)
+    except orjson.JSONDecodeError as e:
+        logger.warning("Failed to parse cached Steam data %s: %s", path, e)
+    return None
+
+
+def _read_cached_app_data(appid: int) -> dict:
+    cache_file = CacheManager().cache_dir / f"steam_app_{appid}.json"
+    cached = _load_cached_json_file(str(cache_file))
+    if not isinstance(cached, dict):
+        return {}
+    details = cached.get(str(appid), {})
+    if isinstance(details, dict) and details.get("success"):
+        data = details.get("data", {})
+        return data if isinstance(data, dict) else {}
+    return cached
+
+
+def _get_cached_steam_cover_path(appid: int) -> str:
+    xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
+    image_folder = os.path.join(xdg_cache_home, "PortProtonQt", "images")
+    for ext in (".jpg", ".png", ".jpeg", ".webp"):
+        cover_path = os.path.join(image_folder, f"{appid}{ext}")
+        if os.path.exists(cover_path):
+            return cover_path
+    return ""
+
+
+def _read_cached_protondb_tier(appid: int) -> str:
+    cache_file = CacheManager().cache_dir / f"protondb_{appid}.json"
+    cached = _load_cached_json_file(str(cache_file))
+    if isinstance(cached, dict):
+        tier = cached.get("tier", "")
+        return tier if isinstance(tier, str) else ""
+    return ""
+
+
+def get_cached_full_steam_game_info(appid: int, fallback_name: str = "") -> dict:
+    """Return installed Steam game metadata from local cache only."""
+    app_data = _read_cached_app_data(appid)
+    name = decode_text(app_data.get("name", "") or fallback_name)
+    description = decode_text(app_data.get("short_description", ""))
+    cover = get_local_steam_cover(appid, prefer_exact=False) or _get_cached_steam_cover_path(appid)
+    return _build_game_info_result(
+        appid=appid,
+        name=name,
+        description=description,
+        cover=cover,
+        controller_support=app_data.get("controller_support", ""),
+        protondb_tier=_read_cached_protondb_tier(appid),
+        steam_game="true",
+        anticheat_status="",
+        anticheat_slug="",
+    )
+
+
+def get_cached_steam_game_info(desktop_name: str, exec_line: str) -> dict:
+    """Return Steam metadata from local cache only."""
+    from portprotonqt.steam_api.utils import filter_candidates, remove_duplicates
+
+    parts = shlex.split(exec_line)
+    game_exe = parts[-1] if parts else exec_line
+    exe_name = os.path.splitext(os.path.basename(game_exe))[0]
+    folder_name = os.path.basename(os.path.dirname(game_exe)) if game_exe else ""
+    candidates = remove_duplicates(filter_candidates([desktop_name, exe_name, folder_name]))
+    apps_path = CacheManager().cache_dir / "steam_apps.json"
+    steam_apps = _load_cached_json_file(str(apps_path))
+    if not isinstance(steam_apps, list):
+        return {}
+
+    steam_apps_index = build_index(steam_apps)
+    matching_app = None
+    for candidate in sorted(candidates, key=lambda s: len(s.split()), reverse=True):
+        matching_app = search_app(candidate, steam_apps_index)
+        if matching_app:
+            break
+    if not matching_app:
+        return {}
+
+    appid = int(matching_app["appid"])
+    return get_cached_full_steam_game_info(appid, matching_app.get("name", ""))
+
+
 def get_steam_game_info_async(
     desktop_name: str,
     exec_line: str,
@@ -300,6 +392,10 @@ def get_steam_game_info_async(
 ) -> None:
     """Asynchronously retrieve game info based on desktop name and exec line."""
     if read_economy_mode():
+        cached_info = get_cached_steam_game_info(desktop_name, exec_line)
+        if cached_info:
+            callback(cached_info)
+            return
         parts = shlex.split(exec_line)
         game_exe = parts[-1] if parts else exec_line
         exe_name = os.path.splitext(os.path.basename(game_exe))[0]
@@ -322,6 +418,7 @@ def get_steam_game_info_async(
 
     parts = shlex.split(exec_line)
     game_exe = parts[-1] if parts else exec_line
+    is_autoinstall = exec_line.startswith("autoinstall:")
 
     if game_exe.lower().endswith('.bat'):
         if os.path.exists(game_exe):
@@ -372,7 +469,7 @@ def get_steam_game_info_async(
     candidates = filter_candidates(candidates)
     candidates = remove_duplicates(candidates)
     candidates_ordered = sorted(candidates, key=lambda s: len(s.split()), reverse=True)
-    has_custom_data = _has_custom_data_for_exe(exe_name)
+    has_custom_data = is_autoinstall or _has_custom_data_for_exe(exe_name)
 
     def on_steam_apps_and_index(
         data_and_index: tuple[list | None, dict | None]
