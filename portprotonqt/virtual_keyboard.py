@@ -36,7 +36,7 @@ class VirtualKeyboard(QFrame):
         self.cursor_visible = True
         self.last_focused_button = None
         self.selected_button = None
-        self.enable_slide_animation = False
+        self.enable_slide_animation = True
         self._slide_animation: QPropertyAnimation | None = None
         self._is_hiding = False
 
