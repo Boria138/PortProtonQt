@@ -60,6 +60,60 @@ def get_steam_home() -> Path | None:
     return None
 
 
+def get_local_steam_cover(appid: int | str, prefer_exact: bool = True) -> str:
+    """Return local Steam library cover path for appid."""
+    steam_home = get_steam_home()
+    if steam_home is None:
+        return ""
+
+    appid_str = str(appid).strip()
+    if not appid_str:
+        return ""
+
+    librarycache = steam_home / "appcache" / "librarycache"
+    if not librarycache.exists():
+        return ""
+
+    exact_paths = (
+        librarycache / appid_str / "library_600x900.jpg",
+        librarycache / f"{appid_str}_library_600x900.jpg",
+    )
+    for cover_path in exact_paths:
+        if cover_path.is_file():
+            return str(cover_path)
+
+    capsule_paths = (
+        librarycache / appid_str / "library_capsule.jpg",
+        librarycache / appid_str / "library_capsule.png",
+        librarycache / f"{appid_str}_library_capsule.jpg",
+        librarycache / f"{appid_str}_library_capsule.png",
+    )
+    for cover_path in capsule_paths:
+        if cover_path.is_file():
+            return str(cover_path)
+
+    if prefer_exact:
+        return ""
+
+    for suffix in ("jpg", "jpeg", "png", "webp"):
+        patterns = (
+            f"{appid_str}/library_600x900*.{suffix}",
+            f"{appid_str}/library_capsule*.{suffix}",
+            f"{appid_str}/*/library_600x900*.{suffix}",
+            f"{appid_str}/*/library_capsule*.{suffix}",
+            f"{appid_str}/*.{suffix}",
+            f"{appid_str}_library_600x900*.{suffix}",
+            f"{appid_str}_library_capsule*.{suffix}",
+            f"{appid_str}_*.{suffix}",
+        )
+        for pattern in patterns:
+            for cover_path in sorted(librarycache.glob(pattern)):
+                if cover_path.is_file():
+                    return str(cover_path)
+
+    return ""
+
+
 def get_steam_compat_tool(appid: int) -> str | None:
     """Return compatibility tool name for given Steam appid."""
     steam_home = get_steam_home()

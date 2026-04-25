@@ -16,7 +16,11 @@ import websocket
 from portprotonqt.logger import get_logger
 from portprotonqt.downloader import Downloader
 from portprotonqt.dialogs import generate_thumbnail
-from portprotonqt.config_utils import get_portproton_location, get_portproton_start_command
+from portprotonqt.config_utils import (
+    get_portproton_location,
+    get_portproton_start_command,
+    read_economy_mode,
+)
 from portprotonqt.steam_api.utils import (
     safe_vdf_load,
     get_steam_home,
@@ -433,6 +437,12 @@ def add_to_steam(game_name: str, exec_line: str, cover_path: str) -> tuple[bool,
 
     if not appid:
         return (False, "Failed to create shortcut using any method")
+
+    if read_economy_mode():
+        logger.info("Economy mode enabled: skipping cover download for shortcut %s", game_name)
+        if was_api_used:
+            return (True, "Game added to Steam via CEF API")
+        return (True, "Game added to Steam. Please restart Steam for changes to take effect.")
 
     steam_appid = None
 

@@ -11,7 +11,7 @@ from portprotonqt.logger import get_logger
 from portprotonqt.downloader import Downloader
 from portprotonqt.localization import get_steam_language
 from portprotonqt.config_utils import read_economy_mode
-from portprotonqt.steam_api.utils import decode_text
+from portprotonqt.steam_api.utils import decode_text, get_local_steam_cover
 from portprotonqt.steam_api.cache import (
     CACHE_DURATION,
     load_app_details,
@@ -248,7 +248,17 @@ def get_full_steam_game_info_async(
 ) -> None:
     """Asynchronously retrieve full Steam game info, including WeAntiCheatYet status."""
     if read_economy_mode():
-        callback({})
+        callback(_build_game_info_result(
+            appid=appid,
+            name=decode_text(fallback_name),
+            description="",
+            cover=get_local_steam_cover(appid, prefer_exact=False),
+            controller_support="",
+            protondb_tier="",
+            steam_game="true",
+            anticheat_status="",
+            anticheat_slug="",
+        ))
         return
 
     def on_app_info(app_info: dict | None) -> None:
@@ -257,7 +267,9 @@ def get_full_steam_game_info_async(
             return
         title = decode_text(app_info.get("name", "") or fallback_name)
         description = decode_text(app_info.get("short_description", ""))
-        cover = f"https://steamcdn-a.akamaihd.net/steam/apps/{appid}/library_600x900_2x.jpg"
+        cover = get_local_steam_cover(appid, prefer_exact=False)
+        if not cover:
+            cover = f"https://steamcdn-a.akamaihd.net/steam/apps/{appid}/library_600x900_2x.jpg"
 
         def on_protondb_tier(tier: str) -> None:
             def on_anticheat_info(anticheat_info: dict) -> None:
@@ -452,8 +464,8 @@ def get_steam_game_info_async(
 
             title = decode_text(app_info.get("name", game_name))
             description = decode_text(app_info.get("short_description", ""))
-            cover = ""
-            if not has_custom_data:
+            cover = get_local_steam_cover(appid, prefer_exact=False)
+            if not cover and not has_custom_data:
                 cover = f"https://steamcdn-a.akamaihd.net/steam/apps/{appid}/library_600x900_2x.jpg"
             controller_support = app_info.get("controller_support", "")
 

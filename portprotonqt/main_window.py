@@ -545,10 +545,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             QApplication.processEvents()  # Allow UI to update
 
             if display_filter == "steam":
-                if economy_mode:
-                    self.games_loaded.emit([])
-                else:
-                    self._load_steam_games_async(lambda games: self.games_loaded.emit(games))
+                self._load_steam_games_async(lambda games: self.games_loaded.emit(games))
             elif display_filter == "portproton":
                 self._load_portproton_games_async(lambda games: self.games_loaded.emit(games))
             elif display_filter == "epic":
@@ -569,7 +566,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
                 # Load games from different sources in parallel to prevent blocking
                 results = {'portproton': [], 'steam': [], 'epic': []}
-                completed = {'portproton': False, 'steam': economy_mode, 'epic': economy_mode}
+                completed = {'portproton': False, 'steam': False, 'epic': economy_mode}
 
                 def check_completion():
                     if all(completed.values()):
@@ -595,8 +592,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                     check_completion()
 
                 self._load_portproton_games_async(portproton_callback)
+                self._load_steam_games_async(steam_callback)
                 if not economy_mode:
-                    self._load_steam_games_async(steam_callback)
                     load_egs_games_async(
                         self.legendary_path,
                         epic_callback,
@@ -607,7 +604,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             else:
                 # For 'all' filter - load games from different sources in parallel to prevent blocking
                 results = {'portproton': [], 'steam': [], 'epic': []}
-                completed = {'portproton': False, 'steam': economy_mode, 'epic': economy_mode}
+                completed = {'portproton': False, 'steam': False, 'epic': economy_mode}
 
                 def on_all_games():
                     seen = set()
@@ -646,8 +643,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
                 # Load all sources in parallel
                 self._load_portproton_games_async(portproton_callback)
+                self._load_steam_games_async(steam_callback)
                 if not economy_mode:
-                    self._load_steam_games_async(steam_callback)
                     load_egs_games_async(
                         self.legendary_path,
                         epic_callback,
@@ -1256,13 +1253,12 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         elif os.path.exists(desktop_path):
             self.context_menu_manager.remove_from_desktop(game_name)
 
-        if not read_economy_mode():
-            is_in_steam = is_game_in_steam(game_name)
-            if dialog.add_to_steam_checkbox.isChecked():
-                if not is_in_steam:
-                    self.context_menu_manager.add_to_steam(game_name, exec_line, cover_path)
-            elif is_in_steam:
-                self.context_menu_manager.remove_from_steam(game_name, exec_line, "portproton")
+        is_in_steam = is_game_in_steam(game_name)
+        if dialog.add_to_steam_checkbox.isChecked():
+            if not is_in_steam:
+                self.context_menu_manager.add_to_steam(game_name, exec_line, cover_path)
+        elif is_in_steam:
+            self.context_menu_manager.remove_from_steam(game_name, exec_line, "portproton")
 
     def createAutoInstallTab(self):
         autoInstallPage = QWidget()
@@ -2169,9 +2165,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.steamCompatTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         current_steam_compat = is_steam_compat_tool_installed()
         self.steamCompatCheckBox.setChecked(current_steam_compat)
-        if read_economy_mode():
-            self.steamCompatCheckBox.setChecked(False)
-            self.steamCompatCheckBox.setEnabled(False)
         steam_compat_layout = QHBoxLayout()
         steam_compat_layout.setContentsMargins(0, 0, 0, 0)
         steam_compat_layout.addWidget(self.steamCompatCheckBox)
@@ -2191,11 +2184,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             if enabled:
                 self.badgeViewCombo.setCurrentIndex(self.badge_view_keys.index("hidden"))
                 self.badgeViewCombo.setEnabled(False)
-                self.steamCompatCheckBox.setChecked(False)
-                self.steamCompatCheckBox.setEnabled(False)
                 return
             self.badgeViewCombo.setEnabled(True)
-            self.steamCompatCheckBox.setEnabled(True)
 
         self.economyModeCheckBox.toggled.connect(update_economy_controls)
         update_economy_controls(self.economyModeCheckBox.isChecked())
@@ -2418,8 +2408,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         economy_mode = self.economyModeCheckBox.isChecked()
         save_economy_mode(economy_mode)
         economy_mode_changed = previous_economy_mode != economy_mode
-        if economy_mode and filter_key == "steam":
-            filter_key = "portproton"
         save_display_filter(filter_key)
         badge_view_idx = self.badgeViewCombo.currentIndex()
         badge_view_mode = self.badge_view_keys[badge_view_idx]
@@ -2449,13 +2437,12 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         start_minimized = self.startMinimizedCheckBox.isChecked()
         save_start_minimized(start_minimized)
 
-        if not economy_mode:
-            steam_compat = self.steamCompatCheckBox.isChecked()
-            currently_installed = is_steam_compat_tool_installed()
-            if steam_compat and not currently_installed:
-                add_steam_compat_tool()
-            elif not steam_compat and currently_installed:
-                remove_steam_compat_tool()
+        steam_compat = self.steamCompatCheckBox.isChecked()
+        currently_installed = is_steam_compat_tool_installed()
+        if steam_compat and not currently_installed:
+            add_steam_compat_tool()
+        elif not steam_compat and currently_installed:
+            remove_steam_compat_tool()
 
         # Save GPU selection to user.conf (only if the combo box exists)
         if hasattr(self, 'gpuCombo'):
