@@ -1,7 +1,7 @@
 from typing import cast, Any
 from PySide6.QtWidgets import (QFrame, QVBoxLayout, QPushButton, QGridLayout,
-                               QSizePolicy, QWidget, QLineEdit, QScrollArea)
-from PySide6.QtCore import Qt, Signal, QProcess, QSize, QEvent
+                               QSizePolicy, QWidget, QLineEdit, QScrollArea, QDialog)
+from PySide6.QtCore import Qt, Signal, QProcess, QSize, QEvent, QPoint, QPropertyAnimation, QEasingCurve
 from PySide6.QtGui import QPixmap, QIcon
 from portprotonqt.keyboard_layouts import keyboard_layouts
 from portprotonqt.theme_manager import ThemeManager
@@ -36,6 +36,9 @@ class VirtualKeyboard(QFrame):
         self.cursor_visible = True
         self.last_focused_button = None
         self.selected_button = None
+        self.enable_slide_animation = False
+        self._slide_animation: QPropertyAnimation | None = None
+        self._is_hiding = False
 
         self.base_button_width = 40
         self.base_min_width = 574
@@ -64,6 +67,28 @@ class VirtualKeyboard(QFrame):
         self.hide()
 
         self.setStyleSheet(self.theme.VIRTUAL_KEYBOARD_STYLE)
+
+    def set_slide_animation_enabled(self, enabled: bool) -> None:
+        """Enable or disable slide animation for show/hide."""
+        self.enable_slide_animation = enabled
+
+    def _target_keyboard_pos(self) -> QPoint:
+        if not self._parent or not isinstance(self._parent, QWidget):
+            return QPoint(0, 0)
+        return QPoint(0, max(0, self._parent.height() - self.height()))
+
+    def _animate_position(self, start_pos: QPoint, end_pos: QPoint, hide_on_finish: bool = False) -> None:
+        if self._slide_animation:
+            self._slide_animation.stop()
+        self._slide_animation = QPropertyAnimation(self, b"pos", self)
+        duration = int(getattr(self.theme, "virtual_keyboard_slide_animation_duration", 160))
+        self._slide_animation.setDuration(max(0, duration))
+        self._slide_animation.setStartValue(start_pos)
+        self._slide_animation.setEndValue(end_pos)
+        self._slide_animation.setEasingCurve(QEasingCurve.Type.OutCubic)
+        if hide_on_finish:
+            self._slide_animation.finished.connect(super().hide)
+        self._slide_animation.start()
 
     def _apply_responsive_metrics(self) -> None:
         if not self._parent or not isinstance(self._parent, QWidget):
@@ -541,6 +566,7 @@ class VirtualKeyboard(QFrame):
         self.update_keyboard()
 
     def show_for_widget(self, widget):
+        self._is_hiding = False
         self.current_input_widget = widget
         if widget:
             try:
@@ -554,8 +580,15 @@ class VirtualKeyboard(QFrame):
             self._sync_keyboard_geometry()
             self.update_keyboard()
 
+        target_pos = self._target_keyboard_pos()
+        if self.enable_slide_animation and self._parent and isinstance(self._parent, QWidget):
+            self.move(0, self._parent.height())
+        else:
+            self.move(target_pos)
         self.show()
         self.raise_()
+        if self.enable_slide_animation:
+            self._animate_position(self.pos(), target_pos)
         self.ensure_input_visible()
 
         # Set focus to first button if no focus on input widget
@@ -573,6 +606,23 @@ class VirtualKeyboard(QFrame):
             first_button = self.findFirstFocusableButton()
             if first_button:
                 self._set_selected_button(first_button)
+
+    def hide(self):
+        if (
+            not self.enable_slide_animation
+            or self._is_hiding
+            or not self.isVisible()
+            or not self._parent
+            or not isinstance(self._parent, QWidget)
+        ):
+            super().hide()
+            return
+
+        self._is_hiding = True
+        end_pos = QPoint(0, self._parent.height())
+        self._animate_position(self.pos(), end_pos, hide_on_finish=True)
+        if self._slide_animation:
+            self._slide_animation.finished.connect(lambda: setattr(self, "_is_hiding", False))
 
     def eventFilter(self, obj, event):
         if (
@@ -611,8 +661,16 @@ class VirtualKeyboard(QFrame):
                 break
             parent_widget = parent_widget.parentWidget()
 
-        # Fallback for dialogs without scrollable container.
-        self.move(0, 0)
+        # Fallback for dialogs without scrollable container: grow dialog instead of
+        # moving keyboard over the input field.
+        if isinstance(self._parent, QDialog):
+            overlap = max(0, widget_bottom - keyboard_top)
+            if overlap > 0:
+                delta = overlap + 16
+                old_geo = self._parent.geometry()
+                self._parent.resize(old_geo.width(), old_geo.height() + delta)
+                self._parent.move(old_geo.x(), max(0, old_geo.y() - delta))
+                self._sync_keyboard_geometry()
 
     def activateFocusedKey(self):
         """Activate current highlighted button on keyboard"""

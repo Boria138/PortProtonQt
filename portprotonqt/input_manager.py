@@ -437,6 +437,17 @@ class InputManager(QObject):
             logger.error(f"Error restoring gamepad handlers: {e}")
 
     def handle_file_explorer_button(self, button_code, value):
+        active_window = QApplication.activeWindow()
+        dialog_keyboard = getattr(active_window, 'keyboard', None) if active_window else None
+        if isinstance(dialog_keyboard, VirtualKeyboard) and dialog_keyboard.isVisible():
+            self.handle_virtual_keyboard(button_code, value)
+            return
+
+        keyboard = getattr(self._parent, 'keyboard', None)
+        if keyboard and keyboard.isVisible():
+            self.handle_virtual_keyboard(button_code, value)
+            return
+
         if value == 0:  # Ignore releases
             return
 
@@ -453,6 +464,25 @@ class InputManager(QObject):
                     popup.close()
                     return
                 return  # Skip other handling if menu is open
+
+            active_window = QApplication.activeWindow()
+            if isinstance(active_window, QDialog) and active_window != self.file_explorer:
+                if button_code in BUTTONS['confirm']:  # A button
+                    focused_widget = QApplication.focusWidget()
+                    if isinstance(focused_widget, QLineEdit):
+                        keyboard = getattr(active_window, 'keyboard', None)
+                        if not keyboard:
+                            keyboard = getattr(self._parent, 'keyboard', None)
+                        if keyboard:
+                            focused_widget.setFocus()
+                            keyboard.show_for_widget(focused_widget)
+                    elif isinstance(focused_widget, QPushButton):
+                        focused_widget.click()
+                    else:
+                        active_window.accept()
+                elif button_code in BUTTONS['back']:  # B button
+                    active_window.reject()
+                return
 
             # 2. Validate File Explorer state
             if not self.file_explorer or not hasattr(self.file_explorer, 'file_list'):
@@ -520,12 +550,64 @@ class InputManager(QObject):
 
     def handle_file_explorer_dpad(self, code, value, current_time):
         try:
+            active_window = QApplication.activeWindow()
+            keyboard = getattr(active_window, 'keyboard', None) if active_window else None
+            if keyboard is None:
+                keyboard = getattr(self._parent, 'keyboard', None)
+
+            if keyboard and keyboard.isVisible():
+                if code in (ecodes.ABS_HAT0X, ecodes.ABS_X):
+                    normalized_value = value
+                    if code == ecodes.ABS_X:
+                        if abs(value) < self.dead_zone:
+                            return
+                        normalized_value = 1 if value > self.dead_zone else -1
+                    if normalized_value > 0:
+                        keyboard.move_focus_right()
+                    elif normalized_value < 0:
+                        keyboard.move_focus_left()
+                elif code in (ecodes.ABS_HAT0Y, ecodes.ABS_Y):
+                    normalized_value = value
+                    if code == ecodes.ABS_Y:
+                        if abs(value) < self.dead_zone:
+                            return
+                        normalized_value = 1 if value > self.dead_zone else -1
+                    if normalized_value > 0:
+                        keyboard.move_focus_down()
+                    elif normalized_value < 0:
+                        keyboard.move_focus_up()
+                return
+
             # 1. Handle Popups (Menus)
             popup = QApplication.activePopupWidget()
             if isinstance(popup, QMenu):
                 if code == ecodes.ABS_HAT0Y and value != 0:
                     self._navigate_menu_actions(popup, direction_down=value > 0)
                 return
+
+            focused_widget = QApplication.focusWidget()
+            if isinstance(active_window, QDialog) and active_window != self.file_explorer:
+                if not focused_widget or not active_window.focusWidget():
+                    focusables = active_window.findChildren(
+                        QWidget,
+                        options=Qt.FindChildOption.FindChildrenRecursively
+                    )
+                    focusables = [w for w in focusables if w.focusPolicy() & Qt.FocusPolicy.StrongFocus]
+                    if focusables:
+                        focusables[0].setFocus(Qt.FocusReason.OtherFocusReason)
+                    return
+                if code == ecodes.ABS_HAT0X and value != 0:
+                    if value > 0:
+                        active_window.focusNextChild()
+                    elif value < 0:
+                        active_window.focusPreviousChild()
+                    return
+                if code == ecodes.ABS_HAT0Y and value != 0 and not isinstance(focused_widget, QTableWidget):
+                    if value > 0:
+                        active_window.focusNextChild()
+                    elif value < 0:
+                        active_window.focusPreviousChild()
+                    return
 
             # 2. Validate State
             if not self.file_explorer or not hasattr(self.file_explorer, 'file_list') or not self.file_explorer.file_list:
@@ -2966,9 +3048,8 @@ class InputManager(QObject):
 
     def handle_virtual_keyboard(self, button_code: int, value: int) -> None:
         active_window = QApplication.activeWindow()
-        if isinstance(active_window, AddGameDialog):
-            keyboard = getattr(active_window, 'keyboard', None)
-        else:
+        keyboard = getattr(active_window, 'keyboard', None) if active_window else None
+        if keyboard is None:
             keyboard = getattr(self._parent, 'keyboard', None)
 
         if not keyboard or not isinstance(keyboard, VirtualKeyboard) or not keyboard.isVisible():

@@ -4,7 +4,7 @@ import subprocess
 import psutil
 from typing import Any
 
-from PySide6.QtWidgets import QDialog, QMessageBox, QWidget, QStackedWidget, QSlider, QTableWidget
+from PySide6.QtWidgets import QDialog, QMessageBox, QWidget, QStackedWidget, QSlider, QTableWidget, QApplication
 
 from portprotonqt.config_utils import read_theme_from_config
 from portprotonqt.context_menu_manager import ContextMenuManager
@@ -135,6 +135,12 @@ def ask_portdata_path() -> str | None:
             pass
     current_path = default_path if os.path.isdir(default_path) else os.path.expanduser("~")
     theme = ThemeManager().apply_theme(read_theme_from_config())
+    app = QApplication.instance()
+    if isinstance(app, QApplication):
+        app.setStyle("Fusion")
+        main_style = getattr(theme, "MAIN_WINDOW_STYLE", "")
+        message_box_style = getattr(theme, "MESSAGE_BOX_STYLE", "")
+        app.setStyleSheet(main_style + message_box_style)
     input_host = _BootstrapInputHost()
     input_manager = InputManager(input_host)
     input_host.input_manager = input_manager
@@ -171,7 +177,9 @@ def ask_portdata_path() -> str | None:
                 message_box.setText(
                     _("Selected folder is on an NTFS disk. Choose another folder for PortProton data.")
                 )
-                message_box.setStyleSheet(file_explorer.theme.MAIN_WINDOW_STYLE + file_explorer.theme.MESSAGE_BOX_STYLE)
+                main_style = getattr(file_explorer.theme, "MAIN_WINDOW_STYLE", "")
+                message_box_style = getattr(file_explorer.theme, "MESSAGE_BOX_STYLE", "")
+                message_box.setStyleSheet(main_style + message_box_style)
                 message_box.exec()
                 current_path = selected_path
                 continue

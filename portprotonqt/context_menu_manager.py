@@ -5,7 +5,7 @@ import shutil
 import subprocess
 import threading
 import orjson
-from PySide6.QtWidgets import QMessageBox, QDialog, QMenu, QLineEdit, QApplication
+from PySide6.QtWidgets import QMessageBox, QDialog, QMenu, QLineEdit, QApplication, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFrame
 from PySide6.QtCore import QUrl, QPoint, QObject, Signal, Qt, QStandardPaths
 from PySide6.QtGui import QDesktopServices, QIcon, QKeySequence
 from portprotonqt.localization import _
@@ -15,6 +15,7 @@ from portprotonqt.egs_api import add_egs_to_steam, get_egs_executable, remove_eg
 from portprotonqt.dialogs import AddGameDialog, FileExplorer, generate_thumbnail
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.logger import get_logger
+from portprotonqt.virtual_keyboard import VirtualKeyboard
 
 logger = get_logger(__name__)
 
@@ -23,6 +24,12 @@ class ContextMenuSignals(QObject):
     show_status_message = Signal(str, int)
     show_warning_dialog = Signal(str, str)
     show_info_dialog = Signal(str, str)
+
+
+class FolderNameDialog(QDialog):
+    """Dialog with typed keyboard attribute for folder name input."""
+    keyboard: VirtualKeyboard
+
 
 class ContextMenuManager:
     """Manages context menu actions for game management in PortProtonQt."""
@@ -173,6 +180,12 @@ class ContextMenuManager:
             action_text = _("Remove from Favorites") if is_favorite else _("Add to Favorites")
             favorite_action = menu.addAction(self._get_safe_icon("star" if is_favorite else "star_full"), action_text)
             favorite_action.triggered.connect(lambda: self.toggle_favorite_folder(file_explorer, full_path, not is_favorite))
+            create_folder_action = menu.addAction(self._get_safe_icon("folder"), _("Create Folder"))
+            create_folder_action.triggered.connect(lambda: self.create_folder(file_explorer))
+            rename_folder_action = menu.addAction(self._get_safe_icon("edit"), _("Rename Folder"))
+            rename_folder_action.triggered.connect(lambda: self.rename_folder(file_explorer, full_path))
+            delete_folder_action = menu.addAction(self._get_safe_icon("delete"), _("Delete Folder"))
+            delete_folder_action.triggered.connect(lambda: self.delete_folder(file_explorer, full_path))
 
             # Disconnect file_list signals to prevent navigation during menu interaction
             try:
@@ -216,6 +229,160 @@ class ContextMenuManager:
                 save_favorite_folders(favorite_folders)
                 logger.info("Removed folder from favorites: %s", folder_path)
         file_explorer.update_drives_list()
+
+    def _prompt_folder_name(self, parent, title: str, label: str, value: str = "") -> str | None:
+        """Prompt folder name from user and return it if valid."""
+        dialog = FolderNameDialog(parent)
+        dialog.setWindowTitle(title)
+        dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
+        parent_width = parent.width() if parent else 800
+        dialog_width = min(640, max(460, parent_width - 80))
+        dialog.setFixedWidth(dialog_width)
+        dialog.setMinimumHeight(320)
+        main_style = getattr(self.theme, "MAIN_WINDOW_STYLE", "")
+        message_box_style = getattr(self.theme, "MESSAGE_BOX_STYLE", "")
+        dialog.setStyleSheet(main_style + message_box_style)
+
+        layout = QVBoxLayout(dialog)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(8)
+
+        panel = QFrame(dialog)
+        panel.setObjectName("folderNamePanel")
+        panel.setStyleSheet(message_box_style)
+        panel_layout = QVBoxLayout(panel)
+        panel_layout.setContentsMargins(14, 12, 14, 12)
+        panel_layout.setSpacing(8)
+
+        label_widget = QLabel(label, panel)
+        line_edit = CustomLineEdit(panel, theme=self.theme)
+        line_edit.setText(value)
+        if hasattr(self.theme, "LINE_EDIT_STYLE"):
+            line_edit.setStyleSheet(self.theme.LINE_EDIT_STYLE)
+        line_edit.setFocus()
+
+        buttons_layout = QHBoxLayout()
+        ok_button = QPushButton(_("OK"), panel)
+        cancel_button = QPushButton(_("Cancel"), panel)
+        if hasattr(self.theme, "ACTION_BUTTON_STYLE"):
+            ok_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+            cancel_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        ok_button.clicked.connect(dialog.accept)
+        cancel_button.clicked.connect(dialog.reject)
+        line_edit.returnPressed.connect(dialog.accept)
+
+        panel_layout.addWidget(label_widget)
+        panel_layout.addWidget(line_edit)
+        buttons_layout.addWidget(ok_button)
+        buttons_layout.addWidget(cancel_button)
+        panel_layout.addLayout(buttons_layout)
+
+        layout.addWidget(panel)
+        layout.addStretch()
+
+        keyboard = VirtualKeyboard(dialog, theme=self.theme, button_width=40)
+        dialog.keyboard = keyboard
+        keyboard.set_slide_animation_enabled(True)
+        keyboard.hide()
+        dialog.finished.connect(lambda _: keyboard.hide())
+
+        accepted = dialog.exec() == QDialog.DialogCode.Accepted
+        self._restore_file_explorer_focus(parent)
+
+        if not accepted:
+            return None
+        folder_name = line_edit.text().strip()
+        if not folder_name:
+            self._show_warning_dialog(_("Error"), _("Folder name cannot be empty"))
+            self._restore_file_explorer_focus(parent)
+            return None
+        if folder_name in {".", ".."} or os.path.basename(folder_name) != folder_name:
+            self._show_warning_dialog(_("Error"), _("Invalid folder name"))
+            self._restore_file_explorer_focus(parent)
+            return None
+        return folder_name
+
+    def _restore_file_explorer_focus(self, parent) -> None:
+        """Restore focus to FileExplorer after modal dialogs."""
+        parent.activateWindow()
+        parent.setFocus(Qt.FocusReason.OtherFocusReason)
+        if hasattr(parent, "file_list") and parent.file_list:
+            parent.file_list.setFocus(Qt.FocusReason.OtherFocusReason)
+
+    def create_folder(self, file_explorer) -> None:
+        """Create a new folder in the current directory."""
+        folder_name = self._prompt_folder_name(file_explorer, _("Create Folder"), _("Folder Name:"))
+        if not folder_name:
+            return
+        target_path = os.path.join(file_explorer.current_path, folder_name)
+        if os.path.exists(target_path):
+            self.signals.show_warning_dialog.emit(_("Error"), _("Folder already exists: {folder_name}").format(folder_name=folder_name))
+            return
+        try:
+            os.mkdir(target_path)
+            file_explorer.update_file_list()
+            self._show_status_message(_("Created folder '{folder_name}'").format(folder_name=folder_name))
+        except OSError as e:
+            self.signals.show_warning_dialog.emit(
+                _("Error"),
+                _("Failed to create folder: {error}").format(error=str(e))
+            )
+
+    def rename_folder(self, file_explorer, folder_path: str) -> None:
+        """Rename selected folder."""
+        current_name = os.path.basename(folder_path)
+        new_name = self._prompt_folder_name(file_explorer, _("Rename Folder"), _("New Folder Name:"), current_name)
+        if not new_name or new_name == current_name:
+            return
+        target_path = os.path.join(os.path.dirname(folder_path), new_name)
+        if os.path.exists(target_path):
+            self.signals.show_warning_dialog.emit(_("Error"), _("Folder already exists: {folder_name}").format(folder_name=new_name))
+            return
+        try:
+            os.rename(folder_path, target_path)
+            favorite_folders = read_favorite_folders()
+            if folder_path in favorite_folders:
+                favorite_folders.remove(folder_path)
+                favorite_folders.append(target_path)
+                save_favorite_folders(favorite_folders)
+            file_explorer.update_file_list()
+            file_explorer.update_drives_list()
+            self._show_status_message(
+                _("Renamed folder '{old_name}' to '{new_name}'").format(old_name=current_name, new_name=new_name)
+            )
+        except OSError as e:
+            self.signals.show_warning_dialog.emit(
+                _("Error"),
+                _("Failed to rename folder: {error}").format(error=str(e))
+            )
+
+    def delete_folder(self, file_explorer, folder_path: str) -> None:
+        """Delete selected folder after confirmation."""
+        folder_name = os.path.basename(folder_path)
+        msg_box = QMessageBox(file_explorer)
+        msg_box.setWindowTitle(_("Confirm Deletion"))
+        msg_box.setText(
+            _("Are you sure you want to delete folder '{folder_name}'? This action cannot be undone.")
+            .format(folder_name=folder_name)
+        )
+        msg_box.setIcon(QMessageBox.Icon.Warning)
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        if msg_box.exec() != QMessageBox.StandardButton.Yes:
+            return
+        try:
+            shutil.rmtree(folder_path)
+            favorite_folders = read_favorite_folders()
+            if folder_path in favorite_folders:
+                favorite_folders.remove(folder_path)
+                save_favorite_folders(favorite_folders)
+            file_explorer.update_file_list()
+            file_explorer.update_drives_list()
+            self._show_status_message(_("Deleted folder '{folder_name}'").format(folder_name=folder_name))
+        except OSError as e:
+            self.signals.show_warning_dialog.emit(
+                _("Error"),
+                _("Failed to delete folder: {error}").format(error=str(e))
+            )
 
     def _get_safe_icon(self, icon_name: str) -> QIcon:
         """Returns a QIcon, ensuring it is valid."""
