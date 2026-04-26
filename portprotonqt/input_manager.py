@@ -2,10 +2,13 @@ import time
 import threading
 import os
 import math
+from dataclasses import dataclass
 from typing import Protocol, cast, Any
-from evdev import InputDevice, InputEvent, UInput, ecodes, list_devices, ff
+os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1")
+import pygame
+from pygame._sdl2 import controller
+from evdev import UInput, ecodes
 from enum import Enum
-from pyudev import Context, Monitor, Device, Devices
 from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea, QLineEdit, QDialog, QMenu, QComboBox, QListView, QMessageBox, QListWidget, QTableWidget, QAbstractItemView, QSlider, QCheckBox, QPushButton
 from PySide6.QtCore import Qt, QObject, QEvent, QPoint, Signal, Slot, QTimer, QThread
 from PySide6.QtGui import QKeyEvent, QMouseEvent
@@ -13,10 +16,9 @@ from portprotonqt.logger import get_logger
 from portprotonqt.image_utils import FullscreenDialog
 from portprotonqt.custom_widgets import NavLabel, AutoSizeButton
 from portprotonqt.game_card import GameCard
-from portprotonqt.config_utils import read_fullscreen_config, read_window_geometry, save_window_geometry, read_auto_fullscreen_gamepad, read_rumble_config, read_gamepad_type
+from portprotonqt.config_utils import read_fullscreen_config, read_window_geometry, save_window_geometry, read_auto_fullscreen_gamepad
 from portprotonqt.dialogs import AddGameDialog
 from portprotonqt.virtual_keyboard import VirtualKeyboard
-import select
 
 logger = get_logger(__name__)
 
@@ -53,28 +55,80 @@ class MainWindowProtocol(Protocol):
     game_library_manager: Any  # GameLibraryManager - using Any to avoid circular import
     auto_size_slider: QSlider | None
 
-# Mapping of actions to evdev button codes, includes Xbox, PlayStation and Nintendo Switch controllers
-# https://github.com/torvalds/linux/blob/master/drivers/hid/hid-playstation.c
-# https://github.com/torvalds/linux/blob/master/drivers/input/joystick/xpad.c
-# https://github.com/torvalds/linux/blob/master/drivers/hid/hid-nintendo
+PAD_BUTTON_SOUTH = 1000
+PAD_BUTTON_EAST = 1001
+PAD_BUTTON_WEST = 1002
+PAD_BUTTON_NORTH = 1003
+PAD_BUTTON_SELECT = 1004
+PAD_BUTTON_GUIDE = 1005
+PAD_BUTTON_START = 1006
+PAD_BUTTON_LEFT_SHOULDER = 1007
+PAD_BUTTON_RIGHT_SHOULDER = 1008
+PAD_AXIS_LEFT_TRIGGER = 1100
+PAD_AXIS_RIGHT_TRIGGER = 1101
+PAD_AXIS_LEFT_X = 1200
+PAD_AXIS_LEFT_Y = 1201
+PAD_AXIS_RIGHT_X = 1202
+PAD_AXIS_RIGHT_Y = 1203
+PAD_DPAD_X = 1300
+PAD_DPAD_Y = 1301
+
 BUTTONS = {
-    'confirm':       {ecodes.BTN_SOUTH},           # A (Xbox) / Cross (PS) / B (Switch)
-    'back':          {ecodes.BTN_EAST},            # B (Xbox) / Circle (PS) / A (Switch)
-    'add_game':      {ecodes.BTN_NORTH},           # X (Xbox) / Triangle (PS) / Y (Switch)
-    'prev_dir':      {ecodes.BTN_WEST},            # Y (Xbox) / Square (PS) / X (Switch)
-    'prev_tab':      {ecodes.BTN_TL, ecodes.BTN_Z},              # LB (Xbox) / L1 (PS) / L (Switch) and BTN_Z for hat switch
-    'next_tab':      {ecodes.BTN_TR, ecodes.BTN_C},              # RB (Xbox) / R1 (PS) / R (Switch) and BTN_C for hat switch
-    'context_menu':  {ecodes.BTN_START},           # Start (Xbox) / Options (PS) / + (Switch)
-    'menu':          {ecodes.BTN_SELECT},          # Select (Xbox) / Share (PS) / - (Switch)
-    'guide':         {ecodes.BTN_MODE},            # Xbox Button / PS Button / Home (Switch)
-    'increase_size': {ecodes.ABS_RZ, ecodes.BTN_TR2},              # RT (Xbox) / R2 (PS) / ZR (Switch) and BTN_TR2 for Bluetooth
-    'decrease_size': {ecodes.ABS_Z, ecodes.BTN_TL2},               # LT (Xbox) / L2 (PS) / ZL (Switch) and BTN_TL2 for Bluetooth
+    'confirm':       {PAD_BUTTON_SOUTH},           # A (Xbox) / Cross (PS) / B (Switch)
+    'back':          {PAD_BUTTON_EAST},            # B (Xbox) / Circle (PS) / A (Switch)
+    'add_game':      {PAD_BUTTON_WEST},            # X (Xbox) / Square (PS) / Y (Switch)
+    'prev_dir':      {PAD_BUTTON_NORTH},           # Y (Xbox) / Triangle (PS) / X (Switch)
+    'prev_tab':      {PAD_BUTTON_LEFT_SHOULDER},
+    'next_tab':      {PAD_BUTTON_RIGHT_SHOULDER},
+    'context_menu':  {PAD_BUTTON_START},
+    'menu':          {PAD_BUTTON_SELECT},
+    'guide':         {PAD_BUTTON_GUIDE},
+    'increase_size': {PAD_AXIS_RIGHT_TRIGGER},
+    'decrease_size': {PAD_AXIS_LEFT_TRIGGER},
 }
 
 class GamepadType(Enum):
     XBOX = "Xbox"
     PLAYSTATION = "PlayStation"
     UNKNOWN = "Unknown"
+
+
+@dataclass
+class PygameGamepad:
+    """Small wrapper that preserves the old InputManager gamepad contract."""
+
+    controller: Any
+    name: str
+    path: str
+    instance_id: int
+
+    def close(self) -> None:
+        """Release local references for the SDL joystick object."""
+        return
+
+
+SDL_CONTROLLER_BUTTON_TO_ECODE = {
+    0: PAD_BUTTON_SOUTH,
+    1: PAD_BUTTON_EAST,
+    2: PAD_BUTTON_WEST,
+    3: PAD_BUTTON_NORTH,
+    4: PAD_BUTTON_SELECT,
+    5: PAD_BUTTON_GUIDE,
+    6: PAD_BUTTON_START,
+    9: PAD_BUTTON_LEFT_SHOULDER,
+    10: PAD_BUTTON_RIGHT_SHOULDER,
+}
+
+SDL_CONTROLLER_AXIS_TO_ECODE = {
+    0: PAD_AXIS_LEFT_X,
+    1: PAD_AXIS_LEFT_Y,
+    2: PAD_AXIS_RIGHT_X,
+    3: PAD_AXIS_RIGHT_Y,
+    4: PAD_AXIS_LEFT_TRIGGER,
+    5: PAD_AXIS_RIGHT_TRIGGER,
+}
+
+PYGAME_AXIS_SCALE = 32767
 
 class MouseEmulationThread(QThread):
     """Thread for creating UInput virtual mouse device without blocking UI."""
@@ -137,13 +191,7 @@ class InputManager(QObject):
         super().__init__(cast(QObject, main_window))
         self._parent = main_window
         self._gamepad_handling_enabled = True
-        type_str = read_gamepad_type()
-        if type_str == "playstation":
-            self.gamepad_type = GamepadType.PLAYSTATION
-        elif type_str == "xbox":
-            self.gamepad_type = GamepadType.XBOX
-        else:
-            self.gamepad_type = GamepadType.UNKNOWN
+        self.gamepad_type = GamepadType.UNKNOWN
         self._parent.currentDetailPage = getattr(self._parent, 'currentDetailPage', None)
         self._parent.current_exec_line = getattr(self._parent, 'current_exec_line', None)
         self._parent.current_add_game_dialog = getattr(self._parent, 'current_add_game_dialog', None)
@@ -154,11 +202,10 @@ class InputManager(QObject):
         self.current_axis_delay = initial_axis_move_delay
         self.last_move_time = 0.0
         self.axis_moving = False
-        self.gamepad: InputDevice | None = None
+        self.gamepad: PygameGamepad | None = None
         self.gamepad_thread: threading.Thread | None = None
         self.running = True
         self._is_fullscreen = read_fullscreen_config()
-        self.rumble_effect_id: int | None = None  # Store the rumble effect ID
         self.lt_pressed = False
         self.rt_pressed = False
         self.last_trigger_time = 0.0
@@ -177,7 +224,7 @@ class InputManager(QObject):
         self.min_value = 0       # axis minimum
         self.max_value = 255     # axis maximum
         self.deadzone_value = 15 # deadzone from kernel (flat parameter)
-        self.scroll_axis_code = ecodes.ABS_RY
+        self.scroll_axis_code = PAD_AXIS_RIGHT_Y
         self.scroll_center = self.center_y
         self.scroll_min_value = self.min_value
         self.scroll_max_value = self.max_value
@@ -211,6 +258,10 @@ class InputManager(QObject):
         self.guide_timer.timeout.connect(self._handle_guide_timeout)
         self.guide_combination_timeout = 0.3  # 300ms timeout for combination
         self.in_guide_combination_attempt = False  # Flag to track if we're in a guide+select combination attempt
+        self._pygame_ready = False
+        self._button_states: dict[int, int] = {}
+        self._hat_states: dict[int, tuple[int, int]] = {}
+        self._axis_states: dict[int, int] = {}
 
         # Focus check timer for emulation flag (runs in main thread)
         self.focus_check_timer = QTimer(self)
@@ -352,7 +403,7 @@ class InputManager(QObject):
             return
 
         current_row = sorted_rows[current_row_idx][1]
-        if code == ecodes.ABS_HAT0X and value != 0:
+        if code == PAD_DPAD_X and value != 0:
             if value < 0:  # Left
                 if current_col_idx > 0:
                     next_card = current_row[current_col_idx - 1]
@@ -381,7 +432,7 @@ class InputManager(QObject):
                             next_card.setFocus(Qt.FocusReason.OtherFocusReason)
                             if scroll_area:
                                 scroll_area.ensureWidgetVisible(next_card, 50, 50)
-        elif code == ecodes.ABS_HAT0Y and value != 0:
+        elif code == PAD_DPAD_Y and value != 0:
             if value > 0:  # Down
                 if current_row_idx < len(sorted_rows) - 1:
                     next_row = sorted_rows[current_row_idx + 1][1]
@@ -556,9 +607,9 @@ class InputManager(QObject):
                 keyboard = getattr(self._parent, 'keyboard', None)
 
             if keyboard and keyboard.isVisible():
-                if code in (ecodes.ABS_HAT0X, ecodes.ABS_X):
+                if code in (PAD_DPAD_X, PAD_AXIS_LEFT_X):
                     normalized_value = value
-                    if code == ecodes.ABS_X:
+                    if code == PAD_AXIS_LEFT_X:
                         if abs(value) < self.dead_zone:
                             return
                         normalized_value = 1 if value > self.dead_zone else -1
@@ -566,9 +617,9 @@ class InputManager(QObject):
                         keyboard.move_focus_right()
                     elif normalized_value < 0:
                         keyboard.move_focus_left()
-                elif code in (ecodes.ABS_HAT0Y, ecodes.ABS_Y):
+                elif code in (PAD_DPAD_Y, PAD_AXIS_LEFT_Y):
                     normalized_value = value
-                    if code == ecodes.ABS_Y:
+                    if code == PAD_AXIS_LEFT_Y:
                         if abs(value) < self.dead_zone:
                             return
                         normalized_value = 1 if value > self.dead_zone else -1
@@ -581,7 +632,7 @@ class InputManager(QObject):
             # 1. Handle Popups (Menus)
             popup = QApplication.activePopupWidget()
             if isinstance(popup, QMenu):
-                if code == ecodes.ABS_HAT0Y and value != 0:
+                if code == PAD_DPAD_Y and value != 0:
                     self._navigate_menu_actions(popup, direction_down=value > 0)
                 return
 
@@ -596,13 +647,13 @@ class InputManager(QObject):
                     if focusables:
                         focusables[0].setFocus(Qt.FocusReason.OtherFocusReason)
                     return
-                if code == ecodes.ABS_HAT0X and value != 0:
+                if code == PAD_DPAD_X and value != 0:
                     if value > 0:
                         active_window.focusNextChild()
                     elif value < 0:
                         active_window.focusPreviousChild()
                     return
-                if code == ecodes.ABS_HAT0Y and value != 0 and not isinstance(focused_widget, QTableWidget):
+                if code == PAD_DPAD_Y and value != 0 and not isinstance(focused_widget, QTableWidget):
                     if value > 0:
                         active_window.focusNextChild()
                     elif value < 0:
@@ -616,7 +667,7 @@ class InputManager(QObject):
             focused_widget = QApplication.focusWidget()
 
             # 3. Handle Drive Buttons Navigation (Horizontal)
-            if code in (ecodes.ABS_HAT0X, ecodes.ABS_X) and \
+            if code in (PAD_DPAD_X, PAD_AXIS_LEFT_X) and \
                hasattr(self.file_explorer, 'drive_buttons') and \
                self.file_explorer.drive_buttons:
 
@@ -640,7 +691,7 @@ class InputManager(QObject):
                 return
 
             # 4. Handle Vertical Navigation (File List vs Drive Buttons)
-            elif code in (ecodes.ABS_HAT0Y, ecodes.ABS_Y):
+            elif code in (PAD_DPAD_Y, PAD_AXIS_LEFT_Y):
                 # Move from buttons to list
                 if isinstance(focused_widget, AutoSizeButton) and focused_widget in self.file_explorer.drive_buttons:
                     if value > 0 and self.file_explorer.file_list.count() > 0:
@@ -650,7 +701,7 @@ class InputManager(QObject):
                     return
 
                 # D-pad: Fixed speed
-                if code == ecodes.ABS_HAT0Y:
+                if code == PAD_DPAD_Y:
                     if value != 0:
                         self.current_direction = value
                         self.stick_value = 1.0
@@ -663,7 +714,7 @@ class InputManager(QObject):
                         self.nav_timer.stop()
 
                 # Stick: Analog speed
-                elif code == ecodes.ABS_Y:
+                elif code == PAD_AXIS_LEFT_Y:
                     if abs(value) < self.dead_zone:
                         if self.stick_activated:
                             self.current_direction = 0
@@ -779,7 +830,7 @@ class InputManager(QObject):
 
             current_row = table.currentRow()
 
-            if code == ecodes.ABS_HAT0Y:  # Up/Down
+            if code == PAD_DPAD_Y:  # Up/Down
                 step = -1 if value < 0 else 1
                 new_row = current_row + step
 
@@ -854,7 +905,7 @@ class InputManager(QObject):
             current_row = 0
             table.setCurrentCell(0, 0)
 
-        if code == ecodes.ABS_HAT0Y and value != 0:
+        if code == PAD_DPAD_Y and value != 0:
             # Vertical navigation
             if value > 0:  # Down
                 new_row = min(current_row + 1, row_count - 1)
@@ -872,7 +923,7 @@ class InputManager(QObject):
                 )
             table.setFocus(Qt.FocusReason.OtherFocusReason)
             return
-        elif code == ecodes.ABS_HAT0X and value != 0:
+        elif code == PAD_DPAD_X and value != 0:
             # Horizontal navigation
             col_count = table.columnCount()
             current_col = table.currentColumn()
@@ -975,7 +1026,7 @@ class InputManager(QObject):
             code: Event code (usually ABS_HAT0X or ABS_HAT0Y)
             value: Event value (direction)
         """
-        if code == ecodes.ABS_HAT0Y and value != 0:
+        if code == PAD_DPAD_Y and value != 0:
             model = list_widget.model()
             current_index = list_widget.currentIndex()
             if model and current_index.isValid():
@@ -998,7 +1049,7 @@ class InputManager(QObject):
             code: Event code (usually ABS_HAT0X or ABS_HAT0Y)
             value: Event value (direction)
         """
-        if code == ecodes.ABS_HAT0Y and value != 0:
+        if code == PAD_DPAD_Y and value != 0:
             current_index = combo_widget.currentIndex()
             if value > 0:  # Down
                 new_index = min(current_index + 1, combo_widget.count() - 1)
@@ -1175,7 +1226,7 @@ class InputManager(QObject):
 
             current_row = table.currentRow()
 
-            if code == ecodes.ABS_HAT0Y:  # Up/Down
+            if code == PAD_DPAD_Y:  # Up/Down
                 step = -1 if value < 0 else 1
                 new_row = current_row + step
 
@@ -1417,7 +1468,7 @@ class InputManager(QObject):
                 normalized_value = 0
 
                 # Normalize Stick vs D-pad
-                if code in (ecodes.ABS_X, ecodes.ABS_Y):  # Sticks
+                if code in (PAD_AXIS_LEFT_X, PAD_AXIS_LEFT_Y):  # Sticks
                     if abs(value) < self.dead_zone:
                         self.current_dpad_code = None
                         self.current_dpad_value = 0
@@ -1428,12 +1479,12 @@ class InputManager(QObject):
                     normalized_value = value
 
                 if normalized_value != 0:
-                    if code in (ecodes.ABS_HAT0X, ecodes.ABS_X):
+                    if code in (PAD_DPAD_X, PAD_AXIS_LEFT_X):
                         if normalized_value > 0:
                             kb.move_focus_right()
                         else:
                             kb.move_focus_left()
-                    elif code in (ecodes.ABS_HAT0Y, ecodes.ABS_Y):
+                    elif code in (PAD_DPAD_Y, PAD_AXIS_LEFT_Y):
                         if normalized_value > 0:
                             kb.move_focus_down()
                         else:
@@ -1444,7 +1495,7 @@ class InputManager(QObject):
                 focused = QApplication.focusWidget()
                 open_combo = self._get_open_settings_combo()
                 if open_combo:
-                    if code == ecodes.ABS_HAT0Y and value != 0:
+                    if code == PAD_DPAD_Y and value != 0:
                         view = open_combo.view()
                         model = view.model()
                         current_index = view.currentIndex()
@@ -1460,11 +1511,11 @@ class InputManager(QObject):
                             view.scrollTo(new_index, QAbstractItemView.ScrollHint.PositionAtCenter)
                     return
 
-                if code not in (ecodes.ABS_HAT0X, ecodes.ABS_HAT0Y, ecodes.ABS_X, ecodes.ABS_Y):
+                if code not in (PAD_DPAD_X, PAD_DPAD_Y, PAD_AXIS_LEFT_X, PAD_AXIS_LEFT_Y):
                     return
 
                 normalized_value = value
-                if code in (ecodes.ABS_X, ecodes.ABS_Y):
+                if code in (PAD_AXIS_LEFT_X, PAD_AXIS_LEFT_Y):
                     if abs(value) < self.dead_zone:
                         normalized_value = 0
                     else:
@@ -1476,7 +1527,7 @@ class InputManager(QObject):
                     self.current_dpad_value = 0
                     return
 
-                if code in (ecodes.ABS_HAT0X, ecodes.ABS_HAT0Y):
+                if code in (PAD_DPAD_X, PAD_DPAD_Y):
                     if self.current_dpad_code != code or self.current_dpad_value != normalized_value:
                         self.dpad_timer.stop()
                         self.dpad_timer.setInterval(120 if self.dpad_timer.isActive() else 220)
@@ -1492,9 +1543,9 @@ class InputManager(QObject):
                     self._focus_first_row_in_current_settings_table()
                     return
 
-                if code in (ecodes.ABS_HAT0X, ecodes.ABS_X):
+                if code in (PAD_DPAD_X, PAD_AXIS_LEFT_X):
                     self._move_mangohud_horizontal(focused, normalized_value, sections)
-                elif code in (ecodes.ABS_HAT0Y, ecodes.ABS_Y):
+                elif code in (PAD_DPAD_Y, PAD_AXIS_LEFT_Y):
                     self._move_mangohud_vertical(focused, normalized_value, sections)
                 return
 
@@ -1506,7 +1557,7 @@ class InputManager(QObject):
             if self.settings_dialog and table == self.settings_dialog.advanced_table and table.currentRow() >= 0:
                 cell_widget = table.cellWidget(table.currentRow(), 1)
                 if isinstance(cell_widget, QComboBox) and cell_widget.view().isVisible():
-                    if code == ecodes.ABS_HAT0Y and value != 0:
+                    if code == PAD_DPAD_Y and value != 0:
                         idx = cell_widget.currentIndex()
                         new_idx = max(0, idx - 1) if value < 0 else min(cell_widget.count() - 1, idx + 1)
                         if new_idx != idx:
@@ -1529,7 +1580,7 @@ class InputManager(QObject):
 
             current_row = table.currentRow()
 
-            if code == ecodes.ABS_HAT0Y:  # Up/Down
+            if code == PAD_DPAD_Y:  # Up/Down
                 step = -1 if value < 0 else 1
                 new_row = current_row + step
 
@@ -1541,7 +1592,7 @@ class InputManager(QObject):
                     table.setCurrentCell(new_row, focus_column)
                     self._focus_settings_advanced_value_widget(table, new_row)
 
-            elif code == ecodes.ABS_HAT0X:  # Left/Right
+            elif code == PAD_DPAD_X:  # Left/Right
                 current_col = table.currentColumn()
                 if value < 0:  # Left
                     if current_col > 0:
@@ -2208,55 +2259,12 @@ class InputManager(QObject):
     def disable_gamepad_handling(self) -> None:
         """Disable gamepad event handling."""
         self._gamepad_handling_enabled = False
-        self.stop_rumble()
         self.dpad_timer.stop()
         self.nav_timer.stop()
 
     def enable_gamepad_handling(self) -> None:
         """Enable gamepad event handling."""
         self._gamepad_handling_enabled = True
-
-    def trigger_rumble(self, duration_ms: int = 200, strong_magnitude: int = 0x8000, weak_magnitude: int = 0x8000) -> None:
-        """Trigger a rumble effect on the gamepad if supported."""
-        if not read_rumble_config():
-            return
-        if not self.gamepad:
-            return
-        try:
-            # Check if the gamepad supports force feedback
-            caps = self.gamepad.capabilities()
-            if ecodes.EV_FF not in caps or ecodes.FF_RUMBLE not in caps.get(ecodes.EV_FF, []):
-                logger.debug("Gamepad does not support force feedback or rumble")
-                return
-
-            # Create a rumble effect
-            rumble = ff.Rumble(strong_magnitude=strong_magnitude, weak_magnitude=weak_magnitude)
-            effect = ff.Effect(
-                id=-1,  # Let evdev assign an ID
-                type=ecodes.FF_RUMBLE,
-                direction=0,  # Direction (not used for rumble)
-                replay=ff.Replay(length=duration_ms, delay=0),
-                u=ff.EffectType(ff_rumble_effect=rumble)
-            )
-
-            # Upload the effect
-            self.rumble_effect_id = self.gamepad.upload_effect(effect)
-            # Play the effect
-            event = InputEvent(0, 0, ecodes.EV_FF, self.rumble_effect_id, 1)
-            self.gamepad.write_event(event)
-            # Schedule effect erasure after duration
-            QTimer.singleShot(duration_ms, self.stop_rumble)
-        except Exception as e:
-            logger.error(f"Error triggering rumble: {e}", exc_info=True)
-
-    def stop_rumble(self) -> None:
-        """Stop the rumble effect and clean up."""
-        if self.gamepad and self.rumble_effect_id is not None:
-            try:
-                self.gamepad.erase_effect(self.rumble_effect_id)
-                self.rumble_effect_id = None
-            except Exception as e:
-                logger.error(f"Error stopping rumble: {e}", exc_info=True)
 
     def _handle_guide_timeout(self) -> None:
         if self.guide_held:
@@ -2691,9 +2699,9 @@ class InputManager(QObject):
 
         if keyboard and keyboard.isVisible():
             # Handle horizontal movement (LEFT/RIGHT)
-            if code in (ecodes.ABS_HAT0X, ecodes.ABS_X):
+            if code in (PAD_DPAD_X, PAD_AXIS_LEFT_X):
                 normalized_value = 0
-                if code == ecodes.ABS_X:  # Left stick
+                if code == PAD_AXIS_LEFT_X:  # Left stick
                     # Apply deadzone
                     if abs(value) < self.dead_zone:
                         self.current_dpad_code = None
@@ -2713,9 +2721,9 @@ class InputManager(QObject):
                 return
 
             # Handle vertical movement (UP/DOWN)
-            elif code in (ecodes.ABS_HAT0Y, ecodes.ABS_Y):
+            elif code in (PAD_DPAD_Y, PAD_AXIS_LEFT_Y):
                 normalized_value = 0
-                if code == ecodes.ABS_Y:  # Left stick
+                if code == PAD_AXIS_LEFT_Y:  # Left stick
                     # Apply deadzone
                     if abs(value) < self.dead_zone:
                         self.current_dpad_code = None
@@ -2757,21 +2765,21 @@ class InputManager(QObject):
                     if focusables:
                         focusables[0].setFocus(Qt.FocusReason.OtherFocusReason)
                     return
-                if code == ecodes.ABS_HAT0X and value != 0:  # Horizontal navigation
+                if code == PAD_DPAD_X and value != 0:  # Horizontal navigation
                     if value > 0:  # Right
                         active.focusNextChild()
                     elif value < 0:  # Left
                         active.focusPreviousChild()
-                elif code == ecodes.ABS_HAT0Y and value != 0:  # Vertical navigation
+                elif code == PAD_DPAD_Y and value != 0:  # Vertical navigation
                     if value > 0:  # Down
                         active.focusNextChild()
                     elif value < 0:  # Up
                         active.focusPreviousChild()
                 return
             # Handle horizontal navigation between AddGameDialog shortcut checkboxes
-            if isinstance(active, AddGameDialog) and code in (ecodes.ABS_HAT0X, ecodes.ABS_X) and value != 0:
+            if isinstance(active, AddGameDialog) and code in (PAD_DPAD_X, PAD_AXIS_LEFT_X) and value != 0:
                 normalized_value = value
-                if code == ecodes.ABS_X:
+                if code == PAD_AXIS_LEFT_X:
                     if abs(value) < self.dead_zone:
                         return
                     normalized_value = 1 if value > self.dead_zone else -1
@@ -2791,7 +2799,7 @@ class InputManager(QObject):
                         return
 
             # Handle AddGameDialog or other QDialog navigation with D-pad
-            elif isinstance(active, QDialog) and code == ecodes.ABS_HAT0X and value != 0:
+            elif isinstance(active, QDialog) and code == PAD_DPAD_X and value != 0:
                 if not focused or not active.focusWidget():
                     # If no widget is focused, focus the first focusable widget
                     focusables = active.findChildren(QWidget, options=Qt.FindChildOption.FindChildrenRecursively)
@@ -2804,7 +2812,7 @@ class InputManager(QObject):
                 elif value < 0:  # Left
                     active.focusPreviousChild()
                 return
-            elif isinstance(active, QDialog) and code == ecodes.ABS_HAT0Y and value != 0 and not isinstance(focused, QTableWidget):  # Keep up/down for other dialogs
+            elif isinstance(active, QDialog) and code == PAD_DPAD_Y and value != 0 and not isinstance(focused, QTableWidget):  # Keep up/down for other dialogs
                 if not focused or not active.focusWidget():
                     # If no widget is focused, focus the first focusable widget
                     focusables = active.findChildren(QWidget, options=Qt.FindChildOption.FindChildrenRecursively)
@@ -2820,13 +2828,13 @@ class InputManager(QObject):
 
             # Handle QMenu navigation with D-pad
             if isinstance(popup, QMenu):
-                if code == ecodes.ABS_HAT0Y and value != 0:
+                if code == PAD_DPAD_Y and value != 0:
                     self._navigate_menu_actions(popup, direction_down=value > 0)
                     return
                 return
 
             # Handle QListView navigation with D-pad
-            if isinstance(focused, QListView) and code == ecodes.ABS_HAT0Y and value != 0:
+            if isinstance(focused, QListView) and code == PAD_DPAD_Y and value != 0:
                 model = focused.model()
                 current_index = focused.currentIndex()
                 if model and current_index.isValid():
@@ -2842,7 +2850,7 @@ class InputManager(QObject):
                 return
 
             # Fullscreen horizontal navigation
-            if isinstance(active, FullscreenDialog) and code == ecodes.ABS_HAT0X:
+            if isinstance(active, FullscreenDialog) and code == PAD_DPAD_X:
                 if value < 0:
                     active.show_prev()
                 elif value > 0:
@@ -2851,7 +2859,7 @@ class InputManager(QObject):
 
 
             # Table navigation using generalized methods
-            if code == ecodes.ABS_HAT0X and value != 0:
+            if code == PAD_DPAD_X and value != 0:
                 system_tab_index = getattr(self._parent, "system_tab_index", -1)
                 if self._parent.stackedWidget.currentIndex() == system_tab_index:
                     switch_relative = getattr(self._parent, "switchSystemSectionRelative", None)
@@ -2872,7 +2880,7 @@ class InputManager(QObject):
                 return
 
             # Search focus logic for tabs 0 and 1
-            if code == ecodes.ABS_HAT0Y and value < 0:
+            if code == PAD_DPAD_Y and value < 0:
                 focused = QApplication.focusWidget()
                 current_index = self._parent.stackedWidget.currentIndex()
                 if current_index in (0, 1) and isinstance(focused, GameCard):
@@ -2897,7 +2905,7 @@ class InputManager(QObject):
                                 return
 
             # Game cards navigation for tabs 0 and 1
-            if code in (ecodes.ABS_HAT0X, ecodes.ABS_HAT0Y):
+            if code in (PAD_DPAD_X, PAD_DPAD_Y):
                 current_index = self._parent.stackedWidget.currentIndex()
                 if current_index in (0, 1):
                     container = self._parent.gamesListWidget if current_index == 0 else self._parent.autoInstallContainer
@@ -2906,11 +2914,11 @@ class InputManager(QObject):
                     self._navigate_game_cards(container, current_index, code, value)
                     return
 
-            if code == ecodes.ABS_HAT0Y and value != 0 and self._handle_theme_tab_navigation(value):
+            if code == PAD_DPAD_Y and value != 0 and self._handle_theme_tab_navigation(value):
                 return
 
             # System tab section buttons: do not cycle tabs on Up/Down.
-            if code == ecodes.ABS_HAT0Y and value != 0:
+            if code == PAD_DPAD_Y and value != 0:
                 system_tab_index = getattr(self._parent, "system_tab_index", -1)
                 if self._parent.stackedWidget.currentIndex() == system_tab_index:
                     focused = QApplication.focusWidget()
@@ -2928,19 +2936,19 @@ class InputManager(QObject):
                         return
 
             # Button navigation on detail pages (horizontal layout)
-            if code in (ecodes.ABS_HAT0X, ecodes.ABS_HAT0Y, ecodes.ABS_X, ecodes.ABS_Y):
+            if code in (PAD_DPAD_X, PAD_DPAD_Y, PAD_AXIS_LEFT_X, PAD_AXIS_LEFT_Y):
                 focused = QApplication.focusWidget()
                 page = self._parent.stackedWidget.currentWidget()
                 current_detail_page = getattr(self._parent, "currentDetailPage", None)
 
                 normalized_code = code
                 normalized_value = value
-                if code in (ecodes.ABS_X, ecodes.ABS_Y):
+                if code in (PAD_AXIS_LEFT_X, PAD_AXIS_LEFT_Y):
                     if abs(value) < self.dead_zone:
                         normalized_value = 0
                     else:
                         normalized_value = 1 if value > self.dead_zone else -1
-                    normalized_code = ecodes.ABS_HAT0X if code == ecodes.ABS_X else ecodes.ABS_HAT0Y
+                    normalized_code = PAD_DPAD_X if code == PAD_AXIS_LEFT_X else PAD_DPAD_Y
 
                 # Check if we're on a detail page and focused widget is a button
                 if (
@@ -2995,22 +3003,22 @@ class InputManager(QObject):
                                 return
 
                             target = None
-                            if normalized_code == ecodes.ABS_HAT0X and normalized_value > 0:
+                            if normalized_code == PAD_DPAD_X and normalized_value > 0:
                                 if current_col_idx < len(rows[current_row_idx]) - 1:
                                     target = rows[current_row_idx][current_col_idx + 1]
                                 elif current_row_idx < len(rows) - 1:
                                     target = rows[current_row_idx + 1][0]
-                            elif normalized_code == ecodes.ABS_HAT0X and normalized_value < 0:
+                            elif normalized_code == PAD_DPAD_X and normalized_value < 0:
                                 if current_col_idx > 0:
                                     target = rows[current_row_idx][current_col_idx - 1]
                                 elif current_row_idx > 0:
                                     target = rows[current_row_idx - 1][-1]
-                            elif normalized_code == ecodes.ABS_HAT0Y and normalized_value > 0:
+                            elif normalized_code == PAD_DPAD_Y and normalized_value > 0:
                                 if current_row_idx < len(rows) - 1:
                                     next_row = rows[current_row_idx + 1]
                                     current_x = centers[focused][0]
                                     target = min(next_row, key=lambda btn: abs(centers[btn][0] - current_x))
-                            elif normalized_code == ecodes.ABS_HAT0Y and normalized_value < 0:
+                            elif normalized_code == PAD_DPAD_Y and normalized_value < 0:
                                 if current_row_idx > 0:
                                     prev_row = rows[current_row_idx - 1]
                                     current_x = centers[focused][0]
@@ -3026,7 +3034,7 @@ class InputManager(QObject):
                                 return
 
             # Vertical navigation in other tabs
-            if code == ecodes.ABS_HAT0Y and value != 0:
+            if code == PAD_DPAD_Y and value != 0:
                 focused = QApplication.focusWidget()
                 page = self._parent.stackedWidget.currentWidget()
                 if value > 0:  # Down
@@ -3287,16 +3295,16 @@ class InputManager(QObject):
                 dpad_code = None
                 dpad_value = 0
                 if key == Qt.Key.Key_Up:
-                    dpad_code = ecodes.ABS_HAT0Y
+                    dpad_code = PAD_DPAD_Y
                     dpad_value = -1
                 elif key == Qt.Key.Key_Down:
-                    dpad_code = ecodes.ABS_HAT0Y
+                    dpad_code = PAD_DPAD_Y
                     dpad_value = 1
                 elif key == Qt.Key.Key_Left:
-                    dpad_code = ecodes.ABS_HAT0X
+                    dpad_code = PAD_DPAD_X
                     dpad_value = -1
                 elif key == Qt.Key.Key_Right:
-                    dpad_code = ecodes.ABS_HAT0X
+                    dpad_code = PAD_DPAD_X
                     dpad_value = 1
 
                 if dpad_code is not None:
@@ -3347,9 +3355,9 @@ class InputManager(QObject):
                 now = time.time()
                 dpad_code = None
                 if key in (Qt.Key.Key_Up, Qt.Key.Key_Down):
-                    dpad_code = ecodes.ABS_HAT0Y
+                    dpad_code = PAD_DPAD_Y
                 elif key in (Qt.Key.Key_Left, Qt.Key.Key_Right):
-                    dpad_code = ecodes.ABS_HAT0X
+                    dpad_code = PAD_DPAD_X
 
                 if dpad_code is not None:
                     # Emit release event with value 0 to stop continuous movement
@@ -3359,203 +3367,71 @@ class InputManager(QObject):
         return super().eventFilter(obj, event)
 
     def init_gamepad(self) -> None:
-        self.udev_context = Context()
-        self.Devices = Devices
-        self.monitor_ready = False
-        self.monitor_event = threading.Event()
-
-        # Connect hotplug signal to handler in main thread
+        self._init_pygame_backend()
         self.gamepad_hotplug.connect(self._on_gamepad_hotplug)
-
-        # Debounce timer for delayed gamepad check (in main Qt thread)
-        self.gamepad_check_timer = QTimer()
+        self.gamepad_check_timer = QTimer(self)
         self.gamepad_check_timer.setSingleShot(True)
         self.gamepad_check_timer.timeout.connect(self.check_gamepad)
-
-        # Initial check
         self.check_gamepad()
+        if not self.gamepad_thread or not self.gamepad_thread.is_alive():
+            self.gamepad_thread = threading.Thread(target=self.monitor_gamepad, daemon=True)
+            self.gamepad_thread.start()
+        logger.info("Gamepad support initialized with pygame events")
 
-        # Start udev monitor in separate thread
-        threading.Thread(target=self.run_udev_monitor, daemon=True).start()
-        logger.info("Gamepad support initialized with hotplug (evdev + pyudev)")
-
-    def run_udev_monitor(self) -> None:
-        """
-        Safe non-blocking udev monitor for gamepads.
-        Uses select.poll() instead of blocking monitor.poll().
-        """
-        try:
-            logger.info("Starting udev monitor...")
-            monitor = Monitor.from_netlink(self.udev_context)
-            monitor.filter_by(subsystem='input')
-
-            try:
-                monitor.start()
-            except Exception as e:
-                logger.error(f"Failed to start udev monitor: {e}")
-                return
-
-            fd = monitor.fileno()
-            poller = select.poll()
-            poller.register(fd, select.POLLIN)
-
-            # Short event drain on startup (0.5 sec)
-            drain_start = time.time()
-            drained_count = 0
-            while time.time() - drain_start < 0.5:
-                events = poller.poll(100)
-                if not events:
-                    continue
-                try:
-                    _ = monitor.poll(timeout=0)  # just read, do not process
-                    drained_count += 1
-                except Exception as e:
-                    logger.debug("Failed to drain initial udev events: %s", e)
-                    break
-
-            self.monitor_ready = True
-            self.monitor_event.set()
-            logger.info(f"Drained {drained_count} initial events, now monitoring hotplug...")
-
-            # Main loop
-            while self.running:
-                events = poller.poll(1000)  # 1 sec timeout
-                if not events:
-                    continue  # just wait, do not block
-
-                try:
-                    device = monitor.poll(timeout=0)
-                except Exception as e:
-                    logger.debug(f"Monitor poll failed: {e}")
-                    continue
-
-                if not device:
-                    continue
-
-                action = device.action
-                if action and self._is_joystick_device(device):
-                    logger.info(f"Joystick hotplug event: {action} for {device.sys_name}")
-                    # send signal to Qt thread
-                    self.handle_udev_event(action, device)
-
-            logger.info("udev monitor stopped gracefully")
-
-        except Exception as e:
-            logger.error(f"Error in udev monitor: {e}", exc_info=True)
-
-    def _is_joystick_device(self, device: Device) -> bool:
-        """
-        Quick check: is device a joystick.
-        Checks ID_INPUT_JOYSTICK from udev database.
-        """
-        try:
-            # Check ID_INPUT_JOYSTICK property
-            if device.get('ID_INPUT_JOYSTICK') == '1':
-                return True
-
-            # Additionally: check parent devices
-            # (some controllers have property only on parent)
-            parent = device.parent
-            if parent and parent.get('ID_INPUT_JOYSTICK') == '1':
-                return True
-
-            return False
-        except Exception as e:
-            logger.debug(f"Error checking joystick device: {e}")
-            return False
-
-
-    def handle_udev_event(self, action: str, device: Device) -> None:
-        """
-        Udev event handler for joysticks.
-        Sends signal to main Qt thread instead of direct QTimer call.
-        """
-        try:
-            if action == 'add':
-                # Send signal to main Qt thread
-                # QTimer will be started there safely
-                logger.debug("Emitting gamepad add signal")
-                self.gamepad_hotplug.emit('add')
-
-            elif action == 'remove' and self.gamepad:
-                # Check specifically our gamepad by device path
-                device_node = device.device_node  # e.g., /dev/input/event3
-
-                if device_node and self.gamepad.path == device_node:
-                    logger.info(f"Connected gamepad disconnected: {device_node}")
-                    # Send signal to main thread
-                    self.gamepad_hotplug.emit('remove')
-
-        except Exception as e:
-            logger.error(f"Error handling udev event: {e}", exc_info=True)
+    def _init_pygame_backend(self) -> None:
+        """Initialize pygame subsystems required for joystick polling."""
+        if self._pygame_ready:
+            return
+        pygame.init()
+        controller.init()
+        self._pygame_ready = True
 
 
     def _on_gamepad_hotplug(self, action: str) -> None:
-        """
-        Hotplug signal handler, executed in main Qt thread.
-        Safely works with QTimer.
-        """
         try:
             if action == 'add':
-                # Debounce: delay check by 200ms
-                # Multiple events in short time merge into one call
-                logger.debug("Scheduling gamepad check (debounced)")
-                self.gamepad_check_timer.start(200)
-
+                self.check_gamepad()
             elif action == 'remove':
-                # Immediate disconnect handling
-                self.stop_rumble()
+                had_gamepad = self.gamepad is not None
+                if self.gamepad:
+                    self.gamepad.close()
                 self.gamepad = None
+                self._reset_pygame_state()
+                self._refresh_gamepad_ui()
+                self.check_gamepad()
 
-                if self.gamepad_thread:
-                    self.gamepad_thread.join(timeout=2.0)
-
-                if read_auto_fullscreen_gamepad() and not read_fullscreen_config():
+                if had_gamepad and not self.gamepad and read_auto_fullscreen_gamepad() and not read_fullscreen_config():
                     self.toggle_fullscreen.emit(False)
 
         except Exception as e:
             logger.error(f"Error in hotplug handler: {e}", exc_info=True)
 
     def check_gamepad(self) -> None:
-        """
-        Check and connect gamepad.
-        Called from main Qt thread via QTimer (debounced).
-        """
         try:
             new_gamepad = self.find_gamepad()
 
             if new_gamepad:
-                if not self.gamepad or new_gamepad.path != self.gamepad.path:
-                    logger.info(f"Gamepad connected: {new_gamepad.name} at {new_gamepad.path}")
-                    self.stop_rumble()
-                    self.gamepad = new_gamepad
+                if self.gamepad and new_gamepad.path == self.gamepad.path:
+                    new_gamepad.close()
+                    return
+                if self.gamepad:
+                    self.gamepad.close()
+                self.detect_gamepad_axes(new_gamepad)
+                logger.info(f"Gamepad connected: {new_gamepad.name} at {new_gamepad.path}")
+                self.gamepad = new_gamepad
+                self._reset_pygame_state()
+                self.gamepad_type = self._detect_gamepad_type(new_gamepad)
+                self._refresh_gamepad_ui()
 
-                    if self.gamepad_thread and self.gamepad_thread.is_alive():
-                        self.gamepad_thread.join(timeout=2.0)
+                if read_auto_fullscreen_gamepad() and not read_fullscreen_config():
+                    self.toggle_fullscreen.emit(True)
 
-                    def start_monitoring():
-                        # Wait for udev monitor readiness without busy-wait
-                        if not self.monitor_event.wait(timeout=2.0):
-                            logger.warning("Timeout waiting for udev monitor readiness")
-                        self.monitor_gamepad()
-
-                    self.gamepad_thread = threading.Thread(
-                        target=start_monitoring,
-                        daemon=True
-                    )
-                    self.gamepad_thread.start()
-
-                    # Auto fullscreen on gamepad connect
-                    if read_auto_fullscreen_gamepad() and not read_fullscreen_config():
-                        self.toggle_fullscreen.emit(True)
-
-            elif self.gamepad and not any(self.gamepad.path == path for path in list_devices()):
+            elif self.gamepad:
                 logger.info("Gamepad no longer detected")
-                self.stop_rumble()
+                self.gamepad.close()
                 self.gamepad = None
-
-                if self.gamepad_thread and self.gamepad_thread.is_alive():
-                    self.gamepad_thread.join(timeout=2.0)
+                self._reset_pygame_state()
+                self._refresh_gamepad_ui()
 
                 if read_auto_fullscreen_gamepad() and not read_fullscreen_config():
                     self.toggle_fullscreen.emit(False)
@@ -3563,261 +3439,255 @@ class InputManager(QObject):
         except Exception as e:
             logger.error(f"Error checking gamepad: {e}", exc_info=True)
 
-    def find_gamepad(self) -> InputDevice | None:
-        """
-        Find first available gamepad.
-        Optimized: pre-filter by capabilities before udev queries.
-        """
-        try:
-            devices = [InputDevice(path) for path in list_devices()]
+    def _reset_pygame_state(self) -> None:
+        """Reset cached joystick state when the active device changes."""
+        self._button_states.clear()
+        self._hat_states.clear()
+        self._axis_states.clear()
+        self.stick_x_raw = self.center_x
+        self.stick_y_raw = self.center_y
+        self.scroll_accumulator = 0.0
+        self.lt_pressed = False
+        self.rt_pressed = False
+        self.start_held = False
+        self.guide_held = False
+        self.emulation_triggered = False
+        self.gamepad_type = GamepadType.UNKNOWN
 
-            if not devices:
+    def _detect_gamepad_type(self, gamepad: PygameGamepad) -> GamepadType:
+        """Infer gamepad type from pygame device metadata."""
+        name = gamepad.name.lower()
+        guid = gamepad.controller.as_joystick().get_guid().lower()
+        if any(keyword in name for keyword in ("playstation", "dualshock", "dualsense", "sony")):
+            return GamepadType.PLAYSTATION
+        if any(keyword in name for keyword in ("xbox", "x-input", "xinput", "microsoft")):
+            return GamepadType.XBOX
+        if guid.startswith(("030000004c05", "030000004c050000")):
+            return GamepadType.PLAYSTATION
+        if guid.startswith(("030000005e04", "030000005e040000")):
+            return GamepadType.XBOX
+        return GamepadType.XBOX
+
+    def _refresh_gamepad_ui(self) -> None:
+        """Refresh control hints and virtual keyboard after gamepad changes."""
+        update_hints = getattr(self._parent, "updateControlHints", None)
+        if callable(update_hints):
+            update_hints()
+        keyboard = getattr(self._parent, "keyboard", None)
+        if keyboard and hasattr(keyboard, "update_keyboard"):
+            keyboard.update_keyboard()
+
+    def find_gamepad(self) -> PygameGamepad | None:
+        """Find the first SDL controller with a stable standardized mapping."""
+        try:
+            if not self._pygame_ready:
+                return None
+            controller_count = controller.get_count()
+            if controller_count <= 0:
                 return None
 
-            logger.debug(f"Checking {len(devices)} devices for gamepad...")
-
-            for device in devices:
-                # Skip ASRock LED controller (known issue)
-                if device.info.vendor == 0x26ce and device.info.product == 0x01a2:
+            for index in range(controller_count):
+                if not controller.is_controller(index):
                     continue
-
-                # Pre-filter: check capabilities
-                # Joystick must have at least axes (ABS) or buttons (KEY)
-                # This avoids udev queries for obviously non-joysticks
-                caps = device.capabilities(verbose=False)
-                has_abs_axes = ecodes.EV_ABS in caps
-                has_buttons = ecodes.EV_KEY in caps
-
-                if not (has_abs_axes or has_buttons):
-                    continue
-
-                # Only do udev query for potential joysticks
-                try:
-                    udev_device = self.Devices.from_device_file(
-                        self.udev_context,
-                        device.path
-                    )
-                    is_joystick = udev_device.get('ID_INPUT_JOYSTICK')
-
-                    if is_joystick == '1':
-                        logger.info(f"Found gamepad: {device.name}")
-                        self.detect_gamepad_axes(device)
-                        return device
-
-                except Exception as e:
-                    logger.debug(f"Could not check udev properties for {device.path}: {e}")
-                    continue
-
-            logger.debug("No gamepad found")
-            return None
-
+                game_controller = controller.Controller(index)
+                joystick = game_controller.as_joystick()
+                instance_id = joystick.get_instance_id()
+                gamepad = PygameGamepad(
+                    controller=game_controller,
+                    name=game_controller.name,
+                    path=f"pygame-controller:{instance_id}",
+                    instance_id=instance_id,
+                )
+                return gamepad
         except Exception as e:
             logger.error(f"Error finding gamepad: {e}", exc_info=True)
-            return None
+        return None
 
-    def detect_gamepad_axes(self, device: InputDevice) -> None:
-        """Read axis parameters from kernel (range and deadzone)"""
-        try:
-            caps = device.capabilities()
-            if ecodes.EV_ABS not in caps:
-                return
+    def detect_gamepad_axes(self, device: PygameGamepad) -> None:
+        """Use normalized pygame axis ranges for navigation and mouse emulation."""
+        self.min_value = -PYGAME_AXIS_SCALE
+        self.max_value = PYGAME_AXIS_SCALE
+        self.center_x = 0
+        self.center_y = 0
+        self.deadzone_value = 4000
+        self.scroll_axis_code = PAD_AXIS_RIGHT_Y
+        self.scroll_center = 0
+        self.scroll_min_value = -PYGAME_AXIS_SCALE
+        self.scroll_max_value = PYGAME_AXIS_SCALE
+        self.scroll_deadzone_value = self.deadzone_value
+        self.stick_x_raw = self.center_x
+        self.stick_y_raw = self.center_y
+        logger.info("Gamepad axes configured for pygame backend: %s", device.name)
 
-            abs_axes = caps[ecodes.EV_ABS]
-            axis_info = dict(cast(Any, abs_axes))
-            self.scroll_axis_code = ecodes.ABS_RY
-            for code, absinfo in cast(Any, abs_axes):
-                if code == ecodes.ABS_X:
-                    self.min_value = absinfo.min
-                    self.max_value = absinfo.max
-                    self.center_x = (absinfo.min + absinfo.max) // 2
-                    self.center_y = (absinfo.min + absinfo.max) // 2
-                    self.stick_x_raw = self.center_x
-                    self.stick_y_raw = self.center_y
+    def _read_controller_axis_value(self, gamepad: PygameGamepad, axis_index: int) -> int:
+        """Return a stable signed 16-bit axis value from the SDL controller backend."""
+        axis_value = gamepad.controller.get_axis(axis_index)
+        if isinstance(axis_value, float):
+            axis_value = axis_value * PYGAME_AXIS_SCALE
+        return int(max(-PYGAME_AXIS_SCALE, min(PYGAME_AXIS_SCALE, axis_value)))
 
-                    # Get deadzone from kernel (flat parameter)
-                    self.deadzone_value = absinfo.flat if absinfo.flat > 0 else 15
-                    self.scroll_center = self.center_y
-                    self.scroll_min_value = self.min_value
-                    self.scroll_max_value = self.max_value
-                    self.scroll_deadzone_value = self.deadzone_value
+    def _process_pygame_events(self) -> None:
+        """Handle controller add/remove events from the SDL event queue."""
+        if not self._pygame_ready:
+            return
+        event_types = (
+            pygame.CONTROLLERDEVICEADDED,
+            pygame.CONTROLLERDEVICEREMOVED,
+        )
+        for event in pygame.event.get(event_types):
+            if event.type == pygame.CONTROLLERDEVICEADDED:
+                device_index = getattr(event, "device_index", None)
+                if device_index is not None and controller.is_controller(device_index):
+                    self.gamepad_hotplug.emit('add')
+            elif event.type == pygame.CONTROLLERDEVICEREMOVED:
+                if self.gamepad and getattr(event, "instance_id", None) == self.gamepad.instance_id:
+                    self.gamepad_hotplug.emit('remove')
 
-                    logger.info(
-                        f"Gamepad axes: min={self.min_value}, max={self.max_value}, "
-                        f"center={self.center_x}, deadzone={self.deadzone_value}"
-                    )
-                    break
+    def _poll_button_events(self, gamepad: PygameGamepad, current_time: float) -> None:
+        """Emit button changes using evdev-compatible codes."""
+        for button_index, button_code in SDL_CONTROLLER_BUTTON_TO_ECODE.items():
+            value = int(gamepad.controller.get_button(button_index))
+            if self._button_states.get(button_index) == value:
+                continue
+            self._button_states[button_index] = value
+            if button_code in BUTTONS['guide']:
+                self.guide_held = value == 1
+            if button_code == PAD_BUTTON_START:
+                self.start_held = value == 1
+            if value == 1 and (
+                (button_code in BUTTONS['guide'] and self.start_held) or
+                (button_code == PAD_BUTTON_START and self.guide_held)
+            ):
+                self.emulation_triggered = not self.emulation_triggered
+            if self._is_mouse_emulation_active() and value == 1:
+                if button_code in BUTTONS['confirm']:
+                    self.click_left()
+                elif button_code in BUTTONS['back']:
+                    self.click_right()
+            if self._should_skip_regular_events():
+                continue
+            self.button_event.emit(button_code, value)
+            if (
+                value == 1 and button_code in BUTTONS['menu'] and
+                not self._is_gamescope_session and not self.in_guide_combination_attempt and
+                self._parent.isActiveWindow()
+            ):
+                self.toggle_fullscreen.emit(not self._is_fullscreen)
 
-            for code in (ecodes.ABS_RY, ecodes.ABS_RZ):
-                absinfo = axis_info.get(code)
-                if not absinfo:
-                    continue
-                axis_center = (absinfo.min + absinfo.max) // 2
-                axis_deadzone = absinfo.flat if absinfo.flat > 0 else self.deadzone_value
-                if code == ecodes.ABS_RY or abs(absinfo.value - axis_center) <= axis_deadzone:
-                    self.scroll_axis_code = code
-                    self.scroll_center = axis_center
-                    self.scroll_min_value = absinfo.min
-                    self.scroll_max_value = absinfo.max
-                    self.scroll_deadzone_value = axis_deadzone
-                    break
+    def _poll_hat_events(self, gamepad: PygameGamepad, current_time: float) -> None:
+        """Read the joystick hat directly for reliable D-pad support."""
+        joystick = gamepad.controller.as_joystick()
+        if joystick.get_numhats() <= 0:
+            return
 
-            logger.info(
-                "Gamepad scroll axis: code=%s, min=%s, max=%s, center=%s, deadzone=%s",
-                self.scroll_axis_code,
-                self.scroll_min_value,
-                self.scroll_max_value,
-                self.scroll_center,
-                self.scroll_deadzone_value,
-            )
-        except Exception as ex:
-            logger.error(f"Error detecting gamepad axes: {ex}")
+        hat_value = joystick.get_hat(0)
+        previous_value = self._hat_states.get(0, (0, 0))
+        self._hat_states[0] = hat_value
+
+        if self._is_mouse_emulation_active():
+            if previous_value[0] != hat_value[0]:
+                if hat_value[0] < 0:
+                    self.move_mouse(-10, 0)
+                elif hat_value[0] > 0:
+                    self.move_mouse(10, 0)
+            if previous_value[1] != hat_value[1]:
+                if hat_value[1] > 0:
+                    self.move_mouse(0, -10)
+                elif hat_value[1] < 0:
+                    self.move_mouse(0, 10)
+
+        if self._should_skip_regular_events():
+            return
+
+        if previous_value[0] != hat_value[0]:
+            self.dpad_moved.emit(PAD_DPAD_X, hat_value[0], current_time)
+        if previous_value[1] != hat_value[1]:
+            self.dpad_moved.emit(PAD_DPAD_Y, -hat_value[1], current_time)
+
+    def _poll_axis_events(self, gamepad: PygameGamepad, current_time: float) -> None:
+        """Emit axis changes using the same evdev-like codes used by the UI."""
+        for axis_index, axis_code in SDL_CONTROLLER_AXIS_TO_ECODE.items():
+            raw_value = self._read_controller_axis_value(gamepad, axis_index)
+            if axis_code is None:
+                continue
+            previous_value = self._axis_states.get(axis_index)
+            if previous_value == raw_value:
+                continue
+            self._axis_states[axis_index] = raw_value
+            if axis_code == PAD_AXIS_LEFT_X:
+                self.stick_x_raw = raw_value
+            elif axis_code == PAD_AXIS_LEFT_Y:
+                self.stick_y_raw = raw_value
+            elif axis_code == self.scroll_axis_code:
+                self.handle_scroll(raw_value)
+            if self._should_skip_regular_events():
+                continue
+            if axis_code in (PAD_AXIS_LEFT_TRIGGER, PAD_AXIS_RIGHT_TRIGGER):
+                self._emit_trigger_event(axis_code, raw_value, current_time)
+                continue
+            self.dpad_moved.emit(axis_code, raw_value, current_time)
+
+    def _emit_trigger_event(self, axis_code: int, raw_value: int, current_time: float) -> None:
+        """Convert pygame trigger axis values into press/release button events."""
+        if current_time - self.last_trigger_time < self.trigger_cooldown:
+            return
+        is_pressed = raw_value > 16384
+        if axis_code == PAD_AXIS_LEFT_TRIGGER and is_pressed != self.lt_pressed:
+            self.lt_pressed = is_pressed
+            self.button_event.emit(axis_code, int(is_pressed))
+            self.last_trigger_time = current_time
+        elif axis_code == PAD_AXIS_RIGHT_TRIGGER and is_pressed != self.rt_pressed:
+            self.rt_pressed = is_pressed
+            self.button_event.emit(axis_code, int(is_pressed))
+            self.last_trigger_time = current_time
+
+    def _is_mouse_emulation_active(self) -> bool:
+        """Return True when the gamepad currently drives mouse emulation."""
+        return self.mouse_emulation_enabled and self.emulation_active and self.emulation_triggered
+
+    def _should_skip_regular_events(self) -> bool:
+        """Skip regular UI events while mouse emulation owns the controller."""
+        return self._is_mouse_emulation_active() and QApplication.activeWindow() is not None
 
     def monitor_gamepad(self) -> None:
         try:
             while self.running:
                 current_time = time.time()
-
-                if self.gamepad:
-                    try:
-                        # Non-blocking read with short timeout
-                        events = []
-                        r, w, x = select.select([self.gamepad.fd], [], [], 0.001)
-                        if r:
-                            events = list(self.gamepad.read())
-
-                        # Process events
-                        for event in events:
-                            if not self.running:
-                                break
-
-                            # Handle guide+start combination for toggling mouse emulation (always process this first)
-                            # This needs to be processed even when mouse emulation is active
-                            if event.type == ecodes.EV_KEY:
-                                if event.code in BUTTONS['guide']:
-                                    self.guide_held = (event.value == 1)
-
-                                if event.code == ecodes.BTN_START:
-                                    self.start_held = (event.value == 1)
-
-                                if event.value == 1:  # Button press
-                                    if ((event.code in BUTTONS['guide'] and self.start_held) or
-                                        (event.code == ecodes.BTN_START and self.guide_held)):
-                                        self.emulation_triggered = not self.emulation_triggered
-
-                            # Check if mouse emulation is active to determine if we should process regular events
-                            mouse_emulation_active = self.mouse_emulation_enabled and self.emulation_active and self.emulation_triggered
-
-                            # Mouse emulation (works regardless of focus)
-                            # Only process mouse emulation when enabled and active
-                            if mouse_emulation_active:
-                                if event.type == ecodes.EV_ABS:
-                                    if event.code == ecodes.ABS_HAT0X:
-                                        if event.value == -1:
-                                            self.move_mouse(-10, 0)
-                                        elif event.value == 1:
-                                            self.move_mouse(10, 0)
-                                    elif event.code == ecodes.ABS_HAT0Y:
-                                        if event.value == -1:
-                                            self.move_mouse(0, -10)
-                                        elif event.value == 1:
-                                            self.move_mouse(0, 10)
-                                    elif event.code == ecodes.ABS_X:
-                                        self.stick_x_raw = event.value
-                                    elif event.code == ecodes.ABS_Y:
-                                        if event.code not in (ecodes.ABS_GAS, ecodes.ABS_BRAKE):
-                                            self.stick_y_raw = event.value
-                                    elif event.code == self.scroll_axis_code:
-                                        self.handle_scroll(event.value)
-                                    elif event.code in (ecodes.ABS_GAS, ecodes.ABS_BRAKE):
-                                        pass  # Triggers - do not process
-                                elif event.type == ecodes.EV_KEY:
-                                    if event.code in (ecodes.BTN_SOUTH, ecodes.BTN_A) and event.value == 1:
-                                        self.click_left()
-                                    elif event.code in (ecodes.BTN_EAST, ecodes.BTN_B) and event.value == 1:
-                                        self.click_right()
-
-                            # Determine if we should process regular events based on focus
-                            # When the main window is in focus and mouse emulation is active, skip regular events to avoid conflicts
-                            active_window = QApplication.activeWindow()
-                            should_skip_regular_events = (mouse_emulation_active and active_window is not None)
-
-                            if should_skip_regular_events:
-                                # Skip regular button/dpad events when mouse emulation is active and window is in focus to avoid conflicts
-                                continue
-
-                            # UI signal handling (only when mouse emulation is not active or window is not in focus, to avoid conflicts)
-                            if event.type == ecodes.EV_KEY:
-                                self.button_event.emit(event.code, event.value)
-                                # Special handling for menu on press only
-                                # Only handle menu button if our main window is currently active
-                                if (event.value == 1 and event.code in BUTTONS['menu'] and
-                                    not self._is_gamescope_session and not self.in_guide_combination_attempt):
-                                    # Check if our main window is the currently active window
-                                    if self._parent.isActiveWindow():
-                                        self.toggle_fullscreen.emit(not self._is_fullscreen)
-                            elif event.type == ecodes.EV_ABS:
-                                if event.code in {ecodes.ABS_Z, ecodes.ABS_RZ}:
-                                    # Trigger handling for UI
-                                    if current_time - self.last_trigger_time < self.trigger_cooldown:
-                                        continue
-                                    if event.code == ecodes.ABS_Z:  # LT/L2
-                                        if event.value > 128 and not self.lt_pressed:
-                                            self.lt_pressed = True
-                                            self.button_event.emit(event.code, 1)
-                                            self.last_trigger_time = current_time
-                                        elif event.value <= 128 and self.lt_pressed:
-                                            self.lt_pressed = False
-                                            self.button_event.emit(event.code, 0)
-                                    elif event.code == ecodes.ABS_RZ:  # RT/R2
-                                        if event.value > 128 and not self.rt_pressed:
-                                            self.rt_pressed = True
-                                            self.button_event.emit(event.code, 1)
-                                            self.last_trigger_time = current_time
-                                        elif event.value <= 128 and self.rt_pressed:
-                                            self.rt_pressed = False
-                                            self.button_event.emit(event.code, 0)
-                                else:
-                                    self.dpad_moved.emit(event.code, event.value, current_time)
-
-                        # Periodic mouse position update (only when mouse emulation is active)
-                        if (current_time - self.last_update >= self.update_interval and
-                            self.mouse_emulation_enabled and self.emulation_active and self.emulation_triggered):
-                            self.update_mouse_position()
-                            self.last_update = current_time
-
-                    except OSError as e:
-                        if e.errno == 19:  # ENODEV
-                            logger.info("Gamepad disconnected during monitoring")
-                        else:
-                            logger.error(f"IOError in gamepad monitoring: {e}")
-                        self.gamepad = None
-                        self.stick_x_raw = self.center_x
-                        self.stick_y_raw = self.center_y
-                        self.scroll_accumulator = 0.0
-                        self.start_held = False
-                        self.guide_held = False
-                        self.emulation_triggered = False
-                        break
-                    except Exception as ex:
-                        logger.error(f"Unexpected error in gamepad monitoring: {ex}")
-                        break
-                else:
+                try:
+                    self._process_pygame_events()
+                except Exception as ex:
+                    logger.error(f"Unexpected error in gamepad event handling: {ex}")
+                if not self.gamepad:
                     time.sleep(0.1)
-                    if not self.running:
-                        break
+                    continue
+                try:
+                    self._poll_button_events(self.gamepad, current_time)
+                    self._poll_hat_events(self.gamepad, current_time)
+                    self._poll_axis_events(self.gamepad, current_time)
+                    if (
+                        current_time - self.last_update >= self.update_interval and
+                        self.mouse_emulation_enabled and self.emulation_active and self.emulation_triggered
+                    ):
+                        self.update_mouse_position()
+                        self.last_update = current_time
+                    time.sleep(0.01)
+                except pygame.error as e:
+                    logger.info("Gamepad disconnected during monitoring: %s", e)
+                    self.gamepad_hotplug.emit('remove')
+                    time.sleep(0.1)
+                except Exception as ex:
+                    logger.error(f"Unexpected error in gamepad monitoring: {ex}")
+                    time.sleep(0.1)
         except Exception as e:
             logger.error(f"Error in gamepad monitoring thread: {e}", exc_info=True)
         finally:
             if self.gamepad:
                 try:
-                    self.stop_rumble()
                     self.gamepad.close()
                 except Exception as e:
                     logger.debug("Failed to close gamepad: %s", e)
             self.gamepad = None
-            self.start_held = False
-            self.guide_held = False
-            self.emulation_triggered = False
+            self._reset_pygame_state()
 
     def cleanup(self) -> None:
         """
@@ -3839,9 +3709,6 @@ class InputManager(QObject):
             self.dpad_timer.stop()
             self.nav_timer.stop()
 
-            # Clear gamepad
-            self.stop_rumble()
-
             if self.gamepad_thread:
                 self.gamepad_thread.join(timeout=2.0)
 
@@ -3849,7 +3716,12 @@ class InputManager(QObject):
                 self.gamepad.close()
 
             self.gamepad = None
+            self._reset_pygame_state()
             self.gamepad_type = GamepadType.UNKNOWN
+            if self._pygame_ready:
+                controller.quit()
+                pygame.quit()
+                self._pygame_ready = False
 
             logger.info("Gamepad cleanup completed")
 

@@ -17,7 +17,6 @@ from portprotonqt.portproton_api import PortProtonAPI, get_user_conf_setting, se
 from portprotonqt.debug_utils import get_selectable_gpu_list, get_prefix_name
 from portprotonqt.input_manager import InputManager, MainWindowProtocol
 from portprotonqt.context_menu_manager import ContextMenuManager, CustomLineEdit
-from portprotonqt.input_manager import GamepadType
 
 from portprotonqt.image_utils import load_pixmap_async, ImageCarousel
 from portprotonqt.steam_api import get_steam_game_info_async, get_full_steam_game_info_async, get_cached_steam_game_info, get_steam_installed_games, is_game_in_steam, fetch_sgdb_cover_async
@@ -30,7 +29,7 @@ from portprotonqt.config_utils import (
     read_display_filter, read_favorites, save_time_config, save_sort_method,
     save_display_filter, save_proxy_config, read_proxy_config, read_fullscreen_config,
     save_fullscreen_config, read_window_geometry, save_window_geometry, reset_config,
-    clear_cache, read_auto_fullscreen_gamepad, save_auto_fullscreen_gamepad, read_rumble_config, save_rumble_config, read_gamepad_type, save_gamepad_type, read_minimize_to_tray, save_minimize_to_tray,
+    clear_cache, read_auto_fullscreen_gamepad, save_auto_fullscreen_gamepad, read_minimize_to_tray, save_minimize_to_tray,
     read_auto_card_size, save_auto_card_size, get_portproton_start_command, read_hide_autoinstall_tab, save_hide_autoinstall_tab,
     get_portproton_scripts_path,
     read_autostart_enabled, save_autostart_enabled, apply_xdg_autostart, read_start_minimized, save_start_minimized,
@@ -218,6 +217,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.input_manager = InputManager(cast(MainWindowProtocol, self))
         self.input_manager.button_event.connect(self.updateControlHints)
         self.input_manager.dpad_moved.connect(self.updateControlHints)
+        self.input_manager.gamepad_hotplug.connect(self.updateControlHints)
 
         # 2. NAVIGATION (TAB BUTTONS)
         self.navWidget = QWidget()
@@ -2203,21 +2203,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         padForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
         scrollLayout.addWidget(padFrame)
 
-        self.gamepadTypeCombo = QComboBox()
-        self.gamepadTypeCombo.addItems(["Xbox", "PlayStation"])
-        self.gamepadTypeCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.gamepadTypeCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
-        self.gamepadTypeTitle = QLabel(_("Gamepad Type:"))
-        self.gamepadTypeTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.gamepadTypeTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
-        self.gamepadTypeTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        current_type_str = read_gamepad_type()
-        if current_type_str == "playstation":
-            self.gamepadTypeCombo.setCurrentText("PlayStation")
-        else:
-            self.gamepadTypeCombo.setCurrentText("Xbox")
-        padForm.addRow(self.gamepadTypeTitle, self.gamepadTypeCombo)
-
         self.autoFullscreenGamepadCheckBox = QCheckBox()  # Removed text
         self.autoFullscreenGamepadCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.autoFullscreenGamepadCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -2233,22 +2218,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         auto_fullscreen_layout.addWidget(self.autoFullscreenGamepadTitle)
         auto_fullscreen_layout.addStretch()
         padForm.addRow(auto_fullscreen_layout)
-
-        self.gamepadRumbleCheckBox = QCheckBox()  # Removed text
-        self.gamepadRumbleCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.gamepadRumbleCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
-        self.gamepadRumbleTitle = QLabel(_("Gamepad haptic feedback"))
-        self.gamepadRumbleTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.gamepadRumbleTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
-        self.gamepadRumbleTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        current_rumble_state = read_rumble_config()
-        self.gamepadRumbleCheckBox.setChecked(current_rumble_state)
-        rumble_layout = QHBoxLayout()
-        rumble_layout.setContentsMargins(0, 0, 0, 0)
-        rumble_layout.addWidget(self.gamepadRumbleCheckBox)
-        rumble_layout.addWidget(self.gamepadRumbleTitle)
-        rumble_layout.addStretch()
-        padForm.addRow(rumble_layout)
 
         # 4. Hardware Settings Section
         hwFrame, hwForm = create_section(_("Hardware Settings"))
@@ -2428,9 +2397,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         auto_fullscreen_gamepad = self.autoFullscreenGamepadCheckBox.isChecked()
         save_auto_fullscreen_gamepad(auto_fullscreen_gamepad)
 
-        rumble_enabled = self.gamepadRumbleCheckBox.isChecked()
-        save_rumble_config(rumble_enabled)
-
         autostart_enabled = self.autostartCheckBox.isChecked()
         save_autostart_enabled(autostart_enabled)
         if not apply_xdg_autostart(autostart_enabled):
@@ -2454,19 +2420,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         # Get hide auto-install tab setting
         hide_autoinstall = self.hideAutoInstallTabCheckBox.isChecked()
 
-        gamepad_type_text = self.gamepadTypeCombo.currentText()
-        gpad_type = "playstation" if gamepad_type_text == "PlayStation" else "xbox"
-        save_gamepad_type(gpad_type)
-
         if hasattr(self, 'input_manager'):
-            if gpad_type == "playstation":
-                self.input_manager.gamepad_type = GamepadType.PLAYSTATION
-            elif gpad_type == "xbox":
-                self.input_manager.gamepad_type = GamepadType.XBOX
-            else:
-                self.input_manager.gamepad_type = GamepadType.UNKNOWN
             self.updateControlHints()
-            # Update virtual keyboard icons
             if hasattr(self, 'keyboard'):
                 self.keyboard.update_keyboard()
 

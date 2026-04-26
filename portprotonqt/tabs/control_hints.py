@@ -47,7 +47,7 @@ class MainWindowControlHintsMixin:
             },
             'add_game': {
                 GamepadType.XBOX: "xbox_x",
-                GamepadType.PLAYSTATION: "ps_triangle",
+                GamepadType.PLAYSTATION: "ps_square",
             },
             'context_menu': {
                 GamepadType.XBOX: "xbox_start",
@@ -59,7 +59,7 @@ class MainWindowControlHintsMixin:
             },
             'search': {
                 GamepadType.XBOX: "xbox_y",
-                GamepadType.PLAYSTATION: "ps_square",
+                GamepadType.PLAYSTATION: "ps_triangle",
             },
             'decrease_size': {
                 GamepadType.XBOX: "xbox_lt",
@@ -71,7 +71,7 @@ class MainWindowControlHintsMixin:
             },
             'prev_dir': {
                 GamepadType.XBOX: "xbox_y",
-                GamepadType.PLAYSTATION: "ps_square",
+                GamepadType.PLAYSTATION: "ps_triangle",
             },
             'guide_select': {
                 GamepadType.XBOX: "xbox_xbox",

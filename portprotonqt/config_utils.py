@@ -257,27 +257,6 @@ def save_favorite_folders(folders: list[str]):
     _get_favorites_folders_config().set_folders(folders)
 
 
-# Legacy functions for gamepad settings
-def read_rumble_config() -> bool:
-    """Reads the gamepad rumble setting."""
-    return _get_gamepad_config().get_rumble_enabled()
-
-
-def save_rumble_config(rumble_enabled: bool):
-    """Saves the gamepad rumble setting."""
-    _get_gamepad_config().set_rumble_enabled(rumble_enabled)
-
-
-def read_gamepad_type() -> str:
-    """Reads the gamepad type."""
-    return _get_gamepad_config().get_type()
-
-
-def save_gamepad_type(gpad_type: str):
-    """Saves the gamepad type."""
-    _get_gamepad_config().set_type(gpad_type)
-
-
 # Legacy functions for proxy settings
 def read_proxy_config() -> dict[str, str]:
     """Reads proxy settings."""
