@@ -3657,13 +3657,14 @@ class InputManager(QObject):
                     self._process_pygame_events()
                 except Exception as ex:
                     logger.error(f"Unexpected error in gamepad event handling: {ex}")
-                if not self.gamepad:
+                active_gamepad = self.gamepad
+                if not active_gamepad:
                     time.sleep(0.1)
                     continue
                 try:
-                    self._poll_button_events(self.gamepad, current_time)
-                    self._poll_hat_events(self.gamepad, current_time)
-                    self._poll_axis_events(self.gamepad, current_time)
+                    self._poll_button_events(active_gamepad, current_time)
+                    self._poll_hat_events(active_gamepad, current_time)
+                    self._poll_axis_events(active_gamepad, current_time)
                     if (
                         current_time - self.last_update >= self.update_interval and
                         self.mouse_emulation_enabled and self.emulation_active and self.emulation_triggered

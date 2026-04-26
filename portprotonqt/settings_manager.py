@@ -98,7 +98,7 @@ def get_toggle_settings():
         # Proton
         'PW_USE_SUPPLIED_DXVK_VKD3D': _("Use bundled dxvk/vkd3d from Wine/Proton"),
         # Power management
-        'PW_USE_INHIBIT_SLEEP_INFO': _("Prevent the system from going to sleep and disable the screensaver while the game is running"),
+        'PW_USE_INHIBIT_SLEEP': _("Prevent the system from going to sleep and disable the screensaver while the game is running"),
         # Runtime
         'PW_USE_RUNTIME': _("Use container launch mode (recommended default)"),
     }
