@@ -1211,15 +1211,13 @@ init_wine_ver () {
         fi
 
         export WINEDIR="${PORT_DATA_PATH}/data/dist/${PW_WINE_USE}"
+        if [[ -d "${WINEDIR}/files" && ! -d "${WINEDIR}/dist" ]] ; then
+            export WINEDIR="${PORT_DATA_PATH}/data/dist/${PW_WINE_USE}/files"
+        fi
         export WINE="${WINEDIR}/bin/wine"
         export WINELOADER="${WINEDIR}/bin/wine"
         export WINESERVER="${WINEDIR}/bin/wineserver"
-        if [[ -d "${WINEDIR}/files" && ! -d "${WINEDIR}/dist" ]] ; then
-            export WINEDIR="${PORT_DATA_PATH}/data/dist/${PW_WINE_USE}/files"
-            export WINE="${WINEDIR}/bin/wine"
-            export WINELOADER="${WINEDIR}/bin/wine"
-            export WINESERVER="${WINEDIR}/bin/wineserver"
-        fi
+
         if [[ -d "${WINEDIR}" ]] ; then
             [[ ! -f "${WINEDIR}/version" ]] && echo "${PW_WINE_USE}" > "${WINEDIR}/version"
 
@@ -4025,7 +4023,11 @@ gui_proton_downloader () {
     fi
     export PW_WINE_USE
 
-    [[ -f "${PORT_DATA_PATH}/data/dist/${PW_WINE_USE}/bin/wine" ]] && return 0
+    if [[ -f "${PORT_DATA_PATH}/data/dist/${PW_WINE_USE}/bin/wine" ]] \
+    || [[ -f "${PORT_DATA_PATH}/data/dist/${PW_WINE_USE}/files/bin/wine" ]]
+    then
+        return 0
+    fi
 
     METADATA_URL="https://git.linux-gaming.ru/Boria138/PortProton-Wine-Metadata/raw/branch/main/wine_metadata.json"
     METADATA=$(curl  -A 'PortProton' -s "$METADATA_URL")
