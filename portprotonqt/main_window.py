@@ -3450,13 +3450,18 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         launch_cmd = entry_exec_split
         if entry_exec_split[0] == "env" and len(entry_exec_split) >= 3:
             legacy_start_sh = entry_exec_split[1]
-            if legacy_start_sh.endswith("/data/scripts/start.sh"):
+            if legacy_start_sh.endswith("start.sh"):
                 start_cmd = get_portproton_start_command()
-                if start_cmd and len(start_cmd) == 1 and start_cmd[0].endswith("start.sh"):
+                if (
+                    start_cmd
+                    and len(start_cmd) == 1
+                    and start_cmd[0].endswith("start.sh")
+                    and os.path.abspath(legacy_start_sh) != os.path.abspath(start_cmd[0])
+                ):
                     launch_cmd = entry_exec_split.copy()
                     launch_cmd[1] = start_cmd[0]
                     entry_exec_split = launch_cmd
-                    logger.info("Updated legacy start.sh path for launch: %s", start_cmd[0])
+                    logger.info("Updated start.sh path for launch: %s -> %s", legacy_start_sh, start_cmd[0])
         if entry_exec_split[0] == "env":
             if len(entry_exec_split) < 3:
                 QMessageBox.warning(self, _("Error"), _("Invalid command format (native)"))
