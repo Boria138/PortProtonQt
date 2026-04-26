@@ -5,6 +5,7 @@ import math
 from dataclasses import dataclass
 from typing import Protocol, cast, Any
 os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1")
+os.environ.setdefault("SDL_VIDEO_ALLOW_SCREENSAVER", "1")
 import pygame
 from pygame._sdl2 import controller
 from evdev import UInput, ecodes
