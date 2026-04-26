@@ -31,7 +31,10 @@ fi
 PORT_IMG_PATH="$(dirname "$PORT_SCRIPTS_PATH")/img"
 
 if [[ -z "$PORT_DATA_PATH" ]] ; then
-    if [[ -f "$HOME/.config/PortProton.conf" ]] ; then
+    if [[ -f "$HOME/.config/PortProtonQt.conf" ]] \
+    && grep "portdata_path" "$HOME/.config/PortProtonQt.conf" ; then
+        PORT_DATA_PATH="$(grep "portdata_path" "$HOME/.config/PortProtonQt.conf" | awk -F"= " '{print $2}')"
+    elif [[ -f "$HOME/.config/PortProton.conf" ]] ; then
         PORT_DATA_PATH="$(head -n 1 "$HOME/.config/PortProton.conf")"
     else
         echo "FATAL ERROR: PortProton data path not found"
