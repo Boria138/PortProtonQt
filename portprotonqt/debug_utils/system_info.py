@@ -300,6 +300,24 @@ def get_filesystem_info(exe_path: str | None, portproton_path: str) -> str:
     return "\n".join(lines) if lines else "Unable to retrieve filesystem info"
 
 
+def get_system_dpi_for_wine(screen_resolution: str | None = None) -> str:
+    """Return Wine LogPixels value calculated from system scale."""
+    app_instance = QApplication.instance()
+    if isinstance(app_instance, QGuiApplication):
+        window = app_instance.focusWindow()
+        if window is None:
+            for widget in QApplication.topLevelWidgets():
+                if widget.isVisible() and widget.windowHandle() is not None:
+                    window = widget.windowHandle()
+                    break
+        if window is not None:
+            dpi_value = int(round(96.0 * window.devicePixelRatio()))
+            if dpi_value > 96:
+                return str(dpi_value)
+
+    return "96"
+
+
 def get_screen_info(portproton_path: str, exe_path: str | None = None) -> tuple[str, str]:
     """Get screen resolution and primary info using PySide6."""
     app_instance = QApplication.instance()

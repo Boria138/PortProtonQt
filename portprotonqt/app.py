@@ -190,6 +190,9 @@ def main():
             # No launch file provided, fall back to GUI mode
             is_steam_compat = False
 
+    QApplication.setHighDpiScaleFactorRoundingPolicy(
+        Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
+    )
     app = QApplication(sys.argv)
     app.setWindowIcon(QIcon.fromTheme(__app_id__))
     app.setDesktopFileName(__app_id__)
@@ -218,7 +221,11 @@ def main():
         set_user_conf_setting,
     )
     from portprotonqt.downloader import Downloader
-    from portprotonqt.debug_utils import get_screen_info, get_selectable_gpu_entries
+    from portprotonqt.debug_utils import (
+        get_screen_info,
+        get_selectable_gpu_entries,
+        get_system_dpi_for_wine,
+    )
 
     # --- Single-instance logic ---
     server_name = __app_id__
@@ -389,6 +396,7 @@ def main():
 
         def run(self):
             try:
+                wine_dpi_value = "96"
                 # Get screen information before running the initial command
                 from portprotonqt.config import get_portproton_location
                 portproton_path = get_portproton_location()
@@ -400,11 +408,14 @@ def main():
                         var_name, var_value = screen_resolution.split('=', 1)
                         if var_value:
                             set_user_conf_setting(var_name, var_value)
+                            wine_dpi_value = get_system_dpi_for_wine(var_value)
 
                     if screen_primary and '=' in screen_primary:
                         var_name, var_value = screen_primary.split('=', 1)
                         if var_value:
                             set_user_conf_setting(var_name, var_value)
+
+                set_user_conf_setting("PW_WINE_DPI_VALUE", wine_dpi_value)
 
                 current_gpu_use = get_user_conf_setting("PW_GPU_USE")
                 selectable_gpu_entries = get_selectable_gpu_entries()

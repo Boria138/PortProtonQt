@@ -14,7 +14,7 @@ from portprotonqt.animations import DetailPageAnimations
 from portprotonqt.custom_widgets import ClickableLabel, AutoSizeButton, NavLabel, FlowLayout
 from portprotonqt.detail_pages import DetailPageManager
 from portprotonqt.portproton_api import PortProtonAPI, get_user_conf_setting, set_user_conf_setting
-from portprotonqt.debug_utils import get_selectable_gpu_list, get_prefix_name
+from portprotonqt.debug_utils import get_selectable_gpu_list, get_prefix_name, get_system_dpi_for_wine
 from portprotonqt.input_manager import InputManager, MainWindowProtocol
 from portprotonqt.context_menu_manager import ContextMenuManager, CustomLineEdit
 
@@ -2408,6 +2408,22 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         economy_mode_layout.addStretch()
         uiForm.addRow(economy_mode_layout)
 
+        self.forceSystemDpiCheckBox = QCheckBox()
+        self.forceSystemDpiCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
+        self.forceSystemDpiCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.forceSystemDpiTitle = QLabel(_("Force system DPI for Wine"))
+        self.forceSystemDpiTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.forceSystemDpiTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
+        self.forceSystemDpiTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        current_force_dpi = get_user_conf_setting('PW_FORCE_SYSTEM_DPI')
+        self.forceSystemDpiCheckBox.setChecked(str(current_force_dpi) == "1")
+        force_system_dpi_layout = QHBoxLayout()
+        force_system_dpi_layout.setContentsMargins(0, 0, 0, 0)
+        force_system_dpi_layout.addWidget(self.forceSystemDpiCheckBox)
+        force_system_dpi_layout.addWidget(self.forceSystemDpiTitle)
+        force_system_dpi_layout.addStretch()
+        uiForm.addRow(force_system_dpi_layout)
+
         # 3. Gamepad Settings Section
         padFrame, padForm = create_section(_("Gamepad Settings"), self.theme)
         padForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
@@ -2657,6 +2673,13 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         if hasattr(self, 'gpuCombo'):
             selected_gpu = self.gpuCombo.currentText()
             set_user_conf_setting('PW_GPU_USE', selected_gpu)
+        if hasattr(self, 'forceSystemDpiCheckBox'):
+            if self.forceSystemDpiCheckBox.isChecked():
+                system_dpi = get_system_dpi_for_wine(get_user_conf_setting('PW_SCREEN_RESOLUTION'))
+                set_user_conf_setting('PW_FORCE_SYSTEM_DPI', "1")
+                set_user_conf_setting('PW_WINE_DPI_VALUE', system_dpi)
+            else:
+                set_user_conf_setting('PW_FORCE_SYSTEM_DPI', "0")
 
         # Get hide auto-install tab setting
         hide_autoinstall = self.hideAutoInstallTabCheckBox.isChecked()

@@ -19,6 +19,7 @@ from portprotonqt.debug_utils.system_info import (
     get_libc_version,
     get_program_bit_depth,
     get_filesystem_info,
+    get_system_dpi_for_wine,
     get_screen_info,
     generate_system_info,
 )
@@ -68,6 +69,7 @@ __all__ = [
     "get_libc_version",
     "get_program_bit_depth",
     "get_filesystem_info",
+    "get_system_dpi_for_wine",
     "get_screen_info",
     "get_ppdb_content",
     "get_user_overrides",

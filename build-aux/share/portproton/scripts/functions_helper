@@ -3635,6 +3635,7 @@ export -f pw_ppd_dbus_has_profile
         get_and_set_reg_file --add 'Software\Wine\Drivers' 'Graphics' 'REG_SZ' "x11,wayland" "user"
 
         print_warning "Wayland in use. Force dpi=96"
+        export PW_FORCE_SYSTEM_DPI="1"
         export PW_WINE_DPI_VALUE="96"
 
         if [[ -f "$WINEDIR/lib/libxkbregistry.so" ]] \
@@ -3651,10 +3652,12 @@ export -f pw_ppd_dbus_has_profile
         get_and_set_reg_file --delete 'Software\Wine\Drivers' 'Graphics'
     fi
 
-    if [[ $PW_WINE_DPI_VALUE =~ (disabled|recommended|96) ]] ; then
-        get_and_set_reg_file --add 'Control Panel\Desktop' 'LogPixels' 'REG_DWORD' "96" "user"
-    else
-        get_and_set_reg_file --add 'Control Panel\Desktop' 'LogPixels' 'REG_DWORD' "$PW_WINE_DPI_VALUE" "user"
+    if [[ "${PW_FORCE_SYSTEM_DPI}" == "1" ]] ; then
+        if [[ $PW_WINE_DPI_VALUE =~ (disabled|recommended|96) ]] ; then
+            get_and_set_reg_file --add 'Control Panel\Desktop' 'LogPixels' 'REG_DWORD' "96" "user"
+        else
+            get_and_set_reg_file --add 'Control Panel\Desktop' 'LogPixels' 'REG_DWORD' "$PW_WINE_DPI_VALUE" "user"
+        fi
     fi
 
     case "$PW_SOUND_DRIVER_USE" in
