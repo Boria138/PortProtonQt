@@ -15,7 +15,6 @@
 ## License and Attribution
 
 - All code MUST be compatible with GPL-3.0.
-- Use appropriate SPDX license identifiers where applicable.
 - AI agents MUST NOT add `Signed-off-by` tags.
 
 When AI contributes to the project, add an `Assisted-by` tag:
