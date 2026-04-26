@@ -6,7 +6,7 @@ from typing import Any
 
 from PySide6.QtWidgets import QDialog, QMessageBox, QWidget, QStackedWidget, QSlider, QTableWidget, QApplication
 
-from portprotonqt.config_utils import read_theme_from_config
+from portprotonqt.config import ui_config
 from portprotonqt.context_menu_manager import ContextMenuManager
 from portprotonqt.dialogs import FileExplorer
 from portprotonqt.input_manager import InputManager
@@ -134,7 +134,7 @@ def ask_portdata_path() -> str | None:
         except OSError:
             pass
     current_path = default_path if os.path.isdir(default_path) else os.path.expanduser("~")
-    theme = ThemeManager().apply_theme(read_theme_from_config())
+    theme = ThemeManager().apply_theme(ui_config.get_theme())
     app = QApplication.instance()
     if isinstance(app, QApplication):
         app.setStyle("Fusion")

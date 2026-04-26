@@ -23,17 +23,22 @@ from portprotonqt.steam_api import get_steam_game_info_async, get_full_steam_gam
 from portprotonqt.egs_api import load_egs_games_async, get_egs_executable
 from portprotonqt.theme_manager import ThemeManager, load_theme_screenshots
 from portprotonqt.time_utils import save_last_launch, get_last_launch, get_playtime_for_exe, format_playtime, get_last_launch_timestamp, format_last_launch
-from portprotonqt.config_utils import (
-    get_portproton_location, read_theme_from_config, save_theme_to_config, parse_desktop_entry,
-    load_theme_metainfo, read_time_config, read_card_size, save_card_size, read_sort_method,
-    read_display_filter, read_favorites, save_time_config, save_sort_method,
-    save_display_filter, save_proxy_config, read_proxy_config, read_fullscreen_config,
-    save_fullscreen_config, read_window_geometry, save_window_geometry, reset_config,
-    clear_cache, read_auto_fullscreen_gamepad, save_auto_fullscreen_gamepad, read_minimize_to_tray, save_minimize_to_tray,
-    read_auto_card_size, save_auto_card_size, get_portproton_start_command, read_hide_autoinstall_tab, save_hide_autoinstall_tab,
+from portprotonqt.config import (
+    get_portproton_location,
+    ui_config,
+    parse_desktop_entry,
+    load_theme_metainfo,
+    game_config,
+    favorites_config,
+    proxy_config,
+    display_config,
+    window_config,
+    reset_main_config,
+    cache_config,
+    get_portproton_start_command,
     get_portproton_scripts_path,
-    read_autostart_enabled, save_autostart_enabled, apply_xdg_autostart, read_start_minimized, save_start_minimized,
-    read_badge_view_mode, save_badge_view_mode, read_economy_mode, save_economy_mode
+    apply_xdg_autostart,
+    find_game_by_exe,
 )
 from portprotonqt.cli import add_steam_compat_tool, remove_steam_compat_tool, is_steam_compat_tool_installed
 
@@ -45,7 +50,6 @@ from portprotonqt.tray_manager import TrayManager
 from portprotonqt.game_library_manager import GameLibraryManager
 from portprotonqt.virtual_keyboard import VirtualKeyboard
 from portprotonqt.dialogs.proton_manager import show_proton_manager
-from portprotonqt.config_utils import find_game_by_exe
 from portprotonqt.tabs.control_hints import MainWindowControlHintsMixin
 from portprotonqt.tabs.system_tab import MainWindowSystemTabMixin
 from portprotonqt.tabs.workers import MainWindowWorkersMixin
@@ -95,13 +99,13 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
     def __init__(self, app_name: str, version: str, launch_exe: str | None = None, resolution: tuple[int, int] | None = None, show_system_tab: bool = False):
         super().__init__()
         self.theme_manager = ThemeManager()
-        selected_theme = read_theme_from_config()
+        selected_theme = ui_config.get_theme()
         self.current_theme_name = selected_theme
         # Apply theme but defer heavy font loading
         self.theme = self.theme_manager.apply_theme(selected_theme)
         self.tray_manager = TrayManager(self, app_name, self.current_theme_name)
-        self.card_width = read_card_size()
-        self.auto_card_width = read_auto_card_size()
+        self.card_width = ui_config.get_card_width()
+        self.auto_card_width = ui_config.get_auto_card_width()
         self.setWindowTitle(f"{app_name} {version}")
         self.setMinimumSize(800, 600)
         self._pending_resolution = resolution  # Store resolution for later application
@@ -156,7 +160,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.fs_watcher = QFileSystemWatcher(self)
         self.fs_watcher.directoryChanged.connect(self.on_directory_changed)
 
-        read_time_config()
+        ui_config.get_time_detail_level()
 
         # Start watching dist and prefixes directories if they exist
         QTimer.singleShot(0, self.start_watching_directories)  # Delay to ensure portproton_location is set
@@ -275,7 +279,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.auto_install_tab_index = 1  # Auto Install tab is always at index 1
 
         # Set visibility based on settings
-        hide_autoinstall = read_hide_autoinstall_tab()
+        hide_autoinstall = ui_config.get_hide_autoinstall_tab()
         if hide_autoinstall:
             # Hide the tab button and page
             if hasattr(self, 'tabButtons') and self.auto_install_tab_index in self.tabButtons:
@@ -314,14 +318,14 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.detail_animations = DetailPageAnimations(self, self.theme)
         self._animations = {}
 
-        if read_fullscreen_config():
+        if display_config.get_fullscreen():
             self.showFullScreen()
         elif self._pending_resolution:
             # Apply resolution from command line
             self.resize(self._pending_resolution[0], self._pending_resolution[1])
             self.showNormal()
         else:
-            width, height = read_window_geometry()
+            width, height = window_config.get_geometry()
             if width > 0 and height > 0:
                 self.resize(width, height)
             else:
@@ -524,8 +528,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         if force_load:
             self.launch_exe = None
 
-        display_filter = read_display_filter()
-        favorites = read_favorites()
+        display_filter = game_config.get_display_filter()
+        favorites = favorites_config.get_games()
         self.pending_games = []
         self.games = []
 
@@ -538,7 +542,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         QApplication.processEvents()
 
         def start_loading():
-            economy_mode = read_economy_mode()
+            economy_mode = ui_config.get_economy_mode()
             # Make sure progress bar is still visible
             self.progress_bar.setValue(0)
             self.progress_bar.setVisible(True)
@@ -759,7 +763,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
         user_cover = ""
         user_game_folder = ""
-        economy_mode = read_economy_mode()
+        economy_mode = ui_config.get_economy_mode()
 
         if game_exe:
             exe_name = os.path.splitext(os.path.basename(game_exe))[0]
@@ -1212,7 +1216,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                     QTimer.singleShot(200, self.game_library_manager.load_visible_images)
 
                 from portprotonqt.steam_api import get_steam_game_info_async
-                if read_economy_mode():
+                if ui_config.get_economy_mode():
                     cached_steam_info = get_cached_steam_game_info(final_name, exec_line)
                     game_data = (
                         final_name,
@@ -1338,7 +1342,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         def on_autoinstall_games_loaded(games: list[tuple]):
             self.autoInstallLoaded = True
             self.autoInstallLoading = False
-            economy_mode = read_economy_mode()
+            economy_mode = ui_config.get_economy_mode()
 
             # Clear
             while self.autoInstallContainerLayout.count():
@@ -1463,7 +1467,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         if hasattr(self, 'auto_size_slider') and self.auto_size_slider:
             self.auto_card_width = self.auto_size_slider.value()
             self.auto_size_slider.setToolTip(f"{self.auto_card_width} px")
-            save_auto_card_size(self.auto_card_width)
+            ui_config.set_auto_card_width(self.auto_card_width)
             for card in self.allAutoInstallCards:
                 card.update_card_size(self.auto_card_width)
             self.autoInstallContainerLayout.invalidate()
@@ -2005,7 +2009,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.timeDetailTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.timeDetailTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
         self.timeDetailTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        current = read_time_config()
+        current = ui_config.get_time_detail_level()
         try:
             idx = self.time_keys.index(current)
         except ValueError:
@@ -2024,7 +2028,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.gamesSortTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.gamesSortTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
         self.gamesSortTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        current = read_sort_method()
+        current = game_config.get_sort_method()
         try:
             idx = self.sort_keys.index(current)
         except ValueError:
@@ -2043,7 +2047,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.gamesDisplayTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.gamesDisplayTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
         self.gamesDisplayTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        current = read_display_filter()
+        current = game_config.get_display_filter()
         try:
             idx = self.filter_keys.index(current)
         except ValueError:
@@ -2062,13 +2066,13 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.badgeViewTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.badgeViewTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
         self.badgeViewTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        current = read_badge_view_mode()
+        current = ui_config.get_badge_view_mode()
         try:
             idx = self.badge_view_keys.index(current)
         except ValueError:
             idx = 0
         self.badgeViewCombo.setCurrentIndex(idx)
-        if read_economy_mode():
+        if ui_config.get_economy_mode():
             self.badgeViewCombo.setCurrentIndex(self.badge_view_keys.index("hidden"))
             self.badgeViewCombo.setEnabled(False)
         genForm.addRow(self.badgeViewTitle, self.badgeViewCombo)
@@ -2085,7 +2089,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.fullscreenTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.fullscreenTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
         self.fullscreenTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        current_fullscreen = read_fullscreen_config()
+        current_fullscreen = display_config.get_fullscreen()
         self.fullscreenCheckBox.setChecked(current_fullscreen)
         fullscreen_layout = QHBoxLayout()
         fullscreen_layout.setContentsMargins(0, 0, 0, 0)
@@ -2101,9 +2105,9 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.minimizeToTrayTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.minimizeToTrayTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
         self.minimizeToTrayTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        current_minimize_to_tray = read_minimize_to_tray()
+        current_minimize_to_tray = display_config.get_minimize_to_tray()
         self.minimizeToTrayCheckBox.setChecked(current_minimize_to_tray)
-        self.minimizeToTrayCheckBox.toggled.connect(lambda checked: save_minimize_to_tray(checked))
+        self.minimizeToTrayCheckBox.toggled.connect(lambda checked: display_config.set_minimize_to_tray(checked))
         minimize_layout = QHBoxLayout()
         minimize_layout.setContentsMargins(0, 0, 0, 0)
         minimize_layout.addWidget(self.minimizeToTrayCheckBox)
@@ -2118,7 +2122,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.autostartTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.autostartTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
         self.autostartTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.autostartCheckBox.setChecked(read_autostart_enabled())
+        self.autostartCheckBox.setChecked(display_config.get_autostart_enabled())
         autostart_layout = QHBoxLayout()
         autostart_layout.setContentsMargins(0, 0, 0, 0)
         autostart_layout.addWidget(self.autostartCheckBox)
@@ -2133,7 +2137,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.startMinimizedTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.startMinimizedTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
         self.startMinimizedTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.startMinimizedCheckBox.setChecked(read_start_minimized())
+        self.startMinimizedCheckBox.setChecked(display_config.get_start_minimized())
         start_minimized_layout = QHBoxLayout()
         start_minimized_layout.setContentsMargins(0, 0, 0, 0)
         start_minimized_layout.addWidget(self.startMinimizedCheckBox)
@@ -2148,9 +2152,9 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.hideAutoInstallTabTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.hideAutoInstallTabTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
         self.hideAutoInstallTabTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        current_hide_autoinstall = read_hide_autoinstall_tab()
+        current_hide_autoinstall = ui_config.get_hide_autoinstall_tab()
         self.hideAutoInstallTabCheckBox.setChecked(current_hide_autoinstall)
-        self.hideAutoInstallTabCheckBox.toggled.connect(lambda checked: save_hide_autoinstall_tab(checked))
+        self.hideAutoInstallTabCheckBox.toggled.connect(lambda checked: ui_config.set_hide_autoinstall_tab(checked))
         hide_autoinstall_layout = QHBoxLayout()
         hide_autoinstall_layout.setContentsMargins(0, 0, 0, 0)
         hide_autoinstall_layout.addWidget(self.hideAutoInstallTabCheckBox)
@@ -2181,7 +2185,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.economyModeTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.economyModeTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
         self.economyModeTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.economyModeCheckBox.setChecked(read_economy_mode())
+        self.economyModeCheckBox.setChecked(ui_config.get_economy_mode())
         def update_economy_controls(enabled: bool):
             if enabled:
                 self.badgeViewCombo.setCurrentIndex(self.badge_view_keys.index("hidden"))
@@ -2210,7 +2214,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.autoFullscreenGamepadTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.autoFullscreenGamepadTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
         self.autoFullscreenGamepadTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        current_auto_fullscreen = read_auto_fullscreen_gamepad()
+        current_auto_fullscreen = display_config.get_auto_fullscreen_gamepad()
         self.autoFullscreenGamepadCheckBox.setChecked(current_auto_fullscreen)
         auto_fullscreen_layout = QHBoxLayout()
         auto_fullscreen_layout.setContentsMargins(0, 0, 0, 0)
@@ -2262,7 +2266,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.proxyUrlTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.proxyUrlTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
         self.proxyUrlTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        proxy_cfg = read_proxy_config()
+        proxy_cfg = proxy_config.get_proxy()
         if proxy_cfg.get("http", ""):
             self.proxyUrlEdit.setText(proxy_cfg["http"])
         proxyForm.addRow(self.proxyUrlTitle, self.proxyUrlEdit)
@@ -2331,7 +2335,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         msg_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
         reply = msg_box.exec()
         if reply == QMessageBox.StandardButton.Yes:
-            reset_config()
+            reset_main_config()
 
             # Show message
             self.statusBar().showMessage(_("Settings reset. Restarting..."), 3000)
@@ -2351,59 +2355,59 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         msg_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
         reply = msg_box.exec()
         if reply == QMessageBox.StandardButton.Yes:
-            clear_cache()
+            cache_config.clear_cache()
 
             # Show message
             self.statusBar().showMessage(_("Cache cleared"), 3000)
 
     def applySettingsDelayed(self):
-        read_time_config()
+        ui_config.get_time_detail_level()
         self.games = []
         self.loadGames()
-        display_filter = read_display_filter()
+        display_filter = game_config.get_display_filter()
         for card in self.game_library_manager.game_card_cache.values():
             card.update_badge_visibility(display_filter)
 
     def savePortProtonSettings(self):
-        previous_economy_mode = read_economy_mode()
+        previous_economy_mode = ui_config.get_economy_mode()
         time_idx = self.timeDetailCombo.currentIndex()
         time_key = self.time_keys[time_idx]
-        save_time_config(time_key)
+        ui_config.set_time_detail_level(time_key)
 
         sort_idx = self.gamesSortCombo.currentIndex()
         sort_key = self.sort_keys[sort_idx]
-        save_sort_method(sort_key)
+        game_config.set_sort_method(sort_key)
 
         filter_idx = self.gamesDisplayCombo.currentIndex()
         filter_key = self.filter_keys[filter_idx]
         economy_mode = self.economyModeCheckBox.isChecked()
-        save_economy_mode(economy_mode)
+        ui_config.set_economy_mode(economy_mode)
         economy_mode_changed = previous_economy_mode != economy_mode
-        save_display_filter(filter_key)
+        game_config.set_display_filter(filter_key)
         badge_view_idx = self.badgeViewCombo.currentIndex()
         badge_view_mode = self.badge_view_keys[badge_view_idx]
         if economy_mode:
             badge_view_mode = "hidden"
-        save_badge_view_mode(badge_view_mode)
+        ui_config.set_badge_view_mode(badge_view_mode)
 
         proxy_url = self.proxyUrlEdit.text().strip()
         proxy_user = self.proxyUserEdit.text().strip()
         proxy_password = self.proxyPasswordEdit.text().strip()
-        save_proxy_config(proxy_url, proxy_user, proxy_password)
+        proxy_config.set_proxy(proxy_url, proxy_user, proxy_password)
 
         fullscreen = self.fullscreenCheckBox.isChecked()
-        save_fullscreen_config(fullscreen)
+        display_config.set_fullscreen(fullscreen)
 
         auto_fullscreen_gamepad = self.autoFullscreenGamepadCheckBox.isChecked()
-        save_auto_fullscreen_gamepad(auto_fullscreen_gamepad)
+        display_config.set_auto_fullscreen_gamepad(auto_fullscreen_gamepad)
 
         autostart_enabled = self.autostartCheckBox.isChecked()
-        save_autostart_enabled(autostart_enabled)
+        display_config.set_autostart_enabled(autostart_enabled)
         if not apply_xdg_autostart(autostart_enabled):
             QMessageBox.warning(self, _("Error"), _("Failed to update xdg-autostart entry."))
 
         start_minimized = self.startMinimizedCheckBox.isChecked()
-        save_start_minimized(start_minimized)
+        display_config.set_start_minimized(start_minimized)
 
         steam_compat = self.steamCompatCheckBox.isChecked()
         currently_installed = is_steam_compat_tool_installed()
@@ -2500,7 +2504,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                     auto_install_page.setVisible(True)
 
         # Save the hide auto-install tab setting to config
-        save_hide_autoinstall_tab(hide_autoinstall)
+        ui_config.set_hide_autoinstall_tab(hide_autoinstall)
 
         self.statusBar().showMessage(_("Settings saved"), 3000)
 
@@ -2599,7 +2603,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             if selected_theme:
                 theme_module = self.theme_manager.apply_theme(selected_theme)
                 if theme_module:
-                    save_theme_to_config(selected_theme)
+                    ui_config.set_theme(selected_theme)
                     self.statusBar().showMessage(_("Theme '{0}' applied successfully").format(selected_theme), 3000)
                     xdg_data_home = os.getenv("XDG_DATA_HOME",
                                             os.path.join(os.path.expanduser("~"), ".local", "share"))
@@ -2623,7 +2627,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
     def restart_application(self):
         """Restart application."""
         if not self.isFullScreen():
-            save_window_geometry(self.width(), self.height())
+            window_config.set_geometry(self.width(), self.height())
         restart_application_with_muvm()
 
     def restore_state(self):
@@ -2772,7 +2776,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         # Normalize the exe path
         exe_path = os.path.abspath(exe_path)
         exe_name = os.path.splitext(os.path.basename(exe_path))[0]
-        economy_mode = read_economy_mode()
+        economy_mode = ui_config.get_economy_mode()
 
         xdg_data_home = os.getenv(
             "XDG_DATA_HOME",
@@ -3579,7 +3583,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         """Handle window close: check minimize_to_tray setting.
         If True - minimize to tray (default). Otherwise - fully close.
         """
-        minimize_to_tray = read_minimize_to_tray()
+        minimize_to_tray = display_config.get_minimize_to_tray()
 
         if minimize_to_tray:
             # Just minimize to tray
@@ -3595,13 +3599,13 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             self.tray_manager.shutdown()
 
         # Save card sizes
-        save_card_size(self.card_width)
-        save_auto_card_size(self.auto_card_width)
+        ui_config.set_card_width(self.card_width)
+        ui_config.set_auto_card_width(self.auto_card_width)
 
         # Save window sizes (if not in fullscreen mode)
-        if not read_fullscreen_config():
+        if not display_config.get_fullscreen():
             logger.debug(f"Saving window geometry: {self.width()}x{self.height()}")
-            save_window_geometry(self.width(), self.height())
+            window_config.set_geometry(self.width(), self.height())
 
         if self.game_processes:
             if not self.stop_running_game():

@@ -13,7 +13,7 @@ from portprotonqt.localization import get_egs_language, _
 from portprotonqt.logger import get_logger
 from portprotonqt.image_utils import load_pixmap_async
 from portprotonqt.time_utils import get_playtime_for_exe, format_playtime, get_last_launch, get_last_launch_timestamp
-from portprotonqt.config_utils import get_portproton_location, get_portproton_start_command
+from portprotonqt.config import get_portproton_location, get_portproton_start_command
 from portprotonqt.dialogs import generate_thumbnail
 from portprotonqt.steam_api import (
     get_weanticheatyet_status_async, get_steam_apps_and_index_async, get_protondb_tier_async,

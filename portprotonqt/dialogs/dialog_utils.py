@@ -5,7 +5,7 @@ from PySide6.QtGui import QPixmap
 from PySide6.QtCore import Qt
 from portprotonqt.localization import _
 from portprotonqt.theme_manager import ThemeManager
-from portprotonqt.config_utils import read_theme_from_config
+from portprotonqt.config import ui_config
 
 theme_manager = ThemeManager()
 
@@ -15,7 +15,7 @@ def create_dialog_hints_widget(theme, main_window, input_manager, context='defau
     Common function to create hints widget for all dialogs.
     Uses main_window for get_button_icon/get_nav_icon, input_manager for gamepad detection.
     """
-    current_theme_name = read_theme_from_config()
+    current_theme_name = ui_config.get_theme()
 
     hintsWidget = QWidget()
     hintsWidget.setStyleSheet(theme.STATUS_BAR_STYLE)

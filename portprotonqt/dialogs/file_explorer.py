@@ -14,7 +14,7 @@ from PySide6.QtCore import Qt, QObject, Signal, QMimeDatabase, QThreadPool, QRun
 if TYPE_CHECKING:
     from portprotonqt.main_window import MainWindow
 
-from portprotonqt.config_utils import read_favorite_folders, read_theme_from_config
+from portprotonqt.config import favorites_folders_config, ui_config
 from portprotonqt.logger import get_logger
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.custom_widgets import AutoSizeButton
@@ -85,7 +85,7 @@ class FileExplorer(QDialog):
 
     def __init__(self, parent=None, theme=None, file_filter=None, initial_path=None, directory_only=False):
         super().__init__(parent)
-        self.theme = theme if theme else theme_manager.apply_theme(read_theme_from_config())
+        self.theme = theme if theme else theme_manager.apply_theme(ui_config.get_theme())
         self.file_signal = FileSelectedSignal()
         self.file_filter = file_filter
         self.directory_only = directory_only
@@ -121,7 +121,7 @@ class FileExplorer(QDialog):
             self.current_path = os.path.expanduser("~")
         self.update_file_list()
 
-        self.current_theme_name = read_theme_from_config()
+        self.current_theme_name = ui_config.get_theme()
         self.hints_widget, self.hints_labels = create_dialog_hints_widget(
             self.theme, self.main_window, self.input_manager, context='file_explorer'
         )
@@ -375,7 +375,7 @@ class FileExplorer(QDialog):
 
         self.drive_buttons = []
         drives = self.get_mounted_drives()
-        favorite_folders = read_favorite_folders()
+        favorite_folders = favorites_folders_config.get_folders()
 
         for drive in drives:
             drive_name = os.path.basename(drive) or drive.split('/')[-1] or drive
@@ -416,7 +416,7 @@ class FileExplorer(QDialog):
                     logger.warning("Root directory is inaccessible: insufficient permissions or path error")
                     return
 
-            favorite_folders = read_favorite_folders()
+            favorite_folders = favorites_folders_config.get_folders()
             logger.debug(f"Favorite folders: {favorite_folders}")
             for folder in favorite_folders:
                 folder_name = os.path.basename(os.path.normpath(folder)) or folder

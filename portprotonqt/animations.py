@@ -4,7 +4,7 @@ from PySide6.QtGui import QPainter, QPen, QColor, QConicalGradient, QBrush
 from PySide6.QtWidgets import QWidget, QGraphicsOpacityEffect
 from collections.abc import Callable
 from portprotonqt.logger import get_logger
-from portprotonqt.config_utils import read_theme_from_config
+from portprotonqt.config import ui_config
 from portprotonqt.theme_manager import ThemeManager
 
 logger = get_logger(__name__)
@@ -26,7 +26,7 @@ class GameCardAnimations:
     def __init__(self, game_card, theme=None):
         self.game_card = game_card
         self.theme_manager = ThemeManager()
-        self.theme = theme if theme is not None else self.theme_manager.apply_theme(read_theme_from_config())
+        self.theme = theme if theme is not None else self.theme_manager.apply_theme(ui_config.get_theme())
         self.thickness_anim: QPropertyAnimation | None = None
         self.gradient_anim: QPropertyAnimation | None = None
         self.scale_anim: QPropertyAnimation | None = None
@@ -374,7 +374,7 @@ class DetailPageAnimations:
     def __init__(self, main_window, theme=None):
         self.main_window = main_window
         self.theme_manager = ThemeManager()
-        self.theme = theme if theme is not None else self.theme_manager.apply_theme(read_theme_from_config())
+        self.theme = theme if theme is not None else self.theme_manager.apply_theme(ui_config.get_theme())
         # Ensure the main window has an animations dict
         if not hasattr(main_window, '_animations'):
             main_window._animations = {}

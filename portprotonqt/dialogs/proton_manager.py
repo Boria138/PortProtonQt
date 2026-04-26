@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, QTimer
 
-from portprotonqt.config_utils import get_portproton_start_command, read_theme_from_config
+from portprotonqt.config import get_portproton_start_command, ui_config
 from portprotonqt.logger import get_logger
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.localization import _
@@ -32,7 +32,7 @@ class ProtonManager(QDialog):
 
     def __init__(self, parent=None, portproton_location=None, theme=None, input_manager=None):
         super().__init__(parent)
-        self.theme = theme if theme else theme_manager.apply_theme(read_theme_from_config())
+        self.theme = theme if theme else theme_manager.apply_theme(ui_config.get_theme())
         self.selected_assets = {}
         self.current_extraction_thread = None
         self.current_download_thread = None
@@ -139,7 +139,7 @@ class ProtonManager(QDialog):
         layout.addWidget(self.download_frame)
 
         if self.input_manager and self.main_window:
-            self.current_theme_name = read_theme_from_config()
+            self.current_theme_name = ui_config.get_theme()
             self.hints_widget, self.hints_labels = create_dialog_hints_widget(
                 self.theme, self.main_window, self.input_manager, context='proton_manager'
             )

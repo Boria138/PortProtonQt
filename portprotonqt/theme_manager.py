@@ -7,7 +7,7 @@ from portprotonqt.theme_security import (
     is_safe_image_file,
 )
 from PySide6.QtGui import QIcon, QFontDatabase, QPixmap
-from portprotonqt.config_utils import save_theme_to_config, load_theme_metainfo
+from portprotonqt.config import ui_config, load_theme_metainfo
 
 # Icon caching for performance optimization
 _icon_cache = {}
@@ -431,7 +431,7 @@ class ThemeManager:
             logger.warning(f"Theme '{theme_name}' not found or unsafe, applying standard theme 'standart'")
             theme_module = load_theme("standart")
             theme_name = "standart"
-            save_theme_to_config("standart")
+            ui_config.set_theme("standart")
 
         load_theme_fonts(theme_name)
 
@@ -443,7 +443,7 @@ class ThemeManager:
 
         self.current_theme_name = theme_name
         self.current_theme_module = theme_module
-        save_theme_to_config(theme_name)
+        ui_config.set_theme(theme_name)
         logger.info(f"Theme '{theme_name}' successfully applied")
         return theme_module
 

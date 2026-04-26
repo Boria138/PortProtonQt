@@ -4,7 +4,6 @@ install_data(
   'animations.py',
   'app.py',
   'cli.py',
-  'config_utils.py',
   'context_menu_manager.py',
   'custom_widgets.py',
   'dialogs.py',

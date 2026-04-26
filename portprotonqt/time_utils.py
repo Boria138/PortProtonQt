@@ -2,7 +2,7 @@ import os
 import hashlib
 from datetime import datetime, timedelta
 from babel.dates import format_timedelta, format_date
-from portprotonqt.config_utils import read_time_config
+from portprotonqt.config import ui_config
 from portprotonqt.localization import _, get_system_locale
 from portprotonqt.logger import get_logger
 
@@ -41,7 +41,7 @@ def format_last_launch(launch_time):
     For "brief" – date in "day month year" format (e.g., "April 1, 2023")
     based on system locale.
     """
-    detail_level = read_time_config() or "detailed"
+    detail_level = ui_config.get_time_detail_level() or "detailed"
     system_locale = get_system_locale()
     if detail_level == "detailed":
         # Calculate delta as launch_time - datetime.now() to get negative value for elapsed time.
@@ -188,7 +188,7 @@ def format_playtime(seconds):
       - if time is less than hour, output exact time with seconds (e.g., "9 min 28 sec"),
       - if more than hour – only hours (e.g., "3 h").
     """
-    detail_level = read_time_config() or "detailed"
+    detail_level = ui_config.get_time_detail_level() or "detailed"
     system_locale = get_system_locale()
     seconds = int(seconds)
 

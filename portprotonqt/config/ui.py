@@ -1,6 +1,8 @@
 """UI configuration settings."""
-from portprotonqt.config.base import BaseConfig, configparser
+import os
+from portprotonqt.config.base import BaseConfig, configparser, THEMES_DIRS
 from portprotonqt.config.validators import validate_string, validate_int, validate_bool
+from portprotonqt.localization import get_theme_translations
 
 
 class UIConfig(BaseConfig):
@@ -67,7 +69,8 @@ class UIConfig(BaseConfig):
 
     def get_badge_view_mode(self) -> str:
         """Get badge view mode ('detailed' or 'compact')."""
-        return self._get_str("badge_view_mode", "detailed")
+        mode = self._get_str("badge_view_mode", "detailed")
+        return mode if mode in ("detailed", "compact", "hidden") else "detailed"
 
     def set_badge_view_mode(self, mode: str):
         """Set badge view mode."""
@@ -82,3 +85,22 @@ class UIConfig(BaseConfig):
         """Set economy mode setting."""
         validate_bool(enabled, "economy_mode")
         self._save_value("economy_mode", enabled, "bool")
+
+
+def load_theme_metainfo(theme_name: str) -> dict:
+    """Load theme metadata from metainfo.ini."""
+    meta: dict[str, str] = {}
+    for themes_dir in THEMES_DIRS:
+        theme_folder = os.path.join(themes_dir, theme_name)
+        metainfo_file = os.path.join(theme_folder, "metainfo.ini")
+        if os.path.exists(metainfo_file):
+            theme_translations = get_theme_translations(metainfo_file)
+            cp = configparser.ConfigParser()
+            cp.read(metainfo_file, encoding="utf-8")
+            if "Metainfo" in cp:
+                meta["author"] = cp.get("Metainfo", "author", fallback="Unknown")
+                meta["author_link"] = cp.get("Metainfo", "author_link", fallback="")
+                meta["name"] = theme_translations.get("name", theme_name)
+                meta["description"] = theme_translations.get("description", "")
+            break
+    return meta

@@ -4,7 +4,7 @@ from portprotonqt.search_utils import SearchOptimizer, ThreadedSearch
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QScrollArea, QSlider, QScroller
 from PySide6.QtCore import Qt, QTimer
 from portprotonqt.custom_widgets import FlowLayout
-from portprotonqt.config_utils import read_favorites, read_sort_method, read_card_size, save_card_size
+from portprotonqt.config import favorites_config, game_config, ui_config
 from portprotonqt.image_utils import load_pixmap_async
 from portprotonqt.context_menu_manager import ContextMenuManager, CustomLineEdit
 from collections import deque
@@ -34,7 +34,7 @@ class GameLibraryManager:
         self.filtered_games: list[tuple] = []
         self.game_card_cache = {}
         self.pending_images = {}
-        self.card_width = read_card_size()
+        self.card_width = ui_config.get_card_width()
         self.layout_mode = str(getattr(theme, "LIBRARY_LAYOUT_MODE", "grid")).lower()
         self.gamesListWidget: QWidget | None = None
         self.gamesListLayout: FlowLayout | None = None
@@ -133,7 +133,7 @@ class GameLibraryManager:
             return
         self.card_width = self.sizeSlider.value()
         self.sizeSlider.setToolTip(f"{self.card_width} px")
-        save_card_size(self.card_width)
+        ui_config.set_card_width(self.card_width)
         self.main_window.card_width = self.card_width
         for card in self.game_card_cache.values():
             card.update_card_size(self.card_width)
@@ -348,8 +348,8 @@ class GameLibraryManager:
         else:
             # Full update: sorting, removal/addition, reorganization
             games_list = self.filtered_games if self.filtered_games else self.games
-            favorites = read_favorites()
-            sort_method = read_sort_method()
+            favorites = favorites_config.get_games()
+            sort_method = game_config.get_sort_method()
 
             # Batch layout updates (extended scope)
             self.gamesListWidget.setUpdatesEnabled(False)

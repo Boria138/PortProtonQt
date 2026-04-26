@@ -11,7 +11,7 @@ from PySide6.QtCore import QTimer
 from portprotonqt.logger import get_logger
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.localization import _
-from portprotonqt.config_utils import read_favorites, read_theme_from_config, save_theme_to_config
+from portprotonqt.config import favorites_config, ui_config
 from portprotonqt.dialogs import GameLaunchDialog
 
 logger = get_logger(__name__)
@@ -29,7 +29,7 @@ class TrayManager:
     def __init__(self, main_window, app_name: str | None = None, theme=None):
         self.app_name = app_name if app_name is not None else "PortProtonQt"
         self.theme_manager = ThemeManager()
-        selected_theme = read_theme_from_config()
+        selected_theme = ui_config.get_theme()
         self.current_theme_name = selected_theme
         self.theme = self.theme_manager.apply_theme(selected_theme)
         self.main_window = main_window
@@ -111,7 +111,7 @@ class TrayManager:
 
     def populate_favorites_menu(self):
         self.favorites_menu.clear()
-        favorites = read_favorites()
+        favorites = favorites_config.get_games()
         if not favorites:
             no_fav_action = QAction(_("No favorites"), self.main_window)
             no_fav_action.setEnabled(False)
@@ -226,14 +226,14 @@ class TrayManager:
 
     def switch_theme(self, theme_name: str):
         try:
-            save_theme_to_config(theme_name)
+            ui_config.set_theme(theme_name)
             logger.info(f"Saved theme {theme_name}, restarting application to apply changes")
 
             restart_application_with_muvm()
 
         except Exception as e:
             logger.error(f"Failed to switch theme to {theme_name}: {e}")
-            save_theme_to_config("standart")
+            ui_config.set_theme("standart")
             restart_application_with_muvm()
 
     def force_exit(self):

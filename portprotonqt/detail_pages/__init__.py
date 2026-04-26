@@ -40,10 +40,10 @@ from portprotonqt.detail_pages.utils import (
     check_autoinstall_installed,
 )
 from portprotonqt.howlongtobeat_api import HowLongToBeat, GameEntry
-from portprotonqt.config_utils import (
-    read_favorites,
+from portprotonqt.config import (
+    favorites_config,
     get_portproton_start_command,
-    read_economy_mode,
+    ui_config,
 )
 from portprotonqt.custom_widgets import AutoSizeButton, ClickableLabel, FlowLayout
 from portprotonqt.localization import _
@@ -114,18 +114,18 @@ class DetailPageManager:
         )
 
     def _get_favorite_text(self, name: str) -> str:
-        return "★" if name in read_favorites() else "☆"
+        return "★" if name in favorites_config.get_games() else "☆"
 
     def _is_economy_mode(self) -> bool:
-        return read_economy_mode()
+        return ui_config.get_economy_mode()
 
     def _create_game_badges(self, parent: QWidget, game_data: dict) -> list:
-        from portprotonqt.config_utils import read_display_filter
+        from portprotonqt.config import game_config
 
         if self._is_economy_mode():
             return []
 
-        display_filter = read_display_filter()
+        display_filter = game_config.get_display_filter()
         game_source = str(game_data.get("game_source", "")).lower()
         appid = game_data.get("appid", "")
         name = game_data.get("name", "")

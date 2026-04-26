@@ -16,7 +16,7 @@ import psutil
 if TYPE_CHECKING:
     from portprotonqt.main_window import MainWindow
 
-from portprotonqt.config_utils import create_desktop_file, read_theme_from_config
+from portprotonqt.config import create_desktop_file, ui_config
 from portprotonqt.logger import get_logger
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.custom_widgets import AutoSizeButton
@@ -103,7 +103,7 @@ class GameLaunchDialog(QDialog):
 
     def __init__(self, parent=None, game_name=None, theme=None, target_exe=None):
         super().__init__(parent)
-        self.theme = theme if theme else theme_manager.apply_theme(read_theme_from_config())
+        self.theme = theme if theme else theme_manager.apply_theme(ui_config.get_theme())
         self.game_name = game_name
         self.target_exe = target_exe
         self.setWindowTitle(_("Launching {0}").format(self.game_name))
@@ -177,7 +177,7 @@ class AddGameDialog(QDialog):
     def __init__(self, parent=None, theme=None, edit_mode=False, game_name=None, exe_path=None, cover_path=None):
         super().__init__(parent)
         from portprotonqt.context_menu_manager import CustomLineEdit
-        self.theme = theme if theme else theme_manager.apply_theme(read_theme_from_config())
+        self.theme = theme if theme else theme_manager.apply_theme(ui_config.get_theme())
         self.edit_mode = edit_mode
         self.last_exe_path = exe_path
         self.last_cover_path = cover_path

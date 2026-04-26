@@ -3,7 +3,7 @@
 import os
 
 from portprotonqt.logger import get_logger
-from portprotonqt.config_utils import get_portproton_location, get_portproton_scripts_path
+from portprotonqt.config import get_portproton_location, get_portproton_scripts_path
 
 from portprotonqt.debug_utils.env_utils import get_file_content
 

@@ -7,7 +7,7 @@ import socket
 from pathlib import Path
 from tqdm import tqdm
 from collections.abc import Callable
-from portprotonqt.config_utils import read_proxy_config
+from portprotonqt.config import proxy_config
 from portprotonqt.logger import get_logger
 
 logger = get_logger(__name__)
@@ -20,7 +20,7 @@ def get_default_user_agent() -> str:
 
 def get_requests_session():
     session = requests.Session()
-    proxy = read_proxy_config() or {}
+    proxy = proxy_config.get_proxy() or {}
     if proxy:
         session.proxies.update(proxy)
     session.headers.update({"User-Agent": get_default_user_agent()})
@@ -360,7 +360,7 @@ class Downloader(QObject):
         thread.start()
         return thread
 
-    def clear_cache(self):
+    def cache_config(self):
         with self._global_lock:
             self._cache.clear()
 

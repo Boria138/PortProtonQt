@@ -6,7 +6,7 @@ from difflib import SequenceMatcher
 from threading import Thread
 import requests
 from bs4 import BeautifulSoup, Tag
-from portprotonqt.config_utils import read_proxy_config
+from portprotonqt.config import proxy_config
 from portprotonqt.time_utils import format_playtime
 from portprotonqt.logger import get_logger
 from portprotonqt.config.cache import CacheManager
@@ -85,9 +85,9 @@ class HTTPClient:
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
             'referer': self.BASE_URL
         })
-        proxy_config = read_proxy_config()
-        if proxy_config:
-            self.session.proxies.update(proxy_config)
+        proxy_settings = proxy_config.get_proxy()
+        if proxy_settings:
+            self.session.proxies.update(proxy_settings)
 
     def get_search_config(self, parse_all_scripts: bool = False) -> SearchConfig | None:
         try:

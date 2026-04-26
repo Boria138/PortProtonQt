@@ -8,7 +8,7 @@ import threading
 import time
 
 from portprotonqt.logger import get_logger
-from portprotonqt.config_utils import get_portproton_location
+from portprotonqt.config import get_portproton_location
 
 from portprotonqt.debug_utils.system_info import generate_system_info
 from portprotonqt.debug_utils.log_processor import process_portproton_log

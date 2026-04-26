@@ -1,6 +1,13 @@
 """Display configuration settings."""
+import os
+from pathlib import Path
 from portprotonqt.config.base import BaseConfig
 from portprotonqt.config.validators import validate_bool
+from portprotonqt.logger import get_logger
+
+logger = get_logger(__name__)
+AUTOSTART_DIR = Path(os.getenv("XDG_CONFIG_HOME", Path.home() / ".config")) / "autostart"
+AUTOSTART_FILE = AUTOSTART_DIR / "ru.linux_gaming.PortProtonQt.desktop"
 
 
 class DisplayConfig(BaseConfig):
@@ -37,7 +44,11 @@ class DisplayConfig(BaseConfig):
 
     def get_autostart_enabled(self) -> bool:
         """Get autostart on login setting."""
-        return self._get_bool("autostart_enabled", False)
+        enabled = self._get_bool("autostart_enabled", False)
+        if enabled and not AUTOSTART_FILE.exists():
+            self.set_autostart_enabled(False)
+            return False
+        return enabled
 
     def set_autostart_enabled(self, enabled: bool):
         """Set autostart on login setting."""
@@ -52,3 +63,35 @@ class DisplayConfig(BaseConfig):
         """Set start minimized setting."""
         validate_bool(minimized, "start_minimized")
         self._save_value("start_minimized", minimized, "bool")
+
+
+def apply_xdg_autostart(enabled: bool) -> bool:
+    """Create or remove xdg-autostart desktop entry."""
+    try:
+        if enabled:
+            AUTOSTART_DIR.mkdir(parents=True, exist_ok=True)
+            exec_command = "portprotonqt"
+            repo_root = Path(__file__).resolve().parent.parent.parent
+            venv_portprotonqt = repo_root / ".venv" / "bin" / "portprotonqt"
+            if repo_root.joinpath(".git").exists() and venv_portprotonqt.exists():
+                exec_command = f'"{venv_portprotonqt}"'
+
+            desktop_entry = (
+                "[Desktop Entry]\n"
+                "Type=Application\n"
+                "Name=PortProtonQt\n"
+                f"Exec={exec_command}\n"
+                "Terminal=false\n"
+                "X-GNOME-Autostart-enabled=true\n"
+            )
+            AUTOSTART_FILE.write_text(desktop_entry, encoding="utf-8")
+            logger.info("Enabled xdg-autostart at %s", AUTOSTART_FILE)
+            return True
+
+        if AUTOSTART_FILE.exists():
+            AUTOSTART_FILE.unlink()
+            logger.info("Disabled xdg-autostart at %s", AUTOSTART_FILE)
+        return True
+    except OSError as error:
+        logger.error("Failed to update xdg-autostart: %s", error)
+        return False

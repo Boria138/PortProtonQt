@@ -11,7 +11,7 @@ import orjson
 from portprotonqt.logger import get_logger
 from portprotonqt.downloader import Downloader
 from portprotonqt.localization import get_steam_language
-from portprotonqt.config_utils import read_economy_mode
+from portprotonqt.config import ui_config
 from portprotonqt.steam_api.utils import decode_text, get_local_steam_cover
 from portprotonqt.steam_api.cache import (
     CACHE_DURATION,
@@ -259,7 +259,7 @@ def get_full_steam_game_info_async(
     fallback_name: str = "",
 ) -> None:
     """Asynchronously retrieve full Steam game info, including WeAntiCheatYet status."""
-    if read_economy_mode():
+    if ui_config.get_economy_mode():
         callback(get_cached_full_steam_game_info(appid, fallback_name))
         return
 
@@ -391,7 +391,7 @@ def get_steam_game_info_async(
     callback: Callable[[dict], None]
 ) -> None:
     """Asynchronously retrieve game info based on desktop name and exec line."""
-    if read_economy_mode():
+    if ui_config.get_economy_mode():
         cached_info = get_cached_steam_game_info(desktop_name, exec_line)
         if cached_info:
             callback(cached_info)

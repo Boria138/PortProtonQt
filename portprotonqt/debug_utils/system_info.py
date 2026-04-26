@@ -338,7 +338,7 @@ def generate_system_info(
     start_cmd: list[str] | None = None
 ) -> str:
     """Generate system information part of debug log."""
-    from portprotonqt.config_utils import get_portproton_location
+    from portprotonqt.config import get_portproton_location
     from portprotonqt.debug_utils.env_utils import (
         get_runtime_status,
         get_vulkan_use_info,

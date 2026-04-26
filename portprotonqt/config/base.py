@@ -30,6 +30,22 @@ _config_cache: dict[str, configparser.ConfigParser] = {}
 _config_mtime: dict[str, float] = {}
 
 
+def reset_main_config() -> None:
+    """Delete main config file and invalidate cache."""
+    if not CONFIG_FILE.exists():
+        return
+    try:
+        CONFIG_FILE.unlink()
+        logger.info("Configuration file %s deleted", CONFIG_FILE)
+    except OSError as error:
+        logger.warning("Failed to delete configuration file: %s", error)
+        return
+
+    config_path = str(CONFIG_FILE)
+    _config_cache.pop(config_path, None)
+    _config_mtime.pop(config_path, None)
+
+
 class BaseConfig:
     """Base configuration class providing common functionality."""
 

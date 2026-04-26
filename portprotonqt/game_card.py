@@ -3,13 +3,10 @@ from PySide6.QtCore import Signal, Property, Qt, QUrl, QTimer
 from PySide6.QtWidgets import QFrame, QGraphicsDropShadowEffect, QVBoxLayout, QHBoxLayout, QWidget, QStackedLayout, QLabel
 from portprotonqt.image_utils import load_pixmap_async, round_corners
 from portprotonqt.localization import _
-from portprotonqt.config_utils import (
-    read_favorites,
-    save_favorites,
-    read_display_filter,
-    read_theme_from_config,
-    read_badge_view_mode,
-    read_economy_mode,
+from portprotonqt.config import (
+    favorites_config,
+    game_config,
+    ui_config,
 )
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.custom_widgets import ClickableLabel
@@ -60,14 +57,14 @@ class GameCard(QFrame):
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self._show_context_menu)
         self.theme_manager = ThemeManager()
-        self.theme = theme if theme is not None else self.theme_manager.apply_theme(read_theme_from_config())
+        self.theme = theme if theme is not None else self.theme_manager.apply_theme(ui_config.get_theme())
 
-        self.display_filter = read_display_filter()
-        self.badge_view_mode = read_badge_view_mode()
-        self.current_theme_name = read_theme_from_config()
+        self.display_filter = game_config.get_display_filter()
+        self.badge_view_mode = ui_config.get_badge_view_mode()
+        self.current_theme_name = ui_config.get_theme()
         self.layout_mode = str(getattr(self.theme, "LIBRARY_LAYOUT_MODE", "grid")).lower()
         self.list_layout = self.layout_mode == "list"
-        self.economy_mode = read_economy_mode()
+        self.economy_mode = ui_config.get_economy_mode()
         self.downloader = Downloader(max_workers=4)
         self.portproton_api = PortProtonAPI(self.downloader)
 
@@ -119,7 +116,7 @@ class GameCard(QFrame):
 
         self.favoriteLabel = ClickableLabel(self.coverWidget)
         self.favoriteLabel.clicked.connect(self.toggle_favorite)
-        self.is_favorite = self.name in set(read_favorites())
+        self.is_favorite = self.name in set(favorites_config.get_games())
         self.update_favorite_icon()
         self.favoriteLabel.raise_()
         if self.list_layout:
@@ -432,7 +429,7 @@ class GameCard(QFrame):
             return
 
         self.display_filter = display_filter
-        self.economy_mode = read_economy_mode()
+        self.economy_mode = ui_config.get_economy_mode()
         self.steam_visible = (str(self.game_source).lower() == "steam" and self.display_filter in ("all", "favorites") and not self.economy_mode)
         self.egs_visible = (str(self.game_source).lower() == "epic" and self.display_filter in ("all", "favorites") and not self.economy_mode)
         self.portproton_visible = (str(self.game_source).lower() == "portproton" and self.display_filter in ("all", "favorites") and not self.economy_mode)
@@ -581,7 +578,7 @@ class GameCard(QFrame):
             pass
 
     def toggle_favorite(self):
-        favorites = read_favorites()
+        favorites = favorites_config.get_games()
         favorites_set = set(favorites)
         if self.is_favorite:
             if self.name in favorites_set:
@@ -591,7 +588,7 @@ class GameCard(QFrame):
             if self.name not in favorites_set:
                 favorites.append(self.name)
             self.is_favorite = True
-        save_favorites(favorites)
+        favorites_config.set_games(favorites)
         self.update_favorite_icon()
 
     def getBorderWidth(self) -> int:

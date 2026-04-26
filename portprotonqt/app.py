@@ -14,13 +14,11 @@ from PySide6.QtNetwork import QLocalServer, QLocalSocket
 
 from portprotonqt.main_window import MainWindow
 from portprotonqt.port_data_path_selector import ask_portdata_path
-from portprotonqt.config_utils import (
-    save_fullscreen_config,
-    read_fullscreen_config,
+from portprotonqt.config import (
+    display_config,
     get_portproton_start_command,
     get_portproton_location,
     save_portdata_path_to_config,
-    read_start_minimized,
 )
 from portprotonqt.logger import get_logger, setup_logger
 from portprotonqt.cli import (
@@ -144,7 +142,7 @@ def main():
     setup_logger(args.debug_level)
     logger = get_logger(__name__)
 
-    fullscreen = args.fullscreen or read_fullscreen_config()
+    fullscreen = args.fullscreen or display_config.get_fullscreen()
     ipc_message = "show:fullscreen" if fullscreen else "show"
     if args.file_or_url and is_launch_file(args.file_or_url):
         ipc_message = f"open:{normalize_launch_path(args.file_or_url)}"
@@ -256,12 +254,12 @@ def main():
 
                         if ":fullscreen" in msg:
                             logger.info("Switching to fullscreen via IPC")
-                            save_fullscreen_config(True)
+                            display_config.set_fullscreen(True)
                             window.showFullScreen()
                         else:
                             if msg.startswith("show"):
                                 logger.info("Switching to normal window via IPC")
-                                save_fullscreen_config(False)
+                                display_config.set_fullscreen(False)
                                 window.showNormal()
 
                         if msg.startswith("open:"):
@@ -282,9 +280,9 @@ def main():
     local_server.newConnection.connect(handle_new_connection)
 
     # --- Initial fullscreen state ---
-    launch_fullscreen = args.fullscreen or read_fullscreen_config()
+    launch_fullscreen = args.fullscreen or display_config.get_fullscreen()
     launch_minimized = (
-        read_start_minimized()
+        display_config.get_start_minimized()
         and not args.fullscreen
         and window_resolution is None
         and exe_path is None
@@ -296,7 +294,7 @@ def main():
         logger.info(
             f"Launching in fullscreen mode ({'--fullscreen' if args.fullscreen else 'config'})"
         )
-        save_fullscreen_config(True)
+        display_config.set_fullscreen(True)
         window.showFullScreen()
     elif window_resolution:
         logger.info(f"Launching with resolution: {window_resolution[0]}x{window_resolution[1]}")
@@ -304,7 +302,7 @@ def main():
         window.showNormal()
     else:
         logger.info("Launching in normal mode")
-        save_fullscreen_config(False)
+        display_config.set_fullscreen(False)
         window.showNormal()
 
     # Execute the initial PortProton command after the UI is set up
@@ -319,7 +317,7 @@ def main():
         def run(self):
             try:
                 # Get screen information before running the initial command
-                from portprotonqt.config_utils import get_portproton_location
+                from portprotonqt.config import get_portproton_location
                 portproton_path = get_portproton_location()
 
                 if portproton_path:

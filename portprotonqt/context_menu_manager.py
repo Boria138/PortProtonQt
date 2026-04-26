@@ -9,7 +9,7 @@ from PySide6.QtWidgets import QMessageBox, QDialog, QMenu, QLineEdit, QApplicati
 from PySide6.QtCore import QUrl, QPoint, QObject, Signal, Qt, QStandardPaths
 from PySide6.QtGui import QDesktopServices, QIcon, QKeySequence
 from portprotonqt.localization import _
-from portprotonqt.config_utils import parse_desktop_entry, read_favorites, save_favorites, read_favorite_folders, save_favorite_folders, get_portproton_start_command
+from portprotonqt.config import parse_desktop_entry, favorites_config, favorites_folders_config, get_portproton_start_command
 from portprotonqt.steam_api import is_game_in_steam, add_to_steam, remove_from_steam
 from portprotonqt.egs_api import add_egs_to_steam, get_egs_executable, remove_egs_from_steam
 from portprotonqt.dialogs import AddGameDialog, FileExplorer, generate_thumbnail
@@ -175,7 +175,7 @@ class ContextMenuManager:
             menu.setStyleSheet(self.theme.CONTEXT_MENU_STYLE)
             menu.setParent(file_explorer, Qt.WindowType.Popup)  # Set transientParent for Wayland
 
-            favorite_folders = read_favorite_folders()
+            favorite_folders = favorites_folders_config.get_folders()
             is_favorite = full_path in favorite_folders
             action_text = _("Remove from Favorites") if is_favorite else _("Add to Favorites")
             favorite_action = menu.addAction(self._get_safe_icon("star" if is_favorite else "star_full"), action_text)
@@ -217,16 +217,16 @@ class ContextMenuManager:
 
     def toggle_favorite_folder(self, file_explorer, folder_path, add):
         """Adds or removes a folder from favorites."""
-        favorite_folders = read_favorite_folders()
+        favorite_folders = favorites_folders_config.get_folders()
         if add:
             if folder_path not in favorite_folders:
                 favorite_folders.append(folder_path)
-                save_favorite_folders(favorite_folders)
+                favorites_folders_config.set_folders(favorite_folders)
                 logger.info("Added folder to favorites: %s", folder_path)
         else:
             if folder_path in favorite_folders:
                 favorite_folders.remove(folder_path)
-                save_favorite_folders(favorite_folders)
+                favorites_folders_config.set_folders(favorite_folders)
                 logger.info("Removed folder from favorites: %s", folder_path)
         file_explorer.update_drives_list()
 
@@ -340,11 +340,11 @@ class ContextMenuManager:
             return
         try:
             os.rename(folder_path, target_path)
-            favorite_folders = read_favorite_folders()
+            favorite_folders = favorites_folders_config.get_folders()
             if folder_path in favorite_folders:
                 favorite_folders.remove(folder_path)
                 favorite_folders.append(target_path)
-                save_favorite_folders(favorite_folders)
+                favorites_folders_config.set_folders(favorite_folders)
             file_explorer.update_file_list()
             file_explorer.update_drives_list()
             self._show_status_message(
@@ -371,10 +371,10 @@ class ContextMenuManager:
             return
         try:
             shutil.rmtree(folder_path)
-            favorite_folders = read_favorite_folders()
+            favorite_folders = favorites_folders_config.get_folders()
             if folder_path in favorite_folders:
                 favorite_folders.remove(folder_path)
-                save_favorite_folders(favorite_folders)
+                favorites_folders_config.set_folders(favorite_folders)
             file_explorer.update_file_list()
             file_explorer.update_drives_list()
             self._show_status_message(_("Deleted folder '{folder_name}'").format(folder_name=folder_name))
@@ -424,7 +424,7 @@ class ContextMenuManager:
             lambda: self._launch_game(game_card)
         )
 
-        favorites = read_favorites()
+        favorites = favorites_config.get_games()
         is_favorite = game_card.name in favorites
         icon_name = "star_full" if is_favorite else "star"
         text = _("Remove from Favorites") if is_favorite else _("Add to Favorites")
@@ -680,7 +680,7 @@ class ContextMenuManager:
             game_card: The GameCard instance to toggle.
             add: True to add to favorites, False to remove.
         """
-        favorites = read_favorites()
+        favorites = favorites_config.get_games()
         if add and game_card.name not in favorites:
             favorites.append(game_card.name)
             game_card.is_favorite = True
@@ -691,7 +691,7 @@ class ContextMenuManager:
             message = _("Removed '{game_name}' from favorites").format(game_name=game_card.name)
         else:
             return
-        save_favorites(favorites)
+        favorites_config.set_games(favorites)
         game_card.update_favorite_icon()
         self._show_status_message(message)
 

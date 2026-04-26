@@ -1,8 +1,8 @@
 from portprotonqt.theme_manager import ThemeManager
-from portprotonqt.config_utils import read_theme_from_config
+from portprotonqt.config import ui_config
 
 theme_manager = ThemeManager()
-current_theme_name = read_theme_from_config()
+current_theme_name = ui_config.get_theme()
 
 # CONSTANTS
 favoriteLabelSize = 48, 48

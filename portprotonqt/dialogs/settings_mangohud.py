@@ -25,7 +25,7 @@ from PySide6.QtWidgets import (
 )
 
 from portprotonqt.config import CONFIG_FILE
-from portprotonqt.config_utils import get_portproton_scripts_path
+from portprotonqt.config import get_portproton_scripts_path
 from portprotonqt.debug_utils import get_cached_vk_gpu_info
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger

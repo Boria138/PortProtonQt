@@ -16,7 +16,7 @@ from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QApplication
 from portprotonqt.downloader import Downloader, get_requests_session
 from portprotonqt.logger import get_logger
-from portprotonqt.config_utils import (
+from portprotonqt.config import (
     get_portproton_location,
     get_portproton_scripts_path,
     get_portproton_start_command,

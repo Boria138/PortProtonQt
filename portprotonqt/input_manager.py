@@ -17,7 +17,7 @@ from portprotonqt.logger import get_logger
 from portprotonqt.image_utils import FullscreenDialog
 from portprotonqt.custom_widgets import NavLabel, AutoSizeButton
 from portprotonqt.game_card import GameCard
-from portprotonqt.config_utils import read_fullscreen_config, read_window_geometry, save_window_geometry, read_auto_fullscreen_gamepad
+from portprotonqt.config import display_config, window_config
 from portprotonqt.dialogs import AddGameDialog
 from portprotonqt.virtual_keyboard import VirtualKeyboard
 
@@ -206,7 +206,7 @@ class InputManager(QObject):
         self.gamepad: PygameGamepad | None = None
         self.gamepad_thread: threading.Thread | None = None
         self.running = True
-        self._is_fullscreen = read_fullscreen_config()
+        self._is_fullscreen = display_config.get_fullscreen()
         self.lt_pressed = False
         self.rt_pressed = False
         self.last_trigger_time = 0.0
@@ -2244,16 +2244,16 @@ class InputManager(QObject):
                 return
             if enable and not self._is_fullscreen:
                 if not window.isFullScreen():
-                    save_window_geometry(window.width(), window.height())
+                    window_config.set_geometry(window.width(), window.height())
                 window.showFullScreen()
                 self._is_fullscreen = True
             elif not enable and self._is_fullscreen:
                 window.showNormal()
-                width, height = read_window_geometry()
+                width, height = window_config.get_geometry()
                 if width > 0 and height > 0:
                     window.resize(width, height)
                 self._is_fullscreen = False
-                save_window_geometry(width, height)
+                window_config.set_geometry(width, height)
         except Exception as e:
             logger.error(f"Error in handle_fullscreen_slot: {e}", exc_info=True)
 
@@ -3401,7 +3401,7 @@ class InputManager(QObject):
                 self._refresh_gamepad_ui()
                 self.check_gamepad()
 
-                if had_gamepad and not self.gamepad and read_auto_fullscreen_gamepad() and not read_fullscreen_config():
+                if had_gamepad and not self.gamepad and display_config.get_auto_fullscreen_gamepad() and not display_config.get_fullscreen():
                     self.toggle_fullscreen.emit(False)
 
         except Exception as e:
@@ -3424,7 +3424,7 @@ class InputManager(QObject):
                 self.gamepad_type = self._detect_gamepad_type(new_gamepad)
                 self._refresh_gamepad_ui()
 
-                if read_auto_fullscreen_gamepad() and not read_fullscreen_config():
+                if display_config.get_auto_fullscreen_gamepad() and not display_config.get_fullscreen():
                     self.toggle_fullscreen.emit(True)
 
             elif self.gamepad:
@@ -3434,7 +3434,7 @@ class InputManager(QObject):
                 self._reset_pygame_state()
                 self._refresh_gamepad_ui()
 
-                if read_auto_fullscreen_gamepad() and not read_fullscreen_config():
+                if display_config.get_auto_fullscreen_gamepad() and not display_config.get_fullscreen():
                     self.toggle_fullscreen.emit(False)
 
         except Exception as e:

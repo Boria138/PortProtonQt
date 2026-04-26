@@ -30,11 +30,11 @@ from PySide6.QtWidgets import (
 if TYPE_CHECKING:
     from portprotonqt.main_window import MainWindow
 
-from portprotonqt.config_utils import (
+from portprotonqt.config import (
     get_portproton_location,
     get_portproton_scripts_path,
     get_portproton_start_command,
-    read_theme_from_config,
+    ui_config,
 )
 from portprotonqt.custom_widgets import AutoSizeButton
 from portprotonqt.dialogs.dialog_utils import create_dialog_hints_widget, update_dialog_hints
@@ -140,7 +140,7 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
 
     def __init__(self, parent=None, theme=None, exe_path=None, appid=None, game_source=None):
         super().__init__(parent)
-        self.theme = theme if theme else theme_manager.apply_theme(read_theme_from_config())
+        self.theme = theme if theme else theme_manager.apply_theme(ui_config.get_theme())
         self.exe_path = exe_path
         self.appid = appid
         self.game_source = str(game_source).lower() if game_source else ""
@@ -218,7 +218,7 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
                 self.main_window = parent_obj
             parent_obj = parent_obj.parent()
 
-        self.current_theme_name = read_theme_from_config()
+        self.current_theme_name = ui_config.get_theme()
 
         if self.input_manager:
             self.input_manager.enable_settings_mode(self)

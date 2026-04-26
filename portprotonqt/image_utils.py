@@ -3,7 +3,7 @@ from PySide6.QtGui import QPen, QColor, QPixmap, QPainter, QPainterPath
 from PySide6.QtCore import Qt, QFile, QEvent, QByteArray, QEasingCurve, QPropertyAnimation
 from PySide6.QtWidgets import QGraphicsItem, QToolButton, QFrame, QLabel, QGraphicsScene, QHBoxLayout, QWidget, QGraphicsView, QVBoxLayout, QSizePolicy
 from PySide6.QtWidgets import QSpacerItem, QGraphicsPixmapItem, QDialog, QApplication
-from portprotonqt.config_utils import read_theme_from_config
+from portprotonqt.config import ui_config
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.downloader import Downloader
 from portprotonqt.logger import get_logger
@@ -33,7 +33,7 @@ def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[Q
     """
     def process_image():
         theme_manager = ThemeManager()
-        current_theme_name = read_theme_from_config()
+        current_theme_name = ui_config.get_theme()
 
         def finish_with(pixmap: QPixmap):
             # Check if pixmap is valid before attempting to scale it
@@ -266,7 +266,7 @@ class FullscreenDialog(QDialog):
         self.images = images
         self.current_index = current_index
         self.theme_manager = ThemeManager()
-        self.theme = theme if theme is not None else self.theme_manager.apply_theme(read_theme_from_config())
+        self.theme = theme if theme is not None else self.theme_manager.apply_theme(ui_config.get_theme())
 
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
@@ -463,7 +463,7 @@ class ImageCarousel(QGraphicsView):
         self.image_items = []
         self._animation = None
         self.theme_manager = ThemeManager()
-        self.theme = theme if theme is not None else self.theme_manager.apply_theme(read_theme_from_config())
+        self.theme = theme if theme is not None else self.theme_manager.apply_theme(ui_config.get_theme())
         self.max_height = 300  # Default height for images
         self.init_ui()
         self.create_arrows()

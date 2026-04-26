@@ -20,7 +20,7 @@ from PySide6.QtGui import QColor, QDesktopServices
 from portprotonqt.custom_widgets import ClickableLabel, AutoSizeButton
 from portprotonqt.game_card import GameCard
 from portprotonqt.localization import _
-from portprotonqt.config_utils import read_badge_view_mode
+from portprotonqt.config import ui_config
 
 
 COVER_WIDTH = 300
@@ -36,7 +36,7 @@ BADGE_TOP_Y = 10
 
 def _apply_badge_view_mode(badge: ClickableLabel) -> None:
     """Apply configured badge view mode."""
-    mode = read_badge_view_mode()
+    mode = ui_config.get_badge_view_mode()
     compact_mode = mode == "compact"
     badge.setCompactMode(compact_mode, BADGE_COMPACT_WIDTH, BADGE_WIDTH)
     badge.setVisible(mode != "hidden")

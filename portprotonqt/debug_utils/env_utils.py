@@ -4,7 +4,7 @@ import os
 import subprocess
 
 from portprotonqt.logger import get_logger
-from portprotonqt.config_utils import get_portproton_location, get_portproton_scripts_path
+from portprotonqt.config import get_portproton_location, get_portproton_scripts_path
 
 logger = get_logger(__name__)
 

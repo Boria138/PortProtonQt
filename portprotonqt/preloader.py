@@ -4,7 +4,7 @@ import re
 from PySide6.QtCore import QRect
 from PySide6.QtGui import QPainter, QPen, QBrush, Qt, QColor, QConicalGradient
 from PySide6.QtWidgets import QWidget
-from portprotonqt.config_utils import read_theme_from_config
+from portprotonqt.config import ui_config
 from portprotonqt.theme_manager import ThemeManager, load_theme
 
 class Preloader(QWidget):
@@ -64,7 +64,7 @@ class Preloader(QWidget):
         theme = theme_manager.current_theme_module
         if theme is None:
             try:
-                theme = load_theme(read_theme_from_config())
+                theme = load_theme(ui_config.get_theme())
             except FileNotFoundError:
                 theme = load_theme("standart")
 

@@ -8,7 +8,7 @@ from PySide6.QtCore import QTimer, Qt, QObject, Signal
 from PySide6.QtGui import QPixmap
 
 from portprotonqt.image_utils import load_pixmap_async, round_corners
-from portprotonqt.config_utils import read_favorites, save_favorites
+from portprotonqt.config import favorites_config
 from portprotonqt.logger import get_logger
 
 logger = get_logger(__name__)
@@ -186,14 +186,14 @@ def create_focus_helper(
 
 def toggle_favorite(game_name: str, main_window) -> str:
     """Toggle favorite status for a game."""
-    favorites = read_favorites()
+    favorites = favorites_config.get_games()
     if game_name in favorites:
         favorites.remove(game_name)
         favorite_text = "☆"
     else:
         favorites.append(game_name)
         favorite_text = "★"
-    save_favorites(favorites)
+    favorites_config.set_games(favorites)
 
     if hasattr(main_window, "game_library_manager"):
         main_window.game_library_manager.update_game_grid()

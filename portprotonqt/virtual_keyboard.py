@@ -5,7 +5,7 @@ from PySide6.QtCore import Qt, Signal, QProcess, QSize, QEvent, QPoint, QPropert
 from PySide6.QtGui import QPixmap, QIcon
 from portprotonqt.keyboard_layouts import keyboard_layouts
 from portprotonqt.theme_manager import ThemeManager
-from portprotonqt.config_utils import read_theme_from_config
+from portprotonqt.config import ui_config
 
 theme_manager = ThemeManager()
 
@@ -16,7 +16,7 @@ class VirtualKeyboard(QFrame):
         super().__init__(parent)
         self._parent: QWidget | None = parent
         self.available_layouts: list[str] = self.get_layouts_setxkbmap()
-        self.theme = theme if theme else theme_manager.apply_theme(read_theme_from_config())
+        self.theme = theme if theme else theme_manager.apply_theme(ui_config.get_theme())
         if not self.available_layouts:
             self.available_layouts.append('en')
         self.current_layout: str = self.available_layouts[0]
@@ -60,7 +60,7 @@ class VirtualKeyboard(QFrame):
             parent_widget = cast(QWidget | None, parent_widget.parent())
 
 
-        self.current_theme_name = read_theme_from_config()
+        self.current_theme_name = ui_config.get_theme()
         self.initUI()
         if self._parent and isinstance(self._parent, QWidget):
             self._parent.installEventFilter(self)
