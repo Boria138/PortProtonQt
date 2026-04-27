@@ -12,7 +12,7 @@ GAME_CARD_ANIMATION = {
     "gradient_anim_duration": 3000,
     "gradient_start_angle": 360,
     "gradient_end_angle": 0,
-    "card_animation_type": "stripe",
+    "card_animation_type": "glow",
     "fill_color": "#409EFF",
     "fill_alpha": 90,
     "stripe_color": "#409EFF",

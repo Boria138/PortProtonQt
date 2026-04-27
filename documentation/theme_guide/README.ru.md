@@ -169,9 +169,10 @@ GAME_CARD_ANIMATION = {
     "gradient_end_angle": 0,
 
     # Тип анимации для карточки при наведении или фокусе
-    # Возможные значения: "gradient", "scale", "fill", "stripe"
+    # Возможные значения: "gradient", "scale", "fill", "stripe", "glow", "scale_fill"
     # "gradient" включает вращающийся градиент для обводки, "scale" увеличивает размер карточки,
-    # "fill" добавляет статичную заливку, "stripe" задает статичный цвет обводки
+    # "fill" добавляет статичную заливку, "stripe" задает статичный цвет обводки,
+    # "glow" добавляет пульсирующую подсветку обводки, "scale_fill" объединяет масштабирование и заливку
     "card_animation_type": "gradient",
 
     # Цвет заливки для типа анимации "fill"
@@ -187,6 +188,12 @@ GAME_CARD_ANIMATION = {
 
     # Прозрачность обводки для типа анимации "stripe" (0-255)
     "stripe_alpha": 255,
+
+    # Базовая прозрачность для типа анимации "glow" (0-255)
+    "glow_base_alpha": 120,
+
+    # Дополнительная пульсирующая прозрачность для типа анимации "glow" (0-255)
+    "glow_pulse_alpha": 80,
 
     # Масштаб карточки в состоянии покоя
     # Определяет базовый размер карточки (1.0 = 100% от исходного размера)
@@ -276,6 +283,16 @@ GAME_CARD_ANIMATION = {
     # Возможные значения: строки, соответствующие QEasingCurve.Type
     "detail_page_easing_curve_exit": "InCubic"
 }
+```
+
+Настройки анимации виртуальной клавиатуры задаются константами темы:
+
+```python
+virtual_keyboard_animation_type = "slide"  # "slide", "fade", "slide_fade", "slide_bounce"
+virtual_keyboard_slide_animation_duration = 160
+virtual_keyboard_fade_animation_duration = 140
+virtual_keyboard_slide_fade_animation_duration = 180
+virtual_keyboard_slide_bounce_animation_duration = 220
 ```
 
 ---

@@ -44,6 +44,10 @@ shadow_offset = (0, 0)
 settings_tooltip_offset_x = 28
 settings_tooltip_offset_y = 4
 virtual_keyboard_slide_animation_duration = 160
+virtual_keyboard_fade_animation_duration = 140
+virtual_keyboard_slide_fade_animation_duration = 180
+virtual_keyboard_slide_bounce_animation_duration = 220
+virtual_keyboard_animation_type = "slide"
 
 GAME_CARD_ANIMATION = {
     # Animation type for entering/exiting detail page
@@ -101,9 +105,10 @@ GAME_CARD_ANIMATION = {
     "gradient_end_angle": 0,
 
     # Animation type for card on hover or focus
-    # Possible values: "gradient", "scale", "fill", "stripe"
+    # Possible values: "gradient", "scale", "fill", "stripe", "glow", "scale_fill"
     # "gradient" enables rotating gradient border, "scale" increases card size, "fill" applies accent overlay,
-    # "stripe" applies static accent border
+    # "stripe" applies static accent border, "glow" applies pulsing accent border,
+    # "scale_fill" combines scale animation with fill overlay
     "card_animation_type": "gradient",
 
     # Overlay color for "fill" card animation type
@@ -119,6 +124,12 @@ GAME_CARD_ANIMATION = {
 
     # Border opacity for "stripe" card animation type (0-255)
     "stripe_alpha": 255,
+
+    # Base opacity for "glow" card animation type (0-255)
+    "glow_base_alpha": 120,
+
+    # Additional pulse opacity for "glow" card animation type (0-255)
+    "glow_pulse_alpha": 80,
 
     # Card scale in idle state
     # Defines base card size (1.0 = 100% of original size)

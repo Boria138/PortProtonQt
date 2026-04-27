@@ -1,8 +1,9 @@
 from typing import cast, Any
 from PySide6.QtWidgets import (QFrame, QVBoxLayout, QPushButton, QGridLayout,
                                QSizePolicy, QWidget, QLineEdit, QScrollArea, QDialog)
-from PySide6.QtCore import Qt, Signal, QProcess, QSize, QEvent, QPoint, QPropertyAnimation, QEasingCurve
+from PySide6.QtCore import Qt, Signal, QProcess, QSize, QEvent, QPoint
 from PySide6.QtGui import QPixmap, QIcon
+from portprotonqt.animations import VirtualKeyboardAnimations
 from portprotonqt.keyboard_layouts import keyboard_layouts
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.config import ui_config
@@ -37,7 +38,7 @@ class VirtualKeyboard(QFrame):
         self.last_focused_button = None
         self.selected_button = None
         self.enable_slide_animation = True
-        self._slide_animation: QPropertyAnimation | None = None
+        self.keyboard_animations = VirtualKeyboardAnimations(self, self.theme)
         self._is_hiding = False
 
         self.base_button_width = 40
@@ -76,19 +77,6 @@ class VirtualKeyboard(QFrame):
         if not self._parent or not isinstance(self._parent, QWidget):
             return QPoint(0, 0)
         return QPoint(0, max(0, self._parent.height() - self.height()))
-
-    def _animate_position(self, start_pos: QPoint, end_pos: QPoint, hide_on_finish: bool = False) -> None:
-        if self._slide_animation:
-            self._slide_animation.stop()
-        self._slide_animation = QPropertyAnimation(self, b"pos", self)
-        duration = int(getattr(self.theme, "virtual_keyboard_slide_animation_duration", 160))
-        self._slide_animation.setDuration(max(0, duration))
-        self._slide_animation.setStartValue(start_pos)
-        self._slide_animation.setEndValue(end_pos)
-        self._slide_animation.setEasingCurve(QEasingCurve.Type.OutCubic)
-        if hide_on_finish:
-            self._slide_animation.finished.connect(super().hide)
-        self._slide_animation.start()
 
     def _apply_responsive_metrics(self) -> None:
         if not self._parent or not isinstance(self._parent, QWidget):
@@ -582,13 +570,13 @@ class VirtualKeyboard(QFrame):
 
         target_pos = self._target_keyboard_pos()
         if self.enable_slide_animation and self._parent and isinstance(self._parent, QWidget):
-            self.move(0, self._parent.height())
+            start_pos = QPoint(0, self._parent.height())
         else:
-            self.move(target_pos)
+            start_pos = target_pos
+        self.move(start_pos)
         self.show()
         self.raise_()
-        if self.enable_slide_animation:
-            self._animate_position(self.pos(), target_pos)
+        self.keyboard_animations.animate_show(start_pos, target_pos, self.enable_slide_animation)
         self.ensure_input_visible()
 
         # Set focus to first button if no focus on input widget
@@ -615,14 +603,24 @@ class VirtualKeyboard(QFrame):
             or not self._parent
             or not isinstance(self._parent, QWidget)
         ):
+            self.keyboard_animations.stop()
+            self._is_hiding = False
             super().hide()
             return
 
         self._is_hiding = True
+        start_pos = self.pos()
         end_pos = QPoint(0, self._parent.height())
-        self._animate_position(self.pos(), end_pos, hide_on_finish=True)
-        if self._slide_animation:
-            self._slide_animation.finished.connect(lambda: setattr(self, "_is_hiding", False))
+        self.keyboard_animations.animate_hide(
+            start_pos,
+            end_pos,
+            self.enable_slide_animation,
+            self._finish_hide_animation,
+        )
+
+    def _finish_hide_animation(self) -> None:
+        self._is_hiding = False
+        super().hide()
 
     def eventFilter(self, obj, event):
         if (

@@ -1,7 +1,6 @@
 # Install Python source files
 install_data(
   ['__init__.py',
-  'animations.py',
   'app.py',
   'cli.py',
   'context_menu_manager.py',
@@ -30,6 +29,16 @@ install_data(
   'version_utils.py',
   'virtual_keyboard.py'],
   install_dir: pythondir / meson.project_name(),
+)
+
+# Install animations package
+install_data(
+  ['animations/__init__.py',
+   'animations/detail_page.py',
+   'animations/game_card.py',
+   'animations/virtual_keyboard.py',
+  ],
+  install_dir: pythondir / meson.project_name() / 'animations',
 )
 
 # Install steam_api package

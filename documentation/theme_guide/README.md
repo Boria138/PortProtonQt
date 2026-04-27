@@ -169,9 +169,10 @@ GAME_CARD_ANIMATION = {
     "gradient_end_angle": 0,
 
     # Type of card animation on hover or focus
-    # Possible values: "gradient", "scale", "fill", "stripe"
+    # Possible values: "gradient", "scale", "fill", "stripe", "glow", "scale_fill"
     # "gradient" enables a rotating gradient border, "scale" enlarges the card,
-    # "fill" applies a static overlay, "stripe" applies a static border color
+    # "fill" applies a static overlay, "stripe" applies a static border color,
+    # "glow" adds pulsing border glow, "scale_fill" combines scaling + fill
     "card_animation_type": "gradient",
 
     # Overlay color for "fill" animation type
@@ -187,6 +188,12 @@ GAME_CARD_ANIMATION = {
 
     # Border opacity for "stripe" animation type (0-255)
     "stripe_alpha": 255,
+
+    # Base opacity for "glow" animation type (0-255)
+    "glow_base_alpha": 120,
+
+    # Extra pulse opacity for "glow" animation type (0-255)
+    "glow_pulse_alpha": 80,
 
     # Card scale in idle state
     # Determines the base size of the card (1.0 = 100% of original size)
@@ -276,6 +283,16 @@ GAME_CARD_ANIMATION = {
     # Possible values: strings corresponding to QEasingCurve.Type
     "detail_page_easing_curve_exit": "InCubic"
 }
+```
+
+Virtual keyboard animation options are configured with theme-level constants:
+
+```python
+virtual_keyboard_animation_type = "slide"  # "slide", "fade", "slide_fade", "slide_bounce"
+virtual_keyboard_slide_animation_duration = 160
+virtual_keyboard_fade_animation_duration = 140
+virtual_keyboard_slide_fade_animation_duration = 180
+virtual_keyboard_slide_bounce_animation_duration = 220
 ```
 
 ---
