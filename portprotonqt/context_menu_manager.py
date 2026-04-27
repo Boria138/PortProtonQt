@@ -472,7 +472,7 @@ class ContextMenuManager:
         exec_line = self._get_exec_line(game_card.name, game_card.exec_line)
         if not exec_line:
             return
-        self.parent.toggleGame(exec_line)
+        self.parent.toggleGame(exec_line, game_name=game_card.name)
 
     def toggle_favorite(self, game_card, add: bool):
         """

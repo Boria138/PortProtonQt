@@ -135,34 +135,18 @@ fatal () {
     exit 1
 }
 
-start_activity_simulation() {
-    grep -i "fedora" "/run/host/etc/os-release" &>/dev/null && START_ACTIVITY_FEDORA="1"
-    (
-        trap 'exit 0' TERM INT
-        while [[ -f "$PW_TMPFS_PATH/screensaver_pid" ]] ; do
-            if [[ $START_ACTIVITY_FEDORA == "1" ]] ; then
-                gdbus call --session --dest org.freedesktop.ScreenSaver \
-                           --object-path /ScreenSaver \
-                           --method org.freedesktop.ScreenSaver.SimulateUserActivity
-            else
-                dbus-send --session --dest=org.freedesktop.ScreenSaver \
-                          --type=method_call /org/freedesktop/ScreenSaver \
-                          org.freedesktop.ScreenSaver.SimulateUserActivity
-            fi
-            sleep 29
-        done
-    ) &
-    echo $! > "$PW_TMPFS_PATH/screensaver_pid"
-}
+pw_enable_idle_inhibit() {
+    PW_INHIBIT_SLR=""
 
-stop_activity_simulation() {
-    if [[ -f "$PW_TMPFS_PATH/screensaver_pid" ]] ; then
-        pw_screensaver_pid=$(<"$PW_TMPFS_PATH/screensaver_pid")
-        if ps cax | grep "${pw_screensaver_pid}" ; then
-            kill -n 9 "${pw_screensaver_pid}" &>/dev/null
-        fi
-        rm -f "$PW_TMPFS_PATH/screensaver_pid"
+    if [[ "$GAMEMODERUN" == "1" ]] \
+    || [[ "$PW_USE_INHIBIT_SLEEP" != "1" ]] \
+    || [[ -z "${DBUS_SESSION_BUS_ADDRESS:-}" ]]
+    then
+        return
     fi
+
+    PW_INHIBIT_SLR="python3 -m portprotonqt.idle_inhibit"
+    print_info "Screensaver will be inhibited using D-Bus"
 }
 
 pw_is_process_active() {
@@ -1633,7 +1617,6 @@ stop_portproton () {
     try_remove_dir "${PW_WINELIB}/var"
     find "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/" -maxdepth 1 -type f -name "*.tmp" -delete
     pw_auto_create_shortcut
-    stop_activity_simulation
     add_in_stop_portproton
     if [[ -n "$PW_POWERPROFILECTL_PROFILE" ]] && [[ "$(pw_ppd_dbus_get_profile)" != "$PW_POWERPROFILECTL_PROFILE" ]] ; then
         pw_ppd_dbus_set_profile "$PW_POWERPROFILECTL_PROFILE"
@@ -2972,16 +2955,7 @@ export -f pw_ppd_dbus_has_profile
         export PW_GAMEMODERUN_SLR=""
     fi
 
-if [[ "$GAMEMODERUN" != "1" ]] && [[ "$PW_USE_INHIBIT_SLEEP" == "1" ]]; then
-    if check_flatpak && [[ -e "/var/run/dbus/system_bus_socket" ]]; then
-        start_activity_simulation
-        PW_INHIBIT_SLR=""
-        print_info "Screensaver will be inhibited using D-Bus (Flatpak mode)"
-    elif [[ -e "/var/run/dbus/system_bus_socket" ]] && command -v systemd-inhibit &>/dev/null; then
-        PW_INHIBIT_SLR="systemd-inhibit --mode=block --who=ru.linux_gaming.PortProton --why=Launched --what=idle:sleep"
-        print_info "Screensaver will be inhibited using systemd-inhibit (Native mode)"
-    fi
-fi
+    pw_enable_idle_inhibit
     pw_other_fixes
 
     # enabled BattleEye_Runtime and EasyAntiCheat_Runtime
@@ -3890,16 +3864,7 @@ steamplay_launch () {
             pw_enable_gamemode_basic
         fi
 
-        if [[ "$GAMEMODERUN" != "1" ]] && [[ "$PW_USE_INHIBIT_SLEEP" == "1" ]]; then
-            if check_flatpak && [[ -e "/var/run/dbus/system_bus_socket" ]]; then
-                start_activity_simulation
-                PW_INHIBIT_SLR=""
-                print_info "Screensaver will be inhibited using D-Bus (Flatpak mode)"
-            elif [[ -e "/var/run/dbus/system_bus_socket" ]] && command -v systemd-inhibit &>/dev/null; then
-                PW_INHIBIT_SLR="systemd-inhibit --mode=block --who=ru.linux_gaming.PortProton --why=Launched --what=idle:sleep"
-                print_info "Screensaver will be inhibited using systemd-inhibit (Native mode)"
-            fi
-        fi
+        pw_enable_idle_inhibit
 
         pw_set_sync_runtime_vars
 
@@ -3958,7 +3923,6 @@ steamplay_launch () {
         ${PW_INHIBIT_SLR} \
         ${PW_TASKSET_SLR} \
         "${proton_runner}" waitforexitandrun "${PW_EXE_FILE}" "$@"
-        stop_activity_simulation
         if [[ $PW_LOG != 1 ]] && [[ -n $START_PW_TIME_IN_GAME ]] ; then
             debug_timer --end -s "PW_TIME_IN_GAME"
             PW_TIME_IN_GAME=$(( PW_TIME_IN_GAME / 1000 ))

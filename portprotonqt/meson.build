@@ -10,6 +10,7 @@ install_data(
   'game_card.py',
   'game_library_manager.py',
   'howlongtobeat_api.py',
+  'idle_inhibit.py',
   'image_utils.py',
   'input_manager.py',
   'keyboard_layouts.py',

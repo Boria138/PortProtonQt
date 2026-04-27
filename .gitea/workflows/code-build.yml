@@ -115,7 +115,7 @@ jobs:
         run: |
           dnf install -y git rpmdevtools meson ninja-build python3-devel \
                          systemd-rpm-macros redhat-rpm-config nodejs npm \
-                         gcc vulkan-loader-devel
+                         gcc vulkan-loader-devel gettext
 
       - name: Setup rpmbuild environment
         run: |

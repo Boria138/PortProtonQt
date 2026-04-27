@@ -3747,7 +3747,13 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             return None
         return launch_parts[0]
 
-    def toggleGame(self, exec_line, button=None):
+    def _get_game_name_for_exec_line(self, exec_line: str) -> str:
+        for game in self.games:
+            if len(game) > 5 and game[5] == exec_line and game[0]:
+                return str(game[0])
+        return ""
+
+    def toggleGame(self, exec_line, button=None, game_name=None):
         # Handle Steam games
         if exec_line.startswith("steam://"):
             url = QUrl(exec_line)
@@ -3827,6 +3833,9 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             self.target_exe = current_exe
             exe_name = os.path.splitext(current_exe)[0]
             env_vars = os.environ.copy()
+            inhibit_game_name = game_name or self._get_game_name_for_exec_line(exec_line)
+            if inhibit_game_name:
+                env_vars["PW_INHIBIT_NAME"] = inhibit_game_name
             game_exe_for_prefix = ""
             for part in reversed(entry_exec_split):
                 if part.lower().endswith(".exe"):

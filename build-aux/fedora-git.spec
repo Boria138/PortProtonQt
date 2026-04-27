@@ -65,13 +65,13 @@ Requires:       procps-ng
 Requires:       psmisc
 Requires:       squashfs-tools
 Requires:       7zip
+Requires:       python3-dbus-fast
 
 # System Tab
 Recommends:     NetworkManager
 Recommends:     bluez
 Recommends:     upower
 Recommends:     pulseaudio-utils
-Recommends:     python3-dbus-fast
 Recommends:     python3-qrcode
 
 %ifarch aarch64

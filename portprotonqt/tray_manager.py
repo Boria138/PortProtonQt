@@ -200,7 +200,7 @@ class TrayManager:
             self.launch_dialog.rejected.connect(lambda: self.cancel_game_launch(exec_line))
             self.launch_dialog.show()
 
-            self.main_window.toggleGame(exec_line)
+            self.main_window.toggleGame(exec_line, game_name=game_name)
         except Exception as e:
             logger.error(f"Failed to launch game {game_name}: {e}")
             if self.launch_dialog:
