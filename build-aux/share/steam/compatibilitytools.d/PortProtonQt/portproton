@@ -47,7 +47,7 @@ fi
 
 # Use AppImage if specified, otherwise use portprotonqt from PATH
 if [[ -n "$PPQT_BIN_PATH" ]]; then
-    "$PPQT_BIN_PATH" --debug-level INFO "$@"
+    "$PPQT_BIN_PATH" --silent --debug-level INFO "$@"
 else
-    portprotonqt --debug-level INFO "$@"
+    portprotonqt --silent --debug-level INFO "$@"
 fi

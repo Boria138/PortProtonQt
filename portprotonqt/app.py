@@ -26,6 +26,7 @@ from portprotonqt.cli import (
     is_portproton_url,
     parse_portproton_url,
     is_launch_file,
+    is_exe_file,
     normalize_launch_path,
     add_steam_compat_tool,
     reinstall_steam_compat_tool,
@@ -100,8 +101,10 @@ def main():
         os.environ["PORT_DATA_PATH"] = portproton_location
 
     # Check if running as Steam compatibility tool (STEAM_COMPAT=1)
-    # In this mode, launch game immediately without GUI
+    # or requested silent launch mode. In both modes, launch game
+    # immediately without GUI.
     is_steam_compat = os.environ.get("STEAM_COMPAT") == "1"
+    is_silent_launch = parsed_args.silent
 
     # Get the PortProton start command
     start_sh = get_portproton_start_command()
@@ -109,15 +112,25 @@ def main():
     if start_sh is None:
         return
 
-    # Handle Steam compatibility mode - launch game directly without GUI
-    if is_steam_compat:
-        # In Steam compatibility mode, launch file path is passed as first argument
+    # Handle no-GUI modes - launch game directly without GUI
+    if is_steam_compat or is_silent_launch:
+        # In no-GUI modes, launch file path is passed as first argument.
+        # --silent supports .exe only.
         exe_path = parsed_args.file_or_url if parsed_args.file_or_url else None
-        if exe_path and is_launch_file(exe_path):
+        can_launch_without_gui = False
+        launch_mode_name = "silent"
+
+        if is_steam_compat:
+            can_launch_without_gui = bool(exe_path and is_launch_file(exe_path))
+            launch_mode_name = "Steam compatibility"
+        elif is_silent_launch:
+            can_launch_without_gui = bool(exe_path and is_exe_file(exe_path))
+
+        if can_launch_without_gui and isinstance(exe_path, str):
             exe_path = normalize_launch_path(exe_path)
             logger = get_logger(__name__)
             setup_logger(parsed_args.debug_level)
-            logger.info("Running in Steam compatibility mode, launching: %s", exe_path)
+            logger.info("Running in %s mode, launching: %s", launch_mode_name, exe_path)
 
             # Launch game via PortProton without GUI
             env_vars = os.environ.copy()
@@ -125,7 +138,7 @@ def main():
             try:
                 subprocess.run(cmd, env=env_vars)
             except Exception as e:
-                logger.error("Failed to launch game in Steam compatibility mode: %s", e)
+                logger.error("Failed to launch game in %s mode: %s", launch_mode_name, e)
                 sys.exit(1)
             sys.exit(0)
         else:

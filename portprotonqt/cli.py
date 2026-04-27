@@ -54,6 +54,11 @@ def parse_args():
         action="store_true",
         help="Show the system tab in the application"
     )
+    parser.add_argument(
+        "--silent",
+        action="store_true",
+        help="Launch .exe file without GUI"
+    )
     # Add positional argument to accept launch files or portproton:// URLs
     parser.add_argument(
         'file_or_url',
