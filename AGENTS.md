@@ -349,6 +349,7 @@ Do not attempt to execute binaries manually.
 - [ ] Logging via `portprotonqt.logger`
 - [ ] New/modified code handles expected/recoverable failures
 - [ ] New installable Python files added to `portprotonqt/meson.build`
+- [ ] If CLI arguments are changed: update `dev-scripts/generate-completions.sh` (do not regenerate `completions/` unless explicitly requested for build/release)
 - [ ] Comments in English, concise
 - [ ] No circular imports introduced by the change
 - [ ] Prefer dedicated functions for subprocess calls when practical within task scope
