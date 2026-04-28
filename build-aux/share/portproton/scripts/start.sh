@@ -4,15 +4,6 @@ export url_site="https://linux-gaming.ru/portproton/"
 export url_cloud="https://cloud.linux-gaming.ru/portproton"
 export url_git="https://git.linux-gaming.ru/CastroFidel/PortWINE"
 ########################################################################
-if [[ "${START_FROM_FLATPAK:-0}" == 1 ]] \
-&& [[ -z "${STEAM_COMPAT_DATA_PATH:-}" ]] \
-&& command -v "flatpak" &>/dev/null
-then
-    unset START_FROM_FLATPAK
-    flatpak run ru.linux_gaming.PortProton "$@"
-    exit
-fi
-
 $PW_DEBUG
 
 if [[ $(id -u) = 0 ]] \
@@ -31,7 +22,10 @@ fi
 PORT_IMG_PATH="$(dirname "$PORT_SCRIPTS_PATH")/img"
 
 if [[ -z "$PORT_DATA_PATH" ]] ; then
-    if [[ -f "$HOME/.config/PortProtonQt.conf" ]] \
+    if [[ -n "${FLATPAK_ID:-}" ]] \
+    && [[ -n "${XDG_DATA_HOME:-}" ]] ; then
+        PORT_DATA_PATH="$(dirname "${XDG_DATA_HOME}")"
+    elif [[ -f "$HOME/.config/PortProtonQt.conf" ]] \
     && grep "portdata_path" "$HOME/.config/PortProtonQt.conf" ; then
         PORT_DATA_PATH="$(grep "portdata_path" "$HOME/.config/PortProtonQt.conf" | awk -F"= " '{print $2}')"
     elif [[ -f "$HOME/.config/PortProton.conf" ]] ; then

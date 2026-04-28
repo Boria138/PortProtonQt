@@ -38,7 +38,8 @@ LOCALE_MAP = {
 
 # Try local locale directory first, fallback to system for development
 _local_localedir = Path(__file__).parent / "locales"
-_system_localedir = Path(os.getenv("SHARUN_DIR", "/usr")) / "share" / "locale"
+_system_prefix = "/app" if os.getenv("FLATPAK_ID") else os.getenv("SHARUN_DIR", "/usr")
+_system_localedir = Path(_system_prefix) / "share" / "locale"
 
 try:
     translate = gettext.translation(

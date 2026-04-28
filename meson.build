@@ -19,7 +19,7 @@ bindir = prefix / get_option('bindir')
 
 # Use custom purelibdir if specified, otherwise use default
 purelibdir_opt = get_option('python_purelibdir')
-pythondir = purelibdir_opt != '' ? purelibdir_opt : join_paths(prefix, python3.get_path('purelib'))
+pythondir = purelibdir_opt != '' ? purelibdir_opt : python3.get_install_dir(pure: true)
 pkgdatadir = pythondir / meson.project_name()
 
 # C compiler for vk_gpu_info

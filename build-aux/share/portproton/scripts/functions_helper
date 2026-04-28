@@ -590,7 +590,8 @@ check_flatpak () {
     if [[ -n "$FLATPAK_IN_USE" ]]
     then [[ "$FLATPAK_IN_USE" == 1 ]] && return 0 || return 1
     fi
-    if grep -i "flatpak" /etc/os-release &>/dev/null ; then
+    if [[ -n "${FLATPAK_ID:-}" ]]
+    then
         export FLATPAK_IN_USE=1
         if grep -i "Alpine Linux" "/run/host/etc/os-release" &>/dev/null ; then
             export ALPINE_FP=1
@@ -754,9 +755,9 @@ search_desktop_file () {
                 while read -r line1 ; do
                     if [[ $line1 =~ ^Exec= ]] ; then
                         if check_flatpak ; then
-                            EXEC_DESKTOP=${line1//Exec=flatpak run ru.linux_gaming.PortProton /}
+                            EXEC_DESKTOP=${line1//Exec=flatpak run ${FLATPAK_ID} --silent /}
                         else
-                            EXEC_DESKTOP=${line1//Exec=env \"$PORT_SCRIPTS_PATH\/start.sh\" /}
+                            EXEC_DESKTOP=${line1//Exec=portprotonqt --silent /}
                         fi
                     fi
                     [[ $line1 =~ ^Icon= ]] && ICON_NAME=${line1//Icon=/}
@@ -4516,14 +4517,13 @@ portwine_output_yad_shortcut () {
         echo "[Desktop Entry]" > "${PORT_DATA_PATH}/${name_desktop}.desktop"
         echo "Name=${name_desktop}" >> "${PORT_DATA_PATH}/${name_desktop}.desktop"
         if check_flatpak
-        then echo "Exec=flatpak run ru.linux_gaming.PortProton \"${PW_EXE_FILE}\"" >> "${PORT_DATA_PATH}/${name_desktop}.desktop"
-        else echo "Exec=env \"${PORT_SCRIPTS_PATH}/start.sh\" \"${PW_EXE_FILE}\"" >> "${PORT_DATA_PATH}/${name_desktop}.desktop"
+        then echo "Exec=flatpak run ${FLATPAK_ID} --silent \"${PW_EXE_FILE}\"" >> "${PORT_DATA_PATH}/${name_desktop}.desktop"
+        else echo "Exec=portprotonqt --silent \"${PW_EXE_FILE}\"" >> "${PORT_DATA_PATH}/${name_desktop}.desktop"
         fi
         {
             echo "Type=Application"
             echo "Categories=Game"
             echo "StartupNotify=true"
-            echo "Path=${PORT_SCRIPTS_PATH}/"
             echo "Icon=${PORT_DATA_PATH}/data/img/${name_desktop_png}.png"
         } >> "${PORT_DATA_PATH}/${name_desktop}.desktop"
         chmod +x "${PORT_DATA_PATH}/${name_desktop}.desktop"

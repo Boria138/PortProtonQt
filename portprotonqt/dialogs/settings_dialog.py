@@ -241,9 +241,7 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
         self.load_current_settings()
 
     def _get_process_args(self, subcommand_args):
-        """Get the full arguments for QProcess.start, handling flatpak format."""
-        if self.start_sh and self.start_sh[0] == "flatpak":
-            return self.start_sh + subcommand_args
+        """Get the full arguments for QProcess.start."""
         return self.start_sh + subcommand_args
 
     def setup_ui(self):

@@ -355,10 +355,9 @@ class DetailPageManager:
         if not entry_exec_split:
             return None
 
-        if entry_exec_split[0] == "env":
-            file_to_check = entry_exec_split[2] if len(entry_exec_split) >= 3 else None
-        elif entry_exec_split[0] == "flatpak":
-            file_to_check = entry_exec_split[3] if len(entry_exec_split) >= 4 else None
+        if "--silent" in entry_exec_split and len(entry_exec_split) >= 2:
+            silent_index = entry_exec_split.index("--silent")
+            file_to_check = entry_exec_split[silent_index + 1] if len(entry_exec_split) > silent_index + 1 else None
         else:
             file_to_check = entry_exec_split[0]
 
@@ -420,10 +419,9 @@ class DetailPageManager:
         if not entry_exec_split:
             return None
 
-        if entry_exec_split[0] == "env":
-            return entry_exec_split[2] if len(entry_exec_split) >= 3 else None
-        elif entry_exec_split[0] == "flatpak":
-            return entry_exec_split[3] if len(entry_exec_split) >= 4 else None
+        if "--silent" in entry_exec_split and len(entry_exec_split) >= 2:
+            silent_index = entry_exec_split.index("--silent")
+            return entry_exec_split[silent_index + 1] if len(entry_exec_split) > silent_index + 1 else None
         return entry_exec_split[0]
 
     def _open_steam_game_folder(self, appid: str) -> None:

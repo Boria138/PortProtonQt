@@ -199,17 +199,22 @@ class FileExplorer(QDialog):
         """Retrieve a list of mounted drives from /proc/mounts, excluding system paths."""
         mounted_drives = []
         try:
+            mounts = []
             with open('/proc/mounts') as f:
                 for line in f:
                     parts = line.strip().split()
                     if len(parts) < 2:
                         continue
                     mount_point = parts[1]
-                    if (mount_point.startswith(('/dev', '/sys', '/proc', '/tmp', '/snap', '/var/lib')) or
-                        (mount_point.startswith('/run') and not mount_point.startswith('/run/media'))):
-                        continue
-                    if os.path.isdir(mount_point) and os.access(mount_point, os.R_OK):
-                        mounted_drives.append(mount_point)
+                    mounts.append(mount_point)
+
+            for mount_point in mounts:
+                if mount_point in ("/media", "/mnt", "/run/media"):
+                    continue
+                if mount_point != "/" and not mount_point.startswith(("/run/media/", "/media/", "/mnt/")):
+                    continue
+                if os.path.isdir(mount_point) and os.access(mount_point, os.R_OK):
+                    mounted_drives.append(mount_point)
             return sorted(mounted_drives)
         except Exception as e:
             logger.error(f"Error retrieving mounted drives: {e}")

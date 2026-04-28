@@ -1,8 +1,8 @@
 """PortProton configuration and launch helpers."""
 import configparser
 import os
+import re
 import shlex
-import subprocess
 from pathlib import Path
 from portprotonqt.config.base import (
     BaseConfig,
@@ -47,13 +47,7 @@ class PortProtonConfig(BaseConfig):
             except Exception as error:
                 logger.warning("Unexpected error reading PortProton configuration file: %s", error)
 
-        default_flatpak_dir = Path.home() / ".var" / "app" / "ru.linux_gaming.PortProton"
-        if default_flatpak_dir.is_dir():
-            self._portproton_location = str(default_flatpak_dir)
-            logger.info("Using Flatpak PortProton directory: %s", default_flatpak_dir)
-            return self._portproton_location
-
-        logger.warning("PortProton configuration and Flatpak directory not found")
+        logger.warning("PortProton configuration not found")
         return None
 
     def set_location(self, location: str):
@@ -102,6 +96,11 @@ def read_portdata_path_from_config() -> str | None:
 
 def get_portproton_location() -> str | None:
     """Return PortProton directory path."""
+    if os.getenv("FLATPAK_ID"):
+        portdata_path = os.getenv("XDG_DATA_HOME", "").strip()
+        if portdata_path:
+            return str(Path(portdata_path).parent)
+
     saved_portdata_path = read_portdata_path_from_config()
     if saved_portdata_path:
         return saved_portdata_path
@@ -142,40 +141,12 @@ def get_portproton_scripts_path() -> str | None:
         prefixes.append(Path(sharun_prefix))
 
     scripts_dirs = (
-        Path(__file__).resolve().parent.parent.parent / "build-aux" / "share" / "portproton" / "scripts",
+        Path.cwd() / "build-aux" / "share" / "portproton" / "scripts",
         *[prefix / "share" / "portproton" / "scripts" for prefix in prefixes],
     )
     for scripts_dir in scripts_dirs:
         if scripts_dir.exists():
             return str(scripts_dir)
-    return None
-
-
-def _detect_flatpak_start_command() -> list[str] | None:
-    """Return Flatpak launch command when PortProton is installed via Flatpak."""
-    try:
-        subprocess.run(["flatpak", "--version"], capture_output=True, text=True, check=False, timeout=5)
-    except FileNotFoundError:
-        return None
-    except Exception as error:
-        logger.debug("Flatpak version check failed: %s", error)
-        return None
-
-    try:
-        result = subprocess.run(
-            ["flatpak", "list"],
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=10,
-        )
-        if "ru.linux_gaming.PortProton" in result.stdout:
-            logger.info("Detected Flatpak installation")
-            return ["flatpak", "run", "ru.linux_gaming.PortProton"]
-    except subprocess.TimeoutExpired:
-        logger.warning("Flatpak list command timed out")
-    except Exception as error:
-        logger.warning("Error checking flatpak list: %s", error)
     return None
 
 
@@ -185,18 +156,133 @@ def get_portproton_start_command() -> list[str] | None:
     if _portproton_start_command is not None:
         return _portproton_start_command
 
-    flatpak_command = _detect_flatpak_start_command()
-    if flatpak_command is not None:
-        _portproton_start_command = flatpak_command
-        return _portproton_start_command
-
     scripts_path = get_portproton_scripts_path()
     if scripts_path:
         _portproton_start_command = [os.path.join(scripts_path, "start.sh")]
         return _portproton_start_command
 
-    logger.warning("Neither flatpak nor start.sh found for PortProton")
+    logger.warning("start.sh not found for PortProton")
     return None
+
+
+def migrate_legacy_shortcut(portproton_path: str, desktop_dir: str | None = None) -> int:
+    """Migrate legacy PortProton shortcuts in known desktop directories."""
+    flatpak_id = os.getenv("FLATPAK_ID", "").strip()
+    user_home = os.path.expanduser("~")
+    legacy_home_path = os.path.join(user_home, "PortProton")
+    current_home_path = os.path.join(user_home, "PortProtonQt")
+    legacy_flatpak_root = os.path.join(user_home, ".var", "app", "ru.linux_gaming.PortProton")
+    current_flatpak_root = os.path.join(user_home, ".var", "app", flatpak_id) if flatpak_id else ""
+    escaped_current_home = re.escape(current_home_path)
+    escaped_current_flatpak_root = re.escape(current_flatpak_root) if current_flatpak_root else ""
+    legacy_portdata_paths = []
+    if PORTPROTON_CONFIG_FILE.exists():
+        try:
+            legacy_config_path = PORTPROTON_CONFIG_FILE.read_text(encoding="utf-8").strip()
+            if legacy_config_path:
+                legacy_portdata_paths.append(legacy_config_path)
+        except OSError as error:
+            logger.warning("Failed to read legacy PortProton config %s: %s", PORTPROTON_CONFIG_FILE, error)
+
+    desktop_path = desktop_dir or os.path.join(os.path.expanduser("~"), "Desktop")
+    desktop_paths = (
+        portproton_path,
+        os.path.join(os.path.expanduser("~"), ".local", "share", "applications"),
+        desktop_path,
+    )
+    migrated = 0
+    for current_path in desktop_paths:
+        if not os.path.isdir(current_path):
+            continue
+
+        for entry in os.scandir(current_path):
+            if not entry.name.endswith(".desktop") or not entry.is_file():
+                continue
+
+            try:
+                lines = Path(entry.path).read_text(encoding="utf-8").splitlines(keepends=True)
+            except OSError as error:
+                logger.warning("Failed to read desktop file %s: %s", entry.path, error)
+                continue
+
+            changed = False
+            for idx, line in enumerate(lines):
+                line_end = "\r\n" if line.endswith("\r\n") else "\n"
+                line_content = line[:-len(line_end)] if line.endswith(("\n", "\r\n")) else line
+
+                if line_content.startswith("Path="):
+                    lines[idx] = ""
+                    changed = True
+                    continue
+
+                updated_line = line_content
+                if not current_flatpak_root:
+                    for legacy_portdata_path in legacy_portdata_paths:
+                        updated_line = re.sub(
+                            rf"{re.escape(legacy_portdata_path)}(?=/|$)",
+                            portproton_path,
+                            updated_line,
+                        )
+
+                if current_flatpak_root:
+                    updated_line = re.sub(
+                        rf"{re.escape(legacy_home_path)}(?=/|$)",
+                        current_home_path,
+                        updated_line,
+                    )
+                    updated_line = re.sub(
+                        rf"{re.escape(legacy_flatpak_root)}(?=/|$)",
+                        current_flatpak_root,
+                        updated_line,
+                    )
+                    updated_line = re.sub(
+                        rf"{escaped_current_flatpak_root}(?:Qt)+(?=/|$)",
+                        current_flatpak_root,
+                        updated_line,
+                    )
+                    updated_line = re.sub(
+                        rf"{escaped_current_home}(?:Qt)+(?=/|$)",
+                        current_home_path,
+                        updated_line,
+                    )
+
+                if updated_line.startswith("Exec="):
+                    exec_value = updated_line[len("Exec="):].strip()
+                    try:
+                        parts = shlex.split(exec_value)
+                    except ValueError:
+                        parts = []
+
+                    if (
+                        len(parts) >= 4
+                        and parts[0] == "flatpak"
+                        and parts[1] == "run"
+                        and parts[2] == "ru.linux_gaming.PortProton"
+                        and flatpak_id
+                    ):
+                        parts[2] = flatpak_id
+                        if "--silent" not in parts:
+                            parts.insert(3, "--silent")
+                        updated_line = f"Exec={shlex.join(parts)}"
+                    elif len(parts) >= 3 and parts[0] == "env" and os.path.basename(parts[1]) == "start.sh":
+                        if "--silent" not in parts:
+                            updated_line = f'Exec={shlex.join(["portprotonqt", "--silent", *parts[2:]])}'
+
+                if updated_line == line_content:
+                    continue
+
+                lines[idx] = f"{updated_line}{line_end}"
+                changed = True
+
+            if not changed:
+                continue
+
+            try:
+                Path(entry.path).write_text("".join(lines), encoding="utf-8")
+                migrated += 1
+            except OSError as error:
+                logger.warning("Failed to update desktop file %s: %s", entry.path, error)
+    return migrated
 
 
 def parse_desktop_entry(file_path: str) -> configparser.SectionProxy | None:
@@ -234,8 +320,10 @@ def find_game_by_exe(exe_path: str) -> configparser.SectionProxy | None:
             continue
 
         game_exe = ""
-        if len(parts) >= 4:
-            game_exe = os.path.expanduser(parts[3])
+        if "--silent" in parts and len(parts) >= 2:
+            silent_index = parts.index("--silent")
+            if len(parts) > silent_index + 1:
+                game_exe = os.path.expanduser(parts[silent_index + 1])
         else:
             for part in parts:
                 if part.endswith(".exe"):
@@ -252,33 +340,25 @@ def create_desktop_file(
 ) -> tuple[str, str] | None:
     """Create desktop entry content and destination path for a game."""
     portproton_path = get_portproton_location()
-    scripts_path = get_portproton_scripts_path()
     if not os.path.isfile(exe_path):
         logger.error("Executable not found: %s", exe_path)
         return None
     if not portproton_path:
         logger.error("PortProton location not found")
         return None
-    if not scripts_path:
-        logger.error("PortProton scripts path not found")
-        return None
 
     if not game_name:
         game_name = os.path.splitext(os.path.basename(exe_path))[0]
-    is_flatpak = ".var" in portproton_path
     base_path = os.path.join(portproton_path, "data")
     icon_path = os.path.join(base_path, "img", f"{game_name}.png")
     desktop_path = os.path.join(portproton_path, f"{game_name}.desktop")
     os.makedirs(os.path.dirname(icon_path), exist_ok=True)
 
-    if is_flatpak:
-        exec_str = f'flatpak run ru.linux_gaming.PortProton "{exe_path}"'
+    flatpak_id = os.getenv("FLATPAK_ID")
+    if flatpak_id:
+        exec_str = f'flatpak run {flatpak_id} --silent "{exe_path}"'
     else:
-        start_sh = os.path.join(scripts_path, "start.sh")
-        if not os.path.exists(start_sh):
-            logger.error("start.sh not found in supported paths")
-            return None
-        exec_str = f'env "{start_sh}" "{exe_path}"'
+        exec_str = f'portprotonqt --silent "{exe_path}"'
 
     comment = _('Launch game "{name}" with PortProton').format(name=game_name)
     desktop_entry = (
@@ -290,7 +370,6 @@ def create_desktop_file(
         "Type=Application\n"
         "Categories=Game;\n"
         "StartupNotify=true\n"
-        f"Path={scripts_path}\n"
         f"Icon={icon_path}\n"
     )
     return desktop_entry, desktop_path

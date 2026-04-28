@@ -17,17 +17,29 @@ fi
 # Copy PPDB file from steam_scripts to exe directory if it exists
 # Steam passes the appid via SteamAppId environment variable
 if [[ -n "$SteamAppId" ]]; then
-    # Get PortProton directory from config file or Flatpak default
+    # Get PortProton directory from config file or Flatpak defaults
     portproton_dir=""
-    config_file="$HOME/.config/PortProton.conf"
+    new_config_file="$HOME/.config/PortProtonQt.conf"
+    legacy_config_file="$HOME/.config/PortProton.conf"
+    new_flatpak_dir="$HOME/.var/app/ru.linux_gaming.PortProtonQt"
+    legacy_flatpak_dir="$HOME/.var/app/ru.linux_gaming.PortProton"
 
-    if [[ -f "$config_file" ]]; then
-        portproton_dir="$(cat "$config_file" | tr -d '\n')"
+    if [[ -f "$new_config_file" ]]; then
+        portproton_dir="$(awk -F'= ' '/^portdata_path/ {print $2; exit}' "$new_config_file" | tr -d '\n')"
     fi
 
     if [[ -z "$portproton_dir" ]] || [[ ! -d "$portproton_dir" ]]; then
-        # Fallback to Flatpak default
-        portproton_dir="$HOME/.var/app/ru.linux_gaming.PortProton"
+        if [[ -f "$legacy_config_file" ]]; then
+            portproton_dir="$(cat "$legacy_config_file" | tr -d '\n')"
+        fi
+    fi
+
+    if [[ -z "$portproton_dir" ]] || [[ ! -d "$portproton_dir" ]]; then
+        if [[ -d "$new_flatpak_dir" ]]; then
+            portproton_dir="$new_flatpak_dir"
+        elif [[ -d "$legacy_flatpak_dir" ]]; then
+            portproton_dir="$legacy_flatpak_dir"
+        fi
     fi
 
     ppdb_source="$portproton_dir/steam_scripts/${SteamAppId}.exe.ppdb"

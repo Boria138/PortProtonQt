@@ -161,10 +161,9 @@ class TrayManager:
             else:
                 # Extract target executable from exec_line
                 entry_exec_split = shlex.split(exec_line)
-                if entry_exec_split[0] == "env" and len(entry_exec_split) > 2:
-                    file_to_check = entry_exec_split[2]
-                elif entry_exec_split[0] == "flatpak" and len(entry_exec_split) > 3:
-                    file_to_check = entry_exec_split[3]
+                if "--silent" in entry_exec_split and len(entry_exec_split) > 1:
+                    silent_index = entry_exec_split.index("--silent")
+                    file_to_check = entry_exec_split[silent_index + 1] if len(entry_exec_split) > silent_index + 1 else ""
                 else:
                     file_to_check = entry_exec_split[0]
 

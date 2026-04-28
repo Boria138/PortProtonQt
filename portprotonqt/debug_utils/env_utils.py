@@ -122,12 +122,7 @@ def get_runtime_status(
     env_vars = get_portproton_env(exe_path)
     runtime_val = env_vars.get("PW_USE_RUNTIME", "1")
 
-    is_flatpak = False
-    if start_cmd:
-        start_cmd_str = " ".join(start_cmd)
-        is_flatpak = "flatpak run" in start_cmd_str
-
-    if is_flatpak:
+    if os.getenv("FLATPAK_ID"):
         return "FLATPAK in used"
     elif runtime_val == "0":
         return "RUNTIME is disabled"

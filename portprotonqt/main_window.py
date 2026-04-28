@@ -39,6 +39,7 @@ from portprotonqt.config import (
     get_portproton_scripts_path,
     apply_xdg_autostart,
     find_game_by_exe,
+    migrate_legacy_shortcut,
 )
 from portprotonqt.cli import add_steam_compat_tool, remove_steam_compat_tool, is_steam_compat_tool_installed
 
@@ -754,7 +755,10 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
         if exec_line:
             parts = shlex.split(exec_line)
-            game_exe = os.path.expanduser(parts[3] if len(parts) >= 4 else exec_line)
+            if "--silent" in parts and len(parts) >= 2:
+                silent_index = parts.index("--silent")
+                if len(parts) > silent_index + 1:
+                    game_exe = os.path.expanduser(parts[silent_index + 1])
 
         xdg_data_home = os.getenv("XDG_DATA_HOME",
                                 os.path.join(os.path.expanduser("~"), ".local", "share"))
@@ -2314,6 +2318,12 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.resetSettingsButton.clicked.connect(self.resetSettings)
         buttonsLayout.addWidget(self.resetSettingsButton)
 
+        self.migrateShortcutsButton = AutoSizeButton(_("Migrate legacy shortcuts"), icon=self.theme_manager.get_icon("update"))
+        self.migrateShortcutsButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        self.migrateShortcutsButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.migrateShortcutsButton.clicked.connect(self.migrateLegacyShortcuts)
+        buttonsLayout.addWidget(self.migrateShortcutsButton)
+
         self.clearCacheButton = AutoSizeButton(_("Clear Cache"), icon=self.theme_manager.get_icon("update"))
         self.clearCacheButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.clearCacheButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -2342,6 +2352,31 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
             # Restart application
             QTimer.singleShot(1000, lambda: self.restart_application())
+
+    def migrateLegacyShortcuts(self):
+        """Migrate legacy shortcuts after user confirmation."""
+        portproton_location = get_portproton_location()
+        if not portproton_location:
+            QMessageBox.warning(self, _("Error"), _("PortProton directory not found"))
+            return
+
+        msg_box = QMessageBox(self)
+        msg_box.setIcon(QMessageBox.Icon.Question)
+        msg_box.setWindowTitle(_("Migrate legacy shortcuts"))
+        msg_box.setText(_("Migrate old PortProton shortcuts to PortProtonQt format?"))
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        msg_box.setDefaultButton(QMessageBox.StandardButton.No)
+        msg_box.setButtonText(QMessageBox.StandardButton.Yes, _("Yes"))
+        msg_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
+        reply = msg_box.exec()
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        migrated = migrate_legacy_shortcut(portproton_location)
+        self.statusBar().showMessage(
+            _("Migrated legacy shortcuts: {count}").format(count=migrated),
+            3000,
+        )
 
     def clearCache(self):
         """Clear cache."""
@@ -3452,25 +3487,15 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             QMessageBox.warning(self, _("Error"), _("Invalid command format (empty exec line)"))
             return
         launch_cmd = entry_exec_split
-        if entry_exec_split[0] == "env" and len(entry_exec_split) >= 3:
-            legacy_start_sh = entry_exec_split[1]
-            if legacy_start_sh.endswith("start.sh"):
-                start_cmd = get_portproton_start_command()
-                if (
-                    start_cmd
-                    and len(start_cmd) == 1
-                    and start_cmd[0].endswith("start.sh")
-                    and os.path.abspath(legacy_start_sh) != os.path.abspath(start_cmd[0])
-                ):
-                    launch_cmd = entry_exec_split.copy()
-                    launch_cmd[1] = start_cmd[0]
-                    entry_exec_split = launch_cmd
-                    logger.info("Updated start.sh path for launch: %s -> %s", legacy_start_sh, start_cmd[0])
-        if entry_exec_split[0] == "env":
-            if len(entry_exec_split) < 3:
-                QMessageBox.warning(self, _("Error"), _("Invalid command format (native)"))
+        if "--silent" in entry_exec_split:
+            if len(entry_exec_split) < 2:
+                QMessageBox.warning(self, _("Error"), _("Invalid command format (silent)"))
                 return
-            file_to_check = entry_exec_split[2]
+            silent_index = entry_exec_split.index("--silent")
+            if len(entry_exec_split) <= silent_index + 1:
+                QMessageBox.warning(self, _("Error"), _("Invalid command format (silent)"))
+                return
+            file_to_check = entry_exec_split[silent_index + 1]
             if file_to_check.lower().endswith(".iso"):
                 resolved_iso_exe = self._resolve_iso_executable(file_to_check)
                 if not resolved_iso_exe:
@@ -3481,25 +3506,10 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                     )
                     return
                 file_to_check = resolved_iso_exe
-                launch_cmd = entry_exec_split.copy()
-                launch_cmd[2] = resolved_iso_exe
-        elif entry_exec_split[0] == "flatpak":
-            if len(entry_exec_split) < 4:
-                QMessageBox.warning(self, _("Error"), _("Invalid command format (flatpak)"))
+            if not self.start_sh:
+                QMessageBox.warning(self, _("Error"), _("PortProton start script not found"))
                 return
-            file_to_check = entry_exec_split[3]
-            if file_to_check.lower().endswith(".iso"):
-                resolved_iso_exe = self._resolve_iso_executable(file_to_check)
-                if not resolved_iso_exe:
-                    QMessageBox.warning(
-                        self,
-                        _("Error"),
-                        _("Failed to launch game: {0}").format("autorun.inf or open executable not found")
-                    )
-                    return
-                file_to_check = resolved_iso_exe
-                launch_cmd = entry_exec_split.copy()
-                launch_cmd[3] = resolved_iso_exe
+            launch_cmd = self.start_sh + [file_to_check]
         else:
             file_to_check = entry_exec_split[0]
             if file_to_check.lower().endswith(".exe") and self.start_sh:
@@ -3508,10 +3518,10 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 resolved_iso_exe = self._resolve_iso_executable(file_to_check)
                 if resolved_iso_exe:
                     file_to_check = resolved_iso_exe
-                    if self.start_sh:
-                        launch_cmd = self.start_sh + [resolved_iso_exe]
-                    else:
-                        launch_cmd = [resolved_iso_exe]
+                    if not self.start_sh:
+                        QMessageBox.warning(self, _("Error"), _("PortProton start script not found"))
+                        return
+                    launch_cmd = self.start_sh + [resolved_iso_exe]
                 else:
                     QMessageBox.warning(
                         self,

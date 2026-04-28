@@ -988,12 +988,14 @@ Icon={icon_path}
             if not entry_exec_split:
                 logger.debug("Invalid executable command for game '%s': %s", game_name, exec_line)
                 return None
-            if entry_exec_split[0] == "env" and len(entry_exec_split) >= 3:
-                exe_path = entry_exec_split[2]
-            elif entry_exec_split[0] == "flatpak" and len(entry_exec_split) >= 4:
-                exe_path = entry_exec_split[3]
+            if "--silent" in entry_exec_split and len(entry_exec_split) >= 2:
+                silent_index = entry_exec_split.index("--silent")
+                exe_path = entry_exec_split[silent_index + 1] if len(entry_exec_split) > silent_index + 1 else ""
             else:
                 exe_path = entry_exec_split[-1]
+            if not exe_path:
+                logger.debug("Executable not found in command for game '%s': %s", game_name, exec_line)
+                return None
             if not exe_path or not os.path.exists(exe_path):
                 logger.debug("Executable not found for game '%s': %s", game_name, exe_path or "None")
                 return None
