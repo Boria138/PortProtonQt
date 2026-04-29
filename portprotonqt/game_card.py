@@ -1,6 +1,18 @@
+import os
+import shlex
+
 from PySide6.QtGui import QPainter, QColor, QDesktopServices
 from PySide6.QtCore import Signal, Property, Qt, QUrl, QTimer
-from PySide6.QtWidgets import QFrame, QGraphicsDropShadowEffect, QVBoxLayout, QHBoxLayout, QWidget, QStackedLayout, QLabel
+from PySide6.QtWidgets import (
+    QFrame,
+    QGraphicsDropShadowEffect,
+    QGraphicsOpacityEffect,
+    QVBoxLayout,
+    QHBoxLayout,
+    QWidget,
+    QStackedLayout,
+    QLabel,
+)
 from portprotonqt.image_utils import load_pixmap_async, round_corners
 from portprotonqt.localization import _
 from portprotonqt.config import (
@@ -67,6 +79,7 @@ class GameCard(QFrame):
         self.economy_mode = ui_config.get_economy_mode()
         self.downloader = Downloader(max_workers=4)
         self.portproton_api = PortProtonAPI(self.downloader)
+        self.missing_executable_path = self._get_missing_executable_path()
 
         self.steam_visible = (str(game_source).lower() == "steam" and self.display_filter in ("all", "favorites") and not self.economy_mode)
         self.egs_visible = (str(game_source).lower() == "epic" and self.display_filter in ("all", "favorites") and not self.economy_mode)
@@ -107,6 +120,10 @@ class GameCard(QFrame):
         self.coverLabel = QLabel()
         self.coverLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.coverLabel.setStyleSheet(self.theme.COVER_LABEL_STYLE)
+        if self.missing_executable_path:
+            self.coverOpacity = QGraphicsOpacityEffect(self.coverLabel)
+            self.coverOpacity.setOpacity(self.theme.missing_exe_cover_opacity)
+            self.coverLabel.setGraphicsEffect(self.coverOpacity)
         coverLayout.addWidget(self.coverLabel)
 
         if self.list_layout:
@@ -201,7 +218,7 @@ class GameCard(QFrame):
 
         self.layout_.addWidget(self.coverWidget)
 
-        self.nameLabel = QLabel(name)
+        self.nameLabel = QLabel(self._get_display_name())
         if self.list_layout:
             self.nameLabel.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
         else:
@@ -527,6 +544,39 @@ class GameCard(QFrame):
             return "silver-bronze"
         elif tier in ("borked", "pending"):
             return "broken"
+        return ""
+
+    def _get_missing_executable_path(self) -> str:
+        if str(self.game_source).lower() != "portproton":
+            return ""
+        exe_path = self._extract_executable_path(self.exec_line)
+        if not exe_path:
+            return ""
+        if not exe_path.lower().endswith(".exe"):
+            return ""
+        return "" if os.path.exists(exe_path) else exe_path
+
+    def _get_display_name(self) -> str:
+        if not self.missing_executable_path:
+            return self.name
+        return f"{_('Missing EXE')}: {self.name}"
+
+    @staticmethod
+    def _extract_executable_path(exec_line: str) -> str:
+        try:
+            parts = shlex.split(exec_line or "")
+        except ValueError:
+            return ""
+        if not parts:
+            return ""
+        if "--silent" in parts:
+            silent_index = parts.index("--silent")
+            if len(parts) <= silent_index + 1:
+                return ""
+            return os.path.expanduser(parts[silent_index + 1])
+        for part in reversed(parts):
+            if part.lower().endswith(".exe"):
+                return os.path.expanduser(part)
         return ""
 
     def open_ppdb_page(self):

@@ -37,6 +37,7 @@ color_text_muted = "#bbbbbb"
 color_accent_blue = "#007AFF"
 color_gamepad_supported = "#00ff00"
 color_white = "#ffffff"
+missing_exe_cover_opacity = 0.45
 
 # Shadow constants
 shadow_blur_radius = 20
