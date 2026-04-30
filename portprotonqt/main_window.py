@@ -923,22 +923,18 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                     btn.setChecked(i == 0)
                 self.stackedWidget.setCurrentIndex(0)
 
+        current_index = self.stackedWidget.currentIndex()
         if hasattr(self, "game_library_manager"):
             mgr = self.game_library_manager
-            if mgr.gamesListWidget and mgr.gamesListLayout:
-                games_layout = mgr.gamesListLayout
-                games_widget = mgr.gamesListWidget
-                # Update layout updates to be more compatible with PySide 6.10.1
-                QTimer.singleShot(0, lambda: games_layout.invalidate())
-                QTimer.singleShot(10, lambda: games_widget.adjustSize())
-                QTimer.singleShot(15, lambda: games_widget.updateGeometry())
-        if hasattr(self, "autoInstallContainer") and hasattr(self, "autoInstallContainerLayout"):
-            auto_layout = self.autoInstallContainerLayout
-            auto_widget = self.autoInstallContainer
-            # Update layout updates to be more compatible with PySide 6.10.1
-            QTimer.singleShot(0, lambda: auto_layout.invalidate())
-            QTimer.singleShot(10, lambda: auto_widget.adjustSize())
-            QTimer.singleShot(15, lambda: auto_widget.updateGeometry())
+            if current_index == 0 and mgr.gamesListWidget and mgr.gamesListLayout:
+                mgr.gamesListLayout.invalidate()
+                mgr.gamesListWidget.adjustSize()
+                mgr.gamesListWidget.updateGeometry()
+        if current_index == self.auto_install_tab_index:
+            if hasattr(self, "autoInstallContainer") and hasattr(self, "autoInstallContainerLayout"):
+                self.autoInstallContainerLayout.invalidate()
+                self.autoInstallContainer.adjustSize()
+                self.autoInstallContainer.updateGeometry()
 
         if self.stackedWidget.currentIndex() == getattr(self, "system_tab_index", -1):
             QTimer.singleShot(0, self._focusSystemNetworkOnTabEnter)

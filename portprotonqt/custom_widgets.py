@@ -161,6 +161,10 @@ class FlowLayout(QLayout):
         self._cache_visible_hash = None
         self._cache_result = None
 
+    def invalidate(self) -> None:
+        self._invalidate_cache()
+        super().invalidate()
+
     def count(self) -> int:
         return len(self.itemList)
 
