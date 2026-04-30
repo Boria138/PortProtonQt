@@ -3478,7 +3478,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
     def closeEvent(self, event):
         """Handle window close: check minimize_to_tray setting.
-        If True - minimize to tray (default). Otherwise - fully close.
+        If True - minimize to tray. Otherwise - fully close.
         """
         minimize_to_tray = display_config.get_minimize_to_tray()
 

@@ -35,7 +35,7 @@ class DisplayConfig(BaseConfig):
 
     def get_minimize_to_tray(self) -> bool:
         """Get minimize-to-tray setting."""
-        return self._get_bool("minimize_to_tray", True)
+        return self._get_bool("minimize_to_tray", False)
 
     def set_minimize_to_tray(self, minimize: bool):
         """Set minimize-to-tray setting."""
