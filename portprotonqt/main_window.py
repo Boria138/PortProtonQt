@@ -1272,21 +1272,17 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         autoInstallLayout = QVBoxLayout(autoInstallPage)
         autoInstallLayout.setSpacing(15)
 
-        # Top panel with title and search
-        headerWidget = QWidget()
-        headerLayout = QHBoxLayout(headerWidget)
-        headerLayout.setContentsMargins(0, 10, 0, 10)
-        headerLayout.setSpacing(10)
+        searchWidget = QWidget()
+        searchWidget.setStyleSheet(self.theme.CONTAINER_STYLE)
+        searchLayout = QHBoxLayout(searchWidget)
+        searchLayout.setContentsMargins(0, 6, 0, 0)
+        searchLayout.setSpacing(10)
 
-        # Title
         titleLabel = QLabel(_("Auto Install"))
-        titleLabel.setStyleSheet(self.theme.TAB_TITLE_STYLE)
-        titleLabel.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
-        headerLayout.addWidget(titleLabel)
+        titleLabel.setStyleSheet(self.theme.INSTALLED_TAB_TITLE_STYLE)
+        searchLayout.addWidget(titleLabel)
+        searchLayout.addStretch()
 
-        headerLayout.addStretch()
-
-        # Search line
         self.autoInstallSearchLineEdit = CustomLineEdit(self, theme=self.theme)
         icon: QIcon = cast(QIcon, self.theme_manager.get_icon("search"))
         action_pos = QLineEdit.ActionPosition.LeadingPosition
@@ -1296,30 +1292,23 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.autoInstallSearchLineEdit.setClearButtonEnabled(True)
         self.autoInstallSearchLineEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE)
         self.autoInstallSearchLineEdit.textChanged.connect(self.filterAutoInstallGames)
-        headerLayout.addWidget(self.autoInstallSearchLineEdit)
+        searchLayout.addWidget(self.autoInstallSearchLineEdit)
+        autoInstallLayout.addWidget(searchWidget)
 
-        autoInstallLayout.addWidget(headerWidget)
-
-        # Scroll
         self.autoInstallScrollArea = QScrollArea()
         self.autoInstallScrollArea.setWidgetResizable(True)
-        self.autoInstallScrollArea.setStyleSheet(self.theme.SCROLL_STYLE + " QWidget { background: transparent; }")
+        self.autoInstallScrollArea.setStyleSheet(self.theme.SCROLL_STYLE + self.theme.TRANSPARENT_BACKGROUND_STYLE)
         QScroller.grabGesture(self.autoInstallScrollArea.viewport(), QScroller.ScrollerGestureType.LeftMouseButtonGesture)
 
         self.autoInstallContainer = QWidget()
+        self.autoInstallContainer.setStyleSheet(self.theme.LIST_WIDGET_STYLE)
         self.autoInstallContainerLayout = FlowLayout(self.autoInstallContainer)
         self.autoInstallContainer.setLayout(self.autoInstallContainerLayout)
         self.autoInstallScrollArea.setWidget(self.autoInstallContainer)
 
         autoInstallLayout.addWidget(self.autoInstallScrollArea)
 
-        # Slider for card size
-        sliderLayout = QHBoxLayout()
-        sliderLayout.setSpacing(0)
-        sliderLayout.setContentsMargins(0, 0, 0, 0)
-        sliderLayout.addStretch()
-
-        self.auto_size_slider = QSlider(Qt.Orientation.Horizontal)
+        self.auto_size_slider = QSlider(Qt.Orientation.Horizontal, autoInstallPage)
         self.auto_size_slider.setMinimum(200)
         self.auto_size_slider.setMaximum(250)
         self.auto_size_slider.setValue(self.auto_card_width)
@@ -1328,9 +1317,11 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.auto_size_slider.setToolTip(f"{self.auto_card_width} px")
         self.auto_size_slider.setStyleSheet(self.theme.SLIDER_SIZE_STYLE)
         self.auto_size_slider.sliderReleased.connect(self.on_auto_slider_released)
-        sliderLayout.addWidget(self.auto_size_slider)
-
-        autoInstallLayout.addLayout(sliderLayout)
+        self.auto_size_slider.setVisible(False)
+        if self.auto_size_slider.isHidden():
+            self.auto_card_width = self.auto_size_slider.maximum()
+            self.auto_size_slider.setValue(self.auto_card_width)
+            self.auto_size_slider.setToolTip(f"{self.auto_card_width} px")
 
         # Store cards
         self.autoInstallGameCards = {}
@@ -1465,14 +1456,18 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
     def on_auto_slider_released(self):
         """Handles auto-install slider release to update card size."""
         if hasattr(self, 'auto_size_slider') and self.auto_size_slider:
-            self.auto_card_width = self.auto_size_slider.value()
+            if not self.auto_size_slider.isHidden():
+                self.auto_card_width = self.auto_size_slider.value()
             self.auto_size_slider.setToolTip(f"{self.auto_card_width} px")
-            ui_config.set_auto_card_width(self.auto_card_width)
-            for card in self.allAutoInstallCards:
-                card.update_card_size(self.auto_card_width)
-            self.autoInstallContainerLayout.invalidate()
-            self.autoInstallContainer.updateGeometry()
-            self.autoInstallScrollArea.updateGeometry()
+            if not self.auto_size_slider.isHidden():
+                ui_config.set_auto_card_width(self.auto_card_width)
+        if not hasattr(self, 'allAutoInstallCards'):
+            return
+        for card in self.allAutoInstallCards:
+            card.update_card_size(self.auto_card_width)
+        self.autoInstallContainerLayout.invalidate()
+        self.autoInstallContainer.updateGeometry()
+        self.autoInstallScrollArea.updateGeometry()
 
     def filterAutoInstallGames(self):
         """Filter auto install game cards based on search text."""
@@ -3604,9 +3599,12 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         if hasattr(self, "tray_manager"):
             self.tray_manager.shutdown()
 
-        # Save card sizes
-        ui_config.set_card_width(self.card_width)
-        ui_config.set_auto_card_width(self.auto_card_width)
+        # Save card sizes only when the size controls are visible.
+        size_slider = getattr(self.game_library_manager, 'sizeSlider', None)
+        if size_slider is None or not size_slider.isHidden():
+            ui_config.set_card_width(self.card_width)
+        if hasattr(self, 'auto_size_slider') and not self.auto_size_slider.isHidden():
+            ui_config.set_auto_card_width(self.auto_card_width)
 
         # Save window sizes (if not in fullscreen mode)
         if not display_config.get_fullscreen():

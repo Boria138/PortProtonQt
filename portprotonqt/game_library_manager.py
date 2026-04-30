@@ -96,6 +96,7 @@ class GameLibraryManager:
         sliderLayout.addWidget(self.sizeSlider)
         if self.layout_mode == "list":
             self.sizeSlider.setVisible(False)
+        self._set_card_width_from_slider()
 
         layout.addLayout(sliderLayout)
 
@@ -131,13 +132,24 @@ class GameLibraryManager:
             return
         if self.sizeSlider is None:
             return
-        self.card_width = self.sizeSlider.value()
+        self._set_card_width_from_slider()
         self.sizeSlider.setToolTip(f"{self.card_width} px")
-        ui_config.set_card_width(self.card_width)
+        if not self.sizeSlider.isHidden():
+            ui_config.set_card_width(self.card_width)
         self.main_window.card_width = self.card_width
         for card in self.game_card_cache.values():
             card.update_card_size(self.card_width)
         self.update_game_grid()
+
+    def _set_card_width_from_slider(self):
+        """Use max card width when the size slider is hidden."""
+        if self.sizeSlider is None:
+            return
+        if self.sizeSlider.isHidden():
+            self.card_width = self.sizeSlider.maximum()
+        else:
+            self.card_width = self.sizeSlider.value()
+        self.sizeSlider.setValue(self.card_width)
 
     def load_visible_images(self):
         """Loads images for visible game cards."""
@@ -229,6 +241,12 @@ class GameLibraryManager:
         self.layout_mode = str(getattr(self.theme, "LIBRARY_LAYOUT_MODE", "grid")).lower()
         if self.sizeSlider is not None:
             self.sizeSlider.setVisible(self.layout_mode != "list")
+            old_card_width = self.card_width
+            self._set_card_width_from_slider()
+            self.main_window.card_width = self.card_width
+            if old_card_width != self.card_width:
+                for card in self.game_card_cache.values():
+                    card.update_card_size(self.card_width)
         if not is_filter:
             if games_list is not None:
                 self.filtered_games = games_list
