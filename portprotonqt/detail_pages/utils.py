@@ -3,8 +3,8 @@
 import os
 from weakref import WeakKeyDictionary
 from collections.abc import Callable
-from PySide6.QtWidgets import QWidget, QApplication, QLabel
-from PySide6.QtCore import QTimer, Qt, QObject, Signal
+from PySide6.QtWidgets import QWidget, QApplication, QLabel, QGraphicsOpacityEffect
+from PySide6.QtCore import QTimer, Qt, QObject, Signal, QPropertyAnimation, QByteArray
 from PySide6.QtGui import QPixmap
 
 from portprotonqt.image_utils import load_pixmap_async, round_corners
@@ -13,6 +13,7 @@ from portprotonqt.logger import get_logger
 
 logger = get_logger(__name__)
 _pixmap_relays: WeakKeyDictionary[QWidget, "_PixmapReadyRelay"] = WeakKeyDictionary()
+_cover_reveal_animations: WeakKeyDictionary[QLabel, QPropertyAnimation] = WeakKeyDictionary()
 
 
 class _PixmapReadyRelay(QObject):
@@ -38,6 +39,7 @@ def setup_image_loading(
     _pixmap_relays[detail_page] = relay
 
     if cover_path:
+        _prepare_cover_reveal(image_label)
         load_pixmap_async(
             cover_path,
             cover_width,
@@ -55,10 +57,36 @@ def _on_pixmap_ready(pixmap: QPixmap, detail_page: QWidget, image_label: QLabel,
     try:
         rounded = round_corners(pixmap, 10)
         image_label.setPixmap(rounded)
+        _reveal_cover(image_label, main_window.theme)
         logger.debug("Pixmap set for imageLabel")
         _setup_palette_stylesheet(detail_page, pixmap, main_window)
     except RuntimeError:
         logger.warning("Detail page already deleted, skipping pixmap update")
+
+
+def _prepare_cover_reveal(image_label: QLabel) -> None:
+    """Hide cover until the loaded pixmap is ready."""
+    effect = QGraphicsOpacityEffect(image_label)
+    effect.setOpacity(0.0)
+    image_label.setGraphicsEffect(effect)
+
+
+def _reveal_cover(image_label: QLabel, theme) -> None:
+    """Show cover smoothly after async loading finishes."""
+    effect = image_label.graphicsEffect()
+    if not isinstance(effect, QGraphicsOpacityEffect):
+        effect = QGraphicsOpacityEffect(image_label)
+        image_label.setGraphicsEffect(effect)
+
+    duration = theme.GAME_CARD_ANIMATION.get("detail_page_fade_duration", 350)
+    animation = QPropertyAnimation(effect, QByteArray(b"opacity"), image_label)
+    animation.setDuration(duration)
+    animation.setStartValue(effect.opacity())
+    animation.setEndValue(1.0)
+    animation.finished.connect(effect.deleteLater)
+    animation.finished.connect(lambda: _cover_reveal_animations.pop(image_label, None))
+    _cover_reveal_animations[image_label] = animation
+    animation.start()
 
 
 def _setup_palette_stylesheet(detail_page: QWidget, pixmap: QPixmap | None, main_window) -> None:

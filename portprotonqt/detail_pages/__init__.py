@@ -2,6 +2,7 @@
 
 import os
 import shlex
+from collections.abc import Callable
 from PySide6.QtWidgets import (
     QWidget,
     QLabel,
@@ -518,31 +519,14 @@ class DetailPageManager:
         self, detail_page: QWidget, image_label: QLabel, details_widget: QWidget, cover_path: str | None
     ) -> None:
         """Setup animation for detail page."""
-        detail_animations = DetailPageAnimations(self.main_window, self.main_window.theme)
         play_button = self._find_play_button(details_widget)
 
-        def load_image_and_restore() -> None:
-            if not validate_detail_page(detail_page):
-                return
-            if not set_opacity_safe(detail_page):
-                return
-            setup_image_loading(
-                detail_page,
-                image_label,
-                cover_path,
-                self.main_window,
-                image_label.width(),
-                image_label.height(),
-            )
+        def setup_focus() -> None:
             if play_button:
                 self._setup_focus_after_animation(detail_page, play_button)
 
-        def cleanup_animation() -> None:
-            if detail_page in self._animations:
-                del self._animations[detail_page]
-
-        detail_animations.animate_detail_page(
-            detail_page, load_image_and_restore, cleanup_animation
+        self._start_detail_page_animation(
+            detail_page, image_label, cover_path, setup_focus
         )
 
     def _get_content_frame_layout(self, detail_page: QWidget) -> QBoxLayout | None:
@@ -722,20 +706,36 @@ class DetailPageManager:
 
     def _setup_autoinstall_animation(self, detail_page: QWidget, image_label: QLabel, cover_path: str | None, install_button: AutoSizeButton) -> None:
         """Setup animation for auto-install page."""
-        def load_image_and_restore() -> None:
+        self._start_detail_page_animation(
+            detail_page,
+            image_label,
+            cover_path,
+            lambda: self._setup_autoinstall_focus(detail_page, install_button),
+        )
+
+    def _start_detail_page_animation(
+        self,
+        detail_page: QWidget,
+        image_label: QLabel,
+        cover_path: str | None,
+        setup_focus: Callable[[], None],
+    ) -> None:
+        """Start detail page animation and image loading."""
+        setup_image_loading(
+            detail_page,
+            image_label,
+            cover_path,
+            self.main_window,
+            image_label.width(),
+            image_label.height(),
+        )
+
+        def restore_after_animation() -> None:
             if not validate_detail_page(detail_page):
                 return
             if not set_opacity_safe(detail_page):
                 return
-            setup_image_loading(
-                detail_page,
-                image_label,
-                cover_path,
-                self.main_window,
-                image_label.width(),
-                image_label.height(),
-            )
-            self._setup_autoinstall_focus(detail_page, install_button)
+            setup_focus()
 
         def cleanup_animation() -> None:
             if detail_page in self._animations:
@@ -743,7 +743,7 @@ class DetailPageManager:
 
         detail_animations = DetailPageAnimations(self.main_window, self.main_window.theme)
         detail_animations.animate_detail_page(
-            detail_page, load_image_and_restore, cleanup_animation
+            detail_page, restore_after_animation, cleanup_animation
         )
 
     def _setup_autoinstall_focus(self, detail_page: QWidget, install_button: AutoSizeButton) -> None:
