@@ -1,4 +1,5 @@
 import os
+import re
 import subprocess
 
 import psutil
@@ -11,8 +12,13 @@ from portprotonqt.context_menu_manager import ContextMenuManager
 from portprotonqt.dialogs import FileExplorer
 from portprotonqt.input_manager import InputManager
 from portprotonqt.localization import _
+from portprotonqt.logger import get_logger
 from portprotonqt.tabs.control_hints import MainWindowControlHintsMixin
 from portprotonqt.theme_manager import ThemeManager
+
+logger = get_logger(__name__)
+DISALLOWED_PORTDATA_FS_TYPES = {"exfat", "fat", "vfat", "msdos", "umsdos", "ncpfs", "iso9660"}
+DISALLOWED_PORTDATA_FS_PATTERNS = (re.compile(r"^ntfs"),)
 
 
 def _get_filesystem_type(path: str) -> str:
@@ -42,10 +48,17 @@ def _get_filesystem_type(path: str) -> str:
     return ""
 
 
-def _is_ntfs_path(path: str) -> bool:
-    """Check if path is on NTFS filesystem."""
+def _is_disallowed_portdata_fs(path: str) -> bool:
+    """Check if path is on a filesystem without Linux symlink support."""
+    if not os.path.exists(path):
+        path = os.path.dirname(path)
     fs_type = _get_filesystem_type(path)
-    return fs_type in {"ntfs", "ntfs3", "ntfs-3g"}
+    if not fs_type:
+        return True
+    logger.info("Creating PortProton data folder on filesystem type: %s", fs_type)
+    return fs_type in DISALLOWED_PORTDATA_FS_TYPES or any(
+        pattern.search(fs_type) for pattern in DISALLOWED_PORTDATA_FS_PATTERNS
+    )
 
 
 class _BootstrapStatusBar:
@@ -170,12 +183,12 @@ def ask_portdata_path() -> str | None:
             dialog_result = file_explorer.exec()
             if dialog_result != QDialog.DialogCode.Accepted or not selected_path:
                 return None
-            if _is_ntfs_path(selected_path):
+            if _is_disallowed_portdata_fs(selected_path):
                 message_box = QMessageBox(file_explorer)
                 message_box.setIcon(QMessageBox.Icon.Warning)
                 message_box.setWindowTitle(_("Error"))
                 message_box.setText(
-                    _("Selected folder is on an NTFS disk. Choose another folder for PortProton data.")
+                    _("Selected folder is on an unsupported filesystem. Choose another folder for PortProton data.")
                 )
                 main_style = getattr(file_explorer.theme, "MAIN_WINDOW_STYLE", "")
                 message_box_style = getattr(file_explorer.theme, "MESSAGE_BOX_STYLE", "")
