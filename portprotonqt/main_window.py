@@ -1368,7 +1368,9 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 if local_path and exe_name in self.autoInstallGameCards:
                     card = self.autoInstallGameCards[exe_name]
                     card.cover_path = local_path
-                    load_pixmap_async(local_path, self.auto_card_width, int(self.auto_card_width * 1.5), card.on_cover_loaded)
+                    cover_width = 64 if card.list_layout else self.auto_card_width
+                    cover_height = cover_width if card.list_layout else int(self.auto_card_width * 1.5)
+                    load_pixmap_async(local_path, cover_width, cover_height, card.on_cover_loaded)
 
             def batch_metadata_callback(exe_name, local_path):
                 logger.debug(f"Metadata callback called for {exe_name}: {local_path}")
