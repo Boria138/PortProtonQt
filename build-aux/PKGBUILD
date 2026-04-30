@@ -1,7 +1,7 @@
 pkgname=('portprotonqt' 'portprotonqt-steam-compat')
 pkgver=0.1.12
 pkgrel=1
-pkgdesc="Modern GUI for managing and launching games from PortProton, Steam, and Epic Games Store"
+pkgdesc="Modern GUI for managing and launching games from PortProton and Steam"
 arch=('any')
 url="https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt"
 license=('GPL-3.0')
@@ -18,7 +18,7 @@ build() {
 }
 
 package_portprotonqt() {
-    pkgdesc="Modern GUI for managing and launching games from PortProton, Steam, and Epic Games Store"
+    pkgdesc="Modern GUI for managing and launching games from PortProton and Steam"
     optdepends=(
         'networkmanager: System tab network management'
         'bluez: System tab bluetooth management'

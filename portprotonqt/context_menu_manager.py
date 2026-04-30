@@ -2,17 +2,13 @@ import os
 import shlex
 import glob
 import shutil
-import subprocess
-import threading
-import orjson
 from PySide6.QtWidgets import QMessageBox, QDialog, QMenu, QLineEdit, QApplication, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFrame
 from PySide6.QtCore import QUrl, QPoint, QObject, Signal, Qt, QStandardPaths
 from PySide6.QtGui import QDesktopServices, QIcon, QKeySequence
 from portprotonqt.localization import _
-from portprotonqt.config import parse_desktop_entry, favorites_config, favorites_folders_config, get_portproton_start_command
+from portprotonqt.config import parse_desktop_entry, favorites_config, favorites_folders_config
 from portprotonqt.steam_api import is_game_in_steam, add_to_steam, remove_from_steam
-from portprotonqt.egs_api import add_egs_to_steam, get_egs_executable, remove_egs_from_steam
-from portprotonqt.dialogs import AddGameDialog, FileExplorer, generate_thumbnail
+from portprotonqt.dialogs import AddGameDialog, generate_thumbnail
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.logger import get_logger
 from portprotonqt.virtual_keyboard import VirtualKeyboard
@@ -51,14 +47,6 @@ class ContextMenuManager:
         self.theme_manager = ThemeManager()
         self.game_library_manager = game_library_manager
         self.update_game_grid = game_library_manager.update_game_grid
-        self.legendary_path = os.path.join(
-            os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache")),
-            "PortProtonQt", "legendary_cache", "legendary"
-        )
-        self.legendary_config_path = os.path.join(
-            os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache")),
-            "PortProtonQt", "legendary_cache"
-        )
         self.signals = ContextMenuSignals()
         if self.parent.statusBar() is None:
             logger.warning("Status bar is not initialized in MainWindow")
@@ -105,28 +93,6 @@ class ContextMenuManager:
             return False
         return True
 
-    def _is_egs_game_installed(self, app_name: str) -> bool:
-        """
-        Check if an EGS game is installed by reading installed.json.
-
-        Args:
-            app_name: The Legendary app_name (unique identifier for the game).
-
-        Returns:
-            bool: True if the game is installed, False otherwise.
-        """
-        installed_json_path = os.path.join(self.legendary_config_path, "installed.json")
-        if not os.path.exists(installed_json_path):
-            logger.debug("installed.json not found at %s", installed_json_path)
-            return False
-        try:
-            with open(installed_json_path, "rb") as f:
-                installed_games = orjson.loads(f.read())
-            return app_name in installed_games
-        except (OSError, orjson.JSONDecodeError) as e:
-            logger.error("Error reading installed.json: %s", e)
-            return False
-
     def _is_game_running(self, game_card) -> bool:
         """
         Check if the game associated with the game_card is currently running.
@@ -137,21 +103,15 @@ class ContextMenuManager:
         Returns:
             bool: True if the game is running, False otherwise.
         """
-        if game_card.game_source == "epic":
-            exe_path = get_egs_executable(game_card.appid, self.legendary_config_path)
-            if not exe_path or not os.path.exists(exe_path):
-                return False
-            current_exe = os.path.basename(exe_path)
-        elif game_card.game_source == "steam":
+        if game_card.game_source == "steam":
             return False
-        else:
-            exec_line = self._get_exec_line(game_card.name, game_card.exec_line)
-            if not exec_line:
-                return False
-            exe_path = self._parse_exe_path(exec_line, game_card.name)
-            if not exe_path:
-                return False
-            current_exe = os.path.basename(exe_path)
+        exec_line = self._get_exec_line(game_card.name, game_card.exec_line)
+        if not exec_line:
+            return False
+        exe_path = self._parse_exe_path(exec_line, game_card.name)
+        if not exe_path:
+            return False
+        current_exe = os.path.basename(exe_path)
 
         return hasattr(self.parent, 'target_exe') and self.parent.target_exe == current_exe
 
@@ -404,8 +364,8 @@ class ContextMenuManager:
         menu = QMenu(self.parent)
         menu.setStyleSheet(self.theme.CONTEXT_MENU_STYLE)
 
-        # For non-Steam and non-Epic games, check if exe exists
-        if game_card.game_source not in ("steam", "epic"):
+        # For non-Steam games, check if exe exists
+        if game_card.game_source != "steam":
             exec_line = self._get_exec_line(game_card.name, game_card.exec_line)
             exe_path = self._parse_exe_path(exec_line, game_card.name) if exec_line else None
             if not exe_path:
@@ -415,7 +375,7 @@ class ContextMenuManager:
                 menu.exec(game_card.mapToGlobal(pos))
                 return
 
-        # Normal menu for games with valid exe or from Steam/Epic
+        # Normal menu for games with valid exe or from Steam
         is_running = self._is_game_running(game_card)
         action_text = _("Stop Game") if is_running else _("Launch Game")
         action_icon = "stop" if is_running else "play"
@@ -431,39 +391,7 @@ class ContextMenuManager:
         favorite_action = menu.addAction(self._get_safe_icon(icon_name), text)
         favorite_action.triggered.connect(lambda: self.toggle_favorite(game_card, not is_favorite))
 
-        if game_card.game_source == "epic":
-            import_action = menu.addAction(self._get_safe_icon("epic_games"), _("Import to Legendary"))
-            import_action.triggered.connect(
-                lambda: self.import_to_legendary(game_card.name, game_card.appid)
-            )
-            if self._is_egs_game_installed(game_card.appid):
-                open_folder_action = menu.addAction(self._get_safe_icon("search"), _("Open Game Folder"))
-                open_folder_action.triggered.connect(
-                    lambda: self.open_egs_game_folder(game_card.appid)
-                )
-                desktop_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DesktopLocation)
-                desktop_path = os.path.join(desktop_dir, f"{game_card.name}.desktop")
-                icon_name = "delete" if os.path.exists(desktop_path) else "desktop"
-                text = _("Remove from Desktop") if os.path.exists(desktop_path) else _("Add to Desktop")
-                desktop_action = menu.addAction(self._get_safe_icon(icon_name), text)
-                desktop_action.triggered.connect(
-                    lambda: self.remove_egs_from_desktop(game_card.name)
-                    if os.path.exists(desktop_path)
-                    else self.add_egs_to_desktop(game_card.name, game_card.appid)
-                )
-                applications_dir = os.path.join(os.path.expanduser("~"), ".local", "share", "applications")
-                menu_path = os.path.join(applications_dir, f"{game_card.name}.desktop")
-                menu_action = menu.addAction(
-                    self._get_safe_icon("delete" if os.path.exists(menu_path) else "menu"),
-                    _("Remove from Menu") if os.path.exists(menu_path) else _("Add to Menu")
-                )
-                menu_action.triggered.connect(
-                    lambda: self.remove_egs_from_menu(game_card.name)
-                    if os.path.exists(menu_path)
-                    else self.add_egs_to_menu(game_card.name, game_card.appid)
-                )
-
-        if game_card.game_source not in ("steam", "epic"):
+        if game_card.game_source != "steam":
             desktop_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DesktopLocation)
             desktop_path = os.path.join(desktop_dir, f"{game_card.name}.desktop")
             icon_name = "delete" if os.path.exists(desktop_path) else "desktop"
@@ -529,148 +457,10 @@ class ContextMenuManager:
                 self.signals.show_warning_dialog.emit(_("Error"), _("Failed to stop game"))
             return
 
-        # Launch the game
-        if game_card.game_source == "epic":
-            if not os.path.exists(self.legendary_path):
-                self.signals.show_warning_dialog.emit(
-                    _("Error"),
-                    _("Legendary executable not found at {path}").format(path=self.legendary_path)
-                )
-                return
-            # Construct EGS launch command
-            wrapper = get_portproton_start_command()
-            exec_line = f'"{self.legendary_path}" launch {game_card.appid} --no-wine --wrapper "{wrapper}"'
-        else:
-            exec_line = self._get_exec_line(game_card.name, game_card.exec_line)
-            if not exec_line:
-                return
+        exec_line = self._get_exec_line(game_card.name, game_card.exec_line)
+        if not exec_line:
+            return
         self.parent.toggleGame(exec_line)
-
-    def add_egs_to_steam(self, game_name: str, app_name: str):
-        """
-        Adds an EGS game to Steam using the egs_api.
-
-        Args:
-            game_name: The display name of the game.
-            app_name: The Legendary app_name (unique identifier for the game).
-        """
-        if not self._check_portproton():
-            return
-        if not os.path.exists(self.legendary_path):
-            self.signals.show_warning_dialog.emit(
-                _("Error"),
-                _("Legendary executable not found at {path}").format(path=self.legendary_path)
-            )
-            return
-
-        def on_add_to_steam_result(result: tuple[bool, str]):
-            success, message = result
-            if success:
-                if "restart" in message.lower():
-                    self.signals.show_info_dialog.emit(
-                        _("Success"),
-                        _("'{game_name}' was added to Steam. Please restart Steam for changes to take effect.").format(game_name=game_name)
-                    )
-                else:
-                    self.signals.show_info_dialog.emit(
-                        _("Success"),
-                        _("'{game_name}' was added to Steam.").format(game_name=game_name)
-                    )
-            else:
-                self.signals.show_warning_dialog.emit(
-                    _("Error"),
-                    _(message).format(game_name=game_name)
-                )
-
-        logger.debug("Adding EGS game '%s' to Steam", game_name)
-        add_egs_to_steam(app_name, game_name, self.legendary_path, on_add_to_steam_result)
-
-    def open_egs_game_folder(self, app_name: str):
-        """
-        Opens the folder containing the EGS game's executable.
-
-        Args:
-            app_name: The Legendary app_name (unique identifier for the game).
-        """
-        if not self._check_portproton():
-            return
-        exe_path = get_egs_executable(app_name, self.legendary_config_path)
-        if not exe_path or not os.path.exists(exe_path):
-            self.signals.show_warning_dialog.emit(
-                _("Error"),
-                _("Executable not found for game: {game_name}").format(game_name=app_name)
-            )
-            return
-        try:
-            folder_path = os.path.dirname(os.path.abspath(exe_path))
-            QDesktopServices.openUrl(QUrl.fromLocalFile(folder_path))
-            self._show_status_message(_("Opened folder for '{game_name}'").format(game_name=app_name))
-        except Exception as e:
-            self.signals.show_warning_dialog.emit(
-                _("Error"),
-                _("Failed to open folder: {error}").format(error=str(e))
-            )
-
-    def import_to_legendary(self, game_name, app_name):
-        """
-        Imports an installed Epic Games Store game to Legendary asynchronously.
-
-        Args:
-            game_name: The display name of the game.
-            app_name: The Legendary app_name (unique identifier for the game).
-        """
-        if not self._check_portproton():
-            return
-        if not os.path.exists(self.legendary_path):
-            self.signals.show_warning_dialog.emit(
-                _("Error"),
-                _("Legendary executable not found at {path}").format(path=self.legendary_path)
-            )
-            return
-
-        # Use FileExplorer with directory_only=True
-        file_explorer = FileExplorer(
-            parent=self.parent,
-            theme=self.theme,
-            initial_path=os.path.expanduser("~"),
-            directory_only=True
-        )
-
-        def on_folder_selected(folder_path):
-            if not folder_path:
-                self._show_status_message(_("No folder selected"))
-                return
-            def run_import():
-                cmd = [self.legendary_path, "import", app_name, folder_path]
-                try:
-                    subprocess.run(cmd, capture_output=True, text=True, check=True)
-                    self.signals.show_info_dialog.emit(
-                        _("Success"),
-                        _("Imported '{game_name}' to Legendary").format(game_name=game_name)
-                    )
-                except subprocess.CalledProcessError as e:
-                    self.signals.show_warning_dialog.emit(
-                        _("Error"),
-                        _("Failed to import '{game_name}' to Legendary: {error}").format(
-                            game_name=game_name, error=e.stderr
-                        )
-                    )
-            self._show_status_message(_("Importing '{game_name}' to Legendary...").format(game_name=game_name))
-            threading.Thread(target=run_import, daemon=True).start()
-
-        # Connect the file selection signal
-        file_explorer.file_signal.file_selected.connect(on_folder_selected)
-
-        # Center FileExplorer relative to the parent widget
-        parent_widget = self.parent
-        if parent_widget:
-            parent_geometry = parent_widget.geometry()
-            center_point = parent_geometry.center()
-            file_explorer_geometry = file_explorer.geometry()
-            file_explorer_geometry.moveCenter(center_point)
-            file_explorer.setGeometry(file_explorer_geometry)
-
-        file_explorer.show()
 
     def toggle_favorite(self, game_card, add: bool):
         """
@@ -770,174 +560,6 @@ class ContextMenuManager:
                 return file_path
 
         return desktop_path
-
-    def _get_egs_desktop_path(self, game_name):
-        """Construct the .desktop file path for EGS games."""
-        return os.path.join(self.portproton_location, "egs_desktops", f"{game_name}.desktop")
-
-    def _create_egs_desktop_file(self, game_name: str, app_name: str) -> bool:
-        """
-        Creates a .desktop file for an EGS game in the PortProton egs_desktops directory.
-
-        Args:
-            game_name: The display name of the game.
-            app_name: The Legendary app_name (unique identifier for the game).
-
-        Returns:
-            bool: True if the .desktop file was created successfully, False otherwise.
-        """
-        if not self._check_portproton():
-            return False
-        if not os.path.exists(self.legendary_path):
-            self.signals.show_warning_dialog.emit(
-                _("Error"),
-                _("Legendary executable not found at {path}").format(path=self.legendary_path)
-            )
-            return False
-        wrapper_command = get_portproton_start_command()
-        if not wrapper_command:
-            self.signals.show_warning_dialog.emit(
-                _("Error"),
-                _("start.sh not found at {path}").format(path="*/share/portproton/scripts/start.sh")
-            )
-            return False
-        wrapper = shlex.join(wrapper_command)
-        icon_path = os.path.join(self.portproton_location, "data", "img", f"{game_name}.png")
-        os.makedirs(os.path.dirname(icon_path), exist_ok=True)
-
-        # Generate 128x128 icon from exe only
-        exe_path = get_egs_executable(app_name, self.legendary_config_path)
-        if exe_path and os.path.exists(exe_path):
-            if not generate_thumbnail(exe_path, icon_path, size=128):
-                logger.error("Failed to generate thumbnail for EGS game: %s", exe_path)
-                icon_path = ""
-        else:
-            logger.error("No executable found for EGS game: %s", app_name)
-            icon_path = ""
-
-        egs_desktop_dir = os.path.join(self.portproton_location, "egs_desktops")
-        os.makedirs(egs_desktop_dir, exist_ok=True)
-        desktop_path = self._get_egs_desktop_path(game_name)
-        comment = _('Launch game "{name}" with PortProton').format(name=game_name)
-        desktop_entry =f"""\
-[Desktop Entry]
-Name={game_name}
-Comment={comment}
-Exec="{self.legendary_path}" launch {app_name} --no-wine --wrapper "{wrapper}"
-Terminal=false
-Type=Application
-Categories=Game;
-StartupNotify=true
-Icon={icon_path}
-    """
-        try:
-            with open(desktop_path, "w", encoding="utf-8") as f:
-                f.write(desktop_entry)
-            os.chmod(desktop_path, 0o755)
-            logger.info("Created .desktop file for EGS game: %s", desktop_path)
-            return True
-        except Exception as e:
-            self.signals.show_warning_dialog.emit(
-                _("Error"),
-                _("Failed to create .desktop file: {error}").format(error=str(e))
-            )
-            return False
-
-    def add_egs_to_desktop(self, game_name: str, app_name: str):
-        """
-        Copies the .desktop file for an EGS game to the Desktop folder.
-
-        Args:
-            game_name: The display name of the game.
-            app_name: The Legendary app_name (unique identifier for the game).
-        """
-        if not self._check_portproton():
-            return
-        desktop_path = self._get_egs_desktop_path(game_name)
-        if not os.path.exists(desktop_path):
-            if not self._create_egs_desktop_file(game_name, app_name):
-                return
-        desktop_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DesktopLocation)
-        os.makedirs(desktop_dir, exist_ok=True)
-        dest_path = os.path.join(desktop_dir, f"{game_name}.desktop")
-        try:
-            shutil.copyfile(desktop_path, dest_path)
-            os.chmod(dest_path, 0o755)
-            self._show_status_message(_("Added '{game_name}' to {location}").format(
-                game_name=game_name, location=_("Desktop")
-            ))
-        except OSError as e:
-            self.signals.show_warning_dialog.emit(
-                _("Error"),
-                _("Failed to add '{game_name}' to {location}: {error}").format(
-                    game_name=game_name, location=_("Desktop"), error=str(e)
-                )
-            )
-
-    def remove_egs_from_desktop(self, game_name: str):
-        """
-        Removes the .desktop file for an EGS game from the Desktop folder.
-
-        Args:
-            game_name: The display name of the game.
-        """
-        desktop_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DesktopLocation)
-        desktop_path = os.path.join(desktop_dir, f"{game_name}.desktop")
-        self._remove_file(
-            desktop_path,
-            _("Failed to remove '{game_name}' from {location}: {error}"),
-            _("Removed '{game_name}' from {location}"),
-            game_name,
-            location=_("Desktop")
-        )
-
-    def add_egs_to_menu(self, game_name: str, app_name: str):
-        """
-        Copies the .desktop file for an EGS game to ~/.local/share/applications.
-
-        Args:
-            game_name: The display name of the game.
-            app_name: The Legendary app_name (unique identifier for the game).
-        """
-        if not self._check_portproton():
-            return
-        desktop_path = self._get_egs_desktop_path(game_name)
-        if not os.path.exists(desktop_path):
-            if not self._create_egs_desktop_file(game_name, app_name):
-                return
-        applications_dir = os.path.join(os.path.expanduser("~"), ".local", "share", "applications")
-        os.makedirs(applications_dir, exist_ok=True)
-        dest_path = os.path.join(applications_dir, f"{game_name}.desktop")
-        try:
-            shutil.copyfile(desktop_path, dest_path)
-            os.chmod(dest_path, 0o755)
-            self._show_status_message(_("Added '{game_name}' to {location}").format(
-                game_name=game_name, location=_("Menu")
-            ))
-        except OSError as e:
-            self.signals.show_warning_dialog.emit(
-                _("Error"),
-                _("Failed to add '{game_name}' to {location}: {error}").format(
-                    game_name=game_name, location=_("Menu"), error=str(e)
-                )
-            )
-
-    def remove_egs_from_menu(self, game_name: str):
-        """
-        Removes the .desktop file for an EGS game from ~/.local/share/applications.
-
-        Args:
-            game_name: The display name of the game.
-        """
-        applications_dir = os.path.join(os.path.expanduser("~"), ".local", "share", "applications")
-        desktop_path = os.path.join(applications_dir, f"{game_name}.desktop")
-        self._remove_file(
-            desktop_path,
-            _("Failed to remove '{game_name}' from {location}: {error}"),
-            _("Removed '{game_name}' from {location}"),
-            game_name,
-            location=_("Menu")
-        )
 
     def _get_exec_line(self, game_name, exec_line):
         """Retrieve and validate exec_line from .desktop file if necessary."""
@@ -1411,7 +1033,7 @@ Icon={icon_path}
             )
 
     def remove_from_steam(self, game_name, exec_line, game_source):
-        """Handle removing a game from Steam via steam_api, supporting both EGS and non-EGS games."""
+        """Handle removing a game from Steam via steam_api."""
         if not self._check_portproton():
             return
 
@@ -1434,42 +1056,29 @@ Icon={icon_path}
                     _(message).format(game_name=game_name)
                 )
 
-        if game_source == "epic":
-            remove_egs_from_steam(game_name, self.portproton_location, on_remove_from_steam_result)
-        else:
-            # For non-EGS games, use steam_api
-            exec_line = self._get_exec_line(game_name, exec_line)
-            if not exec_line:
-                return
-            exe_path = self._parse_exe_path(exec_line, game_name)
-            if not exe_path:
-                return
-            logger.debug("Removing game '%s' from Steam", game_name)
-            try:
-                success, message = remove_from_steam(game_name, exec_line)
-                if success:
-                    if "restart" in message.lower():
-                        self.signals.show_info_dialog.emit(
-                            _("Success"),
-                            _("'{game_name}' was removed from Steam. Please restart Steam for changes to take effect.").format(game_name=game_name)
-                        )
-                    else:
-                        self.signals.show_info_dialog.emit(
-                            _("Success"),
-                            _("'{game_name}' was removed from Steam.").format(game_name=game_name)
-                        )
-                else:
-                    self.signals.show_warning_dialog.emit(
-                        _("Error"),
-                        _(message).format(game_name=game_name)
-                    )
-            except Exception as e:
+        exec_line = self._get_exec_line(game_name, exec_line)
+        if not exec_line:
+            return
+        exe_path = self._parse_exe_path(exec_line, game_name)
+        if not exe_path:
+            return
+        logger.debug("Removing game '%s' from Steam", game_name)
+        try:
+            success, message = remove_from_steam(game_name, exec_line)
+            if success:
+                on_remove_from_steam_result((success, message))
+            else:
                 self.signals.show_warning_dialog.emit(
                     _("Error"),
-                    _("Failed to remove game '{game_name}' from Steam: {error}").format(
-                        game_name=game_name, error=str(e)
-                    )
+                    _(message).format(game_name=game_name)
                 )
+        except Exception as e:
+            self.signals.show_warning_dialog.emit(
+                _("Error"),
+                _("Failed to remove game '{game_name}' from Steam: {error}").format(
+                    game_name=game_name, error=str(e)
+                )
+            )
 
     def open_game_folder(self, game_name, exec_line):
         """

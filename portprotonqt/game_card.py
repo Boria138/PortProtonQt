@@ -82,7 +82,6 @@ class GameCard(QFrame):
         self.missing_executable_path = self._get_missing_executable_path()
 
         self.steam_visible = (str(game_source).lower() == "steam" and self.display_filter in ("all", "favorites") and not self.economy_mode)
-        self.egs_visible = (str(game_source).lower() == "epic" and self.display_filter in ("all", "favorites") and not self.economy_mode)
         self.portproton_visible = (str(game_source).lower() == "portproton" and self.display_filter in ("all", "favorites") and not self.economy_mode)
 
         self.base_extra_margin = 8 if self.list_layout else 20
@@ -167,20 +166,6 @@ class GameCard(QFrame):
         self.steamLabel.setVisible(self.steam_visible)
         if self.economy_mode:
             self.steamLabel.setVisible(False)
-
-        egs_icon = self.theme_manager.get_icon("badge_egs")
-        self.egsLabel = ClickableLabel(
-            "Epic Games",
-            icon=egs_icon,
-            parent=self.coverWidget,
-            font_scale_factor=0.06,
-            change_cursor=False
-        )
-        self.egsLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
-        self.egsLabel.setCardWidth(card_width)
-        self.egsLabel.setVisible(self.egs_visible)
-        if self.economy_mode:
-            self.egsLabel.setVisible(False)
 
         portproton_icon = self.theme_manager.get_icon("badge_portproton")
         self.portprotonLabel = ClickableLabel(
@@ -290,7 +275,6 @@ class GameCard(QFrame):
         badge_y_positions = []
         badges = [
             (self.steam_visible, self.steamLabel),
-            (self.egs_visible, self.egsLabel),
             (self.portproton_visible, self.portprotonLabel),
             (bool(self.getProtonDBText(self.protondb_tier)), self.protondbLabel),
             (bool(self.getAntiCheatText(self.anticheat_status)), self.anticheatLabel),
@@ -331,7 +315,6 @@ class GameCard(QFrame):
             self.anticheatLabel.raise_()
             self.protondbLabel.raise_()
             self.portprotonLabel.raise_()
-            self.egsLabel.raise_()
             self.steamLabel.raise_()
         except RuntimeError:
             # Handle the case where the Qt object was deleted
@@ -373,7 +356,6 @@ class GameCard(QFrame):
         hidden_badges = self.badge_view_mode == "hidden"
         badge_visibility = [
             (self.steam_visible, self.steamLabel),
-            (self.egs_visible, self.egsLabel),
             (self.portproton_visible, self.portprotonLabel),
             (bool(self.getProtonDBText(self.protondb_tier)), self.protondbLabel),
             (bool(self.getAntiCheatText(self.anticheat_status)), self.anticheatLabel),
@@ -448,7 +430,6 @@ class GameCard(QFrame):
         self.display_filter = display_filter
         self.economy_mode = ui_config.get_economy_mode()
         self.steam_visible = (str(self.game_source).lower() == "steam" and self.display_filter in ("all", "favorites") and not self.economy_mode)
-        self.egs_visible = (str(self.game_source).lower() == "epic" and self.display_filter in ("all", "favorites") and not self.economy_mode)
         self.portproton_visible = (str(self.game_source).lower() == "portproton" and self.display_filter in ("all", "favorites") and not self.economy_mode)
         protondb_visible = bool(self.getProtonDBText(self.protondb_tier)) and not self.economy_mode
         anticheat_visible = bool(self.getAntiCheatText(self.anticheat_status)) and not self.economy_mode
@@ -457,7 +438,6 @@ class GameCard(QFrame):
 
         try:
             self.steamLabel.setVisible(self.steam_visible and not hidden_badges)
-            self.egsLabel.setVisible(self.egs_visible and not hidden_badges)
             self.portprotonLabel.setVisible(self.portproton_visible and not hidden_badges)
             self.protondbLabel.setVisible(protondb_visible and not hidden_badges)
             self.anticheatLabel.setVisible(anticheat_visible and not hidden_badges)

@@ -20,7 +20,6 @@ from portprotonqt.context_menu_manager import ContextMenuManager, CustomLineEdit
 
 from portprotonqt.image_utils import load_pixmap_async, ImageCarousel
 from portprotonqt.steam_api import get_steam_game_info_async, get_full_steam_game_info_async, get_cached_steam_game_info, get_steam_installed_games, is_game_in_steam, fetch_sgdb_cover_async
-from portprotonqt.egs_api import load_egs_games_async, get_egs_executable
 from portprotonqt.theme_manager import ThemeManager, load_theme_screenshots
 from portprotonqt.time_utils import save_last_launch, get_last_launch, get_playtime_for_exe, format_playtime, get_last_launch_timestamp, format_last_launch
 from portprotonqt.config import (
@@ -45,7 +44,7 @@ from portprotonqt.cli import add_steam_compat_tool, remove_steam_compat_tool, is
 
 from portprotonqt.tray_manager import restart_application_with_muvm
 from portprotonqt.version_utils import version_sort_key
-from portprotonqt.localization import _, get_egs_language, read_metadata_translations
+from portprotonqt.localization import _, get_metadata_language, read_metadata_translations
 from portprotonqt.downloader import Downloader
 from portprotonqt.tray_manager import TrayManager
 from portprotonqt.game_library_manager import GameLibraryManager
@@ -165,14 +164,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
         # Start watching dist and prefixes directories if they exist
         QTimer.singleShot(0, self.start_watching_directories)  # Delay to ensure portproton_location is set
-        self.legendary_config_path = os.path.join(
-            os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache")),
-            "PortProtonQt", "legendary_cache"
-        )
-        os.makedirs(self.legendary_config_path, exist_ok=True)
-        os.environ["LEGENDARY_CONFIG_PATH"] = self.legendary_config_path
-
-        self.legendary_path = os.path.join(self.legendary_config_path, "legendary")
         self.downloader = Downloader(max_workers=4)
         self.portproton_api = PortProtonAPI(self.downloader)
 
@@ -543,7 +534,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         QApplication.processEvents()
 
         def start_loading():
-            economy_mode = ui_config.get_economy_mode()
             # Make sure progress bar is still visible
             self.progress_bar.setValue(0)
             self.progress_bar.setVisible(True)
@@ -553,30 +543,19 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 self._load_steam_games_async(lambda games: self.games_loaded.emit(games))
             elif display_filter == "portproton":
                 self._load_portproton_games_async(lambda games: self.games_loaded.emit(games))
-            elif display_filter == "epic":
-                if economy_mode:
-                    self.games_loaded.emit([])
-                else:
-                    load_egs_games_async(
-                        self.legendary_path,
-                        lambda games: self.games_loaded.emit(games),
-                        self.downloader,
-                        self.update_progress.emit,
-                        self.update_status_message.emit
-                    )
             elif display_filter == "favorites":
-                def on_all_games_favorites(portproton_games, steam_games, epic_games):
-                    games = [game for game in portproton_games + steam_games + epic_games if game[0] in favorites]
+                def on_all_games_favorites(portproton_games, steam_games):
+                    games = [game for game in portproton_games + steam_games if game[0] in favorites]
                     self.games_loaded.emit(games)
 
                 # Load games from different sources in parallel to prevent blocking
-                results = {'portproton': [], 'steam': [], 'epic': []}
-                completed = {'portproton': False, 'steam': False, 'epic': economy_mode}
+                results = {'portproton': [], 'steam': []}
+                completed = {'portproton': False, 'steam': False}
 
                 def check_completion():
                     if all(completed.values()):
                         QApplication.processEvents()  # Keep UI responsive
-                        on_all_games_favorites(results['portproton'], results['steam'], results['epic'])
+                        on_all_games_favorites(results['portproton'], results['steam'])
 
                 def portproton_callback(games):
                     results['portproton'] = games
@@ -590,31 +569,17 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                     QApplication.processEvents()  # Keep UI responsive
                     check_completion()
 
-                def epic_callback(games):
-                    results['epic'] = games
-                    completed['epic'] = True
-                    QApplication.processEvents()  # Keep UI responsive
-                    check_completion()
-
                 self._load_portproton_games_async(portproton_callback)
                 self._load_steam_games_async(steam_callback)
-                if not economy_mode:
-                    load_egs_games_async(
-                        self.legendary_path,
-                        epic_callback,
-                        self.downloader,
-                        self.update_progress.emit,
-                        self.update_status_message.emit
-                    )
             else:
                 # For 'all' filter - load games from different sources in parallel to prevent blocking
-                results = {'portproton': [], 'steam': [], 'epic': []}
-                completed = {'portproton': False, 'steam': False, 'epic': economy_mode}
+                results = {'portproton': [], 'steam': []}
+                completed = {'portproton': False, 'steam': False}
 
                 def on_all_games():
                     seen = set()
                     games = []
-                    for game in results['portproton'] + results['steam'] + results['epic']:
+                    for game in results['portproton'] + results['steam']:
                         # Unique key: name + exec_line
                         key = (game[0], game[5])
                         if key not in seen:
@@ -640,23 +605,9 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                     QApplication.processEvents()  # Keep UI responsive
                     check_completion()
 
-                def epic_callback(games):
-                    results['epic'] = games
-                    completed['epic'] = True
-                    QApplication.processEvents()  # Keep UI responsive
-                    check_completion()
-
                 # Load all sources in parallel
                 self._load_portproton_games_async(portproton_callback)
                 self._load_steam_games_async(steam_callback)
-                if not economy_mode:
-                    load_egs_games_async(
-                        self.legendary_path,
-                        epic_callback,
-                        self.downloader,
-                        self.update_progress.emit,
-                        self.update_status_message.emit
-                    )
 
         # Run loading immediately to show status without delay
         start_loading()
@@ -806,7 +757,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
         def on_steam_info(steam_info: dict):
             # Get current language
-            language_code = get_egs_language()
+            language_code = get_metadata_language()
 
             # Read translations from metadata.txt
             user_metadata_file = os.path.join(user_game_folder, "metadata.txt")
@@ -838,7 +789,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             ))
 
         if economy_mode:
-            language_code = get_egs_language()
+            language_code = get_metadata_language()
             user_metadata_file = os.path.join(user_game_folder, "metadata.txt")
             translations = {'name': desktop_name, 'description': ''}
             if os.path.exists(user_metadata_file):
@@ -1156,7 +1107,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 last_launch = _("Never")
 
                 # Language for translations
-                language_code = get_egs_language()
+                language_code = get_metadata_language()
 
                 # Read translations from metadata.txt
                 user_metadata_file = os.path.join(custom_folder, "metadata.txt")
@@ -1390,8 +1341,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 # Hide badges and favorite button
                 if hasattr(card, 'steamLabel'):
                     card.steamLabel.setVisible(False)
-                if hasattr(card, 'egsLabel'):
-                    card.egsLabel.setVisible(False)
                 if hasattr(card, 'portprotonLabel'):
                     card.portprotonLabel.setVisible(False)
                 if hasattr(card, 'protondbLabel'):
@@ -2031,8 +1980,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.gamesSortCombo.setCurrentIndex(idx)
         genForm.addRow(self.gamesSortTitle, self.gamesSortCombo)
 
-        self.filter_keys = ["all", "steam", "portproton", "favorites", "epic"]
-        self.filter_labels = [_("All"), "Steam", "PortProton", _("Favorites"), "Epic Games Store"]
+        self.filter_keys = ["all", "steam", "portproton", "favorites"]
+        self.filter_labels = [_("All"), "Steam", "PortProton", _("Favorites")]
         self.gamesDisplayCombo = QComboBox()
         self.gamesDisplayCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.gamesDisplayCombo.addItems(self.filter_labels)
@@ -3409,69 +3358,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             QDesktopServices.openUrl(url)
             return
 
-        # Handle EGS games
-        if exec_line.startswith("legendary:launch:"):
-            app_name = exec_line.split("legendary:launch:")[1]
-
-            # Get path to .exe from installed.json
-            game_exe = get_egs_executable(app_name, self.legendary_config_path)
-            if not game_exe or not os.path.exists(game_exe):
-                QMessageBox.warning(self, _("Error"), _("Executable not found for EGS game: {0}").format(app_name))
-                return
-
-            current_exe = os.path.basename(game_exe)
-            if self.game_processes and self.target_exe is not None and self.target_exe != current_exe:
-                QMessageBox.warning(self, _("Error"), _("Cannot launch game while another game is running"))
-                return
-
-            # Update button
-            update_button = button if button is not None else self.current_play_button
-            self.current_running_button = update_button
-            self.target_exe = current_exe
-            exe_name = os.path.splitext(current_exe)[0]
-
-            # Check if game is running
-            if self.game_processes and self.target_exe == current_exe:
-                if not self.stop_running_game(update_button):
-                    QMessageBox.warning(self, _("Error"), _("Failed to stop game"))
-            else:
-                # Launch game via PortProton
-                env_vars = os.environ.copy()
-                env_vars['LEGENDARY_CONFIG_PATH'] = self.legendary_config_path
-                self._check_missing_prefix_before_launch(game_exe, env_vars)
-
-                wrapper = self.start_sh or ""
-
-                cmd = [wrapper, game_exe]
-
-                try:
-                    process = subprocess.Popen(cmd, env=env_vars, shell=False, preexec_fn=os.setsid)
-                    self.game_processes.append(process)
-                    save_last_launch(exe_name, datetime.now())
-                    if update_button:
-                        try:
-                            update_button.setText(_("Stop"))
-                            icon = self.theme_manager.get_icon("stop")
-                            if isinstance(icon, str):
-                                icon = QIcon(icon)
-                            elif icon is None:
-                                icon = QIcon()
-                            update_button.setIcon(icon)
-                        except RuntimeError:
-                            pass
-
-                    # Reset Wine download monitoring
-                    self.wine_download_seen = False
-                    self.wine_download_percent = 0.0
-
-                    self.checkProcessTimer = QTimer(self)
-                    self.checkProcessTimer.timeout.connect(self.checkTargetExe)
-                    self.checkProcessTimer.start(500)
-                except Exception as e:
-                    logger.error(f"Failed to launch EGS game {app_name}: {e}")
-                    QMessageBox.warning(self, _("Error"), _("Failed to launch game: {0}").format(str(e)))
-            return
-
         # Handle PortProton games
         entry_exec_split = shlex.split(exec_line)
         if not entry_exec_split:
@@ -3654,7 +3540,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
     def _update_card_name_from_metadata(self, exe_name: str, metadata_path: str):
         """Update card name and description from metadata file."""
         # Read the translated metadata using the existing function
-        language_code = get_egs_language()  # Use the same language detection as elsewhere
+        language_code = get_metadata_language()
         translations = read_metadata_translations(metadata_path, language_code)
 
         # Update the card with the new name and description if available

@@ -182,7 +182,7 @@ def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[Q
                 downloader.download_async(cover, local_path, timeout=5, callback=on_downloaded)
                 return
             except Exception as e:
-                logger.error("Error processing EGS URL %s: %s", cover, str(e))
+                logger.error("Error processing remote image URL %s: %s", cover, str(e))
 
         if cover and QFile.exists(cover):
             pixmap = QPixmap(cover)

@@ -271,25 +271,6 @@ def create_steam_badge(
     return badge
 
 
-def create_egs_badge(
-    parent: QWidget,
-    main_window,
-) -> ClickableLabel:
-    """Create Epic Games Store badge."""
-    egs_icon = main_window.theme_manager.get_icon("badge_egs")
-    badge = ClickableLabel(
-        "Epic Games",
-        icon=egs_icon,
-        parent=parent,
-        icon_size=BADGE_ICON_SIZE,
-        icon_space=5,
-        change_cursor=False,
-    )
-    badge.setStyleSheet(main_window.theme.STEAM_BADGE_STYLE)
-    _apply_badge_view_mode(badge)
-    return badge
-
-
 def create_portproton_badge(
     parent: QWidget,
     on_click: Callable[..., None],

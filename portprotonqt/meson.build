@@ -7,7 +7,6 @@ install_data(
   'custom_widgets.py',
   'dialogs.py',
   'downloader.py',
-  'egs_api.py',
   'game_card.py',
   'game_library_manager.py',
   'howlongtobeat_api.py',

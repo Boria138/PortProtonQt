@@ -24,7 +24,6 @@ from portprotonqt.detail_pages.widgets import (
     create_cover_frame,
     create_protondb_badge,
     create_steam_badge,
-    create_egs_badge,
     create_portproton_badge,
     create_anticheat_badge,
     create_details_widget,
@@ -133,7 +132,6 @@ class DetailPageManager:
         exec_line = game_data.get("exec_line", "")
 
         steam_visible = game_source == "steam" and display_filter in ("all", "favorites")
-        egs_visible = game_source == "epic" and display_filter in ("all", "favorites")
         portproton_visible = game_source == "portproton" and display_filter in ("all", "favorites")
 
         badges = []
@@ -142,8 +140,6 @@ class DetailPageManager:
             badges.append(protondb_badge)
         if steam_visible:
             badges.append(self._create_steam_badge(parent, appid))
-        if egs_visible:
-            badges.append(self._create_egs_badge(parent))
         if portproton_visible:
             badges.append(self._create_portproton_badge(parent, name, exec_line))
         anticheat_badge = self._create_anticheat_badge(parent, game_data)
@@ -160,10 +156,6 @@ class DetailPageManager:
 
     def _create_steam_badge(self, parent: QWidget, appid: str) -> dict:
         badge = create_steam_badge(parent, appid, self.main_window)
-        return {"label": badge, "visible": True}
-
-    def _create_egs_badge(self, parent: QWidget) -> dict:
-        badge = create_egs_badge(parent, self.main_window)
         return {"label": badge, "visible": True}
 
     def _create_portproton_badge(self, parent: QWidget, name: str, exec_line: str) -> dict:

@@ -1,7 +1,7 @@
 <div align="center">
   <img src="build-aux/share/icons/hicolor/scalable/apps/ru.linux_gaming.PortProtonQt.svg" width="64">
   <h1 align="center">PortProtonQt</h1>
-  <p align="center">Удобный графический интерфейс для управления и запуска игр из PortProton, Steam и Epic Games Store. Оно объединяет библиотеки игр в единый центр для лёгкой навигации и организации. Лёгкая структура и кроссплатформенная поддержка обеспечивают цельный игровой опыт без необходимости использования нескольких лаунчеров. Интеграция с PortProton упрощает запуск Windows-игр на Linux с минимальной настройкой.</p>
+  <p align="center">Современный и удобный интерфейс для управления и запуска игр из PortProton и Steam. Объединяет библиотеки в одном месте и упрощает запуск Windows-игр на Linux.</p>
 </div>
 
 ### Установка (devel)
@@ -55,7 +55,6 @@ pre-commit run --all-files
 
 PortProtonQt использует код и зависимости от следующих проектов:
 
-- [Legendary](https://github.com/derrod/legendary) — инструмент для работы с Epic Games Store, лицензия [GPL-3.0](https://github.com/derrod/legendary/blob/master/LICENSE).
 - [Icoextract](https://github.com/jlu5/icoextract) — библиотека для извлечения иконок, лицензия [MIT](https://github.com/jlu5/icoextract/blob/master/LICENSE).
 - [HowLongToBeat Python API](https://github.com/ScrappyCocco/HowLongToBeat-PythonAPI) — библиотека для взаимодействия с HowLongToBeat, лицензия [MIT](https://github.com/ScrappyCocco/HowLongToBeat-PythonAPI/blob/master/LICENSE.md).
 Полный текст лицензий см. в файле [LICENSE](LICENSE).

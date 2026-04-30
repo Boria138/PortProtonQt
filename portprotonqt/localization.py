@@ -75,19 +75,16 @@ def get_steam_language():
     # Fallback to English by default
     return 'english'
 
-def get_egs_language():
+def get_metadata_language() -> str:
     try:
         # Babel automatically parses complex locales, e.g., 'zh_Hant_HK' → 'zh_Hant'
         system_locale = get_system_locale()
         if system_locale:
-            locale = Locale.parse(system_locale)
-            # Use only the language code ('ru', 'en', etc.)
-            language_code = locale.language
-            return language_code
+            parsed_locale = Locale.parse(system_locale)
+            return parsed_locale.language
     except Exception as e:
         logger.warning("Failed to detect locale: %s", e)
 
-    # Fallback to English by default
     return 'en'
 
 def read_metadata_translations(metadata_file, language_code):

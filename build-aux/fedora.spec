@@ -6,7 +6,7 @@
 Name:           %{pypi_name}
 Version:        %{pypi_version}
 Release:        1%{?dist}
-Summary:        Modern GUI for managing and launching games from PortProton, Steam, and Epic Games Store
+Summary:        Modern GUI for managing and launching games from PortProton and Steam
 
 License:        GPL-3.0
 URL:            https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt
@@ -65,7 +65,7 @@ Requires:       muvm
 %endif
 
 %description
-This application provides a sleek, intuitive graphical interface for managing and launching games from PortProton, Steam, and Epic Games Store. It consolidates your game libraries into a single, user-friendly hub for seamless navigation and organization. Its lightweight structure and cross-platform support deliver a cohesive gaming experience, eliminating the need for multiple launchers. Unique PortProton integration enhances Linux gaming, enabling effortless play of Windows-based titles with minimal setup.
+A modern and intuitive interface for managing and launching games from PortProton and Steam. Combines libraries in one place and simplifies running Windows games on Linux.
 
 %package -n %{pypi_name}-steam-compat
 Summary:        Steam compatibility tool for PortProtonQt
