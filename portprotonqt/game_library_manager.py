@@ -134,7 +134,7 @@ class GameLibraryManager:
             return
         self._set_card_width_from_slider()
         self.sizeSlider.setToolTip(f"{self.card_width} px")
-        if not self.sizeSlider.isHidden():
+        if self.layout_mode != "list":
             ui_config.set_card_width(self.card_width)
         self.main_window.card_width = self.card_width
         for card in self.game_card_cache.values():
@@ -142,10 +142,10 @@ class GameLibraryManager:
         self.update_game_grid()
 
     def _set_card_width_from_slider(self):
-        """Use max card width when the size slider is hidden."""
+        """Use max card width for list layout."""
         if self.sizeSlider is None:
             return
-        if self.sizeSlider.isHidden():
+        if self.layout_mode == "list":
             self.card_width = self.sizeSlider.maximum()
         else:
             self.card_width = self.sizeSlider.value()

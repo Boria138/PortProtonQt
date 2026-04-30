@@ -1268,8 +1268,15 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.auto_size_slider.setToolTip(f"{self.auto_card_width} px")
         self.auto_size_slider.setStyleSheet(self.theme.SLIDER_SIZE_STYLE)
         self.auto_size_slider.sliderReleased.connect(self.on_auto_slider_released)
-        self.auto_size_slider.setVisible(False)
-        if self.auto_size_slider.isHidden():
+
+        sliderLayout = QHBoxLayout()
+        sliderLayout.addStretch()
+        sliderLayout.addWidget(self.auto_size_slider)
+        autoInstallLayout.addLayout(sliderLayout)
+
+        auto_layout_mode = str(getattr(self.theme, "LIBRARY_LAYOUT_MODE", "grid")).lower()
+        self.auto_size_slider.setVisible(auto_layout_mode != "list")
+        if auto_layout_mode == "list":
             self.auto_card_width = self.auto_size_slider.maximum()
             self.auto_size_slider.setValue(self.auto_card_width)
             self.auto_size_slider.setToolTip(f"{self.auto_card_width} px")
@@ -1404,11 +1411,12 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
     def on_auto_slider_released(self):
         """Handles auto-install slider release to update card size."""
+        auto_layout_mode = str(getattr(self.theme, "LIBRARY_LAYOUT_MODE", "grid")).lower()
         if hasattr(self, 'auto_size_slider') and self.auto_size_slider:
-            if not self.auto_size_slider.isHidden():
+            if auto_layout_mode != "list":
                 self.auto_card_width = self.auto_size_slider.value()
             self.auto_size_slider.setToolTip(f"{self.auto_card_width} px")
-            if not self.auto_size_slider.isHidden():
+            if auto_layout_mode != "list":
                 ui_config.set_auto_card_width(self.auto_card_width)
         if not hasattr(self, 'allAutoInstallCards'):
             return
@@ -3485,11 +3493,12 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         if hasattr(self, "tray_manager"):
             self.tray_manager.shutdown()
 
-        # Save card sizes only when the size controls are visible.
+        # Save card sizes only for grid layouts.
+        layout_mode = str(getattr(self.theme, "LIBRARY_LAYOUT_MODE", "grid")).lower()
         size_slider = getattr(self.game_library_manager, 'sizeSlider', None)
-        if size_slider is None or not size_slider.isHidden():
+        if size_slider is None or layout_mode != "list":
             ui_config.set_card_width(self.card_width)
-        if hasattr(self, 'auto_size_slider') and not self.auto_size_slider.isHidden():
+        if hasattr(self, 'auto_size_slider') and layout_mode != "list":
             ui_config.set_auto_card_width(self.auto_card_width)
 
         # Save window sizes (if not in fullscreen mode)
