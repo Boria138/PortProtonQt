@@ -532,13 +532,13 @@ CHECKBOX_STYLE = f"""
         border: {border_c} {color_a};
     }}
     QCheckBox::indicator:disabled {{
-        background: {color_d};
-        border: {border_c} {color_disabled_text};
+        background: {color_b};
+        border: {border_c} {color_d};
     }}
     QCheckBox::indicator:checked:disabled {{
         image: url({theme_manager.get_icon("check", current_theme_name, as_path=True)});
-        background: {color_d};
-        border: {border_c} {color_disabled_text};
+        background: {color_b};
+        border: {border_c} {color_d};
     }}
 
     QTableWidget::indicator {{
@@ -566,13 +566,13 @@ CHECKBOX_STYLE = f"""
         border: {border_c} {color_a};
     }}
     QTableWidget::indicator:disabled {{
-        background: {color_d};
-        border: {border_c} {color_disabled_text};
+        background: {color_b};
+        border: {border_c} {color_d};
     }}
     QTableWidget::indicator:checked:disabled {{
         image: url({theme_manager.get_icon("check", current_theme_name, as_path=True)});
-        background: {color_d};
-        border: {border_c} {color_disabled_text};
+        background: {color_b};
+        border: {border_c} {color_d};
     }}
 """
 
