@@ -108,6 +108,6 @@ def detail_page_style(stops):
     QWidget {{
         background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
                                     {stops});
-                                    border-radius: {border_radius_b};
+                                    border-radius: 0px;
     }}
 """
