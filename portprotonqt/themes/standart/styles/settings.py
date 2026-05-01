@@ -5,6 +5,7 @@ SETTINGS_FRAME_STYLE = f"""
         background: {color_b};
         border:  {border_a} {color_g};
         border-radius: {border_radius_b};
+        margin-right: 10px;
     }}
 """
 
