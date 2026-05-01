@@ -1969,7 +1969,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         scrollWidget = QWidget()
         scrollWidget.setStyleSheet(self.theme.TRANSPARENT_BACKGROUND_STYLE)
         scrollLayout = QVBoxLayout(scrollWidget)
-        scrollLayout.setContentsMargins(0, 0, 0, 0)
+        scrollLayout.setContentsMargins(0, 0, 10, 0)
         scrollLayout.setSpacing(10)  # Uniform spacing between sections
 
         # Helper to create styled sections
