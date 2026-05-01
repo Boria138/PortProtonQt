@@ -206,6 +206,7 @@ class GameCard(QFrame):
         self.nameLabel = QLabel(self._get_display_name())
         if self.list_layout:
             self.nameLabel.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
+            self.nameLabel.setContentsMargins(0, 0, 10, 0)
         else:
             self.nameLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.nameLabel.setStyleSheet(self.theme.GAME_CARD_NAME_LABEL_STYLE)
@@ -331,8 +332,10 @@ class GameCard(QFrame):
         if self.list_layout:
             row_height = max(68, int(72 * self._scale))
             icon_size = max(48, int(56 * self._scale))
+            margin_left = 10
             self.setFixedSize(scaled_width + scaled_extra, row_height + scaled_extra)
-            self.coverWidget.setFixedSize(icon_size, icon_size)
+            self.coverWidget.setFixedSize(icon_size + margin_left, icon_size)
+            self.coverWidget.setContentsMargins(10, 0, 0, 0)
             self.coverLabel.setFixedSize(icon_size, icon_size)
         else:
             scaled_height = int(self.base_card_width * 1.8 * self._scale)
