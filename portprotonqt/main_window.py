@@ -190,10 +190,12 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.install_process = None
         self.install_monitor_timer = None
 
-        # Wine download monitoring during game launch
+        # Dependency setup monitoring during game launch
         self.wine_download_timer = None
         self.wine_download_percent = 0.0
         self.wine_download_seen = False
+        self.wine_download_status = _("Downloading Wine...")
+        self.game_launch_started = False
 
         # Central widget and main layout
         centralWidget = QWidget()
@@ -418,6 +420,53 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         except Exception as e:
             logger.error(f"Error parsing process log: {e}")
         return None
+
+    def _parse_process_log_status(self) -> tuple[str | None, float | None, bool] | None:
+        """Parse current launch download/extraction status from process.log."""
+        user = os.getenv('USER', 'unknown')
+        log_file = f"/tmp/PortProton_{user}/process.log"
+        if not os.path.exists(log_file):
+            return None
+
+        try:
+            with open(log_file, encoding='utf-8') as f:
+                lines = f.readlines()
+        except OSError as e:
+            logger.error("Error parsing process log status: %s", e)
+            return None
+
+        status = percent = None
+        launch_started = False
+        for line in lines[-80:]:
+            line_lower = line.lower()
+            if "the prefix has been updated" in line_lower \
+                    or "log wine:" in line_lower \
+                    or "log from runtime and wine:" in line_lower:
+                status = None
+                percent = None
+                launch_started = True
+            elif "unpacking file:" in line_lower or "download" in line_lower:
+                action = _("Extracting") if "unpacking file:" in line_lower else _("Downloading")
+                launch_started = False
+                percent = None
+                if "plugins" in line_lower:
+                    status = _("{0} Plugins...").format(action)
+                elif "libs" in line_lower or "libraries" in line_lower:
+                    status = _("{0} Libs...").format(action)
+                elif "wine" in line_lower or "proton" in line_lower:
+                    status = _("{0} Wine...").format(action)
+                else:
+                    status = _("{0} components...").format(action)
+
+            matches = re.findall(r'([0-9]*\.?[0-9]+)%', line)
+            if matches:
+                percent = float(matches[-1])
+
+        if status is None and percent is None and not launch_started:
+            return None
+        if status is None:
+            status = None if launch_started else _("Preparing PortProton...")
+        return status, percent, launch_started
 
     def monitor_install_progress(self):
         """Monitor /tmp/PortProton_$USER/process.log for progress."""
@@ -3020,23 +3069,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         target_running = self.is_target_exe_running()
         child_running = any(proc.poll() is None for proc in self.game_processes)
 
-        # Check Wine download progress first
-        wine_downloading = self.monitor_wine_download_progress()
-
-        if wine_downloading:
-            # Wine is downloading - update button with progress
-            if self.current_running_button is not None:
-                try:
-                    self.current_running_button.setText(_("Downloading Wine... {0}%").format(int(self.wine_download_percent)))
-                    icon = self.theme_manager.get_icon("save")
-                    if isinstance(icon, str):
-                        icon = QIcon(icon)
-                    elif icon is None:
-                        icon = QIcon()
-                    self.current_running_button.setIcon(icon)
-                except RuntimeError:
-                    pass
-        elif target_running:
+        if target_running or (self.game_launch_started and child_running):
+            self.game_launch_started = True
             # Game started - set flag, update button to "Stop"
             if self.current_running_button is not None:
                 try:
@@ -3050,6 +3084,34 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 except RuntimeError:
                     self.current_running_button = None
                 #self._inhibit_screensaver()
+        elif self.monitor_wine_download_progress():
+            # Dependencies are downloading/extracting - update button with progress
+            if self.current_running_button is not None:
+                try:
+                    status = self.wine_download_status
+                    if self.wine_download_percent > 0:
+                        status = status.replace("...", f"... {int(self.wine_download_percent)}%")
+                    self.current_running_button.setText(status)
+                    icon = self.theme_manager.get_icon("save")
+                    if isinstance(icon, str):
+                        icon = QIcon(icon)
+                    elif icon is None:
+                        icon = QIcon()
+                    self.current_running_button.setIcon(icon)
+                except RuntimeError:
+                    pass
+        elif child_running:
+            if self.current_running_button is not None:
+                try:
+                    self.current_running_button.setText(_("Stop"))
+                    icon = self.theme_manager.get_icon("stop")
+                    if isinstance(icon, str):
+                        icon = QIcon(icon)
+                    elif icon is None:
+                        icon = QIcon()
+                    self.current_running_button.setIcon(icon)
+                except RuntimeError:
+                    self.current_running_button = None
         elif not child_running:
             # Game completed - reset flag, reset button and stop timer
             self.resetPlayButton()
@@ -3060,16 +3122,27 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 self.checkProcessTimer = None
 
     def monitor_wine_download_progress(self) -> bool:
-        """Monitor /tmp/PortProton_$USER/process.log for Wine download progress.
+        """Monitor /tmp/PortProton_$USER/process.log for dependency progress.
 
         Returns:
-            bool: True if Wine download is in progress, False otherwise.
+            bool: True if dependency setup is in progress, False otherwise.
         """
-        percent = self._parse_process_log_progress()
-        if percent is None:
+        state = self._parse_process_log_status()
+        if state is None:
             return False
         try:
-            logger.debug(f"Wine download progress: {percent}%")
+            status, percent, launch_started = state
+            if launch_started:
+                self.game_launch_started = True
+                return False
+            if status is None:
+                return False
+            logger.debug("Launch dependency progress: %s %s", status, percent)
+            self.wine_download_status = status
+            if percent is None:
+                self.wine_download_seen = True
+                self.wine_download_percent = 0.0
+                return True
             if percent > 0:
                 self.wine_download_seen = True
                 self.wine_download_percent = percent
@@ -3103,9 +3176,11 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 pass
             self.current_running_button = None
         self.target_exe = None
-        # Reset Wine download monitoring
+        # Reset dependency setup monitoring
         self.wine_download_seen = False
         self.wine_download_percent = 0.0
+        self.wine_download_status = _("Downloading Wine...")
+        self.game_launch_started = False
 
     def stop_running_game(self, button=None) -> bool:
         """Stop current game via PortProton CLI stop command."""
@@ -3465,9 +3540,11 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                     except RuntimeError:
                         pass
 
-                # Reset Wine download monitoring
+                # Reset dependency setup monitoring
                 self.wine_download_seen = False
                 self.wine_download_percent = 0.0
+                self.wine_download_status = _("Downloading Wine...")
+                self.game_launch_started = False
 
                 self.checkProcessTimer = QTimer(self)
                 self.checkProcessTimer.timeout.connect(self.checkTargetExe)
