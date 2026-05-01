@@ -107,6 +107,7 @@ SEARCH_EDIT_STYLE = f"""
         font-family: '{font_family}';
         font-size: {font_size_a};
         color: {color_f};
+        min-height: 24px;
     }}
     QLineEdit:focus {{
         border: {border_b} {color_a};
