@@ -43,11 +43,24 @@ GAME_CARD_ANIMATION = {
 
 LIBRARY_WIDGET_STYLE = """
     QWidget {
-        background: qlineargradient(
-            x1:0, y1:0, x2:1, y2:1,
-            stop:0 #2b2d31,
-            stop:1 #1f2125
+        background: qradialgradient(
+            cx:0.5, cy:0.5, radius:0.8,
+            stop:0 #22242b,
+            stop:1 #1a1b21
         );
         border-radius: 0px;
+    }
+"""
+
+# GAME CARD STYLE (GAMECARD)
+GAME_CARD_WINDOW_STYLE = """
+    QFrame {
+        border-radius: 20px;
+        background: qradialgradient(
+            cx:0.5, cy:0.5, radius:0.8,
+            stop:0 #404554,
+            stop:1 #30323d
+        );
+        border:  0px solid;
     }
 """
