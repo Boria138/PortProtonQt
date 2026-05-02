@@ -70,6 +70,11 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
     update_progress = Signal(int)
     update_status_message = Signal(str, int)
 
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.window().windowHandle().startSystemMove()
+            event.accept()
+
     def _get_lg_versions_from_var(self) -> list[str]:
         """Read Proton/Wine LG versions from scripts/var."""
         scripts_path = get_portproton_scripts_path()
