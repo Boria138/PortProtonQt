@@ -314,6 +314,7 @@ Usage examples:
         export PW_VKBASALT=0
         export PW_USE_D3D_EXTRAS=1
         export WINE_LARGE_ADDRESS_AWARE=0
+        trap "stop_portproton" SIGTERM SIGINT
         # shellcheck source=/dev/null
         . "${PORT_SCRIPTS_PATH}/pw_autoinstall/${2}"
         stop_portproton
@@ -479,6 +480,12 @@ Usage examples:
         stop_portproton
         ;;
     --stop)
+        start_path="$(realpath "$0")"
+        pgrep -f -- "${start_path}.*--autoinstall" | while read -r autoinstall_pid ; do
+            if [[ "${autoinstall_pid}" != "$PW_START_PID" ]] ; then
+                kill -s SIGTERM "${autoinstall_pid}" &>/dev/null
+            fi
+        done
         stop_portproton
         ;;
     *)

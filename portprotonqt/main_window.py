@@ -242,7 +242,13 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
         self.installing = False
         self.install_process = None
+        self.install_stop_process = None
         self.install_monitor_timer = None
+        self.install_stop_requested = False
+        self.current_install_script = None
+        self.current_install_button = None
+        self.current_install_button_text = None
+        self.current_install_button_icon = None
 
         # Dependency setup monitoring during game launch
         self.wine_download_timer = None
@@ -429,17 +435,25 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         # Add prefixes directory to watcher
         self.fs_watcher.addPath(prefixes_path)
 
-    def launch_autoinstall(self, script_name: str):
+    def launch_autoinstall(
+        self, script_name: str, button: AutoSizeButton | None = None
+    ) -> None:
         """Launch auto-install script."""
         if self.installing:
+            if script_name == self.current_install_script:
+                self.stop_autoinstall()
+                return
             QMessageBox.warning(self, _("Warning"), _("Installation already in progress."))
             return
         self.installing = True
+        self.install_stop_requested = False
+        self.current_install_script = script_name
+        self._set_install_button_stop(button)
         self.seen_progress = False
         self.current_percent = 0.0
         start_sh = self.start_sh
         if not start_sh:
-            self.installing = False
+            self._reset_install_state()
             return
         cmd = start_sh + ["cli", "--autoinstall", script_name]
         self.install_process = QProcess(self)
@@ -448,7 +462,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.install_process.errorOccurred.connect(self.on_install_error)
         self.install_process.start(cmd[0], cmd[1:])
         if not self.install_process.waitForStarted(5000):
-            self.installing = False
+            self._reset_install_state()
             QMessageBox.warning(self, _("Error"), _("Failed to start installation."))
             return
         self.progress_bar.setVisible(True)
@@ -457,6 +471,76 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.install_monitor_timer = QTimer(self)
         self.install_monitor_timer.timeout.connect(self.monitor_install_progress)
         self.install_monitor_timer.start(2000)  # Start monitoring after 2s
+
+    def _set_install_button_stop(self, button: AutoSizeButton | None = None) -> None:
+        """Switch the active auto-install button to stop action."""
+        self.current_install_button = button
+        if button is None:
+            return
+
+        self.current_install_button_text = button.text()
+        self.current_install_button_icon = button.icon()
+        icon = self.theme_manager.get_icon("stop")
+        if icon:
+            button.setIcon(icon)
+        button.setText(_("Stop"))
+
+    def _reset_install_state(self) -> None:
+        """Reset auto-install process state and restore button."""
+        self.installing = False
+        self.install_stop_requested = False
+        self.current_install_script = None
+        if self.current_install_button is not None:
+            try:
+                if self.current_install_button_icon is not None:
+                    self.current_install_button.setIcon(self.current_install_button_icon)
+                if self.current_install_button_text is not None:
+                    self.current_install_button.setText(self.current_install_button_text)
+            except RuntimeError:
+                pass
+        self.current_install_button = None
+        self.current_install_button_text = None
+        self.current_install_button_icon = None
+
+    def stop_autoinstall(self) -> None:
+        """Stop current auto-install process."""
+        if not self.install_process:
+            self._reset_install_state()
+            return
+        if (
+            self.install_stop_process is not None
+            and self.install_stop_process.state() != QProcess.ProcessState.NotRunning
+        ):
+            return
+
+        self.install_stop_requested = True
+        self.update_status_message.emit(_("Stopping installation..."), 0)
+        if self.install_monitor_timer is not None:
+            self.install_monitor_timer.stop()
+        if not self.start_sh:
+            logger.warning("PortProton start command is unavailable for stop")
+            self.install_stop_requested = False
+            return
+
+        def on_stop_finished(exit_code: int, exit_status: QProcess.ExitStatus) -> None:
+            if exit_code != 0 or exit_status != QProcess.ExitStatus.NormalExit:
+                self.install_stop_requested = False
+                QMessageBox.warning(self, _("Error"), _("Failed to stop installation."))
+            if self.install_stop_process:
+                self.install_stop_process.deleteLater()
+                self.install_stop_process = None
+
+        def on_stop_error(error: QProcess.ProcessError) -> None:
+            logger.error("Failed to execute PortProton stop command: %s", error)
+            self.install_stop_requested = False
+            if self.install_stop_process:
+                self.install_stop_process.deleteLater()
+                self.install_stop_process = None
+
+        self.install_stop_process = QProcess(self)
+        self.install_stop_process.finished.connect(on_stop_finished)
+        self.install_stop_process.errorOccurred.connect(on_stop_error)
+        self.install_stop_process.start(self.start_sh[0], self.start_sh[1:] + ["cli", "--stop"])
 
     def _parse_process_log_progress(self) -> float | None:
         """Parse progress percentage from /tmp/PortProton_$USER/process.log.
@@ -553,15 +637,17 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
     @Slot(int, int)
     def on_install_finished(self, exit_code: int, exit_status: int):
         """Handle installation finish."""
-        self.installing = False
         if self.install_monitor_timer is not None:
             self.install_monitor_timer.stop()
             self.install_monitor_timer.deleteLater()
             self.install_monitor_timer = None
         self.progress_bar.setRange(0, 100)
-        self.progress_bar.setValue(100)
+        if self.install_stop_requested:
+            self.update_status_message.emit(_("Installation stopped."), 5000)
+            self.progress_bar.setValue(0)
 
-        if exit_code == 0:
+        elif exit_code == 0:
+            self.progress_bar.setValue(100)
             self.update_status_message.emit(_("Installation completed successfully."), 5000)
 
             desktop_dir = self.portproton_location or ""
@@ -577,6 +663,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 )
 
         else:
+            self.progress_bar.setValue(100)
             self.update_status_message.emit(_("Installation failed."), 5000)
             QMessageBox.warning(self, _("Error"), f"Installation failed (code: {exit_code}).")
 
@@ -584,17 +671,26 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         if self.install_process:
             self.install_process.deleteLater()
             self.install_process = None
+        self._reset_install_state()
 
     def on_install_error(self, error: QProcess.ProcessError):
         """Handle installation error."""
-        self.installing = False
         if self.install_monitor_timer is not None:
             self.install_monitor_timer.stop()
             self.install_monitor_timer.deleteLater()
             self.install_monitor_timer = None
+        if self.install_stop_requested:
+            self.update_status_message.emit(_("Installation stopped."), 5000)
+            self.progress_bar.setVisible(False)
+            if self.install_process:
+                self.install_process.deleteLater()
+                self.install_process = None
+            self._reset_install_state()
+            return
         self.update_status_message.emit(_("Installation error."), 5000)
         QMessageBox.warning(self, _("Error"), f"Process error: {error}")
         self.progress_bar.setVisible(False)
+        self._reset_install_state()
 
     @Slot(list)
     def on_games_loaded(self, games: list[tuple]):
@@ -3291,33 +3387,24 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         if not getattr(self, "_animated_covers_suspended", False):
             self.input_manager.resume_gamepad_polling()
 
-    def stop_running_game(self, button=None) -> bool:
-        """Stop current game via PortProton CLI stop command."""
+    def _run_portproton_stop_command(self) -> bool:
+        """Run PortProton CLI stop command."""
         if not self.start_sh:
             logger.warning("PortProton start command is unavailable for stop")
             return False
 
+        if not QProcess.startDetached(self.start_sh[0], self.start_sh[1:] + ["cli", "--stop"]):
+            logger.error("Failed to execute PortProton stop command")
+            return False
+
+        return True
+
+    def stop_running_game(self, button=None) -> bool:
+        """Stop current game via PortProton CLI stop command."""
         if button is not None:
             self.current_running_button = button
 
-        try:
-            result = subprocess.run(
-                self.start_sh + ["cli", "--stop"],
-                capture_output=True,
-                text=True,
-                check=False,
-                timeout=30,
-            )
-        except (OSError, subprocess.SubprocessError) as e:
-            logger.error("Failed to execute PortProton stop command: %s", e)
-            return False
-
-        if result.returncode != 0:
-            logger.warning(
-                "PortProton stop command failed with code %s: %s",
-                result.returncode,
-                result.stderr.strip(),
-            )
+        if not self._run_portproton_stop_command():
             return False
 
         self.game_processes = []
@@ -3911,6 +3998,10 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         if self.game_processes:
             if not self.stop_running_game():
                 logger.warning("Failed to stop running game during application shutdown")
+
+        if self.install_process and self.install_process.state() != QProcess.ProcessState.NotRunning:
+            if not self._run_portproton_stop_command():
+                logger.warning("Failed to stop installation during application shutdown")
 
         self._cleanup_iso_rw_paths()
         self._stopBackgroundWorkers()

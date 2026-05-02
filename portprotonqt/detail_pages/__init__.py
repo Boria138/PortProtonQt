@@ -836,7 +836,9 @@ class DetailPageManager:
     ) -> AutoSizeButton:
         """Create install button for auto-install page."""
         install_button = self._make_action_button(_("Install"), self.main_window.theme_manager.get_icon("save"))
-        install_button.clicked.connect(lambda: self.main_window.launch_autoinstall(script_name))
+        install_button.clicked.connect(
+            lambda: self.main_window.launch_autoinstall(script_name, install_button)
+        )
         buttons_layout.addWidget(install_button)
 
         self._check_install_status(script_name, name, install_button)
@@ -848,6 +850,16 @@ class DetailPageManager:
     ) -> None:
         """Check install status asynchronously and update button."""
         def on_result(is_installed: bool) -> None:
+            if (
+                self.main_window.installing
+                and self.main_window.current_install_script == script_name
+            ):
+                icon = self.main_window.theme_manager.get_icon("stop")
+                if icon:
+                    install_button.setIcon(icon)
+                install_button.setText(_("Stop"))
+                return
+
             text = _("Reinstall") if is_installed else _("Install")
             icon_name = "update" if is_installed else "save"
             icon = self.main_window.theme_manager.get_icon(icon_name)
