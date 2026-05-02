@@ -5,6 +5,7 @@ import subprocess
 
 from portprotonqt.logger import get_logger
 from portprotonqt.config import get_portproton_location, get_portproton_scripts_path
+from portprotonqt.settings_manager import resolve_lg_wine_alias
 
 logger = get_logger(__name__)
 
@@ -159,7 +160,8 @@ def get_vulkan_use_info(portproton_path: str, exe_path: str | None = None) -> st
 def get_wine_version(portproton_path: str, exe_path: str | None = None) -> str:
     """Get Wine/Proton version in use."""
     env_vars = get_portproton_env(exe_path)
-    return env_vars.get("PW_WINE_USE", "Unknown")
+    wine_version = env_vars.get("PW_WINE_USE", "Unknown")
+    return resolve_lg_wine_alias(wine_version, env_vars)
 
 
 def get_d3d_extras_status(portproton_path: str, exe_path: str | None = None) -> str:

@@ -1,6 +1,44 @@
 import os
 import subprocess
 
+from portprotonqt.logger import get_logger
+
+logger = get_logger(__name__)
+LG_WINE_ALIASES = (
+    ("PROTON_LG", "PW_PROTON_LG_VER"),
+    ("WINE_LG", "PW_WINE_LG_VER"),
+)
+
+
+def read_lg_dist_versions_from_var(var_path: str) -> dict[str, str]:
+    """Read Proton/Wine LG dist versions from scripts/var."""
+    if not os.path.exists(var_path):
+        return {}
+
+    versions: dict[str, str] = {}
+    try:
+        with open(var_path, encoding="utf-8") as var_file:
+            for line in var_file:
+                line_stripped = line.strip()
+                for wine_alias, version_key in LG_WINE_ALIASES:
+                    prefix = f"export {version_key}="
+                    if line_stripped.startswith(prefix):
+                        value = line_stripped[len(prefix):].strip().strip('"\'')
+                        if value:
+                            versions[wine_alias] = value
+    except OSError as exc:
+        logger.warning("Failed to read LG versions from %s: %s", var_path, exc)
+
+    return versions
+
+
+def resolve_lg_wine_alias(wine_version: str, env_vars: dict[str, str]) -> str:
+    for wine_alias, version_key in LG_WINE_ALIASES:
+        if wine_version == wine_alias:
+            return env_vars.get(version_key, wine_version)
+
+    return wine_version
+
 
 def get_available_locale_options() -> list[str]:
     """Get locale options based on locales available in the system."""
