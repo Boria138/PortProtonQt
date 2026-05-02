@@ -9,6 +9,29 @@ from portprotonqt.debug_utils.env_utils import get_file_content
 
 logger = get_logger(__name__)
 
+_DUPLICATE_LOG_VARS = {
+    "PW_SCREEN_PRIMARY",
+    "PW_SCREEN_RESOLUTION",
+    "PW_WINE_USE",
+}
+
+
+def _get_export_key(line: str) -> str:
+    stripped_line = line.strip()
+    if stripped_line.startswith("export "):
+        stripped_line = stripped_line[7:].strip()
+    if "=" not in stripped_line:
+        return ""
+    return stripped_line.split("=", 1)[0].strip()
+
+
+def _filter_duplicate_log_vars(content: str) -> str:
+    lines = []
+    for line in content.split("\n"):
+        if _get_export_key(line) not in _DUPLICATE_LOG_VARS:
+            lines.append(line)
+    return "\n".join(lines).strip()
+
 
 def get_ppdb_content(exe_path: str | None, start_cmd: list[str] | None = None) -> str:
     """Get content of PPDB file for the executable."""
@@ -29,7 +52,7 @@ def get_ppdb_content(exe_path: str | None, start_cmd: list[str] | None = None) -
                 if os.path.exists(default_ppdb_path):
                     content = get_file_content(default_ppdb_path)
 
-    return content if content else ""
+    return _filter_duplicate_log_vars(content) if content else ""
 
 
 def get_user_overrides(portproton_path: str) -> str:
@@ -48,10 +71,15 @@ def get_user_overrides(portproton_path: str) -> str:
     for line in content.split("\n"):
         line = line.strip()
         if line and not line.startswith("#") and "bash" not in line.lower():
+            if _get_export_key(line) in _DUPLICATE_LOG_VARS:
+                continue
             if line.startswith("export "):
                 lines.append(line)
             else:
                 lines.append(f"export {line}")
+
+    if len(lines) == 1:
+        return ""
 
     return "\n".join(lines)
 
