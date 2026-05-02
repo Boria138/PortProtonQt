@@ -10,7 +10,7 @@ import pygame
 from pygame._sdl2 import controller
 from evdev import UInput, ecodes
 from enum import Enum
-from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea, QLineEdit, QDialog, QMenu, QComboBox, QListView, QMessageBox, QListWidget, QTableWidget, QAbstractItemView, QSlider, QCheckBox, QPushButton
+from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea, QAbstractScrollArea, QLineEdit, QDialog, QMenu, QComboBox, QListView, QMessageBox, QListWidget, QTableWidget, QAbstractItemView, QSlider, QCheckBox, QPushButton
 from PySide6.QtCore import Qt, QObject, QEvent, QPoint, Signal, Slot, QTimer, QThread
 from PySide6.QtGui import QKeyEvent, QMouseEvent
 from portprotonqt.logger import get_logger
@@ -3109,6 +3109,16 @@ class InputManager(QObject):
                     break
                 parent = parent.parent()
             if isinstance(combo, QComboBox) and not combo.view().isVisible():
+                # Ищем родительский QAbstractScrollArea
+                scrollable = combo.parent()
+                while scrollable:
+                    if isinstance(scrollable, QAbstractScrollArea):
+                        old_focus = QApplication.focusWidget()
+                        QApplication.sendEvent(scrollable.viewport(), event)
+                        if old_focus:
+                            old_focus.setFocus()
+                        return True
+                    scrollable = scrollable.parent()
                 return True
 
         if event.type() == QEvent.Type.MouseButtonPress:
