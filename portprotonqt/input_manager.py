@@ -3109,7 +3109,7 @@ class InputManager(QObject):
                     break
                 parent = parent.parent()
             if isinstance(combo, QComboBox) and not combo.view().isVisible():
-                # Ищем родительский QAbstractScrollArea
+                # Find parent scroll area
                 scrollable = combo.parent()
                 while scrollable:
                     if isinstance(scrollable, QAbstractScrollArea):
