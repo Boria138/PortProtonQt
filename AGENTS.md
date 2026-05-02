@@ -161,6 +161,8 @@ QColor(self.theme.color_disabled_text)
 - Do not change public APIs without reason
 - Do not add dependencies unless required
 - Do not refactor unrelated code
+- Do not modify localization files (`portprotonqt/locales/`) unless explicitly requested
+- Do not extract single-use logic into a helper function without a clear need
 - Do not add comments for obvious code
 - **NEVER leave outdated comments after refactoring** (e.g., "without numpy" after numpy removal, "legacy" after rewrite)
 - **ALWAYS update or remove comments that reference removed dependencies, patterns, or context**
