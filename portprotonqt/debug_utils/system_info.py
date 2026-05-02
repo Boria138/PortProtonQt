@@ -387,7 +387,7 @@ def generate_system_info(
     lines.append("-" * 61)
 
     lines.append("Version WINE in use:")
-    lines.append(get_wine_version(portproton_path, exe_path))
+    lines.append(f"PW_WINE_USE={get_wine_version(portproton_path, exe_path)}")
     lines.append("-" * 61)
 
     lines.append("Program bit depth:")
