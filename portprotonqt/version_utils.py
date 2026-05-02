@@ -27,6 +27,16 @@ def version_sort_key(entry):
 
     # Replace underscores and spaces with hyphens for consistency
     normalized = name_lower.replace('_', '-').replace(' ', '-')
+    if normalized == 'proton-lg':
+        proton_lg_priority = 0
+    elif normalized.startswith('proton-lg-'):
+        proton_lg_priority = 1
+    elif normalized == 'wine-lg':
+        proton_lg_priority = 2
+    elif normalized.startswith('wine-lg-'):
+        proton_lg_priority = 3
+    else:
+        proton_lg_priority = 4
 
     # Extract all numeric sequences and text parts
     tokens = re.findall(r'\d+|\D+', normalized)
@@ -76,4 +86,4 @@ def version_sort_key(entry):
 
     # Return sort key: (prefix for grouping, version parts for version sorting, normalized name)
     # Use normalized name for tie-breaking to avoid issues with spaces vs underscores
-    return (prefix, version_parts, normalized)
+    return (proton_lg_priority, prefix, version_parts, normalized)

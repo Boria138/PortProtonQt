@@ -50,6 +50,7 @@ from portprotonqt.settings_manager import (
     read_lg_dist_versions_from_var,
 )
 from portprotonqt.theme_manager import ThemeManager
+from portprotonqt.version_utils import version_sort_key
 from portprotonqt.virtual_keyboard import VirtualKeyboard
 
 logger = get_logger(__name__)
@@ -144,7 +145,7 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
             if os.path.exists(dist_dir):
                 self.dist_options = sorted(
                     [f for f in os.listdir(dist_dir) if os.path.isdir(os.path.join(dist_dir, f))],
-                    key=lambda x: x.lower()
+                    key=version_sort_key
                 )
             scripts_path = get_portproton_scripts_path()
             if scripts_path:
@@ -153,6 +154,7 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
                 for version in self.lg_dist_aliases.values():
                     if version not in self.dist_options:
                         self.dist_options.append(version)
+                self.dist_options.sort(key=version_sort_key)
             prefixes_dir = os.path.join(self.portproton_path, 'prefixes')
             if os.path.exists(prefixes_dir):
                 _normalize_prefix_directories(prefixes_dir)
