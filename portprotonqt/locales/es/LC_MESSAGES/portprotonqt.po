@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-03-22 13:50+0500\n"
-"PO-Revision-Date: 2026-03-28 17:34+0000\n"
+"PO-Revision-Date: 2026-05-03 11:31+0500\n"
 "Last-Translator: Boria138 <boria138@noreply.codeberg.org>\n"
 "Language-Team: Spanish <https://translate.codeberg.org/projects/portprotonqt/"
 "portprotonqt/es/>\n"
@@ -18,12 +18,8 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.16.2\n"
+"X-Generator: Poedit 3.9\n"
 "Generated-By: Babel 2.17.0\n"
-
-#, python-brace-format
-msgid "Launch game \"{name}\" with PortProton"
-msgstr "Iniciar el juego \"{name}\" con PortProton"
 
 msgid "Error"
 msgstr "Error"
@@ -37,6 +33,70 @@ msgstr "Eliminar de Favoritos"
 msgid "Add to Favorites"
 msgstr "Añadir a Favoritos"
 
+msgid "Create Folder"
+msgstr ""
+
+msgid "Rename Folder"
+msgstr ""
+
+msgid "Delete Folder"
+msgstr ""
+
+msgid "OK"
+msgstr ""
+
+msgid "Cancel"
+msgstr ""
+
+msgid "Folder name cannot be empty"
+msgstr ""
+
+msgid "Invalid folder name"
+msgstr ""
+
+msgid "Folder Name:"
+msgstr ""
+
+#, python-brace-format
+msgid "Folder already exists: {folder_name}"
+msgstr ""
+
+#, python-brace-format
+msgid "Created folder '{folder_name}'"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to create folder: {error}"
+msgstr ""
+
+msgid "New Folder Name:"
+msgstr ""
+
+#, python-brace-format
+msgid "Renamed folder '{old_name}' to '{new_name}'"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to rename folder: {error}"
+msgstr ""
+
+msgid "Confirm Deletion"
+msgstr ""
+
+#, python-brace-format
+msgid ""
+"Are you sure you want to delete folder '{folder_name}'? This action cannot be "
+"undone."
+msgstr ""
+
+#, python-brace-format
+msgid "Deleted folder '{folder_name}'"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to delete folder: {error}"
+msgstr ""
+
 msgid "Delete from PortProton"
 msgstr "Eliminar de PortProton"
 
@@ -46,16 +106,16 @@ msgstr "Detener juego"
 msgid "Launch Game"
 msgstr "Iniciar juego"
 
-msgid "Import to Legendary"
-msgstr ""
-
-msgid "Open Game Folder"
-msgstr ""
-
 msgid "Remove from Desktop"
 msgstr ""
 
 msgid "Add to Desktop"
+msgstr ""
+
+msgid "Edit Shortcut"
+msgstr ""
+
+msgid "Open Game Folder"
 msgstr ""
 
 msgid "Remove from Menu"
@@ -64,59 +124,17 @@ msgstr ""
 msgid "Add to Menu"
 msgstr ""
 
-msgid "Edit Shortcut"
+msgid "Remove from Steam"
+msgstr ""
+
+msgid "Add to Steam"
 msgstr ""
 
 #, python-brace-format
 msgid "Stopped '{game_name}'"
 msgstr ""
 
-#, fuzzy
 msgid "Failed to stop game"
-msgstr "Detener juego"
-
-#, python-brace-format
-msgid "Legendary executable not found at {path}"
-msgstr ""
-
-msgid "Success"
-msgstr ""
-
-#, python-brace-format
-msgid ""
-"'{game_name}' was added to Steam. Please restart Steam for changes to "
-"take effect."
-msgstr ""
-
-#, python-brace-format
-msgid "'{game_name}' was added to Steam."
-msgstr ""
-
-#, python-brace-format
-msgid "Executable not found for game: {game_name}"
-msgstr ""
-
-#, python-brace-format
-msgid "Opened folder for '{game_name}'"
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to open folder: {error}"
-msgstr ""
-
-msgid "No folder selected"
-msgstr ""
-
-#, python-brace-format
-msgid "Imported '{game_name}' to Legendary"
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to import '{game_name}' to Legendary: {error}"
-msgstr ""
-
-#, python-brace-format
-msgid "Importing '{game_name}' to Legendary..."
 msgstr ""
 
 #, python-brace-format
@@ -125,36 +143,6 @@ msgstr ""
 
 #, python-brace-format
 msgid "Removed '{game_name}' from favorites"
-msgstr ""
-
-#, python-brace-format
-msgid "start.sh not found at {path}"
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to create .desktop file: {error}"
-msgstr ""
-
-#, python-brace-format
-msgid "Added '{game_name}' to {location}"
-msgstr ""
-
-msgid "Desktop"
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to add '{game_name}' to {location}: {error}"
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to remove '{game_name}' from {location}: {error}"
-msgstr ""
-
-#, python-brace-format
-msgid "Removed '{game_name}' from {location}"
-msgstr ""
-
-msgid "Menu"
 msgstr ""
 
 #, python-brace-format
@@ -173,13 +161,10 @@ msgstr ""
 msgid "No .desktop file found for '{game_name}'"
 msgstr ""
 
-msgid "Confirm Deletion"
-msgstr ""
-
 #, python-brace-format
 msgid ""
-"Are you sure you want to delete '{game_name}'? This will remove the "
-".desktop file and custom data."
+"Are you sure you want to delete '{game_name}'? This will remove the .desktop "
+"file and custom data."
 msgstr ""
 
 msgid "Yes"
@@ -202,6 +187,28 @@ msgstr ""
 
 #, python-brace-format
 msgid "Added '{game_name}' successfully"
+msgstr ""
+
+#, python-brace-format
+msgid "Added '{game_name}' to {location}"
+msgstr ""
+
+msgid "Menu"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to add '{game_name}' to {location}: {error}"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to remove '{game_name}' from {location}: {error}"
+msgstr ""
+
+#, python-brace-format
+msgid "Removed '{game_name}' from {location}"
+msgstr ""
+
+msgid "Desktop"
 msgstr ""
 
 msgid "Game name and executable path are required"
@@ -230,14 +237,27 @@ msgstr ""
 msgid "Unsupported image format: {extension}"
 msgstr ""
 
+msgid "Success"
+msgstr ""
+
+#, python-brace-format
+msgid ""
+"'{game_name}' was added to Steam. Please restart Steam for changes to take "
+"effect."
+msgstr ""
+
+#, python-brace-format
+msgid "'{game_name}' was added to Steam."
+msgstr ""
+
 #, python-brace-format
 msgid "Failed to add '{game_name}' to Steam: {error}"
 msgstr ""
 
 #, python-brace-format
 msgid ""
-"'{game_name}' was removed from Steam. Please restart Steam for changes to"
-" take effect."
+"'{game_name}' was removed from Steam. Please restart Steam for changes to take "
+"effect."
 msgstr ""
 
 #, python-brace-format
@@ -246,6 +266,14 @@ msgstr ""
 
 #, python-brace-format
 msgid "Failed to remove game '{game_name}' from Steam: {error}"
+msgstr ""
+
+#, python-brace-format
+msgid "Opened folder for '{game_name}'"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to open folder: {error}"
 msgstr ""
 
 msgid "Undo"
@@ -267,15 +295,6 @@ msgid "Delete"
 msgstr ""
 
 msgid "Select All"
-msgstr ""
-
-msgid "Loading Epic Games Store games..."
-msgstr ""
-
-msgid "Never"
-msgstr ""
-
-msgid "No description available"
 msgstr ""
 
 msgid "Supported"
@@ -314,6 +333,9 @@ msgstr ""
 msgid "Starting PortProton..."
 msgstr ""
 
+msgid "Downloading Wine..."
+msgstr ""
+
 msgid "Library"
 msgstr ""
 
@@ -345,6 +367,31 @@ msgstr ""
 msgid "Processed {} installation..."
 msgstr ""
 
+msgid "Extracting"
+msgstr ""
+
+msgid "Downloading"
+msgstr ""
+
+#, python-brace-format
+msgid "{0} Plugins..."
+msgstr ""
+
+#, python-brace-format
+msgid "{0} Libs..."
+msgstr ""
+
+#, python-brace-format
+msgid "{0} Wine..."
+msgstr ""
+
+#, python-brace-format
+msgid "{0} components..."
+msgstr ""
+
+msgid "Preparing PortProton..."
+msgstr ""
+
 msgid "Installation completed successfully."
 msgstr ""
 
@@ -361,6 +408,9 @@ msgid "Game library refreshed"
 msgstr ""
 
 msgid "Loading Steam games..."
+msgstr ""
+
+msgid "Never"
 msgstr ""
 
 msgid "Loading PortProton games..."
@@ -553,13 +603,7 @@ msgstr ""
 msgid "Gamepad Settings"
 msgstr ""
 
-msgid "Gamepad Type:"
-msgstr ""
-
 msgid "Auto Fullscreen on Gamepad connected"
-msgstr ""
-
-msgid "Gamepad haptic feedback"
 msgstr ""
 
 msgid "Hardware Settings"
@@ -598,6 +642,9 @@ msgstr ""
 msgid "Reset Settings"
 msgstr ""
 
+msgid "Migrate legacy shortcuts"
+msgstr ""
+
 msgid "Clear Cache"
 msgstr ""
 
@@ -608,6 +655,13 @@ msgid "Are you sure you want to reset all settings? This action cannot be undone
 msgstr ""
 
 msgid "Settings reset. Restarting..."
+msgstr ""
+
+msgid "Migrate old PortProton shortcuts to PortProtonQt format?"
+msgstr ""
+
+#, python-brace-format
+msgid "Migrated legacy shortcuts: {count}"
 msgstr ""
 
 msgid "Confirm Clear Cache"
@@ -661,10 +715,6 @@ msgstr ""
 msgid "Executable not found: {0}"
 msgstr ""
 
-#, python-brace-format
-msgid "Downloading Wine... {0}%"
-msgstr ""
-
 msgid "Stop"
 msgstr ""
 
@@ -678,44 +728,48 @@ msgstr ""
 msgid "Prefix '{0}' was not found. Install recommended libraries?"
 msgstr ""
 
-#, python-brace-format
-msgid "Executable not found for EGS game: {0}"
+msgid "Invalid command format (empty exec line)"
 msgstr ""
 
-msgid "Cannot launch game while another game is running"
+msgid "Invalid command format (silent)"
 msgstr ""
 
 #, python-brace-format
 msgid "Failed to launch game: {0}"
 msgstr ""
 
-msgid "Invalid command format (empty exec line)"
-msgstr ""
-
-msgid "Invalid command format (native)"
-msgstr ""
-
-msgid "Invalid command format (flatpak)"
+msgid "PortProton start script not found"
 msgstr ""
 
 #, python-brace-format
 msgid "File not found: {0}"
 msgstr ""
 
+msgid "Cannot launch game while another game is running"
+msgstr ""
+
+msgid "Choose PortProton data folder"
+msgstr ""
+
+msgid ""
+"Selected folder is on an unsupported filesystem. Choose another folder for "
+"PortProton data."
+msgstr ""
+
 msgid "Select file for PPDB download"
 msgstr ""
 
 msgid ""
-"Enable vkBasalt by default to improve graphics in games running on "
-"Vulkan. (The HOME hotkey disables vkbasalt)"
+"Enable vkBasalt by default to improve graphics in games running on Vulkan. (The "
+"HOME hotkey disables vkbasalt)"
 msgstr ""
 
 msgid "Forced use of VKBASALT system settings (GOverlay, etc.)"
 msgstr ""
 
 msgid ""
-"Enable dgVoodoo2. Forced use all dgVoodoo2 libs (Glide 2.11-3.1, "
-"DirectDraw 1-7, Direct3D 2-9) on all 3D API."
+"Enable dgVoodoo2. Forced use all dgVoodoo2 libs (Glide 2.11-3.1, DirectDraw "
+"1-7, Direct3D 2-9) on all 3D API."
 msgstr ""
 
 msgid "Enable OptiScaler (replacement upscaler / frame generator)"
@@ -809,8 +863,8 @@ msgid "Use bundled dxvk/vkd3d from Wine/Proton"
 msgstr ""
 
 msgid ""
-"Prevent the system from going to sleep and disable the screensaver while "
-"the game is running"
+"Prevent the system from going to sleep and disable the screensaver while the "
+"game is running"
 msgstr ""
 
 msgid "Use container launch mode (recommended default)"
@@ -843,12 +897,11 @@ msgstr ""
 msgid ""
 "Select the DirectX → Vulkan/OpenGL backend:\n"
 "\n"
-"• Newest – latest DXVK + VKD3D (best compatibility/performance, requires "
-"modern drivers: AMD Mesa 25+, NVIDIA 550.54.14+, Intel Mesa 24.2+)\n"
-"• Stable – older, well-tested DXVK + VKD3D (works on any Vulkan 1.3+ "
-"driver)\n"
-"• Sarek – experimental DXVK-Sarek + VKD3D-Sarek (supports older drivers, "
-"Vulkan 1.1+)\n"
+"• Newest – latest DXVK + VKD3D (best compatibility/performance, requires modern "
+"drivers: AMD Mesa 25+, NVIDIA 550.54.14+, Intel Mesa 24.2+)\n"
+"• Stable – older, well-tested DXVK + VKD3D (works on any Vulkan 1.3+ driver)\n"
+"• Sarek – experimental DXVK-Sarek + VKD3D-Sarek (supports older drivers, Vulkan "
+"1.1+)\n"
 "• WINED3D – OpenGL fallback (lowest performance, use only if others fail)"
 msgstr ""
 
@@ -856,8 +909,8 @@ msgid "Windows version"
 msgstr ""
 
 msgid ""
-"Changing the WINDOWS emulation version may be required to run older "
-"games. WINDOWS versions below 10 do not support new games with DirectX 12"
+"Changing the WINDOWS emulation version may be required to run older games. "
+"WINDOWS versions below 10 do not support new games with DirectX 12"
 msgstr ""
 
 msgid "DLL Overrides"
@@ -882,8 +935,8 @@ msgid "Launch Arguments"
 msgstr ""
 
 msgid ""
-"Adding an argument after the .exe file, just like you would add an "
-"argument in a shortcut on a WINDOWS system.\n"
+"Adding an argument after the .exe file, just like you would add an argument in "
+"a shortcut on a WINDOWS system.\n"
 "\n"
 "Example: -dx11 -skipintro 1"
 msgstr ""
@@ -898,8 +951,8 @@ msgid "CPU Cores Limit"
 msgstr ""
 
 msgid ""
-"Limiting the number of CPU cores is useful for Unity games (It is "
-"recommended to set the value equal to 8)"
+"Limiting the number of CPU cores is useful for Unity games (It is recommended "
+"to set the value equal to 8)"
 msgstr ""
 
 msgid "OpenGL Version"
@@ -930,18 +983,16 @@ msgid ""
 "fifo - First in, first out. Limits the frame rate + no tearing. (VSync)\n"
 "immediate - Unlimited frame rate + tearing.\n"
 "mailbox - Triple buffering. Unlimited frame rate + no tearing.\n"
-"relaxed - Same as fifo but allows tearing when below the monitors refresh"
-" rate."
+"relaxed - Same as fifo but allows tearing when below the monitors refresh rate."
 msgstr ""
 
 msgid "NUMA Node"
 msgstr ""
 
 msgid ""
-"NUMA node for CPU affinity. In multi-core systems, CPUs are split into "
-"NUMA nodes, each with its own local memory and cores. Binding a game to a"
-" single node reduces memory-access latency and limits costly core-to-core"
-" switches."
+"NUMA node for CPU affinity. In multi-core systems, CPUs are split into NUMA "
+"nodes, each with its own local memory and cores. Binding a game to a single "
+"node reduces memory-access latency and limits costly core-to-core switches."
 msgstr ""
 
 msgid "just now"
@@ -976,6 +1027,10 @@ msgstr ""
 
 msgid "No recent games"
 msgstr ""
+
+#, python-brace-format
+msgid "Launch game \"{name}\" with PortProton"
+msgstr "Iniciar el juego \"{name}\" con PortProton"
 
 msgid "Debug log mode was launched"
 msgstr ""
@@ -1046,9 +1101,6 @@ msgstr ""
 
 #, python-brace-format
 msgid "Launching {0}"
-msgstr ""
-
-msgid "Cancel"
 msgstr ""
 
 msgid "Game Name:"
@@ -1462,8 +1514,8 @@ msgid "Grab the keyboard"
 msgstr ""
 
 msgid ""
-"Force grab cursor: always use relative mouse mode instead of switching "
-"with cursor visibility"
+"Force grab cursor: always use relative mouse mode instead of switching with "
+"cursor visibility"
 msgstr ""
 
 msgid "Support Wayland clients using xdg-shell"
@@ -1475,8 +1527,7 @@ msgid ""
 msgstr ""
 
 msgid ""
-"Enable HDR output (needs Gamescope WSI layer enabled for support from "
-"clients)"
+"Enable HDR output (needs Gamescope WSI layer enabled for support from clients)"
 msgstr ""
 
 msgid "Enable SDR->HDR inverse tone mapping. only works for SDR input"
@@ -2065,9 +2116,8 @@ msgstr ""
 msgid "Enter password for: {0}"
 msgstr ""
 
-#, fuzzy
 msgid "Storage"
-msgstr "Detener juego"
+msgstr ""
 
 msgid "Audio"
 msgstr ""
@@ -2137,4 +2187,3 @@ msgstr ""
 
 msgid "Not selected"
 msgstr ""
-

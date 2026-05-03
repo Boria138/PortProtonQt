@@ -19,10 +19,6 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
 
-#, python-brace-format
-msgid "Launch game \"{name}\" with PortProton"
-msgstr ""
-
 msgid "Error"
 msgstr ""
 
@@ -35,6 +31,70 @@ msgstr ""
 msgid "Add to Favorites"
 msgstr ""
 
+msgid "Create Folder"
+msgstr ""
+
+msgid "Rename Folder"
+msgstr ""
+
+msgid "Delete Folder"
+msgstr ""
+
+msgid "OK"
+msgstr ""
+
+msgid "Cancel"
+msgstr ""
+
+msgid "Folder name cannot be empty"
+msgstr ""
+
+msgid "Invalid folder name"
+msgstr ""
+
+msgid "Folder Name:"
+msgstr ""
+
+#, python-brace-format
+msgid "Folder already exists: {folder_name}"
+msgstr ""
+
+#, python-brace-format
+msgid "Created folder '{folder_name}'"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to create folder: {error}"
+msgstr ""
+
+msgid "New Folder Name:"
+msgstr ""
+
+#, python-brace-format
+msgid "Renamed folder '{old_name}' to '{new_name}'"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to rename folder: {error}"
+msgstr ""
+
+msgid "Confirm Deletion"
+msgstr ""
+
+#, python-brace-format
+msgid ""
+"Are you sure you want to delete folder '{folder_name}'? This action "
+"cannot be undone."
+msgstr ""
+
+#, python-brace-format
+msgid "Deleted folder '{folder_name}'"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to delete folder: {error}"
+msgstr ""
+
 msgid "Delete from PortProton"
 msgstr ""
 
@@ -44,16 +104,16 @@ msgstr ""
 msgid "Launch Game"
 msgstr ""
 
-msgid "Import to Legendary"
-msgstr ""
-
-msgid "Open Game Folder"
-msgstr ""
-
 msgid "Remove from Desktop"
 msgstr ""
 
 msgid "Add to Desktop"
+msgstr ""
+
+msgid "Edit Shortcut"
+msgstr ""
+
+msgid "Open Game Folder"
 msgstr ""
 
 msgid "Remove from Menu"
@@ -62,7 +122,10 @@ msgstr ""
 msgid "Add to Menu"
 msgstr ""
 
-msgid "Edit Shortcut"
+msgid "Remove from Steam"
+msgstr ""
+
+msgid "Add to Steam"
 msgstr ""
 
 #, python-brace-format
@@ -73,85 +136,11 @@ msgid "Failed to stop game"
 msgstr ""
 
 #, python-brace-format
-msgid "Legendary executable not found at {path}"
-msgstr ""
-
-msgid "Success"
-msgstr ""
-
-#, python-brace-format
-msgid ""
-"'{game_name}' was added to Steam. Please restart Steam for changes to "
-"take effect."
-msgstr ""
-
-#, python-brace-format
-msgid "'{game_name}' was added to Steam."
-msgstr ""
-
-#, python-brace-format
-msgid "Executable not found for game: {game_name}"
-msgstr ""
-
-#, python-brace-format
-msgid "Opened folder for '{game_name}'"
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to open folder: {error}"
-msgstr ""
-
-msgid "No folder selected"
-msgstr ""
-
-#, python-brace-format
-msgid "Imported '{game_name}' to Legendary"
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to import '{game_name}' to Legendary: {error}"
-msgstr ""
-
-#, python-brace-format
-msgid "Importing '{game_name}' to Legendary..."
-msgstr ""
-
-#, python-brace-format
 msgid "Added '{game_name}' to favorites"
 msgstr ""
 
 #, python-brace-format
 msgid "Removed '{game_name}' from favorites"
-msgstr ""
-
-#, python-brace-format
-msgid "start.sh not found at {path}"
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to create .desktop file: {error}"
-msgstr ""
-
-#, python-brace-format
-msgid "Added '{game_name}' to {location}"
-msgstr ""
-
-msgid "Desktop"
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to add '{game_name}' to {location}: {error}"
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to remove '{game_name}' from {location}: {error}"
-msgstr ""
-
-#, python-brace-format
-msgid "Removed '{game_name}' from {location}"
-msgstr ""
-
-msgid "Menu"
 msgstr ""
 
 #, python-brace-format
@@ -168,9 +157,6 @@ msgstr ""
 
 #, python-brace-format
 msgid "No .desktop file found for '{game_name}'"
-msgstr ""
-
-msgid "Confirm Deletion"
 msgstr ""
 
 #, python-brace-format
@@ -201,6 +187,28 @@ msgstr ""
 msgid "Added '{game_name}' successfully"
 msgstr ""
 
+#, python-brace-format
+msgid "Added '{game_name}' to {location}"
+msgstr ""
+
+msgid "Menu"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to add '{game_name}' to {location}: {error}"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to remove '{game_name}' from {location}: {error}"
+msgstr ""
+
+#, python-brace-format
+msgid "Removed '{game_name}' from {location}"
+msgstr ""
+
+msgid "Desktop"
+msgstr ""
+
 msgid "Game name and executable path are required"
 msgstr ""
 
@@ -227,6 +235,19 @@ msgstr ""
 msgid "Unsupported image format: {extension}"
 msgstr ""
 
+msgid "Success"
+msgstr ""
+
+#, python-brace-format
+msgid ""
+"'{game_name}' was added to Steam. Please restart Steam for changes to "
+"take effect."
+msgstr ""
+
+#, python-brace-format
+msgid "'{game_name}' was added to Steam."
+msgstr ""
+
 #, python-brace-format
 msgid "Failed to add '{game_name}' to Steam: {error}"
 msgstr ""
@@ -243,6 +264,14 @@ msgstr ""
 
 #, python-brace-format
 msgid "Failed to remove game '{game_name}' from Steam: {error}"
+msgstr ""
+
+#, python-brace-format
+msgid "Opened folder for '{game_name}'"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to open folder: {error}"
 msgstr ""
 
 msgid "Undo"
@@ -264,15 +293,6 @@ msgid "Delete"
 msgstr ""
 
 msgid "Select All"
-msgstr ""
-
-msgid "Loading Epic Games Store games..."
-msgstr ""
-
-msgid "Never"
-msgstr ""
-
-msgid "No description available"
 msgstr ""
 
 msgid "Supported"
@@ -311,6 +331,9 @@ msgstr ""
 msgid "Starting PortProton..."
 msgstr ""
 
+msgid "Downloading Wine..."
+msgstr ""
+
 msgid "Library"
 msgstr ""
 
@@ -342,6 +365,31 @@ msgstr ""
 msgid "Processed {} installation..."
 msgstr ""
 
+msgid "Extracting"
+msgstr ""
+
+msgid "Downloading"
+msgstr ""
+
+#, python-brace-format
+msgid "{0} Plugins..."
+msgstr ""
+
+#, python-brace-format
+msgid "{0} Libs..."
+msgstr ""
+
+#, python-brace-format
+msgid "{0} Wine..."
+msgstr ""
+
+#, python-brace-format
+msgid "{0} components..."
+msgstr ""
+
+msgid "Preparing PortProton..."
+msgstr ""
+
 msgid "Installation completed successfully."
 msgstr ""
 
@@ -358,6 +406,9 @@ msgid "Game library refreshed"
 msgstr ""
 
 msgid "Loading Steam games..."
+msgstr ""
+
+msgid "Never"
 msgstr ""
 
 msgid "Loading PortProton games..."
@@ -550,13 +601,7 @@ msgstr ""
 msgid "Gamepad Settings"
 msgstr ""
 
-msgid "Gamepad Type:"
-msgstr ""
-
 msgid "Auto Fullscreen on Gamepad connected"
-msgstr ""
-
-msgid "Gamepad haptic feedback"
 msgstr ""
 
 msgid "Hardware Settings"
@@ -595,6 +640,9 @@ msgstr ""
 msgid "Reset Settings"
 msgstr ""
 
+msgid "Migrate legacy shortcuts"
+msgstr ""
+
 msgid "Clear Cache"
 msgstr ""
 
@@ -605,6 +653,13 @@ msgid "Are you sure you want to reset all settings? This action cannot be undone
 msgstr ""
 
 msgid "Settings reset. Restarting..."
+msgstr ""
+
+msgid "Migrate old PortProton shortcuts to PortProtonQt format?"
+msgstr ""
+
+#, python-brace-format
+msgid "Migrated legacy shortcuts: {count}"
 msgstr ""
 
 msgid "Confirm Clear Cache"
@@ -658,10 +713,6 @@ msgstr ""
 msgid "Executable not found: {0}"
 msgstr ""
 
-#, python-brace-format
-msgid "Downloading Wine... {0}%"
-msgstr ""
-
 msgid "Stop"
 msgstr ""
 
@@ -675,28 +726,32 @@ msgstr ""
 msgid "Prefix '{0}' was not found. Install recommended libraries?"
 msgstr ""
 
-#, python-brace-format
-msgid "Executable not found for EGS game: {0}"
+msgid "Invalid command format (empty exec line)"
 msgstr ""
 
-msgid "Cannot launch game while another game is running"
+msgid "Invalid command format (silent)"
 msgstr ""
 
 #, python-brace-format
 msgid "Failed to launch game: {0}"
 msgstr ""
 
-msgid "Invalid command format (empty exec line)"
-msgstr ""
-
-msgid "Invalid command format (native)"
-msgstr ""
-
-msgid "Invalid command format (flatpak)"
+msgid "PortProton start script not found"
 msgstr ""
 
 #, python-brace-format
 msgid "File not found: {0}"
+msgstr ""
+
+msgid "Cannot launch game while another game is running"
+msgstr ""
+
+msgid "Choose PortProton data folder"
+msgstr ""
+
+msgid ""
+"Selected folder is on an unsupported filesystem. Choose another folder "
+"for PortProton data."
 msgstr ""
 
 msgid "Select file for PPDB download"
@@ -974,6 +1029,10 @@ msgstr ""
 msgid "No recent games"
 msgstr ""
 
+#, python-brace-format
+msgid "Launch game \"{name}\" with PortProton"
+msgstr ""
+
 msgid "Debug log mode was launched"
 msgstr ""
 
@@ -1043,9 +1102,6 @@ msgstr ""
 
 #, python-brace-format
 msgid "Launching {0}"
-msgstr ""
-
-msgid "Cancel"
 msgstr ""
 
 msgid "Game Name:"
