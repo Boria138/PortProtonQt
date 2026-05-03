@@ -105,7 +105,10 @@ class PygameGamepad:
 
     def close(self) -> None:
         """Release local references for the SDL joystick object."""
-        return
+        try:
+            self.controller.quit()
+        except (AttributeError, pygame.error) as e:
+            logger.debug("Failed to close pygame controller: %s", e)
 
 
 SDL_CONTROLLER_BUTTON_TO_ECODE = {
@@ -263,6 +266,7 @@ class InputManager(QObject):
         self._button_states: dict[int, int] = {}
         self._hat_states: dict[int, tuple[int, int]] = {}
         self._axis_states: dict[int, int] = {}
+        self._gamepad_polling_suspended = False
 
         # Focus check timer for emulation flag (runs in main thread)
         self.focus_check_timer = QTimer(self)
@@ -2267,6 +2271,19 @@ class InputManager(QObject):
         """Enable gamepad event handling."""
         self._gamepad_handling_enabled = True
 
+    def suspend_gamepad_polling(self) -> None:
+        """Release the SDL controller while an external game is running."""
+        self._gamepad_polling_suspended = True
+        if self.gamepad:
+            self.gamepad.close()
+            self.gamepad = None
+        self._reset_pygame_state()
+
+    def resume_gamepad_polling(self) -> None:
+        """Resume SDL controller polling after the external game exits."""
+        self._gamepad_polling_suspended = False
+        self.check_gamepad()
+
     def _handle_guide_timeout(self) -> None:
         if self.guide_held:
             time_since_guide = time.time() - self.guide_pressed_time
@@ -3400,6 +3417,8 @@ class InputManager(QObject):
 
     def _on_gamepad_hotplug(self, action: str) -> None:
         try:
+            if self._gamepad_polling_suspended:
+                return
             if action == 'add':
                 self.check_gamepad()
             elif action == 'remove':
@@ -3419,6 +3438,8 @@ class InputManager(QObject):
 
     def check_gamepad(self) -> None:
         try:
+            if self._gamepad_polling_suspended:
+                return
             new_gamepad = self.find_gamepad()
 
             if new_gamepad:
@@ -3500,7 +3521,11 @@ class InputManager(QObject):
             for index in range(controller_count):
                 if not controller.is_controller(index):
                     continue
-                game_controller = controller.Controller(index)
+                try:
+                    game_controller = controller.Controller(index)
+                except pygame.error as e:
+                    logger.debug("Skipping unavailable controller %s: %s", index, e)
+                    continue
                 joystick = game_controller.as_joystick()
                 instance_id = joystick.get_instance_id()
                 gamepad = PygameGamepad(
@@ -3539,7 +3564,7 @@ class InputManager(QObject):
 
     def _process_pygame_events(self) -> None:
         """Handle controller add/remove events from the SDL event queue."""
-        if not self._pygame_ready:
+        if not self._pygame_ready or self._gamepad_polling_suspended:
             return
         event_types = (
             pygame.CONTROLLERDEVICEADDED,
@@ -3664,6 +3689,9 @@ class InputManager(QObject):
         try:
             while self.running:
                 current_time = time.time()
+                if self._gamepad_polling_suspended:
+                    time.sleep(0.1)
+                    continue
                 try:
                     self._process_pygame_events()
                 except Exception as ex:

@@ -3186,6 +3186,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.wine_download_percent = 0.0
         self.wine_download_status = _("Downloading Wine...")
         self.game_launch_started = False
+        self.input_manager.resume_gamepad_polling()
 
     def stop_running_game(self, button=None) -> bool:
         """Stop current game via PortProton CLI stop command."""
@@ -3532,6 +3533,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             try:
                 process = subprocess.Popen(launch_cmd, env=env_vars, shell=False, preexec_fn=os.setsid)
                 self.game_processes.append(process)
+                self.input_manager.suspend_gamepad_polling()
                 save_last_launch(exe_name, datetime.now())
                 if update_button:
                     try:
