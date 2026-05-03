@@ -71,7 +71,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
     update_status_message = Signal(str, int)
 
     def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             self.window().windowHandle().startSystemMove()
             event.accept()
 
