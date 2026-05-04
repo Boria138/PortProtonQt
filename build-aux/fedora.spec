@@ -46,10 +46,21 @@ Requires:       cabextract
 Requires:       gzip
 Requires:       unzip
 Requires:       curl
+Requires:       jq
+Requires:       file
+Requires:       findutils
+Requires:       gawk
+Requires:       grep
+Requires:       tar
+Requires:       xz
+Requires:       zstd
 Requires:       unrar
 Requires:       glx-utils
 Requires:       pciutils
 Requires:       vulkan-loader
+Requires:       procps-ng
+Requires:       psmisc
+Requires:       squashfs-tools
 Requires:       7zip
 
 # System Tab
