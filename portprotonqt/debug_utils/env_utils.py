@@ -10,6 +10,11 @@ from portprotonqt.settings_manager import resolve_lg_wine_alias
 logger = get_logger(__name__)
 
 
+def _normalize_dist_name(value: str) -> str:
+    # Match scripts behavior: trim, normalize whitespace, replace blanks with "_", uppercase.
+    return "_".join(value.split()).upper()
+
+
 def get_file_content(file_path: str, default: str = "") -> str:
     """Safely read file content, removing comments and empty lines."""
     try:
@@ -161,7 +166,11 @@ def get_wine_version(portproton_path: str, exe_path: str | None = None) -> str:
     """Get Wine/Proton version in use."""
     env_vars = get_portproton_env(exe_path)
     wine_version = env_vars.get("PW_WINE_USE", "Unknown")
-    return resolve_lg_wine_alias(wine_version, env_vars)
+    resolved_version = resolve_lg_wine_alias(wine_version, env_vars)
+    if os.path.isabs(resolved_version):
+        base_name = os.path.basename(resolved_version.rstrip(os.sep)) or resolved_version
+        return _normalize_dist_name(base_name)
+    return resolved_version
 
 
 def get_d3d_extras_status(portproton_path: str, exe_path: str | None = None) -> str:

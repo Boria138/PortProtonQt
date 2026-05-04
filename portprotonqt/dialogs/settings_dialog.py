@@ -154,7 +154,11 @@ class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
                 for version in self.lg_dist_aliases.values():
                     if version not in self.dist_options:
                         self.dist_options.append(version)
-                self.dist_options.sort(key=version_sort_key)
+            from portprotonqt.steam_api import get_steam_proton_versions
+            for version in get_steam_proton_versions():
+                if version not in self.dist_options:
+                    self.dist_options.append(version)
+            self.dist_options.sort(key=version_sort_key)
             prefixes_dir = os.path.join(self.portproton_path, 'prefixes')
             if os.path.exists(prefixes_dir):
                 _normalize_prefix_directories(prefixes_dir)

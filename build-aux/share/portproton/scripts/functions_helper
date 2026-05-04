@@ -1225,36 +1225,43 @@ init_wine_ver () {
         then export PW_WINE_USE="${PW_WINE_LG_VER}"
         fi
 
-        export WINEDIR="${PORT_DATA_PATH}/data/dist/${PW_WINE_USE}"
+        PW_EXTERNAL_WINE_DIR=0
+        if [[ "${PW_WINE_USE}" = /* ]] && [[ -d "${PW_WINE_USE}" ]] ; then
+            export WINEDIR="${PW_WINE_USE}"
+            PW_EXTERNAL_WINE_DIR=1
+        else
+            export WINEDIR="${PORT_DATA_PATH}/data/dist/${PW_WINE_USE}"
+        fi
         if [[ -d "${WINEDIR}/files" && ! -d "${WINEDIR}/dist" ]] ; then
-            export WINEDIR="${PORT_DATA_PATH}/data/dist/${PW_WINE_USE}/files"
+            export WINEDIR="${WINEDIR}/files"
         fi
         export WINE="${WINEDIR}/bin/wine"
         export WINELOADER="${WINEDIR}/bin/wine"
         export WINESERVER="${WINEDIR}/bin/wineserver"
 
         if [[ -d "${WINEDIR}" ]] ; then
-            [[ ! -f "${WINEDIR}/version" ]] && echo "${PW_WINE_USE}" > "${WINEDIR}/version"
-
             if [[ ! -d "${WINEDIR}/lib64/wine" ]] && [[ -d "${WINEDIR}/lib/wine/x86_64-unix" ]] ; then
                 create_new_dir "${WINEDIR}/lib64/"
                 try_force_link_dir "${WINEDIR}/lib/wine/" "${WINEDIR}/lib64/"
             fi
+            if [[ "${PW_EXTERNAL_WINE_DIR}" != "1" ]] ; then
+                [[ ! -f "${WINEDIR}/version" ]] && echo "${PW_WINE_USE}" > "${WINEDIR}/version"
 
-            for mono_gecko_chk in "mono" "gecko" ; do
-                if check_symlink "${WINEDIR}/share/wine/${mono_gecko_chk}" ; then
-                    print_info "${WINEDIR}/share/wine/${mono_gecko_chk} is symlink. OK."
-                elif [[ -d "${WINEDIR}/share/wine/${mono_gecko_chk}" ]] ; then
-                    try_copy_dir "${WINEDIR}/share/wine/${mono_gecko_chk}" "${PORT_WINE_TMP_PATH}"
-                    try_remove_dir "${WINEDIR}/share/wine/${mono_gecko_chk}"
-                    try_force_link_dir "${PORT_WINE_TMP_PATH}/${mono_gecko_chk}" "${WINEDIR}"/share/wine/
-                    print_info "Copy ${WINEDIR}/share/wine/${mono_gecko_chk} to tmp and create symlink to ${WINEDIR}/share/wine/. OK."
-                else
-                    try_remove_dir "${WINEDIR}/share/wine/${mono_gecko_chk}"
-                    try_force_link_dir "${PORT_WINE_TMP_PATH}/${mono_gecko_chk}" "${WINEDIR}"/share/wine
-                    print_warning "${WINEDIR}/share/wine/${mono_gecko_chk} is broken symlink. Repair... OK."
-                fi
-            done
+                for mono_gecko_chk in "mono" "gecko" ; do
+                    if check_symlink "${WINEDIR}/share/wine/${mono_gecko_chk}" ; then
+                        print_info "${WINEDIR}/share/wine/${mono_gecko_chk} is symlink. OK."
+                    elif [[ -d "${WINEDIR}/share/wine/${mono_gecko_chk}" ]] ; then
+                        try_copy_dir "${WINEDIR}/share/wine/${mono_gecko_chk}" "${PORT_WINE_TMP_PATH}"
+                        try_remove_dir "${WINEDIR}/share/wine/${mono_gecko_chk}"
+                        try_force_link_dir "${PORT_WINE_TMP_PATH}/${mono_gecko_chk}" "${WINEDIR}"/share/wine/
+                        print_info "Copy ${WINEDIR}/share/wine/${mono_gecko_chk} to tmp and create symlink to ${WINEDIR}/share/wine/. OK."
+                    else
+                        try_remove_dir "${WINEDIR}/share/wine/${mono_gecko_chk}"
+                        try_force_link_dir "${PORT_WINE_TMP_PATH}/${mono_gecko_chk}" "${WINEDIR}"/share/wine
+                        print_warning "${WINEDIR}/share/wine/${mono_gecko_chk} is broken symlink. Repair... OK."
+                    fi
+                done
+            fi
         fi
 
         WINEDLLPATH="${WINEDIR}/lib/wine"
@@ -3921,8 +3928,8 @@ steamplay_launch () {
         [[ $PW_LOG != 1 ]] && debug_timer --start -s "PW_TIME_IN_GAME"
         if [[ -x "${STEAM_COMPAT_TOOL_PATHS%%:*}/proton" ]] ; then
             proton_runner="${STEAM_COMPAT_TOOL_PATHS%%:*}/proton"
-        elif [[ -x "${PORT_DATA_PATH}/data/dist/${PW_WINE_USE}/proton" ]] ; then
-            proton_runner="${PORT_DATA_PATH}/data/dist/${PW_WINE_USE}/proton"
+        elif [[ -x "${WINEDIR}/proton" ]] ; then
+            proton_runner="${WINEDIR}/proton"
         fi
 
         # Virtual Desktop
@@ -4042,6 +4049,10 @@ gui_proton_downloader () {
     then PW_WINE_USE="${PW_WINE_LG_VER}"
     fi
     export PW_WINE_USE
+
+    if [[ "${PW_WINE_USE}" = /* ]] && [[ -d "${PW_WINE_USE}" ]] ; then
+        return 0
+    fi
 
     if [[ -f "${PORT_DATA_PATH}/data/dist/${PW_WINE_USE}/bin/wine" ]] \
     || [[ -f "${PORT_DATA_PATH}/data/dist/${PW_WINE_USE}/files/bin/wine" ]]

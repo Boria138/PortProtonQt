@@ -14,6 +14,7 @@ STEAM_DATA_DIRS = (
     "~/.local/share/Steam",
     "~/snap/steam/common/.local/share/Steam",
     "~/.var/app/com.valvesoftware.Steam/data/Steam",
+    "/usr/share/steam",
 )
 
 
@@ -175,6 +176,41 @@ def get_steam_libs(steam_dir: Path) -> set[Path]:
                     libs.add(path)
     libs.add(steam_dir)
     return libs
+
+
+def _is_steam_proton_dir(path: Path) -> bool:
+    if not path.is_dir():
+        return False
+    if path.joinpath("files", "bin", "wine").is_file():
+        return True
+    return path.joinpath("dist", "bin", "wine").is_file()
+
+
+def get_steam_proton_versions() -> list[str]:
+    """Return Steam Proton install directories usable by PortProton."""
+    roots = set()
+    steam_homes = [Path(os.path.expanduser(path)) for path in STEAM_DATA_DIRS]
+    for steam_home in steam_homes:
+        if not steam_home.exists():
+            continue
+        roots.add(steam_home / "compatibilitytools.d")
+        for steam_lib in get_steam_libs(steam_home):
+            roots.add(steam_lib / "steamapps" / "common")
+
+    versions: dict[Path, Path] = {}
+    for root in roots:
+        if not root.is_dir():
+            continue
+        try:
+            entries = root.iterdir()
+        except OSError as e:
+            logger.debug("Failed to read Steam Proton directory %s: %s", root, e)
+            continue
+        for entry in entries:
+            if _is_steam_proton_dir(entry):
+                versions[entry.resolve()] = entry.absolute()
+
+    return sorted((str(path) for path in versions.values()), key=lambda path: Path(path).name.lower())
 
 
 def get_playtime_data(steam_home: Path | None = None) -> dict[int, tuple[int, int]]:

@@ -4,6 +4,21 @@ import os
 import re
 
 
+def _normalize_dist_name(value: str) -> str:
+    # Match scripts behavior: trim, normalize whitespace, replace blanks with "_", uppercase.
+    return "_".join(value.split()).upper()
+
+
+def _strip_pw_wine_use_path(line: str) -> str:
+    match = re.match(r'^(\s*(?:export\s+)?PW_WINE_USE=)(["\']?)(/[^"\']+)(\2.*)$', line)
+    if not match:
+        return line
+
+    prefix, quote, wine_path, suffix = match.groups()
+    wine_name = os.path.basename(wine_path.rstrip(os.sep)) or wine_path
+    return f"{prefix}{quote}{_normalize_dist_name(wine_name)}{suffix}"
+
+
 def process_portproton_log(log_content: str) -> str:
     """Process PortProton log: remove duplicates, anonymize, filter noise."""
     if not log_content:
@@ -105,6 +120,6 @@ def process_portproton_log(log_content: str) -> str:
                 skip_line = True
 
         if not skip_line:
-            filtered_lines.append(line)
+            filtered_lines.append(_strip_pw_wine_use_path(line))
 
     return '\n'.join(filtered_lines)

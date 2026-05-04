@@ -162,18 +162,31 @@ def get_advanced_settings(disabled_text, logical_core_options=None, locale_optio
 
     # 1. Wine Version
     # Add System WINE option if available
-    wine_options = dist_options[:]
+    wine_options = []
+    wine_value_map = {}
+    for option in dist_options:
+        if os.path.isabs(option):
+            display_name = os.path.basename(option.rstrip(os.sep)) or option
+            if display_name in wine_options:
+                display_name = option
+            wine_value_map[display_name] = option
+            wine_options.append(display_name)
+        else:
+            wine_options.append(option)
     if shutil.which('wine') and _('System WINE') not in wine_options:
         wine_options.append(_('System WINE'))
 
-    advanced_settings.append({
+    wine_setting = {
         'key': 'PW_WINE_USE',
         'name': _("Wine Version"),
         'description': _("Select the Wine or Proton version to use for this executable."),
         'type': 'combo',
         'options': wine_options,
         'default': ''
-    })
+    }
+    if wine_value_map:
+        wine_setting['_value_map'] = wine_value_map
+    advanced_settings.append(wine_setting)
 
     # 2. Prefix Name
     advanced_settings.append({
