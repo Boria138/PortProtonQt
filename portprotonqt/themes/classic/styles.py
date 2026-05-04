@@ -111,3 +111,45 @@ PLAY_BUTTON_STYLE = f"""
         background: {color_a};
     }}
 """
+# STYLE FOR "ADD GAME" AND "BACK" BUTTONS ON DETAIL PAGE AND LIBRARY
+ADDGAME_BACK_BUTTON_STYLE = f"""
+    QPushButton {{
+        background: qradialgradient(
+            cx:0.5, cy:0.5, radius:0.8,
+            stop:0 #404554,
+            stop:1 #30323d
+        );
+        border: {border_a};
+        border-radius: {border_radius_a};
+        color: {color_f};
+        font-size: {font_size_a};
+        font-family: '{font_family}';
+        padding: 5px 10px;
+    }}
+    QPushButton:hover {{
+        background: {color_a};
+    }}
+    QPushButton:pressed {{
+        background: {color_a};
+    }}
+"""
+
+# SEARCH FIELD STYLE
+SEARCH_EDIT_STYLE = f"""
+    QLineEdit {{
+        background: {color_b};
+        border: {border_a};
+        border-radius: {border_radius_a};
+        padding: 5px 10px;
+        font-family: '{font_family}';
+        font-size: {font_size_a};
+        color: {color_f};
+        min-height: 28px;
+    }}
+    QLineEdit:hover {{
+        border: {border_b} {color_a};
+    }}
+    QLineEdit:focus {{
+        border: {border_b} {color_a};
+    }}
+"""
