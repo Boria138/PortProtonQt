@@ -40,6 +40,24 @@ GAME_CARD_ANIMATION = {
     "detail_page_easing_curve_exit": "InCubic",
 }
 
+# VARS
+font_family = "Play"
+font_size_a = "16px"
+font_size_b = "24px"
+border_a = "0px solid"
+border_b = "1px solid"
+border_c = "2px solid"
+border_radius_a = "10px"
+border_radius_b = "15px"
+color_a = "#409EFF"
+color_b = "#282a33"
+color_c = "#3f424d"
+color_d = "#32343d"
+color_e = "#404554"
+color_f = "#ffffff"
+color_g = "rgba(0, 0, 0, 0)"
+color_h = "transparent"
+color_i = "rgba(40, 42, 51, 0.9)"
 
 LIBRARY_WIDGET_STYLE = """
     QWidget {
@@ -63,4 +81,33 @@ GAME_CARD_WINDOW_STYLE = """
         );
         border:  0px solid;
     }
+"""
+
+# PLAY BUTTON STYLE
+PLAY_BUTTON_STYLE = f"""
+    QPushButton {{
+        background: qradialgradient(
+            cx:0.5, cy:0.5, radius:0.8,
+            stop:0 #404554,
+            stop:1 #30323d
+        );
+        border: {border_a} rgba(255, 255, 255, 0.5);
+        border-radius: {border_radius_a};
+        font-size: 16px;
+        color: {color_f};
+        font-weight: bold;
+        font-family: '{font_family}';
+        padding: 5px 10px;
+        min-width: 50px;
+        min-height: 20px;
+    }}
+    QPushButton:hover {{
+        background: {color_a};
+    }}
+    QPushButton:pressed {{
+        background: {color_a};
+    }}
+    QPushButton:focus {{
+        background: {color_a};
+    }}
 """
