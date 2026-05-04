@@ -329,3 +329,27 @@ COMBOBOX_STYLE = f"""
         color: {color_f};
     }}
 """
+
+TAB_STYLE = f"""
+    QTabWidget::pane {{
+        border-top: 1px solid {color_c};
+        background: {color_h};
+    }}
+    QTabBar::tab {{
+        background: {color_c};
+        color: {color_f};
+        padding: 6px 12px;
+        border-top-left-radius: {border_radius_a};
+        border-top-right-radius: {border_radius_a};
+        margin-right: 2px;
+        font-family: '{font_family}';
+        font-size: {font_size_a};
+    }}
+    QTabBar::tab:selected {{
+        background: {color_a};
+        color: {color_f};
+    }}
+    QTabBar::tab:hover {{
+        background: {color_a};
+    }}
+"""
