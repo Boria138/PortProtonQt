@@ -153,3 +153,36 @@ SEARCH_EDIT_STYLE = f"""
         border: {border_b} {color_a};
     }}
 """
+
+# NAVIGATION TAB BUTTON STYLE
+NAV_BUTTON_STYLE = f"""
+    NavLabel {{
+        background: {color_h};
+        padding: 6px 3px;
+        margin: 10px 0 10px 10px;
+        color: #7f7f7f;
+        font-family: '{font_family}';
+        font-size: {font_size_a};
+        text-transform: uppercase;
+        border: {color_a};
+        border-radius: 0px;
+    }}
+    NavLabel[checked = true] {{
+        background: {color_h};
+        color: {color_f};
+        font-weight: normal;
+        text-decoration: none;
+        border-bottom: {border_b} {color_a};
+        border-radius: 0px;
+    }}
+    NavLabel:hover {{
+        background: {color_h};
+        color: {color_f};
+        border-bottom: {border_b} #7f7f7f;
+    }}
+    NavLabel[checked = true]:hover {{
+        background: {color_h};
+        color: {color_f};
+        border-bottom: {border_b} {color_a};
+    }}
+"""
