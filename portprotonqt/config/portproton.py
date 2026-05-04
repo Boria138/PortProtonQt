@@ -136,17 +136,22 @@ def save_portdata_path_to_config(portdata_path: str) -> bool:
 def get_portproton_scripts_path() -> str | None:
     """Return PortProton scripts directory path."""
     sharun_prefix = os.getenv("SHARUN_DIR")
-    prefixes = [Path("/usr"), Path("/app")]
+    prefixes = [("system package", Path("/usr")), ("Flatpak package", Path("/app"))]
     if sharun_prefix:
-        prefixes.append(Path(sharun_prefix))
+        prefixes.append(("AppImage", Path(sharun_prefix)))
 
     scripts_dirs = (
-        Path.cwd() / "build-aux" / "share" / "portproton" / "scripts",
-        *[prefix / "share" / "portproton" / "scripts" for prefix in prefixes],
+        ("repository", Path.cwd() / "build-aux" / "share" / "portproton" / "scripts"),
+        *[(source, prefix / "share" / "portproton" / "scripts") for source, prefix in prefixes],
     )
-    for scripts_dir in scripts_dirs:
+    for source, scripts_dir in scripts_dirs:
         if scripts_dir.exists():
+            logger.info("Using PortProton scripts from %s: %s", source, scripts_dir)
             return str(scripts_dir)
+    logger.info(
+        "PortProton scripts directory not found in: %s",
+        ", ".join(str(path) for _, path in scripts_dirs),
+    )
     return None
 
 

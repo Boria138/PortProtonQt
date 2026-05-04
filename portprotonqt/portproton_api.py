@@ -595,13 +595,20 @@ class PortProtonAPI:
                 # No cache: Load games from scratch
                 games = []
                 scripts_path = get_portproton_scripts_path()
-                auto_dir = os.path.join(scripts_path, "pw_autoinstall") if scripts_path else ""
+                if not scripts_path:
+                    logger.info("PortProton scripts path is not resolved for autoinstall games")
+                    self.finished.emit(games)
+                    return
+
+                auto_dir = os.path.join(scripts_path, "pw_autoinstall")
                 if not os.path.exists(auto_dir):
+                    logger.info("PortProton autoinstall scripts directory not found: %s", auto_dir)
                     self.finished.emit(games)
                     return
 
                 scripts = sorted(glob.glob(os.path.join(auto_dir, "*")))
                 if not scripts:
+                    logger.info("PortProton autoinstall scripts not found in: %s", auto_dir)
                     self.finished.emit(games)
                     return
 
