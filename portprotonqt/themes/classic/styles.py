@@ -1,3 +1,9 @@
+from portprotonqt.theme_manager import ThemeManager
+from portprotonqt.config import ui_config
+
+theme_manager = ThemeManager()
+current_theme_name = ui_config.get_theme()
+
 LIBRARY_LAYOUT_MODE = "list"
 
 GAME_CARD_ANIMATION = {
@@ -184,5 +190,142 @@ NAV_BUTTON_STYLE = f"""
         background: {color_h};
         color: {color_f};
         border-bottom: {border_b} {color_a};
+    }}
+"""
+WINETRICKS_TABBLE_STYLE = f"""
+QTableWidget {{
+    background: {color_h};
+    color: {color_f};
+    gridline-color: {color_h};
+    alternate-background-color: {color_d};
+    border: {border_a};
+    border-radius: {border_radius_a};
+    font-family: '{font_family}';
+    font-size: {font_size_a};
+}}
+QHeaderView::section {{
+    background: {color_d};
+    color: {color_f};
+    padding: 2px;
+    border: {border_a};
+    font-weight: bold;
+    font-family: '{font_family}';
+    font-size: {font_size_a};
+}}
+QTableWidget::item {{
+    padding: 3px;
+    border-bottom: {border_a } {color_c};
+    height: 24px;
+}}
+QTableWidget::item:selected,
+QTableWidget::item:focus,
+QTableWidget::item:selected:focus {{
+    background: {color_a};
+    color: {color_f};
+    selection-background-color: {color_a};
+}}
+QTableWidget::item:hover {{
+    background: {color_h};
+}}
+"""
+
+# COMBOBOX
+COMBOBOX_STYLE = f"""
+    QComboBox {{
+        background: {color_c};
+        border: {border_c} {color_g};
+        border-radius: {border_radius_a};
+        padding-left: 12px;
+        height: 34px;
+        color: {color_f};
+        font-family: '{font_family}';
+        font-size: {font_size_a};
+        min-width: 120px;
+        combobox-popup: 0;
+    }}
+    QComboBox:on {{
+        background: {color_b};
+        border: {border_c} {color_a};
+        border-bottom-style: none;
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
+        border-bottom-left-radius: 0px;
+        border-bottom-right-radius: 0px;
+    }}
+    QComboBox:hover {{
+        border: {border_c} {color_a};
+        background: {color_a};
+    }}
+    /* Focus state */
+    QComboBox:focus {{
+        border: {border_c} {color_a};
+        background-color: {color_a};
+    }}
+    QComboBox:disabled {{
+        background: #2a2c35;
+        border: {border_c} #2a2c35;
+        color: #777a84;
+    }}
+    QComboBox::drop-down {{
+        subcontrol-origin: padding;
+        subcontrol-position: center right;
+        border-left: {border_b} rgba(255, 255, 255, 0.05);
+        padding: 12px;
+        height: 12px;
+        width: 12px;
+    }}
+    QComboBox::down-arrow {{
+        image: url({theme_manager.get_icon("down", current_theme_name, as_path=True)});
+        padding: 12px;
+        height: 10px;
+        width: 10px;
+    }}
+    QComboBox::down-arrow:on {{
+        image: url({theme_manager.get_icon("up", current_theme_name, as_path=True)});
+        padding: 12px;
+        height: 10px;
+        width: 10px;
+    }}
+/* List when combobox is open */
+    QComboBox QAbstractItemView {{
+        outline: none;
+        background: {color_c};
+        border: {border_c} {color_a};
+        border-top-style: none;
+        border-top-left-radius: 0px;
+        border-top-right-radius: 0px;
+        border-bottom-left-radius: 10px;
+        border-bottom-right-radius: 10px;
+    }}
+    QComboBox:editable {{
+        background: {color_c};
+    }}
+    QComboBox::drop-down:editable:focus {{
+        background: {color_a};
+        border-top-left-radius: 0px;
+        border-top-right-radius: 10px;
+        border-bottom-left-radius: 0px;
+        border-bottom-right-radius: 10px;
+    }}
+    QListView {{
+        background: {color_c};
+    }}
+    QListView::item {{
+        padding: 3px 3px 3px 6px;
+        margin: 1px;
+        min-height: 24px;
+        border-radius: {border_radius_a};
+        color: {color_f};
+    }}
+    QListView::item:hover {{
+        background: {color_b};
+    }}
+    QListView::item:selected {{
+        background: {color_b};
+    }}
+    /* Selection in list when item is focused */
+    QListView::item:focus {{
+        background: {color_a};
+        color: {color_f};
     }}
 """
