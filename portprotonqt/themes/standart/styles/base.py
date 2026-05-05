@@ -48,6 +48,8 @@ PROGRESS_BAR_STYLE = f"""
 STATUS_BAR_STYLE = f"""
     QStatusBar {{
         color: {color_f};
+        font-family: '{font_family}';
+        font-size: {font_size_a};
     }}
 """
 
