@@ -10,6 +10,7 @@ portProtonPageMargins = (15, 15, 15, 15)
 portProtonPageHorizontalSpacing = 15
 portProtonPageVerticalSpacing = 10
 portProtonPageSectionHeaderSpacing = 10
+wineSettingsSetSpacing = 10
 
 # VARS
 font_family = "Play"

@@ -8,6 +8,7 @@ portProtonPageMargins = (10, 7, 15, 10)
 portProtonPageHorizontalSpacing = 5
 portProtonPageVerticalSpacing = 2
 portProtonPageSectionHeaderSpacing = 5
+wineSettingsSetSpacing = 2
 
 LIBRARY_LAYOUT_MODE = "list"
 
