@@ -353,3 +353,9 @@ TAB_STYLE = f"""
         background: {color_a};
     }}
 """
+# HINT BAR STYLE
+HINT_BAR_STYLE = f"""
+    QWidget {{
+        max-height: 32px;
+    }}
+"""

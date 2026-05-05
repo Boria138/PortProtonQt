@@ -306,6 +306,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.createThemeTab()
 
         self.controlHintsWidget = self.createControlHintsWidget()
+        self.controlHintsWidget.setStyleSheet(self.theme.HINT_BAR_STYLE)
         mainLayout.addWidget(self.controlHintsWidget)
 
         self.updateControlHints()
