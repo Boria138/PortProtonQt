@@ -165,6 +165,19 @@ stop_activity_simulation() {
     fi
 }
 
+pw_is_process_active() {
+    local process_name
+    for process_name in "$@" ; do
+        if command -v pgrep &>/dev/null && pgrep -x "$process_name" &>/dev/null ; then
+            return 0
+        fi
+        if command -v pidof &>/dev/null && pidof "$process_name" &>/dev/null ; then
+            return 0
+        fi
+    done
+    return 1
+}
+
 try_copy_file () {
     if [[ ! -f "$1" ]] ; then print_info "file $1 not found for copy" && return 1
     elif [[ -z "$2" ]] ; then print_error "no way to copy file $1" && return 1
@@ -2475,13 +2488,16 @@ pw_enable_gamemode_basic () {
     if check_flatpak ; then
         export GAMEMODERUN=1
         PW_GAMEMODERUN_SLR="gamemoderun"
-    elif command -v gamemoded &>/dev/null ; then
+    elif command -v gamemoderun &>/dev/null ; then
         export GAMEMODERUN=1
         PW_GAMEMODERUN_SLR="gamemoderun"
-        systemctl enable --now --user gamemoded &>/dev/null
+        if command -v gamemoded &>/dev/null && ! pw_is_process_active gamemoded ; then
+            gamemoded &>/dev/null &
+            sleep 0.1
+        fi
     else
         export GAMEMODERUN=1
-        if ! pidof gamemoded &>/dev/null ; then
+        if ! pw_is_process_active gamemoded ; then
             if [[ -n "${PW_LD_PRELOAD}" ]]; then
                 export PW_LD_PRELOAD="${PW_LD_PRELOAD}:libgamemodeauto.so.0"
             else
@@ -2929,13 +2945,7 @@ export -f pw_ppd_dbus_has_profile
     elif [[ "$PW_USE_GAMEMODE" = "1" ]] \
     && [[ -n "$DBUS_SESSION_BUS_ADDRESS" ]]
     then
-        if command -v systemctl &>/dev/null \
-        && (systemctl is-active --quiet ananicy.service \
-        || systemctl is-active --quiet ananicy-cpp.service \
-        || systemctl is-active --quiet scx.service \
-        || systemctl is-active --quiet scx_loader.service) \
-        || systemctl is-active --quiet falcond
-        then
+        if pw_is_process_active ananicy ananicy-cpp scx scx_loader falcond ; then
             export GAMEMODERUN=0
             export PW_GAMEMODERUN_SLR=""
             if pw_ppd_dbus_has_profile "performance" && [[ "$(pw_ppd_dbus_get_profile)" != "performance" ]] ; then
