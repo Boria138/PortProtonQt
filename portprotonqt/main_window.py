@@ -1979,12 +1979,13 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         scrollLayout.setSpacing(10)  # Uniform spacing between sections
 
         # Helper to create styled sections
-        def create_section(title_text):
+        def create_section(title_text, theme):
             section_frame = QFrame()
             section_frame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
             section_frame.setStyleSheet(self.theme.SETTINGS_FRAME_STYLE)
             section_layout = QVBoxLayout(section_frame)
-            section_layout.setContentsMargins(15, 15, 15, 15)
+            # section_layout.setContentsMargins(15, 15, 15, 15)
+            section_layout.setContentsMargins(*theme.portProtonPageMargins)
             section_layout.setSpacing(10)
 
             section_title = QLabel(title_text)
@@ -2003,7 +2004,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             return section_frame, section_form
 
         # 1. Library Settings Section
-        genFrame, genForm = create_section(_("Library Settings"))
+        genFrame, genForm = create_section(_("Library Settings"), self.theme)
         genForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
         scrollLayout.addWidget(genFrame)
 
@@ -2087,7 +2088,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         genForm.addRow(self.badgeViewTitle, self.badgeViewCombo)
 
         # 2. Interface Settings Section
-        uiFrame, uiForm = create_section(_("Interface Settings"))
+        uiFrame, uiForm = create_section(_("Interface Settings"), self.theme)
         uiForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
         scrollLayout.addWidget(uiFrame)
 
@@ -2212,7 +2213,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         uiForm.addRow(economy_mode_layout)
 
         # 3. Gamepad Settings Section
-        padFrame, padForm = create_section(_("Gamepad Settings"))
+        padFrame, padForm = create_section(_("Gamepad Settings"), self.theme)
         padForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
         scrollLayout.addWidget(padFrame)
 
@@ -2233,7 +2234,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         padForm.addRow(auto_fullscreen_layout)
 
         # 4. Hardware Settings Section
-        hwFrame, hwForm = create_section(_("Hardware Settings"))
+        hwFrame, hwForm = create_section(_("Hardware Settings"), self.theme)
         hwForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
         scrollLayout.addWidget(hwFrame)
 
@@ -2262,7 +2263,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             hwForm.addRow(QLabel(_("No GPUs found")), QLabel(""))
 
         # 5. Proxy Settings Section
-        proxyFrame, proxyForm = create_section(_("Proxy Settings"))
+        proxyFrame, proxyForm = create_section(_("Proxy Settings"), self.theme)
         proxyForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
         scrollLayout.addWidget(proxyFrame)
 

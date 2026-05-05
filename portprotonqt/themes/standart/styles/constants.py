@@ -6,6 +6,7 @@ current_theme_name = ui_config.get_theme()
 
 # CONSTANTS
 favoriteLabelSize = 48, 48
+portProtonPageMargins = (15, 15, 15, 15)
 
 # VARS
 font_family = "Play"
