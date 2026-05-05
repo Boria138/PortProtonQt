@@ -16,6 +16,8 @@ jobs:
     steps:
       - name: Checkout
         uses: https://gitea.com/actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: https://gitea.com/actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
@@ -26,4 +28,15 @@ jobs:
         run: pip install pyaspeller babel
 
       - name: Run spell check
-        run: python dev-scripts/l10n.py --spellcheck
+        run: |
+          if [ "${{ gitea.event_name }}" = "pull_request" ]; then
+            base="${{ gitea.event.pull_request.base.sha }}"
+          else
+            base="${{ gitea.event.before }}"
+          fi
+
+          if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ]; then
+            python dev-scripts/l10n.py --spellcheck
+          else
+            python dev-scripts/l10n.py --spellcheck --changed-since "$base" --changed-to "${{ gitea.sha }}"
+          fi

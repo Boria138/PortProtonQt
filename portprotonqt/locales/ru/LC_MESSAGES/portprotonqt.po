@@ -609,7 +609,7 @@ msgstr "Скрыть вкладку \"Автоустановка\""
 msgid "Add to Steam compatibility tools"
 msgstr "Добавить в инструменты совместимости Steam"
 
-msgid "Economy mode (disable Steam/HLTB/badges)"
+msgid "Economy mode"
 msgstr "Экономный режим"
 
 msgid "Gamepad Settings"

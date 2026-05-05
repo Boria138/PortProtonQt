@@ -2189,7 +2189,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.economyModeCheckBox = QCheckBox()
         self.economyModeCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.economyModeCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.economyModeTitle = QLabel(_("Economy mode (disable Steam/HLTB/badges)"))
+        self.economyModeTitle = QLabel(_("Economy mode"))
         self.economyModeTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.economyModeTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
         self.economyModeTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)

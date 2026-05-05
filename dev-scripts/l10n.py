@@ -4,6 +4,7 @@ import argparse
 import sys
 import re
 import ast
+import subprocess
 from pathlib import Path
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
@@ -334,6 +335,79 @@ def check_file(filepath: Path, issues_summary: dict) -> bool:
                 issues_summary[filepath].extend([(text, err) for err in errors])
     return has_errors
 
+def get_spellcheck_files(paths: list[str]) -> list[Path]:
+    if not paths:
+        return list(LOCALES_PATH.glob("**/portprotonqt.po")) + [POT_FILE]
+
+    files = []
+    for path in paths:
+        file_path = Path(path)
+        if file_path.suffix not in {'.po', '.pot'}:
+            continue
+        files.append(file_path)
+    return files
+
+def get_changed_translation_files(base: str, head: str) -> list[Path]:
+    result = subprocess.run(
+        ["git", "diff", "--name-only", base, head, "--", "portprotonqt/locales"],
+        capture_output=True,
+        check=False,
+        text=True,
+    )
+    if result.returncode != 0:
+        return []
+
+    files = []
+    for path in result.stdout.splitlines():
+        file_path = Path(path)
+        if file_path.suffix != ".po":
+            continue
+        if _has_changed_translations(file_path, base, head):
+            files.append(file_path)
+    return files
+
+def _has_changed_translations(po_path: Path, base: str, head: str) -> bool:
+    old_text = _read_git_file(base, po_path)
+    if old_text is None:
+        old_entries = {}
+    else:
+        old_entries = _po_translation_map(old_text)
+    current_text = _read_git_file(head, po_path)
+    if current_text is None:
+        return False
+    current_entries = _po_translation_map(current_text)
+
+    for key, values in current_entries.items():
+        if not _has_translation(values):
+            continue
+        if old_entries.get(key) != values:
+            return True
+    return False
+
+def _read_git_file(ref: str, path: Path) -> str | None:
+    result = subprocess.run(
+        ["git", "show", f"{ref}:{path.as_posix()}"],
+        capture_output=True,
+        check=False,
+        text=True,
+    )
+    if result.returncode != 0:
+        return None
+    return result.stdout
+
+def _po_translation_map(text: str) -> dict[str, tuple[tuple[str, str], ...]]:
+    entries = {}
+    for block in _split_po_blocks(text):
+        signature = _parse_po_entry_signature(block)
+        if signature is None:
+            continue
+        key, values = signature
+        entries[key] = values
+    return entries
+
+def _has_translation(values: tuple[tuple[str, str], ...]) -> bool:
+    return any(value.strip() for _, value in values)
+
 # ---------- Основной обработчик ----------
 def main(args) -> int:
     if args.update_all:
@@ -341,7 +415,13 @@ def main(args) -> int:
     if args.create_new:
         create_new(args.create_new)
     if args.spellcheck:
-        files = list(LOCALES_PATH.glob("**/portprotonqt.po")) + [POT_FILE]
+        if args.changed_since:
+            files = get_changed_translation_files(args.changed_since, args.changed_to)
+        else:
+            files = get_spellcheck_files(args.files)
+        if not files:
+            print("No changed translations to check.")
+            return 0
         seen = set(); has_err = False
         issues_summary = defaultdict(list)
         fuzzy_summary = defaultdict(list)
@@ -387,5 +467,8 @@ if __name__ == "__main__":
     parser.add_argument("--create-new", nargs='+', type=str, default=False, help="Create .po for new locales")
     parser.add_argument("--update-all", action='store_true', help="Extract/update locales")
     parser.add_argument("--spellcheck", action='store_true', help="Run spellcheck on POT and PO files")
+    parser.add_argument("--changed-since", type=str, default="", help="Check only PO files with changed translations")
+    parser.add_argument("--changed-to", type=str, default="HEAD", help="Target ref for --changed-since")
+    parser.add_argument("files", nargs='*', help="Files to check with --spellcheck")
     args = parser.parse_args()
     sys.exit(main(args))

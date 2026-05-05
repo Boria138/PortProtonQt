@@ -597,7 +597,7 @@ msgstr ""
 msgid "Add to Steam compatibility tools"
 msgstr ""
 
-msgid "Economy mode (disable Steam/HLTB/badges)"
+msgid "Economy mode"
 msgstr ""
 
 msgid "Gamepad Settings"
