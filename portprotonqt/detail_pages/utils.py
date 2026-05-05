@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QWidget, QApplication, QLabel, QGraphicsOpacityEff
 from PySide6.QtCore import QTimer, Qt, QObject, Signal, QPropertyAnimation, QByteArray
 from PySide6.QtGui import QPixmap
 
-from portprotonqt.image_utils import load_pixmap_async, round_corners
+from portprotonqt.image_utils import load_pixmap_async, round_corners, set_animated_cover
 from portprotonqt.config import favorites_config
 from portprotonqt.logger import get_logger
 
@@ -40,6 +40,8 @@ def setup_image_loading(
 
     if cover_path:
         _prepare_cover_reveal(image_label)
+        if _set_animated_cover((detail_page, image_label), cover_path, (cover_width, cover_height), main_window):
+            return
         load_pixmap_async(
             cover_path,
             cover_width,
@@ -48,6 +50,22 @@ def setup_image_loading(
         )
     else:
         _apply_no_cover_style(detail_page, main_window.theme)
+
+def _set_animated_cover(
+    cover_widgets: tuple[QWidget, QLabel],
+    cover_path: str,
+    cover_size: tuple[int, int],
+    main_window,
+) -> bool:
+    """Set animated cover on detail page."""
+    if not os.path.isfile(cover_path):
+        return False
+    detail_page, image_label = cover_widgets
+    if not set_animated_cover(image_label, cover_path, cover_size[0], cover_size[1], 10):
+        return False
+    _setup_palette_stylesheet(detail_page, image_label.pixmap(), main_window)
+    _reveal_cover(image_label, main_window.theme)
+    return True
 
 
 def _on_pixmap_ready(pixmap: QPixmap, detail_page: QWidget, image_label: QLabel, main_window) -> None:

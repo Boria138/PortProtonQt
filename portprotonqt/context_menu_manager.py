@@ -2,6 +2,7 @@ import os
 import shlex
 import glob
 import shutil
+import tempfile
 from PySide6.QtWidgets import QMessageBox, QDialog, QMenu, QLineEdit, QApplication, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFrame
 from PySide6.QtCore import QUrl, QPoint, QObject, Signal, Qt, QStandardPaths
 from PySide6.QtGui import QDesktopServices, QIcon, QKeySequence
@@ -12,6 +13,7 @@ from portprotonqt.dialogs import AddGameDialog, generate_thumbnail
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.logger import get_logger
 from portprotonqt.virtual_keyboard import VirtualKeyboard
+from portprotonqt.image_utils import COVER_IMAGE_EXTENSIONS
 
 logger = get_logger(__name__)
 
@@ -64,6 +66,16 @@ class ContextMenuManager:
             self._show_info_dialog,
             Qt.ConnectionType.QueuedConnection
         )
+
+    @staticmethod
+    def _remove_old_cover_files(custom_folder: str) -> None:
+        """Remove stale cover files before saving a new cover."""
+        for cover_ext in COVER_IMAGE_EXTENSIONS:
+            old_cover_path = os.path.join(custom_folder, f"cover{cover_ext}")
+            try:
+                os.remove(old_cover_path)
+            except FileNotFoundError:
+                pass
 
     def _show_warning_dialog(self, title: str, message: str):
         """Show a warning dialog in the main thread."""
@@ -912,8 +924,7 @@ class ContextMenuManager:
                     updated_exec_line = parsed_exec
 
             # Check if new_cover_path is a URL by checking for common image extensions
-            image_extensions = ('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.webp')
-            has_image_extension = any(new_cover_path.lower().endswith(ext) for ext in image_extensions)
+            has_image_extension = any(new_cover_path.lower().endswith(ext) for ext in COVER_IMAGE_EXTENSIONS)
 
             # Consider it a URL if it has image extension and is not a local file
             is_url = has_image_extension and not os.path.isfile(new_cover_path)
@@ -931,22 +942,26 @@ class ContextMenuManager:
                 # Use the actual cover file path (either from URL download or local file)
                 cover_to_copy = dialog.last_cover_path if is_url and dialog.last_cover_path and os.path.isfile(dialog.last_cover_path) else new_cover_path
                 ext = os.path.splitext(cover_to_copy)[1].lower()
-                if ext in [".png", ".jpg", ".jpeg", ".bmp"]:
+                if ext in COVER_IMAGE_EXTENSIONS:
                     target_cover_path = os.path.join(custom_folder, f"cover{ext}")
+                    temp_cover_path = None
                     try:
-                        if os.path.exists(target_cover_path) and os.path.samefile(cover_to_copy, target_cover_path):
-                            logger.debug(
-                                "Skipping cover copy for %s: source and destination are identical",
-                                new_name,
-                            )
-                        else:
-                            shutil.copyfile(cover_to_copy, target_cover_path)
+                        if os.path.dirname(os.path.abspath(cover_to_copy)) == os.path.abspath(custom_folder):
+                            fd, temp_cover_path = tempfile.mkstemp(suffix=ext, dir=custom_folder)
+                            os.close(fd)
+                            shutil.copyfile(cover_to_copy, temp_cover_path)
+                            cover_to_copy = temp_cover_path
+                        self._remove_old_cover_files(custom_folder)
+                        shutil.copyfile(cover_to_copy, target_cover_path)
                     except OSError as e:
                         self.signals.show_warning_dialog.emit(
                             _("Error"),
                             _("Failed to copy cover image: {error}").format(error=str(e))
                         )
                         return
+                    finally:
+                        if temp_cover_path and os.path.exists(temp_cover_path):
+                            os.remove(temp_cover_path)
                 else:
                     self.signals.show_warning_dialog.emit(
                         _("Error"),

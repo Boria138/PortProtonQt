@@ -13,7 +13,12 @@ from PySide6.QtWidgets import (
     QStackedLayout,
     QLabel,
 )
-from portprotonqt.image_utils import load_pixmap_async, round_corners
+from portprotonqt.image_utils import (
+    load_pixmap_async,
+    round_corners,
+    set_animated_cover,
+    update_animated_cover_size,
+)
 from portprotonqt.localization import _
 from portprotonqt.config import (
     favorites_config,
@@ -63,6 +68,7 @@ class GameCard(QFrame):
         self.base_card_width = card_width
         self.base_pixmap = None
         self.base_font_size = None
+        self.animated_cover_path = ""
 
         self.select_callback = select_callback
         self.context_menu_manager = context_menu_manager
@@ -125,10 +131,7 @@ class GameCard(QFrame):
             self.coverLabel.setGraphicsEffect(self.coverOpacity)
         coverLayout.addWidget(self.coverLabel)
 
-        if self.list_layout:
-            load_pixmap_async(cover_path or "", 64, 64, self.on_cover_loaded)
-        else:
-            load_pixmap_async(cover_path or "", self.base_card_width, int(self.base_card_width * 1.5), self.on_cover_loaded)
+        self._load_cover_image(cover_path or "")
 
         self.favoriteLabel = ClickableLabel(self.coverWidget)
         self.favoriteLabel.clicked.connect(self.toggle_favorite)
@@ -229,14 +232,49 @@ class GameCard(QFrame):
             parent.updateGeometry()
 
     def on_cover_loaded(self, pixmap):
+        self.animated_cover_path = ""
         self.base_pixmap = pixmap
         self.update_cover_pixmap()
+
+    def _load_cover_image(self, cover_path: str) -> None:
+        if self.list_layout:
+            width = 64
+            height = 64
+        else:
+            width = self.base_card_width
+            height = int(self.base_card_width * 1.5)
+        if self._set_animated_cover(cover_path, width, height):
+            return
+        load_pixmap_async(cover_path, width, height, self.on_cover_loaded)
+
+    def _set_animated_cover(self, cover_path: str, width: int, height: int) -> bool:
+        if not cover_path or not os.path.isfile(cover_path):
+            return False
+        radius = 8 if self.list_layout else 15
+        if not set_animated_cover(self.coverLabel, cover_path, width, height, radius):
+            return False
+        self.animated_cover_path = cover_path
+        self.base_pixmap = None
+        return True
+
+    def _update_animated_cover_size(self) -> None:
+        radius = max(8, int(10 * self._scale)) if self.list_layout else int(15 * self._scale)
+        update_animated_cover_size(
+            self.coverLabel,
+            self.coverLabel.width(),
+            self.coverLabel.height(),
+            radius,
+        )
 
     def update_cover_pixmap(self):
         # Check if the coverLabel still exists before trying to update it
         # This prevents the "Internal C++ object already deleted" error when
         # the widget has been destroyed but the async callback still executes
         if not hasattr(self, 'coverLabel') or self.coverLabel is None:
+            return
+
+        if self.animated_cover_path:
+            self._update_animated_cover_size()
             return
 
         if self.base_pixmap and not self.base_pixmap.isNull():

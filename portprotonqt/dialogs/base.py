@@ -23,6 +23,7 @@ from portprotonqt.custom_widgets import AutoSizeButton
 from portprotonqt.downloader import Downloader
 from portprotonqt.virtual_keyboard import VirtualKeyboard
 from portprotonqt.localization import _
+from portprotonqt.image_utils import COVER_IMAGE_EXTENSIONS, set_animated_cover
 
 logger = get_logger(__name__)
 theme_manager = ThemeManager()
@@ -401,7 +402,7 @@ class AddGameDialog(QDialog):
         try:
             from portprotonqt.dialogs.file_explorer import FileExplorer
             initial_path = os.path.dirname(self.last_cover_path) if self.last_cover_path and os.path.isfile(self.last_cover_path) else None
-            file_explorer = FileExplorer(self, file_filter=('.png', '.jpg', '.jpeg', '.bmp'), initial_path=initial_path)
+            file_explorer = FileExplorer(self, file_filter=COVER_IMAGE_EXTENSIONS, initial_path=initial_path)
             file_explorer.file_signal.file_selected.connect(self.onCoverSelected)
 
             parent_widget = self.parentWidget()
@@ -418,7 +419,7 @@ class AddGameDialog(QDialog):
 
     def onCoverSelected(self, file_path):
         """Handle cover file selection in FileExplorer."""
-        if file_path and os.path.splitext(file_path)[1].lower() in ('.png', '.jpg', '.jpeg', '.bmp'):
+        if file_path and os.path.splitext(file_path)[1].lower() in COVER_IMAGE_EXTENSIONS:
             self.coverEdit.setText(file_path)
             self.last_cover_path = file_path
             self.updatePreview()
@@ -433,6 +434,8 @@ class AddGameDialog(QDialog):
         try:
             if file_path and os.path.isfile(file_path):
                 self.last_cover_path = file_path
+                if set_animated_cover(self.coverPreview, file_path, 250, 250):
+                    return
                 pixmap = QPixmap(file_path)
                 if not pixmap.isNull():
                     self.coverPreview.setPixmap(pixmap.scaled(250, 250, Qt.AspectRatioMode.KeepAspectRatio))
@@ -461,11 +464,11 @@ class AddGameDialog(QDialog):
                 if resolved_path and os.path.isfile(resolved_path):
                     launch_path = resolved_path
 
-        image_extensions = ('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.webp')
-        has_image_extension = any(cover_path.lower().endswith(ext) for ext in image_extensions)
+        has_image_extension = any(cover_path.lower().endswith(ext) for ext in COVER_IMAGE_EXTENSIONS)
 
         if has_image_extension and not os.path.isfile(cover_path):
-            fd, local_path = tempfile.mkstemp(suffix=".png")
+            suffix = os.path.splitext(cover_path)[1].lower() or ".png"
+            fd, local_path = tempfile.mkstemp(suffix=suffix)
             os.close(fd)
             os.unlink(local_path)
 
@@ -478,6 +481,8 @@ class AddGameDialog(QDialog):
             )
             self.coverPreview.setText(_("Downloading cover..."))
         elif cover_path and os.path.isfile(cover_path):
+            if set_animated_cover(self.coverPreview, cover_path, 250, 250):
+                return
             pixmap = QPixmap(cover_path)
             if not pixmap.isNull():
                 self.coverPreview.setPixmap(pixmap.scaled(250, 250, Qt.AspectRatioMode.KeepAspectRatio))

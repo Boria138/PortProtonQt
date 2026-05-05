@@ -18,7 +18,7 @@ from portprotonqt.debug_utils import get_selectable_gpu_list, get_prefix_name
 from portprotonqt.input_manager import InputManager, MainWindowProtocol
 from portprotonqt.context_menu_manager import ContextMenuManager, CustomLineEdit
 
-from portprotonqt.image_utils import load_pixmap_async, ImageCarousel
+from portprotonqt.image_utils import COVER_IMAGE_EXTENSIONS, load_pixmap_async, ImageCarousel
 from portprotonqt.steam_api import get_steam_game_info_async, get_full_steam_game_info_async, get_cached_steam_game_info, get_steam_installed_games, is_game_in_steam, fetch_sgdb_cover_async
 from portprotonqt.theme_manager import ThemeManager, load_theme_screenshots
 from portprotonqt.time_utils import save_last_launch, get_last_launch, get_playtime_for_exe, format_playtime, get_last_launch_timestamp, format_last_launch
@@ -792,7 +792,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 self.portproton_api.download_game_assets_async(exe_name, timeout=5, callback=on_assets_downloaded)
 
             user_files = set(os.listdir(user_game_folder)) if os.path.exists(user_game_folder) else set()
-            for ext in [".jpg", ".png", ".jpeg", ".bmp"]:
+            for ext in COVER_IMAGE_EXTENSIONS:
                 candidate = f"cover{ext}"
                 if candidate in user_files:
                     user_cover = os.path.join(user_game_folder, candidate)
@@ -1137,7 +1137,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 cover_path = None
                 if user_cover:
                     ext = os.path.splitext(user_cover)[1].lower()
-                    if os.path.isfile(user_cover) and ext in [".png", ".jpg", ".jpeg", ".bmp"]:
+                    if os.path.isfile(user_cover) and ext in COVER_IMAGE_EXTENSIONS:
                         copied_cover = os.path.join(custom_folder, f"cover{ext}")
                         shutil.copyfile(user_cover, copied_cover)
                         cover_path = copied_cover
@@ -2830,7 +2830,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
         local_cover_path = ""
         if os.path.isdir(user_game_folder):
-            for ext in (".jpg", ".png", ".jpeg", ".bmp"):
+            for ext in COVER_IMAGE_EXTENSIONS:
                 candidate_cover = os.path.join(user_game_folder, f"cover{ext}")
                 if os.path.exists(candidate_cover):
                     local_cover_path = candidate_cover

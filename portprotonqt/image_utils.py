@@ -1,6 +1,9 @@
 import os
-from PySide6.QtGui import QPen, QColor, QPixmap, QPainter, QPainterPath
-from PySide6.QtCore import Qt, QFile, QEvent, QByteArray, QEasingCurve, QPropertyAnimation
+from weakref import WeakKeyDictionary
+from PySide6.QtGui import QPen, QColor, QPixmap, QPainter, QPainterPath, QImageReader, QMovie
+from PySide6.QtCore import (
+    Qt, QFile, QEvent, QByteArray, QEasingCurve, QPropertyAnimation, QSize
+)
 from PySide6.QtWidgets import QGraphicsItem, QToolButton, QFrame, QLabel, QGraphicsScene, QHBoxLayout, QWidget, QGraphicsView, QVBoxLayout, QSizePolicy
 from PySide6.QtWidgets import QSpacerItem, QGraphicsPixmapItem, QDialog, QApplication
 from portprotonqt.config import ui_config
@@ -14,11 +17,15 @@ import threading
 
 downloader = Downloader()
 logger = get_logger(__name__)
+COVER_IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".bmp", ".gif", ".webp", ".jxl")
 
 # Global queue and thread pool for image loading
 image_load_queue = Queue()
 image_executor = ThreadPoolExecutor(max_workers=4)
 queue_lock = threading.Lock()
+_animated_cover_movies: WeakKeyDictionary[QLabel, QMovie] = WeakKeyDictionary()
+_animated_cover_radii: WeakKeyDictionary[QLabel, int] = WeakKeyDictionary()
+
 
 def get_device_pixel_ratio() -> float:
     """
@@ -26,6 +33,65 @@ def get_device_pixel_ratio() -> float:
     """
     app = QApplication.instance()
     return app.devicePixelRatio() if isinstance(app, QApplication) else 1.0
+
+
+def is_animated_cover(path: str) -> bool:
+    """Return True when path points to an animated cover image."""
+    if not path or os.path.splitext(path)[1].lower() not in (".webp", ".gif"):
+        return False
+    if not QFile.exists(path):
+        return False
+    reader = QImageReader(path)
+    return reader.supportsAnimation() and reader.imageCount() != 1
+
+
+def set_animated_cover(label: QLabel, path: str, width: int, height: int, radius: int = 0) -> bool:
+    """Set animated cover movie on QLabel."""
+    if not is_animated_cover(path):
+        return False
+    movie = QMovie(path, QByteArray(), label)
+    if not movie.isValid():
+        logger.warning("Failed to load animated cover from %s", path)
+        return False
+    movie.setCacheMode(QMovie.CacheMode.CacheAll)
+    movie.setScaledSize(QSize(width, height))
+    _animated_cover_movies[label] = movie
+    _animated_cover_radii[label] = radius
+
+    def update_frame() -> None:
+        pixmap = movie.currentPixmap()
+        if not pixmap.isNull():
+            label.setPixmap(round_corners(pixmap, _animated_cover_radii.get(label, 0)))
+
+    movie.frameChanged.connect(lambda _frame: update_frame())
+    movie.start()
+    update_frame()
+    return True
+
+
+def update_animated_cover_size(label: QLabel, width: int, height: int, radius: int = 0) -> None:
+    """Update animated cover movie size for QLabel."""
+    movie = _animated_cover_movies.get(label)
+    if movie is not None:
+        _animated_cover_radii[label] = radius
+        movie.setScaledSize(QSize(width, height))
+        pixmap = movie.currentPixmap()
+        if not pixmap.isNull():
+            label.setPixmap(round_corners(pixmap, radius))
+
+
+def get_animated_cover_movie(label: QLabel) -> QMovie | None:
+    """Return animated cover movie for QLabel."""
+    return _animated_cover_movies.get(label)
+
+
+def _get_cover_url_suffix(cover: str) -> str:
+    """Return supported image suffix from URL path."""
+    suffix = os.path.splitext(cover.split("?", 1)[0])[1].lower()
+    if suffix in COVER_IMAGE_EXTENSIONS:
+        return suffix
+    return ".jpg"
+
 
 def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[QPixmap], None], app_name: str = ""):
     """
@@ -149,7 +215,7 @@ def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[Q
 
         if cover and cover.startswith(("http://", "https://")):
             try:
-                local_path = os.path.join(image_folder, f"{app_name}.jpg")
+                local_path = os.path.join(image_folder, f"{app_name}{_get_cover_url_suffix(cover)}")
                 if os.path.exists(local_path):
                     pixmap = QPixmap(local_path)
                     # Check if the pixmap loaded successfully

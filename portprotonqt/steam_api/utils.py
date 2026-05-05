@@ -6,6 +6,7 @@ from pathlib import Path
 import vdf
 
 from portprotonqt.logger import get_logger
+from portprotonqt.image_utils import COVER_IMAGE_EXTENSIONS
 
 logger = get_logger(__name__)
 
@@ -95,7 +96,7 @@ def get_local_steam_cover(appid: int | str, prefer_exact: bool = True) -> str:
     if prefer_exact:
         return ""
 
-    for suffix in ("jpg", "jpeg", "png", "webp"):
+    for suffix in (ext.removeprefix(".") for ext in COVER_IMAGE_EXTENSIONS):
         patterns = (
             f"{appid_str}/library_600x900*.{suffix}",
             f"{appid_str}/library_capsule*.{suffix}",

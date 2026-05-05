@@ -24,6 +24,7 @@ from portprotonqt.config import (
 from portprotonqt.localization import _
 from portprotonqt.dialogs import FileExplorer
 from portprotonqt.config.cache import CacheManager
+from portprotonqt.image_utils import COVER_IMAGE_EXTENSIONS
 
 logger = get_logger(__name__)
 AUTOINSTALL_CACHE_DURATION = 3600  # 1 hour for autoinstall cache
@@ -639,7 +640,7 @@ class PortProtonAPI:
                         if os.path.exists(user_game_folder)
                         else set()
                     )
-                    for ext in [".jpg", ".png", ".jpeg", ".bmp"]:
+                    for ext in COVER_IMAGE_EXTENSIONS:
                         candidate = f"cover{ext}"
                         if candidate in user_files:
                             cover_path = os.path.join(user_game_folder, candidate)

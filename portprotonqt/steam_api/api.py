@@ -12,6 +12,7 @@ from portprotonqt.logger import get_logger
 from portprotonqt.downloader import Downloader
 from portprotonqt.localization import get_steam_language
 from portprotonqt.config import ui_config
+from portprotonqt.image_utils import COVER_IMAGE_EXTENSIONS
 from portprotonqt.steam_api.utils import decode_text, get_local_steam_cover
 from portprotonqt.steam_api.cache import (
     CACHE_DURATION,
@@ -236,7 +237,7 @@ def _has_custom_data_for_exe(exe_name: str) -> bool:
         os.path.join(custom_data_root, clean_exe_name),
         os.path.join(custom_data_root, "autoinstall", clean_exe_name),
     ]
-    cover_names = {"cover.png", "cover.jpg", "cover.jpeg", "cover.bmp"}
+    cover_names = {f"cover{ext}" for ext in COVER_IMAGE_EXTENSIONS}
     metadata_name = "metadata.txt"
 
     for game_dir in candidate_dirs:
@@ -323,7 +324,7 @@ def _read_cached_app_data(appid: int) -> dict:
 def _get_cached_steam_cover_path(appid: int) -> str:
     xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
     image_folder = os.path.join(xdg_cache_home, "PortProtonQt", "images")
-    for ext in (".jpg", ".png", ".jpeg", ".webp"):
+    for ext in COVER_IMAGE_EXTENSIONS:
         cover_path = os.path.join(image_folder, f"{appid}{ext}")
         if os.path.exists(cover_path):
             return cover_path
