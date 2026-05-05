@@ -4,7 +4,10 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
-      - 'build-aux/**'
+      - 'build-aux/AppImage/**'
+      - 'build-aux/fedora-git.spec'
+      - 'build-aux/PKGBUILD-git'
+      - '.gitea/workflows/code-build.yml'
 
 env:
   PKGDEST: "/tmp/portprotonqt"
@@ -101,7 +104,7 @@ jobs:
 
     strategy:
       matrix:
-        fedora_version: [41, 42, rawhide]
+        fedora_version: [42, 43, 44, rawhide]
 
     container:
       image: fedora:${{ matrix.fedora_version }}
