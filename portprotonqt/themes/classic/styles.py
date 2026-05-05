@@ -358,9 +358,24 @@ TAB_STYLE = f"""
         background: {color_a};
     }}
 """
+
 # HINT BAR STYLE
 HINT_BAR_STYLE = f"""
     QWidget {{
         max-height: 32px;
+    }}
+"""
+
+SETTINGS_TITLE_STYLE = f"""
+    QLabel {{
+        color: {color_f};
+        margin-top: 1px;
+        font-family: '{font_family}';
+        font-size: {font_size_a};
+        font-weight: bold;
+        padding: 8px;
+        background: {color_d};
+        border-radius: {border_radius_a};
+        min-width: 320px;
     }}
 """
