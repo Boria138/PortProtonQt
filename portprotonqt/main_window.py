@@ -1984,9 +1984,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             section_frame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
             section_frame.setStyleSheet(self.theme.SETTINGS_FRAME_STYLE)
             section_layout = QVBoxLayout(section_frame)
-            # section_layout.setContentsMargins(15, 15, 15, 15)
             section_layout.setContentsMargins(*theme.portProtonPageMargins)
-            section_layout.setSpacing(10)
+            section_layout.setSpacing(theme.portProtonPageSectionHeaderSpacing)
 
             section_title = QLabel(title_text)
             section_title.setStyleSheet(self.theme.SETTINGS_FRAME_TITLE_STYLE)
@@ -1998,8 +1997,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             section_form.setFormAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
             section_form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow)
             section_form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapAllRows)
-            section_form.setHorizontalSpacing(15)
-            section_form.setVerticalSpacing(10)
+            section_form.setHorizontalSpacing(theme.portProtonPageHorizontalSpacing)
+            section_form.setVerticalSpacing(theme.portProtonPageVerticalSpacing)
             section_layout.addLayout(section_form)
             return section_frame, section_form
 

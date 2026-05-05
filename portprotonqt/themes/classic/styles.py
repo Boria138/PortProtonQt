@@ -4,7 +4,10 @@ from portprotonqt.config import ui_config
 theme_manager = ThemeManager()
 current_theme_name = ui_config.get_theme()
 
-settingsPageMargins = (5, 5, 5, 5)
+portProtonPageMargins = (10, 7, 15, 10)
+portProtonPageHorizontalSpacing = 5
+portProtonPageVerticalSpacing = 2
+portProtonPageSectionHeaderSpacing = 5
 
 LIBRARY_LAYOUT_MODE = "list"
 
