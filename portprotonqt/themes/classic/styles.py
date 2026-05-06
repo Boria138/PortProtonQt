@@ -389,3 +389,24 @@ SETTINGS_TITLE_STYLE = f"""
         min-width: 320px;
     }}
 """
+
+# QGroupBox STYLES
+QGROUP_BOX_STYLE = f"""
+    QGroupBox {{
+        font-family: '{font_family}';
+        font-size: {font_size_a};
+        font-weight: bold;
+        color: {color_a};
+        border: {border_b} {color_c};
+        border-radius: {border_radius_a};
+        margin-top: 10px;
+        margin-right: 10px;
+        padding-top: 5px;
+        background: {color_h};
+    }}
+    QGroupBox::title {{
+        subcontrol-origin: margin;
+        left: 12px;
+        padding: 0 6px;
+    }}
+"""
