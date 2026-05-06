@@ -4,12 +4,13 @@ import os
 import tempfile
 from collections.abc import Callable
 from typing import cast, TYPE_CHECKING
-from PySide6.QtGui import QPixmap, QIcon
+from PIL import Image, ImageQt
+from PySide6.QtGui import QPixmap, QIcon, QImage, QImageReader
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QListWidget, QListWidgetItem,
     QScrollArea, QWidget, QScroller, QApplication, QSizePolicy
 )
-from PySide6.QtCore import Qt, QObject, Signal, QMimeDatabase, QThreadPool, QRunnable, Slot
+from PySide6.QtCore import Qt, QObject, Signal, QMimeDatabase, QThreadPool, QRunnable, Slot, QSize, QTimer
 
 if TYPE_CHECKING:
     from portprotonqt.main_window import MainWindow
@@ -21,9 +22,13 @@ from portprotonqt.custom_widgets import AutoSizeButton
 from portprotonqt.localization import _
 from portprotonqt.dialogs.dialog_utils import create_dialog_hints_widget, update_dialog_hints
 from portprotonqt.dialogs.base import generate_thumbnail, FileSelectedSignal
+from portprotonqt.image_utils import COVER_IMAGE_EXTENSIONS
 
 logger = get_logger(__name__)
 theme_manager = ThemeManager()
+THUMBNAIL_PRELOAD_ROWS = 5
+THUMBNAIL_QUEUE_LIMIT = 24
+THUMBNAIL_SCROLL_DELAY_MS = 80
 
 
 class FileExplorer(QDialog):
@@ -33,7 +38,7 @@ class FileExplorer(QDialog):
         """Class for asynchronous thumbnail loading in a separate thread."""
 
         class Signals(QObject):
-            thumbnail_ready = Signal(str, QIcon)
+            thumbnail_ready = Signal(str, QImage)
 
         def __init__(
             self,
@@ -49,15 +54,40 @@ class FileExplorer(QDialog):
             self.resolve_launch_file_path = resolve_launch_file_path
             self.signals = self.Signals()
 
+        def _scaled_size(self, width: int, height: int) -> QSize:
+            ratio = min(self.size / width, self.size / height, 1)
+            return QSize(max(1, int(width * ratio)), max(1, int(height * ratio)))
+
+        def _load_image(self) -> QImage:
+            reader = QImageReader(self.file_path)
+            reader.setAutoTransform(True)
+            image_size = reader.size()
+            if image_size.isValid():
+                reader.setScaledSize(self._scaled_size(image_size.width(), image_size.height()))
+            image = reader.read()
+            if not image.isNull():
+                return image
+            return self._load_pillow_image()
+
+        def _load_pillow_image(self) -> QImage:
+            try:
+                with Image.open(self.file_path) as image:
+                    image.seek(0)
+                    image.thumbnail((self.size, self.size), Image.Resampling.LANCZOS)
+                    qimage = ImageQt.toqimage(image.convert("RGBA"))
+                    return qimage.copy()
+            except (OSError, ValueError) as e:
+                logger.warning("Failed to load image: %s: %s", self.file_path, e)
+                return QImage()
+
         @Slot()
         def run(self):
             """Performs thumbnail loading in a background thread."""
             try:
-                if self.mime_type.startswith("image/"):
-                    pixmap = QPixmap(self.file_path)
-                    if not pixmap.isNull():
-                        scaled_pixmap = pixmap.scaled(self.size, self.size, Qt.AspectRatioMode.KeepAspectRatio)
-                        self.signals.thumbnail_ready.emit(self.file_path, QIcon(scaled_pixmap))
+                if self.mime_type.startswith("image/") or self.file_path.lower().endswith(COVER_IMAGE_EXTENSIONS):
+                    image = self._load_image()
+                    if not image.isNull():
+                        self.signals.thumbnail_ready.emit(self.file_path, image)
                     else:
                         logger.warning("Failed to load image: %s", self.file_path)
                 elif self.file_path.lower().endswith((".exe", ".iso")):
@@ -73,13 +103,17 @@ class FileExplorer(QDialog):
                         return
 
                     with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
-                        if generate_thumbnail(thumbnail_source, tmp.name, size=self.size):
-                            pixmap = QPixmap(tmp.name)
-                            if not pixmap.isNull():
-                                self.signals.thumbnail_ready.emit(self.file_path, QIcon(pixmap))
-                            os.unlink(tmp.name)
+                        tmp_name = tmp.name
+                    try:
+                        if generate_thumbnail(thumbnail_source, tmp_name, size=self.size):
+                            image = QImage(tmp_name)
+                            if not image.isNull():
+                                self.signals.thumbnail_ready.emit(self.file_path, image)
                         else:
                             logger.warning("Failed to generate thumbnail for file: %s", self.file_path)
+                    finally:
+                        if os.path.exists(tmp_name):
+                            os.unlink(tmp_name)
             except Exception as e:
                 logger.error("Error loading thumbnail for %s: %s", self.file_path, str(e))
 
@@ -94,6 +128,11 @@ class FileExplorer(QDialog):
         self.initial_path = initial_path
         self.thumbnail_cache = {}
         self.pending_thumbnails = set()
+        self.deferred_thumbnails = {}
+        self.file_items = {}
+        self.thumbnail_timer = QTimer(self)
+        self.thumbnail_timer.setSingleShot(True)
+        self.thumbnail_timer.timeout.connect(self.load_visible_thumbnails)
         self.main_window = None
         self.setup_ui()
 
@@ -140,13 +179,16 @@ class FileExplorer(QDialog):
         """Asynchronously loads thumbnails for a list of files."""
         thread_pool = QThreadPool.globalInstance()
         thread_pool.setMaxThreadCount(4)
+        available_slots = max(0, THUMBNAIL_QUEUE_LIMIT - len(self.pending_thumbnails))
+        if available_slots == 0:
+            return
 
         for f in files:
             file_path = os.path.join(self.current_path, f)
             if file_path in self.thumbnail_cache or file_path in self.pending_thumbnails:
                 continue
             mime_type = mime_db.mimeTypeForFile(file_path).name()
-            if mime_type.startswith("image/") or file_path.lower().endswith((".exe", ".iso")):
+            if mime_type.startswith("image/") or file_path.lower().endswith(COVER_IMAGE_EXTENSIONS + (".exe", ".iso")):
                 self.pending_thumbnails.add(file_path)
                 resolver = None
                 main_window = cast("MainWindow | None", self.main_window)
@@ -155,28 +197,52 @@ class FileExplorer(QDialog):
                 loader = self.ThumbnailLoader(file_path, mime_type, size=64, resolve_launch_file_path=resolver)
                 loader.signals.thumbnail_ready.connect(self.update_thumbnail)
                 thread_pool.start(loader)
+                available_slots -= 1
+                if available_slots == 0:
+                    return
 
-    @Slot(str, QIcon)
-    def update_thumbnail(self, file_path, icon):
+    @Slot(str, QImage)
+    def update_thumbnail(self, file_path, image):
         """Updates the icon for a file list item after thumbnail loading."""
         try:
-            self.thumbnail_cache[file_path] = icon
             self.pending_thumbnails.discard(file_path)
-            file_name = os.path.basename(file_path)
-            for i in range(self.file_list.count()):
-                item = self.file_list.item(i)
-                if item.text() == file_name:
-                    item.setIcon(icon)
-                    break
+            if file_path not in self.file_items:
+                return
+            if self.thumbnail_timer.isActive():
+                self.deferred_thumbnails[file_path] = image
+                return
+            self._set_thumbnail_icon(file_path, image)
+            if len(self.pending_thumbnails) < THUMBNAIL_QUEUE_LIMIT // 2:
+                self.schedule_thumbnail_loading()
         except Exception as e:
             logger.error("Error updating thumbnail for %s: %s", file_path, str(e))
+
+    def _set_thumbnail_icon(self, file_path: str, image: QImage) -> None:
+        icon = QIcon(QPixmap.fromImage(image))
+        self.thumbnail_cache[file_path] = icon
+        item = self.file_items.get(file_path)
+        if item:
+            item.setIcon(icon)
+
+    def schedule_thumbnail_loading(self) -> None:
+        """Schedule thumbnail loading after scroll events settle."""
+        self.thumbnail_timer.start(THUMBNAIL_SCROLL_DELAY_MS)
 
     def load_visible_thumbnails(self):
         """Load thumbnails only for visible items in the file list."""
         try:
             visible_range = self.file_list.count()
-            first_visible = max(0, self.file_list.indexAt(self.file_list.viewport().rect().topLeft()).row())
-            last_visible = min(visible_range - 1, self.file_list.indexAt(self.file_list.viewport().rect().bottomRight()).row() + 5)
+            if visible_range == 0:
+                return
+            top_row = self.file_list.indexAt(self.file_list.viewport().rect().topLeft()).row()
+            bottom_row = self.file_list.indexAt(self.file_list.viewport().rect().bottomRight()).row()
+            first_visible = max(0, top_row)
+            if bottom_row < 0:
+                row_height = max(1, self.file_list.sizeHintForRow(first_visible))
+                visible_rows = max(1, self.file_list.viewport().height() // row_height)
+                last_visible = min(visible_range - 1, first_visible + visible_rows + THUMBNAIL_PRELOAD_ROWS)
+            else:
+                last_visible = min(visible_range - 1, bottom_row + THUMBNAIL_PRELOAD_ROWS)
 
             files_to_load = []
             for i in range(first_visible, last_visible + 1):
@@ -187,6 +253,13 @@ class FileExplorer(QDialog):
                 if file_name.endswith("/"):
                     continue
                 file_path = os.path.join(self.current_path, file_name)
+                if file_path in self.deferred_thumbnails:
+                    image = self.deferred_thumbnails.pop(file_path)
+                    self._set_thumbnail_icon(file_path, image)
+                    continue
+                if file_path in self.thumbnail_cache:
+                    item.setIcon(self.thumbnail_cache[file_path])
+                    continue
                 if file_path not in self.thumbnail_cache and file_path not in self.pending_thumbnails:
                     files_to_load.append(file_name)
 
@@ -254,10 +327,11 @@ class FileExplorer(QDialog):
         self.file_list.customContextMenuRequested.connect(self.show_folder_context_menu)
         self.file_list.setHorizontalScrollMode(QListWidget.ScrollMode.ScrollPerPixel)
         self.file_list.setVerticalScrollMode(QListWidget.ScrollMode.ScrollPerPixel)
+        self.file_list.setUniformItemSizes(True)
         QScroller.grabGesture(self.file_list.viewport(), QScroller.ScrollerGestureType.LeftMouseButtonGesture)
         self.main_layout.addWidget(self.file_list)
 
-        self.file_list.verticalScrollBar().valueChanged.connect(self.load_visible_thumbnails)
+        self.file_list.verticalScrollBar().valueChanged.connect(self.schedule_thumbnail_loading)
 
         self.button_layout = QHBoxLayout()
         self.button_layout.setSpacing(10)
@@ -456,6 +530,8 @@ class FileExplorer(QDialog):
         self.file_list.clear()
         self.thumbnail_cache.clear()
         self.pending_thumbnails.clear()
+        self.deferred_thumbnails.clear()
+        self.file_items.clear()
         try:
             if self.directory_only:
                 item = QListWidgetItem("./")
@@ -498,10 +574,12 @@ class FileExplorer(QDialog):
                         files = [f for f in files if any(f.lower().endswith(ext) for ext in self.file_filter)]
 
                 for f in sorted(files):
+                    file_path = os.path.join(self.current_path, f)
                     item = QListWidgetItem(f)
+                    self.file_items[file_path] = item
                     self.file_list.addItem(item)
 
-                self.load_visible_thumbnails()
+                self.schedule_thumbnail_loading()
 
             self.path_label.setText(_("Path: ") + self.current_path)
 
