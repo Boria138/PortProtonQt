@@ -155,6 +155,7 @@ QColor(self.theme.color_disabled_text)
 - Modify only the relevant section
 - Preserve existing architecture and naming
 - Do not auto-format unrelated code
+- Do not change formatting-only lines without explicit user request
 - Do not reorder imports unless necessary
 - Do not introduce abstractions without request
 - Do not change logging system
@@ -181,6 +182,7 @@ QColor(self.theme.color_disabled_text)
 - Targeted changes only
 - Preserve existing patterns
 - Keep surrounding code unchanged
+- Keep formatting changes limited to touched logic or required hook fixes
 
 ---
 
