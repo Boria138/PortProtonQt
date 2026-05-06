@@ -1,6 +1,6 @@
 import os
 from weakref import WeakKeyDictionary
-from PySide6.QtGui import QPen, QColor, QPixmap, QPainter, QPainterPath, QImageReader, QMovie
+from PySide6.QtGui import QPen, QColor, QPixmap, QPainter, QPainterPath, QImageReader, QMovie, QBitmap
 from PySide6.QtCore import (
     Qt, QFile, QEvent, QByteArray, QEasingCurve, QPropertyAnimation, QSize, QObject, QTimer
 )
@@ -20,7 +20,7 @@ downloader = Downloader()
 logger = get_logger(__name__)
 COVER_IMAGE_EXTENSIONS = (".png", ".apng", ".jpg", ".jpeg", ".gif", ".webp", ".jxl")
 DEFAULT_ANIMATION_DELAY_MS = 100
-MIN_ANIMATION_DELAY_MS = 20
+ANIMATED_COVER_MIN_DELAY_MS = 50
 
 # Global queue and thread pool for image loading
 image_load_queue = Queue()
@@ -45,6 +45,21 @@ def is_animated_cover(path: str) -> bool:
         return False
     reader = QImageReader(path)
     return reader.supportsAnimation() and reader.imageCount() != 1
+
+
+def _set_cover_mask(label: QLabel, width: int, height: int, radius: int) -> None:
+    if radius <= 0:
+        label.clearMask()
+        return
+    mask = QBitmap(max(width, 1), max(height, 1))
+    mask.fill(Qt.GlobalColor.color0)
+    painter = QPainter(mask)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+    painter.setBrush(Qt.GlobalColor.color1)
+    painter.setPen(Qt.PenStyle.NoPen)
+    painter.drawRoundedRect(0, 0, mask.width(), mask.height(), radius, radius)
+    painter.end()
+    label.setMask(mask)
 
 
 class _PillowAnimatedCover(QObject):
@@ -72,10 +87,15 @@ class _PillowAnimatedCover(QObject):
     def set_scaled_size(self, width: int, height: int) -> None:
         self.width = width
         self.height = height
+        _set_cover_mask(self.label, width, height, self.radius)
         if self.current_frame is not None:
             pixmap, _delay = self._convert_frame(self.current_frame)
             if not pixmap.isNull():
-                self.label.setPixmap(round_corners(pixmap, self.radius))
+                self.label.setPixmap(pixmap)
+
+    def stop(self) -> None:
+        self.timer.stop()
+        self._close_image()
 
     def _open_image(self) -> bool:
         self._close_image()
@@ -92,20 +112,24 @@ class _PillowAnimatedCover(QObject):
             return False
 
     def _close_image(self) -> None:
+        if self.current_frame is not None:
+            self.current_frame.close()
+            self.current_frame = None
         if self.image is not None:
             self.image.close()
             self.image = None
         self.image_iterator = None
-        self.current_frame = None
 
     def _convert_frame(self, frame: Image.Image) -> tuple[QPixmap, int]:
         duration = int(frame.info.get("duration", DEFAULT_ANIMATION_DELAY_MS))
-        duration = max(duration, MIN_ANIMATION_DELAY_MS)
+        duration = max(duration, ANIMATED_COVER_MIN_DELAY_MS)
         image = frame.convert("RGBA").resize(
             (max(self.width, 1), max(self.height, 1)),
-            Image.Resampling.LANCZOS,
+            Image.Resampling.BILINEAR,
         )
-        return QPixmap.fromImage(ImageQt.toqimage(image)), duration
+        pixmap = QPixmap.fromImage(ImageQt.toqimage(image))
+        image.close()
+        return pixmap, duration
 
     def _show_next_frame(self) -> None:
         if self.image_iterator is None:
@@ -122,10 +146,12 @@ class _PillowAnimatedCover(QObject):
             if not self._open_image() or self.image_iterator is None:
                 return DEFAULT_ANIMATION_DELAY_MS
             frame = next(self.image_iterator)
+        if self.current_frame is not None:
+            self.current_frame.close()
         self.current_frame = frame.copy()
         pixmap, delay = self._convert_frame(self.current_frame)
         if not pixmap.isNull():
-            self.label.setPixmap(round_corners(pixmap, self.radius))
+            self.label.setPixmap(pixmap)
         return delay
 
 
@@ -135,12 +161,14 @@ _animated_cover_radii: WeakKeyDictionary[QLabel, int] = WeakKeyDictionary()
 
 def set_animated_cover(label: QLabel, path: str, width: int, height: int, radius: int = 0) -> bool:
     """Set animated cover movie on QLabel."""
+    cleanup_animated_cover(label)
     ext = os.path.splitext(path)[1].lower()
     if not path or ext not in COVER_IMAGE_EXTENSIONS:
         return False
     if not QFile.exists(path):
         return False
     if ext in (".png", ".apng"):
+        _set_cover_mask(label, width, height, radius)
         animation = _PillowAnimatedCover(label, path, width, height, radius)
         if not animation.start():
             return False
@@ -153,20 +181,40 @@ def set_animated_cover(label: QLabel, path: str, width: int, height: int, radius
     if not movie.isValid():
         logger.warning("Failed to load animated cover from %s", path)
         return False
-    movie.setCacheMode(QMovie.CacheMode.CacheAll)
+    movie.setCacheMode(QMovie.CacheMode.CacheNone)
     movie.setScaledSize(QSize(width, height))
+    _set_cover_mask(label, width, height, radius)
     _animated_cover_movies[label] = movie
     _animated_cover_radii[label] = radius
-
-    def update_frame() -> None:
-        pixmap = movie.currentPixmap()
-        if not pixmap.isNull():
-            label.setPixmap(round_corners(pixmap, _animated_cover_radii.get(label, 0)))
-
-    movie.frameChanged.connect(lambda _frame: update_frame())
+    label.setMovie(movie)
     movie.start()
-    update_frame()
     return True
+
+
+def cleanup_animated_cover(label: QLabel) -> None:
+    """Stop and remove animated cover from QLabel."""
+    movie = _animated_cover_movies.pop(label, None)
+    _animated_cover_radii.pop(label, None)
+    if movie is None:
+        return
+    try:
+        if isinstance(movie, _PillowAnimatedCover):
+            movie.stop()
+        else:
+            movie.stop()
+        label.clear()
+        label.clearMask()
+        movie.deleteLater()
+    except RuntimeError:
+        pass
+
+
+def cleanup_widget_animated_covers(widget: QWidget) -> None:
+    """Stop animated covers under widget."""
+    if isinstance(widget, QLabel):
+        cleanup_animated_cover(widget)
+    for label in widget.findChildren(QLabel):
+        cleanup_animated_cover(label)
 
 
 def update_animated_cover_size(label: QLabel, width: int, height: int, radius: int = 0) -> None:
@@ -179,9 +227,7 @@ def update_animated_cover_size(label: QLabel, width: int, height: int, radius: i
             movie.set_scaled_size(width, height)
             return
         movie.setScaledSize(QSize(width, height))
-        pixmap = movie.currentPixmap()
-        if not pixmap.isNull():
-            label.setPixmap(round_corners(pixmap, radius))
+        _set_cover_mask(label, width, height, radius)
 
 
 def get_animated_cover_movie(label: QLabel) -> QMovie | _PillowAnimatedCover | None:

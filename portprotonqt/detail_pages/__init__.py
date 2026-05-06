@@ -52,6 +52,7 @@ from portprotonqt.portproton_api import PortProtonAPI
 from portprotonqt.downloader import Downloader
 from portprotonqt.animations import DetailPageAnimations
 from portprotonqt.debug_utils import DebugLogManager
+from portprotonqt.image_utils import cleanup_widget_animated_covers
 from portprotonqt.steam_api import get_steam_compat_tool, get_steam_home, get_steam_libs, safe_vdf_load
 
 logger = get_logger(__name__)
@@ -875,6 +876,7 @@ class DetailPageManager:
         """Clean up detail page and return to tab."""
         try:
             self._cleanup_animations(page)
+            cleanup_widget_animated_covers(page)
 
             if not self._page_in_stacked(page):
                 logger.debug("Page not found in stacked widget")
@@ -882,6 +884,7 @@ class DetailPageManager:
                 return
 
             self.main_window.stackedWidget.removeWidget(page)
+            page.deleteLater()
             return_tab_index = getattr(self, "_return_to_tab_index", 0)
             self.main_window.stackedWidget.setCurrentIndex(return_tab_index)
 
