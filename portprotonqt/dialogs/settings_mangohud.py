@@ -550,7 +550,6 @@ class MangoHudSettingsMixin:
 
         for category, keys in MANGOHUD_TOGGLE_CATEGORIES.items():
             inner_widget = QWidget()
-            inner_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
             layout = QGridLayout(inner_widget)
             layout.setContentsMargins(0, 8, 0, 8)
             layout.setHorizontalSpacing(0)
@@ -584,7 +583,6 @@ class MangoHudSettingsMixin:
 
         if uncategorized:
             inner_widget = QWidget()
-            inner_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
             layout = QGridLayout(inner_widget)
             layout.setContentsMargins(0, 8, 0, 8)
             layout.setHorizontalSpacing(0)
