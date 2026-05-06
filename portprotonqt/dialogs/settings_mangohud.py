@@ -527,7 +527,6 @@ class MangoHudSettingsMixin:
         parent_layout.addWidget(presets_group)
 
     def _add_mangohud_toggle_group(self, parent_layout):
-        """Add categorized MangoHud toggle checkboxes."""
         selector_group = QGroupBox(_("MangoHud switches"))
         selector_group.setStyleSheet(self.theme.QGROUP_BOX_STYLE)
         selector_layout = QVBoxLayout(selector_group)
@@ -547,58 +546,75 @@ class MangoHudSettingsMixin:
         columns = 4
 
         for category, keys in MANGOHUD_TOGGLE_CATEGORIES.items():
-            category_widget = QWidget()
-            layout = QGridLayout(category_widget)
-            layout.setContentsMargins(8, 8, 8, 8)
-            layout.setHorizontalSpacing(16)
+            inner_widget = QWidget()
+            inner_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+            layout = QGridLayout(inner_widget)
+            layout.setContentsMargins(0, 8, 0, 8)
+            layout.setHorizontalSpacing(0)
             layout.setVerticalSpacing(10)
-            for column in range(columns):
-                layout.setColumnStretch(column, 1)
+
+            num_real_columns = columns
+            total_columns = num_real_columns * 2 + 1
+
+            for col in range(total_columns):
+                if col % 2 == 0:
+                    layout.setColumnStretch(col, 1)
+                else:
+                    layout.setColumnStretch(col, 0)
 
             for index, key in enumerate(keys):
                 if key not in toggle_lookup:
                     continue
                 label = toggle_lookup[key]
                 checkbox = self._create_mangohud_checkbox(label)
-                row = index // columns
-                column = index % columns
-                layout.addWidget(checkbox, row, column)
+                row = index // num_real_columns
+                col_in_row = index % num_real_columns
+                real_col = col_in_row * 2 + 1
+                layout.addWidget(checkbox, row, real_col)
                 self.mangohud_toggle_widgets[key] = checkbox
                 self.mangohud_toggle_widget_keys[checkbox] = key
                 self.register_gamepad_tooltip(checkbox, MANGOHUD_TOGGLE_DESCRIPTIONS.get(key, ""))
                 uncategorized.discard(key)
 
-            self.mangohud_category_groups[category] = category_widget
-            self.mangohud_category_stack.addWidget(category_widget)
+            self.mangohud_category_groups[category] = inner_widget
+            self.mangohud_category_stack.addWidget(inner_widget)
 
         if uncategorized:
-            category_widget = QWidget()
-            layout = QGridLayout(category_widget)
-            layout.setContentsMargins(8, 8, 8, 8)
-            layout.setHorizontalSpacing(16)
+            inner_widget = QWidget()
+            inner_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+            layout = QGridLayout(inner_widget)
+            layout.setContentsMargins(0, 8, 0, 8)
+            layout.setHorizontalSpacing(0)
             layout.setVerticalSpacing(10)
-            for column in range(columns):
-                layout.setColumnStretch(column, 1)
+
+            num_real_columns = columns
+            total_columns = num_real_columns * 2 + 1
+
+            for col in range(total_columns):
+                if col % 2 == 0:
+                    layout.setColumnStretch(col, 1)
+                else:
+                    layout.setColumnStretch(col, 0)
 
             for index, key in enumerate(sorted(uncategorized)):
                 label = toggle_lookup[key]
                 checkbox = self._create_mangohud_checkbox(label)
-                row = index // columns
-                column = index % columns
-                layout.addWidget(checkbox, row, column)
+                row = index // num_real_columns
+                col_in_row = index % num_real_columns
+                real_col = col_in_row * 2 + 1
+                layout.addWidget(checkbox, row, real_col)
                 self.mangohud_toggle_widgets[key] = checkbox
                 self.mangohud_toggle_widget_keys[checkbox] = key
                 self.register_gamepad_tooltip(checkbox, MANGOHUD_TOGGLE_DESCRIPTIONS.get(key, ""))
 
             self.mangohud_category_combo.addItem(_("Other"))
-            self.mangohud_category_groups[_("Other")] = category_widget
-            self.mangohud_category_stack.addWidget(category_widget)
+            self.mangohud_category_groups[_("Other")] = inner_widget
+            self.mangohud_category_stack.addWidget(inner_widget)
 
         self._update_mangohud_category_stack_height()
         parent_layout.addWidget(selector_group)
 
     def _add_mangohud_fps_group(self, parent_layout):
-        """Add FPS limit presets."""
         group = QGroupBox(_("FPS limit"))
         group.setStyleSheet(self.theme.QGROUP_BOX_STYLE)
         layout = QVBoxLayout(group)
@@ -625,16 +641,27 @@ class MangoHudSettingsMixin:
         layout.addWidget(label)
 
         grid = QGridLayout()
-        grid.setHorizontalSpacing(16)
+        grid.setContentsMargins(0, 0, 0, 0)
+        grid.setHorizontalSpacing(0)
         grid.setVerticalSpacing(10)
+
+        num_real_columns = 4
+        total_columns = num_real_columns * 2 + 1
+
+        for col in range(total_columns):
+            if col % 2 == 0:
+                grid.setColumnStretch(col, 1)
+            else:
+                grid.setColumnStretch(col, 0)
 
         for index, fps in enumerate(MANGOHUD_FPS_OPTIONS):
             checkbox = QCheckBox(fps)
             checkbox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
             checkbox.setStyleSheet(self.theme.CHECKBOX_STYLE)
-            row = index // 4
-            column = index % 4
-            grid.addWidget(checkbox, row, column)
+            row = index // num_real_columns
+            col_in_row = index % num_real_columns
+            real_col = col_in_row * 2 + 1
+            grid.addWidget(checkbox, row, real_col)
             self.mangohud_fps_widgets[fps] = checkbox
 
         layout.addLayout(grid)
