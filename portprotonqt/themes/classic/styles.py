@@ -10,6 +10,11 @@ portProtonPageVerticalSpacing = 2
 portProtonPageSectionHeaderSpacing = 5
 wineSettingsSetSpacing = 2
 
+mangoHudSwitchesColumns = 4
+mangoHudSwitchesVerticalSpacing = 5
+mangoHudFpsColumns = 6
+mangoHudFpsVerticalSpacing = 5
+
 LIBRARY_LAYOUT_MODE = "list"
 
 GAME_CARD_ANIMATION = {

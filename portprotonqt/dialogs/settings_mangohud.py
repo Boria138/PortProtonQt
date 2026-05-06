@@ -543,7 +543,7 @@ class MangoHudSettingsMixin:
 
         toggle_lookup = dict(MANGOHUD_TOGGLE_SPECS)
         uncategorized = set(toggle_lookup.keys())
-        columns = 4
+        columns = self.theme.mangoHudSwitchesColumns
 
         for category, keys in MANGOHUD_TOGGLE_CATEGORIES.items():
             inner_widget = QWidget()
@@ -551,7 +551,7 @@ class MangoHudSettingsMixin:
             layout = QGridLayout(inner_widget)
             layout.setContentsMargins(0, 8, 0, 8)
             layout.setHorizontalSpacing(0)
-            layout.setVerticalSpacing(10)
+            layout.setVerticalSpacing(self.theme.mangoHudSwitchesVerticalSpacing)
 
             num_real_columns = columns
             total_columns = num_real_columns * 2 + 1
@@ -585,7 +585,7 @@ class MangoHudSettingsMixin:
             layout = QGridLayout(inner_widget)
             layout.setContentsMargins(0, 8, 0, 8)
             layout.setHorizontalSpacing(0)
-            layout.setVerticalSpacing(10)
+            layout.setVerticalSpacing(self.theme.mangoHudSwitchesVerticalSpacing)
 
             num_real_columns = columns
             total_columns = num_real_columns * 2 + 1
@@ -644,8 +644,9 @@ class MangoHudSettingsMixin:
         grid.setContentsMargins(0, 0, 0, 0)
         grid.setHorizontalSpacing(0)
         grid.setVerticalSpacing(10)
+        grid.setVerticalSpacing(self.theme.mangoHudFpsVerticalSpacing)
 
-        num_real_columns = 4
+        num_real_columns = self.theme.mangoHudFpsColumns
         total_columns = num_real_columns * 2 + 1
 
         for col in range(total_columns):

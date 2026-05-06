@@ -11,6 +11,10 @@ portProtonPageHorizontalSpacing = 15
 portProtonPageVerticalSpacing = 10
 portProtonPageSectionHeaderSpacing = 10
 wineSettingsSetSpacing = 10
+mangoHudSwitchesColumns = 4
+mangoHudSwitchesVerticalSpacing = 10
+mangoHudFpsColumns = 4
+mangoHudFpsVerticalSpacing = 10
 
 # VARS
 font_family = "Play"
