@@ -805,19 +805,23 @@ class MangoHudSettingsMixin:
         self._update_mangohud_toggle_buttons()
 
     def _update_mangohud_toggle_buttons(self):
-        """Update toggle button text based on current settings."""
+        """Update toggle button text and style based on current settings."""
         mangohud_enabled = self.current_settings.get('PW_MANGOHUD') == '1'
         mangohud_user_conf_enabled = self.current_settings.get('PW_MANGOHUD_USER_CONF') == '1'
 
         if mangohud_enabled:
             self.mangohud_enable_button.setText(_("Disable MangoHud"))
+            self.mangohud_enable_button.setStyleSheet(self.theme.ACTION_BUTTON_ACTIVE_STYLE)
         else:
             self.mangohud_enable_button.setText(_("Enable MangoHud"))
+            self.mangohud_enable_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
 
         if mangohud_user_conf_enabled:
             self.mangohud_user_conf_button.setText(_("Don't use system config"))
+            self.mangohud_user_conf_button.setStyleSheet(self.theme.ACTION_BUTTON_ACTIVE_STYLE)
         else:
             self.mangohud_user_conf_button.setText(_("Use system config"))
+            self.mangohud_user_conf_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
 
     def toggle_mangohud_enable(self):
         """Toggle PW_MANGOHUD setting."""
