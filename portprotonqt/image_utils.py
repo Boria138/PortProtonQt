@@ -230,6 +230,19 @@ def update_animated_cover_size(label: QLabel, width: int, height: int, radius: i
         _set_cover_mask(label, width, height, radius)
 
 
+def get_animated_cover_pixmap(label: QLabel) -> QPixmap | None:
+    """Return current animated cover frame for palette extraction."""
+    movie = _animated_cover_movies.get(label)
+    if movie is None:
+        return label.pixmap()
+    if isinstance(movie, _PillowAnimatedCover):
+        return label.pixmap()
+    pixmap = movie.currentPixmap()
+    if pixmap.isNull() and movie.jumpToFrame(0):
+        pixmap = movie.currentPixmap()
+    return None if pixmap.isNull() else pixmap
+
+
 def get_animated_cover_movie(label: QLabel) -> QMovie | _PillowAnimatedCover | None:
     """Return animated cover movie for QLabel."""
     return _animated_cover_movies.get(label)
