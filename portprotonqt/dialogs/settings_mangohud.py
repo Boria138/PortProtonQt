@@ -447,7 +447,6 @@ class MangoHudSettingsMixin:
                 display_text = placeholder_text if option == '' else value_translations.get(option, option)
                 widget.addItem(display_text, option)
         widget.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        widget.setMinimumHeight(40)
         widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         widget.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
         default_value = MANGOHUD_VALUE_DEFAULTS.get(spec['key'], '')
@@ -475,14 +474,12 @@ class MangoHudSettingsMixin:
         # Toggle buttons for PW_MANGOHUD and PW_MANGOHUD_USER_CONF
         self.mangohud_enable_button = QPushButton(_("Enable MangoHud"))
         self.mangohud_enable_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
-        self.mangohud_enable_button.setMinimumHeight(44)
         self.mangohud_enable_button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.mangohud_enable_button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.mangohud_enable_button.clicked.connect(self.toggle_mangohud_enable)
 
         self.mangohud_user_conf_button = QPushButton(_("Use system config"))
         self.mangohud_user_conf_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
-        self.mangohud_user_conf_button.setMinimumHeight(44)
         self.mangohud_user_conf_button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.mangohud_user_conf_button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.mangohud_user_conf_button.clicked.connect(self.toggle_mangohud_user_conf)
@@ -509,7 +506,6 @@ class MangoHudSettingsMixin:
         for index, (label, handler) in enumerate(preset_buttons):
             button = QPushButton(label)
             button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
-            button.setMinimumHeight(44)
             button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
             button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
             button.clicked.connect(handler)
@@ -520,7 +516,6 @@ class MangoHudSettingsMixin:
         for index, (label, handler) in enumerate(action_buttons):
             button = QPushButton(label)
             button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
-            button.setMinimumHeight(44)
             button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
             button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
             button.clicked.connect(handler)
@@ -540,7 +535,6 @@ class MangoHudSettingsMixin:
         self.mangohud_category_combo = QComboBox()
         self.mangohud_category_combo.addItems(list(MANGOHUD_TOGGLE_CATEGORIES.keys()))
         self.mangohud_category_combo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
-        self.mangohud_category_combo.setMinimumHeight(40)
         self.mangohud_category_combo.currentTextChanged.connect(self.on_mangohud_category_changed)
         selector_layout.addWidget(self.mangohud_category_combo)
 
@@ -637,13 +631,7 @@ class MangoHudSettingsMixin:
         for index, fps in enumerate(MANGOHUD_FPS_OPTIONS):
             checkbox = QCheckBox(fps)
             checkbox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-            checkbox.setMinimumHeight(36)
-            checkbox.setStyleSheet(self.theme.CHECKBOX_STYLE + """
-                QCheckBox {
-                    spacing: 10px;
-                    padding: 4px 2px;
-                }
-            """)
+            checkbox.setStyleSheet(self.theme.CHECKBOX_STYLE)
             row = index // 4
             column = index % 4
             grid.addWidget(checkbox, row, column)
@@ -662,7 +650,6 @@ class MangoHudSettingsMixin:
         layout.addWidget(label)
         self.mangohud_extra_edit = QLineEdit()
         self.mangohud_extra_edit.setPlaceholderText(_("Example: battery,gpu_junction_temp,fps_color=39f900"))
-        self.mangohud_extra_edit.setMinimumHeight(40)
         self.mangohud_extra_edit.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.mangohud_extra_edit.installEventFilter(cast(QWidget, self))
         self.mangohud_extra_edit.setStyleSheet(self.theme.ADDGAME_INPUT_STYLE)
@@ -732,14 +719,8 @@ class MangoHudSettingsMixin:
         """Create a styled MangoHud checkbox."""
         checkbox = QCheckBox(label)
         checkbox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        checkbox.setMinimumHeight(36)
         checkbox.installEventFilter(cast(QWidget, self))
-        checkbox.setStyleSheet(self.theme.CHECKBOX_STYLE + """
-            QCheckBox {
-                spacing: 10px;
-                padding: 4px 2px;
-            }
-        """)
+        checkbox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         return checkbox
 
     def on_mangohud_category_changed(self, category):
