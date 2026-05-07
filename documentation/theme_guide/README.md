@@ -108,6 +108,22 @@ This is a theme-level option and does not depend on app settings.
 
 ---
 
+## 🧾 Detail Page Layout Mode
+
+You can control the detail page layout from the theme via `styles.py`:
+
+```python
+# "full" (default) or "compact"
+DETAIL_PAGE_LAYOUT_MODE = "full"
+```
+
+- `full`: full cover size, description, badges, controller support, and HowLongToBeat data.
+- `compact`: smaller cover and simplified detail content.
+
+Economy mode also forces the compact detail page layout.
+
+---
+
 ## 🎥 Animation configuration
 
 The `GAME_CARD_ANIMATION` dictionary controls all animation parameters for game cards:

@@ -20,6 +20,7 @@ exeSettingsGroupBoxElementVerticalSpacing = 2
 exeSettingsGroupBoxElementHorizontalSpacing = 5
 
 LIBRARY_LAYOUT_MODE = "list"
+DETAIL_PAGE_LAYOUT_MODE = "compact"
 
 GAME_CARD_ANIMATION = {
     "detail_page_animation_type": "fade",

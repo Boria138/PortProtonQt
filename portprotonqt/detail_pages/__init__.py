@@ -29,7 +29,7 @@ from portprotonqt.detail_pages.widgets import (
     create_details_widget,
     COVER_WIDTH,
     COVER_HEIGHT,
-    ECONOMY_COVER_SIZE,
+    DETAIL_COMPACT_COVER_SIZE,
 )
 from portprotonqt.detail_pages.utils import (
     setup_image_loading,
@@ -75,9 +75,9 @@ class DetailPageManager:
     def openGameDetailPage(self, game_data: dict) -> None:
         """Open detailed game information page."""
         detail_page = QWidget()
-        economy_mode = self._is_economy_mode()
-        cover_width = ECONOMY_COVER_SIZE if economy_mode else COVER_WIDTH
-        cover_height = ECONOMY_COVER_SIZE if economy_mode else COVER_HEIGHT
+        compact_layout = self._is_compact_detail_layout()
+        cover_width = DETAIL_COMPACT_COVER_SIZE if compact_layout else COVER_WIDTH
+        cover_height = DETAIL_COMPACT_COVER_SIZE if compact_layout else COVER_HEIGHT
         image_label = QLabel()
         image_label.setFixedSize(cover_width, cover_height)
 
@@ -95,7 +95,7 @@ class DetailPageManager:
             cover_height=cover_height,
         )
 
-        description = "" if economy_mode else game_data["description"]
+        description = "" if compact_layout else game_data["description"]
         game_info_layout = self._create_game_info_layout(game_data)
         buttons_layout = self._create_game_buttons_layout(game_data)
         details_widget = create_details_widget(
@@ -104,9 +104,11 @@ class DetailPageManager:
             title=game_data["name"],
             description=description,
             game_info_layout=game_info_layout,
-            controller_support=None if economy_mode else game_data.get("controller_support"),
+            controller_support=(
+                None if compact_layout else game_data.get("controller_support")
+            ),
             buttons_layout=buttons_layout,
-            show_description=not economy_mode,
+            show_description=not compact_layout,
         )
 
         self._finalize_detail_page(
@@ -117,13 +119,16 @@ class DetailPageManager:
     def _get_favorite_text(self, name: str) -> str:
         return "★" if name in favorites_config.get_games() else "☆"
 
-    def _is_economy_mode(self) -> bool:
-        return ui_config.get_economy_mode()
+    def _is_compact_detail_layout(self) -> bool:
+        layout_mode = str(
+            getattr(self.main_window.theme, "DETAIL_PAGE_LAYOUT_MODE", "full")
+        ).lower()
+        return ui_config.get_economy_mode() or layout_mode == "compact"
 
     def _create_game_badges(self, parent: QWidget, game_data: dict) -> list:
         from portprotonqt.config import game_config
 
-        if self._is_economy_mode():
+        if self._is_compact_detail_layout():
             return []
 
         display_filter = game_config.get_display_filter()
@@ -215,7 +220,7 @@ class DetailPageManager:
         self, name: str, hltb_layout: QHBoxLayout, game_info_layout: QVBoxLayout
     ) -> None:
         """Setup HowLongToBeat data loading."""
-        if self._is_economy_mode():
+        if self._is_compact_detail_layout():
             return
         hltb = HowLongToBeat(parent=self.main_window)
 
@@ -584,9 +589,9 @@ class DetailPageManager:
     def openAutoInstallDetailPage(self, game_data: dict) -> None:
         """Open minimal detail page for auto-install games."""
         detail_page = QWidget()
-        economy_mode = self._is_economy_mode()
-        cover_width = ECONOMY_COVER_SIZE if economy_mode else COVER_WIDTH
-        cover_height = ECONOMY_COVER_SIZE if economy_mode else COVER_HEIGHT
+        compact_layout = self._is_compact_detail_layout()
+        cover_width = DETAIL_COMPACT_COVER_SIZE if compact_layout else COVER_WIDTH
+        cover_height = DETAIL_COMPACT_COVER_SIZE if compact_layout else COVER_HEIGHT
         image_label = QLabel()
         image_label.setFixedSize(cover_width, cover_height)
 

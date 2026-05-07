@@ -62,6 +62,7 @@ virtual_keyboard_fade_animation_duration = 140
 virtual_keyboard_slide_fade_animation_duration = 180
 virtual_keyboard_slide_bounce_animation_duration = 220
 virtual_keyboard_animation_type = "slide"
+DETAIL_PAGE_LAYOUT_MODE = "full"
 
 GAME_CARD_ANIMATION = {
     # Animation type for entering/exiting detail page
