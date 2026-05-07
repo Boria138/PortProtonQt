@@ -1381,9 +1381,12 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 exec_line = game_tuple[5]
                 game_source = game_tuple[12]
                 exe_name = game_tuple[13]
-                if not cover_path:
-                    theme_cover = self.theme_manager.get_theme_image(exe_name, self.current_theme_name)
-                    if isinstance(theme_cover, str) and "autoinstall_covers" in theme_cover:
+                theme_cover = self.theme_manager.get_theme_image(exe_name, self.current_theme_name)
+                has_theme_cover = isinstance(theme_cover, str) and "autoinstall_covers" in theme_cover
+                if auto_layout_mode == "list" and has_theme_cover:
+                    cover_path = theme_cover
+                elif not cover_path:
+                    if has_theme_cover:
                         cover_path = theme_cover
                     elif economy_mode:
                         classic_cover = self.theme_manager.get_theme_image(exe_name, "classic")
@@ -1422,6 +1425,10 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             def batch_cover_callback(exe_name, local_path):
                 if local_path and exe_name in self.autoInstallGameCards:
                     card = self.autoInstallGameCards[exe_name]
+                    if card.list_layout:
+                        theme_cover = self.theme_manager.get_theme_image(exe_name, self.current_theme_name)
+                        if isinstance(theme_cover, str) and "autoinstall_covers" in theme_cover:
+                            return
                     card.cover_path = local_path
                     cover_width = 64 if card.list_layout else self.auto_card_width
                     cover_height = cover_width if card.list_layout else int(self.auto_card_width * 1.5)
