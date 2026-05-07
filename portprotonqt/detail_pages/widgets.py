@@ -71,7 +71,10 @@ def create_back_button(
     theme_manager,
     on_click: Callable[..., None],
 ) -> AutoSizeButton:
-    """Create back button with standard styling."""
+    """Create back button with standard styling, but not for classic theme."""
+    if theme.current_theme_name == "classic":
+        return None
+
     back_button = AutoSizeButton(_("Back"), icon=theme_manager.get_icon("back"))
     back_button.setFixedWidth(100)
     back_button.setStyleSheet(theme.ADDGAME_BACK_BUTTON_STYLE)
