@@ -47,12 +47,16 @@ class TrayManager:
         self.tray_menu = QMenu()
         self.toggle_action = QAction(_("Show"), self.main_window)
         self.toggle_action.triggered.connect(self.toggle_window_action)
+        self.stop_game_action = QAction(_("Stop Game"), self.main_window)
+        self.stop_game_action.setEnabled(False)
+        self.stop_game_action.triggered.connect(self.stop_game)
 
         self.favorites_menu = QMenu(_("Favorites"))
         self.recent_menu = QMenu(_("Recent Games"))
         self.themes_menu = QMenu(_("Themes"))
 
         self.tray_menu.addAction(self.toggle_action)
+        self.tray_menu.addAction(self.stop_game_action)
         self.tray_menu.addSeparator()
         self.tray_menu.addMenu(self.favorites_menu)
         self.tray_menu.addMenu(self.recent_menu)
@@ -75,6 +79,7 @@ class TrayManager:
 
     def refresh_tray_menu(self):
         self.update_toggle_action()
+        self.update_stop_game_action()
         self.populate_favorites_menu()
         self.populate_recent_menu()
         self.populate_themes_menu()
@@ -84,6 +89,12 @@ class TrayManager:
             self.toggle_action.setText(_("Hide"))
         else:
             self.toggle_action.setText(_("Show"))
+
+    def update_stop_game_action(self) -> None:
+        game_processes = getattr(self.main_window, "game_processes", [])
+        target_exe = getattr(self.main_window, "target_exe", None)
+        has_running_game = bool(game_processes or target_exe)
+        self.stop_game_action.setEnabled(has_running_game)
 
     def handle_tray_click(self, reason):
         if reason == QSystemTrayIcon.ActivationReason.Context:
@@ -108,6 +119,17 @@ class TrayManager:
             self.main_window.show()
             self.main_window.raise_()
             self.main_window.activateWindow()
+
+    def stop_game(self) -> None:
+        game_name = getattr(self.main_window, "target_exe", None)
+        if self.main_window.stop_running_game():
+            if game_name:
+                message = _("Stopped '{game_name}'").format(game_name=game_name)
+                self.main_window.update_status_message.emit(message, 3000)
+            self.update_stop_game_action()
+            return
+
+        QMessageBox.warning(self.main_window, _("Error"), _("Failed to stop game"))
 
     def populate_favorites_menu(self):
         self.favorites_menu.clear()

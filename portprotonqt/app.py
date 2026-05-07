@@ -2,23 +2,22 @@ import sys
 import os
 import subprocess
 import shutil
+from logging import Logger
 
 __app_id__ = "ru.linux_gaming.PortProtonQt"
 __app_name__ = "PortProtonQt"
 __app_version__ = "0.1.12"
 
-from PySide6.QtCore import QTimer, Qt, QThread, Signal
-from PySide6.QtWidgets import QApplication
-from PySide6.QtGui import QIcon
-from PySide6.QtNetwork import QLocalServer, QLocalSocket
+from PySide6.QtCore import QTimer
+from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
+from PySide6.QtGui import QAction, QIcon
 
-from portprotonqt.main_window import MainWindow
-from portprotonqt.port_data_path_selector import ask_portdata_path
 from portprotonqt.config import (
     display_config,
     get_portproton_start_command,
     get_portproton_location,
     save_portdata_path_to_config,
+    ui_config,
 )
 from portprotonqt.logger import get_logger, setup_logger
 from portprotonqt.cli import (
@@ -33,10 +32,7 @@ from portprotonqt.cli import (
     remove_steam_compat_tool,
     parse_resolution,
 )
-from portprotonqt.portproton_api import PortProtonAPI, get_user_conf_setting, set_user_conf_setting
-from portprotonqt.downloader import Downloader
-from portprotonqt.debug_utils import get_screen_info, get_selectable_gpu_entries
-from portprotonqt.localization import get_steam_language
+from portprotonqt.localization import _, get_steam_language
 
 def get_version():
     try:
@@ -65,6 +61,66 @@ def is_apple_silicon():
                 return False
     except OSError:
         return False
+
+
+def stop_portproton_game(start_sh: list[str], logger: Logger) -> None:
+    try:
+        subprocess.run(
+            start_sh + ["cli", "--stop"],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError) as e:
+        logger.warning("Failed to execute PortProton stop command: %s", e)
+
+
+def get_portproton_tray_icon() -> QIcon:
+    from portprotonqt.theme_manager import ThemeManager
+
+    icon = ThemeManager().get_icon("badge_portproton", ui_config.get_theme())
+    if isinstance(icon, QIcon):
+        return icon
+    return QIcon()
+
+
+def run_silent_tray(app: QApplication, start_sh: list[str], exe_path: str) -> None:
+    """Launch a game with a minimal tray stop action."""
+    logger = get_logger(__name__)
+    app.setQuitOnLastWindowClosed(False)
+    tray_icon = QSystemTrayIcon(get_portproton_tray_icon(), app)
+    tray_icon.setToolTip(__app_name__)
+
+    process = subprocess.Popen(
+        start_sh + [exe_path],
+        env=os.environ.copy(),
+        shell=False,
+    )
+    tray_menu = QMenu()
+
+    def stop_game() -> None:
+        monitor_timer.stop()
+        stop_portproton_game(start_sh, logger)
+        tray_icon.hide()
+        app.quit()
+
+    def close_when_game_exits(_tray_menu: QMenu = tray_menu) -> None:
+        if process.poll() is None:
+            return
+        monitor_timer.stop()
+        tray_icon.hide()
+        app.quit()
+
+    stop_action = QAction(_("Stop Game"), tray_menu)
+    stop_action.triggered.connect(stop_game)
+    tray_menu.addAction(stop_action)
+    tray_icon.setContextMenu(tray_menu)
+    tray_icon.show()
+
+    monitor_timer = QTimer(app)
+    monitor_timer.timeout.connect(close_when_game_exits)
+    monitor_timer.start(1000)
 
 
 def main():
@@ -100,9 +156,7 @@ def main():
     if portproton_location:
         os.environ["PORT_DATA_PATH"] = portproton_location
 
-    # Check if running as Steam compatibility tool (STEAM_COMPAT=1)
-    # or requested silent launch mode. In both modes, launch game
-    # immediately without GUI.
+    # Check if running as Steam compatibility tool (STEAM_COMPAT=1).
     is_steam_compat = os.environ.get("STEAM_COMPAT") == "1"
     is_silent_launch = parsed_args.silent
 
@@ -112,25 +166,16 @@ def main():
     if start_sh is None:
         return
 
-    # Handle no-GUI modes - launch game directly without GUI
-    if is_steam_compat or is_silent_launch:
-        # In no-GUI modes, launch file path is passed as first argument.
-        # --silent supports .exe only.
+    # Handle Steam compatibility mode - launch game directly without GUI.
+    if is_steam_compat:
         exe_path = parsed_args.file_or_url if parsed_args.file_or_url else None
-        can_launch_without_gui = False
-        launch_mode_name = "silent"
-
-        if is_steam_compat:
-            can_launch_without_gui = bool(exe_path and is_launch_file(exe_path))
-            launch_mode_name = "Steam compatibility"
-        elif is_silent_launch:
-            can_launch_without_gui = bool(exe_path and is_exe_file(exe_path))
+        can_launch_without_gui = bool(exe_path and is_launch_file(exe_path))
 
         if can_launch_without_gui and isinstance(exe_path, str):
             exe_path = normalize_launch_path(exe_path)
             logger = get_logger(__name__)
             setup_logger(parsed_args.debug_level)
-            logger.info("Running in %s mode, launching: %s", launch_mode_name, exe_path)
+            logger.info("Running in Steam compatibility mode, launching: %s", exe_path)
 
             # Launch game via PortProton without GUI
             env_vars = os.environ.copy()
@@ -138,7 +183,7 @@ def main():
             try:
                 subprocess.run(cmd, env=env_vars)
             except Exception as e:
-                logger.error("Failed to launch game in %s mode: %s", launch_mode_name, e)
+                logger.error("Failed to launch game in Steam compatibility mode: %s", e)
                 sys.exit(1)
             sys.exit(0)
         else:
@@ -157,8 +202,23 @@ def main():
 
     fullscreen = args.fullscreen or display_config.get_fullscreen()
     ipc_message = "show:fullscreen" if fullscreen else "show"
-    if args.file_or_url and is_launch_file(args.file_or_url):
+    if is_silent_launch and args.file_or_url and is_exe_file(args.file_or_url):
+        run_silent_tray(app, start_sh, normalize_launch_path(args.file_or_url))
+        sys.exit(app.exec())
+    elif args.file_or_url and is_launch_file(args.file_or_url):
         ipc_message = f"open:{normalize_launch_path(args.file_or_url)}"
+
+    from PySide6.QtCore import Qt, QThread, Signal
+    from PySide6.QtNetwork import QLocalServer, QLocalSocket
+    from portprotonqt.main_window import MainWindow
+    from portprotonqt.port_data_path_selector import ask_portdata_path
+    from portprotonqt.portproton_api import (
+        PortProtonAPI,
+        get_user_conf_setting,
+        set_user_conf_setting,
+    )
+    from portprotonqt.downloader import Downloader
+    from portprotonqt.debug_utils import get_screen_info, get_selectable_gpu_entries
 
     # --- Single-instance logic ---
     server_name = __app_id__
@@ -301,7 +361,7 @@ def main():
         and exe_path is None
     )
     if launch_minimized:
-        logger.info("Launching in tray (config)")
+        logger.info("Launching in tray")
         window.hide()
     elif launch_fullscreen:
         logger.info(
