@@ -15,9 +15,9 @@ mangoHudSwitchesVerticalSpacing = 5
 mangoHudFpsColumns = 6
 mangoHudFpsVerticalSpacing = 5
 mangoHudPresetsColumns = 4
-mangoHudBlockSpacing = 5
-mangoHudElementVerticalSpacing = 2
-mangoHudElementHorizontalSpacing = 5
+exeSettingsGroupBoxBlockSpacing = 5
+exeSettingsGroupBoxElementVerticalSpacing = 2
+exeSettingsGroupBoxElementHorizontalSpacing = 5
 
 LIBRARY_LAYOUT_MODE = "list"
 

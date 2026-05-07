@@ -398,7 +398,7 @@ class MangoHudSettingsMixin:
         container.setStyleSheet(self.theme.TRANSPARENT_BACKGROUND_STYLE)
         layout = QVBoxLayout(container)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(self.theme.mangoHudBlockSpacing)
+        layout.setSpacing(self.theme.exeSettingsGroupBoxBlockSpacing)
 
         self._add_mangohud_presets_group(layout)
         self._add_mangohud_toggle_group(layout)
@@ -416,8 +416,8 @@ class MangoHudSettingsMixin:
         group = QGroupBox(_("Layout and limiter"))
         group.setStyleSheet(self.theme.QGROUP_BOX_STYLE)
         form = QFormLayout(group)
-        form.setVerticalSpacing(self.theme.mangoHudElementVerticalSpacing)
-        form.setHorizontalSpacing(self.theme.mangoHudElementHorizontalSpacing)
+        form.setVerticalSpacing(self.theme.exeSettingsGroupBoxElementVerticalSpacing)
+        form.setHorizontalSpacing(self.theme.exeSettingsGroupBoxElementHorizontalSpacing)
         form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
         self.mangohud_gpu_options = self._get_mangohud_gpu_options()
         gpu_count = sum(1 for _text, value in self.mangohud_gpu_options if value.isdigit())
@@ -464,14 +464,14 @@ class MangoHudSettingsMixin:
         presets_group = QGroupBox(_("Presets"))
         presets_group.setStyleSheet(self.theme.QGROUP_BOX_STYLE)
         presets_layout = QGridLayout(presets_group)
-        presets_layout.setVerticalSpacing(self.theme.mangoHudElementVerticalSpacing)
-        presets_layout.setHorizontalSpacing(self.theme.mangoHudElementHorizontalSpacing)
+        presets_layout.setVerticalSpacing(self.theme.exeSettingsGroupBoxElementVerticalSpacing)
+        presets_layout.setHorizontalSpacing(self.theme.exeSettingsGroupBoxElementHorizontalSpacing)
 
         actions_group = QGroupBox(_("Actions"))
         actions_group.setStyleSheet(self.theme.QGROUP_BOX_STYLE)
         actions_layout = QGridLayout(actions_group)
-        actions_layout.setVerticalSpacing(self.theme.mangoHudElementVerticalSpacing)
-        actions_layout.setHorizontalSpacing(self.theme.mangoHudElementHorizontalSpacing)
+        actions_layout.setVerticalSpacing(self.theme.exeSettingsGroupBoxElementVerticalSpacing)
+        actions_layout.setHorizontalSpacing(self.theme.exeSettingsGroupBoxElementHorizontalSpacing)
         columns = self.theme.mangoHudPresetsColumns
 
         # Toggle buttons for PW_MANGOHUD and PW_MANGOHUD_USER_CONF
@@ -619,7 +619,7 @@ class MangoHudSettingsMixin:
         group = QGroupBox(_("FPS limit"))
         group.setStyleSheet(self.theme.QGROUP_BOX_STYLE)
         layout = QVBoxLayout(group)
-        layout.setSpacing(self.theme.mangoHudElementHorizontalSpacing)
+        layout.setSpacing(self.theme.exeSettingsGroupBoxElementHorizontalSpacing)
 
         fps_limit_method_spec = next(
             (spec for spec in MANGOHUD_VALUE_SPECS if spec['key'] == 'fps_limit_method'),

@@ -340,7 +340,7 @@ class GamescopeSettingsMixin:
         container.setStyleSheet(self.theme.TRANSPARENT_BACKGROUND_STYLE)
         layout = QVBoxLayout(container)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(14)
+        layout.setSpacing(self.theme.exeSettingsGroupBoxBlockSpacing)
 
         self._add_gamescope_presets_group(layout)
         self._add_gamescope_toggle_group(layout)
@@ -357,7 +357,8 @@ class GamescopeSettingsMixin:
         group = QGroupBox(_("Resolution and scaling"))
         group.setStyleSheet(self.theme.QGROUP_BOX_STYLE)
         form = QFormLayout(group)
-        form.setSpacing(10)
+        form.setVerticalSpacing(self.theme.exeSettingsGroupBoxElementVerticalSpacing)
+        form.setHorizontalSpacing(self.theme.exeSettingsGroupBoxElementHorizontalSpacing)
         form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
 
         resolution_keys = {
@@ -409,7 +410,6 @@ class GamescopeSettingsMixin:
         for resolution in self._get_gamescope_resolution_options():
             widget.addItem(resolution, resolution)
         widget.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        widget.setMinimumHeight(40)
         widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         widget.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
         widget.currentTextChanged.connect(
@@ -509,7 +509,6 @@ class GamescopeSettingsMixin:
         widget = QLineEdit()
         widget.setPlaceholderText(spec.get('placeholder', ''))
         widget.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        widget.setMinimumHeight(40)
         widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         widget.setStyleSheet(self.theme.ADDGAME_INPUT_STYLE)
         self.gamescope_widgets[spec['key']] = widget
@@ -524,7 +523,6 @@ class GamescopeSettingsMixin:
             display_text = placeholder_text if option == '' else option
             widget.addItem(display_text, option)
         widget.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        widget.setMinimumHeight(40)
         widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         widget.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
         default_value = GAMESCOPE_VALUE_DEFAULTS.get(spec['key'], '')
@@ -541,13 +539,13 @@ class GamescopeSettingsMixin:
         group = QGroupBox(_("Quick presets"))
         group.setStyleSheet(self.theme.QGROUP_BOX_STYLE)
         layout = QGridLayout(group)
-        layout.setSpacing(10)
+        layout.setVerticalSpacing(self.theme.exeSettingsGroupBoxElementVerticalSpacing)
+        layout.setHorizontalSpacing(self.theme.exeSettingsGroupBoxElementHorizontalSpacing)
         columns = 2
 
         # Toggle button for PW_GAMESCOPE
         self.gamescope_enable_button = QPushButton(_("Enable Gamescope"))
         self.gamescope_enable_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
-        self.gamescope_enable_button.setMinimumHeight(44)
         self.gamescope_enable_button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.gamescope_enable_button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.gamescope_enable_button.clicked.connect(self.toggle_gamescope_enable)
@@ -567,7 +565,6 @@ class GamescopeSettingsMixin:
         for index, (label, handler) in enumerate(buttons):
             button = QPushButton(label)
             button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
-            button.setMinimumHeight(44)
             button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
             button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
             button.clicked.connect(handler)
@@ -578,14 +575,12 @@ class GamescopeSettingsMixin:
         parent_layout.addWidget(group)
 
     def _add_gamescope_toggle_group(self, parent_layout):
-        """Add categorized Gamescope toggle checkboxes."""
         selector_group = QGroupBox(_("Gamescope switches"))
         selector_group.setStyleSheet(self.theme.QGROUP_BOX_STYLE)
         selector_layout = QVBoxLayout(selector_group)
 
         self.gamescope_category_combo = QComboBox()
         self.gamescope_category_combo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
-        self.gamescope_category_combo.setMinimumHeight(40)
         selector_layout.addWidget(self.gamescope_category_combo)
 
         self.gamescope_category_stack = QStackedWidget()
@@ -596,58 +591,71 @@ class GamescopeSettingsMixin:
         uncategorized = set(toggle_lookup.keys())
         columns = 2
 
+        num_real_columns = columns
+        total_columns = num_real_columns * 2 + 1
+
         for category, keys in GAMESCOPE_TOGGLE_CATEGORIES.items():
             supported_keys = [key for key in keys if key in self.gamescope_supported_toggle_keys]
             if not supported_keys:
                 continue
-            category_widget = QWidget()
-            layout = QGridLayout(category_widget)
-            layout.setContentsMargins(8, 8, 8, 8)
-            layout.setHorizontalSpacing(16)
-            layout.setVerticalSpacing(10)
-            for column in range(columns):
-                layout.setColumnStretch(column, 1)
+            inner_widget = QWidget()
+            layout = QGridLayout(inner_widget)
+            layout.setContentsMargins(0, 8, 0, 8)
+            layout.setHorizontalSpacing(0)
+            layout.setVerticalSpacing(self.theme.mangoHudSwitchesVerticalSpacing)
+
+            for col in range(total_columns):
+                if col % 2 == 0:
+                    layout.setColumnStretch(col, 1)
+                else:
+                    layout.setColumnStretch(col, 0)
 
             for index, key in enumerate(supported_keys):
                 if key not in toggle_lookup:
                     continue
                 label = toggle_lookup[key]
                 checkbox = self._create_gamescope_checkbox(key, label)
-                row = index // columns
-                column = index % columns
-                layout.addWidget(checkbox, row, column)
+                row = index // num_real_columns
+                col_in_row = index % num_real_columns
+                real_col = col_in_row * 2 + 1
+                layout.addWidget(checkbox, row, real_col)
                 self.gamescope_toggle_widgets[key] = checkbox
                 self.gamescope_toggle_widget_keys[checkbox] = key
                 self.register_gamepad_tooltip(checkbox, GAMESCOPE_TOGGLE_DESCRIPTIONS.get(key, ""))
                 uncategorized.discard(key)
 
-            self.gamescope_category_groups[category] = category_widget
-            self.gamescope_category_stack.addWidget(category_widget)
+            self.gamescope_category_groups[category] = inner_widget
+            self.gamescope_category_stack.addWidget(inner_widget)
             self.gamescope_category_combo.addItem(category)
 
         uncategorized &= self.gamescope_supported_toggle_keys
         if uncategorized:
-            category_widget = QWidget()
-            layout = QGridLayout(category_widget)
-            layout.setContentsMargins(8, 8, 8, 8)
-            layout.setHorizontalSpacing(16)
-            layout.setVerticalSpacing(10)
-            for column in range(columns):
-                layout.setColumnStretch(column, 1)
+            inner_widget = QWidget()
+            layout = QGridLayout(inner_widget)
+            layout.setContentsMargins(0, 8, 0, 8)
+            layout.setHorizontalSpacing(0)
+            layout.setVerticalSpacing(self.theme.mangoHudSwitchesVerticalSpacing)
+
+            for col in range(total_columns):
+                if col % 2 == 0:
+                    layout.setColumnStretch(col, 1)
+                else:
+                    layout.setColumnStretch(col, 0)
 
             for index, key in enumerate(sorted(uncategorized)):
                 label = toggle_lookup[key]
                 checkbox = self._create_gamescope_checkbox(key, label)
-                row = index // columns
-                column = index % columns
-                layout.addWidget(checkbox, row, column)
+                row = index // num_real_columns
+                col_in_row = index % num_real_columns
+                real_col = col_in_row * 2 + 1
+                layout.addWidget(checkbox, row, real_col)
                 self.gamescope_toggle_widgets[key] = checkbox
                 self.gamescope_toggle_widget_keys[checkbox] = key
                 self.register_gamepad_tooltip(checkbox, GAMESCOPE_TOGGLE_DESCRIPTIONS.get(key, ""))
 
             self.gamescope_category_combo.addItem(_("Other"))
-            self.gamescope_category_groups[_("Other")] = category_widget
-            self.gamescope_category_stack.addWidget(category_widget)
+            self.gamescope_category_groups[_("Other")] = inner_widget
+            self.gamescope_category_stack.addWidget(inner_widget)
 
         if not self.gamescope_category_groups:
             return
@@ -666,7 +674,6 @@ class GamescopeSettingsMixin:
         layout.addWidget(label)
         self.gamescope_extra_edit = QLineEdit()
         self.gamescope_extra_edit.setPlaceholderText(_("Example: --cursor-scale-height=1080 --force-orientation=left"))
-        self.gamescope_extra_edit.setMinimumHeight(40)
         self.gamescope_extra_edit.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.gamescope_extra_edit.installEventFilter(cast(QWidget, self))
         self.gamescope_extra_edit.setStyleSheet(self.theme.ADDGAME_INPUT_STYLE)
@@ -677,14 +684,8 @@ class GamescopeSettingsMixin:
         """Create a Gamescope checkbox with description support."""
         checkbox = QCheckBox(label)
         checkbox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        checkbox.setMinimumHeight(36)
         checkbox.installEventFilter(cast(QWidget, self))
-        checkbox.setStyleSheet(self.theme.CHECKBOX_STYLE + """
-            QCheckBox {
-                spacing: 10px;
-                padding: 4px 2px;
-            }
-        """)
+        checkbox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         return checkbox
 
     def on_gamescope_category_changed(self, category):
@@ -736,8 +737,10 @@ class GamescopeSettingsMixin:
 
         if gamescope_enabled:
             self.gamescope_enable_button.setText(_("Disable Gamescope"))
+            self.gamescope_enable_button.setStyleSheet(self.theme.ACTION_BUTTON_ACTIVE_STYLE)
         else:
             self.gamescope_enable_button.setText(_("Enable Gamescope"))
+            self.gamescope_enable_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
 
     def toggle_gamescope_enable(self):
         """Toggle PW_GAMESCOPE setting."""

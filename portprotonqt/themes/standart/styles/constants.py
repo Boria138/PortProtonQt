@@ -16,9 +16,9 @@ mangoHudSwitchesVerticalSpacing = 10
 mangoHudFpsColumns = 4
 mangoHudFpsVerticalSpacing = 10
 mangoHudPresetsColumns = 2
-mangoHudBlockSpacing = 14
-mangoHudElementVerticalSpacing = 10
-mangoHudElementHorizontalSpacing = 10
+exeSettingsGroupBoxBlockSpacing= 14
+exeSettingsGroupBoxElementVerticalSpacing = 10
+exeSettingsGroupBoxElementHorizontalSpacing = 10
 
 # VARS
 font_family = "Play"
