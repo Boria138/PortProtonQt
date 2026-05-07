@@ -28,7 +28,12 @@ def _get_filesystem_type(path: str) -> str:
         partitions = sorted(psutil.disk_partitions(all=True), key=lambda p: len(p.mountpoint), reverse=True)
         for partition in partitions:
             mount_point = partition.mountpoint.rstrip("/") or "/"
-            if resolved_path == mount_point or resolved_path.startswith(mount_point + "/"):
+            is_mount_path = (
+                mount_point == "/"
+                or resolved_path == mount_point
+                or resolved_path.startswith(mount_point + "/")
+            )
+            if is_mount_path:
                 fs_type = partition.fstype.lower()
                 if fs_type != "fuseblk" or not partition.device:
                     return fs_type
