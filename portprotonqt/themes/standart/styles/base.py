@@ -38,6 +38,8 @@ PROGRESS_BAR_STYLE = f"""
         color: {color_f};
         background-color: {color_c};
         text-align: center;
+        font-family: '{font_family}';
+        font-size: {font_size_a};
     }}
     QProgressBar::chunk {{
         background-color: {color_a};
