@@ -165,7 +165,7 @@ SEARCH_EDIT_STYLE = f"""
         font-family: '{font_family}';
         font-size: {font_size_a};
         color: {color_f};
-        min-height: 28px;
+        min-height: 30px;
     }}
     QLineEdit:hover {{
         border: {border_b} {color_a};
