@@ -15,6 +15,7 @@ _icon_cache = {}
 _icon_dirs_cache = {}
 
 logger = get_logger(__name__)
+SUPPORTED_IMAGE_EXTENSIONS = ('.svg', '.png', '.jpg', '.jpeg', '.webp', '.jxl')
 
 # Folder where all custom themes are located
 xdg_data_home = os.getenv("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share"))
@@ -37,6 +38,20 @@ def _is_valid_theme_name(theme_name: str) -> bool:
         return False
     normalized = os.path.normpath(theme_name)
     return normalized == theme_name and normalized not in (".", "..")
+
+
+def _get_parent_theme_name(theme_name: str, parent_name: str | None = None) -> str | None:
+    """Return parent theme name, preserving standard fallback by default."""
+    if theme_name == "standart":
+        return None
+
+    parent_name = parent_name or "standart"
+    if not parent_name:
+        return "standart"
+    if not _is_valid_theme_name(parent_name) or parent_name == theme_name:
+        logger.warning("Invalid parent theme '%s' for '%s', using 'standart'", parent_name, theme_name)
+        return "standart"
+    return parent_name
 
 
 def list_themes():
@@ -99,7 +114,7 @@ def build_icon_cache(theme_name):
             # Walk through all subdirectories to build image map
             for root, _dirs, files in os.walk(images_folder):
                 for file in files:
-                    if file.lower().endswith(('.svg', '.png', '.jpg', '.jpeg')):
+                    if file.lower().endswith(SUPPORTED_IMAGE_EXTENSIONS):
                         image_name = os.path.splitext(file)[0]
                         image_path = os.path.join(root, file)
                         image_map[image_name] = image_path
@@ -115,7 +130,7 @@ def build_icon_cache(theme_name):
                 # Walk through all subdirectories to build image map
                 for root, _dirs, files in os.walk(images_folder):
                     for file in files:
-                        if file.lower().endswith(('.svg', '.png', '.jpg', '.jpeg')):
+                        if file.lower().endswith(SUPPORTED_IMAGE_EXTENSIONS):
                             image_name = os.path.splitext(file)[0]
                             # Only add to map if not already present (custom theme takes precedence)
                             if image_name not in image_map:
@@ -216,12 +231,15 @@ class ThemeWrapper:
     """
     Wrapper for custom theme with metainfo support.
     When accessing attribute, first look for it in custom theme,
-    if attribute missing, value taken from standard styles module.
+    if attribute missing, value taken from inherited theme.
     """
-    def __init__(self, custom_theme, metainfo=None):
+    def __init__(self, custom_theme, metainfo=None, inherit_chain=None):
         self.custom_theme = custom_theme
         self.metainfo = metainfo or {}
         self.screenshots = load_theme_screenshots(self.metainfo.get("name", ""))
+        parent_name = getattr(custom_theme, "THEME_INHERITS", "standart")
+        self.parent_theme_name = _get_parent_theme_name(custom_theme.__name__.split(".")[-1], parent_name)
+        self._inherit_chain = inherit_chain or []
         self._default_theme = None  # Lazy-loaded default theme
         self._generated_styles = None  # Lazy-generated standard styles with custom constants
 
@@ -232,10 +250,18 @@ class ThemeWrapper:
         if generated is not None:
             return generated
         if self._default_theme is None:
-            self._default_theme = load_theme("standart")  # Dynamically load standard theme
+            if self.parent_theme_name in self._inherit_chain:
+                raise AttributeError(f"Theme inheritance cycle for '{self.parent_theme_name}'")
+            try:
+                self._default_theme = load_theme(self.parent_theme_name, self._inherit_chain)
+            except FileNotFoundError:
+                logger.warning("Parent theme '%s' unavailable, using 'standart'", self.parent_theme_name)
+                self._default_theme = load_theme("standart")
         return getattr(self._default_theme, name)
 
     def _get_generated_style(self, name):
+        if self.parent_theme_name != "standart":
+            return None
         if self._generated_styles is None:
             self._generated_styles = self._build_generated_styles()
         return self._generated_styles.get(name)
@@ -282,7 +308,7 @@ class ThemeWrapper:
                 generated[key] = value
         return generated
 
-def load_theme(theme_name):
+def load_theme(theme_name, inherit_chain=None):
     """
     Dynamically load style module of selected theme and metainfo.
     All themes, including standard, pass security check.
@@ -291,6 +317,11 @@ def load_theme(theme_name):
     import sys
     import types
     import os
+
+    inherit_chain = inherit_chain or []
+    if theme_name in inherit_chain:
+        raise FileNotFoundError(f"Theme inheritance cycle for '{theme_name}'")
+    next_inherit_chain = [*inherit_chain, theme_name]
 
     if not _is_valid_theme_name(theme_name):
         raise FileNotFoundError(f"Invalid theme name '{theme_name}'")
@@ -393,7 +424,7 @@ def load_theme(theme_name):
             if theme_name == "standart":
                 return custom_theme
             meta = load_theme_metainfo(theme_name)
-            wrapper = ThemeWrapper(custom_theme, metainfo=meta)
+            wrapper = ThemeWrapper(custom_theme, metainfo=meta, inherit_chain=next_inherit_chain)
             wrapper.screenshots = load_theme_screenshots(theme_name)
             return wrapper
     raise FileNotFoundError(f"Styles file not found for theme '{theme_name}'")
@@ -465,7 +496,7 @@ class ThemeManager:
         theme_name = theme_name or self.current_theme_name
 
         # Extract base name without extension if present
-        supported_extensions = ['.svg', '.png', '.jpg', '.jpeg']
+        supported_extensions = SUPPORTED_IMAGE_EXTENSIONS
         has_extension = any(icon_name.lower().endswith(ext) for ext in supported_extensions)
         base_name = os.path.splitext(icon_name)[0] if has_extension else icon_name
 
@@ -501,13 +532,13 @@ class ThemeManager:
         Return path to image from current theme folder.
         If not found, check standard theme.
         Accept icon name without extension and find matching file
-        with supported extension (.svg, .png, .jpg, etc.).
+        with supported extension (.svg, .png, .jpg, .webp, .jxl, etc.).
         """
         image_path = None
         theme_name = theme_name or self.current_theme_name
 
         # Extract base name without extension if present
-        supported_extensions = ['.svg', '.png', '.jpg', '.jpeg']
+        supported_extensions = SUPPORTED_IMAGE_EXTENSIONS
         has_extension = any(image_name.lower().endswith(ext) for ext in supported_extensions)
         base_name = os.path.splitext(image_name)[0] if has_extension else image_name
 

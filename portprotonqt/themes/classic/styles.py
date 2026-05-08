@@ -1,6 +1,8 @@
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.config import ui_config
 
+THEME_INHERITS = "standart"
+
 theme_manager = ThemeManager()
 current_theme_name = ui_config.get_theme()
 

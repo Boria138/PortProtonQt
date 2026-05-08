@@ -648,7 +648,7 @@ def is_safe_image_file(file_path: str) -> bool:
     """
 
     # Check file extension first
-    safe_extensions = {'.png', '.jpg', '.jpeg', '.svg', '.bmp', '.gif', '.webp', '.ico'}
+    safe_extensions = {'.png', '.jpg', '.jpeg', '.svg', '.bmp', '.gif', '.webp', '.jxl', '.ico'}
     _, ext = os.path.splitext(file_path.lower())
 
     if ext not in safe_extensions:
@@ -694,6 +694,14 @@ def is_safe_image_file(file_path: str) -> bool:
             # BMP signature: 42 4D (BM)
             if not header.startswith(b'BM'):
                 logger.warning(f"File {file_path} does not have BMP signature")
+                return False
+        elif ext == '.webp':
+            if not (header.startswith(b'RIFF') and header[8:12] == b'WEBP'):
+                logger.warning(f"File {file_path} does not have WebP signature")
+                return False
+        elif ext == '.jxl':
+            if not (header.startswith(b'\xff\x0a') or header.startswith(b'\x00\x00\x00\x0cJXL ')):
+                logger.warning(f"File {file_path} does not have JPEG XL signature")
                 return False
         # SVG is text-based, so we just check if it contains XML-like structure
         elif ext == '.svg':

@@ -6,6 +6,7 @@
 - [Overview](#-overview)
 - [Creating the Theme Folder](#-creating-the-theme-folder)
 - [Style File](#-style-file-stylespy)
+- [Style Inheritance](#-style-inheritance)
 - [Animation configuration](#-animation-configuration)
 - [Metadata](#-metadata-metainfoini)
 - [Screenshots](#-screenshots)
@@ -89,6 +90,20 @@ color_a = "#409EFF"
 color_b = "#282a33"
 # ... other constants
 ```
+
+---
+
+## 🧬 Style Inheritance
+
+Themes can inherit missing style variables and functions from another theme by defining `THEME_INHERITS` in `styles.py`:
+
+```python
+THEME_INHERITS = "classic"
+```
+
+If `THEME_INHERITS` is not defined, the theme inherits styles from `standart`.
+
+Inheritance applies only to style attributes loaded from `styles.py`. Fonts, icons, images, and screenshots do not inherit from `THEME_INHERITS`; their fallback remains the built-in `standart` theme.
 
 ---
 
@@ -345,7 +360,7 @@ Screenshot files can have any convenient names.
 ## 🔡 Fonts and Icons (optional)
 
 - Fonts: `fonts/*.ttf` or `.otf`
-- Icons and Images: `images/` directory for all visual assets:
+- Icons and Images: `images/` directory for all visual assets. Supported formats: `.svg`, `.png`, `.jpg`, `.jpeg`, `.webp`, `.jxl`.
   - `images/icons/` - Main application icons (organized in subdirectories like actions/, navigation/, platforms/, etc.)
   - `images/icons/buttons/` - Button icons for UI elements
   - `images/icons/keyboards/` - Keyboard key icons (key_+, key_enter, etc.)
