@@ -2274,6 +2274,11 @@ class InputManager(QObject):
     def suspend_gamepad_polling(self) -> None:
         """Release the SDL controller while an external game is running."""
         self._gamepad_polling_suspended = True
+        if self.focus_check_timer.isActive():
+            self.focus_check_timer.stop()
+        self.emulation_active = False
+        self.dpad_timer.stop()
+        self.nav_timer.stop()
         if self.gamepad:
             self.gamepad.close()
             self.gamepad = None
@@ -2282,6 +2287,8 @@ class InputManager(QObject):
     def resume_gamepad_polling(self) -> None:
         """Resume SDL controller polling after the external game exits."""
         self._gamepad_polling_suspended = False
+        if not self.focus_check_timer.isActive():
+            self.focus_check_timer.start()
         self.check_gamepad()
 
     def _handle_guide_timeout(self) -> None:

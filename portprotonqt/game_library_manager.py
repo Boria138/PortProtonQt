@@ -2,7 +2,8 @@ from typing import Protocol
 from portprotonqt.game_card import GameCard
 from portprotonqt.search_utils import SearchOptimizer, ThreadedSearch
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QScrollArea, QSlider, QScroller
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt, QTimer, Signal
+from PySide6.QtGui import QHideEvent, QRegion, QShowEvent
 from portprotonqt.custom_widgets import FlowLayout
 from portprotonqt.config import favorites_config, game_config, ui_config
 from portprotonqt.image_utils import load_pixmap_async
@@ -24,6 +25,20 @@ class MainWindowProtocol(Protocol):
     current_hovered_card: GameCard | None
     current_focused_card: GameCard | None
     gamesListWidget: QWidget | None
+
+
+class _GameLibraryWidget(QWidget):
+    hidden = Signal()
+    shown = Signal()
+
+    def hideEvent(self, event: QHideEvent) -> None:
+        self.hidden.emit()
+        super().hideEvent(event)
+
+    def showEvent(self, event: QShowEvent) -> None:
+        self.shown.emit()
+        super().showEvent(event)
+
 
 class GameLibraryManager:
     def __init__(self, main_window: MainWindowProtocol, theme, context_menu_manager: ContextMenuManager | None):
@@ -56,7 +71,9 @@ class GameLibraryManager:
 
     def create_games_library_widget(self):
         """Creates the games library widget with search, grid, and slider."""
-        self.gamesLibraryWidget = QWidget()
+        self.gamesLibraryWidget = _GameLibraryWidget()
+        self.gamesLibraryWidget.hidden.connect(self._pause_all_animated_covers)
+        self.gamesLibraryWidget.shown.connect(lambda: QTimer.singleShot(0, self.load_visible_images))
         self.gamesLibraryWidget.setStyleSheet(self.theme.LIBRARY_WIDGET_STYLE)
         layout = QVBoxLayout(self.gamesLibraryWidget)
         layout.setSpacing(15)
@@ -159,10 +176,26 @@ class GameLibraryManager:
         max_concurrent_loads = 5
         loaded_count = 0
         for card_key, card in self.game_card_cache.items():
-            if card_key in self.pending_images and visible_region.contains(card.pos()) and loaded_count < max_concurrent_loads:
+            is_visible = self._is_card_in_view(card, visible_region)
+            card.set_animated_cover_paused(not is_visible)
+            if card_key in self.pending_images and is_visible and loaded_count < max_concurrent_loads:
                 cover_path, width, height, callback = self.pending_images.pop(card_key)
                 load_pixmap_async(cover_path, width, height, callback)
                 loaded_count += 1
+
+    @staticmethod
+    def _is_card_in_view(card: GameCard, visible_region: QRegion) -> bool:
+        if not card.isVisible():
+            return False
+        return visible_region.intersects(card.geometry())
+
+    def _pause_all_animated_covers(self) -> None:
+        for card in self.game_card_cache.values():
+            card.set_animated_cover_paused(True)
+
+    def stop_background_activity(self) -> None:
+        for card in self.game_card_cache.values():
+            card.stop_background_activity()
 
     def _on_card_focused(self, game_name: str, is_focused: bool):
         """Handles card focus events."""
@@ -334,6 +367,7 @@ class GameLibraryManager:
                 )
                 if card.isVisible() != should_be_visible:
                     card.setVisible(should_be_visible)
+                    card.set_animated_cover_paused(not should_be_visible)
                 self.gamesListLayout.addWidget(card)
                 processed += 1
         finally:
@@ -441,6 +475,7 @@ class GameLibraryManager:
                         card = self.game_card_cache[game_key]
                         if card.isVisible() != should_be_visible:
                             card.setVisible(should_be_visible)
+                            card.set_animated_cover_paused(not should_be_visible)
                         new_card_order.append(game_key)
                     else:
                         new_games_map[game_key] = game_data
@@ -461,6 +496,7 @@ class GameLibraryManager:
                         card = self._create_game_card(game_data)
                         self.game_card_cache[game_key] = card
                         card.setVisible(not search_text or search_text in str(game_key[0]).lower())
+                        card.set_animated_cover_paused(not card.isVisible())
                         self.gamesListLayout.addWidget(card)
                         has_new_cards = True
 
@@ -506,11 +542,13 @@ class GameLibraryManager:
                     # Card should be visible
                     if not card.isVisible():
                         card.setVisible(True)
+                    card.set_animated_cover_paused(False)
                 else:
                     # Card should be hidden
                     if card.isVisible():
                         card.setVisible(False)
                         cards_to_hide.append(card_key)
+                    card.set_animated_cover_paused(True)
 
             # Now add any missing cards that are in filtered results but not in cache
             cards_to_add = []
@@ -526,6 +564,7 @@ class GameLibraryManager:
                     card = self._create_game_card(game_data)
                     self.game_card_cache[game_key] = card
                     card.setVisible(True)  # New cards should be visible
+                    card.set_animated_cover_paused(False)
                     cards_to_add.append((game_key, card))
 
             # Add new cards to layout
@@ -553,6 +592,8 @@ class GameLibraryManager:
         # If search is empty, load images for visible ones
         if not search_text:
             self.load_visible_images()
+        else:
+            QTimer.singleShot(0, self.load_visible_images)
 
     def _create_game_card(self, game_data: tuple) -> GameCard:
         """Creates a new game card with all necessary connections."""
@@ -589,6 +630,7 @@ class GameLibraryManager:
                 self.main_window.current_focused_card = None
             if self.main_window.current_hovered_card == card:
                 self.main_window.current_hovered_card = None
+            card.cleanup()
             card.deleteLater()
             self.pending_deletions.remove(card)
 
@@ -610,6 +652,8 @@ class GameLibraryManager:
                             del self.pending_images[key]
                         break
                 # Always schedule widget for deletion regardless of cache state
+                if isinstance(widget, GameCard):
+                    widget.cleanup()
                 widget.deleteLater()
 
         # Also clear the cache completely if needed (in case layout wasn't in sync)
@@ -674,6 +718,7 @@ class GameLibraryManager:
         if key in self.game_card_cache and self.gamesListLayout is not None:
             card = self.game_card_cache.pop(key)
             self.gamesListLayout.removeWidget(card)
+            card.cleanup()
             self.pending_deletions.append(card)  # Defer deleteLater
             if key in self.pending_images:
                 del self.pending_images[key]

@@ -320,10 +320,6 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
         self.audioFocusSinkName = ""
 
     def _startSystemBackgroundTasks(self) -> None:
-        self.bluetoothAutoReloadTimer = QTimer(self)
-        self.bluetoothAutoReloadTimer.setInterval(8000)
-        self.bluetoothAutoReloadTimer.timeout.connect(self._autoReloadBluetoothDevices)
-        self.bluetoothAutoReloadTimer.start()
         self.system_tab_index = self.stackedWidget.addWidget(self.systemWidget)
         QTimer.singleShot(0, self.loadSystemNetworks)
         QTimer.singleShot(0, self.loadSystemBluetoothDevices)
@@ -1509,17 +1505,6 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
         ):
             widget.setEnabled(not busy)
         self.onSystemBluetoothSelectionChanged()
-
-    def _autoReloadBluetoothDevices(self) -> None:
-        if self.bluetoothBusy:
-            return
-        if self.stackedWidget.currentIndex() != getattr(self, "system_tab_index", -1):
-            return
-        if not hasattr(self, "systemSectionStack"):
-            return
-        if self.systemSectionStack.currentIndex() != 2:
-            return
-        self.loadSystemBluetoothDevices()
 
     def loadSystemStorageDevices(self) -> None:
         self.runStorageOperation("load")

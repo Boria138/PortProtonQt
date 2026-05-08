@@ -18,7 +18,12 @@ from portprotonqt.debug_utils import get_selectable_gpu_list, get_prefix_name
 from portprotonqt.input_manager import InputManager, MainWindowProtocol
 from portprotonqt.context_menu_manager import ContextMenuManager, CustomLineEdit
 
-from portprotonqt.image_utils import COVER_IMAGE_EXTENSIONS, load_pixmap_async, ImageCarousel
+from portprotonqt.image_utils import (
+    COVER_IMAGE_EXTENSIONS,
+    ImageCarousel,
+    load_pixmap_async,
+    set_all_animated_covers_suspended,
+)
 from portprotonqt.steam_api import get_steam_game_info_async, get_full_steam_game_info_async, get_cached_steam_game_info, get_steam_installed_games, is_game_in_steam, fetch_sgdb_cover_async
 from portprotonqt.theme_manager import ThemeManager, load_theme_screenshots
 from portprotonqt.time_utils import save_last_launch, get_last_launch, get_playtime_for_exe, format_playtime, get_last_launch_timestamp, format_last_launch
@@ -56,8 +61,8 @@ from portprotonqt.tabs.workers import MainWindowWorkersMixin
 
 from PySide6.QtWidgets import (QLineEdit, QMainWindow, QStatusBar, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox,
                                QDialog, QFormLayout, QMessageBox, QApplication, QPushButton, QProgressBar, QCheckBox, QSizePolicy, QGridLayout, QScrollArea, QScroller, QSlider, QFrame)
-from PySide6.QtCore import Qt, QAbstractAnimation, QUrl, Signal, QTimer, Slot, QProcess, QProcessEnvironment, QFileSystemWatcher, QStandardPaths
-from PySide6.QtGui import QIcon, QColor, QDesktopServices
+from PySide6.QtCore import Qt, QAbstractAnimation, QEvent, QUrl, Signal, QTimer, Slot, QProcess, QProcessEnvironment, QFileSystemWatcher, QStandardPaths
+from PySide6.QtGui import QIcon, QColor, QDesktopServices, QHideEvent, QShowEvent
 from typing import cast
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
@@ -76,6 +81,47 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             self.window().windowHandle().startSystemMove()
             event.accept()
 
+    def changeEvent(self, event: QEvent) -> None:
+        super().changeEvent(event)
+        if event.type() in (QEvent.Type.ActivationChange, QEvent.Type.WindowStateChange):
+            self._update_animated_covers_activity()
+
+    def hideEvent(self, event: QHideEvent) -> None:
+        self._set_animated_covers_suspended(True)
+        super().hideEvent(event)
+
+    def showEvent(self, event: QShowEvent) -> None:
+        super().showEvent(event)
+        self._update_animated_covers_activity()
+
+    def _on_application_state_changed(self, _state: Qt.ApplicationState) -> None:
+        self._update_animated_covers_activity()
+
+    def _update_animated_covers_activity(self) -> None:
+        should_suspend = (
+            not self.isVisible() or
+            self.isMinimized() or
+            not self.isActiveWindow()
+        )
+        self._set_animated_covers_suspended(should_suspend)
+
+    def _set_animated_covers_suspended(self, suspended: bool) -> None:
+        if getattr(self, "_animated_covers_suspended", False) == suspended:
+            return
+        self._animated_covers_suspended = suspended
+        set_all_animated_covers_suspended(suspended)
+        self._set_inactive_background_suspended(suspended)
+        if not suspended and hasattr(self, "game_library_manager"):
+            QTimer.singleShot(0, self.game_library_manager.load_visible_images)
+
+    def _set_inactive_background_suspended(self, suspended: bool) -> None:
+        if hasattr(self, "game_library_manager") and suspended:
+            self.game_library_manager.stop_background_activity()
+        if hasattr(self, "input_manager"):
+            if suspended:
+                self.input_manager.suspend_gamepad_polling()
+            elif not any(proc.poll() is None for proc in self.game_processes):
+                self.input_manager.resume_gamepad_polling()
     def _get_lg_versions_from_var(self) -> list[str]:
         """Read Proton/Wine LG versions from scripts/var."""
         scripts_path = get_portproton_scripts_path()
@@ -117,6 +163,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self._pending_resolution = resolution  # Store resolution for later application
         self._show_system_tab = show_system_tab
         self.system_tab_index = -1  # Default, set when system tab is created
+        self._animated_covers_suspended = False
 
         self.games = []
         self.game_processes = []
@@ -319,6 +366,9 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
         self.detail_animations = DetailPageAnimations(self, self.theme)
         self._animations = {}
+        app = QApplication.instance()
+        if isinstance(app, QApplication):
+            app.applicationStateChanged.connect(self._on_application_state_changed)
 
         if display_config.get_fullscreen():
             self.showFullScreen()
@@ -3196,7 +3246,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.wine_download_percent = 0.0
         self.wine_download_status = _("Downloading Wine...")
         self.game_launch_started = False
-        self.input_manager.resume_gamepad_polling()
+        if not getattr(self, "_animated_covers_suspended", False):
+            self.input_manager.resume_gamepad_polling()
 
     def stop_running_game(self, button=None) -> bool:
         """Stop current game via PortProton CLI stop command."""
@@ -3784,7 +3835,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             "searchDebounceTimer",
             "checkProcessTimer",
             "wine_monitor_timer",
-            "bluetoothAutoReloadTimer",
         ]
 
         for tname in timers:

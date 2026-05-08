@@ -20,7 +20,7 @@ downloader = Downloader()
 logger = get_logger(__name__)
 COVER_IMAGE_EXTENSIONS = (".png", ".apng", ".jpg", ".jpeg", ".gif", ".webp", ".jxl")
 DEFAULT_ANIMATION_DELAY_MS = 100
-ANIMATED_COVER_MIN_DELAY_MS = 50
+ANIMATED_COVER_MIN_DELAY_MS = 100
 
 # Global queue and thread pool for image loading
 image_load_queue = Queue()
@@ -73,18 +73,26 @@ class _PillowAnimatedCover(QObject):
         self.image: Image.Image | None = None
         self.image_iterator = None
         self.current_frame: Image.Image | None = None
+        self.paused = False
+        self.suspended = False
         self.timer = QTimer(self)
         self.timer.timeout.connect(self._show_next_frame)
         self.destroyed.connect(self._close_image)
+        self.label.installEventFilter(self)
 
     def start(self) -> bool:
         if not self._open_image():
             return False
         delay = self._apply_next_frame()
-        self.timer.start(delay)
+        self.set_paused(not self.label.isVisible())
+        if not self.paused:
+            self.timer.start(delay)
         return True
 
     def set_scaled_size(self, width: int, height: int) -> None:
+        if self.width == width and self.height == height:
+            _set_cover_mask(self.label, width, height, self.radius)
+            return
         self.width = width
         self.height = height
         _set_cover_mask(self.label, width, height, self.radius)
@@ -96,6 +104,50 @@ class _PillowAnimatedCover(QObject):
     def stop(self) -> None:
         self.timer.stop()
         self._close_image()
+
+    def set_paused(self, paused: bool) -> None:
+        if self.paused == paused:
+            return
+        self.paused = paused
+        if paused:
+            self.timer.stop()
+            return
+        if self.suspended:
+            return
+        if self.image_iterator is None and not self._open_image():
+            return
+        self.timer.start(self._apply_next_frame())
+
+    def set_suspended(self, suspended: bool) -> None:
+        if self.suspended == suspended:
+            return
+        self.suspended = suspended
+        if suspended:
+            self.timer.stop()
+            self._close_image()
+            return
+        if self.paused or not self.label.isVisible():
+            return
+        if not self._open_image():
+            return
+        self.timer.start(self._apply_next_frame())
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if watched != self.label:
+            return super().eventFilter(watched, event)
+        if event.type() == QEvent.Type.Hide:
+            self.set_paused(True)
+        elif event.type() == QEvent.Type.Show:
+            QTimer.singleShot(0, self._resume_if_visible)
+        return super().eventFilter(watched, event)
+
+    def _resume_if_visible(self) -> None:
+        try:
+            if self.suspended:
+                return
+            self.set_paused(not self.label.isVisible())
+        except RuntimeError:
+            self.stop()
 
     def _open_image(self) -> bool:
         self._close_image()
@@ -132,6 +184,11 @@ class _PillowAnimatedCover(QObject):
         return pixmap, duration
 
     def _show_next_frame(self) -> None:
+        if self.suspended:
+            return
+        if self.paused or not self.label.isVisible():
+            self.set_paused(True)
+            return
         if self.image_iterator is None:
             return
         delay = self._apply_next_frame()
@@ -207,6 +264,50 @@ def cleanup_animated_cover(label: QLabel) -> None:
         movie.deleteLater()
     except RuntimeError:
         pass
+
+
+def set_animated_cover_paused(label: QLabel, paused: bool) -> None:
+    """Pause or resume animated cover playback."""
+    movie = _animated_cover_movies.get(label)
+    if movie is None:
+        return
+    try:
+        if isinstance(movie, _PillowAnimatedCover):
+            movie.set_paused(paused)
+            return
+        if paused:
+            movie.setPaused(True)
+        elif movie.state() == QMovie.MovieState.NotRunning:
+            movie.start()
+        else:
+            movie.setPaused(False)
+    except RuntimeError:
+        pass
+
+
+def set_animated_cover_suspended(label: QLabel, suspended: bool) -> None:
+    """Suspend animated cover playback and release decoder resources."""
+    movie = _animated_cover_movies.get(label)
+    if movie is None:
+        return
+    try:
+        if isinstance(movie, _PillowAnimatedCover):
+            movie.set_suspended(suspended)
+            return
+        if suspended:
+            movie.stop()
+            return
+        if label.isVisible():
+            label.setMovie(movie)
+            movie.start()
+    except RuntimeError:
+        pass
+
+
+def set_all_animated_covers_suspended(suspended: bool) -> None:
+    """Suspend or resume all animated covers."""
+    for label in list(_animated_cover_movies.keys()):
+        set_animated_cover_suspended(label, suspended)
 
 
 def cleanup_widget_animated_covers(widget: QWidget) -> None:

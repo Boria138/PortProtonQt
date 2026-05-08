@@ -1,7 +1,7 @@
 import os
 import shlex
 
-from PySide6.QtGui import QPainter, QColor, QDesktopServices
+from PySide6.QtGui import QPainter, QColor, QDesktopServices, QHideEvent, QShowEvent
 from PySide6.QtCore import Signal, Property, Qt, QUrl, QTimer
 from PySide6.QtWidgets import (
     QFrame,
@@ -14,9 +14,11 @@ from PySide6.QtWidgets import (
     QLabel,
 )
 from portprotonqt.image_utils import (
+    cleanup_animated_cover,
     load_pixmap_async,
     round_corners,
     set_animated_cover,
+    set_animated_cover_paused,
     update_animated_cover_size,
 )
 from portprotonqt.localization import _
@@ -265,6 +267,18 @@ class GameCard(QFrame):
             self.coverLabel.height(),
             radius,
         )
+
+    def set_animated_cover_paused(self, paused: bool) -> None:
+        if not self.animated_cover_path:
+            return
+        set_animated_cover_paused(self.coverLabel, paused)
+
+    def stop_background_activity(self) -> None:
+        self.set_animated_cover_paused(True)
+        self._hovered = False
+        self._focused = False
+        if hasattr(self, 'animations') and self.animations:
+            self.animations.cleanup()
 
     def update_cover_pixmap(self):
         # Check if the coverLabel still exists before trying to update it
@@ -714,6 +728,14 @@ class GameCard(QFrame):
         self.animations.handle_focus_out_event()
         super().focusOutEvent(event)
 
+    def hideEvent(self, event: QHideEvent) -> None:
+        self.set_animated_cover_paused(True)
+        super().hideEvent(event)
+
+    def showEvent(self, event: QShowEvent) -> None:
+        self.set_animated_cover_paused(False)
+        super().showEvent(event)
+
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
             game_data = {
@@ -735,6 +757,8 @@ class GameCard(QFrame):
 
     def cleanup(self):
         """Clean up animations to prevent memory leaks when the card is destroyed."""
+        if hasattr(self, 'coverLabel') and self.coverLabel is not None:
+            cleanup_animated_cover(self.coverLabel)
         if hasattr(self, 'animations') and self.animations:
             try:
                 self.animations.cleanup()
