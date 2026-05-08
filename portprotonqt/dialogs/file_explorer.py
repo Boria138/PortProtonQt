@@ -26,6 +26,7 @@ from portprotonqt.image_utils import COVER_IMAGE_EXTENSIONS
 
 logger = get_logger(__name__)
 theme_manager = ThemeManager()
+DISC_IMAGE_EXTENSIONS = (".iso", ".mdf")
 THUMBNAIL_PRELOAD_ROWS = 5
 THUMBNAIL_QUEUE_LIMIT = 24
 THUMBNAIL_SCROLL_DELAY_MS = 80
@@ -90,12 +91,12 @@ class FileExplorer(QDialog):
                         self.signals.thumbnail_ready.emit(self.file_path, image)
                     else:
                         logger.warning("Failed to load image: %s", self.file_path)
-                elif self.file_path.lower().endswith((".exe", ".iso")):
+                elif self.file_path.lower().endswith((".exe",) + DISC_IMAGE_EXTENSIONS):
                     thumbnail_source = self.file_path
-                    if self.file_path.lower().endswith(".iso") and callable(self.resolve_launch_file_path):
+                    if self.file_path.lower().endswith(DISC_IMAGE_EXTENSIONS) and callable(self.resolve_launch_file_path):
                         resolved_path = self.resolve_launch_file_path(self.file_path)
                         if not resolved_path or not os.path.isfile(resolved_path):
-                            logger.warning("Failed to resolve executable in ISO for preview: %s", self.file_path)
+                            logger.warning("Failed to resolve executable in disc image for preview: %s", self.file_path)
                             return
                         thumbnail_source = resolved_path
 
@@ -188,7 +189,7 @@ class FileExplorer(QDialog):
             if file_path in self.thumbnail_cache or file_path in self.pending_thumbnails:
                 continue
             mime_type = mime_db.mimeTypeForFile(file_path).name()
-            if mime_type.startswith("image/") or file_path.lower().endswith(COVER_IMAGE_EXTENSIONS + (".exe", ".iso")):
+            if mime_type.startswith("image/") or file_path.lower().endswith(COVER_IMAGE_EXTENSIONS + (".exe",) + DISC_IMAGE_EXTENSIONS):
                 self.pending_thumbnails.add(file_path)
                 resolver = None
                 main_window = cast("MainWindow | None", self.main_window)

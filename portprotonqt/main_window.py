@@ -64,6 +64,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
 logger = get_logger(__name__)
+DISC_IMAGE_EXTENSIONS = (".iso", ".mdf")
 
 class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWindowWorkersMixin, QMainWindow):
     games_loaded = Signal(list)
@@ -122,6 +123,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.target_exe = None
         self.current_running_button = None
         self._iso_rw_paths = {}
+        self._mdf_iso_paths = {}
         self.portproton_location = get_portproton_location()
         self.start_sh = get_portproton_start_command()
         self.launch_exe = launch_exe  # Store launch_exe path
@@ -1079,7 +1081,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
             for url in event.mimeData().urls():
-                if url.toLocalFile().lower().endswith((".exe", ".iso")):
+                if url.toLocalFile().lower().endswith((".exe",) + DISC_IMAGE_EXTENSIONS):
                     event.acceptProposedAction()
                     return
         event.ignore()
@@ -1087,7 +1089,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
     def dropEvent(self, event):
         for url in event.mimeData().urls():
             path = url.toLocalFile()
-            if path.lower().endswith((".exe", ".iso")):
+            if path.lower().endswith((".exe",) + DISC_IMAGE_EXTENSIONS):
                 self.openAddGameDialog(path)
                 break
 
@@ -2782,7 +2784,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         if not file_path:
             return None
         normalized = os.path.abspath(os.path.expanduser(file_path))
-        if normalized.lower().endswith(".iso"):
+        if normalized.lower().endswith(DISC_IMAGE_EXTENSIONS):
             resolved = self._resolve_iso_executable(normalized)
             if resolved:
                 return resolved
@@ -2818,7 +2820,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         If not, open detail page without creating a shortcut automatically.
 
         Args:
-            exe_path: Full path to the launch file (.exe or .iso)
+            exe_path: Full path to the launch file (.exe or disc image)
         """
         # Normalize the exe path
         exe_path = os.path.abspath(exe_path)
@@ -3308,6 +3310,13 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         digest = hashlib.sha1(normalized_iso.encode("utf-8")).hexdigest()[:16]
         return os.path.join(runtime_dir, "PortProtonQt", "iso_rw", digest)
 
+    def _get_mdf_iso_path(self, mdf_path: str) -> str:
+        """Return temporary ISO path converted from MDF."""
+        runtime_dir = tempfile.gettempdir()
+        normalized_mdf = os.path.abspath(os.path.expanduser(mdf_path))
+        digest = hashlib.sha1(normalized_mdf.encode("utf-8")).hexdigest()[:16]
+        return os.path.join(runtime_dir, "PortProtonQt", "mdf_iso", f"{digest}.iso")
+
     def _get_7zip_binary(self) -> str | None:
         """Return preferred 7-Zip binary path."""
         seven_zip = shutil.which("7zz")
@@ -3315,9 +3324,159 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             return seven_zip
         return shutil.which("7z")
 
+    def _convert_mdf_to_iso(self, mdf_path: str) -> str | None:
+        """Convert raw 2352-byte sector MDF to temporary ISO."""
+        normalized_mdf = os.path.abspath(os.path.expanduser(mdf_path))
+        iso_path = self._mdf_iso_paths.get(normalized_mdf, self._get_mdf_iso_path(normalized_mdf))
+        stamp_path = f"{iso_path}.source_stamp"
+        try:
+            source_stamp = f"{os.path.getsize(normalized_mdf)}:{int(os.path.getmtime(normalized_mdf))}"
+        except OSError as e:
+            logger.error("Failed to read MDF metadata for %s: %s", normalized_mdf, e)
+            return None
+
+        if os.path.isfile(iso_path) and os.path.isfile(stamp_path):
+            try:
+                with open(stamp_path, encoding="utf-8") as file:
+                    if file.read().strip() == source_stamp:
+                        self._mdf_iso_paths[normalized_mdf] = iso_path
+                        return iso_path
+            except OSError:
+                pass
+
+        os.makedirs(os.path.dirname(iso_path), exist_ok=True)
+        tmp_path = f"{iso_path}.tmp"
+        try:
+            self._write_iso_from_mdf(normalized_mdf, tmp_path)
+            os.replace(tmp_path, iso_path)
+            with open(stamp_path, "w", encoding="utf-8") as file:
+                file.write(source_stamp)
+        except (OSError, ValueError) as e:
+            logger.error("Failed to convert MDF to ISO %s: %s", normalized_mdf, e)
+            try:
+                if os.path.exists(tmp_path):
+                    os.remove(tmp_path)
+            except OSError:
+                pass
+            return None
+
+        self._mdf_iso_paths[normalized_mdf] = iso_path
+        return iso_path
+
+    def _get_mdf_sources(self, mdf_path: str) -> list[str]:
+        """Return all MDF discs from the selected image directory."""
+        normalized_mdf = os.path.abspath(os.path.expanduser(mdf_path))
+        source_dir = os.path.dirname(normalized_mdf)
+        try:
+            sources = [
+                os.path.join(source_dir, name)
+                for name in os.listdir(source_dir)
+                if name.lower().endswith(".mdf") and os.path.isfile(os.path.join(source_dir, name))
+            ]
+        except OSError as e:
+            logger.error("Failed to list MDF directory %s: %s", source_dir, e)
+            return [normalized_mdf]
+        sources.sort(key=lambda path: os.path.basename(path).casefold())
+        return sources or [normalized_mdf]
+
+    def _get_disc_source_stamp(self, source_paths: list[str]) -> str | None:
+        """Return metadata stamp for extracted disc image sources."""
+        stamps = []
+        for source_path in source_paths:
+            try:
+                stamps.append(f"{source_path}:{os.path.getsize(source_path)}:{int(os.path.getmtime(source_path))}")
+            except OSError as e:
+                logger.error("Failed to read disc image metadata for %s: %s", source_path, e)
+                return None
+        return "\n".join(stamps)
+
+    def _clear_disc_runtime_dir(self, rw_root: str) -> None:
+        self._ensure_writable_tree(rw_root)
+        for entry in os.scandir(rw_root):
+            if entry.name == ".iso_source_stamp":
+                continue
+            if entry.is_dir(follow_symlinks=False):
+                shutil.rmtree(entry.path)
+            else:
+                os.remove(entry.path)
+
+    def _extract_iso_to_rw(self, seven_zip_binary: str, iso_path: str, rw_root: str, overwrite_mode: str) -> None:
+        subprocess.run(
+            [seven_zip_binary, "x", iso_path, f"-o{rw_root}", "-y", overwrite_mode],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+
+    def _write_iso_from_mdf(self, mdf_path: str, iso_path: str) -> None:
+        with open(mdf_path, "rb") as source, open(iso_path, "wb") as target:
+            sector_index = 0
+            while True:
+                sector = source.read(2352)
+                if not sector:
+                    return
+                if len(sector) != 2352:
+                    raise ValueError(f"Truncated MDF sector at {sector_index}")
+                mode = sector[15]
+                if mode == 1:
+                    target.write(sector[16:2064])
+                elif mode == 2:
+                    target.write(sector[24:2072])
+                else:
+                    raise ValueError(f"Unknown MDF sector mode {mode} at {sector_index}")
+                sector_index += 1
+
+    def _sync_mdf_set_to_rw(self, mdf_path: str) -> str | None:
+        """Extract all MDF discs from one directory to a shared runtime path."""
+        normalized_mdf = os.path.abspath(os.path.expanduser(mdf_path))
+        rw_root = self._iso_rw_paths.get(normalized_mdf, self._get_iso_rw_root(normalized_mdf))
+        os.makedirs(rw_root, exist_ok=True)
+        stamp_path = os.path.join(rw_root, ".iso_source_stamp")
+        seven_zip_binary = self._get_7zip_binary()
+        if not seven_zip_binary:
+            logger.error("7zz or 7z is required to extract MDF set %s", mdf_path)
+            return None
+
+        mdf_sources = self._get_mdf_sources(normalized_mdf)
+        source_stamp = self._get_disc_source_stamp(mdf_sources)
+        if not source_stamp:
+            return None
+
+        old_stamp = ""
+        if os.path.isfile(stamp_path):
+            try:
+                with open(stamp_path, encoding="utf-8") as file:
+                    old_stamp = file.read().strip()
+            except OSError:
+                old_stamp = ""
+        if old_stamp == source_stamp:
+            self._iso_rw_paths[normalized_mdf] = rw_root
+            return rw_root
+
+        iso_sources = []
+        for source_path in mdf_sources:
+            iso_source = self._convert_mdf_to_iso(source_path)
+            if not iso_source:
+                return None
+            iso_sources.append(iso_source)
+        try:
+            self._clear_disc_runtime_dir(rw_root)
+            for iso_source in iso_sources:
+                self._extract_iso_to_rw(seven_zip_binary, iso_source, rw_root, "-aos")
+            with open(stamp_path, "w", encoding="utf-8") as file:
+                file.write(source_stamp)
+        except (subprocess.CalledProcessError, OSError) as e:
+            logger.error("Failed to sync MDF set to RW path %s: %s", rw_root, e)
+            return None
+
+        self._iso_rw_paths[normalized_mdf] = rw_root
+        return rw_root
+
     def _sync_iso_to_rw(self, iso_path: str) -> str | None:
-        """Extract ISO content to writable runtime directory if source changed."""
+        """Extract disc image content to writable runtime directory if source changed."""
         normalized_iso = os.path.abspath(os.path.expanduser(iso_path))
+        if normalized_iso.lower().endswith(".mdf"):
+            return self._sync_mdf_set_to_rw(normalized_iso)
         rw_root = self._iso_rw_paths.get(normalized_iso, self._get_iso_rw_root(normalized_iso))
         os.makedirs(rw_root, exist_ok=True)
         stamp_path = os.path.join(rw_root, ".iso_source_stamp")
@@ -3342,20 +3501,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
         if old_stamp != source_stamp:
             try:
-                self._ensure_writable_tree(rw_root)
-                for entry in os.scandir(rw_root):
-                    if entry.name == ".iso_source_stamp":
-                        continue
-                    if entry.is_dir(follow_symlinks=False):
-                        shutil.rmtree(entry.path)
-                    else:
-                        os.remove(entry.path)
-                subprocess.run(
-                    [seven_zip_binary, "x", normalized_iso, f"-o{rw_root}", "-y"],
-                    capture_output=True,
-                    text=True,
-                    check=True
-                )
+                self._clear_disc_runtime_dir(rw_root)
+                self._extract_iso_to_rw(seven_zip_binary, normalized_iso, rw_root, "-aoa")
                 with open(stamp_path, "w", encoding="utf-8") as file:
                     file.write(source_stamp)
             except (subprocess.CalledProcessError, OSError) as e:
@@ -3396,11 +3543,34 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             except OSError as e:
                 logger.warning("Failed to cleanup ISO runtime directory %s: %s", rw_root, e)
         self._iso_rw_paths.clear()
+        self._cleanup_mdf_iso_paths()
         self._cleanup_empty_iso_runtime_dirs()
+        self._cleanup_empty_mdf_runtime_dirs()
+
+    def _cleanup_mdf_iso_paths(self) -> None:
+        """Remove temporary ISO files converted from MDF."""
+        for iso_path in set(self._mdf_iso_paths.values()):
+            for path in (iso_path, f"{iso_path}.source_stamp"):
+                try:
+                    if os.path.exists(path):
+                        os.remove(path)
+                except OSError as e:
+                    logger.warning("Failed to cleanup MDF ISO file %s: %s", path, e)
+        self._mdf_iso_paths.clear()
 
     def _cleanup_empty_iso_runtime_dirs(self):
         """Remove empty ISO runtime parent directories."""
         base_dir = os.path.join(tempfile.gettempdir(), "PortProtonQt", "iso_rw")
+        portproton_tmp_dir = os.path.dirname(base_dir)
+        for path in (base_dir, portproton_tmp_dir):
+            try:
+                os.rmdir(path)
+            except OSError:
+                continue
+
+    def _cleanup_empty_mdf_runtime_dirs(self) -> None:
+        """Remove empty MDF conversion parent directories."""
+        base_dir = os.path.join(tempfile.gettempdir(), "PortProtonQt", "mdf_iso")
         portproton_tmp_dir = os.path.dirname(base_dir)
         for path in (base_dir, portproton_tmp_dir):
             try:
@@ -3428,7 +3598,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         return current_path
 
     def _resolve_iso_executable(self, iso_path: str) -> str | None:
-        """Resolve executable for ISO by reading [autorun] open= in autorun.inf."""
+        """Resolve executable for disc image by reading [autorun] open= in autorun.inf."""
         rw_root = self._sync_iso_to_rw(iso_path)
         if not rw_root:
             return None
@@ -3472,7 +3642,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 QMessageBox.warning(self, _("Error"), _("Invalid command format (silent)"))
                 return
             file_to_check = entry_exec_split[silent_index + 1]
-            if file_to_check.lower().endswith(".iso"):
+            if file_to_check.lower().endswith(DISC_IMAGE_EXTENSIONS):
                 resolved_iso_exe = self._resolve_iso_executable(file_to_check)
                 if not resolved_iso_exe:
                     QMessageBox.warning(
@@ -3490,7 +3660,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             file_to_check = entry_exec_split[0]
             if file_to_check.lower().endswith(".exe") and self.start_sh:
                 launch_cmd = self.start_sh + entry_exec_split
-            elif file_to_check.lower().endswith(".iso"):
+            elif file_to_check.lower().endswith(DISC_IMAGE_EXTENSIONS):
                 resolved_iso_exe = self._resolve_iso_executable(file_to_check)
                 if resolved_iso_exe:
                     file_to_check = resolved_iso_exe

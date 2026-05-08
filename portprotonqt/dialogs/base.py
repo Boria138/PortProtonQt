@@ -27,6 +27,7 @@ from portprotonqt.image_utils import COVER_IMAGE_EXTENSIONS, set_animated_cover
 
 logger = get_logger(__name__)
 theme_manager = ThemeManager()
+DISC_IMAGE_EXTENSIONS = (".iso", ".mdf")
 
 
 def generate_thumbnail(inputfile, outfile, size=128, force_resize=True):
@@ -369,11 +370,11 @@ class AddGameDialog(QDialog):
         super().accept()
 
     def browseExe(self):
-        """Open file manager to select executable or ISO file."""
+        """Open file manager to select executable or disc image."""
         try:
             from portprotonqt.dialogs.file_explorer import FileExplorer
             initial_path = os.path.dirname(self.last_exe_path) if self.last_exe_path and os.path.isfile(self.last_exe_path) else None
-            file_explorer = FileExplorer(self, file_filter=('.exe', '.iso'), initial_path=initial_path)
+            file_explorer = FileExplorer(self, file_filter=('.exe',) + DISC_IMAGE_EXTENSIONS, initial_path=initial_path)
             file_explorer.file_signal.file_selected.connect(self.onExeSelected)
 
             parent_widget = self.parentWidget()
@@ -457,7 +458,7 @@ class AddGameDialog(QDialog):
         exe_path = self.exeEdit.text().strip()
         launch_path = exe_path
 
-        if exe_path.lower().endswith(".iso"):
+        if exe_path.lower().endswith(DISC_IMAGE_EXTENSIONS):
             parent_widget = cast("MainWindow | None", self.parentWidget())
             if parent_widget and hasattr(parent_widget, "resolve_launch_file_path"):
                 resolved_path = parent_widget.resolve_launch_file_path(exe_path)
@@ -510,7 +511,7 @@ class AddGameDialog(QDialog):
         if not name:
             return None, None
 
-        if exe_path.lower().endswith(".iso"):
+        if exe_path.lower().endswith(DISC_IMAGE_EXTENSIONS):
             parent_widget = cast("MainWindow | None", self.parentWidget())
             if not parent_widget or not hasattr(parent_widget, "resolve_launch_file_path"):
                 return None, None

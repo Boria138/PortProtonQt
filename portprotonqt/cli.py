@@ -6,6 +6,8 @@ from pathlib import Path
 
 from portprotonqt.steam_api import get_steam_home
 
+LAUNCH_FILE_EXTENSIONS = ('.exe', '.iso', '.mdf')
+
 
 def parse_args():
     """
@@ -63,7 +65,7 @@ def parse_args():
     parser.add_argument(
         'file_or_url',
         nargs='?',
-        help="Launch file path (.exe/.iso) or portproton:// URL"
+        help="Launch file path (.exe/.iso/.mdf) or portproton:// URL"
     )
     return parser.parse_args()
 
@@ -306,9 +308,9 @@ def normalize_launch_path(path: str) -> str:
 
 
 def is_launch_file(path: str) -> bool:
-    """Check if the given path is a supported launch file (.exe or .iso)."""
+    """Check if the given path is a supported launch file."""
     normalized_path = normalize_launch_path(path)
-    return normalized_path.lower().endswith(('.exe', '.iso')) and os.path.isfile(normalized_path)
+    return normalized_path.lower().endswith(LAUNCH_FILE_EXTENSIONS) and os.path.isfile(normalized_path)
 
 
 def parse_portproton_url(url: str) -> str | None:

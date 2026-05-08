@@ -11,4 +11,4 @@ Terminal=false
 Icon=ru.linux_gaming.PortProtonQt
 StartupWMClass=ru.linux_gaming.PortProtonQt
 Categories=Game;Utility;
-MimeType=x-scheme-handler/portproton;application/x-ms-dos-exec;application/x-executable;application/x-dosexec;application/x-iso9660-image;application/x-cd-image;
+MimeType=x-scheme-handler/portproton;application/x-ms-dos-exec;application/x-executable;application/x-dosexec;application/x-iso9660-image;application/x-cd-image;application/x-raw-disk-image;application/x-mdf;application/x-mds-disk;
