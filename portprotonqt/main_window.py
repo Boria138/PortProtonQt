@@ -796,6 +796,39 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             for file_path in desktop_files:
                 executor.submit(self._process_desktop_file_async, file_path, on_desktop_processed)
 
+    def _generate_missing_portproton_icon(self, game_exe: str, icon_path: str, desktop_name: str) -> str:
+        if not self.portproton_location:
+            return ""
+        if not game_exe.lower().endswith(".exe") or not os.path.isfile(game_exe):
+            return ""
+
+        img_dir = os.path.join(self.portproton_location, "data", "img")
+        os.makedirs(img_dir, exist_ok=True)
+        target_path = ""
+
+        if icon_path:
+            expanded_icon = os.path.expanduser(icon_path)
+            abs_icon = os.path.abspath(expanded_icon)
+            abs_img_dir = os.path.abspath(img_dir)
+            if abs_icon.startswith(abs_img_dir + os.sep):
+                target_path = abs_icon
+            elif not os.path.isabs(expanded_icon):
+                icon_name = os.path.basename(expanded_icon)
+                if not os.path.splitext(icon_name)[1]:
+                    icon_name = f"{icon_name}.png"
+                target_path = os.path.join(img_dir, icon_name)
+
+        if not target_path:
+            safe_name = os.path.basename(desktop_name) or os.path.splitext(os.path.basename(game_exe))[0]
+            target_path = os.path.join(img_dir, f"{safe_name}.png")
+
+        if os.path.isfile(target_path):
+            return target_path
+        os.makedirs(os.path.dirname(target_path), exist_ok=True)
+        if generate_thumbnail(game_exe, target_path, size=128):
+            return target_path
+        return ""
+
     def _process_desktop_file_async(self, file_path: str, callback: Callable[[tuple | None], None]):
         entry = parse_desktop_entry(file_path)
         if not entry:
@@ -825,12 +858,16 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
         user_cover = ""
         user_game_folder = ""
+        generated_img_icon = ""
         economy_mode = ui_config.get_economy_mode()
 
         if game_exe:
             exe_name = os.path.splitext(os.path.basename(game_exe))[0]
             user_game_folder = os.path.join(user_custom_folder, exe_name)
             os.makedirs(user_game_folder, exist_ok=True)
+            generated_img_icon = self._generate_missing_portproton_icon(
+                game_exe, entry.get("Icon", ""), desktop_name
+            )
 
             # Check if local game folder is empty and download assets if it is
             if not economy_mode and not os.listdir(user_game_folder):
@@ -875,8 +912,10 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
             final_name = translations['name']
             final_desc = translations['description'] or steam_info.get("description", "")
-            final_cover = (user_cover if user_cover else
-                        steam_info.get("cover", "") or entry.get("Icon", ""))
+            final_cover = (
+                user_cover if user_cover else
+                steam_info.get("cover", "") or generated_img_icon or entry.get("Icon", "")
+            )
 
             callback((
                 final_name,
@@ -904,7 +943,10 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             cached_steam_info = get_cached_steam_game_info(desktop_name, exec_line)
             final_name = translations['name'] or cached_steam_info.get("name", "")
             final_desc = translations['description'] or cached_steam_info.get("description", "")
-            final_cover = user_cover or cached_steam_info.get("cover", "") or entry.get("Icon", "")
+            final_cover = (
+                user_cover or cached_steam_info.get("cover", "") or
+                generated_img_icon or entry.get("Icon", "")
+            )
             if not final_cover and game_exe and game_exe.lower().endswith(".exe") and os.path.exists(game_exe):
                 xdg_cache_home = os.getenv(
                     "XDG_CACHE_HOME",
