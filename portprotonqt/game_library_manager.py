@@ -2,8 +2,8 @@ from typing import Protocol
 from portprotonqt.game_card import GameCard
 from portprotonqt.search_utils import SearchOptimizer, ThreadedSearch
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QScrollArea, QSlider, QScroller
-from PySide6.QtCore import Qt, QTimer, Signal
-from PySide6.QtGui import QHideEvent, QRegion, QShowEvent
+from PySide6.QtCore import Qt, QTimer
+from PySide6.QtGui import QRegion
 from portprotonqt.custom_widgets import FlowLayout
 from portprotonqt.config import favorites_config, game_config, ui_config
 from portprotonqt.image_utils import load_pixmap_async
@@ -25,20 +25,6 @@ class MainWindowProtocol(Protocol):
     current_hovered_card: GameCard | None
     current_focused_card: GameCard | None
     gamesListWidget: QWidget | None
-
-
-class _GameLibraryWidget(QWidget):
-    hidden = Signal()
-    shown = Signal()
-
-    def hideEvent(self, event: QHideEvent) -> None:
-        self.hidden.emit()
-        super().hideEvent(event)
-
-    def showEvent(self, event: QShowEvent) -> None:
-        self.shown.emit()
-        super().showEvent(event)
-
 
 class GameLibraryManager:
     def __init__(self, main_window: MainWindowProtocol, theme, context_menu_manager: ContextMenuManager | None):
@@ -71,9 +57,7 @@ class GameLibraryManager:
 
     def create_games_library_widget(self):
         """Creates the games library widget with search, grid, and slider."""
-        self.gamesLibraryWidget = _GameLibraryWidget()
-        self.gamesLibraryWidget.hidden.connect(self._pause_all_animated_covers)
-        self.gamesLibraryWidget.shown.connect(lambda: QTimer.singleShot(0, self.load_visible_images))
+        self.gamesLibraryWidget = QWidget()
         self.gamesLibraryWidget.setStyleSheet(self.theme.LIBRARY_WIDGET_STYLE)
         layout = QVBoxLayout(self.gamesLibraryWidget)
         layout.setSpacing(15)
