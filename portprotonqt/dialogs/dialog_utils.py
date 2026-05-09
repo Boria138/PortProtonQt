@@ -83,7 +83,7 @@ def create_dialog_hints_widget(theme, main_window, input_manager, context='defau
         hlayout.addWidget(icon_label)
 
         text_label = QLabel(text)
-        text_label.setStyleSheet(theme.LAST_LAUNCH_VALUE_STYLE)
+        text_label.setStyleSheet(theme.HINTS_LABEL_STYLE)
         text_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
         hlayout.addWidget(text_label)
 

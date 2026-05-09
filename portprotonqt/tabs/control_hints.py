@@ -283,7 +283,7 @@ class MainWindowControlHintsMixin:
             layout.addWidget(select_icon)
 
             text_label = QLabel(action_text)
-            text_label.setStyleSheet(self.theme.LAST_LAUNCH_VALUE_STYLE)
+            text_label.setStyleSheet(self.theme.HINTS_LABEL_STYLE)
             text_label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
             layout.addWidget(text_label)
 
