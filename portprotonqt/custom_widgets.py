@@ -1,6 +1,8 @@
 from PySide6.QtWidgets import QLabel, QPushButton, QWidget, QLayout, QLayoutItem
 from PySide6.QtCore import Qt, Signal, QRect, QSize, Property, QPropertyAnimation, QEasingCurve
 from PySide6.QtGui import QFont, QFontMetrics, QPainter
+from portprotonqt.theme_manager import ThemeManager
+from portprotonqt.config import ui_config
 
 def compute_layout(nat_sizes, rect_width, spacing, max_scale, center_rows=True):
     """
@@ -465,7 +467,7 @@ class ClickableLabel(QLabel):
 
 class AutoSizeButton(QPushButton):
     def __init__(self, *args, icon=None, icon_size=16,
-                 min_font_size=6, max_font_size=14, padding=20, update_size=True, **kwargs):
+                 min_font_size=6, max_font_size=14, padding=None, update_size=True, **kwargs):
         if args and isinstance(args[0], str):
             text = args[0]
             parent = kwargs.get("parent", None)
@@ -478,6 +480,14 @@ class AutoSizeButton(QPushButton):
             text = ""
             parent = kwargs.get("parent", None)
             super().__init__(text, parent)
+
+        self.theme_manager = ThemeManager()
+        selected_theme = ui_config.get_theme()
+        self.current_theme_name = selected_theme
+        self.theme = self.theme_manager.apply_theme(selected_theme)
+
+        if padding is None:
+            padding = getattr(self.theme, 'autoSizeButtonPadding', 20)
 
         self._icon = icon
         self._icon_size = icon_size
