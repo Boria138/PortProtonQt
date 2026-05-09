@@ -121,23 +121,27 @@ class IconExtractor:
         self._icons = self._read_icon_resources(pe, icon_res)
         return bool(self._groups and self._icons)
 
-    def _read_group_resources(self, pe, group_res):
+    def _read_group_resources(self, pe, group_res) -> list[bytes]:
         """Read RT_GROUP_ICON blobs."""
         groups = []
         for group_entry in group_res.directory.entries:
             data_entry = group_entry.directory.entries[0] if group_entry.struct.DataIsDirectory else group_entry
             rva = data_entry.data.struct.OffsetToData
-            groups.append(pe.get_data(rva, data_entry.data.struct.Size))
+            data = pe.get_data(rva, data_entry.data.struct.Size)
+            if data is not None:
+                groups.append(data)
         return groups
 
-    def _read_icon_resources(self, pe, icon_res):
+    def _read_icon_resources(self, pe, icon_res) -> dict[int, bytes]:
         """Read RT_ICON blobs keyed by resource ID."""
-        icons = {}
+        icons: dict[int, bytes] = {}
         for icon_entry in icon_res.directory.entries:
             data_entry = icon_entry.directory.entries[0] if icon_entry.struct.DataIsDirectory else icon_entry
             rva = data_entry.data.struct.OffsetToData
-            resource_id = icon_entry.id if icon_entry.id is not None else icon_entry.struct.Name
-            icons[resource_id] = pe.get_data(rva, data_entry.data.struct.Size)
+            resource_id = int(icon_entry.id if icon_entry.id is not None else icon_entry.struct.Name)
+            data = pe.get_data(rva, data_entry.data.struct.Size)
+            if data is not None:
+                icons[resource_id] = data
         return icons
 
     def _select_best_icon_data(self, group_data: bytes) -> bytes | None:
