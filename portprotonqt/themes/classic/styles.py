@@ -187,7 +187,7 @@ ADDGAME_BACK_BUTTON_STYLE = f"""
         font-family: '{font_family}';
         padding: 5px 10px;
         min-width: 120px;
-        min-height: 30px;
+        min-height: 25px;
     }}
     QPushButton:hover {{
         background: {color_a};
@@ -207,7 +207,7 @@ SEARCH_EDIT_STYLE = f"""
         font-family: '{font_family}';
         font-size: {font_size_a};
         color: {color_f};
-        min-height: 30px;
+        min-height: 25px;
     }}
     QLineEdit:hover {{
         border: {border_b} {color_a};
