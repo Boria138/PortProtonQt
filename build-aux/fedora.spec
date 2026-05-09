@@ -26,7 +26,6 @@ Provides:       python3-%{pypi_name} = %{version}-%{release}
 
 Requires:       python3-babel
 Requires:       python3-evdev
-Requires:       python3-icoextract
 Requires:       python3-websocket-client
 Requires:       python3-orjson
 Requires:       python3-psutil

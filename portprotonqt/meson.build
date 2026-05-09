@@ -12,6 +12,7 @@ install_data(
   'howlongtobeat_api.py',
   'idle_inhibit.py',
   'image_utils.py',
+  'icon_extractor.py',
   'input_manager.py',
   'keyboard_layouts.py',
   'localization.py',

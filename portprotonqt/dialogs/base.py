@@ -9,9 +9,7 @@ from PySide6.QtWidgets import (
     QProgressBar, QSizePolicy, QWidget, QCheckBox
 )
 from PySide6.QtCore import Qt, QObject, Signal, QTimer, QStandardPaths, QSize
-from icoextract import IconExtractor, IconExtractorError
 from PIL import Image
-from pefile import PEFormatError
 import psutil
 
 if TYPE_CHECKING:
@@ -25,6 +23,7 @@ from portprotonqt.downloader import Downloader
 from portprotonqt.virtual_keyboard import VirtualKeyboard
 from portprotonqt.localization import _
 from portprotonqt.image_utils import COVER_IMAGE_EXTENSIONS, set_animated_cover
+from portprotonqt.icon_extractor import IconExtractor, IconExtractorError
 
 logger = get_logger(__name__)
 theme_manager = ThemeManager()
@@ -44,12 +43,14 @@ def generate_thumbnail(inputfile, outfile, size=128, force_resize=True):
     try:
         extractor = IconExtractor(inputfile)
         logger.debug("IconExtractor created successfully.")
-    except (RuntimeError, IconExtractorError, PEFormatError) as e:
+    except (RuntimeError, IconExtractorError) as e:
         logger.warning(f"Failed to create IconExtractor: {e}")
         return False
 
     try:
         data = extractor.get_icon()
+        if data is None:
+            return False
         im = Image.open(data)
         logger.debug(f"Extracted icon size {im.size}, formats: {im.format}, frames: {getattr(im, 'n_frames', 1)}")
     except Exception as e:
@@ -58,7 +59,7 @@ def generate_thumbnail(inputfile, outfile, size=128, force_resize=True):
 
     if force_resize:
         logger.debug(f"Forcing icon resize to {size}x{size}")
-        im = im.resize((size, size))
+        im = im.resize((size, size), Image.Resampling.LANCZOS)
     else:
         if size > 256:
             logger.warning('Requested size larger than 256, set to 256')
