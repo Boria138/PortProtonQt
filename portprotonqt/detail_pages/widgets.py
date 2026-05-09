@@ -202,14 +202,14 @@ def create_compact_detail_header(
     header_layout.addWidget(cover_frame, alignment=Qt.AlignmentFlag.AlignCenter)
 
     title_frame = QFrame(header_widget)
-    title_frame.setStyleSheet(theme.DETAILS_WIDGET_STYLE)
+    title_frame.setStyleSheet(theme.COMPACT_DETAILS_WIDGET_STYLE)
     title_layout = QVBoxLayout(title_frame)
     title_layout.setContentsMargins(
         *getattr(theme, "detailCompactTitleMargins", theme.portProtonPageMargins)
     )
     title_label = QLabel(title)
     title_label.setWordWrap(True)
-    title_label.setStyleSheet(theme.DETAIL_PAGE_TITLE_STYLE)
+    title_label.setStyleSheet(theme.COMPACT_DETAIL_PAGE_TITLE_STYLE)
     title_layout.addWidget(title_label, alignment=Qt.AlignmentFlag.AlignVCenter)
     header_layout.addWidget(title_frame, stretch=1)
     return header_widget
@@ -218,7 +218,7 @@ def create_compact_detail_header(
 def create_compact_layout_panel(parent: QWidget, theme, content_layout: QLayout) -> QWidget:
     """Create compact panel for an existing layout."""
     panel = QWidget(parent)
-    panel.setStyleSheet(theme.DETAILS_WIDGET_STYLE)
+    panel.setStyleSheet(theme.COMPACT_PLAYTIME_WIDGET_STYLE)
     panel.setLayout(content_layout)
     content_layout.setContentsMargins(
         *getattr(
@@ -235,7 +235,7 @@ def create_compact_description_panel(
 ) -> QWidget:
     """Create compact description block."""
     desc_widget = QWidget(parent)
-    desc_widget.setStyleSheet(theme.DETAILS_WIDGET_STYLE)
+    desc_widget.setStyleSheet(theme.COMPACT_DETAILS_WIDGET_STYLE)
     desc_layout = QVBoxLayout(desc_widget)
     desc_layout.setContentsMargins(
         *getattr(
@@ -246,7 +246,7 @@ def create_compact_description_panel(
     )
     desc_label = QLabel(description)
     desc_label.setWordWrap(True)
-    desc_label.setStyleSheet(theme.DETAIL_PAGE_DESC_STYLE)
+    desc_label.setStyleSheet(theme.COMPACT_DETAIL_PAGE_DESC_STYLE)
     desc_layout.addWidget(desc_label)
     return desc_widget
 

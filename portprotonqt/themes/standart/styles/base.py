@@ -62,6 +62,18 @@ HINT_BAR_STYLE = f"""
     }}
 """
 
+# HINT LABEL STYLE
+HINTS_LABEL_STYLE = f"""
+    QWidget {{
+        background: {color_h};
+        font-family: '{font_family}';
+        font-size: 13px;
+        color: {color_f};
+        font-weight: 600;
+        letter-spacing: 0.75px;
+    }}
+"""
+
 # MAIN WINDOW HEADER STYLE
 MAIN_WINDOW_HEADER_STYLE = f"""
     QFrame {{

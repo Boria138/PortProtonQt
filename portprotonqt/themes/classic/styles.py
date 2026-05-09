@@ -6,6 +6,13 @@ THEME_INHERITS = "standart"
 theme_manager = ThemeManager()
 current_theme_name = ui_config.get_theme()
 
+detailCompactCoverFrameSize = 128
+detailCompactCoverImageSize = 108
+detailCompactContentSpacing = 5
+detailCompactHeaderSpacing = 16
+detailCompactTitleMargins = (0, 0, 0, 0)
+detailCompactDescriptionMargins = (3, 3, 3, 3)
+
 portProtonPageMargins = (10, 7, 15, 10)
 portProtonPageHorizontalSpacing = 5
 portProtonPageVerticalSpacing = 2
@@ -107,6 +114,33 @@ GAME_CARD_WINDOW_STYLE = """
     }
 """
 
+# COVER LABEL BORDER RADIUS
+COVER_LABEL_STYLE = f"border-radius: {border_radius_b};"
+
+# DETAILS WIDGET (TEXT, DESCRIPTION)
+DETAILS_WIDGET_STYLE = f"background: rgba(20,20,20,0.40); border-radius: {border_radius_b}; padding: 10px;"
+COMPACT_DETAILS_WIDGET_STYLE = f"background: rgba(20,20,20,0.40); border-radius: {border_radius_b}; padding: 10px;"
+
+# TITLE (HEADER) ON DETAIL PAGE
+DETAIL_PAGE_TITLE_STYLE = f"font-family: '{font_family}'; font-size: 32px; color: {color_a};"
+COMPACT_DETAIL_PAGE_TITLE_STYLE = f"font-family: '{font_family}'; font-size: 32px; color: {color_a}; background: {color_h};"
+
+# DIVIDER LINE
+DETAIL_PAGE_LINE_STYLE = "color: rgba(255,255,255,0.12); margin: 0 0;"
+
+# DESCRIPTION TEXT
+DETAIL_PAGE_DESC_STYLE = f"font-family: '{font_family}'; font-size: {font_size_a}; color: {color_f}; line-height: 1.5;"
+COMPACT_DETAIL_PAGE_DESC_STYLE = f"font-family: '{font_family}'; font-size: {font_size_a}; color: {color_f}; line-height: 1.5; background: {color_h};"
+
+# PLAYTIME WIDGET (PLAYTIME)
+COMPACT_PLAYTIME_WIDGET_STYLE = f"background: {color_h}; border-radius: {border_radius_b}; padding: 10px; margin: 10px 0 0 0;"
+
+# ADDITIONAL INFO STYLES ON GAMES PAGE
+LAST_LAUNCH_TITLE_STYLE = f"max-height: 16px; background: rgba(20,20,20,0.40);font-family: '{font_family}'; font-size: 11px; color: {color_f}; text-transform: uppercase; letter-spacing: 0.75px;"
+LAST_LAUNCH_VALUE_STYLE = f"height: 16px; background: rgba(20,20,20,0.40);font-family: '{font_family}'; font-size: 13px; color: {color_f}; font-weight: 600; letter-spacing: 0.75px;"
+PLAY_TIME_TITLE_STYLE = f"max-height: 16px; background: rgba(20,20,20,0.40);font-family: '{font_family}'; font-size: 11px; color: {color_f}; text-transform: uppercase; letter-spacing: 0.75px;"
+PLAY_TIME_VALUE_STYLE = f"height: 16px; background: rgba(20,20,20,0.40);font-family: '{font_family}'; font-size: 13px; color: {color_f}; font-weight: 600; letter-spacing: 0.75px;"
+
 # PLAY BUTTON STYLE
 PLAY_BUTTON_STYLE = f"""
     QPushButton {{
@@ -115,15 +149,16 @@ PLAY_BUTTON_STYLE = f"""
             stop:0 #404554,
             stop:1 #30323d
         );
-        border: {border_a} rgba(255, 255, 255, 0.5);
+        border: {border_b} rgba(255, 255, 255, 0.1);
         border-radius: {border_radius_a};
-        font-size: 16px;
+        font-size: {font_size_a};
+        margin-top: 15px;
         color: {color_f};
         font-weight: bold;
         font-family: '{font_family}';
         padding: 5px 10px;
         min-width: 50px;
-        min-height: 20px;
+        min-height: 30px;
     }}
     QPushButton:hover {{
         background: {color_a};

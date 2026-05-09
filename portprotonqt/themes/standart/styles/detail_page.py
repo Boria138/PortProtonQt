@@ -45,15 +45,21 @@ COVER_LABEL_STYLE = f"border-radius: {border_radius_b};"
 
 # DETAILS WIDGET (TEXT, DESCRIPTION)
 DETAILS_WIDGET_STYLE = f"background: rgba(20,20,20,0.40); border-radius: {border_radius_b}; padding: 10px;"
+COMPACT_DETAILS_WIDGET_STYLE = f"background: rgba(20,20,20,0.40); border-radius: {border_radius_b}; padding: 10px;"
 
 # TITLE (HEADER) ON DETAIL PAGE
 DETAIL_PAGE_TITLE_STYLE = f"font-family: '{font_family}'; font-size: 32px; color: {color_accent_blue};"
+COMPACT_DETAIL_PAGE_TITLE_STYLE = f"font-family: '{font_family}'; font-size: 32px; color: {color_accent_blue};"
 
 # DIVIDER LINE
 DETAIL_PAGE_LINE_STYLE = "color: rgba(255,255,255,0.12); margin: 10px 0;"
 
 # DESCRIPTION TEXT
 DETAIL_PAGE_DESC_STYLE = f"font-family: '{font_family}'; font-size: {font_size_a}; color: {color_f}; line-height: 1.5;"
+COMPACT_DETAIL_PAGE_DESC_STYLE = f"font-family: '{font_family}'; font-size: {font_size_a}; color: {color_f}; line-height: 1.5;"
+
+# PLAYTIME WIDGET (PLAYTIME)
+COMPACT_PLAYTIME_WIDGET_STYLE = f"background: {color_h}; border-radius: {border_radius_b}; padding: 10px;"
 
 # PLAY BUTTON STYLE
 PLAY_BUTTON_STYLE = f"""
