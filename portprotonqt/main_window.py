@@ -3417,9 +3417,22 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             return seven_zip
         return shutil.which("7z")
 
+    def _is_iso9660_file(self, file_path: str) -> bool:
+        """Check if a file has an ISO 9660 volume descriptor."""
+        try:
+            with open(file_path, "rb") as file:
+                file.seek(0x8001)
+                return file.read(5) == b"CD001"
+        except OSError as e:
+            logger.error("Failed to read ISO 9660 signature for %s: %s", file_path, e)
+            return False
+
     def _convert_mdf_to_iso(self, mdf_path: str) -> str | None:
         """Convert raw 2352-byte sector MDF to temporary ISO."""
         normalized_mdf = os.path.abspath(os.path.expanduser(mdf_path))
+        if self._is_iso9660_file(normalized_mdf):
+            return normalized_mdf
+
         iso_path = self._mdf_iso_paths.get(normalized_mdf, self._get_mdf_iso_path(normalized_mdf))
         stamp_path = f"{iso_path}.source_stamp"
         try:
@@ -3690,8 +3703,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             current_path = os.path.join(current_path, match)
         return current_path
 
-    def _resolve_iso_executable(self, iso_path: str) -> str | None:
-        """Resolve executable for disc image by reading [autorun] open= in autorun.inf."""
+    def _resolve_iso_launch_parts(self, iso_path: str) -> list[str] | None:
+        """Resolve executable and launch arguments from disc image autorun.inf."""
         rw_root = self._sync_iso_to_rw(iso_path)
         if not rw_root:
             return None
@@ -3711,7 +3724,14 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         candidate_path = self._resolve_iso_relative_path(rw_root, open_command_parts[0])
         if not candidate_path or not os.path.isfile(candidate_path):
             return None
-        return candidate_path
+        return [candidate_path] + open_command_parts[1:]
+
+    def _resolve_iso_executable(self, iso_path: str) -> str | None:
+        """Resolve executable for disc image by reading [autorun] open= in autorun.inf."""
+        launch_parts = self._resolve_iso_launch_parts(iso_path)
+        if not launch_parts:
+            return None
+        return launch_parts[0]
 
     def toggleGame(self, exec_line, button=None):
         # Handle Steam games
@@ -3735,32 +3755,34 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 QMessageBox.warning(self, _("Error"), _("Invalid command format (silent)"))
                 return
             file_to_check = entry_exec_split[silent_index + 1]
+            launch_file_parts = [file_to_check]
             if file_to_check.lower().endswith(DISC_IMAGE_EXTENSIONS):
-                resolved_iso_exe = self._resolve_iso_executable(file_to_check)
-                if not resolved_iso_exe:
+                resolved_iso_parts = self._resolve_iso_launch_parts(file_to_check)
+                if not resolved_iso_parts:
                     QMessageBox.warning(
                         self,
                         _("Error"),
                         _("Failed to launch game: {0}").format("autorun.inf or open executable not found")
                     )
                     return
-                file_to_check = resolved_iso_exe
+                file_to_check = resolved_iso_parts[0]
+                launch_file_parts = resolved_iso_parts
             if not self.start_sh:
                 QMessageBox.warning(self, _("Error"), _("PortProton start script not found"))
                 return
-            launch_cmd = self.start_sh + [file_to_check]
+            launch_cmd = self.start_sh + launch_file_parts
         else:
             file_to_check = entry_exec_split[0]
             if file_to_check.lower().endswith(".exe") and self.start_sh:
                 launch_cmd = self.start_sh + entry_exec_split
             elif file_to_check.lower().endswith(DISC_IMAGE_EXTENSIONS):
-                resolved_iso_exe = self._resolve_iso_executable(file_to_check)
-                if resolved_iso_exe:
-                    file_to_check = resolved_iso_exe
+                resolved_iso_parts = self._resolve_iso_launch_parts(file_to_check)
+                if resolved_iso_parts:
+                    file_to_check = resolved_iso_parts[0]
                     if not self.start_sh:
                         QMessageBox.warning(self, _("Error"), _("PortProton start script not found"))
                         return
-                    launch_cmd = self.start_sh + [resolved_iso_exe]
+                    launch_cmd = self.start_sh + resolved_iso_parts
                 else:
                     QMessageBox.warning(
                         self,
