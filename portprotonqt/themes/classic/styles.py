@@ -233,7 +233,7 @@ QHeaderView::section {{
 QTableWidget::item {{
     padding: 3px;
     border-bottom: {border_a } {color_c};
-    height: 24px;
+    height: 32px;
 }}
 QTableWidget::item:selected,
 QTableWidget::item:focus,
