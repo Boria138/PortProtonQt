@@ -62,6 +62,7 @@ export VKD3D_SAREK_VER="sarek-2.6.0"
 export PW_VKBASALT="0"
 export PW_VKBASALT_EFFECTS="Curves:cas"
 export PW_VKBASALT_FFX_CAS="0.50"
+export VKBASALT_CONFIG_FILE="${PORT_DATA_PATH}/data/vkBasalt.conf"
 ###GAMESCOPE###
 export PW_GAMESCOPE="0"
 export PW_GS_SDL_VIDEODRIVER_X11="0"

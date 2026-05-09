@@ -20,6 +20,7 @@ else
 fi
 
 PORT_IMG_PATH="$(dirname "$PORT_SCRIPTS_PATH")/img"
+PORT_CONF_PATH="$(dirname "$PORT_SCRIPTS_PATH")/conf"
 
 if [[ -z "$PORT_DATA_PATH" ]] ; then
     if [[ -n "${FLATPAK_ID:-}" ]] \
@@ -36,7 +37,7 @@ if [[ -z "$PORT_DATA_PATH" ]] ; then
     fi
 fi
 
-export PORT_SCRIPTS_PATH PORT_IMG_PATH PORT_DATA_PATH
+export PORT_SCRIPTS_PATH PORT_IMG_PATH PORT_DATA_PATH PORT_CONF_PATH
 export PW_LOG_FILE="${PORT_DATA_PATH}/PortProton.log"
 
 # shellcheck source=/dev/null
@@ -142,6 +143,9 @@ cd "${PORT_SCRIPTS_PATH}" || fatal
 
 # shellcheck source=/dev/null
 source "${PORT_SCRIPTS_PATH}/var"
+
+[[ ! -f "$VKBASALT_CONFIG_FILE" ]] && cp -f "${PORT_CONF_PATH}/vkBasalt.conf" "$VKBASALT_CONFIG_FILE"
+[[ ! -f "$DXVK_CONFIG_FILE" ]] && cp -f "${PORT_CONF_PATH}/dxvk.conf" "$DXVK_CONFIG_FILE"
 
 export STEAM_SCRIPTS="${PORT_DATA_PATH}/steam_scripts"
 create_new_dir "$STEAM_SCRIPTS"

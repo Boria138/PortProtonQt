@@ -1471,7 +1471,6 @@ pw_vkbasalt_check () {
             print_info "System vkBasalt is enabled"
             export ENABLE_VKBASALT="1"
         fi
-        export VKBASALT_CONFIG_FILE="${PORT_DATA_PATH}/data/vkBasalt.conf"
         if ! grep "${PW_PLUGINS_PATH}/reshade" "${VKBASALT_CONFIG_FILE}" &>/dev/null
         then sed -ri "s|= .*/reshade|= \"${PW_PLUGINS_PATH}\"/reshade|g" "${VKBASALT_CONFIG_FILE}"
         fi
