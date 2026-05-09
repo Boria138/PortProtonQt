@@ -5,6 +5,7 @@ from collections.abc import Callable
 from PySide6.QtWidgets import (
     QFrame,
     QGraphicsDropShadowEffect,
+    QHBoxLayout,
     QVBoxLayout,
     QLabel,
     QWidget,
@@ -102,6 +103,14 @@ def setup_adaptive_layout(
     """Setup adaptive layout switching on resize."""
 
     def on_detail_page_resize(event) -> None:
+        if detail_page.property("force_compact_detail_layout"):
+            content_frame_layout.setDirection(QBoxLayout.Direction.TopToBottom)
+            content_frame_layout.setAlignment(
+                Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
+            )
+            QWidget.resizeEvent(detail_page, event)
+            return
+
         required_width = _get_required_horizontal_width(content_frame_layout)
         if detail_page.width() < required_width:
             if content_frame_layout.direction() != QBoxLayout.Direction.TopToBottom:
@@ -158,7 +167,7 @@ def create_cover_frame(
 
     cover_layout = QVBoxLayout(cover_frame)
     cover_layout.setContentsMargins(0, 0, 0, 0)
-    cover_layout.addWidget(image_label)
+    cover_layout.addWidget(image_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
     if favorite_label_text and on_favorite_click:
         _add_favorite_label(cover_frame, favorite_label_text, theme, on_favorite_click)
@@ -167,6 +176,83 @@ def create_cover_frame(
         _position_badges(cover_frame, badges, cover_width)
 
     return cover_frame
+
+
+def create_compact_detail_header(
+    parent: QWidget,
+    theme,
+    cover_frame: QFrame,
+    title: str,
+) -> QWidget:
+    """Create compact detail header with cover and title."""
+    header_widget = QWidget(parent)
+    header_layout = QHBoxLayout(header_widget)
+    header_layout.setContentsMargins(0, 0, 0, 0)
+    header_layout.setSpacing(
+        getattr(
+            theme,
+            "detailCompactHeaderSpacing",
+            theme.portProtonPageHorizontalSpacing,
+        )
+    )
+    header_layout.addWidget(cover_frame, alignment=Qt.AlignmentFlag.AlignCenter)
+
+    title_frame = QFrame(header_widget)
+    title_frame.setStyleSheet(theme.DETAILS_WIDGET_STYLE)
+    title_layout = QVBoxLayout(title_frame)
+    title_layout.setContentsMargins(
+        *getattr(theme, "detailCompactTitleMargins", theme.portProtonPageMargins)
+    )
+    title_label = QLabel(title)
+    title_label.setWordWrap(True)
+    title_label.setStyleSheet(theme.DETAIL_PAGE_TITLE_STYLE)
+    title_layout.addWidget(title_label, alignment=Qt.AlignmentFlag.AlignVCenter)
+    header_layout.addWidget(title_frame, stretch=1)
+    return header_widget
+
+
+def create_compact_layout_panel(parent: QWidget, theme, content_layout: QLayout) -> QWidget:
+    """Create compact panel for an existing layout."""
+    panel = QWidget(parent)
+    panel.setStyleSheet(theme.DETAILS_WIDGET_STYLE)
+    panel.setLayout(content_layout)
+    content_layout.setContentsMargins(
+        *getattr(
+            theme,
+            "detailCompactDescriptionMargins",
+            theme.portProtonPageMargins,
+        )
+    )
+    return panel
+
+
+def create_compact_description_panel(
+    parent: QWidget, theme, description: str
+) -> QWidget:
+    """Create compact description block."""
+    desc_widget = QWidget(parent)
+    desc_widget.setStyleSheet(theme.DETAILS_WIDGET_STYLE)
+    desc_layout = QVBoxLayout(desc_widget)
+    desc_layout.setContentsMargins(
+        *getattr(
+            theme,
+            "detailCompactDescriptionMargins",
+            theme.portProtonPageMargins,
+        )
+    )
+    desc_label = QLabel(description)
+    desc_label.setWordWrap(True)
+    desc_label.setStyleSheet(theme.DETAIL_PAGE_DESC_STYLE)
+    desc_layout.addWidget(desc_label)
+    return desc_widget
+
+
+def create_detail_separator(theme) -> QFrame:
+    """Create detail page separator line."""
+    line = QFrame()
+    line.setFrameShape(QFrame.Shape.HLine)
+    line.setStyleSheet(theme.DETAIL_PAGE_LINE_STYLE)
+    return line
 
 
 def _setup_cover_shadow(cover_frame: QFrame, theme) -> None:

@@ -6,6 +6,12 @@ current_theme_name = ui_config.get_theme()
 
 # CONSTANTS
 favoriteLabelSize = 48, 48
+detailCompactCoverFrameSize = 128
+detailCompactCoverImageSize = 108
+detailCompactContentSpacing = 16
+detailCompactHeaderSpacing = 28
+detailCompactTitleMargins = (20, 20, 20, 20)
+detailCompactDescriptionMargins = (15, 10, 15, 10)
 portProtonPageMargins = (15, 15, 15, 15)
 portProtonPageHorizontalSpacing = 15
 portProtonPageVerticalSpacing = 10

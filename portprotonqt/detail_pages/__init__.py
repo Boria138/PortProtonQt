@@ -27,6 +27,10 @@ from portprotonqt.detail_pages.widgets import (
     create_portproton_badge,
     create_anticheat_badge,
     create_details_widget,
+    create_compact_detail_header,
+    create_compact_layout_panel,
+    create_compact_description_panel,
+    create_detail_separator,
     COVER_WIDTH,
     COVER_HEIGHT,
     DETAIL_COMPACT_COVER_SIZE,
@@ -76,28 +80,26 @@ class DetailPageManager:
         """Open detailed game information page."""
         detail_page = QWidget()
         compact_layout = self._is_compact_detail_layout()
-        cover_width = DETAIL_COMPACT_COVER_SIZE if compact_layout else COVER_WIDTH
-        cover_height = DETAIL_COMPACT_COVER_SIZE if compact_layout else COVER_HEIGHT
-        image_label = QLabel()
-        image_label.setFixedSize(cover_width, cover_height)
+        image_label = self._create_detail_image_label(compact_layout)
 
         self._setup_detail_page_common(detail_page, image_label, 0)
+        detail_page.setProperty("force_compact_detail_layout", compact_layout)
 
-        badges = self._create_game_badges(detail_page, game_data)
-        cover_frame = create_cover_frame(
-            parent=detail_page,
-            theme=self.main_window.theme,
-            image_label=image_label,
-            favorite_label_text=self._get_favorite_text(game_data["name"]),
-            on_favorite_click=lambda: self._on_favorite_click(game_data["name"]),
-            badges=badges,
-            cover_width=cover_width,
-            cover_height=cover_height,
+        cover_frame = self._create_game_cover_frame(
+            detail_page, game_data, image_label, compact_layout
         )
 
-        description = "" if compact_layout else game_data["description"]
+        description = game_data["description"]
         game_info_layout = self._create_game_info_layout(game_data)
         buttons_layout = self._create_game_buttons_layout(game_data)
+        if compact_layout:
+            page_data = self._create_compact_game_data(
+                (cover_frame, image_label), game_data,
+                game_info_layout, buttons_layout
+            )
+            self._finalize_compact_game_page(detail_page, page_data)
+            return
+
         details_widget = create_details_widget(
             parent=detail_page,
             main_window=self.main_window,
@@ -119,11 +121,77 @@ class DetailPageManager:
     def _get_favorite_text(self, name: str) -> str:
         return "★" if name in favorites_config.get_games() else "☆"
 
+    def _create_game_cover_frame(
+        self,
+        detail_page: QWidget,
+        game_data: dict,
+        image_label: QLabel,
+        compact_layout: bool,
+    ) -> QWidget:
+        frame_width, frame_height = self._get_cover_frame_size(compact_layout)
+        badges = self._create_game_badges(detail_page, game_data)
+        return create_cover_frame(
+            parent=detail_page,
+            theme=self.main_window.theme,
+            image_label=image_label,
+            favorite_label_text=self._get_favorite_text(game_data["name"]),
+            on_favorite_click=lambda: self._on_favorite_click(game_data["name"]),
+            badges=badges,
+            cover_width=frame_width,
+            cover_height=frame_height,
+        )
+
+    def _create_compact_game_data(
+        self,
+        cover_widgets: tuple[QWidget, QLabel],
+        game_data: dict,
+        game_info_layout: QVBoxLayout,
+        buttons_layout: FlowLayout,
+    ) -> dict:
+        cover_frame, image_label = cover_widgets
+        return {
+            "cover_frame": cover_frame,
+            "image_label": image_label,
+            "description": game_data.get("description", ""),
+            "game_info_layout": game_info_layout,
+            "buttons_layout": buttons_layout,
+            "name": game_data.get("name", ""),
+            "exec_line": game_data.get("exec_line", ""),
+            "cover_path": game_data.get("cover_path"),
+        }
+
     def _is_compact_detail_layout(self) -> bool:
         layout_mode = str(
             getattr(self.main_window.theme, "DETAIL_PAGE_LAYOUT_MODE", "full")
         ).lower()
         return ui_config.get_economy_mode() or layout_mode == "compact"
+
+    def _create_detail_image_label(self, compact_layout: bool) -> QLabel:
+        cover_width, cover_height = self._get_cover_label_size(compact_layout)
+        image_label = QLabel()
+        image_label.setFixedSize(cover_width, cover_height)
+        image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        return image_label
+
+    def _get_cover_label_size(self, compact_layout: bool) -> tuple[int, int]:
+        if not compact_layout:
+            return COVER_WIDTH, COVER_HEIGHT
+        size = getattr(
+            self.main_window.theme,
+            "detailCompactCoverImageSize",
+            DETAIL_COMPACT_COVER_SIZE,
+        )
+        return size, size
+
+    def _get_cover_frame_size(self, compact_layout: bool) -> tuple[int, int]:
+        if not compact_layout:
+            return COVER_WIDTH, COVER_HEIGHT
+        size = getattr(
+            self.main_window.theme,
+            "detailCompactCoverFrameSize",
+            DETAIL_COMPACT_COVER_SIZE,
+        )
+        return size, size
 
     def _create_game_badges(self, parent: QWidget, game_data: dict) -> list:
         from portprotonqt.config import game_config
@@ -513,6 +581,56 @@ class DetailPageManager:
         self.main_window.current_exec_line = exec_line
         self._setup_detail_page_animation(detail_page, image_label, details_widget, cover_path)
 
+    def _finalize_compact_game_page(self, detail_page: QWidget, page_data: dict) -> None:
+        """Finalize compact game detail page."""
+        content_frame_layout = self._get_content_frame_layout(detail_page)
+        if content_frame_layout:
+            self._populate_compact_game_layout(detail_page, content_frame_layout, page_data)
+
+        main_layout = self._get_main_layout(detail_page)
+        if main_layout:
+            main_layout.addStretch()
+
+        self.main_window.current_exec_line = page_data["exec_line"]
+        self._setup_detail_page_animation(
+            detail_page,
+            page_data["image_label"],
+            detail_page,
+            page_data["cover_path"],
+        )
+
+    def _populate_compact_game_layout(
+        self, detail_page: QWidget, content_frame_layout: QBoxLayout, page_data: dict
+    ) -> None:
+        content_frame_layout.setDirection(QBoxLayout.Direction.TopToBottom)
+        content_frame_layout.setSpacing(self._get_compact_content_spacing())
+        content_frame_layout.addWidget(
+            create_compact_detail_header(
+                detail_page, self.main_window.theme,
+                page_data["cover_frame"], page_data["name"]
+            )
+        )
+        content_frame_layout.addWidget(create_detail_separator(self.main_window.theme))
+        if page_data["description"].strip():
+            content_frame_layout.addWidget(
+                create_compact_description_panel(
+                    detail_page, self.main_window.theme, page_data["description"]
+                )
+            )
+        content_frame_layout.addWidget(
+            create_compact_layout_panel(
+                detail_page, self.main_window.theme, page_data["game_info_layout"]
+            )
+        )
+        content_frame_layout.addLayout(page_data["buttons_layout"])
+
+    def _get_compact_content_spacing(self) -> int:
+        return getattr(
+            self.main_window.theme,
+            "detailCompactContentSpacing",
+            self.main_window.theme.portProtonPageVerticalSpacing,
+        )
+
     def _setup_detail_page_animation(
         self, detail_page: QWidget, image_label: QLabel, details_widget: QWidget, cover_path: str | None
     ) -> None:
@@ -573,8 +691,8 @@ class DetailPageManager:
 
     def _find_play_button(self, details_widget: QWidget) -> QWidget | None:
         """Find play button in details widget."""
-        for child in details_widget.children():
-            if isinstance(child, AutoSizeButton) and self._is_action_button_text(child.text()):
+        for child in details_widget.findChildren(AutoSizeButton):
+            if self._is_action_button_text(child.text()):
                 return child
         return None
 
@@ -590,25 +708,22 @@ class DetailPageManager:
         """Open minimal detail page for auto-install games."""
         detail_page = QWidget()
         compact_layout = self._is_compact_detail_layout()
-        cover_width = DETAIL_COMPACT_COVER_SIZE if compact_layout else COVER_WIDTH
-        cover_height = DETAIL_COMPACT_COVER_SIZE if compact_layout else COVER_HEIGHT
-        image_label = QLabel()
-        image_label.setFixedSize(cover_width, cover_height)
+        frame_width, frame_height = self._get_cover_frame_size(compact_layout)
+        image_label = self._create_detail_image_label(compact_layout)
 
         self._setup_detail_page_common(detail_page, image_label, 1)
+        detail_page.setProperty("force_compact_detail_layout", compact_layout)
 
         exec_line = game_data.get("exec_line", "")
         script_name = self._extract_script_name(exec_line)
-        description = self._get_enhanced_description(
-            script_name, game_data.get("description", "")
-        )
+        description = self._get_enhanced_description(script_name, game_data.get("description", ""))
 
         cover_frame = create_cover_frame(
             parent=detail_page,
             theme=self.main_window.theme,
             image_label=image_label,
-            cover_width=cover_width,
-            cover_height=cover_height,
+            cover_width=frame_width,
+            cover_height=frame_height,
         )
 
         buttons_layout = FlowLayout(center_rows=False)
@@ -617,6 +732,16 @@ class DetailPageManager:
             script_name, game_data.get("name", ""), buttons_layout
         )
 
+        if compact_layout:
+            widgets = (cover_frame, image_label, buttons_layout)
+            page_data = self._create_compact_autoinstall_data(
+                widgets, description, game_data
+            )
+            self._finalize_compact_autoinstall_page(
+                detail_page, page_data, install_button
+            )
+            return
+
         details_widget = create_details_widget(
             parent=detail_page,
             main_window=self.main_window,
@@ -624,8 +749,62 @@ class DetailPageManager:
             description=description,
             buttons_layout=buttons_layout,
         )
+        self._finalize_autoinstall_page(
+            detail_page, cover_frame, details_widget, image_label,
+            game_data.get("cover_path"), install_button
+        )
 
-        self._finalize_autoinstall_page(detail_page, cover_frame, details_widget, image_label, game_data.get("cover_path"), install_button)
+    def _create_compact_autoinstall_data(
+        self,
+        widgets: tuple[QWidget, QLabel, FlowLayout],
+        description: str,
+        game_data: dict,
+    ) -> dict:
+        cover_frame, image_label, buttons_layout = widgets
+        return {
+            "cover_frame": cover_frame,
+            "image_label": image_label,
+            "description": description,
+            "buttons_layout": buttons_layout,
+            "name": game_data.get("name", ""),
+            "cover_path": game_data.get("cover_path"),
+        }
+
+    def _finalize_compact_autoinstall_page(
+        self,
+        detail_page: QWidget,
+        page_data: dict,
+        install_button: AutoSizeButton,
+    ) -> None:
+        """Finalize compact auto-install detail page."""
+        content_frame_layout = self._get_content_frame_layout(detail_page)
+        if content_frame_layout:
+            content_frame_layout.setDirection(QBoxLayout.Direction.TopToBottom)
+            content_frame_layout.setSpacing(self._get_compact_content_spacing())
+            content_frame_layout.addWidget(
+                create_compact_detail_header(
+                    detail_page, self.main_window.theme,
+                    page_data["cover_frame"], page_data["name"]
+                )
+            )
+            content_frame_layout.addWidget(
+                create_detail_separator(self.main_window.theme)
+            )
+            content_frame_layout.addWidget(
+                create_compact_description_panel(
+                    detail_page, self.main_window.theme, page_data["description"]
+                )
+            )
+            content_frame_layout.addLayout(page_data["buttons_layout"])
+
+        main_layout = self._get_main_layout(detail_page)
+        if main_layout:
+            main_layout.addStretch()
+
+        self._setup_autoinstall_animation(
+            detail_page, page_data["image_label"],
+            page_data["cover_path"], install_button
+        )
 
     def _extract_script_name(self, exec_line: str) -> str:
         """Extract script name from exec line."""
