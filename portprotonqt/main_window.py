@@ -159,7 +159,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.card_width = ui_config.get_card_width()
         self.auto_card_width = ui_config.get_auto_card_width()
         self.setWindowTitle(f"{app_name} {version}")
-        self.setMinimumSize(800, 600)
+        self.setMinimumSize(890, 600)
         self._pending_resolution = resolution  # Store resolution for later application
         self._show_system_tab = show_system_tab
         self.system_tab_index = -1  # Default, set when system tab is created
