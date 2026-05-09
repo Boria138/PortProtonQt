@@ -190,6 +190,7 @@ def main():
             # No launch file provided, fall back to GUI mode
             is_steam_compat = False
 
+    from PySide6.QtCore import Qt
     QApplication.setHighDpiScaleFactorRoundingPolicy(
         Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
     )
@@ -211,7 +212,7 @@ def main():
     elif args.file_or_url and is_launch_file(args.file_or_url):
         ipc_message = f"open:{normalize_launch_path(args.file_or_url)}"
 
-    from PySide6.QtCore import Qt, QThread, Signal
+    from PySide6.QtCore import QThread, Signal
     from PySide6.QtNetwork import QLocalServer, QLocalSocket
     from portprotonqt.main_window import MainWindow
     from portprotonqt.port_data_path_selector import ask_portdata_path
