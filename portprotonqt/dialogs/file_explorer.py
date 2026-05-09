@@ -310,7 +310,7 @@ class FileExplorer(QDialog):
         self.drives_container = QWidget()
         self.drives_container.setLayout(self.drives_layout)
         self.drives_scroll.setWidget(self.drives_container)
-        self.drives_scroll.setStyleSheet(self.theme.SCROLL_STYLE + self.theme.TRANSPARENT_BACKGROUND_STYLE)
+        self.drives_scroll.setStyleSheet(self.theme.SCROLL_STYLE + self.theme.TRANSPARENT_BACKGROUND_STYLE + self.theme.DRIVES_BUTTON_STYLE)
         self.drives_scroll.setFixedHeight(70)
         self.main_layout.addWidget(self.drives_scroll)
         self.drives_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)

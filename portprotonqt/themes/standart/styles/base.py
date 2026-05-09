@@ -225,6 +225,30 @@ ACTION_BUTTON_ACTIVE_STYLE = f"""
     }}
 """
 
+# DRIVES BUTTONS STYLE (FILE MANAGER)
+DRIVES_BUTTON_STYLE = f"""
+    QPushButton {{
+        background: {color_c};
+        border: {border_c} {color_g};
+        border-radius: {border_radius_a};
+        color: {color_f};
+        font-size: {font_size_a};
+        font-family: '{font_family}';
+        min-width: 90px;
+    }}
+    QPushButton:hover {{
+        background: {color_a};
+        border: {border_c} {color_a};
+    }}
+    QPushButton:pressed {{
+        background: {color_b};
+    }}
+    QPushButton:focus {{
+        border: {border_c} {color_a};
+        background-color: {color_a};
+    }}
+"""
+
 # OVERLAY STYLE
 OVERLAY_WINDOW_STYLE = f"background: {color_b};"
 OVERLAY_BUTTON_STYLE = f"""

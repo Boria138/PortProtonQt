@@ -293,7 +293,7 @@ COMBOBOX_STYLE = f"""
         border: {border_c} {color_g};
         border-radius: {border_radius_a};
         padding-left: 12px;
-        height: 34px;
+        height: 30px;
         color: {color_f};
         font-family: '{font_family}';
         font-size: {font_size_a};
@@ -387,6 +387,48 @@ COMBOBOX_STYLE = f"""
     }}
 """
 
+LINE_EDIT_STYLE = f"""
+    QLineEdit {{
+        background: {color_c};
+        border: {border_c} rgba(255, 255, 255, 0.01);
+        border-radius: {border_radius_a};
+        height: 30px;
+        padding-left: 12px;
+        color: {color_f};
+        font-family: '{font_family}';
+        font-size: {font_size_a};
+    }}
+    QLineEdit:hover {{
+        background: {color_c};
+        border: {border_c} {color_a};
+    }}
+    QLineEdit:focus {{
+        border: {border_c} {color_a};
+        background-color: {color_e};
+    }}
+"""
+
+ADDGAME_INPUT_STYLE = f"""
+    QLineEdit {{
+        background: {color_c};
+        border: {border_c} {color_g};
+        border-radius: {border_radius_a};
+        height: 30px;
+        padding-left: 12px;
+        color: {color_f};
+        font-family: '{font_family}';
+        font-size: {font_size_a};
+    }}
+    QLineEdit:hover {{
+        background: {color_c};
+        border: {border_c} {color_a};
+    }}
+    QLineEdit:focus {{
+        border: {border_c} {color_a};
+        background-color: {color_e};
+    }}
+"""
+
 TAB_STYLE = f"""
     QTabWidget::pane {{
         border-top: 1px solid {color_c};
@@ -425,7 +467,8 @@ SETTINGS_TITLE_STYLE = f"""
         font-family: '{font_family}';
         font-size: {font_size_a};
         font-weight: bold;
-        padding: 8px;
+        padding: 6px;
+        height: 30px;
         background: {color_d};
         border-radius: {border_radius_a};
         min-width: 320px;
