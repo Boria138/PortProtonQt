@@ -296,7 +296,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             _("Library"),
             _("Auto Install"),
             _("Wine Settings"),
-            _("PortProton Settings"),
+            _("PPQT Settings"),
             _("System"),
             _("Themes")
         ]
