@@ -6,6 +6,8 @@ THEME_INHERITS = "standart"
 theme_manager = ThemeManager()
 current_theme_name = ui_config.get_theme()
 
+autoSizeButtonPadding = 0
+
 detailCompactCoverFrameSize = 128
 detailCompactCoverImageSize = 108
 detailCompactContentSpacing = 5
@@ -157,7 +159,7 @@ PLAY_BUTTON_STYLE = f"""
         font-weight: bold;
         font-family: '{font_family}';
         padding: 5px 10px;
-        min-width: 50px;
+        min-width: 120px;
         min-height: 30px;
     }}
     QPushButton:hover {{
@@ -184,6 +186,8 @@ ADDGAME_BACK_BUTTON_STYLE = f"""
         font-size: {font_size_a};
         font-family: '{font_family}';
         padding: 5px 10px;
+        min-width: 120px;
+        min-height: 30px;
     }}
     QPushButton:hover {{
         background: {color_a};
@@ -446,5 +450,55 @@ QGROUP_BOX_STYLE = f"""
         subcontrol-origin: margin;
         left: 12px;
         padding: 0 6px;
+    }}
+"""
+
+# ACTION BUTTONS STYLE (SAVE, APPLY, ETC.)
+ACTION_BUTTON_STYLE = f"""
+    QPushButton {{
+        background: {color_c};
+        border: {border_c} {color_g};
+        border-radius: {border_radius_a};
+        color: {color_f};
+        font-size: {font_size_a};
+        font-family: '{font_family}';
+        padding: 5px 16px;
+        min-height: 20px;
+    }}
+    QPushButton:hover {{
+        background: {color_a};
+        border: {border_c} {color_a};
+    }}
+    QPushButton:pressed {{
+        background: {color_b};
+    }}
+    QPushButton:focus {{
+        border: {border_c} {color_a};
+        background-color: {color_a};
+    }}
+"""
+
+# ACTION BUTTON ACTIVE STYLE (MANGOHUD, GAMESCOPE ETC.)
+ACTION_BUTTON_ACTIVE_STYLE = f"""
+    QPushButton {{
+        background: {color_c};
+        border: {border_c} {color_a};
+        border-radius: {border_radius_a};
+        color: {color_f};
+        font-size: {font_size_a};
+        font-family: '{font_family}';
+        padding: 5px 16px;
+        min-height: 20px;
+    }}
+    QPushButton:hover {{
+        background: {color_a};
+        border: {border_c} {color_a};
+    }}
+    QPushButton:pressed {{
+        background: {color_b};
+    }}
+    QPushButton:focus {{
+        border: {border_c} {color_a};
+        background-color: {color_a};
     }}
 """
