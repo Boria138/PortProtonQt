@@ -73,7 +73,11 @@ def create_back_button(
     on_click: Callable[..., None],
 ) -> AutoSizeButton:
     """Create back button with standard styling."""
-
+    if getattr(theme, "DETAIL_PAGE_LAYOUT_MODE", None) == "compact":
+        # create a hidden placeholder button
+        dummy = AutoSizeButton()
+        dummy.setVisible(False)
+        return dummy
     back_button = AutoSizeButton(_("Back"), icon=theme_manager.get_icon("back"))
     back_button.setFixedWidth(100)
     back_button.setStyleSheet(theme.ADDGAME_BACK_BUTTON_STYLE)
