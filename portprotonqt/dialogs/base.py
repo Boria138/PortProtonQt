@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QObject, Signal, QTimer, QStandardPaths, QSize
 from icoextract import IconExtractor, IconExtractorError
 from PIL import Image
+from pefile import PEFormatError
 import psutil
 
 if TYPE_CHECKING:
@@ -43,7 +44,7 @@ def generate_thumbnail(inputfile, outfile, size=128, force_resize=True):
     try:
         extractor = IconExtractor(inputfile)
         logger.debug("IconExtractor created successfully.")
-    except (RuntimeError, IconExtractorError) as e:
+    except (RuntimeError, IconExtractorError, PEFormatError) as e:
         logger.warning(f"Failed to create IconExtractor: {e}")
         return False
 

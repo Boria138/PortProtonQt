@@ -3396,6 +3396,14 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                     return os.path.join(current_root, file_name)
         return None
 
+    def _find_setup_executable(self, root_dir: str) -> str | None:
+        """Find setup.exe in extracted disc content without case sensitivity."""
+        for current_root, _dir_names, files in os.walk(root_dir):
+            for file_name in files:
+                if file_name.lower() == "setup.exe":
+                    return os.path.join(current_root, file_name)
+        return None
+
     def _get_iso_rw_root(self, iso_path: str) -> str:
         """Return writable runtime path for ISO content."""
         runtime_dir = tempfile.gettempdir()
@@ -3711,10 +3719,16 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
         autorun_path = self._find_autorun_file(rw_root)
         if not autorun_path:
+            setup_path = self._find_setup_executable(rw_root)
+            if setup_path:
+                return [setup_path]
             return None
 
         open_entry = self._parse_autorun_open_executable(autorun_path)
         if not open_entry:
+            setup_path = self._find_setup_executable(rw_root)
+            if setup_path:
+                return [setup_path]
             return None
 
         open_command_parts = shlex.split(open_entry, posix=False)
