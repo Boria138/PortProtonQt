@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-03-22 13:50+0500\n"
-"PO-Revision-Date: 2026-05-03 11:22+0500\n"
+"PO-Revision-Date: 2026-05-10 12:32+0500\n"
 "Last-Translator: Boria138 <boria138@noreply.codeberg.org>\n"
 "Language-Team: Russian <https://translate.codeberg.org/projects/portprotonqt/"
 "portprotonqt/ru/>\n"
@@ -21,6 +21,9 @@ msgstr ""
 "&& (n%100<10 || n%100>=20) ? 1 : 2;\n"
 "X-Generator: Poedit 3.9\n"
 "Generated-By: Babel 2.17.0\n"
+
+msgid "Stop Game"
+msgstr "Остановить игру"
 
 msgid "Error"
 msgstr "Ошибка"
@@ -63,19 +66,11 @@ msgid "Folder already exists: {folder_name}"
 msgstr "Папка уже существует: {folder_name}"
 
 #, python-brace-format
-msgid "Created folder '{folder_name}'"
-msgstr "Создана папка '{folder_name}'"
-
-#, python-brace-format
 msgid "Failed to create folder: {error}"
 msgstr "Не удалось создать папку: {error}"
 
 msgid "New Folder Name:"
 msgstr "Новое имя Папки:"
-
-#, python-brace-format
-msgid "Renamed folder '{old_name}' to '{new_name}'"
-msgstr "Переименовать папку с '{old_name}' в '{new_name}'"
 
 #, python-brace-format
 msgid "Failed to rename folder: {error}"
@@ -93,18 +88,11 @@ msgstr ""
 "отменить."
 
 #, python-brace-format
-msgid "Deleted folder '{folder_name}'"
-msgstr "Удалена папка '{folder_name}'"
-
-#, python-brace-format
 msgid "Failed to delete folder: {error}"
 msgstr "Не удалось удалить папку: {error}"
 
 msgid "Delete from PortProton"
 msgstr "Удалить из PortProton"
-
-msgid "Stop Game"
-msgstr "Остановить игру"
 
 msgid "Launch Game"
 msgstr "Запустить игру"
@@ -134,20 +122,8 @@ msgid "Add to Steam"
 msgstr "Добавить в Steam"
 
 #, python-brace-format
-msgid "Stopped '{game_name}'"
-msgstr "'{game_name}' остановлен(а)"
-
-#, python-brace-format
 msgid "Failed to stop game"
 msgstr "Не удалось остановить игру"
-
-#, python-brace-format
-msgid "Added '{game_name}' to favorites"
-msgstr "'{game_name}' добавлен(а) в избранное"
-
-#, python-brace-format
-msgid "Removed '{game_name}' from favorites"
-msgstr "'{game_name}' удалён(а) из избранного"
 
 #, python-brace-format
 msgid "No executable command found in .desktop file for '{game_name}'"
@@ -192,19 +168,11 @@ msgid "Failed to delete custom data: {error}"
 msgstr "Не удалось удалить пользовательские данные: {error}"
 
 #, python-brace-format
-msgid "Added '{game_name}' successfully"
-msgstr "'{game_name}' успешно добавлен(а)"
-
-#, python-brace-format
-msgid "Added '{game_name}' to {location}"
-msgstr "`'{game_name}' добавлен(а) в {location}`"
+msgid "Failed to add '{game_name}' to {location}: {error}"
+msgstr "Не удалось добавить '{game_name}' в {location}: {error}"
 
 msgid "Menu"
 msgstr "Меню"
-
-#, python-brace-format
-msgid "Failed to add '{game_name}' to {location}: {error}"
-msgstr "Не удалось добавить '{game_name}' в {location}: {error}"
 
 #, python-brace-format
 msgid "Failed to remove '{game_name}' from {location}: {error}"
@@ -279,10 +247,6 @@ msgid "Failed to remove game '{game_name}' from Steam: {error}"
 msgstr "Не удалось удалить игру '{game_name}' из Steam: {error}"
 
 #, python-brace-format
-msgid "Opened folder for '{game_name}'"
-msgstr "Открыта папка для '{game_name}'"
-
-#, python-brace-format
 msgid "Failed to open folder: {error}"
 msgstr "Не удалось открыть папку для игры: {error}"
 
@@ -337,11 +301,11 @@ msgstr "Бронза"
 msgid "Pending"
 msgstr "В ожидании"
 
+msgid "Launched"
+msgstr "Запуск"
+
 msgid "Unknown Game"
 msgstr "Неизвестная игра"
-
-msgid "Starting PortProton..."
-msgstr "Запуск PortProton..."
 
 #, python-brace-format
 msgid "Downloading Wine..."
@@ -356,8 +320,8 @@ msgstr "Автоустановка"
 msgid "Wine Settings"
 msgstr "Настройки Wine"
 
-msgid "PortProton Settings"
-msgstr "Настройки PortProton"
+msgid "PPQT Settings"
+msgstr "Настройки PPQT"
 
 msgid "System"
 msgstr "Система"
@@ -371,12 +335,17 @@ msgstr "Предупреждение"
 msgid "Installation already in progress."
 msgstr "Установка уже выполняется."
 
+msgid "Installing..."
+msgstr "Установка..."
+
 msgid "Failed to start installation."
 msgstr "Не удалось запустить установку."
 
-#, python-brace-format
-msgid "Processed {} installation..."
-msgstr "{} в процессе установки..."
+msgid "Stop"
+msgstr "Остановить"
+
+msgid "Failed to stop installation."
+msgstr "Не удалось прервать установку."
 
 #, python-brace-format
 msgid "Extracting"
@@ -404,29 +373,11 @@ msgstr "{0} компонентов..."
 msgid "Preparing PortProton..."
 msgstr "Запуск PortProton..."
 
-msgid "Installation completed successfully."
-msgstr "Установка завершена успешно."
-
-msgid "Installation failed."
-msgstr "Установка не удалась."
-
-msgid "Installation error."
-msgstr "Ошибка установки."
-
 msgid "Refresh Grid"
 msgstr "Обновить"
 
-msgid "Game library refreshed"
-msgstr "Игровая библиотека обновлена"
-
-msgid "Loading Steam games..."
-msgstr "Загрузка игр Steam..."
-
 msgid "Never"
 msgstr "Никогда"
-
-msgid "Loading PortProton games..."
-msgstr "Загрузка игр PortProton..."
 
 msgid "Game Library"
 msgstr "Игровая библиотека"
@@ -437,18 +388,8 @@ msgstr "Добавить игру"
 msgid "Find Games ..."
 msgstr "Найти игры..."
 
-msgid "A refresh is already in progress..."
-msgstr "Обновление уже выполняется..."
-
 msgid "Refreshing..."
 msgstr "Обновление..."
-
-msgid "Refreshing game library..."
-msgstr "Обновление игровой библиотеки..."
-
-#, python-brace-format
-msgid "Added '{name}'"
-msgstr "'{name}' добавлен(а)"
 
 msgid "Enter prefix name"
 msgstr "Введите имя префикса"
@@ -486,9 +427,6 @@ msgstr "Очистить Префикс"
 msgid "Manage WINE versions"
 msgstr "Управление версиями WINE"
 
-msgid "Launching tool..."
-msgstr "Запуск инструмента..."
-
 msgid "Failed to start process."
 msgstr "Не удалось запустить процесс."
 
@@ -498,9 +436,6 @@ msgstr "Подтвердите очистку"
 #, python-brace-format
 msgid "Are you sure you want to clear prefix '{}'?"
 msgstr "Вы уверены, что хотите очистить префикс «{}»?"
-
-msgid "Clearing prefix..."
-msgstr "Очистка префикса..."
 
 msgid "Failed to start prefix clear process."
 msgstr "Не удалось запустить процесс очистки префикса."
@@ -545,6 +480,9 @@ msgstr "Префикс «{}» удален."
 #, python-brace-format
 msgid "Failed to delete prefix: {}"
 msgstr "Не удалось удалить префикс: {}"
+
+msgid "PortProton Settings"
+msgstr "Настройки PortProtonQt"
 
 msgid "Library Settings"
 msgstr "Настройки Библиотеки"
@@ -612,6 +550,9 @@ msgstr "Добавить в инструменты совместимости St
 msgid "Economy mode"
 msgstr "Экономный режим"
 
+msgid "Force system DPI for Wine"
+msgstr "Принудительно установить системный DPI для Wine"
+
 msgid "Gamepad Settings"
 msgstr "Настройки геймпада"
 
@@ -655,7 +596,7 @@ msgid "Reset Settings"
 msgstr "Сбросить настройки"
 
 msgid "Migrate legacy shortcuts"
-msgstr "Перенести устаревшие ярлыки"
+msgstr "Перенести старые ярлыки"
 
 msgid "Clear Cache"
 msgstr "Очистить кэш"
@@ -667,15 +608,8 @@ msgid "Are you sure you want to reset all settings? This action cannot be undone
 msgstr ""
 "Вы уверены, что хотите сбросить все настройки? Это действие нельзя отменить."
 
-msgid "Settings reset. Restarting..."
-msgstr "Настройки сброшены. Перезапуск..."
-
 msgid "Migrate old PortProton shortcuts to PortProtonQt format?"
 msgstr "Обновить старые ярлыки PortProton до формата PortProtonQt?"
-
-#, python-brace-format
-msgid "Migrated legacy shortcuts: {count}"
-msgstr "Обновлено устаревших ярлыков: {count}"
 
 msgid "Confirm Clear Cache"
 msgstr "Подтверждение очистки кэша"
@@ -683,14 +617,8 @@ msgstr "Подтверждение очистки кэша"
 msgid "Are you sure you want to clear the cache? This action cannot be undone."
 msgstr "Вы уверены, что хотите очистить кэш? Это действие нельзя отменить."
 
-msgid "Cache cleared"
-msgstr "Кэш очищен"
-
 msgid "Failed to update xdg-autostart entry."
 msgstr "Не удалось обновить запись xdg-autostart."
-
-msgid "Settings saved"
-msgstr "Настройки сохранены"
 
 msgid "Select Theme:"
 msgstr "Выбрать тему:"
@@ -717,19 +645,8 @@ msgid "Link:"
 msgstr "Ссылка:"
 
 #, python-brace-format
-msgid "Theme '{0}' applied successfully"
-msgstr "Тема '{0}' применена успешно"
-
-#, python-brace-format
-msgid "Error applying theme '{0}'"
-msgstr "Ошибка применения темы '{0}'"
-
-#, python-brace-format
 msgid "Executable not found: {0}"
 msgstr "Исполняемый файл не найден: {0}"
-
-msgid "Stop"
-msgstr "Остановить"
 
 msgid "Play"
 msgstr "Играть"
@@ -1079,17 +996,11 @@ msgstr "мин."
 msgid "sec."
 msgstr "сек."
 
-msgid "Show"
-msgstr "Показать"
-
-msgid "Recent Games"
-msgstr "Недавние"
-
 msgid "Exit"
 msgstr "Выход"
 
-msgid "Hide"
-msgstr "Скрыть"
+msgid "Recent Games"
+msgstr "Недавние"
 
 msgid "No favorites"
 msgstr "Нет избранных"

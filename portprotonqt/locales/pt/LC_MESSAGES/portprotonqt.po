@@ -19,6 +19,9 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
 
+msgid "Stop Game"
+msgstr ""
+
 msgid "Error"
 msgstr ""
 
@@ -60,18 +63,10 @@ msgid "Folder already exists: {folder_name}"
 msgstr ""
 
 #, python-brace-format
-msgid "Created folder '{folder_name}'"
-msgstr ""
-
-#, python-brace-format
 msgid "Failed to create folder: {error}"
 msgstr ""
 
 msgid "New Folder Name:"
-msgstr ""
-
-#, python-brace-format
-msgid "Renamed folder '{old_name}' to '{new_name}'"
 msgstr ""
 
 #, python-brace-format
@@ -88,17 +83,10 @@ msgid ""
 msgstr ""
 
 #, python-brace-format
-msgid "Deleted folder '{folder_name}'"
-msgstr ""
-
-#, python-brace-format
 msgid "Failed to delete folder: {error}"
 msgstr ""
 
 msgid "Delete from PortProton"
-msgstr ""
-
-msgid "Stop Game"
 msgstr ""
 
 msgid "Launch Game"
@@ -128,19 +116,7 @@ msgstr ""
 msgid "Add to Steam"
 msgstr ""
 
-#, python-brace-format
-msgid "Stopped '{game_name}'"
-msgstr ""
-
 msgid "Failed to stop game"
-msgstr ""
-
-#, python-brace-format
-msgid "Added '{game_name}' to favorites"
-msgstr ""
-
-#, python-brace-format
-msgid "Removed '{game_name}' from favorites"
 msgstr ""
 
 #, python-brace-format
@@ -184,18 +160,10 @@ msgid "Failed to delete custom data: {error}"
 msgstr ""
 
 #, python-brace-format
-msgid "Added '{game_name}' successfully"
-msgstr ""
-
-#, python-brace-format
-msgid "Added '{game_name}' to {location}"
+msgid "Failed to add '{game_name}' to {location}: {error}"
 msgstr ""
 
 msgid "Menu"
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to add '{game_name}' to {location}: {error}"
 msgstr ""
 
 #, python-brace-format
@@ -267,10 +235,6 @@ msgid "Failed to remove game '{game_name}' from Steam: {error}"
 msgstr ""
 
 #, python-brace-format
-msgid "Opened folder for '{game_name}'"
-msgstr ""
-
-#, python-brace-format
 msgid "Failed to open folder: {error}"
 msgstr ""
 
@@ -325,10 +289,10 @@ msgstr ""
 msgid "Pending"
 msgstr ""
 
-msgid "Unknown Game"
+msgid "Launched"
 msgstr ""
 
-msgid "Starting PortProton..."
+msgid "Unknown Game"
 msgstr ""
 
 msgid "Downloading Wine..."
@@ -343,7 +307,7 @@ msgstr ""
 msgid "Wine Settings"
 msgstr ""
 
-msgid "PortProton Settings"
+msgid "PPQT Settings"
 msgstr ""
 
 msgid "System"
@@ -358,11 +322,16 @@ msgstr ""
 msgid "Installation already in progress."
 msgstr ""
 
+msgid "Installing..."
+msgstr ""
+
 msgid "Failed to start installation."
 msgstr ""
 
-#, python-brace-format
-msgid "Processed {} installation..."
+msgid "Stop"
+msgstr ""
+
+msgid "Failed to stop installation."
 msgstr ""
 
 msgid "Extracting"
@@ -390,28 +359,10 @@ msgstr ""
 msgid "Preparing PortProton..."
 msgstr ""
 
-msgid "Installation completed successfully."
-msgstr ""
-
-msgid "Installation failed."
-msgstr ""
-
-msgid "Installation error."
-msgstr ""
-
 msgid "Refresh Grid"
 msgstr ""
 
-msgid "Game library refreshed"
-msgstr ""
-
-msgid "Loading Steam games..."
-msgstr ""
-
 msgid "Never"
-msgstr ""
-
-msgid "Loading PortProton games..."
 msgstr ""
 
 msgid "Game Library"
@@ -423,17 +374,7 @@ msgstr ""
 msgid "Find Games ..."
 msgstr ""
 
-msgid "A refresh is already in progress..."
-msgstr ""
-
 msgid "Refreshing..."
-msgstr ""
-
-msgid "Refreshing game library..."
-msgstr ""
-
-#, python-brace-format
-msgid "Added '{name}'"
 msgstr ""
 
 msgid "Enter prefix name"
@@ -472,9 +413,6 @@ msgstr ""
 msgid "Manage WINE versions"
 msgstr ""
 
-msgid "Launching tool..."
-msgstr ""
-
 msgid "Failed to start process."
 msgstr ""
 
@@ -483,9 +421,6 @@ msgstr ""
 
 #, python-brace-format
 msgid "Are you sure you want to clear prefix '{}'?"
-msgstr ""
-
-msgid "Clearing prefix..."
 msgstr ""
 
 msgid "Failed to start prefix clear process."
@@ -530,6 +465,9 @@ msgstr ""
 
 #, python-brace-format
 msgid "Failed to delete prefix: {}"
+msgstr ""
+
+msgid "PortProton Settings"
 msgstr ""
 
 msgid "Library Settings"
@@ -598,6 +536,9 @@ msgstr ""
 msgid "Economy mode"
 msgstr ""
 
+msgid "Force system DPI for Wine"
+msgstr ""
+
 msgid "Gamepad Settings"
 msgstr ""
 
@@ -652,14 +593,7 @@ msgstr ""
 msgid "Are you sure you want to reset all settings? This action cannot be undone."
 msgstr ""
 
-msgid "Settings reset. Restarting..."
-msgstr ""
-
 msgid "Migrate old PortProton shortcuts to PortProtonQt format?"
-msgstr ""
-
-#, python-brace-format
-msgid "Migrated legacy shortcuts: {count}"
 msgstr ""
 
 msgid "Confirm Clear Cache"
@@ -668,13 +602,7 @@ msgstr ""
 msgid "Are you sure you want to clear the cache? This action cannot be undone."
 msgstr ""
 
-msgid "Cache cleared"
-msgstr ""
-
 msgid "Failed to update xdg-autostart entry."
-msgstr ""
-
-msgid "Settings saved"
 msgstr ""
 
 msgid "Select Theme:"
@@ -702,18 +630,7 @@ msgid "Link:"
 msgstr ""
 
 #, python-brace-format
-msgid "Theme '{0}' applied successfully"
-msgstr ""
-
-#, python-brace-format
-msgid "Error applying theme '{0}'"
-msgstr ""
-
-#, python-brace-format
 msgid "Executable not found: {0}"
-msgstr ""
-
-msgid "Stop"
 msgstr ""
 
 msgid "Play"
@@ -1011,16 +928,10 @@ msgstr ""
 msgid "sec."
 msgstr ""
 
-msgid "Show"
-msgstr ""
-
-msgid "Recent Games"
-msgstr ""
-
 msgid "Exit"
 msgstr ""
 
-msgid "Hide"
+msgid "Recent Games"
 msgstr ""
 
 msgid "No favorites"
