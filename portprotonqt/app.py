@@ -18,6 +18,7 @@ from portprotonqt.config import (
     get_portproton_location,
     save_portdata_path_to_config,
     ui_config,
+    window_config,
 )
 from portprotonqt.logger import get_logger, setup_logger
 from portprotonqt.cli import (
@@ -206,6 +207,15 @@ def main():
 
     fullscreen = args.fullscreen or display_config.get_fullscreen()
     ipc_message = "show:fullscreen" if fullscreen else "show"
+    resolution_from_args = None
+    if args.resolution:
+        resolution_from_args = parse_resolution(args.resolution)
+        if resolution_from_args is None:
+            logger.warning(f"Invalid resolution format: {args.resolution}, expected WIDTHxHEIGHT (e.g., 1920x1080)")
+        else:
+            window_config.set_geometry(resolution_from_args[0], resolution_from_args[1])
+            logger.info("Saved window resolution: %sx%s", resolution_from_args[0], resolution_from_args[1])
+            ipc_message = "noop"
     if is_silent_launch and args.file_or_url and is_exe_file(args.file_or_url):
         run_silent_tray(app, start_sh, normalize_launch_path(args.file_or_url))
         sys.exit(app.exec())
@@ -296,10 +306,8 @@ def main():
 
     # Parse resolution if provided
     window_resolution = None
-    if args.resolution:
-        window_resolution = parse_resolution(args.resolution)
-        if window_resolution is None:
-            logger.warning(f"Invalid resolution format: {args.resolution}, expected WIDTHxHEIGHT (e.g., 1920x1080)")
+    if args.resolution and resolution_from_args is None:
+        logger.warning(f"Invalid resolution format: {args.resolution}, expected WIDTHxHEIGHT (e.g., 1920x1080)")
 
     window = MainWindow(app_name=__app_name__, version=version, launch_exe=exe_path, resolution=window_resolution, show_system_tab=args.ppqtos)
 
@@ -363,11 +371,12 @@ def main():
     # --- Initial fullscreen state ---
     launch_fullscreen = args.fullscreen or display_config.get_fullscreen()
     launch_minimized = (
-        display_config.get_start_minimized()
-        and not args.fullscreen
-        and window_resolution is None
-        and exe_path is None
-    )
+        (
+            display_config.get_start_minimized()
+            and window_resolution is None
+        )
+        or resolution_from_args is not None
+    ) and not args.fullscreen and exe_path is None
     if launch_minimized:
         logger.info("Launching in tray")
         window.hide()
