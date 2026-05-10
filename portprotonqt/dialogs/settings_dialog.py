@@ -869,7 +869,6 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
                 logger.info("Added MANGOHUD_CONFIG from var file: %s", default_config)
 
         if not changes:
-            QMessageBox.information(self, _("Information"), _("No changes to apply."))
             return
 
         process = QProcess(self)
@@ -889,7 +888,7 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
             logger.error(f"Failed to apply changes: {error_output}")
         else:
             self.load_current_settings()
-            QMessageBox.information(self, _("Success"), _("Settings updated successfully."))
+            self.close()
 
     def keyPressEvent(self, event):
         """Override key press event to handle combo box interaction properly."""
