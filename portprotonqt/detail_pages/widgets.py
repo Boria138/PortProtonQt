@@ -183,12 +183,11 @@ def create_cover_frame(
 
 
 def create_compact_detail_header(
-    parent: QWidget,
-    theme,
-    cover_frame: QFrame,
-    title: str,
+        parent: QWidget,
+        theme,
+        cover_frame: QFrame,
+        title: str,
 ) -> QWidget:
-    """Create compact detail header with cover and title."""
     header_widget = QWidget(parent)
     header_layout = QHBoxLayout(header_widget)
     header_layout.setContentsMargins(0, 0, 0, 0)
@@ -202,11 +201,13 @@ def create_compact_detail_header(
     header_layout.addWidget(cover_frame, alignment=Qt.AlignmentFlag.AlignCenter)
 
     title_frame = QFrame(header_widget)
+    title_frame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
     title_frame.setStyleSheet(theme.COMPACT_DETAILS_WIDGET_STYLE)
     title_layout = QVBoxLayout(title_frame)
     title_layout.setContentsMargins(
         *getattr(theme, "detailCompactTitleMargins", theme.portProtonPageMargins)
     )
+    title_layout.setSizeConstraint(QLayout.SizeConstraint.SetNoConstraint)
     title_label = QLabel(title)
     title_label.setWordWrap(True)
     title_label.setStyleSheet(theme.COMPACT_DETAIL_PAGE_TITLE_STYLE)
