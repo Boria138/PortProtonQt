@@ -76,7 +76,17 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
-            self.window().windowHandle().startSystemMove()
+            corner_size = 20
+            width = self.width()
+            height = self.height()
+            click_pos = event.pos()
+
+            if click_pos.x() >= width - corner_size and click_pos.y() >= height - corner_size:
+                self.window().windowHandle().startSystemResize(
+                    Qt.Edge.BottomEdge | Qt.Edge.RightEdge  # type: ignore
+                )
+            else:
+                self.window().windowHandle().startSystemMove()
             event.accept()
 
     def changeEvent(self, event: QEvent) -> None:
