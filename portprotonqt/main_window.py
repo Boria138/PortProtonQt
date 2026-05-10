@@ -59,7 +59,7 @@ from portprotonqt.tabs.control_hints import MainWindowControlHintsMixin
 from portprotonqt.tabs.system_tab import MainWindowSystemTabMixin
 from portprotonqt.tabs.workers import MainWindowWorkersMixin
 
-from PySide6.QtWidgets import (QLineEdit, QMainWindow, QStatusBar, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox,
+from PySide6.QtWidgets import (QLineEdit, QMainWindow, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox,
                                QDialog, QFormLayout, QMessageBox, QApplication, QPushButton, QProgressBar, QCheckBox, QSizePolicy, QGridLayout, QScrollArea, QScroller, QSlider, QFrame)
 from PySide6.QtCore import Qt, QAbstractAnimation, QEvent, QUrl, Signal, QTimer, Slot, QProcess, QProcessEnvironment, QFileSystemWatcher, QStandardPaths
 from PySide6.QtGui import QIcon, QColor, QDesktopServices, QHideEvent, QShowEvent
@@ -73,8 +73,6 @@ DISC_IMAGE_EXTENSIONS = (".iso", ".mdf")
 
 class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWindowWorkersMixin, QMainWindow):
     games_loaded = Signal(list)
-    update_progress = Signal(int)
-    update_status_message = Signal(str, int)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
@@ -232,25 +230,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         QTimer.singleShot(0, self.start_watching_directories)  # Delay to ensure portproton_location is set
         self.downloader = Downloader(max_workers=4)
         self.portproton_api = PortProtonAPI(self.downloader)
-
-        # Status bar
-        self.setStatusBar(QStatusBar(self))
-        self.statusBar().setStyleSheet(self.theme.STATUS_BAR_STYLE)
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setStyleSheet(self.theme.PROGRESS_BAR_STYLE)
-        self.progress_bar.setMaximumWidth(200)
-        self.progress_bar.setTextVisible(True)
-        self.progress_bar.setVisible(False)
-        self.statusBar().addPermanentWidget(self.progress_bar)
-        self.update_progress.connect(self.progress_bar.setValue)
-        self.update_status_message.connect(self.statusBar().showMessage)
-
-        # Show immediate startup progress to indicate the app is loading
-        self.progress_bar.setVisible(True)
-        self.progress_bar.setRange(0, 0)  # Indeterminate initially
-        self.progress_bar.setValue(0)  # Reset value
-        self.update_status_message.emit(_("Starting PortProton..."), 0)
-        QApplication.processEvents()  # Process to show progress bar immediately
 
         self.installing = False
         self.install_process = None
@@ -461,6 +440,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.install_stop_requested = False
         self.current_install_script = script_name
         self._set_install_button_stop(button)
+        self._set_install_button_progress_text(_("Installing..."))
         self.seen_progress = False
         self.current_percent = 0.0
         start_sh = self.start_sh
@@ -477,9 +457,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             self._reset_install_state()
             QMessageBox.warning(self, _("Error"), _("Failed to start installation."))
             return
-        self.progress_bar.setVisible(True)
-        self.progress_bar.setRange(0, 0)  # Indeterminate
-        self.update_status_message.emit(_("Processed {} installation...").format(script_name), 0)
         self.install_monitor_timer = QTimer(self)
         self.install_monitor_timer.timeout.connect(self.monitor_install_progress)
         self.install_monitor_timer.start(2000)  # Start monitoring after 2s
@@ -496,6 +473,25 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         if icon:
             button.setIcon(icon)
         button.setText(_("Stop"))
+
+    def _set_install_button_progress_text(
+        self, status: str | None = None, percent: float | None = None
+    ) -> None:
+        """Update auto-install button text with current progress."""
+        if self.current_install_button is None:
+            return
+        try:
+            if percent is not None and percent > 0:
+                progress_text = f"{int(percent)}%"
+                button_text = f"{status} {progress_text}" if status else progress_text
+                self.current_install_button.setText(button_text)
+                return
+            if status:
+                self.current_install_button.setText(status)
+                return
+            self.current_install_button.setText(_("Stop"))
+        except RuntimeError:
+            self.current_install_button = None
 
     def _reset_install_state(self) -> None:
         """Reset auto-install process state and restore button."""
@@ -526,7 +522,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             return
 
         self.install_stop_requested = True
-        self.update_status_message.emit(_("Stopping installation..."), 0)
         if self.install_monitor_timer is not None:
             self.install_monitor_timer.stop()
         if not self.start_sh:
@@ -619,27 +614,36 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         if status is None and percent is None and not launch_started:
             return None
         if status is None:
-            status = None if launch_started else _("Preparing PortProton...")
+            if launch_started:
+                status = None
+            else:
+                status = _("Preparing PortProton...")
         return status, percent, launch_started
 
     def monitor_install_progress(self):
         """Monitor /tmp/PortProton_$USER/process.log for progress."""
-        percent = self._parse_process_log_progress()
+        state = self._parse_process_log_status()
+        status = None
+        percent = None
+        if state is not None:
+            status, percent, _ = state
         if percent is None:
+            percent = self._parse_process_log_progress()
+        if percent is None:
+            self._set_install_button_progress_text(status=status)
             return
         try:
             if percent > 0:
                 self.seen_progress = True
                 self.current_percent = percent
+                self._set_install_button_progress_text(status=status, percent=percent)
             elif self.seen_progress and percent == 0:
                 self.current_percent = 100.0
+                self._set_install_button_progress_text(status=status, percent=100.0)
                 if self.install_monitor_timer is not None:
                     self.install_monitor_timer.stop()
-            # Update progress bar to determinate if not already
-            if self.progress_bar.maximum() == 0:
-                self.progress_bar.setRange(0, 100)
-                self.progress_bar.setFormat("%p")  # Show percentage
-            self.progress_bar.setValue(int(self.current_percent))
+            elif status:
+                self._set_install_button_progress_text(status=status)
             if self.current_percent >= 100:
                 if self.install_monitor_timer is not None:
                     self.install_monitor_timer.stop()
@@ -653,15 +657,13 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             self.install_monitor_timer.stop()
             self.install_monitor_timer.deleteLater()
             self.install_monitor_timer = None
-        self.progress_bar.setRange(0, 100)
         if self.install_stop_requested:
-            self.update_status_message.emit(_("Installation stopped."), 5000)
-            self.progress_bar.setValue(0)
-
-        elif exit_code == 0:
-            self.progress_bar.setValue(100)
-            self.update_status_message.emit(_("Installation completed successfully."), 5000)
-
+            if self.install_process:
+                self.install_process.deleteLater()
+                self.install_process = None
+            self._reset_install_state()
+            return
+        if exit_code == 0:
             desktop_dir = self.portproton_location or ""
             new_desktops = [e.path for e in os.scandir(desktop_dir) if e.name.endswith(".desktop")]
             if new_desktops:
@@ -675,11 +677,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 )
 
         else:
-            self.progress_bar.setValue(100)
-            self.update_status_message.emit(_("Installation failed."), 5000)
             QMessageBox.warning(self, _("Error"), f"Installation failed (code: {exit_code}).")
 
-        self.progress_bar.setVisible(False)
         if self.install_process:
             self.install_process.deleteLater()
             self.install_process = None
@@ -692,25 +691,18 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             self.install_monitor_timer.deleteLater()
             self.install_monitor_timer = None
         if self.install_stop_requested:
-            self.update_status_message.emit(_("Installation stopped."), 5000)
-            self.progress_bar.setVisible(False)
             if self.install_process:
                 self.install_process.deleteLater()
                 self.install_process = None
             self._reset_install_state()
             return
-        self.update_status_message.emit(_("Installation error."), 5000)
         QMessageBox.warning(self, _("Error"), f"Process error: {error}")
-        self.progress_bar.setVisible(False)
         self._reset_install_state()
 
     @Slot(list)
     def on_games_loaded(self, games: list[tuple]):
         self.games = games
         self.game_library_manager.set_games(games)
-        self.progress_bar.setVisible(False)
-        self.progress_bar.setRange(0, 100)  # Reset to determinate state for next use
-        self.progress_bar.setValue(0)
 
         # Clear the refresh in progress flag
         if hasattr(self, '_refresh_in_progress'):
@@ -720,16 +712,10 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         if hasattr(self, 'refreshButton'):
             self.refreshButton.setEnabled(True)
             self.refreshButton.setText(_("Refresh Grid"))
-            self.update_status_message.emit(_("Game library refreshed"), 3000)
 
     def loadGames(self, force_load: bool = False):
         # Skip loading library if launching a specific exe
         if self.launch_exe and not force_load:
-            # Hide progress bar and status message when skipping library load
-            self.progress_bar.setVisible(False)
-            self.progress_bar.setRange(0, 100)
-            self.progress_bar.setValue(0)
-            self.statusBar().clearMessage()
             return
 
         if force_load:
@@ -740,20 +726,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.pending_games = []
         self.games = []
 
-        # Show initial progress bar immediately
-        self.progress_bar.setRange(0, 100)  # Set to determinate range
-        self.progress_bar.setValue(0)
-        self.progress_bar.setVisible(True)
-
-        # Process events to keep UI responsive
-        QApplication.processEvents()
-
         def start_loading():
-            # Make sure progress bar is still visible
-            self.progress_bar.setValue(0)
-            self.progress_bar.setVisible(True)
-            QApplication.processEvents()  # Allow UI to update
-
             if display_filter == "steam":
                 self._load_steam_games_async(lambda games: self.games_loaded.emit(games))
             elif display_filter == "portproton":
@@ -835,8 +808,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             callback(steam_games)
             return
         self.total_games = len(installed_games)
-        self.update_progress.emit(0)  # Initialize progress bar
-        self.update_status_message.emit(_("Loading Steam games..."), 3000)
         processed_count = 0
 
         def on_game_info(info: dict, name, appid, last_played, playtime_seconds):
@@ -870,7 +841,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             ))
             processed_count += 1
             self.pending_games.append(None)
-            self.update_progress.emit(len(self.pending_games))  # Update progress bar
             if processed_count == len(installed_games):
                 callback(steam_games)
 
@@ -888,15 +858,12 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             callback(games)
             return
         self.total_games = len(desktop_files)
-        self.update_progress.emit(0)  # Initialize progress bar
-        self.update_status_message.emit(_("Loading PortProton games..."), 3000)
         processed_count = 0
         def on_desktop_processed(result: tuple | None, games=games):
             nonlocal processed_count
             if result:
                 games.append(result)
             self.pending_games.append(None)
-            self.update_progress.emit(len(self.pending_games))  # Update progress bar
             processed_count += 1
             if processed_count == len(desktop_files):
                 callback(games)
@@ -1094,9 +1061,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         if self.pending_games and all(x is None for x in self.pending_games):
             logger.info("All games processed, clearing pending_games")
             self.pending_games = []
-            self.update_progress.emit(0)  # Hide progress bar
-            self.progress_bar.setVisible(False)
-            self.update_status_message.emit("", 0)  # Clear status message
 
     # TABS
     def switchTab(self, index):
@@ -1195,8 +1159,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         """Refresh the game grid by reloading all games without restarting the application."""
         # Prevent multiple refreshes at once
         if hasattr(self, '_refresh_in_progress') and self._refresh_in_progress:
-            # If refresh is already in progress, just update the status
-            self.update_status_message.emit(_("A refresh is already in progress..."), 3000)
             return
 
         # Mark that a refresh is in progress
@@ -1208,11 +1170,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         # Disable the refresh button during refresh to prevent multiple clicks
         self.refreshButton.setEnabled(False)
         self.refreshButton.setText(_("Refreshing..."))
-
-        # Show progress bar
-        self.progress_bar.setVisible(True)
-        self.progress_bar.setRange(0, 0)  # Indeterminate
-        self.update_status_message.emit(_("Refreshing game library..."), 0)
 
         # Clear the game card cache and layout to force reload of custom data
         if hasattr(self, 'game_library_manager') and self.game_library_manager:
@@ -1416,10 +1373,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                     # Incremental add
                     self.game_library_manager.add_game_incremental(game_data)
 
-                    # Status message
-                    msg = _("Added '{name}'").format(name=final_name)
-                    self.statusBar().showMessage(msg, 3000)
-
                     # Trigger visible images load
                     QTimer.singleShot(200, self.game_library_manager.load_visible_images)
 
@@ -1443,8 +1396,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                         cached_steam_info.get("anticheat_slug", ""),
                     )
                     self.game_library_manager.add_game_incremental(game_data)
-                    msg = _("Added '{name}'").format(name=final_name)
-                    self.statusBar().showMessage(msg, 3000)
                     QTimer.singleShot(200, self.game_library_manager.load_visible_images)
                 else:
                     get_steam_game_info_async(final_name, exec_line, on_steam_info)
@@ -1857,7 +1808,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
         # Show progress bar before launch
         self.wine_progress_bar.setVisible(True)
-        self.update_status_message.emit(_("Launching tool..."), 0)
 
         proc = QProcess(self)
         process_env = QProcessEnvironment.systemEnvironment()
@@ -1872,7 +1822,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
         if not proc.waitForStarted(5000):
             self.wine_progress_bar.setVisible(False)
-            self.update_status_message.emit("", 0)
             QMessageBox.warning(self, _("Error"), _("Failed to start process."))
             return
 
@@ -1903,7 +1852,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             if proc.info["name"].lower() == target_exe.lower():
                 # Process started - hide progress bar and stop monitoring
                 self.wine_progress_bar.setVisible(False)
-                self.update_status_message.emit("", 0)
                 if hasattr(self, 'wine_monitor_timer') and self.wine_monitor_timer is not None:
                     self.wine_monitor_timer.stop()
                     self.wine_monitor_timer.deleteLater()
@@ -1914,7 +1862,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
     def _on_wine_tool_finished(self, exitCode, cli_arg):
         """Handle Wine utility completion."""
         self.wine_progress_bar.setVisible(False)
-        self.update_status_message.emit("", 0)
         # Stop monitoring if active
         if hasattr(self, 'wine_monitor_timer') and self.wine_monitor_timer is not None:
             self.wine_monitor_timer.stop()
@@ -1928,7 +1875,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
     def _on_wine_tool_error(self, error, cli_arg):
         """Handle Wine utility launch error."""
         self.wine_progress_bar.setVisible(False)
-        self.update_status_message.emit("", 0)
         # Stop monitoring if active
         if hasattr(self, 'wine_monitor_timer') and self.wine_monitor_timer is not None:
             self.wine_monitor_timer.stop()
@@ -1966,7 +1912,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         start_sh = self.start_sh
 
         self.wine_progress_bar.setVisible(True)
-        self.update_status_message.emit(_("Clearing prefix..."), 0)
 
         self.clear_process = QProcess(self)
         self.clear_process.finished.connect(lambda exitCode: self._on_clear_prefix_finished(exitCode))
@@ -1976,13 +1921,11 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
         if not self.clear_process.waitForStarted(5000):
             self.wine_progress_bar.setVisible(False)
-            self.update_status_message.emit("", 0)
             QMessageBox.warning(self, _("Error"), _("Failed to start prefix clear process."))
             return
 
     def _on_clear_prefix_finished(self, exitCode):
         self.wine_progress_bar.setVisible(False)
-        self.update_status_message.emit("", 0)
         if exitCode == 0:
             QMessageBox.information(self, _("Success"), _("Prefix cleared successfully."))
         else:
@@ -1990,7 +1933,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
     def _on_clear_prefix_error(self, error):
         self.wine_progress_bar.setVisible(False)
-        self.update_status_message.emit("", 0)
         QMessageBox.warning(self, _("Error"), _("Failed to run clear prefix command: {}").format(error))
 
     def create_prefix_backup(self):
@@ -2576,10 +2518,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         reply = msg_box.exec()
         if reply == QMessageBox.StandardButton.Yes:
             reset_main_config()
-
-            # Show message
-            self.statusBar().showMessage(_("Settings reset. Restarting..."), 3000)
-
             # Restart application
             QTimer.singleShot(1000, lambda: self.restart_application())
 
@@ -2603,10 +2541,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             return
 
         migrated = migrate_legacy_shortcut(portproton_location)
-        self.statusBar().showMessage(
-            _("Migrated legacy shortcuts: {count}").format(count=migrated),
-            3000,
-        )
+        logger.info("Migrated legacy shortcuts: %d", migrated)
 
     def clearCache(self):
         """Clear cache."""
@@ -2621,9 +2556,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         reply = msg_box.exec()
         if reply == QMessageBox.StandardButton.Yes:
             cache_config.clear_cache()
-
-            # Show message
-            self.statusBar().showMessage(_("Cache cleared"), 3000)
 
     def applySettingsDelayed(self):
         ui_config.get_time_detail_level()
@@ -2778,8 +2710,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         # Save the hide auto-install tab setting to config
         ui_config.set_hide_autoinstall_tab(hide_autoinstall)
 
-        self.statusBar().showMessage(_("Settings saved"), 3000)
-
     def createThemeTab(self):
         """Themes tab"""
         self.themeTabWidget = QWidget()
@@ -2876,7 +2806,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 theme_module = self.theme_manager.apply_theme(selected_theme)
                 if theme_module:
                     ui_config.set_theme(selected_theme)
-                    self.statusBar().showMessage(_("Theme '{0}' applied successfully").format(selected_theme), 3000)
                     xdg_data_home = os.getenv("XDG_DATA_HOME",
                                             os.path.join(os.path.expanduser("~"), ".local", "share"))
                     state_file = os.path.join(xdg_data_home, "PortProtonQt", "state.txt")
@@ -2888,8 +2817,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                         QTimer.singleShot(500, lambda: self.restart_application())
                     except Exception as e:
                         logger.error(f"Failed to save state to {state_file}: {e}")
-                else:
-                    self.statusBar().showMessage(_("Error applying theme '{0}'").format(selected_theme), 3000)
 
         self.applyButton.clicked.connect(on_apply)
 

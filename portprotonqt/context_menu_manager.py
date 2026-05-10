@@ -20,7 +20,6 @@ logger = get_logger(__name__)
 
 class ContextMenuSignals(QObject):
     """Signals for thread-safe UI updates from worker threads."""
-    show_status_message = Signal(str, int)
     show_warning_dialog = Signal(str, str)
     show_info_dialog = Signal(str, str)
 
@@ -51,14 +50,6 @@ class ContextMenuManager:
         self.game_library_manager = game_library_manager
         self.update_game_grid = game_library_manager.update_game_grid
         self.signals = ContextMenuSignals()
-        if self.parent.statusBar() is None:
-            logger.warning("Status bar is not initialized in MainWindow")
-        else:
-            self.signals.show_status_message.connect(
-                self.parent.statusBar().showMessage,
-                Qt.ConnectionType.QueuedConnection
-            )
-            logger.debug("Connected show_status_message signal to status bar")
         self.signals.show_warning_dialog.connect(
             self._show_warning_dialog,
             Qt.ConnectionType.QueuedConnection
@@ -87,14 +78,6 @@ class ContextMenuManager:
         """Show an info dialog in the main thread."""
         logger.debug("Displaying info dialog: %s - %s", title, message)
         QMessageBox.information(self.parent, title, message)
-
-    def _show_status_message(self, message: str, timeout: int = 3000):
-        """Show a status message on the status bar if available."""
-        if self.parent.statusBar():
-            self.parent.statusBar().showMessage(message, timeout)
-            logger.debug("Displayed status message: %s", message)
-        else:
-            logger.warning("Status bar unavailable for message: %s", message)
 
     def _check_portproton(self):
         """Check if PortProton is available."""
@@ -294,7 +277,6 @@ class ContextMenuManager:
         try:
             os.mkdir(target_path)
             file_explorer.update_file_list()
-            self._show_status_message(_("Created folder '{folder_name}'").format(folder_name=folder_name))
         except OSError as e:
             self.signals.show_warning_dialog.emit(
                 _("Error"),
@@ -320,9 +302,6 @@ class ContextMenuManager:
                 favorites_folders_config.set_folders(favorite_folders)
             file_explorer.update_file_list()
             file_explorer.update_drives_list()
-            self._show_status_message(
-                _("Renamed folder '{old_name}' to '{new_name}'").format(old_name=current_name, new_name=new_name)
-            )
         except OSError as e:
             self.signals.show_warning_dialog.emit(
                 _("Error"),
@@ -350,7 +329,6 @@ class ContextMenuManager:
                 favorites_folders_config.set_folders(favorite_folders)
             file_explorer.update_file_list()
             file_explorer.update_drives_list()
-            self._show_status_message(_("Deleted folder '{folder_name}'").format(folder_name=folder_name))
         except OSError as e:
             self.signals.show_warning_dialog.emit(
                 _("Error"),
@@ -464,9 +442,7 @@ class ContextMenuManager:
 
         # Check if the game is running
         if self._is_game_running(game_card):
-            if hasattr(self.parent, "stop_running_game") and self.parent.stop_running_game():
-                self._show_status_message(_("Stopped '{game_name}'").format(game_name=game_card.name))
-            else:
+            if not (hasattr(self.parent, "stop_running_game") and self.parent.stop_running_game()):
                 self.signals.show_warning_dialog.emit(_("Error"), _("Failed to stop game"))
             return
 
@@ -487,16 +463,13 @@ class ContextMenuManager:
         if add and game_card.name not in favorites:
             favorites.append(game_card.name)
             game_card.is_favorite = True
-            message = _("Added '{game_name}' to favorites").format(game_name=game_card.name)
         elif not add and game_card.name in favorites:
             favorites.remove(game_card.name)
             game_card.is_favorite = False
-            message = _("Removed '{game_name}' from favorites").format(game_name=game_card.name)
         else:
             return
         favorites_config.set_games(favorites)
         game_card.update_favorite_icon()
-        self._show_status_message(message)
 
     def _get_desktop_path(self, game_name):
         """Construct the .desktop file path, trying direct and fallback matching."""
@@ -643,7 +616,6 @@ class ContextMenuManager:
         """Remove a file and handle errors."""
         try:
             os.remove(file_path)
-            self._show_status_message(_(success_message).format(game_name=game_name, location=location))
             return True
         except OSError as e:
             self.signals.show_warning_dialog.emit(
@@ -743,7 +715,6 @@ class ContextMenuManager:
             return
         # Assume game_data is built from new .desktop (name, desc, cover, etc.)
         self.game_library_manager.add_game_incremental(game_data)
-        self._show_status_message(_("Added '{game_name}' successfully").format(game_name=game_data[0]))
 
     def add_to_menu(self, game_name, exec_line):
         """Copy the .desktop file to ~/.local/share/applications."""
@@ -762,9 +733,6 @@ class ContextMenuManager:
         try:
             shutil.copyfile(desktop_path, dest_path)
             os.chmod(dest_path, 0o755)
-            self._show_status_message(_("Added '{game_name}' to {location}").format(
-                game_name=game_name, location=_("Menu")
-            ))
         except OSError as e:
             self.signals.show_warning_dialog.emit(
                 _("Error"),
@@ -826,9 +794,6 @@ class ContextMenuManager:
         try:
             shutil.copyfile(desktop_path, dest_path)
             os.chmod(dest_path, 0o755)
-            self._show_status_message(_("Added '{game_name}' to {location}").format(
-                game_name=game_name, location=_("Desktop")
-            ))
         except OSError as e:
             self.signals.show_warning_dialog.emit(
                 _("Error"),
@@ -1115,7 +1080,6 @@ class ContextMenuManager:
         try:
             folder_path = os.path.dirname(os.path.abspath(exe_path))
             QDesktopServices.openUrl(QUrl.fromLocalFile(folder_path))
-            self._show_status_message(_("Opened folder for '{game_name}'").format(game_name=game_name))
         except Exception as e:
             self.signals.show_warning_dialog.emit(
                 _("Error"),

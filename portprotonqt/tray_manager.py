@@ -114,11 +114,7 @@ class TrayManager:
             self.main_window.activateWindow()
 
     def stop_game(self) -> None:
-        game_name = getattr(self.main_window, "target_exe", None)
         if self.main_window.stop_running_game():
-            if game_name:
-                message = _("Stopped '{game_name}'").format(game_name=game_name)
-                self.main_window.update_status_message.emit(message, 3000)
             self.update_stop_game_action()
             return
 

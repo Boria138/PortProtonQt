@@ -1186,7 +1186,6 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
     def onNetworkOperationFailed(self, _operation: str, error_text: str) -> None:
         self.setNetworkBusy(False)
         logger.warning("Network operation failed: %s", error_text)
-        self.statusBar().showMessage("Error", 4000)
         self.networkStatusLabel.setText("Error")
         self.wirelessEnabledCheckBox.blockSignals(True)
         self.wirelessEnabledCheckBox.setChecked(self.systemWirelessEnabled)
@@ -1407,11 +1406,9 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
         cleaned_error = error_text.strip()
         if cleaned_error:
             logger.warning("Bluetooth operation failed: %s", cleaned_error)
-            self.statusBar().showMessage("Error", 4000)
             self.bluetoothStatusLabel.setText("Error")
         else:
             logger.info("Bluetooth operation finished without actionable error text")
-            self.statusBar().clearMessage()
         if operation == "load":
             self.bluetoothRows = []
             self.bluetoothTable.setRowCount(0)
@@ -1571,7 +1568,6 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
     def onStorageOperationFailed(self, _operation: str, error_text: str) -> None:
         self.setStorageBusy(False)
         logger.warning("Storage operation failed: %s", error_text)
-        self.statusBar().showMessage("Error", 4000)
         self.storageStatusLabel.setText("Error")
 
     def populateSystemStorageDevices(self, payload: dict) -> None:
@@ -1707,7 +1703,6 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
     def onAudioOperationFailed(self, _operation: str, error_text: str) -> None:
         self.setAudioBusy(False)
         logger.warning("Audio operation failed: %s", error_text)
-        self.statusBar().showMessage("Error", 4000)
         self.audioStatusLabel.setText("Error")
 
     def populateSystemAudioDevices(self, payload: dict) -> None:
