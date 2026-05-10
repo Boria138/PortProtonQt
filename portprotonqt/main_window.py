@@ -118,10 +118,22 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         if hasattr(self, "game_library_manager") and suspended:
             self.game_library_manager.stop_background_activity()
         if hasattr(self, "input_manager"):
-            if suspended:
+            if suspended and self._should_suspend_gamepad_polling():
                 self.input_manager.suspend_gamepad_polling()
             elif not any(proc.poll() is None for proc in self.game_processes):
                 self.input_manager.resume_gamepad_polling()
+
+    def _should_suspend_gamepad_polling(self) -> bool:
+        active_window = QApplication.activeWindow()
+        if not isinstance(active_window, QDialog):
+            return True
+        parent_window = active_window.parentWidget()
+        while parent_window is not None:
+            if parent_window is self:
+                return False
+            parent_window = parent_window.parentWidget()
+        return True
+
     def _get_lg_versions_from_var(self) -> list[str]:
         """Read Proton/Wine LG versions from scripts/var."""
         scripts_path = get_portproton_scripts_path()
