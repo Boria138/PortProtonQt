@@ -5,7 +5,7 @@ import shutil
 import tempfile
 import urllib.parse
 from PySide6.QtWidgets import (
-    QDialog, QTabWidget, QTableWidget, QTableWidgetItem, QVBoxLayout,
+    QTabWidget, QTableWidget, QTableWidgetItem, QVBoxLayout,
     QWidget, QCheckBox, QHeaderView, QMessageBox, QLabel, QTextEdit,
     QHBoxLayout, QProgressBar, QFrame, QSizePolicy, QAbstractItemView,
     QStackedWidget, QPushButton
@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QTimer
 
 from portprotonqt.config import get_portproton_start_command, ui_config
+from portprotonqt.dialogs.base import DraggableDialog
 from portprotonqt.logger import get_logger
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.localization import _
@@ -27,7 +28,7 @@ logger = get_logger(__name__)
 theme_manager = ThemeManager()
 
 
-class ProtonManager(QDialog):
+class ProtonManager(DraggableDialog):
     """Dialog for managing Proton/Wine versions."""
 
     def __init__(self, parent=None, portproton_location=None, theme=None, input_manager=None):

@@ -4,7 +4,7 @@ import os
 import re
 from typing import cast, TYPE_CHECKING
 from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QTextEdit, QTabWidget,
+    QVBoxLayout, QHBoxLayout, QTextEdit, QTabWidget,
     QTableWidget, QHeaderView, QTableWidgetItem, QAbstractItemView,
     QStackedWidget, QWidget, QMessageBox
 )
@@ -19,6 +19,7 @@ from portprotonqt.config import get_portproton_location, ui_config
 from portprotonqt.logger import get_logger
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.custom_widgets import AutoSizeButton
+from portprotonqt.dialogs.base import DraggableDialog
 from portprotonqt.downloader import Downloader
 from portprotonqt.preloader import Preloader
 from portprotonqt.localization import _
@@ -28,7 +29,7 @@ logger = get_logger(__name__)
 theme_manager = ThemeManager()
 
 
-class WinetricksDialog(QDialog):
+class WinetricksDialog(DraggableDialog):
     """Dialog for managing Wine prefixes using winetricks."""
 
     def __init__(self, parent=None, theme=None, prefix_path: str | None = None, wine_use: str | None = None):

@@ -29,6 +29,7 @@ from PySide6.QtWidgets import (
 
 from portprotonqt.context_menu_manager import CustomLineEdit
 from portprotonqt.custom_widgets import AutoSizeButton
+from portprotonqt.dialogs.base import DraggableDialog
 from portprotonqt.dialogs import FileExplorer
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
@@ -52,7 +53,7 @@ else:
     _MainWindowTypingBase = object
 
 
-class WifiPasswordDialog(QDialog):
+class WifiPasswordDialog(DraggableDialog):
     """Custom password dialog for Wi-Fi networks with virtual keyboard support."""
 
     def __init__(self, parent=None, ssid: str = "", initial_password: str = "", theme=None):
@@ -986,7 +987,7 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
             logger.warning("Failed to generate QR")
             return
 
-        dialog = QDialog(self)
+        dialog = DraggableDialog(self)
         dialog.setWindowTitle("QR")
         dialog_layout = QVBoxLayout(dialog)
         dialog_layout.setContentsMargins(12, 12, 12, 12)

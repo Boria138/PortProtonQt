@@ -10,6 +10,7 @@ from portprotonqt.localization import _
 from portprotonqt.config import parse_desktop_entry, favorites_config, favorites_folders_config
 from portprotonqt.steam_api import is_game_in_steam, add_to_steam, remove_from_steam
 from portprotonqt.dialogs import AddGameDialog, generate_thumbnail
+from portprotonqt.dialogs.base import DraggableDialog
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.logger import get_logger
 from portprotonqt.virtual_keyboard import VirtualKeyboard
@@ -24,7 +25,7 @@ class ContextMenuSignals(QObject):
     show_info_dialog = Signal(str, str)
 
 
-class FolderNameDialog(QDialog):
+class FolderNameDialog(DraggableDialog):
     """Dialog with typed keyboard attribute for folder name input."""
     keyboard: VirtualKeyboard
 

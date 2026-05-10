@@ -102,7 +102,20 @@ class FileSelectedSignal(QObject):
     file_selected = Signal(str)
 
 
-class GameLaunchDialog(QDialog):
+class DraggableDialog(QDialog):
+    """Dialog with support for system move on left mouse press."""
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            window_handle = self.window().windowHandle()
+            if window_handle is not None:
+                window_handle.startSystemMove()
+                event.accept()
+                return
+        super().mousePressEvent(event)
+
+
+class GameLaunchDialog(DraggableDialog):
     """Modal dialog to indicate game launch progress, similar to Steam's launch dialog."""
 
     def __init__(self, parent=None, game_name=None, theme=None, target_exe=None):
@@ -175,7 +188,7 @@ class GameLaunchDialog(QDialog):
         super().reject()
 
 
-class AddGameDialog(QDialog):
+class AddGameDialog(DraggableDialog):
     """Dialog for adding or editing a game."""
 
     def __init__(self, parent=None, theme=None, edit_mode=False, game_name=None, exe_path=None, cover_path=None):

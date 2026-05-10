@@ -13,7 +13,6 @@ from PySide6.QtWidgets import (
     QAbstractItemView,
     QCheckBox,
     QComboBox,
-    QDialog,
     QHBoxLayout,
     QHeaderView,
     QLabel,
@@ -37,6 +36,7 @@ from portprotonqt.config import (
     ui_config,
 )
 from portprotonqt.custom_widgets import AutoSizeButton
+from portprotonqt.dialogs.base import DraggableDialog
 from portprotonqt.dialogs.dialog_utils import create_dialog_hints_widget, update_dialog_hints
 from portprotonqt.dialogs.settings_mangohud import MANGOHUD_ENV_KEYS, MangoHudSettingsMixin
 from portprotonqt.dialogs.settings_gamescope import GAMESCOPE_ENV_KEYS, GamescopeSettingsMixin
@@ -117,7 +117,7 @@ def _get_numa_nodes() -> dict[str, str]:
     return numa_nodes
 
 
-class ExeSettingsDialog(QDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
+class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
     """Dialog for configuring executable-specific settings."""
 
     def __init__(self, parent=None, theme=None, exe_path=None, appid=None, game_source=None):

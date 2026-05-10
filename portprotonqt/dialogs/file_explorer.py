@@ -7,7 +7,7 @@ from typing import cast, TYPE_CHECKING
 from PIL import Image, ImageQt
 from PySide6.QtGui import QPixmap, QIcon, QImage, QImageReader
 from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QListWidget, QListWidgetItem,
+    QVBoxLayout, QHBoxLayout, QLabel, QListWidget, QListWidgetItem,
     QScrollArea, QWidget, QScroller, QApplication, QSizePolicy
 )
 from PySide6.QtCore import Qt, QObject, Signal, QMimeDatabase, QThreadPool, QRunnable, Slot, QSize, QTimer
@@ -21,7 +21,7 @@ from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.custom_widgets import AutoSizeButton
 from portprotonqt.localization import _
 from portprotonqt.dialogs.dialog_utils import create_dialog_hints_widget, update_dialog_hints
-from portprotonqt.dialogs.base import generate_thumbnail, FileSelectedSignal
+from portprotonqt.dialogs.base import DraggableDialog, generate_thumbnail, FileSelectedSignal
 from portprotonqt.image_utils import COVER_IMAGE_EXTENSIONS
 
 logger = get_logger(__name__)
@@ -32,7 +32,7 @@ THUMBNAIL_QUEUE_LIMIT = 24
 THUMBNAIL_SCROLL_DELAY_MS = 80
 
 
-class FileExplorer(QDialog):
+class FileExplorer(DraggableDialog):
     """File explorer dialog for selecting files and directories."""
 
     class ThumbnailLoader(QRunnable):
