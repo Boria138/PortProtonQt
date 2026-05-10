@@ -1,12 +1,14 @@
 # Install Python source files
 install_data(
   ['__init__.py',
-  'app.py',
-  'cli.py',
-  'context_menu_manager.py',
-  'custom_widgets.py',
-  'dialogs.py',
-  'downloader.py',
+   'app.py',
+   'cli.py',
+   'context_menu_manager.py',
+   'custom_widgets.py',
+   'dialogs.py',
+   'disc_image_utils.py',
+   'downloader.py',
+
   'game_card.py',
   'game_library_manager.py',
   'howlongtobeat_api.py',

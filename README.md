@@ -57,6 +57,7 @@ PortProtonQt использует код и зависимости от след
 
 - [Icoextract](https://github.com/jlu5/icoextract) — библиотека для извлечения иконок, лицензия [MIT](https://github.com/jlu5/icoextract/blob/master/LICENSE).
 - [HowLongToBeat Python API](https://github.com/ScrappyCocco/HowLongToBeat-PythonAPI) — библиотека для взаимодействия с HowLongToBeat, лицензия [MIT](https://github.com/ScrappyCocco/HowLongToBeat-PythonAPI/blob/master/LICENSE.md).
+- [mdf2iso](https://github.com/ScrappyCocco/HowLongToBeat-PythonAPI) — библиотека для конвертации mdf в iso, лицензия [GPLv2](https://salsa.debian.org/debian/mdf2iso/-/blob/master/gpl.txt).
 Полный текст лицензий см. в файле [LICENSE](LICENSE).
 
 > [!WARNING]
