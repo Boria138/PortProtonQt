@@ -6,7 +6,7 @@ THEME_INHERITS = "standart"
 theme_manager = ThemeManager()
 current_theme_name = ui_config.get_theme()
 
-autoSizeButtonPadding = 0
+autoSizeButtonPadding = 16
 
 detailCompactCoverFrameSize = 128
 detailCompactCoverImageSize = 108
