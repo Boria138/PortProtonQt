@@ -15,7 +15,7 @@ import websocket
 
 from portprotonqt.logger import get_logger
 from portprotonqt.downloader import Downloader
-from portprotonqt.dialogs import generate_thumbnail
+from portprotonqt.icon_extractor import generate_thumbnail
 from portprotonqt.config import (
     extract_exec_target_path,
     get_portproton_location,

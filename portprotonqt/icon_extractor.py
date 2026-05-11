@@ -12,6 +12,36 @@ RT_ICON = 3
 RT_GROUP_ICON = 14
 THUMBNAIL_SIZE = 128
 
+
+def generate_thumbnail(inputfile: str, outfile: str, size: int = 128, force_resize: bool = True) -> bool:
+    """
+    Generates a thumbnail for an .exe file.
+
+    inputfile: the input file path
+    outfile: output filename
+    size: determines the thumbnail output size
+    """
+    logger.debug("Starting thumbnail generation: %s → %s, size=%s, force=%s", inputfile, outfile, size, force_resize)
+
+    try:
+        extractor = IconExtractor(inputfile)
+        data = extractor.get_icon()
+        if data is None:
+            return False
+
+        im = Image.open(data)
+        if force_resize or im.size != (size, size):
+            logger.debug("Resizing icon to %sx%s", size, size)
+            im = im.resize((size, size), Image.Resampling.LANCZOS)
+
+        im.save(outfile, "PNG")
+        logger.info("Thumbnail successfully saved to %s", outfile)
+        return True
+    except Exception as e:
+        logger.error("Error generating thumbnail: %s", e)
+        return False
+
+
 class IconExtractorError(Exception):
     """Base exception for icon extraction errors."""
 

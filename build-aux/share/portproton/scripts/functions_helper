@@ -145,7 +145,7 @@ pw_enable_idle_inhibit() {
         return
     fi
 
-    PW_INHIBIT_SLR="python3 -m portprotonqt.idle_inhibit"
+    PW_INHIBIT_SLR="python3 -m portprotonqt.scripts_utils.idle_inhibit"
     print_info "Screensaver will be inhibited using D-Bus"
 }
 
@@ -2256,15 +2256,12 @@ pw_create_gui_png () {
     if [[ -z $name_desktop_png ]] ; then
         basename_PW_EXE_FILE="$(basename "${PW_EXE_FILE}")"
         if echo "$basename_PW_EXE_FILE" | grep -ie 'setup\|install\|\.msi$' &>/dev/null ; then
-            export PW_ICON_FOR_YAD="${PORT_DATA_PATH}/data/img/setup.png"
             export name_desktop_png="setup"
             return 0
         elif echo "$basename_PW_EXE_FILE" | grep -ie '\.reg$' &>/dev/null ; then
-            export PW_ICON_FOR_YAD="${PORT_DATA_PATH}/data/img/reg.png"
             export name_desktop_png="reg"
             return 0
         elif echo "$basename_PW_EXE_FILE"| grep -ie '\.bat$' &>/dev/null ; then
-            export PW_ICON_FOR_YAD="${PORT_DATA_PATH}/data/img/bat.png"
             export name_desktop_png="bat"
             return 0
         fi
@@ -2309,7 +2306,7 @@ pw_create_gui_png () {
         fi
     fi
 
-    resize_png "$PW_EXE_FILE" "${PORTPROTON_NAME}" "48" "128"
+    resize_png "$PW_EXE_FILE" "${PORTPROTON_NAME}"
 
     PORTPROTON_NAME_PNG="${PORTPROTON_NAME// /_}"
     if [[ $PORTPROTON_NAME_PNG =~ [\!\%\$\&\<] ]] ; then
@@ -2318,14 +2315,8 @@ pw_create_gui_png () {
             PORTPROTON_NAME_PNG="${PORTPROTON_NAME_PNG//$i/}"
         done
     fi
-    if [[ -z "${PW_ICON_FOR_YAD}" ]] ; then
-        if [[ -n "$(file "${PORT_DATA_PATH}/data/img/${PORTPROTON_NAME_PNG}.png" | grep "${PW_RESIZE_TO} x ${PW_RESIZE_TO}")" ]] ; then
-            export PW_ICON_FOR_YAD="${PORT_DATA_PATH}/data/img/${PORTPROTON_NAME_PNG}.png"
-        else
-            export PW_ICON_FOR_YAD="${PW_GUI_ICON_PATH}/port_proton.png"
-        fi
-    fi
 }
+
 
 pw_create_unique_exe () {
     BASEDIR_GAME="$(dirname "$PW_EXE_FILE")"
@@ -4479,11 +4470,11 @@ pw_gamescope_process () {
 
 # RESIZE PNG FILE
 resize_png () {
-    if [[ -z "$1" ]] || [[ -z "$2" ]] || [[ -z "$3" ]] ; then
+    if [[ -z "$1" ]] || [[ -z "$2" ]] ; then
         print_error "no argument specified for resize_png"
         return 1
     else
-        local RESIZE_FILE RESIZE_NAME_PNG resize_to resize_to_helper
+        local RESIZE_FILE RESIZE_NAME_PNG
         RESIZE_FILE="$1"
         RESIZE_NAME_PNG="${2// /_}"
     fi
@@ -4492,44 +4483,26 @@ resize_png () {
     then RESIZE_NAME_PNG=${RESIZE_NAME_PNG/*ru.linux_gaming.PortProton\/data\/img\//}
     fi
 
-    for resize_to in "${@:3}" ; do
-        if [[ $resize_to == 128 ]]
-        then resize_to_helper=""
-        else resize_to_helper="_$resize_to"
-        fi
+    if [[ $RESIZE_NAME_PNG =~ [\!\%\$\&\<] ]] ; then
+        local ICON_NAME_REGEX=(\! % \$ \& \<)
+        for i in "${ICON_NAME_REGEX[@]}" ; do
+            RESIZE_NAME_PNG="${RESIZE_NAME_PNG//$i/}"
+        done
+    fi
 
-        if [[ $RESIZE_NAME_PNG =~ [\!\%\$\&\<] ]] ; then
-            local ICON_NAME_REGEX=(\! % \$ \& \<)
-            for i in "${ICON_NAME_REGEX[@]}" ; do
-                RESIZE_NAME_PNG="${RESIZE_NAME_PNG//$i/}"
-            done
-        fi
+    if [[ -f "${PORT_DATA_PATH}/data/img/${RESIZE_NAME_PNG}.png" ]] \
+    || [[ ! -f "${RESIZE_FILE}" ]] \
+    || [[ ! ${RESIZE_FILE,,} =~ .exe$ ]]
+    then
+        return 0
+    fi
 
-        if [[ -f "${PORT_DATA_PATH}/data/img/${RESIZE_NAME_PNG}${resize_to_helper}.png" ]] \
-        || [[ ! -f "${RESIZE_FILE}" ]] \
-        || [[ ! ${RESIZE_FILE,,} =~ .exe$ ]]
-        then
-            return 0
-        fi
+    try_remove_file "${PORT_DATA_PATH}/data/img/launcher.png"
+    try_remove_file "${PORT_DATA_PATH}/data/img/Launcher.png"
 
-        try_remove_file "${PORT_DATA_PATH}/data/img/launcher.png"
-        try_remove_file "${PORT_DATA_PATH}/data/img/Launcher.png"
-
-        if check_flatpak ; then
-            if ! timeout 3 \
-            exe-thumbnailer --force-resize -s "$resize_to" "$(readlink -f "${RESIZE_FILE}")" "${PORT_DATA_PATH}/data/img/${RESIZE_NAME_PNG}${resize_to_helper}.png" \
-            && [[ "$ALPINE_FP" != "1" ]]
-            then
-                print_error "exe-thumbnailer - broken!"
-            fi
-        else
-            print_warning "use portable exe-thumbnailer"
-            env PYTHONPATH="${PW_PLUGINS_PATH}/portable/lib/python3.9/site-packages/" \
-            LD_LIBRARY_PATH="${PW_PLUGINS_PATH}/portable/lib/lib64" \
-            "${PW_WINELIB}/runtime/files/bin/python3.9"  \
-            "${PW_PLUGINS_PATH}/portable/bin/exe-thumbnailer" --force-resize -s "$resize_to" "$(readlink -f "${RESIZE_FILE}")" "${PORT_DATA_PATH}/data/img/${RESIZE_NAME_PNG}${resize_to_helper}.png"
-        fi
-    done
+    python3 -m portprotonqt.scripts_utils.shortcut_tools thumbnail \
+    "$(readlink -f "${RESIZE_FILE}")" \
+    "${PORT_DATA_PATH}/data/img/${RESIZE_NAME_PNG}.png"
 }
 
 portwine_create_shortcut () {
@@ -4563,19 +4536,12 @@ portwine_output_yad_shortcut () {
             export name_desktop="$PW_NAME_DESKTOP_PROXY"
         fi
 
-        echo "[Desktop Entry]" > "${PORT_DATA_PATH}/${name_desktop}.desktop"
-        echo "Name=${name_desktop}" >> "${PORT_DATA_PATH}/${name_desktop}.desktop"
-        if check_flatpak
-        then echo "Exec=flatpak run ${FLATPAK_ID} --silent \"${PW_EXE_FILE}\"" >> "${PORT_DATA_PATH}/${name_desktop}.desktop"
-        else echo "Exec=portprotonqt --silent \"${PW_EXE_FILE}\"" >> "${PORT_DATA_PATH}/${name_desktop}.desktop"
+        if ! python3 -m portprotonqt.scripts_utils.shortcut_tools shortcut \
+        "${PW_EXE_FILE}" \
+        "${name_desktop}"
+        then
+            return 1
         fi
-        {
-            echo "Type=Application"
-            echo "Categories=Game"
-            echo "StartupNotify=true"
-            echo "Icon=${PORT_DATA_PATH}/data/img/${name_desktop_png}.png"
-        } >> "${PORT_DATA_PATH}/${name_desktop}.desktop"
-        chmod +x "${PORT_DATA_PATH}/${name_desktop}.desktop"
 
         if [[ "${PW_SHORTCUT_MENU}" == "TRUE" ]] ; then
             try_remove_file "${HOME}/.local/share/applications/${name_desktop}.desktop"
@@ -4645,7 +4611,7 @@ pw_auto_create_shortcut () {
                     pw_init_db
                     export PW_NO_RESTART_PPDB="1"
                     edit_db_from_gui PW_PREFIX_NAME LAUNCH_URI
-                    unset PW_ICON_FOR_YAD name_desktop_png
+                    unset name_desktop_png
                     portwine_create_shortcut
                 fi
             fi
@@ -4679,9 +4645,9 @@ pw_auto_create_shortcut () {
         fi
         print_info "Created link for: $link_name"
         PORTPROTON_NAME="$link_name"
-        resize_png "$PW_EXE_FILE" "${PORTPROTON_NAME}" "48" "128"
+        resize_png "$PW_EXE_FILE" "${PORTPROTON_NAME}"
         export PW_NO_RESTART_PPDB=1
-        unset PW_ICON_FOR_YAD name_desktop_png
+        unset name_desktop_png
         portwine_create_shortcut
     done
 }

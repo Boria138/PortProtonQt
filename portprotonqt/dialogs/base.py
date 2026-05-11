@@ -9,7 +9,6 @@ from PySide6.QtWidgets import (
     QProgressBar, QSizePolicy, QWidget, QCheckBox
 )
 from PySide6.QtCore import Qt, QObject, Signal, QTimer, QStandardPaths, QSize
-from PIL import Image
 import psutil
 
 if TYPE_CHECKING:
@@ -23,78 +22,11 @@ from portprotonqt.downloader import Downloader
 from portprotonqt.virtual_keyboard import VirtualKeyboard
 from portprotonqt.localization import _
 from portprotonqt.image_utils import COVER_IMAGE_EXTENSIONS, set_animated_cover
-from portprotonqt.icon_extractor import IconExtractor, IconExtractorError
+from portprotonqt.icon_extractor import generate_thumbnail
 
 logger = get_logger(__name__)
 theme_manager = ThemeManager()
 DISC_IMAGE_EXTENSIONS = (".iso", ".mdf")
-
-
-def generate_thumbnail(inputfile, outfile, size=128, force_resize=True):
-    """
-    Generates a thumbnail for an .exe file.
-
-    inputfile: the input file path (%i)
-    outfile: output filename (%o)
-    size: determines the thumbnail output size (%s)
-    """
-    logger.debug(f"Starting thumbnail generation: {inputfile} → {outfile}, size={size}, force={force_resize}")
-
-    try:
-        extractor = IconExtractor(inputfile)
-        logger.debug("IconExtractor created successfully.")
-    except (RuntimeError, IconExtractorError) as e:
-        logger.warning(f"Failed to create IconExtractor: {e}")
-        return False
-
-    try:
-        data = extractor.get_icon()
-        if data is None:
-            return False
-        im = Image.open(data)
-        logger.debug(f"Extracted icon size {im.size}, formats: {im.format}, frames: {getattr(im, 'n_frames', 1)}")
-    except Exception as e:
-        logger.warning(f"Error extracting icon: {e}")
-        return False
-
-    if force_resize:
-        logger.debug(f"Forcing icon resize to {size}x{size}")
-        im = im.resize((size, size), Image.Resampling.LANCZOS)
-    else:
-        if size > 256:
-            logger.warning('Requested size larger than 256, set to 256')
-            size = 256
-        elif size not in (128, 256):
-            logger.warning(f'Unsupported size {size}, set to 128')
-            size = 128
-
-        if size == 256:
-            logger.debug("Saving icon without resize (256x256)")
-            im.save(outfile, "PNG")
-            logger.info(f"Icon saved to {outfile}")
-            return True
-
-        frames = getattr(im, 'n_frames', 1)
-        try:
-            for frame in range(frames):
-                im.seek(frame)
-                if im.size == (size, size):
-                    logger.debug(f"Found frame with size {size}x{size}")
-                    break
-        except EOFError:
-            logger.debug("Frames ended before finding required size.")
-
-        if im.size != (size, size):
-            logger.debug(f"Resizing from {im.size} to {size}x{size}")
-            im = im.resize((size, size))
-
-    try:
-        im.save(outfile, "PNG")
-        logger.info(f"Thumbnail successfully saved to {outfile}")
-        return True
-    except Exception as e:
-        logger.error(f"Error saving thumbnail: {e}")
-        return False
 
 
 class FileSelectedSignal(QObject):
@@ -538,9 +470,7 @@ class AddGameDialog(DraggableDialog):
         result = create_desktop_file(exe_path, name)
         if not result:
             return None, None
-        desktop_entry, desktop_path = result
-        base_path = os.path.join(os.path.dirname(desktop_path), "data")
-        icon_path = os.path.join(base_path, "img", f"{name}.png")
+        desktop_entry, desktop_path, icon_path = result
 
         if not self.last_cover_path and not generate_thumbnail(launch_path, icon_path, size=128):
             logger.error(f"Failed to generate thumbnail from exe: {launch_path}")

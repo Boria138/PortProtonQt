@@ -21,7 +21,8 @@ from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.custom_widgets import AutoSizeButton
 from portprotonqt.localization import _
 from portprotonqt.dialogs.dialog_utils import create_dialog_hints_widget, update_dialog_hints
-from portprotonqt.dialogs.base import DraggableDialog, generate_thumbnail, FileSelectedSignal
+from portprotonqt.icon_extractor import generate_thumbnail
+from portprotonqt.dialogs.base import DraggableDialog, FileSelectedSignal
 from portprotonqt.image_utils import COVER_IMAGE_EXTENSIONS
 
 logger = get_logger(__name__)

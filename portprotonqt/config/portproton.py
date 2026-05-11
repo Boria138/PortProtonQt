@@ -19,6 +19,14 @@ logger = get_logger(__name__)
 _portproton_start_command: list[str] | None = None
 
 
+def _sanitize_icon_name(name: str) -> str:
+    """Convert a game name to a safe icon file name."""
+    sanitized_name = name.replace(" ", "_")
+    for char in ("!", "%", "$", "&", "<"):
+        sanitized_name = sanitized_name.replace(char, "")
+    return sanitized_name
+
+
 class PortProtonConfig(BaseConfig):
     """PortProton location configuration."""
 
@@ -356,8 +364,8 @@ def find_game_by_exe(exe_path: str) -> configparser.SectionProxy | None:
 def create_desktop_file(
     exe_path: str,
     game_name: str | None = None,
-) -> tuple[str, str] | None:
-    """Create desktop entry content and destination path for a game."""
+) -> tuple[str, str, str] | None:
+    """Create desktop entry content, destination path and icon path for a game."""
     portproton_path = get_portproton_location()
     if not os.path.isfile(exe_path):
         logger.error("Executable not found: %s", exe_path)
@@ -369,7 +377,8 @@ def create_desktop_file(
     if not game_name:
         game_name = os.path.splitext(os.path.basename(exe_path))[0]
     base_path = os.path.join(portproton_path, "data")
-    icon_path = os.path.join(base_path, "img", f"{game_name}.png")
+    icon_name = _sanitize_icon_name(game_name)
+    icon_path = os.path.join(base_path, "img", f"{icon_name}.png")
     desktop_path = os.path.join(portproton_path, f"{game_name}.desktop")
     os.makedirs(os.path.dirname(icon_path), exist_ok=True)
 
@@ -391,4 +400,4 @@ def create_desktop_file(
         "StartupNotify=true\n"
         f"Icon={icon_path}\n"
     )
-    return desktop_entry, desktop_path
+    return desktop_entry, desktop_path, icon_path

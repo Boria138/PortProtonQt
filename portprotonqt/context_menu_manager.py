@@ -21,7 +21,8 @@ from portprotonqt.steam_api import (
     remove_from_steam,
     safe_vdf_load,
 )
-from portprotonqt.dialogs import AddGameDialog, generate_thumbnail
+from portprotonqt.icon_extractor import generate_thumbnail
+from portprotonqt.dialogs import AddGameDialog
 from portprotonqt.dialogs.base import DraggableDialog
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.logger import get_logger

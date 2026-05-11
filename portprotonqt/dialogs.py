@@ -5,10 +5,10 @@ New code should import directly from portprotonqt.dialogs package.
 """
 
 # Re-export all dialog classes for backward compatibility
+from portprotonqt.icon_extractor import generate_thumbnail
 from portprotonqt.dialogs.base import (
     GameLaunchDialog,
     AddGameDialog,
-    generate_thumbnail,
     FileSelectedSignal,
 )
 from portprotonqt.dialogs.file_explorer import FileExplorer

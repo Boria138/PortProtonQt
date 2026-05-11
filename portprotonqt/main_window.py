@@ -6,7 +6,8 @@ import subprocess
 import psutil
 import re
 from portprotonqt.logger import get_logger
-from portprotonqt.dialogs import AddGameDialog, FileExplorer, WinetricksDialog, ExeSettingsDialog, generate_thumbnail
+from portprotonqt.icon_extractor import generate_thumbnail
+from portprotonqt.dialogs import AddGameDialog, FileExplorer, WinetricksDialog, ExeSettingsDialog
 from portprotonqt.game_card import GameCard
 from portprotonqt.animations import DetailPageAnimations
 from portprotonqt.custom_widgets import ClickableLabel, AutoSizeButton, NavLabel, FlowLayout

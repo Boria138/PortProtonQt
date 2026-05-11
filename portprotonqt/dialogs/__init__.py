@@ -5,7 +5,8 @@ from portprotonqt.dialogs.file_explorer import FileExplorer
 from portprotonqt.dialogs.winetricks_dialog import WinetricksDialog
 from portprotonqt.dialogs.settings_dialog import ExeSettingsDialog
 from portprotonqt.dialogs.proton_manager import ProtonManager
-from portprotonqt.dialogs.base import GameLaunchDialog, AddGameDialog, generate_thumbnail, FileSelectedSignal
+from portprotonqt.icon_extractor import generate_thumbnail
+from portprotonqt.dialogs.base import GameLaunchDialog, AddGameDialog, FileSelectedSignal
 
 __all__ = [
     'create_dialog_hints_widget',

@@ -13,7 +13,6 @@ install_data(
   'game_card.py',
   'game_library_manager.py',
   'howlongtobeat_api.py',
-  'idle_inhibit.py',
   'image_utils.py',
   'icon_extractor.py',
   'input_manager.py',
@@ -118,6 +117,15 @@ install_data(
    'debug_utils/xorg_utils.py',
   ],
   install_dir: pythondir / meson.project_name() / 'debug_utils',
+)
+
+# Install scripts_utils package
+install_data(
+  ['scripts_utils/__init__.py',
+   'scripts_utils/idle_inhibit.py',
+   'scripts_utils/shortcut_tools.py',
+  ],
+  install_dir: pythondir / meson.project_name() / 'scripts_utils',
 )
 
 # Install config package
