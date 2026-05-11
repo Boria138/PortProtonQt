@@ -386,6 +386,14 @@ class MangoHudSettingsMixin:
         self.mangohud_fps_widgets = {}
         self.mangohud_category_groups = {}
         self.mangohud_gpu_options = []
+        self.mangohud_actions_group = None
+        self.mangohud_presets_group = None
+        self.mangohud_toggle_group = None
+        self.mangohud_values_group = None
+        self.mangohud_fps_group = None
+        self.mangohud_extra_group = None
+        self.mangohud_action_buttons = []
+        self.mangohud_preset_buttons = []
 
     def setup_mangohud_tab(self):
         """Create MangoHud tab widgets."""
@@ -419,6 +427,7 @@ class MangoHudSettingsMixin:
         form.setVerticalSpacing(self.theme.exeSettingsGroupBoxElementVerticalSpacing)
         form.setHorizontalSpacing(self.theme.exeSettingsGroupBoxElementHorizontalSpacing)
         form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
+        self.mangohud_values_group = group
         self.mangohud_gpu_options = self._get_mangohud_gpu_options()
         gpu_count = sum(1 for _text, value in self.mangohud_gpu_options if value.isdigit())
 
@@ -466,6 +475,7 @@ class MangoHudSettingsMixin:
         presets_layout = QGridLayout(presets_group)
         presets_layout.setVerticalSpacing(self.theme.exeSettingsGroupBoxElementVerticalSpacing)
         presets_layout.setHorizontalSpacing(self.theme.exeSettingsGroupBoxElementHorizontalSpacing)
+        self.mangohud_presets_group = presets_group
 
         actions_group = QGroupBox(_("Actions"))
         actions_group.setStyleSheet(self.theme.QGROUP_BOX_STYLE)
@@ -473,6 +483,7 @@ class MangoHudSettingsMixin:
         actions_layout.setVerticalSpacing(self.theme.exeSettingsGroupBoxElementVerticalSpacing)
         actions_layout.setHorizontalSpacing(self.theme.exeSettingsGroupBoxElementHorizontalSpacing)
         columns = self.theme.mangoHudPresetsColumns
+        self.mangohud_actions_group = actions_group
 
         # Toggle buttons for PW_MANGOHUD and PW_MANGOHUD_USER_CONF
         self.mangohud_enable_button = QPushButton(_("Enable MangoHud"))
@@ -515,6 +526,7 @@ class MangoHudSettingsMixin:
             row = index // columns
             column = index % columns
             presets_layout.addWidget(button, row, column)
+            self.mangohud_preset_buttons.append(button)
 
         for index, (label, handler) in enumerate(action_buttons):
             button = QPushButton(label)
@@ -525,6 +537,7 @@ class MangoHudSettingsMixin:
             row = (index // columns) + 1
             column = index % columns
             actions_layout.addWidget(button, row, column)
+            self.mangohud_action_buttons.append(button)
 
         parent_layout.addWidget(actions_group)
         parent_layout.addWidget(presets_group)
@@ -533,6 +546,7 @@ class MangoHudSettingsMixin:
         selector_group = QGroupBox(_("MangoHud switches"))
         selector_group.setStyleSheet(self.theme.QGROUP_BOX_STYLE)
         selector_layout = QVBoxLayout(selector_group)
+        self.mangohud_toggle_group = selector_group
 
         self.mangohud_category_combo = QComboBox()
         self.mangohud_category_combo.addItems(list(MANGOHUD_TOGGLE_CATEGORIES.keys()))
@@ -620,6 +634,7 @@ class MangoHudSettingsMixin:
         group.setStyleSheet(self.theme.QGROUP_BOX_STYLE)
         layout = QVBoxLayout(group)
         layout.setSpacing(self.theme.exeSettingsGroupBoxElementHorizontalSpacing)
+        self.mangohud_fps_group = group
 
         fps_limit_method_spec = next(
             (spec for spec in MANGOHUD_VALUE_SPECS if spec['key'] == 'fps_limit_method'),
@@ -673,6 +688,7 @@ class MangoHudSettingsMixin:
         group = QGroupBox(_("Extra args"))
         group.setStyleSheet(self.theme.QGROUP_BOX_STYLE)
         layout = QVBoxLayout(group)
+        self.mangohud_extra_group = group
         label = QLabel(_("Additional comma-separated MangoHud options not covered by the GUI."))
         label.setWordWrap(True)
         layout.addWidget(label)
@@ -808,6 +824,7 @@ class MangoHudSettingsMixin:
         """Update toggle button text and style based on current settings."""
         mangohud_enabled = self.current_settings.get('PW_MANGOHUD') == '1'
         mangohud_user_conf_enabled = self.current_settings.get('PW_MANGOHUD_USER_CONF') == '1'
+        visible = mangohud_enabled
 
         if mangohud_enabled:
             self.mangohud_enable_button.setText(_("Disable MangoHud"))
@@ -816,12 +833,29 @@ class MangoHudSettingsMixin:
             self.mangohud_enable_button.setText(_("Enable MangoHud"))
             self.mangohud_enable_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
 
+        self.mangohud_user_conf_button.setVisible(visible)
         if mangohud_user_conf_enabled:
             self.mangohud_user_conf_button.setText(_("Don't use system config"))
             self.mangohud_user_conf_button.setStyleSheet(self.theme.ACTION_BUTTON_ACTIVE_STYLE)
         else:
             self.mangohud_user_conf_button.setText(_("Use system config"))
             self.mangohud_user_conf_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+
+        if self.mangohud_toggle_group is not None:
+            self.mangohud_toggle_group.setVisible(visible)
+        if self.mangohud_presets_group is not None:
+            self.mangohud_presets_group.setVisible(visible)
+        if self.mangohud_values_group is not None:
+            self.mangohud_values_group.setVisible(visible)
+        if self.mangohud_fps_group is not None:
+            self.mangohud_fps_group.setVisible(visible)
+        if self.mangohud_extra_group is not None:
+            self.mangohud_extra_group.setVisible(visible)
+
+        for button in self.mangohud_preset_buttons:
+            button.setVisible(visible)
+        for button in self.mangohud_action_buttons:
+            button.setVisible(visible)
 
     def toggle_mangohud_enable(self):
         """Toggle PW_MANGOHUD setting."""

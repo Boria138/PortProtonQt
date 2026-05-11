@@ -267,6 +267,11 @@ class GamescopeSettingsMixin:
         self.gamescope_toggle_widget_keys = {}
         self.gamescope_category_groups = {}
         self.gamescope_resolution_widgets = {}
+        self.gamescope_actions_group = None
+        self.gamescope_toggle_group = None
+        self.gamescope_values_group = None
+        self.gamescope_extra_group = None
+        self.gamescope_action_buttons = []
         self.gamescope_path = shutil.which('gamescope')
         self.gamescope_available = bool(self.gamescope_path)
         self.gamescope_supported_options = None
@@ -360,6 +365,7 @@ class GamescopeSettingsMixin:
         form.setVerticalSpacing(self.theme.exeSettingsGroupBoxElementVerticalSpacing)
         form.setHorizontalSpacing(self.theme.exeSettingsGroupBoxElementHorizontalSpacing)
         form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
+        self.gamescope_values_group = group
 
         resolution_keys = {
             'output_width', 'output_height', 'nested_width', 'nested_height',
@@ -542,6 +548,7 @@ class GamescopeSettingsMixin:
         layout.setVerticalSpacing(self.theme.exeSettingsGroupBoxElementVerticalSpacing)
         layout.setHorizontalSpacing(self.theme.exeSettingsGroupBoxElementHorizontalSpacing)
         columns = 2
+        self.gamescope_actions_group = group
 
         # Toggle button for PW_GAMESCOPE
         self.gamescope_enable_button = QPushButton(_("Enable Gamescope"))
@@ -571,6 +578,7 @@ class GamescopeSettingsMixin:
             row = (index // columns) + 1
             column = index % columns
             layout.addWidget(button, row, column)
+            self.gamescope_action_buttons.append(button)
 
         parent_layout.addWidget(group)
 
@@ -578,6 +586,7 @@ class GamescopeSettingsMixin:
         selector_group = QGroupBox(_("Gamescope switches"))
         selector_group.setStyleSheet(self.theme.QGROUP_BOX_STYLE)
         selector_layout = QVBoxLayout(selector_group)
+        self.gamescope_toggle_group = selector_group
 
         self.gamescope_category_combo = QComboBox()
         self.gamescope_category_combo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
@@ -669,6 +678,7 @@ class GamescopeSettingsMixin:
         group = QGroupBox(_("Extra args"))
         group.setStyleSheet(self.theme.QGROUP_BOX_STYLE)
         layout = QVBoxLayout(group)
+        self.gamescope_extra_group = group
         label = QLabel(_("Additional Gamescope options not covered by the GUI."))
         label.setWordWrap(True)
         layout.addWidget(label)
@@ -734,6 +744,7 @@ class GamescopeSettingsMixin:
     def _update_gamescope_toggle_button(self):
         """Update toggle button text based on current settings."""
         gamescope_enabled = self.current_settings.get('PW_GAMESCOPE') == '1'
+        visible = gamescope_enabled
 
         if gamescope_enabled:
             self.gamescope_enable_button.setText(_("Disable Gamescope"))
@@ -741,6 +752,16 @@ class GamescopeSettingsMixin:
         else:
             self.gamescope_enable_button.setText(_("Enable Gamescope"))
             self.gamescope_enable_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+
+        if self.gamescope_toggle_group is not None:
+            self.gamescope_toggle_group.setVisible(visible)
+        if self.gamescope_values_group is not None:
+            self.gamescope_values_group.setVisible(visible)
+        if self.gamescope_extra_group is not None:
+            self.gamescope_extra_group.setVisible(visible)
+
+        for button in self.gamescope_action_buttons:
+            button.setVisible(visible)
 
     def toggle_gamescope_enable(self):
         """Toggle PW_GAMESCOPE setting."""
