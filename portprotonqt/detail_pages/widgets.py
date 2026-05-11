@@ -200,9 +200,11 @@ def create_compact_detail_header(
         )
     )
     header_layout.addWidget(cover_frame, alignment=Qt.AlignmentFlag.AlignCenter)
+    header_widget.setFixedHeight(cover_frame.height())
 
     title_frame = QFrame(header_widget)
     title_frame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+    title_frame.setMaximumHeight(cover_frame.height())
     title_frame.setStyleSheet(theme.COMPACT_DETAILS_WIDGET_STYLE)
     title_layout = QVBoxLayout(title_frame)
     title_layout.setContentsMargins(

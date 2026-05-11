@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QScrollArea,
     QBoxLayout,
+    QSizePolicy,
 )
 from PySide6.QtCore import Qt, QUrl, QTimer
 from PySide6.QtGui import QDesktopServices
@@ -275,6 +276,9 @@ class DetailPageManager:
         playtime_title.setStyleSheet(self.main_window.theme.PLAY_TIME_TITLE_STYLE)
         playtime_value = QLabel(formatted_playtime)
         playtime_value.setStyleSheet(self.main_window.theme.PLAY_TIME_VALUE_STYLE)
+
+        for widget in (last_launch_title, last_launch_value, playtime_title, playtime_value):
+            widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
         first_row.addWidget(last_launch_title)
         first_row.addWidget(last_launch_value)
