@@ -76,10 +76,10 @@ STEAM_BADGE_STYLE= f"""
 """
 
 # ADDITIONAL INFO STYLES ON GAMES PAGE
-LAST_LAUNCH_TITLE_STYLE = f"font-family: '{font_family}'; font-size: 11px; color: {color_text_muted}; text-transform: uppercase; letter-spacing: 0.75px; margin-bottom: 2px;"
-LAST_LAUNCH_VALUE_STYLE = f"font-family: '{font_family}'; font-size: 13px; color: {color_f}; font-weight: 600; letter-spacing: 0.75px;"
-PLAY_TIME_TITLE_STYLE = f"font-family: '{font_family}'; font-size: 11px; color: {color_text_muted}; text-transform: uppercase; letter-spacing: 0.75px; margin-bottom: 2px;"
-PLAY_TIME_VALUE_STYLE = f"font-family: '{font_family}'; font-size: 13px; color: {color_f}; font-weight: 600; letter-spacing: 0.75px;"
+LAST_LAUNCH_TITLE_STYLE = f"max-height: 16px; background: rgba(20,20,20,0.40);font-family: '{font_family}'; font-size: 11px; color: {color_f}; text-transform: uppercase; letter-spacing: 0.75px;"
+LAST_LAUNCH_VALUE_STYLE = f"height: 16px; background: rgba(20,20,20,0.40);font-family: '{font_family}'; font-size: 13px; color: {color_f}; font-weight: 600; letter-spacing: 0.75px;"
+PLAY_TIME_TITLE_STYLE = f"max-height: 16px; background: rgba(20,20,20,0.40);font-family: '{font_family}'; font-size: 11px; color: {color_f}; text-transform: uppercase; letter-spacing: 0.75px;"
+PLAY_TIME_VALUE_STYLE = f"height: 16px; background: rgba(20,20,20,0.40);font-family: '{font_family}'; font-size: 13px; color: {color_f}; font-weight: 600; letter-spacing: 0.75px;"
 GAMEPAD_SUPPORT_VALUE_STYLE = f"""
     font-family: '{font_family}'; font-size: {font_size_a}; color: {color_gamepad_supported};
     font-weight: bold; background: {color_g};
