@@ -557,6 +557,8 @@ class DetailPageManager:
         content_frame, content_frame_layout = create_content_frame(
             main_layout, self.main_window.theme
         )
+        if self._is_compact_detail_layout():
+            content_frame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
         setup_adaptive_layout(detail_page, content_frame_layout)
 
         self.main_window.stackedWidget.addWidget(detail_page)
