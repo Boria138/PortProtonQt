@@ -1193,14 +1193,14 @@ init_wine_ver () {
         unset WINEDLLPATH
     else
         if [[ -d "${PORT_DATA_PATH}/data/dist" ]] ; then
-        IFS=$'\n'
-        for dist_dir in $(lsbash "${PORT_DATA_PATH}/data/dist") ; do
-            dist_dir_new=$(echo "${dist_dir}" | awk '$1=$1' | sed -e s/[[:blank:]]/_/g)
-            if [[ ! -d "${PORT_DATA_PATH}/data/dist/${dist_dir_new^^}" ]] ; then
-                mv -- "${PORT_DATA_PATH}/data/dist/$dist_dir" "${PORT_DATA_PATH}/data/dist/${dist_dir_new^^}"
-            fi
-        done
-        IFS="$orig_IFS"
+            IFS=$'\n'
+            for dist_dir in $(lsbash "${PORT_DATA_PATH}/data/dist") ; do
+                dist_dir_new=$(echo "${dist_dir}" | awk '$1=$1' | sed -e s/[[:blank:]]/_/g)
+                if [[ ! -d "${PORT_DATA_PATH}/data/dist/${dist_dir_new^^}" ]] ; then
+                    mv -- "${PORT_DATA_PATH}/data/dist/$dist_dir" "${PORT_DATA_PATH}/data/dist/${dist_dir_new^^}"
+                fi
+            done
+            IFS="$orig_IFS"
         fi
 
         if [[ "$PW_WINE_USE" == PROTON_LG ]]
@@ -1219,9 +1219,18 @@ init_wine_ver () {
         if [[ -d "${WINEDIR}/files" && ! -d "${WINEDIR}/dist" ]] ; then
             export WINEDIR="${WINEDIR}/files"
         fi
-        export WINE="${WINEDIR}/bin/wine"
-        export WINELOADER="${WINEDIR}/bin/wine"
-        export WINESERVER="${WINEDIR}/bin/wineserver"
+
+        if [[ "$PW_USE_WOW64" == "1" ]] \
+        && [[ -d "${WINEDIR}/bin-wow64" ]]
+        then
+            export WINE="${WINEDIR}/bin-wow64/wine"
+            export WINELOADER="${WINEDIR}/bin-wow64/wine"
+            export WINESERVER="${WINEDIR}/bin-wow64/wineserver"
+        else
+            export WINE="${WINEDIR}/bin/wine"
+            export WINELOADER="${WINEDIR}/bin/wine"
+            export WINESERVER="${WINEDIR}/bin/wineserver"
+        fi
 
         if [[ -d "${WINEDIR}" ]] ; then
             if [[ ! -d "${WINEDIR}/lib64/wine" ]] && [[ -d "${WINEDIR}/lib/wine/x86_64-unix" ]] ; then
