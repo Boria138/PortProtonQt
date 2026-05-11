@@ -120,6 +120,8 @@ class GameCard(QFrame):
         self.layout_.setContentsMargins(self.base_extra_margin // 2, self.base_extra_margin // 2, self.base_extra_margin // 2, self.base_extra_margin // 2)
 
         self.coverWidget = QWidget()
+        if self.list_layout:
+            self.coverWidget.setStyleSheet(self.theme.COVER_WIDGET_STYLE)
         coverLayout = QStackedLayout(self.coverWidget)
         coverLayout.setContentsMargins(0, 0, 0, 0)
         coverLayout.setStackingMode(QStackedLayout.StackingMode.StackAll)

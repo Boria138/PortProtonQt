@@ -40,6 +40,14 @@ COVER_FRAME_STYLE = f"""
     }}
 """
 
+# COVER WIDGET
+COVER_WIDGET_STYLE = f"""
+    QWidget {{
+        background: {color_h};
+        border:  {border_a} {color_h};
+    }}
+"""
+
 # COVER LABEL BORDER RADIUS
 COVER_LABEL_STYLE = f"border-radius: {border_radius_b};"
 
