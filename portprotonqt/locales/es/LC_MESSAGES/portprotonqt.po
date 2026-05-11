@@ -9,8 +9,8 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-03-22 13:50+0500\n"
-"PO-Revision-Date: 2026-05-10 12:41+0500\n"
-"Last-Translator: Boria138 <boria138@noreply.codeberg.org>\n"
+"PO-Revision-Date: 2026-05-11 08:58+0000\n"
+"Last-Translator: gallegonovato <gallegonovato@noreply.codeberg.org>\n"
 "Language-Team: Spanish <https://translate.codeberg.org/projects/portprotonqt/"
 "portprotonqt/es/>\n"
 "Language: es\n"
@@ -18,75 +18,77 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Poedit 3.9\n"
+"X-Generator: Weblate 5.17.1\n"
 "Generated-By: Babel 2.17.0\n"
 
 msgid "Stop Game"
-msgstr "Detener juego"
+msgstr "Detener partida"
 
 msgid "Error"
 msgstr "Error"
 
 msgid "PortProton directory not found"
-msgstr "Directorio de PortProton no encontrado"
+msgstr "No encontrado el directorio PortProton"
 
 msgid "Remove from Favorites"
-msgstr "Eliminar de Favoritos"
+msgstr "Quitar de favoritos"
 
 msgid "Add to Favorites"
-msgstr "Añadir a Favoritos"
+msgstr "Añadir a favoritos"
 
 msgid "Create Folder"
-msgstr ""
+msgstr "Crear carpeta"
 
 msgid "Rename Folder"
-msgstr ""
+msgstr "Cambiar el nombre de la carpeta"
 
 msgid "Delete Folder"
-msgstr ""
+msgstr "Borrar la carpeta"
 
 msgid "OK"
-msgstr ""
+msgstr "De acuerdo"
 
 msgid "Cancel"
-msgstr ""
+msgstr "Cancelar"
 
 msgid "Folder name cannot be empty"
-msgstr ""
+msgstr "La carpeta tiene que tener un nombre"
 
 msgid "Invalid folder name"
-msgstr ""
+msgstr "Nombre de carpeta incorrecto"
 
 msgid "Folder Name:"
-msgstr ""
+msgstr "Nombre de la carpeta:"
 
 #, python-brace-format
 msgid "Folder already exists: {folder_name}"
-msgstr ""
+msgstr "La carpeta ya existe: {folder_name}"
 
 #, python-brace-format
 msgid "Failed to create folder: {error}"
-msgstr ""
+msgstr "No se ha podido crear la carpeta: {error}"
 
 msgid "New Folder Name:"
-msgstr ""
+msgstr "Nombre de la nueva carpeta:"
 
 #, python-brace-format
 msgid "Failed to rename folder: {error}"
-msgstr ""
+msgstr "No se pudo cambiar el nombre de la carpeta: {error}"
 
 msgid "Confirm Deletion"
-msgstr ""
+msgstr "Confirmar eliminación"
 
 #, python-brace-format
 msgid ""
 "Are you sure you want to delete folder '{folder_name}'? This action cannot be "
 "undone."
 msgstr ""
+"¿Estás seguro de que quieres eliminar la carpeta «{folder_name}»? Esta "
+"acción no se puede deshacer."
 
 #, python-brace-format
 msgid "Failed to delete folder: {error}"
-msgstr ""
+msgstr "No se ha podido eliminar la carpeta: {error}"
 
 msgid "Delete from PortProton"
 msgstr "Eliminar de PortProton"
@@ -95,35 +97,35 @@ msgid "Launch Game"
 msgstr "Iniciar juego"
 
 msgid "Remove from Desktop"
-msgstr ""
+msgstr "Eliminar del escritorio"
 
 msgid "Add to Desktop"
-msgstr ""
-
-msgid "Remove from Menu"
-msgstr ""
-
-msgid "Add to Menu"
-msgstr ""
+msgstr "Añadir al escritorio"
 
 msgid "Edit Shortcut"
-msgstr ""
+msgstr "Editar acceso directo"
 
 msgid "Open Game Folder"
-msgstr ""
+msgstr "Abrir la carpeta del juego"
+
+msgid "Remove from Menu"
+msgstr "Eliminar del menú"
+
+msgid "Add to Menu"
+msgstr "Añadir al menú"
 
 msgid "Remove from Steam"
-msgstr ""
+msgstr "Eliminar de Steam"
 
 msgid "Add to Steam"
-msgstr ""
+msgstr "Añadir a Steam"
 
 msgid "Failed to stop game"
-msgstr ""
+msgstr "Error al detener el juego"
 
 #, python-brace-format
 msgid "No executable command found in .desktop file for '{game_name}'"
-msgstr ""
+msgstr "Sin ningún ejecutable en el archivo .desktop para «{game_name}»"
 
 #, python-brace-format
 msgid "Failed to parse .desktop file for '{game_name}'"
