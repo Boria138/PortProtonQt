@@ -1,12 +1,10 @@
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.config import ui_config
 
-# THEME_INHERITS = "standart"
+THEME_INHERITS = "standart-light"
 
 theme_manager = ThemeManager()
 current_theme_name = ui_config.get_theme()
-
-autoSizeButtonPadding = 16
 
 detailCompactCoverFrameSize = 128
 detailCompactCoverImageSize = 108
@@ -14,13 +12,11 @@ detailCompactContentSpacing = 15
 detailCompactHeaderSpacing = 16
 detailCompactTitleMargins = (0, 0, 0, 0)
 detailCompactDescriptionMargins = (3, 3, 3, 3)
-
 portProtonPageMargins = (10, 7, 15, 10)
 portProtonPageHorizontalSpacing = 5
 portProtonPageVerticalSpacing = 2
 portProtonPageSectionHeaderSpacing = 5
 wineSettingsSetSpacing = 2
-
 mangoHudSwitchesColumns = 4
 mangoHudSwitchesVerticalSpacing = 5
 mangoHudFpsColumns = 6
@@ -119,162 +115,6 @@ color_j = "#d2d3db"
 color_k = "#9394a5"
 color_l = "#212529"
 
-MAIN_WINDOW_STYLE = f"""
-    QWidget {{
-        background: {color_j};
-    }}
-    QLabel {{
-        color: {color_l};
-        font-family: '{font_family}';
-        font-size: {font_size_a};
-    }}
-    QPushButton {{
-        background: {color_c};
-        border: {border_c} rgba(255, 255, 255, 0.01);
-        border-radius: {border_radius_a};
-        color: {color_l};
-        font-size: {font_size_a};
-        font-family: '{font_family}';
-        padding: 8px 16px;
-    }}
-    QPushButton:hover {{
-        background: {color_a};
-        border: {border_c} {color_a};
-    }}
-    QPushButton:pressed {{
-        background: {color_b};
-    }}
-    QPushButton:focus {{
-        border: {border_c} {color_a};
-        background-color: {color_a};
-    }}
-"""
-
-# Favorite Star
-FAVORITE_LABEL_STYLE = f"color: gold; font-size: 32px; background: {color_h};"
-
-# Transparent background style
-TRANSPARENT_BACKGROUND_STYLE = f"""
-    QWidget {{
-        background: {color_h};
-    }}
-"""
-
-# QMessageBox STYLES (MESSAGE BOXES)
-MESSAGE_BOX_STYLE = f"""
-    QMessageBox {{
-        background: {color_j};
-        border: {border_a};
-    }}
-    QMessageBox QLabel {{
-        color: {color_l};
-        font-family: '{font_family}';
-        font-size: {font_size_a};
-    }}
-    QMessageBox QPushButton {{
-        background: {color_c};
-        border: {border_a} {color_h};
-        border-radius: {border_radius_a};
-        color: {color_l};
-        font-family: '{font_family}';
-        padding: 8px 20px;
-        min-width: 80px;
-    }}
-    QMessageBox QPushButton:hover {{
-        background: {color_a};
-        border-color: border: {border_b} {color_a};
-    }}
-    QMessageBox QPushButton:focus {{
-        border: {border_c} {color_a};
-        background: {color_a};
-    }}
-"""
-
-# PROGRESS BAR STYLE
-PROGRESS_BAR_STYLE = f"""
-    QProgressBar {{
-        color: {color_l};
-        background-color: {color_c};
-        text-align: center;
-        font-family: '{font_family}';
-        font-size: {font_size_a};
-    }}
-    QProgressBar::chunk {{
-        background-color: {color_a};
-    }}
-"""
-
-# STATUS BAR STYLE
-STATUS_BAR_STYLE = f"""
-    QStatusBar {{
-        color: {color_l};
-        font-family: '{font_family}';
-        font-size: {font_size_a};
-    }}
-"""
-
-TAB_TITLE_STYLE = f"font-family: '{font_family}'; font-size: {font_size_b}; color: {color_l}; background-color: none;"
-
-# PARAMS_TITLE_STYLE
-PARAMS_TITLE_STYLE = f"""
-    QLabel {{
-        color: {color_l};
-        font-family: '{font_family}';
-        font-size: {font_size_a};
-        font-weight: bold;
-        height: 34px;
-        padding: 7px;
-        background: {color_d};
-        border-radius: {border_radius_a};
-        min-width: 150px;
-    }}
-"""
-
-# LIBRARY TAB TITLE
-INSTALLED_TAB_TITLE_STYLE = f"""
-    QLabel {{
-        font-family: '{font_family}';
-        font-size: {font_size_b};
-        color: {color_l};
-    }}
-"""
-
-THEME_TAB_FOCUS_STYLE = f"""
-    QComboBox#themeTabCombo:focus {{
-        border: {border_b} {color_l};
-        background-color: {color_a};
-    }}
-    QPushButton#themeApplyButton:focus {{
-        border: {border_b} {color_l};
-    }}
-    QGraphicsView#themeScreenshotsCarousel {{
-        border: {border_c} {color_g};
-        border-radius: {border_radius_a};
-    }}
-    QGraphicsView#themeScreenshotsCarousel:focus {{
-        border: {border_b} {color_a};
-    }}
-"""
-
-PREVIEW_WIDGET_STYLE = f"""
-    QWidget {{
-        margin-top: 3px;
-        background-color: {color_e};
-        border-radius: {border_radius_a};
-    }}
-"""
-
-CONTENT_STYLE = f"""
-    QLabel {{
-        font-family: '{font_family}';
-        font-size: {font_size_a};
-        color: {color_l};
-        background-color: none;
-        border-bottom: {border_b} rgba(255, 255, 255, 0.2);
-        padding-bottom: 15px;
-    }}
-"""
-
 LIBRARY_WIDGET_STYLE = f"""
     QWidget {{
         background: qradialgradient(
@@ -283,52 +123,6 @@ LIBRARY_WIDGET_STYLE = f"""
             stop:1 {color_k}
     );
         border-radius: 0px;
-    }}
-"""
-
-# CONTAINER_STYLE
-CONTAINER_STYLE= """
-    QWidget {
-        background-color: none;
-    }
-"""
-
-# OTHER_PAGES_WIDGET_STYLE
-OTHER_PAGES_WIDGET_STYLE= f"""
-    QWidget {{
-        background: qradialgradient(
-        cx:0.5, cy:0.5, radius:0.8,
-            stop:0 {color_j},
-            stop:1 {color_k}
-    );
-        border-radius: 0px;
-    }}
-"""
-
-# CAROUSEL_WIDGET_STYLE
-CAROUSEL_WIDGET_STYLE= f"""
-    QWidget {{
-        background: {color_k};
-        border-radius: 0px;
-    }}
-"""
-
-SETTINGS_FRAME_STYLE = f"""
-    QFrame {{
-        background: {color_h};
-        border:  {border_b} {color_c};
-        border-radius: {border_radius_b};
-    }}
-"""
-
-SETTINGS_FRAME_TITLE_STYLE = f"""
-    QLabel {{
-        font-family: '{font_family}';
-        font-size: {font_size_a};
-        font-weight: bold;
-        color: {color_l};
-        background: {color_h};
-        border:  {border_a} {color_c};
     }}
 """
 
@@ -344,73 +138,6 @@ SETTINGS_TITLE_STYLE = f"""
         border-radius: {border_radius_a};
         border:  {border_a} {color_c};
         min-width: 320px;
-    }}
-"""
-
-SETTINGS_TITLE_CHECKBOX_STYLE = f"""
-    QLabel {{
-        color: {color_l};
-        height: 34px;
-        font-family: '{font_family}';
-        font-size: {font_size_a};
-        font-weight: bold;
-        padding: 7px;
-        background: {color_h};
-        border-radius: {border_radius_a};
-        border:  {border_a} {color_c};
-        min-width: 180px;
-    }}
-"""
-
-# Disabled line edit style
-SETTINGS_DISABLED_INPUT_STYLE = f"background-color: {color_disabled_bg};"
-
-# DRIVES BUTTONS STYLE (FILE MANAGER)
-DRIVES_BUTTON_STYLE = f"""
-    QPushButton {{
-        background: {color_c};
-        border: {border_c} {color_g};
-        border-radius: {border_radius_a};
-        color: {color_l};
-        font-size: {font_size_a};
-        font-family: '{font_family}';
-        min-width: 90px;
-    }}
-    QPushButton:hover {{
-        background: {color_a};
-        border: {border_c} {color_a};
-    }}
-    QPushButton:pressed {{
-        background: {color_b};
-    }}
-    QPushButton:focus {{
-        border: {border_c} {color_a};
-        background-color: {color_a};
-    }}
-"""
-
-# OVERLAY STYLE
-OVERLAY_WINDOW_STYLE = f"background: {color_b};"
-OVERLAY_BUTTON_STYLE = f"""
-    QPushButton {{
-        background: {color_c};
-        border: {border_c} {color_g};
-        border-radius: {border_radius_a};
-        color: {color_l};
-        font-size: {font_size_a};
-        font-family: '{font_family}';
-        padding: 8px 16px;
-    }}
-    QPushButton:hover {{
-        background: {color_a};
-        border: {border_c} {color_a};
-    }}
-    QPushButton:pressed {{
-        background: {color_b};
-    }}
-    QPushButton:focus {{
-        border: {border_c} {color_a};
-        background-color: {color_a};
     }}
 """
 
@@ -448,106 +175,6 @@ GAME_CARD_WINDOW_STYLE = f"""
     }}
 """
 
-# GAME NAME LABEL IN CARD (QLabel)
-GAME_CARD_NAME_LABEL_STYLE = f"""
-    QLabel {{
-        color: {color_l};
-        font-family: '{font_family}';
-        font-size: {font_size_a};
-        font-weight: bold;
-        background-color: {color_h};
-        border: {border_a} {color_h};
-        padding: 14px, 7px, 3px, 7px;
-        qproperty-wordWrap: true;
-    }}
-"""
-
-# PROTONDB BADGE STYLES ON CARD
-def get_protondb_badge_style(tier):
-    tier = tier.lower()
-    tier_colors = {
-        "platinum": {"background": "rgba(255,255,255,0.9)", "color": "black"},
-        "gold": {"background": "rgba(253,185,49,0.7)", "color": "black"},
-        "silver": {"background": "rgba(169,169,169,0.8)", "color": "black"},
-        "bronze": {"background": "rgba(205,133,63,0.7)", "color": "black"},
-        "borked": {"background": "rgba(255,0,0,0.7)", "color": "black"},
-        "pending": {"background": "rgba(160,82,45,0.7)", "color": "black"}
-    }
-    colors = tier_colors.get(tier, {"background": "rgba(0, 0, 0, 0.5)", "color": "white"})
-    return f"""
-        qproperty-alignment: AlignCenter;
-        background-color: {colors["background"]};
-        color: {colors["color"]};
-        border-radius: 5px;
-        font-family: '{font_family}';
-        font-weight: bold;
-    """
-
-# WEANTICHEATYET BADGE STYLES
-def get_anticheat_badge_style(status):
-    status = status.lower()
-    status_colors = {
-        "supported": {"background": "rgba(102, 168, 15, 0.7)", "color": "black"},
-        "running": {"background": "rgba(25, 113, 194, 0.7)", "color": "black"},
-        "planned": {"background": "rgba(156, 54, 181, 0.7)", "color": "black"},
-        "broken": {"background": "rgba(232, 89, 12, 0.7)", "color": "black"},
-        "denied": {"background": "rgba(224, 49, 49, 0.7)", "color": "black"}
-    }
-    colors = status_colors.get(status, {"background": "rgba(0, 0, 0, 0.5)", "color": "white"})
-    return f"""
-        qproperty-alignment: AlignCenter;
-        background-color: {colors["background"]};
-        color: {colors["color"]};
-        font-size: {font_size_a};
-        border-radius: 5px;
-        font-weight: bold;
-    """
-
-# STEAM BADGE STYLES
-STEAM_BADGE_STYLE= f"""
-    qproperty-alignment: AlignCenter;
-    background: rgba(0, 0, 0, 0.5);
-    color: white;
-    border-radius: 5px;
-    font-family: '{font_family}';
-    font-weight: bold;
-"""
-
-# MAIN FRAME FOR GAME DETAILS
-DETAIL_CONTENT_FRAME_STYLE = f"""
-    QFrame {{
-        background: qradialgradient(
-        cx:0.5, cy:0.5, radius:0.8,
-            stop:0 {color_j},
-            stop:1 {color_k}
-        );
-        border:  {border_a} {color_g};
-        border-radius: {border_radius_b};
-    }}
-"""
-
-# FRAME UNDER COVER
-COVER_FRAME_STYLE = f"""
-    QFrame {{
-        background: qradialgradient(
-        cx:0.5, cy:0.5, radius:0.8,
-            stop:0 #E9ECEF,
-            stop:1 {color_j}
-        );
-        border-radius: {border_radius_b};
-        border:  {border_a} {color_g};
-    }}
-"""
-
-# COVER WIDGET
-COVER_WIDGET_STYLE = f"""
-    QWidget {{
-        background: {color_h};
-        border:  {border_a} {color_h};
-    }}
-"""
-
-
 # COVER LABEL BORDER RADIUS
 COVER_LABEL_STYLE = f"border-radius: {border_radius_b};"
 
@@ -584,11 +211,6 @@ LAST_LAUNCH_TITLE_STYLE = f"max-height: 16px; background: qradialgradient(cx:0.5
 LAST_LAUNCH_VALUE_STYLE = f"height: 16px; background: qradialgradient(cx:0.5, cy:0.5, radius:0.8,stop:0 #E9ECEF,stop:1 {color_j}); font-family: '{font_family}'; font-size: 13px; color: {color_l}; font-weight: 600; letter-spacing: 0.75px;"
 PLAY_TIME_TITLE_STYLE = f"max-height: 16px; background: qradialgradient(cx:0.5, cy:0.5, radius:0.8,stop:0 #E9ECEF,stop:1 {color_j}); font-family: '{font_family}'; font-size: 11px; color: {color_l}; text-transform: uppercase; letter-spacing: 0.75px;"
 PLAY_TIME_VALUE_STYLE = f"height: 16px; background: qradialgradient(cx:0.5, cy:0.5, radius:0.8,stop:0 #E9ECEF,stop:1 {color_j}); font-family: '{font_family}'; font-size: 13px; color: {color_l}; font-weight: 600; letter-spacing: 0.75px;"
-GAMEPAD_SUPPORT_VALUE_STYLE = f"""
-    font-family: '{font_family}'; font-size: {font_size_a}; color: {color_gamepad_supported};
-    font-weight: bold; background: {color_g};
-    border-radius: 5px; padding: 4px 8px;
-"""
 
 # PLAY BUTTON STYLE
 PLAY_BUTTON_STYLE = f"""
@@ -619,9 +241,6 @@ PLAY_BUTTON_STYLE = f"""
         background: {color_a};
     }}
 """
-
-# BACKGROUND FOR DETAIL PAGE IF COVER NOT LOADED
-DETAIL_PAGE_NO_COVER_STYLE = f"background: rgba(20,20,20,0.95); border-radius: {border_radius_b};"
 
 # STYLE FOR "ADD GAME" AND "BACK" BUTTONS ON DETAIL PAGE AND LIBRARY
 ADDGAME_BACK_BUTTON_STYLE = f"""
@@ -668,38 +287,6 @@ SEARCH_EDIT_STYLE = f"""
     }}
 """
 
-# SLIDER_SIZE_STYLE
-SLIDER_SIZE_STYLE= f"""
-    QWidget {{
-        background: {color_h};
-        height: 25px;
-    }}
-    QSlider::groove:horizontal {{
-        border:  {border_a};
-        border-radius: 3px;
-        height: 6px; /* the groove expands to the size of the slider by default. by giving it a height, it has a fixed size */
-        background: rgba(20, 20, 20, 0.30);
-        margin: 6px 0;
-    }}
-    QSlider::handle:horizontal {{
-        background: #bebebe;
-        border:  {border_a};
-        width: 18px;
-        height: 18px;
-        margin: -6px 0; /* handle is placed by default on the contents rect of the groove. Expand outside the groove */
-        border-radius: 9px;
-    }}
-"""
-
-# GAME CARD AREA STYLE (QWidget)
-LIST_WIDGET_STYLE = """
-    QWidget {
-        background: none;
-        border:  {border_a} {color_g};
-        border-radius: 25px;
-    }
-"""
-
 # NAVIGATION TAB BUTTON STYLE
 NAV_BUTTON_STYLE = f"""
     NavLabel {{
@@ -730,14 +317,6 @@ NAV_BUTTON_STYLE = f"""
         background: {color_h};
         color: {color_l};
         border-bottom: {border_c} {color_a};
-    }}
-"""
-
-# NAVIGATION AREA STYLE (TAB BUTTONS)
-NAV_WIDGET_STYLE = f"""
-    QWidget {{
-        background: {color_h};
-        border:  {border_a};
     }}
 """
 
@@ -776,59 +355,6 @@ QTableWidget::item:selected:focus {{
 QTableWidget::item:hover {{
     background: {color_h};
 }}
-"""
-
-SCROLL_STYLE = f"""
-    QScrollBar:vertical {{
-        width: 10px;
-        border:  {border_a};
-        border-radius: 5px;
-        background: rgba(20, 20, 20, 0.20);
-    }}
-    QScrollBar::handle:vertical {{
-        background: {color_c};
-        border:  {border_a};
-        border-radius: 5px;
-    }}
-    QScrollBar::add-line:vertical {{
-        border:  {border_a};
-        background: none;
-    }}
-    QScrollBar::sub-line:vertical {{
-        border:  {border_a};
-        background: none;
-    }}
-    QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical {{
-        border:  {border_a};
-        width: 3px;
-        height: 3px;
-        background: none;
-    }}
-    QScrollBar:horizontal {{
-        height: 10px;
-        border:  {border_a};
-        border-radius: 5px;
-        background: rgba(20, 20, 20, 0.20);
-    }}
-    QScrollBar::handle:horizontal {{
-        background: {color_c};
-        border:  {border_a};
-        border-radius: 5px;
-    }}
-    QScrollBar::add-line:horizontal {{
-        border:  {border_a};
-        background: none;
-    }}
-    QScrollBar::sub-line:horizontal {{
-        border:  {border_a};
-        background: none;
-    }}
-    QScrollBar::up-arrow:horizontal, QScrollBar::down-arrow:horizontal {{
-        border:  {border_a};
-        width: 3px;
-        height: 3px;
-        background: none;
-    }}
 """
 
 # COMBOBOX
@@ -932,77 +458,6 @@ COMBOBOX_STYLE = f"""
     }}
 """
 
-CHECKBOX_STYLE = f"""
-    QCheckBox {{
-        height: 34px;
-        color: {color_l};
-        font-family: '{font_family}';
-        font-size: {font_size_a};
-    }}
-    QCheckBox::indicator {{
-        width: 24px;
-        height: 24px;
-        border: {border_c} #bfbfbf;
-        border-radius: {border_radius_a};
-        background: {color_c};
-    }}
-    QCheckBox::indicator:hover {{
-        background: {color_c};
-        border: {border_c} {color_a};
-    }}
-    QCheckBox::indicator:focus {{
-        border: {border_c} {color_a};
-    }}
-    QCheckBox::indicator:checked {{
-        image: url({theme_manager.get_icon("check", current_theme_name, as_path=True)});
-        border: {border_c} {color_a};
-    }}
-    QCheckBox::indicator:disabled {{
-        background: {color_e};
-        border: {border_c} {color_e};
-    }}
-    QCheckBox::indicator:checked:disabled {{
-        image: url({theme_manager.get_icon("check", current_theme_name, as_path=True)});
-        background: {color_e};
-        border: {border_c} {color_e};
-    }}
-
-    QTableWidget::indicator {{
-        width: 24px;
-        height: 24px;
-        border: {border_c} #bfbfbf;
-        border-radius: {border_radius_a};
-        background: {color_c};
-    }}
-    QTableWidget::indicator:unchecked {{
-        background: {color_c};
-        border: {border_c} #bfbfbf;
-        image: none;
-    }}
-    QTableWidget::indicator:checked {{
-        background: {color_b};
-        image: url({theme_manager.get_icon("check", current_theme_name, as_path=True)});
-        border: {border_c} {color_a};
-    }}
-    QTableWidget::indicator:hover {{
-        background: rgba(255, 255, 255, 0.2);
-        border: {border_c} {color_a};
-    }}
-    QTableWidget::indicator:focus {{
-        background: rgba(255, 255, 255, 0.2);
-        border: {border_c} {color_a};
-    }}
-    QTableWidget::indicator:disabled {{
-        background: {color_b};
-        border: {border_c} {color_d};
-    }}
-    QTableWidget::indicator:checked:disabled {{
-        image: url({theme_manager.get_icon("check", current_theme_name, as_path=True)});
-        background: {color_b};
-        border: {border_c} {color_d};
-    }}
-"""
-
 LINE_EDIT_STYLE = f"""
     QLineEdit {{
         background: {color_c};
@@ -1076,30 +531,6 @@ HINT_BAR_STYLE = f"""
     }}
 """
 
-# HINT LABEL STYLE
-HINTS_LABEL_STYLE = f"""
-    QWidget {{
-        background: {color_h};
-        font-family: '{font_family}';
-        font-size: 13px;
-        color: {color_l};
-        font-weight: 600;
-        letter-spacing: 0.75px;
-    }}
-"""
-
-# MAIN WINDOW HEADER STYLE
-MAIN_WINDOW_HEADER_STYLE = f"""
-    QFrame {{
-        background: {color_h};
-        border: 10px solid {color_g};
-        border-bottom: 0px solid {color_g};
-        border-top-left-radius: 30px;
-        border-top-right-radius: 30px;
-        border: none;
-    }}
-"""
-
 # ACTION BUTTONS STYLE (SAVE, APPLY, ETC.)
 ACTION_BUTTON_STYLE = f"""
     QPushButton {{
@@ -1147,214 +578,5 @@ ACTION_BUTTON_ACTIVE_STYLE = f"""
     QPushButton:focus {{
         border: {border_c} {color_a};
         background-color: {color_a};
-    }}
-"""
-
-GETWINE_WINDOW_STYLE = f"""
-/* Table */
-QHeaderView::section {{
-    background: {color_d};
-    color: {color_l};
-    border: {border_a};
-    font-weight: bold;
-    font-family: '{font_family}';
-    font-size: {font_size_a};
-}}
-QTableWidget {{
-    background: {color_h};
-    gridline-color: {color_h};
-    color: {color_l};
-    alternate-background-color: {color_d};
-    border: {border_a};
-    border-radius: {border_radius_a};
-    font-family: '{font_family}';
-    font-size: {font_size_a};
-}}
-QTableWidget::item:!enabled {{
-    color: #7a7a7a;
-}}
-QTableWidget::item:selected,
-QTableWidget::item:selected:!active,
-QTableWidget::item:hover {{
-    background: {color_a};
-}}
-/* LogArea */
-QFrame {{
-    background: {color_h};
-}}
-QTextEdit {{
-    background: {color_e};
-    border: {border_a};
-    border-radius: {border_radius_a};
-    color: {color_l};
-    font-family: '{font_family}';
-    font-size: {font_size_a};
-    padding: 5px;
-}}
-QProgressBar {{
-    color: {color_l};
-    background-color: {color_c};
-    height: 34px;
-    text-align: center;
-    font-family: '{font_family}';
-    font-size: {font_size_a};
-}}
-QProgressBar::chunk {{
-    background-color: {color_a};
-}}
-"""
-
-# Empty state label style
-GETWINE_EMPTY_LABEL_STYLE = f"font-size: {font_size_a}; padding: 50px;"
-
-FILE_EXPLORER_STYLE = f"""
-    QListView {{
-        font-size: {font_size_a};
-        font-family: {font_family};
-        background: {color_e};
-        alternate-background-color: {color_e};
-        color: {color_l};
-        border-top-left-radius: 5px;
-        border-bottom-left-radius: 5px;
-    }}
-    QListView::item {{
-        padding: 8px;
-        margin: 0px 5px;
-    }}
-    QListView::item:alternate {{
-        margin: 0px 5px;
-        background: {color_d};
-    }}
-    QListView::item:selected {{
-        background: {color_a};
-        color: {color_l};
-        border-radius: {border_radius_a};
-    }}
-    QListView::item:hover {{
-        background: {color_a};
-        color: {color_l};
-        border-radius: {border_radius_a};
-    }}
-    QListView::item:focus {{
-        background: {color_a};
-        color: {color_l};
-        border-radius: {border_radius_a};
-    }}
-"""
-
-FILE_EXPLORER_PATH_LABEL_STYLE = f"""
-    QLabel {{
-        color: {color_l};
-        font-size: {font_size_a};
-        font-family: {font_family};
-    }}
-"""
-
-CONTEXT_MENU_STYLE = f"""
-    QMenu {{
-        background: {color_b};
-        color: {color_l};
-        font-family: '{font_family}';
-        font-size: {font_size_a};
-        padding: 5px;
-        min-width: 150px;
-    }}
-    QMenu::icon {{
-        margin-left: 15px;
-    }}
-    QMenu::item {{
-        padding: 10px 20px 10px 10px;
-        background: {color_h};
-        border-radius: {border_radius_a};
-        color: {color_l};
-    }}
-    QMenu::item:selected {{
-        background: {color_a};
-        color: {color_l};
-    }}
-    QMenu::item:disabled {{
-            color: #7f7f7f;
-        }}
-    QMenu::item:hover {{
-        background: {color_a};
-        color: {color_l};
-    }}
-    QMenu::item:focus {{
-        background: {color_a};
-        color: {color_l};
-        border: {border_b} rgba(255, 255, 255, 0.3);
-        border-radius: {border_radius_a};
-    }}
-    QMenu::separator {{
-        height: 1px;
-        background-color: #7f7f7f;
-        margin: 3px 6px;
-    }}
-"""
-
-VIRTUAL_KEYBOARD_STYLE = f"""
-QWidget {{
-    background: {color_k};
-}}
-QPushButton {{
-    font-size: 14px;
-    border: {border_a} {color_h};
-    border-radius: {border_radius_a};
-    min-width: 30px;
-    min-height: 30px;
-    padding: 5px;
-    background-color: {color_e};
-    color: {color_l};
-}}
-QPushButton:hover {{
-    background-color: {color_a};
-    border: {border_b} {color_a};
-}}
-QPushButton:focus {{
-    border: {border_b} {color_a};
-    background-color: {color_a};
-}}
-QPushButton[vk_selected="true"] {{
-    border: {border_b} {color_a};
-    background-color: {color_a};
-}}
-QPushButton:pressed {{
-    background-color: {color_e};
-    border: {border_a} {color_h};
-}}
-QPushButton[checked="true"] {{
-    background-color: {color_a};
-    color: {color_l};
-    border: {border_a} {color_h};
-}}
-QPushButton[checked="true"]:focus {{
-    border: {border_b} {color_l};
-}}
-"""
-
-# FULLSCREEN THEME SCREENSHOT PREVIEW STYLES
-PREV_BUTTON_STYLE="background-color: rgba(0, 0, 0, 0.5); color: white; border: none;"
-NEXT_BUTTON_STYLE="background-color: rgba(0, 0, 0, 0.5); color: white; border: none;"
-
-TOOLTIP_STYLE = f"""
-    QLabel {{
-        background-color: {color_b};
-        border: {border_b} {color_c};
-        border-radius: {border_radius_a};
-        padding: 8px;
-        color: {color_l};
-        font-family: '{font_family}';
-        font-size: {font_size_a};
-    }}
-"""
-
-# FUNCTION FOR DYNAMIC GRADIENT (GAME DETAILS)
-# Functions from this theme always work regardless of selected theme, functions from other themes work only in those themes
-def detail_page_style(stops):
-    return f"""
-    QWidget {{
-        background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                                    {stops});
-                                    border-radius: 0px;
     }}
 """
