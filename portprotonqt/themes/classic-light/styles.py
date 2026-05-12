@@ -10,7 +10,7 @@ autoSizeButtonPadding = 16
 
 detailCompactCoverFrameSize = 128
 detailCompactCoverImageSize = 108
-detailCompactContentSpacing = 5
+detailCompactContentSpacing = 15
 detailCompactHeaderSpacing = 16
 detailCompactTitleMargins = (0, 0, 0, 0)
 detailCompactDescriptionMargins = (3, 3, 3, 3)
@@ -577,7 +577,7 @@ DETAIL_PAGE_DESC_STYLE = f"font-family: '{font_family}'; font-size: {font_size_a
 COMPACT_DETAIL_PAGE_DESC_STYLE = f"font-family: '{font_family}'; font-size: {font_size_a}; color: {color_l}; line-height: 1.5; background: {color_h};"
 
 # PLAYTIME WIDGET (PLAYTIME)
-COMPACT_PLAYTIME_WIDGET_STYLE = f"background: {color_h}; border-radius: {border_radius_b}; padding: 10px; margin: 10px 0 0 0;"
+COMPACT_PLAYTIME_WIDGET_STYLE = f"background: {color_h}; border-radius: {border_radius_b}; padding: 10px;"
 
 # ADDITIONAL INFO STYLES ON GAMES PAGE
 LAST_LAUNCH_TITLE_STYLE = f"max-height: 16px; background: qradialgradient(cx:0.5, cy:0.5, radius:0.8,stop:0 #E9ECEF,stop:1 {color_j}); font-family: '{font_family}'; font-size: 11px; color: {color_l}; text-transform: uppercase; letter-spacing: 0.75px;"

@@ -34,7 +34,7 @@ class TrayManager:
         self.main_window = main_window
         self.tray_icon = QSystemTrayIcon(self.main_window)
 
-        icon = self.theme_manager.get_icon("badge_portproton", self.current_theme_name)
+        icon = self.theme_manager.get_icon("tray_portproton", self.current_theme_name)
         if isinstance(icon, str):
             icon = QIcon(icon)
         elif icon is None:

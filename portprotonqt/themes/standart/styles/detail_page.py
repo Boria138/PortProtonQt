@@ -67,7 +67,7 @@ DETAIL_PAGE_DESC_STYLE = f"font-family: '{font_family}'; font-size: {font_size_a
 COMPACT_DETAIL_PAGE_DESC_STYLE = f"font-family: '{font_family}'; font-size: {font_size_a}; color: {color_f}; line-height: 1.5; background: {color_h};"
 
 # PLAYTIME WIDGET (PLAYTIME)
-COMPACT_PLAYTIME_WIDGET_STYLE = f"background: {color_h}; border-radius: {border_radius_b}; padding: 10px; margin: 10px 0 0 0;"
+COMPACT_PLAYTIME_WIDGET_STYLE = f"background: {color_h}; border-radius: {border_radius_b}; padding: 10px;"
 
 # PLAY BUTTON STYLE
 PLAY_BUTTON_STYLE = f"""

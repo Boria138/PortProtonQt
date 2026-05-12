@@ -80,7 +80,7 @@ def stop_portproton_game(start_sh: list[str], logger: Logger) -> None:
 def get_portproton_tray_icon() -> QIcon:
     from portprotonqt.theme_manager import ThemeManager
 
-    icon = ThemeManager().get_icon("badge_portproton", ui_config.get_theme())
+    icon = ThemeManager().get_icon("tray_portproton", ui_config.get_theme())
     if isinstance(icon, QIcon):
         return icon
     return QIcon()

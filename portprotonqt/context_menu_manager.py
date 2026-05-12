@@ -414,7 +414,7 @@ class ContextMenuManager:
                 else self.add_to_menu(game_card.name, game_card.exec_line)
             )
             is_in_steam = is_game_in_steam(game_card.name)
-            steam_icon_name = "delete" if is_in_steam else "badge_steam"
+            steam_icon_name = "delete" if is_in_steam else "menu_steam"
             steam_text = _("Remove from Steam") if is_in_steam else _("Add to Steam")
             steam_action = menu.addAction(self._get_safe_icon(steam_icon_name), steam_text)
             steam_action.triggered.connect(

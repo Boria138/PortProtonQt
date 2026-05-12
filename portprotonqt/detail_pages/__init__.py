@@ -616,7 +616,7 @@ class DetailPageManager:
                 page_data["cover_frame"], page_data["name"]
             )
         )
-        content_frame_layout.addWidget(create_detail_separator(self.main_window.theme))
+        # content_frame_layout.addWidget(create_detail_separator(self.main_window.theme))
         if page_data["description"].strip():
             content_frame_layout.addWidget(
                 create_compact_description_panel(
