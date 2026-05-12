@@ -45,7 +45,7 @@ from portprotonqt.config import (
 from portprotonqt.cli import add_steam_compat_tool, remove_steam_compat_tool, is_steam_compat_tool_installed
 
 from portprotonqt.tray_manager import restart_application_with_muvm
-from portprotonqt.version_utils import version_sort_key
+from portprotonqt.version_utils import prefix_sort_key, version_sort_key
 from portprotonqt.localization import _, get_metadata_language, read_metadata_translations
 from portprotonqt.downloader import Downloader
 from portprotonqt.tray_manager import TrayManager
@@ -1708,7 +1708,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             self.wineCombo.setCurrentIndex(0)
         formLayout.addRow(self.wineTitleLabel, self.wineCombo)
 
-        self.prefixes = sorted([d for d in os.listdir(prefixes_path) if os.path.isdir(os.path.join(prefixes_path, d))], key=version_sort_key) if os.path.exists(prefixes_path) else []
+        self.prefixes = sorted([d for d in os.listdir(prefixes_path) if os.path.isdir(os.path.join(prefixes_path, d))], key=prefix_sort_key) if os.path.exists(prefixes_path) else []
         self.prefixCombo = QComboBox()
         self.prefixCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.prefixCombo.addItems(self.prefixes)
@@ -2052,7 +2052,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self._normalize_prefix_directories(prefixes_path)
 
         # Update the prefixes list with sorting
-        self.prefixes = sorted([d for d in os.listdir(prefixes_path) if os.path.isdir(os.path.join(prefixes_path, d))], key=version_sort_key)
+        self.prefixes = sorted([d for d in os.listdir(prefixes_path) if os.path.isdir(os.path.join(prefixes_path, d))], key=prefix_sort_key)
         self.prefixCombo.clear()
         self.prefixCombo.addItems(self.prefixes)
         if normalized_current_prefix:

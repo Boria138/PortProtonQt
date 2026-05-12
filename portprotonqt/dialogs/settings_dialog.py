@@ -50,7 +50,7 @@ from portprotonqt.settings_manager import (
     read_lg_dist_versions_from_var,
 )
 from portprotonqt.theme_manager import ThemeManager
-from portprotonqt.version_utils import version_sort_key
+from portprotonqt.version_utils import prefix_sort_key, version_sort_key
 from portprotonqt.virtual_keyboard import VirtualKeyboard
 
 logger = get_logger(__name__)
@@ -164,7 +164,7 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
                 _normalize_prefix_directories(prefixes_dir)
                 self.prefix_options = sorted(
                     [f for f in os.listdir(prefixes_dir) if os.path.isdir(os.path.join(prefixes_dir, f))],
-                    key=lambda x: x.lower()
+                    key=prefix_sort_key
                 )
 
         if shutil.which('wine'):

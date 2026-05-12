@@ -1,6 +1,10 @@
 import os
 import re
 import urllib.parse
+from typing import Any
+
+PINNED_PREFIX_NAMES = ("DEFAULT", "DOTNET", "PROGRAMS")
+
 
 def version_sort_key(entry):
     """
@@ -87,3 +91,11 @@ def version_sort_key(entry):
     # Return sort key: (prefix for grouping, version parts for version sorting, normalized name)
     # Use normalized name for tie-breaking to avoid issues with spaces vs underscores
     return (proton_lg_priority, prefix, version_parts, normalized)
+
+
+def prefix_sort_key(prefix_name: str) -> tuple[int, Any]:
+    normalized_name = prefix_name.upper()
+    if normalized_name in PINNED_PREFIX_NAMES:
+        return (PINNED_PREFIX_NAMES.index(normalized_name), "")
+
+    return (len(PINNED_PREFIX_NAMES), version_sort_key(prefix_name))
