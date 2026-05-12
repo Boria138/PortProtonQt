@@ -2659,7 +2659,7 @@ class InputManager(QObject):
     def _get_theme_tab_focusables(self) -> list[QWidget]:
         """Return focusable widgets for the themes tab gamepad navigation."""
         widgets = []
-        for attr_name in ("themesCombo", "screenshotsCarousel", "applyButton"):
+        for attr_name in ("themesCombo", "themeVariantCombo", "screenshotsCarousel", "applyButton"):
             widget = getattr(self._parent, attr_name, None)
             if isinstance(widget, QWidget) and widget.isVisible() and widget.isEnabled():
                 widgets.append(widget)

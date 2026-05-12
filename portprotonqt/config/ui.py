@@ -1,8 +1,151 @@
 """UI configuration settings."""
+import asyncio
 import os
+import subprocess
+from typing import Any, cast
 from portprotonqt.config.base import BaseConfig, configparser, THEMES_DIRS
 from portprotonqt.config.validators import validate_string, validate_int, validate_bool
 from portprotonqt.localization import get_theme_translations
+from portprotonqt.logger import get_logger
+
+
+logger = get_logger(__name__)
+THEME_VARIANTS = ("dark", "light", "auto")
+
+
+def _get_theme_base_name(theme_name: str) -> str:
+    if theme_name.endswith("-light"):
+        return theme_name[:-6]
+    return theme_name
+
+
+def _get_theme_variant_name(theme_name: str) -> str:
+    if theme_name.endswith("-light"):
+        return "light"
+    return "auto"
+
+
+def _theme_exists(theme_name: str) -> bool:
+    for themes_dir in THEMES_DIRS:
+        theme_folder = os.path.join(themes_dir, theme_name)
+        if os.path.exists(os.path.join(theme_folder, "styles.py")):
+            return True
+    return False
+
+
+def _unwrap_variant(value: Any) -> Any:
+    if isinstance(value, tuple) and len(value) == 1:
+        value = value[0]
+    while not isinstance(value, tuple) and hasattr(value, "value"):
+        value = cast(Any, value).value
+    return value
+
+
+async def _read_portal_color_scheme() -> int | None:
+    try:
+        from dbus_fast import BusType
+        from dbus_fast.aio import MessageBus
+    except ModuleNotFoundError:
+        return None
+
+    bus = await MessageBus(bus_type=BusType.SESSION).connect()
+    try:
+        introspection = await bus.introspect(
+            "org.freedesktop.portal.Desktop",
+            "/org/freedesktop/portal/desktop",
+        )
+        proxy = bus.get_proxy_object(
+            "org.freedesktop.portal.Desktop",
+            "/org/freedesktop/portal/desktop",
+            introspection,
+        )
+        iface = cast(Any, proxy.get_interface("org.freedesktop.portal.Settings"))
+        value = await iface.call_read("org.freedesktop.appearance", "color-scheme")
+        return int(_unwrap_variant(value))
+    finally:
+        bus.disconnect()
+
+
+def _is_portal_dark_theme() -> bool | None:
+    try:
+        color_scheme = asyncio.run(_read_portal_color_scheme())
+    except Exception as e:
+        logger.debug("Failed to read portal color scheme: %s", e)
+        return None
+    if color_scheme is None:
+        return None
+    return color_scheme == 1
+
+
+def _read_gsettings_value(key: str) -> str | None:
+    try:
+        result = subprocess.run(
+            ["gsettings", "get", "org.gnome.desktop.interface", key],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=1,
+        )
+    except (OSError, subprocess.SubprocessError) as e:
+        logger.debug("Failed to read gsettings %s: %s", key, e)
+        return None
+    if result.returncode != 0:
+        return None
+    return result.stdout.strip().strip("'\"")
+
+
+def _is_gsettings_dark_theme() -> bool | None:
+    color_scheme = _read_gsettings_value("color-scheme")
+    if color_scheme == "prefer-dark":
+        return True
+    if color_scheme in ("default", "prefer-light"):
+        return False
+
+    gtk_theme = _read_gsettings_value("gtk-theme")
+    if gtk_theme:
+        return "-dark" in gtk_theme.lower()
+    return None
+
+
+def _is_qt_light_theme() -> bool:
+    try:
+        from PySide6.QtCore import Qt
+        from PySide6.QtWidgets import QApplication
+    except ImportError:
+        return False
+
+    app = cast(QApplication | None, QApplication.instance())
+    if app is None:
+        return False
+
+    try:
+        color_scheme = app.styleHints().colorScheme()
+    except AttributeError:
+        return False
+    return color_scheme == Qt.ColorScheme.Light
+
+
+def _is_system_light_theme() -> bool:
+    is_dark = _is_portal_dark_theme()
+    if is_dark is None:
+        is_dark = _is_gsettings_dark_theme()
+    if is_dark is not None:
+        return not is_dark
+    return _is_qt_light_theme()
+
+
+def _resolve_theme_name(theme_name: str, variant: str) -> str:
+    base_name = _get_theme_base_name(theme_name)
+    resolved_variant = "light" if variant == "auto" and _is_system_light_theme() else variant
+    resolved_name = f"{base_name}-light" if resolved_variant == "light" else base_name
+    if _theme_exists(resolved_name):
+        return resolved_name
+    if _theme_exists(base_name):
+        return base_name
+    light_name = f"{base_name}-light"
+    if _theme_exists(light_name):
+        return light_name
+    return base_name
 
 
 class UIConfig(BaseConfig):
@@ -12,12 +155,34 @@ class UIConfig(BaseConfig):
 
     def get_theme(self) -> str:
         """Get the current theme name."""
-        return self._get_str("theme", "standart")
+        theme_name = self._get_str("theme", "standart")
+        return _resolve_theme_name(theme_name, self.get_theme_variant())
 
     def set_theme(self, theme_name: str):
         """Set the theme name."""
         validate_string(theme_name, "theme", min_len=1, max_len=50)
         self._save_value("theme", theme_name, "str")
+
+    def get_theme_base(self) -> str:
+        """Get the selected base theme name."""
+        return _get_theme_base_name(self._get_str("theme", "standart"))
+
+    def get_theme_variant(self) -> str:
+        """Get theme variant."""
+        theme_name = self._get_str("theme", "standart")
+        variant = self._get_str("theme_variant", _get_theme_variant_name(theme_name))
+        return variant if variant in THEME_VARIANTS else _get_theme_variant_name(theme_name)
+
+    def set_theme_variant(self, variant: str) -> None:
+        """Set theme variant."""
+        validate_string(variant, "theme_variant", min_len=1, max_len=10)
+        if variant not in THEME_VARIANTS:
+            variant = "auto"
+        self._save_value("theme_variant", variant, "str")
+
+    def resolve_theme(self, theme_name: str, variant: str) -> str:
+        """Resolve base theme and variant to an installed theme name."""
+        return _resolve_theme_name(theme_name, variant)
 
     def get_time_detail_level(self) -> str:
         """Get time detail level ('detailed' or 'simple')."""

@@ -2738,15 +2738,40 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.themesCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
         self.themesCombo.setObjectName("themeTabCombo")
         self.themesCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        available_themes = self.theme_manager.get_available_themes()
-        if self.current_theme_name in available_themes:
-            available_themes.remove(self.current_theme_name)
-            available_themes.insert(0, self.current_theme_name)
+        theme_names = self.theme_manager.get_available_themes()
+        available_themes = []
+        for theme_name in theme_names:
+            base_name = theme_name[:-6] if theme_name.endswith("-light") else theme_name
+            if base_name not in available_themes:
+                available_themes.append(base_name)
+        current_theme_base = ui_config.get_theme_base()
+        if current_theme_base in available_themes:
+            available_themes.remove(current_theme_base)
+            available_themes.insert(0, current_theme_base)
         self.themesCombo.addItems(available_themes)
         self.themeTabHeaderLayout.addWidget(self.themesCombo)
+
+        self.themeVariantCombo = QComboBox()
+        self.themeVariantCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
+        self.themeVariantCombo.setObjectName("themeVariantCombo")
+        self.themeVariantCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.themeVariantCombo.addItem(_("Dark"), "dark")
+        self.themeVariantCombo.addItem(_("Light"), "light")
+        self.themeVariantCombo.addItem(_("Auto"), "auto")
+        current_variant = ui_config.get_theme_variant()
+        variant_index = self.themeVariantCombo.findData(current_variant)
+        if variant_index >= 0:
+            self.themeVariantCombo.setCurrentIndex(variant_index)
+        self.themeTabHeaderLayout.addWidget(self.themeVariantCombo)
         self.themeTabHeaderLayout.addStretch(1)
 
         mainLayout.addLayout(self.themeTabHeaderLayout)
+
+        def hasThemeVariants(theme_name: str) -> bool:
+            return theme_name in theme_names and f"{theme_name}-light" in theme_names
+
+        def updateThemeVariantVisibility(*_args: object) -> None:
+            self.themeVariantCombo.setVisible(hasThemeVariants(self.themesCombo.currentText()))
 
         # 2. Screenshots carousel
         self.screenshotsCarousel = ImageCarousel([])
@@ -2777,7 +2802,11 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         mainLayout.addLayout(self.themeInfoLayout)
 
         # Preview update function
-        def updateThemePreview(theme_name):
+        def updateThemePreview(*_args: object) -> None:
+            updateThemeVariantVisibility()
+            base_theme = self.themesCombo.currentText()
+            variant = self.themeVariantCombo.currentData() or "light"
+            theme_name = ui_config.resolve_theme(base_theme, variant)
             meta = load_theme_metainfo(theme_name)
             link = meta.get("author_link", "")
             link_html = f'<a href="{link}">{link}</a>' if link else _("No link")
@@ -2802,16 +2831,21 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             else:
                 self.screenshotsCarousel.hide()
 
-        updateThemePreview(self.current_theme_name)
+        updateThemePreview()
         self.themesCombo.currentTextChanged.connect(updateThemePreview)
+        self.themeVariantCombo.currentTextChanged.connect(updateThemePreview)
 
         # Theme apply logic
-        def on_apply():
-            selected_theme = self.themesCombo.currentText()
+        def on_apply() -> None:
+            selected_theme = ui_config.resolve_theme(
+                self.themesCombo.currentText(),
+                self.themeVariantCombo.currentData() or "light",
+            )
             if selected_theme:
                 theme_module = self.theme_manager.apply_theme(selected_theme)
                 if theme_module:
                     ui_config.set_theme(selected_theme)
+                    ui_config.set_theme_variant(self.themeVariantCombo.currentData() or "light")
                     xdg_data_home = os.getenv("XDG_DATA_HOME",
                                             os.path.join(os.path.expanduser("~"), ".local", "share"))
                     state_file = os.path.join(xdg_data_home, "PortProtonQt", "state.txt")

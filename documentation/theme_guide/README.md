@@ -5,6 +5,7 @@
 ## 📋 Contents
 - [Overview](#-overview)
 - [Creating the Theme Folder](#-creating-the-theme-folder)
+- [Theme Variants](#-theme-variants)
 - [Style File](#-style-file-stylespy)
 - [Style Inheritance](#-style-inheritance)
 - [Animation configuration](#-animation-configuration)
@@ -27,6 +28,21 @@ Themes in `PortProtonQT` allow customizing the UI appearance. Themes are stored 
 ```bash
 mkdir -p ~/.local/share/PortProtonQT/themes/my_custom_theme
 ```
+
+---
+
+## 🌓 Theme Variants
+
+The theme tab groups light and dark variants under one base theme name.
+
+- Dark variant folder: `my_custom_theme`
+- Light variant folder: `my_custom_theme-light`
+
+If both folders exist, the application shows a separate variant selector with `Dark`, `Light`, and `Auto`. If only one folder exists, the variant selector is hidden and the existing theme is used directly.
+
+`Auto` is the default variant. It follows the system color scheme using the desktop portal first, then `gsettings`, and Qt color scheme detection as a fallback.
+
+Both variants are regular themes and must contain their own `styles.py`. Use `THEME_INHERITS` if one variant should reuse missing style values from another theme.
 
 ---
 
