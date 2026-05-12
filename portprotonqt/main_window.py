@@ -895,7 +895,12 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             return target_path
         return ""
 
-    def _process_desktop_file_async(self, file_path: str, callback: Callable[[tuple | None], None]):
+    def _process_desktop_file_async(
+        self,
+        file_path: str,
+        callback: Callable[[tuple | None], None],
+        assets_checked: bool = False,
+    ):
         entry = parse_desktop_entry(file_path)
         if not entry:
             callback(None)
@@ -936,16 +941,16 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             )
 
             # Check if local game folder is empty and download assets if it is
-            if not economy_mode and not os.listdir(user_game_folder):
+            if not economy_mode and not assets_checked and not os.listdir(user_game_folder):
                 logger.debug(f"Local folder for {exe_name} is empty, checking repository")
                 def on_assets_downloaded(results):
-                    nonlocal user_cover
                     if results["cover"]:
-                        user_cover = results["cover"]
                         logger.info(f"Downloaded assets for {exe_name}: {results}")
                     if results["metadata"]:
                         logger.info(f"Downloaded metadata for {exe_name}: {results['metadata']}")
+                    self._process_desktop_file_async(file_path, callback, assets_checked=True)
                 self.portproton_api.download_game_assets_async(exe_name, timeout=5, callback=on_assets_downloaded)
+                return
 
             user_files = set(os.listdir(user_game_folder)) if os.path.exists(user_game_folder) else set()
             for ext in COVER_IMAGE_EXTENSIONS:
@@ -1046,6 +1051,16 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             return
 
         get_steam_game_info_async(desktop_name, exec_line, on_steam_info)
+
+    def _replace_game_from_desktop_file(self, file_path: str, old_name: str, old_exec_line: str):
+        """Refresh one library card from its .desktop file."""
+        def on_game_data(game_data: tuple | None):
+            if not game_data:
+                return
+            self.game_library_manager.replace_game_incremental(old_name, old_exec_line, game_data)
+            QTimer.singleShot(200, self.game_library_manager.load_visible_images)
+
+        self._process_desktop_file_async(file_path, on_game_data)
 
     def finalize_game_loading(self):
         logger.info("Finalizing game loading, pending_games: %d", len(self.pending_games))

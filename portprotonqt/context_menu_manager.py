@@ -384,7 +384,7 @@ class ContextMenuManager:
 
         if game_card.game_source != "steam":
             desktop_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DesktopLocation)
-            desktop_path = os.path.join(desktop_dir, f"{game_card.name}.desktop")
+            desktop_path = self._get_shortcut_path(game_card.name, desktop_dir)
             icon_name = "delete" if os.path.exists(desktop_path) else "desktop"
             text = _("Remove from Desktop") if os.path.exists(desktop_path) else _("Add to Desktop")
             desktop_action = menu.addAction(self._get_safe_icon(icon_name), text)
@@ -404,7 +404,7 @@ class ContextMenuManager:
                 lambda: self.open_game_folder(game_card.name, game_card.exec_line)
             )
             applications_dir = os.path.join(os.path.expanduser("~"), ".local", "share", "applications")
-            menu_path = os.path.join(applications_dir, f"{game_card.name}.desktop")
+            menu_path = self._get_shortcut_path(game_card.name, applications_dir)
             icon_name = "delete" if os.path.exists(menu_path) else "menu"
             text = _("Remove from Menu") if os.path.exists(menu_path) else _("Add to Menu")
             menu_action = menu.addAction(self._get_safe_icon(icon_name), text)
@@ -546,6 +546,13 @@ class ContextMenuManager:
                 return file_path
 
         return desktop_path
+
+    def _get_shortcut_path(self, game_name: str, target_dir: str) -> str:
+        """Return target shortcut path using the source .desktop filename."""
+        desktop_path = self._get_desktop_path(game_name)
+        if os.path.exists(desktop_path):
+            return os.path.join(target_dir, os.path.basename(desktop_path))
+        return os.path.join(target_dir, f"{game_name}.desktop")
 
     def _get_exec_line(self, game_name, exec_line):
         """Retrieve and validate exec_line from .desktop file if necessary."""
@@ -729,7 +736,7 @@ class ContextMenuManager:
             return
         applications_dir = os.path.join(os.path.expanduser("~"), ".local", "share", "applications")
         os.makedirs(applications_dir, exist_ok=True)
-        dest_path = os.path.join(applications_dir, f"{game_name}.desktop")
+        dest_path = self._get_shortcut_path(game_name, applications_dir)
         try:
             shutil.copyfile(desktop_path, dest_path)
             os.chmod(dest_path, 0o755)
@@ -749,7 +756,7 @@ class ContextMenuManager:
             game_name: The display name of the game.
         """
         applications_dir = os.path.join(os.path.expanduser("~"), ".local", "share", "applications")
-        desktop_path = os.path.join(applications_dir, f"{game_name}.desktop")
+        desktop_path = self._get_shortcut_path(game_name, applications_dir)
         self._remove_file(
             desktop_path,
             _("Failed to remove '{game_name}' from {location}: {error}"),
@@ -790,7 +797,7 @@ class ContextMenuManager:
 
         desktop_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DesktopLocation)
         os.makedirs(desktop_dir, exist_ok=True)
-        dest_path = os.path.join(desktop_dir, f"{game_name}.desktop")
+        dest_path = self._get_shortcut_path(game_name, desktop_dir)
         try:
             shutil.copyfile(desktop_path, dest_path)
             os.chmod(dest_path, 0o755)
@@ -810,7 +817,7 @@ class ContextMenuManager:
             game_name: The display name of the game.
         """
         desktop_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DesktopLocation)
-        desktop_path = os.path.join(desktop_dir, f"{game_name}.desktop")
+        desktop_path = self._get_shortcut_path(game_name, desktop_dir)
         self._remove_file(
             desktop_path,
             _("Failed to remove '{game_name}' from {location}: {error}"),
@@ -833,6 +840,7 @@ class ContextMenuManager:
         exec_line = self._get_exec_line(game_name, exec_line)
         if not exec_line:
             return
+        old_exec_line = exec_line
         exe_path = self._parse_exe_path(exec_line, game_name)
         if not exe_path:
             return
@@ -968,6 +976,13 @@ class ContextMenuManager:
                     self.add_to_steam(new_name, updated_exec_line, new_cover_path)
             elif is_in_steam:
                 self.remove_from_steam(new_name, updated_exec_line, "portproton")
+
+            if hasattr(self.parent, "_replace_game_from_desktop_file"):
+                self.parent._replace_game_from_desktop_file(
+                    new_desktop_path,
+                    game_name,
+                    old_exec_line
+                )
 
     def add_to_steam(self, game_name, exec_line, cover_path):
         """

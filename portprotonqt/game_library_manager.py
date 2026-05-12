@@ -694,6 +694,27 @@ class GameLibraryManager:
         self.dirty = True
         self.update_game_grid()
 
+    def replace_game_incremental(self, old_name: str, old_exec_line: str, game_data: tuple):
+        """Replace a single game without full reload."""
+        old_key = (old_name, old_exec_line)
+        new_key = (game_data[0], game_data[5])
+        self.games = [game_data if (g[0], g[5]) == old_key else g for g in self.games]
+        self.filtered_games = [
+            game_data if (g[0], g[5]) == old_key else g for g in self.filtered_games
+        ]
+        if old_key in self.game_card_cache and self.gamesListLayout is not None:
+            card = self.game_card_cache.pop(old_key)
+            self.gamesListLayout.removeWidget(card)
+            card.cleanup()
+            self.pending_deletions.append(card)
+            if old_key in self.pending_images:
+                del self.pending_images[old_key]
+        if new_key not in self.game_card_cache and game_data not in self.games:
+            self.games.append(game_data)
+            self.filtered_games.append(game_data)
+        self.dirty = True
+        self.update_game_grid()
+
     def remove_game_incremental(self, game_name: str, exec_line: str):
         """Remove a single game without full reload."""
         key = (game_name, exec_line)
