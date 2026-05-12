@@ -97,26 +97,33 @@ NAV_WIDGET_STYLE = f"""
 # NAVIGATION TAB BUTTON STYLE
 NAV_BUTTON_STYLE = f"""
     NavLabel {{
-        background: rgba(0,0,0,0);
-        padding: 12px 3px;
+        background: {color_h};
+        padding: 6px 3px;
         margin: 10px 0 10px 10px;
         color: #7f7f7f;
         font-family: '{font_family}';
         font-size: {font_size_a};
         text-transform: uppercase;
         border: {color_a};
-        border-radius: {border_radius_b};
+        border-radius: 0px;
     }}
     NavLabel[checked = true] {{
-        background: rgba(0,0,0,0);
-        color: {color_a};
+        background: {color_h};
+        color: {color_f};
         font-weight: normal;
-        text-decoration: underline;
-        border-radius: {border_radius_b};
+        text-decoration: none;
+        border-bottom: {border_b} {color_a};
+        border-radius: 0px;
     }}
     NavLabel:hover {{
-        background: none;
-        color: {color_a};
+        background: {color_h};
+        color: {color_f};
+        border-bottom: {border_b} #7f7f7f;
+    }}
+    NavLabel[checked = true]:hover {{
+        background: {color_h};
+        color: {color_f};
+        border-bottom: {border_b} {color_a};
     }}
 """
 
