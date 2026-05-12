@@ -52,11 +52,24 @@ COVER_WIDGET_STYLE = f"""
 COVER_LABEL_STYLE = f"border-radius: {border_radius_b};"
 
 # DETAILS WIDGET (TEXT, DESCRIPTION)
-DETAILS_WIDGET_STYLE = f"background: rgba(20,20,20,0.40); border-radius: {border_radius_b}; padding: 10px;"
+DETAILS_WIDGET_STYLE = f"""
+        QFrame {{
+            background: rgba(20,20,20,0.40);
+            border-radius: {border_radius_b};
+            padding: 10px;
+        }}
+        QWidget#child {{
+            background: rgba(20,20,20,0.40);
+            border-radius: {border_radius_b};
+            padding: 10px;
+        }}
+"""
+
+
 COMPACT_DETAILS_WIDGET_STYLE = f"background: rgba(20,20,20,0.40); border-radius: {border_radius_b}; padding: 10px;"
 
 # TITLE (HEADER) ON DETAIL PAGE
-DETAIL_PAGE_TITLE_STYLE = f"font-family: '{font_family}'; font-size: 32px; color: {color_a};"
+DETAIL_PAGE_TITLE_STYLE = f"font-family: '{font_family}'; font-size: 32px; color: {color_a}; background: {color_h};"
 COMPACT_DETAIL_PAGE_TITLE_STYLE = f"font-family: '{font_family}'; font-size: 32px; color: {color_a}; background: {color_h};"
 
 # DIVIDER LINE
