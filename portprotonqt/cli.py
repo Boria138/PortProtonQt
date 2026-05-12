@@ -206,8 +206,6 @@ if [[ -n "$PPQT_BIN_PATH" ]]; then
     "$PPQT_BIN_PATH" --debug-level INFO "$@"
 elif command -v flatpak >/dev/null 2>&1 && flatpak info ru.linux_gaming.PortProtonQt >/dev/null 2>&1; then
     flatpak run ru.linux_gaming.PortProtonQt --debug-level INFO "$@"
-elif command -v flatpak >/dev/null 2>&1 && flatpak info ru.linux_gaming.PortProton >/dev/null 2>&1; then
-    flatpak run ru.linux_gaming.PortProton --debug-level INFO "$@"
 else
     portprotonqt --debug-level INFO "$@"
 fi
