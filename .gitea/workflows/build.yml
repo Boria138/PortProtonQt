@@ -177,6 +177,6 @@ jobs:
           body_path: changelog.txt
           token: ${{ env.GITEA_TOKEN }}
           tag_name: v${{ env.VERSION }}
-          prerelease: true
+          prerelease: false
           files: release/**/*
           sha256sum: false

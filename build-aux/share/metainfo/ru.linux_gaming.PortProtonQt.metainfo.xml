@@ -27,13 +27,15 @@
     <release version="1.0.0" date="2026-04-28">
       <description>
         <ul>
-          <li>Built-in PortProton scripts and full PortProton feature parity</li>
+          <li>Built-in PortProton scripts with full PortProton feature parity</li>
+          <li>New classic theme for an easier transition from PortProton</li>
+          <li>Network-saving mode, improved caching, and fully local Steam game covers</li>
           <li>File manager actions for creating, deleting, and renaming folders</li>
-          <li>Network-saving mode with fewer network requests and improved caching</li>
-          <li>Local Steam game covers and fewer unnecessary cover requests</li>
-          <li>Automatic Xbox and PlayStation gamepad type selection with improved gamepad controls</li>
-          <li>New command-line options for silent exe launch and Wine system DPI handling</li>
-          <li>Fixes for Bluetooth, SteamGridDB, QComboBox layout, and interface stability</li>
+          <li>Support for animated covers, JXL images, MDF launch, and external Steam Proton builds</li>
+          <li>New tray controls for stopping a running game and silent exe launch support</li>
+          <li>Improved gamepad controls with automatic Xbox and PlayStation type selection</li>
+          <li>Improved tray, auto-install page, lost exe handling, and Wine/Proton list ordering</li>
+          <li>Fixes for Bluetooth, SteamGridDB, QComboBox scrolling, Steam Compatdata, and desktop shortcuts</li>
         </ul>
       </description>
     </release>
@@ -75,34 +77,49 @@
 
   <screenshots>
     <screenshot type="default">
-      <image>https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/library.jpg</image>
+      <image>https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/1_library.png</image>
       <caption>Library</caption>
       <caption xml:lang="ru">Библиотека</caption>
     </screenshot>
     <screenshot>
-      <image>https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/game_card.jpg</image>
-      <caption>Card detail page</caption>
-      <caption xml:lang="ru">Детали игры</caption>
-    </screenshot>
-    <screenshot>
-      <image>https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/portproton_settings.jpg</image>
-      <caption>Settings</caption>
-      <caption xml:lang="ru">Настройки</caption>
-    </screenshot>
-    <screenshot>
-      <image>https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/context_menu.jpg</image>
+      <image>https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/2_context_menu.png</image>
       <caption>Context Menu</caption>
       <caption xml:lang="ru">Контекстное меню</caption>
     </screenshot>
     <screenshot>
-      <image>https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/exe_settings.jpg</image>
+      <image>https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/3_auto_installs.png</image>
+      <caption>Auto installs</caption>
+      <caption xml:lang="ru">Автоустановки</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/4_game_card.png</image>
+      <caption>Card detail page</caption>
+      <caption xml:lang="ru">Детали игры</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/5_portproton_settings.png</image>
+      <caption>Settings</caption>
+      <caption xml:lang="ru">Настройки</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/6_wine_settings.png</image>
+      <caption>Wine Settings</caption>
+      <caption xml:lang="ru">Настройки Wine</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/7_exe_settings.png</image>
       <caption>Exe Settings</caption>
       <caption xml:lang="ru">Настройки exe</caption>
     </screenshot>
     <screenshot>
-      <image>https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/wine_settings.jpg</image>
-      <caption>Wine Settings</caption>
-      <caption xml:lang="ru">Настройки Wine</caption>
+      <image>https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/8_exe_settings_mangohud.png</image>
+      <caption>MangoHud Settings</caption>
+      <caption xml:lang="ru">Настройки MangoHud</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/9_exe_settings_gamescope.png</image>
+      <caption>Gamescope Settings</caption>
+      <caption xml:lang="ru">Настройки Gamescope</caption>
     </screenshot>
   </screenshots>
 
