@@ -180,6 +180,10 @@ class TrayManager:
                         if len(entry_exec_split) > silent_index + 1
                         else ""
                     )
+                elif entry_exec_split[0] == "env" and len(entry_exec_split) > 2:
+                    file_to_check = entry_exec_split[2]
+                elif entry_exec_split[0] == "flatpak" and len(entry_exec_split) > 3:
+                    file_to_check = entry_exec_split[3]
                 else:
                     file_to_check = entry_exec_split[0]
 

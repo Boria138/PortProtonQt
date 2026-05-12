@@ -3464,6 +3464,25 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 QMessageBox.warning(self, _("Error"), _("PortProton start script not found"))
                 return
             launch_cmd = self.start_sh + launch_file_parts
+        # TODO: drop it in the future
+        elif entry_exec_split[0] == "env":
+            if len(entry_exec_split) < 3:
+                QMessageBox.warning(self, _("Error"), _("Invalid command format (native)"))
+                return
+            file_to_check = entry_exec_split[2]
+            if not self.start_sh:
+                QMessageBox.warning(self, _("Error"), _("PortProton start script not found"))
+                return
+            launch_cmd = self.start_sh + [file_to_check]
+        elif entry_exec_split[0] == "flatpak":
+            if len(entry_exec_split) < 4:
+                QMessageBox.warning(self, _("Error"), _("Invalid command format (flatpak)"))
+                return
+            file_to_check = entry_exec_split[3]
+            if not self.start_sh:
+                QMessageBox.warning(self, _("Error"), _("PortProton start script not found"))
+                return
+            launch_cmd = self.start_sh + [file_to_check]
         else:
             file_to_check = entry_exec_split[0]
             if file_to_check.lower().endswith(".exe") and self.start_sh:
