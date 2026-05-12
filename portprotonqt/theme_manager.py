@@ -1,3 +1,4 @@
+import ast
 import importlib.util
 import os
 from portprotonqt.logger import get_logger
@@ -54,6 +55,66 @@ def _get_parent_theme_name(theme_name: str, parent_name: str | None = None) -> s
     return parent_name
 
 
+def _find_theme_folder(theme_name: str) -> str | None:
+    if theme_name == "standart":
+        themes_dirs_to_check = [THEMES_DIRS[1]]
+    else:
+        themes_dirs_to_check = THEMES_DIRS
+
+    for themes_dir in themes_dirs_to_check:
+        theme_folder = os.path.join(themes_dir, theme_name)
+        styles_file = os.path.join(theme_folder, "styles.py")
+        if os.path.exists(styles_file):
+            return theme_folder
+    return None
+
+
+def _read_theme_parent_name(theme_name: str) -> str | None:
+    theme_folder = _find_theme_folder(theme_name)
+    if not theme_folder:
+        return _get_parent_theme_name(theme_name)
+
+    styles_file = os.path.join(theme_folder, "styles.py")
+    try:
+        with open(styles_file, encoding="utf-8") as source_file:
+            tree = ast.parse(source_file.read(), filename=styles_file)
+    except (OSError, SyntaxError) as e:
+        logger.warning("Cannot read parent theme for '%s': %s", theme_name, e)
+        return _get_parent_theme_name(theme_name)
+
+    for node in tree.body:
+        if not isinstance(node, ast.Assign):
+            continue
+        if not any(isinstance(target, ast.Name) and target.id == "THEME_INHERITS" for target in node.targets):
+            continue
+        if isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
+            return _get_parent_theme_name(theme_name, node.value.value)
+        logger.warning("Invalid THEME_INHERITS value for '%s', using 'standart'", theme_name)
+        return _get_parent_theme_name(theme_name)
+    return _get_parent_theme_name(theme_name)
+
+
+def _get_theme_resource_chain(theme_name: str) -> list[str]:
+    if not _is_valid_theme_name(theme_name):
+        logger.warning("Unsafe theme name for resources: %s", theme_name)
+        return []
+
+    chain = []
+    seen = set()
+    current_name = theme_name
+    while current_name:
+        if current_name in seen:
+            logger.warning("Theme resource inheritance cycle for '%s'", current_name)
+            break
+        seen.add(current_name)
+        chain.append(current_name)
+        current_name = _read_theme_parent_name(current_name)
+
+    if "standart" not in chain:
+        chain.append("standart")
+    return chain
+
+
 def list_themes():
     """
     Return list of available themes (folder names) from THEMES_DIRS directories.
@@ -105,38 +166,27 @@ def build_icon_cache(theme_name):
 
     image_map = {}
 
-    # Find the theme directory and scan all image files
-    for themes_dir in THEMES_DIRS:
-        theme_folder = os.path.join(themes_dir, theme_name)
+    for resource_theme_name in _get_theme_resource_chain(theme_name):
+        theme_folder = _find_theme_folder(resource_theme_name)
+        if not theme_folder:
+            logger.warning(
+                "Resource theme '%s' not found for '%s'",
+                resource_theme_name,
+                theme_name,
+            )
+            continue
         images_folder = os.path.join(theme_folder, "images")
 
-        if os.path.exists(images_folder):
-            # Walk through all subdirectories to build image map
-            for root, _dirs, files in os.walk(images_folder):
-                for file in files:
-                    if file.lower().endswith(SUPPORTED_IMAGE_EXTENSIONS):
-                        image_name = os.path.splitext(file)[0]
+        if not os.path.exists(images_folder):
+            continue
+
+        for root, _dirs, files in os.walk(images_folder):
+            for file in files:
+                if file.lower().endswith(SUPPORTED_IMAGE_EXTENSIONS):
+                    image_name = os.path.splitext(file)[0]
+                    if image_name not in image_map:
                         image_path = os.path.join(root, file)
                         image_map[image_name] = image_path
-            break
-
-    # Also check standard theme if not found in custom theme
-    if theme_name != "standart":
-        for themes_dir in THEMES_DIRS:
-            theme_folder = os.path.join(themes_dir, "standart")
-            images_folder = os.path.join(theme_folder, "images")
-
-            if os.path.exists(images_folder):
-                # Walk through all subdirectories to build image map
-                for root, _dirs, files in os.walk(images_folder):
-                    for file in files:
-                        if file.lower().endswith(SUPPORTED_IMAGE_EXTENSIONS):
-                            image_name = os.path.splitext(file)[0]
-                            # Only add to map if not already present (custom theme takes precedence)
-                            if image_name not in image_map:
-                                image_path = os.path.join(root, file)
-                                image_map[image_name] = image_path
-                break
 
     _icon_dirs_cache[theme_name] = image_map
     return image_map
@@ -165,33 +215,18 @@ def load_theme_fonts(theme_name):
             timeout = 3  # Reduced timeout to 3 seconds for faster loading
 
             fonts_folder = None
-            if theme_name == "standart":
-                base_dir = os.path.dirname(os.path.abspath(__file__))
-                fonts_folder = os.path.join(base_dir, "themes", "standart", "fonts")
-            else:
-                for themes_dir in THEMES_DIRS:
-                    theme_folder = os.path.join(themes_dir, theme_name)
-                    possible_fonts_folder = os.path.join(theme_folder, "fonts")
-                    if os.path.exists(possible_fonts_folder):
-                        fonts_folder = possible_fonts_folder
-                        break
+            for resource_theme_name in _get_theme_resource_chain(theme_name):
+                theme_folder = _find_theme_folder(resource_theme_name)
+                if not theme_folder:
+                    continue
+                possible_fonts_folder = os.path.join(theme_folder, "fonts")
+                if os.path.exists(possible_fonts_folder):
+                    fonts_folder = possible_fonts_folder
+                    break
 
             if not fonts_folder or not os.path.exists(fonts_folder):
-                standard_fonts_folder = os.path.join(
-                    os.path.dirname(os.path.abspath(__file__)),
-                    "themes",
-                    "standart",
-                    "fonts",
-                )
-                if os.path.exists(standard_fonts_folder):
-                    logger.info(
-                        "Fonts folder not found for theme '%s', using standard fonts",
-                        theme_name,
-                    )
-                    fonts_folder = standard_fonts_folder
-                else:
-                    logger.error(f"Fonts folder not found for theme '{theme_name}'")
-                    return
+                logger.error(f"Fonts folder not found for theme '{theme_name}'")
+                return
 
             font_files = []
             for filename in os.listdir(fonts_folder):
