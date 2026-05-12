@@ -119,6 +119,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self._set_inactive_background_suspended(suspended)
         if not suspended and hasattr(self, "game_library_manager"):
             QTimer.singleShot(0, self.game_library_manager.load_visible_images)
+        if not suspended and hasattr(self, "input_manager") and not self._has_running_game_process():
+            self.input_manager.resume_gamepad_polling()
 
     def _set_inactive_background_suspended(self, suspended: bool) -> None:
         if hasattr(self, "game_library_manager") and suspended:
@@ -3272,7 +3274,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         If game completed - reset flag, update button and stop timer.
         """
         target_running = self.is_target_exe_running()
-        child_running = any(proc.poll() is None for proc in self.game_processes)
+        child_running = self._has_running_game_process()
 
         if target_running or (self.game_launch_started and child_running):
             self.game_launch_started = True
@@ -3386,8 +3388,12 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.wine_download_percent = 0.0
         self.wine_download_status = _("Downloading Wine...")
         self.game_launch_started = False
+        self.game_processes = [proc for proc in self.game_processes if proc.poll() is None]
         if not getattr(self, "_animated_covers_suspended", False):
             self.input_manager.resume_gamepad_polling()
+
+    def _has_running_game_process(self) -> bool:
+        return any(proc.poll() is None for proc in self.game_processes)
 
     def _run_portproton_stop_command(self) -> bool:
         """Run PortProton CLI stop command."""
