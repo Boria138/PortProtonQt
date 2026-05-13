@@ -3,6 +3,15 @@
 #include <string.h>
 #include <vulkan/vulkan.h>
 
+typedef struct {
+    uint32_t vendor_id;
+    uint32_t device_id;
+    VkPhysicalDeviceType device_type;
+    char device_name[VK_MAX_PHYSICAL_DEVICE_NAME_SIZE];
+    uint8_t device_uuid[VK_UUID_SIZE];
+    VkBool32 has_device_uuid;
+} SeenDevice;
+
 // Функция для безопасного извлечения строк из структур Vulkan
 void decode_str(const char* src, char* dst, size_t dst_size) {
     if (!src || !dst || dst_size == 0) {
@@ -72,6 +81,35 @@ VkBool32 device_supports_extension(VkPhysicalDevice device, const char* extensio
 
 VkBool32 device_supports_driver_props(VkPhysicalDevice device) {
     return device_supports_extension(device, VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME);
+}
+
+VkBool32 uuid_is_empty(const uint8_t* uuid) {
+    for (uint32_t i = 0; i < VK_UUID_SIZE; i++) {
+        if (uuid[i] != 0) {
+            return VK_FALSE;
+        }
+    }
+    return VK_TRUE;
+}
+
+VkBool32 seen_device_matches(const SeenDevice* seen_device, const SeenDevice* device) {
+    if (seen_device->has_device_uuid && device->has_device_uuid) {
+        return memcmp(seen_device->device_uuid, device->device_uuid, VK_UUID_SIZE) == 0;
+    }
+
+    return seen_device->vendor_id == device->vendor_id
+        && seen_device->device_id == device->device_id
+        && seen_device->device_type == device->device_type
+        && strcmp(seen_device->device_name, device->device_name) == 0;
+}
+
+VkBool32 device_was_seen(const SeenDevice* seen_devices, uint32_t seen_count, const SeenDevice* device) {
+    for (uint32_t i = 0; i < seen_count; i++) {
+        if (seen_device_matches(&seen_devices[i], device)) {
+            return VK_TRUE;
+        }
+    }
+    return VK_FALSE;
 }
 
 int main() {
@@ -165,6 +203,15 @@ int main() {
         return -1;
     }
 
+    SeenDevice* seen_devices = calloc(device_count, sizeof(SeenDevice));
+    if (!seen_devices) {
+        fprintf(stderr, "Failed to allocate seen device list\n");
+        vkDestroyInstance(instance, NULL);
+        free(devices);
+        return -1;
+    }
+    uint32_t seen_count = 0;
+
     // Обрабатываем каждое устройство
     for (uint32_t i = 0; i < device_count; i++) {
         VkPhysicalDeviceProperties props;
@@ -179,15 +226,18 @@ int main() {
         const char* device_type = device_type_name(props.deviceType);
         VkBool32 supports_drm_format_modifier =
             device_supports_extension(devices[i], "VK_EXT_image_drm_format_modifier");
-
         char driver_name[VK_MAX_EXTENSION_NAME_SIZE] = "Unknown";
         char driver_info[VK_MAX_EXTENSION_NAME_SIZE] = "Unknown";
+        VkPhysicalDeviceIDProperties id_props = {
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES,
+            .pNext = NULL
+        };
 
         if (device_supports_driver_props(devices[i])) {
             // Используем VkPhysicalDeviceProperties2 для получения дополнительной информации
             VkPhysicalDeviceDriverProperties driver_props = {
                 .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES,
-                .pNext = NULL
+                .pNext = &id_props
             };
 
             VkPhysicalDeviceProperties2 props2 = {
@@ -205,6 +255,20 @@ int main() {
                 decode_str(driver_props.driverInfo, driver_info, sizeof(driver_info));
             }
         }
+
+        SeenDevice current_device = {
+            .vendor_id = props.vendorID,
+            .device_id = props.deviceID,
+            .device_type = props.deviceType,
+            .has_device_uuid = !uuid_is_empty(id_props.deviceUUID)
+        };
+        memcpy(current_device.device_uuid, id_props.deviceUUID, VK_UUID_SIZE);
+        memcpy(current_device.device_name, device_name, sizeof(current_device.device_name));
+        if (device_was_seen(seen_devices, seen_count, &current_device)) {
+            continue;
+        }
+        seen_devices[seen_count] = current_device;
+        seen_count++;
 
         printf("GPU #%u\n", i);
         printf("gpu_id: %u\n", gpu_id);
@@ -227,6 +291,7 @@ int main() {
     }
 
     // Освобождаем ресурсы
+    free(seen_devices);
     free(devices);
     vkDestroyInstance(instance, NULL);
 
