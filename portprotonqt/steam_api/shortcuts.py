@@ -17,6 +17,7 @@ from portprotonqt.logger import get_logger
 from portprotonqt.downloader import Downloader
 from portprotonqt.dialogs import generate_thumbnail
 from portprotonqt.config import (
+    extract_exec_target_path,
     get_portproton_location,
     get_portproton_start_command,
     ui_config,
@@ -163,18 +164,9 @@ def call_steam_api(js_cmd: str, *args) -> dict | None:
 def _parse_exec_line(exec_line: str) -> tuple[str | None, str]:
     """Parse exec_line to extract executable path."""
     try:
-        import shlex
-        entry_exec_split = shlex.split(exec_line)
-        if not entry_exec_split:
-            logger.error("Failed to parse exec_line: %s", exec_line)
-            return None, "Failed to parse executable command: no valid tokens"
-
-        if "--silent" in entry_exec_split and len(entry_exec_split) >= 2:
-            silent_index = entry_exec_split.index("--silent")
-            exe_path = entry_exec_split[silent_index + 1] if len(entry_exec_split) > silent_index + 1 else ""
-        else:
-            exe_path = entry_exec_split[-1]
+        exe_path = extract_exec_target_path(exec_line)
         if not exe_path:
+            logger.error("Failed to parse exec_line: %s", exec_line)
             return None, "Failed to parse executable command: no target path"
         return exe_path, ""
     except Exception as e:

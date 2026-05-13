@@ -1,5 +1,4 @@
 import os
-import shlex
 import glob
 import shutil
 import tempfile
@@ -7,7 +6,12 @@ from PySide6.QtWidgets import QMessageBox, QDialog, QMenu, QLineEdit, QApplicati
 from PySide6.QtCore import QUrl, QPoint, QObject, Signal, Qt, QStandardPaths
 from PySide6.QtGui import QDesktopServices, QIcon, QKeySequence
 from portprotonqt.localization import _
-from portprotonqt.config import parse_desktop_entry, favorites_config, favorites_folders_config
+from portprotonqt.config import (
+    extract_exec_target_path,
+    favorites_config,
+    favorites_folders_config,
+    parse_desktop_entry,
+)
 from portprotonqt.steam_api import is_game_in_steam, add_to_steam, remove_from_steam
 from portprotonqt.dialogs import AddGameDialog, generate_thumbnail
 from portprotonqt.dialogs.base import DraggableDialog
@@ -599,15 +603,7 @@ class ContextMenuManager:
     def _parse_exe_path(self, exec_line: str, game_name: str) -> str | None:
         """Parse the executable path from exec_line."""
         try:
-            entry_exec_split = shlex.split(exec_line)
-            if not entry_exec_split:
-                logger.debug("Invalid executable command for game '%s': %s", game_name, exec_line)
-                return None
-            if "--silent" in entry_exec_split and len(entry_exec_split) >= 2:
-                silent_index = entry_exec_split.index("--silent")
-                exe_path = entry_exec_split[silent_index + 1] if len(entry_exec_split) > silent_index + 1 else ""
-            else:
-                exe_path = entry_exec_split[-1]
+            exe_path = extract_exec_target_path(exec_line)
             if not exe_path:
                 logger.debug("Executable not found in command for game '%s': %s", game_name, exec_line)
                 return None

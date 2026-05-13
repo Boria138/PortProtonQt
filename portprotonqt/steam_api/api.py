@@ -11,7 +11,7 @@ import orjson
 from portprotonqt.logger import get_logger
 from portprotonqt.downloader import Downloader
 from portprotonqt.localization import get_steam_language
-from portprotonqt.config import ui_config
+from portprotonqt.config import extract_exec_target_path, ui_config
 from portprotonqt.image_utils import COVER_IMAGE_EXTENSIONS
 from portprotonqt.steam_api.utils import decode_text, get_local_steam_cover
 from portprotonqt.steam_api.cache import (
@@ -363,8 +363,7 @@ def get_cached_steam_game_info(desktop_name: str, exec_line: str) -> dict:
     """Return Steam metadata from local cache only."""
     from portprotonqt.steam_api.utils import filter_candidates, remove_duplicates
 
-    parts = shlex.split(exec_line)
-    game_exe = parts[-1] if parts else exec_line
+    game_exe = extract_exec_target_path(exec_line) or exec_line
     exe_name = os.path.splitext(os.path.basename(game_exe))[0]
     folder_name = os.path.basename(os.path.dirname(game_exe)) if game_exe else ""
     candidates = remove_duplicates(filter_candidates([desktop_name, exe_name, folder_name]))
@@ -397,8 +396,7 @@ def get_steam_game_info_async(
         if cached_info:
             callback(cached_info)
             return
-        parts = shlex.split(exec_line)
-        game_exe = parts[-1] if parts else exec_line
+        game_exe = extract_exec_target_path(exec_line) or exec_line
         exe_name = os.path.splitext(os.path.basename(game_exe))[0]
         game_name = desktop_name or exe_name
         callback(_build_game_info_result(
@@ -417,8 +415,7 @@ def get_steam_game_info_async(
     from portprotonqt.steam_api.cache import get_exiftool_data
     from portprotonqt.steam_api.utils import filter_candidates, remove_duplicates
 
-    parts = shlex.split(exec_line)
-    game_exe = parts[-1] if parts else exec_line
+    game_exe = extract_exec_target_path(exec_line) or exec_line
     is_autoinstall = exec_line.startswith("autoinstall:")
 
     if game_exe.lower().endswith('.bat'):

@@ -16,6 +16,7 @@ from portprotonqt.config.gamepad import GamepadConfig
 from portprotonqt.config.portproton import (
     PortProtonConfig,
     create_desktop_file,
+    extract_exec_target_path,
     find_game_by_exe,
     get_portproton_location,
     get_portproton_scripts_path,
@@ -79,6 +80,7 @@ __all__ = [
     "get_portproton_location",
     "migrate_legacy_shortcut",
     "parse_desktop_entry",
+    "extract_exec_target_path",
     "find_game_by_exe",
     "create_desktop_file",
     "reset_main_config",

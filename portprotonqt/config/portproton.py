@@ -299,6 +299,34 @@ def parse_desktop_entry(file_path: str) -> configparser.SectionProxy | None:
     return cp["Desktop Entry"]
 
 
+def extract_exec_target_path(exec_value: str | list[str]) -> str | None:
+    """Extract target executable or image path from a desktop Exec value."""
+    if isinstance(exec_value, str):
+        try:
+            parts = shlex.split(exec_value)
+        except ValueError:
+            return None
+    else:
+        parts = exec_value
+
+    if not parts:
+        return None
+
+    if "--silent" in parts:
+        silent_index = parts.index("--silent")
+        if len(parts) > silent_index + 1:
+            return os.path.expanduser(parts[silent_index + 1])
+        return None
+
+    for part in reversed(parts):
+        if part.lower().endswith((".exe", ".iso", ".mdf")):
+            return os.path.expanduser(part)
+
+    if parts[0] in ("env", "flatpak"):
+        return None
+    return os.path.expanduser(parts[0])
+
+
 def find_game_by_exe(exe_path: str) -> configparser.SectionProxy | None:
     """Find a game desktop entry by executable path."""
     portproton_path = get_portproton_location()
@@ -319,21 +347,7 @@ def find_game_by_exe(exe_path: str) -> configparser.SectionProxy | None:
         if not exec_line:
             continue
 
-        try:
-            parts = shlex.split(exec_line)
-        except ValueError:
-            continue
-
-        game_exe = ""
-        if "--silent" in parts and len(parts) >= 2:
-            silent_index = parts.index("--silent")
-            if len(parts) > silent_index + 1:
-                game_exe = os.path.expanduser(parts[silent_index + 1])
-        else:
-            for part in parts:
-                if part.endswith(".exe"):
-                    game_exe = part
-                    break
+        game_exe = extract_exec_target_path(exec_line)
         if game_exe and os.path.abspath(game_exe) == target_exe:
             return desktop_entry
     return None

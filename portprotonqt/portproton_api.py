@@ -8,7 +8,6 @@ import re
 import hashlib
 import queue
 import shutil
-import shlex
 import locale
 from collections.abc import Callable
 from typing import Any
@@ -18,6 +17,7 @@ from PySide6.QtWidgets import QApplication
 from portprotonqt.downloader import Downloader, get_requests_session
 from portprotonqt.logger import get_logger
 from portprotonqt.config import (
+    extract_exec_target_path,
     get_portproton_location,
     get_portproton_scripts_path,
     get_portproton_start_command,
@@ -97,19 +97,10 @@ def extract_exe_name(exec_line: str) -> str:
     if exec_line.startswith("autoinstall:"):
         return ""
 
-    try:
-        parts = shlex.split(exec_line)
-
-        # Search for the last part ending with .exe
-        # In PortProton format, the game exe is always the last argument
-        for part in reversed(parts):
-            if part.lower().endswith(".exe"):
-                game_exe = os.path.expanduser(part)
-                return os.path.basename(game_exe)
-
-        return ""
-    except (ValueError, IndexError):
-        return ""
+    game_exe = extract_exec_target_path(exec_line)
+    if game_exe and game_exe.lower().endswith(".exe"):
+        return os.path.basename(game_exe)
+    return ""
 
 
 class PortProtonAPI:

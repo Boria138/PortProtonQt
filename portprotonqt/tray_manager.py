@@ -1,6 +1,5 @@
 import sys
 import subprocess
-import shlex
 import signal
 import psutil
 import os
@@ -10,7 +9,7 @@ from PySide6.QtGui import QIcon, QAction, QFont
 from portprotonqt.logger import get_logger
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.localization import _
-from portprotonqt.config import favorites_config, ui_config
+from portprotonqt.config import extract_exec_target_path, favorites_config, ui_config
 from portprotonqt.dialogs import GameLaunchDialog
 
 logger = get_logger(__name__)
@@ -172,22 +171,9 @@ class TrayManager:
                     self.main_window, game_name=game_name, theme=self.theme
                 )
             else:
-                entry_exec_split = shlex.split(exec_line)
-                if "--silent" in entry_exec_split and len(entry_exec_split) > 1:
-                    silent_index = entry_exec_split.index("--silent")
-                    file_to_check = (
-                        entry_exec_split[silent_index + 1]
-                        if len(entry_exec_split) > silent_index + 1
-                        else ""
-                    )
-                elif entry_exec_split[0] == "env" and len(entry_exec_split) > 2:
-                    file_to_check = entry_exec_split[2]
-                elif entry_exec_split[0] == "flatpak" and len(entry_exec_split) > 3:
-                    file_to_check = entry_exec_split[3]
-                else:
-                    file_to_check = entry_exec_split[0]
+                file_to_check = extract_exec_target_path(exec_line)
 
-                if not os.path.exists(file_to_check):
+                if not file_to_check or not os.path.exists(file_to_check):
                     logger.error(f"File not found: {file_to_check}")
                     QMessageBox.warning(
                         self.main_window, _("Error"), _("File not found: {0}").format(file_to_check)

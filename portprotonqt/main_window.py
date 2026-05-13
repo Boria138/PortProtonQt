@@ -33,6 +33,7 @@ from portprotonqt.config import (
     favorites_config,
     proxy_config,
     display_config,
+    extract_exec_target_path,
     window_config,
     reset_main_config,
     cache_config,
@@ -918,11 +919,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         formatted_playtime = ""
 
         if exec_line:
-            parts = shlex.split(exec_line)
-            if "--silent" in parts and len(parts) >= 2:
-                silent_index = parts.index("--silent")
-                if len(parts) > silent_index + 1:
-                    game_exe = os.path.expanduser(parts[silent_index + 1])
+            game_exe = extract_exec_target_path(exec_line) or ""
 
         xdg_data_home = os.getenv("XDG_DATA_HOME",
                                 os.path.join(os.path.expanduser("~"), ".local", "share"))
@@ -3479,69 +3476,29 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             QMessageBox.warning(self, _("Error"), _("Invalid command format (empty exec line)"))
             return
         launch_cmd = entry_exec_split
-        if "--silent" in entry_exec_split:
-            if len(entry_exec_split) < 2:
-                QMessageBox.warning(self, _("Error"), _("Invalid command format (silent)"))
+        file_to_check = extract_exec_target_path(entry_exec_split)
+        if not file_to_check:
+            QMessageBox.warning(self, _("Error"), _("Invalid command format (native)"))
+            return
+
+        first_exec_part = os.path.expanduser(entry_exec_split[0])
+        if file_to_check.lower().endswith(DISC_IMAGE_EXTENSIONS):
+            resolved_iso_parts = self._resolve_iso_launch_parts(file_to_check)
+            if not resolved_iso_parts:
+                QMessageBox.warning(
+                    self,
+                    _("Error"),
+                    _("Failed to launch game: {0}").format("autorun.inf or open executable not found")
+                )
                 return
-            silent_index = entry_exec_split.index("--silent")
-            if len(entry_exec_split) <= silent_index + 1:
-                QMessageBox.warning(self, _("Error"), _("Invalid command format (silent)"))
-                return
-            file_to_check = entry_exec_split[silent_index + 1]
-            launch_file_parts = [file_to_check]
-            if file_to_check.lower().endswith(DISC_IMAGE_EXTENSIONS):
-                resolved_iso_parts = self._resolve_iso_launch_parts(file_to_check)
-                if not resolved_iso_parts:
-                    QMessageBox.warning(
-                        self,
-                        _("Error"),
-                        _("Failed to launch game: {0}").format("autorun.inf or open executable not found")
-                    )
-                    return
-                file_to_check = resolved_iso_parts[0]
-                launch_file_parts = resolved_iso_parts
+            file_to_check = resolved_iso_parts[0]
             if not self.start_sh:
                 QMessageBox.warning(self, _("Error"), _("PortProton start script not found"))
                 return
+            launch_cmd = self.start_sh + resolved_iso_parts
+        elif self.start_sh and file_to_check.lower().endswith(".exe"):
+            launch_file_parts = entry_exec_split if file_to_check == first_exec_part else [file_to_check]
             launch_cmd = self.start_sh + launch_file_parts
-        # TODO: drop it in the future
-        elif entry_exec_split[0] == "env":
-            if len(entry_exec_split) < 3:
-                QMessageBox.warning(self, _("Error"), _("Invalid command format (native)"))
-                return
-            file_to_check = entry_exec_split[2]
-            if not self.start_sh:
-                QMessageBox.warning(self, _("Error"), _("PortProton start script not found"))
-                return
-            launch_cmd = self.start_sh + [file_to_check]
-        elif entry_exec_split[0] == "flatpak":
-            if len(entry_exec_split) < 4:
-                QMessageBox.warning(self, _("Error"), _("Invalid command format (flatpak)"))
-                return
-            file_to_check = entry_exec_split[3]
-            if not self.start_sh:
-                QMessageBox.warning(self, _("Error"), _("PortProton start script not found"))
-                return
-            launch_cmd = self.start_sh + [file_to_check]
-        else:
-            file_to_check = entry_exec_split[0]
-            if file_to_check.lower().endswith(".exe") and self.start_sh:
-                launch_cmd = self.start_sh + entry_exec_split
-            elif file_to_check.lower().endswith(DISC_IMAGE_EXTENSIONS):
-                resolved_iso_parts = self._resolve_iso_launch_parts(file_to_check)
-                if resolved_iso_parts:
-                    file_to_check = resolved_iso_parts[0]
-                    if not self.start_sh:
-                        QMessageBox.warning(self, _("Error"), _("PortProton start script not found"))
-                        return
-                    launch_cmd = self.start_sh + resolved_iso_parts
-                else:
-                    QMessageBox.warning(
-                        self,
-                        _("Error"),
-                        _("Failed to launch game: {0}").format("autorun.inf or open executable not found")
-                    )
-                    return
 
         if not os.path.exists(file_to_check):
             QMessageBox.warning(self, _("Error"), _("File not found: {0}").format(file_to_check))
@@ -3568,13 +3525,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             inhibit_game_name = game_name or self._get_game_name_for_exec_line(exec_line)
             if inhibit_game_name:
                 env_vars["PW_INHIBIT_NAME"] = inhibit_game_name
-            game_exe_for_prefix = ""
-            for part in reversed(entry_exec_split):
-                if part.lower().endswith(".exe"):
-                    game_exe_for_prefix = os.path.expanduser(part)
-                    break
-            if not game_exe_for_prefix and file_to_check.lower().endswith(".exe"):
-                game_exe_for_prefix = os.path.expanduser(file_to_check)
+            game_exe_for_prefix = file_to_check if file_to_check.lower().endswith(".exe") else ""
             self._check_missing_prefix_before_launch(game_exe_for_prefix, env_vars)
 
             # Launch game

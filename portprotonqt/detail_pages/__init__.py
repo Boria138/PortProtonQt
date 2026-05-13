@@ -1,7 +1,6 @@
 """Detail pages for PortProtonQt."""
 
 import os
-import shlex
 from collections.abc import Callable
 from PySide6.QtWidgets import (
     QWidget,
@@ -46,6 +45,7 @@ from portprotonqt.detail_pages.utils import (
 )
 from portprotonqt.howlongtobeat_api import HowLongToBeat, GameEntry
 from portprotonqt.config import (
+    extract_exec_target_path,
     favorites_config,
     get_portproton_start_command,
     ui_config,
@@ -422,16 +422,7 @@ class DetailPageManager:
 
     def _get_current_exe(self, exec_line: str) -> str | None:
         """Extract current executable from exec line."""
-        entry_exec_split = shlex.split(exec_line)
-        if not entry_exec_split:
-            return None
-
-        if "--silent" in entry_exec_split and len(entry_exec_split) >= 2:
-            silent_index = entry_exec_split.index("--silent")
-            file_to_check = entry_exec_split[silent_index + 1] if len(entry_exec_split) > silent_index + 1 else None
-        else:
-            file_to_check = entry_exec_split[0]
-
+        file_to_check = extract_exec_target_path(exec_line)
         return os.path.basename(file_to_check) if file_to_check else None
 
     def _create_play_button(self, exec_line: str, current_exe: str | None) -> AutoSizeButton:
@@ -486,14 +477,7 @@ class DetailPageManager:
 
     def _get_file_from_exec(self, exec_line: str) -> str | None:
         """Get file path from exec line."""
-        entry_exec_split = shlex.split(exec_line)
-        if not entry_exec_split:
-            return None
-
-        if "--silent" in entry_exec_split and len(entry_exec_split) >= 2:
-            silent_index = entry_exec_split.index("--silent")
-            return entry_exec_split[silent_index + 1] if len(entry_exec_split) > silent_index + 1 else None
-        return entry_exec_split[0]
+        return extract_exec_target_path(exec_line)
 
     def _open_steam_game_folder(self, appid: str) -> None:
         """Open Steam game installation folder by appid."""
