@@ -11,6 +11,7 @@ import shutil
 import shlex
 import locale
 from collections.abc import Callable
+from typing import Any
 from PySide6.QtCore import QThread, Signal, QUrl, QObject, Qt, SignalInstance
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QApplication
@@ -30,6 +31,26 @@ logger = get_logger(__name__)
 AUTOINSTALL_CACHE_DURATION = 3600  # 1 hour for autoinstall cache
 HEAD_FAILURE_RETRY_DELAY = 60  # 1 minute cooldown for failed HEAD checks
 HEAD_CACHE_DURATION = 24 * 60 * 60
+
+
+def _create_bootstrap_file_explorer_parent() -> tuple[QObject | None, Any]:
+    """Create a minimal parent with InputManager before MainWindow exists."""
+    parent = QApplication.activeWindow()
+    if parent is not None:
+        return parent, None
+
+    try:
+        from portprotonqt.input_manager import InputManager
+        from portprotonqt.port_data_path_selector import _BootstrapInputHost
+    except ImportError as e:
+        logger.warning("Cannot initialize gamepad support for PPDB file dialog: %s", e)
+        return None, None
+
+    input_host = _BootstrapInputHost()
+    input_manager = InputManager(input_host)
+    input_host.input_manager = input_manager
+    return input_host, input_manager
+
 
 def normalize_name(s):
     """
@@ -813,40 +834,41 @@ class PortProtonAPI:
         """
         # Check if we're running in GUI mode
         app = QApplication.instance()
-        if app is not None:
-            # Use FileExplorer which is adapted for gamepad control
-            result_queue = queue.Queue()
-
-            def on_file_selected(file_path):
-                result_queue.put(file_path)
-
-            # Create and configure FileExplorer
-            file_explorer = FileExplorer(
-                file_filter=".exe",
-                initial_path=os.path.expanduser("~")
-            )
-            file_explorer.setWindowTitle(_("Select file for PPDB download"))
-
-            # Connect the file selection signal
-            file_explorer.file_signal.file_selected.connect(on_file_selected)
-
-            # Show the dialog
-            file_explorer.exec()
-
-            # Get the selected file from the queue
-            try:
-                selected_file = result_queue.get(timeout=0.1)  # Small timeout to get result
-                if selected_file and os.path.exists(selected_file) and selected_file.lower().endswith('.exe'):
-                    logger.info(f"User selected .exe file: {selected_file}")
-                    return selected_file
-                else:
-                    logger.info("No valid .exe file selected by user")
-                    return None
-            except queue.Empty:
-                logger.info("No file selected in FileExplorer")
-                return None
-        else:
+        if app is None:
             logger.info("No GUI application instance available for FileExplorer")
+            return None
+
+        result_queue = queue.Queue()
+        parent, bootstrap_input_manager = _create_bootstrap_file_explorer_parent()
+
+        def on_file_selected(file_path):
+            result_queue.put(file_path)
+
+        file_explorer = FileExplorer(
+            parent=parent,
+            file_filter=".exe",
+            initial_path=os.path.expanduser("~")
+        )
+        file_explorer.setWindowTitle(_("Select file for PPDB download"))
+        file_explorer.file_signal.file_selected.connect(on_file_selected)
+
+        try:
+            file_explorer.exec()
+        finally:
+            if bootstrap_input_manager:
+                bootstrap_input_manager.cleanup()
+            if parent and bootstrap_input_manager:
+                parent.deleteLater()
+
+        try:
+            selected_file = result_queue.get(timeout=0.1)  # Small timeout to get result
+            if selected_file and os.path.exists(selected_file) and selected_file.lower().endswith('.exe'):
+                logger.info(f"User selected .exe file: {selected_file}")
+                return selected_file
+            logger.info("No valid .exe file selected by user")
+            return None
+        except queue.Empty:
+            logger.info("No file selected in FileExplorer")
             return None
 
 
