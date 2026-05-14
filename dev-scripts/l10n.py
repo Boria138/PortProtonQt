@@ -459,7 +459,7 @@ def main(args) -> int:
                     print(f"{idx}. In '{text}': typo '{err['word']}', suggestions: {', '.join(err['s'])}")
                 print("-----")
         return 1 if has_err else 0
-    extract_strings(); compile_locales()
+    compile_locales()
     return 0
 
 if __name__ == "__main__":
