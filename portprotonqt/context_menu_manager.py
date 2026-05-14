@@ -12,7 +12,12 @@ from portprotonqt.config import (
     favorites_folders_config,
     parse_desktop_entry,
 )
-from portprotonqt.steam_api import is_game_in_steam, add_to_steam, remove_from_steam
+from portprotonqt.steam_api import (
+    add_to_steam,
+    fetch_client_icon_async,
+    is_game_in_steam,
+    remove_from_steam,
+)
 from portprotonqt.dialogs import AddGameDialog, generate_thumbnail
 from portprotonqt.dialogs.base import DraggableDialog
 from portprotonqt.theme_manager import ThemeManager
@@ -386,6 +391,35 @@ class ContextMenuManager:
         favorite_action = menu.addAction(self._get_safe_icon(icon_name), text)
         favorite_action.triggered.connect(lambda: self.toggle_favorite(game_card, not is_favorite))
 
+        if game_card.game_source == "steam":
+            desktop_dir = QStandardPaths.writableLocation(
+                QStandardPaths.StandardLocation.DesktopLocation
+            )
+            desktop_path = self._get_steam_shortcut_path(game_card.name, desktop_dir)
+            icon_name = "delete" if os.path.exists(desktop_path) else "desktop"
+            text = _("Remove from Desktop") if os.path.exists(desktop_path) else _("Add to Desktop")
+            desktop_action = menu.addAction(self._get_safe_icon(icon_name), text)
+            desktop_action.triggered.connect(
+                lambda: self.remove_steam_from_desktop(game_card.name)
+                if os.path.exists(desktop_path)
+                else self.add_steam_to_desktop(game_card.name, game_card.appid)
+            )
+            applications_dir = os.path.join(
+                os.path.expanduser("~"),
+                ".local",
+                "share",
+                "applications",
+            )
+            menu_path = self._get_steam_shortcut_path(game_card.name, applications_dir)
+            icon_name = "delete" if os.path.exists(menu_path) else "menu"
+            text = _("Remove from Menu") if os.path.exists(menu_path) else _("Add to Menu")
+            menu_action = menu.addAction(self._get_safe_icon(icon_name), text)
+            menu_action.triggered.connect(
+                lambda: self.remove_steam_from_menu(game_card.name)
+                if os.path.exists(menu_path)
+                else self.add_steam_to_menu(game_card.name, game_card.appid)
+            )
+
         if game_card.game_source != "steam":
             desktop_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DesktopLocation)
             desktop_path = self._get_shortcut_path(game_card.name, desktop_dir)
@@ -557,6 +591,15 @@ class ContextMenuManager:
         if os.path.exists(desktop_path):
             return os.path.join(target_dir, os.path.basename(desktop_path))
         return os.path.join(target_dir, f"{game_name}.desktop")
+
+    def _get_steam_shortcut_path(self, game_name: str, target_dir: str) -> str:
+        """Return sanitized Steam shortcut path in target directory."""
+        safe_name = (
+            game_name.replace("/", "_").replace(":", "_").replace("\0", "_").strip()
+        )
+        if not safe_name:
+            safe_name = "Steam Game"
+        return os.path.join(target_dir, f"{safe_name}.desktop")
 
     def _get_exec_line(self, game_name, exec_line):
         """Retrieve and validate exec_line from .desktop file if necessary."""
@@ -820,6 +863,98 @@ class ContextMenuManager:
             _("Removed '{game_name}' from {location}"),
             game_name,
             location=_("Desktop")
+        )
+
+    def _add_steam_shortcut(
+        self,
+        game_name: str,
+        appid: int | str,
+        shortcut_target: tuple[str, str],
+    ) -> None:
+        """Create a shortcut for an installed Steam game."""
+        appid_str = str(appid).strip()
+        if not appid_str.isdigit():
+            logger.warning("Invalid Steam appid for desktop shortcut: %s", appid)
+            return
+
+        target_dir, location = shortcut_target
+        os.makedirs(target_dir, exist_ok=True)
+        dest_path = self._get_steam_shortcut_path(game_name, target_dir)
+        display_name = game_name.replace("\n", " ").replace("\r", " ").strip()
+
+        def write_shortcut(icon_path: str) -> None:
+            icon = icon_path or "steam"
+            desktop_entry = (
+                "[Desktop Entry]\n"
+                f"Name={display_name}\n"
+                f"Comment={_('Play this game on Steam')}\n"
+                f"Exec=xdg-open steam://rungameid/{appid_str}\n"
+                "Terminal=false\n"
+                "Type=Application\n"
+                "Categories=Game;\n"
+                "StartupNotify=true\n"
+                f"Icon={icon}\n"
+            )
+            try:
+                with open(dest_path, "w", encoding="utf-8") as f:
+                    f.write(desktop_entry)
+                os.chmod(dest_path, 0o755)
+            except OSError as e:
+                self.signals.show_warning_dialog.emit(
+                    _("Error"),
+                    _("Failed to add '{game_name}' to {location}: {error}").format(
+                        game_name=game_name, location=location, error=str(e)
+                    )
+                )
+
+        fetch_client_icon_async(appid_str, write_shortcut)
+
+    def add_steam_to_desktop(self, game_name: str, appid: int | str) -> None:
+        """Create a desktop shortcut for an installed Steam game."""
+        desktop_dir = QStandardPaths.writableLocation(
+            QStandardPaths.StandardLocation.DesktopLocation
+        )
+        self._add_steam_shortcut(game_name, appid, (desktop_dir, _("Desktop")))
+
+    def remove_steam_from_desktop(self, game_name: str) -> None:
+        """Remove a Steam game desktop shortcut."""
+        desktop_dir = QStandardPaths.writableLocation(
+            QStandardPaths.StandardLocation.DesktopLocation
+        )
+        desktop_path = self._get_steam_shortcut_path(game_name, desktop_dir)
+        self._remove_file(
+            desktop_path,
+            _("Failed to remove '{game_name}' from {location}: {error}"),
+            _("Removed '{game_name}' from {location}"),
+            game_name,
+            location=_("Desktop")
+        )
+
+    def add_steam_to_menu(self, game_name: str, appid: int | str) -> None:
+        """Create an application menu shortcut for an installed Steam game."""
+        applications_dir = os.path.join(
+            os.path.expanduser("~"),
+            ".local",
+            "share",
+            "applications",
+        )
+        self._add_steam_shortcut(game_name, appid, (applications_dir, _("Menu")))
+
+    def remove_steam_from_menu(self, game_name: str) -> None:
+        """Remove a Steam game application menu shortcut."""
+        applications_dir = os.path.join(
+            os.path.expanduser("~"),
+            ".local",
+            "share",
+            "applications",
+        )
+        desktop_path = self._get_steam_shortcut_path(game_name, applications_dir)
+        self._remove_file(
+            desktop_path,
+            _("Failed to remove '{game_name}' from {location}: {error}"),
+            _("Removed '{game_name}' from {location}"),
+            game_name,
+            location=_("Menu")
         )
 
     def edit_game_shortcut(self, game_name, exec_line, cover_path):

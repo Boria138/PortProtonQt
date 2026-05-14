@@ -7,6 +7,7 @@ import urllib.parse
 from collections.abc import Callable
 
 import orjson
+from PIL import Image, UnidentifiedImageError
 
 from portprotonqt.logger import get_logger
 from portprotonqt.downloader import Downloader
@@ -35,6 +36,7 @@ downloader = Downloader()
 _STEAM_APPS_CACHE = CacheManager(name="steam_apps")
 _ANTICHEAT_CACHE = CacheManager(name="anticheat")
 SGDB_CACHE_DURATION = 24 * 60 * 60
+STEAM_CLIENT_ICON_SIZES = (16, 32, 64, 128, 256)
 
 
 def fetch_sgdb_cover_async(game_name: str, callback: Callable[[str], None]) -> None:
@@ -110,6 +112,102 @@ def fetch_app_info_async(app_id: int, callback: Callable[[dict | None], None]) -
     cache_manager = CacheManager()
     cache_file = cache_manager.cache_dir / f"steam_app_{app_id}.json"
     downloader.download_async(url, str(cache_file), timeout=5, callback=process_response)
+
+
+def _get_icon_theme_dir() -> str:
+    xdg_data_home = os.getenv(
+        "XDG_DATA_HOME",
+        os.path.join(os.path.expanduser("~"), ".local", "share"),
+    )
+    return os.path.join(xdg_data_home, "icons", "hicolor")
+
+
+def _install_client_icon(icon_path: str, icon_name: str) -> str:
+    try:
+        with Image.open(icon_path) as image:
+            source_image = image.convert("RGBA")
+            theme_dir = _get_icon_theme_dir()
+            for size in STEAM_CLIENT_ICON_SIZES:
+                icon_dir = os.path.join(theme_dir, f"{size}x{size}", "apps")
+                os.makedirs(icon_dir, exist_ok=True)
+                png_path = os.path.join(icon_dir, f"{icon_name}.png")
+                resized = source_image.resize((size, size), Image.Resampling.LANCZOS)
+                resized.save(png_path, "PNG")
+        return icon_name
+    except (OSError, UnidentifiedImageError) as e:
+        logger.warning("Failed to convert Steam icon %s: %s", icon_path, e)
+        return ""
+
+
+def _download_client_icon(
+    appid_str: str,
+    icon_hash: str,
+    icon_dir: str,
+    callback: Callable[[str], None],
+) -> None:
+    icon_path = os.path.join(icon_dir, appid_str, f"{icon_hash}.ico")
+    icon_name = f"steam_icon_{appid_str}"
+    if os.path.exists(icon_path):
+        callback(_install_client_icon(icon_path, icon_name))
+        return
+
+    icon_url = (
+        "https://shared.fastly.steamstatic.com/community_assets/images/apps/"
+        f"{appid_str}/{icon_hash}.ico"
+    )
+    os.makedirs(os.path.dirname(icon_path), exist_ok=True)
+
+    def on_icon_download(path: str | None) -> None:
+        callback(_install_client_icon(path, icon_name) if path else "")
+
+    downloader.download_async(
+        icon_url,
+        icon_path,
+        timeout=5,
+        callback=on_icon_download,
+    )
+
+
+def fetch_client_icon_async(appid: int | str, callback: Callable[[str], None]) -> None:
+    """Asynchronously fetch Steam client icon and return icon theme name."""
+    appid_str = str(appid).strip()
+    if not appid_str.isdigit():
+        callback("")
+        return
+
+    cache_dir = CacheManager().cache_dir
+    info_path = cache_dir / f"steamcmd_app_{appid_str}_{time.time_ns()}.json"
+    url = f"https://api.steamcmd.net/v1/info/{appid_str}"
+
+    def process_info(result: str | None) -> None:
+        try:
+            if not result or not os.path.exists(result):
+                callback("")
+                return
+            with open(result, "rb") as f:
+                data = orjson.loads(f.read())
+            common = data.get("data", {}).get(appid_str, {}).get("common", {})
+            icon_hash = common.get("clienticon", "")
+            if not icon_hash:
+                callback("")
+                return
+            _download_client_icon(
+                appid_str,
+                icon_hash,
+                str(cache_dir / "steam_icons"),
+                callback,
+            )
+        except (OSError, orjson.JSONDecodeError) as e:
+            logger.warning("Failed to process Steam icon info for appid %s: %s", appid_str, e)
+            callback("")
+        finally:
+            if result:
+                try:
+                    os.remove(result)
+                except OSError:
+                    pass
+
+    downloader.download_async(url, str(info_path), timeout=5, callback=process_info)
 
 
 def get_protondb_tier_async(appid: int, callback: Callable[[str], None]) -> None:

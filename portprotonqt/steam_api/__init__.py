@@ -31,6 +31,7 @@ from portprotonqt.steam_api.cache import (
 from portprotonqt.steam_api.api import (
     fetch_sgdb_cover_async,
     fetch_app_info_async,
+    fetch_client_icon_async,
     get_protondb_tier_async,
     get_full_steam_game_info_async,
     get_cached_steam_game_info,
@@ -78,6 +79,7 @@ __all__ = [
     # API
     "fetch_sgdb_cover_async",
     "fetch_app_info_async",
+    "fetch_client_icon_async",
     "get_protondb_tier_async",
     "get_full_steam_game_info_async",
     "get_cached_steam_game_info",
