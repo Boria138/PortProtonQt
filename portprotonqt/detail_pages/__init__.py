@@ -1111,10 +1111,29 @@ class DetailPageManager:
                 QTimer.singleShot(10, lambda: self.main_window.loadGames(force_load=True))
             else:
                 QTimer.singleShot(10, lambda: self.main_window.game_library_manager.update_game_grid())
+            QTimer.singleShot(50, self._focus_first_library_card)
         elif tab_index == 1 and hasattr(self.main_window, "autoInstallContainer"):
             QTimer.singleShot(10, lambda: self.main_window.autoInstallContainer.updateGeometry())
             if hasattr(self.main_window, "autoInstallContainerLayout"):
                 QTimer.singleShot(15, lambda: self.main_window.autoInstallContainerLayout.update())
+
+    def _focus_first_library_card(self) -> None:
+        container = getattr(self.main_window, "gamesListWidget", None)
+        if container is None:
+            return
+        cards = [
+            widget for widget in container.findChildren(QWidget)
+            if widget.__class__.__name__ == "GameCard"
+        ]
+        if not cards:
+            return
+        cards.sort(key=lambda card: (card.pos().y(), card.pos().x()))
+        cards[0].setFocus(Qt.FocusReason.OtherFocusReason)
+        scroll_area = container.parentWidget()
+        while scroll_area and not isinstance(scroll_area, QScrollArea):
+            scroll_area = scroll_area.parentWidget()
+        if scroll_area:
+            scroll_area.ensureWidgetVisible(cards[0], 50, 50)
 
     def _finalize_cleanup(self) -> None:
         self.main_window.currentDetailPage = None

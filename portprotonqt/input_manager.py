@@ -10,9 +10,10 @@ import pygame
 from pygame._sdl2 import controller
 from evdev import UInput, ecodes
 from enum import Enum
+from shiboken6 import isValid
 from PySide6.QtWidgets import QWidget, QStackedWidget, QApplication, QScrollArea, QAbstractScrollArea, QLineEdit, QDialog, QMenu, QComboBox, QListView, QMessageBox, QListWidget, QTableWidget, QAbstractItemView, QSlider, QCheckBox, QPushButton
 from PySide6.QtCore import Qt, QObject, QEvent, QPoint, Signal, Slot, QTimer, QThread
-from PySide6.QtGui import QKeyEvent, QMouseEvent
+from PySide6.QtGui import QKeySequence
 from portprotonqt.logger import get_logger
 from portprotonqt.image_utils import FullscreenDialog
 from portprotonqt.custom_widgets import NavLabel, AutoSizeButton
@@ -176,7 +177,7 @@ class MouseEmulationThread(QThread):
 class InputManager(QObject):
     """
     Manages input from gamepads and keyboards for navigating the application interface.
-    Supports gamepad hotplugging, button and axis events, and keyboard event filtering
+    Supports gamepad hotplugging, button and axis events, and pygame keyboard events
     for seamless UI interaction.
     """
     # Signals for gamepad events
@@ -307,13 +308,16 @@ class InputManager(QObject):
         self.dpad_moved.connect(self.handle_dpad_slot)
         self.toggle_fullscreen.connect(self.handle_fullscreen_slot)
 
-        # Install keyboard event filter
+        # Install wheel event filter
         app = QApplication.instance()
         if app is not None:
             app.installEventFilter(self)
 
-        # Initialize evdev + hotplug
+        # Initialize pygame input backend
         self.init_gamepad()
+        self.pygame_event_timer = QTimer(self)
+        self.pygame_event_timer.timeout.connect(self._process_pygame_events)
+        self.pygame_event_timer.start(10)
 
     def _async_enable_mouse_emulation(self):
         """Asynchronously enable mouse emulation to avoid blocking startup."""
@@ -2926,6 +2930,8 @@ class InputManager(QObject):
             if code in (PAD_DPAD_X, PAD_DPAD_Y):
                 current_index = self._parent.stackedWidget.currentIndex()
                 if current_index in (0, 1):
+                    if code == PAD_DPAD_Y and value < 0 and self._focus_tab_from_search(current_index):
+                        return
                     container = self._parent.gamesListWidget if current_index == 0 else self._parent.autoInstallContainer
                     if container is None:
                         return
@@ -3138,18 +3144,18 @@ class InputManager(QObject):
                     scrollable = scrollable.parent()
                 return True
 
+        if event.type() in (QEvent.Type.KeyPress, QEvent.Type.KeyRelease):
+            key = self._qt_event_to_pygame_key(event)
+            if key is not None and event.type() == QEvent.Type.KeyPress:
+                return self._handle_pygame_key_press(key, self._qt_modifiers_to_pygame(event))
+            if key is not None:
+                return self._handle_pygame_key_release(key)
+
         if event.type() == QEvent.Type.MouseButtonPress:
-            mouse_event = cast(QMouseEvent, event)
-            if mouse_event.button() == Qt.MouseButton.ExtraButton1:
-                # Handle ExtraButton1 as "back" action, similar to Escape
-                active_win = QApplication.activeWindow()
-                focused = QApplication.focusWidget()
-                if isinstance(focused, QLineEdit):
-                    return False  # Skip if in QLineEdit
-                if isinstance(active_win, QDialog):
-                    active_win.reject()
-                    return True
-                self._parent.goBackDetailPage(self._parent.currentDetailPage)
+            button_method = getattr(event, "button", None)
+            button = button_method() if callable(button_method) else None
+            if button == Qt.MouseButton.ExtraButton1:
+                self._handle_back_mouse_button()
                 return True
 
         # Ensure obj is a QObject
@@ -3157,242 +3163,316 @@ class InputManager(QObject):
             logger.debug(f"Skipping event filter for non-QObject: {type(obj).__name__}")
             return False
 
-        # Handle key press and release events
-        if not isinstance(event, QKeyEvent):
-            return super().eventFilter(obj, event)
-
-        key = event.key()
-        modifiers = event.modifiers()
-        focused = QApplication.focusWidget()
-        active_win = QApplication.activeWindow()
-
-        # Handle key press events
-        if event.type() == QEvent.Type.KeyPress:
-            # Handle FileExplorer specific logic
-            if self.file_explorer:
-                # Handle drive buttons in FileExplorer
-                if key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
-                    if isinstance(focused, AutoSizeButton) and hasattr(self.file_explorer, 'drive_buttons') and focused in self.file_explorer.drive_buttons:
-                        self.file_explorer.select_drive()
-                        return True
-                    elif isinstance(focused, QListWidget) and focused == self.file_explorer.file_list:
-                        current_item = focused.currentItem()
-                        if current_item:
-                            selected = current_item.text()
-                            full_path = os.path.join(self.file_explorer.current_path, selected)
-                            if os.path.isdir(full_path):
-                                if selected == "../":
-                                    self.file_explorer.previous_dir()
-                                else:
-                                    self.file_explorer.current_path = os.path.normpath(full_path)
-                                    self.file_explorer.update_file_list()
-                            elif not self.file_explorer.directory_only:
-                                self.file_explorer.file_signal.file_selected.emit(os.path.normpath(full_path))
-                                self.file_explorer.accept()
-                            return True
-                    else:
-                        self._parent.activateFocusedWidget()
-                        return True
-
-                # Handle FileExplorer navigation with right arrow key
-                if key == Qt.Key.Key_Right:
-                    try:
-                        if hasattr(self.file_explorer, 'drive_buttons') and self.file_explorer.drive_buttons:
-                            if not isinstance(focused, AutoSizeButton) or focused not in self.file_explorer.drive_buttons:
-                                self.file_explorer.drive_buttons[0].setFocus()
-                                self.file_explorer.ensure_button_visible(self.file_explorer.drive_buttons[0])
-                            else:
-                                current_idx = self.file_explorer.drive_buttons.index(focused)
-                                next_idx = min(current_idx + 1, len(self.file_explorer.drive_buttons) - 1)
-                                self.file_explorer.drive_buttons[next_idx].setFocus()
-                                self.file_explorer.ensure_button_visible(self.file_explorer.drive_buttons[next_idx])
-                            return True
-                    except Exception as e:
-                        logger.error(f"Error handling right arrow in FileExplorer: {e}")
-                        return True
-
-                # Handle Backspace for FileExplorer navigation
-                if key == Qt.Key.Key_Backspace:
-                    self.file_explorer.previous_dir()
-                    return True
-
-            # Handle QLineEdit cursor movement with Left/Right arrows
-            if isinstance(focused, QLineEdit) and key in (Qt.Key.Key_Left, Qt.Key.Key_Right):
-                if key == Qt.Key.Key_Left:
-                    focused.cursorBackward(False, 1)  # Move cursor left by one character
-                elif key == Qt.Key.Key_Right:
-                    focused.cursorForward(False, 1)  # Move cursor right by one character
-                return True  # Consume the event to prevent further processing
-
-            # Allow text editing in editable combo boxes
-            if key == Qt.Key.Key_Backspace:
-                if isinstance(focused, QComboBox) and focused.isEditable():
-                    return False
-                parent = focused.parentWidget() if focused else None
-                if isinstance(parent, QComboBox) and parent.isEditable():
-                    return False
-
-            # Refresh game grid with F5
-            if key == Qt.Key.Key_F5:
-                self._parent.refreshGames()
-                return True
-
-            # Close application with Ctrl+Q
-            if key == Qt.Key.Key_Q and modifiers & Qt.KeyboardModifier.ControlModifier:
-                app.quit()
-                return True
-
-            # Handle Backspace for FileExplorer navigation (move to parent directory)
-            if key == Qt.Key.Key_Backspace and self.file_explorer:
-                self.file_explorer.previous_dir()
-                return True
-
-            # Close Dialogs with Escape
-            if key == Qt.Key.Key_Escape:
-                if isinstance(focused, QLineEdit):
-                    return False
-                if isinstance(active_win, QDialog):
-                    active_win.reject()
-                    return True
-
-            # FullscreenDialog navigation
-            if isinstance(active_win, FullscreenDialog):
-                if key in (Qt.Key.Key_Escape, Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_Backspace):
-                    active_win.close()
-                    return True
-                elif key in (Qt.Key.Key_Left, Qt.Key.Key_Right):
-                    # Navigate screenshots in FullscreenDialog
-                    if key == Qt.Key.Key_Left:
-                        active_win.show_prev()
-                    elif key == Qt.Key.Key_Right:
-                        active_win.show_next()
-                    return True  # Consume event to prevent tab switching
-
-            # Handle common UI elements like QMessageBox before tab switching
-            # Check if there's an active QMessageBox that should handle the arrow keys first
-            active = QApplication.activeWindow()
-            if isinstance(active, QMessageBox):
-                # Prevent tab switching when there's an active QMessageBox
-                # Let the default Qt behavior handle the QMessageBox focus navigation
-                if key in (Qt.Key.Key_Left, Qt.Key.Key_Right, Qt.Key.Key_Up, Qt.Key.Key_Down):
-                    # Just continue to let the default processing handle the QMessageBox
-                    pass  # Allow the event to continue to the default processing
-
-            # Handle tab switching with Left/Right arrow keys when not in GameCard focus or QLineEdit or QTableWidget or AutoSizeButton
-            # Also skip if there's an active QMessageBox or other QDialog
-            active = QApplication.activeWindow()
-            if (key in (Qt.Key.Key_Left, Qt.Key.Key_Right) and
-                not isinstance(focused, GameCard | QLineEdit | QTableWidget | AutoSizeButton | QCheckBox) and
-                not self.file_explorer and
-                not isinstance(active, QMessageBox)):
-                if not isinstance(active, QDialog):
-                    idx = self._parent.stackedWidget.currentIndex()
-
-                    # Get only visible tab indices
-                    visible_tab_indices = []
-                    if hasattr(self._parent, 'tabButtons'):
-                        for i, btn in self._parent.tabButtons.items():
-                            if btn.isVisible():
-                                visible_tab_indices.append(i)
-                        visible_tab_indices.sort()  # Ensure they're in order
-
-                    if visible_tab_indices:
-                        # Find current position in the visible tabs list
-                        try:
-                            current_visible_pos = visible_tab_indices.index(idx)
-                        except ValueError:
-                            # Current index is not visible, default to first visible
-                            current_visible_pos = 0
-
-                        if key == Qt.Key.Key_Left:
-                            new_visible_pos = (current_visible_pos - 1) % len(visible_tab_indices)
-                            new_idx = visible_tab_indices[new_visible_pos]
-                            self._parent.switchTab(new_idx)
-                            self._parent.tabButtons[new_idx].setFocus(Qt.FocusReason.OtherFocusReason)
-                            return True
-                        elif key == Qt.Key.Key_Right:
-                            new_visible_pos = (current_visible_pos + 1) % len(visible_tab_indices)
-                            new_idx = visible_tab_indices[new_visible_pos]
-                            self._parent.switchTab(new_idx)
-                            self._parent.tabButtons[new_idx].setFocus(Qt.FocusReason.OtherFocusReason)
-                            return True
-
-            # Map arrow keys to D-pad press events for other contexts
-            if key in (Qt.Key.Key_Up, Qt.Key.Key_Down, Qt.Key.Key_Left, Qt.Key.Key_Right):
-                now = time.time()
-                dpad_code = None
-                dpad_value = 0
-                if key == Qt.Key.Key_Up:
-                    dpad_code = PAD_DPAD_Y
-                    dpad_value = -1
-                elif key == Qt.Key.Key_Down:
-                    dpad_code = PAD_DPAD_Y
-                    dpad_value = 1
-                elif key == Qt.Key.Key_Left:
-                    dpad_code = PAD_DPAD_X
-                    dpad_value = -1
-                elif key == Qt.Key.Key_Right:
-                    dpad_code = PAD_DPAD_X
-                    dpad_value = 1
-
-                if dpad_code is not None:
-                    self.dpad_moved.emit(dpad_code, dpad_value, now)
-                    return True
-
-            # Context menu for GameCard
-            if isinstance(focused, GameCard):
-                if key == Qt.Key.Key_F10 and modifiers & Qt.KeyboardModifier.ShiftModifier:
-                    pos = QPoint(focused.width() // 2, focused.height() // 2)
-                    focused._show_context_menu(pos)
-                    return True
-
-            # General actions: Activate, Back, Add
-            if key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
-                # Special handling for table widgets
-                if isinstance(focused, QTableWidget):
-                    self.handle_table_confirm(focused)
-                    return True
-                self._parent.activateFocusedWidget()
-                return True
-            elif key in (Qt.Key.Key_Escape, Qt.Key.Key_Backspace):
-                if isinstance(focused, QLineEdit):
-                    return False
-                if isinstance(focused, QComboBox) and focused.isEditable():
-                    return False
-                parent = focused.parentWidget() if focused else None
-                if isinstance(parent, QComboBox) and parent.isEditable():
-                    return False
-                self._parent.goBackDetailPage(self._parent.currentDetailPage)
-                return True
-            elif key == Qt.Key.Key_E:
-                if isinstance(focused, QLineEdit):
-                    return False
-                # Only open AddGameDialog if in library tab (index 0)
-                if self._parent.stackedWidget.currentIndex() == 0:
-                    self._parent.openAddGameDialog()
-                    return True
-
-            # Toggle fullscreen with F11
-            if key == Qt.Key.Key_F11 and not self._is_gamescope_session:
-                self.toggle_fullscreen.emit(not self._is_fullscreen)
-                return True
-
-        # Handle key release events for arrow keys
-        elif event.type() == QEvent.Type.KeyRelease:
-            if key in (Qt.Key.Key_Up, Qt.Key.Key_Down, Qt.Key.Key_Left, Qt.Key.Key_Right):
-                now = time.time()
-                dpad_code = None
-                if key in (Qt.Key.Key_Up, Qt.Key.Key_Down):
-                    dpad_code = PAD_DPAD_Y
-                elif key in (Qt.Key.Key_Left, Qt.Key.Key_Right):
-                    dpad_code = PAD_DPAD_X
-
-                if dpad_code is not None:
-                    # Emit release event with value 0 to stop continuous movement
-                    self.dpad_moved.emit(dpad_code, 0, now)
-                    return True
-
         return super().eventFilter(obj, event)
+
+    def _qt_event_to_pygame_key(self, event: QEvent) -> int | None:
+        native_key = self._native_scan_to_pygame_key(event)
+        if native_key is not None:
+            return native_key
+        text_method = getattr(event, "text", None)
+        text = text_method() if callable(text_method) else ""
+        text = text if isinstance(text, str) else ""
+        if text and text.isascii() and text.isprintable():
+            return pygame.key.key_code(text.lower())
+        key_method = getattr(event, "key", None)
+        key_value = key_method() if callable(key_method) else 0
+        key = key_value if isinstance(key_value, int) else 0
+        name = QKeySequence(key).toString()
+        if len(name) == 1 and name.isprintable():
+            return pygame.key.key_code(name.lower())
+        key_names = {
+            "Backspace": pygame.K_BACKSPACE,
+            "Down": pygame.K_DOWN,
+            "Enter": pygame.K_KP_ENTER,
+            "Esc": pygame.K_ESCAPE,
+            "F5": pygame.K_F5,
+            "F10": pygame.K_F10,
+            "F11": pygame.K_F11,
+            "Left": pygame.K_LEFT,
+            "Return": pygame.K_RETURN,
+            "Right": pygame.K_RIGHT,
+            "Up": pygame.K_UP,
+        }
+        return key_names.get(name)
+
+    def _native_scan_to_pygame_key(self, event: QEvent) -> int | None:
+        scan_method = getattr(event, "nativeScanCode", None)
+        scan_value = scan_method() if callable(scan_method) else 0
+        scan_code = scan_value if isinstance(scan_value, int) else 0
+        scan_keys = {
+            16: pygame.K_q,
+            18: pygame.K_e,
+            24: pygame.K_q,
+            26: pygame.K_e,
+        }
+        return scan_keys.get(scan_code)
+
+    def _qt_modifiers_to_pygame(self, event: QEvent) -> int:
+        modifiers_method = getattr(event, "modifiers", None)
+        modifiers = modifiers_method() if callable(modifiers_method) else None
+        pygame_modifiers = 0
+        if isinstance(modifiers, Qt.KeyboardModifier) and modifiers & Qt.KeyboardModifier.ControlModifier:
+            pygame_modifiers |= pygame.KMOD_CTRL
+        if isinstance(modifiers, Qt.KeyboardModifier) and modifiers & Qt.KeyboardModifier.ShiftModifier:
+            pygame_modifiers |= pygame.KMOD_SHIFT
+        return pygame_modifiers
+
+    def _handle_back_mouse_button(self) -> None:
+        active_win = QApplication.activeWindow()
+        focused = self._focused_widget()
+        if isinstance(focused, QLineEdit):
+            return
+        if isinstance(active_win, QDialog):
+            active_win.reject()
+            return
+        self._parent.goBackDetailPage(self._parent.currentDetailPage)
+
+    def _focused_widget(self) -> QWidget | None:
+        focused = QApplication.focusWidget()
+        if focused is None or not isValid(focused):
+            return None
+        return focused
+
+    def _activate_focused_widget(self, focused: QWidget | None) -> None:
+        if focused is None or not isValid(focused):
+            return
+        try:
+            self._parent.activateFocusedWidget()
+        except RuntimeError as e:
+            logger.debug("Focused widget was deleted before activation: %s", e)
+
+    def _handle_pygame_mouse_button(self, event: pygame.event.Event) -> None:
+        """Handle mouse input received from the pygame event queue."""
+        if getattr(event, "button", None) != pygame.BUTTON_X1:
+            return
+        self._handle_back_mouse_button()
+
+    def _handle_pygame_key_event(self, event: pygame.event.Event) -> None:
+        """Handle keyboard input received from the pygame event queue."""
+        key = getattr(event, "key", None)
+        if key is None:
+            return
+        if event.type == pygame.KEYDOWN:
+            self._handle_pygame_key_press(key, pygame.key.get_mods())
+        elif event.type == pygame.KEYUP:
+            self._handle_pygame_key_release(key)
+
+    def _handle_pygame_key_press(self, key: int, modifiers: int) -> bool:
+        if self._handle_pygame_system_key(key, modifiers):
+            return True
+        if self._handle_pygame_file_explorer_key(key):
+            return True
+        if self._handle_pygame_text_key(key):
+            return True
+        if self._handle_pygame_dialog_key(key):
+            return True
+        if self._handle_pygame_tab_key(key):
+            return True
+        if self._handle_pygame_arrow_press(key):
+            return True
+        return self._handle_pygame_action_key(key, modifiers)
+
+    def _handle_pygame_system_key(self, key: int, modifiers: int) -> bool:
+        if key == pygame.K_F5:
+            self._parent.refreshGames()
+            return True
+        if key == pygame.K_q and modifiers & pygame.KMOD_CTRL:
+            app = QApplication.instance()
+            if app is not None:
+                app.quit()
+            return True
+        if key == pygame.K_F11 and not self._is_gamescope_session:
+            self.toggle_fullscreen.emit(not self._is_fullscreen)
+            return True
+        return False
+
+    def _handle_pygame_file_explorer_key(self, key: int) -> bool:
+        file_explorer = self.file_explorer
+        if not file_explorer:
+            return False
+        if key in (pygame.K_RETURN, pygame.K_KP_ENTER):
+            self._activate_file_explorer_focus()
+            return True
+        if key == pygame.K_BACKSPACE:
+            file_explorer.previous_dir()
+            return True
+        return False
+
+    def _activate_file_explorer_focus(self) -> None:
+        file_explorer = self.file_explorer
+        if file_explorer is None:
+            return
+        focused = self._focused_widget()
+        if (
+            isinstance(focused, AutoSizeButton) and
+            hasattr(file_explorer, 'drive_buttons') and
+            focused in file_explorer.drive_buttons
+        ):
+            file_explorer.select_drive()
+            return
+        if file_explorer.file_list.count() > 0:
+            self._activate_file_explorer_item(file_explorer.file_list)
+            return
+        self._activate_focused_widget(focused)
+
+    def _activate_file_explorer_item(self, focused: QListWidget) -> None:
+        file_explorer = self.file_explorer
+        if file_explorer is None:
+            return
+        current_item = focused.currentItem()
+        if current_item is None and focused.count() > 0:
+            focused.setCurrentRow(0)
+            current_item = focused.currentItem()
+        if not current_item:
+            return
+        selected = current_item.text()
+        full_path = os.path.join(file_explorer.current_path, selected)
+        if os.path.isdir(full_path):
+            if selected == "../":
+                file_explorer.previous_dir()
+            else:
+                file_explorer.current_path = os.path.normpath(full_path)
+                file_explorer.update_file_list()
+        elif not file_explorer.directory_only:
+            file_explorer.file_signal.file_selected.emit(os.path.normpath(full_path))
+            file_explorer.accept()
+
+    def _handle_pygame_text_key(self, key: int) -> bool:
+        focused = self._focused_widget()
+        if isinstance(focused, QLineEdit) and key in (pygame.K_LEFT, pygame.K_RIGHT):
+            if key == pygame.K_LEFT:
+                focused.cursorBackward(False, 1)
+            else:
+                focused.cursorForward(False, 1)
+            return True
+        return False
+
+    def _focused_editable_combo(self, focused: QWidget | None) -> bool:
+        if isinstance(focused, QComboBox) and focused.isEditable():
+            return True
+        parent = focused.parentWidget() if focused else None
+        return isinstance(parent, QComboBox) and parent.isEditable()
+
+    def _handle_pygame_dialog_key(self, key: int) -> bool:
+        active_win = QApplication.activeWindow()
+        focused = self._focused_widget()
+        if isinstance(active_win, FullscreenDialog):
+            return self._handle_pygame_fullscreen_dialog_key(active_win, key)
+        if key != pygame.K_ESCAPE:
+            return False
+        settings_dialog = self.settings_dialog
+        if settings_dialog is not None:
+            open_combo = self._get_open_settings_combo()
+            if open_combo:
+                open_combo.hidePopup()
+                settings_dialog.advanced_table.setFocus()
+                return True
+        if isinstance(focused, QLineEdit):
+            return False
+        if isinstance(active_win, QDialog):
+            active_win.reject()
+            return True
+        return False
+
+    def _handle_pygame_fullscreen_dialog_key(self, active_win: FullscreenDialog, key: int) -> bool:
+        if key in (pygame.K_ESCAPE, pygame.K_RETURN, pygame.K_KP_ENTER, pygame.K_BACKSPACE):
+            active_win.close()
+            return True
+        if key == pygame.K_LEFT:
+            active_win.show_prev()
+            return True
+        if key == pygame.K_RIGHT:
+            active_win.show_next()
+            return True
+        return False
+
+    def _handle_pygame_tab_key(self, key: int) -> bool:
+        if key not in (pygame.K_LEFT, pygame.K_RIGHT):
+            return False
+        focused = self._focused_widget()
+        active = QApplication.activeWindow()
+        if self.file_explorer or isinstance(active, QMessageBox | QDialog):
+            return False
+        if isinstance(focused, GameCard | QLineEdit | QTableWidget | AutoSizeButton | QCheckBox):
+            return False
+        return self._switch_visible_tab(-1 if key == pygame.K_LEFT else 1)
+
+    def _focus_tab_from_search(self, current_index: int) -> bool:
+        focused = self._focused_widget()
+        search_edit = (
+            getattr(self._parent, 'searchEdit', None)
+            if current_index == 0
+            else getattr(self._parent, 'autoInstallSearchLineEdit', None)
+        )
+        if focused is not search_edit:
+            return False
+        tab_button = self._parent.tabButtons.get(current_index)
+        if tab_button is None or not tab_button.isVisible():
+            return False
+        tab_button.setFocus(Qt.FocusReason.OtherFocusReason)
+        return True
+
+    def _switch_visible_tab(self, step: int) -> bool:
+        idx = self._parent.stackedWidget.currentIndex()
+        visible = [i for i, btn in self._parent.tabButtons.items() if btn.isVisible()]
+        visible.sort()
+        if not visible:
+            return False
+        try:
+            current_pos = visible.index(idx)
+        except ValueError:
+            current_pos = 0
+        new_idx = visible[(current_pos + step) % len(visible)]
+        self._parent.switchTab(new_idx)
+        self._parent.tabButtons[new_idx].setFocus(Qt.FocusReason.OtherFocusReason)
+        return True
+
+    def _handle_pygame_arrow_press(self, key: int) -> bool:
+        dpad = {
+            pygame.K_UP: (PAD_DPAD_Y, -1),
+            pygame.K_DOWN: (PAD_DPAD_Y, 1),
+            pygame.K_LEFT: (PAD_DPAD_X, -1),
+            pygame.K_RIGHT: (PAD_DPAD_X, 1),
+        }.get(key)
+        if dpad is None:
+            return False
+        self.dpad_moved.emit(dpad[0], dpad[1], time.time())
+        return True
+
+    def _handle_pygame_action_key(self, key: int, modifiers: int) -> bool:
+        focused = self._focused_widget()
+        if isinstance(focused, GameCard) and key == pygame.K_F10 and modifiers & pygame.KMOD_SHIFT:
+            pos = QPoint(focused.width() // 2, focused.height() // 2)
+            focused._show_context_menu(pos)
+            return True
+        if key in (pygame.K_RETURN, pygame.K_KP_ENTER):
+            if isinstance(focused, QTableWidget):
+                self.handle_table_confirm(focused)
+            else:
+                self._activate_focused_widget(focused)
+            return True
+        elif key in (pygame.K_ESCAPE, pygame.K_BACKSPACE):
+            return self._handle_pygame_back_key(focused)
+        elif key == pygame.K_e and not isinstance(focused, QLineEdit):
+            if self._parent.stackedWidget.currentIndex() == 0:
+                self._parent.openAddGameDialog()
+                return True
+        return False
+
+    def _handle_pygame_back_key(self, focused: QWidget | None) -> bool:
+        if isinstance(focused, QLineEdit) or self._focused_editable_combo(focused):
+            return False
+        self._parent.goBackDetailPage(self._parent.currentDetailPage)
+        return True
+
+    def _handle_pygame_key_release(self, key: int) -> bool:
+        if key in (pygame.K_UP, pygame.K_DOWN):
+            self.dpad_moved.emit(PAD_DPAD_Y, 0, time.time())
+            return True
+        elif key in (pygame.K_LEFT, pygame.K_RIGHT):
+            self.dpad_moved.emit(PAD_DPAD_X, 0, time.time())
+            return True
+        return False
 
     def init_gamepad(self) -> None:
         self._init_pygame_backend()
@@ -3563,12 +3643,15 @@ class InputManager(QObject):
         return int(max(-PYGAME_AXIS_SCALE, min(PYGAME_AXIS_SCALE, axis_value)))
 
     def _process_pygame_events(self) -> None:
-        """Handle controller add/remove events from the SDL event queue."""
+        """Handle SDL input events from the pygame event queue."""
         if not self._pygame_ready or self._gamepad_polling_suspended:
             return
         event_types = (
             pygame.CONTROLLERDEVICEADDED,
             pygame.CONTROLLERDEVICEREMOVED,
+            pygame.KEYDOWN,
+            pygame.KEYUP,
+            pygame.MOUSEBUTTONDOWN,
         )
         for event in pygame.event.get(event_types):
             if event.type == pygame.CONTROLLERDEVICEADDED:
@@ -3578,6 +3661,10 @@ class InputManager(QObject):
             elif event.type == pygame.CONTROLLERDEVICEREMOVED:
                 if self.gamepad and getattr(event, "instance_id", None) == self.gamepad.instance_id:
                     self.gamepad_hotplug.emit('remove')
+            elif event.type in (pygame.KEYDOWN, pygame.KEYUP):
+                self._handle_pygame_key_event(event)
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                self._handle_pygame_mouse_button(event)
 
     def _poll_button_events(self, gamepad: PygameGamepad, current_time: float) -> None:
         """Emit button changes using evdev-compatible codes."""
@@ -3692,10 +3779,6 @@ class InputManager(QObject):
                 if self._gamepad_polling_suspended:
                     time.sleep(0.1)
                     continue
-                try:
-                    self._process_pygame_events()
-                except Exception as ex:
-                    logger.error(f"Unexpected error in gamepad event handling: {ex}")
                 active_gamepad = self.gamepad
                 if not active_gamepad:
                     time.sleep(0.1)
@@ -3746,6 +3829,8 @@ class InputManager(QObject):
             # Stop all timers
             if hasattr(self, 'gamepad_check_timer'):
                 self.gamepad_check_timer.stop()
+            if hasattr(self, 'pygame_event_timer'):
+                self.pygame_event_timer.stop()
             self.dpad_timer.stop()
             self.nav_timer.stop()
 

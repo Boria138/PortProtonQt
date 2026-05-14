@@ -887,17 +887,6 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
             self.load_current_settings()
             self.close()
 
-    def keyPressEvent(self, event):
-        """Override key press event to handle combo box interaction properly."""
-        focused_widget = QApplication.focusWidget()
-        if (event.key() == Qt.Key.Key_Escape and
-            isinstance(focused_widget, QComboBox) and
-            focused_widget.view().isVisible()):
-            focused_widget.hidePopup()
-            self.advanced_table.setFocus()
-            return
-        super().keyPressEvent(event)
-
     def closeEvent(self, event):
         if hasattr(self, 'keyboard') and self.keyboard.isVisible():
             self.keyboard.hide()

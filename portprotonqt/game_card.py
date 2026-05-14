@@ -775,24 +775,3 @@ class GameCard(QFrame):
         except RuntimeError:
             # Object already deleted
             pass
-
-
-    def keyPressEvent(self, event):
-        if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
-            game_data = {
-                "name": self.name,
-                "description": self.description,
-                "cover_path": self.cover_path,
-                "appid": self.appid,
-                "controller_support": self.controller_support,
-                "exec_line": self.exec_line,
-                "last_launch": self.last_launch,
-                "formatted_playtime": self.formatted_playtime,
-                "protondb_tier": self.protondb_tier,
-                "game_source": self.game_source,
-                "anticheat_status": self.anticheat_status,
-                "anticheat_slug": self.anticheat_slug,
-            }
-            self.select_callback(game_data)
-        else:
-            super().keyPressEvent(event)
