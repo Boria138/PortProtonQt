@@ -55,5 +55,5 @@ repos:
         name: Check meson.build syntax and file inclusion
         entry: ./dev-scripts/check_meson_files.py
         language: system
-        files: (^portprotonqt/.*\.py$|meson\.build$)
+        files: (^portprotonqt/.*\.py$|^build-aux/share/portproton/|meson\.build$)
         pass_filenames: false

@@ -706,6 +706,15 @@ def get_files_from_meson_build(meson_file_path):
     return sorted(set(files))  # Use set to remove duplicates
 
 
+def get_subdirs_from_meson_build(meson_file_path):
+    """Extract install_subdir paths from meson.build."""
+    with open(meson_file_path, 'r', encoding='utf-8') as f:
+        content = f.read()
+
+    matches = re.findall(r"install_subdir\(\s*'([^']+)'", content, re.DOTALL)
+    return sorted(set(matches))
+
+
 def check_syntax(repo_root: Path) -> tuple[list[str], list[str]]:
     """Check meson.build syntax and return (errors, warnings)."""
     meson_files_list = list(repo_root.glob("**/meson.build"))
@@ -741,6 +750,28 @@ def check_files(repo_root: Path) -> list[str]:
     return [f for f in dir_files if f not in meson_files]
 
 
+def check_portproton_subdirs(repo_root: Path) -> list[str]:
+    """Check if PortProton data directories are included in root meson.build."""
+    portproton_dir = repo_root / 'build-aux' / 'share' / 'portproton'
+    root_meson = repo_root / 'meson.build'
+
+    if not portproton_dir.exists() or not root_meson.exists():
+        return []
+
+    dir_entries = [
+        str(Path('build-aux') / 'share' / 'portproton' / entry.name)
+        for entry in portproton_dir.iterdir()
+        if entry.is_dir() and not entry.name.startswith('.')
+    ]
+    meson_paths = get_files_from_meson_build(root_meson)
+    meson_paths.extend(get_subdirs_from_meson_build(root_meson))
+
+    return [
+        entry for entry in sorted(dir_entries)
+        if not any(path == entry or path.startswith(f"{entry}/") for path in meson_paths)
+    ]
+
+
 def main():
     repo_root = Path(__file__).parent.parent
     exit_code = 0
@@ -764,12 +795,20 @@ def main():
     # Check files inclusion (only if syntax is OK)
     if exit_code == 0:
         missing_files = check_files(repo_root)
+        missing_subdirs = check_portproton_subdirs(repo_root)
 
         if missing_files:
             print("ERROR: The following files are present in the directory but missing from meson.build:")
             for file in missing_files:
                 print(f"  - {file}")
             print("\nPlease add these files to the install_data section in portprotonqt/meson.build")
+            exit_code = 1
+
+        if missing_subdirs:
+            print("ERROR: The following PortProton directories are missing from meson.build:")
+            for directory in missing_subdirs:
+                print(f"  - {directory}")
+            print("\nPlease add these directories to install_subdir() in the root meson.build")
             exit_code = 1
 
     # Success message
