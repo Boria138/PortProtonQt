@@ -412,6 +412,12 @@ class GamescopeSettingsMixin:
     def _create_gamescope_resolution_widget(self, target):
         """Create a resolution combo widget and bind it to width/height fields."""
         widget = QComboBox()
+        widget.view().window().setWindowFlags(
+            Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
+        )
+        widget.view().window().setAttribute(
+            Qt.WidgetAttribute.WA_TranslucentBackground
+        )
         widget.addItem(_("Default value"), '')
         for resolution in self._get_gamescope_resolution_options():
             widget.addItem(resolution, resolution)
@@ -523,6 +529,12 @@ class GamescopeSettingsMixin:
     def _create_gamescope_value_widget(self, spec):
         """Create a Gamescope value widget."""
         widget = QComboBox()
+        widget.view().window().setWindowFlags(
+            Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
+        )
+        widget.view().window().setAttribute(
+            Qt.WidgetAttribute.WA_TranslucentBackground
+        )
         options = spec['options']
         placeholder_text = _("Default value")
         for option in options:
@@ -589,6 +601,12 @@ class GamescopeSettingsMixin:
         self.gamescope_toggle_group = selector_group
 
         self.gamescope_category_combo = QComboBox()
+        self.gamescope_category_combo.view().window().setWindowFlags(
+            Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
+        )
+        self.gamescope_category_combo.view().window().setAttribute(
+            Qt.WidgetAttribute.WA_TranslucentBackground
+        )
         self.gamescope_category_combo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
         selector_layout.addWidget(self.gamescope_category_combo)
 

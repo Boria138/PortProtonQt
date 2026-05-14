@@ -443,6 +443,12 @@ class MangoHudSettingsMixin:
     def _create_mangohud_value_widget(self, spec):
         """Create a MangoHud value widget."""
         widget = QComboBox()
+        widget.view().window().setWindowFlags(
+            Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
+        )
+        widget.view().window().setAttribute(
+            Qt.WidgetAttribute.WA_TranslucentBackground
+        )
         options = spec['options']
         placeholder_text = _("Default value")
         if spec['key'] == 'network':
@@ -549,6 +555,12 @@ class MangoHudSettingsMixin:
         self.mangohud_toggle_group = selector_group
 
         self.mangohud_category_combo = QComboBox()
+        self.mangohud_category_combo.view().window().setWindowFlags(
+            Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
+        )
+        self.mangohud_category_combo.view().window().setAttribute(
+            Qt.WidgetAttribute.WA_TranslucentBackground
+        )
         self.mangohud_category_combo.addItems(list(MANGOHUD_TOGGLE_CATEGORIES.keys()))
         self.mangohud_category_combo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
         self.mangohud_category_combo.currentTextChanged.connect(self.on_mangohud_category_changed)

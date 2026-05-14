@@ -1697,6 +1697,12 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 self.wine_versions.append(version)
         self.wine_versions.sort(key=version_sort_key)
         self.wineCombo = QComboBox()
+        self.wineCombo.view().window().setWindowFlags(
+            Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
+        )
+        self.wineCombo.view().window().setAttribute(
+            Qt.WidgetAttribute.WA_TranslucentBackground
+        )
         self.wineCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.wineCombo.addItems(self.wine_versions)
         self.wineCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
@@ -1710,6 +1716,12 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
         self.prefixes = sorted([d for d in os.listdir(prefixes_path) if os.path.isdir(os.path.join(prefixes_path, d))], key=prefix_sort_key) if os.path.exists(prefixes_path) else []
         self.prefixCombo = QComboBox()
+        self.prefixCombo.view().window().setWindowFlags(
+            Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
+        )
+        self.prefixCombo.view().window().setAttribute(
+            Qt.WidgetAttribute.WA_TranslucentBackground
+        )
         self.prefixCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.prefixCombo.addItems(self.prefixes)
         self.prefixCombo.setEditable(True)
@@ -2165,6 +2177,12 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         scrollLayout.addWidget(genFrame)
 
         self.timeDetailCombo = QComboBox()
+        self.timeDetailCombo.view().window().setWindowFlags(
+            Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
+        )
+        self.timeDetailCombo.view().window().setAttribute(
+            Qt.WidgetAttribute.WA_TranslucentBackground
+        )
         self.timeDetailCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.time_keys = ["detailed", "brief"]
         self.time_labels = [_("Detailed"), _("Brief")]
@@ -2184,6 +2202,12 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         genForm.addRow(self.timeDetailTitle, self.timeDetailCombo)
 
         self.gamesSortCombo = QComboBox()
+        self.gamesSortCombo.view().window().setWindowFlags(
+            Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
+        )
+        self.gamesSortCombo.view().window().setAttribute(
+            Qt.WidgetAttribute.WA_TranslucentBackground
+        )
         self.gamesSortCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.sort_keys = ["last_launch", "playtime", "alphabetical"]
         self.sort_labels = [_("Last launch"), _("Playtime"), _("Alphabetical")]
@@ -2205,6 +2229,12 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.filter_keys = ["all", "steam", "portproton", "favorites"]
         self.filter_labels = [_("All"), "Steam", "PortProton", _("Favorites")]
         self.gamesDisplayCombo = QComboBox()
+        self.gamesDisplayCombo.view().window().setWindowFlags(
+            Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
+        )
+        self.gamesDisplayCombo.view().window().setAttribute(
+            Qt.WidgetAttribute.WA_TranslucentBackground
+        )
         self.gamesDisplayCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.gamesDisplayCombo.addItems(self.filter_labels)
         self.gamesDisplayCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
@@ -2224,6 +2254,12 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.badge_view_keys = ["detailed", "compact", "hidden"]
         self.badge_view_labels = [_("Detailed"), _("Compact"), _("Hidden")]
         self.badgeViewCombo = QComboBox()
+        self.badgeViewCombo.view().window().setWindowFlags(
+            Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
+        )
+        self.badgeViewCombo.view().window().setAttribute(
+            Qt.WidgetAttribute.WA_TranslucentBackground
+        )
         self.badgeViewCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.badgeViewCombo.addItems(self.badge_view_labels)
         self.badgeViewCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
@@ -2429,6 +2465,12 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         filtered_gpu_list = get_selectable_gpu_list()
         if filtered_gpu_list:
             self.gpuCombo = QComboBox()
+            self.gpuCombo.view().window().setWindowFlags(
+                Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
+            )
+            self.gpuCombo.view().window().setAttribute(
+                Qt.WidgetAttribute.WA_TranslucentBackground
+            )
             self.gpuCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
             self.gpuCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
             self.gpuCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
@@ -2754,6 +2796,12 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.themeTabHeaderLayout.addWidget(self.themeTabTitleLabel)
 
         self.themesCombo = QComboBox()
+        self.themesCombo.view().window().setWindowFlags(
+            Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
+        )
+        self.themesCombo.view().window().setAttribute(
+            Qt.WidgetAttribute.WA_TranslucentBackground
+        )
         self.themesCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
         self.themesCombo.setObjectName("themeTabCombo")
         self.themesCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -2771,6 +2819,12 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.themeTabHeaderLayout.addWidget(self.themesCombo)
 
         self.themeVariantCombo = QComboBox()
+        self.themeVariantCombo.view().window().setWindowFlags(
+            Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
+        )
+        self.themeVariantCombo.view().window().setAttribute(
+            Qt.WidgetAttribute.WA_TranslucentBackground
+        )
         self.themeVariantCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
         self.themeVariantCombo.setObjectName("themeVariantCombo")
         self.themeVariantCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)

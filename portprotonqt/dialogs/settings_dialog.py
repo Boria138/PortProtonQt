@@ -583,6 +583,12 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
 
             if setting['type'] == 'combo':
                 combo = QComboBox()
+                combo.view().window().setWindowFlags(
+                    Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
+                )
+                combo.view().window().setAttribute(
+                    Qt.WidgetAttribute.WA_TranslucentBackground
+                )
                 combo.addItems(setting['options'])
                 if setting['key'] == 'PW_PREFIX_NAME':
                     combo.setEditable(True)
