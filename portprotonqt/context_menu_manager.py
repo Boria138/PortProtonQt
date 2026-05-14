@@ -137,6 +137,8 @@ class ContextMenuManager:
                 return
 
             menu = QMenu(file_explorer)
+            menu.setWindowFlags(menu.windowFlags() | Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint)
+            menu.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
             menu.setStyleSheet(self.theme.CONTEXT_MENU_STYLE)
             menu.setParent(file_explorer, Qt.WindowType.Popup)  # Set transientParent for Wayland
 
@@ -362,6 +364,8 @@ class ContextMenuManager:
             pos: The position (in widget coordinates) where the menu should appear.
         """
         menu = QMenu(self.parent)
+        menu.setWindowFlags(menu.windowFlags() | Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint)
+        menu.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         menu.setStyleSheet(self.theme.CONTEXT_MENU_STYLE)
 
         # For non-Steam games, check if exe exists
@@ -1261,6 +1265,8 @@ def show_themed_line_edit_context_menu(line_edit: QLineEdit, global_pos: QPoint,
         action.setEnabled(enabled)
 
     menu = QMenu(line_edit)
+    menu.setWindowFlags(menu.windowFlags() | Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint)
+    menu.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
     current_theme = theme if theme is not None else getattr(line_edit, "theme", None)
     if current_theme and hasattr(current_theme, "CONTEXT_MENU_STYLE"):
         menu.setStyleSheet(current_theme.CONTEXT_MENU_STYLE)

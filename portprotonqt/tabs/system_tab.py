@@ -718,6 +718,8 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
 
     def _createSystemContextMenu(self) -> QMenu:
         menu = QMenu(self)
+        menu.setWindowFlags(menu.windowFlags() | Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint)
+        menu.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         menu.setStyleSheet(self.theme.CONTEXT_MENU_STYLE)
         menu.setParent(self, Qt.WindowType.Popup)
         return menu

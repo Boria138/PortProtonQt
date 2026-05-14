@@ -8,6 +8,8 @@ CONTEXT_MENU_STYLE = f"""
         font-size: {font_size_a};
         padding: 5px;
         min-width: 150px;
+        border: {border_b} {color_a};
+        border-radius: {border_radius_a};
     }}
     QMenu::icon {{
         margin-left: 15px;
