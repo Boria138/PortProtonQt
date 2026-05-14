@@ -3,6 +3,7 @@
 import os
 from pathlib import Path
 
+from PIL import Image, UnidentifiedImageError
 import vdf
 
 from portprotonqt.logger import get_logger
@@ -62,6 +63,17 @@ def get_steam_home() -> Path | None:
     return None
 
 
+def _is_portrait_image(path: Path) -> bool:
+    """Return True when image is taller than wide."""
+    try:
+        with Image.open(path) as image:
+            width, height = image.size
+    except (OSError, UnidentifiedImageError) as e:
+        logger.debug("Failed to read Steam cover dimensions %s: %s", path, e)
+        return False
+    return height > width
+
+
 def get_local_steam_cover(appid: int | str, prefer_exact: bool = True) -> str:
     """Return local Steam library cover path for appid."""
     steam_home = get_steam_home()
@@ -78,17 +90,47 @@ def get_local_steam_cover(appid: int | str, prefer_exact: bool = True) -> str:
 
     exact_paths = (
         librarycache / appid_str / "library_600x900.jpg",
+        librarycache / appid_str / "library_600x900.png",
+        librarycache / appid_str / "library_600x900_2x.jpg",
+        librarycache / appid_str / "library_600x900_2x.png",
         librarycache / f"{appid_str}_library_600x900.jpg",
+        librarycache / f"{appid_str}_library_600x900.png",
+        librarycache / f"{appid_str}_library_600x900_2x.jpg",
+        librarycache / f"{appid_str}_library_600x900_2x.png",
     )
     for cover_path in exact_paths:
         if cover_path.is_file():
             return str(cover_path)
 
+    for suffix in (ext.removeprefix(".") for ext in COVER_IMAGE_EXTENSIONS):
+        patterns = (
+            f"{appid_str}/**/library_600x900*.{suffix}",
+            f"{appid_str}_library_600x900*.{suffix}",
+        )
+        for pattern in patterns:
+            for cover_path in sorted(librarycache.glob(pattern)):
+                if cover_path.is_file():
+                    return str(cover_path)
+
+    for suffix in (ext.removeprefix(".") for ext in COVER_IMAGE_EXTENSIONS):
+        patterns = (
+            f"{appid_str}/**/*.{suffix}",
+            f"{appid_str}_*.{suffix}",
+        )
+        for pattern in patterns:
+            for cover_path in sorted(librarycache.glob(pattern)):
+                if cover_path.is_file() and _is_portrait_image(cover_path):
+                    return str(cover_path)
+
     capsule_paths = (
         librarycache / appid_str / "library_capsule.jpg",
         librarycache / appid_str / "library_capsule.png",
+        librarycache / appid_str / "capsule_616x353.jpg",
+        librarycache / appid_str / "capsule_616x353.png",
         librarycache / f"{appid_str}_library_capsule.jpg",
         librarycache / f"{appid_str}_library_capsule.png",
+        librarycache / f"{appid_str}_capsule_616x353.jpg",
+        librarycache / f"{appid_str}_capsule_616x353.png",
     )
     for cover_path in capsule_paths:
         if cover_path.is_file():
@@ -99,13 +141,13 @@ def get_local_steam_cover(appid: int | str, prefer_exact: bool = True) -> str:
 
     for suffix in (ext.removeprefix(".") for ext in COVER_IMAGE_EXTENSIONS):
         patterns = (
-            f"{appid_str}/library_600x900*.{suffix}",
             f"{appid_str}/library_capsule*.{suffix}",
-            f"{appid_str}/*/library_600x900*.{suffix}",
-            f"{appid_str}/*/library_capsule*.{suffix}",
+            f"{appid_str}/capsule_*.{suffix}",
+            f"{appid_str}/**/library_capsule*.{suffix}",
+            f"{appid_str}/**/capsule_*.{suffix}",
             f"{appid_str}/*.{suffix}",
-            f"{appid_str}_library_600x900*.{suffix}",
             f"{appid_str}_library_capsule*.{suffix}",
+            f"{appid_str}_capsule_*.{suffix}",
             f"{appid_str}_*.{suffix}",
         )
         for pattern in patterns:
