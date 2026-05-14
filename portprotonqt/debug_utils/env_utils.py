@@ -35,6 +35,35 @@ def get_file_content(file_path: str, default: str = "") -> str:
         return default
 
 
+def _parse_env_content(content: str) -> dict[str, str]:
+    env_vars: dict[str, str] = {}
+    for line in content.split('\n'):
+        line = line.strip()
+        if '=' in line:
+            key, val = line.split('=', 1)
+            env_vars[key.strip()] = val.strip()
+    return env_vars
+
+
+def get_portproton_runtime_env() -> dict[str, str]:
+    """Read runtime variables from active PortProton var.log only."""
+    user = os.getenv('USER', 'unknown')
+    var_log_path = f'/tmp/PortProton_{user}/var.log'
+
+    if not os.path.exists(var_log_path):
+        return {}
+
+    logger.debug("Reading runtime variables from %s", var_log_path)
+    try:
+        with open(var_log_path, encoding='utf-8', errors='ignore') as f:
+            env_vars = _parse_env_content(f.read())
+        logger.debug("Found %d runtime variables from var.log", len(env_vars))
+        return env_vars
+    except OSError as e:
+        logger.debug("Error reading var.log: %s", e)
+        return {}
+
+
 def get_portproton_env(exe_path: str | None) -> dict[str, str]:
     """Get environment variables as exported by PortProton.
 
@@ -42,28 +71,10 @@ def get_portproton_env(exe_path: str | None) -> dict[str, str]:
     1. /tmp/PortProton_$USER/var.log (runtime variables from active session)
     2. var file + user.conf + .ppdb (static configuration)
     """
-    env_vars: dict[str, str] = {}
-
     # Priority 1: Read from /tmp/PortProton_$USER/var.log (most authoritative)
-    user = os.getenv('USER', 'unknown')
-    var_log_path = f'/tmp/PortProton_{user}/var.log'
-
-    if os.path.exists(var_log_path):
-        logger.debug("Reading variables from %s", var_log_path)
-        try:
-            with open(var_log_path, encoding='utf-8', errors='ignore') as f:
-                content = f.read()
-
-            for line in content.split('\n'):
-                line = line.strip()
-                if '=' in line:
-                    key, val = line.split('=', 1)
-                    env_vars[key.strip()] = val.strip()
-
-            logger.debug("Found %d variables from var.log", len(env_vars))
-            return env_vars
-        except Exception as e:
-            logger.debug("Error reading var.log: %s", e)
+    env_vars = get_portproton_runtime_env()
+    if env_vars:
+        return env_vars
 
     # Priority 2: Read from static configuration files
     portproton_path = get_portproton_location()
@@ -122,18 +133,20 @@ def get_portproton_env(exe_path: str | None) -> dict[str, str]:
 def get_runtime_status(
     portproton_path: str,
     exe_path: str | None = None,
-    start_cmd: list[str] | None = None
+    start_cmd: list[str] | None = None,
+    env_vars: dict[str, str] | None = None
 ) -> str:
     """Check if RUNTIME is enabled and detect Flatpak usage."""
-    env_vars = get_portproton_env(exe_path)
-    runtime_val = env_vars.get("PW_USE_RUNTIME", "1")
-
     if os.getenv("FLATPAK_ID"):
         return "FLATPAK in used"
-    elif runtime_val == "0":
+
+    env_vars = env_vars if env_vars is not None else get_portproton_env(exe_path)
+    runtime_val = env_vars.get("PW_USE_RUNTIME")
+
+    if runtime_val != "1":
         return "RUNTIME is disabled"
-    else:
-        return "RUNTIME is enabled"
+
+    return "RUNTIME is enabled"
 
 
 def get_vulkan_use_info(portproton_path: str, exe_path: str | None = None) -> str:

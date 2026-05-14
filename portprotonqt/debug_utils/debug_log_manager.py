@@ -12,6 +12,7 @@ from portprotonqt.config import get_portproton_location
 
 from portprotonqt.debug_utils.system_info import generate_system_info
 from portprotonqt.debug_utils.log_processor import process_portproton_log
+from portprotonqt.debug_utils.env_utils import get_portproton_runtime_env
 
 logger = get_logger(__name__)
 
@@ -24,6 +25,7 @@ class DebugLogManager:
         self.exe_path: str | None = None
         self.start_command: list[str] | None = None
         self.wine_output: list[str] = []
+        self.runtime_env: dict[str, str] | None = None
         self.is_running = False
         self.output_queue = queue.Queue()
         self.output_thread = None
@@ -37,6 +39,7 @@ class DebugLogManager:
         self.exe_path = exe_path
         self.start_command = start_command
         self.wine_output = []
+        self.runtime_env = None
         self._stop_event.clear()
 
         portproton_path = get_portproton_location()
@@ -96,6 +99,7 @@ class DebugLogManager:
 
     def stop(self) -> str | None:
         """Stop game and save debug log with captured Wine output."""
+        self._capture_env_vars()
         self._stop_event.set()
 
         if self.is_running and self.process:
@@ -142,7 +146,16 @@ class DebugLogManager:
             self.is_running = False
             return False
 
+        self._capture_env_vars()
         return True
+
+    def _capture_env_vars(self) -> None:
+        """Keep runtime variables before PortProton removes var.log."""
+        env_vars = get_portproton_runtime_env()
+        if env_vars.get("PW_USE_RUNTIME") is not None:
+            self.runtime_env = env_vars
+        elif self.runtime_env is None and env_vars:
+            self.runtime_env = env_vars
 
     def _save_log(self) -> str | None:
         """Save complete debug log to file."""
@@ -150,7 +163,15 @@ class DebugLogManager:
         if not portproton_path:
             return None
 
-        system_info = generate_system_info(self.exe_path, self.start_command)
+        runtime_env = self.runtime_env
+        if runtime_env is None:
+            runtime_env = get_portproton_runtime_env()
+
+        system_info = generate_system_info(
+            self.exe_path,
+            self.start_command,
+            runtime_env
+        )
 
         lines = [system_info]
 

@@ -353,7 +353,8 @@ def get_screen_info(portproton_path: str, exe_path: str | None = None) -> tuple[
 
 def generate_system_info(
     exe_path: str | None = None,
-    start_cmd: list[str] | None = None
+    start_cmd: list[str] | None = None,
+    runtime_env: dict[str, str] | None = None
 ) -> str:
     """Generate system information part of debug log."""
     from portprotonqt.config import get_portproton_location
@@ -383,7 +384,7 @@ def generate_system_info(
     lines.append(ppqt_version)
     lines.append("-" * 61)
 
-    lines.append(get_runtime_status(portproton_path, exe_path, start_cmd))
+    lines.append(get_runtime_status(portproton_path, exe_path, start_cmd, runtime_env))
     lines.append("-" * 61)
 
     if exe_path:
