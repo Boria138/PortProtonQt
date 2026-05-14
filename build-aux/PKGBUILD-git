@@ -18,7 +18,7 @@ pkgver() {
 }
 
 build() {
-    arch-meson PortProtonQt build
+    arch-meson PortProtonQt build -Dnightly=true
     meson compile -C build
 }
 

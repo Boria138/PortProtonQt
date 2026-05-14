@@ -679,7 +679,8 @@ def get_files_from_meson_build(meson_file_path):
         'install_headers',        # Header files installation
         'install_man',            # Manual pages installation
         'install_symlink',        # Symlinks installation
-        'install_emptydir'        # Empty directories installation
+        'install_emptydir',       # Empty directories installation
+        'configure_file',         # Files generated and potentially installed
     ]
     
     # Process each install function

@@ -87,12 +87,12 @@ def bump_meson(path: Path, old: str, new: str) -> bool:
 
 def bump_app_py(path: Path, old: str, new: str) -> bool:
     """
-    Update __app_version__ in app.py
+    Update APP_VERSION fallback in app.py
     """
     if not path.exists():
         return False
     text = path.read_text(encoding='utf-8')
-    pattern = re.compile(r"(?m)^(\s*__app_version__\s*=\s*)\"" + re.escape(old) + r"\"$")
+    pattern = re.compile(r"(?m)^(\s*APP_VERSION\s*=\s*)\"" + re.escape(old) + r"\"$")
     new_text, count = pattern.subn(lambda m: m.group(1) + f'"{new}"', text)
     if count:
         path.write_text(new_text, encoding='utf-8')

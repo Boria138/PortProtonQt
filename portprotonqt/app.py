@@ -1,12 +1,22 @@
 import sys
 import os
+import importlib
 import subprocess
 import shutil
 from logging import Logger
 
 __app_id__ = "ru.linux_gaming.PortProtonQt"
 __app_name__ = "PortProtonQt"
-__app_version__ = "0.1.12"
+
+try:
+    version_module = importlib.import_module("portprotonqt._version")
+    APP_COMMIT = getattr(version_module, "APP_COMMIT", "")
+    APP_VERSION = getattr(version_module, "APP_VERSION", "0.1.12")
+except ImportError:
+    APP_COMMIT = ""
+    APP_VERSION = "0.1.12"
+
+__app_version__ = APP_VERSION
 
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
@@ -36,6 +46,9 @@ from portprotonqt.cli import (
 from portprotonqt.localization import _, get_steam_language
 
 def get_version():
+    if APP_COMMIT:
+        return f"{__app_version__} ({APP_COMMIT})"
+
     try:
         commit = subprocess.check_output(
             ["git", "rev-parse", "--short", "HEAD"],
