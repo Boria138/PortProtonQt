@@ -5,6 +5,7 @@ import stat
 import subprocess
 import tempfile
 import shlex
+from typing import BinaryIO
 from portprotonqt.logger import get_logger
 
 logger = get_logger(__name__)
@@ -12,6 +13,14 @@ logger = get_logger(__name__)
 SYNC_HEADER = b'\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x00'
 SYNC_HEADER_MDF = b'\x80\xc0\x80\x80\x80\x80\x80\xc0\x80\x80\x80\x80'
 ISO_9660_SIG = b'\x01\x43\x44\x30\x30\x31\x01\x00'
+DISC_BLOCK_SIZES = (2048, 2336, 2352, 2368, 2448)
+SVCD_SUB_HEADERS = (
+    b"\x00\x00\x08\x00\x00\x00\x08\x00",
+    b"\x00\x00\x09\x00\x00\x00\x09\x00",
+    b"\x00\x00\x88\x00\x00\x00\x88\x00",
+    b"\x00\x00\x89\x00\x00\x00\x89\x00",
+)
+UDF_SIGNATURES = (b"BEA01", b"BOOT2", b"CD001", b"CDW02", b"NSR02", b"NSR03", b"TEA01")
 
 
 class DiscImageManager:
@@ -52,58 +61,126 @@ class DiscImageManager:
             logger.error("Failed to read ISO 9660 signature for %s: %s", file_path, e)
             return False
 
-    def _write_iso_from_mdf(self, mdf_path: str, iso_path: str) -> None:
-        """Convert MDF to ISO using logic from test.py or legacy fallback."""
-        with open(mdf_path, "rb") as source:
-            source.seek(0)
-            h0 = source.read(12)
-            source.seek(2352)
-            h2352 = source.read(12)
+    def _is_svcd_sub_header(self, header: bytes) -> bool:
+        """Return True if header matches known SVCD subheader bytes."""
+        return header[:8] in SVCD_SUB_HEADERS
 
-            if h0 == SYNC_HEADER:
-                if h2352 == SYNC_HEADER_MDF:
-                    sector_size = 2448
-                elif h2352 == SYNC_HEADER:
-                    sector_size = 2352
+    def _calculate_disc_layout(self, source: BinaryIO) -> tuple[int, int]:
+        """Return pregap and block size using the iat detection rules."""
+        source.seek(0, os.SEEK_END)
+        image_size = source.tell()
+        cd_id_start = -1
+        cd_id_end = 0
+        header_size = 0
+
+        for offset in range(32768, image_size):
+            source.seek(offset)
+            header = source.read(12)
+            if header == SYNC_HEADER:
+                header_size = self._add_header_size(header_size, 16)
+                continue
+            if self._is_svcd_sub_header(header):
+                header_size = self._add_header_size(header_size, 8)
+                continue
+            if header[:5] in UDF_SIGNATURES:
+                if cd_id_start < 0:
+                    cd_id_start = offset
                 else:
-                    raise ValueError(f"Unknown SYNC format for {mdf_path}")
+                    cd_id_end = offset
+                    break
 
-                source.seek(0, os.SEEK_END)
-                num_sectors = source.tell() // sector_size
-                source.seek(0)
-                with open(iso_path, "wb") as target:
-                    for _ in range(num_sectors):
-                        sector_start = source.tell()
-                        header = source.read(16)
-                        if len(header) < 16:
-                            break
-                        mode = header[15]
-                        data_offset = 24 if mode == 2 else 16
-                        source.seek(sector_start + data_offset)
-                        data = source.read(2048)
-                        if len(data) < 2048:
-                            break
-                        target.write(data)
-                        source.seek(sector_start + sector_size)
-                return
+        if cd_id_start < 0 or cd_id_end <= cd_id_start:
+            return self._detect_sector_layout(source)
 
-        # Legacy fallback
+        block_size = self._calculate_block_size(cd_id_end - cd_id_start)
+        pregap = cd_id_start - (block_size * 16) - header_size - 1
+        return max(pregap, 0), block_size
+
+    def _add_header_size(self, header_size: int, value: int) -> int:
+        """Add a detected header size once, matching iat's mixed header logic."""
+        if header_size in (value, 24):
+            return header_size
+        return header_size + value
+
+    def _calculate_block_size(self, block_delta: int) -> int:
+        """Return closest iat-supported block size for descriptor spacing."""
+        for block_size in DISC_BLOCK_SIZES[:-1]:
+            if block_delta % block_size == 0:
+                return block_size
+        return DISC_BLOCK_SIZES[-1]
+
+    def _detect_sector_layout(self, source: BinaryIO) -> tuple[int, int]:
+        """Fallback sector layout detection for images without two descriptors."""
+        source.seek(0)
+        h0 = source.read(12)
+        source.seek(2352)
+        h2352 = source.read(12)
+        if h0 == SYNC_HEADER and h2352 == SYNC_HEADER_MDF:
+            return 0, 2448
+        if h0 == SYNC_HEADER:
+            return 0, 2352
+        return 0, 2352
+
+    def _write_sync_sector_data(self, target: BinaryIO, sector: bytes) -> None:
+        """Write ISO user data from a sector with a sync header."""
+        mode = sector[15]
+        if mode == 0:
+            target.write(sector[16:2352])
+        elif mode == 1:
+            target.write(sector[16:2064])
+        elif mode == 2:
+            self._write_mode_two_sector_data(target, sector)
+        else:
+            raise ValueError(f"Unknown MDF sector mode {mode}")
+
+    def _write_mode_two_sector_data(self, target: BinaryIO, sector: bytes) -> None:
+        """Write ISO user data from a Mode 2 sector."""
+        sub_header = sector[16:24]
+        if sub_header[:4] != sub_header[4:8]:
+            target.write(sector[16:2352])
+            return
+        if sub_header[2] & 0x20:
+            target.write(sector[24:2348])
+            return
+        target.write(sector[24:2072])
+
+    def _write_headerless_sector_data(self, target: BinaryIO, sector: bytes) -> bool:
+        """Write ISO user data from a 2336-byte headerless sector."""
+        sub_header = sector[:8]
+        if sub_header[:4] != sub_header[4:8]:
+            return False
+        if self._is_svcd_sub_header(sub_header):
+            target.write(sector[8:2332])
+        else:
+            target.write(sector[8:2056])
+        return True
+
+    def _write_iso_from_mdf(self, mdf_path: str, iso_path: str) -> None:
+        """Convert MDF to ISO using iat-compatible sector extraction."""
         with open(mdf_path, "rb") as source, open(iso_path, "wb") as target:
-            sector_index = 0
-            while True:
-                sector = source.read(2352)
+            pregap, block_size = self._calculate_disc_layout(source)
+            image_size = os.path.getsize(mdf_path)
+            source.seek(pregap)
+            sector_index = pregap
+            while sector_index < image_size:
+                sector = source.read(block_size)
                 if not sector:
                     return
-                if len(sector) != 2352:
+                if len(sector) != block_size:
                     raise ValueError(f"Truncated MDF sector at {sector_index}")
-                mode = sector[15]
-                if mode == 1:
-                    target.write(sector[16:2064])
-                elif mode == 2:
-                    target.write(sector[24:2072])
+                if sector.startswith(SYNC_HEADER):
+                    self._write_sync_sector_data(target, sector)
+                elif block_size == 2336 and not self._write_headerless_sector_data(target, sector):
+                    sector_index += 1
+                    source.seek(sector_index)
+                    continue
+                elif block_size == 2048:
+                    target.write(sector)
                 else:
-                    raise ValueError(f"Unknown MDF sector mode {mode} at {sector_index}")
-                sector_index += 1
+                    sector_index += 1
+                    source.seek(sector_index)
+                    continue
+                sector_index += block_size
 
     def _convert_mdf_to_iso(self, mdf_path: str) -> str | None:
         """Convert raw 2352-byte sector MDF to temporary ISO."""
