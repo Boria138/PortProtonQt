@@ -23,6 +23,7 @@ from portprotonqt.dialogs.wine_loader import WineLoadingThread, get_cpu_level
 from portprotonqt.dialogs.wine_downloader import DownloadThread
 from portprotonqt.dialogs.wine_extractor import ExtractionThread
 from portprotonqt.preloader import Preloader
+from portprotonqt.steam_api import get_steam_compatibilitytools_dir, get_steam_home, get_steam_libs
 
 logger = get_logger(__name__)
 theme_manager = ThemeManager()
@@ -321,8 +322,7 @@ class ProtonManager(DraggableDialog):
             if url_filename:
                 filename = url_filename
         version_from_name = self.extract_version_from_name(filename)
-        uppercase_filename = filename.upper()
-        is_installed = self.is_asset_installed(uppercase_filename, source_name)
+        is_installed = self.is_asset_installed(filename, source_name)
         checkbox_widget = QWidget()
         checkbox_layout = QHBoxLayout(checkbox_widget)
         checkbox_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -390,16 +390,29 @@ class ProtonManager(DraggableDialog):
                 name_without_ext = name_without_ext[:-len(ext)]
                 break
         dist_path = os.path.join(self.portproton_location, "data", "dist")
-        expected_dir = os.path.join(dist_path, name_without_ext)
-        return os.path.exists(expected_dir)
+        for dirname in (name_without_ext, name_without_ext.upper()):
+            expected_dir = os.path.join(dist_path, dirname)
+            if os.path.exists(expected_dir):
+                return True
+        steam_dir = get_steam_compatibilitytools_dir()
+        if steam_dir is None:
+            return False
+        return steam_dir.joinpath(name_without_ext).exists()
+
+    def get_download_extract_dir(self) -> str:
+        if ui_config.get_download_wine_to_steam():
+            steam_dir = get_steam_compatibilitytools_dir()
+            if steam_dir is not None:
+                return str(steam_dir)
+        portproton_location = self.portproton_location
+        if portproton_location is None:
+            return ""
+        return os.path.join(portproton_location, "data", "dist")
 
     def create_installed_tab(self):
         if not self.portproton_location:
             return
-        dist_path = os.path.join(self.portproton_location, "data", "dist")
-        if not os.path.exists(dist_path):
-            os.makedirs(dist_path, exist_ok=True)
-        installed_versions = [d for d in os.listdir(dist_path) if os.path.isdir(os.path.join(dist_path, d))]
+        installed_versions = self.get_installed_versions()
         if not installed_versions:
             tab = QWidget()
             layout = QVBoxLayout(tab)
@@ -415,14 +428,56 @@ class ProtonManager(DraggableDialog):
         layout.setContentsMargins(5, 5, 5, 5)
         layout.setSpacing(5)
         table = self.create_table_widget()
-        installed_versions.sort(key=version_sort_key)
+        installed_versions.sort(key=lambda item: version_sort_key(item[0]))
         table.setRowCount(len(installed_versions))
-        for row_index, version_name in enumerate(installed_versions):
-            self.add_installed_row(table, row_index, version_name)
+        for row_index, (version_name, version_path) in enumerate(installed_versions):
+            self.add_installed_row(table, row_index, version_name, version_path)
         layout.addWidget(table, 1)
         self.tab_widget.addTab(tab, _("Installed"))
 
-    def add_installed_row(self, table, row_index, version_name):
+    def get_installed_versions(self) -> list[tuple[str, str]]:
+        portproton_location = self.portproton_location
+        if portproton_location is None:
+            return []
+        dist_path = os.path.join(portproton_location, "data", "dist")
+        if not os.path.exists(dist_path):
+            os.makedirs(dist_path, exist_ok=True)
+
+        installed_versions = []
+        seen_paths = set()
+        version_dirs = [dist_path]
+        steam_dir = get_steam_compatibilitytools_dir()
+        if steam_dir is not None:
+            version_dirs.append(str(steam_dir))
+        steam_home = get_steam_home()
+        if steam_home is not None:
+            for steam_lib in get_steam_libs(steam_home):
+                common_dir = steam_lib / "steamapps" / "common"
+                if common_dir.is_dir():
+                    version_dirs.append(str(common_dir))
+
+        for version_dir in version_dirs:
+            for version_name in os.listdir(version_dir):
+                version_path = os.path.join(version_dir, version_name)
+                if not self.is_installed_version_dir(version_path):
+                    continue
+                real_path = os.path.realpath(version_path)
+                if real_path in seen_paths:
+                    continue
+                seen_paths.add(real_path)
+                installed_versions.append((version_name, version_path))
+        return installed_versions
+
+    def is_installed_version_dir(self, version_path: str) -> bool:
+        if not os.path.isdir(version_path):
+            return False
+        if os.path.isfile(os.path.join(version_path, "bin", "wine")):
+            return True
+        if os.path.isfile(os.path.join(version_path, "files", "bin", "wine")):
+            return True
+        return os.path.isfile(os.path.join(version_path, "dist", "bin", "wine"))
+
+    def add_installed_row(self, table, row_index, version_name, version_path):
         checkbox_widget = QWidget()
         checkbox_layout = QHBoxLayout(checkbox_widget)
         checkbox_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -435,13 +490,7 @@ class ProtonManager(DraggableDialog):
         version_item = QTableWidgetItem(version_name)
         version_item.setFlags(version_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
         table.setItem(row_index, 1, version_item)
-        if self.portproton_location:
-            dist_path = os.path.join(self.portproton_location, "data", "dist")
-            version_path = os.path.join(dist_path, version_name)
-            size_str = self.get_directory_size(version_path)
-        else:
-            size_str = _("Unknown")
-            version_path = ""
+        size_str = self.get_directory_size(version_path)
         size_item = QTableWidgetItem(size_str)
         size_item.setFlags(size_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
         table.setItem(row_index, 2, size_item)
@@ -880,8 +929,7 @@ class ProtonManager(DraggableDialog):
         self.download_info_label.setText(_("Extracting: {0}").format(asset_data['asset_name']))
         if self.portproton_location:
             try:
-                dist_path = os.path.join(self.portproton_location, "data", "dist")
-                extract_dir = dist_path
+                extract_dir = self.get_download_extract_dir()
                 self.current_extraction_thread = ExtractionThread(filepath, extract_dir)
                 current_speed = [0.0]
                 current_eta = [0]

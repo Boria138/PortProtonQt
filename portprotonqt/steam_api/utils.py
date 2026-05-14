@@ -63,6 +63,24 @@ def get_steam_home() -> Path | None:
     return None
 
 
+def get_steam_compatibilitytools_dir() -> Path | None:
+    """Return writable Steam compatibility tools directory."""
+    steam_home = get_steam_home()
+    if steam_home is None:
+        return None
+
+    compat_dir = steam_home / "compatibilitytools.d"
+    try:
+        compat_dir.mkdir(exist_ok=True)
+    except OSError as e:
+        logger.debug("Failed to create Steam compatibility tools dir %s: %s", compat_dir, e)
+        return None
+
+    if compat_dir.is_dir() and os.access(compat_dir, os.R_OK | os.W_OK):
+        return compat_dir
+    return None
+
+
 def _is_portrait_image(path: Path) -> bool:
     """Return True when image is taller than wide."""
     try:

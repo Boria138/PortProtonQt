@@ -21,7 +21,7 @@ from portprotonqt.image_utils import (
     load_pixmap_async,
     set_all_animated_covers_suspended,
 )
-from portprotonqt.steam_api import get_steam_game_info_async, get_full_steam_game_info_async, get_cached_steam_game_info, get_steam_installed_games, is_game_in_steam, fetch_sgdb_cover_async
+from portprotonqt.steam_api import get_steam_game_info_async, get_full_steam_game_info_async, get_cached_steam_game_info, get_steam_installed_games, is_game_in_steam, fetch_sgdb_cover_async, get_steam_compatibilitytools_dir
 from portprotonqt.theme_manager import ThemeManager, load_theme_screenshots
 from portprotonqt.time_utils import save_last_launch, get_last_launch, get_playtime_for_exe, format_playtime, get_last_launch_timestamp, format_last_launch
 from portprotonqt.config import (
@@ -2343,6 +2343,22 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         steam_compat_layout.addStretch()
         uiForm.addRow(steam_compat_layout)
 
+        if get_steam_compatibilitytools_dir() is not None:
+            self.downloadWineToSteamCheckBox = QCheckBox()
+            self.downloadWineToSteamCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
+            self.downloadWineToSteamCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+            self.downloadWineToSteamTitle = QLabel(_("Download WINE/Proton to Steam"))
+            self.downloadWineToSteamTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+            self.downloadWineToSteamTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
+            self.downloadWineToSteamTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            self.downloadWineToSteamCheckBox.setChecked(ui_config.get_download_wine_to_steam())
+            download_wine_to_steam_layout = QHBoxLayout()
+            download_wine_to_steam_layout.setContentsMargins(0, 0, 0, 0)
+            download_wine_to_steam_layout.addWidget(self.downloadWineToSteamCheckBox)
+            download_wine_to_steam_layout.addWidget(self.downloadWineToSteamTitle)
+            download_wine_to_steam_layout.addStretch()
+            uiForm.addRow(download_wine_to_steam_layout)
+
         self.economyModeCheckBox = QCheckBox()
         self.economyModeCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.economyModeCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -2617,6 +2633,9 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             add_steam_compat_tool()
         elif not steam_compat and currently_installed:
             remove_steam_compat_tool()
+
+        if hasattr(self, 'downloadWineToSteamCheckBox'):
+            ui_config.set_download_wine_to_steam(self.downloadWineToSteamCheckBox.isChecked())
 
         # Save GPU selection to user.conf (only if the combo box exists)
         if hasattr(self, 'gpuCombo'):

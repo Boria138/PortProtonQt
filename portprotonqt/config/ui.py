@@ -251,6 +251,15 @@ class UIConfig(BaseConfig):
         validate_bool(enabled, "economy_mode")
         self._save_value("economy_mode", enabled, "bool")
 
+    def get_download_wine_to_steam(self) -> bool:
+        """Get Steam compatibility tools download setting."""
+        return self._get_bool("download_wine_to_steam", False)
+
+    def set_download_wine_to_steam(self, enabled: bool) -> None:
+        """Set Steam compatibility tools download setting."""
+        validate_bool(enabled, "download_wine_to_steam")
+        self._save_value("download_wine_to_steam", enabled, "bool")
+
 
 def load_theme_metainfo(theme_name: str) -> dict:
     """Load theme metadata from metainfo.ini."""
