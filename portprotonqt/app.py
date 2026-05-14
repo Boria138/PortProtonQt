@@ -10,8 +10,8 @@ __app_name__ = "PortProtonQt"
 
 try:
     version_module = importlib.import_module("portprotonqt._version")
-    APP_COMMIT = getattr(version_module, "APP_COMMIT", "")
-    APP_VERSION = getattr(version_module, "APP_VERSION", "0.1.12")
+    APP_COMMIT = version_module.APP_COMMIT
+    APP_VERSION = version_module.APP_VERSION
 except ImportError:
     APP_COMMIT = ""
     APP_VERSION = "0.1.12"
