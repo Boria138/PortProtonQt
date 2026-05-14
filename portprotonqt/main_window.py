@@ -1,4 +1,5 @@
 import os
+import signal
 import shlex
 import shutil
 import subprocess
@@ -3411,6 +3412,17 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
     def _has_running_game_process(self) -> bool:
         return any(proc.poll() is None for proc in self.game_processes)
 
+    def _terminate_game_processes(self) -> None:
+        for proc in self.game_processes:
+            if proc.poll() is not None:
+                continue
+            try:
+                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+            except ProcessLookupError:
+                continue
+            except OSError as e:
+                logger.warning("Failed to terminate game process group %s: %s", proc.pid, e)
+
     def _run_portproton_stop_command(self) -> bool:
         """Run PortProton CLI stop command."""
         if not self.start_sh:
@@ -3431,6 +3443,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         if not self._run_portproton_stop_command():
             return False
 
+        self._terminate_game_processes()
         self.game_processes = []
         if hasattr(self, 'checkProcessTimer') and self.checkProcessTimer is not None:
             self.checkProcessTimer.stop()
