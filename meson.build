@@ -72,13 +72,20 @@ install_data(
 )
 
 # Install PortProton scripts
-install_data(
-  'build-aux/share/portproton/scripts/functions_helper',
-  'build-aux/share/portproton/scripts/start.sh',
-  'build-aux/share/portproton/scripts/thanks',
-  'build-aux/share/portproton/scripts/var',
-  install_dir: datadir / 'portproton' / 'scripts',
+install_subdir(
+  'build-aux/share/portproton/scripts',
+  install_dir: datadir / 'portproton',
   install_mode: 'rwxr-xr-x',
+)
+
+install_subdir(
+  'build-aux/share/portproton/conf',
+  install_dir: datadir / 'portproton',
+)
+
+install_subdir(
+  'build-aux/share/portproton/img',
+  install_dir: datadir / 'portproton',
 )
 
 install_subdir(
