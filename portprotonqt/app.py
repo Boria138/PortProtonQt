@@ -179,6 +179,7 @@ def main():
     portproton_location = get_portproton_location()
     if portproton_location:
         os.environ["PORT_DATA_PATH"] = portproton_location
+    ui_config.get_disable_runtime_download()
 
     # Check if running as Steam compatibility tool (STEAM_COMPAT=1).
     is_steam_compat = os.environ.get("STEAM_COMPAT") == "1"

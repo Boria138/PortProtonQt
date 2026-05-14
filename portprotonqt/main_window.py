@@ -2412,6 +2412,22 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         hide_autoinstall_layout.addStretch()
         uiForm.addRow(hide_autoinstall_layout)
 
+        if not os.getenv("FLATPAK_ID"):
+            self.disableRuntimeDownloadCheckBox = QCheckBox()
+            self.disableRuntimeDownloadCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
+            self.disableRuntimeDownloadCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+            self.disableRuntimeDownloadTitle = QLabel(_("Disable PortProton runtime download"))
+            self.disableRuntimeDownloadTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+            self.disableRuntimeDownloadTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
+            self.disableRuntimeDownloadTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            self.disableRuntimeDownloadCheckBox.setChecked(ui_config.get_disable_runtime_download())
+            disable_runtime_download_layout = QHBoxLayout()
+            disable_runtime_download_layout.setContentsMargins(0, 0, 0, 0)
+            disable_runtime_download_layout.addWidget(self.disableRuntimeDownloadCheckBox)
+            disable_runtime_download_layout.addWidget(self.disableRuntimeDownloadTitle)
+            disable_runtime_download_layout.addStretch()
+            uiForm.addRow(disable_runtime_download_layout)
+
         self.steamCompatCheckBox = QCheckBox()
         self.steamCompatCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.steamCompatCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -2732,6 +2748,11 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
         if hasattr(self, 'downloadWineToSteamCheckBox'):
             ui_config.set_download_wine_to_steam(self.downloadWineToSteamCheckBox.isChecked())
+
+        if hasattr(self, 'disableRuntimeDownloadCheckBox'):
+            ui_config.set_disable_runtime_download(self.disableRuntimeDownloadCheckBox.isChecked())
+        else:
+            ui_config.get_disable_runtime_download()
 
         # Save GPU selection to user.conf (only if the combo box exists)
         if hasattr(self, 'gpuCombo') and self.gpuCombo.count() > 1:

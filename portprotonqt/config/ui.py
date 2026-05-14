@@ -294,6 +294,18 @@ class UIConfig(BaseConfig):
         validate_bool(enabled, "download_wine_to_steam")
         self._save_value("download_wine_to_steam", enabled, "bool")
 
+    def get_disable_runtime_download(self) -> bool:
+        """Get PortProton runtime download setting."""
+        default = bool(os.getenv("FLATPAK_ID"))
+        return self._get_bool("disable_runtime_download", default)
+
+    def set_disable_runtime_download(self, enabled: bool) -> None:
+        """Set PortProton runtime download setting."""
+        if os.getenv("FLATPAK_ID"):
+            enabled = True
+        validate_bool(enabled, "disable_runtime_download")
+        self._save_value("disable_runtime_download", enabled, "bool")
+
 
 def load_theme_metainfo(theme_name: str) -> dict:
     """Load theme metadata from metainfo.ini."""

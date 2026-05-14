@@ -1282,7 +1282,11 @@ init_wine_ver () {
 }
 
 pw_init_runtime () {
-    check_flatpak && export PW_USE_RUNTIME="0"
+    if [[ ! -f "${PW_WINELIB}/runtime/files/bin/vkcube" ]] \
+    || [[ ! -f "${PW_WINELIB}/pressure-vessel/bin/pressure-vessel-wrap" ]]
+    then
+        export PW_USE_RUNTIME="0"
+    fi
     if [[ "$PW_USE_RUNTIME" != "1" ]] \
     || [[ "$PW_WINE_USE" == "USE_SYSTEM_WINE" ]]
     then
@@ -2515,7 +2519,7 @@ pw_enable_gamemode_basic () {
 start_portproton () {
     pw_check_and_download_plugins
 
-    if check_flatpak ; then
+    if [[ "${PW_DISABLE_RUNTIME_DOWNLOAD}" == "1" ]] ; then
         try_remove_dir "${PORT_WINE_TMP_PATH}/libs${PW_LIBS_VER}"
     else
         pw_check_and_download_runtime
@@ -4110,7 +4114,12 @@ gui_edit_db () {
     if [[ $PW_WINE_USE =~ (PROTON_LG|WINE_LG) ]] || [[ $PW_VULKAN_USE == "0" ]] ; then
         DISABLE_EDIT_DB_LIST+=" PW_USE_SUPPLIED_DXVK_VKD3D"
     fi
-    check_flatpak && DISABLE_EDIT_DB_LIST+=" PW_USE_RUNTIME"
+
+    if [[ ! -f "${PW_WINELIB}/runtime/files/bin/vkcube" ]] \
+    || [[ ! -f "${PW_WINELIB}/pressure-vessel/bin/pressure-vessel-wrap" ]]
+    then
+        DISABLE_EDIT_DB_LIST+=" PW_USE_RUNTIME"
+    fi
 
     # GALLIUM NINE
     [[ ! -f "${PW_TMPFS_PATH}/gallium_nine.tmp" ]] && DISABLE_EDIT_DB_LIST+=" PW_USE_GALLIUM_NINE"

@@ -37,6 +37,11 @@ if [[ -z "$PORT_DATA_PATH" ]] ; then
     fi
 fi
 
+if [[ -f "$HOME/.config/PortProtonQt.conf" ]] \
+&& grep "disable_runtime_download = True" "$HOME/.config/PortProtonQt.conf" ; then
+    export PW_DISABLE_RUNTIME_DOWNLOAD=1
+fi
+
 export PORT_SCRIPTS_PATH PORT_IMG_PATH PORT_DATA_PATH PORT_CONF_PATH
 export PW_LOG_FILE="${PORT_DATA_PATH}/PortProton.log"
 
