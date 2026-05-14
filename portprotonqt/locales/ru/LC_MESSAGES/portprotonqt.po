@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-03-22 13:50+0500\n"
-"PO-Revision-Date: 2026-05-10 12:41+0500\n"
+"PO-Revision-Date: 2026-05-14 05:48+0000\n"
 "Last-Translator: Boria138 <boria138@noreply.codeberg.org>\n"
 "Language-Team: Russian <https://translate.codeberg.org/projects/portprotonqt/"
 "portprotonqt/ru/>\n"
@@ -17,9 +17,9 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 "
-"&& (n%100<10 || n%100>=20) ? 1 : 2;\n"
-"X-Generator: Poedit 3.9\n"
+"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
+"X-Generator: Weblate 5.17.1\n"
 "Generated-By: Babel 2.17.0\n"
 
 msgid "Stop Game"
@@ -547,9 +547,8 @@ msgstr "Скрыть вкладку \"Автоустановка\""
 msgid "Add to Steam compatibility tools"
 msgstr "Добавить в инструменты совместимости Steam"
 
-#, fuzzy
 msgid "Download WINE/Proton to Steam"
-msgstr "WINE/Proton не выбраны"
+msgstr "Скачивать Proton в Steam"
 
 msgid "Economy mode"
 msgstr "Экономный режим"
@@ -628,14 +627,13 @@ msgid "Select Theme:"
 msgstr "Выбрать тему:"
 
 msgid "Dark"
-msgstr ""
+msgstr "Тёмная"
 
 msgid "Light"
-msgstr ""
+msgstr "Светлая"
 
-#, fuzzy
 msgid "Auto"
-msgstr "Автор:"
+msgstr "Авто"
 
 msgid "Apply Theme"
 msgstr "Применить тему"
@@ -675,9 +673,8 @@ msgstr "Префикс '{0}' не найден. Установить реком�
 msgid "Invalid command format (empty exec line)"
 msgstr "Неправильный формат команды (пустая строка exec)"
 
-#, fuzzy
 msgid "Invalid command format (native)"
-msgstr "Неверный формат команды (тихий режим)"
+msgstr "Неверный формат команды (натив"
 
 #, python-brace-format
 msgid "Failed to launch game: {0}"
