@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-05-10 12:32+0500\n"
+"POT-Creation-Date: 2026-05-14 10:23+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -97,16 +97,16 @@ msgstr ""
 msgid "Add to Desktop"
 msgstr ""
 
-msgid "Edit Shortcut"
-msgstr ""
-
-msgid "Open Game Folder"
-msgstr ""
-
 msgid "Remove from Menu"
 msgstr ""
 
 msgid "Add to Menu"
+msgstr ""
+
+msgid "Edit Shortcut"
+msgstr ""
+
+msgid "Open Game Folder"
 msgstr ""
 
 msgid "Remove from Steam"
@@ -532,6 +532,9 @@ msgstr ""
 msgid "Add to Steam compatibility tools"
 msgstr ""
 
+msgid "Download WINE/Proton to Steam"
+msgstr ""
+
 msgid "Economy mode"
 msgstr ""
 
@@ -607,6 +610,15 @@ msgstr ""
 msgid "Select Theme:"
 msgstr ""
 
+msgid "Dark"
+msgstr ""
+
+msgid "Light"
+msgstr ""
+
+msgid "Auto"
+msgstr ""
+
 msgid "Apply Theme"
 msgstr ""
 
@@ -645,7 +657,7 @@ msgstr ""
 msgid "Invalid command format (empty exec line)"
 msgstr ""
 
-msgid "Invalid command format (silent)"
+msgid "Invalid command format (native)"
 msgstr ""
 
 #, python-brace-format
@@ -1226,9 +1238,6 @@ msgstr ""
 msgid "Exe Settings"
 msgstr ""
 
-msgid "Search:"
-msgstr ""
-
 msgid "Search settings..."
 msgstr ""
 
@@ -1265,16 +1274,7 @@ msgstr ""
 msgid "Default value"
 msgstr ""
 
-msgid "Information"
-msgstr ""
-
-msgid "No changes to apply."
-msgstr ""
-
 msgid "Failed to apply changes. Check logs."
-msgstr ""
-
-msgid "Settings updated successfully."
 msgstr ""
 
 msgid "Borderless window"
@@ -1506,6 +1506,9 @@ msgid "Example: --cursor-scale-height=1080 --force-orientation=left"
 msgstr ""
 
 msgid "Disable Gamescope"
+msgstr ""
+
+msgid "Information"
 msgstr ""
 
 msgid "Custom preset is empty. Save one first."
