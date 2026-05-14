@@ -15,6 +15,7 @@ from portprotonqt.logger import get_logger
 
 logger = get_logger(__name__)
 THEME_VARIANTS = ("dark", "light", "auto")
+DOWNLOADS_SECTION = "Downloads"
 
 
 def _read_theme_variants(theme_name: str) -> dict[str, str]:
@@ -278,33 +279,64 @@ class UIConfig(BaseConfig):
 
     def get_economy_mode(self) -> bool:
         """Get economy mode setting."""
-        return self._get_bool("economy_mode", False)
+        return self._get_download_bool("economy_mode", False)
 
     def set_economy_mode(self, enabled: bool):
         """Set economy mode setting."""
         validate_bool(enabled, "economy_mode")
-        self._save_value("economy_mode", enabled, "bool")
+        self._save_download_value("economy_mode", enabled)
+
+    def _get_download_bool(self, option: str, default: bool) -> bool:
+        cp = self._read_config()
+        if cp is None:
+            return self._save_download_value(option, default)
+
+        try:
+            if cp.has_option(DOWNLOADS_SECTION, option):
+                return cp.getboolean(DOWNLOADS_SECTION, option, fallback=default)
+            if cp.has_option(self._section, option):
+                return cp.getboolean(self._section, option, fallback=default)
+        except ValueError as e:
+            logger.warning("Error reading %s: %s", option, e)
+            return self._save_download_value(option, default)
+        except configparser.Error as e:
+            logger.warning("Error reading %s: %s", option, e)
+            return self._save_download_value(option, default)
+
+        return self._save_download_value(option, default)
+
+    def _save_download_value(self, option: str, value: bool) -> bool:
+        validate_bool(value, option)
+        cp = self._read_config() or configparser.ConfigParser()
+        if DOWNLOADS_SECTION not in cp:
+            cp[DOWNLOADS_SECTION] = {}
+
+        cp[DOWNLOADS_SECTION][option] = str(value)
+        if cp.has_section(self._section):
+            cp.remove_option(self._section, option)
+        self._save_config(cp)
+        return value
 
     def get_download_wine_to_steam(self) -> bool:
         """Get Steam compatibility tools download setting."""
-        return self._get_bool("download_wine_to_steam", False)
+        return self._get_download_bool("download_wine_to_steam", False)
 
     def set_download_wine_to_steam(self, enabled: bool) -> None:
         """Set Steam compatibility tools download setting."""
         validate_bool(enabled, "download_wine_to_steam")
-        self._save_value("download_wine_to_steam", enabled, "bool")
+        self._save_download_value("download_wine_to_steam", enabled)
 
     def get_disable_runtime_download(self) -> bool:
         """Get PortProton runtime download setting."""
         default = bool(os.getenv("FLATPAK_ID"))
-        return self._get_bool("disable_runtime_download", default)
+        return self._get_download_bool("disable_runtime_download", default)
 
     def set_disable_runtime_download(self, enabled: bool) -> None:
         """Set PortProton runtime download setting."""
         if os.getenv("FLATPAK_ID"):
             enabled = True
         validate_bool(enabled, "disable_runtime_download")
-        self._save_value("disable_runtime_download", enabled, "bool")
+        self._save_download_value("disable_runtime_download", enabled)
 
 
 def load_theme_metainfo(theme_name: str) -> dict:

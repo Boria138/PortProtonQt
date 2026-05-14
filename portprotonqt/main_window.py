@@ -2412,11 +2412,12 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         hide_autoinstall_layout.addStretch()
         uiForm.addRow(hide_autoinstall_layout)
 
+        disable_runtime_download_layout = None
         if not os.getenv("FLATPAK_ID"):
             self.disableRuntimeDownloadCheckBox = QCheckBox()
             self.disableRuntimeDownloadCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
             self.disableRuntimeDownloadCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-            self.disableRuntimeDownloadTitle = QLabel(_("Disable PortProton runtime download"))
+            self.disableRuntimeDownloadTitle = QLabel(_("Disable runtime download"))
             self.disableRuntimeDownloadTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
             self.disableRuntimeDownloadTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
             self.disableRuntimeDownloadTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -2426,8 +2427,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             disable_runtime_download_layout.addWidget(self.disableRuntimeDownloadCheckBox)
             disable_runtime_download_layout.addWidget(self.disableRuntimeDownloadTitle)
             disable_runtime_download_layout.addStretch()
-            uiForm.addRow(disable_runtime_download_layout)
 
+        download_wine_to_steam_layout = None
         self.steamCompatCheckBox = QCheckBox()
         self.steamCompatCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.steamCompatCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -2458,7 +2459,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             download_wine_to_steam_layout.addWidget(self.downloadWineToSteamCheckBox)
             download_wine_to_steam_layout.addWidget(self.downloadWineToSteamTitle)
             download_wine_to_steam_layout.addStretch()
-            uiForm.addRow(download_wine_to_steam_layout)
 
         self.economyModeCheckBox = QCheckBox()
         self.economyModeCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
@@ -2482,7 +2482,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         economy_mode_layout.addWidget(self.economyModeCheckBox)
         economy_mode_layout.addWidget(self.economyModeTitle)
         economy_mode_layout.addStretch()
-        uiForm.addRow(economy_mode_layout)
 
         self.forceSystemDpiCheckBox = QCheckBox()
         self.forceSystemDpiCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
@@ -2500,7 +2499,20 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         force_system_dpi_layout.addStretch()
         uiForm.addRow(force_system_dpi_layout)
 
-        # 3. Gamepad Settings Section
+        # 3. Download Settings Section
+        downloadFrame, downloadForm = create_section(_("Download Settings"), self.theme)
+        downloadForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
+        scrollLayout.addWidget(downloadFrame)
+
+        if disable_runtime_download_layout is not None:
+            downloadForm.addRow(disable_runtime_download_layout)
+
+        if download_wine_to_steam_layout is not None:
+            downloadForm.addRow(download_wine_to_steam_layout)
+
+        downloadForm.addRow(economy_mode_layout)
+
+        # 4. Gamepad Settings Section
         padFrame, padForm = create_section(_("Gamepad Settings"), self.theme)
         padForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
         scrollLayout.addWidget(padFrame)
@@ -2521,7 +2533,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         auto_fullscreen_layout.addStretch()
         padForm.addRow(auto_fullscreen_layout)
 
-        # 4. Hardware Settings Section
+        # 5. Hardware Settings Section
         hwFrame, hwForm = create_section(_("Hardware Settings"), self.theme)
         hwForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
         scrollLayout.addWidget(hwFrame)
@@ -2557,7 +2569,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         elif not filtered_gpu_list:
             hwForm.addRow(QLabel(_("No GPUs found")), QLabel(""))
 
-        # 5. Proxy Settings Section
+        # 6. Proxy Settings Section
         proxyFrame, proxyForm = create_section(_("Proxy Settings"), self.theme)
         proxyForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
         scrollLayout.addWidget(proxyFrame)
