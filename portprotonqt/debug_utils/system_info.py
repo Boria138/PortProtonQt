@@ -383,12 +383,6 @@ def generate_system_info(
     lines.append(ppqt_version)
     lines.append("-" * 61)
 
-    lines.append("Scripts version:")
-    scripts_ver_file = os.path.join(portproton_path, "data", "tmp", "scripts_ver")
-    scripts_version = get_file_content(scripts_ver_file, "Unknown")
-    lines.append(scripts_version)
-    lines.append("-" * 61)
-
     lines.append(get_runtime_status(portproton_path, exe_path, start_cmd))
     lines.append("-" * 61)
 
