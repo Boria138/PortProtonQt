@@ -21,6 +21,7 @@ from portprotonqt.detail_pages.widgets import (
     create_back_button,
     create_content_frame,
     setup_adaptive_layout,
+    apply_adaptive_layout,
     create_cover_frame,
     create_protondb_badge,
     create_steam_badge,
@@ -321,6 +322,19 @@ class DetailPageManager:
 
         if has_data:
             game_info_layout.addLayout(hltb_layout)
+            QTimer.singleShot(0, self._refresh_current_detail_page_layout)
+
+    def _refresh_current_detail_page_layout(self) -> None:
+        """Refresh layout after asynchronous detail content changes."""
+        if not self._detail_page_active or not self._current_detail_page:
+            return
+
+        content_frame_layout = self._get_content_frame_layout(self._current_detail_page)
+        if content_frame_layout:
+            content_frame_layout.invalidate()
+            apply_adaptive_layout(self._current_detail_page, content_frame_layout)
+
+        self._current_detail_page.updateGeometry()
 
     def _add_hltb_times(
         self, game: GameEntry, hltb: HowLongToBeat, hltb_layout: QHBoxLayout
