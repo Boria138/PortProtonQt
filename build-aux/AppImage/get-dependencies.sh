@@ -88,7 +88,7 @@ EOM
 # Disable locale noextract
 sed -i -E 's@[[:space:]]*usr/share/locale/\*@@g; s@[[:space:]]+@ @g; s@[[:space:]]+$@@' /etc/pacman.conf
 
-pacman -Syy
+pacman -Syyu --noconfirm --disable-download-timeout
 
 echo "Building PortProtonQt from PKGBUILD..."
 echo "---------------------------------------------------------------"

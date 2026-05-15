@@ -37,9 +37,8 @@ fi
 # Qt libs have to be passed manually due to the app being a python script
 ./quick-sharun \
 	/usr/bin/portprotonqt* \
-	/usr/lib/libQt6Core.so* \
-	/usr/lib/libQt6Gui.so* \
-	/usr/lib/libQt6Network.so* \
+	/usr/lib/libQt6*.so* \
+	/usr/lib/libSDL2*.so* \
 	/usr/lib/libudev.so*
 
 # Turn AppDir into AppImage
