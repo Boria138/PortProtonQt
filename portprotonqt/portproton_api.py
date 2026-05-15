@@ -31,6 +31,8 @@ logger = get_logger(__name__)
 AUTOINSTALL_CACHE_DURATION = 3600  # 1 hour for autoinstall cache
 HEAD_FAILURE_RETRY_DELAY = 60  # 1 minute cooldown for failed HEAD checks
 HEAD_CACHE_DURATION = 24 * 60 * 60
+HEAD_CACHE_NAME = "head_cache"
+HEAD_CACHE_OLD_PATTERN = "head_*.json"
 
 
 def _create_bootstrap_file_explorer_parent() -> tuple[QObject | None, Any]:
@@ -116,6 +118,7 @@ class PortProtonAPI:
         self._head_positive_cache: set[str] = set()
         self._head_negative_cache: set[str] = set()
         self._head_failure_cache: dict[str, float] = {}
+        self._head_disk_cache_cleaned = False
         self._pending_asset_notifier: QObject | None = None
         self._pending_asset_batch_thread: QThread | None = None
 
@@ -123,6 +126,38 @@ class PortProtonAPI:
         game_dir = os.path.join(self.custom_data_dir, exe_name)
         os.makedirs(game_dir, exist_ok=True)
         return game_dir
+
+    def _load_head_cache_entry(self, cache_manager: CacheManager, cache_key: str) -> bool | None:
+        cached = cache_manager.load_json(HEAD_CACHE_NAME)
+        if not isinstance(cached, dict):
+            return None
+        entry = cached.get(cache_key)
+        if not isinstance(entry, dict):
+            return None
+        timestamp = entry.get("timestamp")
+        if not isinstance(timestamp, int | float):
+            return None
+        if time.time() - timestamp > HEAD_CACHE_DURATION:
+            return None
+        return entry.get("exists") is True
+
+    def _save_head_cache_entry(self, cache_manager: CacheManager, cache_key: str, exists: bool) -> None:
+        cached = cache_manager.load_json(HEAD_CACHE_NAME)
+        if not isinstance(cached, dict):
+            cached = {}
+        cached[cache_key] = {"exists": exists, "timestamp": time.time()}
+        cache_manager.save_json(HEAD_CACHE_NAME, cached)
+        self._remove_old_head_cache_files(cache_manager)
+
+    def _remove_old_head_cache_files(self, cache_manager: CacheManager) -> None:
+        if self._head_disk_cache_cleaned:
+            return
+        for cache_file in cache_manager.cache_dir.glob(HEAD_CACHE_OLD_PATTERN):
+            try:
+                cache_file.unlink()
+            except OSError as e:
+                logger.debug("Failed to remove old HEAD cache %s: %s", cache_file, e)
+        self._head_disk_cache_cleaned = True
 
     def _check_file_exists(self, url: str, timeout: int = 5) -> bool:
         if url in self._head_negative_cache:
@@ -134,11 +169,10 @@ class PortProtonAPI:
             return False
 
         cache_manager = CacheManager()
-        cache_key = f"head_{hashlib.sha256(url.encode('utf-8')).hexdigest()}"
-        if cache_manager.is_fresh(cache_key, HEAD_CACHE_DURATION):
-            cached = cache_manager.load_json(cache_key)
-            if isinstance(cached, dict):
-                return cached.get("exists") is True
+        cache_key = hashlib.sha256(url.encode('utf-8')).hexdigest()
+        cached_exists = self._load_head_cache_entry(cache_manager, cache_key)
+        if cached_exists is not None:
+            return cached_exists
 
         try:
             session = get_requests_session()
@@ -147,13 +181,13 @@ class PortProtonAPI:
                 self._head_negative_cache.add(url)
                 self._head_positive_cache.discard(url)
                 self._head_failure_cache.pop(url, None)
-                cache_manager.save_json(cache_key, {"exists": False})
+                self._save_head_cache_entry(cache_manager, cache_key, False)
                 return False
             response.raise_for_status()
             if response.status_code == 200:
                 self._head_positive_cache.add(url)
                 self._head_failure_cache.pop(url, None)
-                cache_manager.save_json(cache_key, {"exists": True})
+                self._save_head_cache_entry(cache_manager, cache_key, True)
                 return True
             return False
         except requests.RequestException as e:
