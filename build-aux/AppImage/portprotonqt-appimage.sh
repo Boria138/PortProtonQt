@@ -11,6 +11,7 @@ export DESKTOP=/usr/share/applications/ru.linux_gaming.PortProtonQt.desktop
 export ICON=/usr/share/icons/hicolor/scalable/apps/ru.linux_gaming.PortProtonQt.svg
 export OUTNAME=PortProtonQt-"$VERSION"-anylinux-"$ARCH".AppImage
 export DEPLOY_OPENGL=1
+export DEPLOY_SDL=1
 export DEPLOY_SYS_PYTHON=1
 export OPTIMIZE_LAUNCH=1
 
@@ -37,9 +38,10 @@ fi
 # Qt libs have to be passed manually due to the app being a python script
 ./quick-sharun \
 	/usr/bin/portprotonqt* \
-	/usr/lib/libQt6*.so* \
-	/usr/lib/libSDL2*.so* \
-	/usr/lib/libudev.so*
+	/usr/lib/libQt6Core.so* \
+	/usr/lib/libQt6Gui.so* \
+	/usr/lib/libQt6Network.so* \
+	/usr/lib/libwebp*.so*
 
 # Turn AppDir into AppImage
 ./quick-sharun --make-appimage
