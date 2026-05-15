@@ -24,7 +24,6 @@ classifiers = [
 ]
 dependencies = [
     "babel>=2.18.0",
-    "beautifulsoup4>=4.14.3",
     "evdev>=1.9.3",
     "icoextract>=0.2.0",
     "libarchive-c>=5.3",
