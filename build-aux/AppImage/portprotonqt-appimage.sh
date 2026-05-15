@@ -41,7 +41,7 @@ fi
 	/usr/lib/libQt6Core.so* \
 	/usr/lib/libQt6Gui.so* \
 	/usr/lib/libQt6Network.so* \
-	/usr/lib/libwebp*.so*
+	usr/lib/qt6/plugins/imageformats/libqwebp.so
 
 # Turn AppDir into AppImage
 ./quick-sharun --make-appimage
