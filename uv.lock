@@ -195,15 +195,6 @@ wheels = [
 ]
 
 [[package]]
-name = "icoextract"
-version = "0.2.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "pefile" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/cc/a9/4653791ae2356f981ea3597a1ace0d04fef622071209a4613bf56abd0264/icoextract-0.2.0.tar.gz", hash = "sha256:e7b4770c9a927a48ecfccc4ecd35afe477c2565a71449f92a95bdc92a0d10043", size = 10949, upload-time = "2025-06-03T04:17:37.464Z" }
-
-[[package]]
 name = "identify"
 version = "2.6.15"
 source = { registry = "https://pypi.org/simple" }
@@ -444,9 +435,9 @@ dependencies = [
     { name = "babel" },
     { name = "dbus-fast" },
     { name = "evdev" },
-    { name = "icoextract" },
     { name = "libarchive-c" },
     { name = "orjson" },
+    { name = "pefile" },
     { name = "pillow" },
     { name = "psutil" },
     { name = "pygame" },
@@ -471,9 +462,9 @@ requires-dist = [
     { name = "babel", specifier = ">=2.18.0" },
     { name = "dbus-fast", specifier = ">=4.0.4" },
     { name = "evdev", specifier = ">=1.9.3" },
-    { name = "icoextract", specifier = ">=0.2.0" },
     { name = "libarchive-c", specifier = ">=5.3" },
     { name = "orjson", specifier = ">=3.11.8" },
+    { name = "pefile", specifier = ">=2024.8.26" },
     { name = "pillow", specifier = ">=12.2.0" },
     { name = "psutil", specifier = ">=7.2.2" },
     { name = "pygame", specifier = ">=2.6.1" },

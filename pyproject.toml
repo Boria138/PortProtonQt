@@ -25,7 +25,6 @@ classifiers = [
 dependencies = [
     "babel>=2.18.0",
     "evdev>=1.9.3",
-    "icoextract>=0.2.0",
     "libarchive-c>=5.3",
     "orjson>=3.11.8",
     "pillow>=12.2.0",
@@ -39,6 +38,7 @@ dependencies = [
     "websocket-client>=1.9.0",
     "dbus-fast>=4.0.4",
     "pygame>=2.6.1",
+    "pefile>=2024.8.26",
 ]
 
 [project.scripts]
