@@ -107,45 +107,28 @@ def setup_adaptive_layout(
     """Setup adaptive layout switching on resize."""
 
     def on_detail_page_resize(event) -> None:
-        update_adaptive_layout(detail_page, content_frame_layout)
+        if detail_page.property("force_compact_detail_layout"):
+            content_frame_layout.setDirection(QBoxLayout.Direction.TopToBottom)
+            content_frame_layout.setAlignment(
+                Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
+            )
+            QWidget.resizeEvent(detail_page, event)
+            return
+
+        required_width = _get_required_horizontal_width(content_frame_layout)
+        if detail_page.width() < required_width:
+            if content_frame_layout.direction() != QBoxLayout.Direction.TopToBottom:
+                content_frame_layout.setDirection(QBoxLayout.Direction.TopToBottom)
+                content_frame_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        else:
+            if content_frame_layout.direction() != QBoxLayout.Direction.LeftToRight:
+                content_frame_layout.setDirection(QBoxLayout.Direction.LeftToRight)
+                content_frame_layout.setAlignment(
+                    Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
+                )
         QWidget.resizeEvent(detail_page, event)
 
     detail_page.resizeEvent = on_detail_page_resize
-
-
-def update_adaptive_layout(
-    detail_page: QWidget,
-    content_frame_layout: QBoxLayout,
-) -> None:
-    """Update adaptive detail page layout."""
-    if detail_page.property("force_compact_detail_layout"):
-        if detail_page.property("adaptive_compact_detail_layout"):
-            required_width = detail_page.property("detail_full_required_width")
-            switch_to_full = detail_page.property("switch_to_full_detail_layout")
-            if not isinstance(required_width, int):
-                required_width = _get_required_horizontal_width(content_frame_layout)
-            if detail_page.width() >= required_width and callable(switch_to_full):
-                switch_to_full()
-                return
-        content_frame_layout.setDirection(QBoxLayout.Direction.TopToBottom)
-        content_frame_layout.setAlignment(
-            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
-        )
-        return
-
-    required_width = _get_required_horizontal_width(content_frame_layout)
-    if detail_page.width() < required_width:
-        detail_page.setProperty("detail_full_required_width", required_width)
-        switch_to_compact = detail_page.property("switch_to_compact_detail_layout")
-        if callable(switch_to_compact):
-            switch_to_compact()
-        return
-
-    if content_frame_layout.direction() != QBoxLayout.Direction.LeftToRight:
-        content_frame_layout.setDirection(QBoxLayout.Direction.LeftToRight)
-        content_frame_layout.setAlignment(
-            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
-        )
 
 
 def _get_required_horizontal_width(content_frame_layout: QBoxLayout) -> int:
