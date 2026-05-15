@@ -195,19 +195,17 @@ class DetailPageManager:
         return size, size
 
     def _create_game_badges(self, parent: QWidget, game_data: dict) -> list:
-        from portprotonqt.config import game_config
 
         if self._is_compact_detail_layout():
             return []
 
-        display_filter = game_config.get_display_filter()
         game_source = str(game_data.get("game_source", "")).lower()
         appid = game_data.get("appid", "")
         name = game_data.get("name", "")
         exec_line = game_data.get("exec_line", "")
 
-        steam_visible = game_source == "steam" and display_filter in ("all", "favorites")
-        portproton_visible = game_source == "portproton" and display_filter in ("all", "favorites")
+        steam_visible = game_source == "steam"
+        portproton_visible = game_source == "portproton"
 
         badges = []
         protondb_badge = self._create_protondb_badge(parent, game_data)

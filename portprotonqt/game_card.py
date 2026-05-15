@@ -89,8 +89,8 @@ class GameCard(QFrame):
         self.portproton_api = PortProtonAPI(self.downloader)
         self.missing_executable_path = self._get_missing_executable_path()
 
-        self.steam_visible = (str(game_source).lower() == "steam" and self.display_filter in ("all", "favorites") and not self.economy_mode)
-        self.portproton_visible = (str(game_source).lower() == "portproton" and self.display_filter in ("all", "favorites") and not self.economy_mode)
+        self.steam_visible = (str(game_source).lower() == "steam" and not self.economy_mode)
+        self.portproton_visible = (str(game_source).lower() == "portproton" and not self.economy_mode)
 
         self.base_extra_margin = 8 if self.list_layout else 20
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -486,8 +486,8 @@ class GameCard(QFrame):
 
         self.display_filter = display_filter
         self.economy_mode = ui_config.get_economy_mode()
-        self.steam_visible = (str(self.game_source).lower() == "steam" and self.display_filter in ("all", "favorites") and not self.economy_mode)
-        self.portproton_visible = (str(self.game_source).lower() == "portproton" and self.display_filter in ("all", "favorites") and not self.economy_mode)
+        self.steam_visible = (str(self.game_source).lower() == "steam" and not self.economy_mode)
+        self.portproton_visible = (str(self.game_source).lower() == "portproton" and not self.economy_mode)
         protondb_visible = bool(self.getProtonDBText(self.protondb_tier)) and not self.economy_mode
         anticheat_visible = bool(self.getAntiCheatText(self.anticheat_status)) and not self.economy_mode
 
