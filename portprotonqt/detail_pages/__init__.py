@@ -21,6 +21,7 @@ from portprotonqt.detail_pages.widgets import (
     create_back_button,
     create_content_frame,
     setup_adaptive_layout,
+    update_adaptive_layout,
     create_cover_frame,
     create_protondb_badge,
     create_steam_badge,
@@ -76,22 +77,44 @@ class DetailPageManager:
         self.debug_log_manager = DebugLogManager()
         self._debug_log_button: AutoSizeButton | None = None
         self._debug_log_timer = None
+        self._current_game_data: dict | None = None
+        self._current_detail_opener: Callable[[dict], None] | None = None
+        self._next_detail_page_compact = False
+        self._switching_detail_layout = False
+        self._detail_full_required_width: int | None = None
 
     def openGameDetailPage(self, game_data: dict) -> None:
         """Open detailed game information page."""
         detail_page = QWidget()
-        compact_layout = self._is_compact_detail_layout()
+        adaptive_compact = self._next_detail_page_compact
+        compact_layout = adaptive_compact or self._is_compact_detail_layout()
+        self._next_detail_page_compact = False
+        self._current_game_data = game_data
+        self._current_detail_opener = self.openGameDetailPage
         image_label = self._create_detail_image_label(compact_layout)
 
         self._setup_detail_page_common(detail_page, image_label, 0)
         detail_page.setProperty("force_compact_detail_layout", compact_layout)
+        detail_page.setProperty("adaptive_compact_detail_layout", adaptive_compact)
+        detail_page.setProperty(
+            "detail_full_required_width",
+            self._detail_full_required_width,
+        )
+        detail_page.setProperty(
+            "switch_to_compact_detail_layout",
+            self._switch_current_detail_to_compact,
+        )
+        detail_page.setProperty(
+            "switch_to_full_detail_layout",
+            self._switch_current_detail_to_full,
+        )
 
         cover_frame = self._create_game_cover_frame(
             detail_page, game_data, image_label, compact_layout
         )
 
         description = game_data["description"]
-        game_info_layout = self._create_game_info_layout(game_data)
+        game_info_layout = self._create_game_info_layout(game_data, compact_layout)
         buttons_layout = self._create_game_buttons_layout(game_data)
         if compact_layout:
             page_data = self._create_compact_game_data(
@@ -130,7 +153,7 @@ class DetailPageManager:
         compact_layout: bool,
     ) -> QWidget:
         frame_width, frame_height = self._get_cover_frame_size(compact_layout)
-        badges = self._create_game_badges(detail_page, game_data)
+        badges = self._create_game_badges(detail_page, game_data, compact_layout)
         return create_cover_frame(
             parent=detail_page,
             theme=self.main_window.theme,
@@ -194,9 +217,10 @@ class DetailPageManager:
         )
         return size, size
 
-    def _create_game_badges(self, parent: QWidget, game_data: dict) -> list:
-
-        if self._is_compact_detail_layout():
+    def _create_game_badges(
+        self, parent: QWidget, game_data: dict, compact_layout: bool
+    ) -> list:
+        if compact_layout:
             return []
 
         game_source = str(game_data.get("game_source", "")).lower()
@@ -245,7 +269,9 @@ class DetailPageManager:
         )
         return {"label": badge, "visible": True} if badge and visible else None
 
-    def _create_game_info_layout(self, game_data: dict) -> QVBoxLayout:
+    def _create_game_info_layout(
+        self, game_data: dict, compact_layout: bool
+    ) -> QVBoxLayout:
         game_info_layout = QVBoxLayout()
         game_info_layout.setSpacing(10)
 
@@ -256,7 +282,10 @@ class DetailPageManager:
 
         hltb_layout = QHBoxLayout()
         hltb_layout.setSpacing(10)
-        self._setup_hltb_data(game_data.get("name", ""), hltb_layout, game_info_layout)
+        if not compact_layout:
+            self._setup_hltb_data(
+                game_data.get("name", ""), hltb_layout, game_info_layout
+            )
 
         return game_info_layout
 
@@ -290,11 +319,12 @@ class DetailPageManager:
         self, name: str, hltb_layout: QHBoxLayout, game_info_layout: QVBoxLayout
     ) -> None:
         """Setup HowLongToBeat data loading."""
-        if self._is_compact_detail_layout():
-            return
         hltb = HowLongToBeat(parent=self.main_window)
+        detail_page = self._current_detail_page
 
         def on_hltb_results(results: list) -> None:
+            if detail_page is not self._current_detail_page:
+                return
             self._on_hltb_results(results, hltb, hltb_layout, game_info_layout)
 
         hltb.searchCompleted.connect(on_hltb_results)
@@ -321,6 +351,65 @@ class DetailPageManager:
 
         if has_data:
             game_info_layout.addLayout(hltb_layout)
+            content_frame_layout = self._get_content_frame_layout(
+                self._current_detail_page
+            )
+            if content_frame_layout:
+                update_adaptive_layout(self._current_detail_page, content_frame_layout)
+
+    def _switch_current_detail_to_compact(self) -> None:
+        """Schedule current detail page compact rebuild."""
+        if self._switching_detail_layout or self._is_compact_detail_layout():
+            return
+        if not self._current_game_data or not self._current_detail_page:
+            return
+        required_width = self._current_detail_page.property(
+            "detail_full_required_width"
+        )
+        if isinstance(required_width, int):
+            self._detail_full_required_width = required_width
+        self._switching_detail_layout = True
+        QTimer.singleShot(0, self._open_current_detail_compact)
+
+    def _switch_current_detail_to_full(self) -> None:
+        """Schedule current detail page full rebuild."""
+        if self._switching_detail_layout or self._is_compact_detail_layout():
+            return
+        if not self._current_game_data or not self._current_detail_page:
+            return
+        self._switching_detail_layout = True
+        QTimer.singleShot(0, self._open_current_detail_full)
+
+    def _open_current_detail_compact(self) -> None:
+        """Reopen current detail page in compact mode."""
+        self._open_current_detail_with_layout(True)
+
+    def _open_current_detail_full(self) -> None:
+        """Reopen current detail page in full mode."""
+        self._open_current_detail_with_layout(False)
+
+    def _open_current_detail_with_layout(self, compact_layout: bool) -> None:
+        """Reopen current detail page with requested layout mode."""
+        page = self._current_detail_page
+        game_data = self._current_game_data
+        opener = self._current_detail_opener
+        if not page or not game_data or not opener:
+            self._switching_detail_layout = False
+            return
+
+        def rebuild_detail_page() -> None:
+            cleanup_widget_animated_covers(page)
+            if self._page_in_stacked(page):
+                self.main_window.stackedWidget.removeWidget(page)
+            page.deleteLater()
+
+            self._current_detail_page = None
+            self._next_detail_page_compact = compact_layout
+            opener(dict(game_data))
+            self._switching_detail_layout = False
+
+        detail_animations = DetailPageAnimations(self.main_window, self.main_window.theme)
+        detail_animations.animate_detail_page_exit(page, rebuild_detail_page)
 
     def _add_hltb_times(
         self, game: GameEntry, hltb: HowLongToBeat, hltb_layout: QHBoxLayout
@@ -695,12 +784,29 @@ class DetailPageManager:
     def openAutoInstallDetailPage(self, game_data: dict) -> None:
         """Open minimal detail page for auto-install games."""
         detail_page = QWidget()
-        compact_layout = self._is_compact_detail_layout()
+        adaptive_compact = self._next_detail_page_compact
+        compact_layout = adaptive_compact or self._is_compact_detail_layout()
+        self._next_detail_page_compact = False
+        self._current_game_data = game_data
+        self._current_detail_opener = self.openAutoInstallDetailPage
         frame_width, frame_height = self._get_cover_frame_size(compact_layout)
         image_label = self._create_detail_image_label(compact_layout)
 
         self._setup_detail_page_common(detail_page, image_label, 1)
         detail_page.setProperty("force_compact_detail_layout", compact_layout)
+        detail_page.setProperty("adaptive_compact_detail_layout", adaptive_compact)
+        detail_page.setProperty(
+            "detail_full_required_width",
+            self._detail_full_required_width,
+        )
+        detail_page.setProperty(
+            "switch_to_compact_detail_layout",
+            self._switch_current_detail_to_compact,
+        )
+        detail_page.setProperty(
+            "switch_to_full_detail_layout",
+            self._switch_current_detail_to_full,
+        )
 
         exec_line = game_data.get("exec_line", "")
         script_name = self._extract_script_name(exec_line)
