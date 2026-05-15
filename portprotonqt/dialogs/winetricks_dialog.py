@@ -94,15 +94,15 @@ class WinetricksDialog(DraggableDialog):
 
     def update_winetricks(self):
         """Update the winetricks script."""
-        if not self.downloader.has_internet():
-            logger.warning("No internet connection, skipping winetricks update")
-            return
-
         url = "https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks"
         temp_path = os.path.join(self.tmp_path, "winetricks_temp")
 
         try:
-            self.downloader.download(url, temp_path)
+            if not self.downloader.download(url, temp_path):
+                logger.warning("Failed to download external winetricks version")
+                if os.path.exists(temp_path):
+                    os.remove(temp_path)
+                return
             with open(temp_path) as f:
                 ext_content = f.read()
             ext_ver_match = re.search(r'WINETRICKS_VERSION\s*=\s*[\'"]?([^\'"\s]+)', ext_content)

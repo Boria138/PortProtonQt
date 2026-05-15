@@ -2,7 +2,6 @@ from PySide6.QtCore import QObject, Signal, QThread
 import threading
 import os
 import requests
-import socket
 from pathlib import Path
 from tqdm import tqdm
 from collections.abc import Callable
@@ -65,53 +64,11 @@ class Downloader(QObject):
         self._locks = {}
         self._active_threads: list[QThread] = []
         self._global_lock = threading.Lock()
-        self._has_internet = None
         self.callback_requested.connect(self._run_callback)
 
     def _run_callback(self, callback, result):
         if callback:
             callback(result)
-
-    def has_internet(self, timeout=3):
-        if self._has_internet is None:
-            errors = []
-            # Primary: Yandex
-            try:
-                socket.create_connection(("77.88.8.8", 53), timeout=timeout)
-            except Exception as e:
-                errors.append(f"Yandex DNS (77.88.8.8): {e}")
-            try:
-                socket.create_connection(("77.88.8.1", 53), timeout=timeout)
-            except Exception as e:
-                errors.append(f"Yandex DNS (77.88.8.1): {e}")
-            try:
-                requests.get("https://ya.ru", timeout=timeout)
-            except Exception as e:
-                errors.append(f"ya.ru: {e}")
-
-            # Fallback: Google (if Yandex failed)
-            if errors:
-                logger.debug("Yandex check failed, trying Google fallback")
-                try:
-                    socket.create_connection(("8.8.8.8", 53), timeout=timeout)
-                except Exception as e:
-                    errors.append(f"Google DNS (8.8.8.8): {e}")
-                try:
-                    socket.create_connection(("8.8.4.4", 53), timeout=timeout)
-                except Exception as e:
-                    errors.append(f"Google DNS (8.8.4.4): {e}")
-                try:
-                    requests.get("https://www.google.com", timeout=timeout)
-                except Exception as e:
-                    errors.append(f"google.com: {e}")
-
-            if errors:
-                logger.warning("Internet unavailable:\n" + "\n".join(errors))
-                self._has_internet = False
-            else:
-                self._has_internet = True
-        return self._has_internet
-
 
     def _get_url_lock(self, url):
         with self._global_lock:
@@ -219,9 +176,6 @@ class Downloader(QObject):
         return results
 
     def download(self, url, local_path, timeout=5):
-        if not self.has_internet():
-            logger.warning(f"No internet, skipping download {url}")
-            return None
         with self._global_lock:
             if url in self._last_error:
                 logger.warning(f"Previous download error for {url}, skipping")
@@ -259,14 +213,6 @@ class Downloader(QObject):
         max_workers=None,
         on_result: Callable[[str, str | None], None] | None = None,
     ):
-        if not self.has_internet():
-            logger.warning("No internet, skipping parallel download")
-            results = dict.fromkeys(urls)
-            if on_result:
-                for url, result in results.items():
-                    on_result(url, result)
-            return results
-
         filtered_urls = []
         filtered_paths = []
         emitted_urls = set()
