@@ -36,6 +36,7 @@ Requires:       python3-tqdm
 Requires:       python3-vdf
 Requires:       python3-pefile
 Requires:       python3-pillow
+Requires:       python3-pillow-qt
 Requires:       python3-rapidfuzz
 Requires:       python3-libarchive-c
 Requires:       perl-Image-ExifTool
