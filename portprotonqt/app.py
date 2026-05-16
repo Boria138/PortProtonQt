@@ -441,7 +441,7 @@ def main():
 
                 current_gpu_use = get_user_conf_setting("PW_GPU_USE")
                 selectable_gpu_entries = get_selectable_gpu_entries()
-                if selectable_gpu_entries:
+                if len(selectable_gpu_entries) > 1:
                     selected_entry = None
                     for entry in selectable_gpu_entries:
                         if entry["device_name"] == current_gpu_use:
@@ -457,6 +457,10 @@ def main():
                             set_user_conf_setting("PW_vendorID", selected_entry["vendor_id"])
                         if selected_entry["device_id"]:
                             set_user_conf_setting("PW_deviceID", selected_entry["device_id"])
+                elif current_gpu_use and current_gpu_use != "disabled":
+                    set_user_conf_setting("PW_GPU_USE", None)
+                    set_user_conf_setting("PW_vendorID", None)
+                    set_user_conf_setting("PW_deviceID", None)
 
                 # Run the initial PortProton command
                 subprocess.run(self.start_cmd + ["cli", "--initial"], timeout=10)

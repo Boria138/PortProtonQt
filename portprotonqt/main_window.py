@@ -2463,7 +2463,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         scrollLayout.addWidget(hwFrame)
 
         filtered_gpu_list = get_selectable_gpu_list()
-        if filtered_gpu_list:
+        if len(filtered_gpu_list) > 1:
             self.gpuCombo = QComboBox()
             self.gpuCombo.view().window().setWindowFlags(
                 Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
@@ -2489,7 +2489,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             self.gpuTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
             self.gpuTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
             hwForm.addRow(self.gpuTitle, self.gpuCombo)
-        else:
+        elif not filtered_gpu_list:
             hwForm.addRow(QLabel(_("No GPUs found")), QLabel(""))
 
         # 5. Proxy Settings Section
@@ -2681,7 +2681,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             ui_config.set_download_wine_to_steam(self.downloadWineToSteamCheckBox.isChecked())
 
         # Save GPU selection to user.conf (only if the combo box exists)
-        if hasattr(self, 'gpuCombo'):
+        if hasattr(self, 'gpuCombo') and self.gpuCombo.count() > 1:
             selected_gpu = self.gpuCombo.currentText()
             set_user_conf_setting('PW_GPU_USE', selected_gpu)
         if hasattr(self, 'forceSystemDpiCheckBox'):
