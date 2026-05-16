@@ -3844,6 +3844,7 @@ steamplay_launch () {
     pw_check_and_download_plugins
 
     if [[ -n "${PW_EXE_FILE:-}" ]]; then
+        local proton_runner
         local steamplay_ld_library_path
         cd "$(dirname "${PW_EXE_FILE}")"
         export PATH_TO_GAME="$(pwd)"
@@ -3905,9 +3906,16 @@ steamplay_launch () {
         [[ $PW_LOG != 1 ]] && debug_timer --start -s "PW_TIME_IN_GAME"
         if [[ -x "${STEAM_COMPAT_TOOL_PATHS%%:*}/proton" ]] ; then
             proton_runner="${STEAM_COMPAT_TOOL_PATHS%%:*}/proton"
+        elif [[ "${PW_WINE_USE:-}" = /* ]] && [[ -x "${PW_WINE_USE}/proton" ]] ; then
+            proton_runner="${PW_WINE_USE}/proton"
+        elif [[ -x "${PORT_DATA_PATH}/data/dist/${PW_WINE_USE:-}/proton" ]] ; then
+            proton_runner="${PORT_DATA_PATH}/data/dist/${PW_WINE_USE}/proton"
         elif [[ -x "${WINEDIR}/proton" ]] ; then
             proton_runner="${WINEDIR}/proton"
+        elif [[ -x "${WINEDIR%/files}/proton" ]] ; then
+            proton_runner="${WINEDIR%/files}/proton"
         fi
+        [[ -z "${proton_runner:-}" ]] && fatal "Proton runner not found"
 
         # Virtual Desktop
         if [[ "${PW_VIRTUAL_DESKTOP}" == "1" ]] ; then
