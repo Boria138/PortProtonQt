@@ -617,7 +617,7 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
                     combo.addItem(current_val_text)
                 combo.setCurrentText(current_val_text)
 
-                if setting['key'] in ('PW_PREFIX_NAME', 'PW_VULKAN_USE') and self.game_source == "steam":
+                if setting['key'] in ('PW_PREFIX_NAME', 'PW_VULKAN_USE', 'PW_USE_INHIBIT_SLEEP') and self.game_source == "steam":
                     combo.setEnabled(False)
                     name_item.setForeground(QColor(self.theme.color_disabled_text))
                 elif is_blocked:
