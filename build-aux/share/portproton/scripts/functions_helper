@@ -3940,7 +3940,6 @@ steamplay_launch () {
         LD_PRELOAD="${LD_PRELOAD:+$LD_PRELOAD:}${PW_LD_PRELOAD}" \
         ${PW_ADD_VAR_SLR} \
         ${PW_GAMEMODERUN_SLR} \
-        ${PW_INHIBIT_SLR} \
         ${PW_TASKSET_SLR} \
         "${proton_runner}" waitforexitandrun "${PW_EXE_FILE}" "$@"
         if [[ $PW_LOG != 1 ]] && [[ -n $START_PW_TIME_IN_GAME ]] ; then

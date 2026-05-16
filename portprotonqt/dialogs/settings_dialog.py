@@ -438,6 +438,7 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
                 "PW_USE_D3D_EXTRAS",
                 "PW_USE_GALLIUM_NINE",
                 "PW_USE_SUPPLIED_DXVK_VKD3D",
+                "PW_USE_INHIBIT_SLEEP",
             })
         if exit_code != 0 or exit_status != QProcess.ExitStatus.NormalExit:
             for key in self.toggle_settings:
@@ -617,7 +618,7 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
                     combo.addItem(current_val_text)
                 combo.setCurrentText(current_val_text)
 
-                if setting['key'] in ('PW_PREFIX_NAME', 'PW_VULKAN_USE', 'PW_USE_INHIBIT_SLEEP') and self.game_source == "steam":
+                if setting['key'] in ('PW_PREFIX_NAME', 'PW_VULKAN_USE') and self.game_source == "steam":
                     combo.setEnabled(False)
                     name_item.setForeground(QColor(self.theme.color_disabled_text))
                 elif is_blocked:
