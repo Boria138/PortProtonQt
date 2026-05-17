@@ -9,7 +9,7 @@ from PySide6.QtGui import QIcon, QAction, QFont
 from portprotonqt.logger import get_logger
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.localization import _
-from portprotonqt.config import extract_exec_target_path, favorites_config, ui_config
+from portprotonqt.config import extract_exec_target_path, ui_config
 from portprotonqt.dialogs import GameLaunchDialog
 
 logger = get_logger(__name__)
@@ -19,7 +19,7 @@ class TrayManager:
     """Tray management module for PortProtonQt.
 
     Provides:
-    - Flat context menu with categories: Stop Game, Favorites, Recent, Exit.
+    - Flat context menu with categories: Stop Game, Tabs, Recent, Exit.
     - Dynamic population of game lists without nested submenus.
     - Minimize to tray on window close, full exit via Exit.
     """
@@ -76,12 +76,11 @@ class TrayManager:
 
         self.tray_menu.addAction(self.stop_game_action)
         self.tray_menu.addSeparator()
+        self._add_category_header(_("Tabs"))
+        self._populate_tabs_flat()
+        self.tray_menu.addSeparator()
 
         self.update_stop_game_action()
-
-        self._add_category_header(_("Favorites"))
-        self._populate_favorites_flat()
-        self.tray_menu.addSeparator()
 
         self._add_category_header(_("Recent Games"))
         self._populate_recent_flat()
@@ -112,35 +111,38 @@ class TrayManager:
             self.main_window.raise_()
             self.main_window.activateWindow()
 
+    def _populate_tabs_flat(self) -> None:
+        tab_buttons = getattr(self.main_window, "tabButtons", {})
+        if not tab_buttons:
+            return
+
+        current_index = self.main_window.stackedWidget.currentIndex()
+        for index, button in sorted(tab_buttons.items()):
+            if button.isHidden():
+                continue
+            action = QAction(button.text(), self.main_window)
+            action.setCheckable(True)
+            action.setChecked(index == current_index)
+            action.triggered.connect(
+                lambda checked=False, tab_index=index: self.switch_tab(tab_index)
+            )
+            self.tray_menu.addAction(action)
+
+    def switch_tab(self, index: int) -> None:
+        if not self.main_window.isVisible():
+            self.main_window.show()
+        if self.main_window.isMinimized():
+            self.main_window.showNormal()
+        self.main_window.switchTab(index)
+        self.main_window.raise_()
+        self.main_window.activateWindow()
+
     def stop_game(self) -> None:
         if self.main_window.stop_running_game():
             self.update_stop_game_action()
             return
 
         QMessageBox.warning(self.main_window, _("Error"), _("Failed to stop game"))
-
-    def _populate_favorites_flat(self):
-        favorites = favorites_config.get_games()
-        if not favorites:
-            no_fav_action = QAction(_("No favorites"), self.main_window)
-            no_fav_action.setEnabled(False)
-            self.tray_menu.addAction(no_fav_action)
-            return
-
-        game_map = {game[0]: (game[5], game[12]) for game in self.main_window.games}
-
-        for fav in sorted(favorites):
-            game_data = game_map.get(fav)
-            if game_data:
-                exec_line, source = game_data
-                action_text = f"{fav} ({source})"
-                action = QAction(action_text, self.main_window)
-                action.triggered.connect(
-                    lambda checked=False, el=exec_line, name=fav: self.launch_game_with_dialog(el, name)
-                )
-                self.tray_menu.addAction(action)
-            else:
-                logger.warning(f"Exec line not found for favorite: {fav}")
 
     def _populate_recent_flat(self):
         if not self.main_window.games:
