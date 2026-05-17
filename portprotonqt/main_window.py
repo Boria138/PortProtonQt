@@ -2463,6 +2463,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         scrollLayout.addWidget(hwFrame)
 
         filtered_gpu_list = get_selectable_gpu_list()
+        hwFrame.setVisible(len(filtered_gpu_list) != 1)
         if len(filtered_gpu_list) > 1:
             self.gpuCombo = QComboBox()
             self.gpuCombo.view().window().setWindowFlags(
