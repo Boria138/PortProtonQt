@@ -2,7 +2,7 @@
 import os
 from pathlib import Path
 from portprotonqt.config.base import BaseConfig
-from portprotonqt.config.validators import validate_bool
+from portprotonqt.config.validators import validate_bool, validate_string
 from portprotonqt.logger import get_logger
 
 logger = get_logger(__name__)
@@ -63,6 +63,16 @@ class DisplayConfig(BaseConfig):
         """Set start minimized setting."""
         validate_bool(minimized, "start_minimized")
         self._save_value("start_minimized", minimized, "bool")
+
+    def get_tray_menu_mode(self) -> str:
+        """Get tray menu mode."""
+        mode = self._get_str("tray_menu_mode", "compact")
+        return mode if mode in ("detailed", "compact") else "compact"
+
+    def set_tray_menu_mode(self, mode: str) -> None:
+        """Set tray menu mode."""
+        validate_string(mode, "tray_menu_mode", min_len=1, max_len=20)
+        self._save_value("tray_menu_mode", mode, "str")
 
 
 def apply_xdg_autostart(enabled: bool) -> bool:

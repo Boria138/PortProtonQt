@@ -2284,6 +2284,31 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         uiForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
         scrollLayout.addWidget(uiFrame)
 
+        self.tray_menu_mode_keys = ["compact", "detailed"]
+        self.tray_menu_mode_labels = [_("Compact"), _("Detailed")]
+        self.trayMenuModeCombo = QComboBox()
+        self.trayMenuModeCombo.view().window().setWindowFlags(
+            Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
+        )
+        self.trayMenuModeCombo.view().window().setAttribute(
+            Qt.WidgetAttribute.WA_TranslucentBackground
+        )
+        self.trayMenuModeCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.trayMenuModeCombo.addItems(self.tray_menu_mode_labels)
+        self.trayMenuModeCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
+        self.trayMenuModeCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.trayMenuModeTitle = QLabel(_("Tray Menu Type:"))
+        self.trayMenuModeTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.trayMenuModeTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
+        self.trayMenuModeTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        current = display_config.get_tray_menu_mode()
+        try:
+            idx = self.tray_menu_mode_keys.index(current)
+        except ValueError:
+            idx = 0
+        self.trayMenuModeCombo.setCurrentIndex(idx)
+        uiForm.addRow(self.trayMenuModeTitle, self.trayMenuModeCombo)
+
         self.fullscreenCheckBox = QCheckBox()  # Removed text
         self.fullscreenCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.fullscreenCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -2670,6 +2695,10 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
         start_minimized = self.startMinimizedCheckBox.isChecked()
         display_config.set_start_minimized(start_minimized)
+
+        tray_menu_mode_idx = self.trayMenuModeCombo.currentIndex()
+        tray_menu_mode = self.tray_menu_mode_keys[tray_menu_mode_idx]
+        display_config.set_tray_menu_mode(tray_menu_mode)
 
         steam_compat = self.steamCompatCheckBox.isChecked()
         currently_installed = is_steam_compat_tool_installed()
