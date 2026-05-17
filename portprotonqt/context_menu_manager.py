@@ -3,7 +3,7 @@ import glob
 import shutil
 import tempfile
 from PySide6.QtWidgets import QMessageBox, QDialog, QMenu, QLineEdit, QApplication, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFrame
-from PySide6.QtCore import QUrl, QPoint, QObject, Signal, Qt, QStandardPaths
+from PySide6.QtCore import QUrl, QPoint, QObject, Signal, Qt, QStandardPaths, QTimer
 from PySide6.QtGui import QDesktopServices, QIcon, QKeySequence
 from portprotonqt.localization import _
 from portprotonqt.config import (
@@ -15,8 +15,11 @@ from portprotonqt.config import (
 from portprotonqt.steam_api import (
     add_to_steam,
     fetch_client_icon_async,
+    get_steam_home,
+    get_steam_libs,
     is_game_in_steam,
     remove_from_steam,
+    safe_vdf_load,
 )
 from portprotonqt.dialogs import AddGameDialog, generate_thumbnail
 from portprotonqt.dialogs.base import DraggableDialog
@@ -423,6 +426,13 @@ class ContextMenuManager:
                 if os.path.exists(menu_path)
                 else self.add_steam_to_menu(game_card.name, game_card.appid)
             )
+            open_folder_action = menu.addAction(self._get_safe_icon("search"), _("Open Game Folder"))
+            open_folder_action.triggered.connect(
+                lambda: QTimer.singleShot(
+                    0,
+                    lambda: self.open_steam_game_folder(game_card.appid)
+                )
+            )
 
         if game_card.game_source != "steam":
             desktop_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DesktopLocation)
@@ -443,7 +453,10 @@ class ContextMenuManager:
             delete_action.triggered.connect(lambda: self.delete_game(game_card.name, game_card.exec_line))
             open_folder_action = menu.addAction(self._get_safe_icon("search"), _("Open Game Folder"))
             open_folder_action.triggered.connect(
-                lambda: self.open_game_folder(game_card.name, game_card.exec_line)
+                lambda: QTimer.singleShot(
+                    0,
+                    lambda: self.open_game_folder(game_card.name, game_card.exec_line)
+                )
             )
             applications_dir = os.path.join(os.path.expanduser("~"), ".local", "share", "applications")
             menu_path = self._get_shortcut_path(game_card.name, applications_dir)
@@ -1235,6 +1248,31 @@ class ContextMenuManager:
                 _("Error"),
                 _("Failed to open folder: {error}").format(error=str(e))
             )
+
+    def open_steam_game_folder(self, appid: int | str) -> None:
+        """Open Steam game installation folder by appid."""
+        appid_str = str(appid).strip()
+        if not appid_str:
+            return
+        steam_home = get_steam_home()
+        if steam_home is None:
+            return
+        for lib in get_steam_libs(steam_home):
+            manifest = lib / "steamapps" / f"appmanifest_{appid_str}.acf"
+            if not manifest.exists():
+                continue
+            data = safe_vdf_load(manifest)
+            install_dir = data.get("AppState", {}).get("installdir")
+            if not install_dir:
+                return
+            folder_path = lib / "steamapps" / "common" / install_dir
+            if not folder_path.exists():
+                return
+            linux_subdir = folder_path / f"{install_dir}_linux"
+            if linux_subdir.exists():
+                folder_path = linux_subdir
+            QDesktopServices.openUrl(QUrl.fromLocalFile(str(folder_path)))
+            return
 
 class CustomLineEdit(QLineEdit):
 
