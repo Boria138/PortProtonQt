@@ -365,20 +365,25 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
         self.apply_button = AutoSizeButton(_("Apply"), icon=ThemeManager().get_icon("apply"))
         self.cancel_button = AutoSizeButton(_("Cancel"), icon=ThemeManager().get_icon("cancel"))
         self.open_ppdb_button = AutoSizeButton(_("Open PPDB"), icon=ThemeManager().get_icon("folder"))
+        self.clear_ppdb_button = AutoSizeButton(_("Clear PPDB"), icon=ThemeManager().get_icon("delete"))
         self.apply_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.cancel_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.open_ppdb_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        self.clear_ppdb_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.apply_button.installEventFilter(self)
         self.cancel_button.installEventFilter(self)
         self.open_ppdb_button.installEventFilter(self)
+        self.clear_ppdb_button.installEventFilter(self)
         button_layout.addWidget(self.apply_button)
         button_layout.addWidget(self.cancel_button)
         button_layout.addWidget(self.open_ppdb_button)
+        button_layout.addWidget(self.clear_ppdb_button)
         self.main_layout.addLayout(button_layout)
 
         self.apply_button.clicked.connect(self.apply_changes)
         self.cancel_button.clicked.connect(self.reject)
         self.open_ppdb_button.clicked.connect(self.open_ppdb_file)
+        self.clear_ppdb_button.clicked.connect(self.clear_ppdb_file)
         self._install_line_edit_event_filters()
 
     def load_current_settings(self):
@@ -491,6 +496,39 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
 
         if not QDesktopServices.openUrl(QUrl.fromLocalFile(db_path)):
             QMessageBox.critical(self, _("Error"), _("Failed to open PPDB file:\n") + db_path)
+
+    def clear_ppdb_file(self):
+        """Remove the PPDB file and reload settings."""
+        if not self.exe_path:
+            QMessageBox.critical(self, _("Error"), _("Executable path is not available."))
+            return
+
+        db_path = self.exe_path + ".ppdb"
+        if not os.path.exists(db_path):
+            QMessageBox.information(self, _("Information"), _("PPDB file does not exist at: ") + db_path)
+            self.load_current_settings()
+            return
+
+        msg_box = QMessageBox(self)
+        msg_box.setIcon(QMessageBox.Icon.Question)
+        msg_box.setWindowTitle(_("Confirm PPDB Clear"))
+        msg_box.setText(_("Are you sure you want to clear PPDB settings? This action cannot be undone."))
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        msg_box.setDefaultButton(QMessageBox.StandardButton.No)
+        msg_box.setButtonText(QMessageBox.StandardButton.Yes, _("Yes"))
+        msg_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
+        if msg_box.exec() != QMessageBox.StandardButton.Yes:
+            return
+
+        try:
+            os.remove(db_path)
+        except OSError as exc:
+            logger.warning("Failed to remove PPDB file %s: %s", db_path, exc)
+            QMessageBox.warning(self, _("Error"), _("Failed to remove PPDB file:\n") + db_path)
+            return
+
+        QMessageBox.information(self, _("Success"), _("PPDB settings cleared."))
+        self.load_current_settings()
 
     def populate_table(self):
         """Populate the table with settings."""
@@ -906,6 +944,7 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
             getattr(self, "apply_button", None),
             getattr(self, "cancel_button", None),
             getattr(self, "open_ppdb_button", None),
+            getattr(self, "clear_ppdb_button", None),
         )
         if obj in action_buttons:
             if event.type() in (
