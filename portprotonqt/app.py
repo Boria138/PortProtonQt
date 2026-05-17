@@ -41,6 +41,8 @@ from portprotonqt.cli import (
     add_steam_compat_tool,
     reinstall_steam_compat_tool,
     remove_steam_compat_tool,
+    clear_cache,
+    reset_settings,
     parse_resolution,
 )
 from portprotonqt.localization import _, get_steam_language
@@ -154,6 +156,14 @@ def main():
     # Handle --remove-steam-compat-tool flag
     if parsed_args.remove_steam_compat_tool:
         success = remove_steam_compat_tool()
+        sys.exit(0 if success else 1)
+
+    if parsed_args.clear_cache:
+        success = clear_cache()
+        sys.exit(0 if success else 1)
+
+    if parsed_args.reset_settings:
+        success = reset_settings()
         sys.exit(0 if success else 1)
 
     # Check if running on Apple Silicon/Asahi Linux or if forced to run under muvm, and re-execute under muvm if needed

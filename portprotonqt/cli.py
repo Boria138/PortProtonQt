@@ -52,6 +52,16 @@ def parse_args():
         help="Remove PortProtonQt Steam compatibility tool from user Steam directory"
     )
     parser.add_argument(
+        "--clear-cache",
+        action="store_true",
+        help="Clear PortProtonQt cache and exit"
+    )
+    parser.add_argument(
+        "--reset-settings",
+        action="store_true",
+        help="Reset PortProtonQt settings and exit"
+    )
+    parser.add_argument(
         "--ppqtos",
         action="store_true",
         help="Show the system tab in the application"
@@ -259,6 +269,24 @@ def remove_steam_compat_tool() -> bool:
 
     print("PortProtonQt Steam compatibility tool removed")
     print("Restart Steam to apply changes")
+    return True
+
+
+def clear_cache() -> bool:
+    """Clear PortProtonQt cache."""
+    from portprotonqt.config import cache_config
+
+    cache_config.clear_cache()
+    print("PortProtonQt cache cleared")
+    return True
+
+
+def reset_settings() -> bool:
+    """Reset PortProtonQt settings."""
+    from portprotonqt.config import reset_main_config
+
+    reset_main_config()
+    print("PortProtonQt settings reset")
     return True
 
 
