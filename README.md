@@ -24,18 +24,21 @@ source .venv/bin/activate.fish  # For fish
 
 ### Разработка
 
-В проект встроен линтер (ruff), статический анализатор (pyright) и проверка lock файла, если эти проверки не пройдут PR не будет принят, поэтому перед коммитом введите такую команду
+Для автоматической подготовки окружения (установка Python 3.10, зависимостей, pre-commit хуков и генерация переводов) выполните скрипт:
 
 ```sh
-uv python install 3.10
-uv sync --all-extras --dev
-source .venv/bin/activate  # For bash/zsh
-# or
-source .venv/bin/activate.fish  # For fish
-pre-commit install
+./dev-scripts/prepare_env.sh
 ```
 
-pre-commit сам запустится при коммите, если вы хотите запустить его вручную введите команду
+Затем активируйте виртуальное окружение. Команда активации для вашей оболочки будет выведена в конце работы скрипта. Обычно это:
+
+```sh
+source .venv/bin/activate  # Для bash/zsh
+# или
+source .venv/bin/activate.fish  # Для fish
+```
+
+pre-commit сам запустится при коммите, если вы хотите запустить его вручную введите команду:
 
 ```sh
 pre-commit run --all-files
