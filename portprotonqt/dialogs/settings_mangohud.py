@@ -837,6 +837,7 @@ class MangoHudSettingsMixin:
         mangohud_enabled = self.current_settings.get('PW_MANGOHUD') == '1'
         mangohud_user_conf_enabled = self.current_settings.get('PW_MANGOHUD_USER_CONF') == '1'
         visible = mangohud_enabled
+        config_visible = mangohud_enabled and not mangohud_user_conf_enabled
 
         if mangohud_enabled:
             self.mangohud_enable_button.setText(_("Disable MangoHud"))
@@ -854,20 +855,20 @@ class MangoHudSettingsMixin:
             self.mangohud_user_conf_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
 
         if self.mangohud_toggle_group is not None:
-            self.mangohud_toggle_group.setVisible(visible)
+            self.mangohud_toggle_group.setVisible(config_visible)
         if self.mangohud_presets_group is not None:
-            self.mangohud_presets_group.setVisible(visible)
+            self.mangohud_presets_group.setVisible(config_visible)
         if self.mangohud_values_group is not None:
-            self.mangohud_values_group.setVisible(visible)
+            self.mangohud_values_group.setVisible(config_visible)
         if self.mangohud_fps_group is not None:
-            self.mangohud_fps_group.setVisible(visible)
+            self.mangohud_fps_group.setVisible(config_visible)
         if self.mangohud_extra_group is not None:
-            self.mangohud_extra_group.setVisible(visible)
+            self.mangohud_extra_group.setVisible(config_visible)
 
         for button in self.mangohud_preset_buttons:
-            button.setVisible(visible)
+            button.setVisible(config_visible)
         for button in self.mangohud_action_buttons:
-            button.setVisible(visible)
+            button.setVisible(config_visible)
 
     def toggle_mangohud_enable(self):
         """Toggle PW_MANGOHUD setting."""
@@ -1225,7 +1226,13 @@ class MangoHudSettingsMixin:
 
     def _filter_mangohud_settings(self, search_text):
         """Filter MangoHud groups based on search text."""
+        mangohud_enabled = self.current_settings.get('PW_MANGOHUD') == '1'
+        mangohud_user_conf_enabled = self.current_settings.get('PW_MANGOHUD_USER_CONF') == '1'
+        config_visible = mangohud_enabled and not mangohud_user_conf_enabled
         for group_box in self.mangohud_tab.findChildren(QGroupBox):
+            if not config_visible:
+                group_box.setVisible(group_box is self.mangohud_actions_group)
+                continue
             if not search_text:
                 group_box.setVisible(True)
                 continue

@@ -1025,7 +1025,11 @@ class GamescopeSettingsMixin:
 
     def _filter_gamescope_settings(self, search_text):
         """Filter Gamescope groups based on search text."""
+        gamescope_enabled = self.current_settings.get('PW_GAMESCOPE') == '1'
         for group_box in self.gamescope_tab.findChildren(QGroupBox):
+            if not gamescope_enabled:
+                group_box.setVisible(group_box is self.gamescope_actions_group)
+                continue
             if not search_text:
                 group_box.setVisible(True)
                 continue
