@@ -200,8 +200,8 @@ if [[ -z "$DOWNLOAD_STEAM_GRID" ]] ; then
 fi
 
 if check_gamescope_session
-then PW_TERM="env LANG=C xterm -fullscreen -bg black -fg white -e"
-else PW_TERM="env LANG=C xterm -bg black -fg white -e"
+then PW_TERM="env LANG=C $PW_PLUGINS_PATH/portable/bin/xterm -fullscreen -bg black -fg white -e"
+else PW_TERM="env LANG=C $PW_PLUGINS_PATH/portable/bin/xterm -bg black -fg white -e"
 fi
 
 pw_cleanup () {
@@ -433,7 +433,7 @@ Usage examples:
         get_wine_and_pfx "$2" "$3"
         start_portproton
         cd "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c" || fatal
-        if check_flatpak ; then
+        if [[ $PW_DISABLE_RUNTIME_DOWNLOAD == "1" ]]; then
             $PW_TERM "pw_run cmd"
         else
             export PW_USE_TERMINAL=1
