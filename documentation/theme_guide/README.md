@@ -35,10 +35,17 @@ mkdir -p ~/.local/share/PortProtonQT/themes/my_custom_theme
 
 The theme tab groups light and dark variants under one base theme name.
 
-- Dark variant folder: `my_custom_theme`
-- Light variant folder: `my_custom_theme-light`
+Define the related theme folders in each variant's `metainfo.ini`:
 
-If both folders exist, the application shows a separate variant selector with `Dark`, `Light`, and `Auto`. If only one folder exists, the variant selector is hidden and the existing theme is used directly.
+```ini
+[Metainfo]
+dark_variant = my_custom_theme
+light_variant = my_custom_theme_light
+```
+
+The folder names can be any valid theme folder names.
+
+If both configured folders exist, the application shows a separate variant selector with `Dark`, `Light`, and `Auto`. If only one folder exists, the variant selector is hidden and the existing theme is used directly.
 
 `Auto` is the default variant. It follows the system color scheme using the desktop portal first, then `gsettings`, and Qt color scheme detection as a fallback.
 
@@ -348,6 +355,8 @@ virtual_keyboard_slide_bounce_animation_duration = 220
 
 ```ini
 [Metainfo]
+dark_variant = my_custom_theme
+light_variant = my_custom_theme_light
 name_en = My Custom Theme
 name_ru = Моя пользовательская тема
 author = Your Name
@@ -363,6 +372,8 @@ You must provide translations for your theme's name and description by adding la
 - `description_en`, `description_ru`, etc. for theme descriptions
 
 The application will automatically select the appropriate translation based on the user's system language, falling back to English if translations are not available for the user's language.
+
+`dark_variant` and `light_variant` are required when the theme has both variants. Add them to both variant folders so either selected folder can resolve back to the same variant pair.
 
 ---
 

@@ -13,14 +13,36 @@ logger = get_logger(__name__)
 THEME_VARIANTS = ("dark", "light", "auto")
 
 
+def _read_theme_variants(theme_name: str) -> dict[str, str]:
+    variants = {}
+    for themes_dir in THEMES_DIRS:
+        metainfo_file = os.path.join(themes_dir, theme_name, "metainfo.ini")
+        if not os.path.exists(metainfo_file):
+            continue
+        cp = configparser.ConfigParser()
+        cp.read(metainfo_file, encoding="utf-8")
+        if "Metainfo" not in cp:
+            return variants
+        dark_name = cp.get("Metainfo", "dark_variant", fallback="")
+        light_name = cp.get("Metainfo", "light_variant", fallback="")
+        if dark_name and _theme_exists(dark_name):
+            variants["dark"] = dark_name
+        if light_name and _theme_exists(light_name):
+            variants["light"] = light_name
+        return variants
+    return variants
+
+
 def _get_theme_base_name(theme_name: str) -> str:
-    if theme_name.endswith("-light"):
-        return theme_name[:-6]
+    variants = _read_theme_variants(theme_name)
+    if variants.get("dark"):
+        return variants["dark"]
     return theme_name
 
 
 def _get_theme_variant_name(theme_name: str) -> str:
-    if theme_name.endswith("-light"):
+    variants = _read_theme_variants(theme_name)
+    if variants.get("light") == theme_name:
         return "light"
     return "auto"
 
@@ -31,6 +53,15 @@ def _theme_exists(theme_name: str) -> bool:
         if os.path.exists(os.path.join(theme_folder, "styles.py")):
             return True
     return False
+
+
+def _get_theme_base_names(theme_names: list[str]) -> list[str]:
+    base_names = []
+    for theme_name in theme_names:
+        base_name = _get_theme_base_name(theme_name)
+        if base_name not in base_names:
+            base_names.append(base_name)
+    return base_names
 
 
 def _unwrap_variant(value: Any) -> Any:
@@ -137,12 +168,13 @@ def _is_system_light_theme() -> bool:
 def _resolve_theme_name(theme_name: str, variant: str) -> str:
     base_name = _get_theme_base_name(theme_name)
     resolved_variant = "light" if variant == "auto" and _is_system_light_theme() else variant
-    resolved_name = f"{base_name}-light" if resolved_variant == "light" else base_name
+    variants = _read_theme_variants(base_name)
+    resolved_name = variants.get(resolved_variant, base_name)
     if _theme_exists(resolved_name):
         return resolved_name
     if _theme_exists(base_name):
         return base_name
-    light_name = f"{base_name}-light"
+    light_name = variants.get("light", "")
     if _theme_exists(light_name):
         return light_name
     return base_name
@@ -166,6 +198,10 @@ class UIConfig(BaseConfig):
     def get_theme_base(self) -> str:
         """Get the selected base theme name."""
         return _get_theme_base_name(self._get_str("theme", "standart"))
+
+    def get_theme_bases(self, theme_names: list[str]) -> list[str]:
+        """Get unique base theme names."""
+        return _get_theme_base_names(theme_names)
 
     def get_theme_variant(self) -> str:
         """Get theme variant."""
@@ -274,6 +310,8 @@ def load_theme_metainfo(theme_name: str) -> dict:
             if "Metainfo" in cp:
                 meta["author"] = cp.get("Metainfo", "author", fallback="Unknown")
                 meta["author_link"] = cp.get("Metainfo", "author_link", fallback="")
+                meta["dark_variant"] = cp.get("Metainfo", "dark_variant", fallback="")
+                meta["light_variant"] = cp.get("Metainfo", "light_variant", fallback="")
                 meta["name"] = theme_translations.get("name", theme_name)
                 meta["description"] = theme_translations.get("description", "")
             break

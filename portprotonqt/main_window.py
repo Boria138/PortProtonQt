@@ -2836,11 +2836,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.themesCombo.setObjectName("themeTabCombo")
         self.themesCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         theme_names = self.theme_manager.get_available_themes()
-        available_themes = []
-        for theme_name in theme_names:
-            base_name = theme_name[:-6] if theme_name.endswith("-light") else theme_name
-            if base_name not in available_themes:
-                available_themes.append(base_name)
+        available_themes = ui_config.get_theme_bases(theme_names)
         current_theme_base = ui_config.get_theme_base()
         if current_theme_base in available_themes:
             available_themes.remove(current_theme_base)
@@ -2871,7 +2867,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         mainLayout.addLayout(self.themeTabHeaderLayout)
 
         def hasThemeVariants(theme_name: str) -> bool:
-            return theme_name in theme_names and f"{theme_name}-light" in theme_names
+            return ui_config.resolve_theme(theme_name, "dark") != ui_config.resolve_theme(theme_name, "light")
 
         def updateThemeVariantVisibility(*_args: object) -> None:
             self.themeVariantCombo.setVisible(hasThemeVariants(self.themesCombo.currentText()))
