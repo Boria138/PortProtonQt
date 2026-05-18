@@ -20,7 +20,6 @@ downloader = Downloader()
 logger = get_logger(__name__)
 COVER_IMAGE_EXTENSIONS = (".png", ".apng", ".jpg", ".jpeg", ".gif", ".webp", ".jxl")
 DEFAULT_ANIMATION_DELAY_MS = 100
-ANIMATED_COVER_MIN_DELAY_MS = 100
 
 # Global queue and thread pool for image loading
 image_load_queue = Queue()
@@ -179,7 +178,6 @@ class _PillowAnimatedCover(QObject):
 
     def _convert_frame(self, frame: Image.Image) -> tuple[QPixmap, int]:
         duration = int(frame.info.get("duration", DEFAULT_ANIMATION_DELAY_MS))
-        duration = max(duration, ANIMATED_COVER_MIN_DELAY_MS)
         image = frame.convert("RGBA").resize(
             (max(self.width, 1), max(self.height, 1)),
             Image.Resampling.BILINEAR,
