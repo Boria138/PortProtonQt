@@ -232,6 +232,16 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
         """Get the full arguments for QProcess.start."""
         return self.start_sh + subcommand_args
 
+    def _resolve_run_after_exe_path(self, exe_path: str) -> str:
+        """Resolve run-after executable relative to the main executable."""
+        normalized = os.path.normpath(os.path.expanduser(exe_path))
+        if not normalized or os.path.isabs(normalized):
+            return normalized
+        game_dir = os.path.dirname(self.exe_path or "")
+        if not game_dir:
+            return normalized
+        return os.path.normpath(os.path.join(game_dir, normalized))
+
     def setup_ui(self):
         """Set up the user interface."""
         self.main_layout = QVBoxLayout(self)
@@ -697,6 +707,7 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
 
                 if setting['key'] == 'PW_RUN_AFTER_EXE':
                     text_container = QWidget()
+                    text_container.setProperty("ppqt_run_after_exe_widget", True)
                     text_layout = QHBoxLayout(text_container)
                     text_layout.setContentsMargins(0, 0, 0, 0)
                     text_layout.setSpacing(6)
@@ -717,7 +728,7 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
                         initial_path = os.path.expanduser("~")
                         current_path = target_line_edit.text().strip()
                         if current_path:
-                            normalized = os.path.normpath(current_path)
+                            normalized = self._resolve_run_after_exe_path(current_path)
                             if os.path.isfile(normalized):
                                 initial_path = os.path.dirname(normalized)
                             elif os.path.isdir(normalized):
@@ -876,6 +887,8 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
 
             elif isinstance(widget, QLineEdit):
                 new_val = widget.text().strip()
+                if key == 'PW_RUN_AFTER_EXE':
+                    new_val = self._resolve_run_after_exe_path(new_val)
                 if new_val != orig_val:
                     changes.append(f"{key}={new_val}")
             else:
