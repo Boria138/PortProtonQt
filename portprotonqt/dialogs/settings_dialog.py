@@ -234,8 +234,10 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
 
     def _resolve_run_after_exe_path(self, exe_path: str) -> str:
         """Resolve run-after executable relative to the main executable."""
+        if not exe_path:
+            return exe_path
         normalized = os.path.normpath(os.path.expanduser(exe_path))
-        if not normalized or os.path.isabs(normalized):
+        if os.path.isabs(normalized):
             return normalized
         game_dir = os.path.dirname(self.exe_path or "")
         if not game_dir:
