@@ -3,48 +3,14 @@
 import re
 import threading
 import time
-from collections.abc import Callable
 from pathlib import Path
-from typing import Annotated, Any, cast
+from typing import Annotated
 
 from PySide6.QtCore import QThread, Signal
 
-try:
-    from dbus_fast import DBusError as _DBusError
-    from dbus_fast.annotations import DBusSignature as _DBusSignature
-    from dbus_fast.service import ServiceInterface as _ServiceInterface
-    from dbus_fast.service import method as _method
-except ModuleNotFoundError:
-    class DBusError(Exception):
-        """Fallback D-Bus error when dbus-fast is unavailable."""
-
-    class ServiceInterface:
-        """Fallback service interface for environments without dbus-fast."""
-
-        def __init__(self, _name: str) -> None:
-            return None
-
-    def method(
-        name: str | None = None,
-        disabled: bool = False,
-    ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
-        del name, disabled
-
-        def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
-            return func
-
-        return decorator
-
-    class DBusSignature:
-        """Fallback D-Bus signature holder when dbus-fast is unavailable."""
-
-        def __init__(self, signature: str) -> None:
-            self.signature = signature
-else:
-    DBusError = cast(Any, _DBusError)
-    DBusSignature = cast(Any, _DBusSignature)
-    ServiceInterface = cast(Any, _ServiceInterface)
-    method = cast(Any, _method)
+from dbus_fast import DBusError
+from dbus_fast.annotations import DBusSignature
+from dbus_fast.service import ServiceInterface, method
 
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger

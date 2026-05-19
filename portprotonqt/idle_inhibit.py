@@ -57,7 +57,7 @@ async def _release_inhibit(iface: Any, cookie: int, dbus_fast: Any) -> None:
 async def _inhibit_and_run(command: list[str]) -> int:
     try:
         iface, cookie, dbus_fast = await _request_inhibit()
-    except (ImportError, TimeoutError) as err:
+    except TimeoutError as err:
         logger.warning("Screensaver inhibit failed: %s", err)
         return await _run_command(command)
     except Exception as err:

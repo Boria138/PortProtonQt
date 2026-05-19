@@ -3,6 +3,10 @@ import asyncio
 import os
 import subprocess
 from typing import Any, cast
+
+from dbus_fast import BusType
+from dbus_fast.aio import MessageBus
+
 from portprotonqt.config.base import BaseConfig, configparser, THEMES_DIRS
 from portprotonqt.config.validators import validate_string, validate_int, validate_bool
 from portprotonqt.localization import get_theme_translations
@@ -73,12 +77,6 @@ def _unwrap_variant(value: Any) -> Any:
 
 
 async def _read_portal_color_scheme() -> int | None:
-    try:
-        from dbus_fast import BusType
-        from dbus_fast.aio import MessageBus
-    except ModuleNotFoundError:
-        return None
-
     bus = await MessageBus(bus_type=BusType.SESSION).connect()
     try:
         introspection = await bus.introspect(
