@@ -144,7 +144,7 @@ class GameLaunchDialog(DraggableDialog):
         self.progress_bar.setRange(0, 0)
         layout.addWidget(self.progress_bar)
 
-        self.cancel_button = AutoSizeButton(_("Cancel"), icon=theme_manager.get_icon("cancel"))
+        self.cancel_button = AutoSizeButton(_("Cancel"), icon=theme_manager.get_icon("cancel", as_path=True))
         self.cancel_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.cancel_button.clicked.connect(self.reject)
         layout.addWidget(self.cancel_button, alignment=Qt.AlignmentFlag.AlignCenter)
@@ -227,7 +227,7 @@ class AddGameDialog(DraggableDialog):
         if exe_path:
             self.exeEdit.setText(exe_path)
 
-        exeBrowseButton = AutoSizeButton(_("Browse..."), icon=theme_manager.get_icon("search"))
+        exeBrowseButton = AutoSizeButton(_("Browse..."), icon=theme_manager.get_icon("search", as_path=True))
         exeBrowseButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         exeBrowseButton.clicked.connect(self.browseExe)
         exeBrowseButton.setObjectName("exeBrowseButton")
@@ -247,7 +247,7 @@ class AddGameDialog(DraggableDialog):
         if cover_path:
             self.coverEdit.setText(cover_path)
 
-        coverBrowseButton = AutoSizeButton(_("Browse..."), icon=theme_manager.get_icon("search"))
+        coverBrowseButton = AutoSizeButton(_("Browse..."), icon=theme_manager.get_icon("search", as_path=True))
         coverBrowseButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         coverBrowseButton.clicked.connect(self.browseCover)
         coverBrowseButton.setObjectName("coverBrowseButton")
@@ -303,8 +303,8 @@ class AddGameDialog(DraggableDialog):
 
         self.button_layout = QHBoxLayout()
         self.button_layout.setSpacing(10)
-        self.select_button = AutoSizeButton(_("Apply"), icon=theme_manager.get_icon("apply"))
-        self.cancel_button = AutoSizeButton(_("Cancel"), icon=theme_manager.get_icon("cancel"))
+        self.select_button = AutoSizeButton(_("Apply"), icon=theme_manager.get_icon("apply", as_path=True))
+        self.cancel_button = AutoSizeButton(_("Cancel"), icon=theme_manager.get_icon("cancel", as_path=True))
         self.select_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.cancel_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.button_layout.addWidget(self.select_button)

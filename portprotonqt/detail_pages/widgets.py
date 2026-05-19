@@ -78,7 +78,7 @@ def create_back_button(
         dummy = AutoSizeButton()
         dummy.setVisible(False)
         return dummy
-    back_button = AutoSizeButton(_("Back"), icon=theme_manager.get_icon("back"))
+    back_button = AutoSizeButton(_("Back"), icon=theme_manager.get_icon("back", as_path=True))
     back_button.setFixedWidth(100)
     back_button.setStyleSheet(theme.ADDGAME_BACK_BUTTON_STYLE)
     back_button.clicked.connect(on_click)
@@ -330,7 +330,7 @@ def create_protondb_badge(
         return None, False
 
     icon_filename = GameCard.getProtonDBIconFilename(protondb_tier)
-    icon = main_window.theme_manager.get_icon(icon_filename, main_window.current_theme_name)
+    icon = main_window.theme_manager.get_icon(icon_filename, main_window.current_theme_name, as_path=True)
 
     badge = ClickableLabel(
         protondb_text,
@@ -353,7 +353,7 @@ def create_steam_badge(
     main_window,
 ) -> ClickableLabel:
     """Create Steam badge."""
-    steam_icon = main_window.theme_manager.get_icon("badge_steam")
+    steam_icon = main_window.theme_manager.get_icon("badge_steam", as_path=True)
     badge = ClickableLabel(
         "Steam",
         icon=steam_icon,
@@ -375,7 +375,7 @@ def create_portproton_badge(
     main_window,
 ) -> ClickableLabel:
     """Create PortProton badge."""
-    portproton_icon = main_window.theme_manager.get_icon("badge_portproton")
+    portproton_icon = main_window.theme_manager.get_icon("badge_portproton", as_path=True)
     badge = ClickableLabel(
         "PortProton",
         icon=portproton_icon,
@@ -402,7 +402,7 @@ def create_anticheat_badge(
         return None, False
 
     icon_filename = GameCard.getAntiCheatIconFilename(anticheat_status)
-    icon = main_window.theme_manager.get_icon(icon_filename, main_window.current_theme_name)
+    icon = main_window.theme_manager.get_icon(icon_filename, main_window.current_theme_name, as_path=True)
 
     badge = ClickableLabel(
         anticheat_text,

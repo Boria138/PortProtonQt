@@ -390,7 +390,7 @@ class DetailPageManager:
         if self._has_game_shortcut(game_name):
             edit_button = self._make_action_button(
                 _("Edit Game"),
-                self.main_window.theme_manager.get_icon("edit"),
+                self.main_window.theme_manager.get_icon("edit", as_path=True),
             )
             edit_button.clicked.connect(
                 lambda: self.main_window.context_menu_manager.edit_game_shortcut(
@@ -401,7 +401,7 @@ class DetailPageManager:
         elif str(game_source).lower() == "steam" and appid:
             open_folder_button = self._make_action_button(
                 _("Open Game Folder"),
-                self.main_window.theme_manager.get_icon("search"),
+                self.main_window.theme_manager.get_icon("search", as_path=True),
             )
             open_folder_button.clicked.connect(
                 lambda: self._open_steam_game_folder(str(appid))
@@ -410,7 +410,7 @@ class DetailPageManager:
         else:
             add_button = self._make_action_button(
                 _("Add Game"),
-                self.main_window.theme_manager.get_icon("addgame"),
+                self.main_window.theme_manager.get_icon("addgame", as_path=True),
             )
             add_button.clicked.connect(
                 lambda: self.main_window.openAddGameDialog(
@@ -441,10 +441,10 @@ class DetailPageManager:
         """Create play/stop button."""
         if self.main_window.target_exe is not None and current_exe == self.main_window.target_exe:
             text = _("Stop")
-            icon = self.main_window.theme_manager.get_icon("stop")
+            icon = self.main_window.theme_manager.get_icon("stop", as_path=True)
         else:
             text = _("Play")
-            icon = self.main_window.theme_manager.get_icon("play")
+            icon = self.main_window.theme_manager.get_icon("play", as_path=True)
 
         play_button = self._make_action_button(text, icon)
         play_button.clicked.connect(lambda: self.main_window.toggleGame(exec_line, play_button))
@@ -454,14 +454,14 @@ class DetailPageManager:
         """Add settings and log buttons for PortProton games."""
         file_to_check = self._get_file_from_exec(exec_line)
 
-        settings_icon = self.main_window.theme_manager.get_icon("settings")
+        settings_icon = self.main_window.theme_manager.get_icon("settings", as_path=True)
         settings_button = self._make_action_button(_("Settings"), settings_icon)
         settings_button.clicked.connect(
             lambda: self.main_window.open_exe_settings(file_to_check, game_source="portproton")
         )
         buttons_layout.addWidget(settings_button)
 
-        log_icon = self.main_window.theme_manager.get_icon("edit")
+        log_icon = self.main_window.theme_manager.get_icon("edit", as_path=True)
         log_button = self._make_action_button(_("Create Log"), log_icon)
         log_button.clicked.connect(lambda: self.toggleDebugLog(file_to_check, log_button))
         buttons_layout.addWidget(log_button)
@@ -480,7 +480,7 @@ class DetailPageManager:
         if not os.path.exists(fake_exe_path):
             open(fake_exe_path, 'a').close()
 
-        settings_icon = self.main_window.theme_manager.get_icon("settings")
+        settings_icon = self.main_window.theme_manager.get_icon("settings", as_path=True)
         settings_button = self._make_action_button(_("Settings"), settings_icon)
         settings_button.clicked.connect(
             lambda: self.main_window.open_exe_settings(fake_exe_path, appid, "steam")
@@ -837,7 +837,7 @@ class DetailPageManager:
         self, script_name: str, name: str, buttons_layout: FlowLayout
     ) -> AutoSizeButton:
         """Create install button for auto-install page."""
-        install_button = self._make_action_button(_("Install"), self.main_window.theme_manager.get_icon("save"))
+        install_button = self._make_action_button(_("Install"), self.main_window.theme_manager.get_icon("save", as_path=True))
         install_button.clicked.connect(
             lambda: self.main_window.launch_autoinstall(script_name, install_button)
         )
@@ -856,7 +856,7 @@ class DetailPageManager:
                 self.main_window.installing
                 and self.main_window.current_install_script == script_name
             ):
-                icon = self.main_window.theme_manager.get_icon("stop")
+                icon = self.main_window.theme_manager.get_icon("stop", as_path=True)
                 if icon:
                     install_button.setIcon(icon)
                 install_button.setText(_("Stop"))
@@ -864,7 +864,7 @@ class DetailPageManager:
 
             text = _("Reinstall") if is_installed else _("Install")
             icon_name = "update" if is_installed else "save"
-            icon = self.main_window.theme_manager.get_icon(icon_name)
+            icon = self.main_window.theme_manager.get_icon(icon_name, as_path=True)
             if icon:
                 install_button.setIcon(icon)
             # Update text without changing button size drastically
@@ -962,7 +962,7 @@ class DetailPageManager:
         log_file = self.debug_log_manager.stop()
 
         button.setText(_("Create Log"))
-        icon = self.main_window.theme_manager.get_icon("edit")
+        icon = self.main_window.theme_manager.get_icon("edit", as_path=True)
         if icon:
             button.setIcon(icon)
 
@@ -983,7 +983,7 @@ class DetailPageManager:
 
         if self.debug_log_manager.start(resolved_exe_path, start_command):
             button.setText(_("Stop Log"))
-            icon = self.main_window.theme_manager.get_icon("stop")
+            icon = self.main_window.theme_manager.get_icon("stop", as_path=True)
             if icon:
                 button.setIcon(icon)
             self._startDebugTimer()
@@ -1038,7 +1038,7 @@ class DetailPageManager:
         """Update debug log button and show dialog if log saved."""
         if self._debug_log_button:
             self._debug_log_button.setText(_("Create Log"))
-            icon = self.main_window.theme_manager.get_icon("edit")
+            icon = self.main_window.theme_manager.get_icon("edit", as_path=True)
             if icon:
                 self._debug_log_button.setIcon(icon)
 

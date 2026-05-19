@@ -1,8 +1,20 @@
-from PySide6.QtWidgets import QLabel, QPushButton, QWidget, QLayout, QLayoutItem
-from PySide6.QtCore import Qt, Signal, QRect, QSize, Property, QPropertyAnimation, QEasingCurve
-from PySide6.QtGui import QFont, QFontMetrics, QPainter
+from PySide6.QtWidgets import QApplication, QLabel, QPushButton, QStyle, QStyleOptionButton, QWidget, QLayout, QLayoutItem
+from PySide6.QtCore import Qt, Signal, QRect, QRectF, QSize, Property, QPropertyAnimation, QEasingCurve
+from PySide6.QtGui import QFont, QFontMetrics, QIcon, QPainter
+from PySide6.QtSvg import QSvgRenderer
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.config import ui_config
+
+
+def _get_device_pixel_ratio() -> float:
+    """Return current device pixel ratio with a safe fallback."""
+    app = QApplication.instance()
+    return app.devicePixelRatio() if isinstance(app, QApplication) else 1.0
+
+
+def _is_svg_icon(icon: object) -> bool:
+    return isinstance(icon, str) and icon.lower().endswith(".svg")
+
 
 def compute_layout(nat_sizes, rect_width, spacing, max_scale, center_rows=True):
     """
@@ -407,8 +419,10 @@ class ClickableLabel(QLabel):
         spacing = self._icon_space
         text = self.text()
 
-        if self._icon:
-            pixmap = self._icon.pixmap(icon_size, icon_size)
+        if self._icon and not _is_svg_icon(self._icon):
+            device_pixel_ratio = _get_device_pixel_ratio()
+            icon = QIcon(self._icon) if isinstance(self._icon, str) else self._icon
+            pixmap = icon.pixmap(QSize(icon_size, icon_size), device_pixel_ratio)
         else:
             pixmap = None
 
@@ -430,7 +444,11 @@ class ClickableLabel(QLabel):
             x = rect.left()
         y = rect.top() + (rect.height() - text_height) // 2
 
-        if pixmap:
+        if _is_svg_icon(self._icon):
+            icon_rect = QRect(x, y + (text_height - icon_size) // 2, icon_size, icon_size)
+            QSvgRenderer(self._icon).render(painter, QRectF(icon_rect))
+            text_x = x + icon_size + spacing
+        elif pixmap:
             icon_rect = QRect(x, y + (text_height - icon_size) // 2, icon_size, icon_size)
             painter.drawPixmap(icon_rect, pixmap)
             text_x = x + icon_size + spacing
@@ -501,7 +519,6 @@ class AutoSizeButton(QPushButton):
 
         if self._icon:
             self.setIcon(self._icon)
-            self.setIconSize(QSize(self._icon_size, self._icon_size))
 
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setFlat(True)
@@ -514,6 +531,65 @@ class AutoSizeButton(QPushButton):
 
     def alignment(self):
         return self._alignment
+
+    def rawIcon(self) -> object | None:
+        return self._icon
+
+    def setIcon(self, icon: object) -> None:
+        self._icon = icon
+        if _is_svg_icon(icon):
+            super().setIcon(QIcon())
+        elif isinstance(icon, str):
+            super().setIcon(QIcon(icon))
+        elif isinstance(icon, QIcon):
+            super().setIcon(icon)
+        else:
+            super().setIcon(QIcon())
+        self.setIconSize(QSize(self._icon_size, self._icon_size))
+        self.update()
+
+    def paintEvent(self, event):
+        if not _is_svg_icon(self._icon):
+            super().paintEvent(event)
+            return
+
+        icon_path = self._icon
+        if not isinstance(icon_path, str):
+            super().paintEvent(event)
+            return
+
+        option = QStyleOptionButton()
+        self.initStyleOption(option)
+        option.text = ""
+        option.icon = QIcon()
+        painter = QPainter(self)
+        self.style().drawControl(QStyle.ControlElement.CE_PushButton, option, painter, self)
+
+        rect = self.style().subElementRect(
+            QStyle.SubElement.SE_PushButtonContents,
+            option,
+            self,
+        )
+        fm = QFontMetrics(self.font())
+        text = self.text()
+        text_width = fm.horizontalAdvance(text)
+        icon_spacing = self._icon_size // 2 if text else 0
+        total_width = self._icon_size + icon_spacing + text_width
+        x = rect.left() + (rect.width() - total_width) // 2
+        icon_y = rect.top() + (rect.height() - self._icon_size) // 2
+        icon_rect = QRect(x, icon_y, self._icon_size, self._icon_size)
+        QSvgRenderer(icon_path).render(painter, QRectF(icon_rect))
+
+        text_rect = QRect(x + self._icon_size + icon_spacing, rect.top(), text_width, rect.height())
+        self.style().drawItemText(
+            painter,
+            text_rect,
+            self._alignment,
+            self.palette(),
+            self.isEnabled(),
+            text,
+            self.foregroundRole(),
+        )
 
     def setText(self, text):
         self._original_text = text

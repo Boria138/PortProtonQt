@@ -463,8 +463,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             return
 
         self.current_install_button_text = button.text()
-        self.current_install_button_icon = button.icon()
-        icon = self.theme_manager.get_icon("stop")
+        self.current_install_button_icon = button.rawIcon()
+        icon = self.theme_manager.get_icon("stop", as_path=True)
         if icon:
             button.setIcon(icon)
         button.setText(_("Stop"))
@@ -1128,14 +1128,14 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.GameLibraryTitle.setStyleSheet(self.theme.INSTALLED_TAB_TITLE_STYLE)
         layout.addWidget(self.GameLibraryTitle)
 
-        self.addGameButton = AutoSizeButton(_("Add Game"), icon=self.theme_manager.get_icon("addgame"))
+        self.addGameButton = AutoSizeButton(_("Add Game"), icon=self.theme_manager.get_icon("addgame", as_path=True))
         self.addGameButton.setStyleSheet(self.theme.ADDGAME_BACK_BUTTON_STYLE)
         self.addGameButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.addGameButton.clicked.connect(self.openAddGameDialog)
         layout.addWidget(self.addGameButton)
 
         # Refresh button
-        self.refreshButton = AutoSizeButton(_("Refresh Grid"), icon=self.theme_manager.get_icon("update"))
+        self.refreshButton = AutoSizeButton(_("Refresh Grid"), icon=self.theme_manager.get_icon("update", as_path=True))
         self.refreshButton.setStyleSheet(self.theme.ADDGAME_BACK_BUTTON_STYLE)
         self.refreshButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.refreshButton.clicked.connect(self.refreshGames)
@@ -2568,25 +2568,25 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         buttonsLayout = QHBoxLayout()
         buttonsLayout.setSpacing(10)
 
-        self.saveButton = AutoSizeButton(_("Save Settings"), icon=self.theme_manager.get_icon("save"))
+        self.saveButton = AutoSizeButton(_("Save Settings"), icon=self.theme_manager.get_icon("save", as_path=True))
         self.saveButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.saveButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.saveButton.clicked.connect(self.savePortProtonSettings)
         buttonsLayout.addWidget(self.saveButton)
 
-        self.resetSettingsButton = AutoSizeButton(_("Reset Settings"), icon=self.theme_manager.get_icon("update"))
+        self.resetSettingsButton = AutoSizeButton(_("Reset Settings"), icon=self.theme_manager.get_icon("update", as_path=True))
         self.resetSettingsButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.resetSettingsButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.resetSettingsButton.clicked.connect(self.resetSettings)
         buttonsLayout.addWidget(self.resetSettingsButton)
 
-        self.migrateShortcutsButton = AutoSizeButton(_("Migrate legacy shortcuts"), icon=self.theme_manager.get_icon("update"))
+        self.migrateShortcutsButton = AutoSizeButton(_("Migrate legacy shortcuts"), icon=self.theme_manager.get_icon("update", as_path=True))
         self.migrateShortcutsButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.migrateShortcutsButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.migrateShortcutsButton.clicked.connect(self.migrateLegacyShortcuts)
         buttonsLayout.addWidget(self.migrateShortcutsButton)
 
-        self.clearCacheButton = AutoSizeButton(_("Clear Cache"), icon=self.theme_manager.get_icon("update"))
+        self.clearCacheButton = AutoSizeButton(_("Clear Cache"), icon=self.theme_manager.get_icon("update", as_path=True))
         self.clearCacheButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.clearCacheButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.clearCacheButton.clicked.connect(self.clearCache)
@@ -2892,7 +2892,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.themeMetainfoLabel.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.themeInfoLayout.addWidget(self.themeMetainfoLabel)
 
-        self.applyButton = AutoSizeButton(_("Apply Theme"), icon=self.theme_manager.get_icon("apply"))
+        self.applyButton = AutoSizeButton(_("Apply Theme"), icon=self.theme_manager.get_icon("apply", as_path=True))
         self.applyButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.applyButton.setObjectName("themeApplyButton")
         self.applyButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -3379,11 +3379,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             if self.current_running_button is not None:
                 try:
                     self.current_running_button.setText(_("Stop"))
-                    icon = self.theme_manager.get_icon("stop")
-                    if isinstance(icon, str):
-                        icon = QIcon(icon)
-                    elif icon is None:
-                        icon = QIcon()
+                    icon = self.theme_manager.get_icon("stop", as_path=True)
                     self.current_running_button.setIcon(icon)
                 except RuntimeError:
                     self.current_running_button = None
@@ -3396,11 +3392,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                     if self.wine_download_percent > 0:
                         status = status.replace("...", f"... {int(self.wine_download_percent)}%")
                     self.current_running_button.setText(status)
-                    icon = self.theme_manager.get_icon("save")
-                    if isinstance(icon, str):
-                        icon = QIcon(icon)
-                    elif icon is None:
-                        icon = QIcon()
+                    icon = self.theme_manager.get_icon("save", as_path=True)
                     self.current_running_button.setIcon(icon)
                 except RuntimeError:
                     pass
@@ -3408,11 +3400,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             if self.current_running_button is not None:
                 try:
                     self.current_running_button.setText(_("Stop"))
-                    icon = self.theme_manager.get_icon("stop")
-                    if isinstance(icon, str):
-                        icon = QIcon(icon)
-                    elif icon is None:
-                        icon = QIcon()
+                    icon = self.theme_manager.get_icon("stop", as_path=True)
                     self.current_running_button.setIcon(icon)
                 except RuntimeError:
                     self.current_running_button = None
@@ -3470,11 +3458,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         if self.current_running_button is not None:
             try:
                 self.current_running_button.setText(_("Play"))
-                icon = self.theme_manager.get_icon("play")
-                if isinstance(icon, str):
-                    icon = QIcon(icon)  # Convert path to QIcon
-                elif icon is None:
-                    icon = QIcon()  # Use empty QIcon as fallback
+                icon = self.theme_manager.get_icon("play", as_path=True)
                 self.current_running_button.setIcon(icon)
             except RuntimeError:
                 pass
@@ -3649,11 +3633,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 if update_button:
                     try:
                         update_button.setText(_("Stop"))
-                        icon = self.theme_manager.get_icon("stop")
-                        if isinstance(icon, str):
-                            icon = QIcon(icon)
-                        elif icon is None:
-                            icon = QIcon()
+                        icon = self.theme_manager.get_icon("stop", as_path=True)
                         update_button.setIcon(icon)
                     except RuntimeError:
                         pass

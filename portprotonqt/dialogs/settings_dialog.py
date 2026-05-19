@@ -374,10 +374,10 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
         self.gamepad_tooltip_timer.timeout.connect(lambda: self.gamepad_tooltip.setVisible(False))
 
         button_layout = QHBoxLayout()
-        self.apply_button = AutoSizeButton(_("Apply"), icon=ThemeManager().get_icon("apply"))
-        self.cancel_button = AutoSizeButton(_("Cancel"), icon=ThemeManager().get_icon("cancel"))
-        self.open_ppdb_button = AutoSizeButton(_("Open PPDB"), icon=ThemeManager().get_icon("folder"))
-        self.clear_ppdb_button = AutoSizeButton(_("Clear PPDB"), icon=ThemeManager().get_icon("delete"))
+        self.apply_button = AutoSizeButton(_("Apply"), icon=ThemeManager().get_icon("apply", as_path=True))
+        self.cancel_button = AutoSizeButton(_("Cancel"), icon=ThemeManager().get_icon("cancel", as_path=True))
+        self.open_ppdb_button = AutoSizeButton(_("Open PPDB"), icon=ThemeManager().get_icon("folder", as_path=True))
+        self.clear_ppdb_button = AutoSizeButton(_("Clear PPDB"), icon=ThemeManager().get_icon("delete", as_path=True))
         self.apply_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.cancel_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.open_ppdb_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
@@ -715,7 +715,7 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
                     text_layout.setSpacing(6)
                     text_layout.addWidget(line_edit)
 
-                    browse_button = AutoSizeButton("...", icon=ThemeManager().get_icon("folder"))
+                    browse_button = AutoSizeButton("...", icon=ThemeManager().get_icon("folder", as_path=True))
                     browse_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
                     browse_button.setFixedWidth(56)
                     browse_button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)

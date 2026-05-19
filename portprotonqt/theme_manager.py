@@ -7,7 +7,10 @@ from portprotonqt.theme_security import (
     is_safe_font_file,
     is_safe_image_file,
 )
-from PySide6.QtGui import QIcon, QFontDatabase, QPixmap
+from PySide6.QtCore import QRectF, Qt
+from PySide6.QtGui import QIcon, QFontDatabase, QPainter, QPixmap
+from PySide6.QtSvg import QSvgRenderer
+from PySide6.QtWidgets import QApplication
 from portprotonqt.config import ui_config, load_theme_metainfo
 
 # Icon caching for performance optimization
@@ -25,6 +28,47 @@ THEMES_DIRS = [
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "themes")
 ]
 _loaded_theme = None
+
+
+def _get_device_pixel_ratio() -> float:
+    """Return current device pixel ratio with a safe fallback."""
+    app = QApplication.instance()
+    return app.devicePixelRatio() if isinstance(app, QApplication) else 1.0
+
+
+def _load_icon(icon_path: str) -> QIcon:
+    """Load theme icon with device pixel ratio for crisp raster icons."""
+    if icon_path.lower().endswith(".svg"):
+        return _load_svg_icon(icon_path)
+
+    pixmap = QPixmap(icon_path)
+    if pixmap.isNull():
+        return QIcon(icon_path)
+
+    device_pixel_ratio = _get_device_pixel_ratio()
+    if device_pixel_ratio > 1.0:
+        pixmap.setDevicePixelRatio(device_pixel_ratio)
+    return QIcon(pixmap)
+
+
+def _load_svg_icon(icon_path: str) -> QIcon:
+    """Render SVG icon into high-DPI pixmaps for Qt icon users."""
+    renderer = QSvgRenderer(icon_path)
+    if not renderer.isValid():
+        return QIcon(icon_path)
+
+    icon = QIcon()
+    device_pixel_ratio = _get_device_pixel_ratio()
+    for size in (16, 20, 22, 24, 32, 48, 64):
+        target_size = max(1, int(size * device_pixel_ratio))
+        pixmap = QPixmap(target_size, target_size)
+        pixmap.fill(Qt.GlobalColor.transparent)
+        pixmap.setDevicePixelRatio(device_pixel_ratio)
+        painter = QPainter(pixmap)
+        renderer.render(painter, QRectF(0, 0, size, size))
+        painter.end()
+        icon.addPixmap(pixmap)
+    return icon
 
 
 def _is_valid_theme_name(theme_name: str) -> bool:
@@ -520,7 +564,9 @@ class ThemeManager:
         If as_path=True, return icon path instead of QIcon.
         """
         # Create cache key
-        cache_key = f"{icon_name}_{theme_name or self.current_theme_name}_{as_path}"
+        theme_name = theme_name or self.current_theme_name
+        device_pixel_ratio = 1.0 if as_path else _get_device_pixel_ratio()
+        cache_key = f"{icon_name}_{theme_name}_{as_path}_{device_pixel_ratio}"
 
         # Check if we already have this icon cached
         if cache_key in _icon_cache:
@@ -528,7 +574,6 @@ class ThemeManager:
             return _icon_cache[cache_key]
 
         icon_path = None
-        theme_name = theme_name or self.current_theme_name
 
         # Extract base name without extension if present
         supported_extensions = SUPPORTED_IMAGE_EXTENSIONS
@@ -558,7 +603,7 @@ class ThemeManager:
             return icon_path
 
         # Create QIcon and cache it
-        icon = QIcon(icon_path)
+        icon = _load_icon(icon_path)
         _icon_cache[cache_key] = icon
         return icon
 

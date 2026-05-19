@@ -336,8 +336,8 @@ class FileExplorer(DraggableDialog):
 
         self.button_layout = QHBoxLayout()
         self.button_layout.setSpacing(10)
-        self.select_button = AutoSizeButton(_("Select"), icon=theme_manager.get_icon("apply"))
-        self.cancel_button = AutoSizeButton(_("Cancel"), icon=theme_manager.get_icon("cancel"))
+        self.select_button = AutoSizeButton(_("Select"), icon=theme_manager.get_icon("apply", as_path=True))
+        self.cancel_button = AutoSizeButton(_("Cancel"), icon=theme_manager.get_icon("cancel", as_path=True))
         self.select_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.cancel_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.button_layout.addWidget(self.select_button)
@@ -459,7 +459,7 @@ class FileExplorer(DraggableDialog):
 
         for drive in drives:
             drive_name = os.path.basename(drive) or drive.split('/')[-1] or drive
-            button = AutoSizeButton(drive_name, icon=theme_manager.get_icon("mount_point"))
+            button = AutoSizeButton(drive_name, icon=theme_manager.get_icon("mount_point", as_path=True))
             button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
             button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
             button.clicked.connect(lambda checked, path=drive: self.change_drive(path))
@@ -468,7 +468,7 @@ class FileExplorer(DraggableDialog):
 
         for folder in favorite_folders:
             folder_name = os.path.basename(folder) or folder.split('/')[-1] or folder
-            button = AutoSizeButton(folder_name, icon=theme_manager.get_icon("folder"))
+            button = AutoSizeButton(folder_name, icon=theme_manager.get_icon("folder", as_path=True))
             button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
             button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
             button.clicked.connect(lambda checked, path=folder: self.change_drive(path))
