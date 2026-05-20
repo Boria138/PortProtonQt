@@ -1632,8 +1632,10 @@ stop_portproton () {
     find "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/" -maxdepth 1 -type f -name "*.tmp" -delete
     pw_auto_create_shortcut
     add_in_stop_portproton
-    if [[ -n "$PW_POWERPROFILECTL_PROFILE" ]] && [[ "$(pw_ppd_dbus_get_profile)" != "$PW_POWERPROFILECTL_PROFILE" ]] ; then
-        pw_ppd_dbus_set_profile "$PW_POWERPROFILECTL_PROFILE"
+    if [[ -n "$PW_POWERPROFILECTL_PROFILE" ]] \
+    && [[ "$(python3 -m portprotonqt.scripts_utils.power_profiles get)" != "$PW_POWERPROFILECTL_PROFILE" ]]
+    then
+        python3 -m portprotonqt.scripts_utils.power_profiles set "$PW_POWERPROFILECTL_PROFILE" &>/dev/null
     fi
 
     if [[ $PW_LOG != 1 ]] && [[ -n $START_PW_TIME_IN_GAME ]] ; then
@@ -2893,48 +2895,6 @@ start_portproton () {
         unset __GLX_VENDOR_LIBRARY_NAME
     fi
 
-pw_ppd_dbus_get_profile() {
-    if ! command -v gdbus &>/dev/null; then
-        return 1
-    fi
-    local result
-    result=$(gdbus call --system \
-        --dest net.hadess.PowerProfiles \
-        --object-path /net/hadess/PowerProfiles \
-        --method org.freedesktop.DBus.Properties.Get \
-        'net.hadess.PowerProfiles' 'ActiveProfile' 2>/dev/null)
-    [[ -n "$result" ]] && echo "$result" | sed "s/.*'\([^']*\)'.*/\1/" || return 1
-}
-export -f pw_ppd_dbus_get_profile
-
-pw_ppd_dbus_set_profile() {
-    local profile="$1"
-    if ! command -v gdbus &>/dev/null; then
-        return 1
-    fi
-    gdbus call --system \
-        --dest net.hadess.PowerProfiles \
-        --object-path /net/hadess/PowerProfiles \
-        --method org.freedesktop.DBus.Properties.Set \
-        'net.hadess.PowerProfiles' 'ActiveProfile' "<'$profile'>" &>/dev/null
-}
-export -f pw_ppd_dbus_set_profile
-
-pw_ppd_dbus_has_profile() {
-    local profile="$1"
-    if ! command -v gdbus &>/dev/null; then
-        return 1
-    fi
-    local result
-    result=$(gdbus call --system \
-        --dest net.hadess.PowerProfiles \
-        --object-path /net/hadess/PowerProfiles \
-        --method org.freedesktop.DBus.Properties.GetAll \
-        'net.hadess.PowerProfiles' 2>/dev/null)
-    [[ "$result" == *"'$profile'"* ]]
-}
-export -f pw_ppd_dbus_has_profile
-
     if check_gamescope_session ; then
         export PW_GAMEMODERUN_SLR=""
     elif [[ "$PW_USE_GAMEMODE" = "1" ]] \
@@ -2943,9 +2903,12 @@ export -f pw_ppd_dbus_has_profile
         if pw_is_process_active ananicy ananicy-cpp scx scx_loader falcond ; then
             export GAMEMODERUN=0
             export PW_GAMEMODERUN_SLR=""
-            if pw_ppd_dbus_has_profile "performance" && [[ "$(pw_ppd_dbus_get_profile)" != "performance" ]] ; then
-                export PW_POWERPROFILECTL_PROFILE=$(pw_ppd_dbus_get_profile)
-                pw_ppd_dbus_set_profile performance
+            local current_power_profile
+            current_power_profile=$(python3 -m portprotonqt.scripts_utils.power_profiles get)
+            if [[ -n "$current_power_profile" && "$current_power_profile" != "performance" ]] \
+            && python3 -m portprotonqt.scripts_utils.power_profiles set performance &>/dev/null
+            then
+                export PW_POWERPROFILECTL_PROFILE="$current_power_profile"
                 print_info "Gamemode replaced by power-profiles-daemon/tuned-ppd/tlp-pd via D-Bus to avoid conflicts"
             else
                 export PW_POWERPROFILECTL_PROFILE=""

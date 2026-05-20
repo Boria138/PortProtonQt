@@ -123,6 +123,7 @@ install_data(
 install_data(
   ['scripts_utils/__init__.py',
    'scripts_utils/idle_inhibit.py',
+   'scripts_utils/power_profiles.py',
    'scripts_utils/shortcut_tools.py',
   ],
   install_dir: pythondir / meson.project_name() / 'scripts_utils',

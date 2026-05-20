@@ -5,6 +5,9 @@ import sys
 from collections.abc import Awaitable
 from typing import Any
 
+import dbus_fast
+import dbus_fast.aio
+
 from portprotonqt.logger import get_logger
 from portprotonqt.localization import _
 
@@ -38,9 +41,6 @@ async def _dbus_call(awaitable: Awaitable[Any]) -> Any:
 
 
 async def _request_inhibit() -> tuple[Any, int, Any]:
-    import dbus_fast
-    import dbus_fast.aio
-
     bus = await _dbus_call(dbus_fast.aio.MessageBus().connect())
     introspection = await _dbus_call(bus.introspect(BUS_NAME, BUS_PATH))
     proxy = bus.get_proxy_object(BUS_NAME, BUS_PATH, introspection)
