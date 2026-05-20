@@ -271,9 +271,10 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         navLayout.setSpacing(10)
 
          # Left navigation button (key_left or button_lb)
-        self.leftNavButton = QLabel()
+        self.leftNavButton = NavLabel()
         self.leftNavButton.setFixedSize(32, 32)
         self.leftNavButton.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.leftNavButton.clicked.connect(lambda: self.switchVisibleTab(-1))
         navLayout.addWidget(self.leftNavButton)
 
         # Tabs
@@ -297,9 +298,10 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.tabButtons[0].setChecked(True)
 
         # Right navigation button (key_right or button_rb)
-        self.rightNavButton = QLabel()
+        self.rightNavButton = NavLabel()
         self.rightNavButton.setFixedSize(32, 32)
         self.rightNavButton.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.rightNavButton.clicked.connect(lambda: self.switchVisibleTab(1))
         navLayout.addWidget(self.rightNavButton)
 
         # Initial update of navigation buttons based on input device
@@ -1069,6 +1071,25 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             self.pending_games = []
 
     # TABS
+    def switchVisibleTab(self, step: int) -> None:
+        """Switch to the previous or next visible tab."""
+        visible_indices = [
+            i for i, btn in self.tabButtons.items()
+            if btn.isVisible()
+        ]
+        visible_indices.sort()
+        if not visible_indices:
+            return
+
+        current_index = self.stackedWidget.currentIndex()
+        try:
+            current_pos = visible_indices.index(current_index)
+        except ValueError:
+            current_pos = 0
+
+        new_index = visible_indices[(current_pos + step) % len(visible_indices)]
+        self.switchTab(new_index)
+
     def switchTab(self, index):
         """Set active tab by index."""
         # Check if the requested tab index is valid, exists, and is visible
