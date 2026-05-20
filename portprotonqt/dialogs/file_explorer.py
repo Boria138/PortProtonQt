@@ -577,6 +577,16 @@ class FileExplorer(DraggableDialog):
                 for f in sorted(files):
                     file_path = os.path.join(self.current_path, f)
                     item = QListWidgetItem(f)
+                    mime_type = self.mime_db.mimeTypeForFile(file_path)
+                    if (
+                        mime_type.name() in ("application/vnd.squashfs", "application/x-squashfs")
+                        or mime_type.inherits("application/vnd.squashfs")
+                    ):
+                        ppack_icon = theme_manager.get_icon("ppack")
+                        if isinstance(ppack_icon, str) and os.path.isfile(ppack_icon):
+                            ppack_icon = QIcon(ppack_icon)
+                        if isinstance(ppack_icon, QIcon):
+                            item.setIcon(ppack_icon)
                     self.file_items[file_path] = item
                     self.file_list.addItem(item)
 
