@@ -2021,6 +2021,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
     def _on_restore_finished(self, exitCode):
         if exitCode == 0:
+            self.refreshGames()
             QMessageBox.information(self, _("Success"), _("Prefix restore completed."))
         else:
             QMessageBox.warning(self, _("Error"), _("Prefix restore failed."))
