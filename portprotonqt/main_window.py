@@ -1979,10 +1979,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         selected_prefix = self.prefixCombo.currentText().strip()
         if not selected_prefix:
             return
-        initial_path = None
-        if self.portproton_location:
-            initial_path = os.path.join(self.portproton_location, "data", "prefixes")
-        file_explorer = FileExplorer(self, initial_path=initial_path, directory_only=True)
+        file_explorer = FileExplorer(self, directory_only=True)
         file_explorer.file_signal.file_selected.connect(lambda path: self._perform_backup(path, selected_prefix))
         file_explorer.exec()
 
