@@ -419,22 +419,33 @@ class ClickableLabel(QLabel):
         spacing = self._icon_space
         text = self.text()
 
-        if self._icon and not _is_svg_icon(self._icon):
+        has_icon = bool(self._icon)
+        if has_icon and not _is_svg_icon(self._icon):
             device_pixel_ratio = _get_device_pixel_ratio()
-            icon = QIcon(self._icon) if isinstance(self._icon, str) else self._icon
-            pixmap = icon.pixmap(QSize(icon_size, icon_size), device_pixel_ratio)
+            if isinstance(self._icon, str):
+                pixmap = QIcon(self._icon).pixmap(
+                    QSize(icon_size, icon_size),
+                    device_pixel_ratio,
+                )
+            elif isinstance(self._icon, QIcon):
+                pixmap = self._icon.pixmap(
+                    QSize(icon_size, icon_size),
+                    device_pixel_ratio,
+                )
+            else:
+                pixmap = None
         else:
             pixmap = None
 
         fm = QFontMetrics(self.font())
         available_width = rect.width()
-        if pixmap:
+        if has_icon:
             available_width -= (icon_size + spacing)
         available_width = max(0, available_width - 4)
         display_text = fm.elidedText(text, Qt.TextElideMode.ElideRight, available_width)
         text_width = fm.horizontalAdvance(display_text)
         text_height = fm.height()
-        total_width = text_width + (icon_size + spacing if pixmap else 0)
+        total_width = text_width + (icon_size + spacing if has_icon else 0)
 
         if alignment & Qt.AlignmentFlag.AlignHCenter:
             x = rect.left() + (rect.width() - total_width) // 2
@@ -444,7 +455,7 @@ class ClickableLabel(QLabel):
             x = rect.left()
         y = rect.top() + (rect.height() - text_height) // 2
 
-        if _is_svg_icon(self._icon):
+        if isinstance(self._icon, str) and _is_svg_icon(self._icon):
             icon_rect = QRect(x, y + (text_height - icon_size) // 2, icon_size, icon_size)
             QSvgRenderer(self._icon).render(painter, QRectF(icon_rect))
             text_x = x + icon_size + spacing
