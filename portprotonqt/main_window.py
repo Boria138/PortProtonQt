@@ -12,7 +12,8 @@ from portprotonqt.animations import DetailPageAnimations
 from portprotonqt.custom_widgets import ClickableLabel, AutoSizeButton, NavLabel, FlowLayout
 from portprotonqt.detail_pages import DetailPageManager
 from portprotonqt.portproton_api import PortProtonAPI, get_user_conf_setting, set_user_conf_setting
-from portprotonqt.debug_utils import get_selectable_gpu_list, get_prefix_name, get_system_dpi_for_wine
+from portprotonqt.debug_utils import get_selectable_gpu_list, get_prefix_name
+from portprotonqt.qt_utils import get_system_dpi_for_wine
 from portprotonqt.input_manager import InputManager, MainWindowProtocol
 from portprotonqt.context_menu_manager import ContextMenuManager, CustomLineEdit
 
@@ -2737,7 +2738,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             set_user_conf_setting('PW_GPU_USE', selected_gpu)
         if hasattr(self, 'forceSystemDpiCheckBox'):
             if self.forceSystemDpiCheckBox.isChecked():
-                system_dpi = get_system_dpi_for_wine(get_user_conf_setting('PW_SCREEN_RESOLUTION'))
+                system_dpi = get_system_dpi_for_wine()
                 set_user_conf_setting('PW_FORCE_SYSTEM_DPI', "1")
                 set_user_conf_setting('PW_WINE_DPI_VALUE', system_dpi)
             else:

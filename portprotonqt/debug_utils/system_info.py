@@ -7,11 +7,10 @@ import subprocess
 from datetime import datetime
 
 import psutil
-from PySide6.QtWidgets import QApplication
-from PySide6.QtGui import QGuiApplication
 
 from portprotonqt.logger import get_logger
 from portprotonqt.localization import _
+from portprotonqt.qt_utils import get_screen_info
 
 from portprotonqt.debug_utils.env_utils import get_file_content
 from portprotonqt.debug_utils.gpu_info import get_graphics_info_detailed
@@ -300,57 +299,6 @@ def get_filesystem_info(exe_path: str | None, portproton_path: str) -> str:
     return "\n".join(lines) if lines else "Unable to retrieve filesystem info"
 
 
-def get_system_dpi_for_wine(screen_resolution: str | None = None) -> str:
-    """Return Wine LogPixels value calculated from system scale."""
-    app_instance = QApplication.instance()
-    if isinstance(app_instance, QGuiApplication):
-        window = app_instance.focusWindow()
-        if window is None:
-            for widget in QApplication.topLevelWidgets():
-                if widget.isVisible() and widget.windowHandle() is not None:
-                    window = widget.windowHandle()
-                    break
-        if window is not None:
-            dpi_value = int(round(96.0 * window.devicePixelRatio()))
-            if dpi_value > 96:
-                return str(dpi_value)
-
-    return "96"
-
-
-def get_screen_info(portproton_path: str, exe_path: str | None = None) -> tuple[str, str]:
-    """Get screen resolution and primary info using PySide6."""
-    app_instance = QApplication.instance()
-    default_resolution = "1920x1080"
-    default_primary = ""
-    if not isinstance(app_instance, QGuiApplication):
-        return (
-            f"PW_SCREEN_RESOLUTION={default_resolution}",
-            f"PW_SCREEN_PRIMARY={default_primary}",
-        )
-
-    screen = app_instance.primaryScreen()
-    if screen is None:
-        screens = app_instance.screens()
-        if screens:
-            screen = screens[0]
-
-    if screen is None:
-        return (
-            f"PW_SCREEN_RESOLUTION={default_resolution}",
-            f"PW_SCREEN_PRIMARY={default_primary}",
-        )
-
-    geometry = screen.geometry()
-    if geometry.width() > 0 and geometry.height() > 0:
-        resolution = f"{geometry.width()}x{geometry.height()}"
-    else:
-        resolution = default_resolution
-
-    primary = screen.name() or default_primary
-    return f"PW_SCREEN_RESOLUTION={resolution}", f"PW_SCREEN_PRIMARY={primary}"
-
-
 def generate_system_info(
     exe_path: str | None = None,
     start_cmd: list[str] | None = None,
@@ -448,7 +396,7 @@ def generate_system_info(
     lines.append(get_graphics_info_detailed())
     lines.append("-" * 61)
 
-    screen_resolution, screen_primary = get_screen_info(portproton_path, exe_path)
+    screen_resolution, screen_primary = get_screen_info()
     if screen_resolution:
         lines.append(screen_resolution)
 

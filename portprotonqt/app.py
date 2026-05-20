@@ -256,10 +256,9 @@ def main():
     )
     from portprotonqt.downloader import Downloader
     from portprotonqt.debug_utils import (
-        get_screen_info,
         get_selectable_gpu_entries,
-        get_system_dpi_for_wine,
     )
+    from portprotonqt.qt_utils import get_screen_info, get_system_dpi_for_wine
 
     # --- Single-instance logic ---
     server_name = __app_id__
@@ -434,13 +433,13 @@ def main():
                 portproton_path = get_portproton_location()
 
                 if portproton_path:
-                    screen_resolution, screen_primary = get_screen_info(portproton_path)
+                    screen_resolution, screen_primary = get_screen_info()
 
                     if screen_resolution and '=' in screen_resolution:
                         var_name, var_value = screen_resolution.split('=', 1)
                         if var_value:
                             set_user_conf_setting(var_name, var_value)
-                            wine_dpi_value = get_system_dpi_for_wine(var_value)
+                            wine_dpi_value = get_system_dpi_for_wine()
 
                     if screen_primary and '=' in screen_primary:
                         var_name, var_value = screen_primary.split('=', 1)

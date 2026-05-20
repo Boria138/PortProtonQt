@@ -5,25 +5,19 @@ from typing import Any
 from PySide6.QtCore import Qt, QRectF
 from PySide6.QtGui import QPainter, QPaintEvent, QPixmap
 from PySide6.QtSvg import QSvgRenderer
-from PySide6.QtWidgets import QApplication, QHBoxLayout, QLabel, QStackedWidget, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QStackedWidget, QWidget
 
 from portprotonqt.custom_widgets import FlowLayout
 from portprotonqt.input_manager import GamepadType
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
+from portprotonqt.qt_utils import get_device_pixel_ratio
 
 logger = get_logger(__name__)
 
 GAMEPAD_HINT_ACTIONS = ("confirm", "back", "add_game", "search", "decrease_size", "increase_size", "context_menu", "menu", "guide_select", "mouse_emulation", "prev_section", "next_section")
 COMBINATION_HINT_ACTIONS = ("guide_select", "mouse_emulation")
 VOLUME_HINT_ACTIONS = ("decrease_size", "increase_size")
-
-
-def _get_device_pixel_ratio() -> float:
-    """Return current device pixel ratio with a safe fallback."""
-    app = QApplication.instance()
-    return app.devicePixelRatio() if isinstance(app, QApplication) else 1.0
-
 
 def _load_control_hint_pixmap(paths: tuple[str | None, ...], width: int, height: int) -> QPixmap:
     for path in paths:
@@ -36,7 +30,7 @@ def _load_control_hint_pixmap(paths: tuple[str | None, ...], width: int, height:
 
 
 def _render_control_hint_path(path: str, width: int, height: int) -> QPixmap:
-    device_pixel_ratio = _get_device_pixel_ratio()
+    device_pixel_ratio = get_device_pixel_ratio()
     target_width = max(1, int(width * device_pixel_ratio))
     target_height = max(1, int(height * device_pixel_ratio))
 

@@ -1,15 +1,10 @@
-from PySide6.QtWidgets import QApplication, QLabel, QPushButton, QStyle, QStyleOptionButton, QWidget, QLayout, QLayoutItem
+from PySide6.QtWidgets import QLabel, QPushButton, QStyle, QStyleOptionButton, QWidget, QLayout, QLayoutItem
 from PySide6.QtCore import Qt, Signal, QRect, QRectF, QSize, Property, QPropertyAnimation, QEasingCurve
 from PySide6.QtGui import QFont, QFontMetrics, QIcon, QPainter
 from PySide6.QtSvg import QSvgRenderer
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.config import ui_config
-
-
-def _get_device_pixel_ratio() -> float:
-    """Return current device pixel ratio with a safe fallback."""
-    app = QApplication.instance()
-    return app.devicePixelRatio() if isinstance(app, QApplication) else 1.0
+from portprotonqt.qt_utils import get_device_pixel_ratio
 
 
 def _is_svg_icon(icon: object) -> bool:
@@ -421,7 +416,7 @@ class ClickableLabel(QLabel):
 
         has_icon = bool(self._icon)
         if has_icon and not _is_svg_icon(self._icon):
-            device_pixel_ratio = _get_device_pixel_ratio()
+            device_pixel_ratio = get_device_pixel_ratio()
             if isinstance(self._icon, str):
                 pixmap = QIcon(self._icon).pixmap(
                     QSize(icon_size, icon_size),

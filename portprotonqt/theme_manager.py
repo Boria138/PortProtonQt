@@ -10,8 +10,8 @@ from portprotonqt.theme_security import (
 from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QIcon, QFontDatabase, QPainter, QPixmap
 from PySide6.QtSvg import QSvgRenderer
-from PySide6.QtWidgets import QApplication
 from portprotonqt.config import ui_config, load_theme_metainfo
+from portprotonqt.qt_utils import get_device_pixel_ratio
 
 # Icon caching for performance optimization
 _icon_cache = {}
@@ -29,13 +29,6 @@ THEMES_DIRS = [
 ]
 _loaded_theme = None
 
-
-def _get_device_pixel_ratio() -> float:
-    """Return current device pixel ratio with a safe fallback."""
-    app = QApplication.instance()
-    return app.devicePixelRatio() if isinstance(app, QApplication) else 1.0
-
-
 def _load_icon(icon_path: str) -> QIcon:
     """Load theme icon with device pixel ratio for crisp raster icons."""
     if icon_path.lower().endswith(".svg"):
@@ -45,7 +38,7 @@ def _load_icon(icon_path: str) -> QIcon:
     if pixmap.isNull():
         return QIcon(icon_path)
 
-    device_pixel_ratio = _get_device_pixel_ratio()
+    device_pixel_ratio = get_device_pixel_ratio()
     if device_pixel_ratio > 1.0:
         pixmap.setDevicePixelRatio(device_pixel_ratio)
     return QIcon(pixmap)
@@ -58,7 +51,7 @@ def _load_svg_icon(icon_path: str) -> QIcon:
         return QIcon(icon_path)
 
     icon = QIcon()
-    device_pixel_ratio = _get_device_pixel_ratio()
+    device_pixel_ratio = get_device_pixel_ratio()
     for size in (16, 20, 22, 24, 32, 48, 64):
         target_size = max(1, int(size * device_pixel_ratio))
         pixmap = QPixmap(target_size, target_size)
@@ -565,7 +558,7 @@ class ThemeManager:
         """
         # Create cache key
         theme_name = theme_name or self.current_theme_name
-        device_pixel_ratio = 1.0 if as_path else _get_device_pixel_ratio()
+        device_pixel_ratio = 1.0 if as_path else get_device_pixel_ratio()
         cache_key = f"{icon_name}_{theme_name}_{as_path}_{device_pixel_ratio}"
 
         # Check if we already have this icon cached

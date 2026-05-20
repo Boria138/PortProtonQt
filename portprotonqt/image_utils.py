@@ -11,6 +11,7 @@ from portprotonqt.config import ui_config
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.downloader import Downloader
 from portprotonqt.logger import get_logger
+from portprotonqt.qt_utils import get_device_pixel_ratio
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from queue import Queue
@@ -25,15 +26,6 @@ DEFAULT_ANIMATION_DELAY_MS = 100
 image_load_queue = Queue()
 image_executor = ThreadPoolExecutor(max_workers=4)
 queue_lock = threading.Lock()
-
-
-def get_device_pixel_ratio() -> float:
-    """
-    Retrieves the device pixel ratio from QApplication, with a fallback of 1.0 if not available.
-    """
-    app = QApplication.instance()
-    return app.devicePixelRatio() if isinstance(app, QApplication) else 1.0
-
 
 def is_animated_cover(path: str) -> bool:
     """Return True when path points to an animated cover image."""
