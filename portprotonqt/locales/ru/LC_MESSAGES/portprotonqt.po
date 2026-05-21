@@ -109,11 +109,11 @@ msgstr "Удалить из меню"
 msgid "Add to Menu"
 msgstr "Добавить в меню"
 
-msgid "Edit Shortcut"
-msgstr "Редактировать ярлык"
-
 msgid "Open Game Folder"
 msgstr "Открыть папку с игрой"
+
+msgid "Edit Shortcut"
+msgstr "Редактировать ярлык"
 
 msgid "Remove from Steam"
 msgstr "Удалить из Steam"
@@ -529,6 +529,9 @@ msgstr "Тип отображения бейджей:"
 msgid "Interface Settings"
 msgstr "Настройки интерфейса"
 
+msgid "Tray Menu Type:"
+msgstr ""
+
 msgid "Launch Application in Fullscreen"
 msgstr "Запуск приложения в полноэкранном режиме"
 
@@ -544,6 +547,9 @@ msgstr "Запускать свёрнутым"
 msgid "Hide Auto-Install Tab"
 msgstr "Скрыть вкладку \"Автоустановка\""
 
+msgid "Disable runtime download"
+msgstr ""
+
 msgid "Add to Steam compatibility tools"
 msgstr "Добавить в инструменты совместимости Steam"
 
@@ -555,6 +561,10 @@ msgstr "Экономный режим"
 
 msgid "Force system DPI for Wine"
 msgstr "Принудительно установить системный DPI для Wine"
+
+#, fuzzy
+msgid "Download Settings"
+msgstr "Скачивание"
 
 msgid "Gamepad Settings"
 msgstr "Настройки геймпада"
@@ -1011,14 +1021,18 @@ msgstr "сек."
 msgid "Exit"
 msgstr "Выход"
 
+#, fuzzy
+msgid "Tabs"
+msgstr "Стабильный"
+
 msgid "Recent Games"
 msgstr "Недавние"
 
-msgid "No favorites"
-msgstr "Нет избранных"
-
 msgid "No recent games"
 msgstr "Нет недавних игр"
+
+msgid "No favorites"
+msgstr "Нет избранных"
 
 #, python-brace-format
 msgid "Launch game \"{name}\" with PortProton"
@@ -1335,6 +1349,10 @@ msgstr "Описание"
 msgid "Open PPDB"
 msgstr "Открыть PPDB"
 
+#, fuzzy
+msgid "Clear PPDB"
+msgstr "Очистить"
+
 msgid "Executable path is not available."
 msgstr "Путь к исполняемому файлу недоступен."
 
@@ -1343,6 +1361,29 @@ msgstr "Файл PPDB не существует по адресу: "
 
 msgid "Failed to open PPDB file:\n"
 msgstr "Не удалось открыть файл PPDB:\n"
+
+msgid "Information"
+msgstr "Информация"
+
+#, fuzzy
+msgid "Confirm PPDB Clear"
+msgstr "Подтвердите очистку"
+
+#, fuzzy
+msgid ""
+"Are you sure you want to clear PPDB settings? This action cannot be "
+"undone."
+msgstr ""
+"Вы уверены, что хотите сбросить все настройки? Это действие нельзя "
+"отменить."
+
+#, fuzzy
+msgid "Failed to remove PPDB file:\n"
+msgstr "Не удалось открыть файл PPDB:\n"
+
+#, fuzzy
+msgid "PPDB settings cleared."
+msgstr "Настройки PPQT"
 
 msgid "disabled"
 msgstr "отключено"
@@ -1593,9 +1634,6 @@ msgstr "Например: --cursor-scale-height=1080 --force-orientation=left"
 
 msgid "Disable Gamescope"
 msgstr "Отключить Gamescope"
-
-msgid "Information"
-msgstr "Информация"
 
 msgid "Custom preset is empty. Save one first."
 msgstr "Пользовательские настройки пусты. Сначала сохраните их."
