@@ -12,7 +12,8 @@ from portprotonqt.animations import DetailPageAnimations
 from portprotonqt.custom_widgets import ClickableLabel, AutoSizeButton, NavLabel, FlowLayout
 from portprotonqt.detail_pages import DetailPageManager
 from portprotonqt.portproton_api import PortProtonAPI, get_user_conf_setting, set_user_conf_setting
-from portprotonqt.debug_utils import get_selectable_gpu_list, get_prefix_name, get_system_dpi_for_wine
+from portprotonqt.debug_utils import get_selectable_gpu_list, get_prefix_name
+from portprotonqt.qt_utils import get_system_dpi_for_wine
 from portprotonqt.input_manager import InputManager, MainWindowProtocol
 from portprotonqt.context_menu_manager import ContextMenuManager, CustomLineEdit
 
@@ -271,9 +272,10 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         navLayout.setSpacing(10)
 
          # Left navigation button (key_left or button_lb)
-        self.leftNavButton = QLabel()
+        self.leftNavButton = NavLabel()
         self.leftNavButton.setFixedSize(32, 32)
         self.leftNavButton.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.leftNavButton.clicked.connect(lambda: self.switchVisibleTab(-1))
         navLayout.addWidget(self.leftNavButton)
 
         # Tabs
@@ -297,9 +299,10 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.tabButtons[0].setChecked(True)
 
         # Right navigation button (key_right or button_rb)
-        self.rightNavButton = QLabel()
+        self.rightNavButton = NavLabel()
         self.rightNavButton.setFixedSize(32, 32)
         self.rightNavButton.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.rightNavButton.clicked.connect(lambda: self.switchVisibleTab(1))
         navLayout.addWidget(self.rightNavButton)
 
         # Initial update of navigation buttons based on input device
@@ -463,8 +466,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             return
 
         self.current_install_button_text = button.text()
-        self.current_install_button_icon = button.icon()
-        icon = self.theme_manager.get_icon("stop")
+        self.current_install_button_icon = button.rawIcon()
+        icon = self.theme_manager.get_icon("stop", as_path=True)
         if icon:
             button.setIcon(icon)
         button.setText(_("Stop"))
@@ -1069,6 +1072,25 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             self.pending_games = []
 
     # TABS
+    def switchVisibleTab(self, step: int) -> None:
+        """Switch to the previous or next visible tab."""
+        visible_indices = [
+            i for i, btn in self.tabButtons.items()
+            if btn.isVisible()
+        ]
+        visible_indices.sort()
+        if not visible_indices:
+            return
+
+        current_index = self.stackedWidget.currentIndex()
+        try:
+            current_pos = visible_indices.index(current_index)
+        except ValueError:
+            current_pos = 0
+
+        new_index = visible_indices[(current_pos + step) % len(visible_indices)]
+        self.switchTab(new_index)
+
     def switchTab(self, index):
         """Set active tab by index."""
         # Check if the requested tab index is valid, exists, and is visible
@@ -1128,14 +1150,14 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.GameLibraryTitle.setStyleSheet(self.theme.INSTALLED_TAB_TITLE_STYLE)
         layout.addWidget(self.GameLibraryTitle)
 
-        self.addGameButton = AutoSizeButton(_("Add Game"), icon=self.theme_manager.get_icon("addgame"))
+        self.addGameButton = AutoSizeButton(_("Add Game"), icon=self.theme_manager.get_icon("addgame", as_path=True))
         self.addGameButton.setStyleSheet(self.theme.ADDGAME_BACK_BUTTON_STYLE)
         self.addGameButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.addGameButton.clicked.connect(self.openAddGameDialog)
         layout.addWidget(self.addGameButton)
 
         # Refresh button
-        self.refreshButton = AutoSizeButton(_("Refresh Grid"), icon=self.theme_manager.get_icon("update"))
+        self.refreshButton = AutoSizeButton(_("Refresh Grid"), icon=self.theme_manager.get_icon("update", as_path=True))
         self.refreshButton.setStyleSheet(self.theme.ADDGAME_BACK_BUTTON_STYLE)
         self.refreshButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.refreshButton.clicked.connect(self.refreshGames)
@@ -1999,6 +2021,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
     def _on_restore_finished(self, exitCode):
         if exitCode == 0:
+            self.refreshGames()
             QMessageBox.information(self, _("Success"), _("Prefix restore completed."))
         else:
             QMessageBox.warning(self, _("Error"), _("Prefix restore failed."))
@@ -2284,6 +2307,31 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         uiForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
         scrollLayout.addWidget(uiFrame)
 
+        self.tray_menu_mode_keys = ["compact", "detailed"]
+        self.tray_menu_mode_labels = [_("Compact"), _("Detailed")]
+        self.trayMenuModeCombo = QComboBox()
+        self.trayMenuModeCombo.view().window().setWindowFlags(
+            Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
+        )
+        self.trayMenuModeCombo.view().window().setAttribute(
+            Qt.WidgetAttribute.WA_TranslucentBackground
+        )
+        self.trayMenuModeCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.trayMenuModeCombo.addItems(self.tray_menu_mode_labels)
+        self.trayMenuModeCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
+        self.trayMenuModeCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.trayMenuModeTitle = QLabel(_("Tray Menu Type:"))
+        self.trayMenuModeTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.trayMenuModeTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
+        self.trayMenuModeTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        current = display_config.get_tray_menu_mode()
+        try:
+            idx = self.tray_menu_mode_keys.index(current)
+        except ValueError:
+            idx = 0
+        self.trayMenuModeCombo.setCurrentIndex(idx)
+        uiForm.addRow(self.trayMenuModeTitle, self.trayMenuModeCombo)
+
         self.fullscreenCheckBox = QCheckBox()  # Removed text
         self.fullscreenCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.fullscreenCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -2364,6 +2412,23 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         hide_autoinstall_layout.addStretch()
         uiForm.addRow(hide_autoinstall_layout)
 
+        disable_runtime_download_layout = None
+        if not os.getenv("FLATPAK_ID"):
+            self.disableRuntimeDownloadCheckBox = QCheckBox()
+            self.disableRuntimeDownloadCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
+            self.disableRuntimeDownloadCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+            self.disableRuntimeDownloadTitle = QLabel(_("Disable runtime download"))
+            self.disableRuntimeDownloadTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+            self.disableRuntimeDownloadTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
+            self.disableRuntimeDownloadTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            self.disableRuntimeDownloadCheckBox.setChecked(ui_config.get_disable_runtime_download())
+            disable_runtime_download_layout = QHBoxLayout()
+            disable_runtime_download_layout.setContentsMargins(0, 0, 0, 0)
+            disable_runtime_download_layout.addWidget(self.disableRuntimeDownloadCheckBox)
+            disable_runtime_download_layout.addWidget(self.disableRuntimeDownloadTitle)
+            disable_runtime_download_layout.addStretch()
+
+        download_wine_to_steam_layout = None
         self.steamCompatCheckBox = QCheckBox()
         self.steamCompatCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.steamCompatCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -2394,7 +2459,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             download_wine_to_steam_layout.addWidget(self.downloadWineToSteamCheckBox)
             download_wine_to_steam_layout.addWidget(self.downloadWineToSteamTitle)
             download_wine_to_steam_layout.addStretch()
-            uiForm.addRow(download_wine_to_steam_layout)
 
         self.economyModeCheckBox = QCheckBox()
         self.economyModeCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
@@ -2418,7 +2482,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         economy_mode_layout.addWidget(self.economyModeCheckBox)
         economy_mode_layout.addWidget(self.economyModeTitle)
         economy_mode_layout.addStretch()
-        uiForm.addRow(economy_mode_layout)
 
         self.forceSystemDpiCheckBox = QCheckBox()
         self.forceSystemDpiCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
@@ -2436,7 +2499,20 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         force_system_dpi_layout.addStretch()
         uiForm.addRow(force_system_dpi_layout)
 
-        # 3. Gamepad Settings Section
+        # 3. Download Settings Section
+        downloadFrame, downloadForm = create_section(_("Download Settings"), self.theme)
+        downloadForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
+        scrollLayout.addWidget(downloadFrame)
+
+        if disable_runtime_download_layout is not None:
+            downloadForm.addRow(disable_runtime_download_layout)
+
+        if download_wine_to_steam_layout is not None:
+            downloadForm.addRow(download_wine_to_steam_layout)
+
+        downloadForm.addRow(economy_mode_layout)
+
+        # 4. Gamepad Settings Section
         padFrame, padForm = create_section(_("Gamepad Settings"), self.theme)
         padForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
         scrollLayout.addWidget(padFrame)
@@ -2457,7 +2533,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         auto_fullscreen_layout.addStretch()
         padForm.addRow(auto_fullscreen_layout)
 
-        # 4. Hardware Settings Section
+        # 5. Hardware Settings Section
         hwFrame, hwForm = create_section(_("Hardware Settings"), self.theme)
         hwForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
         scrollLayout.addWidget(hwFrame)
@@ -2493,7 +2569,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         elif not filtered_gpu_list:
             hwForm.addRow(QLabel(_("No GPUs found")), QLabel(""))
 
-        # 5. Proxy Settings Section
+        # 6. Proxy Settings Section
         proxyFrame, proxyForm = create_section(_("Proxy Settings"), self.theme)
         proxyForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
         scrollLayout.addWidget(proxyFrame)
@@ -2543,25 +2619,25 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         buttonsLayout = QHBoxLayout()
         buttonsLayout.setSpacing(10)
 
-        self.saveButton = AutoSizeButton(_("Save Settings"), icon=self.theme_manager.get_icon("save"))
+        self.saveButton = AutoSizeButton(_("Save Settings"), icon=self.theme_manager.get_icon("save", as_path=True))
         self.saveButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.saveButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.saveButton.clicked.connect(self.savePortProtonSettings)
         buttonsLayout.addWidget(self.saveButton)
 
-        self.resetSettingsButton = AutoSizeButton(_("Reset Settings"), icon=self.theme_manager.get_icon("update"))
+        self.resetSettingsButton = AutoSizeButton(_("Reset Settings"), icon=self.theme_manager.get_icon("update", as_path=True))
         self.resetSettingsButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.resetSettingsButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.resetSettingsButton.clicked.connect(self.resetSettings)
         buttonsLayout.addWidget(self.resetSettingsButton)
 
-        self.migrateShortcutsButton = AutoSizeButton(_("Migrate legacy shortcuts"), icon=self.theme_manager.get_icon("update"))
+        self.migrateShortcutsButton = AutoSizeButton(_("Migrate legacy shortcuts"), icon=self.theme_manager.get_icon("update", as_path=True))
         self.migrateShortcutsButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.migrateShortcutsButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.migrateShortcutsButton.clicked.connect(self.migrateLegacyShortcuts)
         buttonsLayout.addWidget(self.migrateShortcutsButton)
 
-        self.clearCacheButton = AutoSizeButton(_("Clear Cache"), icon=self.theme_manager.get_icon("update"))
+        self.clearCacheButton = AutoSizeButton(_("Clear Cache"), icon=self.theme_manager.get_icon("update", as_path=True))
         self.clearCacheButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.clearCacheButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.clearCacheButton.clicked.connect(self.clearCache)
@@ -2671,6 +2747,10 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         start_minimized = self.startMinimizedCheckBox.isChecked()
         display_config.set_start_minimized(start_minimized)
 
+        tray_menu_mode_idx = self.trayMenuModeCombo.currentIndex()
+        tray_menu_mode = self.tray_menu_mode_keys[tray_menu_mode_idx]
+        display_config.set_tray_menu_mode(tray_menu_mode)
+
         steam_compat = self.steamCompatCheckBox.isChecked()
         currently_installed = is_steam_compat_tool_installed()
         if steam_compat and not currently_installed:
@@ -2681,13 +2761,18 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         if hasattr(self, 'downloadWineToSteamCheckBox'):
             ui_config.set_download_wine_to_steam(self.downloadWineToSteamCheckBox.isChecked())
 
+        if hasattr(self, 'disableRuntimeDownloadCheckBox'):
+            ui_config.set_disable_runtime_download(self.disableRuntimeDownloadCheckBox.isChecked())
+        else:
+            ui_config.get_disable_runtime_download()
+
         # Save GPU selection to user.conf (only if the combo box exists)
         if hasattr(self, 'gpuCombo') and self.gpuCombo.count() > 1:
             selected_gpu = self.gpuCombo.currentText()
             set_user_conf_setting('PW_GPU_USE', selected_gpu)
         if hasattr(self, 'forceSystemDpiCheckBox'):
             if self.forceSystemDpiCheckBox.isChecked():
-                system_dpi = get_system_dpi_for_wine(get_user_conf_setting('PW_SCREEN_RESOLUTION'))
+                system_dpi = get_system_dpi_for_wine()
                 set_user_conf_setting('PW_FORCE_SYSTEM_DPI', "1")
                 set_user_conf_setting('PW_WINE_DPI_VALUE', system_dpi)
             else:
@@ -2807,11 +2892,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.themesCombo.setObjectName("themeTabCombo")
         self.themesCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         theme_names = self.theme_manager.get_available_themes()
-        available_themes = []
-        for theme_name in theme_names:
-            base_name = theme_name[:-6] if theme_name.endswith("-light") else theme_name
-            if base_name not in available_themes:
-                available_themes.append(base_name)
+        available_themes = ui_config.get_theme_bases(theme_names)
         current_theme_base = ui_config.get_theme_base()
         if current_theme_base in available_themes:
             available_themes.remove(current_theme_base)
@@ -2842,7 +2923,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         mainLayout.addLayout(self.themeTabHeaderLayout)
 
         def hasThemeVariants(theme_name: str) -> bool:
-            return theme_name in theme_names and f"{theme_name}-light" in theme_names
+            return ui_config.resolve_theme(theme_name, "dark") != ui_config.resolve_theme(theme_name, "light")
 
         def updateThemeVariantVisibility(*_args: object) -> None:
             self.themeVariantCombo.setVisible(hasThemeVariants(self.themesCombo.currentText()))
@@ -2867,7 +2948,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.themeMetainfoLabel.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.themeInfoLayout.addWidget(self.themeMetainfoLabel)
 
-        self.applyButton = AutoSizeButton(_("Apply Theme"), icon=self.theme_manager.get_icon("apply"))
+        self.applyButton = AutoSizeButton(_("Apply Theme"), icon=self.theme_manager.get_icon("apply", as_path=True))
         self.applyButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.applyButton.setObjectName("themeApplyButton")
         self.applyButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -3354,11 +3435,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             if self.current_running_button is not None:
                 try:
                     self.current_running_button.setText(_("Stop"))
-                    icon = self.theme_manager.get_icon("stop")
-                    if isinstance(icon, str):
-                        icon = QIcon(icon)
-                    elif icon is None:
-                        icon = QIcon()
+                    icon = self.theme_manager.get_icon("stop", as_path=True)
                     self.current_running_button.setIcon(icon)
                 except RuntimeError:
                     self.current_running_button = None
@@ -3371,11 +3448,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                     if self.wine_download_percent > 0:
                         status = status.replace("...", f"... {int(self.wine_download_percent)}%")
                     self.current_running_button.setText(status)
-                    icon = self.theme_manager.get_icon("save")
-                    if isinstance(icon, str):
-                        icon = QIcon(icon)
-                    elif icon is None:
-                        icon = QIcon()
+                    icon = self.theme_manager.get_icon("save", as_path=True)
                     self.current_running_button.setIcon(icon)
                 except RuntimeError:
                     pass
@@ -3383,11 +3456,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             if self.current_running_button is not None:
                 try:
                     self.current_running_button.setText(_("Stop"))
-                    icon = self.theme_manager.get_icon("stop")
-                    if isinstance(icon, str):
-                        icon = QIcon(icon)
-                    elif icon is None:
-                        icon = QIcon()
+                    icon = self.theme_manager.get_icon("stop", as_path=True)
                     self.current_running_button.setIcon(icon)
                 except RuntimeError:
                     self.current_running_button = None
@@ -3445,11 +3514,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         if self.current_running_button is not None:
             try:
                 self.current_running_button.setText(_("Play"))
-                icon = self.theme_manager.get_icon("play")
-                if isinstance(icon, str):
-                    icon = QIcon(icon)  # Convert path to QIcon
-                elif icon is None:
-                    icon = QIcon()  # Use empty QIcon as fallback
+                icon = self.theme_manager.get_icon("play", as_path=True)
                 self.current_running_button.setIcon(icon)
             except RuntimeError:
                 pass
@@ -3624,11 +3689,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 if update_button:
                     try:
                         update_button.setText(_("Stop"))
-                        icon = self.theme_manager.get_icon("stop")
-                        if isinstance(icon, str):
-                            icon = QIcon(icon)
-                        elif icon is None:
-                            icon = QIcon()
+                        icon = self.theme_manager.get_icon("stop", as_path=True)
                         update_button.setIcon(icon)
                     except RuntimeError:
                         pass

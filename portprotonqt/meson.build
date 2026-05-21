@@ -23,6 +23,7 @@ install_data(
   'port_data_path_selector.py',
   'portproton_api.py',
   'preloader.py',
+  'qt_utils.py',
   'search_utils.py',
   'settings_manager.py',
   'theme_manager.py',

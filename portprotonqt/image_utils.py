@@ -11,6 +11,7 @@ from portprotonqt.config import ui_config
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.downloader import Downloader
 from portprotonqt.logger import get_logger
+from portprotonqt.qt_utils import get_device_pixel_ratio
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from queue import Queue
@@ -20,21 +21,11 @@ downloader = Downloader()
 logger = get_logger(__name__)
 COVER_IMAGE_EXTENSIONS = (".png", ".apng", ".jpg", ".jpeg", ".gif", ".webp", ".jxl")
 DEFAULT_ANIMATION_DELAY_MS = 100
-ANIMATED_COVER_MIN_DELAY_MS = 100
 
 # Global queue and thread pool for image loading
 image_load_queue = Queue()
 image_executor = ThreadPoolExecutor(max_workers=4)
 queue_lock = threading.Lock()
-
-
-def get_device_pixel_ratio() -> float:
-    """
-    Retrieves the device pixel ratio from QApplication, with a fallback of 1.0 if not available.
-    """
-    app = QApplication.instance()
-    return app.devicePixelRatio() if isinstance(app, QApplication) else 1.0
-
 
 def is_animated_cover(path: str) -> bool:
     """Return True when path points to an animated cover image."""
@@ -179,7 +170,6 @@ class _PillowAnimatedCover(QObject):
 
     def _convert_frame(self, frame: Image.Image) -> tuple[QPixmap, int]:
         duration = int(frame.info.get("duration", DEFAULT_ANIMATION_DELAY_MS))
-        duration = max(duration, ANIMATED_COVER_MIN_DELAY_MS)
         image = frame.convert("RGBA").resize(
             (max(self.width, 1), max(self.height, 1)),
             Image.Resampling.BILINEAR,

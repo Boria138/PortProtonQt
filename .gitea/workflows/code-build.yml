@@ -129,7 +129,7 @@ jobs:
 
       - name: Copy fedora-git.spec
         run: |
-          sed "s|git clone https://git.linux-gaming.ru/Boria138/PortProtonQt.git|git clone -b ${{ env.PR_BRANCH }} ${{ env.PR_REPO_URL }}|" \
+          sed "s|git clone https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt.git|git clone -b ${{ env.PR_BRANCH }} ${{ env.PR_REPO_URL }}|" \
             build-aux/fedora-git.spec > /home/rpmbuild/SPECS/${{ env.PACKAGE }}.spec
           chown -R rpmbuild:users /home/rpmbuild
 
@@ -184,7 +184,7 @@ jobs:
           cd /__w/portproton-repo
           git clone -b ${{ env.PR_BRANCH }} ${{ env.PR_REPO_URL }} PortProtonQt
           cd /__w/portproton-repo/PortProtonQt/build-aux
-          sed -i "s|source=(\"git+https://git.linux-gaming.ru/Boria138/PortProtonQt.git\")|source=(\"git+${{ env.PR_REPO_URL }}#branch=${{ env.PR_BRANCH }}\")|" PKGBUILD-git
+          sed -i "s|source=(\"git+https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt.git\")|source=(\"git+${{ env.PR_REPO_URL }}#branch=${{ env.PR_BRANCH }}\")|" PKGBUILD-git
           chown user -R ..
           su user -c "yes '' | makepkg --noconfirm -s -p PKGBUILD-git"
 

@@ -284,9 +284,9 @@ class WinetricksDialog(DraggableDialog):
 
         button_layout = QHBoxLayout()
         button_layout.setSpacing(10)
-        self.cancel_button = AutoSizeButton(_("Cancel"), icon=theme_manager.get_icon("cancel"))
-        self.force_button = AutoSizeButton(_("Force Install"), icon=theme_manager.get_icon("apply"))
-        self.install_button = AutoSizeButton(_("Install"), icon=theme_manager.get_icon("apply"))
+        self.cancel_button = AutoSizeButton(_("Cancel"), icon=theme_manager.get_icon("cancel", as_path=True))
+        self.force_button = AutoSizeButton(_("Force Install"), icon=theme_manager.get_icon("apply", as_path=True))
+        self.install_button = AutoSizeButton(_("Install"), icon=theme_manager.get_icon("apply", as_path=True))
         self.cancel_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.force_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.install_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)

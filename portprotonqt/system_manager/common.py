@@ -4,29 +4,8 @@ import asyncio
 import re
 from typing import Any
 
-try:
-    from dbus_fast import BusType as _BusType
-    from dbus_fast import Variant as _DbusVariant
-    from dbus_fast.aio import MessageBus as _MessageBus
-    DBUS_FAST_AVAILABLE = True
-except ModuleNotFoundError:
-    DBUS_FAST_AVAILABLE = False
-    _BusType = None
-    _DbusVariant = None
-    _MessageBus = None
-
-BusType = _BusType
-MessageBus = _MessageBus
-
-
-class _FallbackVariant:
-    """Fallback Variant for environments without dbus-fast."""
-
-    def __init__(self, _signature: str, value: Any) -> None:
-        self.value = value
-
-
-Variant: type[Any] = _DbusVariant if _DbusVariant is not None else _FallbackVariant
+from dbus_fast import BusType, Variant
+from dbus_fast.aio import MessageBus
 
 
 def _create_variant(signature: str, value: Any) -> Any:
@@ -57,8 +36,6 @@ class DbusFastSystemBus:
     """Minimal sync wrapper over dbus-fast system bus."""
 
     def __init__(self) -> None:
-        if not DBUS_FAST_AVAILABLE:
-            raise NetworkManagerError("dbus-fast is not available")
         self._loop = asyncio.new_event_loop()
         self._proxy_cache: dict[tuple[str, str], Any] = {}
         try:
@@ -67,7 +44,7 @@ class DbusFastSystemBus:
         except Exception as exc:
             asyncio.set_event_loop(None)
             self._loop.close()
-            raise NetworkManagerError("dbus-fast is not available") from exc
+            raise NetworkManagerError("Failed to connect to system D-Bus") from exc
 
     def close(self) -> None:
         try:
@@ -124,8 +101,6 @@ class DbusFastSystemBus:
         return self._loop.run_until_complete(coroutine)
 
     async def _connect(self):
-        if BusType is None or MessageBus is None:
-            raise NetworkManagerError("dbus-fast is not available")
         return await MessageBus(bus_type=BusType.SYSTEM).connect()
 
     async def _get_interface(self, service: str, path: str, interface: str):

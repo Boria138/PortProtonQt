@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-05-14 10:23+0500\n"
+"POT-Creation-Date: 2026-05-21 15:40+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -103,10 +103,10 @@ msgstr ""
 msgid "Add to Menu"
 msgstr ""
 
-msgid "Edit Shortcut"
+msgid "Open Game Folder"
 msgstr ""
 
-msgid "Open Game Folder"
+msgid "Edit Shortcut"
 msgstr ""
 
 msgid "Remove from Steam"
@@ -514,6 +514,9 @@ msgstr ""
 msgid "Interface Settings"
 msgstr ""
 
+msgid "Tray Menu Type:"
+msgstr ""
+
 msgid "Launch Application in Fullscreen"
 msgstr ""
 
@@ -529,6 +532,9 @@ msgstr ""
 msgid "Hide Auto-Install Tab"
 msgstr ""
 
+msgid "Disable runtime download"
+msgstr ""
+
 msgid "Add to Steam compatibility tools"
 msgstr ""
 
@@ -539,6 +545,9 @@ msgid "Economy mode"
 msgstr ""
 
 msgid "Force system DPI for Wine"
+msgstr ""
+
+msgid "Download Settings"
 msgstr ""
 
 msgid "Gamepad Settings"
@@ -942,13 +951,16 @@ msgstr ""
 msgid "Exit"
 msgstr ""
 
+msgid "Tabs"
+msgstr ""
+
 msgid "Recent Games"
 msgstr ""
 
-msgid "No favorites"
+msgid "No recent games"
 msgstr ""
 
-msgid "No recent games"
+msgid "No favorites"
 msgstr ""
 
 #, python-brace-format
@@ -1259,6 +1271,9 @@ msgstr ""
 msgid "Open PPDB"
 msgstr ""
 
+msgid "Clear PPDB"
+msgstr ""
+
 msgid "Executable path is not available."
 msgstr ""
 
@@ -1266,6 +1281,23 @@ msgid "PPDB file does not exist at: "
 msgstr ""
 
 msgid "Failed to open PPDB file:\n"
+msgstr ""
+
+msgid "Information"
+msgstr ""
+
+msgid "Confirm PPDB Clear"
+msgstr ""
+
+msgid ""
+"Are you sure you want to clear PPDB settings? This action cannot be "
+"undone."
+msgstr ""
+
+msgid "Failed to remove PPDB file:\n"
+msgstr ""
+
+msgid "PPDB settings cleared."
 msgstr ""
 
 msgid "disabled"
@@ -1506,9 +1538,6 @@ msgid "Example: --cursor-scale-height=1080 --force-orientation=left"
 msgstr ""
 
 msgid "Disable Gamescope"
-msgstr ""
-
-msgid "Information"
 msgstr ""
 
 msgid "Custom preset is empty. Save one first."

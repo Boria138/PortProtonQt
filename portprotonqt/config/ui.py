@@ -3,6 +3,10 @@ import asyncio
 import os
 import subprocess
 from typing import Any, cast
+
+from dbus_fast import BusType
+from dbus_fast.aio import MessageBus
+
 from portprotonqt.config.base import BaseConfig, configparser, THEMES_DIRS
 from portprotonqt.config.validators import validate_string, validate_int, validate_bool
 from portprotonqt.localization import get_theme_translations
@@ -11,16 +15,39 @@ from portprotonqt.logger import get_logger
 
 logger = get_logger(__name__)
 THEME_VARIANTS = ("dark", "light", "auto")
+DOWNLOADS_SECTION = "Downloads"
+
+
+def _read_theme_variants(theme_name: str) -> dict[str, str]:
+    variants = {}
+    for themes_dir in THEMES_DIRS:
+        metainfo_file = os.path.join(themes_dir, theme_name, "metainfo.ini")
+        if not os.path.exists(metainfo_file):
+            continue
+        cp = configparser.ConfigParser()
+        cp.read(metainfo_file, encoding="utf-8")
+        if "Metainfo" not in cp:
+            return variants
+        dark_name = cp.get("Metainfo", "dark_variant", fallback="")
+        light_name = cp.get("Metainfo", "light_variant", fallback="")
+        if dark_name and _theme_exists(dark_name):
+            variants["dark"] = dark_name
+        if light_name and _theme_exists(light_name):
+            variants["light"] = light_name
+        return variants
+    return variants
 
 
 def _get_theme_base_name(theme_name: str) -> str:
-    if theme_name.endswith("-light"):
-        return theme_name[:-6]
+    variants = _read_theme_variants(theme_name)
+    if variants.get("dark"):
+        return variants["dark"]
     return theme_name
 
 
 def _get_theme_variant_name(theme_name: str) -> str:
-    if theme_name.endswith("-light"):
+    variants = _read_theme_variants(theme_name)
+    if variants.get("light") == theme_name:
         return "light"
     return "auto"
 
@@ -33,6 +60,15 @@ def _theme_exists(theme_name: str) -> bool:
     return False
 
 
+def _get_theme_base_names(theme_names: list[str]) -> list[str]:
+    base_names = []
+    for theme_name in theme_names:
+        base_name = _get_theme_base_name(theme_name)
+        if base_name not in base_names:
+            base_names.append(base_name)
+    return base_names
+
+
 def _unwrap_variant(value: Any) -> Any:
     if isinstance(value, tuple) and len(value) == 1:
         value = value[0]
@@ -42,12 +78,6 @@ def _unwrap_variant(value: Any) -> Any:
 
 
 async def _read_portal_color_scheme() -> int | None:
-    try:
-        from dbus_fast import BusType
-        from dbus_fast.aio import MessageBus
-    except ModuleNotFoundError:
-        return None
-
     bus = await MessageBus(bus_type=BusType.SESSION).connect()
     try:
         introspection = await bus.introspect(
@@ -137,12 +167,13 @@ def _is_system_light_theme() -> bool:
 def _resolve_theme_name(theme_name: str, variant: str) -> str:
     base_name = _get_theme_base_name(theme_name)
     resolved_variant = "light" if variant == "auto" and _is_system_light_theme() else variant
-    resolved_name = f"{base_name}-light" if resolved_variant == "light" else base_name
+    variants = _read_theme_variants(base_name)
+    resolved_name = variants.get(resolved_variant, base_name)
     if _theme_exists(resolved_name):
         return resolved_name
     if _theme_exists(base_name):
         return base_name
-    light_name = f"{base_name}-light"
+    light_name = variants.get("light", "")
     if _theme_exists(light_name):
         return light_name
     return base_name
@@ -166,6 +197,10 @@ class UIConfig(BaseConfig):
     def get_theme_base(self) -> str:
         """Get the selected base theme name."""
         return _get_theme_base_name(self._get_str("theme", "standart"))
+
+    def get_theme_bases(self, theme_names: list[str]) -> list[str]:
+        """Get unique base theme names."""
+        return _get_theme_base_names(theme_names)
 
     def get_theme_variant(self) -> str:
         """Get theme variant."""
@@ -244,21 +279,64 @@ class UIConfig(BaseConfig):
 
     def get_economy_mode(self) -> bool:
         """Get economy mode setting."""
-        return self._get_bool("economy_mode", False)
+        return self._get_download_bool("economy_mode", False)
 
     def set_economy_mode(self, enabled: bool):
         """Set economy mode setting."""
         validate_bool(enabled, "economy_mode")
-        self._save_value("economy_mode", enabled, "bool")
+        self._save_download_value("economy_mode", enabled)
+
+    def _get_download_bool(self, option: str, default: bool) -> bool:
+        cp = self._read_config()
+        if cp is None:
+            return self._save_download_value(option, default)
+
+        try:
+            if cp.has_option(DOWNLOADS_SECTION, option):
+                return cp.getboolean(DOWNLOADS_SECTION, option, fallback=default)
+            if cp.has_option(self._section, option):
+                return cp.getboolean(self._section, option, fallback=default)
+        except ValueError as e:
+            logger.warning("Error reading %s: %s", option, e)
+            return self._save_download_value(option, default)
+        except configparser.Error as e:
+            logger.warning("Error reading %s: %s", option, e)
+            return self._save_download_value(option, default)
+
+        return self._save_download_value(option, default)
+
+    def _save_download_value(self, option: str, value: bool) -> bool:
+        validate_bool(value, option)
+        cp = self._read_config() or configparser.ConfigParser()
+        if DOWNLOADS_SECTION not in cp:
+            cp[DOWNLOADS_SECTION] = {}
+
+        cp[DOWNLOADS_SECTION][option] = str(value)
+        if cp.has_section(self._section):
+            cp.remove_option(self._section, option)
+        self._save_config(cp)
+        return value
 
     def get_download_wine_to_steam(self) -> bool:
         """Get Steam compatibility tools download setting."""
-        return self._get_bool("download_wine_to_steam", False)
+        return self._get_download_bool("download_wine_to_steam", False)
 
     def set_download_wine_to_steam(self, enabled: bool) -> None:
         """Set Steam compatibility tools download setting."""
         validate_bool(enabled, "download_wine_to_steam")
-        self._save_value("download_wine_to_steam", enabled, "bool")
+        self._save_download_value("download_wine_to_steam", enabled)
+
+    def get_disable_runtime_download(self) -> bool:
+        """Get PortProton runtime download setting."""
+        default = bool(os.getenv("FLATPAK_ID"))
+        return self._get_download_bool("disable_runtime_download", default)
+
+    def set_disable_runtime_download(self, enabled: bool) -> None:
+        """Set PortProton runtime download setting."""
+        if os.getenv("FLATPAK_ID"):
+            enabled = True
+        validate_bool(enabled, "disable_runtime_download")
+        self._save_download_value("disable_runtime_download", enabled)
 
 
 def load_theme_metainfo(theme_name: str) -> dict:
@@ -274,6 +352,8 @@ def load_theme_metainfo(theme_name: str) -> dict:
             if "Metainfo" in cp:
                 meta["author"] = cp.get("Metainfo", "author", fallback="Unknown")
                 meta["author_link"] = cp.get("Metainfo", "author_link", fallback="")
+                meta["dark_variant"] = cp.get("Metainfo", "dark_variant", fallback="")
+                meta["light_variant"] = cp.get("Metainfo", "light_variant", fallback="")
                 meta["name"] = theme_translations.get("name", theme_name)
                 meta["description"] = theme_translations.get("description", "")
             break

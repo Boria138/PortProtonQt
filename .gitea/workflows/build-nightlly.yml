@@ -76,7 +76,7 @@ jobs:
 
       - name: Copy fedora.spec
         run: |
-          sed "s|git clone https://git.linux-gaming.ru/Boria138/PortProtonQt.git|git clone -b ${{ env.BUILD_BRANCH }} https://git.linux-gaming.ru/Boria138/PortProtonQt.git|" \
+          sed "s|git clone https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt.git|git clone -b ${{ env.BUILD_BRANCH }} https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt.git|" \
             build-aux/fedora-git.spec > /home/rpmbuild/SPECS/${{ env.PACKAGE }}.spec
           chown -R rpmbuild:users /home/rpmbuild
 

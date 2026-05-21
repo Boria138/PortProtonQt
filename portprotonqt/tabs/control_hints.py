@@ -2,20 +2,103 @@
 
 from typing import Any
 
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QPixmap
+from PySide6.QtCore import Qt, QRectF
+from PySide6.QtGui import QPainter, QPaintEvent, QPixmap
+from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QStackedWidget, QWidget
 
 from portprotonqt.custom_widgets import FlowLayout
 from portprotonqt.input_manager import GamepadType
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
+from portprotonqt.qt_utils import get_device_pixel_ratio
 
 logger = get_logger(__name__)
 
 GAMEPAD_HINT_ACTIONS = ("confirm", "back", "add_game", "search", "decrease_size", "increase_size", "context_menu", "menu", "guide_select", "mouse_emulation", "prev_section", "next_section")
 COMBINATION_HINT_ACTIONS = ("guide_select", "mouse_emulation")
 VOLUME_HINT_ACTIONS = ("decrease_size", "increase_size")
+
+def _load_control_hint_pixmap(paths: tuple[str | None, ...], width: int, height: int) -> QPixmap:
+    for path in paths:
+        if path is None:
+            continue
+        pixmap = _render_control_hint_path(str(path), width, height)
+        if not pixmap.isNull():
+            return pixmap
+    return QPixmap()
+
+
+def _render_control_hint_path(path: str, width: int, height: int) -> QPixmap:
+    device_pixel_ratio = get_device_pixel_ratio()
+    target_width = max(1, int(width * device_pixel_ratio))
+    target_height = max(1, int(height * device_pixel_ratio))
+
+    if path.lower().endswith(".svg"):
+        pixmap = QPixmap(target_width, target_height)
+        pixmap.fill(Qt.GlobalColor.transparent)
+        pixmap.setDevicePixelRatio(device_pixel_ratio)
+        painter = QPainter(pixmap)
+        QSvgRenderer(path).render(painter, QRectF(0, 0, width, height))
+        painter.end()
+        return pixmap
+
+    pixmap = QPixmap(path)
+    if pixmap.isNull():
+        return pixmap
+    scaled = pixmap.scaled(
+        target_width,
+        target_height,
+        Qt.AspectRatioMode.KeepAspectRatio,
+        Qt.TransformationMode.SmoothTransformation,
+    )
+    scaled.setDevicePixelRatio(device_pixel_ratio)
+    return scaled
+
+
+def _set_control_hint_icon(label: QLabel, paths: tuple[str | None, ...], width: int, height: int) -> None:
+    if isinstance(label, _ControlHintIconLabel):
+        label.set_icon_paths(paths)
+        return
+    pixmap = _load_control_hint_pixmap(paths, width, height)
+    if not pixmap.isNull():
+        label.setPixmap(pixmap)
+
+
+class _ControlHintIconLabel(QLabel):
+    def __init__(self, width: int, height: int) -> None:
+        super().__init__()
+        self._icon_path = ""
+        self._icon_width = width
+        self._icon_height = height
+        self.setFixedSize(width, height)
+        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+    def set_icon_paths(self, paths: tuple[str | None, ...]) -> None:
+        self._icon_path = ""
+        for path in paths:
+            if path is None:
+                continue
+            if str(path).lower().endswith(".svg"):
+                renderer = QSvgRenderer(str(path))
+                if renderer.isValid():
+                    self._icon_path = str(path)
+                    break
+                continue
+            pixmap = _render_control_hint_path(str(path), self._icon_width, self._icon_height)
+            if not pixmap.isNull():
+                self.setPixmap(pixmap)
+                return
+        self.clear()
+        self.update()
+
+    def paintEvent(self, event: QPaintEvent) -> None:
+        if not self._icon_path:
+            super().paintEvent(event)
+            return
+        painter = QPainter(self)
+        QSvgRenderer(self._icon_path).render(painter, QRectF(self.rect()))
+        painter.end()
 
 
 class MainWindowControlHintsMixin:
@@ -150,27 +233,16 @@ class MainWindowControlHintsMixin:
             layout.setContentsMargins(0, 5, 0, 0)
             layout.setSpacing(6)
 
-            icon_label = QLabel()
-            icon_label.setFixedSize(26, 26)
-            icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-            pixmap = QPixmap()
-            for candidate in (
-                self.theme_manager.get_theme_image(icon_name, self.current_theme_name),
-                self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
-            ):
-                if candidate is not None and pixmap.load(str(candidate)):
-                    break
-
-            if not pixmap.isNull():
-                icon_label.setPixmap(
-                    pixmap.scaled(
-                        26,
-                        26,
-                        Qt.AspectRatioMode.KeepAspectRatio,
-                        Qt.TransformationMode.SmoothTransformation,
-                    )
-                )
+            icon_label = _ControlHintIconLabel(26, 26)
+            _set_control_hint_icon(
+                icon_label,
+                (
+                    self.theme_manager.get_theme_image(icon_name, self.current_theme_name),
+                    self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
+                ),
+                26,
+                26,
+            )
 
             layout.addWidget(icon_label)
 
@@ -198,86 +270,56 @@ class MainWindowControlHintsMixin:
             layout.setContentsMargins(0, 5, 0, 0)
             layout.setSpacing(6)
 
-            guide_icon = QLabel()
-            guide_icon.setFixedSize(26, 26)
-            guide_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-            pixmap = QPixmap()
-            for candidate in (
-                self.theme_manager.get_theme_image("xbox_xbox", self.current_theme_name),
-                self.theme_manager.get_theme_image("ps_ps", self.current_theme_name),
-                self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
-            ):
-                if candidate is not None and pixmap.load(str(candidate)):
-                    break
-
-            if not pixmap.isNull():
-                guide_icon.setPixmap(
-                    pixmap.scaled(
-                        26,
-                        26,
-                        Qt.AspectRatioMode.KeepAspectRatio,
-                        Qt.TransformationMode.SmoothTransformation,
-                    )
-                )
+            guide_icon = _ControlHintIconLabel(26, 26)
+            _set_control_hint_icon(
+                guide_icon,
+                (
+                    self.theme_manager.get_theme_image("xbox_xbox", self.current_theme_name),
+                    self.theme_manager.get_theme_image("ps_ps", self.current_theme_name),
+                    self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
+                ),
+                26,
+                26,
+            )
 
             layout.addWidget(guide_icon)
 
-            plus_icon = QLabel()
-            plus_icon.setFixedSize(26, 26)
-            plus_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-            plus_pixmap = QPixmap()
-            for candidate in (
-                self.theme_manager.get_theme_image("key_+", self.current_theme_name),
-                self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
-            ):
-                if candidate is not None and plus_pixmap.load(str(candidate)):
-                    break
-
-            if not plus_pixmap.isNull():
-                plus_icon.setPixmap(
-                    plus_pixmap.scaled(
-                        26,
-                        26,
-                        Qt.AspectRatioMode.KeepAspectRatio,
-                        Qt.TransformationMode.SmoothTransformation,
-                    )
-                )
+            plus_icon = _ControlHintIconLabel(26, 26)
+            _set_control_hint_icon(
+                plus_icon,
+                (
+                    self.theme_manager.get_theme_image("key_+", self.current_theme_name),
+                    self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
+                ),
+                26,
+                26,
+            )
 
             layout.addWidget(plus_icon)
 
-            select_icon = QLabel()
-            select_icon.setFixedSize(26, 26)
-            select_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            select_icon = _ControlHintIconLabel(26, 26)
 
             if action == "mouse_emulation":
-                pixmap2 = QPixmap()
-                for candidate in (
-                    self.theme_manager.get_theme_image("xbox_start", self.current_theme_name),
-                    self.theme_manager.get_theme_image("ps_options", self.current_theme_name),
-                    self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
-                ):
-                    if candidate is not None and pixmap2.load(str(candidate)):
-                        break
+                _set_control_hint_icon(
+                    select_icon,
+                    (
+                        self.theme_manager.get_theme_image("xbox_start", self.current_theme_name),
+                        self.theme_manager.get_theme_image("ps_options", self.current_theme_name),
+                        self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
+                    ),
+                    26,
+                    26,
+                )
             else:
-                pixmap2 = QPixmap()
-                for candidate in (
-                    self.theme_manager.get_theme_image("xbox_view", self.current_theme_name),
-                    self.theme_manager.get_theme_image("ps_share", self.current_theme_name),
-                    self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
-                ):
-                    if candidate is not None and pixmap2.load(str(candidate)):
-                        break
-
-            if not pixmap2.isNull():
-                select_icon.setPixmap(
-                    pixmap2.scaled(
-                        26,
-                        26,
-                        Qt.AspectRatioMode.KeepAspectRatio,
-                        Qt.TransformationMode.SmoothTransformation,
-                    )
+                _set_control_hint_icon(
+                    select_icon,
+                    (
+                        self.theme_manager.get_theme_image("xbox_view", self.current_theme_name),
+                        self.theme_manager.get_theme_image("ps_share", self.current_theme_name),
+                        self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
+                    ),
+                    26,
+                    26,
                 )
 
             layout.addWidget(select_icon)
@@ -317,42 +359,30 @@ class MainWindowControlHintsMixin:
             gtype.value,
         )
 
-        left_pix = QPixmap()
         if is_gamepad_connected:
             left_icon_name = self.get_nav_icon('left', gtype)
         else:
             left_icon_name = "key_left"
-        left_icon = self.theme_manager.get_theme_image(left_icon_name, self.current_theme_name)
-        if left_icon:
-            left_pix.load(str(left_icon))
+        left_pix = _load_control_hint_pixmap(
+            (self.theme_manager.get_theme_image(left_icon_name, self.current_theme_name),),
+            32,
+            32,
+        )
         if not left_pix.isNull():
-            self.leftNavButton.setPixmap(
-                left_pix.scaled(
-                    32,
-                    32,
-                    Qt.AspectRatioMode.KeepAspectRatio,
-                    Qt.TransformationMode.SmoothTransformation,
-                )
-            )
+            self.leftNavButton.setPixmap(left_pix)
         self.leftNavButton.setVisible(True)
 
-        right_pix = QPixmap()
         if is_gamepad_connected:
             right_icon_name = self.get_nav_icon('right', gtype)
         else:
             right_icon_name = "key_right"
-        right_icon = self.theme_manager.get_theme_image(right_icon_name, self.current_theme_name)
-        if right_icon:
-            right_pix.load(str(right_icon))
+        right_pix = _load_control_hint_pixmap(
+            (self.theme_manager.get_theme_image(right_icon_name, self.current_theme_name),),
+            32,
+            32,
+        )
         if not right_pix.isNull():
-            self.rightNavButton.setPixmap(
-                right_pix.scaled(
-                    32,
-                    32,
-                    Qt.AspectRatioMode.KeepAspectRatio,
-                    Qt.TransformationMode.SmoothTransformation,
-                )
-            )
+            self.rightNavButton.setPixmap(right_pix)
         self.rightNavButton.setVisible(True)
 
     def updateControlHints(self, *args) -> None:
@@ -405,41 +435,25 @@ class MainWindowControlHintsMixin:
                         else:
                             guide_icon_name = "xbox_xbox"
 
-                        guide_pixmap = QPixmap()
-                        for candidate in (
-                            self.theme_manager.get_theme_image(guide_icon_name, self.current_theme_name),
-                            self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
-                        ):
-                            if candidate is not None and guide_pixmap.load(str(candidate)):
-                                break
+                        _set_control_hint_icon(
+                            guide_icon,
+                            (
+                                self.theme_manager.get_theme_image(guide_icon_name, self.current_theme_name),
+                                self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
+                            ),
+                            26,
+                            26,
+                        )
 
-                        if not guide_pixmap.isNull():
-                            guide_icon.setPixmap(
-                                guide_pixmap.scaled(
-                                    26,
-                                    26,
-                                    Qt.AspectRatioMode.KeepAspectRatio,
-                                    Qt.TransformationMode.SmoothTransformation,
-                                )
-                            )
-
-                        plus_pixmap = QPixmap()
-                        for candidate in (
-                            self.theme_manager.get_theme_image("key_+", self.current_theme_name),
-                            self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
-                        ):
-                            if candidate is not None and plus_pixmap.load(str(candidate)):
-                                break
-
-                        if not plus_pixmap.isNull():
-                            plus_icon.setPixmap(
-                                plus_pixmap.scaled(
-                                    26,
-                                    26,
-                                    Qt.AspectRatioMode.KeepAspectRatio,
-                                    Qt.TransformationMode.SmoothTransformation,
-                                )
-                            )
+                        _set_control_hint_icon(
+                            plus_icon,
+                            (
+                                self.theme_manager.get_theme_image("key_+", self.current_theme_name),
+                                self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
+                            ),
+                            26,
+                            26,
+                        )
 
                         select_icon_name = "xbox_view"
                         if action == "guide_select":
@@ -455,23 +469,15 @@ class MainWindowControlHintsMixin:
                             else:
                                 select_icon_name = "xbox_start"
 
-                        select_pixmap = QPixmap()
-                        for candidate in (
-                            self.theme_manager.get_theme_image(select_icon_name, self.current_theme_name),
-                            self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
-                        ):
-                            if candidate is not None and select_pixmap.load(str(candidate)):
-                                break
-
-                        if not select_pixmap.isNull():
-                            select_icon.setPixmap(
-                                select_pixmap.scaled(
-                                    26,
-                                    26,
-                                    Qt.AspectRatioMode.KeepAspectRatio,
-                                    Qt.TransformationMode.SmoothTransformation,
-                                )
-                            )
+                        _set_control_hint_icon(
+                            select_icon,
+                            (
+                                self.theme_manager.get_theme_image(select_icon_name, self.current_theme_name),
+                                self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
+                            ),
+                            26,
+                            26,
+                        )
                     else:
                         if isinstance(icon_element, list):
                             logger.warning(
@@ -481,34 +487,15 @@ class MainWindowControlHintsMixin:
                             continue
                         icon_label = icon_element
                         icon_name = self.get_button_icon(action, gtype)
-                        icon_path = self.theme_manager.get_theme_image(icon_name, self.current_theme_name)
-                        pixmap = QPixmap()
-                        if icon_path:
-                            pixmap.load(str(icon_path))
-                        if not pixmap.isNull():
-                            icon_label.setPixmap(
-                                pixmap.scaled(
-                                    26,
-                                    26,
-                                    Qt.AspectRatioMode.KeepAspectRatio,
-                                    Qt.TransformationMode.SmoothTransformation,
-                                )
-                            )
-                        else:
-                            placeholder = self.theme_manager.get_theme_image(
-                                "placeholder",
-                                self.current_theme_name,
-                            )
-                            if placeholder:
-                                pixmap.load(str(placeholder))
-                                icon_label.setPixmap(
-                                    pixmap.scaled(
-                                        26,
-                                        26,
-                                        Qt.AspectRatioMode.KeepAspectRatio,
-                                        Qt.TransformationMode.SmoothTransformation,
-                                    )
-                                )
+                        _set_control_hint_icon(
+                            icon_label,
+                            (
+                                self.theme_manager.get_theme_image(icon_name, self.current_theme_name),
+                                self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
+                            ),
+                            26,
+                            26,
+                        )
                 else:
                     container.setVisible(False)
             else:

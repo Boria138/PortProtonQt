@@ -1375,6 +1375,9 @@ class InputManager(QObject):
                     if isinstance(focused, QCheckBox) and focused.isEnabled():
                         focused.setChecked(not focused.isChecked())
                         return
+                    if isinstance(focused, QPushButton) and focused.isEnabled():
+                        focused.click()
+                        return
                     combo_from_focus = None
                     if isinstance(focused, QComboBox):
                         combo_from_focus = focused
@@ -1602,6 +1605,8 @@ class InputManager(QObject):
                     self._focus_settings_advanced_value_widget(table, new_row)
 
             elif code == PAD_DPAD_X:  # Left/Right
+                if self._move_settings_inline_button_focus(table, value):
+                    return
                 current_col = table.currentColumn()
                 if value < 0:  # Left
                     if current_col > 0:
@@ -1673,7 +1678,37 @@ class InputManager(QObject):
         if isinstance(cell_widget, QLineEdit):
             cell_widget.setFocus(Qt.FocusReason.OtherFocusReason)
             return
+        if (
+            cell_widget is not None
+            and cell_widget.property("ppqt_run_after_exe_widget")
+        ):
+            line_edit = cell_widget.findChild(QLineEdit)
+            if line_edit and line_edit.isEnabled():
+                line_edit.setFocus(Qt.FocusReason.OtherFocusReason)
+                return
         table.setFocus(Qt.FocusReason.OtherFocusReason)
+
+    def _move_settings_inline_button_focus(self, table: QTableWidget, value: int) -> bool:
+        """Move focus between inline line edit and button in settings cell."""
+        if not self.settings_dialog or table != self.settings_dialog.advanced_table:
+            return False
+        if table.currentColumn() != 1:
+            return False
+
+        cell_widget = table.cellWidget(table.currentRow(), 1)
+        if cell_widget is None or not cell_widget.property("ppqt_run_after_exe_widget"):
+            return False
+
+        line_edit = cell_widget.findChild(QLineEdit)
+        button = cell_widget.findChild(QPushButton)
+        focused = QApplication.focusWidget()
+        if value > 0 and focused == line_edit and button and button.isEnabled():
+            button.setFocus(Qt.FocusReason.OtherFocusReason)
+            return True
+        if value < 0 and focused == button and line_edit and line_edit.isEnabled():
+            line_edit.setFocus(Qt.FocusReason.OtherFocusReason)
+            return True
+        return False
 
     def _focus_first_row_in_current_settings_table(self):
         table = self._get_current_settings_table()

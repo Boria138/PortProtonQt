@@ -1,3 +1,4 @@
+import argparse
 import sys
 import os
 import importlib
@@ -36,11 +37,14 @@ from portprotonqt.cli import (
     is_portproton_url,
     parse_portproton_url,
     is_launch_file,
+    is_prefix_backup_file,
     is_exe_file,
     normalize_launch_path,
     add_steam_compat_tool,
     reinstall_steam_compat_tool,
     remove_steam_compat_tool,
+    clear_cache,
+    reset_settings,
     parse_resolution,
 )
 from portprotonqt.localization import _, get_steam_language
@@ -137,6 +141,45 @@ def run_silent_tray(app: QApplication, start_sh: list[str], exe_path: str) -> No
     monitor_timer.start(1000)
 
 
+def restore_prefix_backup(start_sh: list[str], backup_path: str) -> int:
+    """Restore a PortProton prefix backup."""
+    logger = get_logger(__name__)
+    path = normalize_launch_path(backup_path)
+    cmd = start_sh + ["--restore-prefix", path]
+    try:
+        process = subprocess.Popen(
+            cmd,
+            env=os.environ.copy(),
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+        return process.wait()
+    except (OSError, subprocess.SubprocessError) as e:
+        logger.error("Failed to restore prefix backup %s: %s", path, e)
+        return 1
+
+
+def create_prefix_backup(start_sh: list[str], prefix_name: str, backup_dir: str) -> int:
+    """Create a PortProton prefix backup."""
+    logger = get_logger(__name__)
+    path = os.path.abspath(os.path.expanduser(backup_dir))
+    cmd = start_sh + ["--backup-prefix", prefix_name, path]
+    try:
+        process = subprocess.run(cmd, env=os.environ.copy(), check=False)
+    except (OSError, subprocess.SubprocessError) as e:
+        logger.error("Failed to create prefix backup %s: %s", prefix_name, e)
+        return 1
+    return process.returncode
+
+
+def is_restore_prefix_request(args: argparse.Namespace) -> bool:
+    if args.restore_prefix:
+        return bool(args.file_or_url)
+    return bool(args.file_or_url and is_prefix_backup_file(args.file_or_url))
+
+
 def main():
     # Parse args early to check for force-muvm flag
     parsed_args = parse_args()
@@ -156,6 +199,14 @@ def main():
         success = remove_steam_compat_tool()
         sys.exit(0 if success else 1)
 
+    if parsed_args.clear_cache:
+        success = clear_cache()
+        sys.exit(0 if success else 1)
+
+    if parsed_args.reset_settings:
+        success = reset_settings()
+        sys.exit(0 if success else 1)
+
     # Check if running on Apple Silicon/Asahi Linux or if forced to run under muvm, and re-execute under muvm if needed
     should_run_under_muvm = (is_apple_silicon() or parsed_args.force_muvm) and 'PORTPROTONQT_MUVM' not in os.environ
     if should_run_under_muvm:
@@ -169,6 +220,7 @@ def main():
     portproton_location = get_portproton_location()
     if portproton_location:
         os.environ["PORT_DATA_PATH"] = portproton_location
+    ui_config.get_disable_runtime_download()
 
     # Check if running as Steam compatibility tool (STEAM_COMPAT=1).
     is_steam_compat = os.environ.get("STEAM_COMPAT") == "1"
@@ -179,6 +231,20 @@ def main():
 
     if start_sh is None:
         return
+
+    if parsed_args.create_backup:
+        setup_logger(parsed_args.debug_level)
+        prefix_name, backup_dir = parsed_args.create_backup
+        backup_exit_code = create_prefix_backup(start_sh, prefix_name, backup_dir)
+        sys.exit(backup_exit_code)
+
+    if parsed_args.restore_prefix and not parsed_args.file_or_url:
+        setup_logger(parsed_args.debug_level)
+        sys.exit(1)
+    if is_restore_prefix_request(parsed_args):
+        setup_logger(parsed_args.debug_level)
+        restore_exit_code = restore_prefix_backup(start_sh, parsed_args.file_or_url)
+        sys.exit(restore_exit_code)
 
     # Handle Steam compatibility mode - launch game directly without GUI.
     if is_steam_compat:
@@ -246,10 +312,9 @@ def main():
     )
     from portprotonqt.downloader import Downloader
     from portprotonqt.debug_utils import (
-        get_screen_info,
         get_selectable_gpu_entries,
-        get_system_dpi_for_wine,
     )
+    from portprotonqt.qt_utils import get_screen_info, get_system_dpi_for_wine
 
     # --- Single-instance logic ---
     server_name = __app_id__
@@ -424,13 +489,13 @@ def main():
                 portproton_path = get_portproton_location()
 
                 if portproton_path:
-                    screen_resolution, screen_primary = get_screen_info(portproton_path)
+                    screen_resolution, screen_primary = get_screen_info()
 
                     if screen_resolution and '=' in screen_resolution:
                         var_name, var_value = screen_resolution.split('=', 1)
                         if var_value:
                             set_user_conf_setting(var_name, var_value)
-                            wine_dpi_value = get_system_dpi_for_wine(var_value)
+                            wine_dpi_value = get_system_dpi_for_wine()
 
                     if screen_primary and '=' in screen_primary:
                         var_name, var_value = screen_primary.split('=', 1)

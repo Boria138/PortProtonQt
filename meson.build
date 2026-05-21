@@ -84,6 +84,12 @@ install_data(
   install_dir: datadir / 'applications',
 )
 
+# Install MIME type
+install_data(
+  'build-aux/share/mime/packages/ru.linux_gaming.PortProtonQt.xml',
+  install_dir: datadir / 'mime/packages',
+)
+
 # Install icon
 install_data(
   'build-aux/share/icons/hicolor/scalable/apps/ru.linux_gaming.PortProtonQt.svg',

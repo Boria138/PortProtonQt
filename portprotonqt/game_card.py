@@ -148,7 +148,7 @@ class GameCard(QFrame):
         tier_text = "" if self.economy_mode else self.getProtonDBText(protondb_tier)
         if tier_text:
             icon_filename = self.getProtonDBIconFilename(protondb_tier)
-            icon = self.theme_manager.get_icon(icon_filename, self.current_theme_name)
+            icon = self.theme_manager.get_icon(icon_filename, self.current_theme_name, as_path=True)
             self.protondbLabel = ClickableLabel(
                 tier_text,
                 icon=icon,
@@ -161,7 +161,7 @@ class GameCard(QFrame):
             self.protondbLabel = ClickableLabel("", parent=self.coverWidget)
             self.protondbLabel.setVisible(False)
 
-        steam_icon = self.theme_manager.get_icon("badge_steam")
+        steam_icon = self.theme_manager.get_icon("badge_steam", as_path=True)
         self.steamLabel = ClickableLabel(
             "Steam",
             icon=steam_icon,
@@ -174,7 +174,7 @@ class GameCard(QFrame):
         if self.economy_mode:
             self.steamLabel.setVisible(False)
 
-        portproton_icon = self.theme_manager.get_icon("badge_portproton")
+        portproton_icon = self.theme_manager.get_icon("badge_portproton", as_path=True)
         self.portprotonLabel = ClickableLabel(
             "PortProton",
             icon=portproton_icon,
@@ -191,7 +191,7 @@ class GameCard(QFrame):
         anticheat_text = "" if self.economy_mode else self.getAntiCheatText(anticheat_status)
         if anticheat_text:
             icon_filename = self.getAntiCheatIconFilename(anticheat_status)
-            icon = self.theme_manager.get_icon(icon_filename, self.current_theme_name)
+            icon = self.theme_manager.get_icon(icon_filename, self.current_theme_name, as_path=True)
             self.anticheatLabel = ClickableLabel(
                 anticheat_text,
                 icon=icon,
