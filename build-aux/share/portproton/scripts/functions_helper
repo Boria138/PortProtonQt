@@ -1214,7 +1214,7 @@ init_wine_ver () {
             export WINEDIR="${PW_WINE_USE}"
             PW_EXTERNAL_WINE_DIR=1
         else
-            export WINEDIR="${PORT_DATA_PATH}/data/dist/${PW_WINE_USE}"
+            export WINEDIR="${PORT_DATA_PATH}/data/dist/${PW_WINE_USE^^}"
         fi
         if [[ -d "${WINEDIR}/files" && ! -d "${WINEDIR}/dist" ]] ; then
             export WINEDIR="${WINEDIR}/files"
@@ -3855,6 +3855,7 @@ steamplay_launch () {
         export PATH_TO_GAME="$(pwd)"
         export PORTWINE_DB_FILE="${PW_EXE_FILE}.ppdb"
         [[ -f "${PORTWINE_DB_FILE}" ]] && source "${PORTWINE_DB_FILE}"
+        export PW_USE_SUPPLIED_DXVK_VKD3D="1"
 
         steamplay_ld_library_path="${LD_LIBRARY_PATH}:${STEAM_RUNTIME_LIBRARY_PATH}:${PW_PLUGINS_PATH}/portable/lib/lib64:${PW_PLUGINS_PATH}/portable/lib/lib32"
         [[ -d "${HOME}/.local/share/Steam/ubuntu12_32" ]] && steamplay_ld_library_path="${steamplay_ld_library_path}:${HOME}/.local/share/Steam/ubuntu12_32"
@@ -3901,26 +3902,46 @@ steamplay_launch () {
         export VK_ADD_LAYER_PATH="${PW_VK_LAYER_PATH}"
         export VK_INSTANCE_LAYERS="${PW_VK_INSTANCE_LAYERS}"
 
+        [[ $PW_LOG != 1 ]] && debug_timer --start -s "PW_TIME_IN_GAME"
+
+        if [[ "${PW_WINE_USE,,}" != *proton* ]] ; then
+            fatal "Steamplay don\`t work with ${PW_WINE_USE}!"
+        else
+            init_wine_ver
+        fi
+
+        check_proton_runner () {
+            if [[ -x "${STEAM_COMPAT_TOOL_PATHS%%:*}/proton" ]] ; then
+                proton_runner="${STEAM_COMPAT_TOOL_PATHS%%:*}/proton"
+            elif [[ "${PW_WINE_USE:-}" = /* ]] && [[ -x "${PW_WINE_USE}/proton" ]] ; then
+                proton_runner="${PW_WINE_USE}/proton"
+            elif [[ -x "${PORT_DATA_PATH}/data/dist/${PW_WINE_USE^^}/proton" ]] ; then
+                proton_runner="${PORT_DATA_PATH}/data/dist/${PW_WINE_USE^^}/proton"
+                export PW_WINE_USE="${PW_WINE_USE^^}"
+            elif [[ -x "${WINEDIR}/proton" ]] ; then
+                proton_runner="${WINEDIR}/proton"
+            elif [[ -x "${WINEDIR%/files}/proton" ]] ; then
+                proton_runner="${WINEDIR%/files}/proton"
+            else
+                return 1
+            fi
+            return 0
+        }
+
+        if ! check_proton_runner ; then
+            gui_proton_downloader "${PW_WINE_USE}"
+            init_wine_ver
+            if ! check_proton_runner ; then
+                fatal "$PW_WINE_USE not found!"
+            fi
+        fi
+
         # Winetricks
         if [[ -n "${PW_DLL_INSTALL:-}" ]] ; then
             update_winetricks
             PATH="${PATH}:${PW_PLUGINS_PATH}/portable/bin" LD_LIBRARY_PATH="${steamplay_ld_library_path}" \
                 "${PORT_WINE_TMP_PATH}/winetricks" -q ${PW_DLL_INSTALL}
         fi
-
-        [[ $PW_LOG != 1 ]] && debug_timer --start -s "PW_TIME_IN_GAME"
-        if [[ -x "${STEAM_COMPAT_TOOL_PATHS%%:*}/proton" ]] ; then
-            proton_runner="${STEAM_COMPAT_TOOL_PATHS%%:*}/proton"
-        elif [[ "${PW_WINE_USE:-}" = /* ]] && [[ -x "${PW_WINE_USE}/proton" ]] ; then
-            proton_runner="${PW_WINE_USE}/proton"
-        elif [[ -x "${PORT_DATA_PATH}/data/dist/${PW_WINE_USE:-}/proton" ]] ; then
-            proton_runner="${PORT_DATA_PATH}/data/dist/${PW_WINE_USE}/proton"
-        elif [[ -x "${WINEDIR}/proton" ]] ; then
-            proton_runner="${WINEDIR}/proton"
-        elif [[ -x "${WINEDIR%/files}/proton" ]] ; then
-            proton_runner="${WINEDIR%/files}/proton"
-        fi
-        [[ -z "${proton_runner:-}" ]] && fatal "Proton runner not found"
 
         # Virtual Desktop
         if [[ "${PW_VIRTUAL_DESKTOP}" == "1" ]] ; then
@@ -3939,6 +3960,7 @@ steamplay_launch () {
             print_info "Steam Play virtual desktop disabled in registry"
         fi
 
+        print_info "$proton_runner in use."
         ${PW_RUN_GAMESCOPE} \
         env \
         LD_LIBRARY_PATH="${steamplay_ld_library_path}" \
@@ -4031,20 +4053,16 @@ gui_proton_downloader () {
     create_new_dir "${PORT_DATA_PATH}/data/dist"
 
     PW_WINE_USE="$1"
-    if [[ "$PW_WINE_USE" == PROTON_LG ]]
+    if [[ "${PW_WINE_USE^^}" == PROTON_LG ]]
     then PW_WINE_USE="${PW_PROTON_LG_VER}"
-    elif [[ "$PW_WINE_USE" == WINE_*_LG ]] || [[ "$PW_WINE_USE" == WINE_LG ]]
+    elif [[ "${PW_WINE_USE^^}" == WINE_*_LG ]] || [[ "${PW_WINE_USE^^}" == WINE_LG ]]
     then PW_WINE_USE="${PW_WINE_LG_VER}"
     fi
     export PW_WINE_USE
 
     if [[ "${PW_WINE_USE}" = /* ]] && [[ -d "${PW_WINE_USE}" ]] ; then
         return 0
-    fi
-
-    if [[ -f "${PORT_DATA_PATH}/data/dist/${PW_WINE_USE}/bin/wine" ]] \
-    || [[ -f "${PORT_DATA_PATH}/data/dist/${PW_WINE_USE}/files/bin/wine" ]]
-    then
+    elif [[ -d "${PORT_DATA_PATH}/data/dist/${PW_WINE_USE^^}" ]] ; then
         return 0
     fi
 
