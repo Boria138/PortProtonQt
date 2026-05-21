@@ -1294,7 +1294,7 @@ pw_init_runtime () {
         export PW_LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${PW_PLUGINS_PATH}/portable/lib/lib64:${PW_PLUGINS_PATH}/portable/lib/lib32"
         export PW_VK_LAYER_PATH="${PW_PLUGINS_PATH}/portable/share/vulkan/implicit_layer.d"
         if [[ -z "$PW_TERM" ]] ; then
-            export PW_TERM="env LD_LIBRARY_PATH=\"${PW_LD_LIBRARY_PATH}\" ${PW_PLUGINS_PATH}/portable/bin/xterm -bg black -fg white -e"
+            export PW_TERM="env LD_LIBRARY_PATH=\"${PW_LD_LIBRARY_PATH}\" python3 -m portprotonqt.easyterm -e"
         fi
         export pw_runtime="env"
         return 0
@@ -1381,7 +1381,7 @@ ${PW_PV_OVERRIDES}/i386-linux-gnu/aliases:\
     for PWRTMRW in "${PW_RT_MOUNT_RW[@]}" ; do
         export PRESSURE_VESSEL_FILESYSTEMS_RW="${PRESSURE_VESSEL_FILESYSTEMS_RW:+$PRESSURE_VESSEL_FILESYSTEMS_RW:}${PWRTMRW}"
     done
-    export PW_TERM="env LD_LIBRARY_PATH=\"${PW_LD_LIBRARY_PATH}\" ${PW_PLUGINS_PATH}/portable/bin/xterm -bg black -fg white -e"
+    export PW_TERM="env LD_LIBRARY_PATH=\"${PW_LD_LIBRARY_PATH}\" python3 -m portprotonqt.easyterm -e"
 
     print_info "RUNTIME is enabled"
 }
@@ -3723,6 +3723,15 @@ export -f pw_ppd_dbus_has_profile
 }
 
 pw_run () {
+    if [[ "$PW_USE_TERMINAL" == 1 ]] \
+    && [[ "${PRESSURE_VESSEL_TERMINAL:-}" != "tty" ]]
+    then
+        local pw_terminal_command
+        printf -v pw_terminal_command "%q " pw_run "$@"
+        PRESSURE_VESSEL_TERMINAL=tty $PW_TERM "$pw_terminal_command"
+        return $?
+    fi
+
     if [[ -n "${PATH_TO_GAME}" ]] \
     && [[ -d "${PATH_TO_GAME}" ]]
     then
@@ -3775,7 +3784,6 @@ pw_run () {
             "${WINELOADER}" "$@" ${proxy_launch_parameters} &>>"${PW_LOG_FILE}"
         else
             if [[ "$PW_USE_TERMINAL" == 1 ]] ; then
-                PW_ADD_TO_ARGS_IN_RUNTIME="--xterm"
                 pw_init_runtime
             fi
             echo ""

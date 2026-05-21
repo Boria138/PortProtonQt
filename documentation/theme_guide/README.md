@@ -8,6 +8,7 @@
 - [Theme Variants](#-theme-variants)
 - [Style File](#-style-file-stylespy)
 - [Style Inheritance](#-style-inheritance)
+- [Terminal Color Schemes](#-terminal-color-schemes)
 - [Animation configuration](#-animation-configuration)
 - [Metadata](#-metadata-metainfoini)
 - [Screenshots](#-screenshots)
@@ -159,6 +160,56 @@ DETAIL_PAGE_LAYOUT_MODE = "full"
 - `compact`: smaller cover and simplified detail content.
 
 Economy mode also forces the compact detail page layout.
+
+---
+
+## 🖥 Terminal Color Schemes
+
+Terminal color schemes are separate Kitty-style `.conf` files. Built-in schemes are stored in `portprotonqt/terminal_schemes/`. User schemes can be placed in:
+
+```text
+~/.local/share/PortProtonQt/terminal_schemes/
+```
+
+The filename without `.conf` is used as the scheme name. The terminal menu lists all available `.conf` files from the user directory and the built-in directory.
+
+Example:
+
+```conf
+foreground #d4d4d4
+background #1e1e1e
+cursor #bbbbbb
+selection_foreground #ffffff
+selection_background #264f78
+background_opacity 1.0
+cursor_shape block
+enable_audio_bell no
+
+color0 #000000
+color1 #cd3131
+color2 #0dbc79
+color3 #e5e510
+color4 #2472c8
+color5 #bc3fbc
+color6 #11a8cd
+color7 #e5e5e5
+
+font_size 14
+font_family Monospace
+```
+
+Supported terminal-specific options:
+
+- `foreground`, `background`: default text and background colors.
+- `selection_foreground`, `selection_background`: selected text colors.
+- `cursor` or `cursor_color`: cursor color.
+- `cursor_shape`: `block`, `beam`, or `underline`.
+- `enable_audio_bell`: `yes`/`no`, `true`/`false`, `on`/`off`, or `1`/`0`.
+- `background_opacity`: background opacity from `0.0` to `1.0`.
+- `font_size`, `font_family`: terminal font settings.
+- `color0` through `color255`: ANSI palette entries.
+
+If `cursor_shape` is omitted, the terminal uses `beam`. If `enable_audio_bell` is omitted, audio bell is disabled.
 
 ---
 

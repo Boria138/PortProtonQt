@@ -219,6 +219,15 @@ class UIConfig(BaseConfig):
         """Resolve base theme and variant to an installed theme name."""
         return _resolve_theme_name(theme_name, variant)
 
+    def get_terminal_scheme(self) -> str:
+        """Get the current terminal scheme name."""
+        return self._get_str("terminal_scheme", "default")
+
+    def set_terminal_scheme(self, scheme_name: str):
+        """Set the terminal scheme name."""
+        validate_string(scheme_name, "terminal_scheme", min_len=1, max_len=50)
+        self._save_value("terminal_scheme", scheme_name, "str")
+
     def get_time_detail_level(self) -> str:
         """Get time detail level ('detailed' or 'simple')."""
         cp = self._read_config()

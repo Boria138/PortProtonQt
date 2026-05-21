@@ -8,6 +8,7 @@
 - [Варианты темы](#-варианты-темы)
 - [Файл стилей](#-файл-стилей-stylespy)
 - [Наследование стилей](#-наследование-стилей)
+- [Цветовые схемы терминала](#-цветовые-схемы-терминала)
 - [Конфигурация анимации](#-конфигурация-анимации)
 - [Метаинформация](#-метаинформация-metainfoini)
 - [Скриншоты](#-скриншоты)
@@ -159,6 +160,56 @@ DETAIL_PAGE_LAYOUT_MODE = "full"
 - `compact`: уменьшенная обложка и упрощенное содержимое детальной страницы.
 
 Экономный режим также принудительно включает компактное отображение детальной страницы.
+
+---
+
+## 🖥 Цветовые схемы терминала
+
+Цветовые схемы терминала задаются отдельными `.conf` файлами в Kitty-style формате. Встроенные схемы находятся в `portprotonqt/terminal_schemes/`. Пользовательские схемы можно положить в:
+
+```text
+~/.local/share/PortProtonQt/terminal_schemes/
+```
+
+Имя файла без `.conf` используется как имя схемы. Меню терминала показывает все доступные `.conf` файлы из пользовательской и встроенной директорий.
+
+Пример:
+
+```conf
+foreground #d4d4d4
+background #1e1e1e
+cursor #bbbbbb
+selection_foreground #ffffff
+selection_background #264f78
+background_opacity 1.0
+cursor_shape block
+enable_audio_bell no
+
+color0 #000000
+color1 #cd3131
+color2 #0dbc79
+color3 #e5e510
+color4 #2472c8
+color5 #bc3fbc
+color6 #11a8cd
+color7 #e5e5e5
+
+font_size 14
+font_family Monospace
+```
+
+Поддерживаемые параметры терминала:
+
+- `foreground`, `background`: основные цвета текста и фона.
+- `selection_foreground`, `selection_background`: цвета выделенного текста.
+- `cursor` или `cursor_color`: цвет курсора.
+- `cursor_shape`: `block`, `beam` или `underline`.
+- `enable_audio_bell`: `yes`/`no`, `true`/`false`, `on`/`off` или `1`/`0`.
+- `background_opacity`: прозрачность фона от `0.0` до `1.0`.
+- `font_size`, `font_family`: настройки шрифта терминала.
+- `color0` до `color255`: элементы ANSI-палитры.
+
+Если `cursor_shape` не указан, терминал использует `beam`. Если `enable_audio_bell` не указан, звуковой сигнал выключен.
 
 ---
 

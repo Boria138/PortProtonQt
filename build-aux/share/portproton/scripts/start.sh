@@ -205,8 +205,8 @@ fi
 print_info "The first mirror in used: $MIRROR"
 
 if check_gamescope_session
-then PW_TERM="env LANG=C $PW_PLUGINS_PATH/portable/bin/xterm -fullscreen -bg black -fg white -e"
-else PW_TERM="env LANG=C $PW_PLUGINS_PATH/portable/bin/xterm -bg black -fg white -e"
+then PW_TERM="env LANG=C python3 -m portprotonqt.easyterm --fullscreen -e"
+else PW_TERM="env LANG=C python3 -m portprotonqt.easyterm -e"
 fi
 
 pw_cleanup () {
@@ -438,12 +438,7 @@ Usage examples:
         get_wine_and_pfx "$2" "$3"
         start_portproton
         cd "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c" || fatal
-        if [[ $PW_DISABLE_RUNTIME_DOWNLOAD == "1" ]]; then
-            $PW_TERM "pw_run cmd"
-        else
-            export PW_USE_TERMINAL=1
-            pw_run cmd
-        fi
+        PW_USE_TERMINAL=1 pw_run cmd
         stop_portproton
         ;;
     --winereg)
@@ -479,7 +474,7 @@ Usage examples:
         VK_INSTANCE_LAYERS="${PW_VK_INSTANCE_LAYERS}" \
         ${PW_GAMEMODERUN_SLR} \
         ${PW_ADD_VAR_SLR} \
-        ${PW_TERM} bash
+        ${PW_TERM}
         stop_portproton
         ;;
     --initial)

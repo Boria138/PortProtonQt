@@ -8,6 +8,7 @@ install_data(
    'dialogs.py',
    'disc_image_utils.py',
    'downloader.py',
+   'easyterm.py',
 
   'game_card.py',
   'game_library_manager.py',
@@ -143,6 +144,12 @@ install_subdir(
   install_dir: pythondir / meson.project_name(),
   exclude_directories: ['__pycache__'],
   exclude_files: ['*.pyc'],
+)
+
+# Install terminal schemes
+install_subdir(
+  'terminal_schemes',
+  install_dir: pythondir / meson.project_name(),
 )
 
 # Compile and install locales from .po files
