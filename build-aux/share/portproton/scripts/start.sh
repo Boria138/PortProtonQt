@@ -62,6 +62,17 @@ export orig_IFS="$IFS"
 
 unset PW_NO_RESTART_PPDB PW_DISABLED_CREATE_DB
 
+# TODO:
+# Setting IME to fcitx5 to fix input
+# export GTK_IM_MODULE=fcitx5
+# export QT_IM_MODULE=fcitx5
+# export QT5_IM_MODULE=fcitx5
+# export XMODIFIERS=@im=fcitx5
+
+# Setting for emulator
+# export PW_USE_WOW64="1"
+# export DBUS_FATAL_WARNINGS="0"
+
 if [[ ${1,,} == "cli" ]] ; then
     shift
 fi

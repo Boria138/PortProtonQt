@@ -1223,6 +1223,7 @@ init_wine_ver () {
         if [[ "$PW_USE_WOW64" == "1" ]] \
         && [[ -d "${WINEDIR}/bin-wow64" ]]
         then
+            print_warning "wine wow64 mode in use!"
             export WINE="${WINEDIR}/bin-wow64/wine"
             export WINELOADER="${WINEDIR}/bin-wow64/wine"
             export WINESERVER="${WINEDIR}/bin-wow64/wineserver"
