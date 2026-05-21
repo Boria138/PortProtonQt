@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-portproton-prefix-backup">
+    <comment>PortProton prefix backup</comment>
+    <comment xml:lang="ru">Резервная копия префикса PortProton</comment>
+    <glob pattern="*.ppack"/>
+    <sub-class-of type="application/vnd.squashfs"/>
+  </mime-type>
+</mime-info>

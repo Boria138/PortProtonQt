@@ -1,3 +1,4 @@
+import argparse
 import sys
 import os
 import importlib
@@ -36,6 +37,7 @@ from portprotonqt.cli import (
     is_portproton_url,
     parse_portproton_url,
     is_launch_file,
+    is_prefix_backup_file,
     is_exe_file,
     normalize_launch_path,
     add_steam_compat_tool,
@@ -139,6 +141,45 @@ def run_silent_tray(app: QApplication, start_sh: list[str], exe_path: str) -> No
     monitor_timer.start(1000)
 
 
+def restore_prefix_backup(start_sh: list[str], backup_path: str) -> int:
+    """Restore a PortProton prefix backup."""
+    logger = get_logger(__name__)
+    path = normalize_launch_path(backup_path)
+    cmd = start_sh + ["--restore-prefix", path]
+    try:
+        process = subprocess.Popen(
+            cmd,
+            env=os.environ.copy(),
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+        return process.wait()
+    except (OSError, subprocess.SubprocessError) as e:
+        logger.error("Failed to restore prefix backup %s: %s", path, e)
+        return 1
+
+
+def create_prefix_backup(start_sh: list[str], prefix_name: str, backup_dir: str) -> int:
+    """Create a PortProton prefix backup."""
+    logger = get_logger(__name__)
+    path = os.path.abspath(os.path.expanduser(backup_dir))
+    cmd = start_sh + ["--backup-prefix", prefix_name, path]
+    try:
+        process = subprocess.run(cmd, env=os.environ.copy(), check=False)
+    except (OSError, subprocess.SubprocessError) as e:
+        logger.error("Failed to create prefix backup %s: %s", prefix_name, e)
+        return 1
+    return process.returncode
+
+
+def is_restore_prefix_request(args: argparse.Namespace) -> bool:
+    if args.restore_prefix:
+        return bool(args.file_or_url)
+    return bool(args.file_or_url and is_prefix_backup_file(args.file_or_url))
+
+
 def main():
     # Parse args early to check for force-muvm flag
     parsed_args = parse_args()
@@ -190,6 +231,20 @@ def main():
 
     if start_sh is None:
         return
+
+    if parsed_args.create_backup:
+        setup_logger(parsed_args.debug_level)
+        prefix_name, backup_dir = parsed_args.create_backup
+        backup_exit_code = create_prefix_backup(start_sh, prefix_name, backup_dir)
+        sys.exit(backup_exit_code)
+
+    if parsed_args.restore_prefix and not parsed_args.file_or_url:
+        setup_logger(parsed_args.debug_level)
+        sys.exit(1)
+    if is_restore_prefix_request(parsed_args):
+        setup_logger(parsed_args.debug_level)
+        restore_exit_code = restore_prefix_backup(start_sh, parsed_args.file_or_url)
+        sys.exit(restore_exit_code)
 
     # Handle Steam compatibility mode - launch game directly without GUI.
     if is_steam_compat:

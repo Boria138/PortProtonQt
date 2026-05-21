@@ -7,6 +7,7 @@ from pathlib import Path
 from portprotonqt.steam_api import get_steam_home
 
 LAUNCH_FILE_EXTENSIONS = ('.exe', '.iso', '.mdf')
+PREFIX_BACKUP_EXTENSION = '.ppack'
 
 
 def parse_args():
@@ -70,6 +71,17 @@ def parse_args():
         "--silent",
         action="store_true",
         help="Launch .exe file in tray without showing the main window"
+    )
+    parser.add_argument(
+        "--restore-prefix",
+        action="store_true",
+        help="Restore prefix from .ppack backup"
+    )
+    parser.add_argument(
+        "--create-backup",
+        nargs=2,
+        metavar=("PREFIX", "BACKUP_DIR"),
+        help="Create prefix backup"
     )
     # Add positional argument to accept launch files or portproton:// URLs
     parser.add_argument(
@@ -339,6 +351,12 @@ def is_launch_file(path: str) -> bool:
     """Check if the given path is a supported launch file."""
     normalized_path = normalize_launch_path(path)
     return normalized_path.lower().endswith(LAUNCH_FILE_EXTENSIONS) and os.path.isfile(normalized_path)
+
+
+def is_prefix_backup_file(path: str) -> bool:
+    """Check if the given path is a PortProton prefix backup."""
+    normalized_path = normalize_launch_path(path)
+    return normalized_path.lower().endswith(PREFIX_BACKUP_EXTENSION) and os.path.isfile(normalized_path)
 
 
 def parse_portproton_url(url: str) -> str | None:
