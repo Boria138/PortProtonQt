@@ -508,7 +508,7 @@ class MangoHudSettingsMixin:
         actions_layout.addWidget(self.mangohud_user_conf_button, 0, 1)
 
         preset_buttons = [
-            (_("PortProton default"), self.apply_portproton_default_mangohud),
+            ("PortProton", self.apply_portproton_default_mangohud),
             (_("FPS only"), lambda: self.apply_mangohud_button_preset('fps_only')),
             (_("Compact"), lambda: self.apply_mangohud_button_preset('compact')),
             (_("Extended"), lambda: self.apply_mangohud_button_preset('extended')),
