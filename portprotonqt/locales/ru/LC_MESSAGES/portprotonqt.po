@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-03-22 13:50+0500\n"
-"PO-Revision-Date: 2026-05-21 10:44+0000\n"
+"PO-Revision-Date: 2026-05-22 07:12+0000\n"
 "Last-Translator: Boria138 <boria138@noreply.codeberg.org>\n"
 "Language-Team: Russian <https://translate.codeberg.org/projects/portprotonqt/"
 "portprotonqt/ru/>\n"
@@ -272,7 +272,7 @@ msgid "Select All"
 msgstr "Выбрать всё"
 
 msgid "Terminal Color Scheme"
-msgstr ""
+msgstr "Цветовая схема"
 
 msgid "Supported"
 msgstr "Поддерживается"
@@ -562,9 +562,8 @@ msgstr "Скачивать Proton в Steam"
 msgid "Economy mode"
 msgstr "Экономный режим"
 
-#, fuzzy
 msgid "Download mirror:"
-msgstr "Скачивание: "
+msgstr "Зеркало для скачивания:"
 
 msgid "Force system DPI for Wine"
 msgstr "Принудительно установить системный DPI для Wine"
@@ -1377,9 +1376,8 @@ msgid ""
 msgstr ""
 "Вы уверены, что хотите сбросить настройки? Это действие нельзя отменить."
 
-#, fuzzy
 msgid "Failed to remove PPDB file:\n"
-msgstr "Не удалось открыть файл PPDB:\n"
+msgstr "Не удалось удалить файл PPDB:\n"
 
 msgid "PPDB settings cleared."
 msgstr "Настройки PPDB сброшенны"
