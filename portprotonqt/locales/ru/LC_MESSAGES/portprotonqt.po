@@ -271,6 +271,9 @@ msgstr "Удалить"
 msgid "Select All"
 msgstr "Выбрать всё"
 
+msgid "Terminal Color Scheme"
+msgstr ""
+
 msgid "Supported"
 msgstr "Поддерживается"
 
@@ -559,6 +562,10 @@ msgstr "Скачивать Proton в Steam"
 msgid "Economy mode"
 msgstr "Экономный режим"
 
+#, fuzzy
+msgid "Download mirror:"
+msgstr "Скачивание: "
+
 msgid "Force system DPI for Wine"
 msgstr "Принудительно установить системный DPI для Wine"
 
@@ -827,9 +834,6 @@ msgstr ""
 
 msgid "Use container launch mode (recommended default)"
 msgstr "Использовать режим запуска в контейнере (рекомендуемый по умолчанию)"
-
-msgid "System WINE"
-msgstr "Системный WINE"
 
 msgid "Wine Version"
 msgstr "Версия Wine"
@@ -1323,6 +1327,9 @@ msgstr "Операция отменена"
 msgid "Download or extraction has been cancelled."
 msgstr "Скачивание или распаковка успешно отменена."
 
+msgid "System WINE"
+msgstr "Системный WINE"
+
 msgid "Exe Settings"
 msgstr "Настройки EXE"
 
@@ -1365,13 +1372,10 @@ msgstr "Информация"
 msgid "Confirm PPDB Clear"
 msgstr "Подтвердите очистку PPDB"
 
-#, fuzzy
 msgid ""
-"Are you sure you want to clear PPDB settings? This action cannot be "
-"undone."
+"Are you sure you want to clear settings? This action cannot be undone."
 msgstr ""
-"Вы уверены, что хотите сбросить все настройки? Это действие нельзя "
-"отменить."
+"Вы уверены, что хотите сбросить настройки? Это действие нельзя отменить."
 
 #, fuzzy
 msgid "Failed to remove PPDB file:\n"

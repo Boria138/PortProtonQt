@@ -1328,7 +1328,7 @@ class TerminalWidget(QPlainTextEdit):
         icon = self.theme_manager.get_icon("theme")
         if not isinstance(icon, QIcon):
             icon = QIcon()
-        scheme_menu = menu.addMenu(icon, _("Terminal Scheme"))
+        scheme_menu = menu.addMenu(icon, _("Terminal Color Scheme"))
         self._populate_scheme_menu(scheme_menu)
 
         menu.exec(event.globalPos())

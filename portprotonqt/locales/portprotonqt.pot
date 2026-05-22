@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-05-21 15:40+0500\n"
+"POT-Creation-Date: 2026-05-22 12:10+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -256,6 +256,9 @@ msgid "Delete"
 msgstr ""
 
 msgid "Select All"
+msgstr ""
+
+msgid "Terminal Color Scheme"
 msgstr ""
 
 msgid "Supported"
@@ -544,6 +547,9 @@ msgstr ""
 msgid "Economy mode"
 msgstr ""
 
+msgid "Download mirror:"
+msgstr ""
+
 msgid "Force system DPI for Wine"
 msgstr ""
 
@@ -803,9 +809,6 @@ msgid ""
 msgstr ""
 
 msgid "Use container launch mode (recommended default)"
-msgstr ""
-
-msgid "System WINE"
 msgstr ""
 
 msgid "Wine Version"
@@ -1247,6 +1250,9 @@ msgstr ""
 msgid "Download or extraction has been cancelled."
 msgstr ""
 
+msgid "System WINE"
+msgstr ""
+
 msgid "Exe Settings"
 msgstr ""
 
@@ -1289,9 +1295,7 @@ msgstr ""
 msgid "Confirm PPDB Clear"
 msgstr ""
 
-msgid ""
-"Are you sure you want to clear PPDB settings? This action cannot be "
-"undone."
+msgid "Are you sure you want to clear settings? This action cannot be undone."
 msgstr ""
 
 msgid "Failed to remove PPDB file:\n"

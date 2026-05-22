@@ -259,6 +259,9 @@ msgstr ""
 msgid "Select All"
 msgstr ""
 
+msgid "Terminal Color Scheme"
+msgstr ""
+
 msgid "Supported"
 msgstr ""
 
@@ -545,6 +548,9 @@ msgstr ""
 msgid "Economy mode"
 msgstr ""
 
+msgid "Download mirror:"
+msgstr ""
+
 msgid "Force system DPI for Wine"
 msgstr ""
 
@@ -804,9 +810,6 @@ msgid ""
 msgstr ""
 
 msgid "Use container launch mode (recommended default)"
-msgstr ""
-
-msgid "System WINE"
 msgstr ""
 
 msgid "Wine Version"
@@ -1248,6 +1251,9 @@ msgstr ""
 msgid "Download or extraction has been cancelled."
 msgstr ""
 
+msgid "System WINE"
+msgstr ""
+
 msgid "Exe Settings"
 msgstr ""
 
@@ -1291,8 +1297,7 @@ msgid "Confirm PPDB Clear"
 msgstr ""
 
 msgid ""
-"Are you sure you want to clear PPDB settings? This action cannot be "
-"undone."
+"Are you sure you want to clear settings? This action cannot be undone."
 msgstr ""
 
 msgid "Failed to remove PPDB file:\n"
@@ -2132,4 +2137,3 @@ msgstr ""
 
 msgid "Not selected"
 msgstr ""
-

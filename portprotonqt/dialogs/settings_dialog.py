@@ -538,7 +538,7 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
         msg_box = QMessageBox(self)
         msg_box.setIcon(QMessageBox.Icon.Question)
         msg_box.setWindowTitle(_("Confirm PPDB Clear"))
-        msg_box.setText(_("Are you sure you want to clear PPDB settings? This action cannot be undone."))
+        msg_box.setText(_("Are you sure you want to clear settings? This action cannot be undone."))
         msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         msg_box.setDefaultButton(QMessageBox.StandardButton.No)
         msg_box.setButtonText(QMessageBox.StandardButton.Yes, _("Yes"))
