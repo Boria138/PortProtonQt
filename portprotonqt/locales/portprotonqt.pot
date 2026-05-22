@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-05-22 12:10+0500\n"
+"POT-Creation-Date: 2026-05-22 18:01+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -289,9 +289,6 @@ msgid "Bronze"
 msgstr ""
 
 msgid "Pending"
-msgstr ""
-
-msgid "Launched"
 msgstr ""
 
 msgid "Unknown Game"
@@ -1113,6 +1110,9 @@ msgstr ""
 msgid "Select"
 msgstr ""
 
+msgid "Home"
+msgstr ""
+
 msgid "Path: "
 msgstr ""
 
@@ -1904,9 +1904,6 @@ msgstr ""
 msgid "Use system config"
 msgstr ""
 
-msgid "PortProton default"
-msgstr ""
-
 msgid "FPS only"
 msgstr ""
 
@@ -1979,6 +1976,9 @@ msgid "Installation failed. Check logs."
 msgstr ""
 
 msgid "Components installed successfully."
+msgstr ""
+
+msgid "Launched"
 msgstr ""
 
 msgid "Bluetooth PIN code"

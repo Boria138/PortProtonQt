@@ -304,9 +304,6 @@ msgstr "Бронза"
 msgid "Pending"
 msgstr "В ожидании"
 
-msgid "Launched"
-msgstr "Запуск"
-
 msgid "Unknown Game"
 msgstr "Неизвестная игра"
 
@@ -1182,6 +1179,10 @@ msgstr "Очистить выбранное"
 msgid "Select"
 msgstr "Выбрать"
 
+#, fuzzy
+msgid "Home"
+msgstr "Громкость"
+
 msgid "Path: "
 msgstr "Путь: "
 
@@ -1992,9 +1993,6 @@ msgstr "Включить MangoHud"
 msgid "Use system config"
 msgstr "Использовать системный конфиг"
 
-msgid "PortProton default"
-msgstr "Стандартный PortProton"
-
 msgid "FPS only"
 msgstr "Только FPS"
 
@@ -2070,6 +2068,9 @@ msgstr "Установка не удалась. Проверьте журнал�
 
 msgid "Components installed successfully."
 msgstr "Компоненты успешно установлены."
+
+msgid "Launched"
+msgstr "Запуск"
 
 msgid "Bluetooth PIN code"
 msgstr "ПИН-код Bluetooth"

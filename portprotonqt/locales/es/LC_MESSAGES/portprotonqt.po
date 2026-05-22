@@ -296,9 +296,6 @@ msgstr ""
 msgid "Pending"
 msgstr ""
 
-msgid "Launched"
-msgstr ""
-
 msgid "Unknown Game"
 msgstr ""
 
@@ -1115,6 +1112,9 @@ msgstr ""
 msgid "Select"
 msgstr ""
 
+msgid "Home"
+msgstr ""
+
 msgid "Path: "
 msgstr ""
 
@@ -1911,9 +1911,6 @@ msgstr ""
 msgid "Use system config"
 msgstr ""
 
-msgid "PortProton default"
-msgstr ""
-
 msgid "FPS only"
 msgstr ""
 
@@ -1986,6 +1983,9 @@ msgid "Installation failed. Check logs."
 msgstr ""
 
 msgid "Components installed successfully."
+msgstr ""
+
+msgid "Launched"
 msgstr ""
 
 msgid "Bluetooth PIN code"
