@@ -3,32 +3,14 @@
   "extends": [
     "config:best-practices"
   ],
-  "timezone": "Asia/Qyzylorda",
-  "schedule": [
-    "after 11pm",
-    "before 5am"
-  ],
   "rebaseWhen": "never",
-  "prConcurrentLimit": 1,
-  "prHourlyLimit": 1,
   "fetchChangeLogs": "off",
   "lockFileMaintenance": {
-    "enabled": true,
-    "schedule": [
-      "before 4am on monday"
-    ]
+    "enabled": true
   },
   "pre-commit": {
     "enabled": false
   },
-  "hostRules": [
-    {
-      "description": "Gitea host with reduced API pressure",
-      "matchHost": "git.linux-gaming.ru",
-      "hostType": "gitea",
-      "maxRequestsPerSecond": 1
-    }
-  ],
   "packageRules": [
     {
       "description": "Update Renovate image only weekly",
@@ -47,13 +29,6 @@
       "matchFileNames": [
         ".gitea/workflows/build.yml",
         ".gitea/workflows/build-vk-gpu-info-debian.yml"
-      ],
-      "enabled": false
-    },
-    {
-      "description": "Do not update .python-version",
-      "matchFileNames": [
-        ".python-version"
       ],
       "enabled": false
     },
@@ -82,7 +57,7 @@
       "enabled": false
     },
     {
-      "description": "Prevent unsupported runner/python-version updates",
+      "description": "Prevent unsupported runner and Python version updates",
       "matchDatasources": [
         "github-runners",
         "python-version"
