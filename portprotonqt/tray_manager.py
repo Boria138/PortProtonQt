@@ -3,7 +3,6 @@ import subprocess
 import signal
 import psutil
 import os
-import shutil
 from PySide6.QtWidgets import QSystemTrayIcon, QMenu, QApplication, QMessageBox
 from PySide6.QtGui import QIcon, QAction
 from portprotonqt.logger import get_logger
@@ -275,11 +274,11 @@ class TrayManager:
         try:
             ui_config.set_theme(theme_name)
             logger.info(f"Saved theme {theme_name}, restarting application to apply changes")
-            restart_application_with_muvm()
+            restart_application_process()
         except Exception as e:
             logger.error(f"Failed to switch theme to {theme_name}: {e}")
             ui_config.set_theme("standart")
-            restart_application_with_muvm()
+            restart_application_process()
 
     def force_exit(self):
         self.main_window.close()
@@ -291,21 +290,8 @@ class TrayManager:
             self.tray_icon.deleteLater()
 
 
-def restart_application_with_muvm():
-    """
-    Universal application restart function with muvm support.
-    Checks if app was launched under muvm, and if so,
-    restarts with the same context.
-    """
-    if 'PORTPROTONQT_MUVM' in os.environ:
-        muvm_path = shutil.which('muvm')
-        if muvm_path:
-            env = os.environ.copy()
-            args = [muvm_path, "-i", "-e", "PORTPROTONQT_MUVM=1", sys.executable] + sys.argv[1:]
-            QApplication.quit()
-            subprocess.Popen(args, env=env)
-            return
-
+def restart_application_process():
+    """Restart the application with the current Python executable."""
     executable = sys.executable
     args = sys.argv
     QApplication.quit()

@@ -33,11 +33,6 @@ def parse_args():
         help="Set logging level (ALL for all messages, default: NOTSET)"
     )
     parser.add_argument(
-        "--force-muvm",
-        action="store_true",
-        help="Force running the application under muvm even if not on Apple Silicon"
-    )
-    parser.add_argument(
         "--add-steam-compat-tool",
         action="store_true",
         help="Add PortProtonQt as a Steam compatibility tool if not already installed"

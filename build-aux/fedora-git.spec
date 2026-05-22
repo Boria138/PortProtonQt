@@ -74,10 +74,6 @@ Recommends:     upower
 Recommends:     pulseaudio-utils
 Recommends:     python3-qrcode
 
-%ifarch aarch64
-Requires:       muvm
-%endif
-
 %description
 A modern and intuitive interface for managing and launching games from PortProton and Steam. Combines libraries in one place and simplifies running Windows games on Linux.
 

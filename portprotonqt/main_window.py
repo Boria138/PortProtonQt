@@ -48,7 +48,7 @@ from portprotonqt.config import (
 )
 from portprotonqt.cli import add_steam_compat_tool, remove_steam_compat_tool, is_steam_compat_tool_installed
 
-from portprotonqt.tray_manager import restart_application_with_muvm
+from portprotonqt.tray_manager import restart_application_process
 from portprotonqt.version_utils import prefix_sort_key, version_sort_key
 from portprotonqt.localization import _, get_metadata_language, read_metadata_translations
 from portprotonqt.downloader import Downloader
@@ -3047,7 +3047,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         """Restart application."""
         if not self.isFullScreen():
             window_config.set_geometry(self.width(), self.height())
-        restart_application_with_muvm()
+        restart_application_process()
 
     def restore_state(self):
         """Restore application state after restart."""

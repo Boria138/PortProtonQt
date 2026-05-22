@@ -3,7 +3,6 @@ import sys
 import os
 import importlib
 import subprocess
-import shutil
 from logging import Logger
 
 __app_id__ = "ru.linux_gaming.PortProtonQt"
@@ -61,24 +60,6 @@ def get_version():
         return f"{__app_version__} ({commit})"
     except (subprocess.CalledProcessError, FileNotFoundError, OSError):
         return __app_version__
-
-
-def is_apple_silicon():
-    path = "/proc/device-tree/compatible"
-
-    if not os.path.exists(path):
-        return False
-
-    try:
-        with open(path, "rb") as f:
-            dtcompat = f.read().decode('utf-8', errors='ignore')
-
-            if "apple,arm-platform" in dtcompat:
-                return True
-            else:
-                return False
-    except OSError:
-        return False
 
 
 def stop_portproton_game(start_sh: list[str], logger: Logger) -> None:
@@ -181,7 +162,6 @@ def is_restore_prefix_request(args: argparse.Namespace) -> bool:
 
 
 def main():
-    # Parse args early to check for force-muvm flag
     parsed_args = parse_args()
 
     # Handle --reinstall-steam-compat-tool flag
@@ -206,15 +186,6 @@ def main():
     if parsed_args.reset_settings:
         success = reset_settings()
         sys.exit(0 if success else 1)
-
-    # Check if running on Apple Silicon/Asahi Linux or if forced to run under muvm, and re-execute under muvm if needed
-    should_run_under_muvm = (is_apple_silicon() or parsed_args.force_muvm) and 'PORTPROTONQT_MUVM' not in os.environ
-    if should_run_under_muvm:
-        muvm_path = shutil.which('muvm')
-        if muvm_path:
-            env = os.environ.copy()
-            args_list = [muvm_path, "-i", "-e", "PORTPROTONQT_MUVM=1", sys.executable, os.path.abspath(__file__)]
-            os.execvpe(muvm_path, args_list + sys.argv[1:], env)
 
     os.environ["FULL_LN"] = get_steam_language()
     portproton_location = get_portproton_location()
