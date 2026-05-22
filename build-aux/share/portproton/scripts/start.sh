@@ -269,6 +269,7 @@ case "$1" in
 --winecmd                                           Open wine command prompt, requires WINE version and prefix name
 --winereg                                           Open wine registry editor, requires WINE version and prefix name
 --wine_uninstaller                                  Open wine uninstaller, requires WINE version and prefix name
+--term                                              Open container terminal
 --clear_pfx                                         Clear specified prefix, requires WINE version and prefix name
 --mangohud-preview                                  Starts MangoHud preview in vkcube (optional argument: inline MangoHud config)
 --initial                                           Initial setup command
@@ -463,7 +464,7 @@ Usage examples:
         pw_mangohud_preview "${2:-}"
         exit $?
         ;;
-    --xterm)
+    --term)
         cd "$HOME" || :
         unset PW_SANDBOX_HOME_PATH
         pw_init_runtime
