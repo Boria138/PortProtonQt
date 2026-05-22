@@ -799,6 +799,11 @@ PortProtonQt/
 | Requests | HTTP | Apache-2.0 |
 | Pillow | Image handling | MIT |
 
+### Compatibility
+
+- Keep `dbus-fast` 2.x compatibility for Fedora
+- Do not use `dbus_fast.annotations` or `DBusSignature`
+
 **License compatibility:**
 - MIT, Apache-2.0, BSD: Compatible
 - LGPL: Requires dynamic linking

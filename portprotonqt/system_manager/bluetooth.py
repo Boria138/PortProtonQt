@@ -1,15 +1,15 @@
 """Bluetooth manager worker and service."""
 
+from collections.abc import Callable
 import re
 import threading
 import time
 from pathlib import Path
-from typing import Annotated
+from typing import Any
 
 from PySide6.QtCore import QThread, Signal
 
 from dbus_fast import DBusError
-from dbus_fast.annotations import DBusSignature
 from dbus_fast.service import ServiceInterface, method
 
 from portprotonqt.localization import _
@@ -37,6 +37,14 @@ BLUEZ_AGENT_MANAGER_PATH = "/org/bluez"
 BLUEZ_AGENT_PATH = "/org/portprotonqt/BluetoothAgent"
 
 
+def dbus_method(annotations: dict[str, str]) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+        func.__annotations__ = annotations
+        return method()(func)
+
+    return decorator
+
+
 class BluezPairingAgent(ServiceInterface):
     """BlueZ Agent1 implementation for interactive pairing."""
 
@@ -44,11 +52,11 @@ class BluezPairingAgent(ServiceInterface):
         super().__init__(BLUEZ_AGENT_INTERFACE)
         self._service = service
 
-    @method()
+    @dbus_method({"device": "o", "return": "s"})
     def RequestPinCode(
         self,
-        device: Annotated[str, DBusSignature("o")],
-    ) -> Annotated[str, DBusSignature("s")]:
+        device: str,
+    ) -> str:
         response = self._service._request_pairing_input(
             _("Bluetooth PIN code"),
             _("Enter the Bluetooth PIN code shown on the device"),
@@ -58,19 +66,19 @@ class BluezPairingAgent(ServiceInterface):
             raise DBusError("org.bluez.Error.Rejected", "Bluetooth PIN entry cancelled")
         return response
 
-    @method()
+    @dbus_method({"_device": "o", "_pincode": "s"})
     def DisplayPinCode(
         self,
-        _device: Annotated[str, DBusSignature("o")],
-        _pincode: Annotated[str, DBusSignature("s")],
+        _device: str,
+        _pincode: str,
     ) -> None:
         return None
 
-    @method()
+    @dbus_method({"device": "o", "return": "u"})
     def RequestPasskey(
         self,
-        device: Annotated[str, DBusSignature("o")],
-    ) -> Annotated[int, DBusSignature("u")]:
+        device: str,
+    ) -> int:
         response = self._service._request_pairing_input(
             _("Bluetooth passkey"),
             _("Enter the Bluetooth passkey shown on the device"),
@@ -80,55 +88,41 @@ class BluezPairingAgent(ServiceInterface):
             raise DBusError("org.bluez.Error.Rejected", "Bluetooth passkey entry cancelled")
         return int(response)
 
-    @method()
+    @dbus_method({"_device": "o", "_passkey": "u", "_entered": "q"})
     def DisplayPasskey(
         self,
-        _device: Annotated[str, DBusSignature("o")],
-        _passkey: Annotated[int, DBusSignature("u")],
-        _entered: Annotated[int, DBusSignature("q")],
+        _device: str,
+        _passkey: int,
+        _entered: int,
     ) -> None:
         return None
 
-    @method()
+    @dbus_method({"device": "o", "passkey": "u"})
     def RequestConfirmation(
         self,
-        device: Annotated[str, DBusSignature("o")],
-        passkey: Annotated[int, DBusSignature("u")],
+        device: str,
+        passkey: int,
     ) -> None:
         message = _("Confirm the passkey on devices: {0}").format(f"{int(passkey):06d}")
         approved = self._service._request_pairing_confirm(message, str(device))
         if not approved:
             raise DBusError("org.bluez.Error.Rejected", "Bluetooth pairing confirmation rejected")
 
-    @method()
-    def RequestAuthorization(self, _device: Annotated[str, DBusSignature("o")]) -> None:
+    @dbus_method({"_device": "o"})
+    def RequestAuthorization(self, _device: str) -> None:
         return None
 
-    @method()
+    @dbus_method({"_device": "o", "_uuid": "s"})
     def AuthorizeService(
         self,
-        _device: Annotated[str, DBusSignature("o")],
-        _uuid: Annotated[str, DBusSignature("s")],
+        _device: str,
+        _uuid: str,
     ) -> None:
         return None
 
     @method()
     def Cancel(self) -> None:
         return None
-
-
-BluezPairingAgent.RequestPinCode.__annotations__ = {"device": "o", "return": "s"}
-BluezPairingAgent.DisplayPinCode.__annotations__ = {"_device": "o", "_pincode": "s"}
-BluezPairingAgent.RequestPasskey.__annotations__ = {"device": "o", "return": "u"}
-BluezPairingAgent.DisplayPasskey.__annotations__ = {
-    "_device": "o",
-    "_passkey": "u",
-    "_entered": "q",
-}
-BluezPairingAgent.RequestConfirmation.__annotations__ = {"device": "o", "passkey": "u"}
-BluezPairingAgent.RequestAuthorization.__annotations__ = {"_device": "o"}
-BluezPairingAgent.AuthorizeService.__annotations__ = {"_device": "o", "_uuid": "s"}
-BluezPairingAgent.Cancel.__annotations__ = {}
 
 
 class BluetoothManagerWorker(QThread):
