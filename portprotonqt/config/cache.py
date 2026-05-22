@@ -11,6 +11,7 @@ from portprotonqt.config.base import BaseConfig, CACHE_DIR
 from portprotonqt.logger import get_logger
 
 logger = get_logger(__name__)
+_CACHE_FILE_LOCK = threading.RLock()
 
 
 class CacheConfig(BaseConfig):
@@ -88,10 +89,17 @@ class CacheManager:
         """
         cache_file = self._get_cache_file_path(name)
         try:
-            if cache_file.exists():
-                with open(cache_file, "rb") as f:
-                    return orjson.loads(f.read())
-        except (OSError, orjson.JSONDecodeError) as e:
+            with _CACHE_FILE_LOCK:
+                if cache_file.exists():
+                    with open(cache_file, "rb") as f:
+                        return orjson.loads(f.read())
+        except orjson.JSONDecodeError as e:
+            logger.warning("Failed to load cache %s: %s", cache_file, e)
+            try:
+                cache_file.unlink()
+            except OSError as unlink_error:
+                logger.debug("Failed to remove invalid cache %s: %s", cache_file, unlink_error)
+        except OSError as e:
             logger.warning("Failed to load cache %s: %s", cache_file, e)
         return None
 
@@ -107,15 +115,23 @@ class CacheManager:
             True if saved successfully, False otherwise.
         """
         cache_file = self._get_cache_file_path(name)
+        temp_file = cache_file.with_name(f".{cache_file.name}.{time.time_ns()}.tmp")
         try:
-            with open(cache_file, "wb") as f:
-                if pretty:
-                    f.write(json.dumps(data, indent=2).encode("utf-8"))
-                else:
-                    f.write(orjson.dumps(data))
+            if pretty:
+                content = json.dumps(data, indent=2).encode("utf-8")
+            else:
+                content = orjson.dumps(data)
+            with _CACHE_FILE_LOCK:
+                with open(temp_file, "wb") as f:
+                    f.write(content)
+                temp_file.replace(cache_file)
             return True
         except (OSError, TypeError) as e:
             logger.warning("Failed to save cache %s: %s", cache_file, e)
+            try:
+                temp_file.unlink()
+            except OSError:
+                pass
             return False
 
     def load_text(self, name: str) -> str | None:
