@@ -71,6 +71,7 @@
 - Xterm заменён на самописный терминал с улучшенной интеграцией с winecmd
 - `PROTON_LG` обновлён до версии `10-30`
 - Удалена поддержка запуска через `muvm` и аргумент командной строки `--force-muvm`
+- Обновлён испанский перевод `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/es/`
 
 ### Fixed
 - Исправлено определение `PW_USE_RUNTIME` в debug-логе
@@ -99,6 +100,7 @@
 - @Dervart
 - @Castro-Fidel
 - @Simple16
+- @gallegonovato
 
 ---
 
