@@ -72,7 +72,8 @@
 - Xterm заменён на самописный терминал с улучшенной интеграцией с winecmd
 - `PROTON_LG` обновлён до версии `10-30`
 - Удалена поддержка запуска через `muvm` и аргумент командной строки `--force-muvm`
-- Обновлён испанский перевод `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/es/`
+- Начат испанский перевод `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/es/`
+- Добавлен перевод на Китайский (упрощённый) `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/zh_Hans/`
 - Пресет MangoHud `Стандартный PortProton` переименован в `PortProton`
 
 ### Fixed
@@ -103,6 +104,7 @@
 - @Castro-Fidel
 - @Simple16
 - @gallegonovato
+- @Poesty Li
 
 ---
 
