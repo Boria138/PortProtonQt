@@ -87,6 +87,12 @@ msgstr ""
 "Вы уверены, что хотите удалить папку '{folder_name}'? Это действие нельзя "
 "отменить."
 
+msgid "Yes"
+msgstr "Да"
+
+msgid "No"
+msgstr "Нет"
+
 #, python-brace-format
 msgid "Failed to delete folder: {error}"
 msgstr "Не удалось удалить папку: {error}"
@@ -148,12 +154,6 @@ msgid ""
 msgstr ""
 "Вы уверены, что хотите удалить '{game_name}'? Это приведёт к удалению "
 "файла .desktop и пользовательских данных."
-
-msgid "Yes"
-msgstr "Да"
-
-msgid "No"
-msgstr "Нет"
 
 #, python-brace-format
 msgid "Failed to delete .desktop file: {error}"
@@ -270,9 +270,6 @@ msgstr "Удалить"
 
 msgid "Select All"
 msgstr "Выбрать всё"
-
-msgid "Terminal Color Scheme"
-msgstr "Цветовая схема"
 
 msgid "Supported"
 msgstr "Поддерживается"
@@ -411,6 +408,9 @@ msgstr "Командная строка"
 
 msgid "Uninstaller"
 msgstr "Удаление программ"
+
+msgid "Container Terminal"
+msgstr ""
 
 msgid "Create Prefix Backup"
 msgstr "Создать резервную копию префикса"

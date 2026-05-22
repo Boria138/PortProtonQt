@@ -82,6 +82,12 @@ msgid ""
 "cannot be undone."
 msgstr ""
 
+msgid "Yes"
+msgstr ""
+
+msgid "No"
+msgstr ""
+
 #, python-brace-format
 msgid "Failed to delete folder: {error}"
 msgstr ""
@@ -139,12 +145,6 @@ msgstr ""
 msgid ""
 "Are you sure you want to delete '{game_name}'? This will remove the "
 ".desktop file and custom data."
-msgstr ""
-
-msgid "Yes"
-msgstr ""
-
-msgid "No"
 msgstr ""
 
 #, python-brace-format
@@ -257,9 +257,6 @@ msgid "Delete"
 msgstr ""
 
 msgid "Select All"
-msgstr ""
-
-msgid "Terminal Color Scheme"
 msgstr ""
 
 msgid "Supported"
@@ -396,6 +393,9 @@ msgid "Command Prompt"
 msgstr ""
 
 msgid "Uninstaller"
+msgstr ""
+
+msgid "Container Terminal"
 msgstr ""
 
 msgid "Create Prefix Backup"
