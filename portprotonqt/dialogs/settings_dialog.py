@@ -4,6 +4,7 @@ import os
 import re
 import shutil
 import subprocess
+from pathlib import Path
 from typing import cast, TYPE_CHECKING
 
 from PySide6.QtCore import Qt, QObject, QEvent, QProcess, QTimer, QUrl
@@ -155,9 +156,17 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
                     if version not in self.dist_options:
                         self.dist_options.append(version)
             from portprotonqt.steam_api import get_steam_proton_versions
+            from portprotonqt.steam_api.utils import _is_steam_proton_dir
             for version in get_steam_proton_versions():
                 if version not in self.dist_options:
                     self.dist_options.append(version)
+            if self.game_source == "steam":
+                self.dist_options = [
+                    version for version in self.dist_options
+                    if _is_steam_proton_dir(
+                        Path(version) if os.path.isabs(version) else Path(dist_dir, version)
+                    )
+                ]
             self.dist_options.sort(key=version_sort_key)
             prefixes_dir = os.path.join(self.portproton_path, 'prefixes')
             if os.path.exists(prefixes_dir):
@@ -167,7 +176,7 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
                     key=prefix_sort_key
                 )
 
-        if shutil.which('wine'):
+        if self.game_source != "steam" and shutil.which('wine'):
             if _('System WINE') not in self.dist_options:
                 self.dist_options.append(_('System WINE'))
 
@@ -478,7 +487,12 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
         if current_wine_version in self.lg_dist_aliases:
             self.current_settings['PW_WINE_USE'] = self.lg_dist_aliases[current_wine_version]
             current_wine_version = self.current_settings['PW_WINE_USE']
-        if current_wine_version and current_wine_version not in self.dist_options:
+        if (
+            current_wine_version
+            and current_wine_version not in self.dist_options
+            and self.game_source != "steam"
+            and current_wine_version != 'USE_SYSTEM_WINE'
+        ):
             self.dist_options.append(current_wine_version)
 
         self.original_values = self.current_settings.copy()

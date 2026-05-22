@@ -146,7 +146,6 @@ def get_advanced_settings(disabled_text, logical_core_options=None, locale_optio
                           numa_nodes=None, dist_options=None, prefix_options=None):
     """Get advanced settings configuration."""
     from portprotonqt.localization import _
-    import shutil
 
     advanced_settings = []
     if dist_options is None:
@@ -161,7 +160,6 @@ def get_advanced_settings(disabled_text, logical_core_options=None, locale_optio
         locale_options = get_available_locale_options()
 
     # 1. Wine Version
-    # Add System WINE option if available
     wine_options = []
     wine_value_map = {}
     for option in dist_options:
@@ -173,8 +171,6 @@ def get_advanced_settings(disabled_text, logical_core_options=None, locale_optio
             wine_options.append(display_name)
         else:
             wine_options.append(option)
-    if shutil.which('wine') and _('System WINE') not in wine_options:
-        wine_options.append(_('System WINE'))
 
     wine_setting = {
         'key': 'PW_WINE_USE',
