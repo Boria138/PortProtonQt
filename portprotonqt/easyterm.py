@@ -28,7 +28,6 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import QApplication, QMainWindow, QMenu, QPlainTextEdit
 
-from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
 from portprotonqt.theme_manager import ThemeManager
 
@@ -1301,7 +1300,7 @@ class TerminalWidget(QPlainTextEdit):
                 menu.setStyleSheet(style)
         self._add_menu_action(
             menu,
-            _("Copy"),
+            "Copy",
             QKeySequence.StandardKey.Copy,
             "copy",
             self.copy,
@@ -1309,7 +1308,7 @@ class TerminalWidget(QPlainTextEdit):
         )
         self._add_menu_action(
             menu,
-            _("Paste"),
+            "Paste",
             QKeySequence.StandardKey.Paste,
             "paste",
             self._paste_from_clipboard,
@@ -1317,7 +1316,7 @@ class TerminalWidget(QPlainTextEdit):
         )
         self._add_menu_action(
             menu,
-            _("Select All"),
+            "Select All",
             QKeySequence.StandardKey.SelectAll,
             "select_all",
             self.selectAll,
@@ -1328,7 +1327,7 @@ class TerminalWidget(QPlainTextEdit):
         icon = self.theme_manager.get_icon("theme")
         if not isinstance(icon, QIcon):
             icon = QIcon()
-        scheme_menu = menu.addMenu(icon, _("Terminal Color Scheme"))
+        scheme_menu = menu.addMenu(icon, "Terminal Color Scheme")
         self._populate_scheme_menu(scheme_menu)
 
         menu.exec(event.globalPos())

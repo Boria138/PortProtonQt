@@ -334,6 +334,8 @@ class ContextMenuManager:
         )
         msg_box.setIcon(QMessageBox.Icon.Warning)
         msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        msg_box.setButtonText(QMessageBox.StandardButton.Yes, _("Yes"))
+        msg_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
         if msg_box.exec() != QMessageBox.StandardButton.Yes:
             return
         try:
