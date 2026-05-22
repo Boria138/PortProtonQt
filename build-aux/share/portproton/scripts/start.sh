@@ -188,7 +188,7 @@ unset WINEPREFIX
 
 # choose mirror
 if [[ -z "$MIRROR" ]] \
-&& [[ "$LANGUAGE" == "ru" ]]
+&& [[ "$FULL_LN" == "russian" ]]
 then
     echo 'export MIRROR="CLOUD"' >> "$USER_CONF"
     export MIRROR="CLOUD"
@@ -203,12 +203,6 @@ if [[ $USE_ONLY_LG_RU == "1" ]] ; then
     print_info "Force used linux-gaming.ru for all updates."
 fi
 print_info "The first mirror in used: $MIRROR"
-
-# choose downloading covers from SteamGridDB or not
-if [[ -z "$DOWNLOAD_STEAM_GRID" ]] ; then
-    echo 'export DOWNLOAD_STEAM_GRID="1"' >> "$USER_CONF"
-    export DOWNLOAD_STEAM_GRID="1"
-fi
 
 if check_gamescope_session
 then PW_TERM="env LANG=C $PW_PLUGINS_PATH/portable/bin/xterm -fullscreen -bg black -fg white -e"

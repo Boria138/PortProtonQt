@@ -2483,6 +2483,27 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         economy_mode_layout.addWidget(self.economyModeTitle)
         economy_mode_layout.addStretch()
 
+        self.downloadMirrorCombo = QComboBox()
+        self.downloadMirrorCombo.view().window().setWindowFlags(
+            Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
+        )
+        self.downloadMirrorCombo.view().window().setAttribute(
+            Qt.WidgetAttribute.WA_TranslucentBackground
+        )
+        self.downloadMirrorCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.downloadMirrorCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
+        self.downloadMirrorCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.downloadMirrorCombo.addItems(["CLOUD", "GITHUB"])
+        current_download_mirror = get_user_conf_setting('MIRROR')
+        if current_download_mirror and current_download_mirror not in ("CLOUD", "GITHUB"):
+            self.downloadMirrorCombo.addItem(current_download_mirror)
+        if current_download_mirror:
+            self.downloadMirrorCombo.setCurrentText(current_download_mirror)
+        self.downloadMirrorTitle = QLabel(_("Download mirror:"))
+        self.downloadMirrorTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.downloadMirrorTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
+        self.downloadMirrorTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+
         self.forceSystemDpiCheckBox = QCheckBox()
         self.forceSystemDpiCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.forceSystemDpiCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -2511,6 +2532,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             downloadForm.addRow(download_wine_to_steam_layout)
 
         downloadForm.addRow(economy_mode_layout)
+        downloadForm.addRow(self.downloadMirrorTitle, self.downloadMirrorCombo)
 
         # 4. Gamepad Settings Section
         padFrame, padForm = create_section(_("Gamepad Settings"), self.theme)
@@ -2765,6 +2787,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             ui_config.set_disable_runtime_download(self.disableRuntimeDownloadCheckBox.isChecked())
         else:
             ui_config.get_disable_runtime_download()
+
+        set_user_conf_setting('MIRROR', self.downloadMirrorCombo.currentText())
 
         # Save GPU selection to user.conf (only if the combo box exists)
         if hasattr(self, 'gpuCombo') and self.gpuCombo.count() > 1:
