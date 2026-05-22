@@ -59,8 +59,12 @@ class BaseConfig:
         config_path = str(self._config_file)
 
         if not self._config_file.exists():
-            logger.debug("Configuration file %s not found", config_path)
-            return None
+            try:
+                self._config_file.parent.mkdir(parents=True, exist_ok=True)
+                self._config_file.touch()
+            except OSError as error:
+                logger.warning("Failed to create configuration file %s: %s", config_path, error)
+                return None
 
         try:
             current_mtime = self._config_file.stat().st_mtime
@@ -87,6 +91,7 @@ class BaseConfig:
 
     def _save_config(self, cp: configparser.ConfigParser):
         """Save configuration to file."""
+        self._config_file.parent.mkdir(parents=True, exist_ok=True)
         with open(self._config_file, "w", encoding="utf-8") as f:
             cp.write(f)
         self._invalidate_cache()
@@ -103,6 +108,8 @@ class BaseConfig:
         """Get a configuration value with type conversion."""
         cp = self._read_config()
         if cp is None or not cp.has_section(self._section):
+            return self._save_value(option, default, value_type)
+        if not cp.has_option(self._section, option):
             return self._save_value(option, default, value_type)
 
         try:

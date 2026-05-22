@@ -1698,6 +1698,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.wineTitle.setStyleSheet(self.theme.TAB_TITLE_STYLE)
         self.wineTitle.setObjectName("tabTitle")
         layout.addWidget(self.wineTitle)
+        self.stackedWidget.addWidget(self.wineWidget)
 
         if self.portproton_location is None:
             return
@@ -1831,8 +1832,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         wine_progress_layout.addStretch(1)
         wine_progress_layout.addWidget(self.wine_progress_bar)
         layout.addLayout(wine_progress_layout)
-
-        self.stackedWidget.addWidget(self.wineWidget)
 
     def launch_generic_tool(self, cli_arg):
         wine = self.wineCombo.currentText()
