@@ -284,6 +284,8 @@ class FileExplorer(DraggableDialog):
                     mounts.append(mount_point)
 
             for mount_point in mounts:
+                if mount_point == "/":
+                    continue
                 if mount_point in ("/media", "/mnt", "/run/media"):
                     continue
                 if mount_point != "/" and not mount_point.startswith(("/run/media/", "/media/", "/mnt/")):
@@ -455,8 +457,17 @@ class FileExplorer(DraggableDialog):
                 widget.deleteLater()
 
         self.drive_buttons = []
+        home_path = os.path.expanduser("~")
         drives = self.get_mounted_drives()
         favorite_folders = favorites_folders_config.get_folders()
+
+        if os.path.isdir(home_path) and os.access(home_path, os.R_OK):
+            button = AutoSizeButton(_("Home"), icon=theme_manager.get_icon("folder", as_path=True))
+            button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+            button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+            button.clicked.connect(lambda checked, path=home_path: self.change_drive(path))
+            self.drives_layout.addWidget(button)
+            self.drive_buttons.append(button)
 
         for drive in drives:
             drive_name = os.path.basename(drive) or drive.split('/')[-1] or drive
@@ -487,15 +498,12 @@ class FileExplorer(DraggableDialog):
             drive_name = focused_widget.text().strip()
             logger.debug(f"Selected name: {drive_name}")
 
-            if drive_name == "/":
-                if os.path.isdir("/") and os.access("/", os.R_OK):
-                    self.current_path = "/"
-                    self.update_file_list()
-                    logger.info("Selected root directory")
-                    return
-                else:
-                    logger.warning("Root directory is inaccessible: insufficient permissions or path error")
-                    return
+            home_path = os.path.expanduser("~")
+            if drive_name == _("Home") and os.path.isdir(home_path) and os.access(home_path, os.R_OK):
+                self.current_path = os.path.normpath(home_path)
+                self.update_file_list()
+                logger.info(f"Selected home directory: {self.current_path}")
+                return
 
             favorite_folders = favorites_folders_config.get_folders()
             logger.debug(f"Favorite folders: {favorite_folders}")
