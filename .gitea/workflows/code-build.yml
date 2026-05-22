@@ -68,7 +68,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.appimage == 'true' || github.event_name == 'workflow_dispatch'
     container:
-      image: archlinux:base-devel@sha256:c528201c37821ac7883af233a18eba79fbce9bd900aeae07462888a607741abe
+      image: archlinux:base-devel@sha256:6db772fd1dd128b9cf7b7231ca5284af70879596fe4ec754c911cfc4ac30d5eb
       options: --privileged --device /dev/fuse
     steps:
       - name: Prepare container
@@ -149,7 +149,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.arch == 'true' || github.event_name == 'workflow_dispatch'
     container:
-      image: archlinux:base-devel@sha256:c528201c37821ac7883af233a18eba79fbce9bd900aeae07462888a607741abe
+      image: archlinux:base-devel@sha256:6db772fd1dd128b9cf7b7231ca5284af70879596fe4ec754c911cfc4ac30d5eb
 
     steps:
       - name: Prepare container
