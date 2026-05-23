@@ -31,7 +31,8 @@ python_module () {
 
 python_term () {
     print_info "Running: easyterm $@"
-    env LANG=C python3 -m portprotonqt.easyterm -e "$@"
+    python_module easyterm -e "$@"
+    [[ "$?" == "0" ]] && return 0 || return 1
 }
 
 print_wrapped () {
