@@ -403,7 +403,12 @@ Usage examples:
             if [[ -z "${all_vars[$key]+x}" ]]; then
                 all_vars["$key"]="$val"
             fi
-        done < <(grep -E '^export ' "$PORT_SCRIPTS_PATH/var" | sed -E 's/[[:space:]]*#.*$//' | sed '/^[[:space:]]*$/d')
+        done < <(
+            {
+                grep -E '^export ' "$PORT_SCRIPTS_PATH/var"
+                grep -E '^check_variables ' "$PORT_SCRIPTS_PATH/var" | sed -E 's/^check_variables ([^[:space:]]+) (.*)$/export \1=\2/'
+            } | sed -E 's/[[:space:]]*#.*$//' | sed '/^[[:space:]]*$/d'
+        )
 
         for key in "${!all_vars[@]}"; do
             echo "${key}=\"${all_vars[$key]}\""

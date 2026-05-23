@@ -72,9 +72,7 @@ def get_portproton_env(exe_path: str | None) -> dict[str, str]:
     2. var file + user.conf + .ppdb (static configuration)
     """
     # Priority 1: Read from /tmp/PortProton_$USER/var.log (most authoritative)
-    env_vars = get_portproton_runtime_env()
-    if env_vars:
-        return env_vars
+    runtime_env = get_portproton_runtime_env()
 
     # Priority 2: Read from static configuration files
     portproton_path = get_portproton_location()
@@ -86,13 +84,17 @@ def get_portproton_env(exe_path: str | None) -> dict[str, str]:
         return {}
 
     var_file = os.path.join(scripts_path, "var")
+    functions_helper = os.path.join(scripts_path, "functions_helper")
     user_conf = os.path.join(portproton_path, "data", "user.conf")
 
     if not os.path.exists(var_file):
         logger.debug("var file not found: %s", var_file)
         return {}
 
-    bash_script = f'source "{var_file}" 2>/dev/null; '
+    bash_script = ""
+    if os.path.exists(functions_helper):
+        bash_script += f'source "{functions_helper}" 2>/dev/null; '
+    bash_script += f'source "{var_file}" 2>/dev/null; '
 
     if os.path.exists(user_conf):
         bash_script += f'source "{user_conf}" 2>/dev/null; '
@@ -121,6 +123,9 @@ def get_portproton_env(exe_path: str | None) -> dict[str, str]:
             if "=" in line:
                 key, val = line.split("=", 1)
                 env_vars[key] = val
+
+        if runtime_env:
+            env_vars.update(runtime_env)
 
         logger.debug("Environment variables found: %s", env_vars)
         return env_vars
