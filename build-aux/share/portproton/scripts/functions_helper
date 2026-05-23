@@ -29,6 +29,11 @@ python_module () {
     python3 -m portprotonqt.scripts_utils.$python3_module "$@"
 }
 
+python_term () {
+    print_info "Running: easyterm $@"
+    env LANG=C python3 -m portprotonqt.easyterm -e "$@"
+}
+
 print_wrapped () {
     local text="$1"
     local a="0"
