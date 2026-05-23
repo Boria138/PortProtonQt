@@ -1,5 +1,5 @@
 pkgname=('portprotonqt' 'portprotonqt-steam-compat')
-pkgver=0.1.12
+pkgver=1.0
 pkgrel=1
 pkgdesc="Modern GUI for managing and launching games from PortProton and Steam"
 arch=('any')

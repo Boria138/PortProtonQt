@@ -14,7 +14,7 @@ try:
     APP_VERSION = version_module.APP_VERSION
 except ImportError:
     APP_COMMIT = ""
-    APP_VERSION = "0.1.12"
+    APP_VERSION = "1.0"
 
 __app_version__ = APP_VERSION
 

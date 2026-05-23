@@ -1,5 +1,5 @@
 project('portprotonqt', 'c',
-  version: '0.1.12',
+  version: '1.0',
   meson_version: '>= 0.61.2',
   license: 'GPL-3.0',
 )

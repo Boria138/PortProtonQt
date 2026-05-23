@@ -429,7 +429,7 @@ wheels = [
 
 [[package]]
 name = "portprotonqt"
-version = "0.1.12"
+version = "1.0"
 source = { editable = "." }
 dependencies = [
     { name = "babel" },

@@ -1,6 +1,6 @@
 [project]
 name = "portprotonqt"
-version = "0.1.12"
+version = "1.0"
 description = "A project to rewrite PortProton (PortWINE) using PySide"
 requires-python = ">=3.10"
 readme = "README.md"
