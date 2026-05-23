@@ -409,9 +409,6 @@ msgstr "Командная строка"
 msgid "Uninstaller"
 msgstr "Удаление программ"
 
-msgid "Container Terminal"
-msgstr "Контейнерный терминал"
-
 msgid "Create Prefix Backup"
 msgstr "Создать резервную копию префикса"
 

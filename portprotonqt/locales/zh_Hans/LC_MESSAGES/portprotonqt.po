@@ -1,4 +1,4 @@
-# Translations template for PortProtonQt.
+# Chinese (Simplified) translations for PortProtonQt.
 # Copyright (C) 2026 boria138
 # This file is distributed under the same license as the PortProtonQt
 # project.
@@ -84,6 +84,12 @@ msgid ""
 "cannot be undone."
 msgstr "确定要删除文件夹“{folder_name}”吗？此操作无法撤销。"
 
+msgid "Yes"
+msgstr "是"
+
+msgid "No"
+msgstr "否"
+
 #, python-brace-format
 msgid "Failed to delete folder: {error}"
 msgstr "删除文件夹失败：{error}"
@@ -142,12 +148,6 @@ msgid ""
 "Are you sure you want to delete '{game_name}'? This will remove the "
 ".desktop file and custom data."
 msgstr "确定要删除“{game_name}”吗？这将移除 .desktop 文件和自定义数据。"
-
-msgid "Yes"
-msgstr "是"
-
-msgid "No"
-msgstr "否"
 
 #, python-brace-format
 msgid "Failed to delete .desktop file: {error}"
@@ -260,9 +260,6 @@ msgstr "删除"
 
 msgid "Select All"
 msgstr "全选"
-
-msgid "Terminal Color Scheme"
-msgstr "终端配色方案"
 
 msgid "Supported"
 msgstr "支持"

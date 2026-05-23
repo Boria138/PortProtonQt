@@ -396,9 +396,6 @@ msgstr ""
 msgid "Uninstaller"
 msgstr ""
 
-msgid "Container Terminal"
-msgstr ""
-
 msgid "Create Prefix Backup"
 msgstr ""
 
