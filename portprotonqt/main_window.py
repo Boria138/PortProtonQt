@@ -1774,7 +1774,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             ("--winefile", _("File Explorer")),
             ("--winecmd", _("Command Prompt")),
             ("--wine_uninstaller", _("Uninstaller")),
-            ("--term", _("Container Terminal")),
         ]
 
         for i, (tool_cmd, tool_name) in enumerate(tools):
@@ -1864,10 +1863,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         if not proc.waitForStarted(5000):
             self.wine_progress_bar.setVisible(False)
             QMessageBox.warning(self, _("Error"), _("Failed to start process."))
-            return
-
-        if cli_arg == "--term":
-            self.wine_progress_bar.setVisible(False)
             return
 
         self._start_wine_process_monitor(cli_arg)
