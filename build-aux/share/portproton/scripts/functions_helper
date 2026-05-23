@@ -1641,7 +1641,7 @@ stop_portproton () {
     fi
 
     kill_portwine
-    try_remove_dir "${PW_WINELIB}/var"
+    [[ -n $PW_WINELIB ]] && try_remove_dir "${PW_WINELIB}/var"
     find "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/" -maxdepth 1 -type f -name "*.tmp" -delete
     pw_auto_create_shortcut
     add_in_stop_portproton
@@ -1919,8 +1919,13 @@ pw_init_db () {
             fi
         else
             IFS=$'\n'
-            #TODO: msi
-            PW_FIND_DB_FILE=$(grep -ilw "#${PORTWINE_DB}.exe" "${PORT_SCRIPTS_PATH}/portwine_db"/* | sed s/".exe"/""/gi)
+            if [[ "${PORTWINE_DB,,}" =~ (setup|install|.msi$) ]] ; then
+                print_info "Force used setup.ppdb files!"
+                PW_FIND_DB_FILE="${PORT_SCRIPTS_PATH}/portwine_db/Setup.ppdb"
+            else
+                PW_FIND_DB_FILE=$(grep -ilw "#${PORTWINE_DB}.exe" "${PORT_SCRIPTS_PATH}/portwine_db"/* | sed s/".exe"/""/gi)
+            fi
+
             if [[ $(echo "$PW_FIND_DB_FILE" | wc -l) -gt 1 ]] ; then
                 fatal "More than one ppdb file found!"
             elif [[ $(echo "$PW_FIND_DB_FILE" | wc -l) -eq 1 ]] ; then
@@ -4597,7 +4602,11 @@ pw_auto_create_shortcut () {
 
     unset LINKS
     print_info "checking *.lnk files"
-    for link_file in "${PORT_DATA_PATH}"/data/prefixes/*/drive_c/users/${USER}/Desktop/*.lnk ; do
+    for link_file in "${PORT_DATA_PATH}"/data/prefixes/*/drive_c/users/${USER}/Desktop/*.lnk \
+                     "${PORT_DATA_PATH}"/data/prefixes/*/drive_c/users/Public/Desktop/*.lnk
+    do
+        [[ ! -f $link_file ]] && continue
+        echo $link_file
         link_file=$(readlink -f "$link_file")
         LINKS+=("${link_file// /#@_@#}")
     done
