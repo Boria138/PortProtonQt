@@ -3,6 +3,7 @@ import sys
 import os
 import importlib
 import subprocess
+from urllib.parse import quote, unquote
 from logging import Logger
 
 __app_id__ = "ru.linux_gaming.PortProtonQt"
@@ -203,19 +204,9 @@ def main():
     if start_sh is None:
         return
 
-    if parsed_args.create_backup:
-        setup_logger(parsed_args.debug_level)
-        prefix_name, backup_dir = parsed_args.create_backup
-        backup_exit_code = create_prefix_backup(start_sh, prefix_name, backup_dir)
-        sys.exit(backup_exit_code)
-
     if parsed_args.restore_prefix and not parsed_args.file_or_url:
         setup_logger(parsed_args.debug_level)
         sys.exit(1)
-    if is_restore_prefix_request(parsed_args):
-        setup_logger(parsed_args.debug_level)
-        restore_exit_code = restore_prefix_backup(start_sh, parsed_args.file_or_url)
-        sys.exit(restore_exit_code)
 
     # Handle Steam compatibility mode - launch game directly without GUI.
     if is_steam_compat:
@@ -257,6 +248,8 @@ def main():
 
     fullscreen = args.fullscreen or display_config.get_fullscreen()
     ipc_message = "show:fullscreen" if fullscreen else "show"
+    backup_request = None
+    restore_prefix_path = None
     resolution_from_args = None
     if args.resolution:
         resolution_from_args = parse_resolution(args.resolution)
@@ -266,9 +259,16 @@ def main():
             window_config.set_geometry(resolution_from_args[0], resolution_from_args[1])
             logger.info("Saved window resolution: %sx%s", resolution_from_args[0], resolution_from_args[1])
             ipc_message = "noop"
-    if is_silent_launch and args.file_or_url and is_exe_file(args.file_or_url):
+    if args.create_backup:
+        prefix_name, backup_dir = args.create_backup
+        backup_request = (prefix_name, os.path.abspath(os.path.expanduser(backup_dir)))
+        ipc_message = "backup:{}:{}".format(quote(prefix_name, safe=""), quote(backup_request[1], safe=""))
+    elif is_silent_launch and args.file_or_url and is_exe_file(args.file_or_url):
         run_silent_tray(app, start_sh, normalize_launch_path(args.file_or_url))
         sys.exit(app.exec())
+    elif is_restore_prefix_request(args):
+        restore_prefix_path = normalize_launch_path(args.file_or_url)
+        ipc_message = f"restore:{quote(restore_prefix_path, safe='')}"
     elif args.file_or_url and is_launch_file(args.file_or_url):
         ipc_message = f"open:{normalize_launch_path(args.file_or_url)}"
 
@@ -319,7 +319,7 @@ def main():
             logger.warning("Failed to persist PORT_DATA_PATH in PortProtonQt config")
 
     # Check if we have a portproton:// URL or launch file to handle
-    if args.file_or_url:
+    if args.file_or_url and not restore_prefix_path:
         if is_portproton_url(args.file_or_url):
             # Parse the portproton:// URL to get the full download URL
             download_url = parse_portproton_url(args.file_or_url)
@@ -366,6 +366,14 @@ def main():
         def handle_launch_exe():
             window.handle_launch_exe(exe_path)
         QTimer.singleShot(0, handle_launch_exe)
+    elif backup_request:
+        def handle_create_backup():
+            window._perform_backup(backup_request[1], backup_request[0])
+        QTimer.singleShot(0, handle_create_backup)
+    elif restore_prefix_path:
+        def handle_restore_prefix():
+            window._perform_restore(restore_prefix_path)
+        QTimer.singleShot(0, handle_restore_prefix)
 
     # --- Handle incoming connections ---
     def handle_new_connection():
@@ -380,7 +388,12 @@ def main():
 
             def restore_window():
                 try:
-                    if msg.startswith("show") or msg.startswith("open:"):
+                    if (
+                        msg.startswith("show")
+                        or msg.startswith("open:")
+                        or msg.startswith("restore:")
+                        or msg.startswith("backup:")
+                    ):
                         # Ensure the window is visible and not minimized
                         window.setWindowState(window.windowState() & ~Qt.WindowState.WindowMinimized)
                         window.show()
@@ -407,6 +420,22 @@ def main():
                                 window.handle_launch_exe(launch_path)
                             else:
                                 logger.warning("Invalid launch file via IPC: %s", launch_path)
+                        elif msg.startswith("restore:"):
+                            backup_path = unquote(msg[8:].strip())
+                            if backup_path and is_prefix_backup_file(backup_path):
+                                logger.info("Restoring prefix backup via IPC: %s", backup_path)
+                                window._perform_restore(backup_path)
+                            else:
+                                logger.warning("Invalid prefix backup via IPC: %s", backup_path)
+                        elif msg.startswith("backup:"):
+                            parts = msg.split(":", 2)
+                            if len(parts) == 3:
+                                prefix_name = unquote(parts[1])
+                                backup_dir = unquote(parts[2])
+                                logger.info("Creating prefix backup via IPC: %s", prefix_name)
+                                window._perform_backup(backup_dir, prefix_name)
+                            else:
+                                logger.warning("Invalid prefix backup request via IPC: %s", msg)
                 except Exception as e:
                     logger.warning(f"Failed to restore window: {e}")
 
@@ -424,6 +453,8 @@ def main():
         and not args.fullscreen
         and window_resolution is None
         and exe_path is None
+        and backup_request is None
+        and restore_prefix_path is None
 )
     if launch_minimized:
         logger.info("Launching in tray")

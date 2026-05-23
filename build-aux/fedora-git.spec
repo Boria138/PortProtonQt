@@ -63,7 +63,6 @@ Requires:       pciutils
 Requires:       vulkan-loader
 Requires:       procps-ng
 Requires:       psmisc
-Requires:       squashfs-tools
 Requires:       7zip
 Requires:       python3-dbus-fast
 
@@ -73,6 +72,9 @@ Recommends:     bluez
 Recommends:     upower
 Recommends:     pulseaudio-utils
 Recommends:     python3-qrcode
+
+# For legacy PortProton prefix backup support
+Recommends:     squashfs-tools
 
 %description
 A modern and intuitive interface for managing and launching games from PortProton and Steam. Combines libraries in one place and simplifies running Windows games on Linux.

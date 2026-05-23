@@ -57,6 +57,8 @@ from portprotonqt.game_library_manager import GameLibraryManager
 from portprotonqt.virtual_keyboard import VirtualKeyboard
 from portprotonqt.disc_image_utils import DiscImageManager
 from portprotonqt.dialogs.proton_manager import show_proton_manager
+from portprotonqt.dialogs.prefix_backup import PrefixBackupDialog, PrefixBackupJob, PrefixBackupThread
+from portprotonqt.scripts_utils.prefix_backup import is_legacy_squashfs_backup
 from portprotonqt.tabs.control_hints import MainWindowControlHintsMixin
 from portprotonqt.tabs.system_tab import MainWindowSystemTabMixin
 from portprotonqt.tabs.workers import MainWindowWorkersMixin
@@ -1985,15 +1987,13 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
     def _perform_backup(self, backup_dir, prefix_name):
         os.makedirs(backup_dir, exist_ok=True)
-        if not self.portproton_location or not self.start_sh:
+        if not self.portproton_location:
             return
-        start_sh = self.start_sh
-        self.backup_process = QProcess(self)
-        self.backup_process.finished.connect(lambda exitCode: self._on_backup_finished(exitCode))
-        cmd = start_sh + ["--backup-prefix", prefix_name, backup_dir]
-        self.backup_process.start(cmd[0], cmd[1:])
-        if not self.backup_process.waitForStarted():
-            QMessageBox.warning(self, _("Error"), _("Failed to start backup process."))
+        job = PrefixBackupJob("backup", self.portproton_location, prefix_name, backup_dir)
+        worker = PrefixBackupThread(job)
+        dialog = PrefixBackupDialog(self, worker, self.theme)
+        dialog.start()
+        self._on_backup_finished(0 if worker.success else 1)
 
     def load_prefix_backup(self):
         file_explorer = FileExplorer(self, file_filter='.ppack')
@@ -2003,12 +2003,23 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
     def _perform_restore(self, file_path):
         if not file_path or not os.path.exists(file_path):
             return
-        if not self.portproton_location or not self.start_sh:
+        if not self.portproton_location:
             return
-        start_sh = self.start_sh
+        if is_legacy_squashfs_backup(file_path):
+            self._perform_legacy_restore(file_path)
+            return
+        job = PrefixBackupJob("restore", self.portproton_location, file_path)
+        worker = PrefixBackupThread(job)
+        dialog = PrefixBackupDialog(self, worker, self.theme)
+        dialog.start()
+        self._on_restore_finished(0 if worker.success else 1)
+
+    def _perform_legacy_restore(self, file_path: str) -> None:
+        if not self.start_sh:
+            return
         self.restore_process = QProcess(self)
         self.restore_process.finished.connect(lambda exitCode: self._on_restore_finished(exitCode))
-        cmd = start_sh + ["--restore-prefix", file_path]
+        cmd = self.start_sh + ["--restore-prefix", file_path]
         self.restore_process.start(cmd[0], cmd[1:])
         if not self.restore_process.waitForStarted():
             QMessageBox.warning(self, _("Error"), _("Failed to start restore process."))

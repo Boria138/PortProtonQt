@@ -4668,65 +4668,25 @@ pw_create_prefix_backup_cli () {
     PW_PREFIX_NAME="$1"
     PW_PREFIX_TO_BACKUP="$2"
 
-    if [[ -n "$(grep "/${PW_PREFIX_NAME}/" "${PORT_DATA_PATH}"/*.desktop )" ]] ; then
-        try_remove_file "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/.create_shortcut"
-        grep "/${PW_PREFIX_NAME}/" "${PORT_DATA_PATH}"/*.desktop | awk -F"/${PW_PREFIX_NAME}/" '{print $2}' \
-        | awk -F\" '{print $1}' > "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/.create_shortcut"
-    fi
-
-    unset PW_SANDBOX_HOME_PATH
-    pw_init_runtime
-    if check_flatpak; then
-        TMP_ALL_PATH=""
-    else
-        TMP_ALL_PATH="LD_LIBRARY_PATH=\"${PW_LD_LIBRARY_PATH}\""
-    fi
-
-    chmod -R u+w "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}"
-
-    echo "#!/usr/bin/env bash
-    ${TMP_ALL_PATH} \"${PW_PLUGINS_PATH}/portable/bin/mksquashfs\" \"${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}\" \
-    \"${PW_PREFIX_TO_BACKUP}/${PW_PREFIX_NAME}.ppack.part\" -comp zstd \
-    || rm -f \"${PW_PREFIX_TO_BACKUP}/${PW_PREFIX_NAME}.ppack.part\"
-    " > "${PORT_WINE_TMP_PATH}/pp_pfx_backup.sh"
-
-    chmod u+x "${PORT_WINE_TMP_PATH}/pp_pfx_backup.sh"
-
-    ${pw_runtime} ${PW_TERM} "${PORT_WINE_TMP_PATH}/pp_pfx_backup.sh"
-
-    try_remove_file "${PORT_WINE_TMP_PATH}/pp_pfx_backup.sh"
-
-    if [[ -f "${PW_PREFIX_TO_BACKUP}/${PW_PREFIX_NAME}.ppack.part" ]]; then
-        mv -f "${PW_PREFIX_TO_BACKUP}/${PW_PREFIX_NAME}.ppack.part" \
-              "${PW_PREFIX_TO_BACKUP}/${PW_PREFIX_NAME}.ppack"
-        return 0
-    else
-        return 1
-    fi
+    python3 -m portprotonqt.scripts_utils.prefix_backup --port-data-path "${PORT_DATA_PATH}" \
+        backup "${PW_PREFIX_NAME}" "${PW_PREFIX_TO_BACKUP}"
+    return $?
 }
 
-pw_unpack_prefix () {
-    PW_BACKUP_FILE="$1"
+pw_is_legacy_prefix_backup () {
+    [[ "$(head -c 4 "$1" 2>/dev/null)" == "hsqs" ]]
+}
+
+pw_unpack_legacy_prefix () {
+    PW_PREFIX_NAME=$(basename "${PW_BACKUP_FILE}")
+    PW_PREFIX_NAME="${PW_PREFIX_NAME%.[Pp][Pp][Aa][Cc][Kk]}"
 
     unset PW_SANDBOX_HOME_PATH
     pw_init_runtime
 
-    if check_flatpak; then
-        TMP_ALL_PATH=""
-    else
-        TMP_ALL_PATH="LD_LIBRARY_PATH=\"${PW_LD_LIBRARY_PATH}\""
-    fi
-
-    if check_selinux; then
-        NO_XATTRS_NEED="-no-xattrs"
-    else
-        NO_XATTRS_NEED=""
-    fi
-
-    PW_PREFIX_NAME=$(basename "${PW_BACKUP_FILE^^}" .PPACK)
-
+    try_remove_file "${PORT_WINE_TMP_PATH}/pp_pfx_unpack_error"
     echo "#!/usr/bin/env bash
-    ${TMP_ALL_PATH} \"${PW_PLUGINS_PATH}/portable/bin/unsquashfs\" $NO_XATTRS_NEED -f -d \
+    unsquashfs -no-xattrs -f -d \
     \"${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}\" \"$PW_BACKUP_FILE\" \
     || echo \"ERROR\" > \"${PORT_WINE_TMP_PATH}/pp_pfx_unpack_error\"
     " > "${PORT_WINE_TMP_PATH}/pp_pfx_unpack.sh"
@@ -4738,15 +4698,31 @@ pw_unpack_prefix () {
         try_remove_file "${PORT_WINE_TMP_PATH}/pp_pfx_unpack_error"
         try_remove_file "${PORT_WINE_TMP_PATH}/pp_pfx_unpack.sh"
         return 1
-    else
-        try_remove_file "${PORT_WINE_TMP_PATH}/pp_pfx_unpack.sh"
-        if [[ -f "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/.create_shortcut" ]] ; then
-            while read -r line
-            do
-                export PW_EXE_FILE="$PORT_DATA_PATH/data/prefixes/$PW_PREFIX_NAME/$line"
-                portwine_output_yad_shortcut
-            done < "$PORT_DATA_PATH/data/prefixes/$PW_PREFIX_NAME/.create_shortcut"
-        fi
-        return 0
     fi
+    try_remove_file "${PORT_WINE_TMP_PATH}/pp_pfx_unpack_error"
+    try_remove_file "${PORT_WINE_TMP_PATH}/pp_pfx_unpack.sh"
+    if [[ -f "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/.create_shortcut" ]] ; then
+        while read -r line
+        do
+            export PW_EXE_FILE="$PORT_DATA_PATH/data/prefixes/$PW_PREFIX_NAME/$line"
+            portwine_output_yad_shortcut
+        done < "$PORT_DATA_PATH/data/prefixes/$PW_PREFIX_NAME/.create_shortcut"
+    fi
+    return 0
+}
+
+pw_unpack_prefix () {
+    PW_BACKUP_FILE="$1"
+
+    PW_PREFIX_NAME=$(basename "${PW_BACKUP_FILE}")
+    PW_PREFIX_NAME="${PW_PREFIX_NAME%.[Pp][Pp][Aa][Cc][Kk]}"
+
+    if pw_is_legacy_prefix_backup "${PW_BACKUP_FILE}" ; then
+        pw_unpack_legacy_prefix
+        return $?
+    fi
+
+    python3 -m portprotonqt.scripts_utils.prefix_backup --port-data-path "${PORT_DATA_PATH}" \
+        restore "${PW_BACKUP_FILE}"
+    return $?
 }

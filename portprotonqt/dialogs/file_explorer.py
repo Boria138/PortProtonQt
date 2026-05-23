@@ -588,7 +588,10 @@ class FileExplorer(DraggableDialog):
                     item = QListWidgetItem(f)
                     mime_type = self.mime_db.mimeTypeForFile(file_path)
                     if (
-                        mime_type.name() in ("application/vnd.squashfs", "application/x-squashfs")
+                        f.lower().endswith(".ppack")
+                        or mime_type.name() == "application/x-portproton-prefix-backup"
+                        or mime_type.inherits("application/x-portproton-prefix-backup")
+                        or mime_type.name() in ("application/vnd.squashfs", "application/x-squashfs")
                         or mime_type.inherits("application/vnd.squashfs")
                     ):
                         ppack_icon = theme_manager.get_icon("ppack")
