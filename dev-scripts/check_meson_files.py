@@ -654,13 +654,14 @@ class MesonLinter:
 def get_python_files_from_directory(directory):
     """Get all Python files from a directory (excluding __pycache__ and other non-source files)"""
     python_files = []
-    for file_path in Path(directory).iterdir():
+    base_dir = Path(directory)
+    for file_path in base_dir.rglob('*.py'):
         if (file_path.is_file() and
-            file_path.suffix == '.py' and
             file_path.name != '__pycache__' and
+            '__pycache__' not in file_path.parts and
             not file_path.name.startswith('.') and  # Skip hidden files
             file_path.name != 'meson.build'):       # Exclude meson.build itself
-            python_files.append(file_path.name)
+            python_files.append(file_path.relative_to(base_dir).as_posix())
     return sorted(python_files)
 
 
@@ -747,8 +748,28 @@ def check_files(repo_root: Path) -> list[str]:
 
     dir_files = get_python_files_from_directory(portprotonqt_dir)
     meson_files = get_files_from_meson_build(portprotonqt_meson)
+    meson_subdirs = get_subdirs_from_meson_build(portprotonqt_meson)
 
-    return [f for f in dir_files if f not in meson_files]
+    return [
+        f for f in dir_files
+        if f not in meson_files and
+        not any(f == subdir or f.startswith(f"{subdir}/") for subdir in meson_subdirs)
+    ]
+
+
+def check_stale_files(repo_root: Path) -> list[str]:
+    """Check if meson.build lists Python files that no longer exist."""
+    portprotonqt_dir = repo_root / 'portprotonqt'
+    portprotonqt_meson = portprotonqt_dir / 'meson.build'
+
+    if not portprotonqt_meson.exists():
+        return []
+
+    meson_files = get_files_from_meson_build(portprotonqt_meson)
+    return [
+        f for f in meson_files
+        if f.endswith('.py') and not (portprotonqt_dir / f).exists()
+    ]
 
 
 def check_portproton_subdirs(repo_root: Path) -> list[str]:
@@ -796,6 +817,7 @@ def main():
     # Check files inclusion (only if syntax is OK)
     if exit_code == 0:
         missing_files = check_files(repo_root)
+        stale_files = check_stale_files(repo_root)
         missing_subdirs = check_portproton_subdirs(repo_root)
 
         if missing_files:
@@ -803,6 +825,13 @@ def main():
             for file in missing_files:
                 print(f"  - {file}")
             print("\nPlease add these files to the install_data section in portprotonqt/meson.build")
+            exit_code = 1
+
+        if stale_files:
+            print("ERROR: The following files are listed in meson.build but do not exist:")
+            for file in stale_files:
+                print(f"  - {file}")
+            print("\nPlease remove or update these files in portprotonqt/meson.build")
             exit_code = 1
 
         if missing_subdirs:

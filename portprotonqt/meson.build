@@ -8,8 +8,6 @@ install_data(
    'dialogs.py',
    'disc_image_utils.py',
    'downloader.py',
-   'easyterm.py',
-
   'game_card.py',
   'game_library_manager.py',
   'howlongtobeat_api.py',
@@ -122,6 +120,7 @@ install_data(
 # Install scripts_utils package
 install_data(
   ['scripts_utils/__init__.py',
+   'scripts_utils/easyterm.py',
    'scripts_utils/idle_inhibit.py',
    'scripts_utils/power_profiles.py',
    'scripts_utils/shortcut_tools.py',
