@@ -1307,7 +1307,7 @@ pw_init_runtime () {
         export PW_LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${PW_PLUGINS_PATH}/portable/lib/lib64:${PW_PLUGINS_PATH}/portable/lib/lib32"
         export PW_VK_LAYER_PATH="${PW_PLUGINS_PATH}/portable/share/vulkan/implicit_layer.d"
         if [[ -z "$PW_TERM" ]] ; then
-            export PW_TERM="env LD_LIBRARY_PATH=\"${PW_LD_LIBRARY_PATH}\" python3 -m portprotonqt.easyterm -e"
+            export PW_TERM="env LD_LIBRARY_PATH=\"${PW_LD_LIBRARY_PATH}\" python3 -m portprotonqt.scripts_utils.easyterm -e"
         fi
         export pw_runtime="env"
         return 0
@@ -1394,7 +1394,7 @@ ${PW_PV_OVERRIDES}/i386-linux-gnu/aliases:\
     for PWRTMRW in "${PW_RT_MOUNT_RW[@]}" ; do
         export PRESSURE_VESSEL_FILESYSTEMS_RW="${PRESSURE_VESSEL_FILESYSTEMS_RW:+$PRESSURE_VESSEL_FILESYSTEMS_RW:}${PWRTMRW}"
     done
-    export PW_TERM="env LD_LIBRARY_PATH=\"${PW_LD_LIBRARY_PATH}\" python3 -m portprotonqt.easyterm -e"
+    export PW_TERM="env LD_LIBRARY_PATH=\"${PW_LD_LIBRARY_PATH}\" python3 -m portprotonqt.scripts_utils.easyterm -e"
 
     print_info "RUNTIME is enabled"
 }
@@ -4606,7 +4606,6 @@ pw_auto_create_shortcut () {
                      "${PORT_DATA_PATH}"/data/prefixes/*/drive_c/users/Public/Desktop/*.lnk
     do
         [[ ! -f $link_file ]] && continue
-        echo $link_file
         link_file=$(readlink -f "$link_file")
         LINKS+=("${link_file// /#@_@#}")
     done
