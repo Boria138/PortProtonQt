@@ -19,7 +19,7 @@ import threading
 
 downloader = Downloader()
 logger = get_logger(__name__)
-COVER_IMAGE_EXTENSIONS = (".png", ".apng", ".jpg", ".jpeg", ".gif", ".webp", ".jxl")
+COVER_IMAGE_EXTENSIONS = (".png", ".apng", ".jpg", ".jpeg", ".gif", ".webp", ".jxl", ".svg")
 DEFAULT_ANIMATION_DELAY_MS = 100
 
 # Global queue and thread pool for image loading
