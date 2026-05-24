@@ -1589,6 +1589,17 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 game_data["game_source"] = "portproton"
                 self.detail_page_manager.openAutoInstallDetailPage(game_data)
 
+            def get_autoinstall_theme_cover(exe_name: str) -> str | None:
+                theme_cover = self.theme_manager.get_theme_image(exe_name, self.current_theme_name)
+                if isinstance(theme_cover, str) and "autoinstall_covers" in theme_cover:
+                    return theme_cover
+                if auto_layout_mode != "list":
+                    return None
+                classic_cover = self.theme_manager.get_theme_image(exe_name, "classic")
+                if isinstance(classic_cover, str) and "autoinstall_covers" in classic_cover:
+                    return classic_cover
+                return None
+
             # Create cards
             for game_tuple in games:
                 name = game_tuple[0]
@@ -1599,8 +1610,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 exec_line = game_tuple[5]
                 game_source = game_tuple[12]
                 exe_name = game_tuple[13]
-                theme_cover = self.theme_manager.get_theme_image(exe_name, self.current_theme_name)
-                has_theme_cover = isinstance(theme_cover, str) and "autoinstall_covers" in theme_cover
+                theme_cover = get_autoinstall_theme_cover(exe_name)
+                has_theme_cover = theme_cover is not None
                 if auto_layout_mode == "list" and has_theme_cover:
                     cover_path = theme_cover
                 elif not cover_path:
@@ -1644,8 +1655,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 if local_path and exe_name in self.autoInstallGameCards:
                     card = self.autoInstallGameCards[exe_name]
                     if card.list_layout:
-                        theme_cover = self.theme_manager.get_theme_image(exe_name, self.current_theme_name)
-                        if isinstance(theme_cover, str) and "autoinstall_covers" in theme_cover:
+                        theme_cover = get_autoinstall_theme_cover(exe_name)
+                        if theme_cover is not None:
                             return
                     card.cover_path = local_path
                     cover_width = 64 if card.list_layout else self.auto_card_width
