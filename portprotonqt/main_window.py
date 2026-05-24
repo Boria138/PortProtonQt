@@ -2062,11 +2062,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
     def _perform_legacy_restore(self, file_path: str) -> None:
         if not self.start_sh:
             return
-        self.restore_process = QProcess(self)
-        self.restore_process.finished.connect(lambda exitCode: self._on_restore_finished(exitCode))
         cmd = self.start_sh + ["--restore-prefix", file_path]
-        self.restore_process.start(cmd[0], cmd[1:])
-        if not self.restore_process.waitForStarted():
+        if not QProcess.startDetached(cmd[0], cmd[1:]):
             QMessageBox.warning(self, _("Error"), _("Failed to start restore process."))
 
     def _on_backup_finished(self, exitCode):
