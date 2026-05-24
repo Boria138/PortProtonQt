@@ -156,13 +156,33 @@ unset LD_LIBRARY_PATH
 
 export STEAM_COMPAT=1
 
-
 exe_name="$(basename "$1")"
 exe_dir="$(dirname "$1")"
 
 # Ignore specific executables
-if [[ "$exe_name" == "iscriptevaluator.exe" ]] || \\
-   [[ "$exe_name" == "d3ddriverquery64.exe" ]]; then
+if [[ "$exe_name" == "iscriptevaluator.exe" ]] \\
+|| [[ "$exe_name" == "d3ddriverquery64.exe" ]]
+then
+    exit 0
+fi
+
+# Activate virtual environment if available
+if [[ -n "$PPQT_VENV_PATH" ]]; then
+    cd "$PPQT_VENV_PATH" || exit 1
+    source .venv/bin/activate || exit 1
+fi
+
+if [[ "$UPDATE_CT_PPQT" != "1" ]]; then
+    export UPDATE_CT_PPQT="1"
+    full_command_line=("$(realpath "$0")" "$@")
+    if [[ -n "$PPQT_BIN_PATH" ]]; then
+        "$PPQT_BIN_PATH" --reinstall-steam-compat-tool
+    elif command -v flatpak >/dev/null 2>&1 && flatpak info ru.linux_gaming.PortProtonQt >/dev/null 2>&1; then
+        flatpak run ru.linux_gaming.PortProtonQt --reinstall-steam-compat-tool
+    else
+        portprotonqt --reinstall-steam-compat-tool
+    fi
+    exec "${full_command_line[@]}"
     exit 0
 fi
 
@@ -210,12 +230,6 @@ if [[ -n "$SteamAppId" ]]; then
         cp "$ppdb_source" "$ppdb_dest"
         echo "Copied PPDB from $ppdb_source to $ppdb_dest"
     fi
-fi
-
-# Activate virtual environment if available
-if [[ -n "$PPQT_VENV_PATH" ]]; then
-    cd "$PPQT_VENV_PATH" || exit 1
-    source .venv/bin/activate || exit 1
 fi
 
 # Use AppImage if specified, then Flatpak if installed, otherwise use portprotonqt from PATH
