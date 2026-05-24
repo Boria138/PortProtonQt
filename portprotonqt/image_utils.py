@@ -10,6 +10,7 @@ from PIL import Image, ImageQt, ImageSequence
 from portprotonqt.config import ui_config
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.downloader import Downloader
+from portprotonqt.icon_extractor import generate_thumbnail
 from portprotonqt.logger import get_logger
 from portprotonqt.qt_utils import get_device_pixel_ratio
 from collections.abc import Callable
@@ -352,7 +353,16 @@ def _get_cover_url_suffix(cover: str) -> str:
     return ".jpg"
 
 
-def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[QPixmap], None], app_name: str = ""):
+def load_pixmap_async(
+    cover: str,
+    width: int,
+    height: int,
+    callback: Callable[[QPixmap], None],
+    app_name: str = "",
+    fallback_cover: str = "",
+    fallback_exe: str = "",
+    fallback_icon_path: str = "",
+):
     """
     Asynchronously load cover through task queue.
     """
@@ -377,6 +387,46 @@ def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[Q
                 y = (scaled.height() - height) // 2
                 cropped = scaled.copy(x, y, width, height)
                 callback(cropped)
+
+        def load_fallback_pixmap() -> QPixmap:
+            pixmap = QPixmap()
+            if fallback_cover and QFile.exists(fallback_cover):
+                pixmap.load(fallback_cover)
+                if not pixmap.isNull():
+                    return pixmap
+                logger.warning(f"Failed to load fallback image from {fallback_cover}")
+            exe_icon = load_exe_icon_pixmap()
+            if not exe_icon.isNull():
+                return exe_icon
+            placeholder_path = theme_manager.get_theme_image("placeholder", current_theme_name)
+            if placeholder_path and QFile.exists(placeholder_path):
+                pixmap.load(placeholder_path)
+                if pixmap.isNull():
+                    logger.warning(f"Failed to load placeholder image from {placeholder_path}")
+                return pixmap
+            pixmap = QPixmap(width, height)
+            pixmap.fill(QColor("#333333"))
+            painter = QPainter(pixmap)
+            painter.setPen(QPen(QColor("white")))
+            painter.drawText(pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "No Image")
+            painter.end()
+            return pixmap
+
+        def load_exe_icon_pixmap() -> QPixmap:
+            pixmap = QPixmap()
+            if not fallback_exe or not os.path.isfile(fallback_exe):
+                return pixmap
+            if not fallback_exe.lower().endswith(".exe"):
+                return pixmap
+            icon_path = fallback_icon_path
+            if not icon_path:
+                return pixmap
+            if not os.path.exists(icon_path):
+                os.makedirs(os.path.dirname(icon_path), exist_ok=True)
+                if not generate_thumbnail(fallback_exe, icon_path, size=128):
+                    return pixmap
+            pixmap.load(icon_path)
+            return pixmap
 
         xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
         image_folder = os.path.join(xdg_cache_home, "PortProtonQt", "images")
@@ -407,18 +457,7 @@ def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[Q
                         if result and os.path.exists(result):
                             pixmap.load(result)
                         if pixmap.isNull():
-                            placeholder_path = theme_manager.get_theme_image("placeholder", current_theme_name)
-                            if placeholder_path and QFile.exists(placeholder_path):
-                                pixmap.load(placeholder_path)
-                                if pixmap.isNull():
-                                    logger.warning(f"Failed to load placeholder image from {placeholder_path}")
-                            else:
-                                pixmap = QPixmap(width, height)
-                                pixmap.fill(QColor("#333333"))
-                                painter = QPainter(pixmap)
-                                painter.setPen(QPen(QColor("white")))
-                                painter.drawText(pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "No Image")
-                                painter.end()
+                            pixmap = load_fallback_pixmap()
                         finish_with(pixmap)
 
                     downloader.download_async(cover, local_path, timeout=5, callback=on_downloaded)
@@ -451,18 +490,7 @@ def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[Q
                     if result and os.path.exists(result):
                         pixmap.load(result)
                     if pixmap.isNull():
-                        placeholder_path = theme_manager.get_theme_image("placeholder", current_theme_name)
-                        if placeholder_path and QFile.exists(placeholder_path):
-                            pixmap.load(placeholder_path)
-                            if pixmap.isNull():
-                                logger.warning(f"Failed to load placeholder image from {placeholder_path}")
-                        else:
-                            pixmap = QPixmap(width, height)
-                            pixmap.fill(QColor("#333333"))
-                            painter = QPainter(pixmap)
-                            painter.setPen(QPen(QColor("white")))
-                            painter.drawText(pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "No Image")
-                            painter.end()
+                        pixmap = load_fallback_pixmap()
                     finish_with(pixmap)
 
                 logger.info("Downloading SGDB cover for %s -> %s", app_name or "unknown", filename)
@@ -490,18 +518,7 @@ def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[Q
                     if result and os.path.exists(result):
                         pixmap.load(result)
                     if pixmap.isNull():
-                        placeholder_path = theme_manager.get_theme_image("placeholder", current_theme_name)
-                        if placeholder_path and QFile.exists(placeholder_path):
-                            pixmap.load(placeholder_path)
-                            if pixmap.isNull():
-                                logger.warning(f"Failed to load placeholder image from {placeholder_path}")
-                        else:
-                            pixmap = QPixmap(width, height)
-                            pixmap.fill(QColor("#333333"))
-                            painter = QPainter(pixmap)
-                            painter.setPen(QPen(QColor("white")))
-                            painter.drawText(pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "No Image")
-                            painter.end()
+                        pixmap = load_fallback_pixmap()
                     finish_with(pixmap)
 
                 downloader.download_async(cover, local_path, timeout=5, callback=on_downloaded)
@@ -522,19 +539,7 @@ def load_pixmap_async(cover: str, width: int, height: int, callback: Callable[[Q
                 finish_with(pixmap)
                 return
 
-        placeholder_path = theme_manager.get_theme_image("placeholder", current_theme_name)
-        pixmap = QPixmap()
-        if placeholder_path and QFile.exists(placeholder_path):
-            pixmap.load(placeholder_path)
-            if pixmap.isNull():
-                logger.warning(f"Failed to load placeholder image from {placeholder_path}")
-        else:
-            pixmap = QPixmap(width, height)
-            pixmap.fill(QColor("#333333"))
-            painter = QPainter(pixmap)
-            painter.setPen(QPen(QColor("white")))
-            painter.drawText(pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "No Image")
-            painter.end()
+        pixmap = load_fallback_pixmap()
         finish_with(pixmap)
 
     # Submit the process_image function directly to the executor

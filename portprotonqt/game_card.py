@@ -26,6 +26,7 @@ from portprotonqt.config import (
     WINDOWS_LAUNCH_EXTENSIONS,
     favorites_config,
     game_config,
+    get_portproton_location,
     ui_config,
 )
 from portprotonqt.theme_manager import ThemeManager
@@ -250,7 +251,31 @@ class GameCard(QFrame):
             height = int(self.base_card_width * 1.5)
         if self._set_animated_cover(cover_path, width, height):
             return
-        load_pixmap_async(cover_path, width, height, self.on_cover_loaded)
+        fallback_exe = ""
+        fallback_icon_path = ""
+        if cover_path.startswith(("http://", "https://")):
+            fallback_exe, fallback_icon_path = self._get_exe_icon_fallback()
+        load_pixmap_async(
+            cover_path,
+            width,
+            height,
+            self.on_cover_loaded,
+            fallback_exe=fallback_exe,
+            fallback_icon_path=fallback_icon_path,
+        )
+
+    def _get_exe_icon_fallback(self) -> tuple[str, str]:
+        exe_path = self._extract_executable_path(self.exec_line)
+        if not exe_path or not os.path.isfile(exe_path):
+            return "", ""
+        if not exe_path.lower().endswith(".exe"):
+            return "", ""
+        portproton_location = get_portproton_location()
+        if not portproton_location:
+            return exe_path, ""
+        icon_name = os.path.basename(self.name) or os.path.splitext(os.path.basename(exe_path))[0]
+        icon_path = os.path.join(portproton_location, "data", "img", f"{icon_name}.png")
+        return exe_path, icon_path
 
     def _set_animated_cover(self, cover_path: str, width: int, height: int) -> bool:
         if not cover_path or not os.path.isfile(cover_path):
