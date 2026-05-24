@@ -13,6 +13,35 @@ from portprotonqt.dialogs import GameLaunchDialog
 
 logger = get_logger(__name__)
 
+PREFIX_BACKUP_EXTENSION = ".ppack"
+RESTART_TRANSIENT_OPTIONS = {
+    "--restore-prefix": 1,
+    "--create-backup": 2,
+}
+
+
+def _is_prefix_backup_arg(arg: str) -> bool:
+    path = arg
+    if path.lower().startswith("file://"):
+        path = path[7:].replace("%20", " ")
+    return path.lower().endswith(PREFIX_BACKUP_EXTENSION)
+
+
+def _restart_args(args: list[str]) -> list[str]:
+    restart_args = [args[0]]
+    skip_count = 0
+    for arg in args[1:]:
+        if skip_count:
+            skip_count -= 1
+            continue
+        if arg in RESTART_TRANSIENT_OPTIONS:
+            skip_count = RESTART_TRANSIENT_OPTIONS[arg]
+            continue
+        if _is_prefix_backup_arg(arg):
+            continue
+        restart_args.append(arg)
+    return restart_args
+
 
 class TrayManager:
     """Tray management module for PortProtonQt.
@@ -293,6 +322,6 @@ class TrayManager:
 def restart_application_process():
     """Restart the application with the current Python executable."""
     executable = sys.executable
-    args = sys.argv
+    args = _restart_args(sys.argv)
     QApplication.quit()
     subprocess.Popen([executable] + args)
