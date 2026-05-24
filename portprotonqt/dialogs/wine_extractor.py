@@ -61,6 +61,8 @@ class ExtractionThread(QThread):
                             return
 
                         entry_path = entry.pathname
+                        if entry_path is None:
+                            continue
 
                         if entry.isdir:
                             os.makedirs(entry_path, exist_ok=True)
@@ -103,10 +105,12 @@ class ExtractionThread(QThread):
                             if os.path.lexists(entry_path):
                                 os.remove(entry_path)
 
-                            try:
-                                os.symlink(entry.linkpath, entry_path)
-                            except (OSError, NotImplementedError):
-                                pass
+                            link_path = entry.linkpath
+                            if link_path is not None:
+                                try:
+                                    os.symlink(link_path, entry_path)
+                                except (OSError, NotImplementedError):
+                                    pass
 
                         bytes_read = archive.bytes_read
                         now = time.monotonic()

@@ -230,7 +230,10 @@ def _apply_file_metadata(path: str, entry: libarchive.entry.ArchiveEntry) -> Non
 
 
 def _extract_entry(target_dir: str, entry: libarchive.entry.ArchiveEntry) -> None:
-    destination = _safe_entry_path(target_dir, entry.pathname)
+    entry_path = entry.pathname
+    if entry_path is None:
+        return
+    destination = _safe_entry_path(target_dir, entry_path)
     parent_dir = os.path.dirname(destination)
     if parent_dir:
         os.makedirs(parent_dir, exist_ok=True)
@@ -242,7 +245,9 @@ def _extract_entry(target_dir: str, entry: libarchive.entry.ArchiveEntry) -> Non
     elif entry.islnk:
         if os.path.lexists(destination):
             os.remove(destination)
-        os.symlink(entry.linkpath, destination)
+        link_path = entry.linkpath
+        if link_path is not None:
+            os.symlink(link_path, destination)
     elif entry.isfile:
         if os.path.islink(destination):
             os.remove(destination)
@@ -250,7 +255,7 @@ def _extract_entry(target_dir: str, entry: libarchive.entry.ArchiveEntry) -> Non
             for block in entry.get_blocks():
                 file.write(block)
     else:
-        logger.warning("Skipped unsupported archive entry: %s", entry.pathname)
+        logger.warning("Skipped unsupported archive entry: %s", entry_path)
         return
     _apply_file_metadata(destination, entry)
 
@@ -329,13 +334,16 @@ def restore_backup(
         files_done = 0
         with libarchive.file_reader(backup_file) as archive:
             for entry in archive:
+                entry_path = entry.pathname
+                if entry_path is None:
+                    continue
                 _extract_entry(target_dir, entry)
                 files_done += 1
                 bytes_read = archive.bytes_read
                 elapsed = max(time.monotonic() - start_time, 0.001)
                 speed = bytes_read / (1024 * 1024) / elapsed
                 percent = min(int((bytes_read / archive_size) * 100), 99)
-                progress = BackupProgress(percent, entry.pathname, files_done, 0, speed)
+                progress = BackupProgress(percent, entry_path, files_done, 0, speed)
                 _emit_progress(progress_callback, progress)
         _create_restore_shortcuts(port_data_path, prefix_name)
         progress = BackupProgress(100, target_dir, files_done, files_done, 0.0)
