@@ -398,22 +398,56 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             self.game_library_manager.on_slider_released()
 
     def on_directory_changed(self, path: str):
-        """Handle directory change events for dist and prefixes directories."""
+        """Handle PortProton directory change events."""
         if not self.portproton_location:
             return
 
         dist_path = os.path.join(self.portproton_location, "data", "dist")
         prefixes_path = os.path.join(self.portproton_location, "data", "prefixes")
 
-        if path == dist_path:
+        if path == self.portproton_location:
+            QTimer.singleShot(300, self._refresh_portproton_shortcuts)
+        elif path == dist_path:
             # Wine/Proton directory changed, refresh wine combo
             QTimer.singleShot(100, self.refresh_wine_combo)  # Small delay to allow file operations to complete
         elif path == prefixes_path:
             # Prefixes directory changed, refresh prefix combo
             QTimer.singleShot(100, self.refresh_prefix_combo)  # Small delay to allow file operations to complete
 
+    def _refresh_portproton_shortcuts(self) -> None:
+        """Add newly created PortProton shortcuts to the library."""
+        if not self.portproton_location:
+            return
+
+        try:
+            desktop_files = [
+                entry.path for entry in os.scandir(self.portproton_location)
+                if entry.name.endswith(".desktop")
+            ]
+        except OSError as e:
+            logger.warning("Failed to scan PortProton shortcuts: %s", e)
+            return
+
+        existing_exec_lines = {game[5] for game in self.game_library_manager.games}
+
+        def on_game_data(game_data: tuple | None) -> None:
+            if not game_data:
+                return
+            exec_line = game_data[5]
+            if exec_line in existing_exec_lines:
+                return
+            existing_exec_lines.add(exec_line)
+            self.game_library_manager.add_game_incremental(game_data)
+            QTimer.singleShot(200, self.game_library_manager.load_visible_images)
+
+        for file_path in desktop_files:
+            entry = parse_desktop_entry(file_path)
+            if not entry or entry.get("Exec", "") in existing_exec_lines:
+                continue
+            self._process_desktop_file_async(file_path, on_game_data)
+
     def start_watching_directories(self):
-        """Start watching dist and prefixes directories for changes."""
+        """Start watching PortProton directories for changes."""
         if not self.portproton_location:
             return
 
@@ -429,6 +463,9 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
         # Add prefixes directory to watcher
         self.fs_watcher.addPath(prefixes_path)
+
+        # Add shortcuts directory to watcher
+        self.fs_watcher.addPath(self.portproton_location)
 
     def launch_autoinstall(
         self, script_name: str, button: AutoSizeButton | None = None
@@ -667,20 +704,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 self.install_process = None
             self._reset_install_state()
             return
-        if exit_code == 0:
-            desktop_dir = self.portproton_location or ""
-            new_desktops = [e.path for e in os.scandir(desktop_dir) if e.name.endswith(".desktop")]
-            if new_desktops:
-                latest = max(new_desktops, key=os.path.getmtime)
-                self._process_desktop_file_async(
-                    latest,
-                    lambda result: (
-                        self.game_library_manager.add_game_incremental(result)
-                        if result else None
-                    )
-                )
-
-        else:
+        if exit_code != 0:
             QMessageBox.warning(self, _("Error"), f"Installation failed (code: {exit_code}).")
 
         if self.install_process:
