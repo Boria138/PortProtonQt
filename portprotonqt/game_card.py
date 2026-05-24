@@ -23,6 +23,7 @@ from portprotonqt.image_utils import (
 )
 from portprotonqt.localization import _
 from portprotonqt.config import (
+    WINDOWS_LAUNCH_EXTENSIONS,
     favorites_config,
     game_config,
     ui_config,
@@ -589,7 +590,7 @@ class GameCard(QFrame):
         exe_path = self._extract_executable_path(self.exec_line)
         if not exe_path:
             return ""
-        if not exe_path.lower().endswith(".exe"):
+        if not exe_path.lower().endswith(WINDOWS_LAUNCH_EXTENSIONS):
             return ""
         return "" if os.path.exists(exe_path) else exe_path
 
@@ -612,7 +613,7 @@ class GameCard(QFrame):
                 return ""
             return os.path.expanduser(parts[silent_index + 1])
         for part in reversed(parts):
-            if part.lower().endswith(".exe"):
+            if part.lower().endswith(WINDOWS_LAUNCH_EXTENSIONS):
                 return os.path.expanduser(part)
         return ""
 

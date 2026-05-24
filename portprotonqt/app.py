@@ -38,7 +38,6 @@ from portprotonqt.cli import (
     parse_portproton_url,
     is_launch_file,
     is_prefix_backup_file,
-    is_exe_file,
     normalize_launch_path,
     add_steam_compat_tool,
     reinstall_steam_compat_tool,
@@ -263,7 +262,7 @@ def main():
         prefix_name, backup_dir = args.create_backup
         backup_request = (prefix_name, os.path.abspath(os.path.expanduser(backup_dir)))
         ipc_message = "backup:{}:{}".format(quote(prefix_name, safe=""), quote(backup_request[1], safe=""))
-    elif is_silent_launch and args.file_or_url and is_exe_file(args.file_or_url):
+    elif is_silent_launch and args.file_or_url and is_launch_file(args.file_or_url):
         run_silent_tray(app, start_sh, normalize_launch_path(args.file_or_url))
         sys.exit(app.exec())
     elif is_restore_prefix_request(args):

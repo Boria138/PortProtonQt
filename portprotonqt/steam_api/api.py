@@ -12,7 +12,7 @@ from PIL import Image, UnidentifiedImageError
 from portprotonqt.logger import get_logger
 from portprotonqt.downloader import Downloader
 from portprotonqt.localization import get_steam_language
-from portprotonqt.config import extract_exec_target_path, ui_config
+from portprotonqt.config import THEMED_LAUNCH_ICON_NAMES, extract_exec_target_path, ui_config
 from portprotonqt.image_utils import COVER_IMAGE_EXTENSIONS
 from portprotonqt.steam_api.utils import decode_text, get_local_steam_cover
 from portprotonqt.steam_api.cache import (
@@ -489,12 +489,27 @@ def get_steam_game_info_async(
     callback: Callable[[dict], None]
 ) -> None:
     """Asynchronously retrieve game info based on desktop name and exec line."""
+    game_exe = extract_exec_target_path(exec_line) or exec_line
+    if os.path.splitext(game_exe)[1].lower() in THEMED_LAUNCH_ICON_NAMES:
+        game_name = desktop_name or os.path.splitext(os.path.basename(game_exe))[0]
+        callback(_build_game_info_result(
+            appid="",
+            name=decode_text(game_name),
+            description="",
+            cover="",
+            controller_support="",
+            protondb_tier="",
+            steam_game="false",
+            anticheat_status="",
+            anticheat_slug="",
+        ))
+        return
+
     if ui_config.get_economy_mode():
         cached_info = get_cached_steam_game_info(desktop_name, exec_line)
         if cached_info:
             callback(cached_info)
             return
-        game_exe = extract_exec_target_path(exec_line) or exec_line
         exe_name = os.path.splitext(os.path.basename(game_exe))[0]
         game_name = desktop_name or exe_name
         callback(_build_game_info_result(
@@ -513,7 +528,6 @@ def get_steam_game_info_async(
     from portprotonqt.steam_api.cache import get_exiftool_data
     from portprotonqt.steam_api.utils import filter_candidates, remove_duplicates
 
-    game_exe = extract_exec_target_path(exec_line) or exec_line
     is_autoinstall = exec_line.startswith("autoinstall:")
 
     if game_exe.lower().endswith('.bat'):

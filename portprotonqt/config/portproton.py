@@ -307,6 +307,16 @@ def parse_desktop_entry(file_path: str) -> configparser.SectionProxy | None:
     return cp["Desktop Entry"]
 
 
+WINDOWS_LAUNCH_EXTENSIONS = (".exe", ".bat", ".msi", ".reg")
+DISC_IMAGE_EXTENSIONS = (".iso", ".mdf")
+LAUNCH_FILE_EXTENSIONS = WINDOWS_LAUNCH_EXTENSIONS + DISC_IMAGE_EXTENSIONS
+THEMED_LAUNCH_ICON_NAMES = {
+    ".bat": "bat",
+    ".msi": "msi",
+    ".reg": "reg",
+}
+
+
 def extract_exec_target_path(exec_value: str | list[str]) -> str | None:
     """Extract target executable or image path from a desktop Exec value."""
     if isinstance(exec_value, str):
@@ -327,7 +337,7 @@ def extract_exec_target_path(exec_value: str | list[str]) -> str | None:
         return None
 
     for part in reversed(parts):
-        if part.lower().endswith((".exe", ".iso", ".mdf")):
+        if part.lower().endswith(LAUNCH_FILE_EXTENSIONS):
             return os.path.expanduser(part)
 
     if parts[0] in ("env", "flatpak"):

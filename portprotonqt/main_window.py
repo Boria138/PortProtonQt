@@ -36,6 +36,9 @@ from portprotonqt.config import (
     favorites_config,
     proxy_config,
     display_config,
+    LAUNCH_FILE_EXTENSIONS,
+    THEMED_LAUNCH_ICON_NAMES,
+    WINDOWS_LAUNCH_EXTENSIONS,
     extract_exec_target_path,
     window_config,
     reset_main_config,
@@ -936,18 +939,20 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         user_cover = ""
         user_game_folder = ""
         generated_img_icon = ""
+        themed_launch_icon = ""
         economy_mode = ui_config.get_economy_mode()
 
         if game_exe:
             exe_name = os.path.splitext(os.path.basename(game_exe))[0]
             user_game_folder = os.path.join(user_custom_folder, exe_name)
             os.makedirs(user_game_folder, exist_ok=True)
+            themed_launch_icon = THEMED_LAUNCH_ICON_NAMES.get(os.path.splitext(game_exe)[1].lower(), "")
             generated_img_icon = self._generate_missing_portproton_icon(
                 game_exe, entry.get("Icon", ""), desktop_name
             )
 
             # Check if local game folder is empty and download assets if it is
-            if not economy_mode and not assets_checked and not os.listdir(user_game_folder):
+            if not themed_launch_icon and not economy_mode and not assets_checked and not os.listdir(user_game_folder):
                 logger.debug(f"Local folder for {exe_name} is empty, checking repository")
                 def on_assets_downloaded(results):
                     if results["cover"]:
@@ -1017,7 +1022,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             translations = {'name': desktop_name, 'description': ''}
             if os.path.exists(user_metadata_file):
                 translations = read_metadata_translations(user_metadata_file, language_code)
-            cached_steam_info = get_cached_steam_game_info(desktop_name, exec_line)
+            cached_steam_info = {} if themed_launch_icon else get_cached_steam_game_info(desktop_name, exec_line)
             final_name = translations['name'] or cached_steam_info.get("name", "")
             final_desc = translations['description'] or cached_steam_info.get("description", "")
             final_cover = (
@@ -1269,7 +1274,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
             for url in event.mimeData().urls():
-                if url.toLocalFile().lower().endswith((".exe",) + DISC_IMAGE_EXTENSIONS):
+                if url.toLocalFile().lower().endswith(LAUNCH_FILE_EXTENSIONS):
                     event.acceptProposedAction()
                     return
         event.ignore()
@@ -1277,7 +1282,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
     def dropEvent(self, event):
         for url in event.mimeData().urls():
             path = url.toLocalFile()
-            if path.lower().endswith((".exe",) + DISC_IMAGE_EXTENSIONS):
+            if path.lower().endswith(LAUNCH_FILE_EXTENSIONS):
                 self.openAddGameDialog(path)
                 break
 
@@ -3200,7 +3205,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         If not, open detail page without creating a shortcut automatically.
 
         Args:
-            exe_path: Full path to the launch file (.exe or disc image)
+            exe_path: Full path to the launch file
         """
         # Normalize the exe path
         exe_path = os.path.abspath(exe_path)
@@ -3227,6 +3232,11 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                     break
 
         generated_cover_path = ""
+        themed_launch_icon = THEMED_LAUNCH_ICON_NAMES.get(os.path.splitext(exe_path)[1].lower(), "")
+        themed_launch_cover = ""
+        if themed_launch_icon:
+            icon_path = self.theme_manager.get_icon(themed_launch_icon, as_path=True)
+            themed_launch_cover = icon_path if isinstance(icon_path, str) else ""
         if not local_cover_path and os.path.isfile(exe_path) and exe_path.lower().endswith(".exe"):
             xdg_cache_home = os.getenv(
                 "XDG_CACHE_HOME",
@@ -3251,7 +3261,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             icon_path = existing_entry.get("Icon", "")
             exec_line = existing_entry.get("Exec", "")
             if economy_mode:
-                cached_steam_info = get_cached_steam_game_info(game_name, exec_line)
+                cached_steam_info = {} if themed_launch_icon else get_cached_steam_game_info(game_name, exec_line)
                 game_data = {
                     "name": game_name,
                     "description": cached_steam_info.get("description", ""),
@@ -3283,14 +3293,20 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 else:
                     sgdb_cover_path = steam_info_cover
 
-                final_cover_path = local_cover_path or steam_cover_path or sgdb_cover_path or generated_cover_path or icon_path
+                final_cover_path = (
+                    local_cover_path or steam_cover_path or sgdb_cover_path or
+                    themed_launch_cover or generated_cover_path or icon_path
+                )
 
-                if not (local_cover_path or steam_cover_path or sgdb_cover_path):
+                if not (local_cover_path or steam_cover_path or sgdb_cover_path) and not themed_launch_icon:
                     def on_sgdb_cover(cover: str) -> None:
                         game_data = {
                             "name": game_name,
                             "description": steam_info.get("description", ""),
-                            "cover_path": local_cover_path or steam_cover_path or cover or generated_cover_path or icon_path,
+                            "cover_path": (
+                                local_cover_path or steam_cover_path or cover or
+                                themed_launch_cover or generated_cover_path or icon_path
+                            ),
                             "appid": steam_info.get("appid", ""),
                             "controller_support": steam_info.get("controller_support", ""),
                             "exec_line": exec_line,
@@ -3329,11 +3345,11 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             game_name_from_exe = os.path.splitext(os.path.basename(exe_path))[0]
             direct_exec_line = shlex.quote(exe_path)
             if economy_mode:
-                cached_steam_info = get_cached_steam_game_info(game_name_from_exe, direct_exec_line)
+                cached_steam_info = {} if themed_launch_icon else get_cached_steam_game_info(game_name_from_exe, direct_exec_line)
                 game_data = {
                     "name": game_name_from_exe,
                     "description": cached_steam_info.get("description", ""),
-                    "cover_path": local_cover_path or cached_steam_info.get("cover", "") or generated_cover_path,
+                    "cover_path": local_cover_path or cached_steam_info.get("cover", "") or themed_launch_cover or generated_cover_path,
                     "appid": cached_steam_info.get("appid", ""),
                     "controller_support": cached_steam_info.get("controller_support", ""),
                     "exec_line": direct_exec_line,
@@ -3360,14 +3376,20 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 else:
                     sgdb_cover_path = steam_info_cover
 
-                final_cover_path = local_cover_path or steam_cover_path or sgdb_cover_path or generated_cover_path
+                final_cover_path = (
+                    local_cover_path or steam_cover_path or sgdb_cover_path or
+                    themed_launch_cover or generated_cover_path
+                )
 
-                if not (local_cover_path or steam_cover_path or sgdb_cover_path):
+                if not (local_cover_path or steam_cover_path or sgdb_cover_path) and not themed_launch_icon:
                     def on_sgdb_cover(cover: str) -> None:
                         game_data = {
                             "name": game_name_from_exe,
                             "description": steam_info.get("description", ""),
-                            "cover_path": local_cover_path or steam_cover_path or cover or generated_cover_path,
+                            "cover_path": (
+                                local_cover_path or steam_cover_path or cover or
+                                themed_launch_cover or generated_cover_path
+                            ),
                             "appid": steam_info.get("appid", ""),
                             "controller_support": steam_info.get("controller_support", ""),
                             "exec_line": direct_exec_line,
@@ -3683,7 +3705,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 QMessageBox.warning(self, _("Error"), _("PortProton start script not found"))
                 return
             launch_cmd = self.start_sh + resolved_iso_parts
-        elif self.start_sh and file_to_check.lower().endswith(".exe"):
+        elif self.start_sh and file_to_check.lower().endswith(WINDOWS_LAUNCH_EXTENSIONS):
             launch_file_parts = entry_exec_split if file_to_check == first_exec_part else [file_to_check]
             launch_cmd = self.start_sh + launch_file_parts
 
@@ -3712,7 +3734,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             inhibit_game_name = game_name or self._get_game_name_for_exec_line(exec_line)
             if inhibit_game_name:
                 env_vars["PW_INHIBIT_NAME"] = inhibit_game_name
-            game_exe_for_prefix = file_to_check if file_to_check.lower().endswith(".exe") else ""
+            game_exe_for_prefix = file_to_check if file_to_check.lower().endswith(WINDOWS_LAUNCH_EXTENSIONS) else ""
             self._check_missing_prefix_before_launch(game_exe_for_prefix, env_vars)
 
             # Launch game
