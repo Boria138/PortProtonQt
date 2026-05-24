@@ -1,3 +1,0 @@
-name=Russian Fishing 4
-description_ru=Реалистичный симулятор рыбалки, который предлагает игрокам погрузиться в увлекательный процесс ловли рыбы в различных красивых водоемах России. Игра включает в себя широкий выбор снастей, видов рыб и возможностей для соревнований с другими рыбаками.
-description_en=A realistic fishing simulator that immerses players in the enjoyable process of catching fish in various beautiful bodies of water across Russia. The game features a wide selection of tackle, fish species, and opportunities for competition with other anglers.

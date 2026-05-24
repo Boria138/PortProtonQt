@@ -1,3 +1,0 @@
-name=Steam (UNSTABLE)
-description_ru=Лаунчер для библиотеки игр Steam.
-description_en=Launcher for the Steam game library.

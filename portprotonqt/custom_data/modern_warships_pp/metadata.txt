@@ -1,3 +1,0 @@
-name=Modern Warships
-description_ru=Многопользовательская военная игра, где игроки управляют современными боевыми кораблями и сражаются на морских аренах. Игра предлагает широкий выбор судов, реалистичную графику и захватывающие многопользовательские сражения.
-description_en=A multiplayer military game where players control modern battle ships and fight on naval arenas. The game offers a wide selection of vessels, realistic graphics, and thrilling multiplayer battles.

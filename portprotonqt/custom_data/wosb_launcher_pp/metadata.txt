@@ -1,3 +1,0 @@
-name=World of Sea Battle
-description_ru=Многопользовательская игра, в которой игроки управляют кораблями и участвуют в морских сражениях, стремясь одержать победу над противниками. Игра предлагает различные игровые режимы, возможность кастомизации судов и тактическое планирование командных действий.
-description_en=A multiplayer game where players control ships and participate in naval battles, aiming to defeat their opponents. The game offers various gameplay modes, ship customization options, and tactical planning for team actions.

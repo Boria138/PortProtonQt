@@ -1,3 +1,0 @@
-name=Blood and Soul
-description_ru=Многопользовательская ролевая игра с богатой системой боя и яркой графикой, вдохновленная восточной мифологией. Игроки могут выбирать из различных классов, исследовать уникальные локации и сражаться с могущественными врагами.
-description_en=A multiplayer role-playing game featuring a rich combat system and vibrant graphics, inspired by Eastern mythology. Players can choose from various classes, explore unique locations, and battle powerful foes.

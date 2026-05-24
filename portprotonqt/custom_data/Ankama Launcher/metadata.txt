@@ -1,3 +1,0 @@
-name=Ankama Launcher
-description_ru=Лаунчер для игр Ankama.
-description_en=Launcher for Ankama studio games.

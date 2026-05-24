@@ -1,3 +1,0 @@
-name=Azahar
-description_ru=Эмулятор Nintendo 3DS с открытым исходным кодом на основе Citra, созданный для запуска игр с поддержкой улучшенного разрешения и расширенных настроек эмуляции.
-description_en=An open source Nintendo 3DS emulator based on Citra, designed to run games with support for enhanced resolutions and advanced emulation settings.

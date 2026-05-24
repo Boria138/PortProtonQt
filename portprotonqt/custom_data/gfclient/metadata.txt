@@ -1,3 +1,0 @@
-name=Gameforge Client
-description_ru=Лаунчер для игр Gameforge.
-description_en=Launcher for Gameforge studio games.

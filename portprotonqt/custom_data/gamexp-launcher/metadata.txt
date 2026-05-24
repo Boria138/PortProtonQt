@@ -1,3 +1,0 @@
-name=GameXP
-description_ru=Лаунчер для игр GameXP.
-description_en=Launcher for GameXP studio games.

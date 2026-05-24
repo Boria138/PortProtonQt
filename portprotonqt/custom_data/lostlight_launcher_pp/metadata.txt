@@ -1,3 +1,0 @@
-name=Lost Light
-description_ru=Многопользовательская игра в жанре шутера от первого лица с элементами выживания, где игроки исследуют постапокалиптический мир и сражаются за ресурсы. Игроки должны объединяться в команды, чтобы преодолевать опасности и выполнять миссии, при этом постоянно испытывая напряжение от возможных столкновений с другими группами.
-description_en=A multiplayer first-person shooter with survival elements, where players explore a post-apocalyptic world and fight for resources. Players must team up to overcome dangers and complete missions, while constantly feeling the tension from potential encounters with other groups.
