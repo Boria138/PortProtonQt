@@ -36,6 +36,9 @@ from portprotonqt.config import (
     favorites_config,
     proxy_config,
     display_config,
+    LAUNCH_FILE_EXTENSIONS,
+    THEMED_LAUNCH_ICON_NAMES,
+    WINDOWS_LAUNCH_EXTENSIONS,
     extract_exec_target_path,
     window_config,
     reset_main_config,
@@ -57,6 +60,8 @@ from portprotonqt.game_library_manager import GameLibraryManager
 from portprotonqt.virtual_keyboard import VirtualKeyboard
 from portprotonqt.disc_image_utils import DiscImageManager
 from portprotonqt.dialogs.proton_manager import show_proton_manager
+from portprotonqt.dialogs.prefix_backup import PrefixBackupDialog, PrefixBackupJob, PrefixBackupThread
+from portprotonqt.scripts_utils.prefix_backup import is_legacy_squashfs_backup
 from portprotonqt.tabs.control_hints import MainWindowControlHintsMixin
 from portprotonqt.tabs.system_tab import MainWindowSystemTabMixin
 from portprotonqt.tabs.workers import MainWindowWorkersMixin
@@ -314,6 +319,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         # 3. QStackedWidget (TABS)
         self.stackedWidget = QStackedWidget()
         self.stackedWidget.currentChanged.connect(self.updateControlHints)
+        self.stackedWidget.currentChanged.connect(self._load_empty_library_on_tab_enter)
         mainLayout.addWidget(self.stackedWidget)
 
         self.createInstalledTab()
@@ -393,22 +399,56 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             self.game_library_manager.on_slider_released()
 
     def on_directory_changed(self, path: str):
-        """Handle directory change events for dist and prefixes directories."""
+        """Handle PortProton directory change events."""
         if not self.portproton_location:
             return
 
         dist_path = os.path.join(self.portproton_location, "data", "dist")
         prefixes_path = os.path.join(self.portproton_location, "data", "prefixes")
 
-        if path == dist_path:
+        if path == self.portproton_location:
+            QTimer.singleShot(300, self._refresh_portproton_shortcuts)
+        elif path == dist_path:
             # Wine/Proton directory changed, refresh wine combo
             QTimer.singleShot(100, self.refresh_wine_combo)  # Small delay to allow file operations to complete
         elif path == prefixes_path:
             # Prefixes directory changed, refresh prefix combo
             QTimer.singleShot(100, self.refresh_prefix_combo)  # Small delay to allow file operations to complete
 
+    def _refresh_portproton_shortcuts(self) -> None:
+        """Add newly created PortProton shortcuts to the library."""
+        if not self.portproton_location:
+            return
+
+        try:
+            desktop_files = [
+                entry.path for entry in os.scandir(self.portproton_location)
+                if entry.name.endswith(".desktop")
+            ]
+        except OSError as e:
+            logger.warning("Failed to scan PortProton shortcuts: %s", e)
+            return
+
+        existing_exec_lines = {game[5] for game in self.game_library_manager.games}
+
+        def on_game_data(game_data: tuple | None) -> None:
+            if not game_data:
+                return
+            exec_line = game_data[5]
+            if exec_line in existing_exec_lines:
+                return
+            existing_exec_lines.add(exec_line)
+            self.game_library_manager.add_game_incremental(game_data)
+            QTimer.singleShot(200, self.game_library_manager.load_visible_images)
+
+        for file_path in desktop_files:
+            entry = parse_desktop_entry(file_path)
+            if not entry or entry.get("Exec", "") in existing_exec_lines:
+                continue
+            self._process_desktop_file_async(file_path, on_game_data)
+
     def start_watching_directories(self):
-        """Start watching dist and prefixes directories for changes."""
+        """Start watching PortProton directories for changes."""
         if not self.portproton_location:
             return
 
@@ -424,6 +464,9 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
         # Add prefixes directory to watcher
         self.fs_watcher.addPath(prefixes_path)
+
+        # Add shortcuts directory to watcher
+        self.fs_watcher.addPath(self.portproton_location)
 
     def launch_autoinstall(
         self, script_name: str, button: AutoSizeButton | None = None
@@ -662,20 +705,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 self.install_process = None
             self._reset_install_state()
             return
-        if exit_code == 0:
-            desktop_dir = self.portproton_location or ""
-            new_desktops = [e.path for e in os.scandir(desktop_dir) if e.name.endswith(".desktop")]
-            if new_desktops:
-                latest = max(new_desktops, key=os.path.getmtime)
-                self._process_desktop_file_async(
-                    latest,
-                    lambda result: (
-                        self.game_library_manager.add_game_incremental(result)
-                        if result else None
-                    )
-                )
-
-        else:
+        if exit_code != 0:
             QMessageBox.warning(self, _("Error"), f"Installation failed (code: {exit_code}).")
 
         if self.install_process:
@@ -934,18 +964,20 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         user_cover = ""
         user_game_folder = ""
         generated_img_icon = ""
+        themed_launch_icon = ""
         economy_mode = ui_config.get_economy_mode()
 
         if game_exe:
             exe_name = os.path.splitext(os.path.basename(game_exe))[0]
             user_game_folder = os.path.join(user_custom_folder, exe_name)
             os.makedirs(user_game_folder, exist_ok=True)
+            themed_launch_icon = THEMED_LAUNCH_ICON_NAMES.get(os.path.splitext(game_exe)[1].lower(), "")
             generated_img_icon = self._generate_missing_portproton_icon(
                 game_exe, entry.get("Icon", ""), desktop_name
             )
 
             # Check if local game folder is empty and download assets if it is
-            if not economy_mode and not assets_checked and not os.listdir(user_game_folder):
+            if not themed_launch_icon and not economy_mode and not assets_checked and not os.listdir(user_game_folder):
                 logger.debug(f"Local folder for {exe_name} is empty, checking repository")
                 def on_assets_downloaded(results):
                     if results["cover"]:
@@ -1015,7 +1047,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             translations = {'name': desktop_name, 'description': ''}
             if os.path.exists(user_metadata_file):
                 translations = read_metadata_translations(user_metadata_file, language_code)
-            cached_steam_info = get_cached_steam_game_info(desktop_name, exec_line)
+            cached_steam_info = {} if themed_launch_icon else get_cached_steam_game_info(desktop_name, exec_line)
             final_name = translations['name'] or cached_steam_info.get("name", "")
             final_desc = translations['description'] or cached_steam_info.get("description", "")
             final_cover = (
@@ -1140,6 +1172,10 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         if self.stackedWidget.currentIndex() == getattr(self, "system_tab_index", -1):
             QTimer.singleShot(0, self._focusSystemNetworkOnTabEnter)
 
+    def _load_empty_library_on_tab_enter(self, index: int) -> None:
+        if index == 0 and self.isVisible() and not self.games:
+            self.loadGames(force_load=True)
+
     def createSearchWidget(self) -> tuple[QWidget, CustomLineEdit]:
         self.container = QWidget()
         self.container.setStyleSheet(self.theme.CONTAINER_STYLE)
@@ -1151,7 +1187,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.GameLibraryTitle.setStyleSheet(self.theme.INSTALLED_TAB_TITLE_STYLE)
         layout.addWidget(self.GameLibraryTitle)
 
-        self.addGameButton = AutoSizeButton(_("Add Game"), icon=self.theme_manager.get_icon("addgame", as_path=True))
+        self.addGameButton = AutoSizeButton(_("Add a shortcut"), icon=self.theme_manager.get_icon("addgame", as_path=True))
         self.addGameButton.setStyleSheet(self.theme.ADDGAME_BACK_BUTTON_STYLE)
         self.addGameButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.addGameButton.clicked.connect(self.openAddGameDialog)
@@ -1171,7 +1207,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         action_pos = cast(QLineEdit.ActionPosition, QLineEdit.ActionPosition.LeadingPosition)
         self.searchEdit.addAction(icon, action_pos)
         self.searchEdit.setMaximumWidth(200)
-        self.searchEdit.setPlaceholderText(_("Find Games ..."))
+        self.searchEdit.setPlaceholderText(_("Search ..."))
         self.searchEdit.setClearButtonEnabled(True)
         self.searchEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE)
 
@@ -1267,7 +1303,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
             for url in event.mimeData().urls():
-                if url.toLocalFile().lower().endswith((".exe",) + DISC_IMAGE_EXTENSIONS):
+                if url.toLocalFile().lower().endswith(LAUNCH_FILE_EXTENSIONS):
                     event.acceptProposedAction()
                     return
         event.ignore()
@@ -1275,7 +1311,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
     def dropEvent(self, event):
         for url in event.mimeData().urls():
             path = url.toLocalFile()
-            if path.lower().endswith((".exe",) + DISC_IMAGE_EXTENSIONS):
+            if path.lower().endswith(LAUNCH_FILE_EXTENSIONS):
                 self.openAddGameDialog(path)
                 break
 
@@ -1476,7 +1512,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         action_pos = QLineEdit.ActionPosition.LeadingPosition
         self.autoInstallSearchLineEdit.addAction(icon, action_pos)
         self.autoInstallSearchLineEdit.setMaximumWidth(200)
-        self.autoInstallSearchLineEdit.setPlaceholderText(_("Find Games ..."))
+        self.autoInstallSearchLineEdit.setPlaceholderText(_("Search ..."))
         self.autoInstallSearchLineEdit.setClearButtonEnabled(True)
         self.autoInstallSearchLineEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE)
         self.autoInstallSearchLineEdit.textChanged.connect(self.filterAutoInstallGames)
@@ -1553,6 +1589,17 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 game_data["game_source"] = "portproton"
                 self.detail_page_manager.openAutoInstallDetailPage(game_data)
 
+            def get_autoinstall_theme_cover(exe_name: str) -> str | None:
+                theme_cover = self.theme_manager.get_theme_image(exe_name, self.current_theme_name)
+                if isinstance(theme_cover, str) and "autoinstall_covers" in theme_cover:
+                    return theme_cover
+                if auto_layout_mode != "list":
+                    return None
+                classic_cover = self.theme_manager.get_theme_image(exe_name, "classic")
+                if isinstance(classic_cover, str) and "autoinstall_covers" in classic_cover:
+                    return classic_cover
+                return None
+
             # Create cards
             for game_tuple in games:
                 name = game_tuple[0]
@@ -1563,8 +1610,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 exec_line = game_tuple[5]
                 game_source = game_tuple[12]
                 exe_name = game_tuple[13]
-                theme_cover = self.theme_manager.get_theme_image(exe_name, self.current_theme_name)
-                has_theme_cover = isinstance(theme_cover, str) and "autoinstall_covers" in theme_cover
+                theme_cover = get_autoinstall_theme_cover(exe_name)
+                has_theme_cover = theme_cover is not None
                 if auto_layout_mode == "list" and has_theme_cover:
                     cover_path = theme_cover
                 elif not cover_path:
@@ -1608,8 +1655,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 if local_path and exe_name in self.autoInstallGameCards:
                     card = self.autoInstallGameCards[exe_name]
                     if card.list_layout:
-                        theme_cover = self.theme_manager.get_theme_image(exe_name, self.current_theme_name)
-                        if isinstance(theme_cover, str) and "autoinstall_covers" in theme_cover:
+                        theme_cover = get_autoinstall_theme_cover(exe_name)
+                        if theme_cover is not None:
                             return
                     card.cover_path = local_path
                     cover_width = 64 if card.list_layout else self.auto_card_width
@@ -1985,15 +2032,13 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
     def _perform_backup(self, backup_dir, prefix_name):
         os.makedirs(backup_dir, exist_ok=True)
-        if not self.portproton_location or not self.start_sh:
+        if not self.portproton_location:
             return
-        start_sh = self.start_sh
-        self.backup_process = QProcess(self)
-        self.backup_process.finished.connect(lambda exitCode: self._on_backup_finished(exitCode))
-        cmd = start_sh + ["--backup-prefix", prefix_name, backup_dir]
-        self.backup_process.start(cmd[0], cmd[1:])
-        if not self.backup_process.waitForStarted():
-            QMessageBox.warning(self, _("Error"), _("Failed to start backup process."))
+        job = PrefixBackupJob("backup", self.portproton_location, prefix_name, backup_dir)
+        worker = PrefixBackupThread(job)
+        dialog = PrefixBackupDialog(self, worker, self.theme)
+        dialog.start()
+        self._on_backup_finished(0 if worker.success else 1)
 
     def load_prefix_backup(self):
         file_explorer = FileExplorer(self, file_filter='.ppack')
@@ -2003,14 +2048,22 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
     def _perform_restore(self, file_path):
         if not file_path or not os.path.exists(file_path):
             return
-        if not self.portproton_location or not self.start_sh:
+        if not self.portproton_location:
             return
-        start_sh = self.start_sh
-        self.restore_process = QProcess(self)
-        self.restore_process.finished.connect(lambda exitCode: self._on_restore_finished(exitCode))
-        cmd = start_sh + ["--restore-prefix", file_path]
-        self.restore_process.start(cmd[0], cmd[1:])
-        if not self.restore_process.waitForStarted():
+        if is_legacy_squashfs_backup(file_path):
+            self._perform_legacy_restore(file_path)
+            return
+        job = PrefixBackupJob("restore", self.portproton_location, file_path)
+        worker = PrefixBackupThread(job)
+        dialog = PrefixBackupDialog(self, worker, self.theme)
+        dialog.start()
+        self._on_restore_finished(0 if worker.success else 1)
+
+    def _perform_legacy_restore(self, file_path: str) -> None:
+        if not self.start_sh:
+            return
+        cmd = self.start_sh + ["--restore-prefix", file_path]
+        if not QProcess.startDetached(cmd[0], cmd[1:]):
             QMessageBox.warning(self, _("Error"), _("Failed to start restore process."))
 
     def _on_backup_finished(self, exitCode):
@@ -3189,7 +3242,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         If not, open detail page without creating a shortcut automatically.
 
         Args:
-            exe_path: Full path to the launch file (.exe or disc image)
+            exe_path: Full path to the launch file
         """
         # Normalize the exe path
         exe_path = os.path.abspath(exe_path)
@@ -3216,6 +3269,11 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                     break
 
         generated_cover_path = ""
+        themed_launch_icon = THEMED_LAUNCH_ICON_NAMES.get(os.path.splitext(exe_path)[1].lower(), "")
+        themed_launch_cover = ""
+        if themed_launch_icon:
+            icon_path = self.theme_manager.get_icon(themed_launch_icon, as_path=True)
+            themed_launch_cover = icon_path if isinstance(icon_path, str) else ""
         if not local_cover_path and os.path.isfile(exe_path) and exe_path.lower().endswith(".exe"):
             xdg_cache_home = os.getenv(
                 "XDG_CACHE_HOME",
@@ -3240,7 +3298,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             icon_path = existing_entry.get("Icon", "")
             exec_line = existing_entry.get("Exec", "")
             if economy_mode:
-                cached_steam_info = get_cached_steam_game_info(game_name, exec_line)
+                cached_steam_info = {} if themed_launch_icon else get_cached_steam_game_info(game_name, exec_line)
                 game_data = {
                     "name": game_name,
                     "description": cached_steam_info.get("description", ""),
@@ -3272,14 +3330,20 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 else:
                     sgdb_cover_path = steam_info_cover
 
-                final_cover_path = local_cover_path or steam_cover_path or sgdb_cover_path or generated_cover_path or icon_path
+                final_cover_path = (
+                    local_cover_path or steam_cover_path or sgdb_cover_path or
+                    themed_launch_cover or generated_cover_path or icon_path
+                )
 
-                if not (local_cover_path or steam_cover_path or sgdb_cover_path):
+                if not (local_cover_path or steam_cover_path or sgdb_cover_path) and not themed_launch_icon:
                     def on_sgdb_cover(cover: str) -> None:
                         game_data = {
                             "name": game_name,
                             "description": steam_info.get("description", ""),
-                            "cover_path": local_cover_path or steam_cover_path or cover or generated_cover_path or icon_path,
+                            "cover_path": (
+                                local_cover_path or steam_cover_path or cover or
+                                themed_launch_cover or generated_cover_path or icon_path
+                            ),
                             "appid": steam_info.get("appid", ""),
                             "controller_support": steam_info.get("controller_support", ""),
                             "exec_line": exec_line,
@@ -3318,11 +3382,11 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             game_name_from_exe = os.path.splitext(os.path.basename(exe_path))[0]
             direct_exec_line = shlex.quote(exe_path)
             if economy_mode:
-                cached_steam_info = get_cached_steam_game_info(game_name_from_exe, direct_exec_line)
+                cached_steam_info = {} if themed_launch_icon else get_cached_steam_game_info(game_name_from_exe, direct_exec_line)
                 game_data = {
                     "name": game_name_from_exe,
                     "description": cached_steam_info.get("description", ""),
-                    "cover_path": local_cover_path or cached_steam_info.get("cover", "") or generated_cover_path,
+                    "cover_path": local_cover_path or cached_steam_info.get("cover", "") or themed_launch_cover or generated_cover_path,
                     "appid": cached_steam_info.get("appid", ""),
                     "controller_support": cached_steam_info.get("controller_support", ""),
                     "exec_line": direct_exec_line,
@@ -3349,14 +3413,20 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 else:
                     sgdb_cover_path = steam_info_cover
 
-                final_cover_path = local_cover_path or steam_cover_path or sgdb_cover_path or generated_cover_path
+                final_cover_path = (
+                    local_cover_path or steam_cover_path or sgdb_cover_path or
+                    themed_launch_cover or generated_cover_path
+                )
 
-                if not (local_cover_path or steam_cover_path or sgdb_cover_path):
+                if not (local_cover_path or steam_cover_path or sgdb_cover_path) and not themed_launch_icon:
                     def on_sgdb_cover(cover: str) -> None:
                         game_data = {
                             "name": game_name_from_exe,
                             "description": steam_info.get("description", ""),
-                            "cover_path": local_cover_path or steam_cover_path or cover or generated_cover_path,
+                            "cover_path": (
+                                local_cover_path or steam_cover_path or cover or
+                                themed_launch_cover or generated_cover_path
+                            ),
                             "appid": steam_info.get("appid", ""),
                             "controller_support": steam_info.get("controller_support", ""),
                             "exec_line": direct_exec_line,
@@ -3537,7 +3607,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         """
         if self.current_running_button is not None:
             try:
-                self.current_running_button.setText(_("Play"))
+                self.current_running_button.setText(_("Start"))
                 icon = self.theme_manager.get_icon("play", as_path=True)
                 self.current_running_button.setIcon(icon)
             except RuntimeError:
@@ -3672,7 +3742,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 QMessageBox.warning(self, _("Error"), _("PortProton start script not found"))
                 return
             launch_cmd = self.start_sh + resolved_iso_parts
-        elif self.start_sh and file_to_check.lower().endswith(".exe"):
+        elif self.start_sh and file_to_check.lower().endswith(WINDOWS_LAUNCH_EXTENSIONS):
             launch_file_parts = entry_exec_split if file_to_check == first_exec_part else [file_to_check]
             launch_cmd = self.start_sh + launch_file_parts
 
@@ -3701,7 +3771,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             inhibit_game_name = game_name or self._get_game_name_for_exec_line(exec_line)
             if inhibit_game_name:
                 env_vars["PW_INHIBIT_NAME"] = inhibit_game_name
-            game_exe_for_prefix = file_to_check if file_to_check.lower().endswith(".exe") else ""
+            game_exe_for_prefix = file_to_check if file_to_check.lower().endswith(WINDOWS_LAUNCH_EXTENSIONS) else ""
             self._check_missing_prefix_before_launch(game_exe_for_prefix, env_vars)
 
             # Launch game

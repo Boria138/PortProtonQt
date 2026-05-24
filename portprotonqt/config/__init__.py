@@ -15,6 +15,9 @@ from portprotonqt.config.game import GameConfig
 from portprotonqt.config.gamepad import GamepadConfig
 from portprotonqt.config.portproton import (
     PortProtonConfig,
+    LAUNCH_FILE_EXTENSIONS,
+    THEMED_LAUNCH_ICON_NAMES,
+    WINDOWS_LAUNCH_EXTENSIONS,
     create_desktop_file,
     extract_exec_target_path,
     find_game_by_exe,
@@ -55,6 +58,9 @@ __all__ = [
     "FavoritesConfig",
     "FavoritesFoldersConfig",
     "PortProtonConfig",
+    "LAUNCH_FILE_EXTENSIONS",
+    "THEMED_LAUNCH_ICON_NAMES",
+    "WINDOWS_LAUNCH_EXTENSIONS",
     "CONFIG_FILE",
     "PORTPROTON_CONFIG_FILE",
     "CONFIG_DIR",

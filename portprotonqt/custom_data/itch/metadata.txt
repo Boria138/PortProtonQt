@@ -1,3 +1,0 @@
-name=ITCH.IO
-description_ru=Лаунчер для библиотеки инди-игр.
-description_en=Launcher for the library of indie games.

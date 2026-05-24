@@ -1,3 +1,0 @@
-name=bsnes
-description_ru=Эмулятор Super Nintendo Entertainment System (SNES) с открытым исходным кодом, который фокусируется на производительности, точности, удобном пользовательском интерфейсе и специальных функциях.
-description_en=An open source Super Nintendo Entertainment System (SNES) emulator that focuses on performance, accuracy, user-friendly interface, and special features.

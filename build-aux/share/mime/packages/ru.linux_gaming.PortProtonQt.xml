@@ -4,6 +4,5 @@
     <comment>PortProton prefix backup</comment>
     <comment xml:lang="ru">Резервная копия префикса PortProton</comment>
     <glob pattern="*.ppack"/>
-    <sub-class-of type="application/vnd.squashfs"/>
   </mime-type>
 </mime-info>

@@ -1,3 +1,0 @@
-name=STALCRAFT
-description_ru=Многопользовательская игра с открытым миром, вдохновленная вселенной S.T.A.L.K.E.R., где игроки исследуют заброшенные зоны, сражаются с мутантами и другими сталкерами, а также выполняют различные квесты. Игра сочетает элементы выживания, RPG и шутера от первого лица, предлагая уникальный опыт в постапокалиптическом мире.
-description_en=A multiplayer open-world game inspired by the S.T.A.L.K.E.R. universe, where players explore abandoned zones, battle mutants and other stalkers, and complete various quests. The game combines elements of survival, RPG, and first-person shooter, offering a unique experience in a post-apocalyptic world.

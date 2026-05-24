@@ -409,7 +409,7 @@ class DetailPageManager:
             buttons_layout.addWidget(open_folder_button)
         else:
             add_button = self._make_action_button(
-                _("Add Game"),
+                _("Add a shortcut"),
                 self.main_window.theme_manager.get_icon("addgame", as_path=True),
             )
             add_button.clicked.connect(
@@ -443,7 +443,7 @@ class DetailPageManager:
             text = _("Stop")
             icon = self.main_window.theme_manager.get_icon("stop", as_path=True)
         else:
-            text = _("Play")
+            text = _("Start")
             icon = self.main_window.theme_manager.get_icon("play", as_path=True)
 
         play_button = self._make_action_button(text, icon)
@@ -700,7 +700,7 @@ class DetailPageManager:
 
     def _is_action_button_text(self, text: str) -> bool:
         """Check if button text is Play or Stop."""
-        return text in (_("Play"), _("Stop"))
+        return text in (_("Start"), _("Stop"))
 
     def _on_favorite_click(self, name: str) -> str:
         """Handle favorite toggle click."""
@@ -1119,10 +1119,7 @@ class DetailPageManager:
 
     def _refresh_tab_content(self, tab_index: int) -> None:
         if tab_index == 0 and hasattr(self.main_window, "game_library_manager"):
-            if self.main_window.launch_exe and not self.main_window.games:
-                QTimer.singleShot(10, lambda: self.main_window.loadGames(force_load=True))
-            else:
-                QTimer.singleShot(10, lambda: self.main_window.game_library_manager.update_game_grid())
+            QTimer.singleShot(10, lambda: self.main_window.game_library_manager.update_game_grid())
             QTimer.singleShot(50, self._focus_first_library_card)
         elif tab_index == 1 and hasattr(self.main_window, "autoInstallContainer"):
             QTimer.singleShot(10, lambda: self.main_window.autoInstallContainer.updateGeometry())

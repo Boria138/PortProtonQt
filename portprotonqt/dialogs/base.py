@@ -14,7 +14,12 @@ import psutil
 if TYPE_CHECKING:
     from portprotonqt.main_window import MainWindow
 
-from portprotonqt.config import create_desktop_file, ui_config
+from portprotonqt.config import (
+    LAUNCH_FILE_EXTENSIONS,
+    THEMED_LAUNCH_ICON_NAMES,
+    create_desktop_file,
+    ui_config,
+)
 from portprotonqt.logger import get_logger
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.custom_widgets import AutoSizeButton
@@ -132,7 +137,7 @@ class AddGameDialog(DraggableDialog):
         self.last_cover_path = cover_path
         self.downloader = Downloader(max_workers=4)
 
-        self.setWindowTitle(_("Edit Game") if edit_mode else _("Add Game"))
+        self.setWindowTitle(_("Edit Game") if edit_mode else _("Add a shortcut"))
         self.setModal(True)
         self.setFixedWidth(600)
         self.setFixedHeight(600)
@@ -321,7 +326,7 @@ class AddGameDialog(DraggableDialog):
         try:
             from portprotonqt.dialogs.file_explorer import FileExplorer
             initial_path = os.path.dirname(self.last_exe_path) if self.last_exe_path and os.path.isfile(self.last_exe_path) else None
-            file_explorer = FileExplorer(self, file_filter=('.exe',) + DISC_IMAGE_EXTENSIONS, initial_path=initial_path)
+            file_explorer = FileExplorer(self, file_filter=LAUNCH_FILE_EXTENSIONS, initial_path=initial_path)
             file_explorer.file_signal.file_selected.connect(self.onExeSelected)
 
             parent_widget = self.parentWidget()
@@ -443,6 +448,14 @@ class AddGameDialog(DraggableDialog):
                 pixmap = QPixmap(tmp.name)
                 self.coverPreview.setPixmap(pixmap)
             os.unlink(tmp.name)
+        elif os.path.isfile(launch_path):
+            file_icon_name = THEMED_LAUNCH_ICON_NAMES.get(os.path.splitext(launch_path)[1].lower())
+            file_icon_path = theme_manager.get_icon(file_icon_name, as_path=True) if file_icon_name else ""
+            pixmap = QPixmap(file_icon_path) if isinstance(file_icon_path, str) and file_icon_path else QPixmap()
+            if not pixmap.isNull():
+                self.coverPreview.setPixmap(pixmap.scaled(250, 250, Qt.AspectRatioMode.KeepAspectRatio))
+            else:
+                self.coverPreview.setText(_("No cover selected"))
         else:
             self.coverPreview.setText(_("No cover selected"))
 
@@ -472,7 +485,11 @@ class AddGameDialog(DraggableDialog):
             return None, None
         desktop_entry, desktop_path, icon_path = result
 
-        if not self.last_cover_path and not generate_thumbnail(launch_path, icon_path, size=128):
+        file_icon_name = THEMED_LAUNCH_ICON_NAMES.get(os.path.splitext(launch_path)[1].lower())
+        file_icon_path = theme_manager.get_icon(file_icon_name, as_path=True) if file_icon_name else ""
+        if not self.last_cover_path and file_icon_path:
+            desktop_entry = desktop_entry.replace(f"Icon={icon_path}\n", f"Icon={file_icon_path}\n")
+        elif not self.last_cover_path and not generate_thumbnail(launch_path, icon_path, size=128):
             logger.error(f"Failed to generate thumbnail from exe: {launch_path}")
             desktop_entry = desktop_entry.replace(f"Icon={icon_path}\n", "Icon=\n")
 

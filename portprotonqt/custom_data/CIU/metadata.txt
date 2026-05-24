@@ -1,3 +1,0 @@
-name=Chicken Invaders Universe
-description_ru=Захватывающая аркадная игра, в которой игроки сражаются с агрессивными курицами из космоса, защищая свою планету. Игра предлагает множество уровней, кооперативный режим и возможность улучшения космического корабля.
-description_en=An exciting arcade game where players battle aggressive space chickens to defend their planet. The game features multiple levels, a cooperative mode, and the ability to upgrade their spaceship.

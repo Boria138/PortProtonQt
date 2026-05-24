@@ -1,3 +1,0 @@
-name=Tanki Online
-description_ru=Многопользовательская браузерная игра, в которой игроки управляют танками и участвуют в динамичных командных сражениях на различных картах. Игра предлагает широкий выбор оружия и модификаций, позволяя создавать уникальные танки и разрабатывать тактики для победы.
-description_en=A multiplayer browser game where players control tanks and engage in dynamic team battles across various maps. The game offers a wide selection of weapons and modifications, allowing players to create unique tanks and develop strategies for victory.

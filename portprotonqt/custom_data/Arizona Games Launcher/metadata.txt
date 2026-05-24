@@ -1,3 +1,0 @@
-name=Arizona Games Launcher
-description_ru=Лаунчер для игры Arizona Role Play.
-description_en=Launcher for the Arizona Role Play game.

@@ -119,7 +119,7 @@ class Downloader(QObject):
                                     pbar.update(len(chunk))
                 return local_path
             except requests.exceptions.HTTPError as e:
-                if e.response.status_code == 429:
+                if e.response is not None and e.response.status_code == 429:
                     logger.warning(f"Rate limited (429) for {url}, retrying after delay")
                     time.sleep(2.0)
                     try:

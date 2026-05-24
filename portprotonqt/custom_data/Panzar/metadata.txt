@@ -1,3 +1,0 @@
-name=Panzar
-description_ru=Многопользовательская онлайн-игра в жанре экшен, где игроки сражаются в командах, используя различные классы персонажей и уникальные способности. Игра предлагает тактические сражения на больших картах с разрушительным взаимодействием окружения.
-description_en=A multiplayer online action game where players battle in teams using various character classes and unique abilities. The game features tactical battles on large maps with destructible environments.

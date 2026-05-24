@@ -1,3 +1,0 @@
-name=Age of Empires Online
-description_ru=Многопользовательская стратегия в реальном времени, где игроки строят свои цивилизации, собирают ресурсы и сражаются с противниками. Игра предлагает уникальную экономическую систему и возможность развивать свои города с помощью различных миссий и задач.
-description_en=A multiplayer real-time strategy game where players build their civilizations, gather resources, and battle against opponents. The game features a unique economic system and the ability to develop cities through various missions and quests.

@@ -1,3 +1,0 @@
-name=Path of Exile
-description_ru=Бесплатная онлайн-игра в жанре action RPG, в которой игроки исследуют мрачный мир, сражаются с монстрами и развивают свои персонажи через глубокую систему навыков и предметов. Игра известна своим сложным геймплеем и постоянно обновляемым контентом, включая сезонные лиги и уникальные механики.
-description_en=A free online action RPG where players explore a dark world, fight monsters, and develop their characters through a deep skill and item system. The game is known for its challenging gameplay and constantly updated content, including seasonal leagues and unique mechanics.

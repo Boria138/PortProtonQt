@@ -1,3 +1,0 @@
-name=Wargaming Game Center
-description_ru=Лаунчер для игр Wargaming.
-description_en=Launcher for Wargaming studio games.

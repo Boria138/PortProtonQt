@@ -1,3 +1,0 @@
-name=Epic Games Launcher
-description_ru=Лаунчер для библиотеки игр Epic Games.
-description_en=Launcher for the Epic Games game library.

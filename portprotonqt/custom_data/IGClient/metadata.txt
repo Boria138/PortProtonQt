@@ -1,3 +1,0 @@
-name=Indiegala Client
-description_ru=Лаунчер для библиотеки игр Indiegala.
-description_en=Launcher for the Indiegala game library.

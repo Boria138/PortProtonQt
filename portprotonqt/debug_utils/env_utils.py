@@ -1,6 +1,7 @@
 """Environment variables and configuration utilities."""
 
 import os
+import re
 import subprocess
 
 from portprotonqt.logger import get_logger
@@ -11,8 +12,9 @@ logger = get_logger(__name__)
 
 
 def _normalize_dist_name(value: str) -> str:
-    # Match scripts behavior: trim, normalize whitespace, replace blanks with "_", uppercase.
-    return "_".join(value.split()).upper()
+    # Keep spaced hyphen separators readable before replacing blanks with "_".
+    normalized = re.sub(r"\s*-\s*", "-", value.strip())
+    return "_".join(normalized.split()).upper()
 
 
 def get_file_content(file_path: str, default: str = "") -> str:

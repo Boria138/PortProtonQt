@@ -15,7 +15,7 @@ from PySide6.QtCore import Qt, QObject, Signal, QMimeDatabase, QThreadPool, QRun
 if TYPE_CHECKING:
     from portprotonqt.main_window import MainWindow
 
-from portprotonqt.config import favorites_folders_config, ui_config
+from portprotonqt.config import THEMED_LAUNCH_ICON_NAMES, favorites_folders_config, ui_config
 from portprotonqt.logger import get_logger
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.custom_widgets import AutoSizeButton
@@ -225,6 +225,13 @@ class FileExplorer(DraggableDialog):
         item = self.file_items.get(file_path)
         if item:
             item.setIcon(icon)
+
+    def _get_file_type_icon(self, file_path: str) -> QIcon | None:
+        icon_name = THEMED_LAUNCH_ICON_NAMES.get(os.path.splitext(file_path)[1].lower())
+        if not icon_name:
+            return None
+        icon = theme_manager.get_icon(icon_name)
+        return icon if isinstance(icon, QIcon) and not icon.isNull() else None
 
     def schedule_thumbnail_loading(self) -> None:
         """Schedule thumbnail loading after scroll events settle."""
@@ -587,8 +594,14 @@ class FileExplorer(DraggableDialog):
                     file_path = os.path.join(self.current_path, f)
                     item = QListWidgetItem(f)
                     mime_type = self.mime_db.mimeTypeForFile(file_path)
+                    file_type_icon = self._get_file_type_icon(file_path)
+                    if file_type_icon:
+                        item.setIcon(file_type_icon)
                     if (
-                        mime_type.name() in ("application/vnd.squashfs", "application/x-squashfs")
+                        f.lower().endswith(".ppack")
+                        or mime_type.name() == "application/x-portproton-prefix-backup"
+                        or mime_type.inherits("application/x-portproton-prefix-backup")
+                        or mime_type.name() in ("application/vnd.squashfs", "application/x-squashfs")
                         or mime_type.inherits("application/vnd.squashfs")
                     ):
                         ppack_icon = theme_manager.get_icon("ppack")

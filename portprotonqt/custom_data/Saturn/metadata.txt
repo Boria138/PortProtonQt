@@ -1,4 +1,0 @@
-name=Saturn
-description_ru=Сатурн — это тактическая RPG, действие которой происходит на Земле и на спутниках Сатурна.
-Таинственный сигнал из космоса заставляет искусственный интеллект машин восстать против своих создателей по всей Солнечной системе. Защищайтесь от угрозы на Земле и подключайтесь к роботам на спутниках Сатурна, чтобы остановить конец света. На спасение мира дается всего 3 дня.
-description_en=Saturn is a tactical RPG set on the moons of Saturn and on Earth. The protagonist controls robots on the moons of Saturn and explores an underground city where one can find keys to the secrets of deep space.

@@ -128,7 +128,7 @@ create_new_dir "${HOME}/.local/share/applications"
 create_new_dir "${PORT_DATA_PATH}/data/dist"
 IFS=$'\n'
 for dist_dir in $(lsbash "${PORT_DATA_PATH}/data/dist/") ; do
-    dist_dir_new=$(echo "${dist_dir}" | awk '$1=$1' | sed -e s/[[:blank:]]/_/g)
+    dist_dir_new=$(echo "${dist_dir}" | awk '$1=$1' | sed -e 's/[[:blank:]]*-[[:blank:]]*/-/g' -e 's/[[:blank:]]/_/g')
     if [[ ! -d "${PORT_DATA_PATH}/data/dist/${dist_dir_new^^}" ]] ; then
         mv -- "${PORT_DATA_PATH}/data/dist/$dist_dir" "${PORT_DATA_PATH}/data/dist/${dist_dir_new^^}"
     fi
@@ -205,8 +205,8 @@ fi
 print_info "The first mirror in used: $MIRROR"
 
 if check_gamescope_session
-then PW_TERM="env LANG=C python3 -m portprotonqt.easyterm --fullscreen -e"
-else PW_TERM="env LANG=C python3 -m portprotonqt.easyterm -e"
+then PW_TERM="env LANG=C python3 -m portprotonqt.scripts_utils.easyterm --fullscreen -e"
+else PW_TERM="env LANG=C python3 -m portprotonqt.scripts_utils.easyterm -e"
 fi
 
 pw_cleanup () {

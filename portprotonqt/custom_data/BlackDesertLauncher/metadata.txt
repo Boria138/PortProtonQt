@@ -1,3 +1,0 @@
-name=Black Desert Online (RU)
-description_ru=Многопользовательская ролевая игра с открытым миром, известная своей потрясающей графикой и глубокой системой кастомизации персонажей. Игроки могут исследовать обширные земли, выполнять задания, участвовать в PvP-сражениях и заниматься различными ремеслами.
-description_en=A massively multiplayer online role-playing game set in an open world, renowned for its stunning graphics and deep character customization system. Players can explore vast lands, complete quests, engage in PvP battles, and participate in various crafting activities.

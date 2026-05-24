@@ -1,3 +1,0 @@
-name=Elsword (ENG)
-description_ru=MMORPG c аниме-стилем, которая сочетает в себе элементы платформера и боевой системы в реальном времени, позволяя игрокам сражаться в захватывающих подземельях и PvP-аренах. Игра предлагает множество персонажей с уникальными навыками, а также возможности для кастомизации и совместной игры с друзьями.
-description_en=An anime-style MMORPG that combines elements of a platformer and a real-time combat system, allowing players to fight in exciting dungeons and PvP arenas. The game offers a variety of characters with unique skills, as well as opportunities for customization and playing together with friends.

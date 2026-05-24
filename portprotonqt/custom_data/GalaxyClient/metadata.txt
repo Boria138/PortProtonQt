@@ -1,3 +1,0 @@
-name=GOG Galaxy Launcher
-description_ru=Лаунчер для библиотеки игр GOG.
-description_en=Launcher for the GOG game library.

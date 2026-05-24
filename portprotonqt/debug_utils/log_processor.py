@@ -3,10 +3,7 @@
 import os
 import re
 
-
-def _normalize_dist_name(value: str) -> str:
-    # Match scripts behavior: trim, normalize whitespace, replace blanks with "_", uppercase.
-    return "_".join(value.split()).upper()
+from portprotonqt.debug_utils.env_utils import _normalize_dist_name
 
 
 def _strip_pw_wine_use_path(line: str) -> str:
