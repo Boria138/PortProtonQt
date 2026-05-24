@@ -319,6 +319,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         # 3. QStackedWidget (TABS)
         self.stackedWidget = QStackedWidget()
         self.stackedWidget.currentChanged.connect(self.updateControlHints)
+        self.stackedWidget.currentChanged.connect(self._load_empty_library_on_tab_enter)
         mainLayout.addWidget(self.stackedWidget)
 
         self.createInstalledTab()
@@ -1170,6 +1171,10 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
         if self.stackedWidget.currentIndex() == getattr(self, "system_tab_index", -1):
             QTimer.singleShot(0, self._focusSystemNetworkOnTabEnter)
+
+    def _load_empty_library_on_tab_enter(self, index: int) -> None:
+        if index == 0 and not self.games:
+            self.loadGames(force_load=True)
 
     def createSearchWidget(self) -> tuple[QWidget, CustomLineEdit]:
         self.container = QWidget()
