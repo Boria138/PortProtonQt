@@ -1173,7 +1173,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             QTimer.singleShot(0, self._focusSystemNetworkOnTabEnter)
 
     def _load_empty_library_on_tab_enter(self, index: int) -> None:
-        if index == 0 and not self.games:
+        if index == 0 and self.isVisible() and not self.games:
             self.loadGames(force_load=True)
 
     def createSearchWidget(self) -> tuple[QWidget, CustomLineEdit]:
