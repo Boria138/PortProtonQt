@@ -2720,6 +2720,7 @@ start_portproton () {
             pw_wineboot -r
             echo "based_on_default" >> "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/winetricks.log"
         fi
+        get_and_set_reg_file --add 'Control Panel\Desktop' 'LogPixels' 'REG_DWORD' "96" "user"
     else
         check_dirs_and_files_in_pfx
         if [[ ! -f "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/.wine_ver" ]] \
