@@ -36,7 +36,7 @@ dependencies = [
     "tqdm>=4.67.3",
     "vdf>=3.4",
     "websocket-client>=1.9.0",
-    "dbus-fast>=4.0.4",
+    "dbus-fast>=5.0.4",
     "pygame>=2.6.1",
     "pefile>=2024.8.26",
 ]
