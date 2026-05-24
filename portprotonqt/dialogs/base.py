@@ -132,7 +132,7 @@ class AddGameDialog(DraggableDialog):
         self.last_cover_path = cover_path
         self.downloader = Downloader(max_workers=4)
 
-        self.setWindowTitle(_("Edit Game") if edit_mode else _("Add Game"))
+        self.setWindowTitle(_("Edit Game") if edit_mode else _("Add a shortcut"))
         self.setModal(True)
         self.setFixedWidth(600)
         self.setFixedHeight(600)

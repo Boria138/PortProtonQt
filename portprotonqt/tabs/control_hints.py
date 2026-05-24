@@ -201,7 +201,7 @@ class MainWindowControlHintsMixin:
         gamepad_actions = [
             ("confirm", _("Select")),
             ("back", _("Back")),
-            ("add_game", _("Add Game")),
+            ("add_game", _("Add a shortcut")),
             ("decrease_size", _("Volume") + " -"),
             ("increase_size", _("Volume") + " +"),
             ("context_menu", _("Menu")),
@@ -216,7 +216,7 @@ class MainWindowControlHintsMixin:
         keyboard_hints = [
             ("key_enter", _("Select")),
             ("key_backspace", _("Back")),
-            ("key_e", _("Add Game")),
+            ("key_e", _("Add a shortcut")),
             ("key_context", _("Menu")),
             ("key_f11", _("Fullscreen")),
             ("key_f5", _("Refresh Grid")),

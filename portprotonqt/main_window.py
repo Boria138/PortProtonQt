@@ -1153,7 +1153,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.GameLibraryTitle.setStyleSheet(self.theme.INSTALLED_TAB_TITLE_STYLE)
         layout.addWidget(self.GameLibraryTitle)
 
-        self.addGameButton = AutoSizeButton(_("Add Game"), icon=self.theme_manager.get_icon("addgame", as_path=True))
+        self.addGameButton = AutoSizeButton(_("Add a shortcut"), icon=self.theme_manager.get_icon("addgame", as_path=True))
         self.addGameButton.setStyleSheet(self.theme.ADDGAME_BACK_BUTTON_STYLE)
         self.addGameButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.addGameButton.clicked.connect(self.openAddGameDialog)
@@ -1173,7 +1173,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         action_pos = cast(QLineEdit.ActionPosition, QLineEdit.ActionPosition.LeadingPosition)
         self.searchEdit.addAction(icon, action_pos)
         self.searchEdit.setMaximumWidth(200)
-        self.searchEdit.setPlaceholderText(_("Find Games ..."))
+        self.searchEdit.setPlaceholderText(_("Search ..."))
         self.searchEdit.setClearButtonEnabled(True)
         self.searchEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE)
 
@@ -1478,7 +1478,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         action_pos = QLineEdit.ActionPosition.LeadingPosition
         self.autoInstallSearchLineEdit.addAction(icon, action_pos)
         self.autoInstallSearchLineEdit.setMaximumWidth(200)
-        self.autoInstallSearchLineEdit.setPlaceholderText(_("Find Games ..."))
+        self.autoInstallSearchLineEdit.setPlaceholderText(_("Search ..."))
         self.autoInstallSearchLineEdit.setClearButtonEnabled(True)
         self.autoInstallSearchLineEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE)
         self.autoInstallSearchLineEdit.textChanged.connect(self.filterAutoInstallGames)
@@ -3548,7 +3548,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         """
         if self.current_running_button is not None:
             try:
-                self.current_running_button.setText(_("Play"))
+                self.current_running_button.setText(_("Start"))
                 icon = self.theme_manager.get_icon("play", as_path=True)
                 self.current_running_button.setIcon(icon)
             except RuntimeError:
