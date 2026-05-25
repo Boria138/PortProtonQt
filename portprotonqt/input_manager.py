@@ -254,6 +254,8 @@ class InputManager(QObject):
         self.emulation_active = False
         self.emulation_triggered = False
         self.start_held = False
+        self.select_held = False
+        self.pending_menu_fullscreen_time = 0.0
         self.guide_held = False
         # Variables for key combination handling
         self.guide_pressed_time = 0
@@ -2311,16 +2313,15 @@ class InputManager(QObject):
         self._gamepad_handling_enabled = True
 
     def suspend_gamepad_polling(self) -> None:
-        """Release the SDL controller while an external game is running."""
-        self._gamepad_polling_suspended = True
-        if self.gamepad:
-            self.gamepad.close()
-            self.gamepad = None
-        self._reset_pygame_state()
+        """Disable PPQT gamepad handling while keeping mouse emulation available."""
+        self._gamepad_handling_enabled = False
+        self.dpad_timer.stop()
+        self.nav_timer.stop()
 
     def resume_gamepad_polling(self) -> None:
         """Resume SDL controller polling after the external game exits."""
         self._gamepad_polling_suspended = False
+        self._gamepad_handling_enabled = True
         self.check_gamepad()
 
     def _handle_guide_timeout(self) -> None:
@@ -3597,6 +3598,8 @@ class InputManager(QObject):
         self.lt_pressed = False
         self.rt_pressed = False
         self.start_held = False
+        self.select_held = False
+        self.pending_menu_fullscreen_time = 0.0
         self.guide_held = False
         self.emulation_triggered = False
         self.gamepad_type = GamepadType.UNKNOWN
@@ -3710,13 +3713,17 @@ class InputManager(QObject):
             self._button_states[button_index] = value
             if button_code in BUTTONS['guide']:
                 self.guide_held = value == 1
+            if button_code in BUTTONS['menu']:
+                self.select_held = value == 1
             if button_code == PAD_BUTTON_START:
                 self.start_held = value == 1
-            if value == 1 and (
-                (button_code in BUTTONS['guide'] and self.start_held) or
-                (button_code == PAD_BUTTON_START and self.guide_held)
-            ):
+            emulation_combo = value == 1 and (
+                (button_code in BUTTONS['menu'] and self.start_held) or
+                (button_code == PAD_BUTTON_START and self.select_held)
+            )
+            if emulation_combo:
                 self.emulation_triggered = not self.emulation_triggered
+                self.pending_menu_fullscreen_time = 0.0
             if self._is_mouse_emulation_active() and value == 1:
                 if button_code in BUTTONS['confirm']:
                     self.click_left()
@@ -3727,10 +3734,21 @@ class InputManager(QObject):
             self.button_event.emit(button_code, value)
             if (
                 value == 1 and button_code in BUTTONS['menu'] and
+                not emulation_combo and
                 not self._is_gamescope_session and not self.in_guide_combination_attempt and
                 self._parent.isActiveWindow()
             ):
-                self.toggle_fullscreen.emit(not self._is_fullscreen)
+                self.pending_menu_fullscreen_time = current_time + self.guide_combination_timeout
+
+    def _handle_pending_menu_fullscreen(self, current_time: float) -> None:
+        if not self.pending_menu_fullscreen_time:
+            return
+        if current_time < self.pending_menu_fullscreen_time:
+            return
+        self.pending_menu_fullscreen_time = 0.0
+        if self.start_held or self.in_guide_combination_attempt:
+            return
+        self.toggle_fullscreen.emit(not self._is_fullscreen)
 
     def _poll_hat_events(self, gamepad: PygameGamepad, current_time: float) -> None:
         """Read the joystick hat directly for reliable D-pad support."""
@@ -3820,6 +3838,7 @@ class InputManager(QObject):
                     continue
                 try:
                     self._poll_button_events(active_gamepad, current_time)
+                    self._handle_pending_menu_fullscreen(current_time)
                     self._poll_hat_events(active_gamepad, current_time)
                     self._poll_axis_events(active_gamepad, current_time)
                     if (

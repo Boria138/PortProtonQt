@@ -271,16 +271,28 @@ class MainWindowControlHintsMixin:
             layout.setSpacing(6)
 
             guide_icon = _ControlHintIconLabel(26, 26)
-            _set_control_hint_icon(
-                guide_icon,
-                (
-                    self.theme_manager.get_theme_image("xbox_xbox", self.current_theme_name),
-                    self.theme_manager.get_theme_image("ps_ps", self.current_theme_name),
-                    self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
-                ),
-                26,
-                26,
-            )
+            if action == "mouse_emulation":
+                _set_control_hint_icon(
+                    guide_icon,
+                    (
+                        self.theme_manager.get_theme_image("xbox_view", self.current_theme_name),
+                        self.theme_manager.get_theme_image("ps_share", self.current_theme_name),
+                        self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
+                    ),
+                    26,
+                    26,
+                )
+            else:
+                _set_control_hint_icon(
+                    guide_icon,
+                    (
+                        self.theme_manager.get_theme_image("xbox_xbox", self.current_theme_name),
+                        self.theme_manager.get_theme_image("ps_ps", self.current_theme_name),
+                        self.theme_manager.get_theme_image("placeholder", self.current_theme_name),
+                    ),
+                    26,
+                    26,
+                )
 
             layout.addWidget(guide_icon)
 
@@ -428,7 +440,12 @@ class MainWindowControlHintsMixin:
                     ):
                         guide_icon, plus_icon, select_icon = icon_element
 
-                        if gtype == GamepadType.XBOX:
+                        if action == "mouse_emulation":
+                            if gtype == GamepadType.PLAYSTATION:
+                                guide_icon_name = "ps_share"
+                            else:
+                                guide_icon_name = "xbox_view"
+                        elif gtype == GamepadType.XBOX:
                             guide_icon_name = "xbox_xbox"
                         elif gtype == GamepadType.PLAYSTATION:
                             guide_icon_name = "ps_ps"
