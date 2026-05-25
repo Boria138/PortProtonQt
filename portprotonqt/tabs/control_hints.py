@@ -401,6 +401,7 @@ class MainWindowControlHintsMixin:
         """Update control hints based on gamepad connection status and type."""
         if not hasattr(self, "hintsLabels"):
             return
+        force_update = bool(args and args[0] == "force")
         is_gamepad_connected = self.input_manager.gamepad is not None
         gtype = self.input_manager.gamepad_type
         current_tab_index = self.stackedWidget.currentIndex()
@@ -415,7 +416,7 @@ class MainWindowControlHintsMixin:
             system_section_index,
             getattr(self, "current_theme_name", ""),
         )
-        if hints_state == getattr(self, "_last_control_hints_state", None):
+        if not force_update and hints_state == getattr(self, "_last_control_hints_state", None):
             return
         self._last_control_hints_state = hints_state
 
@@ -519,6 +520,10 @@ class MainWindowControlHintsMixin:
                 container.setVisible(not is_gamepad_connected and not on_system_tab)
 
         self._updateSystemGamepadHintTexts()
+        control_hints_widget = getattr(self, "controlHintsWidget", None)
+        if isinstance(control_hints_widget, QWidget):
+            control_hints_widget.updateGeometry()
+            control_hints_widget.update()
         self.updateNavButtons()
 
     def _setGamepadHintText(self, action: str, text: str) -> None:

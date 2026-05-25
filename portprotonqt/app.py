@@ -447,14 +447,20 @@ def main():
 
     # --- Initial fullscreen state ---
     launch_fullscreen = args.fullscreen or display_config.get_fullscreen()
+    launch_auto_fullscreen = (
+        display_config.get_auto_fullscreen_gamepad()
+        and not launch_fullscreen
+        and getattr(window.input_manager, "gamepad", None) is not None
+    )
     launch_minimized = (
         display_config.get_start_minimized()
         and not args.fullscreen
+        and not launch_auto_fullscreen
         and window_resolution is None
         and exe_path is None
         and backup_request is None
         and restore_prefix_path is None
-)
+    )
     if launch_minimized:
         logger.info("Launching in tray")
         window.hide()
@@ -464,6 +470,10 @@ def main():
         )
         display_config.set_fullscreen(True)
         window.showFullScreen()
+    elif launch_auto_fullscreen:
+        logger.info("Launching in fullscreen mode (gamepad)")
+        window.input_manager.handle_fullscreen_slot(True)
+        window.updateControlHints("force")
     elif window_resolution:
         logger.info(f"Launching with resolution: {window_resolution[0]}x{window_resolution[1]}")
         window.resize(window_resolution[0], window_resolution[1])

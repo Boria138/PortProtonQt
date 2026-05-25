@@ -360,7 +360,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.controlHintsWidget.setStyleSheet(self.theme.HINT_BAR_STYLE)
         mainLayout.addWidget(self.controlHintsWidget)
 
-        self.updateControlHints()
+        self.updateControlHints("force")
 
         self.restore_state()
 
@@ -372,7 +372,11 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         if isinstance(app, QApplication):
             app.applicationStateChanged.connect(self._on_application_state_changed)
 
-        if display_config.get_fullscreen():
+        auto_fullscreen_gamepad = (
+            display_config.get_auto_fullscreen_gamepad()
+            and self.input_manager.gamepad is not None
+        )
+        if display_config.get_fullscreen() or auto_fullscreen_gamepad:
             self.showFullScreen()
         elif self._pending_resolution:
             # Apply resolution from command line
@@ -387,6 +391,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
         # Process events to ensure UI is responsive before starting heavy operations
         QApplication.processEvents()
+        self.updateControlHints("force")
 
         # Delay game loading until after the UI is fully displayed to prevent blocking
         # Use a longer delay to ensure window is fully rendered and responsive
