@@ -355,15 +355,6 @@ PARAMS_TITLE_STYLE = f"""
     }}
 """
 
-# LIBRARY TAB TITLE
-INSTALLED_TAB_TITLE_STYLE = f"""
-    QLabel {{
-        font-family: '{font_family}';
-        font-size: {font_size_b};
-        color: {color_l};
-    }}
-"""
-
 THEME_TAB_FOCUS_STYLE = f"""
     QComboBox#themeTabCombo:focus {{
         border: {border_b} {color_l};

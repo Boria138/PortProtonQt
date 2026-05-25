@@ -175,15 +175,6 @@ LIST_WIDGET_STYLE = """
     }
 """
 
-# LIBRARY TAB TITLE
-INSTALLED_TAB_TITLE_STYLE = f"""
-    QLabel {{
-        font-family: '{font_family}';
-        font-size: {font_size_b};
-        color: {color_f};
-    }}
-"""
-
 # ACTION BUTTONS STYLE (SAVE, APPLY, ETC.)
 ACTION_BUTTON_STYLE = f"""
     QPushButton {{

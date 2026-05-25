@@ -1183,10 +1183,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         layout.setContentsMargins(0, 6, 0, 0)
         layout.setSpacing(10)
 
-        self.GameLibraryTitle = QLabel(_("Game Library"))
-        self.GameLibraryTitle.setStyleSheet(self.theme.INSTALLED_TAB_TITLE_STYLE)
-        layout.addWidget(self.GameLibraryTitle)
-
         self.addGameButton = AutoSizeButton(_("Add a shortcut"), icon=self.theme_manager.get_icon("addgame", as_path=True))
         self.addGameButton.setStyleSheet(self.theme.ADDGAME_BACK_BUTTON_STYLE)
         self.addGameButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -1501,10 +1497,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         searchLayout = QHBoxLayout(searchWidget)
         searchLayout.setContentsMargins(0, 6, 0, 0)
         searchLayout.setSpacing(10)
-
-        titleLabel = QLabel(_("Auto Install"))
-        titleLabel.setStyleSheet(self.theme.INSTALLED_TAB_TITLE_STYLE)
-        searchLayout.addWidget(titleLabel)
         searchLayout.addStretch()
 
         self.autoInstallSearchLineEdit = CustomLineEdit(self, theme=self.theme)
@@ -2385,7 +2377,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.trayMenuModeCombo.setCurrentIndex(idx)
         uiForm.addRow(self.trayMenuModeTitle, self.trayMenuModeCombo)
 
-        self.fullscreenCheckBox = QCheckBox()  # Removed text
+        self.fullscreenCheckBox = QCheckBox()
         self.fullscreenCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.fullscreenCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.fullscreenTitle = QLabel(_("Launch Application in Fullscreen"))
@@ -2401,7 +2393,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         fullscreen_layout.addStretch()
         uiForm.addRow(fullscreen_layout)
 
-        self.minimizeToTrayCheckBox = QCheckBox()  # Removed text
+        self.minimizeToTrayCheckBox = QCheckBox()
         self.minimizeToTrayCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.minimizeToTrayCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.minimizeToTrayTitle = QLabel(_("Minimize to tray on close"))
@@ -2448,7 +2440,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         start_minimized_layout.addStretch()
         uiForm.addRow(start_minimized_layout)
 
-        self.hideAutoInstallTabCheckBox = QCheckBox()  # Removed text
+        self.hideAutoInstallTabCheckBox = QCheckBox()
         self.hideAutoInstallTabCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.hideAutoInstallTabCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.hideAutoInstallTabTitle = QLabel(_("Hide Auto-Install Tab"))
@@ -2592,7 +2584,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         padForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
         scrollLayout.addWidget(padFrame)
 
-        self.autoFullscreenGamepadCheckBox = QCheckBox()  # Removed text
+        self.autoFullscreenGamepadCheckBox = QCheckBox()
         self.autoFullscreenGamepadCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.autoFullscreenGamepadCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.autoFullscreenGamepadTitle = QLabel(_("Auto Fullscreen on Gamepad connected"))
