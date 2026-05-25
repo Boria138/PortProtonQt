@@ -2741,7 +2741,16 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         msg_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
         reply = msg_box.exec()
         if reply == QMessageBox.StandardButton.Yes:
+            portproton_location = get_portproton_location()
             reset_main_config()
+            if portproton_location:
+                user_conf_path = os.path.join(portproton_location, "data", "user.conf")
+                try:
+                    if os.path.isfile(user_conf_path):
+                        os.unlink(user_conf_path)
+                        logger.info("User configuration file %s deleted", user_conf_path)
+                except OSError as error:
+                    logger.warning("Failed to delete user.conf: %s", error)
             # Restart application
             QTimer.singleShot(1000, lambda: self.restart_application())
 
