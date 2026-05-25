@@ -1350,6 +1350,10 @@ ${PW_PV_OVERRIDES}/i386-linux-gnu/aliases:\
 
     export PW_PATH="${PW_PLUGINS_PATH}/portable/bin${PATH:+:$PATH}"
 
+    if [[ "$PW_LOG" == "1" ]] ; then
+        PW_ADD_TO_ARGS_IN_RUNTIME="--verbose $PW_ADD_TO_ARGS_IN_RUNTIME"
+    fi
+
     if [[ -n "${PW_SANDBOX_HOME_PATH}" && -d "${PW_SANDBOX_HOME_PATH}" ]] ; then
         export pw_runtime="${PW_WINELIB}/pressure-vessel/bin/pressure-vessel-unruntime \
         --unshare-home \
@@ -1971,7 +1975,7 @@ pw_init_db () {
                             echo "#Author: ${USER}"
                             echo "#${PORTWINE_DB}.exe"
                             echo "#Rating=1-5"
-                        } > "${PW_EXE_FILE}".ppdb
+                        } > "${PW_EXE_FILE}".ppdb || fatal "Read only: $(dirname "${PW_EXE_FILE}")"
                         export PORTWINE_DB_FILE="${PW_EXE_FILE}".ppdb
                     fi
                     if [[ "${PW_EXE_FILE}" =~ "/prefixes/" ]] && \
@@ -1984,11 +1988,6 @@ pw_init_db () {
                 fi
                 edit_db_from_gui PW_WINE_USE PW_PREFIX_NAME
             fi
-        fi
-
-        if [[ -z "${PATH_TO_GAME}" ]] || [[ ! -d "${PATH_TO_GAME}" ]] ; then
-            PATH_TO_GAME="$( cd "$( dirname "${PW_EXE_FILE}" )" >/dev/null 2>&1 && pwd )"
-            export PATH_TO_GAME
         fi
 
         if [[ "${PW_WINE_CPU_TOPOLOGY}" == "disabled" ]] && [[ -n "${WINE_CPU_TOPOLOGY}" ]] ; then
@@ -2004,6 +2003,13 @@ pw_init_db () {
         if [[ -d "${PATH_TO_GAME}/MelonLoader" ]] ; then
             var_winedlloverride_update "version=n,b"
             print_info "Automatic added fix for Melon Mod-Loader"
+        fi
+    fi
+
+    if [[ -z "${PATH_TO_GAME}" ]] || [[ ! -d "$(realpath "${PATH_TO_GAME}")" ]] ; then
+        if [[ -f "${PW_EXE_FILE}" ]] ; then
+            PATH_TO_GAME="$(dirname "$(realpath "${PW_EXE_FILE}")")"
+            export PATH_TO_GAME
         fi
     fi
 
@@ -3708,14 +3714,14 @@ pw_run () {
     if [[ -n "${PATH_TO_GAME}" ]] \
     && [[ -d "${PATH_TO_GAME}" ]]
     then
-        cd "${PATH_TO_GAME}" || :
+        :
     elif [[ -f "$PW_EXE_FILE" ]]
     then
         PATH_TO_GAME="$( cd "$( dirname "${PW_EXE_FILE}" )" >/dev/null 2>&1 && pwd )"
-        cd "${PATH_TO_GAME}" || :
     else
-        cd "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c" || :
+        PATH_TO_GAME="${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c" || :
     fi
+    cd "${PATH_TO_GAME}" || fatal "${PATH_TO_GAME} not found"
 
     if file "$PW_EXE_FILE" | grep -q "x86-64" ; then
         check_variables WINE_LARGE_ADDRESS_AWARE "0"
@@ -3734,6 +3740,8 @@ pw_run () {
     if [[ "$PW_USE_RUNTIME" == 1 ]] \
     && [[ "$PW_WINE_USE" != "USE_SYSTEM_WINE" ]]
     then
+        unset PORT_SCRIPTS_PATH
+        export OLDPWD="$(realpath "$PATH_TO_GAME")"
         if [[ "${PW_LOG}" == 1 ]] ; then
             echo "export PW_BASE_PFX=$PW_BASE_PFX" >> "$PW_LOG_FILE"
             echo "WINEDLLOVERRIDES=${WINEDLLOVERRIDES}" >> "${PW_LOG_FILE}"
