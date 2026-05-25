@@ -394,13 +394,23 @@ class ProtonManager(DraggableDialog):
             expected_dir = os.path.join(dist_path, dirname)
             if os.path.exists(expected_dir):
                 return True
+        if self.should_install_to_dist(source_name, asset_filename):
+            return False
         steam_dir = get_steam_compatibilitytools_dir()
         if steam_dir is None:
             return False
         return steam_dir.joinpath(name_without_ext).exists()
 
-    def get_download_extract_dir(self) -> str:
-        if ui_config.get_download_wine_to_steam():
+    def should_install_to_dist(self, source_name: str, asset_name: str) -> bool:
+        source = source_name.lower()
+        asset = asset_name.lower()
+        return source == "proton_lg" and (asset.startswith("wine"))
+
+    def get_download_extract_dir(self, asset_data: dict) -> str:
+        install_to_dist = self.should_install_to_dist(
+            asset_data['source_name'], asset_data['asset_name']
+        )
+        if not install_to_dist and ui_config.get_download_wine_to_steam():
             steam_dir = get_steam_compatibilitytools_dir()
             if steam_dir is not None:
                 return str(steam_dir)
@@ -929,7 +939,7 @@ class ProtonManager(DraggableDialog):
         self.download_info_label.setText(_("Extracting: {0}").format(asset_data['asset_name']))
         if self.portproton_location:
             try:
-                extract_dir = self.get_download_extract_dir()
+                extract_dir = self.get_download_extract_dir(asset_data)
                 self.current_extraction_thread = ExtractionThread(filepath, extract_dir)
                 current_speed = [0.0]
                 current_eta = [0]
