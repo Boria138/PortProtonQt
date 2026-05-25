@@ -51,7 +51,7 @@ from portprotonqt.settings_manager import (
     read_lg_dist_versions_from_var,
 )
 from portprotonqt.theme_manager import ThemeManager
-from portprotonqt.version_utils import prefix_sort_key, version_sort_key
+from portprotonqt.version_utils import include_pinned_prefixes, version_sort_key
 from portprotonqt.virtual_keyboard import VirtualKeyboard
 
 logger = get_logger(__name__)
@@ -169,12 +169,11 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
                 ]
             self.dist_options.sort(key=version_sort_key)
             prefixes_dir = os.path.join(self.portproton_path, 'prefixes')
+            prefixes = []
             if os.path.exists(prefixes_dir):
                 _normalize_prefix_directories(prefixes_dir)
-                self.prefix_options = sorted(
-                    [f for f in os.listdir(prefixes_dir) if os.path.isdir(os.path.join(prefixes_dir, f))],
-                    key=prefix_sort_key
-                )
+                prefixes = [f for f in os.listdir(prefixes_dir) if os.path.isdir(os.path.join(prefixes_dir, f))]
+            self.prefix_options = include_pinned_prefixes(prefixes)
 
         if self.game_source != "steam" and shutil.which('wine'):
             if _('System WINE') not in self.dist_options:

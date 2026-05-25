@@ -54,7 +54,7 @@ from portprotonqt.config import (
 from portprotonqt.cli import add_steam_compat_tool, remove_steam_compat_tool, is_steam_compat_tool_installed
 
 from portprotonqt.tray_manager import restart_application_process
-from portprotonqt.version_utils import prefix_sort_key, version_sort_key
+from portprotonqt.version_utils import include_pinned_prefixes, version_sort_key
 from portprotonqt.localization import _, get_metadata_language, read_metadata_translations
 from portprotonqt.downloader import Downloader
 from portprotonqt.tray_manager import TrayManager
@@ -1793,7 +1793,11 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             self.wineCombo.setCurrentIndex(0)
         formLayout.addRow(self.wineTitleLabel, self.wineCombo)
 
-        self.prefixes = sorted([d for d in os.listdir(prefixes_path) if os.path.isdir(os.path.join(prefixes_path, d))], key=prefix_sort_key) if os.path.exists(prefixes_path) else []
+        prefixes = [
+            d for d in os.listdir(prefixes_path)
+            if os.path.isdir(os.path.join(prefixes_path, d))
+        ] if os.path.exists(prefixes_path) else []
+        self.prefixes = include_pinned_prefixes(prefixes)
         self.prefixCombo = QComboBox()
         self.prefixCombo.view().window().setWindowFlags(
             Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
@@ -2142,13 +2146,15 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         current_prefix = self.prefixCombo.currentText().strip()
         normalized_current_prefix = re.sub(r"[ \t]", "_", current_prefix).upper() if current_prefix else ""
         prefixes_path = os.path.join(self.portproton_location, "data", "prefixes")
-        if not os.path.exists(prefixes_path):
-            return
-
-        self._normalize_prefix_directories(prefixes_path)
+        if os.path.exists(prefixes_path):
+            self._normalize_prefix_directories(prefixes_path)
 
         # Update the prefixes list with sorting
-        self.prefixes = sorted([d for d in os.listdir(prefixes_path) if os.path.isdir(os.path.join(prefixes_path, d))], key=prefix_sort_key)
+        prefixes = [
+            d for d in os.listdir(prefixes_path)
+            if os.path.isdir(os.path.join(prefixes_path, d))
+        ] if os.path.exists(prefixes_path) else []
+        self.prefixes = include_pinned_prefixes(prefixes)
         self.prefixCombo.clear()
         self.prefixCombo.addItems(self.prefixes)
         if normalized_current_prefix:

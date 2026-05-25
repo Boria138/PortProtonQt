@@ -99,3 +99,13 @@ def prefix_sort_key(prefix_name: str) -> tuple[int, Any]:
         return (PINNED_PREFIX_NAMES.index(normalized_name), "")
 
     return (len(PINNED_PREFIX_NAMES), version_sort_key(prefix_name))
+
+
+def include_pinned_prefixes(prefix_names: list[str]) -> list[str]:
+    prefixes = list(prefix_names)
+    normalized_prefixes = {prefix.upper() for prefix in prefixes}
+    for prefix_name in PINNED_PREFIX_NAMES:
+        if prefix_name not in normalized_prefixes:
+            prefixes.append(prefix_name)
+
+    return sorted(prefixes, key=prefix_sort_key)
