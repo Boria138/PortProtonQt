@@ -1188,25 +1188,25 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         layout.setContentsMargins(0, 6, 0, 0)
         layout.setSpacing(10)
 
+        # Quick Launch button
+        self.quickLaunchButton = AutoSizeButton(_("Quick Launch"), icon=self.theme_manager.get_icon("play", as_path=True))
+        self.quickLaunchButton.setStyleSheet(self.theme.ADDGAME_BACK_BUTTON_STYLE)
+        self.quickLaunchButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.quickLaunchButton.clicked.connect(self.quickLaunch)
+        layout.addWidget(self.quickLaunchButton)
+
         self.addGameButton = AutoSizeButton(_("Add a shortcut"), icon=self.theme_manager.get_icon("addgame", as_path=True))
         self.addGameButton.setStyleSheet(self.theme.ADDGAME_BACK_BUTTON_STYLE)
-        self.addGameButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.addGameButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.addGameButton.clicked.connect(self.openAddGameDialog)
         layout.addWidget(self.addGameButton)
 
         # Refresh button
         self.refreshButton = AutoSizeButton(_("Refresh Grid"), icon=self.theme_manager.get_icon("update", as_path=True))
         self.refreshButton.setStyleSheet(self.theme.ADDGAME_BACK_BUTTON_STYLE)
-        self.refreshButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.refreshButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.refreshButton.clicked.connect(self.refreshGames)
         layout.addWidget(self.refreshButton)
-
-        # Quick Launch button
-        self.quickLaunchButton = AutoSizeButton(_("Quick Launch"), icon=self.theme_manager.get_icon("play", as_path=True))
-        self.quickLaunchButton.setStyleSheet(self.theme.ADDGAME_BACK_BUTTON_STYLE)
-        self.quickLaunchButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.quickLaunchButton.clicked.connect(self.quickLaunch)
-        layout.addWidget(self.quickLaunchButton)
 
         layout.addStretch()  # Add stretch to push search to the right
 

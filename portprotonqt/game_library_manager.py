@@ -1,7 +1,7 @@
 from typing import Protocol
 from portprotonqt.game_card import GameCard
 from portprotonqt.search_utils import SearchOptimizer, ThreadedSearch
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QScrollArea, QSlider, QScroller
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QScrollArea, QSlider, QScroller, QStackedWidget
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QRegion
 from portprotonqt.custom_widgets import FlowLayout
@@ -25,6 +25,7 @@ class MainWindowProtocol(Protocol):
     current_hovered_card: GameCard | None
     current_focused_card: GameCard | None
     gamesListWidget: QWidget | None
+    stackedWidget: QStackedWidget
 
 class GameLibraryManager:
     def __init__(self, main_window: MainWindowProtocol, theme, context_menu_manager: ContextMenuManager | None):
@@ -47,6 +48,7 @@ class GameLibraryManager:
         self._incremental_new_games_map: dict[tuple[str, str], tuple] = {}
         self._incremental_search_text: str = ""
         self._incremental_batch_size: int = 16
+        self._focus_first_card_after_update = False
         self._pending_update = False
         self.pending_deletions = deque()
         self.is_filtering = False
@@ -368,6 +370,7 @@ class GameLibraryManager:
             self.load_visible_images()
         self.force_update_cards_library()
         self._cancel_incremental_add()
+        self._schedule_focus_first_card()
 
     def _update_game_grid_immediate(self):
         """Updates the game grid with the provided or current game list."""
@@ -504,6 +507,25 @@ class GameLibraryManager:
                 self.force_update_cards_library()
 
         self.is_filtering = False  # Reset flag in any case
+        self._schedule_focus_first_card()
+
+    def _schedule_focus_first_card(self) -> None:
+        if not self._focus_first_card_after_update:
+            return
+        QTimer.singleShot(0, self._focus_first_visible_card)
+
+    def _focus_first_visible_card(self) -> None:
+        if self.gamesListWidget is None:
+            return
+        if getattr(self.main_window.stackedWidget, "currentIndex", lambda: -1)() != 0:
+            return
+        for card in self.gamesListWidget.findChildren(GameCard):
+            if card.isVisible() and card.isEnabled():
+                self._focus_first_card_after_update = False
+                card.setFocus(Qt.FocusReason.OtherFocusReason)
+                if self.gamesScrollArea is not None:
+                    self.gamesScrollArea.ensureWidgetVisible(card, 50, 50)
+                return
 
     def _update_search_results(self, search_text: str = ""):
         """Update the grid with pre-computed search results."""
@@ -648,6 +670,7 @@ class GameLibraryManager:
         """Sets the games list and updates the filtered games."""
         self.games = games
         self.filtered_games = self.games
+        self._focus_first_card_after_update = bool(games)
 
         # Build search indices for fast searching
         self._build_search_indices(games)

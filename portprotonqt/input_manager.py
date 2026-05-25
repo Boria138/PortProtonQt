@@ -2944,11 +2944,12 @@ class InputManager(QObject):
                 if current_index in (0, 1) and isinstance(focused, GameCard):
                     if current_index == 0:
                         container = self._parent.gamesListWidget
-                        search_edit = getattr(self._parent, 'searchEdit', None)
+                        toolbar_widgets = self._get_library_toolbar_widgets()
+                        focus_target = toolbar_widgets[0] if toolbar_widgets else None
                     else:
                         container = self._parent.autoInstallContainer
-                        search_edit = getattr(self._parent, 'autoInstallSearchLineEdit', None)
-                    if container and search_edit:
+                        focus_target = getattr(self._parent, 'autoInstallSearchLineEdit', None)
+                    if container and focus_target:
                         game_cards = container.findChildren(GameCard)
                         if game_cards:
                             current_card_pos = focused.pos()
@@ -2959,13 +2960,15 @@ class InputManager(QObject):
                                     is_first_row = False
                                     break
                             if is_first_row:
-                                search_edit.setFocus()
+                                focus_target.setFocus(Qt.FocusReason.OtherFocusReason)
                                 return
 
             # Game cards navigation for tabs 0 and 1
             if code in (PAD_DPAD_X, PAD_DPAD_Y):
                 current_index = self._parent.stackedWidget.currentIndex()
                 if current_index in (0, 1):
+                    if self._handle_library_toolbar_navigation(code, value):
+                        return
                     if code == PAD_DPAD_Y and value < 0 and self._focus_tab_from_search(current_index):
                         return
                     container = self._parent.gamesListWidget if current_index == 0 else self._parent.autoInstallContainer
@@ -3446,6 +3449,51 @@ class InputManager(QObject):
         if tab_button is None or not tab_button.isVisible():
             return False
         tab_button.setFocus(Qt.FocusReason.OtherFocusReason)
+        return True
+
+    def _get_library_toolbar_widgets(self) -> list[QWidget]:
+        widgets = []
+        for attr_name in ("quickLaunchButton", "addGameButton", "refreshButton", "searchEdit"):
+            widget = getattr(self._parent, attr_name, None)
+            if isinstance(widget, QWidget) and widget.isVisible() and widget.isEnabled():
+                widgets.append(widget)
+        return widgets
+
+    def _focus_first_library_card(self) -> bool:
+        container = getattr(self._parent, "gamesListWidget", None)
+        if container is None:
+            return False
+        for card in container.findChildren(GameCard):
+            if card.isVisible() and card.isEnabled():
+                card.setFocus(Qt.FocusReason.OtherFocusReason)
+                scroll_area = container.parentWidget()
+                while scroll_area and not isinstance(scroll_area, QScrollArea):
+                    scroll_area = scroll_area.parentWidget()
+                if isinstance(scroll_area, QScrollArea):
+                    scroll_area.ensureWidgetVisible(card, 50, 50)
+                return True
+        return False
+
+    def _handle_library_toolbar_navigation(self, code: int, value: int) -> bool:
+        if value == 0 or self._parent.stackedWidget.currentIndex() != 0:
+            return False
+        toolbar_widgets = self._get_library_toolbar_widgets()
+        focused = self._focused_widget()
+        if focused not in toolbar_widgets:
+            return False
+        if code == PAD_DPAD_X:
+            current_index = toolbar_widgets.index(cast(QWidget, focused))
+            next_index = current_index + (1 if value > 0 else -1)
+            if 0 <= next_index < len(toolbar_widgets):
+                toolbar_widgets[next_index].setFocus(Qt.FocusReason.OtherFocusReason)
+            return True
+        if code != PAD_DPAD_Y:
+            return False
+        if value > 0:
+            return self._focus_first_library_card()
+        tab_button = self._parent.tabButtons.get(0)
+        if tab_button is not None and tab_button.isVisible():
+            tab_button.setFocus(Qt.FocusReason.OtherFocusReason)
         return True
 
     def _switch_visible_tab(self, step: int) -> bool:

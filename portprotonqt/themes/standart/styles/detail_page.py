@@ -20,6 +20,10 @@ ADDGAME_BACK_BUTTON_STYLE = f"""
     QPushButton:pressed {{
         background: {color_a};
     }}
+    QPushButton:focus {{
+        background: {color_a};
+        border: {border_b} {color_a};
+    }}
 """
 
 # MAIN FRAME FOR GAME DETAILS
