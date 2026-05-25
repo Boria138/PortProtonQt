@@ -1196,6 +1196,13 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.refreshButton.clicked.connect(self.refreshGames)
         layout.addWidget(self.refreshButton)
 
+        # Quick Launch button
+        self.quickLaunchButton = AutoSizeButton(_("Quick Launch"), icon=self.theme_manager.get_icon("play", as_path=True))
+        self.quickLaunchButton.setStyleSheet(self.theme.ADDGAME_BACK_BUTTON_STYLE)
+        self.quickLaunchButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.quickLaunchButton.clicked.connect(self.quickLaunch)
+        layout.addWidget(self.quickLaunchButton)
+
         layout.addStretch()  # Add stretch to push search to the right
 
         self.searchEdit = CustomLineEdit(self, theme=self.theme)
@@ -1258,6 +1265,19 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         # Reload games using the existing loadGames functionality
         # Use a small delay to allow UI to update before starting the refresh
         QTimer.singleShot(50, lambda: self.loadGames(force_load=True))
+
+    def quickLaunch(self):
+        """Open file manager to select executable and then open its detail page."""
+        file_explorer = FileExplorer(self, self.theme, file_filter=LAUNCH_FILE_EXTENSIONS)
+        file_explorer.file_signal.file_selected.connect(self.handle_launch_exe)
+
+        parent_geometry = self.geometry()
+        center_point = parent_geometry.center()
+        file_explorer_geometry = file_explorer.geometry()
+        file_explorer_geometry.moveCenter(center_point)
+        file_explorer.setGeometry(file_explorer_geometry)
+
+        file_explorer.show()
 
     def on_search_text_changed(self, text: str):
         """Search text change handler with debounce."""
