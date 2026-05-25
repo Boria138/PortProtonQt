@@ -137,7 +137,7 @@ class AddGameDialog(DraggableDialog):
         self.last_cover_path = cover_path
         self.downloader = Downloader(max_workers=4)
 
-        self.setWindowTitle(_("Edit Game") if edit_mode else _("Add a shortcut"))
+        self.setWindowTitle(_("Edit Shortcut") if edit_mode else _("Add a shortcut"))
         self.setModal(True)
         self.setFixedWidth(600)
         self.setFixedHeight(600)
@@ -152,7 +152,7 @@ class AddGameDialog(DraggableDialog):
         self.nameEdit.setStyleSheet(self.theme.ADDGAME_INPUT_STYLE)
         if game_name:
             self.nameEdit.setText(game_name)
-        name_label = QLabel(_("Game Name:"))
+        name_label = QLabel(_("Name:"))
         name_label.setStyleSheet(self.theme.PARAMS_TITLE_STYLE)
         layout.addRow(name_label, self.nameEdit)
 

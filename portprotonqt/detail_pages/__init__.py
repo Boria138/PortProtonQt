@@ -271,7 +271,7 @@ class DetailPageManager:
         last_launch_value = QLabel(last_launch)
         last_launch_value.setStyleSheet(self.main_window.theme.LAST_LAUNCH_VALUE_STYLE)
 
-        playtime_title = QLabel(_("PLAY TIME"))
+        playtime_title = QLabel(_("TIME SPENT"))
         playtime_title.setStyleSheet(self.main_window.theme.PLAY_TIME_TITLE_STYLE)
         playtime_value = QLabel(formatted_playtime)
         playtime_value.setStyleSheet(self.main_window.theme.PLAY_TIME_VALUE_STYLE)
@@ -389,7 +389,7 @@ class DetailPageManager:
 
         if self._has_game_shortcut(game_name):
             edit_button = self._make_action_button(
-                _("Edit Game"),
+                _("Edit Shortcut"),
                 self.main_window.theme_manager.get_icon("edit", as_path=True),
             )
             edit_button.clicked.connect(
@@ -400,7 +400,7 @@ class DetailPageManager:
             buttons_layout.addWidget(edit_button)
         elif str(game_source).lower() == "steam" and appid:
             open_folder_button = self._make_action_button(
-                _("Open Game Folder"),
+                _("Open Folder"),
                 self.main_window.theme_manager.get_icon("search", as_path=True),
             )
             open_folder_button.clicked.connect(

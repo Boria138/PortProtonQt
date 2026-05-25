@@ -943,7 +943,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         if not entry:
             callback(None)
             return
-        desktop_name = entry.get("Name", _("Unknown Game"))
+        desktop_name = entry.get("Name", _("Unknown Application"))
         if desktop_name.lower() in ["portproton", "readme"]:
             callback(None)
             return
@@ -2298,11 +2298,11 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         )
         self.gamesSortCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.sort_keys = ["last_launch", "playtime", "alphabetical"]
-        self.sort_labels = [_("Last launch"), _("Playtime"), _("Alphabetical")]
+        self.sort_labels = [_("Last launch"), _("Time spent"), _("Alphabetical")]
         self.gamesSortCombo.addItems(self.sort_labels)
         self.gamesSortCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
         self.gamesSortCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.gamesSortTitle = QLabel(_("Games Sort Method:"))
+        self.gamesSortTitle = QLabel(_("Sort Method:"))
         self.gamesSortTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.gamesSortTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
         self.gamesSortTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -2327,7 +2327,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.gamesDisplayCombo.addItems(self.filter_labels)
         self.gamesDisplayCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
         self.gamesDisplayCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.gamesDisplayTitle = QLabel(_("Games Display Filter:"))
+        self.gamesDisplayTitle = QLabel(_("Display Filter:"))
         self.gamesDisplayTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.gamesDisplayTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
         self.gamesDisplayTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)

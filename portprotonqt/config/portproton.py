@@ -398,7 +398,7 @@ def create_desktop_file(
     else:
         exec_str = f'portprotonqt --silent "{exe_path}"'
 
-    comment = _('Launch game "{name}" with PortProton').format(name=game_name)
+    comment = _('Launch "{name}" with PortProton').format(name=game_name)
     desktop_entry = (
         "[Desktop Entry]\n"
         f"Name={game_name}\n"
