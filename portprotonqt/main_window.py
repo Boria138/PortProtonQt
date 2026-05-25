@@ -1771,15 +1771,14 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         prefixes_path = os.path.join(self.portproton_location, "data", "prefixes")
         self._normalize_prefix_directories(prefixes_path)
 
-        if not os.path.exists(dist_path):
-            return
-
         formLayout = QFormLayout()
         formLayout.setContentsMargins(0, 10, 0, 0)
         formLayout.setSpacing(self.theme.wineSettingsSetSpacing)
         formLayout.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
 
-        self.wine_versions = sorted([d for d in os.listdir(dist_path) if os.path.isdir(os.path.join(dist_path, d))], key=version_sort_key)
+        self.wine_versions = []
+        if os.path.exists(dist_path):
+            self.wine_versions = sorted([d for d in os.listdir(dist_path) if os.path.isdir(os.path.join(dist_path, d))], key=version_sort_key)
         for version in self._get_lg_versions_from_var():
             if version not in self.wine_versions:
                 self.wine_versions.append(version)
