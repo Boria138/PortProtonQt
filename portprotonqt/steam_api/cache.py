@@ -28,6 +28,10 @@ def get_exiftool_data(game_exe: str) -> dict:
     """Retrieve metadata using exiftool with TTL-based caching."""
     current_time = time.time()
 
+    if not os.path.isfile(game_exe):
+        logger.debug("Skipping exiftool for missing executable: %s", game_exe)
+        return {}
+
     if len(_EXIFTOOL_CACHE) > _CACHE_MAX_ENTRIES // 2:
         expired_keys = [
             key for key, (data, timestamp) in _EXIFTOOL_CACHE.items()

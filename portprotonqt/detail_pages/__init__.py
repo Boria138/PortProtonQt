@@ -1119,7 +1119,10 @@ class DetailPageManager:
 
     def _refresh_tab_content(self, tab_index: int) -> None:
         if tab_index == 0 and hasattr(self.main_window, "game_library_manager"):
-            QTimer.singleShot(10, lambda: self.main_window.game_library_manager.update_game_grid())
+            if self.main_window.games:
+                QTimer.singleShot(10, lambda: self.main_window.game_library_manager.update_game_grid())
+            else:
+                QTimer.singleShot(10, lambda: self.main_window.loadGames(force_load=True))
             QTimer.singleShot(50, self._focus_first_library_card)
         elif tab_index == 1 and hasattr(self.main_window, "autoInstallContainer"):
             QTimer.singleShot(10, lambda: self.main_window.autoInstallContainer.updateGeometry())

@@ -213,6 +213,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.current_hovered_card: GameCard | None = None
         self.pending_games = []
         self.total_games = 0
+        self._loading_games = False
+        self._known_portproton_desktops: set[str] = set()
         self.games_load_timer = QTimer(self)
         self.games_load_timer.setSingleShot(True)
         self.games_load_timer.timeout.connect(self.finalize_game_loading)
@@ -426,16 +428,11 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
     def _refresh_portproton_shortcuts(self) -> None:
         """Add newly created PortProton shortcuts to the library."""
-        if not self.portproton_location:
-            return
+        desktop_files = self._get_portproton_desktop_files()
+        new_desktops = desktop_files - self._known_portproton_desktops
+        self._known_portproton_desktops = desktop_files
 
-        try:
-            desktop_files = [
-                entry.path for entry in os.scandir(self.portproton_location)
-                if entry.name.endswith(".desktop")
-            ]
-        except OSError as e:
-            logger.warning("Failed to scan PortProton shortcuts: %s", e)
+        if not new_desktops or not self.game_library_manager.games:
             return
 
         existing_exec_lines = {game[5] for game in self.game_library_manager.games}
@@ -450,11 +447,25 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             self.game_library_manager.add_game_incremental(game_data)
             QTimer.singleShot(200, self.game_library_manager.load_visible_images)
 
-        for file_path in desktop_files:
+        for file_path in new_desktops:
             entry = parse_desktop_entry(file_path)
             if not entry or entry.get("Exec", "") in existing_exec_lines:
                 continue
             self._process_desktop_file_async(file_path, on_game_data)
+
+    def _get_portproton_desktop_files(self) -> set[str]:
+        """Return current PortProton shortcut files."""
+        if not self.portproton_location:
+            return set()
+
+        try:
+            return {
+                entry.path for entry in os.scandir(self.portproton_location)
+                if entry.name.endswith(".desktop")
+            }
+        except OSError as e:
+            logger.warning("Failed to scan PortProton shortcuts: %s", e)
+            return set()
 
     def start_watching_directories(self):
         """Start watching PortProton directories for changes."""
@@ -476,6 +487,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
         # Add shortcuts directory to watcher
         self.fs_watcher.addPath(self.portproton_location)
+        self._known_portproton_desktops = self._get_portproton_desktop_files()
 
     def launch_autoinstall(
         self, script_name: str, button: AutoSizeButton | None = None
@@ -727,8 +739,10 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
     @Slot(list)
     def on_games_loaded(self, games: list[tuple]):
+        self._loading_games = False
         self.games = games
         self.game_library_manager.set_games(games)
+        self._known_portproton_desktops = self._get_portproton_desktop_files()
 
         # Clear the refresh in progress flag
         if hasattr(self, '_refresh_in_progress'):
@@ -740,6 +754,9 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             self.refreshButton.setText(_("Refresh Grid"))
 
     def loadGames(self, force_load: bool = False):
+        if self._loading_games:
+            return
+
         # Skip loading library if launching a specific exe
         if self.launch_exe and not force_load:
             return
@@ -747,6 +764,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         if force_load:
             self.launch_exe = None
 
+        self._loading_games = True
         display_filter = game_config.get_display_filter()
         favorites = favorites_config.get_games()
         self.pending_games = []
@@ -1157,6 +1175,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         if hasattr(self, "game_library_manager"):
             mgr = self.game_library_manager
             if current_index == 0 and mgr.gamesListWidget and mgr.gamesListLayout:
+                self._load_empty_library_on_tab_enter(current_index)
                 mgr.gamesListLayout.invalidate()
                 mgr.gamesListWidget.adjustSize()
                 mgr.gamesListWidget.updateGeometry()
