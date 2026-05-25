@@ -4,22 +4,16 @@
 ########################################################################
 $PW_DEBUG
 
-process_log () {
-    local filter_word="mono|gecko"
-    echo "$@" | sed -r "/$filter_word/Id" >> "$PW_TMPFS_PATH/process.log"
-}
-export -f process_log
-
-print_error () { printf "\E[31m%s Error: $@ %s\e[0m\n" ; process_log "$@" ;}
+print_error () { printf "\E[31m%s Error: $@ %s\e[0m\n" ;}
 export -f print_error
 
-print_warning () { printf "\E[33m%s Warning: $@ %s\e[0m\n" ; process_log "$@" ;}
+print_warning () { printf "\E[33m%s Warning: $@ %s\e[0m\n" ;}
 export -f print_warning
 
-print_info () { printf "\E[36m%s Info: $@ %s\e[0m\n" ; process_log "$@" ;}
+print_info () { printf "\E[36m%s Info: $@ %s\e[0m\n" ;}
 export -f print_info
 
-print_ok () { printf "\E[35m%s OK: $@ %s\e[0m\n" ; process_log "$@" ;}
+print_ok () { printf "\E[35m%s OK: $@ %s\e[0m\n" ;}
 export -f print_ok
 
 python_module () {
@@ -475,7 +469,7 @@ try_download () {
         # set -o pipefail
         curl -f -# -A 'Mozilla/5.0 (compatible; Konqueror/2.1.1; X11)' -H 'Cache-Control: no-cache, no-store' \
         -H 'Pragma: no-cache' -L "${FIRST_URL[@]}" -o "$dest" 2>&1 \
-        | tr '\r' '\n' | sed -ur 's|[# ]+||g;s|100||g;s|0-||g;s|.*=.*||g' >> "$PW_TMPFS_PATH/process.log"
+        | tr '\r' '\n' | sed -ur 's|[# ]+||g;s|100||g;s|0-||g;s|.*=.*||g'
 
         #TODO: check download errror
         # [[ "${PIPESTATUS[0]}" != 0 ]] && local curl_status="error"
@@ -684,7 +678,7 @@ unpack () {
         $PW_TERM "echo ; echo ; echo \"Unpacking file: $1. Please wait...\" ; $command \"$1\" -C \"$2\""
         [[ "$?" != 0 ]] && return 1 || return 0
     elif [[ "$silent" != "true" ]] ; then
-        process_log "Unpacking file: $1. Please wait..."
+        print_info "Unpacking file: $(basename "$1") Please wait..."
         set -o pipefail
         $command "$1" -C "$2" 2>/dev/null
         [[ "${PIPESTATUS[0]}" != 0 ]] && print_error "File $1 unpacking error." && return 1 || return 0

@@ -5,6 +5,8 @@ import shutil
 import subprocess
 import psutil
 import re
+from queue import Empty, Queue
+from threading import Thread
 from portprotonqt.logger import get_logger
 from portprotonqt.icon_extractor import generate_thumbnail
 from portprotonqt.dialogs import AddGameDialog, FileExplorer, WinetricksDialog, ExeSettingsDialog
@@ -236,15 +238,17 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.installing = False
         self.install_process = None
         self.install_stop_process = None
-        self.install_monitor_timer = None
         self.install_stop_requested = False
         self.current_install_script = None
         self.current_install_button = None
         self.current_install_button_text = None
         self.current_install_button_icon = None
+        self.current_install_status = None
+        self.install_output_buffer = ""
 
         # Dependency setup monitoring during game launch
-        self.wine_download_timer = None
+        self.launch_output_queue = Queue()
+        self.launch_output_thread = None
         self.wine_download_percent = 0.0
         self.wine_download_seen = False
         self.wine_download_status = _("Downloading Wine...")
@@ -496,7 +500,9 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             return
         cmd = start_sh + ["cli", "--autoinstall", script_name]
         self.install_process = QProcess(self)
-        self.install_process.setProcessChannelMode(QProcess.ProcessChannelMode.ForwardedChannels)
+        self.install_output_buffer = ""
+        self.install_process.setProcessChannelMode(QProcess.ProcessChannelMode.MergedChannels)
+        self.install_process.readyReadStandardOutput.connect(self._on_install_output_ready)
         self.install_process.finished.connect(self.on_install_finished)
         self.install_process.errorOccurred.connect(self.on_install_error)
         self.install_process.start(cmd[0], cmd[1:])
@@ -504,9 +510,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             self._reset_install_state()
             QMessageBox.warning(self, _("Error"), _("Failed to start installation."))
             return
-        self.install_monitor_timer = QTimer(self)
-        self.install_monitor_timer.timeout.connect(self.monitor_install_progress)
-        self.install_monitor_timer.start(2000)  # Start monitoring after 2s
 
     def _set_install_button_stop(self, button: AutoSizeButton | None = None) -> None:
         """Switch the active auto-install button to stop action."""
@@ -540,6 +543,52 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         except RuntimeError:
             self.current_install_button = None
 
+    def _on_install_output_ready(self) -> None:
+        """Update install progress from live PortProton output."""
+        if self.install_process is None:
+            return
+
+        data = bytes(self.install_process.readAllStandardOutput().data()).decode(
+            "utf-8", "ignore"
+        )
+        self.install_output_buffer += data
+        lines = self.install_output_buffer.splitlines(keepends=True)
+        self.install_output_buffer = ""
+        if lines and not lines[-1].endswith(("\n", "\r")):
+            self.install_output_buffer = lines.pop()
+
+        for line in lines:
+            state = self._read_process_status_line(line)
+            if state is None:
+                continue
+            status, percent, launch_started = state
+            if launch_started:
+                continue
+            self._update_install_progress(status, percent)
+
+    def _update_install_progress(
+        self, status: str | None = None, percent: float | None = None
+    ) -> None:
+        """Apply parsed auto-install progress to the current button."""
+        if status is not None:
+            self.current_install_status = status
+        elif percent is not None:
+            status = self.current_install_status
+        if percent is None:
+            self._set_install_button_progress_text(status=status)
+            return
+        if percent > 0:
+            self.seen_progress = True
+            self.current_percent = percent
+            self._set_install_button_progress_text(status=status, percent=percent)
+            return
+        if self.seen_progress and percent == 0:
+            self.current_percent = 100.0
+            self._set_install_button_progress_text(status=status, percent=100.0)
+            return
+        if status:
+            self._set_install_button_progress_text(status=status)
+
     def _reset_install_state(self) -> None:
         """Reset auto-install process state and restore button."""
         self.installing = False
@@ -556,6 +605,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.current_install_button = None
         self.current_install_button_text = None
         self.current_install_button_icon = None
+        self.current_install_status = None
+        self.install_output_buffer = ""
 
     def stop_autoinstall(self) -> None:
         """Stop current auto-install process."""
@@ -569,8 +620,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             return
 
         self.install_stop_requested = True
-        if self.install_monitor_timer is not None:
-            self.install_monitor_timer.stop()
         if not self.start_sh:
             logger.warning("PortProton start command is unavailable for stop")
             self.install_stop_requested = False
@@ -596,114 +645,61 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.install_stop_process.errorOccurred.connect(on_stop_error)
         self.install_stop_process.start(self.start_sh[0], self.start_sh[1:] + ["cli", "--stop"])
 
-    def _parse_process_log_progress(self) -> float | None:
-        """Parse progress percentage from /tmp/PortProton_$USER/process.log.
+    def _get_install_status_from_name(self, name: str, action: str) -> str:
+        """Build install status text for a try_download target."""
+        name_lower = name.lower()
+        if "plugins" in name_lower:
+            return _("{0} Plugins...").format(action)
+        if "libs" in name_lower or "libraries" in name_lower:
+            return _("{0} Libs...").format(action)
+        if "wine" in name_lower or "proton" in name_lower:
+            return _("{0} Wine...").format(action)
+        return _("{0} components...").format(action)
 
-        Returns:
-            float | None: Progress percentage (0.0-100.0) if found, None otherwise.
-        """
-        user = os.getenv('USER', 'unknown')
-        log_file = f"/tmp/PortProton_{user}/process.log"
-        if not os.path.exists(log_file):
-            return None
-        try:
-            with open(log_file, encoding='utf-8') as f:
-                content = f.read()
-            matches = re.findall(r'([0-9]*\.?[0-9]+)%', content)
-            if matches:
-                percent = float(matches[-1])
-                return percent
-        except Exception as e:
-            logger.error(f"Error parsing process log: {e}")
-        return None
-
-    def _parse_process_log_status(self) -> tuple[str | None, float | None, bool] | None:
-        """Parse current launch download/extraction status from process.log."""
-        user = os.getenv('USER', 'unknown')
-        log_file = f"/tmp/PortProton_{user}/process.log"
-        if not os.path.exists(log_file):
-            return None
-
-        try:
-            with open(log_file, encoding='utf-8') as f:
-                lines = f.readlines()
-        except OSError as e:
-            logger.error("Error parsing process log status: %s", e)
-            return None
-
+    def _parse_process_status_line(
+        self, line: str
+    ) -> tuple[str | None, float | None, bool] | None:
+        """Parse dependency setup status from one PortProton log line."""
+        line_text = line.strip()
+        line_lower = line.lower()
         status = percent = None
         launch_started = False
-        for line in lines[-80:]:
-            line_lower = line.lower()
-            if "the prefix has been updated" in line_lower \
-                    or "log wine:" in line_lower \
-                    or "log from runtime and wine:" in line_lower:
-                status = None
-                percent = None
-                launch_started = True
-            elif "unpacking file:" in line_lower or "download" in line_lower:
-                action = _("Extracting") if "unpacking file:" in line_lower else _("Downloading")
-                launch_started = False
-                percent = None
-                if "plugins" in line_lower:
-                    status = _("{0} Plugins...").format(action)
-                elif "libs" in line_lower or "libraries" in line_lower:
-                    status = _("{0} Libs...").format(action)
-                elif "wine" in line_lower or "proton" in line_lower:
-                    status = _("{0} Wine...").format(action)
-                else:
-                    status = _("{0} components...").format(action)
-
-            matches = re.findall(r'([0-9]*\.?[0-9]+)%', line)
-            if matches:
-                percent = float(matches[-1])
+        progress_match = re.fullmatch(r'([0-9]*\.?[0-9]+)%', line_text)
+        if progress_match:
+            percent = float(progress_match.group(1))
+        elif "the prefix has been updated" in line_lower \
+                or "log wine:" in line_lower \
+                or "log from runtime and wine:" in line_lower:
+            launch_started = True
+        elif "download " in line_lower and " from " in line_lower:
+            filename_match = re.search(r'download\s+(.+?)\s+from\s+', line, re.IGNORECASE)
+            filename = filename_match.group(1) if filename_match else line
+            status = self._get_install_status_from_name(filename, _("Downloading"))
+        elif "unpacking file:" in line_lower:
+            unpack_match = re.search(
+                r'unpacking file:\s*(.+?)\s+please wait', line, re.IGNORECASE
+            )
+            filename = unpack_match.group(1) if unpack_match else line
+            status = self._get_install_status_from_name(filename, _("Extracting"))
+        elif "download and install" in line_lower:
+            status = self._get_install_status_from_name(line, _("Downloading"))
 
         if status is None and percent is None and not launch_started:
             return None
-        if status is None:
-            if launch_started:
-                status = None
-            else:
-                status = _("Preparing PortProton...")
         return status, percent, launch_started
 
-    def monitor_install_progress(self):
-        """Monitor /tmp/PortProton_$USER/process.log for progress."""
-        state = self._parse_process_log_status()
-        status = None
-        percent = None
-        if state is not None:
-            status, percent, _ = state
-        if percent is None:
-            percent = self._parse_process_log_progress()
-        if percent is None:
-            self._set_install_button_progress_text(status=status)
-            return
-        try:
-            if percent > 0:
-                self.seen_progress = True
-                self.current_percent = percent
-                self._set_install_button_progress_text(status=status, percent=percent)
-            elif self.seen_progress and percent == 0:
-                self.current_percent = 100.0
-                self._set_install_button_progress_text(status=status, percent=100.0)
-                if self.install_monitor_timer is not None:
-                    self.install_monitor_timer.stop()
-            elif status:
-                self._set_install_button_progress_text(status=status)
-            if self.current_percent >= 100:
-                if self.install_monitor_timer is not None:
-                    self.install_monitor_timer.stop()
-        except ValueError:
-            pass  # Ignore invalid floats
+    def _read_process_status_line(
+        self, line: str
+    ) -> tuple[str | None, float | None, bool] | None:
+        """Log and parse one PortProton output line."""
+        text = line.strip()
+        if text:
+            logger.info("%s", text)
+        return self._parse_process_status_line(text)
 
     @Slot(int, int)
     def on_install_finished(self, exit_code: int, exit_status: int):
         """Handle installation finish."""
-        if self.install_monitor_timer is not None:
-            self.install_monitor_timer.stop()
-            self.install_monitor_timer.deleteLater()
-            self.install_monitor_timer = None
         if self.install_stop_requested:
             if self.install_process:
                 self.install_process.deleteLater()
@@ -720,10 +716,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
     def on_install_error(self, error: QProcess.ProcessError):
         """Handle installation error."""
-        if self.install_monitor_timer is not None:
-            self.install_monitor_timer.stop()
-            self.install_monitor_timer.deleteLater()
-            self.install_monitor_timer = None
         if self.install_stop_requested:
             if self.install_process:
                 self.install_process.deleteLater()
@@ -3538,38 +3530,17 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         """
         target_running = self.is_target_exe_running()
         child_running = self._has_running_game_process()
+        dependency_active = self._drain_launch_output_progress()
 
-        if target_running or (self.game_launch_started and child_running):
+        if dependency_active:
+            # Dependencies are downloading/extracting - update button with progress
+            self._set_running_button_progress()
+        elif target_running or (self.game_launch_started and child_running):
             self.game_launch_started = True
             # Game started - set flag, update button to "Stop"
-            if self.current_running_button is not None:
-                try:
-                    self.current_running_button.setText(_("Stop"))
-                    icon = self.theme_manager.get_icon("stop", as_path=True)
-                    self.current_running_button.setIcon(icon)
-                except RuntimeError:
-                    self.current_running_button = None
-                #self._inhibit_screensaver()
-        elif self.monitor_wine_download_progress():
-            # Dependencies are downloading/extracting - update button with progress
-            if self.current_running_button is not None:
-                try:
-                    status = self.wine_download_status
-                    if self.wine_download_percent > 0:
-                        status = status.replace("...", f"... {int(self.wine_download_percent)}%")
-                    self.current_running_button.setText(status)
-                    icon = self.theme_manager.get_icon("save", as_path=True)
-                    self.current_running_button.setIcon(icon)
-                except RuntimeError:
-                    pass
+            self._set_running_button_stop()
         elif child_running:
-            if self.current_running_button is not None:
-                try:
-                    self.current_running_button.setText(_("Stop"))
-                    icon = self.theme_manager.get_icon("stop", as_path=True)
-                    self.current_running_button.setIcon(icon)
-                except RuntimeError:
-                    self.current_running_button = None
+            self._set_running_button_stop()
         elif not child_running:
             # Game completed - reset flag, reset button and stop timer
             self.resetPlayButton()
@@ -3579,41 +3550,49 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 self.checkProcessTimer.deleteLater()
                 self.checkProcessTimer = None
 
-    def monitor_wine_download_progress(self) -> bool:
-        """Monitor /tmp/PortProton_$USER/process.log for dependency progress.
-
-        Returns:
-            bool: True if dependency setup is in progress, False otherwise.
-        """
-        state = self._parse_process_log_status()
-        if state is None:
-            return False
+    def _set_running_button_stop(self) -> None:
+        """Update current running button to stop state."""
+        if self.current_running_button is None:
+            return
         try:
-            status, percent, launch_started = state
+            self.current_running_button.setText(_("Stop"))
+            icon = self.theme_manager.get_icon("stop", as_path=True)
+            self.current_running_button.setIcon(icon)
+        except RuntimeError:
+            self.current_running_button = None
+
+    def _set_running_button_progress(self) -> None:
+        """Update current running button with dependency setup progress."""
+        if self.current_running_button is None:
+            return
+        try:
+            status = self.wine_download_status
+            if self.wine_download_percent > 0:
+                status = status.replace("...", f"... {int(self.wine_download_percent)}%")
+            self.current_running_button.setText(status)
+            icon = self.theme_manager.get_icon("save", as_path=True)
+            self.current_running_button.setIcon(icon)
+        except RuntimeError:
+            self.current_running_button = None
+
+    def _drain_launch_output_progress(self) -> bool:
+        """Apply pending launch dependency statuses from live process output."""
+        while True:
+            try:
+                status, percent, launch_started = self.launch_output_queue.get_nowait()
+            except Empty:
+                break
             if launch_started:
                 self.game_launch_started = True
-                return False
-            if status is None:
-                return False
-            logger.debug("Launch dependency progress: %s %s", status, percent)
-            self.wine_download_status = status
-            if percent is None:
+                continue
+            if status is not None:
+                logger.debug("Launch dependency progress: %s %s", status, percent)
+                self.wine_download_status = status
                 self.wine_download_seen = True
-                self.wine_download_percent = 0.0
-                return True
-            if percent > 0:
-                self.wine_download_seen = True
+                self.wine_download_percent = percent or 0.0
+            elif percent is not None and self.wine_download_seen:
                 self.wine_download_percent = percent
-                return True
-            elif self.wine_download_seen and percent == 0:
-                # Download completed
-                self.wine_download_percent = 100.0
-                if self.wine_download_timer is not None:
-                    self.wine_download_timer.stop()
-                return False
-        except ValueError as e:
-            logger.debug(f"Invalid percent value: {e}")
-        return False
+        return self.wine_download_seen and not self.game_launch_started
 
     def resetPlayButton(self):
         """
@@ -3641,6 +3620,25 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
     def _has_running_game_process(self) -> bool:
         return any(proc.poll() is None for proc in self.game_processes)
+
+    def _start_launch_output_reader(self, process: subprocess.Popen[str]) -> None:
+        """Start background reader for PortProton launch output."""
+        self.launch_output_queue = Queue()
+        self.launch_output_thread = Thread(
+            target=self._read_launch_output,
+            args=(process,),
+            daemon=True,
+        )
+        self.launch_output_thread.start()
+
+    def _read_launch_output(self, process: subprocess.Popen[str]) -> None:
+        """Read launch output and queue parsed dependency statuses."""
+        if process.stdout is None:
+            return
+        for line in process.stdout:
+            state = self._read_process_status_line(line)
+            if state is not None:
+                self.launch_output_queue.put(state)
 
     def _terminate_game_processes(self) -> None:
         for proc in self.game_processes:
@@ -3792,8 +3790,18 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
             # Launch game
             try:
-                process = subprocess.Popen(launch_cmd, env=env_vars, shell=False, preexec_fn=os.setsid)
+                process = subprocess.Popen(
+                    launch_cmd,
+                    env=env_vars,
+                    shell=False,
+                    preexec_fn=os.setsid,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    bufsize=1,
+                )
                 self.game_processes.append(process)
+                self._start_launch_output_reader(process)
                 self.input_manager.suspend_gamepad_polling()
                 save_last_launch(exe_name, datetime.now())
                 if update_button:
