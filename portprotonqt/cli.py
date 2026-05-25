@@ -304,9 +304,19 @@ def clear_cache() -> bool:
 
 def reset_settings() -> bool:
     """Reset PortProtonQt settings."""
-    from portprotonqt.config import reset_main_config
+    from portprotonqt.config import get_portproton_location, reset_main_config
 
+    portproton_location = get_portproton_location()
     reset_main_config()
+    if portproton_location:
+        user_conf_path = Path(portproton_location) / "data" / "user.conf"
+        try:
+            if user_conf_path.is_file():
+                user_conf_path.unlink()
+        except OSError as e:
+            print(f"Failed to delete user.conf: {e}")
+            return False
+
     print("PortProtonQt settings reset")
     return True
 
