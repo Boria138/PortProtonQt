@@ -1,4 +1,4 @@
-pkgname=('portprotonqt-git' 'portprotonqt-git-steam-compat')
+pkgname=('portprotonqt-git')
 pkgver=.
 pkgrel=1
 pkgdesc="Modern GUI for managing and launching games from PortProton and Steam (development build)"
@@ -8,6 +8,9 @@ license=('GPL-3.0')
 depends=('python-requests' 'python-babel' 'python-evdev' 'python-pygame' 'python-orjson'
     'python-psutil' 'python-tqdm' 'python-vdf' 'python-libarchive-c' 'pyside6' 'python-rapidfuzz' 'python-pefile' 'python-pillow' 'perl-image-exiftool' 'python-websocket-client' 'cabextract' 'unzip' 'curl' 'jq' 'file' 'findutils' 'gawk' 'grep' 'tar' 'xz' 'zstd' 'gzip' 'unrar' 'qt6-svg' 'qt6-imageformats' 'pciutils' 'mesa-utils' 'vulkan-icd-loader' 'procps-ng' 'psmisc' '7zip' 'python-dbus-fast')
 makedepends=('meson' 'ninja' 'vulkan-headers' 'gettext')
+conflicts=("portprotonqt-steam-compat")
+provides=('portprotonqt-steam-compat')
+replaces=('portprotonqt-steam-compat')
 source=("git+https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt.git")
 sha256sums=('SKIP')
 
@@ -38,18 +41,4 @@ package_portprotonqt-git() {
     install -Dpm 0644 "$srcdir/PortProtonQt/completions/portprotonqt" -t "$pkgdir/usr/share/bash-completion/completions"
     install -Dpm 0644 "$srcdir/PortProtonQt/completions/portprotonqt.fish" -t "$pkgdir/usr/share/fish/vendor_completions.d"
     install -Dpm 0644 "$srcdir/PortProtonQt/completions/_portprotonqt" -t "$pkgdir/usr/share/zsh/site-functions"
-
-    # Remove steam-compat files from main package
-    rm -rf "$pkgdir/usr/share/steam"
-}
-
-package_portprotonqt-git-steam-compat() {
-    pkgdesc="Steam compatibility tool for PortProtonQt (development build)"
-    depends=('portprotonqt-git')
-
-    DESTDIR="$pkgdir" meson install -C build --skip-subprojects
-
-    # Keep only steam-compat files
-    find "$pkgdir/usr" -mindepth 1 -type f -not -path "${pkgdir}/usr/share/steam*" -print0 | xargs -0 rm -f
-    find "$pkgdir/usr" -mindepth 1 -type d -not -path "${pkgdir}/usr/share/steam*" -empty -delete
 }

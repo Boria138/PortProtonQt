@@ -13,7 +13,7 @@ Summary:        Modern GUI for managing and launching games from PortProton and 
 
 License:        GPL-3.0
 URL:            https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt
-ExclusiveArch:  x86_64 aarch64
+ExclusiveArch:  x86_64
 
 BuildRequires:  meson >= 0.61.2
 BuildRequires:  ninja-build
@@ -76,17 +76,11 @@ Recommends:     python3-qrcode
 # For legacy PortProton prefix backup support
 Recommends:     squashfs-tools
 
+Obsoletes:      %{pypi_name}-steam-compat < %{?epoch:%{epoch}:}%{version}-%{release}
+Provides:       %{pypi_name}-steam-compat = %{?epoch:%{epoch}:}%{version}-%{release}
+
 %description
 A modern and intuitive interface for managing and launching games from PortProton and Steam. Combines libraries in one place and simplifies running Windows games on Linux.
-
-%package -n %{pypi_name}-git-steam-compat
-Summary:        Steam compatibility tool for PortProtonQt (development build)
-License:        GPL-3.0
-Requires:       %{pypi_name}-git = %{version}-%{release}
-
-%description -n %{pypi_name}-git-steam-compat
-Steam compatibility tool integration for PortProtonQt. This package installs
-the necessary files to use PortProtonQt as a Proton compatibility tool in Steam.
 
 %{?python_disable_dependency_generator}
 
@@ -126,8 +120,5 @@ install -Dpm 0644 ./completions/_portprotonqt -t %{buildroot}%{zsh_completions_d
 %{bash_completions_dir}/portprotonqt
 %{fish_completions_dir}/portprotonqt.fish
 %{zsh_completions_dir}/_portprotonqt
-
-%files -n %{pypi_name}-git-steam-compat
-%{_datadir}/steam/compatibilitytools.d/PortProtonQt/
 
 %changelog
