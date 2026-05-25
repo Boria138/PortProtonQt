@@ -362,13 +362,16 @@ msgstr ""
 msgid "Never"
 msgstr ""
 
-msgid "Game Library"
+msgid "Unknown Application"
 msgstr ""
 
-msgid "Add Game"
+msgid "Add a shortcut"
 msgstr ""
 
-msgid "Find Games ..."
+msgid "Quick Launch"
+msgstr ""
+
+msgid "Search ..."
 msgstr ""
 
 msgid "Refreshing..."
@@ -434,9 +437,6 @@ msgstr ""
 msgid "Failed to run clear prefix command: {}"
 msgstr ""
 
-msgid "Failed to start backup process."
-msgstr ""
-
 msgid "Failed to start restore process."
 msgstr ""
 
@@ -482,13 +482,13 @@ msgstr ""
 msgid "Last launch"
 msgstr ""
 
-msgid "Playtime"
+msgid "Time spent"
 msgstr ""
 
 msgid "Alphabetical"
 msgstr ""
 
-msgid "Games Sort Method:"
+msgid "Sort Method:"
 msgstr ""
 
 msgid "All"
@@ -497,7 +497,7 @@ msgstr ""
 msgid "Favorites"
 msgstr ""
 
-msgid "Games Display Filter:"
+msgid "Display Filter:"
 msgstr ""
 
 msgid "Compact"
@@ -654,7 +654,7 @@ msgstr ""
 msgid "Executable not found: {0}"
 msgstr ""
 
-msgid "Play"
+msgid "Start"
 msgstr ""
 
 msgid "Prefix not found"
@@ -962,7 +962,7 @@ msgid "No favorites"
 msgstr ""
 
 #, python-brace-format
-msgid "Launch game \"{name}\" with PortProton"
+msgid "Launch \"{name}\" with PortProton"
 msgstr ""
 
 msgid "Debug log mode was launched"
@@ -974,7 +974,7 @@ msgstr ""
 msgid "LAST LAUNCH"
 msgstr ""
 
-msgid "PLAY TIME"
+msgid "TIME SPENT"
 msgstr ""
 
 msgid "MAIN STORY"
@@ -986,7 +986,7 @@ msgstr ""
 msgid "COMPLETIONIST"
 msgstr ""
 
-msgid "Edit Game"
+msgid "Open Folder"
 msgstr ""
 
 msgid "Settings"
@@ -1013,9 +1013,6 @@ msgstr ""
 msgid "Debug log saved to:"
 msgstr ""
 
-msgid "Open Folder"
-msgstr ""
-
 msgid "Back"
 msgstr ""
 
@@ -1034,9 +1031,6 @@ msgstr ""
 
 #, python-brace-format
 msgid "Launching {0}"
-msgstr ""
-
-msgid "Game Name:"
 msgstr ""
 
 msgid "Path to Executable:"
@@ -1116,6 +1110,28 @@ msgstr ""
 
 #, python-format
 msgid "Access denied: %s"
+msgstr ""
+
+msgid "Prefix backup"
+msgstr ""
+
+msgid "Prefix restore"
+msgstr ""
+
+#, python-brace-format
+msgid "File: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "{0}/{1} files"
+msgstr ""
+
+#, python-brace-format
+msgid "{0} files"
+msgstr ""
+
+#, python-brace-format
+msgid "{0}, Speed: {1:.1f} MB/s"
 msgstr ""
 
 msgid "Selected WINE/Proton:"

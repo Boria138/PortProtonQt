@@ -364,14 +364,20 @@ msgstr "刷新网格"
 msgid "Never"
 msgstr "从不"
 
-msgid "Game Library"
-msgstr "游戏库"
+msgid "Unknown Application"
+msgstr ""
 
-msgid "Add Game"
-msgstr "添加游戏"
+#, fuzzy
+msgid "Add a shortcut"
+msgstr "添加快捷方式到："
 
-msgid "Find Games ..."
-msgstr "查找游戏…"
+#, fuzzy
+msgid "Quick Launch"
+msgstr "上次启动"
+
+#, fuzzy
+msgid "Search ..."
+msgstr "搜索"
 
 msgid "Refreshing..."
 msgstr "正在刷新…"
@@ -436,9 +442,6 @@ msgstr "前缀清除失败，退出代码为 {}。"
 msgid "Failed to run clear prefix command: {}"
 msgstr "运行清除前缀命令失败：{}"
 
-msgid "Failed to start backup process."
-msgstr "启动备份进程失败。"
-
 msgid "Failed to start restore process."
 msgstr "启动恢复进程失败。"
 
@@ -484,13 +487,14 @@ msgstr "时间详细程度："
 msgid "Last launch"
 msgstr "上次启动"
 
-msgid "Playtime"
-msgstr "游戏时长"
+msgid "Time spent"
+msgstr ""
 
 msgid "Alphabetical"
 msgstr "按字母顺序"
 
-msgid "Games Sort Method:"
+#, fuzzy
+msgid "Sort Method:"
 msgstr "游戏排序方式："
 
 msgid "All"
@@ -499,7 +503,8 @@ msgstr "全部"
 msgid "Favorites"
 msgstr "收藏夹"
 
-msgid "Games Display Filter:"
+#, fuzzy
+msgid "Display Filter:"
 msgstr "游戏显示筛选："
 
 msgid "Compact"
@@ -656,8 +661,9 @@ msgstr "链接："
 msgid "Executable not found: {0}"
 msgstr "找不到可执行文件：{0}"
 
-msgid "Play"
-msgstr "播放"
+#, fuzzy
+msgid "Start"
+msgstr "状态"
 
 msgid "Prefix not found"
 msgstr "未找到前缀"
@@ -1001,8 +1007,8 @@ msgstr "无最近游戏"
 msgid "No favorites"
 msgstr "无收藏"
 
-#, python-brace-format
-msgid "Launch game \"{name}\" with PortProton"
+#, fuzzy, python-brace-format
+msgid "Launch \"{name}\" with PortProton"
 msgstr "使用 PortProton 启动游戏“{name}”"
 
 msgid "Debug log mode was launched"
@@ -1014,8 +1020,8 @@ msgstr "要诊断问题，请将完整日志复制到网站："
 msgid "LAST LAUNCH"
 msgstr "上次启动"
 
-msgid "PLAY TIME"
-msgstr "游戏时间"
+msgid "TIME SPENT"
+msgstr ""
 
 msgid "MAIN STORY"
 msgstr "主线剧情"
@@ -1026,8 +1032,8 @@ msgstr "主线 + 支线"
 msgid "COMPLETIONIST"
 msgstr "完美主义者"
 
-msgid "Edit Game"
-msgstr "编辑游戏"
+msgid "Open Folder"
+msgstr "打开文件夹"
 
 msgid "Settings"
 msgstr "设置"
@@ -1053,9 +1059,6 @@ msgstr "日志已保存"
 msgid "Debug log saved to:"
 msgstr "调试日志已保存到："
 
-msgid "Open Folder"
-msgstr "打开文件夹"
-
 msgid "Back"
 msgstr "返回"
 
@@ -1075,9 +1078,6 @@ msgstr "无"
 #, python-brace-format
 msgid "Launching {0}"
 msgstr "正在启动 {0}"
-
-msgid "Game Name:"
-msgstr "游戏名称："
 
 msgid "Path to Executable:"
 msgstr "可执行文件路径："
@@ -1157,6 +1157,30 @@ msgstr "路径： "
 #, python-format
 msgid "Access denied: %s"
 msgstr "访问被拒绝：%s"
+
+#, fuzzy
+msgid "Prefix backup"
+msgstr "加载前缀备份"
+
+#, fuzzy
+msgid "Prefix restore"
+msgstr "前缀恢复失败。"
+
+#, fuzzy, python-brace-format
+msgid "File: {0}"
+msgstr "找不到文件：{0}"
+
+#, python-brace-format
+msgid "{0}/{1} files"
+msgstr ""
+
+#, fuzzy, python-brace-format
+msgid "{0} files"
+msgstr "{0} Wine…"
+
+#, fuzzy, python-brace-format
+msgid "{0}, Speed: {1:.1f} MB/s"
+msgstr "，速度：{:.1f}MB/秒"
 
 msgid "Selected WINE/Proton:"
 msgstr "已选择的 WINE/Proton："

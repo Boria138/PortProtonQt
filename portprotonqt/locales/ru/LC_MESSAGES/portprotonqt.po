@@ -373,11 +373,15 @@ msgstr "Обновить"
 msgid "Never"
 msgstr "Никогда"
 
-msgid "Game Library"
-msgstr "Игровая библиотека"
+msgid "Unknown Application"
+msgstr ""
 
 msgid "Add a shortcut"
 msgstr "Добавить ярлык"
+
+#, fuzzy
+msgid "Quick Launch"
+msgstr "ПОСЛЕДНИЙ ЗАПУСК"
 
 msgid "Search ..."
 msgstr "Поиск ..."
@@ -490,13 +494,14 @@ msgstr "Уровень детализации вывода времени:"
 msgid "Last launch"
 msgstr "Последний запуск"
 
-msgid "Playtime"
-msgstr "Время игры"
+msgid "Time spent"
+msgstr ""
 
 msgid "Alphabetical"
 msgstr "Алфавитный"
 
-msgid "Games Sort Method:"
+#, fuzzy
+msgid "Sort Method:"
 msgstr "Метод сортировки игр:"
 
 msgid "All"
@@ -505,7 +510,8 @@ msgstr "Все"
 msgid "Favorites"
 msgstr "Избранное"
 
-msgid "Games Display Filter:"
+#, fuzzy
+msgid "Display Filter:"
 msgstr "Фильтр игр:"
 
 msgid "Compact"
@@ -1023,8 +1029,8 @@ msgstr "Нет недавних игр"
 msgid "No favorites"
 msgstr "Нет избранных"
 
-#, python-brace-format
-msgid "Launch game \"{name}\" with PortProton"
+#, fuzzy, python-brace-format
+msgid "Launch \"{name}\" with PortProton"
 msgstr "Запустить игру \"{name}\" с помощью PortProton"
 
 msgid "Debug log mode was launched"
@@ -1036,8 +1042,8 @@ msgstr "Для диагностики проблемы скопируйте ВЕ
 msgid "LAST LAUNCH"
 msgstr "ПОСЛЕДНИЙ ЗАПУСК"
 
-msgid "PLAY TIME"
-msgstr "ВРЕМЯ ИГРЫ"
+msgid "TIME SPENT"
+msgstr ""
 
 msgid "MAIN STORY"
 msgstr "СЮЖЕТ"
@@ -1048,8 +1054,8 @@ msgstr "СЮЖЕТ + ПОБОЧКИ"
 msgid "COMPLETIONIST"
 msgstr "100%"
 
-msgid "Edit Game"
-msgstr "Редактировать игру"
+msgid "Open Folder"
+msgstr "Открыть папку"
 
 msgid "Settings"
 msgstr "Настройки"
@@ -1075,9 +1081,6 @@ msgstr "Лог сохранен"
 msgid "Debug log saved to:"
 msgstr "Лог сохранен в:"
 
-msgid "Open Folder"
-msgstr "Открыть папку"
-
 msgid "Back"
 msgstr "Назад"
 
@@ -1097,9 +1100,6 @@ msgstr "отсутствует"
 #, python-brace-format
 msgid "Launching {0}"
 msgstr "Запуск {0}"
-
-msgid "Game Name:"
-msgstr "Имя игры:"
 
 msgid "Path to Executable:"
 msgstr "Путь к исполняемому файлу:"
