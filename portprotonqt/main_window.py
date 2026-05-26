@@ -2646,7 +2646,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         scrollLayout.addWidget(hwFrame)
 
         filtered_gpu_list = get_selectable_gpu_list()
-        hwFrame.setVisible(len(filtered_gpu_list) != 1)
+        hwFrame.setVisible(len(filtered_gpu_list) > 1)
         if len(filtered_gpu_list) > 1:
             self.gpuCombo = QComboBox()
             self.gpuCombo.view().window().setWindowFlags(
@@ -2662,7 +2662,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             current_gpu = get_user_conf_setting('PW_GPU_USE')
             if current_gpu and current_gpu != "disabled" and current_gpu in filtered_gpu_list:
                 self.gpuCombo.setCurrentText(current_gpu)
-            elif current_gpu and current_gpu != "disabled":
+            elif current_gpu and current_gpu != "disabled" and "Info:" not in current_gpu:
                 if current_gpu not in filtered_gpu_list:
                     self.gpuCombo.addItem(current_gpu)
                 self.gpuCombo.setCurrentText(current_gpu)
@@ -2673,8 +2673,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             self.gpuTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
             self.gpuTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
             hwForm.addRow(self.gpuTitle, self.gpuCombo)
-        elif not filtered_gpu_list:
-            hwForm.addRow(QLabel(_("No GPUs found")), QLabel(""))
 
         # 5. Proxy Settings Section
         proxyFrame, proxyForm = create_section(_("Proxy Settings"), self.theme)

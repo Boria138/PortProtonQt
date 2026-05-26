@@ -9,6 +9,8 @@ from portprotonqt.logger import get_logger
 logger = get_logger(__name__)
 
 _vk_gpu_info_output: str | None = None
+_ANSI_RE = re.compile(r'\x1b\[[0-9;]*m|\[[0-9;]{1,8}m')
+_LOG_PREFIXES = ("Info:", "Warning:", "Error:")
 
 
 def get_cached_vk_gpu_info() -> str:
@@ -53,6 +55,20 @@ def get_cached_vk_gpu_info() -> str:
     return _vk_gpu_info_output
 
 
+def _clean_vk_gpu_value(value: str) -> str:
+    """Clean control sequences from vk_gpu_info values."""
+    return _ANSI_RE.sub("", value).strip()
+
+
+def _is_selectable_device_name(device_name: str) -> bool:
+    """Check if vk_gpu_info device name can be shown in UI."""
+    if not device_name:
+        return False
+    if device_name.startswith(_LOG_PREFIXES):
+        return False
+    return "llvmpipe" not in device_name.lower()
+
+
 def get_gpu_list() -> list[str]:
     """Get list of available GPUs, sorted by type (discrete first)."""
     gpu_list: list[str] = []
@@ -87,9 +103,9 @@ def get_gpu_list() -> list[str]:
                         value = key_value[1].strip()
 
                         if key == 'device_name':
-                            gpu_info['deviceName'] = value
+                            gpu_info['deviceName'] = _clean_vk_gpu_value(value)
                         elif key == 'device_type':
-                            gpu_info['deviceType'] = value
+                            gpu_info['deviceType'] = _clean_vk_gpu_value(value)
 
                 i += 1
 
@@ -97,6 +113,8 @@ def get_gpu_list() -> list[str]:
             device_type = gpu_info.get('deviceType', 'Unknown')
 
             if device_type in ['CPU', 'VIRTUAL_GPU']:
+                continue
+            if not _is_selectable_device_name(device_name):
                 continue
 
             if device_type == 'DISCRETE_GPU':
@@ -138,14 +156,14 @@ def get_selectable_gpu_entries() -> list[dict[str, str]]:
             prop_line = lines[i].strip()
             if ":" in prop_line:
                 key, value = prop_line.split(":", 1)
-                gpu_info[key.strip()] = value.strip()
+                gpu_info[key.strip()] = _clean_vk_gpu_value(value)
             i += 1
 
         device_name = gpu_info.get("device_name", "").strip()
         device_type = gpu_info.get("device_type", "").strip()
         if not device_name or device_type in {"CPU", "VIRTUAL_GPU"}:
             continue
-        if "llvmpipe" in device_name.lower():
+        if not _is_selectable_device_name(device_name):
             continue
 
         vendor_id = gpu_info.get("vendor_id", "").strip()
@@ -335,7 +353,7 @@ def _parse_gpu_properties(
             if len(key_value) == 2:
                 key = key_value[0].strip()
                 value = key_value[1].strip()
-                gpu_info[key] = value
+                gpu_info[key] = _clean_vk_gpu_value(value)
         i += 1
 
     return gpu_info, i
