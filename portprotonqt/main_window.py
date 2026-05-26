@@ -2438,6 +2438,22 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         fullscreen_layout.addStretch()
         uiForm.addRow(fullscreen_layout)
 
+        self.autoFullscreenGamepadCheckBox = QCheckBox()
+        self.autoFullscreenGamepadCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
+        self.autoFullscreenGamepadCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.autoFullscreenGamepadTitle = QLabel(_("Auto Fullscreen on Gamepad connected"))
+        self.autoFullscreenGamepadTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.autoFullscreenGamepadTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
+        self.autoFullscreenGamepadTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        current_auto_fullscreen = display_config.get_auto_fullscreen_gamepad()
+        self.autoFullscreenGamepadCheckBox.setChecked(current_auto_fullscreen)
+        auto_fullscreen_layout = QHBoxLayout()
+        auto_fullscreen_layout.setContentsMargins(self.theme.portProtonPageHorizontalSpacing, 0, 0, 0)
+        auto_fullscreen_layout.addWidget(self.autoFullscreenGamepadCheckBox)
+        auto_fullscreen_layout.addWidget(self.autoFullscreenGamepadTitle)
+        auto_fullscreen_layout.addStretch()
+        uiForm.addRow(auto_fullscreen_layout)
+
         self.minimizeToTrayCheckBox = QCheckBox()
         self.minimizeToTrayCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.minimizeToTrayCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -2624,28 +2640,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         downloadForm.addRow(economy_mode_layout)
         downloadForm.addRow(self.downloadMirrorTitle, self.downloadMirrorCombo)
 
-        # 4. Gamepad Settings Section
-        padFrame, padForm = create_section(_("Gamepad Settings"), self.theme)
-        padForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
-        scrollLayout.addWidget(padFrame)
-
-        self.autoFullscreenGamepadCheckBox = QCheckBox()
-        self.autoFullscreenGamepadCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
-        self.autoFullscreenGamepadCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.autoFullscreenGamepadTitle = QLabel(_("Auto Fullscreen on Gamepad connected"))
-        self.autoFullscreenGamepadTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.autoFullscreenGamepadTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
-        self.autoFullscreenGamepadTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        current_auto_fullscreen = display_config.get_auto_fullscreen_gamepad()
-        self.autoFullscreenGamepadCheckBox.setChecked(current_auto_fullscreen)
-        auto_fullscreen_layout = QHBoxLayout()
-        auto_fullscreen_layout.setContentsMargins(0, 0, 0, 0)
-        auto_fullscreen_layout.addWidget(self.autoFullscreenGamepadCheckBox)
-        auto_fullscreen_layout.addWidget(self.autoFullscreenGamepadTitle)
-        auto_fullscreen_layout.addStretch()
-        padForm.addRow(auto_fullscreen_layout)
-
-        # 5. Hardware Settings Section
+        # 4. Hardware Settings Section
         hwFrame, hwForm = create_section(_("Hardware Settings"), self.theme)
         hwForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
         scrollLayout.addWidget(hwFrame)
@@ -2681,7 +2676,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         elif not filtered_gpu_list:
             hwForm.addRow(QLabel(_("No GPUs found")), QLabel(""))
 
-        # 6. Proxy Settings Section
+        # 5. Proxy Settings Section
         proxyFrame, proxyForm = create_section(_("Proxy Settings"), self.theme)
         proxyForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
         scrollLayout.addWidget(proxyFrame)
