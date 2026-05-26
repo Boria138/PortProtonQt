@@ -25,6 +25,14 @@ msgstr ""
 msgid "Stop Game"
 msgstr "Остановить игру"
 
+#, fuzzy
+msgid ""
+"PortProton data folder is not readable and writable. Choose another "
+"folder for PortProton data."
+msgstr ""
+"Выбранная папка находится на неподдерживаемой файловой системе. Выберите "
+"другую папку для данных PortProton."
+
 msgid "Error"
 msgstr "Ошибка"
 
@@ -342,12 +350,6 @@ msgstr "Остановить"
 msgid "Failed to stop installation."
 msgstr "Не удалось прервать установку."
 
-msgid "Extracting"
-msgstr "Распаковка"
-
-msgid "Downloading"
-msgstr "Скачивание"
-
 #, python-brace-format
 msgid "{0} Plugins..."
 msgstr "{0} Плагинов..."
@@ -364,8 +366,11 @@ msgstr "{0} Wine..."
 msgid "{0} components..."
 msgstr "{0} компонентов..."
 
-msgid "Preparing PortProton..."
-msgstr "Запуск PortProton..."
+msgid "Downloading"
+msgstr "Скачивание"
+
+msgid "Extracting"
+msgstr "Распаковка"
 
 msgid "Refresh Grid"
 msgstr "Обновить"
@@ -376,11 +381,11 @@ msgstr "Никогда"
 msgid "Unknown Application"
 msgstr "Неизвестное приложение"
 
-msgid "Add a shortcut"
-msgstr "Добавить ярлык"
-
 msgid "Quick Launch"
 msgstr "Быстрый запуск"
+
+msgid "Add a shortcut"
+msgstr "Добавить ярлык"
 
 msgid "Search ..."
 msgstr "Поиск ..."
@@ -529,6 +534,9 @@ msgstr "Тип области уведомления:"
 msgid "Launch Application in Fullscreen"
 msgstr "Запуск приложения в полноэкранном режиме"
 
+msgid "Auto Fullscreen on Gamepad connected"
+msgstr "Режим полноэкранного отображения приложения при подключении геймпада"
+
 msgid "Minimize to tray on close"
 msgstr "Сворачивать в область уведомления при закрытии"
 
@@ -561,12 +569,6 @@ msgstr "Принудительно установить системный DPI �
 
 msgid "Download Settings"
 msgstr "Настройки скачивания"
-
-msgid "Gamepad Settings"
-msgstr "Настройки геймпада"
-
-msgid "Auto Fullscreen on Gamepad connected"
-msgstr "Режим полноэкранного отображения приложения при подключении геймпада"
 
 msgid "Hardware Settings"
 msgstr "Настройки оборудования"
@@ -696,6 +698,10 @@ msgstr "Файл не найден: {0}"
 msgid "Cannot launch game while another game is running"
 msgstr "Невозможно запустить игру пока запущена другая"
 
+#, fuzzy
+msgid "Choose Folder"
+msgstr "Открыть папку"
+
 msgid "Choose PortProton data folder"
 msgstr "Выберите папку данных PortProton"
 
@@ -705,6 +711,14 @@ msgid ""
 msgstr ""
 "Выбранная папка находится на неподдерживаемой файловой системе. Выберите другую "
 "папку для данных PortProton."
+
+#, fuzzy
+msgid ""
+"Selected folder is not readable and writable. Choose another folder for "
+"PortProton data."
+msgstr ""
+"Выбранная папка находится на неподдерживаемой файловой системе. Выберите "
+"другую папку для данных PortProton."
 
 msgid "Select file for PPDB download"
 msgstr "Выберите файл для загрузки PPDB"

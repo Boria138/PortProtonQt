@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-05-25 09:35+0500\n"
+"POT-Creation-Date: 2026-05-26 11:31+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,6 +19,11 @@ msgstr ""
 "Generated-By: Babel 2.18.0\n"
 
 msgid "Stop Game"
+msgstr ""
+
+msgid ""
+"PortProton data folder is not readable and writable. Choose another "
+"folder for PortProton data."
 msgstr ""
 
 msgid "Error"
@@ -330,12 +335,6 @@ msgstr ""
 msgid "Failed to stop installation."
 msgstr ""
 
-msgid "Extracting"
-msgstr ""
-
-msgid "Downloading"
-msgstr ""
-
 #, python-brace-format
 msgid "{0} Plugins..."
 msgstr ""
@@ -352,7 +351,10 @@ msgstr ""
 msgid "{0} components..."
 msgstr ""
 
-msgid "Preparing PortProton..."
+msgid "Downloading"
+msgstr ""
+
+msgid "Extracting"
 msgstr ""
 
 msgid "Refresh Grid"
@@ -364,10 +366,10 @@ msgstr ""
 msgid "Unknown Application"
 msgstr ""
 
-msgid "Add a shortcut"
+msgid "Quick Launch"
 msgstr ""
 
-msgid "Quick Launch"
+msgid "Add a shortcut"
 msgstr ""
 
 msgid "Search ..."
@@ -517,6 +519,9 @@ msgstr ""
 msgid "Launch Application in Fullscreen"
 msgstr ""
 
+msgid "Auto Fullscreen on Gamepad connected"
+msgstr ""
+
 msgid "Minimize to tray on close"
 msgstr ""
 
@@ -548,12 +553,6 @@ msgid "Force system DPI for Wine"
 msgstr ""
 
 msgid "Download Settings"
-msgstr ""
-
-msgid "Gamepad Settings"
-msgstr ""
-
-msgid "Auto Fullscreen on Gamepad connected"
 msgstr ""
 
 msgid "Hardware Settings"
@@ -683,12 +682,20 @@ msgstr ""
 msgid "Cannot launch game while another game is running"
 msgstr ""
 
+msgid "Choose Folder"
+msgstr ""
+
 msgid "Choose PortProton data folder"
 msgstr ""
 
 msgid ""
 "Selected folder is on an unsupported filesystem. Choose another folder "
 "for PortProton data."
+msgstr ""
+
+msgid ""
+"Selected folder is not readable and writable. Choose another folder for "
+"PortProton data."
 msgstr ""
 
 msgid "Select file for PPDB download"

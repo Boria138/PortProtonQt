@@ -24,6 +24,12 @@ msgstr ""
 msgid "Stop Game"
 msgstr "停止游戏"
 
+#, fuzzy
+msgid ""
+"PortProton data folder is not readable and writable. Choose another "
+"folder for PortProton data."
+msgstr "所选文件夹位于不支持的文件系统上。请为 PortProton 数据选择其他文件夹。"
+
 msgid "Error"
 msgstr "错误"
 
@@ -333,12 +339,6 @@ msgstr "停止"
 msgid "Failed to stop installation."
 msgstr "停止安装失败。"
 
-msgid "Extracting"
-msgstr "正在提取"
-
-msgid "Downloading"
-msgstr "正在下载"
-
 #, python-brace-format
 msgid "{0} Plugins..."
 msgstr "{0} 插件…"
@@ -355,8 +355,11 @@ msgstr "{0} Wine…"
 msgid "{0} components..."
 msgstr "{0} 组件…"
 
-msgid "Preparing PortProton..."
-msgstr "正在准备 PortProton…"
+msgid "Downloading"
+msgstr "正在下载"
+
+msgid "Extracting"
+msgstr "正在提取"
 
 msgid "Refresh Grid"
 msgstr "刷新网格"
@@ -368,12 +371,12 @@ msgid "Unknown Application"
 msgstr ""
 
 #, fuzzy
-msgid "Add a shortcut"
-msgstr "添加快捷方式到："
-
-#, fuzzy
 msgid "Quick Launch"
 msgstr "上次启动"
+
+#, fuzzy
+msgid "Add a shortcut"
+msgstr "添加快捷方式到："
 
 #, fuzzy
 msgid "Search ..."
@@ -525,6 +528,9 @@ msgstr "托盘菜单类型："
 msgid "Launch Application in Fullscreen"
 msgstr "全屏启动应用程序"
 
+msgid "Auto Fullscreen on Gamepad connected"
+msgstr "连接手柄时自动全屏"
+
 msgid "Minimize to tray on close"
 msgstr "关闭时最小化到系统托盘"
 
@@ -557,12 +563,6 @@ msgstr "强制为 Wine 设置系统 DPI"
 
 msgid "Download Settings"
 msgstr "下载设置"
-
-msgid "Gamepad Settings"
-msgstr "游戏手柄设置"
-
-msgid "Auto Fullscreen on Gamepad connected"
-msgstr "连接手柄时自动全屏"
 
 msgid "Hardware Settings"
 msgstr "硬件设置"
@@ -692,12 +692,22 @@ msgstr "找不到文件：{0}"
 msgid "Cannot launch game while another game is running"
 msgstr "另一游戏正在运行时无法启动游戏"
 
+#, fuzzy
+msgid "Choose Folder"
+msgstr "打开文件夹"
+
 msgid "Choose PortProton data folder"
 msgstr "选择 PortProton 数据文件夹"
 
 msgid ""
 "Selected folder is on an unsupported filesystem. Choose another folder "
 "for PortProton data."
+msgstr "所选文件夹位于不支持的文件系统上。请为 PortProton 数据选择其他文件夹。"
+
+#, fuzzy
+msgid ""
+"Selected folder is not readable and writable. Choose another folder for "
+"PortProton data."
 msgstr "所选文件夹位于不支持的文件系统上。请为 PortProton 数据选择其他文件夹。"
 
 msgid "Select file for PPDB download"
