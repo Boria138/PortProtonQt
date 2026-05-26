@@ -3,7 +3,7 @@ import re
 import urllib.parse
 from typing import Any
 
-PINNED_PREFIX_NAMES = ("DEFAULT", "DOTNET", "PROGRAMS")
+PINNED_PREFIX_NAMES = ("DEFAULT", "DOTNET")
 
 
 def version_sort_key(entry):
