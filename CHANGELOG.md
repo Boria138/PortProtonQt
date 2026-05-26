@@ -3,6 +3,19 @@
 Все заметные изменения в этом проекте фиксируются в этом файле.
 Формат основан на [Keep a Changelog](https://keepachangelog.com/) и придерживается принципов [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- Добавлен скрытый тип отображения времени, скрывающий последний запуск и проведённое время
+
+### Changed
+
+### Fixed
+
+### Contributors
+
+---
+
 ## [1.1.0] - 2026-05-26
 
 ### Added

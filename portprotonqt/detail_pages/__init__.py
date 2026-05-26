@@ -250,10 +250,11 @@ class DetailPageManager:
         game_info_layout = QVBoxLayout()
         game_info_layout.setSpacing(10)
 
-        first_row = self._create_playtime_row(
-            game_data.get("last_launch", ""), game_data.get("formatted_playtime", "")
-        )
-        game_info_layout.addLayout(first_row)
+        if ui_config.get_time_detail_level() != "hidden":
+            first_row = self._create_playtime_row(
+                game_data.get("last_launch", ""), game_data.get("formatted_playtime", "")
+            )
+            game_info_layout.addLayout(first_row)
 
         hltb_layout = QHBoxLayout()
         hltb_layout.setSpacing(10)

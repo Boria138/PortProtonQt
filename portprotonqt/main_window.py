@@ -2297,8 +2297,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             Qt.WidgetAttribute.WA_TranslucentBackground
         )
         self.timeDetailCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        self.time_keys = ["detailed", "brief"]
-        self.time_labels = [_("Detailed"), _("Brief")]
+        self.time_keys = ["detailed", "brief", "hidden"]
+        self.time_labels = [_("Detailed"), _("Brief"), _("Hidden")]
         self.timeDetailCombo.addItems(self.time_labels)
         self.timeDetailCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
         self.timeDetailCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
