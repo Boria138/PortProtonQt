@@ -43,7 +43,6 @@ from portprotonqt.config import (
     WINDOWS_LAUNCH_EXTENSIONS,
     extract_exec_target_path,
     window_config,
-    reset_main_config,
     cache_config,
     get_portproton_start_command,
     get_portproton_scripts_path,
@@ -51,7 +50,12 @@ from portprotonqt.config import (
     find_game_by_exe,
     migrate_legacy_shortcut,
 )
-from portprotonqt.cli import add_steam_compat_tool, remove_steam_compat_tool, is_steam_compat_tool_installed
+from portprotonqt.cli import (
+    add_steam_compat_tool,
+    remove_steam_compat_tool,
+    is_steam_compat_tool_installed,
+    reset_settings,
+)
 
 from portprotonqt.tray_manager import restart_application_process
 from portprotonqt.version_utils import include_pinned_prefixes, version_sort_key
@@ -2766,18 +2770,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         msg_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
         reply = msg_box.exec()
         if reply == QMessageBox.StandardButton.Yes:
-            portproton_location = get_portproton_location()
-            reset_main_config()
-            if portproton_location:
-                user_conf_path = os.path.join(portproton_location, "data", "user.conf")
-                try:
-                    if os.path.isfile(user_conf_path):
-                        os.unlink(user_conf_path)
-                        logger.info("User configuration file %s deleted", user_conf_path)
-                except OSError as error:
-                    logger.warning("Failed to delete user.conf: %s", error)
-            # Restart application
-            QTimer.singleShot(1000, lambda: self.restart_application())
+            if reset_settings():
+                QTimer.singleShot(1000, lambda: self.restart_application())
 
     def migrateLegacyShortcuts(self):
         """Migrate legacy shortcuts after user confirmation."""

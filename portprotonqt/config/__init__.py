@@ -4,9 +4,12 @@ from portprotonqt.config.base import (
     CACHE_DIR,
     CONFIG_DIR,
     CONFIG_FILE,
+    COUNTER_SKIP_FILE,
     PORTPROTON_CONFIG_FILE,
     THEMES_DIRS,
+    consume_download_counter_skip,
     reset_main_config,
+    update_app_version,
 )
 from portprotonqt.config.cache import CacheConfig, CacheManager
 from portprotonqt.config.display import DisplayConfig, apply_xdg_autostart
@@ -62,6 +65,7 @@ __all__ = [
     "THEMED_LAUNCH_ICON_NAMES",
     "WINDOWS_LAUNCH_EXTENSIONS",
     "CONFIG_FILE",
+    "COUNTER_SKIP_FILE",
     "PORTPROTON_CONFIG_FILE",
     "CONFIG_DIR",
     "THEMES_DIRS",
@@ -89,5 +93,7 @@ __all__ = [
     "extract_exec_target_path",
     "find_game_by_exe",
     "create_desktop_file",
+    "consume_download_counter_skip",
     "reset_main_config",
+    "update_app_version",
 ]

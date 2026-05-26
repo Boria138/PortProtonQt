@@ -304,7 +304,10 @@ def clear_cache() -> bool:
 
 def reset_settings() -> bool:
     """Reset PortProtonQt settings."""
-    from portprotonqt.config import get_portproton_location, reset_main_config
+    from portprotonqt.config import (
+        get_portproton_location,
+        reset_main_config,
+    )
 
     portproton_location = get_portproton_location()
     reset_main_config()

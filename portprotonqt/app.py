@@ -3,6 +3,9 @@ import sys
 import os
 import importlib
 import subprocess
+import threading
+import urllib.error
+import urllib.request
 from urllib.parse import quote, unquote
 from logging import Logger
 
@@ -24,11 +27,13 @@ from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 from PySide6.QtGui import QAction, QIcon
 
 from portprotonqt.config import (
+    consume_download_counter_skip,
     display_config,
     get_portproton_start_command,
     get_portproton_location,
     save_portdata_path_to_config,
     ui_config,
+    update_app_version,
     window_config,
 )
 from portprotonqt.logger import get_logger, setup_logger
@@ -47,6 +52,8 @@ from portprotonqt.cli import (
     parse_resolution,
 )
 from portprotonqt.localization import _, get_steam_language
+
+COUNTER_DOWNLOAD_URL = "http://cloud.linux-gaming.ru:8081/api/download/{version}"
 
 def get_version():
     if APP_COMMIT:
@@ -140,6 +147,22 @@ def restore_prefix_backup(start_sh: list[str], backup_path: str) -> int:
     except (OSError, subprocess.SubprocessError) as e:
         logger.error("Failed to restore prefix backup %s: %s", path, e)
         return 1
+
+
+def notify_download_counter(app_version: str, logger: Logger) -> None:
+    url = COUNTER_DOWNLOAD_URL.format(version=quote(app_version, safe=""))
+
+    def send_request() -> None:
+        try:
+            request = urllib.request.Request(url, method="GET")
+            with urllib.request.urlopen(request, timeout=10):
+                pass
+        except urllib.error.URLError as e:
+            logger.debug("Failed to notify download counter: %s", e)
+        except OSError as e:
+            logger.debug("Failed to notify download counter: %s", e)
+
+    threading.Thread(target=send_request, daemon=True).start()
 
 
 def create_prefix_backup(start_sh: list[str], prefix_name: str, backup_dir: str) -> int:
@@ -244,6 +267,10 @@ def main():
     args = parsed_args
     setup_logger(args.debug_level)
     logger = get_logger(__name__)
+    if consume_download_counter_skip():
+        update_app_version(__app_version__)
+    elif update_app_version(__app_version__):
+        notify_download_counter(__app_version__, logger)
 
     fullscreen = args.fullscreen or display_config.get_fullscreen()
     ipc_message = "show:fullscreen" if fullscreen else "show"

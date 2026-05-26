@@ -13,6 +13,7 @@ __all__ = ["configparser"]
 # Configuration file paths
 CONFIG_DIR = Path(os.getenv("XDG_CONFIG_HOME", Path.home() / ".config"))
 CONFIG_FILE = CONFIG_DIR / "PortProtonQt.conf"
+COUNTER_SKIP_FILE = CONFIG_DIR / "PortProtonQt.counter.skip"
 PORTPROTON_CONFIG_FILE = CONFIG_DIR / "PortProton.conf"
 
 # Theme directories
@@ -32,6 +33,7 @@ _config_mtime: dict[str, float] = {}
 
 def reset_main_config() -> None:
     """Delete main config file and invalidate cache."""
+    _mark_download_counter_skip()
     if not CONFIG_FILE.exists():
         return
     try:
@@ -44,6 +46,60 @@ def reset_main_config() -> None:
     config_path = str(CONFIG_FILE)
     _config_cache.pop(config_path, None)
     _config_mtime.pop(config_path, None)
+
+
+def _mark_download_counter_skip() -> None:
+    """Skip the next download counter request."""
+    try:
+        COUNTER_SKIP_FILE.parent.mkdir(parents=True, exist_ok=True)
+        COUNTER_SKIP_FILE.write_text("1", encoding="utf-8")
+    except OSError as error:
+        logger.warning("Failed to save counter skip marker: %s", error)
+
+
+def consume_download_counter_skip() -> bool:
+    """Return True once after settings reset."""
+    if not COUNTER_SKIP_FILE.exists():
+        return False
+    try:
+        COUNTER_SKIP_FILE.unlink()
+    except OSError as error:
+        logger.warning("Failed to delete counter skip marker: %s", error)
+    return True
+
+
+def update_app_version(app_version: str) -> bool:
+    """Store current app version and report whether it changed."""
+    cp = configparser.ConfigParser()
+    config_existed = CONFIG_FILE.exists()
+    if config_existed:
+        try:
+            cp.read(CONFIG_FILE, encoding="utf-8")
+        except configparser.Error as e:
+            logger.warning("Invalid configuration file format: %s", e)
+            return False
+
+    section = "Application"
+    old_version = cp.get(section, "version", fallback="")
+    if config_existed and old_version == app_version:
+        return False
+
+    if section not in cp:
+        cp[section] = {}
+    cp[section]["version"] = app_version
+
+    try:
+        CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with open(CONFIG_FILE, "w", encoding="utf-8") as config_file:
+            cp.write(config_file)
+    except OSError as error:
+        logger.warning("Failed to save application version: %s", error)
+        return False
+
+    config_path = str(CONFIG_FILE)
+    _config_cache.pop(config_path, None)
+    _config_mtime.pop(config_path, None)
+    return True
 
 
 class BaseConfig:
