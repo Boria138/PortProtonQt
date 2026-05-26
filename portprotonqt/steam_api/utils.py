@@ -12,7 +12,7 @@ from portprotonqt.image_utils import COVER_IMAGE_EXTENSIONS
 logger = get_logger(__name__)
 
 STEAM_DATA_DIRS = (
-    "~/.local/share/Steam",
+    "~/.steam/steam",
     "~/snap/steam/common/.local/share/Steam",
     "~/.var/app/com.valvesoftware.Steam/data/Steam",
     "/usr/share/steam",
@@ -54,12 +54,30 @@ def decode_text(text: str) -> str:
     return html.unescape(text)
 
 
-def get_steam_home() -> Path | None:
-    """Return path to Steam directory."""
+def _iter_existing_steam_data_dirs() -> list[Path]:
+    """Return existing Steam data dirs with symlinks resolved."""
+    steam_dirs = []
+    seen_dirs = set()
     for dir_path in STEAM_DATA_DIRS:
         expanded_path = Path(os.path.expanduser(dir_path))
-        if expanded_path.exists():
-            return expanded_path
+        if not expanded_path.exists():
+            continue
+        try:
+            steam_path = expanded_path.resolve()
+        except (OSError, RuntimeError) as e:
+            logger.debug("Failed to resolve Steam directory %s: %s", expanded_path, e)
+            steam_path = expanded_path
+        if steam_path in seen_dirs:
+            continue
+        seen_dirs.add(steam_path)
+        steam_dirs.append(steam_path)
+    return steam_dirs
+
+
+def get_steam_home() -> Path | None:
+    """Return path to Steam directory."""
+    for steam_path in _iter_existing_steam_data_dirs():
+        return steam_path
     return None
 
 
@@ -249,10 +267,7 @@ def _is_steam_proton_dir(path: Path) -> bool:
 def get_steam_proton_versions() -> list[str]:
     """Return Steam Proton install directories usable by PortProton."""
     roots = set()
-    steam_homes = [Path(os.path.expanduser(path)) for path in STEAM_DATA_DIRS]
-    for steam_home in steam_homes:
-        if not steam_home.exists():
-            continue
+    for steam_home in _iter_existing_steam_data_dirs():
         roots.add(steam_home / "compatibilitytools.d")
         for steam_lib in get_steam_libs(steam_home):
             roots.add(steam_lib / "steamapps" / "common")
