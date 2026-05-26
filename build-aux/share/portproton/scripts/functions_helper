@@ -19,7 +19,7 @@ export -f print_ok
 python_module () {
     local python3_module="$1"
     shift
-    print_info "Running python3 module: $python3_module $@"
+    print_info "Running python3 module: $python3_module $@" >&2
     python3 -m portprotonqt.scripts_utils.$python3_module "$@"
 }
 
@@ -167,6 +167,32 @@ pw_is_process_active() {
         fi
     done
     return 1
+}
+
+pw_power_profile_state_file() {
+    echo "${PW_TMPFS_PATH}/power_profile"
+}
+
+pw_save_power_profile() {
+    [[ -n "$1" ]] || return 1
+    printf "%s\n" "$1" > "$(pw_power_profile_state_file)"
+}
+
+pw_restore_power_profile() {
+    local current_power_profile saved_power_profile state_file
+    state_file="$(pw_power_profile_state_file)"
+    saved_power_profile="$PW_POWERPROFILECTL_PROFILE"
+
+    if [[ -z "$saved_power_profile" && -f "$state_file" ]] ; then
+        saved_power_profile="$(head -n 1 "$state_file")"
+    fi
+
+    [[ -n "$saved_power_profile" ]] || return 0
+    current_power_profile=$(python_module power_profiles get)
+    if [[ "$current_power_profile" != "$saved_power_profile" ]] ; then
+        python_module power_profiles set "$saved_power_profile" &>/dev/null
+    fi
+    rm -f "$state_file"
 }
 
 try_copy_file () {
@@ -519,47 +545,43 @@ var_ld_library_path_update () {
 
 # GUI NOTIFY SEND
 pw_notify_send () {
-    if command -v gdbus &>/dev/null ; then
-        local icon title body app timeout OPTIND
-        app="PortProton"
-        timeout="5000"
-        OPTIND="1"
-        while getopts a:i:t: opt ; do
-            case "$opt" in
-                a)
-                    app=$OPTARG
-                    ;;
-                i)
-                    case "$OPTARG" in
-                        info) local OPTARG="${PORT_IMG_PATH}/notify/info.svg";;
-                        warning) local OPTARG="${PORT_IMG_PATH}/notify/warning.svg";;
-                        error) local OPTARG="${PORT_IMG_PATH}/notify/error.svg";;
-                    esac
-                    icon=$OPTARG
-                    ;;
-                t)
-                    timeout=$OPTARG
-                    ;;
-                *)
-                    echo "usage: $0
-                    [-a] name application (PortProton default)
-                    [-i] info, warning, error (none default)
-                    [-t] timeout in ms (5000 default)" >&2
-                    return 1
-                    ;;
-            esac
-        done
-        shift $(( OPTIND - 1 ))
-        [[ "$1" == "--" ]] && shift
-        title="$1" ; shift
-        body="$*"
+    local icon title body app timeout OPTIND
+    app="PortProtonQt"
+    timeout="5000"
+    OPTIND="1"
+    while getopts a:i:t: opt ; do
+        case "$opt" in
+            a)
+                app=$OPTARG
+                ;;
+            i)
+                case "$OPTARG" in
+                    info) local OPTARG="${PORT_IMG_PATH}/notify/info.svg";;
+                    warning) local OPTARG="${PORT_IMG_PATH}/notify/warning.svg";;
+                    error) local OPTARG="${PORT_IMG_PATH}/notify/error.svg";;
+                esac
+                icon=$OPTARG
+                ;;
+            t)
+                timeout=$OPTARG
+                ;;
+            *)
+                echo "usage: $0
+                [-a] name application (PortProtonQt default)
+                [-i] info, warning, error (none default)
+                [-t] timeout in ms (5000 default)" >&2
+                return 1
+                ;;
+        esac
+    done
+    shift $(( OPTIND - 1 ))
+    [[ "$1" == "--" ]] && shift
+    title="$1" ; shift
+    body="$*"
 
-        gdbus call --session --dest org.freedesktop.Notifications \
-            --object-path /org/freedesktop/Notifications \
-            --method org.freedesktop.Notifications.Notify \
-            "$app" 0 "$icon" "$title" "$body" "[]" "{}" "$timeout" &>/dev/null
-        return 0
-    fi
+    python_module dbus_tools notify \
+        -a "$app" -i "$icon" -t "$timeout" -- "$title" "$body" &>/dev/null
+    return 0
 }
 export -f pw_notify_send
 
@@ -1634,7 +1656,7 @@ stop_portproton () {
         elif [[ "${DESKTOP_SESSION}" =~ "cinnamon" ]] ; then
             gsettings set org.cinnamon.muffin unredirect-fullscreen-windows false
         elif [[ "${DESKTOP_SESSION}" =~ "deepin" ]] ; then
-            dbus-send --session --dest=com.deepin.WMSwitcher --type=method_call /com/deepin/WMSwitcher com.deepin.WMSwitcher.RequestSwitchWM
+            python_module dbus_tools deepin-switch-wm &>/dev/null
         fi
     fi
 
@@ -1643,11 +1665,7 @@ stop_portproton () {
     find "${PORT_DATA_PATH}/data/prefixes/${PW_PREFIX_NAME}/drive_c/" -maxdepth 1 -type f -name "*.tmp" -delete
     pw_auto_create_shortcut
     add_in_stop_portproton
-    if [[ -n "$PW_POWERPROFILECTL_PROFILE" ]] \
-    && [[ "$(python3 -m portprotonqt.scripts_utils.power_profiles get)" != "$PW_POWERPROFILECTL_PROFILE" ]]
-    then
-        python3 -m portprotonqt.scripts_utils.power_profiles set "$PW_POWERPROFILECTL_PROFILE" &>/dev/null
-    fi
+    pw_restore_power_profile
 
     if [[ $PW_LOG != 1 ]] && [[ -n $START_PW_TIME_IN_GAME ]] ; then
         debug_timer --end -s "PW_TIME_IN_GAME"
@@ -2923,11 +2941,12 @@ start_portproton () {
             export GAMEMODERUN=0
             export PW_GAMEMODERUN_SLR=""
             local current_power_profile
-            current_power_profile=$(python3 -m portprotonqt.scripts_utils.power_profiles get)
+            current_power_profile=$(python_module power_profiles get)
             if [[ -n "$current_power_profile" && "$current_power_profile" != "performance" ]] \
-            && python3 -m portprotonqt.scripts_utils.power_profiles set performance &>/dev/null
+            && python_module power_profiles set performance &>/dev/null
             then
                 export PW_POWERPROFILECTL_PROFILE="$current_power_profile"
+                pw_save_power_profile "$current_power_profile"
                 print_info "Gamemode replaced by power-profiles-daemon/tuned-ppd/tlp-pd via D-Bus to avoid conflicts"
             else
                 export PW_POWERPROFILECTL_PROFILE=""
@@ -3681,7 +3700,7 @@ start_portproton () {
         elif [[ "${DESKTOP_SESSION}" =~ "cinnamon" ]] ; then
             gsettings set org.cinnamon.muffin unredirect-fullscreen-windows true
         elif [[ "${DESKTOP_SESSION}" =~ "deepin" ]] ; then
-            dbus-send --session --dest=com.deepin.WMSwitcher --type=method_call /com/deepin/WMSwitcher com.deepin.WMSwitcher.RequestSwitchWM
+            python_module dbus_tools deepin-switch-wm &>/dev/null
         fi
     fi
 

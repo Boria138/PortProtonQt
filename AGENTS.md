@@ -785,6 +785,11 @@ PortProtonQt/
 - These scripts are for developer convenience only
 - Do not refactor or improve dev-scripts unless explicitly requested
 
+## PortProton Scripts
+
+- In `build-aux/share/portproton/scripts/`, run `portprotonqt.scripts_utils` modules through the existing `python_module` function
+- Do not add direct `python3 -m portprotonqt.scripts_utils.*` calls where `python_module` is available
+
 ---
 
 ## Dependencies
