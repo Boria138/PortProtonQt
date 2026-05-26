@@ -1,0 +1,14 @@
+usr/bin/portprotonqt
+usr/bin/vk_gpu_info
+usr/lib/python3/dist-packages/portprotonqt/
+usr/lib/udev/rules.d/60-portprotonqt.rules
+usr/share/applications/ru.linux_gaming.PortProtonQt.desktop
+usr/share/bash-completion/completions/portprotonqt
+usr/share/fish/vendor_completions.d/portprotonqt.fish
+usr/share/icons/hicolor/scalable/apps/ru.linux_gaming.PortProtonQt.svg
+usr/share/locale/
+usr/share/metainfo/ru.linux_gaming.PortProtonQt.metainfo.xml
+usr/share/mime/packages/ru.linux_gaming.PortProtonQt.xml
+usr/share/polkit-1/rules.d/ru.linux_gaming.PortProtonQt.rules
+usr/share/portproton/
+usr/share/zsh/site-functions/_portprotonqt

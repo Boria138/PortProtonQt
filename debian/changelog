@@ -1,0 +1,5 @@
+portprotonqt (1.0) unstable; urgency=medium
+
+  * Add Debian packaging.
+
+ -- Ivan Mazhukin <vanyamajukin@outlook.com>  Sat, 23 May 2026 13:32:57 +0300

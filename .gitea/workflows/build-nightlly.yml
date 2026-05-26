@@ -1,4 +1,4 @@
-name: Nightly Build - AppImage, Arch, Fedora
+name: Nightly Build - AppImage, Arch, Fedora, Debian
 
 on:
   workflow_dispatch:
@@ -140,3 +140,35 @@ jobs:
         with:
           name: PortProtonQt-Arch
           path: ${{ env.PKGDEST }}/*
+
+  build-debian:
+    name: Build Debian Package
+    runs-on: ubuntu-latest
+    container:
+      image: debian:13
+      options: --privileged
+
+    steps:
+      - name: Install build dependencies
+        run: |
+          apt-get update
+          apt-get install -y build-essential debhelper dpkg-dev gettext git \
+                             libvulkan-dev meson ninja-build nodejs npm \
+                             pkgconf python3
+
+      - name: Checkout
+        uses: https://gitea.com/actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: ${{ env.BUILD_BRANCH }}
+
+      - name: Build Debian package
+        run: |
+          dpkg-buildpackage -us -uc -b
+          mkdir -p dist/deb
+          mv ../*.deb ../*.buildinfo ../*.changes dist/deb/
+
+      - name: Upload Debian package
+        uses: https://gitea.com/actions/gitea-upload-artifact@v4
+        with:
+          name: PortProtonQt-DEB-Debian-13
+          path: dist/deb/*

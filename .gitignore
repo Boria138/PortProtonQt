@@ -8,6 +8,7 @@ wheels/
 
 # Meson
 builddir/
+build-deb/
 
 # Virtual environments
 .venv
