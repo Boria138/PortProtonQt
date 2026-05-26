@@ -92,7 +92,7 @@ if [[ "${1,,}" =~ \.ppack$ ]] ; then
     export PW_NO_RESTART_PPDB="1"
     export PW_DISABLED_CREATE_DB="1"
     PW_EXE_FILE="$1"
-elif [[ "${1,,}" =~ \.(exe|bat|msi|reg|lnk)$ ]] ; then
+elif [[ "${1,,}" =~ \.(exe|bat|cmd|msi|reg|lnk)$ ]] ; then
     if [[ -f "$1" ]] ; then
         PW_EXE_FILE="$(realpath -s "$1")"
     elif [[ -f "$OLDPWD/$1" ]] ; then
@@ -105,7 +105,7 @@ elif [[ "${1,,}" =~ \.(exe|bat|msi|reg|lnk)$ ]] ; then
         get_lnk "${PW_EXE_FILE}"
         PW_EXE_FILE="$(realpath "${link_path}" 2>/dev/null)"
     fi
-elif [[ "$1" =~ ^--(debug|launch|edit-db)$ && "${2,,}" =~ \.(exe|bat|msi|reg)$ ]] ; then
+elif [[ "$1" =~ ^--(debug|launch|edit-db)$ && "${2,,}" =~ \.(exe|bat|cmd|msi|reg)$ ]] ; then
     if [[ -f "$2" ]] ; then
         PW_EXE_FILE="$(realpath -s "$2")"
     elif [[ -f "$OLDPWD/$2" ]] ; then

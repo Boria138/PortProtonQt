@@ -11,6 +11,7 @@
 ### Changed
 
 ### Fixed
+- Добавлена пропущенная поддержка `.cmd` рядом с `.bat`
 
 ### Contributors
 

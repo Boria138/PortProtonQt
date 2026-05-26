@@ -530,12 +530,12 @@ def get_steam_game_info_async(
 
     is_autoinstall = exec_line.startswith("autoinstall:")
 
-    if game_exe.lower().endswith('.bat'):
+    if game_exe.lower().endswith(('.bat', '.cmd')):
         if os.path.exists(game_exe):
             try:
                 with open(game_exe, encoding='utf-8') as f:
-                    bat_lines = f.readlines()
-                for line in bat_lines:
+                    cmd_lines = f.readlines()
+                for line in cmd_lines:
                     line = line.strip()
                     if '.exe' in line.lower():
                         tokens = shlex.split(line)
@@ -546,9 +546,9 @@ def get_steam_game_info_async(
                         if game_exe.lower().endswith('.exe'):
                             break
             except Exception as e:
-                logger.error("Failed to process bat file %s: %s", game_exe, e)
+                logger.error("Failed to process command file %s: %s", game_exe, e)
         else:
-            logger.error("Bat file not found: %s", game_exe)
+            logger.error("Command file not found: %s", game_exe)
 
     if not game_exe.lower().endswith('.exe'):
         logger.error("Invalid executable path: %s. Expected .exe", game_exe)

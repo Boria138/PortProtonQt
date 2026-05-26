@@ -800,7 +800,7 @@ search_desktop_file () {
 
     while read -r -a line2 ; do
         if [[ -z ${line2[0]} ]] \
-        || [[ ! ${line2[0],,} =~ .(bat|exe|msi|reg)$ ]] ; then
+        || [[ ! ${line2[0],,} =~ .(bat|cmd|exe|msi|reg)$ ]] ; then
             BROKEN_LINE=1
             break
         fi
@@ -829,10 +829,10 @@ search_desktop_file () {
         return 1
     fi
 
-    # Ремонт, если есть пустые строки и непонятные строки без .exe, .bat, .msi, .reg
+    # Ремонт, если есть пустые строки и непонятные строки без .exe, .bat, .cmd, .msi, .reg
     if [[ $BROKEN_LINE == 1 ]] ; then
         while read -r -a line4 ; do
-            if [[ -n ${line4[0]} ]] && [[ ${line4[0],,} =~ .(bat|exe|msi|reg)$ ]]
+            if [[ -n ${line4[0]} ]] && [[ ${line4[0],,} =~ .(bat|cmd|exe|msi|reg)$ ]]
             then echo "${line4[*]}"
             fi
         done < "$PORT_WINE_TMP_PATH/statistics" > "$PORT_WINE_TMP_PATH/statistics_repair"
@@ -2291,20 +2291,6 @@ use_exiftool () {
 }
 
 pw_create_gui_png () {
-    if [[ -z $name_desktop_png ]] ; then
-        basename_PW_EXE_FILE="$(basename "${PW_EXE_FILE}")"
-        if echo "$basename_PW_EXE_FILE" | grep -ie 'setup\|install\|\.msi$' &>/dev/null ; then
-            export name_desktop_png="setup"
-            return 0
-        elif echo "$basename_PW_EXE_FILE" | grep -ie '\.reg$' &>/dev/null ; then
-            export name_desktop_png="reg"
-            return 0
-        elif echo "$basename_PW_EXE_FILE"| grep -ie '\.bat$' &>/dev/null ; then
-            export name_desktop_png="bat"
-            return 0
-        fi
-    fi
-
     if [[ -z "$PORTPROTON_NAME" ]] \
     || [[ "$PW_NO_RESTART_PPDB" == "1" ]]
     then
@@ -4030,7 +4016,7 @@ EOF
                 *.exe)
                     pw_run "${PW_VD_TMP[@]}" ${WINE_WIN_START} "${PW_EXE_FILE}"
                 ;;
-                *.bat)
+                *.bat|*.cmd)
                     PW_USE_TERMINAL=1
                     pw_run "${PW_VD_TMP[@]}" "${PW_EXE_FILE}"
                 ;;

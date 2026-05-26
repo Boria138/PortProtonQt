@@ -6,7 +6,7 @@ from pathlib import Path
 
 from portprotonqt.steam_api import get_steam_home
 
-LAUNCH_FILE_EXTENSIONS = ('.exe', '.bat', '.msi', '.reg', '.iso', '.mdf')
+LAUNCH_FILE_EXTENSIONS = ('.exe', '.bat', '.cmd', '.msi', '.reg', '.iso', '.mdf')
 PREFIX_BACKUP_EXTENSION = '.ppack'
 
 
@@ -82,7 +82,7 @@ def parse_args():
     parser.add_argument(
         'file_or_url',
         nargs='?',
-        help="Launch file path (.exe/.bat/.msi/.reg/.iso/.mdf) or portproton:// URL"
+        help="Launch file path (.exe/.bat/.cmd/.msi/.reg/.iso/.mdf) or portproton:// URL"
     )
     return parser.parse_args()
 
