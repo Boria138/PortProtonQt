@@ -570,9 +570,6 @@ msgstr "硬件设置"
 msgid "GPU to use:"
 msgstr "要使用的 GPU："
 
-msgid "No GPUs found"
-msgstr "未找到 GPU"
-
 msgid "Proxy Settings"
 msgstr "代理设置"
 

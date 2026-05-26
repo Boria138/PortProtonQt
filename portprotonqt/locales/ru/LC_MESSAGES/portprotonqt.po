@@ -575,9 +575,6 @@ msgstr "Настройки оборудования"
 msgid "GPU to use:"
 msgstr "Выбор видеокарты:"
 
-msgid "No GPUs found"
-msgstr "Видеокарты отсутствуют"
-
 msgid "Proxy Settings"
 msgstr "Настройки прокси"
 

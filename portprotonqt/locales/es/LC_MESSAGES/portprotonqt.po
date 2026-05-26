@@ -567,9 +567,6 @@ msgstr ""
 msgid "GPU to use:"
 msgstr ""
 
-msgid "No GPUs found"
-msgstr ""
-
 msgid "Proxy Settings"
 msgstr ""
 
