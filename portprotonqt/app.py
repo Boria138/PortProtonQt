@@ -301,7 +301,7 @@ def main():
     from PySide6.QtCore import QThread, Signal
     from PySide6.QtNetwork import QLocalServer, QLocalSocket
     from portprotonqt.main_window import MainWindow
-    from portprotonqt.port_data_path_selector import ask_portdata_path
+    from portprotonqt.port_data_path_selector import ask_portdata_path, is_portdata_path_read_write
     from portprotonqt.portproton_api import (
         PortProtonAPI,
         get_user_conf_setting,
@@ -335,8 +335,14 @@ def main():
         logger.warning(f"Failed to start local server: {local_server.errorString()}")
         return
 
+    portdata_warning = None
+    if portproton_location and not is_portdata_path_read_write(portproton_location):
+        logger.warning("PORT_DATA_PATH is not readable/writable: %s", portproton_location)
+        portdata_warning = _("PortProton data folder is not readable and writable. Choose another folder for PortProton data.")
+        portproton_location = None
+
     if not portproton_location:
-        portproton_location = ask_portdata_path()
+        portproton_location = ask_portdata_path(portdata_warning, bool(portdata_warning))
         if not portproton_location:
             logger.error("PORT_DATA_PATH is not configured, startup aborted")
             return

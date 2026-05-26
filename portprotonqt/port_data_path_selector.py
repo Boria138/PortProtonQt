@@ -1,6 +1,7 @@
 import os
 import re
 import subprocess
+import uuid
 
 import psutil
 from typing import Any
@@ -64,6 +65,30 @@ def _is_disallowed_portdata_fs(path: str) -> bool:
     return fs_type in DISALLOWED_PORTDATA_FS_TYPES or any(
         pattern.search(fs_type) for pattern in DISALLOWED_PORTDATA_FS_PATTERNS
     )
+
+
+def is_portdata_path_read_write(path: str) -> bool:
+    """Check if PortProton data path is readable and writable."""
+    if not os.path.isdir(path):
+        return False
+    if not os.access(path, os.R_OK | os.W_OK | os.X_OK):
+        return False
+
+    probe_path = os.path.join(path, f".portprotonqt-rw-{os.getpid()}-{uuid.uuid4().hex}")
+    try:
+        with open(probe_path, "w+", encoding="utf-8") as probe_file:
+            probe_file.write("rw")
+            probe_file.seek(0)
+            return probe_file.read() == "rw"
+    except OSError as exc:
+        logger.warning("PORT_DATA_PATH is not readable/writable %s: %s", path, exc)
+        return False
+    finally:
+        try:
+            if os.path.exists(probe_path):
+                os.remove(probe_path)
+        except OSError as exc:
+            logger.warning("Failed to remove PORT_DATA_PATH probe %s: %s", probe_path, exc)
 
 
 class _BootstrapStatusBar:
@@ -143,7 +168,21 @@ class _BootstrapInputHost(MainWindowControlHintsMixin, QWidget):
     def handleSystemGamepadAction(self, action: str) -> bool:
         return False
 
-def ask_portdata_path() -> str | None:
+def _show_portdata_warning(parent: QWidget, theme: Any, text: str, allow_choose: bool = False) -> bool:
+    message_box = QMessageBox(parent)
+    message_box.setIcon(QMessageBox.Icon.Warning)
+    message_box.setWindowTitle(_("Error"))
+    message_box.setText(text)
+    if allow_choose:
+        message_box.setStandardButtons(QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Open)
+        message_box.setButtonText(QMessageBox.StandardButton.Open, _("Choose Folder"))
+    main_style = getattr(theme, "MAIN_WINDOW_STYLE", "")
+    message_box_style = getattr(theme, "MESSAGE_BOX_STYLE", "")
+    message_box.setStyleSheet(main_style + message_box_style)
+    return message_box.exec() == QMessageBox.StandardButton.Open
+
+
+def ask_portdata_path(warning_text: str | None = None, allow_warning_skip: bool = False) -> str | None:
     """Ask user to select PORT_DATA_PATH when autodetection failed."""
     default_path = os.path.join(os.path.expanduser("~"), "PortProtonQt")
     if not os.path.isdir(default_path):
@@ -170,6 +209,10 @@ def ask_portdata_path() -> str | None:
     )
 
     try:
+        if warning_text:
+            if not _show_portdata_warning(input_host, theme, warning_text, allow_warning_skip):
+                return None
+
         while True:
             selected_path: str | None = None
             file_explorer = FileExplorer(
@@ -189,16 +232,19 @@ def ask_portdata_path() -> str | None:
             if dialog_result != QDialog.DialogCode.Accepted or not selected_path:
                 return None
             if _is_disallowed_portdata_fs(selected_path):
-                message_box = QMessageBox(file_explorer)
-                message_box.setIcon(QMessageBox.Icon.Warning)
-                message_box.setWindowTitle(_("Error"))
-                message_box.setText(
+                _show_portdata_warning(
+                    file_explorer,
+                    file_explorer.theme,
                     _("Selected folder is on an unsupported filesystem. Choose another folder for PortProton data.")
                 )
-                main_style = getattr(file_explorer.theme, "MAIN_WINDOW_STYLE", "")
-                message_box_style = getattr(file_explorer.theme, "MESSAGE_BOX_STYLE", "")
-                message_box.setStyleSheet(main_style + message_box_style)
-                message_box.exec()
+                current_path = selected_path
+                continue
+            if not is_portdata_path_read_write(selected_path):
+                _show_portdata_warning(
+                    file_explorer,
+                    file_explorer.theme,
+                    _("Selected folder is not readable and writable. Choose another folder for PortProton data.")
+                )
                 current_path = selected_path
                 continue
             return os.path.normpath(selected_path)
