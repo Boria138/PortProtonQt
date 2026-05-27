@@ -80,7 +80,7 @@ export PW_GAMESCOPE_ARGS_NEW=" -f --sharpness 10 --hdr-sdr-content-nits 0"
 
 ###MANGOHUD###
 check_variables PW_MANGOHUD "0"
-export DEFAULT_MANGOHUD_CONFIG="arch,cpu_mhz,cpu_temp,engine_version,gamemode,gpu_core_clock,gpu_mem_clock,gpu_name,gpu_temp,ram,resolution,vkbasalt,vram,vulkan_driver,wine,winesync"
+export DEFAULT_MANGOHUD_CONFIG="arch,cpu_mhz,cpu_temp,engine_version,gamemode,gpu_core_clock,gpu_mem_clock,gpu_name,gpu_temp,ram,resolution,vkbasalt,vram,vulkan_driver,wine,winesync, display_server"
 
 ###DGVOODOO2###
 check_variables PW_DGVOODOO2 "0"
