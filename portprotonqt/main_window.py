@@ -35,6 +35,7 @@ from portprotonqt.config import (
     parse_desktop_entry,
     load_theme_metainfo,
     game_config,
+    gamepad_config,
     favorites_config,
     proxy_config,
     display_config,
@@ -2430,6 +2431,31 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.trayMenuModeCombo.setCurrentIndex(idx)
         uiForm.addRow(self.trayMenuModeTitle, self.trayMenuModeCombo)
 
+        self.gamepad_type_keys = ["auto", "xbox", "playstation"]
+        self.gamepad_type_labels = [_("Auto"), _("Xbox"), _("PlayStation")]
+        self.gamepadTypeCombo = QComboBox()
+        self.gamepadTypeCombo.view().window().setWindowFlags(
+            Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
+        )
+        self.gamepadTypeCombo.view().window().setAttribute(
+            Qt.WidgetAttribute.WA_TranslucentBackground
+        )
+        self.gamepadTypeCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.gamepadTypeCombo.addItems(self.gamepad_type_labels)
+        self.gamepadTypeCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
+        self.gamepadTypeCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.gamepadTypeTitle = QLabel(_("Gamepad Type:"))
+        self.gamepadTypeTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.gamepadTypeTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
+        self.gamepadTypeTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        current_gamepad_type = gamepad_config.get_gamepad_type()
+        try:
+            idx = self.gamepad_type_keys.index(current_gamepad_type)
+        except ValueError:
+            idx = 0
+        self.gamepadTypeCombo.setCurrentIndex(idx)
+        uiForm.addRow(self.gamepadTypeTitle, self.gamepadTypeCombo)
+
         self.fullscreenCheckBox = QCheckBox()
         self.fullscreenCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.fullscreenCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -2446,21 +2472,12 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         fullscreen_layout.addStretch()
         uiForm.addRow(fullscreen_layout)
 
-        self.autoFullscreenGamepadCheckBox = QCheckBox()
+        self.autoFullscreenGamepadCheckBox = QCheckBox(_("Auto Fullscreen on Gamepad connected"))
         self.autoFullscreenGamepadCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.autoFullscreenGamepadCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.autoFullscreenGamepadTitle = QLabel(_("Auto Fullscreen on Gamepad connected"))
-        self.autoFullscreenGamepadTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.autoFullscreenGamepadTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
-        self.autoFullscreenGamepadTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         current_auto_fullscreen = display_config.get_auto_fullscreen_gamepad()
         self.autoFullscreenGamepadCheckBox.setChecked(current_auto_fullscreen)
-        auto_fullscreen_layout = QHBoxLayout()
-        auto_fullscreen_layout.setContentsMargins(self.theme.portProtonPageHorizontalSpacing, 0, 0, 0)
-        auto_fullscreen_layout.addWidget(self.autoFullscreenGamepadCheckBox)
-        auto_fullscreen_layout.addWidget(self.autoFullscreenGamepadTitle)
-        auto_fullscreen_layout.addStretch()
-        uiForm.addRow(auto_fullscreen_layout)
+        uiForm.addRow(self.autoFullscreenGamepadCheckBox)
 
         self.minimizeToTrayCheckBox = QCheckBox()
         self.minimizeToTrayCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
@@ -2851,6 +2868,10 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         auto_fullscreen_gamepad = self.autoFullscreenGamepadCheckBox.isChecked()
         display_config.set_auto_fullscreen_gamepad(auto_fullscreen_gamepad)
 
+        gamepad_type_idx = self.gamepadTypeCombo.currentIndex()
+        gamepad_type = self.gamepad_type_keys[gamepad_type_idx]
+        gamepad_config.set_gamepad_type(gamepad_type)
+
         autostart_enabled = self.autostartCheckBox.isChecked()
         display_config.set_autostart_enabled(autostart_enabled)
         if not apply_xdg_autostart(autostart_enabled):
@@ -2896,6 +2917,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         hide_autoinstall = self.hideAutoInstallTabCheckBox.isChecked()
 
         if hasattr(self, 'input_manager'):
+            self._apply_gamepad_type_setting()
             self.updateControlHints()
             if hasattr(self, 'keyboard'):
                 self.keyboard.update_keyboard()
@@ -2976,6 +2998,13 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
         # Save the hide auto-install tab setting to config
         ui_config.set_hide_autoinstall_tab(hide_autoinstall)
+
+    def _apply_gamepad_type_setting(self) -> None:
+        """Apply configured gamepad type to current input manager."""
+        input_manager = getattr(self, "input_manager", None)
+        if input_manager is None:
+            return
+        input_manager.apply_gamepad_type_setting()
 
     def createThemeTab(self):
         """Themes tab"""

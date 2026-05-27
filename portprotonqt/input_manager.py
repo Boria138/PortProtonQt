@@ -18,7 +18,7 @@ from portprotonqt.logger import get_logger
 from portprotonqt.image_utils import FullscreenDialog
 from portprotonqt.custom_widgets import NavLabel, AutoSizeButton
 from portprotonqt.game_card import GameCard
-from portprotonqt.config import display_config, window_config
+from portprotonqt.config import display_config, gamepad_config, window_config
 from portprotonqt.dialogs import AddGameDialog
 from portprotonqt.virtual_keyboard import VirtualKeyboard
 
@@ -93,6 +93,50 @@ class GamepadType(Enum):
     XBOX = "Xbox"
     PLAYSTATION = "PlayStation"
     UNKNOWN = "Unknown"
+
+PLAYSTATION_NAME_KEYWORDS = (
+    "playstation", "dualshock", "dualsense", "sony", "ps3", "ps4", "ps5"
+)
+XBOX_NAME_KEYWORDS = ("xbox", "x-input", "xinput", "microsoft")
+PLAYSTATION_GUID_VENDOR = "4c050000"
+PLAYSTATION_GUID_PRODUCTS = (
+    "c4050000", "cc090000", "a00b0000", "e60c0000", "f20d0000"
+)
+XBOX_GUID_VENDOR = "5e040000"
+
+PLAYSTATION_MAPPING_PATTERNS = (
+    ("a:b1", "b:b2", "x:b0", "y:b3", "back:b8", "start:b9", "touchpad:"),
+    (
+        "a:b1", "b:b2", "x:b0", "y:b3", "back:b8", "start:b9",
+        "lefttrigger:a3", "righttrigger:a4", "righty:a5",
+    ),
+    (
+        "a:b0", "b:b1", "x:b3", "y:b2", "back:b8", "start:b9",
+        "guide:b10",
+    ),
+)
+XBOX_MAPPING_PATTERNS = (
+    ("a:b0", "b:b1", "x:b2", "y:b3", "back:b6", "start:b7", "guide:b8"),
+)
+
+
+def _mapping_matches(mapping: str, patterns: tuple[tuple[str, ...], ...]) -> bool:
+    """Check if a SDL mapping contains one of known controller layouts."""
+    return any(all(token in mapping for token in pattern) for pattern in patterns)
+
+
+def _get_gamepad_mapping(gamepad: "PygameGamepad") -> str:
+    """Read SDL mapping when available."""
+    try:
+        mapping = gamepad.controller.get_mapping()
+    except pygame.error as e:
+        logger.debug("Failed to read gamepad mapping: %s", e)
+        return ""
+    if isinstance(mapping, str):
+        return mapping.lower()
+    if isinstance(mapping, dict):
+        return ",".join(f"{key}:{value}" for key, value in mapping.items()).lower()
+    return ""
 
 
 @dataclass
@@ -196,7 +240,7 @@ class InputManager(QObject):
         super().__init__(cast(QObject, main_window))
         self._parent = main_window
         self._gamepad_handling_enabled = True
-        self.gamepad_type = GamepadType.UNKNOWN
+        self.gamepad_type = self._get_configured_gamepad_type()
         self._parent.currentDetailPage = getattr(self._parent, 'currentDetailPage', None)
         self._parent.current_exec_line = getattr(self._parent, 'current_exec_line', None)
         self._parent.current_add_game_dialog = getattr(self._parent, 'current_add_game_dialog', None)
@@ -3616,7 +3660,7 @@ class InputManager(QObject):
                 logger.info(f"Gamepad connected: {new_gamepad.name} at {new_gamepad.path}")
                 self.gamepad = new_gamepad
                 self._reset_pygame_state()
-                self.gamepad_type = self._detect_gamepad_type(new_gamepad)
+                self.gamepad_type = self._get_effective_gamepad_type(new_gamepad)
                 self._refresh_gamepad_ui()
 
                 if display_config.get_auto_fullscreen_gamepad() and not display_config.get_fullscreen():
@@ -3650,19 +3694,50 @@ class InputManager(QObject):
         self.pending_menu_fullscreen_time = 0.0
         self.guide_held = False
         self.emulation_triggered = False
-        self.gamepad_type = GamepadType.UNKNOWN
+        self.gamepad_type = self._get_configured_gamepad_type()
+
+    def _get_configured_gamepad_type(self) -> GamepadType:
+        """Return manual gamepad type from config or Unknown for auto mode."""
+        value = gamepad_config.get_gamepad_type()
+        if value == "playstation":
+            return GamepadType.PLAYSTATION
+        if value == "xbox":
+            return GamepadType.XBOX
+        return GamepadType.UNKNOWN
+
+    def _get_effective_gamepad_type(self, gamepad: PygameGamepad) -> GamepadType:
+        """Use manual gamepad type when configured, otherwise auto-detect."""
+        configured_type = self._get_configured_gamepad_type()
+        if configured_type != GamepadType.UNKNOWN:
+            return configured_type
+        return self._detect_gamepad_type(gamepad)
+
+    def apply_gamepad_type_setting(self) -> None:
+        """Apply configured gamepad type to the current device."""
+        if self.gamepad is None:
+            self.gamepad_type = self._get_configured_gamepad_type()
+            return
+        self.gamepad_type = self._get_effective_gamepad_type(self.gamepad)
 
     def _detect_gamepad_type(self, gamepad: PygameGamepad) -> GamepadType:
         """Infer gamepad type from pygame device metadata."""
         name = gamepad.name.lower()
         guid = gamepad.controller.as_joystick().get_guid().lower()
-        if any(keyword in name for keyword in ("playstation", "dualshock", "dualsense", "sony")):
+        mapping = _get_gamepad_mapping(gamepad)
+
+        if any(keyword in name for keyword in PLAYSTATION_NAME_KEYWORDS):
             return GamepadType.PLAYSTATION
-        if any(keyword in name for keyword in ("xbox", "x-input", "xinput", "microsoft")):
+        if guid[8:16] == PLAYSTATION_GUID_VENDOR:
+            return GamepadType.PLAYSTATION
+        if guid[16:24] in PLAYSTATION_GUID_PRODUCTS:
+            return GamepadType.PLAYSTATION
+        if any(keyword in name for keyword in XBOX_NAME_KEYWORDS):
             return GamepadType.XBOX
-        if guid.startswith(("030000004c05", "030000004c050000")):
+        if guid[8:16] == XBOX_GUID_VENDOR:
+            return GamepadType.XBOX
+        if _mapping_matches(mapping, PLAYSTATION_MAPPING_PATTERNS):
             return GamepadType.PLAYSTATION
-        if guid.startswith(("030000005e04", "030000005e040000")):
+        if _mapping_matches(mapping, XBOX_MAPPING_PATTERNS):
             return GamepadType.XBOX
         return GamepadType.XBOX
 
@@ -3944,7 +4019,7 @@ class InputManager(QObject):
 
             self.gamepad = None
             self._reset_pygame_state()
-            self.gamepad_type = GamepadType.UNKNOWN
+            self.gamepad_type = self._get_configured_gamepad_type()
             if self._pygame_ready:
                 controller.quit()
                 pygame.quit()
