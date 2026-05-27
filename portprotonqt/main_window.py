@@ -67,7 +67,7 @@ from portprotonqt.virtual_keyboard import VirtualKeyboard
 from portprotonqt.disc_image_utils import DiscImageManager
 from portprotonqt.dialogs.proton_manager import show_proton_manager
 from portprotonqt.dialogs.prefix_backup import PrefixBackupDialog, PrefixBackupJob, PrefixBackupThread
-from portprotonqt.scripts_utils.prefix_backup import is_legacy_squashfs_backup
+from portprotonqt.scripts_utils.prefix_backup import BACKUP_EXTENSION, is_legacy_squashfs_backup
 from portprotonqt.tabs.control_hints import MainWindowControlHintsMixin
 from portprotonqt.tabs.system_tab import MainWindowSystemTabMixin
 from portprotonqt.tabs.workers import MainWindowWorkersMixin
@@ -1339,7 +1339,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
             for url in event.mimeData().urls():
-                if url.toLocalFile().lower().endswith(LAUNCH_FILE_EXTENSIONS):
+                path = url.toLocalFile().lower()
+                if path.endswith(LAUNCH_FILE_EXTENSIONS) or path.endswith(BACKUP_EXTENSION):
                     event.acceptProposedAction()
                     return
         event.ignore()
@@ -1347,8 +1348,14 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
     def dropEvent(self, event):
         for url in event.mimeData().urls():
             path = url.toLocalFile()
-            if path.lower().endswith(LAUNCH_FILE_EXTENSIONS):
+            path_lower = path.lower()
+            if path_lower.endswith(BACKUP_EXTENSION):
+                self._perform_restore(path)
+                event.acceptProposedAction()
+                break
+            if path_lower.endswith(LAUNCH_FILE_EXTENSIONS):
                 self.openAddGameDialog(path)
+                event.acceptProposedAction()
                 break
 
     def openAddGameDialog(self, exe_path=None):
