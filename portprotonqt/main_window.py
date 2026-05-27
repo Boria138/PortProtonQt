@@ -1670,6 +1670,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                     card_width=self.auto_card_width,
                     parent=self.autoInstallContainer,
                 )
+                card.autoinstall_exe_name = exe_name
 
                 # Hide badges and favorite button
                 if hasattr(card, 'steamLabel'):

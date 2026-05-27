@@ -43,6 +43,7 @@ from portprotonqt.detail_pages.utils import (
     create_focus_helper,
     toggle_favorite,
     check_autoinstall_installed,
+    find_autoinstall_entry_path,
 )
 from portprotonqt.howlongtobeat_api import HowLongToBeat, GameEntry
 from portprotonqt.config import (
@@ -719,6 +720,7 @@ class DetailPageManager:
 
         exec_line = game_data.get("exec_line", "")
         script_name = self._extract_script_name(exec_line)
+        self._return_to_autoinstall_card = game_data.get("autoinstall_exe_name", "")
         description = self._get_enhanced_description(script_name, game_data.get("description", ""))
 
         cover_frame = create_cover_frame(
@@ -838,18 +840,35 @@ class DetailPageManager:
         self, script_name: str, name: str, buttons_layout: FlowLayout
     ) -> AutoSizeButton:
         """Create install button for auto-install page."""
-        install_button = self._make_action_button(_("Install"), self.main_window.theme_manager.get_icon("save", as_path=True))
+        install_button = self._make_action_button(
+            _("Install"),
+            self.main_window.theme_manager.get_icon("save", as_path=True),
+        )
         install_button.clicked.connect(
             lambda: self.main_window.launch_autoinstall(script_name, install_button)
         )
         buttons_layout.addWidget(install_button)
 
-        self._check_install_status(script_name, name, install_button)
+        open_button = self._make_action_button(
+            _("Open Game"),
+            self.main_window.theme_manager.get_icon("play", as_path=True),
+        )
+        open_button.clicked.connect(
+            lambda: self._open_installed_autoinstall_card(script_name, name)
+        )
+        open_button.setVisible(False)
+        buttons_layout.addWidget(open_button)
+
+        self._check_install_status(script_name, name, install_button, open_button)
 
         return install_button
 
     def _check_install_status(
-        self, script_name: str, name: str, install_button: AutoSizeButton
+        self,
+        script_name: str,
+        name: str,
+        install_button: AutoSizeButton,
+        open_button: AutoSizeButton,
     ) -> None:
         """Check install status asynchronously and update button."""
         def on_result(is_installed: bool) -> None:
@@ -870,10 +889,62 @@ class DetailPageManager:
                 install_button.setIcon(icon)
             # Update text without changing button size drastically
             install_button.setText(text)
+            open_button.setVisible(is_installed)
 
         check_autoinstall_installed(
             script_name, name, self.main_window.portproton_location, callback=on_result
         )
+
+    def _open_installed_autoinstall_card(self, script_name: str, name: str) -> None:
+        """Open detail page for installed autoinstall game."""
+        desktop_path = find_autoinstall_entry_path(
+            script_name, self.main_window.portproton_location
+        )
+        if not desktop_path:
+            QMessageBox.warning(self.main_window, _("Error"), _("Game not found."))
+            return
+
+        def on_game_data(game_tuple: tuple | None) -> None:
+            if not game_tuple:
+                QMessageBox.warning(self.main_window, _("Error"), _("Game not found."))
+                return
+            game_data = self._game_tuple_to_data(game_tuple)
+            self._return_to_autoinstall_card = self._get_exec_name(game_data["exec_line"])
+            self._remove_current_detail_page()
+            self.openGameDetailPage(game_data)
+            self._return_to_tab_index = self.main_window.auto_install_tab_index
+
+        self.main_window._process_desktop_file_async(desktop_path, on_game_data)
+
+    def _get_exec_name(self, exec_line: str) -> str:
+        exec_path = extract_exec_target_path(exec_line)
+        if not exec_path:
+            return ""
+        return os.path.splitext(os.path.basename(exec_path))[0]
+
+    def _remove_current_detail_page(self) -> None:
+        page = self.main_window.currentDetailPage
+        if page and self._page_in_stacked(page):
+            self.main_window.stackedWidget.removeWidget(page)
+            page.deleteLater()
+        self.main_window.currentDetailPage = None
+        self._current_detail_page = None
+
+    def _game_tuple_to_data(self, game_tuple: tuple) -> dict:
+        return {
+            "name": game_tuple[0],
+            "description": game_tuple[1],
+            "cover_path": game_tuple[2],
+            "appid": game_tuple[3],
+            "controller_support": game_tuple[4],
+            "exec_line": game_tuple[5],
+            "last_launch": game_tuple[6],
+            "formatted_playtime": game_tuple[7],
+            "protondb_tier": game_tuple[8],
+            "anticheat_status": game_tuple[9],
+            "game_source": game_tuple[12],
+            "anticheat_slug": game_tuple[13] if len(game_tuple) > 13 else "",
+        }
 
     def _finalize_autoinstall_page(
         self,
@@ -1129,6 +1200,30 @@ class DetailPageManager:
             QTimer.singleShot(10, lambda: self.main_window.autoInstallContainer.updateGeometry())
             if hasattr(self.main_window, "autoInstallContainerLayout"):
                 QTimer.singleShot(15, lambda: self.main_window.autoInstallContainerLayout.update())
+            QTimer.singleShot(50, self._focus_return_autoinstall_card)
+
+    def _focus_return_autoinstall_card(self) -> None:
+        exe_name = getattr(self, "_return_to_autoinstall_card", "")
+        if not exe_name:
+            return
+        cards = getattr(self.main_window, "autoInstallGameCards", {})
+        card = cards.get(exe_name)
+        if card is None or not card.isVisible():
+            return
+        self._clear_current_card_state(card)
+        card.setFocus(Qt.FocusReason.OtherFocusReason)
+        self.main_window.current_focused_card = card
+        card.update()
+
+    def _clear_current_card_state(self, target_card: QWidget) -> None:
+        current_card = getattr(self.main_window, "current_focused_card", None)
+        if current_card and current_card != target_card:
+            try:
+                current_card._focused = False
+                current_card.clearFocus()
+                current_card.update()
+            except RuntimeError:
+                pass
 
     def _focus_first_library_card(self) -> None:
         container = getattr(self.main_window, "gamesListWidget", None)

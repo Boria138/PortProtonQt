@@ -67,6 +67,7 @@ class GameCard(QFrame):
         self.anticheat_status = anticheat_status
         self.anticheat_slug = anticheat_slug or ""
         self.game_source = game_source
+        self.autoinstall_exe_name = ""
         self.last_launch_ts = last_launch_ts
         self.playtime_seconds = playtime_seconds
         self.base_card_width = card_width
@@ -779,6 +780,7 @@ class GameCard(QFrame):
                 "game_source": self.game_source,
                 "anticheat_status": self.anticheat_status,
                 "anticheat_slug": self.anticheat_slug,
+                "autoinstall_exe_name": getattr(self, "autoinstall_exe_name", ""),
             }
             self.select_callback(game_data)
         super().mousePressEvent(event)

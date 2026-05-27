@@ -9,7 +9,12 @@ from PySide6.QtGui import QPixmap
 
 from portprotonqt.image_utils import get_animated_cover_pixmap
 from portprotonqt.image_utils import load_pixmap_async, round_corners, set_animated_cover
-from portprotonqt.config import favorites_config
+from portprotonqt.config import (
+    extract_exec_target_path,
+    favorites_config,
+    get_portproton_scripts_path,
+    parse_desktop_entry,
+)
 from portprotonqt.logger import get_logger
 
 logger = get_logger(__name__)
@@ -21,6 +26,12 @@ class _PixmapReadyRelay(QObject):
     """Relay pixmap updates to GUI thread safely."""
 
     pixmap_ready = Signal(object)
+
+
+class _AutoinstallCheckRelay(QObject):
+    """Relay autoinstall check results to GUI thread safely."""
+
+    result_ready = Signal(bool)
 
 
 def setup_image_loading(
@@ -287,11 +298,40 @@ def _check_autoinstall_installed_sync(
     except (OSError, AttributeError):
         return False
 
+    autoinstall_exe = _get_autoinstall_exe_name(script_name)
+    if not autoinstall_exe:
+        return False
+
     for file in desktop_files:
-        if _check_desktop_file(file, portproton_location, script_name, game_name):
+        if _check_desktop_file(file, portproton_location, autoinstall_exe):
             return True
 
     return False
+
+
+def find_autoinstall_entry_path(
+    script_name: str,
+    portproton_location: str | None,
+) -> str | None:
+    """Find installed autoinstall desktop entry path."""
+    if not portproton_location:
+        return None
+
+    try:
+        desktop_files = os.listdir(portproton_location)
+    except (OSError, AttributeError):
+        return None
+
+    autoinstall_exe = _get_autoinstall_exe_name(script_name)
+    if not autoinstall_exe:
+        return None
+
+    for filename in desktop_files:
+        if not _check_desktop_file(filename, portproton_location, autoinstall_exe):
+            continue
+        return os.path.join(portproton_location, filename)
+
+    return None
 
 
 def _check_autoinstall_installed_async(
@@ -302,13 +342,20 @@ def _check_autoinstall_installed_async(
 ) -> None:
     """Asynchronous check for installed autoinstall game."""
     from threading import Thread
-    from PySide6.QtCore import QTimer
+
+    relay = _AutoinstallCheckRelay(QApplication.instance())
+
+    def on_result(result: bool) -> None:
+        callback(result)
+        relay.deleteLater()
+
+    relay.result_ready.connect(on_result, Qt.ConnectionType.QueuedConnection)
 
     def worker() -> None:
         result = _check_autoinstall_installed_sync(
             script_name, game_name, portproton_location
         )
-        QTimer.singleShot(0, lambda: callback(result))
+        relay.result_ready.emit(result)
 
     thread = Thread(target=worker, daemon=True)
     thread.start()
@@ -317,19 +364,51 @@ def _check_autoinstall_installed_async(
 def _check_desktop_file(
     filename: str,
     location: str,
-    script_name: str,
-    game_name: str,
+    autoinstall_exe: str,
 ) -> bool:
-    """Check if desktop file contains script or game name."""
+    """Check if desktop file targets autoinstall exe."""
     if not filename.endswith(".desktop"):
         return False
 
-    try:
-        with open(os.path.join(location, filename), encoding="utf-8") as f:
-            content = f.read()
-            return (
-                script_name.lower() in content.lower()
-                or game_name.lower() in content.lower()
-            )
-    except (OSError, UnicodeDecodeError):
+    desktop_entry = parse_desktop_entry(os.path.join(location, filename))
+    if not desktop_entry:
         return False
+
+    exec_path = extract_exec_target_path(desktop_entry.get("Exec", ""))
+    if not exec_path:
+        return False
+
+    return os.path.basename(exec_path).lower() == autoinstall_exe.lower()
+
+
+def _get_autoinstall_exe_name(script_name: str) -> str:
+    scripts_path = get_portproton_scripts_path()
+    if not scripts_path:
+        return ""
+
+    script_path = os.path.join(scripts_path, "pw_autoinstall", script_name)
+    install_exe = ""
+    try:
+        with open(script_path, encoding="utf-8") as script_file:
+            for line in script_file:
+                if "PW_EXE_FILE" in line:
+                    exe_name = _extract_exe_name(line)
+                    if exe_name:
+                        return exe_name
+                if "PW_AUTOINSTALL_EXE" not in line:
+                    continue
+                exe_name = _extract_exe_name(line)
+                if exe_name:
+                    install_exe = exe_name
+    except OSError:
+        return ""
+
+    return install_exe
+
+
+def _extract_exe_name(line: str) -> str:
+    for part in line.replace("\\", "/").split("/"):
+        clean_part = part.strip().strip('"\' }')
+        if clean_part.lower().endswith(".exe"):
+            return clean_part
+    return ""
