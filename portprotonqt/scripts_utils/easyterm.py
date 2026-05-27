@@ -43,9 +43,11 @@ CONF_RENDER_INTERVAL_MS = 16
 XDG_DATA_HOME = os.getenv(
     "XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share")
 )
+
+PACKAGE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCHEME_DIRS = [
     os.path.join(XDG_DATA_HOME, "PortProtonQt", "terminal_schemes"),
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "terminal_schemes"),
+    os.path.join(PACKAGE_DIR, "terminal_schemes"),
 ]
 
 
