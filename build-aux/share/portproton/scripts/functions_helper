@@ -602,7 +602,7 @@ check_wayland_session () {
     if [[ -n "$WAYLAND_IN_USE" ]]
     then [[ "$WAYLAND_IN_USE" == 1 ]] && return 0 || return 1
     fi
-    if echo "${XDG_SESSION_TYPE}" | grep -i "wayland" &>/dev/null ; then
+    if [[ -n "${WAYLAND_DISPLAY:-}" ]] ; then
         export WAYLAND_IN_USE=1
         return 0
     else
@@ -2413,6 +2413,8 @@ pw_optiscaler_sync_files () {
 }
 
 pw_prepare_gamescope_launch () {
+    [[ "$PW_USE_NATIVE_WAYLAND" == "1" ]] && export PW_GAMESCOPE="0"
+
     local gpu_vendor
     local gamescope_available="0"
 
@@ -2606,6 +2608,13 @@ start_portproton () {
         print_warning "System mangohud, vkBasalt, obs-vk capture and other applications using vulkan layers are forcibly used."
     fi
 
+    if check_wayland_session \
+    && [[ $PW_USE_NATIVE_WAYLAND == "1" || $PW_USE_DXVK_HDR == "1" ]]
+    then
+        print_warning "Native Wayland in use. Force disabled SLR."
+        export PW_USE_RUNTIME="0"
+    fi
+
     pw_init_runtime
 
     if [[ "${PW_USE_GSTREAMER}" == "1" ]] ; then
@@ -2695,6 +2704,7 @@ start_portproton () {
         ${pw_runtime} GST_PLUGIN_SYSTEM_PATH_1_0="" LD_LIBRARY_PATH="${PW_LD_LIBRARY_PATH}:${WINE_LIBRARY_PATH}" \
         WINEDEBUG="err+all" "${WINELOADER}" wineboot $@ &>>"${PW_TMPFS_PATH}/update_pfx_log"
         wait_wineserver
+        get_and_set_reg_file --add 'Software\Wine\Drivers' 'Graphics' 'REG_SZ' "x11,wayland" "user"
         print_info "The prefix has been updated."
     }
 
@@ -3488,7 +3498,12 @@ start_portproton () {
         export VKD3D_SHADER_CACHE_PATH="0"
     fi
 
-    if [[ "${PW_WINE_FULLSCREEN_FSR}" == "1" ]] \
+    if check_wayland_session \
+    && [[ $PW_USE_NATIVE_WAYLAND == "1" || $PW_USE_DXVK_HDR == "1" ]]
+    then
+        export WINE_FULLSCREEN_FSR="0"
+        unset WINE_FULLSCREEN_FAKE_CURRENT_RES WINE_FULLSCREEN_FSR_STRENGTH WINE_FULLSCREEN_INTEGER_SCALING
+    elif [[ "${PW_WINE_FULLSCREEN_FSR}" == "1" ]] \
     && ! check_gamescope_session
     then
         export WINE_FULLSCREEN_FSR="1"
@@ -3618,30 +3633,16 @@ start_portproton () {
         export PROTON_NO_STEAMINPUT="1"
         export WAYLANDDRV_NO_IME="1"
         export PROTON_USE_XALIA="0"
+        unset SDL_GAMECONTROLLER_ALLOW_STEAM_VIRTUAL_GAMEPAD SDL_GAMECONTROLLER_IGNORE_DEVICES
 
         if [[ -d "$WINEDIR/share/X11/locale" ]] ; then
             check_variables "XLOCALEDIR" "$WINEDIR/share/X11/locale"
         fi
 
-        var_winedlloverride_update "winex11.drv=d;winewayland.drv=b"
-        get_and_set_reg_file --add 'Software\Wine\Drivers' 'Graphics' 'REG_SZ' "x11,wayland" "user"
-
-        print_warning "Wayland in use. Force dpi=96"
-        export PW_FORCE_SYSTEM_DPI="1"
-        export PW_WINE_DPI_VALUE="96"
-
-        if [[ -f "$WINEDIR/lib/libxkbregistry.so" ]] \
-        || [[ -f "$WINEDIR/lib/x86_64-linux-gnu/libxkbregistry.so" ]]
-        then print_info "runtime in use with native wayland."
-        else
-            print_warning "Wine is not support native wayland with runtime! Force disabled SLR."
-            export PW_USE_RUNTIME="0"
-        fi
+        var_winedlloverride_update "winex11.drv=;winewayland.drv=b"
     else
         export GST_GL_WINDOW="x11"
-        unset WINE_WAYLAND_HACKS DXVK_HDR
-        check_variables PROTON_USE_XALIA 0
-        get_and_set_reg_file --delete 'Software\Wine\Drivers' 'Graphics'
+        unset DXVK_HDR WINE_WAYLAND_HACKS
     fi
 
     if [[ "${PW_FORCE_SYSTEM_DPI}" == "1" ]] ; then
