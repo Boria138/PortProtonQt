@@ -483,6 +483,9 @@ msgstr ""
 msgid "Brief"
 msgstr ""
 
+msgid "Hidden"
+msgstr ""
+
 msgid "Time Detail Level:"
 msgstr ""
 
@@ -510,9 +513,6 @@ msgstr ""
 msgid "Compact"
 msgstr ""
 
-msgid "Hidden"
-msgstr ""
-
 msgid "Badge View Type:"
 msgstr ""
 
@@ -520,6 +520,18 @@ msgid "Interface Settings"
 msgstr ""
 
 msgid "Tray Menu Type:"
+msgstr ""
+
+msgid "Auto"
+msgstr ""
+
+msgid "Xbox"
+msgstr ""
+
+msgid "PlayStation"
+msgstr ""
+
+msgid "Gamepad Type:"
 msgstr ""
 
 msgid "Launch Application in Fullscreen"
@@ -625,9 +637,6 @@ msgid "Dark"
 msgstr ""
 
 msgid "Light"
-msgstr ""
-
-msgid "Auto"
 msgstr ""
 
 msgid "Apply Theme"
@@ -1005,7 +1014,14 @@ msgstr ""
 msgid "Install"
 msgstr ""
 
+#, fuzzy
+msgid "Open Game"
+msgstr "Detener partida"
+
 msgid "Reinstall"
+msgstr ""
+
+msgid "Game not found."
 msgstr ""
 
 msgid "Stop Log"

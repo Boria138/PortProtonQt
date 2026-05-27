@@ -491,6 +491,9 @@ msgstr "Детальный"
 msgid "Brief"
 msgstr "Упрощённый"
 
+msgid "Hidden"
+msgstr "Скрытый"
+
 msgid "Time Detail Level:"
 msgstr "Уровень детализации вывода времени:"
 
@@ -518,9 +521,6 @@ msgstr "Фильтр:"
 msgid "Compact"
 msgstr "Компактный"
 
-msgid "Hidden"
-msgstr "Скрытый"
-
 msgid "Badge View Type:"
 msgstr "Тип отображения бейджей:"
 
@@ -529,6 +529,20 @@ msgstr "Настройки интерфейса"
 
 msgid "Tray Menu Type:"
 msgstr "Тип области уведомления:"
+
+msgid "Auto"
+msgstr "Авто"
+
+msgid "Xbox"
+msgstr ""
+
+#, fuzzy
+msgid "PlayStation"
+msgstr "Платина"
+
+#, fuzzy
+msgid "Gamepad Type:"
+msgstr "Геймпад"
 
 msgid "Launch Application in Fullscreen"
 msgstr "Запуск приложения в полноэкранном режиме"
@@ -635,9 +649,6 @@ msgstr "Тёмная"
 
 msgid "Light"
 msgstr "Светлая"
-
-msgid "Auto"
-msgstr "Авто"
 
 msgid "Apply Theme"
 msgstr "Применить тему"
@@ -1071,8 +1082,16 @@ msgstr "Создать лог"
 msgid "Install"
 msgstr "Установить"
 
+#, fuzzy
+msgid "Open Game"
+msgstr "Остановить игру"
+
 msgid "Reinstall"
 msgstr "Переустановить"
+
+#, fuzzy
+msgid "Game not found."
+msgstr "Префикс не найден"
 
 msgid "Stop Log"
 msgstr "Остановить лог"

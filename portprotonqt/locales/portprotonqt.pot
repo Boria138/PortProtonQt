@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-05-26 11:44+0500\n"
+"POT-Creation-Date: 2026-05-27 21:30+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -477,6 +477,9 @@ msgstr ""
 msgid "Brief"
 msgstr ""
 
+msgid "Hidden"
+msgstr ""
+
 msgid "Time Detail Level:"
 msgstr ""
 
@@ -504,9 +507,6 @@ msgstr ""
 msgid "Compact"
 msgstr ""
 
-msgid "Hidden"
-msgstr ""
-
 msgid "Badge View Type:"
 msgstr ""
 
@@ -514,6 +514,18 @@ msgid "Interface Settings"
 msgstr ""
 
 msgid "Tray Menu Type:"
+msgstr ""
+
+msgid "Auto"
+msgstr ""
+
+msgid "Xbox"
+msgstr ""
+
+msgid "PlayStation"
+msgstr ""
+
+msgid "Gamepad Type:"
 msgstr ""
 
 msgid "Launch Application in Fullscreen"
@@ -619,9 +631,6 @@ msgid "Dark"
 msgstr ""
 
 msgid "Light"
-msgstr ""
-
-msgid "Auto"
 msgstr ""
 
 msgid "Apply Theme"
@@ -1001,7 +1010,13 @@ msgstr ""
 msgid "Install"
 msgstr ""
 
+msgid "Open Game"
+msgstr ""
+
 msgid "Reinstall"
+msgstr ""
+
+msgid "Game not found."
 msgstr ""
 
 msgid "Stop Log"

@@ -484,6 +484,9 @@ msgstr "详细"
 msgid "Brief"
 msgstr "简要"
 
+msgid "Hidden"
+msgstr "隐藏"
+
 msgid "Time Detail Level:"
 msgstr "时间详细程度："
 
@@ -513,9 +516,6 @@ msgstr "游戏显示筛选："
 msgid "Compact"
 msgstr "紧凑"
 
-msgid "Hidden"
-msgstr "隐藏"
-
 msgid "Badge View Type:"
 msgstr "徽章视图类型："
 
@@ -524,6 +524,20 @@ msgstr "界面设置"
 
 msgid "Tray Menu Type:"
 msgstr "托盘菜单类型："
+
+msgid "Auto"
+msgstr "自动"
+
+msgid "Xbox"
+msgstr ""
+
+#, fuzzy
+msgid "PlayStation"
+msgstr "白金"
+
+#, fuzzy
+msgid "Gamepad Type:"
+msgstr "游戏手柄"
 
 msgid "Launch Application in Fullscreen"
 msgstr "全屏启动应用程序"
@@ -629,9 +643,6 @@ msgstr "深色"
 
 msgid "Light"
 msgstr "浅色"
-
-msgid "Auto"
-msgstr "自动"
 
 msgid "Apply Theme"
 msgstr "应用主题"
@@ -1051,8 +1062,16 @@ msgstr "创建日志"
 msgid "Install"
 msgstr "安装"
 
+#, fuzzy
+msgid "Open Game"
+msgstr "停止游戏"
+
 msgid "Reinstall"
 msgstr "重新安装"
+
+#, fuzzy
+msgid "Game not found."
+msgstr "未找到前缀"
 
 msgid "Stop Log"
 msgstr "停止日志"
