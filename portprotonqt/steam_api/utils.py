@@ -1,6 +1,7 @@
 """Utility functions for Steam API module."""
 
 import os
+import shutil
 from pathlib import Path
 
 from PIL import Image, UnidentifiedImageError
@@ -79,6 +80,34 @@ def get_steam_home() -> Path | None:
     for steam_path in _iter_existing_steam_data_dirs():
         return steam_path
     return None
+
+
+def get_steam_launch_commands(appid: str) -> list[list[str]]:
+    """Return Steam launch commands based on detected Steam data dir."""
+    steam_home = get_steam_home()
+    if steam_home is None:
+        return []
+
+    steam_home_str = str(steam_home)
+    if "/.var/app/com.valvesoftware.Steam/" in steam_home_str:
+        flatpak_cmd = shutil.which("flatpak")
+        if flatpak_cmd:
+            return [[flatpak_cmd, "run", "com.valvesoftware.Steam", "-applaunch", appid]]
+        return []
+
+    if "/snap/steam/" in steam_home_str:
+        steam_cmd = shutil.which("steam")
+        if steam_cmd:
+            return [[steam_cmd, "-applaunch", appid]]
+        snap_cmd = shutil.which("snap")
+        if snap_cmd:
+            return [[snap_cmd, "run", "steam", "-applaunch", appid]]
+        return []
+
+    steam_cmd = shutil.which("steam")
+    if steam_cmd:
+        return [[steam_cmd, "-applaunch", appid]]
+    return []
 
 
 def get_steam_compatibilitytools_dir() -> Path | None:

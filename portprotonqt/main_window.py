@@ -26,7 +26,7 @@ from portprotonqt.image_utils import (
     load_pixmap_async,
     set_all_animated_covers_suspended,
 )
-from portprotonqt.steam_api import get_steam_game_info_async, get_full_steam_game_info_async, get_cached_steam_game_info, get_steam_installed_games, is_game_in_steam, fetch_sgdb_cover_async, get_steam_compatibilitytools_dir
+from portprotonqt.steam_api import get_steam_game_info_async, get_full_steam_game_info_async, get_cached_steam_game_info, get_steam_installed_games, is_game_in_steam, fetch_sgdb_cover_async, get_steam_compatibilitytools_dir, get_steam_launch_commands
 from portprotonqt.theme_manager import ThemeManager, load_theme_screenshots
 from portprotonqt.time_utils import save_last_launch, get_last_launch, get_playtime_for_exe, format_playtime, get_last_launch_timestamp, format_last_launch
 from portprotonqt.config import (
@@ -3744,11 +3744,26 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 return str(game[0])
         return ""
 
+    def _launch_steam_game(self, exec_line: str) -> None:
+        appid = exec_line.rsplit("/", 1)[-1]
+        if not appid.isdigit():
+            logger.warning("Invalid Steam URI: %s", exec_line)
+            return
+
+        for command in get_steam_launch_commands(appid):
+            try:
+                subprocess.Popen(command)
+                return
+            except OSError as e:
+                logger.warning("Failed to launch Steam app %s with %s: %s", appid, command[0], e)
+
+        if not QDesktopServices.openUrl(QUrl(exec_line)):
+            logger.warning("Failed to open Steam URI: %s", exec_line)
+
     def toggleGame(self, exec_line, button=None, game_name=None):
         # Handle Steam games
         if exec_line.startswith("steam://"):
-            url = QUrl(exec_line)
-            QDesktopServices.openUrl(url)
+            self._launch_steam_game(exec_line)
             return
 
         # Handle PortProton games

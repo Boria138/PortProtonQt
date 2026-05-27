@@ -13,6 +13,7 @@
 ### Fixed
 - Добавлена пропущенная поддержка `.cmd` рядом с `.bat`
 - Исправлено определение каталога Steam на OpenSUSE и Deb-based системах
+- Исправлен запуск игр Steam с учётом native, Snap и Flatpak установок
 
 ### Contributors
 
