@@ -2,6 +2,7 @@ import argparse
 import os
 import re
 import shutil
+import sys
 from pathlib import Path
 
 from portprotonqt.steam_api import get_steam_home
@@ -84,7 +85,23 @@ def parse_args():
         nargs='?',
         help="Launch file path (.exe/.bat/.cmd/.msi/.reg/.iso/.mdf) or portproton:// URL"
     )
-    return parser.parse_args()
+    if os.environ.get("STEAM_COMPAT") == "1" and "--" in sys.argv[1:]:
+        separator_index = sys.argv.index("--")
+        args = parser.parse_args(sys.argv[1:separator_index])
+        steam_args = sys.argv[separator_index + 1:]
+        if steam_args:
+            args.file_or_url = steam_args[0]
+            launch_args = steam_args[1:]
+        else:
+            launch_args = []
+    elif os.environ.get("STEAM_COMPAT") == "1":
+        args, launch_args = parser.parse_known_args()
+    else:
+        args = parser.parse_args()
+        launch_args = []
+
+    args.launch_args = launch_args
+    return args
 
 
 def add_steam_compat_tool(force_install: bool = False) -> bool:
@@ -156,8 +173,16 @@ unset LD_LIBRARY_PATH
 
 export STEAM_COMPAT=1
 
-exe_name="$(basename "$1")"
-exe_dir="$(dirname "$1")"
+launch_args=("$@")
+case "${1:-}" in
+    run|waitforexitandrun)
+        launch_args=("${@:2}")
+        ;;
+esac
+
+launch_target="${launch_args[0]:-}"
+exe_name="$(basename "$launch_target")"
+exe_dir="$(dirname "$launch_target")"
 
 # Ignore specific executables
 if [[ "$exe_name" == "iscriptevaluator.exe" ]] \\
@@ -234,11 +259,11 @@ fi
 
 # Use AppImage if specified, then Flatpak if installed, otherwise use portprotonqt from PATH
 if [[ -n "$PPQT_BIN_PATH" ]]; then
-    "$PPQT_BIN_PATH" --debug-level INFO "$@"
+    "$PPQT_BIN_PATH" --debug-level INFO -- "${launch_args[@]}"
 elif command -v flatpak >/dev/null 2>&1 && flatpak info ru.linux_gaming.PortProtonQt >/dev/null 2>&1; then
-    flatpak run ru.linux_gaming.PortProtonQt --debug-level INFO "$@"
+    flatpak run ru.linux_gaming.PortProtonQt --debug-level INFO -- "${launch_args[@]}"
 else
-    portprotonqt --debug-level INFO "$@"
+    portprotonqt --debug-level INFO -- "${launch_args[@]}"
 fi
 ''')
 

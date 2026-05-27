@@ -240,10 +240,11 @@ def main():
             logger = get_logger(__name__)
             setup_logger(parsed_args.debug_level)
             logger.info("Running in Steam compatibility mode, launching: %s", exe_path)
+            logger.info("Steam compatibility launch arguments: %s", parsed_args.launch_args)
 
             # Launch game via PortProton without GUI
             env_vars = os.environ.copy()
-            cmd = start_sh + [exe_path]
+            cmd = start_sh + [exe_path] + parsed_args.launch_args
             try:
                 subprocess.run(cmd, env=env_vars)
             except Exception as e:
