@@ -533,13 +533,6 @@ msgstr "Тип области уведомления:"
 msgid "Auto"
 msgstr "Авто"
 
-msgid "Xbox"
-msgstr ""
-
-#, fuzzy
-msgid "PlayStation"
-msgstr "Платина"
-
 #, fuzzy
 msgid "Gamepad Type:"
 msgstr "Геймпад"

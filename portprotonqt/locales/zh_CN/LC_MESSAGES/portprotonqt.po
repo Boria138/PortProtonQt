@@ -528,13 +528,6 @@ msgstr "托盘菜单类型："
 msgid "Auto"
 msgstr "自动"
 
-msgid "Xbox"
-msgstr ""
-
-#, fuzzy
-msgid "PlayStation"
-msgstr "白金"
-
 #, fuzzy
 msgid "Gamepad Type:"
 msgstr "游戏手柄"

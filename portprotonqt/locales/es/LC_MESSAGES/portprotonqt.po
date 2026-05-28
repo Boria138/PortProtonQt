@@ -525,12 +525,6 @@ msgstr ""
 msgid "Auto"
 msgstr ""
 
-msgid "Xbox"
-msgstr ""
-
-msgid "PlayStation"
-msgstr ""
-
 msgid "Gamepad Type:"
 msgstr ""
 
