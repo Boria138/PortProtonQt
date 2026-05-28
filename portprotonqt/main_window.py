@@ -2432,7 +2432,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         uiForm.addRow(self.trayMenuModeTitle, self.trayMenuModeCombo)
 
         self.gamepad_type_keys = ["auto", "xbox", "playstation"]
-        self.gamepad_type_labels = [_("Auto"), _("Xbox"), _("PlayStation")]
+        self.gamepad_type_labels = [_("Auto"), "Xbox", "PlayStation"]
         self.gamepadTypeCombo = QComboBox()
         self.gamepadTypeCombo.view().window().setWindowFlags(
             Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint

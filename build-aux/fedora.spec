@@ -40,6 +40,7 @@ Requires:       python3-pillow-qt
 Requires:       python3-rapidfuzz
 Requires:       python3-libarchive-c
 Requires:       perl-Image-ExifTool
+Requires:       SDL3
 Requires:       qt6-qtsvg
 Requires:       qt6-qtimageformats
 Requires:       cabextract

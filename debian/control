@@ -24,6 +24,7 @@ Depends:
  gawk,
  jq,
  libimage-exiftool-perl,
+ libsdl3-0,
  mesa-utils,
  pciutils,
  procps,

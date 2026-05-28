@@ -2,6 +2,9 @@ import time
 import threading
 import os
 import math
+import ctypes
+import ctypes.util
+from functools import lru_cache
 from dataclasses import dataclass
 from typing import Protocol, cast, Any
 os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1")
@@ -94,49 +97,124 @@ class GamepadType(Enum):
     PLAYSTATION = "PlayStation"
     UNKNOWN = "Unknown"
 
-PLAYSTATION_NAME_KEYWORDS = (
-    "playstation", "dualshock", "dualsense", "sony", "ps3", "ps4", "ps5"
-)
-XBOX_NAME_KEYWORDS = ("xbox", "x-input", "xinput", "microsoft")
-PLAYSTATION_GUID_VENDOR = "4c050000"
-PLAYSTATION_GUID_PRODUCTS = (
-    "c4050000", "cc090000", "a00b0000", "e60c0000", "f20d0000"
-)
-XBOX_GUID_VENDOR = "5e040000"
+SDL_INIT_GAMEPAD = 0x00002000
+SDL_GAMEPAD_TYPE_STANDARD = 1
+SDL_GAMEPAD_TYPE_XBOX360 = 2
+SDL_GAMEPAD_TYPE_XBOXONE = 3
+SDL_GAMEPAD_TYPE_PS3 = 4
+SDL_GAMEPAD_TYPE_PS4 = 5
+SDL_GAMEPAD_TYPE_PS5 = 6
+SDL_GAMEPAD_TYPE_NINTENDO_SWITCH_PRO = 7
+SDL_GAMEPAD_TYPE_NINTENDO_SWITCH_JOYCON_LEFT = 8
+SDL_GAMEPAD_TYPE_NINTENDO_SWITCH_JOYCON_RIGHT = 9
+SDL_GAMEPAD_TYPE_NINTENDO_SWITCH_JOYCON_PAIR = 10
+SDL_GAMEPAD_TYPE_GAMECUBE = 11
+SDL_GAMEPAD_TYPE_STEAM = 12
+SDL3_XBOX_LIKE_TYPES = {
+    SDL_GAMEPAD_TYPE_STANDARD,
+    SDL_GAMEPAD_TYPE_XBOX360,
+    SDL_GAMEPAD_TYPE_XBOXONE,
+    SDL_GAMEPAD_TYPE_NINTENDO_SWITCH_PRO,
+    SDL_GAMEPAD_TYPE_NINTENDO_SWITCH_JOYCON_LEFT,
+    SDL_GAMEPAD_TYPE_NINTENDO_SWITCH_JOYCON_RIGHT,
+    SDL_GAMEPAD_TYPE_NINTENDO_SWITCH_JOYCON_PAIR,
+    SDL_GAMEPAD_TYPE_GAMECUBE,
+    SDL_GAMEPAD_TYPE_STEAM,
+}
+SDL3_PLAYSTATION_TYPES = {
+    SDL_GAMEPAD_TYPE_PS3,
+    SDL_GAMEPAD_TYPE_PS4,
+    SDL_GAMEPAD_TYPE_PS5,
+}
 
-PLAYSTATION_MAPPING_PATTERNS = (
-    ("a:b1", "b:b2", "x:b0", "y:b3", "back:b8", "start:b9", "touchpad:"),
-    (
-        "a:b1", "b:b2", "x:b0", "y:b3", "back:b8", "start:b9",
-        "lefttrigger:a3", "righttrigger:a4", "righty:a5",
-    ),
-    (
-        "a:b0", "b:b1", "x:b3", "y:b2", "back:b8", "start:b9",
-        "guide:b10",
-    ),
-)
-XBOX_MAPPING_PATTERNS = (
-    ("a:b0", "b:b1", "x:b2", "y:b3", "back:b6", "start:b7", "guide:b8"),
-)
 
-
-def _mapping_matches(mapping: str, patterns: tuple[tuple[str, ...], ...]) -> bool:
-    """Check if a SDL mapping contains one of known controller layouts."""
-    return any(all(token in mapping for token in pattern) for pattern in patterns)
-
-
-def _get_gamepad_mapping(gamepad: "PygameGamepad") -> str:
-    """Read SDL mapping when available."""
-    try:
-        mapping = gamepad.controller.get_mapping()
-    except pygame.error as e:
-        logger.debug("Failed to read gamepad mapping: %s", e)
+def _get_sdl3_error(sdl: ctypes.CDLL) -> str:
+    """Return the current SDL3 error message."""
+    error = sdl.SDL_GetError()
+    if not error:
         return ""
-    if isinstance(mapping, str):
-        return mapping.lower()
-    if isinstance(mapping, dict):
-        return ",".join(f"{key}:{value}" for key, value in mapping.items()).lower()
-    return ""
+    return error.decode(errors="replace")
+
+
+def _configure_sdl3_gamepad_api(sdl: ctypes.CDLL) -> None:
+    """Configure ctypes signatures for the SDL3 gamepad calls used here."""
+    sdl.SDL_InitSubSystem.argtypes = [ctypes.c_uint32]
+    sdl.SDL_InitSubSystem.restype = ctypes.c_bool
+    sdl.SDL_GetGamepads.argtypes = [ctypes.POINTER(ctypes.c_int)]
+    sdl.SDL_GetGamepads.restype = ctypes.POINTER(ctypes.c_uint32)
+    sdl.SDL_GetGamepadTypeForID.argtypes = [ctypes.c_uint32]
+    sdl.SDL_GetGamepadTypeForID.restype = ctypes.c_int
+    sdl.SDL_GetGamepadNameForID.argtypes = [ctypes.c_uint32]
+    sdl.SDL_GetGamepadNameForID.restype = ctypes.c_char_p
+    sdl.SDL_GetError.argtypes = []
+    sdl.SDL_GetError.restype = ctypes.c_char_p
+    sdl.SDL_free.argtypes = [ctypes.c_void_p]
+    sdl.SDL_free.restype = None
+
+
+@lru_cache(maxsize=1)
+def _load_sdl3() -> ctypes.CDLL | None:
+    """Load SDL3 and initialize its gamepad subsystem when available."""
+    library_names = (
+        ctypes.util.find_library("SDL3"),
+        "libSDL3.so.0",
+        "libSDL3.so",
+    )
+    for library_name in library_names:
+        if not library_name:
+            continue
+        try:
+            sdl = ctypes.CDLL(library_name)
+            _configure_sdl3_gamepad_api(sdl)
+        except (AttributeError, OSError) as e:
+            logger.debug("Failed to load SDL3 from %s: %s", library_name, e)
+            continue
+        if sdl.SDL_InitSubSystem(SDL_INIT_GAMEPAD):
+            return sdl
+        logger.debug("Failed to initialize SDL3 gamepad subsystem: %s", _get_sdl3_error(sdl))
+    return None
+
+
+def _decode_sdl3_name(name: bytes | None) -> str:
+    """Decode a SDL3 device name."""
+    if not name:
+        return ""
+    return name.decode(errors="replace")
+
+
+def _gamepad_type_from_sdl3_value(sdl_type: int) -> GamepadType | None:
+    """Map SDL_GamepadType to the existing UI icon families."""
+    if sdl_type in SDL3_PLAYSTATION_TYPES:
+        return GamepadType.PLAYSTATION
+    if sdl_type in SDL3_XBOX_LIKE_TYPES:
+        return GamepadType.XBOX
+    return None
+
+
+def _get_sdl3_gamepad_type(gamepad: "PygameGamepad") -> GamepadType | None:
+    """Read SDL_GamepadType from SDL3 for the current pygame controller."""
+    sdl = _load_sdl3()
+    if sdl is None:
+        return None
+
+    count = ctypes.c_int()
+    gamepads = sdl.SDL_GetGamepads(ctypes.byref(count))
+    if not gamepads:
+        return None
+
+    try:
+        target_name = gamepad.name.casefold()
+        for index in range(count.value):
+            gamepad_id = gamepads[index]
+            sdl_name = _decode_sdl3_name(sdl.SDL_GetGamepadNameForID(gamepad_id))
+            if count.value > 1 and sdl_name.casefold() != target_name:
+                continue
+            gamepad_type = _gamepad_type_from_sdl3_value(sdl.SDL_GetGamepadTypeForID(gamepad_id))
+            if gamepad_type is not None:
+                return gamepad_type
+    finally:
+        sdl.SDL_free(gamepads)
+    return None
 
 
 @dataclass
@@ -3720,26 +3798,11 @@ class InputManager(QObject):
         self.gamepad_type = self._get_effective_gamepad_type(self.gamepad)
 
     def _detect_gamepad_type(self, gamepad: PygameGamepad) -> GamepadType:
-        """Infer gamepad type from pygame device metadata."""
-        name = gamepad.name.lower()
-        guid = gamepad.controller.as_joystick().get_guid().lower()
-        mapping = _get_gamepad_mapping(gamepad)
-
-        if any(keyword in name for keyword in PLAYSTATION_NAME_KEYWORDS):
-            return GamepadType.PLAYSTATION
-        if guid[8:16] == PLAYSTATION_GUID_VENDOR:
-            return GamepadType.PLAYSTATION
-        if guid[16:24] in PLAYSTATION_GUID_PRODUCTS:
-            return GamepadType.PLAYSTATION
-        if any(keyword in name for keyword in XBOX_NAME_KEYWORDS):
-            return GamepadType.XBOX
-        if guid[8:16] == XBOX_GUID_VENDOR:
-            return GamepadType.XBOX
-        if _mapping_matches(mapping, PLAYSTATION_MAPPING_PATTERNS):
-            return GamepadType.PLAYSTATION
-        if _mapping_matches(mapping, XBOX_MAPPING_PATTERNS):
-            return GamepadType.XBOX
-        return GamepadType.XBOX
+        """Read gamepad type from SDL."""
+        sdl3_type = _get_sdl3_gamepad_type(gamepad)
+        if sdl3_type is not None:
+            return sdl3_type
+        return GamepadType.UNKNOWN
 
     def _refresh_gamepad_ui(self) -> None:
         """Refresh control hints and virtual keyboard after gamepad changes."""
