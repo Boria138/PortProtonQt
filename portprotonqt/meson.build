@@ -165,7 +165,7 @@ install_subdir(
 
 # Compile and install locales from .po files
 msgfmt = find_program('msgfmt', required: true)
-foreach lang : ['de', 'es', 'pt', 'ru', 'zh_CN']
+foreach lang : ['be', 'de', 'es', 'pt', 'ru', 'zh_CN']
   mo_target = configure_file(
     input: 'locales' / lang / 'LC_MESSAGES' / 'portprotonqt.po',
     output: lang + '_portprotonqt.mo',
