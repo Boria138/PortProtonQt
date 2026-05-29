@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-03-22 13:50+0500\n"
-"PO-Revision-Date: 2026-05-26 06:33+0000\n"
+"PO-Revision-Date: 2026-05-29 13:53+0000\n"
 "Last-Translator: Boria138 <boria138@noreply.codeberg.org>\n"
 "Language-Team: Russian <https://translate.codeberg.org/projects/portprotonqt/"
 "portprotonqt/ru/>\n"
@@ -533,9 +533,8 @@ msgstr "Тип области уведомления:"
 msgid "Auto"
 msgstr "Авто"
 
-#, fuzzy
 msgid "Gamepad Type:"
-msgstr "Геймпад"
+msgstr "Тип геймпада:"
 
 msgid "Launch Application in Fullscreen"
 msgstr "Запуск приложения в полноэкранном режиме"
@@ -1075,16 +1074,14 @@ msgstr "Создать лог"
 msgid "Install"
 msgstr "Установить"
 
-#, fuzzy
 msgid "Open Game"
-msgstr "Остановить игру"
+msgstr "Открыть игру"
 
 msgid "Reinstall"
 msgstr "Переустановить"
 
-#, fuzzy
 msgid "Game not found."
-msgstr "Префикс не найден"
+msgstr "Игра не найдена"
 
 msgid "Stop Log"
 msgstr "Остановить лог"
