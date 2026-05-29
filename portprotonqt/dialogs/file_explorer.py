@@ -24,6 +24,7 @@ from portprotonqt.dialogs.dialog_utils import create_dialog_hints_widget, update
 from portprotonqt.icon_extractor import generate_thumbnail
 from portprotonqt.dialogs.base import DraggableDialog, FileSelectedSignal
 from portprotonqt.image_utils import COVER_IMAGE_EXTENSIONS
+from portprotonqt.scripts_utils.mount_points import list_mounted_drive_paths
 
 logger = get_logger(__name__)
 theme_manager = ThemeManager()
@@ -279,30 +280,7 @@ class FileExplorer(DraggableDialog):
 
     def get_mounted_drives(self):
         """Retrieve a list of mounted drives from /proc/mounts, excluding system paths."""
-        mounted_drives = []
-        try:
-            mounts = []
-            with open('/proc/mounts') as f:
-                for line in f:
-                    parts = line.strip().split()
-                    if len(parts) < 2:
-                        continue
-                    mount_point = parts[1]
-                    mounts.append(mount_point)
-
-            for mount_point in mounts:
-                if mount_point == "/":
-                    continue
-                if mount_point in ("/media", "/mnt", "/run/media"):
-                    continue
-                if mount_point != "/" and not mount_point.startswith(("/run/media/", "/media/", "/mnt/")):
-                    continue
-                if os.path.isdir(mount_point) and os.access(mount_point, os.R_OK):
-                    mounted_drives.append(mount_point)
-            return sorted(mounted_drives)
-        except Exception as e:
-            logger.error(f"Error retrieving mounted drives: {e}")
-            return []
+        return list_mounted_drive_paths()
 
     def setup_ui(self):
         """Set up the user interface."""

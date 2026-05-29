@@ -124,6 +124,7 @@ install_data(
    'scripts_utils/dbus_tools.py',
    'scripts_utils/easyterm.py',
    'scripts_utils/idle_inhibit.py',
+   'scripts_utils/mount_points.py',
    'scripts_utils/prefix_backup.py',
    'scripts_utils/power_profiles.py',
    'scripts_utils/shortcut_tools.py',
