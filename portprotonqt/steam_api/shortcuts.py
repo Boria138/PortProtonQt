@@ -4,6 +4,7 @@ import base64
 import os
 import random
 import re
+import shlex
 import shutil
 import zlib
 from pathlib import Path
@@ -186,23 +187,33 @@ def _create_launch_script(
 
     safe_game_name = re.sub(r'[<>:"/\\|?*]', '_', game_name.strip())
     script_path = os.path.join(steam_scripts_dir, f"{safe_game_name}.sh")
-
-    if not os.path.exists(script_path):
-        start_cmd = " ".join(start_sh)
-        script_content = f"""#!/usr/bin/env bash
-export LD_PRELOAD=
-"{start_cmd}" "{exe_path}" "$@"
-"""
-        try:
-            with open(script_path, "w", encoding="utf-8") as f:
-                f.write(script_content)
-            os.chmod(script_path, 0o755)
-            logger.info(f"Created launch script: {script_path}")
-        except Exception as e:
-            logger.error(f"Failed to create launch script {script_path}: {e}")
-            return "", f"Failed to create launch script: {e}"
+    appimage_path = os.getenv("APPIMAGE", "").strip()
+    flatpak_id = os.getenv("FLATPAK_ID", "").strip()
+    if flatpak_id:
+        launch_command = shlex.join(["flatpak", "run", flatpak_id, "--silent", exe_path])
+    elif appimage_path and os.path.isfile(appimage_path):
+        launch_command = shlex.join([appimage_path, "--silent", exe_path])
     else:
-        logger.info(f"Launch script already exists: {script_path}")
+        launch_command = shlex.join(["portprotonqt", "--silent", exe_path])
+
+    script_content = f"""#!/usr/bin/env bash
+export LD_PRELOAD=
+{launch_command} "$@"
+"""
+    try:
+        if os.path.exists(script_path):
+            with open(script_path, encoding="utf-8") as f:
+                if f.read() == script_content:
+                    logger.info(f"Launch script already exists: {script_path}")
+                    return script_path, ""
+
+        with open(script_path, "w", encoding="utf-8") as f:
+            f.write(script_content)
+        os.chmod(script_path, 0o755)
+        logger.info(f"Created launch script: {script_path}")
+    except Exception as e:
+        logger.error(f"Failed to create launch script {script_path}: {e}")
+        return "", f"Failed to create launch script: {e}"
 
     return script_path, ""
 
