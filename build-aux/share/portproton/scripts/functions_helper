@@ -1440,6 +1440,27 @@ pw_mangohud_check () {
     return 0
 }
 
+pw_select_mangohud_user_conf () {
+    unset MANGOHUD_CONFIG
+
+    if ! check_flatpak ; then
+        return 0
+    fi
+
+    local home_config="${HOME}/.home/.config/MangoHud/MangoHud.conf"
+    local xdg_config="${XDG_CONFIG_HOME:-${HOME}/.config}/MangoHud/MangoHud.conf"
+
+    if [[ -f "$home_config" ]] ; then
+        export MANGOHUD_CONFIGFILE="$home_config"
+    elif [[ -f "$xdg_config" ]] ; then
+        export MANGOHUD_CONFIGFILE="$xdg_config"
+    else
+        return 0
+    fi
+
+    print_info "System MangoHud.conf in use: $MANGOHUD_CONFIGFILE"
+}
+
 pw_mangohud_preview () {
     if pgrep -f "${PW_PLUGINS_PATH}/portable/bin/vkcube" ; then
         return 0
@@ -2879,7 +2900,7 @@ start_portproton () {
         export MANGOHUD_CONFIGFILE="$PATH_TO_GAME/MangoHud.conf"
         print_info "Custom MangoHud.conf in use: $MANGOHUD_CONFIGFILE"
     elif [[ "${PW_MANGOHUD_USER_CONF}" == 1 ]] ; then
-        unset MANGOHUD_CONFIG
+        pw_select_mangohud_user_conf
     fi
 
     [[ "${PW_VKBASALT_USER_CONF}" == 1 ]] && unset PW_VKBASALT_EFFECTS PW_VKBASALT_FFX_CAS
@@ -3853,7 +3874,7 @@ steamplay_launch () {
             export MANGOHUD_CONFIGFILE="$PATH_TO_GAME/MangoHud.conf"
             print_info "Custom MangoHud.conf in use: $MANGOHUD_CONFIGFILE"
         elif [[ "${PW_MANGOHUD_USER_CONF}" == 1 ]] ; then
-            unset MANGOHUD_CONFIG
+            pw_select_mangohud_user_conf
         fi
 
         pw_optiscaler_sync_files
