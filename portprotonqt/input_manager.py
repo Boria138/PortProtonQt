@@ -3451,6 +3451,9 @@ class InputManager(QObject):
         file_explorer = self.file_explorer
         if not file_explorer:
             return False
+        focused = self._focused_widget()
+        if isinstance(focused, QLineEdit) or self._focused_editable_combo(focused):
+            return False
         if key in (pygame.K_RETURN, pygame.K_KP_ENTER):
             self._activate_file_explorer_focus()
             return True
