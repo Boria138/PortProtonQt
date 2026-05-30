@@ -4,7 +4,9 @@ import os
 import re
 import shlex
 import sys
+import shutil
 from pathlib import Path
+from PySide6.QtCore import QStandardPaths
 from portprotonqt.config.base import (
     BaseConfig,
     CONFIG_FILE,
@@ -189,23 +191,50 @@ def get_portproton_start_command() -> list[str] | None:
     return None
 
 
-def _update_appimage_command(parts: list[str], appimage_path: str) -> list[str] | None:
-    """Update an AppImage launch command to the current AppImage path."""
-    if not parts or not appimage_path or not os.path.isfile(appimage_path):
+def _get_current_launcher_command() -> list[str] | None:
+    """Return the current launcher command for shortcut migration."""
+    appimage_path = os.getenv("APPIMAGE", "").strip()
+    if appimage_path and os.path.isfile(appimage_path):
+        return [appimage_path, "--silent"]
+
+    flatpak_id = os.getenv("FLATPAK_ID", "").strip()
+    if flatpak_id:
+        return ["flatpak", "run", flatpak_id, "--silent"]
+
+    scripts_path = get_portproton_scripts_path()
+    if scripts_path:
+        return [os.path.join(scripts_path, "start.sh")]
+
+    if shutil.which("portprotonqt"):
+        return ["portprotonqt", "--silent"]
+    return None
+
+
+def _extract_launcher_tail(parts: list[str]) -> list[str] | None:
+    """Return shortcut args after the launcher command."""
+    if not parts:
         return None
 
-    if not parts[0].lower().endswith(".appimage"):
-        return None
+    command_name = os.path.basename(parts[0])
+    if parts[0].lower().endswith(".appimage") or command_name == "portprotonqt" or command_name == "start.sh":
+        tail = parts[1:]
+        if tail[:1] == ["--silent"]:
+            tail = tail[1:]
+        return tail
 
-    updated_parts = parts.copy()
-    updated_parts[0] = appimage_path
-    if "--silent" not in updated_parts:
-        updated_parts.insert(1, "--silent")
-    return updated_parts
+    if parts[0] == "flatpak" and len(parts) >= 3 and parts[1] == "run":
+        tail = parts[3:]
+        if tail[:1] == ["--silent"]:
+            tail = tail[1:]
+        return tail
+    return None
 
 
-def _migrate_appimage_line(line: str, appimage_path: str) -> str:
-    """Update AppImage command in desktop Exec or shell script line."""
+def _migrate_launcher_line(line: str, launcher_command: list[str] | None) -> str:
+    """Update launcher command in desktop Exec or shell script line."""
+    if not launcher_command:
+        return line
+
     prefix = "Exec=" if line.startswith("Exec=") else ""
     command = line[len(prefix):].strip() if prefix else line.strip()
     if not command or command.startswith("#"):
@@ -216,18 +245,31 @@ def _migrate_appimage_line(line: str, appimage_path: str) -> str:
     except ValueError:
         return line
 
-    updated_parts = _update_appimage_command(parts, appimage_path)
-    if not updated_parts:
+    tail = _extract_launcher_tail(parts)
+    if tail is None:
         return line
+
+    updated_parts = launcher_command + tail
     if not prefix and updated_parts[-1:] == ["$@"]:
         return f'{shlex.join(updated_parts[:-1])} "$@"'
     return f"{prefix}{shlex.join(updated_parts)}"
 
 
+def _get_desktop_paths(desktop_dir: str | None) -> tuple[str, ...]:
+    """Return desktop directories to scan for shortcuts."""
+    if desktop_dir:
+        return (desktop_dir,)
+
+    desktop_path = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DesktopLocation)
+    if desktop_path:
+        return (desktop_path,)
+
+    return (os.path.join(os.path.expanduser("~"), "Desktop"),)
+
+
 def migrate_legacy_shortcut(portproton_path: str, desktop_dir: str | None = None) -> int:
     """Migrate legacy PortProton shortcuts in known desktop directories."""
     flatpak_id = os.getenv("FLATPAK_ID", "").strip()
-    appimage_path = os.getenv("APPIMAGE", "").strip()
     user_home = os.path.expanduser("~")
     legacy_home_path = os.path.join(user_home, "PortProton")
     current_home_path = os.path.join(user_home, "PortProtonQt")
@@ -244,11 +286,11 @@ def migrate_legacy_shortcut(portproton_path: str, desktop_dir: str | None = None
         except OSError as error:
             logger.warning("Failed to read legacy PortProton config %s: %s", PORTPROTON_CONFIG_FILE, error)
 
-    desktop_path = desktop_dir or os.path.join(os.path.expanduser("~"), "Desktop")
+    launcher_command = _get_current_launcher_command()
     desktop_paths = (
         portproton_path,
-        os.path.join(os.path.expanduser("~"), ".local", "share", "applications"),
-        desktop_path,
+        os.path.join(user_home, ".local", "share", "applications"),
+        *_get_desktop_paths(desktop_dir),
     )
     migrated = 0
     for current_path in desktop_paths:
@@ -329,7 +371,7 @@ def migrate_legacy_shortcut(portproton_path: str, desktop_dir: str | None = None
                             updated_line = f'Exec={shlex.join(["portprotonqt", "--silent", *parts[2:]])}'
 
                 if updated_line.startswith("Exec="):
-                    updated_line = _migrate_appimage_line(updated_line, appimage_path)
+                    updated_line = _migrate_launcher_line(updated_line, launcher_command)
 
                 if updated_line == line_content:
                     continue
@@ -364,7 +406,7 @@ def migrate_legacy_shortcut(portproton_path: str, desktop_dir: str | None = None
         for idx, line in enumerate(lines):
             line_end = "\r\n" if line.endswith("\r\n") else "\n"
             line_content = line[:-len(line_end)] if line.endswith(("\n", "\r\n")) else line
-            updated_line = _migrate_appimage_line(line_content, appimage_path)
+            updated_line = _migrate_launcher_line(line_content, launcher_command)
             if updated_line == line_content:
                 continue
 
