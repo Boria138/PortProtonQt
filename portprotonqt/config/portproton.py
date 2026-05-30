@@ -189,9 +189,45 @@ def get_portproton_start_command() -> list[str] | None:
     return None
 
 
+def _update_appimage_command(parts: list[str], appimage_path: str) -> list[str] | None:
+    """Update an AppImage launch command to the current AppImage path."""
+    if not parts or not appimage_path or not os.path.isfile(appimage_path):
+        return None
+
+    if not parts[0].lower().endswith(".appimage"):
+        return None
+
+    updated_parts = parts.copy()
+    updated_parts[0] = appimage_path
+    if "--silent" not in updated_parts:
+        updated_parts.insert(1, "--silent")
+    return updated_parts
+
+
+def _migrate_appimage_line(line: str, appimage_path: str) -> str:
+    """Update AppImage command in desktop Exec or shell script line."""
+    prefix = "Exec=" if line.startswith("Exec=") else ""
+    command = line[len(prefix):].strip() if prefix else line.strip()
+    if not command or command.startswith("#"):
+        return line
+
+    try:
+        parts = shlex.split(command)
+    except ValueError:
+        return line
+
+    updated_parts = _update_appimage_command(parts, appimage_path)
+    if not updated_parts:
+        return line
+    if not prefix and updated_parts[-1:] == ["$@"]:
+        return f'{shlex.join(updated_parts[:-1])} "$@"'
+    return f"{prefix}{shlex.join(updated_parts)}"
+
+
 def migrate_legacy_shortcut(portproton_path: str, desktop_dir: str | None = None) -> int:
     """Migrate legacy PortProton shortcuts in known desktop directories."""
     flatpak_id = os.getenv("FLATPAK_ID", "").strip()
+    appimage_path = os.getenv("APPIMAGE", "").strip()
     user_home = os.path.expanduser("~")
     legacy_home_path = os.path.join(user_home, "PortProton")
     current_home_path = os.path.join(user_home, "PortProtonQt")
@@ -292,6 +328,9 @@ def migrate_legacy_shortcut(portproton_path: str, desktop_dir: str | None = None
                         if "--silent" not in parts:
                             updated_line = f'Exec={shlex.join(["portprotonqt", "--silent", *parts[2:]])}'
 
+                if updated_line.startswith("Exec="):
+                    updated_line = _migrate_appimage_line(updated_line, appimage_path)
+
                 if updated_line == line_content:
                     continue
 
@@ -306,6 +345,40 @@ def migrate_legacy_shortcut(portproton_path: str, desktop_dir: str | None = None
                 migrated += 1
             except OSError as error:
                 logger.warning("Failed to update desktop file %s: %s", entry.path, error)
+
+    steam_scripts_path = os.path.join(portproton_path, "steam_scripts")
+    if not os.path.isdir(steam_scripts_path):
+        return migrated
+
+    for entry in os.scandir(steam_scripts_path):
+        if not entry.name.endswith(".sh") or not entry.is_file():
+            continue
+
+        try:
+            lines = Path(entry.path).read_text(encoding="utf-8").splitlines(keepends=True)
+        except OSError as error:
+            logger.warning("Failed to read steam script %s: %s", entry.path, error)
+            continue
+
+        changed = False
+        for idx, line in enumerate(lines):
+            line_end = "\r\n" if line.endswith("\r\n") else "\n"
+            line_content = line[:-len(line_end)] if line.endswith(("\n", "\r\n")) else line
+            updated_line = _migrate_appimage_line(line_content, appimage_path)
+            if updated_line == line_content:
+                continue
+
+            lines[idx] = f"{updated_line}{line_end}"
+            changed = True
+
+        if not changed:
+            continue
+
+        try:
+            Path(entry.path).write_text("".join(lines), encoding="utf-8")
+            migrated += 1
+        except OSError as error:
+            logger.warning("Failed to update steam script %s: %s", entry.path, error)
     return migrated
 
 
@@ -405,8 +478,11 @@ def create_desktop_file(
     os.makedirs(os.path.dirname(icon_path), exist_ok=True)
 
     flatpak_id = os.getenv("FLATPAK_ID")
+    appimage_path = os.getenv("APPIMAGE", "").strip()
     if flatpak_id:
         exec_str = f'flatpak run {flatpak_id} --silent "{exe_path}"'
+    elif appimage_path and os.path.isfile(appimage_path):
+        exec_str = shlex.join([appimage_path, "--silent", exe_path])
     else:
         exec_str = f'portprotonqt --silent "{exe_path}"'
 
