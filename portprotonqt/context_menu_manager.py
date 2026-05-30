@@ -152,7 +152,9 @@ class ContextMenuManager:
             favorite_action = menu.addAction(self._get_safe_icon("star" if is_favorite else "star_full"), action_text)
             favorite_action.triggered.connect(lambda: self.toggle_favorite_folder(file_explorer, full_path, not is_favorite))
             create_folder_action = menu.addAction(self._get_safe_icon("folder"), _("Create Folder"))
-            create_folder_action.triggered.connect(lambda: self.create_folder(file_explorer))
+            create_folder_action.triggered.connect(
+                lambda: self.create_folder(file_explorer, os.path.dirname(full_path))
+            )
             rename_folder_action = menu.addAction(self._get_safe_icon("edit"), _("Rename Folder"))
             rename_folder_action.triggered.connect(lambda: self.rename_folder(file_explorer, full_path))
             delete_folder_action = menu.addAction(self._get_safe_icon("delete"), _("Delete Folder"))
@@ -280,12 +282,12 @@ class ContextMenuManager:
         if hasattr(parent, "file_list") and parent.file_list:
             parent.file_list.setFocus(Qt.FocusReason.OtherFocusReason)
 
-    def create_folder(self, file_explorer) -> None:
+    def create_folder(self, file_explorer, parent_path: str | None = None) -> None:
         """Create a new folder in the current directory."""
         folder_name = self._prompt_folder_name(file_explorer, _("Create Folder"), _("Folder Name:"))
         if not folder_name:
             return
-        target_path = os.path.join(file_explorer.current_path, folder_name)
+        target_path = os.path.join(parent_path or file_explorer.current_path, folder_name)
         if os.path.exists(target_path):
             self.signals.show_warning_dialog.emit(_("Error"), _("Folder already exists: {folder_name}").format(folder_name=folder_name))
             return
