@@ -3,6 +3,7 @@ import configparser
 import os
 import re
 import shlex
+import sys
 from pathlib import Path
 from portprotonqt.config.base import (
     BaseConfig,
@@ -143,17 +144,27 @@ def save_portdata_path_to_config(portdata_path: str) -> bool:
 
 def get_portproton_scripts_path() -> str | None:
     """Return PortProton scripts directory path."""
+    appdir_prefix = os.getenv("APPDIR")
     sharun_prefix = os.getenv("SHARUN_DIR")
-    prefixes = [("system package", Path("/usr")), ("Flatpak package", Path("/app"))]
+    appimage_path = os.getenv("APPIMAGE", "").strip()
+    prefixes = []
+    if appdir_prefix:
+        prefixes.append(("AppImage appdir", Path(appdir_prefix)))
     if sharun_prefix:
         prefixes.append(("AppImage", Path(sharun_prefix)))
+    if appimage_path:
+        appimage_root = Path(sys.executable).resolve().parent.parent
+        prefixes.append(("AppImage executable", appimage_root))
+    if os.getenv("FLATPAK_ID"):
+        prefixes.append(("Flatpak package", Path("/app")))
+    prefixes.append(("system package", Path("/usr")))
 
     scripts_dirs = (
         ("repository", Path.cwd() / "build-aux" / "share" / "portproton" / "scripts"),
         *[(source, prefix / "share" / "portproton" / "scripts") for source, prefix in prefixes],
     )
     for source, scripts_dir in scripts_dirs:
-        if scripts_dir.exists():
+        if (scripts_dir / "start.sh").is_file():
             logger.info("Using PortProton scripts from %s: %s", source, scripts_dir)
             return str(scripts_dir)
     logger.info(

@@ -16,6 +16,7 @@
 - В пресет MangoHud `PortProton` добавлен параметр `display_server`
 
 ### Fixed
+- Исправлен запуск PortProtonQt AppImage в режиме `--silent`
 - Исправлен запуск добавленных в Steam приложений из AppImage после перемонтирования в новый временный каталог
 - Исправлен выбор системного `MangoHud.conf` в Flatpak: сначала проверяется `~/.home/.config`, затем `XDG_CONFIG_HOME`
 - Добавлена пропущенная поддержка `.cmd` рядом с `.bat`
