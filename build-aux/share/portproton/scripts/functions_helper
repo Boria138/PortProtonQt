@@ -2402,7 +2402,7 @@ pw_optiscaler_sync_files () {
         fi
     done
 
-    if [[ "${PW_USE_OPTISCALER}" != "1" ]] ; then
+    if [[ "${PW_USE_OPTISCALER}" != "1" ]] || [[ "${PW_USE_SPECIALK}" == "1" ]] ; then
         if [[ -f "$PATH_TO_GAME/dlssg_to_fsr3_amd_is_better.dll" ]] ; then
             for dll in $OPTISCALER_FILES ; do rm -fr "$PATH_TO_GAME/$dll"; done
             for dll in $ORIGINAL_GAME_DLLS ; do [[ -e "$PATH_TO_GAME/${dll}.b" ]] && mv -f "$PATH_TO_GAME/${dll}.b" "$PATH_TO_GAME/${dll}" 2>/dev/null; done
@@ -2430,6 +2430,91 @@ pw_optiscaler_sync_files () {
     fi
     export PW_USE_NVAPI_AND_DLSS="1"
     set_to_dxvk_conf nvidia_new
+}
+
+pw_specialk_set_ini_value () {
+    local ini_file section key value
+    ini_file="$1"
+    section="$2"
+    key="$3"
+    value="$4"
+
+    [[ -f "$ini_file" ]] && sed -i '/./,$!d' "$ini_file"
+
+    if grep -q "^\[$section\]" "$ini_file" ; then
+        if sed -n "/^\[$section\]/,/^\[/{p}" "$ini_file" | grep -q "^$key=" ; then
+            sed -i "/^\[$section\]/,/^\[/{s/^$key=.*/$key=$value/}" "$ini_file"
+        else
+            sed -i "/^\[$section\]/a $key=$value" "$ini_file"
+        fi
+    else
+        [[ -s "$ini_file" ]] && printf '\n' >> "$ini_file"
+        printf '[%s]\n%s=%s\n' "$section" "$key" "$value" >> "$ini_file"
+    fi
+}
+
+pw_specialk_sync_files () {
+    local SPECIALK_PATH SPECIALK_DLLS dll PW_SK_DLL_NAME PW_SK_ARCH_DLL PW_SK_INI_FILE PW_SK_VERSION_FILE
+
+    SPECIALK_PATH="${PW_PLUGINS_PATH}/specialk/specialk-${PW_SPECIALK_VER}"
+    SPECIALK_DLLS="d3d9.dll d3d11.dll dinput8.dll dxgi.dll opengl32.dll"
+    PW_SK_VERSION_FILE="$PATH_TO_GAME/specialk_version"
+
+    if [[ "${PW_USE_SPECIALK}" != "1" ]] ; then
+        if [[ -f "$PW_SK_VERSION_FILE" ]] ; then
+            for dll in $SPECIALK_DLLS ; do rm -fr "$PATH_TO_GAME/$dll"; done
+            for dll in $SPECIALK_DLLS ; do [[ -e "$PATH_TO_GAME/${dll}.b" ]] && mv -f "$PATH_TO_GAME/${dll}.b" "$PATH_TO_GAME/${dll}" 2>/dev/null; done
+            for dll in $SPECIALK_DLLS ; do try_remove_file "$PATH_TO_GAME/${dll%.*}.ini"; done
+            for dll in $SPECIALK_DLLS ; do try_remove_file "$PATH_TO_GAME/custom_${dll%.*}.ini"; done
+            try_remove_file "$PW_SK_VERSION_FILE"
+        fi
+        return 0
+    fi
+
+    if [[ ! -d "$SPECIALK_PATH" ]] && try_download "github.com/SpecialKO/SpecialK/releases/download/${PW_SPECIALK_VER}/SpecialK.7z" "${PORT_DATA_PATH}/data/tmp/SpecialK.7z" ; then
+        create_new_dir "$SPECIALK_PATH"
+        if [[ -z "$pw_7z" ]] ; then
+            if command -v 7z &>/dev/null ; then pw_7z="7z"; else pw_7z="${PW_PLUGINS_PATH}/portable/lib/p7zip/7z"; fi
+        fi
+        $pw_7z x "${PORT_DATA_PATH}/data/tmp/SpecialK.7z" -o"$SPECIALK_PATH" >/dev/null
+        try_remove_file "${PORT_DATA_PATH}/data/tmp/SpecialK.7z"
+    fi
+
+    if [[ -d "$SPECIALK_PATH" ]] ; then
+        local DETECT_OUT HIGHEST_DX USES_OGL
+        DETECT_OUT=$(python_module graphics_detector "$PW_EXE_FILE")
+        HIGHEST_DX=$(echo "$DETECT_OUT" | grep "^HIGHEST_DX=" | cut -d'=' -f2)
+        USES_OGL=$(echo "$DETECT_OUT" | grep "^USES_OGL=" | cut -d'=' -f2)
+
+        PW_SK_DLL_NAME="dxgi.dll"
+        case "$HIGHEST_DX" in
+            "DirectX 12") PW_SK_DLL_NAME="dxgi.dll" ;;
+            "DirectX 11") PW_SK_DLL_NAME="d3d11.dll" ;;
+            "DirectX 9")  PW_SK_DLL_NAME="d3d9.dll" ;;
+            "DirectX 8"|"DirectDraw") return 0 ;;
+            *) [[ "$USES_OGL" == "true" ]] && PW_SK_DLL_NAME="opengl32.dll" || PW_SK_DLL_NAME="dxgi.dll" ;;
+        esac
+        if file "$PW_EXE_FILE" | grep -q "x86-64" ; then
+            PW_SK_ARCH_DLL="SpecialK64.dll"
+        else
+            PW_SK_ARCH_DLL="SpecialK32.dll"
+        fi
+
+        if [[ -f "$SPECIALK_PATH/$PW_SK_ARCH_DLL" ]] ; then
+            PW_SK_INI_FILE="$PATH_TO_GAME/custom_${PW_SK_DLL_NAME%.*}.ini"
+            if [[ ! -f "$PW_SK_VERSION_FILE" ]] && [[ -f "$PATH_TO_GAME/$PW_SK_DLL_NAME" ]] && [[ ! -f "$PATH_TO_GAME/${PW_SK_DLL_NAME}.b" ]] ; then
+                mv -f "$PATH_TO_GAME/$PW_SK_DLL_NAME" "$PATH_TO_GAME/${PW_SK_DLL_NAME}.b"
+            fi
+            if [[ ! -f "$PW_SK_VERSION_FILE" ]] || ! grep -q "$PW_SPECIALK_VER" "$PW_SK_VERSION_FILE" ; then
+                cp -f "$SPECIALK_PATH/$PW_SK_ARCH_DLL" "$PATH_TO_GAME/$PW_SK_DLL_NAME"
+                echo "$PW_SPECIALK_VER" > "$PW_SK_VERSION_FILE"
+            fi
+            var_winedlloverride_update "${PW_SK_DLL_NAME%.*}=n,b"
+            pw_specialk_set_ini_value "$PW_SK_INI_FILE" "Compatibility.General" "UsingWINE" "true"
+            pw_specialk_set_ini_value "$PW_SK_INI_FILE" "Steam.Log" "Silent" "true"
+        fi
+    fi
+
 }
 
 pw_prepare_gamescope_launch () {
@@ -2855,6 +2940,7 @@ start_portproton () {
     fi
 
     pw_optiscaler_sync_files
+    pw_specialk_sync_files
 
     if [[ "${PW_USE_RAY_TRACING}" == "1" ]] ; then
         var_vkd3d_config_update dxr
@@ -3154,7 +3240,7 @@ start_portproton () {
     fi
 
     # DGVOODOO2 enable:
-    if [[ "${PW_DGVOODOO2}" == "1" ]] ; then
+    if [[ "${PW_DGVOODOO2}" == "1" ]] && [[ "${PW_USE_SPECIALK}" != "1" ]] ; then
         if [[ ! -f "${PW_VULKAN_DIR}/dgvoodoo2-${DGV2_VER}/dgVoodoo.conf" ]] ; then
             print_info "Download and install DGVOODOO2 v.${DGV2_VER}"
             if try_download "https://github.com/Castro-Fidel/vulkan/releases/download/dgvoodoo2-${DGV2_VER}/dgvoodoo2-${DGV2_VER}.tar.xz" \
@@ -3401,7 +3487,7 @@ start_portproton () {
                     try_force_link_file "${PATH_TO_DXVK_FILES}/x32/${wine_dxvk_dll}.dll" "${WINEPREFIX}/drive_c/windows/syswow64/${wine_dxvk_dll}.dll"
                     try_force_link_file "${PATH_TO_DXVK_FILES}/x64/${wine_dxvk_dll}.dll" "${WINEPREFIX}/drive_c/windows/system32/${wine_dxvk_dll}.dll" ;;
             esac
-            if [[ $PW_USE_OPTISCALER == "1" ]] && [[ $wine_dxvk_dll == "dxgi" ]]
+            if [[ $PW_USE_OPTISCALER == "1" ]] && [[ $PW_USE_SPECIALK != "1" ]] && [[ $wine_dxvk_dll == "dxgi" ]]
             then var_winedlloverride_update "dxgi=n,b"
             else var_winedlloverride_update "${wine_dxvk_dll}=n"
             fi
@@ -3878,6 +3964,7 @@ steamplay_launch () {
         fi
 
         pw_optiscaler_sync_files
+        pw_specialk_sync_files
 
         PORT_WINE_PREFIX="$STEAM_COMPAT_DATA_PATH/pfx"
 
@@ -4122,7 +4209,7 @@ export -f gui_proton_downloader
 gui_edit_db () {
     KEY_EDIT_DB_GUI=$RANDOM
     DISABLE_EDIT_DB_LIST=""
-    PW_EDIT_DB_LIST=(PW_MANGOHUD PW_MANGOHUD_USER_CONF PW_VKBASALT PW_VKBASALT_USER_CONF PW_DGVOODOO2
+    PW_EDIT_DB_LIST=(PW_MANGOHUD PW_MANGOHUD_USER_CONF PW_VKBASALT PW_VKBASALT_USER_CONF PW_DGVOODOO2 PW_USE_SPECIALK
     PW_USE_ESYNC PW_USE_FSYNC PW_USE_NTSYNC PW_USE_RAY_TRACING PW_USE_NVAPI_AND_DLSS PW_USE_OPTISCALER
     PW_USE_LS_FRAME_GEN PW_WINE_FULLSCREEN_FSR PW_HIDE_NVIDIA_GPU PW_VIRTUAL_DESKTOP PW_USE_TERMINAL
     PW_USE_GAMEMODE PW_USE_INHIBIT_SLEEP PW_USE_D3D_EXTRAS PW_FIX_VIDEO_IN_GAME PW_REDUCE_PULSE_LATENCY
@@ -4155,6 +4242,7 @@ gui_edit_db () {
     if [[ "$PW_VULKAN_USE" == "0" ]] ; then
         DISABLE_EDIT_DB_LIST+=" PW_VKBASALT PW_VKBASALT_USER_CONF PW_USE_RAY_TRACING PW_USE_OBS_VKCAPTURE PW_USE_GALLIUM_ZINK PW_USE_WINED3D_VULKAN"
     fi
+    [[ "${PW_USE_SPECIALK}" == "1" ]] && DISABLE_EDIT_DB_LIST+=" PW_DGVOODOO2 PW_USE_OPTISCALER"
 
     [[ ! -e "/dev/ntsync" ]] && DISABLE_EDIT_DB_LIST+=" PW_USE_NTSYNC"
 

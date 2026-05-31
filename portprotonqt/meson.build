@@ -123,6 +123,7 @@ install_data(
   ['scripts_utils/__init__.py',
    'scripts_utils/dbus_tools.py',
    'scripts_utils/easyterm.py',
+   'scripts_utils/graphics_detector.py',
    'scripts_utils/idle_inhibit.py',
    'scripts_utils/mount_points.py',
    'scripts_utils/prefix_backup.py',
