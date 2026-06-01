@@ -850,7 +850,7 @@ class DetailPageManager:
         buttons_layout.addWidget(install_button)
 
         open_button = self._make_action_button(
-            _("Open Game"),
+            _("Open Card"),
             self.main_window.theme_manager.get_icon("play", as_path=True),
         )
         open_button.clicked.connect(
@@ -872,24 +872,23 @@ class DetailPageManager:
     ) -> None:
         """Check install status asynchronously and update button."""
         def on_result(is_installed: bool) -> None:
-            if (
-                self.main_window.installing
-                and self.main_window.current_install_script == script_name
-            ):
-                icon = self.main_window.theme_manager.get_icon("stop", as_path=True)
-                if icon:
-                    install_button.setIcon(icon)
-                install_button.setText(_("Stop"))
-                return
-
             text = _("Reinstall") if is_installed else _("Install")
             icon_name = "update" if is_installed else "save"
             icon = self.main_window.theme_manager.get_icon(icon_name, as_path=True)
             if icon:
                 install_button.setIcon(icon)
-            # Update text without changing button size drastically
             install_button.setText(text)
             open_button.setVisible(is_installed)
+
+            if (
+                self.main_window.installing
+                and self.main_window.current_install_script == script_name
+            ):
+                self.main_window._set_install_button_stop(install_button)
+                status = getattr(self.main_window, "current_install_status", None)
+                percent = getattr(self.main_window, "current_percent", None)
+                self.main_window._set_install_button_progress_text(status, percent)
+                return
 
         check_autoinstall_installed(
             script_name, name, self.main_window.portproton_location, callback=on_result
@@ -925,6 +924,7 @@ class DetailPageManager:
     def _remove_current_detail_page(self) -> None:
         page = self.main_window.currentDetailPage
         if page and self._page_in_stacked(page):
+            self.main_window.detach_install_button(page)
             self.main_window.stackedWidget.removeWidget(page)
             page.deleteLater()
         self.main_window.currentDetailPage = None
@@ -1153,6 +1153,7 @@ class DetailPageManager:
                 self._finalize_cleanup()
                 return
 
+            self.main_window.detach_install_button(page)
             self.main_window.stackedWidget.removeWidget(page)
             page.deleteLater()
             return_tab_index = getattr(self, "_return_to_tab_index", 0)

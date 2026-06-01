@@ -541,6 +541,21 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             button.setIcon(icon)
         button.setText(_("Stop"))
 
+    def detach_install_button(self, page: QWidget) -> None:
+        """Detach install button before its detail page is deleted."""
+        button = self.current_install_button
+        if button is None:
+            return
+        try:
+            if page.isAncestorOf(button):
+                self.current_install_button = None
+                self.current_install_button_text = None
+                self.current_install_button_icon = None
+        except RuntimeError:
+            self.current_install_button = None
+            self.current_install_button_text = None
+            self.current_install_button_icon = None
+
     def _set_install_button_progress_text(
         self, status: str | None = None, percent: float | None = None
     ) -> None:
