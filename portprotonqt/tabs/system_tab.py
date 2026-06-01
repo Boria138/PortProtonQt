@@ -867,6 +867,11 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
     def _setupSystemPowerActionButtons(self, layout) -> None:
         buttons_layout = QHBoxLayout()
 
+        self.systemLogoutButton = AutoSizeButton(_("Logout"), icon=self.theme_manager.get_icon("exit", as_path=True))
+        self.systemLogoutButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        self.systemLogoutButton.clicked.connect(self.logoutSystem)
+        buttons_layout.addWidget(self.systemLogoutButton)
+
         self.systemRebootButton = AutoSizeButton(_("Reboot"), icon=self.theme_manager.get_icon("reboot", as_path=True))
         self.systemRebootButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.systemRebootButton.clicked.connect(self.rebootSystem)
@@ -886,19 +891,25 @@ class MainWindowSystemTabMixin(_MainWindowTypingBase):
         layout.addLayout(buttons_layout)
         layout.addStretch()
 
-    def _runSystemctlAction(self, action: str) -> None:
-        if QProcess.startDetached("systemctl", [action]):
+    def _runLoginctlAction(self, action: str) -> None:
+        args = [action]
+        if action == "terminate-session":
+            args.append("self")
+        if QProcess.startDetached("loginctl", args):
             return
-        logger.error("Failed to execute systemctl %s", action)
+        logger.error("Failed to execute loginctl %s", " ".join(args))
 
     def rebootSystem(self) -> None:
-        self._runSystemctlAction("reboot")
+        self._runLoginctlAction("reboot")
 
     def shutdownSystem(self) -> None:
-        self._runSystemctlAction("poweroff")
+        self._runLoginctlAction("poweroff")
 
     def suspendSystem(self) -> None:
-        self._runSystemctlAction("suspend")
+        self._runLoginctlAction("suspend")
+
+    def logoutSystem(self) -> None:
+        self._runLoginctlAction("terminate-session")
 
     def loadSystemNetworks(self) -> None:
         self.runNetworkOperation("load")
