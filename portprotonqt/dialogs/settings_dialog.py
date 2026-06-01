@@ -916,14 +916,8 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
         changes.extend(mangohud_changes)
         changes.extend(gamescope_changes)
 
-        # Check if PW_MANGOHUD or PW_GAMESCOPE toggle changes are already in the list
-        has_mangohud_toggle = any(change.startswith("PW_MANGOHUD=") for change in mangohud_changes)
+        # Check if PW_GAMESCOPE toggle changes are already in the list
         has_gamescope_toggle = any(change.startswith("PW_GAMESCOPE=") for change in gamescope_changes)
-
-        # Only force-enable if there are other changes but no explicit toggle change
-        if mangohud_changes and not has_mangohud_toggle:
-            changes = [change for change in changes if not change.startswith("PW_MANGOHUD=")]
-            changes.append("PW_MANGOHUD=1")
 
         if gamescope_changes and not has_gamescope_toggle:
             changes = [change for change in changes if not change.startswith("PW_GAMESCOPE=")]
