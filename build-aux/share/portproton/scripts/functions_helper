@@ -1366,7 +1366,7 @@ ${PW_PV_OVERRIDES}/i386-linux-gnu/aliases:\
 
     export PW_PATH="${PW_PLUGINS_PATH}/portable/bin${PATH:+:$PATH}"
 
-    if [[ "$PW_LOG" == "1" ]] ; then
+    if [[ "$SLR_DEBUG" == "1" ]] ; then
         PW_ADD_TO_ARGS_IN_RUNTIME="--verbose $PW_ADD_TO_ARGS_IN_RUNTIME"
     fi
 
