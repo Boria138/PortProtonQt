@@ -2246,10 +2246,9 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
         assert self.portproton_location is not None
         prefix_path = os.path.join(self.portproton_location, "data", "prefixes", selected_prefix)
-        wine_path = os.path.join(self.portproton_location, "data", "dist", selected_wine, "bin", "wine")
 
         # Open Winetricks dialog
-        dialog = WinetricksDialog(self, self.theme, prefix_path, wine_path)
+        dialog = WinetricksDialog(self, self.theme, prefix_path, selected_wine)
         dialog.exec()
 
     def createPortProtonTab(self):
