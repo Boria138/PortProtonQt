@@ -970,7 +970,7 @@ msgstr ""
 msgid "Install"
 msgstr ""
 
-msgid "Open Game"
+msgid "Open Card"
 msgstr ""
 
 msgid "Reinstall"

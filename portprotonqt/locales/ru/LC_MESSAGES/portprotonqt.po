@@ -1074,8 +1074,9 @@ msgstr "Создать лог"
 msgid "Install"
 msgstr "Установить"
 
-msgid "Open Game"
-msgstr "Открыть игру"
+#, fuzzy
+msgid "Open Card"
+msgstr "Открыть PPDB"
 
 msgid "Reinstall"
 msgstr "Переустановить"

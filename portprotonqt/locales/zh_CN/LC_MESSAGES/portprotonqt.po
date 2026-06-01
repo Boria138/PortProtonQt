@@ -1056,8 +1056,8 @@ msgid "Install"
 msgstr "安装"
 
 #, fuzzy
-msgid "Open Game"
-msgstr "停止游戏"
+msgid "Open Card"
+msgstr "打开 PPDB"
 
 msgid "Reinstall"
 msgstr "重新安装"

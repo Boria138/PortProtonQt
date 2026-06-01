@@ -1009,7 +1009,7 @@ msgid "Install"
 msgstr ""
 
 #, fuzzy
-msgid "Open Game"
+msgid "Open Card"
 msgstr "Detener partida"
 
 msgid "Reinstall"
