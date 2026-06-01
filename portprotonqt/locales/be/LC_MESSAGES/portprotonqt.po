@@ -2105,6 +2105,9 @@ msgstr ""
 msgid "Output"
 msgstr ""
 
+msgid "Logout"
+msgstr ""
+
 msgid "Reboot"
 msgstr ""
 
@@ -2119,4 +2122,3 @@ msgstr ""
 
 msgid "Not selected"
 msgstr ""
-

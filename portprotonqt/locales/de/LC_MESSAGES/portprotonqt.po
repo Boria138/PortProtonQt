@@ -2150,6 +2150,9 @@ msgstr ""
 msgid "Output"
 msgstr ""
 
+msgid "Logout"
+msgstr ""
+
 msgid "Reboot"
 msgstr ""
 

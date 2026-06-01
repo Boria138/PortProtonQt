@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-05-28 10:08+0500\n"
+"POT-Creation-Date: 2026-06-01 10:40+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2145,6 +2145,9 @@ msgid "Playback devices"
 msgstr ""
 
 msgid "Output"
+msgstr ""
+
+msgid "Logout"
 msgstr ""
 
 msgid "Reboot"

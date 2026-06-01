@@ -2236,6 +2236,9 @@ msgstr "Устройства воспроизведения"
 msgid "Output"
 msgstr "Вывод"
 
+msgid "Logout"
+msgstr ""
+
 msgid "Reboot"
 msgstr "Перезагрузить"
 
