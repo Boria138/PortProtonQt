@@ -253,11 +253,11 @@ def get_advanced_settings(disabled_text, logical_core_options=None, locale_optio
         'default': ''
     })
 
-    # 7. Run second executable after launch
+    # 7. Run second executable or wrapper command
     advanced_settings.append({
         'key': 'PW_RUN_AFTER_EXE',
-        'name': _("Run After Exe"),
-        'description': _("Path to a second .exe that should be started after the main executable."),
+        'name': _("Run After / Wrapper"),
+        'description': _("Path to a second .exe, script, or wrapper command. Example: systemd-run --user --scope --slice=app.slice"),
         'type': 'text',
         'default': ''
     })

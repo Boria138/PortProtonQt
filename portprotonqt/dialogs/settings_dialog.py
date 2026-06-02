@@ -91,6 +91,11 @@ def _normalize_prefix_directories(prefixes_dir):
             logger.warning("Failed to rename prefix %s: %s", prefix_name, exc)
 
 
+def _format_setting_value_for_display(value: str) -> str:
+    """Hide shell-escaped quotes in GUI fields."""
+    return value.replace('\\"', '"')
+
+
 def _get_numa_nodes() -> dict[str, str]:
     """Read NUMA nodes from lscpu output."""
     try:
@@ -247,10 +252,24 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
         normalized = os.path.normpath(os.path.expanduser(exe_path))
         if os.path.isabs(normalized):
             return normalized
+        if " " in exe_path:
+            return exe_path
         game_dir = os.path.dirname(self.exe_path or "")
         if not game_dir:
             return normalized
         return os.path.normpath(os.path.join(game_dir, normalized))
+
+    def _get_setting_file_selector_path(self, current_path: str) -> str:
+        """Get initial path for setting file selectors."""
+        initial_path = os.path.expanduser("~")
+        if not current_path:
+            return initial_path
+        normalized = self._resolve_run_after_exe_path(current_path)
+        if os.path.isfile(normalized):
+            return os.path.dirname(normalized)
+        if os.path.isdir(normalized):
+            return normalized
+        return initial_path
 
     def setup_ui(self):
         """Set up the user interface."""
@@ -451,6 +470,7 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
                         ):
                             if val.startswith('"') and val.endswith('"') and len(val) >= 2:
                                 val = val[1:-1]
+                            val = _format_setting_value_for_display(val)
                             self.current_settings[key] = val
                     except ValueError:
                         continue
@@ -736,23 +756,20 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
                         browse_button.setEnabled(False)
 
                     def open_run_after_exe_selector(
-                        _checked: bool = False, target_line_edit=line_edit
+                        _checked: bool = False,
+                        target_line_edit=line_edit,
+                        file_filter="",
                     ):
                         from portprotonqt.dialogs.file_explorer import FileExplorer
 
-                        initial_path = os.path.expanduser("~")
-                        current_path = target_line_edit.text().strip()
-                        if current_path:
-                            normalized = self._resolve_run_after_exe_path(current_path)
-                            if os.path.isfile(normalized):
-                                initial_path = os.path.dirname(normalized)
-                            elif os.path.isdir(normalized):
-                                initial_path = normalized
+                        initial_path = self._get_setting_file_selector_path(
+                            target_line_edit.text().strip()
+                        )
 
                         file_explorer = FileExplorer(
                             self,
                             theme=self.theme,
-                            file_filter=".exe",
+                            file_filter=file_filter,
                             initial_path=initial_path,
                         )
                         file_explorer.file_signal.file_selected.connect(
