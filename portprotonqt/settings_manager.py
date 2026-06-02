@@ -1,7 +1,11 @@
 import os
+import shutil
 import subprocess
+from pathlib import Path
 
 from portprotonqt.logger import get_logger
+from portprotonqt.version_utils import include_pinned_prefixes
+from portprotonqt.version_utils import version_sort_key
 
 logger = get_logger(__name__)
 LG_WINE_ALIASES = (
@@ -38,6 +42,58 @@ def resolve_lg_wine_alias(wine_version: str, env_vars: dict[str, str]) -> str:
             return env_vars.get(version_key, wine_version)
 
     return wine_version
+
+
+def get_available_wine_options(
+    portproton_path: str,
+    system_wine_label: str = "",
+    steam_only: bool = False
+) -> list[str]:
+    dist_dir = os.path.join(portproton_path, "data", "dist")
+    options = []
+    if os.path.exists(dist_dir):
+        options = sorted(
+            [f for f in os.listdir(dist_dir) if os.path.isdir(os.path.join(dist_dir, f))],
+            key=version_sort_key
+        )
+
+    from portprotonqt.config import get_portproton_scripts_path
+    scripts_path = get_portproton_scripts_path()
+    if scripts_path:
+        var_path = os.path.join(scripts_path, "var")
+        for version in read_lg_dist_versions_from_var(var_path).values():
+            if version not in options:
+                options.append(version)
+
+    from portprotonqt.steam_api import get_steam_proton_versions
+    from portprotonqt.steam_api.utils import _is_steam_proton_dir
+    for version in get_steam_proton_versions():
+        if version not in options:
+            options.append(version)
+
+    if steam_only:
+        options = [
+            version for version in options
+            if _is_steam_proton_dir(
+                Path(version) if os.path.isabs(version) else Path(dist_dir, version)
+            )
+        ]
+    elif system_wine_label and shutil.which('wine') and system_wine_label not in options:
+        options.append(system_wine_label)
+
+    options.sort(key=version_sort_key)
+    return options
+
+
+def get_available_prefix_options(portproton_path: str) -> list[str]:
+    prefixes_dir = os.path.join(portproton_path, "data", "prefixes")
+    prefixes = []
+    if os.path.exists(prefixes_dir):
+        prefixes = [
+            name for name in os.listdir(prefixes_dir)
+            if os.path.isdir(os.path.join(prefixes_dir, name))
+        ]
+    return include_pinned_prefixes(prefixes)
 
 
 def get_available_locale_options() -> list[str]:

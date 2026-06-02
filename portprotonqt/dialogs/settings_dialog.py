@@ -2,9 +2,7 @@
 
 import os
 import re
-import shutil
 import subprocess
-from pathlib import Path
 from typing import cast, TYPE_CHECKING
 
 from PySide6.QtCore import Qt, QObject, QEvent, QProcess, QTimer, QUrl
@@ -46,12 +44,13 @@ from portprotonqt.logger import get_logger
 from portprotonqt.preloader import Preloader
 from portprotonqt.settings_manager import (
     ADVANCED_SETTING_KEYS,
+    get_available_prefix_options,
+    get_available_wine_options,
     get_advanced_settings,
     get_toggle_settings,
     read_lg_dist_versions_from_var,
 )
 from portprotonqt.theme_manager import ThemeManager
-from portprotonqt.version_utils import include_pinned_prefixes, version_sort_key
 from portprotonqt.virtual_keyboard import VirtualKeyboard
 
 logger = get_logger(__name__)
@@ -142,42 +141,18 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
         self.lg_dist_aliases = {}
         self.prefix_options = []
         if self.portproton_path:
-            dist_dir = os.path.join(self.portproton_path, "data", 'dist')
-            if os.path.exists(dist_dir):
-                self.dist_options = sorted(
-                    [f for f in os.listdir(dist_dir) if os.path.isdir(os.path.join(dist_dir, f))],
-                    key=version_sort_key
-                )
             scripts_path = get_portproton_scripts_path()
             if scripts_path:
                 var_path = os.path.join(scripts_path, "var")
                 self.lg_dist_aliases = read_lg_dist_versions_from_var(var_path)
-                for version in self.lg_dist_aliases.values():
-                    if version not in self.dist_options:
-                        self.dist_options.append(version)
-            from portprotonqt.steam_api import get_steam_proton_versions
-            from portprotonqt.steam_api.utils import _is_steam_proton_dir
-            for version in get_steam_proton_versions():
-                if version not in self.dist_options:
-                    self.dist_options.append(version)
-            if self.game_source == "steam":
-                self.dist_options = [
-                    version for version in self.dist_options
-                    if _is_steam_proton_dir(
-                        Path(version) if os.path.isabs(version) else Path(dist_dir, version)
-                    )
-                ]
-            self.dist_options.sort(key=version_sort_key)
+            system_wine_label = "" if self.game_source == "steam" else _('System WINE')
+            self.dist_options = get_available_wine_options(
+                self.portproton_path, system_wine_label, self.game_source == "steam"
+            )
             prefixes_dir = os.path.join(self.portproton_path, 'prefixes')
-            prefixes = []
             if os.path.exists(prefixes_dir):
                 _normalize_prefix_directories(prefixes_dir)
-                prefixes = [f for f in os.listdir(prefixes_dir) if os.path.isdir(os.path.join(prefixes_dir, f))]
-            self.prefix_options = include_pinned_prefixes(prefixes)
-
-        if self.game_source != "steam" and shutil.which('wine'):
-            if _('System WINE') not in self.dist_options:
-                self.dist_options.append(_('System WINE'))
+            self.prefix_options = get_available_prefix_options(self.portproton_path)
 
         self.current_settings = {}
         self.value_widgets = {}

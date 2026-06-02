@@ -396,6 +396,10 @@ Usage examples:
             done < <(grep -E '^export ' "$USER_CONF" 2>/dev/null | sed -E 's/[[:space:]]*#.*$//' | sed '/^[[:space:]]*$/d')
         fi
 
+        [[ -n "${PW_DEFAULT_WINE_USE:-}" && -z "${all_vars[PW_WINE_USE]+x}" ]] && all_vars["PW_WINE_USE"]="$PW_DEFAULT_WINE_USE"
+        [[ -n "${PW_DEFAULT_PREFIX_NAME:-}" && -z "${all_vars[PW_PREFIX_NAME]+x}" ]] && all_vars["PW_PREFIX_NAME"]="$PW_DEFAULT_PREFIX_NAME"
+        [[ -n "${PW_DEFAULT_VULKAN_USE:-}" && -z "${all_vars[PW_VULKAN_USE]+x}" ]] && all_vars["PW_VULKAN_USE"]="$PW_DEFAULT_VULKAN_USE"
+
         while IFS='=' read -r key val; do
             key="${key#export }"
             val="${val#\"}"
