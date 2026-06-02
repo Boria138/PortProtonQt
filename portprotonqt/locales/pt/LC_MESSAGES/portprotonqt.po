@@ -1329,9 +1329,6 @@ msgstr ""
 msgid "Failed to remove PPDB file:\n"
 msgstr ""
 
-msgid "PPDB settings cleared."
-msgstr ""
-
 msgid "disabled"
 msgstr ""
 

@@ -1389,9 +1389,6 @@ msgstr "确定要清除设置吗？此操作无法撤销。"
 msgid "Failed to remove PPDB file:\n"
 msgstr "移除 PPDB 文件失败：\n"
 
-msgid "PPDB settings cleared."
-msgstr "PPDB 设置已清除。"
-
 msgid "disabled"
 msgstr "已禁用"
 

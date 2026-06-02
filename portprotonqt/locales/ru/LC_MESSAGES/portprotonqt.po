@@ -1405,9 +1405,6 @@ msgstr "Вы уверены, что хотите сбросить настрой
 msgid "Failed to remove PPDB file:\n"
 msgstr "Не удалось удалить файл PPDB:\n"
 
-msgid "PPDB settings cleared."
-msgstr "Настройки PPDB сброшенны."
-
 msgid "disabled"
 msgstr "отключено"
 

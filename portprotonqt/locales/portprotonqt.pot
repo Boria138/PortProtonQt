@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-06-01 11:23+0500\n"
+"POT-Creation-Date: 2026-06-02 22:39+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1325,9 +1325,6 @@ msgid "Are you sure you want to clear settings? This action cannot be undone."
 msgstr ""
 
 msgid "Failed to remove PPDB file:\n"
-msgstr ""
-
-msgid "PPDB settings cleared."
 msgstr ""
 
 msgid "disabled"

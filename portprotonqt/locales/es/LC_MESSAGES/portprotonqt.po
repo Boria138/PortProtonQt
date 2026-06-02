@@ -1338,9 +1338,6 @@ msgstr ""
 msgid "Failed to remove PPDB file:\n"
 msgstr "No se pudo cambiar el nombre de la carpeta: {error}"
 
-msgid "PPDB settings cleared."
-msgstr ""
-
 msgid "disabled"
 msgstr ""
 
