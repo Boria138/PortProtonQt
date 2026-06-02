@@ -552,7 +552,6 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
             QMessageBox.warning(self, _("Error"), _("Failed to remove PPDB file:\n") + db_path)
             return
 
-        QMessageBox.information(self, _("Success"), _("PPDB settings cleared."))
         self.load_current_settings()
 
     def populate_table(self):
