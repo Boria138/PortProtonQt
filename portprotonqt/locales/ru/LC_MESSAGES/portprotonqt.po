@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-03-22 13:50+0500\n"
-"PO-Revision-Date: 2026-05-29 13:53+0000\n"
+"PO-Revision-Date: 2026-06-02 07:07+0000\n"
 "Last-Translator: Boria138 <boria138@noreply.codeberg.org>\n"
 "Language-Team: Russian <https://translate.codeberg.org/projects/portprotonqt/"
 "portprotonqt/ru/>\n"
@@ -1074,9 +1074,8 @@ msgstr "Создать лог"
 msgid "Install"
 msgstr "Установить"
 
-#, fuzzy
 msgid "Open Card"
-msgstr "Открыть PPDB"
+msgstr "Открыть карточку"
 
 msgid "Reinstall"
 msgstr "Переустановить"
@@ -2238,7 +2237,7 @@ msgid "Output"
 msgstr "Вывод"
 
 msgid "Logout"
-msgstr ""
+msgstr "Выйти"
 
 msgid "Reboot"
 msgstr "Перезагрузить"
