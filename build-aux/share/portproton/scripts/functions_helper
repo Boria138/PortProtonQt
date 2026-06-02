@@ -2402,8 +2402,9 @@ pw_optiscaler_sync_files () {
         fi
     done
 
-    if [[ "${PW_USE_OPTISCALER}" != "1" ]] || [[ "${PW_USE_SPECIALK}" == "1" ]] ; then
-        if [[ -f "$PATH_TO_GAME/dlssg_to_fsr3_amd_is_better.dll" ]] ; then
+    if [[ "${PW_USE_OPTISCALER}" != "1" ]] ; then
+        if [[ -f "$PATH_TO_GAME/optiscaler_version" ]]
+        then
             for dll in $OPTISCALER_FILES ; do rm -fr "$PATH_TO_GAME/$dll"; done
             for dll in $ORIGINAL_GAME_DLLS ; do [[ -e "$PATH_TO_GAME/${dll}.b" ]] && mv -f "$PATH_TO_GAME/${dll}.b" "$PATH_TO_GAME/${dll}" 2>/dev/null; done
             try_remove_file "$PATH_TO_GAME/optiscaler_version"
@@ -2420,10 +2421,19 @@ pw_optiscaler_sync_files () {
     check_variables OPTISCALER_FG_TYPE "Nukems"
     sed -i "s|FGType =.*|FGType = $OPTISCALER_FG_TYPE|g" "$OPTISCALER_PATH/OptiScaler.ini"
     echo "" > "$PATH_TO_GAME/dxvk.conf"
+    if [[ -f "$PATH_TO_GAME/dxgi.dll" ]] \
+    && [[ -f "$PATH_TO_GAME/specialk_version" ]]
+    then
+        create_new_dir "$PATH_TO_GAME/plugins"
+        mv -f "$PATH_TO_GAME/dxgi.dll" "$PATH_TO_GAME/plugins/dxgi.dll"
+        mv -f "$PATH_TO_GAME/specialk_version" "$PATH_TO_GAME/plugins/specialk_version"
+    fi
     if [[ ! -f "$PATH_TO_GAME/dlssg_to_fsr3_amd_is_better.dll" && -f "$PATH_TO_GAME/dxgi.dll" ]] ; then
         fatal 'dxgi.dll is already present in the game folder!\nThis script uses dxgi.dll to load required files.\nRemove the mod using dxgi.dll.'
     fi
-    for dll in $ORIGINAL_GAME_DLLS ; do [[ -e "$PATH_TO_GAME/$dll" && ! -e "$PATH_TO_GAME/${dll}.b" ]] && mv -f "$PATH_TO_GAME/$dll" "$PATH_TO_GAME/${dll}.b" 2>/dev/null; done
+    if [[ ! -f "$PATH_TO_GAME/optiscaler_version" ]] ; then
+        for dll in $ORIGINAL_GAME_DLLS ; do [[ -e "$PATH_TO_GAME/$dll" && ! -e "$PATH_TO_GAME/${dll}.b" ]] && mv -f "$PATH_TO_GAME/$dll" "$PATH_TO_GAME/${dll}.b" 2>/dev/null; done
+    fi
     if [[ ! -f "$PATH_TO_GAME/optiscaler_version" ]] || ! grep -q "$PW_OPTISCALER_VER" "$PATH_TO_GAME/optiscaler_version" ; then
         for dll in $OPTISCALER_FILES ; do cp -fr "$OPTISCALER_PATH/$dll" "$PATH_TO_GAME/$dll" || print_error "$OPTISCALER_PATH/$dll not found for copy!"; done
         echo "$PW_OPTISCALER_VER" > "$PATH_TO_GAME/optiscaler_version"
@@ -2468,6 +2478,12 @@ pw_specialk_sync_files () {
             for dll in $SPECIALK_DLLS ; do try_remove_file "$PATH_TO_GAME/custom_${dll%.*}.ini"; done
             try_remove_file "$PW_SK_VERSION_FILE"
         fi
+        if [[ -f "$PATH_TO_GAME/plugins/specialk_version" ]] ; then
+            try_remove_file "$PATH_TO_GAME/plugins/dxgi.dll"
+            try_remove_file "$PATH_TO_GAME/plugins/specialk_version"
+            try_remove_file "$PATH_TO_GAME/dxgi.ini"
+            try_remove_file "$PATH_TO_GAME/custom_dxgi.ini"
+        fi
         return 0
     fi
 
@@ -2481,6 +2497,24 @@ pw_specialk_sync_files () {
     fi
 
     if [[ -d "$SPECIALK_PATH" ]] ; then
+        if file "$PW_EXE_FILE" | grep -q "x86-64" ; then
+            PW_SK_ARCH_DLL="SpecialK64.dll"
+        else
+            PW_SK_ARCH_DLL="SpecialK32.dll"
+        fi
+
+        if [[ "${PW_USE_OPTISCALER}" == "1" ]] && [[ -f "$SPECIALK_PATH/$PW_SK_ARCH_DLL" ]] ; then
+            create_new_dir "$PATH_TO_GAME/plugins"
+            if [[ ! -f "$PATH_TO_GAME/plugins/specialk_version" ]] || ! grep -q "$PW_SPECIALK_VER" "$PATH_TO_GAME/plugins/specialk_version" ; then
+                cp -f "$SPECIALK_PATH/$PW_SK_ARCH_DLL" "$PATH_TO_GAME/plugins/dxgi.dll"
+                echo "$PW_SPECIALK_VER" > "$PATH_TO_GAME/plugins/specialk_version"
+            fi
+            PW_SK_INI_FILE="$PATH_TO_GAME/custom_dxgi.ini"
+            pw_specialk_set_ini_value "$PW_SK_INI_FILE" "Compatibility.General" "UsingWINE" "true"
+            pw_specialk_set_ini_value "$PW_SK_INI_FILE" "Steam.Log" "Silent" "true"
+            return 0
+        fi
+
         local DETECT_OUT HIGHEST_DX USES_OGL
         DETECT_OUT=$(python_module graphics_detector "$PW_EXE_FILE")
         HIGHEST_DX=$(echo "$DETECT_OUT" | grep "^HIGHEST_DX=" | cut -d'=' -f2)
@@ -2494,15 +2528,13 @@ pw_specialk_sync_files () {
             "DirectX 8"|"DirectDraw") return 0 ;;
             *) [[ "$USES_OGL" == "true" ]] && PW_SK_DLL_NAME="opengl32.dll" || PW_SK_DLL_NAME="dxgi.dll" ;;
         esac
-        if file "$PW_EXE_FILE" | grep -q "x86-64" ; then
-            PW_SK_ARCH_DLL="SpecialK64.dll"
-        else
-            PW_SK_ARCH_DLL="SpecialK32.dll"
-        fi
 
         if [[ -f "$SPECIALK_PATH/$PW_SK_ARCH_DLL" ]] ; then
             PW_SK_INI_FILE="$PATH_TO_GAME/custom_${PW_SK_DLL_NAME%.*}.ini"
-            if [[ ! -f "$PW_SK_VERSION_FILE" ]] && [[ -f "$PATH_TO_GAME/$PW_SK_DLL_NAME" ]] && [[ ! -f "$PATH_TO_GAME/${PW_SK_DLL_NAME}.b" ]] ; then
+            if [[ ! -f "$PW_SK_VERSION_FILE" ]] \
+            && [[ -f "$PATH_TO_GAME/$PW_SK_DLL_NAME" ]] \
+            && [[ ! -f "$PATH_TO_GAME/${PW_SK_DLL_NAME}.b" ]]
+            then
                 mv -f "$PATH_TO_GAME/$PW_SK_DLL_NAME" "$PATH_TO_GAME/${PW_SK_DLL_NAME}.b"
             fi
             if [[ ! -f "$PW_SK_VERSION_FILE" ]] || ! grep -q "$PW_SPECIALK_VER" "$PW_SK_VERSION_FILE" ; then
@@ -3487,7 +3519,7 @@ start_portproton () {
                     try_force_link_file "${PATH_TO_DXVK_FILES}/x32/${wine_dxvk_dll}.dll" "${WINEPREFIX}/drive_c/windows/syswow64/${wine_dxvk_dll}.dll"
                     try_force_link_file "${PATH_TO_DXVK_FILES}/x64/${wine_dxvk_dll}.dll" "${WINEPREFIX}/drive_c/windows/system32/${wine_dxvk_dll}.dll" ;;
             esac
-            if [[ $PW_USE_OPTISCALER == "1" ]] && [[ $PW_USE_SPECIALK != "1" ]] && [[ $wine_dxvk_dll == "dxgi" ]]
+            if [[ $PW_USE_OPTISCALER == "1" ]] && [[ $wine_dxvk_dll == "dxgi" ]]
             then var_winedlloverride_update "dxgi=n,b"
             else var_winedlloverride_update "${wine_dxvk_dll}=n"
             fi
@@ -4242,7 +4274,7 @@ gui_edit_db () {
     if [[ "$PW_VULKAN_USE" == "0" ]] ; then
         DISABLE_EDIT_DB_LIST+=" PW_VKBASALT PW_VKBASALT_USER_CONF PW_USE_RAY_TRACING PW_USE_OBS_VKCAPTURE PW_USE_GALLIUM_ZINK PW_USE_WINED3D_VULKAN"
     fi
-    [[ "${PW_USE_SPECIALK}" == "1" ]] && DISABLE_EDIT_DB_LIST+=" PW_DGVOODOO2 PW_USE_OPTISCALER"
+    [[ "${PW_USE_SPECIALK}" == "1" ]] && DISABLE_EDIT_DB_LIST+=" PW_DGVOODOO2"
 
     [[ ! -e "/dev/ntsync" ]] && DISABLE_EDIT_DB_LIST+=" PW_USE_NTSYNC"
 
