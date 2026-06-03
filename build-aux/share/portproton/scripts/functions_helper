@@ -2001,7 +2001,11 @@ pw_init_db () {
                     export PORTWINE_DB_FILE
                     use_exiftool "$PW_EXE_FILE"
                     grep -q "Sony" "${PW_TMPFS_PATH}/exiftool.tmp" && PW_WINE_USE="WINE_LG"
-                    if [[ -z "${PORTWINE_DB_FILE}" ]] ; then
+                    if [[ -n "${PORTWINE_DB_FILE}" ]] ; then
+                        try_copy_file "${PORTWINE_DB_FILE}" "${PW_EXE_FILE}".ppdb
+                        export PORTWINE_DB_FILE="${PW_EXE_FILE}".ppdb
+                    fi
+                    if [[ ! -f "${PORTWINE_DB_FILE}" ]] ; then
                         {
                             echo "#!/usr/bin/env bash"
                             echo "#Author: ${USER}"
@@ -2038,7 +2042,10 @@ pw_init_db () {
         fi
     fi
 
-    if [[ -z "${PATH_TO_GAME}" ]] || [[ ! -d "$(realpath "${PATH_TO_GAME}")" ]] ; then
+    if [[ -z "${PATH_TO_GAME}" ]] \
+    || [[ "${PATH_TO_GAME}" == "." ]] \
+    || [[ ! -d "$(realpath "${PATH_TO_GAME}")" ]]
+    then
         if [[ -f "${PW_EXE_FILE}" ]] ; then
             PATH_TO_GAME="$(dirname "$(realpath "${PW_EXE_FILE}")")"
             export PATH_TO_GAME
@@ -3731,7 +3738,10 @@ pw_run () {
         return $?
     fi
 
-    if [[ -n "${PATH_TO_GAME}" ]] \
+    if [[ "${PATH_TO_GAME}" == "." ]]
+    then
+        PATH_TO_GAME="$( cd "$( dirname "${PW_EXE_FILE}" )" >/dev/null 2>&1 && pwd )"
+    elif [[ -n "${PATH_TO_GAME}" ]] \
     && [[ -d "${PATH_TO_GAME}" ]]
     then
         :
