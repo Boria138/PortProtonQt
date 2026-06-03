@@ -1190,6 +1190,10 @@ check_user_conf () {
 # export DXVK_HUD=full
 # export GALLIUM_HUD=fps
 export PW_GPU_USE="disabled"
+# Optional defaults for executables without matching db values:
+# export PW_DEFAULT_WINE_USE="WINE_LG"
+# export PW_DEFAULT_PREFIX_NAME="DEFAULT"
+# export PW_DEFAULT_VULKAN_USE="2"
 EOF
     else
         sed -i \
@@ -1903,6 +1907,10 @@ check_dirs_and_files_in_pfx () {
     }
 
 pw_init_db () {
+    [[ -n "${PW_DEFAULT_WINE_USE:-}" ]] && export PW_WINE_USE="${PW_DEFAULT_WINE_USE}"
+    [[ -n "${PW_DEFAULT_PREFIX_NAME:-}" ]] && export PW_PREFIX_NAME="${PW_DEFAULT_PREFIX_NAME}"
+    [[ -n "${PW_DEFAULT_VULKAN_USE:-}" ]] && export PW_VULKAN_USE="${PW_DEFAULT_VULKAN_USE}"
+
     if echo "$LSPCI_VGA" | grep -i -q 'nvidia.*rtx' ; then
         export PW_USE_NVAPI_AND_DLSS="1"
         export PW_USE_RAY_TRACING="1"
@@ -2235,15 +2243,18 @@ edit_user_conf_from_gui () {
         elif [[ $proxy_mod_db =~ ^(Enabled|Enable)$ ]] ; then
             proxy_mod_db=enabled
         fi
+        proxy_mod_db=$(echo "$proxy_mod_db" | sed 's/\\/\\\\\\\\/g; s/"/\\"/g')
+        proxy_mod_db_escaped=$(printf '%s\n' "$proxy_mod_db" | sed 's/[\/&]/\\&/g')
+
         if ! grep "export ${mod_db}=" "${USER_CONF}" &>/dev/null
         then echo "export ${mod_db}=\"$proxy_mod_db\"" >> "${USER_CONF}"
         elif grep "export ${mod_db}=" "${USER_CONF}" | grep -v "#" &>/dev/null
         then
             if [[ "$(grep "export ${mod_db}=" "${USER_CONF}" | grep -v "#")" != "export ${mod_db}=\"$proxy_mod_db\"" ]]
-            then sed -ri "s/^export ${mod_db}=.*/export ${mod_db}=\"$proxy_mod_db\"/" "${USER_CONF}"
+            then sed -ri "s|^export ${mod_db}=.*|export ${mod_db}=\"${proxy_mod_db_escaped}\"|" "${USER_CONF}"
             fi
         elif [[ "$(grep "export ${mod_db}=" "${USER_CONF}")" != "export ${mod_db}=$proxy_mod_db" ]]
-        then sed -ri "s/.*export ${mod_db}=.*/export ${mod_db}=\"$proxy_mod_db\"/g" "${USER_CONF}"
+        then sed -ri "s|.*export ${mod_db}=.*|export ${mod_db}=\"${proxy_mod_db_escaped}\"|g" "${USER_CONF}"
         fi
     done
     return 0

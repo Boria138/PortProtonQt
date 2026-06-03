@@ -59,7 +59,7 @@ from portprotonqt.cli import (
 )
 
 from portprotonqt.tray_manager import restart_application_process
-from portprotonqt.version_utils import include_pinned_prefixes, version_sort_key
+from portprotonqt.version_utils import version_sort_key
 from portprotonqt.localization import _, get_metadata_language, read_metadata_translations
 from portprotonqt.downloader import Downloader
 from portprotonqt.tray_manager import TrayManager
@@ -72,6 +72,7 @@ from portprotonqt.scripts_utils.prefix_backup import BACKUP_EXTENSION, is_legacy
 from portprotonqt.tabs.control_hints import MainWindowControlHintsMixin
 from portprotonqt.tabs.system_tab import MainWindowSystemTabMixin
 from portprotonqt.tabs.workers import MainWindowWorkersMixin
+from portprotonqt.settings_manager import get_available_prefix_options, get_available_wine_options
 
 from PySide6.QtWidgets import (QLineEdit, QMainWindow, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox,
                                QDialog, QFormLayout, QMessageBox, QApplication, QPushButton, QProgressBar, QCheckBox, QSizePolicy, QGridLayout, QScrollArea, QScroller, QSlider, QFrame)
@@ -167,6 +168,48 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         except OSError as exc:
             logger.warning("Failed to read LG versions from %s: %s", var_path, exc)
         return versions
+
+    def _get_default_exe_wine_options(self) -> list[str]:
+        if not self.portproton_location:
+            return []
+        return get_available_wine_options(self.portproton_location, "USE_SYSTEM_WINE")
+
+    def _get_var_default_setting(self, key: str, fallback: str) -> str:
+        scripts_path = get_portproton_scripts_path()
+        if not scripts_path:
+            return fallback
+
+        var_path = os.path.join(scripts_path, "var")
+        if not os.path.exists(var_path):
+            return fallback
+
+        try:
+            with open(var_path, encoding="utf-8") as var_file:
+                for line in var_file:
+                    match = re.match(rf'^\s*check_variables\s+{key}\s+["\']?([^"\']+)', line)
+                    if match:
+                        return match.group(1)
+        except OSError as exc:
+            logger.warning("Failed to read default %s from %s: %s", key, var_path, exc)
+        return fallback
+
+    def _get_default_exe_prefix_options(self) -> list[str]:
+        if not self.portproton_location:
+            return []
+
+        prefixes_path = os.path.join(self.portproton_location, "data", "prefixes")
+        if os.path.exists(prefixes_path):
+            self._normalize_prefix_directories(prefixes_path)
+        return get_available_prefix_options(self.portproton_location)
+
+    def _set_combo_current_data(self, combo: QComboBox, value: str) -> None:
+        for index in range(combo.count()):
+            if combo.itemData(index) == value:
+                combo.setCurrentIndex(index)
+                return
+        if value:
+            combo.addItem(value, value)
+            combo.setCurrentIndex(combo.count() - 1)
 
     def __init__(self, app_name: str, version: str, launch_exe: str | None = None, resolution: tuple[int, int] | None = None, show_system_tab: bool = False):
         super().__init__()
@@ -1840,11 +1883,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             self.wineCombo.setCurrentIndex(0)
         formLayout.addRow(self.wineTitleLabel, self.wineCombo)
 
-        prefixes = [
-            d for d in os.listdir(prefixes_path)
-            if os.path.isdir(os.path.join(prefixes_path, d))
-        ] if os.path.exists(prefixes_path) else []
-        self.prefixes = include_pinned_prefixes(prefixes)
+        self.prefixes = get_available_prefix_options(self.portproton_location)
         self.prefixCombo = QComboBox()
         self.prefixCombo.view().window().setWindowFlags(
             Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
@@ -2196,12 +2235,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         if os.path.exists(prefixes_path):
             self._normalize_prefix_directories(prefixes_path)
 
-        # Update the prefixes list with sorting
-        prefixes = [
-            d for d in os.listdir(prefixes_path)
-            if os.path.isdir(os.path.join(prefixes_path, d))
-        ] if os.path.exists(prefixes_path) else []
-        self.prefixes = include_pinned_prefixes(prefixes)
+        self.prefixes = get_available_prefix_options(self.portproton_location)
         self.prefixCombo.clear()
         self.prefixCombo.addItems(self.prefixes)
         if normalized_current_prefix:
@@ -2688,7 +2722,99 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         downloadForm.addRow(economy_mode_layout)
         downloadForm.addRow(self.downloadMirrorTitle, self.downloadMirrorCombo)
 
-        # 4. Hardware Settings Section
+        # 4. Default Exe Settings Section
+        exeDefaultsFrame, exeDefaultsForm = create_section(_("Default Exe Settings"), self.theme)
+        exeDefaultsForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
+        scrollLayout.addWidget(exeDefaultsFrame)
+
+        self.defaultExeWineCombo = QComboBox()
+        self.defaultExeWineCombo.view().window().setWindowFlags(
+            Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
+        )
+        self.defaultExeWineCombo.view().window().setAttribute(
+            Qt.WidgetAttribute.WA_TranslucentBackground
+        )
+        self.defaultExeWineCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.defaultExeWineCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
+        self.defaultExeWineCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        default_wine_from_var = self._get_var_default_setting("PW_WINE_USE", "PROTON_LG")
+        self.defaultExeWineCombo.addItem(default_wine_from_var, "")
+        for wine_version in self._get_default_exe_wine_options():
+            if wine_version == default_wine_from_var:
+                continue
+            display_name = _("System WINE") if wine_version == "USE_SYSTEM_WINE" else wine_version
+            self.defaultExeWineCombo.addItem(display_name, wine_version)
+        self._set_combo_current_data(
+            self.defaultExeWineCombo, get_user_conf_setting('PW_DEFAULT_WINE_USE') or ""
+        )
+        self.defaultExeWineTitle = QLabel(_("Default WINE/Proton:"))
+        self.defaultExeWineTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
+        self.defaultExeWineTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        exeDefaultsForm.addRow(self.defaultExeWineTitle, self.defaultExeWineCombo)
+
+        self.defaultExePrefixCombo = QComboBox()
+        self.defaultExePrefixCombo.view().window().setWindowFlags(
+            Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
+        )
+        self.defaultExePrefixCombo.view().window().setAttribute(
+            Qt.WidgetAttribute.WA_TranslucentBackground
+        )
+        self.defaultExePrefixCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.defaultExePrefixCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
+        self.defaultExePrefixCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        default_prefix_from_var = self._get_var_default_setting("PW_PREFIX_NAME", "DEFAULT")
+        self.defaultExePrefixCombo.addItem(default_prefix_from_var, "")
+        for prefix_name in self._get_default_exe_prefix_options():
+            if prefix_name != default_prefix_from_var:
+                self.defaultExePrefixCombo.addItem(prefix_name)
+        self.defaultExePrefixCombo.setEditable(True)
+        self.defaultExePrefixCombo.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
+        prefix_line_edit = self.defaultExePrefixCombo.lineEdit()
+        if prefix_line_edit is not None:
+            prefix_line_edit.setPlaceholderText(_("Enter prefix name"))
+        default_prefix = get_user_conf_setting('PW_DEFAULT_PREFIX_NAME')
+        if default_prefix:
+            self.defaultExePrefixCombo.setCurrentText(default_prefix)
+        self.defaultExePrefixTitle = QLabel(_("Default prefix:"))
+        self.defaultExePrefixTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
+        self.defaultExePrefixTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        exeDefaultsForm.addRow(self.defaultExePrefixTitle, self.defaultExePrefixCombo)
+
+        self.defaultExeVulkanCombo = QComboBox()
+        self.defaultExeVulkanCombo.view().window().setWindowFlags(
+            Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
+        )
+        self.defaultExeVulkanCombo.view().window().setAttribute(
+            Qt.WidgetAttribute.WA_TranslucentBackground
+        )
+        self.defaultExeVulkanCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.defaultExeVulkanCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
+        self.defaultExeVulkanCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        default_vulkan_from_var = self._get_var_default_setting("PW_VULKAN_USE", "6")
+        vulkan_options = [
+            (_("Newest"), "6"),
+            (_("Stable"), "2"),
+            ("Sarek", "1"),
+            ("WINED3D - OpenGL", "0"),
+        ]
+        for vulkan_name, vulkan_value in vulkan_options:
+            if vulkan_value == default_vulkan_from_var:
+                self.defaultExeVulkanCombo.addItem(vulkan_name, "")
+                break
+        if self.defaultExeVulkanCombo.count() == 0:
+            self.defaultExeVulkanCombo.addItem(default_vulkan_from_var, "")
+        for vulkan_name, vulkan_value in vulkan_options:
+            if vulkan_value != default_vulkan_from_var:
+                self.defaultExeVulkanCombo.addItem(vulkan_name, vulkan_value)
+        self._set_combo_current_data(
+            self.defaultExeVulkanCombo, get_user_conf_setting('PW_DEFAULT_VULKAN_USE') or ""
+        )
+        self.defaultExeVulkanTitle = QLabel(_("Default 3D API:"))
+        self.defaultExeVulkanTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
+        self.defaultExeVulkanTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        exeDefaultsForm.addRow(self.defaultExeVulkanTitle, self.defaultExeVulkanCombo)
+
+        # 5. Hardware Settings Section
         hwFrame, hwForm = create_section(_("Hardware Settings"), self.theme)
         hwForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
         scrollLayout.addWidget(hwFrame)
@@ -2722,7 +2848,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             self.gpuTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
             hwForm.addRow(self.gpuTitle, self.gpuCombo)
 
-        # 5. Proxy Settings Section
+        # 6. Proxy Settings Section
         proxyFrame, proxyForm = create_section(_("Proxy Settings"), self.theme)
         proxyForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
         scrollLayout.addWidget(proxyFrame)
@@ -2921,6 +3047,16 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             ui_config.set_disable_runtime_download(self.disableRuntimeDownloadCheckBox.isChecked())
         else:
             ui_config.get_disable_runtime_download()
+
+        default_wine = self.defaultExeWineCombo.currentData()
+        set_user_conf_setting('PW_DEFAULT_WINE_USE', str(default_wine or ""))
+        default_prefix = self.defaultExePrefixCombo.currentText().strip()
+        if default_prefix == self.defaultExePrefixCombo.itemText(0):
+            default_prefix = ""
+        default_prefix = re.sub(r"[ \t]", "_", default_prefix).upper() if default_prefix else ""
+        set_user_conf_setting('PW_DEFAULT_PREFIX_NAME', default_prefix)
+        default_vulkan = self.defaultExeVulkanCombo.currentData()
+        set_user_conf_setting('PW_DEFAULT_VULKAN_USE', str(default_vulkan or ""))
 
         set_user_conf_setting('MIRROR', self.downloadMirrorCombo.currentText())
 

@@ -932,12 +932,12 @@ def get_user_conf_setting(variable_name):
 
     clean_lines = []
     for line in result.stdout.splitlines():
-        stripped_line = line.strip()
+        stripped_line = re.sub(r'\x1b\[[0-9;]*[A-Za-z]', '', line).strip()
         if not stripped_line:
             continue
         if any(char in stripped_line for char in "█░▄▀╔╗╚╝║"):
             continue
-        if stripped_line.startswith(("Warning:", "Info:")):
+        if re.match(r'^\[?[0-9;]*m?\s*(Info|Warning|Error|OK):', stripped_line):
             continue
         if "must use subscript when assigning associative array" in stripped_line:
             continue
