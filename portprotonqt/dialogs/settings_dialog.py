@@ -289,7 +289,8 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
         self.settings_table = QTableWidget()
         self.settings_table.setAlternatingRowColors(True)
         self.settings_table.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.settings_table.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
+        self.settings_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.settings_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.settings_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.settings_table.setColumnCount(3)
         self.settings_table.setHorizontalHeaderLabels([_("Setting"), _("Value"), _("Description")])
@@ -300,7 +301,8 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
         self.settings_table.setWordWrap(True)
         self.settings_table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         self.settings_table.setTextElideMode(Qt.TextElideMode.ElideNone)
-        self.settings_table.setStyleSheet(self.theme.WINETRICKS_TABBLE_STYLE + self.theme.COMBOBOX_STYLE + self.theme.LINE_EDIT_STYLE + self.theme.SCROLL_STYLE)
+        settings_combo_style = getattr(self.theme, "SETTINGS_TABLE_COMBOBOX_STYLE", "")
+        self.settings_table.setStyleSheet(self.theme.WINETRICKS_TABBLE_STYLE + self.theme.COMBOBOX_STYLE + settings_combo_style + self.theme.LINE_EDIT_STYLE + self.theme.SCROLL_STYLE)
         self.settings_table.setMouseTracking(True)
 
         self.settings_preloader = Preloader()
@@ -327,8 +329,8 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
         self.advanced_table = QTableWidget()
         self.advanced_table.setAlternatingRowColors(True)
         self.advanced_table.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.advanced_table.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
         self.advanced_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.advanced_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.advanced_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.advanced_table.setColumnCount(3)
         self.advanced_table.setHorizontalHeaderLabels([_("Setting"), _("Value"), _("Description")])
@@ -339,7 +341,7 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
         self.advanced_table.setWordWrap(True)
         self.advanced_table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         self.advanced_table.setTextElideMode(Qt.TextElideMode.ElideNone)
-        self.advanced_table.setStyleSheet(self.theme.WINETRICKS_TABBLE_STYLE + self.theme.COMBOBOX_STYLE + self.theme.LINE_EDIT_STYLE + self.theme.SCROLL_STYLE)
+        self.advanced_table.setStyleSheet(self.theme.WINETRICKS_TABBLE_STYLE + self.theme.COMBOBOX_STYLE + settings_combo_style + self.theme.LINE_EDIT_STYLE + self.theme.SCROLL_STYLE)
         self.advanced_table.setMouseTracking(True)
 
         self.advanced_preloader = Preloader()
@@ -581,6 +583,7 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
             checkbox_widget.setChecked(current_val == '1' and not is_blocked)
             checkbox_widget.setEnabled(not is_blocked)
             checkbox_widget.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+            checkbox_widget.installEventFilter(self)
             checkbox_container = QWidget()
             checkbox_container.setStyleSheet(self.theme.CHECKBOX_STYLE + self.theme.TRANSPARENT_BACKGROUND_STYLE)
             checkbox_layout = QHBoxLayout(checkbox_container)
@@ -608,6 +611,7 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
         self.settings_table.resizeRowsToContents()
         if self.settings_table.rowCount() > 0:
             self.settings_table.setCurrentCell(0, 1)
+            self.settings_table.selectRow(0)
             first_widget = self.value_widgets.get((0, 1))
             if isinstance(first_widget, QCheckBox):
                 first_widget.setFocus(Qt.FocusReason.OtherFocusReason)
@@ -646,6 +650,7 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
 
             if setting['type'] == 'combo':
                 combo = QComboBox()
+                combo.setObjectName("settingsTableCombo")
                 combo.view().window().setWindowFlags(
                     Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
                 )
@@ -798,6 +803,15 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
         """Register tooltip text for a focusable widget."""
         if text:
             self._gamepad_tooltip_map[widget] = text
+
+    def _select_checkbox_row(self, widget: QCheckBox) -> bool:
+        for (row, column), checkbox in self.value_widgets.items():
+            if checkbox != widget:
+                continue
+            self.settings_table.setCurrentCell(row, column)
+            self.settings_table.selectRow(row)
+            return True
+        return False
 
     def show_registered_gamepad_tooltip(self, widget: QWidget) -> bool:
         """Show registered tooltip for the provided widget."""
@@ -989,6 +1003,9 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
                 focused_widget = QApplication.focusWidget()
                 if focused_widget not in self._gamepad_tooltip_map:
                     self.show_gamepad_tooltip(show=False)
+
+        if isinstance(obj, QCheckBox) and event.type() == QEvent.Type.FocusIn:
+            self._select_checkbox_row(obj)
 
         return super().eventFilter(obj, event)
 

@@ -1072,6 +1072,14 @@ COMBOBOX_STYLE = f"""
     }}
 """
 
+SETTINGS_TABLE_COMBOBOX_STYLE = f"""
+    QComboBox#settingsTableCombo:hover,
+    QComboBox#settingsTableCombo:focus {{
+        background: {color_c};
+        border: {border_c} {color_a};
+    }}
+"""
+
 CHECKBOX_STYLE = f"""
     QCheckBox {{
         height: 34px;
