@@ -3781,10 +3781,12 @@ pw_run () {
             echo "Log WINE:" >> "${PW_LOG_FILE}"
             echo ""
             print_info "Log from RUNTIME and WINE:"
+            pw_launch_wrapper \
             ${PW_RUN_GAMESCOPE} \
             ${PW_INHIBIT_SLR} \
             ${PW_TASKSET_SLR} \
             ${pw_runtime} \
+            env \
             LD_LIBRARY_PATH="${PW_LD_LIBRARY_PATH}" \
             LD_PRELOAD="${PW_LD_PRELOAD}" \
             VK_ADD_IMPLICIT_LAYER_PATH="${PW_VK_LAYER_PATH}" \
@@ -3799,10 +3801,12 @@ pw_run () {
             fi
             echo ""
             echo "Log WINE:" > "${PW_LOG_FILE}"
+            pw_launch_wrapper \
             ${PW_RUN_GAMESCOPE} \
             ${PW_INHIBIT_SLR} \
             ${PW_TASKSET_SLR} \
             ${pw_runtime} \
+            env \
             LD_LIBRARY_PATH="${PW_LD_LIBRARY_PATH}" \
             LD_PRELOAD="${PW_LD_PRELOAD}" \
             VK_ADD_IMPLICIT_LAYER_PATH="${PW_VK_LAYER_PATH}" \
@@ -3827,6 +3831,7 @@ pw_run () {
             echo "Log WINE:" >> "${PW_LOG_FILE}"
             echo ""
             print_info "Log WINE:"
+            pw_launch_wrapper \
             env FAKE_VAR= \
             LD_LIBRARY_PATH="${PW_LD_LIBRARY_PATH}" \
             LD_PRELOAD="${PW_LD_PRELOAD}" \
@@ -3846,6 +3851,7 @@ pw_run () {
             echo ""
             echo "Log WINE:" > "${PW_LOG_FILE}"
             print_info "Log WINE:"
+            pw_launch_wrapper \
             env FAKE_VAR= \
             LD_LIBRARY_PATH="${PW_LD_LIBRARY_PATH}" \
             LD_PRELOAD="${PW_LD_PRELOAD}" \
@@ -3863,6 +3869,39 @@ pw_run () {
     fi
 }
 export -f pw_run
+
+pw_launch_wrapper () {
+    if [[ -z "${PW_RUN_AFTER_EXE:-}" ]] ; then
+        "$@"
+        return
+    fi
+
+    if [[ -f "${PW_RUN_AFTER_EXE}" ]] ; then
+        if [[ "${PW_RUN_AFTER_EXE,,}" =~ \.exe$ ]] ; then
+            "$@"
+            return
+        fi
+        "${PW_RUN_AFTER_EXE}"
+        "$@"
+        return
+    fi
+
+    local -a wrapper_cmd
+    eval "wrapper_cmd=(${PW_RUN_AFTER_EXE})"
+    if [[ ${#wrapper_cmd[@]} -eq 0 ]] ; then
+        "$@"
+        return
+    fi
+
+    if [[ "${wrapper_cmd[0]##*/}" == "systemd-run" ]] ; then
+        "${wrapper_cmd[@]}" -- "$@"
+        return
+    fi
+
+    "${wrapper_cmd[@]}"
+    "$@"
+}
+export -f pw_launch_wrapper
 
 steamplay_launch () {
     pw_check_and_download_plugins
@@ -3980,6 +4019,7 @@ steamplay_launch () {
         fi
 
         print_info "$proton_runner in use."
+        pw_launch_wrapper \
         ${PW_RUN_GAMESCOPE} \
         env \
         LD_LIBRARY_PATH="${steamplay_ld_library_path}" \
@@ -4023,6 +4063,7 @@ portwine_launch () {
     else
         if [[ -n "${PW_RUN_AFTER_EXE:-}" ]] \
         && [[ -f "${PW_RUN_AFTER_EXE}" ]] \
+        && [[ "${PW_RUN_AFTER_EXE,,}" =~ \.exe$ ]] \
         && [[ "${PW_RUN_AFTER_EXE}" != "${PW_EXE_FILE}" ]] \
         && [[ "${PW_EXE_FILE,,}" =~ \.exe$ ]]
         then
