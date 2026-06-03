@@ -33,7 +33,7 @@ bindir = prefix / get_option('bindir')
 
 # Use custom purelibdir if specified, otherwise use default
 purelibdir_opt = get_option('python_purelibdir')
-pythondir = purelibdir_opt != '' ? purelibdir_opt : python3.get_install_dir(pure: true)
+pythondir = purelibdir_opt != '' ? purelibdir_opt: python3.get_install_dir(pure: true)
 pkgdatadir = pythondir / meson.project_name()
 
 # C compiler for vk_gpu_info
@@ -133,7 +133,7 @@ install_subdir(
 
 # Install udev rules
 udev_rulesdir_opt = get_option('udev_rulesdir')
-udevdir = udev_rulesdir_opt != '' ? udev_rulesdir_opt : prefix / 'lib' / 'udev' / 'rules.d'
+udevdir = udev_rulesdir_opt != '' ? udev_rulesdir_opt: prefix / 'lib' / 'udev' / 'rules.d'
 
 install_data(
   'build-aux/lib/udev/rules.d/60-portprotonqt.rules',
