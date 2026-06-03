@@ -38,7 +38,7 @@ if [[ -z "$PORT_DATA_PATH" ]] ; then
 fi
 
 if [[ -f "$HOME/.config/PortProtonQt.conf" ]] \
-&& grep "disable_runtime_download = True" "$HOME/.config/PortProtonQt.conf" ; then
+&& grep -q "disable_runtime_download = True" "$HOME/.config/PortProtonQt.conf" ; then
     export PW_DISABLE_RUNTIME_DOWNLOAD=1
 fi
 
@@ -458,6 +458,29 @@ Usage examples:
         start_portproton
         pw_run uninstaller
         stop_portproton
+        ;;
+    --winetricks-list)
+        get_wine_and_pfx "$2" "$3"
+        start_portproton >&2
+        update_winetricks >&2
+        "${PORT_WINE_TMP_PATH}/winetricks" "$4" list
+        winetricks_status=$?
+        stop_portproton >&2
+        exit "$winetricks_status"
+        ;;
+    --winetricks-install)
+        get_wine_and_pfx "$2" "$3"
+        winetricks_force="$4"
+        shift 4
+        start_portproton
+        update_winetricks
+        winetricks_args=("--unattended")
+        [[ "$winetricks_force" == "--force" ]] && winetricks_args+=("--force")
+        "${PORT_WINE_TMP_PATH}/winetricks" "${winetricks_args[@]}" "$@"
+        winetricks_status=$?
+        wait_wineserver
+        stop_portproton
+        exit "$winetricks_status"
         ;;
     --clear_pfx)
         get_wine_and_pfx "$2" "$3"

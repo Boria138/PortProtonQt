@@ -20,7 +20,6 @@ from portprotonqt.logger import get_logger
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.custom_widgets import AutoSizeButton
 from portprotonqt.dialogs.base import DraggableDialog
-from portprotonqt.downloader import Downloader
 from portprotonqt.preloader import Preloader
 from portprotonqt.localization import _
 from portprotonqt.dialogs.dialog_utils import create_dialog_hints_widget, update_dialog_hints
@@ -37,13 +36,11 @@ class WinetricksDialog(DraggableDialog):
         self.theme = theme if theme else theme_manager.apply_theme(ui_config.get_theme())
         self.prefix_path: str | None = prefix_path
         self.wine_use: str | None = wine_use
+        self.start_sh: list[str] | None = None
         self.portproton_path = get_portproton_location()
         if self.portproton_path is None:
             logger.error("PortProton location not found")
             return
-        self.tmp_path = os.path.join(self.portproton_path, "data", "tmp")
-        os.makedirs(self.tmp_path, exist_ok=True)
-        self.winetricks_path = os.path.join(self.tmp_path, "winetricks")
         if self.prefix_path is None:
             logger.error("Prefix path not provided")
             return
@@ -52,15 +49,20 @@ class WinetricksDialog(DraggableDialog):
         if not os.path.exists(self.log_path):
             open(self.log_path, 'a').close()
 
-        self.downloader = Downloader(max_workers=4)
         self.apply_process: QProcess | None = None
+        self.list_processes: dict[str, QProcess] = {}
+        parent_obj = self.parent()
+        while parent_obj:
+            if hasattr(parent_obj, 'start_sh'):
+                self.start_sh = cast("MainWindow", parent_obj).start_sh
+                break
+            parent_obj = parent_obj.parent()
 
         self.setWindowTitle(_("Prefix Manager"))
         self.setModal(True)
         self.resize(700, 700)
         self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE + self.theme.MESSAGE_BOX_STYLE)
 
-        self.update_winetricks()
         self.setup_ui()
         self.load_lists()
 
@@ -91,75 +93,6 @@ class WinetricksDialog(DraggableDialog):
                 lambda *args: update_dialog_hints(self.hints_labels, self.main_window, self.input_manager, theme_manager, self.current_theme_name)
             )
             update_dialog_hints(self.hints_labels, self.main_window, self.input_manager, theme_manager, self.current_theme_name)
-
-    def update_winetricks(self):
-        """Update the winetricks script."""
-        url = "https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks"
-        temp_path = os.path.join(self.tmp_path, "winetricks_temp")
-
-        try:
-            if not self.downloader.download(url, temp_path):
-                logger.warning("Failed to download external winetricks version")
-                if os.path.exists(temp_path):
-                    os.remove(temp_path)
-                return
-            with open(temp_path) as f:
-                ext_content = f.read()
-            ext_ver_match = re.search(r'WINETRICKS_VERSION\s*=\s*[\'"]?([^\'"\s]+)', ext_content)
-            ext_ver = ext_ver_match.group(1) if ext_ver_match else None
-            logger.info(f"External winetricks version: {ext_ver}")
-        except Exception as e:
-            logger.error(f"Failed to get external version: {e}")
-            ext_ver = None
-            if os.path.exists(temp_path):
-                os.remove(temp_path)
-            return
-
-        int_ver = None
-        if os.path.exists(self.winetricks_path):
-            try:
-                with open(self.winetricks_path) as f:
-                    int_content = f.read()
-                int_ver_match = re.search(r'WINETRICKS_VERSION\s*=\s*[\'"]?([^\'"\s]+)', int_content)
-                int_ver = int_ver_match.group(1) if int_ver_match else None
-                logger.info(f"Internal winetricks version: {int_ver}")
-            except Exception as e:
-                logger.error(f"Failed to read internal winetricks version: {e}")
-
-        update_needed = not os.path.exists(self.winetricks_path) or (int_ver != ext_ver and ext_ver)
-
-        if update_needed:
-            try:
-                self.downloader.download(url, self.winetricks_path)
-                os.chmod(self.winetricks_path, 0o755)
-                logger.info(f"Winetricks updated to version {ext_ver}")
-                self.apply_modifications(self.winetricks_path)
-            except Exception as e:
-                logger.error(f"Failed to update winetricks: {e}")
-        elif os.path.exists(self.winetricks_path):
-            self.apply_modifications(self.winetricks_path)
-
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
-
-    def apply_modifications(self, file_path):
-        """Apply custom modifications to the winetricks script."""
-        if not os.path.exists(file_path):
-            return
-        try:
-            with open(file_path) as f:
-                content = f.read()
-
-            content = re.sub(r'w_metadata vcrun2015 dlls \\', r'w_metadata !dont_use_2015! dlls \\', content)
-            content = re.sub(r'w_metadata vcrun2017 dlls \\', r'w_metadata !dont_use_2017! dlls \\', content)
-            content = re.sub(r'w_metadata vcrun2019 dlls \\', r'w_metadata !dont_use_2019! dlls \\', content)
-            content = re.sub(r'w_set_winver win2k3', r'w_set_winver win7', content)
-
-            with open(file_path, 'w') as f:
-                f.write(content)
-            logger.info("Winetricks modifications applied")
-        except Exception as e:
-            logger.error(f"Error applying modifications to winetricks: {e}")
 
     def setup_ui(self):
         """Set up the user interface with tabs and tables."""
@@ -301,38 +234,36 @@ class WinetricksDialog(DraggableDialog):
 
     def load_lists(self):
         """Load and populate the lists for DLLs, Fonts, and Settings."""
-        if not os.path.exists(self.winetricks_path):
+        if self.start_sh is None or self.wine_use is None:
             QMessageBox.warning(self, _("Error"), _("Winetricks not found. Please try again."))
             self.reject()
             return
 
-        assert self.prefix_path is not None
         env = QProcessEnvironment.systemEnvironment()
-        env.insert("WINEPREFIX", self.prefix_path)
-        env.insert("WINETRICKS_DOWNLOADER", "curl")
-        if self.wine_use is not None:
-            env.insert("WINE", self.wine_use)
-
-        cwd = os.path.dirname(self.winetricks_path)
 
         self.containers["dlls"].setCurrentIndex(0)
-        self._start_list_process("dlls", self.dll_table, self.get_dll_exclusions(), env, cwd)
+        self._start_list_process("dlls", self.dll_table, self.get_dll_exclusions(), env)
 
         self.containers["fonts"].setCurrentIndex(0)
-        self._start_list_process("fonts", self.fonts_table, self.get_fonts_exclusions(), env, cwd)
+        self._start_list_process("fonts", self.fonts_table, self.get_fonts_exclusions(), env)
 
         self.containers["settings"].setCurrentIndex(0)
-        self._start_list_process("settings", self.settings_table, self.get_settings_exclusions(), env, cwd)
+        self._start_list_process("settings", self.settings_table, self.get_settings_exclusions(), env)
 
-    def _start_list_process(self, category, table, exclusion_pattern, env, cwd):
+    def _start_list_process(self, category, table, exclusion_pattern, env):
         """Start QProcess for list."""
+        assert self.prefix_path is not None
+        assert self.start_sh is not None
+        assert self.wine_use is not None
         process = QProcess(self)
-        process.setProcessChannelMode(QProcess.ProcessChannelMode.MergedChannels)
         process.setProcessEnvironment(env)
         process.finished.connect(
             lambda exit_code, exit_status: self._on_list_finished(category, table, exclusion_pattern, process, exit_code, exit_status)
         )
-        process.start(self.winetricks_path, [category, "list"])
+        prefix_name = os.path.basename(self.prefix_path.rstrip(os.sep))
+        args = self.start_sh[1:] + ["cli", "--winetricks-list", self.wine_use, prefix_name, category]
+        self.list_processes[category] = process
+        process.start(self.start_sh[0], args)
 
     def _on_list_finished(self, category, table, exclusion_pattern, process: QProcess | None, exit_code, exit_status):
         """Handle list completion."""
@@ -350,6 +281,8 @@ class WinetricksDialog(DraggableDialog):
             error_output = bytes(process.readAllStandardError().data()).decode('utf-8', 'ignore')
             logger.error(f"Failed to list {category}: {error_output}")
 
+        self.list_processes.pop(category, None)
+        process.deleteLater()
         self.containers[category].setCurrentIndex(1)
 
     def get_dll_exclusions(self):
@@ -379,6 +312,7 @@ class WinetricksDialog(DraggableDialog):
 
         for line in lines:
             line = line.strip()
+            line = re.sub(r'(?:\x1b|\033)?\[[0-9;]*m', '', line).strip()
             if not line or re.search(exclusion_pattern, line, re.I):
                 continue
 
@@ -446,10 +380,9 @@ class WinetricksDialog(DraggableDialog):
     def _start_install_process(self, selected, force):
         """Start QProcess for install."""
         assert self.prefix_path is not None
+        if self.start_sh is None or self.wine_use is None:
+            return
         env = QProcessEnvironment.systemEnvironment()
-        env.insert("WINEPREFIX", self.prefix_path)
-        if self.wine_use is not None:
-            env.insert("WINE", self.wine_use)
 
         self.apply_process = QProcess(self)
         self.apply_process.setProcessChannelMode(QProcess.ProcessChannelMode.MergedChannels)
@@ -458,8 +391,16 @@ class WinetricksDialog(DraggableDialog):
         self.apply_process.finished.connect(
             lambda exit_code, exit_status: self._on_install_finished(exit_code, exit_status, selected)
         )
-        args = ["--unattended"] + (["--force"] if force else []) + selected
-        self.apply_process.start(self.winetricks_path, args)
+        prefix_name = os.path.basename(self.prefix_path.rstrip(os.sep))
+        force_arg = "--force" if force else "--no-force"
+        args = self.start_sh[1:] + [
+            "cli",
+            "--winetricks-install",
+            self.wine_use,
+            prefix_name,
+            force_arg,
+        ] + selected
+        self.apply_process.start(self.start_sh[0], args)
 
     def _on_ready_read(self):
         """Handle ready read for install process."""
@@ -506,14 +447,30 @@ class WinetricksDialog(DraggableDialog):
         self.log_output.append(message)
         self.log_output.moveCursor(QTextCursor.MoveOperation.End)
 
+    def _stop_processes(self):
+        """Stop running child processes."""
+        processes = list(self.list_processes.values())
+        if self.apply_process is not None:
+            processes.append(self.apply_process)
+
+        for process in processes:
+            if process.state() == QProcess.ProcessState.NotRunning:
+                continue
+            process.terminate()
+            if not process.waitForFinished(1000):
+                process.kill()
+        self.list_processes.clear()
+
     def closeEvent(self, event):
         """Disable mode on close."""
+        self._stop_processes()
         if self.input_manager:
             self.input_manager.disable_winetricks_mode()
         super().closeEvent(event)
 
     def reject(self):
         """Disable mode on reject."""
+        self._stop_processes()
         if self.input_manager:
             self.input_manager.disable_winetricks_mode()
         super().reject()
