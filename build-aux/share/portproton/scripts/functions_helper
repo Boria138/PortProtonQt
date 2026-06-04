@@ -481,34 +481,34 @@ try_download () {
     # If gamescope session is active, use PW_TERM for downloading
     if check_gamescope_session ; then
         $PW_TERM "echo ; echo ; echo \"Downloading: $filename. Please wait...\" \
-        ; curl -f -# -A 'Mozilla/5.0 (compatible; Konqueror/2.1.1; X11)' -H 'Cache-Control: no-cache, no-store' \
+        ; curl -f -# --connect-timeout 5 --speed-limit 1 --speed-time 5 -A 'Mozilla/5.0 (compatible; Konqueror/2.1.1; X11)' -H 'Cache-Control: no-cache, no-store' \
         -H 'Pragma: no-cache' -L ${FIRST_URL[*]} -o \"$dest\""
+
+
         [[ "$?" != 0 ]] && return 1 || return 0
     fi
 
     # Normal download
     print_info "Download $filename from ${FIRST_URL[0]}..."
     if [[ "$silent" == "true" ]] ; then
-        curl -f -# -A 'Mozilla/5.0 (compatible; Konqueror/2.1.1; X11)' -H 'Cache-Control: no-cache, no-store' \
+        curl -f -# --connect-timeout 5 --speed-limit 1 --speed-time 5 -A 'Mozilla/5.0 (compatible; Konqueror/2.1.1; X11)' -H 'Cache-Control: no-cache, no-store' \
         -H 'Pragma: no-cache' -L "${FIRST_URL[@]}" -o "$dest" 2>&1
     else
-        # set -o pipefail
-        curl -f -# -A 'Mozilla/5.0 (compatible; Konqueror/2.1.1; X11)' -H 'Cache-Control: no-cache, no-store' \
+        curl -f -# --connect-timeout 5 --speed-limit 1 --speed-time 5 -A 'Mozilla/5.0 (compatible; Konqueror/2.1.1; X11)' -H 'Cache-Control: no-cache, no-store' \
         -H 'Pragma: no-cache' -L "${FIRST_URL[@]}" -o "$dest" 2>&1 \
         | tr '\r' '\n' | sed -ur 's|[# ]+||g;s|100||g;s|0-||g;s|.*=.*||g'
 
-        #TODO: check download errror
-        # [[ "${PIPESTATUS[0]}" != 0 ]] && local curl_status="error"
-        # if [[ $no_mirror != "true" ]] \
-        # && [[ $curl_status != "error" ]] \
-        # && try_check_sha256sum "${FIRST_URL[@]}"
-        # then
-        #     print_ok "File downloaded successfully: $filename from ${FIRST_URL[0]}"
-        #     return 0
-        # else
-        #     local curl_status="error"
-        # fi
+        local curl_exit="${PIPESTATUS[0]}"
+        if [[ "$curl_exit" == 28 ]] ; then
+            fatal "Download $filename failed: server did not respond or transfer stalled for more than 5 seconds."
+        elif [[ "$curl_exit" != 0 ]] ; then
+            fatal "Download $filename failed (curl exit code: $curl_exit)."
+        elif [[ "$no_mirror" != "true" ]] ; then
+            try_check_sha256sum "${FIRST_URL[@]}" || fatal "Download $filename failed: the file is broken"
+        fi
     fi
+
+    return 0
 }
 
 var_winedlloverride_update () {
