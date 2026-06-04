@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-03-22 13:50+0500\n"
-"PO-Revision-Date: 2026-06-02 07:07+0000\n"
+"PO-Revision-Date: 2026-06-04 05:34+0000\n"
 "Last-Translator: Boria138 <boria138@noreply.codeberg.org>\n"
 "Language-Team: Russian <https://translate.codeberg.org/projects/portprotonqt/"
 "portprotonqt/ru/>\n"
@@ -407,9 +407,8 @@ msgstr "Стабильный"
 msgid "Vulkan Backend"
 msgstr "Vulkan рендеринг"
 
-#, fuzzy
 msgid "Use by default"
-msgstr "Скрыть HUD по умолчанию"
+msgstr "Использовать по умолчанию"
 
 msgid "Wine Configuration"
 msgstr "Конфигурация Wine"
@@ -752,6 +751,8 @@ msgstr ""
 
 msgid "Enable SpecialK (injection library for fixing graphics, latency and more)"
 msgstr ""
+"Включить SpecialK (библиотека для оптимизации графики, снижения задержек и "
+"других улучшений)"
 
 msgid "Enable OptiScaler (replacement upscaler / frame generator)"
 msgstr "Включить OptiScaler (замена апскейлера / генератора кадров)"
@@ -941,14 +942,15 @@ msgstr ""
 "\n"
 "Пример: -dx11 -skipintro 1"
 
-#, fuzzy
 msgid "Run After / Wrapper"
-msgstr "Запустить после Exe"
+msgstr "Запустить после"
 
 msgid ""
 "Path to a second .exe, script, or wrapper command. Example: systemd-run "
 "--user --scope --slice=app.slice"
 msgstr ""
+"Путь к второму файлу .exe, скрипту или команде-обёртке. Пример: systemd-"
+"run --user --scope --slice=app.slice"
 
 msgid "CPU Cores Limit"
 msgstr "Ограничение ядер CPU"
