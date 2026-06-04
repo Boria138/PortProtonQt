@@ -775,6 +775,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
     @Slot(int, int)
     def on_install_finished(self, exit_code: int, exit_status: int):
         """Handle installation finish."""
+        script_name = self.current_install_script
         if self.install_stop_requested:
             if self.install_process:
                 self.install_process.deleteLater()
@@ -788,6 +789,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             self.install_process.deleteLater()
             self.install_process = None
         self._reset_install_state()
+        if exit_code == 0:
+            self.detail_page_manager.refresh_autoinstall_install_status(script_name)
 
     def on_install_error(self, error: QProcess.ProcessError):
         """Handle installation error."""

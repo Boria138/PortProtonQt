@@ -78,6 +78,7 @@ class DetailPageManager:
         self.debug_log_manager = DebugLogManager()
         self._debug_log_button: AutoSizeButton | None = None
         self._debug_log_timer = None
+        self._autoinstall_status_controls = None
 
     def openGameDetailPage(self, game_data: dict) -> None:
         """Open detailed game information page."""
@@ -859,9 +860,19 @@ class DetailPageManager:
         open_button.setVisible(False)
         buttons_layout.addWidget(open_button)
 
+        self._autoinstall_status_controls = (
+            script_name, name, install_button, open_button
+        )
         self._check_install_status(script_name, name, install_button, open_button)
 
         return install_button
+
+    def refresh_autoinstall_install_status(self, script_name: str | None) -> None:
+        """Refresh install buttons for opened auto-install page."""
+        controls = self._autoinstall_status_controls
+        if not script_name or not controls or controls[0] != script_name:
+            return
+        self._check_install_status(*controls)
 
     def _check_install_status(
         self,
@@ -927,6 +938,7 @@ class DetailPageManager:
             self.main_window.detach_install_button(page)
             self.main_window.stackedWidget.removeWidget(page)
             page.deleteLater()
+        self._autoinstall_status_controls = None
         self.main_window.currentDetailPage = None
         self._current_detail_page = None
 

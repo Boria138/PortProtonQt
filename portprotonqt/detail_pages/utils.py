@@ -377,8 +377,12 @@ def _check_desktop_file(
     exec_path = extract_exec_target_path(desktop_entry.get("Exec", ""))
     if not exec_path:
         return False
+    if not os.path.isfile(exec_path):
+        return False
 
-    return os.path.basename(exec_path).lower() == autoinstall_exe.lower()
+    exec_name = os.path.basename(exec_path).lower()
+    real_exec_name = os.path.basename(os.path.realpath(exec_path)).lower()
+    return autoinstall_exe.lower() in (exec_name, real_exec_name)
 
 
 def _get_autoinstall_exe_name(script_name: str) -> str:
