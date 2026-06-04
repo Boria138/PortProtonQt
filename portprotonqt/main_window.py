@@ -1,4 +1,5 @@
 import os
+import sys
 import signal
 import shlex
 import shutil
@@ -585,6 +586,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         data = bytes(self.install_process.readAllStandardOutput().data()).decode(
             "utf-8", "ignore"
         )
+        sys.stdout.write(data)
+        sys.stdout.flush()
         self.install_output_buffer += data
         lines = self.install_output_buffer.splitlines(keepends=True)
         self.install_output_buffer = ""
