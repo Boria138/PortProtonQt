@@ -804,7 +804,16 @@ class InputManager(QObject):
                hasattr(self.file_explorer, 'drive_buttons') and \
                self.file_explorer.drive_buttons:
 
-                if not isinstance(focused_widget, AutoSizeButton) or focused_widget not in self.file_explorer.drive_buttons:
+                is_drive_button = (
+                    isinstance(focused_widget, AutoSizeButton) and
+                    focused_widget in self.file_explorer.drive_buttons
+                )
+                if code == PAD_AXIS_LEFT_X:
+                    if abs(value) < self.dead_zone or not is_drive_button:
+                        return
+                    value = 1 if value > self.dead_zone else -1
+
+                if not is_drive_button:
                     # Focus first drive button if not currently on one
                     self.file_explorer.drive_buttons[0].setFocus()
                     self.file_explorer.ensure_button_visible(self.file_explorer.drive_buttons[0])
@@ -827,7 +836,7 @@ class InputManager(QObject):
             elif code in (PAD_DPAD_Y, PAD_AXIS_LEFT_Y):
                 # Move from buttons to list
                 if isinstance(focused_widget, AutoSizeButton) and focused_widget in self.file_explorer.drive_buttons:
-                    if value > 0 and self.file_explorer.file_list.count() > 0:
+                    if code == PAD_DPAD_Y and value > 0 and self.file_explorer.file_list.count() > 0:
                         self.file_explorer.file_list.setFocus()
                         self.file_explorer.file_list.setCurrentRow(0)
                         self.file_explorer.file_list.scrollToItem(self.file_explorer.file_list.currentItem())
