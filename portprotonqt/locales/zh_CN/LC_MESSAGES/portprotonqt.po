@@ -391,6 +391,19 @@ msgstr "输入前缀名称"
 msgid "Prefix:"
 msgstr "前缀："
 
+msgid "Newest"
+msgstr "最新"
+
+msgid "Stable"
+msgstr "稳定"
+
+msgid "Vulkan Backend"
+msgstr "Vulkan 后端"
+
+#, fuzzy
+msgid "Use by default"
+msgstr "默认隐藏 HUD"
+
 msgid "Wine Configuration"
 msgstr "Wine 配置"
 
@@ -731,6 +744,9 @@ msgstr ""
 "启用 dgVoodoo2。在所有 3D API 上强制使用所有 dgVoodoo2 库（Glide 2.11-3.1、"
 "DirectDraw 1-7、Direct3D 2-9）。"
 
+msgid "Enable SpecialK (injection library for fixing graphics, latency and more)"
+msgstr ""
+
 msgid "Enable OptiScaler (replacement upscaler / frame generator)"
 msgstr "启用 OptiScaler（替代性升频器/帧生成器）"
 
@@ -841,15 +857,6 @@ msgstr "前缀名称"
 msgid "Specify the Wine prefix to run this game with"
 msgstr "指定用于运行此游戏的 Wine 前缀"
 
-msgid "Newest"
-msgstr "最新"
-
-msgid "Stable"
-msgstr "稳定"
-
-msgid "Vulkan Backend"
-msgstr "Vulkan 后端"
-
 msgid ""
 "Select the DirectX → Vulkan/OpenGL backend:\n"
 "\n"
@@ -924,11 +931,14 @@ msgstr ""
 "\n"
 "示例：-dx11 -skipintro 1"
 
-msgid "Run After Exe"
+#, fuzzy
+msgid "Run After / Wrapper"
 msgstr "在 Exe 后运行"
 
-msgid "Path to a second .exe that should be started after the main executable."
-msgstr "应在主可执行文件之后启动的第二个 .exe 的路径。"
+msgid ""
+"Path to a second .exe, script, or wrapper command. Example: systemd-run "
+"--user --scope --slice=app.slice"
+msgstr ""
 
 msgid "CPU Cores Limit"
 msgstr "CPU 核心限制"

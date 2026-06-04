@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-06-02 22:39+0500\n"
+"POT-Creation-Date: 2026-06-04 10:32+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -384,6 +384,18 @@ msgstr ""
 msgid "Prefix:"
 msgstr ""
 
+msgid "Newest"
+msgstr ""
+
+msgid "Stable"
+msgstr ""
+
+msgid "Vulkan Backend"
+msgstr ""
+
+msgid "Use by default"
+msgstr ""
+
 msgid "Wine Configuration"
 msgstr ""
 
@@ -714,6 +726,9 @@ msgid ""
 "DirectDraw 1-7, Direct3D 2-9) on all 3D API."
 msgstr ""
 
+msgid "Enable SpecialK (injection library for fixing graphics, latency and more)"
+msgstr ""
+
 msgid "Enable OptiScaler (replacement upscaler / frame generator)"
 msgstr ""
 
@@ -824,15 +839,6 @@ msgstr ""
 msgid "Specify the Wine prefix to run this game with"
 msgstr ""
 
-msgid "Newest"
-msgstr ""
-
-msgid "Stable"
-msgstr ""
-
-msgid "Vulkan Backend"
-msgstr ""
-
 msgid ""
 "Select the DirectX → Vulkan/OpenGL backend:\n"
 "\n"
@@ -881,10 +887,12 @@ msgid ""
 "Example: -dx11 -skipintro 1"
 msgstr ""
 
-msgid "Run After Exe"
+msgid "Run After / Wrapper"
 msgstr ""
 
-msgid "Path to a second .exe that should be started after the main executable."
+msgid ""
+"Path to a second .exe, script, or wrapper command. Example: systemd-run "
+"--user --scope --slice=app.slice"
 msgstr ""
 
 msgid "CPU Cores Limit"

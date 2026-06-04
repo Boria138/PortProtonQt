@@ -398,6 +398,19 @@ msgstr "Введите имя префикса"
 msgid "Prefix:"
 msgstr "Префикс:"
 
+msgid "Newest"
+msgstr "Новейший"
+
+msgid "Stable"
+msgstr "Стабильный"
+
+msgid "Vulkan Backend"
+msgstr "Vulkan рендеринг"
+
+#, fuzzy
+msgid "Use by default"
+msgstr "Скрыть HUD по умолчанию"
+
 msgid "Wine Configuration"
 msgstr "Конфигурация Wine"
 
@@ -737,6 +750,9 @@ msgstr ""
 "Включить dgVoodoo2. Принудительное использование всех библиотек dgVoodoo2 (Glide "
 "2.11-3.1, DirectDraw 1-7, Direct3D 2-9) на всех 3D API."
 
+msgid "Enable SpecialK (injection library for fixing graphics, latency and more)"
+msgstr ""
+
 msgid "Enable OptiScaler (replacement upscaler / frame generator)"
 msgstr "Включить OptiScaler (замена апскейлера / генератора кадров)"
 
@@ -848,15 +864,6 @@ msgstr "Имя префикса"
 msgid "Specify the Wine prefix to run this game with"
 msgstr "Укажите префикс Wine для запуска этой игры"
 
-msgid "Newest"
-msgstr "Новейший"
-
-msgid "Stable"
-msgstr "Стабильный"
-
-msgid "Vulkan Backend"
-msgstr "Vulkan рендеринг"
-
 msgid ""
 "Select the DirectX → Vulkan/OpenGL backend:\n"
 "\n"
@@ -934,11 +941,14 @@ msgstr ""
 "\n"
 "Пример: -dx11 -skipintro 1"
 
-msgid "Run After Exe"
+#, fuzzy
+msgid "Run After / Wrapper"
 msgstr "Запустить после Exe"
 
-msgid "Path to a second .exe that should be started after the main executable."
-msgstr "Путь к второму файлу .exe, который должен запускаться после основного."
+msgid ""
+"Path to a second .exe, script, or wrapper command. Example: systemd-run "
+"--user --scope --slice=app.slice"
+msgstr ""
 
 msgid "CPU Cores Limit"
 msgstr "Ограничение ядер CPU"
