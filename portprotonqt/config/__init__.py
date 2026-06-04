@@ -13,7 +13,7 @@ from portprotonqt.config.base import (
 )
 from portprotonqt.config.cache import CacheConfig, CacheManager
 from portprotonqt.config.display import DisplayConfig, apply_xdg_autostart
-from portprotonqt.config.favorites import FavoritesConfig, FavoritesFoldersConfig
+from portprotonqt.config.favorites import ExeSettingsFavoritesConfig, FavoritesConfig, FavoritesFoldersConfig
 from portprotonqt.config.game import GameConfig
 from portprotonqt.config.gamepad import GamepadConfig
 from portprotonqt.config.portproton import (
@@ -46,6 +46,7 @@ display_config = DisplayConfig()
 window_config = MainWindowConfig()
 favorites_config = FavoritesConfig()
 favorites_folders_config = FavoritesFoldersConfig()
+exe_settings_favorites_config = ExeSettingsFavoritesConfig()
 portproton_config = PortProtonConfig()
 
 __all__ = [
@@ -60,6 +61,7 @@ __all__ = [
     "MainWindowConfig",
     "FavoritesConfig",
     "FavoritesFoldersConfig",
+    "ExeSettingsFavoritesConfig",
     "PortProtonConfig",
     "LAUNCH_FILE_EXTENSIONS",
     "THEMED_LAUNCH_ICON_NAMES",
@@ -80,6 +82,7 @@ __all__ = [
     "window_config",
     "favorites_config",
     "favorites_folders_config",
+    "exe_settings_favorites_config",
     "portproton_config",
     "load_theme_metainfo",
     "apply_xdg_autostart",

@@ -68,3 +68,34 @@ class FavoritesFoldersConfig(BaseConfig):
         fav_str = ", ".join([os.path.normpath(f) for f in folders])
         cp[self._section]["folders"] = f'"{fav_str}"'
         self._save_config(cp)
+
+
+class ExeSettingsFavoritesConfig(BaseConfig):
+    """Favorite executable settings configuration."""
+
+    _section = "ExeSettingsFavorites"
+
+    def get_keys(self) -> list[str]:
+        """Get list of favorite executable setting keys."""
+        cp = self._read_config()
+        if cp is None or not cp.has_section(self._section):
+            return []
+
+        keys = cp.get(self._section, "keys", fallback="").strip()
+        if keys.startswith('"') and keys.endswith('"'):
+            keys = keys[1:-1]
+        return [key.strip() for key in keys.split(",") if key.strip()]
+
+    def set_keys(self, keys: list[str]) -> None:
+        """Set list of favorite executable setting keys."""
+        if not isinstance(keys, list):
+            raise ValidationError("keys must be a list", "keys", keys)
+        for key in keys:
+            validate_string(key, "key", min_len=1, max_len=255)
+
+        cp = self._read_config() or configparser.ConfigParser()
+        if self._section not in cp:
+            cp[self._section] = {}
+        fav_str = ", ".join(keys)
+        cp[self._section]["keys"] = f'"{fav_str}"'
+        self._save_config(cp)

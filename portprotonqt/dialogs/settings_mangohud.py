@@ -790,7 +790,8 @@ class MangoHudSettingsMixin:
         """Track focused MangoHud toggle checkbox and show tooltip."""
         if isinstance(new, QCheckBox) and self.show_registered_gamepad_tooltip(new):
             return
-        if self.tab_widget.currentIndex() == 2:
+        current_tab = self.tab_widget.currentWidget()
+        if current_tab in (self.mangohud_tab, getattr(self, "gamescope_tab", None)):
             self.show_gamepad_tooltip(show=False)
 
     def _update_mangohud_category_stack_height(self):

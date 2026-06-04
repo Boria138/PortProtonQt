@@ -47,6 +47,7 @@ def create_dialog_hints_widget(theme, main_window, input_manager, context='defau
             ("confirm", _("Toggle")),
             ("add_game", _("Save")),
             ("prev_dir", _("Search")),
+            ("context_menu", _("Menu")),
             ("back", _("Cancel")),
             ("prev_tab", _("Prev Tab")),
             ("next_tab", _("Next Tab")),

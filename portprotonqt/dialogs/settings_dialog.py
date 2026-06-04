@@ -5,8 +5,8 @@ import re
 import subprocess
 from typing import cast, TYPE_CHECKING
 
-from PySide6.QtCore import Qt, QObject, QEvent, QProcess, QTimer, QUrl
-from PySide6.QtGui import QColor, QContextMenuEvent, QDesktopServices, QGuiApplication
+from PySide6.QtCore import Qt, QObject, QEvent, QPoint, QProcess, QTimer, QUrl
+from PySide6.QtGui import QColor, QContextMenuEvent, QDesktopServices, QGuiApplication, QIcon
 from PySide6.QtWidgets import (
     QApplication,
     QAbstractItemView,
@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
     QHeaderView,
     QLabel,
     QLineEdit,
+    QMenu,
     QMessageBox,
     QStackedWidget,
     QTabWidget,
@@ -32,6 +33,7 @@ from portprotonqt.config import (
     get_portproton_location,
     get_portproton_scripts_path,
     get_portproton_start_command,
+    exe_settings_favorites_config,
     ui_config,
 )
 from portprotonqt.custom_widgets import AutoSizeButton
@@ -164,6 +166,8 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
         self.original_values = {}
         self.advanced_widgets = {}
         self.original_display_values = {}
+        self.exe_setting_favorites = exe_settings_favorites_config.get_keys()
+        self.advanced_settings_by_key = {}
         self.init_mangohud_state()
         self.init_gamescope_state()
         self.blocked_keys = set()
@@ -264,6 +268,8 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
 
         self.tab_widget = QTabWidget()
         self.tab_widget.setStyleSheet(self.theme.TAB_STYLE)
+        self.favorites_tab = QWidget()
+        self.favorites_tab_layout = QVBoxLayout(self.favorites_tab)
         self.main_tab = QWidget()
         self.main_tab_layout = QVBoxLayout(self.main_tab)
         self.advanced_tab = QWidget()
@@ -298,6 +304,10 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
         settings_combo_style = getattr(self.theme, "SETTINGS_TABLE_COMBOBOX_STYLE", "")
         self.settings_table.setStyleSheet(self.theme.WINETRICKS_TABBLE_STYLE + self.theme.COMBOBOX_STYLE + settings_combo_style + self.theme.LINE_EDIT_STYLE + self.theme.SCROLL_STYLE)
         self.settings_table.setMouseTracking(True)
+        self.settings_table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.settings_table.customContextMenuRequested.connect(
+            lambda pos: self.show_setting_context_menu(self.settings_table, pos)
+        )
 
         self.settings_preloader = Preloader()
         settings_preloader_container = QWidget()
@@ -337,6 +347,41 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
         self.advanced_table.setTextElideMode(Qt.TextElideMode.ElideNone)
         self.advanced_table.setStyleSheet(self.theme.WINETRICKS_TABBLE_STYLE + self.theme.COMBOBOX_STYLE + settings_combo_style + self.theme.LINE_EDIT_STYLE + self.theme.SCROLL_STYLE)
         self.advanced_table.setMouseTracking(True)
+        self.advanced_table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.advanced_table.customContextMenuRequested.connect(
+            lambda pos: self.show_setting_context_menu(self.advanced_table, pos)
+        )
+
+        self.favorites_table = QTableWidget()
+        self.favorites_table.setAlternatingRowColors(True)
+        self.favorites_table.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.favorites_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.favorites_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.favorites_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.favorites_table.setColumnCount(3)
+        self.favorites_table.setHorizontalHeaderLabels([_("Setting"), _("Value"), _("Description")])
+        self.favorites_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        self.favorites_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
+        self.favorites_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
+        self.favorites_table.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
+        self.favorites_table.setWordWrap(True)
+        self.favorites_table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.favorites_table.setTextElideMode(Qt.TextElideMode.ElideNone)
+        self.favorites_table.setStyleSheet(
+            self.theme.WINETRICKS_TABBLE_STYLE
+            + self.theme.COMBOBOX_STYLE
+            + settings_combo_style
+            + self.theme.LINE_EDIT_STYLE
+            + self.theme.SCROLL_STYLE
+        )
+        self.favorites_table.setMouseTracking(True)
+        self.favorites_table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.favorites_table.customContextMenuRequested.connect(
+            lambda pos: self.show_setting_context_menu(self.favorites_table, pos)
+        )
+        self.favorites_tab_layout.addWidget(self.favorites_table)
+        self.favorites_table.currentCellChanged.connect(self.on_table_selection_changed)
+        self.favorites_table.cellEntered.connect(self.on_table_cell_hovered)
 
         self.advanced_preloader = Preloader()
         advanced_preloader_container = QWidget()
@@ -500,6 +545,7 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
         self.populate_mangohud()
         if self.gamescope_available:
             self.populate_gamescope()
+        self.populate_favorites(select_tab=True)
 
         self.settings_container.setCurrentIndex(1)
         self.advanced_container.setCurrentIndex(1)
@@ -633,6 +679,9 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
             dist_options=self.dist_options,
             prefix_options=self.prefix_options
         )
+        self.advanced_settings_by_key = {
+            setting['key']: setting for setting in advanced_settings
+        }
 
         for setting in advanced_settings:
             row = self.advanced_table.rowCount()
@@ -640,6 +689,7 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
             is_blocked = setting.get("type") == "combo" and len(setting.get("options", [])) == 1
 
             name_item = QTableWidgetItem(setting['name'])
+            name_item.setData(Qt.ItemDataRole.UserRole, setting['key'])
             name_item.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled)
             self.advanced_table.setItem(row, 0, name_item)
 
@@ -775,6 +825,234 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
             self.on_table_selection_changed()
         self._install_line_edit_event_filters()
 
+    def _get_current_settings_table(self) -> QTableWidget | None:
+        current_widget = self.tab_widget.currentWidget()
+        if current_widget == self.favorites_tab:
+            return self.favorites_table
+        if current_widget == self.main_tab:
+            return self.settings_table
+        if current_widget == self.advanced_tab:
+            return self.advanced_table
+        return None
+
+    def show_setting_context_menu(self, table: QTableWidget, pos: QPoint) -> None:
+        """Show favorite actions for a settings row."""
+        row = table.rowAt(pos.y())
+        if row < 0:
+            return
+
+        item = table.item(row, 0)
+        if item is None:
+            return
+
+        key = item.data(Qt.ItemDataRole.UserRole)
+        if not isinstance(key, str) or not key:
+            return
+
+        is_favorite = key in self.exe_setting_favorites
+        icon_name = "star" if is_favorite else "star_full"
+        raw_icon = theme_manager.get_icon(icon_name)
+        if isinstance(raw_icon, QIcon):
+            icon = raw_icon
+        elif isinstance(raw_icon, str):
+            icon = QIcon(raw_icon)
+        else:
+            icon = QIcon()
+        menu = QMenu(table)
+        menu.setWindowFlags(
+            menu.windowFlags()
+            | Qt.WindowType.Popup
+            | Qt.WindowType.FramelessWindowHint
+        )
+        menu.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        menu.setStyleSheet(self.theme.CONTEXT_MENU_STYLE)
+        menu.setParent(table, Qt.WindowType.Popup)
+        text = _("Remove from Favorites") if is_favorite else _("Add to Favorites")
+        action = menu.addAction(icon, text)
+        action.triggered.connect(lambda: self.toggle_setting_favorite(key, not is_favorite))
+        menu.setActiveAction(action)
+        menu.setFocus(Qt.FocusReason.OtherFocusReason)
+        QTimer.singleShot(0, lambda: menu.setActiveAction(action))
+        menu.exec(table.viewport().mapToGlobal(pos))
+
+    def handle_settings_context_menu(self) -> bool:
+        """Open favorite context menu for the current settings row."""
+        table = self._get_current_settings_table()
+        if table is None or table.currentRow() < 0:
+            return False
+
+        column = table.currentColumn()
+        if column < 0:
+            column = 0
+        index = table.model().index(table.currentRow(), column)
+        if not index.isValid():
+            return False
+
+        point = table.visualRect(index).center()
+        self.show_setting_context_menu(table, point)
+        return True
+
+    def toggle_setting_favorite(self, key: str, add: bool) -> None:
+        """Toggle favorite state for an executable setting."""
+        favorites = list(self.exe_setting_favorites)
+        if add and key not in favorites:
+            favorites.append(key)
+        elif not add and key in favorites:
+            favorites.remove(key)
+        else:
+            return
+
+        self.exe_setting_favorites = favorites
+        exe_settings_favorites_config.set_keys(favorites)
+        self.populate_favorites()
+
+    def populate_favorites(self, select_tab: bool = False) -> None:
+        """Populate the favorites tab with selected settings."""
+        self.favorites_table.setRowCount(0)
+        self.favorites_table.verticalHeader().setVisible(False)
+        for key in self.exe_setting_favorites:
+            if key in self.toggle_settings:
+                self._add_favorite_toggle_row(key)
+            elif key in self.advanced_widgets:
+                self._add_favorite_advanced_row(key)
+        self.favorites_table.resizeRowsToContents()
+        self._sync_favorites_table_columns()
+        self._sync_favorites_tab_visibility(select_tab)
+        if self.search_edit.text():
+            self.filter_settings(self.search_edit.text())
+
+    def _sync_favorites_table_columns(self) -> None:
+        source_table = self.settings_table
+        for key in self.exe_setting_favorites:
+            if key in self.advanced_widgets and key not in self.toggle_settings:
+                source_table = self.advanced_table
+                break
+
+        source_header = source_table.horizontalHeader()
+        target_header = self.favorites_table.horizontalHeader()
+        target_header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
+        target_header.setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
+        target_header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
+        target_header.resizeSection(0, source_header.sectionSize(0))
+        target_header.resizeSection(1, source_header.sectionSize(1))
+
+    def _sync_favorites_tab_visibility(self, select_tab: bool) -> None:
+        favorites_index = self.tab_widget.indexOf(self.favorites_tab)
+        has_favorites = self.favorites_table.rowCount() > 0
+        if has_favorites and favorites_index < 0:
+            self.tab_widget.insertTab(0, self.favorites_tab, _("Favorites"))
+            if not select_tab:
+                return
+            self.tab_widget.setCurrentIndex(0)
+            self.favorites_table.setCurrentCell(0, 1)
+            self.favorites_table.setFocus(Qt.FocusReason.OtherFocusReason)
+        elif has_favorites and select_tab:
+            self.tab_widget.setCurrentIndex(0)
+            self.favorites_table.setCurrentCell(0, 1)
+            self.favorites_table.setFocus(Qt.FocusReason.OtherFocusReason)
+        elif not has_favorites and favorites_index >= 0:
+            self.tab_widget.removeTab(favorites_index)
+
+    def _add_favorite_toggle_row(self, key: str) -> None:
+        row = self.favorites_table.rowCount()
+        self.favorites_table.insertRow(row)
+        self._set_favorite_text_cells(
+            row,
+            key,
+            format_setting_name_for_display(key),
+            self.toggle_settings[key],
+        )
+
+        source_widget = self._find_toggle_widget(key)
+        checkbox = QCheckBox()
+        checkbox.setStyleSheet(self.theme.CHECKBOX_STYLE)
+        checkbox.setChecked(source_widget.isChecked() if source_widget else False)
+        checkbox.setEnabled(source_widget.isEnabled() if source_widget else False)
+        checkbox.stateChanged.connect(
+            lambda _state, widget=source_widget, cb=checkbox: self._sync_checkbox(widget, cb)
+        )
+        checkbox_container = QWidget()
+        checkbox_container.setStyleSheet(
+            self.theme.CHECKBOX_STYLE + self.theme.TRANSPARENT_BACKGROUND_STYLE
+        )
+        checkbox_layout = QHBoxLayout(checkbox_container)
+        checkbox_layout.setContentsMargins(0, 0, 0, 0)
+        checkbox_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        checkbox_layout.addWidget(checkbox)
+        checkbox_container.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        checkbox_item = QTableWidgetItem()
+        checkbox_item.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled)
+        self.favorites_table.setItem(row, 1, checkbox_item)
+        self.favorites_table.setCellWidget(row, 1, checkbox_container)
+
+    def _add_favorite_advanced_row(self, key: str) -> None:
+        setting = self.advanced_settings_by_key.get(key)
+        source_widget = self.advanced_widgets.get(key)
+        if setting is None or source_widget is None:
+            return
+
+        row = self.favorites_table.rowCount()
+        self.favorites_table.insertRow(row)
+        self._set_favorite_text_cells(row, key, setting['name'], setting['description'])
+        if isinstance(source_widget, QComboBox):
+            self._add_favorite_combo(row, source_widget)
+        elif isinstance(source_widget, QLineEdit):
+            self._add_favorite_line_edit(row, source_widget)
+
+    def _set_favorite_text_cells(self, row: int, key: str, name: str, description: str) -> None:
+        name_item = QTableWidgetItem(name)
+        name_item.setData(Qt.ItemDataRole.UserRole, key)
+        name_item.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled)
+        desc_item = QTableWidgetItem(description)
+        desc_item.setFlags(Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled)
+        desc_item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        self.favorites_table.setItem(row, 0, name_item)
+        self.favorites_table.setItem(row, 2, desc_item)
+
+    def _find_toggle_widget(self, key: str) -> QCheckBox | None:
+        for (row, _column), widget in self.value_widgets.items():
+            item = self.settings_table.item(row, 0)
+            if item and item.data(Qt.ItemDataRole.UserRole) == key:
+                return widget
+        return None
+
+    def _sync_checkbox(self, source_widget: QCheckBox | None, checkbox: QCheckBox) -> None:
+        if source_widget is not None and source_widget.isChecked() != checkbox.isChecked():
+            source_widget.setChecked(checkbox.isChecked())
+
+    def _add_favorite_combo(self, row: int, source_widget: QComboBox) -> None:
+        combo = QComboBox()
+        combo.setObjectName("settingsTableCombo")
+        combo.view().window().setWindowFlags(
+            Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
+        )
+        combo.view().window().setAttribute(
+            Qt.WidgetAttribute.WA_TranslucentBackground
+        )
+        combo.setEditable(source_widget.isEditable())
+        for index in range(source_widget.count()):
+            combo.addItem(source_widget.itemText(index), source_widget.itemData(index))
+        combo.setCurrentText(source_widget.currentText())
+        combo.setEnabled(source_widget.isEnabled())
+        settings_combo_style = getattr(self.theme, "SETTINGS_TABLE_COMBOBOX_STYLE", "")
+        combo.setStyleSheet(
+            self.theme.COMBOBOX_STYLE
+            + settings_combo_style
+            + self.theme.SCROLL_STYLE
+        )
+        combo.currentTextChanged.connect(source_widget.setCurrentText)
+        self.favorites_table.setCellWidget(row, 1, combo)
+
+    def _add_favorite_line_edit(self, row: int, source_widget: QLineEdit) -> None:
+        line_edit = QLineEdit()
+        line_edit.setText(source_widget.text())
+        line_edit.setPlaceholderText(source_widget.placeholderText())
+        line_edit.setEnabled(source_widget.isEnabled())
+        line_edit.setStyleSheet(source_widget.styleSheet() or self.theme.ADDGAME_INPUT_STYLE)
+        line_edit.textChanged.connect(source_widget.setText)
+        line_edit.installEventFilter(self)
+        self.favorites_table.setCellWidget(row, 1, line_edit)
+
     def init_virtual_keyboard(self):
         """Initialize virtual keyboard."""
         self.keyboard = VirtualKeyboard(self, theme=self.theme, button_width=50)
@@ -824,6 +1102,18 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
     def filter_settings(self, text):
         """Filter settings based on search text."""
         search_text = text.lower()
+        for row in range(self.favorites_table.rowCount()):
+            name_item = self.favorites_table.item(row, 0)
+            desc_item = self.favorites_table.item(row, 2)
+            should_show = False
+
+            if name_item and search_text in name_item.text().lower():
+                should_show = True
+            elif desc_item and search_text in desc_item.text().lower():
+                should_show = True
+
+            self.favorites_table.setRowHidden(row, not should_show)
+
         for row in range(self.settings_table.rowCount()):
             name_item = self.settings_table.item(row, 0)
             desc_item = self.settings_table.item(row, 2)
@@ -1059,7 +1349,7 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
                 _show_tooltip_at(anchor_widget.mapToGlobal(widget_rect.bottomLeft()))
                 return
 
-            current_table = self.advanced_table if self.tab_widget.currentIndex() == 1 else self.settings_table
+            current_table = self._get_current_settings_table()
             if current_table and current_table.currentRow() >= 0 and current_table.currentColumn() >= 0:
                 row = current_table.currentRow()
                 col = current_table.currentColumn()
@@ -1074,8 +1364,8 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
 
     def get_current_description(self):
         """Get the description text for the currently selected row."""
-        current_table = self.advanced_table if self.tab_widget.currentIndex() == 1 else self.settings_table
-        if self.tab_widget.currentIndex() == 2:
+        current_table = self._get_current_settings_table()
+        if current_table is None:
             return ""
         current_row = current_table.currentRow()
         if current_row >= 0:
@@ -1117,11 +1407,11 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
 
     def on_table_selection_changed(self):
         """Called when table selection changes to update the gamepad tooltip."""
-        if self.tab_widget.currentIndex() == 2:
+        current_table = self._get_current_settings_table()
+        if current_table is None:
             self.show_gamepad_tooltip(show=False)
             return
 
-        current_table = self.advanced_table if self.tab_widget.currentIndex() == 1 else self.settings_table
         current_column = current_table.currentColumn() if current_table else -1
         if current_column != 2:
             self.show_gamepad_tooltip(show=False)
@@ -1140,7 +1430,7 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
 
     def on_table_cell_hovered(self, row, column):
         """Show custom tooltip on hover for description cells."""
-        if self.tab_widget.currentIndex() == 2 or column != 2:
+        if column != 2:
             self.show_gamepad_tooltip(show=False)
             return
 
