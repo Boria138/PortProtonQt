@@ -41,6 +41,7 @@ from portprotonqt.dialogs.base import DraggableDialog
 from portprotonqt.dialogs.dialog_utils import create_dialog_hints_widget, update_dialog_hints
 from portprotonqt.dialogs.settings_mangohud import MANGOHUD_ENV_KEYS, MangoHudSettingsMixin
 from portprotonqt.dialogs.settings_gamescope import GAMESCOPE_ENV_KEYS, GamescopeSettingsMixin
+from portprotonqt.dialogs.settings_vkbasalt import VKBASALT_ENV_KEYS, VkBasaltSettingsMixin
 from portprotonqt.localization import _, format_setting_name_for_display
 from portprotonqt.logger import get_logger
 from portprotonqt.preloader import Preloader
@@ -61,6 +62,8 @@ TOGGLE_BOOL_KEYS = {
     'PW_MANGOHUD',
     'PW_MANGOHUD_USER_CONF',
     'PW_GAMESCOPE',
+    'PW_VKBASALT',
+    'PW_VKBASALT_USER_CONF',
 }
 
 
@@ -124,7 +127,12 @@ def _get_numa_nodes() -> dict[str, str]:
     return numa_nodes
 
 
-class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSettingsMixin):
+class ExeSettingsDialog(
+    DraggableDialog,
+    MangoHudSettingsMixin,
+    GamescopeSettingsMixin,
+    VkBasaltSettingsMixin,
+):
     """Dialog for configuring executable-specific settings."""
 
     def __init__(self, parent=None, theme=None, exe_path=None, appid=None, game_source=None):
@@ -170,6 +178,7 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
         self.advanced_settings_by_key = {}
         self.init_mangohud_state()
         self.init_gamescope_state()
+        self.init_vkbasalt_state()
         self.blocked_keys = set()
         self.numa_nodes = {}
         self.locale_options = []
@@ -276,12 +285,15 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
         self.advanced_tab_layout = QVBoxLayout(self.advanced_tab)
         self.mangohud_tab = QWidget()
         self.mangohud_tab_layout = QVBoxLayout(self.mangohud_tab)
+        self.vkbasalt_tab = QWidget()
+        self.vkbasalt_tab_layout = QVBoxLayout(self.vkbasalt_tab)
         self.gamescope_tab = QWidget()
         self.gamescope_tab_layout = QVBoxLayout(self.gamescope_tab)
 
         self.tab_widget.addTab(self.main_tab, _("Main"))
         self.tab_widget.addTab(self.advanced_tab, _("Advanced"))
         self.tab_widget.addTab(self.mangohud_tab, "MangoHud")
+        self.tab_widget.addTab(self.vkbasalt_tab, "vkBasalt")
         if self.gamescope_available:
             self.tab_widget.addTab(self.gamescope_tab, "Gamescope")
         self.tab_widget.currentChanged.connect(self.on_table_selection_changed)
@@ -405,6 +417,7 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
         self.advanced_table.installEventFilter(self)
 
         self.setup_mangohud_tab()
+        self.setup_vkbasalt_tab()
         if self.gamescope_available:
             self.setup_gamescope_tab()
 
@@ -488,6 +501,7 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
                             or key in ADVANCED_SETTING_KEYS
                             or key in MANGOHUD_ENV_KEYS
                             or key in GAMESCOPE_ENV_KEYS
+                            or key in VKBASALT_ENV_KEYS
                             or key in TOGGLE_BOOL_KEYS
                         ):
                             if val.startswith('"') and val.endswith('"') and len(val) >= 2:
@@ -518,8 +532,11 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
                 self.current_settings[key] = ''
             for key in GAMESCOPE_ENV_KEYS:
                 self.current_settings[key] = ''
+            for key in VKBASALT_ENV_KEYS:
+                self.current_settings[key] = ''
         else:
             self.current_settings.setdefault('PW_MANGOHUD', '0')
+            self.current_settings.setdefault('PW_VKBASALT', '0')
 
         for key in self.blocked_keys:
             self.current_settings[key] = '0'
@@ -543,6 +560,7 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
         self.populate_table()
         self.populate_advanced()
         self.populate_mangohud()
+        self.populate_vkbasalt()
         if self.gamescope_available:
             self.populate_gamescope()
         self.populate_favorites(select_tab=True)
@@ -1139,6 +1157,7 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
             self.advanced_table.setRowHidden(row, not should_show)
 
         self._filter_mangohud_settings(search_text)
+        self._filter_vkbasalt_settings(search_text)
         self._filter_gamescope_settings(search_text)
 
     def apply_changes(self):
@@ -1209,6 +1228,7 @@ class ExeSettingsDialog(DraggableDialog, MangoHudSettingsMixin, GamescopeSetting
         if self.gamescope_available:
             gamescope_changes = self._collect_gamescope_changes()
         changes.extend(mangohud_changes)
+        changes.extend(self._collect_vkbasalt_changes())
         changes.extend(gamescope_changes)
 
         # Check if PW_GAMESCOPE toggle changes are already in the list

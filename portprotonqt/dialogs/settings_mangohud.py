@@ -791,7 +791,11 @@ class MangoHudSettingsMixin:
         if isinstance(new, QCheckBox) and self.show_registered_gamepad_tooltip(new):
             return
         current_tab = self.tab_widget.currentWidget()
-        if current_tab in (self.mangohud_tab, getattr(self, "gamescope_tab", None)):
+        if current_tab in (
+            self.mangohud_tab,
+            getattr(self, "vkbasalt_tab", None),
+            getattr(self, "gamescope_tab", None),
+        ):
             self.show_gamepad_tooltip(show=False)
 
     def _update_mangohud_category_stack_height(self):

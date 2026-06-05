@@ -64,6 +64,7 @@ install_data(
    'dialogs/settings_dialog.py',
    'dialogs/settings_mangohud.py',
    'dialogs/settings_gamescope.py',
+   'dialogs/settings_vkbasalt.py',
    'dialogs/proton_manager.py',
    'dialogs/prefix_backup.py',
    'dialogs/wine_loader.py',

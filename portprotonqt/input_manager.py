@@ -1782,6 +1782,7 @@ class InputManager(QObject):
         current_tab = self.settings_dialog.tab_widget.currentWidget()
         return current_tab in (
             getattr(self.settings_dialog, "mangohud_tab", None),
+            getattr(self.settings_dialog, "vkbasalt_tab", None),
             getattr(self.settings_dialog, "gamescope_tab", None),
         )
 
@@ -1885,13 +1886,14 @@ class InputManager(QObject):
                 self._focus_mangohud_widget(sections[0][0])
 
     def _get_mangohud_nav_sections(self):
-        """Return MangoHud/Gamescope focusable widgets grouped by visual sections."""
+        """Return settings tool focusable widgets grouped by visual sections."""
         if not self.settings_dialog:
             return []
         current_tab = self.settings_dialog.tab_widget.currentWidget()
         is_mangohud = current_tab == getattr(self.settings_dialog, "mangohud_tab", None)
+        is_vkbasalt = current_tab == getattr(self.settings_dialog, "vkbasalt_tab", None)
         is_gamescope = current_tab == getattr(self.settings_dialog, "gamescope_tab", None)
-        if not is_mangohud and not is_gamescope:
+        if not is_mangohud and not is_vkbasalt and not is_gamescope:
             return []
 
         sections = []
@@ -1924,22 +1926,28 @@ class InputManager(QObject):
         preset_section = self._sort_widgets_by_position(preset_buttons) if preset_buttons else []
 
         toggle_widgets = []
-        category_combo_attr = 'mangohud_category_combo' if is_mangohud else 'gamescope_category_combo'
-        category_stack_attr = 'mangohud_category_stack' if is_mangohud else 'gamescope_category_stack'
-        category_combo = getattr(self.settings_dialog, category_combo_attr, None)
-        if category_combo and category_combo.isVisible() and category_combo.isEnabled():
-            toggle_widgets.append(category_combo)
-        category_stack = getattr(self.settings_dialog, category_stack_attr, None)
-        if category_stack:
-            category_widget = category_stack.currentWidget()
-            if category_widget:
-                category_checkboxes = [
-                    checkbox for checkbox in category_widget.findChildren(
-                        QCheckBox, options=Qt.FindChildOption.FindChildrenRecursively
-                    )
-                    if checkbox.isVisible() and checkbox.isEnabled()
-                ]
-                toggle_widgets.extend(self._sort_widgets_by_position(category_checkboxes))
+        if is_vkbasalt:
+            toggle_widgets = [
+                checkbox for checkbox in self.settings_dialog.vkbasalt_shader_widgets.values()
+                if checkbox.isVisible() and checkbox.isEnabled()
+            ]
+        else:
+            category_combo_attr = 'mangohud_category_combo' if is_mangohud else 'gamescope_category_combo'
+            category_stack_attr = 'mangohud_category_stack' if is_mangohud else 'gamescope_category_stack'
+            category_combo = getattr(self.settings_dialog, category_combo_attr, None)
+            if category_combo and category_combo.isVisible() and category_combo.isEnabled():
+                toggle_widgets.append(category_combo)
+            category_stack = getattr(self.settings_dialog, category_stack_attr, None)
+            if category_stack:
+                category_widget = category_stack.currentWidget()
+                if category_widget:
+                    category_checkboxes = [
+                        checkbox for checkbox in category_widget.findChildren(
+                            QCheckBox, options=Qt.FindChildOption.FindChildrenRecursively
+                        )
+                        if checkbox.isVisible() and checkbox.isEnabled()
+                    ]
+                    toggle_widgets.extend(self._sort_widgets_by_position(category_checkboxes))
         toggle_section = toggle_widgets if toggle_widgets else []
 
         fps_section = []
@@ -1956,8 +1964,11 @@ class InputManager(QObject):
             if fps_widgets:
                 fps_section = self._sort_widgets_by_position(fps_widgets)
 
-        extra_edit_attr = 'mangohud_extra_edit' if is_mangohud else 'gamescope_extra_edit'
-        extra_edit = getattr(self.settings_dialog, extra_edit_attr, None)
+        if is_vkbasalt:
+            extra_edit = getattr(self.settings_dialog, 'vkbasalt_cas_slider', None)
+        else:
+            extra_edit_attr = 'mangohud_extra_edit' if is_mangohud else 'gamescope_extra_edit'
+            extra_edit = getattr(self.settings_dialog, extra_edit_attr, None)
         extra_section = [extra_edit] if extra_edit and extra_edit.isVisible() and extra_edit.isEnabled() else []
 
         if is_mangohud:
@@ -1971,7 +1982,7 @@ class InputManager(QObject):
                 sections.append(fps_section)
             if extra_section:
                 sections.append(extra_section)
-        else:
+        elif is_gamescope:
             # Gamescope UI order: presets -> toggles -> values -> extra.
             if preset_section:
                 sections.append(preset_section)
@@ -1979,6 +1990,13 @@ class InputManager(QObject):
                 sections.append(toggle_section)
             if value_widgets:
                 sections.append(self._sort_widgets_by_position(value_widgets))
+            if extra_section:
+                sections.append(extra_section)
+        else:
+            if preset_section:
+                sections.append(preset_section)
+            if toggle_section:
+                sections.append(self._sort_widgets_by_position(toggle_section))
             if extra_section:
                 sections.append(extra_section)
 
@@ -2023,6 +2041,9 @@ class InputManager(QObject):
         position = self._find_widget_in_sections(focused, sections)
         if not position:
             return
+        if isinstance(focused, QSlider):
+            focused.setValue(focused.value() + direction)
+            return
         section_index, _widget_index = position
         target = self._find_mangohud_grid_horizontal_target(
             focused, direction, sections[section_index]
@@ -2065,6 +2086,7 @@ class InputManager(QObject):
 
         current_tab = settings_dialog.tab_widget.currentWidget()
         is_mangohud = current_tab == getattr(settings_dialog, "mangohud_tab", None)
+        is_vkbasalt = current_tab == getattr(settings_dialog, "vkbasalt_tab", None)
         fps_limit_method = None
         if is_mangohud:
             fps_limit_method = settings_dialog.mangohud_widgets.get('fps_limit_method')
@@ -2078,10 +2100,13 @@ class InputManager(QObject):
                 self._focus_mangohud_widget(first_fps_checkbox)
                 return
 
-        category_combo_attr = 'mangohud_category_combo' if is_mangohud else 'gamescope_category_combo'
-        category_stack_attr = 'mangohud_category_stack' if is_mangohud else 'gamescope_category_stack'
-        category_combo = getattr(settings_dialog, category_combo_attr, None)
-        category_stack = getattr(settings_dialog, category_stack_attr, None)
+        category_combo = None
+        category_stack = None
+        if not is_vkbasalt:
+            category_combo_attr = 'mangohud_category_combo' if is_mangohud else 'gamescope_category_combo'
+            category_stack_attr = 'mangohud_category_stack' if is_mangohud else 'gamescope_category_stack'
+            category_combo = getattr(settings_dialog, category_combo_attr, None)
+            category_stack = getattr(settings_dialog, category_stack_attr, None)
         if direction > 0 and category_combo and focused is category_combo and category_stack:
             current_category_widget = category_stack.currentWidget()
             if current_category_widget:
@@ -2112,7 +2137,6 @@ class InputManager(QObject):
         if not target_section:
             return
 
-        category_combo = getattr(settings_dialog, category_combo_attr, None)
         if category_combo and category_combo in target_section:
             self._focus_mangohud_widget(category_combo)
             return
@@ -2238,6 +2262,10 @@ class InputManager(QObject):
         current_tab = self.settings_dialog.tab_widget.currentWidget()
         if current_tab == getattr(self.settings_dialog, "mangohud_tab", None):
             toggle_keys = getattr(self.settings_dialog, 'mangohud_toggle_widget_keys', {})
+            return isinstance(widget, QCheckBox) and widget in toggle_keys
+        if current_tab == getattr(self.settings_dialog, "vkbasalt_tab", None):
+            toggle_widgets = getattr(self.settings_dialog, 'vkbasalt_shader_widgets', {})
+            return isinstance(widget, QCheckBox) and widget in set(toggle_widgets.values())
         elif current_tab == getattr(self.settings_dialog, "gamescope_tab", None):
             toggle_keys = getattr(self.settings_dialog, 'gamescope_toggle_widget_keys', {})
         else:
@@ -2251,7 +2279,18 @@ class InputManager(QObject):
         toggle_widgets = [widget for widget in section if self._is_mangohud_toggle_widget(widget)]
         if not toggle_widgets:
             return None
+        if self._is_vkbasalt_cas_widget(focused) and direction > 0:
+            return None
         return self._find_mangohud_vertical_grid_target(focused, direction, toggle_widgets)
+
+    def _is_vkbasalt_cas_widget(self, widget: QWidget) -> bool:
+        if not self.settings_dialog:
+            return False
+        current_tab = self.settings_dialog.tab_widget.currentWidget()
+        if current_tab != getattr(self.settings_dialog, "vkbasalt_tab", None):
+            return False
+        cas_widget = getattr(self.settings_dialog, 'vkbasalt_shader_widgets', {}).get('cas')
+        return widget is cas_widget
 
     def _find_mangohud_fps_vertical_target(self, focused, direction, section):
         """Navigate FPS widgets down/up with automatic next/prev column jump."""
