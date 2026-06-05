@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-03-22 13:50+0500\n"
-"PO-Revision-Date: 2026-06-04 05:34+0000\n"
+"PO-Revision-Date: 2026-06-05 08:34+0000\n"
 "Last-Translator: Boria138 <boria138@noreply.codeberg.org>\n"
 "Language-Team: Russian <https://translate.codeberg.org/projects/portprotonqt/"
 "portprotonqt/ru/>\n"
@@ -2078,23 +2078,21 @@ msgstr "Ошибка при записи конфигурации MangoHud."
 msgid "Failed to run preview."
 msgstr "Ошибка при запуске предпросмотра."
 
-#, fuzzy
 msgid "Enable vkBasalt"
-msgstr "Статус vkBasalt"
+msgstr "Включить vkBasalt"
 
 msgid "ReShade shaders"
-msgstr ""
+msgstr "Шейдеры"
 
 msgid "AMD FidelityFX - Contrast Adaptive Sharpening"
-msgstr ""
+msgstr "AMD FidelityFX — адаптивная резкость с учетом контрастности"
 
 #, python-brace-format
 msgid "Sharpness: {0}"
-msgstr ""
+msgstr "Резкость: {0}"
 
-#, fuzzy
 msgid "Disable vkBasalt"
-msgstr "Статус vkBasalt"
+msgstr "Отключить vkBasalt"
 
 msgid "Prefix Manager"
 msgstr "Менеджер префиксов"
