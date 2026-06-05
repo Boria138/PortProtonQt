@@ -1,0 +1,2185 @@
+# Spanish translations for PortProtonQt.
+# Copyright (C) 2026 boria138
+# This file is distributed under the same license as the PortProtonQt
+# project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-03-22 13:50+0500\n"
+"PO-Revision-Date: 2026-05-11 08:58+0000\n"
+"Last-Translator: gallegonovato <gallegonovato@noreply.codeberg.org>\n"
+"Language-Team: Spanish <https://translate.codeberg.org/projects/portprotonqt/"
+"portprotonqt/es/>\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 5.17.1\n"
+"Generated-By: Babel 2.17.0\n"
+
+msgid "Stop Game"
+msgstr "Detener partida"
+
+msgid ""
+"PortProton data folder is not readable and writable. Choose another "
+"folder for PortProton data."
+msgstr ""
+
+msgid "Error"
+msgstr "Error"
+
+msgid "PortProton directory not found"
+msgstr "No encontrado el directorio PortProton"
+
+msgid "Remove from Favorites"
+msgstr "Quitar de favoritos"
+
+msgid "Add to Favorites"
+msgstr "Añadir a favoritos"
+
+msgid "Create Folder"
+msgstr "Crear carpeta"
+
+msgid "Rename Folder"
+msgstr "Cambiar el nombre de la carpeta"
+
+msgid "Delete Folder"
+msgstr "Borrar la carpeta"
+
+msgid "OK"
+msgstr "De acuerdo"
+
+msgid "Cancel"
+msgstr "Cancelar"
+
+msgid "Folder name cannot be empty"
+msgstr "La carpeta tiene que tener un nombre"
+
+msgid "Invalid folder name"
+msgstr "Nombre de carpeta incorrecto"
+
+msgid "Folder Name:"
+msgstr "Nombre de la carpeta:"
+
+#, python-brace-format
+msgid "Folder already exists: {folder_name}"
+msgstr "La carpeta ya existe: {folder_name}"
+
+#, python-brace-format
+msgid "Failed to create folder: {error}"
+msgstr "No se ha podido crear la carpeta: {error}"
+
+msgid "New Folder Name:"
+msgstr "Nombre de la nueva carpeta:"
+
+#, python-brace-format
+msgid "Failed to rename folder: {error}"
+msgstr "No se pudo cambiar el nombre de la carpeta: {error}"
+
+msgid "Confirm Deletion"
+msgstr "Confirmar eliminación"
+
+#, python-brace-format
+msgid ""
+"Are you sure you want to delete folder '{folder_name}'? This action cannot be "
+"undone."
+msgstr ""
+"¿Estás seguro de que quieres eliminar la carpeta «{folder_name}»? Esta "
+"acción no se puede deshacer."
+
+msgid "Yes"
+msgstr ""
+
+msgid "No"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to delete folder: {error}"
+msgstr "No se ha podido eliminar la carpeta: {error}"
+
+msgid "Delete from PortProton"
+msgstr "Eliminar de PortProton"
+
+msgid "Launch Game"
+msgstr "Iniciar juego"
+
+msgid "Remove from Desktop"
+msgstr "Eliminar del escritorio"
+
+msgid "Add to Desktop"
+msgstr "Añadir al escritorio"
+
+msgid "Remove from Menu"
+msgstr "Eliminar del menú"
+
+msgid "Add to Menu"
+msgstr "Añadir al menú"
+
+msgid "Open Game Folder"
+msgstr "Abrir la carpeta del juego"
+
+msgid "Edit Shortcut"
+msgstr "Editar acceso directo"
+
+msgid "Remove from Steam"
+msgstr "Eliminar de Steam"
+
+msgid "Add to Steam"
+msgstr "Añadir a Steam"
+
+msgid "Failed to stop game"
+msgstr "Error al detener el juego"
+
+#, python-brace-format
+msgid "No executable command found in .desktop file for '{game_name}'"
+msgstr "Sin ningún ejecutable en el archivo .desktop para «{game_name}»"
+
+#, python-brace-format
+msgid "Failed to parse .desktop file for '{game_name}'"
+msgstr ""
+
+#, python-brace-format
+msgid "Error reading .desktop file: {error}"
+msgstr ""
+
+#, python-brace-format
+msgid "No .desktop file found for '{game_name}'"
+msgstr ""
+
+#, python-brace-format
+msgid ""
+"Are you sure you want to delete '{game_name}'? This will remove the .desktop "
+"file and custom data."
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to delete .desktop file: {error}"
+msgstr ""
+
+#, python-brace-format
+msgid "Deleted '{game_name}' successfully"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to delete custom data: {error}"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to add '{game_name}' to {location}: {error}"
+msgstr ""
+
+msgid "Menu"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to remove '{game_name}' from {location}: {error}"
+msgstr ""
+
+#, python-brace-format
+msgid "Removed '{game_name}' from {location}"
+msgstr ""
+
+msgid "Desktop"
+msgstr ""
+
+msgid "Game name and executable path are required"
+msgstr ""
+
+msgid "Failed to generate .desktop file data"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to delete old .desktop file: {error}"
+msgstr ""
+
+#, python-brace-format
+msgid "Removed old .desktop file for '{game_name}'"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to save .desktop file: {error}"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to copy cover image: {error}"
+msgstr ""
+
+#, python-brace-format
+msgid "Unsupported image format: {extension}"
+msgstr ""
+
+msgid "Success"
+msgstr ""
+
+#, python-brace-format
+msgid ""
+"'{game_name}' was added to Steam. Please restart Steam for changes to take "
+"effect."
+msgstr ""
+
+#, python-brace-format
+msgid "'{game_name}' was added to Steam."
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to add '{game_name}' to Steam: {error}"
+msgstr ""
+
+#, python-brace-format
+msgid ""
+"'{game_name}' was removed from Steam. Please restart Steam for changes to take "
+"effect."
+msgstr ""
+
+#, python-brace-format
+msgid "'{game_name}' was removed from Steam."
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to remove game '{game_name}' from Steam: {error}"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to open folder: {error}"
+msgstr ""
+
+msgid "Undo"
+msgstr ""
+
+msgid "Redo"
+msgstr ""
+
+msgid "Cut"
+msgstr ""
+
+msgid "Copy"
+msgstr ""
+
+msgid "Paste"
+msgstr ""
+
+msgid "Delete"
+msgstr ""
+
+msgid "Select All"
+msgstr ""
+
+msgid "Supported"
+msgstr ""
+
+msgid "Running"
+msgstr ""
+
+msgid "Planned"
+msgstr ""
+
+msgid "Broken"
+msgstr ""
+
+msgid "Denied"
+msgstr ""
+
+msgid "Platinum"
+msgstr ""
+
+msgid "Gold"
+msgstr ""
+
+msgid "Silver"
+msgstr ""
+
+msgid "Bronze"
+msgstr ""
+
+msgid "Pending"
+msgstr ""
+
+msgid "Unknown Game"
+msgstr ""
+
+msgid "Downloading Wine..."
+msgstr ""
+
+msgid "Library"
+msgstr ""
+
+msgid "Auto Install"
+msgstr ""
+
+msgid "Wine Settings"
+msgstr ""
+
+msgid "PPQT Settings"
+msgstr ""
+
+msgid "System"
+msgstr ""
+
+msgid "Themes"
+msgstr ""
+
+msgid "Warning"
+msgstr ""
+
+msgid "Installation already in progress."
+msgstr ""
+
+msgid "Installing..."
+msgstr ""
+
+msgid "Failed to start installation."
+msgstr ""
+
+msgid "Stop"
+msgstr ""
+
+msgid "Failed to stop installation."
+msgstr ""
+
+#, python-brace-format
+msgid "{0} Plugins..."
+msgstr ""
+
+#, python-brace-format
+msgid "{0} Libs..."
+msgstr ""
+
+#, python-brace-format
+msgid "{0} Wine..."
+msgstr ""
+
+#, python-brace-format
+msgid "{0} components..."
+msgstr ""
+
+msgid "Downloading"
+msgstr ""
+
+msgid "Extracting"
+msgstr ""
+
+msgid "Refresh Grid"
+msgstr ""
+
+msgid "Never"
+msgstr ""
+
+msgid "Unknown Application"
+msgstr ""
+
+msgid "Quick Launch"
+msgstr ""
+
+#, fuzzy
+msgid "Add a shortcut"
+msgstr "Editar acceso directo"
+
+msgid "Search ..."
+msgstr ""
+
+msgid "Refreshing..."
+msgstr ""
+
+msgid "Enter prefix name"
+msgstr ""
+
+msgid "Prefix:"
+msgstr ""
+
+msgid "Newest"
+msgstr ""
+
+msgid "Stable"
+msgstr ""
+
+msgid "Vulkan Backend"
+msgstr ""
+
+msgid "Use by default"
+msgstr ""
+
+msgid "Wine Configuration"
+msgstr ""
+
+msgid "Registry Editor"
+msgstr ""
+
+msgid "File Explorer"
+msgstr ""
+
+msgid "Command Prompt"
+msgstr ""
+
+msgid "Uninstaller"
+msgstr ""
+
+msgid "Create Prefix Backup"
+msgstr ""
+
+msgid "Load Prefix Backup"
+msgstr ""
+
+msgid "Delete Prefix"
+msgstr ""
+
+msgid "Clear Prefix"
+msgstr ""
+
+msgid "Manage WINE versions"
+msgstr ""
+
+msgid "Failed to start process."
+msgstr ""
+
+msgid "Confirm Clear"
+msgstr ""
+
+#, python-brace-format
+msgid "Are you sure you want to clear prefix '{}'?"
+msgstr ""
+
+msgid "Failed to start prefix clear process."
+msgstr ""
+
+msgid "Prefix cleared successfully."
+msgstr ""
+
+#, python-brace-format
+msgid "Prefix clear failed with exit code {}."
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to run clear prefix command: {}"
+msgstr ""
+
+msgid "Failed to start restore process."
+msgstr ""
+
+msgid "Prefix backup completed."
+msgstr ""
+
+msgid "Prefix backup failed."
+msgstr ""
+
+msgid "Prefix restore completed."
+msgstr ""
+
+msgid "Prefix restore failed."
+msgstr ""
+
+#, python-brace-format
+msgid "Are you sure you want to delete prefix '{}'?"
+msgstr ""
+
+#, python-brace-format
+msgid "Prefix '{}' deleted."
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to delete prefix: {}"
+msgstr ""
+
+msgid "PortProton Settings"
+msgstr ""
+
+msgid "Library Settings"
+msgstr ""
+
+msgid "Detailed"
+msgstr ""
+
+msgid "Brief"
+msgstr ""
+
+msgid "Hidden"
+msgstr ""
+
+msgid "Time Detail Level:"
+msgstr ""
+
+msgid "Last launch"
+msgstr ""
+
+msgid "Time spent"
+msgstr ""
+
+msgid "Alphabetical"
+msgstr ""
+
+msgid "Sort Method:"
+msgstr ""
+
+msgid "All"
+msgstr ""
+
+msgid "Favorites"
+msgstr ""
+
+msgid "Display Filter:"
+msgstr ""
+
+msgid "Compact"
+msgstr ""
+
+msgid "Badge View Type:"
+msgstr ""
+
+msgid "Interface Settings"
+msgstr ""
+
+msgid "Tray Menu Type:"
+msgstr ""
+
+msgid "Auto"
+msgstr ""
+
+msgid "Gamepad Type:"
+msgstr ""
+
+msgid "Launch Application in Fullscreen"
+msgstr ""
+
+msgid "Auto Fullscreen on Gamepad connected"
+msgstr ""
+
+msgid "Minimize to tray on close"
+msgstr ""
+
+msgid "Run at system startup"
+msgstr ""
+
+msgid "Start in tray"
+msgstr ""
+
+msgid "Hide Auto-Install Tab"
+msgstr ""
+
+msgid "Disable runtime download"
+msgstr ""
+
+msgid "Add to Steam compatibility tools"
+msgstr ""
+
+msgid "Download WINE/Proton to Steam"
+msgstr ""
+
+msgid "Economy mode"
+msgstr ""
+
+msgid "Download mirror:"
+msgstr ""
+
+msgid "Force system DPI for Wine"
+msgstr ""
+
+msgid "Download Settings"
+msgstr ""
+
+msgid "Hardware Settings"
+msgstr ""
+
+msgid "GPU to use:"
+msgstr ""
+
+msgid "Proxy Settings"
+msgstr ""
+
+msgid "Proxy URL"
+msgstr ""
+
+msgid "Proxy URL:"
+msgstr ""
+
+msgid "Proxy Username"
+msgstr ""
+
+msgid "Proxy Username:"
+msgstr ""
+
+msgid "Proxy Password"
+msgstr ""
+
+msgid "Proxy Password:"
+msgstr ""
+
+msgid "Save Settings"
+msgstr ""
+
+msgid "Reset Settings"
+msgstr ""
+
+msgid "Migrate legacy shortcuts"
+msgstr ""
+
+msgid "Clear Cache"
+msgstr ""
+
+msgid "Confirm Reset"
+msgstr ""
+
+msgid "Are you sure you want to reset all settings? This action cannot be undone."
+msgstr ""
+
+msgid "Migrate old PortProton shortcuts to PortProtonQt format?"
+msgstr ""
+
+msgid "Confirm Clear Cache"
+msgstr ""
+
+msgid "Are you sure you want to clear the cache? This action cannot be undone."
+msgstr ""
+
+msgid "Failed to update xdg-autostart entry."
+msgstr ""
+
+msgid "Select Theme:"
+msgstr ""
+
+msgid "Dark"
+msgstr ""
+
+msgid "Light"
+msgstr ""
+
+msgid "Apply Theme"
+msgstr ""
+
+msgid "No link"
+msgstr ""
+
+msgid "Unknown"
+msgstr ""
+
+msgid "Name:"
+msgstr ""
+
+msgid "Description:"
+msgstr ""
+
+msgid "Author:"
+msgstr ""
+
+msgid "Link:"
+msgstr ""
+
+#, python-brace-format
+msgid "Executable not found: {0}"
+msgstr ""
+
+msgid "Start"
+msgstr ""
+
+msgid "Prefix not found"
+msgstr ""
+
+#, python-brace-format
+msgid "Prefix '{0}' was not found. Install recommended libraries?"
+msgstr ""
+
+msgid "Invalid command format (empty exec line)"
+msgstr ""
+
+msgid "Invalid command format (native)"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to launch game: {0}"
+msgstr ""
+
+msgid "PortProton start script not found"
+msgstr ""
+
+#, python-brace-format
+msgid "File not found: {0}"
+msgstr ""
+
+msgid "Cannot launch game while another game is running"
+msgstr ""
+
+#, fuzzy
+msgid "Choose Folder"
+msgstr "Crear carpeta"
+
+msgid "Choose PortProton data folder"
+msgstr ""
+
+msgid ""
+"Selected folder is on an unsupported filesystem. Choose another folder for "
+"PortProton data."
+msgstr ""
+
+msgid ""
+"Selected folder is not readable and writable. Choose another folder for "
+"PortProton data."
+msgstr ""
+
+msgid "Select file for PPDB download"
+msgstr ""
+
+msgid ""
+"Enable dgVoodoo2. Forced use all dgVoodoo2 libs (Glide 2.11-3.1, DirectDraw "
+"1-7, Direct3D 2-9) on all 3D API."
+msgstr ""
+
+msgid "Enable SpecialK (injection library for fixing graphics, latency and more)"
+msgstr ""
+
+msgid "Enable OptiScaler (replacement upscaler / frame generator)"
+msgstr ""
+
+msgid "Enable Lossless Scaling frame generation (experimental)"
+msgstr ""
+
+msgid "FSR upscaling in fullscreen with ProtonGE below native resolution"
+msgstr ""
+
+msgid "Enable vkd3d support - Ray Tracing"
+msgstr ""
+
+msgid "Enable DLSS on supported NVIDIA graphics cards"
+msgstr ""
+
+msgid "Disguise all NVIDIA GPU features"
+msgstr ""
+
+msgid "Enable in-process synchronization primitives based on eventfd."
+msgstr ""
+
+msgid "Enable futex-based in-process synchronization primitives."
+msgstr ""
+
+msgid "Enable in-process synchronization via the Linux ntsync driver."
+msgstr ""
+
+msgid "Enable forced use of third-party DirectX libraries"
+msgstr ""
+
+msgid "Force use of built-in DXGI library"
+msgstr ""
+
+msgid "Use system GameMode for performance optimization"
+msgstr ""
+
+msgid "Disable desktop compositing for performance"
+msgstr ""
+
+msgid "Fix pink-tinted video playback in some games"
+msgstr ""
+
+msgid "Reduce PulseAudio latency to fix intermittent sound"
+msgstr ""
+
+msgid "Run the application in WINE virtual desktop"
+msgstr ""
+
+msgid "Run the application in a terminal"
+msgstr ""
+
+msgid "Force US keyboard layout"
+msgstr ""
+
+msgid "Force DirectInput protocol instead of XInput"
+msgstr ""
+
+msgid "Use GStreamer for in-game clips (WMF support)"
+msgstr ""
+
+msgid "Use WINE shader caching"
+msgstr ""
+
+msgid "Enable Easy Anti-Cheat and BattlEye runtimes"
+msgstr ""
+
+msgid "Use system Vulkan layers (MangoHud, vkBasalt, OBS, etc.)"
+msgstr ""
+
+msgid "Enable OBS Studio capture via obs-vkcapture"
+msgstr ""
+
+msgid "Enable experimental native Wayland support"
+msgstr ""
+
+msgid "Enable HDR settings under native Wayland"
+msgstr ""
+
+msgid "Use Gallium Zink (OpenGL via Vulkan)"
+msgstr ""
+
+msgid "Use Gallium Nine (native DirectX 9 for Mesa)"
+msgstr ""
+
+msgid "Use WineD3D Vulkan backend (Damavand)"
+msgstr ""
+
+msgid "Use bundled dxvk/vkd3d from Wine/Proton"
+msgstr ""
+
+msgid ""
+"Prevent the system from going to sleep and disable the screensaver while the "
+"game is running"
+msgstr ""
+
+msgid "Use container launch mode (recommended default)"
+msgstr ""
+
+msgid "Wine Version"
+msgstr ""
+
+msgid "Select the Wine or Proton version to use for this executable."
+msgstr ""
+
+msgid "Prefix Name"
+msgstr ""
+
+msgid "Specify the Wine prefix to run this game with"
+msgstr ""
+
+msgid ""
+"Select the DirectX → Vulkan/OpenGL backend:\n"
+"\n"
+"• Newest – latest DXVK + VKD3D (best compatibility/performance, requires modern "
+"drivers: AMD Mesa 25+, NVIDIA 550.54.14+, Intel Mesa 24.2+)\n"
+"• Stable – older, well-tested DXVK + VKD3D (works on any Vulkan 1.3+ driver)\n"
+"• Sarek – experimental DXVK-Sarek + VKD3D-Sarek (supports older drivers, Vulkan "
+"1.1+)\n"
+"• WINED3D – OpenGL fallback (lowest performance, use only if others fail)"
+msgstr ""
+
+msgid "Windows version"
+msgstr ""
+
+msgid ""
+"Changing the WINDOWS emulation version may be required to run older games. "
+"WINDOWS versions below 10 do not support new games with DirectX 12"
+msgstr ""
+
+msgid "DLL Overrides"
+msgstr ""
+
+msgid ""
+"Forced to use/disable the library only for the given application.\n"
+"\n"
+"A brief instruction:\n"
+"* libraries are written WITHOUT the .dll file extension\n"
+"* libraries are separated by semicolons - ;\n"
+"* library=n - use the WINDOWS (third-party) library\n"
+"* library=b - use WINE (built-in) library\n"
+"* library=n,b - use WINDOWS library and then WINE\n"
+"* library=b,n - use WINE library and then WINDOWS\n"
+"* library= - disable the use of this library\n"
+"\n"
+"Example: libglesv2=;d3dx9_36,d3dx9_42=n,b;mfc120=b,n"
+msgstr ""
+
+msgid "Launch Arguments"
+msgstr ""
+
+msgid ""
+"Adding an argument after the .exe file, just like you would add an argument in "
+"a shortcut on a WINDOWS system.\n"
+"\n"
+"Example: -dx11 -skipintro 1"
+msgstr ""
+
+msgid "Run After / Wrapper"
+msgstr ""
+
+msgid ""
+"Path to a second .exe, script, or wrapper command. Example: systemd-run "
+"--user --scope --slice=app.slice"
+msgstr ""
+
+msgid "CPU Cores Limit"
+msgstr ""
+
+msgid ""
+"Limiting the number of CPU cores is useful for Unity games (It is recommended "
+"to set the value equal to 8)"
+msgstr ""
+
+msgid "OpenGL Version"
+msgstr ""
+
+msgid ""
+"You can select the required OpenGL version, some games require a forced "
+"Compatibility Profile (COMP)."
+msgstr ""
+
+msgid "VKD3D Feature Level"
+msgstr ""
+
+msgid "You can set a forced feature level VKD3D for games on DirectX12"
+msgstr ""
+
+msgid "Locale"
+msgstr ""
+
+msgid "Force certain locale for an app. Fixes encoding issues in legacy software"
+msgstr ""
+
+msgid "Window Mode"
+msgstr ""
+
+msgid ""
+"Window mode (for Vulkan and OpenGL):\n"
+"fifo - First in, first out. Limits the frame rate + no tearing. (VSync)\n"
+"immediate - Unlimited frame rate + tearing.\n"
+"mailbox - Triple buffering. Unlimited frame rate + no tearing.\n"
+"relaxed - Same as fifo but allows tearing when below the monitors refresh rate."
+msgstr ""
+
+msgid "NUMA Node"
+msgstr ""
+
+msgid ""
+"NUMA node for CPU affinity. In multi-core systems, CPUs are split into NUMA "
+"nodes, each with its own local memory and cores. Binding a game to a single "
+"node reduces memory-access latency and limits costly core-to-core switches."
+msgstr ""
+
+msgid "just now"
+msgstr ""
+
+msgid "d."
+msgstr ""
+
+msgid "h."
+msgstr ""
+
+msgid "min."
+msgstr ""
+
+msgid "sec."
+msgstr ""
+
+msgid "Exit"
+msgstr ""
+
+msgid "Tabs"
+msgstr ""
+
+msgid "Recent Games"
+msgstr ""
+
+msgid "No recent games"
+msgstr ""
+
+msgid "No favorites"
+msgstr ""
+
+#, fuzzy, python-brace-format
+msgid "Launch \"{name}\" with PortProton"
+msgstr "Iniciar el juego \"{name}\" con PortProton"
+
+msgid "Debug log mode was launched"
+msgstr ""
+
+msgid "To diagnose the problem, copy the ENTIRE log to the site:"
+msgstr ""
+
+msgid "LAST LAUNCH"
+msgstr ""
+
+msgid "TIME SPENT"
+msgstr ""
+
+msgid "MAIN STORY"
+msgstr ""
+
+msgid "MAIN + SIDES"
+msgstr ""
+
+msgid "COMPLETIONIST"
+msgstr ""
+
+msgid "Open Folder"
+msgstr ""
+
+msgid "Settings"
+msgstr ""
+
+msgid "Create Log"
+msgstr ""
+
+msgid "Install"
+msgstr ""
+
+#, fuzzy
+msgid "Open Card"
+msgstr "Detener partida"
+
+msgid "Reinstall"
+msgstr ""
+
+msgid "Game not found."
+msgstr ""
+
+msgid "Stop Log"
+msgstr ""
+
+msgid "Failed to start debug session"
+msgstr ""
+
+msgid "Log Saved"
+msgstr ""
+
+msgid "Debug log saved to:"
+msgstr ""
+
+msgid "Back"
+msgstr ""
+
+#, python-brace-format
+msgid "Gamepad Support: {0}"
+msgstr ""
+
+msgid "full"
+msgstr ""
+
+msgid "partial"
+msgstr ""
+
+msgid "none"
+msgstr ""
+
+#, python-brace-format
+msgid "Launching {0}"
+msgstr ""
+
+msgid "Path to Executable:"
+msgstr ""
+
+msgid "Browse..."
+msgstr ""
+
+msgid "Custom Cover:"
+msgstr ""
+
+msgid "Enter local path or URL for cover image"
+msgstr ""
+
+msgid "Add shortcut to:"
+msgstr ""
+
+msgid "Cover Preview:"
+msgstr ""
+
+msgid "Apply"
+msgstr ""
+
+msgid "Invalid image"
+msgstr ""
+
+msgid "Failed to download cover"
+msgstr ""
+
+msgid "Downloading cover..."
+msgstr ""
+
+msgid "No cover selected"
+msgstr ""
+
+msgid "Open"
+msgstr ""
+
+msgid "Select Dir"
+msgstr ""
+
+msgid "Prev Dir"
+msgstr ""
+
+msgid "Toggle"
+msgstr ""
+
+msgid "Force Install"
+msgstr ""
+
+msgid "Prev Tab"
+msgstr ""
+
+msgid "Next Tab"
+msgstr ""
+
+msgid "Save"
+msgstr ""
+
+msgid "Search"
+msgstr ""
+
+msgid "Download"
+msgstr ""
+
+msgid "Clear All"
+msgstr ""
+
+msgid "Select"
+msgstr ""
+
+msgid "Home"
+msgstr ""
+
+msgid "Path: "
+msgstr ""
+
+#, python-format
+msgid "Access denied: %s"
+msgstr ""
+
+msgid "Prefix backup"
+msgstr ""
+
+msgid "Prefix restore"
+msgstr ""
+
+#, python-brace-format
+msgid "File: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid "{0}/{1} files"
+msgstr ""
+
+#, python-brace-format
+msgid "{0} files"
+msgstr ""
+
+#, python-brace-format
+msgid "{0}, Speed: {1:.1f} MB/s"
+msgstr ""
+
+msgid "Selected WINE/Proton:"
+msgstr ""
+
+msgid "No WINE/Proton selected"
+msgstr ""
+
+msgid "Downloading: "
+msgstr ""
+
+msgid "Download Selected"
+msgstr ""
+
+msgid "Installed"
+msgstr ""
+
+#, python-brace-format
+msgid "Error loading WINE/Proton: {error}"
+msgstr ""
+
+msgid "Version WINE/Proton"
+msgstr ""
+
+msgid "Size"
+msgstr ""
+
+#, python-brace-format
+msgid "{display_name} (installed)"
+msgstr ""
+
+msgid "No Wine/Proton versions installed"
+msgstr ""
+
+msgid "Select to remove this WINE/Proton"
+msgstr ""
+
+#, python-brace-format
+msgid "Selected {} WINE/Proton:\n"
+msgstr ""
+
+#, python-brace-format
+msgid ""
+"\n"
+"Total size to delete: {}\n"
+msgstr ""
+
+msgid "Delete Selected"
+msgstr ""
+
+#, python-brace-format
+msgid "Selected {} assets:\n"
+msgstr ""
+
+#, python-brace-format
+msgid ""
+"\n"
+"Total size to download: {}\n"
+msgstr ""
+
+msgid "Downloading in Progress"
+msgstr ""
+
+msgid "Cannot clear selection while extraction is in progress."
+msgstr ""
+
+msgid "No Selection"
+msgstr ""
+
+msgid "Please select at least one WINE/Proton to download."
+msgstr ""
+
+msgid "Please wait for current downloading to complete."
+msgstr ""
+
+msgid "Please select at least one WINE/Proton to delete."
+msgstr ""
+
+#, python-brace-format
+msgid ""
+"Are you sure you want to delete {} selected WINE/Proton?\n"
+"\n"
+"This action cannot be undone."
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to remove WINE/Proton at {}: {}"
+msgstr ""
+
+#, python-brace-format
+msgid "Successfully removed {} WINE/Proton."
+msgstr ""
+
+msgid "Downloading Complete"
+msgstr ""
+
+msgid "All selected WINE/Proton have been downloaded!"
+msgstr ""
+
+#, python-brace-format
+msgid "Downloading: {0} ({1}%)"
+msgstr ""
+
+#, python-brace-format
+msgid "Extracting: {0}"
+msgstr ""
+
+#, python-brace-format
+msgid ", ETA: {}s"
+msgstr ""
+
+#, python-brace-format
+msgid ", Speed: {:.1f}MB/s"
+msgstr ""
+
+#, python-brace-format
+msgid "Extracting: {0}{1}{2}"
+msgstr ""
+
+msgid "Extraction Error"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to extract archive: {0}"
+msgstr ""
+
+msgid "Operation Cancelled"
+msgstr ""
+
+msgid "Download or extraction has been cancelled."
+msgstr ""
+
+msgid "System WINE"
+msgstr ""
+
+msgid "Exe Settings"
+msgstr ""
+
+msgid "Search settings..."
+msgstr ""
+
+msgid "Main"
+msgstr ""
+
+msgid "Advanced"
+msgstr ""
+
+msgid "Setting"
+msgstr ""
+
+msgid "Value"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "Open PPDB"
+msgstr ""
+
+msgid "Clear PPDB"
+msgstr ""
+
+msgid "Executable path is not available."
+msgstr ""
+
+msgid "PPDB file does not exist at: "
+msgstr ""
+
+msgid "Failed to open PPDB file:\n"
+msgstr ""
+
+msgid "Information"
+msgstr ""
+
+#, fuzzy
+msgid "Confirm PPDB Clear"
+msgstr "Confirmar eliminación"
+
+#, fuzzy, python-brace-format
+msgid ""
+"Are you sure you want to clear settings? This action cannot be undone."
+msgstr ""
+"¿Estás seguro de que quieres eliminar la carpeta «{folder_name}»? Esta "
+"acción no se puede deshacer."
+
+#, fuzzy, python-brace-format
+msgid "Failed to remove PPDB file:\n"
+msgstr "No se pudo cambiar el nombre de la carpeta: {error}"
+
+msgid "disabled"
+msgstr ""
+
+msgid "Default value"
+msgstr ""
+
+msgid "Failed to apply changes. Check logs."
+msgstr ""
+
+msgid "Borderless window"
+msgstr ""
+
+msgid "Fullscreen window"
+msgstr ""
+
+msgid "Grab keyboard"
+msgstr ""
+
+msgid "Force grab cursor (always relative mouse mode)"
+msgstr ""
+
+msgid "Expose Wayland"
+msgstr ""
+
+msgid "Use realtime scheduling"
+msgstr ""
+
+msgid "Force windows fullscreen"
+msgstr ""
+
+msgid "Enable HDR output"
+msgstr ""
+
+msgid "Enable SDR→HDR inverse tone mapping"
+msgstr ""
+
+msgid "Force HDR support"
+msgstr ""
+
+msgid "Force HDR10 PQ output"
+msgstr ""
+
+msgid "HDR luminance heatmap"
+msgstr ""
+
+msgid "Enable mangoapp overlay"
+msgstr ""
+
+msgid "Enable adaptive sync"
+msgstr ""
+
+msgid "Output width"
+msgstr ""
+
+msgid "Output height"
+msgstr ""
+
+msgid "Game width"
+msgstr ""
+
+msgid "Game height"
+msgstr ""
+
+msgid "Game refresh rate (Hz)"
+msgstr ""
+
+msgid "Maximum scale factor"
+msgstr ""
+
+msgid "E.g., 5"
+msgstr ""
+
+msgid "Upscaler type"
+msgstr ""
+
+msgid "Upscaler filter"
+msgstr ""
+
+msgid "Upscaler sharpness (0-20)"
+msgstr ""
+
+msgid "Mouse sensitivity"
+msgstr ""
+
+msgid "E.g., 0.5"
+msgstr ""
+
+msgid "Rendering backend"
+msgstr ""
+
+msgid "Ready FD"
+msgstr ""
+
+msgid "E.g., 3"
+msgstr ""
+
+msgid "Hide cursor delay (ms)"
+msgstr ""
+
+msgid "E.g., 1000"
+msgstr ""
+
+msgid "XWayland servers count"
+msgstr ""
+
+msgid "E.g., 1"
+msgstr ""
+
+msgid "Force orientation"
+msgstr ""
+
+msgid "Cursor scale height"
+msgstr ""
+
+msgid "SDR gamut wideness (0-1)"
+msgstr ""
+
+msgid "HDR SDR content nits"
+msgstr ""
+
+msgid "E.g., 400"
+msgstr ""
+
+msgid "HDR ITM SDR nits"
+msgstr ""
+
+msgid "HDR ITM target nits"
+msgstr ""
+
+msgid "Framerate limit"
+msgstr ""
+
+msgid "Unfocused refresh rate (Hz)"
+msgstr ""
+
+msgid "Window"
+msgstr ""
+
+msgid "Platform"
+msgstr ""
+
+msgid "HDR"
+msgstr ""
+
+msgid "Overlay"
+msgstr ""
+
+msgid "Make the window borderless"
+msgstr ""
+
+msgid "Make the window fullscreen"
+msgstr ""
+
+msgid "Grab the keyboard"
+msgstr ""
+
+msgid ""
+"Force grab cursor: always use relative mouse mode instead of switching with "
+"cursor visibility"
+msgstr ""
+
+msgid "Support Wayland clients using xdg-shell"
+msgstr ""
+
+msgid ""
+"Force windows inside of gamescope to be the size of the nested display "
+"(fullscreen)"
+msgstr ""
+
+msgid ""
+"Enable HDR output (needs Gamescope WSI layer enabled for support from clients)"
+msgstr ""
+
+msgid "Enable SDR->HDR inverse tone mapping. only works for SDR input"
+msgstr ""
+
+msgid "Force support for HDR even if the display doesn't support it"
+msgstr ""
+
+msgid "Force output to HDR10 PQ even if unsupported (will look wrong)"
+msgstr ""
+
+msgid "Display heatmap-style debug view of HDR luminance in nits"
+msgstr ""
+
+msgid "Launch with the mangoapp (mangohud) performance overlay enabled"
+msgstr ""
+
+msgid "Enable adaptive sync if available (variable rate refresh)"
+msgstr ""
+
+msgid "Resolution and scaling"
+msgstr ""
+
+msgid "Quick presets"
+msgstr ""
+
+#, python-brace-format
+msgid "Enable {0}"
+msgstr ""
+
+msgid "Default"
+msgstr ""
+
+msgid "FSR upscaling"
+msgstr ""
+
+msgid "HDR setup"
+msgstr ""
+
+msgid "Performance"
+msgstr ""
+
+msgid "Custom"
+msgstr ""
+
+msgid "Save custom"
+msgstr ""
+
+msgid "Clear"
+msgstr ""
+
+msgid "Gamescope switches"
+msgstr ""
+
+msgid "Other"
+msgstr ""
+
+msgid "Extra args"
+msgstr ""
+
+msgid "Additional Gamescope options not covered by the GUI."
+msgstr ""
+
+msgid "Example: --cursor-scale-height=1080 --force-orientation=left"
+msgstr ""
+
+#, python-brace-format
+msgid "Disable {0}"
+msgstr ""
+
+msgid "Custom preset is empty. Save one first."
+msgstr ""
+
+msgid "Custom preset saved."
+msgstr ""
+
+msgid "Failed to save custom preset."
+msgstr ""
+
+msgid "Overlay position"
+msgstr ""
+
+msgid "Device battery"
+msgstr ""
+
+msgid "FPS limit method"
+msgstr ""
+
+msgid "Anisotropic filtering"
+msgstr ""
+
+msgid "FCAT screen edge"
+msgstr ""
+
+msgid "Table columns"
+msgstr ""
+
+msgid "Network (tx/rx kb/s)"
+msgstr ""
+
+msgid "GPU list"
+msgstr ""
+
+msgid "Background opacity"
+msgstr ""
+
+msgid "Round corners (px)"
+msgstr ""
+
+msgid "Top-left"
+msgstr ""
+
+msgid "Top-right"
+msgstr ""
+
+msgid "Middle-left"
+msgstr ""
+
+msgid "Middle-right"
+msgstr ""
+
+msgid "Bottom-left"
+msgstr ""
+
+msgid "Bottom-right"
+msgstr ""
+
+msgid "Top-center"
+msgstr ""
+
+msgid "Bottom-center"
+msgstr ""
+
+msgid "Gamepad"
+msgstr ""
+
+msgid "Mouse"
+msgstr ""
+
+msgid "Gamepad, mouse"
+msgstr ""
+
+msgid "Late"
+msgstr ""
+
+msgid "Early"
+msgstr ""
+
+msgid "General"
+msgstr ""
+
+msgid "CPU / GPU"
+msgstr ""
+
+msgid "Application architecture (32/64-bit)"
+msgstr ""
+
+msgid "Battery percent and energy consumption"
+msgstr ""
+
+msgid "Battery icon instead of percent"
+msgstr ""
+
+msgid "Remaining battery time"
+msgstr ""
+
+msgid "Battery wattage"
+msgstr ""
+
+msgid "Force bicubic filtering"
+msgstr ""
+
+msgid "Core load as vertical bars"
+msgstr ""
+
+msgid "Per-core load and frequency"
+msgstr ""
+
+msgid "Core load color change"
+msgstr ""
+
+msgid "CPU core type (P/E/ARM)"
+msgstr ""
+
+msgid "CPU efficiency (frames/joule)"
+msgstr ""
+
+msgid "CPU load color change"
+msgstr ""
+
+msgid "CPU frequency in MHz"
+msgstr ""
+
+msgid "CPU power draw (watts)"
+msgstr ""
+
+msgid "CPU temperature"
+msgstr ""
+
+msgid "Gamescope frametime graphs"
+msgstr ""
+
+msgid "Wireless device battery icon"
+msgstr ""
+
+msgid "Display server type (X11/Wayland)"
+msgstr ""
+
+msgid "Dynamic frametime Y-axis"
+msgstr ""
+
+msgid "Short engine names"
+msgstr ""
+
+msgid "Engine version (OpenGL/Vulkan)"
+msgstr ""
+
+msgid "Executable name"
+msgstr ""
+
+msgid "Steam Deck fan RPM"
+msgstr ""
+
+msgid "Frame capture analysis"
+msgstr ""
+
+msgid "Flip efficiency (joules/frame)"
+msgstr ""
+
+msgid "FPS text color by value"
+msgstr ""
+
+msgid "FPS percentiles"
+msgstr ""
+
+msgid "Show FPS only"
+msgstr ""
+
+msgid "Frame counter"
+msgstr ""
+
+msgid "Frametime next to FPS"
+msgstr ""
+
+msgid "Detailed frame timing chart"
+msgstr ""
+
+msgid "FSR status (gamescope)"
+msgstr ""
+
+msgid "Enable most parameters"
+msgstr ""
+
+msgid "GameMode status"
+msgstr ""
+
+msgid "GPU core frequency"
+msgstr ""
+
+msgid "GPU efficiency (frames/joule)"
+msgstr ""
+
+msgid "GPU fan (RPM/%)"
+msgstr ""
+
+msgid "GPU junction temperature"
+msgstr ""
+
+msgid "GPU load color change"
+msgstr ""
+
+msgid "GPU memory frequency"
+msgstr ""
+
+msgid "GPU memory temperature"
+msgstr ""
+
+msgid "GPU name from pci.ids"
+msgstr ""
+
+msgid "GPU power draw (watts)"
+msgstr ""
+
+msgid "GPU power limit"
+msgstr ""
+
+msgid "GPU temperature"
+msgstr ""
+
+msgid "GPU voltage"
+msgstr ""
+
+msgid "HDR status (gamescope)"
+msgstr ""
+
+msgid "Hide FSR sharpness info"
+msgstr ""
+
+msgid "FPS histogram"
+msgstr ""
+
+msgid "Horizontal HUD layout"
+msgstr ""
+
+msgid "Stretch background horizontally"
+msgstr ""
+
+msgid "Compact HUD mode"
+msgstr ""
+
+msgid "Remove HUD margins"
+msgstr ""
+
+msgid "IO read rate (MiB/s)"
+msgstr ""
+
+msgid "IO write rate (MiB/s)"
+msgstr ""
+
+msgid "Add versioning to logs"
+msgstr ""
+
+msgid "Media player metadata"
+msgstr ""
+
+msgid "Hide HUD by default"
+msgstr ""
+
+msgid "Use primary font size"
+msgstr ""
+
+msgid "Allow log uploads"
+msgstr ""
+
+msgid "Vulkan present mode"
+msgstr ""
+
+msgid "Process VRAM usage"
+msgstr ""
+
+msgid "Process memory (resident)"
+msgstr ""
+
+msgid "Process shared memory"
+msgstr ""
+
+msgid "Process virtual memory"
+msgstr ""
+
+msgid "System RAM usage"
+msgstr ""
+
+msgid "RAM temperature (DDR5)"
+msgstr ""
+
+msgid "Load config file"
+msgstr ""
+
+msgid "Refresh rate (gamescope)"
+msgstr ""
+
+msgid "Current resolution"
+msgstr ""
+
+msgid "Retro filtering (unfiltered)"
+msgstr ""
+
+msgid "Show FPS limit"
+msgstr ""
+
+msgid "Swap usage"
+msgstr ""
+
+msgid "Temperature in Fahrenheit"
+msgstr ""
+
+msgid "Text outline"
+msgstr ""
+
+msgid "GPU throttling status"
+msgstr ""
+
+msgid "Throttling in frame graph"
+msgstr ""
+
+msgid "Local time"
+msgstr ""
+
+msgid "Time without label"
+msgstr ""
+
+msgid "Force trilinear filtering"
+msgstr ""
+
+msgid "Automatic log uploads"
+msgstr ""
+
+msgid "MangoHud version"
+msgstr ""
+
+msgid "Status vkBasalt"
+msgstr ""
+
+msgid "Vulkan driver (radv/amdvlk)"
+msgstr ""
+
+msgid "Wine/Proton version"
+msgstr ""
+
+msgid "Wine sync method"
+msgstr ""
+
+msgid "VRAM usage"
+msgstr ""
+
+msgid "Layout and limiter"
+msgstr ""
+
+msgid "Presets"
+msgstr ""
+
+msgid "Actions"
+msgstr ""
+
+msgid "Use system config"
+msgstr ""
+
+msgid "FPS only"
+msgstr ""
+
+msgid "Extended"
+msgstr ""
+
+msgid "Write system config"
+msgstr ""
+
+msgid "Preview"
+msgstr ""
+
+msgid "MangoHud switches"
+msgstr ""
+
+msgid "FPS limit"
+msgstr ""
+
+msgid ""
+"Select one or more FPS presets. The values are saved into FPS_LIMIT and "
+"MangoHud will also show the active FPS limit."
+msgstr ""
+
+msgid "Additional comma-separated MangoHud options not covered by the GUI."
+msgstr ""
+
+msgid "Example: battery,gpu_junction_temp,fps_color=39f900"
+msgstr ""
+
+msgid "All GPUs"
+msgstr ""
+
+msgid "Don't use system config"
+msgstr ""
+
+msgid "Failed to read default MangoHud config."
+msgstr ""
+
+msgid "System MangoHud config has been written."
+msgstr ""
+
+msgid "Failed to write system MangoHud config."
+msgstr ""
+
+msgid "Failed to run preview."
+msgstr ""
+
+msgid "ReShade shaders"
+msgstr ""
+
+msgid "AMD FidelityFX - Contrast Adaptive Sharpening"
+msgstr ""
+
+msgid "Toggle key"
+msgstr ""
+
+#, python-brace-format
+msgid "Sharpness: {0}"
+msgstr ""
+
+msgid "Press a button to choose"
+msgstr ""
+
+msgid "Prefix Manager"
+msgstr ""
+
+msgid "Set"
+msgstr ""
+
+msgid "Libraries"
+msgstr ""
+
+msgid "Fonts"
+msgstr ""
+
+msgid "Winetricks not found. Please try again."
+msgstr ""
+
+msgid "No components selected."
+msgstr ""
+
+msgid "Installation failed. Check logs."
+msgstr ""
+
+msgid "Components installed successfully."
+msgstr ""
+
+msgid "Launched"
+msgstr ""
+
+msgid "Bluetooth PIN code"
+msgstr ""
+
+msgid "Enter the Bluetooth PIN code shown on the device"
+msgstr ""
+
+msgid "Bluetooth passkey"
+msgstr ""
+
+msgid "Enter the Bluetooth passkey shown on the device"
+msgstr ""
+
+#, python-brace-format
+msgid "Confirm the passkey on devices: {0}"
+msgstr ""
+
+msgid "Bluetooth pairing"
+msgstr ""
+
+msgid "Connected"
+msgstr ""
+
+msgid "Paired"
+msgstr ""
+
+msgid "Available"
+msgstr ""
+
+msgid "Disconnected"
+msgstr ""
+
+msgid "Protected"
+msgstr ""
+
+msgid "Saved"
+msgstr ""
+
+msgid "Mounted"
+msgstr ""
+
+msgid "Not mounted"
+msgstr ""
+
+msgid "Volume"
+msgstr ""
+
+msgid "Fullscreen"
+msgstr ""
+
+msgid "Mouse Emulation"
+msgstr ""
+
+msgid "Connect"
+msgstr ""
+
+msgid "Disconnect"
+msgstr ""
+
+msgid "Enable/Disable"
+msgstr ""
+
+msgid "Refresh"
+msgstr ""
+
+msgid "Add VPN"
+msgstr ""
+
+msgid "Scan"
+msgstr ""
+
+msgid "Mount"
+msgstr ""
+
+msgid "Unmount"
+msgstr ""
+
+msgid "Set output"
+msgstr ""
+
+#, python-brace-format
+msgid "Enter password for: {0}"
+msgstr ""
+
+msgid "Storage"
+msgstr ""
+
+msgid "Audio"
+msgstr ""
+
+msgid "Power"
+msgstr ""
+
+msgid "Network"
+msgstr ""
+
+msgid "Security"
+msgstr ""
+
+msgid "Signal"
+msgstr ""
+
+msgid "State"
+msgstr ""
+
+msgid "Forget"
+msgstr ""
+
+msgid "Share"
+msgstr ""
+
+msgid "Profile"
+msgstr ""
+
+msgid "Type"
+msgstr ""
+
+msgid "Add"
+msgstr ""
+
+msgid "Device"
+msgstr ""
+
+msgid "Battery"
+msgstr ""
+
+msgid "Volume label"
+msgstr ""
+
+msgid "Used"
+msgstr ""
+
+msgid "Mount point"
+msgstr ""
+
+msgid "Playback devices"
+msgstr ""
+
+msgid "Output"
+msgstr ""
+
+msgid "Logout"
+msgstr ""
+
+msgid "Reboot"
+msgstr ""
+
+msgid "Shutdown"
+msgstr ""
+
+msgid "Suspend"
+msgstr ""
+
+msgid "Selected"
+msgstr ""
+
+msgid "Not selected"
+msgstr ""
