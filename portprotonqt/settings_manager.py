@@ -142,8 +142,6 @@ def get_toggle_settings():
 
     return {
         # Graphics enhancements
-        'PW_VKBASALT': _("Enable vkBasalt by default to improve graphics in games running on Vulkan. (The HOME hotkey disables vkbasalt)"),
-        'PW_VKBASALT_USER_CONF': _("Forced use of VKBASALT system settings (GOverlay, etc.)"),
         'PW_DGVOODOO2': _("Enable dgVoodoo2. Forced use all dgVoodoo2 libs (Glide 2.11-3.1, DirectDraw 1-7, Direct3D 2-9) on all 3D API."),
         'PW_USE_SPECIALK': _("Enable SpecialK (injection library for fixing graphics, latency and more)"),
         # Upscalers and Frame Generation
