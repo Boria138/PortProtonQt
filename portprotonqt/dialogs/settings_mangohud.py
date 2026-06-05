@@ -492,7 +492,7 @@ class MangoHudSettingsMixin:
         self.mangohud_actions_group = actions_group
 
         # Toggle buttons for PW_MANGOHUD and PW_MANGOHUD_USER_CONF
-        self.mangohud_enable_button = QPushButton(_("Enable MangoHud"))
+        self.mangohud_enable_button = QPushButton(_("Enable {0}").format("MangoHud"))
         self.mangohud_enable_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.mangohud_enable_button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.mangohud_enable_button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
@@ -845,10 +845,10 @@ class MangoHudSettingsMixin:
         config_visible = mangohud_enabled and not mangohud_user_conf_enabled
 
         if mangohud_enabled:
-            self.mangohud_enable_button.setText(_("Disable MangoHud"))
+            self.mangohud_enable_button.setText(_("Disable {0}").format("MangoHud"))
             self.mangohud_enable_button.setStyleSheet(self.theme.ACTION_BUTTON_ACTIVE_STYLE)
         else:
-            self.mangohud_enable_button.setText(_("Enable MangoHud"))
+            self.mangohud_enable_button.setText(_("Enable {0}").format("MangoHud"))
             self.mangohud_enable_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
 
         self.mangohud_user_conf_button.setVisible(visible)

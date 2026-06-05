@@ -80,7 +80,7 @@ class VkBasaltSettingsMixin:
         layout.setHorizontalSpacing(self.theme.exeSettingsGroupBoxElementHorizontalSpacing)
         self.vkbasalt_actions_group = group
 
-        self.vkbasalt_enable_button = self._create_vkbasalt_button(_("Enable vkBasalt"))
+        self.vkbasalt_enable_button = self._create_vkbasalt_button(_("Enable {0}").format("vkBasalt"))
         self.vkbasalt_enable_button.clicked.connect(self.toggle_vkbasalt_enable)
         self.vkbasalt_user_conf_button = self._create_vkbasalt_button(_("Use system config"))
         self.vkbasalt_user_conf_button.clicked.connect(self.toggle_vkbasalt_user_conf)
@@ -232,7 +232,9 @@ class VkBasaltSettingsMixin:
         config_visible = vkbasalt_enabled and not user_conf_enabled
 
         self._update_vkbasalt_button(self.vkbasalt_enable_button, vkbasalt_enabled)
-        self.vkbasalt_enable_button.setText(_("Disable vkBasalt") if vkbasalt_enabled else _("Enable vkBasalt"))
+        self.vkbasalt_enable_button.setText(
+            _("Disable {0}").format("vkBasalt") if vkbasalt_enabled else _("Enable {0}").format("vkBasalt")
+        )
         self.vkbasalt_user_conf_button.setVisible(vkbasalt_enabled)
         self._update_vkbasalt_button(self.vkbasalt_user_conf_button, user_conf_enabled)
         self.vkbasalt_user_conf_button.setText(

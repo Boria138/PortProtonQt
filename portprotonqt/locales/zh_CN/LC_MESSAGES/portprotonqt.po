@@ -728,16 +728,6 @@ msgid "Select file for PPDB download"
 msgstr "选择用于 PPDB 下载的文件"
 
 msgid ""
-"Enable vkBasalt by default to improve graphics in games running on "
-"Vulkan. (The HOME hotkey disables vkbasalt)"
-msgstr ""
-"默认启用 vkBasalt 以改善运行在 Vulkan 上的游戏的图形效果。（HOME 热键禁用 "
-"vkbasalt）"
-
-msgid "Forced use of VKBASALT system settings (GOverlay, etc.)"
-msgstr "强制使用 VKBASALT 系统设置（GOverlay 等）"
-
-msgid ""
 "Enable dgVoodoo2. Forced use all dgVoodoo2 libs (Glide 2.11-3.1, "
 "DirectDraw 1-7, Direct3D 2-9) on all 3D API."
 msgstr ""
@@ -1597,8 +1587,9 @@ msgstr "分辨率与缩放"
 msgid "Quick presets"
 msgstr "快速预设"
 
-msgid "Enable Gamescope"
-msgstr "启用 Gamescope"
+#, python-brace-format
+msgid "Enable {0}"
+msgstr "启用 {0}"
 
 msgid "Default"
 msgstr "默认"
@@ -1636,8 +1627,9 @@ msgstr "图形界面未覆盖的其他 Gamescope 选项。"
 msgid "Example: --cursor-scale-height=1080 --force-orientation=left"
 msgstr "示例：--cursor-scale-height=1080 --force-orientation=left"
 
-msgid "Disable Gamescope"
-msgstr "禁用 Gamescope"
+#, python-brace-format
+msgid "Disable {0}"
+msgstr "禁用 {0}"
 
 msgid "Custom preset is empty. Save one first."
 msgstr "自定义预设为空。请先保存一个。"
@@ -1993,9 +1985,6 @@ msgstr "预设"
 msgid "Actions"
 msgstr "操作"
 
-msgid "Enable MangoHud"
-msgstr "启用 MangoHud"
-
 msgid "Use system config"
 msgstr "使用系统配置"
 
@@ -2033,9 +2022,6 @@ msgstr "示例：battery,gpu_junction_temp,fps_color=39f900"
 msgid "All GPUs"
 msgstr "所有 GPU"
 
-msgid "Disable MangoHud"
-msgstr "禁用 MangoHud"
-
 msgid "Don't use system config"
 msgstr "不使用系统配置"
 
@@ -2051,23 +2037,21 @@ msgstr "写入系统 MangoHud 配置失败。"
 msgid "Failed to run preview."
 msgstr "运行预览失败。"
 
-#, fuzzy
-msgid "Enable vkBasalt"
-msgstr "vkBasalt 状态"
-
 msgid "ReShade shaders"
 msgstr ""
 
 msgid "AMD FidelityFX - Contrast Adaptive Sharpening"
 msgstr ""
 
+msgid "Toggle key"
+msgstr "切换键"
+
 #, python-brace-format
 msgid "Sharpness: {0}"
 msgstr ""
 
-#, fuzzy
-msgid "Disable vkBasalt"
-msgstr "vkBasalt 状态"
+msgid "Press a button to choose"
+msgstr "按下按钮进行选择"
 
 msgid "Prefix Manager"
 msgstr "前缀管理器"

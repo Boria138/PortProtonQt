@@ -1,4 +1,4 @@
-# Translations template for PortProtonQt.
+# Portuguese (Brazil) translations for PortProtonQt.
 # Copyright (C) 2026 boria138
 # This file is distributed under the same license as the PortProtonQt
 # project.
@@ -712,14 +712,6 @@ msgid ""
 msgstr ""
 
 msgid "Select file for PPDB download"
-msgstr ""
-
-msgid ""
-"Enable vkBasalt by default to improve graphics in games running on "
-"Vulkan. (The HOME hotkey disables vkbasalt)"
-msgstr ""
-
-msgid "Forced use of VKBASALT system settings (GOverlay, etc.)"
 msgstr ""
 
 msgid ""
@@ -1534,7 +1526,8 @@ msgstr ""
 msgid "Quick presets"
 msgstr ""
 
-msgid "Enable Gamescope"
+#, python-brace-format
+msgid "Enable {0}"
 msgstr ""
 
 msgid "Default"
@@ -1573,7 +1566,8 @@ msgstr ""
 msgid "Example: --cursor-scale-height=1080 --force-orientation=left"
 msgstr ""
 
-msgid "Disable Gamescope"
+#, python-brace-format
+msgid "Disable {0}"
 msgstr ""
 
 msgid "Custom preset is empty. Save one first."
@@ -1930,9 +1924,6 @@ msgstr ""
 msgid "Actions"
 msgstr ""
 
-msgid "Enable MangoHud"
-msgstr ""
-
 msgid "Use system config"
 msgstr ""
 
@@ -1968,9 +1959,6 @@ msgstr ""
 msgid "All GPUs"
 msgstr ""
 
-msgid "Disable MangoHud"
-msgstr ""
-
 msgid "Don't use system config"
 msgstr ""
 
@@ -1984,6 +1972,22 @@ msgid "Failed to write system MangoHud config."
 msgstr ""
 
 msgid "Failed to run preview."
+msgstr ""
+
+msgid "ReShade shaders"
+msgstr ""
+
+msgid "AMD FidelityFX - Contrast Adaptive Sharpening"
+msgstr ""
+
+msgid "Toggle key"
+msgstr ""
+
+#, python-brace-format
+msgid "Sharpness: {0}"
+msgstr ""
+
+msgid "Press a button to choose"
 msgstr ""
 
 msgid "Prefix Manager"
@@ -2170,3 +2174,4 @@ msgstr ""
 
 msgid "Not selected"
 msgstr ""
+

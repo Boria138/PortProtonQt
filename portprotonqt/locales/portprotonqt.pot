@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-06-05 12:33+0500\n"
+"POT-Creation-Date: 2026-06-05 16:30+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -711,14 +711,6 @@ msgid ""
 msgstr ""
 
 msgid "Select file for PPDB download"
-msgstr ""
-
-msgid ""
-"Enable vkBasalt by default to improve graphics in games running on "
-"Vulkan. (The HOME hotkey disables vkbasalt)"
-msgstr ""
-
-msgid "Forced use of VKBASALT system settings (GOverlay, etc.)"
 msgstr ""
 
 msgid ""
@@ -1533,7 +1525,8 @@ msgstr ""
 msgid "Quick presets"
 msgstr ""
 
-msgid "Enable Gamescope"
+#, python-brace-format
+msgid "Enable {0}"
 msgstr ""
 
 msgid "Default"
@@ -1572,7 +1565,8 @@ msgstr ""
 msgid "Example: --cursor-scale-height=1080 --force-orientation=left"
 msgstr ""
 
-msgid "Disable Gamescope"
+#, python-brace-format
+msgid "Disable {0}"
 msgstr ""
 
 msgid "Custom preset is empty. Save one first."
@@ -1929,9 +1923,6 @@ msgstr ""
 msgid "Actions"
 msgstr ""
 
-msgid "Enable MangoHud"
-msgstr ""
-
 msgid "Use system config"
 msgstr ""
 
@@ -1967,9 +1958,6 @@ msgstr ""
 msgid "All GPUs"
 msgstr ""
 
-msgid "Disable MangoHud"
-msgstr ""
-
 msgid "Don't use system config"
 msgstr ""
 
@@ -1985,20 +1973,20 @@ msgstr ""
 msgid "Failed to run preview."
 msgstr ""
 
-msgid "Enable vkBasalt"
-msgstr ""
-
 msgid "ReShade shaders"
 msgstr ""
 
 msgid "AMD FidelityFX - Contrast Adaptive Sharpening"
 msgstr ""
 
+msgid "Toggle key"
+msgstr ""
+
 #, python-brace-format
 msgid "Sharpness: {0}"
 msgstr ""
 
-msgid "Disable vkBasalt"
+msgid "Press a button to choose"
 msgstr ""
 
 msgid "Prefix Manager"

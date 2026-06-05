@@ -715,14 +715,6 @@ msgid "Select file for PPDB download"
 msgstr ""
 
 msgid ""
-"Enable vkBasalt by default to improve graphics in games running on "
-"Vulkan. (The HOME hotkey disables vkbasalt)"
-msgstr ""
-
-msgid "Forced use of VKBASALT system settings (GOverlay, etc.)"
-msgstr ""
-
-msgid ""
 "Enable dgVoodoo2. Forced use all dgVoodoo2 libs (Glide 2.11-3.1, "
 "DirectDraw 1-7, Direct3D 2-9) on all 3D API."
 msgstr ""
@@ -1535,7 +1527,8 @@ msgstr ""
 msgid "Quick presets"
 msgstr ""
 
-msgid "Enable Gamescope"
+#, python-brace-format
+msgid "Enable {0}"
 msgstr ""
 
 msgid "Default"
@@ -1574,7 +1567,8 @@ msgstr ""
 msgid "Example: --cursor-scale-height=1080 --force-orientation=left"
 msgstr ""
 
-msgid "Disable Gamescope"
+#, python-brace-format
+msgid "Disable {0}"
 msgstr ""
 
 msgid "Custom preset is empty. Save one first."
@@ -1931,9 +1925,6 @@ msgstr ""
 msgid "Actions"
 msgstr ""
 
-msgid "Enable MangoHud"
-msgstr ""
-
 msgid "Use system config"
 msgstr ""
 
@@ -1969,9 +1960,6 @@ msgstr ""
 msgid "All GPUs"
 msgstr ""
 
-msgid "Disable MangoHud"
-msgstr ""
-
 msgid "Don't use system config"
 msgstr ""
 
@@ -1987,20 +1975,20 @@ msgstr ""
 msgid "Failed to run preview."
 msgstr ""
 
-msgid "Enable vkBasalt"
-msgstr ""
-
 msgid "ReShade shaders"
 msgstr ""
 
 msgid "AMD FidelityFX - Contrast Adaptive Sharpening"
 msgstr ""
 
+msgid "Toggle key"
+msgstr ""
+
 #, python-brace-format
 msgid "Sharpness: {0}"
 msgstr ""
 
-msgid "Disable vkBasalt"
+msgid "Press a button to choose"
 msgstr ""
 
 msgid "Prefix Manager"

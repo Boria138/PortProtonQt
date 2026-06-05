@@ -563,7 +563,7 @@ class GamescopeSettingsMixin:
         self.gamescope_actions_group = group
 
         # Toggle button for PW_GAMESCOPE
-        self.gamescope_enable_button = QPushButton(_("Enable Gamescope"))
+        self.gamescope_enable_button = QPushButton(_("Enable {0}").format("Gamescope"))
         self.gamescope_enable_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.gamescope_enable_button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.gamescope_enable_button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
@@ -765,10 +765,10 @@ class GamescopeSettingsMixin:
         visible = gamescope_enabled
 
         if gamescope_enabled:
-            self.gamescope_enable_button.setText(_("Disable Gamescope"))
+            self.gamescope_enable_button.setText(_("Disable {0}").format("Gamescope"))
             self.gamescope_enable_button.setStyleSheet(self.theme.ACTION_BUTTON_ACTIVE_STYLE)
         else:
-            self.gamescope_enable_button.setText(_("Enable Gamescope"))
+            self.gamescope_enable_button.setText(_("Enable {0}").format("Gamescope"))
             self.gamescope_enable_button.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
 
         if self.gamescope_toggle_group is not None:

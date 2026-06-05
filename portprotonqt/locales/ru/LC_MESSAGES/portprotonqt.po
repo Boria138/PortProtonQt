@@ -733,16 +733,6 @@ msgid "Select file for PPDB download"
 msgstr "Выберите файл для загрузки PPDB"
 
 msgid ""
-"Enable vkBasalt by default to improve graphics in games running on Vulkan. (The "
-"HOME hotkey disables vkbasalt)"
-msgstr ""
-"Включить vkBasalt по умолчанию, для улучшения графики в играх на Vulkan. "
-"(Горячая клавиша HOME отключает vkbasalt)"
-
-msgid "Forced use of VKBASALT system settings (GOverlay, etc.)"
-msgstr "Принудительное использование системных настроек vkBasalt (GOverlay и т.д.)"
-
-msgid ""
 "Enable dgVoodoo2. Forced use all dgVoodoo2 libs (Glide 2.11-3.1, DirectDraw 1-7, "
 "Direct3D 2-9) on all 3D API."
 msgstr ""
@@ -1624,8 +1614,9 @@ msgstr "Разрешение и масштабирование"
 msgid "Quick presets"
 msgstr "Профили"
 
-msgid "Enable Gamescope"
-msgstr "Включить Gamescope"
+#, python-brace-format
+msgid "Enable {0}"
+msgstr "Включить {0}"
 
 msgid "Default"
 msgstr "Стандартный"
@@ -1663,8 +1654,9 @@ msgstr "Дополнительные параметры Gamescope (через з
 msgid "Example: --cursor-scale-height=1080 --force-orientation=left"
 msgstr "Например: --cursor-scale-height=1080 --force-orientation=left"
 
-msgid "Disable Gamescope"
-msgstr "Отключить Gamescope"
+#, python-brace-format
+msgid "Disable {0}"
+msgstr "Отключить {0}"
 
 msgid "Custom preset is empty. Save one first."
 msgstr "Пользовательские настройки пусты. Сначала сохраните их."
@@ -2020,9 +2012,6 @@ msgstr "Профили"
 msgid "Actions"
 msgstr "Действия"
 
-msgid "Enable MangoHud"
-msgstr "Включить MangoHud"
-
 msgid "Use system config"
 msgstr "Использовать системный конфиг"
 
@@ -2060,9 +2049,6 @@ msgstr "Пример: battery,gpu_junction_temp,fps_color=39f900"
 msgid "All GPUs"
 msgstr "Все ГП"
 
-msgid "Disable MangoHud"
-msgstr "Отключить MangoHud"
-
 msgid "Don't use system config"
 msgstr "Не использовать системный конфиг"
 
@@ -2078,21 +2064,21 @@ msgstr "Ошибка при записи конфигурации MangoHud."
 msgid "Failed to run preview."
 msgstr "Ошибка при запуске предпросмотра."
 
-msgid "Enable vkBasalt"
-msgstr "Включить vkBasalt"
-
 msgid "ReShade shaders"
 msgstr "Шейдеры"
 
 msgid "AMD FidelityFX - Contrast Adaptive Sharpening"
 msgstr "AMD FidelityFX — адаптивная резкость с учетом контрастности"
 
+msgid "Toggle key"
+msgstr "Клавиша переключения"
+
 #, python-brace-format
 msgid "Sharpness: {0}"
 msgstr "Резкость: {0}"
 
-msgid "Disable vkBasalt"
-msgstr "Отключить vkBasalt"
+msgid "Press a button to choose"
+msgstr "Нажмите кнопку для выбора"
 
 msgid "Prefix Manager"
 msgstr "Менеджер префиксов"
