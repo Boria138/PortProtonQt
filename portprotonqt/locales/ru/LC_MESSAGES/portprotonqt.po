@@ -2078,6 +2078,24 @@ msgstr "Ошибка при записи конфигурации MangoHud."
 msgid "Failed to run preview."
 msgstr "Ошибка при запуске предпросмотра."
 
+#, fuzzy
+msgid "Enable vkBasalt"
+msgstr "Статус vkBasalt"
+
+msgid "ReShade shaders"
+msgstr ""
+
+msgid "AMD FidelityFX - Contrast Adaptive Sharpening"
+msgstr ""
+
+#, python-brace-format
+msgid "Sharpness: {0}"
+msgstr ""
+
+#, fuzzy
+msgid "Disable vkBasalt"
+msgstr "Статус vkBasalt"
+
 msgid "Prefix Manager"
 msgstr "Менеджер префиксов"
 

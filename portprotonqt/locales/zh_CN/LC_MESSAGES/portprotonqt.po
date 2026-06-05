@@ -2051,6 +2051,24 @@ msgstr "写入系统 MangoHud 配置失败。"
 msgid "Failed to run preview."
 msgstr "运行预览失败。"
 
+#, fuzzy
+msgid "Enable vkBasalt"
+msgstr "vkBasalt 状态"
+
+msgid "ReShade shaders"
+msgstr ""
+
+msgid "AMD FidelityFX - Contrast Adaptive Sharpening"
+msgstr ""
+
+#, python-brace-format
+msgid "Sharpness: {0}"
+msgstr ""
+
+#, fuzzy
+msgid "Disable vkBasalt"
+msgstr "vkBasalt 状态"
+
 msgid "Prefix Manager"
 msgstr "前缀管理器"
 

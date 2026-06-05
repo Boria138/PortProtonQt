@@ -1995,6 +1995,22 @@ msgstr ""
 msgid "Failed to run preview."
 msgstr ""
 
+msgid "Enable vkBasalt"
+msgstr ""
+
+msgid "ReShade shaders"
+msgstr ""
+
+msgid "AMD FidelityFX - Contrast Adaptive Sharpening"
+msgstr ""
+
+#, python-brace-format
+msgid "Sharpness: {0}"
+msgstr ""
+
+msgid "Disable vkBasalt"
+msgstr ""
+
 msgid "Prefix Manager"
 msgstr ""
 

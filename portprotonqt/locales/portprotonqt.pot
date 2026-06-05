@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-06-04 10:32+0500\n"
+"POT-Creation-Date: 2026-06-05 12:33+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1983,6 +1983,22 @@ msgid "Failed to write system MangoHud config."
 msgstr ""
 
 msgid "Failed to run preview."
+msgstr ""
+
+msgid "Enable vkBasalt"
+msgstr ""
+
+msgid "ReShade shaders"
+msgstr ""
+
+msgid "AMD FidelityFX - Contrast Adaptive Sharpening"
+msgstr ""
+
+#, python-brace-format
+msgid "Sharpness: {0}"
+msgstr ""
+
+msgid "Disable vkBasalt"
 msgstr ""
 
 msgid "Prefix Manager"
