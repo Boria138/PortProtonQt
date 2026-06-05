@@ -26,10 +26,10 @@ if try_download "https://launcher.ccpgames.com/eve-online/release/win32/x64/eve-
 then
     EVE_LAUNCHER_DIR="${WINEPREFIX}/drive_c/users/steamuser/AppData/Local/eve-online"
 
-    $pw_7z x "${PORT_WINE_TMP_PATH}/eve-online-latest+Setup.exe" -o"${EVE_LAUNCHER_DIR}" -y
+    unpack "${PORT_WINE_TMP_PATH}/eve-online-latest+Setup.exe" "${EVE_LAUNCHER_DIR}"
     EVE_VERSION="$(cat "${EVE_LAUNCHER_DIR}/RELEASES" | awk '{print $2}' | awk -F"-" '{print $3}')"
 
-    $pw_7z x "${EVE_LAUNCHER_DIR}/eve-online-${EVE_VERSION}-full.nupkg" -o"${EVE_LAUNCHER_DIR}/tmp" -y
+    unpack "${EVE_LAUNCHER_DIR}/eve-online-${EVE_VERSION}-full.nupkg" "${EVE_LAUNCHER_DIR}/tmp"
 
 
     create_new_dir "${EVE_LAUNCHER_DIR}/app-$EVE_VERSION"

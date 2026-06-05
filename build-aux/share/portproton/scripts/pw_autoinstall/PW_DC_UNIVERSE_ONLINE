@@ -13,7 +13,7 @@ export PORTWINE_CREATE_SHORTCUT_NAME="DC Universe Online"
 start_portproton
 if try_download "https://launch.daybreakgames.com/installer/DCUO_setup.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
-    "$pw_7z" x -y "${PW_AUTOINSTALL_EXE}" -o"$WINEPREFIX/drive_c/Program Files (x86)/Daybreak Game Company"
+    unpack "${PW_AUTOINSTALL_EXE}" "$WINEPREFIX/drive_c/Program Files (x86)/Daybreak Game Company"
     PW_EXE_FILE="$WINEPREFIX/drive_c/Program Files (x86)/Daybreak Game Company/LaunchPad.exe"
     try_remove_file "${PW_AUTOINSTALL_EXE}"
     try_remove_file "${PW_EXE_FILE}.ppdb"

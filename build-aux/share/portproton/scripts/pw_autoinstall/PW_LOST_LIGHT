@@ -15,7 +15,7 @@ URL_LOST_LIGHT="$(curl -s --list-only "https://adl.easebar.com/d/g/yhtj/c/lostli
 start_portproton
 if try_download "${URL_LOST_LIGHT}" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
-    "$pw_7z" x -y "${PW_AUTOINSTALL_EXE}" -o"$WINEPREFIX/drive_c/Program Files (x86)/LostLight"
+    unpack "${PW_AUTOINSTALL_EXE}" "$WINEPREFIX/drive_c/Program Files (x86)/LostLight"
     export PW_EXE_FILE="$WINEPREFIX/drive_c/Program Files (x86)/LostLight/launcher.exe"
     pw_create_unique_exe "lostlight_launcher_pp"
     try_remove_file "${PW_AUTOINSTALL_EXE}"

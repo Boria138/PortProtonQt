@@ -689,6 +689,16 @@ unpack () {
          *.tar.gz) local command="tar -xhzf" ;;
         *.tar.zst) local command="tar -I zstd -xhf" ;;
             *.tar) local command="tar -xhf" ;;
+        *.7z|*.zip|*.exe|*.nupkg)
+            if [[ -z "$pw_7z" ]] ; then
+                if command -v 7z &>/dev/null
+                then pw_7z="7z"
+                else pw_7z="${PW_PLUGINS_PATH}/portable/lib/p7zip/7z"
+                fi
+            fi
+            local command="$pw_7z"
+            local is_p7zip=true
+            ;;
     esac
 
     case $3 in
@@ -697,15 +707,27 @@ unpack () {
 
     # If gamescope session is active, use PW_TERM for unpack
     if check_gamescope_session ; then
-        $PW_TERM "echo ; echo ; echo \"Unpacking file: $1. Please wait...\" ; $command \"$1\" -C \"$2\""
+        if [[ "$is_p7zip" == "true" ]] ; then
+            $PW_TERM "echo ; echo ; echo \"Unpacking file: $1. Please wait...\" ; \"$command\" x -y \"$1\" -o\"$2\""
+        else
+            $PW_TERM "echo ; echo ; echo \"Unpacking file: $1. Please wait...\" ; $command \"$1\" -C \"$2\""
+        fi
         [[ "$?" != 0 ]] && return 1 || return 0
     elif [[ "$silent" != "true" ]] ; then
         print_info "Unpacking file: $(basename "$1") Please wait..."
         set -o pipefail
-        $command "$1" -C "$2" 2>/dev/null
+        if [[ "$is_p7zip" == "true" ]] ; then
+            "$command" x -y "$1" "-o$2" 2>/dev/null
+        else
+            $command "$1" -C "$2" 2>/dev/null
+        fi
         [[ "${PIPESTATUS[0]}" != 0 ]] && print_error "File $1 unpacking error." && return 1 || return 0
     else
-        $command "$1" -C "$2" && return 0 || return 1
+        if [[ "$is_p7zip" == "true" ]] ; then
+            "$command" x -y "$1" "-o$2" && return 0 || return 1
+        else
+            $command "$1" -C "$2" && return 0 || return 1
+        fi
     fi
 }
 
@@ -1818,10 +1840,6 @@ pw_check_and_download_plugins () {
             # export PW_PLUGINS_PATH="${PORT_WINE_TMP_PATH}/plugins${PW_PLUGINS_VER}"
         fi
     fi
-    if command -v 7z &>/dev/null
-    then export pw_7z="7z"
-    else export pw_7z="${PW_PLUGINS_PATH}/portable/lib/p7zip/7z"
-    fi
     return 0
 }
 
@@ -2507,10 +2525,7 @@ pw_specialk_sync_files () {
 
     if [[ ! -d "$SPECIALK_PATH" ]] && try_download "github.com/SpecialKO/SpecialK/releases/download/${PW_SPECIALK_VER}/SpecialK.7z" "${PORT_DATA_PATH}/data/tmp/SpecialK.7z" ; then
         create_new_dir "$SPECIALK_PATH"
-        if [[ -z "$pw_7z" ]] ; then
-            if command -v 7z &>/dev/null ; then pw_7z="7z"; else pw_7z="${PW_PLUGINS_PATH}/portable/lib/p7zip/7z"; fi
-        fi
-        $pw_7z x "${PORT_DATA_PATH}/data/tmp/SpecialK.7z" -o"$SPECIALK_PATH" >/dev/null
+        unpack "${PORT_DATA_PATH}/data/tmp/SpecialK.7z" "$SPECIALK_PATH" silent
         try_remove_file "${PORT_DATA_PATH}/data/tmp/SpecialK.7z"
     fi
 

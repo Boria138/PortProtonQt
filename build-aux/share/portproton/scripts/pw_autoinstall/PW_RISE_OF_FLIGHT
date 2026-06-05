@@ -14,7 +14,7 @@ export PORTWINE_CREATE_SHORTCUT_NAME="Rise of Flight"
 start_portproton
 if try_download "https://il2bosrd1.cdnvideo.ru/ROF/ROF_UE.zip" "${PW_AUTOINSTALL_EXE}" no_mirror
 then
-    "$pw_7z" x -y "${PW_AUTOINSTALL_EXE}" -o"$WINEPREFIX/drive_c/Program Files (x86)/1C-777/Rise of Flight"
+    unpack "${PW_AUTOINSTALL_EXE}" "$WINEPREFIX/drive_c/Program Files (x86)/1C-777/Rise of Flight"
     pw_kill_autostart "3rd_party" &
     pw_run "$WINEPREFIX/drive_c/Program Files (x86)/1C-777/Rise of Flight/ROF_UE/setup.exe"
     PW_EXE_FILE="$WINEPREFIX/drive_c/Program Files (x86)/1C-777/Rise of Flight/bin_game/release/rof_updater.exe"
