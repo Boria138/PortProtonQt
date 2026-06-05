@@ -211,6 +211,7 @@ class ExeSettingsDialog(
 
         if self.input_manager:
             self.input_manager.enable_settings_mode(self)
+            self.input_manager.gamepad_hotplug.connect(self._update_vkbasalt_toggle_key_visibility)
 
         self.hints_widget, self.hints_labels = create_dialog_hints_widget(
             self.theme, self.main_window, self.input_manager, context='settings'

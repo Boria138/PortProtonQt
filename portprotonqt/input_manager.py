@@ -1995,10 +1995,10 @@ class InputManager(QObject):
         else:
             if preset_section:
                 sections.append(preset_section)
-            if toggle_section:
-                sections.append(self._sort_widgets_by_position(toggle_section))
             if extra_section:
                 sections.append(extra_section)
+            if toggle_section:
+                sections.append(self._sort_widgets_by_position(toggle_section))
 
         return sections
 
@@ -2066,7 +2066,16 @@ class InputManager(QObject):
         if not settings_dialog:
             return
 
+        current_tab = settings_dialog.tab_widget.currentWidget()
+        is_mangohud = current_tab == getattr(settings_dialog, "mangohud_tab", None)
+        is_vkbasalt = current_tab == getattr(settings_dialog, "vkbasalt_tab", None)
         section_index, _widget_index = position
+        if is_vkbasalt and isinstance(focused, QSlider) and direction > 0:
+            target = self._find_vkbasalt_first_effect_widget()
+            if target:
+                self._focus_mangohud_widget(target)
+                return
+
         toggle_boundary_reached = False
         if self._is_mangohud_fps_widget(focused):
             fps_target = self._find_mangohud_fps_vertical_target(
@@ -2084,9 +2093,6 @@ class InputManager(QObject):
                 return
             toggle_boundary_reached = True
 
-        current_tab = settings_dialog.tab_widget.currentWidget()
-        is_mangohud = current_tab == getattr(settings_dialog, "mangohud_tab", None)
-        is_vkbasalt = current_tab == getattr(settings_dialog, "vkbasalt_tab", None)
         fps_limit_method = None
         if is_mangohud:
             fps_limit_method = settings_dialog.mangohud_widgets.get('fps_limit_method')
@@ -2279,9 +2285,42 @@ class InputManager(QObject):
         toggle_widgets = [widget for widget in section if self._is_mangohud_toggle_widget(widget)]
         if not toggle_widgets:
             return None
+        if self._is_current_vkbasalt_tab():
+            return self._find_vkbasalt_effect_vertical_target(focused, direction, toggle_widgets)
         if self._is_vkbasalt_cas_widget(focused) and direction > 0:
             return None
         return self._find_mangohud_vertical_grid_target(focused, direction, toggle_widgets)
+
+    def _is_current_vkbasalt_tab(self) -> bool:
+        if not self.settings_dialog:
+            return False
+        current_tab = self.settings_dialog.tab_widget.currentWidget()
+        return current_tab == getattr(self.settings_dialog, "vkbasalt_tab", None)
+
+    def _find_vkbasalt_first_effect_widget(self) -> QWidget | None:
+        if not self.settings_dialog:
+            return None
+        widgets = [
+            widget for widget in self.settings_dialog.vkbasalt_shader_widgets.values()
+            if widget.isVisible() and widget.isEnabled()
+        ]
+        if not widgets:
+            return None
+        return self._sort_widgets_by_position(widgets)[0]
+
+    def _find_vkbasalt_effect_vertical_target(
+        self, focused: QWidget, direction: int, widgets: list[QWidget]
+    ) -> QWidget | None:
+        if not self.settings_dialog:
+            return None
+        target = self._find_mangohud_vertical_grid_target(focused, direction, widgets)
+        if direction >= 0 or target is None:
+            return target
+        focused_pos = focused.mapTo(self.settings_dialog, focused.rect().center())
+        target_pos = target.mapTo(self.settings_dialog, target.rect().center())
+        if target_pos.x() < focused_pos.x() and target_pos.y() > focused_pos.y():
+            return None
+        return target
 
     def _is_vkbasalt_cas_widget(self, widget: QWidget) -> bool:
         if not self.settings_dialog:

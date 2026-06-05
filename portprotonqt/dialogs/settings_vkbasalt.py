@@ -39,6 +39,7 @@ class VkBasaltSettingsMixin:
     portproton_path: str | None
     vkbasalt_tab: QWidget
     vkbasalt_tab_layout: QVBoxLayout
+    input_manager: Any
     sender: Any
 
     def init_vkbasalt_state(self) -> None:
@@ -49,6 +50,7 @@ class VkBasaltSettingsMixin:
         self.vkbasalt_shaders_layout = None
         self.vkbasalt_cas_group = None
         self.vkbasalt_cas_label = None
+        self.vkbasalt_toggle_key_label = None
         self.vkbasalt_toggle_key_button = None
         self.vkbasalt_toggle_key_waiting = False
 
@@ -65,8 +67,8 @@ class VkBasaltSettingsMixin:
         layout.setSpacing(self.theme.exeSettingsGroupBoxBlockSpacing)
 
         self._add_vkbasalt_actions_group(layout)
-        self._add_vkbasalt_shaders_group(layout)
         self._add_vkbasalt_cas_group(layout)
+        self._add_vkbasalt_shaders_group(layout)
         layout.addStretch()
 
         scroll.setWidget(container)
@@ -121,9 +123,9 @@ class VkBasaltSettingsMixin:
         self.vkbasalt_cas_slider.valueChanged.connect(self._update_vkbasalt_cas_label)
         layout.addWidget(self.vkbasalt_cas_slider)
 
-        toggle_key_label = QLabel(_("Toggle key"))
-        toggle_key_label.setWordWrap(True)
-        layout.addWidget(toggle_key_label)
+        self.vkbasalt_toggle_key_label = QLabel(_("Toggle key"))
+        self.vkbasalt_toggle_key_label.setWordWrap(True)
+        layout.addWidget(self.vkbasalt_toggle_key_label)
         self.vkbasalt_toggle_key_button = self._create_vkbasalt_button("")
         self.vkbasalt_toggle_key_button.clicked.connect(self._start_vkbasalt_toggle_key_capture)
         self.vkbasalt_toggle_key_button.installEventFilter(cast(QWidget, self))
@@ -192,6 +194,7 @@ class VkBasaltSettingsMixin:
         self.vkbasalt_cas_slider.setValue(cas_value)
         toggle_key = self.current_settings.get('PW_VKBASALT_TOOGLE_KEY', 'Home')
         self._set_vkbasalt_toggle_key(toggle_key)
+        self._update_vkbasalt_toggle_key_visibility()
         self.vkbasalt_original_values = {
             'PW_VKBASALT_EFFECTS': self.current_settings.get('PW_VKBASALT_EFFECTS', 'Curves:cas'),
             'PW_VKBASALT_FFX_CAS': self.current_settings.get('PW_VKBASALT_FFX_CAS', '0.50'),
@@ -259,6 +262,20 @@ class VkBasaltSettingsMixin:
         self.current_settings['PW_VKBASALT_TOOGLE_KEY'] = key_name or 'Home'
         if self.vkbasalt_toggle_key_button is not None:
             self.vkbasalt_toggle_key_button.setText(self.current_settings['PW_VKBASALT_TOOGLE_KEY'])
+
+    def _update_vkbasalt_toggle_key_visibility(self, _action: str | None = None) -> None:
+        input_manager = getattr(self, 'input_manager', None)
+        visible = not (input_manager and getattr(input_manager, 'gamepad', None) is not None)
+        if self.vkbasalt_toggle_key_label is not None:
+            self.vkbasalt_toggle_key_label.setVisible(visible)
+        if self.vkbasalt_toggle_key_button is None:
+            return
+        self.vkbasalt_toggle_key_button.setVisible(visible)
+        focus_policy = Qt.FocusPolicy.StrongFocus if visible else Qt.FocusPolicy.NoFocus
+        self.vkbasalt_toggle_key_button.setFocusPolicy(focus_policy)
+        if not visible and self.vkbasalt_toggle_key_waiting:
+            self.vkbasalt_toggle_key_waiting = False
+            self.vkbasalt_toggle_key_button.releaseKeyboard()
 
     def _handle_vkbasalt_key_button_event(self, obj: QWidget, event: QEvent) -> bool:
         button = self.vkbasalt_toggle_key_button
