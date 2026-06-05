@@ -325,8 +325,15 @@ Usage examples:
         export PW_USE_D3D_EXTRAS=1
         export WINE_LARGE_ADDRESS_AWARE=0
         trap "stop_portproton" SIGTERM SIGINT
-        # shellcheck source=/dev/null
-        . "${PORT_SCRIPTS_PATH}/pw_autoinstall/${2}"
+        if [[ "$2" =~ "/" ]] && [[ -f "$2" ]] ; then
+            # shellcheck source=/dev/null
+            . "${2}"
+        elif [[ -f "${PORT_SCRIPTS_PATH}/pw_autoinstall/${2}" ]] ; then
+            # shellcheck source=/dev/null
+            . "${PORT_SCRIPTS_PATH}/pw_autoinstall/${2}"
+        else
+            fatal "Not found autoinstal script: $2"
+        fi
         stop_portproton
         ;;
     --debug)
