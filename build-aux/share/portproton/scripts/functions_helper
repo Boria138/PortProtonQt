@@ -1572,9 +1572,10 @@ pw_vkbasalt_check () {
         if ! grep "${PW_PLUGINS_PATH}/reshade" "${VKBASALT_CONFIG_FILE}" &>/dev/null
         then sed -ri "s|= .*/reshade|= \"${PW_PLUGINS_PATH}\"/reshade|g" "${VKBASALT_CONFIG_FILE}"
         fi
-        if [[ -n "${PW_VKBASALT_EFFECTS}" ]] && [[ -n "${PW_VKBASALT_FFX_CAS}" ]] ; then
+        if [[ -n "${PW_VKBASALT_EFFECTS}" ]] && [[ -n "${PW_VKBASALT_FFX_CAS}" ]] && [[ -n "${PW_VKBASALT_TOOGLE_KEY}" ]] ; then
             sed -ri "s/effects = .*/effects = ${PW_VKBASALT_EFFECTS}/g" "${VKBASALT_CONFIG_FILE}"
             sed -ri "s/casSharpness .*/casSharpness = ${PW_VKBASALT_FFX_CAS}/g" "${VKBASALT_CONFIG_FILE}"
+            sed -ri "s/toggleKey = .*/toggleKey = ${PW_VKBASALT_TOOGLE_KEY}/g" "${VKBASALT_CONFIG_FILE}"
         fi
     else
         export DISABLE_VKBASALT="1"

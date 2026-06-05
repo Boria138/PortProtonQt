@@ -3,7 +3,8 @@
 import os
 from typing import Any, cast
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QEvent, Qt
+from PySide6.QtGui import QKeyEvent, QKeySequence
 from PySide6.QtWidgets import (
     QCheckBox,
     QGridLayout,
@@ -26,6 +27,7 @@ VKBASALT_ENV_KEYS = [
     'PW_PLUGINS_VER',
     'PW_VKBASALT_EFFECTS',
     'PW_VKBASALT_FFX_CAS',
+    'PW_VKBASALT_TOOGLE_KEY',
 ]
 
 
@@ -47,6 +49,8 @@ class VkBasaltSettingsMixin:
         self.vkbasalt_shaders_layout = None
         self.vkbasalt_cas_group = None
         self.vkbasalt_cas_label = None
+        self.vkbasalt_toggle_key_button = None
+        self.vkbasalt_toggle_key_waiting = False
 
     def setup_vkbasalt_tab(self) -> None:
         """Create vkBasalt tab widgets."""
@@ -116,6 +120,14 @@ class VkBasaltSettingsMixin:
         self.vkbasalt_cas_slider.setStyleSheet(self.theme.SLIDER_SIZE_STYLE)
         self.vkbasalt_cas_slider.valueChanged.connect(self._update_vkbasalt_cas_label)
         layout.addWidget(self.vkbasalt_cas_slider)
+
+        toggle_key_label = QLabel(_("Toggle key"))
+        toggle_key_label.setWordWrap(True)
+        layout.addWidget(toggle_key_label)
+        self.vkbasalt_toggle_key_button = self._create_vkbasalt_button("")
+        self.vkbasalt_toggle_key_button.clicked.connect(self._start_vkbasalt_toggle_key_capture)
+        self.vkbasalt_toggle_key_button.installEventFilter(cast(QWidget, self))
+        layout.addWidget(self.vkbasalt_toggle_key_button)
         parent_layout.addWidget(group)
 
     def _create_vkbasalt_button(self, label: str) -> QPushButton:
@@ -178,9 +190,12 @@ class VkBasaltSettingsMixin:
 
         cas_value = self._parse_vkbasalt_cas(self.current_settings.get('PW_VKBASALT_FFX_CAS', '0.50'))
         self.vkbasalt_cas_slider.setValue(cas_value)
+        toggle_key = self.current_settings.get('PW_VKBASALT_TOOGLE_KEY', 'Home')
+        self._set_vkbasalt_toggle_key(toggle_key)
         self.vkbasalt_original_values = {
             'PW_VKBASALT_EFFECTS': self.current_settings.get('PW_VKBASALT_EFFECTS', 'Curves:cas'),
             'PW_VKBASALT_FFX_CAS': self.current_settings.get('PW_VKBASALT_FFX_CAS', '0.50'),
+            'PW_VKBASALT_TOOGLE_KEY': toggle_key,
         }
         self._update_vkbasalt_toggle_buttons()
 
@@ -231,6 +246,33 @@ class VkBasaltSettingsMixin:
         style = self.theme.ACTION_BUTTON_ACTIVE_STYLE if active else self.theme.ACTION_BUTTON_STYLE
         button.setStyleSheet(style)
 
+    def _start_vkbasalt_toggle_key_capture(self) -> None:
+        self.vkbasalt_toggle_key_waiting = True
+        if self.vkbasalt_toggle_key_button is None:
+            return
+        self.vkbasalt_toggle_key_button.setText(_("Press a button to choose"))
+        self.vkbasalt_toggle_key_button.grabKeyboard()
+
+    def _set_vkbasalt_toggle_key(self, key_name: str) -> None:
+        self.current_settings['PW_VKBASALT_TOOGLE_KEY'] = key_name or 'Home'
+        if self.vkbasalt_toggle_key_button is not None:
+            self.vkbasalt_toggle_key_button.setText(self.current_settings['PW_VKBASALT_TOOGLE_KEY'])
+
+    def _handle_vkbasalt_key_button_event(self, obj: QWidget, event: QEvent) -> bool:
+        button = self.vkbasalt_toggle_key_button
+        if button is None or obj is not button:
+            return False
+        if event.type() != QEvent.Type.KeyPress or not self.vkbasalt_toggle_key_waiting:
+            return False
+
+        key_event = cast(QKeyEvent, event)
+        key_name = QKeySequence(key_event.key()).toString()
+        if key_name:
+            self._set_vkbasalt_toggle_key(key_name)
+        self.vkbasalt_toggle_key_waiting = False
+        button.releaseKeyboard()
+        return True
+
     def toggle_vkbasalt_enable(self) -> None:
         current_val = self.current_settings.get('PW_VKBASALT', '0')
         self.current_settings['PW_VKBASALT'] = '0' if current_val == '1' else '1'
@@ -262,6 +304,9 @@ class VkBasaltSettingsMixin:
         cas_value = f"{self.vkbasalt_cas_slider.value() / 100:.2f}"
         if cas_value != self.vkbasalt_original_values.get('PW_VKBASALT_FFX_CAS', ''):
             changes.append(f"PW_VKBASALT_FFX_CAS={cas_value}")
+        toggle_key = self.current_settings.get('PW_VKBASALT_TOOGLE_KEY', 'Home')
+        if toggle_key != self.vkbasalt_original_values.get('PW_VKBASALT_TOOGLE_KEY', ''):
+            changes.append(f"PW_VKBASALT_TOOGLE_KEY={toggle_key}")
         return changes
 
     def _filter_vkbasalt_settings(self, search_text: str) -> None:

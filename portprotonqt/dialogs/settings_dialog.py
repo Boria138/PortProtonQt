@@ -1277,6 +1277,9 @@ class ExeSettingsDialog(
         super().closeEvent(event)
 
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
+        if isinstance(obj, QWidget) and self._handle_vkbasalt_key_button_event(obj, event):
+            return True
+
         action_buttons = (
             getattr(self, "apply_button", None),
             getattr(self, "cancel_button", None),
