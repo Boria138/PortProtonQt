@@ -13,6 +13,12 @@ def get_cache_file_path():
     cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
     return os.path.join(cache_home, "PortProtonQt", "last_launch")
 
+def _parse_last_launch_line(line: str) -> tuple[str, str] | None:
+    parts = line.strip().rsplit(maxsplit=1)
+    if len(parts) != 2:
+        return None
+    return parts[0], parts[1]
+
 def save_last_launch(exe_name, launch_time):
     """
     Save launch time for exe.
@@ -23,9 +29,9 @@ def save_last_launch(exe_name, launch_time):
     if os.path.exists(file_path):
         with open(file_path, encoding="utf-8") as f:
             for line in f:
-                parts = line.strip().split(maxsplit=1)
-                if len(parts) == 2:
-                    data[parts[0]] = parts[1]
+                parsed_line = _parse_last_launch_line(line)
+                if parsed_line:
+                    data[parsed_line[0]] = parsed_line[1]
     data[exe_name] = launch_time.isoformat()
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
     with open(file_path, "w", encoding="utf-8") as f:
@@ -62,9 +68,9 @@ def get_last_launch(exe_name):
         return _("Never")
     with open(file_path, encoding="utf-8") as f:
         for line in f:
-            parts = line.strip().split(maxsplit=1)
-            if len(parts) == 2 and parts[0] == exe_name:
-                iso_time = parts[1]
+            parsed_line = _parse_last_launch_line(line)
+            if parsed_line and parsed_line[0] == exe_name:
+                iso_time = parsed_line[1]
                 launch_time = datetime.fromisoformat(iso_time)
                 return format_last_launch(launch_time)
     return _("Never")
@@ -230,9 +236,9 @@ def get_last_launch_timestamp(exe_name):
         return 0
     with open(file_path, encoding="utf-8") as f:
         for line in f:
-            parts = line.strip().split(maxsplit=1)
-            if len(parts) == 2 and parts[0] == exe_name:
-                iso_time = parts[1]
+            parsed_line = _parse_last_launch_line(line)
+            if parsed_line and parsed_line[0] == exe_name:
+                iso_time = parsed_line[1]
                 dt = datetime.fromisoformat(iso_time)
                 return dt.timestamp()
     return 0
