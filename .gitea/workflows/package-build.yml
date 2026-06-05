@@ -26,7 +26,7 @@ jobs:
       arch:     ${{ steps.check.outputs.arch }}
       debian:   ${{ steps.check.outputs.debian }}
     steps:
-      - uses: https://gitea.com/actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: https://git.linux-gaming.ru/actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         if: github.event_name == 'pull_request'
         with:
           fetch-depth: 0
@@ -89,10 +89,10 @@ jobs:
           pacman -Sy --noconfirm archlinux-keyring
           pacman -Syu --noconfirm --disable-download-timeout --needed git wget gnupg nodejs npm xorg-server-xvfb zsync
 
-      - uses: https://gitea.com/actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: https://git.linux-gaming.ru/actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         if: github.event_name == 'pull_request'
 
-      - uses: https://gitea.com/actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: https://git.linux-gaming.ru/actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         if: github.event_name == 'workflow_dispatch'
         with:
           ref: ${{ env.BUILD_BRANCH }}
@@ -113,7 +113,7 @@ jobs:
           ./portprotonqt-appimage.sh
 
       - name: Upload AppImage
-        uses: https://gitea.com/actions/gitea-upload-artifact@v4
+        uses: https://git.linux-gaming.ru/actions/gitea-upload-artifact@v4
         with:
           name: PortProtonQt-AppImage
           path: build-aux/AppImage/dist/*.AppImage
@@ -147,11 +147,11 @@ jobs:
           echo '%_topdir /home/rpmbuild' > /home/rpmbuild/.rpmmacros
 
       - name: Checkout PR
-        uses: https://gitea.com/actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        uses: https://git.linux-gaming.ru/actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         if: github.event_name == 'pull_request'
 
       - name: Checkout branch
-        uses: https://gitea.com/actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        uses: https://git.linux-gaming.ru/actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         if: github.event_name == 'workflow_dispatch'
         with:
           ref: ${{ env.BUILD_BRANCH }}
@@ -172,7 +172,7 @@ jobs:
           su rpmbuild -c "rpmbuild -ba /home/rpmbuild/SPECS/${{ env.PACKAGE }}.spec"
 
       - name: Upload RPM package
-        uses: https://gitea.com/actions/gitea-upload-artifact@v4
+        uses: https://git.linux-gaming.ru/actions/gitea-upload-artifact@v4
         with:
           name: PortProtonQt-RPM-Fedora-${{ matrix.fedora_version }}
           path: /home/rpmbuild/RPMS/**/*.rpm
@@ -211,11 +211,11 @@ jobs:
           chown user -R ..
 
       - name: Checkout PR
-        uses: https://gitea.com/actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        uses: https://git.linux-gaming.ru/actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         if: github.event_name == 'pull_request'
 
       - name: Checkout branch
-        uses: https://gitea.com/actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        uses: https://git.linux-gaming.ru/actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         if: github.event_name == 'workflow_dispatch'
         with:
           ref: ${{ env.BUILD_BRANCH }}
@@ -238,7 +238,7 @@ jobs:
           su user -c "yes '' | makepkg --noconfirm -s -p PKGBUILD-git"
 
       - name: Upload Arch package
-        uses: https://gitea.com/actions/gitea-upload-artifact@v4
+        uses: https://git.linux-gaming.ru/actions/gitea-upload-artifact@v4
         with:
           name: PortProtonQt-Arch
           path: ${{ env.PKGDEST }}/*
@@ -261,11 +261,11 @@ jobs:
                              pkgconf python3
 
       - name: Checkout PR
-        uses: https://gitea.com/actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        uses: https://git.linux-gaming.ru/actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         if: github.event_name == 'pull_request'
 
       - name: Checkout branch
-        uses: https://gitea.com/actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        uses: https://git.linux-gaming.ru/actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         if: github.event_name == 'workflow_dispatch'
         with:
           ref: ${{ env.BUILD_BRANCH }}
@@ -277,7 +277,7 @@ jobs:
           mv ../*.deb ../*.buildinfo ../*.changes dist/deb/
 
       - name: Upload Debian package
-        uses: https://gitea.com/actions/gitea-upload-artifact@v4
+        uses: https://git.linux-gaming.ru/actions/gitea-upload-artifact@v4
         with:
           name: PortProtonQt-DEB-Debian-13
           path: dist/deb/*

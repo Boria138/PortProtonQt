@@ -11,10 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: https://gitea.com/actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        uses: https://git.linux-gaming.ru/actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Set up Python
-        uses: https://gitea.com/actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        uses: https://git.linux-gaming.ru/actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
           python-version-file: "pyproject.toml"
 

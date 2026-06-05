@@ -27,7 +27,7 @@ jobs:
           pacman -Sy --noconfirm archlinux-keyring
           pacman -Syu --noconfirm --disable-download-timeout --needed git wget gnupg nodejs npm xorg-server-xvfb zsync
 
-      - uses: https://gitea.com/actions/checkout@v4
+      - uses: https://git.linux-gaming.ru/actions/checkout@v4
 
       - name: Install appimage dependencies
         run: |
@@ -41,7 +41,7 @@ jobs:
           ./portprotonqt-appimage.sh
 
       - name: Upload AppImage
-        uses: https://gitea.com/actions/gitea-upload-artifact@v4
+        uses: https://git.linux-gaming.ru/actions/gitea-upload-artifact@v4
         with:
           name: PortProtonQt-AppImage
           path: build-aux/AppImage/dist/*.AppImage
@@ -78,7 +78,7 @@ jobs:
           chown user -R ..
 
       - name: Checkout
-        uses: https://gitea.com/actions/checkout@v4
+        uses: https://git.linux-gaming.ru/actions/checkout@v4
 
       - name: Build
         run: |
@@ -89,7 +89,7 @@ jobs:
           su user -c "yes '' | makepkg --noconfirm -s"
 
       - name: Upload Arch package
-        uses: https://gitea.com/actions/gitea-upload-artifact@v4
+        uses: https://git.linux-gaming.ru/actions/gitea-upload-artifact@v4
         with:
           name: PortProtonQt-Arch
           path: ${{ env.PKGDEST }}/*
@@ -121,7 +121,7 @@ jobs:
           echo '%_topdir /home/rpmbuild' > /home/rpmbuild/.rpmmacros
 
       - name: Checkout repo
-        uses: https://gitea.com/actions/checkout@v4
+        uses: https://git.linux-gaming.ru/actions/checkout@v4
 
       - name: Copy fedora.spec
         run: |
@@ -133,7 +133,7 @@ jobs:
           su rpmbuild -c "rpmbuild -ba /home/rpmbuild/SPECS/${{ env.PACKAGE }}.spec"
 
       - name: Upload RPM package
-        uses: https://gitea.com/actions/gitea-upload-artifact@v4
+        uses: https://git.linux-gaming.ru/actions/gitea-upload-artifact@v4
         with:
           name: PortProtonQt-RPM-Fedora-${{ matrix.fedora_version }}
           path: /home/rpmbuild/RPMS/**/*.rpm
@@ -154,7 +154,7 @@ jobs:
                              pkgconf python3
 
       - name: Checkout
-        uses: https://gitea.com/actions/checkout@v4
+        uses: https://git.linux-gaming.ru/actions/checkout@v4
 
       - name: Build Debian package
         run: |
@@ -163,7 +163,7 @@ jobs:
           mv ../*.deb ../*.buildinfo ../*.changes dist/deb/
 
       - name: Upload Debian package
-        uses: https://gitea.com/actions/gitea-upload-artifact@v4
+        uses: https://git.linux-gaming.ru/actions/gitea-upload-artifact@v4
         with:
           name: PortProtonQt-DEB-Debian-13
           path: dist/deb/*
@@ -172,7 +172,7 @@ jobs:
     name: Create and Publish Release
     runs-on: ubuntu-latest
     steps:
-      - uses: https://gitea.com/actions/checkout@v4
+      - uses: https://git.linux-gaming.ru/actions/checkout@v4
 
       - name: Install required dependencies
         run: |
@@ -180,7 +180,7 @@ jobs:
             sudo apt install -y original-awk unzip
 
       - name: Download all artifacts
-        uses: https://gitea.com/actions/download-artifact@v3
+        uses: https://git.linux-gaming.ru/actions/download-artifact@v3
         continue-on-error: true
         with:
           path: release/
@@ -200,7 +200,7 @@ jobs:
           awk "/^## \\[$VERSION\\]/ {flag=1; next} /^## \\[/ || /^---/ {flag=0} flag" CHANGELOG.md > changelog.txt
 
       - name: Release
-        uses: https://gitea.com/actions/gitea-release-action@v1
+        uses: https://git.linux-gaming.ru/actions/gitea-release-action@v1
         env:
             NODE_OPTIONS: '--experimental-fetch' # if nodejs < 18
         with:

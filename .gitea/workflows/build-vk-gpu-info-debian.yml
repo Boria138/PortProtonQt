@@ -25,12 +25,12 @@ jobs:
           apt-get install -y build-essential pkg-config libvulkan-dev git curl wget nodejs npm
 
       - name: Set up Node.js
-        uses: https://gitea.com/actions/setup-node@v2
+        uses: https://git.linux-gaming.ru/actions/setup-node@v2
         with:
           node-version: 20
 
       - name: Checkout code
-        uses: https://gitea.com/actions/checkout@v3
+        uses: https://git.linux-gaming.ru/actions/checkout@v3
 
       - name: Compile vk_gpu_info
         run: |
@@ -51,7 +51,7 @@ jobs:
           fi
 
       - name: Upload vk_gpu_info binary
-        uses: https://gitea.com/actions/gitea-upload-artifact@v4
+        uses: https://git.linux-gaming.ru/actions/gitea-upload-artifact@v4
         with:
           name: vk_gpu_info-debian11-binary
           path: build-aux/vk_gpu_info

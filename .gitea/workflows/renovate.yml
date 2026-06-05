@@ -10,10 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     container: ghcr.io/renovatebot/renovate:latest@sha256:47421f2f3f82048e969b5195dd808d5ac2c5f69d43d192191c4a3dca390afe06
     steps:
-      - uses: https://gitea.com/actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: https://git.linux-gaming.ru/actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Set up Node.js
-        uses: https://gitea.com/actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        uses: https://git.linux-gaming.ru/actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version: 20
 
