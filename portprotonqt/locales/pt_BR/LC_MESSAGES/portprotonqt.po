@@ -9,93 +9,99 @@ msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-06-04 10:32+0500\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Automatically generated\n"
-"Language-Team: none\n"
+"PO-Revision-Date: 2026-06-05 14:12+0000\n"
+"Last-Translator: Boria138 <boria138@noreply.codeberg.org>\n"
+"Language-Team: Portuguese (Brazil) <https://translate.codeberg.org/projects/"
+"portprotonqt/portprotonqt/pt_BR/>\n"
 "Language: pt_BR\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
+"X-Generator: Weblate 2026.5\n"
 "Generated-By: Babel 2.18.0\n"
 
 msgid "Stop Game"
-msgstr ""
+msgstr "Parar o Jogo"
 
 msgid ""
 "PortProton data folder is not readable and writable. Choose another "
 "folder for PortProton data."
 msgstr ""
+"A pasta de dados do PortProton não pode ser lida nem gravada. Escolha outra "
+"pasta para os dados do PortProton."
 
 msgid "Error"
-msgstr ""
+msgstr "Erro"
 
 msgid "PortProton directory not found"
-msgstr ""
+msgstr "Diretório do PortProton não encontrado"
 
 msgid "Remove from Favorites"
-msgstr ""
+msgstr "Remover dos Favoritos"
 
 msgid "Add to Favorites"
-msgstr ""
+msgstr "Adicionar aos Favoritos"
 
 msgid "Create Folder"
-msgstr ""
+msgstr "Criar Pasta"
 
 msgid "Rename Folder"
-msgstr ""
+msgstr "Renomear Pasta"
 
 msgid "Delete Folder"
-msgstr ""
+msgstr "Excluir Pasta"
 
 msgid "OK"
-msgstr ""
+msgstr "OK"
 
 msgid "Cancel"
-msgstr ""
+msgstr "Cancelar"
 
 msgid "Folder name cannot be empty"
-msgstr ""
+msgstr "O nome da pasta não pode ficar vazio"
 
 msgid "Invalid folder name"
-msgstr ""
+msgstr "Nome de pasta inválido"
 
 msgid "Folder Name:"
-msgstr ""
+msgstr "Nome da Pasta:"
 
 #, python-brace-format
 msgid "Folder already exists: {folder_name}"
-msgstr ""
+msgstr "A pasta já existe: {folder_name}"
 
 #, python-brace-format
 msgid "Failed to create folder: {error}"
-msgstr ""
+msgstr "Falha ao criar a pasta: {error}"
 
 msgid "New Folder Name:"
-msgstr ""
+msgstr "Novo Nome da Pasta:"
 
 #, python-brace-format
 msgid "Failed to rename folder: {error}"
-msgstr ""
+msgstr "Falha ao renomear a pasta: {error}"
 
 msgid "Confirm Deletion"
-msgstr ""
+msgstr "Confirmar Exclusão"
 
 #, python-brace-format
 msgid ""
 "Are you sure you want to delete folder '{folder_name}'? This action "
 "cannot be undone."
 msgstr ""
+"Tem certeza de que deseja excluir a pasta '{folder_name}'? Esta ação não "
+"pode ser desfeita."
 
 msgid "Yes"
-msgstr ""
+msgstr "Sim"
 
 msgid "No"
-msgstr ""
+msgstr "Não"
 
 #, python-brace-format
 msgid "Failed to delete folder: {error}"
-msgstr ""
+msgstr "Falha ao excluir a pasta: {error}"
 
 msgid "Delete from PortProton"
 msgstr ""
@@ -2174,4 +2180,3 @@ msgstr ""
 
 msgid "Not selected"
 msgstr ""
-
