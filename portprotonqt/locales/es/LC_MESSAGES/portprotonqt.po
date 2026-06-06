@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-03-22 13:50+0500\n"
-"PO-Revision-Date: 2026-05-11 08:58+0000\n"
+"PO-Revision-Date: 2026-06-06 16:07+0000\n"
 "Last-Translator: gallegonovato <gallegonovato@noreply.codeberg.org>\n"
 "Language-Team: Spanish <https://translate.codeberg.org/projects/portprotonqt/"
 "portprotonqt/es/>\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.17.1\n"
+"X-Generator: Weblate 2026.5\n"
 "Generated-By: Babel 2.17.0\n"
 
 msgid "Stop Game"
@@ -28,6 +28,8 @@ msgid ""
 "PortProton data folder is not readable and writable. Choose another "
 "folder for PortProton data."
 msgstr ""
+"La carpeta de datos de PortProton no tiene permisos de lectura ni escritura. "
+"Elija otra carpeta para los datos de PortProton."
 
 msgid "Error"
 msgstr "Error"
@@ -92,10 +94,10 @@ msgstr ""
 "acción no se puede deshacer."
 
 msgid "Yes"
-msgstr ""
+msgstr "Sí"
 
 msgid "No"
-msgstr ""
+msgstr "No"
 
 #, python-brace-format
 msgid "Failed to delete folder: {error}"
@@ -140,94 +142,99 @@ msgstr "Sin ningún ejecutable en el archivo .desktop para «{game_name}»"
 
 #, python-brace-format
 msgid "Failed to parse .desktop file for '{game_name}'"
-msgstr ""
+msgstr "Error al analizar el archivo .desktop para ' {game_name} '"
 
 #, python-brace-format
 msgid "Error reading .desktop file: {error}"
-msgstr ""
+msgstr "Error al leer el archivo .desktop: {error}"
 
 #, python-brace-format
 msgid "No .desktop file found for '{game_name}'"
-msgstr ""
+msgstr "No se encontró ningún archivo .desktop para '{game_name}'"
 
 #, python-brace-format
 msgid ""
 "Are you sure you want to delete '{game_name}'? This will remove the .desktop "
 "file and custom data."
 msgstr ""
+"¿Estás seguro de que quieres eliminar «{game_name}»? Esto eliminará el "
+"archivo .desktop y los datos personalizados."
 
 #, python-brace-format
 msgid "Failed to delete .desktop file: {error}"
-msgstr ""
+msgstr "No se ha podido eliminar el archivo .desktop: {error}"
 
 #, python-brace-format
 msgid "Deleted '{game_name}' successfully"
-msgstr ""
+msgstr "Se ha eliminado «{game_name}» correctamente"
 
 #, python-brace-format
 msgid "Failed to delete custom data: {error}"
-msgstr ""
+msgstr "No se han podido eliminar los datos personalizados: {error}"
 
 #, python-brace-format
 msgid "Failed to add '{game_name}' to {location}: {error}"
-msgstr ""
+msgstr "No se ha podido añadir «{game_name}» a {location}: {error}"
 
 msgid "Menu"
-msgstr ""
+msgstr "Menú"
 
 #, python-brace-format
 msgid "Failed to remove '{game_name}' from {location}: {error}"
-msgstr ""
+msgstr "No se ha podido eliminar «{game_name}» de {location}: {error}"
 
 #, python-brace-format
 msgid "Removed '{game_name}' from {location}"
-msgstr ""
+msgstr "Se ha eliminado «{game_name}» de {location}"
 
 msgid "Desktop"
-msgstr ""
+msgstr "Escritorio"
 
 msgid "Game name and executable path are required"
 msgstr ""
+"Es necesario indicar el nombre del juego y la ruta del archivo ejecutable"
 
 msgid "Failed to generate .desktop file data"
-msgstr ""
+msgstr "No se han podido generar los datos del archivo .desktop"
 
 #, python-brace-format
 msgid "Failed to delete old .desktop file: {error}"
-msgstr ""
+msgstr "No se ha podido eliminar el archivo .desktop antiguo: {error}"
 
 #, python-brace-format
 msgid "Removed old .desktop file for '{game_name}'"
-msgstr ""
+msgstr "Se ha eliminado el antiguo archivo .desktop de «{game_name}»"
 
 #, python-brace-format
 msgid "Failed to save .desktop file: {error}"
-msgstr ""
+msgstr "No se ha podido guardar el archivo .desktop: {error}"
 
 #, python-brace-format
 msgid "Failed to copy cover image: {error}"
-msgstr ""
+msgstr "No se ha podido copiar la imagen de portada: {error}"
 
 #, python-brace-format
 msgid "Unsupported image format: {extension}"
-msgstr ""
+msgstr "Formato de imagen no compatible: {extension}"
 
 msgid "Success"
-msgstr ""
+msgstr "Éxito"
 
 #, python-brace-format
 msgid ""
 "'{game_name}' was added to Steam. Please restart Steam for changes to take "
 "effect."
 msgstr ""
+"Se ha añadido «{game_name}» a Steam. Reinicia Steam para que los cambios "
+"surtan efecto."
 
 #, python-brace-format
 msgid "'{game_name}' was added to Steam."
-msgstr ""
+msgstr "«{game_name}» se ha añadido a Steam."
 
 #, python-brace-format
 msgid "Failed to add '{game_name}' to Steam: {error}"
-msgstr ""
+msgstr "No se ha podido añadir «{game_name}» a Steam: {error}"
 
 #, python-brace-format
 msgid ""
