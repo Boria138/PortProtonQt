@@ -33,7 +33,8 @@
 - Исправлен запуск PortProtonQt AppImage в режиме `--silent`
 - Исправлен запуск добавленных в Steam приложений из AppImage
 - Исправлена миграция ярлыков на рабочем столе
-- Исправлен выбор системного `MangoHud.conf` в Flatpak: сначала проверяется `~/.home/.config`, затем `XDG_CONFIG_HOME`
+- Исправлен выбор системного `MangoHud.conf` в Flatpak: сначала проверяется `~/.config`, затем `XDG_CONFIG_HOME`
+- Исправлен выбор системного `vkBasalt.conf` в Flatpak: сначала проверяется `~/.config`, затем `XDG_CONFIG_HOME`
 - Исправлено авто-включение MangoHud при наличии `MANGOHUD_CONFIG`
 - Добавлена пропущенная поддержка `.cmd` рядом с `.bat`
 - Исправлено определение каталога Steam на OpenSUSE и Deb-based системах

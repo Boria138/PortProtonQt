@@ -1473,7 +1473,7 @@ pw_select_mangohud_user_conf () {
         return 0
     fi
 
-    local home_config="${HOME}/.home/.config/MangoHud/MangoHud.conf"
+    local home_config="${HOME}/.config/MangoHud/MangoHud.conf"
     local xdg_config="${XDG_CONFIG_HOME:-${HOME}/.config}/MangoHud/MangoHud.conf"
 
     if [[ -f "$home_config" ]] ; then
@@ -1485,6 +1485,28 @@ pw_select_mangohud_user_conf () {
     fi
 
     print_info "System MangoHud.conf in use: $MANGOHUD_CONFIGFILE"
+}
+
+pw_select_vkbasalt_user_conf () {
+    unset VKBASALT_CONFIG_FILE
+    unset PW_VKBASALT_EFFECTS PW_VKBASALT_FFX_CAS
+
+    if ! check_flatpak ; then
+        return 0
+    fi
+
+    local home_config="${HOME}/.config/vkBasalt/vkBasalt.conf"
+    local xdg_config="${XDG_CONFIG_HOME:-${HOME}/.config}/vkBasalt/vkBasalt.conf"
+
+    if [[ -f "$home_config" ]] ; then
+        export VKBASALT_CONFIG_FILE="$home_config"
+    elif [[ -f "$xdg_config" ]] ; then
+        export VKBASALT_CONFIG_FILE="$xdg_config"
+    else
+        return 0
+    fi
+
+    print_info "System vkBasalt.conf in use: $VKBASALT_CONFIG_FILE"
 }
 
 pw_mangohud_preview () {
@@ -3065,7 +3087,7 @@ start_portproton () {
         pw_select_mangohud_user_conf
     fi
 
-    [[ "${PW_VKBASALT_USER_CONF}" == 1 ]] && unset PW_VKBASALT_EFFECTS PW_VKBASALT_FFX_CAS
+    [[ "${PW_VKBASALT_USER_CONF}" == 1 ]] && pw_select_vkbasalt_user_conf
 
     if [[ $PW_GPU_USE != "disabled" ]] ; then
         export DXVK_FILTER_DEVICE_NAME="$PW_GPU_USE"
@@ -4071,6 +4093,8 @@ steamplay_launch () {
         elif [[ "${PW_MANGOHUD_USER_CONF}" == 1 ]] ; then
             pw_select_mangohud_user_conf
         fi
+
+        [[ "${PW_VKBASALT_USER_CONF}" == 1 ]] && pw_select_vkbasalt_user_conf
 
         pw_optiscaler_sync_files
         pw_specialk_sync_files
