@@ -16,9 +16,16 @@ git merge --ff-only "$remote/$main_branch"
 
 if git merge-base --is-ancestor "$remote/$weblate_branch" HEAD; then
     echo "No new Weblate changes to merge."
+elif git merge-base --is-ancestor HEAD "$remote/$weblate_branch"; then
+    git merge --ff-only "$remote/$weblate_branch"
 else
-    git merge --no-ff "$remote/$weblate_branch"
+    git switch -C "$weblate_branch" "$remote/$weblate_branch"
+    git rebase "$main_branch"
+    git switch "$main_branch"
+    git merge --ff-only "$weblate_branch"
 fi
+
+python dev-scripts/l10n.py
 
 git push "$remote" "$main_branch"
 git push "$remote" "$main_branch:$weblate_branch"
