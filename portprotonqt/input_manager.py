@@ -2289,8 +2289,6 @@ class InputManager(QObject):
             return None
         if self._is_current_vkbasalt_tab():
             return self._find_vkbasalt_effect_vertical_target(focused, direction, toggle_widgets)
-        if self._is_vkbasalt_cas_widget(focused) and direction > 0:
-            return None
         return self._find_mangohud_vertical_grid_target(focused, direction, toggle_widgets)
 
     def _is_current_vkbasalt_tab(self) -> bool:
@@ -2323,15 +2321,6 @@ class InputManager(QObject):
         if target_pos.x() < focused_pos.x() and target_pos.y() > focused_pos.y():
             return None
         return target
-
-    def _is_vkbasalt_cas_widget(self, widget: QWidget) -> bool:
-        if not self.settings_dialog:
-            return False
-        current_tab = self.settings_dialog.tab_widget.currentWidget()
-        if current_tab != getattr(self.settings_dialog, "vkbasalt_tab", None):
-            return False
-        cas_widget = getattr(self.settings_dialog, 'vkbasalt_shader_widgets', {}).get('cas')
-        return widget is cas_widget
 
     def _find_mangohud_fps_vertical_target(self, focused, direction, section):
         """Navigate FPS widgets down/up with automatic next/prev column jump."""

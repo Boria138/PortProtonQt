@@ -46,6 +46,7 @@ class VkBasaltSettingsMixin:
         self.vkbasalt_shader_widgets = {}
         self.vkbasalt_original_values = {}
         self.vkbasalt_actions_group = None
+        self.vkbasalt_actions_layout = None
         self.vkbasalt_shaders_group = None
         self.vkbasalt_shaders_layout = None
         self.vkbasalt_cas_group = None
@@ -81,18 +82,26 @@ class VkBasaltSettingsMixin:
         layout.setVerticalSpacing(self.theme.exeSettingsGroupBoxElementVerticalSpacing)
         layout.setHorizontalSpacing(self.theme.exeSettingsGroupBoxElementHorizontalSpacing)
         self.vkbasalt_actions_group = group
+        self.vkbasalt_actions_layout = layout
 
         self.vkbasalt_enable_button = self._create_vkbasalt_button(_("Enable {0}").format("vkBasalt"))
         self.vkbasalt_enable_button.clicked.connect(self.toggle_vkbasalt_enable)
         self.vkbasalt_user_conf_button = self._create_vkbasalt_button(_("Use system config"))
         self.vkbasalt_user_conf_button.clicked.connect(self.toggle_vkbasalt_user_conf)
+        self.vkbasalt_toggle_key_button = self._create_vkbasalt_button("")
+        self.vkbasalt_toggle_key_button.clicked.connect(self._start_vkbasalt_toggle_key_capture)
+        self.vkbasalt_toggle_key_button.installEventFilter(cast(QWidget, self))
+        self.vkbasalt_clear_button = self._create_vkbasalt_button(_("Clear"))
+        self.vkbasalt_clear_button.clicked.connect(self.clear_vkbasalt_settings)
         layout.addWidget(self.vkbasalt_enable_button, 0, 0)
         layout.addWidget(self.vkbasalt_user_conf_button, 0, 1)
+        layout.addWidget(self.vkbasalt_toggle_key_button, 1, 0)
+        layout.addWidget(self.vkbasalt_clear_button, 1, 1)
 
         parent_layout.addWidget(group)
 
     def _add_vkbasalt_shaders_group(self, parent_layout: QVBoxLayout) -> None:
-        group = QGroupBox(_("ReShade shaders"))
+        group = QGroupBox(_("Shaders"))
         group.setStyleSheet(self.theme.QGROUP_BOX_STYLE)
         self.vkbasalt_shaders_layout = QGridLayout(group)
         self.vkbasalt_shaders_layout.setContentsMargins(0, 8, 0, 8)
@@ -123,13 +132,6 @@ class VkBasaltSettingsMixin:
         self.vkbasalt_cas_slider.valueChanged.connect(self._update_vkbasalt_cas_label)
         layout.addWidget(self.vkbasalt_cas_slider)
 
-        self.vkbasalt_toggle_key_label = QLabel(_("Toggle key"))
-        self.vkbasalt_toggle_key_label.setWordWrap(True)
-        layout.addWidget(self.vkbasalt_toggle_key_label)
-        self.vkbasalt_toggle_key_button = self._create_vkbasalt_button("")
-        self.vkbasalt_toggle_key_button.clicked.connect(self._start_vkbasalt_toggle_key_capture)
-        self.vkbasalt_toggle_key_button.installEventFilter(cast(QWidget, self))
-        layout.addWidget(self.vkbasalt_toggle_key_button)
         parent_layout.addWidget(group)
 
     def _create_vkbasalt_button(self, label: str) -> QPushButton:
@@ -192,6 +194,7 @@ class VkBasaltSettingsMixin:
 
         cas_value = self._parse_vkbasalt_cas(self.current_settings.get('PW_VKBASALT_FFX_CAS', '0.50'))
         self.vkbasalt_cas_slider.setValue(cas_value)
+        self._update_vkbasalt_cas_label()
         toggle_key = self.current_settings.get('PW_VKBASALT_TOOGLE_KEY', 'Home')
         self._set_vkbasalt_toggle_key(toggle_key)
         self._update_vkbasalt_toggle_key_visibility()
@@ -208,7 +211,7 @@ class VkBasaltSettingsMixin:
 
         columns = self.theme.mangoHudSwitchesColumns
         shader_names = self._get_vkbasalt_shader_names()
-        for index, shader in enumerate([*shader_names, 'cas']):
+        for index, shader in enumerate(shader_names):
             checkbox = self._create_vkbasalt_checkbox(shader)
             row = index // columns
             real_col = (index % columns) * 2 + 1
@@ -227,7 +230,10 @@ class VkBasaltSettingsMixin:
     def _update_vkbasalt_cas_label(self) -> None:
         if self.vkbasalt_cas_label is None:
             return
-        self.vkbasalt_cas_label.setText(_("Sharpness: {0}").format(self.vkbasalt_cas_slider.value()))
+        self.vkbasalt_cas_label.setText(_("Sharpness: {0}").format(self._get_vkbasalt_cas_percent()))
+
+    def _get_vkbasalt_cas_percent(self) -> int:
+        return self.vkbasalt_cas_slider.value()
 
     def _update_vkbasalt_toggle_buttons(self) -> None:
         vkbasalt_enabled = self.current_settings.get('PW_VKBASALT') == '1'
@@ -243,6 +249,8 @@ class VkBasaltSettingsMixin:
         self.vkbasalt_user_conf_button.setText(
             _("Don't use system config") if user_conf_enabled else _("Use system config")
         )
+        self.vkbasalt_clear_button.setVisible(vkbasalt_enabled)
+        self._update_vkbasalt_toggle_key_visibility()
         for group in (self.vkbasalt_shaders_group, self.vkbasalt_cas_group):
             if group is not None:
                 group.setVisible(config_visible)
@@ -261,16 +269,22 @@ class VkBasaltSettingsMixin:
     def _set_vkbasalt_toggle_key(self, key_name: str) -> None:
         self.current_settings['PW_VKBASALT_TOOGLE_KEY'] = key_name or 'Home'
         if self.vkbasalt_toggle_key_button is not None:
-            self.vkbasalt_toggle_key_button.setText(self.current_settings['PW_VKBASALT_TOOGLE_KEY'])
+            self.vkbasalt_toggle_key_button.setText(
+                _("Toggle key: {0}").format(self.current_settings['PW_VKBASALT_TOOGLE_KEY'])
+            )
 
     def _update_vkbasalt_toggle_key_visibility(self, _action: str | None = None) -> None:
         input_manager = getattr(self, 'input_manager', None)
-        visible = not (input_manager and getattr(input_manager, 'gamepad', None) is not None)
+        vkbasalt_enabled = self.current_settings.get('PW_VKBASALT') == '1'
+        visible = vkbasalt_enabled and not (input_manager and getattr(input_manager, 'gamepad', None) is not None)
         if self.vkbasalt_toggle_key_label is not None:
             self.vkbasalt_toggle_key_label.setVisible(visible)
         if self.vkbasalt_toggle_key_button is None:
             return
         self.vkbasalt_toggle_key_button.setVisible(visible)
+        if self.vkbasalt_actions_layout is not None:
+            clear_column = 1 if visible else 0
+            self.vkbasalt_actions_layout.addWidget(self.vkbasalt_clear_button, 1, clear_column)
         focus_policy = Qt.FocusPolicy.StrongFocus if visible else Qt.FocusPolicy.NoFocus
         self.vkbasalt_toggle_key_button.setFocusPolicy(focus_policy)
         if not visible and self.vkbasalt_toggle_key_waiting:
@@ -303,10 +317,20 @@ class VkBasaltSettingsMixin:
         self._update_vkbasalt_toggle_buttons()
 
     def _build_vkbasalt_effects(self) -> str:
-        return ':'.join(
+        effects = [
             shader for shader, checkbox in self.vkbasalt_shader_widgets.items()
             if checkbox.isChecked()
-        )
+        ]
+        if self._get_vkbasalt_cas_percent() > 0:
+            effects.append('cas')
+        return ':'.join(effects)
+
+    def clear_vkbasalt_settings(self) -> None:
+        for checkbox in self.vkbasalt_shader_widgets.values():
+            checkbox.setChecked(False)
+        self.vkbasalt_cas_slider.setValue(0)
+        self._update_vkbasalt_cas_label()
+        self._set_vkbasalt_toggle_key('Home')
 
     def _collect_vkbasalt_changes(self) -> list[str]:
         changes = []
@@ -320,7 +344,7 @@ class VkBasaltSettingsMixin:
         effects = self._build_vkbasalt_effects()
         if effects != self.vkbasalt_original_values.get('PW_VKBASALT_EFFECTS', ''):
             changes.append(f"PW_VKBASALT_EFFECTS={effects}")
-        cas_value = f"{self.vkbasalt_cas_slider.value() / 100:.2f}"
+        cas_value = f"{self._get_vkbasalt_cas_percent() / 100:.2f}"
         if cas_value != self.vkbasalt_original_values.get('PW_VKBASALT_FFX_CAS', ''):
             changes.append(f"PW_VKBASALT_FFX_CAS={cas_value}")
         toggle_key = self.current_settings.get('PW_VKBASALT_TOOGLE_KEY', 'Home')
