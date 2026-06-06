@@ -916,6 +916,10 @@ QTableWidget::item:selected:focus {{
 QTableWidget::item:hover {{
     background: {color_h};
 }}
+QTableWidget::item:selected:hover {{
+    background: {color_a};
+    color: {color_l};
+}}
 """
 
 SCROLL_STYLE = f"""
