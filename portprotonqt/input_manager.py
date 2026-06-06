@@ -357,7 +357,7 @@ class InputManager(QObject):
         self.scroll_max_value = self.max_value
         self.scroll_deadzone_value = self.deadzone_value
 
-        self.sensitivity = 8.0
+        self.sensitivity = 20.0
 
         # Dynamic attributes for different modes (declared here to satisfy type checkers)
         self.winetricks_dialog = None
