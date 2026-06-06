@@ -1999,13 +1999,10 @@ msgstr ""
 msgid "Failed to run preview."
 msgstr ""
 
-msgid "ReShade shaders"
+msgid "Shaders"
 msgstr ""
 
 msgid "AMD FidelityFX - Contrast Adaptive Sharpening"
-msgstr ""
-
-msgid "Toggle key"
 msgstr ""
 
 #, python-brace-format
@@ -2013,6 +2010,10 @@ msgid "Sharpness: {0}"
 msgstr ""
 
 msgid "Press a button to choose"
+msgstr ""
+
+#, python-brace-format
+msgid "Toggle key: {0}"
 msgstr ""
 
 msgid "Prefix Manager"

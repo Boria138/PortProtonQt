@@ -2069,14 +2069,12 @@ msgstr "Ошибка при записи конфигурации MangoHud."
 msgid "Failed to run preview."
 msgstr "Ошибка при запуске предпросмотра."
 
-msgid "ReShade shaders"
-msgstr "Шейдеры"
+#, fuzzy
+msgid "Shaders"
+msgstr "Поделиться"
 
 msgid "AMD FidelityFX - Contrast Adaptive Sharpening"
 msgstr "AMD FidelityFX — адаптивная резкость с учетом контрастности"
-
-msgid "Toggle key"
-msgstr "Клавиша переключения"
 
 #, python-brace-format
 msgid "Sharpness: {0}"
@@ -2084,6 +2082,10 @@ msgstr "Резкость: {0}"
 
 msgid "Press a button to choose"
 msgstr "Нажмите кнопку для выбора"
+
+#, fuzzy, python-brace-format
+msgid "Toggle key: {0}"
+msgstr "Клавиша переключения"
 
 msgid "Prefix Manager"
 msgstr "Менеджер префиксов"

@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-06-05 16:30+0500\n"
+"POT-Creation-Date: 2026-06-06 22:51+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1973,13 +1973,10 @@ msgstr ""
 msgid "Failed to run preview."
 msgstr ""
 
-msgid "ReShade shaders"
+msgid "Shaders"
 msgstr ""
 
 msgid "AMD FidelityFX - Contrast Adaptive Sharpening"
-msgstr ""
-
-msgid "Toggle key"
 msgstr ""
 
 #, python-brace-format
@@ -1987,6 +1984,10 @@ msgid "Sharpness: {0}"
 msgstr ""
 
 msgid "Press a button to choose"
+msgstr ""
+
+#, python-brace-format
+msgid "Toggle key: {0}"
 msgstr ""
 
 msgid "Prefix Manager"

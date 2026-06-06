@@ -1,4 +1,4 @@
-# Chinese (Simplified) translations for PortProtonQt.
+# Chinese (Simplified, China) translations for PortProtonQt.
 # Copyright (C) 2026 boria138
 # This file is distributed under the same license as the PortProtonQt
 # project.
@@ -2037,14 +2037,12 @@ msgstr "写入系统 MangoHud 配置失败。"
 msgid "Failed to run preview."
 msgstr "运行预览失败。"
 
-msgid "ReShade shaders"
-msgstr ""
+#, fuzzy
+msgid "Shaders"
+msgstr "分享"
 
 msgid "AMD FidelityFX - Contrast Adaptive Sharpening"
 msgstr ""
-
-msgid "Toggle key"
-msgstr "切换键"
 
 #, python-brace-format
 msgid "Sharpness: {0}"
@@ -2052,6 +2050,10 @@ msgstr ""
 
 msgid "Press a button to choose"
 msgstr "按下按钮进行选择"
+
+#, fuzzy, python-brace-format
+msgid "Toggle key: {0}"
+msgstr "切换键"
 
 msgid "Prefix Manager"
 msgstr "前缀管理器"
