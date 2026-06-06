@@ -45,8 +45,12 @@ def get_cached_vk_gpu_info() -> str:
             if result.returncode == 0:
                 _vk_gpu_info_output = result.stdout
             else:
+                logger.warning(_format_command_error("vk_gpu_info", result))
                 _vk_gpu_info_output = ""
         except FileNotFoundError:
+            _vk_gpu_info_output = ""
+        except subprocess.TimeoutExpired as e:
+            logger.warning(_format_command_timeout("vk_gpu_info", e))
             _vk_gpu_info_output = ""
         except Exception as e:
             logger.error("Error running vk_gpu_info: %s", e)
@@ -332,10 +336,54 @@ def _parse_glxinfo_output(stdout: str) -> list[str]:
         "OpenGL profile mask",
         "OpenGL ES profile",
     ]
-    return [
-        line for line in stdout.split("\n")
-        if any(p in line for p in keep_patterns)
-    ]
+    lines = []
+
+    for line in stdout.split("\n"):
+        if ":" not in line:
+            continue
+
+        key, value = line.split(":", 1)
+        if any(p in line for p in keep_patterns):
+            lines.append(f"{key}: {value.strip()}")
+
+    return lines
+
+
+def _get_last_output_line(output: str | bytes | None) -> str | None:
+    """Return the last non-empty process output line."""
+    if not output:
+        return None
+    if isinstance(output, bytes):
+        output = output.decode(errors="replace")
+
+    lines = [line.strip() for line in output.splitlines() if line.strip()]
+    if not lines:
+        return None
+    return lines[-1]
+
+
+def _format_command_error(
+    command: str,
+    result: subprocess.CompletedProcess[str]
+) -> str:
+    """Format process error details for debug output."""
+    last_line = _get_last_output_line(result.stderr or result.stdout)
+    if last_line:
+        return f"{command} error: {last_line}"
+    return f"{command} exited with code {result.returncode}"
+
+
+def _format_command_timeout(
+    command: str,
+    error: subprocess.TimeoutExpired
+) -> str:
+    """Format process timeout details for debug output."""
+    details = [f"{command} timed out after {error.timeout} seconds"]
+    last_line = _get_last_output_line(error.stderr or error.output)
+    if last_line:
+        details.append(f"last output: {last_line}")
+
+    return "; ".join(details)
 
 
 def _parse_gpu_properties(
@@ -422,6 +470,10 @@ def get_graphics_info_detailed() -> str:
         if result.returncode == 0:
             devices_info = _parse_lspci_output(result.stdout)
             lines.extend(_build_graphics_section(devices_info))
+        else:
+            lines.append(_format_command_error("lspci", result))
+    except subprocess.TimeoutExpired as e:
+        lines.append(_format_command_timeout("lspci", e))
     except Exception as e:
         lines.append(f"lspci error: {e}")
 
@@ -429,7 +481,7 @@ def get_graphics_info_detailed() -> str:
 
     try:
         result = subprocess.run(
-            ["glxinfo"],
+            ["glxinfo", "-B"],
             capture_output=True,
             text=True,
             timeout=10,
@@ -437,8 +489,12 @@ def get_graphics_info_detailed() -> str:
         )
         if result.returncode == 0:
             lines.extend(_parse_glxinfo_output(result.stdout))
+        else:
+            lines.append(_format_command_error("glxinfo", result))
     except FileNotFoundError:
         lines.append("glxinfo not found")
+    except subprocess.TimeoutExpired as e:
+        lines.append(_format_command_timeout("glxinfo", e))
     except Exception as e:
         lines.append(f"glxinfo error: {e}")
 
