@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-06-04 10:32+0500\n"
-"PO-Revision-Date: 2026-06-06 16:07+0000\n"
+"PO-Revision-Date: 2026-06-06 17:41+0000\n"
 "Last-Translator: rogerio-mattos <rogerio-mattos@noreply.codeberg.org>\n"
 "Language-Team: Portuguese (Brazil) <https://translate.codeberg.org/projects/"
 "portprotonqt/portprotonqt/pt_BR/>\n"
@@ -696,63 +696,71 @@ msgid "Invalid command format (empty exec line)"
 msgstr "Formato de comando inválido (linha exec vazia)"
 
 msgid "Invalid command format (native)"
-msgstr ""
+msgstr "Formato de comando inválido (nativo)"
 
 #, python-brace-format
 msgid "Failed to launch game: {0}"
-msgstr ""
+msgstr "Falha ao iniciar o jogo: {0}"
 
 msgid "PortProton start script not found"
-msgstr ""
+msgstr "Script de inicialização do PortProton não encontrado"
 
 #, python-brace-format
 msgid "File not found: {0}"
-msgstr ""
+msgstr "Arquivo não encontrado: {0}"
 
 msgid "Cannot launch game while another game is running"
-msgstr ""
+msgstr "Não é possível iniciar o jogo enquanto outro jogo estiver em execução"
 
 msgid "Choose Folder"
-msgstr ""
+msgstr "Escolher Pasta"
 
 msgid "Choose PortProton data folder"
-msgstr ""
+msgstr "Escolher pasta de dados do PortProton"
 
 msgid ""
 "Selected folder is on an unsupported filesystem. Choose another folder "
 "for PortProton data."
 msgstr ""
+"A pasta selecionada está em um sistema de arquivos não suportado. Escolha "
+"outra pasta para os dados do PortProton."
 
 msgid ""
 "Selected folder is not readable and writable. Choose another folder for "
 "PortProton data."
 msgstr ""
+"A pasta selecionada não pode ser lida nem gravada. Escolha outra pasta para "
+"os dados do PortProton."
 
 msgid "Select file for PPDB download"
-msgstr ""
+msgstr "Selecionar arquivo para download do PPDB"
 
 msgid ""
 "Enable dgVoodoo2. Forced use all dgVoodoo2 libs (Glide 2.11-3.1, "
 "DirectDraw 1-7, Direct3D 2-9) on all 3D API."
 msgstr ""
+"Ativar dgVoodoo2. Uso forçado de todas as libs dgVoodoo2 (Glide 2.11-3.1, "
+"DirectDraw 1-7, Direct3D 2-9) em todas as APIs 3D."
 
 msgid "Enable SpecialK (injection library for fixing graphics, latency and more)"
 msgstr ""
+"Ativar SpecialK (biblioteca de injeção para correções gráficas, latência e "
+"mais)"
 
 msgid "Enable OptiScaler (replacement upscaler / frame generator)"
-msgstr ""
+msgstr "Ativar OptiScaler (upscaler / gerador de quadros alternativo)"
 
 msgid "Enable Lossless Scaling frame generation (experimental)"
-msgstr ""
+msgstr "Ativar geração de quadros do Lossless Scaling (experimental)"
 
 msgid "FSR upscaling in fullscreen with ProtonGE below native resolution"
-msgstr ""
+msgstr "Upscaling FSR em tela cheia com ProtonGE abaixo da resolução nativa"
 
 msgid "Enable vkd3d support - Ray Tracing"
-msgstr ""
+msgstr "Ativar suporte vkd3d - Ray Tracing"
 
 msgid "Enable DLSS on supported NVIDIA graphics cards"
-msgstr ""
+msgstr "Ativar DLSS em placas NVIDIA compatíveis"
 
 msgid "Disguise all NVIDIA GPU features"
 msgstr ""
