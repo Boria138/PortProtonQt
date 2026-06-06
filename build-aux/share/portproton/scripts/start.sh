@@ -23,8 +23,7 @@ PORT_IMG_PATH="$(dirname "$PORT_SCRIPTS_PATH")/img"
 PORT_CONF_PATH="$(dirname "$PORT_SCRIPTS_PATH")/conf"
 
 if [[ -z "$PORT_DATA_PATH" ]] ; then
-    if [[ -n "${FLATPAK_ID:-}" ]] \
-    && [[ -n "${XDG_DATA_HOME:-}" ]] ; then
+    if [[ -n "${XDG_DATA_HOME:-}" ]] ; then
         PORT_DATA_PATH="$(dirname "${XDG_DATA_HOME}")"
     elif [[ -f "$HOME/.config/PortProtonQt.conf" ]] \
     && grep "portdata_path" "$HOME/.config/PortProtonQt.conf" ; then
@@ -37,7 +36,10 @@ if [[ -z "$PORT_DATA_PATH" ]] ; then
     fi
 fi
 
-if [[ -f "$HOME/.config/PortProtonQt.conf" ]] \
+if [[ -n "${XDG_CONFIG_HOME:-}" ]] \
+&& grep -q "disable_runtime_download = True" "$XDG_CONFIG_HOME/PortProtonQt.conf" ; then
+	export PW_DISABLE_RUNTIME_DOWNLOAD=1
+elif [[ -f "$HOME/.config/PortProtonQt.conf" ]] \
 && grep -q "disable_runtime_download = True" "$HOME/.config/PortProtonQt.conf" ; then
     export PW_DISABLE_RUNTIME_DOWNLOAD=1
 fi
