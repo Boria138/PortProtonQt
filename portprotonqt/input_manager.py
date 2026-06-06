@@ -803,6 +803,8 @@ class InputManager(QObject):
             if code in (PAD_DPAD_X, PAD_AXIS_LEFT_X) and \
                hasattr(self.file_explorer, 'drive_buttons') and \
                self.file_explorer.drive_buttons:
+                if code == PAD_DPAD_X and value == 0:
+                    return
 
                 is_drive_button = (
                     isinstance(focused_widget, AutoSizeButton) and
@@ -2431,7 +2433,7 @@ class InputManager(QObject):
 
     def handle_scroll(self, raw_value):
         """Handle scrolling from right stick Y"""
-        if not self.mouse_emulation_enabled or not self.emulation_active or not self.ui:
+        if not self._is_mouse_emulation_active() or not self.ui:
             return
 
         # Normalize from center
@@ -4107,6 +4109,8 @@ class InputManager(QObject):
                 continue
             if axis_code in (PAD_AXIS_LEFT_TRIGGER, PAD_AXIS_RIGHT_TRIGGER):
                 self._emit_trigger_event(axis_code, raw_value, current_time)
+                continue
+            if axis_code not in (PAD_AXIS_LEFT_X, PAD_AXIS_LEFT_Y):
                 continue
             self.dpad_moved.emit(axis_code, raw_value, current_time)
 
