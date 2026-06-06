@@ -9,8 +9,8 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-03-22 13:50+0500\n"
-"PO-Revision-Date: 2026-06-05 14:30+0000\n"
-"Last-Translator: Simple16 <simple16@noreply.codeberg.org>\n"
+"PO-Revision-Date: 2026-06-06 17:53+0000\n"
+"Last-Translator: Boria138 <boria138@noreply.codeberg.org>\n"
 "Language-Team: Russian <https://translate.codeberg.org/projects/portprotonqt/"
 "portprotonqt/ru/>\n"
 "Language: ru\n"
@@ -2069,9 +2069,8 @@ msgstr "Ошибка при записи конфигурации MangoHud."
 msgid "Failed to run preview."
 msgstr "Ошибка при запуске предпросмотра."
 
-#, fuzzy
 msgid "Shaders"
-msgstr "Поделиться"
+msgstr "Шейдеры"
 
 msgid "AMD FidelityFX - Contrast Adaptive Sharpening"
 msgstr "AMD FidelityFX — адаптивная резкость с учетом контрастности"
@@ -2083,9 +2082,9 @@ msgstr "Резкость: {0}"
 msgid "Press a button to choose"
 msgstr "Нажмите кнопку для выбора"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Toggle key: {0}"
-msgstr "Клавиша переключения"
+msgstr "Клавиша переключения: {0}"
 
 msgid "Prefix Manager"
 msgstr "Менеджер префиксов"
