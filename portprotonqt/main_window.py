@@ -1819,7 +1819,9 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         formLayout.setSpacing(self.theme.wineSettingsSetSpacing)
         formLayout.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
 
-        self.wine_versions = get_available_wine_options(self.portproton_location)
+        self.wine_versions = get_available_wine_options(
+            self.portproton_location, include_lg_aliases=True
+        )
         self.wineCombo = QComboBox()
         self.wineCombo.view().window().setWindowFlags(
             Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
@@ -2222,7 +2224,9 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         if not self.portproton_location:
             return
 
-        self.wine_versions = get_available_wine_options(self.portproton_location)
+        self.wine_versions = get_available_wine_options(
+            self.portproton_location, include_lg_aliases=True
+        )
         self.wineCombo.clear()
         self.wineCombo.addItems(self.wine_versions)
 

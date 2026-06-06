@@ -47,7 +47,8 @@ def resolve_lg_wine_alias(wine_version: str, env_vars: dict[str, str]) -> str:
 def get_available_wine_options(
     portproton_path: str,
     system_wine_label: str = "",
-    steam_only: bool = False
+    steam_only: bool = False,
+    include_lg_aliases: bool = False
 ) -> list[str]:
     dist_dir = os.path.join(portproton_path, "data", "dist")
     options = []
@@ -61,7 +62,9 @@ def get_available_wine_options(
     scripts_path = get_portproton_scripts_path()
     if scripts_path:
         var_path = os.path.join(scripts_path, "var")
-        for version in read_lg_dist_versions_from_var(var_path).values():
+        for wine_alias, version in read_lg_dist_versions_from_var(var_path).items():
+            if include_lg_aliases and wine_alias not in options:
+                options.append(wine_alias)
             if version not in options:
                 options.append(version)
 
