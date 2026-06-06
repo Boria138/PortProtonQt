@@ -9,8 +9,8 @@ msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-06-04 10:32+0500\n"
-"PO-Revision-Date: 2026-06-05 14:31+0000\n"
-"Last-Translator: Boria138 <boria138@noreply.codeberg.org>\n"
+"PO-Revision-Date: 2026-06-06 17:41+0000\n"
+"Last-Translator: rogerio-mattos <rogerio-mattos@noreply.codeberg.org>\n"
 "Language-Team: Portuguese (Brazil) <https://translate.codeberg.org/projects/"
 "portprotonqt/portprotonqt/pt_BR/>\n"
 "Language: pt_BR\n"
@@ -104,644 +104,663 @@ msgid "Failed to delete folder: {error}"
 msgstr "Falha ao excluir a pasta: {error}"
 
 msgid "Delete from PortProton"
-msgstr ""
+msgstr "Excluir do PortProton"
 
 msgid "Launch Game"
-msgstr ""
+msgstr "Iniciar Jogo"
 
 msgid "Remove from Desktop"
-msgstr ""
+msgstr "Remover da Área de Trabalho"
 
 msgid "Add to Desktop"
-msgstr ""
+msgstr "Adicionar à Área de Trabalho"
 
 msgid "Remove from Menu"
-msgstr ""
+msgstr "Remover do Menu"
 
 msgid "Add to Menu"
-msgstr ""
+msgstr "Adicionar ao Menu"
 
 msgid "Open Game Folder"
-msgstr ""
+msgstr "Abrir Pasta do Jogo"
 
 msgid "Edit Shortcut"
-msgstr ""
+msgstr "Editar Atalho"
 
 msgid "Remove from Steam"
-msgstr ""
+msgstr "Remover da Steam"
 
 msgid "Add to Steam"
-msgstr ""
+msgstr "Adicionar a Steam"
 
 msgid "Failed to stop game"
-msgstr ""
+msgstr "Falha ao parar o jogo"
 
 #, python-brace-format
 msgid "No executable command found in .desktop file for '{game_name}'"
 msgstr ""
+"Nenhum comando executável encontrado no arquivo .desktop para '{game_name}'"
 
 #, python-brace-format
 msgid "Failed to parse .desktop file for '{game_name}'"
-msgstr ""
+msgstr "Falha ao analisar o arquivo .desktop de '{game_name}'"
 
 #, python-brace-format
 msgid "Error reading .desktop file: {error}"
-msgstr ""
+msgstr "Erro ao ler o arquivo .desktop: {error}"
 
 #, python-brace-format
 msgid "No .desktop file found for '{game_name}'"
-msgstr ""
+msgstr "Nenhum arquivo .desktop encontrado para '{game_name}'"
 
 #, python-brace-format
 msgid ""
 "Are you sure you want to delete '{game_name}'? This will remove the "
 ".desktop file and custom data."
 msgstr ""
+"Tem certeza de que deseja excluir '{game_name}'? Isso removerá o arquivo "
+".desktop e os dados personalizados."
 
 #, python-brace-format
 msgid "Failed to delete .desktop file: {error}"
-msgstr ""
+msgstr "Falha ao excluir o arquivo .desktop: {error}"
 
 #, python-brace-format
 msgid "Deleted '{game_name}' successfully"
-msgstr ""
+msgstr "'{game_name}' excluído com sucesso"
 
 #, python-brace-format
 msgid "Failed to delete custom data: {error}"
-msgstr ""
+msgstr "Falha ao excluir os dados personalizados: {error}"
 
 #, python-brace-format
 msgid "Failed to add '{game_name}' to {location}: {error}"
-msgstr ""
+msgstr "Falha ao adicionar '{game_name}' a {location}: {error}"
 
 msgid "Menu"
-msgstr ""
+msgstr "Menu"
 
 #, python-brace-format
 msgid "Failed to remove '{game_name}' from {location}: {error}"
-msgstr ""
+msgstr "Falha ao remover '{game_name}' de {location}: {error}"
 
 #, python-brace-format
 msgid "Removed '{game_name}' from {location}"
-msgstr ""
+msgstr "'{game_name}' removido de {location}"
 
 msgid "Desktop"
-msgstr ""
+msgstr "Área de Trabalho"
 
 msgid "Game name and executable path are required"
-msgstr ""
+msgstr "O nome do jogo e o caminho do executável são obrigatórios"
 
 msgid "Failed to generate .desktop file data"
-msgstr ""
+msgstr "Falha ao gerar os dados do arquivo .desktop"
 
 #, python-brace-format
 msgid "Failed to delete old .desktop file: {error}"
-msgstr ""
+msgstr "Falha ao excluir o arquivo .desktop antigo: {error}"
 
 #, python-brace-format
 msgid "Removed old .desktop file for '{game_name}'"
-msgstr ""
+msgstr "Arquivo .desktop antigo de '{game_name}' removido"
 
 #, python-brace-format
 msgid "Failed to save .desktop file: {error}"
-msgstr ""
+msgstr "Falha ao salvar o arquivo .desktop: {error}"
 
 #, python-brace-format
 msgid "Failed to copy cover image: {error}"
-msgstr ""
+msgstr "Falha ao copiar a imagem de capa: {error}"
 
 #, python-brace-format
 msgid "Unsupported image format: {extension}"
-msgstr ""
+msgstr "Formato de imagem não suportado: {extension}"
 
 msgid "Success"
-msgstr ""
+msgstr "Sucesso"
 
 #, python-brace-format
 msgid ""
 "'{game_name}' was added to Steam. Please restart Steam for changes to "
 "take effect."
 msgstr ""
+"'{game_name}' foi adicionado à Steam. Reinicie a Steam para aplicar as "
+"alterações."
 
 #, python-brace-format
 msgid "'{game_name}' was added to Steam."
-msgstr ""
+msgstr "'{game_name}' foi adicionado à Steam."
 
 #, python-brace-format
 msgid "Failed to add '{game_name}' to Steam: {error}"
-msgstr ""
+msgstr "Falha ao adicionar '{game_name}' à Steam: {error}"
 
 #, python-brace-format
 msgid ""
 "'{game_name}' was removed from Steam. Please restart Steam for changes to"
 " take effect."
 msgstr ""
+"'{game_name}' foi removido da Steam. Reinicie à Steam para que as alterações "
+"tenham efeito."
 
 #, python-brace-format
 msgid "'{game_name}' was removed from Steam."
-msgstr ""
+msgstr "'{game_name}' foi removido da Steam."
 
 #, python-brace-format
 msgid "Failed to remove game '{game_name}' from Steam: {error}"
-msgstr ""
+msgstr "Falha ao remover o jogo '{game_name}' da Steam: {error}"
 
 #, python-brace-format
 msgid "Failed to open folder: {error}"
-msgstr ""
+msgstr "Falha ao abrir a pasta: {error}"
 
 msgid "Undo"
-msgstr ""
+msgstr "Desfazer"
 
 msgid "Redo"
-msgstr ""
+msgstr "Refazer"
 
 msgid "Cut"
-msgstr ""
+msgstr "Recortar"
 
 msgid "Copy"
-msgstr ""
+msgstr "Copiar"
 
 msgid "Paste"
-msgstr ""
+msgstr "Colar"
 
 msgid "Delete"
-msgstr ""
+msgstr "Excluir"
 
 msgid "Select All"
-msgstr ""
+msgstr "Selecionar Tudo"
 
 msgid "Supported"
-msgstr ""
+msgstr "Suportado"
 
 msgid "Running"
-msgstr ""
+msgstr "Em Execução"
 
 msgid "Planned"
-msgstr ""
+msgstr "Planejado"
 
 msgid "Broken"
-msgstr ""
+msgstr "Quebrado"
 
 msgid "Denied"
-msgstr ""
+msgstr "Negado"
 
 msgid "Platinum"
-msgstr ""
+msgstr "Platina"
 
 msgid "Gold"
-msgstr ""
+msgstr "Ouro"
 
 msgid "Silver"
-msgstr ""
+msgstr "Prata"
 
 msgid "Bronze"
-msgstr ""
+msgstr "Bronze"
 
 msgid "Pending"
-msgstr ""
+msgstr "Pendente"
 
 msgid "Unknown Game"
-msgstr ""
+msgstr "Jogo Desconhecido"
 
 msgid "Downloading Wine..."
-msgstr ""
+msgstr "Baixando Wine..."
 
 msgid "Library"
-msgstr ""
+msgstr "Biblioteca"
 
 msgid "Auto Install"
-msgstr ""
+msgstr "Instalação Automática"
 
 msgid "Wine Settings"
-msgstr ""
+msgstr "Configurações do Wine"
 
 msgid "PPQT Settings"
-msgstr ""
+msgstr "Configurações do PPQT"
 
 msgid "System"
-msgstr ""
+msgstr "Sistema"
 
 msgid "Themes"
-msgstr ""
+msgstr "Temas"
 
 msgid "Warning"
-msgstr ""
+msgstr "Aviso"
 
 msgid "Installation already in progress."
-msgstr ""
+msgstr "A instalação já está em andamento."
 
 msgid "Installing..."
-msgstr ""
+msgstr "Instalando..."
 
 msgid "Failed to start installation."
-msgstr ""
+msgstr "Falha ao iniciar a instalação."
 
 msgid "Stop"
-msgstr ""
+msgstr "Parar"
 
 msgid "Failed to stop installation."
-msgstr ""
+msgstr "Falha ao parar a instalação."
 
 #, python-brace-format
 msgid "{0} Plugins..."
-msgstr ""
+msgstr "{0} Plugins..."
 
 #, python-brace-format
 msgid "{0} Libs..."
-msgstr ""
+msgstr "{0} Libs..."
 
 #, python-brace-format
 msgid "{0} Wine..."
-msgstr ""
+msgstr "{0} Wine..."
 
 #, python-brace-format
 msgid "{0} components..."
-msgstr ""
+msgstr "{0} componentes..."
 
 msgid "Downloading"
-msgstr ""
+msgstr "Baixando"
 
 msgid "Extracting"
-msgstr ""
+msgstr "Extraindo"
 
 msgid "Refresh Grid"
-msgstr ""
+msgstr "Atualizar Grade"
 
 msgid "Never"
-msgstr ""
+msgstr "Nunca"
 
 msgid "Unknown Application"
-msgstr ""
+msgstr "Aplicativo Desconhecido"
 
 msgid "Quick Launch"
-msgstr ""
+msgstr "Início Rápido"
 
 msgid "Add a shortcut"
-msgstr ""
+msgstr "Adicionar um atalho"
 
 msgid "Search ..."
-msgstr ""
+msgstr "Pesquisar..."
 
 msgid "Refreshing..."
-msgstr ""
+msgstr "Atualizando..."
 
 msgid "Enter prefix name"
-msgstr ""
+msgstr "Digite o nome do prefixo"
 
 msgid "Prefix:"
-msgstr ""
+msgstr "Prefixo:"
 
 msgid "Newest"
-msgstr ""
+msgstr "Mais recente"
 
 msgid "Stable"
-msgstr ""
+msgstr "Estável"
 
 msgid "Vulkan Backend"
-msgstr ""
+msgstr "Backend Vulkan"
 
 msgid "Use by default"
-msgstr ""
+msgstr "Usar por padrão"
 
 msgid "Wine Configuration"
-msgstr ""
+msgstr "Configuração do Wine"
 
 msgid "Registry Editor"
-msgstr ""
+msgstr "Editor de Registro"
 
 msgid "File Explorer"
-msgstr ""
+msgstr "Explorador de Arquivos"
 
 msgid "Command Prompt"
-msgstr ""
+msgstr "Prompt de Comando"
 
 msgid "Uninstaller"
-msgstr ""
+msgstr "Desinstalador"
 
 msgid "Create Prefix Backup"
-msgstr ""
+msgstr "Criar Backup do Prefixo"
 
 msgid "Load Prefix Backup"
-msgstr ""
+msgstr "Carregar Backup do Prefixo"
 
 msgid "Delete Prefix"
-msgstr ""
+msgstr "Excluir Prefixo"
 
 msgid "Clear Prefix"
-msgstr ""
+msgstr "Limpar Prefixo"
 
 msgid "Manage WINE versions"
-msgstr ""
+msgstr "Gerenciar versões do WINE"
 
 msgid "Failed to start process."
-msgstr ""
+msgstr "Falha ao iniciar o processo."
 
 msgid "Confirm Clear"
-msgstr ""
+msgstr "Confirmar Limpeza"
 
 #, python-brace-format
 msgid "Are you sure you want to clear prefix '{}'?"
-msgstr ""
+msgstr "Tem certeza de que deseja limpar o prefixo '{}'?"
 
 msgid "Failed to start prefix clear process."
-msgstr ""
+msgstr "Falha ao iniciar o processo de limpeza do prefixo."
 
 msgid "Prefix cleared successfully."
-msgstr ""
+msgstr "Prefixo limpo com sucesso."
 
 #, python-brace-format
 msgid "Prefix clear failed with exit code {}."
-msgstr ""
+msgstr "A limpeza do prefixo falhou com o código de saída {}."
 
 #, python-brace-format
 msgid "Failed to run clear prefix command: {}"
-msgstr ""
+msgstr "Falha ao executar o comando de limpar prefixo: {}"
 
 msgid "Failed to start restore process."
-msgstr ""
+msgstr "Falha ao iniciar o processo de restauração."
 
 msgid "Prefix backup completed."
-msgstr ""
+msgstr "Backup do prefixo concluído."
 
 msgid "Prefix backup failed."
-msgstr ""
+msgstr "Backup do prefixo falhou."
 
 msgid "Prefix restore completed."
-msgstr ""
+msgstr "Restauração do prefixo concluída."
 
 msgid "Prefix restore failed."
-msgstr ""
+msgstr "Restauração do prefixo falhou."
 
 #, python-brace-format
 msgid "Are you sure you want to delete prefix '{}'?"
-msgstr ""
+msgstr "Tem certeza de que deseja excluir o prefixo '{}'?"
 
 #, python-brace-format
 msgid "Prefix '{}' deleted."
-msgstr ""
+msgstr "Prefixo '{}' excluído."
 
 #, python-brace-format
 msgid "Failed to delete prefix: {}"
-msgstr ""
+msgstr "Falha ao excluir o prefixo: {}"
 
 msgid "PortProton Settings"
-msgstr ""
+msgstr "Configurações do PortProton"
 
 msgid "Library Settings"
-msgstr ""
+msgstr "Configurações da Biblioteca"
 
 msgid "Detailed"
-msgstr ""
+msgstr "Detalhado"
 
 msgid "Brief"
-msgstr ""
+msgstr "Resumido"
 
 msgid "Hidden"
-msgstr ""
+msgstr "Oculto"
 
 msgid "Time Detail Level:"
-msgstr ""
+msgstr "Nível de Detalhe do Tempo:"
 
 msgid "Last launch"
-msgstr ""
+msgstr "Último lançamento"
 
 msgid "Time spent"
-msgstr ""
+msgstr "Tempo jogado"
 
 msgid "Alphabetical"
-msgstr ""
+msgstr "Alfabético"
 
 msgid "Sort Method:"
-msgstr ""
+msgstr "Método de Ordenação:"
 
 msgid "All"
-msgstr ""
+msgstr "Todos"
 
 msgid "Favorites"
-msgstr ""
+msgstr "Favoritos"
 
 msgid "Display Filter:"
-msgstr ""
+msgstr "Filtro de Exibição:"
 
 msgid "Compact"
-msgstr ""
+msgstr "Compacto"
 
 msgid "Badge View Type:"
-msgstr ""
+msgstr "Modo de Exibição do Selo:"
 
 msgid "Interface Settings"
-msgstr ""
+msgstr "Configurações da Interface"
 
 msgid "Tray Menu Type:"
-msgstr ""
+msgstr "Tipo de Menu da Bandeja:"
 
 msgid "Auto"
-msgstr ""
+msgstr "Automático"
 
 msgid "Gamepad Type:"
-msgstr ""
+msgstr "Tipo de Controle:"
 
 msgid "Launch Application in Fullscreen"
-msgstr ""
+msgstr "Iniciar Aplicativo em Tela Cheia"
 
 msgid "Auto Fullscreen on Gamepad connected"
-msgstr ""
+msgstr "Tela Cheia Automática ao Conectar o Controle"
 
 msgid "Minimize to tray on close"
-msgstr ""
+msgstr "Minimizar para a bandeja ao fechar"
 
 msgid "Run at system startup"
-msgstr ""
+msgstr "Executar na inicialização do sistema"
 
 msgid "Start in tray"
-msgstr ""
+msgstr "Iniciar na bandeja"
 
 msgid "Hide Auto-Install Tab"
-msgstr ""
+msgstr "Ocultar Aba de Instalação Automática"
 
 msgid "Disable runtime download"
-msgstr ""
+msgstr "Desativar download de runtime"
 
 msgid "Add to Steam compatibility tools"
-msgstr ""
+msgstr "Adicionar às ferramentas de compatibilidade da Steam"
 
 msgid "Download WINE/Proton to Steam"
-msgstr ""
+msgstr "Baixar WINE/Proton para a Steam"
 
 msgid "Economy mode"
-msgstr ""
+msgstr "Modo econômico"
 
 msgid "Download mirror:"
-msgstr ""
+msgstr "Espelho de download:"
 
 msgid "Force system DPI for Wine"
-msgstr ""
+msgstr "Forçar DPI do sistema para o Wine"
 
 msgid "Download Settings"
-msgstr ""
+msgstr "Configurações de Download"
 
 msgid "Hardware Settings"
-msgstr ""
+msgstr "Configurações de Hardware"
 
 msgid "GPU to use:"
-msgstr ""
+msgstr "GPU a usar:"
 
 msgid "Proxy Settings"
-msgstr ""
+msgstr "Configurações de Proxy"
 
 msgid "Proxy URL"
-msgstr ""
+msgstr "URL do Proxy"
 
 msgid "Proxy URL:"
-msgstr ""
+msgstr "URL do Proxy:"
 
 msgid "Proxy Username"
-msgstr ""
+msgstr "Nome de Usuário do Proxy"
 
 msgid "Proxy Username:"
-msgstr ""
+msgstr "Nome de Usuário do Proxy:"
 
 msgid "Proxy Password"
-msgstr ""
+msgstr "Senha do Proxy"
 
 msgid "Proxy Password:"
-msgstr ""
+msgstr "Senha do Proxy:"
 
 msgid "Save Settings"
-msgstr ""
+msgstr "Salvar Configurações"
 
 msgid "Reset Settings"
-msgstr ""
+msgstr "Redefinir Configurações"
 
 msgid "Migrate legacy shortcuts"
-msgstr ""
+msgstr "Migrar atalhos legados"
 
 msgid "Clear Cache"
-msgstr ""
+msgstr "Limpar Cache"
 
 msgid "Confirm Reset"
-msgstr ""
+msgstr "Confirmar Redefinição"
 
 msgid "Are you sure you want to reset all settings? This action cannot be undone."
 msgstr ""
+"Tem certeza de que deseja redefinir todas as configurações? Esta ação não "
+"pode ser desfeita."
 
 msgid "Migrate old PortProton shortcuts to PortProtonQt format?"
-msgstr ""
+msgstr "Migrar atalhos antigos do PortProton para o formato PortProtonQt?"
 
 msgid "Confirm Clear Cache"
-msgstr ""
+msgstr "Confirmar Limpeza do Cache"
 
 msgid "Are you sure you want to clear the cache? This action cannot be undone."
 msgstr ""
+"Tem certeza de que deseja limpar o cache? Esta ação não pode ser desfeita."
 
 msgid "Failed to update xdg-autostart entry."
-msgstr ""
+msgstr "Falha ao atualizar a entrada xdg-autostart."
 
 msgid "Select Theme:"
-msgstr ""
+msgstr "Selecionar Tema:"
 
 msgid "Dark"
-msgstr ""
+msgstr "Escuro"
 
 msgid "Light"
-msgstr ""
+msgstr "Claro"
 
 msgid "Apply Theme"
-msgstr ""
+msgstr "Aplicar Tema"
 
 msgid "No link"
-msgstr ""
+msgstr "Sem link"
 
 msgid "Unknown"
-msgstr ""
+msgstr "Desconhecido"
 
 msgid "Name:"
-msgstr ""
+msgstr "Nome:"
 
 msgid "Description:"
-msgstr ""
+msgstr "Descrição:"
 
 msgid "Author:"
-msgstr ""
+msgstr "Autor:"
 
 msgid "Link:"
-msgstr ""
+msgstr "Link:"
 
 #, python-brace-format
 msgid "Executable not found: {0}"
-msgstr ""
+msgstr "Executável não encontrado: {0}"
 
 msgid "Start"
-msgstr ""
+msgstr "Iniciar"
 
 msgid "Prefix not found"
-msgstr ""
+msgstr "Prefixo não encontrado"
 
 #, python-brace-format
 msgid "Prefix '{0}' was not found. Install recommended libraries?"
 msgstr ""
+"O prefixo '{0}' não foi encontrado. Instalar as bibliotecas recomendadas?"
 
 msgid "Invalid command format (empty exec line)"
-msgstr ""
+msgstr "Formato de comando inválido (linha exec vazia)"
 
 msgid "Invalid command format (native)"
-msgstr ""
+msgstr "Formato de comando inválido (nativo)"
 
 #, python-brace-format
 msgid "Failed to launch game: {0}"
-msgstr ""
+msgstr "Falha ao iniciar o jogo: {0}"
 
 msgid "PortProton start script not found"
-msgstr ""
+msgstr "Script de inicialização do PortProton não encontrado"
 
 #, python-brace-format
 msgid "File not found: {0}"
-msgstr ""
+msgstr "Arquivo não encontrado: {0}"
 
 msgid "Cannot launch game while another game is running"
-msgstr ""
+msgstr "Não é possível iniciar o jogo enquanto outro jogo estiver em execução"
 
 msgid "Choose Folder"
-msgstr ""
+msgstr "Escolher Pasta"
 
 msgid "Choose PortProton data folder"
-msgstr ""
+msgstr "Escolher pasta de dados do PortProton"
 
 msgid ""
 "Selected folder is on an unsupported filesystem. Choose another folder "
 "for PortProton data."
 msgstr ""
+"A pasta selecionada está em um sistema de arquivos não suportado. Escolha "
+"outra pasta para os dados do PortProton."
 
 msgid ""
 "Selected folder is not readable and writable. Choose another folder for "
 "PortProton data."
 msgstr ""
+"A pasta selecionada não pode ser lida nem gravada. Escolha outra pasta para "
+"os dados do PortProton."
 
 msgid "Select file for PPDB download"
-msgstr ""
+msgstr "Selecionar arquivo para download do PPDB"
 
 msgid ""
 "Enable dgVoodoo2. Forced use all dgVoodoo2 libs (Glide 2.11-3.1, "
 "DirectDraw 1-7, Direct3D 2-9) on all 3D API."
 msgstr ""
+"Ativar dgVoodoo2. Uso forçado de todas as libs dgVoodoo2 (Glide 2.11-3.1, "
+"DirectDraw 1-7, Direct3D 2-9) em todas as APIs 3D."
 
 msgid "Enable SpecialK (injection library for fixing graphics, latency and more)"
 msgstr ""
+"Ativar SpecialK (biblioteca de injeção para correções gráficas, latência e "
+"mais)"
 
 msgid "Enable OptiScaler (replacement upscaler / frame generator)"
-msgstr ""
+msgstr "Ativar OptiScaler (upscaler / gerador de quadros alternativo)"
 
 msgid "Enable Lossless Scaling frame generation (experimental)"
-msgstr ""
+msgstr "Ativar geração de quadros do Lossless Scaling (experimental)"
 
 msgid "FSR upscaling in fullscreen with ProtonGE below native resolution"
-msgstr ""
+msgstr "Upscaling FSR em tela cheia com ProtonGE abaixo da resolução nativa"
 
 msgid "Enable vkd3d support - Ray Tracing"
-msgstr ""
+msgstr "Ativar suporte vkd3d - Ray Tracing"
 
 msgid "Enable DLSS on supported NVIDIA graphics cards"
-msgstr ""
+msgstr "Ativar DLSS em placas NVIDIA compatíveis"
 
 msgid "Disguise all NVIDIA GPU features"
 msgstr ""
