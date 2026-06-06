@@ -242,48 +242,76 @@ class WinetricksDialog(DraggableDialog):
         env = QProcessEnvironment.systemEnvironment()
 
         self.containers["dlls"].setCurrentIndex(0)
-        self._start_list_process("dlls", self.dll_table, self.get_dll_exclusions(), env)
-
         self.containers["fonts"].setCurrentIndex(0)
-        self._start_list_process("fonts", self.fonts_table, self.get_fonts_exclusions(), env)
-
         self.containers["settings"].setCurrentIndex(0)
-        self._start_list_process("settings", self.settings_table, self.get_settings_exclusions(), env)
+        self._start_list_all_process(env)
 
-    def _start_list_process(self, category, table, exclusion_pattern, env):
-        """Start QProcess for list."""
+    def _start_list_all_process(self, env: QProcessEnvironment) -> None:
+        """Start QProcess for all winetricks lists."""
         assert self.prefix_path is not None
         assert self.start_sh is not None
         assert self.wine_use is not None
         process = QProcess(self)
         process.setProcessEnvironment(env)
         process.finished.connect(
-            lambda exit_code, exit_status: self._on_list_finished(category, table, exclusion_pattern, process, exit_code, exit_status)
+            lambda exit_code, exit_status: self._on_list_all_finished(process, exit_code, exit_status)
         )
         prefix_name = os.path.basename(self.prefix_path.rstrip(os.sep))
-        args = self.start_sh[1:] + ["cli", "--winetricks-list", self.wine_use, prefix_name, category]
-        self.list_processes[category] = process
+        args = self.start_sh[1:] + ["cli", "--winetricks-list-all", self.wine_use, prefix_name]
+        self.list_processes["all"] = process
         process.start(self.start_sh[0], args)
 
-    def _on_list_finished(self, category, table, exclusion_pattern, process: QProcess | None, exit_code, exit_status):
-        """Handle list completion."""
-        if process is None:
-            logger.error(f"Process is None for {category}")
-            self.containers[category].setCurrentIndex(1)
-            return
+    def _on_list_all_finished(
+        self, process: QProcess, exit_code: int, exit_status: QProcess.ExitStatus
+    ) -> None:
+        """Handle all lists completion."""
         output = bytes(process.readAllStandardOutput().data()).decode('utf-8', 'ignore')
+        error_output = bytes(process.readAllStandardError().data()).decode('utf-8', 'ignore')
         if exit_code == 0 and exit_status == QProcess.ExitStatus.NormalExit:
-            self.populate_table(table, output, exclusion_pattern, self.log_path)
-            if table.rowCount() > 0:
-                table.setCurrentCell(0, 0)
-                table.setFocus(Qt.FocusReason.OtherFocusReason)
+            self._log_process_warnings(error_output)
+            sections = self._split_list_output(output)
+            self.populate_table(
+                self.dll_table, sections.get("dlls", ""), self.get_dll_exclusions(), self.log_path
+            )
+            self.populate_table(
+                self.fonts_table, sections.get("fonts", ""), self.get_fonts_exclusions(), self.log_path
+            )
+            self.populate_table(
+                self.settings_table, sections.get("settings", ""), self.get_settings_exclusions(), self.log_path
+            )
+            for table in [self.dll_table, self.fonts_table, self.settings_table]:
+                if table.rowCount() > 0:
+                    table.setCurrentCell(0, 0)
         else:
-            error_output = bytes(process.readAllStandardError().data()).decode('utf-8', 'ignore')
-            logger.error(f"Failed to list {category}: {error_output}")
+            logger.error(f"Failed to list winetricks: {error_output}")
 
-        self.list_processes.pop(category, None)
+        self.list_processes.pop("all", None)
         process.deleteLater()
-        self.containers[category].setCurrentIndex(1)
+        for category in ["dlls", "fonts", "settings"]:
+            self.containers[category].setCurrentIndex(1)
+
+    def _log_process_warnings(self, error_output: str) -> None:
+        """Log suspicious stderr lines from helper scripts."""
+        patterns = ("error", "failed", "syntax", "ошибка", "синтакс")
+        for line in error_output.splitlines():
+            clean_line = line.strip()
+            if not clean_line:
+                continue
+            if any(pattern in clean_line.lower() for pattern in patterns):
+                logger.warning("Winetricks list warning: %s", clean_line)
+
+    def _split_list_output(self, output: str) -> dict[str, str]:
+        """Split combined winetricks output by category markers."""
+        sections: dict[str, list[str]] = {}
+        category = ""
+        for line in output.splitlines():
+            if line.startswith("__PORTPROTONQT_WINETRICKS_SECTION__:"):
+                category = line.rsplit(":", 1)[1]
+                sections[category] = []
+                continue
+            if category:
+                sections[category].append(line)
+        return {key: "\n".join(lines) for key, lines in sections.items()}
 
     def get_dll_exclusions(self):
         """Get regex pattern for DLL exclusions."""

@@ -269,6 +269,8 @@ case "$1" in
 --winecmd                                           Open wine command prompt, requires WINE version and prefix name
 --winereg                                           Open wine registry editor, requires WINE version and prefix name
 --wine_uninstaller                                  Open wine uninstaller, requires WINE version and prefix name
+--winetricks-list-all                               List winetricks DLLs, fonts, and settings
+--winetricks-install                                Install winetricks items, requires WINE version and prefix name
 --clear_pfx                                         Clear specified prefix, requires WINE version and prefix name
 --mangohud-preview                                  Starts MangoHud preview in vkcube (optional argument: inline MangoHud config)
 --initial                                           Initial setup command
@@ -285,6 +287,8 @@ Usage examples:
   portproton cli --backup-prefix DEFAULT /path/to/backup/directory
   portproton cli --restore-prefix /path/to/backup/file.ppack
   portproton cli --winecfg WINE_LG DEFAULT
+  portproton cli --winetricks-list-all WINE_LG DEFAULT
+  portproton cli --winetricks-install WINE_LG DEFAULT --no-force corefonts
   portproton cli --mangohud-preview \"fps,frametime,cpu_temp,gpu_temp\"
   portproton cli --autoinstall [script_name_from_pw_autoinstall]
             "
@@ -471,13 +475,48 @@ Usage examples:
         pw_run uninstaller
         stop_portproton
         ;;
-    --winetricks-list)
+    --winetricks-list-all)
         get_wine_and_pfx "$2" "$3"
-        start_portproton >&2
         update_winetricks >&2
-        "${PORT_WINE_TMP_PATH}/winetricks" "$4" list
-        winetricks_status=$?
-        stop_portproton >&2
+        sh -n "${PORT_WINE_TMP_PATH}/winetricks" >&2 || exit 1
+        awk '
+            function save_entry() {
+                if (category == "") {
+                    return
+                }
+                count[category]++
+                entries[category, count[category]] = name " " title
+                category = ""
+                name = ""
+                title = ""
+            }
+            /^w_metadata[[:space:]]+/ {
+                save_entry()
+                if ($3 == "dlls" || $3 == "fonts" || $3 == "settings") {
+                    name = $2
+                    category = $3
+                }
+                next
+            }
+            category != "" && /^[[:space:]]*title="/ {
+                title = $0
+                sub(/^[[:space:]]*title="/, "", title)
+                sub(/[[:space:]]*\\$/, "", title)
+                sub(/"$/, "", title)
+            }
+            END {
+                save_entry()
+                split("dlls fonts settings", categories, " ")
+                for (i = 1; i <= 3; i++) {
+                    category = categories[i]
+                    print "__PORTPROTONQT_WINETRICKS_SECTION__:" category
+                    for (j = 1; j <= count[category]; j++) {
+                        print entries[category, j]
+                    }
+                }
+            }
+        ' "${PORT_WINE_TMP_PATH}/winetricks"
+        winetricks_status="$?"
         exit "$winetricks_status"
         ;;
     --winetricks-install)
