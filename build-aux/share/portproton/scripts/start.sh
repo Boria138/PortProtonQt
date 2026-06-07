@@ -161,6 +161,8 @@ cd "${PORT_SCRIPTS_PATH}" || fatal
 
 # shellcheck source=/dev/null
 source "${PORT_SCRIPTS_PATH}/var"
+# HACK: Avoid inheriting a system scripts cwd in pressure-vessel.
+cd "${XDG_DATA_HOME:-$HOME}" || fatal
 
 [[ ! -f "$VKBASALT_CONFIG_FILE" ]] && cp -f "${PORT_CONF_PATH}/vkBasalt.conf" "$VKBASALT_CONFIG_FILE"
 [[ ! -f "$DXVK_CONFIG_FILE" ]] && cp -f "${PORT_CONF_PATH}/dxvk.conf" "$DXVK_CONFIG_FILE"
