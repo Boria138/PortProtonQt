@@ -4746,8 +4746,8 @@ portwine_create_shortcut () {
     fi
     pw_create_gui_png
 
-    check_variables PW_SHORTCUT_MENU "TRUE"
-    check_variables PW_SHORTCUT_DESKTOP "TRUE"
+    check_variables PW_SHORTCUT_MENU "FALSE"
+    check_variables PW_SHORTCUT_DESKTOP "FALSE"
 
     unset name_desktop
     create_name_desktop
@@ -4761,8 +4761,8 @@ portwine_output_yad_shortcut () {
 
         pw_create_gui_png
         unset name_desktop
-        check_variables PW_SHORTCUT_MENU "TRUE"
-        check_variables PW_SHORTCUT_DESKTOP "TRUE"
+        check_variables PW_SHORTCUT_MENU "FALSE"
+        check_variables PW_SHORTCUT_DESKTOP "FALSE"
 
         if [[ -z $name_desktop ]] ; then
             create_name_desktop
