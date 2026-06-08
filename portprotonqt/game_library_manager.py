@@ -1,6 +1,7 @@
 from typing import Protocol
 from portprotonqt.game_card import GameCard
 from portprotonqt.search_utils import SearchOptimizer, ThreadedSearch
+from PySide6.QtWidgets import QAbstractButton
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QScrollArea, QSlider, QScroller, QStackedWidget
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QRegion
@@ -197,6 +198,7 @@ class GameLibraryManager:
         card = self.game_card_cache[card_key]
 
         if is_focused:
+            self._collapse_library_filter_controls()
             if self.main_window.current_hovered_card and self.main_window.current_hovered_card != card:
                 try:
                     self.main_window.current_hovered_card._hovered = False
@@ -215,6 +217,15 @@ class GameLibraryManager:
             if self.main_window.current_focused_card == card:
                 self.main_window.current_focused_card = None
 
+    def _collapse_library_filter_controls(self) -> None:
+        controls_button = getattr(self.main_window, "libraryControlsButton", None)
+        if not isinstance(controls_button, QAbstractButton) or not controls_button.isChecked():
+            return
+        controls_button.setChecked(False)
+        toggle_controls = getattr(self.main_window, "_toggle_library_controls", None)
+        if callable(toggle_controls):
+            toggle_controls()
+
     def _on_card_hovered(self, game_name: str, is_hovered: bool):
         """Handles card hover events."""
         card_key = None
@@ -229,6 +240,7 @@ class GameLibraryManager:
         card = self.game_card_cache[card_key]
 
         if is_hovered:
+            self._collapse_library_filter_controls()
             if self.main_window.current_focused_card and self.main_window.current_focused_card != card:
                 try:
                     if self.main_window.current_focused_card:

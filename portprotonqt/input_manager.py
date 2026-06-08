@@ -3725,15 +3725,6 @@ class InputManager(QObject):
         filter_widgets[0].setFocus(Qt.FocusReason.OtherFocusReason)
         return True
 
-    def _collapse_library_filter_controls(self) -> None:
-        controls_button = getattr(self._parent, "libraryControlsButton", None)
-        if not isinstance(controls_button, AutoSizeButton) or not controls_button.isChecked():
-            return
-        controls_button.setChecked(False)
-        toggle_controls = getattr(self._parent, "_toggle_library_controls", None)
-        if callable(toggle_controls):
-            toggle_controls()
-
     def _focus_first_library_card(self) -> bool:
         container = getattr(self._parent, "gamesListWidget", None)
         if container is None:
@@ -3769,10 +3760,7 @@ class InputManager(QObject):
                 if isinstance(controls_button, QWidget):
                     controls_button.setFocus(Qt.FocusReason.OtherFocusReason)
                 return True
-            focused_card = self._focus_first_library_card()
-            if focused_card:
-                self._collapse_library_filter_controls()
-            return focused_card
+            return self._focus_first_library_card()
         if focused not in toolbar_widgets:
             return False
         if code == PAD_DPAD_X:
