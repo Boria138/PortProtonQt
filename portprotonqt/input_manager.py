@@ -3910,11 +3910,11 @@ class InputManager(QObject):
         self.gamepad_type = self._get_effective_gamepad_type(self.gamepad)
 
     def _detect_gamepad_type(self, gamepad: PygameGamepad) -> GamepadType:
-        """Read gamepad type from SDL."""
+        """Read gamepad type from SDL or fall back to Xbox."""
         sdl3_type = _get_sdl3_gamepad_type(gamepad)
         if sdl3_type is not None:
             return sdl3_type
-        return GamepadType.UNKNOWN
+        return GamepadType.XBOX
 
     def _refresh_gamepad_ui(self) -> None:
         """Refresh control hints and virtual keyboard after gamepad changes."""
