@@ -255,8 +255,15 @@ class GameLibraryManager:
         self._pending_update = False
         self._update_game_grid_immediate()
 
-    def update_game_grid(self, games_list: list[tuple] | None = None, is_filter: bool = False):
+    def update_game_grid(
+        self,
+        games_list: list[tuple] | None = None,
+        is_filter: bool = False,
+        focus_first_card: bool | None = None,
+    ):
         """Schedules a game grid update with debouncing."""
+        if focus_first_card is not None:
+            self._focus_first_card_after_update = focus_first_card
         self.layout_mode = str(getattr(self.theme, "LIBRARY_LAYOUT_MODE", "grid")).lower()
         if self.sizeSlider is not None:
             self.sizeSlider.setVisible(self.layout_mode != "list")
@@ -666,11 +673,11 @@ class GameLibraryManager:
         self.game_card_cache.clear()
         self.pending_images.clear()
 
-    def set_games(self, games: list[tuple]):
+    def set_games(self, games: list[tuple], focus_first_card: bool = True):
         """Sets the games list and updates the filtered games."""
         self.games = games
         self.filtered_games = self.games
-        self._focus_first_card_after_update = bool(games)
+        self._focus_first_card_after_update = bool(games) and focus_first_card
 
         # Build search indices for fast searching
         self._build_search_indices(games)

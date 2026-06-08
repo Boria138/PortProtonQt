@@ -271,6 +271,96 @@ ADDGAME_BACK_BUTTON_STYLE = f"""
     }}
 """
 
+LIBRARY_CONTROLS_BUTTON_STYLE = f"""
+    QPushButton {{
+        background: qradialgradient(
+        cx:0.5, cy:0.5, radius:0.8,
+            stop:0 #E9ECEF,
+            stop:1 {color_j}
+        );
+        border: {border_b} {color_f};
+        border-radius: {border_radius_a};
+        color: {color_l};
+        font-size: {font_size_a};
+        font-family: '{font_family}';
+        padding: 5px 10px;
+        min-width: 24px;
+        min-height: 25px;
+    }}
+    QPushButton:hover,
+    QPushButton:pressed,
+    QPushButton:focus,
+    QPushButton:checked {{
+        background: qradialgradient(
+        cx:0.5, cy:0.5, radius:0.8,
+            stop:0 #E9ECEF,
+            stop:1 {color_j}
+        );
+        border: {border_b} {color_a};
+    }}
+"""
+
+LIBRARY_FILTER_COMBOBOX_STYLE = f"""
+    QComboBox {{
+        background: {color_b};
+        border: {border_b} {color_f};
+        border-radius: {border_radius_a};
+        padding-left: 12px;
+        height: 30px;
+        color: {color_l};
+        font-family: '{font_family}';
+        font-size: {font_size_a};
+        min-width: 120px;
+        combobox-popup: 0;
+    }}
+    QComboBox:hover,
+    QComboBox:focus,
+    QComboBox:on {{
+        background: {color_b};
+        border: {border_b} {color_a};
+    }}
+    QComboBox::drop-down {{
+        subcontrol-origin: padding;
+        subcontrol-position: center right;
+        border-left: {border_b} rgba(255, 255, 255, 0.05);
+        padding: 12px;
+        height: 12px;
+        width: 12px;
+    }}
+    QComboBox::down-arrow {{
+        image: url({theme_manager.get_icon("down", current_theme_name, as_path=True)});
+        padding: 12px;
+        height: 10px;
+        width: 10px;
+    }}
+    QComboBox::down-arrow:on {{
+        image: url({theme_manager.get_icon("up", current_theme_name, as_path=True)});
+        padding: 12px;
+        height: 10px;
+        width: 10px;
+    }}
+    QComboBox QAbstractItemView {{
+        outline: none;
+        background: {color_c};
+        border: {border_b} {color_a};
+        border-radius: {border_radius_a};
+        color: {color_l};
+        selection-background-color: {color_a};
+        selection-color: {color_l};
+    }}
+    QComboBox QAbstractItemView::item {{
+        background: {color_c};
+        color: {color_l};
+        padding: 6px 10px;
+        min-height: 24px;
+    }}
+    QComboBox QAbstractItemView::item:hover,
+    QComboBox QAbstractItemView::item:selected {{
+        background: {color_a};
+        color: {color_l};
+    }}
+"""
+
 # SEARCH FIELD STYLE
 SEARCH_EDIT_STYLE = f"""
     QLineEdit {{

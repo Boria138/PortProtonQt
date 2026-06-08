@@ -3687,11 +3687,52 @@ class InputManager(QObject):
 
     def _get_library_toolbar_widgets(self) -> list[QWidget]:
         widgets = []
-        for attr_name in ("quickLaunchButton", "addGameButton", "refreshButton", "searchEdit"):
+        for attr_name in (
+            "quickLaunchButton",
+            "addGameButton",
+            "refreshButton",
+            "searchEdit",
+            "libraryControlsButton",
+        ):
             widget = getattr(self._parent, attr_name, None)
             if isinstance(widget, QWidget) and widget.isVisible() and widget.isEnabled():
                 widgets.append(widget)
         return widgets
+
+    def _get_library_filter_widgets(self) -> list[QWidget]:
+        controls_widget = getattr(self._parent, "libraryControlsWidget", None)
+        if not isinstance(controls_widget, QWidget) or not controls_widget.isVisible():
+            return []
+        widgets = []
+        for attr_name in ("gamesSortCombo", "gamesDisplayCombo"):
+            widget = getattr(self._parent, attr_name, None)
+            if isinstance(widget, QWidget) and widget.isVisible() and widget.isEnabled():
+                widgets.append(widget)
+        return widgets
+
+    def _focus_library_filter_controls(self) -> bool:
+        controls_button = getattr(self._parent, "libraryControlsButton", None)
+        if not isinstance(controls_button, AutoSizeButton):
+            return False
+        if not controls_button.isChecked():
+            controls_button.setChecked(True)
+            toggle_controls = getattr(self._parent, "_toggle_library_controls", None)
+            if callable(toggle_controls):
+                toggle_controls()
+        filter_widgets = self._get_library_filter_widgets()
+        if not filter_widgets:
+            return False
+        filter_widgets[0].setFocus(Qt.FocusReason.OtherFocusReason)
+        return True
+
+    def _collapse_library_filter_controls(self) -> None:
+        controls_button = getattr(self._parent, "libraryControlsButton", None)
+        if not isinstance(controls_button, AutoSizeButton) or not controls_button.isChecked():
+            return
+        controls_button.setChecked(False)
+        toggle_controls = getattr(self._parent, "_toggle_library_controls", None)
+        if callable(toggle_controls):
+            toggle_controls()
 
     def _focus_first_library_card(self) -> bool:
         container = getattr(self._parent, "gamesListWidget", None)
@@ -3712,7 +3753,26 @@ class InputManager(QObject):
         if value == 0 or self._parent.stackedWidget.currentIndex() != 0:
             return False
         toolbar_widgets = self._get_library_toolbar_widgets()
+        filter_widgets = self._get_library_filter_widgets()
         focused = self._focused_widget()
+        if focused in filter_widgets:
+            if code == PAD_DPAD_X:
+                current_index = filter_widgets.index(cast(QWidget, focused))
+                next_index = current_index + (1 if value > 0 else -1)
+                if 0 <= next_index < len(filter_widgets):
+                    filter_widgets[next_index].setFocus(Qt.FocusReason.OtherFocusReason)
+                return True
+            if code != PAD_DPAD_Y:
+                return False
+            if value < 0:
+                controls_button = getattr(self._parent, "libraryControlsButton", None)
+                if isinstance(controls_button, QWidget):
+                    controls_button.setFocus(Qt.FocusReason.OtherFocusReason)
+                return True
+            focused_card = self._focus_first_library_card()
+            if focused_card:
+                self._collapse_library_filter_controls()
+            return focused_card
         if focused not in toolbar_widgets:
             return False
         if code == PAD_DPAD_X:
@@ -3724,6 +3784,9 @@ class InputManager(QObject):
         if code != PAD_DPAD_Y:
             return False
         if value > 0:
+            controls_button = getattr(self._parent, "libraryControlsButton", None)
+            if focused is controls_button and self._focus_library_filter_controls():
+                return True
             return self._focus_first_library_card()
         tab_button = self._parent.tabButtons.get(0)
         if tab_button is not None and tab_button.isVisible():

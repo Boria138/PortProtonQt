@@ -38,6 +38,7 @@ install_data(
   ['animations/__init__.py',
    'animations/detail_page.py',
    'animations/game_card.py',
+   'animations/library_controls.py',
    'animations/virtual_keyboard.py',
   ],
   install_dir: pythondir / meson.project_name() / 'animations',

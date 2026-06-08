@@ -26,6 +26,87 @@ ADDGAME_BACK_BUTTON_STYLE = f"""
     }}
 """
 
+LIBRARY_CONTROLS_BUTTON_STYLE = f"""
+    QPushButton {{
+        background: rgba(20, 20, 20, 0.40);
+        border: {border_b} rgba(255, 255, 255, 0.5);
+        border-radius: {border_radius_a};
+        color: {color_f};
+        font-size: {font_size_a};
+        font-family: '{font_family}';
+        padding: 8px 12px;
+        min-width: 24px;
+    }}
+    QPushButton:hover,
+    QPushButton:pressed,
+    QPushButton:focus,
+    QPushButton:checked {{
+        background: rgba(20, 20, 20, 0.40);
+        border: {border_b} {color_a};
+    }}
+"""
+
+LIBRARY_FILTER_COMBOBOX_STYLE = f"""
+    QComboBox {{
+        background: rgba(20, 20, 20, 0.40);
+        border: {border_b} rgba(255, 255, 255, 0.5);
+        border-radius: {border_radius_a};
+        padding-left: 12px;
+        height: 34px;
+        color: {color_f};
+        font-family: '{font_family}';
+        font-size: {font_size_a};
+        min-width: 120px;
+        combobox-popup: 0;
+    }}
+    QComboBox:hover,
+    QComboBox:focus,
+    QComboBox:on {{
+        background: rgba(20, 20, 20, 0.40);
+        border: {border_b} {color_a};
+    }}
+    QComboBox::drop-down {{
+        subcontrol-origin: padding;
+        subcontrol-position: center right;
+        border-left: {border_b} rgba(255, 255, 255, 0.05);
+        padding: 12px;
+        height: 12px;
+        width: 12px;
+    }}
+    QComboBox::down-arrow {{
+        image: url({theme_manager.get_icon("down", current_theme_name, as_path=True)});
+        padding: 12px;
+        height: 12px;
+        width: 12px;
+    }}
+    QComboBox::down-arrow:on {{
+        image: url({theme_manager.get_icon("up", current_theme_name, as_path=True)});
+        padding: 12px;
+        height: 12px;
+        width: 12px;
+    }}
+    QComboBox QAbstractItemView {{
+        outline: none;
+        background: {color_c};
+        border: {border_b} {color_a};
+        border-radius: {border_radius_a};
+        color: {color_f};
+        selection-background-color: {color_a};
+        selection-color: {color_f};
+    }}
+    QComboBox QAbstractItemView::item {{
+        background: {color_c};
+        color: {color_f};
+        padding: 6px 10px;
+        min-height: 24px;
+    }}
+    QComboBox QAbstractItemView::item:hover,
+    QComboBox QAbstractItemView::item:selected {{
+        background: {color_a};
+        color: {color_f};
+    }}
+"""
+
 # MAIN FRAME FOR GAME DETAILS
 DETAIL_CONTENT_FRAME_STYLE = f"""
     QFrame {{

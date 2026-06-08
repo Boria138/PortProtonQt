@@ -12,7 +12,7 @@ from portprotonqt.logger import get_logger
 from portprotonqt.icon_extractor import generate_thumbnail
 from portprotonqt.dialogs import AddGameDialog, FileExplorer, WinetricksDialog, ExeSettingsDialog
 from portprotonqt.game_card import GameCard
-from portprotonqt.animations import DetailPageAnimations
+from portprotonqt.animations import DetailPageAnimations, LibraryControlsAnimation
 from portprotonqt.custom_widgets import ClickableLabel, AutoSizeButton, NavLabel, FlowLayout
 from portprotonqt.detail_pages import DetailPageManager
 from portprotonqt.portproton_api import PortProtonAPI, get_user_conf_setting, set_user_conf_setting
@@ -769,7 +769,9 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
     def on_games_loaded(self, games: list[tuple]):
         self._loading_games = False
         self.games = games
-        self.game_library_manager.set_games(games)
+        focus_first_card = not getattr(self, "_preserve_library_focus_after_load", False)
+        self._preserve_library_focus_after_load = False
+        self.game_library_manager.set_games(games, focus_first_card=focus_first_card)
         self._known_portproton_desktops = self._get_portproton_desktop_files()
 
         # Clear the refresh in progress flag
@@ -1220,35 +1222,77 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         if index == 0 and self.isVisible() and not self.games:
             self.loadGames(force_load=True)
 
-    def createSearchWidget(self) -> tuple[QWidget, CustomLineEdit]:
-        self.container = QWidget()
-        self.container.setStyleSheet(self.theme.CONTAINER_STYLE)
-        layout = QHBoxLayout(self.container)
-        layout.setContentsMargins(0, 6, 0, 0)
-        layout.setSpacing(10)
+    def _set_combo_current_key(self, combo: QComboBox, keys: list[str], current: str) -> None:
+        try:
+            idx = keys.index(current)
+        except ValueError:
+            idx = 0
+        combo.setCurrentIndex(idx)
 
-        # Quick Launch button
+    def _create_library_combo(self, labels: list[str], tooltip: str) -> QComboBox:
+        combo = QComboBox()
+        combo.view().window().setWindowFlags(
+            Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
+        )
+        combo.view().window().setAttribute(
+            Qt.WidgetAttribute.WA_TranslucentBackground
+        )
+        combo.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        combo.addItems(labels)
+        combo.setToolTip(tooltip)
+        combo_style = getattr(self.theme, "LIBRARY_FILTER_COMBOBOX_STYLE", self.theme.COMBOBOX_STYLE)
+        combo.setStyleSheet(combo_style + self.theme.SCROLL_STYLE)
+        combo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        return combo
+
+    def _on_library_sort_changed(self, index: int) -> None:
+        if index < 0 or index >= len(self.sort_keys):
+            return
+        game_config.set_sort_method(self.sort_keys[index])
+        if hasattr(self, "game_library_manager"):
+            self.game_library_manager.update_game_grid(focus_first_card=False)
+
+    def _on_library_filter_changed(self, index: int) -> None:
+        if index < 0 or index >= len(self.filter_keys):
+            return
+        game_config.set_display_filter(self.filter_keys[index])
+        self.searchEdit.clear()
+        self.games = []
+        self._preserve_library_focus_after_load = True
+        self.loadGames(force_load=True)
+
+    def _toggle_library_controls(self) -> None:
+        self.libraryControlsAnimation.toggle(self.libraryControlsButton.isChecked())
+
+    def _create_library_controls_widget(self) -> QHBoxLayout:
+        self.libraryControlsWidget = QWidget()
+        controls_layout = QHBoxLayout(self.libraryControlsWidget)
+        controls_layout.setContentsMargins(0, 0, 0, 0)
+        controls_layout.setSpacing(10)
+        return controls_layout
+
+    def _add_library_action_buttons(self, buttons_layout: QHBoxLayout) -> None:
         self.quickLaunchButton = AutoSizeButton(_("Quick Launch"), icon=self.theme_manager.get_icon("play", as_path=True))
         self.quickLaunchButton.setStyleSheet(self.theme.ADDGAME_BACK_BUTTON_STYLE)
         self.quickLaunchButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.quickLaunchButton.clicked.connect(self.quickLaunch)
-        layout.addWidget(self.quickLaunchButton)
+        buttons_layout.addWidget(self.quickLaunchButton)
 
         self.addGameButton = AutoSizeButton(_("Add a shortcut"), icon=self.theme_manager.get_icon("addgame", as_path=True))
         self.addGameButton.setStyleSheet(self.theme.ADDGAME_BACK_BUTTON_STYLE)
         self.addGameButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.addGameButton.clicked.connect(self.openAddGameDialog)
-        layout.addWidget(self.addGameButton)
+        buttons_layout.addWidget(self.addGameButton)
 
         # Refresh button
         self.refreshButton = AutoSizeButton(_("Refresh Grid"), icon=self.theme_manager.get_icon("update", as_path=True))
         self.refreshButton.setStyleSheet(self.theme.ADDGAME_BACK_BUTTON_STYLE)
         self.refreshButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.refreshButton.clicked.connect(self.refreshGames)
-        layout.addWidget(self.refreshButton)
+        buttons_layout.addWidget(self.refreshButton)
+        buttons_layout.addStretch()
 
-        layout.addStretch()  # Add stretch to push search to the right
-
+    def _add_library_search(self, buttons_layout: QHBoxLayout) -> None:
         self.searchEdit = CustomLineEdit(self, theme=self.theme)
         icon: QIcon = cast(QIcon, self.theme_manager.get_icon("search"))
         action_pos = cast(QLineEdit.ActionPosition, QLineEdit.ActionPosition.LeadingPosition)
@@ -1263,8 +1307,71 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.searchDebounceTimer.setSingleShot(True)
         self.searchDebounceTimer.setInterval(150)  # Reduced debounce time for better responsiveness
         self.searchDebounceTimer.timeout.connect(self.on_search_changed)
+        buttons_layout.addWidget(self.searchEdit)
 
-        layout.addWidget(self.searchEdit)
+    def _add_library_controls_button(self, buttons_layout: QHBoxLayout) -> None:
+        self.libraryControlsButton = AutoSizeButton(
+            icon=self.theme_manager.get_icon("menu", as_path=True)
+        )
+        button_style = getattr(
+            self.theme,
+            "LIBRARY_CONTROLS_BUTTON_STYLE",
+            self.theme.ADDGAME_BACK_BUTTON_STYLE,
+        )
+        self.libraryControlsButton.setStyleSheet(button_style)
+        self.libraryControlsButton.setToolTip(_("Library Settings"))
+        self.libraryControlsButton.setCheckable(True)
+        self.libraryControlsButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.libraryControlsButton.clicked.connect(self._toggle_library_controls)
+        buttons_layout.addWidget(self.libraryControlsButton)
+
+    def _add_library_filter_controls(self, controls_layout: QHBoxLayout) -> None:
+        self.sort_keys = ["last_launch", "playtime", "alphabetical"]
+        self.sort_labels = [_("Last launch"), _("Time spent"), _("Alphabetical")]
+        self.gamesSortCombo = self._create_library_combo(self.sort_labels, _("Sort Method:"))
+        self._set_combo_current_key(
+            self.gamesSortCombo,
+            self.sort_keys,
+            game_config.get_sort_method(),
+        )
+        self.gamesSortCombo.currentIndexChanged.connect(self._on_library_sort_changed)
+        controls_layout.addStretch()
+        controls_layout.addWidget(self.gamesSortCombo)
+
+        self.filter_keys = ["all", "steam", "portproton", "favorites"]
+        self.filter_labels = [_("All"), "Steam", "PortProton", _("Favorites")]
+        self.gamesDisplayCombo = self._create_library_combo(self.filter_labels, _("Display Filter:"))
+        self._set_combo_current_key(
+            self.gamesDisplayCombo,
+            self.filter_keys,
+            game_config.get_display_filter(),
+        )
+        self.gamesDisplayCombo.currentIndexChanged.connect(self._on_library_filter_changed)
+        controls_layout.addWidget(self.gamesDisplayCombo)
+
+    def createSearchWidget(self) -> tuple[QWidget, CustomLineEdit]:
+        self.container = QWidget()
+        self.container.setStyleSheet(self.theme.CONTAINER_STYLE)
+        layout = QVBoxLayout(self.container)
+        layout.setContentsMargins(0, 6, 0, 0)
+        layout.setSpacing(10)
+        buttons_layout = QHBoxLayout()
+        buttons_layout.setContentsMargins(0, 0, 0, 0)
+        buttons_layout.setSpacing(10)
+        controls_layout = self._create_library_controls_widget()
+
+        self._add_library_action_buttons(buttons_layout)
+        self._add_library_search(buttons_layout)
+        self.libraryControlsAnimation = LibraryControlsAnimation(
+            self.libraryControlsWidget,
+            self.theme,
+            self.searchDebounceTimer.interval(),
+        )
+        self._add_library_controls_button(buttons_layout)
+        self._add_library_filter_controls(controls_layout)
+        self.libraryControlsAnimation.setup_hidden()
+        layout.addLayout(buttons_layout)
+        layout.addWidget(self.libraryControlsWidget)
         return self.container, self.searchEdit
 
     def refreshGames(self):
@@ -2377,56 +2484,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.timeDetailCombo.setCurrentIndex(idx)
         genForm.addRow(self.timeDetailTitle, self.timeDetailCombo)
 
-        self.gamesSortCombo = QComboBox()
-        self.gamesSortCombo.view().window().setWindowFlags(
-            Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
-        )
-        self.gamesSortCombo.view().window().setAttribute(
-            Qt.WidgetAttribute.WA_TranslucentBackground
-        )
-        self.gamesSortCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        self.sort_keys = ["last_launch", "playtime", "alphabetical"]
-        self.sort_labels = [_("Last launch"), _("Time spent"), _("Alphabetical")]
-        self.gamesSortCombo.addItems(self.sort_labels)
-        self.gamesSortCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
-        self.gamesSortCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.gamesSortTitle = QLabel(_("Sort Method:"))
-        self.gamesSortTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.gamesSortTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
-        self.gamesSortTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        current = game_config.get_sort_method()
-        try:
-            idx = self.sort_keys.index(current)
-        except ValueError:
-            idx = 0
-        self.gamesSortCombo.setCurrentIndex(idx)
-        genForm.addRow(self.gamesSortTitle, self.gamesSortCombo)
-
-        self.filter_keys = ["all", "steam", "portproton", "favorites"]
-        self.filter_labels = [_("All"), "Steam", "PortProton", _("Favorites")]
-        self.gamesDisplayCombo = QComboBox()
-        self.gamesDisplayCombo.view().window().setWindowFlags(
-            Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
-        )
-        self.gamesDisplayCombo.view().window().setAttribute(
-            Qt.WidgetAttribute.WA_TranslucentBackground
-        )
-        self.gamesDisplayCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        self.gamesDisplayCombo.addItems(self.filter_labels)
-        self.gamesDisplayCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
-        self.gamesDisplayCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.gamesDisplayTitle = QLabel(_("Display Filter:"))
-        self.gamesDisplayTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.gamesDisplayTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
-        self.gamesDisplayTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        current = game_config.get_display_filter()
-        try:
-            idx = self.filter_keys.index(current)
-        except ValueError:
-            idx = 0
-        self.gamesDisplayCombo.setCurrentIndex(idx)
-        genForm.addRow(self.gamesDisplayTitle, self.gamesDisplayCombo)
-
         self.badge_view_keys = ["detailed", "compact", "hidden"]
         self.badge_view_labels = [_("Detailed"), _("Compact"), _("Hidden")]
         self.badgeViewCombo = QComboBox()
@@ -2904,16 +2961,9 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         time_key = self.time_keys[time_idx]
         ui_config.set_time_detail_level(time_key)
 
-        sort_idx = self.gamesSortCombo.currentIndex()
-        sort_key = self.sort_keys[sort_idx]
-        game_config.set_sort_method(sort_key)
-
-        filter_idx = self.gamesDisplayCombo.currentIndex()
-        filter_key = self.filter_keys[filter_idx]
         economy_mode = self.economyModeCheckBox.isChecked()
         ui_config.set_economy_mode(economy_mode)
         economy_mode_changed = previous_economy_mode != economy_mode
-        game_config.set_display_filter(filter_key)
         badge_view_idx = self.badgeViewCombo.currentIndex()
         badge_view_mode = self.badge_view_keys[badge_view_idx]
         if economy_mode:
@@ -2989,8 +3039,9 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             if self.game_library_manager.gamesListLayout is not None:
                 self.game_library_manager.clear_layout(self.game_library_manager.gamesListLayout)
         else:
+            display_filter = game_config.get_display_filter()
             for card in self.game_library_manager.game_card_cache.values():
-                card.update_badge_visibility(filter_key)
+                card.update_badge_visibility(display_filter)
                 card.update_badge_view_mode(badge_view_mode)
 
         if (
