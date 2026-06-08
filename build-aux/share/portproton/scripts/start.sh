@@ -372,12 +372,12 @@ Usage examples:
         exit 0
         ;;
     --show-ppdb)
-        # --show-ppdb /полный/путь/до/файла.exe ИЛИ /полный/путь/до/файла.exe.ppdb
+        # --show-ppdb /полный/путь/до/файла.(exe|bat|cmd|msi|reg) ИЛИ /полный/путь/до/файла.ext.ppdb
         input_path="$2"
 
         case "$input_path" in
             *.ppdb) exe_path="${input_path%.ppdb}" ;;
-            *.exe)  exe_path="$input_path" ;;
+            *.[bB][aA][tT]|*.[cC][mM][dD]|*.[eE][xX][eE]|*.[mM][sS][iI]|*.[rR][eE][gG]) exe_path="$input_path" ;;
         esac
 
         ppdb_path="${exe_path}.ppdb"
