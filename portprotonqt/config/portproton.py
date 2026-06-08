@@ -434,7 +434,7 @@ def parse_desktop_entry(file_path: str) -> configparser.SectionProxy | None:
 
 
 WINDOWS_LAUNCH_EXTENSIONS = (".exe", ".bat", ".cmd", ".msi", ".reg")
-DISC_IMAGE_EXTENSIONS = (".iso", ".mdf")
+DISC_IMAGE_EXTENSIONS = (".iso", ".mdf", ".nrg")
 LAUNCH_FILE_EXTENSIONS = WINDOWS_LAUNCH_EXTENSIONS + DISC_IMAGE_EXTENSIONS
 THEMED_LAUNCH_ICON_NAMES = {
     ".bat": "bat",

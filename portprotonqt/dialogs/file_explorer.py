@@ -28,7 +28,7 @@ from portprotonqt.scripts_utils.mount_points import list_mounted_drive_paths
 
 logger = get_logger(__name__)
 theme_manager = ThemeManager()
-DISC_IMAGE_EXTENSIONS = (".iso", ".mdf")
+DISC_IMAGE_EXTENSIONS = (".iso", ".mdf", ".nrg")
 THUMBNAIL_PRELOAD_ROWS = 5
 THUMBNAIL_QUEUE_LIMIT = 24
 THUMBNAIL_SCROLL_DELAY_MS = 80
