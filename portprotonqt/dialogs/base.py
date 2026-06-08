@@ -31,7 +31,7 @@ from portprotonqt.icon_extractor import generate_thumbnail
 
 logger = get_logger(__name__)
 theme_manager = ThemeManager()
-DISC_IMAGE_EXTENSIONS = (".iso", ".mdf")
+DISC_IMAGE_EXTENSIONS = (".iso", ".mdf", ".nrg")
 
 
 class FileSelectedSignal(QObject):

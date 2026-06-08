@@ -84,7 +84,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
 logger = get_logger(__name__)
-DISC_IMAGE_EXTENSIONS = (".iso", ".mdf")
+DISC_IMAGE_EXTENSIONS = (".iso", ".mdf", ".nrg")
 
 class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWindowWorkersMixin, QMainWindow):
     games_loaded = Signal(list)

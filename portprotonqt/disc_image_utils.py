@@ -21,6 +21,7 @@ SVCD_SUB_HEADERS = (
     b"\x00\x00\x89\x00\x00\x00\x89\x00",
 )
 UDF_SIGNATURES = (b"BEA01", b"BOOT2", b"CD001", b"CDW02", b"NSR02", b"NSR03", b"TEA01")
+CONVERTIBLE_DISC_EXTENSIONS = (".mdf", ".nrg")
 
 
 class DiscImageManager:
@@ -300,7 +301,10 @@ class DiscImageManager:
             logger.error("7zz or 7z is required to extract MDF set %s", mdf_path)
             return None
 
-        mdf_sources = self._get_mdf_sources(normalized_mdf)
+        if normalized_mdf.lower().endswith(".mdf"):
+            mdf_sources = self._get_mdf_sources(normalized_mdf)
+        else:
+            mdf_sources = [normalized_mdf]
         source_stamp = self._get_disc_source_stamp(mdf_sources)
         if not source_stamp:
             return None
@@ -338,7 +342,7 @@ class DiscImageManager:
     def sync_iso_to_rw(self, iso_path: str) -> str | None:
         """Extract disc image content to writable runtime directory if source changed."""
         normalized_iso = os.path.abspath(os.path.expanduser(iso_path))
-        if normalized_iso.lower().endswith(".mdf"):
+        if normalized_iso.lower().endswith(CONVERTIBLE_DISC_EXTENSIONS):
             return self._sync_mdf_set_to_rw(normalized_iso)
         rw_root = self._iso_rw_paths.get(normalized_iso, self._get_iso_rw_root(normalized_iso))
         os.makedirs(rw_root, exist_ok=True)
