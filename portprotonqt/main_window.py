@@ -12,7 +12,7 @@ from portprotonqt.logger import get_logger
 from portprotonqt.icon_extractor import generate_thumbnail
 from portprotonqt.dialogs import AddGameDialog, FileExplorer, WinetricksDialog, ExeSettingsDialog
 from portprotonqt.game_card import GameCard
-from portprotonqt.animations import DetailPageAnimations, LibraryControlsAnimation
+from portprotonqt.animations import DetailPageAnimations, ExpandingSearchAnimation, LibraryControlsAnimation
 from portprotonqt.custom_widgets import ClickableLabel, AutoSizeButton, NavLabel, FlowLayout
 from portprotonqt.detail_pages import DetailPageManager
 from portprotonqt.portproton_api import PortProtonAPI, get_user_conf_setting, set_user_conf_setting
@@ -75,7 +75,7 @@ from portprotonqt.tabs.workers import MainWindowWorkersMixin
 from portprotonqt.settings_manager import get_available_prefix_options, get_available_wine_options
 
 from PySide6.QtWidgets import (QLineEdit, QMainWindow, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox,
-                               QDialog, QFormLayout, QMessageBox, QApplication, QPushButton, QProgressBar, QCheckBox, QSizePolicy, QGridLayout, QScrollArea, QScroller, QSlider, QFrame)
+                               QDialog, QFormLayout, QMessageBox, QApplication, QPushButton, QProgressBar, QCheckBox, QSizePolicy, QGridLayout, QScrollArea, QScroller, QSlider, QFrame, QToolButton)
 from PySide6.QtCore import Qt, QAbstractAnimation, QEvent, QUrl, Signal, QTimer, Slot, QProcess, QProcessEnvironment, QFileSystemWatcher, QStandardPaths
 from PySide6.QtGui import QIcon, QColor, QDesktopServices, QHideEvent, QShowEvent
 from typing import cast
@@ -1296,7 +1296,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.searchEdit = CustomLineEdit(self, theme=self.theme)
         icon: QIcon = cast(QIcon, self.theme_manager.get_icon("search"))
         action_pos = cast(QLineEdit.ActionPosition, QLineEdit.ActionPosition.LeadingPosition)
-        self.searchEdit.addAction(icon, action_pos)
+        self.searchIconAction = self.searchEdit.addAction(icon, action_pos)
         self.searchEdit.setMaximumWidth(200)
         self.searchEdit.setPlaceholderText(_("Search ..."))
         self.searchEdit.setClearButtonEnabled(True)
@@ -1307,6 +1307,15 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.searchDebounceTimer.setSingleShot(True)
         self.searchDebounceTimer.setInterval(150)  # Reduced debounce time for better responsiveness
         self.searchDebounceTimer.timeout.connect(self.on_search_changed)
+        self.searchEdit.focusInEvent = self._wrap_search_focus_event(
+            self.searchEdit.focusInEvent,
+            True,
+        )
+        self.searchEdit.focusOutEvent = self._wrap_search_focus_event(
+            self.searchEdit.focusOutEvent,
+            False,
+        )
+        self.searchEdit.resizeEvent = self._wrap_search_resize_event(self.searchEdit.resizeEvent)
         buttons_layout.addWidget(self.searchEdit)
 
     def _add_library_controls_button(self, buttons_layout: QHBoxLayout) -> None:
@@ -1324,6 +1333,47 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.libraryControlsButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.libraryControlsButton.clicked.connect(self._toggle_library_controls)
         buttons_layout.addWidget(self.libraryControlsButton)
+
+    def _setup_library_search_animation(self) -> None:
+        self.searchAnimation = ExpandingSearchAnimation(
+            self.searchEdit,
+            self.theme,
+            self.searchDebounceTimer.interval(),
+        )
+        collapsed_width = self.libraryControlsButton.sizeHint().width()
+        expanded_width = self.searchEdit.maximumWidth()
+        self.searchAnimation.setup(collapsed_width, expanded_width)
+        QTimer.singleShot(0, self._center_collapsed_search_icon)
+
+    def _wrap_search_focus_event(self, original_event: Callable, expand: bool) -> Callable:
+        def handle_focus_event(event):
+            original_event(event)
+            if not hasattr(self, "searchAnimation"):
+                return
+            if expand:
+                self.searchAnimation.expand()
+            else:
+                self.searchAnimation.collapse()
+            QTimer.singleShot(0, self._center_collapsed_search_icon)
+        return handle_focus_event
+
+    def _wrap_search_resize_event(self, original_event: Callable) -> Callable:
+        def handle_resize_event(event):
+            original_event(event)
+            self._center_collapsed_search_icon()
+        return handle_resize_event
+
+    def _center_collapsed_search_icon(self) -> None:
+        animation = getattr(self, "searchAnimation", None)
+        if animation is None or self.searchEdit.maximumWidth() != animation.collapsed_width:
+            return
+        for button in self.searchEdit.findChildren(QToolButton):
+            if button.defaultAction() is self.searchIconAction:
+                size = button.sizeHint()
+                x = (self.searchEdit.width() - size.width()) // 2
+                y = (self.searchEdit.height() - size.height()) // 2
+                button.setGeometry(x, y, size.width(), size.height())
+                return
 
     def _add_library_filter_controls(self, controls_layout: QHBoxLayout) -> None:
         self.sort_keys = ["last_launch", "playtime", "alphabetical"]
@@ -1368,6 +1418,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             self.searchDebounceTimer.interval(),
         )
         self._add_library_controls_button(buttons_layout)
+        self._setup_library_search_animation()
         self._add_library_filter_controls(controls_layout)
         self.libraryControlsAnimation.setup_hidden()
         layout.addLayout(buttons_layout)

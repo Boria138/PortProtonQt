@@ -8,6 +8,48 @@ from PySide6.QtCore import (
 from PySide6.QtWidgets import QGraphicsOpacityEffect, QWidget
 
 
+class ExpandingSearchAnimation:
+    def __init__(self, widget: QWidget, theme: object, fallback_duration: int):
+        self.widget = widget
+        self.theme = theme
+        self.fallback_duration = fallback_duration
+        self.animation = QPropertyAnimation(widget, QByteArray(b"maximumWidth"))
+
+    def setup(self, collapsed_width: int, expanded_width: int) -> None:
+        self.collapsed_width = collapsed_width
+        self.expanded_width = expanded_width
+        self.widget.setMaximumWidth(collapsed_width)
+
+    def expand(self) -> None:
+        self._start(self.expanded_width)
+
+    def collapse(self) -> None:
+        if getattr(self.widget, "text", lambda: "")():
+            return
+        self._start(self.collapsed_width)
+
+    def _start(self, target_width: int) -> None:
+        if self.animation.state() == QAbstractAnimation.State.Running:
+            self.animation.stop()
+        self.animation = QPropertyAnimation(self.widget, QByteArray(b"maximumWidth"))
+        self.animation.setDuration(self._duration())
+        self.animation.setStartValue(self.widget.maximumWidth())
+        self.animation.setEndValue(target_width)
+        self.animation.setEasingCurve(self._easing(target_width == self.expanded_width))
+        self.animation.start()
+
+    def _duration(self) -> int:
+        animation_config = getattr(self.theme, "GAME_CARD_ANIMATION", {})
+        return animation_config.get("scale_anim_duration", self.fallback_duration)
+
+    def _easing(self, opening: bool) -> QEasingCurve:
+        animation_config = getattr(self.theme, "GAME_CARD_ANIMATION", {})
+        key = "scale_easing_curve" if opening else "scale_easing_curve_out"
+        easing_name = animation_config.get(key, QEasingCurve.Type.InOutQuad.name)
+        easing_type = getattr(QEasingCurve.Type, easing_name, QEasingCurve.Type.InOutQuad)
+        return QEasingCurve(easing_type)
+
+
 class LibraryControlsAnimation:
     def __init__(self, widget: QWidget, theme: object, fallback_duration: int):
         self.widget = widget
