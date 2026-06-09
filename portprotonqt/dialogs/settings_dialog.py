@@ -527,7 +527,7 @@ class ExeSettingsDialog(
                 self.current_settings[key] = '0'
             for adv_key in ADVANCED_SETTING_KEYS:
                 self.current_settings[adv_key] = 'disabled' if any(
-                    x in adv_key for x in ['TOPOLOGY', 'SELECT', 'MODE', 'LEVEL', 'GL_VERSION', 'NUMA']
+                    x in adv_key for x in ['TOPOLOGY', 'SELECT', 'MODE', 'LEVEL', 'GL_VERSION', 'NUMA', 'DRIVER']
                 ) else ''
             for key in MANGOHUD_ENV_KEYS:
                 self.current_settings[key] = ''
