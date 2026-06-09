@@ -223,6 +223,8 @@ class GameLibraryManager:
                 self.main_window.current_focused_card = None
 
     def _collapse_library_filter_controls(self) -> None:
+        if getattr(self.main_window, "_library_controls_hover_close_delayed", False):
+            return
         controls_button = getattr(self.main_window, "libraryControlsButton", None)
         if not isinstance(controls_button, QAbstractButton) or not controls_button.isChecked():
             return

@@ -275,6 +275,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.current_play_button = None
         self.current_focused_card: GameCard | None = None
         self.current_hovered_card: GameCard | None = None
+        self._library_controls_hover_close_delayed = False
         self.pending_games = []
         self.total_games = 0
         self._loading_games = False
@@ -1459,6 +1460,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             game_config.get_sort_method(),
         )
         self.gamesSortCombo.currentIndexChanged.connect(self._on_library_sort_changed)
+        self.gamesSortCombo.activated.connect(self._delay_library_controls_hover_close)
         controls_layout.addStretch()
         controls_layout.addWidget(self.gamesSortCombo)
 
@@ -1471,6 +1473,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             game_config.get_display_filter(),
         )
         self.gamesDisplayCombo.currentIndexChanged.connect(self._on_library_filter_changed)
+        self.gamesDisplayCombo.activated.connect(self._delay_library_controls_hover_close)
         controls_layout.addWidget(self.gamesDisplayCombo)
 
         self.badge_view_keys = ["detailed", "compact", "hidden"]
@@ -1485,7 +1488,15 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             self.gamesBadgeViewCombo.setCurrentIndex(self.badge_view_keys.index("hidden"))
             self.gamesBadgeViewCombo.setEnabled(False)
         self.gamesBadgeViewCombo.currentIndexChanged.connect(self._on_library_badge_view_changed)
+        self.gamesBadgeViewCombo.activated.connect(self._delay_library_controls_hover_close)
         controls_layout.addWidget(self.gamesBadgeViewCombo)
+
+    def _delay_library_controls_hover_close(self, _index: int = -1) -> None:
+        self._library_controls_hover_close_delayed = True
+        QTimer.singleShot(350, self._allow_library_controls_hover_close)
+
+    def _allow_library_controls_hover_close(self) -> None:
+        self._library_controls_hover_close_delayed = False
 
     def createSearchWidget(self) -> tuple[QWidget, CustomLineEdit]:
         self.container = QWidget()

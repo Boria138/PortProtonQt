@@ -21,6 +21,7 @@
 - Добавлена вкладка настроек vkBasalt в диалог настроек exe
 - Добавлена проверка хэш-суммы после скачивания компонентов
 - Добавлена поддержка запуска `.nrg`
+- Начат португальский перевод `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/pt_BR/`
 
 ### Changed
 - Действия управления питанием во вкладке `System` переведены на использование `loginctl`
@@ -31,6 +32,7 @@
 - Увеличена скорость передвижения курсора при эмуляции мыши
 - Ярлыки по умолчанию создаются только внутри PortProtonQt, без копирования в меню приложений и на рабочий стол
 - Обновлён WINE_LG: 11-1 -> 11-10
+- Обновлён испанский перевод `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/es/`
 
 ### Fixed
 - Исправлена работа Winetricks с версиями Proton/Wine имеющими путь `files/bin/wine`
@@ -66,6 +68,9 @@
 ### Contributors
 - Ivan Mazhukin
 - @Castro-Fidel
+- @Dervart
+- @rogerio-mattos
+- @gallegonovato
 
 ---
 
