@@ -675,9 +675,8 @@ LINE_EDIT_STYLE = f"""
 
 TOOLTIP_STYLE = f"""
     QLabel {{
-        background-color: {color_b};
-        border: {border_b} {color_c};
-        border-radius: {border_radius_a};
+        background: {color_b};
+        border: {border_b} {color_e};
         padding: 8px;
         color: {color_f};
         font-family: '{font_family}';
