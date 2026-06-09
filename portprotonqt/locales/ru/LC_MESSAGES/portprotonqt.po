@@ -389,6 +389,42 @@ msgstr "Добавить ярлык"
 msgid "Search ..."
 msgstr "Поиск ..."
 
+msgid "Library Settings"
+msgstr "Настройки Библиотеки"
+
+msgid "Last launch"
+msgstr "Последний запуск"
+
+msgid "Time spent"
+msgstr "Проведенное время"
+
+msgid "Alphabetical"
+msgstr "Алфавитный"
+
+msgid "Sort Method:"
+msgstr "Метод сортировки:"
+
+msgid "All"
+msgstr "Все"
+
+msgid "Favorites"
+msgstr "Избранное"
+
+msgid "Display Filter:"
+msgstr "Фильтр:"
+
+msgid "Detailed"
+msgstr "Детальный"
+
+msgid "Compact"
+msgstr "Компактный"
+
+msgid "Hidden"
+msgstr "Скрытый"
+
+msgid "Badge View Type:"
+msgstr "Тип отображения бейджей:"
+
 msgid "Refreshing..."
 msgstr "Обновление..."
 
@@ -494,47 +530,11 @@ msgstr "Не удалось удалить префикс: {}"
 msgid "PortProton Settings"
 msgstr "Настройки PortProtonQt"
 
-msgid "Library Settings"
-msgstr "Настройки Библиотеки"
-
-msgid "Detailed"
-msgstr "Детальный"
-
 msgid "Brief"
 msgstr "Упрощённый"
 
-msgid "Hidden"
-msgstr "Скрытый"
-
 msgid "Time Detail Level:"
 msgstr "Уровень детализации вывода времени:"
-
-msgid "Last launch"
-msgstr "Последний запуск"
-
-msgid "Time spent"
-msgstr "Проведенное время"
-
-msgid "Alphabetical"
-msgstr "Алфавитный"
-
-msgid "Sort Method:"
-msgstr "Метод сортировки:"
-
-msgid "All"
-msgstr "Все"
-
-msgid "Favorites"
-msgstr "Избранное"
-
-msgid "Display Filter:"
-msgstr "Фильтр:"
-
-msgid "Compact"
-msgstr "Компактный"
-
-msgid "Badge View Type:"
-msgstr "Тип отображения бейджей:"
 
 msgid "Interface Settings"
 msgstr "Настройки интерфейса"
@@ -1011,6 +1011,13 @@ msgstr ""
 "NUMA, каждый со своей локальной памятью и ядрами. Привязка игры к одному "
 "узлу уменьшает задержку доступа к памяти и ограничивает дорогостоящие "
 "переключения между ядрами."
+
+msgid "Sound Driver"
+msgstr ""
+
+#, fuzzy
+msgid "Force the Wine sound driver for this executable."
+msgstr "Выбор версии Wine или Proton для использования с этим исполняемым файлом."
 
 msgid "just now"
 msgstr "только что"

@@ -382,6 +382,44 @@ msgstr "添加快捷方式到："
 msgid "Search ..."
 msgstr "搜索"
 
+msgid "Library Settings"
+msgstr "库设置"
+
+msgid "Last launch"
+msgstr "上次启动"
+
+msgid "Time spent"
+msgstr ""
+
+msgid "Alphabetical"
+msgstr "按字母顺序"
+
+#, fuzzy
+msgid "Sort Method:"
+msgstr "游戏排序方式："
+
+msgid "All"
+msgstr "全部"
+
+msgid "Favorites"
+msgstr "收藏夹"
+
+#, fuzzy
+msgid "Display Filter:"
+msgstr "游戏显示筛选："
+
+msgid "Detailed"
+msgstr "详细"
+
+msgid "Compact"
+msgstr "紧凑"
+
+msgid "Hidden"
+msgstr "隐藏"
+
+msgid "Badge View Type:"
+msgstr "徽章视图类型："
+
 msgid "Refreshing..."
 msgstr "正在刷新…"
 
@@ -488,49 +526,11 @@ msgstr "删除前缀失败：{}"
 msgid "PortProton Settings"
 msgstr "PortProton 设置"
 
-msgid "Library Settings"
-msgstr "库设置"
-
-msgid "Detailed"
-msgstr "详细"
-
 msgid "Brief"
 msgstr "简要"
 
-msgid "Hidden"
-msgstr "隐藏"
-
 msgid "Time Detail Level:"
 msgstr "时间详细程度："
-
-msgid "Last launch"
-msgstr "上次启动"
-
-msgid "Time spent"
-msgstr ""
-
-msgid "Alphabetical"
-msgstr "按字母顺序"
-
-#, fuzzy
-msgid "Sort Method:"
-msgstr "游戏排序方式："
-
-msgid "All"
-msgstr "全部"
-
-msgid "Favorites"
-msgstr "收藏夹"
-
-#, fuzzy
-msgid "Display Filter:"
-msgstr "游戏显示筛选："
-
-msgid "Compact"
-msgstr "紧凑"
-
-msgid "Badge View Type:"
-msgstr "徽章视图类型："
 
 msgid "Interface Settings"
 msgstr "界面设置"
@@ -987,6 +987,13 @@ msgstr ""
 "用于 CPU 亲和性的 NUMA 节点。在多核系统中，CPU 被划分为 NUMA 节点，每个节点拥"
 "有自己的本地内存和核心。将游戏绑定到单个节点可降低内存访问延迟，并减少开销较"
 "大的核心间切换。"
+
+msgid "Sound Driver"
+msgstr ""
+
+#, fuzzy
+msgid "Force the Wine sound driver for this executable."
+msgstr "选择用于此可执行文件的 Wine 或 Proton 版本。"
 
 msgid "just now"
 msgstr "刚刚"

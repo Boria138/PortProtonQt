@@ -389,6 +389,42 @@ msgstr "Adicionar um atalho"
 msgid "Search ..."
 msgstr "Pesquisar..."
 
+msgid "Library Settings"
+msgstr "Configurações da Biblioteca"
+
+msgid "Last launch"
+msgstr "Último lançamento"
+
+msgid "Time spent"
+msgstr "Tempo jogado"
+
+msgid "Alphabetical"
+msgstr "Alfabético"
+
+msgid "Sort Method:"
+msgstr "Método de Ordenação:"
+
+msgid "All"
+msgstr "Todos"
+
+msgid "Favorites"
+msgstr "Favoritos"
+
+msgid "Display Filter:"
+msgstr "Filtro de Exibição:"
+
+msgid "Detailed"
+msgstr "Detalhado"
+
+msgid "Compact"
+msgstr "Compacto"
+
+msgid "Hidden"
+msgstr "Oculto"
+
+msgid "Badge View Type:"
+msgstr "Modo de Exibição do Selo:"
+
 msgid "Refreshing..."
 msgstr "Atualizando..."
 
@@ -494,47 +530,11 @@ msgstr "Falha ao excluir o prefixo: {}"
 msgid "PortProton Settings"
 msgstr "Configurações do PortProton"
 
-msgid "Library Settings"
-msgstr "Configurações da Biblioteca"
-
-msgid "Detailed"
-msgstr "Detalhado"
-
 msgid "Brief"
 msgstr "Resumido"
 
-msgid "Hidden"
-msgstr "Oculto"
-
 msgid "Time Detail Level:"
 msgstr "Nível de Detalhe do Tempo:"
-
-msgid "Last launch"
-msgstr "Último lançamento"
-
-msgid "Time spent"
-msgstr "Tempo jogado"
-
-msgid "Alphabetical"
-msgstr "Alfabético"
-
-msgid "Sort Method:"
-msgstr "Método de Ordenação:"
-
-msgid "All"
-msgstr "Todos"
-
-msgid "Favorites"
-msgstr "Favoritos"
-
-msgid "Display Filter:"
-msgstr "Filtro de Exibição:"
-
-msgid "Compact"
-msgstr "Compacto"
-
-msgid "Badge View Type:"
-msgstr "Modo de Exibição do Selo:"
 
 msgid "Interface Settings"
 msgstr "Configurações da Interface"
@@ -961,6 +961,12 @@ msgid ""
 "NUMA nodes, each with its own local memory and cores. Binding a game to a"
 " single node reduces memory-access latency and limits costly core-to-core"
 " switches."
+msgstr ""
+
+msgid "Sound Driver"
+msgstr ""
+
+msgid "Force the Wine sound driver for this executable."
 msgstr ""
 
 msgid "just now"

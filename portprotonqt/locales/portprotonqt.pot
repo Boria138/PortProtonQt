@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-06-06 22:51+0500\n"
+"POT-Creation-Date: 2026-06-09 16:24+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -375,6 +375,42 @@ msgstr ""
 msgid "Search ..."
 msgstr ""
 
+msgid "Library Settings"
+msgstr ""
+
+msgid "Last launch"
+msgstr ""
+
+msgid "Time spent"
+msgstr ""
+
+msgid "Alphabetical"
+msgstr ""
+
+msgid "Sort Method:"
+msgstr ""
+
+msgid "All"
+msgstr ""
+
+msgid "Favorites"
+msgstr ""
+
+msgid "Display Filter:"
+msgstr ""
+
+msgid "Detailed"
+msgstr ""
+
+msgid "Compact"
+msgstr ""
+
+msgid "Hidden"
+msgstr ""
+
+msgid "Badge View Type:"
+msgstr ""
+
 msgid "Refreshing..."
 msgstr ""
 
@@ -480,46 +516,10 @@ msgstr ""
 msgid "PortProton Settings"
 msgstr ""
 
-msgid "Library Settings"
-msgstr ""
-
-msgid "Detailed"
-msgstr ""
-
 msgid "Brief"
 msgstr ""
 
-msgid "Hidden"
-msgstr ""
-
 msgid "Time Detail Level:"
-msgstr ""
-
-msgid "Last launch"
-msgstr ""
-
-msgid "Time spent"
-msgstr ""
-
-msgid "Alphabetical"
-msgstr ""
-
-msgid "Sort Method:"
-msgstr ""
-
-msgid "All"
-msgstr ""
-
-msgid "Favorites"
-msgstr ""
-
-msgid "Display Filter:"
-msgstr ""
-
-msgid "Compact"
-msgstr ""
-
-msgid "Badge View Type:"
 msgstr ""
 
 msgid "Interface Settings"
@@ -935,6 +935,12 @@ msgid ""
 "NUMA nodes, each with its own local memory and cores. Binding a game to a"
 " single node reduces memory-access latency and limits costly core-to-core"
 " switches."
+msgstr ""
+
+msgid "Sound Driver"
+msgstr ""
+
+msgid "Force the Wine sound driver for this executable."
 msgstr ""
 
 msgid "just now"
