@@ -2,6 +2,7 @@
 
 import glob
 import os
+import shutil
 import subprocess
 import tarfile
 import time
@@ -30,6 +31,9 @@ def get_exiftool_data(game_exe: str) -> dict:
 
     if not os.path.isfile(game_exe):
         logger.debug("Skipping exiftool for missing executable: %s", game_exe)
+        return {}
+    if shutil.which("exiftool") is None:
+        logger.debug("Skipping exiftool for %s: executable not found", game_exe)
         return {}
 
     if len(_EXIFTOOL_CACHE) > _CACHE_MAX_ENTRIES // 2:
