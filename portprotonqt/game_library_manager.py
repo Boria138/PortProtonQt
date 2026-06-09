@@ -20,6 +20,8 @@ class MainWindowProtocol(Protocol):
 
     def on_slider_released(self) -> None: ...
 
+    def _register_gamepad_tooltip(self, widget: QWidget, text: str) -> None: ...
+
     # Required attributes
     searchEdit: CustomLineEdit
     card_width: int
@@ -27,6 +29,7 @@ class MainWindowProtocol(Protocol):
     current_focused_card: GameCard | None
     gamesListWidget: QWidget | None
     stackedWidget: QStackedWidget
+    _gamepad_tooltip_map: dict[QWidget, str]
 
 class GameLibraryManager:
     def __init__(self, main_window: MainWindowProtocol, theme, context_menu_manager: ContextMenuManager | None):
@@ -94,8 +97,9 @@ class GameLibraryManager:
         self.sizeSlider.setValue(self.card_width)
         self.sizeSlider.setTickInterval(10)
         self.sizeSlider.setFixedWidth(150)
-        self.sizeSlider.setToolTip(f"{self.card_width} px")
         self.sizeSlider.setStyleSheet(self.theme.SLIDER_SIZE_STYLE)
+        if hasattr(self.main_window, "_register_gamepad_tooltip"):
+            self.main_window._register_gamepad_tooltip(self.sizeSlider, f"{self.card_width} px")
         self.sizeSlider.sliderReleased.connect(self.main_window.on_slider_released)
         sliderLayout.addWidget(self.sizeSlider)
         if self.layout_mode == "list":
@@ -137,7 +141,8 @@ class GameLibraryManager:
         if self.sizeSlider is None:
             return
         self._set_card_width_from_slider()
-        self.sizeSlider.setToolTip(f"{self.card_width} px")
+        if hasattr(self.main_window, "_gamepad_tooltip_map"):
+            self.main_window._gamepad_tooltip_map[self.sizeSlider] = f"{self.card_width} px"
         if self.layout_mode != "list":
             ui_config.set_card_width(self.card_width)
         self.main_window.card_width = self.card_width

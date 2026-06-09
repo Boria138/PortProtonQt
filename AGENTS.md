@@ -628,6 +628,11 @@ shadow.setBlurRadius(self.theme.shadow_blur_radius)
 label.setStyleSheet(self.theme.CONTENT_STYLE)
 ```
 
+**Tooltip rule:**
+- Prefer the themed `gamepad_tooltip`/`TOOLTIP_STYLE` mechanism for in-app `QWidget` tooltips
+- Avoid `setToolTip()` for regular widgets when the themed tooltip can be used
+- `setToolTip()` is acceptable only for APIs that are not regular widgets, such as `QSystemTrayIcon`
+
 ### Comments
 ```python
 # NEVER: Russian or verbose

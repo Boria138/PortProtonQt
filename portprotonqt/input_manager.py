@@ -3690,8 +3690,8 @@ class InputManager(QObject):
         for attr_name in (
             "quickLaunchButton",
             "addGameButton",
-            "refreshButton",
             "searchEdit",
+            "refreshButton",
             "libraryControlsButton",
         ):
             widget = getattr(self._parent, attr_name, None)

@@ -738,7 +738,6 @@ class ClickablePixmapItem(QGraphicsPixmapItem):
         self.index = index
         self.carousel = carousel
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setToolTip("")
         self._click_start_position = None
         self.setAcceptedMouseButtons(Qt.MouseButton.LeftButton)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)

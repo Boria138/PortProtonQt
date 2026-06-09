@@ -76,8 +76,8 @@ from portprotonqt.settings_manager import get_available_prefix_options, get_avai
 
 from PySide6.QtWidgets import (QLineEdit, QMainWindow, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QStackedWidget, QComboBox,
                                QDialog, QFormLayout, QMessageBox, QApplication, QPushButton, QProgressBar, QCheckBox, QSizePolicy, QGridLayout, QScrollArea, QScroller, QSlider, QFrame, QToolButton)
-from PySide6.QtCore import Qt, QAbstractAnimation, QEvent, QUrl, Signal, QTimer, Slot, QProcess, QProcessEnvironment, QFileSystemWatcher, QStandardPaths
-from PySide6.QtGui import QIcon, QColor, QDesktopServices, QHideEvent, QShowEvent
+from PySide6.QtCore import Qt, QAbstractAnimation, QEvent, QUrl, Signal, QTimer, Slot, QProcess, QProcessEnvironment, QFileSystemWatcher, QStandardPaths, QObject
+from PySide6.QtGui import QIcon, QColor, QDesktopServices, QHideEvent, QShowEvent, QGuiApplication
 from typing import cast
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
@@ -142,6 +142,61 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
     def _set_inactive_background_suspended(self, suspended: bool) -> None:
         if hasattr(self, "game_library_manager") and suspended:
             self.game_library_manager.stop_background_activity()
+
+    def _init_gamepad_tooltip(self) -> None:
+        self._gamepad_tooltip_map: dict[QWidget, str] = {}
+        self.gamepad_tooltip = QLabel()
+        self.gamepad_tooltip.setWordWrap(True)
+        self.gamepad_tooltip.setStyleSheet(self.theme.TOOLTIP_STYLE)
+        self.gamepad_tooltip.setVisible(False)
+        self.gamepad_tooltip.setParent(self)
+        self.gamepad_tooltip.setWindowFlags(Qt.WindowType.ToolTip)
+        self.gamepad_tooltip.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.gamepad_tooltip.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        self.gamepad_tooltip_timer = QTimer(self)
+        self.gamepad_tooltip_timer.setSingleShot(True)
+        self.gamepad_tooltip_timer.timeout.connect(lambda: self.gamepad_tooltip.setVisible(False))
+
+    def _register_gamepad_tooltip(self, widget: QWidget, text: str) -> None:
+        self._gamepad_tooltip_map[widget] = text
+        widget.installEventFilter(self)
+
+    def _show_gamepad_tooltip(self, show: bool, text: str = "", anchor_widget: QWidget | None = None) -> None:
+        if not show or not text or anchor_widget is None or not anchor_widget.isVisible():
+            self.gamepad_tooltip_timer.stop()
+            self.gamepad_tooltip.setVisible(False)
+            return
+
+        self.gamepad_tooltip.setText(text)
+        self.gamepad_tooltip.setFixedSize(500, 300)
+        font_metrics = self.gamepad_tooltip.fontMetrics()
+        text_rect = font_metrics.boundingRect(
+            0, 0, 480, 1000,
+            Qt.TextFlag.TextWordWrap | Qt.TextFlag.TextExpandTabs,
+            text,
+        )
+        required_width = min(500, text_rect.width() + 25)
+        required_height = min(300, text_rect.height() + 25)
+        anchor_pos = anchor_widget.mapToGlobal(anchor_widget.rect().bottomLeft())
+        x = anchor_pos.x() + self.theme.settings_tooltip_offset_x
+        y = anchor_pos.y() + self.theme.settings_tooltip_offset_y
+        screen = QGuiApplication.screenAt(anchor_pos) or QGuiApplication.primaryScreen()
+        if screen:
+            available_rect = screen.availableGeometry()
+            x = max(available_rect.left(), min(x, available_rect.right() - required_width))
+            y = max(available_rect.top(), min(y, available_rect.bottom() - required_height))
+        self.gamepad_tooltip.setFixedSize(required_width, required_height)
+        self.gamepad_tooltip.move(x, y)
+        self.gamepad_tooltip.setVisible(True)
+        self.gamepad_tooltip_timer.start(max(2500, min(12000, 1500 + len(text) * 30)))
+
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
+        if isinstance(obj, QWidget) and obj in getattr(self, "_gamepad_tooltip_map", {}):
+            if event.type() in (QEvent.Type.Enter, QEvent.Type.FocusIn):
+                self._show_gamepad_tooltip(True, self._gamepad_tooltip_map[obj], obj)
+            elif event.type() in (QEvent.Type.Leave, QEvent.Type.FocusOut, QEvent.Type.MouseButtonPress):
+                self._show_gamepad_tooltip(False)
+        return super().eventFilter(obj, event)
 
     def _get_var_default_setting(self, key: str, fallback: str) -> str:
         scripts_path = get_portproton_scripts_path()
@@ -214,6 +269,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         QApplication.setStyle("Fusion")
         self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE + self.theme.MESSAGE_BOX_STYLE)
         self.setAcceptDrops(True)
+        self._init_gamepad_tooltip()
         self.current_exec_line = None
         self.currentDetailPage = None
         self.current_play_button = None
@@ -781,7 +837,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         # Re-enable the refresh button if it exists
         if hasattr(self, 'refreshButton'):
             self.refreshButton.setEnabled(True)
-            self.refreshButton.setText(_("Refresh Grid"))
+            self._gamepad_tooltip_map[self.refreshButton] = _("Refresh Grid")
 
     def loadGames(self, force_load: bool = False):
         if self._loading_games:
@@ -1239,10 +1295,10 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         )
         combo.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         combo.addItems(labels)
-        combo.setToolTip(tooltip)
         combo_style = getattr(self.theme, "LIBRARY_FILTER_COMBOBOX_STYLE", self.theme.COMBOBOX_STYLE)
         combo.setStyleSheet(combo_style + self.theme.SCROLL_STYLE)
         combo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self._register_gamepad_tooltip(combo, tooltip)
         return combo
 
     def _on_library_sort_changed(self, index: int) -> None:
@@ -1283,13 +1339,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.addGameButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.addGameButton.clicked.connect(self.openAddGameDialog)
         buttons_layout.addWidget(self.addGameButton)
-
-        # Refresh button
-        self.refreshButton = AutoSizeButton(_("Refresh Grid"), icon=self.theme_manager.get_icon("update", as_path=True))
-        self.refreshButton.setStyleSheet(self.theme.ADDGAME_BACK_BUTTON_STYLE)
-        self.refreshButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.refreshButton.clicked.connect(self.refreshGames)
-        buttons_layout.addWidget(self.refreshButton)
         buttons_layout.addStretch()
 
     def _add_library_search(self, buttons_layout: QHBoxLayout) -> None:
@@ -1318,6 +1367,19 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.searchEdit.resizeEvent = self._wrap_search_resize_event(self.searchEdit.resizeEvent)
         buttons_layout.addWidget(self.searchEdit)
 
+    def _add_library_refresh_button(self, buttons_layout: QHBoxLayout) -> None:
+        self.refreshButton = AutoSizeButton(icon=self.theme_manager.get_icon("update", as_path=True))
+        button_style = getattr(
+            self.theme,
+            "LIBRARY_CONTROLS_BUTTON_STYLE",
+            self.theme.ADDGAME_BACK_BUTTON_STYLE,
+        )
+        self.refreshButton.setStyleSheet(button_style)
+        self.refreshButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.refreshButton.clicked.connect(self.refreshGames)
+        self._register_gamepad_tooltip(self.refreshButton, _("Refresh Grid"))
+        buttons_layout.addWidget(self.refreshButton)
+
     def _add_library_controls_button(self, buttons_layout: QHBoxLayout) -> None:
         self.libraryControlsButton = AutoSizeButton(
             icon=self.theme_manager.get_icon("menu", as_path=True)
@@ -1328,10 +1390,10 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             self.theme.ADDGAME_BACK_BUTTON_STYLE,
         )
         self.libraryControlsButton.setStyleSheet(button_style)
-        self.libraryControlsButton.setToolTip(_("Library Settings"))
         self.libraryControlsButton.setCheckable(True)
         self.libraryControlsButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.libraryControlsButton.clicked.connect(self._toggle_library_controls)
+        self._register_gamepad_tooltip(self.libraryControlsButton, _("Library Settings"))
         buttons_layout.addWidget(self.libraryControlsButton)
 
     def _setup_library_search_animation(self) -> None:
@@ -1412,6 +1474,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
         self._add_library_action_buttons(buttons_layout)
         self._add_library_search(buttons_layout)
+        self._add_library_refresh_button(buttons_layout)
         self.libraryControlsAnimation = LibraryControlsAnimation(
             self.libraryControlsWidget,
             self.theme,
@@ -1439,7 +1502,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
         # Disable the refresh button during refresh to prevent multiple clicks
         self.refreshButton.setEnabled(False)
-        self.refreshButton.setText(_("Refreshing..."))
+        self._gamepad_tooltip_map[self.refreshButton] = _("Refreshing...")
 
         # Clear the game card cache and layout to force reload of custom data
         if hasattr(self, 'game_library_manager') and self.game_library_manager:
@@ -1759,8 +1822,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.auto_size_slider.setValue(self.auto_card_width)
         self.auto_size_slider.setTickInterval(10)
         self.auto_size_slider.setFixedWidth(150)
-        self.auto_size_slider.setToolTip(f"{self.auto_card_width} px")
         self.auto_size_slider.setStyleSheet(self.theme.SLIDER_SIZE_STYLE)
+        self._register_gamepad_tooltip(self.auto_size_slider, f"{self.auto_card_width} px")
         self.auto_size_slider.sliderReleased.connect(self.on_auto_slider_released)
 
         sliderLayout = QHBoxLayout()
@@ -1773,7 +1836,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         if auto_layout_mode == "list":
             self.auto_card_width = self.auto_size_slider.maximum()
             self.auto_size_slider.setValue(self.auto_card_width)
-            self.auto_size_slider.setToolTip(f"{self.auto_card_width} px")
+            self._gamepad_tooltip_map[self.auto_size_slider] = f"{self.auto_card_width} px"
 
         # Store cards
         self.autoInstallGameCards = {}
@@ -1930,7 +1993,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         if hasattr(self, 'auto_size_slider') and self.auto_size_slider:
             if auto_layout_mode != "list":
                 self.auto_card_width = self.auto_size_slider.value()
-            self.auto_size_slider.setToolTip(f"{self.auto_card_width} px")
+            self._gamepad_tooltip_map[self.auto_size_slider] = f"{self.auto_card_width} px"
             if auto_layout_mode != "list":
                 ui_config.set_auto_card_width(self.auto_card_width)
         if not hasattr(self, 'allAutoInstallCards'):

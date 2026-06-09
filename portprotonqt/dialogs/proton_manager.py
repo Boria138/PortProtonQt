@@ -10,7 +10,8 @@ from PySide6.QtWidgets import (
     QHBoxLayout, QProgressBar, QFrame, QSizePolicy, QAbstractItemView,
     QStackedWidget, QPushButton
 )
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt, QTimer, QEvent, QObject
+from PySide6.QtGui import QGuiApplication
 
 from portprotonqt.config import get_portproton_start_command, ui_config
 from portprotonqt.dialogs.base import DraggableDialog
@@ -60,10 +61,65 @@ class ProtonManager(DraggableDialog):
         if self.input_manager:
             self.enable_proton_manager_mode()
 
+    def _init_gamepad_tooltip(self) -> None:
+        self._gamepad_tooltip_map = {}
+        self.gamepad_tooltip = QLabel()
+        self.gamepad_tooltip.setWordWrap(True)
+        self.gamepad_tooltip.setStyleSheet(self.theme.TOOLTIP_STYLE)
+        self.gamepad_tooltip.setVisible(False)
+        self.gamepad_tooltip.setParent(self)
+        self.gamepad_tooltip.setWindowFlags(Qt.WindowType.ToolTip)
+        self.gamepad_tooltip.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.gamepad_tooltip.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        self.gamepad_tooltip_timer = QTimer(self)
+        self.gamepad_tooltip_timer.setSingleShot(True)
+        self.gamepad_tooltip_timer.timeout.connect(lambda: self.gamepad_tooltip.setVisible(False))
+
+    def _register_gamepad_tooltip(self, widget: QWidget, text: str) -> None:
+        self._gamepad_tooltip_map[widget] = text
+        widget.installEventFilter(self)
+
+    def _show_gamepad_tooltip(self, show: bool, text: str = "", anchor_widget: QWidget | None = None) -> None:
+        if not show or not text or anchor_widget is None or not anchor_widget.isVisible():
+            self.gamepad_tooltip_timer.stop()
+            self.gamepad_tooltip.setVisible(False)
+            return
+        self.gamepad_tooltip.setText(text)
+        self.gamepad_tooltip.setFixedSize(500, 300)
+        font_metrics = self.gamepad_tooltip.fontMetrics()
+        text_rect = font_metrics.boundingRect(
+            0, 0, 480, 1000,
+            Qt.TextFlag.TextWordWrap | Qt.TextFlag.TextExpandTabs,
+            text,
+        )
+        required_width = min(500, text_rect.width() + 25)
+        required_height = min(300, text_rect.height() + 25)
+        anchor_pos = anchor_widget.mapToGlobal(anchor_widget.rect().bottomLeft())
+        x = anchor_pos.x() + self.theme.settings_tooltip_offset_x
+        y = anchor_pos.y() + self.theme.settings_tooltip_offset_y
+        screen = QGuiApplication.screenAt(anchor_pos) or QGuiApplication.primaryScreen()
+        if screen:
+            available_rect = screen.availableGeometry()
+            x = max(available_rect.left(), min(x, available_rect.right() - required_width))
+            y = max(available_rect.top(), min(y, available_rect.bottom() - required_height))
+        self.gamepad_tooltip.setFixedSize(required_width, required_height)
+        self.gamepad_tooltip.move(x, y)
+        self.gamepad_tooltip.setVisible(True)
+        self.gamepad_tooltip_timer.start(max(2500, min(12000, 1500 + len(text) * 30)))
+
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
+        if isinstance(obj, QWidget) and obj in getattr(self, "_gamepad_tooltip_map", {}):
+            if event.type() in (QEvent.Type.Enter, QEvent.Type.FocusIn):
+                self._show_gamepad_tooltip(True, self._gamepad_tooltip_map[obj], obj)
+            elif event.type() in (QEvent.Type.Leave, QEvent.Type.FocusOut, QEvent.Type.MouseButtonPress):
+                self._show_gamepad_tooltip(False)
+        return super().eventFilter(obj, event)
+
     def initUI(self):
         self.setWindowTitle(_('Manage WINE versions'))
         self.resize(1133, 720)
         self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE + self.theme.MESSAGE_BOX_STYLE)
+        self._init_gamepad_tooltip()
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(5, 5, 5, 5)
@@ -493,7 +549,7 @@ class ProtonManager(DraggableDialog):
         checkbox_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         checkbox_layout.setContentsMargins(0, 0, 0, 0)
         checkbox = QCheckBox()
-        checkbox_widget.setToolTip(_("Select to remove this WINE/Proton"))
+        self._register_gamepad_tooltip(checkbox_widget, _("Select to remove this WINE/Proton"))
         checkbox.stateChanged.connect(lambda state: self.on_installed_version_toggled(state))
         checkbox_layout.addWidget(checkbox)
         table.setCellWidget(row_index, 0, checkbox_widget)
