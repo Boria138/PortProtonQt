@@ -1317,6 +1317,18 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self._preserve_library_focus_after_load = True
         self.loadGames(force_load=True)
 
+    def _on_library_badge_view_changed(self, index: int) -> None:
+        if index < 0 or index >= len(self.badge_view_keys):
+            return
+        badge_view_mode = self.badge_view_keys[index]
+        if ui_config.get_economy_mode():
+            badge_view_mode = "hidden"
+        ui_config.set_badge_view_mode(badge_view_mode)
+        display_filter = game_config.get_display_filter()
+        for card in self.game_library_manager.game_card_cache.values():
+            card.update_badge_visibility(display_filter)
+            card.update_badge_view_mode(badge_view_mode)
+
     def _toggle_library_controls(self) -> None:
         self.libraryControlsAnimation.toggle(self.libraryControlsButton.isChecked())
 
@@ -1460,6 +1472,20 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         )
         self.gamesDisplayCombo.currentIndexChanged.connect(self._on_library_filter_changed)
         controls_layout.addWidget(self.gamesDisplayCombo)
+
+        self.badge_view_keys = ["detailed", "compact", "hidden"]
+        self.badge_view_labels = [_("Detailed"), _("Compact"), _("Hidden")]
+        self.gamesBadgeViewCombo = self._create_library_combo(self.badge_view_labels, _("Badge View Type:"))
+        self._set_combo_current_key(
+            self.gamesBadgeViewCombo,
+            self.badge_view_keys,
+            ui_config.get_badge_view_mode(),
+        )
+        if ui_config.get_economy_mode():
+            self.gamesBadgeViewCombo.setCurrentIndex(self.badge_view_keys.index("hidden"))
+            self.gamesBadgeViewCombo.setEnabled(False)
+        self.gamesBadgeViewCombo.currentIndexChanged.connect(self._on_library_badge_view_changed)
+        controls_layout.addWidget(self.gamesBadgeViewCombo)
 
     def createSearchWidget(self) -> tuple[QWidget, CustomLineEdit]:
         self.container = QWidget()
@@ -2598,34 +2624,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.timeDetailCombo.setCurrentIndex(idx)
         genForm.addRow(self.timeDetailTitle, self.timeDetailCombo)
 
-        self.badge_view_keys = ["detailed", "compact", "hidden"]
-        self.badge_view_labels = [_("Detailed"), _("Compact"), _("Hidden")]
-        self.badgeViewCombo = QComboBox()
-        self.badgeViewCombo.view().window().setWindowFlags(
-            Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
-        )
-        self.badgeViewCombo.view().window().setAttribute(
-            Qt.WidgetAttribute.WA_TranslucentBackground
-        )
-        self.badgeViewCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        self.badgeViewCombo.addItems(self.badge_view_labels)
-        self.badgeViewCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
-        self.badgeViewCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.badgeViewTitle = QLabel(_("Badge View Type:"))
-        self.badgeViewTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.badgeViewTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
-        self.badgeViewTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        current = ui_config.get_badge_view_mode()
-        try:
-            idx = self.badge_view_keys.index(current)
-        except ValueError:
-            idx = 0
-        self.badgeViewCombo.setCurrentIndex(idx)
-        if ui_config.get_economy_mode():
-            self.badgeViewCombo.setCurrentIndex(self.badge_view_keys.index("hidden"))
-            self.badgeViewCombo.setEnabled(False)
-        genForm.addRow(self.badgeViewTitle, self.badgeViewCombo)
-
         # 2. Interface Settings Section
         uiFrame, uiForm = create_section(_("Interface Settings"), self.theme)
         uiForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
@@ -2835,10 +2833,12 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.economyModeCheckBox.setChecked(ui_config.get_economy_mode())
         def update_economy_controls(enabled: bool):
             if enabled:
-                self.badgeViewCombo.setCurrentIndex(self.badge_view_keys.index("hidden"))
-                self.badgeViewCombo.setEnabled(False)
+                if hasattr(self, "gamesBadgeViewCombo"):
+                    self.gamesBadgeViewCombo.setCurrentIndex(self.badge_view_keys.index("hidden"))
+                    self.gamesBadgeViewCombo.setEnabled(False)
                 return
-            self.badgeViewCombo.setEnabled(True)
+            if hasattr(self, "gamesBadgeViewCombo"):
+                self.gamesBadgeViewCombo.setEnabled(True)
 
         self.economyModeCheckBox.toggled.connect(update_economy_controls)
         update_economy_controls(self.economyModeCheckBox.isChecked())
@@ -3078,11 +3078,16 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         economy_mode = self.economyModeCheckBox.isChecked()
         ui_config.set_economy_mode(economy_mode)
         economy_mode_changed = previous_economy_mode != economy_mode
-        badge_view_idx = self.badgeViewCombo.currentIndex()
+        badge_view_idx = self.gamesBadgeViewCombo.currentIndex()
         badge_view_mode = self.badge_view_keys[badge_view_idx]
         if economy_mode:
             badge_view_mode = "hidden"
         ui_config.set_badge_view_mode(badge_view_mode)
+        library_badge_index = self.badge_view_keys.index(badge_view_mode)
+        if self.gamesBadgeViewCombo.currentIndex() != library_badge_index:
+            self.gamesBadgeViewCombo.blockSignals(True)
+            self.gamesBadgeViewCombo.setCurrentIndex(library_badge_index)
+            self.gamesBadgeViewCombo.blockSignals(False)
 
         proxy_url = self.proxyUrlEdit.text().strip()
         proxy_user = self.proxyUserEdit.text().strip()

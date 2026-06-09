@@ -3704,7 +3704,7 @@ class InputManager(QObject):
         if not isinstance(controls_widget, QWidget) or not controls_widget.isVisible():
             return []
         widgets = []
-        for attr_name in ("gamesSortCombo", "gamesDisplayCombo"):
+        for attr_name in ("gamesSortCombo", "gamesDisplayCombo", "gamesBadgeViewCombo"):
             widget = getattr(self._parent, attr_name, None)
             if isinstance(widget, QWidget) and widget.isVisible() and widget.isEnabled():
                 widgets.append(widget)
