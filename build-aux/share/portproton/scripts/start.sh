@@ -190,6 +190,8 @@ if [[ -n "${STEAM_COMPAT_DATA_PATH:-}" ]]; then
 fi
 unset WINEPREFIX
 
+fatal "33333333"
+
 # choose mirror
 if [[ -z "$MIRROR" ]] \
 && [[ "$FULL_LN" == "russian" ]]

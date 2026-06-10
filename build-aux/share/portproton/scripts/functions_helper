@@ -546,7 +546,7 @@ var_ld_library_path_update () {
 # GUI NOTIFY SEND
 pw_notify_send () {
     local icon title body app timeout OPTIND
-    app="PortProtonQt"
+    app="ru.linux_gaming.PortProtonQt"
     timeout="5000"
     OPTIND="1"
     while getopts a:i:t: opt ; do
