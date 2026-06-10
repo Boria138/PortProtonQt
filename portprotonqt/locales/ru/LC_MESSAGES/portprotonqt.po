@@ -53,6 +53,14 @@ msgstr "Переименовать Папку"
 msgid "Delete Folder"
 msgstr "Удалить Папку"
 
+#, fuzzy
+msgid "Rename File"
+msgstr "Переименовать Папку"
+
+#, fuzzy
+msgid "Delete File"
+msgstr "Удалить Папку"
+
 msgid "OK"
 msgstr "Ок"
 
@@ -103,6 +111,30 @@ msgstr "Нет"
 #, python-brace-format
 msgid "Failed to delete folder: {error}"
 msgstr "Не удалось удалить папку: {error}"
+
+#, fuzzy, python-brace-format
+msgid ""
+"Are you sure you want to delete file '{file_name}'? This action cannot be"
+" undone."
+msgstr ""
+"Вы уверены, что хотите удалить папку '{folder_name}'? Это действие нельзя"
+" отменить."
+
+#, fuzzy, python-brace-format
+msgid "Failed to delete file: {error}"
+msgstr "Не удалось удалить папку: {error}"
+
+#, fuzzy
+msgid "New File Name:"
+msgstr "Новое имя Папки:"
+
+#, fuzzy, python-brace-format
+msgid "File already exists: {file_name}"
+msgstr "Папка уже существует: {folder_name}"
+
+#, fuzzy, python-brace-format
+msgid "Failed to rename file: {error}"
+msgstr "Не удалось переименовать папку: {error}"
 
 msgid "Delete from PortProton"
 msgstr "Удалить из PortProton"

@@ -52,6 +52,14 @@ msgstr "Renomear Pasta"
 msgid "Delete Folder"
 msgstr "Excluir Pasta"
 
+#, fuzzy
+msgid "Rename File"
+msgstr "Renomear Pasta"
+
+#, fuzzy
+msgid "Delete File"
+msgstr "Excluir Pasta"
+
 msgid "OK"
 msgstr "OK"
 
@@ -102,6 +110,30 @@ msgstr "Não"
 #, python-brace-format
 msgid "Failed to delete folder: {error}"
 msgstr "Falha ao excluir a pasta: {error}"
+
+#, fuzzy, python-brace-format
+msgid ""
+"Are you sure you want to delete file '{file_name}'? This action cannot be"
+" undone."
+msgstr ""
+"Tem certeza de que deseja excluir a pasta '{folder_name}'? Esta ação não "
+"pode ser desfeita."
+
+#, fuzzy, python-brace-format
+msgid "Failed to delete file: {error}"
+msgstr "Falha ao excluir a pasta: {error}"
+
+#, fuzzy
+msgid "New File Name:"
+msgstr "Novo Nome da Pasta:"
+
+#, fuzzy, python-brace-format
+msgid "File already exists: {file_name}"
+msgstr "A pasta já existe: {folder_name}"
+
+#, fuzzy, python-brace-format
+msgid "Failed to rename file: {error}"
+msgstr "Falha ao renomear a pasta: {error}"
 
 msgid "Delete from PortProton"
 msgstr "Excluir do PortProton"

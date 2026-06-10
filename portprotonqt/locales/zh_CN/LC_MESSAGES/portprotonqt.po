@@ -51,6 +51,14 @@ msgstr "重命名文件夹"
 msgid "Delete Folder"
 msgstr "删除文件夹"
 
+#, fuzzy
+msgid "Rename File"
+msgstr "重命名文件夹"
+
+#, fuzzy
+msgid "Delete File"
+msgstr "删除文件夹"
+
 msgid "OK"
 msgstr "确定"
 
@@ -99,6 +107,28 @@ msgstr "否"
 #, python-brace-format
 msgid "Failed to delete folder: {error}"
 msgstr "删除文件夹失败：{error}"
+
+#, fuzzy, python-brace-format
+msgid ""
+"Are you sure you want to delete file '{file_name}'? This action cannot be"
+" undone."
+msgstr "确定要删除文件夹“{folder_name}”吗？此操作无法撤销。"
+
+#, fuzzy, python-brace-format
+msgid "Failed to delete file: {error}"
+msgstr "删除文件夹失败：{error}"
+
+#, fuzzy
+msgid "New File Name:"
+msgstr "新文件夹名称："
+
+#, fuzzy, python-brace-format
+msgid "File already exists: {file_name}"
+msgstr "文件夹已存在：{folder_name}"
+
+#, fuzzy, python-brace-format
+msgid "Failed to rename file: {error}"
+msgstr "重命名文件夹失败：{error}"
 
 msgid "Delete from PortProton"
 msgstr "从 PortProton 中删除"

@@ -52,6 +52,14 @@ msgstr "Cambiar el nombre de la carpeta"
 msgid "Delete Folder"
 msgstr "Borrar la carpeta"
 
+#, fuzzy
+msgid "Rename File"
+msgstr "Cambiar el nombre de la carpeta"
+
+#, fuzzy
+msgid "Delete File"
+msgstr "Borrar la carpeta"
+
 msgid "OK"
 msgstr "De acuerdo"
 
@@ -102,6 +110,30 @@ msgstr "No"
 #, python-brace-format
 msgid "Failed to delete folder: {error}"
 msgstr "No se ha podido eliminar la carpeta: {error}"
+
+#, fuzzy, python-brace-format
+msgid ""
+"Are you sure you want to delete file '{file_name}'? This action cannot be"
+" undone."
+msgstr ""
+"¿Estás seguro de que quieres eliminar la carpeta «{folder_name}»? Esta "
+"acción no se puede deshacer."
+
+#, fuzzy, python-brace-format
+msgid "Failed to delete file: {error}"
+msgstr "No se ha podido eliminar la carpeta: {error}"
+
+#, fuzzy
+msgid "New File Name:"
+msgstr "Nombre de la nueva carpeta:"
+
+#, fuzzy, python-brace-format
+msgid "File already exists: {file_name}"
+msgstr "La carpeta ya existe: {folder_name}"
+
+#, fuzzy, python-brace-format
+msgid "Failed to rename file: {error}"
+msgstr "No se pudo cambiar el nombre de la carpeta: {error}"
 
 msgid "Delete from PortProton"
 msgstr "Eliminar de PortProton"

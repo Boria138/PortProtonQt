@@ -49,6 +49,12 @@ msgstr ""
 msgid "Delete Folder"
 msgstr ""
 
+msgid "Rename File"
+msgstr ""
+
+msgid "Delete File"
+msgstr ""
+
 msgid "OK"
 msgstr ""
 
@@ -94,6 +100,27 @@ msgstr ""
 
 #, python-brace-format
 msgid "Failed to delete folder: {error}"
+msgstr ""
+
+#, python-brace-format
+msgid ""
+"Are you sure you want to delete file '{file_name}'? This action cannot be"
+" undone."
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to delete file: {error}"
+msgstr ""
+
+msgid "New File Name:"
+msgstr ""
+
+#, python-brace-format
+msgid "File already exists: {file_name}"
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to rename file: {error}"
 msgstr ""
 
 msgid "Delete from PortProton"
