@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-06-04 10:32+0500\n"
-"PO-Revision-Date: 2026-06-09 11:25+0000\n"
+"PO-Revision-Date: 2026-06-11 10:21+0000\n"
 "Last-Translator: rogerio-mattos <rogerio-mattos@noreply.codeberg.org>\n"
 "Language-Team: Portuguese (Brazil) <https://translate.codeberg.org/projects/"
 "portprotonqt/portprotonqt/pt_BR/>\n"
@@ -111,13 +111,13 @@ msgstr "Não"
 msgid "Failed to delete folder: {error}"
 msgstr "Falha ao excluir a pasta: {error}"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid ""
 "Are you sure you want to delete file '{file_name}'? This action cannot be"
 " undone."
 msgstr ""
-"Tem certeza de que deseja excluir a pasta '{folder_name}'? Esta ação não "
-"pode ser desfeita."
+"Tem certeza de que deseja excluir a pasta '{file_name}'? Esta ação não pode "
+"ser desfeita."
 
 #, fuzzy, python-brace-format
 msgid "Failed to delete file: {error}"
@@ -127,9 +127,9 @@ msgstr "Falha ao excluir a pasta: {error}"
 msgid "New File Name:"
 msgstr "Novo Nome da Pasta:"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "File already exists: {file_name}"
-msgstr "A pasta já existe: {folder_name}"
+msgstr "A pasta já existe: {file_name}"
 
 #, fuzzy, python-brace-format
 msgid "Failed to rename file: {error}"
@@ -1132,210 +1132,215 @@ msgid "Stop Log"
 msgstr ""
 
 msgid "Failed to start debug session"
-msgstr ""
+msgstr "Falha ao iniciar a sessão de depuração"
 
 msgid "Log Saved"
-msgstr ""
+msgstr "Log Salvo"
 
 msgid "Debug log saved to:"
-msgstr ""
+msgstr "Log de depuração salvo em:"
 
 msgid "Back"
-msgstr ""
+msgstr "Voltar"
 
 #, python-brace-format
 msgid "Gamepad Support: {0}"
-msgstr ""
+msgstr "Suporte a Controle: {0}"
 
 msgid "full"
-msgstr ""
+msgstr "completo"
 
 msgid "partial"
-msgstr ""
+msgstr "parcial"
 
 msgid "none"
-msgstr ""
+msgstr "nenhum"
 
 #, python-brace-format
 msgid "Launching {0}"
-msgstr ""
+msgstr "Iniciando {0}"
 
 msgid "Path to Executable:"
-msgstr ""
+msgstr "Caminho do Executável:"
 
 msgid "Browse..."
-msgstr ""
+msgstr "Procurar..."
 
 msgid "Custom Cover:"
-msgstr ""
+msgstr "Capa Personalizada:"
 
 msgid "Enter local path or URL for cover image"
-msgstr ""
+msgstr "Informe o caminho local ou a URL da imagem de capa"
 
 msgid "Add shortcut to:"
-msgstr ""
+msgstr "Adicionar atalho em:"
 
 msgid "Cover Preview:"
-msgstr ""
+msgstr "Pré-visualização da Capa:"
 
 msgid "Apply"
-msgstr ""
+msgstr "Aplicar"
 
 msgid "Invalid image"
-msgstr ""
+msgstr "Imagem inválida"
 
 msgid "Failed to download cover"
-msgstr ""
+msgstr "Falha ao baixar a capa"
 
 msgid "Downloading cover..."
-msgstr ""
+msgstr "Baixando capa..."
 
 msgid "No cover selected"
-msgstr ""
+msgstr "Nenhuma capa selecionada"
 
 msgid "Open"
-msgstr ""
+msgstr "Abrir"
 
 msgid "Select Dir"
-msgstr ""
+msgstr "Selecionar Dir"
 
 msgid "Prev Dir"
-msgstr ""
+msgstr "Dir Anterior"
 
 msgid "Toggle"
-msgstr ""
+msgstr "Alternar"
 
 msgid "Force Install"
-msgstr ""
+msgstr "Forçar Instalação"
 
 msgid "Prev Tab"
-msgstr ""
+msgstr "Aba Anterior"
 
 msgid "Next Tab"
-msgstr ""
+msgstr "Próxima Aba"
 
 msgid "Save"
-msgstr ""
+msgstr "Salvar"
 
 msgid "Search"
-msgstr ""
+msgstr "Pesquisar"
 
 msgid "Download"
-msgstr ""
+msgstr "Baixar"
 
 msgid "Clear All"
-msgstr ""
+msgstr "Limpar Tudo"
 
 msgid "Select"
-msgstr ""
+msgstr "Selecionar"
 
 msgid "Home"
-msgstr ""
+msgstr "Início"
 
 msgid "Path: "
-msgstr ""
+msgstr "Caminho: "
 
 #, python-format
 msgid "Access denied: %s"
-msgstr ""
+msgstr "Acesso negado: %s"
 
 msgid "Prefix backup"
-msgstr ""
+msgstr "Backup do prefixo"
 
 msgid "Prefix restore"
-msgstr ""
+msgstr "Restauração do prefixo"
 
 #, python-brace-format
 msgid "File: {0}"
-msgstr ""
+msgstr "Arquivo: {0}"
 
 #, python-brace-format
 msgid "{0}/{1} files"
-msgstr ""
+msgstr "{0}/{1} arquivos"
 
 #, python-brace-format
 msgid "{0} files"
-msgstr ""
+msgstr "{0} arquivos"
 
 #, python-brace-format
 msgid "{0}, Speed: {1:.1f} MB/s"
-msgstr ""
+msgstr "{0}, Velocidade: {1:.1f} MB/s"
 
 msgid "Selected WINE/Proton:"
-msgstr ""
+msgstr "WINE/Proton selecionado:"
 
 msgid "No WINE/Proton selected"
-msgstr ""
+msgstr "Nenhum WINE/Proton selecionado"
 
 msgid "Downloading: "
-msgstr ""
+msgstr "Baixando: "
 
 msgid "Download Selected"
-msgstr ""
+msgstr "Baixar Selecionados"
 
 msgid "Installed"
-msgstr ""
+msgstr "Instalado"
 
 #, python-brace-format
 msgid "Error loading WINE/Proton: {error}"
-msgstr ""
+msgstr "Erro ao carregar WINE/Proton: {error}"
 
 msgid "Version WINE/Proton"
-msgstr ""
+msgstr "Versão WINE/Proton"
 
 msgid "Size"
-msgstr ""
+msgstr "Tamanho"
 
 #, python-brace-format
 msgid "{display_name} (installed)"
-msgstr ""
+msgstr "{display_name} (instalado)"
 
 msgid "No Wine/Proton versions installed"
-msgstr ""
+msgstr "Nenhuma versão Wine/Proton instalada"
 
 msgid "Select to remove this WINE/Proton"
-msgstr ""
+msgstr "Selecione para remover este WINE/Proton"
 
 #, python-brace-format
 msgid "Selected {} WINE/Proton:\n"
-msgstr ""
+msgstr "{} WINE/Proton selecionado(s):\n"
 
 #, python-brace-format
 msgid ""
 "\n"
 "Total size to delete: {}\n"
 msgstr ""
+"\n"
+"Tamanho total a excluir: {}\n"
 
 msgid "Delete Selected"
-msgstr ""
+msgstr "Excluir Selecionados"
 
 #, python-brace-format
 msgid "Selected {} assets:\n"
-msgstr ""
+msgstr "{} recursos selecionados:\n"
 
 #, python-brace-format
 msgid ""
 "\n"
 "Total size to download: {}\n"
 msgstr ""
+"\n"
+"Tamanho total a baixar: {}\n"
 
 msgid "Downloading in Progress"
-msgstr ""
+msgstr "Download em Andamento"
 
 msgid "Cannot clear selection while extraction is in progress."
 msgstr ""
+"Não é possível limpar a seleção enquanto a extração estiver em andamento."
 
 msgid "No Selection"
-msgstr ""
+msgstr "Nenhuma Seleção"
 
 msgid "Please select at least one WINE/Proton to download."
-msgstr ""
+msgstr "Selecione pelo menos um WINE/Proton para baixar."
 
 msgid "Please wait for current downloading to complete."
-msgstr ""
+msgstr "Aguarde a conclusão do download atual."
 
 msgid "Please select at least one WINE/Proton to delete."
-msgstr ""
+msgstr "Selecione pelo menos um WINE/Proton para excluir."
 
 #, python-brace-format
 msgid ""
@@ -1343,194 +1348,199 @@ msgid ""
 "\n"
 "This action cannot be undone."
 msgstr ""
+"Tem certeza de que deseja excluir {} WINE/Proton selecionado(s)?\n"
+"\n"
+"Esta ação não pode ser desfeita."
 
 #, python-brace-format
 msgid "Failed to remove WINE/Proton at {}: {}"
-msgstr ""
+msgstr "Falha ao remover WINE/Proton em {}: {}"
 
 #, python-brace-format
 msgid "Successfully removed {} WINE/Proton."
-msgstr ""
+msgstr "{} WINE/Proton removido(s) com sucesso."
 
 msgid "Downloading Complete"
-msgstr ""
+msgstr "Download Concluído"
 
 msgid "All selected WINE/Proton have been downloaded!"
-msgstr ""
+msgstr "Todos os WINE/Proton selecionados foram baixados!"
 
 #, python-brace-format
 msgid "Downloading: {0} ({1}%)"
-msgstr ""
+msgstr "Baixando: {0} ({1}%)"
 
 #, python-brace-format
 msgid "Extracting: {0}"
-msgstr ""
+msgstr "Extraindo: {0}"
 
 #, python-brace-format
 msgid ", ETA: {}s"
-msgstr ""
+msgstr ", ETA: {}s"
 
-#, python-brace-format
+#, fuzzy, python-brace-format
 msgid ", Speed: {:.1f}MB/s"
-msgstr ""
+msgstr ", Velocidade: {:.1f}MB/s"
 
 #, python-brace-format
 msgid "Extracting: {0}{1}{2}"
-msgstr ""
+msgstr "Extraindo: {0}{1}{2}"
 
 msgid "Extraction Error"
-msgstr ""
+msgstr "Erro de Extração"
 
 #, python-brace-format
 msgid "Failed to extract archive: {0}"
-msgstr ""
+msgstr "Falha ao extrair o arquivo: {0}"
 
 msgid "Operation Cancelled"
-msgstr ""
+msgstr "Operação Cancelada"
 
 msgid "Download or extraction has been cancelled."
-msgstr ""
+msgstr "O download ou a extração foi cancelado."
 
 msgid "System WINE"
-msgstr ""
+msgstr "WINE do Sistema"
 
 msgid "Exe Settings"
-msgstr ""
+msgstr "Configurações do Exe"
 
 msgid "Search settings..."
-msgstr ""
+msgstr "Pesquisar configurações..."
 
 msgid "Main"
-msgstr ""
+msgstr "Principal"
 
 msgid "Advanced"
-msgstr ""
+msgstr "Avançado"
 
 msgid "Setting"
-msgstr ""
+msgstr "Configuração"
 
 msgid "Value"
-msgstr ""
+msgstr "Valor"
 
 msgid "Description"
-msgstr ""
+msgstr "Descrição"
 
 msgid "Open PPDB"
-msgstr ""
+msgstr "Abrir PPDB"
 
 msgid "Clear PPDB"
-msgstr ""
+msgstr "Limpar PPDB"
 
 msgid "Executable path is not available."
-msgstr ""
+msgstr "O caminho do executável não está disponível."
 
 msgid "PPDB file does not exist at: "
-msgstr ""
+msgstr "O arquivo PPDB não existe em: "
 
 msgid "Failed to open PPDB file:\n"
-msgstr ""
+msgstr "Falha ao abrir o arquivo PPDB:\n"
 
 msgid "Information"
-msgstr ""
+msgstr "Informação"
 
 msgid "Confirm PPDB Clear"
-msgstr ""
+msgstr "Confirmar Limpeza do PPDB"
 
 msgid "Are you sure you want to clear settings? This action cannot be undone."
 msgstr ""
+"Tem certeza de que deseja limpar as configurações? Esta ação não pode ser "
+"desfeita."
 
 msgid "Failed to remove PPDB file:\n"
-msgstr ""
+msgstr "Falha ao remover o arquivo PPDB:\n"
 
 msgid "disabled"
-msgstr ""
+msgstr "desativado"
 
 msgid "Default value"
-msgstr ""
+msgstr "Valor padrão"
 
 msgid "Failed to apply changes. Check logs."
-msgstr ""
+msgstr "Falha ao aplicar as alterações. Verifique os logs."
 
 msgid "Borderless window"
-msgstr ""
+msgstr "Janela sem bordas"
 
 msgid "Fullscreen window"
-msgstr ""
+msgstr "Janela em tela cheia"
 
 msgid "Grab keyboard"
-msgstr ""
+msgstr "Capturar teclado"
 
 msgid "Force grab cursor (always relative mouse mode)"
-msgstr ""
+msgstr "Forçar captura do cursor (sempre modo relativo do mouse)"
 
 msgid "Expose Wayland"
-msgstr ""
+msgstr "Expor Wayland"
 
 msgid "Use realtime scheduling"
-msgstr ""
+msgstr "Usar agendamento em tempo real"
 
 msgid "Force windows fullscreen"
-msgstr ""
+msgstr "Forçar janelas em tela cheia"
 
 msgid "Enable HDR output"
-msgstr ""
+msgstr "Ativar saída HDR"
 
 msgid "Enable SDR→HDR inverse tone mapping"
-msgstr ""
+msgstr "Ativar mapeamento de tom inverso SDR→HDR"
 
 msgid "Force HDR support"
-msgstr ""
+msgstr "Forçar suporte HDR"
 
 msgid "Force HDR10 PQ output"
-msgstr ""
+msgstr "Forçar saída HDR10 PQ"
 
 msgid "HDR luminance heatmap"
-msgstr ""
+msgstr "Mapa de calor de luminância HDR"
 
 msgid "Enable mangoapp overlay"
-msgstr ""
+msgstr "Ativar overlay mangoapp"
 
 msgid "Enable adaptive sync"
-msgstr ""
+msgstr "Ativar sincronização adaptativa"
 
 msgid "Output width"
-msgstr ""
+msgstr "Largura de saída"
 
 msgid "Output height"
-msgstr ""
+msgstr "Altura de saída"
 
 msgid "Game width"
-msgstr ""
+msgstr "Largura do jogo"
 
 msgid "Game height"
-msgstr ""
+msgstr "Altura do jogo"
 
 msgid "Game refresh rate (Hz)"
-msgstr ""
+msgstr "Taxa de atualização do jogo (Hz)"
 
 msgid "Maximum scale factor"
-msgstr ""
+msgstr "Fator de escala máximo"
 
 msgid "E.g., 5"
-msgstr ""
+msgstr "Ex.: 5"
 
 msgid "Upscaler type"
-msgstr ""
+msgstr "Tipo de upscaler"
 
 msgid "Upscaler filter"
-msgstr ""
+msgstr "Filtro do upscaler"
 
 msgid "Upscaler sharpness (0-20)"
-msgstr ""
+msgstr "Nitidez do upscaler (0-20)"
 
 msgid "Mouse sensitivity"
-msgstr ""
+msgstr "Sensibilidade do mouse"
 
 msgid "E.g., 0.5"
-msgstr ""
+msgstr "Ex.: 0.5"
 
 msgid "Rendering backend"
-msgstr ""
+msgstr "Backend de renderização"
 
 msgid "Ready FD"
 msgstr ""
