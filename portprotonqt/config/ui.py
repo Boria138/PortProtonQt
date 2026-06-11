@@ -139,6 +139,18 @@ def _is_gsettings_dark_theme() -> bool | None:
         except (OSError, subprocess.SubprocessError):
             pass
 
+    # MATE
+    if session.startswith("mate"):
+        try:
+            result = subprocess.run(
+                ["gsettings", "get", "org.mate.interface", "gtk-theme"],
+                capture_output=True, text=True, check=False, timeout=1,
+            )
+            if result.returncode == 0 and (gtk_theme := result.stdout.strip().strip("'\"")):
+                return "-dark" in gtk_theme.lower()
+        except (OSError, subprocess.SubprocessError):
+            pass
+
     # Cinnamon
     if session.startswith("cinnamon"):
         for schema, key in [
