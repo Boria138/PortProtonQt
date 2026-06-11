@@ -125,15 +125,71 @@ def _read_gsettings_value(key: str) -> str | None:
 
 
 def _is_gsettings_dark_theme() -> bool | None:
-    color_scheme = _read_gsettings_value("color-scheme")
-    if color_scheme == "prefer-dark":
-        return True
-    if color_scheme in ("default", "prefer-light"):
-        return False
+    session = os.environ.get("XDG_SESSION_DESKTOP", "").lower()
 
-    gtk_theme = _read_gsettings_value("gtk-theme")
-    if gtk_theme:
+    # XFCE
+    if session == "xfce":
+        try:
+            result = subprocess.run(
+                ["xfconf-query", "-c", "xsettings", "-p", "/Net/ThemeName"],
+                capture_output=True, text=True, check=False, timeout=1,
+            )
+            if result.returncode == 0 and (gtk_theme := result.stdout.strip()):
+                return "-dark" in gtk_theme.lower()
+        except (OSError, subprocess.SubprocessError):
+            pass
+
+    # Cinnamon
+    if session == "cinnamon":
+        for schema, key in [
+            ("org.x.apps.portal", "color-scheme"),
+            ("org.cinnamon.desktop.interface", "gtk-theme"),
+        ]:
+            try:
+                result = subprocess.run(
+                    ["gsettings", "get", schema, key],
+                    capture_output=True, text=True, check=False, timeout=1,
+                )
+            except (OSError, subprocess.SubprocessError):
+                continue
+            if result.returncode != 0:
+                continue
+            value = result.stdout.strip().strip("'\"")
+            if key == "color-scheme":
+                if value == "prefer-dark":
+                    return True
+                if value in ("default", "prefer-light"):
+                    return False
+            else:
+                return "-dark" in value.lower()
+
+    # GNOME
+    try:
+        result = subprocess.run(
+            ["gsettings", "get", "org.gnome.desktop.interface", "color-scheme"],
+            capture_output=True, text=True, check=False, timeout=1,
+        )
+    except (OSError, subprocess.SubprocessError) as e:
+        logger.debug("Failed to read gsettings color-scheme: %s", e)
+        return None
+    if result.returncode == 0:
+        value = result.stdout.strip().strip("'\"")
+        if value == "prefer-dark":
+            return True
+        if value in ("default", "prefer-light"):
+            return False
+
+    try:
+        result = subprocess.run(
+            ["gsettings", "get", "org.gnome.desktop.interface", "gtk-theme"],
+            capture_output=True, text=True, check=False, timeout=1,
+        )
+    except (OSError, subprocess.SubprocessError) as e:
+        logger.debug("Failed to read gsettings gtk-theme: %s", e)
+        return None
+    if result.returncode == 0 and (gtk_theme := result.stdout.strip().strip("'\"")):
         return "-dark" in gtk_theme.lower()
+
     return None
 
 

@@ -3,6 +3,21 @@
 Все заметные изменения в этом проекте фиксируются в этом файле.
 Формат основан на [Keep a Changelog](https://keepachangelog.com/) и придерживается принципов [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+### Changed
+
+
+### Fixed
+- Исправлено определение тёмной темы для `Cinnamon` и `XFCE`
+
+
+### Contributors
+
+---
+
 ## [1.2.0] - 2026-06-10
 
 ### Added
