@@ -128,7 +128,7 @@ def _is_gsettings_dark_theme() -> bool | None:
     session = os.environ.get("XDG_SESSION_DESKTOP", "").lower()
 
     # XFCE
-    if session == "xfce":
+    if session.startswith("xfce"):
         try:
             result = subprocess.run(
                 ["xfconf-query", "-c", "xsettings", "-p", "/Net/ThemeName"],
@@ -140,7 +140,7 @@ def _is_gsettings_dark_theme() -> bool | None:
             pass
 
     # Cinnamon
-    if session == "cinnamon":
+    if session.startswith("cinnamon"):
         for schema, key in [
             ("org.x.apps.portal", "color-scheme"),
             ("org.cinnamon.desktop.interface", "gtk-theme"),
