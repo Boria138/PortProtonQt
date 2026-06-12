@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#Author: xuser
+#LostEmber-Win64-Shipping.exe
+#Rating=1-5
+#####################examples###########################
+export PW_HEAP_DELAY_FREE=1

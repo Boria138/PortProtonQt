@@ -1,0 +1,59 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+exclude: '(data/|documentation/|portprotonqt/locales/|portprotonqt/custom_data/|dev-scripts/|\.venv/|venv/|.*\.svg$)'
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-toml
+      - id: check-yaml
+
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.9.5
+    hooks:
+      - id: uv-lock
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.3
+    hooks:
+      - id: ruff-check
+
+  - repo: local
+    hooks:
+      - id: pyright
+        name: pyright
+        entry: pyright
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
+        exclude: 'themes/.*/styles\.py$'
+
+  - repo: local
+    hooks:
+      - id: bash-n
+        name: bash -n
+        entry: ./dev-scripts/check_bash_scripts.sh
+        language: system
+        files: ^build-aux/share/portproton/scripts/
+        types: [file]
+
+  - repo: local
+    hooks:
+      - id: check-qss-properties
+        name: Check theme for invalid QSS properties
+        entry: ./dev-scripts/check_qss_properties.py
+        language: system
+        types: [file]
+        files: ^portprotonqt/themes/[^/]+/styles\.py$
+        pass_filenames: false
+
+  - repo: local
+    hooks:
+      - id: check-meson
+        name: Check meson.build syntax and file inclusion
+        entry: ./dev-scripts/check_meson_files.py
+        language: system
+        files: (^portprotonqt/.*\.py$|^build-aux/share/portproton/|meson\.build$)
+        pass_filenames: false

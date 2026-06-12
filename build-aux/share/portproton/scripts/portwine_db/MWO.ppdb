@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+#Author: fidel
+#MWOLauncher.exe
+#MWO.exe
+#Rating=1-5
+#####################examples###########################
+if [[ "$LANGUAGE" == "ru" ]] ; then
+     export PW_COMMENT_DB="На данный момент игра работает, но долго запускаеться из Лаунчера.\nПосле установки игры, при повторном запуске, игра будет запускаться быстро."
+else
+     export PW_COMMENT_DB="At the moment the game works, but it takes a long time to start from the Launcher.\nAfter installing the game, when restarting, the game will start quickly."
+fi
+
+add_in_start_portproton ()
+{
+    if [[ -f "${PATH_TO_GAME}/MWO.exe" ]] ; then
+        #echo "Override $PW_EXE_FILE to ${PATH_TO_GAME}/MWO.exe"
+        export PW_EXE_FILE="${PATH_TO_GAME}/MWO.exe"
+    fi
+}

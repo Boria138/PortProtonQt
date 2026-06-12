@@ -1,0 +1,21 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@ --buildsystem=meson
+
+override_dh_auto_configure:
+	dh_auto_configure -- \
+		-Dpython_purelibdir=/usr/lib/python3/dist-packages \
+		-Dudev_rulesdir=/usr/lib/udev/rules.d
+
+override_dh_auto_install:
+	dh_auto_install --destdir=debian/tmp
+
+execute_after_dh_auto_install:
+	bash ./dev-scripts/generate-completions.sh
+	install -Dpm 0644 completions/portprotonqt \
+		debian/tmp/usr/share/bash-completion/completions/portprotonqt
+	install -Dpm 0644 completions/_portprotonqt \
+		debian/tmp/usr/share/zsh/site-functions/_portprotonqt
+	install -Dpm 0644 completions/portprotonqt.fish \
+		debian/tmp/usr/share/fish/vendor_completions.d/portprotonqt.fish

@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+#Author: igor
+#Sam4.exe
+#SamSM.exe
+#Rating=1-5
+#####################examples###########################
+export LAUNCH_PARAMETERS="+gfx_strApi Vulkan"
+export PW_VULKAN_USE=1

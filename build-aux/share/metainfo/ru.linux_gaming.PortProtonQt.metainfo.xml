@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop">
+  <name>PortProtonQt</name>
+  <id>ru.linux_gaming.PortProtonQt</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+
+  <summary>Modern GUI for managing and launching games from PortProton and Steam</summary>
+  <summary xml:lang="ru">Современный интерфейс для управления и запуска игр из PortProton и Steam</summary>
+
+  <description>
+    <p>
+      A modern and intuitive interface for managing and launching games from PortProton and Steam. Combines libraries in one place and simplifies running Windows games on Linux.
+    </p>
+    <p xml:lang="ru">
+      Современный и удобный интерфейс для управления и запуска игр из PortProton и Steam. Объединяет библиотеки в одном месте и упрощает запуск Windows-игр на Linux.
+    </p>
+  </description>
+
+  <launchable type="desktop-id">ru.linux_gaming.PortProtonQt.desktop</launchable>
+
+  <developer id="ru.linux_gaming">
+    <name>Boria138</name>
+  </developer>
+
+  <releases>
+    <release version="1.2.0" date="2026-06-10">
+      <description></description>
+    </release>
+    <release version="1.1.0" date="2026-05-26">
+      <description/>
+    </release>
+    <release version="1.0" date="2026-05-23">
+      <description/>
+    </release>
+    <release version="0.1.12" date="2026-04-17" type="development">
+      <description/>
+    </release>
+    <release version="0.1.11" date="2026-02-18" type="development">
+      <description/>
+    </release>
+    <release version="0.1.10" date="2026-01-14" type="development">
+      <description/>
+    </release>
+    <release version="0.1.9" date="2025-12-08" type="development">
+      <description/>
+    </release>
+    <release version="0.1.8" date="2025-10-18" type="development">
+      <description/>
+    </release>
+    <release version="0.1.7" date="2025-10-12" type="development">
+      <description/>
+    </release>
+    <release version="0.1.6" date="2025-09-23" type="development">
+      <description/>
+    </release>
+    <release version="0.1.5" date="2025-08-31" type="development">
+      <description/>
+    </release>
+    <release version="0.1.4" date="2025-07-21" type="development">
+      <description/>
+    </release>
+    <release version="0.1.3" date="2025-07-05" type="development">
+      <description/>
+    </release>
+    <release version="0.1.2" date="2025-06-15" type="development">
+      <description/>
+    </release>
+    <release version="0.1.1" date="2025-05-17" type="development">
+      <description/>
+    </release>
+  </releases>
+
+  <recommends>
+    <control>keyboard</control>
+    <control>pointing</control>
+    <control>touch</control>
+    <control>gamepad</control>
+  </recommends>
+
+  <branding>
+    <color type="primary" scheme_preference="light">#007AFF</color>
+    <color type="primary" scheme_preference="dark">#09BEC8</color>
+  </branding>
+
+  <categories>
+    <category>Game</category>
+    <category>Utility</category>
+  </categories>
+
+  <url type="homepage">https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt</url>
+  <url type="bugtracker">https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/issues</url>
+  <url type="translate">https://translate.codeberg.org/engage/portprotonqt</url>
+
+  <screenshots>
+    <screenshot type="default">
+      <image>https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/1_library.png</image>
+      <caption>Library</caption>
+      <caption xml:lang="ru">Библиотека</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/2_context_menu.png</image>
+      <caption>Context Menu</caption>
+      <caption xml:lang="ru">Контекстное меню</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/3_auto_installs.png</image>
+      <caption>Auto installs</caption>
+      <caption xml:lang="ru">Автоустановки</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/4_game_card.png</image>
+      <caption>Card detail page</caption>
+      <caption xml:lang="ru">Детали игры</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/5_portproton_settings.png</image>
+      <caption>Settings</caption>
+      <caption xml:lang="ru">Настройки</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/6_wine_settings.png</image>
+      <caption>Wine Settings</caption>
+      <caption xml:lang="ru">Настройки Wine</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/7_exe_settings.png</image>
+      <caption>Exe Settings</caption>
+      <caption xml:lang="ru">Настройки exe</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/8_exe_settings_mangohud.png</image>
+      <caption>MangoHud Settings</caption>
+      <caption xml:lang="ru">Настройки MangoHud</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/portprotonqt/themes/standart/images/screenshots/9_exe_settings_gamescope.png</image>
+      <caption>Gamescope Settings</caption>
+      <caption xml:lang="ru">Настройки Gamescope</caption>
+    </screenshot>
+  </screenshots>
+
+  <keywords>
+    <keyword translate="no">wine</keyword>
+    <keyword translate="no">proton</keyword>
+    <keyword translate="no">steam</keyword>
+    <keyword translate="no">windows</keyword>
+    <keyword translate="no">linux gaming</keyword>
+    <keyword translate="no">portproton</keyword>
+    <keyword>game launcher</keyword>
+    <keyword>compatibility tool</keyword>
+    <keyword>games</keyword>
+    <keyword xml:lang="ru">игры</keyword>
+    <keyword xml:lang="ru">лаунчер игр</keyword>
+    <keyword xml:lang="ru">запуск игр</keyword>
+  </keywords>
+
+  <content_rating type="oars-1.1"/>
+</component>

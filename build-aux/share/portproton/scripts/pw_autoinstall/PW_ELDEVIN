@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Author: chal55rus
+# type: games
+# name: Eldevin (ENG)
+# image: eldevin
+# info_en: An MMORPG with vibrant graphics where players explore a vast fantasy world, complete quests, and battle enemies to develop their characters. The game features diverse classes and skills, as well as crafting and group interaction systems.
+# info_ru: MMORPG с красочной графикой, где игроки исследуют обширный фэнтезийный мир, выполняют квесты и сражаются с врагами, чтобы развивать свои персонажи. Игра предлагает разнообразные классы и навыки, а также системы крафта и группового взаимодействия.
+########################################################################
+export PW_PREFIX_NAME="ELDEVIN"
+export LAUNCH_PARAMETERS="/S"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/eldevin_win64.exe"
+export PORTWINE_CREATE_SHORTCUT_NAME="Eldevin"
+
+start_portproton
+if try_download "https://www.eldevin.com/cdn/files/eldevin_win64.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
+then
+    pw_run "${PW_AUTOINSTALL_EXE}"
+    PW_EXE_FILE="$WINEPREFIX/drive_c/Program Files/Eldevin/Eldevin.exe"
+    try_remove_file "${PW_AUTOINSTALL_EXE}"
+    try_remove_file "${PW_EXE_FILE}.ppdb"
+    kill_portwine
+    portwine_create_shortcut
+fi
+stop_portproton

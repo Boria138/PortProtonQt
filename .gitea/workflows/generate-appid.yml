@@ -1,0 +1,42 @@
+name: Fetch Data
+run-name: Fetch and Write steam apps list
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 1 * *'
+
+jobs:
+  build:
+    if: gitea.repository == 'Linux-Gaming/PortProtonQt'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: https://git.linux-gaming.ru/actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+
+      - name: Set up Python
+        uses: https://git.linux-gaming.ru/actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        with:
+          python-version-file: "pyproject.toml"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xz-utils
+
+      - name: Set up dependency
+        run: pip install aiohttp asyncio
+
+      - name: Run get_id.py
+        run: python dev-scripts/get_id.py
+        env:
+          STEAM_KEY: ${{ secrets.STEAM_KEY }}
+          LINUX_GAMING_API_KEY: ${{ secrets.LINUX_GAMING_API_KEY }}
+          LINUX_GAMING_API_USERNAME: ${{ secrets.LINUX_GAMING_API_USERNAME }}
+
+      - name: Commit and push changes
+        env:
+          GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
+          GITEA_ACTOR: ${{ gitea.actor }}
+          GITEA_SERVER: "git.linux-gaming.ru"
+          GITEA_REPOSITORY: ${{ gitea.repository }}
+        run: bash dev-scripts/push-to-gitea.sh

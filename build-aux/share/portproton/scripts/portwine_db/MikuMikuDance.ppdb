@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+#Author: norz3n
+#MikuMikuDance.exe
+#Rating=3-5
+#####################examples###########################
+export PW_DLL_INSTALL="vcrun2017"               # Install DLL in port prefix (used winetricks)
+export WINEDLLOVERRIDES="MMEffect,MMHack,d3d9,dsound=n,b"

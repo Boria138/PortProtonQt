@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+#Author: castro-fidel
+#Panzar.exe
+#Rating=1-5
+#####################examples###########################
+export PW_WINDOWS_VER="7"
+export PW_PREFIX_NAME="PANZAR"

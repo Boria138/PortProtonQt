@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#Author: norz3n
+#gta3.exe
+#Rating=1-5
+#####################examples###########################
+export WINEDLLOVERRIDES="d3d8,drvmgt,mss32=n,b"

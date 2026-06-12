@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Author: chal55rus
+# type: games
+# name: Arizona Games Launcher
+# image: arizonagameslauncher
+# info_en: Launcher for the Arizona Role Play game.
+# info_ru: Лаунчер для игры Arizona Role Play.
+########################################################################
+export PW_PREFIX_NAME="ARIZONA_GAMES_LAUNCHER"
+export LAUNCH_PARAMETERS="/S"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/Arizona Installer.exe"
+export PORTWINE_CREATE_SHORTCUT_NAME="Arizona Games Launcher"
+export PW_VULKAN_USE="0"
+
+start_portproton
+if try_download "https://pc.az-ins.com/Arizona%20Launcher.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
+then
+    pw_kill_autostart "Arizona Games" &
+    pw_run "${PW_AUTOINSTALL_EXE}"
+    PW_EXE_FILE="$WINEPREFIX/drive_c/users/steamuser/AppData/Local/Programs/Arizona Games Launcher/Arizona Games Launcher.exe"
+    try_remove_file "${PW_AUTOINSTALL_EXE}"
+    try_remove_file "${PW_EXE_FILE}.ppdb"
+    kill_portwine
+    portwine_create_shortcut
+fi
+stop_portproton

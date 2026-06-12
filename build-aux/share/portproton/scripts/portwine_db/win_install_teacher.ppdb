@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+#Author: fidel
+#win_install_teacher.exe
+#Rating=1-5
+export PW_VULKAN_USE="0"
+export PW_WINE_USE="PROTON_LG"
+export PW_PREFIX_NAME="TEACHER"
+export PW_DISABLED_CREATE_DB="1"
+export PW_USE_FSYNC="0"
+export PW_USE_ESYNC="0"
+export PW_DLL_INSTALL=""
+export WINEDLLOVERRIDES="mscoree,mshtml="
+export DISABLE_CP_DEFPFX="1"
+
+add_in_stop_portproton () {
+    # pw_find_exe news
+    export PW_EXE_FILE="$WINEPREFIX/drive_c/Program Files (x86)/Учитель/Учитель.exe"
+    portwine_create_shortcut
+}

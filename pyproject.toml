@@ -1,0 +1,74 @@
+[project]
+name = "portprotonqt"
+version = "1.2.0"
+description = "A project to rewrite PortProton (PortWINE) using PySide"
+requires-python = ">=3.10"
+readme = "README.md"
+license = { text = "GPL-3.0" }
+authors = [
+  { name = "Boria138" },
+  { name = "BlackSnaker" },
+  { name = "Mikhail Tergoev(Castro-Fidel)" }
+]
+keywords = ["portproton", "wine", "game", "steam"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Operating System :: POSIX :: Linux"
+]
+dependencies = [
+    "babel>=2.18.0",
+    "evdev>=1.9.3",
+    "libarchive-c>=5.3",
+    "orjson>=3.11.8",
+    "pillow>=12.2.0",
+    "psutil>=7.2.2",
+    "pyside6>=6.11.0",
+    "rapidfuzz>=3.14.5",
+    "qrcode>=8.2",
+    "requests>=2.33.1",
+    "tqdm>=4.67.3",
+    "vdf>=3.4",
+    "websocket-client>=1.9.0",
+    "dbus-fast>=5.0.4",
+    "pygame>=2.6.1",
+    "pefile>=2024.8.26",
+]
+
+[project.scripts]
+portprotonqt = "portprotonqt.app:main"
+
+[tool.setuptools.packages.find]
+include = ["portprotonqt*"]
+
+[tool.uv]
+package = true
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.5.1",
+    "pyaspeller>=2.0.2",
+    "pyright>=1.1.408",
+]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "B", "C4", "UP"]
+ignore = ["B008", "C901", "W191", "E501"]
+
+[tool.ruff.lint.isort]
+known-third-party = ["portprotonqt"]
+
+[tool.ruff]
+exclude = [".eggs", ".git", "build", "dist", "portprotonqt.egg-info", ".venv", "venv", "dev-scripts", "portprotonqt/themes", ".vscode"]
+target-version = "py310"
+
+[tool.pyright]
+pythonVersion = "3.10"
+pythonPlatform = "Linux"
+ignore = [".eggs", ".git", "build", "dist", "portprotonqt.egg-info", ".venv", "venv", "dev-scripts", "portprotonqt/themes", ".vscode"]

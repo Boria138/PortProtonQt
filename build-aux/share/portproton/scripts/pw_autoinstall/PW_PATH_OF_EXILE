@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Author: Castro Fidel (linux-gaming.ru)
+# type: games
+# name: Path of Exile
+# image: poe
+# info_en: A free online action RPG where players explore a dark world, fight monsters, and develop their characters through a deep skill and item system. The game is known for its challenging gameplay and constantly updated content, including seasonal leagues and unique mechanics.
+# info_ru: Бесплатная онлайн-игра в жанре action RPG, в которой игроки исследуют мрачный мир, сражаются с монстрами и развивают свои персонажи через глубокую систему навыков и предметов. Игра известна своим сложным геймплеем и постоянно обновляемым контентом, включая сезонные лиги и уникальные механики.
+########################################################################
+export LAUNCH_PARAMETERS="/S"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/PathOfExileInstaller.exe"
+
+start_portproton
+if try_download "https://web.poecdn.com/protected/downloads/PathOfExileInstaller.exe?key=lpKVe-ZJOqVrur8612s8gg" "${PW_AUTOINSTALL_EXE}" no_mirror
+then
+    pw_run "${PW_AUTOINSTALL_EXE}"
+    PW_EXE_FILE="$WINEPREFIX/drive_c/Program Files (x86)/Grinding Gear Games/Path of Exile/PathOfExile.exe"
+    try_remove_file "${PW_AUTOINSTALL_EXE}"
+    try_remove_file "${PW_EXE_FILE}.ppdb"
+    kill_portwine
+    export PORTWINE_CREATE_SHORTCUT_NAME="Path of Exile"
+    portwine_create_shortcut
+fi
+stop_portproton

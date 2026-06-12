@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Author: chal55rus (Sergey P.)
+# type: games
+# name: Rockstar Games Launcher
+# image: Rockstar
+# info_en: Launcher for Rockstar studio games.
+# info_ru: Лаунчер для игр Rockstar.
+########################################################################
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/Rockstar-Games-Launcher.exe"
+export PORTWINE_CREATE_SHORTCUT_NAME="Rockstar"
+export PW_WINE_USE="WINE_LG"
+export PW_PREFIX_NAME="ROCKSTAR"
+
+start_portproton
+if try_download "https://gamedownloads.rockstargames.com/public/installer/Rockstar-Games-Launcher.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
+then
+    try_remove_dir "$WINEPREFIX/drive_c/Program Files/Rockstar Games/Launcher"
+    pw_kill_autostart RockstarService.exe &
+    pw_run "${PW_AUTOINSTALL_EXE}"
+    PW_EXE_FILE="$(find "$WINEPREFIX/drive_c/" -type f -name "Launcher.exe" | grep "Rockstar Games/Launcher/Launcher.exe")"
+    pw_create_unique_exe "rockstar_launcher_pp"
+    try_remove_file "${PW_AUTOINSTALL_EXE}"
+    try_remove_file "${PW_EXE_FILE}.ppdb"
+    kill_portwine
+    portwine_create_shortcut
+fi
+stop_portproton

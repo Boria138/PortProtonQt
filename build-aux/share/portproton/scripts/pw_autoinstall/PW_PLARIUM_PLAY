@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Author: chal55rus (Sergey P.)
+# type: games
+# name: Plarium Play
+# image: plariumplay
+# info_en: Launcher for Plarium studio games.
+# info_ru: Лаунчер для игр Plarium.
+########################################################################
+export LAUNCH_PARAMETERS="/s"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/plarium_play_setup.exe"
+export PW_WINDOWS_VER="10"
+export PW_PREFIX_NAME="DOTNET"
+export PORTWINE_CREATE_SHORTCUT_NAME="Plarium Play"
+
+start_portproton
+if try_download "https://installer.plarium.com/desktop?lid=2&arc=64&os=windows" "${PW_AUTOINSTALL_EXE}" no_mirror
+then
+    pw_kill_autostart PlariumPlay.exe &
+    pw_run "${PW_AUTOINSTALL_EXE}"
+    PW_EXE_FILE="$WINEPREFIX/drive_c/users/steamuser/AppData/Local/PlariumPlay/PlariumPlay.exe"
+    try_remove_file "${PW_AUTOINSTALL_EXE}"
+    try_remove_file "${PW_EXE_FILE}.ppdb"
+    kill_portwine
+    portwine_create_shortcut
+fi
+stop_portproton

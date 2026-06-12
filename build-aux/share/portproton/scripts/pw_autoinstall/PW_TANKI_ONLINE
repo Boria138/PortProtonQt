@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Author: chal55rus
+# type: games
+# name: Tanki Online
+# image: tankionline
+# info_en: A multiplayer browser game where players control tanks and engage in dynamic team battles across various maps. The game offers a wide selection of weapons and modifications, allowing players to create unique tanks and develop strategies for victory.
+# info_ru: Многопользовательская браузерная игра, в которой игроки управляют танками и участвуют в динамичных командных сражениях на различных картах. Игра предлагает широкий выбор оружия и модификаций, позволяя создавать уникальные танки и разрабатывать тактики для победы.
+########################################################################
+export PW_PREFIX_NAME="TANKI_ONLINE"
+export LAUNCH_PARAMETERS="/S"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/TankiOnlineSetup.exe"
+export PORTWINE_CREATE_SHORTCUT_NAME="Tanki Online"
+
+start_portproton
+if try_download "https://tankionline.com/desktop/TankiOnlineSetup.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
+then
+    pw_run "${PW_AUTOINSTALL_EXE}"
+    PW_EXE_FILE="$WINEPREFIX/drive_c/users/steamuser/AppData/Local/Programs/Tanki Online/Tanki Online.exe"
+    try_remove_file "${PW_AUTOINSTALL_EXE}"
+    try_remove_file "${PW_EXE_FILE}.ppdb"
+    kill_portwine
+    portwine_create_shortcut
+fi
+stop_portproton

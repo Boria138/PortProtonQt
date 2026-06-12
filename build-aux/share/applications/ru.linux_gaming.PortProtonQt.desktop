@@ -1,0 +1,14 @@
+[Desktop Entry]
+Name=PortProtonQt
+Exec=portprotonqt %u
+Type=Application
+Comment=A modern GUI for PortProton project
+Comment[ru]=Современный графический интерфейс для проекта PortProton
+Comment[es]=Una interfaz gráfica moderna para el proyecto PortProton
+Comment[pt]=Uma interface gráfica moderna para o projeto PortProton
+Comment[de]=Eine moderne grafische Benutzeroberfläche für das PortProton-Projekt
+Terminal=false
+Icon=ru.linux_gaming.PortProtonQt
+StartupWMClass=ru.linux_gaming.PortProtonQt
+Categories=Game;Utility;
+MimeType=x-scheme-handler/portproton;application/x-portproton-prefix-backup;application/x-ms-dos-exec;application/x-ms-dos-batch;application/x-bat;application/x-msi;text/x-ms-regedit;application/x-executable;application/x-dosexec;application/x-iso9660-image;application/x-cd-image;application/x-raw-disk-image;application/x-mdf;application/x-mds-disk;application/x-nrg;

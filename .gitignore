@@ -1,0 +1,53 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Meson
+builddir/
+build-deb/
+
+# Virtual environments
+.venv
+venv
+pyvenv.cfg
+
+# Ruff
+.ruff_cache
+
+# MyPy
+.mypy_cache
+
+# MacOS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Editors files
+*-swp
+.gigaide
+.idea
+.vscode
+.ropeproject
+.zed
+
+# get_wine debug folder
+proton_downloads
+
+# Need for refactoring
+REFRACTORING_PLAN.md
+AUDIT_CHECKLIST.md
+
+# Compiled gettext catalogs
+portprotonqt/locales/*/LC_MESSAGES/*.mo
+
+
+# AI
+.codex

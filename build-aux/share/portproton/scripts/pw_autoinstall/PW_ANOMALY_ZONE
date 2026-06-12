@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Author: chal55rus
+# type: games
+# name: Anomaly Zone
+# image: anomalyzone
+# info_en: An action game about stalkers, where players explore mysterious worlds and fight against a variety of opponents. The game offers an exciting storyline and the opportunity to improve the character by unlocking new abilities and equipment.
+# info_ru: Экшен-игра про сталкеров, где игроки исследуют таинственные миры и сражаются с разнообразными противниками. Игра предлагает захватывающий сюжет и возможность улучшать персонажа, открывая новые способности и снаряжение.
+########################################################################
+export PW_PREFIX_NAME="ANOMALY_ZONE"
+export LAUNCH_PARAMETERS="/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-"
+export PW_AUTOINSTALL_EXE="${PORT_WINE_TMP_PATH}/az_webinst.exe"
+export PORTWINE_CREATE_SHORTCUT_NAME="Anomaly Zone"
+
+start_portproton
+if try_download "https://anomaly-zone.ru/file/az_webinst.exe" "${PW_AUTOINSTALL_EXE}" no_mirror
+then
+    pw_kill_autostart Launcher.exe &
+    pw_run "${PW_AUTOINSTALL_EXE}"
+    PW_EXE_FILE="$WINEPREFIX/drive_c/Program Files/New Story Games/Anomaly-Zone/Launcher.exe"
+    pw_create_unique_exe
+    try_remove_file "${PW_AUTOINSTALL_EXE}"
+    try_remove_file "${PW_EXE_FILE}.ppdb"
+    kill_portwine
+    portwine_create_shortcut
+fi
+stop_portproton
