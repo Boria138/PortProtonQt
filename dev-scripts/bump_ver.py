@@ -18,6 +18,7 @@ MESON_BUILD = BASE_DIR / "meson.build"
 APP_PY = BASE_DIR / "portprotonqt" / "app.py"
 GITEA_WORKFLOW = BASE_DIR / ".gitea" / "workflows" / "build.yml"
 CHANGELOG = BASE_DIR / "CHANGELOG.md"
+DEBIAN_CHANGELOG = BASE_DIR / "debian" / "changelog"
 METAINFO = BASE_DIR / "build-aux" / "share" / "metainfo" / "ru.linux_gaming.PortProtonQt.metainfo.xml"
 
 def bump_appimage(path: Path, old: str, new: str) -> bool:
@@ -45,6 +46,32 @@ def bump_arch(path: Path, old: str, new: str) -> bool:
     if count:
         path.write_text(new_text, encoding='utf-8')
     return bool(count)
+
+def bump_debian(path: Path, old: str, new: str) -> bool:
+    """
+    Prepend a new entry to debian/changelog
+    """
+    if not path.exists():
+        return False
+    text = path.read_text(encoding='utf-8')
+    
+    # Maintainer info from the original entry
+    maintainer = "Ivan Mazhukin <vanyamajukin@outlook.com>"
+    # Debian date format: Mon, 23 May 2026 13:32:57 +0300
+    # Using subprocess to get the exact format via 'date -R'
+    try:
+        timestamp = subprocess.check_output(["date", "-R"]).decode().strip()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        timestamp = date.today().strftime('%a, %d %b %Y %H:%M:%S +0000')
+
+    new_entry = (
+        f"portprotonqt ({new}) unstable; urgency=medium\n\n"
+        f"  * New upstream release.\n\n"
+        f" -- {maintainer}  {timestamp}\n\n"
+    )
+    
+    path.write_text(new_entry + text, encoding='utf-8')
+    return True
 
 def bump_fedora(path: Path, old: str, new: str) -> bool:
     """
@@ -185,6 +212,7 @@ def main():
         (APP_PY, bump_app_py),
         (GITEA_WORKFLOW, bump_workflow),
         (CHANGELOG, bump_changelog),
+        (DEBIAN_CHANGELOG, bump_debian),
         (METAINFO, bump_metainfo)
     ]
 
