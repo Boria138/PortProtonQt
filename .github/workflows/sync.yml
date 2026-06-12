@@ -1,0 +1,59 @@
+name: Mirror Upstream to GitHub
+
+on:
+  schedule:
+    # Every day at 03:00 UTC
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Mirror Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Sync Git Branches and Tags
+        run: |
+          # 1. Add upstream remote
+          git remote add upstream https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt.git
+          
+          # 2. Fetch all branches and tags from upstream
+          git fetch upstream --prune --tags
+          
+          # 3. Sync the main branch (merge upstream/main to preserve this workflow file)
+          git checkout main
+          git merge upstream/main -m "chore: sync with upstream main" --allow-unrelated-histories || {
+            echo "Conflict occurred during merge. Resolving by prioritizing upstream and keeping .github/"
+            git checkout upstream/main -- .
+            git checkout HEAD -- .github/
+            git commit -m "chore: sync with upstream main (resolved conflicts)"
+          }
+          git push origin main
+          
+          # 4. Sync other branches directly from remote tracking refs
+          for branch in $(git branch -r | grep 'upstream/' | grep -v 'upstream/main' | grep -v 'upstream/HEAD' | sed 's/.*upstream\///'); do
+            echo "Syncing branch: $branch"
+            git push origin "refs/remotes/upstream/$branch:refs/heads/$branch" --force
+          done
+          
+          # 5. Push tags
+          git push origin --tags --force
+
+      - name: Sync Releases and Assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 .github/sync_releases.py
