@@ -9,8 +9,8 @@ msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-05-22 18:01+0500\n"
-"PO-Revision-Date: 2026-06-05 14:30+0000\n"
-"Last-Translator: Anonymous <anonymous@noreply.codeberg.org>\n"
+"PO-Revision-Date: 2026-06-12 23:07+0000\n"
+"Last-Translator: rogerio-mattos <rogerio-mattos@noreply.codeberg.org>\n"
 "Language-Team: Chinese (Simplified Han script) <https://"
 "translate.codeberg.org/projects/portprotonqt/portprotonqt/zh_Hans/>\n"
 "Language: zh_CN\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 2026.5\n"
+"X-Generator: Weblate 2026.6.1\n"
 "Generated-By: Babel 2.18.0\n"
 
 msgid "Stop Game"
@@ -108,11 +108,11 @@ msgstr "否"
 msgid "Failed to delete folder: {error}"
 msgstr "删除文件夹失败：{error}"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid ""
 "Are you sure you want to delete file '{file_name}'? This action cannot be"
 " undone."
-msgstr "确定要删除文件夹“{folder_name}”吗？此操作无法撤销。"
+msgstr "确定要删除文件夹“{file_name}”吗？此操作无法撤销。"
 
 #, fuzzy, python-brace-format
 msgid "Failed to delete file: {error}"
@@ -122,9 +122,9 @@ msgstr "删除文件夹失败：{error}"
 msgid "New File Name:"
 msgstr "新文件夹名称："
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "File already exists: {file_name}"
-msgstr "文件夹已存在：{folder_name}"
+msgstr "文件夹已存在：{file_name}"
 
 #, fuzzy, python-brace-format
 msgid "Failed to rename file: {error}"
@@ -398,7 +398,7 @@ msgid "Never"
 msgstr "从不"
 
 msgid "Unknown Application"
-msgstr ""
+msgstr "未知应用程序"
 
 #, fuzzy
 msgid "Quick Launch"
@@ -408,9 +408,8 @@ msgstr "上次启动"
 msgid "Add a shortcut"
 msgstr "添加快捷方式到："
 
-#, fuzzy
 msgid "Search ..."
-msgstr "搜索"
+msgstr "搜索..."
 
 msgid "Library Settings"
 msgstr "库设置"
@@ -424,9 +423,8 @@ msgstr ""
 msgid "Alphabetical"
 msgstr "按字母顺序"
 
-#, fuzzy
 msgid "Sort Method:"
-msgstr "游戏排序方式："
+msgstr "游戏排序方式:"
 
 msgid "All"
 msgstr "全部"
@@ -468,9 +466,8 @@ msgstr "稳定"
 msgid "Vulkan Backend"
 msgstr "Vulkan 后端"
 
-#, fuzzy
 msgid "Use by default"
-msgstr "默认隐藏 HUD"
+msgstr "默认使用"
 
 msgid "Wine Configuration"
 msgstr "Wine 配置"
