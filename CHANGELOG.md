@@ -8,6 +8,7 @@
 ### Added
 
 ### Changed
+- Исключены лишние артефакты (.changes, .buildinfo, -dbgsym.deb) при сборке Debian пакетов в CI
 
 
 ### Fixed
