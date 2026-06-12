@@ -226,19 +226,8 @@ class TestCreateDesktopFile:
         assert "&" not in basename
         assert "<" not in basename
 
-    def test_flatpak_exec_line(self, tmp_path: Path, monkeypatch: Any) -> None:
-        _patch_location(monkeypatch, tmp_path)
-        monkeypatch.setenv("FLATPAK_ID", "ru.linux_gaming.PortProton")
-        monkeypatch.delenv("APPIMAGE", raising=False)
-        exe = _make_exe(tmp_path)
-        result = create_desktop_file(exe)
-        assert result is not None
-        entry, _, _ = result
-        assert "flatpak run ru.linux_gaming.PortProton" in entry
-
     def test_appimage_exec_line(self, tmp_path: Path, monkeypatch: Any) -> None:
         _patch_location(monkeypatch, tmp_path)
-        monkeypatch.delenv("FLATPAK_ID", raising=False)
         appimage = tmp_path / "PortProtonQt.AppImage"
         appimage.touch()
         monkeypatch.setenv("APPIMAGE", str(appimage))
@@ -358,9 +347,9 @@ class TestExtractExecPathWithSpaces:
         assert result is not None
         assert "my games" in result
 
-    def test_flatpak_path_with_spaces(self) -> None:
+    def test_command_with_path_with_spaces(self) -> None:
         result = extract_exec_target_path(
-            'flatpak run ru.linux_gaming.PortProton --silent "/path/to/my game.exe"'
+            'portprotonqt --silent "/path/to/my game.exe"'
         )
         assert result is not None
         assert "my game.exe" in result

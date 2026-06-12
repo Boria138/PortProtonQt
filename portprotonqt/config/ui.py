@@ -394,13 +394,10 @@ class UIConfig(BaseConfig):
 
     def get_disable_runtime_download(self) -> bool:
         """Get PortProton runtime download setting."""
-        default = bool(os.getenv("FLATPAK_ID"))
-        return self._get_download_bool("disable_runtime_download", default)
+        return self._get_download_bool("disable_runtime_download", False)
 
     def set_disable_runtime_download(self, enabled: bool) -> None:
         """Set PortProton runtime download setting."""
-        if os.getenv("FLATPAK_ID"):
-            enabled = True
         validate_bool(enabled, "disable_runtime_download")
         self._save_download_value("disable_runtime_download", enabled)
 

@@ -612,38 +612,13 @@ check_wayland_session () {
 }
 export -f check_wayland_session
 
-check_flatpak () {
-    if [[ -n "$FLATPAK_IN_USE" ]]
-    then [[ "$FLATPAK_IN_USE" == 1 ]] && return 0 || return 1
-    fi
-    if [[ -n "${FLATPAK_ID:-}" ]]
-    then
-        export FLATPAK_IN_USE=1
-        if grep -i "Alpine Linux" "/run/host/etc/os-release" &>/dev/null ; then
-            export ALPINE_FP=1
-        fi
-        return 0
-    else
-        export FLATPAK_IN_USE=0
-        return 1
-    fi
-}
-export -f check_flatpak
-
 check_selinux () {
     if [[ -n "$SELINUX_IN_USE" ]]
     then [[ "$SELINUX_IN_USE" == 1 ]] && return 0 || return 1
     fi
-    if check_flatpak ; then
-        if grep -i ^"SELINUX=enforcing" /run/host/etc/selinux/config &>/dev/null ; then
-            export SELINUX_IN_USE=1
-            return 0
-        fi
-    else
-        if grep -i ^"SELINUX=enforcing" /etc/selinux/config &>/dev/null ; then
-            export SELINUX_IN_USE=1
-            return 0
-        fi
+    if grep -i ^"SELINUX=enforcing" /etc/selinux/config &>/dev/null ; then
+        export SELINUX_IN_USE=1
+        return 0
     fi
     export SELINUX_IN_USE=0
     return 1
@@ -803,11 +778,7 @@ search_desktop_file () {
             if [[ ! $desktop_file_new =~ (PortProton|readme) ]] ; then
                 while read -r line1 ; do
                     if [[ $line1 =~ ^Exec= ]] ; then
-                        if check_flatpak ; then
-                            EXEC_DESKTOP=${line1//Exec=flatpak run ${FLATPAK_ID} --silent /}
-                        else
-                            EXEC_DESKTOP=${line1//Exec=portprotonqt --silent /}
-                        fi
+                        EXEC_DESKTOP=${line1//Exec=portprotonqt --silent /}
                     fi
                     [[ $line1 =~ ^Icon= ]] && ICON_NAME=${line1//Icon=/}
                 done < "$desktop_file"
@@ -1180,15 +1151,13 @@ init_wine_ver () {
         export WINEDLLPATH
     fi
 
-    if ! check_flatpak ; then
-        WINE_LIBRARY_PATH="${WINEDIR}/lib"
-        if [[ -d "${WINEDIR}/lib64/gstreamer-1.0" ]]
-        then WINE_LIBRARY_PATH+=":${WINEDIR}/lib64"
-        elif [[ -d "${WINEDIR}/lib/x86_64-linux-gnu" ]]
-        then WINE_LIBRARY_PATH+=":${WINEDIR}/lib/x86_64-linux-gnu:${WINEDIR}/lib/i386-linux-gnu"
-        fi
-        export WINE_LIBRARY_PATH
+    WINE_LIBRARY_PATH="${WINEDIR}/lib"
+    if [[ -d "${WINEDIR}/lib64/gstreamer-1.0" ]]
+    then WINE_LIBRARY_PATH+=":${WINEDIR}/lib64"
+    elif [[ -d "${WINEDIR}/lib/x86_64-linux-gnu" ]]
+    then WINE_LIBRARY_PATH+=":${WINEDIR}/lib/x86_64-linux-gnu:${WINEDIR}/lib/i386-linux-gnu"
     fi
+    export WINE_LIBRARY_PATH
 
     export MEDIACONV_BLANK_VIDEO_FILE="${WINEDIR}/share/media/blank.mkv"
     export MEDIACONV_BLANK_AUDIO_FILE="${WINEDIR}/share/media/blank.ptna"
@@ -1239,8 +1208,7 @@ ${nvidia_lib32_path}"
 
     PW_PV_OVERRIDES="/usr/lib/pressure-vessel/overrides/lib"
 
-    if ! check_flatpak; then
-      export PW_LD_LIBRARY_PATH="\
+    export PW_LD_LIBRARY_PATH="\
 ${PW_PLUGINS_PATH}/portable/lib/lib64:\
 ${PW_PLUGINS_PATH}/portable/lib/lib32:\
 ${PW_PV_OVERRIDES}/x86_64-linux-gnu/aliases:\
@@ -1249,7 +1217,6 @@ ${PW_PV_OVERRIDES}/i386-linux-gnu/aliases:\
 /overrides/lib/i386-linux-gnu:\
 /lib/x86_64-linux-gnu:\
 /lib/i386-linux-gnu"
-    fi
 
     export PW_PATH="${PW_PLUGINS_PATH}/portable/bin${PATH:+:$PATH}"
 
@@ -1318,56 +1285,13 @@ pw_mangohud_check () {
             print_info "System MangoHud is enabled"
             add_to_var PW_ADD_VAR_SLR 'MANGOHUD=1'
         fi
-        # TODO: need to fix work for OpenGL without flatpak...
+        # TODO: need to fix work for OpenGL
         MANGOHUD_LIB_NAME="libMangoHud_shim.so"
         export PW_LD_PRELOAD="${PW_LD_PRELOAD:+$PW_LD_PRELOAD:}${MANGOHUD_LIB_NAME}"
     else
         print_info "MangoHud is disabled"
     fi
     return 0
-}
-
-pw_select_mangohud_user_conf () {
-    unset MANGOHUD_CONFIG
-
-    if ! check_flatpak ; then
-        return 0
-    fi
-
-    local home_config="${HOME}/.config/MangoHud/MangoHud.conf"
-    local xdg_config="${XDG_CONFIG_HOME:-${HOME}/.config}/MangoHud/MangoHud.conf"
-
-    if [[ -f "$home_config" ]] ; then
-        export MANGOHUD_CONFIGFILE="$home_config"
-    elif [[ -f "$xdg_config" ]] ; then
-        export MANGOHUD_CONFIGFILE="$xdg_config"
-    else
-        return 0
-    fi
-
-    print_info "System MangoHud.conf in use: $MANGOHUD_CONFIGFILE"
-}
-
-pw_select_vkbasalt_user_conf () {
-    unset VKBASALT_CONFIG_FILE
-    unset PW_VKBASALT_EFFECTS PW_VKBASALT_FFX_CAS
-
-    if ! check_flatpak ; then
-        return 0
-    fi
-
-    local home_config="${HOME}/.config/vkBasalt/vkBasalt.conf"
-    local xdg_config="${XDG_CONFIG_HOME:-${HOME}/.config}/vkBasalt/vkBasalt.conf"
-
-    if [[ -f "$home_config" ]] ; then
-        export VKBASALT_CONFIG_FILE="$home_config"
-    elif [[ -f "$xdg_config" ]] ; then
-        export VKBASALT_CONFIG_FILE="$xdg_config"
-    else
-        return 0
-    fi
-
-    print_info "System vkBasalt.conf in use: $VKBASALT_CONFIG_FILE"
 }
 
 pw_mangohud_preview () {
@@ -1424,14 +1348,8 @@ pw_lsfg_vk_check () {
                 -e "s|.*\"library_path\".*|    \"library_path\": \"$lsfg_vk_path/liblsfg-vk-layer.so\",|g" \
             "$lsfg_vk_path/VkLayer_LSFGVK_frame_generation.json"
 
-            if check_flatpak ; then
-                create_new_dir "$PORT_DATA_PATH/data/vulkan/implicit_layer.d/"
-                try_force_link_file "$lsfg_vk_path/VkLayer_LSFGVK_frame_generation.json" \
-                                    "$PORT_DATA_PATH/data/vulkan/implicit_layer.d/VkLayer_LS_PW_frame_generation.json"
-            else
-                try_force_link_file "$lsfg_vk_path/VkLayer_LSFGVK_frame_generation.json" \
-                                    "$PW_PLUGINS_PATH/portable/share/vulkan/implicit_layer.d/VkLayer_LS_PW_frame_generation.json"
-            fi
+            try_force_link_file "$lsfg_vk_path/VkLayer_LSFGVK_frame_generation.json" \
+                                "$PW_PLUGINS_PATH/portable/share/vulkan/implicit_layer.d/VkLayer_LS_PW_frame_generation.json"
 
             print_info "Portable LSFG_VK is enabled"
         else
@@ -1505,13 +1423,8 @@ kill_portwine () {
     fi
 
     if [[ "${PW_WINE_USE}" != "USE_SYSTEM_WINE" ]] ; then
-        if check_flatpak && [[ "$ALPINE_FP" == "1" ]] ; then
-            wine_pids=$(ls -l /proc/*/exe >/dev/null 2>&1 | grep -ie PortProton | grep -E 'wine(64)?-preloader|wineserver' | awk -F/ '{print $3}')
-            bwrap_pids=$(pgrep -f wrap | grep PortProton | head -n 1)
-        else
-            wine_pids=$(ls -l /proc/*/exe 2>/dev/null | grep -ie PortProton | grep -E 'wine(64)?-preloader|wineserver' | awk -F/ '{print $3}')
-            bwrap_pids="$(pgrep -a wrap | grep PortProton | head -n 1 | awk '{print $1}')"
-        fi
+        wine_pids=$(ls -l /proc/*/exe 2>/dev/null | grep -ie PortProton | grep -E 'wine(64)?-preloader|wineserver' | awk -F/ '{print $3}')
+        bwrap_pids="$(pgrep -a wrap | grep PortProton | head -n 1 | awk '{print $1}')"
     else
         wine_pids=$(ls -l /proc/*/exe 2>/dev/null | grep -E 'wine(64)?-preloader|wineserver' | awk -F/ '{print $3}')
         unset bwrap_pids
@@ -2071,23 +1984,17 @@ pw_skip_get_info () {
 
         # GALLIUM NINE
         unset FIND_D3D_MODULE D3D_MODULE_PATH
-        if ! check_flatpak ; then
-            FIND_D3D_MODULE="$(find /usr/ -maxdepth 4 -type f -name "d3dadapter9.so.*" 2>/dev/null)"
-            if [[ -n "$FIND_D3D_MODULE" ]] ; then
-                FIND_D3D_MODULE="$(dirname "$FIND_D3D_MODULE")"
-                IFS=$'\n'
-                for D3D_MP in $FIND_D3D_MODULE ; do
-                    if [[ -n "$D3D_MODULE_PATH" ]]
-                    then export D3D_MODULE_PATH="$D3D_MODULE_PATH:/run/host${D3D_MP}"
-                    else export D3D_MODULE_PATH="/run/host${D3D_MP}"
-                    fi
-                done
-                IFS="$orig_IFS"
-            fi
-        else
-            if [[ -d "/app/lib/i386-linux-gnu/GL/default/lib/d3d" && -d "/usr/lib/x86_64-linux-gnu/GL/default/lib/d3d" ]] ; then
-                export D3D_MODULE_PATH="/app/lib/i386-linux-gnu/GL/default/lib/d3d:/usr/lib/x86_64-linux-gnu/GL/default/lib/d3d"
-            fi
+        FIND_D3D_MODULE="$(find /usr/ -maxdepth 4 -type f -name "d3dadapter9.so.*" 2>/dev/null)"
+        if [[ -n "$FIND_D3D_MODULE" ]] ; then
+            FIND_D3D_MODULE="$(dirname "$FIND_D3D_MODULE")"
+            IFS=$'\n'
+            for D3D_MP in $FIND_D3D_MODULE ; do
+                if [[ -n "$D3D_MODULE_PATH" ]]
+                then export D3D_MODULE_PATH="$D3D_MODULE_PATH:/run/host${D3D_MP}"
+                else export D3D_MODULE_PATH="/run/host${D3D_MP}"
+                fi
+            done
+            IFS="$orig_IFS"
         fi
         [[ -n $D3D_MODULE_PATH ]] && echo "$D3D_MODULE_PATH" > "${PW_TMPFS_PATH}/gallium_nine.tmp"
 
@@ -2586,10 +2493,7 @@ pw_set_sync_runtime_vars () {
 }
 
 pw_enable_gamemode_basic () {
-    if check_flatpak ; then
-        export GAMEMODERUN=1
-        PW_GAMEMODERUN_SLR="gamemoderun"
-    elif command -v gamemoderun &>/dev/null ; then
+    if command -v gamemoderun &>/dev/null ; then
         export GAMEMODERUN=1
         PW_GAMEMODERUN_SLR="gamemoderun"
         if command -v gamemoded &>/dev/null && ! pw_is_process_active gamemoded ; then
@@ -2698,12 +2602,10 @@ start_portproton () {
     pw_init_runtime
 
     if [[ "${PW_USE_GSTREAMER}" == "1" ]] ; then
-        if ! check_flatpak ; then
-            if [[ -d "${WINEDIR}/lib64/gstreamer-1.0" ]]
-            then export GST_PLUGIN_SYSTEM_PATH_1_0="${WINEDIR}/lib64/gstreamer-1.0:${WINEDIR}/lib/gstreamer-1.0"
-            elif  [[ -d "${WINEDIR}/lib/x86_64-linux-gnu/gstreamer-1.0" ]]
-            then export GST_PLUGIN_SYSTEM_PATH_1_0="${WINEDIR}/lib/x86_64-linux-gnu/gstreamer-1.0:${WINEDIR}/lib/i386-linux-gnu/gstreamer-1.0"
-            fi
+        if [[ -d "${WINEDIR}/lib64/gstreamer-1.0" ]]
+        then export GST_PLUGIN_SYSTEM_PATH_1_0="${WINEDIR}/lib64/gstreamer-1.0:${WINEDIR}/lib/gstreamer-1.0"
+        elif  [[ -d "${WINEDIR}/lib/x86_64-linux-gnu/gstreamer-1.0" ]]
+        then export GST_PLUGIN_SYSTEM_PATH_1_0="${WINEDIR}/lib/x86_64-linux-gnu/gstreamer-1.0:${WINEDIR}/lib/i386-linux-gnu/gstreamer-1.0"
         fi
 
         create_new_dir "${PORT_WINE_TMP_PATH}/gstreamer_tmp"
@@ -2971,10 +2873,10 @@ start_portproton () {
         export MANGOHUD_CONFIGFILE="$PATH_TO_GAME/MangoHud.conf"
         print_info "Custom MangoHud.conf in use: $MANGOHUD_CONFIGFILE"
     elif [[ "${PW_MANGOHUD_USER_CONF}" == 1 ]] ; then
-        pw_select_mangohud_user_conf
+        unset MANGOHUD_CONFIG
     fi
 
-    [[ "${PW_VKBASALT_USER_CONF}" == 1 ]] && pw_select_vkbasalt_user_conf
+    [[ "${PW_VKBASALT_USER_CONF}" == 1 ]] && unset PW_VKBASALT_EFFECTS PW_VKBASALT_FFX_CAS
 
     if [[ $PW_GPU_USE != "disabled" ]] ; then
         export DXVK_FILTER_DEVICE_NAME="$PW_GPU_USE"
@@ -3991,10 +3893,10 @@ steamplay_launch () {
             export MANGOHUD_CONFIGFILE="$PATH_TO_GAME/MangoHud.conf"
             print_info "Custom MangoHud.conf in use: $MANGOHUD_CONFIGFILE"
         elif [[ "${PW_MANGOHUD_USER_CONF}" == 1 ]] ; then
-            pw_select_mangohud_user_conf
+            unset MANGOHUD_CONFIG
         fi
 
-        [[ "${PW_VKBASALT_USER_CONF}" == 1 ]] && pw_select_vkbasalt_user_conf
+        [[ "${PW_VKBASALT_USER_CONF}" == 1 ]] && unset PW_VKBASALT_EFFECTS PW_VKBASALT_FFX_CAS
 
         pw_optiscaler_sync_files
         pw_specialk_sync_files
@@ -4290,8 +4192,7 @@ gui_edit_db () {
         SOUND_DRIVER_VAR="disabled"
     fi
 
-    if ! check_flatpak \
-    && ! compare_versions "$(ldd --version | head -n 1 | awk '{print $NF}')" "2.38"
+    if ! compare_versions "$(ldd --version | head -n 1 | awk '{print $NF}')" "2.38"
     then
         export PW_USE_LS_FRAME_GEN="0"
     fi

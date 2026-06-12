@@ -238,12 +238,6 @@ trap "pw_cleanup" EXIT
 
 pw_init_db
 
-if [[ ! -d "${HOME}/PortProtonQt" ]] \
-&& check_flatpak
-then
-    ln -s "${PORT_DATA_PATH}" "${HOME}/PortProtonQt"
-fi
-
 # shellcheck source=/dev/null
 source "${USER_CONF}"
 

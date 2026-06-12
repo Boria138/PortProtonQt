@@ -88,8 +88,6 @@ def process_portproton_log(log_content: str) -> str:
             f"/media/{username}", "/media/xuser"
         )
 
-    is_flatpak_used = "FLATPAK in used" in deduplicated_content
-
     filtered_lines = []
     for line in deduplicated_content.split("\n"):
         skip_line = False
@@ -107,14 +105,6 @@ def process_portproton_log(log_content: str) -> str:
 
         if not skip_line and line.rstrip().lower().endswith('.fx'):
             skip_line = True
-
-        if not skip_line and is_flatpak_used:
-            stripped_line = line.strip()
-            if (
-                stripped_line.startswith("PW_USE_RUNTIME=") or
-                stripped_line.startswith("export PW_USE_RUNTIME=")
-            ):
-                skip_line = True
 
         if not skip_line:
             filtered_lines.append(_strip_pw_wine_use_path(line))

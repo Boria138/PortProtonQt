@@ -14,7 +14,6 @@ os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1")
 os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
-
 @pytest.fixture
 def tmp_config_dir(tmp_path: Path) -> Generator[Path, None, None]:
     os.environ["XDG_CONFIG_HOME"] = str(tmp_path / "config")

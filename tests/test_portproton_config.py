@@ -29,7 +29,7 @@ class TestExtractExecTargetPath:
         assert result == "/tmp/game.exe"
 
     def test_bat_file(self):
-        result = extract_exec_target_path("flatpak run com.app --silent /tmp/setup.bat")
+        result = extract_exec_target_path("portprotonqt --silent /tmp/setup.bat")
         assert result == "/tmp/setup.bat"
 
     def test_iso_file(self):
@@ -38,10 +38,6 @@ class TestExtractExecTargetPath:
 
     def test_env_prefix(self):
         result = extract_exec_target_path("env WINEPREFIX=/p /usr/bin/wine /tmp/game.exe")
-        assert result == "/tmp/game.exe"
-
-    def test_flatpak_prefix(self):
-        result = extract_exec_target_path("flatpak run com.app --silent /tmp/game.exe")
         assert result == "/tmp/game.exe"
 
     def test_list_input(self):

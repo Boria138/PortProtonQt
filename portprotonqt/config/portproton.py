@@ -58,6 +58,12 @@ class PortProtonConfig(BaseConfig):
             except Exception as error:
                 logger.warning("Unexpected error reading PortProton configuration file: %s", error)
 
+        flatpak_path = os.path.join(os.path.expanduser("~"), ".var", "app", "ru.linux_gaming.PortProton")
+        if os.path.isdir(flatpak_path):
+            self._portproton_location = flatpak_path
+            logger.info("PortProton path from Flatpak location: %s", flatpak_path)
+            return self._portproton_location
+
         logger.warning("PortProton configuration not found")
         return None
 
@@ -107,11 +113,6 @@ def read_portdata_path_from_config() -> str | None:
 
 def get_portproton_location() -> str | None:
     """Return PortProton directory path."""
-    if os.getenv("FLATPAK_ID"):
-        portdata_path = os.getenv("XDG_DATA_HOME", "").strip()
-        if portdata_path:
-            return str(Path(portdata_path).parent)
-
     saved_portdata_path = read_portdata_path_from_config()
     if saved_portdata_path:
         return saved_portdata_path
@@ -157,8 +158,6 @@ def get_portproton_scripts_path() -> str | None:
     if appimage_path:
         appimage_root = Path(sys.executable).resolve().parent.parent
         prefixes.append(("AppImage executable", appimage_root))
-    if os.getenv("FLATPAK_ID"):
-        prefixes.append(("Flatpak package", Path("/app")))
     prefixes.append(("system package", Path("/usr")))
 
     scripts_dirs = (
@@ -197,10 +196,6 @@ def _get_current_launcher_command() -> list[str] | None:
     if appimage_path and os.path.isfile(appimage_path):
         return [appimage_path, "--silent"]
 
-    flatpak_id = os.getenv("FLATPAK_ID", "").strip()
-    if flatpak_id:
-        return ["flatpak", "run", flatpak_id, "--silent"]
-
     scripts_path = get_portproton_scripts_path()
     if scripts_path:
         return [os.path.join(scripts_path, "start.sh")]
@@ -227,6 +222,7 @@ def _extract_launcher_tail(parts: list[str]) -> list[str] | None:
         if tail[:1] == ["--silent"]:
             tail = tail[1:]
         return tail
+
     return None
 
 
@@ -269,14 +265,10 @@ def _get_desktop_paths(desktop_dir: str | None) -> tuple[str, ...]:
 
 def migrate_legacy_shortcut(portproton_path: str, desktop_dir: str | None = None) -> int:
     """Migrate legacy PortProton shortcuts in known desktop directories."""
-    flatpak_id = os.getenv("FLATPAK_ID", "").strip()
     user_home = os.path.expanduser("~")
     legacy_home_path = os.path.join(user_home, "PortProton")
     current_home_path = os.path.join(user_home, "PortProtonQt")
-    legacy_flatpak_root = os.path.join(user_home, ".var", "app", "ru.linux_gaming.PortProton")
-    current_flatpak_root = os.path.join(user_home, ".var", "app", flatpak_id) if flatpak_id else ""
-    escaped_current_home = re.escape(current_home_path)
-    escaped_current_flatpak_root = re.escape(current_flatpak_root) if current_flatpak_root else ""
+    flatpak_data_path = os.path.join(user_home, ".var", "app", "ru.linux_gaming.PortProton")
     legacy_portdata_paths = []
     if PORTPROTON_CONFIG_FILE.exists():
         try:
@@ -285,7 +277,6 @@ def migrate_legacy_shortcut(portproton_path: str, desktop_dir: str | None = None
                 legacy_portdata_paths.append(legacy_config_path)
         except OSError as error:
             logger.warning("Failed to read legacy PortProton config %s: %s", PORTPROTON_CONFIG_FILE, error)
-
     launcher_command = _get_current_launcher_command()
     desktop_paths = (
         portproton_path,
@@ -296,112 +287,77 @@ def migrate_legacy_shortcut(portproton_path: str, desktop_dir: str | None = None
     for current_path in desktop_paths:
         if not os.path.isdir(current_path):
             continue
-
         for entry in os.scandir(current_path):
             if not entry.name.endswith(".desktop") or not entry.is_file():
                 continue
-
             try:
                 lines = Path(entry.path).read_text(encoding="utf-8").splitlines(keepends=True)
             except OSError as error:
                 logger.warning("Failed to read desktop file %s: %s", entry.path, error)
                 continue
-
             changed = False
             for idx, line in enumerate(lines):
                 line_end = "\r\n" if line.endswith("\r\n") else "\n"
                 line_content = line[:-len(line_end)] if line.endswith(("\n", "\r\n")) else line
-
                 if line_content.startswith("Path="):
                     lines[idx] = ""
                     changed = True
                     continue
-
                 updated_line = line_content
-                if not current_flatpak_root:
-                    for legacy_portdata_path in legacy_portdata_paths:
-                        updated_line = re.sub(
-                            rf"{re.escape(legacy_portdata_path)}(?=/|$)",
-                            portproton_path,
-                            updated_line,
-                        )
-
-                if current_flatpak_root:
+                for legacy_portdata_path in legacy_portdata_paths:
                     updated_line = re.sub(
-                        rf"{re.escape(legacy_home_path)}(?=/|$)",
-                        current_home_path,
+                        rf"{re.escape(legacy_portdata_path)}(?=/|$)",
+                        portproton_path,
                         updated_line,
                     )
-                    updated_line = re.sub(
-                        rf"{re.escape(legacy_flatpak_root)}(?=/|$)",
-                        current_flatpak_root,
-                        updated_line,
-                    )
-                    updated_line = re.sub(
-                        rf"{escaped_current_flatpak_root}(?:Qt)+(?=/|$)",
-                        current_flatpak_root,
-                        updated_line,
-                    )
-                    updated_line = re.sub(
-                        rf"{escaped_current_home}(?:Qt)+(?=/|$)",
-                        current_home_path,
-                        updated_line,
-                    )
-
+                updated_line = re.sub(
+                    rf"{re.escape(legacy_home_path)}(?=/|$)",
+                    current_home_path,
+                    updated_line,
+                )
+                updated_line = re.sub(
+                    rf"{re.escape(flatpak_data_path)}(?=/|$)",
+                    portproton_path,
+                    updated_line,
+                )
                 if updated_line.startswith("Exec="):
                     exec_value = updated_line[len("Exec="):].strip()
                     try:
                         parts = shlex.split(exec_value)
                     except ValueError:
                         parts = []
-
-                    if (
-                        len(parts) >= 4
-                        and parts[0] == "flatpak"
-                        and parts[1] == "run"
-                        and parts[2] == "ru.linux_gaming.PortProton"
-                        and flatpak_id
-                    ):
-                        parts[2] = flatpak_id
+                    if len(parts) >= 4 and parts[0] == "flatpak" and parts[1] == "run" and parts[2] == "ru.linux_gaming.PortProton":
+                        parts = parts[3:]
                         if "--silent" not in parts:
-                            parts.insert(3, "--silent")
-                        updated_line = f"Exec={shlex.join(parts)}"
+                            parts.insert(0, "--silent")
+                        updated_line = f"Exec={shlex.join(['portprotonqt', *parts])}"
                     elif len(parts) >= 3 and parts[0] == "env" and os.path.basename(parts[1]) == "start.sh":
                         if "--silent" not in parts:
                             updated_line = f'Exec={shlex.join(["portprotonqt", "--silent", *parts[2:]])}'
-
                 if updated_line.startswith("Exec="):
                     updated_line = _migrate_launcher_line(updated_line, launcher_command)
-
                 if updated_line == line_content:
                     continue
-
                 lines[idx] = f"{updated_line}{line_end}"
                 changed = True
-
             if not changed:
                 continue
-
             try:
                 Path(entry.path).write_text("".join(lines), encoding="utf-8")
                 migrated += 1
             except OSError as error:
                 logger.warning("Failed to update desktop file %s: %s", entry.path, error)
-
     steam_scripts_path = os.path.join(portproton_path, "steam_scripts")
     if not os.path.isdir(steam_scripts_path):
         return migrated
-
     for entry in os.scandir(steam_scripts_path):
         if not entry.name.endswith(".sh") or not entry.is_file():
             continue
-
         try:
             lines = Path(entry.path).read_text(encoding="utf-8").splitlines(keepends=True)
         except OSError as error:
             logger.warning("Failed to read steam script %s: %s", entry.path, error)
             continue
-
         changed = False
         for idx, line in enumerate(lines):
             line_end = "\r\n" if line.endswith("\r\n") else "\n"
@@ -409,13 +365,10 @@ def migrate_legacy_shortcut(portproton_path: str, desktop_dir: str | None = None
             updated_line = _migrate_launcher_line(line_content, launcher_command)
             if updated_line == line_content:
                 continue
-
             lines[idx] = f"{updated_line}{line_end}"
             changed = True
-
         if not changed:
             continue
-
         try:
             Path(entry.path).write_text("".join(lines), encoding="utf-8")
             migrated += 1
@@ -467,7 +420,7 @@ def extract_exec_target_path(exec_value: str | list[str]) -> str | None:
         if part.lower().endswith(LAUNCH_FILE_EXTENSIONS):
             return os.path.expanduser(part)
 
-    if parts[0] in ("env", "flatpak"):
+    if parts[0] == "env":
         return None
     return os.path.expanduser(parts[0])
 
@@ -519,11 +472,8 @@ def create_desktop_file(
     desktop_path = os.path.join(portproton_path, f"{game_name}.desktop")
     os.makedirs(os.path.dirname(icon_path), exist_ok=True)
 
-    flatpak_id = os.getenv("FLATPAK_ID")
     appimage_path = os.getenv("APPIMAGE", "").strip()
-    if flatpak_id:
-        exec_str = f'flatpak run {flatpak_id} --silent "{exe_path}"'
-    elif appimage_path and os.path.isfile(appimage_path):
+    if appimage_path and os.path.isfile(appimage_path):
         exec_str = shlex.join([appimage_path, "--silent", exe_path])
     else:
         exec_str = f'portprotonqt --silent "{exe_path}"'

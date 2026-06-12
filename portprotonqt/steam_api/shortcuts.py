@@ -188,10 +188,7 @@ def _create_launch_script(
     safe_game_name = re.sub(r'[<>:"/\\|?*]', '_', game_name.strip())
     script_path = os.path.join(steam_scripts_dir, f"{safe_game_name}.sh")
     appimage_path = os.getenv("APPIMAGE", "").strip()
-    flatpak_id = os.getenv("FLATPAK_ID", "").strip()
-    if flatpak_id:
-        launch_command = shlex.join(["flatpak", "run", flatpak_id, "--silent", exe_path])
-    elif appimage_path and os.path.isfile(appimage_path):
+    if appimage_path and os.path.isfile(appimage_path):
         launch_command = shlex.join([appimage_path, "--silent", exe_path])
     else:
         launch_command = shlex.join(["portprotonqt", "--silent", exe_path])

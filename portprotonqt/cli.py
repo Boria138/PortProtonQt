@@ -202,8 +202,6 @@ if [[ "$UPDATE_CT_PPQT" != "1" ]]; then
     full_command_line=("$(realpath "$0")" "$@")
     if [[ -n "$PPQT_BIN_PATH" ]]; then
         "$PPQT_BIN_PATH" --reinstall-steam-compat-tool
-    elif command -v flatpak >/dev/null 2>&1 && flatpak info ru.linux_gaming.PortProtonQt >/dev/null 2>&1; then
-        flatpak run ru.linux_gaming.PortProtonQt --reinstall-steam-compat-tool
     else
         portprotonqt --reinstall-steam-compat-tool
     fi
@@ -214,15 +212,10 @@ fi
 # Copy PPDB file from steam_scripts to exe directory if it exists
 # Steam passes the appid via SteamAppId environment variable
 if [[ -n "$SteamAppId" ]]; then
-    # Get PortProton directory from config file or Flatpak defaults
+    # Get PortProton directory from config file
     portproton_dir=""
     new_config_file="$HOME/.config/PortProtonQt.conf"
     legacy_config_file="$HOME/.config/PortProton.conf"
-    new_flatpak_id="ru.linux_gaming.PortProtonQt"
-    legacy_flatpak_id="ru.linux_gaming.PortProton"
-    new_flatpak_config_file="$HOME/.var/app/$new_flatpak_id/config/PortProtonQt.conf"
-    new_flatpak_dir="$HOME/.var/app/$new_flatpak_id/data"
-    legacy_flatpak_dir="$HOME/.var/app/$legacy_flatpak_id/data"
 
     if [[ -f "$new_config_file" ]]; then
         portproton_dir="$(awk -F'= ' '/^portdata_path/ {print $2; exit}' "$new_config_file" | tr -d '\\n')"
@@ -231,20 +224,6 @@ if [[ -n "$SteamAppId" ]]; then
     if [[ -z "$portproton_dir" ]] || [[ ! -d "$portproton_dir" ]]; then
         if [[ -f "$legacy_config_file" ]]; then
             portproton_dir="$(cat "$legacy_config_file" | tr -d '\\n')"
-        fi
-    fi
-
-    if [[ -z "$portproton_dir" ]] || [[ ! -d "$portproton_dir" ]]; then
-        if [[ -f "$new_flatpak_config_file" ]]; then
-            portproton_dir="$(awk -F'= ' '/^portdata_path/ {print $2; exit}' "$new_flatpak_config_file" | tr -d '\\n')"
-        fi
-    fi
-
-    if [[ -z "$portproton_dir" ]] || [[ ! -d "$portproton_dir" ]]; then
-        if [[ -d "$new_flatpak_dir" ]]; then
-            portproton_dir="$new_flatpak_dir"
-        elif [[ -d "$legacy_flatpak_dir" ]]; then
-            portproton_dir="$legacy_flatpak_dir"
         fi
     fi
 
@@ -257,11 +236,9 @@ if [[ -n "$SteamAppId" ]]; then
     fi
 fi
 
-# Use AppImage if specified, then Flatpak if installed, otherwise use portprotonqt from PATH
+# Use AppImage if specified, otherwise use portprotonqt from PATH
 if [[ -n "$PPQT_BIN_PATH" ]]; then
     "$PPQT_BIN_PATH" --debug-level INFO -- "${launch_args[@]}"
-elif command -v flatpak >/dev/null 2>&1 && flatpak info ru.linux_gaming.PortProtonQt >/dev/null 2>&1; then
-    flatpak run ru.linux_gaming.PortProtonQt --debug-level INFO -- "${launch_args[@]}"
 else
     portprotonqt --debug-level INFO -- "${launch_args[@]}"
 fi

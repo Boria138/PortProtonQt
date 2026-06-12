@@ -11,12 +11,6 @@ from portprotonqt.scripts_utils.dbus_tools import (
     DBUS_TIMEOUT,
     NOTIFICATIONS_BUS_NAME,
     NOTIFICATIONS_BUS_PATH,
-    PORTAL_BUS_NAME,
-    PORTAL_BUS_PATH,
-    PORTAL_IDLE_FLAG,
-    PORTAL_INTERFACE,
-    PORTAL_NOTIFICATION_INTERFACE,
-    PORTAL_REQUEST_INTERFACE,
     POWER_PROFILE_ENDPOINTS,
     PROFILES,
     PROPERTIES_INTERFACE,
@@ -27,7 +21,6 @@ from portprotonqt.scripts_utils.dbus_tools import (
     _bus_call,
     _get_property,
     _profile_names,
-    _serialize_icon,
     _variant_value,
     dbus_call,
     get_power_profile,
@@ -61,24 +54,6 @@ class TestNotificationRequest:
         req = NotificationRequest("a", "i", "t", "b", 1)
         with pytest.raises(AttributeError):
             req.app = "x"  # type: ignore[misc]
-
-
-class TestSerializeIcon:
-    def test_file_path_with_slash(self):
-        result = _serialize_icon("/usr/share/icon.png")
-        assert result.value == ["file", Variant("s", "/usr/share/icon.png")]
-
-    def test_file_path_with_dot(self):
-        result = _serialize_icon("icon.png")
-        assert result.value == ["file", Variant("s", "icon.png")]
-
-    def test_themed_icon(self):
-        result = _serialize_icon("dialog-information")
-        assert result.value == ["themed", Variant("as", ["dialog-information"])]
-
-    def test_themed_icon_hyphen(self):
-        result = _serialize_icon("audio-x-generic")
-        assert result.value == ["themed", Variant("as", ["audio-x-generic"])]
 
 
 class TestVariantValue:
@@ -267,26 +242,6 @@ class TestSendNotification:
                 patcher.stop()
         assert _run_async(run()) is True
 
-    def test_standard_fails_portal_succeeds(self):
-        async def run():
-            req = NotificationRequest("app", "", "Title", "Body", 5000)
-            call_count = 0
-
-            async def side_effect(msg):
-                nonlocal call_count
-                call_count += 1
-                if call_count == 1:
-                    return _make_error()
-                return _make_ok([None])
-
-            bus, patcher = _patch_bus()
-            bus.call = AsyncMock(side_effect=side_effect)
-            try:
-                return await send_notification(req)
-            finally:
-                patcher.stop()
-        assert _run_async(run()) is True
-
     def test_both_fail(self):
         async def run():
             req = NotificationRequest("app", "", "Title", "Body", 5000)
@@ -339,29 +294,23 @@ class TestRequestDeepinWmSwitch:
 
 
 class TestRequestIdleInhibit:
-    def test_screensaver_fallback_to_portal(self):
+    def test_screensaver_success(self):
         async def run():
             bus, patcher = _patch_bus()
-            bus.get_proxy_object = MagicMock(side_effect=Exception("no screensaver"))
-
-            call_count = 0
-
-            async def side_effect(msg):
-                nonlocal call_count
-                call_count += 1
-                if call_count == 1:
-                    return _make_ok(["/portal/path"])
-                return _make_ok(["/portal/path"])
-
-            bus.call = AsyncMock(side_effect=side_effect)
+            bus.introspect = AsyncMock(return_value="<node/>")
+            mock_iface = MagicMock()
+            mock_iface.call_inhibit = AsyncMock(return_value="cookie123")
+            mock_proxy = MagicMock()
+            mock_proxy.get_interface.return_value = mock_iface
+            bus.get_proxy_object.return_value = mock_proxy
             try:
                 return await request_idle_inhibit("app", "reason")
             finally:
                 patcher.stop()
 
         bus, kind, payload = _run_async(run())
-        assert kind == "portal"
-        assert payload == "/portal/path"
+        assert kind == "screensaver"
+        assert len(payload) == 2
         assert bus is not None
 
 
@@ -376,18 +325,6 @@ class TestReleaseIdleInhibit:
 
         iface, bus = _run_async(run())
         iface.call_un_inhibit.assert_called_once_with("cookie123")
-        bus.disconnect.assert_called_once()
-
-    def test_release_portal(self):
-        async def run():
-            bus, patcher = _patch_bus(_make_ok([]))
-            try:
-                await release_idle_inhibit(bus, "portal", "/handle/path")
-                return bus
-            finally:
-                patcher.stop()
-
-        bus = _run_async(run())
         bus.disconnect.assert_called_once()
 
     def test_release_suppresses_dbus_error(self):
@@ -413,18 +350,6 @@ class TestReleaseIdleInhibit:
 
         bus = _run_async(run())
         bus.disconnect.assert_called_once()
-
-    def test_release_portal_suppresses_error(self):
-        async def run():
-            bus = AsyncMock()
-            bus.call = AsyncMock(side_effect=DBusError("org.freedesktop.DBus.Error.Failed", "err"))
-            bus.disconnect = MagicMock()
-            await release_idle_inhibit(bus, "portal", "/handle/path")
-            return bus
-
-        bus = _run_async(run())
-        bus.disconnect.assert_called_once()
-
 
 class TestGetPowerProfile:
     def test_success(self):
@@ -598,25 +523,15 @@ class TestConstants:
     def test_bus_timeout(self):
         assert DBUS_TIMEOUT == 10
 
-    def test_portal_idle_flag(self):
-        assert PORTAL_IDLE_FLAG == 8
-
     def test_screensaver_bus(self):
         assert SCREENSAVER_BUS_NAME == "org.freedesktop.ScreenSaver"
         assert SCREENSAVER_BUS_PATH == "/org/freedesktop/ScreenSaver"
-
-    def test_portal_bus(self):
-        assert PORTAL_BUS_NAME == "org.freedesktop.portal.Desktop"
-        assert PORTAL_BUS_PATH == "/org/freedesktop/portal/desktop"
 
     def test_notification_bus(self):
         assert NOTIFICATIONS_BUS_NAME == "org.freedesktop.Notifications"
         assert NOTIFICATIONS_BUS_PATH == "/org/freedesktop/Notifications"
 
     def test_interfaces(self):
-        assert PORTAL_INTERFACE == "org.freedesktop.portal.Inhibit"
-        assert PORTAL_NOTIFICATION_INTERFACE == "org.freedesktop.portal.Notification"
-        assert PORTAL_REQUEST_INTERFACE == "org.freedesktop.portal.Request"
         assert PROPERTIES_INTERFACE == "org.freedesktop.DBus.Properties"
 
     def test_profile_constants(self):

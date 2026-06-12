@@ -45,7 +45,6 @@ class TestGetCurrentLauncherCommand:
         appimage = tmp_path / "PortProtonQt.AppImage"
         appimage.touch()
         monkeypatch.setenv("APPIMAGE", str(appimage))
-        monkeypatch.delenv("FLATPAK_ID", raising=False)
         monkeypatch.setattr(
             "portprotonqt.config.portproton.get_portproton_scripts_path",
             lambda: None,
@@ -57,7 +56,6 @@ class TestGetCurrentLauncherCommand:
 
     def test_portprotonqt_in_path(self, monkeypatch, tmp_path):
         monkeypatch.delenv("APPIMAGE", raising=False)
-        monkeypatch.delenv("FLATPAK_ID", raising=False)
         monkeypatch.setattr(
             "portprotonqt.config.portproton.get_portproton_scripts_path",
             lambda: None,
@@ -69,7 +67,6 @@ class TestGetCurrentLauncherCommand:
 
     def test_scripts_path(self, monkeypatch, tmp_path):
         monkeypatch.delenv("APPIMAGE", raising=False)
-        monkeypatch.delenv("FLATPAK_ID", raising=False)
         monkeypatch.setattr(
             "portprotonqt.config.portproton.get_portproton_scripts_path",
             lambda: str(tmp_path / "scripts"),
@@ -80,7 +77,6 @@ class TestGetCurrentLauncherCommand:
 
     def test_nothing_found(self, monkeypatch):
         monkeypatch.delenv("APPIMAGE", raising=False)
-        monkeypatch.delenv("FLATPAK_ID", raising=False)
         monkeypatch.setattr("shutil.which", lambda name: None)
         monkeypatch.setattr(
             "portprotonqt.config.portproton.get_portproton_scripts_path",
@@ -289,7 +285,7 @@ class TestMigrateLegacyShortcut:
 
         migrate_legacy_shortcut(str(pp_dir), str(desktop_dir))
         content = desktop_file.read_text()
-        assert "flatpak" not in content
+        assert "flatpak run ru.linux_gaming.PortProton" not in content
         assert "portprotonqt" in content
 
     def test_no_portproton_path_returns_zero(self, tmp_path, monkeypatch):

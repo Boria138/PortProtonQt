@@ -143,10 +143,7 @@ def get_runtime_status(
     start_cmd: list[str] | None = None,
     env_vars: dict[str, str] | None = None
 ) -> str:
-    """Check if RUNTIME is enabled and detect Flatpak usage."""
-    if os.getenv("FLATPAK_ID"):
-        return "FLATPAK in used"
-
+    """Check if RUNTIME is enabled."""
     env_vars = env_vars if env_vars is not None else get_portproton_env(exe_path)
     runtime_val = env_vars.get("PW_USE_RUNTIME")
 

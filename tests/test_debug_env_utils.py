@@ -6,27 +6,15 @@ from portprotonqt.debug_utils import env_utils
 from portprotonqt.debug_utils import gpu_info
 
 
-def test_get_runtime_status_enabled(monkeypatch: Any) -> None:
-    monkeypatch.delenv("FLATPAK_ID", raising=False)
-
+def test_get_runtime_status_enabled() -> None:
     assert env_utils.get_runtime_status("", env_vars={"PW_USE_RUNTIME": "1"}) == (
         "RUNTIME is enabled"
     )
 
 
-def test_get_runtime_status_disabled(monkeypatch: Any) -> None:
-    monkeypatch.delenv("FLATPAK_ID", raising=False)
-
+def test_get_runtime_status_disabled() -> None:
     assert env_utils.get_runtime_status("", env_vars={"PW_USE_RUNTIME": "0"}) == (
         "RUNTIME is disabled"
-    )
-
-
-def test_get_runtime_status_detects_flatpak(monkeypatch: Any) -> None:
-    monkeypatch.setenv("FLATPAK_ID", "ru.linux_gaming.PortProtonQt")
-
-    assert env_utils.get_runtime_status("", env_vars={"PW_USE_RUNTIME": "1"}) == (
-        "FLATPAK in used"
     )
 
 

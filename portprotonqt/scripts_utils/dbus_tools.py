@@ -3,7 +3,6 @@ import argparse
 import asyncio
 import contextlib
 import sys
-import time
 from collections.abc import Awaitable
 from dataclasses import dataclass
 from typing import Any, cast
@@ -23,12 +22,6 @@ DEEPIN_WM_BUS_NAME = "com.deepin.WMSwitcher"
 DEEPIN_WM_BUS_PATH = "/com/deepin/WMSwitcher"
 SCREENSAVER_BUS_NAME = "org.freedesktop.ScreenSaver"
 SCREENSAVER_BUS_PATH = "/org/freedesktop/ScreenSaver"
-PORTAL_BUS_NAME = "org.freedesktop.portal.Desktop"
-PORTAL_BUS_PATH = "/org/freedesktop/portal/desktop"
-PORTAL_INTERFACE = "org.freedesktop.portal.Inhibit"
-PORTAL_NOTIFICATION_INTERFACE = "org.freedesktop.portal.Notification"
-PORTAL_REQUEST_INTERFACE = "org.freedesktop.portal.Request"
-PORTAL_IDLE_FLAG = 8
 PROPERTIES_INTERFACE = "org.freedesktop.DBus.Properties"
 ACTIVE_PROFILE = "ActiveProfile"
 PROFILES = "Profiles"
@@ -76,19 +69,13 @@ async def _session_call(message: Message) -> bool:
 
 
 async def send_notification(request: NotificationRequest) -> bool:
-    """Send desktop notification with Portal fallback."""
+    """Send desktop notification."""
     bus = await dbus_call(MessageBus(bus_type=BusType.SESSION).connect())
     try:
         try:
-            if await _send_standard_notification(bus, request):
-                return True
+            return await _send_standard_notification(bus, request)
         except Exception as error:
             logger.warning("Standard notification failed: %s", error)
-
-        try:
-            return await _send_portal_notification(bus, request)
-        except Exception as error:
-            logger.warning("Portal notification failed: %s", error)
             return False
     finally:
         bus.disconnect()
@@ -122,37 +109,6 @@ async def _send_standard_notification(bus: MessageBus, request: NotificationRequ
     return body is not None
 
 
-def _serialize_icon(icon: str) -> Variant:
-    """Serialize icon to (sv) tuple for Portal notifications."""
-    if "/" in icon or "." in icon:
-        # File path
-        return Variant("(sv)", ["file", Variant("s", icon)])
-    # Themed icon name
-    return Variant("(sv)", ["themed", Variant("as", [icon])])
-
-
-async def _send_portal_notification(bus: MessageBus, request: NotificationRequest) -> bool:
-    notification = {
-        "title": Variant("s", request.title),
-        "body": Variant("s", request.body),
-    }
-    if request.icon:
-        notification["icon"] = _serialize_icon(request.icon)
-
-    body = await _bus_call(
-        bus,
-        Message(
-            destination=PORTAL_BUS_NAME,
-            path=PORTAL_BUS_PATH,
-            interface=PORTAL_NOTIFICATION_INTERFACE,
-            member="AddNotification",
-            signature="sa{sv}",
-            body=[f"portproton_{int(time.time() * 1000)}", notification],
-        ),
-    )
-    return body is not None
-
-
 async def request_deepin_wm_switch() -> bool:
     """Request Deepin window manager switch."""
     return await _session_call(
@@ -166,14 +122,10 @@ async def request_deepin_wm_switch() -> bool:
 
 
 async def request_idle_inhibit(application: str, reason: str) -> tuple[MessageBus, str, Any]:
-    """Request idle inhibit through screensaver or portal D-Bus API."""
+    """Request idle inhibit through screensaver D-Bus API."""
     bus = await dbus_call(MessageBus(bus_type=BusType.SESSION).connect())
     try:
-        try:
-            kind, payload = await _request_screensaver_inhibit(bus, application, reason)
-        except Exception as error:
-            logger.warning("Screensaver inhibit failed: %s", error)
-            kind, payload = await _request_portal_inhibit(bus, reason)
+        kind, payload = await _request_screensaver_inhibit(bus, application, reason)
     except Exception:
         bus.disconnect()
         raise
@@ -193,43 +145,13 @@ async def _request_screensaver_inhibit(
     return "screensaver", (iface, cookie)
 
 
-async def _request_portal_inhibit(bus: MessageBus, reason: str) -> tuple[str, Any]:
-    options = {"reason": Variant("s", reason)}
-    body = await _bus_call(
-        bus,
-        Message(
-            destination=PORTAL_BUS_NAME,
-            path=PORTAL_BUS_PATH,
-            interface=PORTAL_INTERFACE,
-            member="Inhibit",
-            signature="sua{sv}",
-            body=["", PORTAL_IDLE_FLAG, options],
-        ),
-    )
-    return "portal", body[0]
-
-
 async def release_idle_inhibit(bus: MessageBus, kind: str, payload: Any) -> None:
     """Release idle inhibit requested through request_idle_inhibit."""
     with contextlib.suppress(DBusError, asyncio.TimeoutError):
         if kind == "screensaver":
             iface, cookie = payload
             await dbus_call(iface.call_un_inhibit(cookie))
-        elif kind == "portal":
-            await _release_portal_inhibit(bus, payload)
     bus.disconnect()
-
-
-async def _release_portal_inhibit(bus: MessageBus, handle: str) -> None:
-    await _bus_call(
-        bus,
-        Message(
-            destination=PORTAL_BUS_NAME,
-            path=handle,
-            interface=PORTAL_REQUEST_INTERFACE,
-            member="Close",
-        ),
-    )
 
 
 async def get_power_profile() -> str | None:

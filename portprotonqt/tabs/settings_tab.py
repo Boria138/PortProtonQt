@@ -1,4 +1,3 @@
-import os
 from typing import TYPE_CHECKING, Any
 
 from PySide6.QtCore import Qt, QTimer
@@ -296,21 +295,19 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         hide_autoinstall_layout.addStretch()
         uiForm.addRow(hide_autoinstall_layout)
 
-        disable_runtime_download_layout = None
-        if not os.getenv("FLATPAK_ID"):
-            self.disableRuntimeDownloadCheckBox = QCheckBox()
-            self.disableRuntimeDownloadCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
-            self.disableRuntimeDownloadCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-            self.disableRuntimeDownloadTitle = QLabel(_("Disable runtime download"))
-            self.disableRuntimeDownloadTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-            self.disableRuntimeDownloadTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
-            self.disableRuntimeDownloadTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-            self.disableRuntimeDownloadCheckBox.setChecked(ui_config.get_disable_runtime_download())
-            disable_runtime_download_layout = QHBoxLayout()
-            disable_runtime_download_layout.setContentsMargins(0, 0, 0, 0)
-            disable_runtime_download_layout.addWidget(self.disableRuntimeDownloadCheckBox)
-            disable_runtime_download_layout.addWidget(self.disableRuntimeDownloadTitle)
-            disable_runtime_download_layout.addStretch()
+        self.disableRuntimeDownloadCheckBox = QCheckBox()
+        self.disableRuntimeDownloadCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
+        self.disableRuntimeDownloadCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.disableRuntimeDownloadTitle = QLabel(_("Disable runtime download"))
+        self.disableRuntimeDownloadTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.disableRuntimeDownloadTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
+        self.disableRuntimeDownloadTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.disableRuntimeDownloadCheckBox.setChecked(ui_config.get_disable_runtime_download())
+        disable_runtime_download_layout = QHBoxLayout()
+        disable_runtime_download_layout.setContentsMargins(0, 0, 0, 0)
+        disable_runtime_download_layout.addWidget(self.disableRuntimeDownloadCheckBox)
+        disable_runtime_download_layout.addWidget(self.disableRuntimeDownloadTitle)
+        disable_runtime_download_layout.addStretch()
 
         download_wine_to_steam_layout = None
         self.steamCompatCheckBox = QCheckBox()
