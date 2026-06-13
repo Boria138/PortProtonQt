@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-06-04 10:32+0500\n"
-"PO-Revision-Date: 2026-06-11 10:21+0000\n"
+"PO-Revision-Date: 2026-06-12 23:07+0000\n"
 "Last-Translator: rogerio-mattos <rogerio-mattos@noreply.codeberg.org>\n"
 "Language-Team: Portuguese (Brazil) <https://translate.codeberg.org/projects/"
 "portprotonqt/portprotonqt/pt_BR/>\n"
@@ -1543,294 +1543,302 @@ msgid "Rendering backend"
 msgstr "Backend de renderização"
 
 msgid "Ready FD"
-msgstr ""
+msgstr "FD pronto"
 
 msgid "E.g., 3"
-msgstr ""
+msgstr "Ex.: 3"
 
 msgid "Hide cursor delay (ms)"
-msgstr ""
+msgstr "Atraso para ocultar o cursor (ms)"
 
 msgid "E.g., 1000"
-msgstr ""
+msgstr "Ex.: 1000"
 
 msgid "XWayland servers count"
-msgstr ""
+msgstr "Quantidade de servidores XWayland"
 
 msgid "E.g., 1"
-msgstr ""
+msgstr "Ex.: 1"
 
 msgid "Force orientation"
-msgstr ""
+msgstr "Forçar orientação"
 
 msgid "Cursor scale height"
-msgstr ""
+msgstr "Altura de escala do cursor"
 
 msgid "SDR gamut wideness (0-1)"
-msgstr ""
+msgstr "Amplitude do gamut SDR (0-1)"
 
 msgid "HDR SDR content nits"
-msgstr ""
+msgstr "Nits do conteúdo SDR em HDR"
 
 msgid "E.g., 400"
-msgstr ""
+msgstr "Ex.: 400"
 
 msgid "HDR ITM SDR nits"
-msgstr ""
+msgstr "Nits SDR do ITM HDR"
 
 msgid "HDR ITM target nits"
-msgstr ""
+msgstr "Nits alvo do ITM HDR"
 
 msgid "Framerate limit"
-msgstr ""
+msgstr "Limite de taxa de quadros"
 
 msgid "Unfocused refresh rate (Hz)"
-msgstr ""
+msgstr "Taxa de atualização sem foco (Hz)"
 
 msgid "Window"
-msgstr ""
+msgstr "Janela"
 
 msgid "Platform"
-msgstr ""
+msgstr "Plataforma"
 
 msgid "HDR"
-msgstr ""
+msgstr "HDR"
 
 msgid "Overlay"
-msgstr ""
+msgstr "Overlay"
 
 msgid "Make the window borderless"
-msgstr ""
+msgstr "Tornar a janela sem bordas"
 
 msgid "Make the window fullscreen"
-msgstr ""
+msgstr "Tornar a janela em tela cheia"
 
 msgid "Grab the keyboard"
-msgstr ""
+msgstr "Capturar o teclado"
 
 msgid ""
 "Force grab cursor: always use relative mouse mode instead of switching "
 "with cursor visibility"
 msgstr ""
+"Forçar captura do cursor: sempre usar modo relativo do mouse em vez de "
+"alternar com a visibilidade do cursor"
 
 msgid "Support Wayland clients using xdg-shell"
-msgstr ""
+msgstr "Suportar clientes Wayland usando xdg-shell"
 
 msgid ""
 "Force windows inside of gamescope to be the size of the nested display "
 "(fullscreen)"
 msgstr ""
+"Forçar janelas dentro do gamescope ao tamanho da tela aninhada (tela cheia)"
 
 msgid ""
 "Enable HDR output (needs Gamescope WSI layer enabled for support from "
 "clients)"
 msgstr ""
+"Ativar saída HDR (requer camada WSI do Gamescope ativada para suporte dos "
+"clientes)"
 
 msgid "Enable SDR->HDR inverse tone mapping. only works for SDR input"
 msgstr ""
+"Ativar mapeamento de tom inverso SDR->HDR. funciona apenas com entrada SDR"
 
 msgid "Force support for HDR even if the display doesn't support it"
-msgstr ""
+msgstr "Forçar suporte a HDR mesmo se o monitor não suportar"
 
 msgid "Force output to HDR10 PQ even if unsupported (will look wrong)"
-msgstr ""
+msgstr "Forçar saída HDR10 PQ mesmo sem suporte (a imagem ficará incorreta)"
 
 msgid "Display heatmap-style debug view of HDR luminance in nits"
 msgstr ""
+"Exibir visualização de depuração em mapa de calor da luminância HDR em nits"
 
 msgid "Launch with the mangoapp (mangohud) performance overlay enabled"
-msgstr ""
+msgstr "Iniciar com overlay de desempenho mangoapp (mangohud) ativado"
 
 msgid "Enable adaptive sync if available (variable rate refresh)"
 msgstr ""
+"Ativar sincronização adaptativa, se disponível (taxa de atualização variável)"
 
 msgid "Resolution and scaling"
-msgstr ""
+msgstr "Resolução e escala"
 
 msgid "Quick presets"
-msgstr ""
+msgstr "Predefinições rápidas"
 
 #, python-brace-format
 msgid "Enable {0}"
-msgstr ""
+msgstr "Ativar {0}"
 
 msgid "Default"
-msgstr ""
+msgstr "Padrão"
 
 msgid "FSR upscaling"
-msgstr ""
+msgstr "FSR upscaling"
 
 msgid "HDR setup"
-msgstr ""
+msgstr "Configuração HDR"
 
 msgid "Performance"
-msgstr ""
+msgstr "Desempenho"
 
 msgid "Custom"
-msgstr ""
+msgstr "Personalizado"
 
 msgid "Save custom"
-msgstr ""
+msgstr "Salvar personalizado"
 
 msgid "Clear"
-msgstr ""
+msgstr "Limpar"
 
 msgid "Gamescope switches"
-msgstr ""
+msgstr "Opções do Gamescope"
 
 msgid "Other"
-msgstr ""
+msgstr "Outros"
 
 msgid "Extra args"
-msgstr ""
+msgstr "Args extras"
 
 msgid "Additional Gamescope options not covered by the GUI."
-msgstr ""
+msgstr "Opções adicionais do Gamescope não cobertas pela interface."
 
 msgid "Example: --cursor-scale-height=1080 --force-orientation=left"
-msgstr ""
+msgstr "Exemplo: --cursor-scale-height=1080 --force-orientation=left"
 
 #, python-brace-format
 msgid "Disable {0}"
-msgstr ""
+msgstr "Desativar {0}"
 
 msgid "Custom preset is empty. Save one first."
-msgstr ""
+msgstr "A predefinição personalizada está vazia. Salve uma primeiro."
 
 msgid "Custom preset saved."
-msgstr ""
+msgstr "Predefinição personalizada salva."
 
 msgid "Failed to save custom preset."
-msgstr ""
+msgstr "Falha ao salvar a predefinição personalizada."
 
 msgid "Overlay position"
-msgstr ""
+msgstr "Posição do overlay"
 
 msgid "Device battery"
-msgstr ""
+msgstr "Bateria do dispositivo"
 
 msgid "FPS limit method"
-msgstr ""
+msgstr "Método de limite de FPS"
 
 msgid "Anisotropic filtering"
-msgstr ""
+msgstr "Filtragem anisotrópica"
 
 msgid "FCAT screen edge"
-msgstr ""
+msgstr "Borda da tela FCAT"
 
 msgid "Table columns"
-msgstr ""
+msgstr "Colunas da tabela"
 
 msgid "Network (tx/rx kb/s)"
-msgstr ""
+msgstr "Rede (tx/rx kb/s)"
 
 msgid "GPU list"
-msgstr ""
+msgstr "Lista de GPUs"
 
 msgid "Background opacity"
-msgstr ""
+msgstr "Opacidade do fundo"
 
 msgid "Round corners (px)"
-msgstr ""
+msgstr "Cantos arredondados (px)"
 
 msgid "Top-left"
-msgstr ""
+msgstr "Superior esquerdo"
 
 msgid "Top-right"
-msgstr ""
+msgstr "Superior direito"
 
 msgid "Middle-left"
-msgstr ""
+msgstr "Meio esquerdo"
 
 msgid "Middle-right"
-msgstr ""
+msgstr "Meio direito"
 
 msgid "Bottom-left"
-msgstr ""
+msgstr "Inferior esquerdo"
 
 msgid "Bottom-right"
-msgstr ""
+msgstr "Inferior direito"
 
 msgid "Top-center"
-msgstr ""
+msgstr "Superior central"
 
 msgid "Bottom-center"
-msgstr ""
+msgstr "Inferior central"
 
 msgid "Gamepad"
-msgstr ""
+msgstr "Controle"
 
 msgid "Mouse"
-msgstr ""
+msgstr "Mouse"
 
 msgid "Gamepad, mouse"
-msgstr ""
+msgstr "Controle, mouse"
 
 msgid "Late"
-msgstr ""
+msgstr "Tardio"
 
 msgid "Early"
-msgstr ""
+msgstr "Antecipado"
 
 msgid "General"
-msgstr ""
+msgstr "Geral"
 
 msgid "CPU / GPU"
-msgstr ""
+msgstr "CPU / GPU"
 
 msgid "Application architecture (32/64-bit)"
-msgstr ""
+msgstr "Arquitetura do aplicativo (32/64 bits)"
 
 msgid "Battery percent and energy consumption"
-msgstr ""
+msgstr "Percentual da bateria e consumo de energia"
 
 msgid "Battery icon instead of percent"
-msgstr ""
+msgstr "Ícone da bateria em vez de percentual"
 
 msgid "Remaining battery time"
-msgstr ""
+msgstr "Tempo restante da bateria"
 
 msgid "Battery wattage"
-msgstr ""
+msgstr "Potência da bateria"
 
 msgid "Force bicubic filtering"
-msgstr ""
+msgstr "Forçar filtragem bicúbica"
 
 msgid "Core load as vertical bars"
-msgstr ""
+msgstr "Carga dos núcleos em barras verticais"
 
 msgid "Per-core load and frequency"
-msgstr ""
+msgstr "Carga e frequência por núcleo"
 
 msgid "Core load color change"
-msgstr ""
+msgstr "Mudança de cor da carga dos núcleos"
 
 msgid "CPU core type (P/E/ARM)"
-msgstr ""
+msgstr "Tipo de núcleo da CPU (P/E/ARM)"
 
 msgid "CPU efficiency (frames/joule)"
-msgstr ""
+msgstr "Eficiência da CPU (quadros/joule)"
 
 msgid "CPU load color change"
-msgstr ""
+msgstr "Mudança de cor da carga da CPU"
 
 msgid "CPU frequency in MHz"
-msgstr ""
+msgstr "Frequência da CPU em MHz"
 
 msgid "CPU power draw (watts)"
-msgstr ""
+msgstr "Consumo de energia da CPU (watts)"
 
 msgid "CPU temperature"
-msgstr ""
+msgstr "Temperatura da CPU"
 
 msgid "Gamescope frametime graphs"
-msgstr ""
+msgstr "Gráficos de frametime do Gamescope"
 
 msgid "Wireless device battery icon"
-msgstr ""
+msgstr "Ícone de bateria do dispositivo sem fio"
 
 msgid "Display server type (X11/Wayland)"
-msgstr ""
+msgstr "Tipo de servidor de exibição (X11/Wayland)"
 
 msgid "Dynamic frametime Y-axis"
 msgstr ""
