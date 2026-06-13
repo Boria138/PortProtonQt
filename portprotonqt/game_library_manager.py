@@ -5,7 +5,7 @@ from PySide6.QtWidgets import QAbstractButton
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QScrollArea, QSlider, QScroller, QStackedWidget
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QRegion
-from portprotonqt.custom_widgets import FlowLayout
+from portprotonqt.custom_widgets import FlowLayout, AutoHideScrollArea
 from portprotonqt.config import favorites_config, game_config, ui_config
 from portprotonqt.image_utils import load_pixmap_async
 from portprotonqt.context_menu_manager import ContextMenuManager, CustomLineEdit
@@ -73,10 +73,10 @@ class GameLibraryManager:
         layout.addWidget(searchWidget)
 
         # Scroll area for game grid
-        scrollArea = QScrollArea()
+        scrollArea = AutoHideScrollArea(theme=self.theme)
         self.gamesScrollArea = scrollArea
         scrollArea.setWidgetResizable(True)
-        scrollArea.setStyleSheet(self.theme.SCROLL_STYLE + self.theme.TRANSPARENT_BACKGROUND_STYLE)
+        # scrollArea.setStyleSheet(self.theme.SCROLL_STYLE + self.theme.TRANSPARENT_BACKGROUND_STYLE)
         QScroller.grabGesture(scrollArea.viewport(), QScroller.ScrollerGestureType.LeftMouseButtonGesture)
 
         self.gamesListWidget = QWidget()
