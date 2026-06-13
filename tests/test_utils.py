@@ -1,0 +1,380 @@
+"""Tests for steam_api/utils.py — normalize_name, search, VDF loading."""
+from pathlib import Path
+from unittest.mock import patch
+
+from portprotonqt.steam_api.utils import (
+    normalize_name,
+    is_valid_candidate,
+    filter_candidates,
+    remove_duplicates,
+    safe_vdf_load,
+    convert_steam_id,
+    decode_text,
+    get_steam_launch_commands,
+    get_steam_compatibilitytools_dir,
+    get_steam_compat_tool,
+    get_local_steam_cover,
+    get_steam_installed_games,
+    _iter_existing_steam_data_dirs,
+    _is_steam_proton_dir,
+    _is_portrait_image,
+)
+from portprotonqt.steam_api.cache import (
+    build_index,
+    search_app,
+    build_weanticheatyet_index,
+    search_anticheat_entry,
+    search_anticheat_status,
+)
+
+
+class TestNormalizeName:
+    def test_lowercase(self):
+        assert normalize_name("Counter-Strike 2") == "counter strike 2"
+
+    def test_trademark_symbol(self):
+        assert normalize_name("Cyberpunk 2077™") == "cyberpunk 2077"
+
+    def test_registered_symbol(self):
+        assert normalize_name("Game®") == "game"
+
+    def test_colon_replaced_with_space(self):
+        assert normalize_name("Call of Duty: Modern Warfare") == "call of duty modern warfare"
+
+    def test_comma_replaced_with_space(self):
+        assert normalize_name("Halo, mcc") == "halo mcc"
+
+    def test_hyphen_replaced_with_space(self):
+        assert normalize_name("Grand Theft Auto V") == "grand theft auto v"
+
+    def test_multiple_spaces_collapsed(self):
+        assert normalize_name("Game    Title") == "game title"
+
+    def test_suffix_bin_removed(self):
+        assert normalize_name("gamebin") == "game"
+
+    def test_suffix_app_removed(self):
+        assert normalize_name("gameapp") == "game"
+
+    def test_suffix_bin_with_space(self):
+        assert normalize_name("game bin") == "game"
+
+    def test_keyword_ultimate_removed(self):
+        assert normalize_name("Red Dead Redemption 2 Ultimate Edition") == "red dead redemption 2"
+
+    def test_keyword_edition_removed(self):
+        assert normalize_name("Cyberpunk 2077 Edition") == "cyberpunk 2077"
+
+    def test_keyword_definitive_removed(self):
+        assert normalize_name("Zelda Definitive") == "zelda"
+
+    def test_keyword_complete_removed(self):
+        assert normalize_name("Halo Complete") == "halo"
+
+    def test_keyword_remastered_removed(self):
+        assert normalize_name("Dark Souls Remastered") == "dark souls"
+
+    def test_empty_string(self):
+        assert normalize_name("") == ""
+
+    def test_only_symbols(self):
+        assert normalize_name("™®") == ""
+
+    def test_preserves_normal_words(self):
+        assert normalize_name("The Witcher 3") == "the witcher 3"
+
+
+class TestIsValidCandidate:
+    def test_valid_candidate(self):
+        assert is_valid_candidate("Cyberpunk 2077") is True
+
+    def test_rejects_game(self):
+        assert is_valid_candidate("game") is False
+
+    def test_rejects_win32(self):
+        assert is_valid_candidate("GameWin32") is False
+
+    def test_rejects_win64(self):
+        assert is_valid_candidate("GameWin64") is False
+
+    def test_rejects_gamelauncher(self):
+        assert is_valid_candidate("GameLauncher") is False
+
+    def test_empty_string(self):
+        assert is_valid_candidate("") is True
+
+    def test_whitespace_only(self):
+        assert is_valid_candidate("   ") is True
+
+
+class TestFilterCandidates:
+    def test_filters_invalid(self):
+        candidates = ["Cyberpunk 2077", "game", "GameWin32", "Dota 2"]
+        result = filter_candidates(candidates)
+        assert "Cyberpunk 2077" in result
+        assert "Dota 2" in result
+        assert "game" not in result
+        assert "GameWin32" not in result
+
+    def test_filters_empty_strings(self):
+        candidates = ["Valid Game", "", "  ", "Another"]
+        result = filter_candidates(candidates)
+        assert "" not in result
+        assert "  " not in result
+
+    def test_empty_list(self):
+        assert filter_candidates([]) == []
+
+
+class TestRemoveDuplicates:
+    def test_preserves_order(self):
+        assert remove_duplicates(["a", "b", "a", "c", "b"]) == ["a", "b", "c"]
+
+    def test_empty_list(self):
+        assert remove_duplicates([]) == []
+
+
+class TestSafeVdfLoad:
+    def test_load_text_vdf(self, tmp_path: Path):
+        vdf_file = tmp_path / "test.vdf"
+        vdf_file.write_text('"root"\n{\n    "key" "value"\n}\n')
+        result = safe_vdf_load(str(vdf_file))
+        assert result["root"]["key"] == "value"
+
+    def test_load_empty_file(self, tmp_path: Path):
+        vdf_file = tmp_path / "empty.vdf"
+        vdf_file.write_bytes(b"")
+        result = safe_vdf_load(str(vdf_file))
+        assert result == {}
+
+    def test_load_nonexistent_file(self):
+        result = safe_vdf_load("/nonexistent/path/file.vdf")
+        assert result == {}
+
+    def test_load_binary_vdf(self, tmp_path: Path):
+        vdf_file = tmp_path / "binary.vdf"
+        vdf_file.write_bytes(b"\x00binary data")
+        result = safe_vdf_load(str(vdf_file))
+        assert isinstance(result, dict)
+
+
+class TestBuildIndex:
+    def test_builds_index_by_normalized_name(self, sample_steam_apps):
+        index = build_index(sample_steam_apps)
+        assert "counter strike 2" in index
+        assert index["counter strike 2"]["appid"] == 730
+
+    def test_empty_list(self):
+        assert build_index([]) == {}
+
+    def test_skips_empty_normalized_name(self):
+        apps = [{"appid": 1, "name": "Game", "normalized_name": ""}]
+        assert build_index(apps) == {}
+
+
+class TestSearchApp:
+    def test_exact_match(self, sample_steam_apps):
+        index = build_index(sample_steam_apps)
+        result = search_app("counter strike 2", index)
+        assert result is not None
+        assert result["appid"] == 730
+
+    def test_partial_match_high_ratio(self, sample_steam_apps):
+        index = build_index(sample_steam_apps)
+        result = search_app("team fortress", index)
+        assert result is not None
+        assert result["appid"] == 440
+
+    def test_no_match(self, sample_steam_apps):
+        index = build_index(sample_steam_apps)
+        result = search_app("totally unknown game xyz", index)
+        assert result is None
+
+    def test_empty_index(self):
+        assert search_app("anything", {}) is None
+
+
+class TestBuildWeanticheatyetIndex:
+    def test_builds_index(self, sample_anticheat_apps):
+        index = build_weanticheatyet_index(sample_anticheat_apps)
+        assert "fortnite" in index
+        assert index["fortnite"]["status"] == "Broken"
+
+    def test_empty_list(self):
+        assert build_weanticheatyet_index([]) == {}
+
+    def test_skips_empty_normalized_name(self):
+        apps = [{"normalized_name": "", "status": "ok", "slug": "x"}]
+        assert build_weanticheatyet_index(apps) == {}
+
+
+class TestSearchAnticheatEntry:
+    def test_exact_match(self, sample_anticheat_apps):
+        index = build_weanticheatyet_index(sample_anticheat_apps)
+        result = search_anticheat_entry("fortnite", index)
+        assert result is not None
+        assert result["status"] == "Broken"
+
+    def test_no_match(self, sample_anticheat_apps):
+        index = build_weanticheatyet_index(sample_anticheat_apps)
+        result = search_anticheat_entry("unknown game", index)
+        assert result is None
+
+    def test_empty_candidate(self, sample_anticheat_apps):
+        index = build_weanticheatyet_index(sample_anticheat_apps)
+        assert search_anticheat_entry("", index) is None
+
+
+class TestSearchAnticheatStatus:
+    def test_returns_status(self, sample_anticheat_apps):
+        index = build_weanticheatyet_index(sample_anticheat_apps)
+        assert search_anticheat_status("fortnite", index) == "Broken"
+
+    def test_returns_empty_string_on_miss(self, sample_anticheat_apps):
+        index = build_weanticheatyet_index(sample_anticheat_apps)
+        assert search_anticheat_status("unknown", index) == ""
+
+
+class TestConvertSteamId:
+    def test_positive(self):
+        assert convert_steam_id(12345) == 12345
+
+    def test_negative_to_unsigned(self):
+        assert convert_steam_id(-1) == 0xFFFFFFFF
+
+    def test_zero(self):
+        assert convert_steam_id(0) == 0
+
+
+class TestDecodeText:
+    def test_html_entities(self):
+        assert decode_text("&amp;") == "&"
+        assert decode_text("&lt;b&gt;") == "<b>"
+
+    def test_plain_text(self):
+        assert decode_text("hello world") == "hello world"
+
+
+class TestIterExistingSteamDataDirs:
+    def test_returns_existing_dirs(self, tmp_path: Path):
+        steam_dir = tmp_path / "steam"
+        steam_dir.mkdir()
+        with patch("portprotonqt.steam_api.utils.STEAM_DATA_DIRS", (str(steam_dir),)):
+            result = _iter_existing_steam_data_dirs()
+            assert len(result) == 1
+
+    def test_skips_nonexistent(self):
+        with patch("portprotonqt.steam_api.utils.STEAM_DATA_DIRS", ("/nonexistent/path",)):
+            result = _iter_existing_steam_data_dirs()
+            assert len(result) == 0
+
+    def test_deduplicates_resolved_symlinks(self, tmp_path: Path):
+        real_dir = tmp_path / "real"
+        real_dir.mkdir()
+        link_dir = tmp_path / "link"
+        link_dir.symlink_to(real_dir)
+        with patch("portprotonqt.steam_api.utils.STEAM_DATA_DIRS", (str(real_dir), str(link_dir))):
+            result = _iter_existing_steam_data_dirs()
+            assert len(result) == 1
+
+
+class TestIsSteamProtonDir:
+    def test_with_files_bin_wine(self, tmp_path: Path):
+        proton_dir = tmp_path / "Proton"
+        proton_dir.mkdir()
+        wine_file = proton_dir / "files" / "bin" / "wine"
+        wine_file.parent.mkdir(parents=True)
+        wine_file.touch()
+        assert _is_steam_proton_dir(proton_dir) is True
+
+    def test_with_dist_bin_wine(self, tmp_path: Path):
+        proton_dir = tmp_path / "Proton"
+        proton_dir.mkdir()
+        wine_file = proton_dir / "dist" / "bin" / "wine"
+        wine_file.parent.mkdir(parents=True)
+        wine_file.touch()
+        assert _is_steam_proton_dir(proton_dir) is True
+
+    def test_not_proton_dir(self, tmp_path: Path):
+        proton_dir = tmp_path / "NotProton"
+        proton_dir.mkdir()
+        assert _is_steam_proton_dir(proton_dir) is False
+
+    def test_not_a_dir(self, tmp_path: Path):
+        assert _is_steam_proton_dir(tmp_path / "nope") is False
+
+
+class TestGetSteamLaunchCommands:
+    def test_no_steam_home(self):
+        with patch("portprotonqt.steam_api.utils._iter_existing_steam_data_dirs", return_value=[]):
+            result = get_steam_launch_commands("730")
+            assert result == []
+
+    def test_flatpak_steam(self, tmp_path: Path):
+        steam_dir = tmp_path / ".var" / "app" / "com.valvesoftware.Steam" / "data" / "Steam"
+        steam_dir.mkdir(parents=True)
+        with (
+            patch("portprotonqt.steam_api.utils._iter_existing_steam_data_dirs", return_value=[steam_dir]),
+            patch("shutil.which", return_value="/usr/bin/flatpak"),
+        ):
+            result = get_steam_launch_commands("730")
+            assert len(result) == 1
+            assert "flatpak" in result[0][0]
+            assert "730" in result[0]
+
+
+class TestGetSteamCompatTool:
+    def test_no_steam_home(self):
+        with patch("portprotonqt.steam_api.utils.get_steam_home", return_value=None):
+            assert get_steam_compat_tool(730) is None
+
+    def test_no_config_vdf(self, tmp_path: Path):
+        steam_dir = tmp_path / "steam"
+        steam_dir.mkdir()
+        with patch("portprotonqt.steam_api.utils.get_steam_home", return_value=steam_dir):
+            assert get_steam_compat_tool(730) is None
+
+
+class TestGetLocalSteamCover:
+    def test_no_steam_home(self):
+        with patch("portprotonqt.steam_api.utils.get_steam_home", return_value=None):
+            assert get_local_steam_cover(730) == ""
+
+    def test_empty_appid(self):
+        assert get_local_steam_cover("") == ""
+
+    def test_no_librarycache(self, tmp_path: Path):
+        steam_dir = tmp_path / "steam"
+        steam_dir.mkdir()
+        with patch("portprotonqt.steam_api.utils.get_steam_home", return_value=steam_dir):
+            assert get_local_steam_cover(730) == ""
+
+
+class TestGetSteamInstalledGames:
+    def test_no_steam_home(self):
+        with patch("portprotonqt.steam_api.utils.get_steam_home", return_value=None):
+            assert get_steam_installed_games() == []
+
+
+class TestGetSteamCompatibilitytoolsDir:
+    def test_no_steam_home(self):
+        with patch("portprotonqt.steam_api.utils.get_steam_home", return_value=None):
+            assert get_steam_compatibilitytools_dir() is None
+
+    def test_creates_dir(self, tmp_path: Path):
+        steam_dir = tmp_path / "steam"
+        steam_dir.mkdir()
+        with patch("portprotonqt.steam_api.utils.get_steam_home", return_value=steam_dir):
+            result = get_steam_compatibilitytools_dir()
+            assert result is not None
+            assert result.exists()
+
+
+class TestIsPortraitImage:
+    def test_nonexistent_file(self):
+        assert _is_portrait_image(Path("/nonexistent/file.png")) is False
+
+    def test_invalid_image(self, tmp_path: Path):
+        bad_file = tmp_path / "bad.png"
+        bad_file.write_bytes(b"not an image")
+        assert _is_portrait_image(bad_file) is False

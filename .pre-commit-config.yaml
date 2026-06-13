@@ -57,3 +57,13 @@ repos:
         language: system
         files: (^portprotonqt/.*\.py$|^build-aux/share/portproton/|meson\.build$)
         pass_filenames: false
+
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest
+        entry: uv run pytest tests/ -x -q --tb=line
+        language: system
+        types: [python]
+        files: ^(tests/|portprotonqt/)
+        pass_filenames: false
