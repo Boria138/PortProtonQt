@@ -28,6 +28,6 @@ fi
 python dev-scripts/l10n.py
 
 git push "$remote" "$main_branch"
-git push "$remote" "$main_branch:$weblate_branch"
+git push --force "$remote" "$main_branch:$weblate_branch"
 
 echo "Weblate translations accepted and $weblate_branch synced to $main_branch."
