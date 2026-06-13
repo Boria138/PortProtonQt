@@ -6,16 +6,16 @@
 ## [Unreleased]
 
 ### Added
+- Добавлен `AutoHideScrollArea` — QScrollArea с автоматически скрывающейся полосой прокрутки с анимацией fade-in/out
 
 ### Changed
-- Исключены лишние артефакты (.changes, .buildinfo, -dbgsym.deb) при сборке Debian пакетов в CI
-
 
 ### Fixed
 - Исправлено определение тёмной темы для `Cinnamon`, `XFCE` и `MATE`
 
 
 ### Contributors
+- @Dervart
 
 ---
 
