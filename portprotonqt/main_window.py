@@ -1842,7 +1842,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
         self.autoInstallScrollArea = AutoHideScrollArea(theme=self.theme)
         self.autoInstallScrollArea.setWidgetResizable(True)
-        self.autoInstallScrollArea.setStyleSheet(self.theme.SCROLL_STYLE + self.theme.TRANSPARENT_BACKGROUND_STYLE)
         QScroller.grabGesture(self.autoInstallScrollArea.viewport(), QScroller.ScrollerGestureType.LeftMouseButtonGesture)
 
         self.autoInstallContainer = QWidget()

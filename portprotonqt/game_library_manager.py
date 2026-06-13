@@ -76,7 +76,6 @@ class GameLibraryManager:
         scrollArea = AutoHideScrollArea(theme=self.theme)
         self.gamesScrollArea = scrollArea
         scrollArea.setWidgetResizable(True)
-        # scrollArea.setStyleSheet(self.theme.SCROLL_STYLE + self.theme.TRANSPARENT_BACKGROUND_STYLE)
         QScroller.grabGesture(scrollArea.viewport(), QScroller.ScrollerGestureType.LeftMouseButtonGesture)
 
         self.gamesListWidget = QWidget()
