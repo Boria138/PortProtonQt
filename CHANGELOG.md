@@ -9,6 +9,9 @@
 - Добавлен `AutoHideScrollArea` — QScrollArea с автоматически скрывающейся полосой прокрутки с анимацией fade-in/out
 
 ### Changed
+- Убран дебаг-код `proton_downloads` из менеджера WINE/Proton
+
+### Removed
 
 ### Fixed
 - Исправлено определение тёмной темы для `Cinnamon`, `XFCE` и `MATE`
