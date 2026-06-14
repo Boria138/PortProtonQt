@@ -305,6 +305,7 @@ git commit -m "feat: description in English ≤72 chars"
 | uv-lock | uv.lock up to date |
 | ruff-check | Linting (E, W, F, B, C4, UP) |
 | pyright | Type checking |
+| pytest | Unit tests (367 tests, ~1.2s) |
 | bash-n | Bash syntax check and shebang `CRLF` check for `build-aux/share/portproton/scripts/` |
 | check-meson | meson.build syntax + files |
 | check-qss-properties | Theme QSS validation |
@@ -331,6 +332,7 @@ These tools are executed ONLY via pre-commit hooks.
 - `pre-commit run --all-files`
 - `pre-commit run ruff-check`
 - `pre-commit run pyright`
+- `pre-commit run pytest`
 
 #### Rationale
 
@@ -338,6 +340,61 @@ These tools are executed ONLY via pre-commit hooks.
 Direct execution bypasses project configuration and is forbidden.
 
 Do not attempt to execute binaries manually.
+
+---
+
+## Testing
+
+### Structure
+
+```
+tests/
+├── conftest.py              # Shared fixtures (tmp_config_dir, sample_steam_apps)
+├── test_utils.py            # Steam API utils (normalize_name, search, VDF, Steam utils)
+├── test_validators.py       # Config validators (string, int, bool, path, url)
+├── test_cache_manager.py    # CacheManager (save/load/TTL/atomic writes)
+├── test_dark_theme.py       # Dark theme detection (XFCE/MATE/Cinnamon/GNOME)
+├── test_steam_cache.py      # exiftool skip, cache eviction, delete_cached_app_files
+├── test_base_config.py      # BaseConfig read/write, caching, versioning
+├── test_cli.py              # normalize_launch_path, URL/resolution parsing
+├── test_portproton_config.py # exec_line parsing, launcher tail, extensions
+├── test_migration.py        # Desktop shortcut migration, prefix backup, squashfs
+├── test_icon_extractor.py   # NE/PE icon extraction, DIB decoding, thumbnails
+└── test_time_utils.py       # Playtime parsing, last launch cache, formatting
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+uv run pytest tests/ -v
+
+# Run specific test file
+uv run pytest tests/test_utils.py -v
+
+# Run specific test class
+uv run pytest tests/test_utils.py::TestNormalizeName -v
+
+# Run with pre-commit
+pre-commit run pytest
+```
+
+### Writing Tests
+
+- Tests MUST use `pytest` with `tmp_path` fixture for file isolation
+- Tests MUST mock external resources (network, system paths, env vars)
+- Tests MUST NOT depend on system state (installed apps, real Steam dirs)
+- Use `monkeypatch` for environment variables and function patching
+- Keep tests locale-independent (assert numbers, not translated strings)
+- Test regression scenarios from git fix commits
+
+### Key Regression Areas
+
+| Module | Regression | Commit |
+|--------|-----------|--------|
+| `time_utils` | Spaced exe names in cache | 764bb3c |
+| `time_utils` | SHA256 hash + L5- index | 7a02b6b |
+| `time_utils` | Malformed playtime data | dd65021 |
 
 ---
 
@@ -770,6 +827,7 @@ PortProtonQt/
 │   ├── theme_manager.py  # Theme management
 │   ├── logger.py         # Logging
 │   └── themes/           # Theme files
+├── tests/                # Unit tests (367 tests)
 ├── build-aux/            # Build resources
 ├── dev-scripts/          # Development scripts
 ├── documentation/        # Documentation

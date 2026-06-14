@@ -55,6 +55,8 @@ dev = [
     "pre-commit>=4.5.1",
     "pyaspeller>=2.0.2",
     "pyright>=1.1.408",
+    "pytest>=8.0.0",
+    "pytest-mock>=3.14.0",
 ]
 
 [tool.ruff.lint]

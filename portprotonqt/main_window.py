@@ -13,7 +13,7 @@ from portprotonqt.icon_extractor import generate_thumbnail
 from portprotonqt.dialogs import AddGameDialog, FileExplorer, WinetricksDialog, ExeSettingsDialog
 from portprotonqt.game_card import GameCard
 from portprotonqt.animations import DetailPageAnimations, ExpandingSearchAnimation, LibraryControlsAnimation
-from portprotonqt.custom_widgets import ClickableLabel, AutoSizeButton, NavLabel, FlowLayout
+from portprotonqt.custom_widgets import ClickableLabel, AutoSizeButton, NavLabel, FlowLayout, AutoHideScrollArea
 from portprotonqt.detail_pages import DetailPageManager
 from portprotonqt.portproton_api import PortProtonAPI, get_user_conf_setting, set_user_conf_setting
 from portprotonqt.debug_utils import get_selectable_gpu_list, get_prefix_name
@@ -1840,9 +1840,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         searchLayout.addWidget(self.autoInstallSearchLineEdit)
         autoInstallLayout.addWidget(searchWidget)
 
-        self.autoInstallScrollArea = QScrollArea()
+        self.autoInstallScrollArea = AutoHideScrollArea(theme=self.theme)
         self.autoInstallScrollArea.setWidgetResizable(True)
-        self.autoInstallScrollArea.setStyleSheet(self.theme.SCROLL_STYLE + self.theme.TRANSPARENT_BACKGROUND_STYLE)
         QScroller.grabGesture(self.autoInstallScrollArea.viewport(), QScroller.ScrollerGestureType.LeftMouseButtonGesture)
 
         self.autoInstallContainer = QWidget()
