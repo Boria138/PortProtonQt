@@ -305,7 +305,7 @@ git commit -m "feat: description in English ≤72 chars"
 | uv-lock | uv.lock up to date |
 | ruff-check | Linting (E, W, F, B, C4, UP) |
 | pyright | Type checking |
-| pytest | Unit tests (435 tests, ~1.3s) |
+| pytest | Unit tests (512 tests, ~1.8s) |
 | bash-n | Bash syntax check and shebang `CRLF` check for `build-aux/share/portproton/scripts/` |
 | check-meson | meson.build syntax + files |
 | check-qss-properties | Theme QSS validation |
@@ -361,7 +361,8 @@ tests/
 ├── test_migration.py        # Desktop shortcut migration, prefix backup, squashfs
 ├── test_icon_extractor.py   # NE/PE icon extraction, DIB decoding, thumbnails
 ├── test_dbus_tools.py       # D-Bus tools (notifications, idle inhibit, power profiles)
-└── test_time_utils.py       # Playtime parsing, last launch cache, formatting
+├── test_time_utils.py       # Playtime parsing, last launch cache, formatting
+└── test_shortcuts.py        # Desktop shortcut creation, paths with spaces, .desktop entry
 ```
 
 ### Running Tests
@@ -828,7 +829,7 @@ PortProtonQt/
 │   ├── theme_manager.py  # Theme management
 │   ├── logger.py         # Logging
 │   └── themes/           # Theme files
-├── tests/                # Unit tests (435 tests)
+├── tests/                # Unit tests (512 tests)
 ├── build-aux/            # Build resources
 ├── dev-scripts/          # Development scripts
 ├── documentation/        # Documentation
