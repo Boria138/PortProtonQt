@@ -822,9 +822,6 @@ class ProtonManager(DraggableDialog):
             if self.is_downloading:
                 QMessageBox.warning(self, _("Downloading in Progress"), _("Please wait for current downloading to complete."))
                 return
-            downloads_dir = "proton_downloads"
-            if not os.path.exists(downloads_dir):
-                os.makedirs(downloads_dir)
             self.assets_to_download = list(self.selected_assets.values())
             self.current_download_index = 0
             self.is_downloading = True
@@ -927,69 +924,52 @@ class ProtonManager(DraggableDialog):
         self.download_asset(asset_data)
 
     def download_asset(self, asset_data):
-        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        proton_downloads_path = os.path.join(repo_root, "proton_downloads")
-        local_file_path = None
-        if os.path.exists(proton_downloads_path) and os.path.isdir(proton_downloads_path):
-            for filename in os.listdir(proton_downloads_path):
-                if filename == asset_data['asset_name']:
-                    local_file_path = os.path.join(proton_downloads_path, filename)
-                    logger.info(f"DEBUG: Using local file: {local_file_path}")
-                    break
-        if local_file_path and os.path.exists(local_file_path):
-            logger.info(f"DEBUG: Skipping download, using local file: {local_file_path}")
-            download_info = f"{asset_data['source_name'].upper()} - {asset_data['asset_name']} (DEBUG: local)"
-            if len(download_info) > 80:
-                download_info = download_info[:77] + "..."
-            self.download_progress.setValue(0)
-            self.download_frame.setVisible(True)
-            self.download_frame.setStyleSheet(self.theme.GETWINE_WINDOW_STYLE)
-            self.download_btn.setEnabled(False)
-            self.clear_btn.setEnabled(False)
-            QTimer.singleShot(100, lambda: self.start_extraction_for_asset(asset_data, local_file_path))
-        else:
-            temp_dir = tempfile.mkdtemp(prefix="portproton_wine_")
-            filename = os.path.join(temp_dir, asset_data['asset_name'])
-            download_url = asset_data['download_url']
-            download_info = f"{asset_data['source_name'].upper()} - {asset_data['asset_name']}"
-            if len(download_info) > 80:
-                download_info = download_info[:77] + "..."
-            self.download_progress.setValue(0)
-            self.download_frame.setVisible(True)
-            self.download_frame.setStyleSheet(self.theme.GETWINE_WINDOW_STYLE)
-            self.download_btn.setEnabled(False)
-            self.clear_btn.setEnabled(False)
-            self.current_download_thread = DownloadThread(download_url, filename)
-            def update_download_progress(progress):
-                self.download_progress.setValue(progress)
-                self.download_info_label.setText(_("Downloading: {0} ({1}%)").format(asset_data['asset_name'], progress))
-            def download_finished(filepath, success):
-                if success:
-                    logger.info(f"Successfully downloaded: {filepath}")
-                    self.start_extraction_for_asset(asset_data, filepath)
-                else:
-                    logger.error(f"Failed to download: {filepath}")
-                    temp_dir = os.path.dirname(filepath)
-                    try:
-                        shutil.rmtree(temp_dir)
-                    except (OSError, FileNotFoundError):
-                        pass
-                    self.current_download_index += 1
-                    QTimer.singleShot(100, self.start_next_download)
-            def download_error(error_msg):
-                logger.error(f"Download error: {error_msg}")
-                QMessageBox.critical(self, "Download Error", f"Failed to download WINE/Proton: {error_msg}")
-                temp_dir = os.path.dirname(filename)
+        temp_dir = tempfile.mkdtemp(prefix="portproton_wine_")
+        filename = os.path.join(temp_dir, asset_data['asset_name'])
+        download_url = asset_data['download_url']
+        download_info = f"{asset_data['source_name'].upper()} - {asset_data['asset_name']}"
+        if len(download_info) > 80:
+            download_info = download_info[:77] + "..."
+        self.download_progress.setValue(0)
+        self.download_frame.setVisible(True)
+        self.download_frame.setStyleSheet(self.theme.GETWINE_WINDOW_STYLE)
+        self.download_btn.setEnabled(False)
+        self.clear_btn.setEnabled(False)
+        self.current_download_thread = DownloadThread(download_url, filename)
+
+        def update_download_progress(progress):
+            self.download_progress.setValue(progress)
+            self.download_info_label.setText(_("Downloading: {0} ({1}%)").format(asset_data['asset_name'], progress))
+
+        def download_finished(filepath, success):
+            if success:
+                logger.info(f"Successfully downloaded: {filepath}")
+                self.start_extraction_for_asset(asset_data, filepath)
+            else:
+                logger.error(f"Failed to download: {filepath}")
+                temp_dir = os.path.dirname(filepath)
                 try:
                     shutil.rmtree(temp_dir)
                 except (OSError, FileNotFoundError):
                     pass
                 self.current_download_index += 1
                 QTimer.singleShot(100, self.start_next_download)
-            self.current_download_thread.progress.connect(update_download_progress)
-            self.current_download_thread.finished.connect(download_finished)
-            self.current_download_thread.error.connect(download_error)
-            self.current_download_thread.start()
+
+        def download_error(error_msg):
+            logger.error(f"Download error: {error_msg}")
+            QMessageBox.critical(self, "Download Error", f"Failed to download WINE/Proton: {error_msg}")
+            temp_dir = os.path.dirname(filename)
+            try:
+                shutil.rmtree(temp_dir)
+            except (OSError, FileNotFoundError):
+                pass
+            self.current_download_index += 1
+            QTimer.singleShot(100, self.start_next_download)
+
+        self.current_download_thread.progress.connect(update_download_progress)
+        self.current_download_thread.finished.connect(download_finished)
+        self.current_download_thread.error.connect(download_error)
+        self.current_download_thread.start()
 
     def start_extraction_for_asset(self, asset_data, filepath):
         self.download_info_label.setText(_("Extracting: {0}").format(asset_data['asset_name']))
