@@ -10,6 +10,7 @@
 
 ### Changed
 - Убран дебаг-код `proton_downloads` из менеджера WINE/Proton
+- Файл `last_launch` перемещён из `~/.cache/PortProtonQt/` в `~/.local/share/PortProtonQt/` согласно XDG спецификации
 
 ### Removed
 

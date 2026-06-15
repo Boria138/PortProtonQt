@@ -13,7 +13,7 @@ from portprotonqt.time_utils import (
     save_last_launch,
     get_last_launch,
     get_last_launch_timestamp,
-    get_cache_file_path,
+    get_last_launch_path,
     parse_playtime_file,
     get_playtime_for_exe,
     format_playtime,
@@ -52,18 +52,18 @@ class TestParseLastLaunchLine:
         assert result == ("game.exe", "2026-01-15T10:30:00")
 
 
-# ── get_cache_file_path ──────────────────────────────────────────────────────
+# ── get_last_launch_path ──────────────────────────────────────────────────────
 
 class TestGetCacheFilePath:
     def test_default_path(self, monkeypatch):
-        monkeypatch.delenv("XDG_CACHE_HOME", raising=False)
-        result = get_cache_file_path()
+        monkeypatch.delenv("XDG_DATA_HOME", raising=False)
+        result = get_last_launch_path()
         assert result.endswith("PortProtonQt/last_launch")
-        assert ".cache" in result
+        assert ".local" in result
 
-    def test_xdg_cache_home(self, monkeypatch, tmp_path):
-        monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
-        result = get_cache_file_path()
+    def test_xdg_data_home(self, monkeypatch, tmp_path):
+        monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
+        result = get_last_launch_path()
         assert result.startswith(str(tmp_path))
         assert "PortProtonQt/last_launch" in result
 
@@ -74,7 +74,7 @@ class TestSaveAndGetLastLaunch:
     def test_roundtrip(self, tmp_path, monkeypatch):
         cache_file = tmp_path / "PortProtonQt" / "last_launch"
         monkeypatch.setattr(
-            "portprotonqt.time_utils.get_cache_file_path",
+            "portprotonqt.time_utils.get_last_launch_path",
             lambda: str(cache_file),
         )
         now = datetime(2026, 6, 15, 12, 0, 0)
@@ -86,7 +86,7 @@ class TestSaveAndGetLastLaunch:
     def test_spaced_exe_name_roundtrip(self, tmp_path, monkeypatch):
         cache_file = tmp_path / "PortProtonQt" / "last_launch"
         monkeypatch.setattr(
-            "portprotonqt.time_utils.get_cache_file_path",
+            "portprotonqt.time_utils.get_last_launch_path",
             lambda: str(cache_file),
         )
         now = datetime(2026, 6, 15, 12, 0, 0)
@@ -98,7 +98,7 @@ class TestSaveAndGetLastLaunch:
     def test_multiple_exe_names(self, tmp_path, monkeypatch):
         cache_file = tmp_path / "PortProtonQt" / "last_launch"
         monkeypatch.setattr(
-            "portprotonqt.time_utils.get_cache_file_path",
+            "portprotonqt.time_utils.get_last_launch_path",
             lambda: str(cache_file),
         )
         save_last_launch("game1.exe", datetime(2026, 1, 1))
@@ -109,7 +109,7 @@ class TestSaveAndGetLastLaunch:
     def test_overwrites_existing(self, tmp_path, monkeypatch):
         cache_file = tmp_path / "PortProtonQt" / "last_launch"
         monkeypatch.setattr(
-            "portprotonqt.time_utils.get_cache_file_path",
+            "portprotonqt.time_utils.get_last_launch_path",
             lambda: str(cache_file),
         )
         save_last_launch("game.exe", datetime(2026, 1, 1))
@@ -121,7 +121,7 @@ class TestSaveAndGetLastLaunch:
     def test_unknown_exe_returns_never(self, tmp_path, monkeypatch):
         cache_file = tmp_path / "PortProtonQt" / "last_launch"
         monkeypatch.setattr(
-            "portprotonqt.time_utils.get_cache_file_path",
+            "portprotonqt.time_utils.get_last_launch_path",
             lambda: str(cache_file),
         )
         result = get_last_launch("nonexistent.exe")
@@ -130,7 +130,7 @@ class TestSaveAndGetLastLaunch:
 
     def test_no_cache_file_returns_never(self, monkeypatch):
         monkeypatch.setattr(
-            "portprotonqt.time_utils.get_cache_file_path",
+            "portprotonqt.time_utils.get_last_launch_path",
             lambda: "/nonexistent/path/last_launch",
         )
         result = get_last_launch("game.exe")
@@ -144,7 +144,7 @@ class TestGetLastLaunchTimestamp:
     def test_returns_timestamp(self, tmp_path, monkeypatch):
         cache_file = tmp_path / "PortProtonQt" / "last_launch"
         monkeypatch.setattr(
-            "portprotonqt.time_utils.get_cache_file_path",
+            "portprotonqt.time_utils.get_last_launch_path",
             lambda: str(cache_file),
         )
         dt = datetime(2026, 6, 15, 12, 0, 0)
@@ -154,7 +154,7 @@ class TestGetLastLaunchTimestamp:
 
     def test_returns_zero_for_unknown(self, monkeypatch):
         monkeypatch.setattr(
-            "portprotonqt.time_utils.get_cache_file_path",
+            "portprotonqt.time_utils.get_last_launch_path",
             lambda: "/nonexistent/path",
         )
         assert get_last_launch_timestamp("game.exe") == 0
@@ -162,7 +162,7 @@ class TestGetLastLaunchTimestamp:
     def test_returns_zero_for_missing_exe(self, tmp_path, monkeypatch):
         cache_file = tmp_path / "PortProtonQt" / "last_launch"
         monkeypatch.setattr(
-            "portprotonqt.time_utils.get_cache_file_path",
+            "portprotonqt.time_utils.get_last_launch_path",
             lambda: str(cache_file),
         )
         save_last_launch("game.exe", datetime(2026, 6, 15))
@@ -171,7 +171,7 @@ class TestGetLastLaunchTimestamp:
     def test_spaced_exe_timestamp(self, tmp_path, monkeypatch):
         cache_file = tmp_path / "PortProtonQt" / "last_launch"
         monkeypatch.setattr(
-            "portprotonqt.time_utils.get_cache_file_path",
+            "portprotonqt.time_utils.get_last_launch_path",
             lambda: str(cache_file),
         )
         dt = datetime(2026, 6, 15, 12, 0, 0)
@@ -394,7 +394,7 @@ class TestSpacedExeRegression:
     def test_save_and_read_spaced_name(self, tmp_path, monkeypatch):
         cache_file = tmp_path / "PortProtonQt" / "last_launch"
         monkeypatch.setattr(
-            "portprotonqt.time_utils.get_cache_file_path",
+            "portprotonqt.time_utils.get_last_launch_path",
             lambda: str(cache_file),
         )
         names = [

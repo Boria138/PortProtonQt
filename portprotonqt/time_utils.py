@@ -1,5 +1,6 @@
 import os
 import hashlib
+import shutil
 from datetime import datetime, timedelta
 from babel.dates import format_timedelta, format_date
 from portprotonqt.config import ui_config
@@ -8,10 +9,35 @@ from portprotonqt.logger import get_logger
 
 logger = get_logger(__name__)
 
-def get_cache_file_path():
-    """Return path to portproton_last_launch cache file."""
+_migrated = False
+
+
+def _migrate_last_launch_file(data_home: str) -> str:
+    """Migrate last_launch from old cache dir to XDG_DATA_HOME."""
+    global _migrated
+    if _migrated:
+        return ""
+    _migrated = True
+    new_path = os.path.join(data_home, "PortProtonQt", "last_launch")
     cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
-    return os.path.join(cache_home, "PortProtonQt", "last_launch")
+    old_path = os.path.join(cache_home, "PortProtonQt", "last_launch")
+    if not os.path.exists(old_path) or os.path.exists(new_path):
+        return ""
+    try:
+        os.makedirs(os.path.dirname(new_path), exist_ok=True)
+        shutil.move(old_path, new_path)
+        logger.info("Migrated last_launch from %s to %s", old_path, new_path)
+        return old_path
+    except OSError as e:
+        logger.warning("Failed to migrate last_launch: %s", e)
+        return ""
+
+
+def get_last_launch_path():
+    """Return path to last_launch state file."""
+    data_home = os.getenv("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share"))
+    _migrate_last_launch_file(data_home)
+    return os.path.join(data_home, "PortProtonQt", "last_launch")
 
 def _parse_last_launch_line(line: str) -> tuple[str, str] | None:
     parts = line.strip().rsplit(maxsplit=1)
@@ -24,7 +50,7 @@ def save_last_launch(exe_name, launch_time):
     Save launch time for exe.
     File format: <exe_name> <isoformatted_time>
     """
-    file_path = get_cache_file_path()
+    file_path = get_last_launch_path()
     data = {}
     if os.path.exists(file_path):
         with open(file_path, encoding="utf-8") as f:
@@ -63,7 +89,7 @@ def get_last_launch(exe_name):
     Read last launch time for given exe from cache file.
     Return launch time in required format or translated "Never" string.
     """
-    file_path = get_cache_file_path()
+    file_path = get_last_launch_path()
     if not os.path.exists(file_path):
         return _("Never")
     with open(file_path, encoding="utf-8") as f:
@@ -231,7 +257,7 @@ def get_last_launch_timestamp(exe_name):
     Return last launch timestamp for given exe.
     If no record, return 0.
     """
-    file_path = get_cache_file_path()
+    file_path = get_last_launch_path()
     if not os.path.exists(file_path):
         return 0
     with open(file_path, encoding="utf-8") as f:
