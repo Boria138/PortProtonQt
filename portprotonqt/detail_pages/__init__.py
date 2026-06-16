@@ -275,13 +275,17 @@ class DetailPageManager:
         first_row.setSpacing(10)
 
         last_launch_title = QLabel(_("LAST LAUNCH"))
+        last_launch_title.setObjectName("detailLastLaunchTitle")
         last_launch_title.setStyleSheet(self.main_window.theme.LAST_LAUNCH_TITLE_STYLE)
         last_launch_value = QLabel(last_launch)
+        last_launch_value.setObjectName("detailLastLaunchValue")
         last_launch_value.setStyleSheet(self.main_window.theme.LAST_LAUNCH_VALUE_STYLE)
 
         playtime_title = QLabel(_("TIME SPENT"))
+        playtime_title.setObjectName("detailPlaytimeTitle")
         playtime_title.setStyleSheet(self.main_window.theme.PLAY_TIME_TITLE_STYLE)
         playtime_value = QLabel(formatted_playtime)
+        playtime_value.setObjectName("detailPlaytimeValue")
         playtime_value.setStyleSheet(self.main_window.theme.PLAY_TIME_VALUE_STYLE)
 
         for widget in (last_launch_title, last_launch_value, playtime_title, playtime_value):

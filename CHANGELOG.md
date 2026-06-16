@@ -12,6 +12,9 @@
 ### Changed
 - Убран дебаг-код `proton_downloads` из менеджера WINE/Proton
 - Файл `last_launch` перемещён из `~/.cache/PortProtonQt/` в `~/.local/share/PortProtonQt/` согласно XDG спецификации
+- Файл `statistics` перемещён из `portdatapath/tmp` в `~/.local/share/PortProtonQt/` согласно XDG спецификации и очищен от устаревших полей
+- Из-за проблем с кешем fontconfig весь кеш Appimage перенесён в `~/.cache/AppImage-Cache/PortProtonQt/`
+
 
 ### Removed
 
