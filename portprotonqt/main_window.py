@@ -246,6 +246,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.games = []
         self.game_processes = []
         self.target_exe = None
+        self.game_start_time = None
+        self.game_start_exe = None
         self.current_running_button = None
         self.disc_image_manager = DiscImageManager()
         self.portproton_location = get_portproton_location()
@@ -1098,15 +1100,15 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                     break
 
             # Read statistics
-            if self.portproton_location:
-                statistics_file = os.path.join(self.portproton_location, "data", "tmp", "statistics")
-                try:
-                    playtime_from_stats = get_playtime_for_exe(statistics_file, game_exe)
-                    if playtime_from_stats is not None:
-                        playtime_seconds = playtime_from_stats
-                        formatted_playtime = format_playtime(playtime_seconds)
-                except Exception as e:
-                    logger.error(f"Failed to parse playtime data: {e}")
+            from portprotonqt.time_utils import get_statistics_path
+            statistics_file = get_statistics_path()
+            try:
+                playtime_from_stats = get_playtime_for_exe(statistics_file, game_exe)
+                if playtime_from_stats is not None:
+                    playtime_seconds = playtime_from_stats
+                    formatted_playtime = format_playtime(playtime_seconds)
+            except Exception as e:
+                logger.error(f"Failed to parse playtime data: {e}")
 
         def on_steam_info(steam_info: dict):
             # Get current language
@@ -3909,6 +3911,17 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             except RuntimeError:
                 pass
             self.current_running_button = None
+
+        start_time = getattr(self, "game_start_time", None)
+        start_exe = getattr(self, "game_start_exe", None)
+        if start_time and start_exe:
+            elapsed = int((datetime.now() - start_time).total_seconds())
+            if elapsed > 0:
+                from portprotonqt.time_utils import save_playtime
+                save_playtime(start_exe, elapsed)
+            self.game_start_time = None
+            self.game_start_exe = None
+
         self.target_exe = None
         # Reset dependency setup monitoring
         self.wine_download_seen = False
@@ -3918,6 +3931,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.game_processes = [proc for proc in self.game_processes if proc.poll() is None]
         if not getattr(self, "_animated_covers_suspended", False):
             self.input_manager.resume_gamepad_polling()
+        self.loadGames(force_load=True)
 
     def _has_running_game_process(self) -> bool:
         return any(proc.poll() is None for proc in self.game_processes)
@@ -4119,6 +4133,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 self.game_processes.append(process)
                 self._start_launch_output_reader(process)
                 self.input_manager.suspend_gamepad_polling()
+                self.game_start_time = datetime.now()
+                self.game_start_exe = file_to_check
                 save_last_launch(exe_name, datetime.now())
                 if update_button:
                     try:

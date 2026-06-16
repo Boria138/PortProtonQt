@@ -249,7 +249,7 @@ class TestGetPlaytimeFor_exe:
         sha = hashlib.sha256(b"fake exe content").hexdigest()
 
         stats = tmp_path / "stats.txt"
-        stats.write_text(f"/other/game.exe {sha} 5400 platform build L5-1\n")
+        stats.write_text(f"/other/game.exe {sha} 5400\n")
 
         result = get_playtime_for_exe(str(stats), str(exe))
         assert result == 5400
@@ -259,7 +259,7 @@ class TestGetPlaytimeFor_exe:
         exe.write_bytes(b"\x00" * 100)
 
         stats = tmp_path / "stats.txt"
-        stats.write_text(f"{exe} abc123 3600 platform build\n")
+        stats.write_text(f"{exe} abc123 3600\n")
 
         result = get_playtime_for_exe(str(stats), str(exe))
         assert result == 3600
@@ -269,7 +269,7 @@ class TestGetPlaytimeFor_exe:
         exe.write_bytes(b"\x00" * 100)
 
         stats = tmp_path / "stats.txt"
-        stats.write_text("/other/path/game.exe abc123 7200 platform build\n")
+        stats.write_text("/other/path/game.exe abc123 7200\n")
 
         result = get_playtime_for_exe(str(stats), str(exe))
         assert result == 7200
@@ -279,28 +279,28 @@ class TestGetPlaytimeFor_exe:
         exe.write_bytes(b"\x00" * 100)
 
         stats = tmp_path / "stats.txt"
-        stats.write_text("/other/other.exe abc123 3600 platform build\n")
+        stats.write_text("/other/other.exe abc123 3600\n")
 
         result = get_playtime_for_exe(str(stats), str(exe))
         assert result is None
 
-    def test_l5_index_highest_wins(self, tmp_path):
+    def test_last_entry_wins(self, tmp_path):
         exe = tmp_path / "game.exe"
         exe.write_bytes(b"\x00" * 100)
 
         stats = tmp_path / "stats.txt"
         stats.write_text(
-            "/other/path/game.exe abc123 1000 platform build L5-1\n"
-            "/other/path/game.exe abc123 3000 platform build L5-3\n"
-            "/other/path/game.exe abc123 2000 platform build L5-2\n"
+            "/other/path/game.exe abc123 1000\n"
+            "/other/path/game.exe abc123 3000\n"
+            "/other/path/game.exe abc123 2000\n"
         )
 
         result = get_playtime_for_exe(str(stats), str(exe))
-        assert result == 3000
+        assert result == 2000
 
     def test_no_exe_path_returns_none(self, tmp_path):
         stats = tmp_path / "stats.txt"
-        stats.write_text("/path/game.exe abc123 3600 p b\n")
+        stats.write_text("/path/game.exe abc123 3600\n")
         assert get_playtime_for_exe(str(stats), "") is None
 
     def test_no_stats_file_returns_none(self, tmp_path):
@@ -314,7 +314,7 @@ class TestGetPlaytimeFor_exe:
 
         stats = tmp_path / "stats.txt"
         encoded = str(exe).replace(" ", "#@_@#")
-        stats.write_text(f"{encoded} abc123 1800 platform build\n")
+        stats.write_text(f"{encoded} abc123 1800\n")
 
         result = get_playtime_for_exe(str(stats), str(exe))
         assert result == 1800
@@ -327,8 +327,8 @@ class TestGetPlaytimeFor_exe:
 
         stats = tmp_path / "stats.txt"
         stats.write_text(
-            f"/other/path/game.exe abc123 9999 platform build L5-1\n"
-            f"{exe} {sha} 1111 platform build L5-1\n"
+            f"/other/path/game.exe abc123 9999\n"
+            f"{exe} {sha} 1111\n"
         )
 
         result = get_playtime_for_exe(str(stats), str(exe))
@@ -416,17 +416,17 @@ class TestSpacedExeRegression:
             assert result > 0, f"Failed for: {name}"
 
 
-# ── Regression: L5- index tracking ──────────────────────────────────────────
+# ── Regression: last entry wins ──────────────────────────────────────────────
 
-class TestL5IndexRegression:
-    def test_highest_l5_index_wins(self, tmp_path):
+class TestLastEntryWinsRegression:
+    def test_last_entry_wins(self, tmp_path):
         exe = tmp_path / "game.exe"
         exe.write_bytes(b"\x00" * 100)
 
         stats = tmp_path / "stats.txt"
         lines = []
         for i in range(1, 6):
-            lines.append(f"/path/game.exe sha{i:060d} {i * 1000} p b L5-{i}\n")
+            lines.append(f"/path/game.exe sha{i:060d} {i * 1000}\n")
         stats.write_text("".join(lines))
 
         result = get_playtime_for_exe(str(stats), str(exe))

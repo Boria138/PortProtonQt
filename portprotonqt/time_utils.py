@@ -39,6 +39,58 @@ def get_last_launch_path():
     _migrate_last_launch_file(data_home)
     return os.path.join(data_home, "PortProtonQt", "last_launch")
 
+_stats_migrated = False
+
+
+def _migrate_statistics_file(data_home: str) -> str:
+    """Migrate statistics from old cache/tmp dir to XDG_DATA_HOME."""
+    global _stats_migrated
+    if _stats_migrated:
+        return ""
+    _stats_migrated = True
+    new_path = os.path.join(data_home, "PortProtonQt", "statistics")
+    if os.path.exists(new_path):
+        return ""
+    from portprotonqt.config import get_portproton_location
+    portproton_location = get_portproton_location()
+    if not portproton_location:
+        return ""
+    old_path = os.path.join(portproton_location, "data", "tmp", "statistics")
+    if not os.path.exists(old_path):
+        return ""
+    try:
+        os.makedirs(os.path.dirname(new_path), exist_ok=True)
+        playtime_data = {}
+        with open(old_path, encoding="utf-8") as f:
+            for line in f:
+                if not line.strip():
+                    continue
+                parts = line.strip().split()
+                if len(parts) < 2:
+                    continue
+                exe_path = parts[0]
+                if "steamapps" in exe_path.lower():
+                    continue
+                sha = parts[1] if (len(parts) > 1 and len(parts[1]) == 64) else "-"
+                seconds = next((int(t) for t in parts[1:] if t.isdigit()), None)
+                if seconds is not None:
+                    playtime_data[exe_path] = (sha, seconds)
+        with open(new_path, "w", encoding="utf-8") as f:
+            for path, (sha, seconds) in playtime_data.items():
+                f.write(f"{path} {sha} {seconds}\n")
+        logger.info("Migrated statistics from %s to %s", old_path, new_path)
+        return old_path
+    except Exception as e:
+        logger.warning("Failed to migrate statistics: %s", e)
+        return ""
+
+
+def get_statistics_path() -> str:
+    """Return path to statistics state file."""
+    data_home = os.getenv("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share"))
+    _migrate_statistics_file(data_home)
+    return os.path.join(data_home, "PortProtonQt", "statistics")
+
 def _parse_last_launch_line(line: str) -> tuple[str, str] | None:
     parts = line.strip().rsplit(maxsplit=1)
     if len(parts) != 2:
@@ -63,6 +115,61 @@ def save_last_launch(exe_name, launch_time):
     with open(file_path, "w", encoding="utf-8") as f:
         for key, iso_time in data.items():
             f.write(f"{key} {iso_time}\n")
+
+
+def save_playtime(exe_path: str, additional_seconds: int) -> None:
+    """Save and accumulate playtime for the executable."""
+    if not exe_path or additional_seconds <= 0 or "steamapps" in exe_path.lower():
+        return
+    file_path = get_statistics_path()
+    target_path = os.path.normpath(exe_path)
+    target_sha = ""
+    try:
+        sha = hashlib.sha256()
+        with open(target_path, "rb") as f:
+            while True:
+                chunk = f.read(65536)
+                if not chunk:
+                    break
+                sha.update(chunk)
+        target_sha = sha.hexdigest()
+    except OSError:
+        pass
+
+    entries: list[str] = []
+    updated = False
+    lines: list[str] = []
+    if os.path.exists(file_path):
+        try:
+            with open(file_path, encoding="utf-8") as f:
+                lines = f.readlines()
+        except OSError as e:
+            logger.warning("Failed to read statistics: %s", e)
+
+    for line in lines:
+        parts = line.strip().split()
+        if len(parts) < 2:
+            continue
+        seconds = next((int(t) for t in parts[1:] if t.isdigit()), None)
+        if seconds is None:
+            continue
+        stat_path = os.path.normpath(parts[0].replace("#@_@#", " "))
+        stat_sha = parts[1] if len(parts[1]) == 64 else ""
+        if ((target_sha and stat_sha == target_sha) or stat_path == target_path) and not updated:
+            entries.append(f"{target_path.replace(' ', '#@_@#')} {target_sha or stat_sha} {seconds + additional_seconds}\n")
+            updated = True
+        else:
+            entries.append(line)
+
+    if not updated:
+        entries.append(f"{target_path.replace(' ', '#@_@#')} {target_sha} {additional_seconds}\n")
+
+    try:
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.writelines(entries)
+    except OSError as e:
+        logger.error("Failed to save playtime: %s", e)
 
 def format_last_launch(launch_time):
     """
@@ -148,18 +255,15 @@ def get_playtime_for_exe(file_path: str, exe_path: str) -> int | None:
     try:
         sha = hashlib.sha256()
         with open(target_path, "rb") as exe_file:
-            for chunk in iter(lambda: exe_file.read(1024 * 1024), b""):
+            for chunk in iter(lambda: exe_file.read(65536), b""):
                 sha.update(chunk)
         target_sha = sha.hexdigest()
     except OSError:
         target_sha = None
 
     sha_seconds = None
-    sha_last_launch = -1
     exact_seconds = None
-    exact_last_launch = -1
     fallback_seconds = None
-    fallback_last_launch = -1
 
     with open(file_path, encoding="utf-8") as f:
         for line in f:
@@ -169,39 +273,24 @@ def get_playtime_for_exe(file_path: str, exe_path: str) -> int | None:
             if len(parts) < 3:
                 continue
 
-            seconds = None
-            for token in parts[1:]:
-                if token.isdigit():
-                    seconds = int(token)
-                    break
-            if seconds is None:
+            stat_path = os.path.normpath(parts[0].replace("#@_@#", " "))
+            stat_sha = parts[1]
+            try:
+                seconds = int(parts[2])
+            except ValueError:
                 continue
 
-            last_launch_index = -1
-            for token in parts[1:]:
-                if token.startswith("L5-") and token[3:].isdigit():
-                    last_launch_index = int(token[3:])
-                    break
-
-            stat_path = os.path.normpath(parts[0].replace("#@_@#", " "))
-            stat_sha = parts[1] if len(parts) > 1 and len(parts[1]) == 64 else ""
-
             if target_sha and stat_sha == target_sha:
-                if last_launch_index >= sha_last_launch:
-                    sha_seconds = seconds
-                    sha_last_launch = last_launch_index
+                sha_seconds = seconds
                 continue
 
             if stat_path == target_path:
-                if last_launch_index >= exact_last_launch:
-                    exact_seconds = seconds
-                    exact_last_launch = last_launch_index
+                exact_seconds = seconds
                 continue
 
             stat_name = os.path.splitext(os.path.basename(stat_path))[0].lower()
-            if stat_name == target_name and last_launch_index >= fallback_last_launch:
+            if stat_name == target_name:
                 fallback_seconds = seconds
-                fallback_last_launch = last_launch_index
 
     if sha_seconds is not None:
         return sha_seconds
