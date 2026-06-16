@@ -277,7 +277,7 @@ class UIConfig(BaseConfig):
         self._save_value("terminal_scheme", scheme_name, "str")
 
     def get_time_detail_level(self) -> str:
-        """Get time detail level ('detailed' or 'simple')."""
+        """Get time detail level."""
         cp = self._read_config()
         if cp is None or not cp.has_section("Time"):
             return self._save_time_detail("detailed")

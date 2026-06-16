@@ -61,6 +61,7 @@ from portprotonqt.animations import DetailPageAnimations
 from portprotonqt.debug_utils import DebugLogManager
 from portprotonqt.image_utils import cleanup_widget_animated_covers
 from portprotonqt.steam_api import get_steam_compat_tool, get_steam_home, get_steam_libs, safe_vdf_load
+from portprotonqt.time_utils import format_playtime
 
 logger = get_logger(__name__)
 
@@ -253,8 +254,12 @@ class DetailPageManager:
         game_info_layout.setSpacing(10)
 
         if ui_config.get_time_detail_level() != "hidden":
+            formatted_playtime = game_data.get("formatted_playtime", "")
+            playtime_seconds = game_data.get("playtime_seconds")
+            if playtime_seconds is not None:
+                formatted_playtime = format_playtime(playtime_seconds)
             first_row = self._create_playtime_row(
-                game_data.get("last_launch", ""), game_data.get("formatted_playtime", "")
+                game_data.get("last_launch", ""), formatted_playtime
             )
             game_info_layout.addLayout(first_row)
 
@@ -954,6 +959,7 @@ class DetailPageManager:
             "formatted_playtime": game_tuple[7],
             "protondb_tier": game_tuple[8],
             "anticheat_status": game_tuple[9],
+            "playtime_seconds": game_tuple[11],
             "game_source": game_tuple[12],
             "anticheat_slug": game_tuple[13] if len(game_tuple) > 13 else "",
         }

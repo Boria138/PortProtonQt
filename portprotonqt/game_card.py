@@ -776,6 +776,7 @@ class GameCard(QFrame):
                 "exec_line": self.exec_line,
                 "last_launch": self.last_launch,
                 "formatted_playtime": self.formatted_playtime,
+                "playtime_seconds": self.playtime_seconds,
                 "protondb_tier": self.protondb_tier,
                 "game_source": self.game_source,
                 "anticheat_status": self.anticheat_status,

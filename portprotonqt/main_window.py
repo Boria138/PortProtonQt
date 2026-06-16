@@ -2619,8 +2619,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             Qt.WidgetAttribute.WA_TranslucentBackground
         )
         self.timeDetailCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        self.time_keys = ["detailed", "brief", "hidden"]
-        self.time_labels = [_("Detailed"), _("Brief"), _("Hidden")]
+        self.time_keys = ["detailed", "brief", "steam", "hidden"]
+        self.time_labels = [_("Detailed"), _("Brief"), "Steam", _("Hidden")]
         self.timeDetailCombo.addItems(self.time_labels)
         self.timeDetailCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
         self.timeDetailCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -3194,6 +3194,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                     "exec_line": current_game[5],
                     "last_launch": current_game[6],
                     "formatted_playtime": current_game[7],
+                    "playtime_seconds": current_game[11],
                     "protondb_tier": current_game[8],
                     "anticheat_status": current_game[9],
                     "game_source": current_game[12],

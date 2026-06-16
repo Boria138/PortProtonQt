@@ -378,6 +378,36 @@ class TestFormatPlaytime:
         result = format_playtime(7200)
         assert "2" in result
 
+    def test_steam_ignores_seconds(self, monkeypatch):
+        monkeypatch.setattr(
+            "portprotonqt.time_utils.ui_config",
+            type("obj", (), {"get_time_detail_level": lambda self: "steam"})(),
+        )
+        monkeypatch.setattr("portprotonqt.time_utils.get_system_locale", lambda: "en_US")
+        monkeypatch.setattr("portprotonqt.time_utils._", lambda text: text)
+        result = format_playtime(59)
+        assert result == "0 h."
+
+    def test_steam_decimal_minutes(self, monkeypatch):
+        monkeypatch.setattr(
+            "portprotonqt.time_utils.ui_config",
+            type("obj", (), {"get_time_detail_level": lambda self: "steam"})(),
+        )
+        monkeypatch.setattr("portprotonqt.time_utils.get_system_locale", lambda: "en_US")
+        monkeypatch.setattr("portprotonqt.time_utils._", lambda text: text)
+        result = format_playtime(390)
+        assert result == "0.1 h."
+
+    def test_steam_thousand_hours(self, monkeypatch):
+        monkeypatch.setattr(
+            "portprotonqt.time_utils.ui_config",
+            type("obj", (), {"get_time_detail_level": lambda self: "steam"})(),
+        )
+        monkeypatch.setattr("portprotonqt.time_utils.get_system_locale", lambda: "en_US")
+        monkeypatch.setattr("portprotonqt.time_utils._", lambda text: text)
+        result = format_playtime(3600 * 1000 + 1800)
+        assert result == "1,000.5 h."
+
     def test_float_seconds_truncated(self, monkeypatch):
         monkeypatch.setattr(
             "portprotonqt.time_utils.ui_config",
