@@ -169,6 +169,8 @@ QColor(self.theme.color_disabled_text)
 - **ALWAYS update or remove comments that reference removed dependencies, patterns, or context**
 - **NEVER leave stub/no-op functions** (e.g., `def func(): pass` with comment "removed")
 - **When removing a feature, delete the function entirely, not stub it**
+- When removing async/download code, preserve callback completion paths in callers
+- Add or update regression tests for callback-driven UI loading paths touched by the change
 - Never invent modules
 - Do not move files unless requested
 - Do not create new files for organization (unless task requires a new module)
@@ -357,7 +359,9 @@ tests/
 ├── test_steam_cache.py      # exiftool skip, cache eviction, delete_cached_app_files
 ├── test_base_config.py      # BaseConfig read/write, caching, versioning
 ├── test_cli.py              # normalize_launch_path, URL/resolution parsing
+├── test_main_window.py      # Main window data processing and callback regressions
 ├── test_portproton_config.py # exec_line parsing, launcher tail, extensions
+├── test_portproton_api.py   # PPDB API helpers, autoinstall localization fallback
 ├── test_migration.py        # Desktop shortcut migration, prefix backup, squashfs
 ├── test_icon_extractor.py   # NE/PE icon extraction, DIB decoding, thumbnails
 ├── test_dbus_tools.py       # D-Bus tools (notifications, idle inhibit, power profiles)

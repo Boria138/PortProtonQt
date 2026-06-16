@@ -829,22 +829,7 @@ class DetailPageManager:
 
     def _get_enhanced_description(self, script_name: str, description: str) -> str:
         """Get enhanced description from metadata if available."""
-        if not script_name:
-            return description
-
-        import locale
-
-        try:
-            current_locale = locale.getlocale()[0] or "en"
-        except Exception as e:
-            logger.debug("Failed to get current locale: %s", e)
-            current_locale = "en"
-
-        lang_code = "ru" if current_locale and "ru" in current_locale.lower() else "en"
-        metadata_description = self.portproton_api.get_autoinstall_description(
-            script_name, lang_code
-        )
-        return metadata_description if metadata_description else description
+        return description
 
     def _create_autoinstall_buttons_layout(
         self, script_name: str, name: str, buttons_layout: FlowLayout

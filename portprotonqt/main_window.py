@@ -303,6 +303,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         QTimer.singleShot(0, self.start_watching_directories)  # Delay to ensure portproton_location is set
         self.downloader = Downloader(max_workers=4)
         self.portproton_api = PortProtonAPI(self.downloader)
+        self.autoInstallCustomDataThread = None
 
         self.installing = False
         self.install_process = None
@@ -1041,7 +1042,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self,
         file_path: str,
         callback: Callable[[tuple | None], None],
-        assets_checked: bool = False,
     ):
         entry = parse_desktop_entry(file_path)
         if not entry:
@@ -1070,7 +1070,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         generated_img_icon = ""
         themed_launch_icon = ""
         economy_mode = ui_config.get_economy_mode()
-
         if game_exe:
             exe_name = os.path.splitext(os.path.basename(game_exe))[0]
             user_game_folder = os.path.join(user_custom_folder, exe_name)
@@ -1079,18 +1078,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             generated_img_icon = self._generate_missing_portproton_icon(
                 game_exe, entry.get("Icon", ""), desktop_name
             )
-
-            # Check if local game folder is empty and download assets if it is
-            if not themed_launch_icon and not economy_mode and not assets_checked and not os.listdir(user_game_folder):
-                logger.debug(f"Local folder for {exe_name} is empty, checking repository")
-                def on_assets_downloaded(results):
-                    if results["cover"]:
-                        logger.info(f"Downloaded assets for {exe_name}: {results}")
-                    if results["metadata"]:
-                        logger.info(f"Downloaded metadata for {exe_name}: {results['metadata']}")
-                    self._process_desktop_file_async(file_path, callback, assets_checked=True)
-                self.portproton_api.download_game_assets_async(exe_name, timeout=5, callback=on_assets_downloaded)
-                return
 
             user_files = set(os.listdir(user_game_folder)) if os.path.exists(user_game_folder) else set()
             for ext in COVER_IMAGE_EXTENSIONS:
@@ -1833,14 +1820,39 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         self.autoInstallSearchLineEdit = CustomLineEdit(self, theme=self.theme)
         icon: QIcon = cast(QIcon, self.theme_manager.get_icon("search"))
         action_pos = QLineEdit.ActionPosition.LeadingPosition
-        self.autoInstallSearchLineEdit.addAction(icon, action_pos)
+        self.autoInstallSearchIconAction = self.autoInstallSearchLineEdit.addAction(icon, action_pos)
         self.autoInstallSearchLineEdit.setMaximumWidth(200)
         self.autoInstallSearchLineEdit.setPlaceholderText(_("Search ..."))
         self.autoInstallSearchLineEdit.setClearButtonEnabled(True)
         self.autoInstallSearchLineEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE)
         self.autoInstallSearchLineEdit.textChanged.connect(self.filterAutoInstallGames)
+        self.autoInstallSearchLineEdit.focusInEvent = self._wrap_autoinstall_search_focus_event(
+            self.autoInstallSearchLineEdit.focusInEvent,
+            True,
+        )
+        self.autoInstallSearchLineEdit.focusOutEvent = self._wrap_autoinstall_search_focus_event(
+            self.autoInstallSearchLineEdit.focusOutEvent,
+            False,
+        )
+        self.autoInstallSearchLineEdit.resizeEvent = self._wrap_autoinstall_search_resize_event(
+            self.autoInstallSearchLineEdit.resizeEvent
+        )
         searchLayout.addWidget(self.autoInstallSearchLineEdit)
+
+        self.autoInstallRefreshButton = AutoSizeButton(icon=self.theme_manager.get_icon("update", as_path=True))
+        button_style = getattr(
+            self.theme,
+            "LIBRARY_CONTROLS_BUTTON_STYLE",
+            self.theme.ADDGAME_BACK_BUTTON_STYLE,
+        )
+        self.autoInstallRefreshButton.setStyleSheet(button_style)
+        self.autoInstallRefreshButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.autoInstallRefreshButton.clicked.connect(self._refresh_autoinstall_games)
+        self._register_gamepad_tooltip(self.autoInstallRefreshButton, _("Refresh Grid"))
+        searchLayout.addWidget(self.autoInstallRefreshButton)
+
         autoInstallLayout.addWidget(searchWidget)
+        self._setup_autoinstall_search_animation()
 
         self.autoInstallScrollArea = AutoHideScrollArea(theme=self.theme)
         self.autoInstallScrollArea.setWidgetResizable(True)
@@ -1886,7 +1898,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         def on_autoinstall_games_loaded(games: list[tuple]):
             self.autoInstallLoaded = True
             self.autoInstallLoading = False
-            economy_mode = ui_config.get_economy_mode()
 
             # Clear
             while self.autoInstallContainerLayout.count():
@@ -1909,21 +1920,14 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                     logger.warning(f"Invalid exec_line for autoinstall: {exec_line}")
                     return
                 game_data["game_source"] = "portproton"
+                ppai_target = exec_line[12:].strip()
+                if ppai_target.startswith(("http://", "https://")):
+                    self._open_autoinstall_card_after_script_download(game_data, ppai_target)
+                    return
                 self.detail_page_manager.openAutoInstallDetailPage(game_data)
 
-            def get_autoinstall_theme_cover(exe_name: str) -> str | None:
-                theme_cover = self.theme_manager.get_theme_image(exe_name, self.current_theme_name)
-                if isinstance(theme_cover, str) and "autoinstall_covers" in theme_cover:
-                    return theme_cover
-                if auto_layout_mode != "list":
-                    return None
-                classic_cover = self.theme_manager.get_theme_image(exe_name, "classic")
-                if isinstance(classic_cover, str) and "autoinstall_covers" in classic_cover:
-                    return classic_cover
-                return None
-
             # Create cards
-            for game_tuple in games:
+            for game_tuple in sorted(games, key=lambda item: str(item[0]).casefold()):
                 name = game_tuple[0]
                 description = game_tuple[1]
                 cover_path = game_tuple[2]
@@ -1932,17 +1936,12 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 exec_line = game_tuple[5]
                 game_source = game_tuple[12]
                 exe_name = game_tuple[13]
-                theme_cover = get_autoinstall_theme_cover(exe_name)
-                has_theme_cover = theme_cover is not None
-                if auto_layout_mode == "list" and has_theme_cover:
-                    cover_path = theme_cover
-                elif not cover_path:
-                    if has_theme_cover:
-                        cover_path = theme_cover
-                    elif economy_mode:
-                        classic_cover = self.theme_manager.get_theme_image(exe_name, "classic")
-                        if isinstance(classic_cover, str) and "autoinstall_covers" in classic_cover:
-                            cover_path = classic_cover
+                compact_cover = game_tuple[14] if len(game_tuple) > 14 else ""
+                full_cover = game_tuple[15] if len(game_tuple) > 15 else cover_path
+                if auto_layout_mode == "list":
+                    cover_path = compact_cover or full_cover
+                else:
+                    cover_path = full_cover or compact_cover
 
                 card = GameCard(
                     name, description, cover_path, appid, controller_support,
@@ -1971,38 +1970,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 self.allAutoInstallCards.append(card)
                 self.autoInstallContainerLayout.addWidget(card)
 
-            # Load missing covers and metadata in batch
-            exe_names_to_load = [game_tuple[13] for game_tuple in games]
-
-            def batch_cover_callback(exe_name, local_path):
-                if local_path and exe_name in self.autoInstallGameCards:
-                    card = self.autoInstallGameCards[exe_name]
-                    if card.list_layout:
-                        theme_cover = get_autoinstall_theme_cover(exe_name)
-                        if theme_cover is not None:
-                            return
-                    card.cover_path = local_path
-                    cover_width = 64 if card.list_layout else self.auto_card_width
-                    cover_height = cover_width if card.list_layout else int(self.auto_card_width * 1.5)
-                    load_pixmap_async(local_path, cover_width, cover_height, card.on_cover_loaded)
-
-            def batch_metadata_callback(exe_name, local_path):
-                logger.debug(f"Metadata callback called for {exe_name}: {local_path}")
-                if local_path and os.path.exists(local_path):
-                    try:
-                        self._update_card_name_from_metadata(exe_name, local_path)
-                        logger.info(f"Updated metadata for {exe_name}")
-                    except Exception as e:
-                        logger.error(f"Error updating card metadata for {exe_name}: {e}")
-
-            if exe_names_to_load and not economy_mode:
-                self.portproton_api.download_autoinstall_assets_batch_async(
-                    exe_names_to_load,
-                    timeout=5,
-                    cover_callback=batch_cover_callback,
-                    metadata_callback=batch_metadata_callback
-                )
-
             self.autoInstallContainer.updateGeometry()
             self.autoInstallScrollArea.updateGeometry()
             self.filterAutoInstallGames()
@@ -2011,19 +1978,99 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
 
         self.stackedWidget.addWidget(autoInstallPage)
 
-    def _start_autoinstall_load(self) -> None:
+    def _open_autoinstall_card_after_script_download(
+        self,
+        game_data: dict,
+        ppai_url: str,
+    ) -> None:
+        def on_script_ready(script_path: str) -> None:
+            self.autoInstallScriptLoadThread = None
+            if script_path:
+                game_data["exec_line"] = f"autoinstall:{script_path}"
+            self.detail_page_manager.openAutoInstallDetailPage(game_data)
+            if script_path:
+                self.autoInstallCustomDataThread = self.portproton_api.start_autoinstall_custom_data_write(
+                    script_path,
+                    game_data,
+                )
+                self.autoInstallCustomDataThread.finished.connect(
+                    lambda: setattr(self, "autoInstallCustomDataThread", None)
+                )
+
+        self.autoInstallScriptLoadThread = self.portproton_api.start_autoinstall_script_download(
+            ppai_url,
+            on_script_ready,
+        )
+
+    def _setup_autoinstall_search_animation(self) -> None:
+        self.autoInstallSearchAnimation = ExpandingSearchAnimation(
+            self.autoInstallSearchLineEdit,
+            self.theme,
+            self.searchDebounceTimer.interval(),
+        )
+        collapsed_width = self.autoInstallRefreshButton.sizeHint().width()
+        expanded_width = self.autoInstallSearchLineEdit.maximumWidth()
+        self.autoInstallSearchAnimation.setup(collapsed_width, expanded_width)
+        QTimer.singleShot(0, self._center_collapsed_autoinstall_search_icon)
+
+    def _wrap_autoinstall_search_focus_event(self, original_event: Callable, expand: bool) -> Callable:
+        def handle_focus_event(event):
+            original_event(event)
+            if not hasattr(self, "autoInstallSearchAnimation"):
+                return
+            if expand:
+                self.autoInstallSearchAnimation.expand()
+            else:
+                self.autoInstallSearchAnimation.collapse()
+            QTimer.singleShot(0, self._center_collapsed_autoinstall_search_icon)
+        return handle_focus_event
+
+    def _wrap_autoinstall_search_resize_event(self, original_event: Callable) -> Callable:
+        def handle_resize_event(event):
+            original_event(event)
+            self._center_collapsed_autoinstall_search_icon()
+        return handle_resize_event
+
+    def _center_collapsed_autoinstall_search_icon(self) -> None:
+        animation = getattr(self, "autoInstallSearchAnimation", None)
+        if animation is None or self.autoInstallSearchLineEdit.maximumWidth() != animation.collapsed_width:
+            return
+        for button in self.autoInstallSearchLineEdit.findChildren(QToolButton):
+            if button.defaultAction() is self.autoInstallSearchIconAction:
+                size = button.sizeHint()
+                x = (self.autoInstallSearchLineEdit.width() - size.width()) // 2
+                y = (self.autoInstallSearchLineEdit.height() - size.height()) // 2
+                button.setGeometry(x, y, size.width(), size.height())
+                return
+
+    def _start_autoinstall_load(self, force_refresh: bool = False) -> None:
         if self.autoInstallLoaded or self.autoInstallLoading:
             return
         if not hasattr(self, "_on_autoinstall_games_loaded"):
             return
         self.autoInstallLoading = True
         self.autoInstallLoadThread = self.portproton_api.start_autoinstall_games_load(
-            self._on_autoinstall_games_loaded
+            self._on_autoinstall_games_loaded,
+            force_refresh=force_refresh,
         )
-        if self.autoInstallLoadThread:
-            def on_thread_finished():
-                self.autoInstallLoadThread = None  # Release reference
-            self.autoInstallLoadThread.finished.connect(on_thread_finished)
+        if not self.autoInstallLoadThread:
+            self.autoInstallLoading = False
+            if hasattr(self, "autoInstallRefreshButton"):
+                self.autoInstallRefreshButton.setEnabled(True)
+            return
+
+        def on_thread_finished():
+            self.autoInstallLoadThread = None  # Release reference
+            if hasattr(self, "autoInstallRefreshButton"):
+                self.autoInstallRefreshButton.setEnabled(True)
+        self.autoInstallLoadThread.finished.connect(on_thread_finished)
+
+    def _refresh_autoinstall_games(self) -> None:
+        if self.autoInstallLoading:
+            return
+        self.autoInstallRefreshButton.setEnabled(False)
+        self.autoInstallLoaded = False
+        self._start_autoinstall_load(force_refresh=True)
 
     def on_auto_slider_released(self):
         """Handles auto-install slider release to update card size."""
@@ -4353,44 +4400,6 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 self.detail_page_manager.debug_log_manager.cleanup_on_exit()
             except Exception as e:
                 logger.warning(f"Failed to cleanup debug log manager: {e}")
-
-    def _update_card_name_from_metadata(self, exe_name: str, metadata_path: str):
-        """Update card name and description from metadata file."""
-        # Read the translated metadata using the existing function
-        language_code = get_metadata_language()
-        translations = read_metadata_translations(metadata_path, language_code)
-
-        # Update the card with the new name and description if available
-        if exe_name in self.autoInstallGameCards:
-            card = self.autoInstallGameCards[exe_name]
-
-            # Defensive check: Ensure card is not a list or other unexpected type
-            if isinstance(card, list):
-                logger.error(f"Card for {exe_name} is unexpectedly a list: {card}")
-                return
-
-            # Additional defensive checks for card validity
-            if not hasattr(card, 'nameLabel'):
-                logger.warning(f"Card for {exe_name} doesn't have nameLabel attribute")
-                return
-
-            if not (hasattr(card, 'nameLabel') and hasattr(card.nameLabel, 'setText')):
-                logger.warning(f"Card nameLabel for {exe_name} doesn't have setText method")
-                return
-
-            if translations and 'name' in translations and translations['name'] and translations['name'] != _('Unknown Game'):
-                # Update the card's internal name reference
-                card.name = translations['name']
-                # Update the display label
-                if hasattr(card, 'nameLabel') and card.nameLabel:
-                    card.nameLabel.setText(translations['name'])
-
-            # Update description if available
-            if translations and 'description' in translations and translations['description']:
-                card.description = translations['description']
-                if hasattr(card, 'descriptionLabel') and card.descriptionLabel:
-                    card.descriptionLabel.setText(translations['description'])
-
 
     def goBackDetailPage(self, page):
         """Bridge method to detail page manager."""

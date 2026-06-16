@@ -3198,7 +3198,7 @@ class InputManager(QObject):
             if code in (PAD_DPAD_X, PAD_DPAD_Y):
                 current_index = self._parent.stackedWidget.currentIndex()
                 if current_index in (0, 1):
-                    if self._handle_library_toolbar_navigation(code, value):
+                    if self._handle_toolbar_navigation(code, value):
                         return
                     if code == PAD_DPAD_Y and value < 0 and self._focus_tab_from_search(current_index):
                         return
@@ -3725,8 +3725,7 @@ class InputManager(QObject):
         filter_widgets[0].setFocus(Qt.FocusReason.OtherFocusReason)
         return True
 
-    def _focus_first_library_card(self) -> bool:
-        container = getattr(self._parent, "gamesListWidget", None)
+    def _focus_first_game_card(self, container: QWidget | None) -> bool:
         if container is None:
             return False
         for card in container.findChildren(GameCard):
@@ -3740,16 +3739,38 @@ class InputManager(QObject):
                 return True
         return False
 
-    def _handle_library_toolbar_navigation(self, code: int, value: int) -> bool:
-        if value == 0 or self._parent.stackedWidget.currentIndex() != 0:
+    def _focus_first_library_card(self) -> bool:
+        container = getattr(self._parent, "gamesListWidget", None)
+        return self._focus_first_game_card(container)
+
+    def _get_autoinstall_toolbar_widgets(self) -> list[QWidget]:
+        widgets = []
+        for attr_name in ("autoInstallSearchLineEdit", "autoInstallRefreshButton"):
+            widget = getattr(self._parent, attr_name, None)
+            if isinstance(widget, QWidget) and widget.isVisible() and widget.isEnabled():
+                widgets.append(widget)
+        return widgets
+
+    def _focus_first_autoinstall_card(self) -> bool:
+        container = getattr(self._parent, "autoInstallContainer", None)
+        return self._focus_first_game_card(container)
+
+    def _handle_toolbar_navigation(self, code: int, value: int) -> bool:
+        current_index = self._parent.stackedWidget.currentIndex()
+        if value == 0 or current_index not in (0, 1):
             return False
-        toolbar_widgets = self._get_library_toolbar_widgets()
-        filter_widgets = self._get_library_filter_widgets()
+        if current_index == 0:
+            toolbar_widgets = self._get_library_toolbar_widgets()
+            focus_first_card = self._focus_first_library_card
+        else:
+            toolbar_widgets = self._get_autoinstall_toolbar_widgets()
+            focus_first_card = self._focus_first_autoinstall_card
         focused = self._focused_widget()
+        filter_widgets = self._get_library_filter_widgets() if current_index == 0 else []
         if focused in filter_widgets:
             if code == PAD_DPAD_X:
-                current_index = filter_widgets.index(cast(QWidget, focused))
-                next_index = current_index + (1 if value > 0 else -1)
+                widget_index = filter_widgets.index(cast(QWidget, focused))
+                next_index = widget_index + (1 if value > 0 else -1)
                 if 0 <= next_index < len(filter_widgets):
                     filter_widgets[next_index].setFocus(Qt.FocusReason.OtherFocusReason)
                 return True
@@ -3760,12 +3781,12 @@ class InputManager(QObject):
                 if isinstance(controls_button, QWidget):
                     controls_button.setFocus(Qt.FocusReason.OtherFocusReason)
                 return True
-            return self._focus_first_library_card()
+            return focus_first_card()
         if focused not in toolbar_widgets:
             return False
         if code == PAD_DPAD_X:
-            current_index = toolbar_widgets.index(cast(QWidget, focused))
-            next_index = current_index + (1 if value > 0 else -1)
+            widget_index = toolbar_widgets.index(cast(QWidget, focused))
+            next_index = widget_index + (1 if value > 0 else -1)
             if 0 <= next_index < len(toolbar_widgets):
                 toolbar_widgets[next_index].setFocus(Qt.FocusReason.OtherFocusReason)
             return True
@@ -3775,8 +3796,8 @@ class InputManager(QObject):
             controls_button = getattr(self._parent, "libraryControlsButton", None)
             if focused is controls_button and self._focus_library_filter_controls():
                 return True
-            return self._focus_first_library_card()
-        tab_button = self._parent.tabButtons.get(0)
+            return focus_first_card()
+        tab_button = self._parent.tabButtons.get(current_index)
         if tab_button is not None and tab_button.isVisible():
             tab_button.setFocus(Qt.FocusReason.OtherFocusReason)
         return True
