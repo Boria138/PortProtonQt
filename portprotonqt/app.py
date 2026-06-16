@@ -98,25 +98,29 @@ def run_silent_tray(app: QApplication, start_sh: list[str], exe_path: str) -> No
     tray_icon = QSystemTrayIcon(get_portproton_tray_icon(), app)
     tray_icon.setToolTip(__app_name__)
 
-    process = subprocess.Popen(
-        start_sh + [exe_path],
-        env=os.environ.copy(),
-        shell=False,
-    )
+    from datetime import datetime
+    from portprotonqt.time_utils import save_last_launch, save_playtime
+    save_last_launch(os.path.splitext(os.path.basename(exe_path))[0], datetime.now())
+    start_time = datetime.now()
+
+    process = subprocess.Popen(start_sh + [exe_path], env=os.environ.copy(), shell=False)
     tray_menu = QMenu()
 
-    def stop_game() -> None:
+    def end_silent_run():
         monitor_timer.stop()
-        stop_portproton_game(start_sh, logger)
+        elapsed = int((datetime.now() - start_time).total_seconds())
+        if elapsed > 0:
+            save_playtime(exe_path, elapsed)
         tray_icon.hide()
         app.quit()
 
+    def stop_game() -> None:
+        stop_portproton_game(start_sh, logger)
+        end_silent_run()
+
     def close_when_game_exits(_tray_menu: QMenu = tray_menu) -> None:
-        if process.poll() is None:
-            return
-        monitor_timer.stop()
-        tray_icon.hide()
-        app.quit()
+        if process.poll() is not None:
+            end_silent_run()
 
     stop_action = QAction(_("Stop Game"), tray_menu)
     stop_action.triggered.connect(stop_game)

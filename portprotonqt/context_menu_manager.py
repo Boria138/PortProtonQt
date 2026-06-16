@@ -749,10 +749,11 @@ class ContextMenuManager:
 
     def _remove_statistics_entry(self, exe_path, game_name):
         """Remove statistics entry for exact executable path."""
-        if not exe_path or not self.portproton_location:
+        if not exe_path:
             return
 
-        statistics_file = os.path.join(self.portproton_location, "data", "tmp", "statistics")
+        from portprotonqt.time_utils import get_statistics_path
+        statistics_file = get_statistics_path()
         if not os.path.exists(statistics_file):
             return
 
