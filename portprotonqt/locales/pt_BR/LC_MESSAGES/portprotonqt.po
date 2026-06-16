@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-06-04 10:32+0500\n"
-"PO-Revision-Date: 2026-06-12 23:07+0000\n"
+"PO-Revision-Date: 2026-06-16 21:07+0000\n"
 "Last-Translator: rogerio-mattos <rogerio-mattos@noreply.codeberg.org>\n"
 "Language-Team: Portuguese (Brazil) <https://translate.codeberg.org/projects/"
 "portprotonqt/portprotonqt/pt_BR/>\n"
@@ -35,7 +35,7 @@ msgid "Error"
 msgstr "Erro"
 
 msgid "PortProton directory not found"
-msgstr "Diretório do PortProton não encontrado"
+msgstr "Diretório do PortProton não Encontrado"
 
 msgid "Remove from Favorites"
 msgstr "Remover dos Favoritos"
@@ -52,13 +52,11 @@ msgstr "Renomear Pasta"
 msgid "Delete Folder"
 msgstr "Excluir Pasta"
 
-#, fuzzy
 msgid "Rename File"
-msgstr "Renomear Pasta"
+msgstr "Renomear Arquivo"
 
-#, fuzzy
 msgid "Delete File"
-msgstr "Excluir Pasta"
+msgstr "Excluir Arquivo"
 
 msgid "OK"
 msgstr "OK"
@@ -119,21 +117,20 @@ msgstr ""
 "Tem certeza de que deseja excluir a pasta '{file_name}'? Esta ação não pode "
 "ser desfeita."
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Failed to delete file: {error}"
-msgstr "Falha ao excluir a pasta: {error}"
+msgstr "Falha ao Excluir Arquivo: {error}"
 
-#, fuzzy
 msgid "New File Name:"
-msgstr "Novo Nome da Pasta:"
+msgstr "Novo Nome do Arquivo:"
 
 #, python-brace-format
 msgid "File already exists: {file_name}"
 msgstr "A pasta já existe: {file_name}"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Failed to rename file: {error}"
-msgstr "Falha ao renomear a pasta: {error}"
+msgstr "Falha ao renomear o arquivo: {error}"
 
 msgid "Delete from PortProton"
 msgstr "Excluir do PortProton"
@@ -1047,10 +1044,10 @@ msgstr ""
 "custosas entre núcleos."
 
 msgid "Sound Driver"
-msgstr ""
+msgstr "Driver de som"
 
 msgid "Force the Wine sound driver for this executable."
-msgstr ""
+msgstr "Forçar o uso do driver de áudio do Wine para este executável."
 
 msgid "just now"
 msgstr "agora mesmo"
@@ -1108,28 +1105,28 @@ msgid "COMPLETIONIST"
 msgstr "100%"
 
 msgid "Open Folder"
-msgstr ""
+msgstr "Abrir pasta"
 
 msgid "Settings"
-msgstr ""
+msgstr "Configurações"
 
 msgid "Create Log"
-msgstr ""
+msgstr "Criar log"
 
 msgid "Install"
-msgstr ""
+msgstr "Instalar"
 
 msgid "Open Card"
-msgstr ""
+msgstr "Abrir cartão"
 
 msgid "Reinstall"
-msgstr ""
+msgstr "Reinstale"
 
 msgid "Game not found."
-msgstr ""
+msgstr "Jogo não encontrado."
 
 msgid "Stop Log"
-msgstr ""
+msgstr "Encerrar log"
 
 msgid "Failed to start debug session"
 msgstr "Falha ao iniciar a sessão de depuração"
@@ -1841,82 +1838,82 @@ msgid "Display server type (X11/Wayland)"
 msgstr "Tipo de servidor de exibição (X11/Wayland)"
 
 msgid "Dynamic frametime Y-axis"
-msgstr ""
+msgstr "Eixo Y dinâmico do frametime"
 
 msgid "Short engine names"
-msgstr ""
+msgstr "Nomes curtos do motor"
 
 msgid "Engine version (OpenGL/Vulkan)"
-msgstr ""
+msgstr "Versão do motor (OpenGL/Vulkan)"
 
 msgid "Executable name"
-msgstr ""
+msgstr "Nome do executável"
 
 msgid "Steam Deck fan RPM"
-msgstr ""
+msgstr "RPM da ventoinha do Steam Deck"
 
 msgid "Frame capture analysis"
-msgstr ""
+msgstr "Análise de captura de frames"
 
 msgid "Flip efficiency (joules/frame)"
-msgstr ""
+msgstr "Eficiência de flip (joules/frame)"
 
 msgid "FPS text color by value"
-msgstr ""
+msgstr "Cor do texto de FPS por valor"
 
 msgid "FPS percentiles"
-msgstr ""
+msgstr "Percentis de FPS"
 
 msgid "Show FPS only"
-msgstr ""
+msgstr "Mostrar apenas FPS"
 
 msgid "Frame counter"
-msgstr ""
+msgstr "Contador de Frames"
 
 msgid "Frametime next to FPS"
-msgstr ""
+msgstr "Frametime ao lado do FPS"
 
 msgid "Detailed frame timing chart"
-msgstr ""
+msgstr "Gráfico Detalhado de Frametime"
 
 msgid "FSR status (gamescope)"
-msgstr ""
+msgstr "Status do FSR (gamescope)"
 
 msgid "Enable most parameters"
-msgstr ""
+msgstr "Ativar a Maioria dos Parâmetros"
 
 msgid "GameMode status"
-msgstr ""
+msgstr "Status do GameMode"
 
 msgid "GPU core frequency"
-msgstr ""
+msgstr "Frequência do Núcleo da GPU"
 
 msgid "GPU efficiency (frames/joule)"
-msgstr ""
+msgstr "Eficiência da GPU (Frames/Joule)"
 
 msgid "GPU fan (RPM/%)"
-msgstr ""
+msgstr "Ventoinha da GPU (RPM/%)"
 
 msgid "GPU junction temperature"
-msgstr ""
+msgstr "Temperatura da Junção da GPU"
 
 msgid "GPU load color change"
-msgstr ""
+msgstr "Mudança de Cor da Carga da GPU"
 
 msgid "GPU memory frequency"
-msgstr ""
+msgstr "Frequência da Memória da GPU"
 
 msgid "GPU memory temperature"
-msgstr ""
+msgstr "Temperatura da Memória da GPU"
 
 msgid "GPU name from pci.ids"
-msgstr ""
+msgstr "Nome da GPU do pci.ids"
 
 msgid "GPU power draw (watts)"
-msgstr ""
+msgstr "Consumo de Energia da GPU (Watts)"
 
 msgid "GPU power limit"
-msgstr ""
+msgstr "Limite de Energia da GPU"
 
 msgid "GPU temperature"
 msgstr ""
