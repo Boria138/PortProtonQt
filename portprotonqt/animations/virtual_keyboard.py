@@ -41,10 +41,7 @@ class VirtualKeyboardAnimations:
             self.keyboard.move(start_pos)
             pos_anim = self._position_animation(start_pos, end_pos, duration, "OutCubic")
             opacity_anim = self._opacity_animation(0.0, 1.0, duration, "OutCubic")
-            group = QParallelAnimationGroup()
-            group.addAnimation(pos_anim)
-            group.addAnimation(opacity_anim)
-            self.animation = group
+            self.animation = self._parallel_animation(pos_anim, opacity_anim)
         elif animation_type == "slide_bounce":
             self._clear_opacity_effect()
             self.keyboard.move(start_pos)
@@ -73,10 +70,7 @@ class VirtualKeyboardAnimations:
             self.keyboard.move(start_pos)
             pos_anim = self._position_animation(start_pos, end_pos, duration, "InCubic")
             opacity_anim = self._opacity_animation(1.0, 0.0, duration, "InCubic")
-            group = QParallelAnimationGroup()
-            group.addAnimation(pos_anim)
-            group.addAnimation(opacity_anim)
-            self.animation = group
+            self.animation = self._parallel_animation(pos_anim, opacity_anim)
         elif animation_type == "slide_bounce":
             self._clear_opacity_effect()
             self.keyboard.move(start_pos)
@@ -124,6 +118,16 @@ class VirtualKeyboardAnimations:
         if end_opacity >= 1.0:
             animation.finished.connect(self._clear_opacity_effect)
         return animation
+
+    def _parallel_animation(
+        self,
+        position_anim: QAbstractAnimation,
+        opacity_anim: QAbstractAnimation,
+    ) -> QParallelAnimationGroup:
+        group = QParallelAnimationGroup()
+        group.addAnimation(position_anim)
+        group.addAnimation(opacity_anim)
+        return group
 
     def _ensure_opacity_effect(self) -> QGraphicsOpacityEffect:
         if self.opacity_effect is None or not isValid(self.opacity_effect):

@@ -3,6 +3,7 @@ import hashlib
 import shutil
 from datetime import datetime, timedelta
 from babel.dates import format_timedelta, format_date
+from babel.numbers import format_decimal
 from portprotonqt.config import ui_config
 from portprotonqt.localization import _, get_system_locale
 from portprotonqt.logger import get_logger
@@ -308,6 +309,8 @@ def format_playtime(seconds):
     For "brief":
       - if time is less than hour, output exact time with seconds (e.g., "9 min 28 sec"),
       - if more than hour – only hours (e.g., "3 h").
+
+    For "steam" outputs hours with one decimal digit and ignores seconds.
     """
     detail_level = ui_config.get_time_detail_level() or "detailed"
     system_locale = get_system_locale()
@@ -327,6 +330,11 @@ def format_playtime(seconds):
         if secs > 0 or not parts:
             parts.append(f"{secs} " + _("sec."))
         return " ".join(parts)
+    elif detail_level == "steam":
+        minutes = seconds // 60
+        hours = minutes / 60
+        formatted_hours = format_decimal(hours, format="#,##0.#", locale=system_locale)
+        return f"{formatted_hours} " + _("h.")
     else:
         # Brief mode
         if seconds < 3600:

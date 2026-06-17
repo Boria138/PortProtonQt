@@ -61,6 +61,7 @@ from portprotonqt.animations import DetailPageAnimations
 from portprotonqt.debug_utils import DebugLogManager
 from portprotonqt.image_utils import cleanup_widget_animated_covers
 from portprotonqt.steam_api import get_steam_compat_tool, get_steam_home, get_steam_libs, safe_vdf_load
+from portprotonqt.time_utils import format_playtime
 
 logger = get_logger(__name__)
 
@@ -253,8 +254,12 @@ class DetailPageManager:
         game_info_layout.setSpacing(10)
 
         if ui_config.get_time_detail_level() != "hidden":
+            formatted_playtime = game_data.get("formatted_playtime", "")
+            playtime_seconds = game_data.get("playtime_seconds")
+            if playtime_seconds is not None:
+                formatted_playtime = format_playtime(playtime_seconds)
             first_row = self._create_playtime_row(
-                game_data.get("last_launch", ""), game_data.get("formatted_playtime", "")
+                game_data.get("last_launch", ""), formatted_playtime
             )
             game_info_layout.addLayout(first_row)
 
@@ -270,13 +275,17 @@ class DetailPageManager:
         first_row.setSpacing(10)
 
         last_launch_title = QLabel(_("LAST LAUNCH"))
+        last_launch_title.setObjectName("detailLastLaunchTitle")
         last_launch_title.setStyleSheet(self.main_window.theme.LAST_LAUNCH_TITLE_STYLE)
         last_launch_value = QLabel(last_launch)
+        last_launch_value.setObjectName("detailLastLaunchValue")
         last_launch_value.setStyleSheet(self.main_window.theme.LAST_LAUNCH_VALUE_STYLE)
 
         playtime_title = QLabel(_("TIME SPENT"))
+        playtime_title.setObjectName("detailPlaytimeTitle")
         playtime_title.setStyleSheet(self.main_window.theme.PLAY_TIME_TITLE_STYLE)
         playtime_value = QLabel(formatted_playtime)
+        playtime_value.setObjectName("detailPlaytimeValue")
         playtime_value.setStyleSheet(self.main_window.theme.PLAY_TIME_VALUE_STYLE)
 
         for widget in (last_launch_title, last_launch_value, playtime_title, playtime_value):
@@ -954,6 +963,7 @@ class DetailPageManager:
             "formatted_playtime": game_tuple[7],
             "protondb_tier": game_tuple[8],
             "anticheat_status": game_tuple[9],
+            "playtime_seconds": game_tuple[11],
             "game_source": game_tuple[12],
             "anticheat_slug": game_tuple[13] if len(game_tuple) > 13 else "",
         }

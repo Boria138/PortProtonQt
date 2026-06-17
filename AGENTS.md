@@ -305,7 +305,7 @@ git commit -m "feat: description in English ≤72 chars"
 | uv-lock | uv.lock up to date |
 | ruff-check | Linting (E, W, F, B, C4, UP) |
 | pyright | Type checking |
-| pytest | Unit tests (512 tests, ~1.8s) |
+| pytest | Unit tests |
 | bash-n | Bash syntax check and shebang `CRLF` check for `build-aux/share/portproton/scripts/` |
 | check-meson | meson.build syntax + files |
 | check-qss-properties | Theme QSS validation |
@@ -829,7 +829,7 @@ PortProtonQt/
 │   ├── theme_manager.py  # Theme management
 │   ├── logger.py         # Logging
 │   └── themes/           # Theme files
-├── tests/                # Unit tests (512 tests)
+├── tests/                # Unit tests
 ├── build-aux/            # Build resources
 ├── dev-scripts/          # Development scripts
 ├── documentation/        # Documentation
@@ -891,6 +891,6 @@ PortProtonQt/
 
 ---
 
-**Last updated:** 2026-06-14
+**Last updated:** 2026-06-16
 **Version:** 1.2
 **Status:** Release

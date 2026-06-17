@@ -8,6 +8,19 @@ from PySide6.QtCore import (
 from PySide6.QtWidgets import QGraphicsOpacityEffect, QWidget
 
 
+def _animation_duration(theme: object, fallback_duration: int) -> int:
+    animation_config = getattr(theme, "GAME_CARD_ANIMATION", {})
+    return animation_config.get("scale_anim_duration", fallback_duration)
+
+
+def _animation_easing(theme: object, opening: bool) -> QEasingCurve:
+    animation_config = getattr(theme, "GAME_CARD_ANIMATION", {})
+    key = "scale_easing_curve" if opening else "scale_easing_curve_out"
+    easing_name = animation_config.get(key, QEasingCurve.Type.InOutQuad.name)
+    easing_type = getattr(QEasingCurve.Type, easing_name, QEasingCurve.Type.InOutQuad)
+    return QEasingCurve(easing_type)
+
+
 class ExpandingSearchAnimation:
     def __init__(self, widget: QWidget, theme: object, fallback_duration: int):
         self.widget = widget
@@ -32,22 +45,11 @@ class ExpandingSearchAnimation:
         if self.animation.state() == QAbstractAnimation.State.Running:
             self.animation.stop()
         self.animation = QPropertyAnimation(self.widget, QByteArray(b"maximumWidth"))
-        self.animation.setDuration(self._duration())
+        self.animation.setDuration(_animation_duration(self.theme, self.fallback_duration))
         self.animation.setStartValue(self.widget.maximumWidth())
         self.animation.setEndValue(target_width)
-        self.animation.setEasingCurve(self._easing(target_width == self.expanded_width))
+        self.animation.setEasingCurve(_animation_easing(self.theme, target_width == self.expanded_width))
         self.animation.start()
-
-    def _duration(self) -> int:
-        animation_config = getattr(self.theme, "GAME_CARD_ANIMATION", {})
-        return animation_config.get("scale_anim_duration", self.fallback_duration)
-
-    def _easing(self, opening: bool) -> QEasingCurve:
-        animation_config = getattr(self.theme, "GAME_CARD_ANIMATION", {})
-        key = "scale_easing_curve" if opening else "scale_easing_curve_out"
-        easing_name = animation_config.get(key, QEasingCurve.Type.InOutQuad.name)
-        easing_type = getattr(QEasingCurve.Type, easing_name, QEasingCurve.Type.InOutQuad)
-        return QEasingCurve(easing_type)
 
 
 class LibraryControlsAnimation:
@@ -91,10 +93,10 @@ class LibraryControlsAnimation:
         end_value: object,
     ) -> QPropertyAnimation:
         animation = QPropertyAnimation(self.widget, QByteArray(property_name))
-        animation.setDuration(self._duration())
+        animation.setDuration(_animation_duration(self.theme, self.fallback_duration))
         animation.setStartValue(start_value)
         animation.setEndValue(end_value)
-        animation.setEasingCurve(self._easing(end_value != 0))
+        animation.setEasingCurve(_animation_easing(self.theme, end_value != 0))
         return animation
 
     def _create_opacity_animation(self, opening: bool, duration: int) -> QPropertyAnimation:
@@ -102,16 +104,5 @@ class LibraryControlsAnimation:
         animation.setDuration(duration)
         animation.setStartValue(self.opacity_effect.opacity())
         animation.setEndValue(1 if opening else 0)
-        animation.setEasingCurve(self._easing(opening))
+        animation.setEasingCurve(_animation_easing(self.theme, opening))
         return animation
-
-    def _duration(self) -> int:
-        animation_config = getattr(self.theme, "GAME_CARD_ANIMATION", {})
-        return animation_config.get("scale_anim_duration", self.fallback_duration)
-
-    def _easing(self, opening: bool) -> QEasingCurve:
-        animation_config = getattr(self.theme, "GAME_CARD_ANIMATION", {})
-        key = "scale_easing_curve" if opening else "scale_easing_curve_out"
-        easing_name = animation_config.get(key, QEasingCurve.Type.InOutQuad.name)
-        easing_type = getattr(QEasingCurve.Type, easing_name, QEasingCurve.Type.InOutQuad)
-        return QEasingCurve(easing_type)

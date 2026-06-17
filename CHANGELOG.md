@@ -7,16 +7,17 @@
 
 ### Added
 - Добавлен `AutoHideScrollArea` — QScrollArea с автоматически скрывающейся полосой прокрутки с анимацией fade-in/out
+- Добавлен тип отображения времени `Steam` с часами, десятичными минутами
+- Добавлено обновление отображения последнего запуска и проведённого времени без перезапуска приложения
 
 ### Changed
 - Убран дебаг-код `proton_downloads` из менеджера WINE/Proton
 - Файл `last_launch` перемещён из `~/.cache/PortProtonQt/` в `~/.local/share/PortProtonQt/` согласно XDG спецификации
-
-### Removed
+- Файл `statistics` перемещён из `portdatapath/tmp` в `~/.local/share/PortProtonQt/` согласно XDG спецификации и очищен от устаревших полей
+- Из-за проблем с кешем fontconfig весь кеш Appimage перенесён в `~/.cache/AppImage-Cache/PortProtonQt/`
 
 ### Fixed
 - Исправлено определение тёмной темы для `Cinnamon`, `XFCE` и `MATE`
-
 
 ### Contributors
 - @Dervart

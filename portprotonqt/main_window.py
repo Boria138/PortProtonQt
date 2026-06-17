@@ -2619,8 +2619,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             Qt.WidgetAttribute.WA_TranslucentBackground
         )
         self.timeDetailCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        self.time_keys = ["detailed", "brief", "hidden"]
-        self.time_labels = [_("Detailed"), _("Brief"), _("Hidden")]
+        self.time_keys = ["detailed", "brief", "steam", "hidden"]
+        self.time_labels = [_("Detailed"), _("Brief"), "Steam", _("Hidden")]
         self.timeDetailCombo.addItems(self.time_labels)
         self.timeDetailCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
         self.timeDetailCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -3081,11 +3081,63 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         for card in self.game_library_manager.game_card_cache.values():
             card.update_badge_visibility(display_filter)
 
+    def _format_game_tuple_playtime(self, game: tuple) -> tuple:
+        """Return game tuple with playtime formatted for current UI mode."""
+        if len(game) <= 11:
+            return game
+        updated_game = list(game)
+        updated_game[7] = format_playtime(updated_game[11] or 0)
+        return tuple(updated_game)
+
+    def _refresh_loaded_playtime_format(self) -> None:
+        """Refresh cached playtime strings after changing display mode."""
+        self.games = [self._format_game_tuple_playtime(game) for game in self.games]
+        self.game_library_manager.games = [
+            self._format_game_tuple_playtime(game)
+            for game in self.game_library_manager.games
+        ]
+        self.game_library_manager.filtered_games = [
+            self._format_game_tuple_playtime(game)
+            for game in self.game_library_manager.filtered_games
+        ]
+        for card in self.game_library_manager.game_card_cache.values():
+            card.formatted_playtime = format_playtime(card.playtime_seconds or 0)
+
+    def _refresh_current_detail_time(self) -> None:
+        """Refresh time labels on the current detail page."""
+        if not self.currentDetailPage or not self.current_exec_line:
+            return
+        if self.stackedWidget.currentWidget() is not self.currentDetailPage:
+            return
+        current_game = next(
+            (game for game in self.games if game[5] == self.current_exec_line),
+            None,
+        )
+        if not current_game:
+            return
+        last_launch_value = self.currentDetailPage.findChild(QLabel, "detailLastLaunchValue")
+        if last_launch_value is not None:
+            last_launch_value.setText(current_game[6])
+        playtime_value = self.currentDetailPage.findChild(QLabel, "detailPlaytimeValue")
+        if playtime_value is not None:
+            playtime_value.setText(current_game[7])
+        visible = ui_config.get_time_detail_level() != "hidden"
+        for object_name in (
+            "detailLastLaunchTitle",
+            "detailLastLaunchValue",
+            "detailPlaytimeTitle",
+            "detailPlaytimeValue",
+        ):
+            widget = self.currentDetailPage.findChild(QLabel, object_name)
+            if widget is not None:
+                widget.setVisible(visible)
+
     def savePortProtonSettings(self):
         previous_economy_mode = ui_config.get_economy_mode()
         time_idx = self.timeDetailCombo.currentIndex()
         time_key = self.time_keys[time_idx]
         ui_config.set_time_detail_level(time_key)
+        self._refresh_loaded_playtime_format()
 
         economy_mode = self.economyModeCheckBox.isChecked()
         ui_config.set_economy_mode(economy_mode)
@@ -3175,31 +3227,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 card.update_badge_visibility(display_filter)
                 card.update_badge_view_mode(badge_view_mode)
 
-        if (
-            self.currentDetailPage
-            and self.current_exec_line
-            and self.stackedWidget.currentWidget() is self.currentDetailPage
-        ):
-            current_game = next((game for game in self.games if game[5] == self.current_exec_line), None)
-            if current_game:
-                self.stackedWidget.removeWidget(self.currentDetailPage)
-                self.currentDetailPage.deleteLater()
-                self.currentDetailPage = None
-                game_data = {
-                    "name": current_game[0],
-                    "description": current_game[1],
-                    "cover_path": current_game[2],
-                    "appid": current_game[3],
-                    "controller_support": current_game[4],
-                    "exec_line": current_game[5],
-                    "last_launch": current_game[6],
-                    "formatted_playtime": current_game[7],
-                    "protondb_tier": current_game[8],
-                    "anticheat_status": current_game[9],
-                    "game_source": current_game[12],
-                    "anticheat_slug": current_game[13] if len(current_game) > 13 else "",
-                }
-                self.detail_page_manager.openGameDetailPage(game_data)
+        self._refresh_current_detail_time()
 
         self.settingsDebounceTimer.start()
 
@@ -3804,8 +3832,11 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 "exec_line": focused_widget.exec_line,
                 "last_launch": focused_widget.last_launch,
                 "formatted_playtime": focused_widget.formatted_playtime,
+                "playtime_seconds": focused_widget.playtime_seconds,
                 "protondb_tier": focused_widget.protondb_tier,
+                "anticheat_status": focused_widget.anticheat_status,
                 "game_source": focused_widget.game_source,
+                "anticheat_slug": focused_widget.anticheat_slug,
             }
             focused_widget.select_callback(game_data)
         parent = focused_widget.parent()
@@ -3919,6 +3950,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             if elapsed > 0:
                 from portprotonqt.time_utils import save_playtime
                 save_playtime(start_exe, elapsed)
+                self._update_playtime_after_exit(start_exe, elapsed)
             self.game_start_time = None
             self.game_start_exe = None
 
@@ -3932,6 +3964,94 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
         if not getattr(self, "_animated_covers_suspended", False):
             self.input_manager.resume_gamepad_polling()
         self.loadGames(force_load=True)
+
+    def _update_game_list_playtime(
+        self, games: list[tuple], exe_path: str, additional_seconds: int
+    ) -> tuple[list[tuple], bool]:
+        updated_games = []
+        changed = False
+        for game in games:
+            game_exe = extract_exec_target_path(game[5]) if len(game) > 5 else ""
+            if (
+                len(game) <= 11
+                or not game_exe
+                or os.path.normpath(game_exe) != exe_path
+            ):
+                updated_games.append(game)
+                continue
+            updated_game = list(game)
+            updated_game[11] = (updated_game[11] or 0) + additional_seconds
+            updated_game[7] = format_playtime(updated_game[11])
+            updated_games.append(tuple(updated_game))
+            changed = True
+        return updated_games, changed
+
+    def _update_playtime_after_exit(self, exe_path: str, additional_seconds: int) -> None:
+        target_path = os.path.normpath(exe_path)
+        self.games, changed = self._update_game_list_playtime(
+            self.games, target_path, additional_seconds
+        )
+        if not changed:
+            return
+
+        self.game_library_manager.games = self.games
+        self.game_library_manager.filtered_games, _ = self._update_game_list_playtime(
+            self.game_library_manager.filtered_games, target_path, additional_seconds
+        )
+
+        for card in self.game_library_manager.game_card_cache.values():
+            card_exe = extract_exec_target_path(card.exec_line) or ""
+            if os.path.normpath(card_exe) != target_path:
+                continue
+            card.playtime_seconds = (card.playtime_seconds or 0) + additional_seconds
+            card.formatted_playtime = format_playtime(card.playtime_seconds)
+
+        self.game_library_manager.update_game_grid(focus_first_card=False)
+        self._refresh_current_detail_time()
+
+    def _update_game_list_last_launch(
+        self, games: list[tuple], exe_path: str, launch_time: datetime
+    ) -> tuple[list[tuple], bool]:
+        updated_games = []
+        changed = False
+        for game in games:
+            game_exe = extract_exec_target_path(game[5]) if len(game) > 5 else ""
+            if (
+                len(game) <= 10
+                or not game_exe
+                or os.path.normpath(game_exe) != exe_path
+            ):
+                updated_games.append(game)
+                continue
+            updated_game = list(game)
+            updated_game[6] = format_last_launch(launch_time)
+            updated_game[10] = launch_time.timestamp()
+            updated_games.append(tuple(updated_game))
+            changed = True
+        return updated_games, changed
+
+    def _update_last_launch_after_start(self, exe_path: str, launch_time: datetime) -> None:
+        target_path = os.path.normpath(exe_path)
+        self.games, changed = self._update_game_list_last_launch(
+            self.games, target_path, launch_time
+        )
+        if not changed:
+            return
+
+        self.game_library_manager.games = self.games
+        self.game_library_manager.filtered_games, _ = self._update_game_list_last_launch(
+            self.game_library_manager.filtered_games, target_path, launch_time
+        )
+
+        for card in self.game_library_manager.game_card_cache.values():
+            card_exe = extract_exec_target_path(card.exec_line) or ""
+            if os.path.normpath(card_exe) != target_path:
+                continue
+            card.last_launch = format_last_launch(launch_time)
+            card.last_launch_ts = launch_time.timestamp()
+
+        self.game_library_manager.update_game_grid(focus_first_card=False)
+        self._refresh_current_detail_time()
 
     def _has_running_game_process(self) -> bool:
         return any(proc.poll() is None for proc in self.game_processes)
@@ -4133,9 +4253,11 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 self.game_processes.append(process)
                 self._start_launch_output_reader(process)
                 self.input_manager.suspend_gamepad_polling()
-                self.game_start_time = datetime.now()
+                launch_time = datetime.now()
+                self.game_start_time = launch_time
                 self.game_start_exe = file_to_check
-                save_last_launch(exe_name, datetime.now())
+                save_last_launch(exe_name, launch_time)
+                self._update_last_launch_after_start(file_to_check, launch_time)
                 if update_button:
                     try:
                         update_button.setText(_("Stop"))
