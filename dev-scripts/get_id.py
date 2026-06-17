@@ -108,8 +108,22 @@ async def fetch_ppdb_games(session):
         async with session.get(PPDB_RATINGS_URL, verify_ssl=not DEBUG_MODE) as response:
             response.raise_for_status()
             data = await response.json()
+            if isinstance(data, dict):
+                data = next(
+                    (
+                        data[key]
+                        for key in ("data", "results", "games", "items")
+                        if isinstance(data.get(key), list)
+                    ),
+                    next((value for value in data.values() if isinstance(value, list)), []),
+                )
+            if not isinstance(data, list):
+                print("Ошибка загрузки PPDB games ratings: неожиданный формат ответа")
+                return []
             result = []
             for game in data:
+                if not isinstance(game, dict):
+                    continue
                 result.append({
                     "id": game["id"],
                     "normalized_name": normalize_name(game["name"]),
