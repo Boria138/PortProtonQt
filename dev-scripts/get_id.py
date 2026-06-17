@@ -13,10 +13,12 @@ STEAM_KEY = os.environ.get('STEAM_KEY')
 # Флаги для включения/отключения источников
 ENABLE_STEAM = os.environ.get('ENABLE_STEAM', 'true').lower() == 'true'
 ENABLE_ANTICHEAT = os.environ.get('ENABLE_ANTICHEAT', 'true').lower() == 'true'
+ENABLE_PPDB = os.environ.get('ENABLE_PPDB', 'true').lower() == 'true'
 DEBUG_MODE = os.environ.get('DEBUG_MODE', 'false').lower() == 'true'
 
 # Конфигурация API
 STEAM_BASE_URL = "https://api.steampowered.com/IStoreService/GetAppList/v1/?"
+PPDB_RATINGS_URL = "https://ppdb.linux-gaming.ru/api/games/ratings?fields=id,name,overall_rating&has_reports=true"
 CATEGORY_STEAM = "games"
 
 # Отключаем предупреждения об SSL в дебаг-режиме
@@ -98,14 +100,35 @@ async def fetch_games_json(session):
         print(f"Ошибка загрузки games.json: {error}")
         return []
 
+async def fetch_ppdb_games(session):
+    """
+    Загружает JSON с данными PPDB и извлекает id, normalized_name и overall_rating.
+    """
+    try:
+        async with session.get(PPDB_RATINGS_URL, verify_ssl=not DEBUG_MODE) as response:
+            response.raise_for_status()
+            data = await response.json()
+            result = []
+            for game in data:
+                result.append({
+                    "id": game["id"],
+                    "normalized_name": normalize_name(game["name"]),
+                    "overall_rating": game.get("overall_rating"),
+                })
+            return result
+    except Exception as error:
+        print(f"Ошибка загрузки PPDB games ratings: {error}")
+        return []
+
 async def request_data():
     """
-    Получает данные из Steam и AreWeAntiCheatYet,
+    Получает данные из Steam, AreWeAntiCheatYet и PPDB,
     обрабатывает их и сохраняет в JSON-файлы и tar.xz архивы.
     """
     output_json = []
     total_parsed = 0
     anticheat_games = []
+    ppdb_games = []
 
     try:
         async with aiohttp.ClientSession() as session:
@@ -143,6 +166,12 @@ async def request_data():
                 anticheat_games = await fetch_games_json(session)
             else:
                 print("Пропущена загрузка данных AreWeAntiCheatYet (ENABLE_ANTICHEAT=false).")
+
+            # Загружаем данные PPDB
+            if ENABLE_PPDB:
+                ppdb_games = await fetch_ppdb_games(session)
+            else:
+                print("Пропущена загрузка данных PPDB (ENABLE_PPDB=false).")
 
     except Exception as error:
         print(f"Ошибка получения данных: {error}")
@@ -190,6 +219,26 @@ async def request_data():
             os.remove(anticheat_json_min)
         except Exception as e:
             print(f"Ошибка при упаковке архива AreWeAntiCheatYet: {e}")
+            return False
+
+    # Сохранение данных PPDB
+    if ENABLE_PPDB and ppdb_games:
+        ppdb_json_full = os.path.join(data_dir, "ppdb_games.json")
+        ppdb_json_min = os.path.join(data_dir, "ppdb_games_min.json")
+        with open(ppdb_json_full, "w", encoding="utf-8") as f:
+            json.dump(ppdb_games, f, ensure_ascii=False, indent=2)
+        with open(ppdb_json_min, "w", encoding="utf-8") as f:
+            json.dump(ppdb_games, f, ensure_ascii=False, separators=(',',':'))
+
+        # Упаковка минифицированного JSON PPDB в tar.xz архив
+        ppdb_archive_path = os.path.join(data_dir, "ppdb_games.tar.xz")
+        try:
+            with tarfile.open(ppdb_archive_path, "w:xz", preset=9) as tar:
+                tar.add(ppdb_json_min, arcname=os.path.basename(ppdb_json_min))
+            print(f"Упаковано минифицированное JSON PPDB в архив: {ppdb_archive_path}")
+            os.remove(ppdb_json_min)
+        except Exception as e:
+            print(f"Ошибка при упаковке архива PPDB: {e}")
             return False
 
     return True
