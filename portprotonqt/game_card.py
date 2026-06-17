@@ -31,8 +31,6 @@ from portprotonqt.config import (
 )
 from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.custom_widgets import ClickableLabel
-from portprotonqt.portproton_api import PortProtonAPI
-from portprotonqt.downloader import Downloader
 from portprotonqt.animations import GameCardAnimations
 
 class GameCard(QFrame):
@@ -51,9 +49,13 @@ class GameCard(QFrame):
     hoverChanged = Signal(str, bool)
     focusChanged = Signal(str, bool)
 
-    def __init__(self, name, description, cover_path, appid, controller_support, exec_line,
-                 last_launch, formatted_playtime, protondb_tier, anticheat_status, last_launch_ts, playtime_seconds, game_source,
-                 anticheat_slug="", *, select_callback, theme=None, card_width=250, parent=None, context_menu_manager=None):
+    def __init__(
+        self, name, description, cover_path, appid, controller_support, exec_line,
+        last_launch, formatted_playtime, protondb_tier, anticheat_status,
+        last_launch_ts, playtime_seconds, game_source, anticheat_slug="",
+        ppdb_id="", ppdb_rating="", *, select_callback, theme=None,
+        card_width=250, parent=None, context_menu_manager=None
+    ):
         super().__init__(parent)
         self.name = name
         self.description = description
@@ -66,6 +68,8 @@ class GameCard(QFrame):
         self.protondb_tier = protondb_tier
         self.anticheat_status = anticheat_status
         self.anticheat_slug = anticheat_slug or ""
+        self.ppdb_id = ppdb_id or ""
+        self.ppdb_rating = ppdb_rating or ""
         self.game_source = game_source
         self.autoinstall_exe_name = ""
         self.last_launch_ts = last_launch_ts
@@ -88,12 +92,12 @@ class GameCard(QFrame):
         self.layout_mode = str(getattr(self.theme, "LIBRARY_LAYOUT_MODE", "grid")).lower()
         self.list_layout = self.layout_mode == "list"
         self.economy_mode = ui_config.get_economy_mode()
-        self.downloader = Downloader(max_workers=4)
-        self.portproton_api = PortProtonAPI(self.downloader)
         self.missing_executable_path = self._get_missing_executable_path()
 
         self.steam_visible = (str(game_source).lower() == "steam" and not self.economy_mode)
-        self.portproton_visible = (str(game_source).lower() == "portproton" and not self.economy_mode)
+        self.portproton_visible = (
+            str(game_source).lower() == "portproton" and bool(self.ppdb_id) and not self.economy_mode
+        )
 
         self.base_extra_margin = 8 if self.list_layout else 20
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -184,10 +188,14 @@ class GameCard(QFrame):
             parent=self.coverWidget,
             font_scale_factor=0.06
         )
-        self.portprotonLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
+        if self.ppdb_rating:
+            self.portprotonLabel.setStyleSheet(self.theme.get_protondb_badge_style(self.ppdb_rating))
+        else:
+            self.portprotonLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
         self.portprotonLabel.setCardWidth(card_width)
         self.portprotonLabel.setVisible(self.portproton_visible)
-        self.portprotonLabel.clicked.connect(self.open_ppdb_page)
+        if self.ppdb_id:
+            self.portprotonLabel.clicked.connect(self.open_ppdb_page)
         if self.economy_mode:
             self.portprotonLabel.setVisible(False)
 
@@ -514,7 +522,9 @@ class GameCard(QFrame):
         self.display_filter = display_filter
         self.economy_mode = ui_config.get_economy_mode()
         self.steam_visible = (str(self.game_source).lower() == "steam" and not self.economy_mode)
-        self.portproton_visible = (str(self.game_source).lower() == "portproton" and not self.economy_mode)
+        self.portproton_visible = (
+            str(self.game_source).lower() == "portproton" and bool(self.ppdb_id) and not self.economy_mode
+        )
         protondb_visible = bool(self.getProtonDBText(self.protondb_tier)) and not self.economy_mode
         anticheat_visible = bool(self.getAntiCheatText(self.anticheat_status)) and not self.economy_mode
 
@@ -644,7 +654,8 @@ class GameCard(QFrame):
         return ""
 
     def open_ppdb_page(self):
-        self.portproton_api.open_ppdb_page(self.name, self.exec_line)
+        if self.ppdb_id:
+            QDesktopServices.openUrl(QUrl(f"https://ppdb.linux-gaming.ru/game/{self.ppdb_id}"))
 
     def open_protondb_report(self):
         url = QUrl(f"https://www.protondb.com/app/{self.appid}")
@@ -781,6 +792,8 @@ class GameCard(QFrame):
                 "game_source": self.game_source,
                 "anticheat_status": self.anticheat_status,
                 "anticheat_slug": self.anticheat_slug,
+                "ppdb_id": self.ppdb_id,
+                "ppdb_rating": self.ppdb_rating,
                 "autoinstall_exe_name": getattr(self, "autoinstall_exe_name", ""),
             }
             self.select_callback(game_data)

@@ -50,3 +50,12 @@ def sample_anticheat_apps() -> list[dict]:
         {"normalized_name": "apex legends", "status": "Running", "slug": "apex-legends"},
         {"normalized_name": "pubg battlegrounds", "status": "Running", "slug": "pubg"},
     ]
+
+
+@pytest.fixture
+def sample_ppdb_apps() -> list[dict]:
+    return [
+        {"id": 136732, "normalized_name": "вивисектор зверь внутри", "overall_rating": "platinum"},
+        {"id": 143135, "normalized_name": "златогорье 2 холодные небеса", "overall_rating": "platinum"},
+        {"id": 70547, "normalized_name": "мир кораблей", "overall_rating": "silver"},
+    ]

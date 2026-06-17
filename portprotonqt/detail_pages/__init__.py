@@ -55,8 +55,6 @@ from portprotonqt.config import (
 from portprotonqt.custom_widgets import AutoSizeButton, ClickableLabel, FlowLayout
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
-from portprotonqt.portproton_api import PortProtonAPI
-from portprotonqt.downloader import Downloader
 from portprotonqt.animations import DetailPageAnimations
 from portprotonqt.debug_utils import DebugLogManager
 from portprotonqt.image_utils import cleanup_widget_animated_covers
@@ -75,7 +73,6 @@ class DetailPageManager:
         self._current_detail_page: QWidget | None = None
         self._exit_animation_in_progress = False
         self._animations: dict = {}
-        self.portproton_api = PortProtonAPI(Downloader(max_workers=4))
         self.debug_log_manager = DebugLogManager()
         self._debug_log_button: AutoSizeButton | None = None
         self._debug_log_timer = None
@@ -205,8 +202,8 @@ class DetailPageManager:
 
         game_source = str(game_data.get("game_source", "")).lower()
         appid = game_data.get("appid", "")
-        name = game_data.get("name", "")
-        exec_line = game_data.get("exec_line", "")
+        ppdb_id = str(game_data.get("ppdb_id", ""))
+        ppdb_rating = str(game_data.get("ppdb_rating", ""))
 
         steam_visible = game_source == "steam"
         portproton_visible = game_source == "portproton"
@@ -217,8 +214,8 @@ class DetailPageManager:
             badges.append(protondb_badge)
         if steam_visible:
             badges.append(self._create_steam_badge(parent, appid))
-        if portproton_visible:
-            badges.append(self._create_portproton_badge(parent, name, exec_line))
+        if portproton_visible and ppdb_id:
+            badges.append(self._create_portproton_badge(parent, ppdb_id, ppdb_rating))
         anticheat_badge = self._create_anticheat_badge(parent, game_data)
         if anticheat_badge:
             badges.append(anticheat_badge)
@@ -235,8 +232,18 @@ class DetailPageManager:
         badge = create_steam_badge(parent, appid, self.main_window)
         return {"label": badge, "visible": True}
 
-    def _create_portproton_badge(self, parent: QWidget, name: str, exec_line: str) -> dict:
-        badge = create_portproton_badge(parent, lambda: self.portproton_api.open_ppdb_page(name, exec_line), self.main_window)
+    def _create_portproton_badge(
+        self,
+        parent: QWidget,
+        ppdb_id: str,
+        ppdb_rating: str,
+    ) -> dict:
+        badge = create_portproton_badge(
+            parent,
+            self.main_window,
+            ppdb_id,
+            ppdb_rating,
+        )
         return {"label": badge, "visible": True}
 
     def _create_anticheat_badge(self, parent: QWidget, game_data: dict) -> dict | None:
@@ -951,6 +958,8 @@ class DetailPageManager:
             "playtime_seconds": game_tuple[11],
             "game_source": game_tuple[12],
             "anticheat_slug": game_tuple[13] if len(game_tuple) > 13 else "",
+            "ppdb_id": game_tuple[14] if len(game_tuple) > 14 else "",
+            "ppdb_rating": game_tuple[15] if len(game_tuple) > 15 else "",
         }
 
     def _finalize_autoinstall_page(

@@ -972,6 +972,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 playtime_seconds,
                 "steam",
                 info.get("anticheat_slug", ""),
+                info.get("ppdb_id", ""),
+                info.get("ppdb_rating", ""),
             ))
             processed_count += 1
             self.pending_games.append(None)
@@ -1130,6 +1132,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 playtime_seconds,
                 "portproton",
                 steam_info.get("anticheat_slug", ""),
+                steam_info.get("ppdb_id", ""),
+                steam_info.get("ppdb_rating", ""),
             ))
 
         if economy_mode:
@@ -1747,6 +1751,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                         playtime_seconds,
                         "portproton",
                         steam_info.get("anticheat_slug", ""),
+                        steam_info.get("ppdb_id", ""),
+                        steam_info.get("ppdb_rating", ""),
                     )
 
                     # Incremental add
@@ -1773,6 +1779,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                         playtime_seconds,
                         "portproton",
                         cached_steam_info.get("anticheat_slug", ""),
+                        cached_steam_info.get("ppdb_id", ""),
+                        cached_steam_info.get("ppdb_rating", ""),
                     )
                     self.game_library_manager.add_game_incremental(game_data)
                     QTimer.singleShot(200, self.game_library_manager.load_visible_images)
@@ -3698,6 +3706,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                     "anticheat_status": cached_steam_info.get("anticheat_status", ""),
                     "game_source": "portproton",
                     "anticheat_slug": cached_steam_info.get("anticheat_slug", ""),
+                    "ppdb_id": cached_steam_info.get("ppdb_id", ""),
+                    "ppdb_rating": cached_steam_info.get("ppdb_rating", ""),
                 }
                 self.openGameDetailPage(game_data)
                 return
@@ -3739,6 +3749,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                             "anticheat_status": steam_info.get("anticheat_status", ""),
                             "game_source": "portproton",
                             "anticheat_slug": steam_info.get("anticheat_slug", ""),
+                            "ppdb_id": steam_info.get("ppdb_id", ""),
+                            "ppdb_rating": steam_info.get("ppdb_rating", ""),
                         }
                         self.openGameDetailPage(game_data)
 
@@ -3758,6 +3770,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                     "anticheat_status": steam_info.get("anticheat_status", ""),
                     "game_source": "portproton",
                     "anticheat_slug": steam_info.get("anticheat_slug", ""),
+                    "ppdb_id": steam_info.get("ppdb_id", ""),
+                    "ppdb_rating": steam_info.get("ppdb_rating", ""),
                 }
                 # Open detail page for the newly added game
                 self.openGameDetailPage(game_data)
@@ -3782,6 +3796,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                     "anticheat_status": cached_steam_info.get("anticheat_status", ""),
                     "game_source": "portproton",
                     "anticheat_slug": cached_steam_info.get("anticheat_slug", ""),
+                    "ppdb_id": cached_steam_info.get("ppdb_id", ""),
+                    "ppdb_rating": cached_steam_info.get("ppdb_rating", ""),
                 }
                 self.openGameDetailPage(game_data)
                 return
@@ -3822,6 +3838,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                             "anticheat_status": steam_info.get("anticheat_status", ""),
                             "game_source": "portproton",
                             "anticheat_slug": steam_info.get("anticheat_slug", ""),
+                            "ppdb_id": steam_info.get("ppdb_id", ""),
+                            "ppdb_rating": steam_info.get("ppdb_rating", ""),
                         }
                         self.openGameDetailPage(game_data)
 
@@ -3841,6 +3859,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                     "anticheat_status": steam_info.get("anticheat_status", ""),
                     "game_source": "portproton",
                     "anticheat_slug": steam_info.get("anticheat_slug", ""),
+                    "ppdb_id": steam_info.get("ppdb_id", ""),
+                    "ppdb_rating": steam_info.get("ppdb_rating", ""),
                 }
                 self.openGameDetailPage(game_data)
 
@@ -3884,6 +3904,8 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
                 "anticheat_status": focused_widget.anticheat_status,
                 "game_source": focused_widget.game_source,
                 "anticheat_slug": focused_widget.anticheat_slug,
+                "ppdb_id": focused_widget.ppdb_id,
+                "ppdb_rating": focused_widget.ppdb_rating,
             }
             focused_widget.select_callback(game_data)
         parent = focused_widget.parent()

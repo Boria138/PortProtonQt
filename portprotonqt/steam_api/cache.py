@@ -19,6 +19,7 @@ logger = get_logger(__name__)
 downloader = Downloader()
 
 CACHE_DURATION = 30 * 24 * 60 * 60
+PPDB_DATA_URL = "https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/data/ppdb_games.tar.xz"
 
 _EXIFTOOL_CACHE: dict[str, tuple[dict, float]] = {}
 _CACHE_MAX_ENTRIES = 64
@@ -259,6 +260,67 @@ def load_weanticheatyet_data_async(callback: Callable[[list], None]) -> None:
         downloader.download_async(app_list_url, str(cache_tar_path), timeout=5, callback=process_tar)
 
 
+def _extract_ppdb_archive(
+    result: str | None,
+    cache_tar_path: os.PathLike,
+    cache_json_path: os.PathLike,
+) -> list:
+    if not result or not os.path.exists(result):
+        logger.error("Failed to download PPDB archive")
+        return []
+    try:
+        with tarfile.open(result, mode='r:xz') as tar:
+            member = next((m for m in tar.getmembers() if m.name.endswith('ppdb_games_min.json')), None)
+            if member is None:
+                raise RuntimeError("JSON file not found in archive")
+            fobj = tar.extractfile(member)
+            if fobj is None:
+                raise RuntimeError(f"Failed to extract file {member.name} from archive")
+            raw = fobj.read()
+            fobj.close()
+            data = orjson.loads(raw)
+        with open(cache_json_path, "wb") as f:
+            f.write(orjson.dumps(data))
+        if os.path.exists(cache_tar_path):
+            os.remove(cache_tar_path)
+            logger.info("Deleted archive: %s", cache_tar_path)
+        return data or []
+    except Exception as e:
+        logger.error("Failed to extract PPDB archive: %s", e)
+        return []
+
+
+def load_ppdb_data_async(callback: Callable[[list], None]) -> None:
+    """Asynchronously load PPDB data, using cache if available."""
+    cache_manager = CacheManager()
+    cache_tar_path = cache_manager.cache_dir / "ppdb_games.tar.xz"
+    cache_json_path = cache_manager.cache_dir / "ppdb_games.json"
+
+    def process_tar(result: str | None) -> None:
+        ppdb_data = _extract_ppdb_archive(result, cache_tar_path, cache_json_path)
+        logger.info("Loaded %d PPDB entries from archive", len(ppdb_data))
+        callback(ppdb_data)
+
+    if cache_json_path.exists() and (time.time() - cache_json_path.stat().st_mtime < CACHE_DURATION):
+        logger.info("Using cached PPDB JSON: %s", cache_json_path)
+        try:
+            with open(cache_json_path, "rb") as f:
+                data = orjson.loads(f.read())
+            if not isinstance(data, list):
+                logger.error("Invalid JSON format in %s (not a list), re-downloading", cache_json_path)
+                raise ValueError("Invalid JSON structure")
+            for entry in data:
+                if not isinstance(entry, dict) or "normalized_name" not in entry or "id" not in entry:
+                    logger.error("Invalid PPDB entry in cached JSON %s, re-downloading", cache_json_path)
+                    raise ValueError("Invalid PPDB entry structure")
+            callback(data)
+        except Exception as e:
+            logger.error("Failed to read or validate cached PPDB JSON %s: %s", cache_json_path, e)
+            downloader.download_async(PPDB_DATA_URL, str(cache_tar_path), timeout=5, callback=process_tar)
+    else:
+        downloader.download_async(PPDB_DATA_URL, str(cache_tar_path), timeout=5, callback=process_tar)
+
+
 def build_weanticheatyet_index(anti_cheat_data: list) -> dict:
     """Build index of anti-cheat data by normalized_name field."""
     anti_cheat_index: dict[str, dict] = {}
@@ -270,6 +332,19 @@ def build_weanticheatyet_index(anti_cheat_data: list) -> dict:
         if normalized:
             anti_cheat_index[normalized] = entry
     return anti_cheat_index
+
+
+def build_ppdb_index(ppdb_data: list) -> dict:
+    """Build index of PPDB data by normalized_name field."""
+    ppdb_index: dict[str, dict] = {}
+    if not ppdb_data:
+        return ppdb_index
+    logger.info("Building PPDB data index")
+    for entry in ppdb_data:
+        normalized = entry.get("normalized_name", "")
+        if normalized:
+            ppdb_index[normalized] = entry
+    return ppdb_index
 
 
 def load_protondb_status(appid: int) -> dict | None:
@@ -304,6 +379,24 @@ def search_anticheat_entry(candidate: str, anti_cheat_index: dict) -> dict | Non
         return anti_cheat_index[candidate_norm]
 
     for name_norm, entry in anti_cheat_index.items():
+        if candidate_norm in name_norm:
+            ratio = len(candidate_norm) / len(name_norm)
+            if ratio > 0.8:
+                return entry
+
+    return None
+
+
+def search_ppdb_entry(candidate: str, ppdb_index: dict) -> dict | None:
+    """Search for PPDB entry by candidate: exact match first, then partial."""
+    if not candidate:
+        return None
+    candidate_norm = normalize_name(candidate)
+
+    if candidate_norm in ppdb_index:
+        return ppdb_index[candidate_norm]
+
+    for name_norm, entry in ppdb_index.items():
         if candidate_norm in name_norm:
             ratio = len(candidate_norm) / len(name_norm)
             if ratio > 0.8:
