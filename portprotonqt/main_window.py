@@ -2078,6 +2078,7 @@ class MainWindow(MainWindowControlHintsMixin, MainWindowSystemTabMixin, MainWind
             return
         self.autoInstallRefreshButton.setEnabled(False)
         self.autoInstallLoaded = False
+        self.portproton_api.clear_autoinstall_image_cache()
         self._start_autoinstall_load(force_refresh=True)
 
     def on_auto_slider_released(self):

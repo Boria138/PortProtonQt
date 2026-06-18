@@ -365,6 +365,21 @@ def _get_ppdb_autoinstall_image_name(cover: str) -> str:
     return f"{game_id}{suffix}"
 
 
+def clear_ppdb_autoinstall_image_cache(cover_urls: list[str]) -> None:
+    xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
+    image_folder = os.path.join(xdg_cache_home, "PortProtonQt", "images")
+    for cover in cover_urls:
+        filename = _get_ppdb_autoinstall_image_name(cover)
+        if not filename:
+            continue
+        local_path = os.path.join(image_folder, filename)
+        try:
+            if os.path.exists(local_path):
+                os.remove(local_path)
+        except OSError as e:
+            logger.warning("Failed to remove cached PPDB image %s: %s", local_path, e)
+
+
 def load_pixmap_async(
     cover: str,
     width: int,

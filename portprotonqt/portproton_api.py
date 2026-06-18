@@ -23,7 +23,10 @@ from portprotonqt.config import (
 from portprotonqt.localization import _
 from portprotonqt.dialogs import FileExplorer
 from portprotonqt.config.cache import CacheManager
-from portprotonqt.image_utils import COVER_IMAGE_EXTENSIONS
+from portprotonqt.image_utils import (
+    COVER_IMAGE_EXTENSIONS,
+    clear_ppdb_autoinstall_image_cache,
+)
 
 logger = get_logger(__name__)
 AUTOINSTALL_API_URL = "https://ppdb.linux-gaming.ru/api/games/autoinstall"
@@ -229,6 +232,17 @@ class PortProtonAPI:
         self._autoinstall_cache = None
         cache_manager = CacheManager()
         cache_manager.remove("autoinstall_games_cache")
+
+    def clear_autoinstall_image_cache(self) -> None:
+        """Clear cached autoinstall PPDB images."""
+        games = self._load_autoinstall_cache() or []
+        cover_urls = []
+        for game in games:
+            if len(game) > 14 and isinstance(game[14], str):
+                cover_urls.append(game[14])
+            if len(game) > 15 and isinstance(game[15], str):
+                cover_urls.append(game[15])
+        clear_ppdb_autoinstall_image_cache(cover_urls)
 
     def _get_autoinstall_lang_code(self) -> str:
         try:

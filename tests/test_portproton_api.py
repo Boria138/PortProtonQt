@@ -108,3 +108,29 @@ def test_autoinstall_script_uses_cached_card_data(
     metadata_path = metadata_path / "CachedLauncher" / "metadata.txt"
     assert metadata_path.exists()
     assert "name=Cached Game" in metadata_path.read_text(encoding="utf-8")
+
+
+def test_autoinstall_refresh_clears_cached_ppdb_images(tmp_config_dir: Path) -> None:
+    api = PortProtonAPI()
+    image_dir = tmp_config_dir.parent / "cache" / "PortProtonQt" / "images"
+    image_dir.mkdir(parents=True)
+    compact_cache = image_dir / "43_compat.webp"
+    full_cache = image_dir / "43.webp"
+    unrelated_cache = image_dir / "999.webp"
+    compact_cache.write_text("old compact", encoding="utf-8")
+    full_cache.write_text("old full", encoding="utf-8")
+    unrelated_cache.write_text("keep", encoding="utf-8")
+    api._autoinstall_cache = [
+        (
+            "Game", "", "", "", "", "autoinstall:https://example/game_43.ppai",
+            "Never", "0h 0m", "", "", 0, 0, "autoinstall", "game_43",
+            "https://ppdb.linux-gaming.ru/covers/game_43_icon_abc.webp",
+            "https://ppdb.linux-gaming.ru/covers/game_43_library_abc.webp",
+        )
+    ]
+
+    api.clear_autoinstall_image_cache()
+
+    assert not compact_cache.exists()
+    assert not full_cache.exists()
+    assert unrelated_cache.exists()
