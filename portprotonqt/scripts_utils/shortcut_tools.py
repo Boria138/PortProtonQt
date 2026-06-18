@@ -2,8 +2,79 @@
 import argparse
 import os
 import sys
+import urllib.parse
 from pathlib import Path
+from typing import Any
 from portprotonqt.cli import normalize_launch_path
+
+
+def _download_ppdb_file(session: Any, ppdb_url: str, ppdb_path: str) -> bool:
+    """Download PPDB file to the requested path."""
+    from portprotonqt.logger import get_logger
+    from requests import RequestException
+
+    logger = get_logger(__name__)
+    temp_path = f"{ppdb_path}.tmp"
+    try:
+        logger.info("Download new PPDB file from: %s", ppdb_url)
+        ppdb_response = session.get(ppdb_url, timeout=30)
+        ppdb_response.raise_for_status()
+        Path(temp_path).write_bytes(ppdb_response.content)
+        os.replace(temp_path, ppdb_path)
+        return True
+    except RequestException as error:
+        logger.warning("Failed to download PPDB from URL %s: %s", ppdb_url, error)
+    except OSError as error:
+        logger.warning("Failed to save PPDB file %s: %s", ppdb_path, error)
+
+    Path(temp_path).unlink(missing_ok=True)
+    return False
+
+
+def find_ext_ppdb(exe_path: str) -> bool:
+    """Download PPDB file for executable when it is available."""
+    from portprotonqt.downloader import get_requests_session
+    from portprotonqt.logger import get_logger
+    from requests import RequestException
+
+    logger = get_logger(__name__)
+    if not exe_path or not os.path.isfile(exe_path):
+        logger.error("Broken arguments for PPDB lookup: %s", exe_path)
+        return False
+
+    ppdb_path = f"{exe_path}.ppdb"
+    if os.path.isfile(ppdb_path):
+        logger.info("PPDB file was found: %s", ppdb_path)
+        return True
+
+    exe_filename = os.path.basename(exe_path)
+    api_url = "https://ppdb.linux-gaming.ru/api/lookup/exe/"
+    api_url += urllib.parse.quote(exe_filename)
+    session = get_requests_session()
+
+    try:
+        logger.info("Get metadata from %s", api_url)
+        response = session.get(api_url, timeout=10)
+        response.raise_for_status()
+    except RequestException as error:
+        logger.warning("Failed to fetch metadata %s: %s", api_url, error)
+        return False
+
+    if not response.text or "No game found" in response.text:
+        logger.warning("Settings file not found for %s", exe_filename)
+        return False
+
+    try:
+        ppdb_url = response.json().get("ppdb_url", "")
+    except ValueError as error:
+        logger.warning("Failed to parse metadata %s: %s", api_url, error)
+        return False
+
+    if not ppdb_url:
+        logger.warning("PPDB URL not found in metadata for %s", exe_filename)
+        return False
+
+    return _download_ppdb_file(session, ppdb_url, ppdb_path)
 
 
 def create_shortcut(exe_path: str, game_name: str | None = None) -> bool:
@@ -72,6 +143,9 @@ def parse_args():
     thumbnail_parser.add_argument("exe_path", help="Path to the executable")
     thumbnail_parser.add_argument("output_path", help="Path to the output PNG file")
 
+    ppdb_parser = subparsers.add_parser("find-ppdb", help="Download PPDB for an executable")
+    ppdb_parser.add_argument("exe_path", help="Path to the executable")
+
     return parser.parse_args()
 
 
@@ -82,6 +156,8 @@ def main() -> int:
         return 0 if create_shortcut(args.exe_path, args.game_name) else 1
     if args.command == "thumbnail":
         return 0 if create_thumbnail(args.exe_path, args.output_path) else 1
+    if args.command == "find-ppdb":
+        return 0 if find_ext_ppdb(args.exe_path) else 1
     return 1
 
 

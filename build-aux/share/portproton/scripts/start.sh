@@ -44,6 +44,17 @@ elif [[ -f "$HOME/.config/PortProtonQt.conf" ]] \
     export PW_DISABLE_RUNTIME_DOWNLOAD=1
 fi
 
+if [[ -n "${XDG_CONFIG_HOME:-}" ]] \
+&& [[ -f "$XDG_CONFIG_HOME/PortProtonQt.conf" ]] \
+&& grep -q "auto_download_ppdb = False" "$XDG_CONFIG_HOME/PortProtonQt.conf" ; then
+    export PW_FIND_PPDB=0
+elif [[ -f "$HOME/.config/PortProtonQt.conf" ]] \
+&& grep -q "auto_download_ppdb = False" "$HOME/.config/PortProtonQt.conf" ; then
+    export PW_FIND_PPDB=0
+else
+    export PW_FIND_PPDB=1
+fi
+
 export PORT_SCRIPTS_PATH PORT_IMG_PATH PORT_DATA_PATH PORT_CONF_PATH
 export PW_LOG_FILE="${PORT_DATA_PATH}/PortProton.log"
 

@@ -4633,7 +4633,7 @@ resize_png () {
     try_remove_file "${PORT_DATA_PATH}/data/img/launcher.png"
     try_remove_file "${PORT_DATA_PATH}/data/img/Launcher.png"
 
-    python3 -m portprotonqt.scripts_utils.shortcut_tools thumbnail \
+    python_module shortcut_tools thumbnail \
     "$(readlink -f "${RESIZE_FILE}")" \
     "${PORT_DATA_PATH}/data/img/${RESIZE_NAME_PNG}.png"
 }
@@ -4645,9 +4645,6 @@ portwine_create_shortcut () {
     then return 0
     fi
     pw_create_gui_png
-
-    check_variables PW_SHORTCUT_MENU "FALSE"
-    check_variables PW_SHORTCUT_DESKTOP "FALSE"
 
     unset name_desktop
     create_name_desktop
@@ -4679,39 +4676,26 @@ portwine_output_yad_shortcut () {
         [[ ! -e "${PW_EXE_FILE}" ]] && return 1
 
         pw_download_autoinstall_ppdb
+        if [[ "${PW_FIND_PPDB:-}" == "1" ]] \
+        && [[ -z "${PW_PPDB_FILE:-}" ]]
+        then
+            python_module shortcut_tools find-ppdb "${PW_EXE_FILE}"
+        fi
+
         pw_create_gui_png
         unset name_desktop
-        check_variables PW_SHORTCUT_MENU "FALSE"
-        check_variables PW_SHORTCUT_DESKTOP "FALSE"
 
         if [[ -z $name_desktop ]] ; then
             create_name_desktop
             export name_desktop="$PW_NAME_DESKTOP_PROXY"
         fi
 
-        if ! python3 -m portprotonqt.scripts_utils.shortcut_tools shortcut \
+        if ! python_module shortcut_tools shortcut \
         "${PW_EXE_FILE}" \
         "${name_desktop}"
         then
             return 1
         fi
-
-        if [[ "${PW_SHORTCUT_MENU}" == "TRUE" ]] ; then
-            try_remove_file "${HOME}/.local/share/applications/${name_desktop}.desktop"
-            cp -f "${PORT_DATA_PATH}/${name_desktop}.desktop" "${HOME}/.local/share/applications/"
-        fi
-
-        if [[ "${PW_SHORTCUT_DESKTOP}" == "TRUE" ]] ; then
-            if [[ -d "${HOME}/Desktop" ]] ; then
-                cp -f "${PORT_DATA_PATH}/${name_desktop}.desktop" "${HOME}/Desktop/"
-            elif [[ -d "${HOME}/Рабочий стол" ]] ; then
-                cp -f "${PORT_DATA_PATH}/${name_desktop}.desktop" "${HOME}/Рабочий стол/"
-            elif [[ $(xdg-user-dir DESKTOP) ]] ; then
-                cp -f "${PORT_DATA_PATH}/${name_desktop}.desktop" "$(xdg-user-dir DESKTOP)"
-            fi
-        fi
-
-        export PW_NEW_DESKTOP="1"
 
         if [[ "$PW_NO_RESTART_PPDB" != "1" ]] \
         || [[ -z ${LINKS[0]} ]]

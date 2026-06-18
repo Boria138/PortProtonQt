@@ -395,6 +395,15 @@ class UIConfig(BaseConfig):
         validate_bool(enabled, "disable_runtime_download")
         self._save_download_value("disable_runtime_download", enabled)
 
+    def get_auto_download_ppdb(self) -> bool:
+        """Get PPDB auto-download setting."""
+        return self._get_download_bool("auto_download_ppdb", True)
+
+    def set_auto_download_ppdb(self, enabled: bool) -> None:
+        """Set PPDB auto-download setting."""
+        validate_bool(enabled, "auto_download_ppdb")
+        self._save_download_value("auto_download_ppdb", enabled)
+
 
 def load_theme_metainfo(theme_name: str) -> dict:
     """Load theme metadata from metainfo.ini."""

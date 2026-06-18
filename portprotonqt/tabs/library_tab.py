@@ -29,6 +29,7 @@ from portprotonqt.dialogs import AddGameDialog, FileExplorer
 from portprotonqt.image_utils import COVER_IMAGE_EXTENSIONS
 from portprotonqt.localization import _, get_metadata_language, read_metadata_translations
 from portprotonqt.logger import get_logger
+from portprotonqt.scripts_utils.shortcut_tools import find_ext_ppdb
 from portprotonqt.scripts_utils.prefix_backup import BACKUP_EXTENSION
 from portprotonqt.steam_api import get_cached_steam_game_info, is_game_in_steam
 from portprotonqt.time_utils import format_playtime
@@ -438,6 +439,9 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
 
             if not name or not exe_path:
                 return
+
+            if ui_config.get_auto_download_ppdb() and exe_path.lower().endswith(".exe"):
+                find_ext_ppdb(exe_path)
 
             desktop_entry, desktop_path = dialog.getDesktopEntryData()
             if desktop_entry and desktop_path:
