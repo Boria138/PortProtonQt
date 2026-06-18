@@ -337,9 +337,6 @@ def _parse_glxinfo_output(stdout: str) -> list[str]:
         "OpenGL ES profile",
     ]
     lines = []
-    gpu_line = _format_glxinfo_gpu_line(stdout)
-    if gpu_line:
-        lines.append(gpu_line)
 
     for line in stdout.split("\n"):
         if ":" not in line:
@@ -383,7 +380,7 @@ def _format_glxinfo_gpu_line(stdout: str, vk_output: str | None = None) -> str |
         vulkan_name = gpu_info.get("device_name", "")
 
         if vulkan_name and vulkan_name.lower() in renderer_name:
-            return f"PW_GPU_INFO={vulkan_name}"
+            return f'export PW_GPU_INFO="{vulkan_name}"'
 
     return None
 
@@ -518,6 +515,7 @@ def get_graphics_info_detailed() -> str:
 
     lines.append("----")
 
+    gpu_line = None
     try:
         result = subprocess.run(
             ["glxinfo", "-B"],
@@ -527,6 +525,7 @@ def get_graphics_info_detailed() -> str:
             check=False
         )
         if result.returncode == 0:
+            gpu_line = _format_glxinfo_gpu_line(result.stdout)
             lines.extend(_parse_glxinfo_output(result.stdout))
         else:
             lines.append(_format_command_error("glxinfo", result))
@@ -538,6 +537,8 @@ def get_graphics_info_detailed() -> str:
         lines.append(f"glxinfo error: {e}")
 
     lines.append("-----")
+    if gpu_line:
+        lines.append(gpu_line)
 
     try:
         vk_gpu_info_output = get_cached_vk_gpu_info()

@@ -108,5 +108,5 @@ GPU #1:
 """
 
     assert gpu_info._format_glxinfo_gpu_line(glxinfo_output, vk_output) == (
-        "PW_GPU_INFO=NVIDIA GeForce GTX 1060 3GB"
+        'export PW_GPU_INFO="NVIDIA GeForce GTX 1060 3GB"'
     )

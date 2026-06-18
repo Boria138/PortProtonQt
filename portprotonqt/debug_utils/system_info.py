@@ -393,7 +393,14 @@ def generate_system_info(
     lines.append("-" * 61)
 
     lines.append("Graphic cards and drivers:")
-    lines.append(get_graphics_info_detailed())
+    graphics_lines = []
+    ppdb_log_vars = []
+    for line in get_graphics_info_detailed().split("\n"):
+        if line.startswith("export PW_GPU_INFO="):
+            ppdb_log_vars.append(line)
+        else:
+            graphics_lines.append(line)
+    lines.append("\n".join(graphics_lines).strip())
     lines.append("-" * 61)
 
     screen_resolution, screen_primary = get_screen_info()
@@ -426,6 +433,8 @@ def generate_system_info(
         ppdb_content = get_ppdb_content(exe_path, start_cmd)
         if ppdb_content:
             lines.append(f"Use {exe_path}.ppdb db file:")
+            if ppdb_log_vars:
+                lines.append("\n".join(ppdb_log_vars))
             lines.append(ppdb_content)
             lines.append("-" * 61)
 
