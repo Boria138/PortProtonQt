@@ -15,6 +15,8 @@
 - Файл `last_launch` перемещён из `~/.cache/PortProtonQt/` в `~/.local/share/PortProtonQt/` согласно XDG спецификации
 - Файл `statistics` перемещён из `portdatapath/tmp` в `~/.local/share/PortProtonQt/` согласно XDG спецификации и очищен от устаревших полей
 - Из-за проблем с кешем fontconfig весь кеш Appimage перенесён в `~/.cache/AppImage-Cache/PortProtonQt/`
+- Автоустановки теперь загружаются с сайта `ppdb.linux-gaming.ru`
+- Бейдж PortProton теперь использует данные `ppdb.linux-gaming.ru`, ведёт на страницу отчёта по id и скрывается, если отчёта нет
 
 ### Fixed
 - Исправлено определение тёмной темы для `Cinnamon`, `XFCE` и `MATE`

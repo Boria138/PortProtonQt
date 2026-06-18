@@ -25,6 +25,8 @@ from portprotonqt.steam_api.cache import (
     build_weanticheatyet_index,
     search_anticheat_entry,
     search_anticheat_status,
+    build_ppdb_index,
+    search_ppdb_entry,
 )
 
 
@@ -233,6 +235,37 @@ class TestSearchAnticheatStatus:
     def test_returns_empty_string_on_miss(self, sample_anticheat_apps):
         index = build_weanticheatyet_index(sample_anticheat_apps)
         assert search_anticheat_status("unknown", index) == ""
+
+
+class TestBuildPpdbIndex:
+    def test_builds_index(self, sample_ppdb_apps):
+        index = build_ppdb_index(sample_ppdb_apps)
+        assert "мир кораблей" in index
+        assert index["мир кораблей"]["id"] == 70547
+
+    def test_empty_list(self):
+        assert build_ppdb_index([]) == {}
+
+    def test_skips_empty_normalized_name(self):
+        apps = [{"id": 1, "normalized_name": "", "overall_rating": "platinum"}]
+        assert build_ppdb_index(apps) == {}
+
+
+class TestSearchPpdbEntry:
+    def test_exact_match(self, sample_ppdb_apps):
+        index = build_ppdb_index(sample_ppdb_apps)
+        result = search_ppdb_entry("Мир кораблей", index)
+        assert result is not None
+        assert result["overall_rating"] == "silver"
+
+    def test_no_match(self, sample_ppdb_apps):
+        index = build_ppdb_index(sample_ppdb_apps)
+        result = search_ppdb_entry("unknown game", index)
+        assert result is None
+
+    def test_empty_candidate(self, sample_ppdb_apps):
+        index = build_ppdb_index(sample_ppdb_apps)
+        assert search_ppdb_entry("", index) is None
 
 
 class TestConvertSteamId:

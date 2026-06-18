@@ -45,6 +45,26 @@ def get_protondb_badge_style(tier):
         font-weight: bold;
     """
 
+# PPDB BADGE STYLES
+def get_ppdb_badge_style(tier):
+    tier = tier.lower()
+    tier_colors = {
+        "platinum": {"background": color_ppdb_platinum, "color": "black"},
+        "gold": {"background": color_ppdb_gold, "color": "black"},
+        "silver": {"background": color_ppdb_silver, "color": "black"},
+        "bronze": {"background": color_ppdb_bronze, "color": "black"},
+        "broken": {"background": color_ppdb_broken, "color": "black"}
+    }
+    colors = tier_colors.get(tier, {"background": "rgba(0, 0, 0, 0.5)", "color": "white"})
+    return f"""
+        qproperty-alignment: AlignCenter;
+        background-color: {colors["background"]};
+        color: {colors["color"]};
+        border-radius: 5px;
+        font-family: '{font_family}';
+        font-weight: bold;
+    """
+
 # WEANTICHEATYET BADGE STYLES
 def get_anticheat_badge_style(status):
     status = status.lower()

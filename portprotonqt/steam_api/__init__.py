@@ -27,8 +27,10 @@ from portprotonqt.steam_api.cache import (
     save_protondb_status,
     build_index,
     build_weanticheatyet_index,
+    build_ppdb_index,
     search_app,
     search_anticheat_status,
+    search_ppdb_entry,
 )
 from portprotonqt.steam_api.api import (
     fetch_sgdb_cover_async,
@@ -40,7 +42,9 @@ from portprotonqt.steam_api.api import (
     get_steam_game_info_async,
     get_steam_apps_and_index_async,
     get_anticheat_data_and_index_async,
+    get_ppdb_data_and_index_async,
     get_weanticheatyet_status_async,
+    get_ppdb_info_async,
     clear_steam_api_caches,
 )
 from portprotonqt.steam_api.shortcuts import (
@@ -78,8 +82,10 @@ __all__ = [
     "save_protondb_status",
     "build_index",
     "build_weanticheatyet_index",
+    "build_ppdb_index",
     "search_app",
     "search_anticheat_status",
+    "search_ppdb_entry",
     # API
     "fetch_sgdb_cover_async",
     "fetch_app_info_async",
@@ -90,7 +96,9 @@ __all__ = [
     "get_steam_game_info_async",
     "get_steam_apps_and_index_async",
     "get_anticheat_data_and_index_async",
+    "get_ppdb_data_and_index_async",
     "get_weanticheatyet_status_async",
+    "get_ppdb_info_async",
     "clear_steam_api_caches",
     # Shortcuts
     "enable_steam_cef",

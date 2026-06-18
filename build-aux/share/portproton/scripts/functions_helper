@@ -4616,10 +4616,30 @@ portwine_create_shortcut () {
     portwine_output_yad_shortcut
 }
 
+pw_download_autoinstall_ppdb () {
+    [[ -z "${PW_PPDB_FILE:-}" ]] && return 0
+    [[ -z "${PW_EXE_FILE:-}" ]] && return 0
+    [[ ! -e "${PW_EXE_FILE}" ]] && return 0
+
+    local ppdb_path="${PW_EXE_FILE}.ppdb"
+    local tmp_ppdb_path="${ppdb_path}.tmp"
+
+    print_info "Download PPDB file for $(basename "${PW_EXE_FILE}")..."
+    if try_download "${PW_PPDB_FILE}" "${tmp_ppdb_path}" no_mirror ; then
+        mv -f "${tmp_ppdb_path}" "${ppdb_path}"
+        return 0
+    fi
+
+    try_remove_file "${tmp_ppdb_path}"
+    print_warning "Failed to download PPDB file for $(basename "${PW_EXE_FILE}")"
+    return 0
+}
+
 portwine_output_yad_shortcut () {
 
         [[ ! -e "${PW_EXE_FILE}" ]] && return 1
 
+        pw_download_autoinstall_ppdb
         pw_create_gui_png
         unset name_desktop
         check_variables PW_SHORTCUT_MENU "FALSE"
