@@ -409,303 +409,6 @@ msgstr "Nunca"
 msgid "Unknown Application"
 msgstr "Aplicativo Desconhecido"
 
-msgid "Quick Launch"
-msgstr "Início Rápido"
-
-msgid "Add a shortcut"
-msgstr "Adicionar um atalho"
-
-msgid "Search ..."
-msgstr "Pesquisar..."
-
-msgid "Library Settings"
-msgstr "Configurações da Biblioteca"
-
-msgid "Last launch"
-msgstr "Último lançamento"
-
-msgid "Time spent"
-msgstr "Tempo jogado"
-
-msgid "Alphabetical"
-msgstr "Alfabético"
-
-msgid "Sort Method:"
-msgstr "Método de Ordenação:"
-
-msgid "All"
-msgstr "Todos"
-
-msgid "Favorites"
-msgstr "Favoritos"
-
-msgid "Display Filter:"
-msgstr "Filtro de Exibição:"
-
-msgid "Detailed"
-msgstr "Detalhado"
-
-msgid "Compact"
-msgstr "Compacto"
-
-msgid "Hidden"
-msgstr "Oculto"
-
-msgid "Badge View Type:"
-msgstr "Modo de Exibição do Selo:"
-
-msgid "Refreshing..."
-msgstr "Atualizando..."
-
-msgid "Enter prefix name"
-msgstr "Digite o nome do prefixo"
-
-msgid "Prefix:"
-msgstr "Prefixo:"
-
-msgid "Newest"
-msgstr "Mais recente"
-
-msgid "Stable"
-msgstr "Estável"
-
-msgid "Vulkan Backend"
-msgstr "Backend Vulkan"
-
-msgid "Use by default"
-msgstr "Usar por padrão"
-
-msgid "Wine Configuration"
-msgstr "Configuração do Wine"
-
-msgid "Registry Editor"
-msgstr "Editor de Registro"
-
-msgid "File Explorer"
-msgstr "Explorador de Arquivos"
-
-msgid "Command Prompt"
-msgstr "Prompt de Comando"
-
-msgid "Uninstaller"
-msgstr "Desinstalador"
-
-msgid "Create Prefix Backup"
-msgstr "Criar Backup do Prefixo"
-
-msgid "Load Prefix Backup"
-msgstr "Carregar Backup do Prefixo"
-
-msgid "Delete Prefix"
-msgstr "Excluir Prefixo"
-
-msgid "Clear Prefix"
-msgstr "Limpar Prefixo"
-
-msgid "Manage WINE versions"
-msgstr "Gerenciar versões do WINE"
-
-msgid "Failed to start process."
-msgstr "Falha ao iniciar o processo."
-
-msgid "Confirm Clear"
-msgstr "Confirmar Limpeza"
-
-#, python-brace-format
-msgid "Are you sure you want to clear prefix '{}'?"
-msgstr "Tem certeza de que deseja limpar o prefixo '{}'?"
-
-msgid "Failed to start prefix clear process."
-msgstr "Falha ao iniciar o processo de limpeza do prefixo."
-
-msgid "Prefix cleared successfully."
-msgstr "Prefixo limpo com sucesso."
-
-#, python-brace-format
-msgid "Prefix clear failed with exit code {}."
-msgstr "A limpeza do prefixo falhou com o código de saída {}."
-
-#, python-brace-format
-msgid "Failed to run clear prefix command: {}"
-msgstr "Falha ao executar o comando de limpar prefixo: {}"
-
-msgid "Failed to start restore process."
-msgstr "Falha ao iniciar o processo de restauração."
-
-msgid "Prefix backup completed."
-msgstr "Backup do prefixo concluído."
-
-msgid "Prefix backup failed."
-msgstr "Backup do prefixo falhou."
-
-msgid "Prefix restore completed."
-msgstr "Restauração do prefixo concluída."
-
-msgid "Prefix restore failed."
-msgstr "Restauração do prefixo falhou."
-
-#, python-brace-format
-msgid "Are you sure you want to delete prefix '{}'?"
-msgstr "Tem certeza de que deseja excluir o prefixo '{}'?"
-
-#, python-brace-format
-msgid "Prefix '{}' deleted."
-msgstr "Prefixo '{}' excluído."
-
-#, python-brace-format
-msgid "Failed to delete prefix: {}"
-msgstr "Falha ao excluir o prefixo: {}"
-
-msgid "PortProton Settings"
-msgstr "Configurações do PortProton"
-
-msgid "Brief"
-msgstr "Resumido"
-
-msgid "Time Detail Level:"
-msgstr "Nível de Detalhe do Tempo:"
-
-msgid "Interface Settings"
-msgstr "Configurações da Interface"
-
-msgid "Tray Menu Type:"
-msgstr "Tipo de Menu da Bandeja:"
-
-msgid "Auto"
-msgstr "Automático"
-
-msgid "Gamepad Type:"
-msgstr "Tipo de Controle:"
-
-msgid "Launch Application in Fullscreen"
-msgstr "Iniciar Aplicativo em Tela Cheia"
-
-msgid "Auto Fullscreen on Gamepad connected"
-msgstr "Tela Cheia Automática ao Conectar o Controle"
-
-msgid "Minimize to tray on close"
-msgstr "Minimizar para a bandeja ao fechar"
-
-msgid "Run at system startup"
-msgstr "Executar na inicialização do sistema"
-
-msgid "Start in tray"
-msgstr "Iniciar na bandeja"
-
-msgid "Hide Auto-Install Tab"
-msgstr "Ocultar Aba de Instalação Automática"
-
-msgid "Disable runtime download"
-msgstr "Desativar download de runtime"
-
-msgid "Add to Steam compatibility tools"
-msgstr "Adicionar às ferramentas de compatibilidade da Steam"
-
-msgid "Download WINE/Proton to Steam"
-msgstr "Baixar WINE/Proton para a Steam"
-
-msgid "Economy mode"
-msgstr "Modo econômico"
-
-msgid "Download mirror:"
-msgstr "Espelho de download:"
-
-msgid "Force system DPI for Wine"
-msgstr "Forçar DPI do sistema para o Wine"
-
-msgid "Download Settings"
-msgstr "Configurações de Download"
-
-msgid "Hardware Settings"
-msgstr "Configurações de Hardware"
-
-msgid "GPU to use:"
-msgstr "GPU a usar:"
-
-msgid "Proxy Settings"
-msgstr "Configurações de Proxy"
-
-msgid "Proxy URL"
-msgstr "URL do Proxy"
-
-msgid "Proxy URL:"
-msgstr "URL do Proxy:"
-
-msgid "Proxy Username"
-msgstr "Nome de Usuário do Proxy"
-
-msgid "Proxy Username:"
-msgstr "Nome de Usuário do Proxy:"
-
-msgid "Proxy Password"
-msgstr "Senha do Proxy"
-
-msgid "Proxy Password:"
-msgstr "Senha do Proxy:"
-
-msgid "Save Settings"
-msgstr "Salvar Configurações"
-
-msgid "Reset Settings"
-msgstr "Redefinir Configurações"
-
-msgid "Migrate legacy shortcuts"
-msgstr "Migrar atalhos legados"
-
-msgid "Clear Cache"
-msgstr "Limpar Cache"
-
-msgid "Confirm Reset"
-msgstr "Confirmar Redefinição"
-
-msgid "Are you sure you want to reset all settings? This action cannot be undone."
-msgstr ""
-"Tem certeza de que deseja redefinir todas as configurações? Esta ação não "
-"pode ser desfeita."
-
-msgid "Migrate old PortProton shortcuts to PortProtonQt format?"
-msgstr "Migrar atalhos antigos do PortProton para o formato PortProtonQt?"
-
-msgid "Confirm Clear Cache"
-msgstr "Confirmar Limpeza do Cache"
-
-msgid "Are you sure you want to clear the cache? This action cannot be undone."
-msgstr ""
-"Tem certeza de que deseja limpar o cache? Esta ação não pode ser desfeita."
-
-msgid "Failed to update xdg-autostart entry."
-msgstr "Falha ao atualizar a entrada xdg-autostart."
-
-msgid "Select Theme:"
-msgstr "Selecionar Tema:"
-
-msgid "Dark"
-msgstr "Escuro"
-
-msgid "Light"
-msgstr "Claro"
-
-msgid "Apply Theme"
-msgstr "Aplicar Tema"
-
-msgid "No link"
-msgstr "Sem link"
-
-msgid "Unknown"
-msgstr "Desconhecido"
-
-msgid "Name:"
-msgstr "Nome:"
-
-msgid "Description:"
-msgstr "Descrição:"
-
-msgid "Author:"
-msgstr "Autor:"
-
-msgid "Link:"
-msgstr "Link:"
-
 #, python-brace-format
 msgid "Executable not found: {0}"
 msgstr "Executável não encontrado: {0}"
@@ -806,6 +509,9 @@ msgstr "Ativar sincronização no processo via o driver Linux ntsync."
 msgid "Enable forced use of third-party DirectX libraries"
 msgstr "Ativar uso forçado de bibliotecas DirectX de terceiros"
 
+msgid "Enable D7VK for DirectDraw 1-7"
+msgstr ""
+
 msgid "Force use of built-in DXGI library"
 msgstr "Forçar uso da biblioteca DXGI integrada"
 
@@ -887,6 +593,15 @@ msgstr "Nome do Prefixo"
 
 msgid "Specify the Wine prefix to run this game with"
 msgstr "Especifique o prefixo Wine para executar este jogo"
+
+msgid "Newest"
+msgstr "Mais recente"
+
+msgid "Stable"
+msgstr "Estável"
+
+msgid "Vulkan Backend"
+msgstr "Backend Vulkan"
 
 msgid ""
 "Select the DirectX → Vulkan/OpenGL backend:\n"
@@ -1070,6 +785,9 @@ msgstr "Sair"
 msgid "Tabs"
 msgstr "Abas"
 
+msgid "Favorites"
+msgstr "Favoritos"
+
 msgid "Recent Games"
 msgstr "Jogos Recentes"
 
@@ -1106,6 +824,9 @@ msgstr "100%"
 
 msgid "Open Folder"
 msgstr "Abrir pasta"
+
+msgid "Add a shortcut"
+msgstr "Adicionar um atalho"
 
 msgid "Settings"
 msgstr "Configurações"
@@ -1156,6 +877,9 @@ msgstr "nenhum"
 #, python-brace-format
 msgid "Launching {0}"
 msgstr "Iniciando {0}"
+
+msgid "Name:"
+msgstr "Nome:"
 
 msgid "Path to Executable:"
 msgstr "Caminho do Executável:"
@@ -1223,6 +947,9 @@ msgstr "Baixar"
 msgid "Clear All"
 msgstr "Limpar Tudo"
 
+msgid "File Explorer"
+msgstr "Explorador de Arquivos"
+
 msgid "Select"
 msgstr "Selecionar"
 
@@ -1258,6 +985,9 @@ msgstr "{0} arquivos"
 msgid "{0}, Speed: {1:.1f} MB/s"
 msgstr "{0}, Velocidade: {1:.1f} MB/s"
 
+msgid "Manage WINE versions"
+msgstr "Gerenciar versões do WINE"
+
 msgid "Selected WINE/Proton:"
 msgstr "WINE/Proton selecionado:"
 
@@ -1282,6 +1012,9 @@ msgstr "Versão WINE/Proton"
 
 msgid "Size"
 msgstr "Tamanho"
+
+msgid "Unknown"
+msgstr "Desconhecido"
 
 #, python-brace-format
 msgid "{display_name} (installed)"
@@ -1338,6 +1071,9 @@ msgstr "Aguarde a conclusão do download atual."
 
 msgid "Please select at least one WINE/Proton to delete."
 msgstr "Selecione pelo menos um WINE/Proton para excluir."
+
+msgid "Confirm Clear"
+msgstr "Confirmar Limpeza"
 
 #, python-brace-format
 msgid ""
@@ -1451,6 +1187,9 @@ msgstr "Falha ao remover o arquivo PPDB:\n"
 
 msgid "disabled"
 msgstr "desativado"
+
+msgid "Enter prefix name"
+msgstr "Digite o nome do prefixo"
 
 msgid "Default value"
 msgstr "Valor padrão"
@@ -2059,6 +1798,9 @@ msgstr ""
 msgid "FPS only"
 msgstr ""
 
+msgid "Compact"
+msgstr "Compacto"
+
 msgid "Extended"
 msgstr ""
 
@@ -2190,6 +1932,9 @@ msgstr ""
 msgid "Not mounted"
 msgstr ""
 
+msgid "Search ..."
+msgstr "Pesquisar..."
+
 msgid "Volume"
 msgstr ""
 
@@ -2225,6 +1970,165 @@ msgstr ""
 
 msgid "Set output"
 msgstr ""
+
+msgid "Quick Launch"
+msgstr "Início Rápido"
+
+msgid "Library Settings"
+msgstr "Configurações da Biblioteca"
+
+msgid "Last launch"
+msgstr "Último lançamento"
+
+msgid "Time spent"
+msgstr "Tempo jogado"
+
+msgid "Alphabetical"
+msgstr "Alfabético"
+
+msgid "Sort Method:"
+msgstr "Método de Ordenação:"
+
+msgid "All"
+msgstr "Todos"
+
+msgid "Display Filter:"
+msgstr "Filtro de Exibição:"
+
+msgid "Detailed"
+msgstr "Detalhado"
+
+msgid "Hidden"
+msgstr "Oculto"
+
+msgid "Badge View Type:"
+msgstr "Modo de Exibição do Selo:"
+
+msgid "Refreshing..."
+msgstr "Atualizando..."
+
+msgid "PortProton Settings"
+msgstr "Configurações do PortProton"
+
+msgid "Brief"
+msgstr "Resumido"
+
+msgid "Time Detail Level:"
+msgstr "Nível de Detalhe do Tempo:"
+
+msgid "Interface Settings"
+msgstr "Configurações da Interface"
+
+msgid "Tray Menu Type:"
+msgstr "Tipo de Menu da Bandeja:"
+
+msgid "Auto"
+msgstr "Automático"
+
+msgid "Gamepad Type:"
+msgstr "Tipo de Controle:"
+
+msgid "Launch Application in Fullscreen"
+msgstr "Iniciar Aplicativo em Tela Cheia"
+
+msgid "Auto Fullscreen on Gamepad connected"
+msgstr "Tela Cheia Automática ao Conectar o Controle"
+
+msgid "Minimize to tray on close"
+msgstr "Minimizar para a bandeja ao fechar"
+
+msgid "Run at system startup"
+msgstr "Executar na inicialização do sistema"
+
+msgid "Start in tray"
+msgstr "Iniciar na bandeja"
+
+msgid "Hide Auto-Install Tab"
+msgstr "Ocultar Aba de Instalação Automática"
+
+msgid "Disable runtime download"
+msgstr "Desativar download de runtime"
+
+msgid "Add to Steam compatibility tools"
+msgstr "Adicionar às ferramentas de compatibilidade da Steam"
+
+msgid "Download WINE/Proton to Steam"
+msgstr "Baixar WINE/Proton para a Steam"
+
+msgid "Economy mode"
+msgstr "Modo econômico"
+
+msgid "Download mirror:"
+msgstr "Espelho de download:"
+
+msgid "Auto download PPDB from"
+msgstr ""
+
+msgid "Force system DPI for Wine"
+msgstr "Forçar DPI do sistema para o Wine"
+
+msgid "Download Settings"
+msgstr "Configurações de Download"
+
+msgid "Hardware Settings"
+msgstr "Configurações de Hardware"
+
+msgid "GPU to use:"
+msgstr "GPU a usar:"
+
+msgid "Proxy Settings"
+msgstr "Configurações de Proxy"
+
+msgid "Proxy URL"
+msgstr "URL do Proxy"
+
+msgid "Proxy URL:"
+msgstr "URL do Proxy:"
+
+msgid "Proxy Username"
+msgstr "Nome de Usuário do Proxy"
+
+msgid "Proxy Username:"
+msgstr "Nome de Usuário do Proxy:"
+
+msgid "Proxy Password"
+msgstr "Senha do Proxy"
+
+msgid "Proxy Password:"
+msgstr "Senha do Proxy:"
+
+msgid "Save Settings"
+msgstr "Salvar Configurações"
+
+msgid "Reset Settings"
+msgstr "Redefinir Configurações"
+
+msgid "Migrate legacy shortcuts"
+msgstr "Migrar atalhos legados"
+
+msgid "Clear Cache"
+msgstr "Limpar Cache"
+
+msgid "Confirm Reset"
+msgstr "Confirmar Redefinição"
+
+msgid "Are you sure you want to reset all settings? This action cannot be undone."
+msgstr ""
+"Tem certeza de que deseja redefinir todas as configurações? Esta ação não "
+"pode ser desfeita."
+
+msgid "Migrate old PortProton shortcuts to PortProtonQt format?"
+msgstr "Migrar atalhos antigos do PortProton para o formato PortProtonQt?"
+
+msgid "Confirm Clear Cache"
+msgstr "Confirmar Limpeza do Cache"
+
+msgid "Are you sure you want to clear the cache? This action cannot be undone."
+msgstr ""
+"Tem certeza de que deseja limpar o cache? Esta ação não pode ser desfeita."
+
+msgid "Failed to update xdg-autostart entry."
+msgstr "Falha ao atualizar a entrada xdg-autostart."
 
 #, python-brace-format
 msgid "Enter password for: {0}"
@@ -2304,3 +2208,105 @@ msgstr ""
 
 msgid "Not selected"
 msgstr ""
+
+msgid "Select Theme:"
+msgstr "Selecionar Tema:"
+
+msgid "Dark"
+msgstr "Escuro"
+
+msgid "Light"
+msgstr "Claro"
+
+msgid "Apply Theme"
+msgstr "Aplicar Tema"
+
+msgid "No link"
+msgstr "Sem link"
+
+msgid "Description:"
+msgstr "Descrição:"
+
+msgid "Author:"
+msgstr "Autor:"
+
+msgid "Link:"
+msgstr "Link:"
+
+msgid "Prefix:"
+msgstr "Prefixo:"
+
+msgid "Use by default"
+msgstr "Usar por padrão"
+
+msgid "Wine Configuration"
+msgstr "Configuração do Wine"
+
+msgid "Registry Editor"
+msgstr "Editor de Registro"
+
+msgid "Command Prompt"
+msgstr "Prompt de Comando"
+
+msgid "Uninstaller"
+msgstr "Desinstalador"
+
+msgid "Create Prefix Backup"
+msgstr "Criar Backup do Prefixo"
+
+msgid "Load Prefix Backup"
+msgstr "Carregar Backup do Prefixo"
+
+msgid "Delete Prefix"
+msgstr "Excluir Prefixo"
+
+msgid "Clear Prefix"
+msgstr "Limpar Prefixo"
+
+msgid "Failed to start process."
+msgstr "Falha ao iniciar o processo."
+
+#, python-brace-format
+msgid "Are you sure you want to clear prefix '{}'?"
+msgstr "Tem certeza de que deseja limpar o prefixo '{}'?"
+
+msgid "Failed to start prefix clear process."
+msgstr "Falha ao iniciar o processo de limpeza do prefixo."
+
+msgid "Prefix cleared successfully."
+msgstr "Prefixo limpo com sucesso."
+
+#, python-brace-format
+msgid "Prefix clear failed with exit code {}."
+msgstr "A limpeza do prefixo falhou com o código de saída {}."
+
+#, python-brace-format
+msgid "Failed to run clear prefix command: {}"
+msgstr "Falha ao executar o comando de limpar prefixo: {}"
+
+msgid "Failed to start restore process."
+msgstr "Falha ao iniciar o processo de restauração."
+
+msgid "Prefix backup completed."
+msgstr "Backup do prefixo concluído."
+
+msgid "Prefix backup failed."
+msgstr "Backup do prefixo falhou."
+
+msgid "Prefix restore completed."
+msgstr "Restauração do prefixo concluída."
+
+msgid "Prefix restore failed."
+msgstr "Restauração do prefixo falhou."
+
+#, python-brace-format
+msgid "Are you sure you want to delete prefix '{}'?"
+msgstr "Tem certeza de que deseja excluir o prefixo '{}'?"
+
+#, python-brace-format
+msgid "Prefix '{}' deleted."
+msgstr "Prefixo '{}' excluído."
+
+#, python-brace-format
+msgid "Failed to delete prefix: {}"
+msgstr "Falha ao excluir o prefixo: {}"

@@ -409,301 +409,6 @@ msgstr "Никогда"
 msgid "Unknown Application"
 msgstr "Неизвестное приложение"
 
-msgid "Quick Launch"
-msgstr "Быстрый запуск"
-
-msgid "Add a shortcut"
-msgstr "Добавить ярлык"
-
-msgid "Search ..."
-msgstr "Поиск ..."
-
-msgid "Library Settings"
-msgstr "Настройки Библиотеки"
-
-msgid "Last launch"
-msgstr "Последний запуск"
-
-msgid "Time spent"
-msgstr "Проведенное время"
-
-msgid "Alphabetical"
-msgstr "Алфавитный"
-
-msgid "Sort Method:"
-msgstr "Метод сортировки:"
-
-msgid "All"
-msgstr "Все"
-
-msgid "Favorites"
-msgstr "Избранное"
-
-msgid "Display Filter:"
-msgstr "Фильтр:"
-
-msgid "Detailed"
-msgstr "Детальный"
-
-msgid "Compact"
-msgstr "Компактный"
-
-msgid "Hidden"
-msgstr "Скрытый"
-
-msgid "Badge View Type:"
-msgstr "Тип отображения бейджей:"
-
-msgid "Refreshing..."
-msgstr "Обновление..."
-
-msgid "Enter prefix name"
-msgstr "Введите имя префикса"
-
-msgid "Prefix:"
-msgstr "Префикс:"
-
-msgid "Newest"
-msgstr "Новейший"
-
-msgid "Stable"
-msgstr "Стабильный"
-
-msgid "Vulkan Backend"
-msgstr "Vulkan рендеринг"
-
-msgid "Use by default"
-msgstr "Использовать по умолчанию"
-
-msgid "Wine Configuration"
-msgstr "Конфигурация Wine"
-
-msgid "Registry Editor"
-msgstr "Редактор реестра"
-
-msgid "File Explorer"
-msgstr "Проводник"
-
-msgid "Command Prompt"
-msgstr "Командная строка"
-
-msgid "Uninstaller"
-msgstr "Удаление программ"
-
-msgid "Create Prefix Backup"
-msgstr "Создать резервную копию префикса"
-
-msgid "Load Prefix Backup"
-msgstr "Загрузить резервную копию префикса"
-
-msgid "Delete Prefix"
-msgstr "Удалить Префикс"
-
-msgid "Clear Prefix"
-msgstr "Очистить Префикс"
-
-msgid "Manage WINE versions"
-msgstr "Управление версиями WINE"
-
-msgid "Failed to start process."
-msgstr "Не удалось запустить процесс."
-
-msgid "Confirm Clear"
-msgstr "Подтвердите очистку"
-
-#, python-brace-format
-msgid "Are you sure you want to clear prefix '{}'?"
-msgstr "Вы уверены, что хотите очистить префикс «{}»?"
-
-msgid "Failed to start prefix clear process."
-msgstr "Не удалось запустить процесс очистки префикса."
-
-msgid "Prefix cleared successfully."
-msgstr "Префикс очищен успешно."
-
-#, python-brace-format
-msgid "Prefix clear failed with exit code {}."
-msgstr "Очистка префикса завершилась с кодом ошибки {}."
-
-#, python-brace-format
-msgid "Failed to run clear prefix command: {}"
-msgstr "Не удалось выполнить команду очистки префикса: {}"
-
-msgid "Failed to start restore process."
-msgstr "Не удалось запустить процесс восстановления."
-
-msgid "Prefix backup completed."
-msgstr "Резервное копирование префикса завершено."
-
-msgid "Prefix backup failed."
-msgstr "Сбой резервного копирования префикса."
-
-msgid "Prefix restore completed."
-msgstr "Восстановление префикса завершено."
-
-msgid "Prefix restore failed."
-msgstr "Восстановление префикса не удалось."
-
-#, python-brace-format
-msgid "Are you sure you want to delete prefix '{}'?"
-msgstr "Вы уверены, что хотите удалить префикс «{}»?"
-
-#, python-brace-format
-msgid "Prefix '{}' deleted."
-msgstr "Префикс «{}» удален."
-
-#, python-brace-format
-msgid "Failed to delete prefix: {}"
-msgstr "Не удалось удалить префикс: {}"
-
-msgid "PortProton Settings"
-msgstr "Настройки PortProtonQt"
-
-msgid "Brief"
-msgstr "Упрощённый"
-
-msgid "Time Detail Level:"
-msgstr "Уровень детализации вывода времени:"
-
-msgid "Interface Settings"
-msgstr "Настройки интерфейса"
-
-msgid "Tray Menu Type:"
-msgstr "Тип области уведомления:"
-
-msgid "Auto"
-msgstr "Авто"
-
-msgid "Gamepad Type:"
-msgstr "Тип геймпада:"
-
-msgid "Launch Application in Fullscreen"
-msgstr "Запуск приложения в полноэкранном режиме"
-
-msgid "Auto Fullscreen on Gamepad connected"
-msgstr "Режим полноэкранного отображения приложения при подключении геймпада"
-
-msgid "Minimize to tray on close"
-msgstr "Сворачивать в область уведомления при закрытии"
-
-msgid "Run at system startup"
-msgstr "Запускать при запуске системы"
-
-msgid "Start in tray"
-msgstr "Запускать свёрнутым"
-
-msgid "Hide Auto-Install Tab"
-msgstr "Скрыть вкладку \"Автоустановка\""
-
-msgid "Disable runtime download"
-msgstr "Отключить скачивание контейнера"
-
-msgid "Add to Steam compatibility tools"
-msgstr "Добавить в инструменты совместимости Steam"
-
-msgid "Download WINE/Proton to Steam"
-msgstr "Скачивать Proton в Steam"
-
-msgid "Economy mode"
-msgstr "Экономный режим"
-
-msgid "Download mirror:"
-msgstr "Зеркало для скачивания:"
-
-msgid "Force system DPI for Wine"
-msgstr "Принудительно установить системный DPI для Wine"
-
-msgid "Download Settings"
-msgstr "Настройки скачивания"
-
-msgid "Hardware Settings"
-msgstr "Настройки оборудования"
-
-msgid "GPU to use:"
-msgstr "Выбор видеокарты:"
-
-msgid "Proxy Settings"
-msgstr "Настройки прокси"
-
-msgid "Proxy URL"
-msgstr "Адрес прокси"
-
-msgid "Proxy URL:"
-msgstr "Адрес прокси:"
-
-msgid "Proxy Username"
-msgstr "Имя пользователя прокси"
-
-msgid "Proxy Username:"
-msgstr "Имя пользователя прокси:"
-
-msgid "Proxy Password"
-msgstr "Пароль прокси"
-
-msgid "Proxy Password:"
-msgstr "Пароль прокси:"
-
-msgid "Save Settings"
-msgstr "Сохранить настройки"
-
-msgid "Reset Settings"
-msgstr "Сбросить настройки"
-
-msgid "Migrate legacy shortcuts"
-msgstr "Перенести старые ярлыки"
-
-msgid "Clear Cache"
-msgstr "Очистить кэш"
-
-msgid "Confirm Reset"
-msgstr "Подтверждение сброса"
-
-msgid "Are you sure you want to reset all settings? This action cannot be undone."
-msgstr ""
-"Вы уверены, что хотите сбросить все настройки? Это действие нельзя отменить."
-
-msgid "Migrate old PortProton shortcuts to PortProtonQt format?"
-msgstr "Обновить старые ярлыки PortProton до формата PortProtonQt?"
-
-msgid "Confirm Clear Cache"
-msgstr "Подтверждение очистки кэша"
-
-msgid "Are you sure you want to clear the cache? This action cannot be undone."
-msgstr "Вы уверены, что хотите очистить кэш? Это действие нельзя отменить."
-
-msgid "Failed to update xdg-autostart entry."
-msgstr "Не удалось обновить запись xdg-autostart."
-
-msgid "Select Theme:"
-msgstr "Выбрать тему:"
-
-msgid "Dark"
-msgstr "Тёмная"
-
-msgid "Light"
-msgstr "Светлая"
-
-msgid "Apply Theme"
-msgstr "Применить тему"
-
-msgid "No link"
-msgstr "Нет ссылки"
-
-msgid "Unknown"
-msgstr "Неизвестен"
-
-msgid "Name:"
-msgstr "Название:"
-
-msgid "Description:"
-msgstr "Описание:"
-
-msgid "Author:"
-msgstr "Автор:"
-
-msgid "Link:"
-msgstr "Ссылка:"
-
 #, python-brace-format
 msgid "Executable not found: {0}"
 msgstr "Исполняемый файл не найден: {0}"
@@ -804,6 +509,9 @@ msgstr "Включить синхронизацию в процессе чере
 msgid "Enable forced use of third-party DirectX libraries"
 msgstr "Включить принудительное использование сторонних библиотек DirectX"
 
+msgid "Enable D7VK for DirectDraw 1-7"
+msgstr ""
+
 msgid "Force use of built-in DXGI library"
 msgstr "Принудительно использовать встроенную библиотеку DXGI"
 
@@ -886,6 +594,15 @@ msgstr "Имя префикса"
 
 msgid "Specify the Wine prefix to run this game with"
 msgstr "Укажите префикс Wine для запуска этой игры"
+
+msgid "Newest"
+msgstr "Новейший"
+
+msgid "Stable"
+msgstr "Стабильный"
+
+msgid "Vulkan Backend"
+msgstr "Vulkan рендеринг"
 
 msgid ""
 "Select the DirectX → Vulkan/OpenGL backend:\n"
@@ -1069,6 +786,9 @@ msgstr "Выход"
 msgid "Tabs"
 msgstr "Вкладки"
 
+msgid "Favorites"
+msgstr "Избранное"
+
 msgid "Recent Games"
 msgstr "Недавние"
 
@@ -1105,6 +825,9 @@ msgstr "100%"
 
 msgid "Open Folder"
 msgstr "Открыть папку"
+
+msgid "Add a shortcut"
+msgstr "Добавить ярлык"
 
 msgid "Settings"
 msgstr "Настройки"
@@ -1155,6 +878,9 @@ msgstr "отсутствует"
 #, python-brace-format
 msgid "Launching {0}"
 msgstr "Запуск {0}"
+
+msgid "Name:"
+msgstr "Название:"
 
 msgid "Path to Executable:"
 msgstr "Путь к исполняемому файлу:"
@@ -1222,6 +948,9 @@ msgstr "Скачивание"
 msgid "Clear All"
 msgstr "Очистить выбранное"
 
+msgid "File Explorer"
+msgstr "Проводник"
+
 msgid "Select"
 msgstr "Выбрать"
 
@@ -1257,6 +986,9 @@ msgstr "{0} файлов"
 msgid "{0}, Speed: {1:.1f} MB/s"
 msgstr "{0}, Скорость: {1:.1f} МБ/с"
 
+msgid "Manage WINE versions"
+msgstr "Управление версиями WINE"
+
 msgid "Selected WINE/Proton:"
 msgstr "Выбранные WINE/Proton:"
 
@@ -1281,6 +1013,9 @@ msgstr "Версия WINE/Proton"
 
 msgid "Size"
 msgstr "Размер"
+
+msgid "Unknown"
+msgstr "Неизвестен"
 
 #, python-brace-format
 msgid "{display_name} (installed)"
@@ -1336,6 +1071,9 @@ msgstr "Пожалуйста подождите завершения скачи�
 
 msgid "Please select at least one WINE/Proton to delete."
 msgstr "Пожалуйста выберите хотя бы один WINE/Proton для удаления."
+
+msgid "Confirm Clear"
+msgstr "Подтвердите очистку"
 
 #, python-brace-format
 msgid ""
@@ -1448,6 +1186,9 @@ msgstr "Не удалось удалить файл PPDB:\n"
 
 msgid "disabled"
 msgstr "отключено"
+
+msgid "Enter prefix name"
+msgstr "Введите имя префикса"
 
 msgid "Default value"
 msgstr "По умолчанию"
@@ -2059,6 +1800,9 @@ msgstr "Использовать системный конфиг"
 msgid "FPS only"
 msgstr "Только FPS"
 
+msgid "Compact"
+msgstr "Компактный"
+
 msgid "Extended"
 msgstr "Расширенный"
 
@@ -2192,6 +1936,9 @@ msgstr "Смонтировано"
 msgid "Not mounted"
 msgstr "Не смонтировано"
 
+msgid "Search ..."
+msgstr "Поиск ..."
+
 msgid "Volume"
 msgstr "Громкость"
 
@@ -2227,6 +1974,163 @@ msgstr "Размонтировать"
 
 msgid "Set output"
 msgstr "Выбрать выход"
+
+msgid "Quick Launch"
+msgstr "Быстрый запуск"
+
+msgid "Library Settings"
+msgstr "Настройки Библиотеки"
+
+msgid "Last launch"
+msgstr "Последний запуск"
+
+msgid "Time spent"
+msgstr "Проведенное время"
+
+msgid "Alphabetical"
+msgstr "Алфавитный"
+
+msgid "Sort Method:"
+msgstr "Метод сортировки:"
+
+msgid "All"
+msgstr "Все"
+
+msgid "Display Filter:"
+msgstr "Фильтр:"
+
+msgid "Detailed"
+msgstr "Детальный"
+
+msgid "Hidden"
+msgstr "Скрытый"
+
+msgid "Badge View Type:"
+msgstr "Тип отображения бейджей:"
+
+msgid "Refreshing..."
+msgstr "Обновление..."
+
+msgid "PortProton Settings"
+msgstr "Настройки PortProtonQt"
+
+msgid "Brief"
+msgstr "Упрощённый"
+
+msgid "Time Detail Level:"
+msgstr "Уровень детализации вывода времени:"
+
+msgid "Interface Settings"
+msgstr "Настройки интерфейса"
+
+msgid "Tray Menu Type:"
+msgstr "Тип области уведомления:"
+
+msgid "Auto"
+msgstr "Авто"
+
+msgid "Gamepad Type:"
+msgstr "Тип геймпада:"
+
+msgid "Launch Application in Fullscreen"
+msgstr "Запуск приложения в полноэкранном режиме"
+
+msgid "Auto Fullscreen on Gamepad connected"
+msgstr "Режим полноэкранного отображения приложения при подключении геймпада"
+
+msgid "Minimize to tray on close"
+msgstr "Сворачивать в область уведомления при закрытии"
+
+msgid "Run at system startup"
+msgstr "Запускать при запуске системы"
+
+msgid "Start in tray"
+msgstr "Запускать свёрнутым"
+
+msgid "Hide Auto-Install Tab"
+msgstr "Скрыть вкладку \"Автоустановка\""
+
+msgid "Disable runtime download"
+msgstr "Отключить скачивание контейнера"
+
+msgid "Add to Steam compatibility tools"
+msgstr "Добавить в инструменты совместимости Steam"
+
+msgid "Download WINE/Proton to Steam"
+msgstr "Скачивать Proton в Steam"
+
+msgid "Economy mode"
+msgstr "Экономный режим"
+
+msgid "Download mirror:"
+msgstr "Зеркало для скачивания:"
+
+msgid "Auto download PPDB from"
+msgstr ""
+
+msgid "Force system DPI for Wine"
+msgstr "Принудительно установить системный DPI для Wine"
+
+msgid "Download Settings"
+msgstr "Настройки скачивания"
+
+msgid "Hardware Settings"
+msgstr "Настройки оборудования"
+
+msgid "GPU to use:"
+msgstr "Выбор видеокарты:"
+
+msgid "Proxy Settings"
+msgstr "Настройки прокси"
+
+msgid "Proxy URL"
+msgstr "Адрес прокси"
+
+msgid "Proxy URL:"
+msgstr "Адрес прокси:"
+
+msgid "Proxy Username"
+msgstr "Имя пользователя прокси"
+
+msgid "Proxy Username:"
+msgstr "Имя пользователя прокси:"
+
+msgid "Proxy Password"
+msgstr "Пароль прокси"
+
+msgid "Proxy Password:"
+msgstr "Пароль прокси:"
+
+msgid "Save Settings"
+msgstr "Сохранить настройки"
+
+msgid "Reset Settings"
+msgstr "Сбросить настройки"
+
+msgid "Migrate legacy shortcuts"
+msgstr "Перенести старые ярлыки"
+
+msgid "Clear Cache"
+msgstr "Очистить кэш"
+
+msgid "Confirm Reset"
+msgstr "Подтверждение сброса"
+
+msgid "Are you sure you want to reset all settings? This action cannot be undone."
+msgstr ""
+"Вы уверены, что хотите сбросить все настройки? Это действие нельзя отменить."
+
+msgid "Migrate old PortProton shortcuts to PortProtonQt format?"
+msgstr "Обновить старые ярлыки PortProton до формата PortProtonQt?"
+
+msgid "Confirm Clear Cache"
+msgstr "Подтверждение очистки кэша"
+
+msgid "Are you sure you want to clear the cache? This action cannot be undone."
+msgstr "Вы уверены, что хотите очистить кэш? Это действие нельзя отменить."
+
+msgid "Failed to update xdg-autostart entry."
+msgstr "Не удалось обновить запись xdg-autostart."
 
 #, python-brace-format
 msgid "Enter password for: {0}"
@@ -2306,3 +2210,105 @@ msgstr "Выбранный"
 
 msgid "Not selected"
 msgstr "Не выбранный"
+
+msgid "Select Theme:"
+msgstr "Выбрать тему:"
+
+msgid "Dark"
+msgstr "Тёмная"
+
+msgid "Light"
+msgstr "Светлая"
+
+msgid "Apply Theme"
+msgstr "Применить тему"
+
+msgid "No link"
+msgstr "Нет ссылки"
+
+msgid "Description:"
+msgstr "Описание:"
+
+msgid "Author:"
+msgstr "Автор:"
+
+msgid "Link:"
+msgstr "Ссылка:"
+
+msgid "Prefix:"
+msgstr "Префикс:"
+
+msgid "Use by default"
+msgstr "Использовать по умолчанию"
+
+msgid "Wine Configuration"
+msgstr "Конфигурация Wine"
+
+msgid "Registry Editor"
+msgstr "Редактор реестра"
+
+msgid "Command Prompt"
+msgstr "Командная строка"
+
+msgid "Uninstaller"
+msgstr "Удаление программ"
+
+msgid "Create Prefix Backup"
+msgstr "Создать резервную копию префикса"
+
+msgid "Load Prefix Backup"
+msgstr "Загрузить резервную копию префикса"
+
+msgid "Delete Prefix"
+msgstr "Удалить Префикс"
+
+msgid "Clear Prefix"
+msgstr "Очистить Префикс"
+
+msgid "Failed to start process."
+msgstr "Не удалось запустить процесс."
+
+#, python-brace-format
+msgid "Are you sure you want to clear prefix '{}'?"
+msgstr "Вы уверены, что хотите очистить префикс «{}»?"
+
+msgid "Failed to start prefix clear process."
+msgstr "Не удалось запустить процесс очистки префикса."
+
+msgid "Prefix cleared successfully."
+msgstr "Префикс очищен успешно."
+
+#, python-brace-format
+msgid "Prefix clear failed with exit code {}."
+msgstr "Очистка префикса завершилась с кодом ошибки {}."
+
+#, python-brace-format
+msgid "Failed to run clear prefix command: {}"
+msgstr "Не удалось выполнить команду очистки префикса: {}"
+
+msgid "Failed to start restore process."
+msgstr "Не удалось запустить процесс восстановления."
+
+msgid "Prefix backup completed."
+msgstr "Резервное копирование префикса завершено."
+
+msgid "Prefix backup failed."
+msgstr "Сбой резервного копирования префикса."
+
+msgid "Prefix restore completed."
+msgstr "Восстановление префикса завершено."
+
+msgid "Prefix restore failed."
+msgstr "Восстановление префикса не удалось."
+
+#, python-brace-format
+msgid "Are you sure you want to delete prefix '{}'?"
+msgstr "Вы уверены, что хотите удалить префикс «{}»?"
+
+#, python-brace-format
+msgid "Prefix '{}' deleted."
+msgstr "Префикс «{}» удален."
+
+#, python-brace-format
+msgid "Failed to delete prefix: {}"
+msgstr "Не удалось удалить префикс: {}"

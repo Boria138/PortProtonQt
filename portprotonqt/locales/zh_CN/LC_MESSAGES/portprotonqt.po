@@ -400,304 +400,6 @@ msgstr "从不"
 msgid "Unknown Application"
 msgstr "未知应用程序"
 
-#, fuzzy
-msgid "Quick Launch"
-msgstr "上次启动"
-
-#, fuzzy
-msgid "Add a shortcut"
-msgstr "添加快捷方式到："
-
-msgid "Search ..."
-msgstr "搜索..."
-
-msgid "Library Settings"
-msgstr "库设置"
-
-msgid "Last launch"
-msgstr "上次启动"
-
-msgid "Time spent"
-msgstr ""
-
-msgid "Alphabetical"
-msgstr "按字母顺序"
-
-msgid "Sort Method:"
-msgstr "游戏排序方式:"
-
-msgid "All"
-msgstr "全部"
-
-msgid "Favorites"
-msgstr "收藏夹"
-
-#, fuzzy
-msgid "Display Filter:"
-msgstr "游戏显示筛选："
-
-msgid "Detailed"
-msgstr "详细"
-
-msgid "Compact"
-msgstr "紧凑"
-
-msgid "Hidden"
-msgstr "隐藏"
-
-msgid "Badge View Type:"
-msgstr "徽章视图类型："
-
-msgid "Refreshing..."
-msgstr "正在刷新…"
-
-msgid "Enter prefix name"
-msgstr "输入前缀名称"
-
-msgid "Prefix:"
-msgstr "前缀："
-
-msgid "Newest"
-msgstr "最新"
-
-msgid "Stable"
-msgstr "稳定"
-
-msgid "Vulkan Backend"
-msgstr "Vulkan 后端"
-
-msgid "Use by default"
-msgstr "默认使用"
-
-msgid "Wine Configuration"
-msgstr "Wine 配置"
-
-msgid "Registry Editor"
-msgstr "注册表编辑器"
-
-msgid "File Explorer"
-msgstr "文件管理器"
-
-msgid "Command Prompt"
-msgstr "命令提示符"
-
-msgid "Uninstaller"
-msgstr "卸载程序"
-
-msgid "Create Prefix Backup"
-msgstr "创建前缀备份"
-
-msgid "Load Prefix Backup"
-msgstr "加载前缀备份"
-
-msgid "Delete Prefix"
-msgstr "删除前缀"
-
-msgid "Clear Prefix"
-msgstr "清除前缀"
-
-msgid "Manage WINE versions"
-msgstr "管理 WINE 版本"
-
-msgid "Failed to start process."
-msgstr "启动进程失败。"
-
-msgid "Confirm Clear"
-msgstr "确认清除"
-
-#, python-brace-format
-msgid "Are you sure you want to clear prefix '{}'?"
-msgstr "确定要清除前缀“{}”吗？"
-
-msgid "Failed to start prefix clear process."
-msgstr "启动前缀清除进程失败。"
-
-msgid "Prefix cleared successfully."
-msgstr "前缀已成功清除。"
-
-#, python-brace-format
-msgid "Prefix clear failed with exit code {}."
-msgstr "前缀清除失败，退出代码为 {}。"
-
-#, python-brace-format
-msgid "Failed to run clear prefix command: {}"
-msgstr "运行清除前缀命令失败：{}"
-
-msgid "Failed to start restore process."
-msgstr "启动恢复进程失败。"
-
-msgid "Prefix backup completed."
-msgstr "前缀备份完成。"
-
-msgid "Prefix backup failed."
-msgstr "前缀备份失败。"
-
-msgid "Prefix restore completed."
-msgstr "前缀恢复完成。"
-
-msgid "Prefix restore failed."
-msgstr "前缀恢复失败。"
-
-#, python-brace-format
-msgid "Are you sure you want to delete prefix '{}'?"
-msgstr "确定要删除前缀“{}”吗？"
-
-#, python-brace-format
-msgid "Prefix '{}' deleted."
-msgstr "前缀“{}”已删除。"
-
-#, python-brace-format
-msgid "Failed to delete prefix: {}"
-msgstr "删除前缀失败：{}"
-
-msgid "PortProton Settings"
-msgstr "PortProton 设置"
-
-msgid "Brief"
-msgstr "简要"
-
-msgid "Time Detail Level:"
-msgstr "时间详细程度："
-
-msgid "Interface Settings"
-msgstr "界面设置"
-
-msgid "Tray Menu Type:"
-msgstr "托盘菜单类型："
-
-msgid "Auto"
-msgstr "自动"
-
-#, fuzzy
-msgid "Gamepad Type:"
-msgstr "游戏手柄"
-
-msgid "Launch Application in Fullscreen"
-msgstr "全屏启动应用程序"
-
-msgid "Auto Fullscreen on Gamepad connected"
-msgstr "连接手柄时自动全屏"
-
-msgid "Minimize to tray on close"
-msgstr "关闭时最小化到系统托盘"
-
-msgid "Run at system startup"
-msgstr "系统启动时运行"
-
-msgid "Start in tray"
-msgstr "启动时最小化到托盘"
-
-msgid "Hide Auto-Install Tab"
-msgstr "隐藏自动安装标签页"
-
-msgid "Disable runtime download"
-msgstr "禁用运行时下载"
-
-msgid "Add to Steam compatibility tools"
-msgstr "添加到 Steam 兼容工具"
-
-msgid "Download WINE/Proton to Steam"
-msgstr "将 WINE/Proton 下载到 Steam"
-
-msgid "Economy mode"
-msgstr "节能模式"
-
-msgid "Download mirror:"
-msgstr "下载镜像："
-
-msgid "Force system DPI for Wine"
-msgstr "强制为 Wine 设置系统 DPI"
-
-msgid "Download Settings"
-msgstr "下载设置"
-
-msgid "Hardware Settings"
-msgstr "硬件设置"
-
-msgid "GPU to use:"
-msgstr "要使用的 GPU："
-
-msgid "Proxy Settings"
-msgstr "代理设置"
-
-msgid "Proxy URL"
-msgstr "代理 URL"
-
-msgid "Proxy URL:"
-msgstr "代理 URL："
-
-msgid "Proxy Username"
-msgstr "代理用户名"
-
-msgid "Proxy Username:"
-msgstr "代理用户名："
-
-msgid "Proxy Password"
-msgstr "代理密码"
-
-msgid "Proxy Password:"
-msgstr "代理密码："
-
-msgid "Save Settings"
-msgstr "保存设置"
-
-msgid "Reset Settings"
-msgstr "重置设置"
-
-msgid "Migrate legacy shortcuts"
-msgstr "迁移旧版快捷方式"
-
-msgid "Clear Cache"
-msgstr "清除缓存"
-
-msgid "Confirm Reset"
-msgstr "确认重置"
-
-msgid "Are you sure you want to reset all settings? This action cannot be undone."
-msgstr "确定要重置所有设置吗？此操作无法撤销。"
-
-msgid "Migrate old PortProton shortcuts to PortProtonQt format?"
-msgstr "是否将旧的 PortProton 快捷方式迁移到 PortProtonQt 格式？"
-
-msgid "Confirm Clear Cache"
-msgstr "确认清除缓存"
-
-msgid "Are you sure you want to clear the cache? This action cannot be undone."
-msgstr "确定要清除缓存吗？此操作无法撤销。"
-
-msgid "Failed to update xdg-autostart entry."
-msgstr "更新 xdg-autostart 条目失败。"
-
-msgid "Select Theme:"
-msgstr "选择主题："
-
-msgid "Dark"
-msgstr "深色"
-
-msgid "Light"
-msgstr "浅色"
-
-msgid "Apply Theme"
-msgstr "应用主题"
-
-msgid "No link"
-msgstr "无链接"
-
-msgid "Unknown"
-msgstr "未知"
-
-msgid "Name:"
-msgstr "名称："
-
-msgid "Description:"
-msgstr "描述："
-
-msgid "Author:"
-msgstr "作者："
-
-msgid "Link:"
-msgstr "链接："
-
 #, python-brace-format
 msgid "Executable not found: {0}"
 msgstr "找不到可执行文件：{0}"
@@ -794,6 +496,9 @@ msgstr "通过 Linux ntsync 驱动程序启用进程内同步。"
 msgid "Enable forced use of third-party DirectX libraries"
 msgstr "启用强制使用第三方 DirectX 库"
 
+msgid "Enable D7VK for DirectDraw 1-7"
+msgstr ""
+
 msgid "Force use of built-in DXGI library"
 msgstr "强制使用内置 DXGI 库"
 
@@ -873,6 +578,15 @@ msgstr "前缀名称"
 
 msgid "Specify the Wine prefix to run this game with"
 msgstr "指定用于运行此游戏的 Wine 前缀"
+
+msgid "Newest"
+msgstr "最新"
+
+msgid "Stable"
+msgstr "稳定"
+
+msgid "Vulkan Backend"
+msgstr "Vulkan 后端"
 
 msgid ""
 "Select the DirectX → Vulkan/OpenGL backend:\n"
@@ -1043,6 +757,9 @@ msgstr "退出"
 msgid "Tabs"
 msgstr "标签页"
 
+msgid "Favorites"
+msgstr "收藏夹"
+
 msgid "Recent Games"
 msgstr "最近游戏"
 
@@ -1079,6 +796,10 @@ msgstr "完美主义者"
 
 msgid "Open Folder"
 msgstr "打开文件夹"
+
+#, fuzzy
+msgid "Add a shortcut"
+msgstr "添加快捷方式到："
 
 msgid "Settings"
 msgstr "设置"
@@ -1131,6 +852,9 @@ msgstr "无"
 #, python-brace-format
 msgid "Launching {0}"
 msgstr "正在启动 {0}"
+
+msgid "Name:"
+msgstr "名称："
 
 msgid "Path to Executable:"
 msgstr "可执行文件路径："
@@ -1198,6 +922,9 @@ msgstr "下载"
 msgid "Clear All"
 msgstr "全部清除"
 
+msgid "File Explorer"
+msgstr "文件管理器"
+
 msgid "Select"
 msgstr "选择"
 
@@ -1235,6 +962,9 @@ msgstr "{0} Wine…"
 msgid "{0}, Speed: {1:.1f} MB/s"
 msgstr "，速度：{:.1f}MB/秒"
 
+msgid "Manage WINE versions"
+msgstr "管理 WINE 版本"
+
 msgid "Selected WINE/Proton:"
 msgstr "已选择的 WINE/Proton："
 
@@ -1259,6 +989,9 @@ msgstr "WINE/Proton 版本"
 
 msgid "Size"
 msgstr "大小"
+
+msgid "Unknown"
+msgstr "未知"
 
 #, python-brace-format
 msgid "{display_name} (installed)"
@@ -1314,6 +1047,9 @@ msgstr "请等待当前下载完成。"
 
 msgid "Please select at least one WINE/Proton to delete."
 msgstr "请至少选择一个要删除的 WINE/Proton。"
+
+msgid "Confirm Clear"
+msgstr "确认清除"
 
 #, python-brace-format
 msgid ""
@@ -1425,6 +1161,9 @@ msgstr "移除 PPDB 文件失败：\n"
 
 msgid "disabled"
 msgstr "已禁用"
+
+msgid "Enter prefix name"
+msgstr "输入前缀名称"
 
 msgid "Default value"
 msgstr "默认值"
@@ -2025,6 +1764,9 @@ msgstr "使用系统配置"
 msgid "FPS only"
 msgstr "仅显示 FPS"
 
+msgid "Compact"
+msgstr "紧凑"
+
 msgid "Extended"
 msgstr "扩展"
 
@@ -2159,6 +1901,9 @@ msgstr "已挂载"
 msgid "Not mounted"
 msgstr "未挂载"
 
+msgid "Search ..."
+msgstr "搜索..."
+
 msgid "Volume"
 msgstr "音量"
 
@@ -2194,6 +1939,165 @@ msgstr "卸载"
 
 msgid "Set output"
 msgstr "设置输出"
+
+#, fuzzy
+msgid "Quick Launch"
+msgstr "上次启动"
+
+msgid "Library Settings"
+msgstr "库设置"
+
+msgid "Last launch"
+msgstr "上次启动"
+
+msgid "Time spent"
+msgstr ""
+
+msgid "Alphabetical"
+msgstr "按字母顺序"
+
+msgid "Sort Method:"
+msgstr "游戏排序方式:"
+
+msgid "All"
+msgstr "全部"
+
+#, fuzzy
+msgid "Display Filter:"
+msgstr "游戏显示筛选："
+
+msgid "Detailed"
+msgstr "详细"
+
+msgid "Hidden"
+msgstr "隐藏"
+
+msgid "Badge View Type:"
+msgstr "徽章视图类型："
+
+msgid "Refreshing..."
+msgstr "正在刷新…"
+
+msgid "PortProton Settings"
+msgstr "PortProton 设置"
+
+msgid "Brief"
+msgstr "简要"
+
+msgid "Time Detail Level:"
+msgstr "时间详细程度："
+
+msgid "Interface Settings"
+msgstr "界面设置"
+
+msgid "Tray Menu Type:"
+msgstr "托盘菜单类型："
+
+msgid "Auto"
+msgstr "自动"
+
+#, fuzzy
+msgid "Gamepad Type:"
+msgstr "游戏手柄"
+
+msgid "Launch Application in Fullscreen"
+msgstr "全屏启动应用程序"
+
+msgid "Auto Fullscreen on Gamepad connected"
+msgstr "连接手柄时自动全屏"
+
+msgid "Minimize to tray on close"
+msgstr "关闭时最小化到系统托盘"
+
+msgid "Run at system startup"
+msgstr "系统启动时运行"
+
+msgid "Start in tray"
+msgstr "启动时最小化到托盘"
+
+msgid "Hide Auto-Install Tab"
+msgstr "隐藏自动安装标签页"
+
+msgid "Disable runtime download"
+msgstr "禁用运行时下载"
+
+msgid "Add to Steam compatibility tools"
+msgstr "添加到 Steam 兼容工具"
+
+msgid "Download WINE/Proton to Steam"
+msgstr "将 WINE/Proton 下载到 Steam"
+
+msgid "Economy mode"
+msgstr "节能模式"
+
+msgid "Download mirror:"
+msgstr "下载镜像："
+
+msgid "Auto download PPDB from"
+msgstr ""
+
+msgid "Force system DPI for Wine"
+msgstr "强制为 Wine 设置系统 DPI"
+
+msgid "Download Settings"
+msgstr "下载设置"
+
+msgid "Hardware Settings"
+msgstr "硬件设置"
+
+msgid "GPU to use:"
+msgstr "要使用的 GPU："
+
+msgid "Proxy Settings"
+msgstr "代理设置"
+
+msgid "Proxy URL"
+msgstr "代理 URL"
+
+msgid "Proxy URL:"
+msgstr "代理 URL："
+
+msgid "Proxy Username"
+msgstr "代理用户名"
+
+msgid "Proxy Username:"
+msgstr "代理用户名："
+
+msgid "Proxy Password"
+msgstr "代理密码"
+
+msgid "Proxy Password:"
+msgstr "代理密码："
+
+msgid "Save Settings"
+msgstr "保存设置"
+
+msgid "Reset Settings"
+msgstr "重置设置"
+
+msgid "Migrate legacy shortcuts"
+msgstr "迁移旧版快捷方式"
+
+msgid "Clear Cache"
+msgstr "清除缓存"
+
+msgid "Confirm Reset"
+msgstr "确认重置"
+
+msgid "Are you sure you want to reset all settings? This action cannot be undone."
+msgstr "确定要重置所有设置吗？此操作无法撤销。"
+
+msgid "Migrate old PortProton shortcuts to PortProtonQt format?"
+msgstr "是否将旧的 PortProton 快捷方式迁移到 PortProtonQt 格式？"
+
+msgid "Confirm Clear Cache"
+msgstr "确认清除缓存"
+
+msgid "Are you sure you want to clear the cache? This action cannot be undone."
+msgstr "确定要清除缓存吗？此操作无法撤销。"
+
+msgid "Failed to update xdg-autostart entry."
+msgstr "更新 xdg-autostart 条目失败。"
 
 #, python-brace-format
 msgid "Enter password for: {0}"
@@ -2273,3 +2177,105 @@ msgstr "已选择"
 
 msgid "Not selected"
 msgstr "未选择"
+
+msgid "Select Theme:"
+msgstr "选择主题："
+
+msgid "Dark"
+msgstr "深色"
+
+msgid "Light"
+msgstr "浅色"
+
+msgid "Apply Theme"
+msgstr "应用主题"
+
+msgid "No link"
+msgstr "无链接"
+
+msgid "Description:"
+msgstr "描述："
+
+msgid "Author:"
+msgstr "作者："
+
+msgid "Link:"
+msgstr "链接："
+
+msgid "Prefix:"
+msgstr "前缀："
+
+msgid "Use by default"
+msgstr "默认使用"
+
+msgid "Wine Configuration"
+msgstr "Wine 配置"
+
+msgid "Registry Editor"
+msgstr "注册表编辑器"
+
+msgid "Command Prompt"
+msgstr "命令提示符"
+
+msgid "Uninstaller"
+msgstr "卸载程序"
+
+msgid "Create Prefix Backup"
+msgstr "创建前缀备份"
+
+msgid "Load Prefix Backup"
+msgstr "加载前缀备份"
+
+msgid "Delete Prefix"
+msgstr "删除前缀"
+
+msgid "Clear Prefix"
+msgstr "清除前缀"
+
+msgid "Failed to start process."
+msgstr "启动进程失败。"
+
+#, python-brace-format
+msgid "Are you sure you want to clear prefix '{}'?"
+msgstr "确定要清除前缀“{}”吗？"
+
+msgid "Failed to start prefix clear process."
+msgstr "启动前缀清除进程失败。"
+
+msgid "Prefix cleared successfully."
+msgstr "前缀已成功清除。"
+
+#, python-brace-format
+msgid "Prefix clear failed with exit code {}."
+msgstr "前缀清除失败，退出代码为 {}。"
+
+#, python-brace-format
+msgid "Failed to run clear prefix command: {}"
+msgstr "运行清除前缀命令失败：{}"
+
+msgid "Failed to start restore process."
+msgstr "启动恢复进程失败。"
+
+msgid "Prefix backup completed."
+msgstr "前缀备份完成。"
+
+msgid "Prefix backup failed."
+msgstr "前缀备份失败。"
+
+msgid "Prefix restore completed."
+msgstr "前缀恢复完成。"
+
+msgid "Prefix restore failed."
+msgstr "前缀恢复失败。"
+
+#, python-brace-format
+msgid "Are you sure you want to delete prefix '{}'?"
+msgstr "确定要删除前缀“{}”吗？"
+
+#, python-brace-format
+msgid "Prefix '{}' deleted."
+msgstr "前缀“{}”已删除。"
+
+#, python-brace-format
+msgid "Failed to delete prefix: {}"
+msgstr "删除前缀失败：{}"
