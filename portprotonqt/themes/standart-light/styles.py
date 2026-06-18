@@ -49,6 +49,13 @@ color_j = "#d2d3db"
 color_k = "#9394a5"
 color_l = "#212529"
 
+# PPDB Badge colors
+color_ppdb_platinum = "#b2b2ff"
+color_ppdb_gold = "#ffc107"
+color_ppdb_silver = "#e0e0e0"
+color_ppdb_bronze = "#cd7f32"
+color_ppdb_broken = "#f44336"
+
 # QColor constants for programmatic use
 color_shadow_card = "#00000096"  # rgba(0, 0, 0, 150)
 color_shadow_detail = "#000000c8"  # rgba(0, 0, 0, 200)

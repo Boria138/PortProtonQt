@@ -189,7 +189,7 @@ class GameCard(QFrame):
             font_scale_factor=0.06
         )
         if self.ppdb_rating:
-            self.portprotonLabel.setStyleSheet(self.theme.get_protondb_badge_style(self.ppdb_rating))
+            self.portprotonLabel.setStyleSheet(self.theme.get_ppdb_badge_style(self.ppdb_rating))
         else:
             self.portprotonLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
         self.portprotonLabel.setCardWidth(card_width)

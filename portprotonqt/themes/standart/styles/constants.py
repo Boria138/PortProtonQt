@@ -70,6 +70,13 @@ virtual_keyboard_slide_bounce_animation_duration = 220
 virtual_keyboard_animation_type = "slide"
 DETAIL_PAGE_LAYOUT_MODE = "full"
 
+# PPDB Badge colors
+color_ppdb_platinum = "#b2b2ff"
+color_ppdb_gold = "#ffc107"
+color_ppdb_silver = "#e0e0e0"
+color_ppdb_bronze = "#cd7f32"
+color_ppdb_broken = "#f44336"
+
 GAME_CARD_ANIMATION = {
     # Animation type for entering/exiting detail page
     # Possible values: "fade", "slide_left", "slide_right", "slide_up", "slide_down", "bounce"

@@ -385,7 +385,7 @@ def create_portproton_badge(
         icon_space=5,
     )
     if ppdb_rating:
-        badge.setStyleSheet(main_window.theme.get_protondb_badge_style(ppdb_rating))
+        badge.setStyleSheet(main_window.theme.get_ppdb_badge_style(ppdb_rating))
     else:
         badge.setStyleSheet(main_window.theme.STEAM_BADGE_STYLE)
     _apply_badge_view_mode(badge)
