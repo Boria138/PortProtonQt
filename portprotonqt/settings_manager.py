@@ -162,6 +162,7 @@ def get_toggle_settings():
         'PW_USE_NTSYNC': _("Enable in-process synchronization via the Linux ntsync driver."),
         # DirectX / Graphics
         'PW_USE_D3D_EXTRAS': _("Enable forced use of third-party DirectX libraries"),
+        'PW_USE_D7VK': _("Enable D7VK for DirectDraw 1-7"),
         'PW_USE_WINE_DXGI': _("Force use of built-in DXGI library"),
         # Performance
         'PW_USE_GAMEMODE': _("Use system GameMode for performance optimization"),

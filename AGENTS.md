@@ -359,6 +359,7 @@ tests/
 ├── test_steam_cache.py      # exiftool skip, cache eviction, delete_cached_app_files
 ├── test_base_config.py      # BaseConfig read/write, caching, versioning
 ├── test_cli.py              # normalize_launch_path, URL/resolution parsing
+├── test_debug_env_utils.py  # Debug environment helpers, runtime variables
 ├── test_main_window.py      # Main window data processing and callback regressions
 ├── test_portproton_config.py # exec_line parsing, launcher tail, extensions
 ├── test_portproton_api.py   # PPDB API helpers, autoinstall localization fallback
@@ -858,6 +859,7 @@ PortProtonQt/
 
 - In `build-aux/share/portproton/scripts/`, run `portprotonqt.scripts_utils` modules through the existing `python_module` function
 - Do not add direct `python3 -m portprotonqt.scripts_utils.*` calls where `python_module` is available
+- When adding new PortProton component variables (for example `D7VK_*`), update matching env filters in scripts, runtime `var.log`, and Qt debug/UI helpers
 
 ---
 
@@ -895,6 +897,6 @@ PortProtonQt/
 
 ---
 
-**Last updated:** 2026-06-16
+**Last updated:** 2026-06-18
 **Version:** 1.2
 **Status:** Release

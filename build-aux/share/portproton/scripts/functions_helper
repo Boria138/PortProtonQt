@@ -3462,6 +3462,7 @@ start_portproton () {
 
     if [[ "${PW_USE_D7VK}" == "1" ]] ; then
         PATH_TO_D7VK_FILES="${PW_VULKAN_DIR}/d7vk-${D7VK_VAR_VER}"
+        print_info "D7VK ${D7VK_VAR_VER} in use"
         print_info "Try create symlink D7VK files..."
         try_force_link_file "${WINEDIR}/lib/wine/i386-windows/ddraw.dll" "${WINEPREFIX}/drive_c/windows/syswow64/ddraw_.dll"
         try_force_link_file "${PATH_TO_D7VK_FILES}/x32/ddraw.dll" "${WINEPREFIX}/drive_c/windows/syswow64/ddraw.dll"
@@ -3828,7 +3829,7 @@ pw_run () {
     PW_LD_LIBRARY_PATH="${PW_LD_LIBRARY_PATH}:${WINE_LIBRARY_PATH}"
 
     echo "##### Current variables #####" > "$PW_TMPFS_PATH/var.log"
-    env | grep -E '^(DXVK_|VKD3D_|WINE|PATH|PW_)' \
+    env | grep -E '^(DXVK_|VKD3D_|D7VK_|WINE|PATH|PW_)' \
         | grep -vE '^PW_GENERATE_' \
         | tee -a "$PW_TMPFS_PATH/var.log"
 

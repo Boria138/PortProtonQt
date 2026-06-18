@@ -109,7 +109,7 @@ def get_portproton_env(exe_path: str | None) -> dict[str, str]:
         else:
             logger.debug(".ppdb file not found: %s", ppdb_file)
 
-    bash_script += 'env | grep -E "^(PW_|DXVK_|VKD3D_)"'
+    bash_script += 'env | grep -E "^(PW_|DXVK_|VKD3D_|D7VK_)"'
 
     try:
         result = subprocess.run(
@@ -161,6 +161,10 @@ def get_vulkan_use_info(portproton_path: str, exe_path: str | None = None) -> st
     env_vars = get_portproton_env(exe_path)
     pw_vulkan_use = env_vars.get("PW_VULKAN_USE")
 
+    d7vk = None
+    if env_vars.get("PW_USE_D7VK") == "1":
+        d7vk = f"D7VK {env_vars.get('D7VK_VAR_VER', '')}"
+
     if pw_vulkan_use is None:
         return "PW_VULKAN_USE: Variable not found (stub)"
     elif pw_vulkan_use == "6":
@@ -179,7 +183,11 @@ def get_vulkan_use_info(portproton_path: str, exe_path: str | None = None) -> st
         dxvk = "DXVK"
         vkd3d = "VKD3D-PROTON"
 
-    return f"PW_VULKAN_USE={pw_vulkan_use} - {dxvk}, {vkd3d}"
+    vulkan_info = f"PW_VULKAN_USE={pw_vulkan_use} - {dxvk}, {vkd3d}"
+    if d7vk:
+        vulkan_info = f"{vulkan_info}, {d7vk}"
+
+    return vulkan_info
 
 
 def get_wine_version(portproton_path: str, exe_path: str | None = None) -> str:
