@@ -1775,7 +1775,7 @@ pw_check_and_download_runtime () {
 }
 
 pw_check_and_download_dxvk_and_vkd3d () {
-    # Download DXVK versions
+    # Download DXVK
     for DXVK_VAR_VER in "${DXVK_SAREK_VER}" "${DXVK_OLD_VER}" "${DXVK_NEW_VER}" ; do
         if [[ ! -d "${PW_VULKAN_DIR}/dxvk-${DXVK_VAR_VER}" ]] ; then
             print_info "Download and install DXVK v.${DXVK_VAR_VER}"
@@ -1805,7 +1805,7 @@ pw_check_and_download_dxvk_and_vkd3d () {
         fi
     done
 
-    # Download VKD3D versions
+    # Download VKD3D
     for VKD3D_VAR_VER in "${VKD3D_SAREK_VER}" "${VKD3D_OLD_VER}" "${VKD3D_NEW_VER}" ; do
         if [[ ! -d "${PW_VULKAN_DIR}/vkd3d-proton-${VKD3D_VAR_VER}" ]] ; then
             print_info "Download and install VKD3D-PROTON v.${VKD3D_VAR_VER}"
@@ -1832,6 +1832,32 @@ pw_check_and_download_dxvk_and_vkd3d () {
             fi
         fi
     done
+
+    # Download D7VK
+    if [[ ! -d "${PW_VULKAN_DIR}/d7vk-${D7VK_VAR_VER}" ]] ; then
+        print_info "Download and install D7VK v.${D7VK_VAR_VER}"
+        if try_download "https://github.com/Castro-Fidel/vulkan/releases/download/d7vk-${D7VK_VAR_VER}/d7vk-${D7VK_VAR_VER}.tar.xz" \
+                                    "${PW_VULKAN_DIR}/d7vk-${D7VK_VAR_VER}.tar.xz" ; then
+            if unpack "${PW_VULKAN_DIR}/d7vk-${D7VK_VAR_VER}.tar.xz" "${PW_VULKAN_DIR}" ; then
+                try_remove_file "${PW_VULKAN_DIR}/d7vk-${D7VK_VAR_VER}.tar.xz"
+            else
+                try_remove_file "${PW_VULKAN_DIR}/d7vk-${D7VK_VAR_VER}.tar.xz"
+                try_remove_dir "${PW_VULKAN_DIR}/d7vk-${D7VK_VAR_VER}"
+                fatal "Failed to download and unpack D7VK"
+            fi
+        elif try_download "https://github.com/WinterSnowfall/d7vk/releases/download/${D7VK_VAR_VER}/D7VK-${D7VK_VAR_VER}.tar.zst" \
+                                    "${PW_VULKAN_DIR}/d7vk-${D7VK_VAR_VER}.tar.zst" no_mirror ; then
+            if unpack "${PW_VULKAN_DIR}/d7vk-${D7VK_VAR_VER}.tar.zst" "${PW_VULKAN_DIR}" ; then
+                try_remove_file "${PW_VULKAN_DIR}/d7vk-${D7VK_VAR_VER}.tar.zst"
+            else
+                try_remove_file "${PW_VULKAN_DIR}/d7vk-${D7VK_VAR_VER}.tar.zst"
+                try_remove_dir "${PW_VULKAN_DIR}/d7vk-${D7VK_VAR_VER}"
+                fatal "Failed to download and unpack D7VK"
+            fi
+        else
+            fatal "Failed to download and unpack D7VK"
+        fi
+    fi
 
     return 0
 }
@@ -3217,7 +3243,6 @@ start_portproton () {
     try_force_link_file "${PHYSX_PATH}/cudart64_65.dll" "${WINEPREFIX}/drive_c/windows/system32/cudart64_65.dll"
 
     # 3D API
-    unset CP_VKD3D_FILES CP_DXVK_FILES CP_DGV2_FILES CP_WINE_FILES PATH_TO_DXVK_FILES PATH_TO_VKD3D_FILES CP_GALLIUM_NINE_FILES
     case "${PW_VULKAN_USE}" in
         0)
             # WINED3D OPENGL
@@ -3338,7 +3363,10 @@ start_portproton () {
     fi
 
     # DGVOODOO2 enable:
-    if [[ "${PW_DGVOODOO2}" == "1" ]] && [[ "${PW_USE_SPECIALK}" != "1" ]] ; then
+    if [[ "${PW_DGVOODOO2}" == "1" ]] \
+    && [[ "${PW_USE_SPECIALK}" != "1" ]] \
+    && [[ "${PW_USE_D7VK}" != "1" ]] \
+    then
         if [[ ! -f "${PW_VULKAN_DIR}/dgvoodoo2-${DGV2_VER}/dgVoodoo.conf" ]] ; then
             print_info "Download and install DGVOODOO2 v.${DGV2_VER}"
             if try_download "https://github.com/Castro-Fidel/vulkan/releases/download/dgvoodoo2-${DGV2_VER}/dgvoodoo2-${DGV2_VER}.tar.xz" \
@@ -3396,6 +3424,7 @@ start_portproton () {
             try_force_link_file "${PATH_TO_DGV2_FILES}/x32/${wine_dgv2_dll}.dll" "${WINEPREFIX}/drive_c/windows/syswow64/${wine_dgv2_dll}.dll"
             var_winedlloverride_update "${wine_dgv2_dll}=n"
         done
+
         # DGVOODOO2 settings:
         if [[ "${PW_DGV2_USE_DX12}" == "1" ]] ; then
             if [[ "${PW_VULKAN_USE}" =~ ^(1|2|6)$ ]]
@@ -3556,7 +3585,6 @@ start_portproton () {
         for rm_dgv2_dll in d3dimm glide glide2x glide3x ; do
             try_remove_file "${WINEPREFIX}/drive_c/windows/syswow64/${rm_dgv2_dll}.dll"
         done
-        add_to_var CP_WINE_FILES "ddraw"
     fi
 
     # force use dxgi.dll from wine
@@ -3570,6 +3598,17 @@ start_portproton () {
         try_force_link_file "${WINEDIR}/lib64/wine/x86_64-windows/${copy_wine_dll}.dll" "${WINEPREFIX}/drive_c/windows/system32/${copy_wine_dll}.dll"
         try_force_link_file "${WINEDIR}/lib/wine/i386-windows/${copy_wine_dll}.dll" "${WINEPREFIX}/drive_c/windows/syswow64/${copy_wine_dll}.dll"
     done
+
+    if [[ "${PW_USE_D7VK}" == "1" ]] ; then
+        PATH_TO_D7VK_FILES="${PW_VULKAN_DIR}/d7vk-${D7VK_VAR_VER}"
+        print_info "Try create symlink D7VK files..."
+        try_force_link_file "${WINEDIR}/lib/wine/i386-windows/ddraw.dll" "${WINEPREFIX}/drive_c/windows/syswow64/ddraw_.dll"
+        try_force_link_file "${PATH_TO_D7VK_FILES}/x32/ddraw.dll" "${WINEPREFIX}/drive_c/windows/syswow64/ddraw.dll"
+        var_winedlloverride_update "ddraw=n,b"
+    else
+        try_force_link_file "${WINEDIR}/lib/wine/i386-windows/ddraw.dll" "${WINEPREFIX}/drive_c/windows/syswow64/ddraw.dll"
+        try_remove_file "${WINEPREFIX}/drive_c/windows/syswow64/ddraw_.dll"
+    fi
 
     if [[ -n "$CP_DXVK_FILES" ]] ; then
         print_info "Try create symlink DXVK files..."
@@ -3641,8 +3680,7 @@ start_portproton () {
         check_variables VKD3D_SHADER_CACHE_PATH "${PATH_TO_VKD3D_FILES}/vkd3d_cache"
     fi
 
-    # некоторым играм для любых 3D api для правильной работы wined3d необходимо чтобы эти библиотеки всегда были
-    PATH_TO_VKD3D_FILES="${PW_VULKAN_DIR}/vkd3d-proton-${VKD3D_NEW_VER}" # используется git версия
+    PATH_TO_VKD3D_FILES="${PW_VULKAN_DIR}/vkd3d-proton-${VKD3D_NEW_VER}"
     try_force_link_file "${PATH_TO_VKD3D_FILES}/x86/libvkd3d-1.dll" "${WINEPREFIX}/drive_c/windows/syswow64/libvkd3d-1.dll"
     try_force_link_file "${PATH_TO_VKD3D_FILES}/x86/libvkd3d-shader-1.dll" "${WINEPREFIX}/drive_c/windows/syswow64/libvkd3d-shader-1.dll"
     try_force_link_file "${PATH_TO_VKD3D_FILES}/x64/libvkd3d-1.dll" "${WINEPREFIX}/drive_c/windows/system32/libvkd3d-1.dll"
