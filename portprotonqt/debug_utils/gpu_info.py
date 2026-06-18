@@ -337,6 +337,9 @@ def _parse_glxinfo_output(stdout: str) -> list[str]:
         "OpenGL ES profile",
     ]
     lines = []
+    gpu_line = _format_glxinfo_gpu_line(stdout)
+    if gpu_line:
+        lines.append(gpu_line)
 
     for line in stdout.split("\n"):
         if ":" not in line:
@@ -347,6 +350,42 @@ def _parse_glxinfo_output(stdout: str) -> list[str]:
             lines.append(f"{key}: {value.strip()}")
 
     return lines
+
+
+def _get_glxinfo_value(stdout: str, key_name: str) -> str:
+    """Extract a single value from glxinfo output."""
+    for line in stdout.split("\n"):
+        key, separator, value = line.partition(":")
+        if separator and key.strip() == key_name:
+            return value.strip()
+    return "Unknown"
+
+
+def _format_glxinfo_gpu_line(stdout: str, vk_output: str | None = None) -> str | None:
+    """Format primary GLX renderer using matched vk_gpu_info name."""
+    device_name = _get_glxinfo_value(stdout, "OpenGL renderer string")
+    if device_name == "Unknown":
+        return None
+
+    if vk_output is None:
+        vk_output = get_cached_vk_gpu_info()
+
+    renderer_name = device_name.lower()
+    lines_vk = vk_output.split("\n")
+    i = 0
+    while i < len(lines_vk):
+        line = lines_vk[i].strip()
+        if not line.startswith("GPU #"):
+            i += 1
+            continue
+
+        gpu_info, i = _parse_gpu_properties(lines_vk, i + 1)
+        vulkan_name = gpu_info.get("device_name", "")
+
+        if vulkan_name and vulkan_name.lower() in renderer_name:
+            return f"PW_GPU_INFO={vulkan_name}"
+
+    return None
 
 
 def _get_last_output_line(output: str | bytes | None) -> str | None:

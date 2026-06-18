@@ -3,6 +3,7 @@
 from typing import Any
 
 from portprotonqt.debug_utils import env_utils
+from portprotonqt.debug_utils import gpu_info
 
 
 def test_get_runtime_status_enabled(monkeypatch: Any) -> None:
@@ -81,3 +82,31 @@ def test_get_d3d_extras_status_disabled(monkeypatch: Any) -> None:
     )
 
     assert env_utils.get_d3d_extras_status("") == "D3D_EXTRAS - disabled"
+
+
+def test_parse_glxinfo_output_adds_primary_gpu_line() -> None:
+    glxinfo_output = """name of display: :0
+display: :0  screen: 0
+direct rendering: Yes
+OpenGL vendor string: NVIDIA Corporation
+OpenGL renderer string: NVIDIA GeForce GTX 1060 3GB/PCIe/SSE2
+OpenGL version string: 4.6.0 NVIDIA 580.142
+"""
+    vk_output = """GPU #0:
+    device_name: Intel(R) UHD Graphics 630
+    device_type: INTEGRATED_GPU
+    driver_name: Intel open-source Mesa driver
+    api_version: 1.3.289
+    driver_version: 24.3.4
+
+GPU #1:
+    device_name: NVIDIA GeForce GTX 1060 3GB
+    device_type: DISCRETE_GPU
+    driver_name: NVIDIA
+    api_version: 1.4.312
+    driver_info: 580.142
+"""
+
+    assert gpu_info._format_glxinfo_gpu_line(glxinfo_output, vk_output) == (
+        "PW_GPU_INFO=NVIDIA GeForce GTX 1060 3GB"
+    )
