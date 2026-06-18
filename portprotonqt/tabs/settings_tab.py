@@ -1,0 +1,789 @@
+import os
+from typing import TYPE_CHECKING, Any
+
+from PySide6.QtCore import Qt, QTimer
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QFormLayout,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QScrollArea,
+    QScroller,
+    QSizePolicy,
+    QVBoxLayout,
+    QWidget,
+)
+
+from portprotonqt.cli import (
+    add_steam_compat_tool,
+    is_steam_compat_tool_installed,
+    remove_steam_compat_tool,
+    reset_settings,
+)
+from portprotonqt.config import (
+    apply_xdg_autostart,
+    cache_config,
+    display_config,
+    game_config,
+    gamepad_config,
+    get_portproton_location,
+    migrate_legacy_shortcut,
+    proxy_config,
+    ui_config,
+)
+from portprotonqt.context_menu_manager import CustomLineEdit
+from portprotonqt.custom_widgets import AutoSizeButton
+from portprotonqt.debug_utils import get_selectable_gpu_list
+from portprotonqt.localization import _
+from portprotonqt.logger import get_logger
+from portprotonqt.portproton_api import get_user_conf_setting, set_user_conf_setting
+from portprotonqt.qt_utils import get_system_dpi_for_wine
+from portprotonqt.steam_api import get_steam_compatibilitytools_dir
+from portprotonqt.time_utils import format_playtime
+
+logger = get_logger(__name__)
+
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QMainWindow
+
+    _MainWindowTypingBase = QMainWindow
+else:
+    _MainWindowTypingBase = object
+
+
+class MainWindowSettingsTabMixin(_MainWindowTypingBase):
+    if TYPE_CHECKING:
+        def __getattr__(self, name: str) -> Any: ...
+
+    def createPortProtonTab(self):
+        """PortProton Settings tab."""
+        self.portProtonWidget = QWidget()
+        self.portProtonWidget.setStyleSheet(self.theme.OTHER_PAGES_WIDGET_STYLE)
+        self.portProtonWidget.setObjectName("otherPage")
+        layout = QVBoxLayout(self.portProtonWidget)
+        layout.setContentsMargins(10, 18, 10, 10)
+
+        # Title
+        title = QLabel(_("PortProton Settings"))
+        title.setStyleSheet(self.theme.TAB_TITLE_STYLE)
+        title.setObjectName("tabTitle")
+        title.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
+        title.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        layout.addWidget(title)
+
+        # --- New: Scroll Area for settings ---
+        self.settingsScrollArea = QScrollArea()
+        self.settingsScrollArea.setWidgetResizable(True)
+        self.settingsScrollArea.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.settingsScrollArea.setStyleSheet(self.theme.SCROLL_STYLE + self.theme.TRANSPARENT_BACKGROUND_STYLE)
+        self.settingsScrollArea.setFrameShape(QFrame.Shape.NoFrame)
+        # Disable horizontal scroll
+        self.settingsScrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        QScroller.grabGesture(self.settingsScrollArea.viewport(), QScroller.ScrollerGestureType.LeftMouseButtonGesture)
+
+        scrollWidget = QWidget()
+        scrollWidget.setStyleSheet(self.theme.TRANSPARENT_BACKGROUND_STYLE)
+        scrollLayout = QVBoxLayout(scrollWidget)
+        scrollLayout.setContentsMargins(0, 0, 10, 0)
+        scrollLayout.setSpacing(10)  # Uniform spacing between sections
+
+        # Helper to create styled sections
+        def create_section(title_text, theme):
+            section_frame = QFrame()
+            section_frame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+            section_frame.setStyleSheet(self.theme.SETTINGS_FRAME_STYLE)
+            section_layout = QVBoxLayout(section_frame)
+            section_layout.setContentsMargins(*theme.portProtonPageMargins)
+            section_layout.setSpacing(theme.portProtonPageSectionHeaderSpacing)
+
+            section_title = QLabel(title_text)
+            section_title.setStyleSheet(self.theme.SETTINGS_FRAME_TITLE_STYLE)
+            section_layout.addWidget(section_title)
+
+            section_form = QFormLayout()
+            section_form.setSpacing(10)
+            section_form.setLabelAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+            section_form.setFormAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+            section_form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow)
+            section_form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapAllRows)
+            section_form.setHorizontalSpacing(theme.portProtonPageHorizontalSpacing)
+            section_form.setVerticalSpacing(theme.portProtonPageVerticalSpacing)
+            section_layout.addLayout(section_form)
+            return section_frame, section_form
+
+        # 1. Library Settings Section
+        genFrame, genForm = create_section(_("Library Settings"), self.theme)
+        genForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
+        scrollLayout.addWidget(genFrame)
+
+        self.timeDetailCombo = QComboBox()
+        self.timeDetailCombo.view().window().setWindowFlags(
+            Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
+        )
+        self.timeDetailCombo.view().window().setAttribute(
+            Qt.WidgetAttribute.WA_TranslucentBackground
+        )
+        self.timeDetailCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.time_keys = ["detailed", "brief", "steam", "hidden"]
+        self.time_labels = [_("Detailed"), _("Brief"), "Steam", _("Hidden")]
+        self.timeDetailCombo.addItems(self.time_labels)
+        self.timeDetailCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
+        self.timeDetailCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.timeDetailTitle = QLabel(_("Time Detail Level:"))
+        self.timeDetailTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.timeDetailTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
+        self.timeDetailTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        current = ui_config.get_time_detail_level()
+        try:
+            idx = self.time_keys.index(current)
+        except ValueError:
+            idx = 0
+        self.timeDetailCombo.setCurrentIndex(idx)
+        genForm.addRow(self.timeDetailTitle, self.timeDetailCombo)
+
+        # 2. Interface Settings Section
+        uiFrame, uiForm = create_section(_("Interface Settings"), self.theme)
+        uiForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
+        scrollLayout.addWidget(uiFrame)
+
+        self.tray_menu_mode_keys = ["compact", "detailed"]
+        self.tray_menu_mode_labels = [_("Compact"), _("Detailed")]
+        self.trayMenuModeCombo = QComboBox()
+        self.trayMenuModeCombo.view().window().setWindowFlags(
+            Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
+        )
+        self.trayMenuModeCombo.view().window().setAttribute(
+            Qt.WidgetAttribute.WA_TranslucentBackground
+        )
+        self.trayMenuModeCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.trayMenuModeCombo.addItems(self.tray_menu_mode_labels)
+        self.trayMenuModeCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
+        self.trayMenuModeCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.trayMenuModeTitle = QLabel(_("Tray Menu Type:"))
+        self.trayMenuModeTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.trayMenuModeTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
+        self.trayMenuModeTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        current = display_config.get_tray_menu_mode()
+        try:
+            idx = self.tray_menu_mode_keys.index(current)
+        except ValueError:
+            idx = 0
+        self.trayMenuModeCombo.setCurrentIndex(idx)
+        uiForm.addRow(self.trayMenuModeTitle, self.trayMenuModeCombo)
+
+        self.gamepad_type_keys = ["auto", "xbox", "playstation"]
+        self.gamepad_type_labels = [_("Auto"), "Xbox", "PlayStation"]
+        self.gamepadTypeCombo = QComboBox()
+        self.gamepadTypeCombo.view().window().setWindowFlags(
+            Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
+        )
+        self.gamepadTypeCombo.view().window().setAttribute(
+            Qt.WidgetAttribute.WA_TranslucentBackground
+        )
+        self.gamepadTypeCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.gamepadTypeCombo.addItems(self.gamepad_type_labels)
+        self.gamepadTypeCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
+        self.gamepadTypeCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.gamepadTypeTitle = QLabel(_("Gamepad Type:"))
+        self.gamepadTypeTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.gamepadTypeTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
+        self.gamepadTypeTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        current_gamepad_type = gamepad_config.get_gamepad_type()
+        try:
+            idx = self.gamepad_type_keys.index(current_gamepad_type)
+        except ValueError:
+            idx = 0
+        self.gamepadTypeCombo.setCurrentIndex(idx)
+        uiForm.addRow(self.gamepadTypeTitle, self.gamepadTypeCombo)
+
+        self.fullscreenCheckBox = QCheckBox()
+        self.fullscreenCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
+        self.fullscreenCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.fullscreenTitle = QLabel(_("Launch Application in Fullscreen"))
+        self.fullscreenTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.fullscreenTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
+        self.fullscreenTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        current_fullscreen = display_config.get_fullscreen()
+        self.fullscreenCheckBox.setChecked(current_fullscreen)
+        fullscreen_layout = QHBoxLayout()
+        fullscreen_layout.setContentsMargins(0, 0, 0, 0)
+        fullscreen_layout.addWidget(self.fullscreenCheckBox)
+        fullscreen_layout.addWidget(self.fullscreenTitle)
+        fullscreen_layout.addStretch()
+        uiForm.addRow(fullscreen_layout)
+
+        self.autoFullscreenGamepadCheckBox = QCheckBox()
+        self.autoFullscreenGamepadCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
+        self.autoFullscreenGamepadCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.autoFullscreenGamepadTitle = QLabel(_("Auto Fullscreen on Gamepad connected"))
+        self.autoFullscreenGamepadTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.autoFullscreenGamepadTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
+        self.autoFullscreenGamepadTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        current_auto_fullscreen = display_config.get_auto_fullscreen_gamepad()
+        self.autoFullscreenGamepadCheckBox.setChecked(current_auto_fullscreen)
+        auto_fullscreen_layout = QHBoxLayout()
+        auto_fullscreen_layout.setContentsMargins(0, 0, 0, 0)
+        auto_fullscreen_layout.addWidget(self.autoFullscreenGamepadCheckBox)
+        auto_fullscreen_layout.addWidget(self.autoFullscreenGamepadTitle)
+        auto_fullscreen_layout.addStretch()
+        uiForm.addRow(auto_fullscreen_layout)
+
+        self.minimizeToTrayCheckBox = QCheckBox()
+        self.minimizeToTrayCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
+        self.minimizeToTrayCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.minimizeToTrayTitle = QLabel(_("Minimize to tray on close"))
+        self.minimizeToTrayTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.minimizeToTrayTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
+        self.minimizeToTrayTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        current_minimize_to_tray = display_config.get_minimize_to_tray()
+        self.minimizeToTrayCheckBox.setChecked(current_minimize_to_tray)
+        self.minimizeToTrayCheckBox.toggled.connect(lambda checked: display_config.set_minimize_to_tray(checked))
+        minimize_layout = QHBoxLayout()
+        minimize_layout.setContentsMargins(0, 0, 0, 0)
+        minimize_layout.addWidget(self.minimizeToTrayCheckBox)
+        minimize_layout.addWidget(self.minimizeToTrayTitle)
+        minimize_layout.addStretch()
+        uiForm.addRow(minimize_layout)
+
+        self.autostartCheckBox = QCheckBox()
+        self.autostartCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
+        self.autostartCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.autostartTitle = QLabel(_("Run at system startup"))
+        self.autostartTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.autostartTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
+        self.autostartTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.autostartCheckBox.setChecked(display_config.get_autostart_enabled())
+        autostart_layout = QHBoxLayout()
+        autostart_layout.setContentsMargins(0, 0, 0, 0)
+        autostart_layout.addWidget(self.autostartCheckBox)
+        autostart_layout.addWidget(self.autostartTitle)
+        autostart_layout.addStretch()
+        uiForm.addRow(autostart_layout)
+
+        self.startMinimizedCheckBox = QCheckBox()
+        self.startMinimizedCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
+        self.startMinimizedCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.startMinimizedTitle = QLabel(_("Start in tray"))
+        self.startMinimizedTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.startMinimizedTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
+        self.startMinimizedTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.startMinimizedCheckBox.setChecked(display_config.get_start_minimized())
+        start_minimized_layout = QHBoxLayout()
+        start_minimized_layout.setContentsMargins(0, 0, 0, 0)
+        start_minimized_layout.addWidget(self.startMinimizedCheckBox)
+        start_minimized_layout.addWidget(self.startMinimizedTitle)
+        start_minimized_layout.addStretch()
+        uiForm.addRow(start_minimized_layout)
+
+        self.hideAutoInstallTabCheckBox = QCheckBox()
+        self.hideAutoInstallTabCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
+        self.hideAutoInstallTabCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.hideAutoInstallTabTitle = QLabel(_("Hide Auto-Install Tab"))
+        self.hideAutoInstallTabTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.hideAutoInstallTabTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
+        self.hideAutoInstallTabTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        current_hide_autoinstall = ui_config.get_hide_autoinstall_tab()
+        self.hideAutoInstallTabCheckBox.setChecked(current_hide_autoinstall)
+        self.hideAutoInstallTabCheckBox.toggled.connect(lambda checked: ui_config.set_hide_autoinstall_tab(checked))
+        hide_autoinstall_layout = QHBoxLayout()
+        hide_autoinstall_layout.setContentsMargins(0, 0, 0, 0)
+        hide_autoinstall_layout.addWidget(self.hideAutoInstallTabCheckBox)
+        hide_autoinstall_layout.addWidget(self.hideAutoInstallTabTitle)
+        hide_autoinstall_layout.addStretch()
+        uiForm.addRow(hide_autoinstall_layout)
+
+        disable_runtime_download_layout = None
+        if not os.getenv("FLATPAK_ID"):
+            self.disableRuntimeDownloadCheckBox = QCheckBox()
+            self.disableRuntimeDownloadCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
+            self.disableRuntimeDownloadCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+            self.disableRuntimeDownloadTitle = QLabel(_("Disable runtime download"))
+            self.disableRuntimeDownloadTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+            self.disableRuntimeDownloadTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
+            self.disableRuntimeDownloadTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            self.disableRuntimeDownloadCheckBox.setChecked(ui_config.get_disable_runtime_download())
+            disable_runtime_download_layout = QHBoxLayout()
+            disable_runtime_download_layout.setContentsMargins(0, 0, 0, 0)
+            disable_runtime_download_layout.addWidget(self.disableRuntimeDownloadCheckBox)
+            disable_runtime_download_layout.addWidget(self.disableRuntimeDownloadTitle)
+            disable_runtime_download_layout.addStretch()
+
+        download_wine_to_steam_layout = None
+        self.steamCompatCheckBox = QCheckBox()
+        self.steamCompatCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
+        self.steamCompatCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.steamCompatTitle = QLabel(_("Add to Steam compatibility tools"))
+        self.steamCompatTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.steamCompatTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
+        self.steamCompatTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        current_steam_compat = is_steam_compat_tool_installed()
+        self.steamCompatCheckBox.setChecked(current_steam_compat)
+        steam_compat_layout = QHBoxLayout()
+        steam_compat_layout.setContentsMargins(0, 0, 0, 0)
+        steam_compat_layout.addWidget(self.steamCompatCheckBox)
+        steam_compat_layout.addWidget(self.steamCompatTitle)
+        steam_compat_layout.addStretch()
+        uiForm.addRow(steam_compat_layout)
+
+        if get_steam_compatibilitytools_dir() is not None:
+            self.downloadWineToSteamCheckBox = QCheckBox()
+            self.downloadWineToSteamCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
+            self.downloadWineToSteamCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+            self.downloadWineToSteamTitle = QLabel(_("Download WINE/Proton to Steam"))
+            self.downloadWineToSteamTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+            self.downloadWineToSteamTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
+            self.downloadWineToSteamTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            self.downloadWineToSteamCheckBox.setChecked(ui_config.get_download_wine_to_steam())
+            download_wine_to_steam_layout = QHBoxLayout()
+            download_wine_to_steam_layout.setContentsMargins(0, 0, 0, 0)
+            download_wine_to_steam_layout.addWidget(self.downloadWineToSteamCheckBox)
+            download_wine_to_steam_layout.addWidget(self.downloadWineToSteamTitle)
+            download_wine_to_steam_layout.addStretch()
+
+        self.economyModeCheckBox = QCheckBox()
+        self.economyModeCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
+        self.economyModeCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.economyModeTitle = QLabel(_("Economy mode"))
+        self.economyModeTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.economyModeTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
+        self.economyModeTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.economyModeCheckBox.setChecked(ui_config.get_economy_mode())
+        def update_economy_controls(enabled: bool):
+            if enabled:
+                if hasattr(self, "gamesBadgeViewCombo"):
+                    self.gamesBadgeViewCombo.setCurrentIndex(self.badge_view_keys.index("hidden"))
+                    self.gamesBadgeViewCombo.setEnabled(False)
+                return
+            if hasattr(self, "gamesBadgeViewCombo"):
+                self.gamesBadgeViewCombo.setEnabled(True)
+
+        self.economyModeCheckBox.toggled.connect(update_economy_controls)
+        update_economy_controls(self.economyModeCheckBox.isChecked())
+        economy_mode_layout = QHBoxLayout()
+        economy_mode_layout.setContentsMargins(0, 0, 0, 0)
+        economy_mode_layout.addWidget(self.economyModeCheckBox)
+        economy_mode_layout.addWidget(self.economyModeTitle)
+        economy_mode_layout.addStretch()
+
+        self.downloadMirrorCombo = QComboBox()
+        self.downloadMirrorCombo.view().window().setWindowFlags(
+            Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
+        )
+        self.downloadMirrorCombo.view().window().setAttribute(
+            Qt.WidgetAttribute.WA_TranslucentBackground
+        )
+        self.downloadMirrorCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.downloadMirrorCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
+        self.downloadMirrorCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.downloadMirrorCombo.addItems(["CLOUD", "GITHUB"])
+        current_download_mirror = get_user_conf_setting('MIRROR')
+        if current_download_mirror and current_download_mirror not in ("CLOUD", "GITHUB"):
+            self.downloadMirrorCombo.addItem(current_download_mirror)
+        if current_download_mirror:
+            self.downloadMirrorCombo.setCurrentText(current_download_mirror)
+        self.downloadMirrorTitle = QLabel(_("Download mirror:"))
+        self.downloadMirrorTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.downloadMirrorTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
+        self.downloadMirrorTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+
+        self.forceSystemDpiCheckBox = QCheckBox()
+        self.forceSystemDpiCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
+        self.forceSystemDpiCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.forceSystemDpiTitle = QLabel(_("Force system DPI for Wine"))
+        self.forceSystemDpiTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.forceSystemDpiTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
+        self.forceSystemDpiTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        current_force_dpi = get_user_conf_setting('PW_FORCE_SYSTEM_DPI')
+        self.forceSystemDpiCheckBox.setChecked(str(current_force_dpi) == "1")
+        force_system_dpi_layout = QHBoxLayout()
+        force_system_dpi_layout.setContentsMargins(0, 0, 0, 0)
+        force_system_dpi_layout.addWidget(self.forceSystemDpiCheckBox)
+        force_system_dpi_layout.addWidget(self.forceSystemDpiTitle)
+        force_system_dpi_layout.addStretch()
+        uiForm.addRow(force_system_dpi_layout)
+
+        # 3. Download Settings Section
+        downloadFrame, downloadForm = create_section(_("Download Settings"), self.theme)
+        downloadForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
+        scrollLayout.addWidget(downloadFrame)
+
+        if disable_runtime_download_layout is not None:
+            downloadForm.addRow(disable_runtime_download_layout)
+
+        if download_wine_to_steam_layout is not None:
+            downloadForm.addRow(download_wine_to_steam_layout)
+
+        downloadForm.addRow(economy_mode_layout)
+        downloadForm.addRow(self.downloadMirrorTitle, self.downloadMirrorCombo)
+
+        # 4. Hardware Settings Section
+        hwFrame, hwForm = create_section(_("Hardware Settings"), self.theme)
+        hwForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
+        scrollLayout.addWidget(hwFrame)
+
+        filtered_gpu_list = get_selectable_gpu_list()
+        hwFrame.setVisible(len(filtered_gpu_list) > 1)
+        if len(filtered_gpu_list) > 1:
+            self.gpuCombo = QComboBox()
+            self.gpuCombo.view().window().setWindowFlags(
+                Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint
+            )
+            self.gpuCombo.view().window().setAttribute(
+                Qt.WidgetAttribute.WA_TranslucentBackground
+            )
+            self.gpuCombo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+            self.gpuCombo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+            self.gpuCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
+            self.gpuCombo.addItems(filtered_gpu_list)
+            current_gpu = get_user_conf_setting('PW_GPU_USE')
+            if current_gpu and current_gpu != "disabled" and current_gpu in filtered_gpu_list:
+                self.gpuCombo.setCurrentText(current_gpu)
+            elif current_gpu and current_gpu != "disabled" and "Info:" not in current_gpu:
+                if current_gpu not in filtered_gpu_list:
+                    self.gpuCombo.addItem(current_gpu)
+                self.gpuCombo.setCurrentText(current_gpu)
+            else:
+                self.gpuCombo.setCurrentIndex(0)
+            self.gpuTitle = QLabel(_("GPU to use:"))
+            self.gpuTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+            self.gpuTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
+            self.gpuTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            hwForm.addRow(self.gpuTitle, self.gpuCombo)
+
+        # 5. Proxy Settings Section
+        proxyFrame, proxyForm = create_section(_("Proxy Settings"), self.theme)
+        proxyForm.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
+        scrollLayout.addWidget(proxyFrame)
+
+        self.proxyUrlEdit = CustomLineEdit(self, theme=self.theme)
+        self.proxyUrlEdit.setPlaceholderText(_("Proxy URL"))
+        self.proxyUrlEdit.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.proxyUrlEdit.setStyleSheet(self.theme.LINE_EDIT_STYLE)
+        self.proxyUrlEdit.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.proxyUrlTitle = QLabel(_("Proxy URL:"))
+        self.proxyUrlTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.proxyUrlTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
+        self.proxyUrlTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        proxy_cfg = proxy_config.get_proxy()
+        if proxy_cfg.get("http", ""):
+            self.proxyUrlEdit.setText(proxy_cfg["http"])
+        proxyForm.addRow(self.proxyUrlTitle, self.proxyUrlEdit)
+
+        self.proxyUserEdit = CustomLineEdit(self, theme=self.theme)
+        self.proxyUserEdit.setPlaceholderText(_("Proxy Username"))
+        self.proxyUserEdit.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.proxyUserEdit.setStyleSheet(self.theme.LINE_EDIT_STYLE)
+        self.proxyUserEdit.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.proxyUserTitle = QLabel(_("Proxy Username:"))
+        self.proxyUserTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.proxyUserTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
+        self.proxyUserTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        proxyForm.addRow(self.proxyUserTitle, self.proxyUserEdit)
+
+        self.proxyPasswordEdit = CustomLineEdit(self, theme=self.theme)
+        self.proxyPasswordEdit.setPlaceholderText(_("Proxy Password"))
+        self.proxyPasswordEdit.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.proxyPasswordEdit.setEchoMode(QLineEdit.EchoMode.Password)
+        self.proxyPasswordEdit.setStyleSheet(self.theme.LINE_EDIT_STYLE)
+        self.proxyPasswordEdit.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.proxyPasswordTitle = QLabel(_("Proxy Password:"))
+        self.proxyPasswordTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.proxyPasswordTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
+        self.proxyPasswordTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        proxyForm.addRow(self.proxyPasswordTitle, self.proxyPasswordEdit)
+
+        scrollLayout.addStretch(1)
+        self.settingsScrollArea.setWidget(scrollWidget)
+        layout.addWidget(self.settingsScrollArea)
+
+        # Buttons (outside scroll area, always visible)
+        buttonsLayout = QHBoxLayout()
+        buttonsLayout.setSpacing(10)
+
+        self.saveButton = AutoSizeButton(_("Save Settings"), icon=self.theme_manager.get_icon("save", as_path=True))
+        self.saveButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        self.saveButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.saveButton.clicked.connect(self.savePortProtonSettings)
+        buttonsLayout.addWidget(self.saveButton)
+
+        self.resetSettingsButton = AutoSizeButton(_("Reset Settings"), icon=self.theme_manager.get_icon("update", as_path=True))
+        self.resetSettingsButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        self.resetSettingsButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.resetSettingsButton.clicked.connect(self.resetSettings)
+        buttonsLayout.addWidget(self.resetSettingsButton)
+
+        self.migrateShortcutsButton = AutoSizeButton(_("Migrate legacy shortcuts"), icon=self.theme_manager.get_icon("update", as_path=True))
+        self.migrateShortcutsButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        self.migrateShortcutsButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.migrateShortcutsButton.clicked.connect(self.migrateLegacyShortcuts)
+        buttonsLayout.addWidget(self.migrateShortcutsButton)
+
+        self.clearCacheButton = AutoSizeButton(_("Clear Cache"), icon=self.theme_manager.get_icon("update", as_path=True))
+        self.clearCacheButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
+        self.clearCacheButton.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.clearCacheButton.clicked.connect(self.clearCache)
+        buttonsLayout.addWidget(self.clearCacheButton)
+
+        layout.addLayout(buttonsLayout)
+        self.stackedWidget.addWidget(self.portProtonWidget)
+
+    def resetSettings(self):
+        """Reset settings and restart application."""
+        msg_box = QMessageBox(self)
+        msg_box.setIcon(QMessageBox.Icon.Question)
+        msg_box.setWindowTitle(_("Confirm Reset"))
+        msg_box.setText(_("Are you sure you want to reset all settings? This action cannot be undone."))
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        msg_box.setDefaultButton(QMessageBox.StandardButton.No)
+        msg_box.setButtonText(QMessageBox.StandardButton.Yes, _("Yes"))
+        msg_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
+        reply = msg_box.exec()
+        if reply == QMessageBox.StandardButton.Yes:
+            if reset_settings():
+                QTimer.singleShot(1000, lambda: self.restart_application())
+
+    def migrateLegacyShortcuts(self):
+        """Migrate legacy shortcuts after user confirmation."""
+        portproton_location = get_portproton_location()
+        if not portproton_location:
+            QMessageBox.warning(self, _("Error"), _("PortProton directory not found"))
+            return
+
+        msg_box = QMessageBox(self)
+        msg_box.setIcon(QMessageBox.Icon.Question)
+        msg_box.setWindowTitle(_("Migrate legacy shortcuts"))
+        msg_box.setText(_("Migrate old PortProton shortcuts to PortProtonQt format?"))
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        msg_box.setDefaultButton(QMessageBox.StandardButton.No)
+        msg_box.setButtonText(QMessageBox.StandardButton.Yes, _("Yes"))
+        msg_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
+        reply = msg_box.exec()
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        migrated = migrate_legacy_shortcut(portproton_location)
+        logger.info("Migrated legacy shortcuts: %d", migrated)
+
+    def clearCache(self):
+        """Clear cache."""
+        msg_box = QMessageBox(self)
+        msg_box.setIcon(QMessageBox.Icon.Question)
+        msg_box.setWindowTitle(_("Confirm Clear Cache"))
+        msg_box.setText(_("Are you sure you want to clear the cache? This action cannot be undone."))
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        msg_box.setDefaultButton(QMessageBox.StandardButton.No)
+        msg_box.setButtonText(QMessageBox.StandardButton.Yes, _("Yes"))
+        msg_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
+        reply = msg_box.exec()
+        if reply == QMessageBox.StandardButton.Yes:
+            cache_config.clear_cache()
+
+    def applySettingsDelayed(self):
+        ui_config.get_time_detail_level()
+        self.games = []
+        self.loadGames()
+        display_filter = game_config.get_display_filter()
+        for card in self.game_library_manager.game_card_cache.values():
+            card.update_badge_visibility(display_filter)
+
+    def _format_game_tuple_playtime(self, game: tuple) -> tuple:
+        """Return game tuple with playtime formatted for current UI mode."""
+        if len(game) <= 11:
+            return game
+        updated_game = list(game)
+        updated_game[7] = format_playtime(updated_game[11] or 0)
+        return tuple(updated_game)
+
+    def _refresh_loaded_playtime_format(self) -> None:
+        """Refresh cached playtime strings after changing display mode."""
+        self.games = [self._format_game_tuple_playtime(game) for game in self.games]
+        self.game_library_manager.games = [
+            self._format_game_tuple_playtime(game)
+            for game in self.game_library_manager.games
+        ]
+        self.game_library_manager.filtered_games = [
+            self._format_game_tuple_playtime(game)
+            for game in self.game_library_manager.filtered_games
+        ]
+        for card in self.game_library_manager.game_card_cache.values():
+            card.formatted_playtime = format_playtime(card.playtime_seconds or 0)
+
+    def _refresh_current_detail_time(self) -> None:
+        """Refresh time labels on the current detail page."""
+        if not self.currentDetailPage or not self.current_exec_line:
+            return
+        if self.stackedWidget.currentWidget() is not self.currentDetailPage:
+            return
+        current_game = next(
+            (game for game in self.games if game[5] == self.current_exec_line),
+            None,
+        )
+        if not current_game:
+            return
+        last_launch_value = self.currentDetailPage.findChild(QLabel, "detailLastLaunchValue")
+        if last_launch_value is not None:
+            last_launch_value.setText(current_game[6])
+        playtime_value = self.currentDetailPage.findChild(QLabel, "detailPlaytimeValue")
+        if playtime_value is not None:
+            playtime_value.setText(current_game[7])
+        visible = ui_config.get_time_detail_level() != "hidden"
+        for object_name in (
+            "detailLastLaunchTitle",
+            "detailLastLaunchValue",
+            "detailPlaytimeTitle",
+            "detailPlaytimeValue",
+        ):
+            widget = self.currentDetailPage.findChild(QLabel, object_name)
+            if widget is not None:
+                widget.setVisible(visible)
+
+    def savePortProtonSettings(self):
+        previous_economy_mode = ui_config.get_economy_mode()
+        time_idx = self.timeDetailCombo.currentIndex()
+        time_key = self.time_keys[time_idx]
+        ui_config.set_time_detail_level(time_key)
+        self._refresh_loaded_playtime_format()
+
+        economy_mode = self.economyModeCheckBox.isChecked()
+        ui_config.set_economy_mode(economy_mode)
+        economy_mode_changed = previous_economy_mode != economy_mode
+        badge_view_idx = self.gamesBadgeViewCombo.currentIndex()
+        badge_view_mode = self.badge_view_keys[badge_view_idx]
+        if economy_mode:
+            badge_view_mode = "hidden"
+        ui_config.set_badge_view_mode(badge_view_mode)
+        library_badge_index = self.badge_view_keys.index(badge_view_mode)
+        if self.gamesBadgeViewCombo.currentIndex() != library_badge_index:
+            self.gamesBadgeViewCombo.blockSignals(True)
+            self.gamesBadgeViewCombo.setCurrentIndex(library_badge_index)
+            self.gamesBadgeViewCombo.blockSignals(False)
+
+        proxy_url = self.proxyUrlEdit.text().strip()
+        proxy_user = self.proxyUserEdit.text().strip()
+        proxy_password = self.proxyPasswordEdit.text().strip()
+        proxy_config.set_proxy(proxy_url, proxy_user, proxy_password)
+
+        fullscreen = self.fullscreenCheckBox.isChecked()
+        display_config.set_fullscreen(fullscreen)
+
+        auto_fullscreen_gamepad = self.autoFullscreenGamepadCheckBox.isChecked()
+        display_config.set_auto_fullscreen_gamepad(auto_fullscreen_gamepad)
+
+        gamepad_type_idx = self.gamepadTypeCombo.currentIndex()
+        gamepad_type = self.gamepad_type_keys[gamepad_type_idx]
+        gamepad_config.set_gamepad_type(gamepad_type)
+
+        autostart_enabled = self.autostartCheckBox.isChecked()
+        display_config.set_autostart_enabled(autostart_enabled)
+        if not apply_xdg_autostart(autostart_enabled):
+            QMessageBox.warning(self, _("Error"), _("Failed to update xdg-autostart entry."))
+
+        start_minimized = self.startMinimizedCheckBox.isChecked()
+        display_config.set_start_minimized(start_minimized)
+
+        tray_menu_mode_idx = self.trayMenuModeCombo.currentIndex()
+        tray_menu_mode = self.tray_menu_mode_keys[tray_menu_mode_idx]
+        display_config.set_tray_menu_mode(tray_menu_mode)
+
+        steam_compat = self.steamCompatCheckBox.isChecked()
+        currently_installed = is_steam_compat_tool_installed()
+        if steam_compat and not currently_installed:
+            add_steam_compat_tool()
+        elif not steam_compat and currently_installed:
+            remove_steam_compat_tool()
+
+        if hasattr(self, 'downloadWineToSteamCheckBox'):
+            ui_config.set_download_wine_to_steam(self.downloadWineToSteamCheckBox.isChecked())
+
+        if hasattr(self, 'disableRuntimeDownloadCheckBox'):
+            ui_config.set_disable_runtime_download(self.disableRuntimeDownloadCheckBox.isChecked())
+        else:
+            ui_config.get_disable_runtime_download()
+
+        set_user_conf_setting('MIRROR', self.downloadMirrorCombo.currentText())
+
+        # Save GPU selection to user.conf (only if the combo box exists)
+        if hasattr(self, 'gpuCombo') and self.gpuCombo.count() > 1:
+            selected_gpu = self.gpuCombo.currentText()
+            set_user_conf_setting('PW_GPU_USE', selected_gpu)
+        if hasattr(self, 'forceSystemDpiCheckBox'):
+            if self.forceSystemDpiCheckBox.isChecked():
+                system_dpi = get_system_dpi_for_wine()
+                set_user_conf_setting('PW_FORCE_SYSTEM_DPI', "1")
+                set_user_conf_setting('PW_WINE_DPI_VALUE', system_dpi)
+            else:
+                set_user_conf_setting('PW_FORCE_SYSTEM_DPI', "0")
+
+        # Get hide auto-install tab setting
+        hide_autoinstall = self.hideAutoInstallTabCheckBox.isChecked()
+
+        if hasattr(self, 'input_manager'):
+            self._apply_gamepad_type_setting()
+            self.updateControlHints()
+            if hasattr(self, 'keyboard'):
+                self.keyboard.update_keyboard()
+
+        if economy_mode_changed:
+            if self.game_library_manager.gamesListLayout is not None:
+                self.game_library_manager.clear_layout(self.game_library_manager.gamesListLayout)
+        else:
+            display_filter = game_config.get_display_filter()
+            for card in self.game_library_manager.game_card_cache.values():
+                card.update_badge_visibility(display_filter)
+                card.update_badge_view_mode(badge_view_mode)
+
+        self._refresh_current_detail_time()
+
+        self.settingsDebounceTimer.start()
+
+        gamepad_connected = self.input_manager.find_gamepad() is not None
+        if fullscreen or (auto_fullscreen_gamepad and gamepad_connected):
+            self.showFullScreen()
+
+        # Apply the hide auto-install tab setting
+        if hide_autoinstall:  # Hide the tab
+            # Find the auto-install tab button and hide it
+            if hasattr(self, 'tabButtons') and self.auto_install_tab_index in self.tabButtons:
+                tab_button = self.tabButtons[self.auto_install_tab_index]
+                tab_button.setVisible(False)
+
+                # If currently on the hidden tab, switch to the first tab
+                if self.stackedWidget.currentIndex() == self.auto_install_tab_index:
+                    self.switchTab(0)  # Switch to Library tab
+
+            # Hide the stacked widget page too
+            if hasattr(self, 'stackedWidget'):
+                auto_install_page = self.stackedWidget.widget(self.auto_install_tab_index)
+                if auto_install_page:
+                    auto_install_page.setVisible(False)
+
+            # Stop any ongoing auto-install loading if present
+            if hasattr(self, 'autoInstallLoadThread') and self.autoInstallLoadThread:
+                self.autoInstallLoadThread.requestInterruption()
+                self.autoInstallLoadThread.wait(5000)  # Wait up to 5 seconds for thread to finish
+                self.autoInstallLoadThread = None
+        else:  # Show the tab
+            # Make sure the tab button is visible
+            if hasattr(self, 'tabButtons') and self.auto_install_tab_index in self.tabButtons:
+                tab_button = self.tabButtons[self.auto_install_tab_index]
+                tab_button.setVisible(True)
+
+            # Make sure the stacked widget page is visible
+            if hasattr(self, 'stackedWidget'):
+                auto_install_page = self.stackedWidget.widget(self.auto_install_tab_index)
+                if auto_install_page:
+                    auto_install_page.setVisible(True)
+
+        # Save the hide auto-install tab setting to config
+        ui_config.set_hide_autoinstall_tab(hide_autoinstall)
+
+    def _apply_gamepad_type_setting(self) -> None:
+        """Apply configured gamepad type to current input manager."""
+        input_manager = getattr(self, "input_manager", None)
+        if input_manager is None:
+            return
+        input_manager.apply_gamepad_type_setting()
