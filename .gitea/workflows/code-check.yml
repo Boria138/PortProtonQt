@@ -7,12 +7,14 @@ on:
       - "data/**"
       - "*.md"
       - "dev-scripts/**"
+      - "portprotonqt/locales/**"
   push:
     branches: [main, scripts]
     paths-ignore:
       - "data/**"
       - "*.md"
       - "dev-scripts/**"
+      - "portprotonqt/locales/**"
   workflow_dispatch:
 
 jobs:
