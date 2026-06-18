@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-05-22 18:01+0500\n"
-"PO-Revision-Date: 2026-06-12 23:07+0000\n"
+"POT-Creation-Date: 2026-06-18 23:41+0500\n"
+"PO-Revision-Date: 2026-06-18 23:00+0000\n"
 "Last-Translator: rogerio-mattos <rogerio-mattos@noreply.codeberg.org>\n"
 "Language-Team: Chinese (Simplified Han script) <https://"
 "translate.codeberg.org/projects/portprotonqt/portprotonqt/zh_Hans/>\n"
@@ -24,11 +24,10 @@ msgstr ""
 msgid "Stop Game"
 msgstr "停止游戏"
 
-#, fuzzy
 msgid ""
 "PortProton data folder is not readable and writable. Choose another "
 "folder for PortProton data."
-msgstr "所选文件夹位于不支持的文件系统上。请为 PortProton 数据选择其他文件夹。"
+msgstr "PortProton 数据文件夹不可读写。请为 PortProton 数据选择其他文件夹。"
 
 msgid "Error"
 msgstr "错误"
@@ -51,13 +50,11 @@ msgstr "重命名文件夹"
 msgid "Delete Folder"
 msgstr "删除文件夹"
 
-#, fuzzy
 msgid "Rename File"
-msgstr "重命名文件夹"
+msgstr "重命名文件"
 
-#, fuzzy
 msgid "Delete File"
-msgstr "删除文件夹"
+msgstr "删除文件"
 
 msgid "OK"
 msgstr "确定"
@@ -96,7 +93,7 @@ msgstr "确认删除"
 msgid ""
 "Are you sure you want to delete folder '{folder_name}'? This action "
 "cannot be undone."
-msgstr "确定要删除文件夹“{folder_name}”吗？此操作无法撤销。"
+msgstr "确定要删除文件夹"{folder_name}"吗？此操作无法撤销。"
 
 msgid "Yes"
 msgstr "是"
@@ -112,23 +109,22 @@ msgstr "删除文件夹失败：{error}"
 msgid ""
 "Are you sure you want to delete file '{file_name}'? This action cannot be"
 " undone."
-msgstr "确定要删除文件夹“{file_name}”吗？此操作无法撤销。"
+msgstr "确定要删除文件"{file_name}"吗？此操作无法撤销。"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Failed to delete file: {error}"
-msgstr "删除文件夹失败：{error}"
+msgstr "删除文件失败：{error}"
 
-#, fuzzy
 msgid "New File Name:"
-msgstr "新文件夹名称："
+msgstr "新文件名称："
 
 #, python-brace-format
 msgid "File already exists: {file_name}"
-msgstr "文件夹已存在：{file_name}"
+msgstr "文件已存在：{file_name}"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Failed to rename file: {error}"
-msgstr "重命名文件夹失败：{error}"
+msgstr "重命名文件失败：{error}"
 
 msgid "Delete from PortProton"
 msgstr "从 PortProton 中删除"
@@ -165,11 +161,11 @@ msgstr "停止游戏失败"
 
 #, python-brace-format
 msgid "No executable command found in .desktop file for '{game_name}'"
-msgstr "在“{game_name}”的 .desktop 文件中未找到可执行命令"
+msgstr "在"{game_name}"的 .desktop 文件中未找到可执行命令"
 
 #, python-brace-format
 msgid "Failed to parse .desktop file for '{game_name}'"
-msgstr "解析“{game_name}”的 .desktop 文件失败"
+msgstr "解析"{game_name}"的 .desktop 文件失败"
 
 #, python-brace-format
 msgid "Error reading .desktop file: {error}"
@@ -177,13 +173,13 @@ msgstr "读取 .desktop 文件时出错：{error}"
 
 #, python-brace-format
 msgid "No .desktop file found for '{game_name}'"
-msgstr "未找到“{game_name}”的 .desktop 文件"
+msgstr "未找到"{game_name}"的 .desktop 文件"
 
 #, python-brace-format
 msgid ""
 "Are you sure you want to delete '{game_name}'? This will remove the "
 ".desktop file and custom data."
-msgstr "确定要删除“{game_name}”吗？这将移除 .desktop 文件和自定义数据。"
+msgstr "确定要删除"{game_name}"吗？这将移除 .desktop 文件和自定义数据。"
 
 #, python-brace-format
 msgid "Failed to delete .desktop file: {error}"
@@ -191,7 +187,7 @@ msgstr "删除 .desktop 文件失败：{error}"
 
 #, python-brace-format
 msgid "Deleted '{game_name}' successfully"
-msgstr "已成功删除“{game_name}”"
+msgstr "已成功删除"{game_name}""
 
 #, python-brace-format
 msgid "Failed to delete custom data: {error}"
@@ -199,18 +195,18 @@ msgstr "删除自定义数据失败：{error}"
 
 #, python-brace-format
 msgid "Failed to add '{game_name}' to {location}: {error}"
-msgstr "无法将“{game_name}”添加到 {location}：{error}"
+msgstr "无法将"{game_name}"添加到 {location}：{error}"
 
 msgid "Menu"
 msgstr "菜单"
 
 #, python-brace-format
 msgid "Failed to remove '{game_name}' from {location}: {error}"
-msgstr "无法从 {location} 移除“{game_name}”：{error}"
+msgstr "无法从 {location} 移除"{game_name}"：{error}"
 
 #, python-brace-format
 msgid "Removed '{game_name}' from {location}"
-msgstr "已从 {location} 移除“{game_name}”"
+msgstr "已从 {location} 移除"{game_name}""
 
 msgid "Desktop"
 msgstr "桌面"
@@ -227,7 +223,7 @@ msgstr "删除旧的 .desktop 文件失败：{error}"
 
 #, python-brace-format
 msgid "Removed old .desktop file for '{game_name}'"
-msgstr "已移除“{game_name}”的旧版 .desktop 文件"
+msgstr "已移除"{game_name}"的旧版 .desktop 文件"
 
 #, python-brace-format
 msgid "Failed to save .desktop file: {error}"
@@ -248,29 +244,29 @@ msgstr "成功"
 msgid ""
 "'{game_name}' was added to Steam. Please restart Steam for changes to "
 "take effect."
-msgstr "“{game_name}”已添加到 Steam。请重启 Steam 以使更改生效。"
+msgstr ""{game_name}"已添加到 Steam。请重启 Steam 以使更改生效。"
 
 #, python-brace-format
 msgid "'{game_name}' was added to Steam."
-msgstr "“{game_name}”已添加到 Steam。"
+msgstr ""{game_name}"已添加到 Steam。"
 
 #, python-brace-format
 msgid "Failed to add '{game_name}' to Steam: {error}"
-msgstr "无法将“{game_name}”添加到 Steam：{error}"
+msgstr "无法将"{game_name}"添加到 Steam：{error}"
 
 #, python-brace-format
 msgid ""
 "'{game_name}' was removed from Steam. Please restart Steam for changes to"
 " take effect."
-msgstr "“{game_name}”已从 Steam 中移除。请重启 Steam 以使更改生效。"
+msgstr ""{game_name}"已从 Steam 中移除。请重启 Steam 以使更改生效。"
 
 #, python-brace-format
 msgid "'{game_name}' was removed from Steam."
-msgstr "“{game_name}”已从 Steam 中移除。"
+msgstr ""{game_name}"已从 Steam 中移除。"
 
 #, python-brace-format
 msgid "Failed to remove game '{game_name}' from Steam: {error}"
-msgstr "无法从 Steam 中移除游戏“{game_name}”：{error}"
+msgstr "无法从 Steam 中移除游戏"{game_name}"：{error}"
 
 #, python-brace-format
 msgid "Failed to open folder: {error}"
@@ -404,16 +400,15 @@ msgstr "未知应用程序"
 msgid "Executable not found: {0}"
 msgstr "找不到可执行文件：{0}"
 
-#, fuzzy
 msgid "Start"
-msgstr "状态"
+msgstr "启动"
 
 msgid "Prefix not found"
 msgstr "未找到前缀"
 
 #, python-brace-format
 msgid "Prefix '{0}' was not found. Install recommended libraries?"
-msgstr "未找到前缀“{0}”。是否安装推荐库？"
+msgstr "未找到前缀"{0}"。是否安装推荐库？"
 
 msgid "Invalid command format (empty exec line)"
 msgstr "命令格式无效（exec 行为空）"
@@ -435,9 +430,8 @@ msgstr "找不到文件：{0}"
 msgid "Cannot launch game while another game is running"
 msgstr "另一游戏正在运行时无法启动游戏"
 
-#, fuzzy
 msgid "Choose Folder"
-msgstr "打开文件夹"
+msgstr "选择文件夹"
 
 msgid "Choose PortProton data folder"
 msgstr "选择 PortProton 数据文件夹"
@@ -447,11 +441,10 @@ msgid ""
 "for PortProton data."
 msgstr "所选文件夹位于不支持的文件系统上。请为 PortProton 数据选择其他文件夹。"
 
-#, fuzzy
 msgid ""
 "Selected folder is not readable and writable. Choose another folder for "
 "PortProton data."
-msgstr "所选文件夹位于不支持的文件系统上。请为 PortProton 数据选择其他文件夹。"
+msgstr "所选文件夹不可读写。请为 PortProton 数据选择其他文件夹。"
 
 msgid "Select file for PPDB download"
 msgstr "选择用于 PPDB 下载的文件"
@@ -464,7 +457,7 @@ msgstr ""
 "DirectDraw 1-7、Direct3D 2-9）。"
 
 msgid "Enable SpecialK (injection library for fixing graphics, latency and more)"
-msgstr ""
+msgstr "启用 SpecialK（用于修复图形、延迟等问题的注入库）"
 
 msgid "Enable OptiScaler (replacement upscaler / frame generator)"
 msgstr "启用 OptiScaler（替代性升频器/帧生成器）"
@@ -497,7 +490,7 @@ msgid "Enable forced use of third-party DirectX libraries"
 msgstr "启用强制使用第三方 DirectX 库"
 
 msgid "Enable D7VK for DirectDraw 1-7"
-msgstr ""
+msgstr "为 DirectDraw 1-7 启用 D7VK"
 
 msgid "Force use of built-in DXGI library"
 msgstr "强制使用内置 DXGI 库"
@@ -662,14 +655,15 @@ msgstr ""
 "\n"
 "示例：-dx11 -skipintro 1"
 
-#, fuzzy
 msgid "Run After / Wrapper"
-msgstr "在 Exe 后运行"
+msgstr "运行后 / 包装器"
 
 msgid ""
 "Path to a second .exe, script, or wrapper command. Example: systemd-run "
 "--user --scope --slice=app.slice"
 msgstr ""
+"指向第二个 .exe、脚本或包装器命令的路径。示例：systemd-run --user --scope "
+"--slice=app.slice"
 
 msgid "CPU Cores Limit"
 msgstr "CPU 核心限制"
@@ -730,11 +724,10 @@ msgstr ""
 "大的核心间切换。"
 
 msgid "Sound Driver"
-msgstr ""
+msgstr "音频驱动程序"
 
-#, fuzzy
 msgid "Force the Wine sound driver for this executable."
-msgstr "选择用于此可执行文件的 Wine 或 Proton 版本。"
+msgstr "为此可执行文件强制使用 Wine 音频驱动程序。"
 
 msgid "just now"
 msgstr "刚刚"
@@ -769,9 +762,9 @@ msgstr "无最近游戏"
 msgid "No favorites"
 msgstr "无收藏"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Launch \"{name}\" with PortProton"
-msgstr "使用 PortProton 启动游戏“{name}”"
+msgstr "使用 PortProton 启动"{name}""
 
 msgid "Debug log mode was launched"
 msgstr "调试日志模式已启动"
@@ -783,7 +776,7 @@ msgid "LAST LAUNCH"
 msgstr "上次启动"
 
 msgid "TIME SPENT"
-msgstr ""
+msgstr "游戏时长"
 
 msgid "MAIN STORY"
 msgstr "主线剧情"
@@ -797,9 +790,8 @@ msgstr "完美主义者"
 msgid "Open Folder"
 msgstr "打开文件夹"
 
-#, fuzzy
 msgid "Add a shortcut"
-msgstr "添加快捷方式到："
+msgstr "添加快捷方式"
 
 msgid "Settings"
 msgstr "设置"
@@ -810,16 +802,14 @@ msgstr "创建日志"
 msgid "Install"
 msgstr "安装"
 
-#, fuzzy
 msgid "Open Card"
-msgstr "打开 PPDB"
+msgstr "打开卡片"
 
 msgid "Reinstall"
 msgstr "重新安装"
 
-#, fuzzy
 msgid "Game not found."
-msgstr "未找到前缀"
+msgstr "未找到游戏。"
 
 msgid "Stop Log"
 msgstr "停止日志"
@@ -938,29 +928,27 @@ msgstr "路径： "
 msgid "Access denied: %s"
 msgstr "访问被拒绝：%s"
 
-#, fuzzy
 msgid "Prefix backup"
-msgstr "加载前缀备份"
+msgstr "前缀备份"
 
-#, fuzzy
 msgid "Prefix restore"
-msgstr "前缀恢复失败。"
+msgstr "前缀恢复"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "File: {0}"
-msgstr "找不到文件：{0}"
+msgstr "文件：{0}"
 
 #, python-brace-format
 msgid "{0}/{1} files"
-msgstr ""
+msgstr "{0}/{1} 个文件"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "{0} files"
-msgstr "{0} Wine…"
+msgstr "{0} 个文件"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "{0}, Speed: {1:.1f} MB/s"
-msgstr "，速度：{:.1f}MB/秒"
+msgstr "，速度：{1:.1f} MB/秒"
 
 msgid "Manage WINE versions"
 msgstr "管理 WINE 版本"
@@ -1813,23 +1801,22 @@ msgstr "写入系统 MangoHud 配置失败。"
 msgid "Failed to run preview."
 msgstr "运行预览失败。"
 
-#, fuzzy
 msgid "Shaders"
-msgstr "分享"
+msgstr "着色器"
 
 msgid "AMD FidelityFX - Contrast Adaptive Sharpening"
-msgstr ""
+msgstr "AMD FidelityFX - 对比度自适应锐化"
 
 #, python-brace-format
 msgid "Sharpness: {0}"
-msgstr ""
+msgstr "锐度：{0}"
 
 msgid "Press a button to choose"
 msgstr "按下按钮进行选择"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Toggle key: {0}"
-msgstr "切换键"
+msgstr "切换键：{0}"
 
 msgid "Prefix Manager"
 msgstr "前缀管理器"
@@ -1838,7 +1825,7 @@ msgid "Set"
 msgstr "设置"
 
 msgid "Libraries"
-msgstr "库（Libraries）"
+msgstr "库"
 
 msgid "Fonts"
 msgstr "字体"
@@ -1940,9 +1927,8 @@ msgstr "卸载"
 msgid "Set output"
 msgstr "设置输出"
 
-#, fuzzy
 msgid "Quick Launch"
-msgstr "上次启动"
+msgstr "快速启动"
 
 msgid "Library Settings"
 msgstr "库设置"
@@ -1951,7 +1937,7 @@ msgid "Last launch"
 msgstr "上次启动"
 
 msgid "Time spent"
-msgstr ""
+msgstr "游戏时长"
 
 msgid "Alphabetical"
 msgstr "按字母顺序"
@@ -1962,9 +1948,8 @@ msgstr "游戏排序方式:"
 msgid "All"
 msgstr "全部"
 
-#, fuzzy
 msgid "Display Filter:"
-msgstr "游戏显示筛选："
+msgstr "显示筛选："
 
 msgid "Detailed"
 msgstr "详细"
@@ -1996,9 +1981,8 @@ msgstr "托盘菜单类型："
 msgid "Auto"
 msgstr "自动"
 
-#, fuzzy
 msgid "Gamepad Type:"
-msgstr "游戏手柄"
+msgstr "游戏手柄类型："
 
 msgid "Launch Application in Fullscreen"
 msgstr "全屏启动应用程序"
@@ -2034,7 +2018,7 @@ msgid "Download mirror:"
 msgstr "下载镜像："
 
 msgid "Auto download PPDB from"
-msgstr ""
+msgstr "自动从以下位置下载 PPDB"
 
 msgid "Force system DPI for Wine"
 msgstr "强制为 Wine 设置系统 DPI"
@@ -2161,7 +2145,7 @@ msgid "Output"
 msgstr "输出"
 
 msgid "Logout"
-msgstr ""
+msgstr "注销"
 
 msgid "Reboot"
 msgstr "重启"
@@ -2237,7 +2221,7 @@ msgstr "启动进程失败。"
 
 #, python-brace-format
 msgid "Are you sure you want to clear prefix '{}'?"
-msgstr "确定要清除前缀“{}”吗？"
+msgstr "确定要清除前缀"{}"吗？"
 
 msgid "Failed to start prefix clear process."
 msgstr "启动前缀清除进程失败。"
@@ -2270,11 +2254,11 @@ msgstr "前缀恢复失败。"
 
 #, python-brace-format
 msgid "Are you sure you want to delete prefix '{}'?"
-msgstr "确定要删除前缀“{}”吗？"
+msgstr "确定要删除前缀"{}"吗？"
 
 #, python-brace-format
 msgid "Prefix '{}' deleted."
-msgstr "前缀“{}”已删除。"
+msgstr "前缀"{}"已删除。"
 
 #, python-brace-format
 msgid "Failed to delete prefix: {}"
