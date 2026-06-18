@@ -124,21 +124,24 @@ class ContextMenuManager:
 
         return hasattr(self.parent, 'target_exe') and self.parent.target_exe == current_exe
 
-    def show_folder_context_menu(self, file_explorer, pos):
-        """Shows the context menu for a folder in FileExplorer."""
+    def show_file_explorer_context_menu(self, file_explorer, pos):
+        """Shows the context menu for a file or folder in FileExplorer."""
         try:
             item = file_explorer.file_list.itemAt(pos)
             if not item:
-                logger.debug("No folder selected at position %s", pos)
+                logger.debug("No item selected at position %s", pos)
                 return
+
+            # Ensure the item is visually selected
+            file_explorer.file_list.setCurrentItem(item)
+            file_explorer.handle_item_click(item)
+
             selected = item.text()
-            if not selected.endswith("/"):
-                logger.debug("Selected item is not a folder: %s", selected)
-                return  # Only for folders
-            full_path = os.path.normpath(os.path.join(file_explorer.current_path, selected.rstrip("/")))
-            if not os.path.isdir(full_path):
-                logger.debug("Path is not a directory: %s", full_path)
+            if selected in ("../", "./"):
                 return
+
+            is_folder = selected.endswith("/")
+            full_path = os.path.normpath(os.path.join(file_explorer.current_path, selected.rstrip("/")))
 
             menu = QMenu(file_explorer)
             menu.setWindowFlags(menu.windowFlags() | Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint)
@@ -146,19 +149,28 @@ class ContextMenuManager:
             menu.setStyleSheet(self.theme.CONTEXT_MENU_STYLE)
             menu.setParent(file_explorer, Qt.WindowType.Popup)  # Set transientParent for Wayland
 
-            favorite_folders = favorites_folders_config.get_folders()
-            is_favorite = full_path in favorite_folders
-            action_text = _("Remove from Favorites") if is_favorite else _("Add to Favorites")
-            favorite_action = menu.addAction(self._get_safe_icon("star" if is_favorite else "star_full"), action_text)
-            favorite_action.triggered.connect(lambda: self.toggle_favorite_folder(file_explorer, full_path, not is_favorite))
+            if is_folder:
+                favorite_folders = favorites_folders_config.get_folders()
+                is_favorite = full_path in favorite_folders
+                action_text = _("Remove from Favorites") if is_favorite else _("Add to Favorites")
+                favorite_action = menu.addAction(self._get_safe_icon("star" if is_favorite else "star_full"), action_text)
+                favorite_action.triggered.connect(lambda: self.toggle_favorite_folder(file_explorer, full_path, not is_favorite))
+
             create_folder_action = menu.addAction(self._get_safe_icon("folder"), _("Create Folder"))
             create_folder_action.triggered.connect(
-                lambda: self.create_folder(file_explorer, os.path.dirname(full_path))
+                lambda: self.create_folder(file_explorer, file_explorer.current_path)
             )
-            rename_folder_action = menu.addAction(self._get_safe_icon("edit"), _("Rename Folder"))
-            rename_folder_action.triggered.connect(lambda: self.rename_folder(file_explorer, full_path))
-            delete_folder_action = menu.addAction(self._get_safe_icon("delete"), _("Delete Folder"))
-            delete_folder_action.triggered.connect(lambda: self.delete_folder(file_explorer, full_path))
+
+            if is_folder:
+                rename_action = menu.addAction(self._get_safe_icon("edit"), _("Rename Folder"))
+                rename_action.triggered.connect(lambda: self.rename_folder(file_explorer, full_path))
+                delete_action = menu.addAction(self._get_safe_icon("delete"), _("Delete Folder"))
+                delete_action.triggered.connect(lambda: self.delete_folder(file_explorer, full_path))
+            else:
+                rename_action = menu.addAction(self._get_safe_icon("edit"), _("Rename File"))
+                rename_action.triggered.connect(lambda: self.rename_file(file_explorer, full_path))
+                delete_action = menu.addAction(self._get_safe_icon("delete"), _("Delete File"))
+                delete_action.triggered.connect(lambda: self.delete_file(file_explorer, full_path))
 
             # Disconnect file_list signals to prevent navigation during menu interaction
             try:
@@ -186,7 +198,7 @@ class ContextMenuManager:
             global_pos = file_explorer.file_list.mapToGlobal(pos)
             menu.exec(global_pos)
         except Exception as e:
-            logger.error("Error displaying folder context menu: %s", e)
+            logger.error("Error displaying file explorer context menu: %s", e)
 
     def toggle_favorite_folder(self, file_explorer, folder_path, add):
         """Adds or removes a folder from favorites."""
@@ -352,6 +364,49 @@ class ContextMenuManager:
             self.signals.show_warning_dialog.emit(
                 _("Error"),
                 _("Failed to delete folder: {error}").format(error=str(e))
+            )
+
+    def delete_file(self, file_explorer, file_path: str) -> None:
+        """Delete selected file after confirmation."""
+        file_name = os.path.basename(file_path)
+        msg_box = QMessageBox(file_explorer)
+        msg_box.setWindowTitle(_("Confirm Deletion"))
+        msg_box.setText(
+            _("Are you sure you want to delete file '{file_name}'? This action cannot be undone.")
+            .format(file_name=file_name)
+        )
+        msg_box.setIcon(QMessageBox.Icon.Warning)
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        msg_box.setButtonText(QMessageBox.StandardButton.Yes, _("Yes"))
+        msg_box.setButtonText(QMessageBox.StandardButton.No, _("No"))
+        if msg_box.exec() != QMessageBox.StandardButton.Yes:
+            return
+        try:
+            os.remove(file_path)
+            file_explorer.update_file_list()
+        except OSError as e:
+            self.signals.show_warning_dialog.emit(
+                _("Error"),
+                _("Failed to delete file: {error}").format(error=str(e))
+            )
+
+    def rename_file(self, file_explorer, file_path: str) -> None:
+        """Rename selected file."""
+        current_name = os.path.basename(file_path)
+        new_name = self._prompt_folder_name(file_explorer, _("Rename File"), _("New File Name:"), current_name)
+        if not new_name or new_name == current_name:
+            return
+        target_path = os.path.join(os.path.dirname(file_path), new_name)
+        if os.path.exists(target_path):
+            self.signals.show_warning_dialog.emit(_("Error"), _("File already exists: {file_name}").format(file_name=new_name))
+            return
+        try:
+            os.rename(file_path, target_path)
+            file_explorer.update_file_list()
+        except OSError as e:
+            self.signals.show_warning_dialog.emit(
+                _("Error"),
+                _("Failed to rename file: {error}").format(error=str(e))
             )
 
     def _get_safe_icon(self, icon_name: str) -> QIcon:
@@ -694,10 +749,11 @@ class ContextMenuManager:
 
     def _remove_statistics_entry(self, exe_path, game_name):
         """Remove statistics entry for exact executable path."""
-        if not exe_path or not self.portproton_location:
+        if not exe_path:
             return
 
-        statistics_file = os.path.join(self.portproton_location, "data", "tmp", "statistics")
+        from portprotonqt.time_utils import get_statistics_path
+        statistics_file = get_statistics_path()
         if not os.path.exists(statistics_file):
             return
 

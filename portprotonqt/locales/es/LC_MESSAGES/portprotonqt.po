@@ -52,6 +52,14 @@ msgstr "Cambiar el nombre de la carpeta"
 msgid "Delete Folder"
 msgstr "Borrar la carpeta"
 
+#, fuzzy
+msgid "Rename File"
+msgstr "Cambiar el nombre de la carpeta"
+
+#, fuzzy
+msgid "Delete File"
+msgstr "Borrar la carpeta"
+
 msgid "OK"
 msgstr "De acuerdo"
 
@@ -102,6 +110,30 @@ msgstr "No"
 #, python-brace-format
 msgid "Failed to delete folder: {error}"
 msgstr "No se ha podido eliminar la carpeta: {error}"
+
+#, fuzzy, python-brace-format
+msgid ""
+"Are you sure you want to delete file '{file_name}'? This action cannot be"
+" undone."
+msgstr ""
+"¿Estás seguro de que quieres eliminar la carpeta «{folder_name}»? Esta "
+"acción no se puede deshacer."
+
+#, fuzzy, python-brace-format
+msgid "Failed to delete file: {error}"
+msgstr "No se ha podido eliminar la carpeta: {error}"
+
+#, fuzzy
+msgid "New File Name:"
+msgstr "Nombre de la nueva carpeta:"
+
+#, fuzzy, python-brace-format
+msgid "File already exists: {file_name}"
+msgstr "La carpeta ya existe: {folder_name}"
+
+#, fuzzy, python-brace-format
+msgid "Failed to rename file: {error}"
+msgstr "No se pudo cambiar el nombre de la carpeta: {error}"
 
 msgid "Delete from PortProton"
 msgstr "Eliminar de PortProton"
@@ -388,6 +420,42 @@ msgstr "Editar acceso directo"
 msgid "Search ..."
 msgstr ""
 
+msgid "Library Settings"
+msgstr ""
+
+msgid "Last launch"
+msgstr ""
+
+msgid "Time spent"
+msgstr ""
+
+msgid "Alphabetical"
+msgstr ""
+
+msgid "Sort Method:"
+msgstr ""
+
+msgid "All"
+msgstr ""
+
+msgid "Favorites"
+msgstr ""
+
+msgid "Display Filter:"
+msgstr ""
+
+msgid "Detailed"
+msgstr ""
+
+msgid "Compact"
+msgstr ""
+
+msgid "Hidden"
+msgstr ""
+
+msgid "Badge View Type:"
+msgstr ""
+
 msgid "Refreshing..."
 msgstr ""
 
@@ -493,46 +561,10 @@ msgstr ""
 msgid "PortProton Settings"
 msgstr ""
 
-msgid "Library Settings"
-msgstr ""
-
-msgid "Detailed"
-msgstr ""
-
 msgid "Brief"
 msgstr ""
 
-msgid "Hidden"
-msgstr ""
-
 msgid "Time Detail Level:"
-msgstr ""
-
-msgid "Last launch"
-msgstr ""
-
-msgid "Time spent"
-msgstr ""
-
-msgid "Alphabetical"
-msgstr ""
-
-msgid "Sort Method:"
-msgstr ""
-
-msgid "All"
-msgstr ""
-
-msgid "Favorites"
-msgstr ""
-
-msgid "Display Filter:"
-msgstr ""
-
-msgid "Compact"
-msgstr ""
-
-msgid "Badge View Type:"
 msgstr ""
 
 msgid "Interface Settings"
@@ -946,6 +978,12 @@ msgid ""
 "NUMA node for CPU affinity. In multi-core systems, CPUs are split into NUMA "
 "nodes, each with its own local memory and cores. Binding a game to a single "
 "node reduces memory-access latency and limits costly core-to-core switches."
+msgstr ""
+
+msgid "Sound Driver"
+msgstr ""
+
+msgid "Force the Wine sound driver for this executable."
 msgstr ""
 
 msgid "just now"

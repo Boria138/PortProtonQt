@@ -49,6 +49,13 @@ color_j = "#d2d3db"
 color_k = "#9394a5"
 color_l = "#212529"
 
+# PPDB Badge colors
+color_ppdb_platinum = "#b2b2ff"
+color_ppdb_gold = "#ffc107"
+color_ppdb_silver = "#e0e0e0"
+color_ppdb_bronze = "#cd7f32"
+color_ppdb_broken = "#f44336"
+
 # QColor constants for programmatic use
 color_shadow_card = "#00000096"  # rgba(0, 0, 0, 150)
 color_shadow_detail = "#000000c8"  # rgba(0, 0, 0, 200)
@@ -831,10 +838,18 @@ LIBRARY_FILTER_COMBOBOX_STYLE = f"""
         combobox-popup: 0;
     }}
     QComboBox:hover,
-    QComboBox:focus,
+    QComboBox:focus {{
+        background: {color_b};
+        border: {border_b} {color_a};
+    }}
     QComboBox:on {{
         background: {color_b};
         border: {border_b} {color_a};
+        border-bottom-style: none;
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
+        border-bottom-left-radius: 0px;
+        border-bottom-right-radius: 0px;
     }}
     QComboBox::drop-down {{
         subcontrol-origin: padding;
@@ -860,16 +875,18 @@ LIBRARY_FILTER_COMBOBOX_STYLE = f"""
         outline: none;
         background: {color_c};
         border: {border_b} {color_a};
-        border-radius: {border_radius_a};
-        color: {color_l};
-        selection-background-color: {color_a};
-        selection-color: {color_l};
+        border-top-style: none;
+        border-top-left-radius: 0px;
+        border-top-right-radius: 0px;
+        border-bottom-left-radius: 10px;
+        border-bottom-right-radius: 10px;
     }}
     QComboBox QAbstractItemView::item {{
-        background: {color_c};
-        color: {color_l};
-        padding: 6px 10px;
+        padding: 7px 7px 7px 12px;
+        margin: 3px;
         min-height: 24px;
+        border-radius: {border_radius_a};
+        color: {color_l};
     }}
     QComboBox QAbstractItemView::item:hover,
     QComboBox QAbstractItemView::item:selected {{
@@ -1582,7 +1599,6 @@ TOOLTIP_STYLE = f"""
     QLabel {{
         background-color: {color_b};
         border: {border_b} {color_c};
-        border-radius: {border_radius_a};
         padding: 8px;
         color: {color_l};
         font-family: '{font_family}';

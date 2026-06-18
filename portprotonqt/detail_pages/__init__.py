@@ -55,12 +55,11 @@ from portprotonqt.config import (
 from portprotonqt.custom_widgets import AutoSizeButton, ClickableLabel, FlowLayout
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
-from portprotonqt.portproton_api import PortProtonAPI
-from portprotonqt.downloader import Downloader
 from portprotonqt.animations import DetailPageAnimations
 from portprotonqt.debug_utils import DebugLogManager
 from portprotonqt.image_utils import cleanup_widget_animated_covers
 from portprotonqt.steam_api import get_steam_compat_tool, get_steam_home, get_steam_libs, safe_vdf_load
+from portprotonqt.time_utils import format_playtime
 
 logger = get_logger(__name__)
 
@@ -74,7 +73,6 @@ class DetailPageManager:
         self._current_detail_page: QWidget | None = None
         self._exit_animation_in_progress = False
         self._animations: dict = {}
-        self.portproton_api = PortProtonAPI(Downloader(max_workers=4))
         self.debug_log_manager = DebugLogManager()
         self._debug_log_button: AutoSizeButton | None = None
         self._debug_log_timer = None
@@ -204,8 +202,8 @@ class DetailPageManager:
 
         game_source = str(game_data.get("game_source", "")).lower()
         appid = game_data.get("appid", "")
-        name = game_data.get("name", "")
-        exec_line = game_data.get("exec_line", "")
+        ppdb_id = str(game_data.get("ppdb_id", ""))
+        ppdb_rating = str(game_data.get("ppdb_rating", ""))
 
         steam_visible = game_source == "steam"
         portproton_visible = game_source == "portproton"
@@ -216,8 +214,8 @@ class DetailPageManager:
             badges.append(protondb_badge)
         if steam_visible:
             badges.append(self._create_steam_badge(parent, appid))
-        if portproton_visible:
-            badges.append(self._create_portproton_badge(parent, name, exec_line))
+        if portproton_visible and ppdb_id:
+            badges.append(self._create_portproton_badge(parent, ppdb_id, ppdb_rating))
         anticheat_badge = self._create_anticheat_badge(parent, game_data)
         if anticheat_badge:
             badges.append(anticheat_badge)
@@ -234,8 +232,18 @@ class DetailPageManager:
         badge = create_steam_badge(parent, appid, self.main_window)
         return {"label": badge, "visible": True}
 
-    def _create_portproton_badge(self, parent: QWidget, name: str, exec_line: str) -> dict:
-        badge = create_portproton_badge(parent, lambda: self.portproton_api.open_ppdb_page(name, exec_line), self.main_window)
+    def _create_portproton_badge(
+        self,
+        parent: QWidget,
+        ppdb_id: str,
+        ppdb_rating: str,
+    ) -> dict:
+        badge = create_portproton_badge(
+            parent,
+            self.main_window,
+            ppdb_id,
+            ppdb_rating,
+        )
         return {"label": badge, "visible": True}
 
     def _create_anticheat_badge(self, parent: QWidget, game_data: dict) -> dict | None:
@@ -253,8 +261,12 @@ class DetailPageManager:
         game_info_layout.setSpacing(10)
 
         if ui_config.get_time_detail_level() != "hidden":
+            formatted_playtime = game_data.get("formatted_playtime", "")
+            playtime_seconds = game_data.get("playtime_seconds")
+            if playtime_seconds is not None:
+                formatted_playtime = format_playtime(playtime_seconds)
             first_row = self._create_playtime_row(
-                game_data.get("last_launch", ""), game_data.get("formatted_playtime", "")
+                game_data.get("last_launch", ""), formatted_playtime
             )
             game_info_layout.addLayout(first_row)
 
@@ -270,13 +282,17 @@ class DetailPageManager:
         first_row.setSpacing(10)
 
         last_launch_title = QLabel(_("LAST LAUNCH"))
+        last_launch_title.setObjectName("detailLastLaunchTitle")
         last_launch_title.setStyleSheet(self.main_window.theme.LAST_LAUNCH_TITLE_STYLE)
         last_launch_value = QLabel(last_launch)
+        last_launch_value.setObjectName("detailLastLaunchValue")
         last_launch_value.setStyleSheet(self.main_window.theme.LAST_LAUNCH_VALUE_STYLE)
 
         playtime_title = QLabel(_("TIME SPENT"))
+        playtime_title.setObjectName("detailPlaytimeTitle")
         playtime_title.setStyleSheet(self.main_window.theme.PLAY_TIME_TITLE_STYLE)
         playtime_value = QLabel(formatted_playtime)
+        playtime_value.setObjectName("detailPlaytimeValue")
         playtime_value.setStyleSheet(self.main_window.theme.PLAY_TIME_VALUE_STYLE)
 
         for widget in (last_launch_title, last_launch_value, playtime_title, playtime_value):
@@ -820,22 +836,7 @@ class DetailPageManager:
 
     def _get_enhanced_description(self, script_name: str, description: str) -> str:
         """Get enhanced description from metadata if available."""
-        if not script_name:
-            return description
-
-        import locale
-
-        try:
-            current_locale = locale.getlocale()[0] or "en"
-        except Exception as e:
-            logger.debug("Failed to get current locale: %s", e)
-            current_locale = "en"
-
-        lang_code = "ru" if current_locale and "ru" in current_locale.lower() else "en"
-        metadata_description = self.portproton_api.get_autoinstall_description(
-            script_name, lang_code
-        )
-        return metadata_description if metadata_description else description
+        return description
 
     def _create_autoinstall_buttons_layout(
         self, script_name: str, name: str, buttons_layout: FlowLayout
@@ -954,8 +955,11 @@ class DetailPageManager:
             "formatted_playtime": game_tuple[7],
             "protondb_tier": game_tuple[8],
             "anticheat_status": game_tuple[9],
+            "playtime_seconds": game_tuple[11],
             "game_source": game_tuple[12],
             "anticheat_slug": game_tuple[13] if len(game_tuple) > 13 else "",
+            "ppdb_id": game_tuple[14] if len(game_tuple) > 14 else "",
+            "ppdb_rating": game_tuple[15] if len(game_tuple) > 15 else "",
         }
 
     def _finalize_autoinstall_page(

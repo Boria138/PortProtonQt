@@ -9,8 +9,8 @@ msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-05-22 18:01+0500\n"
-"PO-Revision-Date: 2026-06-05 14:30+0000\n"
-"Last-Translator: Anonymous <anonymous@noreply.codeberg.org>\n"
+"PO-Revision-Date: 2026-06-12 23:07+0000\n"
+"Last-Translator: rogerio-mattos <rogerio-mattos@noreply.codeberg.org>\n"
 "Language-Team: Chinese (Simplified Han script) <https://"
 "translate.codeberg.org/projects/portprotonqt/portprotonqt/zh_Hans/>\n"
 "Language: zh_CN\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 2026.5\n"
+"X-Generator: Weblate 2026.6.1\n"
 "Generated-By: Babel 2.18.0\n"
 
 msgid "Stop Game"
@@ -49,6 +49,14 @@ msgid "Rename Folder"
 msgstr "重命名文件夹"
 
 msgid "Delete Folder"
+msgstr "删除文件夹"
+
+#, fuzzy
+msgid "Rename File"
+msgstr "重命名文件夹"
+
+#, fuzzy
+msgid "Delete File"
 msgstr "删除文件夹"
 
 msgid "OK"
@@ -99,6 +107,28 @@ msgstr "否"
 #, python-brace-format
 msgid "Failed to delete folder: {error}"
 msgstr "删除文件夹失败：{error}"
+
+#, python-brace-format
+msgid ""
+"Are you sure you want to delete file '{file_name}'? This action cannot be"
+" undone."
+msgstr "确定要删除文件夹“{file_name}”吗？此操作无法撤销。"
+
+#, fuzzy, python-brace-format
+msgid "Failed to delete file: {error}"
+msgstr "删除文件夹失败：{error}"
+
+#, fuzzy
+msgid "New File Name:"
+msgstr "新文件夹名称："
+
+#, python-brace-format
+msgid "File already exists: {file_name}"
+msgstr "文件夹已存在：{file_name}"
+
+#, fuzzy, python-brace-format
+msgid "Failed to rename file: {error}"
+msgstr "重命名文件夹失败：{error}"
 
 msgid "Delete from PortProton"
 msgstr "从 PortProton 中删除"
@@ -368,7 +398,7 @@ msgid "Never"
 msgstr "从不"
 
 msgid "Unknown Application"
-msgstr ""
+msgstr "未知应用程序"
 
 #, fuzzy
 msgid "Quick Launch"
@@ -378,9 +408,45 @@ msgstr "上次启动"
 msgid "Add a shortcut"
 msgstr "添加快捷方式到："
 
-#, fuzzy
 msgid "Search ..."
-msgstr "搜索"
+msgstr "搜索..."
+
+msgid "Library Settings"
+msgstr "库设置"
+
+msgid "Last launch"
+msgstr "上次启动"
+
+msgid "Time spent"
+msgstr ""
+
+msgid "Alphabetical"
+msgstr "按字母顺序"
+
+msgid "Sort Method:"
+msgstr "游戏排序方式:"
+
+msgid "All"
+msgstr "全部"
+
+msgid "Favorites"
+msgstr "收藏夹"
+
+#, fuzzy
+msgid "Display Filter:"
+msgstr "游戏显示筛选："
+
+msgid "Detailed"
+msgstr "详细"
+
+msgid "Compact"
+msgstr "紧凑"
+
+msgid "Hidden"
+msgstr "隐藏"
+
+msgid "Badge View Type:"
+msgstr "徽章视图类型："
 
 msgid "Refreshing..."
 msgstr "正在刷新…"
@@ -400,9 +466,8 @@ msgstr "稳定"
 msgid "Vulkan Backend"
 msgstr "Vulkan 后端"
 
-#, fuzzy
 msgid "Use by default"
-msgstr "默认隐藏 HUD"
+msgstr "默认使用"
 
 msgid "Wine Configuration"
 msgstr "Wine 配置"
@@ -488,49 +553,11 @@ msgstr "删除前缀失败：{}"
 msgid "PortProton Settings"
 msgstr "PortProton 设置"
 
-msgid "Library Settings"
-msgstr "库设置"
-
-msgid "Detailed"
-msgstr "详细"
-
 msgid "Brief"
 msgstr "简要"
 
-msgid "Hidden"
-msgstr "隐藏"
-
 msgid "Time Detail Level:"
 msgstr "时间详细程度："
-
-msgid "Last launch"
-msgstr "上次启动"
-
-msgid "Time spent"
-msgstr ""
-
-msgid "Alphabetical"
-msgstr "按字母顺序"
-
-#, fuzzy
-msgid "Sort Method:"
-msgstr "游戏排序方式："
-
-msgid "All"
-msgstr "全部"
-
-msgid "Favorites"
-msgstr "收藏夹"
-
-#, fuzzy
-msgid "Display Filter:"
-msgstr "游戏显示筛选："
-
-msgid "Compact"
-msgstr "紧凑"
-
-msgid "Badge View Type:"
-msgstr "徽章视图类型："
 
 msgid "Interface Settings"
 msgstr "界面设置"
@@ -987,6 +1014,13 @@ msgstr ""
 "用于 CPU 亲和性的 NUMA 节点。在多核系统中，CPU 被划分为 NUMA 节点，每个节点拥"
 "有自己的本地内存和核心。将游戏绑定到单个节点可降低内存访问延迟，并减少开销较"
 "大的核心间切换。"
+
+msgid "Sound Driver"
+msgstr ""
+
+#, fuzzy
+msgid "Force the Wine sound driver for this executable."
+msgstr "选择用于此可执行文件的 Wine 或 Proton 版本。"
 
 msgid "just now"
 msgstr "刚刚"

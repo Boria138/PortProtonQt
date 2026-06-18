@@ -99,8 +99,13 @@ install_data(
 # Install tabs package
 install_data(
   ['tabs/__init__.py',
+   'tabs/autoinstall_tab.py',
    'tabs/control_hints.py',
+   'tabs/library_tab.py',
+   'tabs/settings_tab.py',
    'tabs/system_tab.py',
+   'tabs/theme_tab.py',
+   'tabs/wine_tab.py',
    'tabs/workers.py',
   ],
   install_dir: pythondir / meson.project_name() / 'tabs',

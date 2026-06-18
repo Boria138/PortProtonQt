@@ -5,7 +5,7 @@ from PySide6.QtWidgets import QAbstractButton
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QScrollArea, QSlider, QScroller, QStackedWidget
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QRegion
-from portprotonqt.custom_widgets import FlowLayout
+from portprotonqt.custom_widgets import FlowLayout, AutoHideScrollArea
 from portprotonqt.config import favorites_config, game_config, ui_config
 from portprotonqt.image_utils import load_pixmap_async
 from portprotonqt.context_menu_manager import ContextMenuManager, CustomLineEdit
@@ -20,6 +20,8 @@ class MainWindowProtocol(Protocol):
 
     def on_slider_released(self) -> None: ...
 
+    def _register_gamepad_tooltip(self, widget: QWidget, text: str) -> None: ...
+
     # Required attributes
     searchEdit: CustomLineEdit
     card_width: int
@@ -27,6 +29,7 @@ class MainWindowProtocol(Protocol):
     current_focused_card: GameCard | None
     gamesListWidget: QWidget | None
     stackedWidget: QStackedWidget
+    _gamepad_tooltip_map: dict[QWidget, str]
 
 class GameLibraryManager:
     def __init__(self, main_window: MainWindowProtocol, theme, context_menu_manager: ContextMenuManager | None):
@@ -70,10 +73,9 @@ class GameLibraryManager:
         layout.addWidget(searchWidget)
 
         # Scroll area for game grid
-        scrollArea = QScrollArea()
+        scrollArea = AutoHideScrollArea(theme=self.theme)
         self.gamesScrollArea = scrollArea
         scrollArea.setWidgetResizable(True)
-        scrollArea.setStyleSheet(self.theme.SCROLL_STYLE + self.theme.TRANSPARENT_BACKGROUND_STYLE)
         QScroller.grabGesture(scrollArea.viewport(), QScroller.ScrollerGestureType.LeftMouseButtonGesture)
 
         self.gamesListWidget = QWidget()
@@ -94,8 +96,9 @@ class GameLibraryManager:
         self.sizeSlider.setValue(self.card_width)
         self.sizeSlider.setTickInterval(10)
         self.sizeSlider.setFixedWidth(150)
-        self.sizeSlider.setToolTip(f"{self.card_width} px")
         self.sizeSlider.setStyleSheet(self.theme.SLIDER_SIZE_STYLE)
+        if hasattr(self.main_window, "_register_gamepad_tooltip"):
+            self.main_window._register_gamepad_tooltip(self.sizeSlider, f"{self.card_width} px")
         self.sizeSlider.sliderReleased.connect(self.main_window.on_slider_released)
         sliderLayout.addWidget(self.sizeSlider)
         if self.layout_mode == "list":
@@ -137,7 +140,8 @@ class GameLibraryManager:
         if self.sizeSlider is None:
             return
         self._set_card_width_from_slider()
-        self.sizeSlider.setToolTip(f"{self.card_width} px")
+        if hasattr(self.main_window, "_gamepad_tooltip_map"):
+            self.main_window._gamepad_tooltip_map[self.sizeSlider] = f"{self.card_width} px"
         if self.layout_mode != "list":
             ui_config.set_card_width(self.card_width)
         self.main_window.card_width = self.card_width
@@ -218,6 +222,8 @@ class GameLibraryManager:
                 self.main_window.current_focused_card = None
 
     def _collapse_library_filter_controls(self) -> None:
+        if getattr(self.main_window, "_library_controls_hover_close_delayed", False):
+            return
         controls_button = getattr(self.main_window, "libraryControlsButton", None)
         if not isinstance(controls_button, QAbstractButton) or not controls_button.isChecked():
             return

@@ -1,0 +1,774 @@
+"""Tests for desktop shortcut creation, path resolution, and file writing.
+
+Covers:
+- create_desktop_file: game names with spaces, special chars, exe paths with spaces
+- _get_desktop_path: direct, sanitized, normalized fallback
+- _get_shortcut_path / _get_steam_shortcut_path: spaces, slashes, empty names
+- _copy_shortcut: paths with spaces
+- Migration with paths containing spaces
+- Shortcut .desktop content validation
+"""
+import os
+from pathlib import Path
+from typing import Any
+
+from portprotonqt.config.portproton import (
+    _sanitize_icon_name,
+    create_desktop_file,
+    parse_desktop_entry,
+    extract_exec_target_path,
+)
+
+
+def _make_exe(tmp_path: Path, name: str = "game.exe", subdir: str = "") -> str:
+    exe_dir = tmp_path / "PortProtonQt" / "data" / subdir
+    exe_dir.mkdir(parents=True, exist_ok=True)
+    exe = exe_dir / name
+    exe.touch()
+    return str(exe)
+
+
+def _patch_location(monkeypatch: Any, tmp_path: Path) -> None:
+    monkeypatch.setattr(
+        "portprotonqt.config.portproton.get_portproton_location",
+        lambda: str(tmp_path / "PortProtonQt"),
+    )
+
+
+# ── create_desktop_file ──────────────────────────────────────────────────────
+
+class TestCreateDesktopFile:
+    def test_simple_name(self, tmp_path: Path, monkeypatch: Any) -> None:
+        _patch_location(monkeypatch, tmp_path)
+        exe = _make_exe(tmp_path)
+        result = create_desktop_file(exe)
+        assert result is not None
+        entry, desktop_path, icon_path = result
+        assert "Name=game" in entry
+        assert entry.endswith("\n")
+        assert desktop_path.endswith("game.desktop")
+        assert icon_path.endswith("game.png")
+
+    def test_custom_name(self, tmp_path: Path, monkeypatch: Any) -> None:
+        _patch_location(monkeypatch, tmp_path)
+        exe = _make_exe(tmp_path)
+        result = create_desktop_file(exe, game_name="My Cool Game")
+        assert result is not None
+        entry, desktop_path, _ = result
+        assert "Name=My Cool Game" in entry
+        assert "My Cool Game.desktop" in desktop_path
+
+    def test_name_with_spaces(self, tmp_path: Path, monkeypatch: Any) -> None:
+        _patch_location(monkeypatch, tmp_path)
+        exe = _make_exe(tmp_path)
+        result = create_desktop_file(exe, game_name="Dark Souls III")
+        assert result is not None
+        entry, desktop_path, icon_path = result
+        assert "Name=Dark Souls III" in entry
+        assert "Dark Souls III.desktop" in desktop_path
+        assert "Dark_Souls_III.png" in icon_path
+
+    def test_exe_path_with_spaces(self, tmp_path: Path, monkeypatch: Any) -> None:
+        _patch_location(monkeypatch, tmp_path)
+        exe = _make_exe(tmp_path, subdir="my games folder")
+        result = create_desktop_file(exe)
+        assert result is not None
+        entry, _, _ = result
+        assert "my games folder" in entry
+
+    def test_exe_path_with_spaces_and_custom_name(self, tmp_path: Path, monkeypatch: Any) -> None:
+        _patch_location(monkeypatch, tmp_path)
+        exe = _make_exe(tmp_path, subdir="Steam Games/Portal 2")
+        result = create_desktop_file(exe, game_name="Portal 2")
+        assert result is not None
+        entry, desktop_path, icon_path = result
+        assert "Name=Portal 2" in entry
+        assert "Portal 2.desktop" in desktop_path
+        assert "Portal_2.png" in icon_path
+
+    def test_nonexistent_exe_returns_none(self, tmp_path: Path, monkeypatch: Any) -> None:
+        _patch_location(monkeypatch, tmp_path)
+        result = create_desktop_file("/nonexistent/game.exe")
+        assert result is None
+
+    def test_no_portproton_returns_none(self, monkeypatch: Any) -> None:
+        monkeypatch.setattr(
+            "portprotonqt.config.portproton.get_portproton_location",
+            lambda: None,
+        )
+        result = create_desktop_file("/tmp/game.exe")
+        assert result is None
+
+    def test_desktop_entry_has_required_fields(self, tmp_path: Path, monkeypatch: Any) -> None:
+        _patch_location(monkeypatch, tmp_path)
+        exe = _make_exe(tmp_path)
+        result = create_desktop_file(exe, game_name="Test Game")
+        assert result is not None
+        entry, _, _ = result
+        assert "[Desktop Entry]" in entry
+        assert "Terminal=false" in entry
+        assert "Type=Application" in entry
+        assert "Categories=Game;" in entry
+        assert "StartupNotify=true" in entry
+        assert "Icon=" in entry
+        assert "Exec=" in entry
+
+    def test_name_with_slash_preserved_in_icon(self, tmp_path: Path, monkeypatch: Any) -> None:
+        _patch_location(monkeypatch, tmp_path)
+        exe = _make_exe(tmp_path)
+        result = create_desktop_file(exe, game_name="Game/Title")
+        assert result is not None
+        _, _, icon_path = result
+        assert "Game/Title.png" in icon_path
+
+    def test_name_with_colon_preserved_in_icon(self, tmp_path: Path, monkeypatch: Any) -> None:
+        _patch_location(monkeypatch, tmp_path)
+        exe = _make_exe(tmp_path)
+        result = create_desktop_file(exe, game_name="Game: Subtitle")
+        assert result is not None
+        _, _, icon_path = result
+        assert "Game:_Subtitle.png" in icon_path
+
+    def test_name_with_special_chars_in_icon(self, tmp_path: Path, monkeypatch: Any) -> None:
+        _patch_location(monkeypatch, tmp_path)
+        exe = _make_exe(tmp_path)
+        result = create_desktop_file(exe, game_name="Game! %$& <Title>")
+        assert result is not None
+        _, _, icon_path = result
+        basename = os.path.basename(icon_path)
+        assert "!" not in basename
+        assert "%" not in basename
+        assert "$" not in basename
+        assert "&" not in basename
+        assert "<" not in basename
+
+    def test_flatpak_exec_line(self, tmp_path: Path, monkeypatch: Any) -> None:
+        _patch_location(monkeypatch, tmp_path)
+        monkeypatch.setenv("FLATPAK_ID", "ru.linux_gaming.PortProton")
+        monkeypatch.delenv("APPIMAGE", raising=False)
+        exe = _make_exe(tmp_path)
+        result = create_desktop_file(exe)
+        assert result is not None
+        entry, _, _ = result
+        assert "flatpak run ru.linux_gaming.PortProton" in entry
+
+    def test_appimage_exec_line(self, tmp_path: Path, monkeypatch: Any) -> None:
+        _patch_location(monkeypatch, tmp_path)
+        monkeypatch.delenv("FLATPAK_ID", raising=False)
+        appimage = tmp_path / "PortProtonQt.AppImage"
+        appimage.touch()
+        monkeypatch.setenv("APPIMAGE", str(appimage))
+        exe = _make_exe(tmp_path)
+        result = create_desktop_file(exe)
+        assert result is not None
+        entry, _, _ = result
+        assert "AppImage" in entry
+        assert "--silent" in entry
+
+    def test_name_with_cyrillic(self, tmp_path: Path, monkeypatch: Any) -> None:
+        _patch_location(monkeypatch, tmp_path)
+        exe = _make_exe(tmp_path)
+        result = create_desktop_file(exe, game_name="Тест Игра")
+        assert result is not None
+        entry, desktop_path, icon_path = result
+        assert "Name=Тест Игра" in entry
+        assert "Тест Игра.desktop" in desktop_path
+        assert "Тест_Игра.png" in icon_path
+
+    def test_name_with_unicode_trademark(self, tmp_path: Path, monkeypatch: Any) -> None:
+        _patch_location(monkeypatch, tmp_path)
+        exe = _make_exe(tmp_path)
+        result = create_desktop_file(exe, game_name="Cyberpunk 2077™")
+        assert result is not None
+        entry, _, _ = result
+        assert "Cyberpunk 2077™" in entry
+
+    def test_name_with_single_space(self, tmp_path: Path, monkeypatch: Any) -> None:
+        _patch_location(monkeypatch, tmp_path)
+        exe = _make_exe(tmp_path)
+        result = create_desktop_file(exe, game_name="A B")
+        assert result is not None
+        entry, _, icon_path = result
+        assert "Name=A B" in entry
+        assert "A_B.png" in icon_path
+
+    def test_exe_deeply_nested_path_with_spaces(self, tmp_path: Path, monkeypatch: Any) -> None:
+        _patch_location(monkeypatch, tmp_path)
+        exe = _make_exe(tmp_path, subdir="a/b/c/My Games/Folder")
+        result = create_desktop_file(exe)
+        assert result is not None
+        entry, _, _ = result
+        assert "My Games" in entry
+        assert "Folder" in entry
+
+
+# ── parse_desktop_entry round-trip ───────────────────────────────────────────
+
+class TestParseDesktopEntryRoundTrip:
+    def test_round_trip_simple(self, tmp_path: Path, monkeypatch: Any) -> None:
+        _patch_location(monkeypatch, tmp_path)
+        exe = _make_exe(tmp_path)
+        result = create_desktop_file(exe, game_name="Test Game")
+        assert result is not None
+        entry_text, desktop_path, _ = result
+        Path(desktop_path).write_text(entry_text, encoding="utf-8")
+
+        parsed = parse_desktop_entry(desktop_path)
+        assert parsed is not None
+        assert parsed.get("Name") == "Test Game"
+        assert parsed.get("Type") == "Application"
+        assert parsed.get("Terminal") == "false"
+
+    def test_round_trip_spaces_in_name(self, tmp_path: Path, monkeypatch: Any) -> None:
+        _patch_location(monkeypatch, tmp_path)
+        exe = _make_exe(tmp_path)
+        result = create_desktop_file(exe, game_name="Dark Souls III: Prepare to Die")
+        assert result is not None
+        entry_text, desktop_path, _ = result
+        Path(desktop_path).write_text(entry_text, encoding="utf-8")
+
+        parsed = parse_desktop_entry(desktop_path)
+        assert parsed is not None
+        assert parsed.get("Name") == "Dark Souls III: Prepare to Die"
+
+    def test_round_trip_exe_path_with_spaces(self, tmp_path: Path, monkeypatch: Any) -> None:
+        _patch_location(monkeypatch, tmp_path)
+        exe = _make_exe(tmp_path)
+        result = create_desktop_file(exe)
+        assert result is not None
+        entry_text, desktop_path, _ = result
+        Path(desktop_path).write_text(entry_text, encoding="utf-8")
+
+        parsed = parse_desktop_entry(desktop_path)
+        assert parsed is not None
+        exec_val = parsed.get("Exec", "")
+        assert "game.exe" in exec_val
+
+    def test_round_trip_cyrillic_name(self, tmp_path: Path, monkeypatch: Any) -> None:
+        _patch_location(monkeypatch, tmp_path)
+        exe = _make_exe(tmp_path)
+        result = create_desktop_file(exe, game_name="Тест Игра")
+        assert result is not None
+        entry_text, desktop_path, _ = result
+        Path(desktop_path).write_text(entry_text, encoding="utf-8")
+
+        parsed = parse_desktop_entry(desktop_path)
+        assert parsed is not None
+        assert parsed.get("Name") == "Тест Игра"
+
+
+# ── extract_exec_target_path with spaces ─────────────────────────────────────
+
+class TestExtractExecPathWithSpaces:
+    def test_path_with_spaces_quoted(self) -> None:
+        result = extract_exec_target_path(
+            'portprotonqt --silent "/home/user/my games/game.exe"'
+        )
+        assert result is not None
+        assert "my games" in result
+        assert result.endswith("game.exe")
+
+    def test_path_with_spaces_in_list(self) -> None:
+        parts = ["portprotonqt", "--silent", "/home/user/my games/game.exe"]
+        result = extract_exec_target_path(parts)
+        assert result is not None
+        assert "my games" in result
+
+    def test_flatpak_path_with_spaces(self) -> None:
+        result = extract_exec_target_path(
+            'flatpak run ru.linux_gaming.PortProton --silent "/path/to/my game.exe"'
+        )
+        assert result is not None
+        assert "my game.exe" in result
+
+    def test_deep_path_with_spaces(self) -> None:
+        result = extract_exec_target_path(
+            'portprotonqt --silent "/home/user/My Games/Steam/steamapps/common/Portal 2/portal2.exe"'
+        )
+        assert result is not None
+        assert "My Games" in result
+        assert "Portal 2" in result
+        assert "portal2.exe" in result
+
+    def test_path_with_multiple_spaces(self) -> None:
+        result = extract_exec_target_path(
+            'portprotonqt --silent "/a  b  c/game.exe"'
+        )
+        assert result is not None
+        assert "a  b  c" in result
+
+    def test_cyrillic_path_with_spaces(self) -> None:
+        result = extract_exec_target_path(
+            'portprotonqt --silent "/home/user/Мои Игры/game.exe"'
+        )
+        assert result is not None
+        assert "Мои Игры" in result
+
+
+# ── _sanitize_icon_name edge cases ───────────────────────────────────────────
+
+class TestSanitizeIconNameEdgeCases:
+    def test_spaces_underscored(self) -> None:
+        assert _sanitize_icon_name("My Game") == "My_Game"
+
+    def test_multiple_spaces(self) -> None:
+        assert _sanitize_icon_name("Game   Title") == "Game___Title"
+
+    def test_cyrillic(self) -> None:
+        assert _sanitize_icon_name("Тест Игра") == "Тест_Игра"
+
+    def test_unicode_trademark(self) -> None:
+        assert _sanitize_icon_name("Game™") == "Game™"
+
+    def test_only_removed_chars(self) -> None:
+        assert _sanitize_icon_name("!%$&") == ""
+
+    def test_mixed_removed_and_kept(self) -> None:
+        result = _sanitize_icon_name("A!B%C$D&E<F")
+        assert result == "ABCDEF"
+
+    def test_angle_bracket_open_only(self) -> None:
+        assert _sanitize_icon_name("Game<Sub") == "GameSub"
+
+    def test_long_name(self) -> None:
+        name = "A" * 200
+        assert _sanitize_icon_name(name) == name
+
+    def test_empty_string(self) -> None:
+        assert _sanitize_icon_name("") == ""
+
+    def test_slashes_not_sandboxed(self) -> None:
+        result = _sanitize_icon_name("Game/Title")
+        assert result == "Game/Title"
+
+    def test_name_with_question_mark(self) -> None:
+        assert _sanitize_icon_name("Game?") == "Game?"
+
+    def test_name_with_exclamation_only(self) -> None:
+        assert _sanitize_icon_name("!") == ""
+
+
+# ── _get_shortcut_path ───────────────────────────────────────────────────────
+
+class TestGetShortcutPath:
+    def _make_stub(self, pp_dir: Path, desktop_path_fn: Any = None) -> Any:
+        from portprotonqt.context_menu_manager import ContextMenuManager
+
+        class StubManager:
+            portproton_location = str(pp_dir)
+
+            def _get_desktop_path(self, game_name: str) -> str:
+                return os.path.join(self.portproton_location, f"{game_name}.desktop")
+
+        if desktop_path_fn is not None:
+            StubManager._get_desktop_path = desktop_path_fn  # type: ignore[assignment]
+        return ContextMenuManager, StubManager()
+
+    def test_no_desktop_file_uses_game_name(self, tmp_path: Path) -> None:
+        cls, mgr = self._make_stub(tmp_path / "PortProtonQt")
+        target_dir = tmp_path / "Desktop"
+        target_dir.mkdir()
+        result = cls._get_shortcut_path(mgr, "New Game", str(target_dir))
+        assert result == os.path.join(str(target_dir), "New Game.desktop")
+
+    def test_direct_desktop_file_exists(self, tmp_path: Path) -> None:
+        pp_dir = tmp_path / "PortProtonQt"
+        pp_dir.mkdir()
+        (pp_dir / "My Game.desktop").touch()
+
+        cls, mgr = self._make_stub(pp_dir)
+        target_dir = tmp_path / "Desktop"
+        target_dir.mkdir()
+        result = cls._get_shortcut_path(mgr, "My Game", str(target_dir))
+        assert result.endswith("My Game.desktop")
+        assert str(target_dir) in result
+
+    def test_fallback_sanitized_name(self, tmp_path: Path) -> None:
+        pp_dir = tmp_path / "PortProtonQt"
+        pp_dir.mkdir()
+        (pp_dir / "My_Game.desktop").touch()
+
+        def desktop_path_fn(self: Any, game_name: str) -> str:
+            sanitized = game_name.replace(" ", "_")
+            return os.path.join(self.portproton_location, f"{sanitized}.desktop")
+
+        cls, mgr = self._make_stub(pp_dir, desktop_path_fn)
+        target_dir = tmp_path / "Desktop"
+        target_dir.mkdir()
+        result = cls._get_shortcut_path(mgr, "My Game", str(target_dir))
+        assert result.endswith("My_Game.desktop")
+        assert str(target_dir) in result
+
+    def test_name_with_colon_fallback(self, tmp_path: Path) -> None:
+        pp_dir = tmp_path / "PortProtonQt"
+        pp_dir.mkdir()
+        (pp_dir / "Game__Subtitle.desktop").touch()
+
+        def desktop_path_fn(self: Any, game_name: str) -> str:
+            sanitized = game_name.replace("/", "_").replace(":", "_").replace(" ", "_")
+            return os.path.join(self.portproton_location, f"{sanitized}.desktop")
+
+        cls, mgr = self._make_stub(pp_dir, desktop_path_fn)
+        target_dir = tmp_path / "Desktop"
+        target_dir.mkdir()
+        result = cls._get_shortcut_path(mgr, "Game: Subtitle", str(target_dir))
+        assert "Game__Subtitle.desktop" in result
+
+    def test_name_with_slash_fallback(self, tmp_path: Path) -> None:
+        pp_dir = tmp_path / "PortProtonQt"
+        pp_dir.mkdir()
+        (pp_dir / "Game_Title.desktop").touch()
+
+        def desktop_path_fn(self: Any, game_name: str) -> str:
+            sanitized = game_name.replace("/", "_").replace(":", "_").replace(" ", "_")
+            return os.path.join(self.portproton_location, f"{sanitized}.desktop")
+
+        cls, mgr = self._make_stub(pp_dir, desktop_path_fn)
+        target_dir = tmp_path / "Desktop"
+        target_dir.mkdir()
+        result = cls._get_shortcut_path(mgr, "Game/Title", str(target_dir))
+        assert "Game_Title.desktop" in result
+
+    def test_target_dir_with_spaces(self, tmp_path: Path) -> None:
+        cls, mgr = self._make_stub(tmp_path / "PortProtonQt")
+        target_dir = tmp_path / "My Games"
+        target_dir.mkdir()
+        result = cls._get_shortcut_path(mgr, "Test Game", str(target_dir))
+        assert str(target_dir) in result
+        assert result.endswith("Test Game.desktop")
+
+
+# ── _get_steam_shortcut_path ─────────────────────────────────────────────────
+
+class TestGetSteamShortcutPath:
+    def _make_stub(self) -> tuple[Any, Any]:
+        from portprotonqt.context_menu_manager import ContextMenuManager
+
+        class StubManager:
+            pass
+        return ContextMenuManager, StubManager()
+
+    def test_simple_name(self, tmp_path: Path) -> None:
+        cls, mgr = self._make_stub()
+        result = cls._get_steam_shortcut_path(mgr, "Counter-Strike 2", str(tmp_path))
+        assert result.endswith("Counter-Strike 2.desktop")
+        assert str(tmp_path) in result
+
+    def test_name_with_slash(self, tmp_path: Path) -> None:
+        cls, mgr = self._make_stub()
+        result = cls._get_steam_shortcut_path(mgr, "Game/Title", str(tmp_path))
+        assert result.endswith("Game_Title.desktop")
+
+    def test_name_with_colon(self, tmp_path: Path) -> None:
+        cls, mgr = self._make_stub()
+        result = cls._get_steam_shortcut_path(mgr, "Game: Subtitle", str(tmp_path))
+        assert result.endswith("Game_ Subtitle.desktop")
+
+    def test_name_with_null_char(self, tmp_path: Path) -> None:
+        cls, mgr = self._make_stub()
+        result = cls._get_steam_shortcut_path(mgr, "Game\x00Name", str(tmp_path))
+        assert result.endswith("Game_Name.desktop")
+
+    def test_empty_name_fallback(self, tmp_path: Path) -> None:
+        cls, mgr = self._make_stub()
+        result = cls._get_steam_shortcut_path(mgr, "", str(tmp_path))
+        assert result.endswith("Steam Game.desktop")
+
+    def test_whitespace_only_name_fallback(self, tmp_path: Path) -> None:
+        cls, mgr = self._make_stub()
+        result = cls._get_steam_shortcut_path(mgr, "   ", str(tmp_path))
+        assert result.endswith("Steam Game.desktop")
+
+    def test_name_with_spaces_preserved(self, tmp_path: Path) -> None:
+        cls, mgr = self._make_stub()
+        result = cls._get_steam_shortcut_path(mgr, "Dark Souls III", str(tmp_path))
+        assert result.endswith("Dark Souls III.desktop")
+
+    def test_name_with_newline_not_stripped(self, tmp_path: Path) -> None:
+        cls, mgr = self._make_stub()
+        result = cls._get_steam_shortcut_path(mgr, "Game\nName", str(tmp_path))
+        assert "Game\nName.desktop" in result
+
+    def test_target_dir_with_spaces(self, tmp_path: Path) -> None:
+        cls, mgr = self._make_stub()
+        target = tmp_path / "My Games"
+        target.mkdir()
+        result = cls._get_steam_shortcut_path(mgr, "Test Game", str(target))
+        assert str(target) in result
+        assert result.endswith("Test Game.desktop")
+
+    def test_name_with_cyrillic(self, tmp_path: Path) -> None:
+        cls, mgr = self._make_stub()
+        result = cls._get_steam_shortcut_path(mgr, "Кириллица Игра", str(tmp_path))
+        assert result.endswith("Кириллица Игра.desktop")
+
+    def test_name_with_tab_replaced(self, tmp_path: Path) -> None:
+        cls, mgr = self._make_stub()
+        result = cls._get_steam_shortcut_path(mgr, "Game\tName", str(tmp_path))
+        assert "Game" in result
+        assert "Name" in result
+
+
+# ── Desktop migration with spaces in paths ───────────────────────────────────
+
+class TestMigrationWithSpaces:
+    def test_exe_path_with_spaces_migrated(self, monkeypatch: Any) -> None:
+        from portprotonqt.config.portproton import _migrate_launcher_line
+
+        monkeypatch.setattr(
+            "portprotonqt.config.portproton._get_current_launcher_command",
+            lambda: ["portprotonqt", "--silent"],
+        )
+        old = 'Exec=flatpak run ru.linux_gaming.PortProton --silent "/home/user/My Games/Portal 2/portal2.exe"'
+        result = _migrate_launcher_line(old, ["portprotonqt", "--silent"])
+        assert "My Games" in result
+        assert "portal2.exe" in result
+        assert "flatpak" not in result
+
+    def test_game_name_with_spaces_in_exec(self, monkeypatch: Any) -> None:
+        from portprotonqt.config.portproton import _migrate_launcher_line
+
+        monkeypatch.setattr(
+            "portprotonqt.config.portproton._get_current_launcher_command",
+            lambda: ["portprotonqt", "--silent"],
+        )
+        old = 'portprotonqt --silent "/home/user/Games/Dark Souls III/game.exe"'
+        result = _migrate_launcher_line(old, ["portprotonqt", "--silent"])
+        assert "Dark Souls III" in result
+
+    def test_full_path_with_multiple_spaces(self, monkeypatch: Any) -> None:
+        from portprotonqt.config.portproton import _migrate_launcher_line
+
+        monkeypatch.setattr(
+            "portprotonqt.config.portproton._get_current_launcher_command",
+            lambda: ["portprotonqt", "--silent"],
+        )
+        old = 'portprotonqt --silent "/home/user/My Games/Steam/steamapps/common/Portal 2/portal2.exe"'
+        result = _migrate_launcher_line(old, ["portprotonqt", "--silent"])
+        assert "My Games" in result
+        assert "steamapps" in result
+        assert "Portal 2" in result
+
+    def test_migrate_desktop_with_space_in_exe_path(self, tmp_path: Path, monkeypatch: Any) -> None:
+        from portprotonqt.config.portproton import migrate_legacy_shortcut
+
+        desktop_dir = tmp_path / "desktop"
+        desktop_dir.mkdir()
+        pp_dir = tmp_path / "PortProtonQt"
+        pp_dir.mkdir()
+
+        (desktop_dir / "My Game.desktop").write_text(
+            "[Desktop Entry]\n"
+            "Name=My Game\n"
+            'Exec=flatpak run ru.linux_gaming.PortProton --silent "/home/user/My Games/game.exe"\n',
+        )
+
+        monkeypatch.setattr(
+            "portprotonqt.config.portproton._get_current_launcher_command",
+            lambda: ["portprotonqt", "--silent"],
+        )
+        monkeypatch.setattr(
+            "portprotonqt.config.portproton._get_desktop_paths",
+            lambda d: (d,) if d else (),
+        )
+
+        migrated = migrate_legacy_shortcut(str(pp_dir), str(desktop_dir))
+        assert migrated >= 1
+
+        content = (desktop_dir / "My Game.desktop").read_text()
+        assert "My Games" in content
+        assert "portprotonqt" in content
+        assert "flatpak" not in content
+
+    def test_cyrillic_path_in_exec(self, monkeypatch: Any) -> None:
+        from portprotonqt.config.portproton import _migrate_launcher_line
+
+        monkeypatch.setattr(
+            "portprotonqt.config.portproton._get_current_launcher_command",
+            lambda: ["portprotonqt", "--silent"],
+        )
+        old = 'portprotonqt --silent "/home/user/Мои Игры/game.exe"'
+        result = _migrate_launcher_line(old, ["portprotonqt", "--silent"])
+        assert "Мои Игры" in result
+
+    def test_path_with_trailing_spaces_preserved(self, monkeypatch: Any) -> None:
+        from portprotonqt.config.portproton import _migrate_launcher_line
+
+        monkeypatch.setattr(
+            "portprotonqt.config.portproton._get_current_launcher_command",
+            lambda: ["portprotonqt", "--silent"],
+        )
+        old = 'portprotonqt --silent "/home/user/My Games/game.exe"'
+        result = _migrate_launcher_line(old, ["portprotonqt", "--silent"])
+        assert "My Games" in result
+
+    def test_double_space_path(self, monkeypatch: Any) -> None:
+        from portprotonqt.config.portproton import _migrate_launcher_line
+
+        monkeypatch.setattr(
+            "portprotonqt.config.portproton._get_current_launcher_command",
+            lambda: ["portprotonqt", "--silent"],
+        )
+        old = 'portprotonqt --silent "/home/user/My  Games/game.exe"'
+        result = _migrate_launcher_line(old, ["portprotonqt", "--silent"])
+        assert "My  Games" in result
+
+
+# ── Desktop shortcut content validation ──────────────────────────────────────
+
+class TestDesktopEntryContent:
+    def test_exec_has_quoted_path(self, tmp_path: Path, monkeypatch: Any) -> None:
+        _patch_location(monkeypatch, tmp_path)
+        exe = _make_exe(tmp_path)
+        result = create_desktop_file(exe, game_name="Test")
+        assert result is not None
+        entry, _, _ = result
+        assert "Exec=" in entry
+        exec_value = entry.split("Exec=")[1].split("\n")[0]
+        assert '"' in exec_value
+
+    def test_comment_has_name(self, tmp_path: Path, monkeypatch: Any) -> None:
+        _patch_location(monkeypatch, tmp_path)
+        exe = _make_exe(tmp_path)
+        result = create_desktop_file(exe, game_name="My Game")
+        assert result is not None
+        entry, _, _ = result
+        assert "My Game" in entry
+
+    def test_icon_path_is_absolute(self, tmp_path: Path, monkeypatch: Any) -> None:
+        _patch_location(monkeypatch, tmp_path)
+        exe = _make_exe(tmp_path)
+        result = create_desktop_file(exe, game_name="Test")
+        assert result is not None
+        _, _, icon_path = result
+        assert os.path.isabs(icon_path)
+
+    def test_desktop_path_is_absolute(self, tmp_path: Path, monkeypatch: Any) -> None:
+        _patch_location(monkeypatch, tmp_path)
+        exe = _make_exe(tmp_path)
+        result = create_desktop_file(exe, game_name="Test")
+        assert result is not None
+        _, desktop_path, _ = result
+        assert os.path.isabs(desktop_path)
+
+    def test_no_path_line_in_entry(self, tmp_path: Path, monkeypatch: Any) -> None:
+        _patch_location(monkeypatch, tmp_path)
+        exe = _make_exe(tmp_path)
+        result = create_desktop_file(exe, game_name="Test")
+        assert result is not None
+        entry, _, _ = result
+        assert "Path=" not in entry
+
+    def test_categories_line_present(self, tmp_path: Path, monkeypatch: Any) -> None:
+        _patch_location(monkeypatch, tmp_path)
+        exe = _make_exe(tmp_path)
+        result = create_desktop_file(exe, game_name="Test")
+        assert result is not None
+        entry, _, _ = result
+        assert "Categories=Game;" in entry
+
+    def test_startup_notify_true(self, tmp_path: Path, monkeypatch: Any) -> None:
+        _patch_location(monkeypatch, tmp_path)
+        exe = _make_exe(tmp_path)
+        result = create_desktop_file(exe, game_name="Test")
+        assert result is not None
+        entry, _, _ = result
+        assert "StartupNotify=true" in entry
+
+    def test_terminal_false(self, tmp_path: Path, monkeypatch: Any) -> None:
+        _patch_location(monkeypatch, tmp_path)
+        exe = _make_exe(tmp_path)
+        result = create_desktop_file(exe, game_name="Test")
+        assert result is not None
+        entry, _, _ = result
+        assert "Terminal=false" in entry
+
+
+# ── _copy_shortcut ───────────────────────────────────────────────────────────
+
+class TestCopyShortcut:
+    def test_basic_copy(self, tmp_path: Path) -> None:
+        from portprotonqt.scripts_utils.prefix_backup import _copy_shortcut
+
+        src_dir = tmp_path / "source"
+        src_dir.mkdir()
+        src = src_dir / "Game.desktop"
+        src.write_text("[Desktop Entry]\nName=Game\n")
+
+        target_dir = tmp_path / "target"
+        target_dir.mkdir()
+
+        _copy_shortcut(str(src), str(target_dir))
+        dest = target_dir / "Game.desktop"
+        assert dest.exists()
+        assert dest.read_text() == "[Desktop Entry]\nName=Game\n"
+
+    def test_path_with_spaces(self, tmp_path: Path) -> None:
+        from portprotonqt.scripts_utils.prefix_backup import _copy_shortcut
+
+        src_dir = tmp_path / "my games"
+        src_dir.mkdir()
+        src = src_dir / "Dark Souls.desktop"
+        src.write_text("[Desktop Entry]\nName=Dark Souls\n")
+
+        target_dir = tmp_path / "target dir"
+        target_dir.mkdir()
+
+        _copy_shortcut(str(src), str(target_dir))
+        dest = target_dir / "Dark Souls.desktop"
+        assert dest.exists()
+        assert dest.read_text() == "[Desktop Entry]\nName=Dark Souls\n"
+
+    def test_nonexistent_target_creates_it(self, tmp_path: Path) -> None:
+        from portprotonqt.scripts_utils.prefix_backup import _copy_shortcut
+
+        src_dir = tmp_path / "source"
+        src_dir.mkdir()
+        src = src_dir / "Game.desktop"
+        src.write_text("[Desktop Entry]\nName=Game\n")
+
+        target_dir = tmp_path / "nonexistent" / "nested"
+        _copy_shortcut(str(src), str(target_dir))
+        assert (target_dir / "Game.desktop").exists()
+
+    def test_empty_target_dir_noop(self, tmp_path: Path) -> None:
+        from portprotonqt.scripts_utils.prefix_backup import _copy_shortcut
+
+        src_dir = tmp_path / "source"
+        src_dir.mkdir()
+        src = src_dir / "Game.desktop"
+        src.write_text("[Desktop Entry]\nName=Game\n")
+
+        _copy_shortcut(str(src), "")
+        assert not (tmp_path / "Game.desktop").exists()
+
+    def test_cyrillic_filename(self, tmp_path: Path) -> None:
+        from portprotonqt.scripts_utils.prefix_backup import _copy_shortcut
+
+        src_dir = tmp_path / "source"
+        src_dir.mkdir()
+        src = src_dir / "Тест.desktop"
+        src.write_text("[Desktop Entry]\nName=Тест\n")
+
+        target_dir = tmp_path / "target"
+        target_dir.mkdir()
+
+        _copy_shortcut(str(src), str(target_dir))
+        dest = target_dir / "Тест.desktop"
+        assert dest.exists()
+        assert "Тест" in dest.read_text()
+
+    def test_file_permissions(self, tmp_path: Path) -> None:
+        from portprotonqt.scripts_utils.prefix_backup import _copy_shortcut
+
+        src_dir = tmp_path / "source"
+        src_dir.mkdir()
+        src = src_dir / "Game.desktop"
+        src.write_text("[Desktop Entry]\nName=Game\n")
+
+        target_dir = tmp_path / "target"
+        target_dir.mkdir()
+
+        _copy_shortcut(str(src), str(target_dir))
+        dest = target_dir / "Game.desktop"
+        assert os.access(str(dest), os.X_OK)

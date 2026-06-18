@@ -1,4 +1,5 @@
 from math import radians, sin
+import warnings
 
 from PySide6.QtCore import QPropertyAnimation, QByteArray, QEasingCurve, Qt
 from PySide6.QtGui import QPainter, QPen, QColor, QConicalGradient, QBrush
@@ -21,45 +22,71 @@ class GameCardAnimations:
         self.pulse_anim: QPropertyAnimation | None = None
         self._isPulseAnimationConnected = False
 
+    def _disconnect_pulse_animation(self) -> None:
+        if not self._isPulseAnimationConnected or self.thickness_anim is None:
+            return
+        try:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", RuntimeWarning)
+                self.thickness_anim.finished.disconnect(self.start_pulse_animation)
+        except RuntimeError:
+            pass
+        self._isPulseAnimationConnected = False
+
+    def _stop_animation(self, animation_name: str) -> None:
+        animation = getattr(self, animation_name)
+        if not animation:
+            return
+        try:
+            animation.stop()
+            if animation_name == "thickness_anim":
+                self._disconnect_pulse_animation()
+            animation.deleteLater()
+        except RuntimeError:
+            pass
+        setattr(self, animation_name, None)
+
+    def _restart_gradient_animation(self) -> None:
+        self._stop_animation("gradient_anim")
+        self.gradient_anim = QPropertyAnimation(self.game_card, QByteArray(b"gradientAngle"))
+        self.gradient_anim.setDuration(self.theme.GAME_CARD_ANIMATION["gradient_anim_duration"])
+        self.gradient_anim.setStartValue(self.theme.GAME_CARD_ANIMATION["gradient_start_angle"])
+        self.gradient_anim.setEndValue(self.theme.GAME_CARD_ANIMATION["gradient_end_angle"])
+        self.gradient_anim.setLoopCount(-1)
+        self.gradient_anim.start()
+
+    def _easing_curve(self, easing_key: str) -> QEasingCurve:
+        easing_type = QEasingCurve.Type[self.theme.GAME_CARD_ANIMATION[easing_key]]
+        return QEasingCurve(easing_type)
+
+    def _restart_scale_animation(self, end_value: float, easing_key: str) -> None:
+        self._stop_animation("scale_anim")
+        self.scale_anim = QPropertyAnimation(self.game_card, QByteArray(b"scale"))
+        self.scale_anim.setDuration(self.theme.GAME_CARD_ANIMATION["scale_anim_duration"])
+        self.scale_anim.setEasingCurve(self._easing_curve(easing_key))
+        self.scale_anim.setStartValue(self.game_card._scale)
+        self.scale_anim.setEndValue(end_value)
+        self.scale_anim.start()
+
+    def _start_thickness_animation(self, end_value: float, easing_key: str, connect_pulse: bool) -> None:
+        if not self.thickness_anim:
+            return
+        self.thickness_anim.stop()
+        self._disconnect_pulse_animation()
+        self.thickness_anim.setEasingCurve(self._easing_curve(easing_key))
+        self.thickness_anim.setStartValue(self.game_card._borderWidth)
+        self.thickness_anim.setEndValue(end_value)
+        if connect_pulse:
+            self.thickness_anim.finished.connect(self.start_pulse_animation)
+            self._isPulseAnimationConnected = True
+        self.thickness_anim.start()
+
     def cleanup(self):
         """Clean up all animation objects to prevent memory leaks."""
-        if self.thickness_anim:
-            try:
-                self.thickness_anim.stop()
-                if self._isPulseAnimationConnected:
-                    try:
-                        self.thickness_anim.finished.disconnect(self.start_pulse_animation)
-                    except RuntimeError:
-                        pass
-                self.thickness_anim.deleteLater()
-            except RuntimeError:
-                pass
-            self.thickness_anim = None
-
-        if self.gradient_anim:
-            try:
-                self.gradient_anim.stop()
-                self.gradient_anim.deleteLater()
-            except RuntimeError:
-                pass
-            self.gradient_anim = None
-
-        if self.scale_anim:
-            try:
-                self.scale_anim.stop()
-                self.scale_anim.deleteLater()
-            except RuntimeError:
-                pass
-            self.scale_anim = None
-
-        if self.pulse_anim:
-            try:
-                self.pulse_anim.stop()
-                self.pulse_anim.deleteLater()
-            except RuntimeError:
-                pass
-            self.pulse_anim = None
-
+        self._stop_animation("thickness_anim")
+        self._stop_animation("gradient_anim")
+        self._stop_animation("scale_anim")
+        self._stop_animation("pulse_anim")
         self._isPulseAnimationConnected = False
 
     def setup_animations(self):
@@ -80,13 +107,7 @@ class GameCardAnimations:
         if not (self.game_card._hovered or self.game_card._focused):
             return
 
-        if self.pulse_anim:
-            try:
-                self.pulse_anim.stop()
-                self.pulse_anim.deleteLater()
-            except RuntimeError:
-                pass
-            self.pulse_anim = None
+        self._stop_animation("pulse_anim")
 
         self.pulse_anim = QPropertyAnimation(self.game_card, QByteArray(b"borderWidth"))
         self.pulse_anim.setDuration(self.theme.GAME_CARD_ANIMATION["pulse_anim_duration"])
@@ -107,51 +128,16 @@ class GameCardAnimations:
 
         animation_type = self.theme.GAME_CARD_ANIMATION.get("card_animation_type", "gradient")
 
-        if self.thickness_anim:
-            self.thickness_anim.stop()
-            if self._isPulseAnimationConnected:
-                try:
-                    self.thickness_anim.finished.disconnect(self.start_pulse_animation)
-                except RuntimeError:
-                    pass
-                self._isPulseAnimationConnected = False
-            self.thickness_anim.setEasingCurve(QEasingCurve(QEasingCurve.Type[self.theme.GAME_CARD_ANIMATION["thickness_easing_curve"]]))
-            self.thickness_anim.setStartValue(self.game_card._borderWidth)
-            self.thickness_anim.setEndValue(self.theme.GAME_CARD_ANIMATION["hover_border_width"])
-            self.thickness_anim.finished.connect(self.start_pulse_animation)
-            self._isPulseAnimationConnected = True
-            self.thickness_anim.start()
+        self._start_thickness_animation(
+            self.theme.GAME_CARD_ANIMATION["hover_border_width"],
+            "thickness_easing_curve",
+            True,
+        )
 
         if animation_type in {"gradient", "glow"}:
-            if self.gradient_anim:
-                try:
-                    self.gradient_anim.stop()
-                    self.gradient_anim.deleteLater()
-                except RuntimeError:
-                    pass
-                self.gradient_anim = None
-
-            self.gradient_anim = QPropertyAnimation(self.game_card, QByteArray(b"gradientAngle"))
-            self.gradient_anim.setDuration(self.theme.GAME_CARD_ANIMATION["gradient_anim_duration"])
-            self.gradient_anim.setStartValue(self.theme.GAME_CARD_ANIMATION["gradient_start_angle"])
-            self.gradient_anim.setEndValue(self.theme.GAME_CARD_ANIMATION["gradient_end_angle"])
-            self.gradient_anim.setLoopCount(-1)
-            self.gradient_anim.start()
+            self._restart_gradient_animation()
         elif animation_type in {"scale", "scale_fill"}:
-            if self.scale_anim:
-                try:
-                    self.scale_anim.stop()
-                    self.scale_anim.deleteLater()
-                except RuntimeError:
-                    pass
-                self.scale_anim = None
-
-            self.scale_anim = QPropertyAnimation(self.game_card, QByteArray(b"scale"))
-            self.scale_anim.setDuration(self.theme.GAME_CARD_ANIMATION["scale_anim_duration"])
-            self.scale_anim.setEasingCurve(QEasingCurve(QEasingCurve.Type[self.theme.GAME_CARD_ANIMATION["scale_easing_curve"]]))
-            self.scale_anim.setStartValue(self.game_card._scale)
-            self.scale_anim.setEndValue(self.theme.GAME_CARD_ANIMATION["hover_scale"])
-            self.scale_anim.start()
+            self._restart_scale_animation(self.theme.GAME_CARD_ANIMATION["hover_scale"], "scale_easing_curve")
 
     def handle_leave_event(self):
         """Handle mouse leave event animations."""
@@ -160,47 +146,15 @@ class GameCardAnimations:
         if not self.game_card._focused:
             animation_type = self.theme.GAME_CARD_ANIMATION.get("card_animation_type", "gradient")
             if animation_type in {"gradient", "glow"}:
-                if self.gradient_anim:
-                    try:
-                        self.gradient_anim.stop()
-                        self.gradient_anim.deleteLater()
-                    except RuntimeError:
-                        pass
-                    self.gradient_anim = None
+                self._stop_animation("gradient_anim")
             elif animation_type in {"scale", "scale_fill"}:
-                if self.scale_anim:
-                    try:
-                        self.scale_anim.stop()
-                        self.scale_anim.deleteLater()
-                    except RuntimeError:
-                        pass
-                    self.scale_anim = None
-
-                self.scale_anim = QPropertyAnimation(self.game_card, QByteArray(b"scale"))
-                self.scale_anim.setDuration(self.theme.GAME_CARD_ANIMATION["scale_anim_duration"])
-                self.scale_anim.setEasingCurve(QEasingCurve(QEasingCurve.Type[self.theme.GAME_CARD_ANIMATION["scale_easing_curve_out"]]))
-                self.scale_anim.setStartValue(self.game_card._scale)
-                self.scale_anim.setEndValue(self.theme.GAME_CARD_ANIMATION["default_scale"])
-                self.scale_anim.start()
-            if self.pulse_anim:
-                try:
-                    self.pulse_anim.stop()
-                    self.pulse_anim.deleteLater()
-                except RuntimeError:
-                    pass
-                self.pulse_anim = None
-            if self.thickness_anim:
-                self.thickness_anim.stop()
-                if self._isPulseAnimationConnected:
-                    try:
-                        self.thickness_anim.finished.disconnect(self.start_pulse_animation)
-                    except RuntimeError:
-                        pass
-                    self._isPulseAnimationConnected = False
-                self.thickness_anim.setEasingCurve(QEasingCurve(QEasingCurve.Type[self.theme.GAME_CARD_ANIMATION["thickness_easing_curve_out"]]))
-                self.thickness_anim.setStartValue(self.game_card._borderWidth)
-                self.thickness_anim.setEndValue(self.theme.GAME_CARD_ANIMATION["default_border_width"])
-                self.thickness_anim.start()
+                self._restart_scale_animation(self.theme.GAME_CARD_ANIMATION["default_scale"], "scale_easing_curve_out")
+            self._stop_animation("pulse_anim")
+            self._start_thickness_animation(
+                self.theme.GAME_CARD_ANIMATION["default_border_width"],
+                "thickness_easing_curve_out",
+                False,
+            )
 
     def handle_focus_in_event(self):
         """Handle focus in event animations."""
@@ -213,51 +167,16 @@ class GameCardAnimations:
 
             animation_type = self.theme.GAME_CARD_ANIMATION.get("card_animation_type", "gradient")
 
-            if self.thickness_anim:
-                self.thickness_anim.stop()
-                if self._isPulseAnimationConnected:
-                    try:
-                        self.thickness_anim.finished.disconnect(self.start_pulse_animation)
-                    except RuntimeError:
-                        pass
-                    self._isPulseAnimationConnected = False
-                self.thickness_anim.setEasingCurve(QEasingCurve(QEasingCurve.Type[self.theme.GAME_CARD_ANIMATION["thickness_easing_curve"]]))
-                self.thickness_anim.setStartValue(self.game_card._borderWidth)
-                self.thickness_anim.setEndValue(self.theme.GAME_CARD_ANIMATION["focus_border_width"])
-                self.thickness_anim.finished.connect(self.start_pulse_animation)
-                self._isPulseAnimationConnected = True
-                self.thickness_anim.start()
+            self._start_thickness_animation(
+                self.theme.GAME_CARD_ANIMATION["focus_border_width"],
+                "thickness_easing_curve",
+                True,
+            )
 
             if animation_type in {"gradient", "glow"}:
-                if self.gradient_anim:
-                    try:
-                        self.gradient_anim.stop()
-                        self.gradient_anim.deleteLater()
-                    except RuntimeError:
-                        pass
-                    self.gradient_anim = None
-
-                self.gradient_anim = QPropertyAnimation(self.game_card, QByteArray(b"gradientAngle"))
-                self.gradient_anim.setDuration(self.theme.GAME_CARD_ANIMATION["gradient_anim_duration"])
-                self.gradient_anim.setStartValue(self.theme.GAME_CARD_ANIMATION["gradient_start_angle"])
-                self.gradient_anim.setEndValue(self.theme.GAME_CARD_ANIMATION["gradient_end_angle"])
-                self.gradient_anim.setLoopCount(-1)
-                self.gradient_anim.start()
+                self._restart_gradient_animation()
             elif animation_type in {"scale", "scale_fill"}:
-                if self.scale_anim:
-                    try:
-                        self.scale_anim.stop()
-                        self.scale_anim.deleteLater()
-                    except RuntimeError:
-                        pass
-                    self.scale_anim = None
-
-                self.scale_anim = QPropertyAnimation(self.game_card, QByteArray(b"scale"))
-                self.scale_anim.setDuration(self.theme.GAME_CARD_ANIMATION["scale_anim_duration"])
-                self.scale_anim.setEasingCurve(QEasingCurve(QEasingCurve.Type[self.theme.GAME_CARD_ANIMATION["scale_easing_curve"]]))
-                self.scale_anim.setStartValue(self.game_card._scale)
-                self.scale_anim.setEndValue(self.theme.GAME_CARD_ANIMATION["focus_scale"])
-                self.scale_anim.start()
+                self._restart_scale_animation(self.theme.GAME_CARD_ANIMATION["focus_scale"], "scale_easing_curve")
 
     def handle_focus_out_event(self):
         """Handle focus out event animations."""
@@ -266,47 +185,15 @@ class GameCardAnimations:
         if not self.game_card._hovered:
             animation_type = self.theme.GAME_CARD_ANIMATION.get("card_animation_type", "gradient")
             if animation_type in {"gradient", "glow"}:
-                if self.gradient_anim:
-                    try:
-                        self.gradient_anim.stop()
-                        self.gradient_anim.deleteLater()
-                    except RuntimeError:
-                        pass
-                    self.gradient_anim = None
+                self._stop_animation("gradient_anim")
             elif animation_type in {"scale", "scale_fill"}:
-                if self.scale_anim:
-                    try:
-                        self.scale_anim.stop()
-                        self.scale_anim.deleteLater()
-                    except RuntimeError:
-                        pass
-                    self.scale_anim = None
-
-                self.scale_anim = QPropertyAnimation(self.game_card, QByteArray(b"scale"))
-                self.scale_anim.setDuration(self.theme.GAME_CARD_ANIMATION["scale_anim_duration"])
-                self.scale_anim.setEasingCurve(QEasingCurve(QEasingCurve.Type[self.theme.GAME_CARD_ANIMATION["scale_easing_curve_out"]]))
-                self.scale_anim.setStartValue(self.game_card._scale)
-                self.scale_anim.setEndValue(self.theme.GAME_CARD_ANIMATION["default_scale"])
-                self.scale_anim.start()
-            if self.pulse_anim:
-                try:
-                    self.pulse_anim.stop()
-                    self.pulse_anim.deleteLater()
-                except RuntimeError:
-                    pass
-                self.pulse_anim = None
-            if self.thickness_anim:
-                self.thickness_anim.stop()
-                if self._isPulseAnimationConnected:
-                    try:
-                        self.thickness_anim.finished.disconnect(self.start_pulse_animation)
-                    except RuntimeError:
-                        pass
-                    self._isPulseAnimationConnected = False
-                self.thickness_anim.setEasingCurve(QEasingCurve(QEasingCurve.Type[self.theme.GAME_CARD_ANIMATION["thickness_easing_curve_out"]]))
-                self.thickness_anim.setStartValue(self.game_card._borderWidth)
-                self.thickness_anim.setEndValue(self.theme.GAME_CARD_ANIMATION["default_border_width"])
-                self.thickness_anim.start()
+                self._restart_scale_animation(self.theme.GAME_CARD_ANIMATION["default_scale"], "scale_easing_curve_out")
+            self._stop_animation("pulse_anim")
+            self._start_thickness_animation(
+                self.theme.GAME_CARD_ANIMATION["default_border_width"],
+                "thickness_easing_curve_out",
+                False,
+            )
 
     def paint_border(self, painter: QPainter):
         if not painter.isActive():
@@ -323,17 +210,7 @@ class GameCardAnimations:
             for stop in self.theme.GAME_CARD_ANIMATION["gradient_colors"]:
                 gradient.setColorAt(stop["position"], QColor(stop["color"]))
             pen.setBrush(QBrush(gradient))
-        elif (self.game_card._hovered or self.game_card._focused) and animation_type == "fill":
-            fill_color_value = self.theme.GAME_CARD_ANIMATION.get(
-                "fill_color",
-                getattr(self.theme, "color_a", self.theme.color_f),
-            )
-            fill_alpha = int(self.theme.GAME_CARD_ANIMATION.get("fill_alpha", 90))
-            fill_color = QColor(fill_color_value)
-            fill_color.setAlpha(max(0, min(255, fill_alpha)))
-            fill_brush = QBrush(fill_color)
-            pen.setColor(QColor(0, 0, 0, 0))
-        elif (self.game_card._hovered or self.game_card._focused) and animation_type == "scale_fill":
+        elif (self.game_card._hovered or self.game_card._focused) and animation_type in {"fill", "scale_fill"}:
             fill_color_value = self.theme.GAME_CARD_ANIMATION.get(
                 "fill_color",
                 getattr(self.theme, "color_a", self.theme.color_f),

@@ -107,33 +107,81 @@ def _is_portal_dark_theme() -> bool | None:
     return color_scheme == 1
 
 
-def _read_gsettings_value(key: str) -> str | None:
-    try:
-        result = subprocess.run(
-            ["gsettings", "get", "org.gnome.desktop.interface", key],
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=1,
-        )
-    except (OSError, subprocess.SubprocessError) as e:
-        logger.debug("Failed to read gsettings %s: %s", key, e)
-        return None
-    if result.returncode != 0:
-        return None
-    return result.stdout.strip().strip("'\"")
-
-
 def _is_gsettings_dark_theme() -> bool | None:
-    color_scheme = _read_gsettings_value("color-scheme")
-    if color_scheme == "prefer-dark":
-        return True
-    if color_scheme in ("default", "prefer-light"):
-        return False
+    session = os.environ.get("XDG_SESSION_DESKTOP", "").lower()
 
-    gtk_theme = _read_gsettings_value("gtk-theme")
-    if gtk_theme:
-        return "-dark" in gtk_theme.lower()
+    # XFCE
+    if session.startswith("xfce"):
+        try:
+            result = subprocess.run(
+                ["xfconf-query", "-c", "xsettings", "-p", "/Net/ThemeName"],
+                capture_output=True, text=True, check=False, timeout=1,
+            )
+            if result.returncode == 0 and (gtk_theme := result.stdout.strip()):
+                return "-dark" in gtk_theme.lower()
+        except (OSError, subprocess.SubprocessError):
+            pass
+
+    # MATE
+    if session.startswith("mate"):
+        try:
+            result = subprocess.run(
+                ["gsettings", "get", "org.mate.interface", "gtk-theme"],
+                capture_output=True, text=True, check=False, timeout=1,
+            )
+            if result.returncode == 0 and (gtk_theme := result.stdout.strip().strip("'\"")):
+                return "-dark" in gtk_theme.lower()
+        except (OSError, subprocess.SubprocessError):
+            pass
+
+    # Cinnamon
+    if session.startswith("cinnamon"):
+        for schema, key in [
+            ("org.x.apps.portal", "color-scheme"),
+            ("org.cinnamon.desktop.interface", "gtk-theme"),
+        ]:
+            try:
+                result = subprocess.run(
+                    ["gsettings", "get", schema, key],
+                    capture_output=True, text=True, check=False, timeout=1,
+                )
+            except (OSError, subprocess.SubprocessError):
+                continue
+            if result.returncode != 0:
+                continue
+            value = result.stdout.strip().strip("'\"")
+            if key == "color-scheme":
+                if value == "prefer-dark":
+                    return True
+                if value in ("default", "prefer-light"):
+                    return False
+            else:
+                return "-dark" in value.lower()
+
+    # GNOME
+    for schema, key in [
+        ("org.gnome.desktop.interface", "color-scheme"),
+        ("org.gnome.desktop.interface", "gtk-theme"),
+    ]:
+        try:
+            result = subprocess.run(
+                ["gsettings", "get", schema, key],
+                capture_output=True, text=True, check=False, timeout=1,
+            )
+        except (OSError, subprocess.SubprocessError):
+            continue
+        if result.returncode != 0:
+            continue
+
+        value = result.stdout.strip().strip("'\"")
+        if key == "color-scheme":
+            if value == "prefer-dark":
+                return True
+            if value in ("default", "prefer-light"):
+                return False
+        else:
+            return "-dark" in value.lower()
+
     return None
 
 
@@ -229,7 +277,7 @@ class UIConfig(BaseConfig):
         self._save_value("terminal_scheme", scheme_name, "str")
 
     def get_time_detail_level(self) -> str:
-        """Get time detail level ('detailed' or 'simple')."""
+        """Get time detail level."""
         cp = self._read_config()
         if cp is None or not cp.has_section("Time"):
             return self._save_time_detail("detailed")

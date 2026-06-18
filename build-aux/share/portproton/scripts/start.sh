@@ -250,7 +250,6 @@ get_wine_and_pfx () {
 case "$1" in
     --help)
         help_info () {
-            files_from_autoinstall=$(ls "${PORT_SCRIPTS_PATH}/pw_autoinstall")
             echo -e "Usage: [--repair] [--reinstall] [--autoinstall]
 
 --repair                                            Forces all scripts to be updated to a working state
@@ -278,9 +277,7 @@ case "$1" in
 --clear_pfx                                         Clear specified prefix, requires WINE version and prefix name
 --mangohud-preview                                  Starts MangoHud preview in vkcube (optional argument: inline MangoHud config)
 --initial                                           Initial setup command
---autoinstall                                       --autoinstall and the name of what needs to be installed is given in the list below:
-
-$(echo $files_from_autoinstall | awk '{for (i = 1; i <= NF; i++) {if (i % 10 == 0) {print ""} printf "%s ", $i}}')
+--autoinstall                                       Runs the specified .ppai autoinstall script
 
 Usage examples:
   portproton cli --launch /path/to/game.exe
@@ -294,7 +291,7 @@ Usage examples:
   portproton cli --winetricks-list-all WINE_LG DEFAULT
   portproton cli --winetricks-install WINE_LG DEFAULT --no-force corefonts
   portproton cli --mangohud-preview \"fps,frametime,cpu_temp,gpu_temp\"
-  portproton cli --autoinstall [script_name_from_pw_autoinstall]
+  portproton cli --autoinstall /path/to/script.ppai
             "
         }
         help_info
@@ -333,12 +330,18 @@ Usage examples:
         export PW_USE_D3D_EXTRAS=1
         export WINE_LARGE_ADDRESS_AWARE=0
         trap "stop_portproton" SIGTERM SIGINT
-        if [[ "$2" =~ "/" ]] && [[ -f "$2" ]] ; then
+        if [[ "$2" =~ ^https?://.*\.ppai($|\?) ]] ; then
+            autoinstall_script="${PORT_WINE_TMP_PATH}/$(basename "${2%%\?*}")"
+            if try_download "$2" "${autoinstall_script}" no_mirror ; then
+                # shellcheck source=/dev/null
+                . "${autoinstall_script}"
+                try_remove_file "${autoinstall_script}"
+            else
+                fatal "Not found autoinstal script: $2"
+            fi
+        elif [[ -f "$2" ]] ; then
             # shellcheck source=/dev/null
             . "${2}"
-        elif [[ -f "${PORT_SCRIPTS_PATH}/pw_autoinstall/${2}" ]] ; then
-            # shellcheck source=/dev/null
-            . "${PORT_SCRIPTS_PATH}/pw_autoinstall/${2}"
         else
             fatal "Not found autoinstal script: $2"
         fi

@@ -313,7 +313,7 @@ class FileExplorer(DraggableDialog):
         self.file_list.itemClicked.connect(self.handle_item_click)
         self.file_list.itemDoubleClicked.connect(self.handle_item_double_click)
         self.file_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self.file_list.customContextMenuRequested.connect(self.show_folder_context_menu)
+        self.file_list.customContextMenuRequested.connect(self.show_context_menu)
         self.file_list.setHorizontalScrollMode(QListWidget.ScrollMode.ScrollPerPixel)
         self.file_list.setVerticalScrollMode(QListWidget.ScrollMode.ScrollPerPixel)
         self.file_list.setUniformItemSizes(True)
@@ -335,10 +335,10 @@ class FileExplorer(DraggableDialog):
         self.select_button.clicked.connect(self.select_item)
         self.cancel_button.clicked.connect(self.reject)
 
-    def show_folder_context_menu(self, pos):
-        """Shows the context menu for a folder using ContextMenuManager."""
+    def show_context_menu(self, pos):
+        """Shows the context menu for an item using ContextMenuManager."""
         if self.context_menu_manager:
-            self.context_menu_manager.show_folder_context_menu(self, pos)
+            self.context_menu_manager.show_file_explorer_context_menu(self, pos)
         else:
             logger.warning("ContextMenuManager not found in parent")
 

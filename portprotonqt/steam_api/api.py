@@ -23,8 +23,11 @@ from portprotonqt.steam_api.cache import (
     build_index,
     search_app,
     load_weanticheatyet_data_async,
+    load_ppdb_data_async,
     build_weanticheatyet_index,
+    build_ppdb_index,
     search_anticheat_entry,
+    search_ppdb_entry,
     load_protondb_status,
     save_protondb_status,
 )
@@ -35,6 +38,7 @@ downloader = Downloader()
 
 _STEAM_APPS_CACHE = CacheManager(name="steam_apps")
 _ANTICHEAT_CACHE = CacheManager(name="anticheat")
+_PPDB_CACHE = CacheManager(name="ppdb")
 SGDB_CACHE_DURATION = 24 * 60 * 60
 STEAM_CLIENT_ICON_SIZES = (16, 32, 64, 128, 256)
 
@@ -263,6 +267,18 @@ def get_anticheat_data_and_index_async(
     )
 
 
+def get_ppdb_data_and_index_async(
+    callback: Callable[[tuple[list | None, dict | None]], None]
+) -> None:
+    """Asynchronously load and cache PPDB data and their index."""
+    _PPDB_CACHE.get_data_and_index_async(
+        load_ppdb_data_async,
+        build_ppdb_index,
+        callback,
+        CACHE_DURATION
+    )
+
+
 def get_weanticheatyet_status_async(game_name: str, callback: Callable[[str], None]) -> None:
     """Asynchronously retrieve WeAntiCheatYet status for a game by name."""
     def on_anticheat_info(anticheat_info: dict) -> None:
@@ -291,10 +307,40 @@ def get_weanticheatyet_info_async(game_name: str, callback: Callable[[dict], Non
     get_anticheat_data_and_index_async(on_anticheat_data_and_index)
 
 
+def get_ppdb_info_async(game_name: str, callback: Callable[[dict], None]) -> None:
+    """Asynchronously retrieve PPDB info for a game by name."""
+    def on_ppdb_data_and_index(
+        data_and_index: tuple[list | None, dict | None]
+    ) -> None:
+        ppdb_data, ppdb_index = data_and_index
+        if ppdb_data and ppdb_index:
+            entry = search_ppdb_entry(game_name, ppdb_index) or {}
+        else:
+            entry = {}
+        callback(
+            {
+                "id": entry.get("id", ""),
+                "overall_rating": entry.get("overall_rating", ""),
+            }
+        )
+
+    get_ppdb_data_and_index_async(on_ppdb_data_and_index)
+
+
+def _add_ppdb_info(result: dict, game_name: str, callback: Callable[[dict], None]) -> None:
+    def on_ppdb_info(ppdb_info: dict) -> None:
+        result["ppdb_id"] = ppdb_info.get("id", "")
+        result["ppdb_rating"] = ppdb_info.get("overall_rating", "")
+        callback(result)
+
+    get_ppdb_info_async(game_name, on_ppdb_info)
+
+
 def clear_steam_api_caches() -> None:
     """Clear all cached data to force reload from files."""
     _STEAM_APPS_CACHE.clear_memory_cache()
     _ANTICHEAT_CACHE.clear_memory_cache()
+    _PPDB_CACHE.clear_memory_cache()
     logger.info("Cleared Steam API in-memory caches")
 
 
@@ -308,6 +354,8 @@ def _build_game_info_result(
     steam_game: str,
     anticheat_status: str,
     anticheat_slug: str = "",
+    ppdb_id: str | int = "",
+    ppdb_rating: str = "",
 ) -> dict:
     """Build game info result dictionary."""
     return {
@@ -320,6 +368,8 @@ def _build_game_info_result(
         "steam_game": steam_game,
         "anticheat_status": anticheat_status,
         "anticheat_slug": anticheat_slug,
+        "ppdb_id": ppdb_id,
+        "ppdb_rating": ppdb_rating,
     }
 
 
@@ -385,7 +435,7 @@ def get_full_steam_game_info_async(
                     anticheat_status=anticheat_info.get("status", ""),
                     anticheat_slug=anticheat_info.get("slug", ""),
                 )
-                callback(result)
+                _add_ppdb_info(result, title, callback)
 
             get_weanticheatyet_info_async(title, on_anticheat_info)
 
@@ -438,6 +488,26 @@ def _read_cached_protondb_tier(appid: int) -> str:
     return ""
 
 
+def _read_cached_ppdb_id(game_name: str) -> str:
+    cache_file = CacheManager().cache_dir / "ppdb_games.json"
+    cached = _load_cached_json_file(str(cache_file))
+    if not isinstance(cached, list):
+        return ""
+    ppdb_index = build_ppdb_index(cached)
+    entry = search_ppdb_entry(game_name, ppdb_index) or {}
+    return str(entry.get("id", ""))
+
+
+def _read_cached_ppdb_rating(game_name: str) -> str:
+    cache_file = CacheManager().cache_dir / "ppdb_games.json"
+    cached = _load_cached_json_file(str(cache_file))
+    if not isinstance(cached, list):
+        return ""
+    ppdb_index = build_ppdb_index(cached)
+    entry = search_ppdb_entry(game_name, ppdb_index) or {}
+    return str(entry.get("overall_rating", ""))
+
+
 def get_cached_full_steam_game_info(appid: int, fallback_name: str = "") -> dict:
     """Return installed Steam game metadata from local cache only."""
     app_data = _read_cached_app_data(appid)
@@ -454,6 +524,8 @@ def get_cached_full_steam_game_info(appid: int, fallback_name: str = "") -> dict
         steam_game="true",
         anticheat_status="",
         anticheat_slug="",
+        ppdb_id=_read_cached_ppdb_id(name),
+        ppdb_rating=_read_cached_ppdb_rating(name),
     )
 
 
@@ -605,7 +677,7 @@ def get_steam_game_info_async(
                 def on_anticheat_info_failure(anticheat_info: dict) -> None:
                     result["anticheat_status"] = anticheat_info.get("status", "")
                     result["anticheat_slug"] = anticheat_info.get("slug", "")
-                    callback(result)
+                    _add_ppdb_info(result, game_name, callback)
 
                 get_weanticheatyet_info_async(game_name, on_anticheat_info_failure)
 
@@ -638,7 +710,7 @@ def get_steam_game_info_async(
                         anticheat_status=anticheat_info.get("status", ""),
                         anticheat_slug=anticheat_info.get("slug", ""),
                     )
-                    callback(result)
+                    _add_ppdb_info(result, game_name, callback)
 
                 get_weanticheatyet_info_async(game_name, on_anticheat_info_non_steam)
 
@@ -664,7 +736,7 @@ def get_steam_game_info_async(
                         anticheat_status=anticheat_info.get("status", ""),
                         anticheat_slug=anticheat_info.get("slug", ""),
                     )
-                    callback(result)
+                    _add_ppdb_info(result, game_name, callback)
 
                 get_weanticheatyet_info_async(game_name, on_anticheat_info_no_info)
                 return
@@ -689,7 +761,7 @@ def get_steam_game_info_async(
                         anticheat_status=anticheat_info.get("status", ""),
                         anticheat_slug=anticheat_info.get("slug", ""),
                     )
-                    callback(result)
+                    _add_ppdb_info(result, title, callback)
 
                 get_weanticheatyet_info_async(title, on_anticheat_info_final)
 

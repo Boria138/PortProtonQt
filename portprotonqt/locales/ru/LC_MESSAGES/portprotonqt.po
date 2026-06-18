@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-03-22 13:50+0500\n"
-"PO-Revision-Date: 2026-06-06 17:53+0000\n"
+"PO-Revision-Date: 2026-06-10 05:58+0000\n"
 "Last-Translator: Boria138 <boria138@noreply.codeberg.org>\n"
 "Language-Team: Russian <https://translate.codeberg.org/projects/portprotonqt/"
 "portprotonqt/ru/>\n"
@@ -19,7 +19,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
-"X-Generator: Weblate 2026.5\n"
+"X-Generator: Weblate 2026.6.1\n"
 "Generated-By: Babel 2.18.0\n"
 
 msgid "Stop Game"
@@ -52,6 +52,12 @@ msgstr "Переименовать Папку"
 
 msgid "Delete Folder"
 msgstr "Удалить Папку"
+
+msgid "Rename File"
+msgstr "Переименовать файл"
+
+msgid "Delete File"
+msgstr "Удалить файл"
 
 msgid "OK"
 msgstr "Ок"
@@ -103,6 +109,29 @@ msgstr "Нет"
 #, python-brace-format
 msgid "Failed to delete folder: {error}"
 msgstr "Не удалось удалить папку: {error}"
+
+#, python-brace-format
+msgid ""
+"Are you sure you want to delete file '{file_name}'? This action cannot be"
+" undone."
+msgstr ""
+"Вы уверены, что хотите удалить файл '{file_name}'? Это действие нельзя "
+"отменить."
+
+#, python-brace-format
+msgid "Failed to delete file: {error}"
+msgstr "Не удалось удалить файл: {error}"
+
+msgid "New File Name:"
+msgstr "Новое имя файла:"
+
+#, python-brace-format
+msgid "File already exists: {file_name}"
+msgstr "Файл уже существует: {file_name}"
+
+#, python-brace-format
+msgid "Failed to rename file: {error}"
+msgstr "Не удалось переименовать файл: {error}"
 
 msgid "Delete from PortProton"
 msgstr "Удалить из PortProton"
@@ -389,6 +418,42 @@ msgstr "Добавить ярлык"
 msgid "Search ..."
 msgstr "Поиск ..."
 
+msgid "Library Settings"
+msgstr "Настройки Библиотеки"
+
+msgid "Last launch"
+msgstr "Последний запуск"
+
+msgid "Time spent"
+msgstr "Проведенное время"
+
+msgid "Alphabetical"
+msgstr "Алфавитный"
+
+msgid "Sort Method:"
+msgstr "Метод сортировки:"
+
+msgid "All"
+msgstr "Все"
+
+msgid "Favorites"
+msgstr "Избранное"
+
+msgid "Display Filter:"
+msgstr "Фильтр:"
+
+msgid "Detailed"
+msgstr "Детальный"
+
+msgid "Compact"
+msgstr "Компактный"
+
+msgid "Hidden"
+msgstr "Скрытый"
+
+msgid "Badge View Type:"
+msgstr "Тип отображения бейджей:"
+
 msgid "Refreshing..."
 msgstr "Обновление..."
 
@@ -494,47 +559,11 @@ msgstr "Не удалось удалить префикс: {}"
 msgid "PortProton Settings"
 msgstr "Настройки PortProtonQt"
 
-msgid "Library Settings"
-msgstr "Настройки Библиотеки"
-
-msgid "Detailed"
-msgstr "Детальный"
-
 msgid "Brief"
 msgstr "Упрощённый"
 
-msgid "Hidden"
-msgstr "Скрытый"
-
 msgid "Time Detail Level:"
 msgstr "Уровень детализации вывода времени:"
-
-msgid "Last launch"
-msgstr "Последний запуск"
-
-msgid "Time spent"
-msgstr "Проведенное время"
-
-msgid "Alphabetical"
-msgstr "Алфавитный"
-
-msgid "Sort Method:"
-msgstr "Метод сортировки:"
-
-msgid "All"
-msgstr "Все"
-
-msgid "Favorites"
-msgstr "Избранное"
-
-msgid "Display Filter:"
-msgstr "Фильтр:"
-
-msgid "Compact"
-msgstr "Компактный"
-
-msgid "Badge View Type:"
-msgstr "Тип отображения бейджей:"
 
 msgid "Interface Settings"
 msgstr "Настройки интерфейса"
@@ -1011,6 +1040,13 @@ msgstr ""
 "NUMA, каждый со своей локальной памятью и ядрами. Привязка игры к одному "
 "узлу уменьшает задержку доступа к памяти и ограничивает дорогостоящие "
 "переключения между ядрами."
+
+msgid "Sound Driver"
+msgstr "Драйвер звуковой карты"
+
+msgid "Force the Wine sound driver for this executable."
+msgstr ""
+"Принудительно использовать драйвер звука Wine для этого исполняемого файла."
 
 msgid "just now"
 msgstr "только что"

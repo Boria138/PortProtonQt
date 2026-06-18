@@ -24,7 +24,7 @@ repos:
     hooks:
       - id: pyright
         name: pyright
-        entry: pyright
+        entry: uv run pyright
         language: system
         types_or: [python, pyi]
         require_serial: true
@@ -56,4 +56,14 @@ repos:
         entry: ./dev-scripts/check_meson_files.py
         language: system
         files: (^portprotonqt/.*\.py$|^build-aux/share/portproton/|meson\.build$)
+        pass_filenames: false
+
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest
+        entry: uv run pytest tests/ -x -q --tb=line
+        language: system
+        types: [python]
+        files: ^(tests/|portprotonqt/)
         pass_filenames: false

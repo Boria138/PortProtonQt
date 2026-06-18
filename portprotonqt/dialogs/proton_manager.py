@@ -10,7 +10,8 @@ from PySide6.QtWidgets import (
     QHBoxLayout, QProgressBar, QFrame, QSizePolicy, QAbstractItemView,
     QStackedWidget, QPushButton
 )
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt, QTimer, QEvent, QObject
+from PySide6.QtGui import QGuiApplication
 
 from portprotonqt.config import get_portproton_start_command, ui_config
 from portprotonqt.dialogs.base import DraggableDialog
@@ -60,10 +61,65 @@ class ProtonManager(DraggableDialog):
         if self.input_manager:
             self.enable_proton_manager_mode()
 
+    def _init_gamepad_tooltip(self) -> None:
+        self._gamepad_tooltip_map = {}
+        self.gamepad_tooltip = QLabel()
+        self.gamepad_tooltip.setWordWrap(True)
+        self.gamepad_tooltip.setStyleSheet(self.theme.TOOLTIP_STYLE)
+        self.gamepad_tooltip.setVisible(False)
+        self.gamepad_tooltip.setParent(self)
+        self.gamepad_tooltip.setWindowFlags(Qt.WindowType.ToolTip)
+        self.gamepad_tooltip.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.gamepad_tooltip.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        self.gamepad_tooltip_timer = QTimer(self)
+        self.gamepad_tooltip_timer.setSingleShot(True)
+        self.gamepad_tooltip_timer.timeout.connect(lambda: self.gamepad_tooltip.setVisible(False))
+
+    def _register_gamepad_tooltip(self, widget: QWidget, text: str) -> None:
+        self._gamepad_tooltip_map[widget] = text
+        widget.installEventFilter(self)
+
+    def _show_gamepad_tooltip(self, show: bool, text: str = "", anchor_widget: QWidget | None = None) -> None:
+        if not show or not text or anchor_widget is None or not anchor_widget.isVisible():
+            self.gamepad_tooltip_timer.stop()
+            self.gamepad_tooltip.setVisible(False)
+            return
+        self.gamepad_tooltip.setText(text)
+        self.gamepad_tooltip.setFixedSize(500, 300)
+        font_metrics = self.gamepad_tooltip.fontMetrics()
+        text_rect = font_metrics.boundingRect(
+            0, 0, 480, 1000,
+            Qt.TextFlag.TextWordWrap | Qt.TextFlag.TextExpandTabs,
+            text,
+        )
+        required_width = min(500, text_rect.width() + 25)
+        required_height = min(300, text_rect.height() + 25)
+        anchor_pos = anchor_widget.mapToGlobal(anchor_widget.rect().bottomLeft())
+        x = anchor_pos.x() + self.theme.settings_tooltip_offset_x
+        y = anchor_pos.y() + self.theme.settings_tooltip_offset_y
+        screen = QGuiApplication.screenAt(anchor_pos) or QGuiApplication.primaryScreen()
+        if screen:
+            available_rect = screen.availableGeometry()
+            x = max(available_rect.left(), min(x, available_rect.right() - required_width))
+            y = max(available_rect.top(), min(y, available_rect.bottom() - required_height))
+        self.gamepad_tooltip.setFixedSize(required_width, required_height)
+        self.gamepad_tooltip.move(x, y)
+        self.gamepad_tooltip.setVisible(True)
+        self.gamepad_tooltip_timer.start(max(2500, min(12000, 1500 + len(text) * 30)))
+
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
+        if isinstance(obj, QWidget) and obj in getattr(self, "_gamepad_tooltip_map", {}):
+            if event.type() in (QEvent.Type.Enter, QEvent.Type.FocusIn):
+                self._show_gamepad_tooltip(True, self._gamepad_tooltip_map[obj], obj)
+            elif event.type() in (QEvent.Type.Leave, QEvent.Type.FocusOut, QEvent.Type.MouseButtonPress):
+                self._show_gamepad_tooltip(False)
+        return super().eventFilter(obj, event)
+
     def initUI(self):
         self.setWindowTitle(_('Manage WINE versions'))
         self.resize(1133, 720)
         self.setStyleSheet(self.theme.MAIN_WINDOW_STYLE + self.theme.MESSAGE_BOX_STYLE)
+        self._init_gamepad_tooltip()
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(5, 5, 5, 5)
@@ -493,7 +549,7 @@ class ProtonManager(DraggableDialog):
         checkbox_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         checkbox_layout.setContentsMargins(0, 0, 0, 0)
         checkbox = QCheckBox()
-        checkbox_widget.setToolTip(_("Select to remove this WINE/Proton"))
+        self._register_gamepad_tooltip(checkbox_widget, _("Select to remove this WINE/Proton"))
         checkbox.stateChanged.connect(lambda state: self.on_installed_version_toggled(state))
         checkbox_layout.addWidget(checkbox)
         table.setCellWidget(row_index, 0, checkbox_widget)
@@ -766,9 +822,6 @@ class ProtonManager(DraggableDialog):
             if self.is_downloading:
                 QMessageBox.warning(self, _("Downloading in Progress"), _("Please wait for current downloading to complete."))
                 return
-            downloads_dir = "proton_downloads"
-            if not os.path.exists(downloads_dir):
-                os.makedirs(downloads_dir)
             self.assets_to_download = list(self.selected_assets.values())
             self.current_download_index = 0
             self.is_downloading = True
@@ -871,69 +924,52 @@ class ProtonManager(DraggableDialog):
         self.download_asset(asset_data)
 
     def download_asset(self, asset_data):
-        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        proton_downloads_path = os.path.join(repo_root, "proton_downloads")
-        local_file_path = None
-        if os.path.exists(proton_downloads_path) and os.path.isdir(proton_downloads_path):
-            for filename in os.listdir(proton_downloads_path):
-                if filename == asset_data['asset_name']:
-                    local_file_path = os.path.join(proton_downloads_path, filename)
-                    logger.info(f"DEBUG: Using local file: {local_file_path}")
-                    break
-        if local_file_path and os.path.exists(local_file_path):
-            logger.info(f"DEBUG: Skipping download, using local file: {local_file_path}")
-            download_info = f"{asset_data['source_name'].upper()} - {asset_data['asset_name']} (DEBUG: local)"
-            if len(download_info) > 80:
-                download_info = download_info[:77] + "..."
-            self.download_progress.setValue(0)
-            self.download_frame.setVisible(True)
-            self.download_frame.setStyleSheet(self.theme.GETWINE_WINDOW_STYLE)
-            self.download_btn.setEnabled(False)
-            self.clear_btn.setEnabled(False)
-            QTimer.singleShot(100, lambda: self.start_extraction_for_asset(asset_data, local_file_path))
-        else:
-            temp_dir = tempfile.mkdtemp(prefix="portproton_wine_")
-            filename = os.path.join(temp_dir, asset_data['asset_name'])
-            download_url = asset_data['download_url']
-            download_info = f"{asset_data['source_name'].upper()} - {asset_data['asset_name']}"
-            if len(download_info) > 80:
-                download_info = download_info[:77] + "..."
-            self.download_progress.setValue(0)
-            self.download_frame.setVisible(True)
-            self.download_frame.setStyleSheet(self.theme.GETWINE_WINDOW_STYLE)
-            self.download_btn.setEnabled(False)
-            self.clear_btn.setEnabled(False)
-            self.current_download_thread = DownloadThread(download_url, filename)
-            def update_download_progress(progress):
-                self.download_progress.setValue(progress)
-                self.download_info_label.setText(_("Downloading: {0} ({1}%)").format(asset_data['asset_name'], progress))
-            def download_finished(filepath, success):
-                if success:
-                    logger.info(f"Successfully downloaded: {filepath}")
-                    self.start_extraction_for_asset(asset_data, filepath)
-                else:
-                    logger.error(f"Failed to download: {filepath}")
-                    temp_dir = os.path.dirname(filepath)
-                    try:
-                        shutil.rmtree(temp_dir)
-                    except (OSError, FileNotFoundError):
-                        pass
-                    self.current_download_index += 1
-                    QTimer.singleShot(100, self.start_next_download)
-            def download_error(error_msg):
-                logger.error(f"Download error: {error_msg}")
-                QMessageBox.critical(self, "Download Error", f"Failed to download WINE/Proton: {error_msg}")
-                temp_dir = os.path.dirname(filename)
+        temp_dir = tempfile.mkdtemp(prefix="portproton_wine_")
+        filename = os.path.join(temp_dir, asset_data['asset_name'])
+        download_url = asset_data['download_url']
+        download_info = f"{asset_data['source_name'].upper()} - {asset_data['asset_name']}"
+        if len(download_info) > 80:
+            download_info = download_info[:77] + "..."
+        self.download_progress.setValue(0)
+        self.download_frame.setVisible(True)
+        self.download_frame.setStyleSheet(self.theme.GETWINE_WINDOW_STYLE)
+        self.download_btn.setEnabled(False)
+        self.clear_btn.setEnabled(False)
+        self.current_download_thread = DownloadThread(download_url, filename)
+
+        def update_download_progress(progress):
+            self.download_progress.setValue(progress)
+            self.download_info_label.setText(_("Downloading: {0} ({1}%)").format(asset_data['asset_name'], progress))
+
+        def download_finished(filepath, success):
+            if success:
+                logger.info(f"Successfully downloaded: {filepath}")
+                self.start_extraction_for_asset(asset_data, filepath)
+            else:
+                logger.error(f"Failed to download: {filepath}")
+                temp_dir = os.path.dirname(filepath)
                 try:
                     shutil.rmtree(temp_dir)
                 except (OSError, FileNotFoundError):
                     pass
                 self.current_download_index += 1
                 QTimer.singleShot(100, self.start_next_download)
-            self.current_download_thread.progress.connect(update_download_progress)
-            self.current_download_thread.finished.connect(download_finished)
-            self.current_download_thread.error.connect(download_error)
-            self.current_download_thread.start()
+
+        def download_error(error_msg):
+            logger.error(f"Download error: {error_msg}")
+            QMessageBox.critical(self, "Download Error", f"Failed to download WINE/Proton: {error_msg}")
+            temp_dir = os.path.dirname(filename)
+            try:
+                shutil.rmtree(temp_dir)
+            except (OSError, FileNotFoundError):
+                pass
+            self.current_download_index += 1
+            QTimer.singleShot(100, self.start_next_download)
+
+        self.current_download_thread.progress.connect(update_download_progress)
+        self.current_download_thread.finished.connect(download_finished)
+        self.current_download_thread.error.connect(download_error)
+        self.current_download_thread.start()
 
     def start_extraction_for_asset(self, asset_data, filepath):
         self.download_info_label.setText(_("Extracting: {0}").format(asset_data['asset_name']))

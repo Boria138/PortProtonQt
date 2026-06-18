@@ -8,7 +8,7 @@ on:
 
 env:
   # Common version, will be used for tagging the release
-  VERSION: 1.1.0
+  VERSION: 1.2.0
   PKGDEST: "/tmp/portprotonqt"
   PACKAGE: "portprotonqt"
   GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
@@ -158,9 +158,9 @@ jobs:
 
       - name: Build Debian package
         run: |
-          dpkg-buildpackage -us -uc -b
+          DEB_BUILD_OPTIONS=noautodbgsym dpkg-buildpackage -us -uc -b
           mkdir -p dist/deb
-          mv ../*.deb ../*.buildinfo ../*.changes dist/deb/
+          mv ../*.deb dist/deb/
 
       - name: Upload Debian package
         uses: https://git.linux-gaming.ru/actions/gitea-upload-artifact@v4

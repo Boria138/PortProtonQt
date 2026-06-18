@@ -272,9 +272,9 @@ jobs:
 
       - name: Build Debian package
         run: |
-          dpkg-buildpackage -us -uc -b
+          DEB_BUILD_OPTIONS=noautodbgsym dpkg-buildpackage -us -uc -b
           mkdir -p dist/deb
-          mv ../*.deb ../*.buildinfo ../*.changes dist/deb/
+          mv ../*.deb dist/deb/
 
       - name: Upload Debian package
         uses: https://git.linux-gaming.ru/actions/gitea-upload-artifact@v4

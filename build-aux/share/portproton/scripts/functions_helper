@@ -546,7 +546,7 @@ var_ld_library_path_update () {
 # GUI NOTIFY SEND
 pw_notify_send () {
     local icon title body app timeout OPTIND
-    app="PortProtonQt"
+    app="ru.linux_gaming.PortProtonQt"
     timeout="5000"
     OPTIND="1"
     while getopts a:i:t: opt ; do
@@ -819,146 +819,7 @@ search_desktop_file () {
             fi
         fi
     done
-
-    while read -r -a line2 ; do
-        if [[ -z ${line2[0]} ]] \
-        || [[ ! ${line2[0],,} =~ .(bat|cmd|exe|msi|reg)$ ]] ; then
-            BROKEN_LINE=1
-            break
-        fi
-        if [[ ${line2[1]} == "$FILE_SHA256SUM" ]] ; then
-            FILE_SHA256SUM_FOUND=1
-            break
-        fi
-        if [[ ${line2[1]} != "$FILE_SHA256SUM" ]] \
-        && [[ ${line2[0]} == "${PW_EXE_FILE// /#@_@#}" ]] ; then
-            FILE_SHA256SUM_NOT_FOUND=1
-            break
-        fi
-    done < "$PORT_WINE_TMP_PATH/statistics"
-
-    local line3 line4 count_line i TIME_TOTAL SKIP_REPAIR
-    ## Ремонты:
-    # Ремонт, проверяет чтобы длинна хеш суммы была равна 64 символам, в ином случае удалит битые
-    if [[ $FILE_SHA256SUM_NOT_FOUND == 1 ]] && [[ ${#line2[1]} != "64" ]] ; then
-        while read -r -a line3 ; do
-            if [[ ${#line3[1]} == "64" ]]
-            then echo "${line3[*]}"
-            fi
-        done < "$PORT_WINE_TMP_PATH/statistics" > "$PORT_WINE_TMP_PATH/statistics_repair"
-        try_remove_file "$PORT_WINE_TMP_PATH/statistics"
-        mv -f "$PORT_WINE_TMP_PATH/statistics_repair" "$PORT_WINE_TMP_PATH/statistics"
-        return 1
-    fi
-
-    # Ремонт, если есть пустые строки и непонятные строки без .exe, .bat, .cmd, .msi, .reg
-    if [[ $BROKEN_LINE == 1 ]] ; then
-        while read -r -a line4 ; do
-            if [[ -n ${line4[0]} ]] && [[ ${line4[0],,} =~ .(bat|cmd|exe|msi|reg)$ ]]
-            then echo "${line4[*]}"
-            fi
-        done < "$PORT_WINE_TMP_PATH/statistics" > "$PORT_WINE_TMP_PATH/statistics_repair"
-        try_remove_file "$PORT_WINE_TMP_PATH/statistics"
-        mv -f "$PORT_WINE_TMP_PATH/statistics_repair" "$PORT_WINE_TMP_PATH/statistics"
-        return 1
-    fi
-
-    # Ремонтирует путь на новый, если вдруг путь до .exe файла битый или изменился, но .exe файл он опознал
-    if [[ $FILE_SHA256SUM_FOUND == 1 ]] && [[ ${line2[0]} != "${PW_EXE_FILE// /#@_@#}" ]] ; then
-        sed -i "s|${line2[0]} ${line2[1]}|${PW_EXE_FILE// /#@_@#} ${line2[1]}|" "$PORT_WINE_TMP_PATH/statistics"
-        line2[0]=${PW_EXE_FILE// /#@_@#}
-    fi
-
-    # Ремонт, если sha256sum изменилась, но путь до .exe тот же
-    if [[ $FILE_SHA256SUM_NOT_FOUND == 1 ]] ; then
-        sed -i "s|${line2[0]} ${line2[1]}|${line2[0]} $FILE_SHA256SUM|" "$PORT_WINE_TMP_PATH/statistics"
-        line2[1]=$FILE_SHA256SUM
-    fi
-
-    # Когда приложения ещё нет в статистике
-    [[ -z ${line2[2]} ]] && line2[2]=0
-    # Ремонт, если сломалось время
-    if (( line2[2] >= 999999999 )) ; then
-        sed -i "s|${line2[1]} ${line2[2]}|${line2[1]} 0|" "$PORT_WINE_TMP_PATH/statistics"
-        line2[2]=0
-    fi
-    # Ремонт, если кто-то сломал время
-    if [[ ! ${line2[2]} =~ ^[0-9]+$ ]] ; then
-        sed -i "/${line2[1]}/d" "$PORT_WINE_TMP_PATH/statistics"
-        return 1
-    fi
-
-    ###############################
-    # Общее проведённое время в секундах
-    export TIME_CURRENT=${line2[2]}
-    # количество запусков приложения
-    export COUNT_STARTS=${line2[4]//L4-/}
-    ###############################
-
-    # Проверка новых десктоп файлов, чтобы их можно было сортировать первыми при первом создании в главном меню + ремонт
-    if [[ $PW_NEW_DESKTOP == 1 ]] && [[ ${line2[3]} != NEW_DESKTOP ]] ; then
-        if [[ $FILE_SHA256SUM_FOUND == 1 ]] ; then
-            sed -i "s|${line2[1]} \(.*\) ${line2[3]}|${line2[1]} \1 NEW_DESKTOP|" "$PORT_WINE_TMP_PATH/statistics"
-        else
-            echo "${PW_EXE_FILE// /#@_@#} $FILE_SHA256SUM $TIME_CURRENT NEW_DESKTOP" >> "$PORT_WINE_TMP_PATH/statistics"
-        fi
-    fi
-    unset PW_NEW_DESKTOP
-
-    # Когда приложение было запущено и завершено
-    if [[ -n $PW_TIME_IN_GAME ]] ; then
-        TIME_TOTAL=$(( TIME_CURRENT + PW_TIME_IN_GAME ))
-        if [[ $FILE_SHA256SUM_FOUND == 1 ]] ; then
-            # Когда есть предыдущее время
-            sed -i "s|$FILE_SHA256SUM $TIME_CURRENT|$FILE_SHA256SUM $TIME_TOTAL|" "$PORT_WINE_TMP_PATH/statistics"
-        else
-            # Когда только запустили приложение первый раз
-            echo "${PW_EXE_FILE// /#@_@#} $FILE_SHA256SUM $TIME_TOTAL OLD_DESKTOP" >> "$PORT_WINE_TMP_PATH/statistics"
-        fi
-        # Для ремонта если вдруг в линии ещё что-то есть
-        count_line=6
-        # Здесь добавляются новые линии для статистики (L4-) важен
-        if [[ -z ${line2[4]} ]] ; then
-            SKIP_REPAIR=1
-            sed -i "s|$FILE_SHA256SUM \(.*\)|$FILE_SHA256SUM \1 L4-1|" "$PORT_WINE_TMP_PATH/statistics"
-        else
-            # ремонт, если L4 по каким-то причинам сломался
-            if [[ ${line2[4]} =~ ^L4 ]] ; then
-                local NUMBER_OF_STARTS=$(( ${line2[4]//L4-/} + 1 ))
-            else
-                SKIP_REPAIR=1
-                sed -i "s|$FILE_SHA256SUM \(.*\) ${line2[4]}|$FILE_SHA256SUM \1 L4-1|" "$PORT_WINE_TMP_PATH/statistics"
-            fi
-        fi
-
-        if [[ $SKIP_REPAIR != 1 ]] ; then
-            # Ремонт, если количество элементов массива по каким-то причина больше, чем должно быть
-            if [[ -n ${line2["$count_line"]} ]] ; then
-                for i in $(seq $count_line ${#line2[@]}) ; do
-                    unset 'line2[$i]'
-                done
-                sed -i "s|${PW_EXE_FILE// /#@_@#} $FILE_SHA256SUM \(.*\)|${line2[*]}|" "$PORT_WINE_TMP_PATH/statistics"
-            fi
-            # Для правильной работы L4
-            sed -i "s|$FILE_SHA256SUM \(.*\) ${line2[4]}|$FILE_SHA256SUM \1 L4-$NUMBER_OF_STARTS|" "$PORT_WINE_TMP_PATH/statistics"
-        fi
-
-        # Для правильной работы статистики по последнему запуску
-        if [[ $SORT_WITH_TIME == "lastlaunch" ]] ; then
-            LAST_LAUNCH=$(grep -o 'L5-[0-9]\+' "$PORT_WINE_TMP_PATH/statistics" | sed 's/L5-//' | sort -nr | head -1)
-            [[ -z $LAST_LAUNCH ]] && LAST_LAUNCH=0
-            LAST_LAUNCH=$(( LAST_LAUNCH + 1 ))
-            if [[ -z ${line2[5]} ]] ; then
-                sed -i "s|$FILE_SHA256SUM \(.*\)|$FILE_SHA256SUM \1 L5-$LAST_LAUNCH|" "$PORT_WINE_TMP_PATH/statistics"
-            else
-                sed -i "s|$FILE_SHA256SUM \(.*\) ${line2[5]}|$FILE_SHA256SUM \1 L5-$LAST_LAUNCH|" "$PORT_WINE_TMP_PATH/statistics"
-            fi
-        fi
-    fi
-    if [[ -n $PW_TIME_IN_GAME ]]
-    then return 2
-    else return 0
-    fi
+    return 0
 }
 
 create_name_desktop () {
@@ -4793,10 +4654,30 @@ portwine_create_shortcut () {
     portwine_output_yad_shortcut
 }
 
+pw_download_autoinstall_ppdb () {
+    [[ -z "${PW_PPDB_FILE:-}" ]] && return 0
+    [[ -z "${PW_EXE_FILE:-}" ]] && return 0
+    [[ ! -e "${PW_EXE_FILE}" ]] && return 0
+
+    local ppdb_path="${PW_EXE_FILE}.ppdb"
+    local tmp_ppdb_path="${ppdb_path}.tmp"
+
+    print_info "Download PPDB file for $(basename "${PW_EXE_FILE}")..."
+    if try_download "${PW_PPDB_FILE}" "${tmp_ppdb_path}" no_mirror ; then
+        mv -f "${tmp_ppdb_path}" "${ppdb_path}"
+        return 0
+    fi
+
+    try_remove_file "${tmp_ppdb_path}"
+    print_warning "Failed to download PPDB file for $(basename "${PW_EXE_FILE}")"
+    return 0
+}
+
 portwine_output_yad_shortcut () {
 
         [[ ! -e "${PW_EXE_FILE}" ]] && return 1
 
+        pw_download_autoinstall_ppdb
         pw_create_gui_png
         unset name_desktop
         check_variables PW_SHORTCUT_MENU "FALSE"

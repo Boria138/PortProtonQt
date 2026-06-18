@@ -3,7 +3,6 @@ import subprocess
 import requests
 import urllib.parse
 import time
-import glob
 import re
 import hashlib
 import queue
@@ -11,7 +10,7 @@ import shutil
 import locale
 from collections.abc import Callable
 from typing import Any
-from PySide6.QtCore import QThread, Signal, QUrl, QObject, Qt, SignalInstance
+from PySide6.QtCore import QThread, Signal, QUrl, QObject
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QApplication
 from portprotonqt.downloader import Downloader, get_requests_session
@@ -19,16 +18,18 @@ from portprotonqt.logger import get_logger
 from portprotonqt.config import (
     extract_exec_target_path,
     get_portproton_location,
-    get_portproton_scripts_path,
     get_portproton_start_command,
 )
 from portprotonqt.localization import _
 from portprotonqt.dialogs import FileExplorer
 from portprotonqt.config.cache import CacheManager
-from portprotonqt.image_utils import COVER_IMAGE_EXTENSIONS
+from portprotonqt.image_utils import (
+    COVER_IMAGE_EXTENSIONS,
+    clear_ppdb_autoinstall_image_cache,
+)
 
 logger = get_logger(__name__)
-AUTOINSTALL_CACHE_DURATION = 3600  # 1 hour for autoinstall cache
+AUTOINSTALL_API_URL = "https://ppdb.linux-gaming.ru/api/games/autoinstall"
 HEAD_FAILURE_RETRY_DELAY = 60  # 1 minute cooldown for failed HEAD checks
 HEAD_CACHE_DURATION = 24 * 60 * 60
 HEAD_CACHE_NAME = "head_cache"
@@ -106,9 +107,8 @@ def extract_exe_name(exec_line: str) -> str:
 
 
 class PortProtonAPI:
-    """API to fetch game assets (cover, metadata) and forum topics from the PortProtonQt repository."""
+    """API helpers for PPDB and autoinstall data."""
     def __init__(self, downloader: Downloader | None = None):
-        self.base_url = "https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt-Custom-Metadata/raw/branch/main"
         self.downloader = downloader or Downloader(max_workers=4)
         self.xdg_data_home = os.getenv("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share"))
         self.custom_data_dir = os.path.join(self.xdg_data_home, "PortProtonQt", "custom_data")
@@ -119,13 +119,6 @@ class PortProtonAPI:
         self._head_negative_cache: set[str] = set()
         self._head_failure_cache: dict[str, float] = {}
         self._head_disk_cache_cleaned = False
-        self._pending_asset_notifier: QObject | None = None
-        self._pending_asset_batch_thread: QThread | None = None
-
-    def _get_game_dir(self, exe_name: str) -> str:
-        game_dir = os.path.join(self.custom_data_dir, exe_name)
-        os.makedirs(game_dir, exist_ok=True)
-        return game_dir
 
     def _load_head_cache_entry(self, cache_manager: CacheManager, cache_key: str) -> bool | None:
         cached = cache_manager.load_json(HEAD_CACHE_NAME)
@@ -195,525 +188,300 @@ class PortProtonAPI:
             self._head_failure_cache[url] = time.time()
             return False
 
-    def download_game_assets_async(self, exe_name: str, timeout: int = 5, callback: Callable[[dict[str, str | None]], None] | None = None) -> None:
-        game_dir = self._get_game_dir(exe_name)
-        cover_extensions = [".png"]
-        cover_url_base = f"{self.base_url}/{exe_name}/cover"
-        metadata_url = f"{self.base_url}/{exe_name}/metadata.txt"
-
-        results: dict[str, str | None] = {"cover": None, "metadata": None}
-        pending_downloads = 0
-
-        def on_cover_downloaded(local_path: str | None, ext: str):
-            nonlocal pending_downloads
-            if local_path:
-                logger.info(f"Async cover downloaded for {exe_name}: {local_path}")
-                results["cover"] = local_path
-            else:
-                logger.debug(f"No cover downloaded for {exe_name} with extension {ext}")
-            pending_downloads -= 1
-            check_completion()
-
-        def on_metadata_downloaded(local_path: str | None):
-            nonlocal pending_downloads
-            if local_path:
-                logger.info(f"Async metadata downloaded for {exe_name}: {local_path}")
-                results["metadata"] = local_path
-            else:
-                logger.debug(f"No metadata downloaded for {exe_name}")
-            pending_downloads -= 1
-            check_completion()
-
-        def check_completion():
-            if pending_downloads == 0 and callback:
-                callback(results)
-
-        metadata_found = False
-        local_metadata_path = os.path.join(game_dir, "metadata.txt")
-        if os.path.exists(local_metadata_path):
-            logger.debug(f"Metadata already exists locally for {exe_name}: {local_metadata_path}")
-            results["metadata"] = local_metadata_path
-            metadata_found = True
-        elif self._check_file_exists(metadata_url, timeout):
-            metadata_found = True
-            pending_downloads += 1
-            self.downloader.download_async(
-                metadata_url,
-                local_metadata_path,
-                timeout=timeout,
-                callback=on_metadata_downloaded
-            )
-
-        if not metadata_found:
-            logger.debug(f"No metadata found for {exe_name}, skipping cover checks")
-            if callback:
-                callback(results)
-            return
-
-        for ext in cover_extensions:
-            cover_url = f"{cover_url_base}{ext}"
-            if self._check_file_exists(cover_url, timeout):
-                local_cover_path = os.path.join(game_dir, f"cover{ext}")
-                pending_downloads += 1
-                self.downloader.download_async(
-                    cover_url,
-                    local_cover_path,
-                    timeout=timeout,
-                    callback=lambda path, ext=ext: on_cover_downloaded(path, ext)
-                )
-                break
-
-        if pending_downloads == 0:
-            logger.debug(f"No assets found for {exe_name}")
-            if callback:
-                callback(results)
-
-    def download_autoinstall_cover_async(self, exe_name: str, timeout: int = 5, callback: Callable[[str | None], None] | None = None) -> None:
-        """Download only autoinstall cover image (PNG only, no metadata)."""
-        xdg_data_home = os.getenv("XDG_DATA_HOME",
-                                os.path.join(os.path.expanduser("~"), ".local", "share"))
-        autoinstall_root = os.path.join(xdg_data_home, "PortProtonQt", "custom_data", "autoinstall")
-        user_game_folder = os.path.join(autoinstall_root, exe_name)
-
-        if not os.path.isdir(user_game_folder):
-            try:
-                os.mkdir(user_game_folder)
-            except FileExistsError:
-                pass
-
-        local_cover_path = os.path.join(user_game_folder, "cover.png")
-
-        # Check if the cover already exists locally before attempting download
-        if os.path.exists(local_cover_path):
-            logger.debug(f"Async autoinstall cover already exists locally for {exe_name}: {local_cover_path}")
-            if callback:
-                callback(local_cover_path)
-            return
-
-        cover_url = f"{self.base_url}/{exe_name}/cover.png"
-
-        def on_cover_downloaded(local_path: str | None):
-            if local_path:
-                logger.info(f"Async autoinstall cover downloaded for {exe_name}: {local_path}")
-            else:
-                logger.debug(f"No autoinstall cover downloaded for {exe_name}")
-            if callback:
-                callback(local_path)
-
-        self.downloader.download_async(
-            cover_url,
-            local_cover_path,
-            timeout=timeout,
-            callback=on_cover_downloaded
-        )
-
-    def download_autoinstall_metadata_async(self, exe_name: str, timeout: int = 5, callback: Callable[[str | None], None] | None = None) -> None:
-        """Download autoinstall metadata.txt file."""
-        xdg_data_home = os.getenv("XDG_DATA_HOME",
-                                os.path.join(os.path.expanduser("~"), ".local", "share"))
-        autoinstall_root = os.path.join(xdg_data_home, "PortProtonQt", "custom_data", "autoinstall")
-        user_game_folder = os.path.join(autoinstall_root, exe_name)
-
-        if not os.path.isdir(user_game_folder):
-            try:
-                os.makedirs(user_game_folder, exist_ok=True)
-            except FileExistsError:
-                pass
-
-        local_metadata_path = os.path.join(user_game_folder, "metadata.txt")
-
-        # Check if the file already exists locally before attempting download
-        if os.path.exists(local_metadata_path):
-            logger.debug(f"Async autoinstall metadata already exists locally for {exe_name}: {local_metadata_path}")
-            if callback:
-                callback(local_metadata_path)
-            return
-
-        metadata_url = f"{self.base_url}/{exe_name}/metadata.txt"
-
-        def on_metadata_downloaded(local_path: str | None):
-            if local_path:
-                logger.info(f"Async autoinstall metadata downloaded for {exe_name}: {local_path}")
-            else:
-                logger.debug(f"No autoinstall metadata downloaded for {exe_name}")
-            if callback:
-                callback(local_path)
-
-        self.downloader.download_async(
-            metadata_url,
-            local_metadata_path,
-            timeout=timeout,
-            callback=on_metadata_downloaded
-        )
-
-    def download_autoinstall_assets_batch_async(
-        self,
-        exe_names: list[str],
-        timeout: int = 5,
-        cover_callback: Callable[[str, str | None], None] | None = None,
-        metadata_callback: Callable[[str, str | None], None] | None = None
-    ) -> None:
-        """Download covers and metadata for multiple autoinstall games in parallel.
-
-        Args:
-            exe_names: List of executable names to download assets for
-            timeout: Request timeout in seconds
-            cover_callback: Callback(exe_name, local_path) for cover downloads
-            metadata_callback: Callback(exe_name, local_path) for metadata downloads
-        """
-        xdg_data_home = os.getenv(
-            "XDG_DATA_HOME",
-            os.path.join(os.path.expanduser("~"), ".local", "share"),
-        )
-        autoinstall_root = os.path.join(
-            xdg_data_home, "PortProtonQt", "custom_data", "autoinstall"
-        )
-
-        class AssetNotifier(QObject):
-            cover_ready = Signal(str, object)
-            metadata_ready = Signal(str, object)
-
-        notifier = AssetNotifier()
-        if cover_callback:
-            notifier.cover_ready.connect(cover_callback, Qt.ConnectionType.DirectConnection)
-        if metadata_callback:
-            notifier.metadata_ready.connect(metadata_callback, Qt.ConnectionType.DirectConnection)
-        self._pending_asset_notifier = notifier
-
-        pending_tasks: list[tuple[str, str, SignalInstance, str, str]] = []
-
-        for exe_name in exe_names:
-            user_game_folder = os.path.join(autoinstall_root, exe_name)
-            try:
-                os.makedirs(user_game_folder, exist_ok=True)
-            except FileExistsError:
-                pass
-
-            local_cover_path = os.path.join(user_game_folder, "cover.png")
-            local_metadata_path = os.path.join(user_game_folder, "metadata.txt")
-
-            cover_exists = os.path.exists(local_cover_path)
-            metadata_exists = os.path.exists(local_metadata_path)
-
-            if cover_exists:
-                logger.debug(f"Batch cover already exists for {exe_name}: {local_cover_path}")
-                notifier.cover_ready.emit(exe_name, local_cover_path)
-            else:
-                cover_url = f"{self.base_url}/{exe_name}/cover.png"
-                pending_tasks.append((cover_url, local_cover_path, notifier.cover_ready, exe_name, "cover"))
-
-            if metadata_exists:
-                logger.debug(f"Batch metadata already exists for {exe_name}: {local_metadata_path}")
-                notifier.metadata_ready.emit(exe_name, local_metadata_path)
-            else:
-                metadata_url = f"{self.base_url}/{exe_name}/metadata.txt"
-                pending_tasks.append((metadata_url, local_metadata_path, notifier.metadata_ready, exe_name, "metadata"))
-
-        if not pending_tasks:
-            return
-
-        pending_tasks_by_url = {task[0]: task for task in pending_tasks}
-
-        class BatchDownloadWorker(QThread):
-            item_ready = Signal(str, object)
-            finished = Signal()
-            downloader: Downloader
-            urls: list[str]
-            local_paths: list[str]
-            timeout: int
-
-            def run(self):
-                self.downloader.download_parallel(
-                    self.urls,
-                    self.local_paths,
-                    timeout=self.timeout,
-                    on_result=lambda url, result: self.item_ready.emit(url, result),
-                )
-                self.finished.emit()
-
-        worker = BatchDownloadWorker()
-        worker.downloader = self.downloader
-        worker.urls = [task[0] for task in pending_tasks]
-        worker.local_paths = [task[1] for task in pending_tasks]
-        worker.timeout = timeout
-
-        def on_item_ready(url: str, result: str | None):
-            task = pending_tasks_by_url.get(url)
-            if task is None:
-                return
-            _url, _local_path, signal, exe_name, asset_type = task
-            if result:
-                logger.info(f"{asset_type.capitalize()} downloaded for {exe_name}: {result}")
-            else:
-                logger.debug(f"No {asset_type} found for {exe_name}")
-            signal.emit(exe_name, result)
-
-        def on_batch_finished():
-            self._pending_asset_batch_thread = None
-
-        worker.item_ready.connect(on_item_ready)
-        worker.finished.connect(on_batch_finished)
-        worker.finished.connect(worker.deleteLater)
-        self._pending_asset_batch_thread = worker
-        worker.start()
-
-    def get_autoinstall_description(self, exe_name: str, lang_code: str = "en") -> str | None:
-        """Read description from downloaded metadata.txt file for autoinstall game.
-
-        Args:
-            exe_name: The executable name/script name
-            lang_code: Language code ("en" or "ru" for description)
-
-        Returns:
-            Description string or None if not found
-        """
-        xdg_data_home = os.getenv("XDG_DATA_HOME",
-                                os.path.join(os.path.expanduser("~"), ".local", "share"))
-        autoinstall_root = os.path.join(xdg_data_home, "PortProtonQt", "custom_data", "autoinstall")
-        metadata_path = os.path.join(autoinstall_root, exe_name, "metadata.txt")
-
-        if not os.path.exists(metadata_path):
-            return None
-
-        try:
-            with open(metadata_path, encoding='utf-8') as f:
-                content = f.read()
-
-            # Parse the metadata content to extract description
-            # Format: description_en=... or description_ru=...
-            if lang_code == "ru":
-                pattern = r'^description_ru=(.*)$'
-            else:
-                pattern = r'^description_en=(.*)$'
-
-            match = re.search(pattern, content, re.MULTILINE)
-            if match:
-                description = match.group(1).strip()
-                # Handle potential quoted strings
-                if description.startswith('"') and description.endswith('"'):
-                    description = description[1:-1]
-                return description
-            else:
-                # Try fallback to the other language if the requested one is not found
-                fallback_lang = "ru" if lang_code == "en" else "en"
-                fallback_pattern = rf'^description_{fallback_lang}=(.*)$'
-                fallback_match = re.search(fallback_pattern, content, re.MULTILINE)
-                if fallback_match:
-                    description = fallback_match.group(1).strip()
-                    if description.startswith('"') and description.endswith('"'):
-                        description = description[1:-1]
-                    return description
-        except Exception as e:
-            logger.error(f"Error reading metadata for {exe_name}: {e}")
-
-        return None
-
-    def parse_autoinstall_script(self, file_path: str) -> tuple[str | None, str | None]:
-        """Extract display_name from # name comment and exe_name from autoinstall bash script."""
-        try:
-            with open(file_path, encoding='utf-8') as f:
-                content = f.read()
-
-            # Skip emulators
-            if re.search(r'#\s*type\s*:\s*emulators', content, re.IGNORECASE):
-                return None, None
-
-            display_name = None
-            exe_name = None
-
-            # Extract display_name from "# name:" comment
-            name_match = re.search(r'#\s*name\s*:\s*(.+)', content, re.IGNORECASE)
-            if name_match:
-                display_name = name_match.group(1).strip()
-
-            # --- pw_create_unique_exe ---
-            pw_match = re.search(r'pw_create_unique_exe(?:\s+["\']([^"\']+)["\'])?', content)
-            if pw_match:
-                arg = pw_match.group(1)
-                if arg:
-                    exe_name = arg.strip()
-                    if not exe_name.lower().endswith(".exe"):
-                        exe_name += ".exe"
-                else:
-                    export_match = re.search(
-                        r'export\s+PORTWINE_CREATE_SHORTCUT_NAME\s*=\s*["\']([^"\']+)["\']',
-                        content, re.IGNORECASE)
-                    if export_match:
-                        exe_name = f"{export_match.group(1).strip()}.exe"
-
-            else:
-                portwine_match = None
-                for line in content.splitlines():
-                    stripped = line.strip()
-                    if stripped.startswith("#"):
-                        continue
-                    if "PW_EXE_FILE" in stripped and "=" in stripped:
-                        portwine_match = stripped
-                        break
-
-                if portwine_match:
-                    exe_expr = portwine_match.split("=", 1)[1].strip().strip("'\" ")
-                    exe_candidates = re.findall(r'[-\w\s/\\\.]+\.exe', exe_expr)
-                    if exe_candidates:
-                        exe_name = os.path.basename(exe_candidates[-1].strip())
-
-
-            # Fallback
-            if not display_name and exe_name:
-                display_name = exe_name
-
-            return display_name, exe_name
-
-        except Exception as e:
-            logger.error(f"Failed to parse {file_path}: {e}")
-            return None, None
-
-    def _compute_scripts_signature(self, auto_dir: str) -> str:
-        """Compute a hash-based signature of the autoinstall scripts to detect changes."""
-        if not os.path.exists(auto_dir):
-            return ""
-        scripts = sorted(glob.glob(os.path.join(auto_dir, "*")))
-        # Simple hash: concatenate sorted filenames and hash
-        filenames_str = "".join(sorted([os.path.basename(s) for s in scripts]))
-        return hashlib.md5(filenames_str.encode()).hexdigest()
-
     def _load_autoinstall_cache(self):
-        """Load cached autoinstall games if fresh and scripts unchanged."""
+        """Load cached autoinstall games."""
         if self._autoinstall_cache is not None:
             return self._autoinstall_cache
         cache_manager = CacheManager()
         if cache_manager.exists("autoinstall_games_cache"):
             try:
                 data = cache_manager.load_json("autoinstall_games_cache")
-                if data:
-                    mod_time = cache_manager.get_file_age("autoinstall_games_cache")
-                    if mod_time is not None and mod_time < AUTOINSTALL_CACHE_DURATION:
-                        start_time = time.time()
-                        cached_signature = data.get("scripts_signature", "")
-                        scripts_path = get_portproton_scripts_path()
-                        auto_dir = os.path.join(scripts_path, "pw_autoinstall") if scripts_path else ""
-                        current_signature = self._compute_scripts_signature(auto_dir)
-                        if time.time() - start_time > 3:
-                            logger.warning("Cache loading took too long, skipping cache")
-                            return None
-                        if cached_signature != current_signature:
-                            logger.info("Scripts signature mismatch; invalidating cache")
-                            return None
-                        self._autoinstall_cache = data["games"]
-                        logger.info(f"Loaded {len(self._autoinstall_cache)} cached autoinstall games")
-                        return self._autoinstall_cache
+                if isinstance(data, dict):
+                    if data.get("api_url") != AUTOINSTALL_API_URL:
+                        return None
+                    games = data["games"]
+                    if not self._autoinstall_cache_uses_urls(games):
+                        return None
+                    self._autoinstall_cache = games
+                    logger.info(f"Loaded {len(self._autoinstall_cache)} cached autoinstall games")
+                    return self._autoinstall_cache
             except Exception as e:
                 logger.error(f"Failed to load autoinstall cache: {e}")
         return None
 
+    def _autoinstall_cache_uses_urls(self, games: list) -> bool:
+        for game in games:
+            if len(game) <= 5 or not isinstance(game[5], str):
+                return False
+            if not game[5].startswith("autoinstall:http"):
+                return False
+        return True
+
     def _save_autoinstall_cache(self, games):
-        """Save parsed autoinstall games to cache with scripts signature."""
+        """Save autoinstall games to cache."""
         try:
             cache_manager = CacheManager()
-            scripts_path = get_portproton_scripts_path()
-            auto_dir = os.path.join(scripts_path, "pw_autoinstall") if scripts_path else ""
-            scripts_signature = self._compute_scripts_signature(auto_dir)
-            data = {"games": games, "scripts_signature": scripts_signature, "timestamp": time.time()}
+            data = {"games": games, "api_url": AUTOINSTALL_API_URL, "timestamp": time.time()}
             cache_manager.save_json("autoinstall_games_cache", data)
-            logger.debug(f"Saved {len(games)} autoinstall games to cache with signature {scripts_signature}")
+            logger.debug(f"Saved {len(games)} autoinstall games to cache")
         except Exception as e:
             logger.error(f"Failed to save autoinstall cache: {e}")
 
-    def start_autoinstall_games_load(self, callback: Callable[[list[tuple]], None]) -> QThread | None:
+    def clear_autoinstall_cache(self) -> None:
+        """Clear cached autoinstall API data."""
+        self._autoinstall_cache = None
+        cache_manager = CacheManager()
+        cache_manager.remove("autoinstall_games_cache")
+
+    def clear_autoinstall_image_cache(self) -> None:
+        """Clear cached autoinstall PPDB images."""
+        games = self._load_autoinstall_cache() or []
+        cover_urls = []
+        for game in games:
+            if len(game) > 14 and isinstance(game[14], str):
+                cover_urls.append(game[14])
+            if len(game) > 15 and isinstance(game[15], str):
+                cover_urls.append(game[15])
+        clear_ppdb_autoinstall_image_cache(cover_urls)
+
+    def _get_autoinstall_lang_code(self) -> str:
+        try:
+            current_locale = locale.getlocale()[0] or "en"
+        except (AttributeError, IndexError, TypeError):
+            current_locale = "en"
+        for lang_code in ("ru", "es", "pt"):
+            if lang_code in current_locale.lower():
+                return lang_code
+        return "en"
+
+    def _get_autoinstall_field(self, game: dict, field: str, lang_code: str) -> str:
+        value = game.get(f"{field}_{lang_code}") or game.get(f"{field}_en") or game.get(field)
+        return value if isinstance(value, str) else ""
+
+    def _get_custom_game_dir(self, exe_name: str) -> str:
+        game_dir = os.path.join(self.custom_data_dir, exe_name)
+        os.makedirs(game_dir, exist_ok=True)
+        return game_dir
+
+    def _clean_metadata_value(self, value: str) -> str:
+        return value.replace("\r", " ").replace("\n", " ").strip()
+
+    def _write_autoinstall_metadata(self, game_data: dict, game_dir: str) -> None:
+        metadata_path = os.path.join(game_dir, "metadata.txt")
+        name = game_data.get("name", "")
+        description = game_data.get("description", "")
+        try:
+            with open(metadata_path, "w", encoding="utf-8") as metadata_file:
+                if isinstance(name, str) and name.strip():
+                    metadata_file.write(f"name={self._clean_metadata_value(name)}\n")
+                if isinstance(description, str) and description.strip():
+                    clean_description = self._clean_metadata_value(description)
+                    metadata_file.write(f"description={clean_description}\n")
+        except OSError as e:
+            logger.warning("Failed to write autoinstall metadata %s: %s", metadata_path, e)
+
+    def _get_custom_cover_path(self, game_dir: str, cover_url: str) -> str:
+        ext = os.path.splitext(urllib.parse.urlparse(cover_url).path)[1].lower()
+        if ext not in COVER_IMAGE_EXTENSIONS:
+            ext = ".png"
+        return os.path.join(game_dir, f"cover{ext}")
+
+    def _cache_autoinstall_cover(self, cover_path: str, game_dir: str) -> str:
+        if not cover_path.startswith(("http://", "https://")):
+            return ""
+        local_path = self._get_custom_cover_path(game_dir, cover_path)
+        downloaded_path = self.downloader.download(cover_path, local_path, timeout=10)
+        return downloaded_path or ""
+
+    def _extract_exe_name_from_script_line(self, line: str) -> str:
+        for part in line.replace("\\", "/").split("/"):
+            clean_part = part.strip().strip('"\' }')
+            if clean_part.lower().endswith(".exe"):
+                return clean_part
+        return ""
+
+    def _get_autoinstall_exe_name(self, script_path: str) -> str:
+        install_exe = ""
+        try:
+            with open(script_path, encoding="utf-8") as script_file:
+                for line in script_file:
+                    if "PW_EXE_FILE" in line:
+                        exe_name = self._extract_exe_name_from_script_line(line)
+                        if exe_name:
+                            return exe_name
+                    if "PW_AUTOINSTALL_EXE" not in line:
+                        continue
+                    exe_name = self._extract_exe_name_from_script_line(line)
+                    if exe_name:
+                        install_exe = exe_name
+        except OSError as e:
+            logger.warning("Failed to read autoinstall script %s: %s", script_path, e)
+        return install_exe
+
+    def write_autoinstall_custom_data(self, script_path: str, game_data: dict) -> None:
+        if not game_data:
+            return
+        exe_file = self._get_autoinstall_exe_name(script_path)
+        if not exe_file:
+            return
+
+        exe_name = os.path.splitext(os.path.basename(exe_file))[0]
+        game_dir = self._get_custom_game_dir(exe_name)
+        self._write_autoinstall_metadata(game_data, game_dir)
+        cover_path = game_data.get("cover_path", "")
+        if isinstance(cover_path, str):
+            self._cache_autoinstall_cover(cover_path, game_dir)
+
+    def _get_autoinstall_script_path(self, ppai_url: str) -> str:
+        script_name = os.path.basename(urllib.parse.urlparse(ppai_url).path)
+        if not script_name.endswith(".ppai"):
+            return ""
+        game_match = re.search(r"game_(\d+)_", script_name)
+        cache_key = game_match.group(1) if game_match else hashlib.sha256(ppai_url.encode()).hexdigest()
+        cache_dir = os.path.join(self.custom_data_dir, "autoinstall", cache_key)
+        os.makedirs(cache_dir, exist_ok=True)
+        return os.path.join(cache_dir, script_name)
+
+    def download_autoinstall_script(self, ppai_url: str) -> str:
+        script_path = self._get_autoinstall_script_path(ppai_url)
+        if not script_path:
+            return ""
+
+        temp_path = f"{script_path}.tmp"
+        try:
+            session = get_requests_session()
+            response = session.get(ppai_url, timeout=10)
+            response.raise_for_status()
+            with open(temp_path, "w", encoding="utf-8") as script_file:
+                script_file.write(response.text)
+            os.replace(temp_path, script_path)
+            return script_path
+        except (OSError, requests.RequestException) as e:
+            logger.warning("Failed to download autoinstall script %s: %s", ppai_url, e)
+        if os.path.exists(script_path):
+            return script_path
+        return ""
+
+    def start_autoinstall_script_download(
+        self,
+        ppai_url: str,
+        callback: Callable[[str], None],
+    ) -> QThread:
+        class AutoinstallScriptWorker(QThread):
+            finished = Signal(str)
+            api: "PortProtonAPI"
+            ppai_url: str
+
+            def run(self):
+                script_path = self.api.download_autoinstall_script(self.ppai_url)
+                self.finished.emit(script_path)
+
+        worker = AutoinstallScriptWorker()
+        worker.api = self
+        worker.ppai_url = ppai_url
+        worker.finished.connect(callback)
+        worker.start()
+        return worker
+
+    def start_autoinstall_custom_data_write(
+        self,
+        script_path: str,
+        game_data: dict,
+    ) -> QThread:
+        class AutoinstallCustomDataWorker(QThread):
+            finished = Signal()
+            api: "PortProtonAPI"
+            script_path: str
+            game_data: dict
+
+            def run(self):
+                self.api.write_autoinstall_custom_data(self.script_path, self.game_data)
+                self.finished.emit()
+
+        worker = AutoinstallCustomDataWorker()
+        worker.api = self
+        worker.script_path = script_path
+        worker.game_data = game_data
+        worker.start()
+        return worker
+
+    def _create_autoinstall_game_tuple(self, game: dict, lang_code: str) -> tuple | None:
+        game_id = game.get("id")
+        if not isinstance(game_id, int):
+            return None
+
+        display_name = self._get_autoinstall_field(game, "name", lang_code)
+        if not display_name:
+            return None
+
+        ppai_url = game.get("ppai_url")
+        if not isinstance(ppai_url, str):
+            return None
+
+        description = self._get_autoinstall_field(game, "description", lang_code)
+        compact_icon = game.get("icon_compact_url") or ""
+        full_icon = game.get("icon_full_url") or ""
+        exe_name = f"game_{game_id}"
+
+        return (
+            display_name, description, full_icon, "",
+            "", f"autoinstall:{ppai_url}", "Never", "0h 0m", "", "", 0, 0,
+            "autoinstall", exe_name, compact_icon, full_icon
+        )
+
+    def start_autoinstall_games_load(
+        self,
+        callback: Callable[[list[tuple]], None],
+        force_refresh: bool = False,
+    ) -> QThread | None:
         """Start loading auto-install games in a background thread. Returns the thread for management."""
         class AutoinstallWorker(QThread):
             finished = Signal(list)
             api: "PortProtonAPI"
             portproton_location: str | None
+            force_refresh: bool
 
             def run(self):
-                # Check cache in this background thread, not in main thread
-                start_time = time.time()
-                cached_games = self.api._load_autoinstall_cache()
-                # If cache loading took too long (>2 seconds), skip cache and load directly
-                if time.time() - start_time > 2:
-                    logger.warning("Cache loading took too long, proceeding without cache")
-                    cached_games = None
+                if not self.force_refresh:
+                    cached_games = self.api._load_autoinstall_cache()
+                    if cached_games is not None:
+                        self.finished.emit(cached_games)
+                        return
 
-                if cached_games is not None:
-                    self.finished.emit(cached_games)
-                    return
-
-                # No cache: Load games from scratch
                 games = []
-                scripts_path = get_portproton_scripts_path()
-                if not scripts_path:
-                    logger.info("PortProton scripts path is not resolved for autoinstall games")
+                try:
+                    session = get_requests_session()
+                    response = session.get(AUTOINSTALL_API_URL, timeout=10)
+                    response.raise_for_status()
+                    data = response.json()
+                except (ValueError, requests.RequestException) as e:
+                    logger.warning("Failed to load autoinstall API: %s", e)
+                    if self.force_refresh:
+                        cached_games = self.api._load_autoinstall_cache()
+                        if cached_games is not None:
+                            self.finished.emit(cached_games)
+                            return
                     self.finished.emit(games)
                     return
 
-                auto_dir = os.path.join(scripts_path, "pw_autoinstall")
-                if not os.path.exists(auto_dir):
-                    logger.info("PortProton autoinstall scripts directory not found: %s", auto_dir)
+                api_games = data.get("games", []) if isinstance(data, dict) else []
+                if not isinstance(api_games, list):
+                    logger.warning("Invalid autoinstall API response")
+                    if self.force_refresh:
+                        cached_games = self.api._load_autoinstall_cache()
+                        if cached_games is not None:
+                            self.finished.emit(cached_games)
+                            return
                     self.finished.emit(games)
                     return
 
-                scripts = sorted(glob.glob(os.path.join(auto_dir, "*")))
-                if not scripts:
-                    logger.info("PortProton autoinstall scripts not found in: %s", auto_dir)
-                    self.finished.emit(games)
-                    return
-
-                xdg_data_home = os.getenv(
-                    "XDG_DATA_HOME",
-                    os.path.join(os.path.expanduser("~"), ".local", "share"),
-                )
-                base_autoinstall_dir = os.path.join(
-                    xdg_data_home, "PortProtonQt", "custom_data", "autoinstall"
-                )
-                os.makedirs(base_autoinstall_dir, exist_ok=True)
-
-                for script_path in scripts:
-                    display_name, exe_name = self.api.parse_autoinstall_script(script_path)
-                    script_name = os.path.splitext(os.path.basename(script_path))[0]
-
-                    if not (display_name and exe_name):
+                lang_code = self.api._get_autoinstall_lang_code()
+                for game in api_games:
+                    if not isinstance(game, dict):
                         continue
-
-                    exe_name = os.path.splitext(exe_name)[0]
-                    user_game_folder = os.path.join(base_autoinstall_dir, exe_name)
-                    os.makedirs(user_game_folder, exist_ok=True)
-
-                    # Find cover
-                    cover_path = ""
-                    user_files = (
-                        set(os.listdir(user_game_folder))
-                        if os.path.exists(user_game_folder)
-                        else set()
-                    )
-                    for ext in COVER_IMAGE_EXTENSIONS:
-                        candidate = f"cover{ext}"
-                        if candidate in user_files:
-                            cover_path = os.path.join(user_game_folder, candidate)
-                            break
-
-                    if not cover_path:
-                        logger.debug(f"No local cover found for autoinstall {exe_name}")
-
-                    # Try to get the description from metadata file
-                    description = ""
-                    # Look for metadata in the expected location
-                    try:
-                        current_locale = locale.getlocale()[0] or 'en'
-                    except (AttributeError, IndexError, TypeError):
-                        current_locale = 'en'
-                    lang_code = 'ru' if current_locale and 'ru' in current_locale.lower() else 'en'
-
-                    # Try to read description from downloaded metadata
-                    metadata_description = self.api.get_autoinstall_description(exe_name, lang_code)
-                    if metadata_description:
-                        description = metadata_description
-
-                    game_tuple = (
-                        display_name, description, cover_path, "",
-                        "", f"autoinstall:{script_name}", "Never", "0h 0m", "", "", 0, 0, "autoinstall", exe_name
-                    )
-                    games.append(game_tuple)
+                    game_tuple = self.api._create_autoinstall_game_tuple(game, lang_code)
+                    if game_tuple is not None:
+                        games.append(game_tuple)
 
                 self.api._save_autoinstall_cache(games)
                 self.api._autoinstall_cache = games
@@ -722,6 +490,7 @@ class PortProtonAPI:
         worker = AutoinstallWorker()
         worker.api = self
         worker.portproton_location = self.portproton_location
+        worker.force_refresh = force_refresh
         worker.finished.connect(lambda games: callback(games))
         worker.start()
         logger.info("Started background load of autoinstall games")

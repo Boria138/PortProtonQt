@@ -383,6 +383,16 @@ def get_advanced_settings(disabled_text, logical_core_options=None, locale_optio
         'default': disabled_text
     })
 
+    # 14. Sound driver
+    advanced_settings.append({
+        'key': 'PW_SOUND_DRIVER_USE',
+        'name': _("Sound Driver"),
+        'description': _("Force the Wine sound driver for this executable."),
+        'type': 'combo',
+        'options': [disabled_text, 'oss', 'pulse', 'alsa'],
+        'default': disabled_text
+    })
+
     return advanced_settings
 
 # Keys that should be recognized as advanced settings
@@ -400,4 +410,5 @@ ADVANCED_SETTING_KEYS = [
     'PW_LOCALE_SELECT',
     'PW_MESA_VK_WSI_PRESENT_MODE',
     'PW_CPU_NUMA_NODE_INDEX',
+    'PW_SOUND_DRIVER_USE',
 ]

@@ -1,4 +1,5 @@
 import os
+import re
 from weakref import WeakKeyDictionary
 from PySide6.QtGui import QPen, QColor, QPixmap, QPainter, QPainterPath, QImageReader, QMovie, QBitmap
 from PySide6.QtCore import (
@@ -353,6 +354,32 @@ def _get_cover_url_suffix(cover: str) -> str:
     return ".jpg"
 
 
+def _get_ppdb_autoinstall_image_name(cover: str) -> str:
+    match = re.search(r"/game_(\d+)_(icon|library)_", cover)
+    if not match:
+        return ""
+    game_id, image_type = match.groups()
+    suffix = _get_cover_url_suffix(cover)
+    if image_type == "icon":
+        return f"{game_id}_compat{suffix}"
+    return f"{game_id}{suffix}"
+
+
+def clear_ppdb_autoinstall_image_cache(cover_urls: list[str]) -> None:
+    xdg_cache_home = os.getenv("XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache"))
+    image_folder = os.path.join(xdg_cache_home, "PortProtonQt", "images")
+    for cover in cover_urls:
+        filename = _get_ppdb_autoinstall_image_name(cover)
+        if not filename:
+            continue
+        local_path = os.path.join(image_folder, filename)
+        try:
+            if os.path.exists(local_path):
+                os.remove(local_path)
+        except OSError as e:
+            logger.warning("Failed to remove cached PPDB image %s: %s", local_path, e)
+
+
 def load_pixmap_async(
     cover: str,
     width: int,
@@ -502,7 +529,10 @@ def load_pixmap_async(
 
         if cover and cover.startswith(("http://", "https://")):
             try:
-                local_path = os.path.join(image_folder, f"{app_name}{_get_cover_url_suffix(cover)}")
+                filename = _get_ppdb_autoinstall_image_name(cover)
+                if not filename:
+                    filename = f"{app_name}{_get_cover_url_suffix(cover)}"
+                local_path = os.path.join(image_folder, filename)
                 if os.path.exists(local_path):
                     pixmap = QPixmap(local_path)
                     # Check if the pixmap loaded successfully
@@ -738,7 +768,6 @@ class ClickablePixmapItem(QGraphicsPixmapItem):
         self.index = index
         self.carousel = carousel
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setToolTip("")
         self._click_start_position = None
         self.setAcceptedMouseButtons(Qt.MouseButton.LeftButton)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)

@@ -12,7 +12,6 @@ from portprotonqt.image_utils import load_pixmap_async, round_corners, set_anima
 from portprotonqt.config import (
     extract_exec_target_path,
     favorites_config,
-    get_portproton_scripts_path,
     parse_desktop_entry,
 )
 from portprotonqt.logger import get_logger
@@ -386,11 +385,10 @@ def _check_desktop_file(
 
 
 def _get_autoinstall_exe_name(script_name: str) -> str:
-    scripts_path = get_portproton_scripts_path()
-    if not scripts_path:
+    script_path = script_name
+    if not os.path.isfile(script_path):
         return ""
 
-    script_path = os.path.join(scripts_path, "pw_autoinstall", script_name)
     install_exe = ""
     try:
         with open(script_path, encoding="utf-8") as script_file:

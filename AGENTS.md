@@ -169,6 +169,8 @@ QColor(self.theme.color_disabled_text)
 - **ALWAYS update or remove comments that reference removed dependencies, patterns, or context**
 - **NEVER leave stub/no-op functions** (e.g., `def func(): pass` with comment "removed")
 - **When removing a feature, delete the function entirely, not stub it**
+- When removing async/download code, preserve callback completion paths in callers
+- Add or update regression tests for callback-driven UI loading paths touched by the change
 - Never invent modules
 - Do not move files unless requested
 - Do not create new files for organization (unless task requires a new module)
@@ -305,6 +307,7 @@ git commit -m "feat: description in English ≤72 chars"
 | uv-lock | uv.lock up to date |
 | ruff-check | Linting (E, W, F, B, C4, UP) |
 | pyright | Type checking |
+| pytest | Unit tests |
 | bash-n | Bash syntax check and shebang `CRLF` check for `build-aux/share/portproton/scripts/` |
 | check-meson | meson.build syntax + files |
 | check-qss-properties | Theme QSS validation |
@@ -331,6 +334,7 @@ These tools are executed ONLY via pre-commit hooks.
 - `pre-commit run --all-files`
 - `pre-commit run ruff-check`
 - `pre-commit run pyright`
+- `pre-commit run pytest`
 
 #### Rationale
 
@@ -338,6 +342,65 @@ These tools are executed ONLY via pre-commit hooks.
 Direct execution bypasses project configuration and is forbidden.
 
 Do not attempt to execute binaries manually.
+
+---
+
+## Testing
+
+### Structure
+
+```
+tests/
+├── conftest.py              # Shared fixtures (tmp_config_dir, sample_steam_apps)
+├── test_utils.py            # Steam API utils (normalize_name, search, VDF, Steam utils)
+├── test_validators.py       # Config validators (string, int, bool, path, url)
+├── test_cache_manager.py    # CacheManager (save/load/TTL/atomic writes)
+├── test_dark_theme.py       # Dark theme detection (XFCE/MATE/Cinnamon/GNOME)
+├── test_steam_cache.py      # exiftool skip, cache eviction, delete_cached_app_files
+├── test_base_config.py      # BaseConfig read/write, caching, versioning
+├── test_cli.py              # normalize_launch_path, URL/resolution parsing
+├── test_main_window.py      # Main window data processing and callback regressions
+├── test_portproton_config.py # exec_line parsing, launcher tail, extensions
+├── test_portproton_api.py   # PPDB API helpers, autoinstall localization fallback
+├── test_migration.py        # Desktop shortcut migration, prefix backup, squashfs
+├── test_icon_extractor.py   # NE/PE icon extraction, DIB decoding, thumbnails
+├── test_dbus_tools.py       # D-Bus tools (notifications, idle inhibit, power profiles)
+├── test_time_utils.py       # Playtime parsing, last launch cache, formatting
+└── test_shortcuts.py        # Desktop shortcut creation, paths with spaces, .desktop entry
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+uv run pytest tests/ -v
+
+# Run specific test file
+uv run pytest tests/test_utils.py -v
+
+# Run specific test class
+uv run pytest tests/test_utils.py::TestNormalizeName -v
+
+# Run with pre-commit
+pre-commit run pytest
+```
+
+### Writing Tests
+
+- Tests MUST use `pytest` with `tmp_path` fixture for file isolation
+- Tests MUST mock external resources (network, system paths, env vars)
+- Tests MUST NOT depend on system state (installed apps, real Steam dirs)
+- Use `monkeypatch` for environment variables and function patching
+- Keep tests locale-independent (assert numbers, not translated strings)
+- Test regression scenarios from git fix commits
+
+### Key Regression Areas
+
+| Module | Regression | Commit |
+|--------|-----------|--------|
+| `time_utils` | Spaced exe names in cache | 764bb3c |
+| `time_utils` | SHA256 hash + L5- index | 7a02b6b |
+| `time_utils` | Malformed playtime data | dd65021 |
 
 ---
 
@@ -628,6 +691,11 @@ shadow.setBlurRadius(self.theme.shadow_blur_radius)
 label.setStyleSheet(self.theme.CONTENT_STYLE)
 ```
 
+**Tooltip rule:**
+- Prefer the themed `gamepad_tooltip`/`TOOLTIP_STYLE` mechanism for in-app `QWidget` tooltips
+- Avoid `setToolTip()` for regular widgets when the themed tooltip can be used
+- `setToolTip()` is acceptable only for APIs that are not regular widgets, such as `QSystemTrayIcon`
+
 ### Comments
 ```python
 # NEVER: Russian or verbose
@@ -765,6 +833,7 @@ PortProtonQt/
 │   ├── theme_manager.py  # Theme management
 │   ├── logger.py         # Logging
 │   └── themes/           # Theme files
+├── tests/                # Unit tests
 ├── build-aux/            # Build resources
 ├── dev-scripts/          # Development scripts
 ├── documentation/        # Documentation
@@ -826,6 +895,6 @@ PortProtonQt/
 
 ---
 
-**Last updated:** 2026-03-10
+**Last updated:** 2026-06-16
 **Version:** 1.2
 **Status:** Release

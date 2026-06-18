@@ -371,8 +371,9 @@ def create_steam_badge(
 
 def create_portproton_badge(
     parent: QWidget,
-    on_click: Callable[..., None],
     main_window,
+    ppdb_id: str = "",
+    ppdb_rating: str = "",
 ) -> ClickableLabel:
     """Create PortProton badge."""
     portproton_icon = main_window.theme_manager.get_icon("badge_portproton", as_path=True)
@@ -383,9 +384,14 @@ def create_portproton_badge(
         icon_size=BADGE_ICON_SIZE,
         icon_space=5,
     )
-    badge.setStyleSheet(main_window.theme.STEAM_BADGE_STYLE)
+    if ppdb_rating:
+        badge.setStyleSheet(main_window.theme.get_ppdb_badge_style(ppdb_rating))
+    else:
+        badge.setStyleSheet(main_window.theme.STEAM_BADGE_STYLE)
     _apply_badge_view_mode(badge)
-    badge.clicked.connect(on_click)
+    badge.clicked.connect(
+        lambda: QDesktopServices.openUrl(QUrl(f"https://ppdb.linux-gaming.ru/game/{ppdb_id}"))
+    )
     return badge
 
 

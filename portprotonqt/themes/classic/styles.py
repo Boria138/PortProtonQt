@@ -232,8 +232,8 @@ LIBRARY_CONTROLS_BUTTON_STYLE = f"""
 
 LIBRARY_FILTER_COMBOBOX_STYLE = f"""
     QComboBox {{
-        background: {color_b};
-        border: {border_a};
+        background: {color_d};
+        border: {border_b} {color_h};
         border-radius: {border_radius_a};
         padding-left: 12px;
         height: 30px;
@@ -244,10 +244,18 @@ LIBRARY_FILTER_COMBOBOX_STYLE = f"""
         combobox-popup: 0;
     }}
     QComboBox:hover,
-    QComboBox:focus,
-    QComboBox:on {{
-        background: {color_b};
+    QComboBox:focus {{
+        background: {color_a};
         border: {border_b} {color_a};
+    }}
+    QComboBox:on {{
+        background: {color_d};
+        border: {border_b} {color_a};
+        border-bottom-style: none;
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
+        border-bottom-left-radius: 0px;
+        border-bottom-right-radius: 0px;
     }}
     QComboBox::drop-down {{
         subcontrol-origin: padding;
@@ -273,16 +281,18 @@ LIBRARY_FILTER_COMBOBOX_STYLE = f"""
         outline: none;
         background: {color_c};
         border: {border_b} {color_a};
-        border-radius: {border_radius_a};
-        color: {color_f};
-        selection-background-color: {color_a};
-        selection-color: {color_f};
+        border-top-style: none;
+        border-top-left-radius: 0px;
+        border-top-right-radius: 0px;
+        border-bottom-left-radius: 10px;
+        border-bottom-right-radius: 10px;
     }}
     QComboBox QAbstractItemView::item {{
-        background: {color_c};
-        color: {color_f};
-        padding: 6px 10px;
+        padding: 3px 3px 3px 6px;
+        margin: 1px;
         min-height: 24px;
+        border-radius: {border_radius_a};
+        color: {color_f};
     }}
     QComboBox QAbstractItemView::item:hover,
     QComboBox QAbstractItemView::item:selected {{

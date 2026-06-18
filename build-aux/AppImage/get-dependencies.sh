@@ -100,20 +100,6 @@ fi
 sed -i "s|source=(\"git+https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt.git\")|source=(\"git+${REPO_URL}#branch=$BRANCH\")|" PKGBUILD
 makepkg -si --noconfirm
 
-echo "Installing optional runtime dependencies from PKGBUILD..."
-echo "---------------------------------------------------------------"
-OPTDEPENDS_PACKAGES="$(sed -n '/optdepends=(/,/)/p' PKGBUILD \
-    | grep -o "'[^']*'" \
-    | sed "s/'//g" \
-    | awk -F: '{print $1}' \
-    | tr '\n' ' ' \
-    | xargs)"
-
-if [ -n "${OPTDEPENDS_PACKAGES// /}" ]; then
-    # Install all optional dependencies used by system integrations.
-    pacman -S --needed --noconfirm $OPTDEPENDS_PACKAGES
-fi
-
 echo "Installing debloated packages..."
 echo "---------------------------------------------------------------"
 wget --retry-connrefused --tries=30 "$EXTRA_PACKAGES" -O ./get-debloated-pkgs.sh
