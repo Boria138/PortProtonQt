@@ -12,12 +12,38 @@ import os
 from pathlib import Path
 from typing import Any
 
+import portprotonqt.scripts_utils.shortcut_tools as shortcut_tools
 from portprotonqt.config.portproton import (
     _sanitize_icon_name,
     create_desktop_file,
     parse_desktop_entry,
     extract_exec_target_path,
 )
+
+
+class _ShortcutResponse:
+    def __init__(self, text: str = "", content: bytes = b"", data: dict | None = None) -> None:
+        self.text = text
+        self.content = content
+        self._data = data
+
+    def raise_for_status(self) -> None:
+        return
+
+    def json(self) -> dict:
+        if self._data is None:
+            raise ValueError("invalid json")
+        return self._data
+
+
+class _ShortcutSession:
+    def __init__(self, responses: list[_ShortcutResponse]) -> None:
+        self.responses = responses
+        self.requests: list[tuple[str, int]] = []
+
+    def get(self, url: str, timeout: int = 10) -> _ShortcutResponse:
+        self.requests.append((url, timeout))
+        return self.responses.pop(0)
 
 
 def _make_exe(tmp_path: Path, name: str = "game.exe", subdir: str = "") -> str:
@@ -33,6 +59,64 @@ def _patch_location(monkeypatch: Any, tmp_path: Path) -> None:
         "portprotonqt.config.portproton.get_portproton_location",
         lambda: str(tmp_path / "PortProtonQt"),
     )
+
+
+# ── find_ext_ppdb ────────────────────────────────────────────────────────────
+
+class TestFindExtPPDB:
+    def test_existing_ppdb_returns_true(self, tmp_path: Path, monkeypatch: Any) -> None:
+        exe = Path(_make_exe(tmp_path))
+        ppdb = Path(f"{exe}.ppdb")
+        ppdb.write_text("existing", encoding="utf-8")
+        monkeypatch.setattr(
+            "portprotonqt.downloader.get_requests_session",
+            lambda: (_ for _ in ()).throw(AssertionError("unexpected request")),
+        )
+
+        assert shortcut_tools.find_ext_ppdb(str(exe)) is True
+        assert ppdb.read_text(encoding="utf-8") == "existing"
+
+    def test_downloads_ppdb_next_to_exe(self, tmp_path: Path, monkeypatch: Any) -> None:
+        exe = Path(_make_exe(tmp_path, name="Game File.exe"))
+        session = _ShortcutSession([
+            _ShortcutResponse("{}", data={"ppdb_url": "https://example.org/game.ppdb"}),
+            _ShortcutResponse("PW_USE_DXVK=1", content=b"PW_USE_DXVK=1\n"),
+        ])
+        monkeypatch.setattr(
+            "portprotonqt.downloader.get_requests_session",
+            lambda: session,
+        )
+
+        assert shortcut_tools.find_ext_ppdb(str(exe)) is True
+
+        ppdb = Path(f"{exe}.ppdb")
+        assert ppdb.read_bytes() == b"PW_USE_DXVK=1\n"
+        assert session.requests[0] == (
+            "https://ppdb.linux-gaming.ru/api/lookup/exe/Game%20File.exe",
+            10,
+        )
+        assert session.requests[1] == ("https://example.org/game.ppdb", 30)
+
+    def test_no_game_found_response_returns_false(
+        self,
+        tmp_path: Path,
+        monkeypatch: Any,
+    ) -> None:
+        exe = Path(_make_exe(tmp_path, name="MassEffectAndromeda1"))
+        session = _ShortcutSession([
+            _ShortcutResponse(
+                '{"detail":"No game found with executable: MassEffectAndromeda1"}',
+                data={"detail": "No game found with executable: MassEffectAndromeda1"},
+            ),
+        ])
+        monkeypatch.setattr(
+            "portprotonqt.downloader.get_requests_session",
+            lambda: session,
+        )
+
+        assert shortcut_tools.find_ext_ppdb(str(exe)) is False
+        assert not Path(f"{exe}.ppdb").exists()
+        assert len(session.requests) == 1
 
 
 # ── create_desktop_file ──────────────────────────────────────────────────────

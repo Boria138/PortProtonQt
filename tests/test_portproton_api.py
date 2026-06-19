@@ -3,6 +3,7 @@
 from pathlib import Path
 from typing import Any, cast
 
+import portprotonqt.portproton_api as portproton_api
 from portprotonqt.portproton_api import PortProtonAPI
 
 
@@ -14,6 +15,18 @@ class DummyDownloader:
         self.downloads.append((url, local_path, timeout))
         Path(local_path).write_text("cover", encoding="utf-8")
         return local_path
+
+
+class DummyResponse:
+    text = "new script"
+
+    def raise_for_status(self) -> None:
+        return
+
+
+class DummySession:
+    def get(self, url: str, timeout: int = 10) -> DummyResponse:
+        return DummyResponse()
 
 
 def test_autoinstall_description_falls_back_to_english(tmp_config_dir: Path) -> None:
@@ -35,6 +48,22 @@ def test_autoinstall_name_falls_back_to_plain_field(tmp_config_dir: Path) -> Non
     }
 
     assert api._get_autoinstall_field(game, "name", "ru") == "VK Play"
+
+
+def test_autoinstall_script_download_uses_tmp_dir(
+    tmp_config_dir: Path,
+    tmp_path: Path,
+    monkeypatch: Any,
+) -> None:
+    monkeypatch.setattr(portproton_api.tempfile, "gettempdir", lambda: str(tmp_path))
+    monkeypatch.setattr(portproton_api, "get_requests_session", lambda: DummySession())
+    api = PortProtonAPI()
+
+    script_path = Path(api.download_autoinstall_script("https://example.org/game_42_test.ppai"))
+
+    assert script_path == tmp_path / "PortProtonQt" / "autoinstall" / "game_42_test.ppai"
+    assert "custom_data" not in script_path.parts
+    assert script_path.read_text(encoding="utf-8") == "new script"
 
 
 def test_autoinstall_script_writes_custom_metadata_for_target_exe(

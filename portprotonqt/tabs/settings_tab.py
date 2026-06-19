@@ -390,6 +390,20 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         self.downloadMirrorTitle.setStyleSheet(self.theme.SETTINGS_TITLE_STYLE)
         self.downloadMirrorTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
+        self.autoDownloadPPDBCheckBox = QCheckBox()
+        self.autoDownloadPPDBCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
+        self.autoDownloadPPDBCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.autoDownloadPPDBTitle = QLabel(_("Auto download PPDB from") + " ppdb.linux-gaming.ru")
+        self.autoDownloadPPDBTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.autoDownloadPPDBTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
+        self.autoDownloadPPDBTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.autoDownloadPPDBCheckBox.setChecked(ui_config.get_auto_download_ppdb())
+        auto_download_ppdb_layout = QHBoxLayout()
+        auto_download_ppdb_layout.setContentsMargins(0, 0, 0, 0)
+        auto_download_ppdb_layout.addWidget(self.autoDownloadPPDBCheckBox)
+        auto_download_ppdb_layout.addWidget(self.autoDownloadPPDBTitle)
+        auto_download_ppdb_layout.addStretch()
+
         self.forceSystemDpiCheckBox = QCheckBox()
         self.forceSystemDpiCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.forceSystemDpiCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -418,6 +432,7 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
             downloadForm.addRow(download_wine_to_steam_layout)
 
         downloadForm.addRow(economy_mode_layout)
+        downloadForm.addRow(auto_download_ppdb_layout)
         downloadForm.addRow(self.downloadMirrorTitle, self.downloadMirrorCombo)
 
         # 4. Hardware Settings Section
@@ -705,6 +720,7 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
             ui_config.get_disable_runtime_download()
 
         set_user_conf_setting('MIRROR', self.downloadMirrorCombo.currentText())
+        ui_config.set_auto_download_ppdb(self.autoDownloadPPDBCheckBox.isChecked())
 
         # Save GPU selection to user.conf (only if the combo box exists)
         if hasattr(self, 'gpuCombo') and self.gpuCombo.count() > 1:

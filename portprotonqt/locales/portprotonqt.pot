@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-06-10 10:55+0500\n"
+"POT-Creation-Date: 2026-06-18 23:41+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -393,300 +393,6 @@ msgstr ""
 msgid "Unknown Application"
 msgstr ""
 
-msgid "Quick Launch"
-msgstr ""
-
-msgid "Add a shortcut"
-msgstr ""
-
-msgid "Search ..."
-msgstr ""
-
-msgid "Library Settings"
-msgstr ""
-
-msgid "Last launch"
-msgstr ""
-
-msgid "Time spent"
-msgstr ""
-
-msgid "Alphabetical"
-msgstr ""
-
-msgid "Sort Method:"
-msgstr ""
-
-msgid "All"
-msgstr ""
-
-msgid "Favorites"
-msgstr ""
-
-msgid "Display Filter:"
-msgstr ""
-
-msgid "Detailed"
-msgstr ""
-
-msgid "Compact"
-msgstr ""
-
-msgid "Hidden"
-msgstr ""
-
-msgid "Badge View Type:"
-msgstr ""
-
-msgid "Refreshing..."
-msgstr ""
-
-msgid "Enter prefix name"
-msgstr ""
-
-msgid "Prefix:"
-msgstr ""
-
-msgid "Newest"
-msgstr ""
-
-msgid "Stable"
-msgstr ""
-
-msgid "Vulkan Backend"
-msgstr ""
-
-msgid "Use by default"
-msgstr ""
-
-msgid "Wine Configuration"
-msgstr ""
-
-msgid "Registry Editor"
-msgstr ""
-
-msgid "File Explorer"
-msgstr ""
-
-msgid "Command Prompt"
-msgstr ""
-
-msgid "Uninstaller"
-msgstr ""
-
-msgid "Create Prefix Backup"
-msgstr ""
-
-msgid "Load Prefix Backup"
-msgstr ""
-
-msgid "Delete Prefix"
-msgstr ""
-
-msgid "Clear Prefix"
-msgstr ""
-
-msgid "Manage WINE versions"
-msgstr ""
-
-msgid "Failed to start process."
-msgstr ""
-
-msgid "Confirm Clear"
-msgstr ""
-
-#, python-brace-format
-msgid "Are you sure you want to clear prefix '{}'?"
-msgstr ""
-
-msgid "Failed to start prefix clear process."
-msgstr ""
-
-msgid "Prefix cleared successfully."
-msgstr ""
-
-#, python-brace-format
-msgid "Prefix clear failed with exit code {}."
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to run clear prefix command: {}"
-msgstr ""
-
-msgid "Failed to start restore process."
-msgstr ""
-
-msgid "Prefix backup completed."
-msgstr ""
-
-msgid "Prefix backup failed."
-msgstr ""
-
-msgid "Prefix restore completed."
-msgstr ""
-
-msgid "Prefix restore failed."
-msgstr ""
-
-#, python-brace-format
-msgid "Are you sure you want to delete prefix '{}'?"
-msgstr ""
-
-#, python-brace-format
-msgid "Prefix '{}' deleted."
-msgstr ""
-
-#, python-brace-format
-msgid "Failed to delete prefix: {}"
-msgstr ""
-
-msgid "PortProton Settings"
-msgstr ""
-
-msgid "Brief"
-msgstr ""
-
-msgid "Time Detail Level:"
-msgstr ""
-
-msgid "Interface Settings"
-msgstr ""
-
-msgid "Tray Menu Type:"
-msgstr ""
-
-msgid "Auto"
-msgstr ""
-
-msgid "Gamepad Type:"
-msgstr ""
-
-msgid "Launch Application in Fullscreen"
-msgstr ""
-
-msgid "Auto Fullscreen on Gamepad connected"
-msgstr ""
-
-msgid "Minimize to tray on close"
-msgstr ""
-
-msgid "Run at system startup"
-msgstr ""
-
-msgid "Start in tray"
-msgstr ""
-
-msgid "Hide Auto-Install Tab"
-msgstr ""
-
-msgid "Disable runtime download"
-msgstr ""
-
-msgid "Add to Steam compatibility tools"
-msgstr ""
-
-msgid "Download WINE/Proton to Steam"
-msgstr ""
-
-msgid "Economy mode"
-msgstr ""
-
-msgid "Download mirror:"
-msgstr ""
-
-msgid "Force system DPI for Wine"
-msgstr ""
-
-msgid "Download Settings"
-msgstr ""
-
-msgid "Hardware Settings"
-msgstr ""
-
-msgid "GPU to use:"
-msgstr ""
-
-msgid "Proxy Settings"
-msgstr ""
-
-msgid "Proxy URL"
-msgstr ""
-
-msgid "Proxy URL:"
-msgstr ""
-
-msgid "Proxy Username"
-msgstr ""
-
-msgid "Proxy Username:"
-msgstr ""
-
-msgid "Proxy Password"
-msgstr ""
-
-msgid "Proxy Password:"
-msgstr ""
-
-msgid "Save Settings"
-msgstr ""
-
-msgid "Reset Settings"
-msgstr ""
-
-msgid "Migrate legacy shortcuts"
-msgstr ""
-
-msgid "Clear Cache"
-msgstr ""
-
-msgid "Confirm Reset"
-msgstr ""
-
-msgid "Are you sure you want to reset all settings? This action cannot be undone."
-msgstr ""
-
-msgid "Migrate old PortProton shortcuts to PortProtonQt format?"
-msgstr ""
-
-msgid "Confirm Clear Cache"
-msgstr ""
-
-msgid "Are you sure you want to clear the cache? This action cannot be undone."
-msgstr ""
-
-msgid "Failed to update xdg-autostart entry."
-msgstr ""
-
-msgid "Select Theme:"
-msgstr ""
-
-msgid "Dark"
-msgstr ""
-
-msgid "Light"
-msgstr ""
-
-msgid "Apply Theme"
-msgstr ""
-
-msgid "No link"
-msgstr ""
-
-msgid "Unknown"
-msgstr ""
-
-msgid "Name:"
-msgstr ""
-
-msgid "Description:"
-msgstr ""
-
-msgid "Author:"
-msgstr ""
-
-msgid "Link:"
-msgstr ""
-
 #, python-brace-format
 msgid "Executable not found: {0}"
 msgstr ""
@@ -778,6 +484,9 @@ msgstr ""
 msgid "Enable forced use of third-party DirectX libraries"
 msgstr ""
 
+msgid "Enable D7VK for DirectDraw 1-7"
+msgstr ""
+
 msgid "Force use of built-in DXGI library"
 msgstr ""
 
@@ -856,6 +565,15 @@ msgid "Prefix Name"
 msgstr ""
 
 msgid "Specify the Wine prefix to run this game with"
+msgstr ""
+
+msgid "Newest"
+msgstr ""
+
+msgid "Stable"
+msgstr ""
+
+msgid "Vulkan Backend"
 msgstr ""
 
 msgid ""
@@ -991,6 +709,9 @@ msgstr ""
 msgid "Tabs"
 msgstr ""
 
+msgid "Favorites"
+msgstr ""
+
 msgid "Recent Games"
 msgstr ""
 
@@ -1026,6 +747,9 @@ msgid "COMPLETIONIST"
 msgstr ""
 
 msgid "Open Folder"
+msgstr ""
+
+msgid "Add a shortcut"
 msgstr ""
 
 msgid "Settings"
@@ -1076,6 +800,9 @@ msgstr ""
 
 #, python-brace-format
 msgid "Launching {0}"
+msgstr ""
+
+msgid "Name:"
 msgstr ""
 
 msgid "Path to Executable:"
@@ -1144,6 +871,9 @@ msgstr ""
 msgid "Clear All"
 msgstr ""
 
+msgid "File Explorer"
+msgstr ""
+
 msgid "Select"
 msgstr ""
 
@@ -1179,6 +909,9 @@ msgstr ""
 msgid "{0}, Speed: {1:.1f} MB/s"
 msgstr ""
 
+msgid "Manage WINE versions"
+msgstr ""
+
 msgid "Selected WINE/Proton:"
 msgstr ""
 
@@ -1202,6 +935,9 @@ msgid "Version WINE/Proton"
 msgstr ""
 
 msgid "Size"
+msgstr ""
+
+msgid "Unknown"
 msgstr ""
 
 #, python-brace-format
@@ -1253,6 +989,9 @@ msgid "Please wait for current downloading to complete."
 msgstr ""
 
 msgid "Please select at least one WINE/Proton to delete."
+msgstr ""
+
+msgid "Confirm Clear"
 msgstr ""
 
 #, python-brace-format
@@ -1361,6 +1100,9 @@ msgid "Failed to remove PPDB file:\n"
 msgstr ""
 
 msgid "disabled"
+msgstr ""
+
+msgid "Enter prefix name"
 msgstr ""
 
 msgid "Default value"
@@ -1962,6 +1704,9 @@ msgstr ""
 msgid "FPS only"
 msgstr ""
 
+msgid "Compact"
+msgstr ""
+
 msgid "Extended"
 msgstr ""
 
@@ -2093,6 +1838,9 @@ msgstr ""
 msgid "Not mounted"
 msgstr ""
 
+msgid "Search ..."
+msgstr ""
+
 msgid "Volume"
 msgstr ""
 
@@ -2127,6 +1875,162 @@ msgid "Unmount"
 msgstr ""
 
 msgid "Set output"
+msgstr ""
+
+msgid "Quick Launch"
+msgstr ""
+
+msgid "Library Settings"
+msgstr ""
+
+msgid "Last launch"
+msgstr ""
+
+msgid "Time spent"
+msgstr ""
+
+msgid "Alphabetical"
+msgstr ""
+
+msgid "Sort Method:"
+msgstr ""
+
+msgid "All"
+msgstr ""
+
+msgid "Display Filter:"
+msgstr ""
+
+msgid "Detailed"
+msgstr ""
+
+msgid "Hidden"
+msgstr ""
+
+msgid "Badge View Type:"
+msgstr ""
+
+msgid "Refreshing..."
+msgstr ""
+
+msgid "PortProton Settings"
+msgstr ""
+
+msgid "Brief"
+msgstr ""
+
+msgid "Time Detail Level:"
+msgstr ""
+
+msgid "Interface Settings"
+msgstr ""
+
+msgid "Tray Menu Type:"
+msgstr ""
+
+msgid "Auto"
+msgstr ""
+
+msgid "Gamepad Type:"
+msgstr ""
+
+msgid "Launch Application in Fullscreen"
+msgstr ""
+
+msgid "Auto Fullscreen on Gamepad connected"
+msgstr ""
+
+msgid "Minimize to tray on close"
+msgstr ""
+
+msgid "Run at system startup"
+msgstr ""
+
+msgid "Start in tray"
+msgstr ""
+
+msgid "Hide Auto-Install Tab"
+msgstr ""
+
+msgid "Disable runtime download"
+msgstr ""
+
+msgid "Add to Steam compatibility tools"
+msgstr ""
+
+msgid "Download WINE/Proton to Steam"
+msgstr ""
+
+msgid "Economy mode"
+msgstr ""
+
+msgid "Download mirror:"
+msgstr ""
+
+msgid "Auto download PPDB from"
+msgstr ""
+
+msgid "Force system DPI for Wine"
+msgstr ""
+
+msgid "Download Settings"
+msgstr ""
+
+msgid "Hardware Settings"
+msgstr ""
+
+msgid "GPU to use:"
+msgstr ""
+
+msgid "Proxy Settings"
+msgstr ""
+
+msgid "Proxy URL"
+msgstr ""
+
+msgid "Proxy URL:"
+msgstr ""
+
+msgid "Proxy Username"
+msgstr ""
+
+msgid "Proxy Username:"
+msgstr ""
+
+msgid "Proxy Password"
+msgstr ""
+
+msgid "Proxy Password:"
+msgstr ""
+
+msgid "Save Settings"
+msgstr ""
+
+msgid "Reset Settings"
+msgstr ""
+
+msgid "Migrate legacy shortcuts"
+msgstr ""
+
+msgid "Clear Cache"
+msgstr ""
+
+msgid "Confirm Reset"
+msgstr ""
+
+msgid "Are you sure you want to reset all settings? This action cannot be undone."
+msgstr ""
+
+msgid "Migrate old PortProton shortcuts to PortProtonQt format?"
+msgstr ""
+
+msgid "Confirm Clear Cache"
+msgstr ""
+
+msgid "Are you sure you want to clear the cache? This action cannot be undone."
+msgstr ""
+
+msgid "Failed to update xdg-autostart entry."
 msgstr ""
 
 #, python-brace-format
@@ -2206,5 +2110,107 @@ msgid "Selected"
 msgstr ""
 
 msgid "Not selected"
+msgstr ""
+
+msgid "Select Theme:"
+msgstr ""
+
+msgid "Dark"
+msgstr ""
+
+msgid "Light"
+msgstr ""
+
+msgid "Apply Theme"
+msgstr ""
+
+msgid "No link"
+msgstr ""
+
+msgid "Description:"
+msgstr ""
+
+msgid "Author:"
+msgstr ""
+
+msgid "Link:"
+msgstr ""
+
+msgid "Prefix:"
+msgstr ""
+
+msgid "Use by default"
+msgstr ""
+
+msgid "Wine Configuration"
+msgstr ""
+
+msgid "Registry Editor"
+msgstr ""
+
+msgid "Command Prompt"
+msgstr ""
+
+msgid "Uninstaller"
+msgstr ""
+
+msgid "Create Prefix Backup"
+msgstr ""
+
+msgid "Load Prefix Backup"
+msgstr ""
+
+msgid "Delete Prefix"
+msgstr ""
+
+msgid "Clear Prefix"
+msgstr ""
+
+msgid "Failed to start process."
+msgstr ""
+
+#, python-brace-format
+msgid "Are you sure you want to clear prefix '{}'?"
+msgstr ""
+
+msgid "Failed to start prefix clear process."
+msgstr ""
+
+msgid "Prefix cleared successfully."
+msgstr ""
+
+#, python-brace-format
+msgid "Prefix clear failed with exit code {}."
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to run clear prefix command: {}"
+msgstr ""
+
+msgid "Failed to start restore process."
+msgstr ""
+
+msgid "Prefix backup completed."
+msgstr ""
+
+msgid "Prefix backup failed."
+msgstr ""
+
+msgid "Prefix restore completed."
+msgstr ""
+
+msgid "Prefix restore failed."
+msgstr ""
+
+#, python-brace-format
+msgid "Are you sure you want to delete prefix '{}'?"
+msgstr ""
+
+#, python-brace-format
+msgid "Prefix '{}' deleted."
+msgstr ""
+
+#, python-brace-format
+msgid "Failed to delete prefix: {}"
 msgstr ""
 

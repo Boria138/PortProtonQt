@@ -8,6 +8,7 @@ import hashlib
 import queue
 import shutil
 import locale
+import tempfile
 from collections.abc import Callable
 from typing import Any
 from PySide6.QtCore import QThread, Signal, QUrl, QObject
@@ -336,9 +337,7 @@ class PortProtonAPI:
         script_name = os.path.basename(urllib.parse.urlparse(ppai_url).path)
         if not script_name.endswith(".ppai"):
             return ""
-        game_match = re.search(r"game_(\d+)_", script_name)
-        cache_key = game_match.group(1) if game_match else hashlib.sha256(ppai_url.encode()).hexdigest()
-        cache_dir = os.path.join(self.custom_data_dir, "autoinstall", cache_key)
+        cache_dir = os.path.join(tempfile.gettempdir(), "PortProtonQt", "autoinstall")
         os.makedirs(cache_dir, exist_ok=True)
         return os.path.join(cache_dir, script_name)
 
@@ -358,8 +357,6 @@ class PortProtonAPI:
             return script_path
         except (OSError, requests.RequestException) as e:
             logger.warning("Failed to download autoinstall script %s: %s", ppai_url, e)
-        if os.path.exists(script_path):
-            return script_path
         return ""
 
     def start_autoinstall_script_download(

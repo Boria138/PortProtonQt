@@ -7,7 +7,6 @@
 - [Translate Online](#-translate-online)
 - [Adding a New Translation](#-adding-a-new-translation)
 - [Updating Existing Translations](#-updating-existing-translations)
-- [Spell Check](#-spell-check)
 
 ---
 
@@ -78,16 +77,3 @@ python dev-scripts/l10n.py
 ```
 
 ---
-
-## 🔍 Spell Check
-
-To check spelling, run the following commands:
-
-```bash
-uv python install 3.10
-uv sync --all-extras --dev
-source .venv/bin/activate
-python dev-scripts/l10n.py --spellcheck
-```
-
-The script performs parallel spellchecking of strings in `.po` and `.pot` files. For each file, it prints the list of strings being checked and highlights any spelling errors with suggestions. Words listed in `dev-scripts/.spellignore` are ignored and not treated as typos.
