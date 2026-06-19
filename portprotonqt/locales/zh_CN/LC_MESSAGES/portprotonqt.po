@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-06-18 23:41+0500\n"
-"PO-Revision-Date: 2026-06-18 23:00+0000\n"
+"PO-Revision-Date: 2026-06-19 11:38+0000\n"
 "Last-Translator: rogerio-mattos <rogerio-mattos@noreply.codeberg.org>\n"
 "Language-Team: Chinese (Simplified Han script) <https://"
 "translate.codeberg.org/projects/portprotonqt/portprotonqt/zh_Hans/>\n"
@@ -948,7 +948,7 @@ msgstr "{0} 个文件"
 
 #, python-brace-format
 msgid "{0}, Speed: {1:.1f} MB/s"
-msgstr "，速度：{1:.1f} MB/秒"
+msgstr "{0}，速度：{1:.1f} MB/s"
 
 msgid "Manage WINE versions"
 msgstr "管理 WINE 版本"
@@ -1077,7 +1077,7 @@ msgstr "，预计剩余时间：{}秒"
 
 #, python-brace-format
 msgid ", Speed: {:.1f}MB/s"
-msgstr "，速度：{:.1f}MB/秒"
+msgstr "，速度：{:.1f}MB/s"
 
 #, python-brace-format
 msgid "Extracting: {0}{1}{2}"
