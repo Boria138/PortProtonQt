@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-06-04 10:32+0500\n"
-"PO-Revision-Date: 2026-06-16 21:07+0000\n"
+"PO-Revision-Date: 2026-06-19 11:38+0000\n"
 "Last-Translator: rogerio-mattos <rogerio-mattos@noreply.codeberg.org>\n"
 "Language-Team: Portuguese (Brazil) <https://translate.codeberg.org/projects/"
 "portprotonqt/portprotonqt/pt_BR/>\n"
@@ -510,7 +510,7 @@ msgid "Enable forced use of third-party DirectX libraries"
 msgstr "Ativar uso forçado de bibliotecas DirectX de terceiros"
 
 msgid "Enable D7VK for DirectDraw 1-7"
-msgstr ""
+msgstr "Ativar o D7VK para DirectDraw 1–7"
 
 msgid "Force use of built-in DXGI library"
 msgstr "Forçar uso da biblioteca DXGI integrada"
@@ -1111,7 +1111,7 @@ msgstr "Extraindo: {0}"
 msgid ", ETA: {}s"
 msgstr ", ETA: {}s"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid ", Speed: {:.1f}MB/s"
 msgstr ", Velocidade: {:.1f}MB/s"
 
@@ -1613,363 +1613,367 @@ msgid "Frametime next to FPS"
 msgstr "Frametime ao lado do FPS"
 
 msgid "Detailed frame timing chart"
-msgstr "Gráfico Detalhado de Frametime"
+msgstr "Gráfico detalhado dos tempos de frame"
 
 msgid "FSR status (gamescope)"
 msgstr "Status do FSR (gamescope)"
 
 msgid "Enable most parameters"
-msgstr "Ativar a Maioria dos Parâmetros"
+msgstr "Ativar a maioria dos parâmetros"
 
 msgid "GameMode status"
 msgstr "Status do GameMode"
 
 msgid "GPU core frequency"
-msgstr "Frequência do Núcleo da GPU"
+msgstr "Frequência do núcleo da GPU"
 
 msgid "GPU efficiency (frames/joule)"
-msgstr "Eficiência da GPU (Frames/Joule)"
+msgstr "Eficiência da GPU (frames/joule)"
 
 msgid "GPU fan (RPM/%)"
 msgstr "Ventoinha da GPU (RPM/%)"
 
 msgid "GPU junction temperature"
-msgstr "Temperatura da Junção da GPU"
+msgstr "Temperatura da junção da GPU"
 
 msgid "GPU load color change"
-msgstr "Mudança de Cor da Carga da GPU"
+msgstr "Mudança de cor da carga da GPU"
 
 msgid "GPU memory frequency"
-msgstr "Frequência da Memória da GPU"
+msgstr "Frequência da memória da GPU"
 
 msgid "GPU memory temperature"
-msgstr "Temperatura da Memória da GPU"
+msgstr "Temperatura da memória da GPU"
 
 msgid "GPU name from pci.ids"
 msgstr "Nome da GPU do pci.ids"
 
 msgid "GPU power draw (watts)"
-msgstr "Consumo de Energia da GPU (Watts)"
+msgstr "Consumo de energia da GPU (watts)"
 
 msgid "GPU power limit"
-msgstr "Limite de Energia da GPU"
+msgstr "Limite de energia da GPU"
 
 msgid "GPU temperature"
-msgstr ""
+msgstr "Temperatura da GPU"
 
 msgid "GPU voltage"
-msgstr ""
+msgstr "Voltagem da GPU"
 
 msgid "HDR status (gamescope)"
-msgstr ""
+msgstr "Status do HDR (gamescope)"
 
 msgid "Hide FSR sharpness info"
-msgstr ""
+msgstr "Ocultar informações de nitidez do FSR"
 
 msgid "FPS histogram"
-msgstr ""
+msgstr "Histograma de FPS"
 
 msgid "Horizontal HUD layout"
-msgstr ""
+msgstr "Layout horizontal do HUD"
 
 msgid "Stretch background horizontally"
-msgstr ""
+msgstr "Esticar fundo horizontalmente"
 
 msgid "Compact HUD mode"
-msgstr ""
+msgstr "Modo HUD compacto"
 
 msgid "Remove HUD margins"
-msgstr ""
+msgstr "Remover margens do HUD"
 
 msgid "IO read rate (MiB/s)"
-msgstr ""
+msgstr "Taxa de leitura de E/S (MiB/s)"
 
 msgid "IO write rate (MiB/s)"
-msgstr ""
+msgstr "Taxa de gravação de E/S (MiB/s)"
 
 msgid "Add versioning to logs"
-msgstr ""
+msgstr "Adicionar versionamento aos logs"
 
 msgid "Media player metadata"
-msgstr ""
+msgstr "Metadados do reprodutor de mídia"
 
 msgid "Hide HUD by default"
-msgstr ""
+msgstr "Ocultar HUD por padrão"
 
 msgid "Use primary font size"
-msgstr ""
+msgstr "Usar tamanho de fonte principal"
 
 msgid "Allow log uploads"
-msgstr ""
+msgstr "Permitir envio de logs"
 
 msgid "Vulkan present mode"
-msgstr ""
+msgstr "Modo de apresentação Vulkan"
 
 msgid "Process VRAM usage"
-msgstr ""
+msgstr "Uso de VRAM do processo"
 
 msgid "Process memory (resident)"
-msgstr ""
+msgstr "Memória do processo (residente)"
 
 msgid "Process shared memory"
-msgstr ""
+msgstr "Memória compartilhada do processo"
 
 msgid "Process virtual memory"
-msgstr ""
+msgstr "Memória virtual do processo"
 
 msgid "System RAM usage"
-msgstr ""
+msgstr "Uso de RAM do sistema"
 
 msgid "RAM temperature (DDR5)"
-msgstr ""
+msgstr "Temperatura da RAM (DDR5)"
 
 msgid "Load config file"
-msgstr ""
+msgstr "Carregar arquivo de configuração"
 
 msgid "Refresh rate (gamescope)"
-msgstr ""
+msgstr "Taxa de atualização (gamescope)"
 
 msgid "Current resolution"
-msgstr ""
+msgstr "Resolução atual"
 
 msgid "Retro filtering (unfiltered)"
-msgstr ""
+msgstr "Filtragem retrô (sem filtro)"
 
 msgid "Show FPS limit"
-msgstr ""
+msgstr "Mostrar limite de FPS"
 
 msgid "Swap usage"
-msgstr ""
+msgstr "Uso de swap"
 
 msgid "Temperature in Fahrenheit"
-msgstr ""
+msgstr "Temperatura em Fahrenheit"
 
 msgid "Text outline"
-msgstr ""
+msgstr "Contorno do texto"
 
 msgid "GPU throttling status"
-msgstr ""
+msgstr "Status de limitação da GPU"
 
 msgid "Throttling in frame graph"
-msgstr ""
+msgstr "Limitação no gráfico de frames"
 
 msgid "Local time"
-msgstr ""
+msgstr "Hora local"
 
 msgid "Time without label"
-msgstr ""
+msgstr "Hora sem rótulo"
 
 msgid "Force trilinear filtering"
-msgstr ""
+msgstr "Forçar filtragem trilinear"
 
 msgid "Automatic log uploads"
-msgstr ""
+msgstr "Envio automático de logs"
 
 msgid "MangoHud version"
-msgstr ""
+msgstr "Versão do MangoHud"
 
 msgid "Status vkBasalt"
-msgstr ""
+msgstr "Status do vkBasalt"
 
 msgid "Vulkan driver (radv/amdvlk)"
-msgstr ""
+msgstr "Driver Vulkan (radv/amdvlk)"
 
 msgid "Wine/Proton version"
-msgstr ""
+msgstr "Versão Wine/Proton"
 
 msgid "Wine sync method"
-msgstr ""
+msgstr "Método de sincronização do Wine"
 
 msgid "VRAM usage"
-msgstr ""
+msgstr "Uso de VRAM"
 
 msgid "Layout and limiter"
-msgstr ""
+msgstr "Layout e limitador"
 
 msgid "Presets"
-msgstr ""
+msgstr "Predefinições"
 
 msgid "Actions"
-msgstr ""
+msgstr "Ações"
 
 msgid "Use system config"
-msgstr ""
+msgstr "Ativar MangoHud"
 
 msgid "FPS only"
-msgstr ""
+msgstr "Somente FPS"
 
 msgid "Compact"
 msgstr "Compacto"
 
 msgid "Extended"
-msgstr ""
+msgstr "Estendido"
 
 msgid "Write system config"
-msgstr ""
+msgstr "Gravar configuração do sistema"
 
 msgid "Preview"
-msgstr ""
+msgstr "Pré-visualizar"
 
 msgid "MangoHud switches"
-msgstr ""
+msgstr "Opções do MangoHud"
 
 msgid "FPS limit"
-msgstr ""
+msgstr "Limite de FPS"
 
 msgid ""
 "Select one or more FPS presets. The values are saved into FPS_LIMIT and "
 "MangoHud will also show the active FPS limit."
 msgstr ""
+"Selecione uma ou mais predefinições de FPS. Os valores são salvos em "
+"FPS_LIMIT e o MangoHud também mostrará o limite de FPS ativo."
 
 msgid "Additional comma-separated MangoHud options not covered by the GUI."
 msgstr ""
+"Opções adicionais do MangoHud separadas por vírgula, não cobertas pela "
+"interface."
 
 msgid "Example: battery,gpu_junction_temp,fps_color=39f900"
-msgstr ""
+msgstr "Exemplo: battery,gpu_junction_temp,fps_color=39f900"
 
 msgid "All GPUs"
-msgstr ""
+msgstr "Todas as GPUs"
 
 msgid "Don't use system config"
-msgstr ""
+msgstr "Não usar configuração do sistema"
 
 msgid "Failed to read default MangoHud config."
-msgstr ""
+msgstr "Falha ao ler a configuração padrão do MangoHud."
 
 msgid "System MangoHud config has been written."
-msgstr ""
+msgstr "A configuração do MangoHud do sistema foi gravada."
 
 msgid "Failed to write system MangoHud config."
-msgstr ""
+msgstr "Falha ao gravar a configuração do MangoHud do sistema."
 
 msgid "Failed to run preview."
-msgstr ""
+msgstr "Falha ao executar a pré-visualização."
 
 msgid "Shaders"
-msgstr ""
+msgstr "Shaders"
 
 msgid "AMD FidelityFX - Contrast Adaptive Sharpening"
-msgstr ""
+msgstr "AMD FidelityFX – Nitidez Adaptativa ao Contraste"
 
 #, python-brace-format
 msgid "Sharpness: {0}"
-msgstr ""
+msgstr "Nitidez: {0}"
 
 msgid "Press a button to choose"
-msgstr ""
+msgstr "Pressione um botão para escolher"
 
 #, python-brace-format
 msgid "Toggle key: {0}"
-msgstr ""
+msgstr "Tecla de alternância: {0}"
 
 msgid "Prefix Manager"
-msgstr ""
+msgstr "Gerenciador de Prefixos"
 
 msgid "Set"
-msgstr ""
+msgstr "Definir"
 
 msgid "Libraries"
-msgstr ""
+msgstr "Bibliotecas"
 
 msgid "Fonts"
-msgstr ""
+msgstr "Fontes"
 
 msgid "Winetricks not found. Please try again."
-msgstr ""
+msgstr "Winetricks não encontrado. Tente novamente."
 
 msgid "No components selected."
-msgstr ""
+msgstr "Nenhum componente selecionado."
 
 msgid "Installation failed. Check logs."
-msgstr ""
+msgstr "A instalação falhou. Verifique os logs."
 
 msgid "Components installed successfully."
-msgstr ""
+msgstr "Componentes instalados com sucesso."
 
 msgid "Launched"
-msgstr ""
+msgstr "Iniciado"
 
 msgid "Bluetooth PIN code"
-msgstr ""
+msgstr "Código PIN Bluetooth"
 
 msgid "Enter the Bluetooth PIN code shown on the device"
-msgstr ""
+msgstr "Digite o código PIN Bluetooth exibido no dispositivo"
 
 msgid "Bluetooth passkey"
-msgstr ""
+msgstr "Chave de acesso Bluetooth"
 
 msgid "Enter the Bluetooth passkey shown on the device"
-msgstr ""
+msgstr "Digite a chave de acesso Bluetooth exibida no dispositivo"
 
 #, python-brace-format
 msgid "Confirm the passkey on devices: {0}"
-msgstr ""
+msgstr "Confirme a chave de acesso nos dispositivos: {0}"
 
 msgid "Bluetooth pairing"
-msgstr ""
+msgstr "Pareamento Bluetooth"
 
 msgid "Connected"
-msgstr ""
+msgstr "Conectado"
 
 msgid "Paired"
-msgstr ""
+msgstr "Pareado"
 
 msgid "Available"
-msgstr ""
+msgstr "Disponível"
 
 msgid "Disconnected"
-msgstr ""
+msgstr "Desconectado"
 
 msgid "Protected"
-msgstr ""
+msgstr "Protegido"
 
 msgid "Saved"
-msgstr ""
+msgstr "Salvo"
 
 msgid "Mounted"
-msgstr ""
+msgstr "Montado"
 
 msgid "Not mounted"
-msgstr ""
+msgstr "Não montado"
 
 msgid "Search ..."
 msgstr "Pesquisar..."
 
 msgid "Volume"
-msgstr ""
+msgstr "Volume"
 
 msgid "Fullscreen"
-msgstr ""
+msgstr "Tela Cheia"
 
 msgid "Mouse Emulation"
-msgstr ""
+msgstr "Emulação de Mouse"
 
 msgid "Connect"
-msgstr ""
+msgstr "Conectar"
 
 msgid "Disconnect"
-msgstr ""
+msgstr "Desconectar"
 
 msgid "Enable/Disable"
-msgstr ""
+msgstr "Ativar/Desativar"
 
 msgid "Refresh"
-msgstr ""
+msgstr "Atualizar"
 
 msgid "Add VPN"
-msgstr ""
+msgstr "Adicionar VPN"
 
 msgid "Scan"
-msgstr ""
+msgstr "Procurar"
 
 msgid "Mount"
-msgstr ""
+msgstr "Montar"
 
 msgid "Unmount"
-msgstr ""
+msgstr "Desmontar"
 
 msgid "Set output"
-msgstr ""
+msgstr "Definir saída"
 
 msgid "Quick Launch"
 msgstr "Início Rápido"
@@ -2062,7 +2066,7 @@ msgid "Download mirror:"
 msgstr "Espelho de download:"
 
 msgid "Auto download PPDB from"
-msgstr ""
+msgstr "Baixar automaticamente o PPDB de"
 
 msgid "Force system DPI for Wine"
 msgstr "Forçar DPI do sistema para o Wine"
@@ -2132,82 +2136,82 @@ msgstr "Falha ao atualizar a entrada xdg-autostart."
 
 #, python-brace-format
 msgid "Enter password for: {0}"
-msgstr ""
+msgstr "Digite a senha para: {0}"
 
 msgid "Storage"
-msgstr ""
+msgstr "Armazenamento"
 
 msgid "Audio"
-msgstr ""
+msgstr "Áudio"
 
 msgid "Power"
-msgstr ""
+msgstr "Energia"
 
 msgid "Network"
-msgstr ""
+msgstr "Rede"
 
 msgid "Security"
-msgstr ""
+msgstr "Segurança"
 
 msgid "Signal"
-msgstr ""
+msgstr "Sinal"
 
 msgid "State"
-msgstr ""
+msgstr "Estado"
 
 msgid "Forget"
-msgstr ""
+msgstr "Esquecer"
 
 msgid "Share"
-msgstr ""
+msgstr "Compartilhar"
 
 msgid "Profile"
-msgstr ""
+msgstr "Perfil"
 
 msgid "Type"
-msgstr ""
+msgstr "Tipo"
 
 msgid "Add"
-msgstr ""
+msgstr "Adicionar"
 
 msgid "Device"
-msgstr ""
+msgstr "Dispositivo"
 
 msgid "Battery"
-msgstr ""
+msgstr "Bateria"
 
 msgid "Volume label"
-msgstr ""
+msgstr "Rótulo do volume"
 
 msgid "Used"
-msgstr ""
+msgstr "Usado"
 
 msgid "Mount point"
-msgstr ""
+msgstr "Ponto de montagem"
 
 msgid "Playback devices"
-msgstr ""
+msgstr "Dispositivos de reprodução"
 
 msgid "Output"
-msgstr ""
+msgstr "Saída"
 
 msgid "Logout"
-msgstr ""
+msgstr "Encerrar sessão"
 
 msgid "Reboot"
-msgstr ""
+msgstr "Reiniciar"
 
 msgid "Shutdown"
-msgstr ""
+msgstr "Desligar"
 
 msgid "Suspend"
-msgstr ""
+msgstr "Suspender"
 
 msgid "Selected"
-msgstr ""
+msgstr "Selecionado"
 
 msgid "Not selected"
-msgstr ""
+msgstr "Não selecionado"
 
 msgid "Select Theme:"
 msgstr "Selecionar Tema:"
