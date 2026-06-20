@@ -28,6 +28,7 @@ from portprotonqt.theme_manager import ThemeManager
 COVER_WIDTH = 300
 COVER_HEIGHT = 450
 DETAIL_COMPACT_COVER_SIZE = 128
+DETAIL_COMPACT_WIDTH = 1280
 BADGE_WIDTH = int(COVER_WIDTH * 2 / 3)
 BADGE_ICON_SIZE = 16
 BADGE_COMPACT_WIDTH = BADGE_ICON_SIZE + 14
@@ -91,7 +92,7 @@ def create_content_frame(
     parent_layout: QVBoxLayout,
     theme,
 ) -> tuple[QFrame, QBoxLayout]:
-    """Create content frame with adaptive layout."""
+    """Create content frame."""
     content_frame = QFrame()
     content_frame.setStyleSheet(theme.DETAIL_CONTENT_FRAME_STYLE)
     content_frame_layout = QBoxLayout(QBoxLayout.Direction.LeftToRight, content_frame)
@@ -99,61 +100,6 @@ def create_content_frame(
     content_frame_layout.setSpacing(40)
     parent_layout.addWidget(content_frame)
     return content_frame, content_frame_layout
-
-
-def setup_adaptive_layout(
-    detail_page: QWidget,
-    content_frame_layout: QBoxLayout,
-) -> None:
-    """Setup adaptive layout switching on resize."""
-
-    def on_detail_page_resize(event) -> None:
-        apply_adaptive_layout(detail_page, content_frame_layout)
-        QWidget.resizeEvent(detail_page, event)
-
-    detail_page.resizeEvent = on_detail_page_resize
-
-
-def apply_adaptive_layout(detail_page: QWidget, content_frame_layout: QBoxLayout) -> None:
-    """Apply detail page adaptive layout for current size hints."""
-    if detail_page.property("force_compact_detail_layout"):
-        content_frame_layout.setDirection(QBoxLayout.Direction.TopToBottom)
-        content_frame_layout.setAlignment(
-            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
-        )
-        return
-
-    required_width = _get_required_horizontal_width(content_frame_layout)
-    if detail_page.width() < required_width:
-        if content_frame_layout.direction() != QBoxLayout.Direction.TopToBottom:
-            content_frame_layout.setDirection(QBoxLayout.Direction.TopToBottom)
-            content_frame_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    elif content_frame_layout.direction() != QBoxLayout.Direction.LeftToRight:
-        content_frame_layout.setDirection(QBoxLayout.Direction.LeftToRight)
-        content_frame_layout.setAlignment(
-            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
-        )
-
-
-def _get_required_horizontal_width(content_frame_layout: QBoxLayout) -> int:
-    """Calculate minimal width for horizontal content layout."""
-    item_count = content_frame_layout.count()
-    widget_width_sum = 0
-
-    for index in range(item_count):
-        item = content_frame_layout.itemAt(index)
-        widget = item.widget() if item else None
-        if widget:
-            widget_width_sum += max(
-                widget.minimumSizeHint().width(),
-                widget.sizeHint().width(),
-            )
-
-    margins = content_frame_layout.contentsMargins()
-    spacing_width = content_frame_layout.spacing() * max(0, item_count - 1)
-    frame_padding = margins.left() + margins.right()
-
-    return max(900, widget_width_sum + spacing_width + frame_padding)
 
 
 def create_cover_frame(

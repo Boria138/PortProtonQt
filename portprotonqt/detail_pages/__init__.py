@@ -20,8 +20,6 @@ from portprotonqt.detail_pages.widgets import (
     create_scroll_area,
     create_back_button,
     create_content_frame,
-    setup_adaptive_layout,
-    apply_adaptive_layout,
     create_cover_frame,
     create_protondb_badge,
     create_steam_badge,
@@ -35,6 +33,7 @@ from portprotonqt.detail_pages.widgets import (
     COVER_WIDTH,
     COVER_HEIGHT,
     DETAIL_COMPACT_COVER_SIZE,
+    DETAIL_COMPACT_WIDTH,
 )
 from portprotonqt.detail_pages.utils import (
     setup_image_loading,
@@ -77,9 +76,12 @@ class DetailPageManager:
         self._debug_log_button: AutoSizeButton | None = None
         self._debug_log_timer = None
         self._autoinstall_status_controls = None
+        self._current_detail_source: tuple[str, dict] | None = None
+        self._resize_rebuild_pending = False
 
     def openGameDetailPage(self, game_data: dict) -> None:
         """Open detailed game information page."""
+        self._current_detail_source = ("game", dict(game_data))
         detail_page = QWidget()
         compact_layout = self._is_compact_detail_layout()
         image_label = self._create_detail_image_label(compact_layout)
@@ -163,10 +165,22 @@ class DetailPageManager:
         }
 
     def _is_compact_detail_layout(self) -> bool:
+        if self._is_forced_compact_detail_layout():
+            return True
+        return self._detail_view_width() <= DETAIL_COMPACT_WIDTH
+
+    def _is_forced_compact_detail_layout(self) -> bool:
         layout_mode = str(
             getattr(self.main_window.theme, "DETAIL_PAGE_LAYOUT_MODE", "full")
         ).lower()
         return ui_config.get_economy_mode() or layout_mode == "compact"
+
+    def _detail_view_width(self) -> int:
+        widths = []
+        for widget in (getattr(self.main_window, "stackedWidget", None), self.main_window):
+            if widget is not None and widget.width() > 0:
+                widths.append(widget.width())
+        return min(widths) if widths else 0
 
     def _create_detail_image_label(self, compact_layout: bool) -> QLabel:
         cover_width, cover_height = self._get_cover_label_size(compact_layout)
@@ -351,7 +365,7 @@ class DetailPageManager:
         content_frame_layout = self._get_content_frame_layout(self._current_detail_page)
         if content_frame_layout:
             content_frame_layout.invalidate()
-            apply_adaptive_layout(self._current_detail_page, content_frame_layout)
+            self._queue_resize_rebuild()
 
         self._current_detail_page.updateGeometry()
 
@@ -574,11 +588,67 @@ class DetailPageManager:
         )
         if self._is_compact_detail_layout():
             content_frame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
-        setup_adaptive_layout(detail_page, content_frame_layout)
+        self._setup_resize_rebuild(detail_page)
 
         self.main_window.stackedWidget.addWidget(detail_page)
         self.main_window.stackedWidget.setCurrentWidget(detail_page)
         self.main_window.currentDetailPage = detail_page
+
+    def _setup_resize_rebuild(self, detail_page: QWidget) -> None:
+        if self._is_forced_compact_detail_layout():
+            return
+
+        def handle_resize_event(event) -> None:
+            QWidget.resizeEvent(detail_page, event)
+            self._queue_resize_rebuild()
+
+        detail_page.resizeEvent = handle_resize_event
+
+    def _queue_resize_rebuild(self) -> None:
+        if self._is_forced_compact_detail_layout() or self._resize_rebuild_pending:
+            return
+
+        self._resize_rebuild_pending = True
+        QTimer.singleShot(120, self._rebuild_after_resize)
+
+    def _rebuild_after_resize(self) -> None:
+        self._resize_rebuild_pending = False
+        if not self._can_rebuild_after_resize():
+            return
+
+        detail_page = self._current_detail_page
+        if detail_page is None:
+            return
+
+        current_compact = bool(detail_page.property("force_compact_detail_layout"))
+        requested_compact = self._is_compact_detail_layout()
+        if current_compact == requested_compact:
+            return
+
+        self._reopen_current_detail_page()
+
+    def _can_rebuild_after_resize(self) -> bool:
+        return (
+            self._detail_page_active
+            and self._current_detail_page is not None
+            and self._current_detail_source is not None
+            and self._current_detail_page.parent() is not None
+            and not self._current_detail_page.isHidden()
+        )
+
+    def _reopen_current_detail_page(self) -> None:
+        source = self._current_detail_source
+        if source is None:
+            return
+
+        source_kind, source_data = source
+        return_tab_index = getattr(self, "_return_to_tab_index", 0)
+        self._remove_current_detail_page()
+        if source_kind == "autoinstall":
+            self.openAutoInstallDetailPage(source_data)
+        else:
+            self.openGameDetailPage(source_data)
+        self._return_to_tab_index = return_tab_index
 
     def _finalize_detail_page(
         self,
@@ -727,6 +797,7 @@ class DetailPageManager:
 
     def openAutoInstallDetailPage(self, game_data: dict) -> None:
         """Open minimal detail page for auto-install games."""
+        self._current_detail_source = ("autoinstall", dict(game_data))
         detail_page = QWidget()
         compact_layout = self._is_compact_detail_layout()
         frame_width, frame_height = self._get_cover_frame_size(compact_layout)

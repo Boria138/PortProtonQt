@@ -199,44 +199,57 @@ def create_focus_helper(
 ) -> Callable[[], None]:
     """Create focus helper function for detail page buttons."""
 
+    def can_focus_detail_page() -> bool:
+        return stacked_widget.indexOf(detail_page) >= 0
+
     def try_set_focus() -> None:
-        if not (button and not button.isHidden()):
-            return
+        try:
+            if not can_focus_detail_page():
+                return
+            if not (button and not button.isHidden()):
+                return
 
-        stacked_widget.setCurrentWidget(detail_page)
-        detail_page.setFocus(Qt.FocusReason.OtherFocusReason)
-        button.setFocus(Qt.FocusReason.OtherFocusReason)
-        button.update()
-        detail_page.raise_()
-        main_window.activateWindow()
-
-        if button.hasFocus():
-            logger.debug("Button successfully received focus")
-        else:
-            logger.debug("Retrying focus...")
-            QTimer.singleShot(20, retry_focus)
-
-    def retry_focus() -> None:
-        if not (button and not button.isHidden() and not button.hasFocus()):
-            return
-
-        QApplication.processEvents()
-        main_window.activateWindow()
-        stacked_widget.setCurrentWidget(detail_page)
-        detail_page.raise_()
-        button.setFocus(Qt.FocusReason.OtherFocusReason)
-        button.update()
-
-        if not button.hasFocus():
-            logger.debug("Final retry...")
-            button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+            stacked_widget.setCurrentWidget(detail_page)
+            detail_page.setFocus(Qt.FocusReason.OtherFocusReason)
             button.setFocus(Qt.FocusReason.OtherFocusReason)
-            QApplication.processEvents()
+            button.update()
+            detail_page.raise_()
+            main_window.activateWindow()
 
             if button.hasFocus():
-                logger.debug("Button received focus after final retry")
+                logger.debug("Button successfully received focus")
             else:
-                logger.debug("Button still doesn't have focus")
+                logger.debug("Retrying focus...")
+                QTimer.singleShot(20, retry_focus)
+        except RuntimeError:
+            logger.debug("Detail focus target was deleted")
+
+    def retry_focus() -> None:
+        try:
+            if not can_focus_detail_page():
+                return
+            if not (button and not button.isHidden() and not button.hasFocus()):
+                return
+
+            QApplication.processEvents()
+            main_window.activateWindow()
+            stacked_widget.setCurrentWidget(detail_page)
+            detail_page.raise_()
+            button.setFocus(Qt.FocusReason.OtherFocusReason)
+            button.update()
+
+            if not button.hasFocus():
+                logger.debug("Final retry...")
+                button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+                button.setFocus(Qt.FocusReason.OtherFocusReason)
+                QApplication.processEvents()
+
+                if button.hasFocus():
+                    logger.debug("Button received focus after final retry")
+                else:
+                    logger.debug("Button still doesn't have focus")
+        except RuntimeError:
+            logger.debug("Detail focus target was deleted")
 
     return try_set_focus
 
