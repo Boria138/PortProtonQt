@@ -33,6 +33,14 @@ from portprotonqt.theme_manager import ThemeManager
 from portprotonqt.custom_widgets import ClickableLabel
 from portprotonqt.animations import GameCardAnimations
 
+PROTONDB_TIERS = ("platinum", "gold", "silver", "bronze", "borked", "pending")
+
+
+def is_valid_protondb_tier(tier: str | None) -> bool:
+    """Check if ProtonDB tier is supported."""
+    return bool(tier) and tier.lower() in PROTONDB_TIERS
+
+
 class GameCard(QFrame):
     borderWidthChanged = Signal()
     gradientAngleChanged = Signal()
@@ -152,12 +160,10 @@ class GameCard(QFrame):
         if self.list_layout:
             self.favoriteLabel.setVisible(False)
 
-        tier_text = "" if self.economy_mode else self.getProtonDBText(protondb_tier)
-        if tier_text:
-            icon_filename = self.getProtonDBIconFilename(protondb_tier)
-            icon = self.theme_manager.get_icon(icon_filename, self.current_theme_name, as_path=True)
+        if not self.economy_mode and is_valid_protondb_tier(protondb_tier):
+            icon = self.theme_manager.get_icon("platinum-gold", self.current_theme_name, as_path=True)
             self.protondbLabel = ClickableLabel(
-                tier_text,
+                "ProtonDB",
                 icon=icon,
                 parent=self.coverWidget,
                 font_scale_factor=0.06
@@ -366,7 +372,7 @@ class GameCard(QFrame):
         badges = [
             (self.steam_visible, self.steamLabel),
             (self.portproton_visible, self.portprotonLabel),
-            (bool(self.getProtonDBText(self.protondb_tier)), self.protondbLabel),
+            (is_valid_protondb_tier(self.protondb_tier), self.protondbLabel),
             (bool(self.getAntiCheatText(self.anticheat_status)), self.anticheatLabel),
         ]
 
@@ -449,7 +455,7 @@ class GameCard(QFrame):
         badge_visibility = [
             (self.steam_visible, self.steamLabel),
             (self.portproton_visible, self.portprotonLabel),
-            (bool(self.getProtonDBText(self.protondb_tier)), self.protondbLabel),
+            (is_valid_protondb_tier(self.protondb_tier), self.protondbLabel),
             (bool(self.getAntiCheatText(self.anticheat_status)), self.anticheatLabel),
         ]
         for is_visible, label in badge_visibility:
@@ -525,7 +531,7 @@ class GameCard(QFrame):
         self.portproton_visible = (
             str(self.game_source).lower() == "portproton" and bool(self.ppdb_id) and not self.economy_mode
         )
-        protondb_visible = bool(self.getProtonDBText(self.protondb_tier)) and not self.economy_mode
+        protondb_visible = is_valid_protondb_tier(self.protondb_tier) and not self.economy_mode
         anticheat_visible = bool(self.getAntiCheatText(self.anticheat_status)) and not self.economy_mode
 
         hidden_badges = self.badge_view_mode == "hidden"
@@ -593,31 +599,6 @@ class GameCard(QFrame):
             return "ac_denied"
         elif status in ("broken"):
             return "ac_broken"
-        return ""
-
-    @staticmethod
-    def getProtonDBText(tier: str) -> str:
-        if not tier:
-            return ""
-        translations = {
-            "platinum": _("Platinum"),
-            "gold": _("Gold"),
-            "silver":  _("Silver"),
-            "bronze": _("Bronze"),
-            "borked": _("Broken"),
-            "pending":  _("Pending")
-        }
-        return translations.get(tier.lower(), "")
-
-    @staticmethod
-    def getProtonDBIconFilename(tier: str) -> str:
-        tier = tier.lower()
-        if tier in ("platinum", "gold"):
-            return "platinum-gold"
-        elif tier in ("silver", "bronze"):
-            return "silver-bronze"
-        elif tier in ("borked", "pending"):
-            return "broken"
         return ""
 
     def _get_missing_executable_path(self) -> str:

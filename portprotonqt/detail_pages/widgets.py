@@ -19,7 +19,7 @@ from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QColor, QDesktopServices
 
 from portprotonqt.custom_widgets import ClickableLabel, AutoSizeButton
-from portprotonqt.game_card import GameCard
+from portprotonqt.game_card import GameCard, is_valid_protondb_tier
 from portprotonqt.localization import _
 from portprotonqt.config import ui_config
 
@@ -325,15 +325,13 @@ def create_protondb_badge(
     main_window,
 ) -> tuple[ClickableLabel | None, bool]:
     """Create ProtonDB badge."""
-    protondb_text = GameCard.getProtonDBText(protondb_tier)
-    if not protondb_text:
+    if not is_valid_protondb_tier(protondb_tier):
         return None, False
 
-    icon_filename = GameCard.getProtonDBIconFilename(protondb_tier)
-    icon = main_window.theme_manager.get_icon(icon_filename, main_window.current_theme_name, as_path=True)
+    icon = main_window.theme_manager.get_icon("platinum-gold", main_window.current_theme_name, as_path=True)
 
     badge = ClickableLabel(
-        protondb_text,
+        "ProtonDB",
         icon=icon,
         parent=parent,
         icon_size=BADGE_ICON_SIZE,
