@@ -4651,9 +4651,21 @@ resize_png () {
 }
 
 portwine_create_shortcut () {
-    if [[ ! -e $PW_EXE_FILE ]]
-    then return 1
-    elif [[ $(basename "$PW_EXE_FILE") =~ (unins0|uninstall|remove) ]]
+    if [[ ! -e "$PW_EXE_FILE" ]]; then
+        lnk_dir="$(dirname "$PW_EXE_FILE")"
+        lnk_name_part="$(basename "$PW_EXE_FILE")"
+        if [[ -d "$lnk_dir" ]]; then
+            actual_file="$(ls -1 "$lnk_dir/" 2>/dev/null | grep -F -i -x -- "$lnk_name_part" | head -1)"
+            if [[ -n "$actual_file" ]]; then
+                PW_EXE_FILE="$(realpath "$lnk_dir/$actual_file" 2>/dev/null)"
+                export PW_EXE_FILE
+            fi
+        fi
+        if [[ ! -e "$PW_EXE_FILE" ]]; then
+            return 1
+        fi
+    fi
+    if [[ $(basename "$PW_EXE_FILE") =~ (unins0|uninstall|remove) ]]
     then return 0
     fi
     pw_create_gui_png
@@ -4685,7 +4697,18 @@ pw_download_autoinstall_ppdb () {
 
 portwine_output_yad_shortcut () {
 
-        [[ ! -e "${PW_EXE_FILE}" ]] && return 1
+        if [[ ! -e "${PW_EXE_FILE}" ]]; then
+            lnk_dir="$(dirname "${PW_EXE_FILE}")"
+            lnk_name_part="$(basename "${PW_EXE_FILE}")"
+            if [[ -d "${lnk_dir}" ]]; then
+                actual_file="$(ls -1 "${lnk_dir}/" 2>/dev/null | grep -F -i -x -- "${lnk_name_part}" | head -1)"
+                if [[ -n "${actual_file}" ]]; then
+                    PW_EXE_FILE="$(realpath "${lnk_dir}/${actual_file}" 2>/dev/null)"
+                    export PW_EXE_FILE
+                fi
+            fi
+            [[ ! -e "${PW_EXE_FILE}" ]] && return 1
+        fi
 
         pw_download_autoinstall_ppdb
         if [[ "${PW_FIND_PPDB:-}" == "1" ]] \
@@ -4693,7 +4716,6 @@ portwine_output_yad_shortcut () {
         then
             python_module shortcut_tools find-ppdb "${PW_EXE_FILE}"
         fi
-
         pw_create_gui_png
         unset name_desktop
 
@@ -4796,15 +4818,54 @@ pw_auto_create_shortcut () {
         elif exe_path="$(realpath "${link_path//\/Games\//\/GAMES\//}" 2>/dev/null)" ; then
             export PW_EXE_FILE="$exe_path"
         else
-            print_warning "Link broken for: $link_name"
-            continue
+            lnk_dir="$(dirname "${link_path}")"
+            lnk_name_part="$(basename "${link_path}")"
+            actual_file="$(ls -1 "${lnk_dir}/" 2>/dev/null | grep -F -i -x -- "${lnk_name_part}" | head -1)"
+            if [[ -n "${actual_file}" ]] && exe_path="$(realpath "${lnk_dir}/${actual_file}" 2>/dev/null)" ; then
+                export PW_EXE_FILE="$exe_path"
+            else
+                print_warning "Link broken for: $link_name"
+                continue
+            fi
         fi
         print_info "Created link for: $link_name"
         PORTPROTON_NAME="$link_name"
+        PORTWINE_CREATE_SHORTCUT_NAME="$link_name"
         resize_png "$PW_EXE_FILE" "${PORTPROTON_NAME}"
         export PW_NO_RESTART_PPDB=1
         unset name_desktop_png
         portwine_create_shortcut
+        if [[ -n "${link_cmd:-}" ]] && [[ -n "${PW_EXE_FILE:-}" ]]; then
+            local ppdb_path ppdb_dir ppdb_name actual_ppdb lnk_launch_parameters old_launch_parameters portwine_db_name
+            ppdb_path="${PW_EXE_FILE}.ppdb"
+            ppdb_dir="$(dirname "${ppdb_path}")"
+            ppdb_name="$(basename "${ppdb_path}")"
+            if [[ ! -f "${ppdb_path}" ]] && [[ -d "${ppdb_dir}" ]]; then
+                actual_ppdb="$(ls -1 "${ppdb_dir}/" 2>/dev/null | grep -F -i -x -- "${ppdb_name}" | head -1)"
+                [[ -n "${actual_ppdb}" ]] && ppdb_path="${ppdb_dir}/${actual_ppdb}"
+            fi
+            if [[ ! -f "${ppdb_path}" ]]; then
+                portwine_db_name="$(basename "${PW_EXE_FILE%.[Ee][Xx][Ee]}")"
+                {
+                    echo "#!/usr/bin/env bash"
+                    echo "#Author: ${USER}"
+                    echo "#${portwine_db_name}.exe"
+                    echo "#Rating=1-5"
+                } > "${ppdb_path}" 2>/dev/null
+            fi
+            if [[ -w "${ppdb_path}" ]]; then
+                lnk_launch_parameters="${link_cmd}"
+                lnk_launch_parameters="${lnk_launch_parameters//\"/}"
+                lnk_launch_parameters="${lnk_launch_parameters//\\/\/}"
+                old_launch_parameters="$(sed -n 's/^export LAUNCH_PARAMETERS="\([^"]*\)".*/\1/p' "${ppdb_path}" | head -1)"
+                if [[ -n "${old_launch_parameters}" ]]; then
+                    lnk_launch_parameters="${old_launch_parameters} ${lnk_launch_parameters}"
+                fi
+                sed -i '/^export LAUNCH_PARAMETERS=/d' "${ppdb_path}"
+                printf '%s\n' "export LAUNCH_PARAMETERS=\"${lnk_launch_parameters}\"" >> "${ppdb_path}"
+            fi
+        fi
+        unset PORTWINE_CREATE_SHORTCUT_NAME
     done
 }
 export -f pw_auto_create_shortcut
