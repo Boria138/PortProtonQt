@@ -3414,10 +3414,14 @@ class InputManager(QObject):
                     scrollable = scrollable.parent()
                 return True
 
-        if event.type() in (QEvent.Type.KeyPress, QEvent.Type.KeyRelease):
+        if event.type() == QEvent.Type.KeyPress:
+            if self._redirect_gamecard_input_to_search(event):
+                return True
             key = self._qt_event_to_pygame_key(event)
-            if key is not None and event.type() == QEvent.Type.KeyPress:
+            if key is not None:
                 return self._handle_pygame_key_press(key, self._qt_modifiers_to_pygame(event))
+        if event.type() == QEvent.Type.KeyRelease:
+            key = self._qt_event_to_pygame_key(event)
             if key is not None:
                 return self._handle_pygame_key_release(key)
 
@@ -3502,6 +3506,31 @@ class InputManager(QObject):
         if focused is None or not isValid(focused):
             return None
         return focused
+
+    _GAMECARD_SEARCH_TABS: dict[int, str] = {
+        0: 'searchEdit',
+        1: 'autoInstallSearchLineEdit',
+    }
+
+    def _redirect_gamecard_input_to_search(self, event: QEvent) -> bool:
+        focused = self._focused_widget()
+        if not isinstance(focused, GameCard):
+            return False
+        tab_index = self._parent.stackedWidget.currentIndex()
+        attr_name = self._GAMECARD_SEARCH_TABS.get(tab_index)
+        if attr_name is None:
+            return False
+        text_method = getattr(event, "text", None)
+        text = text_method() if callable(text_method) else ""
+        text = text if isinstance(text, str) else ""
+        if len(text) != 1 or not text.isprintable():
+            return False
+        search_edit = getattr(self._parent, attr_name, None)
+        if not isinstance(search_edit, QLineEdit) or not isValid(search_edit):
+            return False
+        search_edit.setFocus()
+        search_edit.insert(text)
+        return True
 
     def _activate_focused_widget(self, focused: QWidget | None) -> None:
         if focused is None or not isValid(focused):
