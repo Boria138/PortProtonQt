@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-06-18 23:41+0500\n"
+"POT-Creation-Date: 2026-06-20 18:16+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -303,21 +303,6 @@ msgid "Broken"
 msgstr ""
 
 msgid "Denied"
-msgstr ""
-
-msgid "Platinum"
-msgstr ""
-
-msgid "Gold"
-msgstr ""
-
-msgid "Silver"
-msgstr ""
-
-msgid "Bronze"
-msgstr ""
-
-msgid "Pending"
 msgstr ""
 
 msgid "Unknown Game"

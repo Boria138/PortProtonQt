@@ -106,24 +106,27 @@ def _parse_po_entry_signature(block: list[str]) -> tuple[str, tuple[tuple[str, s
     msgid = None
     msgstr_values: dict[str, str] = {}
     i = 0
-    while i < len(block):
-        line = block[i]
-        if line.startswith("msgctxt "):
-            msgctxt, i = _read_po_value(block, i, "msgctxt ")
-            continue
-        if line.startswith("msgid "):
-            msgid, i = _read_po_value(block, i, "msgid ")
-            continue
-        if line.startswith("msgstr "):
-            value, i = _read_po_value(block, i, "msgstr ")
-            msgstr_values["msgstr"] = value
-            continue
-        if line.startswith("msgstr["):
-            key = line.split(" ", maxsplit=1)[0]
-            value, i = _read_po_value(block, i, f"{key} ")
-            msgstr_values[key] = value
-            continue
-        i += 1
+    try:
+        while i < len(block):
+            line = block[i]
+            if line.startswith("msgctxt "):
+                msgctxt, i = _read_po_value(block, i, "msgctxt ")
+                continue
+            if line.startswith("msgid "):
+                msgid, i = _read_po_value(block, i, "msgid ")
+                continue
+            if line.startswith("msgstr "):
+                value, i = _read_po_value(block, i, "msgstr ")
+                msgstr_values["msgstr"] = value
+                continue
+            if line.startswith("msgstr["):
+                key = line.split(" ", maxsplit=1)[0]
+                value, i = _read_po_value(block, i, f"{key} ")
+                msgstr_values[key] = value
+                continue
+            i += 1
+    except (SyntaxError, ValueError):
+        return None
     if msgid is None or msgid == "":
         return None
     return f"{msgctxt}\x04{msgid}", tuple(sorted(msgstr_values.items()))
