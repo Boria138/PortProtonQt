@@ -91,7 +91,7 @@ class GameLibraryManager:
         sliderLayout.addStretch()
 
         self.sizeSlider = QSlider(Qt.Orientation.Horizontal)
-        self.sizeSlider.setMinimum(200)
+        self.sizeSlider.setMinimum(150)
         self.sizeSlider.setMaximum(250)
         self.sizeSlider.setValue(self.card_width)
         self.sizeSlider.setTickInterval(10)
@@ -115,18 +115,6 @@ class GameLibraryManager:
         self._incremental_add_timer = QTimer()
         self._incremental_add_timer.setSingleShot(True)
         self._incremental_add_timer.timeout.connect(self._process_incremental_add_batch)
-
-        # Calculate initial card width
-        def calculate_card_width():
-            if self.gamesListLayout is None:
-                return
-            available_width = scrollArea.width() - 20
-            spacing = self.gamesListLayout._spacing
-            target_cards_per_row = 8
-            calculated_width = (available_width - spacing * (target_cards_per_row - 1)) // target_cards_per_row
-            calculated_width = max(200, min(calculated_width, 250))
-
-        QTimer.singleShot(0, calculate_card_width)
 
         # Connect scroll event for lazy loading
         scrollArea.verticalScrollBar().valueChanged.connect(self.load_visible_images)
