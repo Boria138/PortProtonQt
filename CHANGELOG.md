@@ -19,6 +19,7 @@
 - Из-за проблем с кешем fontconfig весь кеш Appimage перенесён в `~/.cache/AppImage-Cache/PortProtonQt/`
 - Автоустановки теперь загружаются с сайта `ppdb.linux-gaming.ru`
 - Бейдж PortProton теперь использует данные `ppdb.linux-gaming.ru`, ведёт на страницу отчёта по id и скрывается, если отчёта нет
+- Иконки подсказок управления теперь можно нажимать мышью для выполнения соответствующего действия
 - Обновлён перевод на Португальский (Бразилия) `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/pt_BR/`
 - Обновлён перевод на Китайский (упрощённый) `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/zh_Hans/`
 
