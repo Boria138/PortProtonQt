@@ -440,6 +440,8 @@ class ClickableLabel(QLabel):
         display_text = fm.elidedText(text, Qt.TextElideMode.ElideRight, available_width)
         text_width = fm.horizontalAdvance(display_text)
         text_height = fm.height()
+        if has_icon and not display_text:
+            text_height = icon_size
         total_width = text_width + (icon_size + spacing if has_icon else 0)
 
         if alignment & Qt.AlignmentFlag.AlignHCenter:

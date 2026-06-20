@@ -6,6 +6,7 @@ current_theme_name = ui_config.get_theme()
 
 # CONSTANTS
 favoriteLabelSize = 48, 48
+favoriteLabelIconSize = 32
 detailCompactCoverFrameSize = 128
 detailCompactCoverImageSize = 108
 detailCompactContentSpacing = 15

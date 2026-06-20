@@ -120,8 +120,8 @@ class DetailPageManager:
             game_data.get("exec_line", ""), game_data.get("cover_path")
         )
 
-    def _get_favorite_text(self, name: str) -> str:
-        return "★" if name in favorites_config.get_games() else "☆"
+    def _get_favorite_icon_name(self, name: str) -> str:
+        return "star_fav_full" if name in favorites_config.get_games() else "star_fav"
 
     def _create_game_cover_frame(
         self,
@@ -136,7 +136,7 @@ class DetailPageManager:
             parent=detail_page,
             theme=self.main_window.theme,
             image_label=image_label,
-            favorite_label_text=self._get_favorite_text(game_data["name"]),
+            favorite_icon_name=self._get_favorite_icon_name(game_data["name"]),
             on_favorite_click=lambda: self._on_favorite_click(game_data["name"]),
             badges=badges,
             cover_width=frame_width,
@@ -1034,8 +1034,9 @@ class DetailPageManager:
 
     def toggleFavoriteInDetailPage(self, game_name: str, label: ClickableLabel) -> None:
         """Toggle favorite status from detail page."""
-        favorite_text = toggle_favorite(game_name, self.main_window)
-        label.setText(favorite_text)
+        favorite_icon_name = toggle_favorite(game_name, self.main_window)
+        label.setText("")
+        label.setIcon(self.main_window.theme_manager.get_icon(favorite_icon_name, as_path=True))
 
     def toggleDebugLog(self, exe_path: str | None, button: AutoSizeButton) -> None:
         """Toggle debug log creation."""

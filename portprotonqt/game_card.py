@@ -441,7 +441,9 @@ class GameCard(QFrame):
         self.update_cover_pixmap()
 
         favorite_size = (int(self.theme.favoriteLabelSize[0] * self._scale), int(self.theme.favoriteLabelSize[1] * self._scale))
+        favorite_icon_size = int(self.theme.favoriteLabelIconSize * self._scale)
         self.favoriteLabel.setFixedSize(*favorite_size)
+        self.favoriteLabel.setIconSize(favorite_icon_size, 0)
         self.favoriteLabel.move(int(8 * self._scale), int(8 * self._scale))
 
         badge_host_width = self.coverWidget.width()
@@ -660,10 +662,10 @@ class GameCard(QFrame):
             return
 
         try:
-            if self.is_favorite:
-                self.favoriteLabel.setText("★")
-            else:
-                self.favoriteLabel.setText("☆")
+            icon_name = "star_fav_full" if self.is_favorite else "star_fav"
+            icon = self.theme_manager.get_icon(icon_name, self.current_theme_name, as_path=True)
+            self.favoriteLabel.setText("")
+            self.favoriteLabel.setIcon(icon)
             self.favoriteLabel.setStyleSheet(self.theme.FAVORITE_LABEL_STYLE)
         except RuntimeError:
             # Handle the case where the Qt object was deleted

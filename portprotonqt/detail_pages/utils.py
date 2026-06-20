@@ -246,16 +246,16 @@ def toggle_favorite(game_name: str, main_window) -> str:
     favorites = favorites_config.get_games()
     if game_name in favorites:
         favorites.remove(game_name)
-        favorite_text = "☆"
+        favorite_icon_name = "star_fav"
     else:
         favorites.append(game_name)
-        favorite_text = "★"
+        favorite_icon_name = "star_fav_full"
     favorites_config.set_games(favorites)
 
     if hasattr(main_window, "game_library_manager"):
         main_window.game_library_manager.update_game_grid()
 
-    return favorite_text
+    return favorite_icon_name
 
 
 def check_autoinstall_installed(

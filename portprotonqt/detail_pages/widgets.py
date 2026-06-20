@@ -22,6 +22,7 @@ from portprotonqt.custom_widgets import ClickableLabel, AutoSizeButton
 from portprotonqt.game_card import GameCard, is_valid_protondb_tier
 from portprotonqt.localization import _
 from portprotonqt.config import ui_config
+from portprotonqt.theme_manager import ThemeManager
 
 
 COVER_WIDTH = 300
@@ -159,7 +160,7 @@ def create_cover_frame(
     parent: QWidget,
     theme,
     image_label: QLabel,
-    favorite_label_text: str | None = None,
+    favorite_icon_name: str | None = None,
     on_favorite_click: Callable[[], str | None] | None = None,
     badges: list | None = None,
     cover_width: int = COVER_WIDTH,
@@ -176,8 +177,8 @@ def create_cover_frame(
     cover_layout.setContentsMargins(0, 0, 0, 0)
     cover_layout.addWidget(image_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
-    if favorite_label_text and on_favorite_click:
-        _add_favorite_label(cover_frame, favorite_label_text, theme, on_favorite_click)
+    if favorite_icon_name and on_favorite_click:
+        _add_favorite_label(cover_frame, favorite_icon_name, theme, on_favorite_click)
 
     if badges:
         _position_badges(cover_frame, badges, cover_width)
@@ -276,18 +277,20 @@ def _setup_cover_shadow(cover_frame: QFrame, theme) -> None:
 
 
 def _add_favorite_label(
-    cover_frame: QFrame, favorite_label_text: str, theme, on_favorite_click: Callable[[], str | None] | None = None
+    cover_frame: QFrame, favorite_icon_name: str, theme, on_favorite_click: Callable[[], str | None] | None = None
 ) -> None:
     """Add favorite label to cover frame."""
     favorite_label = ClickableLabel(cover_frame)
+    favorite_icon_size = theme.favoriteLabelIconSize
     favorite_label.setFixedSize(*theme.favoriteLabelSize)
+    favorite_label.setIconSize(favorite_icon_size, 0)
     favorite_label.setStyleSheet(theme.FAVORITE_LABEL_STYLE)
-    favorite_label.setText(favorite_label_text)
+    favorite_label.setIcon(ThemeManager().get_icon(favorite_icon_name, as_path=True))
     if on_favorite_click:
         def handle_click() -> None:
             result = on_favorite_click()
-            if isinstance(result, str) and result in ("★", "☆"):
-                favorite_label.setText(result)
+            if isinstance(result, str) and result in ("star_fav_full", "star_fav"):
+                favorite_label.setIcon(ThemeManager().get_icon(result, as_path=True))
         favorite_label.clicked.connect(handle_click)
     favorite_label.move(8, 8)
     favorite_label.raise_()
