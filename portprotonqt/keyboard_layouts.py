@@ -1,4 +1,11 @@
-# keyboard_layouts.py
+from importlib.resources import files
+
+import orjson
+
+from portprotonqt.logger import get_logger
+
+logger = get_logger(__name__)
+
 keyboard_layouts = {
     'en': {
         'normal': [
@@ -71,3 +78,22 @@ keyboard_layouts = {
         ]
     }
 }
+
+
+def _load_keyboard_layouts() -> None:
+    """Load generated layouts from gjs-osk keymaps."""
+    try:
+        layout_file = files("portprotonqt").joinpath("keyboard_layouts.json")
+        with layout_file.open("rb") as file:
+            loaded_layouts = orjson.loads(file.read())
+    except FileNotFoundError:
+        logger.warning("Generated keyboard layouts file not found")
+        return
+    except orjson.JSONDecodeError as e:
+        logger.warning("Generated keyboard layouts file is invalid: %s", e)
+        return
+
+    keyboard_layouts.update(loaded_layouts)
+
+
+_load_keyboard_layouts()

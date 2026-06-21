@@ -33,6 +33,11 @@ install_data(
   install_dir: pythondir / meson.project_name(),
 )
 
+install_data(
+  'keyboard_layouts.json',
+  install_dir: pythondir / meson.project_name(),
+)
+
 # Install animations package
 install_data(
   ['animations/__init__.py',

@@ -125,12 +125,6 @@ install_subdir(
   install_mode: 'rwxr-xr-x',
 )
 
-install_subdir(
-  'build-aux/share/portproton/scripts/pw_autoinstall',
-  install_dir: datadir / 'portproton' / 'scripts',
-  install_mode: 'rwxr-xr-x',
-)
-
 # Install udev rules
 udev_rulesdir_opt = get_option('udev_rulesdir')
 udevdir = udev_rulesdir_opt != '' ? udev_rulesdir_opt: prefix / 'lib' / 'udev' / 'rules.d'

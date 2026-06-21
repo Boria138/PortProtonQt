@@ -10,6 +10,28 @@ from portprotonqt.config import ui_config
 
 theme_manager = ThemeManager()
 
+LAYOUT_DISPLAY_NAMES = {
+    'be': 'Беларуская',
+    'br': 'PT-BR',
+    'by': 'Беларуская',
+    'cn': '中文',
+    'cz': 'Čeština',
+    'de': 'Deutsch',
+    'en': 'English',
+    'es': 'Español',
+    'fr': 'Français',
+    'gb': 'English UK',
+    'it': 'Italiano',
+    'kz': 'Қазақша',
+    'pt': 'Português',
+    'ru': 'Русский',
+    'tr': 'Türkçe',
+    'ua': 'Українська',
+    'uk': 'English UK',
+    'us': 'English US',
+}
+
+
 class VirtualKeyboard(QFrame):
     keyPressed = Signal(str)
 
@@ -18,9 +40,7 @@ class VirtualKeyboard(QFrame):
         self._parent: QWidget | None = parent
         self.available_layouts: list[str] = self.get_layouts_setxkbmap()
         self.theme = theme if theme else theme_manager.apply_theme(ui_config.get_theme())
-        if not self.available_layouts:
-            self.available_layouts.append('en')
-        self.current_layout: str = self.available_layouts[0]
+        self.current_layout: str = self.available_layouts[0] if self.available_layouts else ''
 
         self.focus_timer = None
         self.focus_delay = 150  # Delay between moves in ms
@@ -145,30 +165,50 @@ class VirtualKeyboard(QFrame):
 
     def get_layouts_setxkbmap(self) -> list[str]:
         """Get layouts used in system, return list like ['us', 'ru'] etc."""
-        cmd = r'''localectl status | awk -F: '/X11 Layout/ {gsub(/^[ \t]+/, "", $2); print $2}' '''
-        output = self.run_shell_command(cmd)
-        if output:
-            layouts = [lang.strip() for lang in output.split(',') if lang.strip()]
-            return layouts if layouts else ['en']
-        else:
-            return ['en']
+        layout_cmd = r'''localectl status | awk -F: '/X11 Layout/ {gsub(/^[ \t]+/, "", $2); print $2}' '''
+        output = self.run_shell_command(layout_cmd)
+        if not output:
+            return []
+
+        layouts = [lang.strip() for lang in output.split(',') if lang.strip()]
+        variant_cmd = r'''localectl status | awk -F: '/X11 Variant/ {gsub(/^[ \t]+/, "", $2); print $2}' '''
+        variant_output = self.run_shell_command(variant_cmd)
+        variants = variant_output.split(',') if variant_output else []
+        xkb_layouts = []
+        for index, layout in enumerate(layouts):
+            variant = variants[index].strip() if index < len(variants) else ''
+            xkb_layouts.append(f"{layout}+{variant}" if variant else layout)
+        return xkb_layouts
 
     def create_keyboard(self):
         # Main layouts with Shift
         # Filter available layouts
 
-        LAYOUT_MAP = {'us': 'en'}
-
         # Assume keyboard_layouts is dict[str, dict[str, list[list[str]]]]
         self.layouts: dict[str, dict[str, list[list[str]]]] = {
-            lang: keyboard_layouts.get(LAYOUT_MAP.get(lang, lang), keyboard_layouts['en'])
+            lang: keyboard_layouts[lang]
             for lang in self.available_layouts
+            if lang in keyboard_layouts
         }
+        self.available_layouts = list(self.layouts.keys())
+        if not self.available_layouts:
+            self.layouts['en'] = keyboard_layouts['en']
+            self.available_layouts.append('en')
 
-        self.current_layout = (self.current_layout if self.current_layout in self.layouts else next(iter(self.layouts.keys()), None) or 'en')
+        self.current_layout = self.current_layout if self.current_layout in self.layouts else 'en'
 
         self.buttons: dict[str, QPushButton] = {}
         self.update_keyboard()
+
+    def _space_button_text(self) -> str:
+        if not self.current_layout:
+            return "Space"
+
+        layout, _, variant = self.current_layout.partition('+')
+        name = LAYOUT_DISPLAY_NAMES.get(layout, layout.upper())
+        if variant:
+            name = f"{name}/{variant}"
+        return f"Space · {name}"
 
     def set_gamepad_icon(self, button, icon_type, gtype=''):
         """Set gamepad icon on button based on type"""
@@ -244,22 +284,25 @@ class VirtualKeyboard(QFrame):
                 self.buttons[key] = button
 
         # Bottom row (special buttons)
+        right_shift_col = len(buttons[3]) if len(buttons) > 3 else self.num_cols - 3
+        right_shift_col = min(right_shift_col, self.num_cols - 1)
+        right_shift_span = max(1, self.num_cols - right_shift_col)
         shift = QPushButton('⬆')
-        shift.setFixedSize(fixed_w * 3 + 2 * self.spacing, fixed_h)
+        shift.setFixedSize(fixed_w * right_shift_span + (right_shift_span - 1) * self.spacing, fixed_h)
         shift.setCheckable(True)
         shift.setChecked(self.shift_pressed)
         shift.clicked.connect(lambda checked: self.on_shift_click(checked))
         # Add gamepad icon for Shift (RB/R)
         gtype = self.input_manager.gamepad_type
         self.set_gamepad_icon(shift, 'right', gtype)
-        self.keyboard_layout.addWidget(shift, 3, 11, 1, 3)
+        self.keyboard_layout.addWidget(shift, 3, right_shift_col, 1, right_shift_span)
 
         button = QPushButton('CAPS')
         button.setCheckable(True)
         button.setChecked(self.caps_lock)
         button.clicked.connect(self.on_caps_click)
 
-        space = QPushButton('Space')
+        space = QPushButton(self._space_button_text())
         space.setFixedSize(fixed_w * 5 + 4 * self.spacing, fixed_h)
         space.clicked.connect(lambda: self.on_button_click(' '))
         self.keyboard_layout.addWidget(space, 4, 1, 1, 5)
