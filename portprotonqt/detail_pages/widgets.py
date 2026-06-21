@@ -363,10 +363,10 @@ def create_portproton_badge(
     ppdb_id: str = "",
     ppdb_rating: str = "",
 ) -> ClickableLabel:
-    """Create PortProton badge."""
+    """Create PPDB badge."""
     portproton_icon = main_window.theme_manager.get_icon("badge_portproton", as_path=True)
     badge = ClickableLabel(
-        "PortProton",
+        "PPDB",
         icon=portproton_icon,
         parent=parent,
         icon_size=BADGE_ICON_SIZE,

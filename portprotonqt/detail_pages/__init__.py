@@ -22,7 +22,6 @@ from portprotonqt.detail_pages.widgets import (
     create_content_frame,
     create_cover_frame,
     create_protondb_badge,
-    create_steam_badge,
     create_portproton_badge,
     create_anticheat_badge,
     create_details_widget,
@@ -216,21 +215,14 @@ class DetailPageManager:
         if self._is_compact_detail_layout():
             return []
 
-        game_source = str(game_data.get("game_source", "")).lower()
-        appid = game_data.get("appid", "")
         ppdb_id = str(game_data.get("ppdb_id", ""))
         ppdb_rating = str(game_data.get("ppdb_rating", ""))
-
-        steam_visible = game_source == "steam"
-        portproton_visible = game_source == "portproton"
 
         badges = []
         protondb_badge = self._create_protondb_badge(parent, game_data)
         if protondb_badge:
             badges.append(protondb_badge)
-        if steam_visible:
-            badges.append(self._create_steam_badge(parent, appid))
-        if portproton_visible and ppdb_id:
+        if ppdb_id:
             badges.append(self._create_portproton_badge(parent, ppdb_id, ppdb_rating))
         anticheat_badge = self._create_anticheat_badge(parent, game_data)
         if anticheat_badge:
@@ -243,10 +235,6 @@ class DetailPageManager:
             self.main_window
         )
         return {"label": badge, "visible": True} if badge and visible else None
-
-    def _create_steam_badge(self, parent: QWidget, appid: str) -> dict:
-        badge = create_steam_badge(parent, appid, self.main_window)
-        return {"label": badge, "visible": True}
 
     def _create_portproton_badge(
         self,
