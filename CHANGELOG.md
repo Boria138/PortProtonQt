@@ -13,6 +13,7 @@
 - Добавлена поддержка D7VK
 - Добавлена настройка автоматического скачивания PPDB с `ppdb.linux-gaming.ru`
 - Добавлены раскладки и варианты виртуальной клавиатуры на основе keymap-данных `gjs-osk`
+- Добавлен перевод на Немецкий `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/de/`
 
 ### Changed
 - Минимальный масштаб слайдера размера карточек снижен с 200 до 100 px
@@ -39,6 +40,7 @@
 - @Dervart
 - @rogerio-mattos
 - @Simple16
+- @Rubin13
 
 ---
 
