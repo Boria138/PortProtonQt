@@ -2,8 +2,18 @@ import os
 import re
 import shlex
 
-from PySide6.QtGui import QPainter, QColor, QDesktopServices, QHideEvent, QShowEvent
-from PySide6.QtCore import Signal, Property, Qt, QUrl, QTimer
+from PySide6.QtGui import (
+    QPainter,
+    QColor,
+    QDesktopServices,
+    QHideEvent,
+    QShowEvent,
+    QPainterPath,
+    QIcon,
+    QPen,
+    QLinearGradient,
+)
+from PySide6.QtCore import Signal, Property, Qt, QUrl, QTimer, QSize
 from PySide6.QtWidgets import (
     QFrame,
     QGraphicsDropShadowEffect,
@@ -39,11 +49,167 @@ COMPACT_CARD_WIDTH_THRESHOLD = 150
 COMPACT_CARD_HEIGHT_RATIO = 2.25
 COMPACT_CARD_TITLE_LINES = 3
 COMPACT_CARD_TITLE_SCALE = 0.75
+RIBBON_SIZE_RATIO = 0.28
+RIBBON_MIN_SIZE = 54
+RIBBON_MIN_WIDGET_SIZE = 4
+RIBBON_PEEL_START_RATIO = 0.32
+RIBBON_PEEL_MID_RATIO = 0.58
+RIBBON_PEEL_END_RATIO = 0.82
+RIBBON_PEEL_SHADOW_WIDTH = 3
+RIBBON_FOLD_START_RATIO = 0.60
+RIBBON_FOLD_END_RATIO = 0.92
+RIBBON_ICON_CENTER_RATIO = 0.84
+RIBBON_ICON_SIZE_RATIO = 0.25
+RIBBON_MIN_ICON_SIZE = 8
+RIBBON_GRADIENT_START = 0.0
+RIBBON_GRADIENT_END = 1.0
+RIBBON_GRADIENT_LIGHTER = 145
+RIBBON_GRADIENT_DARKER = 112
+RIBBON_FOLD_DARKER = 132
 
 
 def is_valid_protondb_tier(tier: str | None) -> bool:
     """Check if ProtonDB tier is supported."""
     return bool(tier) and tier.lower() in PROTONDB_TIERS
+
+
+class SourceCorner(QWidget):
+
+    def __init__(
+        self,
+        icon: str | QIcon | None = None,
+        color: str = "",
+        fold_color: str = "",
+        parent: QWidget | None = None,
+    ) -> None:
+        super().__init__(parent)
+        self._icon = icon
+        self._color = QColor(color)
+        self._fold_color = QColor(fold_color)
+        self.setFixedSize(0, 0)
+        self._visible = False
+
+    def paintEvent(self, event: object) -> None:
+        if not self._visible:
+            return
+        w = self.width()
+        h = self.height()
+        if w < RIBBON_MIN_WIDGET_SIZE or h < RIBBON_MIN_WIDGET_SIZE:
+            return
+
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+
+        shadow_path = self._create_shadow_path(w, h)
+        painter.setPen(QPen(self._fold_color, RIBBON_PEEL_SHADOW_WIDTH))
+        painter.drawPath(shadow_path)
+
+        path = self._create_path(w, h)
+        painter.setBrush(self._create_gradient(w, h))
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawPath(path)
+        fold_path = self._create_fold_path(w, h)
+        painter.setBrush(self._color.darker(RIBBON_FOLD_DARKER))
+        painter.drawPath(fold_path)
+        self._draw_icon(painter, w, h)
+
+    def _create_gradient(self, w: int, h: int) -> QLinearGradient:
+        gradient = QLinearGradient(
+            w * RIBBON_PEEL_START_RATIO,
+            h,
+            w,
+            h * RIBBON_PEEL_START_RATIO,
+        )
+        gradient.setColorAt(
+            RIBBON_GRADIENT_START,
+            self._color.lighter(RIBBON_GRADIENT_LIGHTER),
+        )
+        gradient.setColorAt(
+            RIBBON_GRADIENT_END,
+            self._color.darker(RIBBON_GRADIENT_DARKER),
+        )
+        return gradient
+
+    def _create_path(self, w: int, h: int) -> QPainterPath:
+        path = QPainterPath()
+        path.moveTo(w, h)
+        path.lineTo(w * RIBBON_PEEL_START_RATIO, h)
+        path.quadTo(
+            w * RIBBON_PEEL_MID_RATIO,
+            h,
+            w * RIBBON_PEEL_END_RATIO,
+            h * RIBBON_PEEL_MID_RATIO,
+        )
+        path.quadTo(
+            w,
+            h * RIBBON_PEEL_MID_RATIO,
+            w,
+            h * RIBBON_PEEL_START_RATIO,
+        )
+        path.lineTo(w, h)
+        path.closeSubpath()
+        return path
+
+    def _create_fold_path(self, w: int, h: int) -> QPainterPath:
+        fold_path = QPainterPath()
+        fold_path.moveTo(w, h)
+        fold_path.lineTo(w * RIBBON_FOLD_START_RATIO, h)
+        fold_path.quadTo(
+            w * RIBBON_FOLD_END_RATIO,
+            h * RIBBON_FOLD_END_RATIO,
+            w,
+            h * RIBBON_FOLD_START_RATIO,
+        )
+        fold_path.lineTo(w, h)
+        fold_path.closeSubpath()
+        return fold_path
+
+    def _create_shadow_path(self, w: int, h: int) -> QPainterPath:
+        shadow_path = QPainterPath()
+        shadow_path.moveTo(w * RIBBON_PEEL_START_RATIO, h)
+        shadow_path.quadTo(
+            w * RIBBON_PEEL_MID_RATIO,
+            h,
+            w * RIBBON_PEEL_END_RATIO,
+            h * RIBBON_PEEL_MID_RATIO,
+        )
+        shadow_path.quadTo(
+            w,
+            h * RIBBON_PEEL_MID_RATIO,
+            w,
+            h * RIBBON_PEEL_START_RATIO,
+        )
+        return shadow_path
+
+    def _draw_icon(self, painter: QPainter, w: int, h: int) -> None:
+        if not self._icon:
+            return
+
+        from portprotonqt.qt_utils import get_device_pixel_ratio
+
+        dpr = get_device_pixel_ratio()
+        icon_size = max(RIBBON_MIN_ICON_SIZE, int(w * RIBBON_ICON_SIZE_RATIO))
+        render_size = int(icon_size * dpr)
+
+        if isinstance(self._icon, str):
+            pixmap = QIcon(self._icon).pixmap(QSize(render_size, render_size))
+        elif isinstance(self._icon, QIcon):
+            pixmap = self._icon.pixmap(QSize(render_size, render_size))
+        else:
+            return
+
+        painter.drawPixmap(
+            int(w * RIBBON_ICON_CENTER_RATIO - icon_size / 2),
+            int(h * RIBBON_ICON_CENTER_RATIO - icon_size / 2),
+            icon_size,
+            icon_size,
+            pixmap
+        )
+
+    def setVisible(self, visible: bool) -> None:
+        self._visible = visible
+        super().setVisible(visible)
 
 
 class GameCard(QFrame):
@@ -108,9 +274,8 @@ class GameCard(QFrame):
         self.missing_executable_path = self._get_missing_executable_path()
 
         self.steam_visible = (str(game_source).lower() == "steam" and not self.economy_mode)
-        self.portproton_visible = (
-            str(game_source).lower() == "portproton" and bool(self.ppdb_id) and not self.economy_mode
-        )
+        self.portproton_visible = (str(game_source).lower() == "portproton" and not self.economy_mode)
+        self.ppdb_visible = bool(self.ppdb_id) and not self.economy_mode
 
         self.base_extra_margin = 8 if self.list_layout else 20
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -180,35 +345,43 @@ class GameCard(QFrame):
             self.protondbLabel.setVisible(False)
 
         steam_icon = self.theme_manager.get_icon("badge_steam", as_path=True)
-        self.steamLabel = ClickableLabel(
-            "Steam",
+        corner_colors = self.theme.get_source_corner_colors()
+        self.steamLabel = SourceCorner(
             icon=steam_icon,
+            color=corner_colors["color"],
+            fold_color=corner_colors["fold_color"],
             parent=self.coverWidget,
-            font_scale_factor=0.06
         )
-        self.steamLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
-        self.steamLabel.setCardWidth(card_width)
         self.steamLabel.setVisible(self.steam_visible)
         if self.economy_mode:
             self.steamLabel.setVisible(False)
 
         portproton_icon = self.theme_manager.get_icon("badge_portproton", as_path=True)
-        self.portprotonLabel = ClickableLabel(
-            "PortProton",
+        self.portprotonLabel = SourceCorner(
             icon=portproton_icon,
+            color=corner_colors["color"],
+            fold_color=corner_colors["fold_color"],
             parent=self.coverWidget,
-            font_scale_factor=0.06
         )
-        if self.ppdb_rating:
-            self.portprotonLabel.setStyleSheet(self.theme.get_ppdb_badge_style(self.ppdb_rating))
-        else:
-            self.portprotonLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
-        self.portprotonLabel.setCardWidth(card_width)
         self.portprotonLabel.setVisible(self.portproton_visible)
-        if self.ppdb_id:
-            self.portprotonLabel.clicked.connect(self.open_ppdb_page)
         if self.economy_mode:
             self.portprotonLabel.setVisible(False)
+
+        if self.ppdb_visible:
+            self.ppdbLabel = ClickableLabel(
+                "PPDB",
+                icon=portproton_icon,
+                parent=self.coverWidget,
+                font_scale_factor=0.06
+            )
+            if self.ppdb_rating:
+                self.ppdbLabel.setStyleSheet(self.theme.get_ppdb_badge_style(self.ppdb_rating))
+            else:
+                self.ppdbLabel.setStyleSheet(self.theme.STEAM_BADGE_STYLE)
+            self.ppdbLabel.setCardWidth(card_width)
+        else:
+            self.ppdbLabel = ClickableLabel("", parent=self.coverWidget)
+            self.ppdbLabel.setVisible(False)
 
         anticheat_text = "" if self.economy_mode else self.getAntiCheatText(anticheat_status)
         if anticheat_text:
@@ -227,7 +400,7 @@ class GameCard(QFrame):
             self.anticheatLabel.setVisible(False)
 
         self.protondbLabel.clicked.connect(self.open_protondb_report)
-        self.steamLabel.clicked.connect(self.open_steam_page)
+        self.ppdbLabel.clicked.connect(self.open_ppdb_page)
         self.anticheatLabel.clicked.connect(self.open_weanticheatyet_page)
 
         self.layout_.addWidget(self.coverWidget)
@@ -364,7 +537,6 @@ class GameCard(QFrame):
                 pass
 
     def _position_badges(self, current_width):
-        # Check if the card has been destroyed before updating
         if not hasattr(self, 'coverLabel') or self.coverLabel is None:
             return
 
@@ -374,14 +546,16 @@ class GameCard(QFrame):
         cover_height = self.coverWidget.height()
         hidden_badges = self.badge_view_mode == "hidden"
         badge_y_positions = []
-        badges = [
-            (self.steam_visible, self.steamLabel),
-            (self.portproton_visible, self.portprotonLabel),
-            (is_valid_protondb_tier(self.protondb_tier), self.protondbLabel),
-            (bool(self.getAntiCheatText(self.anticheat_status)), self.anticheatLabel),
+        protondb_visible = is_valid_protondb_tier(self.protondb_tier) and not self.economy_mode
+        anticheat_visible = bool(self.getAntiCheatText(self.anticheat_status)) and not self.economy_mode
+
+        info_badges = [
+            (protondb_visible, self.protondbLabel),
+            (self.ppdb_visible, self.ppdbLabel),
+            (anticheat_visible, self.anticheatLabel),
         ]
 
-        for is_visible, badge in badges:
+        for is_visible, badge in info_badges:
             if not is_visible or badge is None or hidden_badges:
                 if badge is not None:
                     badge.setVisible(False)
@@ -409,16 +583,35 @@ class GameCard(QFrame):
                 badge.move(int(badge_x), int(badge_y))
                 badge_y_positions.append(badge_y + badge.height())
             except RuntimeError:
-                # Handle the case where the Qt object was deleted
+                pass
+
+        ribbon_size = int(current_width * RIBBON_SIZE_RATIO)
+        ribbon_size = max(ribbon_size, int(RIBBON_MIN_SIZE * self._scale))
+        source_ribbons = [
+            (self.steam_visible, self.steamLabel),
+            (self.portproton_visible, self.portprotonLabel),
+        ]
+
+        for is_visible, ribbon in source_ribbons:
+            if not is_visible or ribbon is None or hidden_badges:
+                if ribbon is not None:
+                    ribbon.setVisible(False)
+                continue
+            try:
+                ribbon.setFixedSize(ribbon_size, ribbon_size)
+                ribbon.move(current_width - ribbon_size, cover_height - ribbon_size)
+                ribbon.setVisible(True)
+                ribbon.raise_()
+            except RuntimeError:
                 pass
 
         try:
             self.anticheatLabel.raise_()
+            self.ppdbLabel.raise_()
             self.protondbLabel.raise_()
             self.portprotonLabel.raise_()
             self.steamLabel.raise_()
         except RuntimeError:
-            # Handle the case where the Qt object was deleted
             pass
 
     def update_scale(self):
@@ -462,13 +655,14 @@ class GameCard(QFrame):
         small_card_mode = not self.list_layout and self.base_card_width < COMPACT_CARD_WIDTH_THRESHOLD
         compact_badge = self.badge_view_mode == "compact" or small_card_mode
         hidden_badges = self.badge_view_mode == "hidden"
-        badge_visibility = [
-            (self.steam_visible, self.steamLabel),
-            (self.portproton_visible, self.portprotonLabel),
-            (is_valid_protondb_tier(self.protondb_tier), self.protondbLabel),
-            (bool(self.getAntiCheatText(self.anticheat_status)), self.anticheatLabel),
+        protondb_visible = is_valid_protondb_tier(self.protondb_tier) and not self.economy_mode
+        anticheat_visible = bool(self.getAntiCheatText(self.anticheat_status)) and not self.economy_mode
+        info_badge_visibility = [
+            (protondb_visible, self.protondbLabel),
+            (self.ppdb_visible, self.ppdbLabel),
+            (anticheat_visible, self.anticheatLabel),
         ]
-        for is_visible, label in badge_visibility:
+        for is_visible, label in info_badge_visibility:
             if label is not None:
                 try:
                     label.setIconSize(icon_size, icon_space)
@@ -481,7 +675,6 @@ class GameCard(QFrame):
                     )
                     label.setVisible(is_visible and not hidden_badges)
                 except RuntimeError:
-                    # Handle the case where the Qt object was deleted
                     pass
 
         self._position_badges(badge_host_width)
@@ -543,9 +736,8 @@ class GameCard(QFrame):
         self.display_filter = display_filter
         self.economy_mode = ui_config.get_economy_mode()
         self.steam_visible = (str(self.game_source).lower() == "steam" and not self.economy_mode)
-        self.portproton_visible = (
-            str(self.game_source).lower() == "portproton" and bool(self.ppdb_id) and not self.economy_mode
-        )
+        self.portproton_visible = (str(self.game_source).lower() == "portproton" and not self.economy_mode)
+        self.ppdb_visible = bool(self.ppdb_id) and not self.economy_mode
         protondb_visible = is_valid_protondb_tier(self.protondb_tier) and not self.economy_mode
         anticheat_visible = bool(self.getAntiCheatText(self.anticheat_status)) and not self.economy_mode
 
@@ -554,6 +746,7 @@ class GameCard(QFrame):
         try:
             self.steamLabel.setVisible(self.steam_visible and not hidden_badges)
             self.portprotonLabel.setVisible(self.portproton_visible and not hidden_badges)
+            self.ppdbLabel.setVisible(self.ppdb_visible and not hidden_badges)
             self.protondbLabel.setVisible(protondb_visible and not hidden_badges)
             self.anticheatLabel.setVisible(anticheat_visible and not hidden_badges)
         except RuntimeError:
@@ -689,10 +882,6 @@ class GameCard(QFrame):
 
     def open_protondb_report(self):
         url = QUrl(f"https://www.protondb.com/app/{self.appid}")
-        QDesktopServices.openUrl(url)
-
-    def open_steam_page(self):
-        url = QUrl(f"https://steamcommunity.com/app/{self.appid}")
         QDesktopServices.openUrl(url)
 
     def open_weanticheatyet_page(self):

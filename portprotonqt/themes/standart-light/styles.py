@@ -637,6 +637,11 @@ STEAM_BADGE_STYLE= f"""
     font-weight: bold;
 """
 
+
+def get_source_corner_colors() -> dict:
+    return {"color": "#F0F2F5", "fold_color": "#00000096"}
+
+
 # MAIN FRAME FOR GAME DETAILS
 DETAIL_CONTENT_FRAME_STYLE = f"""
     QFrame {{

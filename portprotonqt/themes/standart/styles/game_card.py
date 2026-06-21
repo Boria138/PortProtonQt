@@ -95,6 +95,11 @@ STEAM_BADGE_STYLE= f"""
     font-weight: bold;
 """
 
+
+def get_source_corner_colors() -> dict:
+    return {"color": "#3f424d", "fold_color": "#00000096"}
+
+
 # ADDITIONAL INFO STYLES ON GAMES PAGE
 LAST_LAUNCH_TITLE_STYLE = f"max-height: 16px; background: rgba(20,20,20,0.40);font-family: '{font_family}'; font-size: 11px; color: {color_f}; text-transform: uppercase; letter-spacing: 0.75px;"
 LAST_LAUNCH_VALUE_STYLE = f"height: 16px; background: rgba(20,20,20,0.40);font-family: '{font_family}'; font-size: 13px; color: {color_f}; font-weight: 600; letter-spacing: 0.75px;"

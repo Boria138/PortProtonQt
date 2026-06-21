@@ -143,6 +143,8 @@ class DetailPageManager:
             badges=badges,
             cover_width=frame_width,
             cover_height=frame_height,
+            game_source=str(game_data.get("game_source", "")),
+            theme_manager=self.main_window.theme_manager,
         )
 
     def _create_compact_game_data(

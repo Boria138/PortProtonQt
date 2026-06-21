@@ -19,7 +19,7 @@ from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QColor, QDesktopServices
 
 from portprotonqt.custom_widgets import ClickableLabel, AutoSizeButton
-from portprotonqt.game_card import GameCard, is_valid_protondb_tier
+from portprotonqt.game_card import GameCard, SourceCorner, is_valid_protondb_tier
 from portprotonqt.localization import _
 from portprotonqt.config import ui_config
 from portprotonqt.theme_manager import ThemeManager
@@ -111,6 +111,8 @@ def create_cover_frame(
     badges: list | None = None,
     cover_width: int = COVER_WIDTH,
     cover_height: int = COVER_HEIGHT,
+    game_source: str = "",
+    theme_manager: ThemeManager | None = None,
 ) -> QFrame:
     """Create cover frame with image, favorite icon, and badges."""
     cover_frame = QFrame()
@@ -129,7 +131,46 @@ def create_cover_frame(
     if badges:
         _position_badges(cover_frame, badges, cover_width)
 
+    _add_source_corner(cover_frame, game_source, theme, theme_manager, cover_width, cover_height)
+
     return cover_frame
+
+
+SOURCE_CORNER_RATIO = 0.28
+SOURCE_CORNER_MIN_SIZE = 54
+
+
+def _add_source_corner(
+    cover_frame: QFrame,
+    game_source: str,
+    theme,
+    theme_manager: ThemeManager | None,
+    cover_width: int,
+    cover_height: int,
+) -> None:
+    """Add source corner badge to cover frame."""
+    source = game_source.lower()
+    if source not in ("steam", "portproton") or theme_manager is None:
+        return
+
+    icon_name = "badge_steam" if source == "steam" else "badge_portproton"
+    icon = theme_manager.get_icon(icon_name, as_path=True)
+    if not icon:
+        return
+
+    corner_colors = theme.get_source_corner_colors()
+    ribbon = SourceCorner(
+        icon=icon,
+        color=corner_colors["color"],
+        fold_color=corner_colors["fold_color"],
+        parent=cover_frame,
+    )
+    ribbon_size = int(cover_width * SOURCE_CORNER_RATIO)
+    ribbon_size = max(ribbon_size, int(SOURCE_CORNER_MIN_SIZE))
+    ribbon.setFixedSize(ribbon_size, ribbon_size)
+    ribbon.move(cover_width - ribbon_size, cover_height - ribbon_size)
+    ribbon.setVisible(True)
+    ribbon.raise_()
 
 
 def create_compact_detail_header(
