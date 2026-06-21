@@ -322,21 +322,6 @@ msgstr ""
 msgid "Denied"
 msgstr ""
 
-msgid "Platinum"
-msgstr ""
-
-msgid "Gold"
-msgstr ""
-
-msgid "Silver"
-msgstr ""
-
-msgid "Bronze"
-msgstr ""
-
-msgid "Pending"
-msgstr ""
-
 msgid "Unknown Game"
 msgstr ""
 

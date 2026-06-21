@@ -19,14 +19,16 @@ from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QColor, QDesktopServices
 
 from portprotonqt.custom_widgets import ClickableLabel, AutoSizeButton
-from portprotonqt.game_card import GameCard
+from portprotonqt.game_card import GameCard, is_valid_protondb_tier
 from portprotonqt.localization import _
 from portprotonqt.config import ui_config
+from portprotonqt.theme_manager import ThemeManager
 
 
 COVER_WIDTH = 300
 COVER_HEIGHT = 450
 DETAIL_COMPACT_COVER_SIZE = 128
+DETAIL_COMPACT_WIDTH = 1280
 BADGE_WIDTH = int(COVER_WIDTH * 2 / 3)
 BADGE_ICON_SIZE = 16
 BADGE_COMPACT_WIDTH = BADGE_ICON_SIZE + 14
@@ -90,7 +92,7 @@ def create_content_frame(
     parent_layout: QVBoxLayout,
     theme,
 ) -> tuple[QFrame, QBoxLayout]:
-    """Create content frame with adaptive layout."""
+    """Create content frame."""
     content_frame = QFrame()
     content_frame.setStyleSheet(theme.DETAIL_CONTENT_FRAME_STYLE)
     content_frame_layout = QBoxLayout(QBoxLayout.Direction.LeftToRight, content_frame)
@@ -100,66 +102,11 @@ def create_content_frame(
     return content_frame, content_frame_layout
 
 
-def setup_adaptive_layout(
-    detail_page: QWidget,
-    content_frame_layout: QBoxLayout,
-) -> None:
-    """Setup adaptive layout switching on resize."""
-
-    def on_detail_page_resize(event) -> None:
-        apply_adaptive_layout(detail_page, content_frame_layout)
-        QWidget.resizeEvent(detail_page, event)
-
-    detail_page.resizeEvent = on_detail_page_resize
-
-
-def apply_adaptive_layout(detail_page: QWidget, content_frame_layout: QBoxLayout) -> None:
-    """Apply detail page adaptive layout for current size hints."""
-    if detail_page.property("force_compact_detail_layout"):
-        content_frame_layout.setDirection(QBoxLayout.Direction.TopToBottom)
-        content_frame_layout.setAlignment(
-            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
-        )
-        return
-
-    required_width = _get_required_horizontal_width(content_frame_layout)
-    if detail_page.width() < required_width:
-        if content_frame_layout.direction() != QBoxLayout.Direction.TopToBottom:
-            content_frame_layout.setDirection(QBoxLayout.Direction.TopToBottom)
-            content_frame_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    elif content_frame_layout.direction() != QBoxLayout.Direction.LeftToRight:
-        content_frame_layout.setDirection(QBoxLayout.Direction.LeftToRight)
-        content_frame_layout.setAlignment(
-            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
-        )
-
-
-def _get_required_horizontal_width(content_frame_layout: QBoxLayout) -> int:
-    """Calculate minimal width for horizontal content layout."""
-    item_count = content_frame_layout.count()
-    widget_width_sum = 0
-
-    for index in range(item_count):
-        item = content_frame_layout.itemAt(index)
-        widget = item.widget() if item else None
-        if widget:
-            widget_width_sum += max(
-                widget.minimumSizeHint().width(),
-                widget.sizeHint().width(),
-            )
-
-    margins = content_frame_layout.contentsMargins()
-    spacing_width = content_frame_layout.spacing() * max(0, item_count - 1)
-    frame_padding = margins.left() + margins.right()
-
-    return max(900, widget_width_sum + spacing_width + frame_padding)
-
-
 def create_cover_frame(
     parent: QWidget,
     theme,
     image_label: QLabel,
-    favorite_label_text: str | None = None,
+    favorite_icon_name: str | None = None,
     on_favorite_click: Callable[[], str | None] | None = None,
     badges: list | None = None,
     cover_width: int = COVER_WIDTH,
@@ -176,8 +123,8 @@ def create_cover_frame(
     cover_layout.setContentsMargins(0, 0, 0, 0)
     cover_layout.addWidget(image_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
-    if favorite_label_text and on_favorite_click:
-        _add_favorite_label(cover_frame, favorite_label_text, theme, on_favorite_click)
+    if favorite_icon_name and on_favorite_click:
+        _add_favorite_label(cover_frame, favorite_icon_name, theme, on_favorite_click)
 
     if badges:
         _position_badges(cover_frame, badges, cover_width)
@@ -276,18 +223,20 @@ def _setup_cover_shadow(cover_frame: QFrame, theme) -> None:
 
 
 def _add_favorite_label(
-    cover_frame: QFrame, favorite_label_text: str, theme, on_favorite_click: Callable[[], str | None] | None = None
+    cover_frame: QFrame, favorite_icon_name: str, theme, on_favorite_click: Callable[[], str | None] | None = None
 ) -> None:
     """Add favorite label to cover frame."""
     favorite_label = ClickableLabel(cover_frame)
+    favorite_icon_size = theme.favoriteLabelIconSize
     favorite_label.setFixedSize(*theme.favoriteLabelSize)
+    favorite_label.setIconSize(favorite_icon_size, 0)
     favorite_label.setStyleSheet(theme.FAVORITE_LABEL_STYLE)
-    favorite_label.setText(favorite_label_text)
+    favorite_label.setIcon(ThemeManager().get_icon(favorite_icon_name, as_path=True))
     if on_favorite_click:
         def handle_click() -> None:
             result = on_favorite_click()
-            if isinstance(result, str) and result in ("★", "☆"):
-                favorite_label.setText(result)
+            if isinstance(result, str) and result in ("star_fav_full", "star_fav"):
+                favorite_label.setIcon(ThemeManager().get_icon(result, as_path=True))
         favorite_label.clicked.connect(handle_click)
     favorite_label.move(8, 8)
     favorite_label.raise_()
@@ -325,15 +274,13 @@ def create_protondb_badge(
     main_window,
 ) -> tuple[ClickableLabel | None, bool]:
     """Create ProtonDB badge."""
-    protondb_text = GameCard.getProtonDBText(protondb_tier)
-    if not protondb_text:
+    if not is_valid_protondb_tier(protondb_tier):
         return None, False
 
-    icon_filename = GameCard.getProtonDBIconFilename(protondb_tier)
-    icon = main_window.theme_manager.get_icon(icon_filename, main_window.current_theme_name, as_path=True)
+    icon = main_window.theme_manager.get_icon("platinum-gold", main_window.current_theme_name, as_path=True)
 
     badge = ClickableLabel(
-        protondb_text,
+        "ProtonDB",
         icon=icon,
         parent=parent,
         icon_size=BADGE_ICON_SIZE,

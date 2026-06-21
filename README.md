@@ -66,6 +66,7 @@ PortProtonQt uses code and dependencies from the following projects:
 - [HowLongToBeat Python API](https://github.com/ScrappyCocco/HowLongToBeat-PythonAPI) — library for interacting with HowLongToBeat, [MIT](https://github.com/ScrappyCocco/HowLongToBeat-PythonAPI/blob/master/LICENSE.md) license.
 - [iat](https://sourceforge.net/projects/iat.berlios) — library for converting mdf and nrg to iso, GPLv3 license.
 - [pyte](https://github.com/selectel/pyte) — ANSI escape code parser, [LGPLv3](https://github.com/selectel/pyte?tab=LGPL-3.0-1-ov-file) license.
+- [gjs-osk](https://github.com/Vishram1123/gjs-osk) — base for virtual keyboard layout data, GPLv3 license.
 
 See the [LICENSE](LICENSE) file for the full text of the licenses.
 

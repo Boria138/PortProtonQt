@@ -2,13 +2,13 @@
 
 from typing import Any
 
-from PySide6.QtCore import Qt, QRectF
-from PySide6.QtGui import QPainter, QPaintEvent, QPixmap
+from PySide6.QtCore import Qt, QRectF, Signal
+from PySide6.QtGui import QMouseEvent, QPainter, QPaintEvent, QPixmap
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QStackedWidget, QWidget
 
 from portprotonqt.custom_widgets import FlowLayout
-from portprotonqt.input_manager import GamepadType
+from portprotonqt.input_manager import BUTTONS, GamepadType
 from portprotonqt.localization import _
 from portprotonqt.logger import get_logger
 from portprotonqt.qt_utils import get_device_pixel_ratio
@@ -66,6 +66,8 @@ def _set_control_hint_icon(label: QLabel, paths: tuple[str | None, ...], width: 
 
 
 class _ControlHintIconLabel(QLabel):
+    clicked = Signal()
+
     def __init__(self, width: int, height: int) -> None:
         super().__init__()
         self._icon_path = ""
@@ -73,6 +75,7 @@ class _ControlHintIconLabel(QLabel):
         self._icon_height = height
         self.setFixedSize(width, height)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
 
     def set_icon_paths(self, paths: tuple[str | None, ...]) -> None:
         self._icon_path = ""
@@ -99,6 +102,13 @@ class _ControlHintIconLabel(QLabel):
         painter = QPainter(self)
         QSvgRenderer(self._icon_path).render(painter, QRectF(self.rect()))
         painter.end()
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.clicked.emit()
+            event.accept()
+            return
+        super().mousePressEvent(event)
 
 
 class MainWindowControlHintsMixin:
@@ -214,12 +224,12 @@ class MainWindowControlHintsMixin:
         ]
 
         keyboard_hints = [
-            ("key_enter", _("Select")),
-            ("key_backspace", _("Back")),
-            ("key_e", _("Add a shortcut")),
-            ("key_context", _("Menu")),
-            ("key_f11", _("Fullscreen")),
-            ("key_f5", _("Refresh Grid")),
+            ("key_enter", _("Select"), "confirm"),
+            ("key_backspace", _("Back"), "back"),
+            ("key_e", _("Add a shortcut"), "add_game"),
+            ("key_context", _("Menu"), "context_menu"),
+            ("key_f11", _("Fullscreen"), "menu"),
+            ("key_f5", _("Refresh Grid"), "guide_select"),
         ]
 
         self.hintsLabels = []
@@ -227,7 +237,13 @@ class MainWindowControlHintsMixin:
         self.gamepadHintDefaultTexts = {}
         self.gamepadHintContainers = {}
 
-        def makeHint(icon_name: str, action_text: str, is_gamepad: bool, action: str | None = None):
+        def makeHint(
+            icon_name: str,
+            action_text: str,
+            is_gamepad: bool,
+            action: str | None = None,
+            click_action: str | None = None,
+        ):
             container = QWidget()
             layout = QHBoxLayout(container)
             layout.setContentsMargins(0, 5, 0, 0)
@@ -243,6 +259,8 @@ class MainWindowControlHintsMixin:
                 26,
                 26,
             )
+            hint_action = click_action or action
+            icon_label.clicked.connect(lambda: self._triggerControlHintAction(hint_action))
 
             layout.addWidget(icon_label)
 
@@ -335,6 +353,8 @@ class MainWindowControlHintsMixin:
                 )
 
             layout.addWidget(select_icon)
+            for icon in (guide_icon, plus_icon, select_icon):
+                icon.clicked.connect(lambda hint_action=action: self._triggerControlHintAction(hint_action))
 
             text_label = QLabel(action_text)
             text_label.setStyleSheet(self.theme.HINTS_LABEL_STYLE)
@@ -356,10 +376,39 @@ class MainWindowControlHintsMixin:
             else:
                 makeHint("placeholder", text, True, action)
 
-        for icon, text in keyboard_hints:
-            makeHint(icon, text, False)
+        for icon, text, action in keyboard_hints:
+            makeHint(icon, text, False, click_action=action)
 
         return hintsWidget
+
+    def _triggerControlHintAction(self, action: str | None) -> None:
+        if action is None:
+            return
+        if action == "menu":
+            self._triggerControlHintFullscreen()
+            return
+        if action == "guide_select":
+            refresh_games = getattr(self, "refreshGames", None)
+            if callable(refresh_games):
+                refresh_games()
+            return
+        if action == "mouse_emulation":
+            self.input_manager.emulation_triggered = not self.input_manager.emulation_triggered
+            return
+        if action in ("prev_section", "next_section"):
+            switch_section = getattr(self, "switchSystemSectionRelative", None)
+            if callable(switch_section):
+                switch_section(-1 if action == "prev_section" else 1)
+            return
+        button_action = "prev_dir" if action == "search" else action
+        button_codes = BUTTONS.get(button_action)
+        if button_codes:
+            self.input_manager.handle_button_slot(next(iter(button_codes)), 1)
+
+    def _triggerControlHintFullscreen(self) -> None:
+        if getattr(self.input_manager, "_is_gamescope_session", False):
+            return
+        self.input_manager.toggle_fullscreen.emit(not self.input_manager._is_fullscreen)
 
     def updateNavButtons(self, *args) -> None:
         """Update navigation buttons based on gamepad connection status and type."""

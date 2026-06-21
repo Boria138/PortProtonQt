@@ -66,6 +66,7 @@ PortProtonQt использует код и зависимости от след
 - [HowLongToBeat Python API](https://github.com/ScrappyCocco/HowLongToBeat-PythonAPI) — библиотека для взаимодействия с HowLongToBeat, лицензия [MIT](https://github.com/ScrappyCocco/HowLongToBeat-PythonAPI/blob/master/LICENSE.md).
 - [iat](https://sourceforge.net/projects/iat.berlios) — библиотека для конвертации mdf и nrg в iso, лицензия GPLv3
 - [pyte](https://github.com/selectel/pyte) — разбор ANSI escape-кодов, лицензия [LGPLv3](https://github.com/selectel/pyte?tab=LGPL-3.0-1-ov-file)
+- [gjs-osk](https://github.com/Vishram1123/gjs-osk) — основа данных раскладок виртуальной клавиатуры, лицензия GPLv3.
 Полный текст лицензий см. в файле [LICENSE](LICENSE).
 
 > [!WARNING]

@@ -33,6 +33,11 @@ install_data(
   install_dir: pythondir / meson.project_name(),
 )
 
+install_data(
+  'keyboard_layouts.json',
+  install_dir: pythondir / meson.project_name(),
+)
+
 # Install animations package
 install_data(
   ['animations/__init__.py',
@@ -174,7 +179,7 @@ install_subdir(
 
 # Compile and install locales from .po files
 msgfmt = find_program('msgfmt', required: true)
-foreach lang : ['be', 'ru', 'es', 'pt_BR', 'zh_CN']
+foreach lang : ['be', 'de', 'ru', 'es', 'pt_BR', 'zh_CN']
   mo_target = configure_file(
     input: 'locales' / lang / 'LC_MESSAGES' / 'portprotonqt.po',
     output: lang + '_portprotonqt.mo',

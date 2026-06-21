@@ -100,7 +100,7 @@ class MainWindowAutoInstallTabMixin(_MainWindowTypingBase):
         autoInstallLayout.addWidget(self.autoInstallScrollArea)
 
         self.auto_size_slider = QSlider(Qt.Orientation.Horizontal, autoInstallPage)
-        self.auto_size_slider.setMinimum(200)
+        self.auto_size_slider.setMinimum(100)
         self.auto_size_slider.setMaximum(250)
         self.auto_size_slider.setValue(self.auto_card_width)
         self.auto_size_slider.setTickInterval(10)
