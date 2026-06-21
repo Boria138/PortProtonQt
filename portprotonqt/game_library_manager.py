@@ -91,7 +91,7 @@ class GameLibraryManager:
         sliderLayout.addStretch()
 
         self.sizeSlider = QSlider(Qt.Orientation.Horizontal)
-        self.sizeSlider.setMinimum(150)
+        self.sizeSlider.setMinimum(100)
         self.sizeSlider.setMaximum(250)
         self.sizeSlider.setValue(self.card_width)
         self.sizeSlider.setTickInterval(10)

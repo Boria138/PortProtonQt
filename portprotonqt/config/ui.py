@@ -303,7 +303,7 @@ class UIConfig(BaseConfig):
 
     def set_card_width(self, width: int):
         """Set card width."""
-        validate_int(width, "card_width", min_val=150, max_val=1000)
+        validate_int(width, "card_width", min_val=100, max_val=1000)
         self._save_value("card_width", width, "int")
 
     def get_auto_card_width(self) -> int:
@@ -312,7 +312,7 @@ class UIConfig(BaseConfig):
 
     def set_auto_card_width(self, width: int):
         """Set card width for auto-install."""
-        validate_int(width, "auto_card_width", min_val=150, max_val=1000)
+        validate_int(width, "auto_card_width", min_val=100, max_val=1000)
         self._save_value("auto_card_width", width, "int")
 
     def get_hide_autoinstall_tab(self) -> bool:

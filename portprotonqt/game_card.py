@@ -1,4 +1,5 @@
 import os
+import re
 import shlex
 
 from PySide6.QtGui import QPainter, QColor, QDesktopServices, QHideEvent, QShowEvent
@@ -34,6 +35,10 @@ from portprotonqt.custom_widgets import ClickableLabel
 from portprotonqt.animations import GameCardAnimations
 
 PROTONDB_TIERS = ("platinum", "gold", "silver", "bronze", "borked", "pending")
+COMPACT_CARD_WIDTH_THRESHOLD = 150
+COMPACT_CARD_HEIGHT_RATIO = 2.25
+COMPACT_CARD_TITLE_LINES = 3
+COMPACT_CARD_TITLE_SCALE = 0.75
 
 
 def is_valid_protondb_tier(tier: str | None) -> bool:
@@ -433,7 +438,9 @@ class GameCard(QFrame):
             self.coverWidget.setContentsMargins(10, 0, 0, 0)
             self.coverLabel.setFixedSize(icon_size, icon_size)
         else:
-            scaled_height = int(self.base_card_width * 1.8 * self._scale)
+            small_card_mode = self.base_card_width < COMPACT_CARD_WIDTH_THRESHOLD
+            height_ratio = COMPACT_CARD_HEIGHT_RATIO if small_card_mode else 1.8
+            scaled_height = int(self.base_card_width * height_ratio * self._scale)
             self.setFixedSize(scaled_width + scaled_extra, scaled_height + scaled_extra)
             self.coverWidget.setFixedSize(scaled_width, int(scaled_width * 1.5))
             self.coverLabel.setFixedSize(scaled_width, int(scaled_width * 1.5))
@@ -452,7 +459,8 @@ class GameCard(QFrame):
         icon_space = max(2, int(badge_host_width * 0.012))
         compact_badge_width = int(badge_host_width * 0.12)
         compact_badge_width = max(compact_badge_width, icon_size + icon_space + 8)
-        compact_badge = self.badge_view_mode == "compact"
+        small_card_mode = not self.list_layout and self.base_card_width < COMPACT_CARD_WIDTH_THRESHOLD
+        compact_badge = self.badge_view_mode == "compact" or small_card_mode
         hidden_badges = self.badge_view_mode == "hidden"
         badge_visibility = [
             (self.steam_visible, self.steamLabel),
@@ -481,10 +489,16 @@ class GameCard(QFrame):
         if self.base_font_size is not None:
             try:
                 font = self.nameLabel.font()
-                new_font_size = self.base_font_size * self._scale
+                title_scale = COMPACT_CARD_TITLE_SCALE if small_card_mode else 1.0
+                new_font_size = self.base_font_size * self._scale * title_scale
                 if new_font_size > 0:
                     font.setPointSizeF(new_font_size)
                     self.nameLabel.setFont(font)
+                    if small_card_mode:
+                        max_title_width = max(1, int(scaled_width * 0.9))
+                        self.nameLabel.setText(self._get_compact_display_name(max_title_width))
+                    else:
+                        self.nameLabel.setText(self._get_display_name())
             except RuntimeError:
                 # Handle the case where the Qt object was deleted
                 pass
@@ -517,9 +531,8 @@ class GameCard(QFrame):
             pass
 
     def update_card_size(self, new_width: int):
-        """Update card size by scaling existing base_pixmap without reloading."""
         self.base_card_width = new_width
-        self.update_cover_pixmap()
+        self._load_cover_image(self.cover_path or "")
         self.update_scale()
 
     def update_badge_visibility(self, display_filter: str):
@@ -617,6 +630,40 @@ class GameCard(QFrame):
         if not self.missing_executable_path:
             return self.name
         return f"{_('Missing EXE')}: {self.name}"
+
+    def _get_compact_display_name(self, max_width: int) -> str:
+        text = self._get_display_name()
+        text = text.replace("_", " ")
+        text = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", text)
+        words = text.split()
+        if not words:
+            return text
+
+        metrics = self.nameLabel.fontMetrics()
+        lines = []
+        current_line = ""
+        for index, word in enumerate(words):
+            candidate = f"{current_line} {word}".strip()
+            if metrics.horizontalAdvance(candidate) <= max_width:
+                current_line = candidate
+                continue
+            if not current_line:
+                current_line = metrics.elidedText(word, Qt.TextElideMode.ElideRight, max_width)
+                continue
+            if len(lines) >= COMPACT_CARD_TITLE_LINES - 1:
+                rest = " ".join([current_line, *words[index:]]).strip()
+                lines.append(metrics.elidedText(rest, Qt.TextElideMode.ElideRight, max_width))
+                return "\n".join(lines)
+            if current_line:
+                lines.append(current_line)
+            current_line = word
+
+        if current_line:
+            if len(lines) >= COMPACT_CARD_TITLE_LINES:
+                lines[-1] = metrics.elidedText(lines[-1], Qt.TextElideMode.ElideRight, max_width)
+            else:
+                lines.append(current_line)
+        return "\n".join(lines[:COMPACT_CARD_TITLE_LINES])
 
     @staticmethod
     def _extract_executable_path(exec_line: str) -> str:
