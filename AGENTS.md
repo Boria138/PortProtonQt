@@ -372,6 +372,7 @@ tests/
 ├── test_base_config.py      # BaseConfig read/write, caching, versioning
 ├── test_cli.py              # normalize_launch_path, URL/resolution parsing
 ├── test_debug_env_utils.py  # Debug environment helpers, runtime variables
+├── test_input_manager.py    # Gamepad input navigation and focus regressions
 ├── test_main_window.py      # Main window data processing and callback regressions
 ├── test_portproton_config.py # exec_line parsing, launcher tail, extensions
 ├── test_portproton_api.py   # PPDB API helpers, autoinstall localization fallback

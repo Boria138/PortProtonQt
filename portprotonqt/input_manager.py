@@ -474,7 +474,10 @@ class InputManager(QObject):
         if container is None:
             return
         focused = QApplication.focusWidget()
-        game_cards = container.findChildren(GameCard)
+        game_cards = [
+            card for card in container.findChildren(GameCard)
+            if card.isVisible() and card.isEnabled()
+        ]
         if not game_cards:
             return
 
@@ -489,7 +492,7 @@ class InputManager(QObject):
                 scroll_area.ensureWidgetVisible(game_cards[0], 50, 50)
             return
 
-        cards = container.findChildren(GameCard, options=Qt.FindChildOption.FindChildrenRecursively)
+        cards = game_cards
         if not cards:
             return
         # Group cards by rows with tolerance for y-position
@@ -3181,13 +3184,16 @@ class InputManager(QObject):
                         container = self._parent.autoInstallContainer
                         focus_target = getattr(self._parent, 'autoInstallSearchLineEdit', None)
                     if container and focus_target:
-                        game_cards = container.findChildren(GameCard)
+                        game_cards = [
+                            card for card in container.findChildren(GameCard)
+                            if card.isVisible() and card.isEnabled()
+                        ]
                         if game_cards:
                             current_card_pos = focused.pos()
                             current_row_y = current_card_pos.y()
                             is_first_row = True
                             for card in game_cards:
-                                if card.pos().y() < current_row_y and card.isVisible():
+                                if card.pos().y() < current_row_y:
                                     is_first_row = False
                                     break
                             if is_first_row:
