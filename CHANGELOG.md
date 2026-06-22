@@ -34,6 +34,7 @@
 - Улучшена вкладка тем: добавлена навигация геймпадом по магазину, параллельная загрузка скриншотов и поддержка архивов `.zip`, `.tar`, `.tar.gz`, `.tgz`
 - Обновлён перевод на Португальский (Бразилия) `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/pt_BR/`
 - Обновлён перевод на Китайский (упрощённый) `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/zh_Hans/`
+- Кеш ProtonDB теперь очищается при обновлении списка приложений Steam
 
 ### Fixed
 - Исправлено определение тёмной темы для `Cinnamon`, `XFCE` и `MATE`
