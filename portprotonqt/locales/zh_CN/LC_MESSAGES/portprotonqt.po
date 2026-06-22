@@ -2138,6 +2138,10 @@ msgstr "已选择"
 msgid "Not selected"
 msgstr "未选择"
 
+#, fuzzy, python-brace-format
+msgid "by {0}"
+msgstr "启用 {0}"
+
 msgid "Select Theme:"
 msgstr "选择主题："
 
@@ -2161,6 +2165,41 @@ msgstr "作者："
 
 msgid "Link:"
 msgstr "链接："
+
+#, fuzzy
+msgid "Sort by:"
+msgstr "游戏排序方式:"
+
+#, fuzzy
+msgid "Most voted"
+msgstr "未挂载"
+
+#, fuzzy
+msgid "Most downloaded"
+msgstr "下载"
+
+#, fuzzy
+msgid "Recently updated"
+msgstr "最近游戏"
+
+msgid "Name (A-Z)"
+msgstr ""
+
+#, fuzzy
+msgid "Loading..."
+msgstr "正在下载 Wine…"
+
+#, fuzzy
+msgid "Failed to load themes"
+msgstr "下载封面失败"
+
+#, fuzzy
+msgid "Failed to download theme"
+msgstr "下载封面失败"
+
+#, fuzzy
+msgid "Failed to install theme"
+msgstr "停止游戏失败"
 
 msgid "Prefix:"
 msgstr "前缀："

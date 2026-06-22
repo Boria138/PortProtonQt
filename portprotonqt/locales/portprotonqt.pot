@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-06-20 18:16+0500\n"
+"POT-Creation-Date: 2026-06-22 18:52+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2097,6 +2097,10 @@ msgstr ""
 msgid "Not selected"
 msgstr ""
 
+#, python-brace-format
+msgid "by {0}"
+msgstr ""
+
 msgid "Select Theme:"
 msgstr ""
 
@@ -2119,6 +2123,33 @@ msgid "Author:"
 msgstr ""
 
 msgid "Link:"
+msgstr ""
+
+msgid "Sort by:"
+msgstr ""
+
+msgid "Most voted"
+msgstr ""
+
+msgid "Most downloaded"
+msgstr ""
+
+msgid "Recently updated"
+msgstr ""
+
+msgid "Name (A-Z)"
+msgstr ""
+
+msgid "Loading..."
+msgstr ""
+
+msgid "Failed to load themes"
+msgstr ""
+
+msgid "Failed to download theme"
+msgstr ""
+
+msgid "Failed to install theme"
 msgstr ""
 
 msgid "Prefix:"

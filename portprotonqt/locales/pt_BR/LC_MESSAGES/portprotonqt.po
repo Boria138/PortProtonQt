@@ -2201,6 +2201,10 @@ msgstr "Selecionado"
 msgid "Not selected"
 msgstr "Não selecionado"
 
+#, fuzzy, python-brace-format
+msgid "by {0}"
+msgstr "Ativar {0}"
+
 msgid "Select Theme:"
 msgstr "Selecionar Tema:"
 
@@ -2224,6 +2228,41 @@ msgstr "Autor:"
 
 msgid "Link:"
 msgstr "Link:"
+
+#, fuzzy
+msgid "Sort by:"
+msgstr "Método de Ordenação:"
+
+#, fuzzy
+msgid "Most voted"
+msgstr "Não montado"
+
+#, fuzzy
+msgid "Most downloaded"
+msgstr "Baixar"
+
+#, fuzzy
+msgid "Recently updated"
+msgstr "Jogos Recentes"
+
+msgid "Name (A-Z)"
+msgstr ""
+
+#, fuzzy
+msgid "Loading..."
+msgstr "Baixando Wine..."
+
+#, fuzzy
+msgid "Failed to load themes"
+msgstr "Falha ao baixar a capa"
+
+#, fuzzy
+msgid "Failed to download theme"
+msgstr "Falha ao baixar a capa"
+
+#, fuzzy
+msgid "Failed to install theme"
+msgstr "Falha ao parar o jogo"
 
 msgid "Prefix:"
 msgstr "Prefixo:"

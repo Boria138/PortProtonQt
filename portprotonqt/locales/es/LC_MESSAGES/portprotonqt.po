@@ -2119,6 +2119,10 @@ msgstr ""
 msgid "Not selected"
 msgstr ""
 
+#, python-brace-format
+msgid "by {0}"
+msgstr ""
+
 msgid "Select Theme:"
 msgstr ""
 
@@ -2142,6 +2146,36 @@ msgstr ""
 
 msgid "Link:"
 msgstr ""
+
+msgid "Sort by:"
+msgstr ""
+
+msgid "Most voted"
+msgstr ""
+
+msgid "Most downloaded"
+msgstr ""
+
+msgid "Recently updated"
+msgstr ""
+
+msgid "Name (A-Z)"
+msgstr ""
+
+msgid "Loading..."
+msgstr ""
+
+#, fuzzy
+msgid "Failed to load themes"
+msgstr "Error al detener el juego"
+
+#, fuzzy
+msgid "Failed to download theme"
+msgstr "Error al detener el juego"
+
+#, fuzzy
+msgid "Failed to install theme"
+msgstr "Error al detener el juego"
 
 msgid "Prefix:"
 msgstr ""

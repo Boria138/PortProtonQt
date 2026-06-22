@@ -2200,6 +2200,10 @@ msgstr "Выбранный"
 msgid "Not selected"
 msgstr "Не выбранный"
 
+#, fuzzy, python-brace-format
+msgid "by {0}"
+msgstr "Включить {0}"
+
 msgid "Select Theme:"
 msgstr "Выбрать тему:"
 
@@ -2223,6 +2227,41 @@ msgstr "Автор:"
 
 msgid "Link:"
 msgstr "Ссылка:"
+
+#, fuzzy
+msgid "Sort by:"
+msgstr "Метод сортировки:"
+
+#, fuzzy
+msgid "Most voted"
+msgstr "Не смонтировано"
+
+#, fuzzy
+msgid "Most downloaded"
+msgstr "Скачать"
+
+#, fuzzy
+msgid "Recently updated"
+msgstr "Недавние"
+
+msgid "Name (A-Z)"
+msgstr ""
+
+#, fuzzy
+msgid "Loading..."
+msgstr "Скачивание Wine..."
+
+#, fuzzy
+msgid "Failed to load themes"
+msgstr "Не удалось скачать обложку"
+
+#, fuzzy
+msgid "Failed to download theme"
+msgstr "Не удалось скачать обложку"
+
+#, fuzzy
+msgid "Failed to install theme"
+msgstr "Не удалось остановить игру"
 
 msgid "Prefix:"
 msgstr "Префикс:"
