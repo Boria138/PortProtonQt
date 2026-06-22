@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-06-18 23:41+0500\n"
-"PO-Revision-Date: 2026-06-20 20:18+0000\n"
+"PO-Revision-Date: 2026-06-22 15:33+0000\n"
 "Last-Translator: Rubin13 <rubin13@noreply.codeberg.org>\n"
 "Language-Team: German <https://translate.codeberg.org/projects/portprotonqt/"
 "portprotonqt/de/>\n"
@@ -716,7 +716,7 @@ msgstr ""
 "Software"
 
 msgid "Window Mode"
-msgstr "Synchronisationsmodus"
+msgstr "Synchronisationsmodus für Vulkan and OpenGL"
 
 msgid ""
 "Window mode (for Vulkan and OpenGL):\n"
@@ -726,9 +726,16 @@ msgid ""
 "relaxed - Same as fifo but allows tearing when below the monitors refresh"
 " rate."
 msgstr ""
+"Synchronisationsmodus für Vulkan and OpenGL\n"
+"fifo – First In, First Out. Begrenzt die Bildrate, verhindert Tearing (VSync)"
+".\n"
+"immediate – Unbegrenzte Bildrate, Tearing möglich.\n"
+"mailbox – Dreifache Pufferung. Unbegrenzte Bildrate, kein Tearing.\n"
+"relaxed – Wie fifo, erlaubt aber Tearing unterhalb der Monitor-"
+"Bildwiederholfrequenz."
 
 msgid "NUMA Node"
-msgstr ""
+msgstr "NUMA Node"
 
 msgid ""
 "NUMA node for CPU affinity. In multi-core systems, CPUs are split into "
@@ -736,309 +743,318 @@ msgid ""
 " single node reduces memory-access latency and limits costly core-to-core"
 " switches."
 msgstr ""
+"NUMA Node für CPU-Affinität. In Mehrkernsystemen werden die CPUs in NUMA-"
+"Knoten unterteilt, von denen jeder über eigenen lokalen Speicher und eigene "
+"Kerne verfügt. Die Bindung eines Spiels an einen einzelnen Knoten reduziert "
+"die Speicherzugriffslatenz und begrenzt aufwändige Kernwechsel."
 
 msgid "Sound Driver"
-msgstr ""
+msgstr "Audio Treiber"
 
 msgid "Force the Wine sound driver for this executable."
-msgstr ""
+msgstr "Erzwinge den Wine-Soundtreiber für diese ausführbare Datei."
 
 msgid "just now"
-msgstr ""
+msgstr "Soeben"
 
 msgid "d."
-msgstr ""
+msgstr "T."
 
 msgid "h."
-msgstr ""
+msgstr "Std."
 
 msgid "min."
-msgstr ""
+msgstr "Min."
 
 msgid "sec."
-msgstr ""
+msgstr "Sek."
 
 msgid "Exit"
-msgstr ""
+msgstr "Exit"
 
 msgid "Tabs"
-msgstr ""
+msgstr "Tabs"
 
 msgid "Favorites"
-msgstr ""
+msgstr "Favoriten"
 
 msgid "Recent Games"
-msgstr ""
+msgstr "Aktuelle Spiele"
 
 msgid "No recent games"
-msgstr ""
+msgstr "Keine aktuellen Spiele"
 
 msgid "No favorites"
-msgstr ""
+msgstr "Keine Favoriten"
 
 #, python-brace-format
 msgid "Launch \"{name}\" with PortProton"
-msgstr ""
+msgstr "Ausführen \"{name}\" mit PortProton"
 
 msgid "Debug log mode was launched"
-msgstr ""
+msgstr "Der Debug-Protokollmodus wurde gestartet"
 
 msgid "To diagnose the problem, copy the ENTIRE log to the site:"
 msgstr ""
+"Für die Problembehandlung, teile das GESAMTE Protokoll auf der Website mit:"
 
 msgid "LAST LAUNCH"
-msgstr ""
+msgstr "LETZTER START"
 
 msgid "TIME SPENT"
-msgstr ""
+msgstr "SPIELZEIT"
 
 msgid "MAIN STORY"
-msgstr ""
+msgstr "HAUPTSPIEL"
 
 msgid "MAIN + SIDES"
-msgstr ""
+msgstr "HAUPTSPIEL+DLC"
 
 msgid "COMPLETIONIST"
-msgstr ""
+msgstr "VOLLSTÄNDIG"
 
 msgid "Open Folder"
-msgstr ""
+msgstr "Ordner öffnen"
 
 msgid "Add a shortcut"
-msgstr ""
+msgstr "Verknüpfung erstellen"
 
 msgid "Settings"
-msgstr ""
+msgstr "Einstellungen"
 
 msgid "Create Log"
-msgstr ""
+msgstr "Protokoll erstellen"
 
 msgid "Install"
-msgstr ""
+msgstr "Installieren"
 
 msgid "Open Card"
-msgstr ""
+msgstr "Ansicht öffnen"
 
 msgid "Reinstall"
-msgstr ""
+msgstr "Neuinstallation"
 
 msgid "Game not found."
-msgstr ""
+msgstr "Spiel nicht gefunden."
 
 msgid "Stop Log"
-msgstr ""
+msgstr "Protokollierung beenden"
 
 msgid "Failed to start debug session"
-msgstr ""
+msgstr "Protokollierung konnte nicht gestartet werden"
 
 msgid "Log Saved"
-msgstr ""
+msgstr "Protokoll gespeichert"
 
 msgid "Debug log saved to:"
-msgstr ""
+msgstr "Protokoll gespeichert unter:"
 
 msgid "Back"
-msgstr ""
+msgstr "Zurück"
 
 #, python-brace-format
 msgid "Gamepad Support: {0}"
-msgstr ""
+msgstr "Gamepad-Unterstützung: {0}"
 
 msgid "full"
-msgstr ""
+msgstr "voll"
 
 msgid "partial"
-msgstr ""
+msgstr "teilweise"
 
 msgid "none"
-msgstr ""
+msgstr "fehlt"
 
 #, python-brace-format
 msgid "Launching {0}"
-msgstr ""
+msgstr "Start {0}"
 
 msgid "Name:"
-msgstr ""
+msgstr "Titel:"
 
 msgid "Path to Executable:"
-msgstr ""
+msgstr "Pfad zur ausführbaren Datei:"
 
 msgid "Browse..."
-msgstr ""
+msgstr "Ansicht..."
 
 msgid "Custom Cover:"
-msgstr ""
+msgstr "Eigenes Titelbild:"
 
 msgid "Enter local path or URL for cover image"
-msgstr ""
+msgstr "Lokaler Pfad oder die URL für das Titelbild"
 
 msgid "Add shortcut to:"
-msgstr ""
+msgstr "Verknüpfung hinzufügen zu:"
 
 msgid "Cover Preview:"
-msgstr ""
+msgstr "Titelbild-Vorschau:"
 
 msgid "Apply"
-msgstr ""
+msgstr "Anwenden"
 
 msgid "Invalid image"
-msgstr ""
+msgstr "Ungültiges Bild"
 
 msgid "Failed to download cover"
-msgstr ""
+msgstr "Herunterladen des Titelbildes fehlgeschlagen"
 
 msgid "Downloading cover..."
-msgstr ""
+msgstr "Titelbild wird heruntergeladen..."
 
 msgid "No cover selected"
-msgstr ""
+msgstr "Kein Titelbild ausgewählt"
 
 msgid "Open"
-msgstr ""
+msgstr "Öffnen"
 
 msgid "Select Dir"
-msgstr ""
+msgstr "Ordner auswählen"
 
 msgid "Prev Dir"
-msgstr ""
+msgstr "Vorheriger Ordner"
 
 msgid "Toggle"
-msgstr ""
+msgstr "Umschalten"
 
 msgid "Force Install"
-msgstr ""
+msgstr "Installation erzwingen"
 
 msgid "Prev Tab"
-msgstr ""
+msgstr "Vorheriger Tab"
 
 msgid "Next Tab"
-msgstr ""
+msgstr "Nächster Tab"
 
 msgid "Save"
-msgstr ""
+msgstr "Speichern"
 
 msgid "Search"
-msgstr ""
+msgstr "Suchen"
 
 msgid "Download"
-msgstr ""
+msgstr "Herunterladen"
 
 msgid "Clear All"
-msgstr ""
+msgstr "Ausgewähltes entfernen"
 
 msgid "File Explorer"
-msgstr ""
+msgstr "Datei-Explorer"
 
 msgid "Select"
-msgstr ""
+msgstr "Auswählen"
 
 msgid "Home"
-msgstr ""
+msgstr "Benutzer-Ordner"
 
 msgid "Path: "
-msgstr ""
+msgstr "Pfad: "
 
 #, python-format
 msgid "Access denied: %s"
-msgstr ""
+msgstr "Zugriff verweigert: %s"
 
 msgid "Prefix backup"
-msgstr ""
+msgstr "Prefix-Backup"
 
 msgid "Prefix restore"
-msgstr ""
+msgstr "Prefix wiederherstellen"
 
 #, python-brace-format
 msgid "File: {0}"
-msgstr ""
+msgstr "Datei: {0}"
 
 #, python-brace-format
 msgid "{0}/{1} files"
-msgstr ""
+msgstr "{0}/{1} Dateien"
 
 #, python-brace-format
 msgid "{0} files"
-msgstr ""
+msgstr "{0} Dateien"
 
 #, python-brace-format
 msgid "{0}, Speed: {1:.1f} MB/s"
-msgstr ""
+msgstr "{0}, Geschwindigkeit: {1:.1f} MB/s"
 
 msgid "Manage WINE versions"
-msgstr ""
+msgstr "WINE-Versionen verwalten"
 
 msgid "Selected WINE/Proton:"
-msgstr ""
+msgstr "Ausgewählte WINE/Proton:"
 
 msgid "No WINE/Proton selected"
-msgstr ""
+msgstr "Kein WINE/Proton ausgewählt"
 
 msgid "Downloading: "
-msgstr ""
+msgstr "Herunterladen: "
 
 msgid "Download Selected"
-msgstr ""
+msgstr "Ausgewählte herunterladen"
 
 msgid "Installed"
-msgstr ""
+msgstr "Installiert"
 
 #, python-brace-format
 msgid "Error loading WINE/Proton: {error}"
-msgstr ""
+msgstr "Fehler beim Herunterladen von WINE/Proton: {error}"
 
 msgid "Version WINE/Proton"
-msgstr ""
+msgstr "WINE/Proton Version"
 
 msgid "Size"
-msgstr ""
+msgstr "Größe"
 
 msgid "Unknown"
-msgstr ""
+msgstr "Unbekannt"
 
 #, python-brace-format
 msgid "{display_name} (installed)"
-msgstr ""
+msgstr "{display_name} (installiert)"
 
 msgid "No Wine/Proton versions installed"
-msgstr ""
+msgstr "Keine Wine/Proton-Versionen installiert"
 
 msgid "Select to remove this WINE/Proton"
-msgstr ""
+msgstr "Wähle, um WINE/Proton zu entfernen"
 
 #, python-brace-format
 msgid "Selected {} WINE/Proton:\n"
-msgstr ""
+msgstr "Ausgewählt {} WINE/Proton:\n"
 
 #, python-brace-format
 msgid ""
 "\n"
 "Total size to delete: {}\n"
 msgstr ""
+"\n"
+"Zu löschende Gesamtgröße: {}\n"
 
 msgid "Delete Selected"
-msgstr ""
+msgstr "Ausgewählte löschen"
 
 #, python-brace-format
 msgid "Selected {} assets:\n"
-msgstr ""
+msgstr "Ausgewählt {} WINE/Proton:\n"
 
 #, python-brace-format
 msgid ""
 "\n"
 "Total size to download: {}\n"
 msgstr ""
+"\n"
+"Gesamtgröße des Downloads: {}\n"
 
 msgid "Downloading in Progress"
-msgstr ""
+msgstr "Download läuft"
 
 msgid "Cannot clear selection while extraction is in progress."
-msgstr ""
+msgstr "Die Auswahl kann nicht gelöscht werden, während die Extraktion läuft."
 
 msgid "No Selection"
-msgstr ""
+msgstr "Keine Auswahl"
 
 msgid "Please select at least one WINE/Proton to download."
-msgstr ""
+msgstr "Bitte wähle mindestens eine WINE/Proton-Version zum Herunterladen aus."
 
 msgid "Please wait for current downloading to complete."
 msgstr ""
