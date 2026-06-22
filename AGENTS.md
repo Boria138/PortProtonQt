@@ -210,6 +210,7 @@ if key_value >= Qt.Key.Key_Escape.value: ...
 - Preserve existing patterns
 - Keep surrounding code unchanged
 - Keep formatting changes limited to touched logic or required hook fixes
+- **NEVER delete existing style constants from theme files (QSS strings like `*_STYLE`). All styles must be preserved during rewrites. Deleted styles break child theme inheritance.**
 
 ---
 
@@ -393,7 +394,8 @@ tests/
 ├── test_icon_extractor.py   # NE/PE icon extraction, DIB decoding, thumbnails
 ├── test_dbus_tools.py       # D-Bus tools (notifications, idle inhibit, power profiles)
 ├── test_time_utils.py       # Playtime parsing, last launch cache, formatting
-└── test_shortcuts.py        # Desktop shortcut creation, paths with spaces, .desktop entry
+├── test_shortcuts.py        # Desktop shortcut creation, paths with spaces, .desktop entry
+└── test_theme_manager.py    # Theme AST injection, parent resolution, ThemeWrapper, style integrity
 ```
 
 ### Running Tests
@@ -428,6 +430,9 @@ pre-commit run pytest
 | `time_utils` | Spaced exe names in cache | 764bb3c |
 | `time_utils` | SHA256 hash + L5- index | 7a02b6b |
 | `time_utils` | Malformed playtime data | dd65021 |
+| `theme_manager` | AST injection lost dict constants, leaked CONTAINER_STYLE | 519edd1 |
+| `classic/styles.py` | Missing styles after theme rewrite (NAV, COMBOBOX, TAB, etc.) | 519edd1 |
+| `classic-light/styles.py` | NameError: border_none not defined (no styles/constants.py) | 519edd1 |
 
 ---
 

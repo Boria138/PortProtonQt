@@ -101,19 +101,40 @@ def _inject_parent_theme_constants(module, styles_file: str):
     parent_folder = _find_theme_folder(parent_name)
     if not parent_folder:
         return
-    parent_constants_path = os.path.join(parent_folder, "styles", "constants.py")
-    if not os.path.exists(parent_constants_path):
-        return
+    sources = []
+    styles_dir = os.path.join(parent_folder, "styles")
+    if os.path.isdir(styles_dir):
+        constants_path = os.path.join(styles_dir, "constants.py")
+        if os.path.exists(constants_path):
+            sources.append(constants_path)
+    parent_styles = os.path.join(parent_folder, "styles.py")
+    if os.path.exists(parent_styles):
+        sources.append(parent_styles)
+    for fpath in sources:
+        _inject_ast_constants(fpath, module)
+
+
+def _inject_ast_constants(source_path: str, module):
     try:
-        with open(parent_constants_path, encoding="utf-8") as f:
-            ns: dict = {}
-            exec(compile(f.read(), parent_constants_path, "exec"), ns, ns)
-        for key, value in ns.items():
-            if key.startswith("_") or callable(value) or key in module.__dict__:
+        with open(source_path, encoding="utf-8") as f:
+            tree = ast.parse(f.read(), filename=source_path)
+    except (OSError, SyntaxError) as e:
+        logger.debug("Cannot parse '%s': %s", source_path, e)
+        return
+    for node in ast.iter_child_nodes(tree):
+        if not isinstance(node, ast.Assign):
+            continue
+        if not isinstance(node.value, (ast.Constant, ast.List, ast.Tuple, ast.Dict)):
+            continue
+        for target in node.targets:
+            if not isinstance(target, ast.Name):
                 continue
-            module.__dict__[key] = value
-    except Exception as e:
-        logger.debug("Cannot inject parent constants for '%s': %s", module.__name__, e)
+            if target.id.startswith("_") or target.id in module.__dict__:
+                continue
+            try:
+                module.__dict__[target.id] = ast.literal_eval(node.value)
+            except (ValueError, TypeError):
+                continue
 
 
 def _find_theme_folder(theme_name: str) -> str | None:
