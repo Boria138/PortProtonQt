@@ -212,6 +212,9 @@ msgstr ""
 msgid "Desktop"
 msgstr ""
 
+msgid "Play this game on Steam"
+msgstr ""
+
 msgid "Game name and executable path are required"
 msgstr ""
 
@@ -307,6 +310,9 @@ msgid "Broken"
 msgstr ""
 
 msgid "Denied"
+msgstr ""
+
+msgid "Missing EXE"
 msgstr ""
 
 msgid "Unknown Game"

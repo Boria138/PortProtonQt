@@ -219,6 +219,9 @@ msgstr "'{game_name}' wurde entfernt von {location}"
 msgid "Desktop"
 msgstr "Desktop"
 
+msgid "Play this game on Steam"
+msgstr ""
+
 msgid "Game name and executable path are required"
 msgstr "Spielname und Ausführungspfad werden benötigt"
 
@@ -319,6 +322,9 @@ msgstr "Kaputt"
 
 msgid "Denied"
 msgstr "Abgelehnt"
+
+msgid "Missing EXE"
+msgstr ""
 
 msgid "Unknown Game"
 msgstr "Unbekanntes Spiel"

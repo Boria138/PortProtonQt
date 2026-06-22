@@ -220,6 +220,9 @@ msgstr "'{game_name}' удалён(а) из {location}"
 msgid "Desktop"
 msgstr "Рабочий стол"
 
+msgid "Play this game on Steam"
+msgstr "Играть в эту игру в Steam"
+
 msgid "Game name and executable path are required"
 msgstr "Требуются название игры и путь к исполняемому файлу"
 
@@ -320,6 +323,9 @@ msgstr "Сломано"
 
 msgid "Denied"
 msgstr "Отказано"
+
+msgid "Missing EXE"
+msgstr "Отсутствует EXE"
 
 msgid "Unknown Game"
 msgstr "Неизвестная игра"
@@ -2200,9 +2206,9 @@ msgstr "Выбранный"
 msgid "Not selected"
 msgstr "Не выбранный"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "by {0}"
-msgstr "Включить {0}"
+msgstr "от {0}"
 
 msgid "Select Theme:"
 msgstr "Выбрать тему:"
@@ -2228,40 +2234,32 @@ msgstr "Автор:"
 msgid "Link:"
 msgstr "Ссылка:"
 
-#, fuzzy
 msgid "Sort by:"
-msgstr "Метод сортировки:"
+msgstr "Сортировка:"
 
-#, fuzzy
 msgid "Most voted"
-msgstr "Не смонтировано"
+msgstr "По популярности"
 
-#, fuzzy
 msgid "Most downloaded"
-msgstr "Скачать"
+msgstr "По скачиваниям"
 
-#, fuzzy
 msgid "Recently updated"
-msgstr "Недавние"
+msgstr "Недавно обновлённые"
 
 msgid "Name (A-Z)"
-msgstr ""
+msgstr "Название (А-Я)"
 
-#, fuzzy
 msgid "Loading..."
-msgstr "Скачивание Wine..."
+msgstr "Загрузка..."
 
-#, fuzzy
 msgid "Failed to load themes"
-msgstr "Не удалось скачать обложку"
+msgstr "Не удалось загрузить темы"
 
-#, fuzzy
 msgid "Failed to download theme"
-msgstr "Не удалось скачать обложку"
+msgstr "Не удалось скачать тему"
 
-#, fuzzy
 msgid "Failed to install theme"
-msgstr "Не удалось остановить игру"
+msgstr "Не удалось установить тему"
 
 msgid "Prefix:"
 msgstr "Префикс:"

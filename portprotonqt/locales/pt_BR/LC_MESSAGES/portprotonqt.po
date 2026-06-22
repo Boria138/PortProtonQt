@@ -221,6 +221,9 @@ msgstr "'{game_name}' removido de {location}"
 msgid "Desktop"
 msgstr "Área de Trabalho"
 
+msgid "Play this game on Steam"
+msgstr "Jogar este jogo no Steam"
+
 msgid "Game name and executable path are required"
 msgstr "O nome do jogo e o caminho do executável são obrigatórios"
 
@@ -321,6 +324,9 @@ msgstr "Quebrado"
 
 msgid "Denied"
 msgstr "Negado"
+
+msgid "Missing EXE"
+msgstr "EXE ausente"
 
 msgid "Unknown Game"
 msgstr "Jogo Desconhecido"
@@ -2201,9 +2207,9 @@ msgstr "Selecionado"
 msgid "Not selected"
 msgstr "Não selecionado"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "by {0}"
-msgstr "Ativar {0}"
+msgstr "por {0}"
 
 msgid "Select Theme:"
 msgstr "Selecionar Tema:"
@@ -2229,40 +2235,32 @@ msgstr "Autor:"
 msgid "Link:"
 msgstr "Link:"
 
-#, fuzzy
 msgid "Sort by:"
-msgstr "Método de Ordenação:"
+msgstr "Ordenar por:"
 
-#, fuzzy
 msgid "Most voted"
-msgstr "Não montado"
+msgstr "Mais votados"
 
-#, fuzzy
 msgid "Most downloaded"
-msgstr "Baixar"
+msgstr "Mais baixados"
 
-#, fuzzy
 msgid "Recently updated"
-msgstr "Jogos Recentes"
+msgstr "Atualizados recentemente"
 
 msgid "Name (A-Z)"
-msgstr ""
+msgstr "Nome (A-Z)"
 
-#, fuzzy
 msgid "Loading..."
-msgstr "Baixando Wine..."
+msgstr "Carregando..."
 
-#, fuzzy
 msgid "Failed to load themes"
-msgstr "Falha ao baixar a capa"
+msgstr "Falha ao carregar temas"
 
-#, fuzzy
 msgid "Failed to download theme"
-msgstr "Falha ao baixar a capa"
+msgstr "Falha ao baixar o tema"
 
-#, fuzzy
 msgid "Failed to install theme"
-msgstr "Falha ao parar o jogo"
+msgstr "Falha ao instalar o tema"
 
 msgid "Prefix:"
 msgstr "Prefixo:"
