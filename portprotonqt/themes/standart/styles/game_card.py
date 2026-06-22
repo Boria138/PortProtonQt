@@ -43,6 +43,7 @@ def get_protondb_badge_style(tier):
         border-radius: {border_radius_badge};
         font-family: '{font_family}';
         font-weight: bold;
+        font-style: normal;
     """
 
 # PPDB BADGE STYLES
@@ -63,6 +64,7 @@ def get_ppdb_badge_style(tier):
         border-radius: {border_radius_badge};
         font-family: '{font_family}';
         font-weight: bold;
+        font-style: normal;
     """
 
 # WEANTICHEATYET BADGE STYLES
@@ -83,6 +85,7 @@ def get_anticheat_badge_style(status):
         font-size: {font_size_normal};
         border-radius: {border_radius_badge};
         font-weight: bold;
+        font-style: normal;
     """
 
 # STEAM BADGE STYLES
@@ -93,6 +96,7 @@ STEAM_BADGE_STYLE = f"""
     border-radius: {border_radius_badge};
     font-family: '{font_family}';
     font-weight: bold;
+    font-style: normal;
 """
 
 

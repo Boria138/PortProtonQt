@@ -332,25 +332,46 @@ class ThemeWrapper:
         return getattr(self._default_theme, name)
 
     def _get_generated_style(self, name):
-        if self.parent_theme_name != "standart":
+        parent_styles_dir = self._find_parent_styles_dir()
+        if parent_styles_dir is None:
             return None
         if self._generated_styles is None:
-            self._generated_styles = self._build_generated_styles()
+            self._generated_styles = self._build_generated_styles(parent_styles_dir)
         return self._generated_styles.get(name)
 
-    def _build_generated_styles(self):
+    def _find_parent_styles_dir(self):
+        parent_name = self.parent_theme_name
+        if not parent_name:
+            return None
+        chain = _get_theme_resource_chain(parent_name)
+        for name in chain:
+            folder = _find_theme_folder(name)
+            if not folder:
+                continue
+            styles_dir = os.path.join(folder, "styles")
+            if os.path.isdir(styles_dir):
+                return styles_dir
+        return None
+
+    def _build_generated_styles(self, styles_dir: str):
         generated = {}
-        standard_styles_dir = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            "themes",
-            "standart",
-            "styles",
-        )
-        constants = {
+        constants_path = os.path.join(styles_dir, "constants.py")
+        base_constants: dict = {}
+        try:
+            with open(constants_path, encoding="utf-8") as f:
+                exec(compile(f.read(), constants_path, "exec"), base_constants, base_constants)
+            base_constants = {
+                k: v for k, v in base_constants.items()
+                if not k.startswith("_") and not callable(v)
+            }
+        except Exception:
+            base_constants = {}
+        custom_constants = {
             key: value
             for key, value in vars(self.custom_theme).items()
-            if not key.startswith("_")
+            if not key.startswith("_") and not callable(value)
         }
+        constants = {**base_constants, **custom_constants}
         for style_file in (
             "base.py",
             "game_card.py",
@@ -361,7 +382,7 @@ class ThemeWrapper:
             "file_explorer.py",
             "theme_utils.py",
         ):
-            style_path = os.path.join(standard_styles_dir, style_file)
+            style_path = os.path.join(styles_dir, style_file)
             try:
                 with open(style_path, encoding="utf-8") as source_file:
                     source = source_file.read()

@@ -31,6 +31,7 @@
 - Улучшено адаптивное отображение детальной страницы: вместо вертикального full-layout теперь используется compact-режим
 - Обновлён перевод на Португальский (Бразилия) `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/pt_BR/`
 - Обновлён перевод на Китайский (упрощённый) `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/zh_Hans/`
+- `_build_generated_styles` теперь загружает `standart/constants.py` как базу и мержит с кастомными — темы переопределяют только нужные константы
 
 ### Fixed
 - Исправлено определение тёмной темы для `Cinnamon`, `XFCE` и `MATE`
