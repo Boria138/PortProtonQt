@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-03-22 13:50+0500\n"
-"PO-Revision-Date: 2026-06-06 16:07+0000\n"
+"PO-Revision-Date: 2026-06-22 18:14+0000\n"
 "Last-Translator: gallegonovato <gallegonovato@noreply.codeberg.org>\n"
 "Language-Team: Spanish <https://translate.codeberg.org/projects/portprotonqt/"
 "portprotonqt/es/>\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 2026.5\n"
+"X-Generator: Weblate 2026.6.1\n"
 "Generated-By: Babel 2.17.0\n"
 
 msgid "Stop Game"
@@ -52,13 +52,11 @@ msgstr "Cambiar el nombre de la carpeta"
 msgid "Delete Folder"
 msgstr "Borrar la carpeta"
 
-#, fuzzy
 msgid "Rename File"
-msgstr "Cambiar el nombre de la carpeta"
+msgstr "Renombrar el archivo"
 
-#, fuzzy
 msgid "Delete File"
-msgstr "Borrar la carpeta"
+msgstr "Borrar el archivo"
 
 msgid "OK"
 msgstr "De acuerdo"
@@ -111,29 +109,28 @@ msgstr "No"
 msgid "Failed to delete folder: {error}"
 msgstr "No se ha podido eliminar la carpeta: {error}"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid ""
 "Are you sure you want to delete file '{file_name}'? This action cannot be"
 " undone."
 msgstr ""
-"¿Estás seguro de que quieres eliminar la carpeta «{folder_name}»? Esta "
-"acción no se puede deshacer."
+"¿Estás seguro de que quieres eliminar el archivo «{file_name}»? Esta acción "
+"no se puede deshacer."
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Failed to delete file: {error}"
-msgstr "No se ha podido eliminar la carpeta: {error}"
+msgstr "No se ha podido eliminar el archivo: {error}"
 
-#, fuzzy
 msgid "New File Name:"
-msgstr "Nombre de la nueva carpeta:"
+msgstr "Nombre del nuevo archivo:"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "File already exists: {file_name}"
-msgstr "La carpeta ya existe: {folder_name}"
+msgstr "El archivo ya existe: {file_name}"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Failed to rename file: {error}"
-msgstr "No se pudo cambiar el nombre de la carpeta: {error}"
+msgstr "No se pudo cambiar el nombre del archivo: {error}"
 
 msgid "Delete from PortProton"
 msgstr "Eliminar de PortProton"
@@ -223,7 +220,7 @@ msgid "Desktop"
 msgstr "Escritorio"
 
 msgid "Play this game on Steam"
-msgstr ""
+msgstr "Juegar en Steam"
 
 msgid "Game name and executable path are required"
 msgstr ""
@@ -276,314 +273,338 @@ msgid ""
 "'{game_name}' was removed from Steam. Please restart Steam for changes to take "
 "effect."
 msgstr ""
+"«{game_name}» se ha eliminado de Steam. Por favor, reinicia Steam para que "
+"los cambios surtan efecto."
 
 #, python-brace-format
 msgid "'{game_name}' was removed from Steam."
-msgstr ""
+msgstr "«{game_name}» se ha eliminado de Steam."
 
 #, python-brace-format
 msgid "Failed to remove game '{game_name}' from Steam: {error}"
-msgstr ""
+msgstr "No se ha podido eliminar el juego «{game_name}» de Steam: {error}"
 
 #, python-brace-format
 msgid "Failed to open folder: {error}"
-msgstr ""
+msgstr "No se ha podido abrir la carpeta: {error}"
 
 msgid "Undo"
-msgstr ""
+msgstr "Deshacer"
 
 msgid "Redo"
-msgstr ""
+msgstr "Rehacer"
 
 msgid "Cut"
-msgstr ""
+msgstr "Cortar"
 
 msgid "Copy"
-msgstr ""
+msgstr "Copiar"
 
 msgid "Paste"
-msgstr ""
+msgstr "Pegar"
 
 msgid "Delete"
-msgstr ""
+msgstr "Borrar"
 
 msgid "Select All"
-msgstr ""
+msgstr "Seleccionar todo"
 
 msgid "Supported"
-msgstr ""
+msgstr "Compatible"
 
 msgid "Running"
-msgstr ""
+msgstr "Ejecutando"
 
 msgid "Planned"
-msgstr ""
+msgstr "Previsto"
 
 msgid "Broken"
-msgstr ""
+msgstr "Falló"
 
 msgid "Denied"
-msgstr ""
+msgstr "Denegado"
 
 msgid "Missing EXE"
-msgstr ""
+msgstr "Falta el archivo EXE"
 
 msgid "Unknown Game"
-msgstr ""
+msgstr "Juego desconocido"
 
 msgid "Downloading Wine..."
-msgstr ""
+msgstr "Descargando Wine..."
 
 msgid "Library"
-msgstr ""
+msgstr "Biblioteca"
 
 msgid "Auto Install"
-msgstr ""
+msgstr "Instalación automática"
 
 msgid "Wine Settings"
-msgstr ""
+msgstr "Ajustes de Wine"
 
 msgid "PPQT Settings"
-msgstr ""
+msgstr "Ajustes de PPQT"
 
 msgid "System"
-msgstr ""
+msgstr "Sistema"
 
 msgid "Themes"
-msgstr ""
+msgstr "Temas"
 
 msgid "Warning"
-msgstr ""
+msgstr "Alerta"
 
 msgid "Installation already in progress."
-msgstr ""
+msgstr "La instalación se está ejecutando."
 
 msgid "Installing..."
-msgstr ""
+msgstr "Instalando…"
 
 msgid "Failed to start installation."
-msgstr ""
+msgstr "Error al iniciar la instalación."
 
 msgid "Stop"
-msgstr ""
+msgstr "Detener"
 
 msgid "Failed to stop installation."
-msgstr ""
+msgstr "No se ha podido detener la instalación."
 
 #, python-brace-format
 msgid "{0} Plugins..."
-msgstr ""
+msgstr "{0} Complementos..."
 
 #, python-brace-format
 msgid "{0} Libs..."
-msgstr ""
+msgstr "{0} Bibliotecas..."
 
 #, python-brace-format
 msgid "{0} Wine..."
-msgstr ""
+msgstr "{0} Wine..."
 
 #, python-brace-format
 msgid "{0} components..."
-msgstr ""
+msgstr "{0} componentes..."
 
 msgid "Downloading"
-msgstr ""
+msgstr "Descargando"
 
 msgid "Extracting"
-msgstr ""
+msgstr "Extrayendo"
 
 msgid "Refresh Grid"
-msgstr ""
+msgstr "Actualizar cuadrícula"
 
 msgid "Never"
-msgstr ""
+msgstr "Nunca"
 
 msgid "Unknown Application"
-msgstr ""
+msgstr "Aplicación desconocida"
 
 #, python-brace-format
 msgid "Executable not found: {0}"
-msgstr ""
+msgstr "No se ha encontrado el archivo ejecutable: {0}"
 
 msgid "Start"
-msgstr ""
+msgstr "Iniciar"
 
 msgid "Prefix not found"
-msgstr ""
+msgstr "Prefijo no encontrado"
 
 #, python-brace-format
 msgid "Prefix '{0}' was not found. Install recommended libraries?"
 msgstr ""
+"No se ha encontrado el prefijo «{0}». ¿Quieres instalar las bibliotecas "
+"recomendadas?"
 
 msgid "Invalid command format (empty exec line)"
-msgstr ""
+msgstr "Formato de comando no válido (línea de ejecución vacía)"
 
 msgid "Invalid command format (native)"
-msgstr ""
+msgstr "Formato de comando no válido (nativo)"
 
 #, python-brace-format
 msgid "Failed to launch game: {0}"
-msgstr ""
+msgstr "Error al iniciar el juego: {0}"
 
 msgid "PortProton start script not found"
-msgstr ""
+msgstr "No se ha encontrado el script de inicio de PortProton"
 
 #, python-brace-format
 msgid "File not found: {0}"
-msgstr ""
+msgstr "Archivo no encontrado: {0}"
 
 msgid "Cannot launch game while another game is running"
-msgstr ""
+msgstr "No se puede iniciar el juego mientras hay otro en ejecución"
 
-#, fuzzy
 msgid "Choose Folder"
-msgstr "Crear carpeta"
+msgstr "Seleccionar carpeta"
 
 msgid "Choose PortProton data folder"
-msgstr ""
+msgstr "Selecciona la carpeta de datos de PortProton"
 
 msgid ""
 "Selected folder is on an unsupported filesystem. Choose another folder for "
 "PortProton data."
 msgstr ""
+"La carpeta seleccionadaestá en un formato no compatible. Elige otra carpeta "
+"para los datos de PortProton."
 
 msgid ""
 "Selected folder is not readable and writable. Choose another folder for "
 "PortProton data."
 msgstr ""
+"La carpeta seleccionada no es legible ni escribible. Elige otra carpeta para "
+"los datos de PortProton."
 
 msgid "Select file for PPDB download"
-msgstr ""
+msgstr "Selecciona el archivo para descargar el PPDB"
 
 msgid ""
 "Enable dgVoodoo2. Forced use all dgVoodoo2 libs (Glide 2.11-3.1, DirectDraw "
 "1-7, Direct3D 2-9) on all 3D API."
 msgstr ""
+"Activa dgVoodoo2. Obliga a utilizar todas las bibliotecas de dgVoodoo2 "
+"(Glide 2.11-3.1, DirectDraw 1-7, Direct3D 2-9) en todas las API 3D."
 
 msgid "Enable SpecialK (injection library for fixing graphics, latency and more)"
 msgstr ""
+"Habilitar SpecialK (biblioteca de inyección para corregir problemas "
+"gráficos, de latencia y otros)"
 
 msgid "Enable OptiScaler (replacement upscaler / frame generator)"
 msgstr ""
+"Activar OptiScaler (escalador de resolución / sustitutivo para el generador "
+"de fotogramas)"
 
 msgid "Enable Lossless Scaling frame generation (experimental)"
 msgstr ""
+"Habilitar la generación de fotogramas con escalado sin pérdida (experimental)"
 
 msgid "FSR upscaling in fullscreen with ProtonGE below native resolution"
 msgstr ""
+"Ampliación de FSR en pantalla completa con ProtonGE por debajo de la "
+"resolución nativa"
 
 msgid "Enable vkd3d support - Ray Tracing"
-msgstr ""
+msgstr "Habilitar la compatibilidad con vkd3d - Ray Tracing"
 
 msgid "Enable DLSS on supported NVIDIA graphics cards"
-msgstr ""
+msgstr "Activa DLSS en las tarjetas gráficas NVIDIA compatibles"
 
 msgid "Disguise all NVIDIA GPU features"
-msgstr ""
+msgstr "Ocultar todas las funciones de las GPU de NVIDIA"
 
 msgid "Enable in-process synchronization primitives based on eventfd."
-msgstr ""
+msgstr "Habilitar la sincronización de procesos a través de eventfd."
 
 msgid "Enable futex-based in-process synchronization primitives."
-msgstr ""
+msgstr "Habilitar la sincronización de procesos a través de futex."
 
 msgid "Enable in-process synchronization via the Linux ntsync driver."
-msgstr ""
+msgstr "Habilitar la sincronización de procesos mediante ntsync."
 
 msgid "Enable forced use of third-party DirectX libraries"
-msgstr ""
+msgstr "Habilitar el uso de bibliotecas DirectX de terceros"
 
 msgid "Enable D7VK for DirectDraw 1-7"
-msgstr ""
+msgstr "Habilitar D7VK para DirectDraw 1-7"
 
 msgid "Force use of built-in DXGI library"
-msgstr ""
+msgstr "Forzar el uso de la biblioteca DXGI integrada"
 
 msgid "Use system GameMode for performance optimization"
-msgstr ""
+msgstr "Utiliza el modo GameMode del sistema para optimizar el rendimiento"
 
 msgid "Disable desktop compositing for performance"
-msgstr ""
+msgstr "Desactivar la composición del escritorio para mejorar el rendimiento"
 
 msgid "Fix pink-tinted video playback in some games"
-msgstr ""
+msgstr "Corregir el tono rosado en la reproducción de vídeos en algunos juegos"
 
 msgid "Reduce PulseAudio latency to fix intermittent sound"
 msgstr ""
+"Reducir la latencia de PulseAudio para solucionar los problemas de sonido "
+"intermitente"
 
 msgid "Run the application in WINE virtual desktop"
-msgstr ""
+msgstr "Ejecuta la aplicación en el escritorio virtual de WINE"
 
 msgid "Run the application in a terminal"
-msgstr ""
+msgstr "Ejecuta la aplicación en un terminal"
 
 msgid "Force US keyboard layout"
-msgstr ""
+msgstr "Forzar la distribución del teclado de EE. UU."
 
 msgid "Force DirectInput protocol instead of XInput"
-msgstr ""
+msgstr "Forzar el protocolo DirectInput en lugar de XInput"
 
 msgid "Use GStreamer for in-game clips (WMF support)"
-msgstr ""
+msgstr "Utilizar GStreamer para los clips del juego (compatibilidad con WMF)"
 
 msgid "Use WINE shader caching"
-msgstr ""
+msgstr "Utilizar el almacenamiento en caché de shaders de WINE"
 
 msgid "Enable Easy Anti-Cheat and BattlEye runtimes"
-msgstr ""
+msgstr "Activar los entornos de ejecución de Easy Anti-Cheat y BattlEye"
 
 msgid "Use system Vulkan layers (MangoHud, vkBasalt, OBS, etc.)"
-msgstr ""
+msgstr "Utiliza las capas del sistema Vulkan (MangoHud, vkBasalt, OBS, etc.)"
 
 msgid "Enable OBS Studio capture via obs-vkcapture"
-msgstr ""
+msgstr "Habilitar la captura en OBS Studio mediante obs-vkcapture"
 
 msgid "Enable experimental native Wayland support"
-msgstr ""
+msgstr "Habilitar la compatibilidad experimental nativa con Wayland"
 
 msgid "Enable HDR settings under native Wayland"
-msgstr ""
+msgstr "Activar la configuración de HDR en Wayland nativo"
 
 msgid "Use Gallium Zink (OpenGL via Vulkan)"
-msgstr ""
+msgstr "Utilizar Gallium Zink (OpenGL a través de Vulkan)"
 
 msgid "Use Gallium Nine (native DirectX 9 for Mesa)"
-msgstr ""
+msgstr "Utiliza Gallium Nine (DirectX 9 nativo para Mesa)"
 
 msgid "Use WineD3D Vulkan backend (Damavand)"
-msgstr ""
+msgstr "Utilizar el backend Vulkan de WineD3D (Damavand)"
 
 msgid "Use bundled dxvk/vkd3d from Wine/Proton"
-msgstr ""
+msgstr "Utiliza el paquete dxvk/vkd3d incluido en Wine/Proton"
 
 msgid ""
 "Prevent the system from going to sleep and disable the screensaver while the "
 "game is running"
 msgstr ""
+"Evita que el sistema entre en modo de suspensión y desactiva el "
+"salvapantallas mientras se está ejecutando el juego"
 
 msgid "Use container launch mode (recommended default)"
 msgstr ""
+"Utiliza el modo de ejecución en contenedor (opción predeterminada "
+"recomendada)"
 
 msgid "Wine Version"
-msgstr ""
+msgstr "Versión de Wine"
 
 msgid "Select the Wine or Proton version to use for this executable."
 msgstr ""
+"Selecciona la versión de Wine o Proton que deseas utilizar para este "
+"ejecutable."
 
 msgid "Prefix Name"
-msgstr ""
+msgstr "Nombre del prefijo"
 
 msgid "Specify the Wine prefix to run this game with"
-msgstr ""
+msgstr "Especifica el prefijo de Wine con el que se ejecutará este juego"
 
 msgid "Newest"
-msgstr ""
+msgstr "Más recientes"
 
 msgid "Stable"
-msgstr ""
+msgstr "Estable"
 
 msgid "Vulkan Backend"
-msgstr ""
+msgstr "Backend de Vulkan"
 
 msgid ""
 "Select the DirectX → Vulkan/OpenGL backend:\n"
@@ -595,17 +616,33 @@ msgid ""
 "1.1+)\n"
 "• WINED3D – OpenGL fallback (lowest performance, use only if others fail)"
 msgstr ""
+"Selecciona el backend DirectX → Vulkan/OpenGL:\n"
+"\n"
+"• Más reciente: última versión de DXVK + VKD3D (mejor compatibilidad y "
+"rendimiento; requiere controladores modernos: AMD Mesa 25+, NVIDIA "
+"550.54.14+, Intel Mesa 24.2+)\n"
+"• Estable: versión anterior y bien probada de DXVK + VKD3D (funciona con "
+"cualquier controlador Vulkan 1.3 o superior)\n"
+"\n"
+"• Sarek: versión experimental de DXVK-Sarek + VKD3D-Sarek (compatible con "
+"controladores más antiguos, Vulkan 1.1 o superior)\n"
+"\n"
+"• WINED3D: alternativa de OpenGL (rendimiento más bajo; utilízala solo si "
+"las demás opciones fallan)"
 
 msgid "Windows version"
-msgstr ""
+msgstr "Versión para Windows"
 
 msgid ""
 "Changing the WINDOWS emulation version may be required to run older games. "
 "WINDOWS versions below 10 do not support new games with DirectX 12"
 msgstr ""
+"Es posible que sea necesario cambiar la versión de emulación de WINDOWS para "
+"poder ejecutar juegos más antiguos. Las versiones de WINDOWS anteriores a la "
+"10 no son compatibles con los juegos nuevos que utilizan DirectX 12"
 
 msgid "DLL Overrides"
-msgstr ""
+msgstr "Sustituciones de DLL"
 
 msgid ""
 "Forced to use/disable the library only for the given application.\n"
@@ -621,9 +658,24 @@ msgid ""
 "\n"
 "Example: libglesv2=;d3dx9_36,d3dx9_42=n,b;mfc120=b,n"
 msgstr ""
+"Obliga a utilizar o desactivar la biblioteca únicamente para la aplicación "
+"indicada.\n"
+"\n"
+"Breves instrucciones:\n"
+"* Las bibliotecas se escriben SIN la extensión de archivo .dll\n"
+"* Las bibliotecas se separan mediante punto y coma: ;\n"
+"* library=n: utiliza la biblioteca de WINDOWS (de terceros)\n"
+"* library=b: utiliza la biblioteca de WINE (integrada)\n"
+"* library=n,b: utiliza primero la biblioteca de WINDOWS y, a continuación, "
+"la de WINE\n"
+"* library=b,n: utiliza primero la biblioteca de WINE y, a continuación, la "
+"de WINDOWS\n"
+"* library=: desactiva el uso de esta biblioteca\n"
+"\n"
+"Ejemplo: libglesv2=;d3dx9_36,d3dx9_42=n,b;mfc120=b,n"
 
 msgid "Launch Arguments"
-msgstr ""
+msgstr "Parámetros de ejecución"
 
 msgid ""
 "Adding an argument after the .exe file, just like you would add an argument in "
@@ -631,6 +683,10 @@ msgid ""
 "\n"
 "Example: -dx11 -skipintro 1"
 msgstr ""
+"Añadir un argumento después del archivo .exe, igual que se añadiría un "
+"argumento en un acceso directo en un sistema WINDOWS.\n"
+"\n"
+"Ejemplo: -dx11 -skipintro 1"
 
 msgid "Run After / Wrapper"
 msgstr ""
@@ -639,37 +695,47 @@ msgid ""
 "Path to a second .exe, script, or wrapper command. Example: systemd-run "
 "--user --scope --slice=app.slice"
 msgstr ""
+"Ruta a un segundo archivo .exe, script o comando de envoltura. Ejemplo: "
+"systemd-run --user --scope --slice=app.slice"
 
 msgid "CPU Cores Limit"
-msgstr ""
+msgstr "Límite de núcleos de la CPU"
 
 msgid ""
 "Limiting the number of CPU cores is useful for Unity games (It is recommended "
 "to set the value equal to 8)"
 msgstr ""
+"Limitar el número de núcleos de la CPU resulta útil para los juegos de Unity "
+"(se recomienda establecer el valor en 8)"
 
 msgid "OpenGL Version"
-msgstr ""
+msgstr "Versión de OpenGL"
 
 msgid ""
 "You can select the required OpenGL version, some games require a forced "
 "Compatibility Profile (COMP)."
 msgstr ""
+"Puedes seleccionar la versión de OpenGL que necesites; algunos juegos "
+"requieren un perfil de compatibilidad (COMP) obligatorio."
 
 msgid "VKD3D Feature Level"
-msgstr ""
+msgstr "Nivel de características de VKD3D"
 
 msgid "You can set a forced feature level VKD3D for games on DirectX12"
 msgstr ""
+"Puedes configurar el nivel de características forzado VKD3D para los juegos "
+"en DirectX 12"
 
 msgid "Locale"
-msgstr ""
+msgstr "Local"
 
 msgid "Force certain locale for an app. Fixes encoding issues in legacy software"
 msgstr ""
+"Establecer una configuración regional concreta para una aplicación. "
+"Soluciona problemas de codificación en software antiguo"
 
 msgid "Window Mode"
-msgstr ""
+msgstr "Modo windows"
 
 msgid ""
 "Window mode (for Vulkan and OpenGL):\n"
@@ -678,24 +744,35 @@ msgid ""
 "mailbox - Triple buffering. Unlimited frame rate + no tearing.\n"
 "relaxed - Same as fifo but allows tearing when below the monitors refresh rate."
 msgstr ""
+"Modo de ventana (para Vulkan y OpenGL):\n"
+"fifo: «primero en entrar, primero en salir». Limita la frecuencia de "
+"fotogramas y evita el tearing. (VSync)\n"
+"immediate: frecuencia de fotogramas ilimitada, con tearing.\n"
+"mailbox: triple búfer. Frecuencia de fotogramas ilimitada y sin tearing.\n"
+"relaxed: igual que «fifo», pero permite el tearing cuando se está por debajo "
+"de la frecuencia de refresco del monitor."
 
 msgid "NUMA Node"
-msgstr ""
+msgstr "Nodo NUMA"
 
 msgid ""
 "NUMA node for CPU affinity. In multi-core systems, CPUs are split into NUMA "
 "nodes, each with its own local memory and cores. Binding a game to a single "
 "node reduces memory-access latency and limits costly core-to-core switches."
 msgstr ""
+"Nodo NUMA para la afinidad de la CPU. En los sistemas multinúcleo, las CPU "
+"se dividen en nodos NUMA, cada uno con su propia memoria local y sus propios "
+"núcleos. Vincular un juego a un único nodo reduce la latencia en el acceso a "
+"la memoria y limita los costosos cambios de núcleo a núcleo."
 
 msgid "Sound Driver"
-msgstr ""
+msgstr "Controlador de sonido"
 
 msgid "Force the Wine sound driver for this executable."
-msgstr ""
+msgstr "Forzar el uso del controlador de sonido de Wine para este ejecutable."
 
 msgid "just now"
-msgstr ""
+msgstr "ahora"
 
 msgid "d."
 msgstr ""
@@ -727,9 +804,9 @@ msgstr ""
 msgid "No favorites"
 msgstr ""
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Launch \"{name}\" with PortProton"
-msgstr "Iniciar el juego \"{name}\" con PortProton"
+msgstr "Iniciar «{name}» con PortProton"
 
 msgid "Debug log mode was launched"
 msgstr ""
@@ -755,9 +832,8 @@ msgstr ""
 msgid "Open Folder"
 msgstr ""
 
-#, fuzzy
 msgid "Add a shortcut"
-msgstr "Editar acceso directo"
+msgstr "Añadir un acceso directo"
 
 msgid "Settings"
 msgstr ""
@@ -768,9 +844,8 @@ msgstr ""
 msgid "Install"
 msgstr ""
 
-#, fuzzy
 msgid "Open Card"
-msgstr "Detener partida"
+msgstr "Carta abierta"
 
 msgid "Reinstall"
 msgstr ""
@@ -1098,20 +1173,19 @@ msgstr ""
 msgid "Information"
 msgstr ""
 
-#, fuzzy
 msgid "Confirm PPDB Clear"
-msgstr "Confirmar eliminación"
+msgstr "Confirmar que PPDB está vacío"
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid ""
 "Are you sure you want to clear settings? This action cannot be undone."
 msgstr ""
-"¿Estás seguro de que quieres eliminar la carpeta «{folder_name}»? Esta "
-"acción no se puede deshacer."
+"¿Estás seguro de que quieres borrar la configuración? Esta acción no se "
+"puede deshacer."
 
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Failed to remove PPDB file:\n"
-msgstr "No se pudo cambiar el nombre de la carpeta: {error}"
+msgstr "No se ha podido eliminar el archivo PPDB:\n"
 
 msgid "disabled"
 msgstr ""
@@ -2171,92 +2245,89 @@ msgstr ""
 msgid "Loading..."
 msgstr ""
 
-#, fuzzy
 msgid "Failed to load themes"
-msgstr "Error al detener el juego"
+msgstr "Error al cargar los temas"
 
-#, fuzzy
 msgid "Failed to download theme"
-msgstr "Error al detener el juego"
+msgstr "Error al descargar los temas"
 
-#, fuzzy
 msgid "Failed to install theme"
-msgstr "Error al detener el juego"
+msgstr "Error al instalar el tema"
 
 msgid "Prefix:"
-msgstr ""
+msgstr "Prefijo:"
 
 msgid "Use by default"
-msgstr ""
+msgstr "Usar por defecto"
 
 msgid "Wine Configuration"
-msgstr ""
+msgstr "Configuración de Wine"
 
 msgid "Registry Editor"
-msgstr ""
+msgstr "Editor del registro"
 
 msgid "Command Prompt"
-msgstr ""
+msgstr "Símbolo del sistema"
 
 msgid "Uninstaller"
-msgstr ""
+msgstr "Desinstalador"
 
 msgid "Create Prefix Backup"
-msgstr ""
+msgstr "Crear copia de seguridad del prefijo"
 
 msgid "Load Prefix Backup"
-msgstr ""
+msgstr "Cargar copia de seguridad del prefijo"
 
 msgid "Delete Prefix"
-msgstr ""
+msgstr "Eliminar prefijo"
 
 msgid "Clear Prefix"
-msgstr ""
+msgstr "Limpiar prefijo"
 
 msgid "Failed to start process."
-msgstr ""
+msgstr "Error al iniciar el proceso."
 
 #, python-brace-format
 msgid "Are you sure you want to clear prefix '{}'?"
-msgstr ""
+msgstr "¿Estás seguro de que quieres borrar el prefijo '{}'?"
 
 msgid "Failed to start prefix clear process."
-msgstr ""
+msgstr "Error al iniciar el proceso de borrado del prefijo."
 
 msgid "Prefix cleared successfully."
-msgstr ""
+msgstr "Prefijo borrado correctamente."
 
 #, python-brace-format
 msgid "Prefix clear failed with exit code {}."
-msgstr ""
+msgstr "El borrado del prefijo produjo un error {}."
 
 #, python-brace-format
 msgid "Failed to run clear prefix command: {}"
-msgstr ""
+msgstr "Error al ejecutar el comando de borrado de prefijo: {}"
 
 msgid "Failed to start restore process."
-msgstr ""
+msgstr "Error al restaurar."
 
 msgid "Prefix backup completed."
-msgstr ""
+msgstr "Copia de seguridad del prefijo completada."
 
 msgid "Prefix backup failed."
-msgstr ""
+msgstr "Error en la copia de seguridad del prefijo."
 
 msgid "Prefix restore completed."
-msgstr ""
+msgstr "Restauración del prefijo completado."
 
 msgid "Prefix restore failed."
-msgstr ""
+msgstr "Error al restaurar el prefijo."
 
 #, python-brace-format
 msgid "Are you sure you want to delete prefix '{}'?"
-msgstr ""
+msgstr "¿Estás seguro de que quieres eliminar el prefijo ' {} '?"
 
 #, python-brace-format
 msgid "Prefix '{}' deleted."
-msgstr ""
+msgstr "Prefijo ' {} ' eliminado."
 
 #, python-brace-format
 msgid "Failed to delete prefix: {}"
-msgstr ""
+msgstr "No se pudo eliminar el prefijo: {}"
