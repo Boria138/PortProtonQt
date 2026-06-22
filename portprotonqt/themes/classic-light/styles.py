@@ -6,18 +6,16 @@ THEME_INHERITS = "standart-light"
 theme_manager = ThemeManager()
 current_theme_name = ui_config.get_theme()
 
-detailCompactCoverFrameSize = 128
-detailCompactCoverImageSize = 108
-detailCompactContentSpacing = 15
-detailCompactHeaderSpacing = 16
-detailCompactTitleMargins = (0, 0, 0, 0)
-detailCompactDescriptionMargins = (3, 3, 3, 3)
+# === Layout (differs from standart-light) ===
+LIBRARY_LAYOUT_MODE = "list"
+DETAIL_PAGE_LAYOUT_MODE = "compact"
+
 portProtonPageMargins = (10, 7, 15, 10)
 portProtonPageHorizontalSpacing = 5
 portProtonPageVerticalSpacing = 2
 portProtonPageSectionHeaderSpacing = 5
 wineSettingsSetSpacing = 2
-mangoHudSwitchesColumns = 4
+
 mangoHudSwitchesVerticalSpacing = 5
 mangoHudFpsColumns = 6
 mangoHudFpsVerticalSpacing = 5
@@ -26,33 +24,20 @@ exeSettingsGroupBoxBlockSpacing = 5
 exeSettingsGroupBoxElementVerticalSpacing = 2
 exeSettingsGroupBoxElementHorizontalSpacing = 5
 
-LIBRARY_LAYOUT_MODE = "list"
-DETAIL_PAGE_LAYOUT_MODE = "compact"
+# === Core Palette (light) ===
+color_accent = "#70b8ff"
+color_bg = "#F8F9FC"
+color_surface = "#F0F2F5"
+color_surface_elevated = "#E9ECEF"
+color_surface_hover = "#DEE2E6"
+color_text = "#ffffff"
+color_surface_light = "#d2d3db"
+color_surface_mid = "#9394a5"
+color_text_dark = "#212529"
+color_detail_overlay = "rgba(20,20,20,0.40)"
+color_detail_line = "rgba(255,255,255,0.12)"
 
-# QColor constants for programmatic use
-color_shadow_card = "#00000096"  # rgba(0, 0, 0, 150)
-color_shadow_detail = "#000000c8"  # rgba(0, 0, 0, 200)
-color_placeholder_bg = "#333333"
-color_default_fallback = "#1a1a1a"
-color_disabled_bg = "#f0f0f0"
-color_disabled_text = "#777a84"
-color_text_muted = "#bbbbbb"
-color_accent_blue = "#007AFF"
-color_gamepad_supported = "#00ff00"
-color_white = "#ffffff"
-missing_exe_cover_opacity = 0.45
-
-# Shadow constants
-shadow_blur_radius = 20
-shadow_offset = (0, 0)
-settings_tooltip_offset_x = 28
-settings_tooltip_offset_y = 4
-virtual_keyboard_slide_animation_duration = 160
-virtual_keyboard_fade_animation_duration = 140
-virtual_keyboard_slide_fade_animation_duration = 180
-virtual_keyboard_slide_bounce_animation_duration = 220
-virtual_keyboard_animation_type = "slide"
-
+# === Card Animation (glow) ===
 GAME_CARD_ANIMATION = {
     "detail_page_animation_type": "fade",
     "default_border_width": 1,
@@ -66,9 +51,9 @@ GAME_CARD_ANIMATION = {
     "gradient_start_angle": 360,
     "gradient_end_angle": 0,
     "card_animation_type": "glow",
-    "fill_color": "#409EFF",
+    "fill_color": "#70b8ff",
     "fill_alpha": 90,
-    "stripe_color": "#409EFF",
+    "stripe_color": "#70b8ff",
     "stripe_alpha": 255,
     "default_scale": 1.0,
     "hover_scale": 1.08,
@@ -79,9 +64,9 @@ GAME_CARD_ANIMATION = {
     "scale_easing_curve": "OutBack",
     "scale_easing_curve_out": "InBack",
     "gradient_colors": [
-        {"position": 0, "color": "#9ca3af"},
-        {"position": 0.5, "color": "#6b7280"},
-        {"position": 1, "color": "#9ca3af"},
+        {"position": 0, "color": "#d2d3db"},
+        {"position": 0.5, "color": "#9394a5"},
+        {"position": 1, "color": "#d2d3db"},
     ],
     "detail_page_fade_duration": 350,
     "detail_page_slide_duration": 500,
@@ -93,657 +78,463 @@ GAME_CARD_ANIMATION = {
     "detail_page_easing_curve_exit": "InCubic",
 }
 
-# VARS
-font_family = "Play"
-font_size_normal = "16px"
-font_size_header = "24px"
-border_none = "0px solid"
-border_thin = "1px solid"
-border_medium = "2px solid"
-border_radius_small = "10px"
-border_radius_large = "15px"
-border_radius_card = "20px"
-border_radius_badge = "5px"
-color_accent = "#70b8ff"
-color_bg = "#F8F9FC"
-color_surface = "#F0F2F5"
-color_surface_elevated = "#E9ECEF"
-color_surface_hover = "#DEE2E6"
-color_text = "#ffffff"
-color_transparent = "transparent"
-color_overlay = "rgba(40, 42, 51, 0.9)"
-color_surface_light = "#d2d3db"
-color_surface_mid = "#9394a5"
-color_text_dark = "#212529"
-combo_disabled_bg = "#dee2e6"
-combo_disabled_border = "#dee2e6"
-combo_disabled_text = "#777a84"
-color_nav_inactive = "#7f7f7f"
-color_separator = "#7f7f7f"
-color_scrollbar_bg = "rgba(20, 20, 20, 0.20)"
-color_scrollbar_handle = "#bfbfbf"
-color_border_subtle = "rgba(255, 255, 255, 0.01)"
-color_border_input = "rgba(255, 255, 255, 0.5)"
-color_border_light = "rgba(255, 255, 255, 0.2)"
-color_border_faint = "rgba(255, 255, 255, 0.05)"
-color_checkbox_unchecked_bg = "rgba(255, 255, 255, 0.1)"
-color_checkbox_hover_bg = "rgba(255, 255, 255, 0.2)"
-color_favorite_star = "gold"
-color_badge_steam_bg = "rgba(0, 0, 0, 0.5)"
-color_badge_steam_text = "white"
-color_badge_default_bg = "rgba(0, 0, 0, 0.5)"
-color_badge_default_text = "white"
-color_detail_overlay = "rgba(220, 222, 226, 0.40)"
-color_cover_frame_bg = "rgba(233, 236, 239, 0.80)"
-color_no_cover_bg = "rgba(220,222,226,0.95)"
-color_detail_line = "rgba(0,0,0,0.12)"
-color_preview_btn_bg = "rgba(0, 0, 0, 0.5)"
-color_preview_btn_text = "white"
-SOURCE_CORNER = {
-    "ribbon_color": color_surface,
-    "ribbon_fold_color": "#00000096",
-    "size_ratio": 0.28,
-    "min_size": 54,
-    "min_widget_size": 4,
-    "peel_start_ratio": 0.32,
-    "peel_mid_ratio": 0.58,
-    "peel_end_ratio": 0.82,
-    "peel_shadow_width": 3,
-    "fold_start_ratio": 0.60,
-    "fold_end_ratio": 0.92,
-    "icon_center_ratio": 0.84,
-    "icon_size_ratio": 0.25,
-    "min_icon_size": 8,
-    "gradient_start": 0.0,
-    "gradient_end": 1.0,
-    "gradient_lighter": 145,
-    "gradient_darker": 112,
-    "fold_darker": 132,
-}
-
-
-def get_source_corner_config() -> dict:
-    return SOURCE_CORNER
-
-
-LIBRARY_WIDGET_STYLE = f"""
-    QWidget {{
+# === QSS styles that differ from standart-light (hardcoded) ===
+LIBRARY_WIDGET_STYLE = """
+    QWidget {
         background: qradialgradient(
-        cx:0.5, cy:0.5, radius:0.8,
-            stop:0 {color_surface_light},
-            stop:1 {color_surface_mid}
-    );
+            cx:0.5, cy:0.5, radius:0.8,
+            stop:0 #d2d3db,
+            stop:1 #9394a5
+        );
         border-radius: 0px;
-    }}
+    }
 """
 
-SETTINGS_TITLE_STYLE = f"""
-    QLabel {{
-        color: {color_text_dark};
+SETTINGS_TITLE_STYLE = """
+    QLabel {
+        color: #212529;
         height: 34px;
-        font-family: '{font_family}';
-        font-size: {font_size_normal};
+        font-family: 'Play';
+        font-size: 16px;
         font-weight: bold;
         padding: 7px;
-        background: {color_bg};
-        border-radius: {border_radius_small};
-        border:  {border_none} {color_surface};
+        background: #F8F9FC;
+        border-radius: 10px;
+        border: 0px solid #F0F2F5;
         min-width: 320px;
-    }}
+    }
 """
 
-# QGroupBox STYLES
-QGROUP_BOX_STYLE = f"""
-    QGroupBox {{
-        font-family: '{font_family}';
-        font-size: {font_size_normal};
+QGROUP_BOX_STYLE = """
+    QGroupBox {
+        font-family: 'Play';
+        font-size: 16px;
         font-weight: bold;
-        color: {color_text_dark};
-        border: {border_thin} {color_surface};
-        border-radius: {border_radius_small};
+        color: #212529;
+        border: 1px solid #F0F2F5;
+        border-radius: 10px;
         margin-top: 10px;
         margin-right: 10px;
         padding-top: 5px;
-        background: {color_transparent};
-    }}
-    QGroupBox::title {{
+        background: transparent;
+    }
+    QGroupBox::title {
         subcontrol-origin: margin;
         left: 12px;
         padding: 0 6px;
-    }}
+    }
 """
 
-# GAME CARD STYLE (GAMECARD)
-GAME_CARD_WINDOW_STYLE = f"""
-    QFrame {{
+GAME_CARD_WINDOW_STYLE = """
+    QFrame {
         border-radius: 20px;
         background: qradialgradient(cx:0.5, cy:0.5, radius:0.8,
         stop:0 rgba(255, 255, 255, 0.9),
         stop:0.3 rgba(233, 236, 239, 0.9),
         stop:0.7 rgba(210, 211, 219, 0.9),
         stop:1 rgba(180, 190, 200, 0.9));
-        border: {border_medium} {color_text};
-    }}
+        border: 2px solid #ffffff;
+    }
 """
 
-# COVER LABEL BORDER RADIUS
-COVER_LABEL_STYLE = f"border-radius: {border_radius_large};"
+COVER_LABEL_STYLE = "border-radius: 15px;"
 
-# DETAILS WIDGET (TEXT, DESCRIPTION)
-DETAILS_WIDGET_STYLE = f"background: {color_detail_overlay}; border-radius: {border_radius_large}; padding: 10px;"
-COMPACT_DETAILS_WIDGET_STYLE = f"""
-        QFrame, QWidget {{
+DETAILS_WIDGET_STYLE = "background: rgba(20,20,20,0.40); border-radius: 15px; padding: 10px;"
+COMPACT_DETAILS_WIDGET_STYLE = """
+        QFrame, QWidget {
             background: qradialgradient(
             cx:0.5, cy:0.5, radius:0.8,
                 stop:0 #E9ECEF,
-                stop:1 {color_surface_light}
+                stop:1 #d2d3db
             );
-            border-radius: {border_radius_large};
+            border-radius: 15px;
             padding: 10px;
-        }}
+        }
 """
 
-# TITLE (HEADER) ON DETAIL PAGE
-DETAIL_PAGE_TITLE_STYLE = f"font-family: '{font_family}'; font-size: 32px; color: {color_accent};"
-COMPACT_DETAIL_PAGE_TITLE_STYLE = f"font-family: '{font_family}'; font-size: 32px; color: {color_text_dark}; background: {color_transparent};"
+DETAIL_PAGE_TITLE_STYLE = "font-family: 'Play'; font-size: 32px; color: #70b8ff;"
+COMPACT_DETAIL_PAGE_TITLE_STYLE = "font-family: 'Play'; font-size: 32px; color: #212529; background: transparent;"
+DETAIL_PAGE_LINE_STYLE = "background: transparent; margin: 0 0;"
+DETAIL_PAGE_DESC_STYLE = "font-family: 'Play'; font-size: 16px; color: #212529; line-height: 1.5;"
+COMPACT_DETAIL_PAGE_DESC_STYLE = "font-family: 'Play'; font-size: 16px; color: #212529; line-height: 1.5; background: transparent;"
+COMPACT_PLAYTIME_WIDGET_STYLE = "background: transparent; border-radius: 15px; padding: 10px;"
 
-# DIVIDER LINE
-DETAIL_PAGE_LINE_STYLE = f"background: {color_transparent}; margin: 0 0;"
+LAST_LAUNCH_TITLE_STYLE = "max-height: 16px; background: qradialgradient(cx:0.5, cy:0.5, radius:0.8,stop:0 #E9ECEF,stop:1 #d2d3db); font-family: 'Play'; font-size: 11px; color: #212529; text-transform: uppercase; letter-spacing: 0.75px;"
+LAST_LAUNCH_VALUE_STYLE = "height: 16px; background: qradialgradient(cx:0.5, cy:0.5, radius:0.8,stop:0 #E9ECEF,stop:1 #d2d3db); font-family: 'Play'; font-size: 13px; color: #212529; font-weight: 600; letter-spacing: 0.75px;"
+PLAY_TIME_TITLE_STYLE = "max-height: 16px; background: qradialgradient(cx:0.5, cy:0.5, radius:0.8,stop:0 #E9ECEF,stop:1 #d2d3db); font-family: 'Play'; font-size: 11px; color: #212529; text-transform: uppercase; letter-spacing: 0.75px;"
+PLAY_TIME_VALUE_STYLE = "height: 16px; background: qradialgradient(cx:0.5, cy:0.5, radius:0.8,stop:0 #E9ECEF,stop:1 #d2d3db); font-family: 'Play'; font-size: 13px; color: #212529; font-weight: 600; letter-spacing: 0.75px;"
 
-# DESCRIPTION TEXT
-DETAIL_PAGE_DESC_STYLE = f"font-family: '{font_family}'; font-size: {font_size_normal}; color: {color_text_dark}; line-height: 1.5;"
-COMPACT_DETAIL_PAGE_DESC_STYLE = f"font-family: '{font_family}'; font-size: {font_size_normal}; color: {color_text_dark}; line-height: 1.5; background: {color_transparent};"
-
-# PLAYTIME WIDGET (PLAYTIME)
-COMPACT_PLAYTIME_WIDGET_STYLE = f"background: {color_transparent}; border-radius: {border_radius_large}; padding: 10px;"
-
-# ADDITIONAL INFO STYLES ON GAMES PAGE
-LAST_LAUNCH_TITLE_STYLE = f"max-height: 16px; background: qradialgradient(cx:0.5, cy:0.5, radius:0.8,stop:0 #E9ECEF,stop:1 {color_surface_light}); font-family: '{font_family}'; font-size: 11px; color: {color_text_dark}; text-transform: uppercase; letter-spacing: 0.75px;"
-LAST_LAUNCH_VALUE_STYLE = f"height: 16px; background: qradialgradient(cx:0.5, cy:0.5, radius:0.8,stop:0 #E9ECEF,stop:1 {color_surface_light}); font-family: '{font_family}'; font-size: 13px; color: {color_text_dark}; font-weight: 600; letter-spacing: 0.75px;"
-PLAY_TIME_TITLE_STYLE = f"max-height: 16px; background: qradialgradient(cx:0.5, cy:0.5, radius:0.8,stop:0 #E9ECEF,stop:1 {color_surface_light}); font-family: '{font_family}'; font-size: 11px; color: {color_text_dark}; text-transform: uppercase; letter-spacing: 0.75px;"
-PLAY_TIME_VALUE_STYLE = f"height: 16px; background: qradialgradient(cx:0.5, cy:0.5, radius:0.8,stop:0 #E9ECEF,stop:1 {color_surface_light}); font-family: '{font_family}'; font-size: 13px; color: {color_text_dark}; font-weight: 600; letter-spacing: 0.75px;"
-
-# PLAY BUTTON STYLE
-PLAY_BUTTON_STYLE = f"""
-    QPushButton {{
-        background: qradialgradient(
-        cx:0.5, cy:0.5, radius:0.8,
-            stop:0 #E9ECEF,
-            stop:1 {color_surface_light}
-        );
-        border: {border_thin} {color_text};
-        border-radius: {border_radius_small};
-        font-size: {font_size_normal};
+PLAY_BUTTON_STYLE = """
+    QPushButton {
+        background: qradialgradient(cx:0.5, cy:0.5, radius:0.8, stop:0 #E9ECEF, stop:1 #d2d3db);
+        border: 1px solid #ffffff;
+        border-radius: 10px;
+        font-size: 16px;
         margin-top: 15px;
-        color: {color_text_dark};
+        color: #212529;
         font-weight: bold;
-        font-family: '{font_family}';
+        font-family: 'Play';
         padding: 5px 10px;
         min-width: 120px;
         min-height: 30px;
-    }}
-    QPushButton:hover {{
-        background: {color_accent};
-    }}
-    QPushButton:pressed {{
-        background: {color_accent};
-    }}
-    QPushButton:focus {{
-        background: {color_accent};
-    }}
+    }
+    QPushButton:hover, QPushButton:pressed, QPushButton:focus {
+        background: #70b8ff;
+    }
 """
 
-# STYLE FOR "ADD GAME" AND "BACK" BUTTONS ON DETAIL PAGE AND LIBRARY
-ADDGAME_BACK_BUTTON_STYLE = f"""
-    QPushButton {{
-        background: qradialgradient(
-        cx:0.5, cy:0.5, radius:0.8,
-            stop:0 #E9ECEF,
-            stop:1 {color_surface_light}
-        );
-        border: {border_thin} {color_text};
-        border-radius: {border_radius_small};
-        color: {color_text_dark};
-        font-size: {font_size_normal};
-        font-family: '{font_family}';
+ADDGAME_BACK_BUTTON_STYLE = """
+    QPushButton {
+        background: qradialgradient(cx:0.5, cy:0.5, radius:0.8, stop:0 #E9ECEF, stop:1 #d2d3db);
+        border: 1px solid #ffffff;
+        border-radius: 10px;
+        color: #212529;
+        font-size: 16px;
+        font-family: 'Play';
         padding: 5px 10px;
         min-width: 120px;
         min-height: 25px;
-    }}
-    QPushButton:hover {{
-        background: {color_accent};
-    }}
-    QPushButton:pressed {{
-        background: {color_accent};
-    }}
-    QPushButton:focus {{
-        background: {color_accent};
-        border: {border_thin} {color_accent};
-    }}
+    }
+    QPushButton:hover, QPushButton:pressed {
+        background: #70b8ff;
+    }
+    QPushButton:focus {
+        background: #70b8ff;
+        border: 1px solid #70b8ff;
+    }
 """
 
-LIBRARY_CONTROLS_BUTTON_STYLE = f"""
-    QPushButton {{
-        background: qradialgradient(
-        cx:0.5, cy:0.5, radius:0.8,
-            stop:0 #E9ECEF,
-            stop:1 {color_surface_light}
-        );
-        border: {border_thin} {color_text};
-        border-radius: {border_radius_small};
-        color: {color_text_dark};
-        font-size: {font_size_normal};
-        font-family: '{font_family}';
+LIBRARY_CONTROLS_BUTTON_STYLE = """
+    QPushButton {
+        background: qradialgradient(cx:0.5, cy:0.5, radius:0.8, stop:0 #E9ECEF, stop:1 #d2d3db);
+        border: 1px solid #ffffff;
+        border-radius: 10px;
+        color: #212529;
+        font-size: 16px;
+        font-family: 'Play';
         padding: 5px 10px;
         min-width: 24px;
         min-height: 25px;
-    }}
-    QPushButton:hover,
-    QPushButton:pressed,
-    QPushButton:focus,
-    QPushButton:checked {{
-        background: qradialgradient(
-        cx:0.5, cy:0.5, radius:0.8,
-            stop:0 #E9ECEF,
-            stop:1 {color_surface_light}
-        );
-        border: {border_thin} {color_accent};
-    }}
+    }
+    QPushButton:hover, QPushButton:pressed, QPushButton:focus, QPushButton:checked {
+        background: qradialgradient(cx:0.5, cy:0.5, radius:0.8, stop:0 #E9ECEF, stop:1 #d2d3db);
+        border: 1px solid #70b8ff;
+    }
 """
 
-LIBRARY_FILTER_COMBOBOX_STYLE = f"""
-    QComboBox {{
-        background: {color_bg};
-        border: {border_thin} {color_text};
-        border-radius: {border_radius_small};
+LIBRARY_FILTER_COMBOBOX_STYLE = """
+    QComboBox {
+        background: #F8F9FC;
+        border: 1px solid #ffffff;
+        border-radius: 10px;
         padding-left: 12px;
         height: 30px;
-        color: {color_text_dark};
-        font-family: '{font_family}';
-        font-size: {font_size_normal};
+        color: #212529;
+        font-family: 'Play';
+        font-size: 16px;
         min-width: 120px;
         combobox-popup: 0;
-    }}
-    QComboBox:hover,
-    QComboBox:focus{{
-        background: {color_bg};
-        border: {border_thin} {color_accent};
-    }}
-    QComboBox:on {{
-        background: {color_bg};
-        border: {border_thin} {color_accent};
+    }
+    QComboBox:hover, QComboBox:focus {
+        background: #F8F9FC;
+        border: 1px solid #70b8ff;
+    }
+    QComboBox:on {
+        background: #F8F9FC;
+        border: 1px solid #70b8ff;
         border-bottom-style: none;
         border-top-left-radius: 10px;
         border-top-right-radius: 10px;
         border-bottom-left-radius: 0px;
         border-bottom-right-radius: 0px;
-    }}
-    QComboBox::drop-down {{
+    }
+    QComboBox::drop-down {
         subcontrol-origin: padding;
         subcontrol-position: center right;
-        border-left: {border_thin} rgba(255, 255, 255, 0.05);
+        border-left: 1px solid rgba(255, 255, 255, 0.05);
         padding: 12px;
         height: 12px;
         width: 12px;
-    }}
-    QComboBox::down-arrow {{
-        image: url({theme_manager.get_icon("down", current_theme_name, as_path=True)});
+    }
+    QComboBox::down-arrow {
+        image: url(%s);
         padding: 12px;
         height: 10px;
         width: 10px;
-    }}
-    QComboBox::down-arrow:on {{
-        image: url({theme_manager.get_icon("up", current_theme_name, as_path=True)});
+    }
+    QComboBox::down-arrow:on {
+        image: url(%s);
         padding: 12px;
         height: 10px;
         width: 10px;
-    }}
-    QComboBox QAbstractItemView {{
+    }
+    QComboBox QAbstractItemView {
         outline: none;
-        background: {color_surface};
-        border: {border_thin} {color_accent};
+        background: #F0F2F5;
+        border: 1px solid #70b8ff;
         border-top-style: none;
         border-top-left-radius: 0px;
         border-top-right-radius: 0px;
         border-bottom-left-radius: 10px;
         border-bottom-right-radius: 10px;
-    }}
-    QComboBox QAbstractItemView::item {{
+    }
+    QComboBox QAbstractItemView::item {
         padding: 3px 3px 3px 6px;
         margin: 1px;
         min-height: 24px;
-        border-radius: {border_radius_small};
-        color: {color_text_dark};
-    }}
+        border-radius: 10px;
+        color: #212529;
+    }
     QComboBox QAbstractItemView::item:hover,
-    QComboBox QAbstractItemView::item:selected {{
-        background: {color_accent};
-        color: {color_text_dark};
-    }}
-"""
+    QComboBox QAbstractItemView::item:selected {
+        background: #70b8ff;
+        color: #212529;
+    }
+""" % (
+    theme_manager.get_icon("down", current_theme_name, as_path=True),
+    theme_manager.get_icon("up", current_theme_name, as_path=True),
+)
 
-# SEARCH FIELD STYLE
-SEARCH_EDIT_STYLE = f"""
-    QLineEdit {{
-        background: {color_bg};
-        border: {border_none};
-        border-radius: {border_radius_small};
+SEARCH_EDIT_STYLE = """
+    QLineEdit {
+        background: #F8F9FC;
+        border: 0px solid;
+        border-radius: 10px;
         padding: 5px 10px;
-        font-family: '{font_family}';
-        font-size: {font_size_normal};
-        color: {color_text_dark};
+        font-family: 'Play';
+        font-size: 16px;
+        color: #212529;
         min-height: 25px;
-    }}
-    QLineEdit:hover {{
-        border: {border_thin} {color_accent};
-    }}
-    QLineEdit:focus {{
-        border: {border_thin} {color_accent};
-    }}
+    }
+    QLineEdit:hover, QLineEdit:focus {
+        border: 1px solid #70b8ff;
+    }
 """
 
-# NAVIGATION TAB BUTTON STYLE
-NAV_BUTTON_STYLE = f"""
-    NavLabel {{
-        background: {color_transparent};
+NAV_BUTTON_STYLE = """
+    NavLabel {
+        background: transparent;
         padding: 6px 3px;
         margin: 10px 0 10px 10px;
-        color: {color_overlay};
-        font-family: '{font_family}';
-        font-size: {font_size_normal};
+        color: rgba(40, 42, 51, 0.9);
+        font-family: 'Play';
+        font-size: 16px;
         text-transform: uppercase;
-        border: {color_accent};
+        border: #70b8ff;
         border-radius: 0px;
-    }}
-    NavLabel[checked = true] {{
-        background: {color_transparent};
-        color: {color_text_dark};
+    }
+    NavLabel[checked = true] {
+        background: transparent;
+        color: #212529;
         font-weight: normal;
         text-decoration: none;
-        border-bottom: {border_medium} {color_accent};
+        border-bottom: 2px solid #70b8ff;
         border-radius: 0px;
-    }}
-    NavLabel:hover {{
-        background: {color_transparent};
-        color: {color_text_dark};
-        border-bottom: {border_medium} #7f7f7f;
-    }}
-    NavLabel[checked = true]:hover {{
-        background: {color_transparent};
-        color: {color_text_dark};
-        border-bottom: {border_medium} {color_accent};
-    }}
+    }
+    NavLabel:hover {
+        background: transparent;
+        color: #212529;
+        border-bottom: 2px solid #7f7f7f;
+    }
+    NavLabel[checked = true]:hover {
+        background: transparent;
+        color: #212529;
+        border-bottom: 2px solid #70b8ff;
+    }
 """
 
-WINETRICKS_TABBLE_STYLE = f"""
-QTableWidget {{
-    background: {color_transparent};
-    color: {color_text_dark};
-    gridline-color: {color_transparent};
-    alternate-background-color: {color_surface_hover};
-    border: {border_none};
-    border-radius: {border_radius_small};
-    font-family: '{font_family}';
-    font-size: {font_size_normal};
-}}
-QHeaderView::section {{
-    background: {color_surface_elevated};
-    color: {color_text_dark};
-    padding: 2px;
-    border: {border_none};
-    font-weight: bold;
-    font-family: '{font_family}';
-    font-size: {font_size_normal};
-}}
-QTableWidget::item {{
-    padding: 3px;
-    border-bottom: {border_none } {color_surface};
-    height: 32px;
-}}
-QTableWidget::item:selected,
-QTableWidget::item:focus,
-QTableWidget::item:selected:focus {{
-    background: {color_accent};
-    color: {color_text_dark};
-    selection-background-color: {color_accent};
-}}
-QTableWidget::item:hover {{
-    background: {color_transparent};
-}}
-QTableWidget::item:selected:hover {{
-    background: {color_accent};
-    color: {color_text_dark};
-}}
-"""
-
-# COMBOBOX
-COMBOBOX_STYLE = f"""
-    QComboBox {{
-        background: {color_surface};
-        border: {border_medium} transparent;
-        border-radius: {border_radius_small};
+COMBOBOX_STYLE = """
+    QComboBox {
+        background: #F0F2F5;
+        border: 2px solid transparent;
+        border-radius: 10px;
         padding-left: 12px;
         height: 30px;
-        color: {color_text_dark};
-        font-family: '{font_family}';
-        font-size: {font_size_normal};
+        color: #212529;
+        font-family: 'Play';
+        font-size: 16px;
         min-width: 120px;
         combobox-popup: 0;
-    }}
-    QComboBox:on {{
-        background: {color_bg};
-        border: {border_medium} {color_accent};
+    }
+    QComboBox:on {
+        background: #F8F9FC;
+        border: 2px solid #70b8ff;
         border-bottom-style: none;
         border-top-left-radius: 10px;
         border-top-right-radius: 10px;
         border-bottom-left-radius: 0px;
         border-bottom-right-radius: 0px;
-    }}
-    QComboBox:hover {{
-        border: {border_medium} {color_accent};
-        background: {color_accent};
-    }}
-    /* Focus state */
-    QComboBox:focus {{
-        border: {border_medium} {color_accent};
-        background-color: {color_accent};
-    }}
-    QComboBox:disabled {{
-        background: {color_surface_hover};
-        border: {border_medium} {color_surface_hover};
-        color: {combo_disabled_text};
-    }}
-    QComboBox::drop-down {{
+    }
+    QComboBox:hover {
+        border: 2px solid #70b8ff;
+        background: #70b8ff;
+    }
+    QComboBox:focus {
+        border: 2px solid #70b8ff;
+        background-color: #70b8ff;
+    }
+    QComboBox:disabled {
+        background: #dee2e6;
+        border: 2px solid #dee2e6;
+        color: #777a84;
+    }
+    QComboBox::drop-down {
         subcontrol-origin: padding;
         subcontrol-position: center right;
-        border-left: {border_thin} rgba(255, 255, 255, 0.05);
+        border-left: 1px solid rgba(255, 255, 255, 0.05);
         padding: 12px;
         height: 12px;
         width: 12px;
-    }}
-    QComboBox::down-arrow {{
-        image: url({theme_manager.get_icon("down", current_theme_name, as_path=True)});
+    }
+    QComboBox::down-arrow {
+        image: url(%s);
         padding: 12px;
         height: 10px;
         width: 10px;
-    }}
-    QComboBox::down-arrow:on {{
-        image: url({theme_manager.get_icon("up", current_theme_name, as_path=True)});
+    }
+    QComboBox::down-arrow:on {
+        image: url(%s);
         padding: 12px;
         height: 10px;
         width: 10px;
-    }}
-/* List when combobox is open */
-    QComboBox QAbstractItemView {{
+    }
+    QComboBox QAbstractItemView {
         outline: none;
-        background: {color_surface};
-        border: {border_medium} {color_accent};
+        background: #F0F2F5;
+        border: 2px solid #70b8ff;
         border-top-style: none;
         border-top-left-radius: 0px;
         border-top-right-radius: 0px;
         border-bottom-left-radius: 10px;
         border-bottom-right-radius: 10px;
-    }}
-    QComboBox:editable {{
-        background: {color_surface};
-    }}
-    QComboBox::drop-down:editable:focus {{
-        background: {color_accent};
-        border-top-left-radius: 0px;
-        border-top-right-radius: 10px;
-        border-bottom-left-radius: 0px;
-        border-bottom-right-radius: 10px;
-    }}
-    QListView {{
-        background: {color_surface};
-    }}
-    QListView::item {{
+    }
+    QComboBox QAbstractItemView::item {
         padding: 3px 3px 3px 6px;
         margin: 1px;
         min-height: 24px;
-        border-radius: {border_radius_small};
-        color: {color_text_dark};
-    }}
-    QListView::item:hover {{
-        background: {color_bg};
-    }}
-    QListView::item:selected {{
-        background: {color_bg};
-    }}
-    /* Selection in list when item is focused */
-    QListView::item:focus {{
-        background: {color_accent};
-        color: {color_text_dark};
-    }}
-"""
+        border-radius: 10px;
+        color: #212529;
+    }
+    QComboBox QAbstractItemView::item:hover,
+    QComboBox QAbstractItemView::item:selected {
+        background: #70b8ff;
+        color: #212529;
+    }
+""" % (
+    theme_manager.get_icon("down", current_theme_name, as_path=True),
+    theme_manager.get_icon("up", current_theme_name, as_path=True),
+)
 
-SETTINGS_TABLE_COMBOBOX_STYLE = f"""
-    QComboBox#settingsTableCombo:hover,
-    QComboBox#settingsTableCombo:focus {{
-        background: {color_surface};
-        border: {border_medium} {color_accent};
-    }}
-"""
-
-LINE_EDIT_STYLE = f"""
-    QLineEdit {{
-        background: {color_surface};
-        border: {border_medium} rgba(255, 255, 255, 0.01);
-        border-radius: {border_radius_small};
+LINE_EDIT_STYLE = """
+    QLineEdit {
+        background: #F0F2F5;
+        border: 2px solid rgba(255, 255, 255, 0.01);
+        border-radius: 10px;
         height: 30px;
         padding-left: 12px;
-        color: {color_text_dark};
-        font-family: '{font_family}';
-        font-size: {font_size_normal};
-    }}
-    QLineEdit:hover {{
-        background: {color_surface};
-        border: {border_medium} {color_accent};
-    }}
-    QLineEdit:focus {{
-        border: {border_medium} {color_accent};
-        background-color: {color_surface_hover};
-    }}
+        color: #212529;
+        font-family: 'Play';
+        font-size: 16px;
+    }
+    QLineEdit:hover {
+        background: #F0F2F5;
+        border: 2px solid #70b8ff;
+    }
+    QLineEdit:focus {
+        border: 2px solid #70b8ff;
+        background-color: #DEE2E6;
+    }
 """
 
-ADDGAME_INPUT_STYLE = f"""
-    QLineEdit {{
-        background: {color_surface};
-        border: {border_medium} transparent;
-        border-radius: {border_radius_small};
+ADDGAME_INPUT_STYLE = """
+    QLineEdit {
+        background: #F0F2F5;
+        border: 2px solid transparent;
+        border-radius: 10px;
         height: 30px;
         padding-left: 12px;
-        color: {color_text_dark};
-        font-family: '{font_family}';
-        font-size: {font_size_normal};
-    }}
-    QLineEdit:hover {{
-        background: {color_surface};
-        border: {border_medium} {color_accent};
-    }}
-    QLineEdit:focus {{
-        border: {border_medium} {color_accent};
-        background-color: {color_surface_hover};
-    }}
+        color: #212529;
+        font-family: 'Play';
+        font-size: 16px;
+    }
+    QLineEdit:hover {
+        background: #F0F2F5;
+        border: 2px solid #70b8ff;
+    }
+    QLineEdit:focus {
+        border: 2px solid #70b8ff;
+        background-color: #DEE2E6;
+    }
 """
 
-TAB_STYLE = f"""
-    QTabWidget::pane {{
-        border-top: 1px solid {color_surface};
-        background: {color_transparent};
-    }}
-    QTabBar::tab {{
-        background: {color_surface};
-        color: {color_text_dark};
+TAB_STYLE = """
+    QTabWidget::pane {
+        border-top: 1px solid #F0F2F5;
+        background: transparent;
+    }
+    QTabBar::tab {
+        background: #F0F2F5;
+        color: #212529;
         padding: 6px 12px;
-        border-top-left-radius: {border_radius_small};
-        border-top-right-radius: {border_radius_small};
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
         margin-right: 2px;
-        font-family: '{font_family}';
-        font-size: {font_size_normal};
-    }}
-    QTabBar::tab:selected {{
-        background: {color_accent};
-        color: {color_text_dark};
-    }}
-    QTabBar::tab:hover {{
-        background: {color_accent};
-    }}
+        font-family: 'Play';
+        font-size: 16px;
+    }
+    QTabBar::tab:selected {
+        background: #70b8ff;
+        color: #212529;
+    }
+    QTabBar::tab:hover {
+        background: #70b8ff;
+    }
 """
 
-# HINT BAR STYLE
-HINT_BAR_STYLE = f"""
-    QWidget {{
-        max-height: 40px;
-    }}
-"""
-
-# ACTION BUTTONS STYLE (SAVE, APPLY, ETC.)
-ACTION_BUTTON_STYLE = f"""
-    QPushButton {{
-        background: {color_bg};
-        border: {border_medium} transparent;
-        border-radius: {border_radius_small};
-        color: {color_text_dark};
-        font-size: {font_size_normal};
-        font-family: '{font_family}';
+ACTION_BUTTON_STYLE = """
+    QPushButton {
+        background: #F8F9FC;
+        border: 2px solid transparent;
+        border-radius: 10px;
+        color: #212529;
+        font-size: 16px;
+        font-family: 'Play';
         padding: 5px 16px;
         min-height: 20px;
-    }}
-    QPushButton:hover {{
-        background: {color_accent};
-        border: {border_medium} {color_accent};
-    }}
-    QPushButton:pressed {{
-        background: {color_bg};
-    }}
-    QPushButton:focus {{
-        border: {border_medium} {color_accent};
-        background-color: {color_accent};
-    }}
+    }
+    QPushButton:hover {
+        background: #70b8ff;
+        border: 2px solid #70b8ff;
+    }
+    QPushButton:pressed {
+        background: #F8F9FC;
+    }
+    QPushButton:focus {
+        border: 2px solid #70b8ff;
+        background-color: #70b8ff;
+    }
 """
 
-# ACTION BUTTON ACTIVE STYLE (MANGOHUD, GAMESCOPE ETC.)
-ACTION_BUTTON_ACTIVE_STYLE = f"""
-    QPushButton {{
-        background: {color_surface};
-        border: {border_medium} {color_accent};
-        border-radius: {border_radius_small};
-        color: {color_text_dark};
-        font-size: {font_size_normal};
-        font-family: '{font_family}';
+ACTION_BUTTON_ACTIVE_STYLE = """
+    QPushButton {
+        background: #F0F2F5;
+        border: 2px solid #70b8ff;
+        border-radius: 10px;
+        color: #212529;
+        font-size: 16px;
+        font-family: 'Play';
         padding: 5px 16px;
         min-height: 20px;
-    }}
-    QPushButton:hover {{
-        background: {color_accent};
-        border: {border_medium} {color_accent};
-    }}
-    QPushButton:pressed {{
-        background: {color_bg};
-    }}
-    QPushButton:focus {{
-        border: {border_medium} {color_accent};
-        background-color: {color_accent};
-    }}
+    }
+    QPushButton:hover {
+        background: #70b8ff;
+        border: 2px solid #70b8ff;
+    }
+    QPushButton:pressed {
+        background: #F8F9FC;
+    }
+    QPushButton:focus {
+        border: 2px solid #70b8ff;
+        background-color: #70b8ff;
+    }
 """
