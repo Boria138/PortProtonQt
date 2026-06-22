@@ -377,8 +377,14 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
     def resizeEvent(self, event):
         super().resizeEvent(event)
         if hasattr(self, '_animations') and self._animations:
+            current_detail_page = getattr(self, "currentDetailPage", None)
+            animation_type = self.theme.GAME_CARD_ANIMATION.get(
+                "detail_page_animation_type", "fade"
+            )
             for widget, animation in list(self._animations.items()):
                 try:
+                    if widget is current_detail_page and animation_type == "fade":
+                        continue
                     if animation.state() == QAbstractAnimation.State.Running:
                         animation.stop()
                         widget.setWindowOpacity(1.0)
