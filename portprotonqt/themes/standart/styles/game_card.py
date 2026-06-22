@@ -3,22 +3,22 @@ from .constants import *
 # GAME CARD STYLE (GAMECARD)
 GAME_CARD_WINDOW_STYLE = f"""
     QFrame {{
-        border-radius: 20px;
-        background: rgba(20, 20, 20, 0.40);
-        border:  {border_a} {color_g};
+        border-radius: {border_radius_card};
+        background: {color_detail_overlay};
+        border:  {border_none} transparent;
     }}
 """
 
 # GAME NAME LABEL IN CARD (QLabel)
 GAME_CARD_NAME_LABEL_STYLE = f"""
     QLabel {{
-        color: {color_f};
+        color: {color_text};
         font-family: '{font_family}';
-        font-size: {font_size_a};
+        font-size: {font_size_normal};
         font-weight: bold;
-        background-color: {color_g};
-        border-bottom-left-radius: 20px;
-        border-bottom-right-radius: 20px;
+        background-color: {color_transparent};
+        border-bottom-left-radius: {border_radius_card};
+        border-bottom-right-radius: {border_radius_card};
         padding: 14px, 7px, 3px, 7px;
         qproperty-wordWrap: true;
     }}
@@ -28,19 +28,19 @@ GAME_CARD_NAME_LABEL_STYLE = f"""
 def get_protondb_badge_style(tier):
     tier = tier.lower()
     tier_colors = {
-        "platinum": {"background": "rgba(255,255,255,0.9)", "color": "black"},
-        "gold": {"background": "rgba(253,185,49,0.7)", "color": "black"},
-        "silver": {"background": "rgba(169,169,169,0.8)", "color": "black"},
-        "bronze": {"background": "rgba(205,133,63,0.7)", "color": "black"},
-        "borked": {"background": "rgba(255,0,0,0.7)", "color": "black"},
-        "pending": {"background": "rgba(160,82,45,0.7)", "color": "black"}
+        "platinum": {"background": color_protondb_platinum_bg, "color": color_protondb_platinum_text},
+        "gold": {"background": color_protondb_gold_bg, "color": color_protondb_gold_text},
+        "silver": {"background": color_protondb_silver_bg, "color": color_protondb_silver_text},
+        "bronze": {"background": color_protondb_bronze_bg, "color": color_protondb_bronze_text},
+        "borked": {"background": color_protondb_borked_bg, "color": color_protondb_borked_text},
+        "pending": {"background": color_protondb_pending_bg, "color": color_protondb_pending_text},
     }
-    colors = tier_colors.get(tier, {"background": "rgba(0, 0, 0, 0.5)", "color": "white"})
+    colors = tier_colors.get(tier, {"background": color_badge_default_bg, "color": color_badge_default_text})
     return f"""
         qproperty-alignment: AlignCenter;
         background-color: {colors["background"]};
         color: {colors["color"]};
-        border-radius: 5px;
+        border-radius: {border_radius_badge};
         font-family: '{font_family}';
         font-weight: bold;
     """
@@ -53,14 +53,14 @@ def get_ppdb_badge_style(tier):
         "gold": {"background": color_ppdb_gold, "color": "black"},
         "silver": {"background": color_ppdb_silver, "color": "black"},
         "bronze": {"background": color_ppdb_bronze, "color": "black"},
-        "broken": {"background": color_ppdb_broken, "color": "black"}
+        "broken": {"background": color_ppdb_broken, "color": "black"},
     }
-    colors = tier_colors.get(tier, {"background": "rgba(0, 0, 0, 0.5)", "color": "white"})
+    colors = tier_colors.get(tier, {"background": color_badge_default_bg, "color": color_badge_default_text})
     return f"""
         qproperty-alignment: AlignCenter;
         background-color: {colors["background"]};
         color: {colors["color"]};
-        border-radius: 5px;
+        border-radius: {border_radius_badge};
         font-family: '{font_family}';
         font-weight: bold;
     """
@@ -69,44 +69,44 @@ def get_ppdb_badge_style(tier):
 def get_anticheat_badge_style(status):
     status = status.lower()
     status_colors = {
-        "supported": {"background": "rgba(102, 168, 15, 0.7)", "color": "black"},
-        "running": {"background": "rgba(25, 113, 194, 0.7)", "color": "black"},
-        "planned": {"background": "rgba(156, 54, 181, 0.7)", "color": "black"},
-        "broken": {"background": "rgba(232, 89, 12, 0.7)", "color": "black"},
-        "denied": {"background": "rgba(224, 49, 49, 0.7)", "color": "black"}
+        "supported": {"background": color_anticheat_supported_bg, "color": color_anticheat_supported_text},
+        "running": {"background": color_anticheat_running_bg, "color": color_anticheat_running_text},
+        "planned": {"background": color_anticheat_planned_bg, "color": color_anticheat_planned_text},
+        "broken": {"background": color_anticheat_broken_bg, "color": color_anticheat_broken_text},
+        "denied": {"background": color_anticheat_denied_bg, "color": color_anticheat_denied_text},
     }
-    colors = status_colors.get(status, {"background": "rgba(0, 0, 0, 0.5)", "color": "white"})
+    colors = status_colors.get(status, {"background": color_badge_default_bg, "color": color_badge_default_text})
     return f"""
         qproperty-alignment: AlignCenter;
         background-color: {colors["background"]};
         color: {colors["color"]};
-        font-size: {font_size_a};
-        border-radius: 5px;
+        font-size: {font_size_normal};
+        border-radius: {border_radius_badge};
         font-weight: bold;
     """
 
 # STEAM BADGE STYLES
-STEAM_BADGE_STYLE= f"""
+STEAM_BADGE_STYLE = f"""
     qproperty-alignment: AlignCenter;
-    background: rgba(0, 0, 0, 0.5);
-    color: white;
-    border-radius: 5px;
+    background: {color_badge_steam_bg};
+    color: {color_badge_steam_text};
+    border-radius: {border_radius_badge};
     font-family: '{font_family}';
     font-weight: bold;
 """
 
 
-def get_source_corner_colors() -> dict:
-    return {"color": "#3f424d", "fold_color": "#00000096"}
-
-
 # ADDITIONAL INFO STYLES ON GAMES PAGE
-LAST_LAUNCH_TITLE_STYLE = f"max-height: 16px; background: rgba(20,20,20,0.40);font-family: '{font_family}'; font-size: 11px; color: {color_f}; text-transform: uppercase; letter-spacing: 0.75px;"
-LAST_LAUNCH_VALUE_STYLE = f"height: 16px; background: rgba(20,20,20,0.40);font-family: '{font_family}'; font-size: 13px; color: {color_f}; font-weight: 600; letter-spacing: 0.75px;"
-PLAY_TIME_TITLE_STYLE = f"max-height: 16px; background: rgba(20,20,20,0.40);font-family: '{font_family}'; font-size: 11px; color: {color_f}; text-transform: uppercase; letter-spacing: 0.75px;"
-PLAY_TIME_VALUE_STYLE = f"height: 16px; background: rgba(20,20,20,0.40);font-family: '{font_family}'; font-size: 13px; color: {color_f}; font-weight: 600; letter-spacing: 0.75px;"
+LAST_LAUNCH_TITLE_STYLE = f"max-height: 16px; background: {color_detail_overlay};font-family: '{font_family}'; font-size: {font_size_small}; color: {color_text}; text-transform: uppercase; letter-spacing: 0.75px;"
+LAST_LAUNCH_VALUE_STYLE = f"height: 16px; background: {color_detail_overlay};font-family: '{font_family}'; font-size: {font_size_value}; color: {color_text}; font-weight: 600; letter-spacing: 0.75px;"
+PLAY_TIME_TITLE_STYLE = f"max-height: 16px; background: {color_detail_overlay};font-family: '{font_family}'; font-size: {font_size_small}; color: {color_text}; text-transform: uppercase; letter-spacing: 0.75px;"
+PLAY_TIME_VALUE_STYLE = f"height: 16px; background: {color_detail_overlay};font-family: '{font_family}'; font-size: {font_size_value}; color: {color_text}; font-weight: 600; letter-spacing: 0.75px;"
 GAMEPAD_SUPPORT_VALUE_STYLE = f"""
-    font-family: '{font_family}'; font-size: {font_size_a}; color: {color_gamepad_supported};
-    font-weight: bold; background: {color_g};
-    border-radius: 5px; padding: 4px 8px;
+    font-family: '{font_family}'; font-size: {font_size_normal}; color: {color_gamepad_supported};
+    font-weight: bold; background: {color_transparent};
+    border-radius: {border_radius_badge}; padding: 4px 8px;
 """
+
+
+def get_source_corner_config() -> dict:
+    return SOURCE_CORNER

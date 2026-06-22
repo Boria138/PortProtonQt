@@ -2,45 +2,45 @@ from .constants import *
 
 SETTINGS_FRAME_STYLE = f"""
     QFrame {{
-        background: {color_b};
-        border:  {border_a} {color_g};
-        border-radius: {border_radius_b};
+        background: {color_bg};
+        border:  {border_none} transparent;
+        border-radius: {border_radius_large};
     }}
 """
 
 SETTINGS_FRAME_TITLE_STYLE = f"""
     QLabel {{
         font-family: '{font_family}';
-        font-size: {font_size_a};
+        font-size: {font_size_normal};
         font-weight: bold;
-        color: {color_a};
+        color: {color_accent};
     }}
 """
 
 SETTINGS_TITLE_STYLE = f"""
     QLabel {{
-        color: {color_f};
+        color: {color_text};
         height: 34px;
         font-family: '{font_family}';
-        font-size: {font_size_a};
+        font-size: {font_size_normal};
         font-weight: bold;
         padding: 7px;
-        background: {color_d};
-        border-radius: {border_radius_a};
+        background: {color_surface_elevated};
+        border-radius: {border_radius_small};
         min-width: 320px;
     }}
 """
 
 SETTINGS_TITLE_CHECKBOX_STYLE = f"""
     QLabel {{
-        color: {color_f};
+        color: {color_text};
         height: 34px;
         font-family: '{font_family}';
-        font-size: {font_size_a};
+        font-size: {font_size_normal};
         font-weight: bold;
         padding: 7px;
-        background: {color_h};
-        border-radius: {border_radius_a};
+        background: {color_transparent};
+        border-radius: {border_radius_small};
         min-width: 180px;
     }}
 """

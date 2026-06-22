@@ -213,7 +213,7 @@ class GameCardAnimations:
         elif (self.game_card._hovered or self.game_card._focused) and animation_type in {"fill", "scale_fill"}:
             fill_color_value = self.theme.GAME_CARD_ANIMATION.get(
                 "fill_color",
-                getattr(self.theme, "color_a", self.theme.color_f),
+                getattr(self.theme, "color_accent", self.theme.color_text),
             )
             fill_alpha = int(self.theme.GAME_CARD_ANIMATION.get("fill_alpha", 90))
             fill_color = QColor(fill_color_value)
@@ -223,7 +223,7 @@ class GameCardAnimations:
         elif (self.game_card._hovered or self.game_card._focused) and animation_type == "stripe":
             stripe_color_value = self.theme.GAME_CARD_ANIMATION.get(
                 "stripe_color",
-                getattr(self.theme, "color_a", self.theme.color_f),
+                getattr(self.theme, "color_accent", self.theme.color_text),
             )
             stripe_alpha = int(self.theme.GAME_CARD_ANIMATION.get("stripe_alpha", 255))
             stripe_color = QColor(stripe_color_value)
@@ -232,7 +232,7 @@ class GameCardAnimations:
         elif (self.game_card._hovered or self.game_card._focused) and animation_type == "glow":
             glow_color_value = self.theme.GAME_CARD_ANIMATION.get(
                 "stripe_color",
-                getattr(self.theme, "color_a", self.theme.color_f),
+                getattr(self.theme, "color_accent", self.theme.color_text),
             )
             glow_base_alpha = int(self.theme.GAME_CARD_ANIMATION.get("glow_base_alpha", 120))
             glow_pulse_alpha = int(self.theme.GAME_CARD_ANIMATION.get("glow_pulse_alpha", 80))

@@ -2,88 +2,88 @@ from .constants import *
 
 CONTEXT_MENU_STYLE = f"""
     QMenu {{
-        background: {color_b};
-        color: {color_f};
+        background: {color_bg};
+        color: {color_text};
         font-family: '{font_family}';
-        font-size: {font_size_a};
+        font-size: {font_size_normal};
         padding: 5px;
         min-width: 150px;
-        border: {border_b} {color_a};
-        border-radius: {border_radius_a};
+        border: {border_thin} {color_accent};
+        border-radius: {border_radius_small};
     }}
     QMenu::icon {{
         margin-left: 15px;
     }}
     QMenu::item {{
         padding: 10px 20px 10px 10px;
-        background: {color_h};
-        border-radius: {border_radius_a};
-        color: {color_f};
+        background: {color_transparent};
+        border-radius: {border_radius_small};
+        color: {color_text};
     }}
     QMenu::item:selected {{
-        background: {color_a};
-        color: {color_f};
+        background: {color_accent};
+        color: {color_text};
     }}
     QMenu::item:disabled {{
-            color: #7f7f7f;
+            color: {color_separator};
         }}
     QMenu::item:hover {{
-        background: {color_a};
-        color: {color_f};
+        background: {color_accent};
+        color: {color_text};
     }}
     QMenu::item:focus {{
-        background: {color_a};
-        color: {color_f};
-        border: {border_b} rgba(255, 255, 255, 0.3);
-        border-radius: {border_radius_a};
+        background: {color_accent};
+        color: {color_text};
+        border: {border_thin} {color_border_focus};
+        border-radius: {border_radius_small};
     }}
     QMenu::separator {{
         height: 1px;
-        background-color: #7f7f7f;
+        background-color: {color_separator};
         margin: 3px 6px;
     }}
 """
 
 VIRTUAL_KEYBOARD_STYLE = f"""
 QWidget {{
-    background: {color_i};
+    background: {color_overlay};
 }}
 QPushButton {{
-    font-size: 14px;
-    border: {border_a} {color_h};
-    border-radius: {border_radius_a};
+    font-size: {font_size_keyboard};
+    border: {border_none} {color_transparent};
+    border-radius: {border_radius_small};
     min-width: 30px;
     min-height: 30px;
     padding: 5px;
-    background-color: {color_c};
-    color: {color_f};
+    background-color: {color_surface};
+    color: {color_text};
 }}
 QPushButton:hover {{
-    background-color: {color_a};
-    border: {border_b} {color_a};
+    background-color: {color_accent};
+    border: {border_thin} {color_accent};
 }}
 QPushButton:focus {{
-    border: {border_b} {color_a};
-    background-color: {color_a};
+    border: {border_thin} {color_accent};
+    background-color: {color_accent};
 }}
 QPushButton[vk_selected="true"] {{
-    border: {border_b} {color_a};
-    background-color: {color_a};
+    border: {border_thin} {color_accent};
+    background-color: {color_accent};
 }}
 QPushButton:pressed {{
-    background-color: {color_c};
-    border: {border_a} {color_h};
+    background-color: {color_surface};
+    border: {border_none} {color_transparent};
 }}
 QPushButton[checked="true"] {{
-    background-color: {color_a};
-    color: {color_f};
-    border: {border_a} {color_h};
+    background-color: {color_accent};
+    color: {color_text};
+    border: {border_none} {color_transparent};
 }}
 QPushButton[checked="true"]:focus {{
-    border: {border_b} {color_f};
+    border: {border_thin} {color_text};
 }}
 """
 
 # FULLSCREEN THEME SCREENSHOT PREVIEW STYLES
-PREV_BUTTON_STYLE="background-color: rgba(0, 0, 0, 0.5); color: white; border: none;"
-NEXT_BUTTON_STYLE="background-color: rgba(0, 0, 0, 0.5); color: white; border: none;"
+PREV_BUTTON_STYLE = f"background-color: {color_preview_btn_bg}; color: {color_preview_btn_text}; border: none;"
+NEXT_BUTTON_STYLE = f"background-color: {color_preview_btn_bg}; color: {color_preview_btn_text}; border: none;"

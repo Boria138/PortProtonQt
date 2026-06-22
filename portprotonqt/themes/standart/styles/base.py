@@ -3,55 +3,55 @@ from .constants import *
 # GLOBAL STYLE FOR WINDOW (BACKGROUND), LABELS, BUTTONS
 MAIN_WINDOW_STYLE = f"""
     QWidget {{
-        background: {color_b};
+        background: {color_bg};
     }}
     QLabel {{
-        color: {color_f};
+        color: {color_text};
         font-family: '{font_family}';
-        font-size: {font_size_a};
+        font-size: {font_size_normal};
     }}
     QPushButton {{
-        background: {color_c};
-        border: {border_c} rgba(255, 255, 255, 0.01);
-        border-radius: {border_radius_a};
-        color: {color_f};
-        font-size: {font_size_a};
+        background: {color_surface};
+        border: {border_medium} {color_border_subtle};
+        border-radius: {border_radius_small};
+        color: {color_text};
+        font-size: {font_size_normal};
         font-family: '{font_family}';
         padding: 8px 16px;
     }}
     QPushButton:hover {{
-        background: {color_a};
-        border: {border_c} {color_a};
+        background: {color_accent};
+        border: {border_medium} {color_accent};
     }}
     QPushButton:pressed {{
-        background: {color_b};
+        background: {color_bg};
     }}
     QPushButton:focus {{
-        border: {border_c} {color_a};
-        background-color: {color_a};
+        border: {border_medium} {color_accent};
+        background-color: {color_accent};
     }}
 """
 
 # PROGRESS BAR STYLE
 PROGRESS_BAR_STYLE = f"""
     QProgressBar {{
-        color: {color_f};
-        background-color: {color_c};
+        color: {color_text};
+        background-color: {color_surface};
         text-align: center;
         font-family: '{font_family}';
-        font-size: {font_size_a};
+        font-size: {font_size_normal};
     }}
     QProgressBar::chunk {{
-        background-color: {color_a};
+        background-color: {color_accent};
     }}
 """
 
 # STATUS BAR STYLE
 STATUS_BAR_STYLE = f"""
     QStatusBar {{
-        color: {color_f};
+        color: {color_text};
         font-family: '{font_family}';
-        font-size: {font_size_a};
+        font-size: {font_size_normal};
     }}
 """
 
@@ -65,10 +65,10 @@ HINT_BAR_STYLE = f"""
 # HINT LABEL STYLE
 HINTS_LABEL_STYLE = f"""
     QWidget {{
-        background: {color_h};
+        background: {color_transparent};
         font-family: '{font_family}';
-        font-size: 13px;
-        color: {color_f};
+        font-size: {font_size_value};
+        color: {color_text};
         font-weight: 600;
         letter-spacing: 0.75px;
     }}
@@ -77,11 +77,11 @@ HINTS_LABEL_STYLE = f"""
 # MAIN WINDOW HEADER STYLE
 MAIN_WINDOW_HEADER_STYLE = f"""
     QFrame {{
-        background: {color_h};
-        border: 10px solid {color_g};
-        border-bottom: 0px solid {color_g};
-        border-top-left-radius: 30px;
-        border-top-right-radius: 30px;
+        background: {color_transparent};
+        border: 10px solid transparent;
+        border-bottom: 0px solid transparent;
+        border-top-left-radius: {border_radius_header};
+        border-top-right-radius: {border_radius_header};
         border: none;
     }}
 """
@@ -89,257 +89,257 @@ MAIN_WINDOW_HEADER_STYLE = f"""
 # NAVIGATION AREA STYLE (TAB BUTTONS)
 NAV_WIDGET_STYLE = f"""
     QWidget {{
-        background: {color_h};
-        border:  {border_a};
+        background: {color_transparent};
+        border:  {border_none};
     }}
 """
 
 # NAVIGATION TAB BUTTON STYLE
 NAV_BUTTON_STYLE = f"""
     NavLabel {{
-        background: {color_h};
+        background: {color_transparent};
         padding: 6px 3px;
         margin: 10px 0 10px 10px;
-        color: #7f7f7f;
+        color: {color_nav_inactive};
         font-family: '{font_family}';
-        font-size: {font_size_a};
+        font-size: {font_size_normal};
         text-transform: uppercase;
-        border: {color_a};
+        border: {color_accent};
         border-radius: 0px;
     }}
     NavLabel[checked = true] {{
-        background: {color_h};
-        color: {color_f};
+        background: {color_transparent};
+        color: {color_text};
         font-weight: normal;
         text-decoration: none;
-        border-bottom: {border_b} {color_a};
+        border-bottom: {border_thin} {color_accent};
         border-radius: 0px;
     }}
     NavLabel:hover {{
-        background: {color_h};
-        color: {color_f};
-        border-bottom: {border_b} #7f7f7f;
+        background: {color_transparent};
+        color: {color_text};
+        border-bottom: {border_thin} {color_nav_inactive};
     }}
     NavLabel[checked = true]:hover {{
-        background: {color_h};
-        color: {color_f};
-        border-bottom: {border_b} {color_a};
+        background: {color_transparent};
+        color: {color_text};
+        border-bottom: {border_thin} {color_accent};
     }}
 """
 
 # SEARCH FIELD STYLE
 SEARCH_EDIT_STYLE = f"""
     QLineEdit {{
-        background-color: rgba(30, 30, 30, 0.50);
-        border: {border_b} rgba(255, 255, 255, 0.5);
-        border-radius: {border_radius_a};
+        background-color: {color_detail_overlay};
+        border: {border_thin} {color_border_input};
+        border-radius: {border_radius_small};
         padding: 7px 14px;
         font-family: '{font_family}';
-        font-size: {font_size_a};
-        color: {color_f};
+        font-size: {font_size_normal};
+        color: {color_text};
         min-height: 24px;
     }}
     QLineEdit:focus {{
-        border: {border_b} {color_a};
+        border: {border_thin} {color_accent};
     }}
 """
 # SLIDER_SIZE_STYLE
-SLIDER_SIZE_STYLE= f"""
+SLIDER_SIZE_STYLE = f"""
     QWidget {{
-        background: {color_h};
+        background: {color_transparent};
         height: 25px;
     }}
     QSlider::groove:horizontal {{
-        border:  {border_a};
-        border-radius: 3px;
-        height: 6px; /* the groove expands to the size of the slider by default. by giving it a height, it has a fixed size */
-        background: rgba(20, 20, 20, 0.30);
+        border:  {border_none};
+        border-radius: {border_radius_slider};
+        height: 6px;
+        background: {color_slider_groove_bg};
         margin: 6px 0;
     }}
     QSlider::handle:horizontal {{
-        background: #bebebe;
-        border:  {border_a};
+        background: {color_slider_handle};
+        border:  {border_none};
         width: 18px;
         height: 18px;
-        margin: -6px 0; /* handle is placed by default on the contents rect of the groove. Expand outside the groove */
-        border-radius: 9px;
+        margin: -6px 0;
+        border-radius: {border_radius_slider_handle};
     }}
 """
 
 # GAME CARD AREA STYLE (QWidget)
-LIST_WIDGET_STYLE = """
-    QWidget {
+LIST_WIDGET_STYLE = f"""
+    QWidget {{
         background: none;
-        border:  {border_a} {color_g};
+        border:  {border_none} transparent;
         border-radius: 25px;
-    }
+    }}
 """
 
 # ACTION BUTTONS STYLE (SAVE, APPLY, ETC.)
 ACTION_BUTTON_STYLE = f"""
     QPushButton {{
-        background: {color_c};
-        border: {border_c} {color_g};
-        border-radius: {border_radius_a};
-        color: {color_f};
-        font-size: {font_size_a};
+        background: {color_surface};
+        border: {border_medium} transparent;
+        border-radius: {border_radius_small};
+        color: {color_text};
+        font-size: {font_size_normal};
         font-family: '{font_family}';
         padding: 8px 16px;
     }}
     QPushButton:hover {{
-        background: {color_a};
-        border: {border_c} {color_a};
+        background: {color_accent};
+        border: {border_medium} {color_accent};
     }}
     QPushButton:pressed {{
-        background: {color_b};
+        background: {color_bg};
     }}
     QPushButton:focus {{
-        border: {border_c} {color_a};
-        background-color: {color_a};
+        border: {border_medium} {color_accent};
+        background-color: {color_accent};
     }}
 """
 
 # ACTION BUTTON ACTIVE STYLE (MANGOHUD, GAMESCOPE ETC.)
 ACTION_BUTTON_ACTIVE_STYLE = f"""
     QPushButton {{
-        background: {color_c};
-        border: {border_c} {color_a};
-        border-radius: {border_radius_a};
-        color: {color_f};
-        font-size: {font_size_a};
+        background: {color_surface};
+        border: {border_medium} {color_accent};
+        border-radius: {border_radius_small};
+        color: {color_text};
+        font-size: {font_size_normal};
         font-family: '{font_family}';
         padding: 8px 16px;
     }}
     QPushButton:hover {{
-        background: {color_a};
-        border: {border_c} {color_a};
+        background: {color_accent};
+        border: {border_medium} {color_accent};
     }}
     QPushButton:pressed {{
-        background: {color_b};
+        background: {color_bg};
     }}
     QPushButton:focus {{
-        border: {border_c} {color_a};
-        background-color: {color_a};
+        border: {border_medium} {color_accent};
+        background-color: {color_accent};
     }}
 """
 
 # DRIVES BUTTONS STYLE (FILE MANAGER)
 DRIVES_BUTTON_STYLE = f"""
     QPushButton {{
-        background: {color_c};
-        border: {border_c} {color_g};
-        border-radius: {border_radius_a};
-        color: {color_f};
-        font-size: {font_size_a};
+        background: {color_surface};
+        border: {border_medium} transparent;
+        border-radius: {border_radius_small};
+        color: {color_text};
+        font-size: {font_size_normal};
         font-family: '{font_family}';
         min-width: 90px;
     }}
     QPushButton:hover {{
-        background: {color_a};
-        border: {border_c} {color_a};
+        background: {color_accent};
+        border: {border_medium} {color_accent};
     }}
     QPushButton:pressed {{
-        background: {color_b};
+        background: {color_bg};
     }}
     QPushButton:focus {{
-        border: {border_c} {color_a};
-        background-color: {color_a};
+        border: {border_medium} {color_accent};
+        background-color: {color_accent};
     }}
 """
 
 # OVERLAY STYLE
-OVERLAY_WINDOW_STYLE = f"background: {color_b};"
+OVERLAY_WINDOW_STYLE = f"background: {color_bg};"
 OVERLAY_BUTTON_STYLE = f"""
     QPushButton {{
-        background: {color_c};
-        border: {border_c} {color_g};
-        border-radius: {border_radius_a};
-        color: {color_f};
-        font-size: {font_size_a};
+        background: {color_surface};
+        border: {border_medium} transparent;
+        border-radius: {border_radius_small};
+        color: {color_text};
+        font-size: {font_size_normal};
         font-family: '{font_family}';
         padding: 8px 16px;
     }}
     QPushButton:hover {{
-        background: {color_a};
-        border: {border_c} {color_a};
+        background: {color_accent};
+        border: {border_medium} {color_accent};
     }}
     QPushButton:pressed {{
-        background: {color_b};
+        background: {color_bg};
     }}
     QPushButton:focus {{
-        border: {border_c} {color_a};
-        background-color: {color_a};
+        border: {border_medium} {color_accent};
+        background-color: {color_accent};
     }}
 """
 
 # TEXT STYLES: HEADINGS AND MAIN CONTENT
-TAB_TITLE_STYLE = f"font-family: '{font_family}'; font-size: {font_size_b}; color: {color_f}; background-color: none;"
+TAB_TITLE_STYLE = f"font-family: '{font_family}'; font-size: {font_size_header}; color: {color_text}; background-color: none;"
 CONTENT_STYLE = f"""
     QLabel {{
         font-family: '{font_family}';
-        font-size: {font_size_a};
-        color: {color_f};
+        font-size: {font_size_normal};
+        color: {color_text};
         background-color: none;
-        border-bottom: {border_b} rgba(255, 255, 255, 0.2);
+        border-bottom: {border_thin} {color_border_light};
         padding-bottom: 15px;
     }}
 """
 PREVIEW_WIDGET_STYLE = f"""
     QWidget {{
         margin-top: 3px;
-        background-color: {color_c};
-        border-radius: {border_radius_a};
+        background-color: {color_surface};
+        border-radius: {border_radius_small};
     }}
 """
 
 # MAIN PAGES STYLE
 # LIBRARY_WIDGET_STYLE
-LIBRARY_WIDGET_STYLE= """
-    QWidget {
+LIBRARY_WIDGET_STYLE = f"""
+    QWidget {{
         background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-            stop:0 rgba(112,20,132,1),
-            stop:1 rgba(50,134,182,1));
+            stop:0 {color_library_gradient_start},
+            stop:1 {color_library_gradient_end});
         border-radius: 0px;
-    }
+    }}
 """
 
 # CONTAINER_STYLE
-CONTAINER_STYLE= """
+CONTAINER_STYLE = """
     QWidget {
         background-color: none;
     }
 """
 
 # OTHER_PAGES_WIDGET_STYLE
-OTHER_PAGES_WIDGET_STYLE= f"""
+OTHER_PAGES_WIDGET_STYLE = f"""
     QWidget {{
-        background: {color_d};
+        background: {color_surface_elevated};
         border-radius: 0px;
     }}
 """
 
 # CAROUSEL_WIDGET_STYLE
-CAROUSEL_WIDGET_STYLE= f"""
+CAROUSEL_WIDGET_STYLE = f"""
     QWidget {{
-        background: {color_c};
+        background: {color_surface};
         border-radius: 0px;
     }}
 """
 
 THEME_TAB_FOCUS_STYLE = f"""
     QComboBox#themeTabCombo:focus {{
-        border: {border_b} {color_f};
-        background-color: {color_a};
+        border: {border_thin} {color_text};
+        background-color: {color_accent};
     }}
     QPushButton#themeApplyButton:focus {{
-        border: {border_b} {color_f};
+        border: {border_thin} {color_text};
     }}
     QGraphicsView#themeScreenshotsCarousel {{
-        border: {border_c} {color_g};
-        border-radius: {border_radius_a};
+        border: {border_medium} transparent;
+        border-radius: {border_radius_small};
     }}
     QGraphicsView#themeScreenshotsCarousel:focus {{
-        border: {border_b} {color_a};
+        border: {border_thin} {color_accent};
     }}
 """
 
@@ -347,14 +347,14 @@ THEME_TAB_FOCUS_STYLE = f"""
 # PARAMS_TITLE_STYLE
 PARAMS_TITLE_STYLE = f"""
     QLabel {{
-        color: {color_f};
+        color: {color_text};
         font-family: '{font_family}';
-        font-size: {font_size_a};
+        font-size: {font_size_normal};
         font-weight: bold;
         height: 34px;
         padding: 7px;
-        background: {color_d};
-        border-radius: {border_radius_a};
+        background: {color_surface_elevated};
+        border-radius: {border_radius_small};
         min-width: 150px;
     }}
 """
@@ -362,40 +362,40 @@ PARAMS_TITLE_STYLE = f"""
 # QMessageBox STYLES (MESSAGE BOXES)
 MESSAGE_BOX_STYLE = f"""
     QMessageBox {{
-        background: {color_b};
-        border: {border_a};
+        background: {color_bg};
+        border: {border_none};
     }}
     QMessageBox QLabel {{
-        color: {color_f};
+        color: {color_text};
         font-family: '{font_family}';
-        font-size: {font_size_a};
+        font-size: {font_size_normal};
     }}
     QMessageBox QPushButton {{
-        background: {color_c};
-        border: {border_a} {color_h};
-        border-radius: {border_radius_a};
-        color: {color_f};
+        background: {color_surface};
+        border: {border_none} {color_transparent};
+        border-radius: {border_radius_small};
+        color: {color_text};
         font-family: '{font_family}';
         padding: 8px 20px;
         min-width: 80px;
     }}
     QMessageBox QPushButton:hover {{
-        background: {color_a};
-        border-color: border: {border_b} {color_a};
+        background: {color_accent};
+        border-color: border: {border_thin} {color_accent};
     }}
     QMessageBox QPushButton:focus {{
-        border: {border_c} {color_a};
-        background: {color_a};
+        border: {border_medium} {color_accent};
+        background: {color_accent};
     }}
 """
 
 # Favorite Star
-FAVORITE_LABEL_STYLE = f"color: gold; font-size: 32px; background: {color_h};"
+FAVORITE_LABEL_STYLE = f"color: {color_favorite_star}; font-size: 32px; background: {color_transparent};"
 
 # Transparent background style
 TRANSPARENT_BACKGROUND_STYLE = f"""
     QWidget {{
-        background: {color_h};
+        background: {color_transparent};
     }}
 """
 
@@ -403,15 +403,15 @@ TRANSPARENT_BACKGROUND_STYLE = f"""
 QGROUP_BOX_STYLE = f"""
     QGroupBox {{
         font-family: '{font_family}';
-        font-size: {font_size_a};
+        font-size: {font_size_normal};
         font-weight: bold;
-        color: {color_a};
-        border: {border_b} {color_c};
-        border-radius: {border_radius_a};
+        color: {color_accent};
+        border: {border_thin} {color_surface};
+        border-radius: {border_radius_small};
         margin-top: 10px;
         margin-right: 10px;
         padding-top: 14px;
-        background: {color_h};
+        background: {color_transparent};
     }}
     QGroupBox::title {{
         subcontrol-origin: margin;
@@ -423,20 +423,20 @@ QGROUP_BOX_STYLE = f"""
 # COMBOBOX
 COMBOBOX_STYLE = f"""
     QComboBox {{
-        background: {color_c};
-        border: {border_c} {color_g};
-        border-radius: {border_radius_a};
+        background: {color_surface};
+        border: {border_medium} transparent;
+        border-radius: {border_radius_small};
         padding-left: 12px;
         height: 34px;
-        color: {color_f};
+        color: {color_text};
         font-family: '{font_family}';
-        font-size: {font_size_a};
+        font-size: {font_size_normal};
         min-width: 120px;
         combobox-popup: 0;
     }}
     QComboBox:on {{
-        background: {color_b};
-        border: {border_c} {color_a};
+        background: {color_bg};
+        border: {border_medium} {color_accent};
         border-bottom-style: none;
         border-top-left-radius: 10px;
         border-top-right-radius: 10px;
@@ -444,23 +444,23 @@ COMBOBOX_STYLE = f"""
         border-bottom-right-radius: 0px;
     }}
     QComboBox:hover {{
-        border: {border_c} {color_a};
-        background: {color_a};
+        border: {border_medium} {color_accent};
+        background: {color_accent};
     }}
     /* Focus state */
     QComboBox:focus {{
-        border: {border_c} {color_a};
-        background-color: {color_a};
+        border: {border_medium} {color_accent};
+        background-color: {color_accent};
     }}
     QComboBox:disabled {{
-        background: #2a2c35;
-        border: {border_c} #2a2c35;
-        color: #777a84;
+        background: {color_combo_disabled_bg};
+        border: {border_medium} {color_combo_disabled_border};
+        color: {color_combo_disabled_text};
     }}
     QComboBox::drop-down {{
         subcontrol-origin: padding;
         subcontrol-position: center right;
-        border-left: {border_b} rgba(255, 255, 255, 0.05);
+        border-left: {border_thin} {color_border_faint};
         padding: 12px;
         height: 12px;
         width: 12px;
@@ -480,8 +480,8 @@ COMBOBOX_STYLE = f"""
 /* List when combobox is open */
     QComboBox QAbstractItemView {{
         outline: none;
-        background: {color_c};
-        border: {border_c} {color_a};
+        background: {color_surface};
+        border: {border_medium} {color_accent};
         border-top-style: none;
         border-top-left-radius: 0px;
         border-top-right-radius: 0px;
@@ -489,85 +489,85 @@ COMBOBOX_STYLE = f"""
         border-bottom-right-radius: 10px;
     }}
     QComboBox:editable {{
-        background: {color_c};
+        background: {color_surface};
     }}
     QComboBox::drop-down:editable:focus {{
-        background: {color_a};
+        background: {color_accent};
         border-top-left-radius: 0px;
         border-top-right-radius: 10px;
         border-bottom-left-radius: 0px;
         border-bottom-right-radius: 10px;
     }}
     QListView {{
-        background: {color_c};
+        background: {color_surface};
     }}
     QListView::item {{
         padding: 7px 7px 7px 12px;
         margin: 3px;
         min-height: 24px;
-        border-radius: {border_radius_a};
-        color: {color_f};
+        border-radius: {border_radius_small};
+        color: {color_text};
     }}
     QListView::item:hover {{
-        background: {color_b};
+        background: {color_bg};
     }}
     QListView::item:selected {{
-        background: {color_b};
+        background: {color_bg};
     }}
     /* Selection in list when item is focused */
     QListView::item:focus {{
-        background: {color_a};
-        color: {color_f};
+        background: {color_accent};
+        color: {color_text};
     }}
 """
 
 SCROLL_STYLE = f"""
     QScrollBar:vertical {{
         width: 10px;
-        border:  {border_a};
-        border-radius: 5px;
-        background: rgba(20, 20, 20, 0.30);
+        border:  {border_none};
+        border-radius: {border_radius_small};
+        background: {color_scrollbar_bg};
     }}
     QScrollBar::handle:vertical {{
-        background: #bebebe;
-        border:  {border_a};
-        border-radius: 5px;
+        background: {color_scrollbar_handle};
+        border:  {border_none};
+        border-radius: {border_radius_small};
     }}
     QScrollBar::add-line:vertical {{
-        border:  {border_a};
+        border:  {border_none};
         background: none;
     }}
     QScrollBar::sub-line:vertical {{
-        border:  {border_a};
+        border:  {border_none};
         background: none;
     }}
     QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical {{
-        border:  {border_a};
+        border:  {border_none};
         width: 3px;
         height: 3px;
         background: none;
     }}
     QScrollBar:horizontal {{
         height: 10px;
-        border:  {border_a};
-        border-radius: 5px;
-        background: rgba(20, 20, 20, 0.30);
+        border:  {border_none};
+        border-radius: {border_radius_small};
+        background: {color_scrollbar_bg};
     }}
     QScrollBar::handle:horizontal {{
-        background: #bebebe;
-        border:  {border_a};
-        border-radius: 5px;
+        background: {color_scrollbar_handle};
+        border:  {border_none};
+        border-radius: {border_radius_small};
     }}
     QScrollBar::add-line:horizontal {{
-        border:  {border_a};
+        border:  {border_none};
         background: none;
     }}
     QScrollBar::sub-line:horizontal {{
-        border:  {border_a};
+        border:  {border_none};
         background: none;
     }}
     QScrollBar::up-arrow:horizontal, QScrollBar::down-arrow:horizontal {{
-        border:  {border_a};
+        border:  {border_none};
         width: 3px;
         height: 3px;
         background: none;
@@ -577,133 +577,133 @@ SCROLL_STYLE = f"""
 SETTINGS_TABLE_COMBOBOX_STYLE = f"""
     QComboBox#settingsTableCombo:hover,
     QComboBox#settingsTableCombo:focus {{
-        background: {color_c};
-        border: {border_c} {color_a};
+        background: {color_surface};
+        border: {border_medium} {color_accent};
     }}
 """
 
 CHECKBOX_STYLE = f"""
     QCheckBox {{
         height: 34px;
-        color: {color_f};
+        color: {color_text};
         font-family: '{font_family}';
-        font-size: {font_size_a};
+        font-size: {font_size_normal};
     }}
     QCheckBox::indicator {{
         width: 24px;
         height: 24px;
-        border: {border_c} {color_g};
-        border-radius: {border_radius_a};
-        background: {color_c};
+        border: {border_medium} transparent;
+        border-radius: {border_radius_small};
+        background: {color_surface};
     }}
     QCheckBox::indicator:hover {{
-        background: {color_c};
-        border: {border_c} {color_a};
+        background: {color_surface};
+        border: {border_medium} {color_accent};
     }}
     QCheckBox::indicator:focus {{
-        border: {border_c} {color_a};
+        border: {border_medium} {color_accent};
     }}
     QCheckBox::indicator:checked {{
         image: url({theme_manager.get_icon("check", current_theme_name, as_path=True)});
-        border: {border_c} {color_a};
+        border: {border_medium} {color_accent};
     }}
     QCheckBox::indicator:disabled {{
-        background: {color_b};
-        border: {border_c} {color_d};
+        background: {color_bg};
+        border: {border_medium} {color_surface_elevated};
     }}
     QCheckBox::indicator:checked:disabled {{
         image: url({theme_manager.get_icon("check", current_theme_name, as_path=True)});
-        background: {color_b};
-        border: {border_c} {color_d};
+        background: {color_bg};
+        border: {border_medium} {color_surface_elevated};
     }}
 
     QTableWidget::indicator {{
         width: 24px;
         height: 24px;
-        border: {border_c} {color_h};
-        border-radius: {border_radius_a};
-        background: {color_b};
+        border: {border_medium} {color_transparent};
+        border-radius: {border_radius_small};
+        background: {color_bg};
     }}
     QTableWidget::indicator:unchecked {{
-        background: rgba(255, 255, 255, 0.1);
+        background: {color_checkbox_unchecked_bg};
         image: none;
     }}
     QTableWidget::indicator:checked {{
-        background: {color_b};
+        background: {color_bg};
         image: url({theme_manager.get_icon("check", current_theme_name, as_path=True)});
-        border: {border_c} {color_a};
+        border: {border_medium} {color_accent};
     }}
     QTableWidget::indicator:hover {{
-        background: rgba(255, 255, 255, 0.2);
-        border: {border_c} {color_a};
+        background: {color_checkbox_hover_bg};
+        border: {border_medium} {color_accent};
     }}
     QTableWidget::indicator:focus {{
-        background: rgba(255, 255, 255, 0.2);
-        border: {border_c} {color_a};
+        background: {color_checkbox_hover_bg};
+        border: {border_medium} {color_accent};
     }}
     QTableWidget::indicator:disabled {{
-        background: {color_b};
-        border: {border_c} {color_d};
+        background: {color_bg};
+        border: {border_medium} {color_surface_elevated};
     }}
     QTableWidget::indicator:checked:disabled {{
         image: url({theme_manager.get_icon("check", current_theme_name, as_path=True)});
-        background: {color_b};
-        border: {border_c} {color_d};
+        background: {color_bg};
+        border: {border_medium} {color_surface_elevated};
     }}
 """
 
 LINE_EDIT_STYLE = f"""
     QLineEdit {{
-        background: {color_c};
-        border: {border_c} rgba(255, 255, 255, 0.01);
-        border-radius: {border_radius_a};
+        background: {color_surface};
+        border: {border_medium} {color_border_subtle};
+        border-radius: {border_radius_small};
         height: 34px;
         padding-left: 12px;
-        color: {color_f};
+        color: {color_text};
         font-family: '{font_family}';
-        font-size: {font_size_a};
+        font-size: {font_size_normal};
     }}
     QLineEdit:hover {{
-        background: {color_c};
-        border: {border_c} {color_a};
+        background: {color_surface};
+        border: {border_medium} {color_accent};
     }}
     QLineEdit:focus {{
-        border: {border_c} {color_a};
-        background-color: {color_e};
+        border: {border_medium} {color_accent};
+        background-color: {color_surface_hover};
     }}
 """
 
 TOOLTIP_STYLE = f"""
     QLabel {{
-        background: {color_b};
-        border: {border_b} {color_e};
+        background: {color_bg};
+        border: {border_thin} {color_surface_hover};
         padding: 8px;
-        color: {color_f};
+        color: {color_text};
         font-family: '{font_family}';
-        font-size: {font_size_a};
+        font-size: {font_size_normal};
     }}
 """
 
 TAB_STYLE = f"""
     QTabWidget::pane {{
-        border-top: 1px solid {color_c};
-        background: {color_h};
+        border-top: 1px solid {color_surface};
+        background: {color_transparent};
     }}
     QTabBar::tab {{
-        background: {color_c};
-        color: {color_f};
+        background: {color_surface};
+        color: {color_text};
         padding: 8px 16px;
-        border-top-left-radius: {border_radius_a};
-        border-top-right-radius: {border_radius_a};
+        border-top-left-radius: {border_radius_small};
+        border-top-right-radius: {border_radius_small};
         margin-right: 2px;
         font-family: '{font_family}';
-        font-size: {font_size_a};
+        font-size: {font_size_normal};
     }}
     QTabBar::tab:selected {{
-        background: {color_a};
-        color: {color_f};
+        background: {color_accent};
+        color: {color_text};
     }}
     QTabBar::tab:hover {{
-        background: {color_a};
+        background: {color_accent};
     }}
 """

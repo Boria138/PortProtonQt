@@ -1,38 +1,38 @@
 from .constants import *
 
 # BACKGROUND FOR DETAIL PAGE IF COVER NOT LOADED
-DETAIL_PAGE_NO_COVER_STYLE = f"background: rgba(20,20,20,0.95); border-radius: {border_radius_b};"
+DETAIL_PAGE_NO_COVER_STYLE = f"background: {color_no_cover_bg}; border-radius: {border_radius_large};"
 
 # STYLE FOR "ADD GAME" AND "BACK" BUTTONS ON DETAIL PAGE AND LIBRARY
 ADDGAME_BACK_BUTTON_STYLE = f"""
     QPushButton {{
-        background: rgba(20, 20, 20, 0.40);
-        border: {border_b} rgba(255, 255, 255, 0.5);
-        border-radius: {border_radius_a};
-        color: {color_f};
-        font-size: {font_size_a};
+        background: {color_detail_overlay};
+        border: {border_thin} {color_border_input};
+        border-radius: {border_radius_small};
+        color: {color_text};
+        font-size: {font_size_normal};
         font-family: '{font_family}';
         padding: 8px 16px;
     }}
     QPushButton:hover {{
-        background: {color_a};
+        background: {color_accent};
     }}
     QPushButton:pressed {{
-        background: {color_a};
+        background: {color_accent};
     }}
     QPushButton:focus {{
-        background: {color_a};
-        border: {border_b} {color_a};
+        background: {color_accent};
+        border: {border_thin} {color_accent};
     }}
 """
 
 LIBRARY_CONTROLS_BUTTON_STYLE = f"""
     QPushButton {{
-        background: rgba(20, 20, 20, 0.40);
-        border: {border_b} rgba(255, 255, 255, 0.5);
-        border-radius: {border_radius_a};
-        color: {color_f};
-        font-size: {font_size_a};
+        background: {color_detail_overlay};
+        border: {border_thin} {color_border_input};
+        border-radius: {border_radius_small};
+        color: {color_text};
+        font-size: {font_size_normal};
         font-family: '{font_family}';
         padding: 8px 12px;
         min-width: 24px;
@@ -41,32 +41,32 @@ LIBRARY_CONTROLS_BUTTON_STYLE = f"""
     QPushButton:pressed,
     QPushButton:focus,
     QPushButton:checked {{
-        background: rgba(20, 20, 20, 0.40);
-        border: {border_b} {color_a};
+        background: {color_detail_overlay};
+        border: {border_thin} {color_accent};
     }}
 """
 
 LIBRARY_FILTER_COMBOBOX_STYLE = f"""
     QComboBox {{
-        background: rgba(20, 20, 20, 0.40);
-        border: {border_b} rgba(255, 255, 255, 0.5);
-        border-radius: {border_radius_a};
+        background: {color_detail_overlay};
+        border: {border_thin} {color_border_input};
+        border-radius: {border_radius_small};
         padding-left: 12px;
         height: 34px;
-        color: {color_f};
+        color: {color_text};
         font-family: '{font_family}';
-        font-size: {font_size_a};
+        font-size: {font_size_normal};
         min-width: 120px;
         combobox-popup: 0;
     }}
     QComboBox:hover,
     QComboBox:focus {{
-        background: rgba(20, 20, 20, 0.40);
-        border: {border_b} {color_a};
+        background: {color_detail_overlay};
+        border: {border_thin} {color_accent};
     }}
     QComboBox:on {{
-        background: {color_b};
-        border: {border_b} {color_a};
+        background: {color_bg};
+        border: {border_thin} {color_accent};
         border-bottom-style: none;
         border-top-left-radius: 10px;
         border-top-right-radius: 10px;
@@ -76,7 +76,7 @@ LIBRARY_FILTER_COMBOBOX_STYLE = f"""
     QComboBox::drop-down {{
         subcontrol-origin: padding;
         subcontrol-position: center right;
-        border-left: {border_b} rgba(255, 255, 255, 0.05);
+        border-left: {border_thin} {color_border_faint};
         padding: 12px;
         height: 12px;
         width: 12px;
@@ -95,8 +95,8 @@ LIBRARY_FILTER_COMBOBOX_STYLE = f"""
     }}
     QComboBox QAbstractItemView {{
         outline: none;
-        background: {color_c};
-        border: {border_b} {color_a};
+        background: {color_surface};
+        border: {border_thin} {color_accent};
         border-top-style: none;
         border-top-left-radius: 0px;
         border-top-right-radius: 0px;
@@ -107,84 +107,84 @@ LIBRARY_FILTER_COMBOBOX_STYLE = f"""
         padding: 7px 7px 7px 12px;
         margin: 3px;
         min-height: 24px;
-        border-radius: {border_radius_a};
-        color: {color_f};
+        border-radius: {border_radius_small};
+        color: {color_text};
     }}
     QComboBox QAbstractItemView::item:hover,
     QComboBox QAbstractItemView::item:selected {{
-        background: {color_a};
-        color: {color_f};
+        background: {color_accent};
+        color: {color_text};
     }}
 """
 
 # MAIN FRAME FOR GAME DETAILS
 DETAIL_CONTENT_FRAME_STYLE = f"""
     QFrame {{
-        background: {color_b};
-        border:  {border_a} {color_g};
-        border-radius: {border_radius_b};
+        background: {color_bg};
+        border:  {border_none} transparent;
+        border-radius: {border_radius_large};
     }}
 """
 
 # FRAME UNDER COVER
 COVER_FRAME_STYLE = f"""
     QFrame {{
-        background: rgba(30, 30, 30, 0.80);
-        border-radius: {border_radius_b};
-        border:  {border_a} {color_g};
+        background: {color_cover_frame_bg};
+        border-radius: {border_radius_large};
+        border:  {border_none} transparent;
     }}
 """
 
 # COVER WIDGET
 COVER_WIDGET_STYLE = f"""
     QWidget {{
-        background: {color_h};
-        border:  {border_a} {color_h};
+        background: {color_transparent};
+        border:  {border_none} {color_transparent};
     }}
 """
 
 # COVER LABEL BORDER RADIUS
-COVER_LABEL_STYLE = f"border-radius: {border_radius_b};"
+COVER_LABEL_STYLE = f"border-radius: {border_radius_large};"
 
 # DETAILS WIDGET (TEXT, DESCRIPTION)
 DETAILS_WIDGET_STYLE = f"""
         QFrame {{
-            background: rgba(20,20,20,0.40);
-            border-radius: {border_radius_b};
+            background: {color_detail_overlay};
+            border-radius: {border_radius_large};
             padding: 10px;
         }}
         QWidget#child {{
-            background: rgba(20,20,20,0.40);
-            border-radius: {border_radius_b};
+            background: {color_detail_overlay};
+            border-radius: {border_radius_large};
             padding: 10px;
         }}
 """
 
 
-COMPACT_DETAILS_WIDGET_STYLE = f"background: rgba(20,20,20,0.40); border-radius: {border_radius_b}; padding: 10px;"
+COMPACT_DETAILS_WIDGET_STYLE = f"background: {color_detail_overlay}; border-radius: {border_radius_large}; padding: 10px;"
 
 # TITLE (HEADER) ON DETAIL PAGE
-DETAIL_PAGE_TITLE_STYLE = f"font-family: '{font_family}'; font-size: 32px; color: {color_a}; background: {color_h};"
-COMPACT_DETAIL_PAGE_TITLE_STYLE = f"font-family: '{font_family}'; font-size: 32px; color: {color_a}; background: {color_h};"
+DETAIL_PAGE_TITLE_STYLE = f"font-family: '{font_family}'; font-size: {font_size_title}; color: {color_accent}; background: {color_transparent};"
+COMPACT_DETAIL_PAGE_TITLE_STYLE = f"font-family: '{font_family}'; font-size: {font_size_title}; color: {color_accent}; background: {color_transparent};"
 
 # DIVIDER LINE
-DETAIL_PAGE_LINE_STYLE = "color: rgba(255,255,255,0.12); margin: 0 0;"
+DETAIL_PAGE_LINE_STYLE = f"color: {color_detail_line}; margin: 0 0;"
 
 # DESCRIPTION TEXT
-DETAIL_PAGE_DESC_STYLE = f"font-family: '{font_family}'; font-size: {font_size_a}; color: {color_f}; line-height: 1.5;"
-COMPACT_DETAIL_PAGE_DESC_STYLE = f"font-family: '{font_family}'; font-size: {font_size_a}; color: {color_f}; line-height: 1.5; background: {color_h};"
+DETAIL_PAGE_DESC_STYLE = f"font-family: '{font_family}'; font-size: {font_size_normal}; color: {color_text}; line-height: 1.5;"
+COMPACT_DETAIL_PAGE_DESC_STYLE = f"font-family: '{font_family}'; font-size: {font_size_normal}; color: {color_text}; line-height: 1.5; background: {color_transparent};"
 
 # PLAYTIME WIDGET (PLAYTIME)
-COMPACT_PLAYTIME_WIDGET_STYLE = f"background: {color_h}; border-radius: {border_radius_b}; padding: 10px;"
+COMPACT_PLAYTIME_WIDGET_STYLE = f"background: {color_transparent}; border-radius: {border_radius_large}; padding: 10px;"
 
 # PLAY BUTTON STYLE
 PLAY_BUTTON_STYLE = f"""
     QPushButton {{
-        background: rgba(20, 20, 20, 0.40);
-        border: {border_b} rgba(255, 255, 255, 0.5);
-        border-radius: {border_radius_a};
-        font-size: 18px;
-        color: {color_f};
+        background: {color_detail_overlay};
+        border: {border_thin} {color_border_input};
+        border-radius: {border_radius_small};
+        font-size: {font_size_play};
+        color: {color_text};
         font-weight: bold;
         font-family: '{font_family}';
         padding: 8px 16px;
@@ -193,34 +193,34 @@ PLAY_BUTTON_STYLE = f"""
         min-height: 40px;
     }}
     QPushButton:hover {{
-        background: {color_a};
+        background: {color_accent};
     }}
     QPushButton:pressed {{
-        background: {color_a};
+        background: {color_accent};
     }}
     QPushButton:focus {{
-        background: {color_a};
+        background: {color_accent};
     }}
 """
 
 ADDGAME_INPUT_STYLE = f"""
     QLineEdit {{
-        background: {color_c};
-        border: {border_c} {color_g};
-        border-radius: {border_radius_a};
+        background: {color_surface};
+        border: {border_medium} transparent;
+        border-radius: {border_radius_small};
         height: 34px;
         padding-left: 12px;
-        color: {color_f};
+        color: {color_text};
         font-family: '{font_family}';
-        font-size: {font_size_a};
+        font-size: {font_size_normal};
     }}
     QLineEdit:hover {{
-        background: {color_c};
-        border: {border_c} {color_a};
+        background: {color_surface};
+        border: {border_medium} {color_accent};
     }}
     QLineEdit:focus {{
-        border: {border_c} {color_a};
-        background-color: {color_e};
+        border: {border_medium} {color_accent};
+        background-color: {color_surface_hover};
     }}
 """
 

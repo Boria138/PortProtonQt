@@ -29,10 +29,6 @@ from portprotonqt.detail_pages.widgets import (
     create_compact_layout_panel,
     create_compact_description_panel,
     create_detail_separator,
-    COVER_WIDTH,
-    COVER_HEIGHT,
-    DETAIL_COMPACT_COVER_SIZE,
-    DETAIL_COMPACT_WIDTH,
 )
 from portprotonqt.detail_pages.utils import (
     setup_image_loading,
@@ -168,7 +164,8 @@ class DetailPageManager:
     def _is_compact_detail_layout(self) -> bool:
         if self._is_forced_compact_detail_layout():
             return True
-        return self._detail_view_width() <= DETAIL_COMPACT_WIDTH
+        compact_cfg = getattr(self.main_window.theme, "DETAIL_COMPACT", {})
+        return self._detail_view_width() <= compact_cfg.get("width", 1280)
 
     def _is_forced_compact_detail_layout(self) -> bool:
         layout_mode = str(
@@ -191,22 +188,24 @@ class DetailPageManager:
         return image_label
 
     def _get_cover_label_size(self, compact_layout: bool) -> tuple[int, int]:
+        cover_cfg = getattr(self.main_window.theme, "COVER", {})
         if not compact_layout:
-            return COVER_WIDTH, COVER_HEIGHT
+            return cover_cfg.get("width", 300), cover_cfg.get("height", 450)
         size = getattr(
             self.main_window.theme,
             "detailCompactCoverImageSize",
-            DETAIL_COMPACT_COVER_SIZE,
+            getattr(self.main_window.theme, "DETAIL_COMPACT", {}).get("cover_size", 128),
         )
         return size, size
 
     def _get_cover_frame_size(self, compact_layout: bool) -> tuple[int, int]:
+        cover_cfg = getattr(self.main_window.theme, "COVER", {})
         if not compact_layout:
-            return COVER_WIDTH, COVER_HEIGHT
+            return cover_cfg.get("width", 300), cover_cfg.get("height", 450)
         size = getattr(
             self.main_window.theme,
             "detailCompactCoverFrameSize",
-            DETAIL_COMPACT_COVER_SIZE,
+            getattr(self.main_window.theme, "DETAIL_COMPACT", {}).get("cover_size", 128),
         )
         return size, size
 
