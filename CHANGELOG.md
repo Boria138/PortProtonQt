@@ -15,7 +15,7 @@
 - Добавлены раскладки и варианты виртуальной клавиатуры на основе keymap-данных `gjs-osk`
 - Добавлен перевод на Немецкий `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/de/`
 - Добавлен магазин тем с загрузкой и применением тем из `ppdb.linux-gaming.ru`
-- Добавлена поддержка установки тем по URI `portprotonqt://theme/<id>` с сайта
+- Добавлена поддержка установки тем по URI `portprotonqt://theme/<id>` с `ppdb.linux-gaming.ru`
 
 ### Changed
 - Минимальный масштаб слайдера размера карточек снижен с 200 до 100 px
@@ -34,7 +34,6 @@
 - Улучшена вкладка тем: добавлена навигация геймпадом по магазину, параллельная загрузка скриншотов и поддержка архивов `.zip`, `.tar`, `.tar.gz`, `.tgz`
 - Обновлён перевод на Португальский (Бразилия) `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/pt_BR/`
 - Обновлён перевод на Китайский (упрощённый) `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/zh_Hans/`
-- `_build_generated_styles` теперь загружает `standart/constants.py` как базу и мержит с кастомными — темы переопределяют только нужные константы
 
 ### Fixed
 - Исправлено определение тёмной темы для `Cinnamon`, `XFCE` и `MATE`
