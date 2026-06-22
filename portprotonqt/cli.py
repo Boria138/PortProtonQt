@@ -373,6 +373,18 @@ def is_portproton_url(url: str) -> bool:
     return url.lower().startswith('portproton://')
 
 
+def parse_portprotonqt_theme_url(url: str) -> int | None:
+    """Parse portprotonqt://theme/<id> URL and return theme id."""
+    prefix = "portprotonqt://theme/"
+    if not url.lower().startswith(prefix):
+        return None
+
+    theme_id = url[len(prefix):].strip("/")
+    if not theme_id.isdecimal():
+        return None
+    return int(theme_id)
+
+
 def is_exe_file(path: str) -> bool:
     """Check if the given path is an exe file.
 

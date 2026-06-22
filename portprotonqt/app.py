@@ -41,6 +41,7 @@ from portprotonqt.cli import (
     parse_args,
     is_portproton_url,
     parse_portproton_url,
+    parse_portprotonqt_theme_url,
     is_launch_file,
     is_prefix_backup_file,
     normalize_launch_path,
@@ -281,6 +282,7 @@ def main():
     ipc_message = "show:fullscreen" if fullscreen else "show"
     backup_request = None
     restore_prefix_path = None
+    theme_store_id = None
     resolution_from_args = None
     if args.resolution:
         resolution_from_args = parse_resolution(args.resolution)
@@ -302,6 +304,10 @@ def main():
         ipc_message = f"restore:{quote(restore_prefix_path, safe='')}"
     elif args.file_or_url and is_launch_file(args.file_or_url):
         ipc_message = f"open:{normalize_launch_path(args.file_or_url)}"
+    elif args.file_or_url:
+        theme_store_id = parse_portprotonqt_theme_url(args.file_or_url)
+        if theme_store_id is not None:
+            ipc_message = f"theme:{theme_store_id}"
 
     from PySide6.QtCore import QThread, Signal
     from PySide6.QtNetwork import QLocalServer, QLocalSocket
@@ -381,11 +387,52 @@ def main():
         elif is_launch_file(args.file_or_url):
             # Store launch file path for later processing after window is created
             exe_path = normalize_launch_path(args.file_or_url)
+        elif theme_store_id is not None:
+            exe_path = None
         else:
             logger.warning(f"Unknown file or URL format: {args.file_or_url}")
             exe_path = None
     else:
         exe_path = None
+
+    # Install theme from store URL before creating MainWindow
+    if theme_store_id is not None:
+        try:
+            import tempfile
+            import requests
+            from portprotonqt.tabs.theme_tab import (
+                _theme_store_download_url,
+                _install_theme_archive,
+            )
+            from portprotonqt.theme_manager import ThemeManager
+
+            url = _theme_store_download_url(theme_store_id)
+            with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as archive:
+                archive_path = archive.name
+            try:
+                session = requests.Session()
+                with session.get(url, stream=True, timeout=60) as response:
+                    response.raise_for_status()
+                    with open(archive_path, "wb") as f:
+                        for chunk in response.iter_content(chunk_size=8192):
+                            if chunk:
+                                f.write(chunk)
+                theme_names = _install_theme_archive(archive_path)
+                if theme_names:
+                    tm = ThemeManager()
+                    theme_module = tm.apply_theme(theme_names[0])
+                    if theme_module:
+                        ui_config.set_theme(theme_names[0])
+                        ui_config.set_theme_variant("dark")
+                        logger.info("Theme %s installed and applied before window creation", theme_names[0])
+            except Exception as e:
+                logger.warning("Failed to pre-install theme %s: %s", theme_store_id, e)
+            finally:
+                if os.path.exists(archive_path):
+                    os.remove(archive_path)
+        except Exception as e:
+            logger.warning("Failed to handle theme store URL: %s", e)
+        theme_store_id = None
 
     # --- Main Window ---
     version = get_version()
@@ -393,7 +440,7 @@ def main():
     # Parse resolution if provided
     window_resolution = None
     if args.resolution and resolution_from_args is None:
-        logger.warning(f"Invalid resolution format: {args.resolution}, expected WIDTHxHEIGHT (e.g., 1920x1080)")
+        logger.warning(f"Invalid resolution format: {args.resolution}, expected WIDTHxHEIGHT (e.g. 1920x1080)")
 
     window = MainWindow(app_name=__app_name__, version=version, launch_exe=exe_path, resolution=window_resolution, show_system_tab=args.ppqtos)
 
@@ -430,6 +477,7 @@ def main():
                         or msg.startswith("open:")
                         or msg.startswith("restore:")
                         or msg.startswith("backup:")
+                        or msg.startswith("theme:")
                     ):
                         # Ensure the window is visible and not minimized
                         window.setWindowState(window.windowState() & ~Qt.WindowState.WindowMinimized)
@@ -473,6 +521,14 @@ def main():
                                 window._perform_backup(backup_dir, prefix_name)
                             else:
                                 logger.warning("Invalid prefix backup request via IPC: %s", msg)
+                        elif msg.startswith("theme:"):
+                            try:
+                                theme_id = int(msg[6:].strip())
+                            except ValueError:
+                                logger.warning("Invalid theme store request via IPC: %s", msg)
+                            else:
+                                logger.info("Installing theme from store via IPC: %s", theme_id)
+                                window._download_store_theme({"id": theme_id})
                 except Exception as e:
                     logger.warning(f"Failed to restore window: {e}")
 
@@ -498,6 +554,7 @@ def main():
         and exe_path is None
         and backup_request is None
         and restore_prefix_path is None
+        and theme_store_id is None
     )
     if launch_minimized:
         logger.info("Launching in tray")

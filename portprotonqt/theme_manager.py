@@ -92,6 +92,30 @@ def _get_parent_theme_name(theme_name: str, parent_name: str | None = None) -> s
     return parent_name
 
 
+def _inject_parent_theme_constants(module, styles_file: str):
+    parent_name = _read_theme_parent_name(
+        module.__name__.split(".")[-1]
+    )
+    if not parent_name:
+        return
+    parent_folder = _find_theme_folder(parent_name)
+    if not parent_folder:
+        return
+    parent_constants_path = os.path.join(parent_folder, "styles", "constants.py")
+    if not os.path.exists(parent_constants_path):
+        return
+    try:
+        with open(parent_constants_path, encoding="utf-8") as f:
+            ns: dict = {}
+            exec(compile(f.read(), parent_constants_path, "exec"), ns, ns)
+        for key, value in ns.items():
+            if key.startswith("_") or callable(value) or key in module.__dict__:
+                continue
+            module.__dict__[key] = value
+    except Exception as e:
+        logger.debug("Cannot inject parent constants for '%s': %s", module.__name__, e)
+
+
 def _find_theme_folder(theme_name: str) -> str | None:
     if theme_name == "standart":
         themes_dirs_to_check = [THEMES_DIRS[1]]
@@ -504,8 +528,10 @@ def load_theme(theme_name, inherit_chain=None):
 
             # Register the actual theme module and set its package if it's a custom theme
             sys.modules[module_name] = custom_theme
-            if themes_dir == THEMES_DIRS[0] and theme_name != "standart":  # Custom theme but not standard
+            if themes_dir == THEMES_DIRS[0] and theme_name != "standart":  # Custom theme (first in list) but not standard
                 custom_theme.__package__ = module_name  # This enables relative imports
+
+            _inject_parent_theme_constants(custom_theme, styles_file)
 
             try:
                 spec.loader.exec_module(custom_theme)

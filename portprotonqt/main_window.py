@@ -1620,6 +1620,8 @@ class MainWindow(
             focused_widget.click()
         elif isinstance(focused_widget, QPushButton):
             focused_widget.click()
+        elif callable(click := getattr(focused_widget, "click", None)):
+            click()
         elif isinstance(focused_widget, NavLabel):
             focused_widget.clicked.emit()
         elif isinstance(focused_widget, ImageCarousel):

@@ -15,7 +15,15 @@ portProtonPageHorizontalSpacing = 5
 portProtonPageVerticalSpacing = 2
 portProtonPageSectionHeaderSpacing = 5
 wineSettingsSetSpacing = 2
-
+themeStorePageSpacing = 10
+themeStoreGridOuterMargin = 14
+themeStoreGridSpacing = 16
+themeStoreGridMinColumnWidth = 260
+themeStoreCardMinWidth = 220
+themeStoreCardHeight = 280
+themeStorePreviewHeight = 160
+themeStoreDetailCarouselMinHeight = 300
+mangoHudSwitchesColumns = 4
 mangoHudSwitchesVerticalSpacing = 5
 mangoHudFpsColumns = 6
 mangoHudFpsVerticalSpacing = 5
@@ -537,4 +545,82 @@ ACTION_BUTTON_ACTIVE_STYLE = """
         border: 2px solid #70b8ff;
         background-color: #70b8ff;
     }
+"""
+
+THEME_STORE_SCROLL_STYLE = f"""
+    QScrollArea {{
+        background: {color_surface_elevated};
+        border: {border_none} {color_transparent};
+    }}
+"""
+
+THEME_STORE_CARD_STYLE = f"""
+    QFrame#themeStoreCard {{
+        background: {color_surface};
+        border: {border_thin} rgba(255, 255, 255, 0.2);
+        border-radius: {border_radius_small};
+    }}
+    QFrame#themeStoreCard:hover {{
+        background: {color_surface_hover};
+        border: {border_thin} {color_accent};
+    }}
+    QFrame#themeStoreCard:focus {{
+        background: {color_surface_hover};
+        border: {border_medium} {color_accent};
+    }}
+"""
+
+THEME_STORE_PREVIEW_STYLE = f"""
+    QLabel {{
+        background: {color_bg};
+        border: {border_none} {color_transparent};
+        border-top-left-radius: {border_radius_small};
+        border-top-right-radius: {border_radius_small};
+    }}
+"""
+
+THEME_STORE_CARD_TITLE_STYLE = f"""
+    QLabel {{
+        color: {color_text_dark};
+        background: {color_transparent};
+        border: {border_none} {color_transparent};
+        font-family: '{font_family}';
+        font-size: {font_size_normal};
+        font-weight: bold;
+        padding: 10px 12px 4px 12px;
+    }}
+"""
+
+THEME_STORE_CARD_META_STYLE = f"""
+    QLabel {{
+        color: {color_text_muted};
+        background: {color_transparent};
+        border: {border_none} {color_transparent};
+        font-family: '{font_family}';
+        font-size: {font_size_normal};
+        padding: 2px 12px;
+    }}
+"""
+
+THEME_STORE_DETAIL_TITLE_STYLE = f"""
+    QLabel {{
+        color: {color_text_dark};
+        background: {color_transparent};
+        border: {border_none} {color_transparent};
+        font-family: '{font_family}';
+        font-size: {font_size_header};
+        font-weight: bold;
+    }}
+"""
+
+THEME_STORE_DESCRIPTION_STYLE = f"""
+    QTextBrowser {{
+        color: {color_text_dark};
+        background: {color_surface};
+        border: {border_thin} rgba(255, 255, 255, 0.2);
+        border-radius: {border_radius_small};
+        font-family: '{font_family}';
+        font-size: {font_size_normal};
+        padding: 12px;
+    }}
 """

@@ -930,7 +930,7 @@ msgid "Search"
 msgstr "Поиск"
 
 msgid "Download"
-msgstr "Скачивание"
+msgstr "Скачать"
 
 msgid "Clear All"
 msgstr "Очистить выбранное"
