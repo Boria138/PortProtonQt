@@ -288,6 +288,105 @@ class TestInjectParentThemeConstants:
         _inject_parent_theme_constants(mod, "")
         assert not hasattr(mod, "any_key")
 
+    def test_inherits_through_two_levels(self, tmp_path: Path, monkeypatch):
+        self._patch_dirs(monkeypatch, tmp_path)
+        self._make_parent_theme(
+            tmp_path, "grandparent",
+            'grand_color = "#aaa"\ngrand_size = 42\n'
+        )
+        self._make_parent_theme(
+            tmp_path, "parent_mid",
+            'THEME_INHERITS = "grandparent"\nparent_color = "#bbb"\n'
+        )
+        self._make_child_theme(tmp_path, "child_deep", "parent_mid", '')
+
+        mod = types.ModuleType("child_deep")
+        _inject_parent_theme_constants(mod, "")
+
+        assert mod.__dict__["grand_color"] == "#aaa"
+        assert mod.__dict__["grand_size"] == 42
+        assert mod.__dict__["parent_color"] == "#bbb"
+
+    def test_inherits_through_three_levels(self, tmp_path: Path, monkeypatch):
+        self._patch_dirs(monkeypatch, tmp_path)
+        self._make_parent_theme(
+            tmp_path, "root_theme",
+            'root_val = "from_root"\n'
+        )
+        self._make_parent_theme(
+            tmp_path, "mid_theme",
+            'THEME_INHERITS = "root_theme"\nmid_val = "from_mid"\n'
+        )
+        self._make_parent_theme(
+            tmp_path, "inner_theme",
+            'THEME_INHERITS = "mid_theme"\ninner_val = "from_inner"\n'
+        )
+        self._make_child_theme(tmp_path, "leaf_theme", "inner_theme", '')
+
+        mod = types.ModuleType("leaf_theme")
+        _inject_parent_theme_constants(mod, "")
+
+        assert mod.__dict__["root_val"] == "from_root"
+        assert mod.__dict__["mid_val"] == "from_mid"
+        assert mod.__dict__["inner_val"] == "from_inner"
+
+    def test_constants_py_used_across_chain(self, tmp_path: Path, monkeypatch):
+        self._patch_dirs(monkeypatch, tmp_path)
+        gp_dir = tmp_path / "themes" / "gp_chain"
+        gp_styles = gp_dir / "styles"
+        gp_styles.mkdir(parents=True)
+        (gp_styles / "constants.py").write_text('gp_const = "from_gp_constants"\n')
+        (gp_dir / "styles.py").write_text('gp_style = "from_gp_styles"\n')
+
+        self._make_parent_theme(
+            tmp_path, "mid_chain",
+            'THEME_INHERITS = "gp_chain"\nmid_val = "ok"\n'
+        )
+        self._make_child_theme(tmp_path, "leaf_chain", "mid_chain", '')
+
+        mod = types.ModuleType("leaf_chain")
+        _inject_parent_theme_constants(mod, "")
+
+        assert mod.__dict__["gp_const"] == "from_gp_constants"
+        assert mod.__dict__["gp_style"] == "from_gp_styles"
+        assert mod.__dict__["mid_val"] == "ok"
+
+    def test_cycle_does_not_loop_forever(self, tmp_path: Path, monkeypatch):
+        self._patch_dirs(monkeypatch, tmp_path)
+        self._make_parent_theme(
+            tmp_path, "theme_a",
+            'THEME_INHERITS = "theme_b"\na_val = 1\n'
+        )
+        self._make_parent_theme(
+            tmp_path, "theme_b",
+            'THEME_INHERITS = "theme_a"\nb_val = 2\n'
+        )
+        self._make_child_theme(tmp_path, "theme_c", "theme_a", '')
+
+        mod = types.ModuleType("theme_c")
+        _inject_parent_theme_constants(mod, "")
+
+        assert mod.__dict__["a_val"] == 1
+        assert mod.__dict__["b_val"] == 2
+
+    def test_child_overrides_not_lost(self, tmp_path: Path, monkeypatch):
+        self._patch_dirs(monkeypatch, tmp_path)
+        self._make_parent_theme(
+            tmp_path, "parent_override",
+            'shared_key = "parent_value"\nparent_only = "yes"\n'
+        )
+        self._make_child_theme(
+            tmp_path, "child_override", "parent_override",
+            'shared_key = "child_value"\n'
+        )
+
+        mod = types.ModuleType("child_override")
+        mod.__dict__["shared_key"] = "child_value"
+        _inject_parent_theme_constants(mod, "")
+
+        assert mod.__dict__["shared_key"] == "child_value"
+        assert mod.__dict__["parent_only"] == "yes"
+
 
 # === _read_theme_parent_name ===
 
@@ -465,6 +564,50 @@ class TestThemeStylesIntegrity:
 
 
 # === Integration: all theme .py files are valid Python ===
+
+
+class TestMixThemeConstants:
+    """Verify mix and mix-light themes get constants from the full chain."""
+
+    _themes_dir = Path(__file__).parent.parent / "portprotonqt" / "themes"
+
+    def _patch_dirs(self, monkeypatch):
+        themes_dirs = [str(self._themes_dir.parent / "themes_custom"), str(self._themes_dir)]
+        monkeypatch.setattr(
+            "portprotonqt.theme_manager.THEMES_DIRS", themes_dirs,
+        )
+
+    def test_mix_gets_color_accent_from_standart(self, monkeypatch):
+        self._patch_dirs(monkeypatch)
+        mod = types.ModuleType("mix")
+        mod.__dict__["__name__"] = "mix"
+        _inject_parent_theme_constants(mod, str(self._themes_dir / "mix" / "styles.py"))
+
+        assert "color_accent" in mod.__dict__, (
+            "mix theme must inherit color_accent through classic -> standart chain"
+        )
+
+    def test_mix_light_gets_color_accent_from_standart_light(self, monkeypatch):
+        self._patch_dirs(monkeypatch)
+        mod = types.ModuleType("mix-light")
+        mod.__dict__["__name__"] = "mix-light"
+        _inject_parent_theme_constants(
+            mod, str(self._themes_dir / "mix-light" / "styles.py"),
+        )
+
+        assert "color_accent" in mod.__dict__, (
+            "mix-light theme must inherit color_accent through classic-light -> standart-light chain"
+        )
+
+    def test_classic_gets_color_accent_from_standart(self, monkeypatch):
+        self._patch_dirs(monkeypatch)
+        mod = types.ModuleType("classic")
+        mod.__dict__["__name__"] = "classic"
+        _inject_parent_theme_constants(
+            mod, str(self._themes_dir / "classic" / "styles.py"),
+        )
+
+        assert "color_accent" in mod.__dict__
 
 
 class TestThemeFilesParse:

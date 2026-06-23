@@ -93,25 +93,28 @@ def _get_parent_theme_name(theme_name: str, parent_name: str | None = None) -> s
 
 
 def _inject_parent_theme_constants(module, styles_file: str):
-    parent_name = _read_theme_parent_name(
-        module.__name__.split(".")[-1]
-    )
-    if not parent_name:
-        return
-    parent_folder = _find_theme_folder(parent_name)
-    if not parent_folder:
-        return
-    sources = []
-    styles_dir = os.path.join(parent_folder, "styles")
-    if os.path.isdir(styles_dir):
-        constants_path = os.path.join(styles_dir, "constants.py")
-        if os.path.exists(constants_path):
-            sources.append(constants_path)
-    parent_styles = os.path.join(parent_folder, "styles.py")
-    if os.path.exists(parent_styles):
-        sources.append(parent_styles)
-    for fpath in sources:
-        _inject_ast_constants(fpath, module)
+    visited = set()
+    current_name = module.__name__.split(".")[-1]
+    while current_name and current_name not in visited:
+        visited.add(current_name)
+        parent_name = _read_theme_parent_name(current_name)
+        if not parent_name:
+            break
+        parent_folder = _find_theme_folder(parent_name)
+        if not parent_folder:
+            break
+        sources = []
+        styles_dir = os.path.join(parent_folder, "styles")
+        if os.path.isdir(styles_dir):
+            constants_path = os.path.join(styles_dir, "constants.py")
+            if os.path.exists(constants_path):
+                sources.append(constants_path)
+        parent_styles = os.path.join(parent_folder, "styles.py")
+        if os.path.exists(parent_styles):
+            sources.append(parent_styles)
+        for fpath in sources:
+            _inject_ast_constants(fpath, module)
+        current_name = parent_name
 
 
 def _inject_ast_constants(source_path: str, module):
