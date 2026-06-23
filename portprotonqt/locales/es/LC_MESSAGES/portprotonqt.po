@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-03-22 13:50+0500\n"
-"PO-Revision-Date: 2026-06-22 18:14+0000\n"
+"PO-Revision-Date: 2026-06-23 16:50+0000\n"
 "Last-Translator: gallegonovato <gallegonovato@noreply.codeberg.org>\n"
 "Language-Team: Spanish <https://translate.codeberg.org/projects/portprotonqt/"
 "portprotonqt/es/>\n"
@@ -676,7 +676,7 @@ msgstr ""
 "Ejemplo: -dx11 -skipintro 1"
 
 msgid "Run After / Wrapper"
-msgstr ""
+msgstr "Ejecutar después / Envoltorio"
 
 msgid ""
 "Path to a second .exe, script, or wrapper command. Example: systemd-run "
@@ -765,124 +765,124 @@ msgid "d."
 msgstr ""
 
 msgid "h."
-msgstr ""
+msgstr "h"
 
 msgid "min."
-msgstr ""
+msgstr "min"
 
 msgid "sec."
-msgstr ""
+msgstr "s"
 
 msgid "Exit"
-msgstr ""
+msgstr "Salir"
 
 msgid "Tabs"
-msgstr ""
+msgstr "Pestaña"
 
 msgid "Favorites"
-msgstr ""
+msgstr "Favoritos"
 
 msgid "Recent Games"
-msgstr ""
+msgstr "Juegos recientes"
 
 msgid "No recent games"
-msgstr ""
+msgstr "Sin juegos recientes"
 
 msgid "No favorites"
-msgstr ""
+msgstr "Sin favoritos"
 
 #, python-brace-format
 msgid "Launch \"{name}\" with PortProton"
 msgstr "Iniciar «{name}» con PortProton"
 
 msgid "Debug log mode was launched"
-msgstr ""
+msgstr "Se ha iniciado el modo de registro de depuración"
 
 msgid "To diagnose the problem, copy the ENTIRE log to the site:"
-msgstr ""
+msgstr "Para diagnosticar el problema, copie el registro COMPLETO en:"
 
 msgid "LAST LAUNCH"
-msgstr ""
+msgstr "ÚLTIMO LANZAMIENTO"
 
 msgid "TIME SPENT"
-msgstr ""
+msgstr "TIEMPO EMPLEADO"
 
 msgid "MAIN STORY"
-msgstr ""
+msgstr "HISTORIA PRINCIPAL"
 
 msgid "MAIN + SIDES"
-msgstr ""
+msgstr "TRAMA PRINCIPAL + SECUNDARIA"
 
 msgid "COMPLETIONIST"
-msgstr ""
+msgstr "COMPLETISTA"
 
 msgid "Open Folder"
-msgstr ""
+msgstr "Abrir carpeta"
 
 msgid "Add a shortcut"
 msgstr "Añadir un acceso directo"
 
 msgid "Settings"
-msgstr ""
+msgstr "Ajustes"
 
 msgid "Create Log"
-msgstr ""
+msgstr "Crear registro"
 
 msgid "Install"
-msgstr ""
+msgstr "Instalar"
 
 msgid "Open Card"
 msgstr "Carta abierta"
 
 msgid "Reinstall"
-msgstr ""
+msgstr "Reinstalar"
 
 msgid "Game not found."
-msgstr ""
+msgstr "Juego no encontrado."
 
 msgid "Stop Log"
-msgstr ""
+msgstr "Detener el registro"
 
 msgid "Failed to start debug session"
-msgstr ""
+msgstr "No se pudo iniciar la sesión de depuración"
 
 msgid "Log Saved"
-msgstr ""
+msgstr "Registro guardado"
 
 msgid "Debug log saved to:"
-msgstr ""
+msgstr "Registro de depuración guardado en:"
 
 msgid "Back"
-msgstr ""
+msgstr "Atrás"
 
 #, python-brace-format
 msgid "Gamepad Support: {0}"
-msgstr ""
+msgstr "Compatibilidad con mandos: {0}"
 
 msgid "full"
-msgstr ""
+msgstr "completa"
 
 msgid "partial"
-msgstr ""
+msgstr "parcial"
 
 msgid "none"
-msgstr ""
+msgstr "ninguna"
 
 #, python-brace-format
 msgid "Launching {0}"
-msgstr ""
+msgstr "Comenzando {0}"
 
 msgid "Name:"
-msgstr ""
+msgstr "Nombre:"
 
 msgid "Path to Executable:"
-msgstr ""
+msgstr "Ruta al ejecutable:"
 
 msgid "Browse…"
 msgstr "Examinar…"
 
 msgid "Custom Cover:"
-msgstr ""
+msgstr "Portada personalizada:"
 
 msgid "Enter local path or URL for cover image"
 msgstr ""
