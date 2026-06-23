@@ -211,6 +211,9 @@ msgstr "已从 {location} 移除\"{game_name}\""
 msgid "Desktop"
 msgstr "桌面"
 
+msgid "Play this game on Steam"
+msgstr "在 Steam 上玩此游戏"
+
 msgid "Game name and executable path are required"
 msgstr "游戏名称和可执行文件路径为必填项"
 
@@ -307,6 +310,9 @@ msgstr "损坏"
 
 msgid "Denied"
 msgstr "已拒绝"
+
+msgid "Missing EXE"
+msgstr "缺少 EXE"
 
 msgid "Unknown Game"
 msgstr "未知游戏"
@@ -2138,6 +2144,10 @@ msgstr "已选择"
 msgid "Not selected"
 msgstr "未选择"
 
+#, python-brace-format
+msgid "by {0}"
+msgstr "作者：{0}"
+
 msgid "Select Theme:"
 msgstr "选择主题："
 
@@ -2161,6 +2171,33 @@ msgstr "作者："
 
 msgid "Link:"
 msgstr "链接："
+
+msgid "Sort by:"
+msgstr "排序方式："
+
+msgid "Most voted"
+msgstr "投票最多"
+
+msgid "Most downloaded"
+msgstr "下载最多"
+
+msgid "Recently updated"
+msgstr "最近更新"
+
+msgid "Name (A-Z)"
+msgstr "名称 (A-Z)"
+
+msgid "Loading..."
+msgstr "加载中..."
+
+msgid "Failed to load themes"
+msgstr "加载主题失败"
+
+msgid "Failed to download theme"
+msgstr "下载主题失败"
+
+msgid "Failed to install theme"
+msgstr "安装主题失败"
 
 msgid "Prefix:"
 msgstr "前缀："

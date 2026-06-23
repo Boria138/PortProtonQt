@@ -221,6 +221,9 @@ msgstr "'{game_name}' removido de {location}"
 msgid "Desktop"
 msgstr "Área de Trabalho"
 
+msgid "Play this game on Steam"
+msgstr "Jogar este jogo no Steam"
+
 msgid "Game name and executable path are required"
 msgstr "O nome do jogo e o caminho do executável são obrigatórios"
 
@@ -321,6 +324,9 @@ msgstr "Quebrado"
 
 msgid "Denied"
 msgstr "Negado"
+
+msgid "Missing EXE"
+msgstr "EXE ausente"
 
 msgid "Unknown Game"
 msgstr "Jogo Desconhecido"
@@ -2201,6 +2207,10 @@ msgstr "Selecionado"
 msgid "Not selected"
 msgstr "Não selecionado"
 
+#, python-brace-format
+msgid "by {0}"
+msgstr "por {0}"
+
 msgid "Select Theme:"
 msgstr "Selecionar Tema:"
 
@@ -2224,6 +2234,33 @@ msgstr "Autor:"
 
 msgid "Link:"
 msgstr "Link:"
+
+msgid "Sort by:"
+msgstr "Ordenar por:"
+
+msgid "Most voted"
+msgstr "Mais votados"
+
+msgid "Most downloaded"
+msgstr "Mais baixados"
+
+msgid "Recently updated"
+msgstr "Atualizados recentemente"
+
+msgid "Name (A-Z)"
+msgstr "Nome (A-Z)"
+
+msgid "Loading..."
+msgstr "Carregando..."
+
+msgid "Failed to load themes"
+msgstr "Falha ao carregar temas"
+
+msgid "Failed to download theme"
+msgstr "Falha ao baixar o tema"
+
+msgid "Failed to install theme"
+msgstr "Falha ao instalar o tema"
 
 msgid "Prefix:"
 msgstr "Prefixo:"

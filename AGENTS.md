@@ -111,6 +111,14 @@ QColor(128, 128, 128)
 # NEVER: Magic numbers or hardcoded constant values
 if status == 3: ...
 if key_value >= 0x01000000: ...
+
+# NEVER: Visual constants in application code (game_card.py, detail_pages/, etc.)
+# ALL visual/layout constants MUST live in themes/standart/styles/constants.py
+# Application code reads them via self.theme.CONSTANT_NAME
+COMPACT_CARD_WIDTH_THRESHOLD = 150  # BAD: in game_card.py
+RIBBON_SIZE_RATIO = 0.28           # BAD: in game_card.py
+BADGE_ICON_SIZE = 16               # BAD: in detail_pages/widgets.py
+SOURCE_CORNER_RATIO = 0.28         # BAD: in detail_pages/widgets.py
 ```
 
 ```python
@@ -148,6 +156,11 @@ QColor(self.theme.color_disabled_text)
 # ALWAYS: Add new constants to theme files
 # New colors → portprotonqt/themes/standart/styles/constants.py
 # New QSS styles → portprotonqt/themes/standart/styles/base.py or submodule
+# Never add style constants to application code
+
+# ALWAYS: Use descriptive named constants, enums, or built-in Qt values instead of magic numbers
+STATUS_COMPLETED = 3
+if status == STATUS_COMPLETED: ...
 # Never add style constants to application code
 
 # ALWAYS: Use descriptive named constants, enums, or built-in Qt values instead of magic numbers
@@ -197,6 +210,7 @@ if key_value >= Qt.Key.Key_Escape.value: ...
 - Preserve existing patterns
 - Keep surrounding code unchanged
 - Keep formatting changes limited to touched logic or required hook fixes
+- **NEVER delete existing style constants from theme files (QSS strings like `*_STYLE`). All styles must be preserved during rewrites. Deleted styles break child theme inheritance.**
 
 ---
 
@@ -380,7 +394,8 @@ tests/
 ├── test_icon_extractor.py   # NE/PE icon extraction, DIB decoding, thumbnails
 ├── test_dbus_tools.py       # D-Bus tools (notifications, idle inhibit, power profiles)
 ├── test_time_utils.py       # Playtime parsing, last launch cache, formatting
-└── test_shortcuts.py        # Desktop shortcut creation, paths with spaces, .desktop entry
+├── test_shortcuts.py        # Desktop shortcut creation, paths with spaces, .desktop entry
+└── test_theme_manager.py    # Theme AST injection, parent resolution, ThemeWrapper, style integrity
 ```
 
 ### Running Tests
@@ -415,6 +430,9 @@ pre-commit run pytest
 | `time_utils` | Spaced exe names in cache | 764bb3c |
 | `time_utils` | SHA256 hash + L5- index | 7a02b6b |
 | `time_utils` | Malformed playtime data | dd65021 |
+| `theme_manager` | AST injection lost dict constants, leaked CONTAINER_STYLE | 519edd1 |
+| `classic/styles.py` | Missing styles after theme rewrite (NAV, COMBOBOX, TAB, etc.) | 519edd1 |
+| `classic-light/styles.py` | NameError: border_none not defined (no styles/constants.py) | 519edd1 |
 
 ---
 
@@ -785,6 +803,15 @@ Fix: Use theme constant
 
 shadow.setColor(QColor(0, 0, 0, 150))  # Bad
 shadow.setColor(QColor(self.theme.color_shadow_card))  # Good
+
+[MEDIUM] Hardcoded style constant in application code
+File: portprotonqt/game_card.py:52
+Issue: Visual constant defined in application code instead of theme
+Fix: Add to themes/standart/styles/constants.py and read via self.theme
+
+COMPACT_CARD_WIDTH_THRESHOLD = 150  # Bad: in game_card.py
+# In constants.py: COMPACT_CARD = {"width_threshold": 150, ...}
+# In game_card.py: self.theme.COMPACT_CARD["width_threshold"]  # Good
 ```
 
 ### Approval

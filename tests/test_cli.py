@@ -7,6 +7,7 @@ from portprotonqt.cli import (
     is_launch_file,
     is_prefix_backup_file,
     parse_portproton_url,
+    parse_portprotonqt_theme_url,
     parse_resolution,
     LAUNCH_FILE_EXTENSIONS,
     PREFIX_BACKUP_EXTENSION,
@@ -128,6 +129,20 @@ class TestParsePortprotonUrl:
 
     def test_empty_string(self):
         assert parse_portproton_url("") is None
+
+
+class TestParsePortprotonqtThemeUrl:
+    def test_theme_url(self):
+        assert parse_portprotonqt_theme_url("portprotonqt://theme/6") == 6
+
+    def test_theme_url_trailing_slash(self):
+        assert parse_portprotonqt_theme_url("portprotonqt://theme/42/") == 42
+
+    def test_invalid_prefix(self):
+        assert parse_portprotonqt_theme_url("portproton://theme/6") is None
+
+    def test_invalid_theme_id(self):
+        assert parse_portprotonqt_theme_url("portprotonqt://theme/mix") is None
 
 
 class TestParseResolution:

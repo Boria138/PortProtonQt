@@ -1,4 +1,4 @@
-# Translations template for PortProtonQt.
+# German translations for PortProtonQt.
 # Copyright (C) 2026 boria138
 # This file is distributed under the same license as the PortProtonQt
 # project.
@@ -219,6 +219,9 @@ msgstr "'{game_name}' wurde entfernt von {location}"
 msgid "Desktop"
 msgstr "Desktop"
 
+msgid "Play this game on Steam"
+msgstr ""
+
 msgid "Game name and executable path are required"
 msgstr "Spielname und Ausführungspfad werden benötigt"
 
@@ -320,19 +323,7 @@ msgstr "Kaputt"
 msgid "Denied"
 msgstr "Abgelehnt"
 
-msgid "Platinum"
-msgstr ""
-
-msgid "Gold"
-msgstr ""
-
-msgid "Silver"
-msgstr ""
-
-msgid "Bronze"
-msgstr ""
-
-msgid "Pending"
+msgid "Missing EXE"
 msgstr ""
 
 msgid "Unknown Game"
@@ -2176,6 +2167,10 @@ msgstr ""
 msgid "Not selected"
 msgstr ""
 
+#, python-brace-format
+msgid "by {0}"
+msgstr ""
+
 msgid "Select Theme:"
 msgstr ""
 
@@ -2199,6 +2194,38 @@ msgstr ""
 
 msgid "Link:"
 msgstr ""
+
+msgid "Sort by:"
+msgstr ""
+
+msgid "Most voted"
+msgstr ""
+
+#, fuzzy
+msgid "Most downloaded"
+msgstr "Herunterladen"
+
+msgid "Recently updated"
+msgstr ""
+
+msgid "Name (A-Z)"
+msgstr ""
+
+#, fuzzy
+msgid "Loading..."
+msgstr "Wine wird heruntergeladen..."
+
+#, fuzzy
+msgid "Failed to load themes"
+msgstr "Spiel konnte nicht gestoppt werden"
+
+#, fuzzy
+msgid "Failed to download theme"
+msgstr "Spiel konnte nicht gestoppt werden"
+
+#, fuzzy
+msgid "Failed to install theme"
+msgstr "Spiel konnte nicht gestoppt werden"
 
 msgid "Prefix:"
 msgstr ""

@@ -45,27 +45,6 @@ from portprotonqt.custom_widgets import ClickableLabel
 from portprotonqt.animations import GameCardAnimations
 
 PROTONDB_TIERS = ("platinum", "gold", "silver", "bronze", "borked", "pending")
-COMPACT_CARD_WIDTH_THRESHOLD = 150
-COMPACT_CARD_HEIGHT_RATIO = 2.25
-COMPACT_CARD_TITLE_LINES = 3
-COMPACT_CARD_TITLE_SCALE = 0.75
-RIBBON_SIZE_RATIO = 0.28
-RIBBON_MIN_SIZE = 54
-RIBBON_MIN_WIDGET_SIZE = 4
-RIBBON_PEEL_START_RATIO = 0.32
-RIBBON_PEEL_MID_RATIO = 0.58
-RIBBON_PEEL_END_RATIO = 0.82
-RIBBON_PEEL_SHADOW_WIDTH = 3
-RIBBON_FOLD_START_RATIO = 0.60
-RIBBON_FOLD_END_RATIO = 0.92
-RIBBON_ICON_CENTER_RATIO = 0.84
-RIBBON_ICON_SIZE_RATIO = 0.25
-RIBBON_MIN_ICON_SIZE = 8
-RIBBON_GRADIENT_START = 0.0
-RIBBON_GRADIENT_END = 1.0
-RIBBON_GRADIENT_LIGHTER = 145
-RIBBON_GRADIENT_DARKER = 112
-RIBBON_FOLD_DARKER = 132
 
 
 def is_valid_protondb_tier(tier: str | None) -> bool:
@@ -78,14 +57,15 @@ class SourceCorner(QWidget):
     def __init__(
         self,
         icon: str | QIcon | None = None,
-        color: str = "",
-        fold_color: str = "",
+        config: dict | None = None,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self._icon = icon
-        self._color = QColor(color)
-        self._fold_color = QColor(fold_color)
+        cfg = config or {}
+        self._color = QColor(cfg.get("ribbon_color", "#3f424d"))
+        self._fold_color = QColor(cfg.get("ribbon_fold_color", "#00000096"))
+        self._cfg = cfg
         self.setFixedSize(0, 0)
         self._visible = False
 
@@ -94,7 +74,8 @@ class SourceCorner(QWidget):
             return
         w = self.width()
         h = self.height()
-        if w < RIBBON_MIN_WIDGET_SIZE or h < RIBBON_MIN_WIDGET_SIZE:
+        cfg = self._cfg
+        if w < cfg.get("min_widget_size", 4) or h < cfg.get("min_widget_size", 4):
             return
 
         painter = QPainter(self)
@@ -102,7 +83,7 @@ class SourceCorner(QWidget):
         painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
 
         shadow_path = self._create_shadow_path(w, h)
-        painter.setPen(QPen(self._fold_color, RIBBON_PEEL_SHADOW_WIDTH))
+        painter.setPen(QPen(self._fold_color, cfg.get("peel_shadow_width", 3)))
         painter.drawPath(shadow_path)
 
         path = self._create_path(w, h)
@@ -110,75 +91,79 @@ class SourceCorner(QWidget):
         painter.setPen(Qt.PenStyle.NoPen)
         painter.drawPath(path)
         fold_path = self._create_fold_path(w, h)
-        painter.setBrush(self._color.darker(RIBBON_FOLD_DARKER))
+        painter.setBrush(self._color.darker(cfg.get("fold_darker", 132)))
         painter.drawPath(fold_path)
         self._draw_icon(painter, w, h)
 
     def _create_gradient(self, w: int, h: int) -> QLinearGradient:
+        cfg = self._cfg
         gradient = QLinearGradient(
-            w * RIBBON_PEEL_START_RATIO,
+            w * cfg.get("peel_start_ratio", 0.32),
             h,
             w,
-            h * RIBBON_PEEL_START_RATIO,
+            h * cfg.get("peel_start_ratio", 0.32),
         )
         gradient.setColorAt(
-            RIBBON_GRADIENT_START,
-            self._color.lighter(RIBBON_GRADIENT_LIGHTER),
+            cfg.get("gradient_start", 0.0),
+            self._color.lighter(cfg.get("gradient_lighter", 145)),
         )
         gradient.setColorAt(
-            RIBBON_GRADIENT_END,
-            self._color.darker(RIBBON_GRADIENT_DARKER),
+            cfg.get("gradient_end", 1.0),
+            self._color.darker(cfg.get("gradient_darker", 112)),
         )
         return gradient
 
     def _create_path(self, w: int, h: int) -> QPainterPath:
+        cfg = self._cfg
         path = QPainterPath()
         path.moveTo(w, h)
-        path.lineTo(w * RIBBON_PEEL_START_RATIO, h)
+        path.lineTo(w * cfg.get("peel_start_ratio", 0.32), h)
         path.quadTo(
-            w * RIBBON_PEEL_MID_RATIO,
+            w * cfg.get("peel_mid_ratio", 0.58),
             h,
-            w * RIBBON_PEEL_END_RATIO,
-            h * RIBBON_PEEL_MID_RATIO,
+            w * cfg.get("peel_end_ratio", 0.82),
+            h * cfg.get("peel_mid_ratio", 0.58),
         )
         path.quadTo(
             w,
-            h * RIBBON_PEEL_MID_RATIO,
+            h * cfg.get("peel_mid_ratio", 0.58),
             w,
-            h * RIBBON_PEEL_START_RATIO,
+            h * cfg.get("peel_start_ratio", 0.32),
         )
         path.lineTo(w, h)
         path.closeSubpath()
         return path
 
     def _create_fold_path(self, w: int, h: int) -> QPainterPath:
+        cfg = self._cfg
         fold_path = QPainterPath()
         fold_path.moveTo(w, h)
-        fold_path.lineTo(w * RIBBON_FOLD_START_RATIO, h)
+        fold_path.lineTo(w * cfg.get("fold_start_ratio", 0.60), h)
         fold_path.quadTo(
-            w * RIBBON_FOLD_END_RATIO,
-            h * RIBBON_FOLD_END_RATIO,
+            w * cfg.get("fold_end_ratio", 0.92),
+            h * cfg.get("fold_end_ratio", 0.92),
             w,
-            h * RIBBON_FOLD_START_RATIO,
+            h * cfg.get("fold_start_ratio", 0.60),
         )
         fold_path.lineTo(w, h)
         fold_path.closeSubpath()
         return fold_path
 
     def _create_shadow_path(self, w: int, h: int) -> QPainterPath:
+        cfg = self._cfg
         shadow_path = QPainterPath()
-        shadow_path.moveTo(w * RIBBON_PEEL_START_RATIO, h)
+        shadow_path.moveTo(w * cfg.get("peel_start_ratio", 0.32), h)
         shadow_path.quadTo(
-            w * RIBBON_PEEL_MID_RATIO,
+            w * cfg.get("peel_mid_ratio", 0.58),
             h,
-            w * RIBBON_PEEL_END_RATIO,
-            h * RIBBON_PEEL_MID_RATIO,
+            w * cfg.get("peel_end_ratio", 0.82),
+            h * cfg.get("peel_mid_ratio", 0.58),
         )
         shadow_path.quadTo(
             w,
-            h * RIBBON_PEEL_MID_RATIO,
+            h * cfg.get("peel_mid_ratio", 0.58),
             w,
-            h * RIBBON_PEEL_START_RATIO,
+            h * cfg.get("peel_start_ratio", 0.32),
         )
         return shadow_path
 
@@ -188,8 +173,9 @@ class SourceCorner(QWidget):
 
         from portprotonqt.qt_utils import get_device_pixel_ratio
 
+        cfg = self._cfg
         dpr = get_device_pixel_ratio()
-        icon_size = max(RIBBON_MIN_ICON_SIZE, int(w * RIBBON_ICON_SIZE_RATIO))
+        icon_size = max(cfg.get("min_icon_size", 8), int(w * cfg.get("icon_size_ratio", 0.25)))
         render_size = int(icon_size * dpr)
 
         if isinstance(self._icon, str):
@@ -199,9 +185,10 @@ class SourceCorner(QWidget):
         else:
             return
 
+        center_ratio = cfg.get("icon_center_ratio", 0.84)
         painter.drawPixmap(
-            int(w * RIBBON_ICON_CENTER_RATIO - icon_size / 2),
-            int(h * RIBBON_ICON_CENTER_RATIO - icon_size / 2),
+            int(w * center_ratio - icon_size / 2),
+            int(h * center_ratio - icon_size / 2),
             icon_size,
             icon_size,
             pixmap
@@ -345,11 +332,10 @@ class GameCard(QFrame):
             self.protondbLabel.setVisible(False)
 
         steam_icon = self.theme_manager.get_icon("badge_steam", as_path=True)
-        corner_colors = self.theme.get_source_corner_colors()
+        corner_config = self.theme.get_source_corner_config()
         self.steamLabel = SourceCorner(
             icon=steam_icon,
-            color=corner_colors["color"],
-            fold_color=corner_colors["fold_color"],
+            config=corner_config,
             parent=self.coverWidget,
         )
         self.steamLabel.setVisible(self.steam_visible)
@@ -359,8 +345,7 @@ class GameCard(QFrame):
         portproton_icon = self.theme_manager.get_icon("badge_portproton", as_path=True)
         self.portprotonLabel = SourceCorner(
             icon=portproton_icon,
-            color=corner_colors["color"],
-            fold_color=corner_colors["fold_color"],
+            config=corner_config,
             parent=self.coverWidget,
         )
         self.portprotonLabel.setVisible(self.portproton_visible)
@@ -585,8 +570,9 @@ class GameCard(QFrame):
             except RuntimeError:
                 pass
 
-        ribbon_size = int(current_width * RIBBON_SIZE_RATIO)
-        ribbon_size = max(ribbon_size, int(RIBBON_MIN_SIZE * self._scale))
+        ribbon_cfg = getattr(self.theme, "SOURCE_CORNER", {})
+        ribbon_size = int(current_width * ribbon_cfg.get("size_ratio", 0.28))
+        ribbon_size = max(ribbon_size, int(ribbon_cfg.get("min_size", 54) * self._scale))
         source_ribbons = [
             (self.steam_visible, self.steamLabel),
             (self.portproton_visible, self.portprotonLabel),
@@ -631,8 +617,8 @@ class GameCard(QFrame):
             self.coverWidget.setContentsMargins(10, 0, 0, 0)
             self.coverLabel.setFixedSize(icon_size, icon_size)
         else:
-            small_card_mode = self.base_card_width < COMPACT_CARD_WIDTH_THRESHOLD
-            height_ratio = COMPACT_CARD_HEIGHT_RATIO if small_card_mode else 1.8
+            small_card_mode = self.base_card_width < self.theme.COMPACT_CARD["width_threshold"]
+            height_ratio = self.theme.COMPACT_CARD["height_ratio"] if small_card_mode else 1.8
             scaled_height = int(self.base_card_width * height_ratio * self._scale)
             self.setFixedSize(scaled_width + scaled_extra, scaled_height + scaled_extra)
             self.coverWidget.setFixedSize(scaled_width, int(scaled_width * 1.5))
@@ -652,7 +638,7 @@ class GameCard(QFrame):
         icon_space = max(2, int(badge_host_width * 0.012))
         compact_badge_width = int(badge_host_width * 0.12)
         compact_badge_width = max(compact_badge_width, icon_size + icon_space + 8)
-        small_card_mode = not self.list_layout and self.base_card_width < COMPACT_CARD_WIDTH_THRESHOLD
+        small_card_mode = not self.list_layout and self.base_card_width < self.theme.COMPACT_CARD["width_threshold"]
         compact_badge = self.badge_view_mode == "compact" or small_card_mode
         hidden_badges = self.badge_view_mode == "hidden"
         protondb_visible = is_valid_protondb_tier(self.protondb_tier) and not self.economy_mode
@@ -682,7 +668,7 @@ class GameCard(QFrame):
         if self.base_font_size is not None:
             try:
                 font = self.nameLabel.font()
-                title_scale = COMPACT_CARD_TITLE_SCALE if small_card_mode else 1.0
+                title_scale = self.theme.COMPACT_CARD["title_scale"] if small_card_mode else 1.0
                 new_font_size = self.base_font_size * self._scale * title_scale
                 if new_font_size > 0:
                     font.setPointSizeF(new_font_size)
@@ -843,7 +829,7 @@ class GameCard(QFrame):
             if not current_line:
                 current_line = metrics.elidedText(word, Qt.TextElideMode.ElideRight, max_width)
                 continue
-            if len(lines) >= COMPACT_CARD_TITLE_LINES - 1:
+            if len(lines) >= self.theme.COMPACT_CARD["title_lines"] - 1:
                 rest = " ".join([current_line, *words[index:]]).strip()
                 lines.append(metrics.elidedText(rest, Qt.TextElideMode.ElideRight, max_width))
                 return "\n".join(lines)
@@ -852,11 +838,11 @@ class GameCard(QFrame):
             current_line = word
 
         if current_line:
-            if len(lines) >= COMPACT_CARD_TITLE_LINES:
+            if len(lines) >= self.theme.COMPACT_CARD["title_lines"]:
                 lines[-1] = metrics.elidedText(lines[-1], Qt.TextElideMode.ElideRight, max_width)
             else:
                 lines.append(current_line)
-        return "\n".join(lines[:COMPACT_CARD_TITLE_LINES])
+        return "\n".join(lines[:self.theme.COMPACT_CARD["title_lines"]])
 
     @staticmethod
     def _extract_executable_path(exec_line: str) -> str:

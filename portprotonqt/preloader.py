@@ -68,7 +68,7 @@ class Preloader(QWidget):
             except FileNotFoundError:
                 theme = load_theme("standart")
 
-        for attr_name in ("color_accent_blue", "color_a"):
+        for attr_name in ("color_preloader", "color_accent_blue", "color_accent"):
             if not hasattr(theme, attr_name):
                 continue
             parsed = self._parse_color_string(getattr(theme, attr_name))

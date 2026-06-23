@@ -117,6 +117,20 @@ class ThemeSecurityChecker:
         "unicode", "xrange", "cmp", "reload", "basestring",
     }
 
+    # Safe imports allowed for custom themes (provides theme API access)
+    SAFE_THEME_IMPORTS = {
+        "portprotonqt.theme_manager",
+        "portprotonqt.config",
+    }
+
+    # Safe top-level function/method calls allowed for custom themes
+    SAFE_THEME_CALLS = {
+        "ThemeManager",
+        "ui_config.get_theme",
+        "theme_manager.get_icon",
+        "theme_manager.get_theme_image",
+    }
+
     # Forbidden attributes that could be dangerous
     FORBIDDEN_ATTRIBUTES = {
         # Special methods and attributes that could be used for code execution
@@ -425,18 +439,53 @@ class ThemeSecurityChecker:
                     continue
 
                 if isinstance(node, ast.ImportFrom) and node.level == 0:
-                    self.errors.append(
-                        f"Absolute imports are forbidden in custom theme file {theme_file}"
-                    )
-                    self.has_errors = True
-                    continue
+                    if not self._is_safe_theme_import(node):
+                        self.errors.append(
+                            f"Absolute imports are forbidden in custom theme file {theme_file}"
+                        )
+                        self.has_errors = True
+                        continue
 
                 if self._has_top_level_runtime_call(node):
-                    self.errors.append(
-                        f"Top-level function calls are forbidden in custom theme file {theme_file}"
-                    )
-                    self.has_errors = True
-                    continue
+                    if not self._is_safe_theme_toplevel_call(node):
+                        self.errors.append(
+                            f"Top-level function calls are forbidden in custom theme file {theme_file}"
+                        )
+                        self.has_errors = True
+                        continue
+
+    def _is_safe_theme_import(self, node: ast.ImportFrom) -> bool:
+        """Check if import is from a safe theme module."""
+        if node.module is None:
+            return False
+        return node.module in self.SAFE_THEME_IMPORTS or any(
+            node.module.startswith(safe + ".") for safe in self.SAFE_THEME_IMPORTS
+        )
+
+    def _is_safe_theme_toplevel_call(self, node: ast.AST) -> bool:
+        """Check if a top-level assignment/call uses only safe theme functions."""
+        if isinstance(node, ast.Assign):
+            return self._all_calls_in_node_are_safe(node)
+        if isinstance(node, ast.AnnAssign) and node.value is not None:
+            return self._all_calls_in_node_are_safe(node)
+        if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
+            return self._is_safe_theme_call(node.value.func)
+        return False
+
+    def _all_calls_in_node_are_safe(self, node: ast.AST) -> bool:
+        """Check that every call in a node is a safe theme function."""
+        for child in ast.walk(node):
+            if isinstance(child, ast.Call):
+                if not self._is_safe_theme_call(child.func):
+                    return False
+        return True
+
+    def _is_safe_theme_call(self, func_node: ast.expr) -> bool:
+        """Check if a function call matches a safe theme pattern."""
+        path = self._get_attribute_path(func_node)
+        if isinstance(func_node, ast.Name):
+            path = func_node.id
+        return path in self.SAFE_THEME_CALLS
 
     def _contains_break(self, body: list[ast.stmt]) -> bool:
         """Return True if body contains break statement."""

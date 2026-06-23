@@ -131,6 +131,7 @@ def load_steam_apps_async(callback: Callable[[list], None]) -> None:
                 os.remove(cache_tar_path)
                 logger.info("Deleted archive: %s", cache_tar_path)
             delete_cached_app_files(str(cache_manager.cache_dir), "steam_app_*.json")
+            delete_cached_app_files(str(cache_manager.cache_dir), "protondb_*.json")
 
             steam_apps = data if isinstance(data, list) else []
             logger.info("Loaded %d apps from archive", len(steam_apps))
@@ -158,12 +159,14 @@ def load_steam_apps_async(callback: Callable[[list], None]) -> None:
                 "https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/data/games_appid.tar.xz"
             )
             delete_cached_app_files(str(cache_manager.cache_dir), "steam_app_*.json")
+            delete_cached_app_files(str(cache_manager.cache_dir), "protondb_*.json")
             downloader.download_async(app_list_url, str(cache_tar_path), timeout=5, callback=process_tar)
     else:
         app_list_url = (
             "https://git.linux-gaming.ru/Linux-Gaming/PortProtonQt/raw/branch/main/data/games_appid.tar.xz"
         )
         delete_cached_app_files(str(cache_manager.cache_dir), "steam_app_*.json")
+        delete_cached_app_files(str(cache_manager.cache_dir), "protondb_*.json")
         downloader.download_async(app_list_url, str(cache_tar_path), timeout=5, callback=process_tar)
 
 

@@ -212,6 +212,9 @@ msgstr ""
 msgid "Desktop"
 msgstr ""
 
+msgid "Play this game on Steam"
+msgstr ""
+
 msgid "Game name and executable path are required"
 msgstr ""
 
@@ -307,6 +310,9 @@ msgid "Broken"
 msgstr ""
 
 msgid "Denied"
+msgstr ""
+
+msgid "Missing EXE"
 msgstr ""
 
 msgid "Unknown Game"
@@ -2101,6 +2107,10 @@ msgstr ""
 msgid "Not selected"
 msgstr ""
 
+#, python-brace-format
+msgid "by {0}"
+msgstr ""
+
 msgid "Select Theme:"
 msgstr ""
 
@@ -2123,6 +2133,33 @@ msgid "Author:"
 msgstr ""
 
 msgid "Link:"
+msgstr ""
+
+msgid "Sort by:"
+msgstr ""
+
+msgid "Most voted"
+msgstr ""
+
+msgid "Most downloaded"
+msgstr ""
+
+msgid "Recently updated"
+msgstr ""
+
+msgid "Name (A-Z)"
+msgstr ""
+
+msgid "Loading..."
+msgstr ""
+
+msgid "Failed to load themes"
+msgstr ""
+
+msgid "Failed to download theme"
+msgstr ""
+
+msgid "Failed to install theme"
 msgstr ""
 
 msgid "Prefix:"

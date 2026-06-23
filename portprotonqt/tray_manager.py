@@ -39,6 +39,8 @@ def _restart_args(args: list[str]) -> list[str]:
             continue
         if _is_prefix_backup_arg(arg):
             continue
+        if arg.lower().startswith("portprotonqt://theme/"):
+            continue
         restart_args.append(arg)
     return restart_args
 

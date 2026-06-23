@@ -2932,18 +2932,72 @@ class InputManager(QObject):
 
     def _get_theme_tab_focusables(self) -> list[QWidget]:
         """Return focusable widgets for the themes tab gamepad navigation."""
+        if self._is_theme_store_visible():
+            return self._get_theme_store_focusables()
+
         widgets = []
         for attr_name in ("themesCombo", "themeVariantCombo", "screenshotsCarousel", "applyButton"):
             widget = getattr(self._parent, attr_name, None)
-            if isinstance(widget, QWidget) and widget.isVisible() and widget.isEnabled():
+            if self._is_visible_enabled_widget(widget):
                 widgets.append(widget)
         return widgets
 
-    def _handle_theme_tab_navigation(self, value: int) -> bool:
-        """Handle up/down focus movement in themes tab."""
+    def _is_visible_enabled_widget(self, widget: object) -> bool:
+        return isinstance(widget, QWidget) and widget.isVisible() and widget.isEnabled()
+
+    def _is_theme_store_visible(self) -> bool:
+        content_stack = getattr(self._parent, "themeContentStack", None)
+        store_page = getattr(self._parent, "themeStorePage", None)
+        return content_stack is not None and content_stack.currentWidget() == store_page
+
+    def _get_theme_store_focusables(self) -> list[QWidget]:
+        store_stack = getattr(self._parent, "themeStoreStack", None)
+        detail_page = getattr(self._parent, "themeStoreDetailPage", None)
+        if store_stack is not None and store_stack.currentWidget() == detail_page:
+            return self._get_theme_store_detail_focusables()
+
+        widgets = []
+        for attr_name in ("themesCombo", "themeStoreSortCombo"):
+            widget = getattr(self._parent, attr_name, None)
+            if self._is_visible_enabled_widget(widget):
+                widgets.append(widget)
+        widgets.extend(self._get_theme_store_cards())
+        return widgets
+
+    def _get_theme_store_detail_focusables(self) -> list[QWidget]:
+        widgets = []
+        for attr_name in (
+            "themeStoreBackButton",
+            "themeStoreDownloadButton",
+            "themeStoreCarousel",
+            "themeStoreDarkButton",
+            "themeStoreLightButton",
+        ):
+            widget = getattr(self._parent, attr_name, None)
+            if self._is_visible_enabled_widget(widget):
+                widgets.append(widget)
+        return widgets
+
+    def _get_theme_store_cards(self) -> list[QWidget]:
+        grid_widget = getattr(self._parent, "themeStoreGridWidget", None)
+        if not isinstance(grid_widget, QWidget):
+            return []
+        cards = grid_widget.findChildren(QWidget, "themeStoreCard")
+        return [card for card in cards if card.isVisible() and card.isEnabled()]
+
+    def _handle_theme_tab_navigation(self, code: int, value: int) -> bool:
+        """Handle D-pad focus movement in themes tab."""
         theme_tab_index = getattr(self._parent, "theme_tab_index", None)
         if theme_tab_index is None or self._parent.stackedWidget.currentIndex() != theme_tab_index:
             return False
+
+        if self._is_theme_store_visible() and self._handle_theme_store_grid_navigation(code, value):
+            return True
+
+        focused = QApplication.focusWidget()
+        if code == PAD_DPAD_X and focused in self._get_theme_carousels():
+            self._scroll_theme_carousel(focused, value)
+            return True
 
         focusables = self._get_theme_tab_focusables()
         if not focusables:
@@ -2955,12 +3009,52 @@ class InputManager(QObject):
             return True
 
         current_index = focusables.index(focused)
-        if value > 0:
+        if code == PAD_DPAD_Y and value > 0 or code == PAD_DPAD_X and value > 0:
             next_index = (current_index + 1) % len(focusables)
         else:
             next_index = (current_index - 1) % len(focusables)
         focusables[next_index].setFocus(Qt.FocusReason.OtherFocusReason)
+        self._ensure_theme_store_widget_visible(focusables[next_index])
         return True
+
+    def _handle_theme_store_grid_navigation(self, code: int, value: int) -> bool:
+        focused = QApplication.focusWidget()
+        cards = self._get_theme_store_cards()
+        if focused not in cards:
+            return False
+
+        index = cards.index(focused)
+        columns = max(1, getattr(self._parent, "_theme_store_column_count", lambda: 1)())
+        step = columns if code == PAD_DPAD_Y else 1
+        next_index = index + step if value > 0 else index - step
+        if 0 <= next_index < len(cards):
+            cards[next_index].setFocus(Qt.FocusReason.OtherFocusReason)
+            self._ensure_theme_store_widget_visible(cards[next_index])
+            return True
+        return False
+
+    def _ensure_theme_store_widget_visible(self, widget: QWidget) -> None:
+        scroll_area = getattr(self._parent, "themeStoreScrollArea", None)
+        if isinstance(scroll_area, QScrollArea):
+            scroll_area.ensureWidgetVisible(widget)
+
+    def _get_theme_carousels(self) -> list[QWidget]:
+        widgets = []
+        for attr_name in ("screenshotsCarousel", "themeStoreCarousel"):
+            widget = getattr(self._parent, attr_name, None)
+            if self._is_visible_enabled_widget(widget):
+                widgets.append(widget)
+        return widgets
+
+    def _scroll_theme_carousel(self, carousel: QWidget, value: int) -> None:
+        if value > 0:
+            scroll_right = getattr(carousel, "scroll_right", None)
+            if callable(scroll_right):
+                scroll_right()
+        elif value < 0:
+            scroll_left = getattr(carousel, "scroll_left", None)
+            if callable(scroll_left):
+                scroll_left()
 
     @Slot(int, int, float)
     def handle_dpad_slot(self, code: int, value: int, current_time: float) -> None:
@@ -3214,7 +3308,7 @@ class InputManager(QObject):
                     self._navigate_game_cards(container, current_index, code, value)
                     return
 
-            if code == PAD_DPAD_Y and value != 0 and self._handle_theme_tab_navigation(value):
+            if code in (PAD_DPAD_X, PAD_DPAD_Y) and value != 0 and self._handle_theme_tab_navigation(code, value):
                 return
 
             # System tab section buttons: do not cycle tabs on Up/Down.

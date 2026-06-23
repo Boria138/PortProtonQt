@@ -1807,8 +1807,8 @@ def build_command(args: argparse.Namespace) -> list[str]:
 
 def apply_palette(widget: QPlainTextEdit, theme: object | None) -> None:
     """Apply terminal colors from the selected theme."""
-    background_color = _theme_color(theme, "color_b")
-    foreground_color = _theme_color(theme, "color_f")
+    background_color = _theme_color(theme, "color_bg")
+    foreground_color = _theme_color(theme, "color_text")
     selection_f = _theme_color(theme, "color_selection_f")
     selection_b = _theme_color(theme, "color_selection_b")
     opacity = getattr(theme, "background_opacity", 1.0)

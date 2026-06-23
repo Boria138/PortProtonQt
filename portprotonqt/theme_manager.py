@@ -92,6 +92,54 @@ def _get_parent_theme_name(theme_name: str, parent_name: str | None = None) -> s
     return parent_name
 
 
+def _inject_parent_theme_constants(module, styles_file: str):
+    visited = set()
+    current_name = module.__name__.split(".")[-1]
+    while current_name and current_name not in visited:
+        visited.add(current_name)
+        parent_name = _read_theme_parent_name(current_name)
+        if not parent_name:
+            break
+        parent_folder = _find_theme_folder(parent_name)
+        if not parent_folder:
+            break
+        sources = []
+        styles_dir = os.path.join(parent_folder, "styles")
+        if os.path.isdir(styles_dir):
+            constants_path = os.path.join(styles_dir, "constants.py")
+            if os.path.exists(constants_path):
+                sources.append(constants_path)
+        parent_styles = os.path.join(parent_folder, "styles.py")
+        if os.path.exists(parent_styles):
+            sources.append(parent_styles)
+        for fpath in sources:
+            _inject_ast_constants(fpath, module)
+        current_name = parent_name
+
+
+def _inject_ast_constants(source_path: str, module):
+    try:
+        with open(source_path, encoding="utf-8") as f:
+            tree = ast.parse(f.read(), filename=source_path)
+    except (OSError, SyntaxError) as e:
+        logger.debug("Cannot parse '%s': %s", source_path, e)
+        return
+    for node in ast.iter_child_nodes(tree):
+        if not isinstance(node, ast.Assign):
+            continue
+        if not isinstance(node.value, (ast.Constant, ast.List, ast.Tuple, ast.Dict)):
+            continue
+        for target in node.targets:
+            if not isinstance(target, ast.Name):
+                continue
+            if target.id.startswith("_") or target.id in module.__dict__:
+                continue
+            try:
+                module.__dict__[target.id] = ast.literal_eval(node.value)
+            except (ValueError, TypeError):
+                continue
+
+
 def _find_theme_folder(theme_name: str) -> str | None:
     if theme_name == "standart":
         themes_dirs_to_check = [THEMES_DIRS[1]]
@@ -329,28 +377,53 @@ class ThemeWrapper:
             except FileNotFoundError:
                 logger.warning("Parent theme '%s' unavailable, using 'standart'", self.parent_theme_name)
                 self._default_theme = load_theme("standart")
-        return getattr(self._default_theme, name)
+        try:
+            return getattr(self._default_theme, name)
+        except AttributeError:
+            pass
+        raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
 
     def _get_generated_style(self, name):
-        if self.parent_theme_name != "standart":
+        parent_styles_dir = self._find_parent_styles_dir()
+        if parent_styles_dir is None:
             return None
         if self._generated_styles is None:
-            self._generated_styles = self._build_generated_styles()
+            self._generated_styles = self._build_generated_styles(parent_styles_dir)
         return self._generated_styles.get(name)
 
-    def _build_generated_styles(self):
+    def _find_parent_styles_dir(self):
+        parent_name = self.parent_theme_name
+        if not parent_name:
+            return None
+        chain = _get_theme_resource_chain(parent_name)
+        for name in chain:
+            folder = _find_theme_folder(name)
+            if not folder:
+                continue
+            styles_dir = os.path.join(folder, "styles")
+            if os.path.isdir(styles_dir):
+                return styles_dir
+        return None
+
+    def _build_generated_styles(self, styles_dir: str):
         generated = {}
-        standard_styles_dir = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            "themes",
-            "standart",
-            "styles",
-        )
-        constants = {
+        constants_path = os.path.join(styles_dir, "constants.py")
+        base_constants: dict = {}
+        try:
+            with open(constants_path, encoding="utf-8") as f:
+                exec(compile(f.read(), constants_path, "exec"), base_constants, base_constants)
+            base_constants = {
+                k: v for k, v in base_constants.items()
+                if not k.startswith("_") and not callable(v)
+            }
+        except Exception:
+            base_constants = {}
+        custom_constants = {
             key: value
             for key, value in vars(self.custom_theme).items()
-            if not key.startswith("_")
+            if not key.startswith("_") and not callable(value)
         }
+        constants = {**base_constants, **custom_constants}
         for style_file in (
             "base.py",
             "game_card.py",
@@ -361,7 +434,7 @@ class ThemeWrapper:
             "file_explorer.py",
             "theme_utils.py",
         ):
-            style_path = os.path.join(standard_styles_dir, style_file)
+            style_path = os.path.join(styles_dir, style_file)
             try:
                 with open(style_path, encoding="utf-8") as source_file:
                     source = source_file.read()
@@ -483,8 +556,10 @@ def load_theme(theme_name, inherit_chain=None):
 
             # Register the actual theme module and set its package if it's a custom theme
             sys.modules[module_name] = custom_theme
-            if themes_dir == THEMES_DIRS[0] and theme_name != "standart":  # Custom theme but not standard
+            if themes_dir == THEMES_DIRS[0] and theme_name != "standart":  # Custom theme (first in list) but not standard
                 custom_theme.__package__ = module_name  # This enables relative imports
+
+            _inject_parent_theme_constants(custom_theme, styles_file)
 
             try:
                 spec.loader.exec_module(custom_theme)

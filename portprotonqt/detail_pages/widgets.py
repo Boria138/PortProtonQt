@@ -25,23 +25,12 @@ from portprotonqt.config import ui_config
 from portprotonqt.theme_manager import ThemeManager
 
 
-COVER_WIDTH = 300
-COVER_HEIGHT = 450
-DETAIL_COMPACT_COVER_SIZE = 128
-DETAIL_COMPACT_WIDTH = 1280
-BADGE_WIDTH = int(COVER_WIDTH * 2 / 3)
-BADGE_ICON_SIZE = 16
-BADGE_COMPACT_WIDTH = BADGE_ICON_SIZE + 14
-BADGE_RIGHT_MARGIN = 8
-BADGE_SPACING = 5
-BADGE_TOP_Y = 10
-
-
-def _apply_badge_view_mode(badge: ClickableLabel) -> None:
+def _apply_badge_view_mode(badge: ClickableLabel, theme) -> None:
     """Apply configured badge view mode."""
     mode = ui_config.get_badge_view_mode()
     compact_mode = mode == "compact"
-    badge.setCompactMode(compact_mode, BADGE_COMPACT_WIDTH, BADGE_WIDTH)
+    badge_cfg = getattr(theme, "BADGE", {})
+    badge.setCompactMode(compact_mode, badge_cfg.get("compact_width", 30), badge_cfg.get("width", 200))
     badge.setVisible(mode != "hidden")
 
 
@@ -109,14 +98,17 @@ def create_cover_frame(
     favorite_icon_name: str | None = None,
     on_favorite_click: Callable[[], str | None] | None = None,
     badges: list | None = None,
-    cover_width: int = COVER_WIDTH,
-    cover_height: int = COVER_HEIGHT,
+    cover_width: int | None = None,
+    cover_height: int | None = None,
     game_source: str = "",
     theme_manager: ThemeManager | None = None,
 ) -> QFrame:
     """Create cover frame with image, favorite icon, and badges."""
+    cover_cfg = getattr(theme, "COVER", {})
+    cover_w = cover_width if cover_width is not None else cover_cfg.get("width", 300)
+    cover_h = cover_height if cover_height is not None else cover_cfg.get("height", 450)
     cover_frame = QFrame()
-    cover_frame.setFixedSize(cover_width, cover_height)
+    cover_frame.setFixedSize(cover_w, cover_h)
     cover_frame.setStyleSheet(theme.COVER_FRAME_STYLE)
 
     _setup_cover_shadow(cover_frame, theme)
@@ -129,15 +121,11 @@ def create_cover_frame(
         _add_favorite_label(cover_frame, favorite_icon_name, theme, on_favorite_click)
 
     if badges:
-        _position_badges(cover_frame, badges, cover_width)
+        _position_badges(cover_frame, badges, cover_w, theme)
 
-    _add_source_corner(cover_frame, game_source, theme, theme_manager, cover_width, cover_height)
+    _add_source_corner(cover_frame, game_source, theme, theme_manager, cover_w, cover_h)
 
     return cover_frame
-
-
-SOURCE_CORNER_RATIO = 0.28
-SOURCE_CORNER_MIN_SIZE = 54
 
 
 def _add_source_corner(
@@ -158,15 +146,14 @@ def _add_source_corner(
     if not icon:
         return
 
-    corner_colors = theme.get_source_corner_colors()
+    corner_config = theme.get_source_corner_config()
     ribbon = SourceCorner(
         icon=icon,
-        color=corner_colors["color"],
-        fold_color=corner_colors["fold_color"],
+        config=corner_config,
         parent=cover_frame,
     )
-    ribbon_size = int(cover_width * SOURCE_CORNER_RATIO)
-    ribbon_size = max(ribbon_size, int(SOURCE_CORNER_MIN_SIZE))
+    ribbon_size = int(cover_width * corner_config.get("size_ratio", 0.28))
+    ribbon_size = max(ribbon_size, int(corner_config.get("min_size", 54)))
     ribbon.setFixedSize(ribbon_size, ribbon_size)
     ribbon.move(cover_width - ribbon_size, cover_height - ribbon_size)
     ribbon.setVisible(True)
@@ -283,25 +270,25 @@ def _add_favorite_label(
     favorite_label.raise_()
 
 
-def _position_badges(cover_frame: QFrame, badges: list, cover_width: int = COVER_WIDTH) -> None:
+def _position_badges(cover_frame: QFrame, badges: list, cover_width: int, theme) -> None:
     """Position badges on cover frame."""
+    badge_cfg = getattr(theme, "BADGE", {})
     badge_y_positions = []
 
     for badge_data in badges:
         badge = badge_data["label"]
-        # Reparent badge to cover_frame
         badge.setParent(cover_frame)
         badge.setCompactRelayoutCallback(
-            lambda: _position_badges(cover_frame, badges, cover_width)
+            lambda: _position_badges(cover_frame, badges, cover_width, theme)
         )
         if badge.isHidden():
             continue
-        badge_x = cover_width - badge.width() - BADGE_RIGHT_MARGIN
+        badge_x = cover_width - badge.width() - badge_cfg.get("right_margin", 8)
 
         if badge_y_positions:
-            badge_y = badge_y_positions[-1] + BADGE_SPACING
+            badge_y = badge_y_positions[-1] + badge_cfg.get("spacing", 5)
         else:
-            badge_y = BADGE_TOP_Y
+            badge_y = badge_cfg.get("top_y", 10)
 
         badge.move(badge_x, badge_y)
         badge_y_positions.append(badge_y + badge.height())
@@ -324,11 +311,11 @@ def create_protondb_badge(
         "ProtonDB",
         icon=icon,
         parent=parent,
-        icon_size=BADGE_ICON_SIZE,
+        icon_size=getattr(main_window.theme, "BADGE", {}).get("icon_size", 16),
         icon_space=3,
     )
     badge.setStyleSheet(main_window.theme.get_protondb_badge_style(protondb_tier))
-    _apply_badge_view_mode(badge)
+    _apply_badge_view_mode(badge, main_window.theme)
     badge.clicked.connect(
         lambda: QDesktopServices.openUrl(QUrl(f"https://www.protondb.com/app/{appid}"))
     )
@@ -346,11 +333,11 @@ def create_steam_badge(
         "Steam",
         icon=steam_icon,
         parent=parent,
-        icon_size=BADGE_ICON_SIZE,
+        icon_size=getattr(main_window.theme, "BADGE", {}).get("icon_size", 16),
         icon_space=5,
     )
     badge.setStyleSheet(main_window.theme.STEAM_BADGE_STYLE)
-    _apply_badge_view_mode(badge)
+    _apply_badge_view_mode(badge, main_window.theme)
     badge.clicked.connect(
         lambda: QDesktopServices.openUrl(QUrl(f"https://steamcommunity.com/app/{appid}"))
     )
@@ -369,14 +356,14 @@ def create_portproton_badge(
         "PPDB",
         icon=portproton_icon,
         parent=parent,
-        icon_size=BADGE_ICON_SIZE,
+        icon_size=getattr(main_window.theme, "BADGE", {}).get("icon_size", 16),
         icon_space=5,
     )
     if ppdb_rating:
         badge.setStyleSheet(main_window.theme.get_ppdb_badge_style(ppdb_rating))
     else:
         badge.setStyleSheet(main_window.theme.STEAM_BADGE_STYLE)
-    _apply_badge_view_mode(badge)
+    _apply_badge_view_mode(badge, main_window.theme)
     badge.clicked.connect(
         lambda: QDesktopServices.openUrl(QUrl(f"https://ppdb.linux-gaming.ru/game/{ppdb_id}"))
     )
@@ -402,11 +389,11 @@ def create_anticheat_badge(
         anticheat_text,
         icon=icon,
         parent=parent,
-        icon_size=BADGE_ICON_SIZE,
+        icon_size=getattr(main_window.theme, "BADGE", {}).get("icon_size", 16),
         icon_space=3,
     )
     badge.setStyleSheet(main_window.theme.get_anticheat_badge_style(anticheat_status))
-    _apply_badge_view_mode(badge)
+    _apply_badge_view_mode(badge, main_window.theme)
     if anticheat_slug:
         anticheat_url = f"https://areweanticheatyet.com/game/{anticheat_slug}"
     else:
