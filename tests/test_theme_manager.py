@@ -637,6 +637,110 @@ class TestGeneratedStylesUseChildColors:
             )
 
 
+class TestThemeInheritanceChain:
+    """Verify inheritance works correctly through all chain depths.
+
+    Chains:
+      standart (styles/)
+      ├── classic (no styles/) → mix (no styles/)
+      ├── otto (no styles/)
+      └── standart-light (no styles/)
+          └── classic-light (no styles/) → mix-light (no styles/)
+    """
+
+    _themes_dir = Path(__file__).parent.parent / "portprotonqt" / "themes"
+
+    def test_mix_inherits_from_classic_not_standart_directly(self, monkeypatch):
+        from portprotonqt.theme_manager import load_theme
+        monkeypatch.setattr(
+            "portprotonqt.theme_manager.load_theme_screenshots",
+            lambda name: [],
+        )
+        mix = load_theme("mix")
+        classic = load_theme("classic")
+        assert mix.color_accent == classic.color_accent
+        for style_name in ("ACTION_BUTTON_STYLE", "NAV_BUTTON_STYLE",
+                           "TAB_STYLE", "LIBRARY_WIDGET_STYLE"):
+            assert getattr(mix, style_name) == getattr(classic, style_name)
+
+    def test_mix_light_inherits_from_classic_light(self, monkeypatch):
+        from portprotonqt.theme_manager import load_theme
+        monkeypatch.setattr(
+            "portprotonqt.theme_manager.load_theme_screenshots",
+            lambda name: [],
+        )
+        mix_light = load_theme("mix-light")
+        classic_light = load_theme("classic-light")
+        for style_name in ("ACTION_BUTTON_STYLE", "NAV_BUTTON_STYLE",
+                           "TAB_STYLE", "LIBRARY_WIDGET_STYLE"):
+            assert getattr(mix_light, style_name) == getattr(classic_light, style_name)
+
+    def test_mix_light_overrides_own_styles(self, monkeypatch):
+        from portprotonqt.theme_manager import load_theme
+        monkeypatch.setattr(
+            "portprotonqt.theme_manager.load_theme_screenshots",
+            lambda name: [],
+        )
+        mix_light = load_theme("mix-light")
+        assert hasattr(mix_light, "GAME_CARD_WINDOW_STYLE")
+        assert hasattr(mix_light, "DETAILS_WIDGET_STYLE")
+
+    def test_mix_light_does_not_use_standart_base_qss(self, monkeypatch):
+        from portprotonqt.theme_manager import load_theme
+        monkeypatch.setattr(
+            "portprotonqt.theme_manager.load_theme_screenshots",
+            lambda name: [],
+        )
+        mix_light = load_theme("mix-light")
+        standart = load_theme("standart")
+        assert mix_light.GAME_CARD_WINDOW_STYLE != standart.GAME_CARD_WINDOW_STYLE
+
+    def test_classic_light_inherits_from_standart_light(self, monkeypatch):
+        from portprotonqt.theme_manager import load_theme
+        monkeypatch.setattr(
+            "portprotonqt.theme_manager.load_theme_screenshots",
+            lambda name: [],
+        )
+        classic_light = load_theme("classic-light")
+        standart_light = load_theme("standart-light")
+        assert classic_light.MAIN_WINDOW_STYLE == standart_light.MAIN_WINDOW_STYLE
+        assert classic_light.CHECKBOX_STYLE == standart_light.CHECKBOX_STYLE
+
+    def test_classic_generates_missing_styles_from_standart(self, monkeypatch):
+        from portprotonqt.theme_manager import load_theme
+        monkeypatch.setattr(
+            "portprotonqt.theme_manager.load_theme_screenshots",
+            lambda name: [],
+        )
+        classic = load_theme("classic")
+        assert hasattr(classic, "MAIN_WINDOW_STYLE")
+        assert hasattr(classic, "CHECKBOX_STYLE")
+        assert hasattr(classic, "CONTAINER_STYLE")
+
+    def test_mix_generates_missing_styles_via_classic_to_standart(self, monkeypatch):
+        from portprotonqt.theme_manager import load_theme
+        monkeypatch.setattr(
+            "portprotonqt.theme_manager.load_theme_screenshots",
+            lambda name: [],
+        )
+        mix = load_theme("mix")
+        assert hasattr(mix, "MAIN_WINDOW_STYLE")
+        assert hasattr(mix, "CHECKBOX_STYLE")
+        assert hasattr(mix, "CONTAINER_STYLE")
+
+    def test_libadwaita_generates_styles_from_standart(self, monkeypatch):
+        from portprotonqt.theme_manager import load_theme
+        monkeypatch.setattr(
+            "portprotonqt.theme_manager.load_theme_screenshots",
+            lambda name: [],
+        )
+        libadwaita = load_theme("libadwaita")
+        assert hasattr(libadwaita, "MAIN_WINDOW_STYLE")
+        assert hasattr(libadwaita, "ACTION_BUTTON_STYLE")
+        standart = load_theme("standart")
+        assert libadwaita.MAIN_WINDOW_STYLE != standart.MAIN_WINDOW_STYLE
+
+
 class TestThemeFilesParse:
     """All themes must be valid, parseable Python files."""
 

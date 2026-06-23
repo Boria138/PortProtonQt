@@ -395,14 +395,12 @@ class ThemeWrapper:
         parent_name = self.parent_theme_name
         if not parent_name:
             return None
-        chain = _get_theme_resource_chain(parent_name)
-        for name in chain:
-            folder = _find_theme_folder(name)
-            if not folder:
-                continue
-            styles_dir = os.path.join(folder, "styles")
-            if os.path.isdir(styles_dir):
-                return styles_dir
+        folder = _find_theme_folder(parent_name)
+        if not folder:
+            return None
+        styles_dir = os.path.join(folder, "styles")
+        if os.path.isdir(styles_dir):
+            return styles_dir
         return None
 
     def _build_generated_styles(self, styles_dir: str):
