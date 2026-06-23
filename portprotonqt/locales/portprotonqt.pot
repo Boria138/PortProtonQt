@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-06-22 18:54+0500\n"
+"POT-Creation-Date: 2026-06-23 17:16+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -314,7 +314,7 @@ msgstr ""
 msgid "Unknown Game"
 msgstr ""
 
-msgid "Downloading Wine..."
+msgid "Downloading Wine…"
 msgstr ""
 
 msgid "Library"
@@ -341,7 +341,7 @@ msgstr ""
 msgid "Installation already in progress."
 msgstr ""
 
-msgid "Installing..."
+msgid "Installing…"
 msgstr ""
 
 msgid "Failed to start installation."
@@ -354,19 +354,19 @@ msgid "Failed to stop installation."
 msgstr ""
 
 #, python-brace-format
-msgid "{0} Plugins..."
+msgid "{0} Plugins…"
 msgstr ""
 
 #, python-brace-format
-msgid "{0} Libs..."
+msgid "{0} Libs…"
 msgstr ""
 
 #, python-brace-format
-msgid "{0} Wine..."
+msgid "{0} Wine…"
 msgstr ""
 
 #, python-brace-format
-msgid "{0} components..."
+msgid "{0} components…"
 msgstr ""
 
 msgid "Downloading"
@@ -799,7 +799,7 @@ msgstr ""
 msgid "Path to Executable:"
 msgstr ""
 
-msgid "Browse..."
+msgid "Browse…"
 msgstr ""
 
 msgid "Custom Cover:"
@@ -823,7 +823,7 @@ msgstr ""
 msgid "Failed to download cover"
 msgstr ""
 
-msgid "Downloading cover..."
+msgid "Downloading cover…"
 msgstr ""
 
 msgid "No cover selected"
@@ -993,7 +993,7 @@ msgid ""
 msgstr ""
 
 #, python-brace-format
-msgid "Failed to remove WINE/Proton at {}: {}"
+msgid "Failed to remove WINE/Proton at {path}: {error}"
 msgstr ""
 
 #, python-brace-format
@@ -1023,7 +1023,7 @@ msgid ", Speed: {:.1f}MB/s"
 msgstr ""
 
 #, python-brace-format
-msgid "Extracting: {0}{1}{2}"
+msgid "Extracting: {name}{speed}{eta}"
 msgstr ""
 
 msgid "Extraction Error"
@@ -1045,7 +1045,7 @@ msgstr ""
 msgid "Exe Settings"
 msgstr ""
 
-msgid "Search settings..."
+msgid "Search settings…"
 msgstr ""
 
 msgid "Main"
@@ -1829,7 +1829,7 @@ msgstr ""
 msgid "Not mounted"
 msgstr ""
 
-msgid "Search ..."
+msgid "Search…"
 msgstr ""
 
 msgid "Volume"
@@ -1901,7 +1901,7 @@ msgstr ""
 msgid "Badge View Type:"
 msgstr ""
 
-msgid "Refreshing..."
+msgid "Refreshing…"
 msgstr ""
 
 msgid "PortProton Settings"
@@ -2103,6 +2103,9 @@ msgstr ""
 msgid "Not selected"
 msgstr ""
 
+msgid "Theme Store…"
+msgstr ""
+
 #, python-brace-format
 msgid "by {0}"
 msgstr ""
@@ -2146,13 +2149,20 @@ msgstr ""
 msgid "Name (A-Z)"
 msgstr ""
 
-msgid "Loading..."
+msgid "Loading…"
 msgstr ""
 
 msgid "Failed to load themes"
 msgstr ""
 
 msgid "Failed to download theme"
+msgstr ""
+
+msgid "Downloading…"
+msgstr ""
+
+#, python-brace-format
+msgid "Downloading… {0}%"
 msgstr ""
 
 msgid "Failed to install theme"

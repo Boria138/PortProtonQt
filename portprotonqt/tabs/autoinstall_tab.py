@@ -55,7 +55,7 @@ class MainWindowAutoInstallTabMixin(_MainWindowTypingBase):
         action_pos = QLineEdit.ActionPosition.LeadingPosition
         self.autoInstallSearchIconAction = self.autoInstallSearchLineEdit.addAction(icon, action_pos)
         self.autoInstallSearchLineEdit.setMaximumWidth(200)
-        self.autoInstallSearchLineEdit.setPlaceholderText(_("Search ..."))
+        self.autoInstallSearchLineEdit.setPlaceholderText(_("Search…"))
         self.autoInstallSearchLineEdit.setClearButtonEnabled(True)
         self.autoInstallSearchLineEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE)
         self.autoInstallSearchLineEdit.textChanged.connect(self.filterAutoInstallGames)

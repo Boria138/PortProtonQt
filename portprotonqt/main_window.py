@@ -316,7 +316,7 @@ class MainWindow(
         self.launch_output_thread = None
         self.wine_download_percent = 0.0
         self.wine_download_seen = False
-        self.wine_download_status = _("Downloading Wine...")
+        self.wine_download_status = _("Downloading Wine…")
         self.game_launch_started = False
 
         # Central widget and main layout
@@ -566,7 +566,7 @@ class MainWindow(
         self.install_stop_requested = False
         self.current_install_script = script_name
         self._set_install_button_stop(button)
-        self._set_install_button_progress_text(_("Installing..."))
+        self._set_install_button_progress_text(_("Installing…"))
         self.seen_progress = False
         self.current_percent = 0.0
         start_sh = self.start_sh
@@ -741,12 +741,12 @@ class MainWindow(
         """Build install status text for a try_download target."""
         name_lower = name.lower()
         if "plugins" in name_lower:
-            return _("{0} Plugins...").format(action)
+            return _("{0} Plugins…").format(action)
         if "libs" in name_lower or "libraries" in name_lower:
-            return _("{0} Libs...").format(action)
+            return _("{0} Libs…").format(action)
         if "wine" in name_lower or "proton" in name_lower:
-            return _("{0} Wine...").format(action)
-        return _("{0} components...").format(action)
+            return _("{0} Wine…").format(action)
+        return _("{0} components…").format(action)
 
     def _parse_process_status_line(
         self, line: str
@@ -1771,7 +1771,7 @@ class MainWindow(
         # Reset dependency setup monitoring
         self.wine_download_seen = False
         self.wine_download_percent = 0.0
-        self.wine_download_status = _("Downloading Wine...")
+        self.wine_download_status = _("Downloading Wine…")
         self.game_launch_started = False
         self.game_processes = [proc for proc in self.game_processes if proc.poll() is None]
         if not getattr(self, "_animated_covers_suspended", False):
@@ -2082,7 +2082,7 @@ class MainWindow(
                 # Reset dependency setup monitoring
                 self.wine_download_seen = False
                 self.wine_download_percent = 0.0
-                self.wine_download_status = _("Downloading Wine...")
+                self.wine_download_status = _("Downloading Wine…")
                 self.game_launch_started = False
 
                 self.checkProcessTimer = QTimer(self)

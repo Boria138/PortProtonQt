@@ -329,8 +329,8 @@ msgstr ""
 msgid "Unknown Game"
 msgstr "Unbekanntes Spiel"
 
-msgid "Downloading Wine..."
-msgstr "Wine wird heruntergeladen..."
+msgid "Downloading Wine…"
+msgstr "Wine wird heruntergeladen…"
 
 msgid "Library"
 msgstr "Sammlung"
@@ -356,8 +356,8 @@ msgstr "Warnung"
 msgid "Installation already in progress."
 msgstr "Die Installation ist bereits im Gange."
 
-msgid "Installing..."
-msgstr "Installation läuft..."
+msgid "Installing…"
+msgstr "Installation läuft…"
 
 msgid "Failed to start installation."
 msgstr "Die Installation konnte nicht gestartet werden."
@@ -368,21 +368,17 @@ msgstr "Stop"
 msgid "Failed to stop installation."
 msgstr "Die Installation konnte nicht gestoppt werden."
 
-#, python-brace-format
-msgid "{0} Plugins..."
-msgstr "{0} Plugins..."
+msgid "{0} Plugins…"
+msgstr "{0} Plugins…"
 
-#, python-brace-format
-msgid "{0} Libs..."
-msgstr "{0} Libs..."
+msgid "{0} Libs…"
+msgstr "{0} Libs…"
 
-#, python-brace-format
-msgid "{0} Wine..."
-msgstr "{0} Wine..."
+msgid "{0} Wine…"
+msgstr "{0} Wine…"
 
-#, python-brace-format
-msgid "{0} components..."
-msgstr "{0} Komponenten..."
+msgid "{0} components…"
+msgstr "{0} Komponenten…"
 
 msgid "Downloading"
 msgstr "Herunterladen"
@@ -875,8 +871,8 @@ msgstr "Titel:"
 msgid "Path to Executable:"
 msgstr "Pfad zur ausführbaren Datei:"
 
-msgid "Browse..."
-msgstr "Ansicht..."
+msgid "Browse…"
+msgstr "Ansicht…"
 
 msgid "Custom Cover:"
 msgstr "Eigenes Titelbild:"
@@ -899,8 +895,8 @@ msgstr "Ungültiges Bild"
 msgid "Failed to download cover"
 msgstr "Herunterladen des Titelbildes fehlgeschlagen"
 
-msgid "Downloading cover..."
-msgstr "Titelbild wird heruntergeladen..."
+msgid "Downloading cover…"
+msgstr "Titelbild wird heruntergeladen…"
 
 msgid "No cover selected"
 msgstr "Kein Titelbild ausgewählt"
@@ -1072,9 +1068,8 @@ msgid ""
 "This action cannot be undone."
 msgstr ""
 
-#, python-brace-format
-msgid "Failed to remove WINE/Proton at {}: {}"
-msgstr ""
+msgid "Failed to remove WINE/Proton at {path}: {error}"
+msgstr "WINE/Proton konnte nicht entfernt werden in {path}: {error}"
 
 #, python-brace-format
 msgid "Successfully removed {} WINE/Proton."
@@ -1103,7 +1098,7 @@ msgid ", Speed: {:.1f}MB/s"
 msgstr ""
 
 #, python-brace-format
-msgid "Extracting: {0}{1}{2}"
+msgid "Extracting: {name}{speed}{eta}"
 msgstr ""
 
 msgid "Extraction Error"
@@ -1125,8 +1120,8 @@ msgstr ""
 msgid "Exe Settings"
 msgstr ""
 
-msgid "Search settings..."
-msgstr ""
+msgid "Search settings…"
+msgstr "Einstellungen suchen…"
 
 msgid "Main"
 msgstr ""
@@ -1909,8 +1904,8 @@ msgstr ""
 msgid "Not mounted"
 msgstr ""
 
-msgid "Search ..."
-msgstr ""
+msgid "Search…"
+msgstr "Suchen…"
 
 msgid "Volume"
 msgstr ""
@@ -1981,8 +1976,8 @@ msgstr ""
 msgid "Badge View Type:"
 msgstr ""
 
-msgid "Refreshing..."
-msgstr ""
+msgid "Refreshing…"
+msgstr "Aktualisieren…"
 
 msgid "PortProton Settings"
 msgstr ""
@@ -2183,6 +2178,9 @@ msgstr ""
 msgid "Not selected"
 msgstr ""
 
+msgid "Theme Store…"
+msgstr "Themenladen…"
+
 #, python-brace-format
 msgid "by {0}"
 msgstr ""
@@ -2217,9 +2215,8 @@ msgstr ""
 msgid "Most voted"
 msgstr ""
 
-#, fuzzy
 msgid "Most downloaded"
-msgstr "Herunterladen"
+msgstr "Meist heruntergeladen"
 
 msgid "Recently updated"
 msgstr ""
@@ -2227,21 +2224,23 @@ msgstr ""
 msgid "Name (A-Z)"
 msgstr ""
 
-#, fuzzy
-msgid "Loading..."
-msgstr "Wine wird heruntergeladen..."
+msgid "Loading…"
+msgstr "Laden…"
 
-#, fuzzy
 msgid "Failed to load themes"
-msgstr "Spiel konnte nicht gestoppt werden"
+msgstr ""
 
-#, fuzzy
 msgid "Failed to download theme"
-msgstr "Spiel konnte nicht gestoppt werden"
+msgstr ""
 
-#, fuzzy
+msgid "Downloading…"
+msgstr "Herunterladen…"
+
+msgid "Downloading… {0}%"
+msgstr "Herunterladen… {0}%"
+
 msgid "Failed to install theme"
-msgstr "Spiel konnte nicht gestoppt werden"
+msgstr ""
 
 msgid "Prefix:"
 msgstr ""

@@ -133,7 +133,7 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
         action_pos = cast(QLineEdit.ActionPosition, QLineEdit.ActionPosition.LeadingPosition)
         self.searchIconAction = self.searchEdit.addAction(icon, action_pos)
         self.searchEdit.setMaximumWidth(200)
-        self.searchEdit.setPlaceholderText(_("Search ..."))
+        self.searchEdit.setPlaceholderText(_("Search…"))
         self.searchEdit.setClearButtonEnabled(True)
         self.searchEdit.setStyleSheet(self.theme.SEARCH_EDIT_STYLE)
 
@@ -312,7 +312,7 @@ class MainWindowLibraryTabMixin(_MainWindowTypingBase):
 
         # Disable the refresh button during refresh to prevent multiple clicks
         self.refreshButton.setEnabled(False)
-        self._gamepad_tooltip_map[self.refreshButton] = _("Refreshing...")
+        self._gamepad_tooltip_map[self.refreshButton] = _("Refreshing…")
 
         # Clear the game card cache and layout to force reload of custom data
         if hasattr(self, 'game_library_manager') and self.game_library_manager:

@@ -330,8 +330,8 @@ msgstr "Отсутствует EXE"
 msgid "Unknown Game"
 msgstr "Неизвестная игра"
 
-msgid "Downloading Wine..."
-msgstr "Скачивание Wine..."
+msgid "Downloading Wine…"
+msgstr "Скачивание Wine…"
 
 msgid "Library"
 msgstr "Библиотека"
@@ -357,8 +357,8 @@ msgstr "Предупреждение"
 msgid "Installation already in progress."
 msgstr "Установка уже выполняется."
 
-msgid "Installing..."
-msgstr "Установка..."
+msgid "Installing…"
+msgstr "Установка…"
 
 msgid "Failed to start installation."
 msgstr "Не удалось запустить установку."
@@ -369,21 +369,17 @@ msgstr "Остановить"
 msgid "Failed to stop installation."
 msgstr "Не удалось прервать установку."
 
-#, python-brace-format
-msgid "{0} Plugins..."
-msgstr "{0} Плагинов..."
+msgid "{0} Plugins…"
+msgstr "{0} Плагинов…"
 
-#, python-brace-format
-msgid "{0} Libs..."
-msgstr "{0} Библиотек..."
+msgid "{0} Libs…"
+msgstr "{0} Библиотек…"
 
-#, python-brace-format
-msgid "{0} Wine..."
-msgstr "{0} Wine..."
+msgid "{0} Wine…"
+msgstr "{0} Wine…"
 
-#, python-brace-format
-msgid "{0} components..."
-msgstr "{0} компонентов..."
+msgid "{0} components…"
+msgstr "{0} компонентов…"
 
 msgid "Downloading"
 msgstr "Скачивание"
@@ -392,7 +388,7 @@ msgid "Extracting"
 msgstr "Распаковка"
 
 msgid "Refresh Grid"
-msgstr "Обновить"
+msgstr "Обновить сетку"
 
 msgid "Never"
 msgstr "Никогда"
@@ -838,7 +834,7 @@ msgid "Reinstall"
 msgstr "Переустановить"
 
 msgid "Game not found."
-msgstr "Игра не найдена"
+msgstr "Игра не найдена."
 
 msgid "Stop Log"
 msgstr "Остановить лог"
@@ -878,8 +874,8 @@ msgstr "Название:"
 msgid "Path to Executable:"
 msgstr "Путь к исполняемому файлу:"
 
-msgid "Browse..."
-msgstr "Обзор..."
+msgid "Browse…"
+msgstr "Обзор…"
 
 msgid "Custom Cover:"
 msgstr "Пользовательская обложка:"
@@ -902,8 +898,8 @@ msgstr "Недопустимое изображение"
 msgid "Failed to download cover"
 msgstr "Не удалось скачать обложку"
 
-msgid "Downloading cover..."
-msgstr "Скачивание обложки..."
+msgid "Downloading cover…"
+msgstr "Скачивание обложки…"
 
 msgid "No cover selected"
 msgstr "Обложка не выбрана"
@@ -958,10 +954,10 @@ msgid "Access denied: %s"
 msgstr "Доступ запрещён: %s"
 
 msgid "Prefix backup"
-msgstr "Создать резервную копию префикса"
+msgstr "Резервная копия префикса"
 
 msgid "Prefix restore"
-msgstr "Загрузить резервную копию префикса"
+msgstr "Восстановление префикса"
 
 #, python-brace-format
 msgid "File: {0}"
@@ -1022,7 +1018,7 @@ msgstr "Выберите, чтобы удалить WINE/Proton"
 
 #, python-brace-format
 msgid "Selected {} WINE/Proton:\n"
-msgstr "Выбранно {} WINE/Proton:\n"
+msgstr "Выбрано {} WINE/Proton:\n"
 
 #, python-brace-format
 msgid ""
@@ -1037,7 +1033,7 @@ msgstr "Удалить выбранное"
 
 #, python-brace-format
 msgid "Selected {} assets:\n"
-msgstr "Выбранно {} WINE/Proton:\n"
+msgstr "Выбрано {} ресурсов:\n"
 
 #, python-brace-format
 msgid ""
@@ -1078,9 +1074,8 @@ msgstr ""
 "\n"
 "Это действие нельзя отменить."
 
-#, python-brace-format
-msgid "Failed to remove WINE/Proton at {}: {}"
-msgstr "Не удалось удалить WINE/Proton {}: {}"
+msgid "Failed to remove WINE/Proton at {path}: {error}"
+msgstr "Не удалось удалить WINE/Proton в {path}: {error}"
 
 #, python-brace-format
 msgid "Successfully removed {} WINE/Proton."
@@ -1108,9 +1103,8 @@ msgstr ", Расчетное время: {}с"
 msgid ", Speed: {:.1f}MB/s"
 msgstr ", Скорость: {:.1f}МБ/с"
 
-#, python-brace-format
-msgid "Extracting: {0}{1}{2}"
-msgstr "Распаковка: {0}{1}{2}"
+msgid "Extracting: {name}{speed}{eta}"
+msgstr "Распаковка: {name}{speed}{eta}"
 
 msgid "Extraction Error"
 msgstr "Ошибка распаковки"
@@ -1131,8 +1125,8 @@ msgstr "Системный WINE"
 msgid "Exe Settings"
 msgstr "Настройки EXE"
 
-msgid "Search settings..."
-msgstr "Поиск настроек..."
+msgid "Search settings…"
+msgstr "Поиск настроек…"
 
 msgid "Main"
 msgstr "Основные"
@@ -1387,7 +1381,7 @@ msgid "Resolution and scaling"
 msgstr "Разрешение и масштабирование"
 
 msgid "Quick presets"
-msgstr "Профили"
+msgstr "Быстрые профили"
 
 #, python-brace-format
 msgid "Enable {0}"
@@ -1930,8 +1924,8 @@ msgstr "Смонтировано"
 msgid "Not mounted"
 msgstr "Не смонтировано"
 
-msgid "Search ..."
-msgstr "Поиск ..."
+msgid "Search…"
+msgstr "Поиск…"
 
 msgid "Volume"
 msgstr "Громкость"
@@ -2002,8 +1996,8 @@ msgstr "Скрытый"
 msgid "Badge View Type:"
 msgstr "Тип отображения бейджей:"
 
-msgid "Refreshing..."
-msgstr "Обновление..."
+msgid "Refreshing…"
+msgstr "Обновление…"
 
 msgid "PortProton Settings"
 msgstr "Настройки PortProtonQt"
@@ -2206,6 +2200,9 @@ msgstr "Выбранный"
 msgid "Not selected"
 msgstr "Не выбранный"
 
+msgid "Theme Store…"
+msgstr "Магазин тем…"
+
 #, python-brace-format
 msgid "by {0}"
 msgstr "от {0}"
@@ -2249,14 +2246,20 @@ msgstr "Недавно обновлённые"
 msgid "Name (A-Z)"
 msgstr "Название (А-Я)"
 
-msgid "Loading..."
-msgstr "Загрузка..."
+msgid "Loading…"
+msgstr "Загрузка…"
 
 msgid "Failed to load themes"
 msgstr "Не удалось загрузить темы"
 
 msgid "Failed to download theme"
 msgstr "Не удалось скачать тему"
+
+msgid "Downloading…"
+msgstr "Скачивание…"
+
+msgid "Downloading… {0}%"
+msgstr "Скачивание… {0}%"
 
 msgid "Failed to install theme"
 msgstr "Не удалось установить тему"

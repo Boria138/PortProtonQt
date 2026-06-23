@@ -34,7 +34,7 @@ from portprotonqt.theme_manager import load_theme_screenshots
 from portprotonqt.tray_manager import restart_application_process
 
 logger = get_logger(__name__)
-THEME_STORE_ITEM = "Theme Store..."
+THEME_STORE_ITEM = _("Theme Store…")
 THEME_STORE_API_URL = "https://ppdb.linux-gaming.ru/api/ppqt/themes"
 THEME_STORE_TIMEOUT = 20
 THEME_STORE_DOWNLOAD_TIMEOUT = 60
@@ -668,7 +668,7 @@ class MainWindowThemeTabMixin(_MainWindowTypingBase):
 
     def _load_theme_store(self) -> None:
         self.themeStoreStatusLabel.show()
-        self.themeStoreStatusLabel.setText(_("Loading..."))
+        self.themeStoreStatusLabel.setText(_("Loading…"))
         sort_key, order_key = self._theme_store_sort_args()
         self.themeStoreListWorker = ThemeStoreListWorker(sort_key, order_key)
         self.themeStoreListWorker.loaded.connect(self._on_theme_store_loaded)
@@ -918,7 +918,7 @@ class MainWindowThemeTabMixin(_MainWindowTypingBase):
             self.themeStoreStatusLabel.setText(_("Failed to download theme"))
             return
         self.themeStoreDownloadButton.setEnabled(False)
-        self.themeStoreDownloadButton.setText(_("Downloading..."))
+        self.themeStoreDownloadButton.setText(_("Downloading…"))
         self.themeStoreDownloadWorker = ThemeStoreDownloadWorker(theme_id)
         self.themeStoreDownloadWorker.progress.connect(self._on_store_download_progress)
         self.themeStoreDownloadWorker.installed.connect(self._on_store_theme_installed)
@@ -927,7 +927,7 @@ class MainWindowThemeTabMixin(_MainWindowTypingBase):
         self.themeStoreDownloadWorker.start()
 
     def _on_store_download_progress(self, percent: int) -> None:
-        self.themeStoreDownloadButton.setText(_("Downloading... {0}%").format(percent))
+        self.themeStoreDownloadButton.setText(_("Downloading… {0}%").format(percent))
 
     def _on_store_download_finished(self) -> None:
         self.themeStoreDownloadButton.setEnabled(True)
