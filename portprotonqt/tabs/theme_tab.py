@@ -13,10 +13,9 @@ from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QComboBox,
     QFrame,
-    QGridLayout,
     QHBoxLayout,
     QLabel,
-    QScrollArea,
+    QSlider,
     QStackedWidget,
     QTextBrowser,
     QVBoxLayout,
@@ -25,7 +24,7 @@ from PySide6.QtWidgets import (
 
 from portprotonqt.config.base import THEMES_DIRS
 from portprotonqt.config import load_theme_metainfo, ui_config, window_config
-from portprotonqt.custom_widgets import AutoSizeButton
+from portprotonqt.custom_widgets import AutoHideScrollArea, AutoSizeButton, FlowLayout
 from portprotonqt.downloader import get_requests_session
 from portprotonqt.image_utils import ImageCarousel
 from portprotonqt.localization import _
@@ -305,14 +304,14 @@ class ThemeStoreDownloadWorker(QThread):
 class ThemeStoreCard(QFrame):
     clicked = Signal(dict)
 
-    def __init__(self, theme_data: dict, theme: Any):
+    def __init__(self, theme_data: dict, theme: Any, card_width: int = 280):
         super().__init__()
         self.theme_data = theme_data
+        self.card_width = card_width
         self.setObjectName("themeStoreCard")
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.setMinimumWidth(theme.themeStoreCardMinWidth)
-        self.setFixedHeight(theme.themeStoreCardHeight)
+        self.setFixedWidth(card_width)
         self.setStyleSheet(theme.THEME_STORE_CARD_STYLE)
 
         layout = QVBoxLayout(self)
@@ -321,7 +320,7 @@ class ThemeStoreCard(QFrame):
 
         self.previewLabel = QLabel()
         self.previewLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.previewLabel.setFixedHeight(theme.themeStorePreviewHeight)
+        self.previewLabel.setFixedHeight(int(card_width * 0.57))
         self.previewLabel.setStyleSheet(theme.THEME_STORE_PREVIEW_STYLE)
         layout.addWidget(self.previewLabel)
 
@@ -338,15 +337,22 @@ class ThemeStoreCard(QFrame):
         statsLabel = QLabel(self._stats_text())
         statsLabel.setStyleSheet(theme.THEME_STORE_CARD_META_STYLE)
         layout.addWidget(statsLabel)
-        layout.addStretch(1)
 
     def set_preview(self, pixmap: QPixmap) -> None:
+        preview_size = self.previewLabel.size()
+        if preview_size.width() <= 0 or preview_size.height() <= 0:
+            return
         scaled = pixmap.scaled(
-            self.previewLabel.size(),
+            preview_size,
             Qt.AspectRatioMode.KeepAspectRatio,
             Qt.TransformationMode.SmoothTransformation,
         )
         self.previewLabel.setPixmap(scaled)
+
+    def update_card_size(self, new_width: int) -> None:
+        self.card_width = new_width
+        self.setFixedWidth(new_width)
+        self.previewLabel.setFixedHeight(int(new_width * 0.57))
 
     def _stats_text(self) -> str:
         votes = self.theme_data.get("votes_count", 0)
@@ -564,13 +570,9 @@ class MainWindowThemeTabMixin(_MainWindowTypingBase):
         layout = QVBoxLayout(page)
         layout.setContentsMargins(0, 0, 0, 0)
         header = QHBoxLayout()
-        title = QLabel(_("Themes"))
-        title.setStyleSheet(self.theme.TAB_TITLE_STYLE)
-        header.addWidget(title)
+
+        self._themeStoreCardWidth = ui_config.get_theme_store_card_width()
         header.addStretch(1)
-        sortLabel = QLabel(_("Sort by:"))
-        sortLabel.setStyleSheet(self.theme.CONTENT_STYLE)
-        header.addWidget(sortLabel)
         self.themeStoreSortCombo = QComboBox()
         self.themeStoreSortCombo.addItems([
             _("Most voted"),
@@ -582,19 +584,39 @@ class MainWindowThemeTabMixin(_MainWindowTypingBase):
         self.themeStoreSortCombo.setStyleSheet(self.theme.COMBOBOX_STYLE + self.theme.SCROLL_STYLE)
         self.themeStoreSortCombo.currentIndexChanged.connect(self._on_theme_store_sort_changed)
         header.addWidget(self.themeStoreSortCombo)
+        header.addStretch(1)
         layout.addLayout(header)
 
-        self.themeStoreScrollArea = QScrollArea()
+        self.themeStoreScrollArea = AutoHideScrollArea(theme=self.theme)
         self.themeStoreScrollArea.setWidgetResizable(True)
         self.themeStoreScrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.themeStoreScrollArea.setStyleSheet(self.theme.THEME_STORE_SCROLL_STYLE + self.theme.SCROLL_STYLE)
         self.themeStoreGridWidget = QWidget()
-        self.themeStoreGridLayout = QGridLayout(self.themeStoreGridWidget)
-        margin = self.theme.themeStoreGridOuterMargin
-        self.themeStoreGridLayout.setContentsMargins(margin, margin, margin, margin)
-        self.themeStoreGridLayout.setSpacing(self.theme.themeStoreGridSpacing)
+        self.themeStoreGridLayout = FlowLayout(self.themeStoreGridWidget, center_rows=True)
+        self.themeStoreGridLayout.setContentsMargins(14, 14, 14, 14)
+        self.themeStoreGridLayout._spacing = 16
         self.themeStoreScrollArea.setWidget(self.themeStoreGridWidget)
         layout.addWidget(self.themeStoreScrollArea)
+
+        sliderLayout = QHBoxLayout()
+        sliderLayout.addStretch()
+        self.themeStoreSizeSlider = QSlider(Qt.Orientation.Horizontal)
+        self.themeStoreSizeSlider.setMinimum(150)
+        self.themeStoreSizeSlider.setMaximum(600)
+        self.themeStoreSizeSlider.setValue(self._themeStoreCardWidth)
+        self.themeStoreSizeSlider.setTickInterval(10)
+        self.themeStoreSizeSlider.setFixedWidth(150)
+        self.themeStoreSizeSlider.setStyleSheet(self.theme.SLIDER_SIZE_STYLE)
+        self._register_gamepad_tooltip(self.themeStoreSizeSlider, f"{self._themeStoreCardWidth} px")
+        self.themeStoreSizeSlider.sliderReleased.connect(self._on_theme_store_slider_released)
+        sliderLayout.addWidget(self.themeStoreSizeSlider)
+        layout.addLayout(sliderLayout)
+
+        self._resizeDebounceTimer = QTimer()
+        self._resizeDebounceTimer.setSingleShot(True)
+        self._resizeDebounceTimer.setInterval(150)
+        self._resizeDebounceTimer.timeout.connect(self._relayout_theme_store)
+        self._themeStoreViewport = self.themeStoreScrollArea.viewport()
+        self._themeStoreViewport.installEventFilter(self)
         return page
 
     def _create_theme_store_detail_page(self) -> QWidget:
@@ -618,10 +640,9 @@ class MainWindowThemeTabMixin(_MainWindowTypingBase):
         header.addWidget(self.themeStoreDownloadButton)
         layout.addLayout(header)
 
-        scrollArea = QScrollArea()
+        scrollArea = AutoHideScrollArea(theme=self.theme)
         scrollArea.setWidgetResizable(True)
         scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scrollArea.setStyleSheet(self.theme.THEME_STORE_SCROLL_STYLE + self.theme.SCROLL_STYLE)
         scrollContent = QWidget()
         scrollLayout = QVBoxLayout(scrollContent)
         scrollLayout.setContentsMargins(0, 0, 0, 0)
@@ -661,9 +682,6 @@ class MainWindowThemeTabMixin(_MainWindowTypingBase):
     def _show_theme_store(self) -> None:
         self.themeContentStack.setCurrentWidget(self.themeStorePage)
         self.themeVariantCombo.hide()
-        if getattr(self, "themeStoreLoaded", False):
-            QTimer.singleShot(50, self._schedule_visible_image_load)
-            return
         self._load_theme_store()
 
     def _load_theme_store(self) -> None:
@@ -714,6 +732,7 @@ class MainWindowThemeTabMixin(_MainWindowTypingBase):
         self.themeStoreCardsByUrl = {}
         self.themeStoreLoadedUrls = set()
         self._imageWorkerPool = []
+        self._scrollConnected = False
         while self.themeStoreGridLayout.count():
             item = self.themeStoreGridLayout.takeAt(0)
             if item is None:
@@ -724,22 +743,30 @@ class MainWindowThemeTabMixin(_MainWindowTypingBase):
         self.themeStoreGridIndex = 0
         self._add_next_card_batch()
 
+    def _calc_theme_store_card_width(self) -> int:
+        width = self.themeStoreScrollArea.viewport().width()
+        spacing = self.themeStoreGridLayout._spacing
+        margins = self.themeStoreGridLayout.contentsMargins()
+        available = width - margins.left() - margins.right()
+        desired = self._themeStoreCardWidth
+        cols = max(1, round(available / desired))
+        return max(150, (available - spacing * (cols - 1)) // cols)
+
     def _add_next_card_batch(self) -> None:
         all_themes = getattr(self, "themeStoreThemes", [])
         if self.themeStoreGridIndex >= len(all_themes):
             return
-        columns = self._theme_store_column_count()
+        actual_width = self._calc_theme_store_card_width()
         end = min(self.themeStoreGridIndex + THEME_STORE_CARD_BATCH_SIZE, len(all_themes))
         for index in range(self.themeStoreGridIndex, end):
             theme_data = all_themes[index]
-            card = ThemeStoreCard(theme_data, self.theme)
+            card = ThemeStoreCard(theme_data, self.theme, actual_width)
             card.clicked.connect(self._show_theme_store_detail)
             urls = _theme_store_preview_urls(theme_data)
             if urls:
                 url = urls[0]
                 self.themeStoreCardsByUrl[url] = card
-            row, column = divmod(index, columns)
-            self.themeStoreGridLayout.addWidget(card, row, column)
+            self.themeStoreGridLayout.addWidget(card)
         self.themeStoreGridIndex = end
         if self.themeStoreGridIndex < len(all_themes):
             QTimer.singleShot(0, self._add_next_card_batch)
@@ -802,14 +829,12 @@ class MainWindowThemeTabMixin(_MainWindowTypingBase):
         return self._collect_first_urls_up_to(first_visible)
 
     def _collect_first_urls_up_to(self, start_item: int) -> list[str]:
-        columns = self._theme_store_column_count()
+        viewport = self.themeStoreScrollArea.viewport()
+        viewport_height = viewport.height()
         total = self.themeStoreGridLayout.count()
         urls: list[str] = []
-        start_row, start_col = divmod(start_item, columns)
-        end_row = start_row + 3
-        for i in range(total):
-            row, col = divmod(i, columns)
-            if row > end_row:
+        for i in range(start_item, total):
+            if i >= total:
                 break
             item = self.themeStoreGridLayout.itemAt(i)
             if item is None:
@@ -817,6 +842,9 @@ class MainWindowThemeTabMixin(_MainWindowTypingBase):
             widget = item.widget()
             if widget is None:
                 continue
+            pos = widget.mapTo(viewport, widget.rect().topLeft())
+            if pos.y() > viewport_height * 3:
+                break
             if isinstance(widget, ThemeStoreCard):
                 card_urls = _theme_store_preview_urls(widget.theme_data)
                 if card_urls:
@@ -825,8 +853,7 @@ class MainWindowThemeTabMixin(_MainWindowTypingBase):
 
     def _theme_store_column_count(self) -> int:
         width = self.themeStoreScrollArea.viewport().width()
-        min_width = self.theme.themeStoreGridMinColumnWidth
-        return max(1, width // min_width)
+        return max(1, width // self._themeStoreCardWidth)
 
     def _on_theme_store_preview_loaded(self, url: str, data: bytes) -> None:
         self.themeStoreLoadedUrls.add(url)
@@ -849,6 +876,38 @@ class MainWindowThemeTabMixin(_MainWindowTypingBase):
     def _show_theme_store_list(self) -> None:
         self.themeStoreStack.setCurrentWidget(self.themeStoreListPage)
         QTimer.singleShot(50, self._schedule_visible_image_load)
+
+    def _on_theme_store_slider_released(self) -> None:
+        new_width = self.themeStoreSizeSlider.value()
+        if new_width == self._themeStoreCardWidth:
+            return
+        self._themeStoreCardWidth = new_width
+        ui_config.set_theme_store_card_width(new_width)
+        self._gamepad_tooltip_map[self.themeStoreSizeSlider] = f"{new_width} px"
+        self._populate_theme_store_cards()
+
+    def eventFilter(self, obj, event):
+        if (obj == getattr(self, "_themeStoreViewport", None)
+                and hasattr(self, "_resizeDebounceTimer")
+                and event.type() == event.Type.Resize):
+            self._resizeDebounceTimer.start()
+        return super().eventFilter(obj, event) if hasattr(super(), "eventFilter") else False
+
+    def _relayout_theme_store(self) -> None:
+        if not getattr(self, "themeStoreLoaded", False):
+            return
+        actual_width = self._calc_theme_store_card_width()
+        for i in range(self.themeStoreGridLayout.count()):
+            item = self.themeStoreGridLayout.itemAt(i)
+            if item is None:
+                continue
+            widget = item.widget()
+            if isinstance(widget, ThemeStoreCard):
+                widget.update_card_size(actual_width)
+        self.themeStoreGridLayout.invalidate()
+        self.themeStoreGridWidget.adjustSize()
+        self.themeStoreGridWidget.updateGeometry()
+        QTimer.singleShot(0, self._schedule_visible_image_load)
 
     def _theme_store_meta_text(self, theme_data: dict) -> str:
         author = theme_data.get("author") or _("Unknown")

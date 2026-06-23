@@ -2216,9 +2216,6 @@ msgstr ""
 msgid "Link:"
 msgstr ""
 
-msgid "Sort by:"
-msgstr ""
-
 msgid "Most voted"
 msgstr ""
 

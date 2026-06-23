@@ -2160,9 +2160,6 @@ msgstr "作者："
 msgid "Link:"
 msgstr "链接："
 
-msgid "Sort by:"
-msgstr "排序方式："
-
 msgid "Most voted"
 msgstr "投票最多"
 

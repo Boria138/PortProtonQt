@@ -2222,9 +2222,6 @@ msgstr "Автор:"
 msgid "Link:"
 msgstr "Ссылка:"
 
-msgid "Sort by:"
-msgstr "Сортировка:"
-
 msgid "Most voted"
 msgstr "По популярности"
 
