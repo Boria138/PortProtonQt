@@ -366,6 +366,9 @@ class ThemeWrapper:
     def __getattr__(self, name):
         if hasattr(self.custom_theme, name):
             return getattr(self.custom_theme, name)
+        generated = self._get_generated_style(name)
+        if generated is not None:
+            return generated
         if self._default_theme is None:
             if self.parent_theme_name in self._inherit_chain:
                 raise AttributeError(f"Theme inheritance cycle for '{self.parent_theme_name}'")
@@ -378,9 +381,6 @@ class ThemeWrapper:
             return getattr(self._default_theme, name)
         except AttributeError:
             pass
-        generated = self._get_generated_style(name)
-        if generated is not None:
-            return generated
         raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
 
     def _get_generated_style(self, name):

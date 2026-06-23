@@ -610,6 +610,33 @@ class TestMixThemeConstants:
         assert "color_accent" in mod.__dict__
 
 
+class TestGeneratedStylesUseChildColors:
+    """Verify that color-only themes get QSS styles re-computed with their palette."""
+
+    _themes_dir = Path(__file__).parent.parent / "portprotonqt" / "themes"
+
+    def test_otto_qss_uses_otto_colors(self):
+        from portprotonqt.theme_manager import load_theme
+        otto = load_theme("otto")
+        standart = load_theme("standart")
+        assert otto.MAIN_WINDOW_STYLE != standart.MAIN_WINDOW_STYLE
+        assert otto.color_accent in otto.MAIN_WINDOW_STYLE
+        assert otto.color_bg in otto.MAIN_WINDOW_STYLE
+        assert standart.color_accent not in otto.MAIN_WINDOW_STYLE
+
+    def test_child_theme_styles_differ_from_parent(self):
+        from portprotonqt.theme_manager import load_theme
+        otto = load_theme("otto")
+        standart = load_theme("standart")
+        for style_name in ("ACTION_BUTTON_STYLE", "TAB_STYLE",
+                           "NAV_BUTTON_STYLE", "GAME_CARD_WINDOW_STYLE"):
+            otto_style = getattr(otto, style_name)
+            standart_style = getattr(standart, style_name)
+            assert otto_style != standart_style, (
+                f"{style_name} not re-computed with child colors"
+            )
+
+
 class TestThemeFilesParse:
     """All themes must be valid, parseable Python files."""
 
