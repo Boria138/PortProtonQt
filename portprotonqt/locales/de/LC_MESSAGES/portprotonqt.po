@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-06-18 23:41+0500\n"
-"PO-Revision-Date: 2026-06-22 15:33+0000\n"
+"PO-Revision-Date: 2026-06-23 16:51+0000\n"
 "Last-Translator: Rubin13 <rubin13@noreply.codeberg.org>\n"
 "Language-Team: German <https://translate.codeberg.org/projects/portprotonqt/"
 "portprotonqt/de/>\n"
@@ -1044,13 +1044,13 @@ msgid "Please select at least one WINE/Proton to download."
 msgstr "Bitte wähle mindestens eine WINE/Proton-Version zum Herunterladen aus."
 
 msgid "Please wait for current downloading to complete."
-msgstr ""
+msgstr "Bitte warte bis der aktuelle Download abgeschlossen ist."
 
 msgid "Please select at least one WINE/Proton to delete."
-msgstr ""
+msgstr "Bitte wähle mindestens eine WINE/Proton-Version zum Löschen aus."
 
 msgid "Confirm Clear"
-msgstr ""
+msgstr "Löschen bestätigen"
 
 #, python-brace-format
 msgid ""
@@ -1058,468 +1058,485 @@ msgid ""
 "\n"
 "This action cannot be undone."
 msgstr ""
+"Soll die ausgewählte {} WINE/Proton-Version wirklich löschen?\n"
+"\n"
+"Diese Aktion kann nicht rückgängig gemacht werden."
 
 msgid "Failed to remove WINE/Proton at {path}: {error}"
 msgstr "WINE/Proton konnte nicht entfernt werden in {path}: {error}"
 
 #, python-brace-format
 msgid "Successfully removed {} WINE/Proton."
-msgstr ""
+msgstr "{} WINE/Proton erfolgreich entfernt."
 
 msgid "Downloading Complete"
-msgstr ""
+msgstr "Download abgeschlossen"
 
 msgid "All selected WINE/Proton have been downloaded!"
-msgstr ""
+msgstr "Alle ausgewählten WINE/Proton-Versionen wurden heruntergeladen!"
 
 #, python-brace-format
 msgid "Downloading: {0} ({1}%)"
-msgstr ""
+msgstr "Wird heruntergeladen: {0} ({1} %)"
 
 #, python-brace-format
 msgid "Extracting: {0}"
-msgstr ""
+msgstr "Entpacken: {0}"
 
 #, python-brace-format
 msgid ", ETA: {}s"
-msgstr ""
+msgstr ", voraussichtliche Dauer: {}s"
 
 #, python-brace-format
 msgid ", Speed: {:.1f}MB/s"
-msgstr ""
+msgstr ", Geschwindigkeit: {:.1f}MB/s"
 
 #, python-brace-format
 msgid "Extracting: {name}{speed}{eta}"
-msgstr ""
+msgstr "Entpacken: {name}{speed}{eta}"
 
 msgid "Extraction Error"
-msgstr ""
+msgstr "Fehler beim Entpacken"
 
 #, python-brace-format
 msgid "Failed to extract archive: {0}"
-msgstr ""
+msgstr "Archiv konnte nicht entpackt werden: {0}"
 
 msgid "Operation Cancelled"
-msgstr ""
+msgstr "Operation abgebrochen"
 
 msgid "Download or extraction has been cancelled."
-msgstr ""
+msgstr "Der Download oder das Entpacken wurde abgebrochen."
 
 msgid "System WINE"
-msgstr ""
+msgstr "System WINE"
 
 msgid "Exe Settings"
-msgstr ""
+msgstr "Einstellungen für die exe-Datei"
 
 msgid "Search settings…"
 msgstr "Einstellungen suchen…"
 
 msgid "Main"
-msgstr ""
+msgstr "Haupteinstellungen"
 
 msgid "Advanced"
-msgstr ""
+msgstr "Weitere Einstellungen"
 
 msgid "Setting"
-msgstr ""
+msgstr "Parameter"
 
 msgid "Value"
-msgstr ""
+msgstr "Wert"
 
 msgid "Description"
-msgstr ""
+msgstr "Beschreibung"
 
 msgid "Open PPDB"
-msgstr ""
+msgstr "PPDB öffnen"
 
 msgid "Clear PPDB"
-msgstr ""
+msgstr "PPDB zurücksetzen"
 
 msgid "Executable path is not available."
-msgstr ""
+msgstr "Der Pfad zur ausführbaren Datei ist nicht verfügbar."
 
 msgid "PPDB file does not exist at: "
-msgstr ""
+msgstr "PPDB-Datei ist nicht vorhanden unter: "
 
 msgid "Failed to open PPDB file:\n"
-msgstr ""
+msgstr "Fehler beim Öffnen der PPDB-Datei:\n"
 
 msgid "Information"
-msgstr ""
+msgstr "Information"
 
 msgid "Confirm PPDB Clear"
-msgstr ""
+msgstr "PPDB-Zurücksetzung bestätigen"
 
 msgid "Are you sure you want to clear settings? This action cannot be undone."
 msgstr ""
+"Sollen die Einstellungen zurückgesetzt werden? Dieser Vorgang kann nicht "
+"rückgängig gemacht werden."
 
 msgid "Failed to remove PPDB file:\n"
-msgstr ""
+msgstr "Fehler beim Entfernen der PPDB-Datei:\n"
 
 msgid "disabled"
-msgstr ""
+msgstr "deaktiviert"
 
 msgid "Enter prefix name"
-msgstr ""
+msgstr "Prefix-Name eingeben"
 
 msgid "Default value"
-msgstr ""
+msgstr "Standardwert"
 
 msgid "Failed to apply changes. Check logs."
-msgstr ""
+msgstr "Anwenden der Änderungen fehlgeschlagen. Überprüfe die Protokolle."
 
 msgid "Borderless window"
-msgstr ""
+msgstr "Rahmenloses Fenster"
 
 msgid "Fullscreen window"
-msgstr ""
+msgstr "Vollbildfenster"
 
 msgid "Grab keyboard"
-msgstr ""
+msgstr "Tastatureingabe abfangen"
 
 msgid "Force grab cursor (always relative mouse mode)"
-msgstr ""
+msgstr "Maus-Cursor abfangen (immer relativer Mausmodus)"
 
 msgid "Expose Wayland"
-msgstr ""
+msgstr "Wayland-Unterstützung"
 
 msgid "Use realtime scheduling"
-msgstr ""
+msgstr "Echtzeit-Prozessplanung verwenden"
 
 msgid "Force windows fullscreen"
-msgstr ""
+msgstr "Fenster in den Vollbildmodus erzwingen"
 
 msgid "Enable HDR output"
-msgstr ""
+msgstr "HDR-Ausgabe aktivieren"
 
 msgid "Enable SDR→HDR inverse tone mapping"
-msgstr ""
+msgstr "SDR-zu-HDR-Inverse-Anzeige aktivieren"
 
 msgid "Force HDR support"
-msgstr ""
+msgstr "HDR-Unterstützung erzwingen"
 
 msgid "Force HDR10 PQ output"
-msgstr ""
+msgstr "HDR10-PQ-Ausgabe erzwingen"
 
 msgid "HDR luminance heatmap"
-msgstr ""
+msgstr "HDR-Luminanz-Heatmap"
 
 msgid "Enable mangoapp overlay"
-msgstr ""
+msgstr "MangoApp-Overlay aktivieren"
 
 msgid "Enable adaptive sync"
-msgstr ""
+msgstr "Adaptive Sync aktivieren"
 
 msgid "Output width"
-msgstr ""
+msgstr "Ausgabebreite"
 
 msgid "Output height"
-msgstr ""
+msgstr "Ausgabehöhe"
 
 msgid "Game width"
-msgstr ""
+msgstr "Spielfensterdbreite"
 
 msgid "Game height"
-msgstr ""
+msgstr "Spielfensterhöhe"
 
 msgid "Game refresh rate (Hz)"
-msgstr ""
+msgstr "Bildwiederholrate des Spiels (Hz)"
 
 msgid "Maximum scale factor"
-msgstr ""
+msgstr "Maximaler Skalierungsfaktor"
 
 msgid "E.g., 5"
-msgstr ""
+msgstr "z. B. 5"
 
 msgid "Upscaler type"
-msgstr ""
+msgstr "Upscaler-Typ"
 
 msgid "Upscaler filter"
-msgstr ""
+msgstr "Upscaling-Filter"
 
 msgid "Upscaler sharpness (0-20)"
-msgstr ""
+msgstr "Upscaler-Schärfe (0–20)"
 
 msgid "Mouse sensitivity"
-msgstr ""
+msgstr "Mausempfindlichkeit"
 
 msgid "E.g., 0.5"
-msgstr ""
+msgstr "z. B. 0.5"
 
 msgid "Rendering backend"
-msgstr ""
+msgstr "Rendering-Backend"
 
 msgid "Ready FD"
-msgstr ""
+msgstr "Bereitschaft FD"
 
 msgid "E.g., 3"
-msgstr ""
+msgstr "z. B. 3"
 
 msgid "Hide cursor delay (ms)"
-msgstr ""
+msgstr "Verzögerung bis zum Ausblenden des Cursors (ms)"
 
 msgid "E.g., 1000"
-msgstr ""
+msgstr "z. B. 1000"
 
 msgid "XWayland servers count"
-msgstr ""
+msgstr "Anzahl der XWayland-Server"
 
 msgid "E.g., 1"
-msgstr ""
+msgstr "Z. B. 1"
 
 msgid "Force orientation"
-msgstr ""
+msgstr "Ausrichtung erzwingen"
 
 msgid "Cursor scale height"
-msgstr ""
+msgstr "Lineare Cursorskalierung"
 
 msgid "SDR gamut wideness (0-1)"
-msgstr ""
+msgstr "SDR-Farbraumbreite (0–1)"
 
 msgid "HDR SDR content nits"
-msgstr ""
+msgstr "HDR- und SDR-Helligkeit (Nits)"
 
 msgid "E.g., 400"
-msgstr ""
+msgstr "Z. B. 400"
 
 msgid "HDR ITM SDR nits"
-msgstr ""
+msgstr "Inverse Display-Helligkeit HDR ITM SDR (Nits)"
 
 msgid "HDR ITM target nits"
-msgstr ""
+msgstr "HDR-ITM-Zielhelligkeit (Nits)"
 
 msgid "Framerate limit"
-msgstr ""
+msgstr "Bildratenbegrenzung (Hz)"
 
 msgid "Unfocused refresh rate (Hz)"
-msgstr ""
+msgstr "Bildwiederholrate (Hz) im inaktiven Zustand"
 
 msgid "Window"
-msgstr ""
+msgstr "Fenster"
 
 msgid "Platform"
-msgstr ""
+msgstr "Plattform"
 
 msgid "HDR"
-msgstr ""
+msgstr "HDR"
 
 msgid "Overlay"
-msgstr ""
+msgstr "Overlay"
 
 msgid "Make the window borderless"
-msgstr ""
+msgstr "Fenster rahmenlos"
 
 msgid "Make the window fullscreen"
-msgstr ""
+msgstr "Fenster im Vollbildmodus"
 
 msgid "Grab the keyboard"
-msgstr ""
+msgstr "Tastatur-Eingabe abfangen"
 
 msgid ""
 "Force grab cursor: always use relative mouse mode instead of switching "
 "with cursor visibility"
 msgstr ""
+"Cursor-Erfassung erzwingen: Immer den relativen Mausmodus verwenden, anstatt "
+"zwischen den Modi basierend auf der Cursor-Sichtbarkeit zu wechseln"
 
 msgid "Support Wayland clients using xdg-shell"
-msgstr ""
+msgstr "Unterstützung für Wayland-Clients durch xdg-shell"
 
 msgid ""
 "Force windows inside of gamescope to be the size of the nested display "
 "(fullscreen)"
 msgstr ""
+"Fenster innerhalb von Gamescope zwingen, die Größe des Bildschirms "
+"(Vollbild) anzunehmen"
 
 msgid ""
 "Enable HDR output (needs Gamescope WSI layer enabled for support from "
 "clients)"
 msgstr ""
+"HDR-Ausgabe aktivieren (erfordert die Aktivierung des Gamescope-WSI-Layers "
+"für die Unterstützung durch Clients)"
 
 msgid "Enable SDR->HDR inverse tone mapping. only works for SDR input"
 msgstr ""
+"Aktiviere SDR-zu-HDR-Inverse-Tone-Mapping. Funktioniert nur bei SDR-Eingang"
 
 msgid "Force support for HDR even if the display doesn't support it"
 msgstr ""
+"HDR-Unterstützung erzwingen, auch wenn das Display diese nicht unterstützt"
 
 msgid "Force output to HDR10 PQ even if unsupported (will look wrong)"
 msgstr ""
+"Ausgabe auf HDR10 PQ erzwingen, auch wenn nicht unterstützt (wird falsch "
+"aussehen)"
 
 msgid "Display heatmap-style debug view of HDR luminance in nits"
-msgstr ""
+msgstr "Debug-Ansicht der HDR-Luminanz im Heatmap-Stil (in Nits) anzeigen"
 
 msgid "Launch with the mangoapp (mangohud) performance overlay enabled"
-msgstr ""
+msgstr "Starte mit aktiviertem MangoApp- (MangoHud-)Performance-Overlay"
 
 msgid "Enable adaptive sync if available (variable rate refresh)"
-msgstr ""
+msgstr "Adaptive Sync aktivieren, falls verfügbar (variable Bildwiederholrate)"
 
 msgid "Resolution and scaling"
-msgstr ""
+msgstr "Auflösung und Skalierung"
 
 msgid "Quick presets"
-msgstr ""
+msgstr "Voreingestellte Einstellungen"
 
 #, python-brace-format
 msgid "Enable {0}"
-msgstr ""
+msgstr "Einschalten {0}"
 
 msgid "Default"
-msgstr ""
+msgstr "Standard"
 
 msgid "FSR upscaling"
-msgstr ""
+msgstr "FSR-Upscaling"
 
 msgid "HDR setup"
-msgstr ""
+msgstr "HDR-Einstellungen"
 
 msgid "Performance"
-msgstr ""
+msgstr "Leistung"
 
 msgid "Custom"
-msgstr ""
+msgstr "Benutzerdefiniert"
 
 msgid "Save custom"
-msgstr ""
+msgstr "Benutzerdefinierte Einstellungen speichern"
 
 msgid "Clear"
-msgstr ""
+msgstr "Zurücksetzen"
 
 msgid "Gamescope switches"
-msgstr ""
+msgstr "Gamescope-Einstellungen"
 
 msgid "Other"
-msgstr ""
+msgstr "Andere"
 
 msgid "Extra args"
-msgstr ""
+msgstr "Erweiterte Einstellungen"
 
 msgid "Additional Gamescope options not covered by the GUI."
 msgstr ""
+"Zusätzliche Gamescope-Optionen, die nicht über die grafische "
+"Benutzeroberfläche abgedeckt werden (,)."
 
 msgid "Example: --cursor-scale-height=1080 --force-orientation=left"
-msgstr ""
+msgstr "Beispiel: --cursor-scale-height=1080 --force-orientation=left"
 
 #, python-brace-format
 msgid "Disable {0}"
-msgstr ""
+msgstr "Deaktivieren {0}"
 
 msgid "Custom preset is empty. Save one first."
-msgstr ""
+msgstr "Benutzerdefinierte Einstellungen sind leer. Bitte zuerst abspeichern."
 
 msgid "Custom preset saved."
-msgstr ""
+msgstr "Benutzerdefinierte Einstellungen gespeichert."
 
 msgid "Failed to save custom preset."
-msgstr ""
+msgstr "Speichern von benutzerdefinierten Einstellungen fehlgeschlagen."
 
 msgid "Overlay position"
-msgstr ""
+msgstr "Overlay-Position"
 
 msgid "Device battery"
-msgstr ""
+msgstr "Geräteakku"
 
 msgid "FPS limit method"
-msgstr ""
+msgstr "Methode zur FPS-Begrenzung"
 
 msgid "Anisotropic filtering"
-msgstr ""
+msgstr "Anisotrope Filterung"
 
 msgid "FCAT screen edge"
-msgstr ""
+msgstr "FCAT-Bildschirmrand"
 
 msgid "Table columns"
-msgstr ""
+msgstr "Tabellenspalten"
 
 msgid "Network (tx/rx kb/s)"
-msgstr ""
+msgstr "Netzwerk (Senden/Empfangen KB/s)"
 
 msgid "GPU list"
-msgstr ""
+msgstr "GPU-Liste"
 
 msgid "Background opacity"
-msgstr ""
+msgstr "Hintergrund-Deckkraft"
 
 msgid "Round corners (px)"
-msgstr ""
+msgstr "Abgerundete Ecken (px)"
 
 msgid "Top-left"
-msgstr ""
+msgstr "Oben links"
 
 msgid "Top-right"
-msgstr ""
+msgstr "Oben rechts"
 
 msgid "Middle-left"
-msgstr ""
+msgstr "Mitte links"
 
 msgid "Middle-right"
-msgstr ""
+msgstr "Mitte rechts"
 
 msgid "Bottom-left"
-msgstr ""
+msgstr "Unten links"
 
 msgid "Bottom-right"
-msgstr ""
+msgstr "Unten rechts"
 
 msgid "Top-center"
-msgstr ""
+msgstr "Oben mittig"
 
 msgid "Bottom-center"
-msgstr ""
+msgstr "Unten mittig"
 
 msgid "Gamepad"
-msgstr ""
+msgstr "Gamepad"
 
 msgid "Mouse"
-msgstr ""
+msgstr "Maus"
 
 msgid "Gamepad, mouse"
-msgstr ""
+msgstr "Gamepad, Maus"
 
 msgid "Late"
-msgstr ""
+msgstr "Nach Bildausgabe"
 
 msgid "Early"
-msgstr ""
+msgstr "Vor Bildausgabe"
 
 msgid "General"
-msgstr ""
+msgstr "Allgemein"
 
 msgid "CPU / GPU"
-msgstr ""
+msgstr "CPU / GPU"
 
 msgid "Application architecture (32/64-bit)"
-msgstr ""
+msgstr "Anwendungsarchitektur (32/64-Bit)"
 
 msgid "Battery percent and energy consumption"
-msgstr ""
+msgstr "Akkustand in Prozent und Energieverbrauch"
 
 msgid "Battery icon instead of percent"
-msgstr ""
+msgstr "Batteriesymbol statt Prozentanzeige"
 
 msgid "Remaining battery time"
-msgstr ""
+msgstr "Verbleibende Akkulaufzeit"
 
 msgid "Battery wattage"
-msgstr ""
+msgstr "Akkuleistung (in Watt)"
 
 msgid "Force bicubic filtering"
-msgstr ""
+msgstr "Bikubische Filterung erzwingen"
 
 msgid "Core load as vertical bars"
-msgstr ""
+msgstr "Kernlast als vertikale Balken"
 
 msgid "Per-core load and frequency"
-msgstr ""
+msgstr "Auslastung und Taktfrequenz pro Kern"
 
 msgid "Core load color change"
-msgstr ""
+msgstr "Farbänderung bei Kernbelastung"
 
 msgid "CPU core type (P/E/ARM)"
-msgstr ""
+msgstr "CPU-Kerntyp (P/E/ARM)"
 
 msgid "CPU efficiency (frames/joule)"
-msgstr ""
+msgstr "CPU-Effizienz (Frames/Joule)"
 
 msgid "CPU load color change"
-msgstr ""
+msgstr "Farbwechsel bei CPU-Auslastung"
 
 msgid "CPU frequency in MHz"
 msgstr ""
