@@ -221,9 +221,6 @@ msgstr "'{game_name}' removido de {location}"
 msgid "Desktop"
 msgstr "Área de Trabalho"
 
-msgid "Play this game on Steam"
-msgstr "Jogar este jogo no Steam"
-
 msgid "Game name and executable path are required"
 msgstr "O nome do jogo e o caminho do executável são obrigatórios"
 
@@ -325,9 +322,6 @@ msgstr "Quebrado"
 msgid "Denied"
 msgstr "Negado"
 
-msgid "Missing EXE"
-msgstr "EXE ausente"
-
 msgid "Unknown Game"
 msgstr "Jogo Desconhecido"
 
@@ -375,9 +369,6 @@ msgstr "{0} Plugins…"
 
 msgid "{0} Libs…"
 msgstr "{0} Libs…"
-
-msgid "{0} Wine…"
-msgstr "{0} Wine…"
 
 msgid "{0} components…"
 msgstr "{0} componentes…"
@@ -2342,4 +2333,3 @@ msgstr "Prefixo '{}' excluído."
 #, python-brace-format
 msgid "Failed to delete prefix: {}"
 msgstr "Falha ao excluir o prefixo: {}"
-

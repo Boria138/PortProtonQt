@@ -220,9 +220,6 @@ msgstr "'{game_name}' удалён(а) из {location}"
 msgid "Desktop"
 msgstr "Рабочий стол"
 
-msgid "Play this game on Steam"
-msgstr "Играть в эту игру в Steam"
-
 msgid "Game name and executable path are required"
 msgstr "Требуются название игры и путь к исполняемому файлу"
 
@@ -324,9 +321,6 @@ msgstr "Сломано"
 msgid "Denied"
 msgstr "Отказано"
 
-msgid "Missing EXE"
-msgstr "Отсутствует EXE"
-
 msgid "Unknown Game"
 msgstr "Неизвестная игра"
 
@@ -374,9 +368,6 @@ msgstr "{0} Плагинов…"
 
 msgid "{0} Libs…"
 msgstr "{0} Библиотек…"
-
-msgid "{0} Wine…"
-msgstr "{0} Wine…"
 
 msgid "{0} components…"
 msgstr "{0} компонентов…"
@@ -2341,4 +2332,3 @@ msgstr "Префикс «{}» удален."
 #, python-brace-format
 msgid "Failed to delete prefix: {}"
 msgstr "Не удалось удалить префикс: {}"
-

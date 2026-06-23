@@ -211,9 +211,6 @@ msgstr "已从 {location} 移除\"{game_name}\""
 msgid "Desktop"
 msgstr "桌面"
 
-msgid "Play this game on Steam"
-msgstr "在 Steam 上玩此游戏"
-
 msgid "Game name and executable path are required"
 msgstr "游戏名称和可执行文件路径为必填项"
 
@@ -311,9 +308,6 @@ msgstr "损坏"
 msgid "Denied"
 msgstr "已拒绝"
 
-msgid "Missing EXE"
-msgstr "缺少 EXE"
-
 msgid "Unknown Game"
 msgstr "未知游戏"
 
@@ -361,9 +355,6 @@ msgstr "{0} 插件…"
 
 msgid "{0} Libs…"
 msgstr "{0} 库…"
-
-msgid "{0} Wine…"
-msgstr "{0} Wine…"
 
 msgid "{0} components…"
 msgstr "{0} 组件…"
@@ -2279,4 +2270,3 @@ msgstr "前缀\"{}\"已删除。"
 #, python-brace-format
 msgid "Failed to delete prefix: {}"
 msgstr "删除前缀失败：{}"
-

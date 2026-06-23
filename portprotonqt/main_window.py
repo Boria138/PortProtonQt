@@ -745,7 +745,7 @@ class MainWindow(
         if "libs" in name_lower or "libraries" in name_lower:
             return _("{0} Libs…").format(action)
         if "wine" in name_lower or "proton" in name_lower:
-            return _("{0} Wine…").format(action)
+            return f"{action} Wine…"
         return _("{0} components…").format(action)
 
     def _parse_process_status_line(
