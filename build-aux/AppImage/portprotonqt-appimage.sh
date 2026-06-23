@@ -12,7 +12,7 @@ export ICON=/usr/share/icons/hicolor/scalable/apps/ru.linux_gaming.PortProtonQt.
 export OUTNAME=PortProtonQt-"$VERSION"-anylinux-"$ARCH".AppImage
 export DEPLOY_OPENGL=1
 export DEPLOY_SDL=1
-export DEPLOY_SYS_PYTHON=1
+export DEPLOY_PYTHON=1
 export OPTIMIZE_LAUNCH=1
 
 # Adjust comp settings to bypass oom-killer

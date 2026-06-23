@@ -25,7 +25,7 @@ jobs:
         run: |
           pacman-key --init
           pacman -Sy --noconfirm archlinux-keyring
-          pacman -Syu --noconfirm --disable-download-timeout --needed git wget gnupg nodejs npm xorg-server-xvfb zsync
+          pacman -Syu --noconfirm --disable-download-timeout --needed git wget gnupg nodejs npm xorg-server-xvfb zsync patchelf
 
       - uses: https://git.linux-gaming.ru/actions/checkout@v4
 
