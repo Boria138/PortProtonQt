@@ -108,9 +108,10 @@ shadow.setColor(QColor(0, 0, 0, 150))
 label.setStyleSheet("color: #bbbbbb;")
 QColor(128, 128, 128)
 
-# NEVER: Magic numbers or hardcoded constant values
-if status == 3: ...
-if key_value >= 0x01000000: ...
+# NEVER: Unexplained magic numbers in business logic
+# Status codes, flags, timeouts, limits, protocol values — use named constants or enums
+if status == 3: ...                    # BAD
+if key_value >= 0x01000000: ...        # BAD
 
 # NEVER: Visual constants in application code (game_card.py, detail_pages/, etc.)
 # ALL visual/layout constants MUST live in themes/standart/styles/constants.py
@@ -156,16 +157,12 @@ QColor(self.theme.color_disabled_text)
 # ALWAYS: Add new constants to theme files
 # New colors → portprotonqt/themes/standart/styles/constants.py
 # New QSS styles → portprotonqt/themes/standart/styles/base.py or submodule
-# Never add style constants to application code
 
 # ALWAYS: Use descriptive named constants, enums, or built-in Qt values instead of magic numbers
 STATUS_COMPLETED = 3
-if status == STATUS_COMPLETED: ...
-# Never add style constants to application code
 
-# ALWAYS: Use descriptive named constants, enums, or built-in Qt values instead of magic numbers
-STATUS_COMPLETED = 3
-if status == STATUS_COMPLETED: ...
+if status == STATUS_COMPLETED:
+    ...
 
 # ALWAYS: Use named Qt.Key constants with comments for keyboard system key checks
 # Skip system/modifier keys (Shift, Enter, Arrow keys, etc.)
@@ -781,7 +778,7 @@ Review scope: prioritize new/modified code. Existing unrelated legacy issues sho
 - Emoji usage
 - TODO without tickets
 - Poor variable naming (x, tmp, data)
-- Magic numbers
+- Unexplained magic numbers in business logic (status codes, flags, timeouts, limits, protocol values)
 - Non-English comments
 - **Hardcoded styles or constants (colors, sizes, shadow values, etc.)**
 
