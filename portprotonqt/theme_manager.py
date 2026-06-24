@@ -356,7 +356,10 @@ class ThemeWrapper:
     def __init__(self, custom_theme, metainfo=None, inherit_chain=None):
         self.custom_theme = custom_theme
         self.metainfo = metainfo or {}
-        self.screenshots = load_theme_screenshots(self.metainfo.get("name", ""))
+        self.screenshots = load_theme_screenshots(
+            self.metainfo.get("name")
+            or custom_theme.__name__.split(".")[-1]
+        )
         parent_name = getattr(custom_theme, "THEME_INHERITS", "standart")
         self.parent_theme_name = _get_parent_theme_name(custom_theme.__name__.split(".")[-1], parent_name)
         self._inherit_chain = inherit_chain or []

@@ -392,7 +392,8 @@ tests/
 ├── test_dbus_tools.py       # D-Bus tools (notifications, idle inhibit, power profiles)
 ├── test_time_utils.py       # Playtime parsing, last launch cache, formatting
 ├── test_shortcuts.py        # Desktop shortcut creation, paths with spaces, .desktop entry
-└── test_theme_manager.py    # Theme AST injection, parent resolution, ThemeWrapper, style integrity
+├── test_theme_manager.py    # Theme AST injection, parent resolution, ThemeWrapper, style integrity
+└── test_theme_security.py   # Theme security checker (allowlist AST, forbidden modules/methods, SVG/font/image safety)
 ```
 
 ### Running Tests
