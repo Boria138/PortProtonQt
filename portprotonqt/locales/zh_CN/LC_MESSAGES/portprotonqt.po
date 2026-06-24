@@ -1993,6 +1993,12 @@ msgstr "强制为 Wine 设置系统 DPI"
 msgid "Download Settings"
 msgstr "下载设置"
 
+msgid "Enable Theme Store from"
+msgstr ""
+
+msgid "third-party themes may be unsafe"
+msgstr ""
+
 msgid "Hardware Settings"
 msgstr "硬件设置"
 

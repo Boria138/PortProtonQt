@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-06-23 18:32+0500\n"
+"POT-Creation-Date: 2026-06-25 00:10+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1955,6 +1955,12 @@ msgid "Force system DPI for Wine"
 msgstr ""
 
 msgid "Download Settings"
+msgstr ""
+
+msgid "Enable Theme Store from"
+msgstr ""
+
+msgid "third-party themes may be unsafe"
 msgstr ""
 
 msgid "Hardware Settings"

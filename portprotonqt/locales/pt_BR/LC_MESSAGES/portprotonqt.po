@@ -2054,6 +2054,12 @@ msgstr "Forçar DPI do sistema para o Wine"
 msgid "Download Settings"
 msgstr "Configurações de Download"
 
+msgid "Enable Theme Store from"
+msgstr ""
+
+msgid "third-party themes may be unsafe"
+msgstr ""
+
 msgid "Hardware Settings"
 msgstr "Configurações de Hardware"
 
