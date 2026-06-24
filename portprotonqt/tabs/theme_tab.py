@@ -414,7 +414,8 @@ class MainWindowThemeTabMixin(_MainWindowTypingBase):
             available_themes.remove(current_theme_base)
             available_themes.insert(0, current_theme_base)
         self.themesCombo.addItems(available_themes)
-        self.themesCombo.addItem(_(THEME_STORE_ITEM), THEME_STORE_ITEM)
+        if ui_config.get_enable_theme_store():
+            self.themesCombo.addItem(_(THEME_STORE_ITEM), THEME_STORE_ITEM)
         self.themeTabHeaderLayout.addWidget(self.themesCombo)
 
         self.themeVariantCombo = QComboBox()
@@ -1022,7 +1023,8 @@ class MainWindowThemeTabMixin(_MainWindowTypingBase):
         self.themesCombo.blockSignals(True)
         self.themesCombo.clear()
         self.themesCombo.addItems(available_themes)
-        self.themesCombo.addItem(_(THEME_STORE_ITEM), THEME_STORE_ITEM)
+        if ui_config.get_enable_theme_store():
+            self.themesCombo.addItem(_(THEME_STORE_ITEM), THEME_STORE_ITEM)
         self.themesCombo.blockSignals(False)
 
     def _apply_theme_and_restart(self, theme_name: str, variant: str) -> None:

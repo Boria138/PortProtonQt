@@ -14,7 +14,7 @@
 - Добавлена настройка автоматического скачивания PPDB с `ppdb.linux-gaming.ru`
 - Добавлены раскладки и варианты виртуальной клавиатуры на основе keymap-данных `gjs-osk`
 - Добавлен перевод на Немецкий `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/de/`
-- Добавлен магазин тем с загрузкой и применением тем из `ppdb.linux-gaming.ru`
+- Добавлен магазин тем с загрузкой и применением тем из `ppdb.linux-gaming.ru` (скрыт за настройкой по умолчанию, так как сторонние темы могут быть небезопасны)
 - Добавлена поддержка установки тем по URI `portprotonqt://theme/<id>` с `ppdb.linux-gaming.ru`
 
 ### Changed
