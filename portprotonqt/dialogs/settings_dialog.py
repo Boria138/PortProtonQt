@@ -269,7 +269,7 @@ class ExeSettingsDialog(
         search_layout = QHBoxLayout()
         self.search_edit = QLineEdit()
         self.search_edit.setStyleSheet(self.theme.ADDGAME_INPUT_STYLE)
-        self.search_edit.setPlaceholderText(_("Search settings..."))
+        self.search_edit.setPlaceholderText(_("Search settings…"))
         self.search_edit.textChanged.connect(self.filter_settings)
         self.search_edit.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.search_edit.installEventFilter(self)

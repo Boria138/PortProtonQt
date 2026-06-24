@@ -426,13 +426,18 @@ class TestReadThemeParentName:
 
 
 class TestThemeStylesIntegrity:
-    """Verify that classic and classic-light define all styles that
-    were lost during the theme rewrite."""
+    """Verify theme files define required styles and use f-strings."""
+
+    _themes_dir = Path(__file__).parent.parent / "portprotonqt" / "themes"
+
+    def _read_theme(self, name: str) -> str:
+        path = self._themes_dir / name / "styles.py"
+        if not path.exists():
+            pytest.skip(f"Theme '{name}' not found")
+        return path.read_text(encoding="utf-8")
 
     def test_classic_has_required_styles(self):
-        theme_path = Path(__file__).parent.parent / "portprotonqt" / "themes" / "classic" / "styles.py"
-        content = theme_path.read_text(encoding="utf-8")
-
+        content = self._read_theme("classic")
         required_styles = [
             "NAV_BUTTON_STYLE",
             "COMBOBOX_STYLE",
@@ -465,9 +470,7 @@ class TestThemeStylesIntegrity:
             assert f"{style_name}" in content, f"classic/styles.py missing {style_name}"
 
     def test_classic_light_has_required_styles(self):
-        theme_path = Path(__file__).parent.parent / "portprotonqt" / "themes" / "classic-light" / "styles.py"
-        content = theme_path.read_text(encoding="utf-8")
-
+        content = self._read_theme("classic-light")
         required_styles = [
             "NAV_BUTTON_STYLE",
             "COMBOBOX_STYLE",
@@ -483,22 +486,19 @@ class TestThemeStylesIntegrity:
             assert f"{style_name}" in content, f"classic-light/styles.py missing {style_name}"
 
     def test_classic_game_card_animation_has_glow_keys(self):
-        theme_path = Path(__file__).parent.parent / "portprotonqt" / "themes" / "classic" / "styles.py"
-        content = theme_path.read_text(encoding="utf-8")
+        content = self._read_theme("classic")
         assert '"glow_base_alpha"' in content
         assert '"glow_pulse_alpha"' in content
 
     def test_classic_light_game_card_animation_has_glow_keys(self):
-        theme_path = Path(__file__).parent.parent / "portprotonqt" / "themes" / "classic-light" / "styles.py"
-        content = theme_path.read_text(encoding="utf-8")
+        content = self._read_theme("classic-light")
         assert '"glow_base_alpha"' in content
         assert '"glow_pulse_alpha"' in content
 
     def test_classic_styles_use_fstrings_not_hardcoded(self):
         """Classic QSS style constants should be f-strings, not plain strings
         (except HINT_BAR_STYLE and %-formatted styles for icon paths)."""
-        theme_path = Path(__file__).parent.parent / "portprotonqt" / "themes" / "classic" / "styles.py"
-        content = theme_path.read_text(encoding="utf-8")
+        content = self._read_theme("classic")
         tree = ast.parse(content)
 
         plain_style_count = 0
@@ -526,8 +526,7 @@ class TestThemeStylesIntegrity:
     def test_classic_light_styles_use_fstrings_not_hardcoded(self):
         """Classic-light QSS style constants should be f-strings, not plain strings
         (except %-formatted styles for icon paths)."""
-        theme_path = Path(__file__).parent.parent / "portprotonqt" / "themes" / "classic-light" / "styles.py"
-        content = theme_path.read_text(encoding="utf-8")
+        content = self._read_theme("classic-light")
         tree = ast.parse(content)
 
         plain_style_count = 0
@@ -553,13 +552,11 @@ class TestThemeStylesIntegrity:
         assert percent_style_count <= 3, f"Classic-light has {percent_style_count} %-formatted styles"
 
     def test_classic_theme_inherits_standart(self):
-        theme_path = Path(__file__).parent.parent / "portprotonqt" / "themes" / "classic" / "styles.py"
-        content = theme_path.read_text(encoding="utf-8")
+        content = self._read_theme("classic")
         assert 'THEME_INHERITS = "standart"' in content
 
     def test_classic_light_theme_inherits_standart_light(self):
-        theme_path = Path(__file__).parent.parent / "portprotonqt" / "themes" / "classic-light" / "styles.py"
-        content = theme_path.read_text(encoding="utf-8")
+        content = self._read_theme("classic-light")
         assert 'THEME_INHERITS = "standart-light"' in content
 
 
@@ -567,74 +564,322 @@ class TestThemeStylesIntegrity:
 
 
 class TestMixThemeConstants:
-    """Verify mix and mix-light themes get constants from the full chain."""
+    """Verify color-only themes get constants from the full inheritance chain."""
 
-    _themes_dir = Path(__file__).parent.parent / "portprotonqt" / "themes"
-
-    def _patch_dirs(self, monkeypatch):
-        themes_dirs = [str(self._themes_dir.parent / "themes_custom"), str(self._themes_dir)]
+    @pytest.fixture()
+    def stub_themes(self, tmp_path, monkeypatch):
+        from portprotonqt.theme_manager import THEMES_DIRS
+        base_dir = tmp_path / "themes"
+        base_dir.mkdir()
         monkeypatch.setattr(
-            "portprotonqt.theme_manager.THEMES_DIRS", themes_dirs,
+            "portprotonqt.theme_manager.THEMES_DIRS",
+            [str(base_dir), str(THEMES_DIRS[1])],
+        )
+        return base_dir
+
+    @staticmethod
+    def _make_root(base_dir, name="root"):
+        d = base_dir / name
+        d.mkdir()
+        (d / "styles.py").write_text(
+            'color_accent = "#409EFF"\ncolor_bg = "#282a33"\n',
+            encoding="utf-8",
+        )
+        styles = d / "styles"
+        styles.mkdir()
+        (styles / "__init__.py").write_text("", encoding="utf-8")
+        (styles / "constants.py").write_text(
+            'color_accent = "#409EFF"\ncolor_bg = "#282a33"\n',
+            encoding="utf-8",
         )
 
-    def test_mix_gets_color_accent_from_standart(self, monkeypatch):
-        self._patch_dirs(monkeypatch)
-        mod = types.ModuleType("mix")
-        mod.__dict__["__name__"] = "mix"
-        _inject_parent_theme_constants(mod, str(self._themes_dir / "mix" / "styles.py"))
-
-        assert "color_accent" in mod.__dict__, (
-            "mix theme must inherit color_accent through classic -> standart chain"
+    @staticmethod
+    def _make_child(base_dir, name, inherits):
+        d = base_dir / name
+        d.mkdir()
+        (d / "styles.py").write_text(
+            f'THEME_INHERITS = "{inherits}"\n',
+            encoding="utf-8",
         )
 
-    def test_mix_light_gets_color_accent_from_standart_light(self, monkeypatch):
-        self._patch_dirs(monkeypatch)
-        mod = types.ModuleType("mix-light")
-        mod.__dict__["__name__"] = "mix-light"
+    def test_child_gets_color_accent_from_root_chain(self, stub_themes):
+        self._make_root(stub_themes, "root")
+        self._make_child(stub_themes, "mid", "root")
+        self._make_child(stub_themes, "leaf", "mid")
+        mod = types.ModuleType("leaf")
+        mod.__dict__["__name__"] = "leaf"
         _inject_parent_theme_constants(
-            mod, str(self._themes_dir / "mix-light" / "styles.py"),
+            mod, str(stub_themes / "leaf" / "styles.py"),
         )
-
         assert "color_accent" in mod.__dict__, (
-            "mix-light theme must inherit color_accent through classic-light -> standart-light chain"
+            "leaf theme must inherit color_accent through mid -> root chain"
         )
 
-    def test_classic_gets_color_accent_from_standart(self, monkeypatch):
-        self._patch_dirs(monkeypatch)
-        mod = types.ModuleType("classic")
-        mod.__dict__["__name__"] = "classic"
+    def test_mid_gets_color_accent_from_root(self, stub_themes):
+        self._make_root(stub_themes, "root")
+        self._make_child(stub_themes, "mid", "root")
+        mod = types.ModuleType("mid")
+        mod.__dict__["__name__"] = "mid"
         _inject_parent_theme_constants(
-            mod, str(self._themes_dir / "classic" / "styles.py"),
+            mod, str(stub_themes / "mid" / "styles.py"),
         )
+        assert "color_accent" in mod.__dict__
 
+    def test_child_direct_gets_color_accent_from_parent(self, stub_themes):
+        self._make_root(stub_themes, "root")
+        self._make_child(stub_themes, "child", "root")
+        mod = types.ModuleType("child")
+        mod.__dict__["__name__"] = "child"
+        _inject_parent_theme_constants(
+            mod, str(stub_themes / "child" / "styles.py"),
+        )
         assert "color_accent" in mod.__dict__
 
 
 class TestGeneratedStylesUseChildColors:
     """Verify that color-only themes get QSS styles re-computed with their palette."""
 
-    _themes_dir = Path(__file__).parent.parent / "portprotonqt" / "themes"
+    _CONSTANTS_PY = """\
+font_family = "Test"
+font_size_normal = "16px"
+font_size_small = "11px"
+border_none = "0px solid"
+border_thin = "1px solid"
+border_medium = "2px solid"
+border_radius_small = "10px"
+border_radius_large = "15px"
+color_accent = "#409EFF"
+color_bg = "#282a33"
+color_surface = "#3f424d"
+color_text = "#ffffff"
+color_border_subtle = "rgba(255, 255, 255, 0.01)"
+"""
 
-    def test_otto_qss_uses_otto_colors(self):
-        from portprotonqt.theme_manager import load_theme
-        otto = load_theme("otto")
-        standart = load_theme("standart")
-        assert otto.MAIN_WINDOW_STYLE != standart.MAIN_WINDOW_STYLE
-        assert otto.color_accent in otto.MAIN_WINDOW_STYLE
-        assert otto.color_bg in otto.MAIN_WINDOW_STYLE
-        assert standart.color_accent not in otto.MAIN_WINDOW_STYLE
+    _BASE_PY = """\
+from .constants import *
 
-    def test_child_theme_styles_differ_from_parent(self):
+MAIN_WINDOW_STYLE = f"QWidget {{ background: {color_bg}; color: {color_text}; }}"
+ACTION_BUTTON_STYLE = f"QPushButton {{ background: {color_accent}; border-radius: {border_radius_small}; }}"
+TAB_STYLE = f"QTabBar {{ background: {color_surface}; }}"
+NAV_BUTTON_STYLE = f"QPushButton {{ color: {color_text}; }}"
+GAME_CARD_WINDOW_STYLE = f"QFrame {{ background: {color_surface}; border: {border_medium} {color_border_subtle}; }}"
+CHECKBOX_STYLE = f"QCheckBox {{ color: {color_text}; }}"
+CONTAINER_STYLE = f"QWidget {{ background: {color_bg}; }}"
+"""
+
+    @pytest.fixture()
+    def stub_themes(self, tmp_path, monkeypatch):
+        from portprotonqt.theme_manager import THEMES_DIRS
+        base_dir = tmp_path / "themes"
+        base_dir.mkdir()
+        monkeypatch.setattr(
+            "portprotonqt.theme_manager.THEMES_DIRS",
+            [str(base_dir), str(THEMES_DIRS[1])],
+        )
+
+        parent_dir = base_dir / "parent_theme"
+        parent_dir.mkdir()
+        (parent_dir / "styles.py").write_text(
+            'color_accent = "#409EFF"\ncolor_bg = "#282a33"\n',
+            encoding="utf-8",
+        )
+        styles_dir = parent_dir / "styles"
+        styles_dir.mkdir()
+        (styles_dir / "__init__.py").write_text("", encoding="utf-8")
+        (styles_dir / "constants.py").write_text(
+            self._CONSTANTS_PY, encoding="utf-8",
+        )
+        (styles_dir / "base.py").write_text(
+            self._BASE_PY, encoding="utf-8",
+        )
+        return base_dir
+
+    def test_child_qss_uses_child_colors(self, stub_themes):
         from portprotonqt.theme_manager import load_theme
-        otto = load_theme("otto")
-        standart = load_theme("standart")
+        child_dir = stub_themes / "child_theme"
+        child_dir.mkdir()
+        (child_dir / "styles.py").write_text(
+            'THEME_INHERITS = "parent_theme"\n'
+            'color_accent = "#FF0000"\n'
+            'color_bg = "#00FF00"\n',
+            encoding="utf-8",
+        )
+        child = load_theme("child_theme")
+        parent = load_theme("parent_theme")
+        assert child.MAIN_WINDOW_STYLE != parent.MAIN_WINDOW_STYLE
+        assert "#00FF00" in child.MAIN_WINDOW_STYLE
+        assert "#409EFF" not in child.MAIN_WINDOW_STYLE
+
+    def test_child_theme_styles_differ_from_parent(self, stub_themes):
+        from portprotonqt.theme_manager import load_theme
+        child_dir = stub_themes / "child_theme"
+        child_dir.mkdir()
+        (child_dir / "styles.py").write_text(
+            'THEME_INHERITS = "parent_theme"\n'
+            'color_accent = "#FF0000"\n'
+            'color_bg = "#00FF00"\n',
+            encoding="utf-8",
+        )
+        child = load_theme("child_theme")
+        parent = load_theme("parent_theme")
         for style_name in ("ACTION_BUTTON_STYLE", "TAB_STYLE",
                            "NAV_BUTTON_STYLE", "GAME_CARD_WINDOW_STYLE"):
-            otto_style = getattr(otto, style_name)
-            standart_style = getattr(standart, style_name)
-            assert otto_style != standart_style, (
+            child_style = getattr(child, style_name)
+            parent_style = getattr(parent, style_name)
+            assert child_style != parent_style, (
                 f"{style_name} not re-computed with child colors"
             )
+
+
+class TestThemeInheritanceChain:
+    """Verify inheritance works correctly through all chain depths.
+
+    Uses stub themes in tmp_path to avoid dependency on real themes.
+    """
+
+    _CONSTANTS_PY = """\
+font_family = "Test"
+font_size_normal = "16px"
+font_size_small = "11px"
+border_none = "0px solid"
+border_thin = "1px solid"
+border_medium = "2px solid"
+border_radius_small = "10px"
+border_radius_large = "15px"
+color_accent = "#409EFF"
+color_bg = "#282a33"
+color_surface = "#3f424d"
+color_text = "#ffffff"
+color_border_subtle = "rgba(255, 255, 255, 0.01)"
+"""
+
+    _BASE_PY = """\
+from .constants import *
+
+MAIN_WINDOW_STYLE = f"QWidget {{ background: {color_bg}; color: {color_text}; }}"
+ACTION_BUTTON_STYLE = f"QPushButton {{ background: {color_accent}; border-radius: {border_radius_small}; }}"
+TAB_STYLE = f"QTabBar {{ background: {color_surface}; }}"
+NAV_BUTTON_STYLE = f"QPushButton {{ color: {color_text}; }}"
+LIBRARY_WIDGET_STYLE = f"QWidget {{ background: {color_bg}; }}"
+GAME_CARD_WINDOW_STYLE = f"QFrame {{ background: {color_surface}; border: {border_medium} {color_border_subtle}; }}"
+CHECKBOX_STYLE = f"QCheckBox {{ color: {color_text}; }}"
+CONTAINER_STYLE = f"QWidget {{ background: {color_bg}; }}"
+DETAILS_WIDGET_STYLE = f"QFrame {{ background: {color_surface}; }}"
+"""
+
+    @pytest.fixture()
+    def stub_themes(self, tmp_path, monkeypatch):
+        from portprotonqt.theme_manager import THEMES_DIRS
+        base_dir = tmp_path / "themes"
+        base_dir.mkdir()
+        monkeypatch.setattr(
+            "portprotonqt.theme_manager.THEMES_DIRS",
+            [str(base_dir), str(THEMES_DIRS[1])],
+        )
+        return base_dir
+
+    @staticmethod
+    def _make_parent(base_dir, name="grandparent"):
+        d = base_dir / name
+        d.mkdir()
+        (d / "styles.py").write_text(
+            'color_accent = "#409EFF"\ncolor_bg = "#282a33"\n',
+            encoding="utf-8",
+        )
+        styles = d / "styles"
+        styles.mkdir()
+        (styles / "__init__.py").write_text("", encoding="utf-8")
+        (styles / "constants.py").write_text(
+            TestGeneratedStylesUseChildColors._CONSTANTS_PY,
+            encoding="utf-8",
+        )
+        (styles / "base.py").write_text(
+            TestThemeInheritanceChain._BASE_PY,
+            encoding="utf-8",
+        )
+
+    @staticmethod
+    def _make_child(base_dir, name, inherits, overrides=""):
+        d = base_dir / name
+        d.mkdir()
+        content = f'THEME_INHERITS = "{inherits}"\n{overrides}'
+        (d / "styles.py").write_text(content, encoding="utf-8")
+
+    def test_child_inherits_from_parent_not_grandparent(self, stub_themes):
+        from portprotonqt.theme_manager import load_theme
+        self._make_parent(stub_themes, "grandparent")
+        self._make_child(stub_themes, "parent", "grandparent")
+        self._make_child(stub_themes, "child", "parent")
+        child = load_theme("child")
+        parent = load_theme("parent")
+        assert child.color_accent == parent.color_accent
+        for style_name in ("ACTION_BUTTON_STYLE", "NAV_BUTTON_STYLE",
+                           "TAB_STYLE", "LIBRARY_WIDGET_STYLE"):
+            assert getattr(child, style_name) == getattr(parent, style_name)
+
+    def test_child_inherits_from_parent_chain(self, stub_themes):
+        from portprotonqt.theme_manager import load_theme
+        self._make_parent(stub_themes, "grandparent")
+        self._make_child(stub_themes, "parent", "grandparent")
+        self._make_child(stub_themes, "child", "parent")
+        child = load_theme("child")
+        parent = load_theme("parent")
+        grandparent = load_theme("grandparent")
+        assert hasattr(child, "MAIN_WINDOW_STYLE")
+        assert child.MAIN_WINDOW_STYLE == parent.MAIN_WINDOW_STYLE
+        assert grandparent.MAIN_WINDOW_STYLE != ""
+
+    def test_child_with_overrides_applies_own_colors(self, stub_themes):
+        from portprotonqt.theme_manager import load_theme
+        self._make_parent(stub_themes, "base")
+        self._make_child(
+            stub_themes, "custom", "base",
+            'color_accent = "#FF0000"\ncolor_bg = "#00FF00"\n',
+        )
+        custom = load_theme("custom")
+        assert hasattr(custom, "GAME_CARD_WINDOW_STYLE")
+        assert hasattr(custom, "DETAILS_WIDGET_STYLE")
+
+    def test_child_with_overrides_differs_from_grandparent(self, stub_themes):
+        from portprotonqt.theme_manager import load_theme
+        self._make_parent(stub_themes, "base")
+        self._make_child(
+            stub_themes, "custom", "base",
+            'color_accent = "#FF0000"\ncolor_bg = "#00FF00"\n',
+        )
+        custom = load_theme("custom")
+        base = load_theme("base")
+        assert custom.GAME_CARD_WINDOW_STYLE != base.GAME_CARD_WINDOW_STYLE
+
+    def test_middle_theme_inherits_from_parent(self, stub_themes):
+        from portprotonqt.theme_manager import load_theme
+        self._make_parent(stub_themes, "base")
+        self._make_child(stub_themes, "mid", "base")
+        self._make_child(stub_themes, "leaf", "mid")
+        mid = load_theme("mid")
+        assert hasattr(mid, "MAIN_WINDOW_STYLE")
+        assert hasattr(mid, "CHECKBOX_STYLE")
+
+    def test_deepest_child_gets_grandparent_styles(self, stub_themes):
+        from portprotonqt.theme_manager import load_theme
+        self._make_parent(stub_themes, "base")
+        self._make_child(stub_themes, "mid", "base")
+        self._make_child(stub_themes, "leaf", "mid")
+        leaf = load_theme("leaf")
+        assert hasattr(leaf, "MAIN_WINDOW_STYLE")
+        assert hasattr(leaf, "CHECKBOX_STYLE")
+        assert hasattr(leaf, "CONTAINER_STYLE")
+
+    def test_leaf_generates_styles_from_root(self, stub_themes):
+        from portprotonqt.theme_manager import load_theme
+        self._make_parent(stub_themes, "base")
+        self._make_child(stub_themes, "mid", "base")
+        self._make_child(stub_themes, "leaf", "mid")
+        leaf = load_theme("leaf")
+        assert hasattr(leaf, "MAIN_WINDOW_STYLE")
+        assert hasattr(leaf, "ACTION_BUTTON_STYLE")
+        base = load_theme("base")
+        assert leaf.MAIN_WINDOW_STYLE != base.MAIN_WINDOW_STYLE
 
 
 class TestThemeFilesParse:

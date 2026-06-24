@@ -2806,6 +2806,14 @@ class InputManager(QObject):
             if button_code in BUTTONS['confirm']:
                 self._parent.activateFocusedWidget()
             elif button_code in BUTTONS['back']:
+                if self._is_theme_store_visible():
+                    store_stack = getattr(self._parent, "themeStoreStack", None)
+                    detail_page = getattr(self._parent, "themeStoreDetailPage", None)
+                    if store_stack is not None and store_stack.currentWidget() == detail_page:
+                        _show_list = getattr(self._parent, '_show_theme_store_list', None)
+                        if callable(_show_list):
+                            _show_list()
+                            return
                 self._parent.goBackDetailPage(getattr(self._parent, 'currentDetailPage', None))
             elif button_code in BUTTONS['add_game']:
                 if self._parent.stackedWidget.currentIndex() == 0:
@@ -2887,6 +2895,13 @@ class InputManager(QObject):
                         auto_size_slider.setValue(new_value)
                         if hasattr(self._parent, 'on_auto_slider_released'):
                             self._parent.on_auto_slider_released()
+                elif current_tab == getattr(self._parent, "theme_tab_index", -1):
+                    theme_slider = getattr(self._parent, 'themeStoreSizeSlider', None)
+                    if theme_slider:
+                        new_value = min(theme_slider.value() + 10, theme_slider.maximum())
+                        theme_slider.setValue(new_value)
+                        if hasattr(self._parent, '_on_theme_store_slider_released'):
+                            self._parent._on_theme_store_slider_released()  # type: ignore[union-attr]
             elif button_code in BUTTONS['decrease_size'] and value > 0:
                 current_tab = self._parent.stackedWidget.currentIndex()
                 system_tab_index = getattr(self._parent, "system_tab_index", -1)
@@ -2918,6 +2933,13 @@ class InputManager(QObject):
                         auto_size_slider.setValue(new_value)
                         if hasattr(self._parent, 'on_auto_slider_released'):
                             self._parent.on_auto_slider_released()
+                elif current_tab == getattr(self._parent, "theme_tab_index", -1):
+                    theme_slider = getattr(self._parent, 'themeStoreSizeSlider', None)
+                    if theme_slider:
+                        new_value = max(theme_slider.value() - 10, theme_slider.minimum())
+                        theme_slider.setValue(new_value)
+                        if hasattr(self._parent, '_on_theme_store_slider_released'):
+                            self._parent._on_theme_store_slider_released()  # type: ignore[union-attr]
         except Exception as e:
             logger.error(f"Error in handle_button_slot: {e}", exc_info=True)
 

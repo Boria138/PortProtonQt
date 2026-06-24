@@ -315,6 +315,15 @@ class UIConfig(BaseConfig):
         validate_int(width, "auto_card_width", min_val=100, max_val=1000)
         self._save_value("auto_card_width", width, "int")
 
+    def get_theme_store_card_width(self) -> int:
+        """Get card width for theme store."""
+        return self._get_int("theme_store_card_width", 350)
+
+    def set_theme_store_card_width(self, width: int):
+        """Set card width for theme store."""
+        validate_int(width, "theme_store_card_width", min_val=150, max_val=600)
+        self._save_value("theme_store_card_width", width, "int")
+
     def get_hide_autoinstall_tab(self) -> bool:
         """Get hide auto-install tab setting."""
         return self._get_bool("hide_autoinstall_tab", False)

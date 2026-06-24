@@ -221,9 +221,6 @@ msgstr "'{game_name}' removido de {location}"
 msgid "Desktop"
 msgstr "Área de Trabalho"
 
-msgid "Play this game on Steam"
-msgstr "Jogar este jogo no Steam"
-
 msgid "Game name and executable path are required"
 msgstr "O nome do jogo e o caminho do executável são obrigatórios"
 
@@ -325,14 +322,11 @@ msgstr "Quebrado"
 msgid "Denied"
 msgstr "Negado"
 
-msgid "Missing EXE"
-msgstr "EXE ausente"
-
 msgid "Unknown Game"
 msgstr "Jogo Desconhecido"
 
-msgid "Downloading Wine..."
-msgstr "Baixando Wine..."
+msgid "Downloading Wine…"
+msgstr "Baixando Wine…"
 
 msgid "Library"
 msgstr "Biblioteca"
@@ -358,8 +352,8 @@ msgstr "Aviso"
 msgid "Installation already in progress."
 msgstr "A instalação já está em andamento."
 
-msgid "Installing..."
-msgstr "Instalando..."
+msgid "Installing…"
+msgstr "Instalando…"
 
 msgid "Failed to start installation."
 msgstr "Falha ao iniciar a instalação."
@@ -370,21 +364,14 @@ msgstr "Parar"
 msgid "Failed to stop installation."
 msgstr "Falha ao parar a instalação."
 
-#, python-brace-format
-msgid "{0} Plugins..."
-msgstr "{0} Plugins..."
+msgid "{0} Plugins…"
+msgstr "{0} Plugins…"
 
-#, python-brace-format
-msgid "{0} Libs..."
-msgstr "{0} Libs..."
+msgid "{0} Libs…"
+msgstr "{0} Libs…"
 
-#, python-brace-format
-msgid "{0} Wine..."
-msgstr "{0} Wine..."
-
-#, python-brace-format
-msgid "{0} components..."
-msgstr "{0} componentes..."
+msgid "{0} components…"
+msgstr "{0} componentes…"
 
 msgid "Downloading"
 msgstr "Baixando"
@@ -878,8 +865,8 @@ msgstr "Nome:"
 msgid "Path to Executable:"
 msgstr "Caminho do Executável:"
 
-msgid "Browse..."
-msgstr "Procurar..."
+msgid "Browse…"
+msgstr "Procurar…"
 
 msgid "Custom Cover:"
 msgstr "Capa Personalizada:"
@@ -902,8 +889,8 @@ msgstr "Imagem inválida"
 msgid "Failed to download cover"
 msgstr "Falha ao baixar a capa"
 
-msgid "Downloading cover..."
-msgstr "Baixando capa..."
+msgid "Downloading cover…"
+msgstr "Baixando capa…"
 
 msgid "No cover selected"
 msgstr "Nenhuma capa selecionada"
@@ -1078,9 +1065,8 @@ msgstr ""
 "\n"
 "Esta ação não pode ser desfeita."
 
-#, python-brace-format
-msgid "Failed to remove WINE/Proton at {}: {}"
-msgstr "Falha ao remover WINE/Proton em {}: {}"
+msgid "Failed to remove WINE/Proton at {path}: {error}"
+msgstr "Falha ao remover WINE/Proton em {path}: {error}"
 
 #, python-brace-format
 msgid "Successfully removed {} WINE/Proton."
@@ -1108,9 +1094,8 @@ msgstr ", ETA: {}s"
 msgid ", Speed: {:.1f}MB/s"
 msgstr ", Velocidade: {:.1f}MB/s"
 
-#, python-brace-format
-msgid "Extracting: {0}{1}{2}"
-msgstr "Extraindo: {0}{1}{2}"
+msgid "Extracting: {name}{speed}{eta}"
+msgstr "Extraindo: {name}{speed}{eta}"
 
 msgid "Extraction Error"
 msgstr "Erro de Extração"
@@ -1131,8 +1116,8 @@ msgstr "WINE do Sistema"
 msgid "Exe Settings"
 msgstr "Configurações do Exe"
 
-msgid "Search settings..."
-msgstr "Pesquisar configurações..."
+msgid "Search settings…"
+msgstr "Pesquisar configurações…"
 
 msgid "Main"
 msgstr "Principal"
@@ -1931,8 +1916,8 @@ msgstr "Montado"
 msgid "Not mounted"
 msgstr "Não montado"
 
-msgid "Search ..."
-msgstr "Pesquisar..."
+msgid "Search…"
+msgstr "Pesquisar…"
 
 msgid "Volume"
 msgstr "Volume"
@@ -2003,8 +1988,8 @@ msgstr "Oculto"
 msgid "Badge View Type:"
 msgstr "Modo de Exibição do Selo:"
 
-msgid "Refreshing..."
-msgstr "Atualizando..."
+msgid "Refreshing…"
+msgstr "Atualizando…"
 
 msgid "PortProton Settings"
 msgstr "Configurações do PortProton"
@@ -2207,6 +2192,9 @@ msgstr "Selecionado"
 msgid "Not selected"
 msgstr "Não selecionado"
 
+msgid "Theme Store…"
+msgstr "Loja de temas…"
+
 #, python-brace-format
 msgid "by {0}"
 msgstr "por {0}"
@@ -2235,9 +2223,6 @@ msgstr "Autor:"
 msgid "Link:"
 msgstr "Link:"
 
-msgid "Sort by:"
-msgstr "Ordenar por:"
-
 msgid "Most voted"
 msgstr "Mais votados"
 
@@ -2250,14 +2235,20 @@ msgstr "Atualizados recentemente"
 msgid "Name (A-Z)"
 msgstr "Nome (A-Z)"
 
-msgid "Loading..."
-msgstr "Carregando..."
+msgid "Loading…"
+msgstr "Carregando…"
 
 msgid "Failed to load themes"
 msgstr "Falha ao carregar temas"
 
 msgid "Failed to download theme"
 msgstr "Falha ao baixar o tema"
+
+msgid "Downloading…"
+msgstr "Baixando…"
+
+msgid "Downloading… {0}%"
+msgstr "Baixando… {0}%"
 
 msgid "Failed to install theme"
 msgstr "Falha ao instalar o tema"
@@ -2339,4 +2330,3 @@ msgstr "Prefixo '{}' excluído."
 #, python-brace-format
 msgid "Failed to delete prefix: {}"
 msgstr "Falha ao excluir o prefixo: {}"
-

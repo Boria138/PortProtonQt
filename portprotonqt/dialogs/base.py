@@ -164,7 +164,7 @@ class AddGameDialog(DraggableDialog):
         if exe_path:
             self.exeEdit.setText(exe_path)
 
-        exeBrowseButton = AutoSizeButton(_("Browse..."), icon=theme_manager.get_icon("search", as_path=True))
+        exeBrowseButton = AutoSizeButton(_("Browse…"), icon=theme_manager.get_icon("search", as_path=True))
         exeBrowseButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         exeBrowseButton.clicked.connect(self.browseExe)
         exeBrowseButton.setObjectName("exeBrowseButton")
@@ -184,7 +184,7 @@ class AddGameDialog(DraggableDialog):
         if cover_path:
             self.coverEdit.setText(cover_path)
 
-        coverBrowseButton = AutoSizeButton(_("Browse..."), icon=theme_manager.get_icon("search", as_path=True))
+        coverBrowseButton = AutoSizeButton(_("Browse…"), icon=theme_manager.get_icon("search", as_path=True))
         coverBrowseButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         coverBrowseButton.clicked.connect(self.browseCover)
         coverBrowseButton.setObjectName("coverBrowseButton")
@@ -432,7 +432,7 @@ class AddGameDialog(DraggableDialog):
                 timeout=10,
                 callback=self.handleDownloadedCover
             )
-            self.coverPreview.setText(_("Downloading cover..."))
+            self.coverPreview.setText(_("Downloading cover…"))
         elif cover_path and os.path.isfile(cover_path):
             if set_animated_cover(self.coverPreview, cover_path, 250, 250):
                 return

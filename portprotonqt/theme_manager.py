@@ -356,7 +356,10 @@ class ThemeWrapper:
     def __init__(self, custom_theme, metainfo=None, inherit_chain=None):
         self.custom_theme = custom_theme
         self.metainfo = metainfo or {}
-        self.screenshots = load_theme_screenshots(self.metainfo.get("name", ""))
+        self.screenshots = load_theme_screenshots(
+            self.metainfo.get("name")
+            or custom_theme.__name__.split(".")[-1]
+        )
         parent_name = getattr(custom_theme, "THEME_INHERITS", "standart")
         self.parent_theme_name = _get_parent_theme_name(custom_theme.__name__.split(".")[-1], parent_name)
         self._inherit_chain = inherit_chain or []
@@ -395,14 +398,12 @@ class ThemeWrapper:
         parent_name = self.parent_theme_name
         if not parent_name:
             return None
-        chain = _get_theme_resource_chain(parent_name)
-        for name in chain:
-            folder = _find_theme_folder(name)
-            if not folder:
-                continue
-            styles_dir = os.path.join(folder, "styles")
-            if os.path.isdir(styles_dir):
-                return styles_dir
+        folder = _find_theme_folder(parent_name)
+        if not folder:
+            return None
+        styles_dir = os.path.join(folder, "styles")
+        if os.path.isdir(styles_dir):
+            return styles_dir
         return None
 
     def _build_generated_styles(self, styles_dir: str):

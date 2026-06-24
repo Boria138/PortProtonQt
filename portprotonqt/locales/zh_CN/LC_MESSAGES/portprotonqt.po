@@ -211,9 +211,6 @@ msgstr "已从 {location} 移除\"{game_name}\""
 msgid "Desktop"
 msgstr "桌面"
 
-msgid "Play this game on Steam"
-msgstr "在 Steam 上玩此游戏"
-
 msgid "Game name and executable path are required"
 msgstr "游戏名称和可执行文件路径为必填项"
 
@@ -311,13 +308,10 @@ msgstr "损坏"
 msgid "Denied"
 msgstr "已拒绝"
 
-msgid "Missing EXE"
-msgstr "缺少 EXE"
-
 msgid "Unknown Game"
 msgstr "未知游戏"
 
-msgid "Downloading Wine..."
+msgid "Downloading Wine…"
 msgstr "正在下载 Wine…"
 
 msgid "Library"
@@ -344,7 +338,7 @@ msgstr "警告"
 msgid "Installation already in progress."
 msgstr "安装已在进行中。"
 
-msgid "Installing..."
+msgid "Installing…"
 msgstr "正在安装…"
 
 msgid "Failed to start installation."
@@ -356,20 +350,13 @@ msgstr "停止"
 msgid "Failed to stop installation."
 msgstr "停止安装失败。"
 
-#, python-brace-format
-msgid "{0} Plugins..."
+msgid "{0} Plugins…"
 msgstr "{0} 插件…"
 
-#, python-brace-format
-msgid "{0} Libs..."
+msgid "{0} Libs…"
 msgstr "{0} 库…"
 
-#, python-brace-format
-msgid "{0} Wine..."
-msgstr "{0} Wine…"
-
-#, python-brace-format
-msgid "{0} components..."
+msgid "{0} components…"
 msgstr "{0} 组件…"
 
 msgid "Downloading"
@@ -833,7 +820,7 @@ msgstr "名称："
 msgid "Path to Executable:"
 msgstr "可执行文件路径："
 
-msgid "Browse..."
+msgid "Browse…"
 msgstr "浏览…"
 
 msgid "Custom Cover:"
@@ -857,7 +844,7 @@ msgstr "图像无效"
 msgid "Failed to download cover"
 msgstr "下载封面失败"
 
-msgid "Downloading cover..."
+msgid "Downloading cover…"
 msgstr "正在下载封面…"
 
 msgid "No cover selected"
@@ -1033,9 +1020,8 @@ msgstr ""
 "\n"
 "此操作无法撤销。"
 
-#, python-brace-format
-msgid "Failed to remove WINE/Proton at {}: {}"
-msgstr "移除位于 {} 的 WINE/Proton 失败：{}"
+msgid "Failed to remove WINE/Proton at {path}: {error}"
+msgstr "移除位于 {path} 的 WINE/Proton 失败：{error}"
 
 #, python-brace-format
 msgid "Successfully removed {} WINE/Proton."
@@ -1063,9 +1049,8 @@ msgstr "，预计剩余时间：{}秒"
 msgid ", Speed: {:.1f}MB/s"
 msgstr "，速度：{:.1f}MB/s"
 
-#, python-brace-format
-msgid "Extracting: {0}{1}{2}"
-msgstr "正在提取：{0}{1}{2}"
+msgid "Extracting: {name}{speed}{eta}"
+msgstr "正在提取：{name}{speed}{eta}"
 
 msgid "Extraction Error"
 msgstr "提取错误"
@@ -1086,7 +1071,7 @@ msgstr "系统 WINE"
 msgid "Exe Settings"
 msgstr "可执行文件设置"
 
-msgid "Search settings..."
+msgid "Search settings…"
 msgstr "搜索设置…"
 
 msgid "Main"
@@ -1870,8 +1855,8 @@ msgstr "已挂载"
 msgid "Not mounted"
 msgstr "未挂载"
 
-msgid "Search ..."
-msgstr "搜索..."
+msgid "Search…"
+msgstr "搜索…"
 
 msgid "Volume"
 msgstr "音量"
@@ -1942,7 +1927,7 @@ msgstr "隐藏"
 msgid "Badge View Type:"
 msgstr "徽章视图类型："
 
-msgid "Refreshing..."
+msgid "Refreshing…"
 msgstr "正在刷新…"
 
 msgid "PortProton Settings"
@@ -2144,6 +2129,9 @@ msgstr "已选择"
 msgid "Not selected"
 msgstr "未选择"
 
+msgid "Theme Store…"
+msgstr "主题商店…"
+
 #, python-brace-format
 msgid "by {0}"
 msgstr "作者：{0}"
@@ -2172,9 +2160,6 @@ msgstr "作者："
 msgid "Link:"
 msgstr "链接："
 
-msgid "Sort by:"
-msgstr "排序方式："
-
 msgid "Most voted"
 msgstr "投票最多"
 
@@ -2187,14 +2172,20 @@ msgstr "最近更新"
 msgid "Name (A-Z)"
 msgstr "名称 (A-Z)"
 
-msgid "Loading..."
-msgstr "加载中..."
+msgid "Loading…"
+msgstr "加载中…"
 
 msgid "Failed to load themes"
 msgstr "加载主题失败"
 
 msgid "Failed to download theme"
 msgstr "下载主题失败"
+
+msgid "Downloading…"
+msgstr "正在下载…"
+
+msgid "Downloading… {0}%"
+msgstr "正在下载… {0}%"
 
 msgid "Failed to install theme"
 msgstr "安装主题失败"
@@ -2276,4 +2267,3 @@ msgstr "前缀\"{}\"已删除。"
 #, python-brace-format
 msgid "Failed to delete prefix: {}"
 msgstr "删除前缀失败：{}"
-

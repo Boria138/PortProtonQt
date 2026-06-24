@@ -873,7 +873,7 @@ class ProtonManager(DraggableDialog):
                     removed_count += 1
             except Exception as e:
                 logger.error(f"Error removing version at {version_path}: {e}")
-                QMessageBox.warning(self, _("Error"), _("Failed to remove WINE/Proton at {}: {}").format(version_path, str(e)))
+                QMessageBox.warning(self, _("Error"), _("Failed to remove WINE/Proton at {path}: {error}").format(path=version_path, error=str(e)))
         if removed_count > 0:
             QMessageBox.information(self, _("Success"), _("Successfully removed {} WINE/Proton.").format(removed_count))
             self.refresh_installed_tab()
@@ -983,8 +983,8 @@ class ProtonManager(DraggableDialog):
                     self.download_progress.setValue(progress)
                     eta_text = _(', ETA: {}s').format(current_eta[0]) if current_eta[0] > 0 else ""
                     speed_text = _(', Speed: {:.1f}MB/s').format(current_speed[0]) if current_speed[0] > 0 else ""
-                    self.download_info_label.setText(_("Extracting: {0}{1}{2}").format(
-                        asset_data['asset_name'], speed_text, eta_text))
+                    self.download_info_label.setText(_("Extracting: {name}{speed}{eta}").format(
+                        name=asset_data['asset_name'], speed=speed_text, eta=eta_text))
                 def update_extraction_speed(speed):
                     current_speed[0] = speed
                 def update_extraction_eta(eta):

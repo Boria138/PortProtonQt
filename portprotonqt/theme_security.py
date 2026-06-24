@@ -1,139 +1,112 @@
 """
 Theme security module for PortProtonQt.
-Provides enhanced security checks for theme files to prevent malicious code execution.
+Provides security checks for theme files based on actual theme patterns.
 """
 import ast
 import os
+import re
 from portprotonqt.logger import get_logger
 
 
 logger = get_logger(__name__)
 MAX_THEME_PY_FILE_SIZE = 512 * 1024
+MAX_AST_NODES = 20000
 
 
 class ThemeSecurityChecker:
     """
-    Enhanced security checker for theme files.
-    Identifies and blocks various attack vectors in theme Python files.
+    Allowlist-based security checker for theme files.
+    Only constructs observed in real themes are permitted.
     """
 
-    # Basic forbidden modules that could allow dangerous operations
-    FORBIDDEN_MODULES = {
-        # File system operations
-        "os", "shutil", "pathlib", "glob", "tempfile", "filecmp", "fileinput",
-        "linecache", "io", "mmap", "fnmatch", "difflib",
-
-        # Process and system operations
-        "subprocess", "sys", "ctypes", "cffi", "platform", "resource", "signal",
-        "multiprocessing", "concurrent", "threading", "asyncio", "select",
-        "selectors", "queue", "sched", "contextvars",
-        "posix", "nt", "pwd", "grp",
-
-        # Network operations
-        "socket", "urllib", "urllib2", "urllib.request", "urllib.parse",
-        "urllib.error", "urllib.robotparser", "http", "http.client",
-        "http.cookies", "http.cookiejar", "ftplib", "telnetlib", "smtplib",
-        "poplib", "imaplib", "nntplib", "socketserver", "xmlrpc", "xmlrpc.client",
-        "xmlrpc.server", "ipaddress", "webbrowser", "ssl", "uuid",
-
-        # Code execution and dynamic imports
-        "code", "codeop", "compileall", "py_compile", "runpy", "zipimport",
-        "pkgutil", "pkg_resources", "importlib", "importlib.util",
-        "importlib.import_module", "importlib.resources", "importlib.metadata",
-        "builtins", "exec", "eval", "__import__", "compile", "execfile",
-        "imp", "importlib.machinery", "importlib.abc", "importlib.load_module",
-        "importlib.reload", "imp.load_source", "imp.load_compiled", "imp.find_module",
-        "imp.get_suffixes", "imp.init_builtin", "imp.init_frozen", "imp.is_builtin",
-        "imp.is_frozen", "imp.lock_held", "imp.lock", "imp.reload", "imp.load_module",
-
-        # Data serialization and code execution
-        "pickle", "marshal", "shelve", "json", "yaml", "configparser", "binascii", "base64",
-
-        # Databases and storage
-        "sqlite3", "dbapi2", "sqlite_web", "dataset", "records", "tinydb",
-
-        # Cryptography and security
-        "hashlib", "hmac", "secrets", "crypt", "cryptography",
-
-        # External libraries that could be dangerous
-        "requests", "aiohttp", "selenium", "paramiko", "fabric", "docker",
-        "boto", "boto3", "pymongo", "pymysql", "psycopg2", "redis", "pika",
-        "kafka", "celery", "rq", "playwright", "mechanize", "scrapy",
-        "beautifulsoup4", "lxml", "html5lib", "pyautogui",
-        "keyboard", "mouse", "pynput", "psutil", "wmi", "pywin32",
-
-        # GUI and UI libraries that could be used for malicious purposes
-        "tkinter", "PyQt4", "PyQt5", "PyQt6", "PySide", "PySide2", "PySide6",
-        "kivy", "kivymd", "wx", "wxPython", "pygame", "flask", "django",
-        "fastapi", "tornado", "bottle", "cherrypy", "falcon", "sanic",
-
-
-    }
-
-    # Forbidden functions that could allow dangerous operations
-    FORBIDDEN_FUNCTIONS = {
-        # Code execution
-        "exec", "eval", "compile", "execfile", "__import__",
-
-        # Import-related functions that allow dynamic imports
-        "importlib.import_module", "importlib.util", "importlib.resources",
-        "importlib.metadata", "builtins.__import__", "builtins.eval",
-        "builtins.exec", "builtins.compile", "builtins.open",
-
-        # File system operations
-        "open", "file", "os.open", "os.fdopen", "io.open", "tempfile.mktemp",
-        "tempfile.mkdtemp", "tempfile.NamedTemporaryFile", "tempfile.SpooledTemporaryFile",
-
-        # System operations
-        "os.system", "os.popen", "os.spawnl", "os.spawnle", "os.spawnlp",
-        "os.spawnlpe", "os.spawnv", "os.spawnve", "os.spawnvp", "os.spawnvpe",
-        "os.startfile", "os.execv", "os.execve", "os.execl", "os.execle", "os.execlp",
-        "os.execlpe", "subprocess.run", "subprocess.call",
-        "subprocess.check_call", "subprocess.check_output", "subprocess.Popen",
-        "posix.system", "nt.system",
-        "system", "popen",
-
-        # Network operations
-        "socket.socket", "socket.create_connection", "urllib.request.urlopen",
-        "urllib.request.Request", "requests.get", "requests.post", "requests.put",
-        "requests.delete", "requests.patch", "requests.head", "requests.options",
-        "aiohttp.ClientSession", "http.client.HTTPConnection", "http.client.HTTPSConnection",
-
-        # Reflection and introspection that could be dangerous
-        "getattr", "setattr", "hasattr", "delattr", "globals", "locals", "vars",
-        "dir", "type", "id", "object", "issubclass", "isinstance", "callable",
-        "iter", "next", "reversed", "slice", "sorted", "filter", "map", "reduce",
-
-        # Input functions
-        "input", "raw_input",
-
-        # Built-in functions that could be dangerous in certain contexts
-        "breakpoint", "quit", "exit", "copyright", "credits", "license", "help",
-
-        # Dynamic attribute access that could be dangerous
-        "operator.attrgetter", "operator.itemgetter", "operator.methodcaller",
-
-        "apply", "buffer", "coerce", "intern", "long", "unichr",
-        "unicode", "xrange", "cmp", "reload", "basestring",
-    }
-
-    # Safe imports allowed for custom themes (provides theme API access)
-    SAFE_THEME_IMPORTS = {
+    # Absolute imports allowed for all themes
+    SAFE_ABSOLUTE_IMPORTS = {
         "portprotonqt.theme_manager",
         "portprotonqt.config",
     }
 
-    # Safe top-level function/method calls allowed for custom themes
-    SAFE_THEME_CALLS = {
-        "ThemeManager",
-        "ui_config.get_theme",
-        "theme_manager.get_icon",
-        "theme_manager.get_theme_image",
-    }
+    # Dangerous method names that must not appear as attribute access.
+    # Covers OS/process execution, network calls, and serialization methods
+    # commonly used for payload hiding.
+    FORBIDDEN_METHODS = frozenset({
+        # OS / process execution
+        "system", "popen", "execv", "execve", "execl", "execle", "execlp",
+        "spawnl", "spawnle", "spawnlp", "spawnlpe", "spawnv", "spawnve",
+        "spawnvp", "spawnvpe", "startfile",
+        "run", "check_call", "check_output", "Popen",
+        # Network
+        "urlopen", "Request", "post", "put", "delete", "patch",
+        "ClientSession", "HTTPConnection", "HTTPSConnection",
+        # Encoding / decoding
+        "b64decode", "b64encode", "fromhex",
+        # Serialization
+        "loads", "load", "dumps", "dump",
+    })
 
-    # Forbidden attributes that could be dangerous
-    FORBIDDEN_ATTRIBUTES = {
-        # Special methods and attributes that could be used for code execution
+    # Suspicious string patterns in f-strings / string constants (regex)
+    SUSPICIOUS_STRING_PATTERNS = [
+        (re.compile(r"discord(app)?\.com/api/webhooks/"), "Discord webhook URL"),
+        (re.compile(r"(pastebin\.com|paste\.ee|hastebin\.com|ptpb\.pw|ix\.io|dpaste\.com|ghostbin\.com|rentry\.co|termbin\.com)"), "Paste service URL"),
+        (re.compile(r"(bit\.ly|tinyurl\.com|t\.co|is\.gd|v\.gd|short\.io)/"), "URL shortener"),
+        (re.compile(r"(ngrok\.io|serveo\.net|localtunnel\.me|localhost\.run)/"), "Tunnel service URL"),
+        (re.compile(r"(duckdns\.org|no-ip\.com|ddns\.net|dynu\.com)/"), "Dynamic DNS URL"),
+        (re.compile(r"(xmrig|cpuminer|minerd|ethminer|stratum\+[a-z]+://)"), "Cryptocurrency miner"),
+        (re.compile(r"(pool\.minergate|nanopool\.org|2miners\.com|f2pool\.com|ethermine\.org|nicehash\.com)"), "Mining pool"),
+        (re.compile(r"(4[0-9AB][1-9A-HJ-NP-Za-km-z]{93}|\bbc1[a-zA-HJ-NP-Z0-9]{39,59}|0x[0-9a-fA-F]{40})"), "Crypto wallet address"),
+        (re.compile(r"(\.mozilla|\.config/chromium|\.config/google-chrome|\.config/BraveSoftware)/"), "Browser profile access"),
+        (re.compile(r"~/\.ssh/|/home/[^/]+/\.ssh/"), "SSH key access"),
+        (re.compile(r"~/\.gnupg/|/home/[^/]+/\.gnupg/"), "GPG keyring access"),
+        (re.compile(r"/etc/(passwd|shadow)"), "System password file access"),
+        (re.compile(r"(>>?\s*~/\.(bashrc|zshrc|profile|bash_profile))"), "Shell profile modification"),
+        (re.compile(r"(systemctl\s+enable|crontab|/etc/cron\.d/)"), "Persistence mechanism"),
+        (re.compile(r"LD_PRELOAD\s*="), "LD_PRELOAD injection"),
+    ]
+
+    # Forbidden names that must never appear as identifiers
+    # Forbidden names that must never appear as identifiers.
+    # Theme files are a restricted style-description language, not full Python.
+    # Encoding/decoding/deserialization modules are blocked because they are
+    # commonly used for payload hiding and obfuscation. False positives are
+    # acceptable — blocking a malicious theme outweighs supporting edge-case
+    # theme patterns.
+    FORBIDDEN_NAMES = frozenset({
+        # Code execution
+        "exec", "eval", "compile", "__import__", "open",
+        # Introspection / reflection
+        "getattr", "setattr", "hasattr", "delattr",
+        "globals", "locals", "vars", "dir", "type", "id",
+        "object", "issubclass", "isinstance", "callable",
+        # Obfuscation / payload encoding
+        "json", "orjson", "codecs", "binascii", "struct", "array", "base64",
+        # Dangerous deserialization
+        "pickle", "marshal", "shelve", "yaml",
+        # Dynamic loading
+        "importlib", "pkgutil", "zipimport", "runpy",
+        "compileall", "py_compile", "code", "codeop",
+        # Config parsing (can load arbitrary data)
+        "configparser",
+        # System / process
+        "os", "sys", "subprocess", "shutil", "pathlib",
+        "ctypes", "cffi", "signal", "multiprocessing",
+        "threading", "asyncio", "posix", "nt",
+        # Networking
+        "socket", "http", "ftplib", "smtplib", "poplib",
+        "imaplib", "telnetlib", "xmlrpc", "webbrowser", "ssl",
+        "uuid", "ipaddress",
+        # Crypto / hashing
+        "hashlib", "hmac", "secrets", "crypt",
+        # Database
+        "sqlite3",
+        # External HTTP
+        "requests", "aiohttp",
+        # Legacy / compat
+        "breakpoint", "quit", "exit", "copyright", "credits", "license", "help",
+        "apply", "buffer", "coerce", "intern", "long", "unichr",
+        "unicode", "xrange", "cmp", "reload", "basestring",
+    })
+
+    # Dunder attributes blocked in all theme code
+    FORBIDDEN_DUNDER_ATTRS = frozenset({
         "__class__", "__dict__", "__module__", "__subclasses__", "__bases__",
         "__mro__", "__call__", "__func__", "__self__", "__code__", "__closure__",
         "__globals__", "__name__", "__file__", "__path__", "__package__",
@@ -142,273 +115,112 @@ class ThemeSecurityChecker:
         "__lt__", "__le__", "__eq__", "__ne__", "__gt__", "__ge__", "__hash__",
         "__bool__", "__dir__", "__delattr__", "__getattribute__",
         "__setattr__", "__delete__", "__set__", "__get__", "__set_name__",
-        "__prepare__", "__init_subclass__", "__instancecheck__", "__subclasscheck__",
-        "__subclasshook__", "__class_getitem__", "__annotations__", "__weakref__",
-    }
+        "__prepare__", "__init_subclass__", "__instancecheck__",
+        "__subclasscheck__", "__subclasshook__", "__class_getitem__",
+        "__annotations__", "__weakref__",
+    })
 
-    def __init__(self):
+    def __init__(self) -> None:
+        self.has_errors = False
+        self.errors: list[str] = []
+        self._parent_map: dict[int, ast.AST] = {}
+
+    def _add_error(self, msg: str) -> None:
+        self.errors.append(msg)
+        self.has_errors = True
+
+    def check_theme_safety(
+        self, theme_file: str, allow_absolute_imports: bool = True,
+    ) -> tuple[bool, list[str]]:
+        """Check if a single theme Python file is safe. Returns (is_safe, errors)."""
         self.has_errors = False
         self.errors = []
-
-    def check_theme_safety(self, theme_file: str, allow_absolute_imports: bool = True) -> tuple[bool, list[str]]:
-        """
-        Enhanced security check for theme files.
-        Returns (is_safe, list_of_errors).
-        """
-        self.has_errors = False
-        self.errors = []
+        self._parent_map = {}
 
         try:
-            try:
-                file_size = os.path.getsize(theme_file)
-            except OSError as e:
-                self.errors.append(f"Failed to read theme file size for {theme_file}: {e}")
-                self.has_errors = True
-                return not self.has_errors, self.errors
+            self._check_file_size(theme_file)
+            if self.has_errors:
+                return False, self.errors
 
-            if file_size > MAX_THEME_PY_FILE_SIZE:
-                self.errors.append(
-                    f"Theme file {theme_file} is too large ({file_size} bytes)"
-                )
-                self.has_errors = True
-                return not self.has_errors, self.errors
+            content = self._read_file(theme_file)
+            if content is None:
+                return False, self.errors
 
-            with open(theme_file, encoding='utf-8') as f:
-                content = f.read()
+            tree = self._parse_file(content, theme_file)
+            if tree is None:
+                return False, self.errors
 
-            # Check for syntax errors first
-            try:
-                tree = ast.parse(content)
-            except SyntaxError as e:
-                self.errors.append(f"Syntax error in file {theme_file}: {e}")
-                self.has_errors = True
-                return not self.has_errors, self.errors
+            self._build_parent_map(tree)
+            self._check_ast_size(tree, theme_file)
+            if self.has_errors:
+                return False, self.errors
 
-            self._check_top_level_safety(tree, theme_file, allow_absolute_imports)
-
-            # Walk through the AST and check for dangerous patterns
-            for node in ast.walk(tree):
-                self._check_node_safety(node, theme_file)
+            self._check_top_level(tree, theme_file, allow_absolute_imports)
+            self._check_forbidden_patterns(tree, theme_file)
 
         except Exception as e:
-            self.errors.append(f"Failed to check theme safety for {theme_file}: {e}")
-            self.has_errors = True
+            self._add_error(f"Failed to check theme safety for {theme_file}: {e}")
 
         return not self.has_errors, self.errors
 
-    def _check_node_safety(self, node, theme_file: str):
-        """Check individual AST nodes for security issues."""
-        # Check for forbidden imports
-        if isinstance(node, (ast.Import, ast.ImportFrom)):
-            for alias in node.names:
-                module_name = alias.name
-                # Handle from ... import ... cases
-                if isinstance(node, ast.ImportFrom) and node.module:
-                    module_name = node.module
-
-                # Check if the module is in the forbidden list
-                if module_name in self.FORBIDDEN_MODULES:
-                    error_msg = f"Forbidden module '{module_name}' found in file {theme_file}"
-                    self.errors.append(error_msg)
-                    self.has_errors = True
-                # Also check submodules (e.g., "os.path" should trigger on "os")
-                for forbidden_module in self.FORBIDDEN_MODULES:
-                    if module_name.startswith(forbidden_module + "."):
-                        error_msg = f"Forbidden submodule '{module_name}' found in file {theme_file}"
-                        self.errors.append(error_msg)
-                        self.has_errors = True
-                        break
-
-        # Check for forbidden function calls
-        elif isinstance(node, ast.Call):
-            # Check for direct function calls (e.g., eval(), exec())
-            if isinstance(node.func, ast.Name):
-                if node.func.id in self.FORBIDDEN_FUNCTIONS:
-                    error_msg = f"Forbidden function '{node.func.id}' found in file {theme_file}"
-                    self.errors.append(error_msg)
-                    self.has_errors = True
-
-            # Check for method calls (e.g., os.system(), requests.get())
-            elif isinstance(node.func, ast.Attribute):
-                # Get the full function path (e.g., "os.system")
-                full_func_name = self._get_attribute_path(node.func)
-                if full_func_name in self.FORBIDDEN_FUNCTIONS:
-                    error_msg = f"Forbidden function '{full_func_name}' found in file {theme_file}"
-                    self.errors.append(error_msg)
-                    self.has_errors = True
-                # Check just the attribute name
-                elif node.func.attr in self.FORBIDDEN_FUNCTIONS:
-                    error_msg = f"Forbidden method '{node.func.attr}' called in file {theme_file}"
-                    self.errors.append(error_msg)
-                    self.has_errors = True
-            elif isinstance(node.func, ast.Subscript):
-                subscript_name = self._get_subscript_target_name(node.func)
-                if subscript_name in self.FORBIDDEN_FUNCTIONS:
-                    error_msg = f"Forbidden function '{subscript_name}' found in file {theme_file}"
-                    self.errors.append(error_msg)
-                    self.has_errors = True
-                if self._is_builtins_subscript_access(node.func):
-                    error_msg = f"Forbidden builtins subscript call found in file {theme_file}"
-                    self.errors.append(error_msg)
-                    self.has_errors = True
-
-        # Check for import expressions that might be used dynamically
-        elif isinstance(node, ast.Expr):
-            # Check if the expression is a call to an import-related function
-            if isinstance(node.value, ast.Call):
-                if isinstance(node.value.func, ast.Name):
-                    if node.value.func.id in self.FORBIDDEN_FUNCTIONS:
-                        error_msg = f"Forbidden function '{node.value.func.id}' found in expression in file {theme_file}"
-                        self.errors.append(error_msg)
-                        self.has_errors = True
-                elif isinstance(node.value.func, ast.Attribute):
-                    full_func_name = self._get_attribute_path(node.value.func)
-                    if full_func_name in self.FORBIDDEN_FUNCTIONS:
-                        error_msg = f"Forbidden function '{full_func_name}' found in expression in file {theme_file}"
-                        self.errors.append(error_msg)
-                        self.has_errors = True
-
-        # Check for forbidden attributes
-        elif isinstance(node, ast.Attribute):
-            if node.attr in self.FORBIDDEN_ATTRIBUTES:
-                error_msg = f"Forbidden attribute access '{node.attr}' found in file {theme_file}"
-                self.errors.append(error_msg)
-                self.has_errors = True
-
-        # Check for dangerous expressions (like accessing builtins)
-        elif isinstance(node, ast.Name):
-            if node.id in self.FORBIDDEN_FUNCTIONS:
-                error_msg = f"Forbidden function '{node.id}' found in file {theme_file}"
-                self.errors.append(error_msg)
-                self.has_errors = True
-
-        # Check for potentially dangerous f-strings that might execute code
-        elif isinstance(node, ast.FormattedValue):
-            # Check if the format value contains dangerous expressions
-            if hasattr(node, 'value'):
-                # Recursively check the value for dangerous patterns
-                if isinstance(node.value, ast.Call):
-                    func_name = self._get_attribute_path(node.value.func)
-                    if func_name in self.FORBIDDEN_FUNCTIONS:
-                        error_msg = f"Forbidden function '{func_name}' found in f-string in file {theme_file}"
-                        self.errors.append(error_msg)
-                        self.has_errors = True
-                elif isinstance(node.value, ast.Attribute) and node.value.attr in self.FORBIDDEN_ATTRIBUTES:
-                    error_msg = f"Forbidden attribute access '{node.value.attr}' found in f-string in file {theme_file}"
-                    self.errors.append(error_msg)
-                    self.has_errors = True
-                elif isinstance(node.value, ast.Name) and node.value.id in self.FORBIDDEN_FUNCTIONS:
-                    error_msg = f"Forbidden function '{node.value.id}' found in f-string in file {theme_file}"
-                    self.errors.append(error_msg)
-                    self.has_errors = True
-                # Recursively check nested expressions in f-strings
-                elif isinstance(node.value, (ast.BinOp, ast.UnaryOp, ast.BoolOp)):
-                    # Check for complex expressions that might contain dangerous operations
-                    self._check_node_safety(node.value, theme_file)
-                # Check for nested function calls that might be dangerous
-                elif isinstance(node.value, ast.Subscript):
-                    # Check if we're accessing something potentially dangerous
-                    if hasattr(node.value, 'value') and isinstance(node.value.value, ast.Call):
-                        func_name = self._get_attribute_path(node.value.value.func)
-                        if func_name in self.FORBIDDEN_FUNCTIONS:
-                            error_msg = f"Forbidden function '{func_name}' found in f-string subscript in file {theme_file}"
-                            self.errors.append(error_msg)
-                            self.has_errors = True
-
-        # Check for string concatenation attacks (e.g., "im" + "port", "exec", etc.)
-        elif isinstance(node, ast.BinOp):
-            # Check for string concatenations that might be used to obfuscate dangerous code
-            if isinstance(node.op, ast.Add):  # String concatenation with +
-                left_val = self._get_constant_value(node.left)
-                right_val = self._get_constant_value(node.right)
-
-                if left_val is not None and right_val is not None:
-                    concatenated = str(left_val) + str(right_val)
-                    # Check if concatenated string forms a dangerous module/function name
-                    if concatenated in self.FORBIDDEN_MODULES or concatenated in self.FORBIDDEN_FUNCTIONS:
-                        error_msg = f"Potential string concatenation attack detected: '{concatenated}' in file {theme_file}"
-                        self.errors.append(error_msg)
-                        self.has_errors = True
-                    # Also check if it's a substring of forbidden items
-                    for forbidden_module in self.FORBIDDEN_MODULES:
-                        if concatenated in forbidden_module or forbidden_module in concatenated:
-                            error_msg = f"Potential string concatenation attack detected: '{concatenated}' matches forbidden module '{forbidden_module}' in file {theme_file}"
-                            self.errors.append(error_msg)
-                            self.has_errors = True
-                    for forbidden_func in self.FORBIDDEN_FUNCTIONS:
-                        if concatenated in forbidden_func or forbidden_func in concatenated:
-                            error_msg = f"Potential string concatenation attack detected: '{concatenated}' matches forbidden function '{forbidden_func}' in file {theme_file}"
-                            self.errors.append(error_msg)
-                            self.has_errors = True
-
-        # Check for common obfuscation techniques
-        elif isinstance(node, ast.Call):
-            if isinstance(node.func, ast.Name) and node.func.id in ['eval', 'exec']:
-                # Check if eval/exec is being called with obfuscated content
-                if len(node.args) > 0:
-                    first_arg = node.args[0]
-                    arg_value = self._get_constant_value(first_arg)
-                    if arg_value:
-                        # Check if eval/exec argument contains dangerous content
-                        for forbidden_func in self.FORBIDDEN_FUNCTIONS:
-                            if forbidden_func in str(arg_value):
-                                error_msg = f"Potential obfuscated code execution detected: '{forbidden_func}' found in eval/exec argument in file {theme_file}"
-                                self.errors.append(error_msg)
-                                self.has_errors = True
-
-        # Check for character code arrays (another obfuscation method)
-        elif isinstance(node, ast.List) or isinstance(node, ast.Tuple):
-            # Check if it's a list of character codes that might be converted to dangerous strings
-            if all(isinstance(self._get_constant_value(elt), int) for elt in node.elts):
-                # This might be an array of ASCII codes
-                try:
-                    char_codes = [self._get_constant_value(elt) for elt in node.elts if self._get_constant_value(elt) is not None]
-                    # Filter to only include actual integers for character codes
-                    int_char_codes = [code for code in char_codes if isinstance(code, int)]
-                    if int_char_codes and all(isinstance(code, int) and 32 <= code <= 126 for code in int_char_codes):  # Printable ASCII range
-                        decoded_str = ''.join(chr(code) for code in int_char_codes)
-                        # Check if decoded string contains dangerous content
-                        for forbidden_module in self.FORBIDDEN_MODULES:
-                            if forbidden_module in decoded_str:
-                                error_msg = f"Potential character code obfuscation detected: '{forbidden_module}' found in decoded array in file {theme_file}"
-                                self.errors.append(error_msg)
-                                self.has_errors = True
-                        for forbidden_func in self.FORBIDDEN_FUNCTIONS:
-                            if forbidden_func in decoded_str:
-                                error_msg = f"Potential character code obfuscation detected: '{forbidden_func}' found in decoded array in file {theme_file}"
-                                self.errors.append(error_msg)
-                                self.has_errors = True
-                except (ValueError, TypeError, AttributeError):
-                    # If conversion fails, continue
-                    pass
-
-        elif isinstance(node, ast.While):
-            if isinstance(node.test, ast.Constant) and node.test.value is True:
-                if not self._contains_break(node.body):
-                    error_msg = f"Infinite while loop detected in file {theme_file}"
-                    self.errors.append(error_msg)
-                    self.has_errors = True
-
-    def _check_top_level_safety(self, tree: ast.AST, theme_file: str, allow_absolute_imports: bool):
-        """Block executable top-level statements in theme files."""
-        if not isinstance(tree, ast.Module):
+    def _check_file_size(self, theme_file: str) -> None:
+        try:
+            size = os.path.getsize(theme_file)
+        except OSError as e:
+            self._add_error(f"Failed to read theme file size for {theme_file}: {e}")
             return
+        if size > MAX_THEME_PY_FILE_SIZE:
+            self._add_error(
+                f"Theme file {theme_file} is too large ({size} bytes)"
+            )
 
-        disallowed_nodes = (
-            ast.While,
-            ast.For,
-            ast.AsyncFor,
-            ast.With,
-            ast.AsyncWith,
-            ast.Try,
-            ast.Match,
-        )
+    def _read_file(self, theme_file: str) -> str | None:
+        try:
+            with open(theme_file, encoding="utf-8") as f:
+                return f.read()
+        except OSError as e:
+            self._add_error(f"Failed to read theme file {theme_file}: {e}")
+            return None
+
+    def _parse_file(self, content: str, theme_file: str) -> ast.Module | None:
+        try:
+            return ast.parse(content)
+        except SyntaxError as e:
+            self._add_error(f"Syntax error in file {theme_file}: {e}")
+            return None
+
+    def _build_parent_map(self, tree: ast.Module) -> None:
+        """Build a mapping from child node id to parent node in one pass."""
+        for parent in ast.walk(tree):
+            for child in ast.iter_child_nodes(parent):
+                self._parent_map[id(child)] = parent
+
+    def _get_parent(self, node: ast.AST) -> ast.AST | None:
+        return self._parent_map.get(id(node))
+
+    def _check_ast_size(self, tree: ast.Module, theme_file: str) -> None:
+        """Reject files with excessively large AST to prevent DoS."""
+        count = sum(1 for _ in ast.walk(tree))
+        if count > MAX_AST_NODES:
+            self._add_error(
+                f"Theme file {theme_file} has too many AST nodes ({count})"
+            )
+
+    def _check_top_level(
+        self, tree: ast.Module, theme_file: str, allow_absolute_imports: bool,
+    ) -> None:
+        """Validate top-level module statements against allowlist."""
         for node in tree.body:
-            if isinstance(node, disallowed_nodes):
-                self.errors.append(
-                    f"Top-level executable control flow is forbidden in file {theme_file}"
-                )
-                self.has_errors = True
+            if isinstance(node, (ast.Import, ast.ImportFrom)):
+                self._check_import(node, theme_file, allow_absolute_imports)
+                continue
+
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                self._check_function_def(node, theme_file)
+                continue
+
+            if isinstance(node, (ast.Assign, ast.AnnAssign)):
+                self._check_assignment(node, theme_file)
                 continue
 
             if isinstance(node, ast.Expr):
@@ -417,189 +229,290 @@ class ThemeSecurityChecker:
                     and isinstance(node.value.value, str)
                 )
                 if not is_docstring:
-                    self.errors.append(
+                    self._add_error(
                         f"Top-level executable expression is forbidden in file {theme_file}"
                     )
-                    self.has_errors = True
-                    continue
+                continue
 
+            self._add_error(
+                f"Top-level {type(node).__name__} is forbidden in file {theme_file}"
+            )
+
+    def _check_import(
+        self, node: ast.Import | ast.ImportFrom, theme_file: str,
+        allow_absolute_imports: bool,
+    ) -> None:
+        """Validate import node against allowlist."""
+        if isinstance(node, ast.ImportFrom):
+            if node.level > 0:
+                return
+            module = node.module or ""
+            if module in self.SAFE_ABSOLUTE_IMPORTS or any(
+                module.startswith(safe + ".")
+                for safe in self.SAFE_ABSOLUTE_IMPORTS
+            ):
+                return
             if not allow_absolute_imports:
-                if isinstance(node, ast.ClassDef):
-                    self.errors.append(
-                        f"Top-level classes are forbidden in custom theme file {theme_file}"
-                    )
-                    self.has_errors = True
-                    continue
+                self._add_error(
+                    f"Forbidden import '{module}' in file {theme_file}"
+                )
+            return
 
-                if isinstance(node, ast.Import):
-                    self.errors.append(
-                        f"Absolute imports are forbidden in custom theme file {theme_file}"
-                    )
-                    self.has_errors = True
-                    continue
+        for alias in node.names:
+            if alias.name in self.SAFE_ABSOLUTE_IMPORTS or any(
+                alias.name.startswith(safe + ".")
+                for safe in self.SAFE_ABSOLUTE_IMPORTS
+            ):
+                continue
+            if not allow_absolute_imports:
+                self._add_error(
+                    f"Forbidden import '{alias.name}' in file {theme_file}"
+                )
 
-                if isinstance(node, ast.ImportFrom) and node.level == 0:
-                    if not self._is_safe_theme_import(node):
-                        self.errors.append(
-                            f"Absolute imports are forbidden in custom theme file {theme_file}"
-                        )
-                        self.has_errors = True
-                        continue
+    def _check_function_def(
+        self, node: ast.FunctionDef | ast.AsyncFunctionDef, theme_file: str,
+    ) -> None:
+        """Validate function definition and its body."""
+        if node.decorator_list:
+            self._add_error(
+                f"Decorators are forbidden in file {theme_file}"
+            )
 
-                if self._has_top_level_runtime_call(node):
-                    if not self._is_safe_theme_toplevel_call(node):
-                        self.errors.append(
-                            f"Top-level function calls are forbidden in custom theme file {theme_file}"
-                        )
-                        self.has_errors = True
-                        continue
+        if node.args.defaults or node.args.kw_defaults:
+            has_call = any(
+                isinstance(d, ast.Call)
+                for d in node.args.defaults
+                if d is not None
+            ) or any(
+                isinstance(d, ast.Call)
+                for d in node.args.kw_defaults
+                if d is not None
+            )
+            if has_call:
+                self._add_error(
+                    f"Function default arguments with calls are forbidden in file {theme_file}"
+                )
 
-    def _is_safe_theme_import(self, node: ast.ImportFrom) -> bool:
-        """Check if import is from a safe theme module."""
-        if node.module is None:
-            return False
-        return node.module in self.SAFE_THEME_IMPORTS or any(
-            node.module.startswith(safe + ".") for safe in self.SAFE_THEME_IMPORTS
+        self._check_body(node.body, theme_file, "function")
+
+    def _check_body(
+        self, body: list[ast.stmt], theme_file: str, context: str,
+    ) -> None:
+        """Validate statements inside a function body."""
+        for stmt in body:
+            if isinstance(stmt, (ast.Assign, ast.AnnAssign)):
+                self._check_assignment(stmt, theme_file)
+            elif isinstance(stmt, ast.Return):
+                if stmt.value is not None:
+                    self._check_expression(stmt.value, theme_file, context)
+            elif isinstance(stmt, ast.Expr):
+                self._check_expression(stmt.value, theme_file, context)
+            elif isinstance(stmt, ast.If):
+                self._check_body(stmt.body, theme_file, context)
+                self._check_body(stmt.orelse, theme_file, context)
+            elif isinstance(stmt, ast.Raise):
+                pass
+            elif isinstance(stmt, ast.Pass):
+                pass
+            else:
+                self._add_error(
+                    f"Forbidden {type(stmt).__name__} inside {context} in file {theme_file}"
+                )
+
+    def _check_assignment(
+        self, node: ast.Assign | ast.AnnAssign, theme_file: str,
+    ) -> None:
+        """Validate assignment value is a safe expression."""
+        if node.value is not None:
+            self._check_expression(node.value, theme_file, "assignment")
+
+    def _check_expression(
+        self, node: ast.expr, theme_file: str, context: str,
+    ) -> None:
+        """Validate an expression node is safe."""
+        if isinstance(node, ast.Constant):
+            if isinstance(node.value, str):
+                self._check_string_literal(node.value, theme_file)
+            return
+        if isinstance(node, ast.Name):
+            if node.id in self.FORBIDDEN_NAMES:
+                self._add_error(
+                    f"Forbidden name '{node.id}' in {context} in file {theme_file}"
+                )
+            return
+        if isinstance(node, ast.Attribute):
+            if node.attr in self.FORBIDDEN_DUNDER_ATTRS:
+                self._add_error(
+                    f"Forbidden dunder attribute '{node.attr}' in {context} in file {theme_file}"
+                )
+            self._check_expression(node.value, theme_file, context)
+            return
+        if isinstance(node, ast.Subscript):
+            self._check_expression(node.value, theme_file, context)
+            if self._is_builtins_access(node):
+                self._add_error(
+                    f"__builtins__ access is forbidden in {context} in file {theme_file}"
+                )
+            return
+        if isinstance(node, ast.Call):
+            self._check_call(node, theme_file, context)
+            return
+        if isinstance(node, ast.Dict):
+            for key in node.keys:
+                if key is not None:
+                    self._check_expression(key, theme_file, context)
+            for val in node.values:
+                self._check_expression(val, theme_file, context)
+            return
+        if isinstance(node, (ast.List, ast.Tuple)):
+            for elt in node.elts:
+                self._check_expression(elt, theme_file, context)
+            return
+        if isinstance(node, ast.Set):
+            for elt in node.elts:
+                self._check_expression(elt, theme_file, context)
+            return
+        if isinstance(node, ast.BinOp):
+            self._check_expression(node.left, theme_file, context)
+            self._check_expression(node.right, theme_file, context)
+            return
+        if isinstance(node, ast.UnaryOp):
+            self._check_expression(node.operand, theme_file, context)
+            return
+        if isinstance(node, ast.BoolOp):
+            for val in node.values:
+                self._check_expression(val, theme_file, context)
+            return
+        if isinstance(node, ast.IfExp):
+            self._check_expression(node.test, theme_file, context)
+            self._check_expression(node.body, theme_file, context)
+            self._check_expression(node.orelse, theme_file, context)
+            return
+        if isinstance(node, ast.JoinedStr):
+            for val in node.values:
+                self._check_expression(val, theme_file, context)
+            return
+        if isinstance(node, ast.FormattedValue):
+            self._check_expression(node.value, theme_file, context)
+            return
+        if isinstance(node, ast.NamedExpr):
+            self._check_expression(node.value, theme_file, context)
+            return
+
+        self._add_error(
+            f"Forbidden expression type {type(node).__name__} in {context} in file {theme_file}"
         )
 
-    def _is_safe_theme_toplevel_call(self, node: ast.AST) -> bool:
-        """Check if a top-level assignment/call uses only safe theme functions."""
-        if isinstance(node, ast.Assign):
-            return self._all_calls_in_node_are_safe(node)
-        if isinstance(node, ast.AnnAssign) and node.value is not None:
-            return self._all_calls_in_node_are_safe(node)
-        if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
-            return self._is_safe_theme_call(node.value.func)
-        return False
+    def _check_string_literal(self, value: str, theme_file: str) -> None:
+        """Check string constants for suspicious patterns."""
+        for pattern, desc in self.SUSPICIOUS_STRING_PATTERNS:
+            if pattern.search(value):
+                self._add_error(
+                    f"Suspicious string '{desc}' in file {theme_file}"
+                )
 
-    def _all_calls_in_node_are_safe(self, node: ast.AST) -> bool:
-        """Check that every call in a node is a safe theme function."""
-        for child in ast.walk(node):
-            if isinstance(child, ast.Call):
-                if not self._is_safe_theme_call(child.func):
-                    return False
-        return True
+    def _check_call(
+        self, node: ast.Call, theme_file: str, context: str,
+    ) -> None:
+        """Validate a function/method call."""
+        func = node.func
 
-    def _is_safe_theme_call(self, func_node: ast.expr) -> bool:
-        """Check if a function call matches a safe theme pattern."""
-        path = self._get_attribute_path(func_node)
-        if isinstance(func_node, ast.Name):
-            path = func_node.id
-        return path in self.SAFE_THEME_CALLS
+        if isinstance(func, ast.Name):
+            if func.id in self.FORBIDDEN_NAMES:
+                self._add_error(
+                    f"Forbidden call '{func.id}()' in {context} in file {theme_file}"
+                )
+            return
 
-    def _contains_break(self, body: list[ast.stmt]) -> bool:
-        """Return True if body contains break statement."""
-        for stmt in body:
-            if isinstance(stmt, ast.Break):
-                return True
-            for child in ast.iter_child_nodes(stmt):
-                if isinstance(child, ast.Break):
-                    return True
-        return False
+        if isinstance(func, ast.Attribute):
+            attr = func.attr
+            if attr in self.FORBIDDEN_DUNDER_ATTRS:
+                self._add_error(
+                    f"Forbidden dunder call '{attr}' in {context} in file {theme_file}"
+                )
+            if attr in self.FORBIDDEN_METHODS:
+                self._add_error(
+                    f"Forbidden method call '.{attr}()' in {context} in file {theme_file}"
+                )
+            self._check_expression(func.value, theme_file, context)
+            for arg in node.args:
+                self._check_expression(arg, theme_file, context)
+            for kw in node.keywords:
+                self._check_expression(kw.value, theme_file, context)
+            return
 
-    def _get_subscript_target_name(self, node: ast.Subscript) -> str:
-        """Return static string key for calls like obj['name']()."""
-        key_value = self._get_constant_value(node.slice)
-        if isinstance(key_value, str):
-            return key_value
-        return ""
+        if isinstance(func, ast.Subscript):
+            self._check_expression(func.value, theme_file, context)
+            if self._is_builtins_access(func):
+                self._add_error(
+                    f"__builtins__ call is forbidden in {context} in file {theme_file}"
+                )
+            return
 
-    def _is_builtins_subscript_access(self, node: ast.Subscript) -> bool:
-        """Detect __builtins__['...'] style callable access."""
+        self._add_error(
+            f"Forbidden call expression in {context} in file {theme_file}"
+        )
+
+    def _check_forbidden_patterns(self, tree: ast.Module, theme_file: str) -> None:
+        """Walk AST for structural patterns forbidden in theme code."""
+        for node in ast.walk(tree):
+            if isinstance(node, ast.While):
+                self._add_error(
+                    f"While loop is forbidden in file {theme_file}"
+                )
+            elif isinstance(node, (ast.For, ast.AsyncFor)):
+                self._add_error(
+                    f"For loop is forbidden in file {theme_file}"
+                )
+            elif isinstance(node, (ast.With, ast.AsyncWith)):
+                self._add_error(
+                    f"With statement is forbidden in file {theme_file}"
+                )
+            elif isinstance(node, ast.Try):
+                self._add_error(
+                    f"Try/except is forbidden in file {theme_file}"
+                )
+            elif isinstance(node, ast.ClassDef):
+                self._add_error(
+                    f"Class definition is forbidden in file {theme_file}"
+                )
+            elif isinstance(node, ast.Lambda):
+                self._add_error(
+                    f"Lambda is forbidden in file {theme_file}"
+                )
+            elif isinstance(node, (ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)):
+                self._add_error(
+                    f"Comprehension is forbidden in file {theme_file}"
+                )
+            elif isinstance(node, (ast.Global, ast.Nonlocal)):
+                self._add_error(
+                    f"Global/nonlocal is forbidden in file {theme_file}"
+                )
+            elif isinstance(node, (ast.Yield, ast.YieldFrom, ast.Await)):
+                self._add_error(
+                    f"Yield/await is forbidden in file {theme_file}"
+                )
+            elif isinstance(node, ast.Raise):
+                logger.warning(
+                    "raise statement in theme file %s", theme_file
+                )
+            elif isinstance(node, ast.Assert):
+                self._add_error(
+                    f"Assert is forbidden in file {theme_file}"
+                )
+            elif isinstance(node, ast.Delete):
+                self._add_error(
+                    f"Del is forbidden in file {theme_file}"
+                )
+
+    def _is_builtins_access(self, node: ast.Subscript) -> bool:
+        """Detect __builtins__['...'] style access."""
         target = node.value
         if isinstance(target, ast.Name):
             return target.id == "__builtins__"
         if isinstance(target, ast.Attribute):
             return target.attr == "__builtins__"
         return False
-
-    def _has_top_level_runtime_call(self, node: ast.AST) -> bool:
-        """Detect calls that execute during module import."""
-        if isinstance(node, (ast.Import, ast.ImportFrom)):
-            return False
-
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            return self._function_header_has_call(node)
-
-        if isinstance(node, ast.ClassDef):
-            for element in [*node.decorator_list, *node.bases]:
-                if any(isinstance(child, ast.Call) for child in ast.walk(element)):
-                    return True
-            for keyword in node.keywords:
-                if any(isinstance(child, ast.Call) for child in ast.walk(keyword.value)):
-                    return True
-            return False
-
-        stack = [node]
-        while stack:
-            current = stack.pop()
-            if isinstance(current, ast.Call):
-                return True
-            if isinstance(current, (ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)):
-                return True
-            if isinstance(current, ast.BinOp) and isinstance(
-                current.op, (ast.Mult, ast.MatMult, ast.Pow, ast.LShift, ast.RShift)
-            ):
-                return True
-            for child in ast.iter_child_nodes(current):
-                if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Lambda)):
-                    continue
-                stack.append(child)
-        return False
-
-    def _function_header_has_call(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> bool:
-        """Check function header expressions executed at definition time."""
-        if node.decorator_list:
-            return True
-
-        expressions = []
-        if node.returns is not None:
-            expressions.append(node.returns)
-
-        args = node.args
-        expressions.extend(args.defaults)
-        expressions.extend(default for default in args.kw_defaults if default is not None)
-
-        for arg in [*args.posonlyargs, *args.args, *args.kwonlyargs]:
-            if arg.annotation is not None:
-                expressions.append(arg.annotation)
-        if args.vararg and args.vararg.annotation is not None:
-            expressions.append(args.vararg.annotation)
-        if args.kwarg and args.kwarg.annotation is not None:
-            expressions.append(args.kwarg.annotation)
-
-        for expr in expressions:
-            if self._has_runtime_expression(expr):
-                return True
-        return False
-
-    def _has_runtime_expression(self, expr: ast.AST) -> bool:
-        """Detect expressions that may execute or consume large resources at import time."""
-        for child in ast.walk(expr):
-            if isinstance(child, ast.Call):
-                return True
-            if isinstance(child, (ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)):
-                return True
-            if isinstance(child, ast.BinOp) and isinstance(
-                child.op, (ast.Mult, ast.MatMult, ast.Pow, ast.LShift, ast.RShift)
-            ):
-                return True
-        return False
-
-    def _get_attribute_path(self, attr_node):
-        """Extract the full attribute path from an AST node (e.g., 'os.path.join')."""
-        if isinstance(attr_node, ast.Name):
-            return attr_node.id
-        elif isinstance(attr_node, ast.Attribute):
-            parent_path = self._get_attribute_path(attr_node.value)
-            return f"{parent_path}.{attr_node.attr}"
-        return ""
-
-    def _get_constant_value(self, node):
-        """Extract the constant value from an AST node if it's a constant."""
-        if isinstance(node, ast.Constant):  # Python 3.8+
-            return node.value
-        return None
 
 
 def check_theme_safety(theme_file: str, allow_absolute_imports: bool = True) -> bool:
@@ -697,7 +610,7 @@ def is_safe_image_file(file_path: str) -> bool:
     """
 
     # Check file extension first
-    safe_extensions = {'.png', '.jpg', '.jpeg', '.svg', '.bmp', '.gif', '.webp', '.jxl', '.ico'}
+    safe_extensions = {'.png', '.jpg', '.jpeg', '.svg', '.gif', '.webp', '.jxl'}
     _, ext = os.path.splitext(file_path.lower())
 
     if ext not in safe_extensions:
@@ -739,11 +652,6 @@ def is_safe_image_file(file_path: str) -> bool:
             if not header.startswith(b'GIF8'):
                 logger.warning(f"File {file_path} does not have GIF signature")
                 return False
-        elif ext == '.bmp':
-            # BMP signature: 42 4D (BM)
-            if not header.startswith(b'BM'):
-                logger.warning(f"File {file_path} does not have BMP signature")
-                return False
         elif ext == '.webp':
             if not (header.startswith(b'RIFF') and header[8:12] == b'WEBP'):
                 logger.warning(f"File {file_path} does not have WebP signature")
@@ -767,6 +675,15 @@ def is_safe_image_file(file_path: str) -> bool:
                     "<script" in lower_svg
                     or "foreignobject" in lower_svg
                     or "<!entity" in lower_svg
+                    or "<image" in lower_svg
+                    or "<use" in lower_svg
+                    or "@import" in lower_svg
+                    or "onload=" in lower_svg
+                    or "onclick=" in lower_svg
+                    or "onmouseover=" in lower_svg
+                    or "onerror=" in lower_svg
+                    or "javascript:" in lower_svg
+                    or "data:" in lower_svg
                     or "xlink:href=\"http" in lower_svg
                     or "href=\"http" in lower_svg
                     or "xlink:href='http" in lower_svg
