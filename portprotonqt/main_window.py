@@ -389,6 +389,7 @@ class MainWindow(
         self.stackedWidget = QStackedWidget()
         self.stackedWidget.currentChanged.connect(self.updateControlHints)
         self.stackedWidget.currentChanged.connect(self._load_empty_library_on_tab_enter)
+        self.stackedWidget.currentChanged.connect(self._log_stacked_widget_change)
         mainLayout.addWidget(self.stackedWidget)
 
         self.createInstalledTab()
@@ -1362,7 +1363,26 @@ class MainWindow(
 
     def openGameDetailPage(self, game_data: dict) -> None:
         """Open game detail page."""
+        logger.debug(
+            "Opening detail page for %s from stacked index %d",
+            game_data.get("name", ""),
+            self.stackedWidget.currentIndex(),
+        )
         self.detail_page_manager.openGameDetailPage(game_data)
+        logger.debug(
+            "Detail page opened at stacked index %d, current_detail=%s",
+            self.stackedWidget.currentIndex(),
+            self.stackedWidget.currentWidget() is self.currentDetailPage,
+        )
+
+    def _log_stacked_widget_change(self, index: int) -> None:
+        current_widget = self.stackedWidget.currentWidget()
+        logger.debug(
+            "Stacked widget changed to index %d, detail=%s, widget=%s",
+            index,
+            current_widget is self.currentDetailPage,
+            type(current_widget).__name__ if current_widget else "None",
+        )
 
     def _write_desktop_file(self, desktop_entry: str, desktop_path: str) -> None:
         """Write desktop file with executable permissions."""
