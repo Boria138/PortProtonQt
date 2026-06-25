@@ -413,6 +413,15 @@ class UIConfig(BaseConfig):
         validate_bool(enabled, "auto_download_ppdb")
         self._save_download_value("auto_download_ppdb", enabled)
 
+    def get_enable_theme_store(self) -> bool:
+        """Get theme store visibility setting."""
+        return self._get_bool("enable_theme_store", False)
+
+    def set_enable_theme_store(self, enabled: bool):
+        """Set theme store visibility setting."""
+        validate_bool(enabled, "enable_theme_store")
+        self._save_value("enable_theme_store", enabled, "bool")
+
 
 def load_theme_metainfo(theme_name: str) -> dict:
     """Load theme metadata from metainfo.ini."""

@@ -93,7 +93,7 @@ class FuzzySearchIndex:
             results = []
 
             for i, (item_text, item_data) in enumerate(self.normalized_items):
-                score = fuzz.ratio(query_normalized, item_text)
+                score = fuzz.partial_ratio(query_normalized, item_text)
                 if score >= min_score:
                     results.append((self.items[i][0], item_data, score))
 

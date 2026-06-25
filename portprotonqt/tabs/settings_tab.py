@@ -433,6 +433,22 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
 
         downloadForm.addRow(economy_mode_layout)
         downloadForm.addRow(auto_download_ppdb_layout)
+
+        self.enableThemeStoreCheckBox = QCheckBox()
+        self.enableThemeStoreCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
+        self.enableThemeStoreCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.enableThemeStoreTitle = QLabel(_("Enable Theme Store from") + " ppdb.linux-gaming.ru (" + _("third-party themes may be unsafe") + ")")
+        self.enableThemeStoreTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.enableThemeStoreTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
+        self.enableThemeStoreTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.enableThemeStoreCheckBox.setChecked(ui_config.get_enable_theme_store())
+        enable_theme_store_layout = QHBoxLayout()
+        enable_theme_store_layout.setContentsMargins(0, 0, 0, 0)
+        enable_theme_store_layout.addWidget(self.enableThemeStoreCheckBox)
+        enable_theme_store_layout.addWidget(self.enableThemeStoreTitle)
+        enable_theme_store_layout.addStretch()
+        downloadForm.addRow(enable_theme_store_layout)
+
         downloadForm.addRow(self.downloadMirrorTitle, self.downloadMirrorCombo)
 
         # 4. Hardware Settings Section
@@ -721,6 +737,9 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
 
         set_user_conf_setting('MIRROR', self.downloadMirrorCombo.currentText())
         ui_config.set_auto_download_ppdb(self.autoDownloadPPDBCheckBox.isChecked())
+
+        enable_theme_store = self.enableThemeStoreCheckBox.isChecked()
+        ui_config.set_enable_theme_store(enable_theme_store)
 
         # Save GPU selection to user.conf (only if the combo box exists)
         if hasattr(self, 'gpuCombo') and self.gpuCombo.count() > 1:

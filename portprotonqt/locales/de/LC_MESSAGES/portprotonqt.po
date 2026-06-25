@@ -2050,6 +2050,12 @@ msgstr ""
 msgid "Download Settings"
 msgstr ""
 
+msgid "Enable Theme Store from"
+msgstr ""
+
+msgid "third-party themes may be unsafe"
+msgstr ""
+
 msgid "Hardware Settings"
 msgstr ""
 
