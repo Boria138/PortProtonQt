@@ -541,6 +541,18 @@ class MainWindowThemeTabMixin(_MainWindowTypingBase):
         # Add widget to stackedWidget
         self.theme_tab_index = self.stackedWidget.addWidget(self.themeTabWidget)
 
+    def _refresh_theme_store_visibility(self) -> None:
+        store_index = self.themesCombo.findData(THEME_STORE_ITEM)
+        if ui_config.get_enable_theme_store():
+            if store_index < 0:
+                self.themesCombo.addItem(_(THEME_STORE_ITEM), THEME_STORE_ITEM)
+            return
+        if store_index < 0:
+            return
+        if self.themesCombo.currentIndex() == store_index:
+            self.themesCombo.setCurrentIndex(0)
+        self.themesCombo.removeItem(store_index)
+
     def restart_application(self):
         """Restart application."""
         if not self.isFullScreen():
