@@ -16,6 +16,8 @@
 - Добавлен перевод на Немецкий `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/de/`
 - Добавлен магазин тем с загрузкой и применением тем из `ppdb.linux-gaming.ru` (скрыт за настройкой по умолчанию, так как сторонние темы могут быть небезопасны)
 - Добавлена поддержка установки тем по URI `portprotonqt://theme/<id>` с `ppdb.linux-gaming.ru`
+- Добавлена запись параметров запуска из `.lnk` в `.ppdb`
+- Добавлен автовыбор директории Flatpak-версии PortProton (`~/.var/app/ru.linux_gaming.PortProton`) как `portdatapath`, если директория существует
 
 ### Changed
 - Минимальный масштаб слайдера размера карточек снижен с 200 до 100 px
@@ -35,11 +37,15 @@
 - Обновлён перевод на Португальский (Бразилия) `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/pt_BR/`
 - Обновлён перевод на Китайский (упрощённый) `https://translate.codeberg.org/projects/portprotonqt/portprotonqt/zh_Hans/`
 - Кеш ProtonDB теперь очищается при обновлении списка приложений Steam
+- Убрана поддержка `.lnк` файлов из `start.sh`
+- Удалён весь Flatpak код
 
 ### Fixed
 - Исправлено определение тёмной темы для `Cinnamon`, `XFCE` и `MATE`
 - Исправлена навигация по сетке карточек после перехода к результатам поиска
 - Исправлен нестабильный поиск по первым буквам
+- Исправлен поиск исполняемых файлов из `.lnk` с неверным регистром имени
+- Исправлена обработка путей с пробелами в `portwine_create_shortcut`
 
 ### Contributors
 - @CastroFidel
