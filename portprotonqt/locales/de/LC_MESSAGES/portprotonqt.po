@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PortProtonQt 0.1.1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2026-06-18 23:41+0500\n"
-"PO-Revision-Date: 2026-06-23 16:51+0000\n"
+"PO-Revision-Date: 2026-06-25 07:06+0000\n"
 "Last-Translator: Rubin13 <rubin13@noreply.codeberg.org>\n"
 "Language-Team: German <https://translate.codeberg.org/projects/portprotonqt/"
 "portprotonqt/de/>\n"
@@ -1539,710 +1539,718 @@ msgid "CPU load color change"
 msgstr "Farbwechsel bei CPU-Auslastung"
 
 msgid "CPU frequency in MHz"
-msgstr ""
+msgstr "CPU-Frequenz in MHz"
 
 msgid "CPU power draw (watts)"
-msgstr ""
+msgstr "Leistungsaufnahme der CPU (Watt)"
 
 msgid "CPU temperature"
-msgstr ""
+msgstr "CPU-Temperatur"
 
 msgid "Gamescope frametime graphs"
-msgstr ""
+msgstr "Gamescope-Frametime-Diagramme"
 
 msgid "Wireless device battery icon"
-msgstr ""
+msgstr "Akkusymbol eines drahtlosen Geräts"
 
 msgid "Display server type (X11/Wayland)"
-msgstr ""
+msgstr "Anzeige-Server-Typ (X11/Wayland)"
 
 msgid "Dynamic frametime Y-axis"
-msgstr ""
+msgstr "Dynamische Frametime-Y-Achse"
 
 msgid "Short engine names"
-msgstr ""
+msgstr "Abkürzungen für Grafik-API"
 
 msgid "Engine version (OpenGL/Vulkan)"
-msgstr ""
+msgstr "Grafik-API Engine-Version (OpenGL/Vulkan)"
 
 msgid "Executable name"
-msgstr ""
+msgstr "Bezeichnung der ausführbaren Datei"
 
 msgid "Steam Deck fan RPM"
-msgstr ""
+msgstr "Lüfterdrehzahl des Steam Deck"
 
 msgid "Frame capture analysis"
-msgstr ""
+msgstr "Analyse der Bildaufnahme"
 
 msgid "Flip efficiency (joules/frame)"
-msgstr ""
+msgstr "Umschalten der Effizienz-Darstellung (Joule/Frame)"
 
 msgid "FPS text color by value"
-msgstr ""
+msgstr "FPS-Textfarbe nach Wert"
 
 msgid "FPS percentiles"
-msgstr ""
+msgstr "FPS-Perzentile"
 
 msgid "Show FPS only"
-msgstr ""
+msgstr "Nur FPS anzeigen"
 
 msgid "Frame counter"
-msgstr ""
+msgstr "Bildzähler"
 
 msgid "Frametime next to FPS"
-msgstr ""
+msgstr "Frametime neben FPS"
 
 msgid "Detailed frame timing chart"
-msgstr ""
+msgstr "Detailliertes Diagramm zum Frame-Timing"
 
 msgid "FSR status (gamescope)"
-msgstr ""
+msgstr "FSR-Status (gamescope)"
 
 msgid "Enable most parameters"
-msgstr ""
+msgstr "Die meisten Parameter aktivieren"
 
 msgid "GameMode status"
-msgstr ""
+msgstr "GameMode-Status"
 
 msgid "GPU core frequency"
-msgstr ""
+msgstr "GPU-Kernfrequenz"
 
 msgid "GPU efficiency (frames/joule)"
-msgstr ""
+msgstr "GPU-Effizienz (Frames/Joule)"
 
 msgid "GPU fan (RPM/%)"
-msgstr ""
+msgstr "GPU-Lüfter (U/min/%)"
 
 msgid "GPU junction temperature"
-msgstr ""
+msgstr "GPU-Kernsensor-Temperatur"
 
 msgid "GPU load color change"
-msgstr ""
+msgstr "Farbwechsel bei GPU-Auslastung"
 
 msgid "GPU memory frequency"
-msgstr ""
+msgstr "GPU-Speichertakt"
 
 msgid "GPU memory temperature"
-msgstr ""
+msgstr "GPU-Speichertemperatur"
 
 msgid "GPU name from pci.ids"
-msgstr ""
+msgstr "GPU-Name laut pci.ids"
 
 msgid "GPU power draw (watts)"
-msgstr ""
+msgstr "GPU-Leistungsaufnahme (Watt)"
 
 msgid "GPU power limit"
-msgstr ""
+msgstr "GPU-Leistungslimit"
 
 msgid "GPU temperature"
-msgstr ""
+msgstr "GPU-Temperatur"
 
 msgid "GPU voltage"
-msgstr ""
+msgstr "GPU-Spannung"
 
 msgid "HDR status (gamescope)"
-msgstr ""
+msgstr "HDR-Status (gamescope)"
 
 msgid "Hide FSR sharpness info"
-msgstr ""
+msgstr "FSR-Schärfe-Info ausblenden"
 
 msgid "FPS histogram"
-msgstr ""
+msgstr "FPS-Histogramm"
 
 msgid "Horizontal HUD layout"
-msgstr ""
+msgstr "Horizontales HUD-Layout"
 
 msgid "Stretch background horizontally"
-msgstr ""
+msgstr "Hintergrund horizontal anpassen"
 
 msgid "Compact HUD mode"
-msgstr ""
+msgstr "Kompakter HUD-Modus"
 
 msgid "Remove HUD margins"
-msgstr ""
+msgstr "HUD-Ränder entfernen"
 
 msgid "IO read rate (MiB/s)"
-msgstr ""
+msgstr "IO-Leserate (MiB/s)"
 
 msgid "IO write rate (MiB/s)"
-msgstr ""
+msgstr "IO-Schreibgeschwindigkeit (MiB/s)"
 
 msgid "Add versioning to logs"
-msgstr ""
+msgstr "Versionsinfo zu Protokollen hinzufügen"
 
 msgid "Media player metadata"
-msgstr ""
+msgstr "Metadaten des Mediaplayers"
 
 msgid "Hide HUD by default"
-msgstr ""
+msgstr "HUD standardmäßig ausblenden"
 
 msgid "Use primary font size"
-msgstr ""
+msgstr "Primäre Schriftgröße verwenden"
 
 msgid "Allow log uploads"
-msgstr ""
+msgstr "Log-Uploads zulassen"
 
 msgid "Vulkan present mode"
-msgstr ""
+msgstr "Vulkan-Modus"
 
 msgid "Process VRAM usage"
-msgstr ""
+msgstr "VRAM-Nutzung des Prozesses"
 
 msgid "Process memory (resident)"
-msgstr ""
+msgstr "RAM-Nutzung des Prozesses"
 
 msgid "Process shared memory"
-msgstr ""
+msgstr "Gemeinsame RAM-Nutzung von Prozessen"
 
 msgid "Process virtual memory"
-msgstr ""
+msgstr "Virtueller Speicher des Prozesses"
 
 msgid "System RAM usage"
-msgstr ""
+msgstr "System-RAM-Nutzung"
 
 msgid "RAM temperature (DDR5)"
-msgstr ""
+msgstr "RAM-Temperatur (DDR5)"
 
 msgid "Load config file"
-msgstr ""
+msgstr "Konfigurationsdatei laden"
 
 msgid "Refresh rate (gamescope)"
-msgstr ""
+msgstr "Bildwiederholrate (gamescope)"
 
 msgid "Current resolution"
-msgstr ""
+msgstr "Aktuelle Auflösung"
 
 msgid "Retro filtering (unfiltered)"
-msgstr ""
+msgstr "Retro-Filterung (ungefiltert)"
 
 msgid "Show FPS limit"
-msgstr ""
+msgstr "FPS-Limit anzeigen"
 
 msgid "Swap usage"
-msgstr ""
+msgstr "Swap-Nutzung"
 
 msgid "Temperature in Fahrenheit"
-msgstr ""
+msgstr "Temperatur in Fahrenheit"
 
 msgid "Text outline"
-msgstr ""
+msgstr "Textumrandung"
 
 msgid "GPU throttling status"
-msgstr ""
+msgstr "GPU-Drosselungsstatus"
 
 msgid "Throttling in frame graph"
-msgstr ""
+msgstr "Drosselung im Frame-Graphen"
 
 msgid "Local time"
-msgstr ""
+msgstr "Ortszeit"
 
 msgid "Time without label"
-msgstr ""
+msgstr "Zeit ohne Bezeichnung"
 
 msgid "Force trilinear filtering"
-msgstr ""
+msgstr "Trilineare Filterung erzwingen"
 
 msgid "Automatic log uploads"
-msgstr ""
+msgstr "Automatischer Log-Upload"
 
 msgid "MangoHud version"
-msgstr ""
+msgstr "MangoHud-Version"
 
 msgid "Status vkBasalt"
-msgstr ""
+msgstr "Status von vkBasalt"
 
 msgid "Vulkan driver (radv/amdvlk)"
-msgstr ""
+msgstr "Vulkan-Treiber (radv/amdvlk)"
 
 msgid "Wine/Proton version"
-msgstr ""
+msgstr "Wine-/Proton-Version"
 
 msgid "Wine sync method"
-msgstr ""
+msgstr "Wine-Synchronisationsmethode"
 
 msgid "VRAM usage"
-msgstr ""
+msgstr "VRAM-Nutzung"
 
 msgid "Layout and limiter"
-msgstr ""
+msgstr "Layout und Limiter"
 
 msgid "Presets"
-msgstr ""
+msgstr "Voreinstellungen"
 
 msgid "Actions"
-msgstr ""
+msgstr "Aktionen"
 
 msgid "Use system config"
-msgstr ""
+msgstr "Systemkonfiguration verwenden"
 
 msgid "FPS only"
-msgstr ""
+msgstr "Nur FPS"
 
 msgid "Compact"
-msgstr ""
+msgstr "Kompakt"
 
 msgid "Extended"
-msgstr ""
+msgstr "Erweitert"
 
 msgid "Write system config"
-msgstr ""
+msgstr "Systemkonfiguration schreiben"
 
 msgid "Preview"
-msgstr ""
+msgstr "Vorschau"
 
 msgid "MangoHud switches"
-msgstr ""
+msgstr "MangoHud-Einstellungen"
 
 msgid "FPS limit"
-msgstr ""
+msgstr "FPS-Limit"
 
 msgid ""
 "Select one or more FPS presets. The values are saved into FPS_LIMIT and "
 "MangoHud will also show the active FPS limit."
 msgstr ""
+"Wähle eine oder mehrere FPS-Voreinstellungen aus. Die Werte werden in "
+"FPS_LIMIT gespeichert, und MangoHud zeigt zudem das aktive FPS-Limit an."
 
 msgid "Additional comma-separated MangoHud options not covered by the GUI."
 msgstr ""
+"Zusätzliche, durch Kommas getrennte MangoHud-Optionen, die nicht in "
+"Einstellungen present sind."
 
 msgid "Example: battery,gpu_junction_temp,fps_color=39f900"
-msgstr ""
+msgstr "Beispiel: battery,gpu_junction_temp,fps_color=39f900"
 
 msgid "All GPUs"
-msgstr ""
+msgstr "Alle GPUs"
 
 msgid "Don't use system config"
-msgstr ""
+msgstr "Systemkonfiguration nicht verwenden"
 
 msgid "Failed to read default MangoHud config."
-msgstr ""
+msgstr "Die Standard-MangoHud-Konfiguration konnte nicht gelesen werden."
 
 msgid "System MangoHud config has been written."
-msgstr ""
+msgstr "Die systemweite MangoHud-Konfiguration wurde geschrieben."
 
 msgid "Failed to write system MangoHud config."
-msgstr ""
+msgstr "Schreiben der systemweiten MangoHud-Konfiguration fehlgeschlagen."
 
 msgid "Failed to run preview."
-msgstr ""
+msgstr "Vorschau konnte nicht ausgeführt werden."
 
 msgid "Shaders"
-msgstr ""
+msgstr "Shader"
 
 msgid "AMD FidelityFX - Contrast Adaptive Sharpening"
-msgstr ""
+msgstr "AMD FidelityFX – Kontrastadaptive Schärfung"
 
 #, python-brace-format
 msgid "Sharpness: {0}"
-msgstr ""
+msgstr "Schärfe: {0}"
 
 msgid "Press a button to choose"
-msgstr ""
+msgstr "Klicke eine Taste zur Auswahl"
 
 #, python-brace-format
 msgid "Toggle key: {0}"
-msgstr ""
+msgstr "Umschalttaste: {0}"
 
 msgid "Prefix Manager"
-msgstr ""
+msgstr "Prefix-Manager"
 
 msgid "Set"
-msgstr ""
+msgstr "Auswahl"
 
 msgid "Libraries"
-msgstr ""
+msgstr "Bibliotheken"
 
 msgid "Fonts"
-msgstr ""
+msgstr "Schriftarten"
 
 msgid "Winetricks not found. Please try again."
-msgstr ""
+msgstr "Winetricks wurde nicht gefunden. Bitte versuche es erneut."
 
 msgid "No components selected."
-msgstr ""
+msgstr "Keine Komponenten ausgewählt."
 
 msgid "Installation failed. Check logs."
-msgstr ""
+msgstr "Installation fehlgeschlagen. Protokolle überprüfen."
 
 msgid "Components installed successfully."
-msgstr ""
+msgstr "Komponenten erfolgreich installiert."
 
 msgid "Launched"
-msgstr ""
+msgstr "Gestartet"
 
 msgid "Bluetooth PIN code"
-msgstr ""
+msgstr "Bluetooth-PIN-Code"
 
 msgid "Enter the Bluetooth PIN code shown on the device"
-msgstr ""
+msgstr "Gib den auf dem Gerät angezeigten Bluetooth-PIN-Code ein"
 
 msgid "Bluetooth passkey"
-msgstr ""
+msgstr "Bluetooth-Passkey"
 
 msgid "Enter the Bluetooth passkey shown on the device"
-msgstr ""
+msgstr "Gib den auf dem Gerät angezeigten Bluetooth-Passkey ein"
 
 #, python-brace-format
 msgid "Confirm the passkey on devices: {0}"
-msgstr ""
+msgstr "Bestätige den Passkey auf dem Gerät: {0}"
 
 msgid "Bluetooth pairing"
-msgstr ""
+msgstr "Bluetooth-Kopplung"
 
 msgid "Connected"
-msgstr ""
+msgstr "Verbunden"
 
 msgid "Paired"
-msgstr ""
+msgstr "Gekoppelt"
 
 msgid "Available"
-msgstr ""
+msgstr "Verfügbar"
 
 msgid "Disconnected"
-msgstr ""
+msgstr "Getrennt"
 
 msgid "Protected"
-msgstr ""
+msgstr "Geschützt"
 
 msgid "Saved"
-msgstr ""
+msgstr "Gespeichert"
 
 msgid "Mounted"
-msgstr ""
+msgstr "Eingebunden"
 
 msgid "Not mounted"
-msgstr ""
+msgstr "Nicht eingebunden"
 
 msgid "Search…"
 msgstr "Suchen…"
 
 msgid "Volume"
-msgstr ""
+msgstr "Lautstärke"
 
 msgid "Fullscreen"
-msgstr ""
+msgstr "Vollbild"
 
 msgid "Mouse Emulation"
-msgstr ""
+msgstr "Mausemulation"
 
 msgid "Connect"
-msgstr ""
+msgstr "Verbinden"
 
 msgid "Disconnect"
-msgstr ""
+msgstr "Trennen"
 
 msgid "Enable/Disable"
-msgstr ""
+msgstr "Aktivieren/Deaktivieren"
 
 msgid "Refresh"
-msgstr ""
+msgstr "Aktualisieren"
 
 msgid "Add VPN"
-msgstr ""
+msgstr "VPN hinzufügen"
 
 msgid "Scan"
-msgstr ""
+msgstr "Durchsuchen"
 
 msgid "Mount"
-msgstr ""
+msgstr "Einbinden"
 
 msgid "Unmount"
-msgstr ""
+msgstr "Entbinden"
 
 msgid "Set output"
-msgstr ""
+msgstr "Ausgabe festlegen"
 
 msgid "Quick Launch"
-msgstr ""
+msgstr "Schnellstart"
 
 msgid "Library Settings"
-msgstr ""
+msgstr "Bibliothekseinstellungen"
 
 msgid "Last launch"
-msgstr ""
+msgstr "Letzter Start"
 
 msgid "Time spent"
-msgstr ""
+msgstr "Verbrachte Zeit"
 
 msgid "Alphabetical"
-msgstr ""
+msgstr "Alphabetisch"
 
 msgid "Sort Method:"
-msgstr ""
+msgstr "Sortiermethode:"
 
 msgid "All"
-msgstr ""
+msgstr "Alle"
 
 msgid "Display Filter:"
-msgstr ""
+msgstr "Anzeigefilter:"
 
 msgid "Detailed"
-msgstr ""
+msgstr "Detailliert"
 
 msgid "Hidden"
-msgstr ""
+msgstr "Versteckt"
 
 msgid "Badge View Type:"
-msgstr ""
+msgstr "Anzeigetyp von Titelbildern:"
 
 msgid "Refreshing…"
 msgstr "Aktualisieren…"
 
 msgid "PortProton Settings"
-msgstr ""
+msgstr "PortProton-Einstellungen"
 
 msgid "Brief"
-msgstr ""
+msgstr "Vereinfacht"
 
 msgid "Time Detail Level:"
-msgstr ""
+msgstr "Zeitformat:"
 
 msgid "Interface Settings"
-msgstr ""
+msgstr "Interface-Einstellungen"
 
 msgid "Tray Menu Type:"
-msgstr ""
+msgstr "Typ des Tray-Menüs:"
 
 msgid "Auto"
-msgstr ""
+msgstr "Auto"
 
 msgid "Gamepad Type:"
-msgstr ""
+msgstr "Gamepad-Typ:"
 
 msgid "Launch Application in Fullscreen"
-msgstr ""
+msgstr "Anwendung im Vollbildmodus starten"
 
 msgid "Auto Fullscreen on Gamepad connected"
-msgstr ""
+msgstr "Automatischer Vollbildmodus bei angeschlossenem Gamepad"
 
 msgid "Minimize to tray on close"
-msgstr ""
+msgstr "Beim Schließen in die Taskleiste minimieren"
 
 msgid "Run at system startup"
-msgstr ""
+msgstr "Beim Systemstart ausführen"
 
 msgid "Start in tray"
-msgstr ""
+msgstr "Minimiert im Tray starten"
 
 msgid "Hide Auto-Install Tab"
-msgstr ""
+msgstr "Tab „Automatische Installation“ ausblenden"
 
 msgid "Disable runtime download"
-msgstr ""
+msgstr "Runtime-Download deaktivieren"
 
 msgid "Add to Steam compatibility tools"
-msgstr ""
+msgstr "Zu den Steam-Kompatibilitätswerkzeugen hinzufügen"
 
 msgid "Download WINE/Proton to Steam"
-msgstr ""
+msgstr "Lade WINE/Proton zu Steam herunter"
 
 msgid "Economy mode"
-msgstr ""
+msgstr "Energiesparmodus"
 
 msgid "Download mirror:"
-msgstr ""
+msgstr "Download-Quelle:"
 
 msgid "Auto download PPDB from"
-msgstr ""
+msgstr "Automatischer Download von PPDB von"
 
 msgid "Force system DPI for Wine"
-msgstr ""
+msgstr "System-DPI für Wine erzwingen"
 
 msgid "Download Settings"
-msgstr ""
+msgstr "Download-Einstellungen"
 
 msgid "Enable Theme Store from"
-msgstr ""
+msgstr "Theme Store aktivieren von"
 
 msgid "third-party themes may be unsafe"
-msgstr ""
+msgstr "Themes von Drittanbietern können unsicher sein"
 
 msgid "Hardware Settings"
-msgstr ""
+msgstr "Hardware-Einstellungen"
 
 msgid "GPU to use:"
-msgstr ""
+msgstr "Zu verwendende GPU:"
 
 msgid "Proxy Settings"
-msgstr ""
+msgstr "Proxy-Einstellungen"
 
 msgid "Proxy URL"
-msgstr ""
+msgstr "Proxy-URL"
 
 msgid "Proxy URL:"
-msgstr ""
+msgstr "Proxy-URL:"
 
 msgid "Proxy Username"
-msgstr ""
+msgstr "Proxy-Benutzername"
 
 msgid "Proxy Username:"
-msgstr ""
+msgstr "Proxy-Benutzername:"
 
 msgid "Proxy Password"
-msgstr ""
+msgstr "Proxy-Passwort"
 
 msgid "Proxy Password:"
-msgstr ""
+msgstr "Proxy-Passwort:"
 
 msgid "Save Settings"
-msgstr ""
+msgstr "Einstellungen speichern"
 
 msgid "Reset Settings"
-msgstr ""
+msgstr "Einstellungen zurücksetzen"
 
 msgid "Migrate legacy shortcuts"
-msgstr ""
+msgstr "Ältere Verknüpfungen migrieren"
 
 msgid "Clear Cache"
-msgstr ""
+msgstr "Cache leeren"
 
 msgid "Confirm Reset"
-msgstr ""
+msgstr "Zurücksetzen bestätigen"
 
 msgid "Are you sure you want to reset all settings? This action cannot be undone."
 msgstr ""
+"Sollen alle Einstellungen zurückgesetzt werden? Dieser Vorgang kann nicht "
+"rückgängig gemacht werden."
 
 msgid "Migrate old PortProton shortcuts to PortProtonQt format?"
-msgstr ""
+msgstr "Alte PortProton-Verknüpfungen in das PortProtonQt-Format migrieren?"
 
 msgid "Confirm Clear Cache"
-msgstr ""
+msgstr "Cache-Löschung bestätigen"
 
 msgid "Are you sure you want to clear the cache? This action cannot be undone."
 msgstr ""
+"Soll der Cache wirklich gelöscht werden? Dieser Vorgang kann nicht "
+"rückgängig gemacht werden."
 
 msgid "Failed to update xdg-autostart entry."
-msgstr ""
+msgstr "Der xdg-autostart-Eintrag konnte nicht aktualisiert werden."
 
 #, python-brace-format
 msgid "Enter password for: {0}"
-msgstr ""
+msgstr "Passwort eingeben für: {0}"
 
 msgid "Storage"
-msgstr ""
+msgstr "Datenträger"
 
 msgid "Audio"
-msgstr ""
+msgstr "Audio"
 
 msgid "Power"
-msgstr ""
+msgstr "Leistung"
 
 msgid "Network"
-msgstr ""
+msgstr "Netzwerk"
 
 msgid "Security"
-msgstr ""
+msgstr "Sicherheit"
 
 msgid "Signal"
-msgstr ""
+msgstr "Signal"
 
 msgid "State"
-msgstr ""
+msgstr "Zustand"
 
 msgid "Forget"
-msgstr ""
+msgstr "Vergessen"
 
 msgid "Share"
-msgstr ""
+msgstr "Teilen"
 
 msgid "Profile"
-msgstr ""
+msgstr "Profil"
 
 msgid "Type"
-msgstr ""
+msgstr "Typ"
 
 msgid "Add"
-msgstr ""
+msgstr "Hinzufügen"
 
 msgid "Device"
-msgstr ""
+msgstr "Gerät"
 
 msgid "Battery"
-msgstr ""
+msgstr "Akku"
 
 msgid "Volume label"
-msgstr ""
+msgstr "Volume-Bezeichnung"
 
 msgid "Used"
-msgstr ""
+msgstr "Benutzt"
 
 msgid "Mount point"
-msgstr ""
+msgstr "Einhängepunkt"
 
 msgid "Playback devices"
-msgstr ""
+msgstr "Wiedergabegeräte"
 
 msgid "Output"
-msgstr ""
+msgstr "Ausgang"
 
 msgid "Logout"
-msgstr ""
+msgstr "Abmelden"
 
 msgid "Reboot"
-msgstr ""
+msgstr "Neustart"
 
 msgid "Shutdown"
-msgstr ""
+msgstr "Ausschalten"
 
 msgid "Suspend"
-msgstr ""
+msgstr "Ruhemodus"
 
 msgid "Selected"
-msgstr ""
+msgstr "Ausgewählt"
 
 msgid "Not selected"
-msgstr ""
+msgstr "Nicht ausgewählt"
 
 msgid "Theme Store…"
 msgstr "Themenladen…"
 
 #, python-brace-format
 msgid "by {0}"
-msgstr ""
+msgstr "von {0}"
 
 msgid "Select Theme:"
-msgstr ""
+msgstr "Theme auswählen:"
 
 msgid "Dark"
-msgstr ""
+msgstr "Dunkel"
 
 msgid "Light"
-msgstr ""
+msgstr "Hell"
 
 msgid "Apply Theme"
-msgstr ""
+msgstr "Theme anwenden"
 
 msgid "No link"
-msgstr ""
+msgstr "Kein Link"
 
 msgid "Description:"
-msgstr ""
+msgstr "Beschreibung:"
 
 msgid "Author:"
-msgstr ""
+msgstr "Autor:"
 
 msgid "Link:"
-msgstr ""
+msgstr "Link:"
 
 msgid "Most voted"
-msgstr ""
+msgstr "Populär"
 
 msgid "Most downloaded"
 msgstr "Meist heruntergeladen"
 
 msgid "Recently updated"
-msgstr ""
+msgstr "Kürzlich aktualisiert"
 
 msgid "Name (A-Z)"
-msgstr ""
+msgstr "Name (A–Z)"
 
 msgid "Loading…"
 msgstr "Laden…"
 
 msgid "Failed to load themes"
-msgstr ""
+msgstr "Laden der Themes fehlgeschlagen"
 
 msgid "Failed to download theme"
-msgstr ""
+msgstr "Herunterladen des Themes fehlgeschlagen"
 
 msgid "Downloading…"
 msgstr "Herunterladen…"
@@ -2251,82 +2259,82 @@ msgid "Downloading… {0}%"
 msgstr "Herunterladen… {0}%"
 
 msgid "Failed to install theme"
-msgstr ""
+msgstr "Installation des Themes fehlgeschlagen"
 
 msgid "Prefix:"
-msgstr ""
+msgstr "Prefix:"
 
 msgid "Use by default"
-msgstr ""
+msgstr "Standardmäßig verwenden"
 
 msgid "Wine Configuration"
-msgstr ""
+msgstr "Wine-Konfiguration"
 
 msgid "Registry Editor"
-msgstr ""
+msgstr "Registry-Bearbeitung"
 
 msgid "Command Prompt"
-msgstr ""
+msgstr "Eingabeaufforderung"
 
 msgid "Uninstaller"
-msgstr ""
+msgstr "Deinstallationsprogramm"
 
 msgid "Create Prefix Backup"
-msgstr ""
+msgstr "Prefix-Backup erstellen"
 
 msgid "Load Prefix Backup"
-msgstr ""
+msgstr "Prefix-Backup laden"
 
 msgid "Delete Prefix"
-msgstr ""
+msgstr "Prefix löschen"
 
 msgid "Clear Prefix"
-msgstr ""
+msgstr "Prefix zurücksetzten"
 
 msgid "Failed to start process."
-msgstr ""
+msgstr "Der Prozess konnte nicht gestartet werden."
 
 #, python-brace-format
 msgid "Are you sure you want to clear prefix '{}'?"
-msgstr ""
+msgstr "Soll das Prefix '{}' wirklich zurückgesetzt werden?"
 
 msgid "Failed to start prefix clear process."
-msgstr ""
+msgstr "Der Prozess zum Rücksetzen des Prefixes konnte nicht gestartet werden."
 
 msgid "Prefix cleared successfully."
-msgstr ""
+msgstr "Prefix erfolgreich gelöscht."
 
 #, python-brace-format
 msgid "Prefix clear failed with exit code {}."
-msgstr ""
+msgstr "Das Rücksetzen des Prefixes ist mit dem Exit-Code {} fehlgeschlagen."
 
 #, python-brace-format
 msgid "Failed to run clear prefix command: {}"
-msgstr ""
+msgstr "Ausführung des Befehls zum Rücksetzen des Prefixes fehlgeschlagen: {}"
 
 msgid "Failed to start restore process."
-msgstr ""
+msgstr "Der Wiederherstellungsvorgang konnte nicht gestartet werden."
 
 msgid "Prefix backup completed."
-msgstr ""
+msgstr "Prefix-Backup abgeschlossen."
 
 msgid "Prefix backup failed."
-msgstr ""
+msgstr "Das Backup des Prefixes ist fehlgeschlagen."
 
 msgid "Prefix restore completed."
-msgstr ""
+msgstr "Wiederherstellung des Prefixes abgeschlossen."
 
 msgid "Prefix restore failed."
-msgstr ""
+msgstr "Die Wiederherstellung des Prefixes ist fehlgeschlagen."
 
 #, python-brace-format
 msgid "Are you sure you want to delete prefix '{}'?"
-msgstr ""
+msgstr "Soll das Prefix '{}' wirklich gelöscht werden?"
 
 #, python-brace-format
 msgid "Prefix '{}' deleted."
-msgstr ""
+msgstr "Prefix '{}' gelöscht."
 
 #, python-brace-format
 msgid "Failed to delete prefix: {}"
-msgstr ""
+msgstr "Löschen des Prefixes fehlgeschlagen: {}"

@@ -740,6 +740,7 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
 
         enable_theme_store = self.enableThemeStoreCheckBox.isChecked()
         ui_config.set_enable_theme_store(enable_theme_store)
+        self._refresh_theme_store_visibility()
 
         # Save GPU selection to user.conf (only if the combo box exists)
         if hasattr(self, 'gpuCombo') and self.gpuCombo.count() > 1:

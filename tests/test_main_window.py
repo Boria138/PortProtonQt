@@ -14,7 +14,10 @@ from portprotonqt.tabs import (
 from portprotonqt.tabs.autoinstall_tab import MainWindowAutoInstallTabMixin as AutoInstallMixin
 from portprotonqt.tabs.library_tab import MainWindowLibraryTabMixin as LibraryMixin
 from portprotonqt.tabs.settings_tab import MainWindowSettingsTabMixin as SettingsMixin
-from portprotonqt.tabs.theme_tab import MainWindowThemeTabMixin as ThemeMixin
+from portprotonqt.tabs.theme_tab import (
+    THEME_STORE_ITEM,
+    MainWindowThemeTabMixin as ThemeMixin,
+)
 from portprotonqt.tabs.wine_tab import MainWindowWineTabMixin as WineMixin
 
 
@@ -103,6 +106,7 @@ TAB_METHODS = {
     ),
     ThemeMixin: (
         "createThemeTab",
+        "_refresh_theme_store_visibility",
         "restart_application",
         "restore_state",
     ),
@@ -148,6 +152,60 @@ def test_meson_installs_tab_modules() -> None:
 
     for file_name in expected_files:
         assert file_name in meson_build
+
+
+class FakeComboBox:
+    def __init__(self, items: list[tuple[str, object]], current_index: int = 0) -> None:
+        self.items = items
+        self.current_index = current_index
+
+    def findData(self, value: object) -> int:
+        return next(
+            (index for index, item in enumerate(self.items) if item[1] == value),
+            -1,
+        )
+
+    def addItem(self, text: str, data: object) -> None:
+        self.items.append((text, data))
+
+    def currentIndex(self) -> int:
+        return self.current_index
+
+    def setCurrentIndex(self, index: int) -> None:
+        self.current_index = index
+
+    def removeItem(self, index: int) -> None:
+        self.items.pop(index)
+
+
+def test_refresh_theme_store_visibility_adds_store(monkeypatch: Any) -> None:
+    window: Any = MainWindow.__new__(MainWindow)
+    window.themesCombo = FakeComboBox([("Standard", None)])
+    monkeypatch.setattr(
+        "portprotonqt.tabs.theme_tab.ui_config.get_enable_theme_store",
+        lambda: True,
+    )
+
+    window._refresh_theme_store_visibility()
+
+    assert window.themesCombo.findData(THEME_STORE_ITEM) == 1
+
+
+def test_refresh_theme_store_visibility_removes_selected_store(monkeypatch: Any) -> None:
+    window: Any = MainWindow.__new__(MainWindow)
+    window.themesCombo = FakeComboBox(
+        [("Standard", None), (THEME_STORE_ITEM, THEME_STORE_ITEM)],
+        current_index=1,
+    )
+    monkeypatch.setattr(
+        "portprotonqt.tabs.theme_tab.ui_config.get_enable_theme_store",
+        lambda: False,
+    )
+
+    window._refresh_theme_store_visibility()
+
+    assert window.themesCombo.findData(THEME_STORE_ITEM) == -1
+    assert window.themesCombo.currentIndex() == 0
 
 
 def test_process_portproton_desktop_calls_callback_without_asset_download(
