@@ -2049,7 +2049,7 @@ msgstr ""
 msgid "Download Settings"
 msgstr ""
 
-msgid "Enable Theme Store from"
+msgid "Enable Theme Store from %(source)s (%(warning)s)"
 msgstr ""
 
 msgid "third-party themes may be unsafe"

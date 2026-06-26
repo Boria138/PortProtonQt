@@ -437,7 +437,12 @@ class MainWindowSettingsTabMixin(_MainWindowTypingBase):
         self.enableThemeStoreCheckBox = QCheckBox()
         self.enableThemeStoreCheckBox.setStyleSheet(self.theme.CHECKBOX_STYLE)
         self.enableThemeStoreCheckBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.enableThemeStoreTitle = QLabel(_("Enable Theme Store from") + " ppdb.linux-gaming.ru (" + _("third-party themes may be unsafe") + ")")
+        self.enableThemeStoreTitle = QLabel(
+            _("Enable Theme Store from %(source)s (%(warning)s)") % {
+                "source": "ppdb.linux-gaming.ru",
+                "warning": _("third-party themes may be unsafe"),
+            }
+        )
         self.enableThemeStoreTitle.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.enableThemeStoreTitle.setStyleSheet(self.theme.SETTINGS_TITLE_CHECKBOX_STYLE)
         self.enableThemeStoreTitle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
