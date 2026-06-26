@@ -14,8 +14,8 @@ from portprotonqt.tabs import (
 from portprotonqt.tabs.autoinstall_tab import MainWindowAutoInstallTabMixin as AutoInstallMixin
 from portprotonqt.tabs.library_tab import MainWindowLibraryTabMixin as LibraryMixin
 from portprotonqt.tabs.settings_tab import MainWindowSettingsTabMixin as SettingsMixin
+from portprotonqt.tabs.theme_store import THEME_STORE_ITEM, ThemeStoreMixin
 from portprotonqt.tabs.theme_tab import (
-    THEME_STORE_ITEM,
     MainWindowThemeTabMixin as ThemeMixin,
 )
 from portprotonqt.tabs.wine_tab import MainWindowWineTabMixin as WineMixin
@@ -112,6 +112,15 @@ TAB_METHODS = {
     ),
 }
 
+THEME_STORE_METHODS = (
+    "_create_theme_store_page",
+    "_show_theme_store",
+    "_load_theme_store",
+    "_on_theme_store_slider_released",
+    "_set_theme_store_preview_variant",
+    "_download_current_store_theme",
+)
+
 
 def test_main_window_inherits_all_tab_mixins() -> None:
     expected_mixins = (
@@ -133,6 +142,13 @@ def test_tab_methods_resolve_from_expected_modules() -> None:
             assert method_name not in MainWindow.__dict__
 
 
+def test_theme_store_methods_resolve_from_store_mixin() -> None:
+    assert issubclass(ThemeMixin, ThemeStoreMixin)
+    for method_name in THEME_STORE_METHODS:
+        assert getattr(MainWindow, method_name) is getattr(ThemeStoreMixin, method_name)
+        assert method_name not in ThemeMixin.__dict__
+
+
 def test_tabs_package_exports_tab_mixins() -> None:
     import portprotonqt.tabs as tabs
 
@@ -146,6 +162,8 @@ def test_meson_installs_tab_modules() -> None:
         "tabs/autoinstall_tab.py",
         "tabs/library_tab.py",
         "tabs/settings_tab.py",
+        "tabs/theme_store.py",
+        "tabs/theme_store_workers.py",
         "tabs/theme_tab.py",
         "tabs/wine_tab.py",
     )
