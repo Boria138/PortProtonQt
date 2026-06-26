@@ -359,7 +359,7 @@ MAIN_WINDOW_STYLE = f"""
     }}
     QPushButton {{
         background: {color_surface};
-        border: {border_medium} rgba(255, 255, 255, 0.01);
+        border: {border_medium} {color_border_subtle};
         border-radius: {border_radius_small};
         color: {color_text_dark};
         font-size: {font_size_normal};
@@ -488,7 +488,7 @@ THEME_STORE_SCROLL_STYLE = f"""
 THEME_STORE_CARD_STYLE = f"""
     QFrame#themeStoreCard {{
         background: {color_surface};
-        border: {border_thin} rgba(255, 255, 255, 0.2);
+        border: {border_thin} {color_border_light};
         border-radius: {border_radius_small};
     }}
     QFrame#themeStoreCard:hover {{
@@ -548,7 +548,7 @@ THEME_STORE_DESCRIPTION_STYLE = f"""
     QTextBrowser {{
         color: {color_text_dark};
         background: {color_surface};
-        border: {border_thin} rgba(255, 255, 255, 0.2);
+        border: {border_thin} {color_border_light};
         border-radius: {border_radius_small};
         font-family: '{font_family}';
         font-size: {font_size_normal};
@@ -570,7 +570,7 @@ CONTENT_STYLE = f"""
         font-size: {font_size_normal};
         color: {color_text_dark};
         background-color: none;
-        border-bottom: {border_thin} rgba(255, 255, 255, 0.2);
+        border-bottom: {border_thin} {color_border_light};
         padding-bottom: 15px;
     }}
 """
@@ -579,8 +579,8 @@ LIBRARY_WIDGET_STYLE = f"""
     QWidget {{
         background: qradialgradient(
         cx:0.5, cy:0.5, radius:0.8,
-            stop:0 #cea2fa,
-            stop:1 #70b8ff
+            stop:0 {color_bg},
+            stop:1 {color_surface_elevated}
     );
         border-radius: 0px;
     }}
@@ -741,8 +741,8 @@ GAME_CARD_WINDOW_STYLE = f"""
         border-radius: {border_radius_card};
         background: qradialgradient(
         cx:0.5, cy:0.5, radius:0.8,
-            stop:0 rgba(255, 255, 255, 1),
-            stop:1 rgba(210, 211, 219, 0.5)
+            stop:0 {color_bg},
+            stop:1 {color_surface_elevated}
     );
         border: {border_none} {color_transparent};
     }}
@@ -836,7 +836,7 @@ COVER_FRAME_STYLE = f"""
     QFrame {{
         background: qradialgradient(
         cx:0.5, cy:0.5, radius:0.8,
-            stop:0 #E9ECEF,
+            stop:0 {color_surface_elevated},
             stop:1 {color_surface_light}
         );
         border-radius: {border_radius_large};
@@ -860,7 +860,7 @@ DETAILS_WIDGET_STYLE = f"""
         QFrame {{
             background: qradialgradient(
             cx:0.5, cy:0.5, radius:0.8,
-                stop:0 #E9ECEF,
+                stop:0 {color_surface_elevated},
                 stop:1 {color_surface_light}
             );
             border-radius: {border_radius_large};
@@ -869,7 +869,7 @@ DETAILS_WIDGET_STYLE = f"""
         QWidget#child {{
             background: qradialgradient(
             cx:0.5, cy:0.5, radius:0.8,
-                stop:0 #E9ECEF,
+                stop:0 {color_surface_elevated},
                 stop:1 {color_surface_light}
             );
             border-radius: {border_radius_large};
@@ -881,7 +881,7 @@ COMPACT_DETAILS_WIDGET_STYLE = f"""
         QFrame, QWidget {{
             background: qradialgradient(
             cx:0.5, cy:0.5, radius:0.8,
-                stop:0 #E9ECEF,
+                stop:0 {color_surface_elevated},
                 stop:1 {color_surface_light}
             );
             border-radius: {border_radius_large};
@@ -904,10 +904,10 @@ COMPACT_DETAIL_PAGE_DESC_STYLE = f"font-family: '{font_family}'; font-size: {fon
 COMPACT_PLAYTIME_WIDGET_STYLE = f"background: {color_transparent}; border-radius: {border_radius_large}; padding: 10px;"
 
 # ADDITIONAL INFO STYLES ON GAMES PAGE
-LAST_LAUNCH_TITLE_STYLE = f"max-height: 16px; background: qradialgradient(cx:0.5, cy:0.5, radius:0.8,stop:0 #E9ECEF,stop:1 {color_surface_light}); font-family: '{font_family}'; font-size: 11px; color: {color_text_dark}; text-transform: uppercase; letter-spacing: 0.75px;"
-LAST_LAUNCH_VALUE_STYLE = f"height: 16px; background: qradialgradient(cx:0.5, cy:0.5, radius:0.8,stop:0 #E9ECEF,stop:1 {color_surface_light}); font-family: '{font_family}'; font-size: 13px; color: {color_text_dark}; font-weight: 600; letter-spacing: 0.75px;"
-PLAY_TIME_TITLE_STYLE = f"max-height: 16px; background: qradialgradient(cx:0.5, cy:0.5, radius:0.8,stop:0 #E9ECEF,stop:1 {color_surface_light}); font-family: '{font_family}'; font-size: 11px; color: {color_text_dark}; text-transform: uppercase; letter-spacing: 0.75px;"
-PLAY_TIME_VALUE_STYLE = f"height: 16px; background: qradialgradient(cx:0.5, cy:0.5, radius:0.8,stop:0 #E9ECEF,stop:1 {color_surface_light}); font-family: '{font_family}'; font-size: 13px; color: {color_text_dark}; font-weight: 600; letter-spacing: 0.75px;"
+LAST_LAUNCH_TITLE_STYLE = f"max-height: 16px; background: qradialgradient(cx:0.5, cy:0.5, radius:0.8,stop:0 {color_surface_elevated},stop:1 {color_surface_light}); font-family: '{font_family}'; font-size: 11px; color: {color_text_dark}; text-transform: uppercase; letter-spacing: 0.75px;"
+LAST_LAUNCH_VALUE_STYLE = f"height: 16px; background: qradialgradient(cx:0.5, cy:0.5, radius:0.8,stop:0 {color_surface_elevated},stop:1 {color_surface_light}); font-family: '{font_family}'; font-size: 13px; color: {color_text_dark}; font-weight: 600; letter-spacing: 0.75px;"
+PLAY_TIME_TITLE_STYLE = f"max-height: 16px; background: qradialgradient(cx:0.5, cy:0.5, radius:0.8,stop:0 {color_surface_elevated},stop:1 {color_surface_light}); font-family: '{font_family}'; font-size: 11px; color: {color_text_dark}; text-transform: uppercase; letter-spacing: 0.75px;"
+PLAY_TIME_VALUE_STYLE = f"height: 16px; background: qradialgradient(cx:0.5, cy:0.5, radius:0.8,stop:0 {color_surface_elevated},stop:1 {color_surface_light}); font-family: '{font_family}'; font-size: 13px; color: {color_text_dark}; font-weight: 600; letter-spacing: 0.75px;"
 GAMEPAD_SUPPORT_VALUE_STYLE = f"""
     font-family: '{font_family}'; font-size: {font_size_normal}; color: {color_gamepad_supported};
     font-weight: bold; background: transparent;
@@ -919,7 +919,7 @@ PLAY_BUTTON_STYLE = f"""
     QPushButton {{
         background: qradialgradient(
         cx:0.5, cy:0.5, radius:0.8,
-            stop:0 #E9ECEF,
+            stop:0 {color_surface_elevated},
             stop:1 {color_surface_light}
         );
         border: {border_thin} {color_text};
@@ -953,7 +953,7 @@ ADDGAME_BACK_BUTTON_STYLE = f"""
     QPushButton {{
         background: qradialgradient(
         cx:0.5, cy:0.5, radius:0.8,
-            stop:0 #E9ECEF,
+            stop:0 {color_surface_elevated},
             stop:1 {color_surface_light}
         );
         border: {border_thin} {color_text};
@@ -981,7 +981,7 @@ LIBRARY_CONTROLS_BUTTON_STYLE = f"""
     QPushButton {{
         background: qradialgradient(
         cx:0.5, cy:0.5, radius:0.8,
-            stop:0 #E9ECEF,
+            stop:0 {color_surface_elevated},
             stop:1 {color_surface_light}
         );
         border: {border_thin} {color_text};
@@ -999,7 +999,7 @@ LIBRARY_CONTROLS_BUTTON_STYLE = f"""
     QPushButton:checked {{
         background: qradialgradient(
         cx:0.5, cy:0.5, radius:0.8,
-            stop:0 #E9ECEF,
+            stop:0 {color_surface_elevated},
             stop:1 {color_surface_light}
         );
         border: {border_thin} {color_accent};
@@ -1036,7 +1036,7 @@ LIBRARY_FILTER_COMBOBOX_STYLE = f"""
     QComboBox::drop-down {{
         subcontrol-origin: padding;
         subcontrol-position: center right;
-        border-left: {border_thin} rgba(255, 255, 255, 0.05);
+        border-left: {border_thin} {color_border_faint};
         padding: 12px;
         height: 12px;
         width: 12px;
@@ -1304,7 +1304,7 @@ COMBOBOX_STYLE = f"""
     QComboBox::drop-down {{
         subcontrol-origin: padding;
         subcontrol-position: center right;
-        border-left: {border_thin} rgba(255, 255, 255, 0.05);
+        border-left: {border_thin} {color_border_faint};
         padding: 12px;
         height: 12px;
         width: 12px;
@@ -1383,7 +1383,7 @@ CHECKBOX_STYLE = f"""
     QCheckBox::indicator {{
         width: 24px;
         height: 24px;
-        border: {border_medium} #bfbfbf;
+        border: {border_medium} {color_scrollbar_handle};
         border-radius: {border_radius_small};
         background: {color_surface};
     }}
@@ -1411,13 +1411,13 @@ CHECKBOX_STYLE = f"""
     QTableWidget::indicator {{
         width: 24px;
         height: 24px;
-        border: {border_medium} #bfbfbf;
+        border: {border_medium} {color_scrollbar_handle};
         border-radius: {border_radius_small};
         background: {color_surface};
     }}
     QTableWidget::indicator:unchecked {{
         background: {color_surface};
-        border: {border_medium} #bfbfbf;
+        border: {border_medium} {color_scrollbar_handle};
         image: none;
     }}
     QTableWidget::indicator:checked {{
@@ -1426,11 +1426,11 @@ CHECKBOX_STYLE = f"""
         border: {border_medium} {color_accent};
     }}
     QTableWidget::indicator:hover {{
-        background: rgba(255, 255, 255, 0.2);
+        background: {color_checkbox_hover_bg};
         border: {border_medium} {color_accent};
     }}
     QTableWidget::indicator:focus {{
-        background: rgba(255, 255, 255, 0.2);
+        background: {color_checkbox_hover_bg};
         border: {border_medium} {color_accent};
     }}
     QTableWidget::indicator:disabled {{
@@ -1447,7 +1447,7 @@ CHECKBOX_STYLE = f"""
 LINE_EDIT_STYLE = f"""
     QLineEdit {{
         background: {color_surface};
-        border: {border_medium} rgba(255, 255, 255, 0.01);
+        border: {border_medium} {color_border_subtle};
         border-radius: {border_radius_small};
         height: 34px;
         padding-left: 12px;
@@ -1723,7 +1723,7 @@ CONTEXT_MENU_STYLE = f"""
     QMenu::item:focus {{
         background: {color_accent};
         color: {color_text_dark};
-        border: {border_thin} rgba(255, 255, 255, 0.3);
+        border: {border_thin} {color_border_light};
         border-radius: {border_radius_small};
     }}
     QMenu::separator {{
