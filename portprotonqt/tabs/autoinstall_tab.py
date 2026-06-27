@@ -217,7 +217,6 @@ class MainWindowAutoInstallTabMixin(_MainWindowTypingBase):
         ppai_url: str,
     ) -> None:
         def on_script_ready(script_path: str) -> None:
-            self.autoInstallScriptLoadThread = None
             if script_path:
                 game_data["exec_line"] = f"autoinstall:{script_path}"
             self.detail_page_manager.openAutoInstallDetailPage(game_data)
@@ -233,6 +232,9 @@ class MainWindowAutoInstallTabMixin(_MainWindowTypingBase):
         self.autoInstallScriptLoadThread = self.portproton_api.start_autoinstall_script_download(
             ppai_url,
             on_script_ready,
+        )
+        self.autoInstallScriptLoadThread.finished.connect(
+            lambda: setattr(self, "autoInstallScriptLoadThread", None)
         )
 
     def _setup_autoinstall_search_animation(self) -> None:

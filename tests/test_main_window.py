@@ -219,6 +219,31 @@ class FakeTimer:
         self.interval = interval
 
 
+class FakeSignal:
+    def __init__(self) -> None:
+        self._callbacks: list[Any] = []
+
+    def connect(self, callback: Any) -> None:
+        self._callbacks.append(callback)
+
+    def emit(self) -> None:
+        for callback in self._callbacks:
+            callback()
+
+
+class FakeWorker:
+    def __init__(self) -> None:
+        self.finished = FakeSignal()
+
+
+class FakeDetailPageManager:
+    def __init__(self) -> None:
+        self.opened_data: dict | None = None
+
+    def openAutoInstallDetailPage(self, game_data: dict) -> None:
+        self.opened_data = dict(game_data)
+
+
 def test_refresh_theme_store_visibility_adds_store(monkeypatch: Any) -> None:
     window: Any = MainWindow.__new__(MainWindow)
     window.themesCombo = FakeComboBox([("Standard", None)])
@@ -247,6 +272,53 @@ def test_refresh_theme_store_visibility_removes_selected_store(monkeypatch: Any)
 
     assert window.themesCombo.findData(THEME_STORE_ITEM) == -1
     assert window.themesCombo.currentIndex() == 0
+
+
+def test_autoinstall_script_thread_reference_clears_after_thread_finished() -> None:
+    class FakePortProtonAPI:
+        def __init__(self) -> None:
+            self.script_callback: Any = None
+            self.script_worker = FakeWorker()
+            self.custom_data_worker = FakeWorker()
+
+        def start_autoinstall_script_download(
+            self,
+            _url: str,
+            callback: Any,
+        ) -> FakeWorker:
+            self.script_callback = callback
+            return self.script_worker
+
+        def start_autoinstall_custom_data_write(
+            self,
+            _path: str,
+            _game_data: dict,
+        ) -> FakeWorker:
+            return self.custom_data_worker
+
+    api = FakePortProtonAPI()
+    window: Any = MainWindow.__new__(MainWindow)
+    window.portproton_api = api
+    window.detail_page_manager = FakeDetailPageManager()
+    game_data = {"exec_line": "autoinstall:https://example.org/game.ppai"}
+
+    window._open_autoinstall_card_after_script_download(
+        game_data,
+        "https://example.org/game.ppai",
+    )
+    api.script_callback("/tmp/game.ppai")
+
+    assert window.autoInstallScriptLoadThread is api.script_worker
+    assert window.detail_page_manager.opened_data == {
+        "exec_line": "autoinstall:/tmp/game.ppai",
+    }
+    assert window.autoInstallCustomDataThread is api.custom_data_worker
+
+    api.script_worker.finished.emit()
+    api.custom_data_worker.finished.emit()
+
+    assert window.autoInstallScriptLoadThread is None
+    assert window.autoInstallCustomDataThread is None
 
 
 def test_toggle_game_replaces_invalid_launch_output_bytes(

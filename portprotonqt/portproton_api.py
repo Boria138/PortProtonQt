@@ -346,16 +346,35 @@ class PortProtonAPI:
         if not script_path:
             return ""
 
-        temp_path = f"{script_path}.tmp"
+        temp_path = ""
         try:
             session = get_requests_session()
             response = session.get(ppai_url, timeout=10)
             response.raise_for_status()
-            with open(temp_path, "w", encoding="utf-8") as script_file:
+            cache_dir = os.path.dirname(script_path)
+            os.makedirs(cache_dir, exist_ok=True)
+            with tempfile.NamedTemporaryFile(
+                "w",
+                encoding="utf-8",
+                dir=cache_dir,
+                prefix=f"{os.path.basename(script_path)}.",
+                suffix=".tmp",
+                delete=False,
+            ) as script_file:
+                temp_path = script_file.name
                 script_file.write(response.text)
             os.replace(temp_path, script_path)
             return script_path
         except (OSError, requests.RequestException) as e:
+            if temp_path and os.path.exists(temp_path):
+                try:
+                    os.remove(temp_path)
+                except OSError as cleanup_error:
+                    logger.debug(
+                        "Failed to remove temp autoinstall script %s: %s",
+                        temp_path,
+                        cleanup_error,
+                    )
             logger.warning("Failed to download autoinstall script %s: %s", ppai_url, e)
         return ""
 
@@ -365,18 +384,18 @@ class PortProtonAPI:
         callback: Callable[[str], None],
     ) -> QThread:
         class AutoinstallScriptWorker(QThread):
-            finished = Signal(str)
+            script_ready = Signal(str)
             api: "PortProtonAPI"
             ppai_url: str
 
             def run(self):
                 script_path = self.api.download_autoinstall_script(self.ppai_url)
-                self.finished.emit(script_path)
+                self.script_ready.emit(script_path)
 
         worker = AutoinstallScriptWorker()
         worker.api = self
         worker.ppai_url = ppai_url
-        worker.finished.connect(callback)
+        worker.script_ready.connect(callback)
         worker.start()
         return worker
 
@@ -386,14 +405,12 @@ class PortProtonAPI:
         game_data: dict,
     ) -> QThread:
         class AutoinstallCustomDataWorker(QThread):
-            finished = Signal()
             api: "PortProtonAPI"
             script_path: str
             game_data: dict
 
             def run(self):
                 self.api.write_autoinstall_custom_data(self.script_path, self.game_data)
-                self.finished.emit()
 
         worker = AutoinstallCustomDataWorker()
         worker.api = self
