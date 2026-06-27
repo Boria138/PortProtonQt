@@ -55,9 +55,9 @@ color_surface_mid = "#9394a5"
 color_text_dark = "#212529"
 
 # Widget State
-combo_disabled_bg = "#dee2e6"
-combo_disabled_border = "#dee2e6"
-combo_disabled_text = "#777a84"
+color_combo_disabled_bg = "#dee2e6"
+color_combo_disabled_border = "#dee2e6"
+color_combo_disabled_text = "#777a84"
 
 # Navigation
 color_nav_inactive = "#7f7f7f"
@@ -66,6 +66,10 @@ color_separator = "#7f7f7f"
 # Scrollbar
 color_scrollbar_bg = "rgba(20, 20, 20, 0.20)"
 color_scrollbar_handle = "#bfbfbf"
+
+# Slider
+color_slider_handle = "#bfbfbf"
+color_slider_groove_bg = "rgba(20, 20, 20, 0.20)"
 
 # Border variants
 color_border_subtle = "rgba(255, 255, 255, 0.01)"
@@ -117,6 +121,8 @@ color_detail_overlay = "rgba(220, 222, 226, 0.40)"
 color_cover_frame_bg = "rgba(233, 236, 239, 0.80)"
 color_no_cover_bg = "rgba(220,222,226,0.95)"
 color_detail_line = "rgba(0,0,0,0.12)"
+color_card_gradient_start = "rgba(255, 255, 255, 1)"
+color_card_gradient_end = "rgba(210, 211, 219, 0.5)"
 color_library_gradient_start = "#cea2fa"
 color_library_gradient_end = "#70b8ff"
 
@@ -743,8 +749,8 @@ GAME_CARD_WINDOW_STYLE = f"""
         border-radius: {border_radius_card};
         background: qradialgradient(
         cx:0.5, cy:0.5, radius:0.8,
-            stop:0 rgba(255, 255, 255, 1),
-            stop:1 rgba(210, 211, 219, 0.5)
+            stop:0 {color_card_gradient_start},
+            stop:1 {color_card_gradient_end}
     );
         border: {border_none} {color_transparent};
     }}
@@ -1108,16 +1114,16 @@ SLIDER_SIZE_STYLE= f"""
     QSlider::groove:horizontal {{
         border:  {border_none};
         border-radius: 3px;
-        height: 6px; /* the groove expands to the size of the slider by default. by giving it a height, it has a fixed size */
-        background: {color_detail_overlay};
+        height: 6px;
+        background: {color_slider_groove_bg};
         margin: 6px 0;
     }}
     QSlider::handle:horizontal {{
-        background: {color_surface};
+        background: {color_slider_handle};
         border:  {border_none};
         width: 18px;
         height: 18px;
-        margin: -6px 0; /* handle is placed by default on the contents rect of the groove. Expand outside the groove */
+        margin: -6px 0;
         border-radius: 9px;
     }}
 """
@@ -1299,9 +1305,9 @@ COMBOBOX_STYLE = f"""
         background-color: {color_accent};
     }}
     QComboBox:disabled {{
-        background: {combo_disabled_bg};
-        border: {border_medium} {combo_disabled_border};
-        color: {combo_disabled_text};
+        background: {color_combo_disabled_bg};
+        border: {border_medium} {color_combo_disabled_border};
+        color: {color_combo_disabled_text};
     }}
     QComboBox::drop-down {{
         subcontrol-origin: padding;
