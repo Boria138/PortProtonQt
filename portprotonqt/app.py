@@ -400,7 +400,7 @@ def main():
         try:
             import tempfile
             import requests
-            from portprotonqt.tabs.theme_tab import (
+            from portprotonqt.tabs.theme_store_workers import (
                 _theme_store_download_url,
                 _install_theme_archive,
             )

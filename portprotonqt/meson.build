@@ -109,6 +109,8 @@ install_data(
    'tabs/library_tab.py',
    'tabs/settings_tab.py',
    'tabs/system_tab.py',
+   'tabs/theme_store.py',
+   'tabs/theme_store_workers.py',
    'tabs/theme_tab.py',
    'tabs/wine_tab.py',
    'tabs/workers.py',

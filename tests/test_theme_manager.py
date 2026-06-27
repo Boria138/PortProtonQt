@@ -730,6 +730,29 @@ CONTAINER_STYLE = f"QWidget {{ background: {color_bg}; }}"
                 f"{style_name} not re-computed with child colors"
             )
 
+    def test_child_qss_uses_child_colors_from_parent_styles_file(self, stub_themes):
+        from portprotonqt.theme_manager import load_theme
+        parent_dir = stub_themes / "parent_file_theme"
+        parent_dir.mkdir()
+        (parent_dir / "styles.py").write_text(
+            'color_bg = "#111111"\n'
+            'color_text = "#ffffff"\n'
+            'MAIN_WINDOW_STYLE = f"QWidget {{ background: {color_bg}; color: {color_text}; }}"\n',
+            encoding="utf-8",
+        )
+        child_dir = stub_themes / "child_file_theme"
+        child_dir.mkdir()
+        (child_dir / "styles.py").write_text(
+            'THEME_INHERITS = "parent_file_theme"\n'
+            'color_bg = "#fbf1c7"\n'
+            'color_text = "#3c3836"\n',
+            encoding="utf-8",
+        )
+        child = load_theme("child_file_theme")
+        assert "#fbf1c7" in child.MAIN_WINDOW_STYLE
+        assert "#3c3836" in child.MAIN_WINDOW_STYLE
+        assert "#111111" not in child.MAIN_WINDOW_STYLE
+
 
 class TestThemeInheritanceChain:
     """Verify inheritance works correctly through all chain depths.

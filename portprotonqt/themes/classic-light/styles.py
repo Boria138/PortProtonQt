@@ -37,8 +37,8 @@ color_text = "#ffffff"
 color_surface_light = "#d2d3db"
 color_surface_mid = "#9394a5"
 color_text_dark = "#212529"
-color_detail_overlay = "rgba(20,20,20,0.40)"
-color_detail_line = "rgba(255,255,255,0.12)"
+color_detail_overlay = "rgba(220, 222, 226, 0.40)"
+color_detail_line = "rgba(0,0,0,0.12)"
 
 # === Card Animation (glow) ===
 GAME_CARD_ANIMATION = {
@@ -138,7 +138,7 @@ GAME_CARD_WINDOW_STYLE = f"""
         stop:0.3 rgba(233, 236, 239, 0.9),
         stop:0.7 rgba(210, 211, 219, 0.9),
         stop:1 rgba(180, 190, 200, 0.9));
-        border: {border_medium} #ffffff;
+        border: {border_medium} {color_text};
     }}
 """
 
@@ -172,7 +172,7 @@ PLAY_TIME_VALUE_STYLE = f"height: 16px; background: qradialgradient(cx:0.5, cy:0
 PLAY_BUTTON_STYLE = f"""
     QPushButton {{
         background: qradialgradient(cx:0.5, cy:0.5, radius:0.8, stop:0 {color_surface_elevated}, stop:1 {color_surface_light});
-        border: {border_thin} #ffffff;
+        border: {border_thin} {color_text};
         border-radius: {border_radius_small};
         font-size: {font_size_normal};
         margin-top: 15px;
@@ -191,7 +191,7 @@ PLAY_BUTTON_STYLE = f"""
 ADDGAME_BACK_BUTTON_STYLE = f"""
     QPushButton {{
         background: qradialgradient(cx:0.5, cy:0.5, radius:0.8, stop:0 {color_surface_elevated}, stop:1 {color_surface_light});
-        border: {border_thin} #ffffff;
+        border: {border_thin} {color_text};
         border-radius: {border_radius_small};
         color: {color_text_dark};
         font-size: {font_size_normal};
@@ -212,7 +212,7 @@ ADDGAME_BACK_BUTTON_STYLE = f"""
 LIBRARY_CONTROLS_BUTTON_STYLE = f"""
     QPushButton {{
         background: qradialgradient(cx:0.5, cy:0.5, radius:0.8, stop:0 {color_surface_elevated}, stop:1 {color_surface_light});
-        border: {border_thin} #ffffff;
+        border: {border_thin} {color_text};
         border-radius: {border_radius_small};
         color: {color_text_dark};
         font-size: {font_size_normal};
@@ -230,7 +230,7 @@ LIBRARY_CONTROLS_BUTTON_STYLE = f"""
 LIBRARY_FILTER_COMBOBOX_STYLE = f"""
     QComboBox {{
         background: {color_bg};
-        border: {border_thin} #ffffff;
+        border: {border_thin} {color_text};
         border-radius: {border_radius_small};
         padding-left: 12px;
         height: 30px;
@@ -256,7 +256,7 @@ LIBRARY_FILTER_COMBOBOX_STYLE = f"""
     QComboBox::drop-down {{
         subcontrol-origin: padding;
         subcontrol-position: center right;
-        border-left: {border_thin} rgba(255, 255, 255, 0.05);
+        border-left: {border_thin} {color_border_faint};
         padding: 12px;
         height: 12px;
         width: 12px;
@@ -339,7 +339,7 @@ NAV_BUTTON_STYLE = f"""
     NavLabel:hover {{
         background: {color_transparent};
         color: {color_text_dark};
-        border-bottom: {border_medium} {color_text_muted};
+        border-bottom: {border_medium} {color_nav_inactive};
     }}
     NavLabel[checked = true]:hover {{
         background: {color_transparent};
@@ -386,7 +386,7 @@ COMBOBOX_STYLE = f"""
     QComboBox::drop-down {{
         subcontrol-origin: padding;
         subcontrol-position: center right;
-        border-left: {border_thin} rgba(255, 255, 255, 0.05);
+        border-left: {border_thin} {color_border_faint};
         padding: 12px;
         height: 12px;
         width: 12px;
@@ -413,15 +413,33 @@ COMBOBOX_STYLE = f"""
         border-bottom-left-radius: {border_radius_small};
         border-bottom-right-radius: {border_radius_small};
     }}
-    QComboBox QAbstractItemView::item {{
+    QComboBox:editable {{
+        background: {color_surface};
+    }}
+    QComboBox::drop-down:editable:focus {{
+        background: {color_accent};
+        border-top-left-radius: 0px;
+        border-top-right-radius: {border_radius_small};
+        border-bottom-left-radius: 0px;
+        border-bottom-right-radius: {border_radius_small};
+    }}
+    QListView {{
+        background: {color_surface};
+    }}
+    QListView::item {{
         padding: 3px 3px 3px 6px;
         margin: 1px;
         min-height: 24px;
         border-radius: {border_radius_small};
         color: {color_text_dark};
     }}
-    QComboBox QAbstractItemView::item:hover,
-    QComboBox QAbstractItemView::item:selected {{
+    QListView::item:hover {{
+        background: {color_bg};
+    }}
+    QListView::item:selected {{
+        background: {color_bg};
+    }}
+    QListView::item:focus {{
         background: {color_accent};
         color: {color_text_dark};
     }}
@@ -430,10 +448,18 @@ COMBOBOX_STYLE = f"""
     theme_manager.get_icon("up", current_theme_name, as_path=True),
 )
 
+SETTINGS_TABLE_COMBOBOX_STYLE = f"""
+    QComboBox#settingsTableCombo:hover,
+    QComboBox#settingsTableCombo:focus {{
+        background: {color_surface};
+        border: {border_medium} {color_accent};
+    }}
+"""
+
 LINE_EDIT_STYLE = f"""
     QLineEdit {{
         background: {color_surface};
-        border: {border_medium} rgba(255, 255, 255, 0.01);
+        border: {border_medium} {color_border_subtle};
         border-radius: {border_radius_small};
         height: 30px;
         padding-left: 12px;
@@ -493,6 +519,12 @@ TAB_STYLE = f"""
     }}
     QTabBar::tab:hover {{
         background: {color_accent};
+    }}
+"""
+
+HINT_BAR_STYLE = f"""
+    QWidget {{
+        max-height: 40px;
     }}
 """
 

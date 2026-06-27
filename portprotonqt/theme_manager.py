@@ -140,6 +140,15 @@ def _inject_ast_constants(source_path: str, module):
                 continue
 
 
+def _is_overridden_assignment(node: ast.AST, custom_constants: dict) -> bool:
+    if not isinstance(node, ast.Assign):
+        return False
+    for target in node.targets:
+        if isinstance(target, ast.Name) and target.id in custom_constants:
+            return True
+    return False
+
+
 def _find_theme_folder(theme_name: str) -> str | None:
     if theme_name == "standart":
         themes_dirs_to_check = [THEMES_DIRS[1]]
@@ -388,10 +397,16 @@ class ThemeWrapper:
 
     def _get_generated_style(self, name):
         parent_styles_dir = self._find_parent_styles_dir()
-        if parent_styles_dir is None:
+        parent_styles_file = self._find_parent_styles_file()
+        if parent_styles_dir is None and parent_styles_file is None:
             return None
         if self._generated_styles is None:
-            self._generated_styles = self._build_generated_styles(parent_styles_dir)
+            if parent_styles_dir is not None:
+                self._generated_styles = self._build_generated_styles(parent_styles_dir)
+            else:
+                if parent_styles_file is None:
+                    return None
+                self._generated_styles = self._build_generated_styles_file(parent_styles_file)
         return self._generated_styles.get(name)
 
     def _find_parent_styles_dir(self):
@@ -405,6 +420,45 @@ class ThemeWrapper:
         if os.path.isdir(styles_dir):
             return styles_dir
         return None
+
+    def _find_parent_styles_file(self):
+        parent_name = self.parent_theme_name
+        if not parent_name:
+            return None
+        folder = _find_theme_folder(parent_name)
+        if not folder:
+            return None
+        styles_file = os.path.join(folder, "styles.py")
+        if os.path.exists(styles_file):
+            return styles_file
+        return None
+
+    def _build_generated_styles_file(self, styles_file: str):
+        custom_constants = {
+            key: value
+            for key, value in vars(self.custom_theme).items()
+            if not key.startswith("_") and not callable(value)
+        }
+        try:
+            with open(styles_file, encoding="utf-8") as source_file:
+                tree = ast.parse(source_file.read(), filename=styles_file)
+        except (OSError, SyntaxError):
+            return {}
+
+        tree.body = [
+            node for node in tree.body
+            if not _is_overridden_assignment(node, custom_constants)
+        ]
+        module_globals = {"__builtins__": __builtins__, **custom_constants}
+        try:
+            exec(compile(ast.fix_missing_locations(tree), styles_file, "exec"), module_globals, module_globals)
+        except Exception:
+            return {}
+        return {
+            key: value
+            for key, value in module_globals.items()
+            if not key.startswith("_")
+        }
 
     def _build_generated_styles(self, styles_dir: str):
         generated = {}

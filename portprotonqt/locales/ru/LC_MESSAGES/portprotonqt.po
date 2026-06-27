@@ -2053,8 +2053,8 @@ msgstr "Принудительно установить системный DPI �
 msgid "Download Settings"
 msgstr "Настройки скачивания"
 
-msgid "Enable Theme Store from"
-msgstr "Включить магазин тем от"
+msgid "Enable Theme Store from %(source)s (%(warning)s)"
+msgstr "Включить магазин тем от %(source)s (%(warning)s)"
 
 msgid "third-party themes may be unsafe"
 msgstr "сторонние темы могут быть небезопасны"
