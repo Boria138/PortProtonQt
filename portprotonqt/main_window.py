@@ -2081,6 +2081,7 @@ class MainWindow(
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
                     text=True,
+                    errors="replace",
                     bufsize=1,
                 )
                 self.game_processes.append(process)

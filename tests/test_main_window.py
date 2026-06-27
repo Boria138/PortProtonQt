@@ -196,6 +196,29 @@ class FakeComboBox:
         self.items.pop(index)
 
 
+class FakeInputManager:
+    def __init__(self) -> None:
+        self.suspended = False
+
+    def suspend_gamepad_polling(self) -> None:
+        self.suspended = True
+
+
+class FakeTimer:
+    def __init__(self, _parent: object) -> None:
+        self.interval = 0
+
+    @property
+    def timeout(self) -> "FakeTimer":
+        return self
+
+    def connect(self, _callback: object) -> None:
+        pass
+
+    def start(self, interval: int) -> None:
+        self.interval = interval
+
+
 def test_refresh_theme_store_visibility_adds_store(monkeypatch: Any) -> None:
     window: Any = MainWindow.__new__(MainWindow)
     window.themesCombo = FakeComboBox([("Standard", None)])
@@ -224,6 +247,41 @@ def test_refresh_theme_store_visibility_removes_selected_store(monkeypatch: Any)
 
     assert window.themesCombo.findData(THEME_STORE_ITEM) == -1
     assert window.themesCombo.currentIndex() == 0
+
+
+def test_toggle_game_replaces_invalid_launch_output_bytes(
+    tmp_path: Path,
+    monkeypatch: Any,
+) -> None:
+    exe_path = tmp_path / "Game.exe"
+    exe_path.write_text("", encoding="utf-8")
+    process = object()
+    popen_kwargs: dict[str, object] = {}
+    window: Any = MainWindow.__new__(MainWindow)
+    window.start_sh = ["portproton"]
+    window.game_processes = []
+    window.target_exe = None
+    window.current_play_button = None
+    window.input_manager = FakeInputManager()
+    window.games = []
+
+    def fake_popen(_command: list[str], **kwargs: object) -> object:
+        popen_kwargs.update(kwargs)
+        return process
+
+    monkeypatch.setattr("portprotonqt.main_window.subprocess.Popen", fake_popen)
+    monkeypatch.setattr("portprotonqt.main_window.QTimer", FakeTimer)
+    monkeypatch.setattr("portprotonqt.main_window.save_last_launch", lambda *_args: None)
+    monkeypatch.setattr(window, "_check_missing_prefix_before_launch", lambda *_args: None)
+    monkeypatch.setattr(window, "_start_launch_output_reader", lambda _process: None)
+    monkeypatch.setattr(window, "_update_last_launch_after_start", lambda *_args: None)
+
+    window.toggleGame(str(exe_path))
+
+    assert window.game_processes == [process]
+    assert popen_kwargs["text"] is True
+    assert popen_kwargs["errors"] == "replace"
+    assert window.input_manager.suspended
 
 
 def test_process_portproton_desktop_calls_callback_without_asset_download(
