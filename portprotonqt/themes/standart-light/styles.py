@@ -117,6 +117,8 @@ color_detail_overlay = "rgba(220, 222, 226, 0.40)"
 color_cover_frame_bg = "rgba(233, 236, 239, 0.80)"
 color_no_cover_bg = "rgba(220,222,226,0.95)"
 color_detail_line = "rgba(0,0,0,0.12)"
+color_library_gradient_start = "#cea2fa"
+color_library_gradient_end = "#70b8ff"
 
 # Preview buttons
 color_preview_btn_bg = "rgba(0, 0, 0, 0.5)"
@@ -579,8 +581,8 @@ LIBRARY_WIDGET_STYLE = f"""
     QWidget {{
         background: qradialgradient(
         cx:0.5, cy:0.5, radius:0.8,
-            stop:0 {color_bg},
-            stop:1 {color_surface_elevated}
+            stop:0 {color_library_gradient_start},
+            stop:1 {color_library_gradient_end}
     );
         border-radius: 0px;
     }}
@@ -741,8 +743,8 @@ GAME_CARD_WINDOW_STYLE = f"""
         border-radius: {border_radius_card};
         background: qradialgradient(
         cx:0.5, cy:0.5, radius:0.8,
-            stop:0 {color_bg},
-            stop:1 {color_surface_elevated}
+            stop:0 rgba(255, 255, 255, 1),
+            stop:1 rgba(210, 211, 219, 0.5)
     );
         border: {border_none} {color_transparent};
     }}
@@ -1184,16 +1186,16 @@ QTableWidget {{
 QHeaderView::section {{
     background: {color_surface_elevated};
     color: {color_text_dark};
-    padding: 2px;
+    padding: 5px;
     border: {border_none};
     font-weight: bold;
     font-family: '{font_family}';
     font-size: {font_size_normal};
 }}
 QTableWidget::item {{
-    padding: 3px;
+    padding: 8px;
     border-bottom: {border_none} {color_surface};
-    height: 32px;
+    height: 36px;
 }}
 QTableWidget::item:selected,
 QTableWidget::item:focus,

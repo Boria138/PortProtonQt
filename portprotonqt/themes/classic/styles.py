@@ -120,7 +120,7 @@ PLAY_TIME_VALUE_STYLE = f"height: 16px; background: {color_detail_overlay}; font
 PLAY_BUTTON_STYLE = f"""
     QPushButton {{
         background: qradialgradient(cx:0.5, cy:0.5, radius:0.8, stop:0 {color_surface_hover}, stop:1 {color_surface_elevated});
-        border: {border_thin} rgba(255, 255, 255, 0.1);
+        border: {border_thin} {color_border_light};
         border-radius: {border_radius_small};
         font-size: {font_size_normal};
         margin-top: 15px;
@@ -204,7 +204,7 @@ LIBRARY_FILTER_COMBOBOX_STYLE = f"""
     QComboBox::drop-down {{
         subcontrol-origin: padding;
         subcontrol-position: center right;
-        border-left: {border_thin} rgba(255, 255, 255, 0.05);
+        border-left: {border_thin} {color_border_faint};
         padding: 12px;
         height: 12px;
         width: 12px;
@@ -284,7 +284,7 @@ NAV_BUTTON_STYLE = f"""
         background: {color_transparent};
         padding: 6px 3px;
         margin: 10px 0 10px 10px;
-        color: {color_text_muted};
+        color: {color_nav_inactive};
         font-family: '{font_family}';
         font-size: {font_size_normal};
         text-transform: uppercase;
@@ -302,7 +302,7 @@ NAV_BUTTON_STYLE = f"""
     NavLabel:hover {{
         background: {color_transparent};
         color: {color_text};
-        border-bottom: {border_thin} {color_text_muted};
+        border-bottom: {border_thin} {color_nav_inactive};
     }}
     NavLabel[checked = true]:hover {{
         background: {color_transparent};
@@ -342,14 +342,14 @@ COMBOBOX_STYLE = f"""
         background-color: {color_accent};
     }}
     QComboBox:disabled {{
-        background: {color_disabled_bg};
-        border: {border_medium} {color_disabled_bg};
-        color: {color_disabled_text};
+        background: {color_combo_disabled_bg};
+        border: {border_medium} {color_combo_disabled_border};
+        color: {color_combo_disabled_text};
     }}
     QComboBox::drop-down {{
         subcontrol-origin: padding;
         subcontrol-position: center right;
-        border-left: {border_thin} rgba(255, 255, 255, 0.05);
+        border-left: {border_thin} {color_border_faint};
         padding: 12px;
         height: 12px;
         width: 12px;
@@ -422,7 +422,7 @@ SETTINGS_TABLE_COMBOBOX_STYLE = f"""
 LINE_EDIT_STYLE = f"""
     QLineEdit {{
         background: {color_surface};
-        border: {border_medium} rgba(255, 255, 255, 0.01);
+        border: {border_medium} {color_border_subtle};
         border-radius: {border_radius_small};
         height: 30px;
         padding-left: 12px;

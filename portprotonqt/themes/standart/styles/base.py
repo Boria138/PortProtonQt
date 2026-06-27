@@ -78,6 +78,8 @@ HINTS_LABEL_STYLE = f"""
 MAIN_WINDOW_HEADER_STYLE = f"""
     QFrame {{
         background: {color_transparent};
+        border: 10px solid transparent;
+        border-bottom: 0px solid transparent;
         border-top-left-radius: {border_radius_header};
         border-top-right-radius: {border_radius_header};
         border: none;
