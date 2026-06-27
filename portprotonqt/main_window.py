@@ -623,7 +623,7 @@ class MainWindow(
             return
         try:
             if percent is not None and percent > 0:
-                progress_text = f"{int(percent)}%"
+                progress_text = self._format_progress_percent(percent)
                 button_text = f"{status} {progress_text}" if status else progress_text
                 self.current_install_button.setText(button_text)
                 return
@@ -633,6 +633,12 @@ class MainWindow(
             self.current_install_button.setText(_("Stop"))
         except RuntimeError:
             self.current_install_button = None
+
+    def _format_progress_percent(self, percent: float) -> str:
+        """Format progress without hiding sub-percent values."""
+        if 0 < percent < 1:
+            return f"{percent:.1f}%"
+        return f"{int(percent)}%"
 
     def _on_install_output_ready(self) -> None:
         """Update install progress from live PortProton output."""
@@ -1735,7 +1741,7 @@ class MainWindow(
         try:
             status = self.wine_download_status
             if self.wine_download_percent > 0:
-                status = status.replace("...", f"... {int(self.wine_download_percent)}%")
+                status = f"{status} {self._format_progress_percent(self.wine_download_percent)}"
             self.current_running_button.setText(status)
             icon = self.theme_manager.get_icon("save", as_path=True)
             self.current_running_button.setIcon(icon)
@@ -1757,7 +1763,8 @@ class MainWindow(
                 self.wine_download_status = status
                 self.wine_download_seen = True
                 self.wine_download_percent = percent or 0.0
-            elif percent is not None and self.wine_download_seen:
+            elif percent is not None:
+                self.wine_download_seen = True
                 self.wine_download_percent = percent
         return self.wine_download_seen and not self.game_launch_started
 

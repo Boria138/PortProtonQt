@@ -1,6 +1,7 @@
 """Tests for main window library data processing."""
 
 from pathlib import Path
+from queue import Queue
 from typing import Any
 
 from portprotonqt.main_window import MainWindow
@@ -204,6 +205,23 @@ class FakeInputManager:
         self.suspended = True
 
 
+class FakeButton:
+    def __init__(self) -> None:
+        self.text = ""
+        self.icon = None
+
+    def setText(self, text: str) -> None:
+        self.text = text
+
+    def setIcon(self, icon: object) -> None:
+        self.icon = icon
+
+
+class FakeThemeManager:
+    def get_icon(self, _name: str, as_path: bool = False) -> str:
+        return "icon.svg"
+
+
 class FakeTimer:
     def __init__(self, _parent: object) -> None:
         self.interval = 0
@@ -319,6 +337,24 @@ def test_autoinstall_script_thread_reference_clears_after_thread_finished() -> N
 
     assert window.autoInstallScriptLoadThread is None
     assert window.autoInstallCustomDataThread is None
+
+
+def test_launch_dependency_percent_updates_button_before_status() -> None:
+    window: Any = MainWindow.__new__(MainWindow)
+    button = FakeButton()
+    window.current_running_button = button
+    window.theme_manager = FakeThemeManager()
+    window.launch_output_queue = Queue()
+    window.launch_output_queue.put((None, 0.1, False))
+    window.wine_download_seen = False
+    window.wine_download_percent = 0.0
+    window.wine_download_status = "Downloading Wine…"
+    window.game_launch_started = False
+
+    assert window._drain_launch_output_progress()
+    window._set_running_button_progress()
+
+    assert button.text == "Downloading Wine… 0.1%"
 
 
 def test_toggle_game_replaces_invalid_launch_output_bytes(
