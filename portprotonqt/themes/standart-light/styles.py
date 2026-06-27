@@ -7,7 +7,6 @@ current_theme_name = ui_config.get_theme()
 # CONSTANTS
 favoriteLabelSize = 48, 48
 favoriteLabelIconSize = 32
-autoSizeButtonPadding = 16
 detailCompactCoverFrameSize = 128
 detailCompactCoverImageSize = 108
 detailCompactContentSpacing = 15
@@ -536,7 +535,7 @@ THEME_STORE_CARD_META_STYLE = f"""
         background: {color_transparent};
         border: {border_none} {color_transparent};
         font-family: '{font_family}';
-        font-size: {font_size_normal};
+        font-size: 13px;
         padding: 2px 12px;
     }}
 """
