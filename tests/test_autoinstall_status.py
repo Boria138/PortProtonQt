@@ -62,6 +62,7 @@ def test_find_autoinstall_entry_matches_target_path(tmp_path: Path) -> None:
 def test_autoinstall_status_ignores_desktop_name(tmp_path: Path) -> None:
     script_path = tmp_path / "Secret_World_Legends.ppai"
     script_path.write_text(
+        '#    PW_EXE_FILE="${WINEPREFIX}/drive_c/Program Files (x86)/Funcom/Secret World Legends/SecretWorldLegendsDX11.exe"\n'
         'PW_EXE_FILE="${WINEPREFIX}/drive_c/Program Files (x86)/Funcom/Secret World Legends/ClientPatcher.exe"\n',
         encoding="utf-8",
     )
