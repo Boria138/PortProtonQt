@@ -3,20 +3,20 @@
 ---
 
 ## Contents
-- [Overview](#-overview)
-- [Creating the Theme Folder](#-creating-the-theme-folder)
-- [Theme Variants](#-theme-variants)
-- [Style File](#-style-file-stylespy)
-- [Style Inheritance](#-style-inheritance)
-- [Library Layout Mode](#-library-layout-mode)
-- [Detail Page Layout Mode](#-detail-page-layout-mode)
-- [Preloader](#-preloader)
-- [Source Corner (Ribbon)](#-source-corner-ribbon)
-- [Terminal Color Schemes](#-terminal-color-schemes)
-- [Animation configuration](#-animation-configuration)
-- [Metadata](#-metadata-metainfoini)
-- [Screenshots](#-screenshots)
-- [Fonts and Icons](#-fonts-and-icons-optional)
+- [Overview](#overview)
+- [Creating the Theme Folder](#creating-the-theme-folder)
+- [Theme Variants](#theme-variants)
+- [Style File](#style-file-stylespy)
+- [Style Inheritance](#style-inheritance)
+- [Library Layout Mode](#library-layout-mode)
+- [Detail Page Layout Mode](#detail-page-layout-mode)
+- [Preloader](#preloader)
+- [Source Corner (Ribbon)](#source-corner-ribbon)
+- [Terminal Color Schemes](#terminal-color-schemes)
+- [Animation configuration](#animation-configuration)
+- [Metadata](#metadata-metainfoini)
+- [Screenshots](#screenshots)
+- [Fonts and Icons](#fonts-and-icons-optional)
 
 ---
 
