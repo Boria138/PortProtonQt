@@ -1,6 +1,7 @@
 """Tests for main window library data processing."""
 
 from pathlib import Path
+from queue import Queue
 from typing import Any
 
 from portprotonqt.main_window import MainWindow
@@ -196,6 +197,71 @@ class FakeComboBox:
         self.items.pop(index)
 
 
+class FakeInputManager:
+    def __init__(self) -> None:
+        self.suspended = False
+
+    def suspend_gamepad_polling(self) -> None:
+        self.suspended = True
+
+
+class FakeButton:
+    def __init__(self) -> None:
+        self.text = ""
+        self.icon = None
+
+    def setText(self, text: str) -> None:
+        self.text = text
+
+    def setIcon(self, icon: object) -> None:
+        self.icon = icon
+
+
+class FakeThemeManager:
+    def get_icon(self, _name: str, as_path: bool = False) -> str:
+        return "icon.svg"
+
+
+class FakeTimer:
+    def __init__(self, _parent: object) -> None:
+        self.interval = 0
+
+    @property
+    def timeout(self) -> "FakeTimer":
+        return self
+
+    def connect(self, _callback: object) -> None:
+        pass
+
+    def start(self, interval: int) -> None:
+        self.interval = interval
+
+
+class FakeSignal:
+    def __init__(self) -> None:
+        self._callbacks: list[Any] = []
+
+    def connect(self, callback: Any) -> None:
+        self._callbacks.append(callback)
+
+    def emit(self) -> None:
+        for callback in self._callbacks:
+            callback()
+
+
+class FakeWorker:
+    def __init__(self) -> None:
+        self.finished = FakeSignal()
+
+
+class FakeDetailPageManager:
+    def __init__(self) -> None:
+        self.opened_data: dict | None = None
+
+    def openAutoInstallDetailPage(self, game_data: dict) -> None:
+        self.opened_data = dict(game_data)
+
+
 def test_refresh_theme_store_visibility_adds_store(monkeypatch: Any) -> None:
     window: Any = MainWindow.__new__(MainWindow)
     window.themesCombo = FakeComboBox([("Standard", None)])
@@ -224,6 +290,106 @@ def test_refresh_theme_store_visibility_removes_selected_store(monkeypatch: Any)
 
     assert window.themesCombo.findData(THEME_STORE_ITEM) == -1
     assert window.themesCombo.currentIndex() == 0
+
+
+def test_autoinstall_script_thread_reference_clears_after_thread_finished() -> None:
+    class FakePortProtonAPI:
+        def __init__(self) -> None:
+            self.script_callback: Any = None
+            self.script_worker = FakeWorker()
+            self.custom_data_worker = FakeWorker()
+
+        def start_autoinstall_script_download(
+            self,
+            _url: str,
+            callback: Any,
+        ) -> FakeWorker:
+            self.script_callback = callback
+            return self.script_worker
+
+        def start_autoinstall_custom_data_write(
+            self,
+            _path: str,
+            _game_data: dict,
+        ) -> FakeWorker:
+            return self.custom_data_worker
+
+    api = FakePortProtonAPI()
+    window: Any = MainWindow.__new__(MainWindow)
+    window.portproton_api = api
+    window.detail_page_manager = FakeDetailPageManager()
+    game_data = {"exec_line": "autoinstall:https://example.org/game.ppai"}
+
+    window._open_autoinstall_card_after_script_download(
+        game_data,
+        "https://example.org/game.ppai",
+    )
+    api.script_callback("/tmp/game.ppai")
+
+    assert window.autoInstallScriptLoadThread is api.script_worker
+    assert window.detail_page_manager.opened_data == {
+        "exec_line": "autoinstall:/tmp/game.ppai",
+    }
+    assert window.autoInstallCustomDataThread is api.custom_data_worker
+
+    api.script_worker.finished.emit()
+    api.custom_data_worker.finished.emit()
+
+    assert window.autoInstallScriptLoadThread is None
+    assert window.autoInstallCustomDataThread is None
+
+
+def test_launch_dependency_percent_updates_button_before_status() -> None:
+    window: Any = MainWindow.__new__(MainWindow)
+    button = FakeButton()
+    window.current_running_button = button
+    window.theme_manager = FakeThemeManager()
+    window.launch_output_queue = Queue()
+    window.launch_output_queue.put((None, 0.1, False))
+    window.wine_download_seen = False
+    window.wine_download_percent = 0.0
+    window.wine_download_status = "Downloading Wine…"
+    window.game_launch_started = False
+
+    assert window._drain_launch_output_progress()
+    window._set_running_button_progress()
+
+    assert button.text == "Downloading Wine… 0.1%"
+
+
+def test_toggle_game_replaces_invalid_launch_output_bytes(
+    tmp_path: Path,
+    monkeypatch: Any,
+) -> None:
+    exe_path = tmp_path / "Game.exe"
+    exe_path.write_text("", encoding="utf-8")
+    process = object()
+    popen_kwargs: dict[str, object] = {}
+    window: Any = MainWindow.__new__(MainWindow)
+    window.start_sh = ["portproton"]
+    window.game_processes = []
+    window.target_exe = None
+    window.current_play_button = None
+    window.input_manager = FakeInputManager()
+    window.games = []
+
+    def fake_popen(_command: list[str], **kwargs: object) -> object:
+        popen_kwargs.update(kwargs)
+        return process
+
+    monkeypatch.setattr("portprotonqt.main_window.subprocess.Popen", fake_popen)
+    monkeypatch.setattr("portprotonqt.main_window.QTimer", FakeTimer)
+    monkeypatch.setattr("portprotonqt.main_window.save_last_launch", lambda *_args: None)
+    monkeypatch.setattr(window, "_check_missing_prefix_before_launch", lambda *_args: None)
+    monkeypatch.setattr(window, "_start_launch_output_reader", lambda _process: None)
+    monkeypatch.setattr(window, "_update_last_launch_after_start", lambda *_args: None)
+
+    window.toggleGame(str(exe_path))
+
+    assert window.game_processes == [process]
+    assert popen_kwargs["text"] is True
+    assert popen_kwargs["errors"] == "replace"
+    assert window.input_manager.suspended
 
 
 def test_process_portproton_desktop_calls_callback_without_asset_download(

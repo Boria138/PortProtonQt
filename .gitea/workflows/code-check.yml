@@ -22,7 +22,7 @@ jobs:
     name: Check code
     runs-on: ubuntu-latest
     container:
-      image: archlinux:base-devel@sha256:0cf5eb78f8c3ddcdd7ccc3f9168328fb57ec6be0f83f501a0b2006590e0c92ec
+      image: archlinux:base-devel@sha256:cf028aee853281ba9b3cba41b49f7ad4836275256226938ab619e0f05b1e6105
     steps:
       - name: Install system dependencies
         run: |

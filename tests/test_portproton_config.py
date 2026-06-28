@@ -1,5 +1,6 @@
 """Tests for config/portproton.py — exec_line parsing, icon sanitization, launcher tail extraction."""
 import os
+from pathlib import Path
 
 from portprotonqt.config.portproton import (
     extract_exec_target_path,
@@ -167,3 +168,17 @@ class TestThemedLaunchIconNames:
 
     def test_reg_has_icon(self):
         assert "reg" in THEMED_LAUNCH_ICON_NAMES[".reg"]
+
+
+def test_run_after_batch_is_created_next_to_exe() -> None:
+    helper = Path("build-aux/share/portproton/scripts/functions_helper").read_text(
+        encoding="utf-8",
+    )
+
+    assert 'run_after_dir="$(dirname "${PW_EXE_FILE}")"' in helper
+    assert 'pw_exe_file_win="$("${WINELOADER}" winepath -w "${PW_EXE_FILE}"' in helper
+    assert "chcp 65001 >nul" in helper
+    assert 'start "" "${pw_exe_file_win}" ${LAUNCH_PARAMETERS}' in helper
+    assert 'start "" /unix "${PW_RUN_AFTER_EXE}"' in helper
+    assert 'LAUNCH_PARAMETERS="" proxy_launch_parameters="" \\' in helper
+    assert 'pw_run "${PW_VD_TMP[@]}" "${run_after_bat}"' in helper

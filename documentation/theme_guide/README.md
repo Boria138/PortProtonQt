@@ -1,22 +1,26 @@
-📘  Эта документация также доступна на [русском](README.ru.md)
+  Эта документация также доступна на [русском](README.ru.md)
 
 ---
 
-## 📋 Contents
-- [Overview](#-overview)
-- [Creating the Theme Folder](#-creating-the-theme-folder)
-- [Theme Variants](#-theme-variants)
-- [Style File](#-style-file-stylespy)
-- [Style Inheritance](#-style-inheritance)
-- [Terminal Color Schemes](#-terminal-color-schemes)
-- [Animation configuration](#-animation-configuration)
-- [Metadata](#-metadata-metainfoini)
-- [Screenshots](#-screenshots)
-- [Fonts and Icons](#-fonts-and-icons-optional)
+## Contents
+- [Overview](#overview)
+- [Creating the Theme Folder](#creating-the-theme-folder)
+- [Theme Variants](#theme-variants)
+- [Style File](#style-file-stylespy)
+- [Style Inheritance](#style-inheritance)
+- [Library Layout Mode](#library-layout-mode)
+- [Detail Page Layout Mode](#detail-page-layout-mode)
+- [Preloader](#preloader)
+- [Source Corner (Ribbon)](#source-corner-ribbon)
+- [Terminal Color Schemes](#terminal-color-schemes)
+- [Animation configuration](#animation-configuration)
+- [Metadata](#metadata-metainfoini)
+- [Screenshots](#screenshots)
+- [Fonts and Icons](#fonts-and-icons-optional)
 
 ---
 
-## 📖 Overview
+## Overview
 
 Themes in `PortProtonQT` allow customizing the UI appearance. Themes are stored under:
 
@@ -24,7 +28,7 @@ Themes in `PortProtonQT` allow customizing the UI appearance. Themes are stored 
 
 ---
 
-## 📁 Creating the Theme Folder
+## Creating the Theme Folder
 
 ```bash
 mkdir -p ~/.local/share/PortProtonQT/themes/my_custom_theme
@@ -32,7 +36,7 @@ mkdir -p ~/.local/share/PortProtonQT/themes/my_custom_theme
 
 ---
 
-## 🌓 Theme Variants
+## Theme Variants
 
 The theme tab groups light and dark variants under one base theme name.
 
@@ -54,9 +58,9 @@ Both variants are regular themes and must contain their own `styles.py`. Use `TH
 
 ---
 
-## 🎨 Style File (`styles.py`)
+## Style File (`styles.py`)
 
-Create a `styles.py` in the theme root. It should define variables or functions that return QSS (Qt Style Sheets). For better organization, you can split your theme into multiple submodules by creating a subdirectory (e.g., `styles`, `components`, etc.) with separate Python files for different components, and import them in `styles.py`.
+Create a `styles.py` in the theme root. It should define variables or functions that return QSS (Qt Style Sheets). For better organization, you can split your theme into multiple submodules by creating a `styles/` subdirectory with separate Python files for different components, and import them in `styles.py`.
 
 **Example of modular structure:**
 ```
@@ -65,7 +69,7 @@ my_custom_theme/
 ├── metainfo.ini
 ├── fonts/
 ├── images/
-└── styles/  # This can be named anything (e.g., components, modules, etc.)
+└── styles/
     ├── __init__.py  # This empty file makes the directory a Python package
     ├── constants.py
     ├── base.py
@@ -73,6 +77,8 @@ my_custom_theme/
     ├── detail_page.py
     ├── settings.py
     ├── winetricks.py
+    ├── get_wine.py
+    ├── file_explorer.py
     └── theme_utils.py
 ```
 
@@ -107,17 +113,17 @@ from .styles.theme_utils import *
 ```python
 # Theme constants
 font_family = "Play"
-font_size_a = "16px"
-font_size_b = "24px"
-border_radius_a = "10px"
-color_a = "#409EFF"
-color_b = "#282a33"
+font_size_normal = "16px"
+font_size_header = "24px"
+border_radius_small = "10px"
+color_accent = "#409EFF"
+color_bg = "#282a33"
 # ... other constants
 ```
 
 ---
 
-## 🧬 Style Inheritance
+## Style Inheritance
 
 Themes can inherit missing style variables and functions from another theme by defining `THEME_INHERITS` in `styles.py`:
 
@@ -127,11 +133,93 @@ THEME_INHERITS = "classic"
 
 If `THEME_INHERITS` is not defined, the theme inherits styles from `standart`.
 
-Inheritance applies only to style attributes loaded from `styles.py`. Fonts, icons, images, and screenshots do not inherit from `THEME_INHERITS`; their fallback remains the built-in `standart` theme.
+Fonts, icons, and images also follow the inheritance chain — the first match found walking from child to `standart` wins. If your theme has a `fonts/` directory, it takes priority over the parent's. If it doesn't, the parent's fonts are loaded. Screenshots are the exception — they are loaded only from the current theme, not inherited.
+
+### How Inheritance Works
+
+The inheritance system uses **AST-based constant injection**. When a child theme loads, the engine walks the full inheritance chain (child → parent → grandparent → … → `standart`) and collects all constant assignments from each theme's `styles/constants.py` (or `styles.py` if no `styles/` directory exists).
+
+Constants are collected in order from root to child. **Child theme constants override parent constants.** This means you can change any color, size, or layout value by simply redefining it in your theme — you do not need to copy entire QSS strings.
+
+For parent themes with a `styles/` directory (like `standart`), the QSS styles are **regenerated** with your child constants. Each style file (e.g., `base.py`, `game_card.py`) is re-evaluated with `{**parent_constants, **child_constants}`, so all f-string QSS values reflect your overrides.
+
+For parent themes with only a monolithic `styles.py`, assignments overridden by the child are stripped before re-execution, and the remaining code runs with your constants.
+
+**Example — overriding colors and borders in a child theme:**
+```python
+# my_child_theme/styles.py
+THEME_INHERITS = "standart"
+
+# Override accent color — all QSS using color_accent will use this value
+color_accent = "#3daee9"
+color_bg = "#2c3746"
+color_surface = "#323e4f"
+color_text = "#fdfdfd"
+```
+
+**Example — overriding font and borders:**
+```python
+# my_child_theme/styles.py
+THEME_INHERITS = "standart"
+
+font_family = "Adwaita Sans"
+border_radius_small = "12px"
+border_radius_large = "18px"
+border_radius_card = "12px"
+border_radius_header = "24px"
+border_radius_badge = "6px"
+```
+
+**Example — light theme variant:**
+```python
+# my_child_theme_light/styles.py
+THEME_INHERITS = "standart-light"
+
+color_accent = "#6c782e"
+color_bg = "#fbf1c7"
+color_surface = "#f4e8be"
+color_text = "#3c3836"
+```
+
+**Inheritance chain examples:**
+```
+standart  (root, no parent)
+  ├── standart-light  (defaults to "standart")
+  │     └── classic-light  (THEME_INHERITS = "standart-light")
+  └── classic  (THEME_INHERITS = "standart")
+```
+
+Only the **immediate parent's** `styles/` directory generates QSS for your child theme. Grandparent styles are inherited via attribute lookup fallback, not regenerated.
+
+### Overriding QSS Styles
+
+You can also override entire QSS style strings in your theme. This is useful when you need complete control over a widget's appearance:
+
+```python
+# my_child_theme/styles.py
+THEME_INHERITS = "standart"
+
+LIBRARY_WIDGET_STYLE = f"""
+    QWidget {{
+        background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+            stop:0 {color_library_gradient_start},
+            stop:1 {color_library_gradient_end});
+        border-radius: 0px;
+    }}
+"""
+
+NAV_BUTTON_STYLE = f"""
+    NavLabel {{
+        background: {color_transparent};
+        border-radius: 0px;
+        border-bottom: {border_thin} {color_accent};
+    }}
+"""
+```
 
 ---
 
-## 🧩 Library Layout Mode
+## Library Layout Mode
 
 You can control the game library card layout directly from the theme via `styles.py`:
 
@@ -147,7 +235,7 @@ This is a theme-level option and does not depend on app settings.
 
 ---
 
-## 🧾 Detail Page Layout Mode
+## Detail Page Layout Mode
 
 You can control the detail page layout from the theme via `styles.py`:
 
@@ -163,7 +251,77 @@ Economy mode also forces the compact detail page layout.
 
 ---
 
-## 🖥 Terminal Color Schemes
+## Preloader
+
+The `PRELOADER` dictionary controls the loading indicator style and animation. If not defined, the default spinner is used.
+
+```python
+PRELOADER = {
+    # Style: "default" (spinning arc), "bat" (flying bat), "pulse" (expanding rings),
+    #        "dots" (orbiting dots), "wave" (sine wave)
+    "style": "bat",
+
+    # --- Bat style options ---
+    "bat_size": 80,           # Size of the bat in pixels
+    "bat_flap_speed": 3.0,    # Wing flap speed
+    "bat_alpha": 220,         # Opacity (0-255)
+    "bat_color": color_accent,
+
+    # --- Pulse style options ---
+    "pulse_count": 3,         # Number of expanding rings
+    "pulse_max_radius": 40,   # Maximum ring radius
+    "pulse_speed": 2.0,       # Expansion speed
+    "pulse_color": color_accent,
+
+    # --- Dots style options ---
+    "dots_count": 8,          # Number of orbiting dots
+    "dots_radius": 38,        # Orbit radius
+    "dots_dot_size": 5,       # Dot size
+    "dots_speed": 3.0,        # Orbit speed
+    "dots_color": color_accent,
+
+    # --- Wave style options ---
+    "wave_width": 80,         # Wave width in pixels
+    "wave_amplitude": 15,     # Wave height
+    "wave_speed": 3.0,        # Wave animation speed
+    "wave_line_width": 3,     # Line thickness
+    "wave_color": color_accent,
+}
+```
+
+---
+
+## Source Corner (Ribbon)
+
+The `SOURCE_CORNER` dictionary controls the ribbon/corner badge that indicates the game source (Steam, EGS, etc.) on game cards.
+
+```python
+SOURCE_CORNER = {
+    "ribbon_color": color_surface,         # Main ribbon background
+    "ribbon_fold_color": "#00000096",      # Shadow of the folded corner
+    "size_ratio": 0.28,                    # Ribbon size as ratio of card width
+    "min_size": 54,                        # Minimum ribbon size in pixels
+    "min_widget_size": 4,                  # Minimum widget size for ribbon to show
+    "peel_start_ratio": 0.32,             # Peel effect start position
+    "peel_mid_ratio": 0.58,               # Peel midpoint
+    "peel_end_ratio": 0.82,               # Peel end position
+    "peel_shadow_width": 3,               # Peel shadow thickness
+    "fold_start_ratio": 0.60,             # Fold crease start
+    "fold_end_ratio": 0.92,               # Fold crease end
+    "icon_center_ratio": 0.84,            # Icon center position
+    "icon_size_ratio": 0.25,              # Icon size relative to ribbon
+    "min_icon_size": 8,                   # Minimum icon size
+    "gradient_start": 0.0,                # Gradient start position
+    "gradient_end": 1.0,                  # Gradient end position
+    "gradient_lighter": 145,              # Lighter gradient stop (brightness)
+    "gradient_darker": 112,               # Darker gradient stop (brightness)
+    "fold_darker": 132,                   # Fold area brightness
+}
+```
+
+---
+
+## Terminal Color Schemes
 
 Terminal color schemes are separate Kitty-style `.conf` files. Built-in schemes are stored in `portprotonqt/terminal_schemes/`. User schemes can be placed in:
 
@@ -213,7 +371,7 @@ If `cursor_shape` is omitted, the terminal uses `beam`. If `enable_audio_bell` i
 
 ---
 
-## 🎥 Animation configuration
+## Animation configuration
 
 The `GAME_CARD_ANIMATION` dictionary controls all animation parameters for game cards:
 
@@ -282,14 +440,14 @@ GAME_CARD_ANIMATION = {
 
     # Overlay color for "fill" animation type
     # Any valid Qt color string (hex/rgb/rgba)
-    "fill_color": color_a,
+    "fill_color": color_accent,
 
     # Overlay opacity for "fill" animation type (0-255)
     "fill_alpha": 90,
 
     # Border color for "stripe" animation type
     # Any valid Qt color string (hex/rgb/rgba)
-    "stripe_color": color_a,
+    "stripe_color": color_accent,
 
     # Border opacity for "stripe" animation type (0-255)
     "stripe_alpha": 255,
@@ -402,7 +560,7 @@ virtual_keyboard_slide_bounce_animation_duration = 220
 
 ---
 
-## 📝 Metadata (`metainfo.ini`)
+## Metadata (`metainfo.ini`)
 
 ```ini
 [Metainfo]
@@ -428,14 +586,14 @@ The application will automatically select the appropriate translation based on t
 
 ---
 
-## 🖼 Screenshots
+## Screenshots
 
 Folder: `images/screenshots/` — place UI screenshots there.
 Screenshot files can have any convenient names.
 
 ---
 
-## 🔡 Fonts and Icons (optional)
+## Fonts and Icons (optional)
 
 - Fonts: `fonts/*.ttf` or `.otf`
 - Icons and Images: `images/` directory for all visual assets. Supported formats: `.svg`, `.png`, `.jpg`, `.jpeg`, `.webp`, `.jxl`.
@@ -447,7 +605,7 @@ Screenshot files can have any convenient names.
   - `images/icons/controllers/playstation/` - PlayStation controller button icons (ps_circle, ps_cross, etc.)
   - `images/ui_elements/` - UI elements (placeholder images, etc.)
   - `images/screenshots/` - Theme preview screenshots
-  
+
 Icons and images can be referenced by name without specifying the subdirectory, as the system will search through all subdirectories automatically. Theme creators can organize images in any logical subdirectory structure.
 
 ---

@@ -473,7 +473,7 @@ class DetailPageManager:
         return play_button
 
     def _add_portproton_buttons(self, buttons_layout: FlowLayout, exec_line: str) -> None:
-        """Add settings and log buttons for PortProton games."""
+        """Add settings, log, and open folder buttons for PortProton games."""
         file_to_check = self._get_file_from_exec(exec_line)
 
         settings_icon = self.main_window.theme_manager.get_icon("settings", as_path=True)
@@ -488,6 +488,15 @@ class DetailPageManager:
         log_button.clicked.connect(lambda: self.toggleDebugLog(file_to_check, log_button))
         buttons_layout.addWidget(log_button)
         self._debug_log_button = log_button
+
+        open_folder_button = self._make_action_button(
+            _("Open Folder"),
+            self.main_window.theme_manager.get_icon("search", as_path=True),
+        )
+        open_folder_button.clicked.connect(
+            lambda: self._open_portproton_game_folder(exec_line)
+        )
+        buttons_layout.addWidget(open_folder_button)
 
     def _add_steam_settings_button(self, buttons_layout: FlowLayout, exec_line: str, appid: str) -> None:
         """Add only settings button for Steam games."""
@@ -535,6 +544,14 @@ class DetailPageManager:
                 folder_path = linux_subdir
             QDesktopServices.openUrl(QUrl.fromLocalFile(str(folder_path)))
             return
+
+    def _open_portproton_game_folder(self, exec_line: str) -> None:
+        """Open folder containing the PortProton game executable."""
+        file_to_check = self._get_file_from_exec(exec_line)
+        if not file_to_check or not os.path.exists(file_to_check):
+            return
+        folder_path = os.path.dirname(os.path.abspath(file_to_check))
+        QDesktopServices.openUrl(QUrl.fromLocalFile(folder_path))
 
     def _has_game_shortcut(self, game_name: str) -> bool:
         """Check whether game has a desktop shortcut in PortProton location."""
@@ -982,8 +999,9 @@ class DetailPageManager:
             game_data = self._game_tuple_to_data(game_tuple)
             self._return_to_autoinstall_card = self._get_exec_name(game_data["exec_line"])
             self._remove_current_detail_page()
+            self.main_window.switchTab(0)
             self.openGameDetailPage(game_data)
-            self._return_to_tab_index = self.main_window.auto_install_tab_index
+            self._return_to_tab_index = 0
 
         self.main_window._process_desktop_file_async(desktop_path, on_game_data)
 
