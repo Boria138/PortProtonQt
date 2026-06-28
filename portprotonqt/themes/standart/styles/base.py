@@ -605,13 +605,13 @@ SCROLL_STYLE = f"""
     QScrollBar:vertical {{
         width: 10px;
         border:  {border_none};
-        border-radius: {border_radius_small};
+        border-radius: 5px;
         background: {color_scrollbar_bg};
     }}
     QScrollBar::handle:vertical {{
         background: {color_scrollbar_handle};
         border:  {border_none};
-        border-radius: {border_radius_small};
+        border-radius: 5px;
     }}
     QScrollBar::add-line:vertical {{
         border:  {border_none};
@@ -630,13 +630,13 @@ SCROLL_STYLE = f"""
     QScrollBar:horizontal {{
         height: 10px;
         border:  {border_none};
-        border-radius: {border_radius_small};
+        border-radius: 5px;
         background: {color_scrollbar_bg};
     }}
     QScrollBar::handle:horizontal {{
         background: {color_scrollbar_handle};
         border:  {border_none};
-        border-radius: {border_radius_small};
+        border-radius: 5px;
     }}
     QScrollBar::add-line:horizontal {{
         border:  {border_none};
