@@ -209,6 +209,7 @@ class ThemeStoreMixin:
         self.themeStoreDownloadButton.setStyleSheet(self.theme.ACTION_BUTTON_STYLE)
         self.themeStoreDownloadButton.clicked.connect(self._download_current_store_theme)
         header.addWidget(self.themeStoreDownloadButton)
+        header.setContentsMargins(0, 0, 0, 20)
         return header
 
     def _create_theme_store_detail_body(self) -> AutoHideScrollArea:
